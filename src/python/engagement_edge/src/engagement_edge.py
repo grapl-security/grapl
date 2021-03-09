@@ -93,7 +93,7 @@ JWT_SECRET = LazyJwtSecret()
 DYNAMO: Optional[DynamoDBServiceResource] = None
 
 app = Chalice(app_name="engagement-edge")
-app.api.cors = False
+
 # Sometimes we pass in a dict. Sometimes we pass the string "True". Weird.
 Res = Union[Dict[str, Any], str]
 
