@@ -63,9 +63,7 @@ export class DeploymentParameters {
         validateDeploymentName(deployName, allowLegacyDeploymentName);
 
         this.stackName = deployName;
-        this.logLevels.defaultLogLevel = process.env.DEFAULT_LOG_LEVEL
-            || HardcodedDeploymentParameters.logLevels.defaultLogLevel
-            || "INFO";
+
 
         this.graplVersion = process.env.GRAPL_VERSION
             || HardcodedDeploymentParameters.graplVersion
@@ -93,35 +91,43 @@ export class DeploymentParameters {
         if (!region) {
             throw new Error('Error: Missing Grapl region. Set via bin/deployment_parameters.ts or environment variable GRAPL_REGION.');
         }
-        this.region = region
+        this.region = region;
 
-        this.logLevels.sysmonSubgraphGeneratorLogLevel = process.env.SYSMON_SUBGRAPH_GENERATOR_LOG_LEVEL
-            || HardcodedDeploymentParameters.logLevels.sysmonSubgraphGeneratorLogLevel
-            || this.logLevels.defaultLogLevel;
+        const defaultLogLevel = process.env.DEFAULT_LOG_LEVEL
+            || HardcodedDeploymentParameters.logLevels.defaultLogLevel
+            || "INFO";
 
-        this.logLevels.osquerySubgraphGeneratorLogLevel = process.env.OSQUERY_SUBGRAPH_GENERATOR_LOG_LEVEL
-            || HardcodedDeploymentParameters.logLevels.osquerySubgraphGeneratorLogLevel
-            || this.logLevels.defaultLogLevel;
+        this.logLevels = {
+            defaultLogLevel: defaultLogLevel,
 
-        this.logLevels.nodeIdentifierLogLevel = process.env.NODE_IDENTIFIER_LOG_LEVEL
-            || HardcodedDeploymentParameters.logLevels.nodeIdentifierLogLevel
-            || this.logLevels.defaultLogLevel;
+            sysmonSubgraphGeneratorLogLevel: process.env.SYSMON_SUBGRAPH_GENERATOR_LOG_LEVEL
+                || HardcodedDeploymentParameters.logLevels.sysmonSubgraphGeneratorLogLevel
+                || defaultLogLevel,
 
-        this.logLevels.graphMergerLogLevel = process.env.GRAPH_MERGER_LOG_LEVEL
-            || HardcodedDeploymentParameters.logLevels.graphMergerLogLevel
-            || this.logLevels.defaultLogLevel;
+            osquerySubgraphGeneratorLogLevel: process.env.OSQUERY_SUBGRAPH_GENERATOR_LOG_LEVEL
+                || HardcodedDeploymentParameters.logLevels.osquerySubgraphGeneratorLogLevel
+                || defaultLogLevel,
 
-        this.logLevels.analyzerDispatcherLogLevel = process.env.ANALYZER_DISPATCHER_LOG_LEVEL
-            || HardcodedDeploymentParameters.logLevels.analyzerDispatcherLogLevel
-            || this.logLevels.defaultLogLevel;
+            nodeIdentifierLogLevel: process.env.NODE_IDENTIFIER_LOG_LEVEL
+                || HardcodedDeploymentParameters.logLevels.nodeIdentifierLogLevel
+                || defaultLogLevel,
 
-        this.logLevels.analyzerExecutorLogLevel = process.env.ANALYZER_EXECUTOR_LOG_LEVEL
-            || HardcodedDeploymentParameters.logLevels.analyzerExecutorLogLevel
-            || this.logLevels.defaultLogLevel;
+            graphMergerLogLevel: process.env.GRAPH_MERGER_LOG_LEVEL
+                || HardcodedDeploymentParameters.logLevels.graphMergerLogLevel
+                || defaultLogLevel,
 
-        this.logLevels.engagementCreatorLogLevel = process.env.ENGAGEMENT_CREATOR_LOG_LEVEL
-            || HardcodedDeploymentParameters.logLevels.engagementCreatorLogLevel
-            || this.logLevels.defaultLogLevel;
+            analyzerDispatcherLogLevel: process.env.ANALYZER_DISPATCHER_LOG_LEVEL
+                || HardcodedDeploymentParameters.logLevels.analyzerDispatcherLogLevel
+                || defaultLogLevel,
+
+            analyzerExecutorLogLevel: process.env.ANALYZER_EXECUTOR_LOG_LEVEL
+                || HardcodedDeploymentParameters.logLevels.analyzerExecutorLogLevel
+                || defaultLogLevel,
+
+            engagementCreatorLogLevel: process.env.ENGAGEMENT_CREATOR_LOG_LEVEL
+                || HardcodedDeploymentParameters.logLevels.engagementCreatorLogLevel
+                || defaultLogLevel,
+        }
     }
 
 }
