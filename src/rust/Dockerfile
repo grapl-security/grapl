@@ -19,9 +19,16 @@ RUN wget -q https://github.com/mozilla/sccache/releases/download/v0.2.15/sccache
 
 ENV RUSTC_WRAPPER=/usr/local/bin/sccache
 
+# Install rust toolchain before copying sources to avoid unecessarily
+# resinstalling on source file changes.
 WORKDIR /grapl
+COPY rust/rust-toolchain rust/rust-toolchain
+WORKDIR /grapl/rust
+# 'rustup show' will install components in the rust-toolchain file
+RUN rustup show
 
 # copy sources
+WORKDIR /grapl
 COPY proto proto
 COPY rust rust
 
