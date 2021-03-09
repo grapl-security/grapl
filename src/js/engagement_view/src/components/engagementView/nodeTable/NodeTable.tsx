@@ -20,7 +20,7 @@ type NodeTableProps = {
 	node: VizNode;
 };
 
-function NodeTable({ node }: NodeTableProps) {
+const NodeTable = ({ node }: NodeTableProps) => {
 	const classes = useStyles();
 	const hidden = new Set([
 		"id",
@@ -74,10 +74,13 @@ function NodeTable({ node }: NodeTableProps) {
 					{Object.entries(displayNode).map((nodeProperty) => {
 						const [key, value] = nodeProperty;
 
+						console.log("key", key)
+						console.log("value", value)
+
 						return (
 							<TableRow key={node.node_key + key}>
 								<TableCell className={classes.nodeTableData} align="left">
-									<b>{key}</b>
+									{key}
 								</TableCell>
 								<TableCell className={classes.nodeTableData} align="right">
 									{value as any}

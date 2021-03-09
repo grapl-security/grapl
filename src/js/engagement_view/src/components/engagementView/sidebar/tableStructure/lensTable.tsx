@@ -39,8 +39,7 @@ export const lensTable = (
 				onChangePage={handleChangePage}
 				onChangeRowsPerPage={handleChangeRowsPerPage}
 			/>
-			{/* <TableContainer className={classes.tableContainer}> */}
-			<TableHead className={classes.head}>
+			<TableHead className={classes.tableHead}>
 				<TableRow className={classes.hdrTitle}> Lens Name </TableRow>
 				<TableRow className={classes.riskTitle}> Risk </TableRow>
 			</TableHead>
@@ -50,11 +49,10 @@ export const lensTable = (
 				key={"lensTable"}
 			>
 				<TableBody>
-				{state.lenses
-					.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-					.map((lens: Lens) => {
-						return (
-							
+					{state.lenses
+						.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+						.map((lens: Lens) => {
+							return (
 								<SelectLens
 									key={Number(lens.uid)}
 									uid={lens.uid}
@@ -63,10 +61,9 @@ export const lensTable = (
 									score={lens.score}
 									setLens={setLens}
 								/>
-							
-						);
-					})}
-					</TableBody>
+							);
+						})}
+				</TableBody>
 			</Table>
 			{/* </TableContainer> */}
 		</TableContainer>

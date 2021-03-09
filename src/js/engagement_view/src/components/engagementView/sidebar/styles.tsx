@@ -9,7 +9,7 @@ export const useStyles = makeStyles({
 		padding: "0 30px",
     },
     tableRow: {
-        background: "#333333"
+        background: "#323232",
     },
 	backdrop: {
 		color: "#fff",
@@ -35,41 +35,37 @@ export const useStyles = makeStyles({
 		height: "1.5rem",
 	},
 	header: {
-		display: "flex",
+		display: "flex", 	
 	},
 	table: {
-		minWidth: 450,
-		backgroundColor: "#595959",
+		minWidth: 400,
 	},
 	lensName: {
 		fontSize: ".75rem",
 	},
 	pagination: {
-		margin: ".5rem",
-		backgroundColor: "#323232",
+		backgroundColor: "#323232"
 	},
-	head: {
+	tableHead: {
 		display: "flex",
-		backgroundColor: "#363434",
+		backgroundColor: "#323232",
 		color: "white",
-        fontSize: ".75rem",
-        padding: "1em"
+        fontSize: ".8rem",
+		minWidth: 450,
 	},
 	hdrTitle: {
-        fontSize: "1rem",
-        margin:".5rem",
-        color: "#fff",
+		margin:".5rem",
+		marginLeft: ".5rem"
     },
     riskTitle: {
-        fontSize: "1rem",
         margin:".5rem",
         marginLeft: "10rem",
-        color: "#fff",
     },
     tableContainer:{
         textAlign: "center",
         marginLeft: "auto",
         marginRight: "auto",
-        width: "95%"
+		width: "95%"
+		
     },
 });
