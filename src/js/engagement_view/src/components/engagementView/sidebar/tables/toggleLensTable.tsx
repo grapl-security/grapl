@@ -8,12 +8,12 @@ import Divider from "@material-ui/core/Divider";
 import Backdrop from "@material-ui/core/Backdrop";
 import CircularProgress from "@material-ui/core/CircularProgress";
 
-import { lensTable } from "./lensTable";
+import { lensTable } from "./lensTable/lensTable";
 import { getLenses } from "services/graphQLRequests/getLenses";
 
 import { ToggleLensTableProps, ToggleLensTableState } from "types/CustomTypes";
 
-import { useStyles } from "../styles";
+import { useStyles } from "./lensTable/styles";
 const defaultToggleLensTableState = (): ToggleLensTableState => {
 	return {
 		toggled: true,

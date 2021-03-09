@@ -7,7 +7,7 @@ import { ToggleNodeTableProps } from "types/LensAndNodeTableTypes";
 
 import { NodeDetails } from "../LensAndNodeTableContainer";
 
-import { useStyles } from "../styles";
+import { useStyles } from "./lensTable/styles";
 
 
 export function ToggleNodeDetailTable({ curNode }: ToggleNodeTableProps) {

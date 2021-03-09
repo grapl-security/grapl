@@ -12,6 +12,9 @@ import { SelectLens } from "./selectLens";
 import { Lens } from "types/CustomTypes";
 import { PaginationState } from "types/CustomTypes";
 
+const lensTitle = "Lens Name"; 
+const riskTitle = "Risk";
+
 export const lensTable = (
 	state: PaginationState,
 	page: number,
@@ -39,15 +42,15 @@ export const lensTable = (
 				onChangePage={handleChangePage}
 				onChangeRowsPerPage={handleChangeRowsPerPage}
 			/>
-			<TableHead className={classes.tableHead}>
-				<TableRow className={classes.hdrTitle}> Lens Name </TableRow>
-				<TableRow className={classes.riskTitle}> Risk </TableRow>
-			</TableHead>
 			<Table
 				className={classes.table}
 				aria-label="lens table"
 				key={"lensTable"}
 			>
+				<TableHead className={classes.tableHead}>
+					<TableRow className={classes.hdrTitle}>{lensTitle}</TableRow>
+					<TableRow className={classes.riskTitle}>{riskTitle}</TableRow>
+				</TableHead>
 				<TableBody>
 					{state.lenses
 						.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
@@ -65,7 +68,6 @@ export const lensTable = (
 						})}
 				</TableBody>
 			</Table>
-			{/* </TableContainer> */}
 		</TableContainer>
 	);
 };

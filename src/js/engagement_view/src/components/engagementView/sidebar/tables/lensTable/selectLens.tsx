@@ -4,7 +4,7 @@ import Button from "@material-ui/core/Button";
 import TableCell from "@material-ui/core/TableCell";
 import TableRow from "@material-ui/core/TableRow";
 
-import { useStyles } from '../styles';
+import { useStyles } from './styles';
 
 import { SelectLensProps } from "types/LensAndNodeTableTypes"
 

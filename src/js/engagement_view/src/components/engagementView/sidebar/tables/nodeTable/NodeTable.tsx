@@ -6,8 +6,8 @@ import TableCell from "@material-ui/core/TableCell";
 import TableContainer from "@material-ui/core/TableContainer";
 import TableRow from "@material-ui/core/TableRow";
 
-import { mapEdgeProps } from "../../graphDisplay/graphLayout/graph_traverse";
-import { mapNodeProps } from "../../graphDisplay/graphLayout/mapNodeProps";
+import { mapEdgeProps } from "../../../../graphDisplay/graphLayout/graph_traverse";
+import { mapNodeProps } from "../../../../graphDisplay/graphLayout/mapNodeProps";
 
 import { OtherNodeProperties, VizNode } from "types/CustomTypes";
 
@@ -40,6 +40,8 @@ const NodeTable = ({ node }: NodeTableProps) => {
 		"vx",
 		"fx",
 		"fy",
+		"links", 
+		"neighbors"
 	]);
 
 	mapEdgeProps(node as any, (edgeName: any, _neighbor: any) => {
@@ -73,10 +75,6 @@ const NodeTable = ({ node }: NodeTableProps) => {
 				<TableBody>
 					{Object.entries(displayNode).map((nodeProperty) => {
 						const [key, value] = nodeProperty;
-
-						console.log("key", key)
-						console.log("value", value)
-
 						return (
 							<TableRow key={node.node_key + key}>
 								<TableCell className={classes.nodeTableData} align="left">
