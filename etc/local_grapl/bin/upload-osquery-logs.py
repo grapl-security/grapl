@@ -35,6 +35,7 @@ def hack_PATH_to_include_grapl_tests_common() -> Callable:
 
     return upload_osquery_logs
 
+
 def setup_env(deployment_name: str):
     """Ensures the environment is set up appropriately for interacting
     with Local Grapl (running inside a Docker Compose network locally)

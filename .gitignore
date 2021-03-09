@@ -49,8 +49,8 @@ dist/
 /dist/
 /.pids
 /.pants.workdir.file_lock*
-# See build-support/generate_constraints.sh
-/build-support/.constraints-venv
+# See build-support/manage_virtualenv.sh
+/build-support/grapl-venv
 .yarn/
 
 # Generated when profiling rust code

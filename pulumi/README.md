@@ -35,15 +35,9 @@ future, we hope to be able to simplify this setup.)
 
 We're using the Python SDK for Pulumi. As such, we'll need to have
 access to the appropriate Python libraries when we run the `pulumi`
-CLI. Until we can incorporate this fully into Pants, we'll need to do
-a small amount of `virtualenv` management ourselves.
-
-```sh
-python -m venv venv
-source venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-```
+CLI. If you have not already done so, run `make populate-venv` from
+the repository root, and follow the instructions it gives you at the
+end.
 
 To run Pulumi locally, we'll need to login locally, thus avoiding
 communication with the hosted Pulumi service.

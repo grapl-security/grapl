@@ -270,3 +270,7 @@ help: ## Print this help
 .PHONY: docker-kill-all
 docker-kill-all:  # Kill all currently running Docker containers
 	docker kill $$(docker ps -aq)
+
+.PHONY: populate-venv
+populate-venv: ## Set up a Python virtualenv (you'll have to activate manually!)
+	build-support/manage_virtualenv.sh populate

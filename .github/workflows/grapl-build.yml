@@ -4,8 +4,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
-      - staging
-      - master
+      - main
 
 jobs:
   rust-unit-tests:
