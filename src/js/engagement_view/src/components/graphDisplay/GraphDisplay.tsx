@@ -47,7 +47,6 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
 		const interval = setInterval(async () => {
 			if (lensName) {
 				await updateGraph(lensName, state as GraphState, setState); // state is safe cast, check that lens name is not null
-				console.log("Updating graph for lens: ", lensName);
 			}
 		}, 1000);
 		return () => {
@@ -65,10 +64,10 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
 	const [highlightLinks, setHighlightLinks] = useState(new Set());
 	const [hoverNode, setHoverNode] = useState(null);
 
-	const updateHighlight = () => {
+	const updateHighlight = useCallback(() => {
 		setHighlightNodes(highlightNodes);
 		setHighlightLinks(highlightLinks);
-	};
+	}, [highlightNodes, highlightLinks]);
 
 	const nodeClick = useCallback(
 		(_node, ctx) => {
@@ -114,7 +113,7 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
 			setHoverNode((node as any) || null);
 			updateHighlight();
 		},
-		[setHoverNode, updateHighlight]
+		[setHoverNode, updateHighlight, highlightLinks, highlightNodes]
 	);
 
 	const nodeStyling = useCallback(
