@@ -146,15 +146,15 @@ As long as the `buf` binary is present in your `$PATH`, the [buf Visual Studio
 Code plugin][buf_vsc] will automatically lint your Protobuf files
 according to our configuration.
 
-[vsc]: https://code.visualstudio.com/
-[ra_vsc]: https://marketplace.visualstudio.com/items?itemName=matklad.rust-analyzer
-[clippy]: https://github.com/rust-lang/rust-clippy
-[rustfmt]: https://github.com/rust-lang/rustfmt
 [buf]: https://buf.build
 [buf_release]: https://github.com/bufbuild/buf/releases
 [buf_vsc]: https://marketplace.visualstudio.com/items?itemName=bufbuild.vscode-buf
-[pyright-vsc]: https://marketplace.visualstudio.com/items?itemName=ms-pyright.pyright
-[pylance-vsc]: https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance
+[clippy]: https://github.com/rust-lang/rust-clippy
 [lsp-mode-emacs]: https://github.com/emacs-lsp/lsp-mode
 [lsp-pyright-emacs]: https://github.com/emacs-lsp/lsp-pyright
+[pylance-vsc]: https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance
 [pyright]: https://github.com/Microsoft/pyright
+[pyright-vsc]: https://marketplace.visualstudio.com/items?itemName=ms-pyright.pyright
+[ra_vsc]: https://marketplace.visualstudio.com/items?itemName=matklad.rust-analyzer
+[rustfmt]: https://github.com/rust-lang/rustfmt
+[vsc]: https://code.visualstudio.com/
