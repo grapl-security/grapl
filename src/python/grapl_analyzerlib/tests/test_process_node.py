@@ -168,9 +168,9 @@ class TestProcessQuery(unittest.TestCase):
         process_id=st.integers(min_value=1, max_value=2 ** 32),
         created_timestamp=st.integers(min_value=0, max_value=2 ** 48),
         terminate_time=st.integers(min_value=0, max_value=2 ** 48),
-        image_name=st.text(),
-        process_name=st.text(),
-        arguments=st.text(),
+        image_name=st.text(min_size=1, max_size=64),
+        process_name=st.text(min_size=1, max_size=64),
+        arguments=st.text(min_size=1, max_size=64),
     )
     def test_process_query_view_parity_eq(
         self,

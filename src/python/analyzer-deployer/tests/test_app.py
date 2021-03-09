@@ -23,7 +23,7 @@ def _analyzers() -> st.SearchStrategy[Analyzer]:
         Analyzer,
         st.builds(
             dict,
-            analyzer_id=st.text(),
+            analyzer_id=st.text(min_size=1, max_size=64),
             analyzer_versions=st.lists(st.integers()),
             analyzer_active=st.booleans(),
             created_time=st.integers(),
@@ -37,20 +37,27 @@ def _port_configs() -> st.SearchStrategy[PortConfig]:
         PortConfig,
         st.builds(
             dict,
-            protocol=st.text(),
+            protocol=st.text(min_size=1, max_size=64),
             port=st.integers(),
         ),
     )
 
 
 def _table_configs():
-    return st.builds(TableConfig, **{"table": st.text(), "write": st.booleans()})
+    return st.builds(
+        TableConfig,
+        **{"table": st.text(min_size=1, max_size=64), "write": st.booleans()},
+    )
 
 
 def _secret_configs():
     return st.builds(
         SecretConfig,
-        **{"SecretId": st.text(), "VersionId": st.text(), "VersionStage": st.text()},
+        **{
+            "SecretId": st.text(min_size=1, max_size=64),
+            "VersionId": st.text(min_size=1, max_size=64),
+            "VersionStage": st.text(min_size=1, max_size=64),
+        },
     )
 
 
@@ -70,9 +77,9 @@ def _analyzer_deployments():
     return st.builds(
         AnalyzerDeployment,
         **{
-            "analyzer_id": st.text(),
+            "analyzer_id": st.text(min_size=1, max_size=64),
             "analyzer_version": st.integers(),
-            "s3_key": st.text(),
+            "s3_key": st.text(min_size=1, max_size=64),
             "currently_deployed": st.booleans(),
             "last_deployed_time": st.integers(),
             "analyzer_configuration": _analyzer_configs(),
@@ -84,9 +91,9 @@ def _create_analyzer_responses():
     return st.builds(
         CreateAnalyzerResponse,
         **{
-            "analyzer_id": st.text(),
+            "analyzer_id": st.text(min_size=1, max_size=64),
             "analyzer_version": st.integers(),
-            "s3_key": st.text(),
+            "s3_key": st.text(min_size=1, max_size=64),
         },
     )
 
