@@ -136,8 +136,8 @@ pub fn mg_alphas() -> Vec<String> {
 }
 
 pub fn mutation_endpoint() -> String {
-    std::env::var("MUTATION_ENDPOINT")
-        .expect("MUTATION_ENDPOINT")
+    std::env::var("GRAPH_MUTATION_ENDPOINT")
+        .expect("GRAPH_MUTATION_ENDPOINT")
 }
 
 pub async fn wait_for_s3(s3_client: impl S3) -> color_eyre::Result<()> {
