@@ -10,29 +10,7 @@ import { LambdaDestination } from '@aws-cdk/aws-logs-destinations';
 import { FilterPattern } from '@aws-cdk/aws-logs';
 import { SqsEventSource } from '@aws-cdk/aws-lambda-event-sources';
 import { Watchful } from 'cdk-watchful';
-
-class Queues {
-    readonly queue: sqs.Queue;
-    readonly retryQueue: sqs.Queue;
-
-    constructor(scope: cdk.Construct, queueName: string) {
-        const dead_letter_queue = new sqs.Queue(scope, 'DeadLetterQueue', {
-            queueName: queueName + '-dead-letter-queue',
-        });
-
-        this.retryQueue = new sqs.Queue(scope, 'RetryQueue', {
-            queueName: queueName + '-retry-queue',
-            deadLetterQueue: { queue: dead_letter_queue, maxReceiveCount: 3 },
-            visibilityTimeout: cdk.Duration.seconds(360),
-        });
-
-        this.queue = new sqs.Queue(scope, 'Queue', {
-            queueName: queueName + '-queue',
-            deadLetterQueue: { queue: this.retryQueue, maxReceiveCount: 3 },
-            visibilityTimeout: cdk.Duration.seconds(180),
-        });
-    }
-}
+import { Queues } from './fargate_service';
 
 export interface ServicePropsOptions {
     runtime?: lambda.Runtime;

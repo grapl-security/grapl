@@ -9,10 +9,12 @@ import click
 from mypy_boto3_cloudwatch.client import CloudWatchClient
 from mypy_boto3_ec2 import EC2ServiceResource
 from mypy_boto3_route53 import Route53Client
-from mypy_boto3_sns.client import SNSClient
+from mypy_boto3_sns import SNSClient
 from mypy_boto3_ssm import SSMClient
 
-from . import __version__, common, dgraph_ops, docker_swarm_ops
+from graplctl import __version__, common, dgraph_ops, docker_swarm_ops
+from graplctl.common import GraplctlState
+from graplctl.queues.commands import queues
 
 Tag = common.Tag
 Ec2Instance = common.Ec2Instance
@@ -26,6 +28,8 @@ CLOUDWATCH: CloudWatchClient = SESSION.client(
 )
 SNS: SNSClient = SESSION.client("sns", region_name=os.getenv("AWS_REGION"))
 ROUTE53: Route53Client = SESSION.client("route53", region_name=os.getenv("AWS_REGION"))
+# TODO: Instead of adding to this list, prefer spawning clients
+# off of graplctl_state.session
 
 
 def _ticker(n: int) -> Iterator[None]:
@@ -37,13 +41,6 @@ def _ticker(n: int) -> Iterator[None]:
 #
 # main entrypoint for grapctl
 #
-
-
-@dataclasses.dataclass
-class GraplctlState:
-    grapl_region: str
-    grapl_deployment_name: str
-    grapl_version: str
 
 
 @click.group()
@@ -79,8 +76,14 @@ def main(
     grapl_deployment_name: str,
     grapl_version: str,
 ) -> None:
-    ctx.obj = GraplctlState(grapl_region, grapl_deployment_name, grapl_version)
+    ctx.obj = GraplctlState(
+        grapl_region,
+        grapl_deployment_name,
+        grapl_version,
+        boto3_session=SESSION,
+    )
 
+main.add_command(queues)
 
 #
 # swarm operational commands
