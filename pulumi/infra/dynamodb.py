@@ -1,6 +1,7 @@
 from typing import Dict, List, Optional
 
 import pulumi_aws as aws
+from infra.util import import_aware_opts
 
 import pulumi
 
@@ -100,7 +101,8 @@ def dynamodb_table(
         hash_key=hash_key,
         range_key=range_key,
         billing_mode="PAY_PER_REQUEST",
-        opts=pulumi.ResourceOptions(parent=parent_resource),
+        tags={"grapl deployment": pulumi.get_stack()},
+        opts=import_aware_opts(name, parent=parent_resource),
     )
 
 
