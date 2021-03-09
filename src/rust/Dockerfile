@@ -43,6 +43,7 @@ WORKDIR /grapl/rust
 FROM base AS build
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
+    --mount=type=cache,mode=0777,target=/usr/local/cargo/registry \
     --mount=type=secret,id=rust_env,dst=/grapl/env \
     source /grapl/env; \
     case "${CARGO_PROFILE}" in \
@@ -76,6 +77,7 @@ RUN mkdir -p /grapl/zips; \
 FROM build AS build-test-unit
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
+    --mount=type=cache,mode=0777,target=/usr/local/cargo/registry \
     --mount=type=secret,id=rust_env,dst=/grapl/env \
     source /grapl/env; \
     cargo test --no-run
@@ -84,6 +86,7 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
 FROM build AS build-test-integration
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
+    --mount=type=cache,mode=0777,target=/usr/local/cargo/registry \
     --mount=type=secret,id=rust_env,dst=/grapl/env \
     source /grapl/env; \
     cargo test --manifest-path node-identifier/Cargo.toml --features integration --no-run
