@@ -63,7 +63,7 @@ def test_hit_cache(AnalyzerExecutorSingleton) -> None:
     """
     ae = AnalyzerExecutorSingleton(stub_env=False)
 
-    k1, k2 = st.text(min_size=3), st.text(min_size=3)
+    k1, k2 = st.text(min_size=3, max_size=64), st.text(min_size=3, max_size=64)
 
     assert not ae.check_hit_cache(k1, k2)
     ae.update_hit_cache(k1, k2)
@@ -78,7 +78,7 @@ def test_message_cache(AnalyzerExecutorSingleton) -> None:
     """
     ae = AnalyzerExecutorSingleton(stub_env=False)
 
-    k1, k2, k3 = st.text(min_size=3), st.text(min_size=3), st.text(min_size=3)
+    k1, k2, k3 = st.text(min_size=3, max_size=64), st.text(min_size=3, max_size=64), st.text(min_size=3, max_size=64)
 
     assert not ae.check_msg_cache(k1, k2, k3)
     ae.update_msg_cache(k1, k2, k3)
