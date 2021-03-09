@@ -31,6 +31,7 @@ pants_ignore = [
 [source]
 root_patterns = [
   "/3rdparty",
+  "/build-support",
   "/pants-plugins",
   "/pulumi",
   "/src/js/grapl-cdk",
