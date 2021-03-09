@@ -170,5 +170,5 @@ services:
   grapl-pulumi:
     image: grapl/grapl-local-pulumi:${TAG:-latest}
     build:
-      context: pulumi
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: Dockerfile.pulumi

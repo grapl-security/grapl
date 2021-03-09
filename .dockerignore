@@ -1,0 +1,12 @@
+build-support/grapl-venv
+dist
+etc/sample_data
+**/node_modules
+.pants.d
+.pants.workdir.file_lock*
+.pids
+**/__pycache__
+src/js/grapl-cdk/cdk.out/**
+src/js/grapl-cdk/zips
+src/rust/target/**
+.yarn

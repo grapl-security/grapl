@@ -71,7 +71,7 @@ def main(deployment_name, logfile):
             "s3",
             endpoint_url=os.environ["S3_ENDPOINT"],
             aws_access_key_id=os.environ["S3_ACCESS_KEY_ID"],
-            aws_secret_access_key=os.environ["S3_ACCESS_KEY_SECRET"]
+            aws_secret_access_key=os.environ["S3_ACCESS_KEY_SECRET"],
         )
         sqs = boto3.client("sqs", endpoint_url=os.environ["SQS_ENDPOINT"])
 
@@ -97,7 +97,9 @@ def main(deployment_name, logfile):
             + rand_str(3)
         )
 
-        s3.put_object(Body=c_body, Bucket="{}-raw-log-bucket".format(deployment_name), Key=key)
+        s3.put_object(
+            Body=c_body, Bucket="{}-raw-log-bucket".format(deployment_name), Key=key
+        )
         # local-grapl relies on manual eventing
         if sqs:
             sqs.send_message(

@@ -4,8 +4,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
-      - staging
-      - master
+      - main
 
 jobs:
   # NOTE: RtD will build and deploy our docs after-the-fact; but we'd like to prevent faulty

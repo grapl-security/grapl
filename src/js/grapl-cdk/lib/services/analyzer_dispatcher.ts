@@ -51,8 +51,8 @@ export class AnalyzerDispatch extends cdk.NestedStack {
         this.service = new FargateService(this, service_name, {
             deploymentName: props.deploymentName,
             environment: {
-                RUST_LOG: props.analyzerDispatcherLogLevel,
                 ANALYZER_BUCKET: deployment_name + "-analyzers-bucket",
+                RUST_LOG: props.logLevels.analyzerDispatcherLogLevel,
                 EVENT_CACHE_CLUSTER_ADDRESS: dispatch_event_cache.address,
                 DISPATCHED_ANALYZER_BUCKET: props.writesTo.bucketName,
                 SUBGRAPH_MERGED_BUCKET: subgraphs_merged.bucket.bucketName,

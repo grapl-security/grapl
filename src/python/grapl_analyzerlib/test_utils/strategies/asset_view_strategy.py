@@ -17,7 +17,7 @@ def asset_props() -> st.SearchStrategy[AssetProps]:
         st.builds(
             dict,
             node_key=st.uuids(),
-            hostname=st.text(),
+            hostname=st.text(min_size=1, max_size=64),
         ),
     )
 

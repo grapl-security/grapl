@@ -9,8 +9,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
-      - staging
-      - master
+      - main
     paths:
       # Only audit dependencies on PRs when we actually change dependencies.
       - "**/Cargo.toml"
@@ -23,20 +22,7 @@ jobs:
       run:
         working-directory: src/rust
     steps:
-      # Scheduled actions operate on the default branch. In order to use
-      # "staging", we have to specify it like this.
-      #
-      # Once we switch over to using the master branch for all development, we
-      # can remove this configuration. See
-      # https://github.com/grapl-security/issue-tracker/issues/224
       - uses: actions/checkout@v2
-        if: ${{ github.event_name == 'schedule' }}
-        with:
-          ref: staging
-
-      # If we're not scheduled, then just run on whatever branch we should be running on
-      - uses: actions/checkout@v2
-        if: ${{ github.event_name != 'schedule' }}
 
       # TODO: Once actions-rs/audit-check can run in an arbitrary subdirectory,
       # let's use it instead; it has better output.

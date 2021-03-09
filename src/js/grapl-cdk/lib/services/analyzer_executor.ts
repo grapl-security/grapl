@@ -50,7 +50,7 @@ export class AnalyzerExecutor extends cdk.NestedStack {
                     MESSAGECACHE_PORT: message_cache.cluster.attrRedisEndpointPort,
                     HITCACHE_ADDR: hit_cache.cluster.attrRedisEndpointAddress,
                     HITCACHE_PORT: hit_cache.cluster.attrRedisEndpointPort,
-                    GRAPL_LOG_LEVEL: props.analyzerExecutorLogLevel,
+                    GRAPL_LOG_LEVEL: props.logLevels.analyzerExecutorLogLevel,
                     GRPC_ENABLE_FORK_SUPPORT: '1',
                 },
                 vpc: props.vpc,

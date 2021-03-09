@@ -31,17 +31,11 @@ import {GraphMerger} from "./services/graph_merger";
 import {NodeIdentifier} from "./services/node_identifier";
 import {SysmonGraphGenerator} from "./services/sysmon_graph_generator";
 import {OSQueryGraphGenerator} from "./services/osquery_graph_generator";
+import {LogLevels} from "../bin/deployment_parameters";
 
 export interface GraplServiceProps {
     deploymentName: string;
-    defaultLogLevel: string;
-    sysmonSubgraphGeneratorLogLevel: string;
-    osquerySubgraphGeneratorLogLevel: string;
-    nodeIdentifierLogLevel: string;
-    graphMergerLogLevel: string;
-    analyzerDispatcherLogLevel: string;
-    analyzerExecutorLogLevel: string;
-    engagementCreatorLogLevel: string;
+    logLevels: LogLevels<string>;
     version: string;
     jwtSecret: secretsmanager.Secret;
     vpc: ec2.IVpc;
@@ -53,14 +47,7 @@ export interface GraplServiceProps {
 
 export interface GraplStackProps extends cdk.StackProps {
     stackName: string;
-    defaultLogLevel: string;
-    sysmonSubgraphGeneratorLogLevel: string;
-    osquerySubgraphGeneratorLogLevel: string;
-    nodeIdentifierLogLevel: string;
-    graphMergerLogLevel: string;
-    analyzerDispatcherLogLevel: string;
-    analyzerExecutorLogLevel: string;
-    engagementCreatorLogLevel: string;
+    logLevels: LogLevels<string>;
     version: string;
     watchfulEmail?: string;
     operationalAlarmsEmail: string;
@@ -142,14 +129,7 @@ export class GraplCdkStack extends cdk.Stack {
 
         const graplProps: GraplServiceProps = {
             deploymentName: this.deploymentName,
-            sysmonSubgraphGeneratorLogLevel: props.sysmonSubgraphGeneratorLogLevel,
-            defaultLogLevel: props.defaultLogLevel,
-            osquerySubgraphGeneratorLogLevel: props.osquerySubgraphGeneratorLogLevel,
-            nodeIdentifierLogLevel: props.nodeIdentifierLogLevel,
-            graphMergerLogLevel: props.graphMergerLogLevel,
-            analyzerDispatcherLogLevel: props.analyzerDispatcherLogLevel,
-            analyzerExecutorLogLevel: props.analyzerExecutorLogLevel,
-            engagementCreatorLogLevel: props.engagementCreatorLogLevel,
+            logLevels: props.logLevels,
             version: props.version,
             jwtSecret: jwtSecret,
             vpc: grapl_vpc,

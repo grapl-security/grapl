@@ -44,7 +44,7 @@ export class NodeIdentifier extends cdk.NestedStack {
         this.service = new FargateService(this, service_name, {
             deploymentName: props.deploymentName,
             environment: {
-                RUST_LOG: props.nodeIdentifierLogLevel,
+                RUST_LOG: props.logLevels.nodeIdentifierLogLevel,
                 EVENT_CACHE_CLUSTER_ADDRESS: event_cache.address,
                 RETRY_IDENTITY_CACHE_ADDR:
                 event_cache.cluster.attrRedisEndpointAddress,
