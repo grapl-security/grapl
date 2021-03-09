@@ -78,7 +78,11 @@ def test_message_cache(AnalyzerExecutorSingleton) -> None:
     """
     ae = AnalyzerExecutorSingleton(stub_env=False)
 
-    k1, k2, k3 = st.text(min_size=3, max_size=64), st.text(min_size=3, max_size=64), st.text(min_size=3, max_size=64)
+    k1, k2, k3 = (
+        st.text(min_size=3, max_size=64),
+        st.text(min_size=3, max_size=64),
+        st.text(min_size=3, max_size=64),
+    )
 
     assert not ae.check_msg_cache(k1, k2, k3)
     ae.update_msg_cache(k1, k2, k3)

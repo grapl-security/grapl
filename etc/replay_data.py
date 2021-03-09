@@ -81,7 +81,7 @@ def get_sqs_client() -> SQSClient:
             endpoint_url=os.environ["SQS_ENDPOINT"],
             region_name=os.environ["AWS_REGION"],
             aws_access_key_id=os.environ["SQS_ACCESS_KEY_ID"],
-            aws_secret_access_key=os.environ["SQS_ACCESS_KEY_SECRET"]
+            aws_secret_access_key=os.environ["SQS_ACCESS_KEY_SECRET"],
         )
     else:
         return boto3.client("sqs")
@@ -93,7 +93,7 @@ def get_s3_client() -> S3Client:
             "s3",
             endpoint_url=os.environ["S3_ENDPOINT"],
             aws_access_key_id=os.environ["S3_ACCESS_KEY_ID"],
-            aws_secret_access_key=os.environ["S3_ACCESS_KEY_SECRET"]
+            aws_secret_access_key=os.environ["S3_ACCESS_KEY_SECRET"],
         )
 
     else:

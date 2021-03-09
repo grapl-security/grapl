@@ -44,13 +44,20 @@ def _port_configs() -> st.SearchStrategy[PortConfig]:
 
 
 def _table_configs():
-    return st.builds(TableConfig, **{"table": st.text(min_size=1, max_size=64), "write": st.booleans()})
+    return st.builds(
+        TableConfig,
+        **{"table": st.text(min_size=1, max_size=64), "write": st.booleans()},
+    )
 
 
 def _secret_configs():
     return st.builds(
         SecretConfig,
-        **{"SecretId": st.text(min_size=1, max_size=64), "VersionId": st.text(min_size=1, max_size=64), "VersionStage": st.text(min_size=1, max_size=64)},
+        **{
+            "SecretId": st.text(min_size=1, max_size=64),
+            "VersionId": st.text(min_size=1, max_size=64),
+            "VersionStage": st.text(min_size=1, max_size=64),
+        },
     )
 
 
