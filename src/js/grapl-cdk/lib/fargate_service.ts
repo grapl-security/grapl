@@ -37,9 +37,6 @@ export class Queues {
             deadLetterQueue: { queue: this.retryQueue, maxReceiveCount: 3 },
             visibilityTimeout: cdk.Duration.seconds(180),
         });
-
-        cdk.Tags.of(this.deadLetterQueue).add("redriveMessagesTo", this.retryQueue.queueUrl);
-
     }
 }
 

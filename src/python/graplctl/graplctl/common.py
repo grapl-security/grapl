@@ -5,10 +5,10 @@ import logging
 import os
 import sys
 import time
-import click
 from typing import Dict, Iterator, List, Tuple
 
-from boto3 import Session
+import boto3
+import click
 import mypy_boto3_ec2.service_resource as ec2_resources
 from mypy_boto3_ssm.client import SSMClient
 
@@ -22,15 +22,18 @@ IN_PROGRESS_STATUSES = {
     "Delayed",
 }
 
+
 @dataclasses.dataclass
 class GraplctlState:
     grapl_region: str
     grapl_deployment_name: str
     grapl_version: str
-    boto3_session: boto3.Session
+    boto3_session: boto3.session.Session
+
 
 # Prefer this to `pass_obj`
 pass_graplctl_state = click.make_pass_decorator(GraplctlState)
+
 
 @dataclasses.dataclass
 class Tag:

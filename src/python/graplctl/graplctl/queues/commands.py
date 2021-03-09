@@ -1,5 +1,8 @@
 from graplctl.common import GraplctlState, pass_graplctl_state
-from graplctl.queues.ls import queues_for_deployment
+from graplctl.queues.lib import (
+    list_dlqs_for_deployment,
+    redrive_from_dlq,
+)
 from mypy_boto3_sqs import SQSClient
 import dataclasses
 import click
@@ -28,6 +31,22 @@ def ls(
     graplctl_state: GraplctlState,
     queues_obj: QueuesObj,
 ) -> None:
-    """List all redrivable queues"""
-    queues = queues_for_deployment(graplctl_state, queues_obj.sqs_client)
-    click.echo(list(queues))
+    queues = list_dlqs_for_deployment(graplctl_state, queues_obj.sqs_client)
+    click.echo("\n".join(queues))
+
+@queues.command(help="Redrive messages from a dead letter queue")
+@pass_queues_obj
+@pass_graplctl_state
+@click.argument(
+    'dlq_url',
+)
+def redrive(
+    graplctl_state: GraplctlState,
+    queues_obj: QueuesObj,
+    dlq_url: str,
+) -> None:
+    redrive_from_dlq(
+        graplctl_state,
+        queues_obj.sqs_client,
+        dlq_url,
+    )

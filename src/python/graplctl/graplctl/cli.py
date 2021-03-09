@@ -6,20 +6,19 @@ from typing import Callable, Dict, Iterator, List, Optional
 
 import boto3
 import click
+from graplctl import __version__, common, dgraph_ops, docker_swarm_ops
+from graplctl.common import GraplctlState
+from graplctl.queues.commands import queues
 from mypy_boto3_cloudwatch.client import CloudWatchClient
 from mypy_boto3_ec2 import EC2ServiceResource
 from mypy_boto3_route53 import Route53Client
 from mypy_boto3_sns import SNSClient
 from mypy_boto3_ssm import SSMClient
 
-from graplctl import __version__, common, dgraph_ops, docker_swarm_ops
-from graplctl.common import GraplctlState
-from graplctl.queues.commands import queues
-
 Tag = common.Tag
 Ec2Instance = common.Ec2Instance
 
-SESSION = boto3.Session(profile_name=os.getenv("AWS_PROFILE", "default"))
+SESSION = boto3.session.Session(profile_name=os.getenv("AWS_PROFILE", "default"))
 
 EC2: EC2ServiceResource = SESSION.resource("ec2", region_name=os.getenv("AWS_REGION"))
 SSM: SSMClient = SESSION.client("ssm")
@@ -82,6 +81,7 @@ def main(
         grapl_version,
         boto3_session=SESSION,
     )
+
 
 main.add_command(queues)
 
