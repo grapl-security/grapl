@@ -4,14 +4,16 @@ import json
 import logging
 import os
 import sys
-from typing import Iterator, List, Optional, Tuple
+from typing import TYPE_CHECKING, Iterator, List, Optional, Tuple
 
 from botocore.client import ClientError
-from mypy_boto3_cloudwatch.client import CloudWatchClient
-from mypy_boto3_cloudwatch.type_defs import MetricTypeDef
-from mypy_boto3_route53 import Route53Client
-from mypy_boto3_sns.client import SNSClient
-from mypy_boto3_ssm import SSMClient
+
+if TYPE_CHECKING:
+    from mypy_boto3_cloudwatch.client import CloudWatchClient
+    from mypy_boto3_cloudwatch.type_defs import MetricTypeDef
+    from mypy_boto3_route53 import Route53Client
+    from mypy_boto3_sns.client import SNSClient
+    from mypy_boto3_ssm import SSMClient
 
 from . import common
 

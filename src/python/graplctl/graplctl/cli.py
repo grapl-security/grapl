@@ -1,19 +1,23 @@
+from __future__ import annotations
+
 import dataclasses
 import os
 import time
 import uuid
-from typing import Callable, Dict, Iterator, List, Optional
+from typing import TYPE_CHECKING, Callable, Dict, Iterator, List, Optional
 
 import boto3
 import click
 from graplctl import __version__, common, dgraph_ops, docker_swarm_ops
 from graplctl.common import GraplctlState
 from graplctl.queues.commands import queues
-from mypy_boto3_cloudwatch.client import CloudWatchClient
-from mypy_boto3_ec2 import EC2ServiceResource
-from mypy_boto3_route53 import Route53Client
-from mypy_boto3_sns import SNSClient
-from mypy_boto3_ssm import SSMClient
+
+if TYPE_CHECKING:
+    from mypy_boto3_cloudwatch.client import CloudWatchClient
+    from mypy_boto3_ec2 import EC2ServiceResource
+    from mypy_boto3_route53 import Route53Client
+    from mypy_boto3_sns import SNSClient
+    from mypy_boto3_ssm import SSMClient
 
 Tag = common.Tag
 Ec2Instance = common.Ec2Instance

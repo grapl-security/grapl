@@ -9,16 +9,26 @@ def test_version():
     assert __version__ == "0.1.0"
 
 
+DEFAULT_ARGS = [
+    "--grapl-region",
+    "us-west-2",
+    "--grapl-deployment-name",
+    "fake-deployment",
+    "--grapl-version",
+    "fake-version",
+]
+
+
 def test_queues_ls() -> None:
     runner = CliRunner()
     with _patch_boto3_session() as mock_session:
         _return_fake_queues(mock_session)
-        result = runner.invoke(cli.main, ["queues", "ls"])
-    assert result.exit_code == 0
+        result = runner.invoke(cli.main, [*DEFAULT_ARGS, "queues", "ls"])
     assert (
         result.output
         == "http://queue1-dead-letter-queue\nhttp://queue2-dead-letter-queue\n"
     )
+    assert result.exit_code == 0
 
 
 # TODO: Add a `test_queues_redrive`

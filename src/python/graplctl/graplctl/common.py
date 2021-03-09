@@ -5,12 +5,14 @@ import logging
 import os
 import sys
 import time
-from typing import Dict, Iterator, List, Tuple
+from typing import TYPE_CHECKING, Dict, Iterator, List, Tuple
 
 import boto3
 import click
-import mypy_boto3_ec2.service_resource as ec2_resources
-from mypy_boto3_ssm.client import SSMClient
+
+if TYPE_CHECKING:
+    import mypy_boto3_ec2.service_resource as ec2_resources
+    from mypy_boto3_ssm.client import SSMClient
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
