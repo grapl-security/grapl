@@ -188,7 +188,6 @@ where
 
         let created_time = strategy.create_time;
         let last_seen_time = strategy.last_seen_time;
-
         let unid = match (created_time != 0, last_seen_time != 0) {
             (true, _) => UnidSession {
                 pseudo_key: primary_key,

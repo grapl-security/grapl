@@ -1,5 +1,3 @@
-// #![allow(unused_must_use)]
-
 use std::{collections::{HashMap,
                         HashSet},
           fmt::Debug,
@@ -46,6 +44,7 @@ macro_rules! wait_on {
 
 pub mod dynamic_sessiondb;
 
+pub mod key_cache;
 pub mod sessiondb;
 pub mod sessions;
 
@@ -109,7 +108,6 @@ where
     CacheT: Cache + Clone + Send + Sync + 'static,
 {
     type InputEvent = GraphDescription;
-    // todo: IdentifiedGraph's should be emitted
     type OutputEvent = IdentifiedGraph;
     type Error = NodeIdentifierError;
 
@@ -165,7 +163,6 @@ where
                 Err(e) => {
                     warn!("Failed to attribute node_key with: {}", e);
                     dead_node_ids.insert(node.clone_node_key());
-                    // completed.add_identity(node.clone_node_key(), EventStatus::Failure);
 
                     attribution_failure = Some(e);
                     continue;

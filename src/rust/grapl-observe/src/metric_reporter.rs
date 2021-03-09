@@ -13,9 +13,9 @@ use crate::{metric_error::MetricError,
             writer_wrapper::WriterWrapper};
 
 pub mod common_strs {
-    pub const STATUS: &'static str = "status";
-    pub const SUCCESS: &'static str = "success";
-    pub const FAIL: &'static str = "fail";
+    pub const STATUS: &str = "status";
+    pub const SUCCESS: &str = "success";
+    pub const FAIL: &str = "fail";
 }
 
 pub enum HistogramUnit {
@@ -25,7 +25,7 @@ pub enum HistogramUnit {
     Millis,
     Micros,
 }
-const RESERVED_UNIT_TAG: &'static str = "_unit";
+const RESERVED_UNIT_TAG: &str = "_unit";
 
 type NowGetter = fn() -> DateTime<Utc>;
 
@@ -79,9 +79,9 @@ where
             tags,
         )?;
         let time = self.format_time_for_cloudwatch((self.utc_now)());
-        write!(
+        writeln!(
             self.out.as_mut(),
-            "MONITORING|{}|{}|{}\n",
+            "MONITORING|{}|{}|{}",
             self.service_name,
             time,
             self.buffer
@@ -259,7 +259,7 @@ mod tests {
             .with_timezone(&Utc)
     }
 
-    const SERVICE_NAME: &'static str = "test_service";
+    const SERVICE_NAME: &str = "test_service";
 
     #[test]
     fn test_public_functions_smoke_test() -> Result<(), Box<dyn std::error::Error>> {

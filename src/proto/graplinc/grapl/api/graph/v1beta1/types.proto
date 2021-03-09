@@ -164,11 +164,11 @@ message Edge {
 // Represents a directed edge between two nodes, where both nodes, and this edge, exist in the graph.
 message MergedEdge {
     // The uid associated with the 'source' of the edge
-    string from_uid = 1;
+    uint64 from_uid = 1;
     // The node_key associated with the 'source' of the edge
     string from_node_key = 2;
     // The uid associated with the 'destination' of the edge
-    string to_uid = 3;
+    uint64 to_uid = 3;
     // The node_key associated with the 'destination' of the edge
     string to_node_key = 4;
     // The name of the edge

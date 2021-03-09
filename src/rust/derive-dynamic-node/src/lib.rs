@@ -15,19 +15,23 @@ use syn::{parse_quote,
           NestedMeta,
           Type};
 
-const CREATE_TIME: &str = "create_time";
-const LAST_SEEN_TIME: &str = "last_seen_time";
-const TERMINATE_TIME: &str = "terminate_time";
-const IMMUTABLE: &str = "immutable";
-const INCREMENT: &str = "increment";
-const DECREMENT: &str = "decrement";
+const CREATE_TIME: &'static str = "create_time";
+const LAST_SEEN_TIME: &'static str = "last_seen_time";
+const TERMINATE_TIME: &'static str = "terminate_time";
+const IMMUTABLE: &'static str = "immutable";
+const INCREMENT: &'static str = "increment";
+const DECREMENT: &'static str = "decrement";
+
+const PSEUDO_KEY: &'static str = "pseudo_key";
 
 fn name_and_ty(field: &Field) -> (&Ident, &Type, String) {
     let mut resolution = None;
     for attr in &field.attrs {
         on_grapl_attrs(&attr, |attr| {
             match attr {
-                IMMUTABLE | INCREMENT | DECREMENT => resolution = Some(attr.to_string()),
+                IMMUTABLE => resolution = Some(attr.to_string()),
+                INCREMENT => resolution = Some(attr.to_string()),
+                DECREMENT => resolution = Some(attr.to_string()),
                 _ => (),
             };
         });
@@ -242,8 +246,8 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
     let mut id_fields = quote!();
     for field in fields {
         for attr in &field.attrs {
-            on_grapl_attrs(attr, |meta_attr| {
-                if meta_attr == "pseudo_key" {
+            on_grapl_attrs(attr, |meta_attr| match meta_attr {
+                PSEUDO_KEY => {
                     let f = field
                         .ident
                         .as_ref()
@@ -251,6 +255,7 @@ pub fn derive_grapl_session(input: TokenStream) -> TokenStream {
                         .to_string();
                     id_fields.extend(quote!(#f .to_string(), ));
                 }
+                _ => (),
             });
         }
     }

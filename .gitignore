@@ -1,6 +1,7 @@
 # Mac OS
 .DS_Store
-
+.ninja_log
+.pytype/
 # Test outputs
 test/cypress/screenshots
 test/cypress/videos

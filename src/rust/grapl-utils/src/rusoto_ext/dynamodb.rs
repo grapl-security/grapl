@@ -44,7 +44,8 @@ pub trait GraplDynamoDbClientExt: DynamoDb {
            4. Final formatting and return
         */
         // holds the properties for `KeysAndAttributes` used for a particular table minus the requested items (we'll assemble this later)
-        let mut key_and_attribute_shells = HashMap::new();
+        let mut key_and_attribute_shells =
+            HashMap::with_capacity(batch_get_items_input.request_items.len());
 
         // extract all of the requested rows from all of the tables into a vec
         // additionally, keep a copy of the `KeysAndAttributes` for each table (with the items removed) so we can copy the properties later
@@ -62,8 +63,7 @@ pub trait GraplDynamoDbClientExt: DynamoDb {
 
                     request_items
                         .into_iter()
-                        .map(|row_properties| (table.clone(), row_properties))
-                        .collect::<Vec<(String, HashMap<String, AttributeValue>)>>()
+                        .map(move |row_properties| (table.clone(), row_properties))
                 })
                 .collect();
 
@@ -85,8 +85,8 @@ pub trait GraplDynamoDbClientExt: DynamoDb {
                 .drain(0..std::cmp::min(pending_items.len(), DYNAMODB_MAX_BATCH_GET_ITEM_SIZE))
                 .for_each(|(table_name, row_keys)| {
                     let entry = requested_items_for_table
-                        .entry(table_name.clone())
-                        .or_insert(Vec::new());
+                        .entry(table_name)
+                        .or_insert_with(|| Vec::with_capacity(1));
 
                     entry.push(row_keys);
                 });
@@ -123,45 +123,35 @@ pub trait GraplDynamoDbClientExt: DynamoDb {
             let response = self.batch_get_item(batch_request).await?;
 
             // record consumed capacity, if enabled
-            match response.consumed_capacity {
-                Some(capacity) => {
-                    total_consumed_capacity.extend(capacity);
-                }
-                _ => {}
+            if let Some(capacity) = response.consumed_capacity {
+                total_consumed_capacity.extend(capacity);
             }
 
-            match response.responses {
-                Some(response_map) => {
-                    // for each table in response, record the rows for that table
-                    response_map.into_iter().for_each(|(table_name, rows)| {
-                        let table_rows = total_responses
-                            .entry(table_name.clone())
-                            .or_insert(Vec::new());
+            if let Some(response_map) = response.responses {
+                // for each table in response, record the rows for that table
+                response_map.into_iter().for_each(|(table_name, rows)| {
+                    let table_rows = total_responses
+                        .entry(table_name)
+                        .or_insert_with(|| Vec::with_capacity(rows.len()));
 
-                        table_rows.extend(rows);
-                    });
-                }
-                _ => {}
+                    table_rows.extend(rows);
+                });
             }
 
             // if a response was too large, we may have unprocessed keys.
             // we can just directly insert these back into pending items for processing
-            match response.unprocessed_keys {
-                Some(unprocessed_keys) => {
-                    let unprocessed_keys: Vec<_> = unprocessed_keys
+            if let Some(unprocessed_keys) = response.unprocessed_keys {
+                let unprocessed_keys =
+                    unprocessed_keys
                         .into_iter()
                         .flat_map(|(table_name, keys_and_attributes)| {
                             keys_and_attributes
                                 .keys
                                 .into_iter()
-                                .map(|row_keys| (table_name.clone(), row_keys))
-                                .collect::<Vec<_>>()
-                        })
-                        .collect();
+                                .map(move |row_keys| (table_name.clone(), row_keys))
+                        });
 
-                    pending_items.extend(unprocessed_keys);
-                }
-                _ => {}
+                pending_items.extend(unprocessed_keys);
             }
         }
 

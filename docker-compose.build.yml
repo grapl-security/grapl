@@ -66,6 +66,15 @@ services:
       args:
         - CARGO_PROFILE=${CARGO_PROFILE:-debug}
 
+  grapl-graph-mutation-service:
+    image: grapl/grapl-graph-mutation-service:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: rust/Dockerfile
+      target: graph-mutation-service-deploy
+      args:
+        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
+
   grapl-analyzer-dispatcher:
     image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
     build:
