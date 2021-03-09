@@ -13,7 +13,7 @@ import { getLenses } from "services/graphQLRequests/getLenses";
 
 import { ToggleLensTableProps, ToggleLensTableState } from "types/CustomTypes";
 
-import { useStyles } from "./lensTable/styles";
+import { useStyles } from "./lensTable/lensTableStyles";
 const defaultToggleLensTableState = (): ToggleLensTableState => {
 	return {
 		toggled: true,
@@ -72,7 +72,7 @@ export function ToggleLensTable({ setLens }: ToggleLensTableProps) {
 			<div className={classes.header}>
 				<b className={classes.title}> Lenses </b>
 				<Button
-					className={classes.button}
+					className={classes.lensToggleBtn}
 					onClick={() => {
 						setToggleTableState({
 							...toggleTableState,

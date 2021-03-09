@@ -7,16 +7,17 @@ export const useStyles = makeStyles({
 		border: 0,
 		color: "white",
 		padding: "0 30px",
-    },
-    tableRow: {
-        background: "#323232",
-    },
+	},
 	backdrop: {
 		color: "#fff",
 		backgroundColor: "transparent",
 		width: "80%",
 	},
-	button: {
+	table: {
+		minWidth: 450,
+		backgroundColor: "#323232"
+	},
+	lensToggleBtn: {
 		width: ".05%",
 		height: "50%",
 		color: "white",
@@ -37,25 +38,20 @@ export const useStyles = makeStyles({
 	header: {
 		display: "flex", 	
 	},
-	table: {
-		minWidth: 400,
-	},
 	lensName: {
-		fontSize: ".75rem",
+		fontSize: ".7rem",
 	},
 	pagination: {
 		backgroundColor: "#323232"
 	},
 	tableHead: {
 		display: "flex",
-		backgroundColor: "#323232",
 		color: "white",
         fontSize: ".8rem",
-		minWidth: 450,
 	},
-	hdrTitle: {
+	lensTitle: {
 		margin:".5rem",
-		marginLeft: ".5rem"
+		marginLeft: ".8rem"
     },
     riskTitle: {
         margin:".5rem",
@@ -66,6 +62,8 @@ export const useStyles = makeStyles({
         marginLeft: "auto",
         marginRight: "auto",
 		width: "95%"
-		
+	},
+	tableRow: {
+        background: "#323232",
     },
 });

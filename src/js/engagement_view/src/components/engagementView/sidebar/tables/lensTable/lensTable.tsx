@@ -12,6 +12,7 @@ import { SelectLens } from "./selectLens";
 import { Lens } from "types/CustomTypes";
 import { PaginationState } from "types/CustomTypes";
 
+// We can't pass text to MUI <td>, so we have to pass header titles as variables.
 const lensTitle = "Lens Name"; 
 const riskTitle = "Risk";
 
@@ -44,11 +45,12 @@ export const lensTable = (
 			/>
 			<Table
 				className={classes.table}
-				aria-label="lens table"
+				aria-label="lens-table"
 				key={"lensTable"}
 			>
 				<TableHead className={classes.tableHead}>
-					<TableRow className={classes.hdrTitle}>{lensTitle}</TableRow>
+					{/* Make sure there aren't spaces between TableRow tags and hdr values - spaces here will break the app (as of 03/21) */}
+					<TableRow className={classes.lensTitle}>{lensTitle}</TableRow>
 					<TableRow className={classes.riskTitle}>{riskTitle}</TableRow>
 				</TableHead>
 				<TableBody>

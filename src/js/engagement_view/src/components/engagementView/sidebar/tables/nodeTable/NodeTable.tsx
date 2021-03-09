@@ -12,7 +12,7 @@ import { mapNodeProps } from "../../../../graphDisplay/graphLayout/mapNodeProps"
 import { OtherNodeProperties, VizNode } from "types/CustomTypes";
 
 import { nodeTableHeader } from "./nodeTableHeader";
-import { nodeTableStyles } from "./styles";
+import { nodeTableStyles } from "./nodeTableStyles";
 
 const useStyles = nodeTableStyles;
 
