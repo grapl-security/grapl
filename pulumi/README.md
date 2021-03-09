@@ -95,6 +95,25 @@ pulumi config set grapl:import_from_existing False
 Once we have fully migrated away from CDK, we can remove this
 configuration option and the code that supports it.
 
+## CDK and Pulumi Configuration Caveat
+
+If you are interacting with CDK and Pulumi at the same time (e.g.,
+you're in the middle of helping migrate from one to the other), you
+will need to be scrupulous about keeping your AWS credentials
+up-to-date.
+
+Pulumi can operate just fine with `aws sso login`. CDK, on the other
+hand, cannot, so we have to add credentials to our
+`~/.aws/credentials` file to interact with it.
+
+If, however, your on-disk credentials are out of date, regardless of
+the fact that you may have just logged in with `aws sso login`, your
+Pulumi runs will hang, because it's looking at that file and getting
+invalid information.
+
+To preserve your sanity, get into the habit of updating your
+credentials file regularly if you're working with both CDK and Pulumi
+at the same time.
 
 [pulumi]: https://pulumi.com
 [ls]: https://localstack.cloud/
