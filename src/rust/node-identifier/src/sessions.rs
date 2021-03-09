@@ -10,13 +10,14 @@ use serde::{Deserialize,
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UnidSession {
     pub pseudo_key: String,
+    pub node_type: String,
     pub timestamp: u64,
     pub is_creation: bool, // Is this a creation event
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Session {
-    pub session_id: String,
+    pub session_id: u64,
     pub pseudo_key: String, // hostname-pid
     pub create_time: u64,
     pub end_time: u64,

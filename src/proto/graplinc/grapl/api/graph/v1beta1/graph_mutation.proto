@@ -14,7 +14,6 @@ message SetNodeRequest {
 }
 
 message SetNodeSuccess {
-  uint64 node_uid = 1;
 }
 
 message SetNodeResult {
@@ -26,12 +25,10 @@ message SetNodeResult {
 }
 
 message SetEdgeRequest {
-  v1beta1.Edge edge = 1;
+  v1beta1.IdentifiedEdge edge = 1;
 }
 
 message SetEdgeSuccess {
-  uint64 src_uid = 1;
-  uint64 dst_uid = 2;
 }
 
 message SetEdgeResult {
@@ -43,7 +40,22 @@ message SetEdgeResult {
   }
 }
 
+message CreateNodeRequest {
+  string node_type = 1;
+}
+
+message CreateNodeSuccess {
+  uint64 uid = 1;
+}
+
+message CreateNodeResult {
+  oneof rpc_result {
+    CreateNodeSuccess created = 1;
+  }
+}
+
 service GraphMutationRpc {
+  rpc CreateNode(CreateNodeRequest) returns (CreateNodeResult) {}
   rpc SetNode(SetNodeRequest) returns (SetNodeResult) {}
   rpc SetEdge(SetEdgeRequest) returns (SetEdgeResult) {}
 }

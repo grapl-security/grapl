@@ -17,8 +17,8 @@ use grapl_config::{env_helpers::{s3_event_emitters_from_env,
                                  FromEnv},
                    event_caches};
 pub use grapl_graph_descriptions::graph_mutation_service::graph_mutation_rpc_client::GraphMutationRpcClient;
-use grapl_graph_descriptions::{graph_description::{Edge,
-                                                   EdgeList,
+use grapl_graph_descriptions::{graph_description::{IdentifiedEdge,
+                                                   IdentifiedEdgeList,
                                                    IdentifiedGraph,
                                                    IdentifiedNode,
                                                    MergedGraph,
@@ -143,7 +143,7 @@ where
             });
         }
 
-        for (_, EdgeList { edges }) in subgraph.edges.into_iter() {
+        for (_, IdentifiedEdgeList { edges }) in subgraph.edges.into_iter() {
             for edge in edges {
                 let mut graph_mutation_client = self.graph_mutation_client.clone();
                 edge_requests.push(async move {
@@ -169,10 +169,10 @@ where
 
         for (node_uid, node) in node_requests {
             tracing::debug!(message="set_node", set_node_res=?node_uid);
-            if let set_node_result::RpcResult::Set(SetNodeSuccess { node_uid }) = node_uid {
+            // todo: We need to handle the error
+            if let set_node_result::RpcResult::Set(SetNodeSuccess {}) = node_uid {
                 merged_graph.add_node(MergedNode {
-                    uid: node_uid,
-                    node_key: node.node_key,
+                    uid: node.uid,
                     node_type: node.node_type,
                     properties: node.properties,
                 });
@@ -181,15 +181,13 @@ where
 
         for (set_edge_res, edge) in edge_requests {
             tracing::debug!(message="set_edge", set_edge_res=?set_edge_res);
-            if let set_edge_result::RpcResult::Set(SetEdgeSuccess { src_uid, dst_uid }) =
+            if let set_edge_result::RpcResult::Set(SetEdgeSuccess {}) =
                 set_edge_res
             {
                 merged_graph.add_edge(
                     edge.edge_name,
-                    edge.from_node_key,
-                    src_uid,
-                    edge.to_node_key,
-                    dst_uid,
+                    edge.from_uid,
+                    edge.to_uid,
                 );
             }
         }

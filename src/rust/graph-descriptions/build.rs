@@ -40,10 +40,13 @@ fn main() {
         "#[derive(Ord, PartialOrd)]",
     );
     config = config.type_attribute(
-        ".graplinc.grapl.api.graph.v1beta1.Edge",
+        ".graplinc.grapl.api.graph.v1beta1.EdgeDescription",
         "#[derive(Ord, PartialOrd)]",
     );
-
+    config = config.type_attribute(
+        ".graplinc.grapl.api.graph.v1beta1.IdentifiedEdge",
+        "#[derive(Ord, PartialOrd)]",
+    );
     config = config.type_attribute(
         ".graplinc.grapl.api.graph.v1beta1.Asset",
         "#[derive(Builder)]",

@@ -2,8 +2,8 @@ pub mod graph_description {
     // TODO: Restructure the Rust modules to better reflect the new
     // Protobuf structure
     include!(concat!(
-        env!("OUT_DIR"),
-        "/graplinc.grapl.api.graph.v1beta1.rs"
+    env!("OUT_DIR"),
+    "/graplinc.grapl.api.graph.v1beta1.rs"
     ));
 }
 
@@ -13,8 +13,8 @@ pub mod graph_mutation_service {
     // TODO: Restructure the Rust modules to better reflect the new
     // Protobuf structure
     include!(concat!(
-        env!("OUT_DIR"),
-        "/graplinc.grapl.api.graph.graph_mutation.rs"
+    env!("OUT_DIR"),
+    "/graplinc.grapl.api.graph.graph_mutation.rs"
     ));
 }
 
@@ -75,8 +75,15 @@ impl IdStrategy {
     }
 }
 
-impl EdgeList {
-    pub fn into_vec(self) -> Vec<Edge> {
+impl EdgeDescriptionList {
+    pub fn into_vec(self) -> Vec<EdgeDescription> {
+        let Self { edges } = self;
+        edges
+    }
+}
+
+impl IdentifiedEdgeList {
+    pub fn into_vec(self) -> Vec<IdentifiedEdge> {
         let Self { edges } = self;
         edges
     }
@@ -95,7 +102,7 @@ impl GraphDescription {
         match self.nodes.get_mut(&node.node_key) {
             Some(n) => n.merge(&node),
             None => {
-                self.nodes.insert(node.clone_node_key(), node);
+                self.nodes.insert(node.node_key.clone(), node);
             }
         };
     }
@@ -112,16 +119,16 @@ impl GraphDescription {
 
         assert_ne!(from_node_key, to_node_key);
 
-        let edge = Edge {
+        let edge = EdgeDescription {
             from_node_key: from_node_key.clone(),
             to_node_key,
             edge_name,
         };
 
-        let edge_list: &mut Vec<Edge> = &mut self
+        let edge_list: &mut Vec<_> = &mut self
             .edges
             .entry(from_node_key)
-            .or_insert_with(|| EdgeList {
+            .or_insert_with(|| EdgeDescriptionList {
                 edges: Vec::with_capacity(1),
             })
             .edges;
@@ -163,10 +170,10 @@ impl IdentifiedGraph {
     }
 
     pub fn add_node(&mut self, node: IdentifiedNode) {
-        match self.nodes.get_mut(&node.node_key) {
+        match self.nodes.get_mut(&node.uid) {
             Some(n) => n.merge(&node),
             None => {
-                self.nodes.insert(node.clone_node_key(), node);
+                self.nodes.insert(node.uid, node);
             }
         };
     }
@@ -174,24 +181,22 @@ impl IdentifiedGraph {
     pub fn add_edge(
         &mut self,
         edge_name: impl Into<String>,
-        from_node_key: impl Into<String>,
-        to_node_key: impl Into<String>,
+        from_uid: u64,
+        to_uid: u64,
     ) {
-        let from_node_key = from_node_key.into();
-        let to_node_key = to_node_key.into();
-        assert_ne!(from_node_key, to_node_key);
+        assert_ne!(from_uid, to_uid);
 
         let edge_name = edge_name.into();
-        let edge = Edge {
-            from_node_key: from_node_key.clone(),
-            to_node_key,
+        let edge = IdentifiedEdge {
+            from_uid,
+            to_uid,
             edge_name,
         };
 
-        let edge_list: &mut Vec<Edge> = &mut self
+        let edge_list: &mut Vec<_> = &mut self
             .edges
-            .entry(from_node_key)
-            .or_insert_with(|| EdgeList {
+            .entry(from_uid)
+            .or_insert_with(|| IdentifiedEdgeList {
                 edges: Vec::with_capacity(1),
             })
             .edges;
@@ -199,11 +204,11 @@ impl IdentifiedGraph {
     }
 
     pub fn merge(&mut self, other: &Self) {
-        for (node_key, other_node) in other.nodes.iter() {
-            match self.nodes.get_mut(node_key) {
+        for (uid, other_node) in other.nodes.iter() {
+            match self.nodes.get_mut(uid) {
                 Some(n) => n.merge(other_node),
                 None => {
-                    self.nodes.insert(node_key.clone(), other_node.clone());
+                    self.nodes.insert(*uid, other_node.clone());
                 }
             };
         }
@@ -212,8 +217,8 @@ impl IdentifiedGraph {
             for edge in edge_list.edges.iter() {
                 self.add_edge(
                     edge.edge_name.clone(),
-                    edge.from_node_key.clone(),
-                    edge.to_node_key.clone(),
+                    edge.from_uid,
+                    edge.to_uid,
                 );
             }
         }
@@ -233,19 +238,18 @@ impl MergedGraph {
     }
 
     pub fn add_node(&mut self, node: MergedNode) {
-        match self.nodes.get_mut(&node.node_key) {
+        match self.nodes.get_mut(&node.uid) {
             Some(n) => n.merge(&node),
             None => {
-                self.nodes.insert(node.clone_node_key(), node);
+                self.nodes.insert(node.uid, node);
             }
         };
     }
 
     pub fn add_merged_edge(&mut self, edge: MergedEdge) {
-        let from_node_key = edge.from_node_key.clone();
         let edge_list: &mut Vec<MergedEdge> = &mut self
             .edges
-            .entry(from_node_key)
+            .entry(edge.from_uid)
             .or_insert_with(|| MergedEdgeList {
                 edges: Vec::with_capacity(1),
             })
@@ -256,29 +260,20 @@ impl MergedGraph {
     pub fn add_edge(
         &mut self,
         edge_name: impl Into<String>,
-        from_node_key: impl Into<String>,
-        from_uid: impl Into<u64>,
-        to_node_key: impl Into<String>,
-        to_uid: impl Into<u64>,
+        from_uid: u64,
+        to_uid: u64,
     ) {
         let edge_name = edge_name.into();
-        let from_node_key = from_node_key.into();
-        let from_uid = from_uid.into();
-        let to_node_key = to_node_key.into();
-        let to_uid = to_uid.into();
-        assert_ne!(from_node_key, to_node_key);
         assert_ne!(from_uid, to_uid);
         let edge = MergedEdge {
-            from_node_key: from_node_key.clone(),
             from_uid,
-            to_node_key,
             to_uid,
             edge_name,
         };
 
         let edge_list: &mut Vec<MergedEdge> = &mut self
             .edges
-            .entry(from_node_key)
+            .entry(from_uid)
             .or_insert_with(|| MergedEdgeList {
                 edges: Vec::with_capacity(1),
             })
@@ -287,11 +282,11 @@ impl MergedGraph {
     }
 
     pub fn merge(&mut self, other: &Self) {
-        for (node_key, other_node) in other.nodes.iter() {
-            match self.nodes.get_mut(node_key) {
+        for (uid, other_node) in other.nodes.iter() {
+            match self.nodes.get_mut(uid) {
                 Some(n) => n.merge(other_node),
                 None => {
-                    self.nodes.insert(node_key.clone(), other_node.clone());
+                    self.nodes.insert(*uid, other_node.clone());
                 }
             };
         }
@@ -300,9 +295,7 @@ impl MergedGraph {
             for edge in edge_list.edges.iter() {
                 self.add_edge(
                     edge.edge_name.clone(),
-                    edge.from_node_key.clone(),
                     edge.from_uid,
-                    edge.to_node_key.clone(),
                     edge.to_uid,
                 );
             }
@@ -340,7 +333,7 @@ impl NodeDescription {
 impl IdentifiedNode {
     pub fn merge(&mut self, other: &Self) {
         extra_assert!(debug_assert_eq!(self.node_type, other.node_type));
-        extra_assert!(debug_assert_eq!(self.node_key, other.node_key));
+        extra_assert!(debug_assert_eq!(self.uid, other.uid));
         for (prop_name, prop_value) in other.properties.iter() {
             match self.properties.get_mut(prop_name) {
                 Some(self_prop) => self_prop.merge(prop_value),
@@ -360,9 +353,9 @@ impl IdentifiedNode {
                 .property
                 .as_ref()
                 .map(Property::to_string)
-                .unwrap_or_else(|| panic!("Invalid property on DynamicNode: {}", self.node_key));
+                .unwrap_or_else(|| panic!("Invalid property on DynamicNode: {}", self.uid));
 
-            predicate_cache_identities.push(format!("{}:{}:{}", &self.node_key, key, prop_value));
+            predicate_cache_identities.push(format!("{}:{}:{}", self.uid, key, prop_value));
         }
 
         predicate_cache_identities
@@ -632,8 +625,8 @@ impl NodeDescription {
 }
 
 impl<T> From<T> for NodeProperty
-where
-    T: Into<Property>,
+    where
+        T: Into<Property>,
 {
     fn from(t: T) -> Self {
         NodeProperty {
@@ -642,29 +635,19 @@ where
     }
 }
 
-impl From<NodeDescription> for IdentifiedNode {
-    fn from(n: NodeDescription) -> Self {
-        IdentifiedNode {
-            properties: n.properties,
-            node_key: n.node_key,
-            node_type: n.node_type,
-        }
-    }
-}
 
 impl MergedNode {
     pub fn from(n: IdentifiedNode, uid: u64) -> Self {
         Self {
             uid,
             properties: n.properties,
-            node_key: n.node_key,
             node_type: n.node_type,
         }
     }
 
     pub fn merge(&mut self, other: &Self) {
         extra_assert!(debug_assert_eq!(self.node_type, other.node_type));
-        extra_assert!(debug_assert_eq!(self.node_key, other.node_key));
+        extra_assert!(debug_assert_eq!(self.uid, other.uid));
         for (prop_name, prop_value) in other.properties.iter() {
             match self.properties.get_mut(prop_name) {
                 Some(self_prop) => self_prop.merge(prop_value),
@@ -675,14 +658,6 @@ impl MergedNode {
             }
         }
     }
-
-    pub fn get_node_key(&self) -> &str {
-        self.node_key.as_str()
-    }
-
-    pub fn clone_node_key(&self) -> String {
-        self.node_key.clone()
-    }
 }
 
 impl IdentifiedNode {
@@ -690,16 +665,8 @@ impl IdentifiedNode {
         MergedNode {
             uid,
             properties: self.properties,
-            node_key: self.node_key,
             node_type: self.node_type,
         }
-    }
-    pub fn get_node_key(&self) -> &str {
-        self.node_key.as_str()
-    }
-
-    pub fn clone_node_key(&self) -> String {
-        self.node_key.clone()
     }
 }
 
@@ -978,8 +945,8 @@ pub mod test {
         choices[choice_index].clone()
     }
 
-    fn choose_property(node_key: &str, property_name: &str, g: &mut Gen) -> NodeProperty {
-        let s = format!("{}{}", node_key, property_name);
+    fn choose_property(uid: u64, property_name: &str, g: &mut Gen) -> NodeProperty {
+        let s = format!("{}{}", uid, property_name);
 
         let props = &[
             Property::IncrementOnlyInt(IncrementOnlyIntProp::arbitrary(g)),
@@ -987,35 +954,32 @@ pub mod test {
             Property::IncrementOnlyUint(IncrementOnlyUintProp::arbitrary(g)),
             Property::DecrementOnlyUint(DecrementOnlyUintProp::arbitrary(g)),
             Property::ImmutableInt(ImmutableIntProp::from(
-                hash(&[node_key, property_name]) as i64
+                hash(&[&uid.to_string()[..], property_name]) as i64
             )),
-            Property::ImmutableUint(ImmutableUintProp::from(hash(&[node_key, property_name]))),
+            Property::ImmutableUint(ImmutableUintProp::from(hash(&[&uid.to_string()[..], property_name]))),
             Property::ImmutableStr(ImmutableStrProp::from(s)),
         ];
-        let p: Property = choice(node_key, props);
+        let p: Property = choice(&uid.to_string()[..], props);
         p.into()
     }
 
     impl Arbitrary for IdentifiedNode {
         fn arbitrary(g: &mut Gen) -> Self {
-            let node_keys = &[
-                "c413e25e-9c50-4faf-8e61-f8bfb0e0d18e".to_string(),
-                "0d5c9261-2b6e-4094-8de3-b349cb0aa310".to_string(),
-                "ed1f73df-f38d-43c0-87b0-5aff06e1f68b".to_string(),
-                "6328e956-117e-4f7f-8a5b-c56be1111f43".to_string(),
+            let uids = &[
+                1,2,3,4
             ];
-            let node_key = g.choose(node_keys).unwrap().clone();
+            let uid = g.choose(uids).unwrap().clone();
 
             let node_types = &["Process", "File", "IpAddress"];
-            let node_type = choice(&node_key, node_types);
+            let node_type = choice(&uid.to_string()[..], node_types);
             let mut properties = HashMap::new();
             let property_names: Vec<String> = Vec::arbitrary(g);
             for property_name in property_names {
-                let property = choose_property(&node_key, &property_name, g);
+                let property = choose_property(uid, &property_name, g);
                 properties.insert(property_name.to_owned(), property);
             }
             IdentifiedNode {
-                node_key: node_key.to_owned(),
+                uid,
                 node_type: node_type.to_owned(),
                 properties,
             }
@@ -1113,7 +1077,7 @@ pub mod test {
 
     #[quickcheck]
     fn test_merge_identified_node(mut node_0: IdentifiedNode, node_1: IdentifiedNode) {
-        if node_0.node_key != node_1.node_key {
+        if node_0.uid != node_1.uid {
             return;
         }
         // let original = node_0.clone();

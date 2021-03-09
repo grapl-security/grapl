@@ -1,3 +1,4 @@
+#![allow(warnings)]
 use std::{collections::{HashMap,
                         HashSet},
           fmt::Debug,
@@ -35,6 +36,9 @@ use sqs_executor::{cache::{Cache,
                    make_ten,
                    s3_event_emitter::S3ToSqsEventNotifier,
                    time_based_key_fn};
+use tonic::transport::Channel;
+use grapl_graph_descriptions::graph_mutation_service::graph_mutation_rpc_client::GraphMutationRpcClient;
+use crate::node_allocator::NodeAllocator;
 
 macro_rules! wait_on {
     ($x:expr) => {{
@@ -47,6 +51,7 @@ pub mod dynamic_sessiondb;
 pub mod key_cache;
 pub mod sessiondb;
 pub mod sessions;
+pub mod node_allocator;
 
 #[derive(Clone)]
 pub struct NodeIdentifier<D, CacheT>
@@ -85,7 +90,7 @@ where
             .dynamic_identifier
             .attribute_dynamic_node(&node)
             .await?;
-        Ok(new_node.into())
+        todo!("generated an identified node")
     }
 }
 
@@ -132,7 +137,6 @@ where
             .flatten()
             .map(|e| e.edge_name.as_str())
             .collect();
-        println!("incoming edges: {:?}", edges);
 
         info!(
             "unid_subgraph: {} nodes {} edges",
@@ -149,26 +153,17 @@ where
         for (old_node_key, old_node) in output_subgraph.nodes.iter() {
             let node = old_node.clone();
 
-            // match self.cache.get(old_node_key.clone()).await {
-            //     Ok(CacheResponse::Hit) => {
-            //         info!("Got cache hit for old_node_key, skipping node.");
-            //         continue;
-            //     }
-            //     Err(e) => warn!("Failed to retrieve from cache: {:?}", e),
-            //     _ => (),
-            // };
-
             let node = match self.attribute_node_key(&node).await {
                 Ok(node) => node,
                 Err(e) => {
                     warn!("Failed to attribute node_key with: {}", e);
-                    dead_node_ids.insert(node.clone_node_key());
+                    dead_node_ids.insert(old_node_key.clone());
 
                     attribution_failure = Some(e);
                     continue;
                 }
             };
-            unid_id_map.insert(old_node_key.to_owned(), node.clone_node_key());
+            unid_id_map.insert(old_node_key.to_owned(), node.uid);
             identified_graph.add_node(node);
         }
 
@@ -183,30 +178,30 @@ where
             };
 
             for edge in &edge_list.edges {
-                let from_key = unid_id_map.get(&edge.from_node_key);
-                let to_key = unid_id_map.get(&edge.to_node_key);
+                let from_uid = unid_id_map.get(&edge.from_node_key);
+                let to_uid = unid_id_map.get(&edge.to_node_key);
 
-                let (from_key, to_key) = match (from_key, to_key) {
-                    (Some(from_key), Some(to_key)) => (from_key, to_key),
-                    (Some(from_key), None) => {
+                let (from_uid, to_uid) = match (from_uid, to_uid) {
+                    (Some(from_uid), Some(to_uid)) => (from_uid, to_uid),
+                    (Some(from_uid), None) => {
                         tracing::warn!(
-                            message="Could not get node_key mapping for from_key",
-                            from_key=?from_key,
+                            message="Could not get node_key mapping for from_uid",
+                            from_uid=?from_uid,
                         );
                         continue;
                     }
-                    (None, Some(to_key)) => {
+                    (None, Some(to_uid)) => {
                         tracing::warn!(
-                            message="Could not get node_key mapping for to_key",
-                            to_key=?to_key,
+                            message="Could not get node_key mapping for to_uid",
+                            to_uid=?to_uid,
                         );
                         continue;
                     }
                     (None, None) => {
                         tracing::warn!(
-                            message="Could not get node_key mapping for from_key and to_key",
-                            from_key=?from_key,
-                            to_key=?to_key,
+                            message="Could not get node_key mapping for from_uid and to_uid",
+                            from_uid=?from_uid,
+                            to_uid=?to_uid,
                         );
                         continue;
                     }
@@ -214,8 +209,8 @@ where
 
                 identified_graph.add_edge(
                     edge.edge_name.to_owned(),
-                    from_key.to_owned(),
-                    to_key.to_owned(),
+                    *from_uid,
+                    *to_uid,
                 );
             }
         }
@@ -283,8 +278,15 @@ pub async fn handler(_should_default: bool) -> Result<(), Box<dyn std::error::Er
     })
     .await;
 
+    let mutation_endpoint = grapl_config::mutation_endpoint();
+
+    let mutation_client: GraphMutationRpcClient<Channel> =
+        GraphMutationRpcClient::connect(mutation_endpoint)
+            .await
+            .expect("Failed to connect to graph-mutation-service");
+
     let dynamo = DynamoDbClient::from_env();
-    let dyn_session_db = SessionDb::new(dynamo.clone(), grapl_config::dynamic_session_table_name());
+    let dyn_session_db = SessionDb::new(dynamo.clone(), NodeAllocator { mutation_client },grapl_config::dynamic_session_table_name());
     let dyn_mapping_db = DynamicMappingDb::new(DynamoDbClient::from_env());
 
     let dyn_node_identifier =

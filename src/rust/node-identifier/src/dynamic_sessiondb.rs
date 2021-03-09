@@ -191,11 +191,13 @@ where
         let unid = match (created_time != 0, last_seen_time != 0) {
             (true, _) => UnidSession {
                 pseudo_key: primary_key,
+                node_type: node.node_type,
                 timestamp: created_time,
                 is_creation: true,
             },
             (_, true) => UnidSession {
                 pseudo_key: primary_key,
+                node_type: node.node_type,
                 timestamp: last_seen_time,
                 is_creation: false,
             },

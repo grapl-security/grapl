@@ -22,8 +22,8 @@ use graph_merger_lib;
 use grapl_config::{env_helpers::{s3_event_emitters_from_env,
                                  FromEnv},
                    event_caches};
-use grapl_graph_descriptions::{graph_description::{Edge,
-                                                   EdgeList,
+use grapl_graph_descriptions::{graph_description::{IdentifiedEdge,
+                                                   IdentifiedEdgeList,
                                                    IdentifiedGraph,
                                                    IdentifiedNode,
                                                    MergedGraph,

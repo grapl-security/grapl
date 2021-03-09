@@ -20,6 +20,7 @@ use rusoto_dynamodb::{AttributeValue,
 use uuid::Uuid;
 
 use crate::sessions::*;
+use crate::node_allocator::NodeAllocator;
 
 #[derive(Debug, Clone)]
 pub struct SessionDb<D>
@@ -28,15 +29,17 @@ where
 {
     dynamo: D,
     table_name: String,
+    node_allocator: NodeAllocator,
 }
 
 impl<D> SessionDb<D>
 where
     D: DynamoDb,
 {
-    pub fn new(dynamo: D, table_name: impl Into<String>) -> Self {
+    pub fn new(dynamo: D, node_allocator: NodeAllocator, table_name: impl Into<String>) -> Self {
         Self {
             dynamo,
+            node_allocator,
             table_name: table_name.into(),
         }
     }
@@ -324,7 +327,7 @@ where
         Ok(())
     }
 
-    pub async fn handle_creation_event(&self, unid: UnidSession) -> Result<String, Error> {
+    pub async fn handle_creation_event(&self, unid: UnidSession) -> Result<u64, Error> {
         info!(
             "Handling unid session creation, pseudo_key: {:?} seen at: {}.",
             unid.pseudo_key, unid.timestamp
@@ -389,9 +392,10 @@ where
             }
         }
 
+        let session_id = self.node_allocator.clone().allocate_node(unid.node_type).await?;
         // Create new session, return new session id
         let session = Session {
-            session_id: Uuid::new_v4().to_string(),
+            session_id,
             create_time: unid.timestamp,
             end_time: unid.timestamp + 101,
             is_create_canon: true,
@@ -409,7 +413,7 @@ where
         &self,
         unid: UnidSession,
         should_default: bool,
-    ) -> Result<String, Error> {
+    ) -> Result<u64, Error> {
         info!(
             "Handling unid session, pseudo_key: {:?} seen at: {}.",
             unid.pseudo_key, unid.timestamp
@@ -446,7 +450,7 @@ where
 
         if should_default {
             info!("Defaulting and creating new session.");
-            let session_id = Uuid::new_v4().to_string();
+            let session_id = self.node_allocator.clone().allocate_node(unid.node_type).await?;
             let session = Session {
                 session_id: session_id.clone(),
                 create_time: unid.timestamp,
@@ -472,7 +476,7 @@ where
         &self,
         mut unid: UnidSession,
         should_default: bool,
-    ) -> Result<String, Error> {
+    ) -> Result<u64, Error> {
         unid.timestamp = shave_int(unid.timestamp, 1);
         if unid.is_creation {
             self.handle_creation_event(unid).await

@@ -1,9 +1,8 @@
 use std::{collections::HashMap,
           io::Stdout};
 
-// pub use grapl_graph_descriptions::*;
 pub use dgraph_tonic::Status;
-use grapl_graph_descriptions::Edge;
+use grapl_graph_descriptions::IdentifiedEdge;
 use grapl_observe::metric_reporter::MetricReporter;
 use grapl_utils::{future_ext::GraplFutureExt,
                   rusoto_ext::dynamodb::GraplDynamoDbClientExt};
@@ -58,8 +57,8 @@ impl ReverseEdgeResolver {
 
     pub async fn resolve_reverse_edges(
         &self,
-        edges: Vec<Edge>,
-    ) -> Result<Vec<Edge>, ReverseEdgeResolverError> {
+        edges: Vec<IdentifiedEdge>,
+    ) -> Result<Vec<IdentifiedEdge>, ReverseEdgeResolverError> {
         if edges.is_empty() {
             return Ok(vec![]);
         }
@@ -89,8 +88,8 @@ impl ReverseEdgeResolver {
 
     pub async fn resolve_reverse_edges_from_cache(
         &self,
-        edges: Vec<Edge>,
-    ) -> (Vec<Edge>, Vec<Edge>) {
+        edges: Vec<IdentifiedEdge>,
+    ) -> (Vec<IdentifiedEdge>, Vec<IdentifiedEdge>) {
         let mut reversed = vec![];
         let mut remaining = vec![];
         let mut cache_hit = 0;
@@ -127,10 +126,10 @@ impl ReverseEdgeResolver {
     }
 }
 
-fn reverse_edge(edge: &Edge, reverse_edge_name: String) -> Edge {
-    Edge {
-        from_node_key: edge.to_node_key.to_owned(),
-        to_node_key: edge.from_node_key.to_owned(),
+fn reverse_edge(edge: &IdentifiedEdge, reverse_edge_name: String) -> IdentifiedEdge {
+    IdentifiedEdge {
+        from_uid: edge.to_uid,
+        to_uid: edge.from_uid,
         edge_name: reverse_edge_name,
     }
 }

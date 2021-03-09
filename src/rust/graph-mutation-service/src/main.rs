@@ -78,17 +78,31 @@ pub struct GraphMutationService {
 }
 
 impl GraphMutationService {
-    async fn _set_node(&self, node: IdentifiedNode) -> Result<u64, GraphMutationError> {
+    async fn _create_node(
+        &self,
+        node_type: String,
+    ) -> Result<u64, GraphMutationError> {
         let mut upsert_manager = UpsertManager {
             dgraph_client: self.dgraph_client.clone(),
             node_upsert_generator: NodeUpsertGenerator::default(),
             edge_upsert_generator: EdgeUpsertGenerator::default(),
         };
-        let uid = upsert_manager.upsert_node(&node).await?;
+        // todo: should we add a creation/index time?
+        let uid = upsert_manager.create_node(node_type).await?;
         Ok(uid)
     }
 
-    async fn _set_edge(&self, edge: Edge) -> Result<(u64, u64), GraphMutationError> {
+    async fn _set_node(&self, node: IdentifiedNode) -> Result<(), GraphMutationError> {
+        let mut upsert_manager = UpsertManager {
+            dgraph_client: self.dgraph_client.clone(),
+            node_upsert_generator: NodeUpsertGenerator::default(),
+            edge_upsert_generator: EdgeUpsertGenerator::default(),
+        };
+        upsert_manager.upsert_node(&node).await?;
+        Ok(())
+    }
+
+    async fn _set_edge(&self, edge: IdentifiedEdge) -> Result<(), GraphMutationError> {
         let mut reversed = self
             .reverse_edge_resolver
             .resolve_reverse_edges(vec![edge.clone()])
@@ -106,13 +120,26 @@ impl GraphMutationService {
             node_upsert_generator: NodeUpsertGenerator::default(),
             edge_upsert_generator: EdgeUpsertGenerator::default(),
         };
-        let (src_uid, dst_uid) = upsert_manager.upsert_edge(edge, reversed).await?;
-        Ok((src_uid, dst_uid))
+        upsert_manager.upsert_edge(edge, reversed).await?;
+        Ok(())
     }
 }
 
 #[tonic::async_trait]
 impl GraphMutationRpc for GraphMutationService {
+
+    async fn create_node(
+        &self,
+        request: Request<CreateNodeRequest>,
+    ) -> Result<Response<CreateNodeResult>, Status> {
+        let request = request.into_inner();
+        let uid = self._create_node(request.node_type).await?;
+
+        Ok(tonic::Response::new(CreateNodeResult {
+            rpc_result: Some(create_node_result::RpcResult::Created(CreateNodeSuccess { uid })),
+        }))
+    }
+
     async fn set_node(
         &self,
         request: Request<SetNodeRequest>,
@@ -128,9 +155,9 @@ impl GraphMutationRpc for GraphMutationService {
                 .into())
             }
         };
-        let node_uid = self._set_node(node).await?;
+        self._set_node(node).await?;
         Ok(tonic::Response::new(SetNodeResult {
-            rpc_result: Some(set_node_result::RpcResult::Set(SetNodeSuccess { node_uid })),
+            rpc_result: Some(set_node_result::RpcResult::Set(SetNodeSuccess {  })),
         }))
     }
 
@@ -150,12 +177,10 @@ impl GraphMutationRpc for GraphMutationService {
             }
         };
 
-        let (src_uid, dst_uid) = self._set_edge(edge).await?;
+        self._set_edge(edge).await?;
 
         Ok(tonic::Response::new(SetEdgeResult {
             rpc_result: Some(set_edge_result::RpcResult::Set(SetEdgeSuccess {
-                src_uid,
-                dst_uid,
             })),
         }))
     }

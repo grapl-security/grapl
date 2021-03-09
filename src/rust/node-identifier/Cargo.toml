@@ -61,6 +61,7 @@ tracing-subscriber = "0.2.16"
 darkredis = "0.7.0"
 lazy_static = "1.4.0"
 grapl-utils = { path = "../grapl-utils" }
+tonic = "0.4"
 
 [dependencies.uuid]
 version = "0.8"
