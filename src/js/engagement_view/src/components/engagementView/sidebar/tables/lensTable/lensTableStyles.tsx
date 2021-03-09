@@ -49,14 +49,6 @@ export const useStyles = makeStyles({
 		color: "white",
         fontSize: ".8rem",
 	},
-	lensTitle: {
-		margin:".5rem",
-		marginLeft: ".8rem"
-    },
-    riskTitle: {
-        margin:".5rem",
-        marginLeft: "10rem",
-    },
     tableContainer:{
         textAlign: "center",
         marginLeft: "auto",
