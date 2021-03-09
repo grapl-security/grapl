@@ -81,7 +81,6 @@ export function ToggleLensTable({ setLens }: ToggleLensTableProps) {
 						
 					}}
 				>
-					
 					{toggleTableState.toggled ?  <KeyboardArrowUpOutlinedIcon className={classes.expand}/> : <KeyboardArrowDownOutlinedIcon className={classes.expand}/> }
 				</Button>
 			</div>

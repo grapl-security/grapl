@@ -65,10 +65,10 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
 	const [highlightLinks, setHighlightLinks] = useState(new Set());
 	const [hoverNode, setHoverNode] = useState(null);
 
-	const updateHighlight = () => {
+	const updateHighlight = useCallback(() => {
 		setHighlightNodes(highlightNodes);
 		setHighlightLinks(highlightLinks);
-	};
+	}, [highlightNodes, highlightLinks]);
 
 	const nodeClick = useCallback(
 		(_node, ctx) => {
@@ -114,7 +114,7 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
 			setHoverNode((node as any) || null);
 			updateHighlight();
 		},
-		[setHoverNode, updateHighlight]
+		[setHoverNode, updateHighlight, highlightLinks, highlightNodes]
 	);
 
 	const nodeStyling = useCallback(
