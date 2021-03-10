@@ -65,6 +65,7 @@ def grapl_bucket(
     physical_bucket_name = f"{prefix}-{logical_bucket_name}"
     base_args = {
         "bucket": physical_bucket_name,
+        "opts": import_aware_opts(physical_bucket_name, parent=parent),
     }
 
     # TODO: Temporarily not doing encrypted buckets for Local
@@ -72,8 +73,6 @@ def grapl_bucket(
     # environment a bit differently
     if sse and not IS_LOCAL:
         base_args["server_side_encryption_configuration"] = sse_config()
-
-    base_args["opts"] = import_aware_opts(physical_bucket_name, parent=parent)
 
     return aws.s3.Bucket(logical_bucket_name, **base_args)
 
