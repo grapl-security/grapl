@@ -7,7 +7,7 @@ from infra.util import IS_LOCAL
 import pulumi
 
 
-class UI(pulumi.ComponentResource):
+class EngagementUX(pulumi.ComponentResource):
     """ Represents the web GUI for Grapl."""
 
     def __init__(

@@ -1,8 +1,9 @@
 import pulumi_aws as aws
-from infra import dynamodb, emitter, ui, util
+from infra import dynamodb, emitter, util
 from infra.autotag import register_auto_tags
 from infra.service_queue import ServiceQueue
 from infra.util import DEPLOYMENT_NAME
+from infra.ux import EngagementUX
 
 import pulumi
 
@@ -14,7 +15,7 @@ if __name__ == "__main__":
 
     dynamodb_tables = dynamodb.DynamoDB(DEPLOYMENT_NAME)
 
-    the_ui = ui.UI(DEPLOYMENT_NAME)
+    ux = EngagementUX(DEPLOYMENT_NAME)
 
     util.grapl_bucket("model-plugins-bucket", sse=False)
     util.grapl_bucket("analyzers-bucket", sse=True)
