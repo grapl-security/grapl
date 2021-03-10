@@ -24,7 +24,7 @@ def test_queues_ls() -> None:
     runner = CliRunner()
     with _patch_boto3_session() as mock_session:
         # Importing here, because the import causes an `os.getenv`
-        # that we patch out
+        # that we need to patch out. See the TODO above `SESSION =`
         from graplctl import cli
 
         _return_fake_queues(mock_session)
@@ -55,11 +55,10 @@ def _return_fake_queues(mock_session: Mock) -> None:
 
 @contextmanager
 def _patch_boto3_session() -> ContextManager[Mock]:
-    from graplctl import cli
-
-    with patch.object(cli, cli.os.__name__):
-        with patch.object(
-            cli,
-            "SESSION",
+    # Patches primarily due to legacy constants at the top
+    # of cli.py
+    with patch("graplctl.cli.os"):
+        with patch(
+            "graplctl.cli.SESSION",
         ) as p_session:
             yield p_session
