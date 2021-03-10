@@ -1,13 +1,13 @@
 {
   "name": "grapl-backend",
   "version": "1.0.0",
-  "description": "proof of concept for grapl backend rewrite",
+  "description": "Grapl graphql server",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "server": "nodemon server.js"
   },
-  "author": "Andrea Piazza",
+  "author": "Grapl Inc",
   "license": "ISC",
   "dependencies": {
     "@grpc/grpc-js": "^1.2.2",
