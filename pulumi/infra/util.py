@@ -4,9 +4,12 @@ import pulumi_aws as aws
 
 import pulumi
 
+# This will be incorporated into various infrastructure object names.
+DEPLOYMENT_NAME = pulumi.get_stack()
+
 # Use this to modify behavior or configuration for provisioning in
 # Local Grapl (as opposed to any other real deployment)
-IS_LOCAL = pulumi.get_stack() == "local-grapl"
+IS_LOCAL = DEPLOYMENT_NAME == "local-grapl"
 
 
 # Yes I hate the 'Any' type just as much as you do, but there's
@@ -43,17 +46,12 @@ def import_aware_opts(resource_id: str, **kwargs: Any) -> pulumi.ResourceOptions
 
 def grapl_bucket(
     logical_bucket_name: str,
-    prefix: str = pulumi.get_stack(),
     sse: bool = False,
     parent: Optional[pulumi.Resource] = None,
 ) -> aws.s3.Bucket:
     """Abstracts logic for creating an S3 bucket for our purposes.
 
     logical_bucket_name: What we call this bucket in Pulumi terms.
-
-    prefix: an informative prefix to add to the logical bucket name to
-    form a physical bucket name. Generally, this will be the Pulumi
-    stack.
 
     sse: Whether or not to apply server-side encryption of
     bucket contents
@@ -62,7 +60,7 @@ def grapl_bucket(
     that "owns" this resource.
 
     """
-    physical_bucket_name = f"{prefix}-{logical_bucket_name}"
+    physical_bucket_name = f"{DEPLOYMENT_NAME}-{logical_bucket_name}"
 
     # TODO: Temporarily not doing encrypted buckets for Local
     # Grapl... I think we may need to configure some stuff in

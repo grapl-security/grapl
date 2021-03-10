@@ -2,20 +2,19 @@ import pulumi_aws as aws
 from infra import dynamodb, emitter, ui, util
 from infra.autotag import register_auto_tags
 from infra.service_queue import ServiceQueue
+from infra.util import DEPLOYMENT_NAME
 
 import pulumi
-
-PREFIX = pulumi.get_stack()
 
 if __name__ == "__main__":
 
     # These tags will be added to all provisioned infrastructure
     # objects.
-    register_auto_tags({"grapl deployment": pulumi.get_stack()})
+    register_auto_tags({"grapl deployment": DEPLOYMENT_NAME})
 
-    dynamodb_tables = dynamodb.DynamoDB(PREFIX)
+    dynamodb_tables = dynamodb.DynamoDB(DEPLOYMENT_NAME)
 
-    the_ui = ui.UI(PREFIX)
+    the_ui = ui.UI(DEPLOYMENT_NAME)
 
     util.grapl_bucket("model-plugins-bucket", sse=False)
     util.grapl_bucket("analyzers-bucket", sse=True)

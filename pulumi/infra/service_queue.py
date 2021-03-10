@@ -3,7 +3,7 @@ from typing import Optional
 
 import pulumi_aws as aws
 from infra import util
-from infra.util import IS_LOCAL
+from infra.util import DEPLOYMENT_NAME, IS_LOCAL
 
 import pulumi
 
@@ -36,8 +36,6 @@ class ServiceQueue(pulumi.ComponentResource):
         # TODO: delete_before_replace is only needed if we're
         # overriding the name of the queues
 
-        prefix = pulumi.get_stack()
-
         # Queues have to be imported by URL, which includes the
         # account ID
         account_id = (
@@ -46,7 +44,7 @@ class ServiceQueue(pulumi.ComponentResource):
         queue_import_prefix = f"https://queue.amazonaws.com/{account_id}"
 
         logical_dead_letter_name = f"{name}-dead-letter-queue"
-        physical_dead_letter_name = f"{prefix}-{logical_dead_letter_name}"
+        physical_dead_letter_name = f"{DEPLOYMENT_NAME}-{logical_dead_letter_name}"
         self.dead_letter_queue = aws.sqs.Queue(
             logical_dead_letter_name,
             name=physical_dead_letter_name,
@@ -60,7 +58,7 @@ class ServiceQueue(pulumi.ComponentResource):
         )
 
         logical_retry_name = f"{name}-retry-queue"
-        physical_retry_name = f"{prefix}-{logical_retry_name}"
+        physical_retry_name = f"{DEPLOYMENT_NAME}-{logical_retry_name}"
         self.retry_queue = aws.sqs.Queue(
             logical_retry_name,
             name=physical_retry_name,
@@ -75,7 +73,7 @@ class ServiceQueue(pulumi.ComponentResource):
         )
 
         logical_queue_name = f"{name}-queue"
-        physical_queue_name = f"{prefix}-{logical_queue_name}"
+        physical_queue_name = f"{DEPLOYMENT_NAME}-{logical_queue_name}"
         self.queue = aws.sqs.Queue(
             logical_queue_name,
             name=physical_queue_name,
