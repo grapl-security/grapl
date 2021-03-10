@@ -74,6 +74,7 @@ def grapl_bucket(
     return aws.s3.Bucket(
         logical_bucket_name,
         bucket=physical_bucket_name,
+        force_destroy=True,
         website=website_args,
         server_side_encryption_configuration=sse_config,
         opts=import_aware_opts(physical_bucket_name, parent=parent),
