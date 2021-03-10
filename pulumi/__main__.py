@@ -13,9 +13,9 @@ if __name__ == "__main__":
     # objects.
     register_auto_tags({"grapl deployment": DEPLOYMENT_NAME})
 
-    dynamodb_tables = dynamodb.DynamoDB(DEPLOYMENT_NAME)
+    dynamodb_tables = dynamodb.DynamoDB()
 
-    ux = EngagementUX(DEPLOYMENT_NAME)
+    ux = EngagementUX()
 
     util.grapl_bucket("model-plugins-bucket", sse=False)
     util.grapl_bucket("analyzers-bucket", sse=True)
