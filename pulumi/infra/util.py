@@ -47,6 +47,7 @@ def import_aware_opts(resource_id: str, **kwargs: Any) -> pulumi.ResourceOptions
 def grapl_bucket(
     logical_bucket_name: str,
     sse: bool = False,
+    website_args: Optional[aws.s3.BucketWebsiteArgs] = None,
     parent: Optional[pulumi.Resource] = None,
 ) -> aws.s3.Bucket:
     """Abstracts logic for creating an S3 bucket for our purposes.
@@ -55,6 +56,9 @@ def grapl_bucket(
 
     sse: Whether or not to apply server-side encryption of
     bucket contents
+
+    website_args: configuration for setting the bucket up to serve web
+    content.
 
     parent: for use in ComponentResources; the Pulumi resource
     that "owns" this resource.
@@ -70,6 +74,7 @@ def grapl_bucket(
     return aws.s3.Bucket(
         logical_bucket_name,
         bucket=physical_bucket_name,
+        website=website_args,
         server_side_encryption_configuration=sse_config,
         opts=import_aware_opts(physical_bucket_name, parent=parent),
     )
