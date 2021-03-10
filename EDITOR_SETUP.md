@@ -158,3 +158,43 @@ according to our configuration.
 [ra_vsc]: https://marketplace.visualstudio.com/items?itemName=matklad.rust-analyzer
 [rustfmt]: https://github.com/rust-lang/rustfmt
 [vsc]: https://code.visualstudio.com/
+
+## TypeScript Setup
+
+In an effort to maintain consistency among the files in our front-end codebase, we use the VS Code extension, "Prettier". 
+
+The reason why Grapl uses a consistent formatter on our front-end is because certain elements require no whitespace between tags. 
+
+Sometimes auto-formatters add extra spaces, which may occasionally result in bugs. 
+
+If you don't have the VSCode extension, "Prettier", please install it by clicking the "Extensions" icon on the left panel in VSCode.
+
+Then search for "Prettier", and clicking the "Install" button.
+
+To update your Prettier extension settings in VSCode, navigate to:
+- File > Settings > Extensions > Prettier
+- On the upper right hand corner of the VSCode IDE underneath the close(X) button, click the “Open Settings (JSON) button
+- Ensure your settings match the file below: 
+
+```
+{
+    "window.zoomLevel": 0,
+    "javascript.updateImportsOnFileMove.enabled": "always",
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    "tabnine.experimentalAutoImports": true,
+    "diffEditor.ignoreTrimWhitespace": false,
+    "[javascript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "prettier.useTabs": true,
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[json]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    }
+}
+```
