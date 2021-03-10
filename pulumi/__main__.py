@@ -1,4 +1,3 @@
-import pulumi_aws as aws
 from infra import dynamodb, emitter, util
 from infra.autotag import register_auto_tags
 from infra.service_queue import ServiceQueue
