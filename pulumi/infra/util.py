@@ -65,7 +65,6 @@ def grapl_bucket(
     physical_bucket_name = f"{prefix}-{logical_bucket_name}"
     base_args = {
         "bucket": physical_bucket_name,
-        "tags": {"grapl deployment": pulumi.get_stack()},
     }
 
     # TODO: Temporarily not doing encrypted buckets for Local

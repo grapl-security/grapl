@@ -52,7 +52,6 @@ class ServiceQueue(pulumi.ComponentResource):
             name=physical_dead_letter_name,
             message_retention_seconds=message_retention_seconds,
             visibility_timeout_seconds=30,
-            tags={"grapl deployment": pulumi.get_stack()},
             opts=util.import_aware_opts(
                 f"{queue_import_prefix}/{physical_dead_letter_name}",
                 parent=self,
@@ -68,7 +67,6 @@ class ServiceQueue(pulumi.ComponentResource):
             message_retention_seconds=message_retention_seconds,
             visibility_timeout_seconds=360,
             redrive_policy=self.dead_letter_queue.arn.apply(redrive_policy),
-            tags={"grapl deployment": pulumi.get_stack()},
             opts=util.import_aware_opts(
                 f"{queue_import_prefix}/{physical_retry_name}",
                 parent=self,
@@ -84,7 +82,6 @@ class ServiceQueue(pulumi.ComponentResource):
             message_retention_seconds=message_retention_seconds,
             visibility_timeout_seconds=180,
             redrive_policy=self.retry_queue.arn.apply(redrive_policy),
-            tags={"grapl deployment": pulumi.get_stack()},
             opts=util.import_aware_opts(
                 f"{queue_import_prefix}/{physical_queue_name}",
                 parent=self,

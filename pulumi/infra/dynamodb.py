@@ -101,7 +101,6 @@ def dynamodb_table(
         hash_key=hash_key,
         range_key=range_key,
         billing_mode="PAY_PER_REQUEST",
-        tags={"grapl deployment": pulumi.get_stack()},
         opts=import_aware_opts(name, parent=parent_resource),
     )
 

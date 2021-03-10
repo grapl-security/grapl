@@ -34,7 +34,6 @@ class UI(pulumi.ComponentResource):
         self.bucket = aws.s3.Bucket(
             logical_bucket_name,
             bucket=physical_bucket_name,
-            tags={"grapl deployment": pulumi.get_stack()},
             opts=util.import_aware_opts(physical_bucket_name, parent=self),
             **aws_only_args,
         )
