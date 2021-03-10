@@ -3,7 +3,7 @@ from typing import ContextManager
 from unittest.mock import Mock, patch
 
 from click.testing import CliRunner
-from graplctl import __version__, cli
+from graplctl import __version__
 
 
 def test_version():
@@ -23,6 +23,10 @@ DEFAULT_ARGS = [
 def test_queues_ls() -> None:
     runner = CliRunner()
     with _patch_boto3_session() as mock_session:
+        # Importing here, because the import causes an `os.getenv`
+        # that we patch out
+        from graplctl import cli
+
         _return_fake_queues(mock_session)
         result = runner.invoke(cli.main, [*DEFAULT_ARGS, "queues", "ls"])
     assert (
@@ -51,7 +55,9 @@ def _return_fake_queues(mock_session: Mock) -> None:
 
 @contextmanager
 def _patch_boto3_session() -> ContextManager[Mock]:
-    with patch.object(cli, "os"):
+    from graplctl import cli
+
+    with patch.object(cli, cli.os.__name__):
         with patch.object(
             cli,
             "SESSION",

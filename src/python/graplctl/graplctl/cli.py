@@ -22,6 +22,8 @@ if TYPE_CHECKING:
 Tag = common.Tag
 Ec2Instance = common.Ec2Instance
 
+# TODO: These module-level `os.getenv`s cause troubles with testing.
+# Would be better to delay evaluation to `def main` 
 SESSION = boto3.session.Session(profile_name=os.getenv("AWS_PROFILE", "default"))
 
 EC2: EC2ServiceResource = SESSION.resource("ec2", region_name=os.getenv("AWS_REGION"))
