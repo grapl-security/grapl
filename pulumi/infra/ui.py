@@ -21,21 +21,19 @@ class UI(pulumi.ComponentResource):
         # It appears that the website configuration is not available
         # in MinIO, which we currently use for s3 in local grapl. When
         # interacting with local grapl, we'll just leave it out.
-        aws_only_args = (
-            {
-                "website": aws.s3.BucketWebsiteArgs(
-                    index_document="index.html",
-                )
-            }
+        website_args = (
+            aws.s3.BucketWebsiteArgs(
+                index_document="index.html",
+            )
             if not IS_LOCAL
-            else {}
+            else None
         )
 
         self.bucket = aws.s3.Bucket(
             logical_bucket_name,
             bucket=physical_bucket_name,
+            website=website_args,
             opts=util.import_aware_opts(physical_bucket_name, parent=self),
-            **aws_only_args,
         )
 
         self.register_outputs({})

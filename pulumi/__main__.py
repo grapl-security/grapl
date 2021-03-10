@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
     dynamodb_tables = dynamodb.DynamoDB(PREFIX)
 
-    ui = ui.UI(PREFIX)
+    the_ui = ui.UI(PREFIX)
 
     util.grapl_bucket("model-plugins-bucket", sse=False)
     util.grapl_bucket("analyzers-bucket", sse=True)

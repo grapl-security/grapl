@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 import pulumi_aws as aws
 
@@ -45,7 +45,7 @@ def grapl_bucket(
     logical_bucket_name: str,
     prefix: str = pulumi.get_stack(),
     sse: bool = False,
-    parent=None,
+    parent: Optional[pulumi.Resource] = None,
 ) -> aws.s3.Bucket:
     """Abstracts logic for creating an S3 bucket for our purposes.
 
@@ -63,21 +63,21 @@ def grapl_bucket(
 
     """
     physical_bucket_name = f"{prefix}-{logical_bucket_name}"
-    base_args = {
-        "bucket": physical_bucket_name,
-        "opts": import_aware_opts(physical_bucket_name, parent=parent),
-    }
 
     # TODO: Temporarily not doing encrypted buckets for Local
-    # Grapl... I think we need to configure some stuff in that
-    # environment a bit differently
-    if sse and not IS_LOCAL:
-        base_args["server_side_encryption_configuration"] = sse_config()
+    # Grapl... I think we may need to configure some stuff in
+    # that environment a bit differently.
+    sse_config = sse_configuration() if sse and not IS_LOCAL else None
 
-    return aws.s3.Bucket(logical_bucket_name, **base_args)
+    return aws.s3.Bucket(
+        logical_bucket_name,
+        bucket=physical_bucket_name,
+        server_side_encryption_configuration=sse_config,
+        opts=import_aware_opts(physical_bucket_name, parent=parent),
+    )
 
 
-def sse_config():
+def sse_configuration() -> aws.s3.BucketServerSideEncryptionConfigurationArgs:
     """ Applies SSE to a bucket using AWS KMS. """
     return aws.s3.BucketServerSideEncryptionConfigurationArgs(
         rule=aws.s3.BucketServerSideEncryptionConfigurationRuleArgs(
