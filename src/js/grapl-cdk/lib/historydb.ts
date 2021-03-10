@@ -38,35 +38,35 @@ export class HistoryDb extends cdk.Construct {
 
         this.proc_history = create_table(
             this,
-            props.prefix + '-process_history_table'
+            props.deploymentName + '-process_history_table'
         );
         this.file_history = create_table(
             this,
-            props.prefix + '-file_history_table'
+            props.deploymentName + '-file_history_table'
         );
         this.outbound_connection_history = create_table(
             this,
-            props.prefix + '-outbound_connection_history_table'
+            props.deploymentName + '-outbound_connection_history_table'
         );
         this.inbound_connection_history = create_table(
             this,
-            props.prefix + '-inbound_connection_history_table'
+            props.deploymentName + '-inbound_connection_history_table'
         );
         this.network_connection_history = create_table(
             this,
-            props.prefix + '-network_connection_history_table'
+            props.deploymentName + '-network_connection_history_table'
         );
         this.ip_connection_history = create_table(
             this,
-            props.prefix + '-ip_connection_history_table'
+            props.deploymentName + '-ip_connection_history_table'
         );
         this.dynamic_session_table = create_table(
             this,
-            props.prefix + '-dynamic_session_table'
+            props.deploymentName + '-dynamic_session_table'
         );
 
         this.asset_history = new dynamodb.Table(this, 'AssetIdMappings', {
-            tableName: props.prefix + '-asset_id_mappings',
+            tableName: props.deploymentName + '-asset_id_mappings',
             partitionKey: {
                 name: 'pseudo_key',
                 type: dynamodb.AttributeType.STRING,
@@ -83,7 +83,7 @@ export class HistoryDb extends cdk.Construct {
             this,
             'StaticMappingTable',
             {
-                tableName: props.prefix + '-static_mapping_table',
+                tableName: props.deploymentName + '-static_mapping_table',
                 partitionKey: {
                     name: 'pseudo_key',
                     type: dynamodb.AttributeType.STRING,

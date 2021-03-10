@@ -1,8 +1,10 @@
 use std::convert::TryFrom;
 
-use grapl_graph_descriptions::{graph_description::*,
-                               node::NodeT,
-                               process::ProcessState};
+use endpoint_plugin::{AssetNode,
+                      IAssetNode,
+                      IProcessNode,
+                      ProcessNode};
+use grapl_graph_descriptions::graph_description::*;
 use serde::{Deserialize,
             Serialize};
 
@@ -14,24 +16,23 @@ pub struct ProcessStop {
     timestamp: u64,
 }
 
-impl TryFrom<ProcessStop> for Graph {
+impl TryFrom<ProcessStop> for GraphDescription {
     type Error = String;
 
     fn try_from(process_stop: ProcessStop) -> Result<Self, Self::Error> {
-        let asset = AssetBuilder::default()
-            .hostname(process_stop.hostname.clone())
-            .asset_id(process_stop.hostname.clone())
-            .build()?;
+        let mut asset = AssetNode::new(AssetNode::static_strategy());
+        asset
+            .with_hostname(process_stop.hostname.clone())
+            .with_asset_id(process_stop.hostname.clone());
 
-        let terminated_process = ProcessBuilder::default()
-            .process_name(process_stop.name)
-            .hostname(process_stop.hostname)
-            .state(ProcessState::Terminated)
-            .process_id(process_stop.process_id)
-            .terminated_timestamp(process_stop.timestamp)
-            .build()?;
+        let mut terminated_process = ProcessNode::new(ProcessNode::session_strategy());
+        terminated_process
+            .with_process_name(process_stop.name)
+            .with_asset_id(process_stop.hostname)
+            .with_process_id(process_stop.process_id)
+            .with_terminated_timestamp(process_stop.timestamp);
 
-        let mut graph = Graph::new(process_stop.timestamp);
+        let mut graph = GraphDescription::new();
 
         graph.add_edge(
             "asset_processes",

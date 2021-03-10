@@ -41,7 +41,7 @@ export interface ServicePropsOptions {
 
 export interface ServiceProps {
     version: string;
-    prefix: string;
+    deploymentName: string;
     environment?: any;
     vpc?: ec2.IVpc;
     reads_from?: s3.IBucket;
@@ -69,7 +69,7 @@ export class Service {
     readonly serviceName: string;
 
     constructor(scope: cdk.Construct, name: string, props: ServiceProps) {
-        const serviceName = `${props.prefix}-${name}`;
+        const serviceName = `${props.deploymentName}-${name}`;
         this.serviceName = serviceName;
         const environment = props.environment;
         let retry_code_name = props.retry_code_name;

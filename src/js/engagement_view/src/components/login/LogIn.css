@@ -1,14 +1,11 @@
 /* Login Page */
-
-.backgroundImage{
-  width: 100vw;
-  height: 100vh;
-  background: url("../../images/nodes.jpg");
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
+.loginContainer {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  height: 80vh;
 }
 
 .grapl{
@@ -19,21 +16,45 @@
   font-weight: bold;
   font-size: 5rem;
   margin: 3em 1em;
-  font-family: "Arial";
+  font-family: "Roboto";
+  margin-bottom: 0.75rem;
 }
 
-.formContainer{
-  margin-top: 8.5em;
-  margin-left: 8em;
-  width: 350px;
-  height: 350px;
-  background-color:white;
+.formContainer {
+  background-color: #010101;
   display: flex;
+  flex-direction: column;
   align-items: center;
   font-size: 1.25em;
   box-shadow: 3px 5px 9px #888888;
+  box-shadow: 5px 5px 10px #111;
+  font-weight: bold;
+  padding: 1.5em 2em;
 }
 
+.welcomeBanner {
+  margin-bottom: 0.5em;
+  text-transform: uppercase;
+  font-size: 0.8em;
+  letter-spacing: 4px;
+  color: #bdbdbd;
+  text-align: "center";
+}
+
+.loginText {
+  font-size: 1.2em;
+  margin-bottom: 1em;
+  text-align: "center";
+}
+.formElements {
+  display: flex;
+  flex-direction: column;
+  min-width: 350px;
+}
+
+.bottomMargin {
+  margin-bottom: 0.5em;
+}
 input{
   border: 1px solid darkgrey;
   width: 85%;
@@ -41,20 +62,23 @@ input{
   padding: .2em;
   font-size: 1em;
 } 
-
+.formElements input {
+  margin: 0;
+}
 input, 
 .submitBtn {
   margin: .5em;
+  font-size: 1em;
 }
 
-.submitBtn{
-  background-color: #26B4FF;
+.submitBtn {
+  background-color: #238AC0;
   border: none;
-  padding: .25em;
+  font-weight: bold;
+  padding: 0.25em 2em;
   color: white;
   font-size: 1.15rem;
 }
-
 @media (max-width: 800px) {
   .backgroundImage {
     flex-direction: column;

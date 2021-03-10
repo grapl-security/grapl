@@ -10,7 +10,7 @@ cluster, and install Dgraph on it.
 We'll use the `graplctl` tool to provision Dgraph:
 
 1. Install `graplctl`. See the [graplctl
-   README](https://github.com/grapl-security/grapl/tree/master/src/python/grapctl/README.md)
+   README](https://github.com/grapl-security/grapl/tree/main/src/python/grapctl/README.md)
    for installation instructions.
 
 2. Run the `graplctl dgraph create` command. Note that you will either
@@ -18,6 +18,16 @@ We'll use the `graplctl` tool to provision Dgraph:
    `GRAPL_VERSION` environment variables or supply the corresponding
    values via the CLI options (`graplctl --help` for more
    information).
+   For example:
+   ```bash
+   # Specify the flags if you didn't configure the environment variables.
+   graplctl \
+      --grapl-region your-region-1 \
+      --grapl-deployment-name your-deployment-name \
+      --grapl-version your-version-usually-latest \
+      dgraph create \
+        --instance-type i3.large
+  ```
 
 ## DGraph operations
 

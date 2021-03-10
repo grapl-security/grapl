@@ -135,19 +135,37 @@ test-unit-js: build-test-unit-js ## Build and run unit tests - JavaScript only
 		-f ./test/docker-compose.unit-tests-js.yml
 
 .PHONY: test-typecheck
-test-typecheck: build-test-typecheck ## Build and run typecheck tests
+test-typecheck: build-test-typecheck ## Build and run typecheck tests (non-Pants)
 	test/docker-compose-with-error.sh \
 		-f ./test/docker-compose.typecheck-tests.yml \
-		-p grapl-typecheck_tests
+		-p grapl-typecheck_tests \
+		-t "$(TARGET)"
+
+.PHONY: test-typecheck-pulumi
+test-typecheck-pulumi: ## Typecheck Pulumi Python code
+	./pants typecheck pulumi::
+
+.PHONY: test-typecheck-build-support
+test-typecheck-build-support: ## Typecheck build-support Python code
+	./pants typecheck build-support::
+
+# Right now, we're only typechecking a select portion of code with
+# Pants until CM fixes https://github.com/pantsbuild/pants/issues/11553
+.PHONY: test-typecheck-pants
+test-typecheck-pants: test-typecheck-pulumi test-typecheck-build-support ## Typecheck Python code with Pants
 
 .PHONY: test-integration
 test-integration: export COMPOSE_IGNORE_ORPHANS=1
 test-integration: build-test-integration ## Build and run integration tests
+	# Usage:
+	# make test-integration
+	# make test-integration TARGET=grapl-analyzerlib-integration-tests
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(MAKE) up-detach PROJECT_NAME="grapl-integration_tests" && \
 	test/docker-compose-with-error.sh \
 		-f ./test/docker-compose.integration-tests.yml \
-		-p "grapl-integration_tests"
+		-p "grapl-integration_tests" \
+		-t "$(TARGET)"
 
 .PHONY: test-e2e
 test-e2e: export COMPOSE_IGNORE_ORPHANS=1
@@ -247,8 +265,12 @@ e2e-logs: ## All docker-compose logs
 
 .PHONY: help
 help: ## Print this help
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9_-]+:.*?## / {gsub("\\\\n",sprintf("\n%22c",""), $$2);printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9_-]+:.*?## / {gsub("\\\\n",sprintf("\n%22c",""), $$2);printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 .PHONY: docker-kill-all
 docker-kill-all:  # Kill all currently running Docker containers
 	docker kill $$(docker ps -aq)
+
+.PHONY: populate-venv
+populate-venv: ## Set up a Python virtualenv (you'll have to activate manually!)
+	build-support/manage_virtualenv.sh populate

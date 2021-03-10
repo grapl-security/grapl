@@ -19,9 +19,16 @@ RUN wget -q https://github.com/mozilla/sccache/releases/download/v0.2.15/sccache
 
 ENV RUSTC_WRAPPER=/usr/local/bin/sccache
 
+# Install rust toolchain before copying sources to avoid unecessarily
+# resinstalling on source file changes.
 WORKDIR /grapl
+COPY rust/rust-toolchain rust/rust-toolchain
+WORKDIR /grapl/rust
+# 'rustup show' will install components in the rust-toolchain file
+RUN rustup show
 
 # copy sources
+WORKDIR /grapl
 COPY proto proto
 COPY rust rust
 
@@ -36,6 +43,7 @@ WORKDIR /grapl/rust
 FROM base AS build
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
+    --mount=type=cache,mode=0777,target=/usr/local/cargo/registry \
     --mount=type=secret,id=rust_env,dst=/grapl/env \
     source /grapl/env; \
     case "${CARGO_PROFILE}" in \
@@ -47,6 +55,7 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
         echo "ERROR: Unknown profile: ${CARGO_PROFILE}"; \
         exit 1 ;; \
     esac
+
 
 
 # zip
@@ -68,6 +77,7 @@ RUN mkdir -p /grapl/zips; \
 FROM build AS build-test-unit
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
+    --mount=type=cache,mode=0777,target=/usr/local/cargo/registry \
     --mount=type=secret,id=rust_env,dst=/grapl/env \
     source /grapl/env; \
     cargo test --no-run
@@ -76,6 +86,7 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
 FROM build AS build-test-integration
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
+    --mount=type=cache,mode=0777,target=/usr/local/cargo/registry \
     --mount=type=secret,id=rust_env,dst=/grapl/env \
     source /grapl/env; \
     cargo test --manifest-path node-identifier/Cargo.toml --features integration --no-run

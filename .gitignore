@@ -15,6 +15,7 @@ __pycache__/
 *$py.class
 .mypy_cache
 .hypothesis
+.pytype/
 
 # Rust outputs
 target/
@@ -40,6 +41,7 @@ dist/
 /tags.lock
 /tags.temp
 .log
+pyrightconfig.json
 
 # Pants-related artifacts
 # https://www.pantsbuild.org/docs/gitignore
@@ -48,10 +50,13 @@ dist/
 /dist/
 /.pids
 /.pants.workdir.file_lock*
-# See build-support/generate_constraints.sh
-/build-support/.constraints-venv
+# See build-support/manage_virtualenv.sh
+/build-support/grapl-venv
 .yarn/
 
+# Generated when profiling rust code
+*.profdata
+*.profraw
 
 ### PERSONAL SCRIPTS
 upload_localhost.sh

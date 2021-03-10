@@ -2,6 +2,7 @@
   "name": "grapl-fe",
   "version": "0.1.0",
   "private": true,
+  "proxy": "http://127.0.0.1:1234",
   "dependencies": {
     "@material-ui/core": "^4.9.9",
     "@material-ui/icons": "^4.9.1",
@@ -24,6 +25,7 @@
     "formik": "^2.1.4",
     "gulp": "^4.0.2",
     "history": "^5.0.0",
+    "http-proxy-middleware": "^1.0.6",
     "jest-dom": "^4.0.0",
     "minimist": "^1.2.3",
     "prettier": "2.0.3",

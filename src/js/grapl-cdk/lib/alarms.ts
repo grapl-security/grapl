@@ -28,7 +28,7 @@ import * as cloudwatch_actions from '@aws-cdk/aws-cloudwatch-actions';
 class AlarmSinkProps {
     topic_name: string;
     email: string;
-    prefix: string;
+    deployment_name: string;
 }
 
 class AlarmSink extends cdk.Construct {
@@ -38,7 +38,7 @@ class AlarmSink extends cdk.Construct {
     constructor(scope: cdk.Construct, id: string, props: AlarmSinkProps) {
         super(scope, id);
 
-        const topic_name = `${props.prefix}-${props.topic_name}`;
+        const topic_name = `${props.deployment_name}-${props.topic_name}`;
         this.topic = new sns.Topic(scope, "topic", {
             topicName: topic_name
         });
@@ -48,7 +48,7 @@ class AlarmSink extends cdk.Construct {
 }
 
 interface RiskNodeAlarmProps {
-    prefix: string;
+    deployment_name: string;
     alarm_sink: AlarmSink;
 }
 
@@ -68,7 +68,7 @@ class RiskNodeAlarm extends cdk.Construct {
             this,
             "alarm",
             {
-                alarmName: props.prefix + " - Risk node alarm",
+                alarmName: props.deployment_name + " - Risk node alarm",
                 // TODO: Add some verbiage to the alarm description on how to actually look at what's causing the alarm.
                 alarmDescription: undefined,
                 threshold: 1,
@@ -81,7 +81,7 @@ class RiskNodeAlarm extends cdk.Construct {
 }
 
 export interface OperationalAlarmsProps {
-    prefix: string;
+    deployment_name: string;
     email: string;
 }
 
@@ -103,7 +103,7 @@ export class OperationalAlarms extends cdk.Construct {
 }
 
 export interface SecurityAlarmsProps {
-    prefix: string;
+    deployment_name: string;
     email: string;
 }
 
@@ -121,7 +121,7 @@ export class SecurityAlarms extends cdk.Construct {
         }
         const alarm_sink = new AlarmSink(this, "alarm_sink", alarm_sink_props);
         const risk_node_alarm = new RiskNodeAlarm(this, "risk_node_alarm", {
-            prefix: props.prefix,
+            deployment_name: props.deployment_name,
             alarm_sink: alarm_sink
         });
     }

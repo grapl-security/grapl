@@ -3,12 +3,14 @@ from __future__ import annotations
 import gzip as web_compress
 import json
 import logging
+import os
 import sys
 import time
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, TypeVar, Union, cast
 
 import boto3
 from chalice import Chalice, Response
+from grapl_common.env_helpers import S3ResourceFactory
 
 try:
     from src.lib.env_vars import GRAPL_LOG_LEVEL, IS_LOCAL, UX_BUCKET_NAME
@@ -85,13 +87,7 @@ class LazyUxBucket:
 
         for _ in range(timeout_secs):
             try:
-                s3 = boto3.resource(
-                    "s3",
-                    endpoint_url="http://s3:9000",
-                    aws_access_key_id="minioadmin",
-                    aws_secret_access_key="minioadmin",
-                )
-
+                s3 = S3ResourceFactory(boto3).from_env()
                 bucket = s3.Bucket(UX_BUCKET_NAME)
                 break
             except Exception as e:

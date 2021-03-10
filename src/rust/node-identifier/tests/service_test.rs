@@ -1,5 +1,5 @@
 /// Given:
-///     * A Graph with 4 Session-Identifiable Nodes; A, B, C, D
+///     * A graph with 4 Session-Identifiable Nodes; A, B, C, D
 ///     * Where A, B share a canonical identity, and C, D share a common identity
 ///     * Where A, B, have an edge to C, D
 /// When:

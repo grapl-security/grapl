@@ -1,0 +1,64 @@
+FROM python:3.7-slim-buster as pants-base
+
+SHELL ["/bin/bash", "-c"]
+
+RUN apt-get update && apt-get install --yes \
+    build-essential \
+    curl \
+    unzip \
+    wait-for-it
+
+RUN adduser \
+        --disabled-password \
+        --gecos '' \
+        --home /home/grapl \
+        --shell /bin/bash \
+        grapl
+
+USER grapl
+ENV USER=grapl
+WORKDIR /home/grapl
+
+RUN curl -O https://get.pulumi.com/releases/sdk/pulumi-v2.21.2-linux-x64.tar.gz && \
+    tar -xzvf pulumi-*.tar.gz && \
+    mv pulumi pulumi-bin
+ENV PATH=/home/grapl/pulumi-bin:${PATH}
+
+# Use Pants to grab our dependencies
+#
+# NOTE: This works as long as our Pulumi code only has dependencies on
+# non-Grapl Python libraries (i.e., other code in this repository). If
+# that ever changes, this will also need to be revisited.
+#
+# These are the current bare minimum of files that we need to copy
+# over in order to have pants compute our dependencies. At this stage,
+# it looks kind of horrible, but it means we don't have to keep a
+# requirements.txt file around for the Pulumi code. As things mature,
+# this will get simplified.
+COPY --chown=grapl pants pants
+COPY --chown=grapl pants-plugins pants-plugins
+COPY --chown=grapl pyproject.toml pyproject.toml
+COPY --chown=grapl src/python/mypy.ini src/python/mypy.ini
+COPY --chown=grapl pants.toml pants.toml
+COPY --chown=grapl 3rdparty 3rdparty
+
+# To bootstrap Pants
+# We need to ignore both Pants' cache as well as our Pulumi venv in
+# this particular case since we're operating out of the same directory
+# on everything.
+ENV PANTS_IGNORE="['.cache', 'venv']"
+RUN ./pants --version
+
+# Automatically ensures that our virtualenv is created and active on
+# all subsequent actions
+RUN mkdir venv
+ENV VIRTUAL_ENV=/home/grapl/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+COPY --chown=grapl pulumi pulumi
+
+RUN pip install --upgrade pip wheel && \
+    pip install -r <(./pants dependencies --type=3rdparty pulumi::)
+
+WORKDIR /home/grapl/pulumi

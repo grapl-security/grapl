@@ -4,8 +4,8 @@ Despite the path, this is *not* tied just to Local Grapl, and can also be used o
 """
 
 import argparse
-import sys
 import os
+import sys
 from pathlib import Path
 from typing import Callable
 
@@ -36,16 +36,27 @@ def hack_PATH_to_include_grapl_tests_common() -> Callable:
     return upload_sysmon_logs
 
 
-def setup_env(bucket_prefix: str):
-    if bucket_prefix == "local-grapl":
+def setup_env(deployment_name: str):
+    """Ensures the environment is set up appropriately for interacting
+    with Local Grapl (running inside a Docker Compose network locally)
+    from *outside* that network (i.e., from your workstation).
+
+    """
+    # NOTE: These values are copied from local-grapl.env. It's
+    # unfortunate, yes, but in the interests of a decent
+    # user-experience, we'll eat that pain for now. In the near term,
+    # we should pull this functionality into something like graplctl
+    # with a more formalized way of pointing to a specific Grapl
+    # instance.
+    if deployment_name == "local-grapl":
         kvs = [
             ("AWS_REGION", "us-east-1"),
             ("S3_ENDPOINT", "http://localhost:9000"),
-            ("S3_ACCESS_KEY_ID", "minioadmin"),
-            ("S3_ACCESS_KEY_SECRET", "minioadmin"),
-            ("SQS_ENDPOINT", "http://localhost:9324"),
-            ("SQS_ACCESS_KEY_ID", "dummy_cred_aws_access_key_id"),
-            ("SQS_ACCESS_KEY_SECRET", "dummy_cred_aws_secret_access_key"),
+            ("S3_ACCESS_KEY_ID", "THIS_IS_A_FAKE_AWS_ACCESS_KEY_ID"),
+            ("S3_ACCESS_KEY_SECRET", "THIS_IS_A_FAKE_AWS_SECRET_ACCESS_KEY"),
+            ("SQS_ENDPOINT", "http://localhost:4566"),
+            ("SQS_ACCESS_KEY_ID", "THIS_IS_A_FAKE_AWS_ACCESS_KEY_ID"),
+            ("SQS_ACCESS_KEY_SECRET", "THIS_IS_A_FAKE_AWS_SECRET_ACCESS_KEY"),
         ]
         for (k, v) in kvs:
             # fun fact: os.putenv is bad and this is preferred
@@ -54,7 +65,7 @@ def setup_env(bucket_prefix: str):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Send sysmon logs to Grapl")
-    parser.add_argument("--bucket_prefix", dest="bucket_prefix", required=True)
+    parser.add_argument("--deployment_name", dest="deployment_name", required=True)
     parser.add_argument(
         "--logfile",
         dest="logfile",
@@ -68,13 +79,13 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    if args.bucket_prefix is None:
-        raise Exception("Provide bucket prefix as first argument")
+    if args.deployment_name is None:
+        raise Exception("Provide deployment name as first argument")
 
-    setup_env(args.bucket_prefix)
+    setup_env(args.deployment_name)
     upload_fn = hack_PATH_to_include_grapl_tests_common()
     upload_fn(
-        args.bucket_prefix,
+        args.deployment_name,
         args.logfile,
         delay=args.delay,
         batch_size=args.batch_size,

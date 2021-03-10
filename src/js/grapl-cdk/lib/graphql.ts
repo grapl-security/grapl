@@ -24,7 +24,7 @@ export class GraphQLEndpoint extends cdk.Construct {
 
         const ux_bucket = props.ux_bucket;
 
-        const serviceName = props.prefix + '-GraphQL';
+        const serviceName = props.deploymentName + '-GraphQL';
 
         const event_handler = new lambda.Function(this, 'Handler', {
             runtime: lambda.Runtime.NODEJS_12_X,
@@ -37,7 +37,7 @@ export class GraphQLEndpoint extends cdk.Construct {
             environment: {
                 MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
                 JWT_SECRET_ID: props.jwtSecret.secretArn,
-                BUCKET_PREFIX: props.prefix,
+                DEPLOYMENT_NAME: props.deploymentName,
                 UX_BUCKET_URL: 'https://' + ux_bucket.bucketRegionalDomainName,
             },
             timeout: cdk.Duration.seconds(30),

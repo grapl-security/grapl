@@ -25,8 +25,11 @@ from typing import (
 import boto3
 import jwt
 from chalice import Chalice, CORSConfig, Response
-from grapl_common.env_helpers import DynamoDBResourceFactory
-from src.lib.env_vars import BUCKET_PREFIX, GRAPL_LOG_LEVEL, IS_LOCAL
+from grapl_common.env_helpers import (
+    DynamoDBResourceFactory,
+    SecretsManagerClientFactory,
+)
+from src.lib.env_vars import DEPLOYMENT_NAME, GRAPL_LOG_LEVEL, IS_LOCAL
 from src.lib.sagemaker import create_sagemaker_client
 
 if TYPE_CHECKING:
@@ -70,14 +73,7 @@ class LazyJwtSecret:
 
         for _ in range(timeout_secs):
             try:
-                secretsmanager = boto3.client(
-                    "secretsmanager",
-                    region_name="us-east-1",
-                    aws_access_key_id="dummy_cred_aws_access_key_id",
-                    aws_secret_access_key="dummy_cred_aws_secret_access_key",
-                    endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4584",
-                )
-
+                secretsmanager = SecretsManagerClientFactory(boto3).from_env()
                 jwt_secret = secretsmanager.get_secret_value(
                     SecretId="JWT_SECRET_ID",
                 )["SecretString"]
@@ -97,7 +93,6 @@ JWT_SECRET = LazyJwtSecret()
 DYNAMO: Optional[DynamoDBServiceResource] = None
 
 app = Chalice(app_name="engagement-edge")
-app.api.cors = False
 # Sometimes we pass in a dict. Sometimes we pass the string "True". Weird.
 Res = Union[Dict[str, Any], str]
 
@@ -287,7 +282,7 @@ def check_login() -> Response:
 @requires_auth("/getNotebook")
 def get_notebook() -> Response:
     # cross-reference with `engagement.ts` notebookInstanceName
-    notebook_name = f"{BUCKET_PREFIX}-Notebook"
+    notebook_name = f"{DEPLOYMENT_NAME}-Notebook"
     client = create_sagemaker_client(is_local=IS_LOCAL)
     url = client.get_presigned_url(notebook_name)
     return respond(err=None, res={"notebook_url": url})

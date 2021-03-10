@@ -42,19 +42,19 @@ pub enum GenericEvent {
     ProcessPortBindLog(ProcessPortBindLog),
 }
 
-impl TryFrom<GenericEvent> for Graph {
+impl TryFrom<GenericEvent> for GraphDescription {
     type Error = String;
 
     fn try_from(generic_event: GenericEvent) -> Result<Self, Self::Error> {
         match generic_event {
-            GenericEvent::ProcessStart(event) => Graph::try_from(event),
-            GenericEvent::ProcessStop(event) => Graph::try_from(event),
-            GenericEvent::FileCreate(event) => Graph::try_from(event),
-            GenericEvent::FileDelete(event) => Graph::try_from(event),
-            GenericEvent::FileRead(event) => Graph::try_from(event),
-            GenericEvent::FileWrite(event) => Graph::try_from(event),
-            GenericEvent::ProcessOutboundConnectionLog(event) => Graph::try_from(event),
-            GenericEvent::ProcessInboundConnectionLog(event) => Graph::try_from(event),
+            GenericEvent::ProcessStart(event) => GraphDescription::try_from(event),
+            GenericEvent::ProcessStop(event) => GraphDescription::try_from(event),
+            GenericEvent::FileCreate(event) => GraphDescription::try_from(event),
+            GenericEvent::FileDelete(event) => GraphDescription::try_from(event),
+            GenericEvent::FileRead(event) => GraphDescription::try_from(event),
+            GenericEvent::FileWrite(event) => GraphDescription::try_from(event),
+            GenericEvent::ProcessOutboundConnectionLog(event) => GraphDescription::try_from(event),
+            GenericEvent::ProcessInboundConnectionLog(event) => GraphDescription::try_from(event),
             GenericEvent::ProcessPortBindLog(_event) => unimplemented!(),
         }
     }

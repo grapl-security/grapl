@@ -26,7 +26,11 @@ from grapl_analyzerlib.node_types import (
 )
 from grapl_analyzerlib.prelude import *
 from grapl_analyzerlib.schema import Schema
-from grapl_common.env_helpers import DynamoDBResourceFactory, S3ClientFactory
+from grapl_common.env_helpers import (
+    DynamoDBResourceFactory,
+    S3ClientFactory,
+    SecretsManagerClientFactory,
+)
 from grapl_common.grapl_logger import get_module_grapl_logger
 
 sys.path.append("/tmp/")
@@ -48,14 +52,7 @@ if IS_LOCAL:
 
     for i in range(0, 150):
         try:
-            secretsmanager = boto3.client(
-                "secretsmanager",
-                region_name="us-east-1",
-                aws_access_key_id="dummy_cred_aws_access_key_id",
-                aws_secret_access_key="dummy_cred_aws_secret_access_key",
-                endpoint_url="http://secretsmanager.us-east-1.amazonaws.com:4584",
-            )
-
+            secretsmanager = SecretsManagerClientFactory(boto3).from_env()
             JWT_SECRET = secretsmanager.get_secret_value(
                 SecretId="JWT_SECRET_ID",
             )["SecretString"]
@@ -64,7 +61,7 @@ if IS_LOCAL:
             LOGGER.debug(e)
             time.sleep(1)
 
-    os.environ["BUCKET_PREFIX"] = "local-grapl"
+    os.environ["DEPLOYMENT_NAME"] = "local-grapl"
 else:
     JWT_SECRET_ID = os.environ["JWT_SECRET_ID"]
 
@@ -121,7 +118,7 @@ def format_schemas(schema_defs: List["BaseSchema"]) -> str:
 
 
 def store_schema(dynamodb, schema: "Schema"):
-    table = dynamodb.Table(os.environ["BUCKET_PREFIX"] + "-grapl_schema_table")
+    table = dynamodb.Table(os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table")
     for f_edge, (edge_t, r_edge) in schema.get_edges().items():
         if not (f_edge and r_edge):
             LOGGER.warn(f"missing {f_edge} {r_edge} for {schema.self_type()}")
@@ -218,7 +215,7 @@ def query_dgraph_predicate(client: "GraphClient", predicate_name: str):
 
 
 def meta_into_edge(dynamodb, schema: "Schema", f_edge):
-    table = dynamodb.Table(os.environ["BUCKET_PREFIX"] + "-grapl_schema_table")
+    table = dynamodb.Table(os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table")
     edge_res = table.get_item(Key={"f_edge": f_edge})["Item"]
     edge_t = schema.edges[f_edge][0]  # type: EdgeT
 
@@ -278,7 +275,7 @@ def query_dgraph_type(client: "GraphClient", type_name: str):
 
 
 def get_reverse_edge(dynamodb, schema, f_edge):
-    table = dynamodb.Table(os.environ["BUCKET_PREFIX"] + "-grapl_schema_table")
+    table = dynamodb.Table(os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table")
     edge_res = table.get_item(Key={"f_edge": f_edge})["Item"]
     return edge_res["r_edge"]
 
@@ -295,7 +292,7 @@ def extend_schema(dynamodb, graph_client: GraphClient, schema: "BaseSchema"):
 
 
 def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> Optional[Response]:
-    plugin_bucket = (os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket").lower()
+    plugin_bucket = (os.environ["DEPLOYMENT_NAME"] + "-model-plugins-bucket").lower()
 
     plugin_parts = key.split("/")
     plugin_name = plugin_parts[0]
@@ -327,7 +324,7 @@ def upload_plugin(s3_client: BaseClient, key: str, contents: str) -> Optional[Re
     return None
 
 
-BUCKET_PREFIX = os.environ["BUCKET_PREFIX"]
+DEPLOYMENT_NAME = os.environ["DEPLOYMENT_NAME"]
 
 
 def respond(
@@ -459,7 +456,7 @@ def deploy():
 
 
 def get_plugin_list(s3: BaseClient):
-    plugin_bucket = (os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket").lower()
+    plugin_bucket = (os.environ["DEPLOYMENT_NAME"] + "-model-plugins-bucket").lower()
     list_response = s3.list_objects_v2(Bucket=plugin_bucket)
     if not list_response.get("Contents"):
         return []
@@ -488,7 +485,7 @@ def list_model_plugins():
 
 
 def delete_plugin(s3_client, plugin_name):
-    plugin_bucket = (os.environ["BUCKET_PREFIX"] + "-model-plugins-bucket").lower()
+    plugin_bucket = (os.environ["DEPLOYMENT_NAME"] + "-model-plugins-bucket").lower()
 
     list_response = s3_client.list_objects_v2(
         Bucket=plugin_bucket,

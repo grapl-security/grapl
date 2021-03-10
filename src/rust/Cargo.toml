@@ -3,6 +3,7 @@
 members = [
     "./analyzer-dispatcher",
     "./derive-dynamic-node",
+    "./endpoint-plugin",
     "./graph-descriptions",
     "./graph-merger",
     "./grapl",

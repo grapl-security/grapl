@@ -31,17 +31,11 @@ import {GraphMerger} from "./services/graph_merger";
 import {NodeIdentifier} from "./services/node_identifier";
 import {SysmonGraphGenerator} from "./services/sysmon_graph_generator";
 import {OSQueryGraphGenerator} from "./services/osquery_graph_generator";
+import {LogLevels} from "../bin/deployment_parameters";
 
 export interface GraplServiceProps {
-    prefix: string;
-    defaultLogLevel: string;
-    sysmonSubgraphGeneratorLogLevel: string;
-    osquerySubgraphGeneratorLogLevel: string;
-    nodeIdentifierLogLevel: string;
-    graphMergerLogLevel: string;
-    analyzerDispatcherLogLevel: string;
-    analyzerExecutorLogLevel: string;
-    engagementCreatorLogLevel: string;
+    deploymentName: string;
+    logLevels: LogLevels<string>;
     version: string;
     jwtSecret: secretsmanager.Secret;
     vpc: ec2.IVpc;
@@ -53,14 +47,7 @@ export interface GraplServiceProps {
 
 export interface GraplStackProps extends cdk.StackProps {
     stackName: string;
-    defaultLogLevel: string;
-    sysmonSubgraphGeneratorLogLevel: string;
-    osquerySubgraphGeneratorLogLevel: string;
-    nodeIdentifierLogLevel: string;
-    graphMergerLogLevel: string;
-    analyzerDispatcherLogLevel: string;
-    analyzerExecutorLogLevel: string;
-    engagementCreatorLogLevel: string;
+    logLevels: LogLevels<string>;
     version: string;
     watchfulEmail?: string;
     operationalAlarmsEmail: string;
@@ -68,7 +55,7 @@ export interface GraplStackProps extends cdk.StackProps {
 }
 
 export class GraplCdkStack extends cdk.Stack {
-    prefix: string;
+    deploymentName: string;
     engagement_edge: EngagementEdge;
     graphql_endpoint: GraphQLEndpoint;
     ux_router: UxRouter;
@@ -78,8 +65,8 @@ export class GraplCdkStack extends cdk.Stack {
     constructor(scope: cdk.Construct, id: string, props: GraplStackProps) {
         super(scope, id, props);
 
-        this.prefix = props.stackName;
-        const bucket_prefix = this.prefix.toLowerCase();
+        this.deploymentName = props.stackName;
+        const deployment_name = this.deploymentName.toLowerCase();
 
         const edgeApi = new apigateway.RestApi(this, 'EdgeApiGateway', {});
         edgeApi.addUsagePlan('EdgeApiGatewayUsagePlan', {
@@ -96,25 +83,25 @@ export class GraplCdkStack extends cdk.Stack {
 
         this.edgeApiGateway = edgeApi;
 
-        const grapl_vpc = new ec2.Vpc(this, this.prefix + '-VPC', {
+        const grapl_vpc = new ec2.Vpc(this, this.deploymentName + '-VPC', {
             natGateways: 1,
             enableDnsHostnames: true,
             enableDnsSupport: true,
         });
-        Tags.of(grapl_vpc).add("name", `${this.prefix.toLowerCase()}-grapl-vpc`);
+        Tags.of(grapl_vpc).add("name", `${this.deploymentName.toLowerCase()}-grapl-vpc`);
 
         const jwtSecret = new secretsmanager.Secret(this, 'EdgeJwtSecret', {
             description:
                 'The JWT secret that Grapl uses to authenticate its API',
-            secretName: this.prefix + '-EdgeJwtSecret',
+            secretName: this.deploymentName + '-EdgeJwtSecret',
         });
 
         const user_auth_table = new UserAuthDb(this, 'UserAuthTable', {
-            table_name: this.prefix + '-user_auth_table',
+            table_name: this.deploymentName + '-user_auth_table',
         });
 
         const schema_table = new SchemaDb(this, 'SchemaTable', {
-            table_name: this.prefix + '-grapl_schema_table',
+            table_name: this.deploymentName + '-grapl_schema_table',
         });
 
         let watchful = undefined;
@@ -133,7 +120,7 @@ export class GraplCdkStack extends cdk.Stack {
             this,
             'swarm',
             {
-                prefix: this.prefix,
+                deploymentName: this.deploymentName,
                 vpc: grapl_vpc,
                 version: props.version,
                 watchful: watchful,
@@ -141,15 +128,8 @@ export class GraplCdkStack extends cdk.Stack {
         );
 
         const graplProps: GraplServiceProps = {
-            prefix: this.prefix,
-            sysmonSubgraphGeneratorLogLevel: props.sysmonSubgraphGeneratorLogLevel,
-            defaultLogLevel: props.defaultLogLevel,
-            osquerySubgraphGeneratorLogLevel: props.osquerySubgraphGeneratorLogLevel,
-            nodeIdentifierLogLevel: props.nodeIdentifierLogLevel,
-            graphMergerLogLevel: props.graphMergerLogLevel,
-            analyzerDispatcherLogLevel: props.analyzerDispatcherLogLevel,
-            analyzerExecutorLogLevel: props.analyzerExecutorLogLevel,
-            engagementCreatorLogLevel: props.engagementCreatorLogLevel,
+            deploymentName: this.deploymentName,
+            logLevels: props.logLevels,
             version: props.version,
             jwtSecret: jwtSecret,
             vpc: grapl_vpc,
@@ -171,7 +151,7 @@ export class GraplCdkStack extends cdk.Stack {
         }
 
         const analyzers_bucket = new GraplS3Bucket(this, 'AnalyzersBucket', {
-            bucketName: bucket_prefix + '-analyzers-bucket',
+            bucketName: deployment_name + '-analyzers-bucket',
             removalPolicy: cdk.RemovalPolicy.DESTROY,
             encryption: s3.BucketEncryption.KMS_MANAGED,
             blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
@@ -181,7 +161,7 @@ export class GraplCdkStack extends cdk.Stack {
             this,
             'EngagementsCreatedTopic',
             {
-                topicName: this.prefix + '-engagements-created-topic',
+                topicName: this.deploymentName + '-engagements-created-topic',
             }
         );
 
@@ -198,7 +178,7 @@ export class GraplCdkStack extends cdk.Stack {
         new DGraphTtl(this, 'dgraph-ttl', graplProps);
 
         const model_plugins_bucket = new GraplS3Bucket(this, 'ModelPluginsBucket', {
-            bucketName: bucket_prefix + '-model-plugins-bucket',
+            bucketName: deployment_name + '-model-plugins-bucket',
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
 
@@ -279,7 +259,7 @@ export class GraplCdkStack extends cdk.Stack {
 
         const ux_bucket = new GraplS3Bucket(this, 'EdgeBucket', {
             bucketName:
-                graplProps.prefix.toLowerCase() + '-engagement-ux-bucket',
+                graplProps.deploymentName.toLowerCase() + '-engagement-ux-bucket',
             publicReadAccess: false,
             websiteIndexDocument: 'index.html',
             removalPolicy: cdk.RemovalPolicy.DESTROY,
@@ -325,17 +305,17 @@ export class GraplCdkStack extends cdk.Stack {
         }
 
         new OperationalAlarms(this, "operational_alarms", {
-            prefix: this.prefix,
+            deployment_name: this.deploymentName,
             email: props.operationalAlarmsEmail
         });
 
         new SecurityAlarms(this, "security_alarms", {
-            prefix: this.prefix,
+            deployment_name: this.deploymentName,
             email: props.securityAlarmsEmail
         });
 
         new PipelineDashboard(this, "pipeline_dashboard", {
-            namePrefix: this.prefix,
+            namePrefix: this.deploymentName,
             services: [
                 // Order here is important - the idea is that this dashboard will help Grapl operators
                 // quickly determine which service in the pipeline is failing.

@@ -22,17 +22,17 @@ export class EngagementCreator extends cdk.NestedStack {
     ) {
         super(scope, id);
 
-        const bucket_prefix = props.prefix.toLowerCase();
+        const deployment_name = props.deploymentName.toLowerCase();
         const analyzer_matched_sugraphs = new EventEmitter(
             this,
-            bucket_prefix + '-analyzer-matched-subgraphs'
+            deployment_name + '-analyzer-matched-subgraphs'
         );
         this.bucket = analyzer_matched_sugraphs.bucket;
 
         this.service = new Service(this, id, {
-            prefix: props.prefix,
+            deploymentName: props.deploymentName,
             environment: {
-                GRAPL_LOG_LEVEL: props.analyzerExecutorLogLevel,
+                GRAPL_LOG_LEVEL: props.logLevels.analyzerExecutorLogLevel,
                 MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
             },
             vpc: props.vpc,

@@ -1,6 +1,6 @@
-use derive_dynamic_node::{GraplNode,
-                          GraplSessionId,
-                          GraplStaticId};
+use derive_dynamic_node::{GraplSessionId,
+                          GraplStaticId,
+                          NodeDescription};
 use grapl_graph_descriptions::graph_description::*;
 use log::info;
 use serde_derive::Deserialize;
@@ -9,15 +9,15 @@ fn read_log() -> &'static [u8] {
     unimplemented!()
 }
 
-#[derive(GraplNode, GraplSessionId)]
+#[derive(NodeDescription, GraplSessionId)]
 pub struct SpecialProcess {
-    #[grapl(created_time)]
+    #[grapl(create_time, immutable)]
     pub create_time: u64,
-    #[grapl(last_seen_time)]
+    #[grapl(last_seen_time, increment)]
     pub seen_at: u64,
-    #[grapl(terminated_time)]
+    #[grapl(terminate_time, immutable)]
     pub terminate_time: u64,
-    #[grapl(pseudo_key)]
+    #[grapl(pseudo_key, immutable)]
     pub process_id: u64,
 }
 
@@ -38,24 +38,24 @@ struct InstanceDetails {
 }
 
 #[allow(dead_code)]
-#[derive(GraplNode, GraplStaticId)]
+#[derive(NodeDescription, GraplStaticId)]
 pub struct AwsEc2Instance {
-    #[grapl(static_id)]
+    #[grapl(static_id, immutable)]
     arn: String,
-    #[grapl(static_id)]
+    #[grapl(static_id, immutable)]
     launch_time: u64,
 }
 
 impl IAwsEc2InstanceNode for AwsEc2InstanceNode {
-    fn get_mut_dynamic_node(&mut self) -> &mut DynamicNode {
+    fn get_mut_dynamic_node(&mut self) -> &mut NodeDescription {
         &mut self.dynamic_node
     }
 
-    fn get_dynamic_node(&self) -> &DynamicNode {
+    fn get_dynamic_node(&self) -> &NodeDescription {
         &self.dynamic_node
     }
 
-    fn with_arn(&mut self, arn: impl Into<String>) -> &mut Self {
+    fn with_arn(&mut self, arn: impl Into<ImmutableStrProp>) -> &mut Self {
         info!("custom arn handler");
         self.get_mut_dynamic_node().set_property("arn", arn.into());
         self
@@ -67,14 +67,12 @@ fn main() {
 
     let log: InstanceDetails = serde_json::from_slice(raw_guard_duty_alert).unwrap();
 
-    let mut ec2 = AwsEc2InstanceNode::new(AwsEc2InstanceNode::static_strategy(), log.launch_time);
+    let mut ec2 = AwsEc2InstanceNode::new(AwsEc2InstanceNode::static_strategy());
     ec2.with_arn(log.arn).with_launch_time(log.launch_time);
-    ec2.with_asset_id("".to_string());
 
-    let _launch_time: u64 = ec2.get_launch_time().expect("Couldn't find launch_time!");
-    let _arn: &str = ec2.get_arn().expect("Couldn't find arn!");
-    // println!("arn: {}\t with launch time: {}", _arn, _launch_time);
+    let _launch_time = ec2.get_launch_time().expect("Couldn't find launch_time!");
+    let _arn = ec2.get_arn().expect("Couldn't find arn!");
 
-    let mut graph = Graph::new(log.launch_time);
+    let mut graph = GraphDescription::new();
     graph.add_node(ec2);
 }

@@ -56,17 +56,17 @@ impl FromEnv<CloudWatchClient> for CloudWatchClient {
             ) => CloudWatchClient::new_with(
                 HttpClient::new().expect("failed to create request dispatcher"),
                 rusoto_credential::StaticProvider::new_minimal(
-                    cloudwatch_access_key_id.to_owned(),
-                    cloudwatch_access_key_secret.to_owned(),
+                    cloudwatch_access_key_id,
+                    cloudwatch_access_key_secret,
                 ),
                 Region::Custom {
-                    name: region_name.to_string(),
-                    endpoint: cloudwatch_endpoint.to_string(),
+                    name: region_name,
+                    endpoint: cloudwatch_endpoint,
                 },
             ),
             (Some(cloudwatch_endpoint), None, None) => CloudWatchClient::new(Region::Custom {
-                name: region_name.to_string(),
-                endpoint: cloudwatch_endpoint.to_string(),
+                name: region_name,
+                endpoint: cloudwatch_endpoint,
             }),
             (None, None, None) => CloudWatchClient::new(crate::region()),
             _ => {
@@ -95,17 +95,17 @@ impl FromEnv<DynamoDbClient> for DynamoDbClient {
             ) => DynamoDbClient::new_with(
                 HttpClient::new().expect("failed to create request dispatcher"),
                 rusoto_credential::StaticProvider::new_minimal(
-                    dynamodb_access_key_id.to_owned(),
-                    dynamodb_access_key_secret.to_owned(),
+                    dynamodb_access_key_id,
+                    dynamodb_access_key_secret,
                 ),
                 Region::Custom {
-                    name: region_name.to_string(),
-                    endpoint: dynamodb_endpoint.to_string(),
+                    name: region_name,
+                    endpoint: dynamodb_endpoint,
                 },
             ),
             (Some(dynamodb_endpoint), None, None) => DynamoDbClient::new(Region::Custom {
-                name: region_name.to_string(),
-                endpoint: dynamodb_endpoint.to_string(),
+                name: region_name,
+                endpoint: dynamodb_endpoint,
             }),
             (None, None, None) => DynamoDbClient::new(crate::region()),
             _ => {
@@ -134,18 +134,18 @@ impl FromEnv<SqsClient> for SqsClient {
                 SqsClient::new_with(
                     HttpClient::new().expect("failed to create request dispatcher"),
                     rusoto_credential::StaticProvider::new_minimal(
-                        sqs_access_key_id.to_owned(),
-                        sqs_access_key_secret.to_owned(),
+                        sqs_access_key_id,
+                        sqs_access_key_secret,
                     ),
                     Region::Custom {
-                        name: region_name.to_string(),
-                        endpoint: sqs_endpoint.to_string(),
+                        name: region_name,
+                        endpoint: sqs_endpoint,
                     },
                 )
             }
             (Some(sqs_endpoint), None, None) => SqsClient::new(Region::Custom {
-                name: region_name.to_string(),
-                endpoint: sqs_endpoint.to_string(),
+                name: region_name,
+                endpoint: sqs_endpoint,
             }),
             (None, None, None) => SqsClient::new(crate::region()),
             _ => {
@@ -159,8 +159,8 @@ impl FromEnv<SqsClient> for SqsClient {
 pub fn init_s3_client(region_name: &str) -> S3Client {
     let region = match std::env::var("S3_ENDPOINT").ok() {
         Some(custom_endpoint) => Region::Custom {
-            name: region_name.to_string(),
-            endpoint: custom_endpoint.to_string(),
+            name: region_name.to_owned(),
+            endpoint: custom_endpoint,
         },
         None => Region::from_str(&region_name)
             .unwrap_or_else(|e| panic!("Invalid region name: {:?} {:?}", region_name, e)),
@@ -183,8 +183,8 @@ pub fn init_s3_client(region_name: &str) -> S3Client {
             S3Client::new_with(
                 HttpClient::new().expect("failed to create request dispatcher"),
                 rusoto_credential::StaticProvider::new_minimal(
-                    s3_access_key_id.to_owned(),
-                    s3_access_key_secret.to_owned(),
+                    s3_access_key_id,
+                    s3_access_key_secret,
                 ),
                 region,
             )
@@ -219,18 +219,18 @@ impl FromEnv<S3Client> for S3Client {
                 S3Client::new_with(
                     HttpClient::new().expect("failed to create request dispatcher"),
                     rusoto_credential::StaticProvider::new_minimal(
-                        s3_access_key_id.to_owned(),
-                        s3_access_key_secret.to_owned(),
+                        s3_access_key_id,
+                        s3_access_key_secret,
                     ),
                     Region::Custom {
-                        name: region_name.to_string(),
-                        endpoint: s3_endpoint.to_string(),
+                        name: region_name,
+                        endpoint: s3_endpoint,
                     },
                 )
             }
             (Some(s3_endpoint), None, None) => S3Client::new(Region::Custom {
-                name: region_name.to_string(),
-                endpoint: s3_endpoint.to_string(),
+                name: region_name,
+                endpoint: s3_endpoint,
             }),
             (None, None, None) => S3Client::new(crate::region()),
             _ => {

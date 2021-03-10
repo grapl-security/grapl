@@ -1,9 +1,12 @@
 use std::convert::TryFrom;
 
-use grapl_graph_descriptions::{file::FileState,
-                               graph_description::*,
-                               node::NodeT,
-                               process::ProcessState};
+use endpoint_plugin::{AssetNode,
+                      FileNode,
+                      IAssetNode,
+                      IFileNode,
+                      IProcessNode,
+                      ProcessNode};
+use grapl_graph_descriptions::graph_description::*;
 use serde::{Deserialize,
             Serialize};
 
@@ -26,17 +29,17 @@ pub(crate) struct OSQueryProcessQuery {
 }
 
 impl PartiallyDeserializedOSQueryLog {
-    pub(crate) fn to_graph_from_grapl_processes(self) -> Result<Graph, failure::Error> {
+    pub(crate) fn to_graph_from_grapl_processes(self) -> Result<GraphDescription, failure::Error> {
         OSQueryResponse::<OSQueryProcessQuery>::try_from(self)
-            .map(|response| Graph::try_from(response))?
+            .map(|response| GraphDescription::try_from(response))?
     }
 }
 
-impl TryFrom<OSQueryResponse<OSQueryProcessQuery>> for Graph {
+impl TryFrom<OSQueryResponse<OSQueryProcessQuery>> for GraphDescription {
     type Error = failure::Error;
 
     fn try_from(process_event: OSQueryResponse<OSQueryProcessQuery>) -> Result<Self, Self::Error> {
-        let mut graph = Graph::new(process_event.unix_time);
+        let mut graph = GraphDescription::new();
 
         // this field can be -1 in cases of error
         // https://osquery.io/schema/4.5.1/#processes
@@ -46,31 +49,25 @@ impl TryFrom<OSQueryResponse<OSQueryProcessQuery>> for Graph {
             process_event.columns.time as u64
         };
 
-        let asset = AssetBuilder::default()
-            .asset_id(process_event.host_identifier.clone())
-            .hostname(process_event.host_identifier.clone())
-            .build()
-            .map_err(failure::err_msg)?;
+        let mut asset = AssetNode::new(AssetNode::static_strategy());
+        asset
+            .with_asset_id(process_event.host_identifier.clone())
+            .with_hostname(process_event.host_identifier.clone());
 
-        let child = ProcessBuilder::default()
-            .asset_id(process_event.host_identifier.clone())
-            .hostname(process_event.host_identifier.clone())
-            .state(ProcessState::Created)
-            .created_timestamp(process_start_time)
-            .last_seen_timestamp(process_start_time)
-            .process_name(process_event.columns.name.clone().unwrap_or("".to_string()))
-            .process_id(process_event.columns.pid)
-            .build()
-            .map_err(failure::err_msg)?;
+        let mut child = ProcessNode::new(ProcessNode::session_strategy());
+        child
+            .with_asset_id(process_event.host_identifier.clone())
+            .with_created_timestamp(process_start_time)
+            .with_last_seen_timestamp(process_start_time)
+            .with_process_name(process_event.columns.name.clone().unwrap_or("".to_string()))
+            .with_process_id(process_event.columns.pid);
 
         if !process_event.columns.path.is_empty() {
-            let child_exe = FileBuilder::default()
-                .asset_id(process_event.host_identifier.clone())
-                .file_path(process_event.columns.path.clone())
-                .state(FileState::Existing)
-                .last_seen_timestamp(process_start_time)
-                .build()
-                .map_err(failure::err_msg)?;
+            let mut child_exe = FileNode::new(FileNode::session_strategy());
+            child_exe
+                .with_asset_id(process_event.host_identifier.clone())
+                .with_file_path(process_event.columns.path.clone())
+                .with_last_seen_timestamp(process_start_time);
 
             graph.add_edge(
                 "bin_file",
@@ -90,14 +87,11 @@ impl TryFrom<OSQueryResponse<OSQueryProcessQuery>> for Graph {
         // OSQuery can record -1 for ppid if a parent is not able to be determined
         // https://osquery.io/schema/4.5.1/#process_events
         if process_event.columns.parent >= 0 {
-            let parent_process = ProcessBuilder::default()
-                .asset_id(process_event.host_identifier.clone())
-                .hostname(process_event.host_identifier.clone())
-                .state(ProcessState::Existing)
-                .process_id(process_event.columns.parent as u64)
-                .last_seen_timestamp(process_start_time)
-                .build()
-                .map_err(failure::err_msg)?;
+            let mut parent_process = ProcessNode::new(ProcessNode::session_strategy());
+            parent_process
+                .with_asset_id(process_event.host_identifier.clone())
+                .with_process_id(process_event.columns.parent as u64)
+                .with_last_seen_timestamp(process_start_time);
 
             graph.add_edge(
                 "children",

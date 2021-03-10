@@ -9,7 +9,7 @@ To get started, you'll need to install the following dependencies:
 - Node
 - Typescript
 - AWS CDK: `npm i -g aws-cdk@X.Y.Z` 
-  - version must be >= the version in [Grapl's package.json file](https://github.com/grapl-security/grapl/blob/master/src/js/grapl-cdk/package.json) - for instance, `@1.71.0`
+  - version must be >= the version in [Grapl's package.json file](https://github.com/grapl-security/grapl/blob/main/src/js/grapl-cdk/package.json) - for instance, `@1.71.0`
 - AWS CLI: `pip install awscli`
 
 You'll also need to have local AWS credentials, and a configuration profile. Instructions [here](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html).
@@ -149,17 +149,22 @@ You can send some test data up to the service by going to the root of the grapl 
 ```bash
 cd $GRAPL_ROOT
 
-# whatever deployment name you defined above
-export GRAPL_DEPLOYMENT_NAME="Grapl-MYDEPLOYMENT"
-
 # upload analyzers
-BUCKET_PREFIX=$GRAPL_DEPLOYMENT_NAME etc/aws/upload_analyzer_prod.sh
+etc/aws/upload_analyzer_prod.sh
+
 # upload logs
+AWS_REGION=$GRAPL_REGION \ 
 python3 etc/local_grapl/bin/upload-sysmon-logs.py \
-  --bucket_prefix $GRAPL_DEPLOYMENT_NAME \
+  --deployment_name $GRAPL_DEPLOYMENT_NAME \
   --logfile etc/sample_data/eventlog.xml 
 ```
 
 *Note that this will likely impose charges to your AWS account.*
 
-To use the Grapl UX you must navigate to the `index.html` in the grapl ux bucket.
+You can then view the progress of this data flowing through your deployment
+by looking at the Cloudwatch Dashboard named 
+`{GRAPL_DEPLOYMENT_NAME}-PipelineDashboard`.
+
+### Accessing the Grapl UX (Engagement Edge)
+You can find the base url in `src/js/grapl-cdk/cdk-output.json`; just append
+a `/index.html` to the URL in that file.

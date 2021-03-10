@@ -2,12 +2,11 @@ import json
 import unittest
 from typing import Dict, Type, Any
 
-from grapl_analyzerlib.node_types import PropType
-from grapl_analyzerlib.viewable import Viewable
 from grapl_analyzerlib.grapl_client import GraphClient
+from grapl_analyzerlib.viewable import Viewable
 
 
-def _upsert(client: GraphClient, node_dict: Dict[str, Any]) -> str:
+def _upsert(client: GraphClient, node_dict: Dict[str, Any]) -> int:
     node_dict["uid"] = "_:blank-0"
     node_key = node_dict["node_key"]
     query = f"""
@@ -34,8 +33,7 @@ def _upsert(client: GraphClient, node_dict: Dict[str, Any]) -> str:
 
         if new_uid is None:
             new_uid = uids["blank-0"]
-        if isinstance(new_uid, str):
-            return int(new_uid, 16)
+        return int(new_uid, 16)
 
 
 def upsert(

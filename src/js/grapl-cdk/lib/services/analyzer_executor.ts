@@ -26,10 +26,10 @@ export class AnalyzerExecutor extends cdk.NestedStack {
     ) {
         super(scope, id);
 
-        const bucket_prefix = props.prefix.toLowerCase();
+        const deployment_name = props.deploymentName.toLowerCase();
         const dispatched_analyzer = new EventEmitter(
             this,
-            bucket_prefix + '-dispatched-analyzer'
+            deployment_name + '-dispatched-analyzer'
         );
         this.sourceBucket = dispatched_analyzer.bucket;
 
@@ -38,10 +38,10 @@ export class AnalyzerExecutor extends cdk.NestedStack {
         const message_cache = new RedisCluster(this, 'ExecutorMsgCache', props);
 
         this.service = new FargateService(this, id, {
-                prefix: props.prefix,
+                deploymentName: props.deploymentName,
                 environment: {
                     ANALYZER_MATCH_BUCKET: props.writesTo.bucketName,
-                    BUCKET_PREFIX: bucket_prefix,
+                    DEPLOYMENT_NAME: deployment_name,
                     MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
                     COUNTCACHE_ADDR: count_cache.cluster.attrRedisEndpointAddress,
                     COUNTCACHE_PORT: count_cache.cluster.attrRedisEndpointPort,
@@ -50,7 +50,7 @@ export class AnalyzerExecutor extends cdk.NestedStack {
                     MESSAGECACHE_PORT: message_cache.cluster.attrRedisEndpointPort,
                     HITCACHE_ADDR: hit_cache.cluster.attrRedisEndpointAddress,
                     HITCACHE_PORT: hit_cache.cluster.attrRedisEndpointPort,
-                    GRAPL_LOG_LEVEL: props.analyzerExecutorLogLevel,
+                    GRAPL_LOG_LEVEL: props.logLevels.analyzerExecutorLogLevel,
                     GRPC_ENABLE_FORK_SUPPORT: '1',
                 },
                 vpc: props.vpc,

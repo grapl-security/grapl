@@ -18,7 +18,6 @@ import LensAndNodeTableContainer from "./sidebar/LensAndNodeTableContainer";
 import { LoginNotification } from "../reusableComponents";
 import { checkLogin } from "../../services/login/checkLoginService";
 import { useStyles } from "../graphDisplay/GraphDisplayStyles";
-
 type EngagementViewProps = {
 	setLens: (lens: string) => void;
 	curLens: string;

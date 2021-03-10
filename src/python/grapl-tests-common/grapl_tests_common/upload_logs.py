@@ -100,7 +100,7 @@ class OSQueryGeneratorOptions(GeneratorOptions):
 
 
 def upload_logs(
-    prefix: str,
+    deployment_name: str,
     logfile: str,
     generator_options: GeneratorOptions,
     delay: int = 0,
@@ -112,12 +112,12 @@ def upload_logs(
     set `batch_size` to None to disable batching
     """
     print(
-        f"Writing events to {prefix} with {delay} seconds between batches of {batch_size}"
+        f"Writing events to {deployment_name} with {delay} seconds between batches of {batch_size}"
     )
 
     # Ugly hack to cheaply disable batching
     batch_size = batch_size if batch_size is not None else maxsize
-    requires_manual_eventing = prefix == "local-grapl"
+    requires_manual_eventing = deployment_name == "local-grapl"
     s3 = s3_client or S3ClientFactory(boto3).from_env()
     sqs = sqs_client or SQSClientFactory(boto3).from_env()
 
@@ -128,7 +128,7 @@ def upload_logs(
     def chunker(seq: List[bytes], size: int) -> Iterator[List[bytes]]:
         return (seq[pos : pos + size] for pos in range(0, len(seq), size))
 
-    bucket = f"{prefix}-{generator_options.bucket_suffix}"
+    bucket = f"{deployment_name}-{generator_options.bucket_suffix}"
 
     chunk_count = 0
     for chunk in chunker(body, batch_size):
@@ -158,7 +158,7 @@ def upload_logs(
 
 
 def upload_sysmon_logs(
-    prefix: str,
+    deployment_name: str,
     logfile: str,
     delay: int = 0,
     batch_size: int = 100,
@@ -167,7 +167,7 @@ def upload_sysmon_logs(
 ) -> None:
 
     upload_logs(
-        prefix=prefix,
+        deployment_name=deployment_name,
         logfile=logfile,
         generator_options=SysmonGeneratorOptions(),
         delay=delay,
@@ -178,7 +178,7 @@ def upload_sysmon_logs(
 
 
 def upload_osquery_logs(
-    prefix: str,
+    deployment_name: str,
     logfile: str,
     delay: int = 0,
     batch_size: int = 100,
@@ -186,7 +186,7 @@ def upload_osquery_logs(
     sqs_client: Optional[SQSClient] = None,
 ) -> None:
     upload_logs(
-        prefix=prefix,
+        deployment_name=deployment_name,
         logfile=logfile,
         generator_options=OSQueryGeneratorOptions(),
         delay=delay,

@@ -1,12 +1,14 @@
 use std::convert::TryFrom;
 
-use grapl_graph_descriptions::{file::FileState,
-                               graph_description::*,
-                               node::NodeT,
-                               process::ProcessState};
+use endpoint_plugin::{AssetNode,
+                      FileNode,
+                      IAssetNode,
+                      IFileNode,
+                      IProcessNode,
+                      ProcessNode};
+use grapl_graph_descriptions::graph_description::*;
 use serde::{Deserialize,
             Serialize};
-use tracing::*;
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct FileCreate {
@@ -17,33 +19,28 @@ pub struct FileCreate {
     timestamp: u64,
 }
 
-impl TryFrom<FileCreate> for Graph {
+impl TryFrom<FileCreate> for GraphDescription {
     type Error = String;
 
     fn try_from(file_create: FileCreate) -> Result<Self, Self::Error> {
-        let asset = AssetBuilder::default()
-            .hostname(file_create.hostname.clone())
-            .asset_id(file_create.hostname.clone())
-            .build()?;
+        let mut asset = AssetNode::new(AssetNode::static_strategy());
+        asset
+            .with_hostname(file_create.hostname.clone())
+            .with_asset_id(file_create.hostname.clone());
 
-        let creator = ProcessBuilder::default()
-            .hostname(file_create.hostname.clone())
-            .process_name(file_create.creator_process_name.unwrap_or_default())
-            .state(ProcessState::Existing)
-            .process_id(file_create.creator_process_id)
-            .last_seen_timestamp(file_create.timestamp)
-            .build()?;
+        let mut creator = ProcessNode::new(ProcessNode::session_strategy());
+        creator
+            .with_asset_id(file_create.hostname.clone())
+            .with_process_name(file_create.creator_process_name.unwrap_or_default())
+            .with_process_id(file_create.creator_process_id)
+            .with_last_seen_timestamp(file_create.timestamp);
 
-        let file = FileBuilder::default()
-            .hostname(file_create.hostname)
-            .state(FileState::Created)
-            .created_timestamp(file_create.timestamp)
-            .file_path(file_create.path)
-            .build()?;
+        let mut file = FileNode::new(FileNode::session_strategy());
+        file.with_asset_id(file_create.hostname.clone())
+            .with_created_timestamp(file_create.timestamp)
+            .with_file_path(file_create.path);
 
-        info!("file {}", file.clone().into_json());
-
-        let mut graph = Graph::new(file_create.timestamp);
+        let mut graph = GraphDescription::new();
 
         graph.add_edge(
             "created_files",

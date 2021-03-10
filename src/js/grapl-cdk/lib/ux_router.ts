@@ -21,11 +21,11 @@ export class UxRouter extends cdk.NestedStack {
         const ux_bucket = s3.Bucket.fromBucketName(
             this,
             'uxBucket',
-            props.prefix.toLowerCase() + '-engagement-ux-bucket'
+            props.deploymentName.toLowerCase() + '-engagement-ux-bucket'
         );
 
-        const serviceName = props.prefix + '-UxRouter';
-        this.name = id + props.prefix;
+        const serviceName = props.deploymentName + '-UxRouter';
+        this.name = id + props.deploymentName;
 
         this.event_handler = new lambda.Function(this, 'Handler', {
             runtime: lambda.Runtime.PYTHON_3_7,

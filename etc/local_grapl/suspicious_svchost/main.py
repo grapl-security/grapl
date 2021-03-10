@@ -32,7 +32,9 @@ class SuspiciousSvchost(Analyzer):
                 analyzer_name="Suspicious svchost",
                 node_view=response,
                 risk_score=75,
-                lenses=[("hostname", asset_id)],
+                lenses=[
+                    ("hostname", asset_id),
+                ],
                 risky_node_keys=[
                     # the asset and the process
                     response.get_asset().node_key,

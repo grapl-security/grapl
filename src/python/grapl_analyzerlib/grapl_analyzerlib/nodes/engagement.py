@@ -54,6 +54,7 @@ def stripped_node_to_query(node: Dict[str, Union[str, int]]) -> str:
     func_filter = f'eq(node_key, "{node["node_key"]}")'
     return f"""
         {{
+            # stripped_node_to_query
             res(func: {func_filter}, first: 1) {{
                 uid,
                 node_key,

@@ -7,8 +7,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     branches:
-      - staging
-      - master
+      - main
 
 jobs:
   proto-lint:
@@ -28,13 +27,9 @@ jobs:
         # We use the full URL instead of just ".git" here because we
         # just shallow-clone in Github Actions, so we aren't going to
         # have the staging branch locally.
-        #
-        # NB: This branch will have to change when
-        # https://github.com/grapl-security/issue-tracker/issues/224
-        # is addressed
         run: |
           etc/install_buf.sh
-          ./buf breaking --against="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git#branch=staging"
+          ./buf breaking --against="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git#branch=main"
 
   rust-format:
     runs-on: ubuntu-latest

@@ -8,6 +8,7 @@ try:
 except:
     pass
 
+import os
 import time
 import string
 import boto3
@@ -61,18 +62,18 @@ def into_sqs_message(bucket: str, key: str) -> str:
     )
 
 
-def main(prefix, logfile):
-    print(f"Writing events to {prefix}")
+def main(deployment_name, logfile):
+    print(f"Writing events to {deployment_name}")
     sqs = None
-    # local-grapl prefix is reserved for running Grapl locally
-    if prefix == "local-grapl":
+    # local-grapl deployment_name is reserved for running Grapl locally
+    if deployment_name == "local-grapl":
         s3 = boto3.client(
             "s3",
-            endpoint_url="http://localhost:9000",
-            aws_access_key_id="minioadmin",
-            aws_secret_access_key="minioadmin",
+            endpoint_url=os.environ["S3_ENDPOINT"],
+            aws_access_key_id=os.environ["S3_ACCESS_KEY_ID"],
+            aws_secret_access_key=os.environ["S3_ACCESS_KEY_SECRET"],
         )
-        sqs = boto3.client("sqs", endpoint_url="http://localhost:9324")
+        sqs = boto3.client("sqs", endpoint_url=os.environ["SQS_ENDPOINT"])
 
     else:
         s3 = boto3.client("s3")
@@ -96,13 +97,15 @@ def main(prefix, logfile):
             + rand_str(3)
         )
 
-        s3.put_object(Body=c_body, Bucket="{}-raw-log-bucket".format(prefix), Key=key)
+        s3.put_object(
+            Body=c_body, Bucket="{}-raw-log-bucket".format(deployment_name), Key=key
+        )
         # local-grapl relies on manual eventing
         if sqs:
             sqs.send_message(
-                QueueUrl="http://localhost:9324/queue/grapl-generic-graph-generator-queue",
+                QueueUrl=f"{os.environ['SQS_ENDPOINT']}/queue/grapl-generic-graph-generator-queue",
                 MessageBody=into_sqs_message(
-                    bucket="{}-sysmon-log-bucket".format(prefix), key=key
+                    bucket="{}-sysmon-log-bucket".format(deployment_name), key=key
                 ),
             )
     print(time.ctime())
@@ -110,7 +113,7 @@ def main(prefix, logfile):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Send generic logs to Grapl")
-    parser.add_argument("--bucket_prefix", dest="bucket_prefix", required=True)
+    parser.add_argument("--deployment_name", dest="deployment_name", required=True)
     parser.add_argument("--logfile", dest="logfile", required=True)
     return parser.parse_args()
 
@@ -118,4 +121,4 @@ def parse_args():
 if __name__ == "__main__":
 
     args = parse_args()
-    main(args.bucket_prefix, args.logfile)
+    main(args.deployment_name, args.logfile)

@@ -257,7 +257,7 @@ CMD source venv/bin/activate && \
 FROM engagement-edge-build AS engagement-edge-test
 
 ENV IS_LOCAL=True
-ENV BUCKET_PREFIX=local-grapl
+ENV DEPLOYMENT_NAME=local-grapl
 ENV UX_BUCKET_URL="ux_bucket_url"
 
 ## Install test requirements
@@ -278,7 +278,13 @@ RUN source venv/bin/activate && \
 FROM grapl-python-build AS grapl-ux-router-build
 
 COPY --chown=grapl python/grapl-ux-router grapl-ux-router
-# COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
+COPY --chown=grapl --from=grapl-common-build /home/grapl/grapl-common grapl-common
+
+# Install requirement `grapl_common` - we could also manually COPY the `venv/site_packages`,
+# but the pip install is cleaner.
+RUN source venv/bin/activate && \
+    cd grapl-common && \
+    pip install .
 
 RUN source venv/bin/activate && \
     cd grapl-ux-router && \
