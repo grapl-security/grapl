@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from typing import ContextManager
 from unittest.mock import Mock, patch
 
@@ -48,8 +49,11 @@ def _return_fake_queues(mock_session: Mock) -> None:
     }
 
 
+@contextmanager
 def _patch_boto3_session() -> ContextManager[Mock]:
-    return patch.object(
-        cli,
-        "SESSION",
-    )
+    with patch.object(cli, "os"):
+        with patch.object(
+            cli,
+            "SESSION",
+        ) as p_session:
+            yield p_session
