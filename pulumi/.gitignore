@@ -1,0 +1,3 @@
+# Assuming that you have set up a stack for your own AWS sandbox named
+# `${YOUR_NAME}-sandbox`, we'll ignore that stack.
+Pulumi.*-sandbox.yaml

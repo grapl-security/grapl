@@ -138,15 +138,15 @@ services:
     tty: false
     environment:
       <<: *aws-region
-      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-sysmon-graph-generator-dead-letter-queue"
+      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-sysmon-generator-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-unid-subgraphs-generated-bucket"
-      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-queue"
+      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-queue"
       EVENT_CACHE_CLUSTER_ADDRESS: "${REDIS_HOST}:${REDIS_PORT}"
       IS_LOCAL: "True"
       <<: *log-level
-      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/000000000000/grapl-sysmon-graph-generator-retry-queue"
+      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/000000000000/${DEPLOYMENT_NAME}-sysmon-generator-retry-queue"
       <<: *s3-env
-      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/000000000000/grapl-sysmon-graph-generator-queue"
+      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/000000000000/${DEPLOYMENT_NAME}-sysmon-generator-queue"
       <<: *sqs-env
       <<: *rust-backtrace
     depends_on:
@@ -161,15 +161,15 @@ services:
     environment:
       <<: *aws-region
       DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
-      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-osquery-graph-generator-dead-letter-queue"
+      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-unid-subgraphs-generated-bucket"
-      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-queue"
+      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-queue"
       EVENT_CACHE_CLUSTER_ADDRESS: "${REDIS_HOST}:${REDIS_PORT}"
       IS_LOCAL: "True"
       <<: *log-level
-      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-osquery-graph-generator-retry-queue"
+      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-retry-queue"
       <<: *s3-env
-      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-osquery-graph-generator-queue"
+      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-queue"
       <<: *sqs-env
       <<: *rust-backtrace
     depends_on:
@@ -182,17 +182,17 @@ services:
     image: grapl/grapl-node-identifier:${TAG:-latest}
     environment:
       <<: *aws-region
-      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-dead-letter-queue"
+      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-subgraphs-generated-bucket"
-      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-merger-queue"
+      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-queue"
       <<: *dynamodb-env
       <<: *dynamodb-mapping-tables
       EVENT_CACHE_CLUSTER_ADDRESS: "${REDIS_HOST}:${REDIS_PORT}"
       IS_LOCAL: "true"
       <<: *log-level
-      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-retry-queue"
+      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-retry-queue"
       <<: *s3-env
-      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-queue"
+      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-queue"
       <<: *sqs-env
       <<: *rust-backtrace
     tty: false
@@ -206,17 +206,17 @@ services:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
     environment:
       <<: *aws-region
-      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-dead-letter-queue"
+      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-subgraphs-generated-bucket"
-      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-merger-queue"
+      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-queue"
       <<: *dynamodb-env
       <<: *dynamodb-mapping-tables
       EVENT_CACHE_CLUSTER_ADDRESS: "${REDIS_HOST}:${REDIS_PORT}"
       IS_LOCAL: "True"
       <<: *log-level
-      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-dead-letter-queue"
+      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
       <<: *s3-env
-      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-retry-queue"
+      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-retry-queue"
       <<: *sqs-env
       <<: *rust-backtrace
     tty: false
@@ -230,18 +230,18 @@ services:
     image: grapl/grapl-graph-merger:${TAG:-latest}
     environment:
       <<: *aws-region
-      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-merger-dead-letter-queue"
+      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-subgraphs-merged-bucket"
-      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-dispatcher-queue"
+      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-queue"
       <<: *dgraph-env
       <<: *dynamodb-env
       EVENT_CACHE_CLUSTER_ADDRESS: "${REDIS_HOST}:${REDIS_PORT}"
       GRAPL_SCHEMA_TABLE: "${DEPLOYMENT_NAME}-grapl_schema_table"
       IS_LOCAL: "True"
       <<: *log-level
-      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-merger-retry-queue"
+      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-retry-queue"
       <<: *s3-env
-      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-merger-queue"
+      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-queue"
       <<: *sqs-env
       <<: *rust-backtrace
     tty: false
@@ -258,14 +258,14 @@ services:
       ANALYZER_BUCKET: "${DEPLOYMENT_NAME}-analyzers-bucket"
       ANALYZERS_BUCKET: "${DEPLOYMENT_NAME}-analyzers-bucket"
       <<: *aws-region
-      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-dispatcher-dead-letter-queue"
-      DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-analyzer-dispatched-bucket"
-      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-executor-queue"
+      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-dead-letter-queue"
+      DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-dispatched-analyzer-bucket"
+      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-executor-queue"
       IS_LOCAL: "true"
       <<: *log-level
-      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-dispatcher-retry-queue"
+      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-retry-queue"
       <<: *s3-env
-      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-dispatcher-queue"
+      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-queue"
       <<: *sqs-env
       <<: *rust-backtrace
     tty: false
@@ -292,9 +292,9 @@ services:
       <<: *log-level
       MESSAGECACHE_ADDR: "${REDIS_HOST}"
       MESSAGECACHE_PORT: "${REDIS_PORT}"
-      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-executor-retry-queue"
+      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-executor-retry-queue"
       <<: *s3-env
-      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-executor-queue"
+      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-executor-queue"
       <<: *sqs-env
     tty: true
     ports:

@@ -22,6 +22,7 @@ export EVERY_COMPOSE_FILE=-f docker-compose.yml \
 	-f docker-compose.zips.yml
 
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
+VERBOSE_PANTS := PEX_VERBOSE=5 ./pants -ldebug
 
 # Our `docker-compose.yml` file declares the setup of a "local Grapl"
 # environment, which can be used to locally exercise a Grapl system,
@@ -147,7 +148,7 @@ test-typecheck-pulumi: ## Typecheck Pulumi Python code
 
 .PHONY: test-typecheck-build-support
 test-typecheck-build-support: ## Typecheck build-support Python code
-	./pants typecheck build-support::
+	$(VERBOSE_PANTS) typecheck build-support::
 
 # Right now, we're only typechecking a select portion of code with
 # Pants until CM fixes https://github.com/pantsbuild/pants/issues/11553

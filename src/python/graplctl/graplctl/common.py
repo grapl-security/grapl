@@ -5,10 +5,17 @@ import logging
 import os
 import sys
 import time
-from typing import Dict, Iterator, List, Tuple
+from typing import TYPE_CHECKING, Dict, Iterator, List, Tuple
 
-import mypy_boto3_ec2.service_resource as ec2_resources
-from mypy_boto3_ssm.client import SSMClient
+import click
+
+if TYPE_CHECKING:
+    import mypy_boto3_ec2.service_resource as ec2_resources
+    from mypy_boto3_cloudwatch.client import CloudWatchClient
+    from mypy_boto3_ec2 import EC2ServiceResource
+    from mypy_boto3_route53 import Route53Client
+    from mypy_boto3_sns import SNSClient
+    from mypy_boto3_ssm.client import SSMClient
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
@@ -19,6 +26,23 @@ IN_PROGRESS_STATUSES = {
     "InProgress",
     "Delayed",
 }
+
+
+@dataclasses.dataclass
+class GraplctlState:
+    grapl_region: str
+    grapl_deployment_name: str
+    grapl_version: str
+    aws_profile: str
+    ec2: EC2ServiceResource
+    ssm: SSMClient
+    cloudwatch: CloudWatchClient
+    sns: SNSClient
+    route53: Route53Client
+
+
+# Prefer this to `pass_obj`
+pass_graplctl_state = click.make_pass_decorator(GraplctlState)
 
 
 @dataclasses.dataclass
