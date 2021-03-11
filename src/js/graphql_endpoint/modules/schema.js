@@ -504,6 +504,8 @@ const RootQuery = new GraphQLObjectType({
 			resolve: async (parent, args) => {
 				try {
 					console.log("lens_scope args: ", args);
+					let response = await handleLensScope(parent, args);
+					console.log("lens_scope response: ", response);
 					return await handleLensScope(parent, args);
 				} catch (e) {
 					console.error("Error in handleLensScope: ", e);
