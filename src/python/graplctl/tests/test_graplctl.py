@@ -6,7 +6,7 @@ from click.testing import CliRunner
 from graplctl import __version__, cli
 
 
-def test_version():
+def test_version() -> None:
     assert __version__ == "0.1.0"
 
 
@@ -23,10 +23,6 @@ DEFAULT_ARGS = [
 def test_queues_ls() -> None:
     runner = CliRunner()
     with _patch_boto3_session() as mock_session:
-        # Importing here, because the import causes an `os.getenv`
-        # that we need to patch out. See the TODO above `SESSION =`
-        from graplctl import cli
-
         _return_fake_queues(mock_session)
         result = runner.invoke(cli.main, [*DEFAULT_ARGS, "queues", "ls"])
     assert result.exit_code == 0
@@ -55,12 +51,8 @@ def _return_fake_queues(mock_session: Mock) -> None:
 
 @contextmanager
 def _patch_boto3_session() -> ContextManager[Mock]:
-    # Patches primarily due to legacy constants at the top
-    # of cli.py
-    orig_session = cli.boto3.Session
     with patch.object(
-        cli.boto3,
-        cli.boto3.Session.__name__,
+        cli.boto3, cli.boto3.Session.__name__, spec_set=cli.boto3.Session
     ) as p_session_cls:
         session = Mock(name="Session instance")
         p_session_cls.return_value = session
