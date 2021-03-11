@@ -295,7 +295,7 @@ const getLenses = async (dg_client, first, offset) => {
 		}
 	`;
 
-	console.log("Creating DGraph transaction in getLenses");
+	console.log("Creating DGraph txn in getLenses");
 
 	const txn = dg_client.newTxn();
 
@@ -310,6 +310,7 @@ const getLenses = async (dg_client, first, offset) => {
 	} catch (e) {
 		console.error("Error in DGraph txn getLenses: ", e);
 	} finally {
+		console.log("Closing Dgraph Txn in getLenses")
 		await txn.discard();
 	}
 };
@@ -337,173 +338,38 @@ const getLensSubgraphByName = async (dg_client, lens_name) => {
 		}
     `;
 
-	console.log("Creating DGraph transaction in getLensSubgraphByName");
+	console.log("Creating DGraph txn in getLensSubgraphByName");
 	const txn = dg_client.newTxn();
 
 	try {
 		console.log("Querying DGraph in getLensSubgraphByName");
 		const res = await txn.queryWithVars(query, { $a: lens_name });
-		console.log("getLensSubgraphByName", res);
+		console.log("returning following data from getLensSubGrapByName: ", res.getJson()["all"][0])
 		return res.getJson()["all"][0];
 	} catch (e) {
 		console.error("Error in DGraph txn: getLensSubgraphByName", e);
 	} finally {
+		console.log("Closing dgraphtxn in getLensSubraphByName")
 		await txn.discard();
 	}
 };
 
-// return lens
-const getLensByName = async (dg_client, lensName) => {
-	const query = `
-    query all($a: string, $b: first, $c: offset)
-        {
-            all(func: eq(lens_name, $a), first: 1)
-            {
-                lens_name,
-                score,
-                node_key,
-                uid,
-                dgraph_type: dgraph.type,
-                lens_type,
-                scope @filter(has(node_key)) {
-                    uid,
-                    dgraph_type: dgraph.type,
-                    expand(_all_)
-                }
-            }
-        }
-    `;
-	console.log("creating dgraphtxn in getLensByName");
-	const txn = dg_client.newTxn();
-	try {
-		console.log("Querying DGraph for: getLensByName");
-		const res = await txn.queryWithVars(query, { $a: lensName });
-		console.log("getLensByName", res);
-		return res.getJson()["all"][0];
-	} catch (e) {
-		console.error("Error in DGraph txn: getLensByName", e);
-	} finally {
-		await txn.discard();
-	}
-};
-// Return base node
-const getNeighborsFromNode = async (dg_client, nodeUid) => {
-	const query = `
-    query all($a: string)
-    {
-        all(func: uid($a), first: 1)
-        {
-            uid,
-            dgraph_type
-            expand(_all_) {
-                uid,
-                dgraph_type: dgraph.type,
-                expand(_all_)
-            }
-        }
-    }`;
-	const txn = dg_client.newTxn();
-	try {
-		console.log("Querying DGraph for: getNeighborsFromNode");
-		const res = await txn.queryWithVars(query, { $a: nodeUid });
-		console.log("retrieving neighbors", res);
-		return res.getJson()["all"][0];
-	} catch (e) {
-		console.error("Error in DGraph txn: getNeighborsFromNode", e);
-	} finally {
-		await txn.discard();
-	}
-};
-
-const getRisksFromNode = async (dg_client, nodeUid) => {
-	if (!nodeUid) {
-		console.warn("nodeUid can not be null, undefined, or empty");
-		return;
-	}
-	const query = `
-    query all($a: string)
-        {
-            all(func: uid($a)) @cascade
-            {
-                uid,
-                dgraph_type: dgraph.type
-                node_key
-                risks {
-                    uid
-                    dgraph_type: dgraph.type
-                    node_key
-                    analyzer_name
-                    risk_score
-                }
-            }
-        }
-    `;
-	const txn = dg_client.newTxn();
-	try {
-		console.log("Querying DGraph for: getRisksFromNode");
-		const res = await txn.queryWithVars(query, { $a: nodeUid });
-		console.log("getRisksFromNode response", res);
-		const objRes = res.getJson();
-
-		if (objRes["all"] && objRes["all"][0]) {
-			return res.getJson()["all"][0]["risks"] || [];
-		} else {
-			return [];
-		}
-	} finally {
-		await txn.discard();
-	}
-};
-
-const inLensScope = async (dg_client, nodeUid, lensUid) => {
-	console.log("dg_client", dg_client);
-	console.log("node_uid", nodeUid);
-	console.log("lens_uid", lensUid);
-
-	const query = `
-    query all($a: string, $b: string)
-    {
-        all(func: uid($b)) @cascade
-        {
-            uid,
-            scope @filter(uid($a)) {
-                uid,
-            }
-        }
-    
-    }`;
-
-	console.log("inLensScope query", query);
-
-	const txn = dg_client.newTxn();
-	try {
-		console.log("Querying DGraph for: inLensScope");
-		const res = await txn.queryWithVars(query, {
-			$a: nodeUid,
-			$b: lensUid,
-		});
-		const json_res = res.getJson();
-		console.log("inLensScope response", json_res);
-		return json_res["all"].length !== 0;
-	} catch (e) {
-		console.error("Error in Dgraph txn: inLensScope", e);
-	} finally {
-		await txn.discard();
-	}
-};
 
 const filterDefaultDgraphNodeTypes = (node_type) => {
 	return node_type !== "Base" && node_type !== "Entity";
 };
 
 const handleLensScope = async (parent, args) => {
-	console.log("in handle lensScope, args: ", args);
+	console.log("handleLensScope args: ", args);
 	const dg_client = getDgraphClient();
 
 	const lens_name = args.lens_name;
+	console.log("lens_name in handleLensScope", lens_name);
 
 	// grab the graph of lens, lens scope, and neighbors to nodes in-scope of the lens ((lens) -> (neighbor) -> (neighbor's neighbor))
 	const lens_subgraph = await getLensSubgraphByName(dg_client, lens_name);
+	console.log("lens_subgraph in handleLensScope: ", lens_subgraph);
+
 	lens_subgraph["uid"] = parseInt(lens_subgraph["uid"], 16);
 	// if it's undefined/null, might as well make it an array
 	lens_subgraph["scope"] = lens_subgraph["scope"] || [];
@@ -538,8 +404,9 @@ const handleLensScope = async (parent, args) => {
 			if (predicate === "risks") {
 				neighbor[predicate].forEach((risk_node) => {
 					risk_node["uid"] = parseInt(risk_node["uid"], 16);
-
+					
 					if ("dgraph_type" in risk_node) {
+						console.log("checking if dgraph_type in risk_node", risk_node);
 						risk_node["dgraph_type"] = risk_node["dgraph_type"].filter(
 							filterDefaultDgraphNodeTypes
 						);
@@ -550,7 +417,6 @@ const handleLensScope = async (parent, args) => {
 				neighbor[predicate] = neighbor[predicate].filter(
 					(node) => "dgraph_type" in node && !!node["dgraph_type"]
 				);
-
 				continue;
 			}
 
@@ -595,15 +461,14 @@ const handleLensScope = async (parent, args) => {
 		}
 	}
 
-	for (node in lens_subgraph["scope"]) {
+	for (node of lens_subgraph["scope"]) {
 		if (!builtins.has(node.dgraph_type[0])) {
 			const tmpNode = { ...node };
 			node.predicates = tmpNode;
 		}
 	}
 
-	console.log(JSON.stringify(lens_subgraph["scope"]));
-
+	console.log("lens_subgraph scope", JSON.stringify(lens_subgraph["scope"]));
 	return lens_subgraph;
 };
 
@@ -625,9 +490,9 @@ const RootQuery = new GraphQLObjectType({
 				const first = args.first;
 				const offset = args.offset;
 				// #TODO: Make sure to validate that 'first' is under a specific limit, maybe 1000
-				console.log("Calling getLenses");
+				console.log("Making getLensesQuery");
 				const lenses = await getLenses(getDgraphClient(), first, offset);
-				console.debug("lenses resolver, returned data from getLenses", lenses);
+				console.debug("returning data from getLenses for lenses resolver", lenses);
 				return lenses;
 			},
 		},
@@ -638,7 +503,7 @@ const RootQuery = new GraphQLObjectType({
 			},
 			resolve: async (parent, args) => {
 				try {
-					console.log("Calling handleLensScope with args: ", args);
+					console.log("lens_scope args: ", args);
 					return await handleLensScope(parent, args);
 				} catch (e) {
 					console.error("Error in handleLensScope: ", e);
