@@ -1,45 +1,44 @@
-import pulumi_aws as aws
-from infra import dynamodb
+from infra import dynamodb, emitter, util
+from infra.autotag import register_auto_tags
 from infra.service_queue import ServiceQueue
+from infra.util import DEPLOYMENT_NAME
+from infra.ux import EngagementUX
 
 import pulumi
 
-PREFIX = pulumi.get_stack()
-
 if __name__ == "__main__":
 
-    dynamodb_tables = dynamodb.DynamoDB(PREFIX)
+    # These tags will be added to all provisioned infrastructure
+    # objects.
+    register_auto_tags({"grapl deployment": DEPLOYMENT_NAME})
 
-    buckets = (
-        "analyzer-dispatched-bucket",
-        "analyzer-matched-subgraphs-bucket",
-        "analyzers-bucket",
-        "engagement-ux-bucket",
-        "model-plugins-bucket",
-        "osquery-log-bucket",
-        "subgraphs-generated-bucket",
-        "subgraphs-merged-bucket",
-        "sysmon-log-bucket",
-        "unid-subgraphs-generated-bucket",
+    dynamodb_tables = dynamodb.DynamoDB()
+
+    ux = EngagementUX()
+
+    util.grapl_bucket("model-plugins-bucket", sse=False)
+    util.grapl_bucket("analyzers-bucket", sse=True)
+
+    events = (
+        "analyzer-matched-subgraphs",
+        "dispatched-analyzer",
+        "osquery-log",
+        "subgraphs-generated",
+        "subgraphs-merged",
+        "sysmon-log",
+        "unid-subgraphs-generated",
     )
-
-    for logical_bucket_name in buckets:
-        physical_bucket_name = f"{PREFIX}-{logical_bucket_name}"
-        bucket = aws.s3.Bucket(
-            logical_bucket_name,
-            bucket=physical_bucket_name,
-        )
-        pulumi.export(f"Bucket: {physical_bucket_name}", bucket.id)
+    for event in events:
+        emitter.EventEmitter(event)
 
     services = (
         "analyzer-dispatcher",
         "analyzer-executor",
         "engagement-creator",
-        "generic-graph-generator",
         "graph-merger",
         "node-identifier",
-        "osquery-graph-generator",
-        "sysmon-graph-generator",
+        "osquery-generator",
+        "sysmon-generator",
     )
 
     for service in services:

@@ -2,6 +2,8 @@ import json
 from typing import Optional
 
 import pulumi_aws as aws
+from infra import util
+from infra.util import DEPLOYMENT_NAME, IS_LOCAL
 
 import pulumi
 
@@ -19,7 +21,7 @@ class ServiceQueue(pulumi.ComponentResource):
         # TODO: grapl_infra? grapl.infra? grapl:service:servicequeue?
         super().__init__("grapl:ServiceQueue", name, None, opts)
 
-        message_retention_seconds = 60 * 60 * 24  # 1 day
+        message_retention_seconds = 60 * 60 * 24 * 4  # 4 days
 
         # `arn` is the ARN of a queue. This is a function because of
         # the need to use Output.apply on the ARN.
@@ -27,37 +29,62 @@ class ServiceQueue(pulumi.ComponentResource):
             return json.dumps(
                 {
                     "deadLetterTargetArn": arn,
-                    "maxReceiveCount": 10,
+                    "maxReceiveCount": 3,
                 }
             )
 
         # TODO: delete_before_replace is only needed if we're
         # overriding the name of the queues
 
-        dead_letter_name = f"grapl-{name}-dead_letter-queue"
+        # Queues have to be imported by URL, which includes the
+        # account ID
+        account_id = (
+            "000000000000" if IS_LOCAL else aws.get_caller_identity().account_id
+        )
+        queue_import_prefix = f"https://queue.amazonaws.com/{account_id}"
+
+        logical_dead_letter_name = f"{name}-dead-letter-queue"
+        physical_dead_letter_name = f"{DEPLOYMENT_NAME}-{logical_dead_letter_name}"
         self.dead_letter_queue = aws.sqs.Queue(
-            dead_letter_name,
-            name=dead_letter_name,
+            logical_dead_letter_name,
+            name=physical_dead_letter_name,
             message_retention_seconds=message_retention_seconds,
-            opts=pulumi.ResourceOptions(parent=self, delete_before_replace=True),
+            visibility_timeout_seconds=30,
+            opts=util.import_aware_opts(
+                f"{queue_import_prefix}/{physical_dead_letter_name}",
+                parent=self,
+                delete_before_replace=True,
+            ),
         )
 
-        retry_name = f"grapl-{name}-retry-queue"
+        logical_retry_name = f"{name}-retry-queue"
+        physical_retry_name = f"{DEPLOYMENT_NAME}-{logical_retry_name}"
         self.retry_queue = aws.sqs.Queue(
-            retry_name,
-            name=retry_name,
+            logical_retry_name,
+            name=physical_retry_name,
             message_retention_seconds=message_retention_seconds,
+            visibility_timeout_seconds=360,
             redrive_policy=self.dead_letter_queue.arn.apply(redrive_policy),
-            opts=pulumi.ResourceOptions(parent=self, delete_before_replace=True),
+            opts=util.import_aware_opts(
+                f"{queue_import_prefix}/{physical_retry_name}",
+                parent=self,
+                delete_before_replace=True,
+            ),
         )
 
-        queue_name = f"grapl-{name}-queue"
+        logical_queue_name = f"{name}-queue"
+        physical_queue_name = f"{DEPLOYMENT_NAME}-{logical_queue_name}"
         self.queue = aws.sqs.Queue(
-            queue_name,
-            name=queue_name,
+            logical_queue_name,
+            name=physical_queue_name,
             message_retention_seconds=message_retention_seconds,
+            visibility_timeout_seconds=180,
             redrive_policy=self.retry_queue.arn.apply(redrive_policy),
-            opts=pulumi.ResourceOptions(parent=self, delete_before_replace=True),
+            opts=util.import_aware_opts(
+                f"{queue_import_prefix}/{physical_queue_name}",
+                parent=self,
+                delete_before_replace=True,
+            ),
         )
 
         # TODO Purge queues? This was in the old code; not sure if needed

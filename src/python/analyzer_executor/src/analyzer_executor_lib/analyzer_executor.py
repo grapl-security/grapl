@@ -444,10 +444,13 @@ def emit_event(s3: S3ServiceResource, event: ExecutionHit, is_local: bool) -> No
     # TODO fargate: always emit manual events
     if is_local:
         # Local = manual eventing
+
+        deployment_name = os.environ["DEPLOYMENT_NAME"]
+
         sqs = SQSClientFactory(boto3).from_env()
         send_s3_event(
             sqs,
-            "http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-engagement-creator-queue",
+            f"{os.environ['SQS_ENDPOINT']}/queue/{deployment_name}-engagement-creator-queue",
             "local-grapl-analyzer-matched-subgraphs-bucket",
             key,
         )

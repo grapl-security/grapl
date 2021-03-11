@@ -329,13 +329,17 @@ def main() -> None:
     LOGGER.info("Starting engagement-creator")
     sqs = SQSClientFactory(boto3).from_env()
 
+    deployment_name = os.environ["DEPLOYMENT_NAME"]
+
     alive = False
     while not alive:
         try:
             if "QueueUrls" not in sqs.list_queues(
-                QueueNamePrefix="grapl-engagement-creator-queue"
+                QueueNamePrefix=f"{deployment_name}-engagement-creator-queue"
             ):
-                LOGGER.info("Waiting for grapl-engagement-creator-queue to be created")
+                LOGGER.info(
+                    f"Waiting for {deployment_name}-engagement-creator-queue to be created"
+                )
                 time.sleep(2)
                 continue
         except (
@@ -351,7 +355,7 @@ def main() -> None:
     while True:
         try:
             res = sqs.receive_message(
-                QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-engagement-creator-queue",
+                QueueUrl=f"{os.environ['SQS_ENDPOINT']}/queue/{deployment_name}-engagement-creator-queue",
                 WaitTimeSeconds=10,
                 MaxNumberOfMessages=10,
             )
@@ -367,7 +371,7 @@ def main() -> None:
                 lambda_handler(s3_event, {})
 
                 sqs.delete_message(
-                    QueueUrl="http://sqs.us-east-1.amazonaws.com:9324/queue/grapl-engagement-creator-queue",
+                    QueueUrl=f"{os.environ['SQS_ENDPOINT']}/queue/{deployment_name}-engagement-creator-queue",
                     ReceiptHandle=receipt_handle,
                 )
 
