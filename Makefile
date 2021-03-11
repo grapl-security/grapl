@@ -229,6 +229,8 @@ release: ## 'make build-services' with cargo --release
 .PHONY: zip
 zip: build-aws ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
 	docker-compose -f docker-compose.zips.yml up
+	./pants filter --filter-target-type=python_awslambda :: | xargs ./pants package
+	cp ./dist/src.python.provisioner.src/lambda.zip ./src/js/grapl-cdk/zips/provisioner-$(or $(TAG),latest).zip
 
 .PHONY: push
 push: ## Push Grapl containers to Docker Hub
