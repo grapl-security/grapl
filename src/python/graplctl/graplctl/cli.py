@@ -82,6 +82,7 @@ def main(
         cloudwatch=session.client("cloudwatch", region_name=grapl_region),
         sns=session.client("sns", region_name=grapl_region),
         route53=session.client("route53", region_name=grapl_region),
+        sqs=session.client("sqs", region_name=grapl_region),
     )
 
 
@@ -172,6 +173,7 @@ def aws_destroy(graplctl_state: GraplctlState, all: bool, grapl_root: str):
 @click.pass_obj
 def aws_provision(graplctl_state: GraplctlState):
     pass  # FIXME
+
 
 main.add_command(queues)
 

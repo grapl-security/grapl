@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from mypy_boto3_ec2 import EC2ServiceResource
     from mypy_boto3_route53 import Route53Client
     from mypy_boto3_sns import SNSClient
+    from mypy_boto3_sqs import SQSClient
     from mypy_boto3_ssm.client import SSMClient
 
 LOGGER = logging.getLogger(__name__)
@@ -39,6 +40,7 @@ class GraplctlState:
     cloudwatch: CloudWatchClient
     sns: SNSClient
     route53: Route53Client
+    sqs: SQSClient
 
 
 # Prefer this to `pass_obj`
