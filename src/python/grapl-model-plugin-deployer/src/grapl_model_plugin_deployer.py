@@ -119,6 +119,12 @@ def format_schemas(schema_defs: List["BaseSchema"]) -> str:
 
 def store_schema(dynamodb, schema: "Schema"):
     table = dynamodb.Table(os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table")
+    table.put_item(
+        Item={
+            "node_type": schema.self_type(),
+            "display_property": schema.get_display_property(),
+        }
+    )
     for f_edge, (edge_t, r_edge) in schema.get_edges().items():
         if not (f_edge and r_edge):
             LOGGER.warn(f"missing {f_edge} {r_edge} for {schema.self_type()}")
@@ -546,7 +552,7 @@ def nop_route():
     LOGGER.info("nop_route: " + app.current_request.context["path"])
 
     if app.current_request.method == "OPTIONS":
-        return respond(None, {})
+        return respond(None, {})https://github.com/grapl-security/grapl/pull/677
 
     path = app.current_request.context["path"]
     path_to_handler = {

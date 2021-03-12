@@ -54,6 +54,9 @@ class EntitySchema(BaseSchema):
     def self_type() -> str:
         return "Entity"
 
+    @staticmethod
+    def get_display_property() -> str:
+        return "dgraph.type"
 
 class EntityQuery(BaseQuery[EV, EQ]):
     def with_lenses(self, *lenses: "LensQuery"):
