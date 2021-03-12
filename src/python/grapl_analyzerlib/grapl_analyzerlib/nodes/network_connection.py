@@ -99,9 +99,6 @@ class NetworkConnectionView(EntityView[NCV, NCQ]):
         * - Predicate
           - Type
           - Description
-        * - node_key
-          - string
-          - A unique identifier for this node.
         * - created_timestamp
           - int
           - Time the network connection was created (in millis-since-epoch).
@@ -130,14 +127,13 @@ class NetworkConnectionView(EntityView[NCV, NCQ]):
     def __init__(
         self,
         uid: int,
-        node_key: str,
         graph_client: Any,
         node_types: Set[str],
         port: Optional[int] = None,
         ip_address: Optional[str] = None,
         **kwargs,
     ):
-        super().__init__(uid, node_key, graph_client, node_types, **kwargs)
+        super().__init__(uid, graph_client, node_types, **kwargs)
         self.node_types = set(node_types)
 
         self.port = port

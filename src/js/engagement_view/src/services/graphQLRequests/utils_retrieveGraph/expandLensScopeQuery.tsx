@@ -10,13 +10,11 @@ export const expandLensScopeQuery = (lensName: string) => {
             scope {
                 ... on Process {
                     uid,
-                    node_key, 
                     dgraph_type,
                     process_name, 
                     process_id,
                     children {
                         uid, 
-                        node_key, 
                         dgraph_type,
                         process_name, 
                         process_id,
@@ -31,7 +29,6 @@ export const expandLensScopeQuery = (lensName: string) => {
                 }
                 ... on Asset {
                     uid, 
-                    node_key, 
                     dgraph_type,
                     hostname,
                     asset_ip{
@@ -39,28 +36,24 @@ export const expandLensScopeQuery = (lensName: string) => {
                     }, 
                     asset_processes{
                         uid, 
-                        node_key, 
                         dgraph_type,
                         process_name, 
                         process_id,
                     },
                     files_on_asset{
                         uid, 
-                        node_key, 
                         dgraph_type,
                         file_path
                     }, 
                     risks {  
                         uid,
                         dgraph_type,
-                        node_key, 
                         analyzer_name, 
                         risk_score
                     },
                 }
                 ... on File {
                     uid,
-                    node_key, 
                     dgraph_type,
                     risks {  
                         uid,

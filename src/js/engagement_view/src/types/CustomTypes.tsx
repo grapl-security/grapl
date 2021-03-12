@@ -3,7 +3,6 @@ export type NodeEdges = {[key: string]: (Node | Node[])};
 
 export type BaseNodeProperties = {
     uid: number,
-    node_key: string,
     dgraph_type: string[],
 }
 
@@ -14,12 +13,14 @@ export type Node = {
 } & NodeProperties & NodeEdges;
 
 export type Risk = {
+    node_key: string,
     analyzer_name: string,
     risk_score: number,
 } & BaseNodeProperties;
 
 export type Lens = {
     scope: Node[],
+    node_key: string,
     lens_name: string, 
     lens_type: string,
     score: number

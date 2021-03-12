@@ -123,9 +123,6 @@ class AssetView(EntityView[AV, AQ]):
         * - Predicate
           - Type
           - Description
-        * - node_key
-          - string
-          - A unique identifier for this node.
         * - hostname
           - string
           - The hostname of this asset.
@@ -143,7 +140,6 @@ class AssetView(EntityView[AV, AQ]):
     def __init__(
         self,
         uid: int,
-        node_key: str,
         graph_client: Any,
         node_types: Set[str],
         hostname: Optional[str] = None,
@@ -152,7 +148,7 @@ class AssetView(EntityView[AV, AQ]):
         files_on_asset: Optional[List["FileView"]] = None,
         **kwargs,
     ):
-        super().__init__(uid, node_key, graph_client, node_types=node_types, **kwargs)
+        super().__init__(uid, graph_client, node_types=node_types, **kwargs)
         self.set_predicate("node_types", node_types)
         self.set_predicate("hostname", hostname)
         self.set_predicate("asset_ip", asset_ip)
@@ -168,7 +164,7 @@ class AssetView(EntityView[AV, AQ]):
 
         self_node = (
             self.queryable()
-            .with_node_key(eq=self.node_key)
+            .with_uid(eq=self.uid)
             .with_asset_ip(asset_ips)
             .query_first(self.graph_client)
         )
@@ -183,7 +179,7 @@ class AssetView(EntityView[AV, AQ]):
 
         self_node = (
             self.queryable()
-            .with_node_key(eq=self.node_key)
+            .with_uid(eq=self.uid)
             .with_asset_processes(processes)
             .query_first(self.graph_client)
         )
@@ -198,7 +194,7 @@ class AssetView(EntityView[AV, AQ]):
 
         self_node = (
             self.queryable()
-            .with_node_key(eq=self.node_key)
+            .with_uid(eq=self.uid)
             .with_files_on_asset(files)
             .query_first(self.graph_client)
         )

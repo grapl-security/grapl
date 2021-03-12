@@ -99,10 +99,6 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
             self.set_property_filters(f, [])
             self.set_property_filters(r, [])
 
-    def with_node_key(self: Q, *, eq: str) -> Q:
-        self._property_filters["node_key"] = [[Eq("node_key", eq)]]
-        return self
-
     def with_to_neighbor(self, default, f, r, edges) -> "Q":
         if edges and not isinstance(edges, tuple):
             edges = (edges,)
@@ -158,6 +154,10 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
         )
         return self
 
+    def with_uid(self, eq: int):
+        self.with_int_property('uid', eq=eq)
+        return self
+
     @classmethod
     @abc.abstractmethod
     def node_schema(cls) -> "Schema":
@@ -195,7 +195,6 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
         var_alloc, query = gen_query(self, "q0", first=first)
 
         variables = {v: k for k, v in var_alloc.allocated.items()}
-        txn = graph_client.txn(read_only=True)
 
         with graph_client.txn_context(read_only=True) as txn:
             try:
@@ -213,11 +212,11 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
     def query_first(
         self,
         graph_client: GraphClient,
-        contains_node_key: Optional[str] = None,
+        contains_uid: Optional[str] = None,
         best_effort=False,
     ) -> Optional[V]:
-        if contains_node_key:
-            var_alloc, query = gen_query_parameterized(self, "q0", contains_node_key, 0)
+        if contains_uid:
+            var_alloc, query = gen_query_parameterized(self, "q0", contains_uid, 0)
         else:
             var_alloc, query = gen_query(self, "q0", first=1)
 

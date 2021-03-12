@@ -37,9 +37,6 @@ class BaseSchema(Schema):
         super(BaseSchema, self).__init__(
             {
                 **(properties or {}),
-                "node_key": PropType(
-                    PropPrimitive.Str, False, index=["hash"], upsert=True
-                ),
                 "last_index_time": PropType(PropPrimitive.Int, False),
             },
             {
@@ -112,15 +109,13 @@ class BaseView(Viewable[BV, BQ]):
     def __init__(
         self,
         uid: int,
-        node_key: str,
         graph_client: Any,
         node_types: Set[str],
         **kwargs,
     ):
-        super().__init__(uid, node_key, graph_client, **kwargs)
+        super().__init__(uid, graph_client, **kwargs)
         self.node_types = node_types
         self.uid = uid
-        self.node_key = node_key
 
     def into_view(self, v: Type["V"]) -> Optional["V"]:
         if v.node_schema().self_type() in self.node_types:
@@ -130,7 +125,6 @@ class BaseView(Viewable[BV, BQ]):
             predicates_without_node_types.pop("node_types", None)
             return v(
                 uid=self.uid,
-                node_key=self.node_key,
                 graph_client=self.graph_client,
                 node_types=node_types,
                 **predicates_without_node_types,
@@ -138,8 +132,8 @@ class BaseView(Viewable[BV, BQ]):
         return None
 
     @staticmethod
-    def from_node_key(graph_client: GraphClient, node_key: str) -> "Optional[BaseView]":
-        self_node = BaseQuery().with_node_key(eq=node_key).query_first(graph_client)
+    def from_uid(graph_client: GraphClient, uid: int) -> "Optional[BaseView]":
+        self_node = BaseQuery().with_uid(eq=uid).query_first(graph_client)
 
         return self_node
 
@@ -154,19 +148,18 @@ class BaseView(Viewable[BV, BQ]):
         else:
             edge_filters = ""
         query = f"""
-        query q0($a: string) {{
-            edges(func: eq(node_key, $a) , first: 1) {{
+        {{
+            edges(func: uid({self.uid}) , first: 1) {{
                 uid
                 dgraph.type
-                node_key
-                expand(_all_) @filter(has(dgraph.type) AND has(node_key) {edge_filters}) {{
+                expand(_all_) @filter(has(dgraph.type) {edge_filters}) {{
                     uid
                     dgraph.type
                     expand(_all_)
                 }}
             }}
 
-            properties(func: eq(node_key, $a) , first: 1) {{
+            properties(func: uid({self.uid}) , first: 1) {{
                 uid
                 dgraph.type
                 expand(_all_)
@@ -176,7 +169,7 @@ class BaseView(Viewable[BV, BQ]):
         txn = self.graph_client.txn(read_only=True, best_effort=True)
 
         try:
-            qres = json.loads(txn.query(query, variables={"$a": self.node_key}).json)
+            qres = json.loads(txn.query(query).json)
         finally:
             txn.discard()
 
@@ -200,18 +193,17 @@ class BaseView(Viewable[BV, BQ]):
         edges = defaultdict(list)
         for node in traverse_view_iter(self):
             node_dict = node.to_dict()
-            node_dicts[node_dict["node"]["node_key"]] = node_dict["node"]
-            edges[node_dict["node"]["node_key"]].extend(node_dict["edges"])
+            node_dicts[node_dict["node"]["uid"]] = node_dict["node"]
+            edges[node_dict["node"]["uid"]].extend(node_dict["edges"])
 
         return {"nodes": node_dicts, "edges": edges}
 
     def to_dict(self):
         node_dict = {
             "uid": self.uid,
-            "node_key": self.node_key,
             "dgraph.type": self.node_schema().self_type(),
         }
-        self_key = self.node_key
+        self_key = self.uid
         edges = []
         for predicate_name, predicate in self.predicates.items():
             if not predicate:
@@ -222,7 +214,7 @@ class BaseView(Viewable[BV, BQ]):
                     {
                         "from": self_key,
                         "edge_name": predicate_name,
-                        "to": predicate.node_key,
+                        "to": predicate.uid,
                     }
                 )
                 continue
@@ -232,7 +224,7 @@ class BaseView(Viewable[BV, BQ]):
                         {
                             "from": self_key,
                             "edge_name": predicate_name,
-                            "to": p.node_key,
+                            "to": p.uid,
                         }
                     )
                     continue

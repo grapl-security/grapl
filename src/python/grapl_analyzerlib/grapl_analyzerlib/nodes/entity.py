@@ -81,16 +81,14 @@ class EntityView(BaseView[EV, EQ]):
     def __init__(
         self,
         uid: int,
-        node_key: str,
         graph_client: Any,
         node_types: Set[str],
         lenses: "List[LensView]" = None,
         **kwargs,
     ):
-        super().__init__(uid, node_key, graph_client, node_types, **kwargs)
+        super().__init__(uid, graph_client, node_types, **kwargs)
         self.node_types = set(node_types)
         self.uid = uid
-        self.node_key = node_key
         self.graph_client = graph_client
         self.lenses = lenses or []
 
@@ -105,7 +103,6 @@ class EntityView(BaseView[EV, EQ]):
             self.queryable = v.queryable
             return v(
                 self.uid,
-                self.node_key,
                 self.graph_client,
                 node_types=self.node_types,
                 **self.predicates,

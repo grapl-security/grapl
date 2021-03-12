@@ -133,9 +133,6 @@ class IpPortView(EntityView[IPPV, IPPQ]):
         * - Predicate
           - Type
           - Description
-        * - node_key
-          - string
-          - A unique identifier for this node.
         * - first_seen_timestamp
           - int
           - Time the IP Port was first seen (in millis-since-epoch).
@@ -170,7 +167,6 @@ class IpPortView(EntityView[IPPV, IPPQ]):
     def __init__(
         self,
         uid: int,
-        node_key: str,
         graph_client,
         node_types: Set[str],
         port: Optional[int] = None,
@@ -181,7 +177,7 @@ class IpPortView(EntityView[IPPV, IPPQ]):
         **kwargs,
     ):
         super(IpPortView, self).__init__(
-            uid, node_key, graph_client, node_types, **kwargs
+            uid, graph_client, node_types, **kwargs
         )
         self.set_predicate("port", port)
         self.set_predicate("ip_address", ip_address)

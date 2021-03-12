@@ -19,6 +19,7 @@ LV = TypeVar("LV", bound="RiskView")
 def default_risk_properties() -> Dict[str, PropType]:
     return {
         "analyzer_name": PropType(PropPrimitive.Str, False),
+        "node_key": PropType(PropPrimitive.Str, False, index=['hash'], upsert=True),
         "risk_score": PropType(PropPrimitive.Int, False),
     }
 
@@ -87,9 +88,6 @@ class RiskView(BaseView[LV, LQ]):
         * - Predicate
           - Type
           - Description
-        * - node_key
-          - string
-          - A unique identifier for this node
         * - risk_score
           - int
           - todo: documentation
@@ -106,13 +104,12 @@ class RiskView(BaseView[LV, LQ]):
     def __init__(
         self,
         uid: int,
-        node_key: str,
         graph_client: Any,
         node_types: Set[str],
         risky_nodes: "Optional[List[EntityView]]" = None,
         **kwargs,
     ):
-        super().__init__(uid, node_key, graph_client, node_types, **kwargs)
+        super().__init__(uid, graph_client, node_types, **kwargs)
         self.node_types = set(node_types)
 
         self.set_predicate("risky_nodes", risky_nodes)

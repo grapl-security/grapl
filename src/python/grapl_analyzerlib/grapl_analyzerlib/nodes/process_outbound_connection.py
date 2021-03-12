@@ -151,9 +151,6 @@ class ProcessOutboundConnectionView(EntityView[POCV, POCQ]):
         * - Predicate
           - Type
           - Description
-        * - node_key
-          - string
-          - A unique identifier for this node
         * - created_timestamp
           - int
           - Time the process outbound network connection was created (in millis-since-epoch).
@@ -188,7 +185,6 @@ class ProcessOutboundConnectionView(EntityView[POCV, POCQ]):
     def __init__(
         self,
         uid: int,
-        node_key: str,
         graph_client: Any,
         node_types: Set[str],
         created_timestamp: Optional[int] = None,
@@ -199,7 +195,7 @@ class ProcessOutboundConnectionView(EntityView[POCV, POCQ]):
         protocol: Optional[str] = None,
         **kwargs,
     ):
-        super().__init__(uid, node_key, graph_client, node_types, **kwargs)
+        super().__init__(uid, graph_client, node_types, **kwargs)
         self.node_types = set(node_types)
 
         self.created_timestamp = created_timestamp

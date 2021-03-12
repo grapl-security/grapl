@@ -128,9 +128,6 @@ class IpAddressView(EntityView[IPV, IPQ]):
         * - Predicate
           - Type
           - Description
-        * - node_key
-          - string
-          - A unique identifier for this node.
         * - ip_address
           - string
           - The IP address that this node represents.
@@ -150,7 +147,6 @@ class IpAddressView(EntityView[IPV, IPQ]):
     def __init__(
         self,
         uid: int,
-        node_key: str,
         graph_client: Any,
         node_types: Set[str],
         first_seen_timestamp: Optional[int] = None,
@@ -159,7 +155,7 @@ class IpAddressView(EntityView[IPV, IPQ]):
         ip_connections: Optional[int] = None,
         **kwargs,
     ):
-        super().__init__(uid, node_key, graph_client, node_types, **kwargs)
+        super().__init__(uid, graph_client, node_types, **kwargs)
         self.node_types = set(node_types)
 
         self.set_predicate("first_seen_timestamp", first_seen_timestamp)
@@ -205,7 +201,6 @@ class IpAddressExtendsIpConnectionView(IpConnectionView):
     def __init__(
         self,
         uid: int,
-        node_key: str,
         graph_client: Any,
         node_types: Set[str],
         connecting_ips: Optional[List[IpAddressView]] = None,
@@ -213,7 +208,6 @@ class IpAddressExtendsIpConnectionView(IpConnectionView):
     ):
         super().__init__(
             uid=uid,
-            node_key=node_key,
             graph_client=graph_client,
             node_types=node_types,
             **kwargs,

@@ -169,9 +169,6 @@ class ProcessView(EntityView[PV, PQ]):
         * - Predicate
           - Type
           - Description
-        * - node_key
-          - string
-          - A unique identifier for this node.
         * - asset_id
           - string
           - A unique identifier for this asset.
@@ -224,7 +221,6 @@ class ProcessView(EntityView[PV, PQ]):
     def __init__(
         self,
         uid: int,
-        node_key: str,
         graph_client: Any,
         node_types: Set[str],
         process_name: Optional[str] = None,
@@ -237,7 +233,7 @@ class ProcessView(EntityView[PV, PQ]):
         parent: Optional["ProcessView"] = None,
         **kwargs,
     ):
-        super().__init__(uid, node_key, graph_client, node_types, **kwargs)
+        super().__init__(uid, graph_client, node_types, **kwargs)
         self.set_predicate("node_types", node_types)
         self.set_predicate("process_name", process_name)
         self.set_predicate("image_name", image_name)
@@ -257,7 +253,7 @@ class ProcessView(EntityView[PV, PQ]):
 
         self_node = (
             self.queryable()
-            .with_node_key(eq=self.node_key)
+            .with_uid(eq=self.uid)
             .with_process_name()
             .query_first(self.graph_client)
         )
@@ -272,7 +268,7 @@ class ProcessView(EntityView[PV, PQ]):
 
         self_node = (
             self.queryable()
-            .with_node_key(eq=self.node_key)
+            .with_uid(eq=self.uid)
             .with_process_id()
             .query_first(self.graph_client)
         )
@@ -287,7 +283,7 @@ class ProcessView(EntityView[PV, PQ]):
 
         self_node = (
             self.queryable()
-            .with_node_key(eq=self.node_key)
+            .with_uid(eq=self.uid)
             .with_created_timestamp()
             .query_first(self.graph_client)
         )
@@ -302,7 +298,7 @@ class ProcessView(EntityView[PV, PQ]):
 
         self_node = (
             self.queryable()
-            .with_node_key(eq=self.node_key)
+            .with_uid(eq=self.uid)
             .with_terminate_time()
             .query_first(self.graph_client)
         )
@@ -317,7 +313,7 @@ class ProcessView(EntityView[PV, PQ]):
 
         self_node = (
             self.queryable()
-            .with_node_key(eq=self.node_key)
+            .with_uid(eq=self.uid)
             .with_arguments()
             .query_first(self.graph_client)
         )
@@ -332,7 +328,7 @@ class ProcessView(EntityView[PV, PQ]):
 
         self_node = (
             self.queryable()
-            .with_node_key(eq=self.node_key)
+            .with_uid(eq=self.uid)
             .with_parent(parent)
             .query_first(self.graph_client)
         )
@@ -347,7 +343,7 @@ class ProcessView(EntityView[PV, PQ]):
 
         self_node = (
             self.queryable()
-            .with_node_key(eq=self.node_key)
+            .with_uid(eq=self.uid)
             .with_children(children)
             .query_first(self.graph_client)
         )
@@ -382,7 +378,6 @@ class ProcessExtendsProcessOutboundConnectionView(ProcessOutboundConnectionView)
     def __init__(
         self,
         uid: int,
-        node_key: str,
         graph_client: Any,
         node_types: Set[str],
         connections_from: Optional[List[ProcessView]] = None,
@@ -390,7 +385,6 @@ class ProcessExtendsProcessOutboundConnectionView(ProcessOutboundConnectionView)
     ):
         super().__init__(
             uid=uid,
-            node_key=node_key,
             graph_client=graph_client,
             node_types=node_types,
             **kwargs,
@@ -404,7 +398,7 @@ class ProcessExtendsProcessOutboundConnectionView(ProcessOutboundConnectionView)
 
         self_node = (
             self.queryable()
-            .with_node_key(eq=self.node_key)
+            .with_uid(eq=self.uid)
             .with_connections_from(*connections_from)
             .query_first(self.graph_client)
         )
@@ -429,7 +423,6 @@ class ProcessExtendsProcessInboundConnectionView(ProcessInboundConnectionView):
     def __init__(
         self,
         uid: int,
-        node_key: str,
         graph_client: Any,
         node_types: Set[str],
         bound_by: Optional[List[ProcessView]] = None,
@@ -437,7 +430,6 @@ class ProcessExtendsProcessInboundConnectionView(ProcessInboundConnectionView):
     ):
         super().__init__(
             uid=uid,
-            node_key=node_key,
             graph_client=graph_client,
             node_types=node_types,
             **kwargs,
@@ -451,7 +443,7 @@ class ProcessExtendsProcessInboundConnectionView(ProcessInboundConnectionView):
 
         self_node = (
             self.queryable()
-            .with_node_key(eq=self.node_key)
+            .with_uid(eq=self.uid)
             .with_bound_by(*bound_by)
             .query_first(self.graph_client)
         )

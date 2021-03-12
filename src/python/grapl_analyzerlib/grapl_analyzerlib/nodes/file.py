@@ -303,9 +303,6 @@ class FileView(EntityView[FV, FQ]):
         * - Predicate
           - Type
           - Description
-        * - node_key
-          - string
-          - A unique identifier for this node.
         * - asset_id
           - string
           - A unique identifier for an asset.
@@ -367,7 +364,6 @@ class FileView(EntityView[FV, FQ]):
     def __init__(
         self,
         uid: int,
-        node_key: str,
         graph_client: Any,
         node_types: Set[str],
         file_path: Optional[str] = None,
@@ -393,7 +389,7 @@ class FileView(EntityView[FV, FQ]):
         deleter: Optional["ProcessView"] = None,
         **kwargs,
     ):
-        super(FileView, self).__init__(uid, node_key, graph_client, node_types)
+        super(FileView, self).__init__(uid, graph_client, node_types)
         self.node_types = set(node_types)
         self.set_predicate("file_path", file_path)
         self.set_predicate("file_extension", file_extension)
@@ -574,7 +570,6 @@ class FileExtendsProcessView(ProcessView):
     def __init__(
         self,
         uid: int,
-        node_key: str,
         graph_client: Any,
         node_types: Set[str],
         bin_file: Optional[FileQuery] = None,
@@ -586,7 +581,6 @@ class FileExtendsProcessView(ProcessView):
     ):
         super().__init__(
             uid=uid,
-            node_key=node_key,
             graph_client=graph_client,
             node_types=node_types,
             **kwargs,

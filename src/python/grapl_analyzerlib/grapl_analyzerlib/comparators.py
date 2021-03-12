@@ -52,6 +52,8 @@ class Eq(object):
     def to_filter(self) -> str:
         if self.predicate == "dgraph.type":
             filter_str = f"type({self.value})"
+        elif self.predicate == "uid":
+            filter_str = f"uid({self.value})"
         else:
             filter_str = f"eq({self.predicate}, {self.value})"
 

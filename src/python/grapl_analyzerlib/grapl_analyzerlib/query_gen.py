@@ -122,10 +122,7 @@ def find_func(q: "Queryable", var_alloc: VarAllocator) -> str:
                 and not and_filter[0].negated
             ):
                 filter = deepcopy(and_filter[0])
-                if prop_name == "node_key":
-                    filter.value = var_alloc.alloc(Eq("node_key", filter.value))
-                    return filter.to_filter()
-                elif prop_name == "uid":
+                if prop_name == "uid":
                     filter.value = var_alloc.alloc(Eq("uid", filter.value))
                     return filter.to_filter()
                 else:
@@ -295,7 +292,7 @@ def into_query_block(
     if is_expand:
         properties = f"\n{tabs}".join(["uid", "dgraph.type"])
     else:
-        always = {"uid", "dgraph.type", "node_key"}
+        always = {"uid", "dgraph.type"}
 
         properties = f"\n{tabs}".join(
             [prop[0] for prop in q.property_filters() if prop[1] or prop[0] in always]
@@ -381,7 +378,7 @@ def gen_coalescing_query(
 def gen_query_parameterized(
     q: "Queryable",
     query_name: str,
-    contains_node_key: str,
+    contains_uid: int,
     depth: int,
     binding_modifier: Optional[str] = None,
     vars_alloc: Optional[VarAllocator] = None,
@@ -392,9 +389,9 @@ def gen_query_parameterized(
     bindings = []
     var_queries = []
 
-    node_key_var = vars_alloc.alloc(Eq("node_key", contains_node_key))
+    uid_var = contains_uid
     for i, node in enumerate(traverse_query_iter(q)):
-        func = f"eq(node_key, {node_key_var}), first: 1"
+        func = f"uid({uid_var}), first: 1"
         binding = f"{binding_modifier}Binding{depth}_{i}"
         bindings.append(binding)
         var_name = ""

@@ -43,10 +43,9 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
     queryable: Type[Q] = None  # pytype: disable=not-supported-yet
 
     def __init__(
-        self, uid: int, node_key: str, graph_client: GraphClient, **kwargs
+        self, uid: int, graph_client: GraphClient, **kwargs
     ) -> None:
         self.uid = uid
-        self.node_key = node_key
         self.graph_client = graph_client
         self.predicates = {}
 
@@ -70,7 +69,7 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
 
         self_node = (
             self.queryable()
-            .with_node_key(eq=self.node_key)
+            .with_uid(eq=self.uid)
             .with_str_property(property_name)
             .query_first(self.graph_client)
         )
@@ -86,7 +85,7 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
 
         self_node = (
             self.queryable()
-            .with_node_key(eq=self.node_key)
+            .with_uid(eq=self.uid)
             .with_int_property(property_name)
             .query_first(self.graph_client)
         )
@@ -104,7 +103,7 @@ class Viewable(Generic[V, Q], Extendable, abc.ABC):
 
         self_node = (
             self.queryable()
-            .with_node_key(eq=self.node_key)
+            .with_uid(eq=self.uid)
             .with_to_neighbor(default, f_edge, r_edge, filters)
             .query_first(self.graph_client)
         )

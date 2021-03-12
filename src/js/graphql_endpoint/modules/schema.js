@@ -18,7 +18,6 @@ const { json } = require("express");
 
 const BaseNode = {
     uid: {type: GraphQLInt},
-    node_key: {type: GraphQLString}, 
     dgraph_type: {type: GraphQLList(GraphQLString)},
 }
 
@@ -26,8 +25,9 @@ const LensNodeType = new GraphQLObjectType({
     name: "LensNode", 
     fields: () => ({
         ...BaseNode,
-        lens_name: {type: GraphQLString}, 
-        score: {type: GraphQLInt}, 
+        node_key: {type: GraphQLString},
+        lens_name: {type: GraphQLString},
+        score: {type: GraphQLInt},
         scope: {type: GraphQLList(GraplEntityType)},
         lens_type: {type: GraphQLString}, 
     })
@@ -37,6 +37,7 @@ const RiskType = new GraphQLObjectType({
     name: 'Risk',
     fields: {
         ...BaseNode,
+        node_key: {type: GraphQLString},
         analyzer_name: {type: GraphQLString}, 
         risk_score: {type: GraphQLInt},
     }
@@ -295,7 +296,6 @@ const getLenses = async (dg_client, first, offset) => {
             lens_type,
             scope {
                 uid,
-                node_key,
                 dgraph_type: dgraph.type,
             }
         }
@@ -327,7 +327,7 @@ const getLensSubgraphByName = async (dg_client, lens_name) => {
             lens_name,
             lens_type,
             score,
-            scope @filter(has(node_key)) {
+            scope {
                 uid,
                 dgraph_type: dgraph.type,
                 expand(_all_) {
@@ -368,7 +368,7 @@ const getLensByName = async (dg_client, lensName) => {
                 uid,
                 dgraph_type: dgraph.type,
                 lens_type,
-                scope @filter(has(node_key)) {
+                scope {
                     uid,
                     dgraph_type: dgraph.type,
                     expand(_all_)
@@ -430,7 +430,6 @@ const getRisksFromNode = async (dg_client, nodeUid) => {
             {
                 uid,
                 dgraph_type: dgraph.type
-                node_key
                 risks {
                     uid
                     dgraph_type: dgraph.type

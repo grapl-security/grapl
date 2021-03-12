@@ -146,9 +146,6 @@ class ProcessInboundConnectionView(EntityView[PICV, PICQ]):
         * - Predicate
           - Type
           - Description
-        * - node_key
-          - string
-          - A unique identifier for this node
         * - created_timestamp
           - int
           - Time the process inbound network connection was created (in millis-since-epoch).
@@ -180,7 +177,6 @@ class ProcessInboundConnectionView(EntityView[PICV, PICQ]):
     def __init__(
         self,
         uid: int,
-        node_key: str,
         graph_client: Any,
         node_types: Set[str],
         created_timestamp: Optional[int] = None,
@@ -191,7 +187,7 @@ class ProcessInboundConnectionView(EntityView[PICV, PICQ]):
         protocol: Optional[str] = None,
         **kwargs,
     ):
-        super().__init__(uid, node_key, graph_client, **kwargs)
+        super().__init__(uid, graph_client, **kwargs)
         self.node_types = set(node_types)
 
         self.created_timestamp = created_timestamp

@@ -127,10 +127,10 @@ def recalculate_score(lens: LensView) -> int:
             risk_score = risk.get_risk_score()
             analyzer_name = risk.get_analyzer_name()
             risks_by_analyzer[analyzer_name] = risk_score
-            key_to_analyzers[node.node_key].add(analyzer_name)
+            key_to_analyzers[node.uid].add(analyzer_name)
 
         analyzer_risk_sum = sum([a for a in risks_by_analyzer.values() if a])
-        node_risk_scores[node.node_key] = analyzer_risk_sum
+        node_risk_scores[node.uid] = analyzer_risk_sum
         total_risk_score += analyzer_risk_sum
 
     # Bonus is calculated by finding nodes with multiple analyzers
@@ -182,23 +182,22 @@ def upsert(
 ) -> Viewable[V, Q]:
     node_props["node_key"] = node_key
     node_props["dgraph.type"] = list({type_name, "Base", "Entity"})
-    uid = _upsert(client, node_props)
-    node_props["uid"] = uid
+    _upsert(client, node_props)
     return view_type.from_dict(node_props, client)
 
 
 def nodes_to_attach_risk_to(
     nodes: Sequence[BaseView],
-    risky_node_keys: Optional[Sequence[str]],
+    risky_node_uids: Optional[Sequence[str]],
 ) -> Sequence[BaseView]:
     """
-    a None risky_node_keys means 'mark all as risky'
-    a [] risky_node_keys means 'mark none as risky'.
+    a None risky_node_uids means 'mark all as risky'
+    a [] risky_node_uids means 'mark none as risky'.
     """
-    if risky_node_keys is None:
+    if risky_node_uids is None:
         return nodes
-    risky_node_keys_set = frozenset(risky_node_keys)
-    return [node for node in nodes if node.node_key in risky_node_keys_set]
+    risky_node_uids_set = frozenset(risky_node_uids)
+    return [node for node in nodes if node.uid in risky_node_uids_set]
 
 
 def create_metrics_client() -> EngagementCreatorMetrics:
@@ -243,18 +242,16 @@ def _process_one_event(
     edges = incident_graph["edges"]
     risk_score = incident_graph["risk_score"]
     lens_dict: Sequence[Tuple[str, str]] = incident_graph["lenses"]
-    risky_node_keys = incident_graph["risky_node_keys"]
+    risky_node_uids = incident_graph["risky_node_uids"]
 
     LOGGER.debug(
         f"AnalyzerName {analyzer_name}, nodes: {nodes_raw} edges: {type(edges)} {edges}"
     )
 
     _nodes = (
-        BaseView.from_node_key(mg_client, n["node_key"]) for n in nodes_raw.values()
+        BaseView.from_uid(mg_client, n["uid"]) for n in nodes_raw.values()
     )
     nodes = [n for n in _nodes if n]
-
-    uid_map = {node.node_key: node.uid for node in nodes}
 
     lenses = {}  # type: Dict[str, LensView]
     for node in nodes:
@@ -276,8 +273,8 @@ def _process_one_event(
             # If a node shows up in a lens all of its connected nodes should also show up in that lens
             for edge_list in edges.values():
                 for edge in edge_list:
-                    from_uid = uid_map[edge["from"]]
-                    to_uid = uid_map[edge["to"]]
+                    from_uid = edge["from"]
+                    to_uid = edge["to"]
                     create_edge(mg_client, lens.uid, "scope", from_uid)
                     create_edge(mg_client, lens.uid, "scope", to_uid)
 
@@ -295,7 +292,7 @@ def _process_one_event(
         },
     )
 
-    risky_nodes = nodes_to_attach_risk_to(nodes, risky_node_keys)
+    risky_nodes = nodes_to_attach_risk_to(nodes, risky_node_uids)
     for node in risky_nodes:
         create_edge(mg_client, node.uid, "risks", risk.uid)
         create_edge(mg_client, risk.uid, "risky_nodes", node.uid)
@@ -306,9 +303,9 @@ def _process_one_event(
 
     for edge_list in edges.values():
         for edge in edge_list:
-            from_uid = uid_map[edge["from"]]
+            from_uid = edge["from"]
             edge_name = edge["edge_name"]
-            to_uid = uid_map[edge["to"]]
+            to_uid = edge["to"]
 
             create_edge(mg_client, from_uid, edge_name, to_uid)
 

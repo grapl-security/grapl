@@ -75,7 +75,7 @@ function NodeTable({ node }: NodeTableProps) {
 						const [key, value] = nodeProperty;
 
 						return (
-							<TableRow key={node.node_key + key}>
+							<TableRow key={node.uid + key}>
 								<TableCell className={classes.nodeTableData} align="left">
 									<b>{key}</b>
 								</TableCell>

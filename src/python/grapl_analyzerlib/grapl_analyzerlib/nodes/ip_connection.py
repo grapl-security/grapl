@@ -182,9 +182,6 @@ class IpConnectionView(EntityView[IPV, IPQ]):
         * - Predicate
           - Type
           - Description
-        * - node_key
-          - string
-          - A unique identifier for this node.
         * - created_timestamp
           - int
           - Time of the connection creation (in millis-since-epoch).
@@ -201,7 +198,6 @@ class IpConnectionView(EntityView[IPV, IPQ]):
     def __init__(
         self,
         uid: int,
-        node_key: str,
         graph_client,
         node_types: Set[str],
         src_ip_address=None,
@@ -215,7 +211,7 @@ class IpConnectionView(EntityView[IPV, IPQ]):
         **kwargs,
     ):
         super(IpConnectionView, self).__init__(
-            uid, node_key, graph_client, node_types, **kwargs
+            uid, graph_client, node_types, **kwargs
         )
 
         self.set_predicate("src_ip_address", src_ip_address)

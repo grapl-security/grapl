@@ -35,10 +35,10 @@ class SuspiciousSvchost(Analyzer):
                 lenses=[
                     ("hostname", asset_id),
                 ],
-                risky_node_keys=[
+                risky_node_uids=[
                     # the asset and the process
-                    response.get_asset().node_key,
-                    response.node_key,
+                    response.get_asset().uid,
+                    response.uid,
                 ],
             )
         )

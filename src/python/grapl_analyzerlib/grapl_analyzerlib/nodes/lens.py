@@ -20,6 +20,7 @@ LV = TypeVar("LV", bound="LensView")
 def default_lens_properties() -> Dict[str, PropType]:
     return {
         "lens_name": PropType(PropPrimitive.Str, False),
+        "node_key": PropType(PropPrimitive.Str, False, index=['hash'], upsert=True),
         "score": PropType(PropPrimitive.Int, False),
     }
 
@@ -56,6 +57,9 @@ class LensQuery(BaseQuery[LV, LQ]):
     def with_lens_type(self, eq: str) -> LensQuery:
         return self.with_str_property("lens_type", eq=eq)
 
+    def with_node_key(self, eq: str):
+        return self.with_str_property("node_key", eq=eq)
+
     @classmethod
     def node_schema(cls) -> Schema:
         return LensSchema()
@@ -69,9 +73,6 @@ class LensView(BaseView[LV, LQ]):
         * - Predicate
           - Type
           - Description
-        * - node_key
-          - string
-          - A unique identifier for this node.
         * - lens
           - string
           - The name of the lens this node represents.
@@ -85,7 +86,6 @@ class LensView(BaseView[LV, LQ]):
     def __init__(
         self,
         uid: int,
-        node_key: str,
         graph_client: Any,
         node_types: Set[str],
         scope: Optional[List["EntityView"]] = None,
@@ -93,7 +93,7 @@ class LensView(BaseView[LV, LQ]):
         lens_type: Optional[str] = None,
         **kwargs,
     ):
-        super().__init__(uid, node_key, graph_client, node_types, **kwargs)
+        super().__init__(uid, graph_client, node_types, **kwargs)
 
         self.set_predicate("node_types", node_types)
         self.set_predicate("scope", scope or [])

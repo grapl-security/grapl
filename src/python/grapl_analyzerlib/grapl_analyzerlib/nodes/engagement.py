@@ -51,13 +51,12 @@ def create_edge(txn: Txn, from_uid: int, edge_name: str, to_uid: int) -> None:
 
 
 def stripped_node_to_query(node: Dict[str, Union[str, int]]) -> str:
-    func_filter = f'eq(node_key, "{node["node_key"]}")'
+    func_filter = f'eq(uid, "{node["uid"]}")'
     return f"""
         {{
             # stripped_node_to_query
             res(func: {func_filter}, first: 1) {{
                 uid,
-                node_key,
                 dgraph.type: node_type,
             }}
         }}
@@ -91,7 +90,7 @@ def strip_node(node) -> Dict[str, Any]:
 def response_into_matrix(res, nodes, edges):
     if isinstance(res, dict):
         edges.extend(get_edges(res))
-        nodes[res["node_key"]] = strip_node(res)
+        nodes[res["uid"]] = strip_node(res)
         for element in res.values():
             if type(element) is list:
                 response_into_matrix(element, nodes, edges)
@@ -189,8 +188,8 @@ class EngagementView(LensView[EV, EQ]):
         lens.graph_client = engagement_client
         return cast("EngagementView", lens.into_view(EngagementView))
 
-    def get_node_by_key(self, node_key: str) -> Optional["EntityView"]:
-        return EntityQuery().with_node_key(eq=node_key).query_first(self.graph_client)
+    def get_node_by_key(self, uid: int) -> Optional["EntityView"]:
+        return EntityQuery().with_uid(eq=uid).query_first(self.graph_client)
 
     def get_nodes(self, query: EntityQuery, first: int = 100) -> List["EntityView"]:
         return query.query(self.graph_client, first=first)
@@ -205,7 +204,7 @@ class EngagementView(LensView[EV, EQ]):
 
 
 def remove_from_scope(engagement: EngagementView, node: "Viewable"):
-    if engagement.node_key == node.node_key:
+    if engagement.uid == node.uid:
         return
 
     txn_0 = engagement.graph_client.gclient.txn(read_only=False)

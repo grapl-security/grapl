@@ -158,36 +158,36 @@ class AnalyzerExecutor:
         return cls._singleton
 
     def check_caches(
-        self, file_hash: str, msg_id: str, node_key: str, analyzer_name: str
+        self, file_hash: str, msg_id: str, uid: int, analyzer_name: str
     ) -> bool:
         with self.metric_reporter.histogram_ctx("analyzer-executor.check_caches"):
-            if self.check_msg_cache(file_hash, node_key, msg_id):
+            if self.check_msg_cache(file_hash, uid, msg_id):
                 self.logger.debug("cache hit - already processed")
                 return True
 
-            if self.check_hit_cache(analyzer_name, node_key):
+            if self.check_hit_cache(analyzer_name, uid):
                 self.logger.debug("cache hit - already matched")
                 return True
 
             return False
 
-    def check_msg_cache(self, file: str, node_key: str, msg_id: str) -> bool:
-        to_hash = str(file) + str(node_key) + str(msg_id)
+    def check_msg_cache(self, file: str, uid: int, msg_id: str) -> bool:
+        to_hash = str(file) + str(uid) + str(msg_id)
         event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
         return bool(self.message_cache.get(event_hash))
 
-    def update_msg_cache(self, file: str, node_key: str, msg_id: str) -> None:
-        to_hash = str(file) + str(node_key) + str(msg_id)
+    def update_msg_cache(self, file: str, uid: int, msg_id: str) -> None:
+        to_hash = str(file) + str(uid) + str(msg_id)
         event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
         self.message_cache.set(event_hash, "1")
 
-    def check_hit_cache(self, file: str, node_key: str) -> bool:
-        to_hash = str(file) + str(node_key)
+    def check_hit_cache(self, file: str, uid: int) -> bool:
+        to_hash = str(file) + str(uid)
         event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
         return bool(self.hit_cache.get(event_hash))
 
-    def update_hit_cache(self, file: str, node_key: str) -> None:
-        to_hash = str(file) + str(node_key)
+    def update_hit_cache(self, file: str, uid: int) -> None:
+        to_hash = str(file) + str(uid)
         event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
         self.hit_cache.set(event_hash, "1")
 
@@ -242,8 +242,8 @@ class AnalyzerExecutor:
                     (TagPair("analyzer_name", exec_hit.analyzer_name),),
                 ):
                     emit_event(s3, exec_hit, self.is_local)
-                self.update_msg_cache(analyzer, exec_hit.root_node_key, message["key"])
-                self.update_hit_cache(analyzer_name, exec_hit.root_node_key)
+                self.update_msg_cache(analyzer, exec_hit.root_uid, message["key"])
+                self.update_hit_cache(analyzer_name, exec_hit.root_uid)
 
             p.join()
 
@@ -276,7 +276,7 @@ class AnalyzerExecutor:
             if isinstance(result, ExecutionHit):
                 self.logger.info(
                     f"Analyzer {analyzer_name} emitting event for:"
-                    f"{result.analyzer_name} {result.root_node_key}"
+                    f"{result.analyzer_name} {result.root_uid}"
                 )
                 yield result
 
@@ -304,7 +304,7 @@ class AnalyzerExecutor:
             querymap: Dict[str, List[Queryable]] = defaultdict(list)
 
             for an_name, analyzer in analyzers.items():
-                if self.check_caches(file, msg_id, node.node_key, an_name):
+                if self.check_caches(file, msg_id, node.uid, an_name):
                     continue
 
                 queries = analyzer.get_queries()
@@ -323,7 +323,7 @@ class AnalyzerExecutor:
                         "analyzer-executor.query_first.ms", tags
                     ):
                         response = query.query_first(
-                            dg_client, contains_node_key=node.node_key
+                            dg_client, contains_uid=node.uid
                         )
                     if response:
                         self.logger.debug(
@@ -430,7 +430,7 @@ def emit_event(s3: S3ServiceResource, event: ExecutionHit, is_local: bool) -> No
             "analyzer_name": event.analyzer_name,
             "risk_score": event.risk_score,
             "lenses": event.lenses,
-            "risky_node_keys": event.risky_node_keys,
+            "risky_node_uids": event.risky_node_uids,
         }
     )
     event_hash = hashlib.sha256(event_s.encode())
