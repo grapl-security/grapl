@@ -69,11 +69,6 @@ app.use(
 	"/graphQlEndpoint/graphql",
 	middleware,
 	graphqlHTTP(async (request, response, graphQLParams) => {
-		console.debug({
-			request: request,
-			response: response,
-			graphQLParams: graphQLParams,
-		});
 		return {
 			schema: RootQuerySchema,
 			graphiql: IS_LOCAL,

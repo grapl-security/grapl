@@ -441,9 +441,11 @@ services:
     environment:
       <<: *aws-region
       <<: *dgraph-env
+      <<: *dynamodb-env
       IS_LOCAL: "True"
       JWT_SECRET_ID: "JWT_SECRET_ID"
       PORT: ${GRAPL_GRAPHQL_PORT}
+      GRAPL_DISPLAY_TABLE: "${DEPLOYMENT_NAME}-grapl_display_table"
       <<: *secretsmanager-env
     depends_on:
       - dgraph

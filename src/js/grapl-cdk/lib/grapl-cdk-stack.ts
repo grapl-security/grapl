@@ -105,6 +105,10 @@ export class GraplCdkStack extends cdk.Stack {
             table_name: this.deploymentName + '-grapl_schema_table',
         });
 
+        const display_table = new SchemaDb(this, 'DisplayTable', {
+            table_name: this.deploymentName + '-grapl_display_table',
+        });
+
         let watchful = undefined;
         if (props.watchfulEmail) {
             const alarmSqs = new sqs.Queue(this, 'alarmSqs');
@@ -189,6 +193,7 @@ export class GraplCdkStack extends cdk.Stack {
             {
                 modelPluginBucket: model_plugins_bucket,
                 schemaTable: schema_table,
+                displayTable: display_table,
                 edgeApi,
                 ...graplProps,
             }

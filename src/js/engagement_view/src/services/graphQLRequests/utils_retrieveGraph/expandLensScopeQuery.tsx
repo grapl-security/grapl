@@ -7,6 +7,7 @@ export const expandLensScopeQuery = (lensName: string) => {
             lens_type,
             dgraph_type,
             score,
+            display,
             scope {
                 ... on Process {
                     uid,
@@ -14,16 +15,19 @@ export const expandLensScopeQuery = (lensName: string) => {
                     dgraph_type,
                     process_name, 
                     process_id,
+                    display,
                     children {
                         uid, 
                         node_key, 
                         dgraph_type,
+                        display,
                         process_name, 
                         process_id,
                     }, 
                     risks {  
                         uid,
                         dgraph_type,
+                        display,
                         node_key, 
                         analyzer_name, 
                         risk_score
@@ -33,6 +37,7 @@ export const expandLensScopeQuery = (lensName: string) => {
                     uid, 
                     node_key, 
                     dgraph_type,
+                    display,
                     hostname,
                     asset_ip{
                         ip_address
@@ -41,6 +46,7 @@ export const expandLensScopeQuery = (lensName: string) => {
                         uid, 
                         node_key, 
                         dgraph_type,
+                        display,
                         process_name, 
                         process_id,
                     },
@@ -48,11 +54,13 @@ export const expandLensScopeQuery = (lensName: string) => {
                         uid, 
                         node_key, 
                         dgraph_type,
+                        display,
                         file_path
                     }, 
                     risks {  
                         uid,
                         dgraph_type,
+                        display,
                         node_key, 
                         analyzer_name, 
                         risk_score
@@ -62,9 +70,11 @@ export const expandLensScopeQuery = (lensName: string) => {
                     uid,
                     node_key, 
                     dgraph_type,
+                    display,
                     risks {  
                         uid,
                         dgraph_type,
+                        display,
                         node_key, 
                         analyzer_name, 
                         risk_score
@@ -72,6 +82,7 @@ export const expandLensScopeQuery = (lensName: string) => {
                 }
                 ... on PluginType {
                     predicates,
+                    display
                 }
             }
         }

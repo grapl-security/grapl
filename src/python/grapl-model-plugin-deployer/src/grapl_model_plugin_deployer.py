@@ -53,9 +53,9 @@ if IS_LOCAL:
     for i in range(0, 150):
         try:
             secretsmanager = SecretsManagerClientFactory(boto3).from_env()
-            JWT_SECRET = secretsmanager.get_secret_value(
-                SecretId="JWT_SECRET_ID",
-            )["SecretString"]
+            JWT_SECRET = secretsmanager.get_secret_value(SecretId="JWT_SECRET_ID",)[
+                "SecretString"
+            ]
             break
         except Exception as e:
             LOGGER.debug(e)
@@ -67,9 +67,7 @@ else:
 
     client = boto3.client("secretsmanager")
 
-    JWT_SECRET = client.get_secret_value(
-        SecretId=JWT_SECRET_ID,
-    )["SecretString"]
+    JWT_SECRET = client.get_secret_value(SecretId=JWT_SECRET_ID,)["SecretString"]
 
 app = Chalice(app_name="model-plugin-deployer")
 
@@ -116,28 +114,40 @@ def format_schemas(schema_defs: List["BaseSchema"]) -> str:
         ["  # Type Definitions", types, "\n  # Schema Definitions", schemas]
     )
 
-
-def store_schema(dynamodb, schema: "Schema"):
-    table = dynamodb.Table(os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table")
-    for f_edge, (edge_t, r_edge) in schema.get_edges().items():
-        if not (f_edge and r_edge):
-            LOGGER.warn(f"missing {f_edge} {r_edge} for {schema.self_type()}")
-            continue
-        table.put_item(
-            Item={
-                "f_edge": f_edge,
-                "r_edge": r_edge,
-                "relationship": int(edge_t.rel),
-            }
+    def store_schema(dynamodb, schema: "Schema"):
+        grapl_schema_table = dynamodb.Table(
+            os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table"
+        )
+        grapl_display_table = dynamodb.Table(
+            os.environ["DEPLOYMENT_NAME"] + "-grapl_display_table"
         )
 
-        table.put_item(
+        grapl_display_table.put_item(
             Item={
-                "f_edge": r_edge,
-                "r_edge": f_edge,
-                "relationship": int(edge_t.rel.reverse()),
+                "node_type": schema.self_type(),
+                "display_property": schema.get_display_property(),
+
             }
         )
+        for f_edge, (edge_t, r_edge) in schema.get_edges().items():
+            if not (f_edge and r_edge):
+                LOGGER.warn(f"missing {f_edge} {r_edge} for {schema.self_type()}")
+                continue
+            grapl_schema_table.put_item(
+                Item={
+                    "f_edge": f_edge,
+                    "r_edge": r_edge,
+                    "relationship": int(edge_t.rel),
+                }
+            )
+
+            table.put_item(
+                Item={
+                    "f_edge": r_edge,
+                    "r_edge": f_edge,
+                    "relationship": int(edge_t.rel.reverse()),
+                }
+            )
 
 
 def provision_master_graph(
@@ -413,13 +423,7 @@ def upload_plugins(s3_client, plugin_files: Dict[str, str]) -> Optional[Response
         with open(os.path.join("/tmp/model_plugins/", path), "w") as f:
             f.write(contents)
 
-    th = threading.Thread(
-        target=provision_schemas,
-        args=(
-            GraphClient(),
-            raw_schemas,
-        ),
-    )
+    th = threading.Thread(target=provision_schemas, args=(GraphClient(), raw_schemas,),)
     th.start()
 
     try:
@@ -487,10 +491,7 @@ def list_model_plugins():
 def delete_plugin(s3_client, plugin_name):
     plugin_bucket = (os.environ["DEPLOYMENT_NAME"] + "-model-plugins-bucket").lower()
 
-    list_response = s3_client.list_objects_v2(
-        Bucket=plugin_bucket,
-        Prefix=plugin_name,
-    )
+    list_response = s3_client.list_objects_v2(Bucket=plugin_bucket, Prefix=plugin_name,)
 
     if not list_response.get("Contents"):
         return []

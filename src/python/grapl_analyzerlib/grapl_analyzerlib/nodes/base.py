@@ -42,11 +42,13 @@ class BaseSchema(Schema):
                 ),
                 "last_index_time": PropType(PropPrimitive.Int, False),
             },
-            {
-                **(edges or {}),
-            },
+            {**(edges or {}),},
             view or BaseView,
         )
+
+    @staticmethod
+    def get_display_property() -> str:
+        return "dgraph_type"
 
     def generate_type(self) -> str:
         dgraph_builtins = {"dgraph.type", "uid"}

@@ -11,6 +11,7 @@ import { GraplS3Bucket } from '../grapl_s3_bucket';
 export interface ModelPluginDeployerProps extends GraplServiceProps {
     modelPluginBucket: s3.IBucket;
     schemaTable: SchemaDb;
+    displayTable: SchemaDb;
     edgeApi: apigateway.RestApi;
 }
 
