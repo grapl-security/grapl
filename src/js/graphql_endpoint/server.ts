@@ -69,11 +69,6 @@ app.use(
 	"/graphQlEndpoint/graphql",
 	middleware,
 	graphqlHTTP(async (request, response, graphQLParams) => {
-		console.debug({
-			request: request,
-			response: response,
-			graphQLParams: graphQLParams,
-		});
 		return {
 			schema: RootQuerySchema,
 			graphiql: IS_LOCAL,
@@ -81,12 +76,11 @@ app.use(
 	})
 );
 
-app.use(function (req, res) {
+app.use(function (req: any, res: any) {
 	console.warn(req);
 	console.warn(req.path);
 	res.sendStatus(404);
 });
-
 if (IS_LOCAL) {
 	app.listen(PORT, function () {
 		console.log("GraphQL Server started on Port " + PORT);

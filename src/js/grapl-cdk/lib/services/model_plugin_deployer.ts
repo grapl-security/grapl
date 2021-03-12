@@ -6,11 +6,13 @@ import * as s3 from '@aws-cdk/aws-s3';
 import { WatchedOperation } from 'cdk-watchful';
 import { GraplServiceProps } from '../grapl-cdk-stack';
 import { SchemaDb } from '../schemadb';
+import { DisplayPropertyDb } from '../displaydb';
 import { GraplS3Bucket } from '../grapl_s3_bucket';
 
 export interface ModelPluginDeployerProps extends GraplServiceProps {
     modelPluginBucket: s3.IBucket;
     schemaTable: SchemaDb;
+    displayTable: DisplayPropertyDb;
     edgeApi: apigateway.RestApi;
 }
 
@@ -61,6 +63,10 @@ export class ModelPluginDeployer extends cdk.NestedStack {
                 USER_AUTH_TABLE: props.userAuthTable.user_auth_table.tableName,
                 DEPLOYMENT_NAME: props.deploymentName,
                 UX_BUCKET_URL: 'https://' + ux_bucket.bucketRegionalDomainName,
+                GRAPL_SCHEMA_TABLE: props.schemaTable.table.tableName,
+                GRAPL_DISPLAY_TABLE: props.displayTable.table.tableName,
+
+
             },
             timeout: cdk.Duration.seconds(25),
             memorySize: 256,
@@ -82,6 +88,7 @@ export class ModelPluginDeployer extends cdk.NestedStack {
             props.jwtSecret.grantRead(event_handler.role);
             props.userAuthTable.allowReadFromRole(event_handler.role);
             props.schemaTable.allowReadWriteFromRole(event_handler.role);
+            props.displayTable.allowReadWriteFromRole(event_handler.role);
 
             props.modelPluginBucket.grantReadWrite(event_handler.role);
             props.modelPluginBucket.grantDelete(event_handler.role);

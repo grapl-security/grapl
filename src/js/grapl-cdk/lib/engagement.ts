@@ -13,8 +13,8 @@ import { GraplServiceProps } from './grapl-cdk-stack';
 
 import * as path from 'path';
 import {WatchedOperation} from "cdk-watchful";
-import { SchemaDb } from './schemadb';
 import { GraplS3Bucket } from './grapl_s3_bucket';
+import { DbTable } from './dyanamoDbTable';
 
 
 function getEdgeGatewayId(
@@ -113,9 +113,10 @@ export class EngagementEdge extends cdk.NestedStack {
     }
 }
 
+
 export interface EngagementNotebookProps extends GraplServiceProps {
     model_plugins_bucket: s3.IBucket;
-    schema_db: SchemaDb;
+    schema_db: DbTable
 }
 
 export class EngagementNotebook extends cdk.NestedStack {

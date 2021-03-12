@@ -28,6 +28,12 @@ class DynamoDB(pulumi.ComponentResource):
             self,
             hash_key="f_edge",
         )
+        self.display_table = dynamodb_table(
+            f"{DEPLOYMENT_NAME}-grapl_display_table",
+            [{"name": "node_type", "type": "S"}],
+            self,
+            hash_key="node_type",
+        )
         self.static_mapping_table = dynamodb_table(
             f"{DEPLOYMENT_NAME}-static_mapping_table",
             [{"name": "pseudo_key", "type": "S"}],

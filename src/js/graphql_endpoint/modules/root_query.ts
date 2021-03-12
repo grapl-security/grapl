@@ -120,6 +120,47 @@ function enrichNode(node: RawNode) {
 	);
 }
 
+const AWS = require("aws-sdk");
+const IS_LOCAL = process.env.IS_LOCAL == "True" || null;
+
+const getDisplayProperty = async (nodeType: string) => {
+	try {
+		const region = process.env.AWS_REGION;
+		AWS.config.update({ region: region });
+
+		const ddb = new AWS.DynamoDB({
+			// new client
+			apiVersion: "2012-08-10",
+			region: IS_LOCAL ? process.env.AWS_REGION : undefined,
+			accessKeyId: IS_LOCAL ? process.env.DYNAMODB_ACCESS_KEY_ID : undefined,
+			secretAccessKey: IS_LOCAL
+				? process.env.DYNAMODB_ACCESS_KEY_SECRET
+				: undefined,
+			endpoint: IS_LOCAL ? process.env.DYNAMODB_ENDPOINT : undefined,
+		});
+
+		const params = {
+			TableName: process.env.GRAPL_DISPLAY_TABLE,
+			Key: {
+				node_type: { S: nodeType }, // get display prop for a given node based on the type
+			},
+			ProjectionExpression: "display_property", // identifies	the attributes that you want to query for
+		};
+
+		const response = await ddb.getItem(params).promise();
+
+		if (response.Item === undefined) {
+			return "dgraph_type";
+		}
+		return response.Item.display_property;
+	} catch (e) {
+		console.error(
+			"Error Querying DynamoDB for display property in root_query.ts",
+			e
+		);
+	}
+};
+
 const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
 	console.log("handleLensScope args: ", args);
 	const dg_client = getDgraphClient();
@@ -205,6 +246,17 @@ const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
 	}
 
 	for (const node of lens_subgraph["scope"]) {
+		const nodeType = node.dgraph_type.filter(filterDefaultDgraphNodeTypes)[0];
+		const displayProperty = await getDisplayProperty(nodeType);
+
+		if (node[displayProperty.S] === undefined) {
+			node["display"] = nodeType;
+		} else {
+			node["display"] = node[displayProperty.S].toString();
+		}
+	}
+
+	for (const node of lens_subgraph["scope"]) {
 		if (!builtins.has(node.dgraph_type[0])) {
 			const tmpNode = { ...node };
 			node.predicates = tmpNode;
@@ -244,7 +296,7 @@ const RootQuery = new GraphQLObjectType({
 				// #TODO: Make sure to validate that 'first' is under a specific limit, maybe 1000
 				console.log("Making getLensesQuery");
 				const lenses = await getLenses(getDgraphClient(), first, offset);
-				console.debug("returning data from getLenses for lenses resolver", lenses);
+				console.debug("eturning data from getLenses for lenses resolver", lenses);
 				return lenses;
 			},
 		},

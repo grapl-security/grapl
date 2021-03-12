@@ -14,6 +14,7 @@ const BaseNode = {
 	uid: { type: GraphQLInt },
 	node_key: { type: GraphQLString },
 	dgraph_type: { type: GraphQLList(GraphQLString) },
+	display: {type: GraphQLString},
 };
 
 export const LensNodeType = new GraphQLObjectType({

@@ -48,7 +48,7 @@ export class GraphMerger extends cdk.NestedStack {
                 MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
                 MERGED_CACHE_ADDR: event_cache.cluster.attrRedisEndpointAddress,
                 MERGED_CACHE_PORT: event_cache.cluster.attrRedisEndpointPort,
-                GRAPL_SCHEMA_TABLE: props.schemaTable.schema_table.tableName,
+                GRAPL_SCHEMA_TABLE: props.schemaTable.table.tableName,
             },
             vpc: props.vpc,
             eventEmitter: subgraphs_generated,

@@ -116,28 +116,39 @@ def format_schemas(schema_defs: List["BaseSchema"]) -> str:
         ["  # Type Definitions", types, "\n  # Schema Definitions", schemas]
     )
 
-
-def store_schema(dynamodb, schema: "Schema"):
-    table = dynamodb.Table(os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table")
-    for f_edge, (edge_t, r_edge) in schema.get_edges().items():
-        if not (f_edge and r_edge):
-            LOGGER.warn(f"missing {f_edge} {r_edge} for {schema.self_type()}")
-            continue
-        table.put_item(
-            Item={
-                "f_edge": f_edge,
-                "r_edge": r_edge,
-                "relationship": int(edge_t.rel),
-            }
+    def store_schema(dynamodb, schema: "Schema"):
+        grapl_schema_table = dynamodb.Table(
+            os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table"
+        )
+        grapl_display_table = dynamodb.Table(
+            os.environ["DEPLOYMENT_NAME"] + "-grapl_display_table"
         )
 
-        table.put_item(
-            Item={
-                "f_edge": r_edge,
-                "r_edge": f_edge,
-                "relationship": int(edge_t.rel.reverse()),
+        grapl_display_table.put_item(   
+            Item={  
+                "node_type": schema.self_type(),
+                "display_property": schema.get_display_property(),
             }
         )
+        for f_edge, (edge_t, r_edge) in schema.get_edges().items():
+            if not (f_edge and r_edge):
+                LOGGER.warn(f"missing {f_edge} {r_edge} for {schema.self_type()}")
+                continue
+            grapl_schema_table.put_item(
+                Item={
+                    "f_edge": f_edge,
+                    "r_edge": r_edge,
+                    "relationship": int(edge_t.rel),
+                }
+            )
+
+            grapl_schema_table.put_item(
+                Item={
+                    "f_edge": r_edge,
+                    "r_edge": f_edge,
+                    "relationship": int(edge_t.rel.reverse()),
+                }
+            )
 
 
 def provision_master_graph(
