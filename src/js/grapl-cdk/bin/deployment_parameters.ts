@@ -13,20 +13,20 @@ export interface LogLevels<T> {
 
 module HardcodedDeploymentParameters {
     // ex: 'Grapl-my-deployment'
-    export const deployName = undefined;
+    export const deployName = 'jgrillo-test';
 
     // defaults to 'latest'
-    export const graplVersion = undefined;
+    export const graplVersion = 'jgrillo-test';
 
     // (optional) ex: ops@example.com
-    export const watchfulEmail = undefined;
-    export const operationalAlarmsEmail = undefined;
-    export const securityAlarmsEmail = undefined;
+    export const watchfulEmail = 'jgrillo@graplsecurity.com';
+    export const operationalAlarmsEmail = 'jgrillo@graplsecurity.com';
+    export const securityAlarmsEmail = 'jgrillo@graplsecurity.com';
 
     // AWS region for this Grapl deployment
 
     export const region = undefined;
-    
+
     export const logLevels: LogLevels<string | undefined> = {
         defaultLogLevel: undefined,
         sysmonSubgraphGeneratorLogLevel: undefined,
@@ -49,7 +49,7 @@ export class DeploymentParameters {
 
     logLevels: LogLevels<string>;
 
-    constructor() { 
+    constructor() {
         // I'd like to remove this relatively ASAP.
         const allowLegacyDeploymentName = boolFromEnvVar(
             process.env.GRAPL_ALLOW_LEGACY_DEPLOYMENT_NAME

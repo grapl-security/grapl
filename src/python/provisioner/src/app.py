@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
+import sys
+
 from hashlib import pbkdf2_hmac, sha256
 from typing import TYPE_CHECKING, Any, List, Sequence, Union
 
@@ -33,12 +36,17 @@ if TYPE_CHECKING:
     from mypy_boto3_dynamodb import DynamoDBServiceResource
     from mypy_boto3_secretsmanager import Client as SecretsmanagerClient
 
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
+LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+
 GRAPL_DEPLOYMENT_NAME = os.environ["GRAPL_DEPLOYMENT_NAME"]
 GRAPL_TEST_USER_NAME = os.environ["GRAPL_TEST_USER_NAME"]
 
 
-def _set_schema(graph_client: GraphClient, schema) -> None:
+def _set_schema(graph_client: GraphClient, schema: str) -> None:
     op = pydgraph.Operation(schema=schema)
+    LOGGER.info(f"setting dgraph schema {schema}")
     graph_client.alter(op)
 
 
@@ -210,7 +218,7 @@ def _retrieve_test_user_password(
     secretsmanager: SecretsmanagerClient, deployment_name: str
 ):
     return secretsmanager.get_secret_value(
-        SecretId=f"{deployment_name-TestUserPassword}"
+        SecretId=f"{deployment_name}-TestUserPassword"
     )["SecretString"]
 
 

@@ -1,3 +1,4 @@
+import base64
 import logging
 import os
 import pathlib
@@ -5,6 +6,8 @@ import shutil
 import subprocess
 import sys
 from typing import IO, AnyStr
+
+from mypy_boto3_lambda import LambdaClient
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
@@ -95,5 +98,23 @@ def destroy_grapl(
     LOGGER.info("destroyed all stacks")
 
 
-def provision_grapl() -> None:
-    pass  # FIXME
+def provision_grapl(lambda_: LambdaClient, deployment_name: str) -> None:
+    LOGGER.info("invoking provisioner lambda")
+    result = lambda_.invoke(
+        FunctionName=f"{deployment_name}-Provisioner-Handler",
+        InvocationType="RequestResponse",
+        LogType="Tail",
+    )
+
+    status = result["StatusCode"]
+    logs = base64.b64decode(bytes(result["LogResult"], "utf-8")).decode("utf-8")
+    if status == 200:
+        for line in logs.splitlines():
+            LOGGER.info(line)
+        LOGGER.info("provisioner lambda succeeded")
+    else:
+        for line in logs.splitlines():
+            LOGGER.error(line)
+        raise Exception(
+            f"provisioner lambda failed with status {status}: {result['FunctionError']}"
+        )

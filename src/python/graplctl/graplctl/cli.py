@@ -83,6 +83,7 @@ def main(
         sns=session.client("sns", region_name=grapl_region),
         route53=session.client("route53", region_name=grapl_region),
         sqs=session.client("sqs", region_name=grapl_region),
+        lambda_=session.client("lambda", region_name=grapl_region),
     )
 
 
@@ -126,7 +127,9 @@ def aws_deploy(
     click.echo("deployed grapl cdk stacks to aws")
 
     click.echo("creating dgraph cluster in aws")
-    _create_dgraph(graplctl_state=graplctl_state, instance_type=dgraph_instance_type)
+    if not _create_dgraph(graplctl_state=graplctl_state, instance_type=dgraph_instance_type):
+        click.echo("dgraph cluster already exists")
+        return
     click.echo("created dgraph cluster in aws")
 
 
@@ -172,7 +175,12 @@ def aws_destroy(graplctl_state: GraplctlState, all: bool, grapl_root: str):
 @aws.command(help="provision the grapl deployment", name="provision")
 @click.pass_obj
 def aws_provision(graplctl_state: GraplctlState):
-    pass  # FIXME
+    click.echo("provisioning grapl deployment")
+    aws_cdk_ops.provision_grapl(
+        lambda_=graplctl_state.lambda_,
+        deployment_name=graplctl_state.grapl_deployment_name
+    )
+    click.echo("provisioned grapl deployment")
 
 
 main.add_command(queues)
@@ -195,7 +203,11 @@ def _create_swarm(
     swarm_id: str,
     docker_daemon_config: Optional[Dict] = None,
     extra_init: Optional[Callable[[SSMClient, str, List[Ec2Instance]], None]] = None,
-):
+) -> bool:
+    if swarm_id in set(_swarm_ls(graplctl_state)):
+        click.echo(f"swarm {swarm_id} already exists")
+        return False # bail early if the swarm already exists
+
     ami_id = docker_swarm_ops.REGION_TO_AMI_ID[graplctl_state.grapl_region.lower()]
     security_group_id = docker_swarm_ops.swarm_security_group_id(
         ec2=graplctl_state.ec2,
@@ -361,6 +373,8 @@ def _create_swarm(
     )
     click.echo(f"joined docker swarm worker instances {worker_instance_ids_str}")
 
+    return True
+
 
 @swarm.command(
     help="start ec2 instances and join them as a docker swarm cluster",
@@ -411,15 +425,20 @@ def swarm_create(
     )
 
 
-@swarm.command(help="list swarm ids for each of the swarm clusters", name="ls")
-@pass_graplctl_state
-def swarm_ls(graplctl_state: GraplctlState):
+def _swarm_ls(graplctl_state: GraplctlState) -> Iterator[str]:
     for swarm_id in docker_swarm_ops.swarm_ids(
         ec2=graplctl_state.ec2,
         deployment_name=graplctl_state.grapl_deployment_name,
         region=graplctl_state.grapl_region,
         version=graplctl_state.grapl_version,
     ):
+        yield swarm_id
+
+
+@swarm.command(help="list swarm ids for each of the swarm clusters", name="ls")
+@pass_graplctl_state
+def swarm_ls(graplctl_state: GraplctlState):
+    for swarm_id in _swarm_ls(graplctl_state):
         click.echo(swarm_id)
 
 
@@ -694,10 +713,10 @@ def dgraph():
     pass
 
 
-def _create_dgraph(graplctl_state: GraplctlState, instance_type: str) -> None:
+def _create_dgraph(graplctl_state: GraplctlState, instance_type: str) -> bool:
     swarm_id = f"{graplctl_state.grapl_deployment_name.lower()}-dgraph-swarm"
-    click.echo(f"creating swarm {swarm_id}")
-    _create_swarm(
+    click.echo(f"creating dgraph swarm {swarm_id}")
+    if not _create_swarm(
         graplctl_state=graplctl_state,
         num_managers=1,
         num_workers=2,
@@ -705,8 +724,10 @@ def _create_dgraph(graplctl_state: GraplctlState, instance_type: str) -> None:
         swarm_id=swarm_id,
         docker_daemon_config={"data-root": "/dgraph"},
         extra_init=dgraph_ops.init_dgraph,
-    )
-    click.echo(f"created swarm {swarm_id}")
+    ):
+        click.echo(f"dgraph swarm {swarm_id} already exists")
+        return False  # bail early because the dgraph deployment already exists
+    click.echo(f"created dgraph swarm {swarm_id}")
 
     manager_instance = next(
         docker_swarm_ops.swarm_instances(
@@ -776,6 +797,8 @@ def _create_dgraph(graplctl_state: GraplctlState, instance_type: str) -> None:
         )
     click.echo(f"updated dns A records for dgraph in swarm {swarm_id}")
 
+    return True
+
 
 @dgraph.command(
     help="spin up a swarm cluster and deploy dgraph on it",
@@ -791,7 +814,9 @@ def _create_dgraph(graplctl_state: GraplctlState, instance_type: str) -> None:
 @pass_graplctl_state
 def create_dgraph(graplctl_state: GraplctlState, instance_type: str):
     click.echo(f"creating dgraph cluster of {instance_type} instances")
-    _create_dgraph(graplctl_state=graplctl_state, instance_type=instance_type)
+    if not _create_dgraph(graplctl_state=graplctl_state, instance_type=instance_type):
+        click.echo("dgraph cluster already exists")
+        return
     click.echo(f"created dgraph cluster of {instance_type} instances")
 
 

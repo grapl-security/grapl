@@ -1,7 +1,4 @@
-python_library(
-    name="provisioner",
-    sources=["app.py"],
-)
+python_library()
 
 python_awslambda(
     name="lambda",

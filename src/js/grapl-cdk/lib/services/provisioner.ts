@@ -10,7 +10,7 @@ export class Provisioner extends cdk.NestedStack {
     constructor(parent: cdk.Construct, id: string, props: GraplServiceProps) {
         super(parent, id);
 
-        const serviceName = `${props.prefix}-Provisioner`;
+        const serviceName = `${props.deploymentName}-Provisioner`;
 
         const role = new iam.Role(this, 'ExecutionRole', {
             assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
@@ -35,7 +35,7 @@ export class Provisioner extends cdk.NestedStack {
             ),
             vpc: props.vpc,
             environment: {
-                GRAPL_LOG_LEVEL: props.defaultLogLevel,
+                GRAPL_LOG_LEVEL: props.logLevels.defaultLogLevel || "INFO",
                 MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
             },
             timeout: cdk.Duration.seconds(600),
@@ -55,7 +55,7 @@ export class Provisioner extends cdk.NestedStack {
         }
 
         this.secret = new secretsmanager.Secret(this, 'TestUserPassword', {
-            secretName: `${props.prefix}-TestUserPassword`,
+            secretName: `${props.deploymentName}-TestUserPassword`,
             generateSecretString: {
                 passwordLength: 48
             }

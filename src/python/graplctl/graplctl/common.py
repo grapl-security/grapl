@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     import mypy_boto3_ec2.service_resource as ec2_resources
     from mypy_boto3_cloudwatch.client import CloudWatchClient
     from mypy_boto3_ec2 import EC2ServiceResource
+    from mypy_boto3_lambda import LambdaClient
     from mypy_boto3_route53 import Route53Client
     from mypy_boto3_sns import SNSClient
     from mypy_boto3_sqs import SQSClient
@@ -41,6 +42,7 @@ class GraplctlState:
     sns: SNSClient
     route53: Route53Client
     sqs: SQSClient
+    lambda_: LambdaClient
 
 
 # Prefer this to `pass_obj`
