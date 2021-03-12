@@ -127,7 +127,9 @@ def aws_deploy(
     click.echo("deployed grapl cdk stacks to aws")
 
     click.echo("creating dgraph cluster in aws")
-    if not _create_dgraph(graplctl_state=graplctl_state, instance_type=dgraph_instance_type):
+    if not _create_dgraph(
+        graplctl_state=graplctl_state, instance_type=dgraph_instance_type
+    ):
         click.echo("dgraph cluster already exists")
         return
     click.echo("created dgraph cluster in aws")
@@ -178,7 +180,7 @@ def aws_provision(graplctl_state: GraplctlState):
     click.echo("provisioning grapl deployment")
     aws_cdk_ops.provision_grapl(
         lambda_=graplctl_state.lambda_,
-        deployment_name=graplctl_state.grapl_deployment_name
+        deployment_name=graplctl_state.grapl_deployment_name,
     )
     click.echo("provisioned grapl deployment")
 
@@ -206,7 +208,7 @@ def _create_swarm(
 ) -> bool:
     if swarm_id in set(_swarm_ls(graplctl_state)):
         click.echo(f"swarm {swarm_id} already exists")
-        return False # bail early if the swarm already exists
+        return False  # bail early if the swarm already exists
 
     ami_id = docker_swarm_ops.REGION_TO_AMI_ID[graplctl_state.grapl_region.lower()]
     security_group_id = docker_swarm_ops.swarm_security_group_id(

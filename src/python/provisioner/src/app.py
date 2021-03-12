@@ -4,7 +4,6 @@ import json
 import logging
 import os
 import sys
-
 from hashlib import pbkdf2_hmac, sha256
 from typing import TYPE_CHECKING, Any, List, Sequence, Union
 
