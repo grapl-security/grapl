@@ -12,25 +12,6 @@ and then `pulumi up` against the `local-grapl` stack and deploy to
 your Localstack instance. When working purely on infrastructure, this
 can be a way to iterate quickly.
 
-In our integration and testing environments, we also use Localstack,
-but inside a Docker Compose network, and also currently with
-[MinIO][minio] as our S3 service. This requires changing the S3
-endpoint, as well as the fake AWS credentials we use for
-Pulumi. However, this modification is handled within the
-`docker-compose.yml` file, so it is mentioned here for informational
-purposes only.
-
-(We use MinIO currently because we have some test code that does not
-appear to like Localstack's S3 implementation for an as-yet-unknown
-reason. Additionally, we have had trouble configuring Localstack to
-proxy MinIO as its S3 endpoint. As a result, we need to communicate
-directly with MinIO on its own endpoint. Additionally, MinIO requires
-a secret key of at least 8 characters, so we can't use localstack's
-default value of `test`. Since we don't want the hassle of trying to
-provide multiple sets of credentials to Pulumi, we just set an new set
-across all our services in our Docker Compose environment. In the
-future, we hope to be able to simplify this setup.)
-
 # Getting Started
 
 We're using the Python SDK for Pulumi. As such, we'll need to have

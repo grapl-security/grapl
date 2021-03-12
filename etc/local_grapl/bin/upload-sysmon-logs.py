@@ -51,12 +51,12 @@ def setup_env(deployment_name: str):
     if deployment_name == "local-grapl":
         kvs = [
             ("AWS_REGION", "us-east-1"),
-            ("S3_ENDPOINT", "http://localhost:9000"),
-            ("S3_ACCESS_KEY_ID", "THIS_IS_A_FAKE_AWS_ACCESS_KEY_ID"),
-            ("S3_ACCESS_KEY_SECRET", "THIS_IS_A_FAKE_AWS_SECRET_ACCESS_KEY"),
+            ("S3_ENDPOINT", "http://localhost:4566"),
+            ("S3_ACCESS_KEY_ID", "test"),
+            ("S3_ACCESS_KEY_SECRET", "test"),
             ("SQS_ENDPOINT", "http://localhost:4566"),
-            ("SQS_ACCESS_KEY_ID", "THIS_IS_A_FAKE_AWS_ACCESS_KEY_ID"),
-            ("SQS_ACCESS_KEY_SECRET", "THIS_IS_A_FAKE_AWS_SECRET_ACCESS_KEY"),
+            ("SQS_ACCESS_KEY_ID", "test"),
+            ("SQS_ACCESS_KEY_SECRET", "test"),
         ]
         for (k, v) in kvs:
             # fun fact: os.putenv is bad and this is preferred
