@@ -221,7 +221,7 @@ def _retrieve_test_user_password(
     )["SecretString"]
 
 
-def provision():
+def provision(event: Any = None, context: Any = None):
     graph_client = GraphClient()
     dynamodb: DynamoDBServiceResource = boto3.resource("dynamodb")
     secretsmanager: SecretsmanagerClient = boto3.client("secretsmanager")

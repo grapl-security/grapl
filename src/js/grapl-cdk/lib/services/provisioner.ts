@@ -36,6 +36,8 @@ export class Provisioner extends cdk.NestedStack {
             vpc: props.vpc,
             environment: {
                 GRAPL_LOG_LEVEL: props.logLevels.defaultLogLevel || "INFO",
+                GRAPL_DEPLOYMENT_NAME: props.deploymentName,
+                GRAPL_TEST_USER_NAME: `${props.deploymentName}-grapl-test-user`,
                 MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
             },
             timeout: cdk.Duration.seconds(600),
@@ -46,6 +48,7 @@ export class Provisioner extends cdk.NestedStack {
         event_handler.currentVersion.addAlias('live');
 
         props.dgraphSwarmCluster.allowConnectionsFrom(event_handler);
+        props.userAuthTable.allowReadWriteFromRole(event_handler);
 
         if (props.watchful) {
             props.watchful.watchLambdaFunction(
