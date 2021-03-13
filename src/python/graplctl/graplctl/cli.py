@@ -60,7 +60,7 @@ def _ticker(n: int) -> Iterator[None]:
     "--aws-profile",
     type=click.STRING,
     envvar="AWS_PROFILE",
-    help="aws auth profile [$AWS_PROFILE]",
+    help="aws auth profile [$AWS_PROFILE] (\"default\")",
     default="default",
 )
 @click.pass_context

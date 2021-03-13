@@ -106,6 +106,11 @@ build-services: ## Build Grapl services
 build-aws: ## Build services for Grapl in AWS (subset of all services)
 	$(DOCKER_BUILDX_BAKE) -f docker-compose.zips.yml
 
+.PHONE: graplctl
+graplctl: ## Build graplctl and install it to the project root
+	./pants package ./src/python/graplctl/graplctl
+	cp ./dist/src.python.graplctl.graplctl/graplctl.pex ./graplctl
+
 #
 # Test
 #

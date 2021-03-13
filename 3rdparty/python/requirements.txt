@@ -1,6 +1,7 @@
 # Any Python dependencies used by our code should be declared here.
 boto3
 chalice
+click
 hypothesis
 mypy_boto3_dynamodb
 mypy_boto3_lambda
