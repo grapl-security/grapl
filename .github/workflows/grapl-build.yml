@@ -100,8 +100,15 @@ jobs:
 
   build-zips:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.7]
     steps:
       - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
       - name: Prepare Github Actions CI
         run: |
           ./etc/ci_scripts/clean_gh_actions_space.sh
@@ -123,7 +130,7 @@ jobs:
         run: |
           ./etc/ci_scripts/clean_gh_actions_space.sh
           ./etc/ci_scripts/install_requirements.sh
-      
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
@@ -133,14 +140,14 @@ jobs:
         run: |
           echo "unset RUSTC_WRAPPER" > rust_env.sh
           GRAPL_RUST_ENV_FILE=rust_env.sh GRAPL_LOG_LEVEL=DEBUG make test-integration
-      
+
       # NOTE: This requires >= py37
       # Unlike the e2e tests, we don't dump the database contents; strictly logs.
       - name: 'Collect integration test artifacts'
         if: ${{ always() }}
         run: |
           python3 ./etc/ci_scripts/dump_artifacts.py --compose-project "grapl-integration_tests"
-           
+
       - name: 'Upload integration test artifacts'
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
@@ -179,14 +186,14 @@ jobs:
           GRAPL_LOG_LEVEL=DEBUG DUMP_ARTIFACTS=True make test-e2e ||
           GRAPL_LOG_LEVEL=DEBUG DUMP_ARTIFACTS=True make test-e2e ||
           GRAPL_LOG_LEVEL=DEBUG DUMP_ARTIFACTS=True make test-e2e
-   
+
 
       # NOTE: This requires >= py37
       - name: 'Collect e2e test artifacts'
         if: ${{ always() }}
         run: |
           python3 ./etc/ci_scripts/dump_artifacts.py --compose-project "grapl-e2e_tests"
-           
+
       - name: 'Upload e2e test artifacts'
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
