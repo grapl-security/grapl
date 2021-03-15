@@ -33,12 +33,6 @@ def parse_args() -> argparse.Namespace:
         required=True,
         help="For example, `v0.1.0` - don't forget the v!",
     )
-    parser.add_argument(
-        "--channel",
-        dest="channel",
-        required=True,
-        help="For example, `latest` or `beta`",
-    )
     return parser.parse_args()
 
 
@@ -67,7 +61,7 @@ def download_asset(asset: Asset, args: argparse.Namespace) -> subprocess.Popen:
     url = asset["browser_download_url"]
     filename = asset["name"]
     filename_on_disk = filename.replace(
-        f"-{args.version}-{args.channel}.zip", f"-{args.channel}.zip"
+        f"-{args.version}.zip", f".zip"
     )
 
     print(f"Downloading {url}")
@@ -89,9 +83,6 @@ def main() -> None:
     args = parse_args()
     if not valid_version.match(args.version):
         raise Exception(f"Tag '{args.version}' invalid - must be of format vX.Y.Z")
-
-    if args.channel not in ("latest", "beta", "staging"):
-        print("WARNING: You're using an unconventional --channel, beware!")
 
     assets = get_assets_info(args.version)
 
