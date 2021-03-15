@@ -106,7 +106,7 @@ build-services: ## Build Grapl services
 build-aws: ## Build services for Grapl in AWS (subset of all services)
 	$(DOCKER_BUILDX_BAKE) -f docker-compose.zips.yml
 
-.PHONE: graplctl
+.PHONY: graplctl
 graplctl: ## Build graplctl and install it to the project root
 	./pants package ./src/python/graplctl/graplctl
 	cp ./dist/src.python.graplctl.graplctl/graplctl.pex ./graplctl
@@ -234,6 +234,10 @@ release: ## 'make build-services' with cargo --release
 .PHONY: zip
 zip: build-aws ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
 	docker-compose -f docker-compose.zips.yml up
+	$(MAKE) zip-pants
+
+.PHONY: zip-pants
+zip-pants: ## Generate Lambda zip artifacts using pants
 	./pants filter --filter-target-type=python_awslambda :: | xargs ./pants package
 	cp ./dist/src.python.provisioner.src/lambda.zip ./src/js/grapl-cdk/zips/provisioner-$(or $(TAG),latest).zip
 
