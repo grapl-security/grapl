@@ -3,7 +3,7 @@ import {unpackPluginNodes} from './utils_retrieveGraph/unpackPluginNodes';
 import {expandLensScopeQuery} from './utils_retrieveGraph/expandLensScopeQuery';
 
 import DEV_API_EDGES from '../constants';
-import {apiFetchWithBody} from '../fetch';
+import {apiPostRequestWithBody} from '../fetch';
 
 export const retrieveGraph = async (lens: string): Promise<Node[]> => {
     const expandScopeQueryData = expandLensScopeQuery(lens);
@@ -11,7 +11,7 @@ export const retrieveGraph = async (lens: string): Promise<Node[]> => {
     const lensScopeQuery = JSON.stringify({ query: expandScopeQueryData })
 
     const queryResponse = 
-        await apiFetchWithBody(`${DEV_API_EDGES.graphQL}/graphql`, "POST", lensScopeQuery)
+        await apiPostRequestWithBody(`${DEV_API_EDGES.graphQL}/graphql`, "POST", lensScopeQuery)
             .then(res => res)
             .then(res => {
                 if(res.errors){

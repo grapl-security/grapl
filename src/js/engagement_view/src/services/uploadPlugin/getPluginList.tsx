@@ -1,9 +1,9 @@
 import DEV_API_EDGES from "../constants";
-import { apiFetch } from "../fetch";
+import { apiFetchWithBody } from "../fetch";
 
 export const getPluginList = async () => {
 	try {
-		const getPluginListReq = await apiFetch(
+		const getPluginListReq = await apiFetchWithBody(
 			`${DEV_API_EDGES.modelPluginEdge}/listModelPlugins`,
 			"POST"
 		);
