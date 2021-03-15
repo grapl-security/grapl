@@ -25,8 +25,8 @@ module HardcodedDeploymentParameters {
 
     // AWS region for this Grapl deployment
 
-    export const region = undefined;
-    
+    export const region = 'us-east-1';
+
     export const logLevels: LogLevels<string | undefined> = {
         defaultLogLevel: undefined,
         sysmonSubgraphGeneratorLogLevel: undefined,
@@ -49,7 +49,7 @@ export class DeploymentParameters {
 
     logLevels: LogLevels<string>;
 
-    constructor() { 
+    constructor() {
         // I'd like to remove this relatively ASAP.
         const allowLegacyDeploymentName = boolFromEnvVar(
             process.env.GRAPL_ALLOW_LEGACY_DEPLOYMENT_NAME

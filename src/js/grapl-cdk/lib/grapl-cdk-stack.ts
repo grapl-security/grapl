@@ -330,6 +330,9 @@ export class GraplCdkStack extends cdk.Stack {
             ]
         });
 
-        new Provisioner(this, "provisioner", graplProps);
+        new Provisioner(this, "provisioner", {
+            schemaDb: schema_table,
+            ...graplProps
+        });
     }
 }

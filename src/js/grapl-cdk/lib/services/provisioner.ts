@@ -2,12 +2,18 @@ import * as cdk from '@aws-cdk/core';
 import * as iam from '@aws-cdk/aws-iam';
 import * as lambda from '@aws-cdk/aws-lambda';
 import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
+
 import { GraplServiceProps } from '../grapl-cdk-stack';
+import {SchemaDb} from '../schemadb';
+
+export interface ProvisionerProps extends GraplServiceProps {
+    schemaDb: SchemaDb
+}
 
 export class Provisioner extends cdk.NestedStack {
     private secret: secretsmanager.Secret;
 
-    constructor(parent: cdk.Construct, id: string, props: GraplServiceProps) {
+    constructor(parent: cdk.Construct, id: string, props: ProvisionerProps) {
         super(parent, id);
 
         const serviceName = `${props.deploymentName}-Provisioner`;
@@ -49,6 +55,7 @@ export class Provisioner extends cdk.NestedStack {
 
         props.dgraphSwarmCluster.allowConnectionsFrom(event_handler);
         props.userAuthTable.allowReadWriteFromRole(event_handler);
+        props.schemaDb.allowReadWriteFromRole(event_handler);
 
         if (props.watchful) {
             props.watchful.watchLambdaFunction(
