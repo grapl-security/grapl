@@ -117,33 +117,33 @@ def format_schemas(schema_defs: List["BaseSchema"]) -> str:
     )
 
 
-def store_schema(dynamodb, schema: "Schema"):
-    table = dynamodb.Table(os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table")
-    table.put_item(
-        Item={
-            "node_type": schema.self_type(),
-            "display_property": schema.get_display_property(),
-        }
-    )
-    for f_edge, (edge_t, r_edge) in schema.get_edges().items():
-        if not (f_edge and r_edge):
-            LOGGER.warn(f"missing {f_edge} {r_edge} for {schema.self_type()}")
-            continue
+    def store_schema(dynamodb, schema: "Schema"):
+        table = dynamodb.Table(os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table")
         table.put_item(
             Item={
-                "f_edge": f_edge,
-                "r_edge": r_edge,
-                "relationship": int(edge_t.rel),
+                "node_type": schema.self_type(),
+                "display_property": schema.get_display_property(),
             }
         )
+        for f_edge, (edge_t, r_edge) in schema.get_edges().items():
+            if not (f_edge and r_edge):
+                LOGGER.warn(f"missing {f_edge} {r_edge} for {schema.self_type()}")
+                continue
+            table.put_item(
+                Item={
+                    "f_edge": f_edge,
+                    "r_edge": r_edge,
+                    "relationship": int(edge_t.rel),
+                }
+            )
 
-        table.put_item(
-            Item={
-                "f_edge": r_edge,
-                "r_edge": f_edge,
-                "relationship": int(edge_t.rel.reverse()),
-            }
-        )
+            table.put_item(
+                Item={
+                    "f_edge": r_edge,
+                    "r_edge": f_edge,
+                    "relationship": int(edge_t.rel.reverse()),
+                }
+            )
 
 
 def provision_master_graph(

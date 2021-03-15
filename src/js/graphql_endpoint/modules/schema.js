@@ -3,6 +3,8 @@ const grpc = require("@grpc/grpc-js");
 const { GraphQLJSONObject } = require("graphql-type-json");
 const { json } = require("express");
 
+const {getNodeType} = require("./getNodeType");
+
 const {
 	GraphQLObjectType,
 	GraphQLInt,
@@ -305,12 +307,12 @@ const getLenses = async (dg_client, first, offset) => {
 			$a: first.toString(),
 			$b: offset.toString(),
 		});
-		console.log("Lens response from DGraph", res);
+		console.log("Returning lens response from DGraph");
 		return res.getJson()["all"];
 	} catch (e) {
 		console.error("Error in DGraph txn getLenses: ", e);
 	} finally {
-		console.log("Closing Dgraph Txn in getLenses")
+		console.log("Closing Dgraph Txn in getLenses");
 		await txn.discard();
 	}
 };
@@ -344,16 +346,18 @@ const getLensSubgraphByName = async (dg_client, lens_name) => {
 	try {
 		console.log("Querying DGraph in getLensSubgraphByName");
 		const res = await txn.queryWithVars(query, { $a: lens_name });
-		console.log("returning following data from getLensSubGrapByName: ", res.getJson()["all"][0])
+		console.log(
+			"returning following data from getLensSubGrapByName: ",
+			res.getJson()["all"][0]
+		);
 		return res.getJson()["all"][0];
 	} catch (e) {
 		console.error("Error in DGraph txn: getLensSubgraphByName", e);
 	} finally {
-		console.log("Closing dgraphtxn in getLensSubraphByName")
+		console.log("Closing dgraphtxn in getLensSubraphByName");
 		await txn.discard();
 	}
 };
-
 
 const filterDefaultDgraphNodeTypes = (node_type) => {
 	return node_type !== "Base" && node_type !== "Entity";
@@ -401,10 +405,11 @@ const handleLensScope = async (parent, args) => {
 		// neighbor of a lens neighbor
 		for (const predicate in neighbor) {
 			// we want to keep risks and enrich them at the same time
+			getNodeType(predicate.uid)
 			if (predicate === "risks") {
 				neighbor[predicate].forEach((risk_node) => {
 					risk_node["uid"] = parseInt(risk_node["uid"], 16);
-					
+
 					if ("dgraph_type" in risk_node) {
 						console.log("checking if dgraph_type in risk_node", risk_node);
 						risk_node["dgraph_type"] = risk_node["dgraph_type"].filter(
@@ -492,7 +497,10 @@ const RootQuery = new GraphQLObjectType({
 				// #TODO: Make sure to validate that 'first' is under a specific limit, maybe 1000
 				console.log("Making getLensesQuery");
 				const lenses = await getLenses(getDgraphClient(), first, offset);
-				console.debug("returning data from getLenses for lenses resolver", lenses);
+				console.debug(
+					"returning data from getLenses for lenses resolver",
+					lenses
+				);
 				return lenses;
 			},
 		},
