@@ -60,7 +60,7 @@ def get_assets_info(version: str) -> List[Asset]:
 def download_asset(asset: Asset, args: argparse.Namespace) -> subprocess.Popen:
     url = asset["browser_download_url"]
     filename = asset["name"]
-    filename_on_disk = filename.replace(f"-{args.version}.zip", f".zip")
+    filename_on_disk = filename.replace(f"-{args.version}.zip", ".zip")
 
     print(f"Downloading {url}")
     process = subprocess.Popen(
