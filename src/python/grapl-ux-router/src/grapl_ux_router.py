@@ -275,18 +275,18 @@ if IS_LOCAL:
         LOGGER.info(f'static_js_resource {app.current_request.context["path"]}')
         if app.current_request.method == "OPTIONS":
             return respond(None, {})
-        return _route_to_resource(app.current_request.context["path"])
+        return _route_to_resource(app.current_request.context["path"].lstrip("/"))
 
     @app.route("/static/css/{proxy+}", methods=["OPTIONS", "GET"])
     def static_css_resource_root_nop_route() -> Response:
         LOGGER.info(f'static_css_resource {app.current_request.context["path"]}')
         if app.current_request.method == "OPTIONS":
             return respond(None, {})
-        return _route_to_resource(app.current_request.context["path"])
+        return _route_to_resource(app.current_request.context["path"].lstrip("/"))
 
     @app.route("/static/media/{proxy+}", methods=["OPTIONS", "GET"])
     def static_media_resource_root_nop_route() -> Response:
         LOGGER.info(f'static_media_resource {app.current_request.context["path"]}')
         if app.current_request.method == "OPTIONS":
             return respond(None, {})
-        return _route_to_resource(app.current_request.context["path"])
+        return _route_to_resource(app.current_request.context["path"].lstrip("/"))
