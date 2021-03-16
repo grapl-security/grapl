@@ -7,7 +7,7 @@ grapl_python_distribution(
     ],
     provides = setup_py(
         name = "grapl-common",
-        version = "0.0.5", # TODO: remove VERSION file? Or read from it?
+        version = "0.0.6", # TODO: remove VERSION file? Or read from it?
         description = "Shared code between Grapl components"
     ),
 )

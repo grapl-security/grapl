@@ -6,7 +6,7 @@ grapl_python_distribution(
     ],
     provides = setup_py(
         name = "grapl-analyzerlib",
-        version = "0.2.72", # TODO: remove VERSION file? Or read from it?
+        version = "0.2.73", # TODO: remove VERSION file? Or read from it?
         description = "Library for Grapl Analyzers"
     )
 )
