@@ -6,6 +6,7 @@ use async_trait::async_trait;
 use darkredis::{ConnectionPool,
                 Error as RedisError,
                 MSetBuilder};
+use futures::FutureExt;
 use grapl_observe::{metric_reporter::{tag,
                                       MetricReporter},
                     timers::TimedFutureExt};
@@ -39,6 +40,8 @@ pub enum RedisCacheError {
     Timeout(#[from] Elapsed),
     #[error("JoinError: {0}")]
     JoinError(#[from] tokio::task::JoinError),
+    #[error("Panicked: {0:?}")]
+    Panic(Option<String>),
 }
 
 impl CheckedError for RedisCacheError {
@@ -271,8 +274,9 @@ impl RedisCache {
     }
 }
 
-use std::sync::{Arc,
-                Mutex};
+use std::{panic::AssertUnwindSafe,
+          sync::{Arc,
+                 Mutex}};
 
 use prost::alloc::collections::VecDeque;
 use tracing::error;
@@ -286,48 +290,66 @@ impl Cache for RedisCache {
     where
         CA: Cacheable + Send + Sync + Clone + 'static,
     {
-        let span = tracing::span!(
-            tracing::Level::TRACE,
-            "redis_cache.get",
-            address=?self.address,
-        );
-        let _enter = span.enter();
-        let (res, ms) = self._get(cacheable).timed().await;
+        let f = async {
+            let span = tracing::span!(
+                tracing::Level::TRACE,
+                "redis_cache.get",
+                address=?self.address,
+            );
+            let _enter = span.enter();
+            let (res, ms) = self._get(cacheable).timed().await;
 
-        // todo: Refactor metrics into their own structure
-        match res {
-            Ok(CacheResponse::Hit) => {
-                tracing::debug!("redis cache hit");
-                self.metric_reporter
-                    .histogram(
-                        "redis_cache.get.ms",
-                        ms as f64,
-                        &[tag("success", true), tag("hit", true)],
-                    )
-                    .unwrap_or_else(|e| error!("failed to report redis_cache.get.ms: {:?}", e));
-                self.metric_reporter
-                    .counter(
-                        "redis_cache.get.count",
-                        1f64,
-                        0.10,
-                        &[tag("success", true), tag("hit", true)],
-                    )
-                    .unwrap_or_else(|e| error!("failed to report redis_cache.get.count: {:?}", e));
+            // todo: Refactor metrics into their own structure
+            match res {
+                Ok(CacheResponse::Hit) => {
+                    tracing::debug!("redis cache hit");
+                    self.metric_reporter
+                        .histogram(
+                            "redis_cache.get.ms",
+                            ms as f64,
+                            &[tag("success", true), tag("hit", true)],
+                        )
+                        .unwrap_or_else(|e| error!("failed to report redis_cache.get.ms: {:?}", e));
+                    self.metric_reporter
+                        .counter(
+                            "redis_cache.get.count",
+                            1f64,
+                            0.10,
+                            &[tag("success", true), tag("hit", true)],
+                        )
+                        .unwrap_or_else(|e| {
+                            error!("failed to report redis_cache.get.count: {:?}", e)
+                        });
+                }
+                Ok(CacheResponse::Miss) => {
+                    self.metric_reporter
+                        .counter(
+                            "redis_cache.get.count",
+                            1f64,
+                            0.10,
+                            &[tag("success", true), tag("hit", false)],
+                        )
+                        .unwrap_or_else(|e| {
+                            error!("failed to report redis_cache.get.count: {:?}", e)
+                        });
+                }
+                _ => (),
             }
-            Ok(CacheResponse::Miss) => {
-                self.metric_reporter
-                    .counter(
-                        "redis_cache.get.count",
-                        1f64,
-                        0.10,
-                        &[tag("success", true), tag("hit", false)],
-                    )
-                    .unwrap_or_else(|e| error!("failed to report redis_cache.get.count: {:?}", e));
-            }
-            _ => (),
-        }
 
-        res
+            res
+        };
+
+        let f = AssertUnwindSafe(f);
+
+        f.catch_unwind().await.map_err(|e| {
+            if let Some(err) = e.downcast_ref::<&str>() {
+                RedisCacheError::Panic(Some(err.to_string()))
+            } else if let Some(err) = e.downcast_ref::<String>() {
+                RedisCacheError::Panic(Some(err.to_string()))
+            } else {
+                RedisCacheError::Panic(None)
+            }
+        })?
     }
 
     #[tracing::instrument(skip(self, cacheables))]
@@ -338,63 +360,105 @@ impl Cache for RedisCache {
     where
         CA: Cacheable + Send + Sync + Clone + 'static,
     {
-        let span = tracing::span!(
-            tracing::Level::TRACE,
-            "redis_cache.get_all",
-            address = self.address.as_str(),
-            cacheables_len = cacheables.len(),
-        );
-        let _enter = span.enter();
+        let f = async {
+            let span = tracing::span!(
+                tracing::Level::TRACE,
+                "redis_cache.get_all",
+                address = self.address.as_str(),
+                cacheables_len = cacheables.len(),
+            );
+            let _enter = span.enter();
 
-        let (res, ms) = self._get_all(cacheables).timed().await;
+            let (res, ms) = self._get_all(cacheables).timed().await;
 
-        self.metric_reporter
-            .histogram(
-                "redis_cache.get_all.ms",
-                ms as f64,
-                &[tag("success", res.is_ok())],
-            )
-            .unwrap_or_else(|e| error!("failed to report redis_cache.get_all.ms: {:?}", e));
-        res
+            self.metric_reporter
+                .histogram(
+                    "redis_cache.get_all.ms",
+                    ms as f64,
+                    &[tag("success", res.is_ok())],
+                )
+                .unwrap_or_else(|e| error!("failed to report redis_cache.get_all.ms: {:?}", e));
+            res
+        };
+
+        let f = AssertUnwindSafe(f);
+
+        f.catch_unwind().await.map_err(|e| {
+            if let Some(err) = e.downcast_ref::<&str>() {
+                RedisCacheError::Panic(Some(err.to_string()))
+            } else if let Some(err) = e.downcast_ref::<String>() {
+                RedisCacheError::Panic(Some(err.to_string()))
+            } else {
+                RedisCacheError::Panic(None)
+            }
+        })?
     }
 
     #[tracing::instrument(skip(self, identity))]
     async fn store(&mut self, identity: Vec<u8>) -> Result<(), Self::CacheErrorT> {
-        let span = tracing::span!(
-            tracing::Level::DEBUG,
-            "redis_cache.store",
-            address = self.address.as_str(),
-        );
+        let f = async {
+            let span = tracing::span!(
+                tracing::Level::DEBUG,
+                "redis_cache.store",
+                address = self.address.as_str(),
+            );
 
-        let _enter = span.enter();
-        let (res, ms) = self._store(identity).timed().await;
-        self.metric_reporter
-            .histogram(
-                "redis_cache.store.ms",
-                ms as f64,
-                &[tag("success", res.is_ok())],
-            )
-            .unwrap_or_else(|e| error!("failed to report redis_cache.put.ms: {:?}", e));
-        res
+            let _enter = span.enter();
+            let (res, ms) = self._store(identity).timed().await;
+            self.metric_reporter
+                .histogram(
+                    "redis_cache.store.ms",
+                    ms as f64,
+                    &[tag("success", res.is_ok())],
+                )
+                .unwrap_or_else(|e| error!("failed to report redis_cache.put.ms: {:?}", e));
+            res
+        };
+
+        let f = AssertUnwindSafe(f);
+
+        f.catch_unwind().await.map_err(|e| {
+            if let Some(err) = e.downcast_ref::<&str>() {
+                RedisCacheError::Panic(Some(err.to_string()))
+            } else if let Some(err) = e.downcast_ref::<String>() {
+                RedisCacheError::Panic(Some(err.to_string()))
+            } else {
+                RedisCacheError::Panic(None)
+            }
+        })?
     }
 
     #[tracing::instrument(skip(self, identities))]
     async fn store_all(&mut self, identities: Vec<Vec<u8>>) -> Result<(), Self::CacheErrorT> {
-        let span = tracing::span!(
-            tracing::Level::TRACE,
-            "redis_cache.store_all",
-            address = self.address.as_str(),
-            identities_len = identities.len(),
-        );
-        let _enter = span.enter();
-        let (res, ms) = self._store_all(identities).timed().await;
-        self.metric_reporter
-            .histogram(
-                "redis_cache.store_all.ms",
-                ms as f64,
-                &[tag("success", res.is_ok())],
-            )
-            .unwrap_or_else(|e| error!("failed to report redis_cache.put_all.ms: {:?}", e));
-        res
+        let f = async {
+            let span = tracing::span!(
+                tracing::Level::TRACE,
+                "redis_cache.store_all",
+                address = self.address.as_str(),
+                identities_len = identities.len(),
+            );
+            let _enter = span.enter();
+            let (res, ms) = self._store_all(identities).timed().await;
+            self.metric_reporter
+                .histogram(
+                    "redis_cache.store_all.ms",
+                    ms as f64,
+                    &[tag("success", res.is_ok())],
+                )
+                .unwrap_or_else(|e| error!("failed to report redis_cache.put_all.ms: {:?}", e));
+            res
+        };
+
+        let f = AssertUnwindSafe(f);
+
+        f.catch_unwind().await.map_err(|e| {
+            if let Some(err) = e.downcast_ref::<&str>() {
+                RedisCacheError::Panic(Some(err.to_string()))
+            } else if let Some(err) = e.downcast_ref::<String>() {
+                RedisCacheError::Panic(Some(err.to_string()))
+            } else {
+                RedisCacheError::Panic(None)
+            }
+        })?
     }
 }
