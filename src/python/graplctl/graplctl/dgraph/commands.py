@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import click
-
-from graplctl.common import GraplctlState, pass_graplctl_state
 import graplctl.dgraph.lib as dgraph_ops
-
+from graplctl.common import GraplctlState, pass_graplctl_state
 
 #
 # dgraph operational commands
@@ -35,7 +33,9 @@ def dgraph(
 @pass_graplctl_state
 def create_dgraph(graplctl_state: GraplctlState, instance_type: str):
     click.echo(f"creating dgraph cluster of {instance_type} instances")
-    if not dgraph_ops.create_dgraph(graplctl_state=graplctl_state, instance_type=instance_type):
+    if not dgraph_ops.create_dgraph(
+        graplctl_state=graplctl_state, instance_type=instance_type
+    ):
         click.echo("dgraph cluster already exists")
         return
     click.echo(f"created dgraph cluster of {instance_type} instances")

@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from mypy_boto3_ec2 import EC2ServiceResource
     from mypy_boto3_ssm import SSMClient
 
-from graplctl.common import get_command_results, Tag, Ec2Instance, GraplctlState
+from graplctl.common import Ec2Instance, GraplctlState, Tag, get_command_results
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))

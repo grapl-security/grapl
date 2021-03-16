@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import boto3
 import click
-from graplctl import __version__, common
-from graplctl.common import GraplctlState
-from graplctl.queues.commands import queues
-from graplctl.dgraph.commands import dgraph
-from graplctl.aws.commands import aws
-from graplctl.swarm.commands import swarm
 import graplctl.swarm.lib as docker_swarm_ops
+from graplctl import __version__, common
+from graplctl.aws.commands import aws
+from graplctl.common import GraplctlState
+from graplctl.dgraph.commands import dgraph
+from graplctl.queues.commands import queues
+from graplctl.swarm.commands import swarm
 
 Tag = common.Tag
 Ec2Instance = common.Ec2Instance
@@ -49,7 +49,7 @@ Ec2Instance = common.Ec2Instance
     "--aws-profile",
     type=click.STRING,
     envvar="AWS_PROFILE",
-    help="aws auth profile [$AWS_PROFILE] (\"default\")",
+    help='aws auth profile [$AWS_PROFILE] ("default")',
     default="default",
 )
 @click.pass_context

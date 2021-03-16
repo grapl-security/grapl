@@ -4,8 +4,8 @@ import os
 import sys
 from typing import TYPE_CHECKING, Iterator, List, Optional, Tuple
 
-from click import progressbar
 from botocore.client import ClientError
+from click import progressbar
 
 if TYPE_CHECKING:
     from mypy_boto3_cloudwatch.client import CloudWatchClient
@@ -14,8 +14,8 @@ if TYPE_CHECKING:
     from mypy_boto3_sns.client import SNSClient
     from mypy_boto3_ssm import SSMClient
 
-from graplctl.common import get_command_results, GraplctlState, Ec2Instance, Tag, ticker
 import graplctl.swarm.lib as docker_swarm_ops
+from graplctl.common import Ec2Instance, GraplctlState, Tag, get_command_results, ticker
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))

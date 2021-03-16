@@ -15,11 +15,11 @@ LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
 def _run_shell_cmd(
-        cmd: str,
-        cwd: str,
-        stdout: IO[AnyStr],
-        stderr: IO[AnyStr],
-        env: Optional[Dict[str, str]] = None,
+    cmd: str,
+    cwd: str,
+    stdout: IO[AnyStr],
+    stderr: IO[AnyStr],
+    env: Optional[Dict[str, str]] = None,
 ) -> subprocess.CompletedProcess:
     return subprocess.run(
         cmd,
@@ -57,7 +57,7 @@ def deploy_grapl(
         cwd=grapl_cdk_dir.as_posix(),
         stdout=stdout,
         stderr=stderr,
-        env={"AWS_PROFILE": aws_profile, "PATH": os.environ["PATH"]}
+        env={"AWS_PROFILE": aws_profile, "PATH": os.environ["PATH"]},
     )
     LOGGER.info("deployed Grapl stack")
 
@@ -66,7 +66,10 @@ def deploy_grapl(
 
     LOGGER.info("creating edge UX package")
     _run_shell_cmd(
-        "npm run create_edge_ux_package", cwd=grapl_cdk_dir.as_posix(), stdout=stdout, stderr=stderr
+        "npm run create_edge_ux_package",
+        cwd=grapl_cdk_dir.as_posix(),
+        stdout=stdout,
+        stderr=stderr,
     )
     LOGGER.info("created edge UX package")
 
@@ -76,7 +79,7 @@ def deploy_grapl(
         cwd=grapl_cdk_dir.as_posix(),
         stdout=stdout,
         stderr=stderr,
-        env={"AWS_PROFILE": aws_profile, "PATH": os.environ["PATH"]}
+        env={"AWS_PROFILE": aws_profile, "PATH": os.environ["PATH"]},
     )
     LOGGER.info("deployed EngagementUX stack")
 
@@ -96,11 +99,11 @@ def destroy_grapl(
 
     LOGGER.info("destroying all stacks")
     _run_shell_cmd(
-        "cdk destroy --force --require-approval=never \"*\"",
+        'cdk destroy --force --require-approval=never "*"',
         cwd=grapl_cdk_dir.as_posix(),
         stdout=stdout,
         stderr=stderr,
-        env={"AWS_PROFILE": aws_profile, "PATH": os.environ["PATH"]}
+        env={"AWS_PROFILE": aws_profile, "PATH": os.environ["PATH"]},
     )
     LOGGER.info("destroyed all stacks")
 

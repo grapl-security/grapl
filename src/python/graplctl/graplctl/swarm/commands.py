@@ -4,10 +4,8 @@ import uuid
 from typing import List
 
 import click
-
 import graplctl.swarm.lib as docker_swarm_ops
 from graplctl.common import GraplctlState, pass_graplctl_state
-
 
 #
 # swarm operational commands

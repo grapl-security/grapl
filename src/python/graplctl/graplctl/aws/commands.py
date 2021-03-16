@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import pathlib
-import click
 
+import click
 import graplctl.aws.lib as aws_cdk_ops
 import graplctl.dgraph.lib as dgraph_ops
 import graplctl.swarm.lib as docker_swarm_ops
