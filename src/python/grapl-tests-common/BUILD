@@ -6,7 +6,7 @@ grapl_python_distribution(
     ],
     provides = setup_py(
         name = "grapl-tests-common",
-        version = "0.0.4",
+        version = "0.0.5",
         description = "Shared code between Grapl end-to-end tests"
     )
 )

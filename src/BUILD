@@ -11,7 +11,7 @@ grapl_python_distribution(
     provides = setup_py(
         name = "graplinc-grapl-api",
         readme = "src/python/graplinc/graplinc/grapl/api/README.md",
-        version = "0.1.0",
+        version = "0.1.1",
         description = "Protobuf code for interacting with the Grapl API",
     )
 )
