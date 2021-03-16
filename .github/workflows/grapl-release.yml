@@ -28,6 +28,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
       - name: Prepare Github Actions CI
         run: |
           ./etc/ci_scripts/clean_gh_actions_space.sh
@@ -106,32 +111,34 @@ jobs:
       #       $CHECK_PYPI_VERSION_ARGS
       #     deactivate
 
-      - name: Check whether grapl_graph_descriptions version has been bumped
-        run: |
-          . venv/bin/activate
-          python etc/build_scripts/check_pypi_version.py \
-            grapl_graph_descriptions \
-            $(cat src/rust/graph-descriptions/VERSION) \
-            $CHECK_PYPI_VERSION_ARGS
-          deactivate
+    - name: Check whether grapl_analyzerlib version has been bumped
+      run: |
+        . venv/bin/activate
+        python etc/build_scripts/check_pypi_version.py \
+          grapl_analyzerlib \
+          $(cat src/python/grapl_analyzerlib/VERSION) \
+          $CHECK_PYPI_VERSION_ARGS
+        deactivate
 
-      - name: Check whether grapl_analyzerlib version has been bumped
-        run: |
-          . venv/bin/activate
-          python etc/build_scripts/check_pypi_version.py \
-            grapl_analyzerlib \
-            $(cat src/python/grapl_analyzerlib/VERSION) \
-            $CHECK_PYPI_VERSION_ARGS
-          deactivate
+    - name: Check whether grapl-common version has been bumped
+      run: |
+        . venv/bin/activate
+        python etc/build_scripts/check_pypi_version.py \
+          grapl-common \
+          $(cat src/python/grapl-common/VERSION) \
+          $CHECK_PYPI_VERSION_ARGS
+        deactivate
 
-      - name: Check whether grapl-common version has been bumped
-        run: |
-          . venv/bin/activate
-          python etc/build_scripts/check_pypi_version.py \
-            grapl-common \
-            $(cat src/python/grapl-common/VERSION) \
-            $CHECK_PYPI_VERSION_ARGS
-          deactivate
+    - name: Check whether grapl-tests-common version has been bumped
+      run: |
+        . venv/bin/activate
+        python etc/build_scripts/check_pypi_version.py \
+          grapl-tests-common \
+          $(cat src/python/grapl-tests-common/VERSION) \
+          $CHECK_PYPI_VERSION_ARGS
+        deactivate
+
+
 
   release-services:
     runs-on: ubuntu-latest
