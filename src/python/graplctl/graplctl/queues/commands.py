@@ -1,14 +1,8 @@
 from __future__ import annotations
 
-import dataclasses
-from typing import TYPE_CHECKING
-
 import click
 from graplctl.common import GraplctlState, pass_graplctl_state
 from graplctl.queues.lib import list_dlqs_for_deployment, redrive_from_dlq
-
-if TYPE_CHECKING:
-    from mypy_boto3_sqs import SQSClient
 
 
 @click.group(help="Manipulate work queues")
