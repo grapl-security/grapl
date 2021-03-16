@@ -5,30 +5,35 @@ const { json } = require("express");
 
 const AWS = require("aws-sdk");
 
-// ## TODO? DECIDE HOW TO get an instance of dynamodb in graphql??
-const getNodeType = (dynamodb, nodeUid) => {
-	// make a call to dynamo db with the node and get back it's node type
-	AWS.config.update({ region: "us-east-1" });
 
-	// Create the DynamoDB service object
-	const ddb = new AWS.DynamoDB({ apiVersion: "2012-08-10" });
+// ## TODO? DECIDE HOW TO get an instance of dynamodb in graphql??
+const getNodeType = async (nodeType) => {
+	const region = process.env.AWS_REGION;
+
+	AWS.config.update({ region: region }); // is the env file the right place to get this value?
+	// comes from local-grapl.env
+
+	const ddb = new AWS.DynamoDB({ apiVersion: "2012-08-10" }); // new client 
 
 	const params = {
-		TableName: dynamodb.Table(os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table"),
+		TableName: ddb.Table(process.env.DEPLOYMENT_NAME + "-grapl_schema_table"),
+		// TableName: dynamodb.Table(os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table"),
 		Key: {
-			KEY_NAME: { node_type: nodeUid },// is this supposed to be a primary key? 
+			KEY_NAME: { node_type: nodeType },// get display prop for a given node based on the type
 		},
-		ProjectionExpression: "uid", //ing that identifies	the attributes that you want
+		ProjectionExpression: "uid", // identifies	the attributes that you want to query for
 	};
 
 	// Call DynamoDB to read the item from the table
-	ddb.getItem(params, function (err, data) {
-		if (err) {
-			console.log("Error", err);
-		} else {
-			console.log("Success", data.Item);
-		}
-	});
+	const response = await ddb.getItem(params).promise(); 
+	console.log("response", response)
+
+	// if (err) {
+	// 	console.log("Error", err);
+	//   } else {
+	// 	console.log("Success", data);
+	//   }
+
 };
 
 const {
@@ -426,12 +431,13 @@ const handleLensScope = async (parent, args) => {
 		lens_subgraph["scope"].map((node) => node["uid"])
 	);
 
-	// lens neighbors
 	for (let neighbor of lens_subgraph["scope"]) {
 		// neighbor of a lens neighbor
 		for (const predicate in neighbor) {
 			// we want to keep risks and enrich them at the same time
-			getNodeType(predicate.uid)
+			console.log("calling getNodeType")
+			await getNodeType(predicate.dgraph_type);
+
 			if (predicate === "risks") {
 				neighbor[predicate].forEach((risk_node) => {
 					risk_node["uid"] = parseInt(risk_node["uid"], 16);

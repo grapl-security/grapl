@@ -552,7 +552,7 @@ def nop_route():
     LOGGER.info("nop_route: " + app.current_request.context["path"])
 
     if app.current_request.method == "OPTIONS":
-        return respond(None, {})https://github.com/grapl-security/grapl/pull/677
+        return respond(None, {})
 
     path = app.current_request.context["path"]
     path_to_handler = {
