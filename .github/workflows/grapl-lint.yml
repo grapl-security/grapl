@@ -108,7 +108,7 @@ jobs:
           echo "CHECK_PYPI_VERSION_ARGS=true" >> $GITHUB_ENV
 
       # TODO: Reactivate this once the new graplinc-grapl-api package
-      # has been pushed to PyPi
+      # has been pushed to test PyPi
       #
       # - name: Check whether graplinc-grapl-api version has been bumped
       #   run: |
