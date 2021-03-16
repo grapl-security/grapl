@@ -22,7 +22,9 @@ jobs:
 
   python-unit-tests:
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        python-version: [3.7]
     steps:
       - uses: actions/checkout@v2
 
@@ -86,13 +88,31 @@ jobs:
           python3 -mvenv venv && . venv/bin/activate
           pip install pypi-simple
           deactivate
+      
+      - name: Export CHECK_PYPI_VERSION_ARGS as "check against prod pypi"
+        # passing 'false' to check_pypi means "check prod pypi.org" not test
+        run: |
+          echo "CHECK_PYPI_VERSION_ARGS=false" >> $GITHUB_ENV
+
+      # TODO: Reactivate this once the new graplinc-grapl-api package
+      # has been pushed to PyPi
+      #
+      # - name: Check whether graplinc-grapl-api version has been bumped
+      #   run: |
+      #     . venv/bin/activate
+      #     python etc/build_scripts/check_pypi_version.py \
+      #       graplinc-grapl-api \
+      #       $(cat src/python/graplinc-grapl-api/VERSION) \
+      #       $CHECK_PYPI_VERSION_ARGS
+      #     deactivate
 
       - name: Check whether grapl_graph_descriptions version has been bumped
         run: |
           . venv/bin/activate
           python etc/build_scripts/check_pypi_version.py \
             grapl_graph_descriptions \
-            $(cat src/rust/graph-descriptions/VERSION)
+            $(cat src/rust/graph-descriptions/VERSION) \
+            $CHECK_PYPI_VERSION_ARGS
           deactivate
 
       - name: Check whether grapl_analyzerlib version has been bumped
@@ -100,7 +120,8 @@ jobs:
           . venv/bin/activate
           python etc/build_scripts/check_pypi_version.py \
             grapl_analyzerlib \
-            $(cat src/python/grapl_analyzerlib/VERSION)
+            $(cat src/python/grapl_analyzerlib/VERSION) \
+            $CHECK_PYPI_VERSION_ARGS
           deactivate
 
       - name: Check whether grapl-common version has been bumped
@@ -108,7 +129,8 @@ jobs:
           . venv/bin/activate
           python etc/build_scripts/check_pypi_version.py \
             grapl-common \
-            $(cat src/python/grapl-common/VERSION)
+            $(cat src/python/grapl-common/VERSION) \
+            $CHECK_PYPI_VERSION_ARGS
           deactivate
 
   release-services:
