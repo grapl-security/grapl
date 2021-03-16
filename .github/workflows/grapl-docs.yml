@@ -5,6 +5,7 @@ on:
     types: [opened, synchronize, reopened]
     branches:
       - main
+      - rc-*
 
 jobs:
   # NOTE: RtD will build and deploy our docs after-the-fact; but we'd like to prevent faulty

@@ -5,6 +5,7 @@ on:
     types: [opened, synchronize, reopened]
     branches:
       - main
+      - rc-*
 
 jobs:
   rust-unit-tests:
