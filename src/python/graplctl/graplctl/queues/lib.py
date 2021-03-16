@@ -1,13 +1,17 @@
-from typing import List
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, List
 
 import click
 from graplctl.common import GraplctlState
-from mypy_boto3_sqs import SQSClient
-from mypy_boto3_sqs.type_defs import (
-    DeleteMessageBatchRequestEntryTypeDef,
-    MessageTypeDef,
-    SendMessageBatchRequestEntryTypeDef,
-)
+
+if TYPE_CHECKING:
+    from mypy_boto3_sqs import SQSClient
+    from mypy_boto3_sqs.type_defs import (
+        DeleteMessageBatchRequestEntryTypeDef,
+        MessageTypeDef,
+        SendMessageBatchRequestEntryTypeDef,
+    )
 
 DLQ_SUFFIX = "-dead-letter-queue"
 RETRY_SUFFIX = "-retry-queue"

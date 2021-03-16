@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import click
 import graplctl.dgraph.lib as dgraph_ops
 from graplctl.common import GraplctlState, pass_graplctl_state
