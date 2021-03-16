@@ -27,20 +27,28 @@ jobs:
         python-version: [3.7]
     steps:
       - uses: actions/checkout@v2
+      - name: Prepare Github Actions CI
+        run: |
+          ./etc/ci_scripts/clean_gh_actions_space.sh
+          ./etc/ci_scripts/install_requirements.sh
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Prepare Github Actions CI
-        run: |
-          ./etc/ci_scripts/clean_gh_actions_space.sh
-          ./etc/ci_scripts/install_requirements.sh
+      - name: Pants Cache
+        uses: actions/cache@v2
+        with:
+          # We'll set up a new cache when our lock-file changes
+          key: pants-${{ matrix.python-version }}-${{ hashFiles('3rdparty/python/constraints.txt') }}
+          path: |
+            ~/.cache/pants/setup
+            ~/.cache/pants/named_caches
+            ~/.cache/pants/lmdb_store
 
       - name: Python unit tests
-        run: |
-          make test-unit-python
+        run: make test-unit-python
 
   js-unit-tests:
     runs-on: ubuntu-latest
