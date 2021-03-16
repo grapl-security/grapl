@@ -25,7 +25,7 @@ module HardcodedDeploymentParameters {
 
     // AWS region for this Grapl deployment
 
-    export const region = 'us-east-1';
+    export const region = undefined;
 
     export const logLevels: LogLevels<string | undefined> = {
         defaultLogLevel: undefined,
