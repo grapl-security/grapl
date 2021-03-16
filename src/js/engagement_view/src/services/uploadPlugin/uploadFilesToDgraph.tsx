@@ -6,7 +6,7 @@ export const uploadFilesToDgraph = async (payload: PluginPayload ): Promise<bool
 
     const dgraphPayload = JSON.stringify(payload);
 
-    const dgraphFileUpload = await apiPostRequestWithBody(`${DEV_API_EDGES.modelPluginEdge}/deploy`, "post", dgraphPayload);
+    const dgraphFileUpload = await apiPostRequestWithBody(`${DEV_API_EDGES.modelPluginEdge}/deploy`, dgraphPayload);
 
     const pluginFiles = await dgraphFileUpload;
 

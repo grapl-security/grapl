@@ -11,7 +11,7 @@ export const retrieveGraph = async (lens: string): Promise<Node[]> => {
     const lensScopeQuery = JSON.stringify({ query: expandScopeQueryData })
 
     const queryResponse = 
-        await apiPostRequestWithBody(`${DEV_API_EDGES.graphQL}/graphql`, "POST", lensScopeQuery)
+        await apiPostRequestWithBody(`${DEV_API_EDGES.graphQL}/graphql`, lensScopeQuery)
             .then(res => res)
             .then(res => {
                 if(res.errors){

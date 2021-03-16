@@ -18,7 +18,6 @@ export const getLenses = async (first: number, offset: number) => {
 
 	const response = await apiPostRequestWithBody(
 		`${DEV_API_EDGES.graphQL}/graphql`,
-		"POST",
 		graphQLQuery
 	)
 		.then((res) => res)
