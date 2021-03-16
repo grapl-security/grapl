@@ -5,13 +5,31 @@ import pathlib
 import shutil
 import subprocess
 import sys
-from typing import IO, AnyStr
+from typing import IO, AnyStr, Dict, Optional
 
 from mypy_boto3_lambda import LambdaClient
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+
+
+def _run_shell_cmd(
+        cmd: str,
+        cwd: str,
+        stdout: IO[AnyStr],
+        stderr: IO[AnyStr],
+        env: Optional[Dict[str, str]] = None,
+) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        cmd,
+        stdout=stdout,
+        stderr=stderr,
+        check=True,
+        shell=True,
+        cwd=cwd,
+        env=env
+    )
 
 
 def deploy_grapl(
@@ -27,22 +45,18 @@ def deploy_grapl(
     os.mkdir(edge_ux_artifact_dir)
 
     LOGGER.info("building cdk")
-    subprocess.run(
-        f"cd {grapl_cdk_dir.as_posix()} && npm run build",
-        stdout=stdout,
-        stderr=stderr,
-        check=True,
-        shell=True,
+    _run_shell_cmd(
+        "npm run build", cwd=grapl_cdk_dir.as_posix(), stdout=stdout, stderr=stderr
     )
     LOGGER.info("built cdk")
 
     LOGGER.info("deploying Grapl stack")
-    subprocess.run(
-        f"cd {grapl_cdk_dir.as_posix()} && AWS_PROFILE={aws_profile} cdk deploy --require-approval=never --profile={aws_profile} --outputs-file={outputs_file.as_posix()} Grapl",
+    _run_shell_cmd(
+        f"cdk deploy --require-approval=never --profile={aws_profile} --outputs-file={outputs_file.as_posix()} Grapl",
+        cwd=grapl_cdk_dir.as_posix(),
         stdout=stdout,
         stderr=stderr,
-        check=True,
-        shell=True,
+        env={"AWS_PROFILE": aws_profile}
     )
     LOGGER.info("deployed Grapl stack")
 
@@ -50,22 +64,18 @@ def deploy_grapl(
     os.mkdir(edge_ux_artifact_dir)
 
     LOGGER.info("creating edge UX package")
-    subprocess.run(
-        f"cd {grapl_cdk_dir.as_posix()} && npm run create_edge_ux_package",
-        stdout=stdout,
-        stderr=stderr,
-        check=True,
-        shell=True,
+    _run_shell_cmd(
+        "npm run create_edge_ux_package", cwd=grapl_cdk_dir.as_posix(), stdout=stdout, stderr=stderr
     )
     LOGGER.info("created edge UX package")
 
     LOGGER.info("deploying EngagementUX stack")
-    subprocess.run(
-        f"cd {grapl_cdk_dir.as_posix()} && AWS_PROFILE={aws_profile} cdk deploy --require-approval=never --profile={aws_profile} --outputs-file={outputs_file.as_posix()} EngagementUX",
+    _run_shell_cmd(
+        f"cdk deploy --require-approval=never --profile={aws_profile} --outputs-file={outputs_file.as_posix()} EngagementUX",
+        cwd=grapl_cdk_dir.as_posix(),
         stdout=stdout,
         stderr=stderr,
-        check=True,
-        shell=True,
+        env={"AWS_PROFILE": aws_profile}
     )
     LOGGER.info("deployed EngagementUX stack")
 
@@ -78,22 +88,18 @@ def destroy_grapl(
     grapl_cdk_dir = pathlib.Path(grapl_root.absolute(), "src/js/grapl-cdk")
 
     LOGGER.info("building cdk")
-    subprocess.run(
-        f"cd {grapl_cdk_dir.as_posix()} && npm run build",
-        stdout=stdout,
-        stderr=stderr,
-        check=True,
-        shell=True,
+    _run_shell_cmd(
+        "npm run build", cwd=grapl_cdk_dir.as_posix(), stdout=stdout, stderr=stderr
     )
     LOGGER.info("built cdk")
 
     LOGGER.info("destroying all stacks")
-    subprocess.run(
-        f'cd {grapl_cdk_dir.as_posix()} && AWS_PROFILE={aws_profile} cdk destroy --force --require-approval=never "*"',
+    _run_shell_cmd(
+        "cdk destroy --force --require-approval=never "*"",
+        cwd=grapl_cdk_dir.as_posix(),
         stdout=stdout,
         stderr=stderr,
-        check=True,
-        shell=True,
+        env={"AWS_PROFILE": aws_profile}
     )
     LOGGER.info("destroyed all stacks")
 
