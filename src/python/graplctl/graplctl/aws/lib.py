@@ -28,7 +28,8 @@ def _run_shell_cmd(
         check=True,
         shell=True,
         cwd=cwd,
-        env=env
+        env=env,
+        executable="/bin/bash",
     )
 
 
@@ -56,7 +57,7 @@ def deploy_grapl(
         cwd=grapl_cdk_dir.as_posix(),
         stdout=stdout,
         stderr=stderr,
-        env={"AWS_PROFILE": aws_profile}
+        env={"AWS_PROFILE": aws_profile, "PATH": os.environ["PATH"]}
     )
     LOGGER.info("deployed Grapl stack")
 
@@ -75,7 +76,7 @@ def deploy_grapl(
         cwd=grapl_cdk_dir.as_posix(),
         stdout=stdout,
         stderr=stderr,
-        env={"AWS_PROFILE": aws_profile}
+        env={"AWS_PROFILE": aws_profile, "PATH": os.environ["PATH"]}
     )
     LOGGER.info("deployed EngagementUX stack")
 
@@ -95,11 +96,11 @@ def destroy_grapl(
 
     LOGGER.info("destroying all stacks")
     _run_shell_cmd(
-        "cdk destroy --force --require-approval=never "*"",
+        "cdk destroy --force --require-approval=never \"*\"",
         cwd=grapl_cdk_dir.as_posix(),
         stdout=stdout,
         stderr=stderr,
-        env={"AWS_PROFILE": aws_profile}
+        env={"AWS_PROFILE": aws_profile, "PATH": os.environ["PATH"]}
     )
     LOGGER.info("destroyed all stacks")
 

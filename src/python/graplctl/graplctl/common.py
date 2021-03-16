@@ -30,6 +30,12 @@ IN_PROGRESS_STATUSES = {
 }
 
 
+def ticker(n: int) -> Iterator[None]:
+    for _ in range(n):
+        time.sleep(1)
+        yield None
+
+
 @dataclasses.dataclass
 class GraplctlState:
     grapl_region: str

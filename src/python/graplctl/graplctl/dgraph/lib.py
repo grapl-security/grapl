@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 import json
 import logging
 import os
 import sys
 from typing import TYPE_CHECKING, Iterator, List, Optional, Tuple
 
+from click import progressbar
 from botocore.client import ClientError
 
 if TYPE_CHECKING:
@@ -15,11 +14,8 @@ if TYPE_CHECKING:
     from mypy_boto3_sns.client import SNSClient
     from mypy_boto3_ssm import SSMClient
 
-from . import common
-
-get_command_results = common.get_command_results
-Tag = common.Tag
-Ec2Instance = common.Ec2Instance
+from graplctl.common import get_command_results, GraplctlState, Ec2Instance, Tag, ticker
+import graplctl.swarm.lib as docker_swarm_ops
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
@@ -283,3 +279,115 @@ def deploy_dgraph(
         get_command_results(ssm, command_id, [manager_instance.instance_id])
     )
     LOGGER.info(f"command {command_id} instance {instance_id}: {result}")
+
+
+def create_dgraph(graplctl_state: GraplctlState, instance_type: str) -> bool:
+    swarm_id = f"{graplctl_state.grapl_deployment_name.lower()}-dgraph-swarm"
+    LOGGER.info(f"creating dgraph swarm {swarm_id}")
+    if not docker_swarm_ops.create_swarm(
+        graplctl_state=graplctl_state,
+        num_managers=1,
+        num_workers=2,
+        instance_type=instance_type,
+        swarm_id=swarm_id,
+        docker_daemon_config={"data-root": "/dgraph"},
+        extra_init=init_dgraph,
+    ):
+        LOGGER.warn(f"dgraph swarm {swarm_id} already exists")
+        return False  # bail early because the dgraph deployment already exists
+    LOGGER.info(f"created dgraph swarm {swarm_id}")
+
+    manager_instance = next(
+        docker_swarm_ops.swarm_instances(
+            ec2=graplctl_state.ec2,
+            deployment_name=graplctl_state.grapl_deployment_name,
+            version=graplctl_state.grapl_version,
+            region=graplctl_state.grapl_region,
+            swarm_id=swarm_id,
+            swarm_manager=True,
+        )
+    )
+
+    swarm_instances = list(
+        docker_swarm_ops.swarm_instances(
+            ec2=graplctl_state.ec2,
+            deployment_name=graplctl_state.grapl_deployment_name,
+            version=graplctl_state.grapl_version,
+            region=graplctl_state.grapl_region,
+            swarm_id=swarm_id,
+        )
+    )
+
+    LOGGER.info(f"waiting 5min for cloudwatch metrics to propagate...")
+    with progressbar(ticker(300), length=300) as bar:
+        for _ in bar:
+            continue
+
+    LOGGER.info(f"creating disk usage alarms for dgraph in swarm {swarm_id}")
+    for instance in swarm_instances:
+        create_disk_usage_alarms(
+            cloudwatch=graplctl_state.cloudwatch,
+            sns=graplctl_state.sns,
+            instance_id=instance.instance_id,
+            deployment_name=graplctl_state.grapl_deployment_name,
+        )
+    LOGGER.info(f"created disk usage alarms for dgraph in swarm {swarm_id}")
+
+    LOGGER.info(f"deploying dgraph in swarm {swarm_id}")
+    deploy_dgraph(
+        ssm=graplctl_state.ssm,
+        deployment_name=graplctl_state.grapl_deployment_name,
+        manager_instance=manager_instance,
+        worker_instances=tuple(
+            instance
+            for instance in swarm_instances
+            if Tag(key="grapl-swarm-role", value="swarm-worker") in instance.tags
+        ),
+    )
+    LOGGER.info(f"deployed dgraph in swarm {swarm_id}")
+
+    LOGGER.info(f"updating dns A records for dgraph in swarm {swarm_id}")
+    hosted_zone_id = graplctl_state.route53.list_hosted_zones_by_name(
+        DNSName=f"{graplctl_state.grapl_deployment_name.lower()}.dgraph.grapl"
+    )["HostedZones"][0]["Id"]
+    for instance in docker_swarm_ops.swarm_instances(
+        ec2=graplctl_state.ec2,
+        deployment_name=graplctl_state.grapl_deployment_name,
+        version=graplctl_state.grapl_version,
+        region=graplctl_state.grapl_region,
+        swarm_id=swarm_id,
+    ):
+        insert_dns_ip(
+            route53=graplctl_state.route53,
+            dns_name=f"{graplctl_state.grapl_deployment_name.lower()}.dgraph.grapl",
+            ip_address=instance.private_ip_address,
+            hosted_zone_id=hosted_zone_id,
+        )
+    LOGGER.info(f"updated dns A records for dgraph in swarm {swarm_id}")
+
+    return True
+
+
+def remove_dgraph_dns(graplctl_state: GraplctlState, swarm_id: str):
+    hosted_zone_id = graplctl_state.route53.list_hosted_zones_by_name(
+        DNSName=f"{graplctl_state.grapl_deployment_name.lower()}.dgraph.grapl"
+    )["HostedZones"][0]["Id"]
+    for instance in docker_swarm_ops.swarm_instances(
+        ec2=graplctl_state.ec2,
+        deployment_name=graplctl_state.grapl_deployment_name,
+        version=graplctl_state.grapl_version,
+        region=graplctl_state.grapl_region,
+        swarm_id=swarm_id,
+    ):
+        LOGGER.info(
+            f"removing dns records for instance {instance.instance_id} swarm {swarm_id}"
+        )
+        remove_dns_ip(
+            route53=graplctl_state.route53,
+            dns_name=f"{graplctl_state.grapl_deployment_name.lower()}.dgraph.grapl",
+            ip_address=instance.private_ip_address,
+            hosted_zone_id=hosted_zone_id,
+        )
+        LOGGER.info(
+            f"removed dns records for instance {instance.instance_id} swarm {swarm_id}"
+        )
