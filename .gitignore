@@ -62,4 +62,4 @@ pyrightconfig.json
 upload_localhost.sh
 
 # graplctl
-graplctl
+/graplctl
