@@ -1,4 +1,4 @@
-export const apiFetch = async (urlSlug: string, method = "GET") => {
+export const apiFetchReq = async (urlSlug: string, method = "GET") => {
     const response = await fetch(urlSlug, {
         method,
         credentials: "include",
@@ -14,9 +14,9 @@ export const apiFetch = async (urlSlug: string, method = "GET") => {
 };
 
 
-export const apiFetchWithBody = async (urlSlug: string, method = "POST", body: string) => {
+export const apiPostRequestWithBody = async (urlSlug: string, body: string) => {
     const response = await fetch(urlSlug, {
-        method,
+        method: "POST",
         credentials: "include",
         headers: new Headers({
             "Content-Type": "application/json",
