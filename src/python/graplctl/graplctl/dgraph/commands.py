@@ -1,6 +1,6 @@
 import click
 import graplctl.dgraph.lib as dgraph_ops
-from graplctl.common import GraplctlState, pass_graplctl_state
+from graplctl.common import State, pass_graplctl_state
 
 #
 # dgraph operational commands
@@ -11,7 +11,7 @@ from graplctl.common import GraplctlState, pass_graplctl_state
 @click.pass_context
 @pass_graplctl_state
 def dgraph(
-    graplctl_state: GraplctlState,
+    graplctl_state: State,
     ctx: click.Context,
 ):
     pass
@@ -29,7 +29,7 @@ def dgraph(
     required=True,
 )
 @pass_graplctl_state
-def create_dgraph(graplctl_state: GraplctlState, instance_type: str):
+def create_dgraph(graplctl_state: State, instance_type: str):
     click.echo(f"creating dgraph cluster of {instance_type} instances")
     if not dgraph_ops.create_dgraph(
         graplctl_state=graplctl_state, instance_type=instance_type
@@ -51,7 +51,7 @@ def create_dgraph(graplctl_state: GraplctlState, instance_type: str):
     prompt="are you sure you want to remove the dgraph dns records?"
 )
 @pass_graplctl_state
-def dgraph_remove_dns(graplctl_state: GraplctlState, swarm_id: str):
+def dgraph_remove_dns(graplctl_state: State, swarm_id: str):
     click.echo(f"removing dgraph dns records for swarm {swarm_id}")
     dgraph_ops.remove_dgraph_dns(graplctl_state=graplctl_state, swarm_id=swarm_id)
     click.echo(f"removed dgraph dns records for swarm {swarm_id}")

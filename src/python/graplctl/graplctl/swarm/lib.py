@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from mypy_boto3_ec2 import EC2ServiceResource
     from mypy_boto3_ssm import SSMClient
 
-from graplctl.common import Ec2Instance, GraplctlState, Tag, get_command_results
+from graplctl.common import Ec2Instance, State, Tag, get_command_results
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
@@ -444,7 +444,7 @@ def exec_(
     )[1]
 
 
-def swarm_ls(graplctl_state: GraplctlState) -> Iterator[str]:
+def swarm_ls(graplctl_state: State) -> Iterator[str]:
     for swarm_id in swarm_ids(
         ec2=graplctl_state.ec2,
         deployment_name=graplctl_state.grapl_deployment_name,
@@ -455,7 +455,7 @@ def swarm_ls(graplctl_state: GraplctlState) -> Iterator[str]:
 
 
 def create_swarm(
-    graplctl_state: GraplctlState,
+    graplctl_state: State,
     num_managers: int,
     num_workers: int,
     instance_type: str,
@@ -635,7 +635,7 @@ def create_swarm(
     return True
 
 
-def destroy_swarm(graplctl_state: GraplctlState, swarm_id: str):
+def destroy_swarm(graplctl_state: State, swarm_id: str):
     for instance in swarm_instances(
         ec2=graplctl_state.ec2,
         deployment_name=graplctl_state.grapl_deployment_name,

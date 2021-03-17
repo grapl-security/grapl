@@ -6,7 +6,7 @@ import click
 import graplctl.aws.lib as aws_cdk_ops
 import graplctl.dgraph.lib as dgraph_ops
 import graplctl.swarm.lib as docker_swarm_ops
-from graplctl.common import GraplctlState, pass_graplctl_state
+from graplctl.common import State, pass_graplctl_state
 
 #
 # aws deployment & provisioning commands
@@ -17,7 +17,7 @@ from graplctl.common import GraplctlState, pass_graplctl_state
 @click.pass_context
 @pass_graplctl_state
 def aws(
-    graplctl_state: GraplctlState,
+    graplctl_state: State,
     ctx: click.Context,
 ):
     pass
@@ -41,7 +41,7 @@ def aws(
 )
 @click.pass_obj
 def aws_deploy(
-    graplctl_state: GraplctlState, all: bool, dgraph_instance_type: str, grapl_root: str
+    graplctl_state: State, all: bool, dgraph_instance_type: str, grapl_root: str
 ):
     click.echo("deploying grapl cdk stacks to aws")
     aws_cdk_ops.deploy_grapl(
@@ -71,7 +71,7 @@ def aws_deploy(
     required=True,
 )
 @click.pass_obj
-def aws_destroy(graplctl_state: GraplctlState, all: bool, grapl_root: str):
+def aws_destroy(graplctl_state: State, all: bool, grapl_root: str):
     click.echo("destroying all grapl aws resources")
 
     for swarm_id in docker_swarm_ops.swarm_ids(
@@ -102,7 +102,7 @@ def aws_destroy(graplctl_state: GraplctlState, all: bool, grapl_root: str):
 
 @aws.command(help="provision the grapl deployment", name="provision")
 @click.pass_obj
-def aws_provision(graplctl_state: GraplctlState):
+def aws_provision(graplctl_state: State):
     click.echo("provisioning grapl deployment")
     aws_cdk_ops.provision_grapl(
         lambda_=graplctl_state.lambda_,

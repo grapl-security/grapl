@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import click
-from graplctl.common import GraplctlState, pass_graplctl_state
+from graplctl.common import State, pass_graplctl_state
 from graplctl.queues.lib import list_dlqs_for_deployment, redrive_from_dlq
 
 
@@ -9,7 +9,7 @@ from graplctl.queues.lib import list_dlqs_for_deployment, redrive_from_dlq
 @click.pass_context
 @pass_graplctl_state
 def queues(
-    graplctl_state: GraplctlState,
+    graplctl_state: State,
     ctx: click.Context,
 ) -> None:
     pass
@@ -18,7 +18,7 @@ def queues(
 @queues.command(help="List redrivable queues")
 @pass_graplctl_state
 def ls(
-    graplctl_state: GraplctlState,
+    graplctl_state: State,
 ) -> None:
     queues = list_dlqs_for_deployment(graplctl_state, graplctl_state.sqs)
     click.echo("\n".join(queues))
@@ -30,7 +30,7 @@ def ls(
     "dlq_url",
 )
 def redrive(
-    graplctl_state: GraplctlState,
+    graplctl_state: State,
     dlq_url: str,
 ) -> None:
     redrive_from_dlq(

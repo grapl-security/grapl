@@ -37,7 +37,7 @@ def ticker(n: int) -> Iterator[None]:
 
 
 @dataclasses.dataclass
-class GraplctlState:
+class State:
     grapl_region: str
     grapl_deployment_name: str
     grapl_version: str
@@ -52,7 +52,7 @@ class GraplctlState:
 
 
 # Prefer this to `pass_obj`
-pass_graplctl_state = click.make_pass_decorator(GraplctlState)
+pass_graplctl_state = click.make_pass_decorator(State)
 
 
 @dataclasses.dataclass

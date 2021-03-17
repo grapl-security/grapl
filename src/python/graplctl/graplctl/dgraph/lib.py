@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from mypy_boto3_ssm import SSMClient
 
 import graplctl.swarm.lib as docker_swarm_ops
-from graplctl.common import Ec2Instance, GraplctlState, Tag, get_command_results, ticker
+from graplctl.common import Ec2Instance, State, Tag, get_command_results, ticker
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
@@ -283,7 +283,7 @@ def deploy_dgraph(
     LOGGER.info(f"command {command_id} instance {instance_id}: {result}")
 
 
-def create_dgraph(graplctl_state: GraplctlState, instance_type: str) -> bool:
+def create_dgraph(graplctl_state: State, instance_type: str) -> bool:
     swarm_id = f"{graplctl_state.grapl_deployment_name.lower()}-dgraph-swarm"
     LOGGER.info(f"creating dgraph swarm {swarm_id}")
     if not docker_swarm_ops.create_swarm(
@@ -370,7 +370,7 @@ def create_dgraph(graplctl_state: GraplctlState, instance_type: str) -> bool:
     return True
 
 
-def remove_dgraph_dns(graplctl_state: GraplctlState, swarm_id: str):
+def remove_dgraph_dns(graplctl_state: State, swarm_id: str):
     hosted_zone_id = graplctl_state.route53.list_hosted_zones_by_name(
         DNSName=f"{graplctl_state.grapl_deployment_name.lower()}.dgraph.grapl"
     )["HostedZones"][0]["Id"]

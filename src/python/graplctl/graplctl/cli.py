@@ -5,7 +5,7 @@ import click
 import graplctl.swarm.lib as docker_swarm_ops
 from graplctl import __version__, common
 from graplctl.aws.commands import aws
-from graplctl.common import GraplctlState
+from graplctl.common import State
 from graplctl.dgraph.commands import dgraph
 from graplctl.queues.commands import queues
 from graplctl.swarm.commands import swarm
@@ -61,7 +61,7 @@ def main(
     aws_profile: str,
 ) -> None:
     session = boto3.Session(profile_name=aws_profile)
-    ctx.obj = GraplctlState(
+    ctx.obj = State(
         grapl_region,
         grapl_deployment_name,
         grapl_version,

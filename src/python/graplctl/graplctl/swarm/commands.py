@@ -3,7 +3,7 @@ from typing import List
 
 import click
 import graplctl.swarm.lib as docker_swarm_ops
-from graplctl.common import GraplctlState, pass_graplctl_state
+from graplctl.common import State, pass_graplctl_state
 
 #
 # swarm operational commands
@@ -14,7 +14,7 @@ from graplctl.common import GraplctlState, pass_graplctl_state
 @click.pass_context
 @pass_graplctl_state
 def swarm(
-    graplctl_state: GraplctlState,
+    graplctl_state: State,
     ctx: click.Context,
 ):
     pass
@@ -54,7 +54,7 @@ def swarm(
 )
 @pass_graplctl_state
 def swarm_create(
-    graplctl_state: GraplctlState,
+    graplctl_state: State,
     num_managers: int,
     num_workers: int,
     instance_type: str,
@@ -71,7 +71,7 @@ def swarm_create(
 
 @swarm.command(help="list swarm ids for each of the swarm clusters", name="ls")
 @pass_graplctl_state
-def swarm_ls(graplctl_state: GraplctlState):
+def swarm_ls(graplctl_state: State):
     for swarm_id in docker_swarm_ops.swarm_ls(graplctl_state):
         click.echo(swarm_id)
 
@@ -85,7 +85,7 @@ def swarm_ls(graplctl_state: GraplctlState):
     required=True,
 )
 @pass_graplctl_state
-def swarm_managers(graplctl_state: GraplctlState, swarm_id: str):
+def swarm_managers(graplctl_state: State, swarm_id: str):
     for manager_instance in docker_swarm_ops.swarm_instances(
         ec2=graplctl_state.ec2,
         deployment_name=graplctl_state.grapl_deployment_name,
@@ -107,7 +107,7 @@ def swarm_managers(graplctl_state: GraplctlState, swarm_id: str):
 )
 @click.confirmation_option(prompt="are you sure you want to destroy the swarm cluster?")
 @pass_graplctl_state
-def swarm_destroy(graplctl_state: GraplctlState, swarm_id: str):
+def swarm_destroy(graplctl_state: State, swarm_id: str):
     click.echo(f"destroying swarm {swarm_id}")
     docker_swarm_ops.destroy_swarm(graplctl_state=graplctl_state, swarm_id=swarm_id)
     click.echo(f"destroyed swarm {swarm_id}")
@@ -123,7 +123,7 @@ def swarm_destroy(graplctl_state: GraplctlState, swarm_id: str):
 )
 @click.argument("command", nargs=-1, type=click.STRING)
 @pass_graplctl_state
-def swarm_exec(graplctl_state: GraplctlState, swarm_id: str, command: List[str]):
+def swarm_exec(graplctl_state: State, swarm_id: str, command: List[str]):
     click.echo(
         docker_swarm_ops.exec_(
             ec2=graplctl_state.ec2,
@@ -168,7 +168,7 @@ def swarm_exec(graplctl_state: GraplctlState, swarm_id: str, command: List[str])
 )
 @pass_graplctl_state
 def swarm_scale(
-    graplctl_state: GraplctlState,
+    graplctl_state: State,
     num_managers: int,
     num_workers: int,
     instance_type: str,
