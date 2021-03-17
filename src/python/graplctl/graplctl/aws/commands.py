@@ -73,7 +73,9 @@ def deploy(
     type=click.Path(exists=True, file_okay=False, resolve_path=True),
     required=True,
 )
-@click.confirmation_option(prompt=f"this will tear down the entire grapl deployment, ok?")
+@click.confirmation_option(
+    prompt=f"this will tear down the entire grapl deployment, ok?"
+)
 @pass_graplctl_state
 def destroy(graplctl_state: State, all: bool, grapl_root: str):
     """tear down grapl in aws"""

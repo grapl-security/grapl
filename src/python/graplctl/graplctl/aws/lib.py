@@ -48,9 +48,7 @@ def deploy_grapl(
     os.mkdir(edge_ux_artifact_dir)
 
     LOGGER.info("building cdk")
-    _run_shell_cmd(
-        "npm run build", cwd=grapl_cdk_dir, stdout=stdout, stderr=stderr
-    )
+    _run_shell_cmd("npm run build", cwd=grapl_cdk_dir, stdout=stdout, stderr=stderr)
     LOGGER.info("built cdk")
 
     LOGGER.info("deploying Grapl stack")
@@ -92,9 +90,7 @@ def destroy_grapl(
     grapl_cdk_dir = pathlib.Path(grapl_root.absolute(), GRAPL_CDK_RELATIVE_PATH)
 
     LOGGER.info("building cdk")
-    _run_shell_cmd(
-        "npm run build", cwd=grapl_cdk_dir, stdout=stdout, stderr=stderr
-    )
+    _run_shell_cmd("npm run build", cwd=grapl_cdk_dir, stdout=stdout, stderr=stderr)
     LOGGER.info("built cdk")
 
     LOGGER.info("destroying all stacks")
