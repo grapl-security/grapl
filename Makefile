@@ -109,7 +109,7 @@ build-aws: ## Build services for Grapl in AWS (subset of all services)
 .PHONY: graplctl
 graplctl: ## Build graplctl and install it to the project root
 	./pants package ./src/python/graplctl/graplctl
-	cp ./dist/src.python.graplctl.graplctl/graplctl.pex ./graplctl
+	cp ./dist/src.python.graplctl.graplctl/graplctl.pex ./bin/graplctl
 
 #
 # Test

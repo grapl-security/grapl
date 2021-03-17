@@ -115,11 +115,11 @@ We use the `graplctl` utility to deploy Grapl to AWS. To install
 make graplctl
 ```
 
-This will build the `graplctl` binary and install it in the Grapl
-checkout root. You can familiarize yourself with `graplctl` by running
+This will build the `graplctl` binary and install it in the `bin`
+directory. You can familiarize yourself with `graplctl` by running
 
 ``` bash
-./graplctl --help
+bin/graplctl --help
 ```
 
 Note that you may wish to add some more variables to your `.env`
@@ -138,7 +138,7 @@ To deploy Grapl with `graplctl`, execute the following from the Grapl
 root:
 
 ```bash
-./graplctl aws deploy --all --dgraph-instance-type i3.large
+bin/graplctl aws deploy --all --dgraph-instance-type i3.large .
 ```
 
 Note that we've selected `i3.large` instances for our DGraph
@@ -146,7 +146,7 @@ database. If you'd like to choose a different instance class, you may
 see the available options by running:
 
 ``` bash
-./graplctl aws deploy --help
+bin/graplctl aws deploy --help
 ```
 
 ## DGraph operations
@@ -160,7 +160,7 @@ on a swarm manager. For example, to list all the nodes in the Dgraph
 swarm you can run something like the following:
 
 ``` bash
-graplctl swarm exec --swarm-id my-swarm-id -- docker node ls
+bin/graplctl swarm exec --swarm-id my-swarm-id -- docker node ls
 ```
 
 If you forget which `swarm-id` is associated with your Dgraph cluster,
