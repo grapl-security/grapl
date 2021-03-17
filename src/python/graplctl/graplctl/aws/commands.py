@@ -40,7 +40,8 @@ def aws(
     type=click.Path(exists=True, file_okay=False, resolve_path=True),
     required=True,
 )
-@click.pass_obj
+@click.confirmation_option(prompt=f"this will incur aws charges, ok?")
+@pass_graplctl_state
 def deploy(
     graplctl_state: State, all: bool, dgraph_instance_type: str, grapl_root: str
 ):
@@ -72,7 +73,8 @@ def deploy(
     type=click.Path(exists=True, file_okay=False, resolve_path=True),
     required=True,
 )
-@click.pass_obj
+@click.confirmation_option(prompt=f"this will tear down the entire grapl deployment, ok?")
+@pass_graplctl_state
 def destroy(graplctl_state: State, all: bool, grapl_root: str):
     """tear down grapl in aws"""
     click.echo("destroying all grapl aws resources")
@@ -104,7 +106,8 @@ def destroy(graplctl_state: State, all: bool, grapl_root: str):
 
 
 @aws.command()
-@click.pass_obj
+@click.confirmation_option(prompt=f"this will incur aws charges, ok?")
+@pass_graplctl_state
 def provision(graplctl_state: State):
     """provision the grapl deployment"""
     click.echo("provisioning grapl deployment")

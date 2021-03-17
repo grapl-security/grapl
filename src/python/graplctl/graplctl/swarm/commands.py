@@ -50,6 +50,7 @@ def swarm(
     help="unique id for this swarm cluster (random default)",
     default=str(uuid.uuid4()),
 )
+@click.confirmation_option(prompt=f"this will incur aws charges, ok?")
 @pass_graplctl_state
 def create(
     graplctl_state: State,
@@ -106,7 +107,7 @@ def managers(graplctl_state: State, swarm_id: str):
     help="unique id of the swarm cluster",
     required=True,
 )
-@click.confirmation_option(prompt="are you sure you want to destroy the swarm cluster?")
+@click.confirmation_option(prompt="this will destroy the swarm cluster, ok?")
 @pass_graplctl_state
 def destroy(graplctl_state: State, swarm_id: str):
     """terminate a docker swarm cluster's instances"""
@@ -169,6 +170,7 @@ def swarm_exec(graplctl_state: State, swarm_id: str, command: List[str]):
     help="unique id of the swarm cluster",
     required=True,
 )
+@click.confirmation_option(prompt=f"this will incur aws charges, ok?")
 @pass_graplctl_state
 def scale(
     graplctl_state: State,
