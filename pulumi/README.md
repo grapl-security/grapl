@@ -12,25 +12,6 @@ and then `pulumi up` against the `local-grapl` stack and deploy to
 your Localstack instance. When working purely on infrastructure, this
 can be a way to iterate quickly.
 
-In our integration and testing environments, we also use Localstack,
-but inside a Docker Compose network, and also currently with
-[MinIO][minio] as our S3 service. This requires changing the S3
-endpoint, as well as the fake AWS credentials we use for
-Pulumi. However, this modification is handled within the
-`docker-compose.yml` file, so it is mentioned here for informational
-purposes only.
-
-(We use MinIO currently because we have some test code that does not
-appear to like Localstack's S3 implementation for an as-yet-unknown
-reason. Additionally, we have had trouble configuring Localstack to
-proxy MinIO as its S3 endpoint. As a result, we need to communicate
-directly with MinIO on its own endpoint. Additionally, MinIO requires
-a secret key of at least 8 characters, so we can't use localstack's
-default value of `test`. Since we don't want the hassle of trying to
-provide multiple sets of credentials to Pulumi, we just set an new set
-across all our services in our Docker Compose environment. In the
-future, we hope to be able to simplify this setup.)
-
 # Getting Started
 
 We're using the Python SDK for Pulumi. As such, we'll need to have
@@ -60,6 +41,60 @@ only used for local and testing purposes, we can share the passphrase
 as well: `local-grapl-passphrase`. Setting this in the
 `PULUMI_CONFIG_PASSPHRASE` environment variable can make it easier to
 interact with this stack on your machine.
+
+# Migrating from CDK
+
+To help evaluate the faithfulness of this Pulumi port of our CDK
+logic, we can run Pulumi against an existing CDK-generated Grapl
+deployment in a kind of "import mode". This tells our Pulumi code to
+adopt existing AWS resources into its stack state, rather than
+creating them new. After the resources have been imported, we can
+manage them completely through Pulumi.
+
+If we are in "import mode", if our Pulumi code differs in any way from
+the resources we are trying to import, Pulumi will tell us. We can
+then inspect the difference and modify our Pulumi code appropriately.
+
+If we are *not* in "import mode", then Pulumi will attempt to create
+new resources, regardless of what exists in AWS. This is what you want
+if you are creating fresh infrastructure, or interacting with
+Localstack.
+
+You *must* set this value in configuration explicitly, or the Pulumi
+run *will* fail.
+
+To enable import mode:
+```sh
+pulumi config set grapl:import_from_existing True
+```
+
+To disable import mode:
+```sh
+pulumi config set grapl:import_from_existing False
+```
+
+Once we have fully migrated away from CDK, we can remove this
+configuration option and the code that supports it.
+
+## CDK and Pulumi Configuration Caveat
+
+If you are interacting with CDK and Pulumi at the same time (e.g.,
+you're in the middle of helping migrate from one to the other), you
+will need to be scrupulous about keeping your AWS credentials
+up-to-date.
+
+Pulumi can operate just fine with `aws sso login`. CDK, on the other
+hand, cannot, so we have to add credentials to our
+`~/.aws/credentials` file to interact with it.
+
+If, however, your on-disk credentials are out of date, regardless of
+the fact that you may have just logged in with `aws sso login`, your
+Pulumi runs will hang, because it's looking at that file and getting
+invalid information.
+
+To preserve your sanity, get into the habit of updating your
+credentials file regularly if you're working with both CDK and Pulumi
+at the same time.
 
 [pulumi]: https://pulumi.com
 [ls]: https://localstack.cloud/

@@ -7,7 +7,8 @@ import { ToggleNodeTableProps } from "types/LensAndNodeTableTypes";
 
 import { NodeDetails } from "../LensAndNodeTableContainer";
 
-import { useStyles } from "../styles";
+import { useStyles } from "./lensTable/lensTableStyles";
+
 
 export function ToggleNodeDetailTable({ curNode }: ToggleNodeTableProps) {
 	const [toggled, setToggle] = useState(true);
@@ -18,7 +19,7 @@ export function ToggleNodeDetailTable({ curNode }: ToggleNodeTableProps) {
 				<div className={classes.header}>
 					<b className={classes.title}> Node Details</b>
 					<Button
-						className={classes.button}
+						className={classes.lensToggleBtn}
 						onClick={() => {
 							setToggle((toggled) => !toggled);
 						}}

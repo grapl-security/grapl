@@ -6,13 +6,13 @@ import TableCell from "@material-ui/core/TableCell";
 import TableContainer from "@material-ui/core/TableContainer";
 import TableRow from "@material-ui/core/TableRow";
 
-import { mapEdgeProps } from "../../graphDisplay/graphLayout/graph_traverse";
-import { mapNodeProps } from "../../graphDisplay/graphLayout/mapNodeProps";
+import { mapEdgeProps } from "../../../../graphDisplay/graphLayout/graph_traverse";
+import { mapNodeProps } from "../../../../graphDisplay/graphLayout/mapNodeProps";
 
 import { OtherNodeProperties, VizNode } from "types/CustomTypes";
 
 import { nodeTableHeader } from "./nodeTableHeader";
-import { nodeTableStyles } from "./styles";
+import { nodeTableStyles } from "./nodeTableStyles";
 
 const useStyles = nodeTableStyles;
 
@@ -20,7 +20,7 @@ type NodeTableProps = {
 	node: VizNode;
 };
 
-function NodeTable({ node }: NodeTableProps) {
+const NodeTable = ({ node }: NodeTableProps) => {
 	const classes = useStyles();
 	const hidden = new Set([
 		"id",
@@ -40,6 +40,8 @@ function NodeTable({ node }: NodeTableProps) {
 		"vx",
 		"fx",
 		"fy",
+		"links", 
+		"neighbors"
 	]);
 
 	mapEdgeProps(node as any, (edgeName: any, _neighbor: any) => {
@@ -67,17 +69,16 @@ function NodeTable({ node }: NodeTableProps) {
 	});
 
 	return (
-		<TableContainer>
-			<Table className={classes.nodeTable}>
+		<TableContainer className={classes.nodeTableContainer}>
+			<Table>
 				{nodeTableHeader(node, classes)}
 				<TableBody>
 					{Object.entries(displayNode).map((nodeProperty) => {
 						const [key, value] = nodeProperty;
-
 						return (
 							<TableRow key={node.node_key + key}>
 								<TableCell className={classes.nodeTableData} align="left">
-									<b>{key}</b>
+									{key}
 								</TableCell>
 								<TableCell className={classes.nodeTableData} align="right">
 									{value as any}
@@ -92,3 +93,4 @@ function NodeTable({ node }: NodeTableProps) {
 }
 
 export default NodeTable;
+

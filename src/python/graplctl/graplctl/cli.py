@@ -1,23 +1,30 @@
+from __future__ import annotations
+
 import dataclasses
 import os
 import time
 import uuid
-from typing import Callable, Dict, Iterator, List, Optional
+from typing import TYPE_CHECKING, Callable, Dict, Iterator, List, Optional
 
 import boto3
 import click
-from mypy_boto3_cloudwatch.client import CloudWatchClient
-from mypy_boto3_ec2 import EC2ServiceResource
-from mypy_boto3_route53 import Route53Client
-from mypy_boto3_sns.client import SNSClient
-from mypy_boto3_ssm import SSMClient
+from graplctl import __version__, common, dgraph_ops, docker_swarm_ops
+from graplctl.common import GraplctlState, pass_graplctl_state
+from graplctl.queues.commands import queues
 
-from . import __version__, common, dgraph_ops, docker_swarm_ops
+if TYPE_CHECKING:
+    from mypy_boto3_cloudwatch.client import CloudWatchClient
+    from mypy_boto3_ec2 import EC2ServiceResource
+    from mypy_boto3_route53 import Route53Client
+    from mypy_boto3_sns import SNSClient
+    from mypy_boto3_ssm import SSMClient
 
 Tag = common.Tag
 Ec2Instance = common.Ec2Instance
 
-SESSION = boto3.Session(profile_name=os.getenv("AWS_PROFILE", "default"))
+# TODO: These module-level `os.getenv`s cause troubles with testing.
+# Would be better to delay evaluation to `def main`
+SESSION = boto3.session.Session(profile_name=os.getenv("AWS_PROFILE", "default"))
 
 EC2: EC2ServiceResource = SESSION.resource("ec2", region_name=os.getenv("AWS_REGION"))
 SSM: SSMClient = SESSION.client("ssm")
@@ -26,6 +33,8 @@ CLOUDWATCH: CloudWatchClient = SESSION.client(
 )
 SNS: SNSClient = SESSION.client("sns", region_name=os.getenv("AWS_REGION"))
 ROUTE53: Route53Client = SESSION.client("route53", region_name=os.getenv("AWS_REGION"))
+# TODO: Instead of adding to this list, prefer spawning clients
+# off of graplctl_state.session
 
 
 def _ticker(n: int) -> Iterator[None]:
@@ -37,13 +46,6 @@ def _ticker(n: int) -> Iterator[None]:
 #
 # main entrypoint for grapctl
 #
-
-
-@dataclasses.dataclass
-class GraplctlState:
-    grapl_region: str
-    grapl_deployment_name: str
-    grapl_version: str
 
 
 @click.group()
@@ -79,8 +81,15 @@ def main(
     grapl_deployment_name: str,
     grapl_version: str,
 ) -> None:
-    ctx.obj = GraplctlState(grapl_region, grapl_deployment_name, grapl_version)
+    ctx.obj = GraplctlState(
+        grapl_region,
+        grapl_deployment_name,
+        grapl_version,
+        boto3_session=SESSION,
+    )
 
+
+main.add_command(queues)
 
 #
 # swarm operational commands
@@ -299,7 +308,7 @@ def _create_swarm(
     help="unique ID for this swarm cluster (random default)",
     default=str(uuid.uuid4()),
 )
-@click.pass_obj
+@pass_graplctl_state
 def create_swarm(
     graplctl_state: GraplctlState,
     num_managers: int,
@@ -317,7 +326,7 @@ def create_swarm(
 
 
 @swarm.command(help="list swarm IDs for each of the swarm clusters")
-@click.pass_obj
+@pass_graplctl_state
 def ls(graplctl_state: GraplctlState):
     for swarm_id in docker_swarm_ops.swarm_ids(
         ec2=EC2,
@@ -336,7 +345,7 @@ def ls(graplctl_state: GraplctlState):
     help="unique ID of the swarm cluster",
     required=True,
 )
-@click.pass_obj
+@pass_graplctl_state
 def managers(graplctl_state: GraplctlState, swarm_id: str):
     for manager_instance in docker_swarm_ops.swarm_instances(
         ec2=EC2,
@@ -358,7 +367,7 @@ def managers(graplctl_state: GraplctlState, swarm_id: str):
     required=True,
 )
 @click.confirmation_option(prompt="are you sure you want to destroy the swarm cluster?")
-@click.pass_obj
+@pass_graplctl_state
 def destroy(graplctl_state: GraplctlState, swarm_id: str):
     for instance in docker_swarm_ops.swarm_instances(
         ec2=EC2,
@@ -380,7 +389,7 @@ def destroy(graplctl_state: GraplctlState, swarm_id: str):
     required=True,
 )
 @click.argument("command", nargs=-1, type=click.STRING)
-@click.pass_obj
+@pass_graplctl_state
 def exec_(graplctl_state: GraplctlState, swarm_id: str, command: List[str]):
     click.echo(
         docker_swarm_ops.exec_(
@@ -424,7 +433,7 @@ def exec_(graplctl_state: GraplctlState, swarm_id: str, command: List[str]):
     help="unique ID of the swarm cluster",
     required=True,
 )
-@click.pass_obj
+@pass_graplctl_state
 def scale(
     graplctl_state: GraplctlState,
     num_managers: int,
@@ -602,7 +611,7 @@ def dgraph():
     help="EC2 instance type for swarm nodes",
     required=True,
 )
-@click.pass_obj
+@pass_graplctl_state
 def create_dgraph(graplctl_state: GraplctlState, instance_type: str):
     swarm_id = f"{graplctl_state.grapl_deployment_name.lower()}-dgraph-swarm"
     click.echo(f"creating swarm {swarm_id}")
@@ -697,8 +706,8 @@ def create_dgraph(graplctl_state: GraplctlState, instance_type: str):
 @click.confirmation_option(
     prompt="are you sure you want to remove the DGraph DNS records?"
 )
-@click.pass_obj
-def remove_dns(graplctl_state: GraplctlState, swarm_id: str):
+@pass_graplctl_state
+def remove_dns(graplctl_state: GraplctlState, swarm_id: str) -> None:
     hosted_zone_id = ROUTE53.list_hosted_zones_by_name(
         DNSName=f"{graplctl_state.grapl_deployment_name.lower()}.dgraph.grapl"
     )["HostedZones"][0]["Id"]

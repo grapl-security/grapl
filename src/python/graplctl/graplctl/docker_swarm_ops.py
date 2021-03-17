@@ -8,10 +8,11 @@ import os
 import shlex
 import sys
 import time
-from typing import Dict, Iterator, List, Optional, Set
+from typing import TYPE_CHECKING, Dict, Iterator, List, Optional, Set
 
-from mypy_boto3_ec2 import EC2ServiceResource
-from mypy_boto3_ssm import SSMClient
+if TYPE_CHECKING:
+    from mypy_boto3_ec2 import EC2ServiceResource
+    from mypy_boto3_ssm import SSMClient
 
 from . import common
 

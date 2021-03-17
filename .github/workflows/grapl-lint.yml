@@ -102,14 +102,10 @@ jobs:
           pip install pypi-simple
           deactivate
 
-      - name: Export CHECK_PYPI_VERSION_ARGS as "true" if channel is not latest
-        # passing 'true' to check_pypi means "check test.pypi.org"
+      - name: Export CHECK_PYPI_VERSION_ARGS as "check against test.pypi"
+        # passing 'true' to check_pypi means "check test.pypi.org" vs prod
         run: |
-          if [[ "$CHANNEL" == "latest" ]]; then
-            echo "CHECK_PYPI_VERSION_ARGS=false" >> $GITHUB_ENV
-          else
-            echo "CHECK_PYPI_VERSION_ARGS=true" >> $GITHUB_ENV
-          fi
+          echo "CHECK_PYPI_VERSION_ARGS=true" >> $GITHUB_ENV
 
       # TODO: Reactivate this once the new graplinc-grapl-api package
       # has been pushed to PyPi

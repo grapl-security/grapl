@@ -85,24 +85,6 @@ services:
         aliases:
           - ${REDIS_HOST}
 
-  # While localstack does offer S3 capabilities, it's not actually
-  # MinIO, which is a very full-featured and faithful S3 clone. We
-  # have noticed test failures when we use localstack's s3, so we will
-  # continue to use MinIO.
-  s3:
-    image: minio/minio
-    command: server /data
-    environment:
-      - MINIO_ACCESS_KEY=${S3_ACCESS_KEY_ID}
-      - MINIO_REGION_NAME=${AWS_REGION}
-      - MINIO_SECRET_KEY=${S3_ACCESS_KEY_SECRET}
-    ports:
-      - 127.0.0.1:${S3_PORT_EXTERNAL}:${S3_PORT_INTERNAL}
-    networks:
-      default:
-        aliases:
-          - ${S3_HOST}
-
   localstack:
     image: localstack/localstack:0.12.6
     ports:
@@ -112,7 +94,7 @@ services:
     environment:
       - IMAGE_NAME=localstack/localstack:0.12.6
       - EDGE_PORT=${LOCALSTACK_PORT}
-      - SERVICES=dynamodb,sqs,secretsmanager
+      - SERVICES=dynamodb,s3,secretsmanager,sqs
       - DEBUG=${DEBUG- }
       - DATA_DIR=${DATA_DIR- }
     volumes:
@@ -138,22 +120,21 @@ services:
     tty: false
     environment:
       <<: *aws-region
-      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-sysmon-graph-generator-dead-letter-queue"
+      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-sysmon-generator-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-unid-subgraphs-generated-bucket"
-      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-queue"
+      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-queue"
       EVENT_CACHE_CLUSTER_ADDRESS: "${REDIS_HOST}:${REDIS_PORT}"
       IS_LOCAL: "True"
       <<: *log-level
-      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/000000000000/grapl-sysmon-graph-generator-retry-queue"
+      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/000000000000/${DEPLOYMENT_NAME}-sysmon-generator-retry-queue"
       <<: *s3-env
-      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/000000000000/grapl-sysmon-graph-generator-queue"
+      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/000000000000/${DEPLOYMENT_NAME}-sysmon-generator-queue"
       <<: *sqs-env
       <<: *rust-backtrace
     depends_on:
       - grapl-provision
       - localstack
       - redis
-      - s3
 
   grapl-osquery-subgraph-generator:
     image: grapl/grapl-osquery-subgraph-generator:${TAG:-latest}
@@ -161,38 +142,37 @@ services:
     environment:
       <<: *aws-region
       DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
-      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-osquery-graph-generator-dead-letter-queue"
+      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-unid-subgraphs-generated-bucket"
-      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-queue"
+      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-queue"
       EVENT_CACHE_CLUSTER_ADDRESS: "${REDIS_HOST}:${REDIS_PORT}"
       IS_LOCAL: "True"
       <<: *log-level
-      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-osquery-graph-generator-retry-queue"
+      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-retry-queue"
       <<: *s3-env
-      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-osquery-graph-generator-queue"
+      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-queue"
       <<: *sqs-env
       <<: *rust-backtrace
     depends_on:
       - grapl-provision
       - localstack
       - redis
-      - s3
 
   grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
     environment:
       <<: *aws-region
-      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-dead-letter-queue"
+      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-subgraphs-generated-bucket"
-      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-merger-queue"
+      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-queue"
       <<: *dynamodb-env
       <<: *dynamodb-mapping-tables
       EVENT_CACHE_CLUSTER_ADDRESS: "${REDIS_HOST}:${REDIS_PORT}"
       IS_LOCAL: "true"
       <<: *log-level
-      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-retry-queue"
+      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-retry-queue"
       <<: *s3-env
-      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-queue"
+      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-queue"
       <<: *sqs-env
       <<: *rust-backtrace
     tty: false
@@ -200,23 +180,22 @@ services:
       - grapl-provision
       - localstack
       - redis
-      - s3
 
   grapl-node-identifier-retry-handler:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
     environment:
       <<: *aws-region
-      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-dead-letter-queue"
+      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-subgraphs-generated-bucket"
-      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-merger-queue"
+      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-queue"
       <<: *dynamodb-env
       <<: *dynamodb-mapping-tables
       EVENT_CACHE_CLUSTER_ADDRESS: "${REDIS_HOST}:${REDIS_PORT}"
       IS_LOCAL: "True"
       <<: *log-level
-      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-dead-letter-queue"
+      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
       <<: *s3-env
-      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-node-identifier-retry-queue"
+      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-retry-queue"
       <<: *sqs-env
       <<: *rust-backtrace
     tty: false
@@ -224,22 +203,21 @@ services:
       - grapl-provision
       - localstack
       - redis
-      - s3
 
   grapl-graph-merger:
     image: grapl/grapl-graph-merger:${TAG:-latest}
     environment:
       <<: *aws-region
-      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-merger-dead-letter-queue"
+      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-subgraphs-merged-bucket"
-      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-dispatcher-queue"
+      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-queue"
       <<: *dgraph-env
       EVENT_CACHE_CLUSTER_ADDRESS: "${REDIS_HOST}:${REDIS_PORT}"
       IS_LOCAL: "True"
       <<: *log-level
-      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-merger-retry-queue"
+      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-retry-queue"
       <<: *s3-env
-      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-graph-merger-queue"
+      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-queue"
       <<: *sqs-env
       <<: *rust-backtrace
       GRAPH_MUTATION_ENDPOINT: "${GRAPH_MUTATION_ENDPOINT}"
@@ -288,20 +266,19 @@ services:
       ANALYZER_BUCKET: "${DEPLOYMENT_NAME}-analyzers-bucket"
       ANALYZERS_BUCKET: "${DEPLOYMENT_NAME}-analyzers-bucket"
       <<: *aws-region
-      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-dispatcher-dead-letter-queue"
-      DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-analyzer-dispatched-bucket"
-      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-executor-queue"
+      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-dead-letter-queue"
+      DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-dispatched-analyzer-bucket"
+      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-executor-queue"
       IS_LOCAL: "true"
       <<: *log-level
-      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-dispatcher-retry-queue"
+      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-retry-queue"
       <<: *s3-env
-      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-dispatcher-queue"
+      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-queue"
       <<: *sqs-env
       <<: *rust-backtrace
     tty: false
     depends_on:
       - localstack
-      - s3
 
   ########################################################################
   # Python Services
@@ -322,9 +299,9 @@ services:
       <<: *log-level
       MESSAGECACHE_ADDR: "${REDIS_HOST}"
       MESSAGECACHE_PORT: "${REDIS_PORT}"
-      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-executor-retry-queue"
+      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-executor-retry-queue"
       <<: *s3-env
-      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/grapl-analyzer-executor-queue"
+      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-executor-queue"
       <<: *sqs-env
     tty: true
     ports:
@@ -333,7 +310,6 @@ services:
       - dgraph
       - localstack
       - redis
-      - s3
 
   grapl-ux-router:
     image: grapl/grapl-ux-router:${TAG:-latest}
@@ -373,7 +349,6 @@ services:
     depends_on:
       - dgraph
       - localstack
-      - s3
 
   # TODO: really, this service should be grapl-auth
   grapl-engagement-edge:
@@ -428,7 +403,6 @@ services:
     depends_on:
       - dgraph
       - localstack
-      - s3
     networks:
       default:
         aliases:
@@ -489,7 +463,6 @@ services:
       <<: *s3-env
     depends_on:
       - grapl-provision
-      - s3
 
   grapl-graphql-endpoint:
     image: grapl/grapl-graphql-endpoint:${TAG:-latest}
@@ -532,15 +505,10 @@ services:
     image: grapl/grapl-local-pulumi:${TAG:-latest}
     command: |
       /bin/bash -c "
-         wait-for-it ${S3_HOST}:${S3_PORT_INTERNAL} --timeout=60 &&
          wait-for-it ${LOCALSTACK_HOST}:${LOCALSTACK_PORT} --timeout=60 &&
          sleep 10 &&
          pulumi login --local &&
          pulumi stack init local-grapl --non-interactive &&
-         # See pulumi/README.md fro why we do these configuration overrides
-         pulumi config set aws:accessKey ${FAKE_AWS_ACCESS_KEY_ID} --plaintext &&
-         pulumi config set aws:secretKey ${FAKE_AWS_SECRET_ACCESS_KEY} --plaintext &&
-         pulumi config set --path 'aws:endpoints[0].s3' ${S3_ENDPOINT} &&
          pulumi up --yes --skip-preview --stack=local-grapl &&
          # NOTE: This is running in localstack's network namespace, so
          # we will need to wait on localstack, NOT grapl-pulumi.
@@ -556,7 +524,6 @@ services:
       PULUMI_CONFIG_PASSPHRASE: local-grapl-passphrase
     depends_on:
       - localstack
-      - s3
 
   grapl-provision:
     image: grapl/grapl-provision:${TAG:-latest}

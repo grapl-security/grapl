@@ -42,6 +42,7 @@ dist/
 /tags.lock
 /tags.temp
 .log
+pyrightconfig.json
 
 # Pants-related artifacts
 # https://www.pantsbuild.org/docs/gitignore

@@ -31,6 +31,7 @@ pants_ignore = [
 [source]
 root_patterns = [
   "/3rdparty",
+  "/build-support",
   "/pants-plugins",
   "/pulumi",
   "/src/js/grapl-cdk",
@@ -100,3 +101,4 @@ args = [ "--suppress-no-test-exit-code" ]
 [mypy]
 version = "mypy==0.800"
 config = "src/python/mypy.ini"
+args = [ "--show-error-codes" ]

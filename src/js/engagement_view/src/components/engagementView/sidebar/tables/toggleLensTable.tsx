@@ -8,13 +8,12 @@ import Divider from "@material-ui/core/Divider";
 import Backdrop from "@material-ui/core/Backdrop";
 import CircularProgress from "@material-ui/core/CircularProgress";
 
-import { lensTable } from "./lensTable";
+import { lensTable } from "./lensTable/lensTable";
 import { getLenses } from "services/graphQLRequests/getLenses";
 
 import { ToggleLensTableProps, ToggleLensTableState } from "types/CustomTypes";
 
-import { useStyles } from "../styles";
-
+import { useStyles } from "./lensTable/lensTableStyles";
 const defaultToggleLensTableState = (): ToggleLensTableState => {
 	return {
 		toggled: true,
@@ -73,7 +72,7 @@ export function ToggleLensTable({ setLens }: ToggleLensTableProps) {
 			<div className={classes.header}>
 				<b className={classes.title}> Lenses </b>
 				<Button
-					className={classes.button}
+					className={classes.lensToggleBtn}
 					onClick={() => {
 						setToggleTableState({
 							...toggleTableState,
@@ -82,7 +81,6 @@ export function ToggleLensTable({ setLens }: ToggleLensTableProps) {
 						
 					}}
 				>
-					
 					{toggleTableState.toggled ?  <KeyboardArrowUpOutlinedIcon className={classes.expand}/> : <KeyboardArrowDownOutlinedIcon className={classes.expand}/> }
 				</Button>
 			</div>

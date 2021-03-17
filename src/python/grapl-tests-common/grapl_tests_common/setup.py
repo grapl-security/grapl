@@ -83,7 +83,7 @@ def setup(
             WaitForS3Bucket(s3_client, f"{DEPLOYMENT_NAME}-analyzers-bucket"),
             # for upload-sysmon-logs.py
             WaitForS3Bucket(s3_client, f"{DEPLOYMENT_NAME}-sysmon-log-bucket"),
-            WaitForSqsQueue(sqs_client, "grapl-sysmon-graph-generator-queue"),
+            WaitForSqsQueue(sqs_client, f"{DEPLOYMENT_NAME}-sysmon-generator-queue"),
         ]
     )
 

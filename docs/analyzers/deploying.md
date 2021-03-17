@@ -10,12 +10,12 @@ Analyzers should be deployed with a key of the form:
 
 If you're uploading to a local Grapl,
 ```bash
-AWS_ACCESS_KEY_ID=minioadmin \
-AWS_SECRET_ACCESS_KEY=minioadmin
+AWS_ACCESS_KEY_ID="test" \
+AWS_SECRET_ACCESS_KEY="test"
 aws s3 cp \
 <path to analyzer> \
 s3://local-grapl-analyzers-bucket/analyzers/<analyzer_name>/main.py \
---endpoint-url=http://localhost:9000
+--endpoint-url=http://localhost:4566
 ```
 
 Otherwise, for an AWS deployed Grapl,

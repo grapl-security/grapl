@@ -67,6 +67,11 @@ function exit_message() {
     log "Please run the following to activate it:"
     log
     log "source ${virtualenv}/bin/activate"
+    log
+    log "Alternatively, if using 'direnv', add the following 2 lines to an '.envrc' file in the repository root:"
+    log
+    log "export VIRTUAL_ENV=build-support/grapl-venv"
+    log "PATH_add \${VIRTUAL_ENV}/bin"
 }
 
 function usage() {

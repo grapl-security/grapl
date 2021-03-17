@@ -14,11 +14,11 @@ local_grapl_dir="${analyzer_upload_script_path}/../"
 # we should pull this functionality into something like graplctl
 # with a more formalized way of pointing to a specific Grapl
 # instance.
-export AWS_ACCESS_KEY_ID="THIS_IS_A_FAKE_AWS_ACCESS_KEY_ID"
-export AWS_SECRET_ACCESS_KEY="THIS_IS_A_FAKE_AWS_SECRET_ACCESS_KEY"
+export AWS_ACCESS_KEY_ID="test"
+export AWS_SECRET_ACCESS_KEY="test"
 
 deployment_name="local-grapl"
-local_s3_endpoint="http://localhost:9000"
+local_s3_endpoint="http://localhost:4566"
 region="us-east-1"
 
 aws s3 cp \
