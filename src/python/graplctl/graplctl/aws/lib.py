@@ -13,10 +13,14 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
+GRAPL_CDK_RELATIVE_PATH = "src/js/grapl-cdk"
+EDGE_UX_DIRECTORY = "/edge_ux_post_replace"
+CDK_OUT_FILENAME = "cdk-output.json"
+
 
 def _run_shell_cmd(
     cmd: str,
-    cwd: str,
+    cwd: pathlib.Path,
     stdout: IO[AnyStr],
     stderr: IO[AnyStr],
     env: Optional[Dict[str, str]] = None,
@@ -27,7 +31,7 @@ def _run_shell_cmd(
         stderr=stderr,
         check=True,
         shell=True,
-        cwd=cwd,
+        cwd=cwd.as_posix(),
         env=env,
         executable="/bin/bash",
     )
@@ -36,9 +40,9 @@ def _run_shell_cmd(
 def deploy_grapl(
     grapl_root: pathlib.Path, aws_profile: str, stdout: IO[AnyStr], stderr: IO[AnyStr]
 ) -> None:
-    grapl_cdk_dir = pathlib.Path(grapl_root.absolute(), "src/js/grapl-cdk")
-    edge_ux_artifact_dir = pathlib.Path(grapl_cdk_dir, "/edge_ux_post_replace")
-    outputs_file = pathlib.Path(grapl_cdk_dir, "cdk-output.json")
+    grapl_cdk_dir = pathlib.Path(grapl_root.absolute(), GRAPL_CDK_RELATIVE_PATH)
+    edge_ux_artifact_dir = pathlib.Path(grapl_cdk_dir, EDGE_UX_DIRECTORY)
+    outputs_file = pathlib.Path(grapl_cdk_dir, CDK_OUT_FILENAME)
 
     if edge_ux_artifact_dir.exists():
         shutil.rmtree(edge_ux_artifact_dir)
@@ -47,14 +51,14 @@ def deploy_grapl(
 
     LOGGER.info("building cdk")
     _run_shell_cmd(
-        "npm run build", cwd=grapl_cdk_dir.as_posix(), stdout=stdout, stderr=stderr
+        "npm run build", cwd=grapl_cdk_dir, stdout=stdout, stderr=stderr
     )
     LOGGER.info("built cdk")
 
     LOGGER.info("deploying Grapl stack")
     _run_shell_cmd(
         f"cdk deploy --require-approval=never --profile={aws_profile} --outputs-file={outputs_file.as_posix()} Grapl",
-        cwd=grapl_cdk_dir.as_posix(),
+        cwd=grapl_cdk_dir,
         stdout=stdout,
         stderr=stderr,
         env={"AWS_PROFILE": aws_profile, "PATH": os.environ["PATH"]},
@@ -67,7 +71,7 @@ def deploy_grapl(
     LOGGER.info("creating edge UX package")
     _run_shell_cmd(
         "npm run create_edge_ux_package",
-        cwd=grapl_cdk_dir.as_posix(),
+        cwd=grapl_cdk_dir,
         stdout=stdout,
         stderr=stderr,
     )
@@ -76,7 +80,7 @@ def deploy_grapl(
     LOGGER.info("deploying EngagementUX stack")
     _run_shell_cmd(
         f"cdk deploy --require-approval=never --profile={aws_profile} --outputs-file={outputs_file.as_posix()} EngagementUX",
-        cwd=grapl_cdk_dir.as_posix(),
+        cwd=grapl_cdk_dir,
         stdout=stdout,
         stderr=stderr,
         env={"AWS_PROFILE": aws_profile, "PATH": os.environ["PATH"]},
@@ -89,18 +93,18 @@ def deploy_grapl(
 def destroy_grapl(
     grapl_root: pathlib.Path, aws_profile: str, stdout: IO[AnyStr], stderr: IO[AnyStr]
 ) -> None:
-    grapl_cdk_dir = pathlib.Path(grapl_root.absolute(), "src/js/grapl-cdk")
+    grapl_cdk_dir = pathlib.Path(grapl_root.absolute(), GRAPL_CDK_RELATIVE_PATH)
 
     LOGGER.info("building cdk")
     _run_shell_cmd(
-        "npm run build", cwd=grapl_cdk_dir.as_posix(), stdout=stdout, stderr=stderr
+        "npm run build", cwd=grapl_cdk_dir, stdout=stdout, stderr=stderr
     )
     LOGGER.info("built cdk")
 
     LOGGER.info("destroying all stacks")
     _run_shell_cmd(
         'cdk destroy --force --require-approval=never "*"',
-        cwd=grapl_cdk_dir.as_posix(),
+        cwd=grapl_cdk_dir,
         stdout=stdout,
         stderr=stderr,
         env={"AWS_PROFILE": aws_profile, "PATH": os.environ["PATH"]},
