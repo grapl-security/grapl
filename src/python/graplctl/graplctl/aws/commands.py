@@ -13,17 +13,18 @@ from graplctl.common import State, pass_graplctl_state
 #
 
 
-@click.group(help="commands for managing grapl aws resources", name="aws")
+@click.group()
 @click.pass_context
 @pass_graplctl_state
 def aws(
     graplctl_state: State,
     ctx: click.Context,
 ):
+    """commands for managing grapl aws resources"""
     pass
 
 
-@aws.command(help="deploy grapl to aws", name="deploy")
+@aws.command()
 @click.option(
     "-a", "--all", is_flag=True, required=True, help="all services and resources"
 )
@@ -40,9 +41,10 @@ def aws(
     required=True,
 )
 @click.pass_obj
-def aws_deploy(
+def deploy(
     graplctl_state: State, all: bool, dgraph_instance_type: str, grapl_root: str
 ):
+    """deploy grapl to aws"""
     click.echo("deploying grapl cdk stacks to aws")
     aws_cdk_ops.deploy_grapl(
         grapl_root=pathlib.Path(grapl_root).absolute(),
@@ -61,7 +63,7 @@ def aws_deploy(
     click.echo("created dgraph cluster in aws")
 
 
-@aws.command(help="tear down grapl in aws", name="destroy")
+@aws.command()
 @click.option(
     "-a", "--all", is_flag=True, required=True, help="all services and resources"
 )
@@ -71,7 +73,8 @@ def aws_deploy(
     required=True,
 )
 @click.pass_obj
-def aws_destroy(graplctl_state: State, all: bool, grapl_root: str):
+def destroy(graplctl_state: State, all: bool, grapl_root: str):
+    """tear down grapl in aws"""
     click.echo("destroying all grapl aws resources")
 
     for swarm_id in docker_swarm_ops.swarm_ids(
@@ -100,9 +103,10 @@ def aws_destroy(graplctl_state: State, all: bool, grapl_root: str):
     click.echo("destroyed all grapl aws resources")
 
 
-@aws.command(help="provision the grapl deployment", name="provision")
+@aws.command()
 @click.pass_obj
-def aws_provision(graplctl_state: State):
+def provision(graplctl_state: State):
+    """provision the grapl deployment"""
     click.echo("provisioning grapl deployment")
     aws_cdk_ops.provision_grapl(
         lambda_=graplctl_state.lambda_,
