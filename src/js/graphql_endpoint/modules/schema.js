@@ -4,7 +4,7 @@ const { GraphQLJSONObject } = require("graphql-type-json");
 const { json } = require("express");
 
 const AWS = require("aws-sdk");
-
+const IS_LOCAL = (process.env.IS_LOCAL == 'True') || null;
 
 // ## TODO? DECIDE HOW TO get an instance of dynamodb in graphql??
 const getNodeType = async (nodeType) => {
@@ -12,21 +12,27 @@ const getNodeType = async (nodeType) => {
 
 	AWS.config.update({ region: region }); // is the env file the right place to get this value?
 	// comes from local-grapl.env
+	console.log("nodeType", nodeType)
 
-	const ddb = new AWS.DynamoDB({ apiVersion: "2012-08-10" }); // new client 
+	const ddb = new AWS.DynamoDB({ 
+		apiVersion: "2012-08-10",
+		region: IS_LOCAL ? process.env.AWS_REGION : undefined,
+		accessKeyId: IS_LOCAL ? process.env.DYNAMODB_ACCESS_KEY_ID : undefined,
+		secretAccessKey: IS_LOCAL ? process.env.DYNAMODB_ACCESS_KEY_SECRET : undefined,
+		endpoint: IS_LOCAL ? process.env.DYNAMODB_ENDPOINT : undefined,
+	}); // new client 
 
 	const params = {
-		TableName: ddb.Table(process.env.DEPLOYMENT_NAME + "-grapl_schema_table"),
-		// TableName: dynamodb.Table(os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table"),
+		TableName: process.env.GRAPL_SCHEMA_TABLE,
 		Key: {
-			KEY_NAME: { node_type: nodeType },// get display prop for a given node based on the type
+			node_type: { "S": nodeType },// get display prop for a given node based on the type
 		},
-		ProjectionExpression: "uid", // identifies	the attributes that you want to query for
+		ProjectionExpression: "display_name", // identifies	the attributes that you want to query for
 	};
 
 	// Call DynamoDB to read the item from the table
 	const response = await ddb.getItem(params).promise(); 
-	console.log("response", response)
+	console.log("response from ddb", response)
 
 	// if (err) {
 	// 	console.log("Error", err);
@@ -377,10 +383,7 @@ const getLensSubgraphByName = async (dg_client, lens_name) => {
 	try {
 		console.log("Querying DGraph in getLensSubgraphByName");
 		const res = await txn.queryWithVars(query, { $a: lens_name });
-		console.log(
-			"returning following data from getLensSubGrapByName: ",
-			res.getJson()["all"][0]
-		);
+		console.log("returning data from getLensSubGrapByName: ");
 		return res.getJson()["all"][0];
 	} catch (e) {
 		console.error("Error in DGraph txn: getLensSubgraphByName", e);
@@ -399,11 +402,11 @@ const handleLensScope = async (parent, args) => {
 	const dg_client = getDgraphClient();
 
 	const lens_name = args.lens_name;
-	console.log("lens_name in handleLensScope", lens_name);
+	console.log("handling lens name: ", lens_name);
 
 	// grab the graph of lens, lens scope, and neighbors to nodes in-scope of the lens ((lens) -> (neighbor) -> (neighbor's neighbor))
 	const lens_subgraph = await getLensSubgraphByName(dg_client, lens_name);
-	console.log("lens_subgraph in handleLensScope: ", lens_subgraph);
+	console.log("retrieved subgraph in handleLensScope");
 
 	lens_subgraph["uid"] = parseInt(lens_subgraph["uid"], 16);
 	// if it's undefined/null, might as well make it an array
@@ -436,6 +439,7 @@ const handleLensScope = async (parent, args) => {
 		for (const predicate in neighbor) {
 			// we want to keep risks and enrich them at the same time
 			console.log("calling getNodeType")
+			console.log("predicate value", predicate)
 			await getNodeType(predicate.dgraph_type);
 
 			if (predicate === "risks") {

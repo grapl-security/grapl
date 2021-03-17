@@ -61,11 +61,11 @@ app.use(
 	"/graphQlEndpoint/graphql",
 	middleware,
 	graphqlHTTP(async (request, response, graphQLParams) => {
-		console.debug({
-			request: request,
-			response: response,
-			graphQLParams: graphQLParams,
-		});
+		// console.debug({
+		// 	request: request,
+		// 	response: response,
+		// 	graphQLParams: graphQLParams,
+		// });
 		return {
 			schema: schema,
 			graphiql: IS_LOCAL,
@@ -85,7 +85,7 @@ if (IS_LOCAL) {
 	});
 } else {
 	const server = awsServerlessExpress.createServer(app);
-	console.log("AWS Server", server);
+	// console.log("AWS Server", server);
 	exports.handler = (event, context) => {
 		awsServerlessExpress.proxy(server, event, context);
 	};
