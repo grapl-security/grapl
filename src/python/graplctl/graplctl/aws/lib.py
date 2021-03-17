@@ -5,7 +5,7 @@ import pathlib
 import shutil
 import subprocess
 import sys
-from typing import IO, AnyStr, Dict, Optional
+from typing import IO, AnyStr
 
 from mypy_boto3_lambda import LambdaClient
 
@@ -23,7 +23,6 @@ def _run_shell_cmd(
     cwd: pathlib.Path,
     stdout: IO[AnyStr],
     stderr: IO[AnyStr],
-    env: Optional[Dict[str, str]] = None,
 ) -> subprocess.CompletedProcess:
     return subprocess.run(
         cmd,
@@ -32,7 +31,6 @@ def _run_shell_cmd(
         check=True,
         shell=True,
         cwd=cwd.as_posix(),
-        env=env,
         executable="/bin/bash",
     )
 
@@ -61,7 +59,6 @@ def deploy_grapl(
         cwd=grapl_cdk_dir,
         stdout=stdout,
         stderr=stderr,
-        env={"AWS_PROFILE": aws_profile, "PATH": os.environ["PATH"]},
     )
     LOGGER.info("deployed Grapl stack")
 
@@ -83,7 +80,6 @@ def deploy_grapl(
         cwd=grapl_cdk_dir,
         stdout=stdout,
         stderr=stderr,
-        env={"AWS_PROFILE": aws_profile, "PATH": os.environ["PATH"]},
     )
     LOGGER.info("deployed EngagementUX stack")
 
@@ -103,11 +99,10 @@ def destroy_grapl(
 
     LOGGER.info("destroying all stacks")
     _run_shell_cmd(
-        'cdk destroy --force --require-approval=never "*"',
+        f'cdk destroy --profile={aws_profile} --force --require-approval=never "*"',
         cwd=grapl_cdk_dir,
         stdout=stdout,
         stderr=stderr,
-        env={"AWS_PROFILE": aws_profile, "PATH": os.environ["PATH"]},
     )
     LOGGER.info("destroyed all stacks")
 
