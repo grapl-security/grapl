@@ -84,7 +84,6 @@ jobs:
           make test-typecheck
 
   js-unit-tests:
-    needs: build-zips
     runs-on: ubuntu-latest
 
     steps:
