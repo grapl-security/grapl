@@ -473,7 +473,7 @@ services:
       IS_LOCAL: "True"
       JWT_SECRET_ID: "JWT_SECRET_ID"
       PORT: ${GRAPL_GRAPHQL_PORT}
-      GRAPL_SCHEMA_TABLE: "${DEPLOYMENT_NAME}-grapl_schema_table"
+      GRAPL_DISPLAY_TABLE: "${DEPLOYMENT_NAME}-grapl_display_table"
       <<: *secretsmanager-env
     depends_on:
       - dgraph

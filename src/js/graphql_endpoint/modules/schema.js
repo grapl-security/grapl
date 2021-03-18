@@ -7,13 +7,12 @@ const AWS = require("aws-sdk");
 const IS_LOCAL = (process.env.IS_LOCAL == 'True') || null;
 
 // ## TODO? DECIDE HOW TO get an instance of dynamodb in graphql??
-const getNodeType = async (nodeType) => {
+const getDisplayProperty = async (nodeType) => {
 	const region = process.env.AWS_REGION;
 
 	AWS.config.update({ region: region }); // is the env file the right place to get this value?
 	// comes from local-grapl.env
-	console.log("nodeType", nodeType)
-
+	
 	const ddb = new AWS.DynamoDB({ 
 		apiVersion: "2012-08-10",
 		region: IS_LOCAL ? process.env.AWS_REGION : undefined,
@@ -23,9 +22,9 @@ const getNodeType = async (nodeType) => {
 	}); // new client 
 
 	const params = {
-		TableName: process.env.GRAPL_SCHEMA_TABLE,
+		TableName: process.env.GRAPL_DISPLAY_TABLE,
 		Key: {
-			node_type: { "S": nodeType },// get display prop for a given node based on the type
+			node_type: { S: nodeType },// get display prop for a given node based on the type
 		},
 		ProjectionExpression: "display_name", // identifies	the attributes that you want to query for
 	};
@@ -57,6 +56,7 @@ const BaseNode = {
 	uid: { type: GraphQLInt },
 	node_key: { type: GraphQLString },
 	dgraph_type: { type: GraphQLList(GraphQLString) },
+	display: {type: GraphQLString}
 };
 
 const LensNodeType = new GraphQLObjectType({
@@ -67,6 +67,7 @@ const LensNodeType = new GraphQLObjectType({
 		score: { type: GraphQLInt },
 		scope: { type: GraphQLList(GraplEntityType) },
 		lens_type: { type: GraphQLString },
+
 	}),
 });
 
@@ -415,7 +416,7 @@ const handleLensScope = async (parent, args) => {
 	// start enriching the nodes within the scope
 	lens_subgraph["scope"].forEach(
 		(neighbor) => (neighbor["uid"] = parseInt(neighbor["uid"], 16))
-	);
+	);	
 	lens_subgraph["scope"].forEach(
 		(neighbor) =>
 			(neighbor["dgraph_type"] = neighbor["dgraph_type"].filter(
@@ -438,9 +439,7 @@ const handleLensScope = async (parent, args) => {
 		// neighbor of a lens neighbor
 		for (const predicate in neighbor) {
 			// we want to keep risks and enrich them at the same time
-			console.log("calling getNodeType")
-			console.log("predicate value", predicate)
-			await getNodeType(predicate.dgraph_type);
+	
 
 			if (predicate === "risks") {
 				neighbor[predicate].forEach((risk_node) => {
@@ -503,11 +502,18 @@ const handleLensScope = async (parent, args) => {
 	}
 
 	for (node of lens_subgraph["scope"]) {
+		const displayProperty = await getDisplayProperty(nodeType.filter(filterDefaultDgraphNodeTypes));
+		node["display"] = node[displayProperty].toString();
+	}
+
+	for (node of lens_subgraph["scope"]) {
 		if (!builtins.has(node.dgraph_type[0])) {
 			const tmpNode = { ...node };
 			node.predicates = tmpNode;
 		}
 	}
+
+	// for node in lens.scope pass node
 
 	console.log("lens_subgraph scope", JSON.stringify(lens_subgraph["scope"]));
 	return lens_subgraph;
