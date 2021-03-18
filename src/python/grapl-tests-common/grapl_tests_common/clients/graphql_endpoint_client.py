@@ -1,12 +1,12 @@
 import os
-from typing import Any, Dict
+from typing import Any, Dict, cast
 
 import requests
 
 
 class GraphqlEndpointClient:
     def __init__(self, jwt: str) -> None:
-        hostname = "grapl-graphql-endpoint"
+        hostname = os.environ["GRAPL_GRAPHQL_HOST"]
         port = os.environ["GRAPL_GRAPHQL_PORT"]
         self.endpoint = f"http://{hostname}:{port}"
         self.jwt = jwt
@@ -17,4 +17,4 @@ class GraphqlEndpointClient:
             params={"query": query},
             cookies={"grapl_jwt": self.jwt},
         )
-        return resp.json()["data"]
+        return cast(Dict[str, Any], resp.json()["data"])

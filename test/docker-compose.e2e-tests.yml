@@ -30,6 +30,8 @@ services:
       - DYNAMODB_ENDPOINT
       - GRAPL_AUTH_HOST
       - GRAPL_AUTH_PORT
+      - GRAPL_GRAPHQL_HOST
+      - GRAPL_GRAPHQL_PORT
       - GRAPL_LOG_LEVEL
       - IS_LOCAL=True
       - MG_ALPHAS
