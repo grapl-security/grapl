@@ -86,19 +86,27 @@ services:
           - ${REDIS_HOST}
 
   localstack:
-    image: localstack/localstack:0.12.6
+    image: localstack/localstack:0.12.8
     ports:
       # We'll expose localstack's edge port for ease of use with
       # things like the AWS CLI, Pulumi, etc.
       - 127.0.0.1:${LOCALSTACK_PORT}:${LOCALSTACK_PORT}
     environment:
-      - IMAGE_NAME=localstack/localstack:0.12.6
+      - IMAGE_NAME=localstack/localstack:0.12.8
       - EDGE_PORT=${LOCALSTACK_PORT}
-      - SERVICES=dynamodb,s3,secretsmanager,sqs
-      - DEBUG=${DEBUG- }
+      - HOSTNAME_EXTERNAL=${LOCALSTACK_HOST}
+      - SERVICES=dynamodb,iam,lambda,logs,s3,secretsmanager,sns,sqs
+      - DEBUG=1
+      - LS_LOG=debug
+      - LAMBDA_EXECUTOR=docker
+      - MAIN_CONTAINER_NAME=${COMPOSE_PROJECT_NAME}_localstack_1
+      # Without this, the lambda containers are attached to the bridge network
+      - LAMBDA_DOCKER_NETWORK=grapl-network
       - DATA_DIR=${DATA_DIR- }
+    privileged: true # for docker lambda execution
     volumes:
       - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
     networks:
       default:
         aliases:
