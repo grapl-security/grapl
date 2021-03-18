@@ -8,17 +8,13 @@ import os
 import shlex
 import sys
 import time
-from typing import TYPE_CHECKING, Dict, Iterator, List, Optional, Set
+from typing import TYPE_CHECKING, Callable, Dict, Iterator, List, Optional, Set
 
 if TYPE_CHECKING:
     from mypy_boto3_ec2 import EC2ServiceResource
     from mypy_boto3_ssm import SSMClient
 
-from . import common
-
-get_command_results = common.get_command_results
-Tag = common.Tag
-Ec2Instance = common.Ec2Instance
+from graplctl.common import Ec2Instance, State, Tag, get_command_results
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
@@ -57,7 +53,7 @@ def swarm_vpc_id(ec2: EC2ServiceResource, swarm_security_group_id: str) -> str:
     return ec2.SecurityGroup(swarm_security_group_id).vpc_id
 
 
-def subnet_ids(
+def grapl_subnet_ids(
     ec2: EC2ServiceResource, swarm_vpc_id: str, deployment_name: str
 ) -> Iterator[str]:
     """Yields the subnet IDs for the grapl deployment"""
@@ -446,3 +442,208 @@ def exec_(
     return next(
         get_command_results(ssm, ssm_command_id, [manager_instance.instance_id])
     )[1]
+
+
+def swarm_ls(graplctl_state: State) -> Iterator[str]:
+    for swarm_id in swarm_ids(
+        ec2=graplctl_state.ec2,
+        deployment_name=graplctl_state.grapl_deployment_name,
+        region=graplctl_state.grapl_region,
+        version=graplctl_state.grapl_version,
+    ):
+        yield swarm_id
+
+
+def create_swarm(
+    graplctl_state: State,
+    num_managers: int,
+    num_workers: int,
+    instance_type: str,
+    swarm_id: str,
+    docker_daemon_config: Optional[Dict] = None,
+    extra_init: Optional[Callable[[SSMClient, str, List[Ec2Instance]], None]] = None,
+) -> bool:
+    if swarm_id in set(swarm_ls(graplctl_state)):
+        LOGGER.warn(f"swarm {swarm_id} already exists")
+        return False  # bail early if the swarm already exists
+
+    ami_id = REGION_TO_AMI_ID[graplctl_state.grapl_region.lower()]
+    security_group_id = swarm_security_group_id(
+        ec2=graplctl_state.ec2,
+        deployment_name=graplctl_state.grapl_deployment_name,
+    )
+    vpc_id = swarm_vpc_id(
+        ec2=graplctl_state.ec2, swarm_security_group_id=security_group_id
+    )
+
+    LOGGER.info(f"retrieving subnet ids in vpc {vpc_id}")
+    subnet_ids = set(
+        grapl_subnet_ids(
+            ec2=graplctl_state.ec2,
+            swarm_vpc_id=vpc_id,
+            deployment_name=graplctl_state.grapl_deployment_name,
+        )
+    )
+    LOGGER.info(f"retrieved subnet ids in vpc {vpc_id}")
+
+    LOGGER.info(f"creating manager instances in vpc {vpc_id}")
+    manager_instances = create_instances(
+        ec2=graplctl_state.ec2,
+        ssm=graplctl_state.ssm,
+        deployment_name=graplctl_state.grapl_deployment_name,
+        region=graplctl_state.grapl_region,
+        version=graplctl_state.grapl_version,
+        swarm_manager=True,
+        swarm_id=swarm_id,
+        ami_id=ami_id,
+        count=num_managers,
+        instance_type=instance_type,
+        security_group_id=security_group_id,
+        subnet_ids=subnet_ids,
+    )
+    manager_instance_ids_str = ",".join(w.instance_id for w in manager_instances)
+    LOGGER.info(f"created manager instances {manager_instance_ids_str} in vpc {vpc_id}")
+
+    LOGGER.info(f"creating worker instances in vpc {vpc_id}")
+    worker_instances = create_instances(
+        ec2=graplctl_state.ec2,
+        ssm=graplctl_state.ssm,
+        deployment_name=graplctl_state.grapl_deployment_name,
+        region=graplctl_state.grapl_region,
+        version=graplctl_state.grapl_version,
+        swarm_manager=False,
+        swarm_id=swarm_id,
+        ami_id=ami_id,
+        count=num_workers,
+        instance_type=instance_type,
+        security_group_id=security_group_id,
+        subnet_ids=subnet_ids,
+    )
+    worker_instance_ids_str = ",".join(w.instance_id for w in worker_instances)
+    LOGGER.info(f"created worker instances {worker_instance_ids_str} in vpc {vpc_id}")
+
+    all_instances = manager_instances + worker_instances
+    instance_ids_str = ",".join(i.instance_id for i in all_instances)
+
+    LOGGER.info(f"initializing instances {instance_ids_str}")
+    init_instances(
+        ssm=graplctl_state.ssm,
+        deployment_name=graplctl_state.grapl_deployment_name,
+        instances=all_instances,
+    )
+    LOGGER.info(f"initialized instances {instance_ids_str}")
+
+    if extra_init is not None:
+        LOGGER.info(f"performing extra initialization on instances {instance_ids_str}")
+        extra_init(
+            graplctl_state.ssm,
+            graplctl_state.grapl_deployment_name,
+            all_instances,
+        )
+        LOGGER.info(f"performed extra initialization on instances {instance_ids_str}")
+
+    if docker_daemon_config is not None:
+        LOGGER.info(f"configuring docker daemon on instances {instance_ids_str}")
+        configure_docker_daemon(
+            ssm=graplctl_state.ssm,
+            deployment_name=graplctl_state.grapl_deployment_name,
+            instances=all_instances,
+            config=docker_daemon_config,
+        )
+        LOGGER.info(f"configured docker daemon on instances {instance_ids_str}")
+
+    LOGGER.info(f"restarting daemons on instances {instance_ids_str}")
+    restart_daemons(
+        ssm=graplctl_state.ssm,
+        deployment_name=graplctl_state.grapl_deployment_name,
+        instances=all_instances,
+    )
+    LOGGER.info(f"restarted daemons on instances {instance_ids_str}")
+
+    manager_instance = manager_instances[0]
+    LOGGER.info(
+        f"configuring docker swarm cluster manager {manager_instance.instance_id}"
+    )
+    init_docker_swarm(
+        ec2=graplctl_state.ec2,
+        ssm=graplctl_state.ssm,
+        deployment_name=graplctl_state.grapl_deployment_name,
+        manager_instance=manager_instance,
+    )
+    LOGGER.info(
+        f"configured docker swarm cluster manager {manager_instance.instance_id}"
+    )
+
+    if len(manager_instances) > 1:
+        LOGGER.info(
+            f"extracting docker swarm manager join token from manager {manager_instance.instance_id}"
+        )
+        manager_join_token = extract_join_token(
+            ssm=graplctl_state.ssm,
+            deployment_name=graplctl_state.grapl_deployment_name,
+            manager_instance=manager_instance,
+            manager=True,
+        )
+        LOGGER.info(
+            f"extracted docker swarm manager join token from manager {manager_instance.instance_id}"
+        )
+
+        remaining_manager_instance_ids_str = ",".join(
+            w.instance_id for w in manager_instances[1:]
+        )
+        LOGGER.info(
+            f"joining docker swarm manager instances {remaining_manager_instance_ids_str}"
+        )
+        join_swarm_nodes(
+            ec2=graplctl_state.ec2,
+            ssm=graplctl_state.ssm,
+            deployment_name=graplctl_state.grapl_deployment_name,
+            instances=manager_instances[1:],
+            join_token=manager_join_token,
+            manager=True,
+            manager_ip=manager_instance.private_ip_address,
+        )
+        LOGGER.info(
+            f"joined docker swarm manager instances {remaining_manager_instance_ids_str}"
+        )
+
+    LOGGER.info(
+        f"extracting docker swarm worker join token from manager {manager_instance.instance_id}"
+    )
+    worker_join_token = extract_join_token(
+        ssm=graplctl_state.ssm,
+        deployment_name=graplctl_state.grapl_deployment_name,
+        manager_instance=manager_instance,
+        manager=False,
+    )
+    LOGGER.info(
+        f"extracted docker swarm worker join token from manager {manager_instance.instance_id}"
+    )
+
+    LOGGER.info(f"joining docker swarm worker instances {worker_instance_ids_str}")
+    join_swarm_nodes(
+        ec2=graplctl_state.ec2,
+        ssm=graplctl_state.ssm,
+        deployment_name=graplctl_state.grapl_deployment_name,
+        instances=worker_instances,
+        join_token=worker_join_token,
+        manager=False,
+        manager_ip=manager_instance.private_ip_address,
+    )
+    LOGGER.info(f"joined docker swarm worker instances {worker_instance_ids_str}")
+
+    return True
+
+
+def destroy_swarm(graplctl_state: State, swarm_id: str):
+    for instance in swarm_instances(
+        ec2=graplctl_state.ec2,
+        deployment_name=graplctl_state.grapl_deployment_name,
+        version=graplctl_state.grapl_version,
+        region=graplctl_state.grapl_region,
+        swarm_id=swarm_id,
+    ):
+        graplctl_state.ec2.Instance(instance.instance_id).terminate(
+            InstanceIds=[instance.instance_id]
+        )
+        LOGGER.info(f"terminated instance {instance.instance_id}")

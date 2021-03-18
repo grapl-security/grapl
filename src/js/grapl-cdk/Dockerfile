@@ -43,6 +43,7 @@ RUN touch \
   graphql-endpoint-latest.zip \
   metric-forwarder-latest.zip \
   model-plugin-deployer-latest.zip \
-  ux-router-latest.zip
+  ux-router-latest.zip \
+  provisioner-latest.zip
 
 WORKDIR /home/grapl/src/js/grapl-cdk

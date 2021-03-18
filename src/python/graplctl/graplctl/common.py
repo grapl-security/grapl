@@ -7,11 +7,16 @@ import sys
 import time
 from typing import TYPE_CHECKING, Dict, Iterator, List, Tuple
 
-import boto3
 import click
 
 if TYPE_CHECKING:
     import mypy_boto3_ec2.service_resource as ec2_resources
+    from mypy_boto3_cloudwatch.client import CloudWatchClient
+    from mypy_boto3_ec2 import EC2ServiceResource
+    from mypy_boto3_lambda import LambdaClient
+    from mypy_boto3_route53 import Route53Client
+    from mypy_boto3_sns import SNSClient
+    from mypy_boto3_sqs import SQSClient
     from mypy_boto3_ssm.client import SSMClient
 
 LOGGER = logging.getLogger(__name__)
@@ -25,16 +30,29 @@ IN_PROGRESS_STATUSES = {
 }
 
 
+def ticker(n: int) -> Iterator[None]:
+    for _ in range(n):
+        time.sleep(1)
+        yield None
+
+
 @dataclasses.dataclass
-class GraplctlState:
+class State:
     grapl_region: str
     grapl_deployment_name: str
     grapl_version: str
-    boto3_session: boto3.session.Session
+    aws_profile: str
+    ec2: EC2ServiceResource
+    ssm: SSMClient
+    cloudwatch: CloudWatchClient
+    sns: SNSClient
+    route53: Route53Client
+    sqs: SQSClient
+    lambda_: LambdaClient
 
 
 # Prefer this to `pass_obj`
-pass_graplctl_state = click.make_pass_decorator(GraplctlState)
+pass_graplctl_state = click.make_pass_decorator(State)
 
 
 @dataclasses.dataclass
