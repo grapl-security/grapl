@@ -1,23 +1,17 @@
 from __future__ import annotations
 
 import logging
-import subprocess
 import sys
 from os import environ
 from sys import stdout
-from typing import TYPE_CHECKING, Any, NamedTuple, Sequence
+from typing import TYPE_CHECKING, Sequence
 
 import boto3  # type: ignore
 import pytest
 import requests
 from grapl_common.env_helpers import S3ClientFactory, SQSClientFactory
 from grapl_tests_common.dump_dynamodb import dump_dynamodb
-from grapl_tests_common.sleep import verbose_sleep
-from grapl_tests_common.types import (
-    AnalyzerUpload,
-    S3ServiceResource,
-    SqsServiceResource,
-)
+from grapl_tests_common.types import AnalyzerUpload, S3ServiceResource
 from grapl_tests_common.upload_test_data import UploadTestData
 from grapl_tests_common.wait import WaitForS3Bucket, WaitForSqsQueue, wait_for
 
@@ -72,8 +66,6 @@ def setup(
     analyzers: Sequence[AnalyzerUpload],
     test_data: Sequence[UploadTestData],
 ) -> None:
-    verbose_sleep(10, "awaiting local aws")
-
     s3_client = _create_s3_client()
     sqs_client = _create_sqs_client()
 
