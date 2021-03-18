@@ -11,8 +11,6 @@ from grapl_tests_common.wait import WaitForCondition, WaitForQuery, wait_for_one
 
 LENS_NAME = "DESKTOP-FVSHABR"
 
-GqlLensDict = Dict[str, Any]
-
 
 @pytest.mark.integration_test
 class TestEndToEnd(TestCase):

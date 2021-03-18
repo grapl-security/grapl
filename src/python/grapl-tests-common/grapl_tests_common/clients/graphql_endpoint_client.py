@@ -1,4 +1,5 @@
 import os
+from typing import Any, Dict
 
 import requests
 
@@ -10,7 +11,7 @@ class GraphqlEndpointClient:
         self.endpoint = f"http://{hostname}:{port}"
         self.jwt = jwt
 
-    def query(self, query: str) -> None:
+    def query(self, query: str) -> Dict[str, Any]:
         resp = requests.post(
             f"{self.endpoint}/graphQlEndpoint/graphql",
             params={"query": query},
