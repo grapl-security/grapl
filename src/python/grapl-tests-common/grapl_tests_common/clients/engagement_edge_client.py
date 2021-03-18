@@ -15,8 +15,8 @@ class EngagementEdgeException(Exception):
 
 
 class EngagementEdgeClient:
-    def __init__(self, use_docker_links: bool = False) -> None:
-        hostname = os.environ["GRAPL_AUTH_HOST"] if use_docker_links else "localhost"
+    def __init__(self) -> None:
+        hostname = os.environ["GRAPL_AUTH_HOST"]
         self.endpoint = f"http://{hostname}:{os.environ['GRAPL_AUTH_PORT']}"
 
     def get_jwt(self) -> str:
