@@ -120,12 +120,6 @@ FROM rust-dist AS graph-merger-deploy
 COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/graph-merger" /
 CMD ["/graph-merger"]
 
-# metric-forwarder
-FROM rust-dist AS metric-forwarder-deploy
-
-COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/metric-forwarder" /
-CMD ["/metric-forwarder"]
-
 # node-identifier
 FROM rust-dist AS node-identifier-deploy
 

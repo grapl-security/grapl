@@ -116,12 +116,6 @@ services:
   # Rust Services
   ########################################################################
 
-  grapl-metric-forwarder:
-    image: grapl/grapl-metric-forwarder:${TAG:-latest}
-    tty: false
-    environment:
-      IS_LOCAL: "True"
-      <<: *log-level
 
   grapl-sysmon-subgraph-generator:
     image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
