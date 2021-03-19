@@ -305,22 +305,6 @@ services:
         aliases:
           - ${GRAPL_UX_ROUTER_HOST}
 
-  grapl-engagement-creator:
-    image: grapl/grapl-engagement-creator:${TAG:-latest}
-    command: /bin/sh -c '. venv/bin/activate && python3 engagement-creator/src/engagement-creator.py'
-    environment:
-      <<: *aws-region
-      DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
-      <<: *dgraph-env
-      IS_LOCAL: "True"
-      <<: *log-level
-      <<: *s3-env
-      <<: *sqs-env
-    tty: true
-    depends_on:
-      - dgraph
-      - localstack
-
   # TODO: really, this service should be grapl-auth
   grapl-engagement-edge:
     image: grapl/grapl-engagement-edge:${TAG:-latest}
