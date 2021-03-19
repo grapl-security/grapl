@@ -1,3 +1,4 @@
+import * as express from "express";
 import jwt = require('jsonwebtoken');
 import AWS = require('aws-sdk');
 
@@ -36,7 +37,7 @@ async function fetchJwtSecret(): Promise<string> {
     }
 })();
 
-export const verifyToken = async (jwtToken: string) => {
+export async function verifyToken(jwtToken: string) {
     if (!JWT_SECRET) {
         JWT_SECRET = await fetchJwtSecret();
     }
@@ -51,7 +52,11 @@ export const verifyToken = async (jwtToken: string) => {
 };
 
 
-export const validateJwt = async (req, res, next) => {
+export async function validateJwt(
+    req: express.Request, 
+    res: express.Response, 
+    next: express.NextFunction
+): Promise<express.Response> {
     const headers = req.headers;
     let encoded_jwt = null
 
