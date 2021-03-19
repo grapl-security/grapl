@@ -7,6 +7,7 @@ const get_random = <T>(list: T[]): T => {
 
 const mg_alpha = get_random(process.env.MG_ALPHAS.split(","));
 
+export type DgraphClient = dgraph.DgraphClient;
 export const getDgraphClient = (): dgraph.DgraphClient => {
 	const clientStub = new dgraph.DgraphClientStub(
 		mg_alpha,

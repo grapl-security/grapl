@@ -15,7 +15,7 @@ const BaseNode = {
 	dgraph_type: { type: GraphQLList(GraphQLString) },
 };
 
-const LensNodeType = new GraphQLObjectType({
+export const LensNodeType = new GraphQLObjectType({
 	name: "LensNode",
 	fields: () => ({
 		...BaseNode,
@@ -194,7 +194,7 @@ const PluginType = new GraphQLObjectType({
 	},
 });
 
-const builtins = new Set([
+export const builtins = new Set([
 	"Process",
 	"File",
 	"IpAddress",
@@ -251,7 +251,3 @@ const GraplEntityType = new GraphQLUnionType({
 	types: [PluginType, FileType, ProcessType, AssetType],
 	resolveType: resolveType,
 });
-
-module.exports = {
-	LensNodeType,
-}

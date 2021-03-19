@@ -1,22 +1,25 @@
-const {
+import {
 	GraphQLObjectType,
 	GraphQLInt,
 	GraphQLString,
 	GraphQLList,
 	GraphQLSchema,
 	GraphQLNonNull,
-} = require("graphql");
+} from "graphql";
 
-const {
-    LensNodeType
-} = require("./schema");
+import {
+	LensNodeType,
+	builtins,
+} from "./schema";
 
-const {
-    getDgraphClient
-} = require("./dgraph_client");
+import {
+	getDgraphClient,
+	DgraphClient,
+} from "./dgraph_client";
 
+type MysteryParentType = never;
 
-const getLenses = async (dg_client, first, offset) => {
+const getLenses = async (dg_client: DgraphClient, first: number, offset: number) => {
 	console.log("first, offset parameters in getLenses()", first, offset);
 
 	const query = `
@@ -59,7 +62,7 @@ const getLenses = async (dg_client, first, offset) => {
 	}
 };
 
-const getLensSubgraphByName = async (dg_client, lens_name) => {
+const getLensSubgraphByName = async (dg_client: DgraphClient, lens_name: string) => {
 	const query = `
 		query all($a: string, $b: first, $c: offset) {
 			all(func: eq(lens_name, $a), first: 1) {
@@ -99,11 +102,11 @@ const getLensSubgraphByName = async (dg_client, lens_name) => {
 };
 
 
-const filterDefaultDgraphNodeTypes = (node_type) => {
+const filterDefaultDgraphNodeTypes = (node_type: string) => {
 	return node_type !== "Base" && node_type !== "Entity";
 };
 
-const handleLensScope = async (parent, args) => {
+const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
 	console.log("handleLensScope args: ", args);
 	const dg_client = getDgraphClient();
 
@@ -159,7 +162,7 @@ const handleLensScope = async (parent, args) => {
 
 				// filter out nodes that don't have dgraph_types
 				neighbor[predicate] = neighbor[predicate].filter(
-					(node) => "dgraph_type" in node && !!node["dgraph_type"]
+					(node: any) => "dgraph_type" in node && !!node["dgraph_type"]
 				);
 				continue;
 			}
@@ -205,7 +208,7 @@ const handleLensScope = async (parent, args) => {
 		}
 	}
 
-	for (node of lens_subgraph["scope"]) {
+	for (const node of lens_subgraph["scope"]) {
 		if (!builtins.has(node.dgraph_type[0])) {
 			const tmpNode = { ...node };
 			node.predicates = tmpNode;
@@ -216,6 +219,14 @@ const handleLensScope = async (parent, args) => {
 	return lens_subgraph;
 };
 
+interface RootQueryArgs {
+	first: number;
+	offset: number;
+}
+
+interface LensArgs {
+	lens_name: string;
+}
 
 const RootQuery = new GraphQLObjectType({
 	name: "RootQueryType",
@@ -230,7 +241,7 @@ const RootQuery = new GraphQLObjectType({
 					type: new GraphQLNonNull(GraphQLInt),
 				},
 			},
-			resolve: async (parent, args) => {
+			resolve: async (parent: MysteryParentType, args: RootQueryArgs) => {
 				console.log("lenses query arguments", args);
 				const first = args.first;
 				const offset = args.offset;
@@ -246,7 +257,7 @@ const RootQuery = new GraphQLObjectType({
 			args: {
 				lens_name: { type: new GraphQLNonNull(GraphQLString) },
 			},
-			resolve: async (parent, args) => {
+			resolve: async (parent: MysteryParentType, args: LensArgs) => {
 				try {
 					console.log("lens_scope args: ", args);
 					let response = await handleLensScope(parent, args);
