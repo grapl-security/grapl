@@ -2,8 +2,6 @@ import json
 import logging
 import os
 import sys
-import time
-import traceback
 from collections import defaultdict
 from typing import (
     Any,
@@ -18,19 +16,15 @@ from typing import (
 )
 
 import boto3
-import botocore.exceptions  # type: ignore
 from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.nodes.lens import LensView
 from grapl_analyzerlib.prelude import BaseView, RiskView
 from grapl_analyzerlib.queryable import Queryable
 from grapl_analyzerlib.viewable import Viewable
-from grapl_common.env_helpers import S3ResourceFactory, SQSClientFactory
+from grapl_common.env_helpers import S3ResourceFactory
 from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
 from mypy_boto3_s3 import S3ServiceResource
-from mypy_boto3_sqs import SQSClient
 from typing_extensions import Final, Literal
-
-IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
 GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
 LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
@@ -227,8 +221,7 @@ def _process_one_event(
     mg_client: GraphClient,
     metrics: EngagementCreatorMetrics,
 ) -> None:
-    if not IS_LOCAL:
-        event = json.loads(event["body"])["Records"][0]
+    event = json.loads(event["body"])["Records"][0]
 
     data = parse_s3_event(s3, event)
     incident_graph = json.loads(data)
@@ -323,66 +316,3 @@ def _process_one_event(
                 "score": lens_score,
             },
         )
-
-
-def main() -> None:
-    LOGGER.info("Starting engagement-creator")
-    sqs = SQSClientFactory(boto3).from_env()
-
-    deployment_name = os.environ["DEPLOYMENT_NAME"]
-
-    alive = False
-    while not alive:
-        try:
-            if "QueueUrls" not in sqs.list_queues(
-                QueueNamePrefix=f"{deployment_name}-engagement-creator-queue"
-            ):
-                LOGGER.info(
-                    f"Waiting for {deployment_name}-engagement-creator-queue to be created"
-                )
-                time.sleep(2)
-                continue
-        except (
-            botocore.exceptions.BotoCoreError,
-            botocore.exceptions.ClientError,
-            botocore.parsers.ResponseParserError,
-        ):
-            LOGGER.info("Waiting for SQS to become available")
-            time.sleep(2)
-            continue
-        alive = True
-
-    while True:
-        try:
-            res = sqs.receive_message(
-                QueueUrl=f"{os.environ['SQS_ENDPOINT']}/queue/{deployment_name}-engagement-creator-queue",
-                WaitTimeSeconds=10,
-                MaxNumberOfMessages=10,
-            )
-
-            messages = res.get("Messages", [])
-            if not messages:
-                LOGGER.warning("queue was empty")
-
-            s3_events: Sequence[EventWithReceiptHandle] = [
-                (json.loads(msg["Body"]), msg["ReceiptHandle"]) for msg in messages
-            ]
-            for s3_event, receipt_handle in s3_events:
-                lambda_handler(s3_event, {})
-
-                sqs.delete_message(
-                    QueueUrl=f"{os.environ['SQS_ENDPOINT']}/queue/{deployment_name}-engagement-creator-queue",
-                    ReceiptHandle=receipt_handle,
-                )
-
-        except Exception as e:
-            LOGGER.error(f"mainloop exception {e}")
-            LOGGER.error(traceback.format_exc())
-            time.sleep(2)
-
-
-"""
-main does not run in prod, the entrypoint is 'lambda_handler' in production.
-"""
-if __name__ == "__main__" and IS_LOCAL:
-    main()
