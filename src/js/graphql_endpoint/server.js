@@ -1,7 +1,7 @@
 const express = require("express");
 const regexEscape = require("regex-escape");
 const graphqlHTTP = require("express-graphql");
-const schema = require("./modules/schema.js");
+const rootQuery = require("./modules/root_query.js");
 const cors = require("cors");
 const app = express();
 const awsServerlessExpress = require("aws-serverless-express");
@@ -67,7 +67,7 @@ app.use(
 			graphQLParams: graphQLParams,
 		});
 		return {
-			schema: schema,
+			schema: rootQuery,
 			graphiql: IS_LOCAL,
 		};
 	})
