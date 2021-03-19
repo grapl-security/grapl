@@ -16,3 +16,8 @@ export const getDgraphClient = (): dgraph.DgraphClient => {
 
 	return new dgraph.DgraphClient(clientStub);
 };
+
+export interface RawNode {
+	uid: number | string;
+	dgraph_type: string[];
+}

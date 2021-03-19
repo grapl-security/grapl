@@ -15,14 +15,10 @@ import {
 import {
 	getDgraphClient,
 	DgraphClient,
+	RawNode,
 } from "./dgraph_client";
 
 type MysteryParentType = never;
-
-interface RawNode {
-	uid: number | string;
-	dgraph_type: string[];
-}
 
 const getLenses = async (dg_client: DgraphClient, first: number, offset: number) => {
 	console.log("first, offset parameters in getLenses()", first, offset);
