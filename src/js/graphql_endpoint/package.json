@@ -25,7 +25,11 @@
     "regex-escape": "^3.4.10"
   },
   "devDependencies": {
+    "@types/aws-serverless-express": "^3.3.3",
+    "@types/cors": "^2.8.10",
+    "@types/express": "^4.17.11",
     "@types/google-protobuf": "^3.7.2",
-    "@types/protobufjs": "^6.0.0"
+    "@types/protobufjs": "^6.0.0",
+    "typescript": "^4.2.3"
   }
 }

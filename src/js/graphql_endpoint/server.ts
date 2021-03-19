@@ -1,15 +1,18 @@
-const express = require("express");
-const regexEscape = require("regex-escape");
-const graphqlHTTP = require("express-graphql");
-const rootQuery = require("./modules/root_query.js");
-const cors = require("cors");
+import * as lambda from 'aws-lambda';
+import cors = require("cors");
+import express = require("express");
+import graphqlHTTP = require("express-graphql");
+import rootQuery = require("./modules/root_query.js");
+import awsServerlessExpress = require("aws-serverless-express");
+import { validateJwt } from "./modules/jwt.js";
+//@ts-ignore
+import regexEscape = require("regex-escape");
+
 const app = express();
-const awsServerlessExpress = require("aws-serverless-express");
-const { validateJwt } = require("./modules/jwt.js");
 const PORT = process.env.PORT || 5000;
 const IS_LOCAL = process.env.IS_LOCAL == "True" || null; // get this from environment
 
-let origin = true;
+let origin: string | boolean = true;
 let prefix = "local-grapl";
 
 if (!IS_LOCAL) {
@@ -27,8 +30,10 @@ const corsRegexp = new RegExp(
 
 console.log("corsRegexp", corsRegexp);
 
-const corsDelegate = (req, callback) => {
-	let corsOptions = {
+type CorsCallback = (err: Error | null, options?: cors.CorsOptions) => void
+
+const corsDelegate = (req: cors.CorsRequest, callback: CorsCallback): void => {
+	let corsOptions: cors.CorsOptions = {
 		allowedHeaders:
 			"Content-Type, Cookie, Access-Control-Allow-Headers, Authorization, X-Requested-With",
 		credentials: true,
@@ -40,14 +45,17 @@ const corsDelegate = (req, callback) => {
 		callback(null, corsOptions);
 		return;
 	}
-	if (req.header("Origin") === origin) {
-		console.log("exact matched origin: ", req.header("Origin"));
+
+	const originHeader = req.headers.origin;
+
+	if (originHeader === origin) {
+		console.log("exact matched origin: ", originHeader);
 		corsOptions = { ...corsOptions, origin: true };
-	} else if (corsRegexp.test(req.header("Origin"))) {
-		console.log("regexp matched origin: ", req.header("Origin"));
+	} else if (corsRegexp.test(originHeader)) {
+		console.log("regexp matched origin: ", originHeader);
 		corsOptions = { ...corsOptions, origin: true };
 	} else {
-		console.log("invalid origin: ", req.header("Origin"));
+		console.log("invalid origin: ", originHeader);
 		corsOptions = { ...corsOptions, origin: false };
 	}
 	callback(null, corsOptions); // callback expects two parameters: error and options
@@ -86,7 +94,10 @@ if (IS_LOCAL) {
 } else {
 	const server = awsServerlessExpress.createServer(app);
 	console.log("AWS Server", server);
-	exports.handler = (event, context) => {
+	exports.handler = (
+		event: lambda.APIGatewayProxyEvent, 
+		context: lambda.Context
+	) => {
 		awsServerlessExpress.proxy(server, event, context);
 	};
 }

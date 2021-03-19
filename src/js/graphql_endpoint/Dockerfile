@@ -20,19 +20,26 @@ WORKDIR /home/grapl
 RUN mkdir -p lambda
 
 # Install the dependencies separately to leverage Docker cache
-COPY --chown=grapl js/graphql_endpoint/package.json lambda/package.json
-COPY --chown=grapl js/graphql_endpoint/package-lock.json lambda/package-lock.json
-RUN cd lambda && npm install
-RUN rm -rf lambda/node_modules/grpc/build/
+WORKDIR /home/grapl/lambda
+COPY --chown=grapl js/graphql_endpoint/tsconfig.json tsconfig.json
+COPY --chown=grapl js/graphql_endpoint/package.json package.json
+COPY --chown=grapl js/graphql_endpoint/package-lock.json package-lock.json
+RUN npm install
+RUN rm -rf node_modules/grpc/build/
 
 # Copy graphql sources
-COPY --chown=grapl js/graphql_endpoint/modules lambda/modules
-COPY --chown=grapl js/graphql_endpoint/server.js lambda/server.js
+COPY --chown=grapl js/graphql_endpoint/modules modules
+COPY --chown=grapl js/graphql_endpoint/server.ts server.ts
+
+# This compiles the typescript and spits out the built js files to `lambda/ts_compiled'
+RUN npx tsc
+
+WORKDIR /home/grapl
 
 # zip
 FROM graphql-endpoint-build AS graphql-endpoint-zip
 
-RUN cd lambda && \
+RUN cd lambda/ts_compiled && \
     zip -q9r /home/grapl/lambda.zip ./
 
 # deploy... this is only used in Local Grapl at the moment
@@ -54,7 +61,7 @@ WORKDIR /home/grapl
 
 COPY --chown=grapl --from=graphql-endpoint-build /home/grapl/lambda lambda
 
-WORKDIR /home/grapl/lambda
+WORKDIR /home/grapl/lambda/ts_compiled
 
 COPY --chown=grapl js/graphql_endpoint/package.json package.json
 COPY --chown=grapl js/graphql_endpoint/package-lock.json package-lock.json

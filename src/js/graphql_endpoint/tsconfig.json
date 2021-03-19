@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "allowJs": true,
+    "outDir": "./ts_compiled",
+
+    "lib": [
+      // no DOM
+      "ES5", 
+      "ScriptHost",
+    ],
+
+    //"strict": true,
+    //"downlevelIteration": true,
+    "noImplicitAny": true,
+    "forceConsistentCasingInFileNames": true,
+  },
+  "include": [
+    "server.ts",
+    "server.js",
+    "modules/**/*.js",
+    "modules/**/*.ts",
+  ]
+}
