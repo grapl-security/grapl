@@ -2,7 +2,7 @@ import * as lambda from 'aws-lambda';
 import cors = require("cors");
 import express = require("express");
 import graphqlHTTP = require("express-graphql");
-import rootQuery = require("./modules/root_query.js");
+import {RootQuerySchema} from "./modules/root_query.js";
 import awsServerlessExpress = require("aws-serverless-express");
 import { validateJwt } from "./modules/jwt.js";
 //@ts-ignore
@@ -75,7 +75,7 @@ app.use(
 			graphQLParams: graphQLParams,
 		});
 		return {
-			schema: rootQuery,
+			schema: RootQuerySchema,
 			graphiql: IS_LOCAL,
 		};
 	})
