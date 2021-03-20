@@ -18,7 +18,7 @@ __pycache__/
 .pytype/
 
 # Rust outputs
-target/
+src/rust/target/
 
 # Node packages
 node_modules/

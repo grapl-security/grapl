@@ -2,6 +2,7 @@
 **/node_modules
 
 rust/target
+# We intentionally do no include rust/vendor so Docker will pick it up if it exists
 
 js/grapl-cdk/zips
 js/grapl-cdk/cdk.out
