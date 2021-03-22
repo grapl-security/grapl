@@ -11,6 +11,7 @@ DOCKER_BUILDX_BAKE_OPTS ?=
 ifneq ($(GRAPL_RUST_ENV_FILE),)
 DOCKER_BUILDX_BAKE_OPTS += --set *.secrets=id=rust_env,src="$(GRAPL_RUST_ENV_FILE)"
 endif
+COMPOSE_IGNORE_ORPHANS=1
 export
 
 export EVERY_COMPOSE_FILE=-f docker-compose.yml \
@@ -23,6 +24,15 @@ export EVERY_COMPOSE_FILE=-f docker-compose.yml \
 
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
 VERBOSE_PANTS := PEX_VERBOSE=5 ./pants -ldebug
+
+
+# Use a single shell for each of our targets, which allows us to use the 'trap'
+# built-in in our targets. We set the 'errexit' shell option to preserve
+# execution behavior, where failure from one line in a target will result in
+# Make error.
+# https://www.gnu.org/software/make/manual/html_node/One-Shell.html
+export SHELLOPTS:=$(if $(SHELLOPTS),$(SHELLOPTS):)errexit
+.ONESHELL:
 
 # Our `docker-compose.yml` file declares the setup of a "local Grapl"
 # environment, which can be used to locally exercise a Grapl system,
@@ -116,17 +126,16 @@ graplctl: ## Build graplctl and install it to the project root
 #
 
 .PHONY: test-unit
+test-unit: export COMPOSE_PROJECT_NAME := grapl-test-unit
+test-unit: export COMPOSE_FILE := ./test/docker-compose.unit-tests-rust.yml:./test/docker-compose.unit-tests-js.yml
 test-unit: build-test-unit test-unit-python ## Build and run unit tests
-	test/docker-compose-with-error.sh \
-		-p grapl-test-unit \
-		-f ./test/docker-compose.unit-tests-rust.yml \
-		-f ./test/docker-compose.unit-tests-js.yml
+	test/docker-compose-with-error.sh
 
 .PHONY: test-unit-rust
+test-unit-rust: export COMPOSE_PROJECT_NAME := grapl-test-unit-rust
+test-unit-rust: export COMPOSE_FILE := ./test/docker-compose.unit-tests-rust.yml
 test-unit-rust: build-test-unit-rust ## Build and run unit tests - Rust only
-	test/docker-compose-with-error.sh \
-		-p grapl-test-unit-rust \
-		-f ./test/docker-compose.unit-tests-rust.yml
+	test/docker-compose-with-error.sh
 
 .PHONY: test-unit-python
 # Long term, it would be nice to organize the tests with Pants
@@ -135,17 +144,16 @@ test-unit-python: ## Run Python unit tests under Pants
 	./pants --tag="-needs_work" test :: --pytest-args="-m 'not integration_test'"
 
 .PHONY: test-unit-js
+test-unit-js: export COMPOSE_PROJECT_NAME := grapl-test-unit-js
+test-unit-js: export COMPOSE_FILE := ./test/docker-compose.unit-tests-js.yml
 test-unit-js: build-test-unit-js ## Build and run unit tests - JavaScript only
-	test/docker-compose-with-error.sh \
-		-p grapl-test-unit-js \
-		-f ./test/docker-compose.unit-tests-js.yml
+	test/docker-compose-with-error.sh
 
 .PHONY: test-typecheck
+test-typecheck: export COMPOSE_PROJECT_NAME := grapl-typecheck_tests
+test-typecheck: export COMPOSE_FILE := ./test/docker-compose.typecheck-tests.yml
 test-typecheck: build-test-typecheck ## Build and run typecheck tests (non-Pants)
-	test/docker-compose-with-error.sh \
-		-f ./test/docker-compose.typecheck-tests.yml \
-		-p grapl-typecheck_tests \
-		-t "$(TARGET)"
+	test/docker-compose-with-error.sh "$(TARGET)"
 
 .PHONY: test-typecheck-pulumi
 test-typecheck-pulumi: ## Typecheck Pulumi Python code
@@ -161,26 +169,34 @@ test-typecheck-build-support: ## Typecheck build-support Python code
 test-typecheck-pants: test-typecheck-pulumi test-typecheck-build-support ## Typecheck Python code with Pants
 
 .PHONY: test-integration
-test-integration: export COMPOSE_IGNORE_ORPHANS=1
+test-integration: export COMPOSE_PROJECT_NAME := grapl_integration_tests
+test-integration: export COMPOSE_FILE := ./test/docker-compose.integration-tests.yml
 test-integration: build-test-integration ## Build and run integration tests
-	# Usage:
-	# make test-integration
-	# make test-integration TARGET=grapl-analyzerlib-integration-tests
-	$(WITH_LOCAL_GRAPL_ENV) \
-	$(MAKE) up-detach PROJECT_NAME="grapl-integration_tests" && \
-	test/docker-compose-with-error.sh \
-		-f ./test/docker-compose.integration-tests.yml \
-		-p "grapl-integration_tests" \
-		-t "$(TARGET)"
+	$(MAKE) test-with-env
 
 .PHONY: test-e2e
-test-e2e: export COMPOSE_IGNORE_ORPHANS=1
+test-e2e: export COMPOSE_PROJECT_NAME := grapl_e2e_tests
+test-e2e: export export COMPOSE_FILE := ./test/docker-compose.e2e-tests.yml
 test-e2e: build-test-e2e ## Build and run e2e tests
-	$(WITH_LOCAL_GRAPL_ENV) \
-	$(MAKE) up-detach PROJECT_NAME="grapl-e2e_tests" && \
-	test/docker-compose-with-error.sh \
-		-f ./test/docker-compose.e2e-tests.yml \
-		-p "grapl-e2e_tests"
+	$(MAKE) test-with-env
+
+# This target is not intended to be used directly from the command line, it's
+# intended for tests in docker-compose files that need the Grapl environment.
+.PHONY: test-with-env
+test-with-env: # (Do not include help text - not to be used directly)
+	function tearDown {
+		docker-compose stop
+	}
+	# Ensure we call stop even after test failure, and return exit code from 
+	# the test, not the stop command.
+	trap tearDown EXIT
+	$(WITH_LOCAL_GRAPL_ENV)
+	# Bring up the Grapl environment and detach
+	$(MAKE) up-detach
+	# Run tests and check exit codes from each test container
+	COMPOSE_FILE=$(TEST_FILE) test/docker-compose-with-error.sh \
+		$(TARGET)
+
 
 .PHONY: test
 test: test-unit test-integration test-e2e test-typecheck ## Run all tests
@@ -247,32 +263,38 @@ push: ## Push Grapl containers to Docker Hub
 
 .PHONY: up
 up: build-services ## Build Grapl services and launch docker-compose up
-	$(WITH_LOCAL_GRAPL_ENV) \
+	$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose -f docker-compose.yml up
 
 .PHONY: up-detach
-up-detach: build-services ## Docker-compose up + detach and return control to tty
+up-detach: build-services ## Bring up local Grapl and detach to return control to tty
 	# Primarily used for bringing up an environment for integration testing.
-	# Usage: `make up-detach PROJECT_NAME=asdf`
-	$(WITH_LOCAL_GRAPL_ENV) \
+	# For use with a project name consider setting COMPOSE_PROJECT_NAME env var
+	# Usage: `make up-detach`
+	$(WITH_LOCAL_GRAPL_ENV)
+	# We use this target with COMPOSE_FILE being set pointing to other files.
+	# Although it seems specifying the `--file` option overrides that, we'll
+	# explicitly unset that here to avoid potential surprises.
+	unset COMPOSE_FILE
 	docker-compose \
-		-p $(PROJECT_NAME) \
-		-f docker-compose.yml \
+		--file docker-compose.yml \
 		up --detach --force-recreate
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
-	$(WITH_LOCAL_GRAPL_ENV) \
-	docker-compose $(EVERY_COMPOSE_FILE) down --remove-orphans
+	$(WITH_LOCAL_GRAPL_ENV)
+	docker-compose down --timeout=0
+	docker-compose --project-name "grapl-integration_tests" down --timeout=0
+	docker-compose --project-name "grapl-e2e_tests" down --timeout=0
 
 .PHONY: stop
 stop: ## docker-compose stop - stops (but preserves) the containers
-	$(WITH_LOCAL_GRAPL_ENV) \
+	$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose $(EVERY_COMPOSE_FILE) stop
 
 .PHONY: e2e-logs
 e2e-logs: ## All docker-compose logs
-	$(WITH_LOCAL_GRAPL_ENV) \
+	$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose $(EVERY_COMPOSE_FILE) -p grapl-e2e_tests logs -f
 
 .PHONY: help
