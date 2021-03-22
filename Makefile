@@ -25,6 +25,9 @@ export EVERY_COMPOSE_FILE=-f docker-compose.yml \
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
 VERBOSE_PANTS := PEX_VERBOSE=5 ./pants -ldebug
 
+COMPOSE_PROJECT_INTEGRATION_TESTS := grapl-integration_tests
+COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
+
 
 # Use a single shell for each of our targets, which allows us to use the 'trap'
 # built-in in our targets. We set the 'errexit' shell option to preserve
@@ -169,13 +172,13 @@ test-typecheck-build-support: ## Typecheck build-support Python code
 test-typecheck-pants: test-typecheck-pulumi test-typecheck-build-support ## Typecheck Python code with Pants
 
 .PHONY: test-integration
-test-integration: export COMPOSE_PROJECT_NAME := grapl_integration_tests
+test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
 test-integration: export COMPOSE_FILE := ./test/docker-compose.integration-tests.yml
 test-integration: build-test-integration ## Build and run integration tests
 	$(MAKE) test-with-env
 
 .PHONY: test-e2e
-test-e2e: export COMPOSE_PROJECT_NAME := grapl_e2e_tests
+test-e2e: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_E2E_TESTS)
 test-e2e: export export COMPOSE_FILE := ./test/docker-compose.e2e-tests.yml
 test-e2e: build-test-e2e ## Build and run e2e tests
 	$(MAKE) test-with-env
@@ -184,18 +187,19 @@ test-e2e: build-test-e2e ## Build and run e2e tests
 # intended for tests in docker-compose files that need the Grapl environment.
 .PHONY: test-with-env
 test-with-env: # (Do not include help text - not to be used directly)
-	function tearDown {
-		docker-compose stop
+	stopGrapl() {
+		# Unset COMPOSE_FILE to help ensure it will be ignored with use of --file
+		unset COMPOSE_FILE
+		docker-compose --file docker-compose.yml stop;
 	}
 	# Ensure we call stop even after test failure, and return exit code from 
 	# the test, not the stop command.
-	trap tearDown EXIT
+	trap stopGrapl EXIT
 	$(WITH_LOCAL_GRAPL_ENV)
 	# Bring up the Grapl environment and detach
 	$(MAKE) up-detach
 	# Run tests and check exit codes from each test container
-	COMPOSE_FILE=$(TEST_FILE) test/docker-compose-with-error.sh \
-		$(TARGET)
+	test/docker-compose-with-error.sh $(TARGET)
 
 
 .PHONY: test
@@ -284,8 +288,8 @@ up-detach: build-services ## Bring up local Grapl and detach to return control t
 down: ## docker-compose down - both stops and removes the containers
 	$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose down --timeout=0
-	docker-compose --project-name "grapl-integration_tests" down --timeout=0
-	docker-compose --project-name "grapl-e2e_tests" down --timeout=0
+	docker-compose --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
+	docker-compose --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
 
 .PHONY: stop
 stop: ## docker-compose stop - stops (but preserves) the containers
@@ -295,7 +299,7 @@ stop: ## docker-compose stop - stops (but preserves) the containers
 .PHONY: e2e-logs
 e2e-logs: ## All docker-compose logs
 	$(WITH_LOCAL_GRAPL_ENV)
-	docker-compose $(EVERY_COMPOSE_FILE) -p grapl-e2e_tests logs -f
+	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) logs -f
 
 .PHONY: help
 help: ## Print this help
