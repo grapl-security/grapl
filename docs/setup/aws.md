@@ -57,7 +57,7 @@ Your build outputs should appear in the `src/js/grapl-cdk/zips/` directory.
 There are a few CDK deployment parameters you'll need to configure before you can deploy.
 Each of these can be found in `bin/deployment_parameters.ts`:
 
-1. `deployName` (required)
+1. `GRAPL_DEPLOYMENT_NAME` (required)
 
     Name for the deployment to AWS. We recommend prefixing the
     deployment name with "Grapl-" to help identify Grapl resources in
@@ -66,45 +66,40 @@ Each of these can be found in `bin/deployment_parameters.ts`:
     Note: This name must be globally (AWS) unique, as names for AWS S3
     buckets will be dervied from this.
 
-    env: `GRAPL_DEPLOYMENT_NAME`
-
-2. `graplVersion`
+2. `GRAPL_VERSION`
 
     The version of Grapl to deploy. This string will be used to look
     for the appropriate filenames in the `zips/` directory.
 
     Defaults to `latest`.
 
-    env: `GRAPL_VERSION`
-
-3. `watchfulEmail` (optional)
+3. `GRAPL_CDK_WATCHFUL_EMAIL` (optional)
 
     Setting this enables [Watchful](https://github.com/eladb/cdk-watchful) for
     monitoring Grapl with email alerts.
 
-    env: `GRAPL_CDK_WATCHFUL_EMAIL`
-
-4. `operationalAlarmsEmail` (optional)
+4. `GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL` (optional)
 
     Setting this enables alarms meant for the operator of the Grapl stack.
 
-    env: `GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL`
-
-5. `securityAlarmsEmail` (optional)
+5. `GRAPL_CDK_SECURITY_ALARMS_EMAIL` (optional)
 
     Setting this enables alarms meant for the consumer of the Grapl
     stack, for example, "a new risk node has been found".
 
-    env: `GRAPL_CDK_SECURITY_ALARMS_EMAIL`
-
-Alternatively, these can be set via the environment variables
-mentioned for each above. The environment variables take precedence
-over the values in `bin/deployment_parameters.ts`.
-
-When deploying to production we recommend *not* using environment
-variables for setting parameters, but rather set them in
-`bin/deployment_parameters.ts` and save the changes in a git
-branch. This should help future maintenance of the deployment.
+When deploying to production we recommend creating a `source`-able 
+collection of these environment variables, and saving that to some
+version control; something along the lines of the following:
+```bash
+export GRAPL_ROOT="~/src/grapl"
+export GRAPL_DEPLOYMENT_NAME="some-grapl-deployment-name"
+export GRAPL_VERSION="latest"
+export GRAPL_REGION="us-west-2"
+export GRAPL_CDK_WATCHFUL_EMAIL="someone+watchful@domain.com"
+export GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL="someone+alarm@domain.com"
+export GRAPL_CDK_SECURITY_ALARMS_EMAIL="someone+alarm@domain.com"
+export GRAPL_DGRAPH_INSTANCE_TYPE='i3.large'
+```
 
 ## Install graplctl
 
