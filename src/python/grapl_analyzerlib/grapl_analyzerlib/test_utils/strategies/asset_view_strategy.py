@@ -6,7 +6,7 @@ import hypothesis.strategies as st
 from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.nodes.asset import AssetView
 from grapl_analyzerlib.node_types import PropType
-from test_utils.dgraph_utils import node_key_for_test, upsert
+from grapl_analyzerlib.test_utils.dgraph_utils import node_key_for_test, upsert
 
 AssetProps = NewType("AssetProps", Dict[str, PropType])
 
