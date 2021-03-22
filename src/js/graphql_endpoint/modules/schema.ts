@@ -1,13 +1,14 @@
-const { GraphQLJSONObject } = require("graphql-type-json");
+import { GraphQLJSONObject } from "graphql-type-json";
 
-const {
+import {
 	GraphQLObjectType,
 	GraphQLInt,
 	GraphQLString,
 	GraphQLList,
 	GraphQLUnionType,
 	GraphQLBoolean,
-} = require("graphql");
+} from "graphql";
+import { RawNode } from "./dgraph_client";
 
 const BaseNode = {
 	uid: { type: GraphQLInt },
@@ -15,7 +16,7 @@ const BaseNode = {
 	dgraph_type: { type: GraphQLList(GraphQLString) },
 };
 
-const LensNodeType = new GraphQLObjectType({
+export const LensNodeType = new GraphQLObjectType({
 	name: "LensNode",
 	fields: () => ({
 		...BaseNode,
@@ -86,7 +87,7 @@ const IpConnections = new GraphQLObjectType({
 // 'fields' is a callback, so that we can declare ProcessType first, and then
 // reference it in 'children' later
 // This is called lazy evaluation, where we defer the execution of code until it is needed
-const ProcessType = new GraphQLObjectType({
+const ProcessType: GraphQLObjectType = new GraphQLObjectType({
 	name: "Process",
 	fields: () => ({
 		...BaseNode,
@@ -109,7 +110,7 @@ const ProcessType = new GraphQLObjectType({
 	}),
 });
 
-const NetworkConnection = new GraphQLObjectType({
+const NetworkConnection: GraphQLObjectType = new GraphQLObjectType({
 	name: "NetworkConnection",
 	fields: () => ({
 		src_ip_address: { type: GraphQLString },
@@ -123,7 +124,7 @@ const NetworkConnection = new GraphQLObjectType({
 	}),
 });
 
-const IpPort = new GraphQLObjectType({
+const IpPort: GraphQLObjectType = new GraphQLObjectType({
 	name: "IpPort",
 	fields: {
 		...BaseNode,
@@ -194,7 +195,7 @@ const PluginType = new GraphQLObjectType({
 	},
 });
 
-const builtins = new Set([
+export const builtins = new Set([
 	"Process",
 	"File",
 	"IpAddress",
@@ -206,9 +207,9 @@ const builtins = new Set([
 ]);
 
 // TODO: Handle the rest of the builtin types
-const resolveType = (data) => {
+const resolveType = (data: RawNode) => {
 	data.dgraph_type = data.dgraph_type.filter(
-		(t) => t !== "Entity" && t !== "Base"
+		(t: string) => t !== "Entity" && t !== "Base"
 	);
 
 	if (data.dgraph_type[0] === "Process") {
@@ -251,7 +252,3 @@ const GraplEntityType = new GraphQLUnionType({
 	types: [PluginType, FileType, ProcessType, AssetType],
 	resolveType: resolveType,
 });
-
-module.exports = {
-	LensNodeType,
-}

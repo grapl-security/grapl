@@ -1,22 +1,26 @@
-const {
+import {
 	GraphQLObjectType,
 	GraphQLInt,
 	GraphQLString,
 	GraphQLList,
 	GraphQLSchema,
 	GraphQLNonNull,
-} = require("graphql");
+} from "graphql";
 
-const {
-    LensNodeType
-} = require("./schema");
+import {
+	LensNodeType,
+	builtins,
+} from "./schema";
 
-const {
-    getDgraphClient
-} = require("./dgraph_client");
+import {
+	getDgraphClient,
+	DgraphClient,
+	RawNode,
+} from "./dgraph_client";
 
+type MysteryParentType = never;
 
-const getLenses = async (dg_client, first, offset) => {
+const getLenses = async (dg_client: DgraphClient, first: number, offset: number) => {
 	console.log("first, offset parameters in getLenses()", first, offset);
 
 	const query = `
@@ -59,7 +63,7 @@ const getLenses = async (dg_client, first, offset) => {
 	}
 };
 
-const getLensSubgraphByName = async (dg_client, lens_name) => {
+const getLensSubgraphByName = async (dg_client: DgraphClient, lens_name: string) => {
 	const query = `
 		query all($a: string, $b: first, $c: offset) {
 			all(func: eq(lens_name, $a), first: 1) {
@@ -99,11 +103,24 @@ const getLensSubgraphByName = async (dg_client, lens_name) => {
 };
 
 
-const filterDefaultDgraphNodeTypes = (node_type) => {
+const filterDefaultDgraphNodeTypes = (node_type: string) => {
 	return node_type !== "Base" && node_type !== "Entity";
 };
 
-const handleLensScope = async (parent, args) => {
+function coerceUidIntoInt(node: RawNode) { 
+	if(typeof node["uid"] == 'string') {
+		node["uid"] = parseInt(node["uid"], 16);
+	}
+}
+
+function enrichNode(node: RawNode) {
+	coerceUidIntoInt(node);
+	node["dgraph_type"] = node["dgraph_type"].filter(
+		filterDefaultDgraphNodeTypes
+	);
+}
+
+const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
 	console.log("handleLensScope args: ", args);
 	const dg_client = getDgraphClient();
 
@@ -114,30 +131,23 @@ const handleLensScope = async (parent, args) => {
 	const lens_subgraph = await getLensSubgraphByName(dg_client, lens_name);
 	console.log("lens_subgraph in handleLensScope: ", lens_subgraph);
 
-	lens_subgraph["uid"] = parseInt(lens_subgraph["uid"], 16);
+	coerceUidIntoInt(lens_subgraph);
 	// if it's undefined/null, might as well make it an array
 	lens_subgraph["scope"] = lens_subgraph["scope"] || [];
 
 	// start enriching the nodes within the scope
-	lens_subgraph["scope"].forEach(
-		(neighbor) => (neighbor["uid"] = parseInt(neighbor["uid"], 16))
-	);
-	lens_subgraph["scope"].forEach(
-		(neighbor) =>
-			(neighbor["dgraph_type"] = neighbor["dgraph_type"].filter(
-				filterDefaultDgraphNodeTypes
-			))
-	);
+	lens_subgraph["scope"].forEach(enrichNode);
+
 	// No dgraph_type? Not a node; skip it!
 	lens_subgraph["scope"] = lens_subgraph["scope"].filter(
-		(neighbor) => neighbor["dgraph_type"].length > 0
+		(neighbor: RawNode) => neighbor["dgraph_type"].length > 0
 	);
 
 	// record the uids of all direct neighbors to the lens.
 	// These are the only nodes we should keep by the end of this process.
 	// We'll then try to get all neighbor connections that only correspond to these nodes
 	const neighbor_uids = new Set(
-		lens_subgraph["scope"].map((node) => node["uid"])
+		lens_subgraph["scope"].map((node: RawNode) => node["uid"])
 	);
 
 	// lens neighbors
@@ -146,8 +156,8 @@ const handleLensScope = async (parent, args) => {
 		for (const predicate in neighbor) {
 			// we want to keep risks and enrich them at the same time
 			if (predicate === "risks") {
-				neighbor[predicate].forEach((risk_node) => {
-					risk_node["uid"] = parseInt(risk_node["uid"], 16);
+				neighbor[predicate].forEach((risk_node: RawNode) => {
+					coerceUidIntoInt(risk_node);
 					
 					if ("dgraph_type" in risk_node) {
 						console.log("checking if dgraph_type in risk_node", risk_node);
@@ -159,7 +169,7 @@ const handleLensScope = async (parent, args) => {
 
 				// filter out nodes that don't have dgraph_types
 				neighbor[predicate] = neighbor[predicate].filter(
-					(node) => "dgraph_type" in node && !!node["dgraph_type"]
+					(node: RawNode) => "dgraph_type" in node && !!node["dgraph_type"]
 				);
 				continue;
 			}
@@ -170,16 +180,8 @@ const handleLensScope = async (parent, args) => {
 				neighbor[predicate] &&
 				neighbor[predicate][0]["uid"]
 			) {
-				neighbor[predicate].forEach(
-					(node) => (node["uid"] = parseInt(node["uid"], 16))
-				);
-				neighbor[predicate].forEach(
-					(node) =>
-						(node["dgraph_type"] = node["dgraph_type"].filter(
-							filterDefaultDgraphNodeTypes
-						))
-				);
-				neighbor[predicate] = neighbor[predicate].filter((second_neighbor) =>
+				neighbor[predicate].forEach(enrichNode);
+				neighbor[predicate] = neighbor[predicate].filter((second_neighbor: RawNode) =>
 					neighbor_uids.has(second_neighbor["uid"])
 				);
 
@@ -196,16 +198,13 @@ const handleLensScope = async (parent, args) => {
 				if (!neighbor_uids.has(parseInt(neighbor[predicate]["uid"], 16))) {
 					delete neighbor[predicate];
 				} else {
-					neighbor[predicate]["uid"] = parseInt(neighbor[predicate]["uid"], 16);
-					neighbor[predicate]["dgraph_type"] = neighbor[predicate][
-						"dgraph_type"
-					].filter(filterDefaultDgraphNodeTypes);
+					enrichNode(neighbor[predicate]);
 				}
 			}
 		}
 	}
 
-	for (node of lens_subgraph["scope"]) {
+	for (const node of lens_subgraph["scope"]) {
 		if (!builtins.has(node.dgraph_type[0])) {
 			const tmpNode = { ...node };
 			node.predicates = tmpNode;
@@ -216,6 +215,14 @@ const handleLensScope = async (parent, args) => {
 	return lens_subgraph;
 };
 
+interface RootQueryArgs {
+	first: number;
+	offset: number;
+}
+
+interface LensArgs {
+	lens_name: string;
+}
 
 const RootQuery = new GraphQLObjectType({
 	name: "RootQueryType",
@@ -230,7 +237,7 @@ const RootQuery = new GraphQLObjectType({
 					type: new GraphQLNonNull(GraphQLInt),
 				},
 			},
-			resolve: async (parent, args) => {
+			resolve: async (parent: MysteryParentType, args: RootQueryArgs) => {
 				console.log("lenses query arguments", args);
 				const first = args.first;
 				const offset = args.offset;
@@ -246,7 +253,7 @@ const RootQuery = new GraphQLObjectType({
 			args: {
 				lens_name: { type: new GraphQLNonNull(GraphQLString) },
 			},
-			resolve: async (parent, args) => {
+			resolve: async (parent: MysteryParentType, args: LensArgs) => {
 				try {
 					console.log("lens_scope args: ", args);
 					let response = await handleLensScope(parent, args);
@@ -261,6 +268,6 @@ const RootQuery = new GraphQLObjectType({
 	},
 });
 
-module.exports = new GraphQLSchema({
+export const RootQuerySchema = new GraphQLSchema({ 
 	query: RootQuery,
 });

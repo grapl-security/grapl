@@ -1,11 +1,12 @@
-const jwt = require('jsonwebtoken');
-const AWS = require('aws-sdk')
+import * as express from "express";
+import jwt = require('jsonwebtoken');
+import AWS = require('aws-sdk');
 
 const IS_LOCAL = (process.env.IS_LOCAL == 'True') || null;  // get this from environment
 const JWT_SECRET_ID = process.env.JWT_SECRET_ID;  // get this from environment
 
 // Acts as a local cache of the secret so we don't have to refetch it every time
-let JWT_SECRET = "";
+let JWT_SECRET: string = "";
 
 
 const secretsmanager = new AWS.SecretsManager({
@@ -16,7 +17,7 @@ const secretsmanager = new AWS.SecretsManager({
     endpoint: IS_LOCAL ? process.env.SECRETSMANAGER_ENDPOINT : undefined,
 });
 
-const fetchJwtSecret = async () => {
+async function fetchJwtSecret(): Promise<string> {
     console.log("JWT_SECRET_ID: ", JWT_SECRET_ID);
     const getSecretRes = await secretsmanager.getSecretValue({
         SecretId: JWT_SECRET_ID,
@@ -29,15 +30,14 @@ const fetchJwtSecret = async () => {
 (async () => {
     try {
         if (!JWT_SECRET) {
-            JWT_SECRET = await fetchJwtSecret()
-            .catch((e) => console.warn(e));
+            JWT_SECRET = await fetchJwtSecret();
         }
     } catch (e) {
         console.error(e);
     }
 })();
 
-const verifyToken = async (jwtToken) => {
+export async function verifyToken(jwtToken: string) {
     if (!JWT_SECRET) {
         JWT_SECRET = await fetchJwtSecret();
     }
@@ -52,7 +52,11 @@ const verifyToken = async (jwtToken) => {
 };
 
 
-const validateJwt = async (req, res, next) => {
+export async function validateJwt(
+    req: express.Request, 
+    res: express.Response, 
+    next: express.NextFunction
+): Promise<express.Response> {
     const headers = req.headers;
     let encoded_jwt = null
 
@@ -79,9 +83,4 @@ const validateJwt = async (req, res, next) => {
     } else {
         return res.sendStatus(403)
     }
-}
-
-module.exports = {
-    validateJwt,
-    verifyToken,
 }
