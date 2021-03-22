@@ -4,41 +4,44 @@ const { GraphQLJSONObject } = require("graphql-type-json");
 const { json } = require("express");
 
 const AWS = require("aws-sdk");
-const IS_LOCAL = (process.env.IS_LOCAL == 'True') || null;
+const IS_LOCAL = process.env.IS_LOCAL == "True" || null;
 
-// ## TODO? DECIDE HOW TO get an instance of dynamodb in graphql??
 const getDisplayProperty = async (nodeType) => {
-	const region = process.env.AWS_REGION;
+	try {
+		const region = process.env.AWS_REGION;
+		AWS.config.update({ region: region });
 
-	AWS.config.update({ region: region }); // is the env file the right place to get this value?
-	// comes from local-grapl.env
-	
-	const ddb = new AWS.DynamoDB({ 
-		apiVersion: "2012-08-10",
-		region: IS_LOCAL ? process.env.AWS_REGION : undefined,
-		accessKeyId: IS_LOCAL ? process.env.DYNAMODB_ACCESS_KEY_ID : undefined,
-		secretAccessKey: IS_LOCAL ? process.env.DYNAMODB_ACCESS_KEY_SECRET : undefined,
-		endpoint: IS_LOCAL ? process.env.DYNAMODB_ENDPOINT : undefined,
-	}); // new client 
+		const ddb = new AWS.DynamoDB({
+			// new client
+			apiVersion: "2012-08-10",
+			region: IS_LOCAL ? process.env.AWS_REGION : undefined,
+			accessKeyId: IS_LOCAL ? process.env.DYNAMODB_ACCESS_KEY_ID : undefined,
+			secretAccessKey: IS_LOCAL
+				? process.env.DYNAMODB_ACCESS_KEY_SECRET
+				: undefined,
+			endpoint: IS_LOCAL ? process.env.DYNAMODB_ENDPOINT : undefined,
+		});
 
-	const params = {
-		TableName: process.env.GRAPL_DISPLAY_TABLE,
-		Key: {
-			node_type: { S: nodeType },// get display prop for a given node based on the type
-		},
-		ProjectionExpression: "display_name", // identifies	the attributes that you want to query for
-	};
+		const params = {
+			TableName: process.env.GRAPL_DISPLAY_TABLE,
+			Key: {
+				node_type: { S: nodeType }, // get display prop for a given node based on the type
+			},
+			ProjectionExpression: "display_property", // identifies	the attributes that you want to query for
+		};
 
-	// Call DynamoDB to read the item from the table
-	const response = await ddb.getItem(params).promise(); 
-	console.log("response from ddb", response)
+		const response = await ddb.getItem(params).promise();
 
-	// if (err) {
-	// 	console.log("Error", err);
-	//   } else {
-	// 	console.log("Success", data);
-	//   }
-
+		if (response.Item === undefined) {
+			return "dgraph_type";
+		}
+		return response.Item.display_property;
+	} catch (e) {
+		console.error(
+			"Error Querying DynamoDB for dispaly property in schema.js",
+			e
+		);
+	}
 };
 
 const {
@@ -56,7 +59,7 @@ const BaseNode = {
 	uid: { type: GraphQLInt },
 	node_key: { type: GraphQLString },
 	dgraph_type: { type: GraphQLList(GraphQLString) },
-	display: {type: GraphQLString}
+	display: { type: GraphQLString },
 };
 
 const LensNodeType = new GraphQLObjectType({
@@ -67,7 +70,6 @@ const LensNodeType = new GraphQLObjectType({
 		score: { type: GraphQLInt },
 		scope: { type: GraphQLList(GraplEntityType) },
 		lens_type: { type: GraphQLString },
-
 	}),
 });
 
@@ -236,6 +238,7 @@ const PluginType = new GraphQLObjectType({
 	name: "PluginType",
 	fields: {
 		predicates: { type: GraphQLJSONObject },
+		display: {type: GraphQLString}
 	},
 });
 
@@ -416,7 +419,7 @@ const handleLensScope = async (parent, args) => {
 	// start enriching the nodes within the scope
 	lens_subgraph["scope"].forEach(
 		(neighbor) => (neighbor["uid"] = parseInt(neighbor["uid"], 16))
-	);	
+	);
 	lens_subgraph["scope"].forEach(
 		(neighbor) =>
 			(neighbor["dgraph_type"] = neighbor["dgraph_type"].filter(
@@ -439,14 +442,12 @@ const handleLensScope = async (parent, args) => {
 		// neighbor of a lens neighbor
 		for (const predicate in neighbor) {
 			// we want to keep risks and enrich them at the same time
-	
 
 			if (predicate === "risks") {
 				neighbor[predicate].forEach((risk_node) => {
 					risk_node["uid"] = parseInt(risk_node["uid"], 16);
 
 					if ("dgraph_type" in risk_node) {
-						console.log("checking if dgraph_type in risk_node", risk_node);
 						risk_node["dgraph_type"] = risk_node["dgraph_type"].filter(
 							filterDefaultDgraphNodeTypes
 						);
@@ -502,20 +503,21 @@ const handleLensScope = async (parent, args) => {
 	}
 
 	for (node of lens_subgraph["scope"]) {
-		const displayProperty = await getDisplayProperty(nodeType.filter(filterDefaultDgraphNodeTypes));
-		node["display"] = node[displayProperty].toString();
-	}
+		const nodeType = node.dgraph_type.filter(filterDefaultDgraphNodeTypes)[0];
+		const displayProperty = await getDisplayProperty(nodeType);
 
+		if (node[displayProperty.S] !== undefined) {
+			node["display"] = nodeType;
+		} else {
+			node["display"] = node[displayProperty.S].toString();
+		}
+	}
 	for (node of lens_subgraph["scope"]) {
 		if (!builtins.has(node.dgraph_type[0])) {
 			const tmpNode = { ...node };
 			node.predicates = tmpNode;
 		}
 	}
-
-	// for node in lens.scope pass node
-
-	console.log("lens_subgraph scope", JSON.stringify(lens_subgraph["scope"]));
 	return lens_subgraph;
 };
 
