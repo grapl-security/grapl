@@ -271,7 +271,7 @@ def _process_one_event(
 
             # Attach to scope
             create_edge(mg_client, lens.uid, "scope", node.uid)
-            create_edge(mg_client, node.uid, "in_score", lens.uid)
+            create_edge(mg_client, node.uid, "in_scope", lens.uid)
 
             # If a node shows up in a lens all of its connected nodes should also show up in that lens
             for edge_list in edges.values():
