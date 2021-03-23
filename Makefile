@@ -119,8 +119,8 @@ build-test-e2e: build-services
 build-services: ## Build Grapl services
 	$(DOCKER_BUILDX_BAKE) -f docker-compose.build.yml
 
-.PHONY: build-aws
-build-aws: ## Build services for Grapl in AWS (subset of all services)
+.PHONY: build-lambdas
+build-lambdas: ## Build services for Grapl in AWS (subset of all services)
 	$(DOCKER_BUILDX_BAKE) $(EVERY_LAMBDA_COMPOSE_FILE)
 
 .PHONY: graplctl
@@ -256,7 +256,7 @@ release: ## 'make build-services' with cargo --release
 	$(MAKE) CARGO_PROFILE=release build-services
 
 .PHONY: zip
-zip: build-aws ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
+zip: build-lambdas ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
 	docker-compose $(EVERY_LAMBDA_COMPOSE_FILE) up
 	$(MAKE) zip-pants
 
