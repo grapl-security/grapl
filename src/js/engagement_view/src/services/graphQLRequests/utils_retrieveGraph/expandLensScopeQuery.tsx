@@ -82,6 +82,7 @@ export const expandLensScopeQuery = (lensName: string) => {
                 }
                 ... on PluginType {
                     predicates,
+                    display
                 }
             }
         }
