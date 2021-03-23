@@ -497,6 +497,11 @@ services:
     # both inside this compose network, as well as from outside on our
     # workstations.
     network_mode: "service:localstack"
+    volumes:
+      - type: bind
+        source: ./src/js/grapl-cdk/zips
+        target: /home/grapl/src/js/grapl-cdk/zips
+        read_only: true
     environment:
       PULUMI_CONFIG_PASSPHRASE: local-grapl-passphrase
     depends_on:
