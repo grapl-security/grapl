@@ -98,4 +98,3 @@ at the same time.
 
 [pulumi]: https://pulumi.com
 [ls]: https://localstack.cloud/
-[minio]: https://min.io
