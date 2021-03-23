@@ -310,7 +310,7 @@ services:
     image: grapl/grapl-engagement-edge:${TAG:-latest}
     command: |
       /bin/sh -c '
-        wait-for-it grapl-provision:${WAIT_PORT} --timeout=120 &&
+        wait-for-it grapl-provision:${WAIT_PORT} --timeout=250 &&
         . venv/bin/activate &&
         cd /home/grapl/app &&
         chalice local --no-autoreload --host=0.0.0.0 --port=${GRAPL_AUTH_PORT}
@@ -337,7 +337,7 @@ services:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
     command: |
       /bin/sh -c '
-        wait-for-it grapl-provision:${WAIT_PORT} --timeout=60 &&
+        wait-for-it grapl-provision:${WAIT_PORT} --timeout=250 &&
         . venv/bin/activate &&
         cd /home/grapl/app &&
         chalice local \
@@ -409,7 +409,7 @@ services:
     image: grapl/grapl-engagement-view:${TAG:-latest}
     command: |
       /bin/bash -c "
-        wait-for-it grapl-provision:${WAIT_PORT} --timeout=120 &&
+        wait-for-it grapl-provision:${WAIT_PORT} --timeout=250 &&
         ./upload_local.sh &&
         python -m http.server ${WAIT_PORT}  # wait-for-it
       "
@@ -422,7 +422,7 @@ services:
   grapl-graphql-endpoint:
     image: grapl/grapl-graphql-endpoint:${TAG:-latest}
     command: bash -c "
-      wait-for-it grapl-provision:${WAIT_PORT} --timeout=180 &&
+      wait-for-it grapl-provision:${WAIT_PORT} --timeout=250 &&
       yarn start server"
     environment:
       <<: *aws-region
@@ -494,7 +494,7 @@ services:
         # waiting for grapl-pulumi to finish, because grapl-pulumi
         # runs within the network namespace of localstack, and not a
         # network namespace of its own.
-        wait-for-it localstack:${WAIT_PORT} --timeout=120 &&
+        wait-for-it localstack:${WAIT_PORT} --timeout=200 &&
         wait-for-it ${DGRAPH_HOST}:${DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT} --timeout=$$TIMEOUT &&
         . venv/bin/activate &&
         python /home/grapl/grapl_local_provision/grapl_provision.py &&
