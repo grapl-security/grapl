@@ -14,13 +14,17 @@ endif
 COMPOSE_IGNORE_ORPHANS=1
 export
 
+export EVERY_LAMBDA_COMPOSE_FILE=-f docker-compose.lambda-zips.js.yml \
+	-f docker-compose.lambda-zips.python.yml \
+	-f docker-compose.lambda-zips.rust.yml
+
 export EVERY_COMPOSE_FILE=-f docker-compose.yml \
 	-f ./test/docker-compose.unit-tests-rust.yml \
 	-f ./test/docker-compose.unit-tests-js.yml \
 	-f ./test/docker-compose.integration-tests.yml \
 	-f ./test/docker-compose.e2e-tests.yml \
 	-f ./test/docker-compose.typecheck-tests.yml \
-	-f docker-compose.zips.yml
+	${EVERY_LAMBDA_COMPOSE_FILE}
 
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
 VERBOSE_PANTS := PEX_VERBOSE=5 ./pants -ldebug
@@ -117,7 +121,7 @@ build-services: ## Build Grapl services
 
 .PHONY: build-aws
 build-aws: ## Build services for Grapl in AWS (subset of all services)
-	$(DOCKER_BUILDX_BAKE) -f docker-compose.zips.yml
+	$(DOCKER_BUILDX_BAKE) $(EVERY_LAMBDA_COMPOSE_FILE)
 
 .PHONY: graplctl
 graplctl: ## Build graplctl and install it to the project root
@@ -253,7 +257,7 @@ release: ## 'make build-services' with cargo --release
 
 .PHONY: zip
 zip: build-aws ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
-	docker-compose -f docker-compose.zips.yml up
+	docker-compose $(EVERY_LAMBDA_COMPOSE_FILE) up
 	$(MAKE) zip-pants
 
 .PHONY: zip-pants

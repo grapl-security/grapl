@@ -57,9 +57,9 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
 
 
 
-# zip
+# metric-forwarder-zip
 ################################################################################
-FROM build AS zip
+FROM build AS metric-forwarder-zip
 
 RUN mkdir -p /grapl/zips; \
     grapl-zip() { \
