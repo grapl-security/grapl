@@ -6,8 +6,6 @@ from infra.service_queue import ServiceQueue
 from infra.util import DEPLOYMENT_NAME, IS_LOCAL
 from infra.ux import EngagementUX
 
-import pulumi
-
 if __name__ == "__main__":
 
     # These tags will be added to all provisioned infrastructure

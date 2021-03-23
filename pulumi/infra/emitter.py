@@ -1,5 +1,5 @@
 import json
-from typing import List, Optional
+from typing import Optional
 
 import pulumi_aws as aws
 from infra.util import (

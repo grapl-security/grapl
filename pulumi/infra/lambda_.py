@@ -93,7 +93,7 @@ class LambdaExecutionRole(aws.iam.Role):
     """
 
     def __init__(
-        _self, name: str, opts: Optional[pulumi.ResourceOptions] = None
+        self, name: str, opts: Optional[pulumi.ResourceOptions] = None
     ) -> None:
         super().__init__(
             f"{name}-execution-role",
