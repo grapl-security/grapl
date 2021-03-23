@@ -264,6 +264,7 @@ zip: build-lambdas ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/
 zip-pants: ## Generate Lambda zip artifacts using pants
 	./pants filter --filter-target-type=python_awslambda :: | xargs ./pants package
 	cp ./dist/src.python.provisioner.src/lambda.zip ./src/js/grapl-cdk/zips/provisioner-$(or $(TAG),latest).zip
+	cp ./dist/src.python.engagement-creator/engagement-creator.zip ./src/js/grapl-cdk/zips/engagement-creator-$(or $(TAG),latest).zip
 
 # This target is intended to help ease the transition to Pulumi, and
 # using lambdas in local Grapl testing deployments. Essentially, every
