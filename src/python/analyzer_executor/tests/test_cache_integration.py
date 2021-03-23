@@ -1,9 +1,9 @@
 import unittest
 from typing import Callable, Optional
 
+import hypothesis
 import pytest
 from analyzer_executor_lib.analyzer_executor import AnalyzerExecutor
-import hypothesis
 from hypothesis import strategies as st
 
 SAMPLE_ADDR = "localhost"
@@ -61,11 +61,16 @@ def test_connection_info(executor_fixture: ReturnsAnalyzerExecutor) -> None:
         ae = executor_fixture(stub_env=True, env_addr=None, env_port=None)
 
 
+# @pytest.xfail("These tests were broken when originally created.")
 @hypothesis.given(
     k1=NonemptyStringStrategy,
     k2=NonemptyStringStrategy,
 )
-@hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture])
+@hypothesis.settings(
+    # Doesn't like the Pytest fixture mixed with Hypothesis givens.
+    # It's okay, since the fixture just returns a function.
+    suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture]
+)
 @pytest.mark.integration_test
 def test_hit_cache(
     executor_fixture: ReturnsAnalyzerExecutor,
@@ -81,14 +86,22 @@ def test_hit_cache(
     assert not ae.check_hit_cache(k1, k2)
     ae.update_hit_cache(k1, k2)
     assert ae.check_hit_cache(k1, k2)
+    # Clean up, because Hypothesis provides duplicate inputs
+    ae.delete_hit_cache(k1, k2)
+    assert not ae.check_hit_cache(k1, k2)
 
 
+# @pytest.xfail("These tests were broken when originally created.")
 @hypothesis.given(
     k1=NonemptyStringStrategy,
     k2=NonemptyStringStrategy,
     k3=NonemptyStringStrategy,
 )
-@hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture])
+@hypothesis.settings(
+    # Doesn't like the Pytest fixture mixed with Hypothesis givens.
+    # It's okay, since the fixture just returns a function.
+    suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture]
+)
 @pytest.mark.integration_test
 def test_message_cache(
     executor_fixture: ReturnsAnalyzerExecutor,
@@ -105,3 +118,6 @@ def test_message_cache(
     assert not ae.check_msg_cache(k1, k2, k3)
     ae.update_msg_cache(k1, k2, k3)
     assert ae.check_msg_cache(k1, k2, k3)
+    # Clean up, because Hypothesis provides duplicate inputs
+    ae.delete_msg_cache(k1, k2, k3)
+    assert not ae.check_msg_cache(k1, k2, k3)

@@ -9,11 +9,12 @@ import sys
 import traceback
 from collections import defaultdict
 from datetime import datetime
+from logging import Logger
 from multiprocessing import Pipe, Process
 from multiprocessing.connection import Connection
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, Iterator, List, Optional, Union
 
 import boto3  # type: ignore
 import redis
@@ -51,11 +52,14 @@ except Exception as e:
 
 # TODO:  move generic cache stuff into its own utility file
 class NopCache(object):
-    def set(self, key, value):
+    def set(self, key: str, value: str) -> None:
         pass
 
-    def get(self, key):
+    def get(self, key: str) -> bool:
         return False
+
+    def delete(self, key: str) -> None:
+        pass
 
 
 EitherCache = Union[NopCache, redis.Redis]
@@ -71,8 +75,14 @@ class AnalyzerExecutor:
     _singleton = None
 
     def __init__(
-        self, message_cache, hit_cache, chunk_size, is_local, logger, metric_reporter
-    ):
+        self,
+        message_cache: EitherCache,
+        hit_cache: EitherCache,
+        chunk_size: int,
+        is_local: bool,
+        logger: Logger,
+        metric_reporter: MetricReporter,
+    ) -> None:
         self.message_cache = message_cache
         self.hit_cache = hit_cache
         self.chunk_size = chunk_size
@@ -171,25 +181,40 @@ class AnalyzerExecutor:
 
             return False
 
+    def to_event_hash(self, components: Iterable[str]) -> str:
+        joined = ",".join(components)
+        event_hash = hashlib.sha256(joined.encode()).hexdigest()
+        return event_hash
+
     def check_msg_cache(self, file: str, node_key: str, msg_id: str) -> bool:
-        to_hash = str(file) + str(node_key) + str(msg_id)
-        event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
+        event_hash = self.to_event_hash((file, node_key, msg_id))
         return bool(self.message_cache.get(event_hash))
 
     def update_msg_cache(self, file: str, node_key: str, msg_id: str) -> None:
-        to_hash = str(file) + str(node_key) + str(msg_id)
-        event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
+        event_hash = self.to_event_hash((file, node_key, msg_id))
         self.message_cache.set(event_hash, "1")
 
+    def delete_msg_cache(self, file: str, node_key: str, msg_id: str) -> None:
+        """
+        Only use case right now is cleaning up Redis at test time
+        """
+        event_hash = self.to_event_hash((file, node_key, msg_id))
+        self.message_cache.delete(event_hash)
+
     def check_hit_cache(self, file: str, node_key: str) -> bool:
-        to_hash = str(file) + str(node_key)
-        event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
+        event_hash = self.to_event_hash((file, node_key))
         return bool(self.hit_cache.get(event_hash))
 
     def update_hit_cache(self, file: str, node_key: str) -> None:
-        to_hash = str(file) + str(node_key)
-        event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
+        event_hash = self.to_event_hash((file, node_key))
         self.hit_cache.set(event_hash, "1")
+
+    def delete_hit_cache(self, file: str, node_key: str) -> None:
+        """
+        Only use case right now is cleaning up Redis at test time
+        """
+        event_hash = self.to_event_hash((file, node_key))
+        self.hit_cache.delete(event_hash)
 
     async def handle_events(self, events: SQSMessageBody, context: Any) -> None:
         # Parse sns message
