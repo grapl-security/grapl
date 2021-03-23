@@ -178,13 +178,13 @@ test-typecheck-pants: test-typecheck-pulumi test-typecheck-build-support ## Type
 .PHONY: test-integration
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
 test-integration: export COMPOSE_FILE := ./test/docker-compose.integration-tests.yml
-test-integration: build-test-integration ## Build and run integration tests
+test-integration: build-test-integration modern-lambdas ## Build and run integration tests
 	$(MAKE) test-with-env
 
 .PHONY: test-e2e
 test-e2e: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_E2E_TESTS)
 test-e2e: export export COMPOSE_FILE := ./test/docker-compose.e2e-tests.yml
-test-e2e: build-test-e2e ## Build and run e2e tests
+test-e2e: build-test-e2e modern-lambdas ## Build and run e2e tests
 	$(MAKE) test-with-env
 
 # This target is not intended to be used directly from the command line, it's
@@ -265,12 +265,22 @@ zip-pants: ## Generate Lambda zip artifacts using pants
 	./pants filter --filter-target-type=python_awslambda :: | xargs ./pants package
 	cp ./dist/src.python.provisioner.src/lambda.zip ./src/js/grapl-cdk/zips/provisioner-$(or $(TAG),latest).zip
 
+# This target is intended to help ease the transition to Pulumi, and
+# using lambdas in local Grapl testing deployments. Essentially, every
+# lambda that is deployed by Pulumi should be built here. Once
+# everything is migrated to Pulumi, we can consolidate this target
+# with other zip-generating targets
+modern-lambdas: ## Generate lambda zips that are used in local Grapl and Pulumi deployments
+	$(DOCKER_BUILDX_BAKE) -f docker-compose.lambda-zips.rust.yml
+	docker-compose -f docker-compose.lambda-zips.rust.yml up
+	$(MAKE) zip-pants
+
 .PHONY: push
 push: ## Push Grapl containers to Docker Hub
 	docker-compose --file=docker-compose.build.yml push
 
 .PHONY: up
-up: build-services ## Build Grapl services and launch docker-compose up
+up: build-services modern-lambdas ## Build Grapl services and launch docker-compose up
 	$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose -f docker-compose.yml up
 
