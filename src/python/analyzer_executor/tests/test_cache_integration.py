@@ -61,7 +61,6 @@ def test_connection_info(executor_fixture: ReturnsAnalyzerExecutor) -> None:
         ae = executor_fixture(stub_env=True, env_addr=None, env_port=None)
 
 
-# @pytest.xfail("These tests were broken when originally created.")
 @hypothesis.given(
     k1=NonemptyStringStrategy,
     k2=NonemptyStringStrategy,
@@ -91,7 +90,6 @@ def test_hit_cache(
     assert not ae.check_hit_cache(k1, k2)
 
 
-# @pytest.xfail("These tests were broken when originally created.")
 @hypothesis.given(
     k1=NonemptyStringStrategy,
     k2=NonemptyStringStrategy,
