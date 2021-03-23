@@ -1,16 +1,26 @@
 import unittest
+from typing import Callable, Optional
 
 import pytest
 from analyzer_executor_lib.analyzer_executor import AnalyzerExecutor
+import hypothesis
 from hypothesis import strategies as st
 
 SAMPLE_ADDR = "localhost"
 SAMPLE_PORT = "12345"
 
+ReturnsAnalyzerExecutor = Callable[..., AnalyzerExecutor]
+
+NonemptyStringStrategy = st.text(min_size=3, max_size=64)
+
 
 @pytest.fixture
-def AnalyzerExecutorSingleton(monkeypatch):
-    def _AnalyzerExecutorSingleton(stub_env=False, env_addr=None, env_port=None):
+def executor_fixture(monkeypatch) -> ReturnsAnalyzerExecutor:
+    def _AnalyzerExecutorSingleton(
+        stub_env: bool = False,
+        env_addr: Optional[str] = None,
+        env_port: Optional[str] = None,
+    ) -> AnalyzerExecutor:
         with monkeypatch.context() as mp:
             if stub_env:
                 if env_addr:
@@ -36,53 +46,61 @@ def AnalyzerExecutorSingleton(monkeypatch):
 
 
 @pytest.mark.integration_test
-def test_connection_info(AnalyzerExecutorSingleton) -> None:
+def test_connection_info(executor_fixture: ReturnsAnalyzerExecutor) -> None:
     """
     Ensures exceptions are raised for incomplete connection info.
     """
 
     with pytest.raises(ValueError):
-        ae = AnalyzerExecutorSingleton(
-            stub_env=True, env_addr=SAMPLE_ADDR, env_port=None
-        )
+        ae = executor_fixture(stub_env=True, env_addr=SAMPLE_ADDR, env_port=None)
 
     with pytest.raises(ValueError):
-        ae = AnalyzerExecutorSingleton(
-            stub_env=True, env_addr=None, env_port=SAMPLE_PORT
-        )
+        ae = executor_fixture(stub_env=True, env_addr=None, env_port=SAMPLE_PORT)
 
     with pytest.raises(ValueError):
-        ae = AnalyzerExecutorSingleton(stub_env=True, env_addr=None, env_port=None)
+        ae = executor_fixture(stub_env=True, env_addr=None, env_port=None)
 
 
+@hypothesis.given(
+    k1=NonemptyStringStrategy,
+    k2=NonemptyStringStrategy,
+)
+@hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture])
 @pytest.mark.integration_test
-def test_hit_cache(AnalyzerExecutorSingleton) -> None:
+def test_hit_cache(
+    executor_fixture: ReturnsAnalyzerExecutor,
+    k1: str,
+    k2: str,
+) -> None:
     """
     Initializes the AnalyzerExecutor singleton with Redis connection params
     sourced from the environment, expecting hit cache to populate.
     """
-    ae = AnalyzerExecutorSingleton(stub_env=False)
-
-    k1, k2 = st.text(min_size=3, max_size=64), st.text(min_size=3, max_size=64)
+    ae = executor_fixture(stub_env=False)
 
     assert not ae.check_hit_cache(k1, k2)
     ae.update_hit_cache(k1, k2)
     assert ae.check_hit_cache(k1, k2)
 
 
+@hypothesis.given(
+    k1=NonemptyStringStrategy,
+    k2=NonemptyStringStrategy,
+    k3=NonemptyStringStrategy,
+)
+@hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture])
 @pytest.mark.integration_test
-def test_message_cache(AnalyzerExecutorSingleton) -> None:
+def test_message_cache(
+    executor_fixture: ReturnsAnalyzerExecutor,
+    k1: str,
+    k2: str,
+    k3: str,
+) -> None:
     """
     Initializes the AnalyzerExecutor singleton with Redis connection params
     sourced from the environment, expecting message cache to populate.
     """
-    ae = AnalyzerExecutorSingleton(stub_env=False)
-
-    k1, k2, k3 = (
-        st.text(min_size=3, max_size=64),
-        st.text(min_size=3, max_size=64),
-        st.text(min_size=3, max_size=64),
-    )
+    ae = executor_fixture(stub_env=False)
 
     assert not ae.check_msg_cache(k1, k2, k3)
     ae.update_msg_cache(k1, k2, k3)
