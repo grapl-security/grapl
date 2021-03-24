@@ -27,7 +27,6 @@ export const expandLensScopeQuery = (lensName: string) => {
                     risks {  
                         uid,
                         dgraph_type,
-                        display,
                         node_key, 
                         analyzer_name, 
                         risk_score

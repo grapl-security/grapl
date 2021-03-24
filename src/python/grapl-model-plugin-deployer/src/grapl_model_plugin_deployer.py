@@ -142,7 +142,7 @@ def format_schemas(schema_defs: List["BaseSchema"]) -> str:
                 }
             )
 
-            table.put_item(
+            grapl_schema_table.put_item(
                 Item={
                     "f_edge": r_edge,
                     "r_edge": f_edge,

@@ -91,7 +91,6 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
 
 	const nodeHover = useCallback(
 		(node, ctx) => {
-			console.log("node", node)
 			highlightNodes.clear();
 			highlightLinks.clear();
 
