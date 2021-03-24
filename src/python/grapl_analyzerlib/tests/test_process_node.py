@@ -10,7 +10,7 @@ from hypothesis import given
 from grapl_analyzerlib.prelude import *
 from grapl_analyzerlib.test_utils.dgraph_utils import upsert, create_edge
 from grapl_analyzerlib.test_utils.strategies.asset_view_strategy import (
-    asset_props,
+    asset_props_strategy,
     get_or_create_asset,
     AssetProps,
 )
@@ -96,7 +96,7 @@ class TestProcessQuery(unittest.TestCase):
 
     @hypothesis.settings(deadline=None)
     @given(
-        asset_props=asset_props(),
+        asset_props=asset_props_strategy(),
         process_props=process_props(),
     )
     def test_single_process_connected_to_asset_node(

@@ -102,6 +102,31 @@ services:
       /bin/bash -c "
         cypress run --browser chrome --headless
       "
+  
+  graphql-endpoint-tests:
+    image: grapl/graphql-endpoint-tests:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: ./python/Dockerfile
+      target: graphql-endpoint-tests
+    command: |
+      /bin/bash -c '
+        wait-for-it grapl-provision:${WAIT_PORT} --timeout=120 &&
+        source venv/bin/activate &&
+        cd graphql_endpoint_tests &&
+        py.test --capture=no -n 1 -m "integration_test"
+      '
+    environment:
+      - DEBUG_SERVICES
+      - GRAPL_AUTH_HOST
+      - GRAPL_AUTH_PORT
+      - GRAPL_GRAPHQL_HOST
+      - GRAPL_GRAPHQL_PORT
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
+      - MG_ALPHAS
+      - VSC_DEBUGGER_PORT=${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT_TESTS}
+    ports:
+      - ${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT_TESTS}:${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT_TESTS}
 
 networks:
   default:
