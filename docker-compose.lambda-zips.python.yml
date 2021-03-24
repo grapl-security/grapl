@@ -2,33 +2,6 @@ version: "3.8"
 
 services:
 
-  #
-  # Rust
-  #
-
-  grapl-rust-zips:
-    image: grapl/rust-zip:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: rust/Dockerfile
-      target: zip
-      args:
-        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
-    volumes:
-      - ./src/js/grapl-cdk/zips:/tmp/zips
-    user: ${UID}:${GID}
-    working_dir: /grapl/zips
-    environment:
-      - TAG=${TAG:-latest}
-    command: sh -c 'cp /grapl/zips/metric-forwarder.zip /tmp/zips/metric-forwarder-${TAG:-latest}.zip'
-
-  #
-  # Python services
-  #
-
-  # grapl-analyzer-deployer:
-  #   image: grapl/grapl-analyzer-deployer-zip:${TAG:-latest}
-
   grapl-dgraph-ttl-zip:
     image: grapl/grapl-dgraph-ttl-zip:${TAG:-latest}
     build:
@@ -84,24 +57,6 @@ services:
     environment:
       - TAG=${TAG:-latest}
     command: cp /home/grapl/lambda.zip model-plugin-deployer-${TAG:-latest}.zip
-
-  #
-  # JS/web services
-  #
-
-  grapl-graphql-endpoint-zip:
-    image: grapl/grapl-graphql-endpoint-zip:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: js/graphql_endpoint/Dockerfile
-      target: graphql-endpoint-zip
-    volumes:
-      - ./src/js/grapl-cdk/zips:/grapl
-    user: ${UID}:${GID}
-    working_dir: /grapl
-    environment:
-      - TAG=${TAG:-latest}
-    command: cp /home/grapl/lambda.zip graphql-endpoint-${TAG:-latest}.zip
 
   grapl-ux-router-zip:
     image: grapl/grapl-ux-router-zip:${TAG:-latest}

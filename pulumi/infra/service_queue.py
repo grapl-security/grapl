@@ -3,7 +3,7 @@ from typing import Optional
 
 import pulumi_aws as aws
 from infra import util
-from infra.util import DEPLOYMENT_NAME, IS_LOCAL
+from infra.util import AWS_ACCOUNT_ID, DEPLOYMENT_NAME
 
 import pulumi
 
@@ -38,10 +38,7 @@ class ServiceQueue(pulumi.ComponentResource):
 
         # Queues have to be imported by URL, which includes the
         # account ID
-        account_id = (
-            "000000000000" if IS_LOCAL else aws.get_caller_identity().account_id
-        )
-        queue_import_prefix = f"https://queue.amazonaws.com/{account_id}"
+        queue_import_prefix = f"https://queue.amazonaws.com/{AWS_ACCOUNT_ID}"
 
         logical_dead_letter_name = f"{name}-dead-letter-queue"
         physical_dead_letter_name = f"{DEPLOYMENT_NAME}-{logical_dead_letter_name}"

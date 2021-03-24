@@ -203,7 +203,7 @@ COPY --chown=grapl --from=engagement-creator-build /home/grapl/venv venv
 COPY --chown=grapl --from=engagement-creator-build /home/grapl/engagement-creator engagement-creator
 
 CMD source /venv/bin/activate && \
-    python3 /engagement-creator/src/engagement-creator.py
+    python3 /engagement-creator/src/engagement_creator.py
 
 # test
 FROM engagement-creator-build AS engagement-creator-test

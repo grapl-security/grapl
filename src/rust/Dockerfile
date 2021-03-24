@@ -57,9 +57,9 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
 
 
 
-# zip
+# metric-forwarder-zip
 ################################################################################
-FROM build AS zip
+FROM build AS metric-forwarder-zip
 
 RUN mkdir -p /grapl/zips; \
     grapl-zip() { \
@@ -119,12 +119,6 @@ FROM rust-dist AS graph-merger-deploy
 
 COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/graph-merger" /
 CMD ["/graph-merger"]
-
-# metric-forwarder
-FROM rust-dist AS metric-forwarder-deploy
-
-COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/metric-forwarder" /
-CMD ["/metric-forwarder"]
 
 # node-identifier
 FROM rust-dist AS node-identifier-deploy

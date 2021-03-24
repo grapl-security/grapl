@@ -86,19 +86,27 @@ services:
           - ${REDIS_HOST}
 
   localstack:
-    image: localstack/localstack:0.12.6
+    image: localstack/localstack:0.12.8
     ports:
       # We'll expose localstack's edge port for ease of use with
       # things like the AWS CLI, Pulumi, etc.
       - 127.0.0.1:${LOCALSTACK_PORT}:${LOCALSTACK_PORT}
     environment:
-      - IMAGE_NAME=localstack/localstack:0.12.6
+      - IMAGE_NAME=localstack/localstack:0.12.8
       - EDGE_PORT=${LOCALSTACK_PORT}
-      - SERVICES=dynamodb,s3,secretsmanager,sqs
-      - DEBUG=${DEBUG- }
+      - HOSTNAME_EXTERNAL=${LOCALSTACK_HOST}
+      - SERVICES=dynamodb,iam,lambda,logs,s3,secretsmanager,sns,sqs
+      - DEBUG=1
+      - LS_LOG=debug
+      - LAMBDA_EXECUTOR=docker
+      - MAIN_CONTAINER_NAME=${COMPOSE_PROJECT_NAME}_localstack_1
+      # Without this, the lambda containers are attached to the bridge network
+      - LAMBDA_DOCKER_NETWORK=grapl-network
       - DATA_DIR=${DATA_DIR- }
+    privileged: true # for docker lambda execution
     volumes:
       - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
     networks:
       default:
         aliases:
@@ -108,12 +116,6 @@ services:
   # Rust Services
   ########################################################################
 
-  grapl-metric-forwarder:
-    image: grapl/grapl-metric-forwarder:${TAG:-latest}
-    tty: false
-    environment:
-      IS_LOCAL: "True"
-      <<: *log-level
 
   grapl-sysmon-subgraph-generator:
     image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
@@ -303,28 +305,12 @@ services:
         aliases:
           - ${GRAPL_UX_ROUTER_HOST}
 
-  grapl-engagement-creator:
-    image: grapl/grapl-engagement-creator:${TAG:-latest}
-    command: /bin/sh -c '. venv/bin/activate && python3 engagement-creator/src/engagement-creator.py'
-    environment:
-      <<: *aws-region
-      DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
-      <<: *dgraph-env
-      IS_LOCAL: "True"
-      <<: *log-level
-      <<: *s3-env
-      <<: *sqs-env
-    tty: true
-    depends_on:
-      - dgraph
-      - localstack
-
   # TODO: really, this service should be grapl-auth
   grapl-engagement-edge:
     image: grapl/grapl-engagement-edge:${TAG:-latest}
     command: |
       /bin/sh -c '
-        wait-for-it grapl-provision:${WAIT_PORT} --timeout=120 &&
+        wait-for-it grapl-provision:${WAIT_PORT} --timeout=250 &&
         . venv/bin/activate &&
         cd /home/grapl/app &&
         chalice local --no-autoreload --host=0.0.0.0 --port=${GRAPL_AUTH_PORT}
@@ -351,7 +337,7 @@ services:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
     command: |
       /bin/sh -c '
-        wait-for-it grapl-provision:${WAIT_PORT} --timeout=60 &&
+        wait-for-it grapl-provision:${WAIT_PORT} --timeout=250 &&
         . venv/bin/activate &&
         cd /home/grapl/app &&
         chalice local \
@@ -423,7 +409,7 @@ services:
     image: grapl/grapl-engagement-view:${TAG:-latest}
     command: |
       /bin/bash -c "
-        wait-for-it grapl-provision:${WAIT_PORT} --timeout=120 &&
+        wait-for-it grapl-provision:${WAIT_PORT} --timeout=250 &&
         ./upload_local.sh &&
         python -m http.server ${WAIT_PORT}  # wait-for-it
       "
@@ -436,7 +422,7 @@ services:
   grapl-graphql-endpoint:
     image: grapl/grapl-graphql-endpoint:${TAG:-latest}
     command: bash -c "
-      wait-for-it grapl-provision:${WAIT_PORT} --timeout=180 &&
+      wait-for-it grapl-provision:${WAIT_PORT} --timeout=250 &&
       yarn start server"
     environment:
       <<: *aws-region
@@ -489,6 +475,11 @@ services:
     # both inside this compose network, as well as from outside on our
     # workstations.
     network_mode: "service:localstack"
+    volumes:
+      - type: bind
+        source: ./src/js/grapl-cdk/zips
+        target: /home/grapl/src/js/grapl-cdk/zips
+        read_only: true
     environment:
       PULUMI_CONFIG_PASSPHRASE: local-grapl-passphrase
     depends_on:
@@ -503,7 +494,7 @@ services:
         # waiting for grapl-pulumi to finish, because grapl-pulumi
         # runs within the network namespace of localstack, and not a
         # network namespace of its own.
-        wait-for-it localstack:${WAIT_PORT} --timeout=120 &&
+        wait-for-it localstack:${WAIT_PORT} --timeout=200 &&
         wait-for-it ${DGRAPH_HOST}:${DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT} --timeout=$$TIMEOUT &&
         . venv/bin/activate &&
         python /home/grapl/grapl_local_provision/grapl_provision.py &&

@@ -12,15 +12,6 @@ services:
   # Rust Services
   ########################################################################
 
-  grapl-metric-forwarder:
-    image: grapl/grapl-metric-forwarder:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: rust/Dockerfile
-      target: metric-forwarder-deploy
-      args:
-        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
-
   grapl-sysmon-subgraph-generator:
     image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
     build:
