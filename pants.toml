@@ -46,6 +46,7 @@ root_patterns = [
   "/src/python/analyzer_executor/src",
   "/src/python/analyzer_executor/tests",
   "/src/python/engagement-creator",
+  "/src/python/e2e-test-runner/src",
   "/src/python/engagement_edge",
   "/src/python/graphql_endpoint_tests",
   "/src/python/grapl_analyzerlib",
