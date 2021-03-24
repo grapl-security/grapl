@@ -91,6 +91,7 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
 
 	const nodeHover = useCallback(
 		(node, ctx) => {
+			console.log("node", node)
 			highlightNodes.clear();
 			highlightLinks.clear();
 
@@ -223,7 +224,7 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
 		<ForceGraph2D
 			graphData={data}
 			ref={fgRef} // fix graph to canvas
-			nodeLabel={"nodeLabel"} // tooltip on hover, actual label is in nodeCanvasObject
+			nodeLabel={"nodeType"} // tooltip on hover, actual label is in nodeCanvasObject
 			nodeCanvasObject={nodeStyling}
 			nodeCanvasObjectMode={() => "after"}
 			onNodeHover={nodeHover}

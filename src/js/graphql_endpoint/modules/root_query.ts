@@ -249,7 +249,7 @@ const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
 		const nodeType = node.dgraph_type.filter(filterDefaultDgraphNodeTypes)[0];
 		const displayProperty = await getDisplayProperty(nodeType);
 
-		if (node[displayProperty.S] !== undefined) {
+		if (node[displayProperty.S] === undefined) {
 			node["display"] = nodeType;
 		} else {
 			node["display"] = node[displayProperty.S].toString();
