@@ -97,10 +97,7 @@ def grapl_bucket(
     """
     physical_bucket_name = bucket_physical_name(logical_bucket_name)
 
-    # TODO: Temporarily not doing encrypted buckets for Local
-    # Grapl... I think we may need to configure some stuff in
-    # that environment a bit differently.
-    sse_config = sse_configuration() if sse and not LOCAL_GRAPL else None
+    sse_config = sse_configuration() if sse else None
 
     return aws.s3.Bucket(
         logical_bucket_name,
