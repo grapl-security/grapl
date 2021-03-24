@@ -13,17 +13,19 @@ ReturnsAnalyzerExecutor = Callable[..., AnalyzerExecutor]
 
 NonemptyStringStrategy = st.text(min_size=3, max_size=64)
 
+
 class AnalyzerExecutorCacheDeleters:
     def __init__(self, analyzer_executor: AnalyzerExecutor) -> None:
         self.analyzer_executor = analyzer_executor
-   
+
     def delete_msg_cache(self, file: str, node_key: str, msg_id: str) -> None:
         event_hash = self.analyzer_executor.to_event_hash((file, node_key, msg_id))
-        self.analyzer_executor.message_cache.delete(event_hash) 
+        self.analyzer_executor.message_cache.delete(event_hash)
 
     def delete_hit_cache(self, file: str, node_key: str) -> None:
         event_hash = self.analyzer_executor.to_event_hash((file, node_key))
         self.analyzer_executor.hit_cache.delete(event_hash)
+
 
 @pytest.fixture
 def executor_fixture(monkeypatch) -> ReturnsAnalyzerExecutor:
