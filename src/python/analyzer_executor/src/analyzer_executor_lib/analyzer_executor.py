@@ -194,13 +194,6 @@ class AnalyzerExecutor:
         event_hash = self.to_event_hash((file, node_key, msg_id))
         self.message_cache.set(event_hash, "1")
 
-    def delete_msg_cache(self, file: str, node_key: str, msg_id: str) -> None:
-        """
-        Only use case right now is cleaning up Redis at test time
-        """
-        event_hash = self.to_event_hash((file, node_key, msg_id))
-        self.message_cache.delete(event_hash)
-
     def check_hit_cache(self, file: str, node_key: str) -> bool:
         event_hash = self.to_event_hash((file, node_key))
         return bool(self.hit_cache.get(event_hash))
@@ -208,13 +201,6 @@ class AnalyzerExecutor:
     def update_hit_cache(self, file: str, node_key: str) -> None:
         event_hash = self.to_event_hash((file, node_key))
         self.hit_cache.set(event_hash, "1")
-
-    def delete_hit_cache(self, file: str, node_key: str) -> None:
-        """
-        Only use case right now is cleaning up Redis at test time
-        """
-        event_hash = self.to_event_hash((file, node_key))
-        self.hit_cache.delete(event_hash)
 
     async def handle_events(self, events: SQSMessageBody, context: Any) -> None:
         # Parse sns message
