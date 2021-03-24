@@ -2,13 +2,8 @@ import json
 from typing import Optional
 
 import pulumi_aws as aws
-from infra.util import (
-    AWS_ACCOUNT_ID,
-    DEPLOYMENT_NAME,
-    bucket_physical_name,
-    grapl_bucket,
-    import_aware_opts,
-)
+from infra.bucket import Bucket, bucket_physical_name
+from infra.util import AWS_ACCOUNT_ID, DEPLOYMENT_NAME, import_aware_opts
 
 import pulumi
 
@@ -25,7 +20,7 @@ class EventEmitter(pulumi.ComponentResource):
         super().__init__("grapl:EventEmitter", event_name, None, opts)
 
         logical_bucket_name = f"{event_name}-bucket"
-        self.bucket = grapl_bucket(logical_bucket_name, sse=True, parent=self)
+        self.bucket = Bucket(logical_bucket_name, sse=True, parent=self)
 
         region = aws.get_region().name
         physical_topic_name = f"{DEPLOYMENT_NAME}-{event_name}-topic"

@@ -1,5 +1,6 @@
-from infra import dynamodb, emitter, util
+from infra import dynamodb, emitter
 from infra.autotag import register_auto_tags
+from infra.bucket import Bucket
 from infra.engagement_creator import EngagementCreator
 from infra.metric_forwarder import MetricForwarder
 from infra.service_queue import ServiceQueue
@@ -16,8 +17,8 @@ if __name__ == "__main__":
 
     ux = EngagementUX()
 
-    util.grapl_bucket("model-plugins-bucket", sse=False)
-    util.grapl_bucket("analyzers-bucket", sse=True)
+    Bucket("model-plugins-bucket", sse=False)
+    Bucket("analyzers-bucket", sse=True)
 
     events = [
         "dispatched-analyzer",

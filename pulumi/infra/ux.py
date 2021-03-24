@@ -1,7 +1,7 @@
 from typing import Optional
 
 import pulumi_aws as aws
-from infra import util
+from infra.bucket import Bucket
 from infra.util import DEPLOYMENT_NAME
 
 import pulumi
@@ -13,7 +13,7 @@ class EngagementUX(pulumi.ComponentResource):
     def __init__(self, opts: Optional[pulumi.ResourceOptions] = None) -> None:
         super().__init__("grapl:EngagementUX", DEPLOYMENT_NAME, None, opts)
 
-        self.bucket = util.grapl_bucket(
+        self.bucket = Bucket(
             "engagement-ux-bucket",
             website_args=aws.s3.BucketWebsiteArgs(
                 index_document="index.html",
