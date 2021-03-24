@@ -76,7 +76,7 @@ app.use(
 	})
 );
 
-app.use(function (req, res) {
+app.use(function (req: any, res: any) {
 	console.warn(req);
 	console.warn(req.path);
 	res.sendStatus(404);
@@ -88,15 +88,11 @@ if (IS_LOCAL) {
 	});
 } else {
 	const server = awsServerlessExpress.createServer(app);
-<<<<<<< HEAD:src/js/graphql_endpoint/server.ts
 	console.log("AWS Server", server);
 	exports.handler = (
 		event: lambda.APIGatewayProxyEvent, 
 		context: lambda.Context
 	) => {
-=======
-	exports.handler = (event, context) => {
->>>>>>> ea9da3dc2513e545f2be0cdb2c61b681c861dbee:src/js/graphql_endpoint/server.js
 		awsServerlessExpress.proxy(server, event, context);
 	};
 }
