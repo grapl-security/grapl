@@ -182,7 +182,10 @@ class EngagementView(LensView[EV, EQ]):
         eg_client: GraphClient, lens_name: str, lens_type: str = "engagement"
     ) -> "EngagementView":
         lens = LensView.get_or_create(eg_client, lens_name, "engagement")
-        engagement_client = EngagementClient(lens.uid, eg_client,)
+        engagement_client = EngagementClient(
+            lens.uid,
+            eg_client,
+        )
         lens.graph_client = engagement_client
         return cast("EngagementView", lens.into_view(EngagementView))
 

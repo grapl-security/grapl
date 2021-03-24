@@ -59,9 +59,9 @@ class LazyJwtSecret:
 
             secretsmanager = boto3.client("secretsmanager")
 
-            jwt_secret: str = secretsmanager.get_secret_value(SecretId=jwt_secret_id,)[
-                "SecretString"
-            ]
+            jwt_secret: str = secretsmanager.get_secret_value(
+                SecretId=jwt_secret_id,
+            )["SecretString"]
             return jwt_secret
 
     def _retrieve_jwt_secret_local(self) -> str:
@@ -74,9 +74,9 @@ class LazyJwtSecret:
         for _ in range(timeout_secs):
             try:
                 secretsmanager = SecretsManagerClientFactory(boto3).from_env()
-                jwt_secret = secretsmanager.get_secret_value(SecretId="JWT_SECRET_ID",)[
-                    "SecretString"
-                ]
+                jwt_secret = secretsmanager.get_secret_value(
+                    SecretId="JWT_SECRET_ID",
+                )["SecretString"]
                 break
             except Exception as e:
                 LOGGER.debug(e)
@@ -127,7 +127,11 @@ def get_salt_and_pw(
     table: Table, username: str
 ) -> Tuple[Optional[Salt], Optional[str]]:
     LOGGER.info(f"Getting salt for user: {username}")
-    response = table.get_item(Key={"username": username,})
+    response = table.get_item(
+        Key={
+            "username": username,
+        }
+    )
 
     if not response.get("Item"):
         LOGGER.debug(f"Did not get salt for user: {username}")

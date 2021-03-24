@@ -145,12 +145,8 @@ def provision_master_graph(
 
 
 def store_schema(dynamodb, schema: "Schema") -> None:
-    grapl_schema_table = dynamodb.Table(
-        "local-grapl-grapl_schema_table"
-    )
-    grapl_display_table = dynamodb.Table(
-        "local-grapl-grapl_display_table"
-    )
+    grapl_schema_table = dynamodb.Table("local-grapl-grapl_schema_table")
+    grapl_display_table = dynamodb.Table("local-grapl-grapl_display_table")
 
     grapl_display_table.put_item(
         Item={
@@ -260,7 +256,9 @@ if __name__ == "__main__":
         try:
             if not mg_succ:
                 time.sleep(1)
-                provision_mg(graph_client,)
+                provision_mg(
+                    graph_client,
+                )
                 mg_succ = True
                 LOGGER.info("Provisioned master graph")
                 break

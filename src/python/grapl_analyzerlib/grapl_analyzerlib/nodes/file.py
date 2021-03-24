@@ -73,14 +73,16 @@ class FileSchema(EntitySchema):
     @staticmethod
     def self_type() -> str:
         return "File"
-    
+
     @staticmethod
     def get_display_property() -> str:
         return "file_description"
 
 
 class FileQuery(EntityQuery[FV, FQ]):
-    def __init__(self,) -> None:
+    def __init__(
+        self,
+    ) -> None:
         super(FileQuery, self).__init__()
 
     @with_str_prop("file_path")
@@ -227,15 +229,27 @@ class FileQuery(EntityQuery[FV, FQ]):
         return self
 
     @with_str_prop("md5_hash")
-    def with_md5_hash(self, *, eq: Optional["StrOrNot"] = None,) -> FileQuery:
+    def with_md5_hash(
+        self,
+        *,
+        eq: Optional["StrOrNot"] = None,
+    ) -> FileQuery:
         return self
 
     @with_str_prop("sha1_hash")
-    def with_sha1_hash(self, *, eq: Optional["StrOrNot"] = None,) -> FileQuery:
+    def with_sha1_hash(
+        self,
+        *,
+        eq: Optional["StrOrNot"] = None,
+    ) -> FileQuery:
         return self
 
     @with_str_prop("sha256_hash")
-    def with_sha256_hash(self, *, eq: Optional["StrOrNot"] = None,) -> FileQuery:
+    def with_sha256_hash(
+        self,
+        *,
+        eq: Optional["StrOrNot"] = None,
+    ) -> FileQuery:
         return self
 
     @with_str_prop("file_path")
@@ -409,82 +423,114 @@ class FileView(EntityView[FV, FQ]):
         self.set_predicate("deleter", deleter or [])
 
     def get_file_path(
-        self, *, cached=True,
+        self,
+        *,
+        cached=True,
     ):
         return self.get_str("file_path", cached=cached)
 
     def get_file_extension(
-        self, *, cached=True,
+        self,
+        *,
+        cached=True,
     ):
         return self.get_str("file_extension", cached=cached)
 
     def get_file_mime_type(
-        self, *, cached=True,
+        self,
+        *,
+        cached=True,
     ):
         return self.get_str("file_mime_type", cached=cached)
 
     def get_file_version(
-        self, *, cached=True,
+        self,
+        *,
+        cached=True,
     ):
         return self.get_str("file_version", cached=cached)
 
     def get_file_description(
-        self, *, cached=True,
+        self,
+        *,
+        cached=True,
     ):
         return self.get_str("file_description", cached=cached)
 
     def get_file_product(
-        self, *, cached=True,
+        self,
+        *,
+        cached=True,
     ):
         return self.get_str("file_product", cached=cached)
 
     def get_file_company(
-        self, *, cached=True,
+        self,
+        *,
+        cached=True,
     ):
         return self.get_str("file_company", cached=cached)
 
     def get_file_directory(
-        self, *, cached=True,
+        self,
+        *,
+        cached=True,
     ):
         return self.get_str("file_directory", cached=cached)
 
     def get_file_hard_links(
-        self, *, cached=True,
+        self,
+        *,
+        cached=True,
     ):
         return self.get_str("file_hard_links", cached=cached)
 
     def get_signed(
-        self, *, cached=True,
+        self,
+        *,
+        cached=True,
     ):
         return self.get_str("signed", cached=cached)
 
     def get_signed_status(
-        self, *, cached=True,
+        self,
+        *,
+        cached=True,
     ):
         return self.get_str("signed_status", cached=cached)
 
     def get_md5_hash(
-        self, *, cached=True,
+        self,
+        *,
+        cached=True,
     ):
         return self.get_str("md5_hash", cached=cached)
 
     def get_sha1_hash(
-        self, *, cached=True,
+        self,
+        *,
+        cached=True,
     ):
         return self.get_str("sha1_hash", cached=cached)
 
     def get_sha256_hash(
-        self, *, cached=True,
+        self,
+        *,
+        cached=True,
     ):
         return self.get_str("sha256_hash", cached=cached)
 
     def get_file_inode(
-        self, *, cached=False,
+        self,
+        *,
+        cached=False,
     ):
         return self.get_int("file_inode", cached=cached)
 
     def get_file_size(
-        self, *, cached=False,
+        self,
+        *,
+        cached=False,
     ):
         return self.get_int("file_size", cached=cached)
 
