@@ -3,7 +3,7 @@ from infra.autotag import register_auto_tags
 from infra.engagement_creator import EngagementCreator
 from infra.metric_forwarder import MetricForwarder
 from infra.service_queue import ServiceQueue
-from infra.util import DEPLOYMENT_NAME, IS_LOCAL
+from infra.util import DEPLOYMENT_NAME, LOCAL_GRAPL
 from infra.ux import EngagementUX
 
 if __name__ == "__main__":
@@ -49,7 +49,7 @@ if __name__ == "__main__":
 
     ec = EngagementCreator(source_emitter=analyzer_matched, forwarder=forwarder)
 
-    if IS_LOCAL:
+    if LOCAL_GRAPL:
         from infra.local import secret, user
 
         secret.jwt_secret()

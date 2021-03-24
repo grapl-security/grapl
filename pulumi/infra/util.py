@@ -10,11 +10,11 @@ DEPLOYMENT_NAME = pulumi.get_stack()
 
 # Use this to modify behavior or configuration for provisioning in
 # Local Grapl (as opposed to any other real deployment)
-IS_LOCAL = DEPLOYMENT_NAME == "local-grapl"
+LOCAL_GRAPL = DEPLOYMENT_NAME == "local-grapl"
 
 # For importing some objects, we have to construct a URL, ARN, etc
 # that includes the AWS account ID.
-AWS_ACCOUNT_ID = "000000000000" if IS_LOCAL else aws.get_caller_identity().account_id
+AWS_ACCOUNT_ID = "000000000000" if LOCAL_GRAPL else aws.get_caller_identity().account_id
 
 GLOBAL_LAMBDA_ZIP_TAG = os.getenv("GRAPL_LAMBDA_TAG", "latest")
 """Filename tag for all lambda function ZIP files.
@@ -100,7 +100,7 @@ def grapl_bucket(
     # TODO: Temporarily not doing encrypted buckets for Local
     # Grapl... I think we may need to configure some stuff in
     # that environment a bit differently.
-    sse_config = sse_configuration() if sse and not IS_LOCAL else None
+    sse_config = sse_configuration() if sse and not LOCAL_GRAPL else None
 
     return aws.s3.Bucket(
         logical_bucket_name,
