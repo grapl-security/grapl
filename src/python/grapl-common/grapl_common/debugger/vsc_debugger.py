@@ -18,6 +18,7 @@ ServiceIdentifier = Literal[
     "engagement_edge",
 ]
 
+
 def _install_from_pip(package: str) -> None:
     # Gross, but the suggested way to install from pip mid-python-program!
     # Doing it this way so that <every executable that depends on grapl_common> doesn't inherently
@@ -25,6 +26,7 @@ def _install_from_pip(package: str) -> None:
     subprocess.check_call(
         [sys.executable, "-m", "pip", "install", "--upgrade", package]
     )
+
 
 def _should_debug_service(service: ServiceIdentifier) -> bool:
     """
@@ -42,8 +44,9 @@ def _should_debug_service(service: ServiceIdentifier) -> bool:
     debug_services = set(env_var.split(","))
     return service in debug_services
 
+
 def _get_debug_port() -> Optional[int]:
-    port = os.getenv("VSCODE_DEBUGGER_PORT")
+    port = os.getenv("VSC_DEBUGGER_PORT")
     if not port:
         return None
     else:
@@ -53,13 +56,14 @@ def _get_debug_port() -> Optional[int]:
         ), "84xx range is reserved for our debuggers. You likely want 1 per service."
         return port_int
 
+
 def wait_for_vsc_debugger(service: ServiceIdentifier) -> None:
     if not _should_debug_service(service):
         return
 
     port = _get_debug_port()
     if port is None:
-        logging.error("Couldn't find a debug port for service {service}.")
+        logging.error(f"Couldn't find a debug port for service {service}.")
         return
 
     _install_from_pip("debugpy")
