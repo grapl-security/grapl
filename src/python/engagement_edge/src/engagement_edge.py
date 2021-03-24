@@ -29,6 +29,7 @@ from grapl_common.env_helpers import (
     DynamoDBResourceFactory,
     SecretsManagerClientFactory,
 )
+from grapl_common.debugger.vsc_debugger import wait_for_vsc_debugger
 from src.lib.env_vars import DEPLOYMENT_NAME, GRAPL_LOG_LEVEL, IS_LOCAL
 from src.lib.sagemaker import create_sagemaker_client
 
@@ -41,6 +42,7 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(GRAPL_LOG_LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
+wait_for_vsc_debugger(service="engagement_edge")
 
 class LazyJwtSecret:
     def __init__(self) -> None:

@@ -274,9 +274,10 @@ services:
       <<: *s3-env
       SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-executor-queue"
       <<: *sqs-env
+      VSC_DEBUGGER_PORT: "${VSC_DEBUGGER_PORT_FOR_ANALYZER_EXECUTOR}"
     tty: true
     ports:
-      - 127.0.0.1:${VSC_DEBUGGER}:${VSC_DEBUGGER}
+      - 127.0.0.1:${VSC_DEBUGGER_PORT_FOR_ANALYZER_EXECUTOR}:${VSC_DEBUGGER_PORT_FOR_ANALYZER_EXECUTOR}
     depends_on:
       - dgraph
       - localstack
@@ -321,6 +322,7 @@ services:
           - ${GRAPL_AUTH_HOST}
     environment:
       <<: *aws-region
+      DEBUG_SERVICES: "${DEBUG_SERVICES}"
       DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
       <<: *dynamodb-env
       IS_LOCAL: "True"
@@ -328,10 +330,13 @@ services:
       <<: *secretsmanager-env
       USER_AUTH_TABLE: "${DEPLOYMENT_NAME}-user_auth_table"
       UX_BUCKET_URL: "localhost:3000" # TODO: Port??
+      VSC_DEBUGGER_PORT: "${VSC_DEBUGGER_PORT_FOR_ENGAGEMENT_EDGE}"
     depends_on:
       - grapl-provision
       - localstack
     tty: true
+    ports:
+      - 127.0.0.1:${VSC_DEBUGGER_PORT_FOR_ENGAGEMENT_EDGE}:${VSC_DEBUGGER_PORT_FOR_ENGAGEMENT_EDGE}
 
   grapl-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
