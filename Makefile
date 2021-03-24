@@ -12,6 +12,7 @@ ifneq ($(GRAPL_RUST_ENV_FILE),)
 DOCKER_BUILDX_BAKE_OPTS += --set *.secrets=id=rust_env,src="$(GRAPL_RUST_ENV_FILE)"
 endif
 COMPOSE_IGNORE_ORPHANS=1
+COMPOSE_PROJECT_NAME ?= grapl
 export
 
 export EVERY_LAMBDA_COMPOSE_FILE=--file docker-compose.lambda-zips.js.yml \
