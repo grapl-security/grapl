@@ -14,16 +14,16 @@ endif
 COMPOSE_IGNORE_ORPHANS=1
 export
 
-export EVERY_LAMBDA_COMPOSE_FILE=-f docker-compose.lambda-zips.js.yml \
-	-f docker-compose.lambda-zips.python.yml \
-	-f docker-compose.lambda-zips.rust.yml
+export EVERY_LAMBDA_COMPOSE_FILE=--file docker-compose.lambda-zips.js.yml \
+	--file docker-compose.lambda-zips.python.yml \
+	--file docker-compose.lambda-zips.rust.yml
 
-export EVERY_COMPOSE_FILE=-f docker-compose.yml \
-	-f ./test/docker-compose.unit-tests-rust.yml \
-	-f ./test/docker-compose.unit-tests-js.yml \
-	-f ./test/docker-compose.integration-tests.yml \
-	-f ./test/docker-compose.e2e-tests.yml \
-	-f ./test/docker-compose.typecheck-tests.yml \
+export EVERY_COMPOSE_FILE=--file docker-compose.yml \
+	--file ./test/docker-compose.unit-tests-rust.yml \
+	--file ./test/docker-compose.unit-tests-js.yml \
+	--file ./test/docker-compose.integration-tests.yml \
+	--file ./test/docker-compose.e2e-tests.yml \
+	--file ./test/docker-compose.typecheck-tests.yml \
 	${EVERY_LAMBDA_COMPOSE_FILE}
 
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
