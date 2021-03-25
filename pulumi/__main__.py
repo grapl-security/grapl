@@ -1,10 +1,10 @@
 from infra import dynamodb, emitter
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
+from infra.config import DEPLOYMENT_NAME, LOCAL_GRAPL
 from infra.engagement_creator import EngagementCreator
 from infra.metric_forwarder import MetricForwarder
 from infra.service_queue import ServiceQueue
-from infra.util import DEPLOYMENT_NAME, LOCAL_GRAPL
 from infra.ux import EngagementUX
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ import json
 from typing import Optional
 
 import pulumi_aws as aws
-from infra.util import GLOBAL_LAMBDA_ZIP_TAG
+from infra.config import GLOBAL_LAMBDA_ZIP_TAG
 
 import pulumi
 

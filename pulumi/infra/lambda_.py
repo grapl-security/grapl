@@ -4,13 +4,13 @@ from dataclasses import dataclass, field
 from typing import Mapping, Optional, Union
 
 import pulumi_aws as aws
-from infra.metric_forwarder import MetricForwarder
-from infra.util import (
+from infra.config import (
     DEPLOYMENT_NAME,
     GLOBAL_LAMBDA_ZIP_TAG,
     LOCAL_GRAPL,
     import_aware_opts,
 )
+from infra.metric_forwarder import MetricForwarder
 from typing_extensions import Literal
 
 import pulumi

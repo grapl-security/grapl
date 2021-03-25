@@ -1,17 +1,17 @@
 import json
 
 import pulumi_aws as aws
-from infra.emitter import EventEmitter
-from infra.lambda_ import code_path_for
-from infra.metric_forwarder import MetricForwarder
-from infra.service import Service
-from infra.util import (
+from infra.config import (
     AWS_ACCOUNT_ID,
     DEPLOYMENT_NAME,
     GLOBAL_LAMBDA_ZIP_TAG,
     import_aware_opts,
     mg_alphas,
 )
+from infra.emitter import EventEmitter
+from infra.lambda_ import code_path_for
+from infra.metric_forwarder import MetricForwarder
+from infra.service import Service
 
 import pulumi
 

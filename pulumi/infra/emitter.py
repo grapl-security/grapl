@@ -3,7 +3,7 @@ from typing import Optional
 
 import pulumi_aws as aws
 from infra.bucket import Bucket, bucket_physical_name
-from infra.util import AWS_ACCOUNT_ID, DEPLOYMENT_NAME, import_aware_opts
+from infra.config import AWS_ACCOUNT_ID, DEPLOYMENT_NAME, import_aware_opts
 
 import pulumi
 

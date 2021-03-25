@@ -2,7 +2,7 @@ from typing import Optional
 
 import pulumi_aws as aws
 from infra.bucket import Bucket
-from infra.util import DEPLOYMENT_NAME
+from infra.config import DEPLOYMENT_NAME
 
 import pulumi
 
