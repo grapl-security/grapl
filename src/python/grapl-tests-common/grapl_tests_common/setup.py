@@ -20,7 +20,10 @@ if TYPE_CHECKING:
     from mypy_boto3_sqs import SQSClient
 
 DEPLOYMENT_NAME = environ["DEPLOYMENT_NAME"]
-assert DEPLOYMENT_NAME == "local-grapl"
+DGRAPH_HOST = environ["DGRAPH_HOST"]
+DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT = environ[
+    "DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT"
+]
 
 # Toggle if you want to dump databases, logs, etc.
 DUMP_ARTIFACTS = bool(environ.get("DUMP_ARTIFACTS", False))
@@ -94,7 +97,9 @@ def _after_tests() -> None:
     # The contents of the volume are made available to Github Actions via `dump_artifacts.py`.
     if DUMP_ARTIFACTS:
         logging.info("Executing post-test database dumps")
-        export_request = requests.get("http://dgraph.grapl.test:8080/admin/export")
+        export_request = requests.get(
+            f"http://{DGRAPH_HOST}:{DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT}/admin/export"
+        )
         assert export_request.json()["code"] == "Success"
         dump_dynamodb()
 

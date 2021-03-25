@@ -31,6 +31,7 @@ ClientGetParams = NamedTuple(
         ("endpoint_url_key", str),  # e.g. "SQS_ENDPOINT"
         ("access_key_id_key", str),
         ("access_key_secret_key", str),
+        ("access_session_token", str),
     ),
 )
 
@@ -43,6 +44,7 @@ def _client_get(client_create_fn: Callable[..., Any], params: ClientGetParams) -
     endpoint_url = os.getenv(params.endpoint_url_key)
     access_key_id = os.getenv(params.access_key_id_key)
     access_key_secret = os.getenv(params.access_key_secret_key)
+    access_session_token = os.getenv(params.access_session_token)
 
     # AWS_REGION is Fargate-specific, most AWS stuff uses AWS_DEFAULT_REGION.
     region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION")
@@ -68,6 +70,7 @@ def _client_get(client_create_fn: Callable[..., Any], params: ClientGetParams) -
             endpoint_url=endpoint_url,
             aws_access_key_id=access_key_id,
             aws_secret_access_key=access_key_secret,
+            aws_session_token=access_session_token,
             region_name=region,
         )
     elif endpoint_url and not any((access_key_id, access_key_secret)):
@@ -135,6 +138,7 @@ _SQSParams = ClientGetParams(
     endpoint_url_key="SQS_ENDPOINT",
     access_key_id_key="SQS_ACCESS_KEY_ID",
     access_key_secret_key="SQS_ACCESS_KEY_SECRET",
+    access_session_token="SQS_ACCESS_SESSION_TOKEN",
 )
 
 
@@ -152,6 +156,7 @@ _S3Params = ClientGetParams(
     endpoint_url_key="S3_ENDPOINT",
     access_key_id_key="S3_ACCESS_KEY_ID",
     access_key_secret_key="S3_ACCESS_KEY_SECRET",
+    access_session_token="S3_ACCESS_SESSION_TOKEN",
 )
 
 
@@ -178,6 +183,7 @@ _DynamoDBParams = ClientGetParams(
     endpoint_url_key="DYNAMODB_ENDPOINT",
     access_key_id_key="DYNAMODB_ACCESS_KEY_ID",
     access_key_secret_key="DYNAMODB_ACCESS_KEY_SECRET",
+    access_session_token="DYNAMODB_ACCESS_SESSION_TOKEN",
 )
 
 
@@ -206,6 +212,7 @@ _SecretsManagerParams = ClientGetParams(
     endpoint_url_key="SECRETSMANAGER_ENDPOINT",
     access_key_id_key="SECRETSMANAGER_ACCESS_KEY_ID",
     access_key_secret_key="SECRETSMANAGER_ACCESS_KEY_SECRET",
+    access_session_token="SECRETSMANAGER_ACCESS_SESSION_TOKEN",
 )
 
 

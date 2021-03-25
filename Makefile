@@ -25,6 +25,7 @@ export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 	--file ./test/docker-compose.integration-tests.yml \
 	--file ./test/docker-compose.e2e-tests.yml \
 	--file ./test/docker-compose.typecheck-tests.yml \
+	--file ./test/docker-compose.test-utils.yml \
 	${EVERY_LAMBDA_COMPOSE_FILE}
 
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
@@ -89,36 +90,40 @@ build-all: ## Build all targets (incl. services, tests, zip)
 .PHONY: build-test-unit
 build-test-unit:
 	$(DOCKER_BUILDX_BAKE) \
-		-f ./test/docker-compose.unit-tests-rust.yml \
-		-f ./test/docker-compose.unit-tests-js.yml
+		--file ./test/docker-compose.unit-tests-rust.yml \
+		--file ./test/docker-compose.unit-tests-js.yml
 
 .PHONY: build-test-unit-rust
 build-test-unit-rust:
 	$(DOCKER_BUILDX_BAKE) \
-		-f ./test/docker-compose.unit-tests-rust.yml
+		--file ./test/docker-compose.unit-tests-rust.yml
 
 .PHONY: build-test-unit-js
 build-test-unit-js:
 	$(DOCKER_BUILDX_BAKE) \
-		-f ./test/docker-compose.unit-tests-js.yml
+		--file ./test/docker-compose.unit-tests-js.yml
 
 .PHONY: build-test-typecheck
 build-test-typecheck:
-	docker buildx bake -f ./test/docker-compose.typecheck-tests.yml
+	docker buildx bake --file ./test/docker-compose.typecheck-tests.yml
 
 .PHONY: build-test-integration
 build-test-integration: build-services
 	$(WITH_LOCAL_GRAPL_ENV) \
-	$(DOCKER_BUILDX_BAKE) -f ./test/docker-compose.integration-tests.yml
+	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.integration-tests.yml
 
 .PHONY: build-test-e2e
 build-test-e2e: build-services
 	$(WITH_LOCAL_GRAPL_ENV) \
-	$(DOCKER_BUILDX_BAKE) -f ./test/docker-compose.e2e-tests.yml
+	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.yml
+
+.PHONY: build-wait-for-local-provision
+build-wait-for-local-provision:
+	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.test-utils.yml
 
 .PHONY: build-services
 build-services: ## Build Grapl services
-	$(DOCKER_BUILDX_BAKE) -f docker-compose.build.yml
+	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
 
 .PHONY: build-lambdas
 build-lambdas: ## Build services for Grapl in AWS (subset of all services)
@@ -299,6 +304,20 @@ up-detach: build-services ## Bring up local Grapl and detach to return control t
 	docker-compose \
 		--file docker-compose.yml \
 		up --detach --force-recreate
+	# Wait for provisioning to fully complete before exiting.
+	$(MAKE) wait-for-local-provision
+
+.PHONY: wait-for-local-provision
+wait-for-local-provision: build-wait-for-local-provision
+	$(WITH_LOCAL_GRAPL_ENV)
+	# It looks like docker-compose isn't honoring COMPOSE_IGNORE_ORPHANS
+	# for the 'run' command, so we're left with a bogus warning. This looks
+	# related: https://github.com/docker/compose/issues/8203.
+	docker-compose \
+		--file ./test/docker-compose.test-utils.yml \
+		run --rm \
+		test-utils \
+		wait-for-it grapl-engagement-view-uploader:$${WAIT_PORT} --timeout=250
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
