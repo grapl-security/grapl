@@ -1,9 +1,10 @@
-from infra import dynamodb, emitter, util
+from infra import dynamodb, emitter
 from infra.autotag import register_auto_tags
+from infra.bucket import Bucket
+from infra.config import DEPLOYMENT_NAME, LOCAL_GRAPL
 from infra.engagement_creator import EngagementCreator
 from infra.metric_forwarder import MetricForwarder
 from infra.service_queue import ServiceQueue
-from infra.util import DEPLOYMENT_NAME, IS_LOCAL
 from infra.ux import EngagementUX
 
 if __name__ == "__main__":
@@ -16,8 +17,8 @@ if __name__ == "__main__":
 
     ux = EngagementUX()
 
-    util.grapl_bucket("model-plugins-bucket", sse=False)
-    util.grapl_bucket("analyzers-bucket", sse=True)
+    Bucket("model-plugins-bucket", sse=False)
+    Bucket("analyzers-bucket", sse=True)
 
     events = [
         "dispatched-analyzer",
@@ -49,7 +50,7 @@ if __name__ == "__main__":
 
     ec = EngagementCreator(source_emitter=analyzer_matched, forwarder=forwarder)
 
-    if IS_LOCAL:
+    if LOCAL_GRAPL:
         from infra.local import secret, user
 
         secret.jwt_secret()

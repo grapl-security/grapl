@@ -4,13 +4,13 @@ from dataclasses import dataclass, field
 from typing import Mapping, Optional, Union
 
 import pulumi_aws as aws
-from infra.metric_forwarder import MetricForwarder
-from infra.util import (
+from infra.config import (
     DEPLOYMENT_NAME,
     GLOBAL_LAMBDA_ZIP_TAG,
-    IS_LOCAL,
+    LOCAL_GRAPL,
     import_aware_opts,
 )
+from infra.metric_forwarder import MetricForwarder
 from typing_extensions import Literal
 
 import pulumi
@@ -149,7 +149,7 @@ class Lambda(pulumi.ComponentResource):
             opts=import_aware_opts(lambda_name, parent=self),
         )
 
-        if not IS_LOCAL:
+        if not LOCAL_GRAPL:
             # TODO: While Localstack can create lambda aliases just
             # fine, it doesn't appear to be able to *delete* them
             # right now. Since we don't use aliases in Local Grapl,

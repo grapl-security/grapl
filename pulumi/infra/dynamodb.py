@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional
 
 import pulumi_aws as aws
-from infra.util import DEPLOYMENT_NAME, import_aware_opts
+from infra.config import DEPLOYMENT_NAME, import_aware_opts
 
 import pulumi
 

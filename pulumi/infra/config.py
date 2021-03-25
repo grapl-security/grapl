@@ -1,5 +1,5 @@
 import os
-from typing import Any, Optional
+from typing import Any
 
 import pulumi_aws as aws
 
@@ -10,11 +10,11 @@ DEPLOYMENT_NAME = pulumi.get_stack()
 
 # Use this to modify behavior or configuration for provisioning in
 # Local Grapl (as opposed to any other real deployment)
-IS_LOCAL = DEPLOYMENT_NAME == "local-grapl"
+LOCAL_GRAPL = DEPLOYMENT_NAME == "local-grapl"
 
 # For importing some objects, we have to construct a URL, ARN, etc
 # that includes the AWS account ID.
-AWS_ACCOUNT_ID = "000000000000" if IS_LOCAL else aws.get_caller_identity().account_id
+AWS_ACCOUNT_ID = "000000000000" if LOCAL_GRAPL else aws.get_caller_identity().account_id
 
 GLOBAL_LAMBDA_ZIP_TAG = os.getenv("GRAPL_LAMBDA_TAG", "latest")
 """Filename tag for all lambda function ZIP files.
@@ -73,68 +73,3 @@ def import_aware_opts(resource_id: str, **kwargs: Any) -> pulumi.ResourceOptions
         import_=resource_id if import_from_existing else None
     )
     return pulumi.ResourceOptions.merge(given_opts, import_opts)
-
-
-def grapl_bucket(
-    logical_bucket_name: str,
-    sse: bool = False,
-    website_args: Optional[aws.s3.BucketWebsiteArgs] = None,
-    parent: Optional[pulumi.Resource] = None,
-) -> aws.s3.Bucket:
-    """Abstracts logic for creating an S3 bucket for our purposes.
-
-    logical_bucket_name: What we call this bucket in Pulumi terms.
-
-    sse: Whether or not to apply server-side encryption of
-    bucket contents
-
-    website_args: configuration for setting the bucket up to serve web
-    content.
-
-    parent: for use in ComponentResources; the Pulumi resource
-    that "owns" this resource.
-
-    """
-    physical_bucket_name = bucket_physical_name(logical_bucket_name)
-
-    # TODO: Temporarily not doing encrypted buckets for Local
-    # Grapl... I think we may need to configure some stuff in
-    # that environment a bit differently.
-    sse_config = sse_configuration() if sse and not IS_LOCAL else None
-
-    return aws.s3.Bucket(
-        logical_bucket_name,
-        bucket=physical_bucket_name,
-        force_destroy=True,
-        website=website_args,
-        server_side_encryption_configuration=sse_config,
-        # Ignoring force_destroy temporarily while we're
-        # comparing/contrasting with CDK because otherwise it causes
-        # noise in the diffs. It can be removed once we're fully in
-        # Pulumi.
-        opts=import_aware_opts(
-            physical_bucket_name, parent=parent, ignore_changes=["forceDestroy"]
-        ),
-    )
-
-
-def bucket_physical_name(logical_name: str) -> str:
-    """Compute the physical name of a bucket, given its logical name.
-
-    Mainly useful to help with resource importation logic on certain
-    resources; may not be needed as a separate function once
-    everything is managed by Pulumi.
-
-    """
-    return f"{DEPLOYMENT_NAME}-{logical_name}"
-
-
-def sse_configuration() -> aws.s3.BucketServerSideEncryptionConfigurationArgs:
-    """ Applies SSE to a bucket using AWS KMS. """
-    return aws.s3.BucketServerSideEncryptionConfigurationArgs(
-        rule=aws.s3.BucketServerSideEncryptionConfigurationRuleArgs(
-            apply_server_side_encryption_by_default=aws.s3.BucketServerSideEncryptionConfigurationRuleApplyServerSideEncryptionByDefaultArgs(
-                sse_algorithm="aws:kms",
-            ),
-        ),
-    )
