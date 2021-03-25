@@ -8,6 +8,15 @@ import logging
 import os
 import subprocess
 import sys
+from typing import Optional
+
+from typing_extensions import Literal
+
+ServiceIdentifier = Literal[
+    "grapl_e2e_tests",
+    "analyzer_executor",
+    "engagement_edge",
+]
 
 
 def _install_from_pip(package: str) -> None:
@@ -19,16 +28,7 @@ def _install_from_pip(package: str) -> None:
     )
 
 
-# TODO: we should probably have some fixed 'services' StrEnum somewhere
-SERVICE_TO_PORT = {
-    # As you need to debug more services, add more services here.
-    # Make sure you expose the port in the appropriate docker-compose file.
-    "grapl_e2e_tests": 8400,
-    "analyzer_executor": 8401,
-}
-
-
-def _should_debug_service(service: str) -> bool:
+def _should_debug_service(service: ServiceIdentifier) -> bool:
     """
     When you set
     DEBUG_SERVICES=grapl_e2e_tests
@@ -36,7 +36,7 @@ def _should_debug_service(service: str) -> bool:
 
     When you set
     DEBUG_SERVICES=grapl_e2e_tests,some_future_service
-    you'll start two debug listeners - 1 for each service
+    you'll start two debug listeners - 1 for each service - on different ports!
     """
     env_var = os.getenv("DEBUG_SERVICES")
     if not env_var:
@@ -45,20 +45,30 @@ def _should_debug_service(service: str) -> bool:
     return service in debug_services
 
 
-def wait_for_vsc_debugger(service: str) -> None:
+def _get_debug_port() -> Optional[int]:
+    port = os.getenv("VSC_DEBUGGER_PORT")
+    if not port:
+        return None
+    else:
+        port_int = int(port)
+        assert (
+            8400 <= port_int < 8500
+        ), "84xx range is reserved for our debuggers. You likely want 1 per service."
+        return port_int
+
+
+def wait_for_vsc_debugger(service: ServiceIdentifier) -> None:
     if not _should_debug_service(service):
         return
-    port = SERVICE_TO_PORT.get(service, None)
-    if not port:
-        logging.error("Couldn't find a debug port for service {service}.")
+
+    port = _get_debug_port()
+    if port is None:
+        logging.error(f"Couldn't find a debug port for service {service}.")
         return
 
     _install_from_pip("debugpy")
     import debugpy  # type: ignore
 
-    assert (
-        8400 <= port < 8500
-    ), "84xx range is reserved for our debuggers. You likely want 1 per service."
     host = "0.0.0.0"
     logging.info(f">> Debugpy listening for client at {host}:{port}")
     debugpy.listen((host, port))
