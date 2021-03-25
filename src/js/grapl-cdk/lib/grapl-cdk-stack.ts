@@ -109,8 +109,7 @@ export class GraplCdkStack extends cdk.Stack {
 
         const schema_table = new SchemaDb(this, 'SchemaTable', {deploymentName: this.deploymentName});
 
-        const display_table = new DisplayPropertyDb(this, 'DisplayTable', {deploymentName: this.deploymentName});
-
+        const displayTable = new DisplayPropertyDb(this, 'DisplayTable', {deploymentName: this.deploymentName});
 
 
         let watchful = undefined;
@@ -193,7 +192,7 @@ export class GraplCdkStack extends cdk.Stack {
             {
                 modelPluginBucket: model_plugins_bucket,
                 schemaTable: schema_table,
-                displayTable: display_table,
+                displayTable: displayTable,
                 edgeApi,
                 ...graplProps,
             }
@@ -289,6 +288,7 @@ export class GraplCdkStack extends cdk.Stack {
             ...graplProps,
             ux_bucket,
             edgeApi,
+            displayTable,
         });
 
         if (watchful) {
