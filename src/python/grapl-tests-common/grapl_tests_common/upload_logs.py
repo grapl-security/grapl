@@ -6,6 +6,7 @@ import string
 import time
 from dataclasses import dataclass
 from datetime import datetime
+from os import environ
 from sys import maxsize
 from typing import TYPE_CHECKING, Callable, Iterator, List, Optional, cast
 
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
 import boto3  # type: ignore
 import zstd  # type: ignore
 
-DEPLOYMENT_NAME = "local-grapl"
+DEPLOYMENT_NAME = environ["DEPLOYMENT_NAME"]
 
 
 def rand_str(l: int) -> str:

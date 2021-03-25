@@ -24,7 +24,7 @@ class WaitForS3Bucket(WaitForResource):
 
     def acquire(self) -> Optional[Any]:
         try:
-            return self.s3_client.head_bucket(Bucket=self.bucket_name)
+            return self.s3_client.head_bucket(Bucket=self.bucket_name.strip())
         except self.s3_client.exceptions.NoSuchBucket:
             return None
 
