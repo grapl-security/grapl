@@ -1,0 +1,15 @@
+version: "3.8"
+
+# environment variable PWD is assumed to be grapl root directory
+
+services:
+
+  test-utils:
+    image: grapl/test-utils:${TAG:-latest}
+    build:
+      context: ${PWD}/test
+      dockerfile: ./Dockerfile.test-utils
+
+networks:
+  default:
+    name: grapl-network

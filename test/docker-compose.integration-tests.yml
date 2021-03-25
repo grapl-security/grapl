@@ -13,7 +13,6 @@ services:
       args:
         - CARGO_PROFILE=debug
     command: bash -c "
-      wait-for-it grapl-provision:${WAIT_PORT} --timeout=250 &&
       cargo test --manifest-path node-identifier/Cargo.toml --features integration"
     environment:
       - AWS_REGION
@@ -45,7 +44,6 @@ services:
       dockerfile: ./python/Dockerfile
       target: grapl-analyzerlib-test
     command: bash -c '
-      wait-for-it grapl-provision:${WAIT_PORT} --timeout=250 &&
       source venv/bin/activate &&
       cd grapl_analyzerlib &&
       py.test -n auto -m "integration_test"'
@@ -84,7 +82,6 @@ services:
       dockerfile: ./python/Dockerfile
       target: engagement-edge-test
     command: bash -c '
-      wait-for-it ${GRAPL_AUTH_HOST}:${GRAPL_AUTH_PORT} --timeout=250 &&
       source venv/bin/activate &&
       cd engagement_edge &&
       py.test -n auto -m "integration_test"'
@@ -99,11 +96,10 @@ services:
     image: grapl/grapl-cypress:${TAG:-latest}
     build:
       context: ${PWD}/test
-      dockerfile: ./Dockerfile
+      dockerfile: ./Dockerfile.cypress
       target: grapl-cypress
     command: |
       /bin/bash -c "
-        wait-for-it grapl-provision:${WAIT_PORT} --timeout=250 &&
         cypress run --browser chrome --headless
       "
 
