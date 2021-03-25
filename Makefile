@@ -12,6 +12,7 @@ ifneq ($(GRAPL_RUST_ENV_FILE),)
 DOCKER_BUILDX_BAKE_OPTS += --set *.secrets=id=rust_env,src="$(GRAPL_RUST_ENV_FILE)"
 endif
 COMPOSE_IGNORE_ORPHANS=1
+COMPOSE_PROJECT_NAME ?= grapl
 export
 
 export EVERY_LAMBDA_COMPOSE_FILE=--file docker-compose.lambda-zips.js.yml \
@@ -302,9 +303,9 @@ up-detach: build-services ## Bring up local Grapl and detach to return control t
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
 	$(WITH_LOCAL_GRAPL_ENV)
-	docker-compose down --timeout=0
-	docker-compose --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
-	docker-compose --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
+	docker-compose $(EVERY_COMPOSE_FILE) down --timeout=0
+	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
+	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
 
 .PHONY: stop
 stop: ## docker-compose stop - stops (but preserves) the containers
