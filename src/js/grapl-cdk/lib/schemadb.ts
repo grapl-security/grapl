@@ -1,53 +1,21 @@
 import * as cdk from '@aws-cdk/core';
+import { DbTable } from './dyanamoDbTable';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
-import * as iam from '@aws-cdk/aws-iam';
-
-import { Service } from './service';
-import { RemovalPolicy } from '@aws-cdk/core';
-import { FargateService } from "./fargate_service";
 
 export interface SchemaDbProps {
-    table_name: string;
+    deploymentName: string;
 }
 
-export class SchemaDb extends cdk.Construct {
-    readonly schema_table: dynamodb.Table;
-
+export class SchemaDb extends DbTable {
     constructor(scope: cdk.Construct, id: string, props: SchemaDbProps) {
-        super(scope, id);
-
-        this.schema_table = new dynamodb.Table(this, 'SchemaDbTable', {
-            tableName: props.table_name,
+        super(scope, id, {
+            tableName: props.deploymentName + '-grapl_schema_table',
+            table: 'schema_table',
             partitionKey: {
                 name: 'f_edge',
                 type: dynamodb.AttributeType.STRING,
             },
-            serverSideEncryption: true,
-            billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-            removalPolicy: RemovalPolicy.DESTROY,
+            tableReference: 'SchemaDbTable',
         });
-    }
-
-    allowRead(service: Service|FargateService) {
-        if (service instanceof FargateService) {
-            this.schema_table.grantReadData(service.service.taskDefinition.taskRole);
-            this.schema_table.grantReadData(service.retryService.taskDefinition.taskRole);
-        } else {
-            this.schema_table.grantReadData(service.event_handler);
-            this.schema_table.grantReadData(service.event_retry_handler);
-        }
-    }
-
-    allowReadWrite(service: Service) {
-        this.schema_table.grantReadWriteData(service.event_handler);
-        this.schema_table.grantReadWriteData(service.event_retry_handler);
-    }
-
-    allowReadFromRole(identity: iam.IGrantable) {
-        this.schema_table.grantReadData(identity);
-    }
-
-    allowReadWriteFromRole(identity: iam.IGrantable) {
-        this.schema_table.grantReadWriteData(identity);
     }
 }

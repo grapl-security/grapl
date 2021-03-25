@@ -155,7 +155,7 @@ const getDisplayProperty = async (nodeType: string) => {
 		return response.Item.display_property;
 	} catch (e) {
 		console.error(
-			"Error Querying DynamoDB for dispaly property in schema.js",
+			"Error Querying DynamoDB for display property in root_query.ts",
 			e
 		);
 	}
@@ -296,7 +296,7 @@ const RootQuery = new GraphQLObjectType({
 				// #TODO: Make sure to validate that 'first' is under a specific limit, maybe 1000
 				console.log("Making getLensesQuery");
 				const lenses = await getLenses(getDgraphClient(), first, offset);
-				console.debug("returning data from getLenses for lenses resolver", lenses);
+				console.debug("eturning data from getLenses for lenses resolver", lenses);
 				return lenses;
 			},
 		},
