@@ -46,7 +46,7 @@ services:
     command: bash -c '
       source venv/bin/activate &&
       cd grapl_analyzerlib &&
-      py.test -n auto -m "integration_test"'
+      py.test -v -n auto -m "integration_test"'
     environment:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
       - DEPLOYMENT_NAME

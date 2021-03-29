@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Any, Dict
+from typing import Any, Dict, List
 from unittest import TestCase
 
 import hypothesis
@@ -28,7 +28,7 @@ class TestGraphqlEndpoint(TestCase):
     @hypothesis.given(
         asset_props=asset_props_strategy(),
     )
-    @hypothesis.settings(deadline=timedelta(seconds=1))
+    @hypothesis.settings(deadline=timedelta(seconds=5))
     def test_create_lens_shows_up_in_graphql(
         self,
         asset_props: AssetProps,
@@ -38,6 +38,11 @@ class TestGraphqlEndpoint(TestCase):
         lens_name = lens.get_lens_name()
         assert lens_name
 
+        # Check that this lens shows up in the "show all lenses" view
+        gql_lenses = _query_graphql_endpoint_for_lenses(GRAPHQL_CLIENT)
+        assert lens_name in [l["lens_name"] for l in gql_lenses]
+
+        # Check the things in-scope for the lens
         gql_lens = _query_graphql_endpoint_for_scope(lens_name, GRAPHQL_CLIENT)
         # For some reason, upon create, `lens.uid` comes back as a string like "0x5"
         assert gql_lens["uid"] == int(lens.uid, 0)  # type: ignore
@@ -46,6 +51,22 @@ class TestGraphqlEndpoint(TestCase):
         assert len(gql_lens["scope"]) == 1
         assert gql_lens["scope"][0]["hostname"] == asset_props["hostname"]
 
+
+def _query_graphql_endpoint_for_lenses(gql_client: GraphqlEndpointClient) -> List[GqlLensDict]:
+    # Just get *all* lenses
+    query = """
+    {
+        lenses(first: 1000, offset: 0) {
+            uid,
+            node_key,
+            lens_name,
+            score, 
+            lens_type,
+        }
+    }
+    """
+    resp = gql_client.query(query)
+    return resp["lenses"]
 
 def _query_graphql_endpoint_for_scope(
     lens_name: str, graphql_client: GraphqlEndpointClient
