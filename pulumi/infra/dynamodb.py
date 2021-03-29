@@ -1,9 +1,123 @@
+import json
 from typing import Dict, List, Optional
 
 import pulumi_aws as aws
-from infra.config import DEPLOYMENT_NAME, import_aware_opts
+from infra.config import DEPLOYMENT_NAME
 
 import pulumi
+
+
+class DynamoDBTable(aws.dynamodb.Table):
+    """Specialization of a regular DynamoDB table resource to ensure
+    commonalities across all our tables, make things less verbose, and
+    provide additional functionality.
+
+    In particular, all tables have a `PAY_PER_REQUEST` billing mode,
+    as well as an explicitly-set physical name.
+
+    """
+
+    def __init__(
+        self,
+        name: str,
+        attrs: List[Dict[str, str]],
+        hash_key: str,
+        range_key: Optional[str] = None,
+        opts: Optional[pulumi.ResourceOptions] = None,
+    ) -> None:
+
+        super().__init__(
+            name,
+            name=name,
+            attributes=[
+                aws.dynamodb.TableAttributeArgs(name=a["name"], type=a["type"])
+                for a in attrs
+            ],
+            hash_key=hash_key,
+            range_key=range_key,
+            billing_mode="PAY_PER_REQUEST",
+            opts=opts,
+        )
+
+    def grant_read_permissions_to(self, role: aws.iam.Role) -> None:
+        """ Adds the ability to read from this table to the provided `Role`. """
+        aws.iam.RolePolicy(
+            f"{role._name}-reads-{self._name}",
+            role=role.name,
+            policy=self.arn.apply(
+                lambda table_arn: json.dumps(
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                "Action": [
+                                    "dynamodb:BatchGetItem",
+                                    "dynamodb:GetRecords",
+                                    "dynamodb:GetShardIterator",
+                                    "dynamodb:Query",
+                                    "dynamodb:GetItem",
+                                    "dynamodb:Scan",
+                                ],
+                                "Resource": table_arn,
+                            }
+                        ],
+                    }
+                )
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+    def grant_read_write_permissions_to(self, role: aws.iam.Role) -> None:
+        """ Gives the provided `Role` the ability to read from and write to this table. """
+        aws.iam.RolePolicy(
+            f"{role._name}-reads-and-writes-{self._name}",
+            role=role.name,
+            policy=self.arn.apply(
+                lambda table_arn: json.dumps(
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                "Action": [
+                                    # Read
+                                    "dynamodb:BatchGetItem",
+                                    "dynamodb:GetRecords",
+                                    "dynamodb:GetShardIterator",
+                                    "dynamodb:Query",
+                                    "dynamodb:GetItem",
+                                    "dynamodb:Scan",
+                                    # Write
+                                    "dynamodb:BatchWriteItem",
+                                    "dynamodb:PutItem",
+                                    "dynamodb:UpdateItem",
+                                    "dynamodb:DeleteItem",
+                                ],
+                                "Resource": table_arn,
+                            }
+                        ],
+                    }
+                )
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+
+class DynamoDBHistoryTable(DynamoDBTable):
+    """ Specialization of our `DynamoDBTable` to represent all our "history" tables, which share the same structure. """
+
+    def __init__(
+        self, name: str, opts: Optional[pulumi.ResourceOptions] = None
+    ) -> None:
+
+        super().__init__(
+            name,
+            [{"name": "pseudo_key", "type": "S"}, {"name": "create_time", "type": "N"}],
+            hash_key="pseudo_key",
+            range_key="create_time",
+            opts=opts,
+        )
 
 
 class DynamoDB(pulumi.ComponentResource):
@@ -22,108 +136,76 @@ class DynamoDB(pulumi.ComponentResource):
     def __init__(self, opts: Optional[pulumi.ResourceOptions] = None) -> None:
         super().__init__("grapl:DynamoDB", DEPLOYMENT_NAME, None, opts)
 
-        self.schema_properties_table = dynamodb_table(
+        self.schema_properties_table = DynamoDBTable(
             f"{DEPLOYMENT_NAME}-grapl_schema_properties_table",
-            [
+            attrs=[
                 {"name": "node_type", "type": "S"},
                 # We dynamically create a "type_definition" M (map) type.
             ],
-            self,
             hash_key="node_type",
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self.schema_table = dynamodb_table(
+        self.schema_table = DynamoDBTable(
             f"{DEPLOYMENT_NAME}-grapl_schema_table",
-            [{"name": "f_edge", "type": "S"}],
-            self,
+            attrs=[{"name": "f_edge", "type": "S"}],
             hash_key="f_edge",
-        )
-        self.static_mapping_table = dynamodb_table(
-            f"{DEPLOYMENT_NAME}-static_mapping_table",
-            [{"name": "pseudo_key", "type": "S"}],
-            self,
-            hash_key="pseudo_key",
-        )
-        self.user_auth_table = dynamodb_table(
-            f"{DEPLOYMENT_NAME}-user_auth_table",
-            [{"name": "username", "type": "S"}],
-            self,
-            hash_key="username",
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self.asset_id_mappings = dynamodb_table(
+        self.static_mapping_table = DynamoDBTable(
+            f"{DEPLOYMENT_NAME}-static_mapping_table",
+            attrs=[{"name": "pseudo_key", "type": "S"}],
+            hash_key="pseudo_key",
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.user_auth_table = DynamoDBTable(
+            f"{DEPLOYMENT_NAME}-user_auth_table",
+            attrs=[{"name": "username", "type": "S"}],
+            hash_key="username",
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.asset_id_mappings = DynamoDBTable(
             f"{DEPLOYMENT_NAME}-asset_id_mappings",
-            [{"name": "pseudo_key", "type": "S"}, {"name": "c_timestamp", "type": "N"}],
-            self,
+            attrs=[
+                {"name": "pseudo_key", "type": "S"},
+                {"name": "c_timestamp", "type": "N"},
+            ],
             hash_key="pseudo_key",
             range_key="c_timestamp",
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self.dynamic_session_table = dynamodb_history_table(
-            f"{DEPLOYMENT_NAME}-dynamic_session_table", self
+        self.dynamic_session_table = DynamoDBHistoryTable(
+            f"{DEPLOYMENT_NAME}-dynamic_session_table",
+            opts=pulumi.ResourceOptions(parent=self),
         )
-        self.file_history_table = dynamodb_history_table(
-            f"{DEPLOYMENT_NAME}-file_history_table", self
+
+        self.file_history_table = DynamoDBHistoryTable(
+            f"{DEPLOYMENT_NAME}-file_history_table",
+            opts=pulumi.ResourceOptions(parent=self),
         )
-        self.inbound_connection_history_table = dynamodb_history_table(
-            f"{DEPLOYMENT_NAME}-inbound_connection_history_table", self
+        self.inbound_connection_history_table = DynamoDBHistoryTable(
+            f"{DEPLOYMENT_NAME}-inbound_connection_history_table",
+            opts=pulumi.ResourceOptions(parent=self),
         )
-        self.ip_connection_history_table = dynamodb_history_table(
-            f"{DEPLOYMENT_NAME}-ip_connection_history_table", self
+        self.ip_connection_history_table = DynamoDBHistoryTable(
+            f"{DEPLOYMENT_NAME}-ip_connection_history_table",
+            opts=pulumi.ResourceOptions(parent=self),
         )
-        self.network_connection_history_table = dynamodb_history_table(
-            f"{DEPLOYMENT_NAME}-network_connection_history_table", self
+        self.network_connection_history_table = DynamoDBHistoryTable(
+            f"{DEPLOYMENT_NAME}-network_connection_history_table",
+            opts=pulumi.ResourceOptions(parent=self),
         )
-        self.outbound_connection_hstiory_table = dynamodb_history_table(
-            f"{DEPLOYMENT_NAME}-outbound_connection_history_table", self
+        self.outbound_connection_history_table = DynamoDBHistoryTable(
+            f"{DEPLOYMENT_NAME}-outbound_connection_history_table",
+            opts=pulumi.ResourceOptions(parent=self),
         )
-        self.process_history_table = dynamodb_history_table(
-            f"{DEPLOYMENT_NAME}-process_history_table", self
+        self.process_history_table = DynamoDBHistoryTable(
+            f"{DEPLOYMENT_NAME}-process_history_table",
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
         self.register_outputs({})
-
-
-# Below are essentially private functions
-
-
-def dynamodb_table(
-    name: str,
-    attrs: List[Dict[str, str]],
-    parent_resource: pulumi.Resource,
-    hash_key: str,
-    range_key: Optional[str] = None,
-) -> aws.dynamodb.Table:
-    """Defines a single DynamoDB table.
-
-    Of particular note:
-    - all tables have the "pay per request" billing mode
-    """
-    return aws.dynamodb.Table(
-        name,
-        name=name,
-        attributes=[
-            aws.dynamodb.TableAttributeArgs(name=a["name"], type=a["type"])
-            for a in attrs
-        ],
-        hash_key=hash_key,
-        range_key=range_key,
-        billing_mode="PAY_PER_REQUEST",
-        opts=import_aware_opts(name, parent=parent_resource),
-    )
-
-
-def dynamodb_history_table(
-    name: str, parent_resource: pulumi.Resource
-) -> aws.dynamodb.Table:
-    """A specialization of `dynamodb_table` for our various "history"
-    tracking tables, which all share the same indexing structures.
-
-    """
-    return dynamodb_table(
-        name,
-        [{"name": "pseudo_key", "type": "S"}, {"name": "create_time", "type": "N"}],
-        parent_resource,
-        hash_key="pseudo_key",
-        range_key="create_time",
-    )
