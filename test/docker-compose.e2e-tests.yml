@@ -12,7 +12,6 @@ services:
       target: grapl-e2e-tests-build
     command: |
       bash -c "
-        wait-for-it grapl-provision:${WAIT_PORT} --timeout=60 &&
         source venv/bin/activate &&
         cd grapl_e2e_tests &&
         python3 ./main.py
@@ -24,6 +23,8 @@ services:
       - AWS_REGION
       - DEPLOYMENT_NAME
       - DEBUG_SERVICES=${DEBUG_SERVICES}
+      - DGRAPH_HOST
+      - DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT
       - DUMP_ARTIFACTS=${DUMP_ARTIFACTS:-False}
       - DYNAMODB_ACCESS_KEY_ID
       - DYNAMODB_ACCESS_KEY_SECRET
@@ -41,8 +42,9 @@ services:
       - SQS_ACCESS_KEY_ID
       - SQS_ACCESS_KEY_SECRET
       - SQS_ENDPOINT
+      - VSC_DEBUGGER_PORT=${VSC_DEBUGGER_PORT_FOR_GRAPL_E2E_TESTS}
     ports:
-      - 8400:8400
+      - ${VSC_DEBUGGER_PORT_FOR_GRAPL_E2E_TESTS}:${VSC_DEBUGGER_PORT_FOR_GRAPL_E2E_TESTS}
 
 volumes:
   dynamodb_dump:

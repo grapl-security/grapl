@@ -2,8 +2,7 @@ import json
 from typing import Optional
 
 import pulumi_aws as aws
-from infra import util
-from infra.util import DEPLOYMENT_NAME, IS_LOCAL
+from infra.config import AWS_ACCOUNT_ID, DEPLOYMENT_NAME, import_aware_opts
 
 import pulumi
 
@@ -38,10 +37,7 @@ class ServiceQueue(pulumi.ComponentResource):
 
         # Queues have to be imported by URL, which includes the
         # account ID
-        account_id = (
-            "000000000000" if IS_LOCAL else aws.get_caller_identity().account_id
-        )
-        queue_import_prefix = f"https://queue.amazonaws.com/{account_id}"
+        queue_import_prefix = f"https://queue.amazonaws.com/{AWS_ACCOUNT_ID}"
 
         logical_dead_letter_name = f"{name}-dead-letter-queue"
         physical_dead_letter_name = f"{DEPLOYMENT_NAME}-{logical_dead_letter_name}"
@@ -50,7 +46,7 @@ class ServiceQueue(pulumi.ComponentResource):
             name=physical_dead_letter_name,
             message_retention_seconds=message_retention_seconds,
             visibility_timeout_seconds=30,
-            opts=util.import_aware_opts(
+            opts=import_aware_opts(
                 f"{queue_import_prefix}/{physical_dead_letter_name}",
                 parent=self,
                 delete_before_replace=True,
@@ -65,7 +61,7 @@ class ServiceQueue(pulumi.ComponentResource):
             message_retention_seconds=message_retention_seconds,
             visibility_timeout_seconds=360,
             redrive_policy=self.dead_letter_queue.arn.apply(redrive_policy),
-            opts=util.import_aware_opts(
+            opts=import_aware_opts(
                 f"{queue_import_prefix}/{physical_retry_name}",
                 parent=self,
                 delete_before_replace=True,
@@ -80,7 +76,7 @@ class ServiceQueue(pulumi.ComponentResource):
             message_retention_seconds=message_retention_seconds,
             visibility_timeout_seconds=180,
             redrive_policy=self.retry_queue.arn.apply(redrive_policy),
-            opts=util.import_aware_opts(
+            opts=import_aware_opts(
                 f"{queue_import_prefix}/{physical_queue_name}",
                 parent=self,
                 delete_before_replace=True,

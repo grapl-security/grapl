@@ -12,15 +12,21 @@ ifneq ($(GRAPL_RUST_ENV_FILE),)
 DOCKER_BUILDX_BAKE_OPTS += --set *.secrets=id=rust_env,src="$(GRAPL_RUST_ENV_FILE)"
 endif
 COMPOSE_IGNORE_ORPHANS=1
+COMPOSE_PROJECT_NAME ?= grapl
 export
 
-export EVERY_COMPOSE_FILE=-f docker-compose.yml \
-	-f ./test/docker-compose.unit-tests-rust.yml \
-	-f ./test/docker-compose.unit-tests-js.yml \
-	-f ./test/docker-compose.integration-tests.yml \
-	-f ./test/docker-compose.e2e-tests.yml \
-	-f ./test/docker-compose.typecheck-tests.yml \
-	-f docker-compose.zips.yml
+export EVERY_LAMBDA_COMPOSE_FILE=--file docker-compose.lambda-zips.js.yml \
+	--file docker-compose.lambda-zips.python.yml \
+	--file docker-compose.lambda-zips.rust.yml
+
+export EVERY_COMPOSE_FILE=--file docker-compose.yml \
+	--file ./test/docker-compose.unit-tests-rust.yml \
+	--file ./test/docker-compose.unit-tests-js.yml \
+	--file ./test/docker-compose.integration-tests.yml \
+	--file ./test/docker-compose.e2e-tests.yml \
+	--file ./test/docker-compose.typecheck-tests.yml \
+	--file ./test/docker-compose.test-utils.yml \
+	${EVERY_LAMBDA_COMPOSE_FILE}
 
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
 VERBOSE_PANTS := PEX_VERBOSE=5 ./pants -ldebug
@@ -84,40 +90,44 @@ build-all: ## Build all targets (incl. services, tests, zip)
 .PHONY: build-test-unit
 build-test-unit:
 	$(DOCKER_BUILDX_BAKE) \
-		-f ./test/docker-compose.unit-tests-rust.yml \
-		-f ./test/docker-compose.unit-tests-js.yml
+		--file ./test/docker-compose.unit-tests-rust.yml \
+		--file ./test/docker-compose.unit-tests-js.yml
 
 .PHONY: build-test-unit-rust
 build-test-unit-rust:
 	$(DOCKER_BUILDX_BAKE) \
-		-f ./test/docker-compose.unit-tests-rust.yml
+		--file ./test/docker-compose.unit-tests-rust.yml
 
 .PHONY: build-test-unit-js
 build-test-unit-js:
 	$(DOCKER_BUILDX_BAKE) \
-		-f ./test/docker-compose.unit-tests-js.yml
+		--file ./test/docker-compose.unit-tests-js.yml
 
 .PHONY: build-test-typecheck
 build-test-typecheck:
-	docker buildx bake -f ./test/docker-compose.typecheck-tests.yml
+	docker buildx bake --file ./test/docker-compose.typecheck-tests.yml
 
 .PHONY: build-test-integration
 build-test-integration: build-services
 	$(WITH_LOCAL_GRAPL_ENV) \
-	$(DOCKER_BUILDX_BAKE) -f ./test/docker-compose.integration-tests.yml
+	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.integration-tests.yml
 
 .PHONY: build-test-e2e
 build-test-e2e: build-services
 	$(WITH_LOCAL_GRAPL_ENV) \
-	$(DOCKER_BUILDX_BAKE) -f ./test/docker-compose.e2e-tests.yml
+	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.yml
+
+.PHONY: build-wait-for-local-provision
+build-wait-for-local-provision:
+	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.test-utils.yml
 
 .PHONY: build-services
 build-services: ## Build Grapl services
-	$(DOCKER_BUILDX_BAKE) -f docker-compose.build.yml
+	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
 
-.PHONY: build-aws
-build-aws: ## Build services for Grapl in AWS (subset of all services)
-	$(DOCKER_BUILDX_BAKE) -f docker-compose.zips.yml
+.PHONY: build-lambdas
+build-lambdas: ## Build services for Grapl in AWS (subset of all services)
+	$(DOCKER_BUILDX_BAKE) $(EVERY_LAMBDA_COMPOSE_FILE)
 
 .PHONY: graplctl
 graplctl: ## Build graplctl and install it to the project root
@@ -174,13 +184,13 @@ test-typecheck-pants: test-typecheck-pulumi test-typecheck-build-support ## Type
 .PHONY: test-integration
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
 test-integration: export COMPOSE_FILE := ./test/docker-compose.integration-tests.yml
-test-integration: build-test-integration ## Build and run integration tests
+test-integration: build-test-integration modern-lambdas ## Build and run integration tests
 	$(MAKE) test-with-env
 
 .PHONY: test-e2e
 test-e2e: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_E2E_TESTS)
 test-e2e: export export COMPOSE_FILE := ./test/docker-compose.e2e-tests.yml
-test-e2e: build-test-e2e ## Build and run e2e tests
+test-e2e: build-test-e2e modern-lambdas ## Build and run e2e tests
 	$(MAKE) test-with-env
 
 # This target is not intended to be used directly from the command line, it's
@@ -252,21 +262,32 @@ release: ## 'make build-services' with cargo --release
 	$(MAKE) CARGO_PROFILE=release build-services
 
 .PHONY: zip
-zip: build-aws ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
-	docker-compose -f docker-compose.zips.yml up
+zip: build-lambdas ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
+	docker-compose $(EVERY_LAMBDA_COMPOSE_FILE) up
 	$(MAKE) zip-pants
 
 .PHONY: zip-pants
 zip-pants: ## Generate Lambda zip artifacts using pants
 	./pants filter --filter-target-type=python_awslambda :: | xargs ./pants package
-	cp ./dist/src.python.provisioner.src/lambda.zip ./src/js/grapl-cdk/zips/provisioner-$(or $(TAG),latest).zip
+	cp ./dist/src.python.provisioner.src/lambda.zip ./src/js/grapl-cdk/zips/provisioner-$(TAG).zip
+	cp ./dist/src.python.engagement-creator/engagement-creator.zip ./src/js/grapl-cdk/zips/engagement-creator-$(TAG).zip
+
+# This target is intended to help ease the transition to Pulumi, and
+# using lambdas in local Grapl testing deployments. Essentially, every
+# lambda that is deployed by Pulumi should be built here. Once
+# everything is migrated to Pulumi, we can consolidate this target
+# with other zip-generating targets
+modern-lambdas: ## Generate lambda zips that are used in local Grapl and Pulumi deployments
+	$(DOCKER_BUILDX_BAKE) -f docker-compose.lambda-zips.rust.yml
+	docker-compose -f docker-compose.lambda-zips.rust.yml up
+	$(MAKE) zip-pants
 
 .PHONY: push
 push: ## Push Grapl containers to Docker Hub
 	docker-compose --file=docker-compose.build.yml push
 
 .PHONY: up
-up: build-services ## Build Grapl services and launch docker-compose up
+up: build-services modern-lambdas ## Build Grapl services and launch docker-compose up
 	$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose -f docker-compose.yml up
 
@@ -283,13 +304,27 @@ up-detach: build-services ## Bring up local Grapl and detach to return control t
 	docker-compose \
 		--file docker-compose.yml \
 		up --detach --force-recreate
+	# Wait for provisioning to fully complete before exiting.
+	$(MAKE) wait-for-local-provision
+
+.PHONY: wait-for-local-provision
+wait-for-local-provision: build-wait-for-local-provision
+	$(WITH_LOCAL_GRAPL_ENV)
+	# It looks like docker-compose isn't honoring COMPOSE_IGNORE_ORPHANS
+	# for the 'run' command, so we're left with a bogus warning. This looks
+	# related: https://github.com/docker/compose/issues/8203.
+	docker-compose \
+		--file ./test/docker-compose.test-utils.yml \
+		run --rm \
+		test-utils \
+		wait-for-it grapl-engagement-view-uploader:$${WAIT_PORT} --timeout=250
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
 	$(WITH_LOCAL_GRAPL_ENV)
-	docker-compose down --timeout=0
-	docker-compose --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
-	docker-compose --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
+	docker-compose $(EVERY_COMPOSE_FILE) down --timeout=0
+	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
+	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
 
 .PHONY: stop
 stop: ## docker-compose stop - stops (but preserves) the containers

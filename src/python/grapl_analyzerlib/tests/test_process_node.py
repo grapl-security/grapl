@@ -8,14 +8,14 @@ import pytest
 from hypothesis import given
 
 from grapl_analyzerlib.prelude import *
-from test_utils.dgraph_utils import upsert, create_edge
-from test_utils.strategies.asset_view_strategy import (
+from grapl_analyzerlib.test_utils.dgraph_utils import upsert, create_edge
+from grapl_analyzerlib.test_utils.strategies.asset_view_strategy import (
     asset_props,
     get_or_create_asset,
     AssetProps,
 )
-from test_utils.strategies.misc import text_dgraph_compat
-from test_utils.strategies.process_view_strategy import (
+from grapl_analyzerlib.test_utils.strategies.misc import text_dgraph_compat
+from grapl_analyzerlib.test_utils.strategies.process_view_strategy import (
     process_props,
     get_or_create_process,
     ProcessProps,

@@ -25,6 +25,7 @@ from typing import (
 import boto3
 import jwt
 from chalice import Chalice, CORSConfig, Response
+from grapl_common.debugger.vsc_debugger import wait_for_vsc_debugger
 from grapl_common.env_helpers import (
     DynamoDBResourceFactory,
     SecretsManagerClientFactory,
@@ -40,6 +41,8 @@ if TYPE_CHECKING:
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(GRAPL_LOG_LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+
+wait_for_vsc_debugger(service="engagement_edge")
 
 
 class LazyJwtSecret:

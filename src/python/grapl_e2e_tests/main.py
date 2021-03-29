@@ -7,7 +7,6 @@ from grapl_tests_common.sleep import verbose_sleep
 from grapl_tests_common.upload_test_data import UploadSysmonLogsTestData
 
 DEPLOYMENT_NAME = environ["DEPLOYMENT_NAME"]
-assert DEPLOYMENT_NAME == "local-grapl"
 
 
 def main() -> None:

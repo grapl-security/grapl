@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from os import environ
 from typing import TYPE_CHECKING
 
 from grapl_tests_common.upload_logs import upload_sysmon_logs
@@ -10,7 +11,7 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
     from mypy_boto3_sqs import SQSClient
 
-DEPLOYMENT_NAME = "local-grapl"
+DEPLOYMENT_NAME = environ["DEPLOYMENT_NAME"]
 
 
 class UploadTestData(Protocol):

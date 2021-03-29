@@ -31,6 +31,7 @@ ClientGetParams = NamedTuple(
         ("endpoint_url_key", str),  # e.g. "SQS_ENDPOINT"
         ("access_key_id_key", str),
         ("access_key_secret_key", str),
+        ("access_session_token", str),
     ),
 )
 
@@ -43,6 +44,7 @@ def _client_get(client_create_fn: Callable[..., Any], params: ClientGetParams) -
     endpoint_url = os.getenv(params.endpoint_url_key)
     access_key_id = os.getenv(params.access_key_id_key)
     access_key_secret = os.getenv(params.access_key_secret_key)
+    access_session_token = os.getenv(params.access_session_token)
 
     # AWS_REGION is Fargate-specific, most AWS stuff uses AWS_DEFAULT_REGION.
     region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION")
@@ -55,7 +57,9 @@ def _client_get(client_create_fn: Callable[..., Any], params: ClientGetParams) -
 
     # Unlike Rust FromEnv, we rely on boto3's built in region handling.
 
-    if all((endpoint_url, access_key_id, access_key_secret)):
+    if _running_in_localstack():
+        return _localstack_client(client_create_fn, params)
+    elif all((endpoint_url, access_key_id, access_key_secret)):
         # Local, all are passed in from docker-compose.yml
         logging.info(f"Creating a local client for {which_service}")
         assert (
@@ -66,6 +70,7 @@ def _client_get(client_create_fn: Callable[..., Any], params: ClientGetParams) -
             endpoint_url=endpoint_url,
             aws_access_key_id=access_key_id,
             aws_secret_access_key=access_key_secret,
+            aws_session_token=access_session_token,
             region_name=region,
         )
     elif endpoint_url and not any((access_key_id, access_key_secret)):
@@ -91,11 +96,49 @@ def _client_get(client_create_fn: Callable[..., Any], params: ClientGetParams) -
         )
 
 
+def _running_in_localstack() -> bool:
+    """Detects whether or not code is running in Localstack.
+
+    When running lambda functions in Localstack, the
+    `LOCALSTACK_HOSTNAME` environment variable will be set, allowing
+    us to compose an appropriate endpoint at which the lambda can
+    interact with other Localstack-hosted AWS services.
+
+    Needless to say, this should not be present in the environment of
+    a lambda actually running in AWS.
+
+    """
+    return "LOCALSTACK_HOSTNAME" in os.environ
+
+
+def _localstack_client(
+    client_create_fn: Callable[..., Any], params: ClientGetParams
+) -> Any:
+    """Create a boto3 client for interacting with AWS services running in
+    Localstack from a lambda function also running in Localstack.
+
+
+    Localstack provides LOCALSTACK_HOSTNAME and EDGE_PORT for creating
+    a proper endpoint value. In addition, appropriate values for
+    AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_REGION are also
+    provided.
+
+    See the _running_in_localstack function, as well.
+    """
+    service = params.boto3_client_name
+    logging.info("Creating a {service} client for Localstack!")
+    return client_create_fn(
+        service,
+        endpoint_url=f"http://{os.environ['LOCALSTACK_HOSTNAME']}:{os.environ['EDGE_PORT']}",
+    )
+
+
 _SQSParams = ClientGetParams(
     boto3_client_name="sqs",
     endpoint_url_key="SQS_ENDPOINT",
     access_key_id_key="SQS_ACCESS_KEY_ID",
     access_key_secret_key="SQS_ACCESS_KEY_SECRET",
+    access_session_token="SQS_ACCESS_SESSION_TOKEN",
 )
 
 
@@ -113,6 +156,7 @@ _S3Params = ClientGetParams(
     endpoint_url_key="S3_ENDPOINT",
     access_key_id_key="S3_ACCESS_KEY_ID",
     access_key_secret_key="S3_ACCESS_KEY_SECRET",
+    access_session_token="S3_ACCESS_SESSION_TOKEN",
 )
 
 
@@ -139,6 +183,7 @@ _DynamoDBParams = ClientGetParams(
     endpoint_url_key="DYNAMODB_ENDPOINT",
     access_key_id_key="DYNAMODB_ACCESS_KEY_ID",
     access_key_secret_key="DYNAMODB_ACCESS_KEY_SECRET",
+    access_session_token="DYNAMODB_ACCESS_SESSION_TOKEN",
 )
 
 
@@ -167,6 +212,7 @@ _SecretsManagerParams = ClientGetParams(
     endpoint_url_key="SECRETSMANAGER_ENDPOINT",
     access_key_id_key="SECRETSMANAGER_ACCESS_KEY_ID",
     access_key_secret_key="SECRETSMANAGER_ACCESS_KEY_SECRET",
+    access_session_token="SECRETSMANAGER_ACCESS_SESSION_TOKEN",
 )
 
 

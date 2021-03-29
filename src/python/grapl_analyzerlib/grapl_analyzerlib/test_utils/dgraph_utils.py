@@ -1,9 +1,10 @@
+from __future__ import annotations
 import json
 import unittest
-from typing import Dict, Type, Any
+from typing import Dict, Any, Type
 
-from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.viewable import Viewable
+from grapl_analyzerlib.grapl_client import GraphClient
 
 
 def _upsert(client: GraphClient, node_dict: Dict[str, Any]) -> int:
@@ -39,10 +40,10 @@ def _upsert(client: GraphClient, node_dict: Dict[str, Any]) -> int:
 def upsert(
     client: GraphClient,
     type_name: str,
-    view_type: "Type[Viewable]",
+    view_type: Type[Viewable],
     node_key: str,
     node_props: Dict[str, Any],
-) -> "Viewable":
+) -> Viewable:
     node_props["node_key"] = node_key
     node_props["dgraph.type"] = list({type_name, "Base", "Entity"})
     uid = _upsert(client, node_props)

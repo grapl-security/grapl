@@ -43,7 +43,6 @@ WORKDIR /grapl/rust
 FROM base AS build
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
-    --mount=type=cache,mode=0777,target=/usr/local/cargo/registry \
     --mount=type=secret,id=rust_env,dst=/grapl/env \
     source /grapl/env; \
     case "${CARGO_PROFILE}" in \
@@ -58,9 +57,9 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
 
 
 
-# zip
+# metric-forwarder-zip
 ################################################################################
-FROM build AS zip
+FROM build AS metric-forwarder-zip
 
 RUN mkdir -p /grapl/zips; \
     grapl-zip() { \
@@ -77,7 +76,6 @@ RUN mkdir -p /grapl/zips; \
 FROM build AS build-test-unit
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
-    --mount=type=cache,mode=0777,target=/usr/local/cargo/registry \
     --mount=type=secret,id=rust_env,dst=/grapl/env \
     source /grapl/env; \
     cargo test --no-run
@@ -86,7 +84,6 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
 FROM build AS build-test-integration
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
-    --mount=type=cache,mode=0777,target=/usr/local/cargo/registry \
     --mount=type=secret,id=rust_env,dst=/grapl/env \
     source /grapl/env; \
     cargo test --manifest-path node-identifier/Cargo.toml --features integration --no-run
@@ -122,12 +119,6 @@ FROM rust-dist AS graph-merger-deploy
 
 COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/graph-merger" /
 CMD ["/graph-merger"]
-
-# metric-forwarder
-FROM rust-dist AS metric-forwarder-deploy
-
-COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/metric-forwarder" /
-CMD ["/metric-forwarder"]
 
 # node-identifier
 FROM rust-dist AS node-identifier-deploy
