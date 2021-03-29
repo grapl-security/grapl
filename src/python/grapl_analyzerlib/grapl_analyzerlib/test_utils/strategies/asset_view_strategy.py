@@ -1,6 +1,6 @@
 import unittest
-from copy import deepcopy
-from typing import NewType, Dict, cast
+from typing import cast, Dict, Any, NewType
+from uuid import UUID
 
 import hypothesis.strategies as st
 
@@ -10,7 +10,7 @@ from grapl_analyzerlib.node_types import PropType
 from grapl_analyzerlib.test_utils.dgraph_utils import node_key_for_test, upsert
 from grapl_analyzerlib.test_utils.strategies.misc import text_dgraph_compat
 
-AssetProps = NewType("AssetProps", Dict[str, PropType])
+AssetProps = NewType("AssetProps", Dict[str, Any])
 
 
 def asset_props_strategy() -> st.SearchStrategy[AssetProps]:

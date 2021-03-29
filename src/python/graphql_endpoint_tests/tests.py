@@ -52,7 +52,9 @@ class TestGraphqlEndpoint(TestCase):
         assert gql_lens["scope"][0]["hostname"] == asset_props["hostname"]
 
 
-def _query_graphql_endpoint_for_lenses(gql_client: GraphqlEndpointClient) -> List[GqlLensDict]:
+def _query_graphql_endpoint_for_lenses(
+    gql_client: GraphqlEndpointClient,
+) -> List[GqlLensDict]:
     # Just get *all* lenses
     query = """
     {
@@ -67,6 +69,7 @@ def _query_graphql_endpoint_for_lenses(gql_client: GraphqlEndpointClient) -> Lis
     """
     resp = gql_client.query(query)
     return resp["lenses"]
+
 
 def _query_graphql_endpoint_for_scope(
     lens_name: str, graphql_client: GraphqlEndpointClient
