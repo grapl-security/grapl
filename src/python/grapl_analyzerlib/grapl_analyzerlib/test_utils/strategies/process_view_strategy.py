@@ -5,7 +5,10 @@ from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.nodes.process import ProcessView
 from grapl_analyzerlib.node_types import PropType
 from grapl_analyzerlib.test_utils.dgraph_utils import upsert
-from grapl_analyzerlib.test_utils.strategies.misc import text_dgraph_compat
+from grapl_analyzerlib.test_utils.strategies.misc import (
+    build_random_key,
+    text_dgraph_compat,
+)
 
 ProcessProps = NewType("ProcessProps", Dict[str, PropType])
 
