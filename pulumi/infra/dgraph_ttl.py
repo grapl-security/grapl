@@ -3,12 +3,15 @@ from typing import Optional
 import pulumi_aws as aws
 from infra.config import GLOBAL_LAMBDA_ZIP_TAG, mg_alphas
 from infra.lambda_ import Lambda, LambdaExecutionRole, PythonLambdaArgs, code_path_for
+from infra.network import Network
 
 import pulumi
 
 
 class DGraphTTL(pulumi.ComponentResource):
-    def __init__(self, opts: Optional[pulumi.ResourceOptions] = None) -> None:
+    def __init__(
+        self, network: Network, opts: Optional[pulumi.ResourceOptions] = None
+    ) -> None:
 
         name = "dgraph-ttl"
         super().__init__("grapl:DGraphTTL", name, None, opts)
@@ -34,6 +37,7 @@ class DGraphTTL(pulumi.ComponentResource):
                 memory_size=128,
                 timeout=600,
             ),
+            network=network,
             opts=pulumi.ResourceOptions(parent=self),
         )
 

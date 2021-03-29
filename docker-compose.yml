@@ -95,7 +95,7 @@ services:
       - IMAGE_NAME=localstack/localstack:0.12.8
       - EDGE_PORT=${LOCALSTACK_PORT}
       - HOSTNAME_EXTERNAL=${LOCALSTACK_HOST}
-      - SERVICES=dynamodb,events,iam,lambda,logs,s3,secretsmanager,sns,sqs
+      - SERVICES=dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs
       - DEBUG=1
       - LS_LOG=debug
       - LAMBDA_EXECUTOR=docker
