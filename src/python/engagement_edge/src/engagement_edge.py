@@ -103,25 +103,37 @@ def respond(
     headers: Optional[Dict[str, Any]] = None,
     status_code: int = 500,
 ) -> Response:
+
     if not headers:
         headers = {}
-    if IS_LOCAL:
+
+    if IS_LOCAL: # Overwrite headers
         override = app.current_request.headers.get("origin", "")
-        LOGGER.warning(f"overriding origin: {override}")
+        LOGGER.warning(f"overriding origin for IS_LOCAL:\t'[{override}]")
         headers = {"Access-Control-Allow-Origin": override, **headers}
-    return Response(
-        body={"error": err} if err else json.dumps({"success": res}),
-        status_code=status_code if err else 200,
-        headers={
+
+    if not err: # Set response format for success
+        body        = json.dumps({"success": res})
+        status_code = 200
+    else:
+        body = {"error": err} if err else json.dumps({"success": res})
+
+    headers = {
             "Access-Control-Allow-Credentials": "true",
             "Content-Type": "application/json",
             "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
             "X-Requested-With": "*",
             "Access-Control-Allow-Headers": ":authority, Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With",
             **headers,
-        },
+            }
+
+    response = Response(
+        body        = body,
+        status_code = status_code,
+        headers     = headers,
     )
 
+    return response
 
 def get_salt_and_pw(
     table: Table, username: str
@@ -194,7 +206,7 @@ def check_jwt(headers: Dict[str, Any]) -> bool:
 
 
 def lambda_login(event: Any) -> Optional[str]:
-    body = event.json_body
+    body = json.loads(event.raw_body.decode()) # `event.json_body`, a more obvious choice, is unreliable
     login_res = login(body["username"], body["password"])
     # Clear out the password from the dict, to avoid accidentally logging it
     body["password"] = ""
@@ -227,8 +239,7 @@ def requires_auth(path: str) -> Callable[[RouteFn], RouteFn]:
             try:
                 return route_fn()
             except Exception as e:
-                LOGGER.error(e)
-                return respond("Unexpected Error")
+                return respond(e)
 
         return cast(RouteFn, inner_route)
 
@@ -248,7 +259,7 @@ def no_auth(path: str) -> Callable[[RouteFn], RouteFn]:
                 return route_fn()
             except Exception as e:
                 LOGGER.error(f"path {path} had an error: {e}")
-                return respond("Unexpected Error")
+                return respond(e)
 
         return cast(RouteFn, inner_route)
 
@@ -258,7 +269,7 @@ def no_auth(path: str) -> Callable[[RouteFn], RouteFn]:
 @no_auth("/login")
 def login_route() -> Response:
     LOGGER.debug("/login_route")
-    request = app.current_request
+    request: Request = app.current_request
     cookie = lambda_login(request)
     if cookie:
         LOGGER.info("logged in")

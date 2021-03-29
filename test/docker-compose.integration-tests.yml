@@ -101,11 +101,16 @@ services:
       context: ${PWD}/test
       dockerfile: ./Dockerfile
       target: grapl-cypress
+    volumes:
+      - "./integration-outputs/screenshots:/test/cypress/screenshots"
+      - "./integration-outputs/videos:/test/cypress/videos"
     command: |
       /bin/bash -c "
         wait-for-it grapl-provision:${WAIT_PORT} --timeout=120 &&
-        cypress run --browser chrome --headless
+        CYPRESS_BASE_URL=http://${GRAPL_API_HOST}:${GRAPL_HTTP_FRONTEND_PORT} cypress run --browser chrome --headless
       "
+    environment:
+      - GRAPL_API_HOST
 
 networks:
   default:

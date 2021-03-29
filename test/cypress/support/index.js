@@ -18,3 +18,33 @@ import './commands'
 
 // Alternatively you can use CommonJS syntax:
 // require('./commands')
+
+Cypress.Commands.add('login_flow', () => {
+    cy.visit("/");
+    cy.reload();
+    cy.contains(/login/i).click();
+    cy.location("href").should("include", "/login");
+
+    cy.get("[placeholder='Username']").type("grapluser"); // known good demo password
+    cy.get("[placeholder='Password']").type("graplpassword"); // known good demo password
+    cy.contains(/submit/i).click();
+    cy.wait(100);
+    cy.location("href").should("not.include", "/login");
+    cy.wait(100);
+    cy.visit("/");
+})
+
+Cypress.Commands.add('login', () => {
+  cy.request({
+    url: `http://localhost:1234/auth/login`, // derive from base URL, don't hardcode
+    method: "POST",
+    credentials: "include",
+    headers: new Headers({
+      "Content-Type": "application/json",
+    }),
+    body: JSON.stringify({
+      username: "grapluser",
+      password: "graplpassword",
+    }),
+  })
+})
