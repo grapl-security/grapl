@@ -126,12 +126,8 @@ def _invoke_lambda(lambda_: LambdaClient, function_name: str) -> None:
 
 
 def provision_grapl(lambda_: LambdaClient, deployment_name: str) -> None:
-    _invoke_lambda(
-        lambda_=lambda_, function_name=f"{deployment_name}-Provisioner-Handler"
-    )
+    _invoke_lambda(lambda_=lambda_, function_name=f"{deployment_name}-Provisioner-Handler")
 
 
 def run_e2e_tests(lambda_: LambdaClient, deployment_name: str) -> None:
-    _invoke_lambda(
-        lambda_=lambda_, function_name=f"{deployment_name-E2ETestRunner-Handler}"
-    )
+    _invoke_lambda(lambda_=lambda_, function_name=f"{deployment_name-E2ETestRunner-Handler}")
