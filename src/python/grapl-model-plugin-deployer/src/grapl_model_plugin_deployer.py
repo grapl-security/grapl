@@ -124,8 +124,8 @@ def format_schemas(schema_defs: List["BaseSchema"]) -> str:
             os.environ["DEPLOYMENT_NAME"] + "-grapl_display_table"
         )
 
-        grapl_display_table.put_item(   
-            Item={  
+        grapl_display_table.put_item(
+            Item={
                 "node_type": schema.self_type(),
                 "display_property": schema.get_display_property(),
             }
