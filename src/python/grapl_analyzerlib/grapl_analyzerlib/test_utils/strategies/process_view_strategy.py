@@ -6,7 +6,7 @@ import hypothesis.strategies as st
 from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.nodes.process import ProcessView
 from grapl_analyzerlib.node_types import PropType
-from grapl_analyzerlib.test_utils.dgraph_utils import node_key_for_test, upsert
+from grapl_analyzerlib.test_utils.dgraph_utils import random_key_for_test, upsert
 from grapl_analyzerlib.test_utils.strategies.misc import text_dgraph_compat
 
 ProcessProps = NewType("ProcessProps", Dict[str, PropType])
@@ -33,5 +33,5 @@ def get_or_create_process(
 ) -> ProcessView:
     # Introduce randomness here, because otherwise Hypothesis would generate
     # key collisions at the @given stage
-    node_key = node_key_for_test(test)
+    node_key = random_key_for_test(test)
     return upsert(graph_client, "Process", ProcessView, node_key, node_props)

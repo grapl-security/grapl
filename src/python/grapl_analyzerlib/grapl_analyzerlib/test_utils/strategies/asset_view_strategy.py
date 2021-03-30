@@ -5,7 +5,7 @@ import hypothesis.strategies as st
 
 from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.nodes.asset import AssetView
-from grapl_analyzerlib.test_utils.dgraph_utils import node_key_for_test, upsert
+from grapl_analyzerlib.test_utils.dgraph_utils import random_key_for_test, upsert
 from grapl_analyzerlib.test_utils.strategies.misc import text_dgraph_compat
 
 AssetProps = NewType("AssetProps", Dict[str, Any])
@@ -27,5 +27,5 @@ def get_or_create_asset(
 ) -> AssetView:
     # Introduce randomness here, because otherwise Hypothesis would generate
     # key collisions at the @given stage
-    node_key = node_key_for_test(test)
+    node_key = random_key_for_test(test)
     return upsert(graph_client, "Asset", AssetView, node_key, node_props)

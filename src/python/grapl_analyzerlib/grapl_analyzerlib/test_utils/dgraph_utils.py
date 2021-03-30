@@ -66,9 +66,10 @@ def create_edge(
         txn.mutate(set_obj=mut, commit_now=True)
 
 
-def node_key_for_test(test_case: unittest.TestCase) -> str:
+def random_key_for_test(test_case: unittest.TestCase) -> str:
     """
     The atrociously-named TestCase#id returns things like
     tests.test_ip_address_node.TestIpAddressQuery.test__single_ip_addr_node__query_by_node_key
+    letting us tie back a node to the test that created it
     """
     return "{}{}".format(test_case.id(), uuid.uuid4())
