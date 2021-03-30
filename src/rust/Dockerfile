@@ -1,4 +1,4 @@
-FROM rust:1-slim-buster AS base
+FROM rust:1-slim-buster AS build
 
 ARG CARGO_PROFILE=debug
 
@@ -33,14 +33,6 @@ COPY proto proto
 COPY rust rust
 
 WORKDIR /grapl/rust
-
-
-# build
-#
-# the `base` stage isn't used by the build system, but let's 
-# make `base` and `build` in case it becomes convenient.
-################################################################################
-FROM base AS build
 
 RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
     --mount=type=secret,id=rust_env,dst=/grapl/env \
