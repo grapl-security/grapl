@@ -119,7 +119,7 @@ def respond(
         body = json.dumps({"success": res})
         status_code = 200
     else:
-        body = {"error": err} if err else json.dumps({"success": res})
+        body = json.dumps({"error": err}) if err else json.dumps({"success": res})
 
     headers = {
         "Access-Control-Allow-Credentials": "true",
@@ -245,7 +245,7 @@ def requires_auth(path: str) -> Callable[[RouteFn], RouteFn]:
             try:
                 return route_fn()
             except Exception as e:
-                return respond(e)
+                return respond(str(e))
 
         return cast(RouteFn, inner_route)
 
@@ -265,7 +265,7 @@ def no_auth(path: str) -> Callable[[RouteFn], RouteFn]:
                 return route_fn()
             except Exception as e:
                 LOGGER.error(f"path {path} had an error: {e}")
-                return respond(e)
+                return respond(str(e))
 
         return cast(RouteFn, inner_route)
 
@@ -275,7 +275,7 @@ def no_auth(path: str) -> Callable[[RouteFn], RouteFn]:
 @no_auth("/login")
 def login_route() -> Response:
     LOGGER.debug("/login_route")
-    request: Request = app.current_request
+    request = app.current_request
     cookie = lambda_login(request)
     if cookie:
         LOGGER.info("logged in")
