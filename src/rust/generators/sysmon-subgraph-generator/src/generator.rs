@@ -26,8 +26,6 @@ pub enum SysmonGeneratorError {
     TimeError(#[from] chrono::ParseError),
     #[error("Unsupported event type")]
     UnsupportedEventType(String),
-    #[error("Generator failed")]
-    Unexpected,
 }
 
 impl CheckedError for SysmonGeneratorError {
@@ -37,7 +35,6 @@ impl CheckedError for SysmonGeneratorError {
             Self::NegativeEventTime(_) => Recoverable::Persistent,
             Self::TimeError(_) => Recoverable::Persistent,
             Self::UnsupportedEventType(_) => Recoverable::Persistent,
-            Self::Unexpected => Recoverable::Transient,
         }
     }
 }
