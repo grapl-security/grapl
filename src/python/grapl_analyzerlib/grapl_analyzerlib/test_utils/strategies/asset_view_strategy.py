@@ -5,11 +5,8 @@ import hypothesis.strategies as st
 
 from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.nodes.asset import AssetView
-from grapl_analyzerlib.test_utils.dgraph_utils import upsert
-from grapl_analyzerlib.test_utils.strategies.misc import (
-    build_random_key,
-    text_dgraph_compat,
-)
+from grapl_analyzerlib.test_utils.dgraph_utils import node_key_for_test, upsert
+from grapl_analyzerlib.test_utils.strategies.misc import text_dgraph_compat
 
 AssetProps = NewType("AssetProps", Dict[str, Any])
 
@@ -19,7 +16,7 @@ def asset_props_strategy() -> st.SearchStrategy[AssetProps]:
         AssetProps,
         st.builds(
             dict,
-            node_key=build_random_key(),
+            node_key=st.just("mutated in get_or_create_asset"),
             hostname=text_dgraph_compat(),
         ),
     )
@@ -28,7 +25,7 @@ def asset_props_strategy() -> st.SearchStrategy[AssetProps]:
 def get_or_create_asset(
     test: unittest.TestCase, graph_client: GraphClient, node_props: AssetProps
 ) -> AssetView:
-    node_key = node_props["node_key"]
-    return cast(
-        AssetView, upsert(graph_client, "Asset", AssetView, node_key, node_props)
-    )
+    # Introduce randomness here, because otherwise Hypothesis would generate
+    # key collisions at the @given stage
+    node_key = node_key_for_test(test)
+    return upsert(graph_client, "Asset", AssetView, node_key, node_props)

@@ -21,7 +21,6 @@ GqlLensDict = Dict[str, Any]
 wait_for_vsc_debugger(service="graphql_endpoint_tests")
 
 
-
 @pytest.mark.integration_test
 class TestGraphqlEndpoint(TestCase):
     @hypothesis.given(

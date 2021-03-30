@@ -1,9 +1,11 @@
 from __future__ import annotations
+import uuid
 import json
 import unittest
 from typing import Dict, Any, Type
 
 from grapl_analyzerlib.viewable import Viewable
+from grapl_analyzerlib.queryable import V
 from grapl_analyzerlib.grapl_client import GraphClient
 
 
@@ -40,10 +42,10 @@ def _upsert(client: GraphClient, node_dict: Dict[str, Any]) -> int:
 def upsert(
     client: GraphClient,
     type_name: str,
-    view_type: Type[Viewable],
+    view_type: Type[V],
     node_key: str,
     node_props: Dict[str, Any],
-) -> Viewable:
+) -> V:
     node_props["node_key"] = node_key
     node_props["dgraph.type"] = list({type_name, "Base", "Entity"})
     uid = _upsert(client, node_props)
@@ -64,9 +66,9 @@ def create_edge(
         txn.mutate(set_obj=mut, commit_now=True)
 
 
-def node_key_for_test(test_case: unittest.TestCase, node_key: str) -> str:
+def node_key_for_test(test_case: unittest.TestCase) -> str:
     """
     The atrociously-named TestCase#id returns things like
     tests.test_ip_address_node.TestIpAddressQuery.test__single_ip_addr_node__query_by_node_key
     """
-    return "{}{}".format(test_case.id(), node_key)
+    return "{}{}".format(test_case.id(), uuid.uuid4())
