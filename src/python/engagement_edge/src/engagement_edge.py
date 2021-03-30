@@ -110,33 +110,34 @@ def respond(
     if not headers:
         headers = {}
 
-    if IS_LOCAL: # Overwrite headers
+    if IS_LOCAL:  # Overwrite headers
         override = app.current_request.headers.get("origin", "")
         LOGGER.warning(f"overriding origin for IS_LOCAL:\t'[{override}]")
         headers = {"Access-Control-Allow-Origin": override, **headers}
 
-    if not err: # Set response format for success
-        body        = json.dumps({"success": res})
+    if not err:  # Set response format for success
+        body = json.dumps({"success": res})
         status_code = 200
     else:
         body = {"error": err} if err else json.dumps({"success": res})
 
     headers = {
-            "Access-Control-Allow-Credentials": "true",
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-            "X-Requested-With": "*",
-            "Access-Control-Allow-Headers": ":authority, Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With",
-            **headers,
-            }
+        "Access-Control-Allow-Credentials": "true",
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+        "X-Requested-With": "*",
+        "Access-Control-Allow-Headers": ":authority, Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With",
+        **headers,
+    }
 
     response = Response(
-        body        = body,
-        status_code = status_code,
-        headers     = headers,
+        body=body,
+        status_code=status_code,
+        headers=headers,
     )
 
     return response
+
 
 def get_salt_and_pw(
     table: Table, username: str
@@ -209,7 +210,9 @@ def check_jwt(headers: Dict[str, Any]) -> bool:
 
 
 def lambda_login(event: Any) -> Optional[str]:
-    body = json.loads(event.raw_body.decode()) # `event.json_body`, a more obvious choice, is unreliable
+    body = json.loads(
+        event.raw_body.decode()
+    )  # `event.json_body`, a more obvious choice, is unreliable
     login_res = login(body["username"], body["password"])
     # Clear out the password from the dict, to avoid accidentally logging it
     body["password"] = ""
