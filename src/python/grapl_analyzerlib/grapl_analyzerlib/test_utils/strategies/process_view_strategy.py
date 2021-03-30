@@ -12,7 +12,7 @@ from grapl_analyzerlib.test_utils.strategies.misc import text_dgraph_compat
 ProcessProps = NewType("ProcessProps", Dict[str, PropType])
 
 
-def process_props() -> st.SearchStrategy[ProcessProps]:
+def process_props_strategy() -> st.SearchStrategy[ProcessProps]:
     return st.builds(
         ProcessProps,
         st.builds(

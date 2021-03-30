@@ -16,7 +16,7 @@ from grapl_analyzerlib.test_utils.strategies.asset_view_strategy import (
 )
 from grapl_analyzerlib.test_utils.strategies.misc import text_dgraph_compat
 from grapl_analyzerlib.test_utils.strategies.process_view_strategy import (
-    process_props,
+    process_props_strategy,
     get_or_create_process,
     ProcessProps,
 )
@@ -69,7 +69,7 @@ def get_or_create_process_node_deprecated(
 @pytest.mark.integration_test
 class TestProcessQuery(unittest.TestCase):
     @hypothesis.settings(deadline=None)
-    @given(process_props=process_props())
+    @given(process_props=process_props_strategy())
     def test_single_process_contains_key(self, process_props: ProcessProps) -> None:
         graph_client = GraphClient()
         created_proc = get_or_create_process(self, graph_client, process_props)
@@ -97,7 +97,7 @@ class TestProcessQuery(unittest.TestCase):
     @hypothesis.settings(deadline=None)
     @given(
         asset_props=asset_props_strategy(),
-        process_props=process_props(),
+        process_props=process_props_strategy(),
     )
     def test_single_process_connected_to_asset_node(
         self,
@@ -132,7 +132,7 @@ class TestProcessQuery(unittest.TestCase):
     # Given that the code that generates timestamps only uses unsized types we can make some
     # assumptions about the data
     @hypothesis.settings(deadline=None)
-    @given(process_props=process_props())
+    @given(process_props=process_props_strategy())
     def test_process_query_view_parity(self, process_props: ProcessProps):
         graph_client = GraphClient()
 
@@ -218,7 +218,7 @@ class TestProcessQuery(unittest.TestCase):
         assert process_name == queried_proc.get_process_name()
 
     @hypothesis.settings(deadline=None)
-    @given(process_props=process_props())
+    @given(process_props=process_props_strategy())
     def test_process_query_view_miss(self, process_props: ProcessProps) -> None:
         graph_client = GraphClient()
 
