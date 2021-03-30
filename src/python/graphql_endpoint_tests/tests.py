@@ -20,7 +20,6 @@ GqlLensDict = Dict[str, Any]
 
 wait_for_vsc_debugger(service="graphql_endpoint_tests")
 
-GRAPHQL_CLIENT = GraphqlEndpointClient(jwt=EngagementEdgeClient().get_jwt())
 
 
 @pytest.mark.integration_test
@@ -34,20 +33,23 @@ class TestGraphqlEndpoint(TestCase):
         asset_props: AssetProps,
     ) -> None:
         graph_client = GraphClient()
+        graphql_client = GraphqlEndpointClient(jwt=EngagementEdgeClient().get_jwt())
+
         lens = create_lens_with_nodes_in_scope(self, graph_client, asset_props)
         lens_name = lens.get_lens_name()
         assert lens_name
 
         # Check that this lens shows up in the "show all lenses" view
-        gql_lenses = _query_graphql_endpoint_for_lenses(GRAPHQL_CLIENT)
+        # NOTE: This test could be somewhat finicky, since it just gets the first 1000 lenses
+        gql_lenses = _query_graphql_endpoint_for_lenses(graphql_client)
         assert lens_name in [l["lens_name"] for l in gql_lenses]
 
-        # Check the things in-scope for the lens
-        gql_lens = _query_graphql_endpoint_for_scope(lens_name, GRAPHQL_CLIENT)
+        # Query by that lens name
+        gql_lens = _query_graphql_endpoint_for_scope(lens_name, graphql_client)
         # For some reason, upon create, `lens.uid` comes back as a string like "0x5"
         assert gql_lens["uid"] == int(lens.uid, 0)  # type: ignore
         assert gql_lens["lens_name"] == lens_name
-
+        # Check the nodes in scope
         assert len(gql_lens["scope"]) == 1
         assert gql_lens["scope"][0]["hostname"] == asset_props["hostname"]
 

@@ -37,9 +37,12 @@ def build_random_key() -> st.SearchStrategy[str]:
         some-uuid-goes-here-01234
         """
         test_id = runner.id()
-        random_suffix = UUID(int=random.getrandbits(128), version=4)
-        return f"{test_id}-{random_suffix}"
+        rand_bits = random.getrandbits(128)
+        print(f"random bits: {rand_bits}")
+        random_suffix = UUID(int=rand_bits, version=4)
+        string = f"{test_id}-{random_suffix}"
+        return string
 
     return st.builds(
-        get_test_id, runner=st.runner(), random_id=st.randoms(use_true_random=True)
+        get_test_id, runner=st.runner(), random=st.randoms(use_true_random=True)
     )
