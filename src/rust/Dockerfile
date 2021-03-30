@@ -57,7 +57,7 @@ RUN mkdir -p /grapl/zips; \
     grapl-zip() { \
       TMPDIR="$(mktemp -d)"; \
       cd "$TMPDIR"; \
-      cp "/grapl/rust/target/${TARGET}/${CARGO_PROFILE}/${1}" bootstrap && \
+      cp "/grapl/rust/target/${CARGO_PROFILE}/${1}" bootstrap && \
       zip --quiet -9 "/grapl/zips/${1}.zip" bootstrap; \
     }; \
     grapl-zip metric-forwarder
