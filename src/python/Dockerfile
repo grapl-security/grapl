@@ -457,6 +457,11 @@ RUN source venv/bin/activate && \
     pip install . && \
     python setup.py sdist bdist_wheel
 
+# GraphQL Endpoint tests
+################################################################################
+FROM grapl-tests-common-build AS graphql-endpoint-tests
+
+COPY --chown=grapl python/graphql_endpoint_tests graphql_endpoint_tests
 
 # E2E tests
 ################################################################################
