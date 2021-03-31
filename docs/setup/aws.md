@@ -37,7 +37,10 @@ You'll need to have the following dependencies installed:
   - `npm i -g aws-cdk@X.Y.Z`
   - version must be >= the version in [Grapl's package.json file](https://github.com/grapl-security/grapl/blob/main/src/js/grapl-cdk/package.json) - for instance, `@1.71.0`
 - AWS CLI:
-  - `pip install awscli`
+  - your choice of the following:
+    - `pip install awscli`
+    - https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2-docker.html
+      - helpful alias: `alias aws='docker run --rm -it -v ~/.aws:/root/.aws -v $(pwd):/aws -e AWS_PROFILE amazon/aws-cli'`
 - (optional) Python libraries for running Grapl demo ([boto3](https://github.com/boto/boto3), [zstd](https://pypi.org/project/zstd/)):
   - `pip install boto3 zstd`
 
@@ -91,13 +94,13 @@ collection of these environment variables:
 ```bash
 # example values
 export GRAPL_DEPLOYMENT_NAME="some-grapl-deployment-name"
-export GRAPL_VERSION="latest"
-export GRAPL_ROOT="~/src/grapl"
-export GRAPL_REGION="us-west-2"
-export GRAPL_CDK_WATCHFUL_EMAIL="someone+watchful@domain.com"
-export GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL="someone+alarm@domain.com"
-export GRAPL_CDK_SECURITY_ALARMS_EMAIL="someone+alarm@domain.com"
-export GRAPL_DGRAPH_INSTANCE_TYPE='i3.large'
+export GRAPL_VERSION="latest" # if you set TAG, update this too
+export GRAPL_ROOT="/path/to/grapl_git_repository"
+export GRAPL_REGION="us-xxxx-n"
+export GRAPL_CDK_WATCHFUL_EMAIL="someone+watchful@example.com"
+export GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL="someone+alarm@example.com"
+export GRAPL_CDK_SECURITY_ALARMS_EMAIL="someone+alarm@example.com"
+export GRAPL_DGRAPH_INSTANCE_TYPE='xn.size' # e.g., 'i3.large'
 ```
 
 #### Parameter explanation
@@ -132,11 +135,11 @@ export GRAPL_DGRAPH_INSTANCE_TYPE='i3.large'
 
     Setting this enables [Watchful](https://github.com/eladb/cdk-watchful) for monitoring Grapl with email alerts.
 
-6. `GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL` (optional)
+6. `GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL` (required)
 
     Setting this enables alarms meant for the operator of the Grapl stack.
 
-7. `GRAPL_CDK_SECURITY_ALARMS_EMAIL` (optional)
+7. `GRAPL_CDK_SECURITY_ALARMS_EMAIL` (required)
 
     Setting this enables alarms meant for the consumer of the Grapl stack, for example, "a new risk node has been found".
 
