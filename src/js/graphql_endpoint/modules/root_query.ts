@@ -21,7 +21,7 @@ import {
 type MysteryParentType = never;
 
 const getLenses = async (dg_client: DgraphClient, first: number, offset: number) => {
-	console.log("first, offset parameters in getLenses()", first, offset);
+	console.debug("first, offset parameters in getLenses()", first, offset);
 
 	const query = `
 		query all($a: int, $b: int)
@@ -43,22 +43,22 @@ const getLenses = async (dg_client: DgraphClient, first: number, offset: number)
 		}
 	`;
 
-	console.log("Creating DGraph txn in getLenses");
+	console.debug("Creating DGraph txn in getLenses");
 
 	const txn = dg_client.newTxn();
 
 	try {
-		console.log("Querying DGraph for lenses in getLenses");
+		console.debug("Querying DGraph for lenses in getLenses");
 		const res = await txn.queryWithVars(query, {
 			$a: first.toString(),
 			$b: offset.toString(),
 		});
-		console.log("Lens response from DGraph", res);
+		console.debug("Lens response from DGraph", res);
 		return res.getJson()["all"];
 	} catch (e) {
 		console.error("Error in DGraph txn getLenses: ", e);
 	} finally {
-		console.log("Closing Dgraph Txn in getLenses")
+		console.debug("Closing Dgraph Txn in getLenses")
 		await txn.discard();
 	}
 };
@@ -86,18 +86,18 @@ const getLensSubgraphByName = async (dg_client: DgraphClient, lens_name: string)
 		}
     `;
 
-	console.log("Creating DGraph txn in getLensSubgraphByName");
+	console.debug("Creating DGraph txn in getLensSubgraphByName");
 	const txn = dg_client.newTxn();
 
 	try {
-		console.log("Querying DGraph in getLensSubgraphByName");
+		console.debug("Querying DGraph in getLensSubgraphByName");
 		const res = await txn.queryWithVars(query, { $a: lens_name });
-		console.log("returning following data from getLensSubGrapByName: ", res.getJson()["all"][0])
+		console.debug("returning following data from getLensSubGrapByName: ", res.getJson()["all"][0])
 		return res.getJson()["all"][0];
 	} catch (e) {
 		console.error("Error in DGraph txn: getLensSubgraphByName", e);
 	} finally {
-		console.log("Closing dgraphtxn in getLensSubraphByName")
+		console.debug("Closing dgraphtxn in getLensSubraphByName")
 		await txn.discard();
 	}
 };
@@ -121,15 +121,15 @@ function enrichNode(node: RawNode) {
 }
 
 const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
-	console.log("handleLensScope args: ", args);
+	console.debug("handleLensScope args: ", args);
 	const dg_client = getDgraphClient();
 
 	const lens_name = args.lens_name;
-	console.log("lens_name in handleLensScope", lens_name);
+	console.debug("lens_name in handleLensScope", lens_name);
 
 	// grab the graph of lens, lens scope, and neighbors to nodes in-scope of the lens ((lens) -> (neighbor) -> (neighbor's neighbor))
 	const lens_subgraph = await getLensSubgraphByName(dg_client, lens_name);
-	console.log("lens_subgraph in handleLensScope: ", lens_subgraph);
+	console.debug("lens_subgraph in handleLensScope: ", lens_subgraph);
 
 	coerceUidIntoInt(lens_subgraph);
 	// if it's undefined/null, might as well make it an array
@@ -160,7 +160,7 @@ const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
 					coerceUidIntoInt(risk_node);
 					
 					if ("dgraph_type" in risk_node) {
-						console.log("checking if dgraph_type in risk_node", risk_node);
+						console.debug("checking if dgraph_type in risk_node", risk_node);
 						risk_node["dgraph_type"] = risk_node["dgraph_type"].filter(
 							filterDefaultDgraphNodeTypes
 						);
@@ -211,7 +211,7 @@ const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
 		}
 	}
 
-	console.log("lens_subgraph scope", JSON.stringify(lens_subgraph["scope"]));
+	console.debug("lens_subgraph scope", JSON.stringify(lens_subgraph["scope"]));
 	return lens_subgraph;
 };
 
@@ -238,11 +238,11 @@ const RootQuery = new GraphQLObjectType({
 				},
 			},
 			resolve: async (parent: MysteryParentType, args: RootQueryArgs) => {
-				console.log("lenses query arguments", args);
+				console.debug("lenses query arguments", args);
 				const first = args.first;
 				const offset = args.offset;
 				// #TODO: Make sure to validate that 'first' is under a specific limit, maybe 1000
-				console.log("Making getLensesQuery");
+				console.debug("Making getLensesQuery");
 				const lenses = await getLenses(getDgraphClient(), first, offset);
 				console.debug("returning data from getLenses for lenses resolver", lenses);
 				return lenses;
@@ -255,9 +255,9 @@ const RootQuery = new GraphQLObjectType({
 			},
 			resolve: async (parent: MysteryParentType, args: LensArgs) => {
 				try {
-					console.log("lens_scope args: ", args);
+					console.debug("lens_scope args: ", args);
 					let response = await handleLensScope(parent, args);
-					console.log("lens_scope response: ", response);
+					console.debug("lens_scope response: ", response);
 					return response;
 				} catch (e) {
 					console.error("Error in handleLensScope: ", e);
@@ -268,6 +268,8 @@ const RootQuery = new GraphQLObjectType({
 	},
 });
 
-export const RootQuerySchema = new GraphQLSchema({ 
-	query: RootQuery,
-});
+export function getRootQuerySchema(): GraphQLSchema {
+	return new GraphQLSchema({
+		query: RootQuery
+	});
+}
