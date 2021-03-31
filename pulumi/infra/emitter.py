@@ -20,7 +20,9 @@ class EventEmitter(pulumi.ComponentResource):
         super().__init__("grapl:EventEmitter", event_name, None, opts)
 
         logical_bucket_name = f"{event_name}-bucket"
-        self.bucket = Bucket(logical_bucket_name, sse=True, parent=self)
+        self.bucket = Bucket(
+            logical_bucket_name, sse=True, opts=pulumi.ResourceOptions(parent=self)
+        )
 
         region = aws.get_region().name
         physical_topic_name = f"{DEPLOYMENT_NAME}-{event_name}-topic"

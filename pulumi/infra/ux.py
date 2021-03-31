@@ -18,7 +18,7 @@ class EngagementUX(pulumi.ComponentResource):
             website_args=aws.s3.BucketWebsiteArgs(
                 index_document="index.html",
             ),
-            parent=self,
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
         self.register_outputs({})

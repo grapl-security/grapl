@@ -1,7 +1,8 @@
+import json
 from typing import Optional
 
 import pulumi_aws as aws
-from infra.config import DEPLOYMENT_NAME, import_aware_opts
+from infra.config import DEPLOYMENT_NAME
 
 import pulumi
 
@@ -12,7 +13,7 @@ class Bucket(aws.s3.Bucket):
         logical_bucket_name: str,
         sse: bool = False,
         website_args: Optional[aws.s3.BucketWebsiteArgs] = None,
-        parent: Optional[pulumi.Resource] = None,
+        opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         """Abstracts logic for creating an S3 bucket for our purposes.
 
@@ -24,8 +25,7 @@ class Bucket(aws.s3.Bucket):
         website_args: configuration for setting the bucket up to serve web
         content.
 
-        parent: for use in ComponentResources; the Pulumi resource
-        that "owns" this resource.
+        opts: `pulumi.ResourceOptions` for this resource.
 
         """
         physical_bucket_name = bucket_physical_name(logical_bucket_name)
@@ -38,13 +38,93 @@ class Bucket(aws.s3.Bucket):
             force_destroy=True,
             website=website_args,
             server_side_encryption_configuration=sse_config,
-            # Ignoring force_destroy temporarily while we're
-            # comparing/contrasting with CDK because otherwise it causes
-            # noise in the diffs. It can be removed once we're fully in
-            # Pulumi.
-            opts=import_aware_opts(
-                physical_bucket_name, parent=parent, ignore_changes=["forceDestroy"]
+            opts=opts,
+        )
+
+    def grant_read_permissions_to(self, role: aws.iam.Role) -> None:
+        """ Adds the ability to read from this bucket to the provided `Role`. """
+        aws.iam.RolePolicy(
+            f"{role._name}-reads-{self._name}",
+            role=role.name,
+            policy=self.arn.apply(
+                lambda bucket_arn: json.dumps(
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                "Action": [
+                                    # TODO: Prefer to enumerate specific
+                                    # actions rather than wildcards
+                                    "s3:GetObject*",
+                                    "s3:GetBucket*",
+                                    "s3:List*",
+                                ],
+                                "Resource": [bucket_arn, f"{bucket_arn}/*"],
+                            }
+                        ],
+                    }
+                )
             ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+    def grant_read_write_permissions_to(self, role: aws.iam.Role) -> None:
+        """ Gives the provided `Role` the ability to read from and write to this bucket. """
+        aws.iam.RolePolicy(
+            f"{role._name}-reads-and-writes-{self._name}",
+            role=role.name,
+            policy=self.arn.apply(
+                lambda bucket_arn: json.dumps(
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                # TODO: Prefer to split
+                                # these up by bucket /
+                                # object, as well as
+                                # enumerate the *specific*
+                                # actions that are needed.
+                                "Action": [
+                                    "s3:GetObject*",
+                                    "s3:GetBucket*",
+                                    "s3:List*",
+                                    "s3:DeleteObject*",
+                                    "s3:PutObject*",
+                                    "s3:Abort*",
+                                ],
+                                "Resource": [bucket_arn, f"{bucket_arn}/*"],
+                            },
+                        ],
+                    }
+                )
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+    def grant_delete_permissions_to(self, role: aws.iam.Role) -> None:
+        """ Adds the ability to delete objects from this bucket to the provided `Role`. """
+        aws.iam.RolePolicy(
+            f"{role._name}-deletes-{self._name}",
+            role=role.name,
+            policy=self.arn.apply(
+                lambda bucket_arn: json.dumps(
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                # TODO: Prefer to enumerate specific
+                                # actions rather than wildcards
+                                "Action": "s3:DeleteObject*",
+                                "Resource": f"{bucket_arn}/*",
+                            }
+                        ],
+                    }
+                )
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
 
