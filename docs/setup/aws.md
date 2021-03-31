@@ -236,3 +236,9 @@ deployment by looking at the Cloudwatch Dashboard named
 
 You can find the base url in `src/js/grapl-cdk/cdk-output.json`; just
 append a `/index.html` to the URL in that file.
+
+### Logging In To Grapl
+
+To login to Grapl, your username should will be your deployment name followed by -grapl-test-user. For example, if your deployment was named test-deployment, your username would be test-deployment-grapl-test-user. 
+
+To generate a password for grapl, navigate to Secrets Manager in the AWS console, click on your deployment and scroll down until you see "". Click the "" button which is the password you'll use for your Grapl deployment. 
