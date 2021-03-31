@@ -9,7 +9,7 @@ import {
 
 import { LensNodeType, builtins } from "./schema";
 
-import { getDgraphClient, DgraphClient, RawNode } from "./dgraph_client";
+import { getDgraphClient, DgraphClient, RawNode, EnrichedNode } from "./dgraph_client";
 
 type MysteryParentType = never;
 
@@ -109,17 +109,34 @@ const filterDefaultDgraphNodeTypes = (node_type: string) => {
   return node_type !== "Base" && node_type !== "Entity";
 };
 
-function coerceUidIntoInt(node: RawNode) {
-  if (typeof node["uid"] == "string") {
-    node["uid"] = parseInt(node["uid"], 16);
+function uidAsInt(node: readonly RawNode): number {
+  const uid = node["uid"];
+
+  if (typeof uid == "string") {
+    return parseInt(uid, 16);
   }
+  else if (typeof uid == "number") {
+    return uid;
+  } 
+  throw new Error(`Oddly typed UID ${uid}`);
 }
 
-function enrichNode(node: RawNode) {
+function coerceUidIntoInt(node: readonly RawNode) {
+  node["uid"] = uidAsInt(node);
+}
+
+function enrichNodeMutating(node: RawNode) {
   coerceUidIntoInt(node);
   node["dgraph_type"] = node["dgraph_type"].filter(
     filterDefaultDgraphNodeTypes
   );
+}
+
+function enrichNode(node: readonly RawNode): EnrichedNode { 
+  return {
+    uid: uidAsInt(node),
+    dgraph_type: node.dgraph_type
+  }
 }
 
 const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
@@ -127,7 +144,6 @@ const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
   const dg_client = getDgraphClient();
 
   const lens_name = args.lens_name;
-  console.debug("lens_name in handleLensScope", lens_name);
 
   // grab the graph of lens, lens scope, and neighbors to nodes in-scope of the lens ((lens) -> (neighbor) -> (neighbor's neighbor))
   const lens_subgraph = await getLensSubgraphByName(dg_client, lens_name);
@@ -135,10 +151,10 @@ const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
 
   coerceUidIntoInt(lens_subgraph);
   // if it's undefined/null, might as well make it an array
-  lens_subgraph["scope"] = lens_subgraph["scope"] || [];
+  lens_subgraph["scope"] ||= [];
 
   // start enriching the nodes within the scope
-  lens_subgraph["scope"].forEach(enrichNode);
+  lens_subgraph["scope"].forEach(enrichNodeMutating);
 
   // No dgraph_type? Not a node; skip it!
   lens_subgraph["scope"] = lens_subgraph["scope"].filter(
@@ -182,7 +198,7 @@ const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
         neighbor[predicate] &&
         neighbor[predicate][0]["uid"]
       ) {
-        neighbor[predicate].forEach(enrichNode);
+        neighbor[predicate].forEach(enrichNodeMutating);
         neighbor[predicate] = neighbor[
           predicate
         ].filter((second_neighbor: RawNode) =>
@@ -202,7 +218,7 @@ const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
         if (!neighbor_uids.has(parseInt(neighbor[predicate]["uid"], 16))) {
           delete neighbor[predicate];
         } else {
-          enrichNode(neighbor[predicate]);
+          enrichNodeMutating(neighbor[predicate]);
         }
       }
     }
@@ -228,52 +244,53 @@ interface LensArgs {
   lens_name: string;
 }
 
-const RootQuery = new GraphQLObjectType({
-  name: "RootQueryType",
-  fields: {
-    lenses: {
-      type: GraphQLList(LensNodeType),
-      args: {
-        first: {
-          type: new GraphQLNonNull(GraphQLInt),
+function getRootQuery(): GraphQLObjectType {
+  return new GraphQLObjectType({
+    name: "RootQueryType",
+    fields: {
+      lenses: {
+        type: GraphQLList(LensNodeType),
+        args: {
+          first: {
+            type: new GraphQLNonNull(GraphQLInt),
+          },
+          offset: {
+            type: new GraphQLNonNull(GraphQLInt),
+          },
         },
-        offset: {
-          type: new GraphQLNonNull(GraphQLInt),
+        resolve: async (parent: MysteryParentType, args: RootQueryArgs) => {
+          console.debug("lenses query arguments", args);
+          const first = args.first;
+          const offset = args.offset;
+          // #TODO: Make sure to validate that 'first' is under a specific limit, maybe 1000
+          console.debug("Making getLensesQuery");
+          const lenses = await getLenses(getDgraphClient(), first, offset);
+          console.debug(
+            "returning data from getLenses for lenses resolver",
+            lenses
+          );
+          return lenses;
         },
       },
-      resolve: async (parent: MysteryParentType, args: RootQueryArgs) => {
-        console.debug("lenses query arguments", args);
-        const first = args.first;
-        const offset = args.offset;
-        // #TODO: Make sure to validate that 'first' is under a specific limit, maybe 1000
-        console.debug("Making getLensesQuery");
-        const lenses = await getLenses(getDgraphClient(), first, offset);
-        console.debug(
-          "returning data from getLenses for lenses resolver",
-          lenses
-        );
-        return lenses;
+      lens_scope: {
+        type: LensNodeType,
+        args: {
+          lens_name: { type: new GraphQLNonNull(GraphQLString) },
+        },
+        resolve: async (parent: MysteryParentType, args: LensArgs) => {
+          try {
+            console.debug("lens_scope args: ", args);
+            let response = await handleLensScope(parent, args);
+            console.debug("lens_scope response: ", response);
+            return response;
+          } catch (e) {
+            console.error("Error in handleLensScope: ", e);
+            throw e;
+          }
+        },
       },
     },
-    lens_scope: {
-      type: LensNodeType,
-      args: {
-        lens_name: { type: new GraphQLNonNull(GraphQLString) },
-      },
-      resolve: async (parent: MysteryParentType, args: LensArgs) => {
-        try {
-          console.debug("lens_scope args: ", args);
-          let response = await handleLensScope(parent, args);
-          console.debug("lens_scope response: ", response);
-          return response;
-        } catch (e) {
-          console.error("Error in handleLensScope: ", e);
-          throw e;
-        }
-      },
-    },
-  },
-});
+  });
 
 export function getRootQuerySchema(): GraphQLSchema {
   return new GraphQLSchema({
