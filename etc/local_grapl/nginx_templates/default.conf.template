@@ -15,11 +15,7 @@ server {
   }
 
   location /graphQlEndpoint/ {
-    proxy_pass http://${GRAPL_GRAPHQL_HOST}:${GRAPL_GRAPHQL_PORT}/graphQlEndpoint/;
-  }
-
-  location /prod/graphQlEndpoint/ {
-    proxy_pass http://${GRAPL_GRAPHQL_HOST}:${GRAPL_GRAPHQL_PORT}/graphQlEndpoint/;
+    proxy_pass http://${LOCALSTACK_HOST}:${LOCALSTACK_PORT}/restapis/${API_GATEWAY_API_ID}/prod/_user_request_/graphQlEndpoint/;
   }
 
   location /modelPluginDeployer/ {

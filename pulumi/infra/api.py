@@ -11,6 +11,7 @@ from infra.network import Network
 from infra.secret import JWTSecret
 from infra.ux_router import UxRouter
 
+from infra.graphql import GraphQL
 import pulumi
 
 
@@ -200,6 +201,12 @@ class Api(pulumi.ComponentResource):
             ux_bucket=ux_bucket,
         )
 
+        self.graphql_endpoint = GraphQL(
+            network=network,
+            secret=secret,
+            ux_bucket=ux_bucket,
+        )
+
         # Sagemaker isn't currently supported in Localstack :/
         self.notebook = (
             EngagementNotebook(
@@ -225,6 +232,9 @@ class Api(pulumi.ComponentResource):
             self._add_proxy_resource_integration(self.ux_router.function),
             self._add_proxy_resource_integration(
                 self.engagement_edge.function, path_part="auth"
+            ),
+            self._add_proxy_resource_integration(
+                self.graphql_endpoint.function, path_part="graphQlEndpoint"
             ),
         ]
 

@@ -109,13 +109,6 @@ services:
       dockerfile: js/engagement_view/Dockerfile
       target: engagement-view-local-deploy
 
-  grapl-graphql-endpoint:
-    image: grapl/grapl-graphql-endpoint:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: js/graphql_endpoint/Dockerfile
-      target: graphql-endpoint-deploy
-
   grapl-notebook:
     image: grapl/grapl-notebook:${TAG:-latest}
     build:

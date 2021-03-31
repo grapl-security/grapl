@@ -391,8 +391,6 @@ services:
     depends_on:
       grapl-model-plugin-deployer:
         condition: service_started
-      grapl-graphql-endpoint:
-        condition: service_started
       grapl-pulumi:
         # We must wait until Pulumi has created the API gateway so we
         # know what its URL is.
@@ -412,37 +410,6 @@ services:
     depends_on:
       grapl-provision:
         condition: service_completed_successfully
-
-  grapl-graphql-endpoint:
-    image: grapl/grapl-graphql-endpoint:${TAG:-latest}
-    command: bash -c "./start_potentially_with_debugger.sh"
-    environment:
-      <<: *aws-region
-      <<: *dgraph-env
-      <<: *dynamodb-env
-      IS_LOCAL: "True"
-      JWT_SECRET_ID: "JWT_SECRET_ID"
-      PORT: ${GRAPL_GRAPHQL_PORT}
-      GRAPL_SCHEMA_PROPERTIES_TABLE: "${DEPLOYMENT_NAME}-grapl_schema_properties_table"
-      GRAPL_SCHEMA_TABLE: "${DEPLOYMENT_NAME}-grapl_schema_table"
-      <<: *dynamodb-env
-      <<: *secretsmanager-env
-      DEBUG_SERVICES: "${DEBUG_SERVICES}"
-      VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT: "${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}"
-    depends_on:
-      dgraph:
-        condition: service_started
-      localstack:
-        condition: service_healthy
-      grapl-provision:
-        condition: service_completed_successfully
-    ports:
-      - 127.0.0.1:${GRAPL_GRAPHQL_PORT}:${GRAPL_GRAPHQL_PORT}
-      - 127.0.0.1:${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}:${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}
-    networks:
-      default:
-        aliases:
-          - ${GRAPL_GRAPHQL_HOST}
 
   grapl-notebook:
     image: grapl/grapl-notebook:${TAG:-latest}
