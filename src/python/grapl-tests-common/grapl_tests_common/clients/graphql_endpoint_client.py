@@ -1,5 +1,7 @@
+import json
 import os
-from typing import Any, Dict, cast
+from http import HTTPStatus
+from typing import Any, Dict, Optional, cast
 
 import requests
 
@@ -11,10 +13,13 @@ class GraphqlEndpointClient:
         self.endpoint = f"http://{hostname}:{port}"
         self.jwt = jwt
 
-    def query(self, query: str) -> Dict[str, Any]:
+    def query(
+        self, query: str, variables: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         resp = requests.post(
             f"{self.endpoint}/graphQlEndpoint/graphql",
-            params={"query": query},
+            params={"query": query, "variables": json.dumps(variables or {})},
             cookies={"grapl_jwt": self.jwt},
         )
+        assert resp.status_code == HTTPStatus.OK, resp.json()
         return cast(Dict[str, Any], resp.json()["data"])

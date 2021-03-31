@@ -9,4 +9,4 @@ reorder_modules = true
 group_imports = "StdExternalCrate"
 imports_indent = "Visual"
 imports_layout = "Vertical"
-merge_imports = true
+imports_granularity = "Crate"

@@ -9,9 +9,9 @@ T = TypeVar("T", bound=str)
 
 @st.composite
 def text_dgraph_compat(
-    draw: Callable[[st.SearchStrategy[str]], str],
+    draw: Callable[[st.SearchStrategy[str]], str], max_size: int = 128
 ) -> str:
-    base_text = draw(st.text(min_size=3, max_size=128))
+    base_text = draw(st.text(min_size=3, max_size=max_size))
     # Don't fuck with newlines due to a dgraph bug
     # https://github.com/dgraph-io/dgraph/issues/4694
     assume(len(base_text) > 3)

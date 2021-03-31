@@ -4,18 +4,21 @@ This is reasonably well-documented in `vscode_debugger.rst`.
 I arbitrarily chose `debugpy`, the VS Code debugger (formerly known as ptsvd).
 It'd be pretty easy to add the PyCharm/IntelliJ debugger too (which uses pydevd)
 """
-import logging
 import os
 import subprocess
 import sys
 from typing import Optional
 
+from grapl_common.grapl_logger import get_module_grapl_logger
 from typing_extensions import Literal
+
+LOGGER = get_module_grapl_logger()
 
 ServiceIdentifier = Literal[
     "grapl_e2e_tests",
     "analyzer_executor",
     "engagement_edge",
+    "graphql_endpoint_tests",
 ]
 
 
@@ -63,14 +66,14 @@ def wait_for_vsc_debugger(service: ServiceIdentifier) -> None:
 
     port = _get_debug_port()
     if port is None:
-        logging.error(f"Couldn't find a debug port for service {service}.")
+        LOGGER.error(f"Couldn't find a debug port for service {service}.")
         return
 
     _install_from_pip("debugpy")
     import debugpy  # type: ignore
 
     host = "0.0.0.0"
-    logging.info(f">> Debugpy listening for client at {host}:{port}")
+    LOGGER.info(f">> Debugpy listening for client at {host}:{port}")
     debugpy.listen((host, port))
     debugpy.wait_for_client()
-    logging.info(f">> Debugpy connected!")
+    LOGGER.info(f">> Debugpy connected!")

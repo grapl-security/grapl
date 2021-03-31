@@ -33,6 +33,7 @@ COPY --chown=grapl js/graphql_endpoint/server.ts server.ts
 
 # This compiles the typescript and spits out the built js files to `lambda/ts_compiled'
 RUN npx tsc
+RUN cp -r ./node_modules/ ./ts_compiled/
 
 WORKDIR /home/grapl
 
