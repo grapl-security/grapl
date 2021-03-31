@@ -6,19 +6,14 @@
 
     "lib": [
       // no DOM
-      "ES5", 
-      "ScriptHost",
+      "ES5",
+      "ScriptHost"
     ],
 
     //"strict": true,
     //"downlevelIteration": true,
     "noImplicitAny": true,
-    "forceConsistentCasingInFileNames": true,
+    "forceConsistentCasingInFileNames": true
   },
-  "include": [
-    "server.ts",
-    "server.js",
-    "modules/**/*.js",
-    "modules/**/*.ts",
-  ]
+  "include": ["server.ts", "server.js", "modules/**/*.js", "modules/**/*.ts"]
 }
