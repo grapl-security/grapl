@@ -2,7 +2,7 @@ import * as lambda from 'aws-lambda';
 import cors = require("cors");
 import express = require("express");
 import graphqlHTTP = require("express-graphql");
-import {RootQuerySchema} from "./modules/root_query.js";
+import {getRootQuerySchema} from "./modules/root_query.js";
 import awsServerlessExpress = require("aws-serverless-express");
 import { validateJwt } from "./modules/jwt.js";
 //@ts-ignore
@@ -18,7 +18,7 @@ let prefix = "local-grapl";
 if (!IS_LOCAL) {
 	prefix = process.env.DEPLOYMENT_NAME;
 	origin = process.env.UX_BUCKET_URL;
-	console.log("origin: " + origin);
+	console.debug("origin: " + origin);
 }
 
 const corsRegexp = new RegExp(
@@ -28,7 +28,7 @@ const corsRegexp = new RegExp(
 	"i"
 );
 
-console.log("corsRegexp", corsRegexp);
+console.debug("corsRegexp", corsRegexp);
 
 type CorsCallback = (err: Error | null, options?: cors.CorsOptions) => void
 
@@ -40,7 +40,7 @@ const corsDelegate = (req: cors.CorsRequest, callback: CorsCallback): void => {
 	};
 
 	if (IS_LOCAL) {
-		console.log("Running Locally, CORS disabled");
+		console.debug("Running Locally, CORS disabled");
 		corsOptions = { ...corsOptions, origin: true };
 		callback(null, corsOptions);
 		return;
@@ -49,13 +49,13 @@ const corsDelegate = (req: cors.CorsRequest, callback: CorsCallback): void => {
 	const originHeader = req.headers.origin;
 
 	if (originHeader === origin) {
-		console.log("exact matched origin: ", originHeader);
+		console.debug("exact matched origin: ", originHeader);
 		corsOptions = { ...corsOptions, origin: true };
 	} else if (corsRegexp.test(originHeader)) {
-		console.log("regexp matched origin: ", originHeader);
+		console.debug("regexp matched origin: ", originHeader);
 		corsOptions = { ...corsOptions, origin: true };
 	} else {
-		console.log("invalid origin: ", originHeader);
+		console.debug("invalid origin: ", originHeader);
 		corsOptions = { ...corsOptions, origin: false };
 	}
 	callback(null, corsOptions); // callback expects two parameters: error and options
@@ -75,7 +75,7 @@ app.use(
 			graphQLParams: graphQLParams,
 		});
 		return {
-			schema: RootQuerySchema,
+			schema: getRootQuerySchema(),
 			graphiql: IS_LOCAL,
 		};
 	})
