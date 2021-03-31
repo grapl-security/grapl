@@ -144,6 +144,10 @@ see the available options by running:
 bin/graplctl aws deploy --help
 ```
 
+### Provision Grapl
+
+After we deploy to AWS successfully, we need to provision Grapl by running `./bin/graplctl aws provision` which will invoke the provisioner lambda.
+
 ## DGraph operations
 
 You can manage the DGraph cluster with the docker swarm tooling by
