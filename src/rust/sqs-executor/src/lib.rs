@@ -26,8 +26,7 @@ use tracing::{debug,
               error,
               info};
 
-use crate::{cache::{Cache,
-                    CacheResponse},
+use crate::{cache::Cache,
             completion_event_serializer::CompletionEventSerializer,
             errors::{CheckedError,
                      Recoverable},
@@ -176,7 +175,7 @@ async fn process_message<
     );
     let _enter = inner_loop_span.enter();
 
-    if let Ok(CacheResponse::Hit) = cache.get(message_id.as_bytes().to_owned()).await {
+    if cache.exists(message_id.as_bytes().to_owned()).await {
         info!(
             message_id = message_id,
             "Message has already been processed",

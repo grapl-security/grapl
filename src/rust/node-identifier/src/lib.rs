@@ -26,7 +26,6 @@ use rusoto_dynamodb::{DynamoDb,
 use rusoto_sqs::SqsClient;
 use sessiondb::SessionDb;
 use sqs_executor::{cache::{Cache,
-                           CacheResponse,
                            Cacheable},
                    errors::{CheckedError,
                             Recoverable},
@@ -342,22 +341,32 @@ impl CheckedError for HashCacheError {
 impl Cache for HashCache {
     type CacheErrorT = HashCacheError;
 
-    async fn get<CA: Cacheable + Send + Sync + 'static>(
+    async fn exists<CA: Cacheable + Send + Sync + Clone + 'static>(
         &mut self,
         cacheable: CA,
-    ) -> Result<CacheResponse, HashCacheError> {
+    ) -> bool {
         let self_cache = self.cache.lock().unwrap();
-
-        let id = cacheable.identity();
-        if self_cache.contains(&id) {
-            Ok(CacheResponse::Hit)
-        } else {
-            Ok(CacheResponse::Miss)
-        }
+        self_cache.contains(&cacheable.identity())
     }
+
     async fn store(&mut self, identity: Vec<u8>) -> Result<(), HashCacheError> {
         let mut self_cache = self.cache.lock().unwrap();
         self_cache.insert(identity);
         Ok(())
+    }
+
+    async fn filter_cached<CA: Cacheable + Send + Sync + Clone + 'static>(
+        &mut self,
+        cacheables: Vec<CA>,
+    ) -> Vec<CA> {
+        let self_cache = self.cache.lock().unwrap();
+
+        let mut res = Vec::new();
+        for cacheable in cacheables {
+            if !self_cache.contains(&cacheable.identity()) {
+                res.push(cacheable);
+            }
+        }
+        res
     }
 }

@@ -2,8 +2,7 @@ use std::convert::TryFrom;
 
 use async_trait::async_trait;
 use grapl_graph_descriptions::graph_description::*;
-use sqs_executor::{cache::{Cache,
-                           CacheResponse},
+use sqs_executor::{cache::Cache,
                    errors::{CheckedError,
                             Recoverable},
                    event_handler::{CompletedEvents,
@@ -84,13 +83,11 @@ where
         let mut final_subgraph = GraphDescription::new();
         let mut failed: Option<eyre::Report> = None;
 
+        // Skip events we've successfully processed and stored in the event cache.
+        let events = self.cache.filter_cached(events).await;
+
         for event in events {
             let identity = event.clone();
-
-            if let Ok(CacheResponse::Hit) = self.cache.get(identity.clone()).await {
-                // If this was a hit, skip over the event because we've already processed it
-                continue;
-            }
 
             let subgraph = match GraphDescription::try_from(event) {
                 Ok(subgraph) => subgraph,

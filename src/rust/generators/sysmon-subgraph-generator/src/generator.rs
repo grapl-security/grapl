@@ -1,11 +1,8 @@
-use std::borrow::Cow;
-
 use async_trait::async_trait;
 use grapl_graph_descriptions::graph_description::*;
 use grapl_observe::log_time;
 use log::*;
-use sqs_executor::{cache::{Cache,
-                           CacheResponse},
+use sqs_executor::{cache::Cache,
                    errors::{CheckedError,
                             Recoverable},
                    event_handler::{CompletedEvents,
@@ -59,7 +56,7 @@ where
     /// Takes a vec of event Strings, parses them, and converts them into subgraphs
     async fn process_events(
         &mut self,
-        events: Vec<Cow<'_, str>>,
+        events: Vec<String>,
         identities: &mut CompletedEvents,
     ) -> Result<
         GraphDescription,
@@ -67,6 +64,9 @@ where
     > {
         let mut last_error: Option<SysmonGeneratorError> = None;
         let mut final_subgraph = GraphDescription::new();
+
+        // Skip events we've successfully processed and stored in the event cache.
+        let events = self.cache.filter_cached(events).await;
 
         for event in events {
             let event = match Event::from_str(&event) {
@@ -80,15 +80,6 @@ where
 
                     continue;
                 }
-            };
-
-            match self.cache.get(event.clone()).await {
-                Ok(CacheResponse::Hit) => {
-                    info!("Got cached response");
-                    continue;
-                }
-                Err(e) => warn!("Cache failed with: {:?}", e),
-                _ => (),
             };
 
             let graph = match GraphDescription::try_from(event.clone()) {
@@ -159,6 +150,7 @@ where
             events
                 .split(|i| &[*i][..] == &b"\n"[..])
                 .map(String::from_utf8_lossy)
+                .map(|s| s.to_string())
                 .filter(|event| {
                     (!event.is_empty() && event != "\n")
                         && (event.contains(&"EventID>1<"[..])
