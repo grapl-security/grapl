@@ -26,6 +26,7 @@ COPY --chown=grapl js/graphql_endpoint/package.json package.json
 COPY --chown=grapl js/graphql_endpoint/package-lock.json package-lock.json
 RUN npm install
 RUN rm -rf node_modules/grpc/build/
+RUN cp -r ./node_modules/ ./ts_compiled/
 
 # Copy graphql sources
 COPY --chown=grapl js/graphql_endpoint/modules modules
