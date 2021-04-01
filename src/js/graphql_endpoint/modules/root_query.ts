@@ -109,7 +109,7 @@ const filterDefaultDgraphNodeTypes = (node_type: string) => {
   return node_type !== "Base" && node_type !== "Entity";
 };
 
-function uidAsInt(node: readonly RawNode): number {
+function uidAsInt(node: RawNode): number {
   const uid = node["uid"];
 
   if (typeof uid == "string") {
@@ -121,21 +121,11 @@ function uidAsInt(node: readonly RawNode): number {
   throw new Error(`Oddly typed UID ${uid}`);
 }
 
-function coerceUidIntoInt(node: readonly RawNode) {
-  node["uid"] = uidAsInt(node);
-}
-
-function enrichNodeMutating(node: RawNode) {
-  coerceUidIntoInt(node);
-  node["dgraph_type"] = node["dgraph_type"].filter(
-    filterDefaultDgraphNodeTypes
-  );
-}
-
-function enrichNode(node: readonly RawNode): EnrichedNode { 
+function asEnrichedNode(node: RawNode): EnrichedNode { 
   return {
+    ...node,
     uid: uidAsInt(node),
-    dgraph_type: node.dgraph_type
+    dgraph_type: node.dgraph_type,
   }
 }
 
@@ -149,34 +139,31 @@ const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
   const lens_subgraph = await getLensSubgraphByName(dg_client, lens_name);
   console.debug("lens_subgraph in handleLensScope: ", lens_subgraph);
 
-  coerceUidIntoInt(lens_subgraph);
+  lens_subgraph.uid = uidAsInt(lens_subgraph);
   // if it's undefined/null, might as well make it an array
   lens_subgraph["scope"] ||= [];
-
-  // start enriching the nodes within the scope
-  lens_subgraph["scope"].forEach(enrichNodeMutating);
+  let scope: EnrichedNode[] = (lens_subgraph["scope"] || []).map(asEnrichedNode);
 
   // No dgraph_type? Not a node; skip it!
-  lens_subgraph["scope"] = lens_subgraph["scope"].filter(
-    (neighbor: RawNode) => neighbor["dgraph_type"].length > 0
+  scope = scope.filter(
+    (neighbor: EnrichedNode) => neighbor["dgraph_type"].length > 0
   );
 
   // record the uids of all direct neighbors to the lens.
   // These are the only nodes we should keep by the end of this process.
   // We'll then try to get all neighbor connections that only correspond to these nodes
-  const neighbor_uids = new Set(
-    lens_subgraph["scope"].map((node: RawNode) => node["uid"])
+  const neighbor_uids = new Set<number>(
+    scope.map((node: EnrichedNode) => node["uid"])
   );
 
   // lens neighbors
-  for (let neighbor of lens_subgraph["scope"]) {
+  for (const neighbor of scope) {
     // neighbor of a lens neighbor
     for (const predicate in neighbor) {
       // we want to keep risks and enrich them at the same time
       if (predicate === "risks") {
-        neighbor[predicate].forEach((risk_node: RawNode) => {
-          coerceUidIntoInt(risk_node);
-
+        const risks = neighbor[predicate].map(asEnrichedNode);
+        risks.forEach((risk_node: RawNode) => {
           if ("dgraph_type" in risk_node) {
             console.debug("checking if dgraph_type in risk_node", risk_node);
             risk_node["dgraph_type"] = risk_node["dgraph_type"].filter(
@@ -186,7 +173,7 @@ const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
         });
 
         // filter out nodes that don't have dgraph_types
-        neighbor[predicate] = neighbor[predicate].filter(
+        neighbor[predicate] = risks.filter(
           (node: RawNode) => "dgraph_type" in node && !!node["dgraph_type"]
         );
         continue;
@@ -198,10 +185,10 @@ const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
         neighbor[predicate] &&
         neighbor[predicate][0]["uid"]
       ) {
-        neighbor[predicate].forEach(enrichNodeMutating);
+        neighbor[predicate] = neighbor[predicate].map(asEnrichedNode);
         neighbor[predicate] = neighbor[
           predicate
-        ].filter((second_neighbor: RawNode) =>
+        ].filter((second_neighbor: EnrichedNode) =>
           neighbor_uids.has(second_neighbor["uid"])
         );
 
@@ -215,10 +202,11 @@ const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
         typeof neighbor[predicate] === "object" &&
         neighbor[predicate]["uid"]
       ) {
-        if (!neighbor_uids.has(parseInt(neighbor[predicate]["uid"], 16))) {
+        const enriched = asEnrichedNode(neighbor[predicate]);
+        if (!neighbor_uids.has(enriched.uid)) {
           delete neighbor[predicate];
         } else {
-          enrichNodeMutating(neighbor[predicate]);
+          neighbor[predicate] = enriched;
         }
       }
     }
@@ -291,9 +279,10 @@ function getRootQuery(): GraphQLObjectType {
       },
     },
   });
+}
 
 export function getRootQuerySchema(): GraphQLSchema {
   return new GraphQLSchema({
-    query: RootQuery,
+    query: getRootQuery(),
   });
 }
