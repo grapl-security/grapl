@@ -2,8 +2,8 @@
 .DS_Store
 
 # Test outputs
-test/cypress/screenshots
-test/cypress/videos
+test/integration-outputs/screenshots
+test/integration-outputs/videos
 
 # Environments
 .env
