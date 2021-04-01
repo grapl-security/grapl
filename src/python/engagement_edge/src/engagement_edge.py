@@ -212,7 +212,7 @@ def check_jwt(headers: Dict[str, Any]) -> bool:
 def lambda_login(event: Any) -> Optional[str]:
     body = json.loads(
         event.raw_body.decode()
-    ) # 'json_body' is a more natural choice, but has issues:  c.f. github issue aws/chalice#1188
+    )  # 'json_body' is a more natural choice, but has issues:  c.f. github issue aws/chalice#1188
     login_res = login(body["username"], body["password"])
     # Clear out the password from the dict, to avoid accidentally logging it
     body["password"] = ""
