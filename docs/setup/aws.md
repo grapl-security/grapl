@@ -190,8 +190,9 @@ bin/graplctl aws deploy --help
 
 ### Provision Grapl
 
-After we deploy to AWS successfully, we need to provision Grapl by running 
-```./bin/graplctl aws provision
+After we deploy to AWS successfully, we need to provision Grapl by executing the following from the root of Grapl:
+```bash
+./bin/graplctl aws provision
 ```
 which will invoke the provisioner lambda.
 
@@ -242,8 +243,8 @@ append a `/index.html` to the URL in that file.
 
 ### Logging In To Grapl
 
-To login to Grapl, your username should will be your deployment name followed by -grapl-test-user. For example, if your deployment was named test-deployment, your username would be test-deployment-grapl-test-user. 
+To login to Grapl, your username will be your deployment name followed by `-grapl-test-user`. For example, if your deployment was named `test-deployment`, your username would be `test-deployment-grapl-test-user`. 
 
 To retrieve the password for your grapl deployment, navigate to "AWS Secrets Manager" and click on "Secrets". 
 
-Click on the "Secret name" url that represents your deployment name followed by -TestUserPassword . Clicking that link will bring you to the "secret details" screen. Scroll down to the section labeled"Secret Value" and click "Retrieve Secret Value" button. The password for your deployment will appear under "PlainText"
+Click on the "Secret name" url that represents your deployment name followed by `-TestUserPassword`. Clicking that link will bring you to the "secret details" screen. Scroll down to the section labeled "Secret Value" and click the "Retrieve Secret Value" button. The password for your deployment will appear under "Plaintext".
