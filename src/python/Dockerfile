@@ -187,15 +187,6 @@ RUN source venv/bin/activate && \
     cd engagement-creator && \
     pip install .
 
-# zip
-FROM engagement-creator-build AS engagement-creator-zip
-
-RUN LAMBDA_DIR=$(pwd); \
-    cd ~/venv/lib/python3.7/site-packages/ && \
-    zip -q9r -dg "${LAMBDA_DIR}/lambda.zip" ./ && \
-    cd ~/engagement-creator/src && \
-    find . -type f -name "*.py" -exec zip -g "${LAMBDA_DIR}/lambda.zip" "{}" \;
-
 # deploy
 FROM grapl-python-deploy AS engagement-creator-deploy
 

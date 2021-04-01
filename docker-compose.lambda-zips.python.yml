@@ -16,20 +16,6 @@ services:
       - TAG=${TAG:-latest}
     command: cp /home/grapl/lambda.zip dgraph-ttl-${TAG:-latest}.zip
 
-  grapl-engagement-creator-zip:
-    image: grapl/grapl-engagement-creator-zip:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: ./python/Dockerfile
-      target: engagement-creator-zip
-    volumes:
-      - ./src/js/grapl-cdk/zips:/grapl
-    user: ${UID}:${GID}
-    working_dir: /grapl
-    environment:
-      - TAG=${TAG:-latest}
-    command: cp /home/grapl/lambda.zip engagement-creator-${TAG:-latest}.zip
-
   grapl-engagement-edge-zip:
     image: grapl/grapl-engagement-edge-zip:${TAG:-latest}
     build:
