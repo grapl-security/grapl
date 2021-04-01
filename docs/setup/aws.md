@@ -93,19 +93,21 @@ collection of these environment variables:
 
 ```bash
 # example values
-export GRAPL_DEPLOYMENT_NAME="some-grapl-deployment-name"
+export GRAPL_DEPLOYMENT_NAME="grapl-deployment-name"
+export DEPLOYMENT_NAME="grapl-deployment-name"
 export GRAPL_VERSION="latest" # if you set TAG, update this too
 export GRAPL_ROOT="/path/to/grapl_git_repository"
 export GRAPL_REGION="us-xxxx-n"
-export GRAPL_CDK_WATCHFUL_EMAIL="someone+watchful@example.com"
-export GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL="someone+alarm@example.com"
-export GRAPL_CDK_SECURITY_ALARMS_EMAIL="someone+alarm@example.com"
+export GRAPL_CDK_WATCHFUL_EMAIL="email-for-watchful@example.com"
+export GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL="email-for-op-alarm@example.com"
+export GRAPL_CDK_SECURITY_ALARMS_EMAIL="email-for-sec-alarm@example.com"
 export GRAPL_DGRAPH_INSTANCE_TYPE='xn.size' # e.g., 'i3.large'
 ```
+Note: Arguments for `GRAPL_DEPLOYMENT_NAME`and `DEPLOYMENT_NAME` should have the same deployment value. 
 
 #### Parameter explanation
 
-1. `GRAPL_DEPLOYMENT_NAME` (required)
+1. `GRAPL_DEPLOYMENT_NAME` & `DEPLOYMENT_NAME` (required)
 
     A name for the deployment to AWS.  ([AWS naming requirements](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-s3-bucket-naming-requirements.html) apply)
 
@@ -211,7 +213,7 @@ bin/graplctl swarm exec --swarm-id my-swarm-id -- docker node ls
 ```
 
 If you forget which `swarm-id` is associated with your Dgraph cluster,
-you may list all the swarm IDs in your deployment by running `graplctl
+you may list all the swarm IDs in your deployment by running `bin/graplctl
 swarm ls`.
 
 ### Demo Data
