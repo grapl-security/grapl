@@ -1,4 +1,4 @@
-FROM rust:1-slim-buster AS base
+FROM rust:1-slim-buster AS build
 
 ARG CARGO_PROFILE=debug
 
@@ -34,14 +34,6 @@ COPY rust rust
 
 WORKDIR /grapl/rust
 
-
-# build
-#
-# the `base` stage isn't used by the build system, but let's 
-# make `base` and `build` in case it becomes convenient.
-################################################################################
-FROM base AS build
-
 RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
     --mount=type=secret,id=rust_env,dst=/grapl/env \
     source /grapl/env; \
@@ -65,7 +57,7 @@ RUN mkdir -p /grapl/zips; \
     grapl-zip() { \
       TMPDIR="$(mktemp -d)"; \
       cd "$TMPDIR"; \
-      cp "/grapl/rust/target/${TARGET}/${CARGO_PROFILE}/${1}" bootstrap && \
+      cp "/grapl/rust/target/${CARGO_PROFILE}/${1}" bootstrap && \
       zip --quiet -9 "/grapl/zips/${1}.zip" bootstrap; \
     }; \
     grapl-zip metric-forwarder
