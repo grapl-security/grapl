@@ -8,10 +8,13 @@ from infra.network import Network
 from infra.secret import JWTSecret, TestUserPassword
 from infra.swarm import Ec2Port
 
+from infra.config import DEPLOYMENT_NAME, GLOBAL_LAMBDA_ZIP_TAG
+
 import pulumi
 
 
 class E2eTestRunner(pulumi.ComponentResource):
+
     def __init__(
         self,
         network: Network,
