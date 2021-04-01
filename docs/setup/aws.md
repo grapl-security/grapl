@@ -93,7 +93,6 @@ collection of these environment variables:
 
 ```bash
 # example values
-export GRAPL_DEPLOYMENT_NAME="grapl-deployment-name"
 export DEPLOYMENT_NAME="grapl-deployment-name"
 export GRAPL_VERSION="latest" # if you set TAG, update this too
 export GRAPL_ROOT="/path/to/grapl_git_repository"
@@ -103,11 +102,9 @@ export GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL="email-for-op-alarm@example.com"
 export GRAPL_CDK_SECURITY_ALARMS_EMAIL="email-for-sec-alarm@example.com"
 export GRAPL_DGRAPH_INSTANCE_TYPE='xn.size' # e.g., 'i3.large'
 ```
-Note: Arguments for `GRAPL_DEPLOYMENT_NAME`and `DEPLOYMENT_NAME` should have the same deployment value. 
-
 #### Parameter explanation
 
-1. `GRAPL_DEPLOYMENT_NAME` & `DEPLOYMENT_NAME` (required)
+1. `DEPLOYMENT_NAME` (required)
 
     A name for the deployment to AWS.  ([AWS naming requirements](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-s3-bucket-naming-requirements.html) apply)
 
