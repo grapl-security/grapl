@@ -218,9 +218,18 @@ const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
     }
   }
 
+  // there are node types that we don't know and so, today, the way we handle 
+  // that is basically by just returning an arbitrary JSONObject, 
+  // which we stuff into a 'predicates' field.
+
+  // graphql will filter out any values you try to return 
+  // that aren't part of the queried schema
+
+  // since we don't have a schema in graphql for plugin nodes, we dump it 
+  // into an arbitrary object and it basically gets "unpacked" on the frontend
   for (const node of scope) {
     const primaryDgraphType = node.dgraph_type[0]
-    if (!builtins.has(primaryDgraphType)) {
+    if (!builtins.has(primaryDgraphType)) { // it's a plugin node
       const tmpNode = { ...node };
       node.predicates = tmpNode;
     }
