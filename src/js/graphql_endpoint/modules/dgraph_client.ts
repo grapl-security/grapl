@@ -22,12 +22,8 @@ export interface RawNode {
   dgraph_type: string[];
 }
 
-export interface Lens extends RawNode {
-  scope: RawNode[];
-}
-
 export interface EnrichedNode {
-  uid: number;
+  readonly uid: number;
   dgraph_type: string[];
   [predicate: string]: any;
 }

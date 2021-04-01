@@ -60,6 +60,14 @@ const getLenses = async (
   }
 };
 
+interface LensSubgraph {
+  readonly node_key: string;
+  readonly lens_name: string;
+  readonly lens_type: string;
+  readonly score: number;
+  scope: RawNode[];
+}
+
 const getLensSubgraphByName = async (
   dg_client: DgraphClient,
   lens_name: string
@@ -96,7 +104,7 @@ const getLensSubgraphByName = async (
       "returning following data from getLensSubGrapByName: ",
       res.getJson()["all"][0]
     );
-    return res.getJson()["all"][0];
+    return res.getJson()["all"][0] as (LensSubgraph & RawNode);
   } catch (e) {
     console.error("Error in DGraph txn: getLensSubgraphByName", e);
   } finally {
@@ -136,17 +144,15 @@ const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
   const lens_name = args.lens_name;
 
   // grab the graph of lens, lens scope, and neighbors to nodes in-scope of the lens ((lens) -> (neighbor) -> (neighbor's neighbor))
-  const lens_subgraph = await getLensSubgraphByName(dg_client, lens_name);
+  const lens_subgraph: (LensSubgraph & RawNode) = await getLensSubgraphByName(dg_client, lens_name);
   console.debug("lens_subgraph in handleLensScope: ", lens_subgraph);
 
   lens_subgraph.uid = uidAsInt(lens_subgraph);
-  // if it's undefined/null, might as well make it an array
-  lens_subgraph["scope"] ||= [];
   let scope: EnrichedNode[] = (lens_subgraph["scope"] || []).map(asEnrichedNode);
 
   // No dgraph_type? Not a node; skip it!
   scope = scope.filter(
-    (neighbor: EnrichedNode) => neighbor["dgraph_type"].length > 0
+    (neighbor: EnrichedNode) => neighbor.dgraph_type.length > 0
   );
 
   // record the uids of all direct neighbors to the lens.
@@ -163,7 +169,7 @@ const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
       // we want to keep risks and enrich them at the same time
       if (predicate === "risks") {
         const risks = neighbor[predicate].map(asEnrichedNode);
-        risks.forEach((risk_node: RawNode) => {
+        risks.forEach((risk_node: EnrichedNode) => {
           if ("dgraph_type" in risk_node) {
             console.debug("checking if dgraph_type in risk_node", risk_node);
             risk_node["dgraph_type"] = risk_node["dgraph_type"].filter(
@@ -174,7 +180,7 @@ const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
 
         // filter out nodes that don't have dgraph_types
         neighbor[predicate] = risks.filter(
-          (node: RawNode) => "dgraph_type" in node && !!node["dgraph_type"]
+          (node: EnrichedNode) => "dgraph_type" in node && !!node["dgraph_type"]
         );
         continue;
       }
@@ -212,24 +218,26 @@ const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
     }
   }
 
-  for (const node of lens_subgraph["scope"]) {
-    if (!builtins.has(node.dgraph_type[0])) {
+  for (const node of scope) {
+    const primaryDgraphType = node.dgraph_type[0]
+    if (!builtins.has(primaryDgraphType)) {
       const tmpNode = { ...node };
       node.predicates = tmpNode;
     }
   }
 
+  lens_subgraph.scope = scope;
   console.debug("lens_subgraph scope", JSON.stringify(lens_subgraph["scope"]));
   return lens_subgraph;
 };
 
 interface RootQueryArgs {
-  first: number;
-  offset: number;
+  readonly first: number;
+  readonly offset: number;
 }
 
 interface LensArgs {
-  lens_name: string;
+  readonly lens_name: string;
 }
 
 function getRootQuery(): GraphQLObjectType {
