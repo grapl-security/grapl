@@ -1,9 +1,10 @@
-from infra import dynamodb, emitter
 from infra.api import Api
+from infra import dynamodb, emitter
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.config import DEPLOYMENT_NAME, LOCAL_GRAPL
 from infra.dgraph_ttl import DGraphTTL
+from infra.e2e_test_runner import E2eTestRunner
 from infra.engagement_creator import EngagementCreator
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
@@ -54,6 +55,7 @@ if __name__ == "__main__":
         ServiceQueue(service)
 
     forwarder = MetricForwarder(network=network)
+    e2e_test_runner = E2eTestRunner()
 
     ec = EngagementCreator(
         source_emitter=analyzer_matched, network=network, forwarder=forwarder
