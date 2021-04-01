@@ -246,4 +246,4 @@ To login to Grapl, your username will be your deployment name followed by `-grap
 
 To retrieve the password for your grapl deployment, navigate to "AWS Secrets Manager" and click on "Secrets".
 
-Click on the "Secret name" url that represents your deployment name followed by `-TestUserPassword`. Clicking that link will bring you to the "secret details" screen. Scroll down to the section labeled "Secret Value" and click the "Retrieve Secret Value" button. The password for your deployment will appear under "Plaintext".
+Click on the "Secret name" url that represents your deployment name followed by `-TestUserPassword`. The link will bring you to the "secret details" screen. Scroll down to the section labeled "Secret Value" and click the "Retrieve Secret Value" button. The password for your deployment will appear under "Plaintext".
