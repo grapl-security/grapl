@@ -227,13 +227,13 @@ etc/aws/upload_analyzer_prod.sh
 # upload logs
 AWS_REGION=$GRAPL_REGION \
 python3 etc/local_grapl/bin/upload-sysmon-logs.py \
-  --deployment_name $GRAPL_DEPLOYMENT_NAME \
+  --deployment_name $DEPLOYMENT_NAME \
   --logfile etc/sample_data/eventlog.xml
 ```
 
 You can then view the progress of this data flowing through your
 deployment by looking at the Cloudwatch Dashboard named
-`{GRAPL_DEPLOYMENT_NAME}-PipelineDashboard`.
+`{DEPLOYMENT_NAME}-PipelineDashboard`.
 
 ### Accessing the Grapl UX (Engagement Edge)
 
@@ -242,8 +242,8 @@ append a `/index.html` to the URL in that file.
 
 ### Logging In To Grapl
 
-To login to Grapl, your username will be your deployment name followed by `-grapl-test-user`. For example, if your deployment was named `test-deployment`, your username would be `test-deployment-grapl-test-user`. 
+To login to Grapl, your username will be your deployment name followed by `-grapl-test-user`. For example, if your deployment was named `test-deployment`, your username would be `test-deployment-grapl-test-user`.
 
-To retrieve the password for your grapl deployment, navigate to "AWS Secrets Manager" and click on "Secrets". 
+To retrieve the password for your grapl deployment, navigate to "AWS Secrets Manager" and click on "Secrets".
 
 Click on the "Secret name" url that represents your deployment name followed by `-TestUserPassword`. Clicking that link will bring you to the "secret details" screen. Scroll down to the section labeled "Secret Value" and click the "Retrieve Secret Value" button. The password for your deployment will appear under "Plaintext".

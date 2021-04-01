@@ -32,8 +32,8 @@ Ec2Instance = common.Ec2Instance
     "-n",
     "--grapl-deployment-name",
     type=click.STRING,
-    envvar="GRAPL_DEPLOYMENT_NAME",
-    help="grapl deployment name [$GRAPL_DEPLOYMENT_NAME]",
+    envvar="DEPLOYMENT_NAME",
+    help="grapl deployment name [$DEPLOYMENT_NAME]",
     required=True,
 )
 @click.option(
