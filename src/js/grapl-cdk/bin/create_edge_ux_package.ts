@@ -11,7 +11,7 @@ import { DeploymentParameters } from './deployment_parameters';
  * - inject that into "edge_ux"'s files
  * - write those injected files to "edge_ux_package"
  * - (after this file runs) deploy the `edge_ux_package`
- * 
+ *
  * Learn more at https://github.com/grapl-security/issue-tracker/issues/25
  */
 
@@ -58,7 +58,7 @@ function getEdgeApiUrl(params: DeploymentParameters): string {
      */
     const outputFile = path.join(__dirname, '../cdk-output.json');
     const outputFileContents = JSON.parse(fs.readFileSync(outputFile, 'utf8'));
-    // This looks like { GRAPL_DEPLOYMENT_NAME: { SOME_KEY: apiUrl } }
+    // This looks like { DEPLOYMENT_NAME: { SOME_KEY: apiUrl } }
     const entryForDeployment = outputFileContents[params.stackName];
     if (entryForDeployment === undefined) {
         throw new Error(`Couldn't find an entry in cdk-output.json for ${params.stackName}`);

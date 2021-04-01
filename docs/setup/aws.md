@@ -93,7 +93,7 @@ collection of these environment variables:
 
 ```bash
 # example values
-export GRAPL_DEPLOYMENT_NAME="some-grapl-deployment-name"
+export DEPLOYMENT_NAME="some-grapl-deployment-name"
 export GRAPL_VERSION="latest" # if you set TAG, update this too
 export GRAPL_ROOT="/path/to/grapl_git_repository"
 export GRAPL_REGION="us-xxxx-n"
@@ -105,7 +105,7 @@ export GRAPL_DGRAPH_INSTANCE_TYPE='xn.size' # e.g., 'i3.large'
 
 #### Parameter explanation
 
-1. `GRAPL_DEPLOYMENT_NAME` (required)
+1. `DEPLOYMENT_NAME` (required)
 
     A name for the deployment to AWS.  ([AWS naming requirements](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-s3-bucket-naming-requirements.html) apply)
 
@@ -228,13 +228,13 @@ etc/aws/upload_analyzer_prod.sh
 # upload logs
 AWS_REGION=$GRAPL_REGION \
 python3 etc/local_grapl/bin/upload-sysmon-logs.py \
-  --deployment_name $GRAPL_DEPLOYMENT_NAME \
+  --deployment_name $DEPLOYMENT_NAME \
   --logfile etc/sample_data/eventlog.xml
 ```
 
 You can then view the progress of this data flowing through your
 deployment by looking at the Cloudwatch Dashboard named
-`{GRAPL_DEPLOYMENT_NAME}-PipelineDashboard`.
+`{DEPLOYMENT_NAME}-PipelineDashboard`.
 
 ### Accessing the Grapl UX (Engagement Edge)
 
@@ -243,8 +243,8 @@ append a `/index.html` to the URL in that file.
 
 ### Logging In To Grapl
 
-To login to Grapl, your username will be your deployment name followed by `-grapl-test-user`. For example, if your deployment was named `test-deployment`, your username would be `test-deployment-grapl-test-user`. 
+To login to Grapl, your username will be your deployment name followed by `-grapl-test-user`. For example, if your deployment was named `test-deployment`, your username would be `test-deployment-grapl-test-user`.
 
-To retrieve the password for your grapl deployment, navigate to "AWS Secrets Manager" and click on "Secrets". 
+To retrieve the password for your grapl deployment, navigate to "AWS Secrets Manager" and click on "Secrets".
 
 Click on the "Secret name" url that represents your deployment name followed by `-TestUserPassword`. Clicking that link will bring you to the "secret details" screen. Scroll down to the section labeled "Secret Value" and click the "Retrieve Secret Value" button. The password for your deployment will appear under "Plaintext".

@@ -28,9 +28,9 @@ export class DeploymentParameters {
         ) || false;
 
         // ex: 'grapl-my-deployment'
-        const deployName = process.env.GRAPL_DEPLOYMENT_NAME;
+        const deployName = process.env.DEPLOYMENT_NAME;
         if (!deployName) {
-            throw new Error('Error: Missing Grapl deployment name. Set via bin/deployment_parameters.ts, or environment variable GRAPL_DEPLOYMENT_NAME.');
+            throw new Error('Error: Missing Grapl deployment name. Set via bin/deployment_parameters.ts, or environment variable DEPLOYMENT_NAME.');
         }
         validateDeploymentName(deployName, allowLegacyDeploymentName);
 
