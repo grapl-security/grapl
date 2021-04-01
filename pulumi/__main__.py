@@ -6,12 +6,14 @@ from infra.alarms import OpsAlarms
 from infra.analyzer_dispatcher import AnalyzerDispatcher
 from infra.analyzer_executor import AnalyzerExecutor
 from infra.api import Api
+from infra import dynamodb, emitter
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
 from infra.config import DEPLOYMENT_NAME, LOCAL_GRAPL
 from infra.dgraph_cluster import DgraphCluster, LocalStandInDgraphCluster
 from infra.dgraph_ttl import DGraphTTL
+from infra.e2e_test_runner import E2eTestRunner
 from infra.engagement_creator import EngagementCreator
 from infra.graph_merger import GraphMerger
 from infra.metric_forwarder import MetricForwarder
@@ -161,6 +163,8 @@ def main() -> None:
             forwarder=forwarder,
         )
 
+        E2eTestRunner()
+
     EngagementCreator(
         input_emitter=analyzer_matched_emitter,
         network=network,
@@ -211,16 +215,6 @@ def main() -> None:
         forwarder=forwarder,
         dgraph_cluster=dgraph_cluster,
     )
-
-    ########################################################################
-
-    if LOCAL_GRAPL:
-        from infra.local import user
-
-        user.local_grapl_user(
-            dynamodb_tables.user_auth_table, "grapluser", "graplpassword"
-        )
-
 
 if __name__ == "__main__":
     main()
