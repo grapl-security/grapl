@@ -42,7 +42,7 @@ export class Provisioner extends cdk.NestedStack {
             vpc: props.vpc,
             environment: {
                 GRAPL_LOG_LEVEL: props.logLevels.defaultLogLevel || "INFO",
-                GRAPL_DEPLOYMENT_NAME: props.deploymentName,
+                DEPLOYMENT_NAME: props.deploymentName,
                 GRAPL_TEST_USER_NAME: `${props.deploymentName}-grapl-test-user`,
                 MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
             },
