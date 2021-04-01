@@ -6,6 +6,7 @@ from infra.alarms import OpsAlarms
 from infra.analyzer_dispatcher import AnalyzerDispatcher
 from infra.analyzer_executor import AnalyzerExecutor
 from infra.api import Api
+from infra import dynamodb, emitter
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
