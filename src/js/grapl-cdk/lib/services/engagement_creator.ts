@@ -39,6 +39,8 @@ export class EngagementCreator extends cdk.NestedStack {
             reads_from: analyzer_matched_sugraphs.bucket,
             subscribes_to: analyzer_matched_sugraphs.topic,
             opt: {
+                // This is the entrypoint of a Pants-generated Lambda ZIP
+                py_entrypoint: "lambdex_handler.handler",
                 runtime: lambda.Runtime.PYTHON_3_7,
             },
             version: props.version,
