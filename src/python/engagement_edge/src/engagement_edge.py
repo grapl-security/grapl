@@ -245,6 +245,7 @@ def requires_auth(path: str) -> Callable[[RouteFn], RouteFn]:
             try:
                 return route_fn()
             except Exception as e:
+                LOGGER.error(f"path {path} had an error: {e}")
                 return respond(str(e))
 
         return cast(RouteFn, inner_route)
