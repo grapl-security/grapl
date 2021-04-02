@@ -31,7 +31,8 @@ from grapl_analyzerlib.prelude import (
     RiskSchema,
 )
 from grapl_analyzerlib.schema import Schema
-from typing_extensions import TypedDict  # type: ignore
+from grapl_common.provision import store_schema_properties  # type: ignore
+from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb import DynamoDBServiceResource
@@ -155,37 +156,6 @@ def _store_schema(table: DynamoDBServiceResource.Table, schema: BaseSchema) -> N
         LOGGER.info(f"stored edge mapping: {f_edge} {r_edge}")
 
 
-# TODO: Move into someplace shared with grapl model plugin deployer, grapl-provision
-class SchemaPropertyDict(TypedDict):
-    name: str
-    primitive: str
-    is_set: bool
-
-
-# TODO: Move into someplace shared with grapl model plugin deployer, grapl-provision
-class SchemaDict(TypedDict):
-    properties: List[SchemaPropertyDict]
-
-
-# TODO: Move into someplace shared with grapl model plugin deployer, grapl-provision
-def _store_schema_properties(table: DynamoDBServiceResource, schema: Schema) -> None:
-    properties: List[SchemaPropertyDict] = [
-        {
-            "name": prop_name,
-            "primitive": prop_type.primitive.name,
-            "is_set": prop_type.is_set,
-        }
-        for prop_name, prop_type in schema.get_properties().items()
-    ]
-    type_definition: SchemaDict = {"properties": properties}
-    table.put_item(
-        Item={
-            "node_type": schema.self_type(),
-            "type_definition": type_definition,
-        }
-    )
-
-
 def _provision_graph(
     graph_client: GraphClient, dynamodb: DynamoDBServiceResource
 ) -> None:
@@ -220,7 +190,7 @@ def _provision_graph(
     )
     for schema in schemas:
         _store_schema(table, schema)
-        _store_schema_properties(props_table, schema)
+        store_schema_properties(props_table, schema)
 
 
 def _hash_password(cleartext, salt) -> str:

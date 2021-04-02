@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import base64
 import hmac
 import inspect
@@ -10,7 +12,7 @@ from base64 import b64decode
 from hashlib import sha1
 from http import HTTPStatus
 from pathlib import Path
-from typing import Dict, List, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, TypeVar, Union
 
 import boto3  # type: ignore
 import jwt
@@ -32,6 +34,9 @@ from grapl_common.env_helpers import (
     SecretsManagerClientFactory,
 )
 from grapl_common.grapl_logger import get_module_grapl_logger
+from grapl_common.provision import (
+    store_schema_properties as store_schema_properties_common,
+)
 
 sys.path.append("/tmp/")
 
@@ -40,6 +45,9 @@ T = TypeVar("T")
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 
 LOGGER = get_module_grapl_logger(default_log_level="ERROR")
+
+if TYPE_CHECKING:
+    from mypy_boto3_dynamodb import DynamoDBServiceResource
 
 try:
     directory = Path("/tmp/model_plugins/")
@@ -172,6 +180,13 @@ def get_schema_objects(meta_globals) -> "Dict[str, BaseSchema]":
     return {an[0]: an[1]() for an in clsmembers if is_schema(an[1])}
 
 
+def store_schema_properties(dynamodb: DynamoDBServiceResource, schema: Schema) -> None:
+    table = dynamodb.Table(
+        os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_properties_table"
+    )
+    store_schema_properties_common(table, schema)
+
+
 def provision_schemas(master_graph_client, raw_schemas):
     # For every schema, exec the schema
     meta_globals = {}
@@ -199,6 +214,7 @@ def provision_schemas(master_graph_client, raw_schemas):
 
     for schema in schemas:
         store_schema(dynamodb, schema)
+        store_schema_properties(dynamodb, schema)
 
 
 def query_dgraph_predicate(client: "GraphClient", predicate_name: str):

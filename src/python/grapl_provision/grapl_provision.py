@@ -32,7 +32,7 @@ from grapl_analyzerlib.prelude import (
 from grapl_analyzerlib.schema import Schema
 from grapl_common.env_helpers import DynamoDBResourceFactory
 from grapl_common.grapl_logger import get_module_grapl_logger
-from typing_extensions import TypedDict
+from grapl_common.provision import store_schema_properties
 
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb import DynamoDBServiceResource
@@ -158,37 +158,6 @@ def store_schema(table: DynamoDBServiceResource, schema: Schema) -> None:
         table.put_item(Item={"f_edge": f_edge, "r_edge": r_edge})
         table.put_item(Item={"f_edge": r_edge, "r_edge": f_edge})
         LOGGER.info(f"stored edge mapping: {f_edge} {r_edge}")
-
-
-# TODO: Move into someplace shared with grapl model plugin deployer, provisioner lambda
-class SchemaPropertyDict(TypedDict):
-    name: str
-    primitive: str
-    is_set: bool
-
-
-# TODO: Move into someplace shared with grapl model plugin deployer, provisioner lambda
-class SchemaDict(TypedDict):
-    properties: List[SchemaPropertyDict]
-
-
-# TODO: Move into someplace shared with grapl model plugin deployer, grapl-provision
-def store_schema_properties(table: DynamoDBServiceResource, schema: Schema) -> None:
-    properties: List[SchemaPropertyDict] = [
-        {
-            "name": prop_name,
-            "primitive": prop_type.primitive.name,
-            "is_set": prop_type.is_set,
-        }
-        for prop_name, prop_type in schema.get_properties().items()
-    ]
-    type_definition: SchemaDict = {"properties": properties}
-    table.put_item(
-        Item={
-            "node_type": schema.self_type(),
-            "type_definition": type_definition,
-        }
-    )
 
 
 def provision_mg(mclient) -> None:
