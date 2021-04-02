@@ -133,7 +133,7 @@ function asEnrichedNode(node: RawNode): EnrichedNode {
   return {
     ...node,
     uid: uidAsInt(node),
-    dgraph_type: node.dgraph_type,
+    dgraph_type: node.dgraph_type.filter(filterDefaultDgraphNodeTypes),
   }
 }
 
