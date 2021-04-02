@@ -50,6 +50,8 @@ class TestGraphqlEndpoint(TestCase):
         assert gql_lens["lens_name"] == lens_name
         # Check the nodes in scope
         assert len(gql_lens["scope"]) == 1
+        # Ensure we strip the Entity and Base types
+        assert gql_lens["scope"][0]["dgraph_type"] == ["Asset"]
         assert gql_lens["scope"][0]["hostname"] == asset_props["hostname"]
 
 

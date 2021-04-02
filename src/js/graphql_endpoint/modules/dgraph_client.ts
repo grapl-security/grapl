@@ -21,3 +21,9 @@ export interface RawNode {
   uid: number | string;
   dgraph_type: string[];
 }
+
+export interface EnrichedNode {
+  readonly uid: number;
+  dgraph_type: string[];
+  [predicate: string]: any;
+}
