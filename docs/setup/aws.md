@@ -93,16 +93,15 @@ collection of these environment variables:
 
 ```bash
 # example values
-export DEPLOYMENT_NAME="some-grapl-deployment-name"
+export DEPLOYMENT_NAME="grapl-deployment-name"
 export GRAPL_VERSION="latest" # if you set TAG, update this too
 export GRAPL_ROOT="/path/to/grapl_git_repository"
 export GRAPL_REGION="us-xxxx-n"
-export GRAPL_CDK_WATCHFUL_EMAIL="someone+watchful@example.com"
-export GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL="someone+alarm@example.com"
-export GRAPL_CDK_SECURITY_ALARMS_EMAIL="someone+alarm@example.com"
+export GRAPL_CDK_WATCHFUL_EMAIL="email-for-watchful@example.com"
+export GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL="email-for-op-alarm@example.com"
+export GRAPL_CDK_SECURITY_ALARMS_EMAIL="email-for-sec-alarm@example.com"
 export GRAPL_DGRAPH_INSTANCE_TYPE='xn.size' # e.g., 'i3.large'
 ```
-
 #### Parameter explanation
 
 1. `DEPLOYMENT_NAME` (required)
@@ -211,7 +210,7 @@ bin/graplctl swarm exec --swarm-id my-swarm-id -- docker node ls
 ```
 
 If you forget which `swarm-id` is associated with your Dgraph cluster,
-you may list all the swarm IDs in your deployment by running `graplctl
+you may list all the swarm IDs in your deployment by running `bin/graplctl
 swarm ls`.
 
 ### Demo Data
@@ -247,4 +246,4 @@ To login to Grapl, your username will be your deployment name followed by `-grap
 
 To retrieve the password for your grapl deployment, navigate to "AWS Secrets Manager" and click on "Secrets".
 
-Click on the "Secret name" url that represents your deployment name followed by `-TestUserPassword`. Clicking that link will bring you to the "secret details" screen. Scroll down to the section labeled "Secret Value" and click the "Retrieve Secret Value" button. The password for your deployment will appear under "Plaintext".
+Click on the "Secret name" url that represents your deployment name followed by `-TestUserPassword`. The link will bring you to the "secret details" screen. Scroll down to the section labeled "Secret Value" and click the "Retrieve Secret Value" button. The password for your deployment will appear under "Plaintext".
