@@ -1,12 +1,12 @@
 import * as lambda from "aws-lambda";
-import cors = require("cors");
-import express = require("express");
-import graphqlHTTP = require("express-graphql");
+import * as cors from "cors";
+import * as express from "express";
+import * as graphqlHTTP from "express-graphql";
 import { getRootQuerySchema } from "./modules/root_query.js";
-import awsServerlessExpress = require("aws-serverless-express");
+import * as awsServerlessExpress from "aws-serverless-express";
 import { validateJwt } from "./modules/jwt.js";
 //@ts-ignore
-import regexEscape = require("regex-escape");
+import * as regexEscape from "regex-escape";
 import { GraphQLError } from "graphql";
 
 const app = express();
@@ -62,29 +62,43 @@ const corsDelegate = (req: cors.CorsRequest, callback: CorsCallback): void => {
   callback(null, corsOptions); // callback expects two parameters: error and options
 };
 
+const middleware = [
+  cors(corsDelegate), 
+  validateJwt
+];
+
+app.options("*", cors(corsDelegate));
+
 function customFormatErrorFnForDebugging(error: GraphQLError) {
   return { 
     message: error.message,
     locations: error.locations,
+    //stack: error.stack ? error.stack.split('\n') : [],
     path: error.path,
   }
 }
-
-const middleware = [cors(corsDelegate), validateJwt];
-
-app.options("*", cors(corsDelegate));
 
 app.use(
   "/graphQlEndpoint/graphql",
   middleware,
   graphqlHTTP(async (request, response, graphQLParams) => {
+    // TODO
+    /*
     console.debug({
       request: request,
       response: response,
       graphQLParams: graphQLParams,
     });
+    */
+    let schema;
+    try { 
+      schema = await getRootQuerySchema();
+    } catch(e) {
+      console.error("Some uncaught promise error", e);
+      throw e;
+    }
     return {
-      schema: getRootQuerySchema(),
+      schema: schema,
       graphiql: IS_LOCAL,
       customFormatErrorFn: IS_LOCAL ? customFormatErrorFnForDebugging : undefined,
     };
@@ -92,7 +106,6 @@ app.use(
 );
 
 app.use(function (req, res) {
-  console.warn(req);
   console.warn(req.path);
   res.sendStatus(404);
 });

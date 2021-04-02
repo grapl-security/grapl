@@ -9,6 +9,8 @@
   "author": "Grapl Inc.",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.11.0",
+    "@aws-sdk/util-dynamodb": "^3.11.0",
     "@grpc/grpc-js": "^1.2.2",
     "aws-sdk": "^2.683.0",
     "aws-serverless-express": "^3.3.8",

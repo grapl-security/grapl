@@ -7,6 +7,7 @@ import requests
 
 # Would be nice to improve this as a TypedDict
 GqlLensDict = Dict[str, Any]
+GraphqlType = Dict[str, Any]
 
 
 class GraphqlEndpointClient:
@@ -36,7 +37,6 @@ class GraphqlEndpointClient:
             lens_scope(lens_name: $lens_name) {
                 uid,
                 node_key,
-                lens_name,
                 lens_type,
                 dgraph_type,
                 score,
@@ -103,12 +103,27 @@ class GraphqlEndpointClient:
                             risk_score
                         },
                     }
-                    ... on PluginType {
-                        predicates,
-                    }
                 }
             }
         }
         """
         resp = self.query(query, {"lens_name": lens_name})
         return cast(GqlLensDict, resp["lens_scope"])
+
+    def query_type(self, type_name: str) -> GraphqlType:
+        query = """
+        query QueryGraphqlAboutType($type_name: String!) {
+            __type(name: $type_name) {
+                name
+                fields {
+                    name
+                    type {
+                        name
+                        kind
+                    }
+                }
+            }
+        }
+        """
+        resp = self.query(query, {"type_name": type_name})
+        return cast(GraphqlType, resp["__type"])

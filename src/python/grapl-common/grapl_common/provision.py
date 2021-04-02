@@ -14,6 +14,10 @@ class SchemaPropertyDict(TypedDict):
     is_set: bool
 
 
+class SchemaDict(TypedDict):
+    properties: List[SchemaPropertyDict]
+
+
 # Schema is defined in grapl_analyzerlib, which is actually below `-common` in the stack.
 # I've put this code in `-common` so that it can be shared by:
 # - Model Plugin Deployer
@@ -21,10 +25,6 @@ class SchemaPropertyDict(TypedDict):
 # - provisioner lambda
 # ( and grapl-analyzerlib seems like the wrong place to do that )
 Schema = Any
-
-
-class SchemaDict(TypedDict):
-    properties: List[SchemaPropertyDict]
 
 
 def store_schema_properties(table: Table, schema: Schema) -> None:
@@ -37,8 +37,17 @@ def store_schema_properties(table: Table, schema: Schema) -> None:
         }
         for prop_name, prop_type in schema.get_properties().items()
     ]
-    type_definition: SchemaDict = {"properties": properties}
-
+    denylist_edges = ("in_scope",)
+    edges: List[SchemaPropertyDict] = [
+        {
+            "name": edge_name,
+            "primitive": edge_tuple[0].dest.self_type(),  # TODO fix??? not important???
+            "is_set": edge_tuple[0].is_to_many(),
+        }
+        for edge_name, edge_tuple in schema.forward_edges.items()
+        if edge_name not in denylist_edges
+    ]
+    type_definition: SchemaDict = {"properties": properties + edges}
     table.put_item(
         Item={
             "node_type": schema.self_type(),

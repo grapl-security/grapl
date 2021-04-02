@@ -1,5 +1,5 @@
-import dgraph = require("dgraph-js");
-import grpc = require("@grpc/grpc-js");
+import * as dgraph from "dgraph-js";
+import * as grpc from "@grpc/grpc-js";
 
 const get_random = <T>(list: T[]): T => {
     return list[Math.floor(Math.random() * list.length)];

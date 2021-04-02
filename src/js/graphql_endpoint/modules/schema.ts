@@ -10,31 +10,20 @@ import {
 } from "graphql";
 import { RawNode } from "./dgraph_client";
 
-const BaseNode = {
-    uid: { type: GraphQLInt },
-    node_key: { type: GraphQLString },
-    dgraph_type: { type: GraphQLList(GraphQLString) },
-    display: { type: GraphQLString },
+export const BaseNode = {
+  uid: { type: GraphQLInt },
+  node_key: { type: GraphQLString },
+  dgraph_type: { type: GraphQLList(GraphQLString) },
+	display: { type: GraphQLString },
 };
 
-export const LensNodeType = new GraphQLObjectType({
-    name: "LensNode",
-    fields: () => ({
-        ...BaseNode,
-        lens_name: { type: GraphQLString },
-        score: { type: GraphQLInt },
-        scope: { type: GraphQLList(GraplEntityType) },
-        lens_type: { type: GraphQLString },
-    }),
-});
-
-const RiskType = new GraphQLObjectType({
-    name: "Risk",
-    fields: {
-        ...BaseNode,
-        analyzer_name: { type: GraphQLString },
-        risk_score: { type: GraphQLInt },
-    },
+export const RiskType = new GraphQLObjectType({
+  name: "Risk",
+  fields: {
+    ...BaseNode,
+    analyzer_name: { type: GraphQLString },
+    risk_score: { type: GraphQLInt },
+  },
 });
 
 // We have to support every type in grapl_analyzerlib/schemas
@@ -246,10 +235,3 @@ const resolveType = (data: RawNode) => {
     }
     return "PluginType";
 };
-
-// | FileType, ProcessType, IpAddressType, AssetType, RiskType, IpConnections, ProcessInboundConnections, ProcessOutboundConnections
-const GraplEntityType = new GraphQLUnionType({
-    name: "GraplEntityType",
-    types: [PluginType, FileType, ProcessType, AssetType],
-    resolveType: resolveType,
-});

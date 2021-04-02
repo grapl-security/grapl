@@ -60,6 +60,9 @@ class Schema(metaclass=SingletonMeta):
     ):
         self.node_types = {"BaseNode", self.self_type()}
         self.properties: Dict[str, "PropType"] = {**default_properties(), **properties}
+        self.forward_edges: Dict[
+            str, Tuple["EdgeT", str]
+        ] = {}  # only for exporting to graphql
         self.edges: Dict[str, Tuple["EdgeT", str]] = {}
 
         for edge_name, (edge, r_edge_name) in edges.items():
@@ -71,6 +74,7 @@ class Schema(metaclass=SingletonMeta):
         self.properties[prop_name] = prop
 
     def add_edge(self, edge_name: str, edge: EdgeT, reverse_name: str):
+        self.forward_edges[edge_name] = (edge, reverse_name)
         self.edges[edge_name] = (edge, reverse_name)
         if not reverse_name:
             return

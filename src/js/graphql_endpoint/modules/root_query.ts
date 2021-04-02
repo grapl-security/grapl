@@ -1,3 +1,4 @@
+import {printSchema} from "graphql/utilities";
 import {
     GraphQLObjectType,
     GraphQLInt,
@@ -7,7 +8,7 @@ import {
     GraphQLNonNull,
 } from "graphql";
 
-import { LensNodeType, builtins } from "./schema";
+import { BaseNode, builtins } from "./schema";
 
 import {
     getDgraphClient,
@@ -15,6 +16,8 @@ import {
     RawNode,
     EnrichedNode,
 } from "./dgraph_client";
+import { SchemaClient } from "./schema_client";
+import { allSchemasToGraphql } from "./schema_to_graphql";
 
 type MysteryParentType = never;
 
@@ -26,24 +29,24 @@ const getLenses = async (
     console.debug("first, offset parameters in getLenses()", first, offset);
 
     const query = `
-		query all($a: int, $b: int)
-		{
-			all(func: type(Lens), first: $a, offset: $b, orderdesc: score)
-			{
-				lens_name,
-				score,
-				node_key,
-				uid,
-				dgraph_type: dgraph.type,
-				lens_type,
-				scope {
-					uid,
-					node_key,
-					dgraph_type: dgraph.type,
-				}
-			}
-		}
-	`;
+        query all($a: int, $b: int)
+        {
+            all(func: type(Lens), first: $a, offset: $b, orderdesc: score)
+            {
+                lens_name,
+                score,
+                node_key,
+                uid,
+                dgraph_type: dgraph.type,
+                lens_type,
+                scope {
+                    uid,
+                    node_key,
+                    dgraph_type: dgraph.type,
+                }
+            }
+        }
+    `;
 
     console.debug("Creating DGraph txn in getLenses");
 
@@ -78,25 +81,25 @@ const getLensSubgraphByName = async (
     lens_name: string
 ) => {
     const query = `
-		query all($a: string, $b: first, $c: offset) {
-			all(func: eq(lens_name, $a), first: 1) {
-				uid,
-				dgraph_type: dgraph.type,
-				node_key,
-				lens_name,
-				lens_type,
-				score,
-				scope @filter(has(node_key)) {
-					uid,
-					dgraph_type: dgraph.type,
-					expand(_all_) {
-						uid,
-						dgraph_type: dgraph.type,
-						expand(_all_)
-					}
-				}
-			}
-		}
+        query all($a: string, $b: first, $c: offset) {
+            all(func: eq(lens_name, $a), first: 1) {
+                uid,
+                dgraph_type: dgraph.type,
+                node_key,
+                lens_name,
+                lens_type,
+                score,
+                scope @filter(has(node_key)) {
+                    uid,
+                    dgraph_type: dgraph.type,
+                    expand(_all_) {
+                        uid,
+                        dgraph_type: dgraph.type,
+                        expand(_all_)
+                    }
+                }
+            }
+        }
     `;
 
     console.debug("Creating DGraph txn in getLensSubgraphByName");
@@ -145,174 +148,110 @@ function asEnrichedNode(node: RawNode): EnrichedNode {
     };
 }
 
-const AWS = require("aws-sdk");
-const IS_LOCAL = process.env.IS_LOCAL == "True" || null;
+const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
+  console.debug("handleLensScope args: ", args);
+  const dg_client = getDgraphClient();
 
-const getDisplayProperty = async (nodeType: string) => {
-    try {
-        const region = process.env.AWS_REGION;
-        AWS.config.update({ region: region });
+  const lens_name = args.lens_name;
 
-        const ddb = new AWS.DynamoDB({
-            // new client
-            apiVersion: "2012-08-10",
-            region: IS_LOCAL ? process.env.AWS_REGION : undefined,
-            accessKeyId: IS_LOCAL
-                ? process.env.DYNAMODB_ACCESS_KEY_ID
-                : undefined,
-            secretAccessKey: IS_LOCAL
-                ? process.env.DYNAMODB_ACCESS_KEY_SECRET
-                : undefined,
-            endpoint: IS_LOCAL ? process.env.DYNAMODB_ENDPOINT : undefined,
+  // grab the graph of lens, lens scope, and neighbors to nodes in-scope of the lens ((lens) -> (neighbor) -> (neighbor's neighbor))
+  const lens_subgraph: (LensSubgraph & RawNode) = await getLensSubgraphByName(dg_client, lens_name);
+  console.debug("lens_subgraph in handleLensScope: ", lens_subgraph);
+
+  lens_subgraph.uid = uidAsInt(lens_subgraph);
+  let scope: EnrichedNode[] = (lens_subgraph["scope"] || []).map(asEnrichedNode);
+
+  // No dgraph_type? Not a node; skip it!
+  scope = scope.filter(
+    (neighbor: EnrichedNode) => neighbor.dgraph_type.length > 0
+  );
+
+  // record the uids of all direct neighbors to the lens.
+  // These are the only nodes we should keep by the end of this process.
+  // We'll then try to get all neighbor connections that only correspond to these nodes
+  const neighbor_uids = new Set<number>(
+    scope.map((node: EnrichedNode) => node["uid"])
+  );
+
+  // lens neighbors
+  for (const neighbor of scope) {
+    // neighbor of a lens neighbor
+    for (const predicate in neighbor) {
+      // we want to keep risks and enrich them at the same time
+      if (predicate === "risks") {
+        const risks = neighbor[predicate].map(asEnrichedNode);
+        risks.forEach((risk_node: EnrichedNode) => {
+          if (hasDgraphType(risk_node)) {
+            console.debug("checking if dgraph_type in risk_node", risk_node);
+            risk_node["dgraph_type"] = risk_node["dgraph_type"].filter(
+              filterDefaultDgraphNodeTypes
+            );
+          }
         });
 
-        const params = {
-            TableName: process.env.GRAPL_SCHEMA_PROPERTIES_TABLE,
-            Key: {
-                node_type: { S: nodeType }, // get display prop for a given node based on the type
-            },
-            ProjectionExpression: "display_property", // identifies	the attributes that you want to query for
-        };
+        // filter out nodes that don't have dgraph_types
+        neighbor[predicate] = risks.filter(hasDgraphType);
+        continue;
+      }
 
-        const response = await ddb.getItem(params).promise();
-
-        if (response.Item === undefined) {
-            return "dgraph_type";
-        }
-        return response.Item.display_property;
-    } catch (e) {
-        console.error(
-            "Error Querying DynamoDB for display property in root_query.ts",
-            e
+      // If this edge is 1-to-many, we need to filter down the list to lens-neighbor -> lens-neighbor connections
+      if (
+        Array.isArray(neighbor[predicate]) &&
+        neighbor[predicate] &&
+        neighbor[predicate][0]["uid"]
+      ) {
+        neighbor[predicate] = neighbor[predicate].map(asEnrichedNode);
+        neighbor[predicate] = neighbor[
+          predicate
+        ].filter((second_neighbor: EnrichedNode) =>
+          neighbor_uids.has(second_neighbor["uid"])
         );
-    }
-};
 
-const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
-    console.debug("handleLensScope args: ", args);
-    const dg_client = getDgraphClient();
+        // If we filtered all the edges down, might as well delete this predicate
+        if (neighbor[predicate].length === 0) {
+          delete neighbor[predicate];
+        }
+      }
+      // If this edge is 1-to-1, we need to determine if we need to delete the edge
+      else if (
+        typeof neighbor[predicate] === "object" &&
+        neighbor[predicate]["uid"]
+      ) {
+        const enriched = asEnrichedNode(neighbor[predicate]);
+        if (!neighbor_uids.has(enriched.uid)) {
+          delete neighbor[predicate];
+        } else {
+          neighbor[predicate] = enriched;
+        }
 
-    const lens_name = args.lens_name;
+		// TODO improve this display stuff
+        for (const node of scope) {
+            const _node = node as any;
+            const nodeType = _node.dgraph_type.filter(
+                filterDefaultDgraphNodeTypes
+            )[0];
+            console.log("nodeType", nodeType)
+            const displayProperty = await getDisplayProperty(nodeType);
 
-    // grab the graph of lens, lens scope, and neighbors to nodes in-scope of the lens ((lens) -> (neighbor) -> (neighbor's neighbor))
-    const lens_subgraph: LensSubgraph & RawNode = await getLensSubgraphByName(
-        dg_client,
-        lens_name
-    );
-    console.debug("lens_subgraph in handleLensScope: ", lens_subgraph);
-
-    lens_subgraph.uid = uidAsInt(lens_subgraph);
-    let scope: EnrichedNode[] = (lens_subgraph["scope"] || []).map(
-        asEnrichedNode
-    );
-
-    // No dgraph_type? Not a node; skip it!
-    scope = scope.filter(
-        (neighbor: EnrichedNode) => neighbor.dgraph_type.length > 0
-    );
-
-    // record the uids of all direct neighbors to the lens.
-    // These are the only nodes we should keep by the end of this process.
-    // We'll then try to get all neighbor connections that only correspond to these nodes
-    const neighbor_uids = new Set<number>(
-        scope.map((node: EnrichedNode) => node["uid"])
-    );
-
-    // lens neighbors
-    for (const neighbor of scope) {
-        // neighbor of a lens neighbor
-        for (const predicate in neighbor) {
-            // we want to keep risks and enrich them at the same time
-            if (predicate === "risks") {
-                const risks = neighbor[predicate].map(asEnrichedNode);
-                risks.forEach((risk_node: EnrichedNode) => {
-                    if (hasDgraphType(risk_node)) {
-                        console.debug(
-                            "checking if dgraph_type in risk_node",
-                            risk_node
-                        );
-                        risk_node["dgraph_type"] = risk_node[
-                            "dgraph_type"
-                        ].filter(filterDefaultDgraphNodeTypes);
-                    }
-                });
-
-                // filter out nodes that don't have dgraph_types
-                neighbor[predicate] = risks.filter(hasDgraphType);
-                continue;
-            }
-
-            // If this edge is 1-to-many, we need to filter down the list to lens-neighbor -> lens-neighbor connections
-            if (
-                Array.isArray(neighbor[predicate]) &&
-                neighbor[predicate] &&
-                neighbor[predicate][0]["uid"]
-            ) {
-                neighbor[predicate] = neighbor[predicate].map(asEnrichedNode);
-                neighbor[predicate] = neighbor[
-                    predicate
-                ].filter((second_neighbor: EnrichedNode) =>
-                    neighbor_uids.has(second_neighbor["uid"])
-                );
-
-                // If we filtered all the edges down, might as well delete this predicate
-                if (neighbor[predicate].length === 0) {
-                    delete neighbor[predicate];
-                }
-            }
-            // If this edge is 1-to-1, we need to determine if we need to delete the edge
-            else if (
-                typeof neighbor[predicate] === "object" &&
-                neighbor[predicate]["uid"]
-            ) {
-                const enriched = asEnrichedNode(neighbor[predicate]);
-                if (!neighbor_uids.has(enriched.uid)) {
-                    delete neighbor[predicate];
-                } else {
-                    neighbor[predicate] = enriched;
-                }
-                for (const node of scope) {
-                    const _node = node as any;
-                    const nodeType = _node.dgraph_type.filter(
-                        filterDefaultDgraphNodeTypes
-                    )[0];
-                    console.log("nodeType", nodeType);
-                    const displayProperty = await getDisplayProperty(nodeType);
-
-                    if (_node[displayProperty.S] === undefined) {
-                        _node["display"] = nodeType;
-                    } else {
-                        _node["display"] = _node[displayProperty.S].toString();
-                    }
-                }
+            if (_node[displayProperty.S] === undefined) {
+                _node["display"] = nodeType;
+            } else {
+                _node["display"] = _node[displayProperty.S].toString();
             }
         }
+      }
     }
+  }
 
-    // there are node types that we don't know and so, today, the way we handle
-    // that is basically by just returning an arbitrary JSONObject,
-    // which we stuff into a 'predicates' field.
-
-    // graphql will filter out any values you try to return
-    // that aren't part of the queried schema
-
-    // since we don't have a schema in graphql for plugin nodes, we dump it
-    // into an arbitrary object and it basically gets "unpacked" on the frontend
-    for (const node of scope) {
-        const primaryDgraphType = node.dgraph_type[0];
-        if (!builtins.has(primaryDgraphType)) {
-            // it's a plugin node
-            const tmpNode = { ...node };
-            node.predicates = tmpNode;
-        }
+  for (const node of scope) {
+    if (!node) {
+      throw new Error(`Somehow received a null or undefined scope node: ${node}`);
     }
+  }
 
-    lens_subgraph.scope = scope;
-    console.debug(
-        "lens_subgraph scope",
-        JSON.stringify(lens_subgraph["scope"])
-    );
-    return lens_subgraph;
+  lens_subgraph.scope = scope;
+  console.debug("lens_subgraph scope", JSON.stringify(lens_subgraph["scope"]));
+  return lens_subgraph;
 };
 
 interface RootQueryArgs {
@@ -324,64 +263,83 @@ interface LensArgs {
     readonly lens_name: string;
 }
 
-function getRootQuery(): GraphQLObjectType {
-    return new GraphQLObjectType({
-        name: "RootQueryType",
-        fields: {
-            lenses: {
-                type: GraphQLList(LensNodeType),
-                args: {
-                    first: {
-                        type: new GraphQLNonNull(GraphQLInt),
-                    },
-                    offset: {
-                        type: new GraphQLNonNull(GraphQLInt),
-                    },
-                },
-                resolve: async (
-                    parent: MysteryParentType,
-                    args: RootQueryArgs
-                ) => {
-                    console.debug("lenses query arguments", args);
-                    const first = args.first;
-                    const offset = args.offset;
-                    // #TODO: Make sure to validate that 'first' is under a specific limit, maybe 1000
-                    console.debug("Making getLensesQuery");
-                    const lenses = await getLenses(
-                        getDgraphClient(),
-                        first,
-                        offset
-                    );
-                    console.debug(
-                        "returning data from getLenses for lenses resolver",
-                        lenses
-                    );
-                    return lenses;
-                },
-            },
-            lens_scope: {
-                type: LensNodeType,
-                args: {
-                    lens_name: { type: new GraphQLNonNull(GraphQLString) },
-                },
-                resolve: async (parent: MysteryParentType, args: LensArgs) => {
-                    try {
-                        console.debug("lens_scope args: ", args);
-                        let response = await handleLensScope(parent, args);
-                        console.debug("lens_scope response: ", response);
-                        return response;
-                    } catch (e) {
-                        console.error("Error in handleLensScope: ", e);
-                        throw e;
-                    }
-                },
-            },
+async function getRootQuery(): Promise<GraphQLObjectType> {
+  const types = await new SchemaClient().getSchemas();
+  const typesWithoutBuiltins = types.filter((schema) => {
+    // This could be a one-liner, but I think it's complex enough for ifelse
+    console.log("HEYYY");
+    console.log(schema.node_type);
+    if (schema.node_type == "Risk" || schema.node_type == "Lens") {
+      console.log("YABBA DABBA DOO");
+      return false; // reject
+    } else {
+      return true; // keep
+    }
+  });
+  const GraplEntityType = allSchemasToGraphql(typesWithoutBuiltins);
+  const LensNodeType = new GraphQLObjectType({
+    name: "LensNode",
+    fields: () => ({
+      ...BaseNode,
+      lens_name: { type: GraphQLString },
+      score: { type: GraphQLInt },
+      scope: { type: GraphQLList(GraplEntityType) },
+      lens_type: { type: GraphQLString },
+    }),
+  });
+
+  return new GraphQLObjectType({
+    name: "RootQueryType",
+    fields: {
+      lenses: {
+        type: GraphQLList(LensNodeType),
+        args: {
+          first: {
+            type: new GraphQLNonNull(GraphQLInt),
+          },
+          offset: {
+            type: new GraphQLNonNull(GraphQLInt),
+          },
         },
-    });
+        resolve: async (parent: MysteryParentType, args: RootQueryArgs) => {
+          console.debug("lenses query arguments", args);
+          const first = args.first;
+          const offset = args.offset;
+          // #TODO: Make sure to validate that 'first' is under a specific limit, maybe 1000
+          console.debug("Making getLensesQuery");
+          const lenses = await getLenses(getDgraphClient(), first, offset);
+          console.debug(
+            "returning data from getLenses for lenses resolver",
+            lenses
+          );
+          return lenses;
+        },
+      },
+      lens_scope: {
+        type: LensNodeType,
+        args: {
+          lens_name: { type: new GraphQLNonNull(GraphQLString) },
+        },
+        resolve: async (parent: MysteryParentType, args: LensArgs) => {
+          try {
+            console.debug("lens_scope args: ", args);
+            let response = await handleLensScope(parent, args);
+            console.debug("lens_scope response: ", response);
+            return response;
+          } catch (e) {
+            console.error("Error in handleLensScope: ", e);
+            throw e;
+          }
+        },
+      },
+    },
+  });
 }
 
-export function getRootQuerySchema(): GraphQLSchema {
-    return new GraphQLSchema({
-        query: getRootQuery(),
-    });
+export async function getRootQuerySchema(): Promise<GraphQLSchema> {
+  const schema = new GraphQLSchema({
+    query: await getRootQuery(),
+  });
+  console.log("Schema: ", printSchema(schema));
+  return schema;
 }
