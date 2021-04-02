@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, List
 
 import boto3
 import pydgraph
+from typing_extensions import TypedDict
 from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.node_types import (
     EdgeRelationship,
@@ -160,15 +161,36 @@ def store_schema(table: DynamoDBServiceResource, schema: Schema) -> None:
 
 
 # TODO: Move into someplace shared with grapl model plugin deployer, provisioner lambda
-def store_schema_properties(table: DynamoDBServiceResource, schema: Schema) -> None:
-    for prop_name, prop_type in schema.get_properties().items():
-        table.put_item(
-            Item={
-                "schema": schema.self_type(),
-                "property": prop_name,
-                "prop_primitive": prop_type.prop_type_str(),
-            }
-        )
+class SchemaPropertyDict(TypedDict):
+    name: str
+    primitive: str
+    is_set: bool
+
+# TODO: Move into someplace shared with grapl model plugin deployer, provisioner lambda
+class SchemaDict(TypedDict):
+    properties: List[SchemaPropertyDict]
+
+# TODO: Move into someplace shared with grapl model plugin deployer, grapl-provision
+def store_schema_properties(
+    table: DynamoDBServiceResource, schema: Schema
+) -> None:
+    properties: List[SchemaPropertyDict] = [
+        {
+            "name": prop_name,
+            "primitive": prop_type.primitive,
+            "is_set": prop_type.is_set,
+        }
+        for prop_name, prop_type in schema.get_properties().items()
+    ]
+    type_definition: SchemaDict = {
+        "properties": properties
+    }
+    table.put_item(
+        Item={
+            "node_type": schema.self_type(),
+            "type_definition": type_definition,
+        }
+    )
 
 
 def provision_mg(mclient) -> None:

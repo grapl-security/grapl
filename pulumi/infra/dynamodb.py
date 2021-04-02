@@ -33,11 +33,10 @@ class DynamoDB(pulumi.ComponentResource):
             f"{DEPLOYMENT_NAME}-grapl_schema_properties_table",
             [
                 {"name": "schema", "type": "S"},
-                {"name": "property", "type": "S"},
+                # We dynamically create a "type_definition" M (map) type.
             ],
             self,
             hash_key="schema",
-            range_key="property",
         )
 
         self.schema_table = dynamodb_table(
