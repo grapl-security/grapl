@@ -22,6 +22,24 @@ class DynamoDB(pulumi.ComponentResource):
     def __init__(self, opts: Optional[pulumi.ResourceOptions] = None) -> None:
         super().__init__("grapl:DynamoDB", DEPLOYMENT_NAME, None, opts)
 
+        """
+        Table looks like
+        {Asset, "Prop1", "int"}
+        {Asset, "Prop2", "bool"}
+        {Process, "Prop1", "int"}
+        etc etc
+        """
+        self.schema_properties_table = dynamodb_table(
+            f"{DEPLOYMENT_NAME}-grapl_schema_properties_table",
+            [
+                {"name": "schema", "type": "S"},
+                {"name": "property", "type": "S"},
+            ],
+            self,
+            hash_key="schema",
+            range_key="property",
+        )
+
         self.schema_table = dynamodb_table(
             f"{DEPLOYMENT_NAME}-grapl_schema_table",
             [{"name": "f_edge", "type": "S"}],

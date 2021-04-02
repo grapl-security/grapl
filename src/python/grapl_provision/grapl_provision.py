@@ -1,3 +1,4 @@
+from __future__ import annotations
 import json
 import os
 import sys
@@ -30,6 +31,9 @@ from grapl_analyzerlib.prelude import (
 from grapl_analyzerlib.schema import Schema
 from grapl_common.env_helpers import DynamoDBResourceFactory
 from grapl_common.grapl_logger import get_module_grapl_logger
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from mypy_boto3_dynamodb import DynamoDBServiceResource
 
 LOGGER = get_module_grapl_logger(default_log_level="INFO")
 
@@ -44,7 +48,7 @@ def drop_all(client) -> None:
     client.alter(op)
 
 
-def format_schemas(schema_defs: List["BaseSchema"]) -> str:
+def format_schemas(schema_defs: List[BaseSchema]) -> str:
     schemas = "\n\n".join([schema.generate_schema() for schema in schema_defs])
 
     types = "\n\n".join([schema.generate_type() for schema in schema_defs])
@@ -54,7 +58,7 @@ def format_schemas(schema_defs: List["BaseSchema"]) -> str:
     )
 
 
-def query_dgraph_predicate(client: "GraphClient", predicate_name: str):
+def query_dgraph_predicate(client: GraphClient, predicate_name: str):
     query = f"""
         schema(pred: {predicate_name}) {{  }}
     """
@@ -99,7 +103,7 @@ def meta_into_predicate(schema, predicate_meta):
         raise e
 
 
-def query_dgraph_type(client: "GraphClient", type_name: str):
+def query_dgraph_type(client: GraphClient, type_name: str):
     query = f"""
         schema(type: {type_name}) {{ type }}
     """
@@ -126,7 +130,7 @@ def query_dgraph_type(client: "GraphClient", type_name: str):
     return predicate_metas
 
 
-def extend_schema(graph_client: GraphClient, schema: "BaseSchema"):
+def extend_schema(graph_client: GraphClient, schema: BaseSchema):
     predicate_metas = query_dgraph_type(graph_client, schema.self_type())
 
     for predicate_meta in predicate_metas:
@@ -144,7 +148,7 @@ def provision_master_graph(
     set_schema(master_graph_client, mg_schema_str)
 
 
-def store_schema(table, schema: "Schema"):
+def store_schema(table: DynamoDBServiceResource, schema: Schema) -> None:
     for f_edge, (_, r_edge) in schema.get_edges().items():
         if not (f_edge and r_edge):
             continue
@@ -152,6 +156,15 @@ def store_schema(table, schema: "Schema"):
         table.put_item(Item={"f_edge": f_edge, "r_edge": r_edge})
         table.put_item(Item={"f_edge": r_edge, "r_edge": f_edge})
         LOGGER.info(f"stored edge mapping: {f_edge} {r_edge}")
+
+# TODO: Move into someplace shared with grapl model plugin deployer, provisioner lambda
+def store_schema_properties(table: DynamoDBServiceResource, schema: Schema) -> None:
+    for prop_name, prop_type in schema.get_properties().items():
+        table.put_item(Item={
+            "schema": schema.self_type(),
+            "property": prop_name,
+            "prop_primitive": prop_type.prop_type_str(),
+        })
 
 
 def provision_mg(mclient) -> None:
@@ -184,10 +197,12 @@ def provision_mg(mclient) -> None:
 
     dynamodb = DynamoDBResourceFactory(boto3).from_env()
 
-    table = dynamodb.Table("local-grapl-grapl_schema_table")
+    edges_table = dynamodb.Table("local-grapl-grapl_schema_table")
+    props_table = dynamodb.Table("local-grapl-grapl_schema_properties_table")
     for schema in schemas:
         try:
-            store_schema(table, schema)
+            store_schema(edges_table, schema)
+            store_schema_properties(props_table, schema)
         except Exception as e:
             LOGGER.warn(f"storing schema: {schema} {table} {e}")
 
