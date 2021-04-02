@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any, List, Sequence, Union
 
 import boto3
 import pydgraph
-from typing_extensions import TypedDict  # type: ignore
 from grapl_analyzerlib.node_types import (
     EdgeRelationship,
     EdgeT,
@@ -32,6 +31,7 @@ from grapl_analyzerlib.prelude import (
     RiskSchema,
 )
 from grapl_analyzerlib.schema import Schema
+from typing_extensions import TypedDict  # type: ignore
 
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb import DynamoDBServiceResource
@@ -154,31 +154,30 @@ def _store_schema(table: DynamoDBServiceResource.Table, schema: BaseSchema) -> N
         table.put_item(Item={"f_edge": r_edge, "r_edge": f_edge})
         LOGGER.info(f"stored edge mapping: {f_edge} {r_edge}")
 
+
 # TODO: Move into someplace shared with grapl model plugin deployer, grapl-provision
 class SchemaPropertyDict(TypedDict):
     name: str
     primitive: str
     is_set: bool
 
+
 # TODO: Move into someplace shared with grapl model plugin deployer, grapl-provision
 class SchemaDict(TypedDict):
     properties: List[SchemaPropertyDict]
 
+
 # TODO: Move into someplace shared with grapl model plugin deployer, grapl-provision
-def _store_schema_properties(
-    table: DynamoDBServiceResource, schema: Schema
-) -> None:
+def _store_schema_properties(table: DynamoDBServiceResource, schema: Schema) -> None:
     properties: List[SchemaPropertyDict] = [
         {
             "name": prop_name,
-            "primitive": prop_type.primitive,
+            "primitive": prop_type.primitive.name,
             "is_set": prop_type.is_set,
         }
         for prop_name, prop_type in schema.get_properties().items()
     ]
-    type_definition: SchemaDict = {
-        "properties": properties
-    }
+    type_definition: SchemaDict = {"properties": properties}
     table.put_item(
         Item={
             "node_type": schema.self_type(),
