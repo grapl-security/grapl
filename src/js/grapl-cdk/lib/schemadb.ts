@@ -7,19 +7,32 @@ import { RemovalPolicy } from '@aws-cdk/core';
 import { FargateService } from "./fargate_service";
 
 export interface SchemaDbProps {
-    table_name: string;
+    edges_table_name: string;
+    properties_table_name: string;
 }
 
 export class SchemaDb extends cdk.Construct {
     readonly schema_table: dynamodb.Table;
+    readonly schema_properties_table: dynamodb.Table;
 
     constructor(scope: cdk.Construct, id: string, props: SchemaDbProps) {
         super(scope, id);
 
         this.schema_table = new dynamodb.Table(this, 'SchemaDbTable', {
-            tableName: props.table_name,
+            tableName: props.edges_table_name,
             partitionKey: {
                 name: 'f_edge',
+                type: dynamodb.AttributeType.STRING,
+            },
+            serverSideEncryption: true,
+            billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+            removalPolicy: RemovalPolicy.DESTROY,
+        });
+
+        this.schema_properties_table = new dynamodb.Table(this, 'SchemaPropertiesDbTable', {
+            tableName: props.properties_table_name,
+            partitionKey: {
+                name: 'node_type',
                 type: dynamodb.AttributeType.STRING,
             },
             serverSideEncryption: true,
@@ -29,25 +42,33 @@ export class SchemaDb extends cdk.Construct {
     }
 
     allowRead(service: Service|FargateService) {
-        if (service instanceof FargateService) {
-            this.schema_table.grantReadData(service.service.taskDefinition.taskRole);
-            this.schema_table.grantReadData(service.retryService.taskDefinition.taskRole);
-        } else {
-            this.schema_table.grantReadData(service.event_handler);
-            this.schema_table.grantReadData(service.event_retry_handler);
+        for (const table of [this.schema_table, this.schema_properties_table]) {
+            if (service instanceof FargateService) {
+                table.grantReadData(service.service.taskDefinition.taskRole);
+                table.grantReadData(service.retryService.taskDefinition.taskRole);
+            } else {
+                table.grantReadData(service.event_handler);
+                table.grantReadData(service.event_retry_handler);
+            }
         }
     }
 
     allowReadWrite(service: Service) {
-        this.schema_table.grantReadWriteData(service.event_handler);
-        this.schema_table.grantReadWriteData(service.event_retry_handler);
+        for (const table of [this.schema_table, this.schema_properties_table]) {
+            table.grantReadWriteData(service.event_handler);
+            table.grantReadWriteData(service.event_retry_handler);
+        }
     }
 
     allowReadFromRole(identity: iam.IGrantable) {
-        this.schema_table.grantReadData(identity);
+        for (const table of [this.schema_table, this.schema_properties_table]) {
+            table.grantReadData(identity);
+        }
     }
 
     allowReadWriteFromRole(identity: iam.IGrantable) {
-        this.schema_table.grantReadWriteData(identity);
+        for (const table of [this.schema_table, this.schema_properties_table]) {
+            table.grantReadWriteData(identity);
+        }
     }
 }
