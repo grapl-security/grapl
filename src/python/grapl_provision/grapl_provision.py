@@ -1,9 +1,10 @@
 from __future__ import annotations
+
 import json
 import os
 import sys
 import time
-from typing import List
+from typing import TYPE_CHECKING, List
 
 import boto3
 import pydgraph
@@ -31,7 +32,7 @@ from grapl_analyzerlib.prelude import (
 from grapl_analyzerlib.schema import Schema
 from grapl_common.env_helpers import DynamoDBResourceFactory
 from grapl_common.grapl_logger import get_module_grapl_logger
-from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb import DynamoDBServiceResource
 
@@ -157,14 +158,17 @@ def store_schema(table: DynamoDBServiceResource, schema: Schema) -> None:
         table.put_item(Item={"f_edge": r_edge, "r_edge": f_edge})
         LOGGER.info(f"stored edge mapping: {f_edge} {r_edge}")
 
+
 # TODO: Move into someplace shared with grapl model plugin deployer, provisioner lambda
 def store_schema_properties(table: DynamoDBServiceResource, schema: Schema) -> None:
     for prop_name, prop_type in schema.get_properties().items():
-        table.put_item(Item={
-            "schema": schema.self_type(),
-            "property": prop_name,
-            "prop_primitive": prop_type.prop_type_str(),
-        })
+        table.put_item(
+            Item={
+                "schema": schema.self_type(),
+                "property": prop_name,
+                "prop_primitive": prop_type.prop_type_str(),
+            }
+        )
 
 
 def provision_mg(mclient) -> None:

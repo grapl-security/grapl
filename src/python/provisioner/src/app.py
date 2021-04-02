@@ -152,14 +152,19 @@ def _store_schema(table: DynamoDBServiceResource.Table, schema: BaseSchema) -> N
         table.put_item(Item={"f_edge": r_edge, "r_edge": f_edge})
         LOGGER.info(f"stored edge mapping: {f_edge} {r_edge}")
 
+
 # TODO: Move into someplace shared with grapl model plugin deployer, grapl-provision
-def _store_schema_properties(table: DynamoDBServiceResource, schema: BaseSchema) -> None:
+def _store_schema_properties(
+    table: DynamoDBServiceResource, schema: BaseSchema
+) -> None:
     for prop_name, prop_type in schema.get_properties().items():
-        table.put_item(Item={
-            "schema": schema.self_type(),
-            "property": prop_name,
-            "prop_primitive": prop_type.prop_type_str(),
-        })
+        table.put_item(
+            Item={
+                "schema": schema.self_type(),
+                "property": prop_name,
+                "prop_primitive": prop_type.prop_type_str(),
+            }
+        )
 
 
 def _provision_graph(
