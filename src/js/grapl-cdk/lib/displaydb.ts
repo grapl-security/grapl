@@ -12,7 +12,7 @@ export class DisplayPropertyDb extends DbTable {
             tableName: props.deploymentName + '-grapl_display_table',
             table: 'display_table',
             partitionKey: {
-                name: 'display',
+                name: 'node_type',
                 type: dynamodb.AttributeType.STRING,
             },
             tableReference: 'DisplayPropertyDbTable',

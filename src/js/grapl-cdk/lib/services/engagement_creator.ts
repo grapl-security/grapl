@@ -40,6 +40,7 @@ export class EngagementCreator extends cdk.NestedStack {
             subscribes_to: analyzer_matched_sugraphs.topic,
             opt: {
                 runtime: lambda.Runtime.PYTHON_3_7,
+                py_entrypoint: "lambdex_handler.handler",
             },
             version: props.version,
             watchful: props.watchful,
