@@ -71,6 +71,11 @@ class ProcessSchema(EntitySchema):
     def self_type() -> str:
         return "Process"
 
+    @staticmethod
+    def get_display_property() -> str:
+        return "process_name"
+
+
 
 class ProcessQuery(EntityQuery[PV, PQ]):
     @with_int_prop("process_id")
