@@ -31,7 +31,8 @@ def store_schema_properties(table: Table, schema: Schema) -> None:
     properties: List[SchemaPropertyDict] = [
         {
             "name": prop_name,
-            "primitive": prop_type.primitive.name,
+            # Special case: treat uids as int
+            "primitive": prop_type.primitive.name if prop_name != "uid" else "Int",
             "is_set": prop_type.is_set,
         }
         for prop_name, prop_type in schema.get_properties().items()

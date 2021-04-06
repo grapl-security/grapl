@@ -6,6 +6,7 @@ into graphql endpoint tests (which are *consumers* of the dynamodb node schemas)
 from typing import cast
 from unittest import TestCase
 import os
+from grapl_analyzerlib.node_types import PropPrimitive
 
 import pytest
 import boto3
@@ -22,8 +23,14 @@ class TestSchemaStoredInDynamodb(TestCase):
     ) -> None:
         resource = DynamoDBResourceFactory(boto3).from_env()
         schema_props_table = resource.Table(f"{os.environ['DEPLOYMENT_NAME']}-grapl_schema_properties_table")
-        asset = cast(SchemaDict, schema_props_table.get_item(Key={"node_type": "Asset"}))["Item"]["type_definition"]
-        LOGGER.info(asset)
-        assert asset["properties"][0]["name"] == "uid"
-        # TODO: More robust testing of properties, in particular the edges!
+
+        asset_type = cast(SchemaDict, schema_props_table.get_item(
+            Key={"node_type": "Asset"}
+        )["Item"]["type_definition"])
+        prop_map = {prop["name"]: prop for prop in asset_type["properties"]}
+        assert prop_map["uid"]["primitive"] == PropPrimitive.Int.name  # special case for uid
+        assert prop_map["uid"]["is_set"] == False
+        assert prop_map["hostname"]["primitive"] == PropPrimitive.Str.name
+        assert prop_map["hostname"]["is_set"] == False
+        assert "asset_ip" not in prop_map  # this is coming in an upcoming PR
 
