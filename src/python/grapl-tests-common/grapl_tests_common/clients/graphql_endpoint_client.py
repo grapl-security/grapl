@@ -36,6 +36,7 @@ class GraphqlEndpointClient:
             lens_scope(lens_name: $lens_name) {
                 uid,
                 node_key,
+                lens_name,
                 lens_type,
                 dgraph_type,
                 score,
