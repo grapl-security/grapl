@@ -102,7 +102,8 @@ export class GraplCdkStack extends cdk.Stack {
         });
 
         const schema_table = new SchemaDb(this, 'SchemaTable', {
-            table_name: this.deploymentName + '-grapl_schema_table',
+            edges_table_name: this.deploymentName + '-grapl_schema_table',
+            properties_table_name: `${this.deploymentName}-grapl_schema_properties_table`
         });
 
         let watchful = undefined;

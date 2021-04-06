@@ -22,6 +22,16 @@ class DynamoDB(pulumi.ComponentResource):
     def __init__(self, opts: Optional[pulumi.ResourceOptions] = None) -> None:
         super().__init__("grapl:DynamoDB", DEPLOYMENT_NAME, None, opts)
 
+        self.schema_properties_table = dynamodb_table(
+            f"{DEPLOYMENT_NAME}-grapl_schema_properties_table",
+            [
+                {"name": "node_type", "type": "S"},
+                # We dynamically create a "type_definition" M (map) type.
+            ],
+            self,
+            hash_key="node_type",
+        )
+
         self.schema_table = dynamodb_table(
             f"{DEPLOYMENT_NAME}-grapl_schema_table",
             [{"name": "f_edge", "type": "S"}],

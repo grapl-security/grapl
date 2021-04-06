@@ -8,7 +8,7 @@ from hashlib import pbkdf2_hmac, sha256
 from typing import TYPE_CHECKING, Any, List, Sequence, Union
 
 import boto3
-import pydgraph  # type: ignore
+import pydgraph
 from grapl_analyzerlib.node_types import (
     EdgeRelationship,
     EdgeT,
@@ -30,6 +30,9 @@ from grapl_analyzerlib.prelude import (
     ProcessSchema,
     RiskSchema,
 )
+from grapl_analyzerlib.schema import Schema
+from grapl_common.provision import store_schema_properties  # type: ignore
+from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb import DynamoDBServiceResource
@@ -182,8 +185,12 @@ def _provision_graph(
     table: DynamoDBServiceResource.Table = dynamodb.Table(
         f"{DEPLOYMENT_NAME}-grapl_schema_table"
     )
+    props_table: DynamoDBServiceResource.Table = dynamodb.Table(
+        f"{DEPLOYMENT_NAME}-grapl_schema_properties_table"
+    )
     for schema in schemas:
         _store_schema(table, schema)
+        store_schema_properties(props_table, schema)
 
 
 def _hash_password(cleartext, salt) -> str:
