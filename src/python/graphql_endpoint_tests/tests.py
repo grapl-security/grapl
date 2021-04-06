@@ -44,7 +44,7 @@ class TestGraphqlEndpoint(TestCase):
         assert lens_name in [l["lens_name"] for l in gql_lenses]
 
         # Query by that lens name
-        gql_lens = graphql_client.query_graphql_endpoint_for_scope(lens_name)
+        gql_lens = graphql_client.query_for_scope(lens_name)
         # For some reason, upon create, `lens.uid` comes back as a string like "0x5"
         assert gql_lens["uid"] == int(lens.uid, 0)  # type: ignore
         assert gql_lens["lens_name"] == lens_name
