@@ -44,7 +44,7 @@ class TestGraphqlEndpoint(TestCase):
         assert lens_name in [l["lens_name"] for l in gql_lenses]
 
         # Query by that lens name
-        gql_lens = _query_graphql_endpoint_for_scope(lens_name, graphql_client)
+        gql_lens = graphql_client.query_graphql_endpoint_for_scope(lens_name)
         # For some reason, upon create, `lens.uid` comes back as a string like "0x5"
         assert gql_lens["uid"] == int(lens.uid, 0)  # type: ignore
         assert gql_lens["lens_name"] == lens_name
@@ -72,55 +72,3 @@ def _query_graphql_endpoint_for_lenses(
     """
     resp = gql_client.query(query)
     return resp["lenses"]
-
-
-def _query_graphql_endpoint_for_scope(
-    lens_name: str, graphql_client: GraphqlEndpointClient
-) -> GqlLensDict:
-    # This query is based off the lens_scope query in /expandLensScopeQuery.tsx
-
-    query = """
-    query LensScopeByName($lens_name: String!) {
-        lens_scope(lens_name: $lens_name) {
-            uid,
-            node_key,
-            lens_type,
-            lens_name,
-            dgraph_type,
-            score,
-            scope {
-                ... on Asset {
-                    uid, 
-                    node_key, 
-                    dgraph_type,
-                    hostname,
-                    asset_ip{
-                        ip_address
-                    }, 
-                    asset_processes{
-                        uid, 
-                        node_key, 
-                        dgraph_type,
-                        process_name, 
-                        process_id,
-                    },
-                    files_on_asset{
-                        uid, 
-                        node_key, 
-                        dgraph_type,
-                        file_path
-                    }, 
-                    risks {  
-                        uid,
-                        dgraph_type,
-                        node_key, 
-                        analyzer_name, 
-                        risk_score
-                    },
-                }
-            }
-        }
-    }
-    """
-    resp = graphql_client.query(query, {"lens_name": lens_name})
-    return resp["lens_scope"]

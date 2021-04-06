@@ -117,6 +117,10 @@ const filterDefaultDgraphNodeTypes = (node_type: string) => {
   return node_type !== "Base" && node_type !== "Entity";
 };
 
+function hasDgraphType(node: RawNode): boolean {
+  return "dgraph_type" in node && !!node["dgraph_type"]
+}
+
 function uidAsInt(node: RawNode): number {
   const uid = node["uid"];
 
@@ -133,7 +137,7 @@ function asEnrichedNode(node: RawNode): EnrichedNode {
   return {
     ...node,
     uid: uidAsInt(node),
-    dgraph_type: node.dgraph_type.filter(filterDefaultDgraphNodeTypes),
+    dgraph_type: node.dgraph_type?.filter(filterDefaultDgraphNodeTypes)
   }
 }
 
@@ -170,7 +174,7 @@ const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
       if (predicate === "risks") {
         const risks = neighbor[predicate].map(asEnrichedNode);
         risks.forEach((risk_node: EnrichedNode) => {
-          if ("dgraph_type" in risk_node) {
+          if (hasDgraphType(risk_node)) {
             console.debug("checking if dgraph_type in risk_node", risk_node);
             risk_node["dgraph_type"] = risk_node["dgraph_type"].filter(
               filterDefaultDgraphNodeTypes
@@ -179,9 +183,7 @@ const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
         });
 
         // filter out nodes that don't have dgraph_types
-        neighbor[predicate] = risks.filter(
-          (node: EnrichedNode) => "dgraph_type" in node && !!node["dgraph_type"]
-        );
+        neighbor[predicate] = risks.filter(hasDgraphType);
         continue;
       }
 
