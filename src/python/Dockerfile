@@ -9,7 +9,7 @@ RUN eval "$(/home/grapl/.pyenv/bin/pyenv init -)" && python -mvenv venv && \
     source venv/bin/activate && \
     pip install --upgrade pip
 
-# base build
+# python build
 ################################################################################
 FROM grapl-python-base AS grapl-python-build
 RUN source venv/bin/activate && \

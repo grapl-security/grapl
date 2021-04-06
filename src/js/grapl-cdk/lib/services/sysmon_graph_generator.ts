@@ -45,7 +45,7 @@ export class SysmonGraphGenerator extends cdk.NestedStack {
             version: props.version,
             watchful: props.watchful,
             serviceImage: ContainerImage.fromAsset(SRC_DIR, {
-                target: "sysmon-subgraph-generator-deploy",
+                target: "sysmon-subgraph-generator",
                 buildArgs: {
                     "CARGO_PROFILE": "debug"
                 },

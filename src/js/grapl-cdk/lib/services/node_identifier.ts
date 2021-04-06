@@ -71,14 +71,14 @@ export class NodeIdentifier extends cdk.NestedStack {
             version: props.version,
             watchful: props.watchful,
             serviceImage: ContainerImage.fromAsset(SRC_DIR, {
-                target: "node-identifier-deploy",
+                target: "node-identifier",
                 buildArgs: {
                     "CARGO_PROFILE": "debug"
                 },
                 file: RUST_DOCKERFILE,
             }),
             retryServiceImage: ContainerImage.fromAsset(SRC_DIR, {
-                target: "node-identifier-retry-handler-deploy",
+                target: "node-identifier-retry-handler",
                 buildArgs: {
                     "CARGO_PROFILE": "debug"
                 },

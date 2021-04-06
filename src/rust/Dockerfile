@@ -1,26 +1,7 @@
-FROM grapl-build-base AS build
-ENV RUSTUP_HOME=/usr/local/rustup \
-    CARGO_HOME=/usr/local/cargo \
-    PATH=/usr/local/cargo/bin:$PATH \
-    RUST_VERSION=1.51.0
-RUN dpkgArch="$(dpkg --print-architecture)"; \
-    case "${dpkgArch##*-}" in \
-        amd64) rustArch='x86_64-unknown-linux-gnu'; rustupSha256='ed7773edaf1d289656bdec2aacad12413b38ad0193fff54b2231f5140a4b07c5' ;; \
-        armhf) rustArch='armv7-unknown-linux-gnueabihf'; rustupSha256='7a7b9d246ad63358705d8d4a7d5c2ef1adfec24525d1d5c44a7739e1b867e84d' ;; \
-        arm64) rustArch='aarch64-unknown-linux-gnu'; rustupSha256='f80a0a792b3ab905ab4919474daf4d3f60e574fc6987e69bfba2fd877241a8de' ;; \
-        i386) rustArch='i686-unknown-linux-gnu'; rustupSha256='4473c18286aa1831683a772706d9a5c98b87a61cc014d38063e00a63a480afef' ;; \
-        *) echo >&2 "unsupported architecture: ${dpkgArch}"; exit 1 ;; \
-    esac; \
-    url="https://static.rust-lang.org/rustup/archive/1.23.1/${rustArch}/rustup-init"; \
-    wget "$url"; \
-    echo "${rustupSha256} *rustup-init" | sha256sum -c -; \
-    chmod +x rustup-init; \
-    ./rustup-init -y --no-modify-path --profile minimal --default-toolchain $RUST_VERSION --default-host ${rustArch}; \
-    rm rustup-init; \
-    chmod -R a+w $RUSTUP_HOME $CARGO_HOME; \
-    rustup --version; \
-    cargo --version; \
-    rustc --version; \
+FROM grapl-build-base AS grapl-rust-build
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y && \
+    source $HOME/.cargo/env && \
+    rustup default stable
 ARG CARGO_PROFILE=debug
 WORKDIR /tmp
 RUN wget -q https://github.com/mozilla/sccache/releases/download/v0.2.15/sccache-v0.2.15-x86_64-unknown-linux-musl.tar.gz && \
@@ -55,7 +36,7 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
 
 # metric-forwarder-zip
 ################################################################################
-FROM build AS metric-forwarder-zip
+FROM grapl-rust-build AS metric-forwarder-zip
 RUN mkdir -p /home/grapl/zips; \
     grapl-zip() { \
       TMPDIR="$(mktemp -d)"; \
@@ -67,13 +48,13 @@ RUN mkdir -p /home/grapl/zips; \
 
 # build test stages
 ################################################################################
-FROM build AS build-test-unit
+FROM grapl-rust-build AS build-test-unit
 RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
     --mount=type=secret,id=rust_env,dst=/home/grapl/env \
     source /grapl/env; \
     cargo test --no-run
 
-FROM build AS build-test-integration
+FROM grapl-rust-build AS build-test-integration
 RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
     --mount=type=secret,id=rust_env,dst=/home/grapl/env \
     source /home/grapl/env; \
@@ -96,25 +77,25 @@ CMD ["/home/grapl/generic-subgraph-generator"]
 
 # graph-merger
 FROM rust-dist AS graph-merger
-COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/graph-merger" /home/grapl/graph-merger
+COPY --from=build "/home/grapl/rust/target/${CARGO_PROFILE}/graph-merger" /home/grapl/graph-merger
 CMD ["/home/grapl/graph-merger"]
 
 # node-identifier
 FROM rust-dist AS node-identifier
-COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/node-identifier" /home/grapl/node-identifier
+COPY --from=build "/home/grapl/rust/target/${CARGO_PROFILE}/node-identifier" /home/grapl/node-identifier
 CMD ["/home/grapl/node-identifier"]
 
 # node-identifier-retry-handler
 FROM rust-dist AS node-identifier-retry-handler
-COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/node-identifier-retry-handler" /home/grapl/node-identifier-retry-handler
+COPY --from=build "/home/grapl/rust/target/${CARGO_PROFILE}/node-identifier-retry-handler" /home/grapl/node-identifier-retry-handler
 CMD ["/home/grapl/node-identifier-retry-handler"]
 
 # sysmon-subgraph-generator
 FROM rust-dist AS sysmon-subgraph-generator
-COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/sysmon-subgraph-generator" /home/grapl/sysmon-subgraph-generator
+COPY --from=build "/home/grapl/rust/target/${CARGO_PROFILE}/sysmon-subgraph-generator" /home/grapl/sysmon-subgraph-generator
 CMD ["/home/grapl/sysmon-subgraph-generator"]
 
 # osquery-subgraph-generator
 FROM rust-dist AS osquery-subgraph-generator
-COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/osquery-subgraph-generator" /home/grapl/osquery-subgraph-generator
+COPY --from=build "/home/grapl/rust/target/${CARGO_PROFILE}/osquery-subgraph-generator" /home/grapl/osquery-subgraph-generator
 CMD ["/home/grapl/osquery-subgraph-generator"]

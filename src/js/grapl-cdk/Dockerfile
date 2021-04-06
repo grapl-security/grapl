@@ -2,11 +2,7 @@
 # I haven't yet figured out a way to run the tests, primarily owing to the fact we need the ZIP'd artifacts
 # of other services/builds.
 
-FROM node:alpine3.10 AS grapl-cdk-build
-
-# no-op the base image cmd, so it doesn't launch a Node repl
-CMD :
-RUN apk add bash
+FROM grapl-js-base AS grapl-cdk-build
 RUN npm install --global aws-cdk
 
 # Grab all dependencies
