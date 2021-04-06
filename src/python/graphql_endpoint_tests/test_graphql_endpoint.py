@@ -53,6 +53,23 @@ class TestGraphqlEndpoint(TestCase):
         # Ensure we strip the Entity and Base types
         assert gql_lens["scope"][0]["dgraph_type"] == ["Asset"]
         assert gql_lens["scope"][0]["hostname"] == asset_props["hostname"]
+    
+    def test_describe_asset_type(
+        self,
+    ) -> None:
+        graphql_client = GraphqlEndpointClient(jwt=EngagementEdgeClient().get_jwt())
+
+        result = _query_graphql_about_type("Asset", graphql_client)
+        assert result["name"] == "Asset"
+        
+        uid_looks_like = {
+            "name": "uid",
+            "type": {
+                "name": "Int",
+                "kind": "SCALAR"
+            }
+        }
+        assert any(x for x in result["fields"] if x == uid_looks_like)
 
 
 def _query_graphql_endpoint_for_lenses(
@@ -72,3 +89,23 @@ def _query_graphql_endpoint_for_lenses(
     """
     resp = gql_client.query(query)
     return resp["lenses"]
+
+def _query_graphql_about_type(
+    type_name: str, graphql_client: GraphqlEndpointClient
+):
+    query = """
+    query QueryGraphqlAboutType($type_name: String!) {
+    __type(name: $type_name) {
+        name
+        fields {
+        name
+        type {
+            name
+            kind
+        }
+        }
+    }
+    }
+    """
+    resp = graphql_client.query(query, {"type_name": type_name})
+    return resp["__type"]
