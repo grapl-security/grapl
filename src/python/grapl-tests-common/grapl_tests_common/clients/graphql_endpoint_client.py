@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional, cast
 
 import requests
 
+# Would be nice to improve this as a TypedDict
 GqlLensDict = Dict[str, Any]
 
 
@@ -109,4 +110,4 @@ class GraphqlEndpointClient:
         }
         """
         resp = self.query(query, {"lens_name": lens_name})
-        return resp["lens_scope"]
+        return cast(GqlLensDict, resp["lens_scope"])
