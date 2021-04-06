@@ -50,13 +50,20 @@ def ensure_graphql_lens_scope_no_errors(
     gql_client: GraphqlEndpointClient,
     lens_name: str,
 ) -> None:
+    """
+    Eventually we'd want more-robust checks here, but this is an acceptable
+    smoke test in the mean time.
+    """
     gql_lens = gql_client.query_for_scope(lens_name=lens_name)
     assert len(gql_lens["scope"]) in (3, 4, 5)
 
-    all_types_in_scope = set(node["dgraph_type"] for node in gql_lens["scope"])
+    # Accumulate ["Asset"], ["Process"] into Set("Asset, Process")
+    all_types_in_scope = set(
+        sum((node["dgraph_type"] for node in gql_lens["scope"]), [])
+    )
     assert all_types_in_scope == set(
         (
-            ["Asset"],
-            ["Process"],
+            "Asset",
+            "Process",
         )
     )

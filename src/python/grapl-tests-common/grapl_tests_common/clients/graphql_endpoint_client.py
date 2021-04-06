@@ -31,14 +31,35 @@ class GraphqlEndpointClient:
 
         query = """
         query LensScopeByName($lens_name: String!) {
+            
             lens_scope(lens_name: $lens_name) {
                 uid,
                 node_key,
                 lens_type,
-                lens_name,
                 dgraph_type,
                 score,
                 scope {
+                    ... on Process {
+                        uid,
+                        node_key, 
+                        dgraph_type,
+                        process_name, 
+                        process_id,
+                        children {
+                            uid, 
+                            node_key, 
+                            dgraph_type,
+                            process_name, 
+                            process_id,
+                        }, 
+                        risks {  
+                            uid,
+                            dgraph_type,
+                            node_key, 
+                            analyzer_name, 
+                            risk_score
+                        },
+                    }
                     ... on Asset {
                         uid, 
                         node_key, 
@@ -67,6 +88,21 @@ class GraphqlEndpointClient:
                             analyzer_name, 
                             risk_score
                         },
+                    }
+                    ... on File {
+                        uid,
+                        node_key, 
+                        dgraph_type,
+                        risks {  
+                            uid,
+                            dgraph_type,
+                            node_key, 
+                            analyzer_name, 
+                            risk_score
+                        },
+                    }
+                    ... on PluginType {
+                        predicates,
                     }
                 }
             }
