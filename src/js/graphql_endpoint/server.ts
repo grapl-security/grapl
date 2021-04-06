@@ -7,6 +7,7 @@ import awsServerlessExpress = require("aws-serverless-express");
 import { validateJwt } from "./modules/jwt.js";
 //@ts-ignore
 import regexEscape = require("regex-escape");
+import { GraphQLError } from "graphql";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -61,6 +62,14 @@ const corsDelegate = (req: cors.CorsRequest, callback: CorsCallback): void => {
   callback(null, corsOptions); // callback expects two parameters: error and options
 };
 
+function customFormatErrorFnForDebugging(error: GraphQLError) {
+  return { 
+    message: error.message,
+    locations: error.locations,
+    path: error.path,
+  }
+}
+
 const middleware = [cors(corsDelegate), validateJwt];
 
 app.options("*", cors(corsDelegate));
@@ -77,6 +86,7 @@ app.use(
     return {
       schema: getRootQuerySchema(),
       graphiql: IS_LOCAL,
+      customFormatErrorFn: IS_LOCAL ? customFormatErrorFnForDebugging : undefined,
     };
   })
 );
