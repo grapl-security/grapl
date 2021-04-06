@@ -83,10 +83,6 @@ WITH_LOCAL_GRAPL_ENV := set -o allexport; . ./local-grapl.env; set +o allexport;
 .PHONY: build
 build: build-services ## Alias for `services` (default)
 
-.PHONY: build-all
-build-all: ## Build all targets (incl. services, tests, zip)
-	$(WITH_LOCAL_GRAPL_ENV) $(DOCKER_BUILDX_BAKE) $(EVERY_COMPOSE_FILE)
-
 .PHONY: build-test-unit
 build-test-unit:
 	$(DOCKER_BUILDX_BAKE) \
