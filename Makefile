@@ -79,6 +79,10 @@ WITH_LOCAL_GRAPL_ENV := set -o allexport; . ./local-grapl.env; set +o allexport;
 #
 # Build
 #
+.PHONY: build-base-images
+build-base-images:
+	$(DOCKER_BUILDX_BAKE) \
+		--file ./base-images/docker-compose.base-images.yml
 
 .PHONY: build
 build: build-services ## Alias for `services` (default)

@@ -24,6 +24,7 @@ WORKDIR /home/grapl
 # base image for builds
 ##
 FROM grapl-base AS grapl-build-base
+USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
@@ -32,10 +33,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     liblzma-dev \
     libncurses5-dev \
     libncursesw5-dev \
-    libreadline-dev
+    libreadline-dev \
     libsqlite3-dev \
     libssl-dev \
-    libbz2-dev
+    libbz2-dev \
     llvm \
     make \
     protobuf-compiler \
@@ -46,5 +47,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     zip \
     zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
+USER grapl
 ENV PROTOC /usr/bin/protoc
 ENV PROTOC_INCLUDE /usr/include
