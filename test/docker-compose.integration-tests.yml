@@ -4,16 +4,15 @@ version: "3.8"
 
 services:
 
-  grapl-rust-node-identifier-integration-tests:
-    image: grapl/grapl-node-identifier-test:${TAG:-latest}
+  rust-node-identifier-integration-tests:
+    image: grapl/rust-integration-tests:${TAG:-latest}
     build:
       context: ${PWD}/src
       dockerfile: rust/Dockerfile
       target: build-test-integration
       args:
         - CARGO_PROFILE=debug
-    command: bash -c "
-      cargo test --manifest-path node-identifier/Cargo.toml --features integration"
+    command: cargo test --features node-identifier/integration --test '*'
     environment:
       - AWS_REGION
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
@@ -36,6 +35,18 @@ services:
       - DYNAMODB_ENDPOINT
       - DYNAMODB_ACCESS_KEY_ID
       - DYNAMODB_ACCESS_KEY_SECRET
+
+  rust-sqs-executor-integration-tests:
+    image: grapl/rust-integration-tests:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: rust/Dockerfile
+      target: build-test-integration
+      args:
+        - CARGO_PROFILE=debug
+    command: cargo test --features sqs-executor/integration --test '*'
+    environment:
+      - REDIS_ENDPOINT=redis://${REDIS_HOST}:${REDIS_PORT}
 
   grapl-analyzerlib-integration-tests:
     image: grapl/grapl-analyzerlib-test:${TAG:-latest}

@@ -66,7 +66,7 @@ where
         let mut final_subgraph = GraphDescription::new();
 
         // Skip events we've successfully processed and stored in the event cache.
-        let events = self.cache.filter_cached(events).await;
+        let events = self.cache.filter_cached(&events).await;
 
         for event in events {
             let event = match Event::from_str(&event) {

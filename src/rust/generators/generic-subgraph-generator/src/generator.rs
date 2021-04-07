@@ -84,7 +84,7 @@ where
         let mut failed: Option<eyre::Report> = None;
 
         // Skip events we've successfully processed and stored in the event cache.
-        let events = self.cache.filter_cached(events).await;
+        let events = self.cache.filter_cached(&events).await;
 
         for event in events {
             let identity = event.clone();

@@ -6,6 +6,9 @@ edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+integration = []
+
 [dependencies]
 grapl-observe = { path = "../grapl-observe" }
 grapl-utils = { path = "../grapl-utils" }

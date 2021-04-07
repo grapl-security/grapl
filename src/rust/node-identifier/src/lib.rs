@@ -228,7 +228,10 @@ where
         }
 
         if !dead_node_ids.is_empty() || attribution_failure.is_some() {
-            info!("Partial Success, identified {} nodes", identified_graph.nodes.len());
+            info!(
+                "Partial Success, identified {} nodes",
+                identified_graph.nodes.len()
+            );
             Err(Ok(
                 (identified_graph, NodeIdentifierError::Unexpected), // todo: Use a real error here
             ))
@@ -324,32 +327,36 @@ impl CheckedError for HashCacheError {
 impl Cache for HashCache {
     type CacheErrorT = HashCacheError;
 
-    async fn exists<CA: Cacheable + Send + Sync + Clone + 'static>(
-        &mut self,
-        cacheable: CA,
-    ) -> bool {
+    async fn all_exist<CA>(&mut self, cacheables: &[CA]) -> bool
+    where
+        CA: Cacheable + Send + Sync + Clone + 'static,
+    {
         let self_cache = self.cache.lock().unwrap();
-        self_cache.contains(&cacheable.identity())
+
+        cacheables
+            .into_iter()
+            .all(|c| self_cache.contains(&c.identity()))
     }
 
-    async fn store(&mut self, identity: Vec<u8>) -> Result<(), HashCacheError> {
+    async fn store<CA>(&mut self, cacheable: CA) -> Result<(), HashCacheError>
+    where
+        CA: Cacheable + Send + Sync + Clone + 'static,
+    {
         let mut self_cache = self.cache.lock().unwrap();
-        self_cache.insert(identity);
+        self_cache.insert(cacheable.identity());
         Ok(())
     }
 
-    async fn filter_cached<CA: Cacheable + Send + Sync + Clone + 'static>(
-        &mut self,
-        cacheables: Vec<CA>,
-    ) -> Vec<CA> {
+    async fn filter_cached<CA>(&mut self, cacheables: &[CA]) -> Vec<CA>
+    where
+        CA: Cacheable + Send + Sync + Clone + 'static,
+    {
         let self_cache = self.cache.lock().unwrap();
 
-        let mut res = Vec::new();
-        for cacheable in cacheables {
-            if !self_cache.contains(&cacheable.identity()) {
-                res.push(cacheable);
-            }
-        }
-        res
+        cacheables
+            .iter()
+            .cloned()
+            .filter(|c| self_cache.contains(&c.identity()))
+            .collect()
     }
 }

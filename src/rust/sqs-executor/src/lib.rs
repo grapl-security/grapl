@@ -92,7 +92,7 @@ where
         }
     }
 
-    cache.store_all(to_cache).await.unwrap_or_else(|e| {
+    cache.store_all(&to_cache).await.unwrap_or_else(|e| {
         error!(
             error = e.to_string().as_str(),
             "Failed to store_all in cache"
@@ -175,7 +175,7 @@ async fn process_message<
     );
     let _enter = inner_loop_span.enter();
 
-    if cache.exists(message_id.as_bytes().to_owned()).await {
+    if cache.all_exist(&[message_id.to_owned()]).await {
         info!(
             message_id = message_id,
             "Message has already been processed",
