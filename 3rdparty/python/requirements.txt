@@ -12,6 +12,7 @@ mypy_boto3_sqs
 protobuf>=3.12.1
 pulumi>=2.0.0,<3.0.0
 pulumi-aws>=3.2.0,<4.0.0
+pulumi_random
 pydgraph
 pyjwt
 requests
