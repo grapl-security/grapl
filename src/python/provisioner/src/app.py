@@ -149,11 +149,11 @@ def _store_schema(dynamodb, schema: "Schema"):
         grapl_schema_table = dynamodb.Table(
             os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table"
         )
-        grapl_display_table = dynamodb.Table(
-            os.environ["DEPLOYMENT_NAME"] + "-grapl_display_table"
+        grapl_schema_properties_table = dynamodb.Table(
+            os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_properties_table"
         )
 
-        grapl_display_table.put_item(   
+        grapl_schema_properties_table.put_item(   
             Item={  
                 "node_type": schema.self_type(),
                 "display_property": schema.get_display_property(),
