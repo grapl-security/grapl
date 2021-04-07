@@ -1,9 +1,8 @@
 import * as cdk from '@aws-cdk/core';
+import { DbTable } from './dynamoDbTable';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
-import * as iam from '@aws-cdk/aws-iam';
-
 import { Service } from './service';
-import { RemovalPolicy } from '@aws-cdk/core';
+import * as iam from '@aws-cdk/aws-iam';
 import { FargateService } from "./fargate_service";
 
 export interface SchemaDbProps {
@@ -12,63 +11,66 @@ export interface SchemaDbProps {
 }
 
 export class SchemaDb extends cdk.Construct {
-    readonly schema_table: dynamodb.Table;
-    readonly schema_properties_table: dynamodb.Table;
+    readonly schema_table: DbTable;
+    readonly schema_properties_table: DbTable;
 
     constructor(scope: cdk.Construct, id: string, props: SchemaDbProps) {
         super(scope, id);
 
-        this.schema_table = new dynamodb.Table(this, 'SchemaDbTable', {
+        this.schema_table = new DbTable(this, 'SchemaDbTable', {
             tableName: props.edges_table_name,
+            table: 'schema_db_table',
             partitionKey: {
                 name: 'f_edge',
                 type: dynamodb.AttributeType.STRING,
             },
-            serverSideEncryption: true,
-            billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-            removalPolicy: RemovalPolicy.DESTROY,
+            tableReference: 'SchemaDbTable',
         });
 
-        this.schema_properties_table = new dynamodb.Table(this, 'SchemaPropertiesDbTable', {
-            tableName: props.properties_table_name,
-            partitionKey: {
-                name: 'node_type',
-                type: dynamodb.AttributeType.STRING,
-            },
-            serverSideEncryption: true,
-            billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-            removalPolicy: RemovalPolicy.DESTROY,
-        });
+        this.schema_properties_table = new DbTable(
+            this,
+            'SchemaPropertiesDbTable',
+            {
+                tableName: props.properties_table_name,
+                table: 'schema_properties_db_table',
+                partitionKey: {
+                    name: 'node_type',
+                    type: dynamodb.AttributeType.STRING,
+                },
+                tableReference: 'SchemaPropertiesDbTable',
+            }
+        );
     }
 
     allowRead(service: Service|FargateService) {
         for (const table of [this.schema_table, this.schema_properties_table]) {
             if (service instanceof FargateService) {
-                table.grantReadData(service.service.taskDefinition.taskRole);
-                table.grantReadData(service.retryService.taskDefinition.taskRole);
+                table.table.grantReadData(service.service.taskDefinition.taskRole);
+                table.table.grantReadData(service.retryService.taskDefinition.taskRole);
             } else {
-                table.grantReadData(service.event_handler);
-                table.grantReadData(service.event_retry_handler);
+                table.table.grantReadData(service.event_handler);
+                table.table.grantReadData(service.event_retry_handler);
             }
         }
     }
 
+
     allowReadWrite(service: Service) {
         for (const table of [this.schema_table, this.schema_properties_table]) {
-            table.grantReadWriteData(service.event_handler);
-            table.grantReadWriteData(service.event_retry_handler);
+            table.table.grantReadWriteData(service.event_handler);
+            table.table.grantReadWriteData(service.event_retry_handler);
         }
     }
 
     allowReadFromRole(identity: iam.IGrantable) {
         for (const table of [this.schema_table, this.schema_properties_table]) {
-            table.grantReadData(identity);
+            table.table.grantReadData(identity);
         }
     }
 
     allowReadWriteFromRole(identity: iam.IGrantable) {
         for (const table of [this.schema_table, this.schema_properties_table]) {
-            table.grantReadWriteData(identity);
+            table.table.grantReadWriteData(identity);
         }
     }
 }

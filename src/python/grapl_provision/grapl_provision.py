@@ -150,14 +150,31 @@ def provision_master_graph(
     set_schema(master_graph_client, mg_schema_str)
 
 
-def store_schema(table: DynamoDBServiceResource, schema: Schema) -> None:
-    for f_edge, (_, r_edge) in schema.get_edges().items():
-        if not (f_edge and r_edge):
-            continue
+def store_schema(dynamodb, schema: "Schema") -> None:
+    grapl_schema_table = dynamodb.Table("local-grapl-grapl_schema_table")
+    grapl_display_table = dynamodb.Table("local-grapl-grapl_display_table")
 
-        table.put_item(Item={"f_edge": f_edge, "r_edge": r_edge})
-        table.put_item(Item={"f_edge": r_edge, "r_edge": f_edge})
-        LOGGER.info(f"stored edge mapping: {f_edge} {r_edge}")
+    grapl_display_table.put_item(
+        Item={
+            "node_type": schema.self_type(),
+            "display_property": schema.get_display_property(),
+        }
+    )
+    for f_edge, (edge_t, r_edge) in schema.get_edges().items():
+        if not (f_edge and r_edge):
+            LOGGER.warn(f"missing {f_edge} {r_edge} for {schema.self_type()}")
+            continue
+        grapl_schema_table.put_item(
+            Item={"f_edge": f_edge, "r_edge": r_edge, "relationship": int(edge_t.rel)}
+        )
+
+        grapl_schema_table.put_item(
+            Item={
+                "f_edge": r_edge,
+                "r_edge": f_edge,
+                "relationship": int(edge_t.rel.reverse()),
+            }
+        )
 
 
 def provision_mg(mclient) -> None:
@@ -190,14 +207,13 @@ def provision_mg(mclient) -> None:
 
     dynamodb = DynamoDBResourceFactory(boto3).from_env()
 
-    edges_table = dynamodb.Table("local-grapl-grapl_schema_table")
     props_table = dynamodb.Table("local-grapl-grapl_schema_properties_table")
     for schema in schemas:
         try:
-            store_schema(edges_table, schema)
+            store_schema(dynamodb, schema)
             store_schema_properties(props_table, schema)
         except Exception as e:
-            LOGGER.warn(f"storing schema: {schema} {edges_table} {e}")
+            LOGGER.warn(f"storing schema: {schema} {e}")
 
 
 DEPLOYMENT_NAME = "local-grapl"
