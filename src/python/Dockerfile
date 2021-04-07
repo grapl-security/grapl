@@ -317,15 +317,6 @@ COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
 RUN source venv/bin/activate && \
     pip install -r dgraph-ttl/requirements.txt
 
-# zip
-FROM dgraph-ttl-build AS dgraph-ttl-zip
-
-RUN LAMBDA_DIR=$(pwd); \
-    cd ~/venv/lib/python3.7/site-packages && \
-    zip -q9r -dg "${LAMBDA_DIR}/lambda.zip" ./ && \
-    cd ~/dgraph-ttl && \
-    zip -g "${LAMBDA_DIR}/lambda.zip" app.py
-
 # deploy
 FROM grapl-python-deploy AS dgraph-ttl-deploy
 
