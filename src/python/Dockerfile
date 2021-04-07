@@ -1,14 +1,3 @@
-# python base
-################################################################################
-FROM grapl-build-base AS grapl-python-base
-RUN curl https://pyenv.run | bash
-RUN /home/grapl/.pyenv/bin/pyenv update
-RUN /home/grapl/.pyenv/bin/pyenv install --verbose 3.7.10
-RUN /home/grapl/.pyenv/bin/pyenv global 3.7.10
-RUN eval "$(/home/grapl/.pyenv/bin/pyenv init -)" && python -mvenv venv && \
-    source venv/bin/activate && \
-    pip install --upgrade pip
-
 # python build
 ################################################################################
 FROM grapl-python-base AS grapl-python-build

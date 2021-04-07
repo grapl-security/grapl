@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   ########################################################################
-  # base images -- all images inherit from grapl-base
+  # base images -- all images inherit from these
   ########################################################################
 
   grapl-base:
@@ -18,3 +18,24 @@ services:
       context: ./base-images
       dockerfile: Dockerfile.base
       target: grapl-build-base
+
+  grapl-rust-base:
+    image: grapl/grapl-rust-base:${TAG:-latest}
+    build:
+      context: ./base-images
+      dockerfile: Dockerfile.base
+      target: grapl-rust-base
+
+  grapl-python-base:
+    image: grapl/grapl-python-base:${TAG:-latest}
+    build:
+      context: ./base-images
+      dockerfile: Dockerfile.base
+      target: grapl-python-base
+
+  grapl-js-base:
+    image: grapl/grapl-js-base:${TAG:-latest}
+    build:
+      context: ./base-images
+      dockerfile: Dockerfile.base
+      target: grapl-js-base

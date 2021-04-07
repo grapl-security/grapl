@@ -88,24 +88,24 @@ build-base-images:
 build: build-services ## Alias for `services` (default)
 
 .PHONY: build-test-unit
-build-test-unit:
+build-test-unit: build-base-images
 	$(DOCKER_BUILDX_BAKE) \
 		--file ./test/docker-compose.unit-tests-rust.yml \
 		--file ./test/docker-compose.unit-tests-js.yml
 
 .PHONY: build-test-unit-rust
-build-test-unit-rust:
+build-test-unit-rust: build-base-images
 	$(DOCKER_BUILDX_BAKE) \
 		--file ./test/docker-compose.unit-tests-rust.yml
 
 .PHONY: build-test-unit-js
-build-test-unit-js:
+build-test-unit-js: build-base-images
 	$(DOCKER_BUILDX_BAKE) \
 		--file ./test/docker-compose.unit-tests-js.yml
 
 .PHONY: build-test-typecheck
-build-test-typecheck:
-	docker buildx bake --file ./test/docker-compose.typecheck-tests.yml
+build-test-typecheck: build-base-images
+	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.typecheck-tests.yml
 
 .PHONY: build-test-integration
 build-test-integration: build-services
@@ -118,15 +118,15 @@ build-test-e2e: build-services
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.yml
 
 .PHONY: build-wait-for-local-provision
-build-wait-for-local-provision:
+build-wait-for-local-provision: build-base-images
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.test-utils.yml
 
 .PHONY: build-services
-build-services: ## Build Grapl services
+build-services: build-base-images ## Build Grapl services
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
 
 .PHONY: build-lambdas
-build-lambdas: ## Build services for Grapl in AWS (subset of all services)
+build-lambdas: build-base-images ## Build services for Grapl in AWS (subset of all services)
 	$(DOCKER_BUILDX_BAKE) $(EVERY_LAMBDA_COMPOSE_FILE)
 
 .PHONY: graplctl

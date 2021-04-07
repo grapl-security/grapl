@@ -1,7 +1,4 @@
-FROM grapl-build-base AS grapl-rust-build
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y && \
-    source $HOME/.cargo/env && \
-    rustup default stable
+FROM grapl-rust-base as grapl-rust-build
 ARG CARGO_PROFILE=debug
 WORKDIR /tmp
 RUN wget -q https://github.com/mozilla/sccache/releases/download/v0.2.15/sccache-v0.2.15-x86_64-unknown-linux-musl.tar.gz && \

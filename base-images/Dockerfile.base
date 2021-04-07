@@ -50,3 +50,40 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 USER grapl
 ENV PROTOC /usr/bin/protoc
 ENV PROTOC_INCLUDE /usr/include
+
+##
+# rust
+##
+FROM grapl-build-base AS grapl-rust-base
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y && \
+    source /home/grapl/.cargo/env && \
+    rustup default stable
+
+##
+# python
+##
+FROM grapl-build-base AS grapl-python-base
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
+USER grapl
+RUN curl https://pyenv.run | bash
+RUN /home/grapl/.pyenv/bin/pyenv update
+RUN /home/grapl/.pyenv/bin/pyenv install --verbose 3.7.10
+RUN /home/grapl/.pyenv/bin/pyenv global 3.7.10
+RUN eval "$(/home/grapl/.pyenv/bin/pyenv init -)" && python -mvenv venv && \
+    source venv/bin/activate && \
+    pip install --upgrade pip
+
+##
+# js
+##
+FROM grapl-build-base AS grapl-js-base
+ENV NVM_DIR=/home/grapl/.nvm
+ENV NODE_VERSION=v14.16.0
+RUN mkdir -p $NVM_DIR
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash \
+    && source $NVM_DIR/nvm.sh \
+    && nvm install $NODE_VERSION \
+    && nvm alias default $NODE_VERSION \
+    && nvm use default
+RUN source $NVM_DIR/nvm.sh && npm install -g yarn  # FIXME: version
