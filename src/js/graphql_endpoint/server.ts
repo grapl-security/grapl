@@ -103,7 +103,6 @@ if (IS_LOCAL) {
   });
 } else {
   const server = awsServerlessExpress.createServer(app);
-  console.log("AWS Server", server);
   exports.handler = (
     event: lambda.APIGatewayProxyEvent,
     context: lambda.Context

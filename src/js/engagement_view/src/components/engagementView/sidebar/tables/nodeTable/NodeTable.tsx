@@ -41,7 +41,8 @@ const NodeTable = ({ node }: NodeTableProps) => {
 		"fx",
 		"fy",
 		"links", 
-		"neighbors"
+		"neighbors",
+		"display",
 	]);
 
 	mapEdgeProps(node as any, (edgeName: any, _neighbor: any) => {
