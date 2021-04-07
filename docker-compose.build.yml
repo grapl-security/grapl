@@ -12,6 +12,24 @@ services:
   # Rust Services
   ########################################################################
 
+  grapl-rust-build:
+    image: grapl/grapl-rust-build:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: rust/Dockerfile
+      target: grapl-rust-build
+      args:
+        - TAG=${TAG:-latest}
+
+  rust-dist:
+    image: grapl/rust-dist:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: rust/Dockerfile
+      target: rust-dist
+      args:
+        - TAG=${TAG:-latest}
+
   grapl-sysmon-subgraph-generator:
     image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
     build:
@@ -70,12 +88,23 @@ services:
   # Python Services
   ########################################################################
 
+  grapl-python-build:
+    image: grapl/grapl-python-build:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: ./python/Dockerfile
+      target: grapl-python-build
+      args:
+        - TAG=${TAG:-latest}
+
   grapl-analyzer-executor:
     image: grapl/grapl-analyzer-executor:${TAG:-latest}
     build:
       context: src
       dockerfile: ./python/Dockerfile
       target: analyzer-executor
+      args:
+        - TAG=${TAG:-latest}
 
   grapl-ux-router:
     image: grapl/grapl-ux-router:${TAG:-latest}
@@ -83,6 +112,8 @@ services:
       context: src
       dockerfile: ./python/Dockerfile
       target: grapl-ux-router
+      args:
+        - TAG=${TAG:-latest}
 
   grapl-engagement-creator:
     image: grapl/grapl-engagement-creator:${TAG:-latest}
@@ -90,6 +121,8 @@ services:
       context: src
       dockerfile: ./python/Dockerfile
       target: engagement-creator
+      args:
+        - TAG=${TAG:-latest}
 
   # TODO: really, this service should be grapl-auth
   grapl-engagement-edge:
@@ -98,6 +131,8 @@ services:
       context: src
       dockerfile: ./python/Dockerfile
       target: engagement-edge
+      args:
+        - TAG=${TAG:-latest}
 
   grapl-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
@@ -105,6 +140,8 @@ services:
       context: src
       dockerfile: ./python/Dockerfile
       target: model-plugin-deployer
+      args:
+        - TAG=${TAG:-latest}
 
   grapl-dgraph-ttl:
     image: grapl/grapl-dgraph-ttl:${TAG:-latest}
@@ -112,10 +149,21 @@ services:
       context: src
       dockerfile: ./python/Dockerfile
       target: dgraph-ttl
+      args:
+        - TAG=${TAG:-latest}
 
   ########################################################################
   # Web Services
   ########################################################################
+
+  engagement-view-deps:
+    image: grapl/engagement-view-deps:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: js/engagement_view/Dockerfile
+      target: engagement-view
+      args:
+        - TAG=${TAG:-latest}
 
   grapl-engagement-view-uploader:
     image: grapl/grapl-engagement-view:${TAG:-latest}
@@ -123,6 +171,17 @@ services:
       context: src
       dockerfile: js/engagement_view/Dockerfile
       target: engagement-view
+      args:
+        - TAG=${TAG:-latest}
+
+  graphql-endpoint-build:
+    image: grapl/graphql-endpoint-build:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: js/graphql_endpoint/Dockerfile
+      target: graphql-endpoint-build
+      args:
+        - TAG=${TAG:-latest}
 
   grapl-graphql-endpoint:
     image: grapl/grapl-graphql-endpoint:${TAG:-latest}
@@ -130,6 +189,8 @@ services:
       context: src
       dockerfile: js/graphql_endpoint/Dockerfile
       target: graphql-endpoint
+      args:
+        - TAG=${TAG:-latest}
 
   grapl-notebook:
     image: grapl/grapl-notebook:${TAG:-latest}
@@ -137,6 +198,8 @@ services:
       context: src
       dockerfile: ./python/Dockerfile
       target: grapl-notebook
+      args:
+        - TAG=${TAG:-latest}
 
   ########################################################################
   # Utility Services
@@ -148,9 +211,13 @@ services:
       context: src
       dockerfile: ./python/Dockerfile
       target: grapl-provision
+      args:
+        - TAG=${TAG:-latest}
 
   grapl-pulumi:
     image: grapl/grapl-local-pulumi:${TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile.pulumi
+      args:
+        - TAG=${TAG:-latest}

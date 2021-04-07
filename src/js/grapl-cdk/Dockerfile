@@ -2,7 +2,8 @@
 # I haven't yet figured out a way to run the tests, primarily owing to the fact we need the ZIP'd artifacts
 # of other services/builds.
 
-FROM grapl-js-base AS grapl-cdk-build
+FROM grapl/grapl-js-base:$TAG AS grapl-cdk-build
+ARG TAG=latest
 RUN npm install --global aws-cdk
 
 # Grab all dependencies

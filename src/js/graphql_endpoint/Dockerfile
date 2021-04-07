@@ -1,4 +1,5 @@
-FROM grapl-js-base AS graphql-endpoint-build
+FROM grapl/grapl-js-base:$TAG AS graphql-endpoint-build
+ARG TAG=latest
 RUN mkdir -p lambda
 # Install the dependencies separately to leverage Docker cache
 WORKDIR /home/grapl/lambda
@@ -22,7 +23,8 @@ RUN cd lambda/ts_compiled && \
     zip -q9r /home/grapl/lambda.zip ./
 
 # deploy... this is only used in Local Grapl at the moment
-FROM grapl-js-base AS graphql-endpoint
+FROM grapl/grapl-js-base:$TAG AS graphql-endpoint
+ARG TAG=latest
 COPY --chown=grapl --from=graphql-endpoint-build /home/grapl/lambda lambda
 WORKDIR /home/grapl/lambda/ts_compiled
 COPY --chown=grapl js/graphql_endpoint/package.json package.json

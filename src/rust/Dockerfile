@@ -1,4 +1,5 @@
-FROM grapl-rust-base as grapl-rust-build
+FROM grapl/grapl-rust-base:$TAG as grapl-rust-build
+ARG TAG=latest
 ARG CARGO_PROFILE=debug
 WORKDIR /tmp
 RUN wget -q https://github.com/mozilla/sccache/releases/download/v0.2.15/sccache-v0.2.15-x86_64-unknown-linux-musl.tar.gz && \
@@ -59,7 +60,8 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
 
 # images for running services
 ################################################################################
-FROM grapl-base AS rust-dist
+FROM grapl/grapl-base:$TAG AS rust-dist
+ARG TAG=latest
 ARG CARGO_PROFILE=debug
 
 # analyzer-dispatcher

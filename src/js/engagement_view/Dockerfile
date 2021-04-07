@@ -1,6 +1,7 @@
 # deps
 ################################################################################
-FROM grapl-js-build AS engagement-view-deps
+FROM grapl/grapl-js-build:$TAG AS engagement-view-deps
+ARG TAG=latest
 # install deps as separate steps to leverage build cache
 COPY js/engagement_view/package.json package.json
 COPY js/engagement_view/yarn.lock yarn.lock
@@ -17,6 +18,7 @@ RUN yarn build
 
 # deploy
 ################################################################################
-FROM grapl-js-base AS engagement-view
+FROM grapl/grapl-js-base:$TAG AS engagement-view
+ARG TAG=latest
 RUN source /home/grapl/venv/bin/activate && python3 -m pip install awscli
 COPY --from=engagement-view-build /home/grapl /home/grapl

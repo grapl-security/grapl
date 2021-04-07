@@ -1,6 +1,7 @@
 # python build
 ################################################################################
-FROM grapl-python-base AS grapl-python-build
+FROM grapl/grapl-python-base:$TAG AS grapl-python-build
+ARG TAG=latest
 RUN source venv/bin/activate && \
     pip install wheel grpcio chalice hypothesis pytest pytest-xdist
 
@@ -78,7 +79,8 @@ RUN source venv/bin/activate && \
     pip install .
 
 # deploy
-FROM grapl-python-base AS analyzer-executor
+FROM grapl/grapl-python-base:$TAG AS analyzer-executor
+ARG TAG=latest
 COPY --chown=grapl --from=analyzer-executor-build /home/grapl/venv venv
 COPY --chown=grapl --from=analyzer-executor-build /home/grapl/analyzer_executor analyzer_executor
 CMD source venv/bin/activate && \
@@ -103,7 +105,8 @@ RUN source venv/bin/activate && \
     pip install .
 
 # deploy
-FROM grapl-python-base AS engagement-creator
+FROM grapl/grapl-python-base:$TAG AS engagement-creator
+ARG TAG=latest
 COPY --chown=grapl --from=engagement-creator-build /home/grapl/venv venv
 COPY --chown=grapl --from=engagement-creator-build /home/grapl/engagement-creator engagement-creator
 CMD source /venv/bin/activate && \
@@ -137,7 +140,8 @@ RUN LAMBDA_DIR=$(pwd); \
     find . -type f -name "*.py" -exec zip -g "${LAMBDA_DIR}/lambda.zip" "{}" \;
 
 # deploy
-FROM grapl-python-base AS engagement-edge
+FROM grapl/grapl-python-base:$TAG AS engagement-edge
+ARG TAG=latest
 COPY --chown=grapl --from=engagement-edge-build /home/grapl/venv venv
 RUN source venv/bin/activate && \
     chalice new-project app/
@@ -181,7 +185,8 @@ RUN ORIG_DIR=$(pwd); \
     find . -type f -name "*.py" -exec zip -g "${ORIG_DIR}/lambda.zip" "{}" \;
 
 # deploy
-FROM grapl-python-base AS grapl-ux-router
+FROM grapl/grapl-python-base:$TAG AS grapl-ux-router
+ARG TAG=latest
 COPY --chown=grapl --from=grapl-ux-router-build /home/grapl/venv venv
 RUN source venv/bin/activate && \
     chalice new-project app/
@@ -209,7 +214,8 @@ RUN LAMBDA_DIR=$(pwd); \
     zip -g "${LAMBDA_DIR}/lambda.zip" app.py
 
 # deploy
-FROM grapl-python-base AS dgraph-ttl
+FROM grapl/grapl-python-base:$TAG AS dgraph-ttl
+ARG TAG=latest
 COPY --chown=grapl --from=dgraph-ttl-build /home/grapl/venv venv
 COPY --chown=grapl --from=dgraph-ttl-build /home/grapl/dgraph-ttl app
 CMD source venv/bin/activate && \
@@ -242,7 +248,8 @@ RUN LAMBDA_DIR=$(pwd); \
     find . -type f -name "*.py" -exec zip -g "${LAMBDA_DIR}/lambda.zip" "{}" \;
 
 # deploy
-FROM grapl-python-base AS model-plugin-deployer
+FROM grapl/grapl-python-base:$TAG AS model-plugin-deployer
+ARG TAG=latest
 COPY --chown=grapl --from=model-plugin-deployer-build /home/grapl/venv venv
 RUN source venv/bin/activate && \
     chalice new-project app/
@@ -260,7 +267,8 @@ RUN python_test_deps/install_requirements.sh
 ################################################################################
 
 # build
-FROM grapl-python-base AS grapl-notebook
+FROM grapl/grapl-python-base:$TAG AS grapl-notebook
+ARG TAG=latest
 EXPOSE 8888
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
 RUN source venv/bin/activate && \
@@ -282,7 +290,8 @@ RUN source venv/bin/activate && \
 ################################################################################
 
 # build
-FROM grapl-python-base AS grapl-provision
+FROM grapl/grapl-python-base:$TAG AS grapl-provision
+ARG TAG=latest
 COPY --chown=grapl python/grapl_provision grapl_local_provision
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
 
