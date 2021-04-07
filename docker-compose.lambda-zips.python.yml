@@ -2,20 +2,6 @@ version: "3.8"
 
 services:
 
-  grapl-engagement-edge-zip:
-    image: grapl/grapl-engagement-edge-zip:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: ./python/Dockerfile
-      target: engagement-edge-zip
-    volumes:
-      - ./src/js/grapl-cdk/zips:/grapl
-    user: ${UID}:${GID}
-    working_dir: /grapl
-    environment:
-      - TAG=${TAG:-latest}
-    command: cp /home/grapl/lambda.zip engagement-edge-${TAG:-latest}.zip
-
   grapl-model-plugin-deployer-zip:
     image: grapl/grapl-model-plugin-deployer-zip:${TAG:-latest}
     build:

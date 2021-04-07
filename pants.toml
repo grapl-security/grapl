@@ -42,7 +42,6 @@ root_patterns = [
   "/src/python/analyzer_executor/tests",
   "/src/python/engagement-creator",
   "/src/python/engagement_edge",
-  "/src/python/engagement_edge/tests",
   "/src/python/graphql_endpoint_tests",
   "/src/python/grapl_analyzerlib",
   "/src/python/grapl-common",

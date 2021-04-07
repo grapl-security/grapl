@@ -91,14 +91,6 @@ services:
       dockerfile: ./python/Dockerfile
       target: engagement-creator-deploy
 
-  # TODO: really, this service should be grapl-auth
-  grapl-engagement-edge:
-    image: grapl/grapl-engagement-edge:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: ./python/Dockerfile
-      target: engagement-edge-deploy
-
   grapl-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
     build:
