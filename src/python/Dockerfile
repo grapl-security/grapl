@@ -1,7 +1,8 @@
+ARG TAG=latest
+
 # python build
 ################################################################################
 FROM grapl/grapl-python-base:$TAG AS grapl-python-build
-ARG TAG=latest
 RUN source venv/bin/activate && \
     pip install wheel grpcio chalice hypothesis pytest pytest-xdist
 
@@ -80,7 +81,6 @@ RUN source venv/bin/activate && \
 
 # deploy
 FROM grapl/grapl-python-base:$TAG AS analyzer-executor
-ARG TAG=latest
 COPY --chown=grapl --from=analyzer-executor-build /home/grapl/venv venv
 COPY --chown=grapl --from=analyzer-executor-build /home/grapl/analyzer_executor analyzer_executor
 CMD source venv/bin/activate && \
@@ -106,7 +106,6 @@ RUN source venv/bin/activate && \
 
 # deploy
 FROM grapl/grapl-python-base:$TAG AS engagement-creator
-ARG TAG=latest
 COPY --chown=grapl --from=engagement-creator-build /home/grapl/venv venv
 COPY --chown=grapl --from=engagement-creator-build /home/grapl/engagement-creator engagement-creator
 CMD source /venv/bin/activate && \
@@ -141,7 +140,6 @@ RUN LAMBDA_DIR=$(pwd); \
 
 # deploy
 FROM grapl/grapl-python-base:$TAG AS engagement-edge
-ARG TAG=latest
 COPY --chown=grapl --from=engagement-edge-build /home/grapl/venv venv
 RUN source venv/bin/activate && \
     chalice new-project app/
@@ -186,7 +184,6 @@ RUN ORIG_DIR=$(pwd); \
 
 # deploy
 FROM grapl/grapl-python-base:$TAG AS grapl-ux-router
-ARG TAG=latest
 COPY --chown=grapl --from=grapl-ux-router-build /home/grapl/venv venv
 RUN source venv/bin/activate && \
     chalice new-project app/
@@ -215,7 +212,6 @@ RUN LAMBDA_DIR=$(pwd); \
 
 # deploy
 FROM grapl/grapl-python-base:$TAG AS dgraph-ttl
-ARG TAG=latest
 COPY --chown=grapl --from=dgraph-ttl-build /home/grapl/venv venv
 COPY --chown=grapl --from=dgraph-ttl-build /home/grapl/dgraph-ttl app
 CMD source venv/bin/activate && \
@@ -249,7 +245,6 @@ RUN LAMBDA_DIR=$(pwd); \
 
 # deploy
 FROM grapl/grapl-python-base:$TAG AS model-plugin-deployer
-ARG TAG=latest
 COPY --chown=grapl --from=model-plugin-deployer-build /home/grapl/venv venv
 RUN source venv/bin/activate && \
     chalice new-project app/
@@ -268,7 +263,6 @@ RUN python_test_deps/install_requirements.sh
 
 # build
 FROM grapl/grapl-python-base:$TAG AS grapl-notebook
-ARG TAG=latest
 EXPOSE 8888
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
 RUN source venv/bin/activate && \
@@ -291,7 +285,6 @@ RUN source venv/bin/activate && \
 
 # build
 FROM grapl/grapl-python-base:$TAG AS grapl-provision
-ARG TAG=latest
 COPY --chown=grapl python/grapl_provision grapl_local_provision
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
 

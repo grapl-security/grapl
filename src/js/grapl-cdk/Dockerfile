@@ -1,17 +1,18 @@
+ARG TAG=latest
+
 # NOTE: this build is half-baked, and primarily supplies us with typechecks at CI time.
 # I haven't yet figured out a way to run the tests, primarily owing to the fact we need the ZIP'd artifacts
 # of other services/builds.
 
 FROM grapl/grapl-js-base:$TAG AS grapl-cdk-build
-ARG TAG=latest
-RUN npm install --global aws-cdk
+RUN source $NVM_DIR/nvm.sh && npm install --global aws-cdk
 
 # Grab all dependencies
 WORKDIR /home/grapl
 COPY js/grapl-cdk/package.json src/js/grapl-cdk/package.json
 COPY js/grapl-cdk/package-lock.json src/js/grapl-cdk/package-lock.json
 WORKDIR /home/grapl/src/js/grapl-cdk
-RUN npm install
+RUN source $NVM_DIR/nvm.sh && npm install
 
 # Copy in the rest of the source
 WORKDIR /home/grapl
@@ -19,7 +20,7 @@ COPY js/grapl-cdk src/js/grapl-cdk
 
 # does typechecking, which is nice
 WORKDIR /home/grapl/src/js/grapl-cdk
-RUN npm run build
+RUN source $NVM_DIR/nvm.sh && npm run build
 
 # test
 ######################################################

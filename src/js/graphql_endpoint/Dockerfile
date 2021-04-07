@@ -1,18 +1,19 @@
-FROM grapl/grapl-js-base:$TAG AS graphql-endpoint-build
 ARG TAG=latest
+
+FROM grapl/grapl-js-base:$TAG AS graphql-endpoint-build
 RUN mkdir -p lambda
 # Install the dependencies separately to leverage Docker cache
 WORKDIR /home/grapl/lambda
 COPY --chown=grapl js/graphql_endpoint/tsconfig.json tsconfig.json
 COPY --chown=grapl js/graphql_endpoint/package.json package.json
 COPY --chown=grapl js/graphql_endpoint/package-lock.json package-lock.json
-RUN npm install
+RUN source $NVM_DIR/nvm.sh && npm install
 RUN rm -rf node_modules/grpc/build/
 # Copy graphql sources
 COPY --chown=grapl js/graphql_endpoint/modules modules
 COPY --chown=grapl js/graphql_endpoint/server.ts server.ts
 # This compiles the typescript and spits out the built js files to `lambda/ts_compiled'
-RUN npx tsc
+RUN source $NVM_DIR/nvm.sh && npx tsc
 RUN cp -r ./node_modules ./ts_compiled/node_modules
 WORKDIR /home/grapl
 
@@ -24,11 +25,10 @@ RUN cd lambda/ts_compiled && \
 
 # deploy... this is only used in Local Grapl at the moment
 FROM grapl/grapl-js-base:$TAG AS graphql-endpoint
-ARG TAG=latest
 COPY --chown=grapl --from=graphql-endpoint-build /home/grapl/lambda lambda
 WORKDIR /home/grapl/lambda/ts_compiled
 COPY --chown=grapl js/graphql_endpoint/package.json package.json
 COPY --chown=grapl js/graphql_endpoint/package-lock.json package-lock.json
 COPY --chown=grapl js/graphql_endpoint/start_potentially_with_debugger.sh \
   start_potentially_with_debugger.sh
-CMD yarn start server
+CMD source $NVM_DIR/nvm.sh && yarn start server
