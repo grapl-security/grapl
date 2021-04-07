@@ -67,5 +67,7 @@ WORKDIR /home/grapl/lambda/ts_compiled
 
 COPY --chown=grapl js/graphql_endpoint/package.json package.json
 COPY --chown=grapl js/graphql_endpoint/package-lock.json package-lock.json
+COPY --chown=grapl js/graphql_endpoint/start_potentially_with_debugger.sh \
+  start_potentially_with_debugger.sh
 
-CMD yarn start server
+CMD yarn start

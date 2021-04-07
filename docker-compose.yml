@@ -428,7 +428,7 @@ services:
     image: grapl/grapl-graphql-endpoint:${TAG:-latest}
     command: bash -c "
       wait-for-it grapl-provision:${WAIT_PORT} --timeout=250 &&
-      yarn start server"
+      ./start_potentially_with_debugger.sh"
     environment:
       <<: *aws-region
       <<: *dgraph-env
@@ -436,12 +436,15 @@ services:
       JWT_SECRET_ID: "JWT_SECRET_ID"
       PORT: ${GRAPL_GRAPHQL_PORT}
       <<: *secretsmanager-env
+      DEBUG_SERVICES: "${DEBUG_SERVICES}"
+      VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT: "${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}"
     depends_on:
       - dgraph
       - grapl-provision
       - localstack
     ports:
       - 127.0.0.1:${GRAPL_GRAPHQL_PORT}:${GRAPL_GRAPHQL_PORT}
+      - 127.0.0.1:${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}:${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}
     networks:
       default:
         aliases:
