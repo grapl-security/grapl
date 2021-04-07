@@ -53,7 +53,7 @@ root_patterns = [
   "/src/python/grapl-model-plugin-deployer/tests",
   "/src/python/grapl_provision",
   "/src/python/grapl-tests-common",
-  "/src/python/grapl-ux-router/src",
+  "/src/python/grapl-ux-router",
   "/src/python/provisioner/src",
   "/src/python/provisioner/tests",
   "/src/python/repl",

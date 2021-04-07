@@ -327,29 +327,6 @@ services:
       redis:
         condition: service_healthy
 
-  grapl-ux-router:
-    image: grapl/grapl-ux-router:${TAG:-latest}
-    command: |
-      /bin/sh -c '
-        . venv/bin/activate &&
-        cd app &&
-        chalice local --no-autoreload --host=0.0.0.0 --port=${GRAPL_UX_ROUTER_PORT}
-      '
-    environment:
-      GRAPL_LOG_LEVEL: "DEBUG"
-      IS_LOCAL: "True"
-      UX_BUCKET_NAME: "${DEPLOYMENT_NAME}-engagement-ux-bucket"
-      <<: *aws-region
-      <<: *s3-env
-    depends_on:
-      grapl-engagement-view-uploader:
-        condition: service_completed_successfully
-    tty: true
-    networks:
-      default:
-        aliases:
-          - ${GRAPL_UX_ROUTER_HOST}
-
   grapl-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
     command: |
@@ -409,16 +386,12 @@ services:
       - GRAPL_GRAPHQL_PORT
       - GRAPL_MODEL_PLUGIN_DEPLOYER_HOST
       - GRAPL_MODEL_PLUGIN_DEPLOYER_PORT
-      - GRAPL_UX_ROUTER_HOST
-      - GRAPL_UX_ROUTER_PORT
       - LOCALSTACK_HOST
       - LOCALSTACK_PORT
     depends_on:
       grapl-model-plugin-deployer:
         condition: service_started
       grapl-graphql-endpoint:
-        condition: service_started
-      grapl-ux-router:
         condition: service_started
       grapl-pulumi:
         # We must wait until Pulumi has created the API gateway so we

@@ -77,13 +77,6 @@ services:
       dockerfile: ./python/Dockerfile
       target: analyzer-executor-deploy
 
-  grapl-ux-router:
-    image: grapl/grapl-ux-router:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: ./python/Dockerfile
-      target: grapl-ux-router-deploy
-
   grapl-engagement-creator:
     image: grapl/grapl-engagement-creator:${TAG:-latest}
     build:
