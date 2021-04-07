@@ -436,12 +436,14 @@ services:
       JWT_SECRET_ID: "JWT_SECRET_ID"
       PORT: ${GRAPL_GRAPHQL_PORT}
       <<: *secretsmanager-env
+      NODE_OPTIONS: "--inspect=127.0.0.1:${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}"  # allows debugger
     depends_on:
       - dgraph
       - grapl-provision
       - localstack
     ports:
       - 127.0.0.1:${GRAPL_GRAPHQL_PORT}:${GRAPL_GRAPHQL_PORT}
+      - ${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}:${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}
     networks:
       default:
         aliases:
