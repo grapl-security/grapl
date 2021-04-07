@@ -20,10 +20,12 @@ export const getDgraphClient = (): dgraph.DgraphClient => {
 export interface RawNode {
   uid: number | string;
   dgraph_type: string[];
+  display: string;
 }
 
 export interface EnrichedNode {
   readonly uid: number;
   dgraph_type: string[] | undefined;
   [predicate: string]: any;
+  display: string; 
 }
