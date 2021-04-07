@@ -95,7 +95,7 @@ services:
       - IMAGE_NAME=localstack/localstack:0.12.8
       - EDGE_PORT=${LOCALSTACK_PORT}
       - HOSTNAME_EXTERNAL=${LOCALSTACK_HOST}
-      - SERVICES=dynamodb,iam,lambda,logs,s3,secretsmanager,sns,sqs
+      - SERVICES=dynamodb,events,iam,lambda,logs,s3,secretsmanager,sns,sqs
       - DEBUG=1
       - LS_LOG=debug
       - LAMBDA_EXECUTOR=docker
@@ -367,19 +367,6 @@ services:
       default:
         aliases:
           - ${GRAPL_MODEL_PLUGIN_DEPLOYER_HOST}
-
-  grapl-dgraph-ttl:
-    image: grapl/grapl-dgraph-ttl:${TAG:-latest}
-    command: /bin/sh -c '. venv/bin/activate && cd /home/grapl/app && chalice local --no-autoreload --host=0.0.0.0 --port=${GRAPL_DGRAPH_TTL_PORT}'
-    environment:
-      <<: *dgraph-env
-      GRAPL_DGRAPH_TTL_S: "${GRAPL_DGRAPH_TTL_S:-31536000}"
-      GRAPL_TTL_DELETE_BATCH_SIZE: "${GRAPL_TTL_DELETE_BATCH_SIZE:-10}"
-      IS_LOCAL: "True"
-      <<: *log-level
-    tty: true
-    depends_on:
-      - dgraph
 
   ########################################################################
   # Web Services

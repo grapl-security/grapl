@@ -6,7 +6,6 @@ from typing import Dict, Iterable, Iterator, List, Optional, Tuple, Union
 from chalice import Chalice
 from grapl_analyzerlib.grapl_client import GraphClient
 
-IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 GRAPL_DGRAPH_TTL_S = int(os.environ.get("GRAPL_DGRAPH_TTL_S", "-1"))
 GRAPL_LOG_LEVEL = os.environ.get("GRAPL_LOG_LEVEL", "ERROR")
 GRAPL_TTL_DELETE_BATCH_SIZE = int(os.environ.get("GRAPL_TTL_DELETE_BATCH_SIZE", "1000"))
@@ -145,11 +144,3 @@ def prune_expired_subgraphs(event, lambda_context) -> None:
         app.log.info(f"Pruned {node_count} nodes and {edge_count} edges")
     else:
         app.log.warn("GRAPL_DGRAPH_TTL_S is not set, exiting.")
-
-
-if IS_LOCAL:
-    import time
-
-    while 1:
-        time.sleep(60)
-        prune_expired_subgraphs(None, None)
