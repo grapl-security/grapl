@@ -38,10 +38,12 @@ def store_schema_properties(table: Table, schema: Schema) -> None:
         for prop_name, prop_type in schema.get_properties().items()
     ]
     type_definition: SchemaDict = {"properties": properties}
+
     table.put_item(
         Item={
             "node_type": schema.self_type(),
             # Dynamodb doesn't like my fancy typedict
             "type_definition": cast(Dict[str, Any], type_definition),
+            "display_property": schema.get_display_property(),
         }
     )

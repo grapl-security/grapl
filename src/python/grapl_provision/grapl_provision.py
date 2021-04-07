@@ -152,14 +152,7 @@ def provision_master_graph(
 
 def store_schema(dynamodb, schema: "Schema") -> None:
     grapl_schema_table = dynamodb.Table("local-grapl-grapl_schema_table")
-    grapl_display_table = dynamodb.Table("local-grapl-grapl_display_table")
 
-    grapl_display_table.put_item(
-        Item={
-            "node_type": schema.self_type(),
-            "display_property": schema.get_display_property(),
-        }
-    )
     for f_edge, (edge_t, r_edge) in schema.get_edges().items():
         if not (f_edge and r_edge):
             LOGGER.warn(f"missing {f_edge} {r_edge} for {schema.self_type()}")

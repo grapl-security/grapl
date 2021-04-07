@@ -165,7 +165,7 @@ const getDisplayProperty = async (nodeType: string) => {
 		});
 
 		const params = {
-			TableName: process.env.GRAPL_DISPLAY_TABLE,
+			TableName: process.env.GRAPL_SCHEMA_PROPERTIES_TABLE,
 			Key: {
 				node_type: { S: nodeType }, // get display prop for a given node based on the type
 			},
@@ -266,17 +266,18 @@ const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
 				} else {
 					neighbor[predicate] = enriched;
 				}
-				for (const node of lens_subgraph["scope"]) {
-          const _node = node as any; 
-					const nodeType = node.dgraph_type.filter(
+				for (const node of scope) {
+					const _node = node as any;
+					const nodeType = _node.dgraph_type.filter(
 						filterDefaultDgraphNodeTypes
 					)[0];
+					console.log("nodeType", nodeType)
 					const displayProperty = await getDisplayProperty(nodeType);
 
 					if (_node[displayProperty.S] === undefined) {
-						node["display"] = nodeType;
+						_node["display"] = nodeType;
 					} else {
-						node["display"] = _node[displayProperty.S].toString();
+						_node["display"] = _node[displayProperty.S].toString();
 					}
 				}
 			}
