@@ -6,6 +6,9 @@
 version: "3.8"
 volumes:
   dgraph_export:
+  pulumi_outputs:
+    # This volume will be used to output Pulumi stack outputs that may
+    # need to be accessible in test containers.
 
 x-common-variables:
   aws-region: &aws-region
@@ -111,7 +114,7 @@ services:
     healthcheck:
       test: |
         bash -c '
-          export AWS_ACCESS_KEY_ID=${FAKE_AWS_ACCESS_KEY_ID} && 
+          export AWS_ACCESS_KEY_ID=${FAKE_AWS_ACCESS_KEY_ID} &&
           export AWS_SECRET_ACCESS_KEY=${FAKE_AWS_SECRET_ACCESS_KEY} &&
           aws --endpoint-url=http://${LOCALSTACK_HOST}:${LOCALSTACK_PORT} s3 ls
         '
@@ -416,24 +419,39 @@ services:
 
   nginx:
     image: nginxinc/nginx-unprivileged
+    command: |
+      /bin/bash -c "
+        export API_GATEWAY_API_ID=$$(cat /pulumi-outputs/prod-api-id) &&
+        /docker-entrypoint.sh nginx -g 'daemon off;'
+      "
     volumes:
       - ./etc/local_grapl/nginx_templates:/etc/nginx/templates
+      - type: volume
+        source: pulumi_outputs
+        target: /pulumi-outputs
+        read_only: true
     ports:
       - "127.0.0.1:1234:${GRAPL_HTTP_FRONTEND_PORT}"
     environment:
-      - GRAPL_AUTH_HOST
-      - GRAPL_AUTH_PORT
       - GRAPL_GRAPHQL_HOST
       - GRAPL_GRAPHQL_PORT
       - GRAPL_MODEL_PLUGIN_DEPLOYER_HOST
       - GRAPL_MODEL_PLUGIN_DEPLOYER_PORT
       - GRAPL_UX_ROUTER_HOST
       - GRAPL_UX_ROUTER_PORT
+      - LOCALSTACK_HOST
+      - LOCALSTACK_PORT
     depends_on:
-      - grapl-engagement-edge
-      - grapl-model-plugin-deployer
-      - grapl-graphql-endpoint
-      - grapl-ux-router
+      grapl-model-plugin-deployer:
+        condition: service_started
+      grapl-graphql-endpoint:
+        condition: service_started
+      grapl-ux-router:
+        condition: service_started
+      grapl-pulumi:
+        # We must wait until Pulumi has created the API gateway so we
+        # know what its URL is.
+        condition: service_completed_successfully
     networks:
       default:
         aliases:
@@ -499,10 +517,12 @@ services:
     image: grapl/grapl-local-pulumi:${TAG:-latest}
     command: |
       /bin/bash -c "
-         sleep 10 &&
          pulumi login --local &&
          pulumi stack init local-grapl --non-interactive &&
-         pulumi up --yes --skip-preview --stack=local-grapl
+         pulumi up --yes --skip-preview --stack=local-grapl &&
+
+         # Write the necessary outputs to the shared volume, for access by other containers
+         pulumi stack output prod-api-id > /home/grapl/pulumi-outputs/prod-api-id
       "
     # Our local-grapl Pulumi stack is configured to communicate with
     # localhost. By participating in the network namespace of our
@@ -515,6 +535,10 @@ services:
         source: ./src/js/grapl-cdk/zips
         target: /home/grapl/src/js/grapl-cdk/zips
         read_only: true
+      - type: volume
+        source: pulumi_outputs
+        target: /home/grapl/pulumi-outputs
+        read_only: false
     environment:
       PULUMI_CONFIG_PASSPHRASE: local-grapl-passphrase
     depends_on:
