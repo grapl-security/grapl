@@ -26,7 +26,9 @@ COPY --chown=grapl rust rust
 WORKDIR /home/grapl/rust
 RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
     --mount=type=secret,id=rust_env,dst=/home/grapl/env \
-    source /home/grapl/env; \
+    if test -f /home/grapl/env; then \
+        source /home/grapl/env; \
+    fi; \
     case "${CARGO_PROFILE}" in \
       debug) \
         cargo build ;; \
@@ -54,13 +56,17 @@ RUN mkdir -p /home/grapl/zips; \
 FROM grapl-rust-build AS build-test-unit
 RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
     --mount=type=secret,id=rust_env,dst=/home/grapl/env \
-    source /home/grapl/env; \
+    if test -f /home/grapl/env; then \
+        source /home/grapl/env; \
+    fi; \
     cargo test --no-run
 
 FROM grapl-rust-build AS build-test-integration
 RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
     --mount=type=secret,id=rust_env,dst=/home/grapl/env \
-    source /home/grapl/env; \
+    if test -f /home/grapl/env; then \
+        source /home/grapl/env; \
+    fi; \
     cargo test --features node-identifier/integration,sqs-executor/integration --test '*' --no-run
 
 # images for running services

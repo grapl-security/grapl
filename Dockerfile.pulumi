@@ -3,7 +3,7 @@ FROM grapl/grapl-python-base:$TAG as pants-base
 RUN curl -O https://get.pulumi.com/releases/sdk/pulumi-v2.24.1-linux-x64.tar.gz && \
     tar -xzvf pulumi-v2.23.1-linux-x64.tar.gz && \
     mv pulumi pulumi-bin
-ENV PATH=/home/grapl/pulumi-bin:${PATH}
+ENV PATH="/home/grapl/pulumi-bin:$PATH"
 
 # Use Pants to grab our dependencies
 #
@@ -32,8 +32,8 @@ RUN ./pants --version
 
 # Automatically ensures that our virtualenv is created and active on
 # all subsequent actions
-RUN mkdir venv
-ENV VIRTUAL_ENV=/home/grapl/venv
+RUN mkdir pulumi-venv
+ENV VIRTUAL_ENV=/home/grapl/pulumi-venv
 RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 

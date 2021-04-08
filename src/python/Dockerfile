@@ -20,6 +20,7 @@ RUN python_test_deps/download_requirements.sh
 FROM grapl-python-build AS graplinc-grapl-api-build
 COPY --chown=grapl proto proto
 COPY --chown=grapl python/graplinc-grapl-api python/graplinc-grapl-api
+SHELL ["/bin/bash", "-eu", "-o", "pipefail", "-c"]
 RUN source venv/bin/activate && \
     cd python/graplinc-grapl-api && \
     python setup.py sdist bdist_wheel && \

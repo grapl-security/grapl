@@ -28,6 +28,7 @@ USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
+    git \
     libc6-dev \
     libffi-dev \
     liblzma-dev \
@@ -41,7 +42,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     make \
     protobuf-compiler \
     python-openssl \
-    tar \
     tk-dev \
     wget \
     xz-utils \
@@ -59,22 +59,21 @@ FROM grapl-build-base AS grapl-rust-base
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y && \
     source /home/grapl/.cargo/env && \
     rustup default stable
+ENV PATH="/home/grapl/.cargo/bin:$PATH"
 
 ##
 # python
 ##
 FROM grapl-build-base AS grapl-python-base
-USER root
-RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
-USER grapl
 RUN curl https://pyenv.run | bash
 RUN /home/grapl/.pyenv/bin/pyenv update
 RUN /home/grapl/.pyenv/bin/pyenv install --verbose 3.7.10
 RUN /home/grapl/.pyenv/bin/pyenv global 3.7.10
+RUN /home/grapl/.pyenv/bin/pyenv doctor
 RUN eval "$(/home/grapl/.pyenv/bin/pyenv init -)" && python -mvenv venv && \
     source venv/bin/activate && \
     pip install --upgrade pip
-ENV PATH=/home/grapl/.pyenv/versions/3.7.10/bin/:{$PATH}
+ENV PATH="/home/grapl/.pyenv/versions/3.7.10/bin:$PATH"
 
 ##
 # js
