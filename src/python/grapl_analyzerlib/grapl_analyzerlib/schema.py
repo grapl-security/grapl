@@ -100,6 +100,10 @@ class Schema(metaclass=SingletonMeta):
             self.viewable = cast(ReturnsViewableType, self.viewable)()
 
         return cast(ViewableType, self.viewable)
+    
+    @staticmethod
+    def get_display_property() -> str:
+        return "dgraph_type"
 
     @staticmethod
     @abc.abstractmethod
@@ -107,7 +111,6 @@ class Schema(metaclass=SingletonMeta):
         raise NotImplementedError
         # noinspection PyUnreachableCode
         return cast(Any, None)  # satisfy pytype
-
 
 from grapl_analyzerlib.node_types import PropType, EdgeT
 from grapl_analyzerlib.viewable import Viewable
