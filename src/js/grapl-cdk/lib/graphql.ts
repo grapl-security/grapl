@@ -27,7 +27,7 @@ export class GraphQLEndpoint extends cdk.Construct {
         const serviceName = props.deploymentName + '-GraphQL';
 
         const event_handler = new lambda.Function(this, 'Handler', {
-            runtime: lambda.Runtime.NODEJS_12_X,
+            runtime: lambda.Runtime.NODEJS_14_X,
             handler: `server.handler`,
             functionName: serviceName + '-Handler',
             code: lambda.Code.fromAsset(
