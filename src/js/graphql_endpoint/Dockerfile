@@ -1,4 +1,6 @@
-FROM node:12.18-buster-slim AS graphql-endpoint-build
+# Don't forget to update the other `FROM node:` in this file.
+# Use the latest Node version here: https://docs.aws.amazon.com/lambda/latest/dg/lambda-nodejs.html
+FROM node:14.16-buster-slim AS graphql-endpoint-build  
 
 RUN apt-get update && apt-get -y install --no-install-recommends \
         build-essential \
@@ -45,7 +47,7 @@ RUN cd lambda/ts_compiled && \
     zip -q9r /home/grapl/lambda.zip ./
 
 # deploy... this is only used in Local Grapl at the moment
-FROM node:12.18-buster-slim AS graphql-endpoint-deploy
+FROM node:14.16-buster-slim AS graphql-endpoint-deploy
 
 # Only really needed for Local Grapl
 RUN apt-get update && apt-get -y install --no-install-recommends \
