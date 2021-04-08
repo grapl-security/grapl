@@ -54,7 +54,6 @@ export class SchemaDb extends cdk.Construct {
         }
     }
 
-
     allowReadWrite(service: Service) {
         for (const table of [this.schema_table, this.schema_properties_table]) {
             table.table.grantReadWriteData(service.event_handler);

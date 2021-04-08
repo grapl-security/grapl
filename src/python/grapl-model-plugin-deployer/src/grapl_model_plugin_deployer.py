@@ -136,7 +136,7 @@ def store_schema(dynamodb, schema: "Schema"):
     grapl_schema_properties.put_item(
         Item={
             "node_type": schema.self_type(),
-            "display_property": schema.get_display_property(),
+            "display_property": schema.get_display_properties(),
         }
     )
     for f_edge, (edge_t, r_edge) in schema.get_edges().items():
