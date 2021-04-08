@@ -69,7 +69,6 @@ class AssetSchema(EntitySchema):
         return "hostname"
 
 
-
 class AssetQuery(EntityQuery[AV, AQ]):
     @classmethod
     def node_schema(cls) -> Schema:

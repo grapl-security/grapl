@@ -17,7 +17,6 @@ import { OperationalAlarms, SecurityAlarms } from './alarms';
 
 import { Watchful } from 'cdk-watchful';
 import { SchemaDb } from './schemadb';
-import { DisplayPropertyDb } from './displaydb';
 import { PipelineDashboard } from './pipeline_dashboard';
 import { UxRouter } from './ux_router';
 import { GraplS3Bucket } from './grapl_s3_bucket';
@@ -108,10 +107,6 @@ export class GraplCdkStack extends cdk.Stack {
         const schema_table = new SchemaDb(this, 'SchemaTable', {
             edges_table_name: this.deploymentName + '-grapl_schema_table',
             properties_table_name: `${this.deploymentName}-grapl_schema_properties_table`
-        });
-
-        const displayTable = new DisplayPropertyDb(this, 'DisplayTable', {
-            deploymentName: this.deploymentName,
         });
 
         let watchful = undefined;
@@ -289,7 +284,7 @@ export class GraplCdkStack extends cdk.Stack {
             ...graplProps,
             ux_bucket,
             edgeApi,
-            displayTable
+            schemaProperties: schema_table
         });
 
         if (watchful) {

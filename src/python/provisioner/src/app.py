@@ -146,27 +146,28 @@ def _extend_schema(graph_client: GraphClient, schema: BaseSchema) -> None:
 
 
 def _store_schema(dynamodb, schema: "Schema"):
-        grapl_schema_table = dynamodb.Table(
-            os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table"
-        )
-        grapl_schema_properties_table = dynamodb.Table(
-            os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_properties_table"
-        )
+    grapl_schema_table = dynamodb.Table(
+        os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table"
+    )
+    grapl_schema_properties_table = dynamodb.Table(
+        os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_properties_table"
+    )
 
-        grapl_schema_properties_table.put_item(   
-            Item={  
-                "node_type": schema.self_type(),
-                "display_property": schema.get_display_property(),
-            }
-        )
+    grapl_schema_properties_table.put_item(
+        Item={
+            "node_type": schema.self_type(),
+            "display_property": schema.get_display_property(),
+        }
+    )
     for f_edge, (_, r_edge) in schema.get_edges().items():
         if not (f_edge and r_edge):
             LOGGER.warn(f"!! We found an edge that is missing a reverse edge: {f_edge}")
             continue
 
-        grapl_schema_table.put_item(Item={"f_edge": f_edge, "r_edge": r_edge})
-        grapl_schema_table.put_item(Item={"f_edge": r_edge, "r_edge": f_edge})
-        LOGGER.info(f"stored edge mapping: {f_edge} {r_edge}")
+    grapl_schema_table.put_item(Item={"f_edge": f_edge, "r_edge": r_edge})
+    grapl_schema_table.put_item(Item={"f_edge": r_edge, "r_edge": f_edge})
+    LOGGER.info(f"stored edge mapping: {f_edge} {r_edge}")
+
 
 def _provision_graph(
     graph_client: GraphClient, dynamodb: DynamoDBServiceResource

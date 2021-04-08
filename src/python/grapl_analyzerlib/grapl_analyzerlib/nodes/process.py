@@ -76,7 +76,6 @@ class ProcessSchema(EntitySchema):
         return "process_name"
 
 
-
 class ProcessQuery(EntityQuery[PV, PQ]):
     @with_int_prop("process_id")
     def with_process_id(

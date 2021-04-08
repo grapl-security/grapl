@@ -41,7 +41,7 @@ export class GraphQLEndpoint extends cdk.Construct {
                 JWT_SECRET_ID: props.jwtSecret.secretArn,
                 DEPLOYMENT_NAME: props.deploymentName,
                 UX_BUCKET_URL: 'https://' + ux_bucket.bucketRegionalDomainName,
-                GRAPL_SCHEMA_PROPERTIES: `${props.deploymentName}-grapl_schema_properties`,
+                GRAPL_SCHEMA_PROPERTIES_TABLE: `${props.deploymentName}-grapl_schema_properties_table`,
             },
             timeout: cdk.Duration.seconds(30),
             memorySize: 128,
@@ -60,7 +60,7 @@ export class GraphQLEndpoint extends cdk.Construct {
 
         if (event_handler.role) {
             props.jwtSecret.grantRead(event_handler.role);
-            props.schemaProperties.allowReadWriteFromRole(event_handler.role);
+            props.schemaProperties.allowReadFromRole(event_handler.role);
         }
         const integration = new apigateway.LambdaIntegration(event_handler);
         props.edgeApi.root.addResource('graphQlEndpoint').addProxy({
