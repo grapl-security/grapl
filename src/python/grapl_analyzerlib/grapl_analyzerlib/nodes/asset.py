@@ -64,6 +64,10 @@ class AssetSchema(EntitySchema):
     def self_type() -> str:
         return "Asset"
 
+    @staticmethod
+    def get_display_property() -> str:
+        return "hostname"
+
 
 class AssetQuery(EntityQuery[AV, AQ]):
     @classmethod

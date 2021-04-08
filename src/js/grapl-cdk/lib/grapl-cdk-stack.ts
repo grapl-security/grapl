@@ -8,31 +8,31 @@ import * as sqs from '@aws-cdk/aws-sqs';
 
 import { Tags } from '@aws-cdk/core';
 
-import {Service} from './service';
-import {UserAuthDb} from './userauthdb';
-import {EngagementNotebook} from './engagement';
-import {EngagementEdge} from './engagement';
-import {GraphQLEndpoint} from './graphql';
-import {OperationalAlarms, SecurityAlarms} from './alarms';
+import { Service } from './service';
+import { UserAuthDb } from './userauthdb';
+import { EngagementNotebook } from './engagement';
+import { EngagementEdge } from './engagement';
+import { GraphQLEndpoint } from './graphql';
+import { OperationalAlarms, SecurityAlarms } from './alarms';
 
-import {Watchful} from 'cdk-watchful';
-import {SchemaDb} from './schemadb';
-import {PipelineDashboard} from './pipeline_dashboard';
-import {UxRouter} from "./ux_router";
-import {GraplS3Bucket} from "./grapl_s3_bucket";
-import {DGraphSwarmCluster} from "./services/dgraph_swarm_cluster";
-import {ModelPluginDeployer} from "./services/model_plugin_deployer";
-import {MetricForwarder} from "./services/metric_forwarder";
-import {EngagementCreator} from "./services/engagement_creator";
-import {DGraphTtl} from "./services/dgraph_ttl";
-import {AnalyzerExecutor} from "./services/analyzer_executor";
-import {AnalyzerDispatch} from "./services/analyzer_dispatcher";
-import {GraphMerger} from "./services/graph_merger";
-import {NodeIdentifier} from "./services/node_identifier";
-import {Provisioner} from "./services/provisioner";
-import {SysmonGraphGenerator} from "./services/sysmon_graph_generator";
-import {OSQueryGraphGenerator} from "./services/osquery_graph_generator";
-import {LogLevels} from "../bin/deployment_parameters";
+import { Watchful } from 'cdk-watchful';
+import { SchemaDb } from './schemadb';
+import { PipelineDashboard } from './pipeline_dashboard';
+import { UxRouter } from './ux_router';
+import { GraplS3Bucket } from './grapl_s3_bucket';
+import { DGraphSwarmCluster } from './services/dgraph_swarm_cluster';
+import { ModelPluginDeployer } from './services/model_plugin_deployer';
+import { MetricForwarder } from './services/metric_forwarder';
+import { EngagementCreator } from './services/engagement_creator';
+import { DGraphTtl } from './services/dgraph_ttl';
+import { AnalyzerExecutor } from './services/analyzer_executor';
+import { AnalyzerDispatch } from './services/analyzer_dispatcher';
+import { GraphMerger } from './services/graph_merger';
+import { NodeIdentifier } from './services/node_identifier';
+import { Provisioner } from './services/provisioner';
+import { SysmonGraphGenerator } from './services/sysmon_graph_generator';
+import { OSQueryGraphGenerator } from './services/osquery_graph_generator';
+import { LogLevels } from '../bin/deployment_parameters';
 
 export interface GraplServiceProps {
     deploymentName: string;
@@ -89,7 +89,10 @@ export class GraplCdkStack extends cdk.Stack {
             enableDnsHostnames: true,
             enableDnsSupport: true,
         });
-        Tags.of(grapl_vpc).add("name", `${this.deploymentName.toLowerCase()}-grapl-vpc`);
+        Tags.of(grapl_vpc).add(
+            'name',
+            `${this.deploymentName.toLowerCase()}-grapl-vpc`
+        );
 
         const jwtSecret = new secretsmanager.Secret(this, 'EdgeJwtSecret', {
             description:
@@ -118,16 +121,12 @@ export class GraplCdkStack extends cdk.Stack {
             });
         }
 
-        const dgraphSwarmCluster = new DGraphSwarmCluster(
-            this,
-            'swarm',
-            {
-                deploymentName: this.deploymentName,
-                vpc: grapl_vpc,
-                version: props.version,
-                watchful: watchful,
-            }
-        );
+        const dgraphSwarmCluster = new DGraphSwarmCluster(this, 'swarm', {
+            deploymentName: this.deploymentName,
+            vpc: grapl_vpc,
+            version: props.version,
+            watchful: watchful,
+        });
 
         const graplProps: GraplServiceProps = {
             deploymentName: this.deploymentName,
@@ -140,17 +139,13 @@ export class GraplCdkStack extends cdk.Stack {
             watchful: watchful,
         };
 
-        const metric_forwarder = new MetricForwarder(
-            this,
-            'metric-forwarder',
-            {
-                ...graplProps,
-            }
-        );
+        const metric_forwarder = new MetricForwarder(this, 'metric-forwarder', {
+            ...graplProps,
+        });
         // as we onboard more services to monitoring, add in ...enableMetricsProps
         const enableMetricsProps: Pick<GraplServiceProps, 'metricForwarder'> = {
             metricForwarder: metric_forwarder.service,
-        }
+        };
 
         const analyzers_bucket = new GraplS3Bucket(this, 'AnalyzersBucket', {
             bucketName: deployment_name + '-analyzers-bucket',
@@ -179,10 +174,14 @@ export class GraplCdkStack extends cdk.Stack {
 
         new DGraphTtl(this, 'dgraph-ttl', graplProps);
 
-        const model_plugins_bucket = new GraplS3Bucket(this, 'ModelPluginsBucket', {
-            bucketName: deployment_name + '-model-plugins-bucket',
-            removalPolicy: cdk.RemovalPolicy.DESTROY,
-        });
+        const model_plugins_bucket = new GraplS3Bucket(
+            this,
+            'ModelPluginsBucket',
+            {
+                bucketName: deployment_name + '-model-plugins-bucket',
+                removalPolicy: cdk.RemovalPolicy.DESTROY,
+            }
+        );
 
         this.model_plugin_deployer = new ModelPluginDeployer(
             this,
@@ -231,60 +230,62 @@ export class GraplCdkStack extends cdk.Stack {
             ...enableMetricsProps,
         });
 
-        const sysmon_generator = new SysmonGraphGenerator(this, 'sysmon-subgraph-generator', {
-            writesTo: node_identifier.bucket,
-            ...graplProps,
-            ...enableMetricsProps,
-        });
-
-        const osquery_generator = new OSQueryGraphGenerator(this, 'osquery-subgraph-generator', {
-            writesTo: node_identifier.bucket,
-            ...graplProps,
-            ...enableMetricsProps,
-        });
-
-        const engagement_notebook = new EngagementNotebook(this, 'engagements', {
-            model_plugins_bucket,
-            schema_db: schema_table,
-            ...graplProps,
-        });
-
-        this.engagement_edge = new EngagementEdge(
+        const sysmon_generator = new SysmonGraphGenerator(
             this,
-            'EngagementEdge',
+            'sysmon-subgraph-generator',
             {
+                writesTo: node_identifier.bucket,
                 ...graplProps,
-                engagement_notebook: engagement_notebook,
-                edgeApi,
-            },
+                ...enableMetricsProps,
+            }
         );
+
+        const osquery_generator = new OSQueryGraphGenerator(
+            this,
+            'osquery-subgraph-generator',
+            {
+                writesTo: node_identifier.bucket,
+                ...graplProps,
+                ...enableMetricsProps,
+            }
+        );
+
+        const engagement_notebook = new EngagementNotebook(
+            this,
+            'engagements',
+            {
+                model_plugins_bucket,
+                schema_db: schema_table,
+                ...graplProps,
+            }
+        );
+
+        this.engagement_edge = new EngagementEdge(this, 'EngagementEdge', {
+            ...graplProps,
+            engagement_notebook: engagement_notebook,
+            edgeApi,
+        });
 
         const ux_bucket = new GraplS3Bucket(this, 'EdgeBucket', {
             bucketName:
-                graplProps.deploymentName.toLowerCase() + '-engagement-ux-bucket',
+                graplProps.deploymentName.toLowerCase() +
+                '-engagement-ux-bucket',
             publicReadAccess: false,
             websiteIndexDocument: 'index.html',
             removalPolicy: cdk.RemovalPolicy.DESTROY,
         });
 
-        this.ux_router = new UxRouter(
-            this,
-            'UxRouter',
-            {
-                ...graplProps,
-                edgeApi,
-            },
-        );
+        this.ux_router = new UxRouter(this, 'UxRouter', {
+            ...graplProps,
+            edgeApi,
+        });
 
-        this.graphql_endpoint = new GraphQLEndpoint(
-            this,
-            'GraphqlEndpoint',
-            {
-                ...graplProps,
-                ux_bucket,
-                edgeApi,
-            }
-        );
+        this.graphql_endpoint = new GraphQLEndpoint(this, 'GraphqlEndpoint', {
+            ...graplProps,
+            ux_bucket,
+            edgeApi,
+            schemaProperties: schema_table
+        });
 
         if (watchful) {
             const watchedOperations = [
@@ -294,29 +295,24 @@ export class GraplCdkStack extends cdk.Stack {
                 ...this.ux_router.apis,
             ];
 
-
-            watchful.watchApiGateway(
-                'EdgeApiGatewayIntegration',
-                edgeApi,
-                {
-                    serverErrorThreshold: 1, // any 5xx alerts
-                    cacheGraph: true,
-                    watchedOperations,
-                }
-            );
+            watchful.watchApiGateway('EdgeApiGatewayIntegration', edgeApi, {
+                serverErrorThreshold: 1, // any 5xx alerts
+                cacheGraph: true,
+                watchedOperations,
+            });
         }
 
-        new OperationalAlarms(this, "operational_alarms", {
+        new OperationalAlarms(this, 'operational_alarms', {
             deployment_name: this.deploymentName,
-            email: props.operationalAlarmsEmail
+            email: props.operationalAlarmsEmail,
         });
 
-        new SecurityAlarms(this, "security_alarms", {
+        new SecurityAlarms(this, 'security_alarms', {
             deployment_name: this.deploymentName,
-            email: props.securityAlarmsEmail
+            email: props.securityAlarmsEmail,
         });
 
-        new PipelineDashboard(this, "pipeline_dashboard", {
+        new PipelineDashboard(this, 'pipeline_dashboard', {
             namePrefix: this.deploymentName,
             services: [
                 // Order here is important - the idea is that this dashboard will help Grapl operators
@@ -328,12 +324,12 @@ export class GraplCdkStack extends cdk.Stack {
                 analyzer_dispatch.service,
                 analyzer_executor.service,
                 engagement_creator.service,
-            ]
+            ],
         });
 
-        new Provisioner(this, "provisioner", {
+        new Provisioner(this, 'provisioner', {
             schemaDb: schema_table,
-            ...graplProps
+            ...graplProps,
         });
     }
 }

@@ -126,12 +126,24 @@ def format_schemas(schema_defs: List["BaseSchema"]) -> str:
 
 
 def store_schema(dynamodb, schema: "Schema"):
-    table = dynamodb.Table(os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table")
+    grapl_schema_table = dynamodb.Table(
+        os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table"
+    )
+    grapl_schema_properties = dynamodb.Table(
+        os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_properties"
+    )
+
+    grapl_schema_properties.put_item(
+        Item={
+            "node_type": schema.self_type(),
+            "display_property": schema.get_display_property(),
+        }
+    )
     for f_edge, (edge_t, r_edge) in schema.get_edges().items():
         if not (f_edge and r_edge):
             LOGGER.warn(f"missing {f_edge} {r_edge} for {schema.self_type()}")
             continue
-        table.put_item(
+        grapl_schema_table.put_item(
             Item={
                 "f_edge": f_edge,
                 "r_edge": r_edge,
@@ -139,7 +151,7 @@ def store_schema(dynamodb, schema: "Schema"):
             }
         )
 
-        table.put_item(
+        grapl_schema_table.put_item(
             Item={
                 "f_edge": r_edge,
                 "r_edge": f_edge,

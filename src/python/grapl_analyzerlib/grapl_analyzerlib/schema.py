@@ -102,6 +102,10 @@ class Schema(metaclass=SingletonMeta):
         return cast(ViewableType, self.viewable)
 
     @staticmethod
+    def get_display_property() -> str:
+        return "dgraph_type"
+
+    @staticmethod
     @abc.abstractmethod
     def self_type() -> str:
         raise NotImplementedError

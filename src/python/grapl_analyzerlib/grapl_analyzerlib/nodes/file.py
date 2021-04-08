@@ -74,6 +74,10 @@ class FileSchema(EntitySchema):
     def self_type() -> str:
         return "File"
 
+    @staticmethod
+    def get_display_property() -> str:
+        return "file_path"
+
 
 class FileQuery(EntityQuery[FV, FQ]):
     def __init__(
