@@ -1,4 +1,4 @@
-import { GraphQLBoolean, GraphQLFieldConfigMap, GraphQLInt, GraphQLList, GraphQLObjectType, GraphQLOutputType, GraphQLScalarType, GraphQLSchema, GraphQLString, GraphQLType, GraphQLUnionType, Thunk } from "graphql";
+import { GraphQLBoolean, GraphQLFieldConfigMap, GraphQLInt, GraphQLList, GraphQLObjectType, GraphQLOutputType, GraphQLString, GraphQLUnionType } from "graphql";
 import { RawNode } from "./dgraph_client";
 import { Schema, SchemaProperty } from "./schema_client";
 import { RiskType } from "./schema";

@@ -8,7 +8,7 @@ import {
     GraphQLNonNull,
 } from "graphql";
 
-import { BaseNode, builtins } from "./schema";
+import { BaseNode } from "./schema";
 
 import {
     getDgraphClient,
@@ -243,12 +243,6 @@ const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
     }
   }
 
-  for (const node of scope) {
-    if (!node) {
-      throw new Error(`Somehow received a null or undefined scope node: ${node}`);
-    }
-  }
-
   lens_subgraph.scope = scope;
   console.debug("lens_subgraph scope", JSON.stringify(lens_subgraph["scope"]));
   return lens_subgraph;
@@ -264,19 +258,17 @@ interface LensArgs {
 }
 
 async function getRootQuery(): Promise<GraphQLObjectType> {
-  const types = await new SchemaClient().getSchemas();
-  const typesWithoutBuiltins = types.filter((schema) => {
-    // This could be a one-liner, but I think it's complex enough for ifelse
-    console.log("HEYYY");
-    console.log(schema.node_type);
+  const schemaTypes = await new SchemaClient().getSchemas();
+  const schemaTypesWithoutBuiltins = schemaTypes.filter((schema) => {
     if (schema.node_type == "Risk" || schema.node_type == "Lens") {
-      console.log("YABBA DABBA DOO");
       return false; // reject
     } else {
       return true; // keep
     }
   });
-  const GraplEntityType = allSchemasToGraphql(typesWithoutBuiltins);
+
+  const GraplEntityType = allSchemasToGraphql(schemaTypesWithoutBuiltins);
+
   const LensNodeType = new GraphQLObjectType({
     name: "LensNode",
     fields: () => ({

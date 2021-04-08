@@ -73,7 +73,6 @@ function customFormatErrorFnForDebugging(error: GraphQLError) {
   return { 
     message: error.message,
     locations: error.locations,
-    //stack: error.stack ? error.stack.split('\n') : [],
     path: error.path,
   }
 }
@@ -82,14 +81,11 @@ app.use(
   "/graphQlEndpoint/graphql",
   middleware,
   graphqlHTTP(async (request, response, graphQLParams) => {
-    // TODO
-    /*
     console.debug({
       request: request,
       response: response,
       graphQLParams: graphQLParams,
     });
-    */
     let schema;
     try { 
       schema = await getRootQuerySchema();

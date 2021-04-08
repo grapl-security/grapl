@@ -40,5 +40,8 @@ class TestSchemaStoredInDynamodb(TestCase):
         assert prop_map["uid"]["is_set"] == False
         assert prop_map["hostname"]["primitive"] == PropPrimitive.Str.name
         assert prop_map["hostname"]["is_set"] == False
+
         # how about forward edges?
         assert "asset_ip" in prop_map
+        assert prop_map["asset_ip"]["primitive"] == "IpAddress"
+        assert prop_map["asset_ip"]["is_set"] == True

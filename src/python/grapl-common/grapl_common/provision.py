@@ -12,6 +12,8 @@ class SchemaPropertyDict(TypedDict):
     name: str
     primitive: str
     is_set: bool
+    # Future TODO: Perhaps also specify edge data here,
+    # like `is_edge: <No | Fwd | Reverse>` or something
 
 
 class SchemaDict(TypedDict):
@@ -37,11 +39,15 @@ def store_schema_properties(table: Table, schema: Schema) -> None:
         }
         for prop_name, prop_type in schema.get_properties().items()
     ]
+
+    # Don't send over these edges
     denylist_edges = ("in_scope",)
     edges: List[SchemaPropertyDict] = [
         {
             "name": edge_name,
-            "primitive": edge_tuple[0].dest.self_type(),  # TODO fix??? not important???
+            "primitive": edge_tuple[
+                0
+            ].dest.self_type(),  # Forward edge goes to this type
             "is_set": edge_tuple[0].is_to_many(),
         }
         for edge_name, edge_tuple in schema.forward_edges.items()
