@@ -204,6 +204,7 @@ test-with-env: # (Do not include help text - not to be used directly)
 	}
 	# Ensure we call stop even after test failure, and return exit code from 
 	# the test, not the stop command.
+	trap stopGrapl EXIT
 	$(WITH_LOCAL_GRAPL_ENV)
 	# Bring up the Grapl environment and detach
 	$(MAKE) up-detach
