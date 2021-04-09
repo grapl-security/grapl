@@ -13,7 +13,6 @@ export const apiFetchReq = async (urlSlug: string, method = "GET") => {
     return response.json();
 };
 
-
 export const apiPostRequestWithBody = async (urlSlug: string, body: string) => {
     const response = await fetch(urlSlug, {
         method: "POST",

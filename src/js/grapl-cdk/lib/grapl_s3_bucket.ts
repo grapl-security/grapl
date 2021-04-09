@@ -1,5 +1,5 @@
-import * as s3 from '@aws-cdk/aws-s3';
-import { Construct } from '@aws-cdk/core';
+import * as s3 from "@aws-cdk/aws-s3";
+import { Construct } from "@aws-cdk/core";
 
 export class GraplS3Bucket extends s3.Bucket {
     /*
@@ -10,6 +10,6 @@ export class GraplS3Bucket extends s3.Bucket {
         super(scope, id, {
             ...props,
             autoDeleteObjects: true,
-        })
+        });
     }
 }

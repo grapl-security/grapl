@@ -223,8 +223,12 @@ lint-rust: ## Run Rust lint checks
 lint-python: ## Run Python lint checks
 	./pants lint ::
 
+.PHONY: lint-js
+lint-js: ## Run js lint checks
+	cd src/js; bin/format.sh --check
+
 .PHONY: lint
-lint: lint-rust lint-python ## Run all lint checks
+lint: lint-python lint-js lint-rust ## Run all lint checks
 
 .PHONY: format-rust
 format-rust: ## Reformat all Rust code
@@ -234,12 +238,12 @@ format-rust: ## Reformat all Rust code
 format-python: ## Reformat all Python code
 	./pants fmt ::
 
-.PHONY: format-ts
-format-ts: ## Reformat all Typescript code
-	cd src/js; bin/format.sh;
+.PHONY: format-js
+format-js: ## Reformat all js/ts code
+	cd src/js; bin/format.sh --update
 
 .PHONY: format
-format: format-rust format-python format-ts ## Reformat all code
+format: format-python format-ts format-rust ## Reformat all code
 
 .PHONY: package-python-libs
 package-python-libs: ## Create Python distributions for public libraries
