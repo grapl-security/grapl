@@ -25,7 +25,7 @@ export interface Schema {
         readonly properties: SchemaProperty[];
     }
     readonly node_type: string;
-    readonly display: string;
+    readonly display_property: string;
 }
 
 export interface SchemaProperty {

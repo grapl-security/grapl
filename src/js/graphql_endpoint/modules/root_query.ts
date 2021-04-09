@@ -147,7 +147,7 @@ function asEnrichedNodeWithSchemas(node: RawNode, schemaMap: Map<string, Schema>
         uid: uidAsInt(node),
         dgraph_type: dgraph_types,
     // Attach the static display string to the enriched node
-    display: schemaMap.get(dgraph_types[0])?.display,
+    display: schemaMap.get(dgraph_types[0])?.display_property,
     };
 }
 
