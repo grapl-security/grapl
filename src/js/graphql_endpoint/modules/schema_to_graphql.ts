@@ -1,13 +1,27 @@
-import { GraphQLBoolean, GraphQLFieldConfigMap, GraphQLInt, GraphQLList, GraphQLObjectType, GraphQLOutputType, GraphQLString, GraphQLUnionType } from "graphql";
+import {
+    GraphQLBoolean,
+    GraphQLFieldConfigMap,
+    GraphQLInt,
+    GraphQLList,
+    GraphQLObjectType,
+    GraphQLOutputType,
+    GraphQLString,
+    GraphQLUnionType,
+} from "graphql";
 import { RawNode } from "./dgraph_client";
 import { Schema, SchemaProperty } from "./schema_client";
 import { RiskType } from "./schema";
 
 export type GqlTypeMap = Map<string, GraphQLObjectType>;
 
-function propertyToGraphql(property: SchemaProperty, typeMap: GqlTypeMap): GraphQLOutputType {
+function propertyToGraphql(
+    property: SchemaProperty,
+    typeMap: GqlTypeMap
+): GraphQLOutputType {
     if (typeMap.size == 0) {
-        throw new Error("We expect to only execute this function once the ResolutionMap is full");
+        throw new Error(
+            "We expect to only execute this function once the ResolutionMap is full"
+        );
     }
 
     const hardcodedOverride = getHardcodedOverride(property, typeMap);
@@ -29,9 +43,11 @@ function propertyToGraphql(property: SchemaProperty, typeMap: GqlTypeMap): Graph
         prim = GraphQLString;
     } else {
         if (typeMap.has(property.primitive)) {
-            prim = typeMap.get(property.primitive)
+            prim = typeMap.get(property.primitive);
         } else {
-            throw new Error(`Couldn't resolve property ${property.name}: ${property.primitive}`);
+            throw new Error(
+                `Couldn't resolve property ${property.name}: ${property.primitive}`
+            );
         }
     }
 
@@ -42,7 +58,10 @@ function propertyToGraphql(property: SchemaProperty, typeMap: GqlTypeMap): Graph
     }
 }
 
-function getHardcodedOverride(property: SchemaProperty, typeMap: GqlTypeMap): GraphQLOutputType | undefined {
+function getHardcodedOverride(
+    property: SchemaProperty,
+    typeMap: GqlTypeMap
+): GraphQLOutputType | undefined {
     /* grapl_analyzerlib is *wrong*, and fixing it breaks other services.
        so, for now, just manually override and fix it in a followup PR. 
        context at:
@@ -71,7 +90,10 @@ function normalizePropName(name: string): string {
     return name;
 }
 
-function schemaToGraphql(schema: Schema, typeMap: GqlTypeMap): GraphQLObjectType {
+function schemaToGraphql(
+    schema: Schema,
+    typeMap: GqlTypeMap
+): GraphQLObjectType {
     // Convert one Schema, like "Asset" or "Process"
     return new GraphQLObjectType({
         name: schema.node_type,
@@ -79,23 +101,25 @@ function schemaToGraphql(schema: Schema, typeMap: GqlTypeMap): GraphQLObjectType
             const fields: GraphQLFieldConfigMap<any, any> = {};
             for (const prop of schema.type_definition.properties) {
                 const propName = normalizePropName(prop.name);
-                try { 
+                try {
                     const propAsGraphql = propertyToGraphql(prop, typeMap);
                     fields[propName] = { type: propAsGraphql };
                 } catch (e) {
-                    throw new Error(`Couldn't convert ${schema.node_type}: ${e}`);
+                    throw new Error(
+                        `Couldn't convert ${schema.node_type}: ${e}`
+                    );
                 }
             }
             // Bolt on a 'display' field
             fields["display"] = { type: GraphQLString };
-            return fields
+            return fields;
         },
     });
 }
 
 function genResolveTypeForTypes(types: GqlTypeMap) {
     // Convert an entire set of schemas, for a deployment
-    function resolveType(data: RawNode): string  {
+    function resolveType(data: RawNode): string {
         const dgraphType = data.dgraph_type.filter(
             (t: string) => t !== "Entity" && t !== "Base"
         );
@@ -116,7 +140,9 @@ export function dynamodbSchemasIntoGraphqlTypes(schemas: Schema[]): GqlTypeMap {
     for (const schema of schemas) {
         const convertedSchema = schemaToGraphql(schema, map);
         if (map.has(convertedSchema.name)) {
-            throw new Error(`Two duplicate types with name ${convertedSchema.name}`);
+            throw new Error(
+                `Two duplicate types with name ${convertedSchema.name}`
+            );
         }
         map.set(convertedSchema.name, convertedSchema);
     }
@@ -124,13 +150,12 @@ export function dynamodbSchemasIntoGraphqlTypes(schemas: Schema[]): GqlTypeMap {
     return map;
 }
 
-export function allSchemasToGraphql(schemas: Schema[]): GraphQLUnionType
-{
+export function allSchemasToGraphql(schemas: Schema[]): GraphQLUnionType {
     if (schemas.length == 0) {
         throw new Error("No schemas received");
     }
     const typeMap = dynamodbSchemasIntoGraphqlTypes(schemas);
-    if (typeMap.size <= 1) { 
+    if (typeMap.size <= 1) {
         throw new Error("Seemingly didn't generate types");
     }
     const resolveType = genResolveTypeForTypes(typeMap);

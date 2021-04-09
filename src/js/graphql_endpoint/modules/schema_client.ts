@@ -9,7 +9,7 @@ function getDynamodbClient() {
         const credentials: aws_types.Credentials = {
             accessKeyId: process.env.DYNAMODB_ACCESS_KEY_ID,
             secretAccessKey: process.env.DYNAMODB_ACCESS_KEY_SECRET,
-        }
+        };
         return new dynamodb.DynamoDB({
             endpoint: process.env.DYNAMODB_ENDPOINT,
             credentials: credentials,
@@ -23,14 +23,14 @@ function getDynamodbClient() {
 export interface Schema {
     readonly type_definition: {
         readonly properties: SchemaProperty[];
-    }
+    };
     readonly node_type: string;
     readonly display_property: string;
 }
 
 export interface SchemaProperty {
     readonly name: string;
-    readonly primitive: "Int" | "Str" | "Bool";  // see PropPrimitive in python
+    readonly primitive: "Int" | "Str" | "Bool"; // see PropPrimitive in python
     readonly is_set: boolean;
 }
 
@@ -46,13 +46,15 @@ export class SchemaClient {
 
     async getSchemas(): Promise<Schema[]> {
         const command = new dynamodb.ScanCommand({
-            TableName: this.schemaTableName
+            TableName: this.schemaTableName,
         });
-        try { 
+        try {
             const scan = await this.client.send(command);
-            const schemas = scan.Items.map((item) => util_dynamodb.unmarshall(item) as Schema);
+            const schemas = scan.Items.map(
+                (item) => util_dynamodb.unmarshall(item) as Schema
+            );
             return schemas;
-        } catch(e) {
+        } catch (e) {
             console.error("Get Schemas failure", e);
             throw e;
         }

@@ -18,8 +18,8 @@ export const getDgraphClient = (): dgraph.DgraphClient => {
 };
 
 export interface RawNode {
-  uid: number | string;
-  dgraph_type?: string[];
+    uid: number | string;
+    dgraph_type?: string[];
 }
 
 export interface EnrichedNode {
