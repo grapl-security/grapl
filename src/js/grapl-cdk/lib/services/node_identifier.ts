@@ -45,7 +45,7 @@ export class NodeIdentifier extends cdk.NestedStack {
             deploymentName: props.deploymentName,
             environment: {
                 RUST_LOG: props.logLevels.nodeIdentifierLogLevel,
-                EVENT_CACHE_CLUSTER_ADDRESS: event_cache.address,
+                REDIS_ENDPOINT: event_cache.address,
                 RETRY_IDENTITY_CACHE_ADDR:
                 event_cache.cluster.attrRedisEndpointAddress,
                 RETRY_IDENTITY_CACHE_PORT:

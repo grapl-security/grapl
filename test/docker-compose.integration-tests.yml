@@ -46,7 +46,7 @@ services:
         - CARGO_PROFILE=debug
     command: cargo test --features sqs-executor/integration --test '*'
     environment:
-      - REDIS_ENDPOINT=redis://${REDIS_HOST}:${REDIS_PORT}
+      - REDIS_ENDPOINT
 
   grapl-analyzerlib-integration-tests:
     image: grapl/grapl-analyzerlib-test:${TAG:-latest}
