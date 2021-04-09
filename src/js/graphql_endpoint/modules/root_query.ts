@@ -335,6 +335,7 @@ export async function getRootQuerySchema(): Promise<GraphQLSchema> {
   const schema = new GraphQLSchema({
     query: await getRootQuery(),
   });
-  console.log("Schema: ", printSchema(schema));
+  // Super useful for debugging!
+  // console.log("Schema: ", printSchema(schema));
   return schema;
 }
