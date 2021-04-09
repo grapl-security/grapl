@@ -234,8 +234,12 @@ format-rust: ## Reformat all Rust code
 format-python: ## Reformat all Python code
 	./pants fmt ::
 
+.PHONY: format-ts
+format-ts: ## Reformat all Typescript code
+	cd src/js; bin/format.sh;
+
 .PHONY: format
-format: format-rust format-python ## Reformat all code
+format: format-rust format-python format-ts ## Reformat all code
 
 .PHONY: package-python-libs
 package-python-libs: ## Create Python distributions for public libraries
