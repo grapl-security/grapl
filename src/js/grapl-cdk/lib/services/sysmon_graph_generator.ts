@@ -37,7 +37,7 @@ export class SysmonGraphGenerator extends cdk.NestedStack {
             environment: {
                 DEPLOYMENT_NAME: deployment_name,
                 RUST_LOG: props.logLevels.sysmonSubgraphGeneratorLogLevel,
-                EVENT_CACHE_CLUSTER_ADDRESS: event_cache.address,
+                REDIS_ENDPOINT: event_cache.address,
             },
             vpc: props.vpc,
             eventEmitter: sysmon_log,

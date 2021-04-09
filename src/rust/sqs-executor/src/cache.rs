@@ -23,42 +23,36 @@ where
     }
 }
 
-#[derive(Eq, PartialEq, Clone)]
-pub enum CacheResponse {
-    Hit,
-    Miss,
-}
-
 #[async_trait]
 pub trait Cache: Clone {
     type CacheErrorT: CheckedError + Send + Sync + 'static;
 
-    async fn get<CA: Cacheable + Send + Sync + Clone + 'static>(
-        &mut self,
-        cacheable: CA,
-    ) -> Result<CacheResponse, Self::CacheErrorT>;
-
-    async fn get_all<CA: Cacheable + Send + Sync + Clone + 'static>(
-        &mut self,
-        cacheables: Vec<CA>,
-    ) -> Result<Vec<(CA, CacheResponse)>, Self::CacheErrorT> {
-        let mut results = Vec::with_capacity(cacheables.len());
-
-        for cacheable in cacheables {
-            results.push((cacheable.clone(), self.get(cacheable).await?));
-        }
-
-        Ok(results)
+    async fn all_exist<CA>(&mut self, cacheables: &[CA]) -> bool
+    where
+        CA: Cacheable + Send + Sync + Clone + 'static,
+    {
+        // If cacheable doesn't return from filter_cached then
+        // we know it exists in the cache
+        self.filter_cached(cacheables).await.is_empty()
     }
 
-    async fn store(&mut self, identity: Vec<u8>) -> Result<(), Self::CacheErrorT>;
+    async fn store<CA>(&mut self, cacheable: CA) -> Result<(), Self::CacheErrorT>
+    where
+        CA: Cacheable + Send + Sync + Clone + 'static;
 
-    async fn store_all(&mut self, identities: Vec<Vec<u8>>) -> Result<(), Self::CacheErrorT> {
-        for identity in identities.into_iter() {
-            self.store(identity).await?;
+    async fn store_all<CA>(&mut self, cacheables: &[CA]) -> Result<(), Self::CacheErrorT>
+    where
+        CA: Cacheable + Send + Sync + Clone + 'static,
+    {
+        for cacheable in cacheables.into_iter() {
+            self.store(cacheable.identity()).await?;
         }
         Ok(())
     }
+
+    async fn filter_cached<CA>(&mut self, cacheables: &[CA]) -> Vec<CA>
+    where
+        CA: Cacheable + Send + Sync + Clone + 'static;
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -80,16 +74,25 @@ pub struct NopCache {}
 impl Cache for NopCache {
     type CacheErrorT = NopCacheError;
 
-    async fn get<CA: Cacheable + Send + Sync + Clone + 'static>(
-        &mut self,
-        _cacheable: CA,
-    ) -> Result<CacheResponse, Self::CacheErrorT> {
-        tracing::debug!("nopcache.get operation");
-        Ok(CacheResponse::Miss)
+    async fn all_exist<CA>(&mut self, _cacheables: &[CA]) -> bool
+    where
+        CA: Cacheable + Send + Sync + Clone + 'static,
+    {
+        false
     }
 
-    async fn store(&mut self, _identity: Vec<u8>) -> Result<(), Self::CacheErrorT> {
+    async fn store<CA>(&mut self, _identity: CA) -> Result<(), Self::CacheErrorT>
+    where
+        CA: Cacheable + Send + Sync + Clone + 'static,
+    {
         tracing::debug!("nopcache.store operation");
         Ok(())
+    }
+
+    async fn filter_cached<CA>(&mut self, cacheables: &[CA]) -> Vec<CA>
+    where
+        CA: Cacheable + Send + Sync + Clone + 'static,
+    {
+        cacheables.to_vec()
     }
 }

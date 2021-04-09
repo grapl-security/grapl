@@ -42,7 +42,6 @@ use serde::{Deserialize,
             Serialize};
 use serde_json::Value;
 use sqs_executor::{cache::{Cache,
-                           CacheResponse,
                            Cacheable},
                    errors::{CheckedError,
                             Recoverable},

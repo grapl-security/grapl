@@ -78,7 +78,7 @@ FROM build AS build-test-integration
 RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
     --mount=type=secret,id=rust_env,dst=/grapl/env \
     source /grapl/env; \
-    cargo test --manifest-path node-identifier/Cargo.toml --features integration --no-run
+    cargo test --features node-identifier/integration,sqs-executor/integration --test '*' --no-run
 
 
 # images for running services

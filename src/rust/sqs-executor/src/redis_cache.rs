@@ -1,20 +1,19 @@
 use std::{io::Stdout,
-          time::{Duration,
-                 Instant}};
+          time::Duration};
 
 use async_trait::async_trait;
-use darkredis::{ConnectionPool,
-                Error as RedisError,
-                MSetBuilder};
 use grapl_observe::{metric_reporter::{tag,
                                       MetricReporter},
                     timers::TimedFutureExt};
 use grapl_utils::future_ext::GraplFutureExt;
+use itertools::{Either,
+                Itertools};
 use lazy_static::lazy_static;
+use redis::{AsyncCommands,
+            RedisError};
 use tokio::time::error::Elapsed;
 
 use crate::{cache::{Cache,
-                    CacheResponse,
                     Cacheable},
             errors::{CheckedError,
                      Recoverable}};
@@ -22,8 +21,6 @@ use crate::{cache::{Cache,
 lazy_static! {
     /// Timeout for requests to Redis
     static ref REDIS_REQUEST_TIMEOUT: Duration = Duration::from_millis(300);
-    /// Expiration value for set Redis keys (after 30 minutes, the key is unset)
-    static ref REDIS_SET_EXPIRATION: Duration = Duration::from_secs(30 * 60); // 30 minutes
 }
 
 /// Value we set in Redis to represent a "set" key
@@ -44,18 +41,15 @@ pub enum RedisCacheError {
 impl CheckedError for RedisCacheError {
     fn error_type(&self) -> Recoverable {
         match self {
-            RedisCacheError::RedisError(RedisError::EmptySlice) => Recoverable::Persistent,
             _ => Recoverable::Transient,
         }
     }
 }
 
-// todo: We should add a circuit breaker to this and not hit the backing redis-store if it closes
-
 #[derive(Clone)]
 pub struct RedisCache {
     address: String,
-    connection_pool: ConnectionPool,
+    connection_manager: redis::aio::ConnectionManager,
     metric_reporter: MetricReporter<Stdout>,
     lru_cache: Arc<Mutex<lru::LruCache<Vec<u8>, ()>>>,
 }
@@ -65,207 +59,154 @@ impl RedisCache {
         address: String,
         metric_reporter: MetricReporter<Stdout>,
     ) -> Result<Self, RedisError> {
-        let connection_pool =
-            ConnectionPool::create(address.clone(), None, num_cpus::get() * 10).await?;
+        RedisCache::with_lru_capacity(100_000, address, metric_reporter).await
+    }
+
+    pub async fn with_lru_capacity(
+        cap: usize,
+        address: String,
+        metric_reporter: MetricReporter<Stdout>,
+    ) -> Result<Self, RedisError> {
+        let client = redis::Client::open(address.clone())?;
+        let connection_manager = client.get_tokio_connection_manager().await?;
 
         Ok(Self {
-            connection_pool,
             address,
+            connection_manager,
             metric_reporter,
-            lru_cache: Arc::new(Mutex::new(lru::LruCache::new(100_000))),
+            lru_cache: Arc::new(Mutex::new(lru::LruCache::new(cap))),
         })
     }
 }
 
 impl RedisCache {
-    #[tracing::instrument(skip(self, cacheable))]
-    async fn _get<CA>(&mut self, cacheable: CA) -> Result<CacheResponse, RedisCacheError>
+    async fn _filter_cached<CA>(&mut self, cacheables: &[CA]) -> Vec<CA>
     where
         CA: Cacheable + Send + Sync + Clone + 'static,
     {
-        self._get_all(vec![cacheable]).await.map(|mut results| {
-            results
-                .pop()
-                .map(|(_, response)| response)
-                .unwrap_or(CacheResponse::Miss)
-        })
-    }
+        let get_identities = |cacheables: &Vec<CA>| -> Vec<Vec<u8>> {
+            cacheables.into_iter().map(|c| c.identity()).collect()
+        };
 
-    async fn _get_all<CA>(
-        &mut self,
-        cacheables: Vec<CA>,
-    ) -> Result<Vec<(CA, CacheResponse)>, RedisCacheError>
-    where
-        CA: Cacheable + Send + Sync + Clone + 'static,
-    {
-        let cacheable_responses: Vec<(CA, Option<CacheResponse>)> = {
+        // Check LRU
+        let (lru_hits, lru_misses): (Vec<_>, Vec<_>) = {
             let mut lru_cache = self.lru_cache.lock().unwrap();
 
             cacheables
-                .into_iter()
-                .map(|cacheable| {
-                    // if this hits, it's a Some(CacheResponse::Hit)
-                    // otherwise, we use None to signify that we should check in with redis
-                    let identity_bytes = cacheable.identity();
-                    let lru_cache_response =
-                        lru_cache.get(&identity_bytes).map(|_| CacheResponse::Hit);
-
-                    (cacheable, lru_cache_response)
-                })
-                .collect()
-        };
-
-        // if the LRU cache satisfied all our needs, we should return early
-        let are_all_keys_handled = cacheable_responses
-            .iter()
-            .all(|(_, response)| response.is_some());
-
-        if are_all_keys_handled {
-            return Ok(cacheable_responses
-                .into_iter()
-                .filter_map(|(cacheable, response)| response.map(|response| (cacheable, response)))
-                .collect());
-        }
-
-        // fetch the responses from redis and convert them into CacheResponses
-        // this Vec<_> should be equal in size to the number of entries in cacheable_responses with
-        // 'response' set to None
-        let mut unknown_cacheable_responses: VecDeque<CacheResponse> = {
-            // this vec will be len() > 0 since we would've returned earlier otherwise
-            let unknown_cacheables: Vec<_> = cacheable_responses
                 .iter()
-                .filter(|(_, response)| response.is_none())
-                .map(|(cacheable, _)| cacheable.identity())
-                .collect();
-
-            let client_pool = self.connection_pool.clone();
-            let mut client = client_pool.get().await;
-
-            client
-                .mget(&unknown_cacheables)
-                .timeout(REDIS_REQUEST_TIMEOUT.clone())
-                .await??
-                .into_iter()
-                .map(|mget_response: Option<_>| match mget_response {
-                    Some(_) => CacheResponse::Hit,
-                    None => CacheResponse::Miss,
-                })
-                .collect()
+                .cloned()
+                .partition(|c| lru_cache.get(&c.identity()).is_some())
         };
 
-        // convert original cacheable_responses into a complete set of CacheResponses
-        let complete_cacheable_responses: Vec<_> = cacheable_responses
-            .into_iter()
-            .map(|(cacheable, response)| {
-                let actual_response = match response {
-                    Some(cache_response) => cache_response,
-                    None => unknown_cacheable_responses.pop_front().unwrap_or_else(|| {
-                        error!("Missing cacheable response from redis fetch.");
-                        CacheResponse::Miss
-                    }),
-                };
-
-                (cacheable, actual_response)
-            })
-            .collect();
-
-        if !unknown_cacheable_responses.is_empty() {
-            error!("Redis returned more cache responses than expected.");
+        if !lru_hits.is_empty() {
+            info!(
+                "Event cache hits from LRU cache: {:?}",
+                get_identities(&lru_hits)
+            );
         }
 
-        Ok(complete_cacheable_responses)
-    }
-
-    #[tracing::instrument(skip(self, identity))]
-    async fn _store(&mut self, identity: Vec<u8>) -> Result<(), RedisCacheError> {
-        // put the key into the cache
-        // if it was already in the cache, a Some will return and we know we can return Ok
-        if self
-            .lru_cache
-            .lock()
-            .unwrap()
-            .put(identity.clone(), LRU_SET_VALUE)
-            .is_some()
-        {
-            return Ok(());
+        // If we have misses from the LRU cache, we check Redis.
+        // If lru_misses is empty we can return with empty vector
+        if lru_misses.is_empty() {
+            return lru_misses;
         }
 
-        let identity = hex::encode(identity);
-
-        let mut client = self.connection_pool.get().await;
-
-        client
-            .set_and_expire_seconds(
-                &identity,
-                REDIS_SET_VALUE,
-                (*REDIS_SET_EXPIRATION).as_secs() as u32,
-            )
-            .timeout(REDIS_REQUEST_TIMEOUT.clone())
-            .await??;
-
-        Ok(())
-    }
-
-    #[tracing::instrument(skip(self, identities))]
-    async fn _store_all(&mut self, identities: Vec<Vec<u8>>) -> Result<(), RedisCacheError> {
-        if identities.is_empty() {
-            return Ok(());
-        }
-
-        let identities_to_check: Vec<_> = {
-            let mut lru_cache = self.lru_cache.lock().unwrap();
-
-            // for each of the identities:
-            //      1. update the lru cache status
-            //      2. if key is new (is_none()), collect into a Vec
-            identities
-                .into_iter()
-                .filter(|identity| lru_cache.put(identity.clone(), LRU_SET_VALUE).is_none())
-                .collect()
+        // Check Redis for misses from the LRU cache
+        let lru_miss_ids = get_identities(&lru_misses);
+        // connection_manager.get will return Option<T> if the input Vec has a single element,
+        // otherwise it returns a Vec<Option<T>>. We want to work with the Vec<Option<T>>.
+        let redis_result: Result<Vec<Option<u8>>, RedisError> = if lru_miss_ids.len() == 1 {
+            self.connection_manager
+                .get(lru_miss_ids.clone())
+                .await
+                .map(|value| vec![value])
+        } else {
+            self.connection_manager.get(lru_miss_ids.clone()).await
         };
 
-        if identities_to_check.is_empty() {
-            return Ok(());
-        }
+        match redis_result {
+            Ok(responses) => {
+                let (redis_hits, redis_misses): (Vec<CA>, Vec<CA>) = lru_misses
+                    .into_iter()
+                    .zip(responses.into_iter())
+                    .partition_map(|(c, r)| match r {
+                        Some(_) => Either::Left(c),
+                        None => Either::Right(c),
+                    });
 
-        let client_pool = self.connection_pool.clone();
-        let task_start = Instant::now();
+                if !redis_hits.is_empty() {
+                    info!(
+                        "Event cache hits from Redis: {:?}",
+                        get_identities(&redis_hits)
+                    );
+                }
 
-        tokio::spawn(async move {
-            let mut client = client_pool.get().await;
-            let mut mset_builder = MSetBuilder::new();
-
-            for identity in &identities_to_check {
-                mset_builder = mset_builder.set(identity, REDIS_SET_VALUE);
-            }
-
-            match client.mset(mset_builder).await {
-                Ok(_) => Ok(()),
-                Err(e) => {
-                    let elapsed = task_start.elapsed();
-
-                    if elapsed >= *REDIS_REQUEST_TIMEOUT {
-                        let elapsed_ms = elapsed.as_millis() as u64;
-                        error!(
-                            error = e.to_string().as_str(),
-                            elapsed_ms = elapsed_ms,
-                            "redis mset failed outside of ttl"
-                        );
-                        Ok(())
-                    } else {
-                        Err(e)
+                // If we have entries in redis_hits here it means they weren't found
+                // in the LRU cache. So we'll put them back in LRU cache since they
+                // were some of the latest seen
+                {
+                    let mut lru_cache = self.lru_cache.lock().unwrap();
+                    for cacheable in &redis_hits {
+                        // We don't care if identity already exists, so we discard the Option
+                        // returned from put.
+                        lru_cache.put(cacheable.identity(), LRU_SET_VALUE);
                     }
                 }
+
+                // Return Redis cache missis, which should also be LRU cache misses
+                redis_misses
             }
-        })
-        .timeout(REDIS_REQUEST_TIMEOUT.clone())
-        .await???;
-        /*
-           Three question marks for the following reasons:
-           1. Result from timeout
-           2. Result from JoinHandle (from tokio::spawn)
-           3. Result from `async { ... }` region (we return Ok(()) or Err(..))
-        */
+            Err(e) => {
+                error!("{:?}", e);
+                // If Redis fails, we'll settle for returning LRU cache misses
+                lru_misses
+            }
+        }
+    }
+
+    #[tracing::instrument(skip(self, cacheable))]
+    async fn _store<CA>(&mut self, cacheable: CA) -> Result<(), RedisCacheError>
+    where
+        CA: Cacheable + Send + Sync + Clone + 'static,
+    {
+        self._store_all(&[cacheable]).await
+    }
+
+    #[tracing::instrument(skip(self, cacheables))]
+    async fn _store_all<CA>(&mut self, cacheables: &[CA]) -> Result<(), RedisCacheError>
+    where
+        CA: Cacheable + Send + Sync + Clone + 'static,
+    {
+        if cacheables.is_empty() {
+            return Ok(());
+        }
+
+        // Store cacheables in LRU and Redis caches
+
+        // We perform a slight optimization here: send to Redis only if the entry was not already
+        // in the LRU cache. If an entry exists in the LRU cache, then we must have previously
+        // stored it in the Redis cache as well, and we can avoid sending that to Redis again. As
+        // entries are evicted from the LRU cache, we'll just reset the value in the Redis cache.
+
+        // LRU PUT
+        let cacheables_for_redis: Vec<_> = {
+            let mut lru_cache = self.lru_cache.lock().unwrap();
+
+            cacheables
+                .iter()
+                .filter(|cacheable| lru_cache.put(cacheable.identity(), LRU_SET_VALUE).is_none())
+                .collect()
+        };
+
+        // Redis SET
+        let kv_pairs: Vec<(Vec<u8>, &[u8; 1])> = cacheables_for_redis
+            .into_iter()
+            .map(|k| (k.identity(), REDIS_SET_VALUE))
+            .collect();
+        self.connection_manager
+            .set_multiple(&kv_pairs)
+            .timeout(REDIS_REQUEST_TIMEOUT.clone())
+            .await??;
 
         Ok(())
     }
@@ -274,92 +215,46 @@ impl RedisCache {
 use std::sync::{Arc,
                 Mutex};
 
-use prost::alloc::collections::VecDeque;
-use tracing::error;
+use tracing::{error,
+              info};
 
 #[async_trait]
 impl Cache for RedisCache {
     type CacheErrorT = RedisCacheError;
 
-    #[tracing::instrument(skip(self, cacheable))]
-    async fn get<CA>(&mut self, cacheable: CA) -> Result<CacheResponse, Self::CacheErrorT>
-    where
-        CA: Cacheable + Send + Sync + Clone + 'static,
-    {
-        let span = tracing::span!(
-            tracing::Level::TRACE,
-            "redis_cache.get",
-            address=?self.address,
-        );
-        let _enter = span.enter();
-        let (res, ms) = self._get(cacheable).timed().await;
-
-        // todo: Refactor metrics into their own structure
-        match res {
-            Ok(CacheResponse::Hit) => {
-                tracing::debug!("redis cache hit");
-                self.metric_reporter
-                    .histogram(
-                        "redis_cache.get.ms",
-                        ms as f64,
-                        &[tag("success", true), tag("hit", true)],
-                    )
-                    .unwrap_or_else(|e| error!("failed to report redis_cache.get.ms: {:?}", e));
-                self.metric_reporter
-                    .counter(
-                        "redis_cache.get.count",
-                        1f64,
-                        0.10,
-                        &[tag("success", true), tag("hit", true)],
-                    )
-                    .unwrap_or_else(|e| error!("failed to report redis_cache.get.count: {:?}", e));
-            }
-            Ok(CacheResponse::Miss) => {
-                self.metric_reporter
-                    .counter(
-                        "redis_cache.get.count",
-                        1f64,
-                        0.10,
-                        &[tag("success", true), tag("hit", false)],
-                    )
-                    .unwrap_or_else(|e| error!("failed to report redis_cache.get.count: {:?}", e));
-            }
-            _ => (),
-        }
-
-        res
-    }
-
     #[tracing::instrument(skip(self, cacheables))]
-    async fn get_all<CA>(
-        &mut self,
-        cacheables: Vec<CA>,
-    ) -> Result<Vec<(CA, CacheResponse)>, Self::CacheErrorT>
+    async fn all_exist<CA>(&mut self, cacheables: &[CA]) -> bool
     where
         CA: Cacheable + Send + Sync + Clone + 'static,
     {
         let span = tracing::span!(
-            tracing::Level::TRACE,
-            "redis_cache.get_all",
+            tracing::Level::DEBUG,
+            "redis_cache.all_exist",
             address = self.address.as_str(),
-            cacheables_len = cacheables.len(),
         );
-        let _enter = span.enter();
 
-        let (res, ms) = self._get_all(cacheables).timed().await;
+        let _enter = span.enter();
+        // Here we call filtered_cached to reuse the code for checking LRU and Redis caches
+        // If the response is empty then we know the entry is in the cache and we return true
+        let (res, ms) = self._filter_cached(cacheables).timed().await;
 
         self.metric_reporter
             .histogram(
-                "redis_cache.get_all.ms",
+                "redis_cache.all_exist.ms",
                 ms as f64,
-                &[tag("success", res.is_ok())],
+                &[tag("success", true)],
             )
-            .unwrap_or_else(|e| error!("failed to report redis_cache.get_all.ms: {:?}", e));
-        res
+            .unwrap_or_else(|e| error!("failed to report redis_cache.all_exist.ms: {:?}", e));
+
+        // If the response is empty then we know the entry is in the cache and we return true
+        res.is_empty()
     }
 
-    #[tracing::instrument(skip(self, identity))]
-    async fn store(&mut self, identity: Vec<u8>) -> Result<(), Self::CacheErrorT> {
+    #[tracing::instrument(skip(self, cacheable))]
+    async fn store<CA>(&mut self, cacheable: CA) -> Result<(), Self::CacheErrorT>
+    where
+        CA: Cacheable + Send + Sync + Clone + 'static,
+    {
         let span = tracing::span!(
             tracing::Level::DEBUG,
             "redis_cache.store",
@@ -367,7 +262,7 @@ impl Cache for RedisCache {
         );
 
         let _enter = span.enter();
-        let (res, ms) = self._store(identity).timed().await;
+        let (res, ms) = self._store(cacheable).timed().await;
         self.metric_reporter
             .histogram(
                 "redis_cache.store.ms",
@@ -378,16 +273,19 @@ impl Cache for RedisCache {
         res
     }
 
-    #[tracing::instrument(skip(self, identities))]
-    async fn store_all(&mut self, identities: Vec<Vec<u8>>) -> Result<(), Self::CacheErrorT> {
+    #[tracing::instrument(skip(self, cacheables))]
+    async fn store_all<CA>(&mut self, cacheables: &[CA]) -> Result<(), Self::CacheErrorT>
+    where
+        CA: Cacheable + Send + Sync + Clone + 'static,
+    {
         let span = tracing::span!(
             tracing::Level::TRACE,
             "redis_cache.store_all",
             address = self.address.as_str(),
-            identities_len = identities.len(),
+            cacheables_len = cacheables.len(),
         );
         let _enter = span.enter();
-        let (res, ms) = self._store_all(identities).timed().await;
+        let (res, ms) = self._store_all(cacheables).timed().await;
         self.metric_reporter
             .histogram(
                 "redis_cache.store_all.ms",
@@ -395,6 +293,32 @@ impl Cache for RedisCache {
                 &[tag("success", res.is_ok())],
             )
             .unwrap_or_else(|e| error!("failed to report redis_cache.put_all.ms: {:?}", e));
+        res
+    }
+
+    #[tracing::instrument(skip(self, cacheables))]
+    async fn filter_cached<CA>(&mut self, cacheables: &[CA]) -> Vec<CA>
+    where
+        CA: Cacheable + Send + Sync + Clone + 'static,
+    {
+        let span = tracing::span!(
+            tracing::Level::TRACE,
+            "redis_cache.filter_cached",
+            address = self.address.as_str(),
+            cacheables_len = cacheables.len(),
+        );
+        let _enter = span.enter();
+
+        let (res, ms) = self._filter_cached(cacheables).timed().await;
+
+        self.metric_reporter
+            .histogram(
+                "redis_cache.filter_cached.ms",
+                ms as f64,
+                &[tag("success", true)],
+            )
+            .unwrap_or_else(|e| error!("failed to report redis_cache.filter_cached.ms: {:?}", e));
+
         res
     }
 }

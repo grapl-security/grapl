@@ -53,7 +53,7 @@ export class AnalyzerDispatch extends cdk.NestedStack {
             environment: {
                 ANALYZER_BUCKET: deployment_name + "-analyzers-bucket",
                 RUST_LOG: props.logLevels.analyzerDispatcherLogLevel,
-                EVENT_CACHE_CLUSTER_ADDRESS: dispatch_event_cache.address,
+                REDIS_ENDPOINT: dispatch_event_cache.address,
                 DISPATCHED_ANALYZER_BUCKET: props.writesTo.bucketName,
                 SUBGRAPH_MERGED_BUCKET: subgraphs_merged.bucket.bucketName,
             },

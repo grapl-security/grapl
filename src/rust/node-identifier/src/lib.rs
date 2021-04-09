@@ -26,14 +26,12 @@ use rusoto_dynamodb::{DynamoDb,
 use rusoto_sqs::SqsClient;
 use sessiondb::SessionDb;
 use sqs_executor::{cache::{Cache,
-                           CacheResponse,
                            Cacheable},
                    errors::{CheckedError,
                             Recoverable},
                    event_handler::{CompletedEvents,
                                    EventHandler},
                    event_retriever::S3PayloadRetriever,
-                   event_status::EventStatus,
                    make_ten,
                    s3_event_emitter::S3ToSqsEventNotifier,
                    time_based_key_fn};
@@ -116,7 +114,7 @@ where
     async fn handle_event(
         &mut self,
         unid_subgraph: GraphDescription,
-        completed: &mut CompletedEvents,
+        _completed: &mut CompletedEvents,
     ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
         let mut attribution_failure = None;
 
@@ -151,21 +149,11 @@ where
         for (old_node_key, old_node) in output_subgraph.nodes.iter() {
             let node = old_node.clone();
 
-            // match self.cache.get(old_node_key.clone()).await {
-            //     Ok(CacheResponse::Hit) => {
-            //         info!("Got cache hit for old_node_key, skipping node.");
-            //         continue;
-            //     }
-            //     Err(e) => warn!("Failed to retrieve from cache: {:?}", e),
-            //     _ => (),
-            // };
-
             let node = match self.attribute_node_key(&node).await {
                 Ok(node) => node,
                 Err(e) => {
                     warn!("Failed to attribute node_key with: {}", e);
                     dead_node_ids.insert(node.clone_node_key());
-                    // completed.add_identity(node.clone_node_key(), EventStatus::Failure);
 
                     attribution_failure = Some(e);
                     continue;
@@ -239,14 +227,11 @@ where
             return Ok(IdentifiedGraph::new());
         }
 
-        let identities: Vec<_> = unid_id_map.keys().collect();
-
-        identities
-            .iter()
-            .for_each(|identity| completed.add_identity(identity.clone(), EventStatus::Success));
-
         if !dead_node_ids.is_empty() || attribution_failure.is_some() {
-            info!("Partial Success, identified {} nodes", identities.len());
+            info!(
+                "Partial Success, identified {} nodes",
+                identified_graph.nodes.len()
+            );
             Err(Ok(
                 (identified_graph, NodeIdentifierError::Unexpected), // todo: Use a real error here
             ))
@@ -342,22 +327,36 @@ impl CheckedError for HashCacheError {
 impl Cache for HashCache {
     type CacheErrorT = HashCacheError;
 
-    async fn get<CA: Cacheable + Send + Sync + 'static>(
-        &mut self,
-        cacheable: CA,
-    ) -> Result<CacheResponse, HashCacheError> {
+    async fn all_exist<CA>(&mut self, cacheables: &[CA]) -> bool
+    where
+        CA: Cacheable + Send + Sync + Clone + 'static,
+    {
         let self_cache = self.cache.lock().unwrap();
 
-        let id = cacheable.identity();
-        if self_cache.contains(&id) {
-            Ok(CacheResponse::Hit)
-        } else {
-            Ok(CacheResponse::Miss)
-        }
+        cacheables
+            .into_iter()
+            .all(|c| self_cache.contains(&c.identity()))
     }
-    async fn store(&mut self, identity: Vec<u8>) -> Result<(), HashCacheError> {
+
+    async fn store<CA>(&mut self, cacheable: CA) -> Result<(), HashCacheError>
+    where
+        CA: Cacheable + Send + Sync + Clone + 'static,
+    {
         let mut self_cache = self.cache.lock().unwrap();
-        self_cache.insert(identity);
+        self_cache.insert(cacheable.identity());
         Ok(())
+    }
+
+    async fn filter_cached<CA>(&mut self, cacheables: &[CA]) -> Vec<CA>
+    where
+        CA: Cacheable + Send + Sync + Clone + 'static,
+    {
+        let self_cache = self.cache.lock().unwrap();
+
+        cacheables
+            .iter()
+            .cloned()
+            .filter(|c| self_cache.contains(&c.identity()))
+            .collect()
     }
 }

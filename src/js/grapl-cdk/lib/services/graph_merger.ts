@@ -41,7 +41,7 @@ export class GraphMerger extends cdk.NestedStack {
         this.service = new FargateService(this, service_name, {
             deploymentName: props.deploymentName,
             environment: {
-                EVENT_CACHE_CLUSTER_ADDRESS: event_cache.address,
+                REDIS_ENDPOINT: event_cache.address,
                 DEPLOYMENT_NAME: deployment_name,
                 RUST_LOG: props.logLevels.graphMergerLogLevel,
                 SUBGRAPH_MERGED_BUCKET: props.writesTo.bucketName,
