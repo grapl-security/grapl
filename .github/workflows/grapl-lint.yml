@@ -31,6 +31,14 @@ jobs:
         run: |
           etc/install_buf.sh
           ./buf breaking --against="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git#branch=main"
+  
+  js-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Check JS code formatting
+        run: |
+          make lint-js
 
   rust-format:
     runs-on: ubuntu-latest
