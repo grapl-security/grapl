@@ -10,6 +10,11 @@ function propertyToGraphql(property: SchemaProperty, typeMap: GqlTypeMap): Graph
         throw new Error("We expect to only execute this function once the ResolutionMap is full");
     }
 
+    const hardcodedOverride = getHardcodedOverride(property, typeMap);
+    if (hardcodedOverride) {
+        return hardcodedOverride;
+    }
+
     let prim: GraphQLOutputType = undefined;
     if (property.name == "uid") {
         // Special case
@@ -35,6 +40,25 @@ function propertyToGraphql(property: SchemaProperty, typeMap: GqlTypeMap): Graph
     } else {
         return prim;
     }
+}
+
+function getHardcodedOverride(property: SchemaProperty, typeMap: GqlTypeMap): GraphQLOutputType | undefined {
+    /* grapl_analyzerlib is *wrong*, and fixing it breaks other services.
+       so, for now, just manually override and fix it in a followup PR. 
+       context at:
+       https://grapl-internal.slack.com/archives/C017PLQ8TCZ/p1617991501057700
+       
+       */
+    if (property.name == "children") {
+        return GraphQLList(typeMap.get("Process"));
+    }
+    if (property.name == "asset_processes") {
+        return GraphQLList(typeMap.get("Process"));
+    }
+    if (property.name == "file_on_asset") {
+        return GraphQLList(typeMap.get("File"));
+    }
+    return undefined;
 }
 
 function normalizePropName(name: string): string {

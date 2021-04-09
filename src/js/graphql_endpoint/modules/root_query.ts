@@ -115,6 +115,7 @@ const getLensSubgraphByName = async (
         return res.getJson()["all"][0] as LensSubgraph & RawNode;
     } catch (e) {
         console.error("Error in DGraph txn: getLensSubgraphByName", e);
+        throw(e);
     } finally {
         console.debug("Closing dgraphtxn in getLensSubraphByName");
         await txn.discard();
@@ -126,7 +127,10 @@ const filterDefaultDgraphNodeTypes = (node_type: string) => {
 };
 
 function hasDgraphType(node: RawNode): boolean {
-    return "dgraph_type" in node && !!node["dgraph_type"];
+    return "dgraph_type" in node  // it's a property
+      && !!node["dgraph_type"] // it's not null
+      && (node.dgraph_type?.length > 0)
+      ;
 }
 
 function uidAsInt(node: RawNode): number {
@@ -137,18 +141,22 @@ function uidAsInt(node: RawNode): number {
     } else if (typeof uid == "number") {
         return uid;
     }
-    throw new Error(`Oddly typed UID ${uid}`);
+  throw new Error(`Oddly typed UID ${uid}`);
 }
 
 function asEnrichedNodeWithSchemas(node: RawNode, schemaMap: Map<string, Schema>): EnrichedNode {
-  const dgraph_types = node.dgraph_type?.filter(filterDefaultDgraphNodeTypes);
-    return {
-        ...node,
-        uid: uidAsInt(node),
-        dgraph_type: dgraph_types,
-    // Attach the static display string to the enriched node
-    display: schemaMap.get(dgraph_types[0])?.display_property,
-    };
+  const dgraph_types = (node.dgraph_type || []).filter(filterDefaultDgraphNodeTypes);
+  const mostConcreteDgraphType = dgraph_types[0]; // yes, this can be undefined
+  const whichPropToDisplay = schemaMap.get(dgraph_types[0])?.display_property;
+  // fall back to just the type.
+  // I don't super love this design - it's putting view logic in the controller layer
+  const display: string = (node as any)[whichPropToDisplay] || mostConcreteDgraphType;
+  return {
+    ...node,
+    uid: uidAsInt(node),
+    dgraph_type: dgraph_types,
+    display: display,
+  };
 }
 
 const handleLensScope = async (parent: MysteryParentType, args: LensArgs, schemaMap: Map<string, Schema>) => {
@@ -165,11 +173,9 @@ const handleLensScope = async (parent: MysteryParentType, args: LensArgs, schema
 
   lens_subgraph.uid = uidAsInt(lens_subgraph);
   let scope: EnrichedNode[] = (lens_subgraph["scope"] || [])
-    .filter((node: RawNode) => node.dgraph_type.length > 0)
-  .map(asEnrichedNode);
-
-  // No dgraph_type? Not a node; skip it!
-  scope = scope
+    // No dgraph_type? Not a node; skip it!
+    .filter((node: RawNode) => node.dgraph_type?.length > 0)
+    .map(asEnrichedNode);
 
   // record the uids of all direct neighbors to the lens.
   // These are the only nodes we should keep by the end of this process.

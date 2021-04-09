@@ -191,10 +191,7 @@ def provision_mg(mclient) -> None:
         schema.init_reverse()
 
     for schema in schemas:
-        try:
-            extend_schema(mclient, schema)
-        except Exception as e:
-            LOGGER.warn(f"Failed to extend_schema: {schema} {e}")
+        extend_schema(mclient, schema)
 
     provision_master_graph(mclient, schemas)
 
@@ -202,11 +199,8 @@ def provision_mg(mclient) -> None:
 
     props_table = dynamodb.Table("local-grapl-grapl_schema_properties_table")
     for schema in schemas:
-        try:
-            store_schema(dynamodb, schema)
-            store_schema_properties(props_table, schema)
-        except Exception as e:
-            LOGGER.warn(f"storing schema: {schema} {e}")
+        store_schema(dynamodb, schema)
+        store_schema_properties(props_table, schema)
 
 
 DEPLOYMENT_NAME = "local-grapl"
@@ -264,7 +258,11 @@ if __name__ == "__main__":
                 LOGGER.info("Provisioned master graph")
                 break
         except Exception as e:
-            if i > 10:
-                LOGGER.error(f"mg provision failed with: {e}")
+            if i <= 10:
+                LOGGER.error(f"Provision failure {i}/150:", e)
+            elif 10 < i <= 140:
+                LOGGER.error(f"Provision failure {i}/150")
+            else:
+                raise e
 
     LOGGER.info("Completed provisioning")

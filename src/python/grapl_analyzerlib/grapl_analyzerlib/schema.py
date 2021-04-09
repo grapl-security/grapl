@@ -57,16 +57,22 @@ class Schema(metaclass=SingletonMeta):
         properties: Dict[str, PropType],
         edges: Dict[str, Tuple[EdgeT, str]],
         viewable: Union[ViewableType, ReturnsViewableType],
-    ):
+    ) -> None:
         self.node_types = {"BaseNode", self.self_type()}
         self.properties: Dict[str, "PropType"] = {**default_properties(), **properties}
-        self.forward_edges: Dict[
-            str, Tuple["EdgeT", str]
-        ] = {}  # only for exporting to graphql
         self.edges: Dict[str, Tuple["EdgeT", str]] = {}
 
         for edge_name, (edge, r_edge_name) in edges.items():
             self.add_edge(edge_name, edge, r_edge_name)
+
+        # only for exporting to graphql
+        self.forward_edges: Dict[str, Tuple[EdgeT, str]] = {
+            name: edge_tuple
+            for (name, edge_tuple) in self.edges.items()
+            if isinstance(
+                self, edge_tuple[0].source
+            )  # if self instance of EntitySchema, for example, for risks
+        }
 
         self.viewable = viewable
 
@@ -74,7 +80,6 @@ class Schema(metaclass=SingletonMeta):
         self.properties[prop_name] = prop
 
     def add_edge(self, edge_name: str, edge: EdgeT, reverse_name: str):
-        self.forward_edges[edge_name] = (edge, reverse_name)
         self.edges[edge_name] = (edge, reverse_name)
         if not reverse_name:
             return
