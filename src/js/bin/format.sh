@@ -56,7 +56,7 @@ checkPrettierInstalled() {
     not_installed=$?
     set -e 
     if [ "$not_installed" -ne "0" ]; then
-        echo "Installing prettier" && npm install -g prettier;
+        echo "Installing prettier" && sudo npm install -g prettier;
     fi
 }
 checkPrettierInstalled

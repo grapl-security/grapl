@@ -243,7 +243,7 @@ format-js: ## Reformat all js/ts code
 	cd src/js; bin/format.sh --update
 
 .PHONY: format
-format: format-python format-ts format-rust ## Reformat all code
+format: format-python format-js format-rust ## Reformat all code
 
 .PHONY: package-python-libs
 package-python-libs: ## Create Python distributions for public libraries
