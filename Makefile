@@ -225,7 +225,7 @@ lint-python: ## Run Python lint checks
 
 .PHONY: lint-js
 lint-js: ## Run js lint checks
-	cd src/js; bin/format.sh --check
+	cd src/js; bin/format.sh --help
 
 .PHONY: lint
 lint: lint-python lint-js lint-rust ## Run all lint checks
