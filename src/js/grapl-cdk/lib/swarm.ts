@@ -1,15 +1,15 @@
-import * as cdk from '@aws-cdk/core';
-import * as ec2 from '@aws-cdk/aws-ec2';
-import * as ecs from '@aws-cdk/aws-ecs';
-import * as iam from '@aws-cdk/aws-iam';
-import * as route53 from '@aws-cdk/aws-route53';
-import * as s3deploy from '@aws-cdk/aws-s3-deployment';
+import * as cdk from "@aws-cdk/core";
+import * as ec2 from "@aws-cdk/aws-ec2";
+import * as ecs from "@aws-cdk/aws-ecs";
+import * as iam from "@aws-cdk/aws-iam";
+import * as route53 from "@aws-cdk/aws-route53";
+import * as s3deploy from "@aws-cdk/aws-s3-deployment";
 
-import * as path from 'path';
+import * as path from "path";
 
-import { Watchful } from 'cdk-watchful';
-import { Tags } from '@aws-cdk/core';
-import { GraplS3Bucket } from './grapl_s3_bucket';
+import { Watchful } from "cdk-watchful";
+import { Tags } from "@aws-cdk/core";
+import { GraplS3Bucket } from "./grapl_s3_bucket";
 
 export interface SwarmProps {
     // Grapl deployment name.
@@ -47,13 +47,16 @@ export class Swarm extends cdk.Construct {
     constructor(scope: cdk.Construct, id: string, props: SwarmProps) {
         super(scope, id);
 
-        const swarmSecurityGroup = new ec2.SecurityGroup(scope, 'Swarm', {
+        const swarmSecurityGroup = new ec2.SecurityGroup(scope, "Swarm", {
             description: `${props.deploymentName} Docker Swarm security group`,
             vpc: props.vpc,
             allowAllOutbound: false,
             securityGroupName: `${props.deploymentName.toLowerCase()}-grapl-swarm`,
         });
-        Tags.of(swarmSecurityGroup).add("grapl-deployment-name", `${props.deploymentName.toLowerCase()}`);
+        Tags.of(swarmSecurityGroup).add(
+            "grapl-deployment-name",
+            `${props.deploymentName.toLowerCase()}`
+        );
 
         // allow hosts in the swarm security group to make outbound
         // connections to the Internet for these services:
@@ -83,8 +86,8 @@ export class Swarm extends cdk.Construct {
         this.swarmSecurityGroup = swarmSecurityGroup;
 
         // IAM Role for Swarm instances
-        const swarmInstanceRole = new iam.Role(this, 'SwarmRole', {
-            assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
+        const swarmInstanceRole = new iam.Role(this, "SwarmRole", {
+            assumedBy: new iam.ServicePrincipal("ec2.amazonaws.com"),
             roleName: `${props.deploymentName.toLowerCase()}-grapl-swarm-role`,
         });
 
@@ -92,7 +95,7 @@ export class Swarm extends cdk.Construct {
         // run the CloudWatch Agent.
         swarmInstanceRole.addManagedPolicy(
             iam.ManagedPolicy.fromAwsManagedPolicyName(
-                'CloudWatchAgentServerPolicy' // FIXME: don't use managed policy
+                "CloudWatchAgentServerPolicy" // FIXME: don't use managed policy
             )
         );
 
@@ -100,29 +103,29 @@ export class Swarm extends cdk.Construct {
         // instances with SSM
         swarmInstanceRole.addManagedPolicy(
             iam.ManagedPolicy.fromAwsManagedPolicyName(
-                'AmazonSSMManagedInstanceCore' // FIXME: don't use managed policy
+                "AmazonSSMManagedInstanceCore" // FIXME: don't use managed policy
             )
         );
 
         // Logging policy to allow Swarm instances to ship service
         // logs to CloudWatch.
-        swarmInstanceRole.addToPrincipalPolicy(new iam.PolicyStatement({
-            effect: iam.Effect.ALLOW,
-            actions: [
-                'logs:CreateLogGroup',
-                'logs:CreateLogStream',
-                'logs:PutLogEvents',
-                'logs:DescribeLogStreams',
-            ],
-            resources: [
-                `${props.logsGroupResourceArn}:*`
-            ],
-        }));
+        swarmInstanceRole.addToPrincipalPolicy(
+            new iam.PolicyStatement({
+                effect: iam.Effect.ALLOW,
+                actions: [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                    "logs:DescribeLogStreams",
+                ],
+                resources: [`${props.logsGroupResourceArn}:*`],
+            })
+        );
 
         // Configure a Route53 Hosted Zone for the Swarm cluster.
         this.swarmHostedZone = new route53.PrivateHostedZone(
             this,
-            'SwarmZone',
+            "SwarmZone",
             {
                 vpc: props.vpc,
                 zoneName: `${props.deploymentName.toLowerCase()}.dgraph.grapl`,
@@ -130,7 +133,7 @@ export class Swarm extends cdk.Construct {
         );
 
         // Bucket for swarm configs
-        const swarmConfigBucket = new GraplS3Bucket(this, 'SwarmConfigBucket', {
+        const swarmConfigBucket = new GraplS3Bucket(this, "SwarmConfigBucket", {
             bucketName: `${props.deploymentName.toLowerCase()}-swarm-config-bucket`,
             publicReadAccess: false,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
@@ -141,16 +144,16 @@ export class Swarm extends cdk.Construct {
         this.swarmInstanceRole = swarmInstanceRole;
 
         // Deploy cluster setup scripts to S3
-        const swarmDir = path.join(__dirname, '../swarm/');
-        new s3deploy.BucketDeployment(this, 'SwarmConfigDeployment', {
+        const swarmDir = path.join(__dirname, "../swarm/");
+        new s3deploy.BucketDeployment(this, "SwarmConfigDeployment", {
             sources: [s3deploy.Source.asset(swarmDir)],
             destinationBucket: swarmConfigBucket,
         });
 
         // InstanceProfile for swarm instances
-        new iam.CfnInstanceProfile(this, 'SwarmInstanceProfile', {
+        new iam.CfnInstanceProfile(this, "SwarmInstanceProfile", {
             roles: [swarmInstanceRole.roleName],
-            instanceProfileName: `${props.deploymentName.toLowerCase()}-swarm-instance-profile`
+            instanceProfileName: `${props.deploymentName.toLowerCase()}-swarm-instance-profile`,
         });
     }
 
