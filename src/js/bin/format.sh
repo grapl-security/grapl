@@ -51,7 +51,7 @@ else printHelp;
 fi
 
 checkPrettierInstalled() {
-    npm list --depth 1 --global prettier > /dev/null 2>&1
+    npm list --depth 1 --global prettier
     not_installed=$?
     if [ "$not_installed" -ne "0" ]; then
         echo "Installing prettier" && npm install -g prettier;
