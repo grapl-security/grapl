@@ -40,6 +40,7 @@ class GraphqlEndpointClient:
                 lens_type,
                 dgraph_type,
                 score,
+                display,
                 scope {
                     ... on Process {
                         uid,

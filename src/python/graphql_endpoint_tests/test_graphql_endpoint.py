@@ -55,6 +55,8 @@ class TestGraphqlEndpoint(TestCase):
         # Ensure we strip the Entity and Base types
         assert gql_lens["scope"][0]["dgraph_type"] == ["Asset"]
         assert gql_lens["scope"][0]["hostname"] == asset_props["hostname"]
+        # Ensure we send along the Display
+        assert gql_lens["scope"][0]["display"] == ["hostname"]
 
     def test_describe_asset_type(
         self,

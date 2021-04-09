@@ -82,8 +82,6 @@ app.use(
   middleware,
   graphqlHTTP(async (request, response, graphQLParams) => {
     console.debug({
-      request: request,
-      response: response,
       graphQLParams: graphQLParams,
     });
     let schema;

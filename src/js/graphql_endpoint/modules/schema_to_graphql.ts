@@ -3,9 +3,9 @@ import { RawNode } from "./dgraph_client";
 import { Schema, SchemaProperty } from "./schema_client";
 import { RiskType } from "./schema";
 
-type ResolutionMap = Map<string, GraphQLObjectType>;
+export type GqlTypeMap = Map<string, GraphQLObjectType>;
 
-function propertyToGraphql(property: SchemaProperty, typeMap: ResolutionMap): GraphQLOutputType {
+function propertyToGraphql(property: SchemaProperty, typeMap: GqlTypeMap): GraphQLOutputType {
     if (typeMap.size == 0) {
         throw new Error("We expect to only execute this function once the ResolutionMap is full");
     }
@@ -47,7 +47,7 @@ function normalizePropName(name: string): string {
     return name;
 }
 
-function schemaToGraphql(schema: Schema, typeMap: ResolutionMap): GraphQLObjectType {
+function schemaToGraphql(schema: Schema, typeMap: GqlTypeMap): GraphQLObjectType {
     // Convert one Schema, like "Asset" or "Process"
     return new GraphQLObjectType({
         name: schema.node_type,
@@ -62,12 +62,14 @@ function schemaToGraphql(schema: Schema, typeMap: ResolutionMap): GraphQLObjectT
                     throw new Error(`Couldn't convert ${schema.node_type}: ${e}`);
                 }
             }
+            // Bolt on a 'display' field
+            fields["display"] = { type: GraphQLString };
             return fields
         },
     });
 }
 
-function genResolveTypeForTypes(types: ResolutionMap) {
+function genResolveTypeForTypes(types: GqlTypeMap) {
     // Convert an entire set of schemas, for a deployment
     function resolveType(data: RawNode): string  {
         const dgraphType = data.dgraph_type.filter(
@@ -83,8 +85,8 @@ function genResolveTypeForTypes(types: ResolutionMap) {
     return resolveType;
 }
 
-export function dynamodbSchemasIntoGraphqlTypes(schemas: Schema[]): ResolutionMap {
-    const map: ResolutionMap = new Map();
+export function dynamodbSchemasIntoGraphqlTypes(schemas: Schema[]): GqlTypeMap {
+    const map: GqlTypeMap = new Map();
     map.set("Risk", RiskType);
 
     for (const schema of schemas) {
@@ -98,8 +100,8 @@ export function dynamodbSchemasIntoGraphqlTypes(schemas: Schema[]): ResolutionMa
     return map;
 }
 
-export function allSchemasToGraphql(schemas: Schema[]): GraphQLUnionType {
-    //const types = schemas.map(schemaToGraphql);
+export function allSchemasToGraphql(schemas: Schema[]): GraphQLUnionType
+{
     if (schemas.length == 0) {
         throw new Error("No schemas received");
     }

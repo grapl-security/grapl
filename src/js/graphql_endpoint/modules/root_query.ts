@@ -16,7 +16,7 @@ import {
     RawNode,
     EnrichedNode,
 } from "./dgraph_client";
-import { SchemaClient } from "./schema_client";
+import { Schema, SchemaClient } from "./schema_client";
 import { allSchemasToGraphql } from "./schema_to_graphql";
 
 type MysteryParentType = never;
@@ -140,17 +140,22 @@ function uidAsInt(node: RawNode): number {
     throw new Error(`Oddly typed UID ${uid}`);
 }
 
-function asEnrichedNode(node: RawNode): EnrichedNode {
+function asEnrichedNodeWithSchemas(node: RawNode, schemaMap: Map<string, Schema>): EnrichedNode {
+  const dgraph_types = node.dgraph_type?.filter(filterDefaultDgraphNodeTypes);
     return {
         ...node,
         uid: uidAsInt(node),
-        dgraph_type: node.dgraph_type?.filter(filterDefaultDgraphNodeTypes),
+        dgraph_type: dgraph_types,
+    // Attach the static display string to the enriched node
+    display: schemaMap.get(dgraph_types[0])?.display,
     };
 }
 
-const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
+const handleLensScope = async (parent: MysteryParentType, args: LensArgs, schemaMap: Map<string, Schema>) => {
   console.debug("handleLensScope args: ", args);
-  const dg_client = getDgraphClient();
+  const dg_client = getDgraphClient()
+  // partial apply schemaMap
+  const asEnrichedNode = (node: EnrichedNode) => asEnrichedNodeWithSchemas(node, schemaMap);
 
   const lens_name = args.lens_name;
 
@@ -159,12 +164,12 @@ const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
   console.debug("lens_subgraph in handleLensScope: ", lens_subgraph);
 
   lens_subgraph.uid = uidAsInt(lens_subgraph);
-  let scope: EnrichedNode[] = (lens_subgraph["scope"] || []).map(asEnrichedNode);
+  let scope: EnrichedNode[] = (lens_subgraph["scope"] || [])
+    .filter((node: RawNode) => node.dgraph_type.length > 0)
+  .map(asEnrichedNode);
 
   // No dgraph_type? Not a node; skip it!
-  scope = scope.filter(
-    (neighbor: EnrichedNode) => neighbor.dgraph_type.length > 0
-  );
+  scope = scope
 
   // record the uids of all direct neighbors to the lens.
   // These are the only nodes we should keep by the end of this process.
@@ -224,22 +229,13 @@ const handleLensScope = async (parent: MysteryParentType, args: LensArgs) => {
           neighbor[predicate] = enriched;
         }
 
-		// TODO improve this display stuff
-        for (const node of scope) {
-            const _node = node as any;
-            const nodeType = _node.dgraph_type.filter(
-                filterDefaultDgraphNodeTypes
-            )[0];
-            console.log("nodeType", nodeType)
-            const displayProperty = await getDisplayProperty(nodeType);
-
-            if (_node[displayProperty.S] === undefined) {
-                _node["display"] = nodeType;
-            } else {
-                _node["display"] = _node[displayProperty.S].toString();
-            }
-        }
       }
+    }
+  }
+
+  for (const node of scope) {
+    if (!node) {
+      throw new Error(`Somehow received a null or undefined scope node: ${node}`);
     }
   }
 
@@ -258,8 +254,9 @@ interface LensArgs {
 }
 
 async function getRootQuery(): Promise<GraphQLObjectType> {
-  const schemaTypes = await new SchemaClient().getSchemas();
-  const schemaTypesWithoutBuiltins = schemaTypes.filter((schema) => {
+  const schemasWithBuiltins = await new SchemaClient().getSchemas();
+  const schemas = schemasWithBuiltins.filter((schema) => {
+    // This could be a one-liner, but I think it's complex enough for ifelse
     if (schema.node_type == "Risk" || schema.node_type == "Lens") {
       return false; // reject
     } else {
@@ -267,8 +264,10 @@ async function getRootQuery(): Promise<GraphQLObjectType> {
     }
   });
 
-  const GraplEntityType = allSchemasToGraphql(schemaTypesWithoutBuiltins);
+  // We use this in the `handleLensScope` to determine the display property
+  const schemasMap: Map<string, Schema> = new Map(schemas.map((s) => [s.node_type, s]));
 
+  const GraplEntityType = allSchemasToGraphql(schemas);
   const LensNodeType = new GraphQLObjectType({
     name: "LensNode",
     fields: () => ({
@@ -314,9 +313,7 @@ async function getRootQuery(): Promise<GraphQLObjectType> {
         },
         resolve: async (parent: MysteryParentType, args: LensArgs) => {
           try {
-            console.debug("lens_scope args: ", args);
-            let response = await handleLensScope(parent, args);
-            console.debug("lens_scope response: ", response);
+            let response = await handleLensScope(parent, args, schemasMap);
             return response;
           } catch (e) {
             console.error("Error in handleLensScope: ", e);
