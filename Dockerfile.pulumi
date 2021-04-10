@@ -5,8 +5,7 @@ SHELL ["/bin/bash", "-c"]
 RUN apt-get update && apt-get install --yes \
     build-essential \
     curl \
-    unzip \
-    wait-for-it
+    unzip
 
 RUN adduser \
         --disabled-password \

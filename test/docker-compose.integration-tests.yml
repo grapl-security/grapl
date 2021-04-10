@@ -128,7 +128,6 @@ services:
       target: graphql-endpoint-tests
     command: |
       /bin/bash -c '
-        wait-for-it grapl-provision:${WAIT_PORT} --timeout=120 &&
         source venv/bin/activate &&
         cd graphql_endpoint_tests &&
         py.test --capture=no -n 1 -m "integration_test"
