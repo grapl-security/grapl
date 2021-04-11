@@ -15,6 +15,7 @@ pulumi-aws>=3.2.0,<4.0.0
 pulumi_random
 pydgraph
 pyjwt
+pytest
 requests
 redis
 typing_extensions

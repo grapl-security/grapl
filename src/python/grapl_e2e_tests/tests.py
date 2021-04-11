@@ -1,11 +1,13 @@
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict
 from unittest import TestCase
 
 import pytest
+from grapl_e2e_tests.expected_gql_asset import expected_gql_asset
 from grapl_analyzerlib.nodes.lens import LensQuery, LensView
 from grapl_tests_common.clients.engagement_edge_client import EngagementEdgeClient
 from grapl_tests_common.clients.graphql_endpoint_client import GraphqlEndpointClient
+from grapl_tests_common.subset_equals import subset_equals
 from grapl_tests_common.wait import WaitForCondition, WaitForQuery, wait_for_one
 
 LENS_NAME = "DESKTOP-FVSHABR"
@@ -55,7 +57,8 @@ def ensure_graphql_lens_scope_no_errors(
     smoke test in the mean time.
     """
     gql_lens = gql_client.query_for_scope(lens_name=lens_name)
-    assert len(gql_lens["scope"]) in (3, 4, 5)
+    scope = gql_lens["scope"]
+    assert len(scope) in (3, 4, 5)
 
     # Accumulate ["Asset"], ["Process"] into Set("Asset, Process")
     all_types_in_scope = set(
@@ -67,3 +70,6 @@ def ensure_graphql_lens_scope_no_errors(
             "Process",
         )
     )
+
+    asset_node: Dict = next((n for n in scope if n["dgraph_type"] == ["Asset"]))
+    subset_equals(larger=asset_node, smaller=expected_gql_asset())

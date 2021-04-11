@@ -33,14 +33,13 @@ class GraphqlEndpointClient:
 
         query = """
         query LensScopeByName($lens_name: String!) {
-            
             lens_scope(lens_name: $lens_name) {
                 uid,
                 node_key,
-                lens_name,
                 lens_type,
                 dgraph_type,
                 score,
+                display,
                 scope {
                     ... on Process {
                         uid,
@@ -48,10 +47,12 @@ class GraphqlEndpointClient:
                         dgraph_type,
                         process_name, 
                         process_id,
+                        display,
                         children {
                             uid, 
                             node_key, 
                             dgraph_type,
+                            display,
                             process_name, 
                             process_id,
                         }, 
@@ -67,6 +68,7 @@ class GraphqlEndpointClient:
                         uid, 
                         node_key, 
                         dgraph_type,
+                        display,
                         hostname,
                         asset_ip{
                             ip_address
@@ -75,6 +77,7 @@ class GraphqlEndpointClient:
                             uid, 
                             node_key, 
                             dgraph_type,
+                            display,
                             process_name, 
                             process_id,
                         },
@@ -82,11 +85,13 @@ class GraphqlEndpointClient:
                             uid, 
                             node_key, 
                             dgraph_type,
+                            display,
                             file_path
                         }, 
                         risks {  
                             uid,
                             dgraph_type,
+                            display,
                             node_key, 
                             analyzer_name, 
                             risk_score
@@ -96,9 +101,11 @@ class GraphqlEndpointClient:
                         uid,
                         node_key, 
                         dgraph_type,
+                        display,
                         risks {  
                             uid,
                             dgraph_type,
+                            display,
                             node_key, 
                             analyzer_name, 
                             risk_score
