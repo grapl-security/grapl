@@ -1,7 +1,7 @@
 ARG TAG=latest
 FROM grapl/grapl-python-base:$TAG as pants-base
 RUN curl -O https://get.pulumi.com/releases/sdk/pulumi-v2.24.1-linux-x64.tar.gz && \
-    tar -xzvf pulumi-v2.23.1-linux-x64.tar.gz && \
+    tar -xzvf pulumi-v2.24.1-linux-x64.tar.gz && \
     mv pulumi pulumi-bin
 ENV PATH="/home/grapl/pulumi-bin:$PATH"
 
