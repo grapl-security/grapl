@@ -174,8 +174,19 @@ const handleLensScope = async (
     console.debug("handleLensScope args: ", args);
     const dg_client = getDgraphClient();
     // partial apply schemaMap
-    const asEnrichedNode = (node: EnrichedNode) =>
+    const asEnrichedNode = (node: RawNode) =>
         asEnrichedNodeWithSchemas(node, schemaMap);
+    
+    // Tosses ones that don't have dgraph type (i.e., edges)
+    const batchEnrichNodes = (nodes: RawNode[]) => {
+        return nodes.flatMap((n: RawNode) => {
+            const enriched = asEnrichedNode(n);
+            if(hasDgraphType(enriched)) {
+                return [enriched];
+            } 
+            return [];
+        })
+    }
 
     const lens_name = args.lens_name;
 
@@ -187,70 +198,58 @@ const handleLensScope = async (
     console.debug("lens_subgraph in handleLensScope: ", lens_subgraph);
 
     lens_subgraph.uid = uidAsInt(lens_subgraph);
-    let scope: EnrichedNode[] = (lens_subgraph["scope"] || [])
-        // No dgraph_type? Not a node; skip it!
-        .filter((node: RawNode) => node.dgraph_type?.length > 0)
-        .map(asEnrichedNode);
+    let scope: EnrichedNode[] = batchEnrichNodes(lens_subgraph["scope"] || []);
 
     // record the uids of all direct neighbors to the lens.
     // These are the only nodes we should keep by the end of this process.
     // We'll then try to get all neighbor connections that only correspond to these nodes
-    const neighbor_uids = new Set<number>(
-        scope.map((node: EnrichedNode) => node["uid"])
+    const uids_in_scope = new Set<number>(
+        scope.map((node: EnrichedNode) => node.uid)
     );
 
     // lens neighbors
-    for (const neighbor of scope) {
+    for (const node of scope) {
         // neighbor of a lens neighbor
-        for (const predicate in neighbor) {
+        for (const predicate in node) {
             // we want to keep risks and enrich them at the same time
             if (predicate === "risks") {
-                const risks = neighbor[predicate].map(asEnrichedNode);
-                risks.forEach((risk_node: EnrichedNode) => {
-                    if (hasDgraphType(risk_node)) {
-                        console.debug(
-                            "checking if dgraph_type in risk_node",
-                            risk_node
-                        );
-                        risk_node["dgraph_type"] = risk_node[
-                            "dgraph_type"
-                        ].filter(filterDefaultDgraphNodeTypes);
-                    }
-                });
-
-                // filter out nodes that don't have dgraph_types
-                neighbor[predicate] = risks.filter(hasDgraphType);
+                // enrich + filter out nodes that don't have dgraph_types
+                node[predicate] = batchEnrichNodes(node[predicate]);
                 continue;
             }
 
             // If this edge is 1-to-many, we need to filter down the list to lens-neighbor -> lens-neighbor connections
+            // i.e. if you see:
+            //    Known UIDs: [1, 2, 3];
+            //  (UID 1) --edge--> [2, 4, 5]
+            // Throw away 4 and 5 since they're not in-scope.
             if (
-                Array.isArray(neighbor[predicate]) &&
-                neighbor[predicate] &&
-                neighbor[predicate][0]["uid"]
+                Array.isArray(node[predicate]) &&
+                node[predicate] &&
+                node[predicate][0]["uid"]
             ) {
-                neighbor[predicate] = neighbor[predicate].map(asEnrichedNode);
-                neighbor[predicate] = neighbor[
-                    predicate
-                ].filter((second_neighbor: EnrichedNode) =>
-                    neighbor_uids.has(second_neighbor["uid"])
-                );
+                node[predicate] = batchEnrichNodes(node[predicate])
+                    .filter((neighbor_of_node: EnrichedNode) =>
+                        uids_in_scope.has(neighbor_of_node["uid"])
+                    );
 
                 // If we filtered all the edges down, might as well delete this predicate
-                if (neighbor[predicate].length === 0) {
-                    delete neighbor[predicate];
+                if (node[predicate].length === 0) {
+                    delete node[predicate];
                 }
             }
             // If this edge is 1-to-1, we need to determine if we need to delete the edge
+            // i.e. if you see:
+            //    Known UIDs: [1, 2, 3];
+            //  (UID 1) --edge--> (UID 4)
+            // Throw away this edge, since UID 4 is not in-scope.
             else if (
-                typeof neighbor[predicate] === "object" &&
-                neighbor[predicate]["uid"]
+                typeof node[predicate] === "object" &&
+                node[predicate]["uid"]
             ) {
-                const enriched = asEnrichedNode(neighbor[predicate]);
-                if (!neighbor_uids.has(enriched.uid)) {
-                    delete neighbor[predicate];
-                } else {
-                    neighbor[predicate] = enriched;
+                node[predicate] = asEnrichedNode(node[predicate]);
+                if (!uids_in_scope.has(node[predicate].uid)) {
+                    delete node[predicate];
                 }
             }
         }
@@ -260,7 +259,7 @@ const handleLensScope = async (
         if (!node) {
             throw new Error(
                 `Somehow received a null or undefined scope node: ${node}`
-            );
+            )
         }
     }
 
