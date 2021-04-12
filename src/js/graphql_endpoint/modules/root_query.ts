@@ -176,17 +176,17 @@ const handleLensScope = async (
     // partial apply schemaMap
     const asEnrichedNode = (node: RawNode) =>
         asEnrichedNodeWithSchemas(node, schemaMap);
-    
+
     // Tosses ones that don't have dgraph type (i.e., edges)
     const batchEnrichNodes = (nodes: RawNode[]) => {
         return nodes.flatMap((n: RawNode) => {
             const enriched = asEnrichedNode(n);
-            if(hasDgraphType(enriched)) {
+            if (hasDgraphType(enriched)) {
                 return [enriched];
-            } 
+            }
             return [];
-        })
-    }
+        });
+    };
 
     const lens_name = args.lens_name;
 
@@ -228,10 +228,11 @@ const handleLensScope = async (
                 node[predicate] &&
                 node[predicate][0]["uid"]
             ) {
-                node[predicate] = batchEnrichNodes(node[predicate])
-                    .filter((neighbor_of_node: EnrichedNode) =>
-                        uids_in_scope.has(neighbor_of_node["uid"])
-                    );
+                node[predicate] = batchEnrichNodes(
+                    node[predicate]
+                ).filter((neighbor_of_node: EnrichedNode) =>
+                    uids_in_scope.has(neighbor_of_node["uid"])
+                );
 
                 // If we filtered all the edges down, might as well delete this predicate
                 if (node[predicate].length === 0) {
@@ -259,7 +260,7 @@ const handleLensScope = async (
         if (!node) {
             throw new Error(
                 `Somehow received a null or undefined scope node: ${node}`
-            )
+            );
         }
     }
 
