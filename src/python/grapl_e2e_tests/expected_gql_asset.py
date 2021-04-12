@@ -1,5 +1,6 @@
 from typing import Any, Mapping
 
+
 def expected_gql_asset() -> Mapping[str, Any]:
     """
     All the fixed values (i.e. no uid, no node key) we'd see in the e2e test

@@ -1,12 +1,15 @@
 from typing import Any, List, Mapping
 
- 
+
 def _dict_subset_equals(larger: Mapping, smaller: Mapping, path: str) -> None:
     for k in smaller.keys():
         new_path = f"{path}[{k}]"
         if k not in larger:
-            raise SubsetEqualsException("No key {k} in larger", larger, smaller, new_path)
+            raise SubsetEqualsException(
+                "No key {k} in larger", larger, smaller, new_path
+            )
         _subset_equals(larger=larger[k], smaller=smaller[k], path=new_path)
+
 
 def _list_subset_equals(larger: List, smaller: List, path: str) -> None:
     """
@@ -29,9 +32,15 @@ def _list_subset_equals(larger: List, smaller: List, path: str) -> None:
                 break
 
         if found_match:
-            continue # on to the next item in the smaller-set
+            continue  # on to the next item in the smaller-set
         else:
-            raise SubsetEqualsException("Couldn't find a match for item in larger.", larger=larger, smaller=item, path=new_path)
+            raise SubsetEqualsException(
+                "Couldn't find a match for item in larger.",
+                larger=larger,
+                smaller=item,
+                path=new_path,
+            )
+
 
 def _primitive_equals(larger: object, smaller: object, path: str) -> None:
     primitives = (int, str, bool, float)
@@ -39,7 +48,10 @@ def _primitive_equals(larger: object, smaller: object, path: str) -> None:
         if larger != smaller:
             raise SubsetEqualsException("Not equal:", larger, smaller, path)
     else:
-        raise SubsetEqualsException("Don't know how to subset-compare this type", larger, smaller, path)
+        raise SubsetEqualsException(
+            "Don't know how to subset-compare this type", larger, smaller, path
+        )
+
 
 class SubsetEqualsException(AssertionError):
     def __init__(self, message: str, larger: Any, smaller: Any, path: str) -> None:
@@ -50,7 +62,7 @@ class SubsetEqualsException(AssertionError):
 
 def _subset_equals(larger: object, smaller: object, path: str = "") -> None:
     if larger is smaller:
-        pass # we good
+        pass  # we good
     elif isinstance(larger, List) and isinstance(smaller, List):
         _list_subset_equals(larger, smaller, path)
     elif isinstance(larger, Mapping) and isinstance(smaller, Mapping):
@@ -58,14 +70,18 @@ def _subset_equals(larger: object, smaller: object, path: str = "") -> None:
     else:
         _primitive_equals(larger, smaller, path)
 
+
 def subset_equals(*, larger: object, smaller: object) -> None:
     """
     in fancy terms,
     Larger = superset
     Smaller = subset
     """
+    __tracebackhide__ = True  # hide this helper function's traceback from pytest
     path = "root_object"
     try:
         _subset_equals(larger=larger, smaller=smaller, path=path)
     except SubsetEqualsException as e:
-        raise SubsetEqualsException("Couldn't find a subset", larger, smaller, path) from e
+        raise SubsetEqualsException(
+            "Couldn't find a subset", larger, smaller, path
+        ) from e

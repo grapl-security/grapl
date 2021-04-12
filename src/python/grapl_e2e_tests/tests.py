@@ -3,12 +3,17 @@ from typing import Any, Dict
 from unittest import TestCase
 
 import pytest
-from grapl_e2e_tests.expected_gql_asset import expected_gql_asset
 from grapl_analyzerlib.nodes.lens import LensQuery, LensView
+from grapl_e2e_tests.expected_gql_asset import expected_gql_asset
 from grapl_tests_common.clients.engagement_edge_client import EngagementEdgeClient
 from grapl_tests_common.clients.graphql_endpoint_client import GraphqlEndpointClient
 from grapl_tests_common.subset_equals import subset_equals
-from grapl_tests_common.wait import WaitForCondition, WaitForNoException, WaitForQuery, wait_for_one
+from grapl_tests_common.wait import (
+    WaitForCondition,
+    WaitForNoException,
+    WaitForQuery,
+    wait_for_one,
+)
 
 LENS_NAME = "DESKTOP-FVSHABR"
 
@@ -46,9 +51,12 @@ class TestEndToEnd(TestCase):
 
         gql_client = GraphqlEndpointClient(jwt=EngagementEdgeClient().get_jwt())
 
-        wait_for_one(WaitForNoException(
-            lambda: ensure_graphql_lens_scope_no_errors(gql_client, LENS_NAME)
-        ), timeout_secs=20)
+        wait_for_one(
+            WaitForNoException(
+                lambda: ensure_graphql_lens_scope_no_errors(gql_client, LENS_NAME)
+            ),
+            timeout_secs=20,
+        )
 
 
 def ensure_graphql_lens_scope_no_errors(
