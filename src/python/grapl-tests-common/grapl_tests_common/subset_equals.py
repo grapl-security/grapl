@@ -6,7 +6,7 @@ def _dict_subset_equals(larger: Mapping, smaller: Mapping, path: str) -> None:
         new_path = f"{path}[{k}]"
         if k not in larger:
             raise SubsetEqualsException("No key {k} in larger", larger, smaller, new_path)
-        subset_equals(larger=larger[k], smaller=smaller[k], path=new_path)
+        _subset_equals(larger=larger[k], smaller=smaller[k], path=new_path)
 
 def _list_subset_equals(larger: List, smaller: List, path: str) -> None:
     """
@@ -14,13 +14,13 @@ def _list_subset_equals(larger: List, smaller: List, path: str) -> None:
     We do not care about order.
     This is N^2 and I don't care.
     """
-    for item in smaller:
-        new_path = f"{path}[n]"
+    for idx, item in enumerate(smaller):
+        new_path = f"{path}[{idx}]"
         # try to find a match in the larger set
         found_match = False
         for larger_item in larger:
             try:
-                subset_equals(larger=larger_item, smaller=item, path=new_path)
+                _subset_equals(larger=larger_item, smaller=item, path=new_path)
             except SubsetEqualsException as e:
                 pass
             else:
@@ -48,12 +48,7 @@ class SubsetEqualsException(AssertionError):
         )
 
 
-def subset_equals(*, larger: object, smaller: object, path: str = "") -> None:
-    """
-    in fancy terms,
-    Larger = superset
-    Smaller = subset
-    """
+def _subset_equals(larger: object, smaller: object, path: str = "") -> None:
     if larger is smaller:
         pass # we good
     elif isinstance(larger, List) and isinstance(smaller, List):
@@ -63,3 +58,14 @@ def subset_equals(*, larger: object, smaller: object, path: str = "") -> None:
     else:
         _primitive_equals(larger, smaller, path)
 
+def subset_equals(*, larger: object, smaller: object) -> None:
+    """
+    in fancy terms,
+    Larger = superset
+    Smaller = subset
+    """
+    path = "root_object"
+    try:
+        _subset_equals(larger=larger, smaller=smaller, path=path)
+    except SubsetEqualsException as e:
+        raise SubsetEqualsException("Couldn't find a subset", larger, smaller, path) from e
