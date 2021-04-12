@@ -66,7 +66,7 @@ function getHardcodedOverride(
        so, for now, just manually override and fix it in a followup PR. 
        context at:
        https://grapl-internal.slack.com/archives/C017PLQ8TCZ/p1617991501057700
-       
+       https://github.com/grapl-security/issue-tracker/issues/388
        */
     if (property.name == "children") {
         return GraphQLList(typeMap.get("Process"));
