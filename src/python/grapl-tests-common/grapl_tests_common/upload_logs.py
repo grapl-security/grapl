@@ -10,7 +10,11 @@ from os import environ
 from sys import maxsize
 from typing import TYPE_CHECKING, Callable, Iterator, List, Optional, cast
 
-from grapl_common.env_helpers import S3ClientFactory, SQSClientFactory
+from grapl_common.env_helpers import (
+    S3ClientFactory,
+    SQSClientFactory,
+    get_deployment_name,
+)
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
@@ -18,8 +22,6 @@ if TYPE_CHECKING:
 
 import boto3  # type: ignore
 import zstd  # type: ignore
-
-DEPLOYMENT_NAME = environ["DEPLOYMENT_NAME"]
 
 
 def rand_str(l: int) -> str:
@@ -79,7 +81,7 @@ class GeneratorOptions:
 class SysmonGeneratorOptions(GeneratorOptions):
     def __init__(self) -> None:
         super().__init__(
-            queue_name=f"{DEPLOYMENT_NAME}-sysmon-generator-queue",
+            queue_name=f"{get_deployment_name()}-sysmon-generator-queue",
             bucket_suffix="sysmon-log-bucket",
             key_infix="sysmon",
         )
@@ -92,7 +94,7 @@ class SysmonGeneratorOptions(GeneratorOptions):
 class OSQueryGeneratorOptions(GeneratorOptions):
     def __init__(self) -> None:
         super().__init__(
-            queue_name=f"{DEPLOYMENT_NAME}-osquery-generator-queue",
+            queue_name=f"{get_deployment_name()}-osquery-generator-queue",
             bucket_suffix="osquery-log-bucket",
             key_infix="osquery",
         )

@@ -1,10 +1,9 @@
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Mapping
 from unittest import TestCase
 
 import pytest
 from grapl_analyzerlib.nodes.lens import LensQuery, LensView
-from grapl_e2e_tests.expected_gql_asset import expected_gql_asset
 from grapl_tests_common.clients.engagement_edge_client import EngagementEdgeClient
 from grapl_tests_common.clients.graphql_endpoint_client import GraphqlEndpointClient
 from grapl_tests_common.subset_equals import subset_equals
@@ -82,3 +81,45 @@ def ensure_graphql_lens_scope_no_errors(
 
     # The 'risks' field is not immediately filled out, but eventually consistent
     subset_equals(larger=asset_node, smaller=expected_gql_asset())
+
+
+def expected_gql_asset() -> Mapping[str, Any]:
+    """
+    All the fixed values (i.e. no uid, no node key) we'd see in the e2e test
+    """
+    return {
+        "dgraph_type": ["Asset"],
+        "display": "DESKTOP-FVSHABR",
+        "hostname": "DESKTOP-FVSHABR",
+        "asset_processes": [
+            {
+                "dgraph_type": ["Process"],
+                "process_name": "cmd.exe",
+                "process_id": 5824,
+            },
+            {
+                "dgraph_type": ["Process"],
+                "process_name": "dropper.exe",
+                "process_id": 4164,
+            },
+            {
+                "dgraph_type": ["Process"],
+                "process_name": "cmd.exe",
+                "process_id": 5824,
+            },
+            {
+                "dgraph_type": ["Process"],
+                "process_name": "svchost.exe",
+                "process_id": 6132,
+            },
+        ],
+        "files_on_asset": None,
+        "risks": [
+            {
+                "dgraph_type": ["Risk"],
+                "node_key": "Rare Parent of cmd.exe",
+                "analyzer_name": "Rare Parent of cmd.exe",
+                "risk_score": 10,
+            }
+        ],
+    }

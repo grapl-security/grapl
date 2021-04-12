@@ -6,8 +6,6 @@ from grapl_tests_common.setup import AnalyzerUpload
 from grapl_tests_common.sleep import verbose_sleep
 from grapl_tests_common.upload_test_data import UploadSysmonLogsTestData
 
-DEPLOYMENT_NAME = environ["DEPLOYMENT_NAME"]
-
 
 def main() -> None:
     wait_for_vsc_debugger("grapl_e2e_tests")

@@ -9,7 +9,11 @@ from typing import TYPE_CHECKING, Sequence
 import boto3  # type: ignore
 import pytest
 import requests
-from grapl_common.env_helpers import S3ClientFactory, SQSClientFactory
+from grapl_common.env_helpers import (
+    S3ClientFactory,
+    SQSClientFactory,
+    get_deployment_name,
+)
 from grapl_tests_common.dump_dynamodb import dump_dynamodb
 from grapl_tests_common.types import AnalyzerUpload, S3ServiceResource
 from grapl_tests_common.upload_test_data import UploadTestData
@@ -19,11 +23,6 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
     from mypy_boto3_sqs import SQSClient
 
-DEPLOYMENT_NAME = environ["DEPLOYMENT_NAME"]
-DGRAPH_HOST = environ["DGRAPH_HOST"]
-DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT = environ[
-    "DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT"
-]
 
 # Toggle if you want to dump databases, logs, etc.
 DUMP_ARTIFACTS = bool(environ.get("DUMP_ARTIFACTS", False))
@@ -39,7 +38,7 @@ def _upload_analyzers(
     Janky, since Jesse will have an analyzer-uploader service pretty soon.
     """
 
-    bucket = f"{DEPLOYMENT_NAME}-analyzers-bucket"
+    bucket = f"{get_deployment_name()}-analyzers-bucket"
     for (local_path, s3_key) in analyzers:
         logging.info(f"S3 uploading analyzer from {local_path}")
         with open(local_path, "r") as f:
@@ -75,10 +74,12 @@ def setup(
     wait_for(
         [
             # for uploading analyzers
-            WaitForS3Bucket(s3_client, f"{DEPLOYMENT_NAME}-analyzers-bucket"),
+            WaitForS3Bucket(s3_client, f"{get_deployment_name()}-analyzers-bucket"),
             # for upload-sysmon-logs.py
-            WaitForS3Bucket(s3_client, f"{DEPLOYMENT_NAME}-sysmon-log-bucket"),
-            WaitForSqsQueue(sqs_client, f"{DEPLOYMENT_NAME}-sysmon-generator-queue"),
+            WaitForS3Bucket(s3_client, f"{get_deployment_name()}-sysmon-log-bucket"),
+            WaitForSqsQueue(
+                sqs_client, f"{get_deployment_name()}-sysmon-generator-queue"
+            ),
         ]
     )
 
@@ -92,13 +93,16 @@ def _after_tests() -> None:
     Add any "after tests are executed, but before docker-compose down" stuff here.
     """
 
+    dgraph_host = environ["DGRAPH_HOST"]
+    dgraph_alpha = environ["DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT"]
+
     # Issue a command to dgraph to export the whole database.
     # This is then stored on a volume, `dgraph_export` (defined in docker-compose.yml)
     # The contents of the volume are made available to Github Actions via `dump_artifacts.py`.
     if DUMP_ARTIFACTS:
         logging.info("Executing post-test database dumps")
         export_request = requests.get(
-            f"http://{DGRAPH_HOST}:{DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT}/admin/export"
+            f"http://{dgraph_host}:{dgraph_alpha}/admin/export"
         )
         assert export_request.json()["code"] == "Success"
         dump_dynamodb()
