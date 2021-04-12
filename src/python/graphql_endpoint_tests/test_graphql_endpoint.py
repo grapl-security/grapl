@@ -57,7 +57,7 @@ class TestGraphqlEndpoint(TestCase):
         assert asset_node["dgraph_type"] == ["Asset"]
         assert asset_node["hostname"] == asset_props["hostname"]
         # Ensure we send along the Display
-        assert asset_node["display"] == asset_props["hostname"] 
+        assert asset_node["display"] == asset_props["hostname"]
 
     def test_describe_asset_type(
         self,
