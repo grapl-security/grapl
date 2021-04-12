@@ -1,8 +1,4 @@
-import {
-    GraphQLInt,
-    GraphQLString,
-    GraphQLList,
-} from "graphql";
+import { GraphQLInt, GraphQLString, GraphQLList } from "graphql";
 import { allSchemasToGraphql } from "../modules/schema_to_graphql";
 import { schemas } from "./schemas_fixture";
 
@@ -23,7 +19,9 @@ describe("allSchemasToGraphql", () => {
         });
 
         it("with a dgraph_type: [string] field", () => {
-            expect(fields["dgraph_type"].type).toEqual(GraphQLList(GraphQLString));
+            expect(fields["dgraph_type"].type).toEqual(
+                GraphQLList(GraphQLString)
+            );
         });
     });
 });
