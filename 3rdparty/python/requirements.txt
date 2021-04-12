@@ -1,5 +1,6 @@
 # Any Python dependencies used by our code should be declared here.
 boto3
+botocore
 chalice
 click
 hypothesis
