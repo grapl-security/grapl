@@ -1,6 +1,7 @@
 # As recommended by https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored
 .yarn/*
 !.yarn/cache/
+!.yarn/cache/**
 !.yarn/patches
 !.yarn/plugins
 !.yarn/releases
