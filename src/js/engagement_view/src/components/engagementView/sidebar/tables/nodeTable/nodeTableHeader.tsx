@@ -4,7 +4,7 @@ import TableCell from "@material-ui/core/TableCell";
 import TableHead from "@material-ui/core/TableHead";
 import TableRow from "@material-ui/core/TableRow";
 
-import { VizNode } from "types/CustomTypes";
+import { VizNode } from "../../../../../types/CustomTypes";
 
 export function nodeTableHeader(node: VizNode, styles: any) {
 	if (node) {

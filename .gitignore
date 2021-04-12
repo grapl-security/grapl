@@ -51,7 +51,6 @@ pyrightconfig.json
 /.pants.workdir.file_lock*
 # See build-support/manage_virtualenv.sh
 /build-support/grapl-venv
-.yarn/
 
 # Generated when profiling rust code
 *.profdata

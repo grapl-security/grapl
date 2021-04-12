@@ -1,3 +1,3 @@
 export type GraplHeaderProps = {
-    displayBtn: boolean;
-};
+    displayBtn: boolean
+}
