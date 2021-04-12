@@ -1,7 +1,9 @@
+from pprint import pformat
 from typing import Any, List, Mapping
 
 
 def _dict_subset_equals(larger: Mapping, smaller: Mapping, path: str) -> None:
+    __tracebackhide__ = True  # hide this helper function's traceback from pytest
     for k in smaller.keys():
         new_path = f"{path}[{k}]"
         if k not in larger:
@@ -17,6 +19,7 @@ def _list_subset_equals(larger: List, smaller: List, path: str) -> None:
     We do not care about order.
     This is N^2 and I don't care.
     """
+    __tracebackhide__ = True  # hide this helper function's traceback from pytest
     for idx, item in enumerate(smaller):
         new_path = f"{path}[{idx}]"
         # try to find a match in the larger set
@@ -43,6 +46,7 @@ def _list_subset_equals(larger: List, smaller: List, path: str) -> None:
 
 
 def _primitive_equals(larger: object, smaller: object, path: str) -> None:
+    __tracebackhide__ = True  # hide this helper function's traceback from pytest
     primitives = (int, str, bool, float)
     if any((isinstance(larger, p) and isinstance(smaller, p) for p in primitives)):
         if larger != smaller:
@@ -56,11 +60,12 @@ def _primitive_equals(larger: object, smaller: object, path: str) -> None:
 class SubsetEqualsException(AssertionError):
     def __init__(self, message: str, larger: Any, smaller: Any, path: str) -> None:
         super(SubsetEqualsException, self).__init__(
-            f"{message}\n\n{path}\n\n==Larger==\n{larger}\n\n==Smaller==\n{smaller}"
+            f"{message}\n\n{path}\n\n==Larger==\n{pformat(larger)}\n\n==Smaller==\n{pformat(smaller)}"
         )
 
 
 def _subset_equals(larger: object, smaller: object, path: str = "") -> None:
+    __tracebackhide__ = True  # hide this helper function's traceback from pytest
     if larger is smaller:
         pass  # we good
     elif isinstance(larger, List) and isinstance(smaller, List):
@@ -77,7 +82,6 @@ def subset_equals(*, larger: object, smaller: object) -> None:
     Larger = superset
     Smaller = subset
     """
-    __tracebackhide__ = True  # hide this helper function's traceback from pytest
     path = "root_object"
     try:
         _subset_equals(larger=larger, smaller=smaller, path=path)

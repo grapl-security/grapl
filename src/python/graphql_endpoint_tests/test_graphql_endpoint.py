@@ -53,9 +53,9 @@ class TestGraphqlEndpoint(TestCase):
         # Check the nodes in scope
         assert len(gql_lens["scope"]) == 1
         # Ensure we strip the Entity and Base types
-        assert gql_lens["scope"][0]["dgraph_type"] == ["Asset"]
-        assert gql_lens["scope"][0]["hostname"] == asset_props["hostname"]
-        assert len(gql_lens["scope"][0]["risks"]) == 1
+        asset_node = gql_lens["scope"][0]
+        assert asset_node["dgraph_type"] == ["Asset"]
+        assert asset_node["hostname"] == asset_props["hostname"]
         # Ensure we send along the Display
         assert gql_lens["scope"][0]["display"] == ["hostname"]
 

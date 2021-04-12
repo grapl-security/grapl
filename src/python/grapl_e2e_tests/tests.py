@@ -55,7 +55,7 @@ class TestEndToEnd(TestCase):
             WaitForNoException(
                 lambda: ensure_graphql_lens_scope_no_errors(gql_client, LENS_NAME)
             ),
-            timeout_secs=20,
+            timeout_secs=40,
         )
 
 
