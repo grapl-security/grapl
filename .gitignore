@@ -2,8 +2,7 @@
 .DS_Store
 
 # Test outputs
-test/integration-outputs/screenshots
-test/integration-outputs/videos
+test/integration-outputs
 
 # Environments
 .env
