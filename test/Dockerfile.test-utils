@@ -1,5 +1,2 @@
-FROM grapl/grapl-base:$TAG
 ARG TAG=latest
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        wait-for-it \
-    && rm -rf /var/lib/apt/lists/*
+FROM grapl/grapl-base:$TAG AS test-utils
