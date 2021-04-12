@@ -1,13 +1,7 @@
 import {
-    GraphQLBoolean,
-    GraphQLFieldConfigMap,
     GraphQLInt,
-    GraphQLList,
-    GraphQLObjectType,
-    GraphQLOutputType,
     GraphQLString,
-    GraphQLType,
-    GraphQLUnionType,
+    GraphQLList,
 } from "graphql";
 import { allSchemasToGraphql } from "../modules/schema_to_graphql";
 import { schemas } from "./schemas_fixture";
@@ -26,6 +20,10 @@ describe("allSchemasToGraphql", () => {
 
         it("with a display: string field", () => {
             expect(fields["display"].type).toEqual(GraphQLString);
+        });
+
+        it("with a dgraph_type: [string] field", () => {
+            expect(fields["dgraph_type"].type).toEqual(GraphQLList(GraphQLString));
         });
     });
 });
