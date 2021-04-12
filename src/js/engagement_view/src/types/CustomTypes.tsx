@@ -1,88 +1,87 @@
-export type OtherNodeProperties = {[key: string]: (string | number)};
-export type NodeEdges = {[key: string]: (Node | Node[])};
+export type OtherNodeProperties = { [key: string]: string | number };
+export type NodeEdges = { [key: string]: Node | Node[] };
 
 export type BaseNodeProperties = {
-    uid: number,
-    dgraph_type: string[],
-}
+    uid: number;
+    node_key: string;
+    dgraph_type: string[];
+};
 
-export type NodeProperties = BaseNodeProperties & OtherNodeProperties; 
+export type NodeProperties = BaseNodeProperties & OtherNodeProperties;
 
 export type Node = {
-    risks?: Risk[],
-} & NodeProperties & NodeEdges;
+    risks?: Risk[];
+} & NodeProperties &
+    NodeEdges;
 
 export type Risk = {
-    node_key: string,
-    analyzer_name: string,
-    risk_score: number,
+    analyzer_name: string;
+    risk_score: number;
 } & BaseNodeProperties;
 
 export type Lens = {
-    scope: Node[],
-    node_key: string,
-    lens_name: string, 
-    lens_type: string,
-    score: number
-} & NodeProperties & NodeEdges;
-
+    scope: Node[];
+    lens_name: string;
+    lens_type: string;
+    score: number;
+} & NodeProperties &
+    NodeEdges;
 
 export type Coordinates = {
-    x?: number,
-    y?: number,
-    fx?: number,
-    fy?: number,
-    vx?: number,
-    vy?: number,
+    x?: number;
+    y?: number;
+    fx?: number;
+    fy?: number;
+    vx?: number;
+    vy?: number;
 };
 
 export type VizNodeMeta = {
-    id: number,
-    nodeLabel: string,
-    risk_score?: number,
-    analyzer_names?: string[],
-    neighbors?: VizNode[],
-    links?: Link[],
+    id: number;
+    nodeLabel: string;
+    risk_score?: number;
+    analyzer_names?: string[];
+    neighbors?: VizNode[];
+    links?: Link[];
 } & Coordinates;
 
 export type VizNode = VizNodeMeta & NodeProperties;
 
 export type Link = {
-    source: number,
-    target: number,
-    name: string, 
-}
+    source: number;
+    target: number;
+    name: string;
+};
 
 export type VizGraph = {
-    nodes: VizNode[],
-    links: Link[],
-    index: {[key: number]: VizNode},
-}
+    nodes: VizNode[];
+    links: Link[];
+    index: { [key: number]: VizNode };
+};
 
-export type LoginProps = {}
+export type LoginProps = {};
 
 export type RouteState = {
-    curPage: string,
-    lastCheckLoginCheck: number,
-}
+    curPage: string;
+    lastCheckLoginCheck: number;
+};
 
-export type SetRouteState = (routeState: RouteState) => void; 
-
+export type SetRouteState = (routeState: RouteState) => void;
 
 export type ToggleLensTableProps = {
-    setLens: (lens: string) => void,
-}
+    setLens: (lens: string) => void;
+};
 
 export type ToggleLensTableState = {
-    toggled: boolean,
-    lenses: Lens[],
-    first: number,
-    offset: number,
-}
+    toggled: boolean;
+    lenses: Lens[];
+    first: number;
+    offset: number;
+};
 
 export type PaginationState = {
-    first: number, 
-    lenses: Lens[],
-    offset: number,
-    toggled: boolean,
-}
+    first: number;
+    lenses: Lens[];
+    offset: number;
+    toggled: boolean;
+};
