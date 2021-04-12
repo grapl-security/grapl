@@ -8,9 +8,12 @@ COPY js/engagement_view/package.json package.json
 COPY js/engagement_view/yarn.lock yarn.lock
 COPY js/engagement_view/.yarnrc.yml .yarnrc.yml
 COPY js/engagement_view/.yarn/releases .yarn/releases
+COPY js/engagement_view/.yarn/cache/ .yarn/cache/
+COPY js/engagement_view/.pnp.cjs .pnp.cjs
 
 RUN yarn set version berry
-RUN yarn install
+RUN yarn install --immutable --check-cache
+#RUN yarn install
 
 # now copy all sources
 COPY js/engagement_view .

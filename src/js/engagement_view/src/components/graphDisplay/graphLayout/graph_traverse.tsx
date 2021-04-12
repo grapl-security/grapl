@@ -1,4 +1,4 @@
-import { NodeProperties, NodeEdges } from "types/CustomTypes";
+import { NodeProperties, NodeEdges } from "../../../types/CustomTypes";
 
 const _mapGraph = <T extends NodeProperties & NodeEdges>(
 	node: T,

@@ -9,9 +9,9 @@ import Backdrop from "@material-ui/core/Backdrop";
 import CircularProgress from "@material-ui/core/CircularProgress";
 
 import { lensTable } from "./lensTable/lensTable";
-import { getLenses } from "services/graphQLRequests/getLenses";
+import { getLenses } from "../../../../services/graphQLRequests/getLenses";
 
-import { ToggleLensTableProps, ToggleLensTableState } from "types/CustomTypes";
+import { ToggleLensTableProps, ToggleLensTableState } from "../../../../types/CustomTypes";
 
 import { useStyles } from "./lensTable/lensTableStyles";
 const defaultToggleLensTableState = (): ToggleLensTableState => {
@@ -62,7 +62,7 @@ export function ToggleLensTable({ setLens }: ToggleLensTableProps) {
 					}
 				}
 			);
-		}, 5000);
+		}, 1000);
 		return () => clearInterval(interval);
 	});
 

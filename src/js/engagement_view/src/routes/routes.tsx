@@ -7,16 +7,16 @@ import UploadPlugin from "../components/uploadPlugin/UploadPluginView";
 import { HashRouter, Route, Switch } from "react-router-dom";
 
 export default function Routes() {
-    console.log("Grapl loaded");
+  console.log("Grapl loaded");
 
-    return (
-        <HashRouter>
-            <Switch>
-                <Route exact path="/login" component={LogIn} />
-                <Route exact path="/" component={Dashboard} />
-                <Route exact path="/plugins" component={UploadPlugin} />
-                <Route exact path="/engagements" component={EngagementUx} />
-            </Switch>
-        </HashRouter>
-    );
+  return (
+    <HashRouter>
+      <Switch>
+        <Route exact path="/login" component={LogIn} />
+        <Route exact path="/" component={Dashboard} />
+        <Route exact path="/plugins" component={UploadPlugin} />
+        <Route exact path="/engagements" component={EngagementUx} />
+      </Switch>
+    </HashRouter>
+  );
 }

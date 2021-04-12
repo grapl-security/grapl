@@ -6,7 +6,7 @@ import TableRow from "@material-ui/core/TableRow";
 
 import { useStyles } from './lensTableStyles';
 
-import { SelectLensProps } from "types/LensAndNodeTableTypes"
+import { SelectLensProps } from "../../../../../types/LensAndNodeTableTypes"
 
 
 export function SelectLens(props: SelectLensProps) {

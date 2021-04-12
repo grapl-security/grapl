@@ -1,5 +1,5 @@
 import {Node} from '../../../types/CustomTypes'
-import {mapGraph} from "components/graphDisplay/graphLayout/graph_traverse";
+import {mapGraph} from "../../../components/graphDisplay/graphLayout/graph_traverse";
 
 const builtins = new Set([
     'Process',

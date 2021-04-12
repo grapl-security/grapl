@@ -10,3 +10,4 @@ src/js/grapl-cdk/cdk.out/**
 src/js/grapl-cdk/zips
 src/rust/target/**
 .yarn
+!.yarn/cache
