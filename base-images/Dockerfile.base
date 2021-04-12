@@ -1,0 +1,92 @@
+##
+# grapl base image -- every image inherits from this one
+##
+FROM debian:buster-slim AS grapl-base
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    bash \
+    ca-certificates \
+    libstdc++6 \
+    netbase \
+    wait-for-it \
+    && rm -rf /var/lib/apt/lists/*
+SHELL ["/bin/bash", "-euf", "-o", "pipefail", "-c"]
+RUN adduser \
+        --disabled-password \
+        --gecos '' \
+        --home /home/grapl \
+        --shell /bin/bash \
+        grapl
+USER grapl
+ENV USER=grapl
+WORKDIR /home/grapl
+
+##
+# base image for builds
+##
+FROM grapl-base AS grapl-build-base
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    git \
+    libc6-dev \
+    libffi-dev \
+    liblzma-dev \
+    libncurses5-dev \
+    libncursesw5-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libssl-dev \
+    libbz2-dev \
+    llvm \
+    make \
+    protobuf-compiler \
+    python-openssl \
+    tk-dev \
+    wget \
+    xz-utils \
+    zip \
+    zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
+USER grapl
+ENV PROTOC /usr/bin/protoc
+ENV PROTOC_INCLUDE /usr/include
+
+##
+# rust
+##
+FROM grapl-build-base AS grapl-rust-base
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y && \
+    source /home/grapl/.cargo/env && \
+    rustup default stable
+ENV PATH="/home/grapl/.cargo/bin:$PATH"
+
+##
+# python
+##
+FROM grapl-build-base AS grapl-python-base
+RUN curl https://pyenv.run | bash
+RUN /home/grapl/.pyenv/bin/pyenv update
+RUN /home/grapl/.pyenv/bin/pyenv install --verbose 3.7.10
+RUN /home/grapl/.pyenv/bin/pyenv global 3.7.10
+RUN /home/grapl/.pyenv/bin/pyenv doctor
+RUN eval "$(/home/grapl/.pyenv/bin/pyenv init -)" && python -mvenv venv && \
+    source venv/bin/activate && \
+    pip install --upgrade pip
+ENV PATH="/home/grapl/.pyenv/versions/3.7.10/bin:$PATH"
+
+##
+# js
+##
+FROM grapl-build-base AS grapl-js-base
+ENV NVM_DIR=/home/grapl/.nvm
+ENV NODE_VERSION=v14.16.0
+RUN mkdir -p $NVM_DIR
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash \
+    && source $NVM_DIR/nvm.sh \
+    && nvm install $NODE_VERSION \
+    && nvm alias default $NODE_VERSION \
+    && nvm use default
+ENV NODE_PATH="$NVM_DIR/$NODE_VERSION/lib/node_modules"
+ENV PATH="$NVM_DIR/$NODE_VERSION/bin:$PATH"
+RUN source $NVM_DIR/nvm.sh && npm install -g yarn

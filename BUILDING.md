@@ -94,7 +94,7 @@ which can be useful for things like settings for
 [sccache](https://github.com/mozilla/sccache), which is used to for caching. It
 is passed as a [Docker build
 secret](https://docs.docker.com/develop/develop-images/build_enhancements/#new-docker-build-secret-information)
-so it should be suitable secrets like S3 credentials for use with sccache. 
+so it should be suitable secrets like S3 credentials for use with sccache.
 - `DOCKER_BUILDX_BAKE_OPTS` - Docker images are built using [docker
   buildx](https://github.com/docker/buildx). You can pass additional arguments
 to the `docker buildx build` commands by setting this option (ex: `--progress
@@ -113,10 +113,10 @@ By default, our builds will use Mozilla's
 [sccache](https://github.com/mozilla/sccache) to cache builds in a [cache mount
 type](https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/syntax.md#run---mounttypecache).
 This improves performance for local development experience as Rust sources
-change. 
+change.
 
 Environment variables used by `sccache` can be supplied via the
-`GRAPL_RUST_ENV_FILE` environment variable when running Make. 
+`GRAPL_RUST_ENV_FILE` environment variable when running Make.
 
 Examples:
 
@@ -186,7 +186,7 @@ image.
     image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
     build:
       context: src/rust
-      target: sysmon-subgraph-generator-deploy
+      target: sysmon-subgraph-generator
       args:
         - CARGO_PROFILE=${CARGO_PROFILE:-debug}
 ...
@@ -197,7 +197,7 @@ be found under the `test` directory.
 
 ### Running tests
 
-Most Grapl Dockerfiles have build targets specific for running tests, which 
+Most Grapl Dockerfiles have build targets specific for running tests, which
 
 Docker Compose is used to define the containers for running tests, as well as
 the how the image for the container should be built. The following is the

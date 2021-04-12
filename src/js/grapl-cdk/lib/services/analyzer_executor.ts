@@ -59,7 +59,7 @@ export class AnalyzerExecutor extends cdk.NestedStack {
                 version: props.version,
                 watchful: props.watchful,
                 serviceImage: ContainerImage.fromAsset(SRC_DIR, {
-                    target: "analyzer-executor-deploy",
+                    target: "analyzer-executor",
                     file: PYTHON_DOCKERFILE,
                 }),
                 metric_forwarder: props.metricForwarder,

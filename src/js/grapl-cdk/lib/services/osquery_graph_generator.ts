@@ -45,7 +45,7 @@ export class OSQueryGraphGenerator extends cdk.NestedStack {
             version: props.version,
             watchful: props.watchful,
             serviceImage: ContainerImage.fromAsset(SRC_DIR, {
-                target: "osquery-subgraph-generator-deploy",
+                target: "osquery-subgraph-generator",
                 buildArgs: {
                     "CARGO_PROFILE": "debug"
                 },

@@ -56,7 +56,7 @@ export class GraphMerger extends cdk.NestedStack {
             version: props.version,
             watchful: props.watchful,
             serviceImage: ContainerImage.fromAsset(SRC_DIR, {
-                target: "graph-merger-deploy",
+                target: "graph-merger",
                 buildArgs: {
                     "CARGO_PROFILE": "debug"
                 },

@@ -79,33 +79,33 @@ WITH_LOCAL_GRAPL_ENV := set -o allexport; . ./local-grapl.env; set +o allexport;
 #
 # Build
 #
+.PHONY: build-base-images
+build-base-images:
+	$(DOCKER_BUILDX_BAKE) \
+		--file ./base-images/docker-compose.base-images.yml
 
 .PHONY: build
 build: build-services ## Alias for `services` (default)
 
-.PHONY: build-all
-build-all: ## Build all targets (incl. services, tests, zip)
-	$(WITH_LOCAL_GRAPL_ENV) $(DOCKER_BUILDX_BAKE) $(EVERY_COMPOSE_FILE)
-
 .PHONY: build-test-unit
-build-test-unit:
+build-test-unit: build-base-images
 	$(DOCKER_BUILDX_BAKE) \
 		--file ./test/docker-compose.unit-tests-rust.yml \
 		--file ./test/docker-compose.unit-tests-js.yml
 
 .PHONY: build-test-unit-rust
-build-test-unit-rust:
+build-test-unit-rust: build-base-images
 	$(DOCKER_BUILDX_BAKE) \
 		--file ./test/docker-compose.unit-tests-rust.yml
 
 .PHONY: build-test-unit-js
-build-test-unit-js:
+build-test-unit-js: build-base-images
 	$(DOCKER_BUILDX_BAKE) \
 		--file ./test/docker-compose.unit-tests-js.yml
 
 .PHONY: build-test-typecheck
-build-test-typecheck:
-	docker buildx bake --file ./test/docker-compose.typecheck-tests.yml
+build-test-typecheck: build-base-images
+	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.typecheck-tests.yml
 
 .PHONY: build-test-integration
 build-test-integration: build-services
@@ -118,15 +118,15 @@ build-test-e2e: build-services
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.yml
 
 .PHONY: build-wait-for-local-provision
-build-wait-for-local-provision:
+build-wait-for-local-provision: build-base-images
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.test-utils.yml
 
 .PHONY: build-services
-build-services: ## Build Grapl services
+build-services: build-base-images ## Build Grapl services
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
 
 .PHONY: build-lambdas
-build-lambdas: ## Build services for Grapl in AWS (subset of all services)
+build-lambdas: build-base-images ## Build services for Grapl in AWS (subset of all services)
 	$(DOCKER_BUILDX_BAKE) $(EVERY_LAMBDA_COMPOSE_FILE)
 
 .PHONY: graplctl
@@ -202,7 +202,7 @@ test-with-env: # (Do not include help text - not to be used directly)
 		unset COMPOSE_FILE
 		docker-compose --file docker-compose.yml stop;
 	}
-	# Ensure we call stop even after test failure, and return exit code from 
+	# Ensure we call stop even after test failure, and return exit code from
 	# the test, not the stop command.
 	trap stopGrapl EXIT
 	$(WITH_LOCAL_GRAPL_ENV)
@@ -254,12 +254,14 @@ package-python-libs: ## Create Python distributions for public libraries
 #
 
 .PHONY: clean
-clean: ## Prune all docker build cache and remove Grapl containers and images
-	docker builder prune --all --force
-	# Remove all Grapl containers - continue on error (no containers found)
-	docker rm --volumes --force $$(docker ps --filter "name=grapl*" --all --quiet) 2>/dev/null || true
-	# Remove all Grapl images = continue on error (no images found)
-	docker rmi --force $$(docker images --filter reference="grapl/*" --quiet) 2>/dev/null || true
+clean: ## Prune dangling containers, images, networks, and build cache
+	docker system prune -f
+	## Prune dangling volumes
+	docker volume prune -f
+	## remove graplctl, dist, grapl-cdk/zips
+	rm -f ./bin/graplctl
+	rm -rf ./dist
+	rm -f ./src/js/grapl-cdk/zips/*.zip
 
 .PHONY: clean-mount-cache
 clean-mount-cache: ## Prune all docker mount cache (used by sccache)

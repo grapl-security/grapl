@@ -9,6 +9,8 @@ services:
     build:
       context: ${PWD}/test
       dockerfile: ./Dockerfile.test-utils
+      args:
+        - TAG=${TAG:-latest}
 
 networks:
   default:

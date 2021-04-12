@@ -1,5 +1,2 @@
-FROM debian:buster-slim
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        wait-for-it \
-    && rm -rf /var/lib/apt/lists/*
+ARG TAG=latest
+FROM grapl/grapl-base:$TAG AS test-utils
