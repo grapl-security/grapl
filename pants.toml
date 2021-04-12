@@ -1,5 +1,5 @@
 [GLOBAL]
-pants_version = "2.2.0"
+pants_version = "2.3.0"
 backend_packages = [
   "pants.backend.awslambda.python",
   "pants.backend.codegen.protobuf.python",
@@ -64,6 +64,7 @@ root_patterns = [
 # To update it, see build-support/manage_virtualenv.sh
 requirement_constraints = "3rdparty/python/constraints.txt"
 interpreter_constraints = ["CPython==3.7.*"]
+resolver_version = "pip-2020-resolver"
 
 # We have at least one __init__.py file that has code in it.
 # See https://www.pantsbuild.org/docs/python-backend
