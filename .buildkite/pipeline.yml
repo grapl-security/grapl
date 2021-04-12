@@ -1,0 +1,132 @@
+---
+env:
+  PANTS_CONFIG_FILES: "['pants.toml', 'pants.ci.toml']"
+
+pants_cache_config: &pants_cache_config
+  # Individual jobs must provide an `id` key. We'll first attempt to
+  # restore from a cache on the current branch, and fall back to the
+  # corresponding cache on the main branch.
+  key: "cache-{{ id }}-{{ checksum '3rdparty/python/constraints.txt' }}-{{ git.branch }}"
+  restore-keys:
+    - "cache-{{ id }}-{{ checksum '3rdparty/python/constraints.txt' }}-main"
+  paths:
+    - ".cache"
+
+# TODO: Cache for JS, Rust deps
+
+# TODO: Will want to use sccache for Rust, I think
+
+# TODO: possibly just us Docker for caching?
+
+steps:
+
+  - label: ":large_blue_square::lint-roller: Lint Protobuf"
+    command:
+      - buf lint --verbose
+
+  - label: ":large_blue_square::face_with_symbols_on_mouth: Protobuf Breaking Changes"
+    command:
+      - buf breaking --against="${BUILDKITE_REPO}.git" --verbose
+
+  - label: ":rust: rustfmt"
+    command:
+      - cd src/rust
+      - bin/format --check
+
+  - label: ":rust: Linting"
+    command:
+      - cd src/rust
+      - bin/lint
+    agents:
+      queue: "beefy"
+
+  - label: ":rust: Unit Tests"
+    command:
+      - cd src/rust
+      - cargo test
+    agents:
+      queue: "beefy"
+
+  - label: ":rust: Unit Tests via Docker plugin"
+    command:
+      - cd src/rust
+      - cargo test
+    plugins:
+      - docker#v3.8.0:
+          image: "rust:1.51.0"
+    agents:
+      queue: "beefy"
+
+  - label: ":rust::docker: Unit Tests"
+    command:
+      - make test-unit-rust
+    agents:
+      queue: "beefy"
+
+  - label: ":python::jeans: Linting"
+    command:
+      - make lint-python
+    plugins:
+      - gencer/cache#v2.4.8:
+          id: pants-lint
+          <<: *pants_cache_config
+    retry:
+      automatic:
+        limit: 3
+
+  - label: ":python::jeans: Unit Tests"
+    command:
+      - make test-unit-python
+    plugins:
+      - gencer/cache#v2.4.8:
+          id: pants-unit-test
+          <<: *pants_cache_config
+    retry:
+      automatic:
+        limit: 3
+
+  - label: ":python::jeans: Typechecking"
+    command:
+      - make test-typecheck-pants
+    plugins:
+      - gencer/cache#v2.4.8:
+          id: pants-typecheck
+          <<: *pants_cache_config
+    retry:
+      automatic:
+        limit: 3
+
+  # TODO: Consider beefy queue
+  - label: ":python::docker: Typechecking (:no_entry_sign::jeans:)"
+    command:
+      - make test-typecheck
+
+  # TODO: Consider beefy queue
+  - label: ":typescript::docker: Unit Tests"
+    command:
+      - make test-unit-js
+
+  # TODO: Consider beefy queue
+  - label: ":aws-lambda::package: Create Lambda Zips"
+    command:
+      - make zip
+    plugins:
+      - gencer/cache#v2.4.8:
+          id: pants-zip
+          <<: *pants_cache_config
+
+  - label: ":hammer: Integration Tests"
+    command:
+      - .buildkite/scripts/integration.sh
+    agents:
+      queue: "beefy"
+    artifact_paths:
+      - "test_artifacts/**/*"
+
+  - label: ":hammer: E2E Tests"
+    command:
+      - .buildkite/scripts/e2e.sh
+    agents:
+      queue: "beefy"
+    artifact_paths:
+      - "test_artifacts/**/*"
