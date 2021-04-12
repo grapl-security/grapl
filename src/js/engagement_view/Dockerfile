@@ -13,7 +13,6 @@ COPY js/engagement_view/.pnp.cjs .pnp.cjs
 
 RUN yarn set version berry
 RUN yarn install --immutable --check-cache
-#RUN yarn install
 
 # now copy all sources
 COPY js/engagement_view .

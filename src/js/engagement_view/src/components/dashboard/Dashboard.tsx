@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import { dasboardStyles } from "./styles";
 import GraplHeader from "../reusableComponents/graplHeader/GraplHeader";
 import LoginNotification from "../reusableComponents/notifications/Notifications";
-import { getNotebookUrl } from "../..//services/sagemakerNotebook/notebookService";
+import { getNotebookUrl } from "../../services/sagemakerNotebook/notebookService";
 
 const useStyles = dasboardStyles;
 

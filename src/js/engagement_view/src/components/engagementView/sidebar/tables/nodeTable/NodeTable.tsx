@@ -41,7 +41,8 @@ const NodeTable = ({ node }: NodeTableProps) => {
 		"fx",
 		"fy",
 		"links", 
-		"neighbors"
+		"neighbors",
+		"display",
 	]);
 
 	mapEdgeProps(node as any, (edgeName: any, _neighbor: any) => {
@@ -76,7 +77,7 @@ const NodeTable = ({ node }: NodeTableProps) => {
 					{Object.entries(displayNode).map((nodeProperty) => {
 						const [key, value] = nodeProperty;
 						return (
-							<TableRow key={node.uid + key}>
+							<TableRow key={node.node_key + key}>
 								<TableCell className={classes.nodeTableData} align="left">
 									{key}
 								</TableCell>
