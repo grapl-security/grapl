@@ -7,6 +7,7 @@ import requests
 
 # Would be nice to improve this as a TypedDict
 GqlLensDict = Dict[str, Any]
+GraphqlType = Dict[str, Any]
 
 
 class GraphqlEndpointClient:
@@ -32,14 +33,13 @@ class GraphqlEndpointClient:
 
         query = """
         query LensScopeByName($lens_name: String!) {
-            
             lens_scope(lens_name: $lens_name) {
                 uid,
                 node_key,
-                lens_name,
                 lens_type,
                 dgraph_type,
                 score,
+                display,
                 scope {
                     ... on Process {
                         uid,
@@ -47,10 +47,12 @@ class GraphqlEndpointClient:
                         dgraph_type,
                         process_name, 
                         process_id,
+                        display,
                         children {
                             uid, 
                             node_key, 
                             dgraph_type,
+                            display,
                             process_name, 
                             process_id,
                         }, 
@@ -66,6 +68,7 @@ class GraphqlEndpointClient:
                         uid, 
                         node_key, 
                         dgraph_type,
+                        display,
                         hostname,
                         asset_ip{
                             ip_address
@@ -74,6 +77,7 @@ class GraphqlEndpointClient:
                             uid, 
                             node_key, 
                             dgraph_type,
+                            display,
                             process_name, 
                             process_id,
                         },
@@ -81,11 +85,13 @@ class GraphqlEndpointClient:
                             uid, 
                             node_key, 
                             dgraph_type,
+                            display,
                             file_path
                         }, 
                         risks {  
                             uid,
                             dgraph_type,
+                            display,
                             node_key, 
                             analyzer_name, 
                             risk_score
@@ -95,16 +101,15 @@ class GraphqlEndpointClient:
                         uid,
                         node_key, 
                         dgraph_type,
+                        display,
                         risks {  
                             uid,
                             dgraph_type,
+                            display,
                             node_key, 
                             analyzer_name, 
                             risk_score
                         },
-                    }
-                    ... on PluginType {
-                        predicates,
                     }
                 }
             }
@@ -112,3 +117,21 @@ class GraphqlEndpointClient:
         """
         resp = self.query(query, {"lens_name": lens_name})
         return cast(GqlLensDict, resp["lens_scope"])
+
+    def query_type(self, type_name: str) -> GraphqlType:
+        query = """
+        query QueryGraphqlAboutType($type_name: String!) {
+            __type(name: $type_name) {
+                name
+                fields {
+                    name
+                    type {
+                        name
+                        kind
+                    }
+                }
+            }
+        }
+        """
+        resp = self.query(query, {"type_name": type_name})
+        return cast(GraphqlType, resp["__type"])

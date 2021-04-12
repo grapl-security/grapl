@@ -79,9 +79,6 @@ export const expandLensScopeQuery = (lensName: string) => {
                         risk_score
                     },
                 }
-                ... on PluginType {
-                    predicates,
-                }
             }
         }
     }

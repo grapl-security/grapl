@@ -1,5 +1,5 @@
-import dgraph = require("dgraph-js");
-import grpc = require("@grpc/grpc-js");
+import * as dgraph from "dgraph-js";
+import * as grpc from "@grpc/grpc-js";
 
 const get_random = <T>(list: T[]): T => {
     return list[Math.floor(Math.random() * list.length)];
@@ -19,8 +19,7 @@ export const getDgraphClient = (): dgraph.DgraphClient => {
 
 export interface RawNode {
     uid: number | string;
-    dgraph_type: string[];
-    display: string;
+    dgraph_type?: string[];
 }
 
 export interface EnrichedNode {
