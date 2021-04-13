@@ -1,6 +1,7 @@
 """
 Mostly copied from etc/local_grapl/bin/upload_plugin.py
 """
+from __future__ import annotations
 import logging
 import os
 import sys
@@ -16,11 +17,17 @@ _JSON_CONTENT_TYPE_HEADERS = {"Content-type": "application/json"}
 class ModelPluginDeployerException(Exception):
     pass
 
-
+#TODO: This interface should just take the endpoint and let the client provide the endpoint and
+# Use special constructors (staic methods on a class (from default... ) )
 class ModelPluginDeployerClient:
-    def __init__(self, use_docker_links: bool = False) -> None:
-        hostname = "grapl-model-plugin-deployer" if use_docker_links else "localhost"
-        self.endpoint = f"http://{hostname}:8123"
+    def __init__(self, endpoint: str) -> None:
+        self.endpoint = endpoint
+
+    @staticmethod
+    def from_env() -> ModelPluginDeployerClient:
+        hostname = os.environ["GRAPL_MODEL_PLUGIN_DEPLOYER_HOST"]
+        port = os.environ["GRAPL_MODEL_PLUGIN_DEPLOYER_PORT"]
+        return ModelPluginDeployerClient(endpoint=f"http://{hostname}:{port}")
 
     def deploy(
         self,

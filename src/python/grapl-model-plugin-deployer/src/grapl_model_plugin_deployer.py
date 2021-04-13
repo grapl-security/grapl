@@ -38,6 +38,8 @@ from grapl_common.provision import (
     store_schema_properties as store_schema_properties_common,
 )
 
+import requests 
+
 sys.path.append("/tmp/")
 
 T = TypeVar("T")

@@ -78,7 +78,8 @@ def setup(
             WaitForS3Bucket(s3_client, f"{DEPLOYMENT_NAME}-analyzers-bucket"),
             # for upload-sysmon-logs.py
             WaitForS3Bucket(s3_client, f"{DEPLOYMENT_NAME}-sysmon-log-bucket"),
-            WaitForSqsQueue(sqs_client, f"{DEPLOYMENT_NAME}-sysmon-generator-queue"),
+            WaitForSqsQueue(
+                sqs_client, f"{DEPLOYMENT_NAME}-sysmon-generator-queue"),
         ]
     )
 
@@ -105,9 +106,14 @@ def _after_tests() -> None:
 
 
 def exec_pytest() -> None:
+    pytest_args = []
+    if environ.get("PYTEST_EXPRESSION"):
+        pytest_args.extend(("-k", environ["PYTEST_EXPRESSION"]))
+
     result = pytest.main(
         [
             "--capture=no",
+            *pytest_args
         ]
     )  # disable stdout capture
     _after_tests()

@@ -7,11 +7,12 @@ from grapl_analyzerlib.nodes.lens import LensQuery, LensView
 from grapl_tests_common.clients.engagement_edge_client import EngagementEdgeClient
 from grapl_tests_common.clients.graphql_endpoint_client import GraphqlEndpointClient
 from grapl_tests_common.wait import WaitForCondition, WaitForQuery, wait_for_one
+from grapl_tests_common.clients.model_plugin_deployer_client import ModelPluginDeployerClient
+
 
 LENS_NAME = "DESKTOP-FVSHABR"
 
 GqlLensDict = Dict[str, Any]
-
 
 @pytest.mark.integration_test
 class TestEndToEnd(TestCase):
@@ -44,6 +45,11 @@ class TestEndToEnd(TestCase):
 
         gql_client = GraphqlEndpointClient(jwt=EngagementEdgeClient().get_jwt())
         ensure_graphql_lens_scope_no_errors(gql_client, LENS_NAME)
+    
+    def test_model_plugin(self) -> None:
+        model_plugin_client = ModelPluginDeployerClient.from_env()
+        upload_model_plugin(model_plugin_client)
+        
 
 
 def ensure_graphql_lens_scope_no_errors(
@@ -67,3 +73,24 @@ def ensure_graphql_lens_scope_no_errors(
             "Process",
         )
     )
+    
+
+def upload_model_plugin(
+    model_plugin_client: ModelPluginDeployerClient,
+) -> bool:
+    logging.info("Making request to /deploy to upload model plugins")
+    
+    plugin_path = "./schemas"
+    jwt = EngagementEdgeClient().get_jwt()
+    
+    plugin_upload = model_plugin_client.deploy(
+        plugin_path,
+        jwt,
+    )
+    
+    logging.info(f"UploadRequest: {plugin_upload.json()}")
+    
+    upload_status = plugin_upload.json()["success"]["Success"] == True
+    assert upload_status
+
+
