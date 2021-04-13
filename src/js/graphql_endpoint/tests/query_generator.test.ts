@@ -9,6 +9,7 @@ describe("QueryGenerator", () => {
 
     describe("generate", () => {
         const generated = queryGen.generate();
+        console.log(generated);
         expect(generated).toEqual("hey");
     });
 });

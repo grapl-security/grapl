@@ -19,7 +19,7 @@ NCV = TypeVar("NCV", bound="NetworkConnectionView")
 def default_network_connection_properties():
     return {
         "src_ip_address": PropType(PropPrimitive.Str, False),
-        "src_port": PropType(PropPrimitive.Str, False),
+        "src_port": PropType(PropPrimitive.Int, False),
         "dst_ip_address": PropType(PropPrimitive.Str, False),
         "dst_port": PropType(PropPrimitive.Int, False),
         "created_timestamp": PropType(PropPrimitive.Int, False),

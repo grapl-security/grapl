@@ -1,10 +1,22 @@
-import { GraphQLFieldMap, GraphQLObjectType, GraphQLOutputType, GraphQLType, GraphQLUnionType } from "graphql";
+import {
+    GraphQLField,
+    GraphQLFieldMap,
+    GraphQLList,
+    GraphQLObjectType,
+    GraphQLOutputType,
+    GraphQLType,
+    GraphQLUnionType,
+} from "graphql";
+
+const DEFAULT_STACK_LIMIT = 2; // otherwise you'd have recursion while expanding all the types
 
 export class QueryGenerator {
-    constructor(readonly GraplEntityType: GraphQLUnionType) { 
-    }
+    constructor(readonly GraplEntityType: GraphQLUnionType) {}
 
-    private genField(key: string, fields: GraphQLFieldMap<any, any>): string {
+    genField(
+        field: GraphQLField<any, any>,
+        stackLimit: number
+    ): string[] {
         /**
          * Sample outputs:
          * hostname
@@ -12,29 +24,55 @@ export class QueryGenerator {
              ip_address
            }
          **/
-        const field = fields[key].name;
-        /*
-        let childrenOfField = "";
-        if ("getTypes" in field.type) {
-            const children = field.type.getTypes();
+        if(stackLimit == 0) {
+            return [];
         }
-        */
-        return `${field}`;
+        const children: string[] = [];
+        if (field.type instanceof GraphQLObjectType) {
+            const childrenFields = field.type.getFields();
+            for (const key in childrenFields) {
+                children.push(...this.genField(childrenFields[key], stackLimit - 1));
+            }
+        } else if (
+            field.type instanceof GraphQLList &&
+            field.type.ofType instanceof GraphQLObjectType
+        ) {
+            const childrenFields = field.type.ofType.getFields();
+            for (const key in childrenFields) {
+                children.push(
+                    ...
+                    this.genField(childrenFields[key], stackLimit - 1)
+                );
+            }
+        } else {
+            // it's a scalar, which we can handle easily
+            return [field.name];
+        }
+        // it's an object type
+        if (children.length) {
+            return [`${field.name} {${children.join(",")}}`]
+        }
+        // it's an object type, but we don't query any predicates on it - so just elide it
+        // for example, `risks { }` -> just return nothing
+        return []; 
     }
 
-    private genOnFragment(type: GraphQLObjectType): string {
+    genOnFragment(type: GraphQLObjectType): string {
         const typeName = type.name;
         const fields: string[] = [];
-        for(const key in type.getFields()) {
-            fields.push(this.genField(key, type.getFields()));
+        for (const key in type.getFields()) {
+            const field = type.getFields()[key];
+            fields.push(...this.genField(field, DEFAULT_STACK_LIMIT));
         }
         return ` ... on ${typeName} {
             ${fields.join(",")}
         }`;
     }
-    
+
     public generate(): string {
-        const scopeDefinition = this.GraplEntityType.getTypes().map((type) => this.genOnFragment(type));
+        const scopeDefinition = this.GraplEntityType.getTypes().map((type) =>
+            this.genOnFragment(type)
+        );
         return `query LensScopeByName($lens_name: String!) {
             
             lens_scope(lens_name: $lens_name) {
@@ -130,4 +168,4 @@ const example = `
                 }
             }
         }
-        `
+        `;
