@@ -3,8 +3,7 @@ ARG TAG=latest
 # python build
 ################################################################################
 FROM grapl/grapl-python-base:$TAG AS grapl-python-build
-RUN source venv/bin/activate && \
-    pip install wheel grpcio chalice hypothesis pytest pytest-xdist
+RUN pip install wheel grpcio chalice hypothesis pytest pytest-xdist
 
 # test deps
 ################################################################################
@@ -21,8 +20,7 @@ FROM grapl-python-build AS graplinc-grapl-api-build
 COPY --chown=grapl proto proto
 COPY --chown=grapl python/graplinc-grapl-api python/graplinc-grapl-api
 SHELL ["/bin/bash", "-eu", "-o", "pipefail", "-c"]
-RUN source venv/bin/activate && \
-    cd python/graplinc-grapl-api && \
+RUN cd python/graplinc-grapl-api && \
     python setup.py sdist bdist_wheel && \
     pip install dist/*.whl
 
@@ -37,8 +35,7 @@ RUN python_test_deps/install_requirements.sh
 # build
 FROM grapl-python-build AS grapl-common-build
 COPY --chown=grapl python/grapl-common grapl-common
-RUN source venv/bin/activate && \
-    cd grapl-common && \
+RUN cd grapl-common && \
     pip install . && \
     python setup.py sdist bdist_wheel
 
@@ -55,11 +52,9 @@ FROM grapl-python-build AS grapl-analyzerlib-build
 COPY --chown=grapl python/grapl_analyzerlib grapl_analyzerlib
 COPY --chown=grapl --from=graplinc-grapl-api-build /home/grapl/venv venv
 COPY --chown=grapl --from=grapl-common-build /home/grapl/grapl-common grapl-common
-RUN source venv/bin/activate && \
-    cd grapl-common && \
+RUN cd grapl-common && \
     pip install .
-RUN source venv/bin/activate && \
-    cd grapl_analyzerlib && \
+RUN cd grapl_analyzerlib && \
     pip install . && \
     python setup.py sdist bdist_wheel
 
@@ -76,16 +71,14 @@ RUN python_test_deps/install_requirements.sh
 FROM grapl-python-build AS analyzer-executor-build
 COPY --chown=grapl python/analyzer_executor analyzer_executor
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
-RUN source venv/bin/activate && \
-    cd analyzer_executor && \
+RUN cd analyzer_executor && \
     pip install .
 
 # deploy
 FROM grapl/grapl-python-base:$TAG AS analyzer-executor
 COPY --chown=grapl --from=analyzer-executor-build /home/grapl/venv venv
 COPY --chown=grapl --from=analyzer-executor-build /home/grapl/analyzer_executor analyzer_executor
-CMD source venv/bin/activate && \
-    python3 analyzer_executor/src/run.py
+CMD python3 analyzer_executor/src/run.py
 
 # test
 FROM analyzer-executor-build AS analyzer-executor-test
@@ -101,23 +94,20 @@ RUN python_test_deps/install_requirements.sh
 FROM grapl-python-build AS engagement-creator-build
 COPY --chown=grapl python/engagement-creator engagement-creator
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
-RUN source venv/bin/activate && \
-    cd engagement-creator && \
+RUN cd engagement-creator && \
     pip install .
 
 # deploy
 FROM grapl/grapl-python-base:$TAG AS engagement-creator
 COPY --chown=grapl --from=engagement-creator-build /home/grapl/venv venv
 COPY --chown=grapl --from=engagement-creator-build /home/grapl/engagement-creator engagement-creator
-CMD source /venv/bin/activate && \
-    python3 /engagement-creator/src/engagement_creator.py
+CMD python3 /engagement-creator/src/engagement_creator.py
 
 # test
 FROM engagement-creator-build AS engagement-creator-test
 COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
 RUN python_test_deps/install_requirements.sh
-RUN source venv/bin/activate && \
-    cd engagement-creator && \
+RUN cd engagement-creator && \
     pip install .[typecheck]
 
 # engagement-edge
@@ -127,8 +117,7 @@ RUN source venv/bin/activate && \
 FROM grapl-python-build AS engagement-edge-build
 COPY --chown=grapl python/engagement_edge engagement_edge
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
-RUN source venv/bin/activate && \
-    cd engagement_edge && \
+RUN cd engagement_edge && \
     pip install .
 
 # zip
@@ -142,11 +131,9 @@ RUN LAMBDA_DIR=$(pwd); \
 # deploy
 FROM grapl/grapl-python-base:$TAG AS engagement-edge
 COPY --chown=grapl --from=engagement-edge-build /home/grapl/venv venv
-RUN source venv/bin/activate && \
-    chalice new-project app/
+RUN chalice new-project app/
 COPY --chown=grapl --from=engagement-edge-build /home/grapl/engagement_edge/src/engagement_edge.py app/app.py
-CMD source venv/bin/activate && \
-    cd app && \
+CMD cd app && \
     chalice local --no-autoreload --host=0.0.0.0 --port=8900
 
 # test
@@ -157,8 +144,7 @@ ENV UX_BUCKET_URL="ux_bucket_url"
 COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
 RUN python_test_deps/install_requirements.sh
 COPY --chown=grapl python/grapl-tests-common grapl-tests-common
-RUN source venv/bin/activate && \
-    cd grapl-tests-common && \
+RUN cd grapl-tests-common && \
     pip install .
 
 # grapl-ux-router
@@ -168,11 +154,9 @@ RUN source venv/bin/activate && \
 FROM grapl-python-build AS grapl-ux-router-build
 COPY --chown=grapl python/grapl-ux-router grapl-ux-router
 COPY --chown=grapl --from=grapl-common-build /home/grapl/grapl-common grapl-common
-RUN source venv/bin/activate && \
-    cd grapl-common && \
+RUN cd grapl-common && \
     pip install .
-RUN source venv/bin/activate && \
-    cd grapl-ux-router && \
+RUN cd grapl-ux-router && \
     pip install .
 
 # zip
@@ -186,11 +170,9 @@ RUN ORIG_DIR=$(pwd); \
 # deploy
 FROM grapl/grapl-python-base:$TAG AS grapl-ux-router
 COPY --chown=grapl --from=grapl-ux-router-build /home/grapl/venv venv
-RUN source venv/bin/activate && \
-    chalice new-project app/
+RUN chalice new-project app/
 COPY --chown=grapl --from=grapl-ux-router-build /home/grapl/grapl-ux-router/src/grapl_ux_router.py app/app.py
-CMD source venv/bin/activate && \
-    cd app && \
+CMD cd app && \
     chalice local --no-autoreload --host=0.0.0.0 --port=8901
 
 # dgraph-ttl
@@ -200,8 +182,7 @@ CMD source venv/bin/activate && \
 FROM grapl-python-build AS dgraph-ttl-build
 COPY --chown=grapl python/grapl-dgraph-ttl dgraph-ttl
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
-RUN source venv/bin/activate && \
-    pip install -r dgraph-ttl/requirements.txt
+RUN pip install -r dgraph-ttl/requirements.txt
 
 # zip
 FROM dgraph-ttl-build AS dgraph-ttl-zip
@@ -215,8 +196,7 @@ RUN LAMBDA_DIR=$(pwd); \
 FROM grapl/grapl-python-base:$TAG AS dgraph-ttl
 COPY --chown=grapl --from=dgraph-ttl-build /home/grapl/venv venv
 COPY --chown=grapl --from=dgraph-ttl-build /home/grapl/dgraph-ttl app
-CMD source venv/bin/activate && \
-    cd app && \
+CMD cd app && \
     chalice local --no-autoreload --host=0.0.0.0 --port=8124
 
 # test
@@ -232,8 +212,7 @@ RUN python_test_deps/install_requirements.sh
 FROM grapl-python-build AS model-plugin-deployer-build
 COPY --chown=grapl python/grapl-model-plugin-deployer model-plugin-deployer
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
-RUN source venv/bin/activate && \
-    cd model-plugin-deployer && \
+RUN cd model-plugin-deployer && \
     pip install .
 
 # zip
@@ -247,11 +226,9 @@ RUN LAMBDA_DIR=$(pwd); \
 # deploy
 FROM grapl/grapl-python-base:$TAG AS model-plugin-deployer
 COPY --chown=grapl --from=model-plugin-deployer-build /home/grapl/venv venv
-RUN source venv/bin/activate && \
-    chalice new-project app/
+RUN chalice new-project app/
 COPY --chown=grapl --from=model-plugin-deployer-build /home/grapl/model-plugin-deployer/src/grapl_model_plugin_deployer.py app/app.py
-CMD source venv/bin/activate && \
-    cd app && \
+CMD cd app && \
     chalice local --no-autoreload --host=0.0.0.0 --port=8123
 
 # test
@@ -266,19 +243,16 @@ RUN python_test_deps/install_requirements.sh
 FROM grapl/grapl-python-base:$TAG AS grapl-notebook
 EXPOSE 8888
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
-RUN source venv/bin/activate && \
-    pip install jupyter
+RUN pip install jupyter
 RUN mkdir -p grapl-notebook/model_plugins
 COPY --chown=grapl python/grapl-notebook/jupyter_notebook_config.py /home/grapl/.jupyter/
 COPY --chown=grapl python/grapl-notebook/Demo_Engagement.ipynb grapl-notebook/
-CMD source venv/bin/activate && \
-    cd grapl-notebook && \
+CMD cd grapl-notebook && \
     jupyter notebook --ip="0.0.0.0"
 
 # test
 FROM grapl-notebook AS grapl-notebook-test
-RUN source venv/bin/activate && \
-    pip install nbqa mypy boto3-stubs[essential]
+RUN pip install nbqa mypy boto3-stubs[essential]
 
 #
 # Local provision
@@ -296,8 +270,7 @@ COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
 COPY --from=python-test-deps /home/grapl/python_test_deps python_test_deps
 RUN python_test_deps/install_requirements.sh
 COPY --chown=grapl python/grapl-tests-common grapl-tests-common
-RUN source venv/bin/activate && \
-    cd grapl-tests-common && \
+RUN cd grapl-tests-common && \
     pip install . && \
     python setup.py sdist bdist_wheel
 
@@ -314,5 +287,4 @@ COPY --chown=grapl python/grapl_e2e_tests grapl_e2e_tests
 USER root
 RUN mkdir /mnt/dynamodb_dump && chown grapl /mnt/dynamodb_dump
 USER grapl
-RUN source venv/bin/activate && \
-    pip install zstd
+RUN pip install zstd

@@ -65,15 +65,16 @@ ENV PATH="/home/grapl/.cargo/bin:$PATH"
 # python
 ##
 FROM grapl-build-base AS grapl-python-base
-RUN curl https://pyenv.run | bash
-RUN /home/grapl/.pyenv/bin/pyenv update
-RUN /home/grapl/.pyenv/bin/pyenv install --verbose 3.7.10
-RUN /home/grapl/.pyenv/bin/pyenv global 3.7.10
-RUN /home/grapl/.pyenv/bin/pyenv doctor
-RUN eval "$(/home/grapl/.pyenv/bin/pyenv init -)" && python -mvenv venv && \
-    source venv/bin/activate && \
+SHELL ["/bin/bash", "-ef", "-o", "pipefail", "-c"]
+ENV PYTHON_VERSION="3.7.10"
+ENV PYENV_ROOT="/home/grapl/.pyenv"
+ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH"
+RUN curl https://pyenv.run | bash && \
+    pyenv update && \
+    pyenv install --verbose 3.7.10 && \
+    pyenv global 3.7.10 && \
+    pyenv doctor && \
     pip install --upgrade pip
-ENV PATH="/home/grapl/.pyenv/versions/3.7.10/bin:$PATH"
 
 ##
 # js
