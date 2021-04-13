@@ -10,8 +10,8 @@ import TableCell from "@material-ui/core/TableCell";
 
 import { ClassNameMap } from "@material-ui/styles/withStyles";
 import { SelectLens } from "./selectLens";
-import { Lens } from "types/CustomTypes";
-import { PaginationState } from "types/CustomTypes";
+import { Lens } from "../../../../../types/CustomTypes";
+import { PaginationState } from "../../../../../types/CustomTypes";
 
 export const lensTable = (
 	state: PaginationState,

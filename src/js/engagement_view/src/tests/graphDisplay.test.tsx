@@ -1,7 +1,7 @@
 import {
     getNodeType,
     vizGraphFromLensScope,
-} from "components/graphDisplay/graphLayout/vizGraphFromLensScope";
+} from "../components/graphDisplay/graphLayout/vizGraphFromLensScope";
 import { baseNodeData } from "./engagementView/data/baseNodeData";
 
 import {

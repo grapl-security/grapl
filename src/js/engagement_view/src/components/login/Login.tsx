@@ -4,8 +4,8 @@ import { Field, Form, Formik } from "formik";
 
 import "./LogIn.css";
 import { loginStyles } from "./styles";
-import { LoginProps } from "types/CustomTypes";
-import { loginService } from "services/login/loginService";
+import { LoginProps } from "../../types/CustomTypes";
+import { loginService } from "../../services/login/loginService";
 import { sha256WithPepper } from "./utils/passwordHashing";
 
 export const LogIn = (_: LoginProps) => {

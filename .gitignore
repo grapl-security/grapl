@@ -24,7 +24,13 @@ node_modules/
 
 # Yarn packages
 src/js/engagement_view/.yarn/install-state.gz
-
+.yarn/*
+!.yarn/cache/
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
 
 # Distribution / packaging
 build/
@@ -51,7 +57,6 @@ pyrightconfig.json
 /.pants.workdir.file_lock*
 # See build-support/manage_virtualenv.sh
 /build-support/grapl-venv
-.yarn/
 
 # Generated when profiling rust code
 *.profdata
