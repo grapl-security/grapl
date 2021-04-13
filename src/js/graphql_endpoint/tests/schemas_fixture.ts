@@ -1,7 +1,7 @@
 import { Schema } from "../modules/schema_client";
 
 // Grabbed verbatim from the current state of prod on: Apr 12, 2020
-export const schemas: Schema[] = [
+export const schemas_fixture: Schema[] = [
     {
         type_definition: {
             properties: [

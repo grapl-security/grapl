@@ -65,8 +65,9 @@ export class QueryGenerator {
         if (children.length) {
             return [
                 `${spaces}${args.field.name} {
-                \n${children.join(",\n")}}
-                ${spaces}}`];
+${children.join(",\n")}
+${spaces}}`,
+            ];
         }
         // it's an object type, but we don't query any predicates on it - so just elide it
         // for example, `risks { }` -> just return nothing
@@ -91,28 +92,29 @@ export class QueryGenerator {
         }
         const spaces = " ".repeat(args.numSpaces);
         return `${spaces}... on ${typeName} {
-        ${fields.join(",\n")}
-        ${spaces}`;
+${fields.join(",\n")}
+${spaces}}`;
     }
 
     public generate(): string {
         const scopeDefinition = this.GraplEntityType.getTypes().map((type) =>
-            this.genOnFragment({ type: type, numSpaces: 8 })
+            this.genOnFragment({ type: type, numSpaces: 12 })
         );
-        return `query LensScopeByName($lens_name: String!) {
-            
-            lens_scope(lens_name: $lens_name) {
-                uid,
-                node_key,
-                lens_type,
-                dgraph_type,
-                score,
-                display,
-                scope { 
-        ${scopeDefinition.join(",")}  # this is where the spaces: 8 comes in
-                }
-            }
-        }`;
+        return `
+query LensScopeByName($lens_name: String!) {
+    lens_scope(lens_name: $lens_name) {
+        uid,
+        node_key,
+        lens_type,
+        dgraph_type,
+        score,
+        display,
+        scope { 
+${scopeDefinition.join(",")}
+        }
+    }
+}
+        `;
     }
 }
 

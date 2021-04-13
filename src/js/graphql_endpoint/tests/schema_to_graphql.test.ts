@@ -1,9 +1,9 @@
 import { GraphQLInt, GraphQLString, GraphQLList } from "graphql";
 import { allSchemasToGraphql } from "../modules/schema_to_graphql";
-import { schemas } from "./schemas_fixture";
+import { schemas_fixture } from "./schemas_fixture";
 
 describe("allSchemasToGraphql", () => {
-    const GraplEntityType = allSchemasToGraphql(schemas);
+    const GraplEntityType = allSchemasToGraphql(schemas_fixture);
     const subtypes = GraplEntityType.getTypes();
 
     describe("created a type Asset", () => {
