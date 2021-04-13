@@ -91,14 +91,14 @@ ${spaces}}`,
             );
         }
         const spaces = " ".repeat(args.numSpaces);
-        return `${spaces}... on ${typeName} {
+        return `\n${spaces}... on ${typeName} {
 ${fields.join(",\n")}
 ${spaces}}`;
     }
 
     public generate(): string {
         const scopeDefinition = this.GraplEntityType.getTypes().map((type) =>
-            this.genOnFragment({ type: type, numSpaces: 12 })
+            this.genOnFragment({ type: type, numSpaces: TABBING * 3 })
         );
         return `
 query LensScopeByName($lens_name: String!) {

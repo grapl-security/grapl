@@ -17,7 +17,7 @@ describe("QueryGenerator", () => {
     });
 
     describe("genOnFragment", () => {
-        const expectedRisk = `... on Risk {
+        const expectedRisk = `\n... on Risk {
     uid,
     node_key,
     dgraph_type,
@@ -37,8 +37,8 @@ describe("QueryGenerator", () => {
                 .map((s) => `    ${s}`)
                 .join("\n");
             expect(
-                queryGen.genOnFragment({ type: Risk, numSpaces: 4 })
-            ).toEqual(expectedRiskWithSpaces);
+                queryGen.genOnFragment({ type: Risk, numSpaces: 4 }).trim()
+            ).toEqual(expectedRiskWithSpaces.trim());
         });
     });
 
