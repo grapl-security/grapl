@@ -30,7 +30,7 @@ export interface Schema {
 
 export interface SchemaProperty {
     readonly name: string;
-    readonly primitive: "Int" | "Str" | "Bool"; // see PropPrimitive in python
+    readonly primitive: string; // "Int" | "Str" | "Bool" or another Schema's name
     readonly is_set: boolean;
 }
 
