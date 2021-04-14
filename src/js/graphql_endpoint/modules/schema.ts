@@ -20,3 +20,12 @@ export const RiskType = new GraphQLObjectType({
         risk_score: { type: GraphQLInt },
     },
 });
+
+// Simply return the result from QueryGenerator.
+// Clients will grab the query-string, then send that query over to `lens_scope`.
+export const LensScopeQueryString = new GraphQLObjectType({
+    name: "LensScopeQueryString",
+    fields: {
+        query_string: { type: GraphQLString },
+    },
+});
