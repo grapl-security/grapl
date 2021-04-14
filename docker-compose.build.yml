@@ -19,7 +19,7 @@ services:
       dockerfile: rust/Dockerfile
       target: sysmon-subgraph-generator-deploy
       args:
-        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
+        - RUST_BUILD=${RUST_BUILD:-debug}
 
   grapl-osquery-subgraph-generator:
     image: grapl/grapl-osquery-subgraph-generator:${TAG:-latest}
@@ -28,7 +28,7 @@ services:
       dockerfile: rust/Dockerfile
       target: osquery-subgraph-generator-deploy
       args:
-        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
+        - RUST_BUILD=${RUST_BUILD:-debug}
 
   grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
@@ -37,7 +37,7 @@ services:
       dockerfile: rust/Dockerfile
       target: node-identifier-deploy
       args:
-        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
+        - RUST_BUILD=${RUST_BUILD:-debug}
 
   grapl-node-identifier-retry-handler:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
@@ -46,7 +46,7 @@ services:
       dockerfile: rust/Dockerfile
       target: node-identifier-retry-handler-deploy
       args:
-        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
+        - RUST_BUILD=${RUST_BUILD:-debug}
 
   grapl-graph-merger:
     image: grapl/grapl-graph-merger:${TAG:-latest}
@@ -55,7 +55,7 @@ services:
       dockerfile: rust/Dockerfile
       target: graph-merger-deploy
       args:
-        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
+        - RUST_BUILD=${RUST_BUILD:-debug}
 
   grapl-analyzer-dispatcher:
     image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
@@ -64,7 +64,7 @@ services:
       dockerfile: rust/Dockerfile
       target: analyzer-dispatcher-deploy
       args:
-        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
+        - RUST_BUILD=${RUST_BUILD:-debug}
 
   ########################################################################
   # Python Services

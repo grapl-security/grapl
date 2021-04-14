@@ -58,7 +58,7 @@ export class GraphMerger extends cdk.NestedStack {
             serviceImage: ContainerImage.fromAsset(SRC_DIR, {
                 target: "graph-merger-deploy",
                 buildArgs: {
-                    CARGO_PROFILE: "debug",
+                    RUST_BUILD: "debug",
                 },
                 file: RUST_DOCKERFILE,
             }),

@@ -8,9 +8,9 @@ services:
     build:
       context: ${PWD}/src
       dockerfile: rust/Dockerfile
-      target: build-test-integration
+      target: build-test
       args:
-        - CARGO_PROFILE=debug
+        - RUST_BUILD=test-integration
     command: cargo test --features node-identifier/integration --test '*'
     environment:
       - AWS_REGION
@@ -40,9 +40,9 @@ services:
     build:
       context: ${PWD}/src
       dockerfile: rust/Dockerfile
-      target: build-test-integration
+      target: build-test
       args:
-        - CARGO_PROFILE=debug
+        - RUST_BUILD=test-integration
     command: cargo test --features sqs-executor/integration --test '*'
     environment:
       - REDIS_ENDPOINT
