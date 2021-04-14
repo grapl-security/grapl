@@ -137,18 +137,21 @@ export const EngagementUx = () => {
             return;
         }
 
-        const interval = setInterval(async () => {
-            await checkLogin().then((loggedIn) => {
-                if (!loggedIn) {
-                    console.warn("Logged out");
-                }
-                setEngagementState({
-                    ...engagementState,
-                    loggedIn: loggedIn || false,
-                    renderedOnce: true,
-                });
+        const fetchLoginAndSetState = async () => {
+            const loggedIn = await checkLogin();
+            if (!loggedIn) {
+                console.warn("Logged out");
+            }
+            setEngagementState({
+                ...engagementState,
+                loggedIn: loggedIn || false,
+                renderedOnce: true,
             });
-        }, 1000);
+        };
+
+        // Do the initial fetch, and schedule it to re-run every N seconds
+        fetchLoginAndSetState();
+        const interval = setInterval(fetchLoginAndSetState, 1000);
 
         return () => {
             clearInterval(interval);

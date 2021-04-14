@@ -8,7 +8,7 @@ import {
     GraphQLNonNull,
 } from "graphql";
 
-import { BaseNode } from "./schema";
+import { BaseNode, LensScopeQueryString } from "./schema";
 
 import {
     getDgraphClient,
@@ -18,6 +18,7 @@ import {
 } from "./dgraph_client";
 import { Schema, SchemaClient } from "./schema_client";
 import { allSchemasToGraphql } from "./schema_to_graphql";
+import { QueryGenerator } from "./query_generator";
 
 type MysteryParentType = never;
 
@@ -360,6 +361,18 @@ async function getRootQuery(): Promise<GraphQLObjectType> {
                         console.error("Error in handleLensScope: ", e);
                         throw e;
                     }
+                },
+            },
+            lens_scope_query: {
+                type: LensScopeQueryString,
+                resolve: async (parent: never, args: never) => {
+                    // We should consider caching this instead of re-generating it every time.
+                    const query_string = new QueryGenerator(
+                        GraplEntityType
+                    ).generate();
+                    return {
+                        query_string,
+                    };
                 },
             },
         },

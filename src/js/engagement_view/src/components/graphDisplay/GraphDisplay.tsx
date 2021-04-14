@@ -43,15 +43,21 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
     const fgRef: any = useRef(); // fix graph to canvas
     const [state, setState] = useState(defaultGraphDisplayState(lensName));
 
+    async function updateGraphAndSetState() {
+        if (lensName) {
+            await updateGraph(lensName, state as GraphState, setState); // state is safe cast, check that lens name is not null
+        }
+    }
+
+    // TODO is there a way to updateGraphAndSetState immediately on click?
+
     useEffect(() => {
-        const interval = setInterval(async () => {
-            if (lensName) {
-                await updateGraph(lensName, state as GraphState, setState); // state is safe cast, check that lens name is not null
-            }
-        }, 1000);
-        return () => {
-            clearInterval(interval);
-        };
+        // Set the initial state immediately
+        updateGraphAndSetState();
+
+        // refresh every 10 seconds
+        const interval = setInterval(updateGraphAndSetState, 10000);
+        return () => clearInterval(interval);
     }, [lensName, state, setState]);
 
     const data = useMemo(() => {
