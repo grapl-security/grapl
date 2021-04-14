@@ -83,14 +83,28 @@ def upload_model_plugin(
     plugin_path = "./schemas"
     jwt = EngagementEdgeClient().get_jwt()
     
-    plugin_upload = model_plugin_client.deploy(
-        plugin_path,
-        jwt,
-    )
-    
-    logging.info(f"UploadRequest: {plugin_upload.json()}")
-    
-    upload_status = plugin_upload.json()["success"]["Success"] == True
-    assert upload_status
+    try:
+        check_plugin_path_has_schemas_file(plugin_path)
+    except: 
+        logging.info("Plugin path is does not contain")
+    finally: 
+        plugin_upload = model_plugin_client.deploy(
+            plugin_path,
+            jwt,
+        )
+        
+        logging.info(f"UploadRequest: {plugin_upload.json()}")
+        
+        upload_status = plugin_upload.json()["success"]["Success"] == True
+        
+        assert upload_status
 
-
+def check_plugin_path_has_schemas_file(
+    filename: str,
+) -> bool:
+    if (filename.__contains__("schemas.py")):
+        logging.info("Found schemas.py in plugin path")
+        assert True
+    else:
+        logging.error("Did not find schemas.py file to upload plugins. Please add this file and try again, thanks!")
+        assert False
