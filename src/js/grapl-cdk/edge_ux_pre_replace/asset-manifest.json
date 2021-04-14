@@ -1,6 +1,7 @@
 {
   "files": {
     "main.css": "/static/css/main.60942ed7.chunk.css",
+<<<<<<< HEAD
     "main.js": "/static/js/main.42c42853.chunk.js",
     "main.js.map": "/static/js/main.42c42853.chunk.js.map",
     "runtime-main.js": "/static/js/runtime-main.980a0650.js",
@@ -16,5 +17,23 @@
     "static/js/2.e5ff9b3a.chunk.js",
     "static/css/main.60942ed7.chunk.css",
     "static/js/main.42c42853.chunk.js"
+=======
+    "main.js": "/static/js/main.69d04679.chunk.js",
+    "main.js.map": "/static/js/main.69d04679.chunk.js.map",
+    "runtime-main.js": "/static/js/runtime-main.980a0650.js",
+    "runtime-main.js.map": "/static/js/runtime-main.980a0650.js.map",
+    "static/js/2.e73fcfe3.chunk.js": "/static/js/2.e73fcfe3.chunk.js",
+    "static/js/2.e73fcfe3.chunk.js.map": "/static/js/2.e73fcfe3.chunk.js.map",
+    "index.html": "/index.html",
+    "static/css/main.60942ed7.chunk.css.map": "/static/css/main.60942ed7.chunk.css.map",
+    "static/js/2.e73fcfe3.chunk.js.LICENSE.txt": "/static/js/2.e73fcfe3.chunk.js.LICENSE.txt",
+    "static/media/logo.cc627171.svg": "/static/media/logo.cc627171.svg"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.980a0650.js",
+    "static/js/2.e73fcfe3.chunk.js",
+    "static/css/main.60942ed7.chunk.css",
+    "static/js/main.69d04679.chunk.js"
+>>>>>>> d00eed30... Actually serving the query string from graphql-endpoint, and consuming it (#743)
   ]
 }
