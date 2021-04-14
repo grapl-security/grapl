@@ -1,5 +1,6 @@
 import React from 'react';
 
+import Popover from '@material-ui/core/Popover';
 import Card from '@material-ui/core/Card';
 import CardActionArea from '@material-ui/core/CardActionArea';
 import CardActions from '@material-ui/core/CardActions';
@@ -15,6 +16,17 @@ export default function LoginNotification() {
     const classes = useStyles();
 
     return (
+    <Popover 
+        open={true}
+        anchorOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+        }}
+        transformOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+        }}
+        >
         <Card variant="outlined" className={classes.root}>
             <CardActionArea>
                 <CardContent>
@@ -37,5 +49,6 @@ export default function LoginNotification() {
                 > Login </Button>
             </CardActions>
         </Card>
+    </Popover>
     );
 }
