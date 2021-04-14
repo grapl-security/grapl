@@ -1,6 +1,7 @@
 import {
     GraphQLBoolean,
     GraphQLFieldConfigMap,
+    GraphQLFloat,
     GraphQLInt,
     GraphQLList,
     GraphQLObjectType,
@@ -36,7 +37,7 @@ function propertyToGraphql(
     }
 
     if (property.primitive == "Int") {
-        prim = GraphQLInt;
+        prim = GraphQLFloat;
     } else if (property.primitive == "Bool") {
         prim = GraphQLBoolean;
     } else if (property.primitive == "Str") {
@@ -76,6 +77,9 @@ function getHardcodedOverride(
     }
     if (property.name == "file_on_asset") {
         return GraphQLList(typeMap.get("File"));
+    }
+    if (property.name == "parent") {
+        return typeMap.get("Process");
     }
     return undefined;
 }
