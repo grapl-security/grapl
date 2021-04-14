@@ -23,10 +23,7 @@ COPY --chown=grapl src/python/mypy.ini src/python/mypy.ini
 COPY --chown=grapl pants.toml pants.toml
 COPY --chown=grapl 3rdparty 3rdparty
 
-# To bootstrap Pants
-# We need to ignore both Pants' cache as well as our Pulumi venv in
-# this particular case since we're operating out of the same directory
-# on everything.
+# Ignore the pants cache
 ENV PANTS_IGNORE="['.cache']"
 RUN ./pants --version
 

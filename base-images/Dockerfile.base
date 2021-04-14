@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     netbase \
     wait-for-it \
     && rm -rf /var/lib/apt/lists/*
-SHELL ["/bin/bash", "-euf", "-o", "pipefail", "-c"]
+SHELL ["/bin/bash", "-eu", "-o", "pipefail", "-c"]
 RUN adduser \
         --disabled-password \
         --gecos '' \
@@ -75,6 +75,7 @@ RUN curl https://pyenv.run | bash && \
     pyenv global 3.7.10 && \
     pyenv doctor && \
     pip install --upgrade pip
+ENV PYTHON="$PYENV_ROOT/versions/$PYTHON_VERSION/bin/python"
 
 ##
 # js
