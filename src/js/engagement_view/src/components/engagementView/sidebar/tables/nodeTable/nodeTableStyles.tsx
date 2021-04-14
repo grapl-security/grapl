@@ -1,24 +1,24 @@
-import { makeStyles } from '@material-ui/core/styles';
+import { makeStyles } from "@material-ui/core/styles";
 
 export const nodeTableStyles = makeStyles({
     root: {
-        fontSize: ".75em"
+        fontSize: ".75em",
     },
     nodeTable: {
         minWidth: 450,
-    }, 
+    },
     tableHeader: {
-        fontSize: ".85rem", 
-        backgroundColor: "#363434"
-    }, 
+        fontSize: ".85rem",
+        backgroundColor: "#363434",
+    },
     nodeTableData: {
         fontSize: ".75rem",
-        backgroundColor: "#333333"
+        backgroundColor: "#333333",
     },
-    nodeTableContainer:{
+    nodeTableContainer: {
         textAlign: "center",
         marginLeft: "auto",
         marginRight: "auto",
-        width: "95%"
+        width: "95%",
     },
 });

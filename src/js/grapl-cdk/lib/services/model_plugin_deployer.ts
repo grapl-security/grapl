@@ -1,12 +1,12 @@
-import * as apigateway from '@aws-cdk/aws-apigateway';
-import * as cdk from '@aws-cdk/core';
-import * as iam from '@aws-cdk/aws-iam';
-import * as lambda from '@aws-cdk/aws-lambda';
-import * as s3 from '@aws-cdk/aws-s3';
-import { WatchedOperation } from 'cdk-watchful';
-import { GraplServiceProps } from '../grapl-cdk-stack';
-import { SchemaDb } from '../schemadb';
-import { GraplS3Bucket } from '../grapl_s3_bucket';
+import * as apigateway from "@aws-cdk/aws-apigateway";
+import * as cdk from "@aws-cdk/core";
+import * as iam from "@aws-cdk/aws-iam";
+import * as lambda from "@aws-cdk/aws-lambda";
+import * as s3 from "@aws-cdk/aws-s3";
+import { WatchedOperation } from "cdk-watchful";
+import { GraplServiceProps } from "../grapl-cdk-stack";
+import { SchemaDb } from "../schemadb";
+import { GraplS3Bucket } from "../grapl_s3_bucket";
 
 export interface ModelPluginDeployerProps extends GraplServiceProps {
     modelPluginBucket: s3.IBucket;
@@ -24,32 +24,32 @@ export class ModelPluginDeployer extends cdk.NestedStack {
     ) {
         super(parent, id);
 
-        const serviceName = props.deploymentName + '-ModelPluginDeployer';
+        const serviceName = props.deploymentName + "-ModelPluginDeployer";
 
         const ux_bucket = GraplS3Bucket.fromBucketName(
             this,
-            'uxBucket',
-            props.deploymentName.toLowerCase() + '-engagement-ux-bucket'
+            "uxBucket",
+            props.deploymentName.toLowerCase() + "-engagement-ux-bucket"
         );
 
-        const role = new iam.Role(this, 'ExecutionRole', {
-            assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
-            roleName: serviceName + '-HandlerRole',
-            description: 'Lambda execution role for: ' + serviceName,
+        const role = new iam.Role(this, "ExecutionRole", {
+            assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
+            roleName: serviceName + "-HandlerRole",
+            description: "Lambda execution role for: " + serviceName,
             managedPolicies: [
                 iam.ManagedPolicy.fromAwsManagedPolicyName(
-                    'service-role/AWSLambdaBasicExecutionRole'
+                    "service-role/AWSLambdaBasicExecutionRole"
                 ),
                 iam.ManagedPolicy.fromAwsManagedPolicyName(
-                    'service-role/AWSLambdaVPCAccessExecutionRole'
+                    "service-role/AWSLambdaVPCAccessExecutionRole"
                 ),
             ],
         });
 
-        const event_handler = new lambda.Function(this, 'Handler', {
+        const event_handler = new lambda.Function(this, "Handler", {
             runtime: lambda.Runtime.PYTHON_3_7,
             handler: `grapl_model_plugin_deployer.app`,
-            functionName: serviceName + '-Handler',
+            functionName: serviceName + "-Handler",
             code: lambda.Code.fromAsset(
                 `./zips/model-plugin-deployer-${props.version}.zip`
             ),
@@ -60,14 +60,14 @@ export class ModelPluginDeployer extends cdk.NestedStack {
                 JWT_SECRET_ID: props.jwtSecret.secretArn,
                 USER_AUTH_TABLE: props.userAuthTable.user_auth_table.tableName,
                 DEPLOYMENT_NAME: props.deploymentName,
-                UX_BUCKET_URL: 'https://' + ux_bucket.bucketRegionalDomainName,
+                UX_BUCKET_URL: "https://" + ux_bucket.bucketRegionalDomainName,
             },
             timeout: cdk.Duration.seconds(25),
             memorySize: 256,
             description: props.version,
             role,
         });
-        event_handler.currentVersion.addAlias('live');
+        event_handler.currentVersion.addAlias("live");
 
         props.dgraphSwarmCluster.allowConnectionsFrom(event_handler);
 
@@ -88,14 +88,23 @@ export class ModelPluginDeployer extends cdk.NestedStack {
         }
 
         const integration = new apigateway.LambdaIntegration(event_handler);
-        props.edgeApi.root.addResource('modelPluginDeployer').addProxy({
+        props.edgeApi.root.addResource("modelPluginDeployer").addProxy({
             defaultIntegration: integration,
         });
         this.apis = [];
-        for (const httpMethod of ['POST', 'OPTIONS', 'GET', 'DELETE']) {
-            for (const resourcePath of ['/gitWebhook', '/deploy', '/listModelPlugins', 'deleteModelPlugin', '/{proxy+}']) {
+        for (const httpMethod of ["POST", "OPTIONS", "GET", "DELETE"]) {
+            for (const resourcePath of [
+                "/gitWebhook",
+                "/deploy",
+                "/listModelPlugins",
+                "deleteModelPlugin",
+                "/{proxy+}",
+            ]) {
                 this.apis.push({ httpMethod, resourcePath });
-                this.apis.push({ httpMethod, resourcePath: '/modelPluginDeployer' + resourcePath });
+                this.apis.push({
+                    httpMethod,
+                    resourcePath: "/modelPluginDeployer" + resourcePath,
+                });
             }
         }
     }

@@ -1,10 +1,10 @@
-import * as cdk from '@aws-cdk/core';
-import * as ec2 from '@aws-cdk/aws-ec2';
-import * as path from 'path';
-import * as s3deploy from '@aws-cdk/aws-s3-deployment';
-import { Swarm, SwarmConnectable } from '../swarm';
-import { Watchful } from 'cdk-watchful';
-import { GraplS3Bucket } from '../grapl_s3_bucket';
+import * as cdk from "@aws-cdk/core";
+import * as ec2 from "@aws-cdk/aws-ec2";
+import * as path from "path";
+import * as s3deploy from "@aws-cdk/aws-s3-deployment";
+import { Swarm, SwarmConnectable } from "../swarm";
+import { Watchful } from "cdk-watchful";
+import { GraplS3Bucket } from "../grapl_s3_bucket";
 
 export interface DGraphSwarmClusterProps {
     deploymentName: string;
@@ -23,16 +23,16 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
     ) {
         super(parent, id);
 
-        this.dgraphSwarmCluster = new Swarm(this, 'SwarmCluster', {
+        this.dgraphSwarmCluster = new Swarm(this, "SwarmCluster", {
             deploymentName: props.deploymentName,
             version: props.version,
             vpc: props.vpc,
             logsGroupResourceArn: super.formatArn({
-                partition: 'aws',
-                service: 'logs',
-                resource: 'log-group',
-                sep: ':',
-                resourceName: `${props.deploymentName.toLowerCase()}-grapl-dgraph`
+                partition: "aws",
+                service: "logs",
+                resource: "log-group",
+                sep: ":",
+                resourceName: `${props.deploymentName.toLowerCase()}-grapl-dgraph`,
             }),
             internalServicePorts: [
                 ec2.Port.tcp(5080),
@@ -45,20 +45,24 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
                 ec2.Port.tcp(8083),
                 ec2.Port.tcp(9081),
                 ec2.Port.tcp(9082),
-                ec2.Port.tcp(9083)
+                ec2.Port.tcp(9083),
             ],
             watchful: props.watchful,
         });
 
-        const dgraphConfigBucket = new GraplS3Bucket(this, 'DGraphConfigBucket', {
-            bucketName: `${props.deploymentName.toLowerCase()}-dgraph-config-bucket`,
-            publicReadAccess: false,
-            removalPolicy: cdk.RemovalPolicy.DESTROY,
-        });
+        const dgraphConfigBucket = new GraplS3Bucket(
+            this,
+            "DGraphConfigBucket",
+            {
+                bucketName: `${props.deploymentName.toLowerCase()}-dgraph-config-bucket`,
+                publicReadAccess: false,
+                removalPolicy: cdk.RemovalPolicy.DESTROY,
+            }
+        );
         // grant read access to the swarm instances
         dgraphConfigBucket.grantRead(this.dgraphSwarmCluster.swarmInstanceRole);
 
-        const dgraphDir = path.join(__dirname, '../../dgraph/');
+        const dgraphDir = path.join(__dirname, "../../dgraph/");
         new s3deploy.BucketDeployment(this, "dgraphConfigDeployment", {
             sources: [s3deploy.Source.asset(dgraphDir)],
             destinationBucket: dgraphConfigBucket,

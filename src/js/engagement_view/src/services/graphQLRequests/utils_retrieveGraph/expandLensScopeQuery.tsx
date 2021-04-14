@@ -84,4 +84,4 @@ export const expandLensScopeQuery = (lensName: string) => {
     }
 `;
     return query;
-}
+};
