@@ -19,160 +19,172 @@ import { LoginNotification } from "../reusableComponents";
 import { checkLogin } from "../../services/login/checkLoginService";
 import { useStyles } from "../graphDisplay/GraphDisplayStyles";
 type EngagementViewProps = {
-	setLens: (lens: string) => void;
-	curLens: string;
-	curNode: VizNode | null;
+    setLens: (lens: string) => void;
+    curLens: string;
+    curNode: VizNode | null;
 };
 
 const defaultEngagementState = (): EngagementUxState => {
-	return { curLens: "", curNode: null, loggedIn: true, renderedOnce: false };
+    return { curLens: "", curNode: null, loggedIn: true, renderedOnce: false };
 };
 
 export default function EngagementView({
-	setLens,
-	curLens,
-	curNode,
+    setLens,
+    curLens,
+    curNode,
 }: EngagementViewProps) {
-	const classes = useStyles();
+    const classes = useStyles();
 
-	const [open, setOpen] = React.useState(true);
+    const [open, setOpen] = React.useState(true);
 
-	const handleDrawerOpen = () => {
-		setOpen(true);
-	};
+    const handleDrawerOpen = () => {
+        setOpen(true);
+    };
 
-	const handleDrawerClose = () => {
-		setOpen(false);
-	};
+    const handleDrawerClose = () => {
+        setOpen(false);
+    };
 
-	return (
-		<div className={classes.root}>
-			<AppBar
-				position="fixed"
-				className={clsx(classes.appBar, { [classes.appBarShift]: open })}
-			>
-				<Toolbar>
-					<IconButton
-						color="inherit"
-						aria-label="open drawer"
-						onClick={handleDrawerOpen}
-						edge="start"
-						className={clsx(classes.menuButton, open && classes.hide)}
-					>
-						{/* // Menu Icon  */}
-						&#9776;
-					</IconButton>
+    return (
+        <div className={classes.root}>
+            <AppBar
+                position="fixed"
+                className={clsx(classes.appBar, {
+                    [classes.appBarShift]: open,
+                })}
+            >
+                <Toolbar>
+                    <IconButton
+                        color="inherit"
+                        aria-label="open drawer"
+                        onClick={handleDrawerOpen}
+                        edge="start"
+                        className={clsx(
+                            classes.menuButton,
+                            open && classes.hide
+                        )}
+                    >
+                        {/* // Menu Icon  */}
+                        &#9776;
+                    </IconButton>
 
-					<div className={classes.headerContainer}>
-						<Typography variant="h5" noWrap>
-							<b className={classes.headerTitle}> GRAPL </b>
-						</Typography>
-						<Link to="/" className={classes.link}>
-							<Home />
-						</Link>
-					</div>
-				</Toolbar>
-			</AppBar>
+                    <div className={classes.headerContainer}>
+                        <Typography variant="h5" noWrap>
+                            <b className={classes.headerTitle}> GRAPL </b>
+                        </Typography>
+                        <Link to="/" className={classes.link}>
+                            <Home />
+                        </Link>
+                    </div>
+                </Toolbar>
+            </AppBar>
 
-			<Drawer
-				className={classes.drawer}
-				variant="persistent"
-				anchor="left"
-				open={open}
-				classes={{
-					paper: classes.drawerPaper,
-				}}
-			>
-				<div className={classes.drawerHeader}>
-					<Button onClick={handleDrawerClose}>
-						<KeyboardArrowLeftIcon className={classes.close} />
-					</Button>
-				</div>
+            <Drawer
+                className={classes.drawer}
+                variant="persistent"
+                anchor="left"
+                open={open}
+                classes={{
+                    paper: classes.drawerPaper,
+                }}
+            >
+                <div className={classes.drawerHeader}>
+                    <Button onClick={handleDrawerClose}>
+                        <KeyboardArrowLeftIcon className={classes.close} />
+                    </Button>
+                </div>
 
-				<Divider />
+                <Divider />
 
-				<LensAndNodeTableContainer setLens={setLens} curNode={curNode} />
-			</Drawer>
+                <LensAndNodeTableContainer
+                    setLens={setLens}
+                    curNode={curNode}
+                />
+            </Drawer>
 
-			<main className={clsx(classes.content, { [classes.contentShift]: open })}>
-				<div className={classes.drawerHeader} />
+            <main
+                className={clsx(classes.content, {
+                    [classes.contentShift]: open,
+                })}
+            >
+                <div className={classes.drawerHeader} />
 
-				{/* selected lens name */}
-				<h3 className={classes.lensName}> {curLens || ""} </h3>
+                {/* selected lens name */}
+                <h3 className={classes.lensName}> {curLens || ""} </h3>
 
-				<Typography paragraph></Typography>
-			</main>
-		</div>
-	);
+                <Typography paragraph></Typography>
+            </main>
+        </div>
+    );
 }
 
 type EngagementUxState = {
-	curLens: string;
-	curNode: VizNode | null;
-	loggedIn: boolean;
-	renderedOnce: boolean;
+    curLens: string;
+    curNode: VizNode | null;
+    loggedIn: boolean;
+    renderedOnce: boolean;
 };
 
 export const EngagementUx = () => {
-	const classes = useStyles();
+    const classes = useStyles();
 
-	const [engagementState, setEngagementState] = React.useState(
-		defaultEngagementState()
-	);
+    const [engagementState, setEngagementState] = React.useState(
+        defaultEngagementState()
+    );
 
-	useEffect(() => {
-		if (engagementState.renderedOnce) {
-			return;
-		}
+    useEffect(() => {
+        if (engagementState.renderedOnce) {
+            return;
+        }
 
-		const interval = setInterval(async () => {
-			await checkLogin().then((loggedIn) => {
-				if (!loggedIn) {
-					console.warn("Logged out");
-				}
-				setEngagementState({
-					...engagementState,
-					loggedIn: loggedIn || false,
-					renderedOnce: true,
-				});
-			});
-		}, 1000);
+        const interval = setInterval(async () => {
+            await checkLogin().then((loggedIn) => {
+                if (!loggedIn) {
+                    console.warn("Logged out");
+                }
+                setEngagementState({
+                    ...engagementState,
+                    loggedIn: loggedIn || false,
+                    renderedOnce: true,
+                });
+            });
+        }, 1000);
 
-		return () => {
-			clearInterval(interval);
-		};
-	}, [engagementState, setEngagementState]);
+        return () => {
+            clearInterval(interval);
+        };
+    }, [engagementState, setEngagementState]);
 
-	const loggedIn = engagementState.loggedIn;
+    const loggedIn = engagementState.loggedIn;
 
-	return (
-		<>
-			<EngagementView
-				setLens={(lens: string) =>
-					setEngagementState({
-						...engagementState,
-						curLens: lens,
-					})
-				}
-				curLens={engagementState.curLens}
-				curNode={engagementState.curNode}
-			/>
+    return (
+        <>
+            <EngagementView
+                setLens={(lens: string) =>
+                    setEngagementState({
+                        ...engagementState,
+                        curLens: lens,
+                    })
+                }
+                curLens={engagementState.curLens}
+                curNode={engagementState.curNode}
+            />
 
-			<>
-				<div className={classes.loggedIn}>
-					{!loggedIn ? <LoginNotification /> : ""}
-				</div>
+            <>
+                <div className={classes.loggedIn}>
+                    {!loggedIn ? <LoginNotification /> : ""}
+                </div>
 
-				<GraphDisplay
-					lensName={engagementState.curLens}
-					setCurNode={(node) => {
-						setEngagementState({
-							...engagementState,
-							curNode: node,
-						});
-					}}
-				/>
-			</>
-		</>
-	);
+                <GraphDisplay
+                    lensName={engagementState.curLens}
+                    setCurNode={(node) => {
+                        setEngagementState({
+                            ...engagementState,
+                            curNode: node,
+                        });
+                    }}
+                />
+            </>
+        </>
+    );
 };

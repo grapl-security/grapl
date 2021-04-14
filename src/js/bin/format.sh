@@ -1,5 +1,6 @@
 #!/bin/bash
 set -u
+shopt -s globstar  # ** now actually works
 
 mode=""
 
@@ -66,6 +67,8 @@ prettier \
     --config grapl-cdk/.prettierrc.toml \
     ${prettier_arg} \
     graphql_endpoint/**/*.ts \
-    grapl-cdk/**/*.ts \
+    grapl-cdk/bin/**/*.ts \
+    grapl-cdk/lib/**/*.ts \
+    grapl-cdk/test/**/*.ts \
     engagement_view/src/**/*.ts \
-    engagement_view/src/**/*.tsx
+    engagement_view/src/**/*.tsx \
