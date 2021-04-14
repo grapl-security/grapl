@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Dict
 
 import requests
+import json
 
 _JSON_CONTENT_TYPE_HEADERS = {"Content-type": "application/json"}
 
@@ -79,3 +80,37 @@ class ModelPluginDeployerClient:
         if file_path.endswith(".ipynb"):
             return False
         return True
+    
+    def list_plugins(
+        self, 
+        jwt: str,
+    ) -> requests.Response: 
+                
+        resp = requests.post(
+            f"{self.endpoint}/listModelPlugins",
+            headers=_JSON_CONTENT_TYPE_HEADERS,
+            cookies={"grapl_jwt": jwt},
+        )
+        logging.info(f"Listing model plugins: {resp}")
+        
+        if resp.status_code != HTTPStatus.OK:
+            raise ModelPluginDeployerException(f"{resp.status_code}: {resp.text}")
+        return resp
+
+    def delete_model_plugin(
+        self, 
+        jwt: str,
+        plugin_name: str
+    ) -> requests.Response: 
+                
+        resp = requests.post(
+            f"{self.endpoint}/deleteModelPlugin",
+            json={"plugins_to_delete": plugin_name},
+            headers=_JSON_CONTENT_TYPE_HEADERS,
+            cookies={"grapl_jwt": jwt},
+        )
+        logging.info(f"Listing model plugins: {resp}")
+        
+        if resp.status_code != HTTPStatus.OK:
+            raise ModelPluginDeployerException(f"{resp.status_code}: {resp.text}")
+        return resp
