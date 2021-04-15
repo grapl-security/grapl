@@ -1,14 +1,20 @@
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, Mapping
 from unittest import TestCase
 
 import pytest
 from grapl_analyzerlib.nodes.lens import LensQuery, LensView
 from grapl_tests_common.clients.engagement_edge_client import EngagementEdgeClient
 from grapl_tests_common.clients.graphql_endpoint_client import GraphqlEndpointClient
-from grapl_tests_common.wait import WaitForCondition, WaitForQuery, wait_for_one
 from grapl_tests_common.clients.model_plugin_deployer_client import ModelPluginDeployerClient
 
+from grapl_tests_common.subset_equals import subset_equals
+from grapl_tests_common.wait import (
+    WaitForCondition,
+    WaitForNoException,
+    WaitForQuery,
+    wait_for_one,
+)
 
 LENS_NAME = "DESKTOP-FVSHABR"
 
@@ -32,7 +38,7 @@ class TestEndToEnd(TestCase):
         assert lens.get_lens_name() == LENS_NAME
 
         # lens scope is not atomic
-        def condition() -> bool:
+        def scope_has_N_items() -> bool:
             length = len(lens.get_scope())
             logging.info(f"Expected 3-5 nodes in scope, currently is {length}")
 
@@ -44,7 +50,7 @@ class TestEndToEnd(TestCase):
                 5,
             )
 
-        wait_for_one(WaitForCondition(condition), timeout_secs=240)
+        wait_for_one(WaitForCondition(scope_has_N_items), timeout_secs=240)
 
         gql_client = GraphqlEndpointClient(
             jwt=EngagementEdgeClient().get_jwt())
@@ -62,18 +68,23 @@ class TestEndToEnd(TestCase):
     @pytest.mark.xfail # TODO: once list plugins is resolved, we can fix delete plugins :) 
     def test_delete_plugin(self) -> None:
         delete_model_plugin(model_plugin_client, "schemas.py") # Hard Code for now 
+        gql_client = GraphqlEndpointClient(jwt=EngagementEdgeClient().get_jwt())
+
+        wait_for_one(
+            WaitForNoException(
+                lambda: ensure_graphql_lens_scope_no_errors(gql_client, LENS_NAME)
+            ),
+            timeout_secs=40,
+        )
 
 
 def ensure_graphql_lens_scope_no_errors(
     gql_client: GraphqlEndpointClient,
     lens_name: str,
 ) -> None:
-    """
-    Eventually we'd want more-robust checks here, but this is an acceptable
-    smoke test in the mean time.
-    """
     gql_lens = gql_client.query_for_scope(lens_name=lens_name)
-    assert len(gql_lens["scope"]) in (3, 4, 5)
+    scope = gql_lens["scope"]
+    assert len(scope) in (3, 4, 5)
 
     # Accumulate ["Asset"], ["Process"] into Set("Asset, Process")
     all_types_in_scope = set(
@@ -160,3 +171,50 @@ def delete_model_plugin(
 
     assert deleted
 # ---------------------------- end model plugin helpers ------------------------------------
+
+    asset_node: Dict = next((n for n in scope if n["dgraph_type"] == ["Asset"]))
+
+    # The 'risks' field is not immediately filled out, but eventually consistent
+    subset_equals(larger=asset_node, smaller=expected_gql_asset())
+
+
+def expected_gql_asset() -> Mapping[str, Any]:
+    """
+    All the fixed values (i.e. no uid, no node key) we'd see in the e2e test
+    """
+    return {
+        "dgraph_type": ["Asset"],
+        "display": "DESKTOP-FVSHABR",
+        "hostname": "DESKTOP-FVSHABR",
+        "asset_processes": [
+            {
+                "dgraph_type": ["Process"],
+                "process_name": "cmd.exe",
+                "process_id": 5824,
+            },
+            {
+                "dgraph_type": ["Process"],
+                "process_name": "dropper.exe",
+                "process_id": 4164,
+            },
+            {
+                "dgraph_type": ["Process"],
+                "process_name": "cmd.exe",
+                "process_id": 5824,
+            },
+            {
+                "dgraph_type": ["Process"],
+                "process_name": "svchost.exe",
+                "process_id": 6132,
+            },
+        ],
+        "files_on_asset": None,
+        "risks": [
+            {
+                "dgraph_type": ["Risk"],
+                "node_key": "Rare Parent of cmd.exe",
+                "analyzer_name": "Rare Parent of cmd.exe",
+                "risk_score": 10,
+            }
+        ],
+    }

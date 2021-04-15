@@ -79,12 +79,9 @@ export const expandLensScopeQuery = (lensName: string) => {
                         risk_score
                     },
                 }
-                ... on PluginType {
-                    predicates,
-                }
             }
         }
     }
 `;
     return query;
-}
+};

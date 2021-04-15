@@ -1,4 +1,4 @@
-import { makeStyles } from '@material-ui/core/styles';
+import { makeStyles } from "@material-ui/core/styles";
 
 export const notificationsStyles = makeStyles({
     root: {
@@ -8,5 +8,5 @@ export const notificationsStyles = makeStyles({
     button: {
         border: "2px solid white",
         backgroundColor: "#42c6ff",
-    }
+    },
 });

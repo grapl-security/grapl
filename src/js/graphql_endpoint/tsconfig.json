@@ -6,7 +6,7 @@
 
     "lib": [
       "DOM",  // Surprising inclusion, but needed for the dynamodb tools
-      "ES5",
+      "es2019",
       "ScriptHost"
     ],
 
@@ -16,6 +16,7 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "noImplicitAny": true,
+    // TODO: "strictNullChecks": true,
     "forceConsistentCasingInFileNames": true
   },
   "include": ["server.ts", "server.js", "modules/**/*.js", "modules/**/*.ts"]
