@@ -93,8 +93,6 @@ class ModelPluginDeployerClient:
             headers=_JSON_CONTENT_TYPE_HEADERS,
             cookies={"grapl_jwt": jwt},
         )
-        logging.info(f"Listing model plugins: {resp}")
-
         if resp.status_code != HTTPStatus.OK:
             raise ModelPluginDeployerException(f"{resp.status_code}: {resp.text}")
         return resp

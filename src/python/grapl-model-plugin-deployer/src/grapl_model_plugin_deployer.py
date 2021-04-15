@@ -17,7 +17,6 @@ from typing import TYPE_CHECKING, Dict, List, Optional, TypeVar, Union
 import boto3  # type: ignore
 import jwt
 import pydgraph  # type: ignore
-import requests
 from botocore.client import BaseClient  # type: ignore
 from chalice import Chalice, Response
 from github import Github

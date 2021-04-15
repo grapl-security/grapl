@@ -53,11 +53,13 @@ class TestEndToEnd(TestCase):
 
         wait_for_one(WaitForCondition(scope_has_N_items), timeout_secs=240)
 
-        gql_client = GraphqlEndpointClient(jwt=EngagementEdgeClient().get_jwt())
+        gql_client = GraphqlEndpointClient(
+            jwt=EngagementEdgeClient().get_jwt())
 
         wait_for_one(
             WaitForNoException(
-                lambda: ensure_graphql_lens_scope_no_errors(gql_client, LENS_NAME)
+                lambda: ensure_graphql_lens_scope_no_errors(
+                    gql_client, LENS_NAME)
             ),
             timeout_secs=40,
         )
@@ -73,12 +75,15 @@ class TestEndToEnd(TestCase):
 
     @pytest.mark.xfail  # TODO: once list plugins is resolved, we can fix delete plugins :)
     def test_delete_plugin(self) -> None:
-        delete_model_plugin(model_plugin_client, "schemas.py")  # Hard Code for now
-        gql_client = GraphqlEndpointClient(jwt=EngagementEdgeClient().get_jwt())
+        delete_model_plugin(model_plugin_client,
+                            "schemas.py")  # Hard Code for now
+        gql_client = GraphqlEndpointClient(
+            jwt=EngagementEdgeClient().get_jwt())
 
         wait_for_one(
             WaitForNoException(
-                lambda: ensure_graphql_lens_scope_no_errors(gql_client, LENS_NAME)
+                lambda: ensure_graphql_lens_scope_no_errors(
+                    gql_client, LENS_NAME)
             ),
             timeout_secs=40,
         )
@@ -103,7 +108,8 @@ def ensure_graphql_lens_scope_no_errors(
         )
     )
 
-    asset_node: Dict = next((n for n in scope if n["dgraph_type"] == ["Asset"]))
+    asset_node: Dict = next(
+        (n for n in scope if n["dgraph_type"] == ["Asset"]))
 
     # The 'risks' field is not immediately filled out, but eventually consistent
     subset_equals(larger=asset_node, smaller=expected_gql_asset())
@@ -164,21 +170,18 @@ def upload_model_plugin(
     plugin_path = "./schemas"
     jwt = EngagementEdgeClient().get_jwt()
 
-    try:
-        check_plugin_path_has_schemas_file(plugin_path)
-    except:
-        logging.info("Plugin path is does not contain")
-    finally:
-        plugin_upload = model_plugin_client.deploy(
-            plugin_path,
-            jwt,
-        )
+    check_plugin_path_has_schemas_file(plugin_path)
 
-        logging.info(f"UploadRequest: {plugin_upload.json()}")
+    plugin_upload = model_plugin_client.deploy(
+        plugin_path,
+        jwt,
+    )
 
-        upload_status = plugin_upload.json()["success"]["Success"] == True
+    logging.info(f"UploadRequest: {plugin_upload.json()}")
 
-        assert upload_status
+    upload_status = plugin_upload.json()["success"]["Success"] == True
+
+    assert upload_status
 
 
 def check_plugin_path_has_schemas_file(
