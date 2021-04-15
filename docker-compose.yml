@@ -79,6 +79,11 @@ services:
         # to disable persistence
         rm -f /data/dump.rdb && redis-server
       "
+    healthcheck:
+      test: bash -c 'redis-cli -h 127.0.0.1 ping | grep PONG'
+      interval: 5s
+      timeout: 10s
+      start_period: 10s
     networks:
       default:
         aliases:
@@ -146,9 +151,9 @@ services:
       grapl-provision:
         condition: service_completed_successfully
       localstack:
-        condition: service_started
+        condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
 
   grapl-osquery-subgraph-generator:
     image: grapl/grapl-osquery-subgraph-generator:${TAG:-latest}
@@ -171,9 +176,9 @@ services:
       grapl-provision:
         condition: service_completed_successfully
       localstack:
-        condition: service_started
+        condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
 
   grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
@@ -197,9 +202,9 @@ services:
       grapl-provision:
         condition: service_completed_successfully
       localstack:
-        condition: service_started
+        condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
 
   grapl-node-identifier-retry-handler:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
@@ -223,9 +228,9 @@ services:
       grapl-provision:
         condition: service_completed_successfully
       localstack:
-        condition: service_started
+        condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
 
   grapl-graph-merger:
     image: grapl/grapl-graph-merger:${TAG:-latest}
@@ -252,9 +257,9 @@ services:
       grapl-provision:
         condition: service_completed_successfully
       localstack:
-        condition: service_started
+        condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
 
   grapl-analyzer-dispatcher:
     image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
@@ -275,7 +280,7 @@ services:
     tty: false
     depends_on:
       localstack:
-        condition: service_started
+        condition: service_healthy
 
   ########################################################################
   # Python Services
@@ -305,9 +310,14 @@ services:
     ports:
       - 127.0.0.1:${VSC_DEBUGGER_PORT_FOR_ANALYZER_EXECUTOR}:${VSC_DEBUGGER_PORT_FOR_ANALYZER_EXECUTOR}
     depends_on:
-      - dgraph
-      - localstack
-      - redis
+      dgraph:
+        condition: service_started
+      grapl-provision:
+        condition: service_completed_successfully
+      localstack:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   grapl-ux-router:
     image: grapl/grapl-ux-router:${TAG:-latest}
@@ -358,7 +368,7 @@ services:
       VSC_DEBUGGER_PORT: "${VSC_DEBUGGER_PORT_FOR_ENGAGEMENT_EDGE}"
     depends_on:
       localstack:
-        condition: service_started
+        condition: service_healthy
       grapl-provision:
         condition: service_completed_successfully
     tty: true
@@ -390,7 +400,7 @@ services:
       dgraph:
         condition: service_started
       localstack:
-        condition: service_started
+        condition: service_healthy
       grapl-provision:
         condition: service_completed_successfully
     networks:
@@ -458,7 +468,7 @@ services:
       dgraph:
         condition: service_started
       localstack:
-        condition: service_started
+        condition: service_healthy
       grapl-provision:
         condition: service_completed_successfully
     ports:
@@ -530,7 +540,7 @@ services:
       dgraph:
         condition: service_started
       localstack:
-        condition: service_started
+        condition: service_healthy
       grapl-pulumi:
         condition: service_completed_successfully
 
