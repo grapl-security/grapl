@@ -54,25 +54,35 @@ class TestEndToEnd(TestCase):
 
         gql_client = GraphqlEndpointClient(
             jwt=EngagementEdgeClient().get_jwt())
-        ensure_graphql_lens_scope_no_errors(gql_client, LENS_NAME)
-        
+
+        wait_for_one(
+            WaitForNoException(
+                lambda: ensure_graphql_lens_scope_no_errors(
+                    gql_client, LENS_NAME)
+            ),
+            timeout_secs=40,
+        )
+
     # -------------------------- MODEL PLUGIN TESTS -------------------------------------------
 
     def test_upload_plugin(self) -> None:
         upload_model_plugin(model_plugin_client)
-    
-    @pytest.mark.xfail # TODO: Remove once list plugins is resolved
+
+    @pytest.mark.xfail  # TODO: Remove once list plugins is resolved
     def test_list_plugin(self) -> None:
         get_plugin_list(model_plugin_client)
-    
-    @pytest.mark.xfail # TODO: once list plugins is resolved, we can fix delete plugins :) 
+
+    @pytest.mark.xfail  # TODO: once list plugins is resolved, we can fix delete plugins :)
     def test_delete_plugin(self) -> None:
-        delete_model_plugin(model_plugin_client, "schemas.py") # Hard Code for now 
-        gql_client = GraphqlEndpointClient(jwt=EngagementEdgeClient().get_jwt())
+        delete_model_plugin(model_plugin_client,
+                            "schemas.py")  # Hard Code for now
+        gql_client = GraphqlEndpointClient(
+            jwt=EngagementEdgeClient().get_jwt())
 
         wait_for_one(
             WaitForNoException(
-                lambda: ensure_graphql_lens_scope_no_errors(gql_client, LENS_NAME)
+                lambda: ensure_graphql_lens_scope_no_errors(
+                    gql_client, LENS_NAME)
             ),
             timeout_secs=40,
         )
@@ -96,83 +106,9 @@ def ensure_graphql_lens_scope_no_errors(
             "Process",
         )
     )
-    
-    
-# -----------------------  MODEL PLUGIN HELPERS -------------------------------------------
-    
-# TODO: move these into their own file once that's doable with e2e/pants
 
-def upload_model_plugin(
-    model_plugin_client: ModelPluginDeployerClient,
-) -> bool:
-    logging.info("Making request to /deploy to upload model plugins")
-
-    plugin_path = "./schemas"
-    jwt = EngagementEdgeClient().get_jwt()
-
-    try:
-        check_plugin_path_has_schemas_file(plugin_path)
-    except:
-        logging.info("Plugin path is does not contain")
-    finally:
-        plugin_upload = model_plugin_client.deploy(
-            plugin_path,
-            jwt,
-        )
-
-        logging.info(f"UploadRequest: {plugin_upload.json()}")
-
-        upload_status = plugin_upload.json()["success"]["Success"] == True
-
-        assert upload_status
-
-
-def check_plugin_path_has_schemas_file(
-    filename: str,
-) -> bool:
-    if (filename.__contains__("schemas.py")):
-        logging.info("Found schemas.py in plugin path")
-        assert True
-    else:
-        logging.error(
-            "Did not find schemas.py file to upload plugins. Please add this file and try again, thanks!")
-        assert False
-
-def get_plugin_list(
-    model_plugin_client: ModelPluginDeployerClient
-) -> bool:
-    jwt = EngagementEdgeClient().get_jwt()
-
-    get_plugin_list = model_plugin_client.list_plugins(
-        jwt,
-    )
-
-    logging.info(f"UploadRequest: {get_plugin_list.json()}")
-
-    upload_status = get_plugin_list.json()["success"]["plugin_list"] != []
-
-    assert upload_status
-
-
-def delete_model_plugin(
-    model_plugin_client: ModelPluginDeployerClient,
-    plugin_to_delete: str,
-) -> bool:
-    jwt = EngagementEdgeClient().get_jwt()
-
-    delete_plugin = model_plugin_client.delete_model_plugin(
-        jwt,
-        plugin_to_delete,
-    )
-
-    logging.info(f"Deleting Plugin: {plugin_to_delete}")
-
-    deleted = delete_plugin.json()["success"]["plugins_to_delete"]
-
-    assert deleted
-# ---------------------------- end model plugin helpers ------------------------------------
-
-    asset_node: Dict = next((n for n in scope if n["dgraph_type"] == ["Asset"]))
+    asset_node: Dict = next(
+        (n for n in scope if n["dgraph_type"] == ["Asset"]))
 
     # The 'risks' field is not immediately filled out, but eventually consistent
     subset_equals(larger=asset_node, smaller=expected_gql_asset())
@@ -218,3 +154,81 @@ def expected_gql_asset() -> Mapping[str, Any]:
             }
         ],
     }
+
+
+# -----------------------  MODEL PLUGIN HELPERS -------------------------------------------
+
+# TODO: move these into their own file once that's doable with e2e/pants
+
+def upload_model_plugin(
+    model_plugin_client: ModelPluginDeployerClient,
+) -> bool:
+    logging.info("Making request to /deploy to upload model plugins")
+
+    plugin_path = "./schemas"
+    jwt = EngagementEdgeClient().get_jwt()
+
+    try:
+        check_plugin_path_has_schemas_file(plugin_path)
+    except:
+        logging.info("Plugin path is does not contain")
+    finally:
+        plugin_upload = model_plugin_client.deploy(
+            plugin_path,
+            jwt,
+        )
+
+        logging.info(f"UploadRequest: {plugin_upload.json()}")
+
+        upload_status = plugin_upload.json()["success"]["Success"] == True
+
+        assert upload_status
+
+
+def check_plugin_path_has_schemas_file(
+    filename: str,
+) -> bool:
+    if (filename.__contains__("schemas.py")):
+        logging.info("Found schemas.py in plugin path")
+        assert True
+    else:
+        logging.error(
+            "Did not find schemas.py file to upload plugins. Please add this file and try again, thanks!")
+        assert False
+
+
+def get_plugin_list(
+    model_plugin_client: ModelPluginDeployerClient
+) -> bool:
+    jwt = EngagementEdgeClient().get_jwt()
+
+    get_plugin_list = model_plugin_client.list_plugins(
+        jwt,
+    )
+
+    logging.info(f"UploadRequest: {get_plugin_list.json()}")
+
+    upload_status = get_plugin_list.json()["success"]["plugin_list"] != []
+
+    assert upload_status
+
+
+def delete_model_plugin(
+    model_plugin_client: ModelPluginDeployerClient,
+    plugin_to_delete: str,
+) -> bool:
+    jwt = EngagementEdgeClient().get_jwt()
+
+    delete_plugin = model_plugin_client.delete_model_plugin(
+        jwt,
+        plugin_to_delete,
+    )
+
+    logging.info(f"Deleting Plugin: {plugin_to_delete}")
+
+    deleted = delete_plugin.json()["success"]["plugins_to_delete"]
+
+    assert deleted
+
+
+# ---------------------------- end model plugin helpers ------------------------------------
