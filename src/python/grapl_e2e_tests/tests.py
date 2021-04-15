@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Any, Dict, Mapping
 from unittest import TestCase
 
@@ -16,7 +17,6 @@ from grapl_tests_common.wait import (
     WaitForQuery,
     wait_for_one,
 )
-import os
 
 LENS_NAME = "DESKTOP-FVSHABR"
 
@@ -54,13 +54,11 @@ class TestEndToEnd(TestCase):
 
         wait_for_one(WaitForCondition(scope_has_N_items), timeout_secs=240)
 
-        gql_client = GraphqlEndpointClient(
-            jwt=EngagementEdgeClient().get_jwt())
+        gql_client = GraphqlEndpointClient(jwt=EngagementEdgeClient().get_jwt())
 
         wait_for_one(
             WaitForNoException(
-                lambda: ensure_graphql_lens_scope_no_errors(
-                    gql_client, LENS_NAME)
+                lambda: ensure_graphql_lens_scope_no_errors(gql_client, LENS_NAME)
             ),
             timeout_secs=40,
         )
@@ -76,15 +74,12 @@ class TestEndToEnd(TestCase):
 
     @pytest.mark.xfail  # TODO: once list plugins is resolved, we can fix delete plugins :)
     def test_delete_plugin(self) -> None:
-        delete_model_plugin(model_plugin_client,
-                            "schemas.py")  # Hard Code for now
-        gql_client = GraphqlEndpointClient(
-            jwt=EngagementEdgeClient().get_jwt())
+        delete_model_plugin(model_plugin_client, "schemas.py")  # Hard Code for now
+        gql_client = GraphqlEndpointClient(jwt=EngagementEdgeClient().get_jwt())
 
         wait_for_one(
             WaitForNoException(
-                lambda: ensure_graphql_lens_scope_no_errors(
-                    gql_client, LENS_NAME)
+                lambda: ensure_graphql_lens_scope_no_errors(gql_client, LENS_NAME)
             ),
             timeout_secs=40,
         )
@@ -109,8 +104,7 @@ def ensure_graphql_lens_scope_no_errors(
         )
     )
 
-    asset_node: Dict = next(
-        (n for n in scope if n["dgraph_type"] == ["Asset"]))
+    asset_node: Dict = next((n for n in scope if n["dgraph_type"] == ["Asset"]))
 
     # The 'risks' field is not immediately filled out, but eventually consistent
     subset_equals(larger=asset_node, smaller=expected_gql_asset())
@@ -172,7 +166,7 @@ def upload_model_plugin(
     jwt = EngagementEdgeClient().get_jwt()
 
     files = os.listdir(plugin_path)
-    
+
     check_plugin_path_has_schemas_file(files)
 
     plugin_upload = model_plugin_client.deploy(
