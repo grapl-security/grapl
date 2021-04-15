@@ -16,6 +16,7 @@ from grapl_tests_common.wait import (
     WaitForQuery,
     wait_for_one,
 )
+import os
 
 LENS_NAME = "DESKTOP-FVSHABR"
 
@@ -170,7 +171,9 @@ def upload_model_plugin(
     plugin_path = "./schemas"
     jwt = EngagementEdgeClient().get_jwt()
 
-    check_plugin_path_has_schemas_file(plugin_path)
+    files = os.listdir(plugin_path)
+    
+    check_plugin_path_has_schemas_file(files)
 
     plugin_upload = model_plugin_client.deploy(
         plugin_path,
@@ -185,16 +188,18 @@ def upload_model_plugin(
 
 
 def check_plugin_path_has_schemas_file(
-    filename: str,
+    files: str,
 ) -> bool:
-    if "schemas.py" in filename:
-        logging.info("Found schemas.py in plugin path")
-        assert True
-    else:
-        logging.error(
-            "Did not find schemas.py file to upload plugins. Please add this file and try again, thanks!"
-        )
-        assert False
+    logging.info(f"files: {files}")
+    for filename in files:
+        if "schemas.py" in filename:
+            logging.info("Found schemas.py in plugin path")
+            assert True
+        else:
+            logging.error(
+                "Did not find schemas.py file. Please add this file and try again, thanks!"
+            )
+            assert False
 
 
 def get_plugin_list(model_plugin_client: ModelPluginDeployerClient) -> bool:
