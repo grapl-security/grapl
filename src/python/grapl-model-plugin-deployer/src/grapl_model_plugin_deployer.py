@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, TypeVar, Union
 import boto3  # type: ignore
 import jwt
 import pydgraph  # type: ignore
+import requests
 from botocore.client import BaseClient  # type: ignore
 from chalice import Chalice, Response
 from github import Github
@@ -37,8 +38,6 @@ from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_common.provision import (
     store_schema_properties as store_schema_properties_common,
 )
-
-import requests 
 
 sys.path.append("/tmp/")
 

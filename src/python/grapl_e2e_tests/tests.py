@@ -6,8 +6,9 @@ import pytest
 from grapl_analyzerlib.nodes.lens import LensQuery, LensView
 from grapl_tests_common.clients.engagement_edge_client import EngagementEdgeClient
 from grapl_tests_common.clients.graphql_endpoint_client import GraphqlEndpointClient
-from grapl_tests_common.clients.model_plugin_deployer_client import ModelPluginDeployerClient
-
+from grapl_tests_common.clients.model_plugin_deployer_client import (
+    ModelPluginDeployerClient,
+)
 from grapl_tests_common.subset_equals import subset_equals
 from grapl_tests_common.wait import (
     WaitForCondition,
@@ -52,13 +53,11 @@ class TestEndToEnd(TestCase):
 
         wait_for_one(WaitForCondition(scope_has_N_items), timeout_secs=240)
 
-        gql_client = GraphqlEndpointClient(
-            jwt=EngagementEdgeClient().get_jwt())
+        gql_client = GraphqlEndpointClient(jwt=EngagementEdgeClient().get_jwt())
 
         wait_for_one(
             WaitForNoException(
-                lambda: ensure_graphql_lens_scope_no_errors(
-                    gql_client, LENS_NAME)
+                lambda: ensure_graphql_lens_scope_no_errors(gql_client, LENS_NAME)
             ),
             timeout_secs=40,
         )
@@ -74,15 +73,12 @@ class TestEndToEnd(TestCase):
 
     @pytest.mark.xfail  # TODO: once list plugins is resolved, we can fix delete plugins :)
     def test_delete_plugin(self) -> None:
-        delete_model_plugin(model_plugin_client,
-                            "schemas.py")  # Hard Code for now
-        gql_client = GraphqlEndpointClient(
-            jwt=EngagementEdgeClient().get_jwt())
+        delete_model_plugin(model_plugin_client, "schemas.py")  # Hard Code for now
+        gql_client = GraphqlEndpointClient(jwt=EngagementEdgeClient().get_jwt())
 
         wait_for_one(
             WaitForNoException(
-                lambda: ensure_graphql_lens_scope_no_errors(
-                    gql_client, LENS_NAME)
+                lambda: ensure_graphql_lens_scope_no_errors(gql_client, LENS_NAME)
             ),
             timeout_secs=40,
         )
@@ -107,8 +103,7 @@ def ensure_graphql_lens_scope_no_errors(
         )
     )
 
-    asset_node: Dict = next(
-        (n for n in scope if n["dgraph_type"] == ["Asset"]))
+    asset_node: Dict = next((n for n in scope if n["dgraph_type"] == ["Asset"]))
 
     # The 'risks' field is not immediately filled out, but eventually consistent
     subset_equals(larger=asset_node, smaller=expected_gql_asset())
@@ -160,6 +155,7 @@ def expected_gql_asset() -> Mapping[str, Any]:
 
 # TODO: move these into their own file once that's doable with e2e/pants
 
+
 def upload_model_plugin(
     model_plugin_client: ModelPluginDeployerClient,
 ) -> bool:
@@ -188,7 +184,7 @@ def upload_model_plugin(
 def check_plugin_path_has_schemas_file(
     filename: str,
 ) -> bool:
-    if ("schemas.py" in filename):
+    if "schemas.py" in filename:
         logging.info("Found schemas.py in plugin path")
         assert True
     else:
@@ -198,9 +194,7 @@ def check_plugin_path_has_schemas_file(
         assert False
 
 
-def get_plugin_list(
-    model_plugin_client: ModelPluginDeployerClient
-) -> bool:
+def get_plugin_list(model_plugin_client: ModelPluginDeployerClient) -> bool:
     jwt = EngagementEdgeClient().get_jwt()
 
     get_plugin_list = model_plugin_client.list_plugins(

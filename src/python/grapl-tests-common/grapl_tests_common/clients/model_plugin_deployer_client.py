@@ -2,6 +2,8 @@
 Mostly copied from etc/local_grapl/bin/upload_plugin.py
 """
 from __future__ import annotations
+
+import json
 import logging
 import os
 import sys
@@ -10,7 +12,6 @@ from pathlib import Path
 from typing import Dict
 
 import requests
-import json
 
 _JSON_CONTENT_TYPE_HEADERS = {"Content-type": "application/json"}
 
@@ -18,7 +19,8 @@ _JSON_CONTENT_TYPE_HEADERS = {"Content-type": "application/json"}
 class ModelPluginDeployerException(Exception):
     pass
 
-#TODO: This interface should just take the endpoint and let the client provide the endpoint and
+
+# TODO: This interface should just take the endpoint and let the client provide the endpoint and
 # Use special constructors (staic methods on a class (from default... ) )
 class ModelPluginDeployerClient:
     def __init__(self, endpoint: str) -> None:
@@ -80,29 +82,25 @@ class ModelPluginDeployerClient:
         if file_path.endswith(".ipynb"):
             return False
         return True
-    
+
     def list_plugins(
-        self, 
+        self,
         jwt: str,
-    ) -> requests.Response: 
-                
+    ) -> requests.Response:
+
         resp = requests.post(
             f"{self.endpoint}/listModelPlugins",
             headers=_JSON_CONTENT_TYPE_HEADERS,
             cookies={"grapl_jwt": jwt},
         )
         logging.info(f"Listing model plugins: {resp}")
-        
+
         if resp.status_code != HTTPStatus.OK:
             raise ModelPluginDeployerException(f"{resp.status_code}: {resp.text}")
         return resp
 
-    def delete_model_plugin(
-        self, 
-        jwt: str,
-        plugin_name: str
-    ) -> requests.Response: 
-                
+    def delete_model_plugin(self, jwt: str, plugin_name: str) -> requests.Response:
+
         resp = requests.post(
             f"{self.endpoint}/deleteModelPlugin",
             json={"plugins_to_delete": plugin_name},
@@ -110,7 +108,7 @@ class ModelPluginDeployerClient:
             cookies={"grapl_jwt": jwt},
         )
         logging.info(f"Listing model plugins: {resp}")
-        
+
         if resp.status_code != HTTPStatus.OK:
             raise ModelPluginDeployerException(f"{resp.status_code}: {resp.text}")
         return resp

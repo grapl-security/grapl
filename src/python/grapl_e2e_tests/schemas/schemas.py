@@ -1,24 +1,18 @@
-from model_plugins.aws_cloudtrail.schemas import IamRoleNodeSchema
 from typing import *
-from grapl_analyzerlib.node_types import (
-    PropType,
-    PropPrimitive,
-)
+
+from grapl_analyzerlib.grapl_client import GraphClient
+from grapl_analyzerlib.node_types import PropPrimitive, PropType
+from grapl_analyzerlib.nodes import EntityQuery, EntitySchema, EntityView
 from grapl_analyzerlib.prelude import *
-from grapl_analyzerlib.nodes import (
-    EntitySchema,
-    EntityQuery, 
-    EntityView,
-)
-from grapl_analyzerlib.grapl_client import (
-    GraphClient
-)
+from model_plugins.aws_cloudtrail.schemas import IamRoleNodeSchema
 
 
 class IamRoleNodeSchema(EntitySchema):
     def __init__(self):
         super(IamRoleNodeSchema, self).__init__(
-            properties={"arn": PropType(PropPrimitive.Str, False), },
+            properties={
+                "arn": PropType(PropPrimitive.Str, False),
+            },
             edges={},
             view=lambda: IamRoleView,
         )

@@ -113,12 +113,7 @@ def exec_pytest() -> None:
     if environ.get("PYTEST_EXPRESSION"):
         pytest_args.extend(("-k", environ["PYTEST_EXPRESSION"]))
 
-    result = pytest.main(
-        [
-            "--capture=no",
-            *pytest_args
-        ]
-    )  # disable stdout capture
+    result = pytest.main(["--capture=no", *pytest_args])  # disable stdout capture
     _after_tests()
 
     sys.exit(result)
