@@ -49,13 +49,17 @@ class TestEndToEnd(TestCase):
         gql_client = GraphqlEndpointClient(
             jwt=EngagementEdgeClient().get_jwt())
         ensure_graphql_lens_scope_no_errors(gql_client, LENS_NAME)
+        
+    # -------------------------- MODEL PLUGIN TESTS -------------------------------------------
 
     def test_upload_plugin(self) -> None:
         upload_model_plugin(model_plugin_client)
-
+    
+    @pytest.mark.xfail # TODO: Remove once list plugins is resolved
     def test_list_plugin(self) -> None:
         get_plugin_list(model_plugin_client)
-
+    
+    @pytest.mark.xfail # TODO: once list plugins is resolved, we can fix delete plugins :) 
     def test_delete_plugin(self) -> None:
         delete_model_plugin(model_plugin_client, "schemas.py") # Hard Code for now 
 
@@ -81,7 +85,11 @@ def ensure_graphql_lens_scope_no_errors(
             "Process",
         )
     )
-
+    
+    
+# -----------------------  MODEL PLUGIN HELPERS -------------------------------------------
+    
+# TODO: move these into their own file once that's doable with e2e/pants
 
 def upload_model_plugin(
     model_plugin_client: ModelPluginDeployerClient,
@@ -119,39 +127,36 @@ def check_plugin_path_has_schemas_file(
             "Did not find schemas.py file to upload plugins. Please add this file and try again, thanks!")
         assert False
 
-# TODO: Because delete and list plugins are fundamentally broken, we're going to leave this commented out right now and just
-# re-enable when these routes are working appropriately. Outline is here
+def get_plugin_list(
+    model_plugin_client: ModelPluginDeployerClient
+) -> bool:
+    jwt = EngagementEdgeClient().get_jwt()
+
+    get_plugin_list = model_plugin_client.list_plugins(
+        jwt,
+    )
+
+    logging.info(f"UploadRequest: {get_plugin_list.json()}")
+
+    upload_status = get_plugin_list.json()["success"]["plugin_list"] != []
+
+    assert upload_status
 
 
-# def get_plugin_list(
-#     model_plugin_client: ModelPluginDeployerClient
-# ) -> bool:
-#     jwt = EngagementEdgeClient().get_jwt()
+def delete_model_plugin(
+    model_plugin_client: ModelPluginDeployerClient,
+    plugin_to_delete: str,
+) -> bool:
+    jwt = EngagementEdgeClient().get_jwt()
 
-#     get_plugin_list = model_plugin_client.list_plugins(
-#         jwt,
-#     )
+    delete_plugin = model_plugin_client.delete_model_plugin(
+        jwt,
+        plugin_to_delete,
+    )
 
-#     logging.info(f"UploadRequest: {get_plugin_list.json()}")
+    logging.info(f"Deleting Plugin: {plugin_to_delete}")
 
-#     upload_status = get_plugin_list.json()["success"]["plugin_list"] != []
+    deleted = delete_plugin.json()["success"]["plugins_to_delete"]
 
-#     assert upload_status
-
-
-# def delete_model_plugin(
-#     model_plugin_client: ModelPluginDeployerClient,
-#     plugin_to_delete: str,
-# ) -> bool:
-#     jwt = EngagementEdgeClient().get_jwt()
-
-#     delete_plugin = model_plugin_client.delete_model_plugin(
-#         jwt,
-#         plugin_to_delete,
-#     )
-
-#     logging.info(f"Deleting Plugin: {plugin_to_delete}")
-
-#     deleted = delete_plugin.json()["success"]["plugins_to_delete"]
-
-#     assert deleted
+    assert deleted
+# ---------------------------- end model plugin helpers ------------------------------------
