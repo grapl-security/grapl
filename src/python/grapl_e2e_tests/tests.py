@@ -22,8 +22,6 @@ LENS_NAME = "DESKTOP-FVSHABR"
 
 GqlLensDict = Dict[str, Any]
 
-model_plugin_client = ModelPluginDeployerClient.from_env()
-
 
 @pytest.mark.integration_test
 class TestEndToEnd(TestCase):
@@ -66,15 +64,19 @@ class TestEndToEnd(TestCase):
     # -------------------------- MODEL PLUGIN TESTS -------------------------------------------
 
     def test_upload_plugin(self) -> None:
-        upload_model_plugin(model_plugin_client)
+        upload_model_plugin(model_plugin_client=ModelPluginDeployerClient.from_env())
 
     @pytest.mark.xfail  # TODO: Remove once list plugins is resolved
     def test_list_plugin(self) -> None:
-        get_plugin_list(model_plugin_client)
+        get_plugin_list(model_plugin_client=ModelPluginDeployerClient.from_env())
 
     @pytest.mark.xfail  # TODO: once list plugins is resolved, we can fix delete plugins :)
     def test_delete_plugin(self) -> None:
-        delete_model_plugin(model_plugin_client, "schemas.py")  # Hard Code for now
+        # Hard Code for now
+        delete_model_plugin(
+            plugin_name="aws_plugin",
+            model_plugin_client=ModelPluginDeployerClient.from_env(),
+        )  # TODO: we need to change the plugin name when this endpoint gets fixed
         gql_client = GraphqlEndpointClient(jwt=EngagementEdgeClient().get_jwt())
 
         wait_for_one(

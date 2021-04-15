@@ -2,9 +2,8 @@ from typing import *
 
 from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.node_types import PropPrimitive, PropType
-from grapl_analyzerlib.nodes import EntityQuery, EntitySchema, EntityView
+from grapl_analyzerlib.nodes.entity import EntityQuery, EntitySchema, EntityView
 from grapl_analyzerlib.prelude import *
-from model_plugins.aws_cloudtrail.schemas import IamRoleNodeSchema
 
 
 class IamRoleNodeSchema(EntitySchema):
