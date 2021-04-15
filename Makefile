@@ -2,6 +2,8 @@
 # Makefile for developing using Docker
 #
 
+.DEFAULT_GOAL := help
+
 -include .env
 TAG ?= latest
 CARGO_PROFILE ?= debug
@@ -76,12 +78,34 @@ export SHELLOPTS:=$(if $(SHELLOPTS),$(SHELLOPTS):)errexit
 # way.
 WITH_LOCAL_GRAPL_ENV := set -o allexport; . ./local-grapl.env; set +o allexport;
 
-#
-# Build
-#
+FORMATTING_BEGIN_BLUE = \033[36m
+FORMATTING_END = \033[0m
+
+.PHONY: help
+help: ## Print this help
+	@printf -- "\n"
+	@printf -- "                  ___           ___           ___           ___           ___ \n"
+	@printf -- "                 /\  \         /\  \         /\  \         /\  \         /\__\ \n" 
+	@printf -- "                /::\  \       /::\  \       /::\  \       /::\  \       /:/  / \n" 
+	@printf -- "               /:/\:\  \     /:/\:\  \     /:/\:\  \     /:/\:\  \     /:/  /  \n" 
+	@printf -- "              /:/  \:\  \   /::\~\:\  \   /::\~\:\  \   /::\~\:\  \   /:/  /   \n" 
+	@printf -- "             /:/__/_\:\__\ /:/\:\ \:\__\ /:/\:\ \:\__\ /:/\:\ \:\__\ /:/__/    \n" 
+	@printf -- "             \:\  /\ \/__/ \/_|::\/:/  / \/__\:\/:/  / \/__\:\/:/  / \:\  \    \n" 
+	@printf -- "              \:\ \:\__\      |:|::/  /       \::/  /       \::/  /   \:\  \   \n" 
+	@printf -- "               \:\/:/  /      |:|\/__/        /:/  /         \/__/     \:\  \  \n" 
+	@printf -- "                \::/  /       |:|  |         /:/  /                     \:\__\ \n" 
+	@printf -- "                 \/__/         \|__|         \/__/                       \/__/ \n"
+	@printf -- "\n"
+	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make ${FORMATTING_BEGIN_BLUE}<target>${FORMATTING_END}\n"} /^[a-zA-Z0-9_-]+:.*?##/ { printf "  ${FORMATTING_BEGIN_BLUE}%-46s${FORMATTING_END} %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+##@ Build
 
 .PHONY: build
 build: build-services ## Alias for `services` (default)
+
+.PHONY: build-release
+build-release: ## 'make build-services' with cargo --release
+	$(MAKE) CARGO_PROFILE=release build-services
 
 .PHONY: build-all
 build-all: ## Build all targets (incl. services, tests, zip)
@@ -134,9 +158,10 @@ graplctl: ## Build graplctl and install it to the project root
 	./pants package ./src/python/graplctl/graplctl
 	cp ./dist/src.python.graplctl.graplctl/graplctl.pex ./bin/graplctl
 
-#
-# Test
-#
+##@ Test
+
+.PHONY: test
+test: test-unit test-integration test-e2e test-typecheck ## Run all tests
 
 .PHONY: test-unit
 test-unit: export COMPOSE_PROJECT_NAME := grapl-test-unit
@@ -211,9 +236,7 @@ test-with-env: # (Do not include help text - not to be used directly)
 	# Run tests and check exit codes from each test container
 	test/docker-compose-with-error.sh $(TARGET)
 
-
-.PHONY: test
-test: test-unit test-integration test-e2e test-typecheck ## Run all tests
+##@ Lint
 
 .PHONY: lint-rust
 lint-rust: ## Run Rust lint checks
@@ -229,6 +252,8 @@ lint-js: ## Run js lint checks
 
 .PHONY: lint
 lint: lint-python lint-js lint-rust ## Run all lint checks
+
+##@ Formatting
 
 .PHONY: format-rust
 format-rust: ## Reformat all Rust code
@@ -249,51 +274,7 @@ format: format-python format-js format-rust ## Reformat all code
 package-python-libs: ## Create Python distributions for public libraries
 	./pants filter --filter-target-type=python_distribution :: | xargs ./pants package
 
-#
-# else
-#
-
-.PHONY: clean
-clean: ## Prune all docker build cache and remove Grapl containers and images
-	docker builder prune --all --force
-	# Remove all Grapl containers - continue on error (no containers found)
-	docker rm --volumes --force $$(docker ps --filter "name=grapl*" --all --quiet) 2>/dev/null || true
-	# Remove all Grapl images = continue on error (no images found)
-	docker rmi --force $$(docker images --filter reference="grapl/*" --quiet) 2>/dev/null || true
-
-.PHONY: clean-mount-cache
-clean-mount-cache: ## Prune all docker mount cache (used by sccache)
-	docker builder prune --filter type=exec.cachemount
-
-.PHONY: release
-release: ## 'make build-services' with cargo --release
-	$(MAKE) CARGO_PROFILE=release build-services
-
-.PHONY: zip
-zip: build-lambdas ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
-	docker-compose $(EVERY_LAMBDA_COMPOSE_FILE) up
-	$(MAKE) zip-pants
-
-.PHONY: zip-pants
-zip-pants: ## Generate Lambda zip artifacts using pants
-	./pants filter --filter-target-type=python_awslambda :: | xargs ./pants package
-	cp ./dist/src.python.provisioner.src/lambda.zip ./src/js/grapl-cdk/zips/provisioner-$(TAG).zip
-	cp ./dist/src.python.engagement-creator/engagement-creator.zip ./src/js/grapl-cdk/zips/engagement-creator-$(TAG).zip
-	cp ./dist/src.python.grapl-dgraph-ttl/lambda.zip ./src/js/grapl-cdk/zips/dgraph-ttl-$(TAG).zip
-
-# This target is intended to help ease the transition to Pulumi, and
-# using lambdas in local Grapl testing deployments. Essentially, every
-# lambda that is deployed by Pulumi should be built here. Once
-# everything is migrated to Pulumi, we can consolidate this target
-# with other zip-generating targets
-modern-lambdas: ## Generate lambda zips that are used in local Grapl and Pulumi deployments
-	$(DOCKER_BUILDX_BAKE) -f docker-compose.lambda-zips.rust.yml
-	docker-compose -f docker-compose.lambda-zips.rust.yml up
-	$(MAKE) zip-pants
-
-.PHONY: push
-push: ## Push Grapl containers to Docker Hub
-	docker-compose --file=docker-compose.build.yml push
+##@ Local Grapl
 
 .PHONY: up
 up: build-services modern-lambdas ## Build Grapl services and launch docker-compose up
@@ -340,14 +321,50 @@ stop: ## docker-compose stop - stops (but preserves) the containers
 	$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose $(EVERY_COMPOSE_FILE) stop
 
+##@ Utility
+
+.PHONY: clean
+clean: ## Prune all docker build cache and remove Grapl containers and images
+	docker builder prune --all --force
+	# Remove all Grapl containers - continue on error (no containers found)
+	docker rm --volumes --force $$(docker ps --filter "name=grapl*" --all --quiet) 2>/dev/null || true
+	# Remove all Grapl images = continue on error (no images found)
+	docker rmi --force $$(docker images --filter reference="grapl/*" --quiet) 2>/dev/null || true
+
+.PHONY: clean-mount-cache
+clean-mount-cache: ## Prune all docker mount cache (used by sccache)
+	docker builder prune --filter type=exec.cachemount
+
+.PHONY: zip
+zip: build-lambdas ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
+	docker-compose $(EVERY_LAMBDA_COMPOSE_FILE) up
+	$(MAKE) zip-pants
+
+.PHONY: zip-pants
+zip-pants: ## Generate Lambda zip artifacts using pants
+	./pants filter --filter-target-type=python_awslambda :: | xargs ./pants package
+	cp ./dist/src.python.provisioner.src/lambda.zip ./src/js/grapl-cdk/zips/provisioner-$(TAG).zip
+	cp ./dist/src.python.engagement-creator/engagement-creator.zip ./src/js/grapl-cdk/zips/engagement-creator-$(TAG).zip
+	cp ./dist/src.python.grapl-dgraph-ttl/lambda.zip ./src/js/grapl-cdk/zips/dgraph-ttl-$(TAG).zip
+
+# This target is intended to help ease the transition to Pulumi, and
+# using lambdas in local Grapl testing deployments. Essentially, every
+# lambda that is deployed by Pulumi should be built here. Once
+# everything is migrated to Pulumi, we can consolidate this target
+# with other zip-generating targets
+modern-lambdas: ## Generate lambda zips that are used in local Grapl and Pulumi deployments
+	$(DOCKER_BUILDX_BAKE) -f docker-compose.lambda-zips.rust.yml
+	docker-compose -f docker-compose.lambda-zips.rust.yml up
+	$(MAKE) zip-pants
+
+.PHONY: push
+push: ## Push Grapl containers to Docker Hub
+	docker-compose --file=docker-compose.build.yml push
+
 .PHONY: e2e-logs
 e2e-logs: ## All docker-compose logs
 	$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) logs -f
-
-.PHONY: help
-help: ## Print this help
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9_-]+:.*?## / {gsub("\\\\n",sprintf("\n%22c",""), $$2);printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 .PHONY: docker-kill-all
 docker-kill-all:  # Kill all currently running Docker containers
