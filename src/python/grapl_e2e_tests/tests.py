@@ -188,12 +188,13 @@ def upload_model_plugin(
 def check_plugin_path_has_schemas_file(
     filename: str,
 ) -> bool:
-    if (filename.__contains__("schemas.py")):
+    if ("schemas.py" in filename):
         logging.info("Found schemas.py in plugin path")
         assert True
     else:
         logging.error(
-            "Did not find schemas.py file to upload plugins. Please add this file and try again, thanks!")
+            "Did not find schemas.py file to upload plugins. Please add this file and try again, thanks!"
+        )
         assert False
 
 
