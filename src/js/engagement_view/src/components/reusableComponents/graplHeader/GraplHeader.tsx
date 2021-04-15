@@ -25,15 +25,9 @@ const GraplHeader = ({ displayBtn }: GraplHeaderProps) => {
                     <Typography variant="h6" className={classes.title}>
                         GRAPL
                     </Typography>
-                    <IconButton>
-                        <Link
-                            to="/"
-                            className={classes.link}
-                            hidden={!displayBtn}
-                        >
-                            <Home />
-                        </Link>
-                    </IconButton>
+                    {displayBtn && (
+                        <Link to="/" className={classes.link}></Link>
+                    )}
                 </Toolbar>
             </AppBar>
         </>
