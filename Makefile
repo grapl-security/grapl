@@ -84,19 +84,14 @@ FORMATTING_END = \033[0m
 
 .PHONY: help
 help: ## Print this help
-	@printf -- "\n"
-	@printf -- "                  ___           ___           ___           ___           ___ \n"
-	@printf -- "                 /\  \         /\  \         /\  \         /\  \         /\__\ \n" 
-	@printf -- "                /::\  \       /::\  \       /::\  \       /::\  \       /:/  / \n" 
-	@printf -- "               /:/\:\  \     /:/\:\  \     /:/\:\  \     /:/\:\  \     /:/  /  \n" 
-	@printf -- "              /:/  \:\  \   /::\~\:\  \   /::\~\:\  \   /::\~\:\  \   /:/  /   \n" 
-	@printf -- "             /:/__/_\:\__\ /:/\:\ \:\__\ /:/\:\ \:\__\ /:/\:\ \:\__\ /:/__/    \n" 
-	@printf -- "             \:\  /\ \/__/ \/_|::\/:/  / \/__\:\/:/  / \/__\:\/:/  / \:\  \    \n" 
-	@printf -- "              \:\ \:\__\      |:|::/  /       \::/  /       \::/  /   \:\  \   \n" 
-	@printf -- "               \:\/:/  /      |:|\/__/        /:/  /         \/__/     \:\  \  \n" 
-	@printf -- "                \::/  /       |:|  |         /:/  /                     \:\__\ \n" 
-	@printf -- "                 \/__/         \|__|         \/__/                       \/__/ \n"
-	@printf -- "\n"
+	@printf -- '\n'
+	@printf -- '                                                     __ \n'
+	@printf -- '             (≡)         ____ _ _____ ____ _ ____   / / \n'
+	@printf -- '                \       / __ `// ___// __ `// __ \ / /  \n'
+	@printf -- '                (≡)    / /_/ // /   / /_/ // /_/ // /   \n'
+	@printf -- '                /      \__, //_/    \__,_// .___//_/    \n'
+	@printf -- '             (≡)      /____/             /_/            \n'
+	@printf -- '\n'
 	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make ${FORMATTING_BEGIN_BLUE}<target>${FORMATTING_END}\n"} /^[a-zA-Z0-9_-]+:.*?##/ { printf "  ${FORMATTING_BEGIN_BLUE}%-46s${FORMATTING_END} %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 ##@ Build
