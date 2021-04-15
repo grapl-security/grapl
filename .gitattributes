@@ -1,1 +1,2 @@
-src/js/grapl-cdk/edge_ux_pre_replace/* linguist-generated=true
+# Hide generated files during diff
+src/js/grapl-cdk/edge_ux_pre_replace/**/* linguist-generated=true
