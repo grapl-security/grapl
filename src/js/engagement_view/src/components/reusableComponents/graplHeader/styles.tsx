@@ -8,6 +8,12 @@ export const graplHeaderStyles = makeStyles((theme: Theme) =>
         header: {
             justifyContent: "space-between",
         },
+        titleIcon: {
+            fontSize: "36px", // icons are treated as fonts, weird
+        },
+        title: {
+            flexGrow: 1,
+        },
         link: {
             color: "#42C6FF",
             textDecoration: "none",

@@ -9,6 +9,9 @@ import Home from "@material-ui/icons/Home";
 import { graplHeaderStyles } from "./styles";
 import { GraplHeaderProps } from "types/GraplHeaderTypes";
 
+import { LogoIcon } from "./LogoIcon";
+import { IconButton } from "@material-ui/core";
+
 const useStyles = graplHeaderStyles;
 
 const GraplHeader = ({ displayBtn }: GraplHeaderProps) => {
@@ -18,11 +21,12 @@ const GraplHeader = ({ displayBtn }: GraplHeaderProps) => {
         <>
             <AppBar position="static">
                 <Toolbar className={classes.header}>
-                    <Typography variant="h6">GRAPL</Typography>
+                    <LogoIcon className={classes.titleIcon} />
+                    <Typography variant="h6" className={classes.title}>
+                        GRAPL
+                    </Typography>
                     {displayBtn && (
-                        <Link to="/" className={classes.link}>
-                            <Home />
-                        </Link>
+                        <Link to="/" className={classes.link}></Link>
                     )}
                 </Toolbar>
             </AppBar>
