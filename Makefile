@@ -40,8 +40,9 @@ COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
 # execution behavior, where failure from one line in a target will result in
 # Make error.
 # https://www.gnu.org/software/make/manual/html_node/One-Shell.html
-export SHELLOPTS:=$(if $(SHELLOPTS),$(SHELLOPTS):)errexit
+SHELL := bash
 .ONESHELL:
+.SHELLFLAGS := -eu -o pipefail -c
 
 # Our `docker-compose.yml` file declares the setup of a "local Grapl"
 # environment, which can be used to locally exercise a Grapl system,
@@ -202,7 +203,7 @@ test-with-env: # (Do not include help text - not to be used directly)
 		unset COMPOSE_FILE
 		docker-compose --file docker-compose.yml stop;
 	}
-	# Ensure we call stop even after test failure, and return exit code from 
+	# Ensure we call stop even after test failure, and return exit code from
 	# the test, not the stop command.
 	trap stopGrapl EXIT
 	$(WITH_LOCAL_GRAPL_ENV)
