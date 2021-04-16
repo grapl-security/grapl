@@ -4,7 +4,7 @@ import logging
 import sys
 from os import environ
 from sys import stdout
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, List, Sequence
 
 import boto3  # type: ignore
 import pytest
@@ -109,11 +109,11 @@ def _after_tests() -> None:
 
 
 def exec_pytest() -> None:
-    result = pytest.main(
-        [
-            "--capture=no",
-        ]
-    )  # disable stdout capture
+    pytest_args: List[str] = []
+    if environ.get("PYTEST_EXPRESSION"):
+        pytest_args.extend(("-k", environ["PYTEST_EXPRESSION"]))
+
+    result = pytest.main(["--capture=no", *pytest_args])  # disable stdout capture
     _after_tests()
 
     sys.exit(result)

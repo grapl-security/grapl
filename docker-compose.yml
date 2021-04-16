@@ -363,6 +363,8 @@ services:
     depends_on:
       - dgraph
       - localstack
+    ports:
+      - 127.0.0.1:${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}:${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}
     networks:
       default:
         aliases:

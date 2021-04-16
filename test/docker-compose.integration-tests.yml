@@ -3,7 +3,6 @@ version: "3.8"
 # environment variable PWD is assumed to be grapl root directory
 
 services:
-
   rust-node-identifier-integration-tests:
     image: grapl/rust-integration-tests:${TAG:-latest}
     build:
@@ -123,7 +122,7 @@ services:
   #     "
   #   environment:
   #     - GRAPL_API_HOST
-  
+
   graphql-endpoint-tests:
     image: grapl/graphql-endpoint-tests:${TAG:-latest}
     build:
@@ -148,6 +147,8 @@ services:
       - GRAPL_AUTH_PORT
       - GRAPL_GRAPHQL_HOST
       - GRAPL_GRAPHQL_PORT
+      - GRAPL_MODEL_PLUGIN_DEPLOYER_HOST
+      - GRAPL_MODEL_PLUGIN_DEPLOYER_PORT
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
       - MG_ALPHAS
       - VSC_DEBUGGER_PORT=${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT_TESTS}
