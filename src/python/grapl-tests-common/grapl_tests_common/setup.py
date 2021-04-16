@@ -4,7 +4,7 @@ import logging
 import sys
 from os import environ
 from sys import stdout
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Any, List, Sequence
 
 import boto3  # type: ignore
 import pytest
@@ -109,7 +109,7 @@ def _after_tests() -> None:
 
 
 def exec_pytest() -> None:
-    pytest_args = []
+    pytest_args: List[Any] = []
     if environ.get("PYTEST_EXPRESSION"):
         pytest_args.extend(("-k", environ["PYTEST_EXPRESSION"]))
 

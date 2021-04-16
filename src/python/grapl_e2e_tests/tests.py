@@ -1,6 +1,7 @@
 import logging
 import os
-from typing import Any, Dict, Mapping
+from pathlib import Path
+from typing import Any, Dict, List, Mapping
 from unittest import TestCase
 
 import pytest
@@ -74,17 +75,9 @@ class TestEndToEnd(TestCase):
     def test_delete_plugin(self) -> None:
         # Hard Code for now
         delete_model_plugin(
-            plugin_name="aws_plugin",
             model_plugin_client=ModelPluginDeployerClient.from_env(),
+            plugin_to_delete="aws_plugin",
         )  # TODO: we need to change the plugin name when this endpoint gets fixed
-        gql_client = GraphqlEndpointClient(jwt=EngagementEdgeClient().get_jwt())
-
-        wait_for_one(
-            WaitForNoException(
-                lambda: ensure_graphql_lens_scope_no_errors(gql_client, LENS_NAME)
-            ),
-            timeout_secs=40,
-        )
 
 
 def ensure_graphql_lens_scope_no_errors(
@@ -161,7 +154,7 @@ def expected_gql_asset() -> Mapping[str, Any]:
 
 def upload_model_plugin(
     model_plugin_client: ModelPluginDeployerClient,
-) -> bool:
+) -> None:
     logging.info("Making request to /deploy to upload model plugins")
 
     plugin_path = "./schemas"
@@ -172,7 +165,7 @@ def upload_model_plugin(
     check_plugin_path_has_schemas_file(files)
 
     plugin_upload = model_plugin_client.deploy(
-        plugin_path,
+        Path(plugin_path),
         jwt,
     )
 
@@ -184,8 +177,8 @@ def upload_model_plugin(
 
 
 def check_plugin_path_has_schemas_file(
-    files: str,
-) -> bool:
+    files: List[str],
+) -> None:
     logging.info(f"files: {files}")
     for filename in files:
         if "schemas.py" in filename:
@@ -198,7 +191,7 @@ def check_plugin_path_has_schemas_file(
             assert False
 
 
-def get_plugin_list(model_plugin_client: ModelPluginDeployerClient) -> bool:
+def get_plugin_list(model_plugin_client: ModelPluginDeployerClient) -> None:
     jwt = EngagementEdgeClient().get_jwt()
 
     get_plugin_list = model_plugin_client.list_plugins(
@@ -215,7 +208,7 @@ def get_plugin_list(model_plugin_client: ModelPluginDeployerClient) -> bool:
 def delete_model_plugin(
     model_plugin_client: ModelPluginDeployerClient,
     plugin_to_delete: str,
-) -> bool:
+) -> None:
     jwt = EngagementEdgeClient().get_jwt()
 
     delete_plugin = model_plugin_client.delete_model_plugin(
