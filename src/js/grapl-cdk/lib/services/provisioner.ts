@@ -1,13 +1,13 @@
-import * as cdk from '@aws-cdk/core';
-import * as iam from '@aws-cdk/aws-iam';
-import * as lambda from '@aws-cdk/aws-lambda';
-import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
+import * as cdk from "@aws-cdk/core";
+import * as iam from "@aws-cdk/aws-iam";
+import * as lambda from "@aws-cdk/aws-lambda";
+import * as secretsmanager from "@aws-cdk/aws-secretsmanager";
 
-import { GraplServiceProps } from '../grapl-cdk-stack';
-import {SchemaDb} from '../schemadb';
+import { GraplServiceProps } from "../grapl-cdk-stack";
+import { SchemaDb } from "../schemadb";
 
 export interface ProvisionerProps extends GraplServiceProps {
-    schemaDb: SchemaDb
+    schemaDb: SchemaDb;
 }
 
 export class Provisioner extends cdk.NestedStack {
@@ -18,23 +18,23 @@ export class Provisioner extends cdk.NestedStack {
 
         const serviceName = `${props.deploymentName}-Provisioner`;
 
-        const role = new iam.Role(this, 'ExecutionRole', {
-            assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
-            roleName: serviceName + '-HandlerRole',
-            description: 'Lambda execution role for: ' + serviceName,
+        const role = new iam.Role(this, "ExecutionRole", {
+            assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
+            roleName: serviceName + "-HandlerRole",
+            description: "Lambda execution role for: " + serviceName,
             managedPolicies: [
                 iam.ManagedPolicy.fromAwsManagedPolicyName(
-                    'service-role/AWSLambdaBasicExecutionRole'
+                    "service-role/AWSLambdaBasicExecutionRole"
                 ),
                 iam.ManagedPolicy.fromAwsManagedPolicyName(
-                    'service-role/AWSLambdaVPCAccessExecutionRole'
+                    "service-role/AWSLambdaVPCAccessExecutionRole"
                 ),
             ],
         });
 
-        const event_handler = new lambda.Function(this, 'Handler', {
+        const event_handler = new lambda.Function(this, "Handler", {
             runtime: lambda.Runtime.PYTHON_3_7,
-            handler: 'lambdex_handler.handler',
+            handler: "lambdex_handler.handler",
             functionName: `${serviceName}-Handler`,
             code: lambda.Code.fromAsset(
                 `./zips/provisioner-${props.version}.zip`
@@ -51,7 +51,7 @@ export class Provisioner extends cdk.NestedStack {
             description: props.version,
             role,
         });
-        event_handler.currentVersion.addAlias('live');
+        event_handler.currentVersion.addAlias("live");
 
         props.dgraphSwarmCluster.allowConnectionsFrom(event_handler);
         props.userAuthTable.allowReadWriteFromRole(event_handler);
@@ -64,11 +64,11 @@ export class Provisioner extends cdk.NestedStack {
             );
         }
 
-        this.secret = new secretsmanager.Secret(this, 'TestUserPassword', {
+        this.secret = new secretsmanager.Secret(this, "TestUserPassword", {
             secretName: `${props.deploymentName}-TestUserPassword`,
             generateSecretString: {
-                passwordLength: 48
-            }
+                passwordLength: 48,
+            },
         });
         this.secret.grantRead(role);
     }

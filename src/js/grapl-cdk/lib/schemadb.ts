@@ -1,8 +1,8 @@
-import * as cdk from '@aws-cdk/core';
-import { DbTable } from './dynamoDbTable';
-import * as dynamodb from '@aws-cdk/aws-dynamodb';
-import { Service } from './service';
-import * as iam from '@aws-cdk/aws-iam';
+import * as cdk from "@aws-cdk/core";
+import { DbTable } from "./dynamoDbTable";
+import * as dynamodb from "@aws-cdk/aws-dynamodb";
+import { Service } from "./service";
+import * as iam from "@aws-cdk/aws-iam";
 import { FargateService } from "./fargate_service";
 
 export interface SchemaDbProps {
@@ -17,36 +17,40 @@ export class SchemaDb extends cdk.Construct {
     constructor(scope: cdk.Construct, id: string, props: SchemaDbProps) {
         super(scope, id);
 
-        this.schema_table = new DbTable(this, 'SchemaDbTable', {
+        this.schema_table = new DbTable(this, "SchemaDbTable", {
             tableName: props.edges_table_name,
-            table: 'schema_db_table',
+            table: "schema_db_table",
             partitionKey: {
-                name: 'f_edge',
+                name: "f_edge",
                 type: dynamodb.AttributeType.STRING,
             },
-            tableReference: 'SchemaDbTable',
+            tableReference: "SchemaDbTable",
         });
 
         this.schema_properties_table = new DbTable(
             this,
-            'SchemaPropertiesDbTable',
+            "SchemaPropertiesDbTable",
             {
                 tableName: props.properties_table_name,
-                table: 'schema_properties_db_table',
+                table: "schema_properties_db_table",
                 partitionKey: {
-                    name: 'node_type',
+                    name: "node_type",
                     type: dynamodb.AttributeType.STRING,
                 },
-                tableReference: 'SchemaPropertiesDbTable',
+                tableReference: "SchemaPropertiesDbTable",
             }
         );
     }
 
-    allowRead(service: Service|FargateService) {
+    allowRead(service: Service | FargateService) {
         for (const table of [this.schema_table, this.schema_properties_table]) {
             if (service instanceof FargateService) {
-                table.table.grantReadData(service.service.taskDefinition.taskRole);
-                table.table.grantReadData(service.retryService.taskDefinition.taskRole);
+                table.table.grantReadData(
+                    service.service.taskDefinition.taskRole
+                );
+                table.table.grantReadData(
+                    service.retryService.taskDefinition.taskRole
+                );
             } else {
                 table.table.grantReadData(service.event_handler);
                 table.table.grantReadData(service.event_retry_handler);

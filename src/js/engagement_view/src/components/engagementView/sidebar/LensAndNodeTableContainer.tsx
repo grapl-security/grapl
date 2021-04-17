@@ -1,22 +1,31 @@
 import React from "react";
 
-import NodeTable from './tables/nodeTable/NodeTable';
-import { NodeDetailsProps, EngagementViewProps } from "types/LensAndNodeTableTypes";
+import NodeTable from "./tables/nodeTable/NodeTable";
+import {
+    NodeDetailsProps,
+    EngagementViewProps,
+} from "types/LensAndNodeTableTypes";
 
-import {ToggleLensTable} from "./tables/toggleLensTable";
-import {ToggleNodeDetailTable} from './tables/toggleNodeDetailTable';
+import { ToggleLensTable } from "./tables/toggleLensTable";
+import { ToggleNodeDetailTable } from "./tables/toggleNodeDetailTable";
 
-export const NodeDetails = ({node}: NodeDetailsProps) => {
-    return ( 
-        <> <NodeTable node={node} /> </> 
-    )
-}
-
-export default function LensAndNodeTableContainer({setLens, curNode}: EngagementViewProps) {
+export const NodeDetails = ({ node }: NodeDetailsProps) => {
     return (
         <>
-            <ToggleLensTable setLens={setLens}/>
-            <ToggleNodeDetailTable curNode={curNode}/>
+            {" "}
+            <NodeTable node={node} />{" "}
+        </>
+    );
+};
+
+export default function LensAndNodeTableContainer({
+    setLens,
+    curNode,
+}: EngagementViewProps) {
+    return (
+        <>
+            <ToggleLensTable setLens={setLens} />
+            <ToggleNodeDetailTable curNode={curNode} />
         </>
     );
 }

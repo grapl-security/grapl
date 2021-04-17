@@ -24,12 +24,14 @@ RUN mkdir -p lambda
 WORKDIR /home/grapl/lambda
 COPY --chown=grapl js/graphql_endpoint/tsconfig.json tsconfig.json
 COPY --chown=grapl js/graphql_endpoint/package.json package.json
+COPY --chown=grapl js/graphql_endpoint/jest.config.js jest.config.js
 COPY --chown=grapl js/graphql_endpoint/package-lock.json package-lock.json
 RUN npm install
 RUN rm -rf node_modules/grpc/build/
 
 # Copy graphql sources
 COPY --chown=grapl js/graphql_endpoint/modules modules
+COPY --chown=grapl js/graphql_endpoint/tests tests
 COPY --chown=grapl js/graphql_endpoint/server.ts server.ts
 
 # This compiles the typescript and spits out the built js files to `lambda/ts_compiled'

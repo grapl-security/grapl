@@ -1,12 +1,23 @@
 import logging
-from typing import Any, Dict, List
+import os
+from pathlib import Path
+from typing import Any, Dict, List, Mapping
 from unittest import TestCase
 
 import pytest
 from grapl_analyzerlib.nodes.lens import LensQuery, LensView
 from grapl_tests_common.clients.engagement_edge_client import EngagementEdgeClient
 from grapl_tests_common.clients.graphql_endpoint_client import GraphqlEndpointClient
-from grapl_tests_common.wait import WaitForCondition, WaitForQuery, wait_for_one
+from grapl_tests_common.clients.model_plugin_deployer_client import (
+    ModelPluginDeployerClient,
+)
+from grapl_tests_common.subset_equals import subset_equals
+from grapl_tests_common.wait import (
+    WaitForCondition,
+    WaitForNoException,
+    WaitForQuery,
+    wait_for_one,
+)
 
 LENS_NAME = "DESKTOP-FVSHABR"
 
@@ -28,7 +39,7 @@ class TestEndToEnd(TestCase):
         assert lens.get_lens_name() == LENS_NAME
 
         # lens scope is not atomic
-        def condition() -> bool:
+        def scope_has_N_items() -> bool:
             length = len(lens.get_scope())
             logging.info(f"Expected 3-5 nodes in scope, currently is {length}")
 
@@ -40,22 +51,42 @@ class TestEndToEnd(TestCase):
                 5,
             )
 
-        wait_for_one(WaitForCondition(condition), timeout_secs=240)
+        wait_for_one(WaitForCondition(scope_has_N_items), timeout_secs=240)
 
         gql_client = GraphqlEndpointClient(jwt=EngagementEdgeClient().get_jwt())
-        ensure_graphql_lens_scope_no_errors(gql_client, LENS_NAME)
+
+        wait_for_one(
+            WaitForNoException(
+                lambda: ensure_graphql_lens_scope_no_errors(gql_client, LENS_NAME)
+            ),
+            timeout_secs=40,
+        )
+
+    # -------------------------- MODEL PLUGIN TESTS -------------------------------------------
+
+    def test_upload_plugin(self) -> None:
+        upload_model_plugin(model_plugin_client=ModelPluginDeployerClient.from_env())
+
+    @pytest.mark.xfail  # TODO: Remove once list plugins is resolved
+    def test_list_plugin(self) -> None:
+        get_plugin_list(model_plugin_client=ModelPluginDeployerClient.from_env())
+
+    @pytest.mark.xfail  # TODO: once list plugins is resolved, we can fix delete plugins :)
+    def test_delete_plugin(self) -> None:
+        # Hard Code for now
+        delete_model_plugin(
+            model_plugin_client=ModelPluginDeployerClient.from_env(),
+            plugin_to_delete="aws_plugin",
+        )  # TODO: we need to change the plugin name when this endpoint gets fixed
 
 
 def ensure_graphql_lens_scope_no_errors(
     gql_client: GraphqlEndpointClient,
     lens_name: str,
 ) -> None:
-    """
-    Eventually we'd want more-robust checks here, but this is an acceptable
-    smoke test in the mean time.
-    """
     gql_lens = gql_client.query_for_scope(lens_name=lens_name)
-    assert len(gql_lens["scope"]) in (3, 4, 5)
+    scope = gql_lens["scope"]
+    assert len(scope) in (3, 4, 5)
 
     # Accumulate ["Asset"], ["Process"] into Set("Asset, Process")
     all_types_in_scope = set(
@@ -67,3 +98,128 @@ def ensure_graphql_lens_scope_no_errors(
             "Process",
         )
     )
+
+    asset_node: Dict = next((n for n in scope if n["dgraph_type"] == ["Asset"]))
+
+    # The 'risks' field is not immediately filled out, but eventually consistent
+    subset_equals(larger=asset_node, smaller=expected_gql_asset())
+
+
+def expected_gql_asset() -> Mapping[str, Any]:
+    """
+    All the fixed values (i.e. no uid, no node key) we'd see in the e2e test
+    """
+    return {
+        "dgraph_type": ["Asset"],
+        "display": "DESKTOP-FVSHABR",
+        "hostname": "DESKTOP-FVSHABR",
+        "asset_processes": [
+            {
+                "dgraph_type": ["Process"],
+                "process_name": "cmd.exe",
+                "process_id": 5824,
+            },
+            {
+                "dgraph_type": ["Process"],
+                "process_name": "dropper.exe",
+                "process_id": 4164,
+            },
+            {
+                "dgraph_type": ["Process"],
+                "process_name": "cmd.exe",
+                "process_id": 5824,
+            },
+            {
+                "dgraph_type": ["Process"],
+                "process_name": "svchost.exe",
+                "process_id": 6132,
+            },
+        ],
+        "files_on_asset": None,
+        "risks": [
+            {
+                "dgraph_type": ["Risk"],
+                "node_key": "Rare Parent of cmd.exe",
+                "analyzer_name": "Rare Parent of cmd.exe",
+                "risk_score": 10,
+            }
+        ],
+    }
+
+
+# -----------------------  MODEL PLUGIN HELPERS -------------------------------------------
+
+# TODO: move these into their own file once that's doable with e2e/pants
+
+
+def upload_model_plugin(
+    model_plugin_client: ModelPluginDeployerClient,
+) -> None:
+    logging.info("Making request to /deploy to upload model plugins")
+
+    plugin_path = "./schemas"
+    jwt = EngagementEdgeClient().get_jwt()
+
+    files = os.listdir(plugin_path)
+
+    check_plugin_path_has_schemas_file(files)
+
+    plugin_upload = model_plugin_client.deploy(
+        Path(plugin_path),
+        jwt,
+    )
+
+    logging.info(f"UploadRequest: {plugin_upload.json()}")
+
+    upload_status = plugin_upload.json()["success"]["Success"] == True
+
+    assert upload_status
+
+
+def check_plugin_path_has_schemas_file(
+    files: List[str],
+) -> None:
+    logging.info(f"files: {files}")
+    for filename in files:
+        if "schemas.py" in filename:
+            assert True, f"Found Schemas in plugin path"
+        else:
+            logging.error(
+                "Did not find schemas.py file. Please add this file and try again, thanks!"
+            )
+            assert False, f"Did not find schemas.py file in {files}"
+
+
+def get_plugin_list(model_plugin_client: ModelPluginDeployerClient) -> None:
+    jwt = EngagementEdgeClient().get_jwt()
+
+    get_plugin_list = model_plugin_client.list_plugins(
+        jwt,
+    )
+
+    logging.info(f"UploadRequest: {get_plugin_list.json()}")
+
+    upload_status = get_plugin_list.json()["success"]["plugin_list"] != []
+
+    assert upload_status
+
+
+def delete_model_plugin(
+    model_plugin_client: ModelPluginDeployerClient,
+    plugin_to_delete: str,
+) -> None:
+    jwt = EngagementEdgeClient().get_jwt()
+
+    delete_plugin = model_plugin_client.delete_model_plugin(
+        jwt,
+        plugin_to_delete,
+    )
+
+    logging.info(f"Deleting Plugin: {plugin_to_delete}")
+
+    deleted = delete_plugin.json()["success"]["plugins_to_delete"]
+
+    assert deleted
+
+
+# ---------------------------- end model plugin helpers ------------------------------------

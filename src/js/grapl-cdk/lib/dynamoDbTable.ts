@@ -1,34 +1,36 @@
-import * as cdk from '@aws-cdk/core';
-import * as dynamodb from '@aws-cdk/aws-dynamodb';
-import * as iam from '@aws-cdk/aws-iam';
+import * as cdk from "@aws-cdk/core";
+import * as dynamodb from "@aws-cdk/aws-dynamodb";
+import * as iam from "@aws-cdk/aws-iam";
 
-import { Service } from './service';
-import { RemovalPolicy } from '@aws-cdk/core';
+import { Service } from "./service";
+import { RemovalPolicy } from "@aws-cdk/core";
 import { FargateService } from "./fargate_service";
 
 export interface DbTableProps {
     tableName: string;
-    table: string; 
-    tableReference: string; 
+    table: string;
+    tableReference: string;
     partitionKey: {
-        name: string,
-        type: dynamodb.AttributeType,
-    }; 
-    sortKey?: {
-        name: string, 
-        type: dynamodb.AttributeType, 
-    } | undefined; 
+        name: string;
+        type: dynamodb.AttributeType;
+    };
+    sortKey?:
+        | {
+              name: string;
+              type: dynamodb.AttributeType;
+          }
+        | undefined;
 }
 
 export class DbTable extends cdk.Construct {
-    readonly table: dynamodb.Table; 
-    readonly tableName: string; 
+    readonly table: dynamodb.Table;
+    readonly tableName: string;
 
-    constructor(scope: cdk.Construct, id: string, props: DbTableProps) { 
+    constructor(scope: cdk.Construct, id: string, props: DbTableProps) {
         super(scope, id);
 
-        this.tableName = props.tableName; 
-        
+        this.tableName = props.tableName;
+
         this.table = new dynamodb.Table(this, props.tableReference, {
             tableName: props.tableName,
             partitionKey: props.partitionKey,
@@ -39,10 +41,12 @@ export class DbTable extends cdk.Construct {
         });
     }
 
-    allowRead(service: Service|FargateService) {
+    allowRead(service: Service | FargateService) {
         if (service instanceof FargateService) {
             this.table.grantReadData(service.service.taskDefinition.taskRole);
-            this.table.grantReadData(service.retryService.taskDefinition.taskRole);
+            this.table.grantReadData(
+                service.retryService.taskDefinition.taskRole
+            );
         } else {
             this.table.grantReadData(service.event_handler);
             this.table.grantReadData(service.event_retry_handler);

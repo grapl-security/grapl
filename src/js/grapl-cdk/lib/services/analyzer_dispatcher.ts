@@ -1,14 +1,14 @@
-import * as cdk from '@aws-cdk/core';
-import * as ec2 from '@aws-cdk/aws-ec2';
-import * as s3 from '@aws-cdk/aws-s3';
-import * as sns from '@aws-cdk/aws-sns';
-import { EventEmitter } from '../event_emitters';
-import { RedisCluster } from '../redis';
-import { GraplServiceProps } from '../grapl-cdk-stack';
-import { GraplS3Bucket } from '../grapl_s3_bucket';
-import {FargateService} from "../fargate_service";
-import {ContainerImage} from "@aws-cdk/aws-ecs";
-import { SRC_DIR, RUST_DOCKERFILE } from '../dockerfile_paths';
+import * as cdk from "@aws-cdk/core";
+import * as ec2 from "@aws-cdk/aws-ec2";
+import * as s3 from "@aws-cdk/aws-s3";
+import * as sns from "@aws-cdk/aws-sns";
+import { EventEmitter } from "../event_emitters";
+import { RedisCluster } from "../redis";
+import { GraplServiceProps } from "../grapl-cdk-stack";
+import { GraplS3Bucket } from "../grapl_s3_bucket";
+import { FargateService } from "../fargate_service";
+import { ContainerImage } from "@aws-cdk/aws-ecs";
+import { SRC_DIR, RUST_DOCKERFILE } from "../dockerfile_paths";
 
 export interface AnalyzerDispatchProps extends GraplServiceProps {
     writesTo: s3.IBucket;
@@ -31,11 +31,11 @@ export class AnalyzerDispatch extends cdk.NestedStack {
         const deployment_name = props.deploymentName.toLowerCase();
         const subgraphs_merged = new EventEmitter(
             this,
-            deployment_name + '-subgraphs-merged'
+            deployment_name + "-subgraphs-merged"
         );
         const analyzer_bucket = s3.Bucket.fromBucketName(
             this,
-            'analyzers-bucket',
+            "analyzers-bucket",
             deployment_name + "-analyzers-bucket"
         );
         this.bucket = subgraphs_merged.bucket;
@@ -43,7 +43,7 @@ export class AnalyzerDispatch extends cdk.NestedStack {
 
         const dispatch_event_cache = new RedisCluster(
             this,
-            'DispatchedEventCache',
+            "DispatchedEventCache",
             props
         );
         dispatch_event_cache.connections.allowFromAnyIpv4(ec2.Port.allTcp());
@@ -65,17 +65,23 @@ export class AnalyzerDispatch extends cdk.NestedStack {
             serviceImage: ContainerImage.fromAsset(SRC_DIR, {
                 target: "analyzer-dispatcher-deploy",
                 buildArgs: {
-                    "CARGO_PROFILE": "debug"
+                    CARGO_PROFILE: "debug",
                 },
                 file: RUST_DOCKERFILE,
             }),
             command: ["/analyzer-dispatcher"],
             metric_forwarder: props.metricForwarder,
         });
-        analyzer_bucket.grantRead(this.service.service.service.taskDefinition.taskRole);
-        analyzer_bucket.grantRead(this.service.retryService.service.taskDefinition.taskRole);
+        analyzer_bucket.grantRead(
+            this.service.service.service.taskDefinition.taskRole
+        );
+        analyzer_bucket.grantRead(
+            this.service.retryService.service.taskDefinition.taskRole
+        );
         this.service.service.cluster.connections.allowToAnyIpv4(
-            ec2.Port.tcp(parseInt(dispatch_event_cache.cluster.attrRedisEndpointPort))
+            ec2.Port.tcp(
+                parseInt(dispatch_event_cache.cluster.attrRedisEndpointPort)
+            )
         );
     }
 }

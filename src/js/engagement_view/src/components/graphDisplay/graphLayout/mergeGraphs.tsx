@@ -3,124 +3,124 @@ import { VizGraph, VizNode } from "../../../types/CustomTypes";
 
 // if graph has updated, merge y into x
 export const mergeNodes = (node: VizNode, newNode: VizNode) => {
-	let merged = false;
-	let nodeWithoutVizFormatting = {} as VizNode;
-	for(const prop in node){
-		if(
-			prop === "fx" || 
-			prop === "fy" ||
-			prop === "links" ||
-			prop === "neighbors" ||
-			prop === "vx" || 
-			prop === "vy" || 
-			prop === "x" || 
-			prop === "y" || 
-			prop === "vx" || 
-			prop === "vy"
-		){
-			continue; 
-		} 
+    let merged = false;
+    let nodeWithoutVizFormatting = {} as VizNode;
+    for (const prop in node) {
+        if (
+            prop === "fx" ||
+            prop === "fy" ||
+            prop === "links" ||
+            prop === "neighbors" ||
+            prop === "vx" ||
+            prop === "vy" ||
+            prop === "x" ||
+            prop === "y" ||
+            prop === "vx" ||
+            prop === "vy"
+        ) {
+            continue;
+        }
 
-		nodeWithoutVizFormatting[prop] = node[prop]; 
-	}
+        nodeWithoutVizFormatting[prop] = node[prop];
+    }
 
-	const _node = nodeWithoutVizFormatting;
+    const _node = nodeWithoutVizFormatting;
 
-	mapNodeProps(newNode, (prop: string) => {
-		if (!Object.prototype.hasOwnProperty.call(_node, prop)) {
-			if ((_node as any)[prop] !== (newNode as any)[prop]) {
-				(_node as any)[prop] = (newNode as any)[prop];
-				merged = true;
-			}
-		}
-		return;
-	});
-	return merged;
+    mapNodeProps(newNode, (prop: string) => {
+        if (!Object.prototype.hasOwnProperty.call(_node, prop)) {
+            if ((_node as any)[prop] !== (newNode as any)[prop]) {
+                (_node as any)[prop] = (newNode as any)[prop];
+                merged = true;
+            }
+        }
+        return;
+    });
+    return merged;
 };
 
 export const mergeGraphs = (
-	curGraph: VizGraph,
-	updateGraph: VizGraph
+    curGraph: VizGraph,
+    updateGraph: VizGraph
 ): VizGraph | null => {
-	// Merges two graphs into a new graph, returns 'null' when there are no new updates
+    // Merges two graphs into a new graph, returns 'null' when there are no new updates
 
-	if (!updateGraph.nodes && !updateGraph.links) {
-		return null;
-	}
+    if (!updateGraph.nodes && !updateGraph.links) {
+        return null;
+    }
 
-	let updated = false;
+    let updated = false;
 
-	const outputGraph: VizGraph = { nodes: [], links: [], index: {} };
-	const nodes = new Map();
-	const links = new Map();
+    const outputGraph: VizGraph = { nodes: [], links: [], index: {} };
+    const nodes = new Map();
+    const links = new Map();
 
-	for (const node of curGraph.nodes) {
-		nodes.set(node.uid, node);
-	}
+    for (const node of curGraph.nodes) {
+        nodes.set(node.uid, node);
+    }
 
-	for (const newNode of updateGraph.nodes) {
-		const node = nodes.get(newNode.uid);
-		if (node) {
-			if (mergeNodes(node, newNode)) {
-				updated = true;
-			}
-		} else {
-			nodes.set(newNode.uid, newNode);
-			updated = true;
-		}
-	}
+    for (const newNode of updateGraph.nodes) {
+        const node = nodes.get(newNode.uid);
+        if (node) {
+            if (mergeNodes(node, newNode)) {
+                updated = true;
+            }
+        } else {
+            nodes.set(newNode.uid, newNode);
+            updated = true;
+        }
+    }
 
-	for (const link of curGraph.links) {
-		if (link) {
-			const _link = link as any; 
-			const setLink = _link.source.uid + link.name + _link.target.uid; 
-			links.set(setLink, link);
-		}
-	}
+    for (const link of curGraph.links) {
+        if (link) {
+            const _link = link as any;
+            const setLink = _link.source.uid + link.name + _link.target.uid;
+            links.set(setLink, link);
+        }
+    }
 
-	for (const newLink of updateGraph.links) {
-		const getLink = newLink.source + newLink.name + newLink.target; 
-		const link = links.get(getLink);
+    for (const newLink of updateGraph.links) {
+        const getLink = newLink.source + newLink.name + newLink.target;
+        const link = links.get(getLink);
 
-		if (!link) {
-			links.set(newLink.source + newLink.name + newLink.target, newLink);
-			updated = true;
-		}
-	}
+        if (!link) {
+            links.set(newLink.source + newLink.name + newLink.target, newLink);
+            updated = true;
+        }
+    }
 
-	outputGraph.nodes = Array.from(nodes.values());
-	outputGraph.links = Array.from(links.values());
+    outputGraph.nodes = Array.from(nodes.values());
+    outputGraph.links = Array.from(links.values());
 
-	for (const node of outputGraph.nodes) {
-		outputGraph.index[node.uid] = node;
-	}
+    for (const node of outputGraph.nodes) {
+        outputGraph.index[node.uid] = node;
+    }
 
-	outputGraph.links.forEach((link) => {
-		// the graph should not be updated if the link is already in the index array
+    outputGraph.links.forEach((link) => {
+        // the graph should not be updated if the link is already in the index array
 
-		const sourceNode = outputGraph.index[link.source] as any;
-		const targetNode = outputGraph.index[link.target] as any;
+        const sourceNode = outputGraph.index[link.source] as any;
+        const targetNode = outputGraph.index[link.target] as any;
 
-		if (sourceNode === undefined || !targetNode === undefined) {
-			return;
-		}
+        if (sourceNode === undefined || !targetNode === undefined) {
+            return;
+        }
 
-		!sourceNode.neighbors && (sourceNode.neighbors = new Set());
-		!targetNode.neighbors && (targetNode.neighbors = new Set());
+        !sourceNode.neighbors && (sourceNode.neighbors = new Set());
+        !targetNode.neighbors && (targetNode.neighbors = new Set());
 
-		sourceNode.neighbors.add(targetNode);
-		targetNode.neighbors.add(sourceNode);
+        sourceNode.neighbors.add(targetNode);
+        targetNode.neighbors.add(sourceNode);
 
-		!sourceNode.links && (sourceNode.links = new Set());
-		!targetNode.links && (targetNode.links = new Set());
+        !sourceNode.links && (sourceNode.links = new Set());
+        !targetNode.links && (targetNode.links = new Set());
 
-		sourceNode.links.add(link);
-		targetNode.links.add(link);
-	});
+        sourceNode.links.add(link);
+        targetNode.links.add(link);
+    });
 
-	if (updated) {
-		return outputGraph;
-	} else {
-		return null;
-	}
+    if (updated) {
+        return outputGraph;
+    } else {
+        return null;
+    }
 };

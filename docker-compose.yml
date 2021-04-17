@@ -403,6 +403,8 @@ services:
         condition: service_healthy
       grapl-provision:
         condition: service_completed_successfully
+    ports:
+      - 127.0.0.1:${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}:${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}
     networks:
       default:
         aliases:
@@ -460,7 +462,7 @@ services:
       PORT: ${GRAPL_GRAPHQL_PORT}
       GRAPL_SCHEMA_PROPERTIES_TABLE: "${DEPLOYMENT_NAME}-grapl_schema_properties_table"
       GRAPL_SCHEMA_TABLE: "${DEPLOYMENT_NAME}-grapl_schema_table"
-
+      <<: *dynamodb-env
       <<: *secretsmanager-env
       DEBUG_SERVICES: "${DEBUG_SERVICES}"
       VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT: "${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}"

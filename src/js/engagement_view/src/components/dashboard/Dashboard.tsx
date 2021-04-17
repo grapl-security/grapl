@@ -5,82 +5,84 @@ import { checkLogin } from "services/login/checkLoginService";
 import { Link } from "react-router-dom";
 import { dasboardStyles } from "./styles";
 import GraplHeader from "../reusableComponents/graplHeader/GraplHeader";
-import LoginNotification from "../reusableComponents/notifications/Notifications";
+import LoginNotification from "../reusableComponents/notifications/LoginNotification";
 import { getNotebookUrl } from "services/sagemakerNotebook/notebookService";
 
 const useStyles = dasboardStyles;
 
 export default function Dashboard() {
-	const asyncSagemakerUrl = useAsync(getNotebookUrl, []);
-	const classes = useStyles();
+    const asyncSagemakerUrl = useAsync(getNotebookUrl, []);
+    const classes = useStyles();
 
-	const [state, setState] = useState({
-		loggedIn: true,
-		renderedOnce: false,
-	});
+    const [state, setState] = useState({
+        loggedIn: true,
+        renderedOnce: false,
+    });
 
-	useEffect(() => {
-		if (state.renderedOnce) {
-			return;
-		}
+    useEffect(() => {
+        if (state.renderedOnce) {
+            return;
+        }
 
-		const interval = setInterval(async () => {
-			await checkLogin().then((loggedIn) => {
-				if (!loggedIn) {
-					console.warn("Logged out");
-				}
-				setState({
-					loggedIn: loggedIn || false,
-					renderedOnce: true,
-				});
-			});
-		}, 2000);
+        const interval = setInterval(async () => {
+            await checkLogin().then((loggedIn) => {
+                if (!loggedIn) {
+                    console.warn("Logged out");
+                }
+                setState({
+                    loggedIn: loggedIn || false,
+                    renderedOnce: true,
+                });
+            });
+        }, 2000);
 
-		return () => {
-			clearInterval(interval);
-		};
-	}, [state, setState]);
+        return () => {
+            clearInterval(interval);
+        };
+    }, [state, setState]);
 
-	console.log("state - loggedin", state.loggedIn);
+    console.log("state - loggedin", state.loggedIn);
 
-	const loggedIn = state.loggedIn;
+    const loggedIn = state.loggedIn;
 
-	const openSagemakerUrl = () => {
-		if (asyncSagemakerUrl.loading || !asyncSagemakerUrl.result) {
-			alert("sagemaker url not ready");
-			return;
-		}
+    const openSagemakerUrl = () => {
+        if (asyncSagemakerUrl.loading || !asyncSagemakerUrl.result) {
+            alert("sagemaker url not ready");
+            return;
+        }
 
-		window.open(asyncSagemakerUrl.result);
-	};
+        window.open(asyncSagemakerUrl.result);
+    };
 
-	return (
-		<>
-			<GraplHeader displayBtn={false} />
+    return (
+        <>
+            <GraplHeader displayBtn={false} />
 
-			<div className={classes.dashboard}>
-				<section className={classes.navSec}>
+            <div className={classes.dashboard}>
+                <section className={classes.navSec}>
+                    <Link to="/engagements" className={classes.link}>
+                        {" "}
+                        Engagements{" "}
+                    </Link>
+                    <Link to="/plugins" className={classes.link}>
+                        {" "}
+                        Upload Plugin{" "}
+                    </Link>
+                    <Button
+                        onClick={openSagemakerUrl}
+                        className={classes.sagemaker}
+                    >
+                        {" "}
+                        Engagement Notebook{" "}
+                    </Button>
+                </section>
 
-						<Link to="/engagements" className={classes.link}>
-							{" "}
-							Engagements{" "}
-						</Link>
-						<Link to="/plugins" className={classes.link}>
-							{" "}
-							Upload Plugin{" "}
-						</Link>
-					<Button onClick={openSagemakerUrl} className={classes.sagemaker}>
-						{" "}
-						Engagement Notebook{" "}
-					</Button>
-				</section>
-
-				<section>
-					<div className={classes.loggedIn}>
-						{!loggedIn ? <LoginNotification /> : ""}
-					</div>
-				</section>
-			</div>
-		</>
-	);
+                <section>
+                    <div className={classes.loggedIn}>
+                        {!loggedIn ? <LoginNotification /> : ""}
+                    </div>
+                </section>
+            </div>
+        </>
+    );
 }
