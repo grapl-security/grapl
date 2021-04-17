@@ -61,6 +61,11 @@ class TestEndToEnd(TestCase):
             ),
             timeout_secs=40,
         )
+        
+        
+    # ---------------------------- NOTEBOOK TESTS ------------------------------------------
+    def test_notebook_url(self) -> None: 
+        get_notebook_url()
 
     # -------------------------- MODEL PLUGIN TESTS -------------------------------------------
 
@@ -223,3 +228,13 @@ def delete_model_plugin(
 
 
 # ---------------------------- end model plugin helpers ------------------------------------
+
+
+def get_notebook_url() -> None:
+    jwt = EngagementEdgeClient().get_jwt()
+    notebook_url = EngagementEdgeClient().get_notebook(jwt)
+    
+    if "localhost:8888" in notebook_url: # TODO: This will need to be changed for AWS Deployments
+        assert f"Found notebook url on {notebook_url}" 
+    else:
+        assert f"Unable to retrieve notebook url or notebook url is invalid: {notebook_url}"
