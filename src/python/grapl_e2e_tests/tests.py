@@ -63,7 +63,10 @@ class TestEndToEnd(TestCase):
         )
         
         
-    # ---------------------------- NOTEBOOK TESTS ------------------------------------------
+    # ---------------------------- AUTH + NOTEBOOK TESTS ------------------------------------------
+    def test_login (self) -> None:
+        check_login()
+    
     def test_notebook_url(self) -> None: 
         get_notebook_url()
 
@@ -234,7 +237,14 @@ def get_notebook_url() -> None:
     jwt = EngagementEdgeClient().get_jwt()
     notebook_url = EngagementEdgeClient().get_notebook(jwt)
     
-    if "localhost:8888" in notebook_url: # TODO: This will need to be changed for AWS Deployments
+    if "localhost:8888" in notebook_url: # TODO: Need to conditionally change for AWS Deployments
         assert f"Found notebook url on {notebook_url}" 
     else:
         assert f"Unable to retrieve notebook url or notebook url is invalid: {notebook_url}"
+        
+def check_login() -> None: 
+    jwt = EngagementEdgeClient().get_jwt()
+    if jwt != None:
+        assert f"Auth working, jwt exists {jwt}"
+    else:
+        assert f"Unable to retrieve jwt token - auth is broken"
