@@ -118,10 +118,6 @@ build-test-e2e: build-services
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.yml
 
-.PHONY: build-wait-for-local-provision
-build-wait-for-local-provision:
-	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.test-utils.yml
-
 .PHONY: build-services
 build-services: ## Build Grapl services
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
@@ -314,20 +310,6 @@ up-detach: build-services ## Bring up local Grapl and detach to return control t
 	docker-compose \
 		--file docker-compose.yml \
 		up --detach --force-recreate
-	# Wait for provisioning to fully complete before exiting.
-	$(MAKE) wait-for-local-provision
-
-.PHONY: wait-for-local-provision
-wait-for-local-provision: build-wait-for-local-provision
-	$(WITH_LOCAL_GRAPL_ENV)
-	# It looks like docker-compose isn't honoring COMPOSE_IGNORE_ORPHANS
-	# for the 'run' command, so we're left with a bogus warning. This looks
-	# related: https://github.com/docker/compose/issues/8203.
-	docker-compose \
-		--file ./test/docker-compose.test-utils.yml \
-		run --rm \
-		test-utils \
-		wait-for-it grapl-engagement-view-uploader:$${WAIT_PORT} --timeout=250
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
