@@ -9,5 +9,5 @@ edition = "2018"
 [dependencies]
 grapl-graph-descriptions = { path="../graph-descriptions", version="*" }
 derive-dynamic-node = { path="../derive-dynamic-node" }
-uuid = "0.8.2"
-thiserror = "1.0.23"
+uuid = "0"
+thiserror = "1.0"
