@@ -8,9 +8,7 @@ import pytest
 from grapl_analyzerlib.nodes.lens import LensQuery, LensView
 from grapl_tests_common.clients.engagement_edge_client import EngagementEdgeClient
 from grapl_tests_common.clients.graphql_endpoint_client import GraphqlEndpointClient
-from grapl_tests_common.clients.model_plugin_deployer_client import (
-    ModelPluginDeployerClient,
-)
+from grapl_tests_common.clients.model_plugin_deployer_client import ModelPluginDeployerClient 
 from grapl_tests_common.subset_equals import subset_equals
 from grapl_tests_common.wait import (
     WaitForCondition,
@@ -87,6 +85,8 @@ class TestEndToEnd(TestCase):
             plugin_to_delete="aws_plugin",
         )  # TODO: we need to change the plugin name when this endpoint gets fixed
 
+    # --------------------------  ENGAGEMENT VIEW TESTS ------------------------------------------
+
 
 def ensure_graphql_lens_scope_no_errors(
     gql_client: GraphqlEndpointClient,
@@ -155,7 +155,7 @@ def expected_gql_asset() -> Mapping[str, Any]:
     }
 
 
-# -----------------------  MODEL PLUGIN HELPERS -------------------------------------------
+# ----------------------- v MODEL PLUGIN HELPERS v -------------------------------------------
 
 # TODO: move these into their own file once that's doable with e2e/pants
 
@@ -230,7 +230,7 @@ def delete_model_plugin(
     assert deleted
 
 
-# ---------------------------- end model plugin helpers ------------------------------------
+# ---------------------------- AUTH HELPERS v ------------------------------------
 
 
 def get_notebook_url() -> None:
@@ -248,3 +248,4 @@ def check_login() -> None:
         assert f"Auth working, jwt exists {jwt}"
     else:
         assert f"Unable to retrieve jwt token - auth is broken"
+        
