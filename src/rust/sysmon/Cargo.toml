@@ -1,0 +1,20 @@
+[package]
+name = "sysmon"
+version = "0.2.6"
+authors = ["colin <colin@graplsecurity.com>"]
+description = "Type definitions and (de)serialization support for Sysmon events"
+license = "MIT OR Apache-2.0"
+keywords = ["sysinternals", "sysmon"]
+edition = "2018"
+repository = "https://github.com/grapl-security/grapl/tree/main/src/rust/sysmon"
+readme = "README.md"
+
+[dependencies]
+failure = "0.1"
+serde-xml-rs = "0.4"
+serde = "1.0"
+serde_derive = "1.0"
+derive_is_enum_variant = "0.1"
+anyhow = "1"
+chrono = "0.4"
+uuid = { version = "0", features = ["serde", "v4"] }
