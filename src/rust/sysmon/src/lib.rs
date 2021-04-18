@@ -7,37 +7,34 @@ extern crate serde_derive;
 extern crate serde_xml_rs;
 extern crate uuid;
 
-use std::collections::HashMap;
-use std::convert::TryFrom;
+use std::{collections::HashMap,
+          convert::TryFrom};
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow,
+             Result};
 use chrono::prelude::*;
 use failure::_core::ops::Deref;
-use serde::{Deserialize, Deserializer};
-use serde::de::Error as SerdeError;
+use serde::{de::Error as SerdeError,
+            Deserialize,
+            Deserializer};
 
 macro_rules! get_or_err {
     ($map:ident, $field_name:expr) => {
-
         match $map.remove($field_name) {
             Some(field) => field,
-            None => return Err(anyhow!("No field: {}", $field_name))
+            None => return Err(anyhow!("No field: {}", $field_name)),
         }
-
     };
 
     ($map:ident, $field_name:expr, $maperr:expr) => {
-
         match $map.remove($field_name) {
             Some(field) => field,
-            None => return Err(anyhow!("No field: {}", $field_name)).map_err($maperr)
+            None => return Err(anyhow!("No field: {}", $field_name)).map_err($maperr),
         }
-
     };
 }
 
-#[derive(Debug, Clone, Hash)]
-#[derive(is_enum_variant)]
+#[derive(Debug, Clone, Hash, is_enum_variant)]
 pub enum Event {
     ProcessCreate(ProcessCreateEvent),
     FileCreate(FileCreateEvent),
@@ -50,25 +47,19 @@ impl Event {
         let s = s.as_ref();
         serde_xml_rs::from_str::<ProcessCreateEvent>(s)
             .map(|p| Event::ProcessCreate(p))
-            .or_else(|_|
-                serde_xml_rs::from_str::<FileCreateEvent>(s)
-                    .map(|f| Event::FileCreate(f))
-            )
-            .or_else(|_|
-                serde_xml_rs::from_str::<NetworkEvent>(s)
-                    .map(|n| {
-                        if n.event_data.initiated {
-                           Event::OutboundNetwork(n)
-
-                        } else {
-                           Event::InboundNetwork(n)
-                        }
-                    })
-            )
+            .or_else(|_| serde_xml_rs::from_str::<FileCreateEvent>(s).map(|f| Event::FileCreate(f)))
+            .or_else(|_| {
+                serde_xml_rs::from_str::<NetworkEvent>(s).map(|n| {
+                    if n.event_data.initiated {
+                        Event::OutboundNetwork(n)
+                    } else {
+                        Event::InboundNetwork(n)
+                    }
+                })
+            })
             .map_err(|e| anyhow!("Error : {:?} {}", e, s))
     }
 }
-
 
 #[derive(Debug, Deserialize, Clone, Hash)]
 pub struct Provider {
@@ -77,7 +68,6 @@ pub struct Provider {
     #[serde(rename = "Guid")]
     pub provider_guid: String,
 }
-
 
 #[derive(Debug, Deserialize, Clone, Hash)]
 pub struct EventId {
@@ -91,20 +81,17 @@ pub struct Level {
     pub level: String,
 }
 
-
 #[derive(Debug, Deserialize, Clone, Hash)]
 pub struct Task {
     #[serde(rename = "$value")]
     pub task: String,
 }
 
-
 #[derive(Debug, Deserialize, Clone, Hash)]
 pub struct Version {
     #[serde(rename = "$value")]
     pub version: String,
 }
-
 
 #[derive(Debug, Deserialize, Clone, Hash)]
 pub struct Opcode {
@@ -203,7 +190,7 @@ pub struct System {
 #[derive(Debug, Deserialize, Clone, Hash)]
 pub struct UtcTime {
     #[serde(rename = "$value")]
-    pub utc_time: String
+    pub utc_time: String,
 }
 
 impl Deref for UtcTime {
@@ -213,7 +200,6 @@ impl Deref for UtcTime {
         &self.utc_time
     }
 }
-
 
 #[derive(Debug, Deserialize, Clone, Hash)]
 pub struct ProcessGuid {
@@ -231,7 +217,6 @@ impl ProcessGuid {
 
         let ts = i32::from_le_bytes(b);
         Utc.timestamp(ts as i64, 0).timestamp() as u64
-
     }
 }
 
@@ -352,7 +337,6 @@ impl Deref for Hashes {
     }
 }
 
-
 #[derive(Debug, Deserialize, Clone, Hash)]
 pub struct TargetFilename {
     pub target_filename: String,
@@ -365,7 +349,6 @@ impl Deref for TargetFilename {
         &self.target_filename
     }
 }
-
 
 #[derive(Debug, Deserialize, Clone, Hash)]
 pub struct ProcessCreateEventData {
@@ -407,12 +390,9 @@ pub struct ProcessCreateEventData {
 pub struct ProcessCreateEvent {
     #[serde(rename = "System")]
     pub system: System,
-    #[serde(rename = "EventData", deserialize_with="from_intermediary_data")]
+    #[serde(rename = "EventData", deserialize_with = "from_intermediary_data")]
     pub event_data: ProcessCreateEventData,
 }
-
-
-
 
 #[derive(Debug, Deserialize, Clone, Hash)]
 pub struct FileCreateEventData {
@@ -429,10 +409,9 @@ pub struct FileCreateEvent {
     #[serde(rename = "System")]
     pub system: System,
 
-    #[serde(rename = "EventData", deserialize_with="from_intermediary_data")]
-    pub event_data: FileCreateEventData
+    #[serde(rename = "EventData", deserialize_with = "from_intermediary_data")]
+    pub event_data: FileCreateEventData,
 }
-
 
 #[derive(Debug, Deserialize, Clone, Hash)]
 pub struct NetworkEventData {
@@ -459,7 +438,7 @@ pub struct NetworkEventData {
 pub struct NetworkEvent {
     #[serde(rename = "System")]
     pub system: System,
-    #[serde(rename = "EventData", deserialize_with="from_intermediary_data")]
+    #[serde(rename = "EventData", deserialize_with = "from_intermediary_data")]
     pub event_data: NetworkEventData,
 }
 
@@ -471,9 +450,9 @@ impl TryFrom<IntermediaryEventData> for ProcessCreateEventData {
 
         for data in inter.data {
             if let Some(value) = data.value {
-//                if (value == "4") {
-//                    panic!("{} {}", data.name, value.len());
-//                }
+                //                if (value == "4") {
+                //                    panic!("{} {}", data.name, value.len());
+                //                }
                 m.insert(data.name, value);
             }
         }
@@ -484,33 +463,52 @@ impl TryFrom<IntermediaryEventData> for ProcessCreateEventData {
         let parent_process_id = get_or_err!(m, "ParentProcessId");
         let parent_process_id: u64 = parent_process_id.parse()?;
 
-
-        Ok(
-            ProcessCreateEventData {
-                utc_time: UtcTime {utc_time: get_or_err!(m, "UtcTime") },
-                process_guid: ProcessGuid {
-                    process_guid: uuid::Uuid::parse_str(&get_or_err!(m, "ProcessGuid")[1..37])?
-                },
-                process_id,
-                image: Image { image: get_or_err!(m, "Image") },
-                command_line: CommandLine { command_line: get_or_err!(m, "CommandLine") },
-                current_directory: CurrentDirectory { current_directory: get_or_err!(m, "CurrentDirectory") },
-                user: User { user: get_or_err!(m, "User") },
-                logon_guid: LogonGuid {
-                    logon_guid: uuid::Uuid::parse_str(&get_or_err!(m, "LogonGuid")[1..37])?
-                },
-                logon_id: LogonId { logon_id: get_or_err!(m, "LogonId") },
-                terminal_session_id: TerminalSessionId { terminal_session_id: get_or_err!(m, "TerminalSessionId") },
-                integrity_level: IntegrityLevel { integrity_level: get_or_err!(m, "IntegrityLevel") },
-                hashes: Hashes { hashes: get_or_err!(m, "Hashes") },
-                parent_process_guid: ProcessGuid {
-                    process_guid:  uuid::Uuid::parse_str(&get_or_err!(m, "ParentProcessGuid")[1..37])?
-                },
-                parent_process_id,
-                parent_image: Image { image: get_or_err!(m, "ParentImage") },
-                parent_command_line: CommandLine { command_line: get_or_err!(m, "ParentCommandLine") },
-            }
-        )
+        Ok(ProcessCreateEventData {
+            utc_time: UtcTime {
+                utc_time: get_or_err!(m, "UtcTime"),
+            },
+            process_guid: ProcessGuid {
+                process_guid: uuid::Uuid::parse_str(&get_or_err!(m, "ProcessGuid")[1..37])?,
+            },
+            process_id,
+            image: Image {
+                image: get_or_err!(m, "Image"),
+            },
+            command_line: CommandLine {
+                command_line: get_or_err!(m, "CommandLine"),
+            },
+            current_directory: CurrentDirectory {
+                current_directory: get_or_err!(m, "CurrentDirectory"),
+            },
+            user: User {
+                user: get_or_err!(m, "User"),
+            },
+            logon_guid: LogonGuid {
+                logon_guid: uuid::Uuid::parse_str(&get_or_err!(m, "LogonGuid")[1..37])?,
+            },
+            logon_id: LogonId {
+                logon_id: get_or_err!(m, "LogonId"),
+            },
+            terminal_session_id: TerminalSessionId {
+                terminal_session_id: get_or_err!(m, "TerminalSessionId"),
+            },
+            integrity_level: IntegrityLevel {
+                integrity_level: get_or_err!(m, "IntegrityLevel"),
+            },
+            hashes: Hashes {
+                hashes: get_or_err!(m, "Hashes"),
+            },
+            parent_process_guid: ProcessGuid {
+                process_guid: uuid::Uuid::parse_str(&get_or_err!(m, "ParentProcessGuid")[1..37])?,
+            },
+            parent_process_id,
+            parent_image: Image {
+                image: get_or_err!(m, "ParentImage"),
+            },
+            parent_command_line: CommandLine {
+                command_line: get_or_err!(m, "ParentCommandLine"),
+            },
+        })
     }
 }
 
@@ -529,18 +527,22 @@ impl TryFrom<IntermediaryEventData> for FileCreateEventData {
         let process_id = get_or_err!(m, "ProcessId");
         let process_id = process_id.parse()?;
 
-        Ok(
-            FileCreateEventData {
-                utc_time: UtcTime { utc_time: get_or_err!(m, "UtcTime") },
-                process_guid: ProcessGuid {
-                    process_guid:  uuid::Uuid::parse_str(&get_or_err!(m, "ProcessGuid")[1..37])?
-                },
-                process_id,
-                image: Image { image: get_or_err!(m, "Image") },
-                creation_utc_time: UtcTime { utc_time: get_or_err!(m, "CreationUtcTime") },
-                target_filename: get_or_err!(m, "TargetFilename"),
-            }
-        )
+        Ok(FileCreateEventData {
+            utc_time: UtcTime {
+                utc_time: get_or_err!(m, "UtcTime"),
+            },
+            process_guid: ProcessGuid {
+                process_guid: uuid::Uuid::parse_str(&get_or_err!(m, "ProcessGuid")[1..37])?,
+            },
+            process_id,
+            image: Image {
+                image: get_or_err!(m, "Image"),
+            },
+            creation_utc_time: UtcTime {
+                utc_time: get_or_err!(m, "CreationUtcTime"),
+            },
+            target_filename: get_or_err!(m, "TargetFilename"),
+        })
     }
 }
 
@@ -556,42 +558,43 @@ impl TryFrom<IntermediaryEventData> for NetworkEventData {
             }
         }
 
-        let user = m.remove("User")
-            .map(|user| User { user });
+        let user = m.remove("User").map(|user| User { user });
 
-        Ok(
-            NetworkEventData {
-                utc_time: UtcTime {utc_time: get_or_err!(m, "UtcTime")},
-                process_guid: ProcessGuid {
-                    process_guid:  uuid::Uuid::parse_str(&get_or_err!(m, "ProcessGuid")[1..37])?
-                },
-                process_id: get_or_err!(m, "ProcessId").parse()?,
-                image: Image { image: get_or_err!(m, "Image") },
-                user,
-                protocol: get_or_err!(m, "Protocol"),
-                source_is_ipv6: get_or_err!(m, "SourceIsIpv6"),
-                source_ip: get_or_err!(m, "SourceIp"),
-                source_hostname: m.remove("SourceHostname"),
-                source_port_name: m.remove("SourcePortName"),
-                destination_is_ipv6: get_or_err!(m, "DestinationIsIpv6"),
-                destination_ip: get_or_err!(m, "DestinationIp"),
-                destination_hostname: m.remove("DestinationHostname"),
-                destination_port_name: m.remove("DestinationPortName"),
-                initiated: get_or_err!(m, "Initiated").parse()?,
-                source_port: get_or_err!(m, "SourcePort").parse()?,
-                destination_port: get_or_err!(m, "DestinationPort").parse()?,
-            }
-        )
+        Ok(NetworkEventData {
+            utc_time: UtcTime {
+                utc_time: get_or_err!(m, "UtcTime"),
+            },
+            process_guid: ProcessGuid {
+                process_guid: uuid::Uuid::parse_str(&get_or_err!(m, "ProcessGuid")[1..37])?,
+            },
+            process_id: get_or_err!(m, "ProcessId").parse()?,
+            image: Image {
+                image: get_or_err!(m, "Image"),
+            },
+            user,
+            protocol: get_or_err!(m, "Protocol"),
+            source_is_ipv6: get_or_err!(m, "SourceIsIpv6"),
+            source_ip: get_or_err!(m, "SourceIp"),
+            source_hostname: m.remove("SourceHostname"),
+            source_port_name: m.remove("SourcePortName"),
+            destination_is_ipv6: get_or_err!(m, "DestinationIsIpv6"),
+            destination_ip: get_or_err!(m, "DestinationIp"),
+            destination_hostname: m.remove("DestinationHostname"),
+            destination_port_name: m.remove("DestinationPortName"),
+            initiated: get_or_err!(m, "Initiated").parse()?,
+            source_port: get_or_err!(m, "SourcePort").parse()?,
+            destination_port: get_or_err!(m, "DestinationPort").parse()?,
+        })
     }
 }
 
 fn from_intermediary_data<'de, D, T>(deserializer: D) -> Result<T, D::Error>
-    where
-        D: Deserializer<'de>,
-        T: TryFrom<IntermediaryEventData>,
+where
+    D: Deserializer<'de>,
+    T: TryFrom<IntermediaryEventData>,
 {
     let s: IntermediaryEventData = Deserialize::deserialize(deserializer)?;
-    T::try_from(s).map_err(|_| SerdeError::custom("Failed to deserialize") )
+    T::try_from(s).map_err(|_| SerdeError::custom("Failed to deserialize"))
 }
 
 #[derive(Debug, Deserialize, Clone, Hash)]
@@ -600,16 +603,13 @@ pub struct Data {
     pub name: String,
     #[serde(rename = "$value")]
     pub value: Option<String>,
-
 }
-
 
 #[derive(Debug, Deserialize, Clone, Hash)]
 pub struct IntermediaryEventData {
     #[serde(rename = "Data")]
-    pub data: Vec<Data>
+    pub data: Vec<Data>,
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -764,10 +764,10 @@ mod tests {
 
     #[test]
     fn event_type() {
-        assert!(Event::from_str(NETWORK_EVENT).unwrap().is_outbound_network());
+        assert!(Event::from_str(NETWORK_EVENT)
+            .unwrap()
+            .is_outbound_network());
         assert!(Event::from_str(FILE_CREATE).unwrap().is_file_create());
         assert!(Event::from_str(PROCESS_CREATE).unwrap().is_process_create());
     }
 }
-
-

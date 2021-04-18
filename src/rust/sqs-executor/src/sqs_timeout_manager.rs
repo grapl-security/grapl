@@ -1,11 +1,11 @@
-use std::time::Duration;
+use std::time::{Duration,
+                Instant};
 
 use futures::{future::{self,
                        Either},
               pin_mut};
 use rusoto_sqs::{ChangeMessageVisibilityRequest,
                  Sqs};
-use std::time::{Instant};
 use tokio::sync::{mpsc::{channel as mpsc_channel,
                          Receiver as MpscReceiver,
                          Sender as MpscSender},

@@ -2,10 +2,10 @@ use std::{future::Future,
           io::Stdout,
           pin::Pin,
           task::{Context,
-                 Poll}};
+                 Poll},
+          time::Instant};
 
 use pin_project::pin_project;
-use std::time::Instant;
 
 use crate::metric_reporter::{MetricReporter,
                              TagPair};
@@ -81,12 +81,13 @@ where
             *_self.1 = Some(Instant::now());
         }
         match _self.0.poll(cx) {
-            Poll::Ready(result) => Poll::Ready((result, _self.1.unwrap().elapsed().as_millis() as u64)),
+            Poll::Ready(result) => {
+                Poll::Ready((result, _self.1.unwrap().elapsed().as_millis() as u64))
+            }
             Poll::Pending => Poll::Pending,
         }
     }
 }
-
 
 pub trait HistogramFutExt<'a>: Future + 'a {
     fn histogram(
