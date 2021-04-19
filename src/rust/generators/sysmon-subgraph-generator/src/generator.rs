@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use grapl_graph_descriptions::graph_description::*;
+use std::time::Instant;
 use grapl_observe::log_time;
 use log::*;
 use sqs_executor::{cache::Cache,

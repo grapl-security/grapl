@@ -37,7 +37,6 @@ serde_dynamodb = {version="0.7", default_features = false, features=["rustls"]}
 
 sha2 = "0.9"
 log = "0.4"
-stopwatch = "0"
 
 sqs-executor = { path = "../sqs-executor/" }
 zstd = "0.6"

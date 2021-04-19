@@ -35,7 +35,6 @@ rusoto_credential = "0.46"
 
 aws_lambda_events = "0.4"
 
-stopwatch = "0"
 sha2 = "0"
 
 zstd = "0.6"
