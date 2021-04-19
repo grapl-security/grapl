@@ -55,10 +55,7 @@ tokio = { version = "1", features = ["sync", "macros", "time", "rt-multi-thread"
 hmap = "0.1"
 tracing = "0.1"
 chrono = "0.4"
-
-[dependencies.uuid]
-version = "0.8"
-features = ["v4"]
+uuid = { version = "0.8", features=["v4"] }
 
 [dev-dependencies]
 quickcheck = "1"

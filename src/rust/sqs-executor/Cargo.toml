@@ -29,7 +29,7 @@ async-trait = "0.1"
 tracing = "0.1"
 tracing-futures = "0.2"
 futures-util = "0.3"
-uuid = {version = "0", features=["v4"]}
+uuid = { version = "0.8", features=["v4"] }
 lazy_static = "1.4"
 futures = "0.3"
 num_cpus = "1"
