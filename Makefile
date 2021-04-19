@@ -82,6 +82,8 @@ FMT_BLUE = \033[36m
 FMT_PURPLE = \033[35m
 FMT_BOLD = \033[1m
 FMT_END = \033[0m
+VSC_DEBUGGER_DOCS_LINK = https://grapl.readthedocs.io/en/latest/debugging/vscode_debugger.html
+
 
 .PHONY: help
 help: ## Print this help
@@ -93,14 +95,23 @@ help: ## Print this help
 	@printf -- '                /      \__, //_/    \__,_// .___//_/    \n'
 	@printf -- '             (≡)      /____/             /_/            \n'
 	@printf -- '\n'
+	@printf -- '${FMT_BOLD}Useful environment variables (with examples):${FMT_END}\n'
+	@printf -- '  ${FMT_PURPLE}TARGETS${FMT_END}="typecheck-analyzer-executor typecheck-grapl-common" make test-typecheck\n'
+	@printf -- '    to specify "only run a subset of tests/services".\n'
+	@printf -- '\n'
+	@printf -- '  ${FMT_PURPLE}KEEP_TEST_ENV=1${FMT_END} make test-integration\n'
+	@printf -- '    to keep the test environment around after a test suite.\n'
+	@printf -- '\n'
+	@printf -- '  ${FMT_PURPLE}DEBUG_SERVICES${FMT_END}="graphql_endpoint grapl_e2e_tests" make test-e2e\n'
+	@printf -- '    to launch the VSCode Debugger (see ${VSC_DEBUGGER_DOCS_LINK}).\n'
+	@printf -- '\n'
+	@printf '\n'
 	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make ${FMT_BLUE}<target>${FMT_END}\n"} \
 		 /^[a-zA-Z0-9_-]+:.*?##/ { printf "  ${FMT_BLUE}%-46s${FMT_END} %s\n", $$1, $$2 } \
 		 /^##@/ { printf "\n${FMT_BOLD}%s${FMT_END}\n", substr($$0, 5) } ' \
 		 $(MAKEFILE_LIST)
 	@printf '\n'
-	@printf -- '${FMT_BOLD}Useful environment variables:${FMT_END}\n'
-	@printf -- '  ${FMT_PURPLE}TARGETS="typecheck-analyzer-executor typecheck-grapl-common"${FMT_END} make test-typecheck\n'
-	@printf '\n'
+
 
 ##@ Build
 
