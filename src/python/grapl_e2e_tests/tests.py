@@ -8,7 +8,9 @@ import pytest
 from grapl_analyzerlib.nodes.lens import LensQuery, LensView
 from grapl_tests_common.clients.engagement_edge_client import EngagementEdgeClient
 from grapl_tests_common.clients.graphql_endpoint_client import GraphqlEndpointClient
-from grapl_tests_common.clients.model_plugin_deployer_client import ModelPluginDeployerClient 
+from grapl_tests_common.clients.model_plugin_deployer_client import (
+    ModelPluginDeployerClient,
+)
 from grapl_tests_common.subset_equals import subset_equals
 from grapl_tests_common.wait import (
     WaitForCondition,
@@ -59,13 +61,12 @@ class TestEndToEnd(TestCase):
             ),
             timeout_secs=40,
         )
-        
-        
+
     # ---------------------------- AUTH + NOTEBOOK TESTS ------------------------------------------
-    def test_login (self) -> None:
+    def test_login(self) -> None:
         check_login()
-    
-    def test_notebook_url(self) -> None: 
+
+    def test_notebook_url(self) -> None:
         get_notebook_url()
 
     # -------------------------- MODEL PLUGIN TESTS -------------------------------------------
@@ -236,16 +237,18 @@ def delete_model_plugin(
 def get_notebook_url() -> None:
     jwt = EngagementEdgeClient().get_jwt()
     notebook_url = EngagementEdgeClient().get_notebook(jwt)
-    
-    if "localhost:8888" in notebook_url: # TODO: Need to conditionally change for AWS Deployments
-        assert f"Found notebook url on {notebook_url}" 
+
+    if (
+        "localhost:8888" in notebook_url
+    ):  # TODO: Need to conditionally change for AWS Deployments
+        assert f"Found notebook url on {notebook_url}"
     else:
         assert f"Unable to retrieve notebook url or notebook url is invalid: {notebook_url}"
-        
-def check_login() -> None: 
+
+
+def check_login() -> None:
     jwt = EngagementEdgeClient().get_jwt()
     if jwt != None:
         assert f"Auth working, jwt exists {jwt}"
     else:
         assert f"Unable to retrieve jwt token - auth is broken"
-        

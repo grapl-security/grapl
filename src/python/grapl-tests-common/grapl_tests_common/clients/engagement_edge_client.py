@@ -18,7 +18,7 @@ class EngagementEdgeClient:
     def __init__(self) -> None:
         hostname = os.environ["GRAPL_AUTH_HOST"]
         self.endpoint = f"http://{hostname}:{os.environ['GRAPL_AUTH_PORT']}"
-    
+
     # @staticmethod
     # def from_env() -> EngagementEdgeClient:
     #     hostname = os.environ["GRAPL_ENGAGMENT_EDGE_HOST"]

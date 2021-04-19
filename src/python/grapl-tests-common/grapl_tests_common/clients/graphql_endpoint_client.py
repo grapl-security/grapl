@@ -1,8 +1,8 @@
 import json
+import logging
 import os
 from http import HTTPStatus
 from typing import Any, Dict, Optional, cast
-import logging
 
 import requests
 
@@ -67,6 +67,3 @@ class GraphqlEndpointClient:
         """
         resp = self.query(query, {"type_name": type_name})
         return cast(GraphqlType, resp["__type"])
-    
-    
-    
