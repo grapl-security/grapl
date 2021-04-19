@@ -1,9 +1,13 @@
 #!/bin/bash
 
+# You can pass TARGETS to this script to specify
+# which services to run, instead of all of them, which is the default behavior.
+TARGETS="${TARGETS}"
+
 set -e
 
 usage() { 
-    echo 'Usage: $0 [SERVICES]' 1>&2
+    echo 'Usage: [TARGETS="service1 service2"] $0' 1>&2
     echo
     echo 'This script calls into `docker-compose up` and checks the exit code' 1>&2
     echo 'of each container upon exit. If any container exit code is non-zero,' 1>&2
@@ -14,16 +18,12 @@ usage() {
     exit 1
 }
 
-# We'll pass SERVICES to the end of docker-compose up to allow users to specify
-# specific services to run, instead of all of them, which is the default behavior.
-SERVICES="$@"
-
 # Execute the 'up'
-docker-compose up --force-recreate ${SERVICES}
+docker-compose up --force-recreate ${TARGETS}
 
 # check for container exit codes other than 0
 EXIT_CODE=0
-ALL_TESTS=$(docker-compose ps --quiet ${SERVICES})
+ALL_TESTS=$(docker-compose ps --quiet ${TARGETS})
 for test in $ALL_TESTS; do
     docker inspect -f "{{ .State.ExitCode }}" $test | grep -q ^0;
     if [ $? -ne 0 ]; then 
