@@ -6,14 +6,14 @@ use sqs_executor::{errors::{CheckedError,
 
 #[derive(thiserror::Error, Debug)]
 pub enum ZstdDecoderError {
-    #[error("ProtoError")]
-    ProtoError(#[from] std::io::Error),
+    #[error("DecompressionError")]
+    DecompressionError(#[from] std::io::Error),
 }
 
 impl CheckedError for ZstdDecoderError {
     fn error_type(&self) -> Recoverable {
         match self {
-            Self::ProtoError(_) => Recoverable::Persistent,
+            Self::DecompressionError(_) => Recoverable::Persistent,
         }
     }
 }

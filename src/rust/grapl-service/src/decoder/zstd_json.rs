@@ -9,7 +9,7 @@ use sqs_executor::{errors::{CheckedError,
 pub enum ZstdJsonDecoderError {
     #[error("DecompressionError")]
     DecompressionError(#[from] std::io::Error),
-    #[error("ProtoError")]
+    #[error("JsonError")]
     JsonError(#[from] serde_json::Error),
 }
 
