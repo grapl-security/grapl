@@ -8,7 +8,6 @@ SHELL ["/bin/bash", "-c"]
 RUN apt-get update && apt-get -y install --no-install-recommends \
         build-essential \
         protobuf-compiler \
-        wait-for-it \
         zip \
     && rm -rf /var/lib/apt/lists/*
 
@@ -41,7 +40,6 @@ SHELL ["/bin/bash", "-c"]
 RUN apt-get update && apt-get -y install --no-install-recommends \
         bash \
         libstdc++6 \
-        wait-for-it \
     && rm -rf /var/lib/apt/lists/*
 
 RUN adduser \

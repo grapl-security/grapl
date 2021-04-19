@@ -7,7 +7,6 @@ RUN apt-get update && apt-get -y install --no-install-recommends \
         libffi-dev \
         libssl-dev \
         python3 \
-        wait-for-it \
         zip
 
 RUN adduser \
@@ -50,10 +49,6 @@ RUN cd lambda/ts_compiled && \
 
 # deploy... this is only used in Local Grapl at the moment
 FROM node:14.16-buster-slim AS graphql-endpoint-deploy
-
-# Only really needed for Local Grapl
-RUN apt-get update && apt-get -y install --no-install-recommends \
-    wait-for-it
 
 RUN adduser \
         --disabled-password \

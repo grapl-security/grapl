@@ -11,6 +11,7 @@ from infra.config import (
 from infra.emitter import EventEmitter
 from infra.lambda_ import code_path_for
 from infra.metric_forwarder import MetricForwarder
+from infra.network import Network
 from infra.service import Service
 
 import pulumi
@@ -18,7 +19,7 @@ import pulumi
 
 class EngagementCreator(Service):
     def __init__(
-        self, source_emitter: EventEmitter, forwarder: MetricForwarder
+        self, source_emitter: EventEmitter, network: Network, forwarder: MetricForwarder
     ) -> None:
 
         name = "engagement-creator"
@@ -28,6 +29,7 @@ class EngagementCreator(Service):
             lambda_description=GLOBAL_LAMBDA_ZIP_TAG,
             lambda_handler_fn="lambdex_handler.handler",
             lambda_code_path=code_path_for("engagement-creator"),
+            network=network,
             env={
                 "GRAPL_LOG_LEVEL": "INFO",
                 "MG_ALPHAS": mg_alphas(),

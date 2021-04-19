@@ -2,6 +2,8 @@
 # Makefile for developing using Docker
 #
 
+.DEFAULT_GOAL := help
+
 -include .env
 TAG ?= latest
 CARGO_PROFILE ?= debug
@@ -25,7 +27,6 @@ export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 	--file ./test/docker-compose.integration-tests.yml \
 	--file ./test/docker-compose.e2e-tests.yml \
 	--file ./test/docker-compose.typecheck-tests.yml \
-	--file ./test/docker-compose.test-utils.yml \
 	${EVERY_LAMBDA_COMPOSE_FILE}
 
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
@@ -77,12 +78,29 @@ SHELL := bash
 # way.
 WITH_LOCAL_GRAPL_ENV := set -o allexport; . ./local-grapl.env; set +o allexport;
 
-#
-# Build
-#
+FORMATTING_BEGIN_BLUE = \033[36m
+FORMATTING_END = \033[0m
+
+.PHONY: help
+help: ## Print this help
+	@printf -- '\n'
+	@printf -- '                                                     __ \n'
+	@printf -- '             (≡)         ____ _ _____ ____ _ ____   / / \n'
+	@printf -- '                \       / __ `// ___// __ `// __ \ / /  \n'
+	@printf -- '                (≡)    / /_/ // /   / /_/ // /_/ // /   \n'
+	@printf -- '                /      \__, //_/    \__,_// .___//_/    \n'
+	@printf -- '             (≡)      /____/             /_/            \n'
+	@printf -- '\n'
+	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make ${FORMATTING_BEGIN_BLUE}<target>${FORMATTING_END}\n"} /^[a-zA-Z0-9_-]+:.*?##/ { printf "  ${FORMATTING_BEGIN_BLUE}%-46s${FORMATTING_END} %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+##@ Build
 
 .PHONY: build
 build: build-services ## Alias for `services` (default)
+
+.PHONY: build-release
+build-release: ## 'make build-services' with cargo --release
+	$(MAKE) CARGO_PROFILE=release build-services
 
 .PHONY: build-all
 build-all: ## Build all targets (incl. services, tests, zip)
@@ -118,10 +136,6 @@ build-test-e2e: build-services
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.yml
 
-.PHONY: build-wait-for-local-provision
-build-wait-for-local-provision:
-	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.test-utils.yml
-
 .PHONY: build-services
 build-services: ## Build Grapl services
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
@@ -135,9 +149,10 @@ graplctl: ## Build graplctl and install it to the project root
 	./pants package ./src/python/graplctl/graplctl
 	cp ./dist/src.python.graplctl.graplctl/graplctl.pex ./bin/graplctl
 
-#
-# Test
-#
+##@ Test
+
+.PHONY: test
+test: test-unit test-integration test-e2e test-typecheck ## Run all tests
 
 .PHONY: test-unit
 test-unit: export COMPOSE_PROJECT_NAME := grapl-test-unit
@@ -212,9 +227,7 @@ test-with-env: # (Do not include help text - not to be used directly)
 	# Run tests and check exit codes from each test container
 	test/docker-compose-with-error.sh $(TARGET)
 
-
-.PHONY: test
-test: test-unit test-integration test-e2e test-typecheck ## Run all tests
+##@ Lint
 
 .PHONY: lint-rust
 lint-rust: ## Run Rust lint checks
@@ -230,6 +243,8 @@ lint-js: ## Run js lint checks
 
 .PHONY: lint
 lint: lint-python lint-js lint-rust ## Run all lint checks
+
+##@ Formatting
 
 .PHONY: format-rust
 format-rust: ## Reformat all Rust code
@@ -250,9 +265,40 @@ format: format-python format-js format-rust ## Reformat all code
 package-python-libs: ## Create Python distributions for public libraries
 	./pants filter --filter-target-type=python_distribution :: | xargs ./pants package
 
-#
-# else
-#
+##@ Local Grapl
+
+.PHONY: up
+up: build-services modern-lambdas ## Build Grapl services and launch docker-compose up
+	$(WITH_LOCAL_GRAPL_ENV)
+	docker-compose -f docker-compose.yml up
+
+.PHONY: up-detach
+up-detach: build-services ## Bring up local Grapl and detach to return control to tty
+	# Primarily used for bringing up an environment for integration testing.
+	# For use with a project name consider setting COMPOSE_PROJECT_NAME env var
+	# Usage: `make up-detach`
+	$(WITH_LOCAL_GRAPL_ENV)
+	# We use this target with COMPOSE_FILE being set pointing to other files.
+	# Although it seems specifying the `--file` option overrides that, we'll
+	# explicitly unset that here to avoid potential surprises.
+	unset COMPOSE_FILE
+	docker-compose \
+		--file docker-compose.yml \
+		up --detach --force-recreate
+
+.PHONY: down
+down: ## docker-compose down - both stops and removes the containers
+	$(WITH_LOCAL_GRAPL_ENV)
+	docker-compose $(EVERY_COMPOSE_FILE) down --timeout=0
+	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
+	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
+
+.PHONY: stop
+stop: ## docker-compose stop - stops (but preserves) the containers
+	$(WITH_LOCAL_GRAPL_ENV)
+	docker-compose $(EVERY_COMPOSE_FILE) stop
+
+##@ Utility
 
 .PHONY: clean
 clean: ## Prune all docker build cache and remove Grapl containers and images
@@ -265,10 +311,6 @@ clean: ## Prune all docker build cache and remove Grapl containers and images
 .PHONY: clean-mount-cache
 clean-mount-cache: ## Prune all docker mount cache (used by sccache)
 	docker builder prune --filter type=exec.cachemount
-
-.PHONY: release
-release: ## 'make build-services' with cargo --release
-	$(MAKE) CARGO_PROFILE=release build-services
 
 .PHONY: zip
 zip: build-lambdas ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
@@ -296,59 +338,10 @@ modern-lambdas: ## Generate lambda zips that are used in local Grapl and Pulumi 
 push: ## Push Grapl containers to Docker Hub
 	docker-compose --file=docker-compose.build.yml push
 
-.PHONY: up
-up: build-services modern-lambdas ## Build Grapl services and launch docker-compose up
-	$(WITH_LOCAL_GRAPL_ENV)
-	docker-compose -f docker-compose.yml up
-
-.PHONY: up-detach
-up-detach: build-services ## Bring up local Grapl and detach to return control to tty
-	# Primarily used for bringing up an environment for integration testing.
-	# For use with a project name consider setting COMPOSE_PROJECT_NAME env var
-	# Usage: `make up-detach`
-	$(WITH_LOCAL_GRAPL_ENV)
-	# We use this target with COMPOSE_FILE being set pointing to other files.
-	# Although it seems specifying the `--file` option overrides that, we'll
-	# explicitly unset that here to avoid potential surprises.
-	unset COMPOSE_FILE
-	docker-compose \
-		--file docker-compose.yml \
-		up --detach --force-recreate
-	# Wait for provisioning to fully complete before exiting.
-	$(MAKE) wait-for-local-provision
-
-.PHONY: wait-for-local-provision
-wait-for-local-provision: build-wait-for-local-provision
-	$(WITH_LOCAL_GRAPL_ENV)
-	# It looks like docker-compose isn't honoring COMPOSE_IGNORE_ORPHANS
-	# for the 'run' command, so we're left with a bogus warning. This looks
-	# related: https://github.com/docker/compose/issues/8203.
-	docker-compose \
-		--file ./test/docker-compose.test-utils.yml \
-		run --rm \
-		test-utils \
-		wait-for-it grapl-engagement-view-uploader:$${WAIT_PORT} --timeout=250
-
-.PHONY: down
-down: ## docker-compose down - both stops and removes the containers
-	$(WITH_LOCAL_GRAPL_ENV)
-	docker-compose $(EVERY_COMPOSE_FILE) down --timeout=0
-	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
-	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
-
-.PHONY: stop
-stop: ## docker-compose stop - stops (but preserves) the containers
-	$(WITH_LOCAL_GRAPL_ENV)
-	docker-compose $(EVERY_COMPOSE_FILE) stop
-
 .PHONY: e2e-logs
 e2e-logs: ## All docker-compose logs
 	$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) logs -f
-
-.PHONY: help
-help: ## Print this help
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9_-]+:.*?## / {gsub("\\\\n",sprintf("\n%22c",""), $$2);printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 .PHONY: docker-kill-all
 docker-kill-all:  # Kill all currently running Docker containers

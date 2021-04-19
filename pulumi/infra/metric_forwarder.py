@@ -3,13 +3,16 @@ from typing import Optional
 
 import pulumi_aws as aws
 from infra.config import GLOBAL_LAMBDA_ZIP_TAG
+from infra.network import Network
 
 import pulumi
 
 
 # TODO: will need VPC here
 class MetricForwarder(pulumi.ComponentResource):
-    def __init__(self, opts: Optional[pulumi.ResourceOptions] = None) -> None:
+    def __init__(
+        self, network: Network, opts: Optional[pulumi.ResourceOptions] = None
+    ) -> None:
         name = "metric-forwarder"
         super().__init__("grapl:MetricForwarder", name, None, opts)
 
@@ -35,6 +38,7 @@ class MetricForwarder(pulumi.ComponentResource):
                 memory_size=128,
                 timeout=45,
             ),
+            network=network,
             opts=pulumi.ResourceOptions(parent=self),
         )
 

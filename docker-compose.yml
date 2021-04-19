@@ -1,5 +1,4 @@
 ### Port conventions (though there are many, many exceptions)
-# 81xx - grapl services (and some `wait-for-it` http servers)
 # 82xx - TBD
 # 83xx - grapl plugin services, like grapl-aws-plugins
 # 84xx - debugger ports (see vsc_debugger.py)
@@ -80,6 +79,11 @@ services:
         # to disable persistence
         rm -f /data/dump.rdb && redis-server
       "
+    healthcheck:
+      test: bash -c 'redis-cli -h 127.0.0.1 ping | grep PONG'
+      interval: 5s
+      timeout: 10s
+      start_period: 10s
     networks:
       default:
         aliases:
@@ -95,7 +99,7 @@ services:
       - IMAGE_NAME=localstack/localstack:0.12.8
       - EDGE_PORT=${LOCALSTACK_PORT}
       - HOSTNAME_EXTERNAL=${LOCALSTACK_HOST}
-      - SERVICES=dynamodb,events,iam,lambda,logs,s3,secretsmanager,sns,sqs
+      - SERVICES=dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs
       - DEBUG=1
       - LS_LOG=debug
       - LAMBDA_EXECUTOR=docker
@@ -104,6 +108,16 @@ services:
       - LAMBDA_DOCKER_NETWORK=grapl-network
       - DATA_DIR=${DATA_DIR- }
     privileged: true # for docker lambda execution
+    healthcheck:
+      test: |
+        bash -c '
+          export AWS_ACCESS_KEY_ID=${FAKE_AWS_ACCESS_KEY_ID} && 
+          export AWS_SECRET_ACCESS_KEY=${FAKE_AWS_SECRET_ACCESS_KEY} &&
+          aws --endpoint-url=http://${LOCALSTACK_HOST}:${LOCALSTACK_PORT} s3 ls
+        '
+      interval: 5s
+      timeout: 10s
+      start_period: 10s
     volumes:
       - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
@@ -134,9 +148,12 @@ services:
       <<: *sqs-env
       <<: *rust-backtrace
     depends_on:
-      - grapl-provision
-      - localstack
-      - redis
+      grapl-provision:
+        condition: service_completed_successfully
+      localstack:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   grapl-osquery-subgraph-generator:
     image: grapl/grapl-osquery-subgraph-generator:${TAG:-latest}
@@ -156,9 +173,12 @@ services:
       <<: *sqs-env
       <<: *rust-backtrace
     depends_on:
-      - grapl-provision
-      - localstack
-      - redis
+      grapl-provision:
+        condition: service_completed_successfully
+      localstack:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
@@ -179,9 +199,12 @@ services:
       <<: *rust-backtrace
     tty: false
     depends_on:
-      - grapl-provision
-      - localstack
-      - redis
+      grapl-provision:
+        condition: service_completed_successfully
+      localstack:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   grapl-node-identifier-retry-handler:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
@@ -202,9 +225,12 @@ services:
       <<: *rust-backtrace
     tty: false
     depends_on:
-      - grapl-provision
-      - localstack
-      - redis
+      grapl-provision:
+        condition: service_completed_successfully
+      localstack:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   grapl-graph-merger:
     image: grapl/grapl-graph-merger:${TAG:-latest}
@@ -226,10 +252,14 @@ services:
       <<: *rust-backtrace
     tty: false
     depends_on:
-      - dgraph
-      - grapl-provision
-      - localstack
-      - redis
+      dgraph:
+        condition: service_started
+      grapl-provision:
+        condition: service_completed_successfully
+      localstack:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   grapl-analyzer-dispatcher:
     image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
@@ -249,7 +279,8 @@ services:
       <<: *rust-backtrace
     tty: false
     depends_on:
-      - localstack
+      localstack:
+        condition: service_healthy
 
   ########################################################################
   # Python Services
@@ -279,15 +310,19 @@ services:
     ports:
       - 127.0.0.1:${VSC_DEBUGGER_PORT_FOR_ANALYZER_EXECUTOR}:${VSC_DEBUGGER_PORT_FOR_ANALYZER_EXECUTOR}
     depends_on:
-      - dgraph
-      - localstack
-      - redis
+      dgraph:
+        condition: service_started
+      grapl-provision:
+        condition: service_completed_successfully
+      localstack:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   grapl-ux-router:
     image: grapl/grapl-ux-router:${TAG:-latest}
     command: |
       /bin/sh -c '
-        wait-for-it grapl-engagement-view-uploader:${WAIT_PORT} --timeout=180 &&
         . venv/bin/activate &&
         cd app &&
         chalice local --no-autoreload --host=0.0.0.0 --port=${GRAPL_UX_ROUTER_PORT}
@@ -299,7 +334,8 @@ services:
       <<: *aws-region
       <<: *s3-env
     depends_on:
-      - grapl-engagement-view-uploader
+      grapl-engagement-view-uploader:
+        condition: service_completed_successfully
     tty: true
     networks:
       default:
@@ -311,7 +347,6 @@ services:
     image: grapl/grapl-engagement-edge:${TAG:-latest}
     command: |
       /bin/sh -c '
-        wait-for-it grapl-provision:${WAIT_PORT} --timeout=250 &&
         . venv/bin/activate &&
         cd /home/grapl/app &&
         chalice local --no-autoreload --host=0.0.0.0 --port=${GRAPL_AUTH_PORT}
@@ -332,8 +367,10 @@ services:
       UX_BUCKET_URL: "localhost:3000" # TODO: Port??
       VSC_DEBUGGER_PORT: "${VSC_DEBUGGER_PORT_FOR_ENGAGEMENT_EDGE}"
     depends_on:
-      - grapl-provision
-      - localstack
+      localstack:
+        condition: service_healthy
+      grapl-provision:
+        condition: service_completed_successfully
     tty: true
     ports:
       - 127.0.0.1:${VSC_DEBUGGER_PORT_FOR_ENGAGEMENT_EDGE}:${VSC_DEBUGGER_PORT_FOR_ENGAGEMENT_EDGE}
@@ -342,7 +379,6 @@ services:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
     command: |
       /bin/sh -c '
-        wait-for-it grapl-provision:${WAIT_PORT} --timeout=250 &&
         . venv/bin/activate &&
         cd /home/grapl/app &&
         chalice local \
@@ -361,8 +397,12 @@ services:
       UX_BUCKET_URL: "localhost"
     tty: true
     depends_on:
-      - dgraph
-      - localstack
+      dgraph:
+        condition: service_started
+      localstack:
+        condition: service_healthy
+      grapl-provision:
+        condition: service_completed_successfully
     ports:
       - 127.0.0.1:${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}:${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}
     networks:
@@ -402,22 +442,17 @@ services:
   grapl-engagement-view-uploader:
     image: grapl/grapl-engagement-view:${TAG:-latest}
     command: |
-      /bin/bash -c "
-        wait-for-it grapl-provision:${WAIT_PORT} --timeout=250 &&
-        ./upload_local.sh &&
-        python -m http.server ${WAIT_PORT}  # wait-for-it
-      "
+      /bin/bash -c "./upload_local.sh"
     environment:
       <<: *aws-region
       <<: *s3-env
     depends_on:
-      - grapl-provision
+      grapl-provision:
+        condition: service_completed_successfully
 
   grapl-graphql-endpoint:
     image: grapl/grapl-graphql-endpoint:${TAG:-latest}
-    command: bash -c "
-      wait-for-it grapl-provision:${WAIT_PORT} --timeout=250 &&
-      ./start_potentially_with_debugger.sh"
+    command: bash -c "./start_potentially_with_debugger.sh"
     environment:
       <<: *aws-region
       <<: *dgraph-env
@@ -432,9 +467,12 @@ services:
       DEBUG_SERVICES: "${DEBUG_SERVICES}"
       VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT: "${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}"
     depends_on:
-      - dgraph
-      - grapl-provision
-      - localstack
+      dgraph:
+        condition: service_started
+      localstack:
+        condition: service_healthy
+      grapl-provision:
+        condition: service_completed_successfully
     ports:
       - 127.0.0.1:${GRAPL_GRAPHQL_PORT}:${GRAPL_GRAPHQL_PORT}
       - 127.0.0.1:${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}:${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}
@@ -461,14 +499,10 @@ services:
     image: grapl/grapl-local-pulumi:${TAG:-latest}
     command: |
       /bin/bash -c "
-         wait-for-it ${LOCALSTACK_HOST}:${LOCALSTACK_PORT} --timeout=60 &&
          sleep 10 &&
          pulumi login --local &&
          pulumi stack init local-grapl --non-interactive &&
-         pulumi up --yes --skip-preview --stack=local-grapl &&
-         # NOTE: This is running in localstack's network namespace, so
-         # we will need to wait on localstack, NOT grapl-pulumi.
-         python -u -m http.server ${WAIT_PORT}
+         pulumi up --yes --skip-preview --stack=local-grapl
       "
     # Our local-grapl Pulumi stack is configured to communicate with
     # localhost. By participating in the network namespace of our
@@ -484,23 +518,16 @@ services:
     environment:
       PULUMI_CONFIG_PASSPHRASE: local-grapl-passphrase
     depends_on:
-      - localstack
+      localstack:
+        condition: service_healthy
 
   grapl-provision:
     image: grapl/grapl-provision:${TAG:-latest}
     command: |
       /bin/bash -c "
         export TIMEOUT=35 &&
-        # NOTE: We wait on localstack, even though we conceptually are
-        # waiting for grapl-pulumi to finish, because grapl-pulumi
-        # runs within the network namespace of localstack, and not a
-        # network namespace of its own.
-        wait-for-it localstack:${WAIT_PORT} --timeout=200 &&
-        wait-for-it ${DGRAPH_HOST}:${DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT} --timeout=$$TIMEOUT &&
         . venv/bin/activate &&
-        python /home/grapl/grapl_local_provision/grapl_provision.py &&
-        # Host a server on this port, so that tests can wait-for-it
-        python -m http.server ${WAIT_PORT}
+        python /home/grapl/grapl_local_provision/grapl_provision.py
       "
     environment:
       <<: *aws-region
@@ -512,9 +539,12 @@ services:
       <<: *sqs-env
     tty: true
     depends_on:
-      - dgraph
-      - localstack
-      - grapl-pulumi
+      dgraph:
+        condition: service_started
+      localstack:
+        condition: service_healthy
+      grapl-pulumi:
+        condition: service_completed_successfully
 
 networks:
   default:
