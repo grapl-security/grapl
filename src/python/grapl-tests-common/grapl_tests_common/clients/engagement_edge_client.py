@@ -1,6 +1,8 @@
+import logging
 import os
 from http import HTTPStatus
 from typing import Optional
+from urllib.error import HTTPError
 
 import requests
 
@@ -42,6 +44,20 @@ class EngagementEdgeClient:
                 f"Couldn't find grapl_jwt cookie in {resp.cookies}"
             )
         return cookie
+
+    def invalid_creds(self) -> requests.Response:
+        resp = requests.post(
+            f"{self.endpoint}/login",
+            json={
+                "username": "fakeuser",
+                "password": "fakepassword",
+            },
+            headers={
+                **_JSON_CONTENT_TYPE_HEADERS,
+                **_ORIGIN,
+            },
+        )
+        return resp
 
     def get_notebook(self, jwt: str) -> str:
         cookies = {"grapl_jwt": jwt}

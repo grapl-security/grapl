@@ -20,8 +20,11 @@ from grapl_tests_common.wait import (
 )
 
 LENS_NAME = "DESKTOP-FVSHABR"
-
 GqlLensDict = Dict[str, Any]
+
+
+class TestException(Exception):
+    pass
 
 
 @pytest.mark.integration_test
@@ -33,16 +36,13 @@ class TestEndToEnd(TestCase):
         # - Lens with 3 scope
         # - Lens with 4 scope
         # - Lens with 5 scope (correct)
-
         query = LensQuery().with_lens_name(LENS_NAME)
         lens: LensView = wait_for_one(WaitForQuery(query), timeout_secs=120)
         assert lens.get_lens_name() == LENS_NAME
-
         # lens scope is not atomic
         def scope_has_N_items() -> bool:
             length = len(lens.get_scope())
             logging.info(f"Expected 3-5 nodes in scope, currently is {length}")
-
             # The correct answer for this is 5.
             # We are temp 'allowing' below that because it means the pipeline is, _mostly_, working.
             return length in (
@@ -52,9 +52,7 @@ class TestEndToEnd(TestCase):
             )
 
         wait_for_one(WaitForCondition(scope_has_N_items), timeout_secs=240)
-
         gql_client = GraphqlEndpointClient(jwt=EngagementEdgeClient().get_jwt())
-
         wait_for_one(
             WaitForNoException(
                 lambda: ensure_graphql_lens_scope_no_errors(gql_client, LENS_NAME)
@@ -63,7 +61,6 @@ class TestEndToEnd(TestCase):
         )
 
     # -------------------------- MODEL PLUGIN TESTS -------------------------------------------
-
     def test_upload_plugin(self) -> None:
         upload_model_plugin(model_plugin_client=ModelPluginDeployerClient.from_env())
 
@@ -79,6 +76,15 @@ class TestEndToEnd(TestCase):
             plugin_to_delete="aws_plugin",
         )  # TODO: we need to change the plugin name when this endpoint gets fixed
 
+    def test_check_login(self) -> None:
+        check_login()
+
+    def test_get_notebook_url(self) -> None:
+        get_notebook_url()
+
+    def test_check__invalid_creds(self) -> None:
+        check_invalid_creds()
+
 
 def ensure_graphql_lens_scope_no_errors(
     gql_client: GraphqlEndpointClient,
@@ -87,7 +93,6 @@ def ensure_graphql_lens_scope_no_errors(
     gql_lens = gql_client.query_for_scope(lens_name=lens_name)
     scope = gql_lens["scope"]
     assert len(scope) in (3, 4, 5)
-
     # Accumulate ["Asset"], ["Process"] into Set("Asset, Process")
     all_types_in_scope = set(
         sum((node["dgraph_type"] for node in gql_lens["scope"]), [])
@@ -98,9 +103,7 @@ def ensure_graphql_lens_scope_no_errors(
             "Process",
         )
     )
-
     asset_node: Dict = next((n for n in scope if n["dgraph_type"] == ["Asset"]))
-
     # The 'risks' field is not immediately filled out, but eventually consistent
     subset_equals(larger=asset_node, smaller=expected_gql_asset())
 
@@ -148,31 +151,21 @@ def expected_gql_asset() -> Mapping[str, Any]:
 
 
 # -----------------------  MODEL PLUGIN HELPERS -------------------------------------------
-
 # TODO: move these into their own file once that's doable with e2e/pants
-
-
 def upload_model_plugin(
     model_plugin_client: ModelPluginDeployerClient,
 ) -> None:
     logging.info("Making request to /deploy to upload model plugins")
-
     plugin_path = "./schemas"
     jwt = EngagementEdgeClient().get_jwt()
-
     files = os.listdir(plugin_path)
-
     check_plugin_path_has_schemas_file(files)
-
     plugin_upload = model_plugin_client.deploy(
         Path(plugin_path),
         jwt,
     )
-
     logging.info(f"UploadRequest: {plugin_upload.json()}")
-
     upload_status = plugin_upload.json()["success"]["Success"] == True
-
     assert upload_status
 
 
@@ -192,15 +185,11 @@ def check_plugin_path_has_schemas_file(
 
 def get_plugin_list(model_plugin_client: ModelPluginDeployerClient) -> None:
     jwt = EngagementEdgeClient().get_jwt()
-
     get_plugin_list = model_plugin_client.list_plugins(
         jwt,
     )
-
     logging.info(f"UploadRequest: {get_plugin_list.json()}")
-
     upload_status = get_plugin_list.json()["success"]["plugin_list"] != []
-
     assert upload_status
 
 
@@ -209,17 +198,42 @@ def delete_model_plugin(
     plugin_to_delete: str,
 ) -> None:
     jwt = EngagementEdgeClient().get_jwt()
-
     delete_plugin = model_plugin_client.delete_model_plugin(
         jwt,
         plugin_to_delete,
     )
-
     logging.info(f"Deleting Plugin: {plugin_to_delete}")
-
     deleted = delete_plugin.json()["success"]["plugins_to_delete"]
-
     assert deleted
 
 
-# ---------------------------- end model plugin helpers ------------------------------------
+# ---------------------------- AUTH HELPERS v ------------------------------------
+def get_notebook_url() -> None:
+    jwt = EngagementEdgeClient().get_jwt()
+    notebook_url = EngagementEdgeClient().get_notebook(jwt)
+    if (
+        "localhost:8888" in notebook_url
+    ):  # TODO: Need to conditionally change for AWS Deployments
+        assert notebook_url
+    else:
+        raise TestException(
+            f"Unable to retrieve notebook url or notebook url is invalid: {notebook_url}"
+        )
+
+
+def check_login() -> None:
+    jwt = EngagementEdgeClient().get_jwt()
+    if jwt != None:
+        assert f"Auth working, jwt exists {jwt}"
+    else:
+        raise TestException(f"Unable to retrieve jwt token - auth is broken")
+
+
+def check_invalid_creds() -> None:
+    resp = EngagementEdgeClient().invalid_creds()
+    if resp.status_code == 403:
+        assert "Provided invalid creds & was unauthorized"
+    else:
+        raise TestException(
+            "Unexpected authorization with invalid credentials - major issues!"
+        )

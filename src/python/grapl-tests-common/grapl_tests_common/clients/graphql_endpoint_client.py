@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from http import HTTPStatus
 from typing import Any, Dict, Optional, cast
@@ -8,6 +9,11 @@ import requests
 # Would be nice to improve this as a TypedDict
 GqlLensDict = Dict[str, Any]
 GraphqlType = Dict[str, Any]
+_JSON_CONTENT_TYPE_HEADERS = {"Content-type": "application/json"}
+
+
+class GraphQLException(Exception):
+    pass
 
 
 class GraphqlEndpointClient:
