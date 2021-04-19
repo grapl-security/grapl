@@ -31,3 +31,4 @@ zstd = "0.6"
 tokio = { version = "1", features = ["sync", "rt", "macros", "time", "rt-multi-thread", "fs"] }
 thiserror = "1.0"
 tracing = "0.1"
+itertools = "0.10"
