@@ -214,7 +214,7 @@ def get_notebook_url() -> None:
     if (
         "localhost:8888" in notebook_url
     ):  # TODO: Need to conditionally change for AWS Deployments
-        assert f"Found notebook url on {notebook_url}"
+        assert notebook_url
     else:
         raise TestException(
             f"Unable to retrieve notebook url or notebook url is invalid: {notebook_url}"
@@ -232,6 +232,8 @@ def check_login() -> None:
 def check_invalid_creds() -> None:
     resp = EngagementEdgeClient().invalid_creds()
     if resp.status_code == 403:
-        assert f"Provided invalid creds & was unauthorized"
+        assert "Provided invalid creds & was unauthorized"
     else:
-        raise TestException(f"Unable to retrieve jwt token - auth is broken")
+        raise TestException(
+            "Unexpected authorization with invalid credentials - major issues!"
+        )
