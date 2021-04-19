@@ -1,11 +1,11 @@
-use std::time::Duration;
+use std::time::{Duration,
+                Instant};
 
 use futures::{future::{self,
                        Either},
               pin_mut};
 use rusoto_sqs::{ChangeMessageVisibilityRequest,
                  Sqs};
-use stopwatch::Stopwatch;
 use tokio::sync::{mpsc::{channel as mpsc_channel,
                          Receiver as MpscReceiver,
                          Sender as MpscSender},
@@ -41,7 +41,7 @@ where
         } = self;
         tracing::info!("Starting keep_alive for message");
 
-        let sw = Stopwatch::start_new();
+        let start = Instant::now();
 
         // Sleep for N - 10 seconds, set timeout to 2N
         let message_id = &message_id;
@@ -73,7 +73,7 @@ where
                                 iteration = i,
                                 message_id = message_id.as_str(),
                                 receipt_handle = receipt_handle.as_str(),
-                                time_taken = sw.elapsed_ms(),
+                                time_taken = start.elapsed().as_millis() as u64,
                                 "Successfully changed message visibility"
                             );
                         }
@@ -83,7 +83,7 @@ where
                                 iteration=i,
                                 message_id=message_id.as_str(),
                                 receipt_handle=receipt_handle.as_str(),
-                                time_taken=sw.elapsed_ms(),
+                                time_taken=start.elapsed().as_millis() as u64,
                                 "Failed to change message visibility"
                             );
                             break; // These errors are not retryable
@@ -94,7 +94,7 @@ where
                                 iteration = i,
                                 message_id = message_id.as_str(),
                                 receipt_handle = receipt_handle.as_str(),
-                                time_taken = sw.elapsed_ms(),
+                                time_taken = start.elapsed().as_millis() as u64,
                                 "Failed to change message visibility, but it's probably fine"
                             );
                             return;
@@ -106,7 +106,7 @@ where
                         iteration = i,
                         message_id = message_id.as_str(),
                         receipt_handle = receipt_handle.as_str(),
-                        time_taken = sw.elapsed_ms(),
+                        time_taken = start.elapsed().as_millis() as u64,
                         "Message no longer needs to be kept alive"
                     );
                     return;
@@ -117,7 +117,7 @@ where
                 iteration = i,
                 message_id = message_id.as_str(),
                 receipt_handle = receipt_handle.as_str(),
-                time_taken = sw.elapsed_ms(),
+                time_taken = start.elapsed().as_millis() as u64,
                 "message-visibility-loop",
             );
         }
@@ -126,7 +126,7 @@ where
             iteration = max_iter,
             message_id = message_id.as_str(),
             receipt_handle = receipt_handle.as_str(),
-            time_taken = sw.elapsed_ms(),
+            time_taken = start.elapsed().as_millis() as u64,
             "message still has not processed"
         );
     }

@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use async_trait::async_trait;
 use grapl_graph_descriptions::graph_description::*;
 use grapl_observe::log_time;

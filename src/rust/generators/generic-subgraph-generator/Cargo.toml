@@ -12,28 +12,24 @@ grapl-config = {path="../../grapl-config", version="*"}
 sqs-executor = { path = "../../sqs-executor/" }
 grapl-service = { path = "../../grapl-service/" }
 grapl-observe = { path = "../../grapl-observe/" }
-lazy_static = "1.2.0"
+lazy_static = "1.2"
 log = "0"
 prost = "0.7"
 regex = "1"
 rusoto_core = { version="0.46.0", default_features = false, features=["rustls"] }
 rusoto_s3 = { version="0.46.0", default_features = false, features=["rustls"] }
 rusoto_sqs = { version="0.46.0", default_features = false, features=["rustls"] }
-futures = "0.3.*"
-aws_lambda_events = "0.2.0"
-async-trait = "0.1.22"
+futures = "0.3"
+aws_lambda_events = "0.4"
+async-trait = "0.1"
 zstd = "0.6"
 tokio = { version = "1", features = ["sync", "rt", "macros", "time", "rt-multi-thread"] }
 
-tracing = "0.1.15"
-tracing-futures = "0.2.4"
+tracing = "0.1"
+tracing-futures = "0.2"
 tracing-subscriber = "0.2"
-eyre = "0.4.3"
-thiserror = "1.0.23"
-serde = "1.0.120"
-serde_json = "1.0.61"
-
-
-[dependencies.uuid]
-version = "*"
-features = ["v4"]
+eyre = "0.6"
+thiserror = "1.0"
+serde = "1.0"
+serde_json = "1.0"
+uuid = { version = "0.8", features=["v4"] }
