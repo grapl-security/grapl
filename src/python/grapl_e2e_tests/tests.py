@@ -232,7 +232,7 @@ def check_login() -> None:
 def check_invalid_creds() -> None:
     resp = EngagementEdgeClient().invalid_creds()
     if resp.status_code == 403:
-        assert "Provided invalid creds & was unauthorized"
+        assert resp.status_code == 403, "Provided invalid creds which were unauthorized"
     else:
         raise TestException(
             "Unexpected authorization with invalid credentials - major issues!"
