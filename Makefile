@@ -78,8 +78,12 @@ SHELL := bash
 # way.
 WITH_LOCAL_GRAPL_ENV := set -o allexport; . ./local-grapl.env; set +o allexport;
 
-FORMATTING_BEGIN_BLUE = \033[36m
-FORMATTING_END = \033[0m
+FMT_BLUE = \033[36m
+FMT_PURPLE = \033[35m
+FMT_BOLD = \033[1m
+FMT_END = \033[0m
+VSC_DEBUGGER_DOCS_LINK = https://grapl.readthedocs.io/en/latest/debugging/vscode_debugger.html
+
 
 .PHONY: help
 help: ## Print this help
@@ -91,7 +95,25 @@ help: ## Print this help
 	@printf -- '                /      \__, //_/    \__,_// .___//_/    \n'
 	@printf -- '             (≡)      /____/             /_/            \n'
 	@printf -- '\n'
-	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make ${FORMATTING_BEGIN_BLUE}<target>${FORMATTING_END}\n"} /^[a-zA-Z0-9_-]+:.*?##/ { printf "  ${FORMATTING_BEGIN_BLUE}%-46s${FORMATTING_END} %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+	@printf -- '${FMT_BOLD}Useful environment variables (with examples):${FMT_END}\n'
+	@printf -- '  ${FMT_PURPLE}TARGETS${FMT_END}="typecheck-analyzer-executor typecheck-grapl-common" make test-typecheck\n'
+	@printf -- '    to only run a subset of test targets.\n'
+	@printf -- '\n'
+	@printf -- '  ${FMT_PURPLE}KEEP_TEST_ENV=1${FMT_END} make test-integration\n'
+	@printf -- '    to keep the test environment around after a test suite.\n'
+	@printf -- '\n'
+	@printf -- '  ${FMT_PURPLE}DEBUG_SERVICES${FMT_END}="graphql_endpoint grapl_e2e_tests" make test-e2e\n'
+	@printf -- '    to launch the VSCode Debugger (see ${VSC_DEBUGGER_DOCS_LINK}).\n'
+	@printf -- '\n'
+	@printf -- '  ${FMT_BOLD}FUN FACT${FMT_END}: You can also specify these as postfix, like:\n'
+	@printf -- '    make test-something KEEP_TEST_ENV=1\n'
+	@printf '\n'
+	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make ${FMT_BLUE}<target>${FMT_END}\n"} \
+		 /^[a-zA-Z0-9_-]+:.*?##/ { printf "  ${FMT_BLUE}%-46s${FMT_END} %s\n", $$1, $$2 } \
+		 /^##@/ { printf "\n${FMT_BOLD}%s${FMT_END}\n", substr($$0, 5) } ' \
+		 $(MAKEFILE_LIST)
+	@printf '\n'
+
 
 ##@ Build
 
@@ -182,7 +204,7 @@ test-unit-js: build-test-unit-js ## Build and run unit tests - JavaScript only
 test-typecheck: export COMPOSE_PROJECT_NAME := grapl-typecheck_tests
 test-typecheck: export COMPOSE_FILE := ./test/docker-compose.typecheck-tests.yml
 test-typecheck: build-test-typecheck ## Build and run typecheck tests (non-Pants)
-	test/docker-compose-with-error.sh "$(TARGET)"
+	test/docker-compose-with-error.sh
 
 .PHONY: test-typecheck-pulumi
 test-typecheck-pulumi: ## Typecheck Pulumi Python code
@@ -225,7 +247,7 @@ test-with-env: # (Do not include help text - not to be used directly)
 	# Bring up the Grapl environment and detach
 	$(MAKE) up-detach
 	# Run tests and check exit codes from each test container
-	test/docker-compose-with-error.sh $(TARGET)
+	test/docker-compose-with-error.sh
 
 ##@ Lint
 
