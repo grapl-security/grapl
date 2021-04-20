@@ -18,8 +18,9 @@ class EngagementEdgeException(Exception):
 
 class EngagementEdgeClient:
     def __init__(self) -> None:
-        hostname = os.environ["GRAPL_AUTH_HOST"]
-        self.endpoint = f"http://{hostname}:{os.environ['GRAPL_AUTH_PORT']}"
+        hostname = os.environ["GRAPL_API_HOST"]
+        port = os.environ["GRAPL_HTTP_FRONTEND_PORT"]
+        self.endpoint = f"http://{hostname}:{port}/auth"
 
     def get_jwt(self) -> str:
         resp = requests.post(
