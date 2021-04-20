@@ -48,7 +48,7 @@ jobs:
             ~/.cache/pants/lmdb_store
 
       - name: Python unit tests
-        run: make test-unit-python
+        run: ./build-support/retry.sh --sleep=0 --tries=3 -- make test-unit-python
 
   js-unit-tests:
     runs-on: ubuntu-latest

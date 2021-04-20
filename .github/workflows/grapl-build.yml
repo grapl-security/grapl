@@ -52,7 +52,7 @@ jobs:
             ~/.cache/pants/lmdb_store
 
       - name: Python unit tests
-        run: make test-unit-python
+        run: ./build-support/retry.sh --sleep=0 --tries=3 -- make test-unit-python
 
   python-typecheck-pants:
     runs-on: ubuntu-latest
@@ -75,7 +75,7 @@ jobs:
             ~/.cache/pants/named_caches
             ~/.cache/pants/lmdb_store
       - name: Typecheck Python code with Pants
-        run: make test-typecheck-pants
+        run: ./build-support/retry.sh --sleep=0 --tries=3 -- make test-typecheck-pants
 
   python-typecheck:
     runs-on: ubuntu-latest
