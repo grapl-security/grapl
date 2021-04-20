@@ -13,9 +13,9 @@ use grapl_observe::metric_reporter::MetricReporter;
 use grapl_service::serialization::GraphDescriptionSerializer;
 use log::*;
 use rusoto_sqs::SqsClient;
-use sqs_executor::{event_retriever::S3PayloadRetriever,
-                   make_ten,
+use sqs_executor::{make_ten,
                    s3_event_emitter::S3ToSqsEventNotifier,
+                   s3_event_retriever::S3PayloadRetriever,
                    time_based_key_fn};
 
 use crate::{generator::OSQuerySubgraphGenerator,

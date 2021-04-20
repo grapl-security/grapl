@@ -14,9 +14,9 @@ use rusoto_core::Region;
 use rusoto_s3::S3Client;
 use rusoto_sqs::SqsClient;
 use sqs_executor::{cache::NopCache,
-                   event_retriever::S3PayloadRetriever,
                    make_ten,
                    s3_event_emitter::S3ToSqsEventNotifier,
+                   s3_event_retriever::S3PayloadRetriever,
                    time_based_key_fn};
 use tracing::*;
 
