@@ -14,7 +14,17 @@ from multiprocessing import Pipe, Process
 from multiprocessing.connection import Connection
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Iterable, Iterator, List, Optional, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Union,
+)
 
 import boto3  # type: ignore
 import redis
@@ -31,7 +41,7 @@ from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
 
 if TYPE_CHECKING:
-    from mypy_boto3_s3 import S3Client, S3ServiceResource
+    from mypy_boto3_s3 import S3ServiceResource
     from mypy_boto3_sqs import SQSClient
 
 
@@ -71,9 +81,6 @@ class AnalyzerExecutor:
     CHUNK_SIZE_RETRY: int = 10
     CHUNK_SIZE_DEFAULT: int = 100
 
-    # singleton
-    _singleton = None
-
     def __init__(
         self,
         message_cache: EitherCache,
@@ -91,81 +98,74 @@ class AnalyzerExecutor:
         self.metric_reporter = metric_reporter
 
     @classmethod
-    def singleton(cls) -> AnalyzerExecutor:
-        if not cls._singleton:
-            LOGGER.debug("initializing AnalyzerExecutor singleton")
-            is_local = bool(
-                os.getenv("IS_LOCAL", False)
-            )  # TODO move determination to grapl-common
+    def from_env(cls, env: Optional[Mapping[str, str]] = None) -> AnalyzerExecutor:
+        env = env or os.environ
+        is_local = bool(
+            env.get("IS_LOCAL", False)
+        )  # TODO move determination to grapl-common
 
-            # If we're retrying, change the chunk size
-            is_retry = os.getenv("IS_RETRY", False)
-            if is_retry == "True":
-                chunk_size = cls.CHUNK_SIZE_RETRY
-            else:
-                chunk_size = cls.CHUNK_SIZE_DEFAULT
+        # If we're retrying, change the chunk size
+        is_retry = env.get("IS_RETRY", False)
+        if is_retry == "True":
+            chunk_size = cls.CHUNK_SIZE_RETRY
+        else:
+            chunk_size = cls.CHUNK_SIZE_DEFAULT
 
-            # Set up message cache
-            messagecache_addr = os.getenv("MESSAGECACHE_ADDR")
-            messagecache_port: Optional[int] = None
-            messagecache_port_str = os.getenv("MESSAGECACHE_PORT")
-            if messagecache_port_str:
-                try:
-                    messagecache_port = int(messagecache_port_str)
-                except (TypeError, ValueError) as ex:
-                    LOGGER.error(
-                        f"can't connect to redis, MESSAGECACHE_PORT couldn't cast to int"
-                    )
-                    raise ex
-
-            if messagecache_addr and messagecache_port:
-                LOGGER.debug(
-                    f"message cache connecting to redis at {messagecache_addr}:{messagecache_port}"
-                )
-                message_cache = redis.Redis(
-                    host=messagecache_addr, port=messagecache_port, db=0
-                )
-            else:
+        # Set up message cache
+        messagecache_addr = env.get("MESSAGECACHE_ADDR")
+        messagecache_port: Optional[int] = None
+        messagecache_port_str = env.get("MESSAGECACHE_PORT")
+        if messagecache_port_str:
+            try:
+                messagecache_port = int(messagecache_port_str)
+            except (TypeError, ValueError) as ex:
                 LOGGER.error(
-                    f"message cache failed connecting to redis | addr:\t{messagecache_addr} | port:\t{messagecache_port}"
+                    f"can't connect to redis, MESSAGECACHE_PORT couldn't cast to int"
                 )
-                raise ValueError(
-                    f"incomplete redis connection details for message cache"
-                )
+                raise ex
 
-            # Set up hit cache
-            hitcache_addr = os.getenv("HITCACHE_ADDR")
-            hitcache_port: Optional[int] = None
-            hitcache_port_str = os.getenv("HITCACHE_PORT")
-            if hitcache_port_str:
-                try:
-                    hitcache_port = int(hitcache_port_str)
-                except (TypeError, ValueError) as ex:
-                    LOGGER.error(
-                        f"can't connect to redis, HITCACHE_PORT couldn't cast to int"
-                    )
-                    raise ex
-
-            if hitcache_addr and hitcache_port:
-                LOGGER.debug(
-                    f"hit cache connecting to redis at {hitcache_addr}:{hitcache_port}"
-                )
-                hit_cache = redis.Redis(
-                    host=hitcache_addr, port=int(hitcache_port), db=0
-                )
-            else:
-                LOGGER.error(
-                    f"hit cache failed connecting to redis | addr:\t{hitcache_addr} | port:\t{hitcache_port}"
-                )
-                raise ValueError(f"incomplete redis connection details for hit cache")
-
-            metric_reporter = MetricReporter.create("analyzer-executor")
-            # retain singleton
-            cls._singleton = cls(
-                message_cache, hit_cache, chunk_size, is_local, LOGGER, metric_reporter
+        if messagecache_addr and messagecache_port:
+            LOGGER.debug(
+                f"message cache connecting to redis at {messagecache_addr}:{messagecache_port}"
             )
+            message_cache = redis.Redis(
+                host=messagecache_addr, port=messagecache_port, db=0
+            )
+        else:
+            LOGGER.error(
+                f"message cache failed connecting to redis | addr:\t{messagecache_addr} | port:\t{messagecache_port}"
+            )
+            raise ValueError(f"incomplete redis connection details for message cache")
 
-        return cls._singleton
+        # Set up hit cache
+        hitcache_addr = env.get("HITCACHE_ADDR")
+        hitcache_port: Optional[int] = None
+        hitcache_port_str = env.get("HITCACHE_PORT")
+        if hitcache_port_str:
+            try:
+                hitcache_port = int(hitcache_port_str)
+            except (TypeError, ValueError) as ex:
+                LOGGER.error(
+                    f"can't connect to redis, HITCACHE_PORT couldn't cast to int"
+                )
+                raise ex
+
+        if hitcache_addr and hitcache_port:
+            LOGGER.debug(
+                f"hit cache connecting to redis at {hitcache_addr}:{hitcache_port}"
+            )
+            hit_cache = redis.Redis(host=hitcache_addr, port=int(hitcache_port), db=0)
+        else:
+            LOGGER.error(
+                f"hit cache failed connecting to redis | addr:\t{hitcache_addr} | port:\t{hitcache_port}"
+            )
+            raise ValueError(f"incomplete redis connection details for hit cache")
+
+        metric_reporter = MetricReporter.create("analyzer-executor")
+
+        return AnalyzerExecutor(
+            message_cache, hit_cache, chunk_size, is_local, LOGGER, metric_reporter
+        )
 
     def check_caches(
         self, file_hash: str, msg_id: str, node_key: str, analyzer_name: str

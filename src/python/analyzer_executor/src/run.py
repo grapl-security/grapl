@@ -14,7 +14,6 @@ from grapl_common.grapl_logger import get_module_grapl_logger
 
 wait_for_vsc_debugger(service="analyzer_executor")
 
-ANALYZER_EXECUTOR = AnalyzerExecutor.singleton()
 LOGGER = get_module_grapl_logger()
 
 
@@ -31,9 +30,11 @@ async def main():
     queue_url = os.environ["SOURCE_QUEUE_URL"]
     retriever = EventRetriever(queue_url=queue_url)
     sqs_client = SQSClientFactory(boto3).from_env()
+    analyzer_executor = AnalyzerExecutor.from_env()
+
     for sqs_message in retriever.retrieve():
         # We'd feed this coroutine into the timeout manager.
-        message_handle_coroutine = ANALYZER_EXECUTOR.handle_events(sqs_message.body, {})
+        message_handle_coroutine = analyzer_executor.handle_events(sqs_message.body, {})
         # While we're waiting for that future to complete, keep telling SQS
         # "hey, we're working on it" so it doesn't become visible on the
         # input queue again.
