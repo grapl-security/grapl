@@ -30,7 +30,6 @@ export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 	${EVERY_LAMBDA_COMPOSE_FILE}
 
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
-VERBOSE_PANTS := PEX_VERBOSE=5 ./pants -ldebug
 
 COMPOSE_PROJECT_INTEGRATION_TESTS := grapl-integration_tests
 COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
@@ -43,7 +42,15 @@ COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
 # https://www.gnu.org/software/make/manual/html_node/One-Shell.html
 SHELL := bash
 .ONESHELL:
-.SHELLFLAGS := -eu -o pipefail -c
+# errexit nounset noclobber
+.SHELLFLAGS := \
+-e \
+-u \
+-o pipefail \
+-c
+
+# Note: it doesn't seem to like a single-quote nested in a double-quote!
+WITH_RETRY = ./build-support/retry.sh --sleep=0 --tries=3 --
 
 # Our `docker-compose.yml` file declares the setup of a "local Grapl"
 # environment, which can be used to locally exercise a Grapl system,
@@ -192,7 +199,7 @@ test-unit-rust: build-test-unit-rust ## Build and run unit tests - Rust only
 # Long term, it would be nice to organize the tests with Pants
 # tags, rather than pytest tags
 test-unit-python: ## Run Python unit tests under Pants
-	./pants --tag="-needs_work" test :: --pytest-args="-m 'not integration_test'"
+	$(WITH_RETRY) ./pants --tag="-needs_work" test :: --pytest-args="-m \"not integration_test\""
 
 .PHONY: test-unit-js
 test-unit-js: export COMPOSE_PROJECT_NAME := grapl-test-unit-js
@@ -208,11 +215,11 @@ test-typecheck: build-test-typecheck ## Build and run typecheck tests (non-Pants
 
 .PHONY: test-typecheck-pulumi
 test-typecheck-pulumi: ## Typecheck Pulumi Python code
-	./pants typecheck pulumi::
+	$(WITH_RETRY) ./pants typecheck pulumi::
 
 .PHONY: test-typecheck-build-support
 test-typecheck-build-support: ## Typecheck build-support Python code
-	$(VERBOSE_PANTS) typecheck build-support::
+	$(WITH_RETRY) ./pants typecheck build-support::
 
 # Right now, we're only typechecking a select portion of code with
 # Pants until CM fixes https://github.com/pantsbuild/pants/issues/11553
