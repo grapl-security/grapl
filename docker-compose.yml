@@ -105,8 +105,13 @@ services:
       - HOSTNAME_EXTERNAL=${LOCALSTACK_HOST}
       - SERVICES=apigateway,dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs
       - DEBUG=1
-      - LS_LOG=debug
-      - LAMBDA_EXECUTOR=docker
+      # Once we put the lambdas behind the API gateway, overall test
+      # time increased. Using the `docker` executor reliably takes at
+      # least 2x the time of `docker-reuse`. However, the containers
+      # generated are invisible to docker-compose, and Localstack
+      # doesn't shut them down, so we have to manage that on our own
+      # (see Makefile)
+      - LAMBDA_EXECUTOR=docker-reuse
       - MAIN_CONTAINER_NAME=${COMPOSE_PROJECT_NAME}_localstack_1
       # Without this, the lambda containers are attached to the bridge network
       - LAMBDA_DOCKER_NETWORK=grapl-network
@@ -123,7 +128,6 @@ services:
       timeout: 10s
       start_period: 10s
     volumes:
-      - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
     networks:
       default:
