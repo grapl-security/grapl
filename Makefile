@@ -50,7 +50,6 @@ SHELL := bash
 -c
 
 # Note: it doesn't seem to like a single-quote nested in a double-quote!
-WITH_RETRY = ./build-support/retry.sh --sleep=0 --tries=3 --
 
 # Our `docker-compose.yml` file declares the setup of a "local Grapl"
 # environment, which can be used to locally exercise a Grapl system,
@@ -199,7 +198,7 @@ test-unit-rust: build-test-unit-rust ## Build and run unit tests - Rust only
 # Long term, it would be nice to organize the tests with Pants
 # tags, rather than pytest tags
 test-unit-python: ## Run Python unit tests under Pants
-	$(WITH_RETRY) ./pants --tag="-needs_work" test :: --pytest-args="-m \"not integration_test\""
+	./pants --tag="-needs_work" test :: --pytest-args="-m \"not integration_test\""
 
 .PHONY: test-unit-js
 test-unit-js: export COMPOSE_PROJECT_NAME := grapl-test-unit-js
@@ -215,11 +214,11 @@ test-typecheck: build-test-typecheck ## Build and run typecheck tests (non-Pants
 
 .PHONY: test-typecheck-pulumi
 test-typecheck-pulumi: ## Typecheck Pulumi Python code
-	$(WITH_RETRY) ./pants typecheck pulumi::
+	./pants typecheck pulumi::
 
 .PHONY: test-typecheck-build-support
 test-typecheck-build-support: ## Typecheck build-support Python code
-	$(WITH_RETRY) ./pants typecheck build-support::
+	./pants typecheck build-support::
 
 # Right now, we're only typechecking a select portion of code with
 # Pants until CM fixes https://github.com/pantsbuild/pants/issues/11553

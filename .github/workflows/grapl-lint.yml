@@ -87,4 +87,4 @@ jobs:
             ~/.cache/pants/named_caches
             ~/.cache/pants/lmdb_store
       - name: Lint
-        run: make lint-python
+        run: ./build-support/retry.sh --sleep=0 --tries=3 make lint-python
