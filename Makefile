@@ -302,6 +302,7 @@ package-python-libs: ## Create Python distributions for public libraries
 ##@ Local Grapl
 
 .PHONY: up
+up: export COMPOSE_PROJECT_NAME="grapl"
 up: build-services modern-lambdas ## Build Grapl services and launch docker-compose up
 	$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose -f docker-compose.yml up
