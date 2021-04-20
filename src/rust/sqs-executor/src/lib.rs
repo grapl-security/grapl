@@ -11,7 +11,6 @@ use std::{error::Error,
 
 use event_emitter::EventEmitter;
 use event_handler::EventHandler;
-use event_retriever::S3PayloadRetriever;
 use futures_util::FutureExt;
 use grapl_observe::{metric_reporter::{tag,
                                       MetricReporter},
@@ -22,6 +21,7 @@ use rusoto_sqs::{ListQueuesError,
                  Message as SqsMessage,
                  Sqs};
 use s3_event_emitter::S3EventEmitter;
+use s3_event_retriever::S3PayloadRetriever;
 use tracing::{debug,
               error,
               info};

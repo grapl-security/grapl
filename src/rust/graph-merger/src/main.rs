@@ -56,9 +56,9 @@ use sqs_executor::{cache::{Cache,
                             Recoverable},
                    event_handler::{CompletedEvents,
                                    EventHandler},
-                   event_retriever::S3PayloadRetriever,
                    make_ten,
-                   s3_event_emitter::S3ToSqsEventNotifier};
+                   s3_event_emitter::S3ToSqsEventNotifier,
+                   s3_event_retriever::S3PayloadRetriever};
 use tracing::{error,
               info,
               warn};
