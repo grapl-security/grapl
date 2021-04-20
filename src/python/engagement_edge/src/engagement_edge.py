@@ -301,7 +301,7 @@ def check_login() -> Response:
 def get_notebook() -> Response:
     # cross-reference with `engagement.ts` notebookInstanceName
     notebook_name = f"{DEPLOYMENT_NAME}-Notebook"
-    client = create_sagemaker_client(is_local=IS_LOCAL)
+    client = create_sagemaker_client()
     url = client.get_presigned_url(notebook_name)
     return respond(err=None, res={"notebook_url": url})
 
