@@ -75,6 +75,24 @@ class NopCache(object):
 EitherCache = Union[NopCache, redis.Redis]
 
 
+def verbose_cast_to_int(input: Optional[str]) -> Optional[int]:
+    if not input:
+        return None
+
+    try:
+        return int(input)
+    except (TypeError, ValueError):
+        raise ValueError(f"Couldn't cast this env variable into an int: {input}") from e
+
+
+def construct_redis_client(addr: Optional[str], port: Optional[int]) -> redis.Redis:
+    if addr and port:
+        LOGGER.debug(f"connecting to redis at {addr}:{port}")
+        return redis.Redis(host=addr, port=port, db=0)
+    else:
+        raise ValueError(f"Failed connecting to redis | addr:\t{addr} | port:\t{port}")
+
+
 class AnalyzerExecutor:
 
     # constants
@@ -105,61 +123,23 @@ class AnalyzerExecutor:
         )  # TODO move determination to grapl-common
 
         # If we're retrying, change the chunk size
-        is_retry = env.get("IS_RETRY", False)
-        if is_retry == "True":
+        is_retry = bool(env.get("IS_RETRY", False))
+        if is_retry:
             chunk_size = cls.CHUNK_SIZE_RETRY
         else:
             chunk_size = cls.CHUNK_SIZE_DEFAULT
 
         # Set up message cache
         messagecache_addr = env.get("MESSAGECACHE_ADDR")
-        messagecache_port: Optional[int] = None
-        messagecache_port_str = env.get("MESSAGECACHE_PORT")
-        if messagecache_port_str:
-            try:
-                messagecache_port = int(messagecache_port_str)
-            except (TypeError, ValueError) as ex:
-                LOGGER.error(
-                    f"can't connect to redis, MESSAGECACHE_PORT couldn't cast to int"
-                )
-                raise ex
-
-        if messagecache_addr and messagecache_port:
-            LOGGER.debug(
-                f"message cache connecting to redis at {messagecache_addr}:{messagecache_port}"
-            )
-            message_cache = redis.Redis(
-                host=messagecache_addr, port=messagecache_port, db=0
-            )
-        else:
-            LOGGER.error(
-                f"message cache failed connecting to redis | addr:\t{messagecache_addr} | port:\t{messagecache_port}"
-            )
-            raise ValueError(f"incomplete redis connection details for message cache")
+        messagecache_port: Optional[int] = verbose_cast_to_int(
+            env.get("MESSAGECACHE_PORT")
+        )
+        message_cache = construct_redis_client(messagecache_addr, messagecache_port)
 
         # Set up hit cache
         hitcache_addr = env.get("HITCACHE_ADDR")
-        hitcache_port: Optional[int] = None
-        hitcache_port_str = env.get("HITCACHE_PORT")
-        if hitcache_port_str:
-            try:
-                hitcache_port = int(hitcache_port_str)
-            except (TypeError, ValueError) as ex:
-                LOGGER.error(
-                    f"can't connect to redis, HITCACHE_PORT couldn't cast to int"
-                )
-                raise ex
-
-        if hitcache_addr and hitcache_port:
-            LOGGER.debug(
-                f"hit cache connecting to redis at {hitcache_addr}:{hitcache_port}"
-            )
-            hit_cache = redis.Redis(host=hitcache_addr, port=int(hitcache_port), db=0)
-        else:
-            LOGGER.error(
-                f"hit cache failed connecting to redis | addr:\t{hitcache_addr} | port:\t{hitcache_port}"
-            )
-            raise ValueError(f"incomplete redis connection details for hit cache")
+        hitcache_port: Optional[int] = verbose_cast_to_int(env.get("HITCACHE_PORT"))
+        hit_cache = construct_redis_client(hitcache_addr, hitcache_port)
 
         metric_reporter = MetricReporter.create("analyzer-executor")
 
