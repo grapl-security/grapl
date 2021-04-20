@@ -230,9 +230,6 @@ RouteFn = TypeVar("RouteFn", bound=Callable[..., Response])
 
 
 def requires_auth(path: str) -> Callable[[RouteFn], RouteFn]:
-    if not IS_LOCAL:
-        path = "/{proxy+}" + path
-
     def route_wrapper(route_fn: RouteFn) -> RouteFn:
         @app.route(path, methods=["OPTIONS", "POST"])
         def inner_route() -> Response:
@@ -254,9 +251,6 @@ def requires_auth(path: str) -> Callable[[RouteFn], RouteFn]:
 
 
 def no_auth(path: str) -> Callable[[RouteFn], RouteFn]:
-    if not IS_LOCAL:
-        path = "/{proxy+}" + path
-
     def route_wrapper(route_fn: RouteFn) -> RouteFn:
         @app.route(path, methods=["OPTIONS", "GET", "POST"])
         def inner_route() -> Response:
