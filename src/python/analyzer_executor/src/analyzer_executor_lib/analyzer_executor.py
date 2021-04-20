@@ -14,20 +14,10 @@ from multiprocessing import Pipe, Process
 from multiprocessing.connection import Connection
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Dict, Iterable, Iterator, List, Mapping, Optional
 
 import boto3  # type: ignore
-import redis
+from analyzer_executor_lib.redis_cache import EitherCache, construct_redis_client
 from analyzer_executor_lib.sqs_types import S3PutRecordDict, SQSMessageBody
 from grapl_analyzerlib.analyzer import Analyzer
 from grapl_analyzerlib.execution import ExecutionComplete, ExecutionFailed, ExecutionHit
@@ -60,21 +50,6 @@ except Exception as e:
     LOGGER.error("Failed to create model plugins directory", e)
 
 
-# TODO:  move generic cache stuff into its own utility file
-class NopCache(object):
-    def set(self, key: str, value: str) -> None:
-        pass
-
-    def get(self, key: str) -> bool:
-        return False
-
-    def delete(self, key: str) -> None:
-        pass
-
-
-EitherCache = Union[NopCache, redis.Redis]
-
-
 def verbose_cast_to_int(input: Optional[str]) -> Optional[int]:
     if not input:
         return None
@@ -82,15 +57,7 @@ def verbose_cast_to_int(input: Optional[str]) -> Optional[int]:
     try:
         return int(input)
     except (TypeError, ValueError):
-        raise ValueError(f"Couldn't cast this env variable into an int: {input}") from e
-
-
-def construct_redis_client(addr: Optional[str], port: Optional[int]) -> redis.Redis:
-    if addr and port:
-        LOGGER.debug(f"connecting to redis at {addr}:{port}")
-        return redis.Redis(host=addr, port=port, db=0)
-    else:
-        raise ValueError(f"Failed connecting to redis | addr:\t{addr} | port:\t{port}")
+        raise ValueError(f"Couldn't cast this env variable into an int: {input}")
 
 
 class AnalyzerExecutor:

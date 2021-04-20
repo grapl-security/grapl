@@ -10,8 +10,6 @@ from hypothesis import strategies as st
 SAMPLE_ADDR = "localhost"
 SAMPLE_PORT = "12345"
 
-ReturnsAnalyzerExecutor = Callable[..., AnalyzerExecutor]
-
 NonemptyStringStrategy = st.text(min_size=3, max_size=64)
 
 
