@@ -345,39 +345,6 @@ services:
         aliases:
           - ${GRAPL_UX_ROUTER_HOST}
 
-  # TODO: really, this service should be grapl-auth
-  grapl-engagement-edge:
-    image: grapl/grapl-engagement-edge:${TAG:-latest}
-    command: |
-      /bin/sh -c '
-        . venv/bin/activate &&
-        cd /home/grapl/app &&
-        chalice local --no-autoreload --host=0.0.0.0 --port=${GRAPL_AUTH_PORT}
-      '
-    networks:
-      default:
-        aliases:
-          - ${GRAPL_AUTH_HOST}
-    environment:
-      <<: *aws-region
-      DEBUG_SERVICES: "${DEBUG_SERVICES}"
-      DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
-      <<: *dynamodb-env
-      IS_LOCAL: "True"
-      <<: *log-level
-      <<: *secretsmanager-env
-      USER_AUTH_TABLE: "${DEPLOYMENT_NAME}-user_auth_table"
-      UX_BUCKET_URL: "localhost:3000" # TODO: Port??
-      VSC_DEBUGGER_PORT: "${VSC_DEBUGGER_PORT_FOR_ENGAGEMENT_EDGE}"
-    depends_on:
-      localstack:
-        condition: service_healthy
-      grapl-provision:
-        condition: service_completed_successfully
-    tty: true
-    ports:
-      - 127.0.0.1:${VSC_DEBUGGER_PORT_FOR_ENGAGEMENT_EDGE}:${VSC_DEBUGGER_PORT_FOR_ENGAGEMENT_EDGE}
-
   grapl-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
     command: |
