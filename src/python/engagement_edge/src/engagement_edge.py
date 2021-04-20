@@ -60,7 +60,7 @@ class LazyJwtSecret:
         else:
             jwt_secret_id = os.environ["JWT_SECRET_ID"]
 
-            secretsmanager = boto3.client("secretsmanager")
+            secretsmanager = SecretsManagerClientFactory(boto3).from_env()
 
             jwt_secret: str = secretsmanager.get_secret_value(
                 SecretId=jwt_secret_id,
