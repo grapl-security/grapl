@@ -302,6 +302,7 @@ package-python-libs: ## Create Python distributions for public libraries
 ##@ Local Grapl
 
 .PHONY: up
+up: export COMPOSE_PROJECT_NAME="grapl"
 up: build-services modern-lambdas ## Build Grapl services and launch docker-compose up
 	$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose -f docker-compose.yml up
@@ -323,6 +324,11 @@ up-detach: build-services ## Bring up local Grapl and detach to return control t
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
 	$(WITH_LOCAL_GRAPL_ENV)
+	# This is only for killing the lambda containers that Localstack
+	# spins up in our network, but that docker-compose doesn't know
+	# about. This must be the network that is used in Localstack's
+	# LAMBDA_DOCKER_NETWORK environment variable.
+	-docker kill $(shell docker ps --quiet --filter=network=grapl-network)
 	docker-compose $(EVERY_COMPOSE_FILE) down --timeout=0
 	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
 	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
@@ -357,6 +363,7 @@ zip-pants: ## Generate Lambda zip artifacts using pants
 	cp ./dist/src.python.provisioner.src/lambda.zip ./src/js/grapl-cdk/zips/provisioner-$(TAG).zip
 	cp ./dist/src.python.engagement-creator/engagement-creator.zip ./src/js/grapl-cdk/zips/engagement-creator-$(TAG).zip
 	cp ./dist/src.python.grapl-dgraph-ttl/lambda.zip ./src/js/grapl-cdk/zips/dgraph-ttl-$(TAG).zip
+	cp ./dist/src.python.engagement_edge/engagement_edge.zip ./src/js/grapl-cdk/zips/engagement-edge-$(TAG).zip
 
 # This target is intended to help ease the transition to Pulumi, and
 # using lambdas in local Grapl testing deployments. Essentially, every

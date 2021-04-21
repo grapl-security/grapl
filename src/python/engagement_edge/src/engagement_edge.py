@@ -60,7 +60,7 @@ class LazyJwtSecret:
         else:
             jwt_secret_id = os.environ["JWT_SECRET_ID"]
 
-            secretsmanager = boto3.client("secretsmanager")
+            secretsmanager = SecretsManagerClientFactory(boto3).from_env()
 
             jwt_secret: str = secretsmanager.get_secret_value(
                 SecretId=jwt_secret_id,
@@ -230,9 +230,6 @@ RouteFn = TypeVar("RouteFn", bound=Callable[..., Response])
 
 
 def requires_auth(path: str) -> Callable[[RouteFn], RouteFn]:
-    if not IS_LOCAL:
-        path = "/{proxy+}" + path
-
     def route_wrapper(route_fn: RouteFn) -> RouteFn:
         @app.route(path, methods=["OPTIONS", "POST"])
         def inner_route() -> Response:
@@ -254,9 +251,6 @@ def requires_auth(path: str) -> Callable[[RouteFn], RouteFn]:
 
 
 def no_auth(path: str) -> Callable[[RouteFn], RouteFn]:
-    if not IS_LOCAL:
-        path = "/{proxy+}" + path
-
     def route_wrapper(route_fn: RouteFn) -> RouteFn:
         @app.route(path, methods=["OPTIONS", "GET", "POST"])
         def inner_route() -> Response:
@@ -301,7 +295,7 @@ def check_login() -> Response:
 def get_notebook() -> Response:
     # cross-reference with `engagement.ts` notebookInstanceName
     notebook_name = f"{DEPLOYMENT_NAME}-Notebook"
-    client = create_sagemaker_client(is_local=IS_LOCAL)
+    client = create_sagemaker_client()
     url = client.get_presigned_url(notebook_name)
     return respond(err=None, res={"notebook_url": url})
 

@@ -99,8 +99,8 @@ services:
       - IS_LOCAL=True
       - DEPLOYMENT_NAME
       - UX_BUCKET_URL="ux_bucket_url"
-      - GRAPL_AUTH_HOST
-      - GRAPL_AUTH_PORT
+      - GRAPL_API_HOST
+      - GRAPL_HTTP_FRONTEND_PORT
 
   # TODO: Re-enable these tests after the following issues are resolved:
   # - https://github.com/grapl-security/issue-tracker/issues/385
@@ -142,8 +142,8 @@ services:
       - DYNAMODB_ENDPOINT
       - DYNAMODB_ACCESS_KEY_ID
       - DYNAMODB_ACCESS_KEY_SECRET
-      - GRAPL_AUTH_HOST
-      - GRAPL_AUTH_PORT
+      - GRAPL_API_HOST
+      - GRAPL_HTTP_FRONTEND_PORT
       - GRAPL_GRAPHQL_HOST
       - GRAPL_GRAPHQL_PORT
       - GRAPL_MODEL_PLUGIN_DEPLOYER_HOST

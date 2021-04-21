@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING
 
 import boto3
@@ -33,8 +34,8 @@ class LocalSagemakerClient(ISagemakerClient):
         return "http://localhost:8888"
 
 
-def create_sagemaker_client(is_local: bool) -> ISagemakerClient:
-    if is_local:
+def create_sagemaker_client() -> ISagemakerClient:
+    if os.getenv("LOCALSTACK_HOSTNAME"):
         return LocalSagemakerClient()
     else:
         client = boto3.client("sagemaker")
