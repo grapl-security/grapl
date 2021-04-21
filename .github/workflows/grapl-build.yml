@@ -21,7 +21,7 @@ jobs:
 
       - name: Rust unit tests
         run: |
-          make -j8 test-unit-rust
+          make -j2 test-unit-rust
 
   python-unit-tests:
     runs-on: ubuntu-latest
@@ -52,7 +52,7 @@ jobs:
             ~/.cache/pants/lmdb_store
 
       - name: Python unit tests
-        run: ./build-support/retry.sh --sleep=0 --tries=3 -- make -j8 test-unit-python
+        run: ./build-support/retry.sh --sleep=0 --tries=3 -- make -j4 test-unit-python
 
   python-typecheck-pants:
     runs-on: ubuntu-latest
@@ -75,7 +75,7 @@ jobs:
             ~/.cache/pants/named_caches
             ~/.cache/pants/lmdb_store
       - name: Typecheck Python code with Pants
-        run: ./build-support/retry.sh --sleep=0 --tries=3 -- make -j8 test-typecheck-pants
+        run: ./build-support/retry.sh --sleep=0 --tries=3 -- make -j4 test-typecheck-pants
 
   python-typecheck:
     runs-on: ubuntu-latest
@@ -90,7 +90,7 @@ jobs:
 
       - name: Run python-typecheck
         run: |
-          make -j8 test-typecheck
+          make -j4 test-typecheck
 
   js-unit-tests:
     runs-on: ubuntu-latest
@@ -105,7 +105,7 @@ jobs:
 
       - name: JS unit tests
         run: |
-          make -j8 test-unit-js
+          make -j4 test-unit-js
 
   build-zips:
     runs-on: ubuntu-latest
@@ -123,7 +123,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Build AWS Lambda ZIP files
-        run: make -j8 zip
+        run: make -j4 zip
 
   integration-tests:
     runs-on: ubuntu-latest
@@ -148,7 +148,7 @@ jobs:
       - name: Run integration tests
         run: |
           echo "unset RUSTC_WRAPPER" > rust_env.sh
-          GRAPL_RUST_ENV_FILE=rust_env.sh GRAPL_LOG_LEVEL=DEBUG make -j8 test-integration
+          GRAPL_RUST_ENV_FILE=rust_env.sh GRAPL_LOG_LEVEL=DEBUG make -j4 test-integration
 
       # NOTE: This requires >= py37
       # Unlike the e2e tests, we don't dump the database contents; strictly logs.
@@ -192,7 +192,7 @@ jobs:
       - name: Run end-to-end tests
         run: |
           # A cheap, low-tech retry. If any of them ever exits 0, it short circuits.
-          GRAPL_LOG_LEVEL=DEBUG DUMP_ARTIFACTS=True make -j8 test-e2e ||
+          GRAPL_LOG_LEVEL=DEBUG DUMP_ARTIFACTS=True make -j4 test-e2e ||
           GRAPL_LOG_LEVEL=DEBUG DUMP_ARTIFACTS=True make test-e2e ||
           GRAPL_LOG_LEVEL=DEBUG DUMP_ARTIFACTS=True make test-e2e
 
