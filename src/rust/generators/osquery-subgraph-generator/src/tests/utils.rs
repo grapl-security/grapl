@@ -1,4 +1,4 @@
-use grapl_service::decoder::ZstdNdjsonDecoder;
+use grapl_service::decoder::NdjsonDecoder;
 use sqs_executor::event_decoder::PayloadDecoder;
 use tokio::fs;
 
@@ -11,7 +11,7 @@ pub(crate) async fn read_osquery_test_data(
     let file_data = fs::read(format!("test_data/{}", path))
         .await
         .expect(&format!("Failed to read test data ({}).", path));
-    let mut decoder = ZstdNdjsonDecoder::default();
+    let mut decoder = NdjsonDecoder::default();
 
     decoder.decode(file_data).unwrap()
 }

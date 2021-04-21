@@ -24,7 +24,7 @@ rusoto_sqs = { version="0.46", default_features = false, features=["rustls"] }
 rusoto_credential = "0.46"
 
 async-trait = "0.1"
-zstd = "0.6"
+zstd = "0.7"
 tokio = { version = "1", features = ["sync", "rt", "macros", "time", "rt-multi-thread"] }
 chrono = "0.4"
 sqs-executor = { path = "../sqs-executor/" }

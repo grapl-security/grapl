@@ -18,7 +18,7 @@ use grapl_graph_descriptions::graph_description::{GraphDescription,
                                                   IdentifiedNode,
                                                   NodeDescription};
 use grapl_observe::metric_reporter::MetricReporter;
-use grapl_service::{decoder::ZstdProtoDecoder,
+use grapl_service::{decoder::ProtoDecoder,
                     serialization::IdentifiedGraphSerializer};
 use log::*;
 use rusoto_dynamodb::{DynamoDb,
@@ -265,7 +265,7 @@ pub async fn handler(_should_default: bool) -> Result<(), Box<dyn std::error::Er
     let s3_payload_retriever = &mut make_ten(async {
         S3PayloadRetriever::new(
             |region_str| grapl_config::env_helpers::init_s3_client(&region_str),
-            ZstdProtoDecoder::default(),
+            ProtoDecoder::default(),
             MetricReporter::new(&env.service_name),
         )
     })

@@ -37,7 +37,7 @@ aws_lambda_events = "0.4"
 
 sha2 = "0"
 
-zstd = "0.6"
+zstd = "0.7"
 prost = "0.7"
 base64 = "0"
 rand = "0"

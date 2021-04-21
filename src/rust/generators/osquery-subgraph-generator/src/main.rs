@@ -43,7 +43,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let s3_payload_retriever = &mut make_ten(async {
         S3PayloadRetriever::new(
             |region_str| grapl_config::env_helpers::init_s3_client(&region_str),
-            grapl_service::decoder::ZstdNdjsonDecoder::default(),
+            grapl_service::decoder::NdjsonDecoder::default(),
             MetricReporter::new(&env.service_name),
         )
     })

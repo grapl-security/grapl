@@ -56,4 +56,19 @@ impl SysmonSubgraphGeneratorMetrics {
             )
             .unwrap_or_else(|e| warn!("Metric failed: {}", e))
     }
+
+    pub fn report_subgraph_generation<T, E>(&mut self, result: &Result<T, E>) {
+        let status = match result {
+            Ok(_) => common_strs::SUCCESS,
+            Err(_) => common_strs::FAIL,
+        };
+
+        self.metric_reporter
+            .gauge(
+                "sysmon-subgraph-generation",
+                1.0,
+                &[TagPair(common_strs::STATUS, status)],
+            )
+            .unwrap_or_else(|e| warn!("Metric failed: {}", e))
+    }
 }
