@@ -61,7 +61,7 @@ export interface FargateServiceProps {
     metric_forwarder?: Service;
 }
 
-interface DeafultAndRetry<T> {
+interface DefaultAndRetry<T> {
     readonly default: T;
     readonly retry: T;
 }
@@ -71,7 +71,7 @@ export class FargateService {
     readonly serviceName: string;
     readonly service: ecs_patterns.QueueProcessingFargateService;
     readonly retryService: ecs_patterns.QueueProcessingFargateService;
-    readonly logGroups: DeafultAndRetry<logs.LogGroup>;
+    readonly logGroups: DefaultAndRetry<logs.LogGroup>;
 
     constructor(
         scope: cdk.Construct,
@@ -114,6 +114,16 @@ export class FargateService {
             }),
         };
 
+        const autoscalingProps = {
+            // Fargate autoscaling groups can adjust their scaling based on any metric, like:
+            // CPU usage, approximate queue messages, etc.
+            // The QueueProcessingFargateService pattern does it based on both of those metrics!
+            // https://github.com/aws/aws-cdk/blob/7966f8d48c4bff26beb22856d289f9d0c7e7081d/packages/%40aws-cdk/aws-ecs-patterns/lib/base/queue-processing-service-base.ts#L331
+            minScalingCapacity: 0, // CURRENTLY BROKEN https://github.com/aws/aws-cdk/issues/14336
+            maxScalingCapacity: 5,
+            // Potential optimization would be to calibrate `scalingSteps`, but default seems okay for now.
+        };
+
         // Create a load-balanced Fargate service and make it public
         this.service = new ecs_patterns.QueueProcessingFargateService(
             scope,
@@ -135,11 +145,11 @@ export class FargateService {
                 queue: queues.queue,
                 cpu: 256,
                 memoryLimitMiB: 512,
-                desiredTaskCount: 1,
                 logDriver: new AwsLogDriver({
                     streamPrefix: "logs",
                     logGroup: this.logGroups.default,
                 }),
+                ...autoscalingProps,
             }
         );
 
@@ -163,11 +173,11 @@ export class FargateService {
                 queue: queues.retryQueue,
                 cpu: 256,
                 memoryLimitMiB: 512,
-                desiredTaskCount: 1,
                 logDriver: new AwsLogDriver({
                     streamPrefix: "logs",
                     logGroup: this.logGroups.retry,
                 }),
+                ...autoscalingProps,
             }
         );
 

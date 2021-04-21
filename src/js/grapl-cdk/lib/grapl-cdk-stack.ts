@@ -1,5 +1,6 @@
 import * as apigateway from "@aws-cdk/aws-apigateway";
 import * as cdk from "@aws-cdk/core";
+import * as cxapi from "@aws-cdk/cx-api";
 import * as ec2 from "@aws-cdk/aws-ec2";
 import * as s3 from "@aws-cdk/aws-s3";
 import * as secretsmanager from "@aws-cdk/aws-secretsmanager";
@@ -65,6 +66,12 @@ export class GraplCdkStack extends cdk.Stack {
 
     constructor(scope: cdk.Construct, id: string, props: GraplStackProps) {
         super(scope, id, props);
+
+        const setFeatureFlags = () => {
+            // ECS "Default Desired Count" is deprecated in favor of minScalingCapacity maxScalingCapacity
+            this.node.setContext(cxapi.ECS_REMOVE_DEFAULT_DESIRED_COUNT, true);
+        };
+        setFeatureFlags();
 
         this.deploymentName = props.stackName;
         const deployment_name = this.deploymentName.toLowerCase();
