@@ -52,6 +52,12 @@ pub fn is_local() -> bool {
 
 pub async fn event_cache(env: &ServiceEnv) -> RedisCache {
     let cache_address = std::env::var("REDIS_ENDPOINT").expect("REDIS_ENDPOINT");
+    if (!cache_address.starts_with("redis://")) {
+        panic!(
+            "Expected redis client with redis://, but got {}",
+            cache_address
+        );
+    }
     let lru_cache_size = std::env::var("LRU_CACHE_SIZE")
         .unwrap_or(String::from("1000000"))
         .parse::<usize>()
