@@ -1,19 +1,19 @@
-use std::io::Cursor;
-
 use serde::Deserialize;
 use sqs_executor::{errors::{CheckedError,
                             Recoverable},
                    event_decoder::PayloadDecoder};
 
+use crate::decoder::decompress::PayloadDecompressionError;
+
 #[derive(thiserror::Error, Debug)]
-pub enum ZstdJsonDecoderError {
+pub enum JsonDecoderError {
     #[error("DecompressionError")]
-    DecompressionError(#[from] std::io::Error),
-    #[error("ProtoError")]
+    DecompressionError(#[from] PayloadDecompressionError),
+    #[error("JsonError")]
     JsonError(#[from] serde_json::Error),
 }
 
-impl CheckedError for ZstdJsonDecoderError {
+impl CheckedError for JsonDecoderError {
     fn error_type(&self) -> Recoverable {
         match self {
             Self::DecompressionError(_) => Recoverable::Persistent,
@@ -23,20 +23,16 @@ impl CheckedError for ZstdJsonDecoderError {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct ZstdJsonDecoder;
+pub struct JsonDecoder;
 
-impl<D> PayloadDecoder<D> for ZstdJsonDecoder
+impl<D> PayloadDecoder<D> for JsonDecoder
 where
     for<'a> D: Deserialize<'a>,
 {
-    type DecoderError = ZstdJsonDecoderError;
+    type DecoderError = JsonDecoderError;
     fn decode(&mut self, body: Vec<u8>) -> Result<D, Self::DecoderError> {
-        let mut decompressed = Vec::new();
+        let decompressed = super::decompress::maybe_decompress(body.as_slice())?;
 
-        let mut body = Cursor::new(&body);
-
-        zstd::stream::copy_decode(&mut body, &mut decompressed)?;
-
-        Ok(serde_json::from_slice(&decompressed)?)
+        serde_json::from_slice(&decompressed).map_err(|e| e.into())
     }
 }

@@ -241,3 +241,7 @@ pub fn ip_connection_history_table_name() -> String {
 pub fn asset_id_mappings_table_name() -> String {
     std::env::var("ASSET_ID_MAPPINGS").expect("ASSET_ID_MAPPINGS")
 }
+
+pub fn source_compression() -> String {
+    std::env::var("SOURCE_COMPRESSION").unwrap_or(String::from("Zstd"))
+}

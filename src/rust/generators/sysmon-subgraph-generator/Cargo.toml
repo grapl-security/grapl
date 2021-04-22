@@ -22,6 +22,7 @@ log = "0.4"
 regex = "1.3"
 lazy_static = "1.2"
 chrono = "0.4"
+itertools = "0.10"
 
 rusoto_s3 = {version="0.46.0", default_features = false, features=["rustls"]}
 rusoto_core = {version="0.46.0", default_features = false, features=["rustls"]}
@@ -33,7 +34,7 @@ aws_lambda_events = "0.4"
 async-trait = "0.1"
 thiserror = "1.0"
 
-zstd = "0.6"
+zstd = "0.7"
 tokio = { version = "1", features = ["sync", "rt", "macros", "time", "rt-multi-thread"] }
 graph-generator-lib = { path="../graph-generator-lib" }
 tracing = "0.1"

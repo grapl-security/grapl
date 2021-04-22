@@ -27,7 +27,8 @@ rusoto_core = {version="0.46.0", default_features = false, features=["rustls"]}
 rusoto_sqs = {version="0.46.0", default_features = false, features=["rustls"]}
 
 async-trait = "0.1"
-zstd = "0.6"
+zstd = "0.7"
 tokio = { version = "1", features = ["sync", "rt", "macros", "time", "rt-multi-thread", "fs"] }
 thiserror = "1.0"
 tracing = "0.1"
+itertools = "0.10"

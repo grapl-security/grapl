@@ -25,7 +25,7 @@ use grapl_graph_descriptions::graph_description::{Edge,
 use grapl_observe::{dgraph_reporter::DgraphMetricReporter,
                     metric_reporter::{tag,
                                       MetricReporter}};
-use grapl_service::{decoder::ZstdProtoDecoder,
+use grapl_service::{decoder::ProtoDecoder,
                     serialization::MergedGraphSerializer};
 use grapl_utils::{future_ext::GraplFutureExt,
                   rusoto_ext::dynamodb::GraplDynamoDbClientExt};
