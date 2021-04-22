@@ -352,6 +352,10 @@ clean: ## Prune all docker build cache and remove Grapl containers and images
 clean-mount-cache: ## Prune all docker mount cache (used by sccache)
 	docker builder prune --filter type=exec.cachemount
 
+.PHONY: clean-artifacts
+clean-artifacts: ## Remove all dumped artifacts from test runs (see dump_artifacts.py)
+	rm -Rf artifacts_*_[0-9]*
+
 .PHONY: zip
 zip: build-lambdas ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
 	docker-compose $(EVERY_LAMBDA_COMPOSE_FILE) up

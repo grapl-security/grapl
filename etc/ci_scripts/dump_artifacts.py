@@ -4,6 +4,7 @@ import logging
 import os
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any, List, Optional
 
@@ -120,19 +121,15 @@ def _dump_docker_log(container_name: str, dir: Path) -> None:
         popen.wait()
 
 
-ARTIFACTS_PATH = Path("/tmp/dumped_artifacts").resolve()
-
-
-def dump_all_logs(compose_project: str) -> None:
+def dump_all_logs(compose_project: str, artifacts_dir: Path) -> None:
     containers = _container_names_by_prefix(compose_project)
-    os.makedirs(ARTIFACTS_PATH, exist_ok=True)
     for container in containers:
-        _dump_docker_log(container_name=container, dir=ARTIFACTS_PATH)
+        _dump_docker_log(container_name=container, dir=artifacts_dir)
     for lambda_fn in _lambda_names():
-        _dump_lambda_log(lambda_fn, dir=ARTIFACTS_PATH)
+        _dump_lambda_log(lambda_fn, dir=artifacts_dir)
 
 
-def dump_volume(compose_project: Optional[str], volume_name: str) -> None:
+def dump_volume(compose_project: Optional[str], volume_name: str, artifacts_dir: Path) -> None:
     # Make a temporary container with the volume mounted
     # docker-compose prefixes volume names with the compose project name.
     prefix = f"{compose_project}_" if compose_project else ""
@@ -144,10 +141,9 @@ def dump_volume(compose_project: Optional[str], volume_name: str) -> None:
     )
     print(f"Temporary container {container_id}")
 
-    os.makedirs(ARTIFACTS_PATH, exist_ok=True)
-    # Copy contents of /mounted_volume into ARTIFACTS_PATH
+    # Copy contents of /mounted_volume into artifacts_dir
     subprocess.run(
-        f"docker cp {container_id}:/{volume_name} {ARTIFACTS_PATH}".split(" "),
+        f"docker cp {container_id}:/{volume_name} {artifacts_dir}".split(" "),
     )
 
     subprocess.run(f"docker rm {container_id}".split(" "))
@@ -165,8 +161,15 @@ def parse_args() -> Any:
 
 if __name__ == "__main__":
     args = parse_args()
-    dump_all_logs(compose_project=args.compose_project)
-    dump_volume(compose_project=args.compose_project, volume_name="dgraph_export")
+    compose_project = args.compose_project
+
+    cwd = os.getcwd()
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    artifacts_dir = Path(f"{cwd}/artifacts_{compose_project}_{timestamp}")
+    os.makedirs(artifacts_dir, exist_ok=False)
+
+    dump_all_logs(compose_project=compose_project, artifacts_dir=artifacts_dir)
+    dump_volume(compose_project=compose_project, volume_name="dgraph_export", artifacts_dir=artifacts_dir)
     # dynamodb dump is done in the e2e binary, which is outside compose - hence, no compose project.
-    dump_volume(compose_project=None, volume_name="dynamodb_dump")
-    logging.info(f"Dumped to {ARTIFACTS_PATH}")
+    dump_volume(compose_project=None, volume_name="dynamodb_dump", artifacts_dir=artifacts_dir)
+    logging.info(f"Dumped to {artifacts_dir}")
