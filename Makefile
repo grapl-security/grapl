@@ -278,7 +278,7 @@ lint-js: ## Run js lint checks
 .PHONY: lint
 lint: lint-python lint-js lint-rust ## Run all lint checks
 
-##@ Formatting 🧙
+##@ Formatting 💅
 
 .PHONY: format-rust
 format-rust: ## Reformat all Rust code
