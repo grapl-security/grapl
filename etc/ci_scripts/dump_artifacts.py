@@ -26,12 +26,11 @@ def _name_of_all_containers(compose_project: str) -> List[str]:
             "--filter",
             f"name={compose_project}",
             "--format",
-            "table {{.Names}}",
+            "{{.Names}}",
         ],
         capture_output=True,
     )
     containers: List[str] = run_result.stdout.decode("utf-8").split("\n")
-    containers = containers[1:]  # remove the table column header
     containers = [c for c in containers if c]  # filter empty
     if not containers:
         raise ValueError(f"Couldn't find any containers for '{compose_project}'")
