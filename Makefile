@@ -90,7 +90,6 @@ FMT_BOLD = \033[1m
 FMT_END = \033[0m
 VSC_DEBUGGER_DOCS_LINK = https://grapl.readthedocs.io/en/latest/debugging/vscode_debugger.html
 
-
 .PHONY: help
 help: ## Print this help
 	@printf -- '\n'
@@ -121,7 +120,7 @@ help: ## Print this help
 	@printf '\n'
 
 
-##@ Build
+##@ Build 🔨
 
 .PHONY: build
 build: build-services ## Alias for `services` (default)
@@ -176,8 +175,9 @@ build-lambdas: ## Build services for Grapl in AWS (subset of all services)
 graplctl: ## Build graplctl and install it to the project root
 	./pants package ./src/python/graplctl/graplctl
 	cp ./dist/src.python.graplctl.graplctl/graplctl.pex ./bin/graplctl
+	printf -- '\n${FMT_BOLD}Graplctl${FMT_END} written to ${FMT_BLUE}./bin/graplctl${FMT_END}\n'
 
-##@ Test
+##@ Test 🧪
 
 .PHONY: test
 test: test-unit test-integration test-e2e test-typecheck ## Run all tests
@@ -261,7 +261,7 @@ test-with-env: # (Do not include help text - not to be used directly)
 	# Run tests and check exit codes from each test container
 	test/docker-compose-with-error.sh
 
-##@ Lint
+##@ Lint 🧹
 
 .PHONY: lint-rust
 lint-rust: ## Run Rust lint checks
@@ -278,7 +278,7 @@ lint-js: ## Run js lint checks
 .PHONY: lint
 lint: lint-python lint-js lint-rust ## Run all lint checks
 
-##@ Formatting
+##@ Formatting 💅
 
 .PHONY: format-rust
 format-rust: ## Reformat all Rust code
@@ -299,7 +299,7 @@ format: format-python format-js format-rust ## Reformat all code
 package-python-libs: ## Create Python distributions for public libraries
 	./pants filter --filter-target-type=python_distribution :: | xargs ./pants package
 
-##@ Local Grapl
+##@ Local Grapl 💻
 
 .PHONY: up
 up: export COMPOSE_PROJECT_NAME="grapl"
@@ -338,7 +338,7 @@ stop: ## docker-compose stop - stops (but preserves) the containers
 	$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose $(EVERY_COMPOSE_FILE) stop
 
-##@ Utility
+##@ Utility ⚙
 
 .PHONY: clean
 clean: ## Prune all docker build cache and remove Grapl containers and images
