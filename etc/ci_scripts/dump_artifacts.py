@@ -14,9 +14,17 @@ assert sys.version_info >= (
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 
-def _name_of_all_containers(compose_project: str) -> List[str]:
-    """
-    compose_project meaning the name of the docker-compose project.
+def _container_names_by_prefix(prefix: str) -> List[str]:
+    """Return a list of all containers (running or not) whose names begin
+    with `prefix`.
+
+    Provide a `docker-compose` project name as a prefix to retrieve
+    containers associated with that project. (We don't use
+    `docker-compose` to do this directly because of our rather complex
+    usage of multiple compose files at a time.)
+
+    Raises an error if no such containers are found.
+
     """
     run_result = subprocess.run(
         [
@@ -24,7 +32,7 @@ def _name_of_all_containers(compose_project: str) -> List[str]:
             "ps",
             "--all",
             "--filter",
-            f"name={compose_project}",
+            f"name={prefix}",
             "--format",
             "{{.Names}}",
         ],
@@ -33,7 +41,7 @@ def _name_of_all_containers(compose_project: str) -> List[str]:
     containers: List[str] = run_result.stdout.decode("utf-8").split("\n")
     containers = [c for c in containers if c]  # filter empty
     if not containers:
-        raise ValueError(f"Couldn't find any containers for '{compose_project}'")
+        raise ValueError(f"Couldn't find any containers for '{prefix}'")
     return containers
 
 
@@ -59,7 +67,7 @@ ARTIFACTS_PATH = Path("/tmp/dumped_artifacts").resolve()
 
 
 def dump_all_logs(compose_project: str) -> None:
-    containers = _name_of_all_containers(compose_project)
+    containers = _container_names_by_prefix(compose_project)
     os.makedirs(ARTIFACTS_PATH, exist_ok=True)
     for container in containers:
         _dump_docker_log(container_name=container, dir=ARTIFACTS_PATH)
