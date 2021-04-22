@@ -391,3 +391,7 @@ docker-kill-all:  # Kill all currently running Docker containers
 .PHONY: populate-venv
 populate-venv: ## Set up a Python virtualenv (you'll have to activate manually!)
 	build-support/manage_virtualenv.sh populate
+
+.PHONY: repl
+repl: ## Run an interactive ipython repl that can import from grapl-common etc
+	./pants --no-pantsd repl --shell=ipython src/python/repl

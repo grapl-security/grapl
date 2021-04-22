@@ -56,6 +56,7 @@ root_patterns = [
   "/src/python/grapl-ux-router/src",
   "/src/python/provisioner/src",
   "/src/python/provisioner/tests",
+  "/src/python/repl",
 ]
 
 [python-setup]
@@ -104,3 +105,6 @@ args = [ "--suppress-no-test-exit-code" ]
 version = "mypy==0.800"
 config = "src/python/mypy.ini"
 args = [ "--show-error-codes" ]
+
+[ipython]
+version = "ipython==7.20.0"
