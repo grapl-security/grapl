@@ -55,7 +55,7 @@ if __name__ == "__main__":
         ServiceQueue(service)
 
     forwarder = MetricForwarder(network=network)
-    e2e_test_runner = E2eTestRunner()
+    e2e_test_runner = E2eTestRunner(network=network)
 
     ec = EngagementCreator(
         source_emitter=analyzer_matched, network=network, forwarder=forwarder
