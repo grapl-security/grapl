@@ -2,12 +2,13 @@ from typing import Optional
 
 import pulumi_aws as aws
 from infra.config import DEPLOYMENT_NAME, GLOBAL_LAMBDA_ZIP_TAG, mg_alphas
+from infra.network import Network
 
 import pulumi
 
 
 class E2eTestRunner(pulumi.ComponentResource):
-    def __init__(self, opts: Optional[pulumi.ResourceOptions] = None) -> None:
+    def __init__(self, network: Network, opts: Optional[pulumi.ResourceOptions] = None) -> None:
         name = "e2e-test-runner"
         super().__init__("grapl:E2eTestRunner", name, None, opts)
 
@@ -39,6 +40,7 @@ class E2eTestRunner(pulumi.ComponentResource):
                 timeout=600,
             ),
             opts=pulumi.ResourceOptions(parent=self),
+            network=network,
         )
 
         self.register_outputs({})
