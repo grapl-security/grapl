@@ -111,7 +111,7 @@ def test_hit_cache(
     # Doesn't like the Pytest fixture mixed with Hypothesis givens.
     # It's okay, since the fixture just returns a function.
     suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture],
-    deadline=None
+    deadline=None,
 )
 @pytest.mark.integration_test
 def test_message_cache(
