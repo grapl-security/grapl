@@ -95,7 +95,6 @@ collection of these environment variables:
 # example values
 export DEPLOYMENT_NAME="grapl-deployment-name"
 export GRAPL_VERSION="latest" # if you set TAG, update this too
-export GRAPL_ROOT="/path/to/grapl_git_repository"
 export GRAPL_REGION="us-xxxx-n"
 export GRAPL_CDK_WATCHFUL_EMAIL="email-for-watchful@example.com"
 export GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL="email-for-op-alarm@example.com"
@@ -103,6 +102,7 @@ export GRAPL_CDK_SECURITY_ALARMS_EMAIL="email-for-sec-alarm@example.com"
 export GRAPL_DGRAPH_INSTANCE_TYPE='xn.size' # e.g., 'i3.large'
 ```
 #### Parameter explanation
+<!-- The repeated "1." is expanded out to the correct number when rendered -->
 
 1. `DEPLOYMENT_NAME` (required)
 
@@ -112,7 +112,7 @@ export GRAPL_DGRAPH_INSTANCE_TYPE='xn.size' # e.g., 'i3.large'
 
     We recommend prefixing the deployment name with "Grapl-" to help identify Grapl resources in your AWS account.
 
-2. `GRAPL_VERSION` (required, if TAG changed)
+1. `GRAPL_VERSION` (required, if TAG changed)
 
     Which locally built version of Grapl to deploy.
 
@@ -122,23 +122,19 @@ export GRAPL_DGRAPH_INSTANCE_TYPE='xn.size' # e.g., 'i3.large'
 
     Otherwise, you may safely let it default to 'latest'.
 
-3. `GRAPL_ROOT` (required)
-
-    This is the path to the directory where you checked Grapl out as a Git repository.
-
-4. `GRAPL_REGION` (required)
+1. `GRAPL_REGION` (required)
 
     This is your [AWS region](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html).
 
-5. `GRAPL_CDK_WATCHFUL_EMAIL` (optional)
+1. `GRAPL_CDK_WATCHFUL_EMAIL` (optional)
 
     Setting this enables [Watchful](https://github.com/eladb/cdk-watchful) for monitoring Grapl with email alerts.
 
-6. `GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL` (required)
+1. `GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL` (required)
 
     Setting this enables alarms meant for the operator of the Grapl stack.
 
-7. `GRAPL_CDK_SECURITY_ALARMS_EMAIL` (required)
+1. `GRAPL_CDK_SECURITY_ALARMS_EMAIL` (required)
 
     Setting this enables alarms meant for the consumer of the Grapl stack, for example, "a new risk node has been found".
 
