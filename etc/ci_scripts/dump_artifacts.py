@@ -29,7 +29,7 @@ def _container_names_by_prefix(prefix: str) -> List[str]:
     Raises an error if no such containers are found.
 
     """
-    run_result = subprocess.run(
+    result = subprocess.run(
         [
             "docker",
             "ps",
@@ -40,9 +40,9 @@ def _container_names_by_prefix(prefix: str) -> List[str]:
             "{{.Names}}",
         ],
         capture_output=True,
+        text=True,
     )
-    containers: List[str] = run_result.stdout.decode("utf-8").split("\n")
-    containers = [c for c in containers if c]  # filter empty
+    containers = result.stdout.split()
     if not containers:
         raise ValueError(f"Couldn't find any containers for '{prefix}'")
     return containers
@@ -109,16 +109,11 @@ def _dump_docker_log(container_name: str, dir: Path) -> None:
     """
     destination = dir / f"{container_name}.log"
     with open(destination, "wb") as out_stream:
-        popen = subprocess.Popen(
-            [
-                "docker",
-                "logs",
-                "--timestamps",
-                container_name,
-            ],
+        subprocess.run(
+            f"docker logs --timestamps {container_name}",
             stdout=out_stream,
+            shell=True,
         )
-        popen.wait()
 
 
 def dump_all_logs(compose_project: str, artifacts_dir: Path) -> None:
@@ -133,20 +128,23 @@ def dump_volume(compose_project: Optional[str], volume_name: str, artifacts_dir:
     # Make a temporary container with the volume mounted
     # docker-compose prefixes volume names with the compose project name.
     prefix = f"{compose_project}_" if compose_project else ""
-    cmd = f"docker run -d --volume {prefix}{volume_name}:/{volume_name} alpine true"
     container_id = (
-        subprocess.run(cmd.split(" "), capture_output=True)
-        .stdout.decode("utf-8")
-        .strip()
+        subprocess.run(
+            f"docker run -d --volume {prefix}{volume_name}:/{volume_name} alpine true",
+            shell=True,
+            capture_output=True,
+            text=True)
+        .stdout.strip()
     )
     print(f"Temporary container {container_id}")
 
     # Copy contents of /mounted_volume into artifacts_dir
     subprocess.run(
-        f"docker cp {container_id}:/{volume_name} {artifacts_dir}".split(" "),
+        f"docker cp {container_id}:/{volume_name} {artifacts_dir}",
+        shell=True
     )
 
-    subprocess.run(f"docker rm {container_id}".split(" "))
+    subprocess.run(f"docker rm {container_id}", shell=True)
 
 
 def parse_args() -> Any:
