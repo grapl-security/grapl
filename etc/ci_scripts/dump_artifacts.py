@@ -108,6 +108,7 @@ def _dump_docker_log(container_name: str, dir: Path) -> None:
     run `docker logs` and dump to $DIR/$CONTAINER_NAME.log
     """
     destination = dir / f"{container_name}.log"
+    logging.info(f"Dumping logs for '{container_name}' container to '{destination}'")
     with open(destination, "wb") as out_stream:
         subprocess.run(
             f"docker logs --timestamps {container_name}",
