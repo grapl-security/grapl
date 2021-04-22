@@ -106,6 +106,17 @@ def respond(
     headers: Optional[Dict[str, Any]] = None,
     status_code: int = 500,
 ) -> Response:
+    """
+    This function is copy-pasted-shared between
+    - engagement_edge.py
+    - grapl_model_plugin_deployer.py
+
+    Please update the other one if you update this function.
+
+    # Q&A
+    "Why not refactor it into grapl-common or someplace?"
+    We are removing Chalice soon; that seems like the right time to do that change.
+    """
 
     if not headers:
         headers = {}
