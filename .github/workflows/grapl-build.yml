@@ -150,20 +150,12 @@ jobs:
           echo "unset RUSTC_WRAPPER" > rust_env.sh
           GRAPL_RUST_ENV_FILE=rust_env.sh GRAPL_LOG_LEVEL=DEBUG make test-integration
 
-      # NOTE: This requires >= py37
-      # Unlike the e2e tests, we don't dump the database contents; strictly logs.
-      - name: 'Collect integration test artifacts'
-        if: ${{ always() }}
-        run: |
-          python3 ./etc/ci_scripts/dump_artifacts.py --compose-project "grapl-integration_tests"
-
       - name: 'Upload integration test artifacts'
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
         with:
           name: integration-test-artifacts
-          # this path is specified in dump_artifacts.py
-          path: /tmp/dumped_artifacts/
+          path: "artifacts_grapl-integration_tests_*"
           retention-days: 28
 
 
@@ -196,18 +188,10 @@ jobs:
           GRAPL_LOG_LEVEL=DEBUG DUMP_ARTIFACTS=True make test-e2e ||
           GRAPL_LOG_LEVEL=DEBUG DUMP_ARTIFACTS=True make test-e2e
 
-
-      # NOTE: This requires >= py37
-      - name: 'Collect e2e test artifacts'
-        if: ${{ always() }}
-        run: |
-          python3 ./etc/ci_scripts/dump_artifacts.py --compose-project "grapl-e2e_tests"
-
       - name: 'Upload e2e test artifacts'
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
         with:
           name: e2e-artifacts
-          # this path is specified in dump_artifacts.py
-          path: /tmp/dumped_artifacts/
+          path: "artifacts_grapl-e2e_tests_*"
           retention-days: 28
