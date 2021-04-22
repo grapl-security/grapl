@@ -49,6 +49,7 @@ pyrightconfig.json
 /dist/
 /.pids
 /.pants.workdir.file_lock*
+/.cache
 # See build-support/manage_virtualenv.sh
 /build-support/grapl-venv
 .yarn/
