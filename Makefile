@@ -355,7 +355,7 @@ clean-mount-cache: ## Prune all docker mount cache (used by sccache)
 
 .PHONY: clean-artifacts
 clean-artifacts: ## Remove all dumped artifacts from test runs (see dump_artifacts.py)
-	rm -Rf artifacts_*_[0-9]*
+	rm -Rf test_artifacts
 
 .PHONY: zip
 zip: build-lambdas ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)

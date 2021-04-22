@@ -164,7 +164,7 @@ if __name__ == "__main__":
 
     cwd = os.getcwd()
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    artifacts_dir = Path(f"{cwd}/artifacts_{compose_project}_{timestamp}")
+    artifacts_dir = Path(f"{cwd}/test_artifacts/{compose_project}_{timestamp}")
     os.makedirs(artifacts_dir, exist_ok=False)
 
     dump_all_logs(compose_project=compose_project, artifacts_dir=artifacts_dir)

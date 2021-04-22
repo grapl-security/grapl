@@ -155,7 +155,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: integration-test-artifacts
-          path: "artifacts_grapl-integration_tests_*"
+          path: "test_artifacts"
           retention-days: 28
 
 
@@ -193,5 +193,5 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: e2e-artifacts
-          path: "artifacts_grapl-e2e_tests_*"
+          path: "test_artifacts"
           retention-days: 28

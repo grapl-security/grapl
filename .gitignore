@@ -4,7 +4,7 @@
 # Test outputs
 test/integration-outputs
 # Artifacts dumped from dump_artifacts.py script
-/artifacts_*_[0-9]*/
+/test_artifacts/
 
 # Environments
 .env
