@@ -250,6 +250,7 @@ test-with-env: # (Do not include help text - not to be used directly)
 		fi
 		# Unset COMPOSE_FILE to help ensure it will be ignored with use of --file
 		unset COMPOSE_FILE
+		etc/ci_scripts/dump_artifacts.py --compose-project=${COMPOSE_PROJECT_NAME}
 		docker-compose --file docker-compose.yml stop;
 	}
 	# Ensure we call stop even after test failure, and return exit code from
@@ -351,6 +352,10 @@ clean: ## Prune all docker build cache and remove Grapl containers and images
 .PHONY: clean-mount-cache
 clean-mount-cache: ## Prune all docker mount cache (used by sccache)
 	docker builder prune --filter type=exec.cachemount
+
+.PHONY: clean-artifacts
+clean-artifacts: ## Remove all dumped artifacts from test runs (see dump_artifacts.py)
+	rm -Rf test_artifacts
 
 .PHONY: zip
 zip: build-lambdas ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
