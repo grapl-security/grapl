@@ -61,6 +61,7 @@ class E2eTestRunner(pulumi.ComponentResource):
             # graplctl expects this specific function name :(
             override_name=f"{DEPLOYMENT_NAME}-e2e-test-runner",
             opts=pulumi.ResourceOptions(parent=self),
+            network=network,
         )
 
         Ec2Port("tcp", 443).allow_outbound_any_ip(self.function.security_group)
