@@ -395,8 +395,6 @@ def respond(
     else:
         body = json.dumps({"error": err}) if err else json.dumps({"success": res})
 
-    body["request_id"] = app.current_request.context.request_id  # type: ignore
-
     headers = {
         "Access-Control-Allow-Credentials": "true",
         "Content-Type": "application/json",
