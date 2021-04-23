@@ -7,9 +7,6 @@ import click
 from graplctl.common import State, pass_graplctl_state
 from graplctl.upload.lib import upload_analyzer
 
-#
-#
-
 
 @click.group()
 @click.pass_context
@@ -18,7 +15,7 @@ def upload(
     graplctl_state: State,
     ctx: click.Context,
 ):
-    """Dev commands, like "upload analyzer" or "upload sysmon logs" """
+    """commands like "upload analyzer" or "upload sysmon logs" """
     pass
 
 
@@ -31,7 +28,7 @@ def upload(
 )
 @pass_graplctl_state
 def analyzer(graplctl_state: State, analyzer_main_py: PathLike) -> None:
-    """Upload an analyzer to AWS"""
+    """Upload an analyzer to the S3 bucket"""
     upload_analyzer(
         graplctl_state.s3,
         Path(analyzer_main_py).resolve(),
