@@ -197,6 +197,7 @@ test-unit-rust: build-test-unit-rust ## Build and run unit tests - Rust only
 .PHONY: test-unit-python
 # Long term, it would be nice to organize the tests with Pants
 # tags, rather than pytest tags
+# If you need to `pdb` these tests, add a `--debug` between `test` and `::`
 test-unit-python: ## Run Python unit tests under Pants
 	./pants --tag="-needs_work" test :: --pytest-args="-m \"not integration_test\""
 
