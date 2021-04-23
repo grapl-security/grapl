@@ -1,3 +1,6 @@
+# TODO https://github.com/grapl-security/issue-tracker/issues/393
+# Remove this in favor of something like `graplctl dev upload_builtin_analyzers`
+
 # no unset variables please
 set -eu
 
