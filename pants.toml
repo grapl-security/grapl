@@ -33,6 +33,7 @@ pants_ignore = [
 root_patterns = [
   "/3rdparty",
   "/build-support",
+  "/etc",  # Some of our tests use sample data from here
   "/pants-plugins",
   "/pulumi",
   "/src/js/grapl-cdk",

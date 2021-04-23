@@ -6,15 +6,11 @@ import string
 import time
 from dataclasses import dataclass
 from datetime import datetime
-from os import environ
+from os import PathLike, environ
 from sys import maxsize
 from typing import TYPE_CHECKING, Callable, Iterator, List, Optional, cast
 
-from grapl_common.env_helpers import (
-    S3ClientFactory,
-    SQSClientFactory,
-    get_deployment_name,
-)
+from grapl_common.env_helpers import S3ClientFactory, SQSClientFactory
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
@@ -79,9 +75,9 @@ class GeneratorOptions:
 
 
 class SysmonGeneratorOptions(GeneratorOptions):
-    def __init__(self) -> None:
+    def __init__(self, deployment_name: str) -> None:
         super().__init__(
-            queue_name=f"{get_deployment_name()}-sysmon-generator-queue",
+            queue_name=f"{deployment_name}-sysmon-generator-queue",
             bucket_suffix="sysmon-log-bucket",
             key_infix="sysmon",
         )
@@ -92,9 +88,9 @@ class SysmonGeneratorOptions(GeneratorOptions):
 
 
 class OSQueryGeneratorOptions(GeneratorOptions):
-    def __init__(self) -> None:
+    def __init__(self, deployment_name: str) -> None:
         super().__init__(
-            queue_name=f"{get_deployment_name()}-osquery-generator-queue",
+            queue_name=f"{deployment_name}-osquery-generator-queue",
             bucket_suffix="osquery-log-bucket",
             key_infix="osquery",
         )
@@ -106,7 +102,7 @@ class OSQueryGeneratorOptions(GeneratorOptions):
 
 def upload_logs(
     deployment_name: str,
-    logfile: str,
+    logfile: PathLike,
     generator_options: GeneratorOptions,
     delay: int = 0,
     batch_size: Optional[int] = 100,
@@ -164,7 +160,7 @@ def upload_logs(
 
 def upload_sysmon_logs(
     deployment_name: str,
-    logfile: str,
+    logfile: PathLike,
     delay: int = 0,
     batch_size: int = 100,
     s3_client: Optional[S3Client] = None,
@@ -174,7 +170,7 @@ def upload_sysmon_logs(
     upload_logs(
         deployment_name=deployment_name,
         logfile=logfile,
-        generator_options=SysmonGeneratorOptions(),
+        generator_options=SysmonGeneratorOptions(deployment_name=deployment_name),
         delay=delay,
         batch_size=batch_size,
         s3_client=s3_client,
@@ -184,7 +180,7 @@ def upload_sysmon_logs(
 
 def upload_osquery_logs(
     deployment_name: str,
-    logfile: str,
+    logfile: PathLike,
     delay: int = 0,
     batch_size: int = 100,
     s3_client: Optional[S3Client] = None,
@@ -193,7 +189,7 @@ def upload_osquery_logs(
     upload_logs(
         deployment_name=deployment_name,
         logfile=logfile,
-        generator_options=OSQueryGeneratorOptions(),
+        generator_options=OSQueryGeneratorOptions(deployment_name=deployment_name),
         delay=delay,
         batch_size=batch_size,
         s3_client=s3_client,
