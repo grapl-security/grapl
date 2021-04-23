@@ -138,6 +138,23 @@ export GRAPL_DGRAPH_INSTANCE_TYPE='xn.size' # e.g., 'i3.large'
 
     Setting this enables alarms meant for the consumer of the Grapl stack, for example, "a new risk node has been found".
 
+### AWS CDK bootstrap
+
+Before using AWS CDK to deploy Grapl we'll need to bootstrap the account for use with CDK:
+
+```bash
+env CDK_NEW_BOOTSTRAP=1 cdk bootstrap \
+  --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess
+```
+
+Depending on your environment you may need to specify the AWS account and region to bootstrap:
+
+```bash
+env CDK_NEW_BOOTSTRAP=1 cdk bootstrap \
+  --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess \
+  aws://<ACCOUNT-NUMBER>/<REGION>
+```
+
 ## `graplctl`
 
 ### Installation
