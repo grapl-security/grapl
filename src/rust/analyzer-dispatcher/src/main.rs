@@ -8,7 +8,7 @@ use grapl_config::env_helpers::{s3_event_emitters_from_env,
                                 FromEnv};
 use grapl_graph_descriptions::graph_description::*;
 use grapl_observe::metric_reporter::MetricReporter;
-use grapl_service::decoder::ZstdProtoDecoder;
+use grapl_service::decoder::ProtoDecoder;
 use log::{debug,
           error,
           info,
@@ -22,9 +22,9 @@ use sqs_executor::{cache::NopCache,
                             Recoverable},
                    event_handler::{CompletedEvents,
                                    EventHandler},
-                   event_retriever::S3PayloadRetriever,
                    make_ten,
                    s3_event_emitter::S3ToSqsEventNotifier,
+                   s3_event_retriever::S3PayloadRetriever,
                    time_based_key_fn};
 
 use crate::dispatch_event::{AnalyzerDispatchEvent,
@@ -175,7 +175,7 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
     let s3_payload_retriever = &mut make_ten(async {
         S3PayloadRetriever::new(
             |region_str| grapl_config::env_helpers::init_s3_client(&region_str),
-            ZstdProtoDecoder::default(),
+            ProtoDecoder::default(),
             MetricReporter::new(&env.service_name),
         )
     })

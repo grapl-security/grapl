@@ -49,7 +49,7 @@ export class RedisCluster extends cdk.Construct {
             vpcSecurityGroupIds: [this.securityGroup.securityGroupId],
         });
 
-        this.address = `${this.cluster.attrRedisEndpointAddress}:${this.cluster.attrRedisEndpointPort}`;
+        this.address = `redis://${this.cluster.attrRedisEndpointAddress}:${this.cluster.attrRedisEndpointPort}`;
 
         this.cluster.addDependsOn(subnetGroup);
     }

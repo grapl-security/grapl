@@ -8,15 +8,15 @@ use grapl_config::{env_helpers::{s3_event_emitters_from_env,
                                  FromEnv},
                    event_caches};
 use grapl_observe::metric_reporter::MetricReporter;
-use grapl_service::{decoder::ZstdJsonDecoder,
+use grapl_service::{decoder::JsonDecoder,
                     serialization::GraphDescriptionSerializer};
 use rusoto_core::Region;
 use rusoto_s3::S3Client;
 use rusoto_sqs::SqsClient;
 use sqs_executor::{cache::NopCache,
-                   event_retriever::S3PayloadRetriever,
                    make_ten,
                    s3_event_emitter::S3ToSqsEventNotifier,
+                   s3_event_retriever::S3PayloadRetriever,
                    time_based_key_fn};
 use tracing::*;
 
@@ -43,7 +43,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let s3_payload_retriever = &mut make_ten(async {
         S3PayloadRetriever::new(
             |region_str| S3Client::new(Region::from_str(&region_str).expect("region_str")),
-            ZstdJsonDecoder::default(),
+            JsonDecoder::default(),
             MetricReporter::new(&env.service_name),
         )
     })

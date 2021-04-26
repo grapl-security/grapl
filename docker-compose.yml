@@ -6,6 +6,9 @@
 version: "3.8"
 volumes:
   dgraph_export:
+  pulumi_outputs:
+    # This volume will be used to output Pulumi stack outputs that may
+    # need to be accessible in test containers.
 
 x-common-variables:
   aws-region: &aws-region
@@ -90,19 +93,25 @@ services:
           - ${REDIS_HOST}
 
   localstack:
-    image: localstack/localstack:0.12.8
+    # This is our own version until a PR is merged upstream
+    image: graplsec/localstack:chalice-compatible
     ports:
       # We'll expose localstack's edge port for ease of use with
       # things like the AWS CLI, Pulumi, etc.
       - 127.0.0.1:${LOCALSTACK_PORT}:${LOCALSTACK_PORT}
     environment:
-      - IMAGE_NAME=localstack/localstack:0.12.8
+      - IMAGE_NAME=graplsec/localstack:chalice-compatible
       - EDGE_PORT=${LOCALSTACK_PORT}
       - HOSTNAME_EXTERNAL=${LOCALSTACK_HOST}
-      - SERVICES=dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs
+      - SERVICES=apigateway,dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs
       - DEBUG=1
-      - LS_LOG=debug
-      - LAMBDA_EXECUTOR=docker
+      # Once we put the lambdas behind the API gateway, overall test
+      # time increased. Using the `docker` executor reliably takes at
+      # least 2x the time of `docker-reuse`. However, the containers
+      # generated are invisible to docker-compose, and Localstack
+      # doesn't shut them down, so we have to manage that on our own
+      # (see Makefile)
+      - LAMBDA_EXECUTOR=docker-reuse
       - MAIN_CONTAINER_NAME=${COMPOSE_PROJECT_NAME}_localstack_1
       # Without this, the lambda containers are attached to the bridge network
       - LAMBDA_DOCKER_NETWORK=grapl-network
@@ -111,7 +120,7 @@ services:
     healthcheck:
       test: |
         bash -c '
-          export AWS_ACCESS_KEY_ID=${FAKE_AWS_ACCESS_KEY_ID} && 
+          export AWS_ACCESS_KEY_ID=${FAKE_AWS_ACCESS_KEY_ID} &&
           export AWS_SECRET_ACCESS_KEY=${FAKE_AWS_SECRET_ACCESS_KEY} &&
           aws --endpoint-url=http://${LOCALSTACK_HOST}:${LOCALSTACK_PORT} s3 ls
         '
@@ -119,7 +128,6 @@ services:
       timeout: 10s
       start_period: 10s
     volumes:
-      - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
     networks:
       default:
@@ -342,39 +350,6 @@ services:
         aliases:
           - ${GRAPL_UX_ROUTER_HOST}
 
-  # TODO: really, this service should be grapl-auth
-  grapl-engagement-edge:
-    image: grapl/grapl-engagement-edge:${TAG:-latest}
-    command: |
-      /bin/sh -c '
-        . venv/bin/activate &&
-        cd /home/grapl/app &&
-        chalice local --no-autoreload --host=0.0.0.0 --port=${GRAPL_AUTH_PORT}
-      '
-    networks:
-      default:
-        aliases:
-          - ${GRAPL_AUTH_HOST}
-    environment:
-      <<: *aws-region
-      DEBUG_SERVICES: "${DEBUG_SERVICES}"
-      DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
-      <<: *dynamodb-env
-      IS_LOCAL: "True"
-      <<: *log-level
-      <<: *secretsmanager-env
-      USER_AUTH_TABLE: "${DEPLOYMENT_NAME}-user_auth_table"
-      UX_BUCKET_URL: "localhost:3000" # TODO: Port??
-      VSC_DEBUGGER_PORT: "${VSC_DEBUGGER_PORT_FOR_ENGAGEMENT_EDGE}"
-    depends_on:
-      localstack:
-        condition: service_healthy
-      grapl-provision:
-        condition: service_completed_successfully
-    tty: true
-    ports:
-      - 127.0.0.1:${VSC_DEBUGGER_PORT_FOR_ENGAGEMENT_EDGE}:${VSC_DEBUGGER_PORT_FOR_ENGAGEMENT_EDGE}
-
   grapl-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
     command: |
@@ -416,24 +391,39 @@ services:
 
   nginx:
     image: nginxinc/nginx-unprivileged
+    command: |
+      /bin/bash -c "
+        export API_GATEWAY_API_ID=$$(cat /pulumi-outputs/prod-api-id) &&
+        /docker-entrypoint.sh nginx -g 'daemon off;'
+      "
     volumes:
       - ./etc/local_grapl/nginx_templates:/etc/nginx/templates
+      - type: volume
+        source: pulumi_outputs
+        target: /pulumi-outputs
+        read_only: true
     ports:
       - "127.0.0.1:1234:${GRAPL_HTTP_FRONTEND_PORT}"
     environment:
-      - GRAPL_AUTH_HOST
-      - GRAPL_AUTH_PORT
       - GRAPL_GRAPHQL_HOST
       - GRAPL_GRAPHQL_PORT
       - GRAPL_MODEL_PLUGIN_DEPLOYER_HOST
       - GRAPL_MODEL_PLUGIN_DEPLOYER_PORT
       - GRAPL_UX_ROUTER_HOST
       - GRAPL_UX_ROUTER_PORT
+      - LOCALSTACK_HOST
+      - LOCALSTACK_PORT
     depends_on:
-      - grapl-engagement-edge
-      - grapl-model-plugin-deployer
-      - grapl-graphql-endpoint
-      - grapl-ux-router
+      grapl-model-plugin-deployer:
+        condition: service_started
+      grapl-graphql-endpoint:
+        condition: service_started
+      grapl-ux-router:
+        condition: service_started
+      grapl-pulumi:
+        # We must wait until Pulumi has created the API gateway so we
+        # know what its URL is.
+        condition: service_completed_successfully
     networks:
       default:
         aliases:
@@ -499,10 +489,12 @@ services:
     image: grapl/grapl-local-pulumi:${TAG:-latest}
     command: |
       /bin/bash -c "
-         sleep 10 &&
          pulumi login --local &&
          pulumi stack init local-grapl --non-interactive &&
-         pulumi up --yes --skip-preview --stack=local-grapl
+         pulumi up --yes --skip-preview --stack=local-grapl &&
+
+         # Write the necessary outputs to the shared volume, for access by other containers
+         pulumi stack output prod-api-id > /home/grapl/pulumi-outputs/prod-api-id
       "
     # Our local-grapl Pulumi stack is configured to communicate with
     # localhost. By participating in the network namespace of our
@@ -515,6 +507,10 @@ services:
         source: ./src/js/grapl-cdk/zips
         target: /home/grapl/src/js/grapl-cdk/zips
         read_only: true
+      - type: volume
+        source: pulumi_outputs
+        target: /home/grapl/pulumi-outputs
+        read_only: false
     environment:
       PULUMI_CONFIG_PASSPHRASE: local-grapl-passphrase
     depends_on:

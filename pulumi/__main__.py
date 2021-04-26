@@ -1,4 +1,5 @@
 from infra import dynamodb, emitter
+from infra.api import Api
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.config import DEPLOYMENT_NAME, LOCAL_GRAPL
@@ -8,7 +9,6 @@ from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.secret import JWTSecret
 from infra.service_queue import ServiceQueue
-from infra.ux import EngagementUX
 
 if __name__ == "__main__":
 
@@ -24,9 +24,7 @@ if __name__ == "__main__":
 
     dynamodb_tables = dynamodb.DynamoDB()
 
-    ux = EngagementUX()
-
-    Bucket("model-plugins-bucket", sse=False)
+    model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)
     Bucket("analyzers-bucket", sse=True)
 
     events = [
@@ -60,6 +58,30 @@ if __name__ == "__main__":
     ec = EngagementCreator(
         source_emitter=analyzer_matched, network=network, forwarder=forwarder
     )
+
+    ########################################################################
+
+    # TODO: create everything inside of Api class
+
+    import pulumi_aws as aws
+
+    ux_bucket = Bucket(
+        "engagement-ux-bucket",
+        website_args=aws.s3.BucketWebsiteArgs(
+            index_document="index.html",
+        ),
+    )
+    # TODO: How do we get the *contents* of this bucket uploaded?
+
+    api = Api(
+        network=network,
+        secret=secret,
+        ux_bucket=ux_bucket,
+        db=dynamodb_tables,
+        plugins_bucket=model_plugins_bucket,
+    )
+
+    ########################################################################
 
     if LOCAL_GRAPL:
         from infra.local import user

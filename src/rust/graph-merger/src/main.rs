@@ -34,7 +34,7 @@ use grapl_graph_descriptions::graph_description::{Edge,
 use grapl_observe::{dgraph_reporter::DgraphMetricReporter,
                     metric_reporter::{tag,
                                       MetricReporter}};
-use grapl_service::{decoder::ZstdProtoDecoder,
+use grapl_service::{decoder::ProtoDecoder,
                     serialization::MergedGraphSerializer};
 use grapl_utils::{future_ext::GraplFutureExt,
                   rusoto_ext::dynamodb::GraplDynamoDbClientExt};
@@ -56,9 +56,9 @@ use sqs_executor::{cache::{Cache,
                             Recoverable},
                    event_handler::{CompletedEvents,
                                    EventHandler},
-                   event_retriever::S3PayloadRetriever,
                    make_ten,
-                   s3_event_emitter::S3ToSqsEventNotifier};
+                   s3_event_emitter::S3ToSqsEventNotifier,
+                   s3_event_retriever::S3PayloadRetriever};
 use tracing::{error,
               info,
               warn};
@@ -107,7 +107,7 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
     let s3_payload_retriever = &mut make_ten(async {
         S3PayloadRetriever::new(
             |region_str| grapl_config::env_helpers::init_s3_client(&region_str),
-            ZstdProtoDecoder::default(),
+            ProtoDecoder::default(),
             MetricReporter::new(&env.service_name),
         )
     })

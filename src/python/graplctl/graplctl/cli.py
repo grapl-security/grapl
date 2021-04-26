@@ -9,6 +9,7 @@ from graplctl.common import State
 from graplctl.dgraph.commands import dgraph
 from graplctl.queues.commands import queues
 from graplctl.swarm.commands import swarm
+from graplctl.upload.commands import upload
 
 Tag = common.Tag
 Ec2Instance = common.Ec2Instance
@@ -69,6 +70,7 @@ def main(
         ec2=session.resource("ec2", region_name=grapl_region),
         ssm=session.client("ssm", region_name=grapl_region),
         cloudwatch=session.client("cloudwatch", region_name=grapl_region),
+        s3=session.client("s3", region_name=grapl_region),
         sns=session.client("sns", region_name=grapl_region),
         route53=session.client("route53", region_name=grapl_region),
         sqs=session.client("sqs", region_name=grapl_region),
@@ -80,3 +82,4 @@ main.add_command(aws)
 main.add_command(dgraph)
 main.add_command(queues)
 main.add_command(swarm)
+main.add_command(upload)

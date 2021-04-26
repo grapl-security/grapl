@@ -61,7 +61,7 @@ export class EngagementEdge extends cdk.NestedStack {
 
         this.event_handler = new lambda.Function(this, "Handler", {
             runtime: lambda.Runtime.PYTHON_3_7,
-            handler: `src.engagement_edge.app`,
+            handler: `lambdex_handler.handler`,
             functionName: serviceName + "-Handler",
             code: lambda.Code.fromAsset(
                 `./zips/engagement-edge-${props.version}.zip`

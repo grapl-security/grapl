@@ -11,11 +11,7 @@ server {
   listen 3128;
 
   location /auth/ {
-    proxy_pass http://${GRAPL_AUTH_HOST}:${GRAPL_AUTH_PORT}$uri;
-  }
-
-  location /prod/auth/ {
-    proxy_pass http://${GRAPL_AUTH_HOST}:${GRAPL_AUTH_PORT}$uri;
+    proxy_pass http://${LOCALSTACK_HOST}:${LOCALSTACK_PORT}/restapis/${API_GATEWAY_API_ID}/prod/_user_request_/auth/;
   }
 
   location /graphQlEndpoint/ {

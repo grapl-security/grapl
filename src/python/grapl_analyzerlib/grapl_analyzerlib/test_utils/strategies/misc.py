@@ -1,10 +1,7 @@
-from typing import Callable, Text, TypeVar
+from typing import Callable
 
 from hypothesis import assume
 from hypothesis import strategies as st
-
-
-T = TypeVar("T", bound=str)
 
 
 @st.composite

@@ -219,29 +219,6 @@ RUN source venv/bin/activate && \
     cd engagement_edge && \
     pip install .
 
-# zip
-FROM engagement-edge-build AS engagement-edge-zip
-
-RUN LAMBDA_DIR=$(pwd); \
-    cd ~/venv/lib/python3.7/site-packages/ && \
-    zip -q9r -dg "${LAMBDA_DIR}/lambda.zip" ./ && \
-    cd ~/engagement_edge/src && \
-    find . -type f -name "*.py" -exec zip -g "${LAMBDA_DIR}/lambda.zip" "{}" \;
-
-# deploy
-FROM grapl-python-deploy AS engagement-edge-deploy
-
-COPY --chown=grapl --from=engagement-edge-build /home/grapl/venv venv
-
-RUN source venv/bin/activate && \
-    chalice new-project app/
-
-COPY --chown=grapl --from=engagement-edge-build /home/grapl/engagement_edge/src/engagement_edge.py app/app.py
-
-CMD source venv/bin/activate && \
-    cd app && \
-    chalice local --no-autoreload --host=0.0.0.0 --port=8900
-
 # test
 FROM engagement-edge-build AS engagement-edge-test
 

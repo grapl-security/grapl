@@ -30,7 +30,6 @@ export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 	${EVERY_LAMBDA_COMPOSE_FILE}
 
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
-VERBOSE_PANTS := PEX_VERBOSE=5 ./pants -ldebug
 
 COMPOSE_PROJECT_INTEGRATION_TESTS := grapl-integration_tests
 COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
@@ -43,7 +42,14 @@ COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
 # https://www.gnu.org/software/make/manual/html_node/One-Shell.html
 SHELL := bash
 .ONESHELL:
-.SHELLFLAGS := -eu -o pipefail -c
+# errexit nounset noclobber
+.SHELLFLAGS := \
+-e \
+-u \
+-o pipefail \
+-c
+
+# Note: it doesn't seem to like a single-quote nested in a double-quote!
 
 # Our `docker-compose.yml` file declares the setup of a "local Grapl"
 # environment, which can be used to locally exercise a Grapl system,
@@ -84,7 +90,6 @@ FMT_BOLD = \033[1m
 FMT_END = \033[0m
 VSC_DEBUGGER_DOCS_LINK = https://grapl.readthedocs.io/en/latest/debugging/vscode_debugger.html
 
-
 .PHONY: help
 help: ## Print this help
 	@printf -- '\n'
@@ -115,7 +120,7 @@ help: ## Print this help
 	@printf '\n'
 
 
-##@ Build
+##@ Build 🔨
 
 .PHONY: build
 build: build-services ## Alias for `services` (default)
@@ -170,8 +175,9 @@ build-lambdas: ## Build services for Grapl in AWS (subset of all services)
 graplctl: ## Build graplctl and install it to the project root
 	./pants package ./src/python/graplctl/graplctl
 	cp ./dist/src.python.graplctl.graplctl/graplctl.pex ./bin/graplctl
+	printf -- '\n${FMT_BOLD}Graplctl${FMT_END} written to ${FMT_BLUE}./bin/graplctl${FMT_END}\n'
 
-##@ Test
+##@ Test 🧪
 
 .PHONY: test
 test: test-unit test-integration test-e2e test-typecheck ## Run all tests
@@ -191,8 +197,9 @@ test-unit-rust: build-test-unit-rust ## Build and run unit tests - Rust only
 .PHONY: test-unit-python
 # Long term, it would be nice to organize the tests with Pants
 # tags, rather than pytest tags
+# If you need to `pdb` these tests, add a `--debug` between `test` and `::`
 test-unit-python: ## Run Python unit tests under Pants
-	./pants --tag="-needs_work" test :: --pytest-args="-m 'not integration_test'"
+	./pants --tag="-needs_work" test :: --pytest-args="-m \"not integration_test\""
 
 .PHONY: test-unit-js
 test-unit-js: export COMPOSE_PROJECT_NAME := grapl-test-unit-js
@@ -212,7 +219,7 @@ test-typecheck-pulumi: ## Typecheck Pulumi Python code
 
 .PHONY: test-typecheck-build-support
 test-typecheck-build-support: ## Typecheck build-support Python code
-	$(VERBOSE_PANTS) typecheck build-support::
+	./pants typecheck build-support::
 
 # Right now, we're only typechecking a select portion of code with
 # Pants until CM fixes https://github.com/pantsbuild/pants/issues/11553
@@ -236,8 +243,15 @@ test-e2e: build-test-e2e modern-lambdas ## Build and run e2e tests
 .PHONY: test-with-env
 test-with-env: # (Do not include help text - not to be used directly)
 	stopGrapl() {
+		# skip if KEEP_TEST_ENV is set
+		if [[ -z "${KEEP_TEST_ENV}" ]]; then
+			echo "Tearing down test environment"
+		else
+			echo "Keeping test environment" && return 0
+		fi
 		# Unset COMPOSE_FILE to help ensure it will be ignored with use of --file
 		unset COMPOSE_FILE
+		etc/ci_scripts/dump_artifacts.py --compose-project=${COMPOSE_PROJECT_NAME}
 		docker-compose --file docker-compose.yml stop;
 	}
 	# Ensure we call stop even after test failure, and return exit code from
@@ -249,7 +263,7 @@ test-with-env: # (Do not include help text - not to be used directly)
 	# Run tests and check exit codes from each test container
 	test/docker-compose-with-error.sh
 
-##@ Lint
+##@ Lint 🧹
 
 .PHONY: lint-rust
 lint-rust: ## Run Rust lint checks
@@ -266,7 +280,7 @@ lint-js: ## Run js lint checks
 .PHONY: lint
 lint: lint-python lint-js lint-rust ## Run all lint checks
 
-##@ Formatting
+##@ Formatting 💅
 
 .PHONY: format-rust
 format-rust: ## Reformat all Rust code
@@ -287,9 +301,10 @@ format: format-python format-js format-rust ## Reformat all code
 package-python-libs: ## Create Python distributions for public libraries
 	./pants filter --filter-target-type=python_distribution :: | xargs ./pants package
 
-##@ Local Grapl
+##@ Local Grapl 💻
 
 .PHONY: up
+up: export COMPOSE_PROJECT_NAME="grapl"
 up: build-services modern-lambdas ## Build Grapl services and launch docker-compose up
 	$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose -f docker-compose.yml up
@@ -311,6 +326,11 @@ up-detach: build-services ## Bring up local Grapl and detach to return control t
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
 	$(WITH_LOCAL_GRAPL_ENV)
+	# This is only for killing the lambda containers that Localstack
+	# spins up in our network, but that docker-compose doesn't know
+	# about. This must be the network that is used in Localstack's
+	# LAMBDA_DOCKER_NETWORK environment variable.
+	-docker kill $(shell docker ps --quiet --filter=network=grapl-network)
 	docker-compose $(EVERY_COMPOSE_FILE) down --timeout=0
 	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
 	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
@@ -320,7 +340,7 @@ stop: ## docker-compose stop - stops (but preserves) the containers
 	$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose $(EVERY_COMPOSE_FILE) stop
 
-##@ Utility
+##@ Utility ⚙
 
 .PHONY: clean
 clean: ## Prune all docker build cache and remove Grapl containers and images
@@ -334,6 +354,10 @@ clean: ## Prune all docker build cache and remove Grapl containers and images
 clean-mount-cache: ## Prune all docker mount cache (used by sccache)
 	docker builder prune --filter type=exec.cachemount
 
+.PHONY: clean-artifacts
+clean-artifacts: ## Remove all dumped artifacts from test runs (see dump_artifacts.py)
+	rm -Rf test_artifacts
+
 .PHONY: zip
 zip: build-lambdas ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
 	docker-compose $(EVERY_LAMBDA_COMPOSE_FILE) up
@@ -345,6 +369,7 @@ zip-pants: ## Generate Lambda zip artifacts using pants
 	cp ./dist/src.python.provisioner.src/lambda.zip ./src/js/grapl-cdk/zips/provisioner-$(TAG).zip
 	cp ./dist/src.python.engagement-creator/engagement-creator.zip ./src/js/grapl-cdk/zips/engagement-creator-$(TAG).zip
 	cp ./dist/src.python.grapl-dgraph-ttl/lambda.zip ./src/js/grapl-cdk/zips/dgraph-ttl-$(TAG).zip
+	cp ./dist/src.python.engagement_edge/engagement_edge.zip ./src/js/grapl-cdk/zips/engagement-edge-$(TAG).zip
 
 # This target is intended to help ease the transition to Pulumi, and
 # using lambdas in local Grapl testing deployments. Essentially, every
@@ -372,3 +397,7 @@ docker-kill-all:  # Kill all currently running Docker containers
 .PHONY: populate-venv
 populate-venv: ## Set up a Python virtualenv (you'll have to activate manually!)
 	build-support/manage_virtualenv.sh populate
+
+.PHONY: repl
+repl: ## Run an interactive ipython repl that can import from grapl-common etc
+	./pants --no-pantsd repl --shell=ipython src/python/repl
