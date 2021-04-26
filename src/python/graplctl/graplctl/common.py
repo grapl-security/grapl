@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from mypy_boto3_ec2 import EC2ServiceResource
     from mypy_boto3_lambda import LambdaClient
     from mypy_boto3_route53 import Route53Client
+    from mypy_boto3_s3 import S3Client
     from mypy_boto3_sns import SNSClient
     from mypy_boto3_sqs import SQSClient
     from mypy_boto3_ssm.client import SSMClient
@@ -45,6 +46,7 @@ class State:
     ec2: EC2ServiceResource
     ssm: SSMClient
     cloudwatch: CloudWatchClient
+    s3: S3Client
     sns: SNSClient
     route53: Route53Client
     sqs: SQSClient

@@ -15,7 +15,8 @@ from grapl_common.env_helpers import (
     get_deployment_name,
 )
 from grapl_tests_common.dump_dynamodb import dump_dynamodb
-from grapl_tests_common.types import AnalyzerUpload, S3ServiceResource
+from grapl_tests_common.types import S3ServiceResource
+from grapl_tests_common.upload_analyzers import AnalyzerUpload, upload_analyzers
 from grapl_tests_common.upload_test_data import UploadTestData
 from grapl_tests_common.wait import WaitForS3Bucket, WaitForSqsQueue, wait_for
 
@@ -28,21 +29,6 @@ if TYPE_CHECKING:
 DUMP_ARTIFACTS = bool(environ.get("DUMP_ARTIFACTS", False))
 
 logging.basicConfig(stream=stdout, level=logging.INFO)
-
-
-def _upload_analyzers(
-    s3_client: S3ServiceResource, analyzers: Sequence[AnalyzerUpload]
-) -> None:
-    """
-    Basically reimplementing upload_local_analyzers.sh
-    Janky, since Jesse will have an analyzer-uploader service pretty soon.
-    """
-
-    bucket = f"{get_deployment_name()}-analyzers-bucket"
-    for (local_path, s3_key) in analyzers:
-        logging.info(f"S3 uploading analyzer from {local_path}")
-        with open(local_path, "r") as f:
-            s3_client.put_object(Body=f.read(), Bucket=bucket, Key=s3_key)
 
 
 def _upload_test_data(
@@ -64,7 +50,7 @@ def _create_sqs_client() -> SQSClient:
     return SQSClientFactory(boto3).from_env()
 
 
-def setup(
+def setup_tests(
     analyzers: Sequence[AnalyzerUpload],
     test_data: Sequence[UploadTestData],
 ) -> None:
@@ -83,7 +69,7 @@ def setup(
         ]
     )
 
-    _upload_analyzers(s3_client, analyzers)
+    upload_analyzers(s3_client, analyzers, get_deployment_name())
     _upload_test_data(s3_client, sqs_client, test_data)
     # You may want to sleep(30) to let the pipeline do its thing, but setup won't force it.
 

@@ -1,6 +1,9 @@
 # no unset variables please
 set -eu
 
+# TODO https://github.com/grapl-security/issue-tracker/issues/393
+# Remove this in favor of something like `graplctl dev upload_builtin_analyzers`
+
 ANALYZER_UPLOAD_SCRIPT_PATH=$(dirname "$(readlink -f "$0")")
 LOCAL_GRAPL_DIR=$ANALYZER_UPLOAD_SCRIPT_PATH/../local_grapl
 

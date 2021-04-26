@@ -1,9 +1,6 @@
-from os import environ
-
-import grapl_tests_common
 from grapl_common.debugger.vsc_debugger import wait_for_vsc_debugger
-from grapl_tests_common.setup import AnalyzerUpload
-from grapl_tests_common.sleep import verbose_sleep
+from grapl_tests_common import setup_tests
+from grapl_tests_common.upload_analyzers import AnalyzerUpload
 from grapl_tests_common.upload_test_data import UploadSysmonLogsTestData
 
 
@@ -25,12 +22,12 @@ def main() -> None:
             "/home/grapl/etc/sample_data/eventlog.xml",
         ),
     )
-    grapl_tests_common.setup.setup(
+    setup_tests.setup_tests(
         analyzers=analyzers,
         test_data=test_data,
     )
 
-    grapl_tests_common.setup.exec_pytest()
+    setup_tests.exec_pytest()
 
 
 if __name__ == "__main__":
