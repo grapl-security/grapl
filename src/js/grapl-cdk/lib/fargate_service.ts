@@ -16,6 +16,7 @@ import { EventEmitter } from "./event_emitters";
 import { LambdaDestination } from "@aws-cdk/aws-logs-destinations";
 import { Service } from "./service";
 import * as service_common from "./service_common";
+import { QueueProcessingFargateServiceProps } from "@aws-cdk/aws-ecs-patterns";
 
 export class Queues {
     readonly queue: sqs.Queue;
@@ -117,14 +118,25 @@ export class FargateService {
             }),
         };
 
-        const autoscalingProps = {
+        const autoscalingProps: Partial<QueueProcessingFargateServiceProps> = {
             // Fargate autoscaling groups can adjust their scaling based on any metric, like:
             // CPU usage, approximate queue messages, etc.
             // The QueueProcessingFargateService pattern does it based on both of those metrics!
             // https://github.com/aws/aws-cdk/blob/7966f8d48c4bff26beb22856d289f9d0c7e7081d/packages/%40aws-cdk/aws-ecs-patterns/lib/base/queue-processing-service-base.ts#L331
-            minScalingCapacity: 0, // CURRENTLY BROKEN https://github.com/aws/aws-cdk/issues/14336
-            maxScalingCapacity: 5,
-            // Potential optimization would be to calibrate `scalingSteps`, but default seems okay for now.
+
+            // Due to a bug, we have to also specify desiredCapacity: https://github.com/aws/aws-cdk/issues/14336
+            desiredTaskCount: 0,
+            minScalingCapacity: 0,
+            maxScalingCapacity: 4,
+
+            // based on ApproximateNumberOfMessagesVisible in the input queue
+            // This hasn't been calibrated at all
+            scalingSteps: [
+                { upper: 0, change: -1 }, // Scale to zero if no messages
+                { lower: 1, change: +1 }, // Scale to at least 1 if _any_ messages
+                { lower: 100, change: +2 },
+                { lower: 500, change: +5 },
+            ],
         };
 
         // Create a load-balanced Fargate service and make it public
