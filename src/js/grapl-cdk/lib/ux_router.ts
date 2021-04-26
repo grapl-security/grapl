@@ -29,7 +29,7 @@ export class UxRouter extends cdk.NestedStack {
 
         this.event_handler = new lambda.Function(this, "Handler", {
             runtime: lambda.Runtime.PYTHON_3_7,
-            handler: `src.grapl_ux_router.app`,
+            handler: `lambdex_handler.handler`,
             functionName: serviceName + "-Handler",
             code: lambda.Code.fromAsset(
                 `./zips/ux-router-${props.version}.zip`

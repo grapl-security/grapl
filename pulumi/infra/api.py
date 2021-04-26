@@ -9,6 +9,7 @@ from infra.engagement_notebook import EngagementNotebook
 from infra.lambda_ import Lambda
 from infra.network import Network
 from infra.secret import JWTSecret
+from infra.ux_router import UxRouter
 
 import pulumi
 
@@ -193,9 +194,11 @@ class Api(pulumi.ComponentResource):
         # way to do that would seem to be making this API own
         # instances of each of them.
 
-        # TODO: Add UX Router
-        # TODO: Add GraphQL endpoint
-        # TODO: Add Model Plugin Deployer
+        self.ux_router = UxRouter(
+            network=network,
+            secret=secret,
+            ux_bucket=ux_bucket,
+        )
 
         # Sagemaker isn't currently supported in Localstack :/
         self.notebook = (
@@ -219,6 +222,7 @@ class Api(pulumi.ComponentResource):
         )
 
         self.proxies = [
+            self._add_proxy_resource_integration(self.ux_router.function),
             self._add_proxy_resource_integration(
                 self.engagement_edge.function, path_part="auth"
             ),
