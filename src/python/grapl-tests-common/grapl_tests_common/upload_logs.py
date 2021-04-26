@@ -67,7 +67,7 @@ def into_sqs_message(bucket: str, key: str) -> str:
 @dataclass
 class GeneratorOptions:
     bucket_suffix: str
-    queue_name: str
+    queue_suffix: str
     key_infix: str
 
     def encode_chunk(self, input: List[bytes]) -> bytes:
@@ -75,9 +75,9 @@ class GeneratorOptions:
 
 
 class SysmonGeneratorOptions(GeneratorOptions):
-    def __init__(self, deployment_name: str) -> None:
+    def __init__(self) -> None:
         super().__init__(
-            queue_name=f"{deployment_name}-sysmon-generator-queue",
+            queue_suffix=f"osquery-generator-queue",
             bucket_suffix="sysmon-log-bucket",
             key_infix="sysmon",
         )
@@ -88,9 +88,9 @@ class SysmonGeneratorOptions(GeneratorOptions):
 
 
 class OSQueryGeneratorOptions(GeneratorOptions):
-    def __init__(self, deployment_name: str) -> None:
+    def __init__(self) -> None:
         super().__init__(
-            queue_name=f"{deployment_name}-osquery-generator-queue",
+            queue_suffix=f"osquery-generator-queue",
             bucket_suffix="osquery-log-bucket",
             key_infix="osquery",
         )
@@ -130,6 +130,7 @@ def upload_logs(
         return (seq[pos : pos + size] for pos in range(0, len(seq), size))
 
     bucket = f"{deployment_name}-{generator_options.bucket_suffix}"
+    queue = f"{deployment_name}-{generator_options.queue_suffix}"
 
     chunk_count = 0
     for chunk in chunker(body, batch_size):
@@ -149,7 +150,7 @@ def upload_logs(
         if requires_manual_eventing:
             endpoint_url = sqs._endpoint.host  # type: ignore
             sqs.send_message(
-                QueueUrl=f"{endpoint_url}/queue/{generator_options.queue_name}",
+                QueueUrl=f"{endpoint_url}/queue/{queue}",
                 MessageBody=into_sqs_message(bucket=bucket, key=key),
             )
 
@@ -170,7 +171,7 @@ def upload_sysmon_logs(
     upload_logs(
         deployment_name=deployment_name,
         logfile=logfile,
-        generator_options=SysmonGeneratorOptions(deployment_name=deployment_name),
+        generator_options=SysmonGeneratorOptions(),
         delay=delay,
         batch_size=batch_size,
         s3_client=s3_client,
@@ -189,7 +190,7 @@ def upload_osquery_logs(
     upload_logs(
         deployment_name=deployment_name,
         logfile=logfile,
-        generator_options=OSQueryGeneratorOptions(deployment_name=deployment_name),
+        generator_options=OSQueryGeneratorOptions(),
         delay=delay,
         batch_size=batch_size,
         s3_client=s3_client,
