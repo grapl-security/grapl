@@ -77,7 +77,7 @@ class GeneratorOptions:
 class SysmonGeneratorOptions(GeneratorOptions):
     def __init__(self) -> None:
         super().__init__(
-            queue_suffix=f"osquery-generator-queue",
+            queue_suffix=f"sysmon-generator-queue",
             bucket_suffix="sysmon-log-bucket",
             key_infix="sysmon",
         )
