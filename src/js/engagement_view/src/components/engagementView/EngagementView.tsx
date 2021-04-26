@@ -12,12 +12,14 @@ import KeyboardArrowLeftIcon from "@material-ui/icons/KeyboardArrowLeft";
 import Button from "@material-ui/core/Button";
 import Home from "@material-ui/icons/Home";
 
+
 import { VizNode } from "types/CustomTypes";
 import GraphDisplay from "../graphDisplay/GraphDisplay";
 import LensAndNodeTableContainer from "./sidebar/LensAndNodeTableContainer";
 import { LoginNotification } from "../reusableComponents";
 import { checkLogin } from "../../services/login/checkLoginService";
 import { useStyles } from "../graphDisplay/GraphDisplayStyles";
+
 type EngagementViewProps = {
     setLens: (lens: string) => void;
     curLens: string;

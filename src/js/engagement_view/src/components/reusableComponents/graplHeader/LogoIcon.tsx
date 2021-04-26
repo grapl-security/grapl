@@ -22,7 +22,7 @@ export function LogoIcon(props: LogoIconProps) {
         <SvgIcon
             component={Logo}
             viewBox="150 0 400 500"
-            className={[classes.logoIcon, props.className]}
+            className={classes.logoIcon}
         ></SvgIcon>
     );
 }
