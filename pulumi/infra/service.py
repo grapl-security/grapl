@@ -3,6 +3,7 @@ from typing import Mapping, Optional, Union
 
 from infra.lambda_ import LambdaExecutionRole, PythonLambdaArgs
 from infra.metric_forwarder import MetricForwarder
+from infra.network import Network
 from infra.queue_driven_lambda import QueueDrivenLambda
 from infra.service_queue import ServiceQueue
 
@@ -18,6 +19,7 @@ class Service(pulumi.ComponentResource):
         lambda_description: str,
         lambda_handler_fn: str,
         lambda_code_path: str,
+        network: Network,
         env: Mapping[str, Union[str, pulumi.Output[str]]],
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
@@ -51,6 +53,7 @@ class Service(pulumi.ComponentResource):
             self.queue.queue,
             args=args,
             forwarder=forwarder,
+            network=network,
             opts=pulumi.ResourceOptions(parent=self),
         )
 
@@ -70,6 +73,7 @@ class Service(pulumi.ComponentResource):
                 },
             ),
             forwarder=forwarder,
+            network=network,
             opts=pulumi.ResourceOptions(parent=self),
         )
 

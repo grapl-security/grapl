@@ -5,8 +5,7 @@ SHELL ["/bin/bash", "-c"]
 RUN apt-get update && apt-get install --yes \
     build-essential \
     curl \
-    unzip \
-    wait-for-it
+    unzip
 
 RUN adduser \
         --disabled-password \
@@ -61,4 +60,10 @@ COPY --chown=grapl pulumi pulumi
 RUN pip install --upgrade pip wheel && \
     pip install -r <(./pants dependencies --type=3rdparty pulumi::)
 
+# Create a directory *as the grapl user*, at which we will mount an
+# external volume to share Pulumi run outputs with other
+# containers. Because of Docker magic, this has to be present first,
+# and with the correct permissions, in order for us to be able to
+# write to it.
+RUN mkdir /home/grapl/pulumi-outputs
 WORKDIR /home/grapl/pulumi

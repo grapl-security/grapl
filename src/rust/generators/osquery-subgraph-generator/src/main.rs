@@ -7,9 +7,9 @@ use grapl_observe::metric_reporter::MetricReporter;
 use grapl_service::serialization::GraphDescriptionSerializer;
 use log::*;
 use rusoto_sqs::SqsClient;
-use sqs_executor::{event_retriever::S3PayloadRetriever,
-                   make_ten,
+use sqs_executor::{make_ten,
                    s3_event_emitter::S3ToSqsEventNotifier,
+                   s3_event_retriever::S3PayloadRetriever,
                    time_based_key_fn};
 
 use osquery_subgraph_generator_lib::{generator::OSQuerySubgraphGenerator,
@@ -39,7 +39,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let s3_payload_retriever = &mut make_ten(async {
         S3PayloadRetriever::new(
             |region_str| grapl_config::env_helpers::init_s3_client(&region_str),
-            OSQueryLogDecoder::default(),
+            grapl_service::decoder::NdjsonDecoder::default(),
             MetricReporter::new(&env.service_name),
         )
     })

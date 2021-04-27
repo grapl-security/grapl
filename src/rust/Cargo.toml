@@ -18,5 +18,6 @@ members = [
     "./generators/osquery-subgraph-generator",
     "./generators/sysmon-subgraph-generator",
     "./sqs-executor",
+    "./sysmon",
     "./grapl-service",
 ]

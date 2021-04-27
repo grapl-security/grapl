@@ -1,6 +1,5 @@
 #![cfg(test)]
-
-use grapl_service::decoder::ZstdJsonDecoder;
+use grapl_service::decoder::JsonDecoder;
 use sqs_executor::{cache::NopCache,
                    event_decoder::PayloadDecoder,
                    event_handler::CompletedEvents};
@@ -40,7 +39,7 @@ async fn test_log_event_deserialization() {
 
     let mut generator = GenericSubgraphGenerator::new(NopCache {});
 
-    let mut event_deserializer = ZstdJsonDecoder::default();
+    let mut event_deserializer = JsonDecoder::default();
 
     let generic_events: Vec<GenericEvent> = event_deserializer
         .decode(raw_test_data)

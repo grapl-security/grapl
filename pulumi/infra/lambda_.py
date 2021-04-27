@@ -11,6 +11,7 @@ from infra.config import (
     import_aware_opts,
 )
 from infra.metric_forwarder import MetricForwarder
+from infra.network import Network
 from typing_extensions import Literal
 
 import pulumi
@@ -125,13 +126,21 @@ class Lambda(pulumi.ComponentResource):
         self,
         name: str,
         args: LambdaArgs,
+        network: Network,
         forwarder: Optional[MetricForwarder] = None,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         super().__init__("grapl:Lambda", name, None, opts)
 
-        # TODO:
-        # - Add VPC to lambda
+        # Our previous usage of CDK was such that we automatically
+        # created a separate security group for each of our lambdas:
+        #
+        # https://docs.aws.amazon.com/cdk/api/latest/docs/@aws-cdk_aws-lambda.Function.html#securitygroups
+        self.security_group = aws.ec2.SecurityGroup(
+            f"{name}-security-group",
+            vpc_id=network.vpc.id,
+            opts=pulumi.ResourceOptions(parent=self),
+        )
 
         lambda_name = f"{DEPLOYMENT_NAME}-{name}"
         self.function = aws.lambda_.Function(
@@ -146,6 +155,11 @@ class Lambda(pulumi.ComponentResource):
             memory_size=args.memory_size,
             timeout=args.timeout,
             role=args.execution_role.arn,
+            vpc_config=aws.lambda_.FunctionVpcConfigArgs(
+                # See https://docs.aws.amazon.com/lambda/latest/dg/configuration-vpc.html
+                security_group_ids=[self.security_group.id],
+                subnet_ids=[net.id for net in network.private_subnets],
+            ),
             opts=import_aware_opts(lambda_name, parent=self),
         )
 

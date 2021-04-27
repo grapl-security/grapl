@@ -4,6 +4,7 @@ from typing import Optional
 import pulumi_aws as aws
 from infra.lambda_ import Lambda, LambdaArgs
 from infra.metric_forwarder import MetricForwarder
+from infra.network import Network
 
 import pulumi
 
@@ -16,6 +17,7 @@ class QueueDrivenLambda(pulumi.ComponentResource):
         name: str,
         queue: aws.sqs.Queue,
         args: LambdaArgs,
+        network: Network,
         forwarder: Optional[MetricForwarder] = None,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
@@ -25,6 +27,7 @@ class QueueDrivenLambda(pulumi.ComponentResource):
         self.function = Lambda(
             name,
             args=args,
+            network=network,
             forwarder=forwarder,
             opts=pulumi.ResourceOptions(parent=self),
         )

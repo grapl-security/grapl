@@ -1,6 +1,8 @@
+import logging
 import os
 from http import HTTPStatus
 from typing import Optional
+from urllib.error import HTTPError
 
 import requests
 
@@ -16,8 +18,9 @@ class EngagementEdgeException(Exception):
 
 class EngagementEdgeClient:
     def __init__(self) -> None:
-        hostname = os.environ["GRAPL_AUTH_HOST"]
-        self.endpoint = f"http://{hostname}:{os.environ['GRAPL_AUTH_PORT']}"
+        hostname = os.environ["GRAPL_API_HOST"]
+        port = os.environ["GRAPL_HTTP_FRONTEND_PORT"]
+        self.endpoint = f"http://{hostname}:{port}/auth"
 
     def get_jwt(self) -> str:
         resp = requests.post(
@@ -42,6 +45,20 @@ class EngagementEdgeClient:
                 f"Couldn't find grapl_jwt cookie in {resp.cookies}"
             )
         return cookie
+
+    def invalid_creds(self) -> requests.Response:
+        resp = requests.post(
+            f"{self.endpoint}/login",
+            json={
+                "username": "fakeuser",
+                "password": "fakepassword",
+            },
+            headers={
+                **_JSON_CONTENT_TYPE_HEADERS,
+                **_ORIGIN,
+            },
+        )
+        return resp
 
     def get_notebook(self, jwt: str) -> str:
         cookies = {"grapl_jwt": jwt}

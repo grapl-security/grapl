@@ -5,7 +5,6 @@ ARG CARGO_PROFILE=debug
 SHELL ["/bin/bash", "-c"]
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        wait-for-it \
         wget \
         zip \
     && rm -rf /var/lib/apt/lists/*

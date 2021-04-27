@@ -2,6 +2,8 @@
 # Makefile for developing using Docker
 #
 
+.DEFAULT_GOAL := help
+
 -include .env
 TAG ?= latest
 CARGO_PROFILE ?= debug
@@ -25,11 +27,9 @@ export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 	--file ./test/docker-compose.integration-tests.yml \
 	--file ./test/docker-compose.e2e-tests.yml \
 	--file ./test/docker-compose.typecheck-tests.yml \
-	--file ./test/docker-compose.test-utils.yml \
 	${EVERY_LAMBDA_COMPOSE_FILE}
 
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
-VERBOSE_PANTS := PEX_VERBOSE=5 ./pants -ldebug
 
 COMPOSE_PROJECT_INTEGRATION_TESTS := grapl-integration_tests
 COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
@@ -40,8 +40,16 @@ COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
 # execution behavior, where failure from one line in a target will result in
 # Make error.
 # https://www.gnu.org/software/make/manual/html_node/One-Shell.html
-export SHELLOPTS:=$(if $(SHELLOPTS),$(SHELLOPTS):)errexit
+SHELL := bash
 .ONESHELL:
+# errexit nounset noclobber
+.SHELLFLAGS := \
+-e \
+-u \
+-o pipefail \
+-c
+
+# Note: it doesn't seem to like a single-quote nested in a double-quote!
 
 # Our `docker-compose.yml` file declares the setup of a "local Grapl"
 # environment, which can be used to locally exercise a Grapl system,
@@ -76,12 +84,50 @@ export SHELLOPTS:=$(if $(SHELLOPTS),$(SHELLOPTS):)errexit
 # way.
 WITH_LOCAL_GRAPL_ENV := set -o allexport; . ./local-grapl.env; set +o allexport;
 
-#
-# Build
-#
+FMT_BLUE = \033[36m
+FMT_PURPLE = \033[35m
+FMT_BOLD = \033[1m
+FMT_END = \033[0m
+VSC_DEBUGGER_DOCS_LINK = https://grapl.readthedocs.io/en/latest/debugging/vscode_debugger.html
+
+.PHONY: help
+help: ## Print this help
+	@printf -- '\n'
+	@printf -- '                                                     __ \n'
+	@printf -- '             (≡)         ____ _ _____ ____ _ ____   / / \n'
+	@printf -- '                \       / __ `// ___// __ `// __ \ / /  \n'
+	@printf -- '                (≡)    / /_/ // /   / /_/ // /_/ // /   \n'
+	@printf -- '                /      \__, //_/    \__,_// .___//_/    \n'
+	@printf -- '             (≡)      /____/             /_/            \n'
+	@printf -- '\n'
+	@printf -- '${FMT_BOLD}Useful environment variables (with examples):${FMT_END}\n'
+	@printf -- '  ${FMT_PURPLE}TARGETS${FMT_END}="typecheck-analyzer-executor typecheck-grapl-common" make test-typecheck\n'
+	@printf -- '    to only run a subset of test targets.\n'
+	@printf -- '\n'
+	@printf -- '  ${FMT_PURPLE}KEEP_TEST_ENV=1${FMT_END} make test-integration\n'
+	@printf -- '    to keep the test environment around after a test suite.\n'
+	@printf -- '\n'
+	@printf -- '  ${FMT_PURPLE}DEBUG_SERVICES${FMT_END}="graphql_endpoint grapl_e2e_tests" make test-e2e\n'
+	@printf -- '    to launch the VSCode Debugger (see ${VSC_DEBUGGER_DOCS_LINK}).\n'
+	@printf -- '\n'
+	@printf -- '  ${FMT_BOLD}FUN FACT${FMT_END}: You can also specify these as postfix, like:\n'
+	@printf -- '    make test-something KEEP_TEST_ENV=1\n'
+	@printf '\n'
+	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make ${FMT_BLUE}<target>${FMT_END}\n"} \
+		 /^[a-zA-Z0-9_-]+:.*?##/ { printf "  ${FMT_BLUE}%-46s${FMT_END} %s\n", $$1, $$2 } \
+		 /^##@/ { printf "\n${FMT_BOLD}%s${FMT_END}\n", substr($$0, 5) } ' \
+		 $(MAKEFILE_LIST)
+	@printf '\n'
+
+
+##@ Build 🔨
 
 .PHONY: build
 build: build-services ## Alias for `services` (default)
+
+.PHONY: build-release
+build-release: ## 'make build-services' with cargo --release
+	$(MAKE) CARGO_PROFILE=release build-services
 
 .PHONY: build-all
 build-all: ## Build all targets (incl. services, tests, zip)
@@ -117,10 +163,6 @@ build-test-e2e: build-services
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.yml
 
-.PHONY: build-wait-for-local-provision
-build-wait-for-local-provision:
-	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.test-utils.yml
-
 .PHONY: build-services
 build-services: ## Build Grapl services
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
@@ -133,10 +175,12 @@ build-lambdas: ## Build services for Grapl in AWS (subset of all services)
 graplctl: ## Build graplctl and install it to the project root
 	./pants package ./src/python/graplctl/graplctl
 	cp ./dist/src.python.graplctl.graplctl/graplctl.pex ./bin/graplctl
+	printf -- '\n${FMT_BOLD}Graplctl${FMT_END} written to ${FMT_BLUE}./bin/graplctl${FMT_END}\n'
 
-#
-# Test
-#
+##@ Test 🧪
+
+.PHONY: test
+test: test-unit test-integration test-e2e test-typecheck ## Run all tests
 
 .PHONY: test-unit
 test-unit: export COMPOSE_PROJECT_NAME := grapl-test-unit
@@ -153,8 +197,9 @@ test-unit-rust: build-test-unit-rust ## Build and run unit tests - Rust only
 .PHONY: test-unit-python
 # Long term, it would be nice to organize the tests with Pants
 # tags, rather than pytest tags
+# If you need to `pdb` these tests, add a `--debug` between `test` and `::`
 test-unit-python: ## Run Python unit tests under Pants
-	./pants --tag="-needs_work" test :: --pytest-args="-m 'not integration_test'"
+	./pants --tag="-needs_work" test :: --pytest-args="-m \"not integration_test\""
 
 .PHONY: test-unit-js
 test-unit-js: export COMPOSE_PROJECT_NAME := grapl-test-unit-js
@@ -166,7 +211,7 @@ test-unit-js: build-test-unit-js ## Build and run unit tests - JavaScript only
 test-typecheck: export COMPOSE_PROJECT_NAME := grapl-typecheck_tests
 test-typecheck: export COMPOSE_FILE := ./test/docker-compose.typecheck-tests.yml
 test-typecheck: build-test-typecheck ## Build and run typecheck tests (non-Pants)
-	test/docker-compose-with-error.sh "$(TARGET)"
+	test/docker-compose-with-error.sh
 
 .PHONY: test-typecheck-pulumi
 test-typecheck-pulumi: ## Typecheck Pulumi Python code
@@ -174,7 +219,7 @@ test-typecheck-pulumi: ## Typecheck Pulumi Python code
 
 .PHONY: test-typecheck-build-support
 test-typecheck-build-support: ## Typecheck build-support Python code
-	$(VERBOSE_PANTS) typecheck build-support::
+	./pants typecheck build-support::
 
 # Right now, we're only typechecking a select portion of code with
 # Pants until CM fixes https://github.com/pantsbuild/pants/issues/11553
@@ -198,22 +243,27 @@ test-e2e: build-test-e2e modern-lambdas ## Build and run e2e tests
 .PHONY: test-with-env
 test-with-env: # (Do not include help text - not to be used directly)
 	stopGrapl() {
+		# skip if KEEP_TEST_ENV is set
+		if [[ -z "${KEEP_TEST_ENV}" ]]; then
+			echo "Tearing down test environment"
+		else
+			echo "Keeping test environment" && return 0
+		fi
 		# Unset COMPOSE_FILE to help ensure it will be ignored with use of --file
 		unset COMPOSE_FILE
+		etc/ci_scripts/dump_artifacts.py --compose-project=${COMPOSE_PROJECT_NAME}
 		docker-compose --file docker-compose.yml stop;
 	}
-	# Ensure we call stop even after test failure, and return exit code from 
+	# Ensure we call stop even after test failure, and return exit code from
 	# the test, not the stop command.
 	trap stopGrapl EXIT
 	$(WITH_LOCAL_GRAPL_ENV)
 	# Bring up the Grapl environment and detach
 	$(MAKE) up-detach
 	# Run tests and check exit codes from each test container
-	test/docker-compose-with-error.sh $(TARGET)
+	test/docker-compose-with-error.sh
 
-
-.PHONY: test
-test: test-unit test-integration test-e2e test-typecheck ## Run all tests
+##@ Lint 🧹
 
 .PHONY: lint-rust
 lint-rust: ## Run Rust lint checks
@@ -229,6 +279,8 @@ lint-js: ## Run js lint checks
 
 .PHONY: lint
 lint: lint-python lint-js lint-rust ## Run all lint checks
+
+##@ Formatting 💅
 
 .PHONY: format-rust
 format-rust: ## Reformat all Rust code
@@ -249,53 +301,10 @@ format: format-python format-js format-rust ## Reformat all code
 package-python-libs: ## Create Python distributions for public libraries
 	./pants filter --filter-target-type=python_distribution :: | xargs ./pants package
 
-#
-# else
-#
-
-.PHONY: clean
-clean: ## Prune all docker build cache and remove Grapl containers and images
-	docker builder prune --all --force
-	# Remove all Grapl containers - continue on error (no containers found)
-	docker rm --volumes --force $$(docker ps --filter "name=grapl*" --all --quiet) 2>/dev/null || true
-	# Remove all Grapl images = continue on error (no images found)
-	docker rmi --force $$(docker images --filter reference="grapl/*" --quiet) 2>/dev/null || true
-
-.PHONY: clean-mount-cache
-clean-mount-cache: ## Prune all docker mount cache (used by sccache)
-	docker builder prune --filter type=exec.cachemount
-
-.PHONY: release
-release: ## 'make build-services' with cargo --release
-	$(MAKE) CARGO_PROFILE=release build-services
-
-.PHONY: zip
-zip: build-lambdas ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
-	docker-compose $(EVERY_LAMBDA_COMPOSE_FILE) up
-	$(MAKE) zip-pants
-
-.PHONY: zip-pants
-zip-pants: ## Generate Lambda zip artifacts using pants
-	./pants filter --filter-target-type=python_awslambda :: | xargs ./pants package
-	cp ./dist/src.python.provisioner.src/lambda.zip ./src/js/grapl-cdk/zips/provisioner-$(TAG).zip
-	cp ./dist/src.python.engagement-creator/engagement-creator.zip ./src/js/grapl-cdk/zips/engagement-creator-$(TAG).zip
-	cp ./dist/src.python.grapl-dgraph-ttl/lambda.zip ./src/js/grapl-cdk/zips/dgraph-ttl-$(TAG).zip
-
-# This target is intended to help ease the transition to Pulumi, and
-# using lambdas in local Grapl testing deployments. Essentially, every
-# lambda that is deployed by Pulumi should be built here. Once
-# everything is migrated to Pulumi, we can consolidate this target
-# with other zip-generating targets
-modern-lambdas: ## Generate lambda zips that are used in local Grapl and Pulumi deployments
-	$(DOCKER_BUILDX_BAKE) -f docker-compose.lambda-zips.rust.yml
-	docker-compose -f docker-compose.lambda-zips.rust.yml up
-	$(MAKE) zip-pants
-
-.PHONY: push
-push: ## Push Grapl containers to Docker Hub
-	docker-compose --file=docker-compose.build.yml push
+##@ Local Grapl 💻
 
 .PHONY: up
+up: export COMPOSE_PROJECT_NAME="grapl"
 up: build-services modern-lambdas ## Build Grapl services and launch docker-compose up
 	$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose -f docker-compose.yml up
@@ -313,24 +322,15 @@ up-detach: build-services ## Bring up local Grapl and detach to return control t
 	docker-compose \
 		--file docker-compose.yml \
 		up --detach --force-recreate
-	# Wait for provisioning to fully complete before exiting.
-	$(MAKE) wait-for-local-provision
-
-.PHONY: wait-for-local-provision
-wait-for-local-provision: build-wait-for-local-provision
-	$(WITH_LOCAL_GRAPL_ENV)
-	# It looks like docker-compose isn't honoring COMPOSE_IGNORE_ORPHANS
-	# for the 'run' command, so we're left with a bogus warning. This looks
-	# related: https://github.com/docker/compose/issues/8203.
-	docker-compose \
-		--file ./test/docker-compose.test-utils.yml \
-		run --rm \
-		test-utils \
-		wait-for-it grapl-engagement-view-uploader:$${WAIT_PORT} --timeout=250
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
 	$(WITH_LOCAL_GRAPL_ENV)
+	# This is only for killing the lambda containers that Localstack
+	# spins up in our network, but that docker-compose doesn't know
+	# about. This must be the network that is used in Localstack's
+	# LAMBDA_DOCKER_NETWORK environment variable.
+	-docker kill $(shell docker ps --quiet --filter=network=grapl-network)
 	docker-compose $(EVERY_COMPOSE_FILE) down --timeout=0
 	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
 	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
@@ -340,14 +340,56 @@ stop: ## docker-compose stop - stops (but preserves) the containers
 	$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose $(EVERY_COMPOSE_FILE) stop
 
+##@ Utility ⚙
+
+.PHONY: clean
+clean: ## Prune all docker build cache and remove Grapl containers and images
+	docker builder prune --all --force
+	# Remove all Grapl containers - continue on error (no containers found)
+	docker rm --volumes --force $$(docker ps --filter "name=grapl*" --all --quiet) 2>/dev/null || true
+	# Remove all Grapl images = continue on error (no images found)
+	docker rmi --force $$(docker images --filter reference="grapl/*" --quiet) 2>/dev/null || true
+
+.PHONY: clean-mount-cache
+clean-mount-cache: ## Prune all docker mount cache (used by sccache)
+	docker builder prune --filter type=exec.cachemount
+
+.PHONY: clean-artifacts
+clean-artifacts: ## Remove all dumped artifacts from test runs (see dump_artifacts.py)
+	rm -Rf test_artifacts
+
+.PHONY: zip
+zip: build-lambdas ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
+	docker-compose $(EVERY_LAMBDA_COMPOSE_FILE) up
+	$(MAKE) zip-pants
+
+.PHONY: zip-pants
+zip-pants: ## Generate Lambda zip artifacts using pants
+	./pants filter --filter-target-type=python_awslambda :: | xargs ./pants package
+	cp ./dist/src.python.provisioner.src/lambda.zip ./src/js/grapl-cdk/zips/provisioner-$(TAG).zip
+	cp ./dist/src.python.engagement-creator/engagement-creator.zip ./src/js/grapl-cdk/zips/engagement-creator-$(TAG).zip
+	cp ./dist/src.python.grapl-dgraph-ttl/lambda.zip ./src/js/grapl-cdk/zips/dgraph-ttl-$(TAG).zip
+	cp ./dist/src.python.engagement_edge/engagement_edge.zip ./src/js/grapl-cdk/zips/engagement-edge-$(TAG).zip
+	cp ./dist/src.python.grapl-ux-router/grapl-ux-router.zip ./src/js/grapl-cdk/zips/ux-router-$(TAG).zip
+
+# This target is intended to help ease the transition to Pulumi, and
+# using lambdas in local Grapl testing deployments. Essentially, every
+# lambda that is deployed by Pulumi should be built here. Once
+# everything is migrated to Pulumi, we can consolidate this target
+# with other zip-generating targets
+modern-lambdas: ## Generate lambda zips that are used in local Grapl and Pulumi deployments
+	$(DOCKER_BUILDX_BAKE) -f docker-compose.lambda-zips.rust.yml
+	docker-compose -f docker-compose.lambda-zips.rust.yml up
+	$(MAKE) zip-pants
+
+.PHONY: push
+push: ## Push Grapl containers to Docker Hub
+	docker-compose --file=docker-compose.build.yml push
+
 .PHONY: e2e-logs
 e2e-logs: ## All docker-compose logs
 	$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) logs -f
-
-.PHONY: help
-help: ## Print this help
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z0-9_-]+:.*?## / {gsub("\\\\n",sprintf("\n%22c",""), $$2);printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 .PHONY: docker-kill-all
 docker-kill-all:  # Kill all currently running Docker containers
@@ -356,3 +398,7 @@ docker-kill-all:  # Kill all currently running Docker containers
 .PHONY: populate-venv
 populate-venv: ## Set up a Python virtualenv (you'll have to activate manually!)
 	build-support/manage_virtualenv.sh populate
+
+.PHONY: repl
+repl: ## Run an interactive ipython repl that can import from grapl-common etc
+	./pants --no-pantsd repl --shell=ipython src/python/repl

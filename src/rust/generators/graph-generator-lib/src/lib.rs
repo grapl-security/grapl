@@ -13,10 +13,10 @@ use rusoto_sqs::SqsClient;
 use sqs_executor::{errors::CheckedError,
                    event_decoder::PayloadDecoder,
                    event_handler::EventHandler,
-                   event_retriever::S3PayloadRetriever,
                    make_ten,
                    redis_cache::RedisCache,
                    s3_event_emitter::S3ToSqsEventNotifier,
+                   s3_event_retriever::S3PayloadRetriever,
                    time_based_key_fn};
 use tracing::info;
 

@@ -1,13 +1,13 @@
 use async_trait::async_trait;
 use grapl_graph_descriptions::graph_description::*;
-use grapl_observe::log_time;
+use itertools::{Either,
+                Itertools};
 use log::*;
 use sqs_executor::{cache::Cache,
                    errors::{CheckedError,
                             Recoverable},
                    event_handler::{CompletedEvents,
-                                   EventHandler},
-                   event_status::EventStatus};
+                                   EventHandler}};
 use sysmon::Event;
 
 use crate::{metrics::SysmonSubgraphGeneratorMetrics,
@@ -15,8 +15,6 @@ use crate::{metrics::SysmonSubgraphGeneratorMetrics,
 
 #[derive(thiserror::Error, Debug)]
 pub enum SysmonGeneratorError {
-    #[error("DeserializeError")]
-    DeserializeError(failure::Error),
     #[error("NegativeEventTime")]
     NegativeEventTime(i64),
     #[error("TimeError")]
@@ -28,7 +26,6 @@ pub enum SysmonGeneratorError {
 impl CheckedError for SysmonGeneratorError {
     fn error_type(&self) -> Recoverable {
         match self {
-            Self::DeserializeError(_) => Recoverable::Persistent,
             Self::NegativeEventTime(_) => Recoverable::Persistent,
             Self::TimeError(_) => Recoverable::Persistent,
             Self::UnsupportedEventType(_) => Recoverable::Persistent,
@@ -52,69 +49,6 @@ where
     pub fn new(cache: C, metrics: SysmonSubgraphGeneratorMetrics) -> Self {
         Self { cache, metrics }
     }
-
-    /// Takes a vec of event Strings, parses them, and converts them into subgraphs
-    async fn process_events(
-        &mut self,
-        events: Vec<String>,
-        identities: &mut CompletedEvents,
-    ) -> Result<
-        GraphDescription,
-        Result<(GraphDescription, SysmonGeneratorError), SysmonGeneratorError>,
-    > {
-        let mut last_error: Option<SysmonGeneratorError> = None;
-        let mut final_subgraph = GraphDescription::new();
-
-        // Skip events we've successfully processed and stored in the event cache.
-        let events = self.cache.filter_cached(&events).await;
-
-        for event in events {
-            let event = match Event::from_str(&event) {
-                Ok(event) => event,
-                Err(e) => {
-                    warn!("Failed to deserialize event: {}, {}", e, event);
-
-                    last_error = Some(SysmonGeneratorError::DeserializeError(failure::err_msg(
-                        format!("Failed: {}", e),
-                    )));
-
-                    continue;
-                }
-            };
-
-            let graph = match GraphDescription::try_from(event.clone()) {
-                Ok(subgraph) => subgraph,
-                Err(SysmonGeneratorError::UnsupportedEventType(_s)) => continue,
-                Err(new_error) => {
-                    error!("GraphDescription::try_from failed with: {:?}", new_error);
-                    // TODO: we should probably be recording each separate failure, but this is only going to save the last failure
-                    match last_error {
-                        // Save the last error, but do not overwrite a transient error with a persistent error.
-                        // The awkwardness of this is being tracked in: https://github.com/grapl-security/issue-tracker/issues/269
-                        Some(ref mut e) => {
-                            if e.is_transient() {
-                                last_error = Some(new_error);
-                            }
-                        }
-                        None => {
-                            last_error = Some(new_error);
-                        }
-                    }
-
-                    continue;
-                }
-            };
-
-            final_subgraph.merge(&graph);
-            identities.add_identity(event, EventStatus::Success);
-        }
-
-        match (last_error, identities.identities.is_empty()) {
-            (Some(last_failure), true) => Err(Err(last_failure)),
-            (Some(last_failure), false) => Err(Ok((final_subgraph, last_failure))),
-            (None, _) => Ok(final_subgraph),
-        }
-    }
 }
 
 #[async_trait]
@@ -122,51 +56,71 @@ impl<C> EventHandler for SysmonSubgraphGenerator<C>
 where
     C: Cache + Clone + Send + Sync + 'static,
 {
-    type InputEvent = Vec<u8>;
+    type InputEvent = Vec<Result<Event, crate::serialization::SysmonDecoderError>>;
     type OutputEvent = GraphDescription;
     type Error = SysmonGeneratorError;
 
     async fn handle_event(
         &mut self,
-        events: Vec<u8>,
+        events: Self::InputEvent,
         completed: &mut CompletedEvents,
     ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
-        info!("Handling raw event");
+        info!("Processing {} incoming Sysmon events.", events.len());
 
-        /*
-           This iterator is taking a set of bytes of the logs, splitting the logs on newlines,
-           converting the byte sequences to utf-8 strings, and then filtering on the following criteria:
-               1. The line isn't empty
-               2. The line is not `\n` (to prevent issues with multiple newline sequences)
-               3. The line contains event with ID 1, 3, or 11
+        let (deserialized_events, deserialization_errors): (Vec<_>, Vec<_>) =
+            events.into_iter().partition_map(|event| match event {
+                Ok(value) => Either::Left(value),
+                Err(error) => Either::Right(error),
+            });
 
-           The event ids 1, 3, and 11 correspond to Process Creation, Network Connection, and File Creation
-           in that order.
+        for error in deserialization_errors {
+            error!("Deserialization error: {}", error);
+        }
 
-           https://docs.microsoft.com/en-us/sysinternals/downloads/sysmon#events
-        */
-        let events: Vec<_> = log_time!(
-            "event split",
-            events
-                .split(|i| &[*i][..] == &b"\n"[..])
-                .map(String::from_utf8_lossy)
-                .map(|s| s.to_string())
-                .filter(|event| {
-                    (!event.is_empty() && event != "\n")
-                        && (event.contains(&"EventID>1<"[..])
-                            || event.contains(&"EventID>3<"[..])
-                            || event.contains(&"EventID>11<"[..]))
-                })
-                .collect()
-        );
+        let subgraph_results: Vec<_> = deserialized_events
+            .into_iter()
+            .map(|event| GraphDescription::try_from(event))
+            .collect();
 
-        info!("Handling {} events", events.len());
+        // Report subgraph generation metrics
+        for result in subgraph_results.iter() {
+            self.metrics.report_subgraph_generation(result);
+        }
 
-        let final_subgraph = self.process_events(events, completed).await;
+        let (subgraphs, mut subgraph_generation_errors): (Vec<_>, Vec<_>) = subgraph_results
+            .into_iter()
+            .partition_map(|result| match result {
+                Ok(value) => Either::Left(value),
+                Err(error) => Either::Right(error),
+            });
+
+        for error in &subgraph_generation_errors {
+            match error {
+                SysmonGeneratorError::UnsupportedEventType(_) => continue,
+                _ => error!("GraphDescription::try_from failed with: {:?}", error),
+            }
+        }
+
+        let final_subgraph =
+            subgraphs
+                .iter()
+                .fold(GraphDescription::new(), |mut current_graph, subgraph| {
+                    current_graph.merge(&subgraph);
+                    current_graph
+                });
 
         info!("Completed mapping {} subgraphs", completed.len());
-        self.metrics.report_handle_event_success(&final_subgraph);
 
-        final_subgraph
+        let graph_generation_error = subgraph_generation_errors.pop();
+
+        let final_result = match (graph_generation_error, subgraphs.is_empty()) {
+            (None, _) => Ok(final_subgraph),
+            (Some(error), false) => Err(Ok((final_subgraph, error))),
+            (Some(error), true) => Err(Err(error)),
+        };
+
+        self.metrics.report_handle_event_success(&final_result);
+
+        final_result
     }
 }

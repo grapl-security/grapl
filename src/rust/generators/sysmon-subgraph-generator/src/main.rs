@@ -1,17 +1,14 @@
 #![type_length_limit = "1334469"]
 #![feature(test)]
 use graph_generator_lib::run_graph_generator;
-pub use grapl_service::{decoder::{ZstdDecoder,
-                                  ZstdDecoderError},
-                        serialization::{GraphDescriptionSerializer,
-                                        GraphDescriptionSerializerError}};
+pub use grapl_service::serialization::{GraphDescriptionSerializer,
+                                       GraphDescriptionSerializerError};
 use log::*;
 
 use sysmon_subgraph_generator_lib::{
     generator::SysmonSubgraphGenerator,
     metrics::SysmonSubgraphGeneratorMetrics
 };
-
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -23,7 +20,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         move |cache| {
             SysmonSubgraphGenerator::new(cache, SysmonSubgraphGeneratorMetrics::new(&service_name))
         },
-        ZstdDecoder::default(),
+        serialization::SysmonDecoder::default(),
     )
     .await;
 

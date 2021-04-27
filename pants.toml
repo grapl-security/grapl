@@ -1,5 +1,5 @@
 [GLOBAL]
-pants_version = "2.2.0"
+pants_version = "2.4.0"
 backend_packages = [
   "pants.backend.awslambda.python",
   "pants.backend.codegen.protobuf.python",
@@ -42,7 +42,6 @@ root_patterns = [
   "/src/python/analyzer_executor/tests",
   "/src/python/engagement-creator",
   "/src/python/engagement_edge",
-  "/src/python/engagement_edge/tests",
   "/src/python/graphql_endpoint_tests",
   "/src/python/grapl_analyzerlib",
   "/src/python/grapl-common",
@@ -54,9 +53,10 @@ root_patterns = [
   "/src/python/grapl-model-plugin-deployer/tests",
   "/src/python/grapl_provision",
   "/src/python/grapl-tests-common",
-  "/src/python/grapl-ux-router/src",
+  "/src/python/grapl-ux-router",
   "/src/python/provisioner/src",
   "/src/python/provisioner/tests",
+  "/src/python/repl",
 ]
 
 [python-setup]
@@ -105,3 +105,6 @@ args = [ "--suppress-no-test-exit-code" ]
 version = "mypy==0.800"
 config = "src/python/mypy.ini"
 args = [ "--show-error-codes" ]
+
+[ipython]
+version = "ipython==7.20.0"

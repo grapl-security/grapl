@@ -1,11 +1,11 @@
 #[macro_export]
 macro_rules! log_time {
     ($msg:expr, $x:expr) => {{
-        let mut sw = stopwatch::Stopwatch::start_new();
+        let start = Instant::now();
         #[allow(path_statements)]
         let result = $x;
-        sw.stop();
-        info!("{} {} milliseconds", $msg, sw.elapsed_ms());
+        let duration = start.elapsed().as_millis();
+        info!("{} {} milliseconds", $msg, duration);
         result
     }};
 }

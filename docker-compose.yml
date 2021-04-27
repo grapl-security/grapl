@@ -1,5 +1,4 @@
 ### Port conventions (though there are many, many exceptions)
-# 81xx - grapl services (and some `wait-for-it` http servers)
 # 82xx - TBD
 # 83xx - grapl plugin services, like grapl-aws-plugins
 # 84xx - debugger ports (see vsc_debugger.py)
@@ -7,6 +6,9 @@
 version: "3.8"
 volumes:
   dgraph_export:
+  pulumi_outputs:
+    # This volume will be used to output Pulumi stack outputs that may
+    # need to be accessible in test containers.
 
 x-common-variables:
   aws-region: &aws-region
@@ -80,32 +82,52 @@ services:
         # to disable persistence
         rm -f /data/dump.rdb && redis-server
       "
+    healthcheck:
+      test: bash -c 'redis-cli -h 127.0.0.1 ping | grep PONG'
+      interval: 5s
+      timeout: 10s
+      start_period: 10s
     networks:
       default:
         aliases:
           - ${REDIS_HOST}
 
   localstack:
-    image: localstack/localstack:0.12.8
+    # This is our own version until a PR is merged upstream
+    image: graplsec/localstack:chalice-compatible
     ports:
       # We'll expose localstack's edge port for ease of use with
       # things like the AWS CLI, Pulumi, etc.
       - 127.0.0.1:${LOCALSTACK_PORT}:${LOCALSTACK_PORT}
     environment:
-      - IMAGE_NAME=localstack/localstack:0.12.8
+      - IMAGE_NAME=graplsec/localstack:chalice-compatible
       - EDGE_PORT=${LOCALSTACK_PORT}
       - HOSTNAME_EXTERNAL=${LOCALSTACK_HOST}
-      - SERVICES=dynamodb,events,iam,lambda,logs,s3,secretsmanager,sns,sqs
+      - SERVICES=apigateway,dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs
       - DEBUG=1
-      - LS_LOG=debug
-      - LAMBDA_EXECUTOR=docker
+      # Once we put the lambdas behind the API gateway, overall test
+      # time increased. Using the `docker` executor reliably takes at
+      # least 2x the time of `docker-reuse`. However, the containers
+      # generated are invisible to docker-compose, and Localstack
+      # doesn't shut them down, so we have to manage that on our own
+      # (see Makefile)
+      - LAMBDA_EXECUTOR=docker-reuse
       - MAIN_CONTAINER_NAME=${COMPOSE_PROJECT_NAME}_localstack_1
       # Without this, the lambda containers are attached to the bridge network
       - LAMBDA_DOCKER_NETWORK=grapl-network
       - DATA_DIR=${DATA_DIR- }
     privileged: true # for docker lambda execution
+    healthcheck:
+      test: |
+        bash -c '
+          export AWS_ACCESS_KEY_ID=${FAKE_AWS_ACCESS_KEY_ID} &&
+          export AWS_SECRET_ACCESS_KEY=${FAKE_AWS_SECRET_ACCESS_KEY} &&
+          aws --endpoint-url=http://${LOCALSTACK_HOST}:${LOCALSTACK_PORT} s3 ls
+        '
+      interval: 5s
+      timeout: 10s
+      start_period: 10s
     volumes:
-      - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
     networks:
       default:
@@ -134,9 +156,12 @@ services:
       <<: *sqs-env
       <<: *rust-backtrace
     depends_on:
-      - grapl-provision
-      - localstack
-      - redis
+      grapl-provision:
+        condition: service_completed_successfully
+      localstack:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   grapl-osquery-subgraph-generator:
     image: grapl/grapl-osquery-subgraph-generator:${TAG:-latest}
@@ -156,9 +181,12 @@ services:
       <<: *sqs-env
       <<: *rust-backtrace
     depends_on:
-      - grapl-provision
-      - localstack
-      - redis
+      grapl-provision:
+        condition: service_completed_successfully
+      localstack:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
@@ -179,9 +207,12 @@ services:
       <<: *rust-backtrace
     tty: false
     depends_on:
-      - grapl-provision
-      - localstack
-      - redis
+      grapl-provision:
+        condition: service_completed_successfully
+      localstack:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   grapl-node-identifier-retry-handler:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
@@ -202,9 +233,12 @@ services:
       <<: *rust-backtrace
     tty: false
     depends_on:
-      - grapl-provision
-      - localstack
-      - redis
+      grapl-provision:
+        condition: service_completed_successfully
+      localstack:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   grapl-graph-merger:
     image: grapl/grapl-graph-merger:${TAG:-latest}
@@ -226,10 +260,14 @@ services:
       <<: *rust-backtrace
     tty: false
     depends_on:
-      - dgraph
-      - grapl-provision
-      - localstack
-      - redis
+      dgraph:
+        condition: service_started
+      grapl-provision:
+        condition: service_completed_successfully
+      localstack:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   grapl-analyzer-dispatcher:
     image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
@@ -249,7 +287,8 @@ services:
       <<: *rust-backtrace
     tty: false
     depends_on:
-      - localstack
+      localstack:
+        condition: service_healthy
 
   ########################################################################
   # Python Services
@@ -279,70 +318,19 @@ services:
     ports:
       - 127.0.0.1:${VSC_DEBUGGER_PORT_FOR_ANALYZER_EXECUTOR}:${VSC_DEBUGGER_PORT_FOR_ANALYZER_EXECUTOR}
     depends_on:
-      - dgraph
-      - localstack
-      - redis
-
-  grapl-ux-router:
-    image: grapl/grapl-ux-router:${TAG:-latest}
-    command: |
-      /bin/sh -c '
-        wait-for-it grapl-engagement-view-uploader:${WAIT_PORT} --timeout=180 &&
-        . venv/bin/activate &&
-        cd app &&
-        chalice local --no-autoreload --host=0.0.0.0 --port=${GRAPL_UX_ROUTER_PORT}
-      '
-    environment:
-      GRAPL_LOG_LEVEL: "DEBUG"
-      IS_LOCAL: "True"
-      UX_BUCKET_NAME: "${DEPLOYMENT_NAME}-engagement-ux-bucket"
-      <<: *aws-region
-      <<: *s3-env
-    depends_on:
-      - grapl-engagement-view-uploader
-    tty: true
-    networks:
-      default:
-        aliases:
-          - ${GRAPL_UX_ROUTER_HOST}
-
-  # TODO: really, this service should be grapl-auth
-  grapl-engagement-edge:
-    image: grapl/grapl-engagement-edge:${TAG:-latest}
-    command: |
-      /bin/sh -c '
-        wait-for-it grapl-provision:${WAIT_PORT} --timeout=250 &&
-        . venv/bin/activate &&
-        cd /home/grapl/app &&
-        chalice local --no-autoreload --host=0.0.0.0 --port=${GRAPL_AUTH_PORT}
-      '
-    networks:
-      default:
-        aliases:
-          - ${GRAPL_AUTH_HOST}
-    environment:
-      <<: *aws-region
-      DEBUG_SERVICES: "${DEBUG_SERVICES}"
-      DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
-      <<: *dynamodb-env
-      IS_LOCAL: "True"
-      <<: *log-level
-      <<: *secretsmanager-env
-      USER_AUTH_TABLE: "${DEPLOYMENT_NAME}-user_auth_table"
-      UX_BUCKET_URL: "localhost:3000" # TODO: Port??
-      VSC_DEBUGGER_PORT: "${VSC_DEBUGGER_PORT_FOR_ENGAGEMENT_EDGE}"
-    depends_on:
-      - grapl-provision
-      - localstack
-    tty: true
-    ports:
-      - 127.0.0.1:${VSC_DEBUGGER_PORT_FOR_ENGAGEMENT_EDGE}:${VSC_DEBUGGER_PORT_FOR_ENGAGEMENT_EDGE}
+      dgraph:
+        condition: service_started
+      grapl-provision:
+        condition: service_completed_successfully
+      localstack:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   grapl-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
     command: |
       /bin/sh -c '
-        wait-for-it grapl-provision:${WAIT_PORT} --timeout=250 &&
         . venv/bin/activate &&
         cd /home/grapl/app &&
         chalice local \
@@ -361,8 +349,14 @@ services:
       UX_BUCKET_URL: "localhost"
     tty: true
     depends_on:
-      - dgraph
-      - localstack
+      dgraph:
+        condition: service_started
+      localstack:
+        condition: service_healthy
+      grapl-provision:
+        condition: service_completed_successfully
+    ports:
+      - 127.0.0.1:${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}:${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}
     networks:
       default:
         aliases:
@@ -374,24 +368,35 @@ services:
 
   nginx:
     image: nginxinc/nginx-unprivileged
+    command: |
+      /bin/bash -c "
+        export API_GATEWAY_API_ID=$$(cat /pulumi-outputs/prod-api-id) &&
+        /docker-entrypoint.sh nginx -g 'daemon off;'
+      "
     volumes:
       - ./etc/local_grapl/nginx_templates:/etc/nginx/templates
+      - type: volume
+        source: pulumi_outputs
+        target: /pulumi-outputs
+        read_only: true
     ports:
       - "127.0.0.1:1234:${GRAPL_HTTP_FRONTEND_PORT}"
     environment:
-      - GRAPL_AUTH_HOST
-      - GRAPL_AUTH_PORT
       - GRAPL_GRAPHQL_HOST
       - GRAPL_GRAPHQL_PORT
       - GRAPL_MODEL_PLUGIN_DEPLOYER_HOST
       - GRAPL_MODEL_PLUGIN_DEPLOYER_PORT
-      - GRAPL_UX_ROUTER_HOST
-      - GRAPL_UX_ROUTER_PORT
+      - LOCALSTACK_HOST
+      - LOCALSTACK_PORT
     depends_on:
-      - grapl-engagement-edge
-      - grapl-model-plugin-deployer
-      - grapl-graphql-endpoint
-      - grapl-ux-router
+      grapl-model-plugin-deployer:
+        condition: service_started
+      grapl-graphql-endpoint:
+        condition: service_started
+      grapl-pulumi:
+        # We must wait until Pulumi has created the API gateway so we
+        # know what its URL is.
+        condition: service_completed_successfully
     networks:
       default:
         aliases:
@@ -400,22 +405,17 @@ services:
   grapl-engagement-view-uploader:
     image: grapl/grapl-engagement-view:${TAG:-latest}
     command: |
-      /bin/bash -c "
-        wait-for-it grapl-provision:${WAIT_PORT} --timeout=250 &&
-        ./upload_local.sh &&
-        python -m http.server ${WAIT_PORT}  # wait-for-it
-      "
+      /bin/bash -c "./upload_local.sh"
     environment:
       <<: *aws-region
       <<: *s3-env
     depends_on:
-      - grapl-provision
+      grapl-provision:
+        condition: service_completed_successfully
 
   grapl-graphql-endpoint:
     image: grapl/grapl-graphql-endpoint:${TAG:-latest}
-    command: bash -c "
-      wait-for-it grapl-provision:${WAIT_PORT} --timeout=250 &&
-      ./start_potentially_with_debugger.sh"
+    command: bash -c "./start_potentially_with_debugger.sh"
     environment:
       <<: *aws-region
       <<: *dgraph-env
@@ -430,9 +430,12 @@ services:
       DEBUG_SERVICES: "${DEBUG_SERVICES}"
       VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT: "${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}"
     depends_on:
-      - dgraph
-      - grapl-provision
-      - localstack
+      dgraph:
+        condition: service_started
+      localstack:
+        condition: service_healthy
+      grapl-provision:
+        condition: service_completed_successfully
     ports:
       - 127.0.0.1:${GRAPL_GRAPHQL_PORT}:${GRAPL_GRAPHQL_PORT}
       - 127.0.0.1:${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}:${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}
@@ -459,14 +462,12 @@ services:
     image: grapl/grapl-local-pulumi:${TAG:-latest}
     command: |
       /bin/bash -c "
-         wait-for-it ${LOCALSTACK_HOST}:${LOCALSTACK_PORT} --timeout=60 &&
-         sleep 10 &&
          pulumi login --local &&
          pulumi stack init local-grapl --non-interactive &&
          pulumi up --yes --skip-preview --stack=local-grapl &&
-         # NOTE: This is running in localstack's network namespace, so
-         # we will need to wait on localstack, NOT grapl-pulumi.
-         python -u -m http.server ${WAIT_PORT}
+
+         # Write the necessary outputs to the shared volume, for access by other containers
+         pulumi stack output prod-api-id > /home/grapl/pulumi-outputs/prod-api-id
       "
     # Our local-grapl Pulumi stack is configured to communicate with
     # localhost. By participating in the network namespace of our
@@ -479,26 +480,23 @@ services:
         source: ./src/js/grapl-cdk/zips
         target: /home/grapl/src/js/grapl-cdk/zips
         read_only: true
+      - type: volume
+        source: pulumi_outputs
+        target: /home/grapl/pulumi-outputs
+        read_only: false
     environment:
       PULUMI_CONFIG_PASSPHRASE: local-grapl-passphrase
     depends_on:
-      - localstack
+      localstack:
+        condition: service_healthy
 
   grapl-provision:
     image: grapl/grapl-provision:${TAG:-latest}
     command: |
       /bin/bash -c "
         export TIMEOUT=35 &&
-        # NOTE: We wait on localstack, even though we conceptually are
-        # waiting for grapl-pulumi to finish, because grapl-pulumi
-        # runs within the network namespace of localstack, and not a
-        # network namespace of its own.
-        wait-for-it localstack:${WAIT_PORT} --timeout=200 &&
-        wait-for-it ${DGRAPH_HOST}:${DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT} --timeout=$$TIMEOUT &&
         . venv/bin/activate &&
-        python /home/grapl/grapl_local_provision/grapl_provision.py &&
-        # Host a server on this port, so that tests can wait-for-it
-        python -m http.server ${WAIT_PORT}
+        python /home/grapl/grapl_local_provision/grapl_provision.py
       "
     environment:
       <<: *aws-region
@@ -510,9 +508,12 @@ services:
       <<: *sqs-env
     tty: true
     depends_on:
-      - dgraph
-      - localstack
-      - grapl-pulumi
+      dgraph:
+        condition: service_started
+      localstack:
+        condition: service_healthy
+      grapl-pulumi:
+        condition: service_completed_successfully
 
 networks:
   default:

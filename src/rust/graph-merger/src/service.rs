@@ -25,7 +25,7 @@ use grapl_graph_descriptions::graph_description::{Edge,
 use grapl_observe::{dgraph_reporter::DgraphMetricReporter,
                     metric_reporter::{tag,
                                       MetricReporter}};
-use grapl_service::{decoder::ZstdProtoDecoder,
+use grapl_service::{decoder::ProtoDecoder,
                     serialization::MergedGraphSerializer};
 use grapl_utils::{future_ext::GraplFutureExt,
                   rusoto_ext::dynamodb::GraplDynamoDbClientExt};
@@ -47,9 +47,9 @@ use sqs_executor::{cache::{Cache,
                             Recoverable},
                    event_handler::{CompletedEvents,
                                    EventHandler},
-                   event_retriever::S3PayloadRetriever,
                    make_ten,
-                   s3_event_emitter::S3ToSqsEventNotifier};
+                   s3_event_emitter::S3ToSqsEventNotifier,
+                   s3_event_retriever::S3PayloadRetriever};
 use tracing::{error,
               info,
               warn};

@@ -24,10 +24,7 @@ thiserror = "1"
 tokio-compat = "0.1"
 tokio = { version = "1", features = ["sync", "macros", "time", "rt-multi-thread"] }
 tokio-compat-02 = "0.2.0"
-
-[dependencies.uuid]
-version = "*"
-features = ["v4"]
+uuid = { version = "0.8", features=["v4"] }
 
 [dev-dependencies]
 hmap = "0.1"
