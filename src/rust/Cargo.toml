@@ -9,6 +9,7 @@ members = [
     "./grapl",
     "./grapl-config",
     "./grapl-utils",
+    "./grapl-test",
     "./grapl-observe",
     "./metric-forwarder",
     "./node-identifier",

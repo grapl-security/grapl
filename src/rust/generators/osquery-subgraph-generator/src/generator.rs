@@ -13,7 +13,7 @@ use crate::{metrics::OSQuerySubgraphGeneratorMetrics,
             parsers::PartiallyDeserializedOSQueryLog};
 
 #[derive(Clone)]
-pub(crate) struct OSQuerySubgraphGenerator<C>
+pub struct OSQuerySubgraphGenerator<C>
 where
     C: Cache + Clone + Send + Sync + 'static,
 {

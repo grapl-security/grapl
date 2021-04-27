@@ -37,7 +37,7 @@ impl CheckedError for SysmonGeneratorError {
 }
 
 #[derive(Clone)]
-pub(crate) struct SysmonSubgraphGenerator<C>
+pub struct SysmonSubgraphGenerator<C>
 where
     C: Cache + Clone + Send + Sync + 'static,
 {

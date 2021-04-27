@@ -1,10 +1,4 @@
 #![type_length_limit = "1232619"]
-mod generator;
-mod metrics;
-mod parsers;
-mod serialization;
-mod tests;
-
 use graph_generator_lib::*;
 use grapl_config::{env_helpers::{s3_event_emitters_from_env,
                                  FromEnv},
@@ -18,7 +12,7 @@ use sqs_executor::{event_retriever::S3PayloadRetriever,
                    s3_event_emitter::S3ToSqsEventNotifier,
                    time_based_key_fn};
 
-use crate::{generator::OSQuerySubgraphGenerator,
+use osquery_subgraph_generator_lib::{generator::OSQuerySubgraphGenerator,
             metrics::OSQuerySubgraphGeneratorMetrics,
             serialization::OSQueryLogDecoder};
 
