@@ -13,12 +13,12 @@ from hashlib import sha1
 from http import HTTPStatus
 from pathlib import Path
 from typing import (
-    Mapping,
     TYPE_CHECKING,
     Any,
     Callable,
     Dict,
     List,
+    Mapping,
     Optional,
     Type,
     TypeVar,

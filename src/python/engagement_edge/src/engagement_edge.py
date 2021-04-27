@@ -11,11 +11,11 @@ from hmac import compare_digest
 from http import HTTPStatus
 from random import uniform
 from typing import (
-    Mapping,
     TYPE_CHECKING,
     Any,
     Callable,
     Dict,
+    Mapping,
     Optional,
     Tuple,
     TypeVar,
