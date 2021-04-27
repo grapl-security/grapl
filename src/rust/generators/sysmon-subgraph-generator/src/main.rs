@@ -7,7 +7,8 @@ use log::*;
 
 use sysmon_subgraph_generator_lib::{
     generator::SysmonSubgraphGenerator,
-    metrics::SysmonSubgraphGeneratorMetrics
+    metrics::SysmonSubgraphGeneratorMetrics,
+    serialization::SysmonDecoder
 };
 
 #[tokio::main]
@@ -20,7 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         move |cache| {
             SysmonSubgraphGenerator::new(cache, SysmonSubgraphGeneratorMetrics::new(&service_name))
         },
-        serialization::SysmonDecoder::default(),
+        SysmonDecoder::default(),
     )
     .await;
 

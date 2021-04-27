@@ -13,8 +13,7 @@ use sqs_executor::{make_ten,
                    time_based_key_fn};
 
 use osquery_subgraph_generator_lib::{generator::OSQuerySubgraphGenerator,
-            metrics::OSQuerySubgraphGeneratorMetrics,
-            serialization::OSQueryLogDecoder};
+            metrics::OSQuerySubgraphGeneratorMetrics};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

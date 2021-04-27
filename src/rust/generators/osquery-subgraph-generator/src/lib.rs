@@ -3,5 +3,4 @@
 pub mod generator;
 pub mod metrics;
 pub mod parsers;
-pub mod serialization;
 mod tests;
