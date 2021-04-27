@@ -1,9 +1,10 @@
-use std::fmt::{Display, Formatter, Result as FmtResult};
-use std::error::Error;
-use sqs_executor::errors::{
-    CheckedError,
-    Recoverable
-};
+use std::{error::Error,
+          fmt::{Display,
+                Formatter,
+                Result as FmtResult}};
+
+use sqs_executor::errors::{CheckedError,
+                           Recoverable};
 
 #[derive(Debug)]
 pub struct GenericError {}
@@ -17,5 +18,7 @@ impl Display for GenericError {
 impl Error for GenericError {}
 
 impl CheckedError for GenericError {
-    fn error_type(&self) -> Recoverable { Recoverable::Transient }
+    fn error_type(&self) -> Recoverable {
+        Recoverable::Transient
+    }
 }

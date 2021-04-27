@@ -6,14 +6,13 @@ use grapl_config::{env_helpers::{s3_event_emitters_from_env,
 use grapl_observe::metric_reporter::MetricReporter;
 use grapl_service::serialization::GraphDescriptionSerializer;
 use log::*;
+use osquery_subgraph_generator_lib::{generator::OSQuerySubgraphGenerator,
+                                     metrics::OSQuerySubgraphGeneratorMetrics};
 use rusoto_sqs::SqsClient;
 use sqs_executor::{make_ten,
                    s3_event_emitter::S3ToSqsEventNotifier,
                    s3_event_retriever::S3PayloadRetriever,
                    time_based_key_fn};
-
-use osquery_subgraph_generator_lib::{generator::OSQuerySubgraphGenerator,
-            metrics::OSQuerySubgraphGeneratorMetrics};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
