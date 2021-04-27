@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
 Despite the path, this is *not* tied just to Local Grapl, and can also be used on true S3 buckets.
+
+TODO: This file is on the verge of being deprecated by `graplctl upload sysmon`.
+Just need to add support for local-grapl.
+https://github.com/grapl-security/issue-tracker/issues/393
 """
 
 import argparse

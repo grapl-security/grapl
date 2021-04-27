@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from grapl_common.debugger.vsc_debugger import wait_for_vsc_debugger
 from grapl_tests_common import setup_tests
 from grapl_tests_common.upload_analyzers import AnalyzerUpload
@@ -19,7 +21,7 @@ def main() -> None:
 
     test_data = (
         UploadSysmonLogsTestData(
-            "/home/grapl/etc/sample_data/eventlog.xml",
+            Path("/home/grapl/etc/sample_data/eventlog.xml").resolve()
         ),
     )
     setup_tests.setup_tests(
