@@ -11,6 +11,7 @@ from hmac import compare_digest
 from http import HTTPStatus
 from random import uniform
 from typing import (
+    Mapping,
     TYPE_CHECKING,
     Any,
     Callable,
@@ -202,7 +203,7 @@ def login(username: str, password: str) -> Optional[str]:
     return jwt.encode({"username": username}, JWT_SECRET.get(), algorithm="HS256")
 
 
-def check_jwt(headers: Dict[str, Any]) -> bool:
+def check_jwt(headers: Mapping[str, Any]) -> bool:
     encoded_jwt = None
     for cookie in headers.get("Cookie", "").split(";"):
         if "grapl_jwt=" in cookie:
