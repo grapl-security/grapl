@@ -20,10 +20,8 @@ class GraphqlEndpointClient:
     def __init__(self, jwt: str) -> None:
         hostname = os.environ["GRAPL_API_HOST"]
         port = os.environ["GRAPL_HTTP_FRONTEND_PORT"]
-        #self.endpoint = f"http://{os.environ['LOCALSTACK_HOST']}:{os.environ['LOCALSTACK_PORT']}/restapis/{os.environ['API_GATEWAY_API_ID']}/prod/_user_request_/graphQlEndpoint"
         self.endpoint = f"http://{hostname}:{port}/graphQlEndpoint"
         self.jwt = jwt
-        print(f"GRAPHQL ENDPOINT: {self.endpoint}")
 
     def query(
         self, query: str, variables: Optional[Dict[str, Any]] = None

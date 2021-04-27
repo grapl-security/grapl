@@ -31,7 +31,7 @@ class GraphQL(pulumi.ComponentResource):
                 execution_role=self.role,
                 description=GLOBAL_LAMBDA_ZIP_TAG,
                 handler="server.handler",
-                runtime=aws.lambda_.Runtime.NODE_JS12D_X,
+                runtime=aws.lambda_.Runtime.NODE_JS14D_X,
                 code_path=code_path_for(name),
                 package_type="Zip",
                 env={
@@ -43,7 +43,8 @@ class GraphQL(pulumi.ComponentResource):
                     # we can properly resolve it.
                     "DEPLOYMENT_NAME": pulumi.get_stack(),
                     # TODO: This will fail in localstack becase of the
-                    # URLs involved...
+                    # URLs involved... actually, this doesn't appear
+                    # to be used
                     "UX_BUCKET_URL": pulumi.Output.concat(
                         "https://", ux_bucket.bucket_regional_domain_name
                     ),

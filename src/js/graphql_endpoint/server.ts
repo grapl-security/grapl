@@ -99,6 +99,7 @@ app.use(
 );
 
 app.use(function (req, res) {
+    console.warn(req);
     console.warn(req.path);
     res.sendStatus(404);
 });
