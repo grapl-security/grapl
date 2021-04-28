@@ -30,8 +30,8 @@ from grapl_analyzerlib.prelude import (
     ProcessSchema,
     RiskSchema,
 )
+from grapl_analyzerlib.provision import provision_common
 from grapl_analyzerlib.schema import Schema
-from grapl_common.provision import store_schema_properties  # type: ignore
 from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
@@ -44,22 +44,6 @@ LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 DEPLOYMENT_NAME = os.environ["DEPLOYMENT_NAME"]
 GRAPL_TEST_USER_NAME = os.environ["GRAPL_TEST_USER_NAME"]
-
-
-def _set_schema(graph_client: GraphClient, schema: str) -> None:
-    op = pydgraph.Operation(schema=schema)
-    LOGGER.info(f"setting dgraph schema {schema}")
-    graph_client.alter(op)
-
-
-def _format_schemas(schema_defs: Sequence[BaseSchema]) -> str:
-    schemas = "\n\n".join([schema.generate_schema() for schema in schema_defs])
-
-    types = "\n\n".join([schema.generate_type() for schema in schema_defs])
-
-    return "\n".join(
-        ["  # Type Definitions", types, "\n  # Schema Definitions", schemas]
-    )
 
 
 def _query_dgraph_predicate(client: "GraphClient", predicate_name: str) -> Any:
@@ -145,24 +129,11 @@ def _extend_schema(graph_client: GraphClient, schema: BaseSchema) -> None:
             schema.add_edge(predicate_meta["predicate"], predicate, "")
 
 
-def _store_schema(dynamodb, schema: "Schema"):
-    grapl_schema_table = dynamodb.Table(
-        os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table"
-    )
-
-    for f_edge, (_, r_edge) in schema.get_edges().items():
-        if not (f_edge and r_edge):
-            LOGGER.warn(f"!! We found an edge that is missing a reverse edge: {f_edge}")
-            continue
-
-    grapl_schema_table.put_item(Item={"f_edge": f_edge, "r_edge": r_edge})
-    grapl_schema_table.put_item(Item={"f_edge": r_edge, "r_edge": f_edge})
-    LOGGER.info(f"stored edge mapping: {f_edge} {r_edge}")
-
-
 def _provision_graph(
     graph_client: GraphClient, dynamodb: DynamoDBServiceResource
 ) -> None:
+    # Compare with the more-dynamic `get_schema_objects()`
+    # not sure I like that more, though
     schemas = (
         AssetSchema(),
         ProcessSchema(),
@@ -183,18 +154,19 @@ def _provision_graph(
     for schema in schemas:
         _extend_schema(graph_client, schema)
 
-    schema_str = _format_schemas(schemas)
-    _set_schema(graph_client, schema_str)
+    schema_str = provision_common.format_schemas(schemas)
+    provision_common.set_schema(graph_client, schema_str)
 
-    table: DynamoDBServiceResource.Table = dynamodb.Table(
-        f"{DEPLOYMENT_NAME}-grapl_schema_table"
+    schema_table = provision_common.get_schema_table(
+        dynamodb, deployment_name=DEPLOYMENT_NAME
     )
-    props_table: DynamoDBServiceResource.Table = dynamodb.Table(
-        f"{DEPLOYMENT_NAME}-grapl_schema_properties_table"
+    schema_properties_table = provision_common.get_schema_properties_table(
+        dynamodb, deployment_name=DEPLOYMENT_NAME
     )
+
     for schema in schemas:
-        _store_schema(dynamodb, schema)
-        store_schema_properties(props_table, schema)
+        provision_common.store_schema(schema_table, schema)
+        provision_common.store_schema_properties(schema_properties_table, schema)
 
 
 def _hash_password(cleartext, salt) -> str:
