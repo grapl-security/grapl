@@ -35,6 +35,7 @@ class GraphQL(pulumi.ComponentResource):
                 code_path=code_path_for(name),
                 package_type="Zip",
                 env={
+                    "DEBUG": "express:*",
                     "MG_ALPHAS": mg_alphas(),
                     "JWT_SECRET_ID": secret.secret.arn
                     if not LOCAL_GRAPL
