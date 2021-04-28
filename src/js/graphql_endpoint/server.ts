@@ -75,7 +75,7 @@ function customFormatErrorFnForDebugging(error: GraphQLError) {
 }
 
 app.use(
-    "/graphQlEndpoint/graphql",
+    "/graphQlEndpoint/{proxy+}",
     middleware,
     graphqlHTTP(async (request, response, graphQLParams) => {
         console.debug({
@@ -99,7 +99,7 @@ app.use(
 );
 
 app.use(function (req, res) {
-    console.warn(req);
+    console.warn("LOLWUT - 404 for you");
     console.warn(req.path);
     res.sendStatus(404);
 });
