@@ -38,16 +38,15 @@ from grapl_analyzerlib.node_types import (
     PropType,
 )
 from grapl_analyzerlib.prelude import *
+from grapl_analyzerlib.provision import provision_common
 from grapl_analyzerlib.schema import Schema
 from grapl_common.env_helpers import (
     DynamoDBResourceFactory,
     S3ClientFactory,
     SecretsManagerClientFactory,
+    get_deployment_name,
 )
 from grapl_common.grapl_logger import get_module_grapl_logger
-from grapl_common.provision import (
-    store_schema_properties as store_schema_properties_common,
-)
 
 sys.path.append("/tmp/")
 
@@ -122,92 +121,36 @@ def verify_payload(payload_body, key, signature):
     return new_signature == signature
 
 
-def set_schema(client: GraphClient, schema: str) -> None:
-    op = pydgraph.Operation(schema=schema, run_in_background=True)
-    client.alter(op)
+def get_schema_objects(meta_globals: Dict[str, Any]) -> Dict[str, BaseSchema]:
+    def is_schema(schema_cls: Type[Schema]) -> bool:
+        """
+        A poor, but functional, heuristic to figure out if something seems like a schema.
+        """
+        try:
+            schema_cls.self_type()
+        except Exception as e:
+            LOGGER.debug(f"no self_type {e}")
+            return False
+        return True
 
-
-def format_schemas(schema_defs: List["BaseSchema"]) -> str:
-    schemas = "\n\n".join([schema.generate_schema() for schema in schema_defs])
-
-    types = "\n\n".join([schema.generate_type() for schema in schema_defs])
-
-    return "\n".join(
-        ["  # Type Definitions", types, "\n  # Schema Definitions", schemas]
-    )
-
-
-def store_schema(dynamodb, schema: "Schema") -> None:
-    grapl_schema_table = dynamodb.Table(
-        os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table"
-    )
-    grapl_schema_properties = dynamodb.Table(
-        os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_properties"
-    )
-
-    grapl_schema_properties.put_item(
-        Item={
-            "node_type": schema.self_type(),
-            "display_property": schema.get_display_property(),
-        }
-    )
-    for f_edge, (edge_t, r_edge) in schema.get_edges().items():
-        if not (f_edge and r_edge):
-            LOGGER.warn(f"missing {f_edge} {r_edge} for {schema.self_type()}")
-            continue
-        grapl_schema_table.put_item(
-            Item={
-                "f_edge": f_edge,
-                "r_edge": r_edge,
-                "relationship": int(edge_t.rel),
-            }
-        )
-
-        grapl_schema_table.put_item(
-            Item={
-                "f_edge": r_edge,
-                "r_edge": f_edge,
-                "relationship": int(edge_t.rel.reverse()),
-            }
-        )
-
-
-def provision_master_graph(
-    master_graph_client: GraphClient, schemas: List["BaseSchema"]
-) -> None:
-    mg_schema_str = format_schemas(schemas)
-    set_schema(master_graph_client, mg_schema_str)
-
-
-def is_schema(schema_cls: Type[Schema]) -> bool:
-    try:
-        schema_cls.self_type()
-    except Exception as e:
-        LOGGER.debug(f"no self_type {e}")
-        return False
-    return True
-
-
-def get_schema_objects(meta_globals) -> "Dict[str, BaseSchema]":
     clsmembers = [(m, c) for m, c in meta_globals.items() if inspect.isclass(c)]
 
     return {an[0]: an[1]() for an in clsmembers if is_schema(an[1])}
 
 
-def store_schema_properties(dynamodb: DynamoDBServiceResource, schema: Schema) -> None:
-    table = dynamodb.Table(
-        os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_properties_table"
-    )
-    store_schema_properties_common(table, schema)
+def provision_schemas(graph_client: GraphClient, raw_schemas: List[bytes]) -> None:
+    """
+    `raw_schemas` is a list of raw, exec'able python code contained in a `schema.py` file
+    """
+    deployment_name = get_deployment_name()
 
-
-def provision_schemas(master_graph_client, raw_schemas):
-    # For every schema, exec the schema
-    meta_globals: Dict = {}
+    # For every schema, exec the schema. The new schemas in scope in the file
+    # are then written to `meta_globals`.
+    meta_globals: Dict[str, Any] = {}
     for raw_schema in raw_schemas:
         exec(raw_schema, meta_globals)
 
-    # Now fetch the schemas back from memory
+    # Now fetch the schemas back, as Python classes, from meta_globals
     schemas = list(get_schema_objects(meta_globals).values())
     LOGGER.info(f"deploying schemas: {[s.self_type() for s in schemas]}")
 
@@ -215,20 +158,29 @@ def provision_schemas(master_graph_client, raw_schemas):
     for schema in schemas:
         schema.init_reverse()
 
-    LOGGER.info("Merge the schemas with what exists in the graph")
     dynamodb = DynamoDBResourceFactory(boto3).from_env()
+    schema_table = provision_common.get_schema_table(
+        dynamodb, deployment_name=deployment_name
+    )
+    schema_properties_table = provision_common.get_schema_properties_table(
+        dynamodb, deployment_name=deployment_name
+    )
+
+    LOGGER.info("Merge the schemas with what exists in the graph")
     for schema in schemas:
-        store_schema(dynamodb, schema)
+        provision_common.store_schema(schema_table, schema)
+        provision_common.store_schema_properties(schema_properties_table, schema)
 
     LOGGER.info("Reprovision the graph")
-    provision_master_graph(master_graph_client, schemas)
+    schema_str = provision_common.format_schemas(schemas)
+    provision_common.set_schema(graph_client, schema_str)
 
     for schema in schemas:
-        extend_schema(dynamodb, master_graph_client, schema)
+        extend_schema(dynamodb, graph_client, schema)
 
     for schema in schemas:
-        store_schema(dynamodb, schema)
-        store_schema_properties(dynamodb, schema)
+        provision_common.store_schema(schema_table, schema)
+        provision_common.store_schema_properties(schema_properties_table, schema)
 
 
 def query_dgraph_predicate(client: "GraphClient", predicate_name: str) -> Any:

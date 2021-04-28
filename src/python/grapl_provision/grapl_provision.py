@@ -29,10 +29,10 @@ from grapl_analyzerlib.prelude import (
     ProcessSchema,
     RiskSchema,
 )
+from grapl_analyzerlib.provision import provision_common
 from grapl_analyzerlib.schema import Schema
 from grapl_common.env_helpers import DynamoDBResourceFactory
 from grapl_common.grapl_logger import get_module_grapl_logger
-from grapl_common.provision import store_schema_properties
 
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb import DynamoDBServiceResource
@@ -150,26 +150,6 @@ def provision_master_graph(
     set_schema(master_graph_client, mg_schema_str)
 
 
-def store_schema(dynamodb, schema: "Schema") -> None:
-    grapl_schema_table = dynamodb.Table("local-grapl-grapl_schema_table")
-
-    for f_edge, (edge_t, r_edge) in schema.get_edges().items():
-        if not (f_edge and r_edge):
-            LOGGER.warn(f"missing {f_edge} {r_edge} for {schema.self_type()}")
-            continue
-        grapl_schema_table.put_item(
-            Item={"f_edge": f_edge, "r_edge": r_edge, "relationship": int(edge_t.rel)}
-        )
-
-        grapl_schema_table.put_item(
-            Item={
-                "f_edge": r_edge,
-                "r_edge": f_edge,
-                "relationship": int(edge_t.rel.reverse()),
-            }
-        )
-
-
 def provision_mg(mclient) -> None:
     drop_all(mclient)
 
@@ -195,12 +175,18 @@ def provision_mg(mclient) -> None:
 
     provision_master_graph(mclient, schemas)
 
+    deployment_name = "local-grapl"  # TODO replace?
     dynamodb = DynamoDBResourceFactory(boto3).from_env()
+    schema_table = provision_common.get_schema_table(
+        dynamodb, deployment_name=deployment_name
+    )
+    schema_properties_table = provision_common.get_schema_properties_table(
+        dynamodb, deployment_name=deployment_name
+    )
 
-    props_table = dynamodb.Table("local-grapl-grapl_schema_properties_table")
     for schema in schemas:
-        store_schema(dynamodb, schema)
-        store_schema_properties(props_table, schema)
+        provision_common.store_schema(schema_table, schema)
+        provision_common.store_schema_properties(schema_properties_table, schema)
 
 
 DEPLOYMENT_NAME = "local-grapl"
