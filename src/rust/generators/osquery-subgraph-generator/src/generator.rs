@@ -1,4 +1,5 @@
-use std::convert::TryFrom;
+use std::{convert::TryFrom,
+          sync::Arc};
 
 use async_trait::async_trait;
 use grapl_graph_descriptions::graph_description::*;
@@ -49,7 +50,7 @@ impl<C> EventHandler for OSQuerySubgraphGenerator<C>
 where
     C: Cache + Clone + Send + Sync + 'static,
 {
-    type InputEvent = Vec<Result<PartiallyDeserializedOSQueryLog, serde_json::Error>>;
+    type InputEvent = Vec<Result<PartiallyDeserializedOSQueryLog, Arc<serde_json::Error>>>;
     type OutputEvent = GraphDescription;
     type Error = OSQuerySubgraphGeneratorError;
 

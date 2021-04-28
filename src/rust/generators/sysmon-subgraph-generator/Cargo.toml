@@ -7,12 +7,18 @@ edition = "2018"
 [lib]
 name = "sysmon_subgraph_generator_lib"
 
+[dev-dependencies]
+criterion = { version = "0.3", features = ["async_tokio", "html_reports"] }
+
+[[bench]]
+name = "generator_bench"
+harness = false
+
 [dependencies]
 grapl-graph-descriptions = { path="../../graph-descriptions", version="*" }
 endpoint-plugin = { path="../../endpoint-plugin", version="*"}
 grapl-config = {path = "../../grapl-config", version="*"}
 grapl-observe = {path = "../../grapl-observe", version="*"}
-grapl-test = { path = "../../grapl-test", version = "*"}
 
 sqs-executor = { path = "../../sqs-executor/" }
 grapl-service = { path = "../../grapl-service/" }

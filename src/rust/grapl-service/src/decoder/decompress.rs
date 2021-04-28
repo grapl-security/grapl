@@ -1,11 +1,13 @@
 use std::{io::{Cursor,
                Read},
-          str::FromStr};
+          str::FromStr,
+          sync::Arc};
 
 use libflate::gzip::Decoder as GzDecoder;
 use sqs_executor::errors::{CheckedError,
                            Recoverable};
-#[derive(Debug, PartialEq)]
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum PayloadDecompression {
     Gzip,
     None,
@@ -25,10 +27,16 @@ impl FromStr for PayloadDecompression {
     }
 }
 
-#[derive(thiserror::Error, Debug)]
+#[derive(thiserror::Error, Clone, Debug)]
 pub enum PayloadDecompressionError {
     #[error("DecompressionError")]
-    DecompressionError(#[from] std::io::Error),
+    DecompressionError(Arc<std::io::Error>),
+}
+
+impl From<std::io::Error> for PayloadDecompressionError {
+    fn from(err: std::io::Error) -> Self {
+        PayloadDecompressionError::DecompressionError(Arc::new(err))
+    }
 }
 
 impl CheckedError for PayloadDecompressionError {

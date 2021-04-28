@@ -1,28 +1,33 @@
-#![cfg(test)]
-#![feature(test)]
-
-extern crate test;
-
-use std::io::Write;
-
-use grapl_test::cache::EmptyCache;
-use sqs_executor::{event_decoder::PayloadDecoder,
-                   event_handler::CompletedEvents};
+use criterion::{criterion_group,
+                criterion_main,
+                Criterion};
+use sqs_executor::{cache::NopCache,
+                   event_decoder::PayloadDecoder,
+                   event_handler::{CompletedEvents,
+                                   EventHandler}};
 use sysmon_subgraph_generator_lib::{generator::SysmonSubgraphGenerator,
                                     metrics::SysmonSubgraphGeneratorMetrics,
                                     serialization::SysmonDecoder};
-use test::Bencher;
 use tokio::runtime::Runtime;
 
-const SYSMON_SAMPLE_DATA_FILE: &'static str = "../../../../etc/sample_data/events6.xml";
+const SYSMON_SAMPLE_DATA_FILE: &'static str = "sample_data/events6.xml";
 
-#[bench]
-fn bench_sysmon_generator(bencher: &mut Bencher) {
-    let cache = EmptyCache::new();
+async fn sysmon_generator_process_events(
+    sysmon_test_events: <SysmonSubgraphGenerator<NopCache> as EventHandler>::InputEvent,
+) {
+    let mut generator = SysmonSubgraphGenerator::new(
+        NopCache {},
+        SysmonSubgraphGeneratorMetrics::new("SYSMON_TEST"),
+    );
 
-    let mut generator =
-        SysmonSubgraphGenerator::new(cache, SysmonSubgraphGeneratorMetrics::new("SYSMON_TEST"));
+    let mut completed_events = CompletedEvents { identities: vec![] };
 
+    let _ = generator
+        .handle_event(sysmon_test_events, &mut completed_events)
+        .await;
+}
+
+fn bench_sysmon_generator_1000_events(c: &mut Criterion) {
     let runtime = Runtime::new().unwrap();
 
     let sysmon_test_events: Vec<_> = runtime.block_on(async {
@@ -37,26 +42,17 @@ fn bench_sysmon_generator(bencher: &mut Bencher) {
             .decode(test_data_bytes)
             .expect("Unable to parse sysmon sample data into sysmon events.")
             .into_iter()
-            .filter_map(|item| item.ok())
+            .filter(|item| item.is_ok())
             .take(1_000)
             .collect()
     });
 
-    std::io::stdout()
-        .write_all(format!("Events: {}\n", sysmon_test_events.len()).as_bytes())
-        .expect("Failed to write event count.");
-
-    bencher.iter(|| {
-        use sqs_executor::event_handler::EventHandler;
-
-        let mut completed_events = CompletedEvents { identities: vec![] };
-
-        let sysmon_test_data: Vec<_> = sysmon_test_events
-            .clone()
-            .into_iter()
-            .map(|event| Ok(event))
-            .collect();
-
-        let _ = runtime.block_on(generator.handle_event(sysmon_test_data, &mut completed_events));
+    c.bench_function("Sysmon Generator - 1000 Events", |bencher| {
+        bencher.to_async(&runtime).iter(|| async {
+            sysmon_generator_process_events(sysmon_test_events.clone()).await;
+        });
     });
 }
+
+criterion_group!(generator_benches, bench_sysmon_generator_1000_events);
+criterion_main!(generator_benches);
