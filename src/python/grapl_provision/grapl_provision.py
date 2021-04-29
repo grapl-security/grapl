@@ -30,7 +30,6 @@ from grapl_analyzerlib.prelude import (
     RiskSchema,
 )
 from grapl_analyzerlib.provision import provision_common
-from grapl_analyzerlib.schema import Schema
 from grapl_common.env_helpers import DynamoDBResourceFactory
 from grapl_common.grapl_logger import get_module_grapl_logger
 

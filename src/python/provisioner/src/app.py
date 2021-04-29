@@ -7,7 +7,6 @@ from hashlib import pbkdf2_hmac, sha256
 from typing import TYPE_CHECKING, Any
 
 import boto3
-import pydgraph
 from grapl_analyzerlib.prelude import (
     AssetSchema,
     FileSchema,
