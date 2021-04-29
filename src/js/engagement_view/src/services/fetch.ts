@@ -61,7 +61,6 @@ export class GraphqlEndpointClient {
     public async getLensScope(lensName: string): Promise<LensScope> {
         const query = await this.getScopeQuery();
         const resp = await this.query(query, { lens_name: lensName });
-        console.log(resp);
         return resp["lens_scope"] as LensScope;
     }
 

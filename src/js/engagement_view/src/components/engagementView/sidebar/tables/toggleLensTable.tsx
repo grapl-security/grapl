@@ -51,7 +51,6 @@ export function ToggleLensTable({ setLens }: ToggleLensTableProps) {
         const interval = setInterval(() => {
             getLenses(toggleTableState.first, toggleTableState.offset).then(
                 (response) => {
-                    console.log("response.getLenses", response)
                     if (
                         response.lenses &&
                         response.lenses !== toggleTableState.lenses

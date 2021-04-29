@@ -19,6 +19,7 @@ export const updateGraph = async (
     await retrieveGraph(lensName)
         .then(async (scope) => {
             const updatedGraph = vizGraphFromLensScope(scope);
+
             const mergeUpdatedGraph = mergeGraphs(
                 engagementState.graphData,
                 updatedGraph

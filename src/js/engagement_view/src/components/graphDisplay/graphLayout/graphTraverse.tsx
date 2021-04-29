@@ -1,5 +1,6 @@
 import { NodeProperties, NodeEdges } from "types/CustomTypes";
 
+
 const _mapGraph = <T extends NodeProperties & NodeEdges>(
     node: T,
     visited: Set<string>,
@@ -17,7 +18,7 @@ const _mapGraph = <T extends NodeProperties & NodeEdges>(
     });
 };
 
-export const mapGraph = <T extends NodeProperties & NodeEdges>(
+export const mapGraphForPlugins = <T extends NodeProperties & NodeEdges>(
     node: T,
     f: (node: T, prop: string, neighbor: T) => void
 ) => {
@@ -58,7 +59,7 @@ export const mapEdgeProps = <T extends NodeProperties & NodeEdges>(
 ) => {
     for (const prop in node) {
         if (Object.prototype.hasOwnProperty.call(node, prop)) {
-            const possibleNeighbor = (node as any)[prop];
+            const possibleNeighbor = (node as any)[prop]; // get values of node object
             if (Array.isArray(possibleNeighbor)) {
                 for (const neighbor of possibleNeighbor) {
                     if (neighbor.uid !== undefined) {

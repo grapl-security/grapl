@@ -1,4 +1,4 @@
-import { traverseNodes, traverseNeighbors, mapEdges } from "./graph_traverse";
+import { traverseNodes, traverseNeighbors, mapEdges } from "./graphTraverse";
 import { getNodeLabel } from "./labels";
 import {
     Link,
