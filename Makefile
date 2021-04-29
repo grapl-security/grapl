@@ -360,8 +360,8 @@ clean-artifacts: ## Remove all dumped artifacts from test runs (see dump_artifac
 
 .PHONY: zip
 zip: build-lambdas ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
-	docker-compose $(EVERY_LAMBDA_COMPOSE_FILE) up
 	$(MAKE) zip-pants
+	docker-compose $(EVERY_LAMBDA_COMPOSE_FILE) up
 
 .PHONY: zip-pants
 zip-pants: ## Generate Lambda zip artifacts using pants
