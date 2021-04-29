@@ -27,12 +27,6 @@ test("get node type from dGraph type", () => {
     expect(getNodeType(baseNodeData)).toBe("Risk");
 });
 
-test("test for react-force-graph", () => {
-    expect(vizGraphFromLensScope(vizGraphData as any)).toMatchObject(
-        vizGraphReturnData
-    );
-});
-
 test("merge graph data HAS changed and graph WILL be updated", () => {
     expect(
         mergeGraphs(initalGraphData as any, updatedGraphData as any)
