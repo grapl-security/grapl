@@ -8,4 +8,7 @@ chmod 777 rust_env.sh
 export GRAPL_LOG_LEVEL=DEBUG
 export GRAPL_RUST_ENV_FILE=rust_env.sh
 
-make test-integration
+# Retrieve ZIPs
+buildkite-agent artifact download 'src/js/grapl-cdk/zips/*.zip' .
+
+make test-integration-base

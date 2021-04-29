@@ -106,16 +106,21 @@ steps:
     command:
       - make test-unit-js
 
-  # TODO: Consider beefy queue
   - label: ":aws-lambda::package: Create Lambda Zips"
+    key: zips
     command:
       - make zip
     plugins:
       - gencer/cache#v2.4.8:
           id: pants-zip
           <<: *pants_cache_config
+    agents:
+      queue: "beefy"
+    artifact_paths:
+      - "src/js/grapl-cdk/zips/*.zip"
 
   - label: ":hammer: Integration Tests"
+    depends_on: zips
     command:
       - .buildkite/scripts/integration.sh
     agents:
@@ -124,6 +129,7 @@ steps:
       - "test_artifacts/**/*"
 
   - label: ":hammer: E2E Tests"
+    depends_on: zips
     command:
       - .buildkite/scripts/e2e.sh
     agents:

@@ -227,15 +227,23 @@ test-typecheck-build-support: ## Typecheck build-support Python code
 test-typecheck-pants: test-typecheck-pulumi test-typecheck-build-support ## Typecheck Python code with Pants
 
 .PHONY: test-integration
-test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
-test-integration: export COMPOSE_FILE := ./test/docker-compose.integration-tests.yml
-test-integration: build-test-integration modern-lambdas ## Build and run integration tests
+test-integration: modern-lambdas ## Build and run integration tests
+	$(MAKE) test-integration-base
+
+.PHONY: test-integration-base
+test-integration-base: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
+test-integration-base: export COMPOSE_FILE := ./test/docker-compose.integration-tests.yml
+test-integration-base: build-test-integration
 	$(MAKE) test-with-env
 
 .PHONY: test-e2e
-test-e2e: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_E2E_TESTS)
-test-e2e: export export COMPOSE_FILE := ./test/docker-compose.e2e-tests.yml
-test-e2e: build-test-e2e modern-lambdas ## Build and run e2e tests
+test-e2e: modern-lambdas ## Build and run e2e tests
+	$(MAKE) test-e2e-base
+
+.PHONY: test-e2e-base
+test-e2e-base: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_E2E_TESTS)
+test-e2e-base: export COMPOSE_FILE := ./test/docker-compose.e2e-tests.yml
+test-e2e-base: build-test-e2e
 	$(MAKE) test-with-env
 
 # This target is not intended to be used directly from the command line, it's
