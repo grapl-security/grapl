@@ -176,7 +176,7 @@ def provision_schemas(graph_client: GraphClient, raw_schemas: List[bytes]) -> No
     provision_common.set_schema(graph_client, schema_str)
 
     for schema in schemas:
-        extend_schema(dynamodb, graph_client, schema)
+        provision_common.extend_schema(schema_table, graph_client, schema)
 
     for schema in schemas:
         provision_common.store_schema(schema_table, schema)
@@ -194,84 +194,6 @@ def query_dgraph_predicate(client: "GraphClient", predicate_name: str) -> Any:
         txn.discard()
 
     return res
-
-
-def meta_into_edge(dynamodb, schema: "Schema", f_edge) -> EdgeT:
-    table = dynamodb.Table(os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table")
-    edge_res = table.get_item(Key={"f_edge": f_edge})["Item"]
-    edge_t = schema.edges[f_edge][0]  # type: EdgeT
-
-    return EdgeT(type(schema), edge_t.dest, EdgeRelationship(edge_res["relationship"]))
-
-
-def meta_into_property(predicate_meta) -> PropType:
-    is_set = predicate_meta.get("list")
-    type_name = predicate_meta["type"]
-    primitive = None
-    if type_name == "string":
-        primitive = PropPrimitive.Str
-    if type_name == "int":
-        primitive = PropPrimitive.Int
-    if type_name == "bool":
-        primitive = PropPrimitive.Bool
-
-    assert primitive is not None
-    return PropType(primitive, is_set, index=predicate_meta.get("index", []))
-
-
-def meta_into_predicate(dynamodb, schema, predicate_meta) -> Union[EdgeT, PropType]:
-    try:
-        if predicate_meta["type"] == "uid":
-            return meta_into_edge(dynamodb, schema, predicate_meta["predicate"])
-        else:
-            return meta_into_property(predicate_meta)
-    except Exception as e:
-        LOGGER.error(f"Failed to convert meta to predicate: {predicate_meta} {e}")
-        raise e
-
-
-def query_dgraph_type(client: "GraphClient", type_name: str):
-    query = f"""
-        schema(type: {type_name}) {{ type }}
-    """
-    txn = client.txn(read_only=True)
-    try:
-        res = json.loads(txn.query(query).json)
-    finally:
-        txn.discard()
-
-    if not res:
-        return []
-    if not res.get("types"):
-        return []
-
-    res = res["types"][0]["fields"]
-    predicate_names = []
-    for pred in res:
-        predicate_names.append(pred["name"])
-
-    predicate_metas = []
-    for predicate_name in predicate_names:
-        predicate_metas.append(query_dgraph_predicate(client, predicate_name))
-
-    return predicate_metas
-
-
-def get_reverse_edge(dynamodb, schema, f_edge):
-    table = dynamodb.Table(os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table")
-    edge_res = table.get_item(Key={"f_edge": f_edge})["Item"]
-    return edge_res["r_edge"]
-
-
-def extend_schema(dynamodb, graph_client: GraphClient, schema: "BaseSchema"):
-    predicate_metas = query_dgraph_type(graph_client, schema.self_type())
-    for predicate_meta in predicate_metas:
-        predicate = meta_into_predicate(dynamodb, schema, predicate_meta)
-        if isinstance(predicate, PropType):
-            schema.add_property(predicate_meta["predicate"], predicate)
-        else:
-            r_edge = get_reverse_edge(dynamodb, schema, predicate_meta["predicate"])
-            schema.add_edge(predicate_meta["predicate"], predicate, r_edge)
 
 
 def upload_plugin(s3_client: S3Client, key: str, contents: str) -> Optional[Response]:

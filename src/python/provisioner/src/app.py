@@ -46,94 +46,15 @@ DEPLOYMENT_NAME = os.environ["DEPLOYMENT_NAME"]
 GRAPL_TEST_USER_NAME = os.environ["GRAPL_TEST_USER_NAME"]
 
 
-def _query_dgraph_predicate(client: "GraphClient", predicate_name: str) -> Any:
-    query = f"""
-        schema(pred: {predicate_name}) {{  }}
-    """
-    txn = client.txn(read_only=True)
-    try:
-        res = json.loads(txn.query(query).json)["schema"][0]
-    finally:
-        txn.discard()
-
-    return res
-
-
-def _meta_into_edge(schema, predicate_meta) -> EdgeT:
-    if predicate_meta.get("list"):
-        return EdgeT(type(schema), BaseSchema, EdgeRelationship.OneToMany)
-    else:
-        return EdgeT(type(schema), BaseSchema, EdgeRelationship.OneToOne)
-
-
-def _meta_into_property(predicate_meta) -> PropType:
-    is_set = predicate_meta.get("list")
-    type_name = predicate_meta["type"]
-    primitive = None
-    if type_name == "string":
-        primitive = PropPrimitive.Str
-    if type_name == "int":
-        primitive = PropPrimitive.Int
-    if type_name == "bool":
-        primitive = PropPrimitive.Bool
-
-    assert primitive is not None
-    return PropType(primitive, is_set, index=predicate_meta.get("index", []))
-
-
-def _meta_into_predicate(schema, predicate_meta) -> Union[EdgeT, PropType]:
-    try:
-        if predicate_meta["type"] == "uid":
-            return _meta_into_edge(schema, predicate_meta)
-        else:
-            return _meta_into_property(predicate_meta)
-    except Exception as e:
-        raise Exception(f"Failed to convert meta to predicate: {predicate_meta}") from e
-
-
-def _query_dgraph_type(graph_client: GraphClient, type_name: str) -> List[Any]:
-    query = f"""
-        schema(type: {type_name}) {{ type }}
-    """
-    txn = graph_client.txn(read_only=True)
-    try:
-        res = json.loads(txn.query(query).json)
-    finally:
-        txn.discard()
-
-    if not res:
-        return []
-    if not res.get("types"):
-        return []
-
-    res = res["types"][0]["fields"]
-    predicate_names = []
-    for pred in res:
-        predicate_names.append(pred["name"])
-
-    predicate_metas = []
-    for predicate_name in predicate_names:
-        predicate_metas.append(_query_dgraph_predicate(graph_client, predicate_name))
-
-    return predicate_metas
-
-
-def _extend_schema(graph_client: GraphClient, schema: BaseSchema) -> None:
-    predicate_metas = _query_dgraph_type(graph_client, schema.self_type())
-
-    for predicate_meta in predicate_metas:
-        predicate = _meta_into_predicate(schema, predicate_meta)
-        if isinstance(predicate, PropType):
-            schema.add_property(predicate_meta["predicate"], predicate)
-        else:
-            schema.add_edge(predicate_meta["predicate"], predicate, "")
-
-
 def _provision_graph(
     graph_client: GraphClient, dynamodb: DynamoDBServiceResource
 ) -> None:
-    # Compare with the more-dynamic `get_schema_objects()`
-    # not sure I like that more, though
+    schema_table = provision_common.get_schema_table(
+        dynamodb, deployment_name=DEPLOYMENT_NAME
+    )
+    schema_properties_table = provision_common.get_schema_properties_table(
+        dynamodb, deployment_name=DEPLOYMENT_NAME
+    )
     schemas = (
         AssetSchema(),
         ProcessSchema(),
@@ -152,17 +73,10 @@ def _provision_graph(
         schema.init_reverse()
 
     for schema in schemas:
-        _extend_schema(graph_client, schema)
+        provision_common.extend_schema(schema_table, graph_client, schema)
 
     schema_str = provision_common.format_schemas(schemas)
     provision_common.set_schema(graph_client, schema_str)
-
-    schema_table = provision_common.get_schema_table(
-        dynamodb, deployment_name=DEPLOYMENT_NAME
-    )
-    schema_properties_table = provision_common.get_schema_properties_table(
-        dynamodb, deployment_name=DEPLOYMENT_NAME
-    )
 
     for schema in schemas:
         provision_common.store_schema(schema_table, schema)

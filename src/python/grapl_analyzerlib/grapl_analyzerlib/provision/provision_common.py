@@ -4,8 +4,12 @@ grapl-common is beneath grapl_analyzerlib in the stack, so that's a bad candidat
 """
 
 from __future__ import annotations
+import json
 
 from typing import TYPE_CHECKING, Any, Dict, List, cast
+from grapl_analyzerlib.node_types import PropType
+from grapl_analyzerlib.provision.meta_into import meta_into_predicate
+from grapl_analyzerlib.provision.queries import query_dgraph_type
 
 from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_analyzerlib.grapl_client import GraphClient
@@ -122,3 +126,23 @@ def set_schema(client: GraphClient, schema: str) -> None:
     op = pydgraph.Operation(schema=schema, run_in_background=True)
     LOGGER.info(f"setting dgraph schema {schema}")
     client.alter(op)
+
+
+def _get_reverse_edge(schema_table: Table, schema: BaseSchema, f_edge) -> str:
+    edge_res = schema_table.get_item(Key={"f_edge": f_edge})["Item"]
+    return edge_res["r_edge"]
+
+
+def extend_schema(
+    schema_table: Table, graph_client: GraphClient, schema: BaseSchema
+) -> None:
+    predicate_metas = query_dgraph_type(graph_client, schema.self_type())
+    for predicate_meta in predicate_metas:
+        predicate = meta_into_predicate(schema_table, schema, predicate_meta)
+        if isinstance(predicate, PropType):
+            schema.add_property(predicate_meta["predicate"], predicate)
+        else:
+            r_edge = _get_reverse_edge(
+                schema_table, schema, predicate_meta["predicate"]
+            )
+            schema.add_edge(predicate_meta["predicate"], predicate, r_edge)
