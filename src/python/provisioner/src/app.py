@@ -1,23 +1,15 @@
 from __future__ import annotations
 
-import json
 import logging
 import os
 import sys
 from hashlib import pbkdf2_hmac, sha256
-from typing import TYPE_CHECKING, Any, List, Sequence, Union
+from typing import TYPE_CHECKING, Any
 
 import boto3
 import pydgraph
-from grapl_analyzerlib.node_types import (
-    EdgeRelationship,
-    EdgeT,
-    PropPrimitive,
-    PropType,
-)
 from grapl_analyzerlib.prelude import (
     AssetSchema,
-    BaseSchema,
     FileSchema,
     GraphClient,
     IpAddressSchema,
@@ -31,8 +23,6 @@ from grapl_analyzerlib.prelude import (
     RiskSchema,
 )
 from grapl_analyzerlib.provision import provision_common
-from grapl_analyzerlib.schema import Schema
-from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb import DynamoDBServiceResource
