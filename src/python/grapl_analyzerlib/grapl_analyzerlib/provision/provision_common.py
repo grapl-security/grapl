@@ -12,7 +12,6 @@ from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.schema import Schema
 from grapl_analyzerlib.nodes.base import BaseSchema
 import pydgraph
-from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb import DynamoDBServiceResource
@@ -22,6 +21,9 @@ if TYPE_CHECKING:
 LOGGER = get_module_grapl_logger()
 
 
+"""
+# TODO: Resurrect these once PyType supports TypedDict, or once analyzerlib is mypy'd
+from typing_extensions import TypedDict
 class SchemaPropertyDict(TypedDict):
     name: str
     primitive: str
@@ -32,6 +34,9 @@ class SchemaPropertyDict(TypedDict):
 
 class SchemaDict(TypedDict):
     properties: List[SchemaPropertyDict]
+"""
+SchemaPropertyDict = Dict[str, Any]
+SchemaDict = Dict[str, Any]
 
 
 def get_schema_table(dynamodb: DynamoDBServiceResource, deployment_name: str) -> Table:
