@@ -8,7 +8,6 @@ import os
 import sys
 import threading
 import traceback
-from base64 import b64decode
 from hashlib import sha1
 from http import HTTPStatus
 from pathlib import Path
@@ -28,15 +27,7 @@ from typing import (
 
 import boto3  # type: ignore
 import jwt
-import pydgraph  # type: ignore
 from chalice import Chalice, Response
-from github import Github
-from grapl_analyzerlib.node_types import (
-    EdgeRelationship,
-    EdgeT,
-    PropPrimitive,
-    PropType,
-)
 from grapl_analyzerlib.prelude import *
 from grapl_analyzerlib.provision import provision_common
 from grapl_analyzerlib.schema import Schema
@@ -181,19 +172,6 @@ def provision_schemas(graph_client: GraphClient, raw_schemas: List[bytes]) -> No
     for schema in schemas:
         provision_common.store_schema(schema_table, schema)
         provision_common.store_schema_properties(schema_properties_table, schema)
-
-
-def query_dgraph_predicate(client: "GraphClient", predicate_name: str) -> Any:
-    query = f"""
-        schema(pred: {predicate_name}) {{  }}
-    """
-    txn = client.txn(read_only=True)
-    try:
-        res = json.loads(txn.query(query).json)["schema"][0]
-    finally:
-        txn.discard()
-
-    return res
 
 
 def upload_plugin(s3_client: S3Client, key: str, contents: str) -> Optional[Response]:

@@ -1,12 +1,16 @@
 from __future__ import annotations
 import json
 
-from typing import Mapping, TYPE_CHECKING, Any, Dict, List, cast
+from typing import Mapping, Any, List
 
 from grapl_analyzerlib.grapl_client import GraphClient
 
+QueryPredicateResult = Mapping[str, Any]
 
-def query_dgraph_type(client: GraphClient, type_name: str) -> List[QueryPredicateResult]:
+
+def query_dgraph_type(
+    client: GraphClient, type_name: str
+) -> List[QueryPredicateResult]:
     query = f"""
         schema(type: {type_name}) {{ type }}
     """
@@ -33,8 +37,9 @@ def query_dgraph_type(client: GraphClient, type_name: str) -> List[QueryPredicat
     return predicate_metas
 
 
-QueryPredicateResult = Mapping[str, Any]
-def query_dgraph_predicate(client: GraphClient, predicate_name: str) -> Any:
+def query_dgraph_predicate(
+    client: GraphClient, predicate_name: str
+) -> QueryPredicateResult:
     query = f"""
         schema(pred: {predicate_name}) {{  }}
     """
