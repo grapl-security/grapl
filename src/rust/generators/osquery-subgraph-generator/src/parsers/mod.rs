@@ -36,7 +36,7 @@ enum OSQueryAction {
 /// When converting this struct into a [Graph], it internally re-deserializes into a [OSQueryResponse]
 /// object with pack-specific columnar data.
 #[derive(Serialize, Deserialize, Clone)]
-pub(crate) struct PartiallyDeserializedOSQueryLog {
+pub struct PartiallyDeserializedOSQueryLog {
     pub(crate) name: String,
     #[serde(rename = "unixTime")]
     pub(crate) unix_time: u64,

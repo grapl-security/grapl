@@ -4,7 +4,7 @@ use sqs_executor::{errors::{CheckedError,
                    event_decoder::PayloadDecoder};
 use sysmon::Event;
 
-#[derive(thiserror::Error, Debug)]
+#[derive(thiserror::Error, Clone, Debug)]
 pub enum SysmonDecoderError {
     #[error("DeserializeError")]
     DeserializeError(String),
