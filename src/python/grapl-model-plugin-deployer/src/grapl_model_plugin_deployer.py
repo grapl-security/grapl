@@ -18,6 +18,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Mapping,
     Optional,
     Type,
     TypeVar,
@@ -99,7 +100,7 @@ def into_list(t: Union[T, List[T]]) -> List[T]:
     return [t]
 
 
-def check_jwt(headers: Dict[str, Any]) -> bool:
+def check_jwt(headers: Mapping[str, Any]) -> bool:
     encoded_jwt = None
     for cookie in headers.get("Cookie", "").split(";"):
         if "grapl_jwt=" in cookie:
