@@ -137,7 +137,7 @@ services:
       '
     environment:
       - AWS_REGION
-      - DEBUG_SERVICES
+      - DEBUG_SERVICES=${DEBUG_SERVICES:-}
       - DEPLOYMENT_NAME
       - DYNAMODB_ENDPOINT
       - DYNAMODB_ACCESS_KEY_ID
