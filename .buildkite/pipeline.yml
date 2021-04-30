@@ -105,6 +105,10 @@ steps:
   - label: ":typescript::docker: Unit Tests"
     command:
       - make test-unit-js
+  
+  - label: ":typescript::lint-roller: Lint Typescript/JS"
+    command:
+      - make lint-js
 
   # TODO: Consider beefy queue
   - label: ":aws-lambda::package: Create Lambda Zips"
