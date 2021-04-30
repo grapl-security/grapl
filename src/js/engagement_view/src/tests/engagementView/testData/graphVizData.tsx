@@ -306,3 +306,19 @@ export const vizGraphReturnData = {
         },
     },
 };
+
+export const node40 = {
+    name: 40,
+    uid: 40,
+    node_key: "53e2abc7-ce21-4be0-b70a-4c835eefecd1",
+    dgraph_type: ["Asset"],
+    display: "Asset",
+    hostname: "DESKTOP-FVSHABR",
+    asset_ip: null,
+    files_on_asset: null,
+    risk_score: 85,
+    analyzerNames: "Rare Parent of cmd.exe, Suspicious svchost",
+    id: 40,
+    nodeType: "Asset",
+    nodeLabel: "Asset",
+}
