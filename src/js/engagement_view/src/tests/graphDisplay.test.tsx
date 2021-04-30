@@ -7,17 +7,9 @@ import {
 } from "./engagementView/testData/baseData";
 
 import {
-	getNodeType,
-	vizGraphFromLensScope,
-} from "components/graphDisplay/graphLayout/vizGraphFromLensScope";
-
-
-import {
 	vizGraphData,
 	vizGraphReturnData,
 } from "./engagementView/testData/graphVizData";
-
-import { mergeGraphs } from "components/graphDisplay/graphLayout/mergeGraphs";
 
 import {
 	initalGraphData,
@@ -25,9 +17,13 @@ import {
 } from "./engagementView/testData/mergeGraphData";
 
 import {
-	getLinkLabel,
-	getNodeLabel,
-} from "components/graphDisplay/graphLayout/labels";
+	getNodeType,
+	vizGraphFromLensScope,
+} from "components/graphDisplay/graphLayout/vizGraphFromLensScope";
+
+
+import { mergeGraphs } from "components/graphDisplay/graphLayout/mergeGraphs";
+
 
 import {
 	nodeFillColor,
@@ -82,20 +78,6 @@ test("merge graph data has NOT changed and graph WILL NOT be updated", () => {
 	expect(mergeGraphs(initalGraphData as any, initalGraphData as any)).toBe(
 		null
 	);
-});
-
-test("link label for children", () => {
-	expect(getLinkLabel("children")).toBe("executed");
-});
-
-// Test graph styling for high risk process node
-// Assuming if process works, formatting for other node types also works
-test("link label for processes", () => {
-	expect(getLinkLabel("asset_processes")).toBe("asset_processes");
-});
-
-test("get node label", () => {
-	expect(getNodeLabel("Process", processNode as any)).toBe("Process");
 });
 
 test("get nodeFillColor for process", () => {
