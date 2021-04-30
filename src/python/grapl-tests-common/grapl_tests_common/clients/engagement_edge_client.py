@@ -59,7 +59,7 @@ class EngagementEdgeClient:
             },
         )
         return resp
-    
+
     def empty_creds(self) -> requests.Response:
         resp = requests.post(
             f"{self.endpoint}/login",

@@ -84,7 +84,7 @@ class TestEndToEnd(TestCase):
 
     def test_check__invalid_creds(self) -> None:
         check_invalid_creds()
-        
+
     def test_check__empty_creds(self) -> None:
         check_empty_creds()
 
@@ -219,6 +219,7 @@ def get_notebook_url() -> None:
     ):  # TODO: Need to conditionally change for AWS Deployments
         assert notebook_url
 
+
 def check_login() -> None:
     jwt = EngagementEdgeClient().get_jwt()
     if jwt != None:
@@ -228,6 +229,7 @@ def check_login() -> None:
 def check_invalid_creds() -> None:
     resp = EngagementEdgeClient().invalid_creds()
     assert resp.status_code == 403, "We expected a 403 forbidden"
+
 
 def check_empty_creds() -> None:
     resp = EngagementEdgeClient().empty_creds()
