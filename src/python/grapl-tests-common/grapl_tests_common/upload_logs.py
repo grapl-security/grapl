@@ -6,15 +6,11 @@ import string
 import time
 from dataclasses import dataclass
 from datetime import datetime
-from os import environ
+from os import PathLike, environ
 from sys import maxsize
 from typing import TYPE_CHECKING, Callable, Iterator, List, Optional, cast
 
-from grapl_common.env_helpers import (
-    S3ClientFactory,
-    SQSClientFactory,
-    get_deployment_name,
-)
+from grapl_common.env_helpers import S3ClientFactory, SQSClientFactory
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
@@ -71,7 +67,7 @@ def into_sqs_message(bucket: str, key: str) -> str:
 @dataclass
 class GeneratorOptions:
     bucket_suffix: str
-    queue_name: str
+    queue_suffix: str
     key_infix: str
 
     def encode_chunk(self, input: List[bytes]) -> bytes:
@@ -81,7 +77,7 @@ class GeneratorOptions:
 class SysmonGeneratorOptions(GeneratorOptions):
     def __init__(self) -> None:
         super().__init__(
-            queue_name=f"{get_deployment_name()}-sysmon-generator-queue",
+            queue_suffix=f"sysmon-generator-queue",
             bucket_suffix="sysmon-log-bucket",
             key_infix="sysmon",
         )
@@ -94,7 +90,7 @@ class SysmonGeneratorOptions(GeneratorOptions):
 class OSQueryGeneratorOptions(GeneratorOptions):
     def __init__(self) -> None:
         super().__init__(
-            queue_name=f"{get_deployment_name()}-osquery-generator-queue",
+            queue_suffix=f"osquery-generator-queue",
             bucket_suffix="osquery-log-bucket",
             key_infix="osquery",
         )
@@ -106,7 +102,7 @@ class OSQueryGeneratorOptions(GeneratorOptions):
 
 def upload_logs(
     deployment_name: str,
-    logfile: str,
+    logfile: PathLike,
     generator_options: GeneratorOptions,
     delay: int = 0,
     batch_size: Optional[int] = 100,
@@ -134,6 +130,7 @@ def upload_logs(
         return (seq[pos : pos + size] for pos in range(0, len(seq), size))
 
     bucket = f"{deployment_name}-{generator_options.bucket_suffix}"
+    queue = f"{deployment_name}-{generator_options.queue_suffix}"
 
     chunk_count = 0
     for chunk in chunker(body, batch_size):
@@ -153,7 +150,7 @@ def upload_logs(
         if requires_manual_eventing:
             endpoint_url = sqs._endpoint.host  # type: ignore
             sqs.send_message(
-                QueueUrl=f"{endpoint_url}/queue/{generator_options.queue_name}",
+                QueueUrl=f"{endpoint_url}/queue/{queue}",
                 MessageBody=into_sqs_message(bucket=bucket, key=key),
             )
 
@@ -164,7 +161,7 @@ def upload_logs(
 
 def upload_sysmon_logs(
     deployment_name: str,
-    logfile: str,
+    logfile: PathLike,
     delay: int = 0,
     batch_size: int = 100,
     s3_client: Optional[S3Client] = None,
@@ -184,7 +181,7 @@ def upload_sysmon_logs(
 
 def upload_osquery_logs(
     deployment_name: str,
-    logfile: str,
+    logfile: PathLike,
     delay: int = 0,
     batch_size: int = 100,
     s3_client: Optional[S3Client] = None,

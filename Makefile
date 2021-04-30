@@ -360,8 +360,8 @@ clean-artifacts: ## Remove all dumped artifacts from test runs (see dump_artifac
 
 .PHONY: zip
 zip: build-lambdas ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
-	docker-compose $(EVERY_LAMBDA_COMPOSE_FILE) up
 	$(MAKE) zip-pants
+	docker-compose $(EVERY_LAMBDA_COMPOSE_FILE) up
 
 .PHONY: zip-pants
 zip-pants: ## Generate Lambda zip artifacts using pants
@@ -370,6 +370,7 @@ zip-pants: ## Generate Lambda zip artifacts using pants
 	cp ./dist/src.python.engagement-creator/engagement-creator.zip ./src/js/grapl-cdk/zips/engagement-creator-$(TAG).zip
 	cp ./dist/src.python.grapl-dgraph-ttl/lambda.zip ./src/js/grapl-cdk/zips/dgraph-ttl-$(TAG).zip
 	cp ./dist/src.python.engagement_edge/engagement_edge.zip ./src/js/grapl-cdk/zips/engagement-edge-$(TAG).zip
+	cp ./dist/src.python.grapl-ux-router/grapl-ux-router.zip ./src/js/grapl-cdk/zips/ux-router-$(TAG).zip
 
 # This target is intended to help ease the transition to Pulumi, and
 # using lambdas in local Grapl testing deployments. Essentially, every

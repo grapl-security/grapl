@@ -1,6 +1,6 @@
 from contextlib import contextmanager
-from typing import ContextManager, Sequence
-from unittest.mock import ANY, Mock, patch
+from typing import Any, ContextManager, Dict, Sequence
+from unittest.mock import ANY, MagicMock, Mock, patch
 
 from click.testing import CliRunner, Result
 from graplctl import cli
@@ -20,9 +20,25 @@ class BotoSessionMock:
 
     def __init__(self, session: Mock) -> None:
         self.session = session
+        # We'll store `session.client("thing")` in a map for easy access
+        self.clients: Dict[str, Mock] = {}
+
+        def _memoize_client(service_name: str, **kwargs: Any) -> Mock:
+            # This is called when you call `session.client("thing")`
+            if service_name not in self.clients:
+                self.clients[service_name] = MagicMock(
+                    name=f"BotoSessionMock {service_name} client"
+                )
+
+            return self.clients[service_name]
+
+        self.session.client.side_effect = _memoize_client
+
+    def client(self, client_name: str) -> Mock:
+        return self.session.client(client_name)
 
     def return_fake_queues(self) -> None:
-        sqs_client = self.session.client.return_value
+        sqs_client = self.client("sqs")
         sqs_client.list_queues.return_value = {
             "QueueUrls": [
                 "http://queue1",
@@ -46,4 +62,4 @@ def patch_boto3_session() -> ContextManager[BotoSessionMock]:
 
 
 def invoke_with_default_args(args: Sequence[str]) -> Result:
-    return CliRunner().invoke(cli.main, [*DEFAULT_ARGS, *args])
+    return CliRunner().invoke(cli.main, [*DEFAULT_ARGS, *args], catch_exceptions=False)

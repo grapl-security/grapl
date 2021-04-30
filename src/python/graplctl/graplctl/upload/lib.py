@@ -8,10 +8,13 @@ from grapl_tests_common.upload_analyzers import AnalyzerUpload, upload_analyzers
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
+    from mypy_boto3_sqs.client import SQSClient
 
 
 def upload_analyzer(
-    s3_client: S3Client, analyzer_main_py: Path, deployment_name: str
+    s3_client: S3Client,
+    deployment_name: str,
+    analyzer_main_py: Path,
 ) -> None:
     # The assumption is that the input path is something like
     # /home/grapl/etc/local_grapl/unique_cmd_parent/main.py

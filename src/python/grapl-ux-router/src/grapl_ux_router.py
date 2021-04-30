@@ -12,16 +12,14 @@ import boto3
 from chalice import Chalice, Response
 from grapl_common.env_helpers import S3ResourceFactory
 
-try:
-    from src.lib.env_vars import GRAPL_LOG_LEVEL, IS_LOCAL, UX_BUCKET_NAME
-except:
-    from lib.env_vars import GRAPL_LOG_LEVEL, IS_LOCAL, UX_BUCKET_NAME
-
 if TYPE_CHECKING:
     from mypy_boto3_s3.service_resource import Bucket
 
     pass
 
+IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
+GRAPL_LOG_LEVEL = os.environ.get("GRAPL_LOG_LEVEL", "ERROR")
+UX_BUCKET_NAME = os.environ["UX_BUCKET_NAME"]
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(GRAPL_LOG_LEVEL)

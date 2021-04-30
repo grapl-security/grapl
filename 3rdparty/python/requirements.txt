@@ -1,7 +1,7 @@
 # Any Python dependencies used by our code should be declared here.
 boto3
 botocore
-chalice
+chalice==1.22.4
 click
 hypothesis
 mypy_boto3_dynamodb
