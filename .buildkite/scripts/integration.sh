@@ -8,4 +8,5 @@ chmod 777 rust_env.sh
 export GRAPL_LOG_LEVEL=DEBUG
 export GRAPL_RUST_ENV_FILE=rust_env.sh
 
-make -j8 test-integration
+make -j8 build-test-integration 
+make test-integration
