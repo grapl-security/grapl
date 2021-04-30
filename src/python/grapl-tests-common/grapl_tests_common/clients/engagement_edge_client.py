@@ -59,6 +59,20 @@ class EngagementEdgeClient:
             },
         )
         return resp
+    
+    def empty_creds(self) -> requests.Response:
+        resp = requests.post(
+            f"{self.endpoint}/login",
+            json={
+                "username": "",
+                "password": "",
+            },
+            headers={
+                **_JSON_CONTENT_TYPE_HEADERS,
+                **_ORIGIN,
+            },
+        )
+        return resp
 
     def get_notebook(self, jwt: str) -> str:
         cookies = {"grapl_jwt": jwt}
