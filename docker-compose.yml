@@ -299,7 +299,7 @@ services:
     environment:
       <<: *aws-region
       DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
-      DEBUG_SERVICES: "${DEBUG_SERVICES}"
+      DEBUG_SERVICES: "${DEBUG_SERVICES:-}"
       <<: *dgraph-env
       GRPC_ENABLE_FORK_SUPPORT: "1"
       HITCACHE_ADDR: "${REDIS_HOST}"
@@ -427,7 +427,7 @@ services:
       GRAPL_SCHEMA_TABLE: "${DEPLOYMENT_NAME}-grapl_schema_table"
       <<: *dynamodb-env
       <<: *secretsmanager-env
-      DEBUG_SERVICES: "${DEBUG_SERVICES}"
+      DEBUG_SERVICES: "${DEBUG_SERVICES:-}"
       VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT: "${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}"
     depends_on:
       dgraph:

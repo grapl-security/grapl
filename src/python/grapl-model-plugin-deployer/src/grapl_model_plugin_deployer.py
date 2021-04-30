@@ -8,7 +8,6 @@ import os
 import sys
 import threading
 import traceback
-from base64 import b64decode
 from hashlib import sha1
 from http import HTTPStatus
 from pathlib import Path
@@ -28,26 +27,17 @@ from typing import (
 
 import boto3  # type: ignore
 import jwt
-import pydgraph  # type: ignore
 from chalice import Chalice, Response
-from github import Github
-from grapl_analyzerlib.node_types import (
-    EdgeRelationship,
-    EdgeT,
-    PropPrimitive,
-    PropType,
-)
 from grapl_analyzerlib.prelude import *
+from grapl_analyzerlib.provision import provision_common
 from grapl_analyzerlib.schema import Schema
 from grapl_common.env_helpers import (
     DynamoDBResourceFactory,
     S3ClientFactory,
     SecretsManagerClientFactory,
+    get_deployment_name,
 )
 from grapl_common.grapl_logger import get_module_grapl_logger
-from grapl_common.provision import (
-    store_schema_properties as store_schema_properties_common,
-)
 
 sys.path.append("/tmp/")
 
@@ -122,92 +112,36 @@ def verify_payload(payload_body, key, signature):
     return new_signature == signature
 
 
-def set_schema(client: GraphClient, schema: str) -> None:
-    op = pydgraph.Operation(schema=schema, run_in_background=True)
-    client.alter(op)
+def get_schema_objects(meta_globals: Dict[str, Any]) -> Dict[str, BaseSchema]:
+    def is_schema(schema_cls: Type[Schema]) -> bool:
+        """
+        A poor, but functional, heuristic to figure out if something seems like a schema.
+        """
+        try:
+            schema_cls.self_type()
+        except Exception as e:
+            LOGGER.debug(f"no self_type {e}")
+            return False
+        return True
 
-
-def format_schemas(schema_defs: List["BaseSchema"]) -> str:
-    schemas = "\n\n".join([schema.generate_schema() for schema in schema_defs])
-
-    types = "\n\n".join([schema.generate_type() for schema in schema_defs])
-
-    return "\n".join(
-        ["  # Type Definitions", types, "\n  # Schema Definitions", schemas]
-    )
-
-
-def store_schema(dynamodb, schema: "Schema") -> None:
-    grapl_schema_table = dynamodb.Table(
-        os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table"
-    )
-    grapl_schema_properties = dynamodb.Table(
-        os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_properties"
-    )
-
-    grapl_schema_properties.put_item(
-        Item={
-            "node_type": schema.self_type(),
-            "display_property": schema.get_display_property(),
-        }
-    )
-    for f_edge, (edge_t, r_edge) in schema.get_edges().items():
-        if not (f_edge and r_edge):
-            LOGGER.warn(f"missing {f_edge} {r_edge} for {schema.self_type()}")
-            continue
-        grapl_schema_table.put_item(
-            Item={
-                "f_edge": f_edge,
-                "r_edge": r_edge,
-                "relationship": int(edge_t.rel),
-            }
-        )
-
-        grapl_schema_table.put_item(
-            Item={
-                "f_edge": r_edge,
-                "r_edge": f_edge,
-                "relationship": int(edge_t.rel.reverse()),
-            }
-        )
-
-
-def provision_master_graph(
-    master_graph_client: GraphClient, schemas: List["BaseSchema"]
-) -> None:
-    mg_schema_str = format_schemas(schemas)
-    set_schema(master_graph_client, mg_schema_str)
-
-
-def is_schema(schema_cls: Type[Schema]) -> bool:
-    try:
-        schema_cls.self_type()
-    except Exception as e:
-        LOGGER.debug(f"no self_type {e}")
-        return False
-    return True
-
-
-def get_schema_objects(meta_globals) -> "Dict[str, BaseSchema]":
     clsmembers = [(m, c) for m, c in meta_globals.items() if inspect.isclass(c)]
 
     return {an[0]: an[1]() for an in clsmembers if is_schema(an[1])}
 
 
-def store_schema_properties(dynamodb: DynamoDBServiceResource, schema: Schema) -> None:
-    table = dynamodb.Table(
-        os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_properties_table"
-    )
-    store_schema_properties_common(table, schema)
+def provision_schemas(graph_client: GraphClient, raw_schemas: List[bytes]) -> None:
+    """
+    `raw_schemas` is a list of raw, exec'able python code contained in a `schema.py` file
+    """
+    deployment_name = get_deployment_name()
 
-
-def provision_schemas(master_graph_client, raw_schemas):
-    # For every schema, exec the schema
-    meta_globals: Dict = {}
+    # For every schema, exec the schema. The new schemas in scope in the file
+    # are then written to `meta_globals`.
+    meta_globals: Dict[str, Any] = {}
     for raw_schema in raw_schemas:
         exec(raw_schema, meta_globals)
 
-    # Now fetch the schemas back from memory
+    # Now fetch the schemas back, as Python classes, from meta_globals
     schemas = list(get_schema_objects(meta_globals).values())
     LOGGER.info(f"deploying schemas: {[s.self_type() for s in schemas]}")
 
@@ -215,111 +149,29 @@ def provision_schemas(master_graph_client, raw_schemas):
     for schema in schemas:
         schema.init_reverse()
 
-    LOGGER.info("Merge the schemas with what exists in the graph")
     dynamodb = DynamoDBResourceFactory(boto3).from_env()
+    schema_table = provision_common.get_schema_table(
+        dynamodb, deployment_name=deployment_name
+    )
+    schema_properties_table = provision_common.get_schema_properties_table(
+        dynamodb, deployment_name=deployment_name
+    )
+
+    LOGGER.info("Merge the schemas with what exists in the graph")
     for schema in schemas:
-        store_schema(dynamodb, schema)
+        provision_common.store_schema(schema_table, schema)
+        provision_common.store_schema_properties(schema_properties_table, schema)
 
     LOGGER.info("Reprovision the graph")
-    provision_master_graph(master_graph_client, schemas)
+    schema_str = provision_common.format_schemas(schemas)
+    provision_common.set_schema(graph_client, schema_str)
 
     for schema in schemas:
-        extend_schema(dynamodb, master_graph_client, schema)
+        provision_common.extend_schema(schema_table, graph_client, schema)
 
     for schema in schemas:
-        store_schema(dynamodb, schema)
-        store_schema_properties(dynamodb, schema)
-
-
-def query_dgraph_predicate(client: "GraphClient", predicate_name: str) -> Any:
-    query = f"""
-        schema(pred: {predicate_name}) {{  }}
-    """
-    txn = client.txn(read_only=True)
-    try:
-        res = json.loads(txn.query(query).json)["schema"][0]
-    finally:
-        txn.discard()
-
-    return res
-
-
-def meta_into_edge(dynamodb, schema: "Schema", f_edge) -> EdgeT:
-    table = dynamodb.Table(os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table")
-    edge_res = table.get_item(Key={"f_edge": f_edge})["Item"]
-    edge_t = schema.edges[f_edge][0]  # type: EdgeT
-
-    return EdgeT(type(schema), edge_t.dest, EdgeRelationship(edge_res["relationship"]))
-
-
-def meta_into_property(predicate_meta) -> PropType:
-    is_set = predicate_meta.get("list")
-    type_name = predicate_meta["type"]
-    primitive = None
-    if type_name == "string":
-        primitive = PropPrimitive.Str
-    if type_name == "int":
-        primitive = PropPrimitive.Int
-    if type_name == "bool":
-        primitive = PropPrimitive.Bool
-
-    assert primitive is not None
-    return PropType(primitive, is_set, index=predicate_meta.get("index", []))
-
-
-def meta_into_predicate(dynamodb, schema, predicate_meta) -> Union[EdgeT, PropType]:
-    try:
-        if predicate_meta["type"] == "uid":
-            return meta_into_edge(dynamodb, schema, predicate_meta["predicate"])
-        else:
-            return meta_into_property(predicate_meta)
-    except Exception as e:
-        LOGGER.error(f"Failed to convert meta to predicate: {predicate_meta} {e}")
-        raise e
-
-
-def query_dgraph_type(client: "GraphClient", type_name: str):
-    query = f"""
-        schema(type: {type_name}) {{ type }}
-    """
-    txn = client.txn(read_only=True)
-    try:
-        res = json.loads(txn.query(query).json)
-    finally:
-        txn.discard()
-
-    if not res:
-        return []
-    if not res.get("types"):
-        return []
-
-    res = res["types"][0]["fields"]
-    predicate_names = []
-    for pred in res:
-        predicate_names.append(pred["name"])
-
-    predicate_metas = []
-    for predicate_name in predicate_names:
-        predicate_metas.append(query_dgraph_predicate(client, predicate_name))
-
-    return predicate_metas
-
-
-def get_reverse_edge(dynamodb, schema, f_edge):
-    table = dynamodb.Table(os.environ["DEPLOYMENT_NAME"] + "-grapl_schema_table")
-    edge_res = table.get_item(Key={"f_edge": f_edge})["Item"]
-    return edge_res["r_edge"]
-
-
-def extend_schema(dynamodb, graph_client: GraphClient, schema: "BaseSchema"):
-    predicate_metas = query_dgraph_type(graph_client, schema.self_type())
-    for predicate_meta in predicate_metas:
-        predicate = meta_into_predicate(dynamodb, schema, predicate_meta)
-        if isinstance(predicate, PropType):
-            schema.add_property(predicate_meta["predicate"], predicate)
-        else:
-            r_edge = get_reverse_edge(dynamodb, schema, predicate_meta["predicate"])
-            schema.add_edge(predicate_meta["predicate"], predicate, r_edge)
+        provision_common.store_schema(schema_table, schema)
+        provision_common.store_schema_properties(schema_properties_table, schema)
 
 
 def upload_plugin(s3_client: S3Client, key: str, contents: str) -> Optional[Response]:
