@@ -5,4 +5,4 @@ set -euo pipefail
 export GRAPL_LOG_LEVEL="DEBUG"
 export DUMP_ARTIFACTS="True"
 
-make test-e2e
+make -j8 test-e2e
