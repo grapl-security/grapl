@@ -10,9 +10,9 @@ from unittest import TestCase
 import boto3
 import pytest
 from grapl_analyzerlib.node_types import PropPrimitive
+from grapl_analyzerlib.provision import provision_common
 from grapl_common.env_helpers import DynamoDBResourceFactory
 from grapl_common.grapl_logger import get_module_grapl_logger
-from grapl_common.provision import SchemaDict
 
 LOGGER = get_module_grapl_logger()
 
@@ -28,7 +28,7 @@ class TestSchemaStoredInDynamodb(TestCase):
         )
 
         asset_type = cast(
-            SchemaDict,
+            provision_common.SchemaDict,
             schema_props_table.get_item(Key={"node_type": "Asset"})["Item"][
                 "type_definition"
             ],
