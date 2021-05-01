@@ -40,6 +40,7 @@ class TestEndToEnd(TestCase):
         lens: LensView = wait_for_one(WaitForQuery(query), timeout_secs=120)
         assert lens.get_lens_name() == LENS_NAME
         # lens scope is not atomic
+
         def scope_has_N_items() -> bool:
             length = len(lens.get_scope())
             logging.info(f"Expected 3-5 nodes in scope, currently is {length}")
@@ -52,21 +53,25 @@ class TestEndToEnd(TestCase):
             )
 
         wait_for_one(WaitForCondition(scope_has_N_items), timeout_secs=240)
-        gql_client = GraphqlEndpointClient(jwt=EngagementEdgeClient().get_jwt())
+        gql_client = GraphqlEndpointClient(
+            jwt=EngagementEdgeClient().get_jwt())
         wait_for_one(
             WaitForNoException(
-                lambda: ensure_graphql_lens_scope_no_errors(gql_client, LENS_NAME)
+                lambda: ensure_graphql_lens_scope_no_errors(
+                    gql_client, LENS_NAME)
             ),
             timeout_secs=40,
         )
 
     # -------------------------- MODEL PLUGIN TESTS -------------------------------------------
     def test_upload_plugin(self) -> None:
-        upload_model_plugin(model_plugin_client=ModelPluginDeployerClient.from_env())
+        upload_model_plugin(
+            model_plugin_client=ModelPluginDeployerClient.from_env())
 
     @pytest.mark.xfail  # TODO: Remove once list plugins is resolved
     def test_list_plugin(self) -> None:
-        get_plugin_list(model_plugin_client=ModelPluginDeployerClient.from_env())
+        get_plugin_list(
+            model_plugin_client=ModelPluginDeployerClient.from_env())
 
     @pytest.mark.xfail  # TODO: once list plugins is resolved, we can fix delete plugins :)
     def test_delete_plugin(self) -> None:
@@ -106,7 +111,8 @@ def ensure_graphql_lens_scope_no_errors(
             "Process",
         )
     )
-    asset_node: Dict = next((n for n in scope if n["dgraph_type"] == ["Asset"]))
+    asset_node: Dict = next(
+        (n for n in scope if n["dgraph_type"] == ["Asset"]))
     # The 'risks' field is not immediately filled out, but eventually consistent
     subset_equals(larger=asset_node, smaller=expected_gql_asset())
 
@@ -222,8 +228,7 @@ def get_notebook_url() -> None:
 
 def check_login() -> None:
     jwt = EngagementEdgeClient().get_jwt()
-    if jwt != None:
-        assert f"Auth working, jwt exists {jwt}"
+    assert jwt != None
 
 
 def check_invalid_creds() -> None:
