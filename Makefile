@@ -27,6 +27,7 @@ export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 	--file ./test/docker-compose.integration-tests.yml \
 	--file ./test/docker-compose.e2e-tests.yml \
 	--file ./test/docker-compose.typecheck-tests.yml \
+	--file ./test/docker-compose.formatter.yml \
 	${EVERY_LAMBDA_COMPOSE_FILE}
 
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
@@ -171,6 +172,11 @@ build-services: ## Build Grapl services
 build-lambdas: ## Build services for Grapl in AWS (subset of all services)
 	$(DOCKER_BUILDX_BAKE) $(EVERY_LAMBDA_COMPOSE_FILE)
 
+.PHONY: build-formatter
+build-formatter:
+	$(DOCKER_BUILDX_BAKE) \
+		--file ./docker-compose.formatter.yml
+
 .PHONY: graplctl
 graplctl: ## Build graplctl and install it to the project root
 	./pants package ./src/python/graplctl/graplctl
@@ -274,8 +280,8 @@ lint-python: ## Run Python lint checks
 	./pants lint ::
 
 .PHONY: lint-js
-lint-js: ## Run js lint checks
-	cd src/js; bin/format.sh --check
+lint-js: build-formatter ## Run js lint checks
+	docker-compose -f docker-compose.formatter.yml up lint-js
 
 .PHONY: lint
 lint: lint-python lint-js lint-rust ## Run all lint checks
@@ -291,8 +297,8 @@ format-python: ## Reformat all Python code
 	./pants fmt ::
 
 .PHONY: format-js
-format-js: ## Reformat all js/ts code
-	cd src/js; bin/format.sh --update
+format-js: build-formatter ## Reformat all js/ts code
+	docker-compose -f docker-compose.formatter.yml up format-js
 
 .PHONY: format
 format: format-python format-js format-rust ## Reformat all code
