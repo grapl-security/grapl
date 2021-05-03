@@ -1,0 +1,20 @@
+version: "3.8"
+
+x-common-variables:
+  formatter-image: &formatter-image
+    image: grapl/format
+    build:
+      context: ./etc/formatter
+    volumes:
+      - type: bind
+        source: .
+        target: /mnt/grapl_repo_rw
+
+services:
+  lint-js:
+    <<: *formatter-image
+    command: /bin/bash -c 'cd /mnt/grapl_repo_rw/src/js; bin/format.sh --check'
+
+  format-js:
+    <<: *formatter-image
+    command: /bin/bash -c 'cd /mnt/grapl_repo_rw/src/js; bin/format.sh --update'
