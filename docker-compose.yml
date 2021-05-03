@@ -93,14 +93,15 @@ services:
           - ${REDIS_HOST}
 
   localstack:
-    # This is our own version until a PR is merged upstream
-    image: graplsec/localstack:chalice-compatible
+    # TODO: 0.12.11 is the one we want once it's released; until then
+    # we need an unreleased fix for lambda invocation
+    image: localstack/localstack:latest
     ports:
       # We'll expose localstack's edge port for ease of use with
       # things like the AWS CLI, Pulumi, etc.
       - 127.0.0.1:${LOCALSTACK_PORT}:${LOCALSTACK_PORT}
     environment:
-      - IMAGE_NAME=graplsec/localstack:chalice-compatible
+      - IMAGE_NAME=localstack/localstack:latest
       - EDGE_PORT=${LOCALSTACK_PORT}
       - HOSTNAME_EXTERNAL=${LOCALSTACK_HOST}
       - SERVICES=apigateway,dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs
