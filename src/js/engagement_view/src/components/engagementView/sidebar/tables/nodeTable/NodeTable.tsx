@@ -6,7 +6,7 @@ import TableCell from "@material-ui/core/TableCell";
 import TableContainer from "@material-ui/core/TableContainer";
 import TableRow from "@material-ui/core/TableRow";
 
-import { mapEdgeProps } from "../../../../graphDisplay/graphLayout/graph_traverse";
+import { mapEdgeProps } from "../../../../graphDisplay/graphLayout/graphTraverse";
 import { mapNodeProps } from "../../../../graphDisplay/graphLayout/mapNodeProps";
 
 import { OtherNodeProperties, VizNode } from "types/CustomTypes";

@@ -2,7 +2,7 @@ import { VizGraph, Link, VizNode } from "../../../types/CustomTypes";
 import { calcNodeRiskPercentile } from "./nodeCalcs";
 import { riskOutline } from "./nodeColoring";
 
-const findNode = (id: number, nodes: VizNode[]) => {
+export const findNode = (id: number, nodes: VizNode[]) => {
     for (const node of nodes || []) {
         if (node.id === id) {
             return node;
@@ -12,9 +12,11 @@ const findNode = (id: number, nodes: VizNode[]) => {
 };
 
 export const calcLinkRisk = (link: Link, Graph: VizGraph) => {
+
     let sourceNode: any =
         findNode(link.source, Graph.nodes) ||
         findNode((link as any).source.name, Graph.nodes);
+
     let targetNode: any =
         findNode(link.target as any, Graph.nodes) ||
         findNode((link as any).target.name as any, Graph.nodes);

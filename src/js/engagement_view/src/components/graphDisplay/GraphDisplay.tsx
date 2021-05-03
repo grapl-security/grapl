@@ -58,7 +58,7 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
         // refresh every 10 seconds
         const interval = setInterval(updateGraphAndSetState, 10000);
         return () => clearInterval(interval);
-    }, [lensName, state, setState]);
+    }, [lensName, state, setState, updateGraphAndSetState]);
 
     const data = useMemo(() => {
         const graphData = state.graphData;

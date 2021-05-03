@@ -40,6 +40,7 @@ class TestEndToEnd(TestCase):
         lens: LensView = wait_for_one(WaitForQuery(query), timeout_secs=120)
         assert lens.get_lens_name() == LENS_NAME
         # lens scope is not atomic
+
         def scope_has_N_items() -> bool:
             length = len(lens.get_scope())
             logging.info(f"Expected 3-5 nodes in scope, currently is {length}")
@@ -84,6 +85,9 @@ class TestEndToEnd(TestCase):
 
     def test_check__invalid_creds(self) -> None:
         check_invalid_creds()
+
+    def test_check__empty_creds(self) -> None:
+        check_empty_creds()
 
 
 def ensure_graphql_lens_scope_no_errors(
@@ -215,25 +219,18 @@ def get_notebook_url() -> None:
         "localhost:8888" in notebook_url
     ):  # TODO: Need to conditionally change for AWS Deployments
         assert notebook_url
-    else:
-        raise TestException(
-            f"Unable to retrieve notebook url or notebook url is invalid: {notebook_url}"
-        )
 
 
 def check_login() -> None:
     jwt = EngagementEdgeClient().get_jwt()
-    if jwt != None:
-        assert f"Auth working, jwt exists {jwt}"
-    else:
-        raise TestException(f"Unable to retrieve jwt token - auth is broken")
+    assert jwt != None
 
 
 def check_invalid_creds() -> None:
     resp = EngagementEdgeClient().invalid_creds()
-    if resp.status_code == 403:
-        assert "Provided invalid creds & was unauthorized"
-    else:
-        raise TestException(
-            "Unexpected authorization with invalid credentials - major issues!"
-        )
+    assert resp.status_code == 403, "We expected a 403 forbidden"
+
+
+def check_empty_creds() -> None:
+    resp = EngagementEdgeClient().empty_creds()
+    assert resp.status_code == 500, "Expected 500 permissions error"

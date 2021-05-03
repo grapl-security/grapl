@@ -5,3 +5,5 @@
 !.yarn/plugins
 !.yarn/sdks
 !.yarn/versions
+
+/coverage

@@ -1,5 +1,5 @@
 import { Node } from "../../../types/CustomTypes";
-import { mapGraph } from "components/graphDisplay/graphLayout/graph_traverse";
+import { mapGraphForPlugins } from "components/graphDisplay/graphLayout/graphTraverse";
 
 const builtins = new Set([
     "Process",
@@ -17,7 +17,7 @@ export const unpackPluginNodes = (nodes: Node[]) => {
         if (!(node as any).predicates) {
             continue;
         }
-        mapGraph(node, (node, edge_name, neighbor) => {
+        mapGraphForPlugins(node, (node, edge_name, neighbor) => {
             if ((node as any).predicates) {
                 if (!builtins.has((node as any).predicates.dgraph_type[0])) {
                     // Using 'any' because the PluginType is temporary, and not valid outside of the initial response
