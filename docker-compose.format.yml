@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+  format:
+    command: |
+      /bin/bash -c '
+        cd /mnt/grapl_repo_rw && cd src/js; bin/format.sh --update
+      '
+    image: grapl/format
+    build:
+      context: ./etc/format
+    volumes:
+      - type: bind
+        source: .
+        target: /mnt/grapl_repo_rw
