@@ -13,8 +13,8 @@ x-common-variables:
 services:
   lint-js:
     <<: *formatter-image
-    command: /bin/bash -c 'make lint-js'
+    command: /bin/bash -c 'cd /mnt/grapl_repo_rw/src/js; bin/format.sh --check'
 
   format-js:
     <<: *formatter-image
-    command: /bin/bash -c 'make format-js'
+    command: /bin/bash -c 'cd /mnt/grapl_repo_rw/src/js; bin/format.sh --update'

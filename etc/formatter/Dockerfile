@@ -4,7 +4,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \
         netbase \
         curl \
-        make \
     && rm -rf /var/lib/apt/lists/*
 
 # Install npm, Prettier
@@ -17,6 +16,3 @@ RUN npm install -g prettier@2.2.1
 # as well as Pants to perform containerized linting.
 
 USER nobody
-
-WORKDIR /home/linter
-COPY ./Makefile /home/linter/Makefile
