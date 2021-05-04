@@ -321,4 +321,4 @@ export const node40 = {
     id: 40,
     nodeType: "Asset",
     nodeLabel: "Asset",
-}
+};

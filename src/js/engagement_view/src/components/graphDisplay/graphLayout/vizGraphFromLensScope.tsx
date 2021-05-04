@@ -48,7 +48,6 @@ export const vizGraphFromLensScope = (vizGraphData: Node[]): VizGraph => {
             }
         });
 
-
         traverseNodes(vizNode, (node) => {
             const nodeType = getNodeType(node);
 
