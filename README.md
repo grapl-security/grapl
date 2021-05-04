@@ -1,3 +1,9 @@
+<img 
+    src="src/js/engagement_view/src/components/reusableComponents/graplHeader/logo.svg" 
+    width="100px"
+    height="100px"
+    align="right"
+    />
 ## Grapl
 
 Grapl is a Graph Platform for Detection and Response with a focus on
@@ -160,4 +166,4 @@ querying capabilities.
 ## Setup
 Grapl can run locally on your computer, or you can deploy to AWS.
 
-https://grapl.readthedocs.io/en/latest/setup/local.html
+https://grapl.readthedocs.io/en/main/setup/local.html
