@@ -1,14 +1,18 @@
 use std::collections::HashMap;
 
-use grapl_graph_descriptions::{graph_description::*,
-                               node_property::Property};
-use node_property::Property::{DecrementOnlyInt as ProtoDecrementOnlyIntProp,
-                              DecrementOnlyUint as ProtoDecrementOnlyUintProp,
-                              ImmutableInt as ProtoImmutableIntProp,
-                              ImmutableStr as ProtoImmutableStrProp,
-                              ImmutableUint as ProtoImmutableUintProp,
-                              IncrementOnlyInt as ProtoIncrementOnlyIntProp,
-                              IncrementOnlyUint as ProtoIncrementOnlyUintProp};
+use grapl_graph_descriptions::{
+    graph_description::*,
+    node_property::Property,
+};
+use node_property::Property::{
+    DecrementOnlyInt as ProtoDecrementOnlyIntProp,
+    DecrementOnlyUint as ProtoDecrementOnlyUintProp,
+    ImmutableInt as ProtoImmutableIntProp,
+    ImmutableStr as ProtoImmutableStrProp,
+    ImmutableUint as ProtoImmutableUintProp,
+    IncrementOnlyInt as ProtoIncrementOnlyIntProp,
+    IncrementOnlyUint as ProtoIncrementOnlyUintProp,
+};
 
 pub struct Escaped(String);
 

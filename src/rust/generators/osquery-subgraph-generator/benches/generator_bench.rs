@@ -1,13 +1,21 @@
-use criterion::{criterion_group,
-                criterion_main,
-                Criterion};
+use criterion::{
+    criterion_group,
+    criterion_main,
+    Criterion,
+};
 use grapl_service::decoder::ndjson::NdjsonDecoder;
-use osquery_subgraph_generator_lib::{generator::OSQuerySubgraphGenerator,
-                                     metrics::OSQuerySubgraphGeneratorMetrics};
-use sqs_executor::{cache::NopCache,
-                   event_decoder::PayloadDecoder,
-                   event_handler::{CompletedEvents,
-                                   EventHandler}};
+use osquery_subgraph_generator_lib::{
+    generator::OSQuerySubgraphGenerator,
+    metrics::OSQuerySubgraphGeneratorMetrics,
+};
+use sqs_executor::{
+    cache::NopCache,
+    event_decoder::PayloadDecoder,
+    event_handler::{
+        CompletedEvents,
+        EventHandler,
+    },
+};
 use tokio::runtime::Runtime;
 
 const OSQUERY_SAMPLE_DATA_FILE: &'static str = "sample_data/osquery_data.log";

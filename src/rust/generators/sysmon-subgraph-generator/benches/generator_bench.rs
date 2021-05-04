@@ -1,13 +1,21 @@
-use criterion::{criterion_group,
-                criterion_main,
-                Criterion};
-use sqs_executor::{cache::NopCache,
-                   event_decoder::PayloadDecoder,
-                   event_handler::{CompletedEvents,
-                                   EventHandler}};
-use sysmon_subgraph_generator_lib::{generator::SysmonSubgraphGenerator,
-                                    metrics::SysmonSubgraphGeneratorMetrics,
-                                    serialization::SysmonDecoder};
+use criterion::{
+    criterion_group,
+    criterion_main,
+    Criterion,
+};
+use sqs_executor::{
+    cache::NopCache,
+    event_decoder::PayloadDecoder,
+    event_handler::{
+        CompletedEvents,
+        EventHandler,
+    },
+};
+use sysmon_subgraph_generator_lib::{
+    generator::SysmonSubgraphGenerator,
+    metrics::SysmonSubgraphGeneratorMetrics,
+    serialization::SysmonDecoder,
+};
 use tokio::runtime::Runtime;
 
 const SYSMON_SAMPLE_DATA_FILE: &'static str = "sample_data/events6.xml";

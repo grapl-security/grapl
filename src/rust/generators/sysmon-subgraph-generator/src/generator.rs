@@ -1,17 +1,27 @@
 use async_trait::async_trait;
 use grapl_graph_descriptions::graph_description::*;
-use itertools::{Either,
-                Itertools};
+use itertools::{
+    Either,
+    Itertools,
+};
 use log::*;
-use sqs_executor::{cache::Cache,
-                   errors::{CheckedError,
-                            Recoverable},
-                   event_handler::{CompletedEvents,
-                                   EventHandler}};
+use sqs_executor::{
+    cache::Cache,
+    errors::{
+        CheckedError,
+        Recoverable,
+    },
+    event_handler::{
+        CompletedEvents,
+        EventHandler,
+    },
+};
 use sysmon::Event;
 
-use crate::{metrics::SysmonSubgraphGeneratorMetrics,
-            models::SysmonTryFrom};
+use crate::{
+    metrics::SysmonSubgraphGeneratorMetrics,
+    models::SysmonTryFrom,
+};
 
 #[derive(thiserror::Error, Debug)]
 pub enum SysmonGeneratorError {

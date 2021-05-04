@@ -1,19 +1,31 @@
-use std::{convert::TryFrom,
-          sync::Arc};
+use std::{
+    convert::TryFrom,
+    sync::Arc,
+};
 
 use async_trait::async_trait;
 use grapl_graph_descriptions::graph_description::*;
-use itertools::{Either,
-                Itertools};
+use itertools::{
+    Either,
+    Itertools,
+};
 use log::*;
-use sqs_executor::{cache::Cache,
-                   errors::{CheckedError,
-                            Recoverable},
-                   event_handler::{CompletedEvents,
-                                   EventHandler}};
+use sqs_executor::{
+    cache::Cache,
+    errors::{
+        CheckedError,
+        Recoverable,
+    },
+    event_handler::{
+        CompletedEvents,
+        EventHandler,
+    },
+};
 
-use crate::{metrics::OSQuerySubgraphGeneratorMetrics,
-            parsers::PartiallyDeserializedOSQueryLog};
+use crate::{
+    metrics::OSQuerySubgraphGeneratorMetrics,
+    parsers::PartiallyDeserializedOSQueryLog,
+};
 
 #[derive(Clone)]
 pub struct OSQuerySubgraphGenerator<C>

@@ -1,5 +1,7 @@
-use serde::{Deserialize,
-            Serialize};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct ProcessPortBindLog {

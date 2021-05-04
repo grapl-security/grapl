@@ -1,7 +1,11 @@
 use serde::Deserialize;
-use sqs_executor::{errors::{CheckedError,
-                            Recoverable},
-                   event_decoder::PayloadDecoder};
+use sqs_executor::{
+    errors::{
+        CheckedError,
+        Recoverable,
+    },
+    event_decoder::PayloadDecoder,
+};
 
 use crate::decoder::decompress::PayloadDecompressionError;
 

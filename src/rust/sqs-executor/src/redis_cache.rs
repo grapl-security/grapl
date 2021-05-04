@@ -1,22 +1,38 @@
-use std::{io::Stdout,
-          time::Duration};
+use std::{
+    io::Stdout,
+    time::Duration,
+};
 
 use async_trait::async_trait;
-use grapl_observe::{metric_reporter::{tag,
-                                      MetricReporter},
-                    timers::TimedFutureExt};
+use grapl_observe::{
+    metric_reporter::{
+        tag,
+        MetricReporter,
+    },
+    timers::TimedFutureExt,
+};
 use grapl_utils::future_ext::GraplFutureExt;
-use itertools::{Either,
-                Itertools};
+use itertools::{
+    Either,
+    Itertools,
+};
 use lazy_static::lazy_static;
-use redis::{AsyncCommands,
-            RedisError};
+use redis::{
+    AsyncCommands,
+    RedisError,
+};
 use tokio::time::error::Elapsed;
 
-use crate::{cache::{Cache,
-                    Cacheable},
-            errors::{CheckedError,
-                     Recoverable}};
+use crate::{
+    cache::{
+        Cache,
+        Cacheable,
+    },
+    errors::{
+        CheckedError,
+        Recoverable,
+    },
+};
 
 lazy_static! {
     /// Timeout for requests to Redis
@@ -212,11 +228,15 @@ impl RedisCache {
     }
 }
 
-use std::sync::{Arc,
-                Mutex};
+use std::sync::{
+    Arc,
+    Mutex,
+};
 
-use tracing::{error,
-              info};
+use tracing::{
+    error,
+    info,
+};
 
 #[async_trait]
 impl Cache for RedisCache {

@@ -1,16 +1,22 @@
-use endpoint_plugin::{AssetNode,
-                      FileNode,
-                      IAssetNode,
-                      IFileNode,
-                      IProcessNode,
-                      ProcessNode};
+use endpoint_plugin::{
+    AssetNode,
+    FileNode,
+    IAssetNode,
+    IFileNode,
+    IProcessNode,
+    ProcessNode,
+};
 use grapl_graph_descriptions::graph_description::*;
 use sysmon::ProcessCreateEvent;
 
-use crate::{generator::SysmonGeneratorError,
-            models::{get_image_name,
-                     strip_file_zone_identifier,
-                     utc_to_epoch}};
+use crate::{
+    generator::SysmonGeneratorError,
+    models::{
+        get_image_name,
+        strip_file_zone_identifier,
+        utc_to_epoch,
+    },
+};
 
 /// Creates a graph decribing a `ProcessCreateEvent`.
 ///
@@ -87,8 +93,10 @@ pub fn generate_process_create_subgraph(
 }
 #[cfg(test)]
 mod tests {
-    use grapl_graph_descriptions::{graph_description::node_property::Property,
-                                   ImmutableUintProp};
+    use grapl_graph_descriptions::{
+        graph_description::node_property::Property,
+        ImmutableUintProp,
+    };
     use sysmon::*;
 
     use super::*;

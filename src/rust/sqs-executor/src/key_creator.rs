@@ -1,7 +1,9 @@
 //<prefix>-<event-type>/<day>/<seconds>/<serialization>/<compression>-<capability>
 
-use std::time::{SystemTime,
-                UNIX_EPOCH};
+use std::time::{
+    SystemTime,
+    UNIX_EPOCH,
+};
 
 pub trait KeyGenerator {
     fn generate_key(&mut self, capability: u64) -> String;
