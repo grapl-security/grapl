@@ -113,12 +113,11 @@ services:
   # Utility Services
   ########################################################################
 
-  grapl-provision:
-    image: grapl/grapl-provision:${TAG:-latest}
+  graplctl:
+    image: grapl/graplctl:${TAG:-latest}
     build:
-      context: src
-      dockerfile: ./python/Dockerfile
-      target: grapl-provision
+      context: .
+      dockerfile: ./src/python/Dockerfile
 
   grapl-pulumi:
     image: grapl/grapl-local-pulumi:${TAG:-latest}
