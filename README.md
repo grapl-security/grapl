@@ -4,25 +4,26 @@
     height="100px"
     align="right"
     />
-## Grapl
+# Grapl
+Grapl is a graph-based SIEM platform built by-and-for incident response engineers.
 
-Grapl is a Graph Platform for Detection and Response with a focus on
-helping Detection Engineers and Incident Responders stop fighting
-their data and start connecting it. Grapl leverages graph data
-structures at its core to ensure that you can query and connect your
-data efficiently, model complex attacker behaviors for detection, and
-easily expand suspicious behaviors to encompass the full scope of an
+## Details
+Grapl leverages graph data structures at its core to ensure that you 
+can query and connect your data efficiently, model complex attacker behaviors for detection, and
+easily delve into suspicious behaviors to understand the full scope of an
 ongoing intrusion.
 
-For a more in depth overview of Grapl, [read this](https://insanitybit.github.io/2019/03/09/grapl).
+For a more in depth overview of Grapl, read [this](https://insanitybit.github.io/2019/03/09/grapl).
 
 Essentially, Grapl will take raw logs, convert them into graphs, and
 merge those graphs into a Master Graph. It will then orchestrate the
 execution of your attack signatures, and provide tools for performing
-your investigations. Or watch [this talk at
+your investigations. 
+
+You can watch some of our talks at [at
 BSidesLV](https://www.youtube.com/watch?v=LjCtbpXQA9U&t=8028s) or
-[this talk at BSides San
-Francisco](https://www.youtube.com/watch?v=uErWRAJ4I4w) .
+[at BSides San
+Francisco](https://www.youtube.com/watch?v=uErWRAJ4I4w).
 
 Grapl natively supports nodes for:
 
@@ -31,8 +32,10 @@ Grapl natively supports nodes for:
 - Networking
 - Plugin nodes, which can be used to arbitrarily extend the graph
 
-and currently parses Sysmon logs or a generic JSON log format to
-generate these graphs.
+Grapl natively supports the following input formats to generate graphs:
+- Sysmon logs
+- OSQuery logs
+- a generic JSON log format
 
 Keep in mind that Grapl is not yet at a stable, 1.0 state, and is a
 fast moving project. Expect some minor bugs and breaking changes!
