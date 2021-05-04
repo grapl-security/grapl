@@ -13,21 +13,23 @@ import { LogoIcon } from "./LogoIcon";
 const useStyles = graplHeaderStyles;
 
 const GraplHeader = ({ displayBtn }: GraplHeaderProps) => {
-	const classes = useStyles();
+    const classes = useStyles();
 
-	return (
-		<>
-			<AppBar position="static">
-				<Toolbar className={classes.header}>
-					<LogoIcon className={classes.titleIcon} />
-					<Typography variant="h6" className={classes.title}>
-						GRAPL
-					</Typography>
-					{displayBtn && <Link to="/" className={classes.link}></Link>}
-				</Toolbar>
-			</AppBar>
-		</>
-	);
+    return (
+        <>
+            <AppBar position="static">
+                <Toolbar className={classes.header}>
+                    <LogoIcon className={classes.titleIcon} />
+                    <Typography variant="h6" className={classes.title}>
+                        GRAPL
+                    </Typography>
+                    {displayBtn && (
+                        <Link to="/" className={classes.link}></Link>
+                    )}
+                </Toolbar>
+            </AppBar>
+        </>
+    );
 };
 
 export default GraplHeader;

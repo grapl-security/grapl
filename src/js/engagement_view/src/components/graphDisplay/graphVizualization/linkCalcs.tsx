@@ -12,7 +12,6 @@ export const findNode = (id: number, nodes: VizNode[]) => {
 };
 
 export const calcLinkRisk = (link: Link, Graph: VizGraph) => {
-
     let sourceNode: any =
         findNode(link.source, Graph.nodes) ||
         findNode((link as any).source.name, Graph.nodes);
