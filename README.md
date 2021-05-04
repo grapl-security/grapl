@@ -1,9 +1,10 @@
-<img 
-    src="src/js/engagement_view/src/components/reusableComponents/graplHeader/logo.svg" 
-    width="100px"
-    height="100px"
-    align="right"
-    />
+<p align="center">
+    <img 
+        src="src/js/engagement_view/src/components/reusableComponents/graplHeader/logo.svg" 
+        width="100px"
+        />
+</p>
+
 # Grapl
 Grapl is a graph-based SIEM platform built by-and-for incident response engineers.
 
