@@ -237,14 +237,24 @@ CMD source venv/bin/activate && \
     jupyter notebook --ip="0.0.0.0"
 
 #
-# Local provision
+# graplctl
 ################################################################################
 
-# build
-FROM grapl-python-build AS grapl-provision
-
-COPY --chown=grapl python/grapl_provision grapl_local_provision
-COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
+FROM python:3.7-slim-buster AS graplctl
+RUN adduser \
+    --disabled-password \
+    --gecos '' \
+    --home /home/grapl \
+    --shell /bin/bash \
+    grapl
+USER grapl
+ENV USER=grapl
+WORKDIR /home/grapl
+RUN mkdir -p /home/grapl/bin
+RUN mkdir -p /home/grapl/.aws
+RUN echo "[default]\naws_access_key_id=${AWS_ACCESS_KEY_ID}\naws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" > /home/grapl/.aws/credentials
+COPY --chown=grapl ./bin/graplctl /home/grapl/bin/graplctl
+ENV PATH=/home/grapl/bin:$PATH
 
 # grapl-tests-common-build
 ################################################################################
@@ -267,16 +277,12 @@ FROM grapl-tests-common-build AS graphql-endpoint-tests
 
 COPY --chown=grapl python/graphql_endpoint_tests graphql_endpoint_tests
 
-# E2E tests
+# e2e tests
 ################################################################################
-FROM grapl-tests-common-build AS grapl-e2e-tests-build
-
-COPY --chown=grapl python/grapl_e2e_tests grapl_e2e_tests
-
-# Allow user `grapl` to write to the mount point
-USER root
-RUN mkdir /mnt/dynamodb_dump && chown grapl /mnt/dynamodb_dump
-USER grapl
-
-RUN source venv/bin/activate && \
-    pip install zstd==1.4.9.1
+FROM graplctl AS e2e-tests
+CMD graplctl \
+    --grapl-region us-east-1 \
+    --grapl-deployment-name local-grapl \
+    --grapl-version FIXME \
+    --aws-profile default \
+    aws test
