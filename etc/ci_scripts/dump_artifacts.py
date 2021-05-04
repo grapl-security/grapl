@@ -113,7 +113,7 @@ def _dump_docker_log(container_name: str, dir: Path) -> None:
         subprocess.run(
             f"docker logs --timestamps {container_name}",
             stdout=out_stream,
-            stderr=subprocess.DEVNULL,
+            stderr=out_stream,
             shell=True,
         )
 
@@ -127,7 +127,7 @@ def dump_docker_ps(dir: Path) -> None:
         subprocess.run(
             f"docker ps",
             stdout=out_stream,
-            stderr=subprocess.DEVNULL,
+            stderr=out_stream,
             shell=True,
         )
 
