@@ -14,6 +14,8 @@ use rusoto_dynamodb::{AttributeValue,
                       PutItemInput};
 use serde::{Deserialize,
             Serialize};
+use sha2::{Digest,
+           Sha256};
 
 use crate::{sessiondb::SessionDb,
             sessions::UnidSession};
@@ -148,31 +150,32 @@ where
         Ok(primary_key)
     }
 
-    async fn primary_mapping_key(
+    /// Because statically identified nodes are uniquely identifiable based on their static properties
+    /// we can avoid fetching from dynamodb and calculate a node key by hashing the properties deterministically
+    fn get_static_node_key(
         &self,
-        node: &mut NodeDescription,
+        node: &NodeDescription,
         strategy: &Static,
     ) -> Result<String, Error> {
-        let mut primary_key = String::with_capacity(32);
+        let mut hasher = Sha256::new();
 
-        if strategy.primary_key_requires_asset_id {
-            panic!("pre-resolution of asset_id is not supported currently")
-        }
+        // first, let's sort the properties, so we get a consistent ordering for hashing
+        let mut sorted_key_properties = strategy.primary_key_properties.clone();
+        sorted_key_properties.sort();
 
-        for prop_name in &strategy.primary_key_properties {
-            let prop_val = node.properties.get(prop_name);
-
-            match prop_val {
-                Some(val) => primary_key.push_str(&val.to_string()),
+        for prop_name in sorted_key_properties {
+            match node.properties.get(&prop_name) {
+                Some(prop_val) => hasher.update(prop_val.to_string().as_bytes()),
                 None => bail!(format!(
                     "Node is missing required property {} for identity",
                     prop_name
                 )),
             }
         }
-        primary_key.push_str(&node.node_type);
 
-        Ok(primary_key)
+        hasher.update(node.node_type.as_bytes());
+
+        Ok(hex::encode(hasher.finalize()))
     }
 
     pub async fn attribute_dynamic_session(
@@ -219,31 +222,13 @@ where
 
     pub async fn attribute_static_mapping(
         &self,
-        node: NodeDescription,
+        mut node: NodeDescription,
         strategy: &Static,
     ) -> Result<NodeDescription, Error> {
-        let mut attributed_node = node.clone();
-        let key = self
-            .primary_mapping_key(&mut attributed_node, strategy)
-            .await?;
+        let static_node_key = self.get_static_node_key(&node, &strategy)?;
+        node.set_key(static_node_key);
 
-        let node_key = self.dyn_mapping_db.direct_map(&key).await?;
-
-        match node_key {
-            Some(node_key) => attributed_node.set_key(node_key),
-            None => {
-                // Static mappings don't need to be guessed, if
-                // we don't find it just make it
-                let new_id = uuid::Uuid::new_v4().to_string();
-                info!("Creating static mapping for dynamic node");
-                self.dyn_mapping_db
-                    .create_mapping(key, new_id.clone())
-                    .await?;
-                attributed_node.set_key(new_id)
-            }
-        }
-
-        Ok(attributed_node)
+        Ok(node)
     }
 
     pub async fn attribute_dynamic_node(

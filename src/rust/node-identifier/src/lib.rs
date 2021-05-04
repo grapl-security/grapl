@@ -125,15 +125,6 @@ where
             return Ok(IdentifiedGraph::new());
         }
 
-        let edges: HashSet<_> = unid_subgraph
-            .edges
-            .values()
-            .map(|e| e.edges.iter())
-            .flatten()
-            .map(|e| e.edge_name.as_str())
-            .collect();
-        println!("incoming edges: {:?}", edges);
-
         info!(
             "unid_subgraph: {} nodes {} edges",
             unid_subgraph.nodes.len(),
