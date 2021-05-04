@@ -2,15 +2,22 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, TypeVar
 
 from typing_extensions import Protocol
 
 if TYPE_CHECKING:
+    from mypy_boto3_cloudwatch import CloudWatchClient
     from mypy_boto3_dynamodb import DynamoDBClient, DynamoDBServiceResource
+    from mypy_boto3_ec2 import EC2ServiceResource
+    from mypy_boto3_lambda import LambdaClient
+    from mypy_boto3_route53 import Route53Client
     from mypy_boto3_s3 import S3Client, S3ServiceResource
     from mypy_boto3_secretsmanager import SecretsManagerClient
+    from mypy_boto3_sns import SNSClient
     from mypy_boto3_sqs import SQSClient
+    from mypy_boto3_ssm import SSMClient
+
 
 T = TypeVar("T", covariant=True)
 
@@ -36,7 +43,11 @@ ClientGetParams = NamedTuple(
 )
 
 
-def _client_get(client_create_fn: Callable[..., Any], params: ClientGetParams) -> Any:
+def _client_get(
+    client_create_fn: Callable[..., Any],
+    params: ClientGetParams,
+    region: Optional[str] = None,
+) -> Any:
     """
     :param client_create_fn: the `boto3.client` or `boto3.resource` function
     """
@@ -47,9 +58,10 @@ def _client_get(client_create_fn: Callable[..., Any], params: ClientGetParams) -
     access_session_token = os.getenv(params.access_session_token)
 
     # AWS_REGION is Fargate-specific, most AWS stuff uses AWS_DEFAULT_REGION.
-    region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION")
     if not region:
-        raise FromEnvException("Please set AWS_REGION= or AWS_DEFAULT_REGION=")
+        region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION")
+        if not region:
+            raise FromEnvException("Please set AWS_REGION= or AWS_DEFAULT_REGION=")
 
     # Unlike Rust FromEnv, we rely on boto3's built in region handling.
 
@@ -136,8 +148,130 @@ class SQSClientFactory(FromEnv["SQSClient"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(self) -> SQSClient:
-        client: SQSClient = _client_get(self.client_create_fn, _SQSParams)
+    def from_env(self, region: Optional[str] = None) -> SQSClient:
+        client: SQSClient = _client_get(
+            self.client_create_fn, _SQSParams, region=region
+        )
+        return client
+
+
+_SNSParams = ClientGetParams(
+    boto3_client_name="sns",
+    endpoint_url_key="SNS_ENDPOINT",
+    access_key_id_key="SNS_ACCESS_KEY_ID",
+    access_key_secret_key="SNS_ACCESS_KEY_SECRET",
+    access_session_token="SNS_ACCESS_SESSION_TOKEN",
+)
+
+
+class SNSClientFactory(FromEnv["SNSClient"]):
+    def __init__(self, boto3_module: Any):
+        self.client_create_fn = boto3_module.client
+
+    def from_env(self, region: Optional[str] = None) -> SNSClient:
+        client: SNSClient = _client_get(
+            self.client_create_fn, _SNSParams, region=region
+        )
+        return client
+
+
+_EC2Params = ClientGetParams(
+    boto3_client_name="ec2",
+    endpoint_url_key="EC2_ENDPOINT",
+    access_key_id_key="EC2_ACCESS_KEY_ID",
+    access_key_secret_key="EC2_ACCESS_KEY_SECRET",
+    access_session_token="EC2_ACCESS_SESSION_TOKEN",
+)
+
+
+class EC2ResourceFactory(FromEnv["EC2ServiceResource"]):
+    def __init__(self, boto3_module: Any):
+        self.client_create_fn = boto3_module.resource
+
+    def from_env(self, region: Optional[str] = None) -> EC2ServiceResource:
+        client: EC2ServiceResource = _client_get(
+            self.client_create_fn, _EC2Params, region=region
+        )
+        return client
+
+
+_SSMParams = ClientGetParams(
+    boto3_client_name="ssm",
+    endpoint_url_key="SSM_ENDPOINT",
+    access_key_id_key="SSM_ACCESS_KEY_ID",
+    access_key_secret_key="SSM_ACCESS_KEY_SECRET",
+    access_session_token="SSM_ACCESS_SESSION_TOKEN",
+)
+
+
+class SSMClientFactory(FromEnv["SSMClient"]):
+    def __init__(self, boto3_module: Any):
+        self.client_create_fn = boto3_module.client
+
+    def from_env(self, region: Optional[str] = None) -> SSMClient:
+        client: SSMClient = _client_get(
+            self.client_create_fn, _SSMParams, region=region
+        )
+        return client
+
+
+_CloudWatchParams = ClientGetParams(
+    boto3_client_name="cloudwatch",
+    endpoint_url_key="CLOUDWATCH_ENDPOINT",
+    access_key_id_key="CLOUDWATCH_ACCESS_KEY_ID",
+    access_key_secret_key="CLOUDWATCH_ACCESS_KEY_SECRET",
+    access_session_token="CLOUDWATCH_ACCESS_SESSION_TOKEN",
+)
+
+
+class CloudWatchClientFactory(FromEnv["CloudWatchClient"]):
+    def __init__(self, boto3_module: Any):
+        self.client_create_fn = boto3_module.client
+
+    def from_env(self, region: Optional[str] = None) -> CloudWatchClient:
+        client: CloudWatchClient = _client_get(
+            self.client_create_fn, _CloudWatchParams, region=region
+        )
+        return client
+
+
+_LambdaParams = ClientGetParams(
+    boto3_client_name="lambda",
+    endpoint_url_key="LAMBDA_ENDPOINT",
+    access_key_id_key="LAMBDA_ACCESS_KEY_ID",
+    access_key_secret_key="LAMBDA_ACCESS_KEY_SECRET",
+    access_session_token="LAMBDA_ACCESS_SESSION_TOKEN",
+)
+
+
+class LambdaClientFactory(FromEnv["LambdaClient"]):
+    def __init__(self, boto3_module: Any):
+        self.client_create_fn = boto3_module.client
+
+    def from_env(self, region: Optional[str] = None) -> LambdaClient:
+        client: LambdaClient = _client_get(
+            self.client_create_fn, _LambdaParams, region=region
+        )
+        return client
+
+
+_Route53Params = ClientGetParams(
+    boto3_client_name="route53",
+    endpoint_url_key="ROUTE53_ENDPOINT",
+    access_key_id_key="ROUTE53_ACCESS_KEY_ID",
+    access_key_secret_key="ROUTE53_ACCESS_KEY_SECRET",
+    access_session_token="ROUTE53_ACCESS_SESSION_TOKEN",
+)
+
+
+class Route53ClientFactory(FromEnv["Route53Client"]):
+    def __init__(self, boto3_module: Any):
+        self.client_create_fn = boto3_module.client
+
+    def from_env(self, region: Optional[str] = None) -> Route53Client:
+        client: Route53Client = _client_get(
+            self.client_create_fn, _Route53Params, region=region
+        )
         return client
 
 
@@ -154,8 +288,8 @@ class S3ClientFactory(FromEnv["S3Client"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(self) -> S3Client:
-        client: S3Client = _client_get(self.client_create_fn, _S3Params)
+    def from_env(self, region: Optional[str] = None) -> S3Client:
+        client: S3Client = _client_get(self.client_create_fn, _S3Params, region=region)
         return client
 
 
@@ -163,8 +297,10 @@ class S3ResourceFactory(FromEnv["S3ServiceResource"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.resource
 
-    def from_env(self) -> S3ServiceResource:
-        client: S3ServiceResource = _client_get(self.client_create_fn, _S3Params)
+    def from_env(self, region: Optional[str] = None) -> S3ServiceResource:
+        client: S3ServiceResource = _client_get(
+            self.client_create_fn, _S3Params, region=region
+        )
         return client
 
 
@@ -181,9 +317,9 @@ class DynamoDBResourceFactory(FromEnv["DynamoDBServiceResource"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.resource
 
-    def from_env(self) -> DynamoDBServiceResource:
+    def from_env(self, region: Optional[str] = None) -> DynamoDBServiceResource:
         client: DynamoDBServiceResource = _client_get(
-            self.client_create_fn, _DynamoDBParams
+            self.client_create_fn, _DynamoDBParams, region=region
         )
         return client
 
@@ -192,8 +328,10 @@ class DynamoDBClientFactory(FromEnv["DynamoDBClient"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(self) -> DynamoDBClient:
-        client: DynamoDBClient = _client_get(self.client_create_fn, _DynamoDBParams)
+    def from_env(self, region: Optional[str] = None) -> DynamoDBClient:
+        client: DynamoDBClient = _client_get(
+            self.client_create_fn, _DynamoDBParams, region=region
+        )
         return client
 
 
@@ -210,9 +348,9 @@ class SecretsManagerClientFactory(FromEnv["SecretsManagerClient"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(self) -> SecretsManagerClient:
+    def from_env(self, region: Optional[str] = None) -> SecretsManagerClient:
         client: SecretsManagerClient = _client_get(
-            self.client_create_fn, _SecretsManagerParams
+            self.client_create_fn, _SecretsManagerParams, region=region
         )
         return client
 
