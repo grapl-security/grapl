@@ -118,6 +118,12 @@ export class FargateService {
             }),
         };
 
+        // This COULD be zero, but causes really unfortunate latency.
+        // Perfectly fine for production, less so for developer testing (adds 5-10m latency)
+        // See thread:
+        // https://grapl-internal.slack.com/archives/C018YCSN0B0/p1620156010045800?thread_ts=1620154431.041100&cid=C018YCSN0B0
+        const minTasks = 1;
+
         const autoscalingProps: Partial<QueueProcessingFargateServiceProps> = {
             // Fargate autoscaling groups can adjust their scaling based on any metric, like:
             // CPU usage, approximate queue messages, etc.
@@ -125,15 +131,15 @@ export class FargateService {
             // https://github.com/aws/aws-cdk/blob/7966f8d48c4bff26beb22856d289f9d0c7e7081d/packages/%40aws-cdk/aws-ecs-patterns/lib/base/queue-processing-service-base.ts#L331
 
             // Due to a bug, we have to also specify desiredCapacity: https://github.com/aws/aws-cdk/issues/14336
-            desiredTaskCount: 0,
-            minScalingCapacity: 0,
+            desiredTaskCount: minTasks,
+            minScalingCapacity: minTasks,
             maxScalingCapacity: 4,
 
-            // based on ApproximateNumberOfMessagesVisible in the input queue
+            // These numbers are based on ApproximateNumberOfMessagesVisible in the input queue
             // This hasn't been calibrated at all
             scalingSteps: [
-                { upper: 0, change: -1 }, // Scale to zero if no messages
-                { lower: 1, change: +1 }, // Scale to at least 1 if _any_ messages
+                { upper: 0, change: -1 }, // Scale down if no messages
+                { lower: 1, change: +1 }, // Scale up a bit if _any_ messages
                 { lower: 100, change: +2 },
                 { lower: 500, change: +5 },
             ],
