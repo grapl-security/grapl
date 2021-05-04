@@ -1,10 +1,14 @@
 use graph_generator_lib::run_graph_generator;
-pub use grapl_service::serialization::{GraphDescriptionSerializer,
-                                       GraphDescriptionSerializerError};
+pub use grapl_service::serialization::{
+    GraphDescriptionSerializer,
+    GraphDescriptionSerializerError,
+};
 use log::*;
-use sysmon_subgraph_generator_lib::{generator::SysmonSubgraphGenerator,
-                                    metrics::SysmonSubgraphGeneratorMetrics,
-                                    serialization::SysmonDecoder};
+use sysmon_subgraph_generator_lib::{
+    generator::SysmonSubgraphGenerator,
+    metrics::SysmonSubgraphGeneratorMetrics,
+    serialization::SysmonDecoder,
+};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

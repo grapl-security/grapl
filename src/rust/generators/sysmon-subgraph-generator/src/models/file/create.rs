@@ -1,16 +1,22 @@
-use endpoint_plugin::{AssetNode,
-                      FileNode,
-                      IAssetNode,
-                      IFileNode,
-                      IProcessNode,
-                      ProcessNode};
+use endpoint_plugin::{
+    AssetNode,
+    FileNode,
+    IAssetNode,
+    IFileNode,
+    IProcessNode,
+    ProcessNode,
+};
 use grapl_graph_descriptions::graph_description::*;
 use sysmon::FileCreateEvent;
 
-use crate::{generator::SysmonGeneratorError,
-            models::{get_image_name,
-                     strip_file_zone_identifier,
-                     utc_to_epoch}};
+use crate::{
+    generator::SysmonGeneratorError,
+    models::{
+        get_image_name,
+        strip_file_zone_identifier,
+        utc_to_epoch,
+    },
+};
 
 /// Creates a subgrqph describing a `FileCreateEvent`
 ///

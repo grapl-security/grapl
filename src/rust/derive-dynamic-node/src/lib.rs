@@ -4,16 +4,18 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TS2;
 use quote::quote;
-use syn::{parse_quote,
-          spanned::Spanned,
-          Attribute,
-          Data,
-          Field,
-          Fields,
-          Ident,
-          Meta,
-          NestedMeta,
-          Type};
+use syn::{
+    parse_quote,
+    spanned::Spanned,
+    Attribute,
+    Data,
+    Field,
+    Fields,
+    Ident,
+    Meta,
+    NestedMeta,
+    Type,
+};
 
 const CREATE_TIME: &str = "create_time";
 const LAST_SEEN_TIME: &str = "last_seen_time";

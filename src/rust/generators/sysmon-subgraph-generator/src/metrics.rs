@@ -1,8 +1,10 @@
 use std::io::Stdout;
 
-use grapl_observe::metric_reporter::{common_strs,
-                                     MetricReporter,
-                                     TagPair};
+use grapl_observe::metric_reporter::{
+    common_strs,
+    MetricReporter,
+    TagPair,
+};
 use log::*;
 
 pub enum Status {

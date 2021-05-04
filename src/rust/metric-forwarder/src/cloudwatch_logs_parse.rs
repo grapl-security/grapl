@@ -1,5 +1,7 @@
-use aws_lambda_events::event::cloudwatch_logs::{CloudwatchLogsData,
-                                                CloudwatchLogsLogEvent};
+use aws_lambda_events::event::cloudwatch_logs::{
+    CloudwatchLogsData,
+    CloudwatchLogsLogEvent,
+};
 use rayon::prelude::*;
 
 use crate::error::MetricForwarderError;
@@ -55,14 +57,20 @@ pub fn parse_log(log_str: &str) -> Result<Stat, MetricForwarderError> {
 
 #[cfg(test)]
 mod tests {
-    use statsd_parser::{Counter,
-                        Gauge,
-                        Metric};
+    use statsd_parser::{
+        Counter,
+        Gauge,
+        Metric,
+    };
 
-    use crate::{cloudwatch_logs_parse::{parse_log,
-                                        Stat,
-                                        MONITORING_DELIM},
-                error::MetricForwarderError};
+    use crate::{
+        cloudwatch_logs_parse::{
+            parse_log,
+            Stat,
+            MONITORING_DELIM,
+        },
+        error::MetricForwarderError,
+    };
 
     fn expect_metric(input: &[&str], expected: Metric) -> Result<Stat, MetricForwarderError> {
         let input_joined = input.join(MONITORING_DELIM);

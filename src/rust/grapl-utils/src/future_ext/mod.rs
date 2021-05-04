@@ -1,5 +1,7 @@
-use std::{future::Future,
-          time::Duration};
+use std::{
+    future::Future,
+    time::Duration,
+};
 
 pub trait GraplFutureExt: Future {
     /// Helper method that creates a [`tokio::time::error::Elapsed`] future from the current future

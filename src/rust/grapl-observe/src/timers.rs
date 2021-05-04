@@ -1,14 +1,20 @@
-use std::{future::Future,
-          io::Stdout,
-          pin::Pin,
-          task::{Context,
-                 Poll},
-          time::Instant};
+use std::{
+    future::Future,
+    io::Stdout,
+    pin::Pin,
+    task::{
+        Context,
+        Poll,
+    },
+    time::Instant,
+};
 
 use pin_project::pin_project;
 
-use crate::metric_reporter::{MetricReporter,
-                             TagPair};
+use crate::metric_reporter::{
+    MetricReporter,
+    TagPair,
+};
 
 pub fn time_it<F, R>(f: F) -> (R, std::time::Duration)
 where

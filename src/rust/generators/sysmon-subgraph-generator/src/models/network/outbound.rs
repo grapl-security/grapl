@@ -1,22 +1,26 @@
-use endpoint_plugin::{AssetNode,
-                      IAssetNode,
-                      IIpAddressNode,
-                      IIpConnectionNode,
-                      IIpPortNode,
-                      INetworkConnectionNode,
-                      IProcessNode,
-                      IProcessOutboundConnectionNode,
-                      IpAddressNode,
-                      IpConnectionNode,
-                      IpPortNode,
-                      NetworkConnectionNode,
-                      ProcessNode,
-                      ProcessOutboundConnectionNode};
+use endpoint_plugin::{
+    AssetNode,
+    IAssetNode,
+    IIpAddressNode,
+    IIpConnectionNode,
+    IIpPortNode,
+    INetworkConnectionNode,
+    IProcessNode,
+    IProcessOutboundConnectionNode,
+    IpAddressNode,
+    IpConnectionNode,
+    IpPortNode,
+    NetworkConnectionNode,
+    ProcessNode,
+    ProcessOutboundConnectionNode,
+};
 use grapl_graph_descriptions::graph_description::*;
 use sysmon::NetworkEvent;
 
-use crate::{generator::SysmonGeneratorError,
-            models::utc_to_epoch};
+use crate::{
+    generator::SysmonGeneratorError,
+    models::utc_to_epoch,
+};
 
 /// Creates a subgraph describing an outbound `NetworkEvent`
 ///

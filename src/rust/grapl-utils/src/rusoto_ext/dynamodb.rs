@@ -2,12 +2,14 @@ use std::collections::HashMap;
 
 use async_trait::async_trait;
 use rusoto_core::RusotoError;
-use rusoto_dynamodb::{AttributeValue,
-                      BatchGetItemError,
-                      BatchGetItemInput,
-                      BatchGetItemOutput,
-                      DynamoDb,
-                      KeysAndAttributes};
+use rusoto_dynamodb::{
+    AttributeValue,
+    BatchGetItemError,
+    BatchGetItemInput,
+    BatchGetItemOutput,
+    DynamoDb,
+    KeysAndAttributes,
+};
 
 const DYNAMODB_MAX_BATCH_GET_ITEM_SIZE: usize = 100;
 
