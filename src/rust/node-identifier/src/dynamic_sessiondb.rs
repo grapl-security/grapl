@@ -65,7 +65,7 @@ where
             ..Default::default()
         };
 
-        let item = wait_on!(self.dyn_mapping_db.get_item(query))?.item;
+        let item = self.dyn_mapping_db.get_item(query).await?.item;
 
         match item {
             Some(item) => {
@@ -89,7 +89,7 @@ where
             ..Default::default()
         };
 
-        let _put_item_response = wait_on!(self.dyn_mapping_db.put_item(put_req))?;
+        let _put_item_response = self.dyn_mapping_db.put_item(put_req).await?;
 
         Ok(())
     }

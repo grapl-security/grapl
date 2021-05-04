@@ -36,12 +36,6 @@ use sqs_executor::{cache::{Cache,
                    s3_event_retriever::S3PayloadRetriever,
                    time_based_key_fn};
 
-macro_rules! wait_on {
-    ($x:expr) => {{
-        $x.await
-    }};
-}
-
 pub mod dynamic_sessiondb;
 
 pub mod sessiondb;

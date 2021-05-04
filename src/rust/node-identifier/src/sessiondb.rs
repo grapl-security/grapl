@@ -66,7 +66,7 @@ where
             ..Default::default()
         };
 
-        let res = wait_on!(self.dynamo.query(query));
+        let res = self.dynamo.query(query).await;
         if let Err(RusotoError::Unknown(ref e)) = res {
             bail!("Query failed with error: {:?}", e);
         };
@@ -108,7 +108,7 @@ where
             ..Default::default()
         };
 
-        let res = wait_on!(self.dynamo.query(query))?;
+        let res = self.dynamo.query(query).await?;
 
         if let Some(items) = res.items {
             match &items[..] {
@@ -159,7 +159,7 @@ where
             ..Default::default()
         };
 
-        wait_on!(self.dynamo.transact_write_items(TransactWriteItemsInput {
+        self.dynamo.transact_write_items(TransactWriteItemsInput {
             transact_items: vec![
                 TransactWriteItem {
                     delete: del_req.into(),
@@ -171,7 +171,7 @@ where
                 },
             ],
             ..Default::default()
-        }))?;
+        }).await?;
 
         Ok(())
     }
@@ -217,7 +217,7 @@ where
             ..Default::default()
         };
 
-        wait_on!(self.dynamo.update_item(upd_req))?;
+        self.dynamo.update_item(upd_req).await?;
 
         Ok(())
     }
@@ -277,7 +277,7 @@ where
             ..Default::default()
         };
 
-        wait_on!(self.dynamo.update_item(upd_req))?;
+        self.dynamo.update_item(upd_req).await?;
 
         Ok(())
     }
@@ -290,7 +290,7 @@ where
             ..Default::default()
         };
 
-        wait_on!(self.dynamo.put_item(put_req))?;
+        self.dynamo.put_item(put_req).await?;
 
         Ok(())
     }
@@ -312,7 +312,7 @@ where
             ..Default::default()
         };
 
-        wait_on!(self.dynamo.delete_item(del_req))?;
+        self.dynamo.delete_item(del_req).await?;
         Ok(())
     }
 
