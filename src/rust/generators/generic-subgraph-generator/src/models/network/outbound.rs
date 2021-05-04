@@ -1,20 +1,24 @@
 use std::convert::TryFrom;
 
-use endpoint_plugin::{AssetNode,
-                      IAssetNode,
-                      IIpAddressNode,
-                      IIpPortNode,
-                      INetworkConnectionNode,
-                      IProcessNode,
-                      IProcessOutboundConnectionNode,
-                      IpAddressNode,
-                      IpPortNode,
-                      NetworkConnectionNode,
-                      ProcessNode,
-                      ProcessOutboundConnectionNode};
+use endpoint_plugin::{
+    AssetNode,
+    IAssetNode,
+    IIpAddressNode,
+    IIpPortNode,
+    INetworkConnectionNode,
+    IProcessNode,
+    IProcessOutboundConnectionNode,
+    IpAddressNode,
+    IpPortNode,
+    NetworkConnectionNode,
+    ProcessNode,
+    ProcessOutboundConnectionNode,
+};
 use grapl_graph_descriptions::graph_description::*;
-use serde::{Deserialize,
-            Serialize};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
 pub struct ProcessOutboundConnectionLog {

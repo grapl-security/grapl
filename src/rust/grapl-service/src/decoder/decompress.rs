@@ -1,11 +1,17 @@
-use std::{io::{Cursor,
-               Read},
-          str::FromStr,
-          sync::Arc};
+use std::{
+    io::{
+        Cursor,
+        Read,
+    },
+    str::FromStr,
+    sync::Arc,
+};
 
 use libflate::gzip::Decoder as GzDecoder;
-use sqs_executor::errors::{CheckedError,
-                           Recoverable};
+use sqs_executor::errors::{
+    CheckedError,
+    Recoverable,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum PayloadDecompression {

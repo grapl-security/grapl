@@ -1,6 +1,8 @@
-use derive_dynamic_node::{GraplSessionId,
-                          GraplStaticId,
-                          NodeDescription};
+use derive_dynamic_node::{
+    GraplSessionId,
+    GraplStaticId,
+    NodeDescription,
+};
 use grapl_graph_descriptions::graph_description::*;
 use log::info;
 use serde_derive::Deserialize;

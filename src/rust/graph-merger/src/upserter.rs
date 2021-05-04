@@ -1,45 +1,67 @@
-use std::{collections::HashMap,
-          sync::Arc};
+use std::{
+    collections::HashMap,
+    sync::Arc,
+};
 
-use dgraph_query_lib::{condition::{Condition,
-                                   ConditionValue},
-                       mutation::{Mutation,
-                                  MutationBuilder,
-                                  MutationPredicateValue,
-                                  MutationUID,
-                                  MutationUnit},
-                       predicate::{Field,
-                                   Predicate},
-                       query::QueryBuilder,
-                       queryblock::{QueryBlock,
-                                    QueryBlockBuilder,
-                                    QueryBlockType},
-                       upsert::{Upsert,
-                                UpsertBlock},
-                       ToQueryString};
-use dgraph_tonic::{Client as DgraphClient,
-                   Mutate,
-                   Mutation as DgraphMutation,
-                   MutationResponse,
-                   Query};
+use dgraph_query_lib::{
+    condition::{
+        Condition,
+        ConditionValue,
+    },
+    mutation::{
+        Mutation,
+        MutationBuilder,
+        MutationPredicateValue,
+        MutationUID,
+        MutationUnit,
+    },
+    predicate::{
+        Field,
+        Predicate,
+    },
+    query::QueryBuilder,
+    queryblock::{
+        QueryBlock,
+        QueryBlockBuilder,
+        QueryBlockType,
+    },
+    upsert::{
+        Upsert,
+        UpsertBlock,
+    },
+    ToQueryString,
+};
+use dgraph_tonic::{
+    Client as DgraphClient,
+    Mutate,
+    Mutation as DgraphMutation,
+    MutationResponse,
+    Query,
+};
 use futures::StreamExt;
-use futures_retry::{FutureRetry,
-                    RetryPolicy};
-use grapl_graph_descriptions::{graph_description::*,
-                               node_property::Property,
-                               MergedGraph};
+use futures_retry::{
+    FutureRetry,
+    RetryPolicy,
+};
+use grapl_graph_descriptions::{
+    graph_description::*,
+    node_property::Property,
+    MergedGraph,
+};
 use grapl_utils::iter_ext::GraplIterExt;
 // use grapl_graph_descriptions::Edge;
 // use grapl_graph_descriptions::EdgeList;
 // use grapl_graph_descriptions::MergedNode;
 // use grapl_graph_descriptions::IdentifiedNode;
-pub use node_property::Property::{DecrementOnlyInt as ProtoDecrementOnlyIntProp,
-                                  DecrementOnlyUint as ProtoDecrementOnlyUintProp,
-                                  ImmutableInt as ProtoImmutableIntProp,
-                                  ImmutableStr as ProtoImmutableStrProp,
-                                  ImmutableUint as ProtoImmutableUintProp,
-                                  IncrementOnlyInt as ProtoIncrementOnlyIntProp,
-                                  IncrementOnlyUint as ProtoIncrementOnlyUintProp};
+pub use node_property::Property::{
+    DecrementOnlyInt as ProtoDecrementOnlyIntProp,
+    DecrementOnlyUint as ProtoDecrementOnlyUintProp,
+    ImmutableInt as ProtoImmutableIntProp,
+    ImmutableStr as ProtoImmutableStrProp,
+    ImmutableUint as ProtoImmutableUintProp,
+    IncrementOnlyInt as ProtoIncrementOnlyIntProp,
+    IncrementOnlyUint as ProtoIncrementOnlyUintProp,
+};
 
 use crate::upsert_util;
 

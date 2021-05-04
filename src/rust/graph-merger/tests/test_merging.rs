@@ -1,25 +1,39 @@
 #[cfg(feature = "integration")]
 pub mod test {
-    use std::{collections::HashMap,
-              sync::{Arc,
-                     Once}};
+    use std::{
+        collections::HashMap,
+        sync::{
+            Arc,
+            Once,
+        },
+    };
 
-    use dgraph_query_lib::{condition::{Condition,
-                                       ConditionValue},
-                           predicate::{Field,
-                                       Predicate},
-                           queryblock::QueryBlockType,
-                           schema::{Indexing,
-                                    PredicateDefinition,
-                                    PredicateType,
-                                    Schema,
-                                    SchemaDefinition},
-                           EdgeBuilder,
-                           QueryBlockBuilder,
-                           QueryBuilder,
-                           ToQueryString};
-    use dgraph_tonic::{Client as DgraphClient,
-                       Query};
+    use dgraph_query_lib::{
+        condition::{
+            Condition,
+            ConditionValue,
+        },
+        predicate::{
+            Field,
+            Predicate,
+        },
+        queryblock::QueryBlockType,
+        schema::{
+            Indexing,
+            PredicateDefinition,
+            PredicateType,
+            Schema,
+            SchemaDefinition,
+        },
+        EdgeBuilder,
+        QueryBlockBuilder,
+        QueryBuilder,
+        ToQueryString,
+    };
+    use dgraph_tonic::{
+        Client as DgraphClient,
+        Query,
+    };
     use graph_merger_lib::upserter::GraphMergeHelper;
     use grapl_graph_descriptions::*;
 

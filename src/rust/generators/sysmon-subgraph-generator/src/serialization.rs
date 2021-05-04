@@ -1,7 +1,11 @@
 use grapl_service::decoder::decompress::PayloadDecompressionError;
-use sqs_executor::{errors::{CheckedError,
-                            Recoverable},
-                   event_decoder::PayloadDecoder};
+use sqs_executor::{
+    errors::{
+        CheckedError,
+        Recoverable,
+    },
+    event_decoder::PayloadDecoder,
+};
 use sysmon::Event;
 
 #[derive(thiserror::Error, Clone, Debug)]

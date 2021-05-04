@@ -1,14 +1,22 @@
 #![cfg(test)]
 use grapl_service::decoder::JsonDecoder;
-use sqs_executor::{cache::NopCache,
-                   event_decoder::PayloadDecoder,
-                   event_handler::CompletedEvents};
-use tokio::{fs::File,
-            io::{AsyncReadExt,
-                 Result}};
+use sqs_executor::{
+    cache::NopCache,
+    event_decoder::PayloadDecoder,
+    event_handler::CompletedEvents,
+};
+use tokio::{
+    fs::File,
+    io::{
+        AsyncReadExt,
+        Result,
+    },
+};
 
-use crate::{generator::GenericSubgraphGenerator,
-            models::GenericEvent};
+use crate::{
+    generator::GenericSubgraphGenerator,
+    models::GenericEvent,
+};
 
 #[tokio::test]
 /// Tests if generic event serialization is working as expected.

@@ -1,11 +1,17 @@
-use std::{collections::hash_map::DefaultHasher,
-          hash::{Hash,
-                 Hasher}};
+use std::{
+    collections::hash_map::DefaultHasher,
+    hash::{
+        Hash,
+        Hasher,
+    },
+};
 
 use async_trait::async_trait;
 
-use crate::errors::{CheckedError,
-                    Recoverable};
+use crate::errors::{
+    CheckedError,
+    Recoverable,
+};
 
 pub trait Cacheable {
     fn identity(&self) -> Vec<u8>;

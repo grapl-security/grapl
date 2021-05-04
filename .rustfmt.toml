@@ -7,6 +7,5 @@ reorder_modules = true
 
 # Unstable formatting directives
 group_imports = "StdExternalCrate"
-imports_indent = "Visual"
 imports_layout = "Vertical"
 imports_granularity = "Crate"

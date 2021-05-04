@@ -3,20 +3,26 @@
 use std::time::Duration;
 
 use grapl_config::env_helpers::FromEnv;
-use node_identifier::{sessiondb::SessionDb,
-                      sessions::{Session,
-                                 UnidSession}};
+use node_identifier::{
+    sessiondb::SessionDb,
+    sessions::{
+        Session,
+        UnidSession,
+    },
+};
 use quickcheck_macros::quickcheck;
 use rusoto_core::RusotoError;
-use rusoto_dynamodb::{AttributeDefinition,
-                      CreateTableError,
-                      CreateTableInput,
-                      CreateTableOutput,
-                      DeleteTableInput,
-                      DynamoDb,
-                      DynamoDbClient,
-                      KeySchemaElement,
-                      ProvisionedThroughput};
+use rusoto_dynamodb::{
+    AttributeDefinition,
+    CreateTableError,
+    CreateTableInput,
+    CreateTableOutput,
+    DeleteTableInput,
+    DynamoDb,
+    DynamoDbClient,
+    KeySchemaElement,
+    ProvisionedThroughput,
+};
 use tokio::runtime::Runtime;
 
 async fn try_create_table(

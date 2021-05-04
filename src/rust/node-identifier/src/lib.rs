@@ -1,40 +1,66 @@
 // #![allow(unused_must_use)]
 
-use std::{collections::{HashMap,
-                        HashSet},
-          fmt::Debug,
-          sync::{Arc,
-                 Mutex}};
+use std::{
+    collections::{
+        HashMap,
+        HashSet,
+    },
+    fmt::Debug,
+    sync::{
+        Arc,
+        Mutex,
+    },
+};
 
 use async_trait::async_trait;
-use dynamic_sessiondb::{DynamicMappingDb,
-                        NodeDescriptionIdentifier};
+use dynamic_sessiondb::{
+    DynamicMappingDb,
+    NodeDescriptionIdentifier,
+};
 use failure::Error;
-use grapl_config::{env_helpers::{s3_event_emitters_from_env,
-                                 FromEnv},
-                   event_caches};
-use grapl_graph_descriptions::graph_description::{GraphDescription,
-                                                  IdentifiedGraph,
-                                                  IdentifiedNode,
-                                                  NodeDescription};
+use grapl_config::{
+    env_helpers::{
+        s3_event_emitters_from_env,
+        FromEnv,
+    },
+    event_caches,
+};
+use grapl_graph_descriptions::graph_description::{
+    GraphDescription,
+    IdentifiedGraph,
+    IdentifiedNode,
+    NodeDescription,
+};
 use grapl_observe::metric_reporter::MetricReporter;
-use grapl_service::{decoder::ProtoDecoder,
-                    serialization::IdentifiedGraphSerializer};
+use grapl_service::{
+    decoder::ProtoDecoder,
+    serialization::IdentifiedGraphSerializer,
+};
 use log::*;
-use rusoto_dynamodb::{DynamoDb,
-                      DynamoDbClient};
+use rusoto_dynamodb::{
+    DynamoDb,
+    DynamoDbClient,
+};
 use rusoto_sqs::SqsClient;
 use sessiondb::SessionDb;
-use sqs_executor::{cache::{Cache,
-                           Cacheable},
-                   errors::{CheckedError,
-                            Recoverable},
-                   event_handler::{CompletedEvents,
-                                   EventHandler},
-                   make_ten,
-                   s3_event_emitter::S3ToSqsEventNotifier,
-                   s3_event_retriever::S3PayloadRetriever,
-                   time_based_key_fn};
+use sqs_executor::{
+    cache::{
+        Cache,
+        Cacheable,
+    },
+    errors::{
+        CheckedError,
+        Recoverable,
+    },
+    event_handler::{
+        CompletedEvents,
+        EventHandler,
+    },
+    make_ten,
+    s3_event_emitter::S3ToSqsEventNotifier,
+    s3_event_retriever::S3PayloadRetriever,
+    time_based_key_fn,
+};
 
 pub mod dynamic_sessiondb;
 

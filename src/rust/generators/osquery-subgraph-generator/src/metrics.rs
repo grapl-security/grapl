@@ -1,9 +1,11 @@
 use std::io::Stdout;
 
 use failure::Error;
-use grapl_observe::metric_reporter::{common_strs,
-                                     MetricReporter,
-                                     TagPair};
+use grapl_observe::metric_reporter::{
+    common_strs,
+    MetricReporter,
+    TagPair,
+};
 use log::*;
 
 #[derive(Clone)]
