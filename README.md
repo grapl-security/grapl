@@ -26,16 +26,17 @@ BSidesLV](https://www.youtube.com/watch?v=LjCtbpXQA9U&t=8028s) or
 Francisco](https://www.youtube.com/watch?v=uErWRAJ4I4w).
 
 Grapl natively supports nodes for:
-
 - Processes
 - Files
 - Networking
-- Plugin nodes, which can be used to arbitrarily extend the graph
 
 Grapl natively supports the following input formats to generate graphs:
 - Sysmon logs
-- OSQuery logs
+- osquery logs
 - a generic JSON log format
+
+Grapl is being developed with plugins in mind - operators can easily
+support new input log formats and new node types.
 
 Keep in mind that Grapl is not yet at a stable, 1.0 state, and is a
 fast moving project. Expect some minor bugs and breaking changes!
