@@ -8,7 +8,9 @@ import pulumi
 
 
 class E2eTestRunner(pulumi.ComponentResource):
-    def __init__(self, network: Network, opts: Optional[pulumi.ResourceOptions] = None) -> None:
+    def __init__(
+        self, network: Network, opts: Optional[pulumi.ResourceOptions] = None
+    ) -> None:
         name = "e2e-test-runner"
         super().__init__("grapl:E2eTestRunner", name, None, opts)
 

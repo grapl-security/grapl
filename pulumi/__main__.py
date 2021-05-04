@@ -1,5 +1,5 @@
-from infra.api import Api
 from infra import dynamodb, emitter
+from infra.api import Api
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.config import DEPLOYMENT_NAME, LOCAL_GRAPL

@@ -3,6 +3,16 @@ from __future__ import annotations
 import boto3
 import click
 import graplctl.swarm.lib as docker_swarm_ops
+from grapl_common.env_helpers import (
+    CloudWatchClientFactory,
+    EC2ResourceFactory,
+    LambdaClientFactory,
+    Route53ClientFactory,
+    SNSClientFactory,
+    SQSClientFactory,
+    SSMClientFactory,
+    S3ClientFactory,
+)
 from graplctl import __version__, common
 from graplctl.aws.commands import aws
 from graplctl.common import State
@@ -67,14 +77,14 @@ def main(
         grapl_deployment_name,
         grapl_version,
         aws_profile,
-        ec2=session.resource("ec2", region_name=grapl_region),
-        ssm=session.client("ssm", region_name=grapl_region),
-        cloudwatch=session.client("cloudwatch", region_name=grapl_region),
-        s3=session.client("s3", region_name=grapl_region),
-        sns=session.client("sns", region_name=grapl_region),
-        route53=session.client("route53", region_name=grapl_region),
-        sqs=session.client("sqs", region_name=grapl_region),
-        lambda_=session.client("lambda", region_name=grapl_region),
+        ec2=EC2ResourceFactory(session).from_env(region=grapl_region),
+        ssm=SSMClientFactory(session).from_env(region=grapl_region),
+        cloudwatch=CloudWatchClientFactory(session).from_env(region=grapl_region),
+        s3=S3ClientFactory(session).from_env(region=grapl_region),
+        sns=SNSClientFactory(session).from_env(region=grapl_region),
+        route53=Route53ClientFactory(session).from_env(region=grapl_region),
+        sqs=SQSClientFactory(session).from_env(region=grapl_region),
+        lambda_=LambdaClientFactory(session).from_env(region=grapl_region),
     )
 
 

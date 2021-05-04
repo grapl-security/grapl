@@ -106,7 +106,7 @@ def destroy_grapl(
 def _invoke_lambda(lambda_: LambdaClient, function_name: str) -> None:
     LOGGER.info(f"invoking lambda {function_name}")
     result = lambda_.invoke(
-        FunctionName=f"{deployment_name}-Provisioner-Handler",
+        FunctionName=function_name,
         InvocationType="RequestResponse",
         LogType="Tail",
     )
@@ -133,5 +133,5 @@ def provision_grapl(lambda_: LambdaClient, deployment_name: str) -> None:
 
 def run_e2e_tests(lambda_: LambdaClient, deployment_name: str) -> None:
     _invoke_lambda(
-        lambda_=lambda_, function_name=f"{deployment_name-E2ETestRunner-Handler}"
+        lambda_=lambda_, function_name=f"{deployment_name}-E2ETestRunner-Handler"
     )
