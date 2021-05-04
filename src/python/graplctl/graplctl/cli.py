@@ -8,10 +8,10 @@ from grapl_common.env_helpers import (
     EC2ResourceFactory,
     LambdaClientFactory,
     Route53ClientFactory,
+    S3ClientFactory,
     SNSClientFactory,
     SQSClientFactory,
     SSMClientFactory,
-    S3ClientFactory,
 )
 from graplctl import __version__, common
 from graplctl.aws.commands import aws
