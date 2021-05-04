@@ -14,3 +14,4 @@ RUN npm install -g prettier@2.2.1
 # TODO:
 # In later iterations, we can also install all the Rustup cargofmt stuff here
 # as well as Pants to perform containerized linting.
+USER "${UID}:${GID}"
