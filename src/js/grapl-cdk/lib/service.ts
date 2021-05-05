@@ -10,6 +10,7 @@ import { LambdaDestination } from "@aws-cdk/aws-logs-destinations";
 import { FilterPattern } from "@aws-cdk/aws-logs";
 import { SqsEventSource } from "@aws-cdk/aws-lambda-event-sources";
 import { Watchful } from "cdk-watchful";
+import * as service_common from "./service_common";
 
 class Queues {
     readonly queue: sqs.Queue;
@@ -136,6 +137,7 @@ export class Service {
             memorySize: 128,
             description: props.version,
             role,
+            logRetention: service_common.LOG_RETENTION,
         });
         event_handler.currentVersion.addAlias("live");
 
@@ -170,6 +172,7 @@ export class Service {
             memorySize: 256,
             description: props.version,
             role,
+            logRetention: service_common.LOG_RETENTION,
         });
         event_retry_handler.currentVersion.addAlias("live");
 

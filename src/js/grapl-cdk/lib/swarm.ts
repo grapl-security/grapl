@@ -13,10 +13,10 @@ import { GraplS3Bucket } from "./grapl_s3_bucket";
 
 export interface SwarmProps {
     // Grapl deployment name.
-    readonly deploymentName: String;
+    readonly deploymentName: string;
 
     // Grapl deployment version.
-    readonly version: String;
+    readonly version: string;
 
     // The VPC where the Docker Swarm cluster will run.
     readonly vpc: ec2.IVpc;
@@ -25,7 +25,7 @@ export interface SwarmProps {
     //
     // Should have the following structure:
     // arn:aws:logs:{region}:{account-id}:log-group:{log_group_name}
-    readonly logsGroupResourceArn: String;
+    readonly logsGroupResourceArn: string;
 
     // The service-specific (e.g. DGraph) ports to open internally
     // within the Docker Swarm cluster.
