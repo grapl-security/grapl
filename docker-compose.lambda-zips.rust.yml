@@ -9,7 +9,7 @@ services:
       dockerfile: rust/Dockerfile
       target: metric-forwarder-zip
       args:
-        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
+        - RUST_BUILD=${RUST_BUILD:-debug}
     volumes:
       - ./src/js/grapl-cdk/zips:/tmp/zips
     user: ${UID}:${GID}

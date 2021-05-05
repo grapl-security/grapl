@@ -6,7 +6,7 @@
 
 -include .env
 TAG ?= latest
-CARGO_PROFILE ?= debug
+RUST_BUILD ?= debug
 UID = $(shell id -u)
 GID = $(shell id -g)
 DOCKER_BUILDX_BAKE_OPTS ?=
@@ -127,7 +127,7 @@ build: build-services ## Alias for `services` (default)
 
 .PHONY: build-release
 build-release: ## 'make build-services' with cargo --release
-	$(MAKE) CARGO_PROFILE=release build-services
+	$(MAKE) RUST_BUILD=release build-services
 
 .PHONY: build-all
 build-all: ## Build all targets (incl. services, tests, zip)
