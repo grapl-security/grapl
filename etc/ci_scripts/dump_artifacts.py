@@ -113,10 +113,23 @@ def _dump_docker_log(container_name: str, dir: Path) -> None:
         subprocess.run(
             f"docker logs --timestamps {container_name}",
             stdout=out_stream,
-            stderr=subprocess.DEVNULL,
+            stderr=out_stream,
             shell=True,
         )
 
+def dump_docker_ps(dir: Path) -> None:
+    """
+    run `docker ps` and dump to $DIR/docker_ps.log
+    """
+    destination = dir / "docker_ps.log"
+    logging.info(f"Dumping 'docker ps' to '{destination}'")
+    with open(destination, "wb") as out_stream:
+        subprocess.run(
+            f"docker ps",
+            stdout=out_stream,
+            stderr=out_stream,
+            shell=True,
+        )
 
 def dump_all_logs(compose_project: str, artifacts_dir: Path) -> None:
     containers = _container_names_by_prefix(compose_project)
@@ -168,6 +181,7 @@ if __name__ == "__main__":
     artifacts_dir = Path(f"{cwd}/test_artifacts/{compose_project}_{timestamp}")
     os.makedirs(artifacts_dir, exist_ok=False)
 
+    dump_docker_ps(artifacts_dir)
     dump_all_logs(compose_project=compose_project, artifacts_dir=artifacts_dir)
     dump_volume(compose_project=compose_project, volume_name="dgraph_export", artifacts_dir=artifacts_dir)
     # dynamodb dump is done in the e2e binary, which is outside compose - hence, no compose project.
