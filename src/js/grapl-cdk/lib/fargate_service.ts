@@ -68,7 +68,13 @@ interface DefaultAndRetry<T> {
     readonly retry: T;
 }
 
-function getAutoscalingProps({minTasks, maxTasks}: {minTasks: number, maxTasks: number}): Partial<QueueProcessingFargateServiceProps> {
+function getAutoscalingProps({
+    minTasks,
+    maxTasks,
+}: {
+    minTasks: number;
+    maxTasks: number;
+}): Partial<QueueProcessingFargateServiceProps> {
     return {
         // Fargate autoscaling groups can adjust their scaling based on any metric, like:
         // CPU usage, approximate queue messages, etc.
@@ -141,12 +147,18 @@ export class FargateService {
             }),
         };
 
-        const defaultAutoscaling = getAutoscalingProps({minTasks: 1, maxTasks: 4});
+        const defaultAutoscaling = getAutoscalingProps({
+            minTasks: 1,
+            maxTasks: 4,
+        });
 
         // Scaling to zero causes some latency issues. We've decided to enable
         // it for retry services. Basically a tradeoff between cost and how long it takes to process.
         // https://grapl-internal.slack.com/archives/C018YCSN0B0/p1620156010045800?thread_ts=1620154431.041100&cid=C018YCSN0B0
-        const retryAutoscaling = getAutoscalingProps({minTasks: 0, maxTasks: 4});
+        const retryAutoscaling = getAutoscalingProps({
+            minTasks: 0,
+            maxTasks: 4,
+        });
 
         // Create a load-balanced Fargate service and make it public
         this.service = new ecs_patterns.QueueProcessingFargateService(
