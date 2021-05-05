@@ -68,6 +68,29 @@ interface DefaultAndRetry<T> {
     readonly retry: T;
 }
 
+function getAutoscalingProps({minTasks, maxTasks}: {minTasks: number, maxTasks: number}): Partial<QueueProcessingFargateServiceProps> {
+    return {
+        // Fargate autoscaling groups can adjust their scaling based on any metric, like:
+        // CPU usage, approximate queue messages, etc.
+        // The QueueProcessingFargateService pattern does it based on both of those metrics!
+        // https://github.com/aws/aws-cdk/blob/7966f8d48c4bff26beb22856d289f9d0c7e7081d/packages/%40aws-cdk/aws-ecs-patterns/lib/base/queue-processing-service-base.ts#L331
+
+        // Due to a bug, we have to also specify desiredCapacity: https://github.com/aws/aws-cdk/issues/14336
+        desiredTaskCount: minTasks,
+        minScalingCapacity: minTasks,
+        maxScalingCapacity: maxTasks,
+
+        // These numbers are based on ApproximateNumberOfMessagesVisible in the input queue
+        // This hasn't been calibrated at all
+        scalingSteps: [
+            { upper: 0, change: -1 }, // Scale down to minimum if no messages
+            { lower: 1, change: +1 }, // Scale up a bit if _any_ messages (particularly important when minTasks == 0)
+            { lower: 100, change: +2 },
+            { lower: 500, change: +5 },
+        ],
+    };
+}
+
 export class FargateService {
     readonly queues: Queues;
     readonly serviceName: string;
@@ -118,32 +141,12 @@ export class FargateService {
             }),
         };
 
-        // This COULD be zero, but causes really unfortunate latency.
-        // Perfectly fine for production, less so for developer testing (adds 5-10m latency)
-        // See thread:
+        const defaultAutoscaling = getAutoscalingProps({minTasks: 1, maxTasks: 4});
+
+        // Scaling to zero causes some latency issues. We've decided to enable
+        // it for retry services. Basically a tradeoff between cost and how long it takes to process.
         // https://grapl-internal.slack.com/archives/C018YCSN0B0/p1620156010045800?thread_ts=1620154431.041100&cid=C018YCSN0B0
-        const minTasks = 1;
-
-        const autoscalingProps: Partial<QueueProcessingFargateServiceProps> = {
-            // Fargate autoscaling groups can adjust their scaling based on any metric, like:
-            // CPU usage, approximate queue messages, etc.
-            // The QueueProcessingFargateService pattern does it based on both of those metrics!
-            // https://github.com/aws/aws-cdk/blob/7966f8d48c4bff26beb22856d289f9d0c7e7081d/packages/%40aws-cdk/aws-ecs-patterns/lib/base/queue-processing-service-base.ts#L331
-
-            // Due to a bug, we have to also specify desiredCapacity: https://github.com/aws/aws-cdk/issues/14336
-            desiredTaskCount: minTasks,
-            minScalingCapacity: minTasks,
-            maxScalingCapacity: 4,
-
-            // These numbers are based on ApproximateNumberOfMessagesVisible in the input queue
-            // This hasn't been calibrated at all
-            scalingSteps: [
-                { upper: 0, change: -1 }, // Scale down if no messages
-                { lower: 1, change: +1 }, // Scale up a bit if _any_ messages
-                { lower: 100, change: +2 },
-                { lower: 500, change: +5 },
-            ],
-        };
+        const retryAutoscaling = getAutoscalingProps({minTasks: 0, maxTasks: 4});
 
         // Create a load-balanced Fargate service and make it public
         this.service = new ecs_patterns.QueueProcessingFargateService(
@@ -170,7 +173,7 @@ export class FargateService {
                     streamPrefix: "logs",
                     logGroup: this.logGroups.default,
                 }),
-                ...autoscalingProps,
+                ...defaultAutoscaling,
             }
         );
 
@@ -198,7 +201,7 @@ export class FargateService {
                     streamPrefix: "logs",
                     logGroup: this.logGroups.retry,
                 }),
-                ...autoscalingProps,
+                ...retryAutoscaling,
             }
         );
 
