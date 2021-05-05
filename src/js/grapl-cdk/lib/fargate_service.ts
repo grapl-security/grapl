@@ -15,6 +15,7 @@ import { Watchful } from "cdk-watchful";
 import { EventEmitter } from "./event_emitters";
 import { LambdaDestination } from "@aws-cdk/aws-logs-destinations";
 import { Service } from "./service";
+import * as service_common from "./service_common";
 
 export class Queues {
     readonly queue: sqs.Queue;
@@ -107,10 +108,12 @@ export class FargateService {
             default: new logs.LogGroup(scope, "default", {
                 logGroupName: `grapl/${this.serviceName}/default`,
                 removalPolicy: cdk.RemovalPolicy.DESTROY,
+                retention: service_common.LOG_RETENTION,
             }),
             retry: new logs.LogGroup(scope, "retry", {
                 logGroupName: `grapl/${this.serviceName}/retry`,
                 removalPolicy: cdk.RemovalPolicy.DESTROY,
+                retention: service_common.LOG_RETENTION,
             }),
         };
 

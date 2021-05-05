@@ -1,5 +1,6 @@
 import * as cdk from "@aws-cdk/core";
 import * as ec2 from "@aws-cdk/aws-ec2";
+import * as logs from "@aws-cdk/aws-logs";
 import * as path from "path";
 import * as s3deploy from "@aws-cdk/aws-s3-deployment";
 import { Swarm, SwarmConnectable } from "../swarm";
@@ -23,17 +24,17 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
     ) {
         super(parent, id);
 
+        const logGroup = new logs.LogGroup(this, "logGroup", {
+            logGroupName: `${props.deploymentName.toLowerCase()}-grapl-dgraph`,
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+            retention: logs.RetentionDays.ONE_WEEK,
+        });
+
         this.dgraphSwarmCluster = new Swarm(this, "SwarmCluster", {
             deploymentName: props.deploymentName,
             version: props.version,
             vpc: props.vpc,
-            logsGroupResourceArn: super.formatArn({
-                partition: "aws",
-                service: "logs",
-                resource: "log-group",
-                sep: ":",
-                resourceName: `${props.deploymentName.toLowerCase()}-grapl-dgraph`,
-            }),
+            logsGroupResourceArn: logGroup.logGroupArn,
             internalServicePorts: [
                 ec2.Port.tcp(5080),
                 ec2.Port.tcp(6080),
