@@ -28,7 +28,6 @@ def provision(graplctl_state: State) -> None:
     click.echo("provisioning grapl deployment")
     aws_cdk_ops.provision_grapl(
         lambda_=graplctl_state.lambda_,
-        deployment_name=graplctl_state.grapl_deployment_name,
     )
     click.echo("provisioned grapl deployment")
 
@@ -38,8 +37,5 @@ def provision(graplctl_state: State) -> None:
 def test(graplctl_state: State) -> None:
     """run end-to-end tests in aws"""
     click.echo("running end-to-end tests")
-    aws_cdk_ops.run_e2e_tests(
-        lambda_=graplctl_state.lambda_,
-        deployment_name=graplctl_state.grapl_deployment_name,
-    )
+    aws_cdk_ops.run_e2e_tests(lambda_=graplctl_state.lambda_)
     click.echo("ran end-to-end tests")
