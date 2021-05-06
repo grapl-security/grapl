@@ -39,7 +39,7 @@ function fargateInvocationsWidget(
     isRetry?: boolean
 ): cloudwatch.GraphWidget {
     const titleSuffix = isRetry ? " (retry)" : "";
-    const handler = isRetry ? service.service : service.retryService;
+    const handler = isRetry ? service.retryService : service.service;
 
     return new cloudwatch.GraphWidget({
         title: `Invoke ${service.serviceName}${titleSuffix}`,

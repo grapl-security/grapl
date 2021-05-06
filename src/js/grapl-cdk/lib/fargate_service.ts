@@ -16,6 +16,7 @@ import { EventEmitter } from "./event_emitters";
 import { LambdaDestination } from "@aws-cdk/aws-logs-destinations";
 import { Service } from "./service";
 import * as service_common from "./service_common";
+import { QueueProcessingFargateServiceProps } from "@aws-cdk/aws-ecs-patterns";
 
 export class Queues {
     readonly queue: sqs.Queue;
@@ -62,9 +63,38 @@ export interface FargateServiceProps {
     metric_forwarder?: Service;
 }
 
-interface DeafultAndRetry<T> {
+interface DefaultAndRetry<T> {
     readonly default: T;
     readonly retry: T;
+}
+
+function getAutoscalingProps({
+    minTasks,
+    maxTasks,
+}: {
+    minTasks: number;
+    maxTasks: number;
+}): Partial<QueueProcessingFargateServiceProps> {
+    return {
+        // Fargate autoscaling groups can adjust their scaling based on any metric, like:
+        // CPU usage, approximate queue messages, etc.
+        // The QueueProcessingFargateService pattern does it based on both of those metrics!
+        // https://github.com/aws/aws-cdk/blob/7966f8d48c4bff26beb22856d289f9d0c7e7081d/packages/%40aws-cdk/aws-ecs-patterns/lib/base/queue-processing-service-base.ts#L331
+
+        // Due to a bug, we have to also specify desiredCapacity: https://github.com/aws/aws-cdk/issues/14336
+        desiredTaskCount: minTasks,
+        minScalingCapacity: minTasks,
+        maxScalingCapacity: maxTasks,
+
+        // These numbers are based on ApproximateNumberOfMessagesVisible in the input queue
+        // This hasn't been calibrated at all
+        scalingSteps: [
+            { upper: 0, change: -1 }, // Scale down to minimum if no messages
+            { lower: 1, change: +1 }, // Scale up a bit if _any_ messages (particularly important when minTasks == 0)
+            { lower: 100, change: +2 },
+            { lower: 500, change: +5 },
+        ],
+    };
 }
 
 export class FargateService {
@@ -72,7 +102,7 @@ export class FargateService {
     readonly serviceName: string;
     readonly service: ecs_patterns.QueueProcessingFargateService;
     readonly retryService: ecs_patterns.QueueProcessingFargateService;
-    readonly logGroups: DeafultAndRetry<logs.LogGroup>;
+    readonly logGroups: DefaultAndRetry<logs.LogGroup>;
 
     constructor(
         scope: cdk.Construct,
@@ -117,6 +147,19 @@ export class FargateService {
             }),
         };
 
+        const defaultAutoscaling = getAutoscalingProps({
+            minTasks: 1,
+            maxTasks: 4,
+        });
+
+        // Scaling to zero causes some latency issues. We've decided to enable
+        // it for retry services. Basically a tradeoff between cost and how long it takes to process.
+        // https://grapl-internal.slack.com/archives/C018YCSN0B0/p1620156010045800?thread_ts=1620154431.041100&cid=C018YCSN0B0
+        const retryAutoscaling = getAutoscalingProps({
+            minTasks: 0,
+            maxTasks: 4,
+        });
+
         // Create a load-balanced Fargate service and make it public
         this.service = new ecs_patterns.QueueProcessingFargateService(
             scope,
@@ -138,11 +181,11 @@ export class FargateService {
                 queue: queues.queue,
                 cpu: 256,
                 memoryLimitMiB: 512,
-                desiredTaskCount: 1,
                 logDriver: new AwsLogDriver({
                     streamPrefix: "logs",
                     logGroup: this.logGroups.default,
                 }),
+                ...defaultAutoscaling,
             }
         );
 
@@ -166,11 +209,11 @@ export class FargateService {
                 queue: queues.retryQueue,
                 cpu: 256,
                 memoryLimitMiB: 512,
-                desiredTaskCount: 1,
                 logDriver: new AwsLogDriver({
                     streamPrefix: "logs",
                     logGroup: this.logGroups.retry,
                 }),
+                ...retryAutoscaling,
             }
         );
 
