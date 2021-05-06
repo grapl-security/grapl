@@ -114,8 +114,14 @@ fn main() -> Result<()> {
     }
 
     if let Some(ref path) = opt.output {
-        if opt.no_emit {
+        if !opt.no_emit {
             std::fs::write(path, all_code.as_bytes())?;
+        } else {
+            tracing::debug!(
+                message="output specified, but no_emit is true - skipping",
+                output_path=?path,
+                no_emit=?opt.no_emit,
+            );
         }
     }
 
