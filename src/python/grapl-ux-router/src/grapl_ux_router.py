@@ -76,7 +76,7 @@ class LazyUxBucket:
         if IS_LOCAL:
             return self._retrieve_bucket_local()
         else:
-            s3 = boto3.resource("s3")
+            s3 = S3ResourceFactory(boto3).from_env()
             return s3.Bucket(UX_BUCKET_NAME)
 
     def _retrieve_bucket_local(self) -> Bucket:
