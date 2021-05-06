@@ -163,7 +163,7 @@ def main() -> None:
             forwarder=forwarder,
         )
 
-        E2eTestRunner(network=network)
+        E2eTestRunner()
 
     EngagementCreator(
         input_emitter=analyzer_matched_emitter,
