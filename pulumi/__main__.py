@@ -8,6 +8,7 @@ from infra.e2e_test_runner import E2eTestRunner
 from infra.engagement_creator import EngagementCreator
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
+from infra.provisioner import Provisioner
 from infra.secret import JWTSecret
 from infra.service_queue import ServiceQueue
 
@@ -56,6 +57,7 @@ if __name__ == "__main__":
 
     forwarder = MetricForwarder(network=network)
     e2e_test_runner = E2eTestRunner(network=network)
+    provisioner = Provisioner(network=network)
 
     ec = EngagementCreator(
         source_emitter=analyzer_matched, network=network, forwarder=forwarder

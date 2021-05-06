@@ -4,6 +4,7 @@ import logging
 import os
 from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, TypeVar
 
+from botocore.client import Config
 from typing_extensions import Protocol
 
 if TYPE_CHECKING:
@@ -47,6 +48,7 @@ def _client_get(
     client_create_fn: Callable[..., Any],
     params: ClientGetParams,
     region: Optional[str] = None,
+    config: Optional[Config] = None,
 ) -> Any:
     """
     :param client_create_fn: the `boto3.client` or `boto3.resource` function
@@ -70,7 +72,17 @@ def _client_get(
     # Unlike Rust FromEnv, we rely on boto3's built in region handling.
 
     if _running_in_localstack():
-        return _localstack_client(client_create_fn, params)
+        localstack_config = Config(
+            read_timeout=120,
+        )
+        if config is not None:
+            config = config.merge(localstack_config)
+        else:
+            config = localstack_config
+
+        return _localstack_client(
+            client_create_fn, params, region=region, config=config
+        )
     elif all((endpoint_url, access_key_id, access_key_secret)):
         # Local, all are passed in from docker-compose.yml
         logging.info(f"Creating a local client for {which_service}")
@@ -84,6 +96,7 @@ def _client_get(
             aws_secret_access_key=access_key_secret,
             aws_session_token=access_session_token,
             region_name=region,
+            config=config,
         )
     elif endpoint_url and not any((access_key_id, access_key_secret)):
         # Local or AWS doing cross-region stuff
@@ -91,6 +104,7 @@ def _client_get(
             params.boto3_client_name,
             endpoint_url=endpoint_url,
             region_name=region,
+            config=config,
         )
     elif not any((endpoint_url, access_key_id, access_key_secret)):
         # AWS
@@ -101,6 +115,7 @@ def _client_get(
         return client_create_fn(
             params.boto3_client_name,
             region_name=region,
+            config=config,
         )
     else:
         raise FromEnvException(
@@ -124,7 +139,10 @@ def _running_in_localstack() -> bool:
 
 
 def _localstack_client(
-    client_create_fn: Callable[..., Any], params: ClientGetParams
+    client_create_fn: Callable[..., Any],
+    params: ClientGetParams,
+    region: Optional[str],
+    config: Optional[Config],
 ) -> Any:
     """Create a boto3 client for interacting with AWS services running in
     Localstack from a lambda function also running in Localstack.
@@ -142,6 +160,8 @@ def _localstack_client(
     return client_create_fn(
         service,
         endpoint_url=f"http://{os.environ['LOCALSTACK_HOSTNAME']}:{os.environ['EDGE_PORT']}",
+        region_name=region,
+        config=config,
     )
 
 
@@ -158,9 +178,11 @@ class SQSClientFactory(FromEnv["SQSClient"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(self, region: Optional[str] = None) -> SQSClient:
+    def from_env(
+        self, region: Optional[str] = None, config: Optional[Config] = None
+    ) -> SQSClient:
         client: SQSClient = _client_get(
-            self.client_create_fn, _SQSParams, region=region
+            self.client_create_fn, _SQSParams, region=region, config=config
         )
         return client
 
@@ -178,9 +200,11 @@ class SNSClientFactory(FromEnv["SNSClient"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(self, region: Optional[str] = None) -> SNSClient:
+    def from_env(
+        self, region: Optional[str] = None, config: Optional[Config] = None
+    ) -> SNSClient:
         client: SNSClient = _client_get(
-            self.client_create_fn, _SNSParams, region=region
+            self.client_create_fn, _SNSParams, region=region, config=config
         )
         return client
 
@@ -198,9 +222,11 @@ class EC2ResourceFactory(FromEnv["EC2ServiceResource"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.resource
 
-    def from_env(self, region: Optional[str] = None) -> EC2ServiceResource:
+    def from_env(
+        self, region: Optional[str] = None, config: Optional[Config] = None
+    ) -> EC2ServiceResource:
         client: EC2ServiceResource = _client_get(
-            self.client_create_fn, _EC2Params, region=region
+            self.client_create_fn, _EC2Params, region=region, config=config
         )
         return client
 
@@ -218,9 +244,11 @@ class SSMClientFactory(FromEnv["SSMClient"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(self, region: Optional[str] = None) -> SSMClient:
+    def from_env(
+        self, region: Optional[str] = None, config: Optional[Config] = None
+    ) -> SSMClient:
         client: SSMClient = _client_get(
-            self.client_create_fn, _SSMParams, region=region
+            self.client_create_fn, _SSMParams, region=region, config=config
         )
         return client
 
@@ -238,9 +266,11 @@ class CloudWatchClientFactory(FromEnv["CloudWatchClient"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(self, region: Optional[str] = None) -> CloudWatchClient:
+    def from_env(
+        self, region: Optional[str] = None, config: Optional[Config] = None
+    ) -> CloudWatchClient:
         client: CloudWatchClient = _client_get(
-            self.client_create_fn, _CloudWatchParams, region=region
+            self.client_create_fn, _CloudWatchParams, region=region, config=config
         )
         return client
 
@@ -258,9 +288,11 @@ class LambdaClientFactory(FromEnv["LambdaClient"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(self, region: Optional[str] = None) -> LambdaClient:
+    def from_env(
+        self, region: Optional[str] = None, config: Optional[Config] = None
+    ) -> LambdaClient:
         client: LambdaClient = _client_get(
-            self.client_create_fn, _LambdaParams, region=region
+            self.client_create_fn, _LambdaParams, region=region, config=config
         )
         return client
 
@@ -278,9 +310,11 @@ class Route53ClientFactory(FromEnv["Route53Client"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(self, region: Optional[str] = None) -> Route53Client:
+    def from_env(
+        self, region: Optional[str] = None, config: Optional[Config] = None
+    ) -> Route53Client:
         client: Route53Client = _client_get(
-            self.client_create_fn, _Route53Params, region=region
+            self.client_create_fn, _Route53Params, region=region, config=config
         )
         return client
 
@@ -298,8 +332,12 @@ class S3ClientFactory(FromEnv["S3Client"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(self, region: Optional[str] = None) -> S3Client:
-        client: S3Client = _client_get(self.client_create_fn, _S3Params, region=region)
+    def from_env(
+        self, region: Optional[str] = None, config: Optional[Config] = None
+    ) -> S3Client:
+        client: S3Client = _client_get(
+            self.client_create_fn, _S3Params, region=region, config=config
+        )
         return client
 
 
@@ -307,9 +345,11 @@ class S3ResourceFactory(FromEnv["S3ServiceResource"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.resource
 
-    def from_env(self, region: Optional[str] = None) -> S3ServiceResource:
+    def from_env(
+        self, region: Optional[str] = None, config: Optional[Config] = None
+    ) -> S3ServiceResource:
         client: S3ServiceResource = _client_get(
-            self.client_create_fn, _S3Params, region=region
+            self.client_create_fn, _S3Params, region=region, config=config
         )
         return client
 
@@ -327,9 +367,11 @@ class DynamoDBResourceFactory(FromEnv["DynamoDBServiceResource"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.resource
 
-    def from_env(self, region: Optional[str] = None) -> DynamoDBServiceResource:
+    def from_env(
+        self, region: Optional[str] = None, config: Optional[Config] = None
+    ) -> DynamoDBServiceResource:
         client: DynamoDBServiceResource = _client_get(
-            self.client_create_fn, _DynamoDBParams, region=region
+            self.client_create_fn, _DynamoDBParams, region=region, config=config
         )
         return client
 
@@ -358,9 +400,11 @@ class SecretsManagerClientFactory(FromEnv["SecretsManagerClient"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(self, region: Optional[str] = None) -> SecretsManagerClient:
+    def from_env(
+        self, region: Optional[str] = None, config: Optional[Config] = None
+    ) -> SecretsManagerClient:
         client: SecretsManagerClient = _client_get(
-            self.client_create_fn, _SecretsManagerParams, region=region
+            self.client_create_fn, _SecretsManagerParams, region=region, config=config
         )
         return client
 

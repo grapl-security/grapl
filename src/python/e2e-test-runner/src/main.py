@@ -30,7 +30,3 @@ def main(_, __) -> None:
     )
 
     setup_tests.exec_pytest()
-
-
-if __name__ == "__main__":
-    main()

@@ -7,15 +7,14 @@ from infra.network import Network
 import pulumi
 
 
-class E2eTestRunner(pulumi.ComponentResource):
+class Provisioner(pulumi.ComponentResource):
     def __init__(
         self, network: Network, opts: Optional[pulumi.ResourceOptions] = None
     ) -> None:
-        name = "e2e-test-runner"
-        super().__init__("grapl:E2eTestRunner", name, None, opts)
+        name = "provisioner"
+        super().__init__("grapl:Provisioner", name, None, opts)
 
-        # Importing here avoids circular import hell between E2eTestrunner and
-        # Lambda
+        # Importing here avoids circular import hell between Provisioner and Lambda
         from infra.lambda_ import Lambda, LambdaArgs, LambdaExecutionRole, code_path_for
 
         self.role = LambdaExecutionRole(
