@@ -107,6 +107,8 @@ fn main() -> Result<()> {
     if opt.output.is_none() {
         for (i, s) in all_code.split("\n").enumerate() {
             if opt.line_num {
+                // https://doc.rust-lang.org/std/fmt/#fillalignment
+                // right-pad the line numbers
                 print!("{: <4}: ", i + 1);
             }
             println!("{}", s);
