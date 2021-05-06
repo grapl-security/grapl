@@ -237,7 +237,7 @@ test-integration: graplctl build-test-integration modern-lambdas ## Build and ru
 .PHONY: test-e2e
 test-e2e: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_E2E_TESTS)
 test-e2e: export export COMPOSE_FILE := ./test/docker-compose.e2e-tests.yml
-test-e2e: build-test-e2e ## Build and run e2e tests
+test-e2e: graplctl build-test-e2e modern-lambdas ## Build and run e2e tests
 	$(MAKE) test-with-env
 
 # This target is not intended to be used directly from the command line, it's
