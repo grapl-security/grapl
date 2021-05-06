@@ -1,4 +1,5 @@
 use graphql_parser::schema::Directive;
+
 use crate::node_type::MergeFailure;
 
 #[derive(Debug, thiserror::Error)]
@@ -22,5 +23,5 @@ pub enum CodeGenError<'a> {
         directives: Vec<Directive<'a, &'a str>>,
     },
     #[error("Failed to extend node schema")]
-    MergeFailure(#[from] MergeFailure)
+    MergeFailure(#[from] MergeFailure),
 }

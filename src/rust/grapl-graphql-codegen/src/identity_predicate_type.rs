@@ -12,11 +12,11 @@ pub enum IdentityPredicateType {
 }
 
 use crate::constants::{
-    PSEUDO_KEY,
     CREATE_TIME,
     LAST_SEEN_TIME,
-    TERMINATE_TIME,
+    PSEUDO_KEY,
     STATIC_ID,
+    TERMINATE_TIME,
 };
 
 impl IdentityPredicateType {

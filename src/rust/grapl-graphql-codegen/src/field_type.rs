@@ -1,4 +1,4 @@
-use graphql_parser::schema::{Field};
+use graphql_parser::schema::Field;
 
 /// Given a field in a GraphQL schema, represents that field
 /// being an predicate vs an edge
@@ -10,13 +10,14 @@ pub enum FieldType {
 
 impl<'a> From<&Field<'a, &'a str>> for FieldType {
     fn from(field: &Field<'a, &'a str>) -> Self {
-        field.directives
+        field
+            .directives
             .iter()
             .find_map(|d| {
                 match d.name {
                     "edge" => Some(FieldType::Edge),
                     // todo: We should be more specific here
-                    _ => Some(FieldType::Predicate)
+                    _ => Some(FieldType::Predicate),
                 }
             })
             .unwrap()

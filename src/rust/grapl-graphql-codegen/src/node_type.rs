@@ -1,17 +1,24 @@
-use std::convert::{TryFrom, TryInto};
+use std::convert::{
+    TryFrom,
+    TryInto,
+};
 
 use color_eyre::eyre::Result;
+use graphql_parser::schema::{
+    Definition,
+    Directive,
+    Document,
+    ObjectType,
+    TypeDefinition,
+};
 
-use graphql_parser::schema::Directive;
-use graphql_parser::schema::ObjectType;
-use graphql_parser::schema::{Definition, Document, TypeDefinition};
-
-use crate::edge::Edge;
-
-use crate::errors::CodeGenError;
-use crate::field_type::FieldType;
-use crate::identification_algorithm::IdentificationAlgorithm;
-use crate::node_predicate::NodePredicate;
+use crate::{
+    edge::Edge,
+    errors::CodeGenError,
+    field_type::FieldType,
+    identification_algorithm::IdentificationAlgorithm,
+    node_predicate::NodePredicate,
+};
 
 // Python Queryable generation
 pub fn generate_parameter_from_predicate(predicate: &NodePredicate) -> String {
@@ -286,9 +293,9 @@ impl NodeType {
     pub fn generate_python_schema(&self) -> String {
         let mut schema_str = String::with_capacity(256);
         tracing::trace!(
-                message="Generating Python Schema",
-                node_type=?self.type_name,
-            );
+            message="Generating Python Schema",
+            node_type=?self.type_name,
+        );
 
         schema_str += &self.generate_python_default_schema_properties();
         schema_str += "\n";

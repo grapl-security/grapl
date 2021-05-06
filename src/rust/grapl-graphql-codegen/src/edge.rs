@@ -1,8 +1,17 @@
-use crate::edge_rel::EdgeRel;
-use crate::errors::CodeGenError;
-use graphql_parser::schema::Field;
-use graphql_parser::schema::Type;
-use std::convert::{TryFrom, TryInto};
+use std::convert::{
+    TryFrom,
+    TryInto,
+};
+
+use graphql_parser::schema::{
+    Field,
+    Type,
+};
+
+use crate::{
+    edge_rel::EdgeRel,
+    errors::CodeGenError,
+};
 
 /// The Edge structure represents a bi-directional relationship between
 /// two nodes
@@ -56,12 +65,10 @@ impl Edge {
             + "\n";
         query_def = query_def
             + &format!(
-            r#"        return self.with_to_neighbor({}Query, "{}", "{}", {})"#,
-            self.source_type_name,
-            src_edge_name,
-            rev_edge_name,
-            src_edge_name,
-        ) + "\n";
+                r#"        return self.with_to_neighbor({}Query, "{}", "{}", {})"#,
+                self.source_type_name, src_edge_name, rev_edge_name, src_edge_name,
+            )
+            + "\n";
         query_def
     }
 

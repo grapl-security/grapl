@@ -1,17 +1,20 @@
+use std::convert::TryFrom;
+
 use graphql_parser::schema::Directive;
 
-use crate::constants::{
-    PSEUDO_KEY,
-    STATIC_ID,
-    CREATE_TIME,
-    LAST_SEEN_TIME,
-    TERMINATE_TIME,
-    IMMUTABLE,
-    INCREMENT_ONLY,
-    DECREMENT_ONLY,
+use crate::{
+    constants::{
+        CREATE_TIME,
+        DECREMENT_ONLY,
+        IMMUTABLE,
+        INCREMENT_ONLY,
+        LAST_SEEN_TIME,
+        PSEUDO_KEY,
+        STATIC_ID,
+        TERMINATE_TIME,
+    },
+    errors::CodeGenError,
 };
-use std::convert::TryFrom;
-use crate::errors::CodeGenError;
 
 /// ConflictResolution represents how, given two instances of the same predicate, those
 /// predicates should be merged together.
@@ -69,6 +72,8 @@ impl<'a> TryFrom<&[Directive<'a, &'a str>]> for ConflictResolution {
         directives
             .iter()
             .find_map(ConflictResolution::from_directive)
-            .ok_or_else(|| CodeGenError::UnsupportedConflictResolution { directives: directives.to_vec() })
+            .ok_or_else(|| CodeGenError::UnsupportedConflictResolution {
+                directives: directives.to_vec(),
+            })
     }
 }

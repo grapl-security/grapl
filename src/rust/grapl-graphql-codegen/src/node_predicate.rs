@@ -1,14 +1,20 @@
-use crate::conflict_resolution::ConflictResolution;
-use crate::errors::CodeGenError;
-use crate::identity_predicate_type::IdentityPredicateType;
-use graphql_parser::schema::Type;
+use std::convert::{
+    TryFrom,
+    TryInto,
+};
 
-use std::convert::{TryFrom, TryInto};
+use graphql_parser::schema::{
+    Field,
+    Type,
+};
 
-use graphql_parser::schema::Field;
-
-use crate::predicate_type::PredicateType;
-use crate::as_static_python::AsStaticPython;
+use crate::{
+    as_static_python::AsStaticPython,
+    conflict_resolution::ConflictResolution,
+    errors::CodeGenError,
+    identity_predicate_type::IdentityPredicateType,
+    predicate_type::PredicateType,
+};
 
 /// The NodePredicate holds all of the information for a defined property or edge
 #[derive(Debug)]
@@ -115,7 +121,10 @@ impl NodePredicate {
 
         let predicate_name = self.predicate_name.as_str();
         let py_ty = self.predicate_type.into_python_primitive_type();
-        let cached = self.conflict_resolution.implies_cacheable().as_static_python();
+        let cached = self
+            .conflict_resolution
+            .implies_cacheable()
+            .as_static_python();
         get_method = get_method
             + &format!(
                 r#"    def get_{}(self, cached: bool = {}) -> Optional[{}]:"#,

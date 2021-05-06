@@ -1,10 +1,14 @@
-use std::path::PathBuf;
+use std::{
+    io::Read,
+    path::PathBuf,
+};
 
+use color_eyre::eyre::{
+    Result,
+    WrapErr,
+};
 use graphql_parser::schema::parse_schema;
 use structopt::StructOpt;
-use std::io::Read;
-use color_eyre::eyre::Result;
-use color_eyre::eyre::WrapErr;
 
 pub mod as_static_python;
 pub mod conflict_resolution;
@@ -12,14 +16,13 @@ pub mod constants;
 pub mod edge;
 pub mod edge_rel;
 pub mod errors;
+pub mod external_helpers;
 pub mod field_type;
 pub mod identification_algorithm;
 pub mod identity_predicate_type;
 pub mod node_predicate;
 pub mod node_type;
 pub mod predicate_type;
-pub mod external_helpers;
-
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "grapl-graphql-codegen", about = "Codegen for Grapl plugins")]
@@ -37,11 +40,11 @@ struct Opt {
     no_emit: bool,
 
     /// Build the code with line numbers
-    #[structopt(long="line-num", parse(from_flag))]
+    #[structopt(long = "line-num", parse(from_flag))]
     line_num: bool,
 
     /// Build the code with line numbers
-    #[structopt(long="validate", parse(from_flag))]
+    #[structopt(long = "validate", parse(from_flag))]
     validate: bool,
 }
 
@@ -51,7 +54,9 @@ fn read_in_schema(input: &Option<PathBuf>) -> Result<String> {
             .context(format!("Failed to read from file: {:?}", path))?),
         None => {
             let mut buf = String::with_capacity(256);
-            std::io::stdin().lock().read_to_string(&mut buf)
+            std::io::stdin()
+                .lock()
+                .read_to_string(&mut buf)
                 .context("Failed to read from stdin")?;
             Ok(buf)
         }
@@ -79,8 +84,7 @@ fn main() -> Result<()> {
     tracing::debug!(message="Executing grapl-graphql-codegen", options=?opt);
     let raw_schema = read_in_schema(&opt.input)?;
     let document = parse_schema(&raw_schema)?;
-    let node_types = node_type::parse_into_node_types(&document)
-        .expect("Failed");
+    let node_types = node_type::parse_into_node_types(&document).expect("Failed");
 
     let mut all_code = String::with_capacity(1024 * node_types.len());
     all_code.push_str(&standin_imports());
@@ -95,7 +99,7 @@ fn main() -> Result<()> {
 
     // If `no_emit` is set, return early
     if opt.no_emit {
-       return Ok(())
+        return Ok(());
     }
 
     // `output` being none implies we should write to stdout

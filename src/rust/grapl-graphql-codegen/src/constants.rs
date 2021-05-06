@@ -9,7 +9,6 @@ pub const IMMUTABLE: &'static str = "immutable";
 pub const INCREMENT_ONLY: &'static str = "increment_only";
 pub const DECREMENT_ONLY: &'static str = "decrement_only";
 
-
 pub const STRING: &'static str = "String";
 pub const INT: &'static str = "Int";
 pub const UINT: &'static str = "UInt";

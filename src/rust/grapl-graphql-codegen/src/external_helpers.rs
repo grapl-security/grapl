@@ -1,5 +1,12 @@
-use std::process::{Stdio, Command, Output};
-use std::io::Write;
+use std::{
+    io::Write,
+    process::{
+        Command,
+        Output,
+        Stdio,
+    },
+};
+
 use color_eyre::eyre::Result;
 
 /// Helpers for the CLI, allowing it to execute the generated code

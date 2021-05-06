@@ -1,10 +1,17 @@
-use std::convert::{TryFrom, TryInto};
+use std::convert::{
+    TryFrom,
+    TryInto,
+};
+
 use graphql_parser::schema::Type;
-use crate::errors::CodeGenError;
-use crate::constants::{
-    STRING,
-    UINT,
-    INT,
+
+use crate::{
+    constants::{
+        INT,
+        STRING,
+        UINT,
+    },
+    errors::CodeGenError,
 };
 
 /// PredicateType represents one of the supported types in Grapl
@@ -30,7 +37,8 @@ impl PredicateType {
             PredicateType::String => "str",
             PredicateType::I64 => "int",
             PredicateType::U64 => "int",
-        }.to_string()
+        }
+        .to_string()
     }
 
     pub fn into_python_primitive_type_or_not(self) -> String {
@@ -38,7 +46,8 @@ impl PredicateType {
             PredicateType::String => "StrOrNot",
             PredicateType::I64 => "IntOrNot",
             PredicateType::U64 => "IntOrNot",
-        }.to_string()
+        }
+        .to_string()
     }
 }
 
@@ -58,11 +67,10 @@ impl<'a> TryFrom<&Type<'a, &'a str>> for PredicateType {
                 }
             }
             Type::NonNullType(ref value) => value.as_ref().try_into(),
-            Type::ListType(_) => todo!("We don't currently support sets of values in Grapl")
+            Type::ListType(_) => todo!("We don't currently support sets of values in Grapl"),
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -70,8 +78,17 @@ mod tests {
 
     #[test]
     fn test_predicate_type() {
-        assert_eq!(PredicateType::String.into_python_primitive_type_or_not(), "StrOrNot");
-        assert_eq!(PredicateType::I64.into_python_primitive_type_or_not(), "IntOrNot");
-        assert_eq!(PredicateType::U64.into_python_primitive_type_or_not(), "IntOrNot");
+        assert_eq!(
+            PredicateType::String.into_python_primitive_type_or_not(),
+            "StrOrNot"
+        );
+        assert_eq!(
+            PredicateType::I64.into_python_primitive_type_or_not(),
+            "IntOrNot"
+        );
+        assert_eq!(
+            PredicateType::U64.into_python_primitive_type_or_not(),
+            "IntOrNot"
+        );
     }
 }
