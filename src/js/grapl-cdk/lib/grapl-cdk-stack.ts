@@ -30,7 +30,6 @@ import { AnalyzerExecutor } from "./services/analyzer_executor";
 import { AnalyzerDispatch } from "./services/analyzer_dispatcher";
 import { GraphMerger } from "./services/graph_merger";
 import { NodeIdentifier } from "./services/node_identifier";
-import { Provisioner } from "./services/provisioner";
 import { SysmonGraphGenerator } from "./services/sysmon_graph_generator";
 import { OSQueryGraphGenerator } from "./services/osquery_graph_generator";
 import { E2eTestRunner } from "./services/e2e-test-runner";
@@ -334,17 +333,5 @@ export class GraplCdkStack extends cdk.Stack {
                 engagement_creator.service,
             ],
         });
-
-        const provisioner = new Provisioner(this, "provisioner", {
-            schemaDb: schema_table,
-            ...graplProps,
-        });
-
-        new E2eTestRunner(this, "e2e-test-runner", {
-            schemaDb: schema_table,
-            provisioner: provisioner,
-            edgeApiGateway: edgeApi,
-            ...graplProps,
-        })
     }
 }
