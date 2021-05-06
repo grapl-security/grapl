@@ -35,7 +35,7 @@ struct Opt {
     #[structopt(short = "o", long = "output", parse(from_os_str), env)]
     output: Option<PathBuf>,
 
-    /// Output file, stdout if not present
+    /// Do not emit any generated code - useful with 'validate'
     #[structopt(long = "no-emit", parse(from_flag))]
     no_emit: bool,
 
@@ -43,7 +43,8 @@ struct Opt {
     #[structopt(long = "line-num", parse(from_flag))]
     line_num: bool,
 
-    /// Build the code with line numbers
+    /// Generated code will be passed to the system Python interpreter, and mypy will be executed
+    /// against the code as well
     #[structopt(long = "validate", parse(from_flag))]
     validate: bool,
 }
