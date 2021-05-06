@@ -19,6 +19,7 @@ from infra.network import Network
 from infra.node_identifier import NodeIdentifier
 from infra.osquery_generator import OSQueryGenerator
 from infra.provision_lambda import Provisioner
+from infra.provisioner import Provisioner
 from infra.secret import JWTSecret
 from infra.sysmon_generator import SysmonGenerator
 
@@ -148,7 +149,7 @@ def main() -> None:
             forwarder=forwarder,
         )
 
-        E2eTestRunner(network=network)
+        E2eTestRunner()
 
     EngagementCreator(
         input_emitter=analyzer_matched_emitter,

@@ -22,6 +22,10 @@ from grapl_analyzerlib.prelude import (
     RiskSchema,
 )
 from grapl_analyzerlib.provision import provision_common
+from grapl_common.env_helpers import (
+    DynamoDBResourceFactory,
+    SecretsManagerClientFactory,
+)
 
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb import DynamoDBServiceResource
@@ -122,23 +126,29 @@ def _validate_environment():
     missing = [var for var in required if var not in os.environ]
 
     if missing:
-        print(
+        LOGGER.error(
             f"The following environment variables are required, but are not present: {missing}"
         )
         sys.exit(1)
 
 
 def provision(event: Any = None, context: Any = None):
+    LOGGER.info("provisioning grapl")
     _validate_environment()
+    LOGGER.info("configuration is valid")
+
     graph_client = GraphClient()
-    dynamodb: DynamoDBServiceResource = boto3.resource("dynamodb")
-    secretsmanager: SecretsmanagerClient = boto3.client("secretsmanager")
+    dynamodb: DynamoDBServiceResource = DynamoDBResourceFactory(boto3).from_env()
+    secretsmanager: SecretsmanagerClient = SecretsManagerClientFactory(boto3).from_env()
 
+    LOGGER.info("provisioning graph")
     _provision_graph(graph_client=graph_client, dynamodb=dynamodb)
+    LOGGER.info("provisioned graph")
 
+    LOGGER.info("retrieving test user password")
     password = _retrieve_test_user_password(secretsmanager, DEPLOYMENT_NAME)
+    LOGGER.info("retrieved test user password")
+
+    LOGGER.info("creating test user")
     _create_user(dynamodb=dynamodb, username=GRAPL_TEST_USER_NAME, cleartext=password)
-
-
-if __name__ == "__main__":
-    provision()
+    LOGGER.info("created test user")
