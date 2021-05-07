@@ -1,0 +1,7 @@
+type File @grapl(identity_algorithm: "session") {
+    file_path: String! @pseudo_key,
+    created_at: UInt! @create_time,
+    last_seen_at: UInt! @last_seen_time,
+    terminated_at: UInt! @terminate_time,
+}
+
