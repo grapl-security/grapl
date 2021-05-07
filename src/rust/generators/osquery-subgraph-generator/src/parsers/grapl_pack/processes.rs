@@ -1,18 +1,24 @@
 use std::convert::TryFrom;
 
-use endpoint_plugin::{AssetNode,
-                      FileNode,
-                      IAssetNode,
-                      IFileNode,
-                      IProcessNode,
-                      ProcessNode};
+use endpoint_plugin::{
+    AssetNode,
+    FileNode,
+    IAssetNode,
+    IFileNode,
+    IProcessNode,
+    ProcessNode,
+};
 use grapl_graph_descriptions::graph_description::*;
-use serde::{Deserialize,
-            Serialize};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 use super::from_str;
-use crate::parsers::{OSQueryResponse,
-                     PartiallyDeserializedOSQueryLog};
+use crate::parsers::{
+    OSQueryResponse,
+    PartiallyDeserializedOSQueryLog,
+};
 
 /// See https://osquery.io/schema/4.5.0/#processes
 #[derive(Serialize, Deserialize)]

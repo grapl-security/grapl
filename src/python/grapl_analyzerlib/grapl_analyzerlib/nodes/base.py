@@ -48,6 +48,10 @@ class BaseSchema(Schema):
             view or BaseView,
         )
 
+    @staticmethod
+    def get_display_property() -> str:
+        return "dgraph_type"
+
     def generate_type(self) -> str:
         dgraph_builtins = {"dgraph.type", "uid"}
 

@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+
+  grapl-metric-forwarder-zip:
+    image: grapl/rust-zip:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: rust/Dockerfile
+      target: metric-forwarder-zip
+      args:
+        - RUST_BUILD=${RUST_BUILD:-debug}
+    volumes:
+      - ./src/js/grapl-cdk/zips:/tmp/zips
+    user: ${UID}:${GID}
+    working_dir: /grapl/zips
+    environment:
+      - TAG=${TAG:-latest}
+    command: sh -c 'cp /grapl/zips/metric-forwarder.zip /tmp/zips/metric-forwarder-${TAG:-latest}.zip'

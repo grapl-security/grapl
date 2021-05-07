@@ -19,6 +19,12 @@ services:
       dockerfile: js/grapl-cdk/Dockerfile
       target: grapl-cdk-test
     command: npm run test
-
-  # grapl-graphql-endpoint:
-  #   image: grapl/grapl-graphql-endpoint-test:${TAG:-latest}
+  
+  grapl-graphql-endpoint-test:
+    image: grapl/grapl-graphql-endpoint:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: js/graphql_endpoint/Dockerfile
+      target: graphql-endpoint-deploy
+    command: bash -c "
+      cd .. && npx jest"

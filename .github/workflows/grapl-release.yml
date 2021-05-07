@@ -22,18 +22,33 @@ jobs:
 
   python-unit-tests:
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        python-version: [3.7]
     steps:
       - uses: actions/checkout@v2
-
       - name: Prepare Github Actions CI
         run: |
           ./etc/ci_scripts/clean_gh_actions_space.sh
           ./etc/ci_scripts/install_requirements.sh
 
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Pants Cache
+        uses: actions/cache@v2
+        with:
+          # We'll set up a new cache when our lock-file changes
+          key: pants-${{ matrix.python-version }}-${{ hashFiles('3rdparty/python/constraints.txt') }}
+          path: |
+            ~/.cache/pants/setup
+            ~/.cache/pants/named_caches
+            ~/.cache/pants/lmdb_store
+
       - name: Python unit tests
-        run: |
-          make test-unit-python
+        run: ./build-support/retry.sh --sleep=0 --tries=3 -- make test-unit-python
 
   js-unit-tests:
     runs-on: ubuntu-latest
@@ -65,55 +80,9 @@ jobs:
         run: |
           make test-integration
 
-  check-pypi:
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        python-version: [3.7]
-
-    steps:
-
-      - uses: actions/checkout@v2
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install pypi-simple
-        run: |
-          python3 -mvenv venv && . venv/bin/activate
-          pip install pypi-simple
-          deactivate
-
-      - name: Check whether grapl_graph_descriptions version has been bumped
-        run: |
-          . venv/bin/activate
-          python etc/build_scripts/check_pypi_version.py \
-            grapl_graph_descriptions \
-            $(cat src/rust/graph-descriptions/VERSION)
-          deactivate
-
-      - name: Check whether grapl_analyzerlib version has been bumped
-        run: |
-          . venv/bin/activate
-          python etc/build_scripts/check_pypi_version.py \
-            grapl_analyzerlib \
-            $(cat src/python/grapl_analyzerlib/VERSION)
-          deactivate
-
-      - name: Check whether grapl-common version has been bumped
-        run: |
-          . venv/bin/activate
-          python etc/build_scripts/check_pypi_version.py \
-            grapl-common \
-            $(cat src/python/grapl-common/VERSION)
-          deactivate
-
   release-services:
     runs-on: ubuntu-latest
-    needs: [rust-unit-tests, python-unit-tests, js-unit-tests, integration-tests, check-pypi]
+    needs: [rust-unit-tests, python-unit-tests, js-unit-tests, integration-tests]
 
     steps:
       - uses: actions/checkout@v2

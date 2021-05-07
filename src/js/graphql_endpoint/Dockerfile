@@ -1,11 +1,12 @@
-FROM node:12.18-buster-slim AS graphql-endpoint-build
+# Don't forget to update the other `FROM node:` in this file.
+# Use the latest Node version here: https://docs.aws.amazon.com/lambda/latest/dg/lambda-nodejs.html
+FROM node:14.16-buster-slim AS graphql-endpoint-build  
 
 RUN apt-get update && apt-get -y install --no-install-recommends \
         build-essential \
         libffi-dev \
         libssl-dev \
         python3 \
-        wait-for-it \
         zip
 
 RUN adduser \
@@ -20,27 +21,34 @@ WORKDIR /home/grapl
 RUN mkdir -p lambda
 
 # Install the dependencies separately to leverage Docker cache
-COPY --chown=grapl js/graphql_endpoint/package.json lambda/package.json
-COPY --chown=grapl js/graphql_endpoint/package-lock.json lambda/package-lock.json
-RUN cd lambda && npm install
-RUN rm -rf lambda/node_modules/grpc/build/
+WORKDIR /home/grapl/lambda
+COPY --chown=grapl js/graphql_endpoint/tsconfig.json tsconfig.json
+COPY --chown=grapl js/graphql_endpoint/package.json package.json
+COPY --chown=grapl js/graphql_endpoint/jest.config.js jest.config.js
+COPY --chown=grapl js/graphql_endpoint/package-lock.json package-lock.json
+RUN npm install
+RUN rm -rf node_modules/grpc/build/
 
 # Copy graphql sources
-COPY --chown=grapl js/graphql_endpoint/modules lambda/modules
-COPY --chown=grapl js/graphql_endpoint/server.js lambda/server.js
+COPY --chown=grapl js/graphql_endpoint/modules modules
+COPY --chown=grapl js/graphql_endpoint/tests tests
+COPY --chown=grapl js/graphql_endpoint/server.ts server.ts
+
+# This compiles the typescript and spits out the built js files to `lambda/ts_compiled'
+RUN npx tsc
+RUN cp -r ./node_modules ./ts_compiled/node_modules
+
+WORKDIR /home/grapl
 
 # zip
 FROM graphql-endpoint-build AS graphql-endpoint-zip
 
-RUN cd lambda && \
+RUN test -d lambda/ts_compiled/node_modules && echo "Okay, found node_modules"
+RUN cd lambda/ts_compiled && \
     zip -q9r /home/grapl/lambda.zip ./
 
 # deploy... this is only used in Local Grapl at the moment
-FROM node:12.18-buster-slim AS graphql-endpoint-deploy
-
-# Only really needed for Local Grapl
-RUN apt-get update && apt-get -y install --no-install-recommends \
-    wait-for-it
+FROM node:14.16-buster-slim AS graphql-endpoint-deploy
 
 RUN adduser \
         --disabled-password \
@@ -54,9 +62,11 @@ WORKDIR /home/grapl
 
 COPY --chown=grapl --from=graphql-endpoint-build /home/grapl/lambda lambda
 
-WORKDIR /home/grapl/lambda
+WORKDIR /home/grapl/lambda/ts_compiled
 
 COPY --chown=grapl js/graphql_endpoint/package.json package.json
 COPY --chown=grapl js/graphql_endpoint/package-lock.json package-lock.json
+COPY --chown=grapl js/graphql_endpoint/start_potentially_with_debugger.sh \
+  start_potentially_with_debugger.sh
 
-CMD yarn start server
+CMD yarn start

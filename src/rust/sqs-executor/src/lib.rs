@@ -1,41 +1,56 @@
 pub mod retriever;
 
-use std::{error::Error,
-          fmt::Debug,
-          future::Future,
-          io::Stdout,
-          panic::AssertUnwindSafe,
-          time::{Duration,
-                 SystemTime,
-                 UNIX_EPOCH}};
+use std::{
+    error::Error,
+    fmt::Debug,
+    future::Future,
+    io::Stdout,
+    panic::AssertUnwindSafe,
+    time::{
+        Duration,
+        SystemTime,
+        UNIX_EPOCH,
+    },
+};
 
 use event_emitter::EventEmitter;
 use event_handler::EventHandler;
-use event_retriever::S3PayloadRetriever;
 use futures_util::FutureExt;
-use grapl_observe::{metric_reporter::{tag,
-                                      MetricReporter},
-                    timers::TimedFutureExt};
+use grapl_observe::{
+    metric_reporter::{
+        tag,
+        MetricReporter,
+    },
+    timers::TimedFutureExt,
+};
 use rusoto_s3::S3;
-use rusoto_sqs::{ListQueuesError,
-                 ListQueuesRequest,
-                 Message as SqsMessage,
-                 Sqs};
+use rusoto_sqs::{
+    ListQueuesError,
+    ListQueuesRequest,
+    Message as SqsMessage,
+    Sqs,
+};
 use s3_event_emitter::S3EventEmitter;
-use tracing::{debug,
-              error,
-              info};
+use s3_event_retriever::S3PayloadRetriever;
+use tracing::{
+    debug,
+    error,
+    info,
+};
 
-use crate::{cache::{Cache,
-                    CacheResponse},
-            completion_event_serializer::CompletionEventSerializer,
-            errors::{CheckedError,
-                     Recoverable},
-            event_decoder::PayloadDecoder,
-            event_handler::CompletedEvents,
-            event_retriever::PayloadRetriever,
-            event_status::EventStatus,
-            s3_event_emitter::OnEventEmit};
+use crate::{
+    cache::Cache,
+    completion_event_serializer::CompletionEventSerializer,
+    errors::{
+        CheckedError,
+        Recoverable,
+    },
+    event_decoder::PayloadDecoder,
+    event_handler::CompletedEvents,
+    event_retriever::PayloadRetriever,
+    event_status::EventStatus,
+    s3_event_emitter::OnEventEmit,
+};
 
 pub mod cache;
 pub mod completion_event_serializer;
@@ -43,8 +58,10 @@ pub mod errors;
 pub mod event_decoder;
 pub mod event_emitter;
 pub mod event_handler;
-pub use retriever::{event_retriever,
-                    s3_event_retriever};
+pub use retriever::{
+    event_retriever,
+    s3_event_retriever,
+};
 use rusoto_core::RusotoError;
 
 use crate::sqs_timeout_manager::keep_alive;
@@ -93,7 +110,7 @@ where
         }
     }
 
-    cache.store_all(to_cache).await.unwrap_or_else(|e| {
+    cache.store_all(&to_cache).await.unwrap_or_else(|e| {
         error!(
             error = e.to_string().as_str(),
             "Failed to store_all in cache"
@@ -176,7 +193,7 @@ async fn process_message<
     );
     let _enter = inner_loop_span.enter();
 
-    if let Ok(CacheResponse::Hit) = cache.get(message_id.as_bytes().to_owned()).await {
+    if cache.all_exist(&[message_id.to_owned()]).await {
         info!(
             message_id = message_id,
             "Message has already been processed",

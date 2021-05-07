@@ -1,8 +1,10 @@
 use std::io::Stdout;
 
-use grapl_observe::metric_reporter::{common_strs,
-                                     MetricReporter,
-                                     TagPair};
+use grapl_observe::metric_reporter::{
+    common_strs,
+    MetricReporter,
+    TagPair,
+};
 use log::*;
 
 pub enum Status {
@@ -53,6 +55,21 @@ impl SysmonSubgraphGeneratorMetrics {
                 "sysmon-generator-completion",
                 1.0,
                 &[TagPair(common_strs::STATUS, status.to_str())],
+            )
+            .unwrap_or_else(|e| warn!("Metric failed: {}", e))
+    }
+
+    pub fn report_subgraph_generation<T, E>(&mut self, result: &Result<T, E>) {
+        let status = match result {
+            Ok(_) => common_strs::SUCCESS,
+            Err(_) => common_strs::FAIL,
+        };
+
+        self.metric_reporter
+            .gauge(
+                "sysmon-subgraph-generation",
+                1.0,
+                &[TagPair(common_strs::STATUS, status)],
             )
             .unwrap_or_else(|e| warn!("Metric failed: {}", e))
     }

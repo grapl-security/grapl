@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "allowJs": true,
+    "outDir": "./ts_compiled",
+
+    "lib": [
+      "DOM",  // Surprising inclusion, but needed for the dynamodb tools
+      "es2019",
+      "ScriptHost"
+    ],
+
+    //"strict": true,
+    "allowSyntheticDefaultImports": true,
+    "downlevelIteration": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    // TODO: "strictNullChecks": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["server.ts", "server.js", "modules/**/*.js", "modules/**/*.ts"]
+}

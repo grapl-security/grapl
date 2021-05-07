@@ -1,7 +1,6 @@
+import { createStyles, makeStyles, Theme } from "@material-ui/core/styles";
 
-import {createStyles, makeStyles, Theme} from "@material-ui/core/styles";
-
-export const dasboardStyles = makeStyles( (theme: Theme) =>
+export const dasboardStyles = makeStyles((theme: Theme) =>
     createStyles({
         root: {
             display: "flex",
@@ -10,16 +9,16 @@ export const dasboardStyles = makeStyles( (theme: Theme) =>
             backgroundColor: "#1A191C",
             margin: "1rem",
             fontSize: ".65rem",
-        }, 
+        },
         loggedIn: {
-            display:"flex", 
+            display: "flex",
             justifyContent: "flex-end",
-            zIndex: 100, 
-        }, 
+            zIndex: 100,
+        },
         dashboard: {
             display: "flex",
             flexDirection: "row",
-        }, 
+        },
         link: {
             fontSize: ".75rem",
             color: "white",
@@ -44,10 +43,10 @@ export const dasboardStyles = makeStyles( (theme: Theme) =>
         },
         navSec: {
             margin: "0 auto",
-            marginTop: "6rem"
+            marginTop: "6rem",
         },
         help: {
-            color:"white"
-        }
+            color: "white",
+        },
     })
 );

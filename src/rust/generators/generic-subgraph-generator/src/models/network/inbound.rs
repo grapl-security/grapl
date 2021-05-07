@@ -1,20 +1,24 @@
 use std::convert::TryFrom;
 
-use endpoint_plugin::{AssetNode,
-                      IAssetNode,
-                      IIpAddressNode,
-                      IIpPortNode,
-                      INetworkConnectionNode,
-                      IProcessInboundConnectionNode,
-                      IProcessNode,
-                      IpAddressNode,
-                      IpPortNode,
-                      NetworkConnectionNode,
-                      ProcessInboundConnectionNode,
-                      ProcessNode};
+use endpoint_plugin::{
+    AssetNode,
+    IAssetNode,
+    IIpAddressNode,
+    IIpPortNode,
+    INetworkConnectionNode,
+    IProcessInboundConnectionNode,
+    IProcessNode,
+    IpAddressNode,
+    IpPortNode,
+    NetworkConnectionNode,
+    ProcessInboundConnectionNode,
+    ProcessNode,
+};
 use grapl_graph_descriptions::graph_description::*;
-use serde::{Deserialize,
-            Serialize};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 // In an inbound connection "src" is where the connection is coming from
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]

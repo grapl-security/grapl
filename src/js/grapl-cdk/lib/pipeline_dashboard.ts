@@ -1,9 +1,9 @@
-import * as cdk from '@aws-cdk/core';
-import * as cloudwatch from '@aws-cdk/aws-cloudwatch';
-import { Service } from './service';
-import {FargateService} from "./fargate_service";
+import * as cdk from "@aws-cdk/core";
+import * as cloudwatch from "@aws-cdk/aws-cloudwatch";
+import { Service } from "./service";
+import { FargateService } from "./fargate_service";
 
-import * as sqs from '@aws-cdk/aws-sqs';
+import * as sqs from "@aws-cdk/aws-sqs";
 
 // like traffic lights, from best to worst
 const GREEN_GRAPH = { color: cloudwatch.Color.GREEN };
@@ -12,14 +12,14 @@ const RED_GRAPH = { color: cloudwatch.Color.RED };
 const BLUE_GRAPH = { color: cloudwatch.Color.BLUE };
 
 // 24-width grid
-const FULL_WIDTH = { width: 24 }; 
+const FULL_WIDTH = { width: 24 };
 const HALF_WIDTH = { width: 12 };
 
 function lambdaInvocationsWidget(
     service: Service,
     isRetry?: boolean
 ): cloudwatch.GraphWidget {
-    const titleSuffix = isRetry ? ' (retry)' : '';
+    const titleSuffix = isRetry ? " (retry)" : "";
     const handler = isRetry
         ? service.event_retry_handler
         : service.event_handler;
@@ -30,7 +30,7 @@ function lambdaInvocationsWidget(
             handler.metricErrors(RED_GRAPH),
         ],
         liveData: true,
-        ...HALF_WIDTH
+        ...HALF_WIDTH,
     });
 }
 
@@ -38,10 +38,8 @@ function fargateInvocationsWidget(
     service: FargateService,
     isRetry?: boolean
 ): cloudwatch.GraphWidget {
-    const titleSuffix = isRetry ? ' (retry)' : '';
-    const handler = isRetry
-        ? service.service
-        : service.retryService;
+    const titleSuffix = isRetry ? " (retry)" : "";
+    const handler = isRetry ? service.retryService : service.service;
 
     return new cloudwatch.GraphWidget({
         title: `Invoke ${service.serviceName}${titleSuffix}`,
@@ -50,17 +48,15 @@ function fargateInvocationsWidget(
             handler.service.metricMemoryUtilization(),
         ],
         liveData: true,
-        ...HALF_WIDTH
+        ...HALF_WIDTH,
     });
 }
 
-function fargateQueueWidget(
-    service: FargateService,
-): cloudwatch.GraphWidget {
+function fargateQueueWidget(service: FargateService): cloudwatch.GraphWidget {
     return new cloudwatch.GraphWidget({
         title: `Queues for ${service.serviceName}`,
         left: [
-            // Num Messages Received is not necessarily the best 
+            // Num Messages Received is not necessarily the best
             // metric to examine, but it's better than cpu/mem!
             service.queues.queue.metricNumberOfMessagesReceived({
                 ...GREEN_GRAPH,
@@ -71,16 +67,17 @@ function fargateQueueWidget(
                 label: "Retry",
             }),
             // I'm using visible here since nobody is consuming from it.
-            service.queues.deadLetterQueue.metricApproximateNumberOfMessagesVisible({
-                ...RED_GRAPH,
-                label: "Dead"
-            }),
+            service.queues.deadLetterQueue.metricApproximateNumberOfMessagesVisible(
+                {
+                    ...RED_GRAPH,
+                    label: "Dead",
+                }
+            ),
         ],
         liveData: true,
-        ...FULL_WIDTH
+        ...FULL_WIDTH,
     });
 }
-
 
 export class PipelineDashboardProps {
     readonly services: (Service | FargateService)[];
@@ -94,8 +91,8 @@ export class PipelineDashboard extends cdk.Construct {
         props: PipelineDashboardProps
     ) {
         super(scope, id);
-        const dashboard = new cloudwatch.Dashboard(this, 'Dashboard', {
-            dashboardName: props.namePrefix + '-PipelineDashboard',
+        const dashboard = new cloudwatch.Dashboard(this, "Dashboard", {
+            dashboardName: props.namePrefix + "-PipelineDashboard",
         });
         // First, add metrics around queue health
         for (const service of props.services) {
@@ -107,14 +104,20 @@ export class PipelineDashboard extends cdk.Construct {
                 const queueWidget = fargateQueueWidget(service);
                 dashboard.addWidgets(queueWidget);
             } else {
-                console.assert("service must be of type Service or FargateService", service, typeof service);
+                console.assert(
+                    "service must be of type Service or FargateService",
+                    service,
+                    typeof service
+                );
             }
         }
-        
-        dashboard.addWidgets(new cloudwatch.TextWidget({
-            markdown: "# Fargate service health",
-            ...FULL_WIDTH,
-        }));
+
+        dashboard.addWidgets(
+            new cloudwatch.TextWidget({
+                markdown: "# Fargate service health",
+                ...FULL_WIDTH,
+            })
+        );
 
         // Also, add metrics around service health for Fargate svcs
         for (const service of props.services) {
@@ -122,10 +125,16 @@ export class PipelineDashboard extends cdk.Construct {
                 // do nothing
             } else if (service instanceof FargateService) {
                 const invocations = fargateInvocationsWidget(service, false);
-                const retryInvocations = fargateInvocationsWidget(service, true);
+                const retryInvocations = fargateInvocationsWidget(
+                    service,
+                    true
+                );
                 dashboard.addWidgets(invocations, retryInvocations);
             } else {
-                console.assert("service must be of type Service or FargateService, but was", typeof service);
+                console.assert(
+                    "service must be of type Service or FargateService, but was",
+                    typeof service
+                );
             }
         }
     }

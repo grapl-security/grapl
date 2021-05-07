@@ -1,40 +1,64 @@
-use std::{collections::{HashMap,
-                        HashSet},
-          fmt::Debug,
-          sync::{Arc,
-                 Mutex}};
+use std::{
+    collections::{
+        HashMap,
+        HashSet,
+    },
+    fmt::Debug,
+    sync::{
+        Arc,
+        Mutex,
+    },
+};
 
 use async_trait::async_trait;
-use dynamic_sessiondb::{DynamicMappingDb,
-                        NodeDescriptionIdentifier};
+use dynamic_sessiondb::{
+    DynamicMappingDb,
+    NodeDescriptionIdentifier,
+};
 use failure::Error;
-use grapl_config::{env_helpers::{s3_event_emitters_from_env,
-                                 FromEnv},
-                   event_caches};
-use grapl_graph_descriptions::graph_description::{GraphDescription,
-                                                  IdentifiedGraph,
-                                                  IdentifiedNode,
-                                                  NodeDescription};
+use grapl_config::{
+    env_helpers::{
+        s3_event_emitters_from_env,
+        FromEnv,
+    },
+    event_caches,
+};
+use grapl_graph_descriptions::graph_description::{
+    GraphDescription,
+    IdentifiedGraph,
+    IdentifiedNode,
+    NodeDescription,
+};
 use grapl_observe::metric_reporter::MetricReporter;
-use grapl_service::{decoder::ZstdProtoDecoder,
-                    serialization::IdentifiedGraphSerializer};
+use grapl_service::{
+    decoder::ProtoDecoder,
+    serialization::IdentifiedGraphSerializer,
+};
 use log::*;
-use rusoto_dynamodb::{DynamoDb,
-                      DynamoDbClient};
+use rusoto_dynamodb::{
+    DynamoDb,
+    DynamoDbClient,
+};
 use rusoto_sqs::SqsClient;
 use sessiondb::SessionDb;
-use sqs_executor::{cache::{Cache,
-                           CacheResponse,
-                           Cacheable},
-                   errors::{CheckedError,
-                            Recoverable},
-                   event_handler::{CompletedEvents,
-                                   EventHandler},
-                   event_retriever::S3PayloadRetriever,
-                   event_status::EventStatus,
-                   make_ten,
-                   s3_event_emitter::S3ToSqsEventNotifier,
-                   time_based_key_fn};
+use sqs_executor::{
+    cache::{
+        Cache,
+        Cacheable,
+    },
+    errors::{
+        CheckedError,
+        Recoverable,
+    },
+    event_handler::{
+        CompletedEvents,
+        EventHandler,
+    },
+    make_ten,
+    s3_event_emitter::S3ToSqsEventNotifier,
+    s3_event_retriever::S3PayloadRetriever,
+    time_based_key_fn,
+};
 
 macro_rules! wait_on {
     ($x:expr) => {{
@@ -44,7 +68,6 @@ macro_rules! wait_on {
 
 pub mod dynamic_sessiondb;
 
-pub mod key_cache;
 pub mod sessiondb;
 pub mod sessions;
 
@@ -114,7 +137,7 @@ where
     async fn handle_event(
         &mut self,
         unid_subgraph: GraphDescription,
-        completed: &mut CompletedEvents,
+        _completed: &mut CompletedEvents,
     ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
         let mut attribution_failure = None;
 
@@ -124,15 +147,6 @@ where
             warn!("Received empty subgraph");
             return Ok(IdentifiedGraph::new());
         }
-
-        let edges: HashSet<_> = unid_subgraph
-            .edges
-            .values()
-            .map(|e| e.edges.iter())
-            .flatten()
-            .map(|e| e.edge_name.as_str())
-            .collect();
-        println!("incoming edges: {:?}", edges);
 
         info!(
             "unid_subgraph: {} nodes {} edges",
@@ -148,15 +162,6 @@ where
         let mut identified_graph = IdentifiedGraph::new();
         for (old_node_key, old_node) in output_subgraph.nodes.iter() {
             let node = old_node.clone();
-
-            // match self.cache.get(old_node_key.clone()).await {
-            //     Ok(CacheResponse::Hit) => {
-            //         info!("Got cache hit for old_node_key, skipping node.");
-            //         continue;
-            //     }
-            //     Err(e) => warn!("Failed to retrieve from cache: {:?}", e),
-            //     _ => (),
-            // };
 
             let node = match self.attribute_node_key(&node).await {
                 Ok(node) => node,
@@ -236,14 +241,11 @@ where
             return Ok(IdentifiedGraph::new());
         }
 
-        let identities: Vec<_> = unid_id_map.keys().collect();
-
-        identities
-            .iter()
-            .for_each(|identity| completed.add_identity(identity.clone(), EventStatus::Success));
-
         if !dead_node_ids.is_empty() || attribution_failure.is_some() {
-            info!("Partial Success, identified {} nodes", identities.len());
+            info!(
+                "Partial Success, identified {} nodes",
+                identified_graph.nodes.len()
+            );
             Err(Ok(
                 (identified_graph, NodeIdentifierError::Unexpected), // todo: Use a real error here
             ))
@@ -277,7 +279,7 @@ pub async fn handler(_should_default: bool) -> Result<(), Box<dyn std::error::Er
     let s3_payload_retriever = &mut make_ten(async {
         S3PayloadRetriever::new(
             |region_str| grapl_config::env_helpers::init_s3_client(&region_str),
-            ZstdProtoDecoder::default(),
+            ProtoDecoder::default(),
             MetricReporter::new(&env.service_name),
         )
     })
@@ -339,22 +341,36 @@ impl CheckedError for HashCacheError {
 impl Cache for HashCache {
     type CacheErrorT = HashCacheError;
 
-    async fn get<CA: Cacheable + Send + Sync + 'static>(
-        &mut self,
-        cacheable: CA,
-    ) -> Result<CacheResponse, HashCacheError> {
+    async fn all_exist<CA>(&mut self, cacheables: &[CA]) -> bool
+    where
+        CA: Cacheable + Send + Sync + Clone + 'static,
+    {
         let self_cache = self.cache.lock().unwrap();
 
-        let id = cacheable.identity();
-        if self_cache.contains(&id) {
-            Ok(CacheResponse::Hit)
-        } else {
-            Ok(CacheResponse::Miss)
-        }
+        cacheables
+            .into_iter()
+            .all(|c| self_cache.contains(&c.identity()))
     }
-    async fn store(&mut self, identity: Vec<u8>) -> Result<(), HashCacheError> {
+
+    async fn store<CA>(&mut self, cacheable: CA) -> Result<(), HashCacheError>
+    where
+        CA: Cacheable + Send + Sync + Clone + 'static,
+    {
         let mut self_cache = self.cache.lock().unwrap();
-        self_cache.insert(identity);
+        self_cache.insert(cacheable.identity());
         Ok(())
+    }
+
+    async fn filter_cached<CA>(&mut self, cacheables: &[CA]) -> Vec<CA>
+    where
+        CA: Cacheable + Send + Sync + Clone + 'static,
+    {
+        let self_cache = self.cache.lock().unwrap();
+
+        cacheables
+            .iter()
+            .cloned()
+            .filter(|c| self_cache.contains(&c.identity()))
+            .collect()
     }
 }

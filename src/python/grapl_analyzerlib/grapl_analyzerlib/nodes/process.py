@@ -28,7 +28,9 @@ def default_process_edges() -> Dict[str, Tuple[EdgeT, str]]:
 
     return {
         "children": (
-            EdgeT(ProcessSchema, ProcessSchema, EdgeRelationship.ManyToOne),
+            EdgeT(
+                ProcessSchema, ProcessSchema, EdgeRelationship.ManyToOne
+            ),  # this seems like its OneToMany?
             "parent",
         ),
         "created_connections": (
@@ -70,6 +72,10 @@ class ProcessSchema(EntitySchema):
     @staticmethod
     def self_type() -> str:
         return "Process"
+
+    @staticmethod
+    def get_display_property() -> str:
+        return "process_name"
 
 
 class ProcessQuery(EntityQuery[PV, PQ]):

@@ -16,6 +16,9 @@ class WaitForResource(Protocol):
     def acquire(self) -> Optional[Any]:
         pass
 
+    def failure_reason(self) -> Optional[Exception]:
+        return None
+
 
 class WaitForS3Bucket(WaitForResource):
     def __init__(self, s3_client: Any, bucket_name: str):
@@ -24,7 +27,7 @@ class WaitForS3Bucket(WaitForResource):
 
     def acquire(self) -> Optional[Any]:
         try:
-            return self.s3_client.head_bucket(Bucket=self.bucket_name)
+            return self.s3_client.head_bucket(Bucket=self.bucket_name.strip())
         except self.s3_client.exceptions.NoSuchBucket:
             return None
 
@@ -76,15 +79,20 @@ class WaitForNoException(WaitForResource):
 
     def __init__(self, fn: Callable) -> None:
         self.fn = fn
+        self.last_failure: Optional[Exception] = None
 
     def acquire(self) -> Optional[Any]:
         try:
-            return self.fn()
-        except:
+            return self.fn() or "success"
+        except Exception as e:
+            self.last_failure = e
             return None
 
     def __str__(self) -> str:
         return f"WaitForNoException({inspect.getsource(self.fn)})"
+
+    def failure_reason(self) -> Optional[Exception]:
+        return self.last_failure
 
 
 class WaitForQuery(WaitForResource):
@@ -118,7 +126,9 @@ def wait_for(
     for resource in cycle(resources):
         now = get_now()
         if now >= timeout_after:
-            raise TimeoutError(f"Timed out waiting for {resource}")
+            raise TimeoutError(
+                f"Timed out waiting for {resource}"
+            ) from resource.failure_reason()
         if len(completed) == len(resources):
             break
         if resource in completed:

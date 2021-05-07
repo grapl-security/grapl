@@ -11,34 +11,6 @@ export interface LogLevels<T> {
     engagementCreatorLogLevel: T;
 }
 
-module HardcodedDeploymentParameters {
-    // ex: 'Grapl-my-deployment'
-    export const deployName = undefined;
-
-    // defaults to 'latest'
-    export const graplVersion = undefined;
-
-    // (optional) ex: ops@example.com
-    export const watchfulEmail = undefined;
-    export const operationalAlarmsEmail = undefined;
-    export const securityAlarmsEmail = undefined;
-
-    // AWS region for this Grapl deployment
-
-    export const region = undefined;
-    
-    export const logLevels: LogLevels<string | undefined> = {
-        defaultLogLevel: undefined,
-        sysmonSubgraphGeneratorLogLevel: undefined,
-        osquerySubgraphGeneratorLogLevel: undefined,
-        nodeIdentifierLogLevel: undefined,
-        graphMergerLogLevel: undefined,
-        analyzerDispatcherLogLevel: undefined,
-        analyzerExecutorLogLevel: undefined,
-        engagementCreatorLogLevel: undefined
-    };
-}
-
 export class DeploymentParameters {
     stackName: string;
     graplVersion: string;
@@ -49,92 +21,89 @@ export class DeploymentParameters {
 
     logLevels: LogLevels<string>;
 
-    constructor() { 
+    constructor() {
         // I'd like to remove this relatively ASAP.
-        const allowLegacyDeploymentName = boolFromEnvVar(
-            process.env.GRAPL_ALLOW_LEGACY_DEPLOYMENT_NAME
-        ) || false;
+        const allowLegacyDeploymentName =
+            boolFromEnvVar(process.env.GRAPL_ALLOW_LEGACY_DEPLOYMENT_NAME) ||
+            false;
 
-        const deployName = process.env.GRAPL_DEPLOYMENT_NAME
-            || HardcodedDeploymentParameters.deployName;
+        // ex: 'grapl-my-deployment'
+        const deployName = process.env.DEPLOYMENT_NAME;
         if (!deployName) {
-            throw new Error('Error: Missing Grapl deployment name. Set via bin/deployment_parameters.ts, or environment variable GRAPL_DEPLOYMENT_NAME.');
+            throw new Error(
+                "Error: Missing Grapl deployment name. Set via bin/deployment_parameters.ts, or environment variable DEPLOYMENT_NAME."
+            );
         }
         validateDeploymentName(deployName, allowLegacyDeploymentName);
 
         this.stackName = deployName;
 
+        // defaults to 'latest'
+        this.graplVersion = process.env.GRAPL_VERSION || "latest";
 
-        this.graplVersion = process.env.GRAPL_VERSION
-            || HardcodedDeploymentParameters.graplVersion
-            || 'latest';
+        // ex: ops@example.com
+        this.watchfulEmail = process.env.GRAPL_CDK_WATCHFUL_EMAIL;
 
-        this.watchfulEmail = process.env.GRAPL_CDK_WATCHFUL_EMAIL
-            || HardcodedDeploymentParameters.watchfulEmail;
-
-        const _operationalAlarmsEmail = process.env.GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL
-            || HardcodedDeploymentParameters.operationalAlarmsEmail;
+        const _operationalAlarmsEmail =
+            process.env.GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL;
         if (!_operationalAlarmsEmail) {
-            throw new Error('Error: Missing operational alarms email. Set via bin/deployment_parameters.ts, or environment variable GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL.');
+            throw new Error(
+                "Error: Missing operational alarms email. Set via bin/deployment_parameters.ts, or environment variable GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL."
+            );
         }
         this.operationalAlarmsEmail = _operationalAlarmsEmail;
 
-        const _securityAlarmsEmail = process.env.GRAPL_CDK_SECURITY_ALARMS_EMAIL
-            || HardcodedDeploymentParameters.securityAlarmsEmail;
+        const _securityAlarmsEmail =
+            process.env.GRAPL_CDK_SECURITY_ALARMS_EMAIL;
         if (!_securityAlarmsEmail) {
-            throw new Error('Error: Missing security alarms email. Set via bin/deployment_parameters.ts, or environment variable GRAPL_CDK_SECURITY_ALARMS_EMAIL.');
+            throw new Error(
+                "Error: Missing security alarms email. Set via bin/deployment_parameters.ts, or environment variable GRAPL_CDK_SECURITY_ALARMS_EMAIL."
+            );
         }
         this.securityAlarmsEmail = _securityAlarmsEmail;
 
-        const region = process.env.GRAPL_REGION
-            || HardcodedDeploymentParameters.region
+        // AWS region for this Grapl deployment
+        const region = process.env.GRAPL_REGION;
         if (!region) {
-            throw new Error('Error: Missing Grapl region. Set via bin/deployment_parameters.ts or environment variable GRAPL_REGION.');
+            throw new Error(
+                "Error: Missing Grapl region. Set via bin/deployment_parameters.ts or environment variable GRAPL_REGION."
+            );
         }
         this.region = region;
 
-        const defaultLogLevel = process.env.DEFAULT_LOG_LEVEL
-            || HardcodedDeploymentParameters.logLevels.defaultLogLevel
-            || "INFO";
+        const defaultLogLevel = process.env.DEFAULT_LOG_LEVEL || "INFO";
 
         this.logLevels = {
             defaultLogLevel: defaultLogLevel,
 
-            sysmonSubgraphGeneratorLogLevel: process.env.SYSMON_SUBGRAPH_GENERATOR_LOG_LEVEL
-                || HardcodedDeploymentParameters.logLevels.sysmonSubgraphGeneratorLogLevel
-                || defaultLogLevel,
+            sysmonSubgraphGeneratorLogLevel:
+                process.env.SYSMON_SUBGRAPH_GENERATOR_LOG_LEVEL ||
+                defaultLogLevel,
 
-            osquerySubgraphGeneratorLogLevel: process.env.OSQUERY_SUBGRAPH_GENERATOR_LOG_LEVEL
-                || HardcodedDeploymentParameters.logLevels.osquerySubgraphGeneratorLogLevel
-                || defaultLogLevel,
+            osquerySubgraphGeneratorLogLevel:
+                process.env.OSQUERY_SUBGRAPH_GENERATOR_LOG_LEVEL ||
+                defaultLogLevel,
 
-            nodeIdentifierLogLevel: process.env.NODE_IDENTIFIER_LOG_LEVEL
-                || HardcodedDeploymentParameters.logLevels.nodeIdentifierLogLevel
-                || defaultLogLevel,
+            nodeIdentifierLogLevel:
+                process.env.NODE_IDENTIFIER_LOG_LEVEL || defaultLogLevel,
 
-            graphMergerLogLevel: process.env.GRAPH_MERGER_LOG_LEVEL
-                || HardcodedDeploymentParameters.logLevels.graphMergerLogLevel
-                || defaultLogLevel,
+            graphMergerLogLevel:
+                process.env.GRAPH_MERGER_LOG_LEVEL || defaultLogLevel,
 
-            analyzerDispatcherLogLevel: process.env.ANALYZER_DISPATCHER_LOG_LEVEL
-                || HardcodedDeploymentParameters.logLevels.analyzerDispatcherLogLevel
-                || defaultLogLevel,
+            analyzerDispatcherLogLevel:
+                process.env.ANALYZER_DISPATCHER_LOG_LEVEL || defaultLogLevel,
 
-            analyzerExecutorLogLevel: process.env.ANALYZER_EXECUTOR_LOG_LEVEL
-                || HardcodedDeploymentParameters.logLevels.analyzerExecutorLogLevel
-                || defaultLogLevel,
+            analyzerExecutorLogLevel:
+                process.env.ANALYZER_EXECUTOR_LOG_LEVEL || defaultLogLevel,
 
-            engagementCreatorLogLevel: process.env.ENGAGEMENT_CREATOR_LOG_LEVEL
-                || HardcodedDeploymentParameters.logLevels.engagementCreatorLogLevel
-                || defaultLogLevel,
-        }
+            engagementCreatorLogLevel:
+                process.env.ENGAGEMENT_CREATOR_LOG_LEVEL || defaultLogLevel,
+        };
     }
-
 }
 
-
 function boolFromEnvVar(envVar: string | undefined): boolean | undefined {
-    if(envVar) {
+    if (envVar) {
         return JSON.parse(envVar.toLowerCase());
     }
     return undefined;
@@ -143,15 +112,18 @@ function boolFromEnvVar(envVar: string | undefined): boolean | undefined {
 // Must start with an alpha
 // Must end with an alpha or number
 // In the middle, - and _ are fine
-const regex = /^[a-z]([a-z0-9_-]?[a-z0-9]+)*$/
-export function validateDeploymentName(deploymentName: string, allowLegacyDeploymentName: boolean) {
-    if(allowLegacyDeploymentName) {
-        return
+const regex = /^[a-z]([a-z0-9_-]?[a-z0-9]+)*$/;
+export function validateDeploymentName(
+    deploymentName: string,
+    allowLegacyDeploymentName: boolean
+) {
+    if (allowLegacyDeploymentName) {
+        return;
     }
-    if(!regex.test(deploymentName)) {
+    if (!regex.test(deploymentName)) {
         throw new Error(
-            `Deployment name "${deploymentName}" is invalid - should match regex ${regex}.`
-            + "(You can, temporarily, allow this with GRAPL_ALLOW_LEGACY_DEPLOYMENT_NAME=true)."
-        )
+            `Deployment name "${deploymentName}" is invalid - should match regex ${regex}.` +
+                "(You can, temporarily, allow this with GRAPL_ALLOW_LEGACY_DEPLOYMENT_NAME=true)."
+        );
     }
 }

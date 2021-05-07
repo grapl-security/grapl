@@ -1,14 +1,14 @@
-import * as cdk from '@aws-cdk/core';
-import * as ec2 from '@aws-cdk/aws-ec2';
-import * as s3 from '@aws-cdk/aws-s3';
-import { EventEmitter } from '../event_emitters';
-import { RedisCluster } from '../redis';
-import { GraplServiceProps } from '../grapl-cdk-stack';
-import { SchemaDb } from '../schemadb';
+import * as cdk from "@aws-cdk/core";
+import * as ec2 from "@aws-cdk/aws-ec2";
+import * as s3 from "@aws-cdk/aws-s3";
+import { EventEmitter } from "../event_emitters";
+import { RedisCluster } from "../redis";
+import { GraplServiceProps } from "../grapl-cdk-stack";
+import { SchemaDb } from "../schemadb";
 import { ContainerImage } from "@aws-cdk/aws-ecs";
 import { FargateService } from "../fargate_service";
-import { GraplS3Bucket } from '../grapl_s3_bucket';
-import { SRC_DIR, RUST_DOCKERFILE } from '../dockerfile_paths';
+import { GraplS3Bucket } from "../grapl_s3_bucket";
+import { SRC_DIR, RUST_DOCKERFILE } from "../dockerfile_paths";
 
 export interface GraphMergerProps extends GraplServiceProps {
     writesTo: s3.IBucket;
@@ -26,13 +26,13 @@ export class GraphMerger extends cdk.NestedStack {
         const deployment_name = props.deploymentName.toLowerCase();
         const subgraphs_generated = new EventEmitter(
             this,
-            deployment_name + '-subgraphs-generated'
+            deployment_name + "-subgraphs-generated"
         );
         this.bucket = subgraphs_generated.bucket;
 
         const event_cache = new RedisCluster(
             this,
-            'GraphMergerMergedCache',
+            "GraphMergerMergedCache",
             props
         );
 
@@ -41,7 +41,7 @@ export class GraphMerger extends cdk.NestedStack {
         this.service = new FargateService(this, service_name, {
             deploymentName: props.deploymentName,
             environment: {
-                EVENT_CACHE_CLUSTER_ADDRESS: event_cache.address,
+                REDIS_ENDPOINT: event_cache.address,
                 DEPLOYMENT_NAME: deployment_name,
                 RUST_LOG: props.logLevels.graphMergerLogLevel,
                 SUBGRAPH_MERGED_BUCKET: props.writesTo.bucketName,
@@ -58,7 +58,7 @@ export class GraphMerger extends cdk.NestedStack {
             serviceImage: ContainerImage.fromAsset(SRC_DIR, {
                 target: "graph-merger-deploy",
                 buildArgs: {
-                    "CARGO_PROFILE": "debug"
+                    RUST_BUILD: "debug",
                 },
                 file: RUST_DOCKERFILE,
             }),
@@ -75,7 +75,11 @@ export class GraphMerger extends cdk.NestedStack {
             ec2.Port.allTcp()
         );
         props.schemaTable.allowRead(this.service);
-        props.dgraphSwarmCluster.allowConnectionsFrom(this.service.service.service);
-        props.dgraphSwarmCluster.allowConnectionsFrom(this.service.retryService.service);
+        props.dgraphSwarmCluster.allowConnectionsFrom(
+            this.service.service.service
+        );
+        props.dgraphSwarmCluster.allowConnectionsFrom(
+            this.service.retryService.service
+        );
     }
 }

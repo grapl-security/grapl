@@ -57,13 +57,22 @@ class Schema(metaclass=SingletonMeta):
         properties: Dict[str, PropType],
         edges: Dict[str, Tuple[EdgeT, str]],
         viewable: Union[ViewableType, ReturnsViewableType],
-    ):
+    ) -> None:
         self.node_types = {"BaseNode", self.self_type()}
         self.properties: Dict[str, "PropType"] = {**default_properties(), **properties}
         self.edges: Dict[str, Tuple["EdgeT", str]] = {}
 
         for edge_name, (edge, r_edge_name) in edges.items():
             self.add_edge(edge_name, edge, r_edge_name)
+
+        # only for exporting to graphql
+        self.forward_edges: Dict[str, Tuple[EdgeT, str]] = {
+            name: edge_tuple
+            for (name, edge_tuple) in self.edges.items()
+            if isinstance(
+                self, edge_tuple[0].source
+            )  # if self instance of EntitySchema, for example, for risks
+        }
 
         self.viewable = viewable
 
@@ -100,6 +109,10 @@ class Schema(metaclass=SingletonMeta):
             self.viewable = cast(ReturnsViewableType, self.viewable)()
 
         return cast(ViewableType, self.viewable)
+
+    @staticmethod
+    def get_display_property() -> str:
+        return "dgraph_type"
 
     @staticmethod
     @abc.abstractmethod

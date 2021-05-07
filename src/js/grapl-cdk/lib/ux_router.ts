@@ -1,13 +1,13 @@
-import * as cdk from '@aws-cdk/core';
-import * as s3 from '@aws-cdk/aws-s3';
-import * as lambda from '@aws-cdk/aws-lambda';
-import * as apigateway from '@aws-cdk/aws-apigateway';
+import * as cdk from "@aws-cdk/core";
+import * as s3 from "@aws-cdk/aws-s3";
+import * as lambda from "@aws-cdk/aws-lambda";
+import * as apigateway from "@aws-cdk/aws-apigateway";
 
-import {GraplServiceProps} from './grapl-cdk-stack';
-import {WatchedOperation} from "cdk-watchful";
+import { GraplServiceProps } from "./grapl-cdk-stack";
+import { WatchedOperation } from "cdk-watchful";
 
 export interface UxRouterProps extends GraplServiceProps {
-    edgeApi: apigateway.RestApi,
+    edgeApi: apigateway.RestApi;
 }
 
 export class UxRouter extends cdk.NestedStack {
@@ -20,17 +20,17 @@ export class UxRouter extends cdk.NestedStack {
 
         const ux_bucket = s3.Bucket.fromBucketName(
             this,
-            'uxBucket',
-            props.deploymentName.toLowerCase() + '-engagement-ux-bucket'
+            "uxBucket",
+            props.deploymentName.toLowerCase() + "-engagement-ux-bucket"
         );
 
-        const serviceName = props.deploymentName + '-UxRouter';
+        const serviceName = props.deploymentName + "-UxRouter";
         this.name = id + props.deploymentName;
 
-        this.event_handler = new lambda.Function(this, 'Handler', {
+        this.event_handler = new lambda.Function(this, "Handler", {
             runtime: lambda.Runtime.PYTHON_3_7,
-            handler: `src.grapl_ux_router.app`,
-            functionName: serviceName + '-Handler',
+            handler: `lambdex_handler.handler`,
+            functionName: serviceName + "-Handler",
             code: lambda.Code.fromAsset(
                 `./zips/ux-router-${props.version}.zip`
             ),
@@ -43,7 +43,7 @@ export class UxRouter extends cdk.NestedStack {
             memorySize: 128,
             description: props.version,
         });
-        this.event_handler.currentVersion.addAlias('live');
+        this.event_handler.currentVersion.addAlias("live");
         ux_bucket.grantRead(this.event_handler);
         if (props.watchful) {
             props.watchful.watchLambdaFunction(
@@ -55,17 +55,19 @@ export class UxRouter extends cdk.NestedStack {
             props.jwtSecret.grantRead(this.event_handler.role);
         }
 
-        const integration = new apigateway.LambdaIntegration(this.event_handler);
+        const integration = new apigateway.LambdaIntegration(
+            this.event_handler
+        );
         props.edgeApi.root.addProxy({
-           defaultIntegration: integration,
+            defaultIntegration: integration,
         });
         // props.edgeApi.root.addResource("{proxy+}").addProxy({
         //     defaultIntegration: integration,
         // });
         this.apis = [];
-        for (const httpMethod of ['POST', 'OPTIONS', 'GET', 'DELETE']) {
-            for (const resourcePath of ['/', '/{proxy+}']) {
-                this.apis.push({httpMethod, resourcePath});
+        for (const httpMethod of ["POST", "OPTIONS", "GET", "DELETE"]) {
+            for (const resourcePath of ["/", "/{proxy+}"]) {
+                this.apis.push({ httpMethod, resourcePath });
             }
         }
     }

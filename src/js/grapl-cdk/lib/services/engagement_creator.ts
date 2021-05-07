@@ -1,11 +1,11 @@
-import * as cdk from '@aws-cdk/core';
-import * as ec2 from '@aws-cdk/aws-ec2';
-import * as lambda from '@aws-cdk/aws-lambda';
-import * as sns from '@aws-cdk/aws-sns';
-import { Service } from '../service';
-import { EventEmitter } from '../event_emitters';
-import { GraplServiceProps } from '../grapl-cdk-stack';
-import { GraplS3Bucket } from '../grapl_s3_bucket';
+import * as cdk from "@aws-cdk/core";
+import * as ec2 from "@aws-cdk/aws-ec2";
+import * as lambda from "@aws-cdk/aws-lambda";
+import * as sns from "@aws-cdk/aws-sns";
+import { Service } from "../service";
+import { EventEmitter } from "../event_emitters";
+import { GraplServiceProps } from "../grapl-cdk-stack";
+import { GraplS3Bucket } from "../grapl_s3_bucket";
 
 export interface EngagementCreatorProps extends GraplServiceProps {
     publishesTo: sns.ITopic;
@@ -25,7 +25,7 @@ export class EngagementCreator extends cdk.NestedStack {
         const deployment_name = props.deploymentName.toLowerCase();
         const analyzer_matched_sugraphs = new EventEmitter(
             this,
-            deployment_name + '-analyzer-matched-subgraphs'
+            deployment_name + "-analyzer-matched-subgraphs"
         );
         this.bucket = analyzer_matched_sugraphs.bucket;
 
@@ -39,6 +39,8 @@ export class EngagementCreator extends cdk.NestedStack {
             reads_from: analyzer_matched_sugraphs.bucket,
             subscribes_to: analyzer_matched_sugraphs.topic,
             opt: {
+                // This is the entrypoint of a Pants-generated Lambda ZIP
+                py_entrypoint: "lambdex_handler.handler",
                 runtime: lambda.Runtime.PYTHON_3_7,
             },
             version: props.version,
@@ -46,17 +48,19 @@ export class EngagementCreator extends cdk.NestedStack {
             metric_forwarder: props.metricForwarder,
         });
 
-        props.dgraphSwarmCluster.allowConnectionsFrom(this.service.event_handler);
+        props.dgraphSwarmCluster.allowConnectionsFrom(
+            this.service.event_handler
+        );
 
         this.service.publishesToTopic(props.publishesTo);
 
         this.service.event_handler.connections.allowToAnyIpv4(
             ec2.Port.allTcp(),
-            'Allow outbound to S3'
+            "Allow outbound to S3"
         );
         this.service.event_retry_handler.connections.allowToAnyIpv4(
             ec2.Port.allTcp(),
-            'Allow outbound to S3'
+            "Allow outbound to S3"
         );
     }
 }

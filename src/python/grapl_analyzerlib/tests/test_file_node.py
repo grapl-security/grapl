@@ -16,7 +16,7 @@ import pytest
 from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.nodes.file import FileQuery, FileView
 from grapl_analyzerlib.viewable import Viewable
-from test_utils.dgraph_utils import upsert, create_edge
+from grapl_analyzerlib.test_utils.dgraph_utils import upsert, create_edge
 
 
 def get_or_create_file_node(

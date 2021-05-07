@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import json
 import os
 import sys
 import time
-from typing import List
+from typing import TYPE_CHECKING, List
 
 import boto3
 import pydgraph
@@ -27,9 +29,12 @@ from grapl_analyzerlib.prelude import (
     ProcessSchema,
     RiskSchema,
 )
-from grapl_analyzerlib.schema import Schema
+from grapl_analyzerlib.provision import provision_common
 from grapl_common.env_helpers import DynamoDBResourceFactory
 from grapl_common.grapl_logger import get_module_grapl_logger
+
+if TYPE_CHECKING:
+    from mypy_boto3_dynamodb import DynamoDBServiceResource
 
 LOGGER = get_module_grapl_logger(default_log_level="INFO")
 
@@ -44,7 +49,7 @@ def drop_all(client) -> None:
     client.alter(op)
 
 
-def format_schemas(schema_defs: List["BaseSchema"]) -> str:
+def format_schemas(schema_defs: List[BaseSchema]) -> str:
     schemas = "\n\n".join([schema.generate_schema() for schema in schema_defs])
 
     types = "\n\n".join([schema.generate_type() for schema in schema_defs])
@@ -54,7 +59,7 @@ def format_schemas(schema_defs: List["BaseSchema"]) -> str:
     )
 
 
-def query_dgraph_predicate(client: "GraphClient", predicate_name: str):
+def query_dgraph_predicate(client: GraphClient, predicate_name: str):
     query = f"""
         schema(pred: {predicate_name}) {{  }}
     """
@@ -99,7 +104,7 @@ def meta_into_predicate(schema, predicate_meta):
         raise e
 
 
-def query_dgraph_type(client: "GraphClient", type_name: str):
+def query_dgraph_type(client: GraphClient, type_name: str):
     query = f"""
         schema(type: {type_name}) {{ type }}
     """
@@ -126,7 +131,7 @@ def query_dgraph_type(client: "GraphClient", type_name: str):
     return predicate_metas
 
 
-def extend_schema(graph_client: GraphClient, schema: "BaseSchema"):
+def extend_schema(graph_client: GraphClient, schema: BaseSchema):
     predicate_metas = query_dgraph_type(graph_client, schema.self_type())
 
     for predicate_meta in predicate_metas:
@@ -142,16 +147,6 @@ def provision_master_graph(
 ) -> None:
     mg_schema_str = format_schemas(schemas)
     set_schema(master_graph_client, mg_schema_str)
-
-
-def store_schema(table, schema: "Schema"):
-    for f_edge, (_, r_edge) in schema.get_edges().items():
-        if not (f_edge and r_edge):
-            continue
-
-        table.put_item(Item={"f_edge": f_edge, "r_edge": r_edge})
-        table.put_item(Item={"f_edge": r_edge, "r_edge": f_edge})
-        LOGGER.info(f"stored edge mapping: {f_edge} {r_edge}")
 
 
 def provision_mg(mclient) -> None:
@@ -175,21 +170,22 @@ def provision_mg(mclient) -> None:
         schema.init_reverse()
 
     for schema in schemas:
-        try:
-            extend_schema(mclient, schema)
-        except Exception as e:
-            LOGGER.warn(f"Failed to extend_schema: {schema} {e}")
+        extend_schema(mclient, schema)
 
     provision_master_graph(mclient, schemas)
 
+    deployment_name = "local-grapl"  # TODO replace?
     dynamodb = DynamoDBResourceFactory(boto3).from_env()
+    schema_table = provision_common.get_schema_table(
+        dynamodb, deployment_name=deployment_name
+    )
+    schema_properties_table = provision_common.get_schema_properties_table(
+        dynamodb, deployment_name=deployment_name
+    )
 
-    table = dynamodb.Table("local-grapl-grapl_schema_table")
     for schema in schemas:
-        try:
-            store_schema(table, schema)
-        except Exception as e:
-            LOGGER.warn(f"storing schema: {schema} {table} {e}")
+        provision_common.store_schema(schema_table, schema)
+        provision_common.store_schema_properties(schema_properties_table, schema)
 
 
 DEPLOYMENT_NAME = "local-grapl"
@@ -247,7 +243,11 @@ if __name__ == "__main__":
                 LOGGER.info("Provisioned master graph")
                 break
         except Exception as e:
-            if i > 10:
-                LOGGER.error(f"mg provision failed with: {e}")
+            if i <= 10:
+                LOGGER.error(f"Provision failure {i}/150:", e)
+            elif 10 < i <= 140:
+                LOGGER.error(f"Provision failure {i}/150")
+            else:
+                raise e
 
     LOGGER.info("Completed provisioning")

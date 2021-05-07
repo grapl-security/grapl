@@ -1,15 +1,22 @@
 #![cfg(test)]
+use grapl_service::decoder::JsonDecoder;
+use sqs_executor::{
+    cache::NopCache,
+    event_decoder::PayloadDecoder,
+    event_handler::CompletedEvents,
+};
+use tokio::{
+    fs::File,
+    io::{
+        AsyncReadExt,
+        Result,
+    },
+};
 
-use grapl_service::decoder::ZstdJsonDecoder;
-use sqs_executor::{cache::NopCache,
-                   event_decoder::PayloadDecoder,
-                   event_handler::CompletedEvents};
-use tokio::{fs::File,
-            io::{AsyncReadExt,
-                 Result}};
-
-use crate::{generator::GenericSubgraphGenerator,
-            models::GenericEvent};
+use crate::{
+    generator::GenericSubgraphGenerator,
+    models::GenericEvent,
+};
 
 #[tokio::test]
 /// Tests if generic event serialization is working as expected.
@@ -40,7 +47,7 @@ async fn test_log_event_deserialization() {
 
     let mut generator = GenericSubgraphGenerator::new(NopCache {});
 
-    let mut event_deserializer = ZstdJsonDecoder::default();
+    let mut event_deserializer = JsonDecoder::default();
 
     let generic_events: Vec<GenericEvent> = event_deserializer
         .decode(raw_test_data)

@@ -1,6 +1,7 @@
 [GLOBAL]
-pants_version = "2.2.0"
+pants_version = "2.4.0"
 backend_packages = [
+  "pants.backend.awslambda.python",
   "pants.backend.codegen.protobuf.python",
   "pants.backend.python",
   "pants.backend.python.lint.isort",
@@ -32,6 +33,7 @@ pants_ignore = [
 root_patterns = [
   "/3rdparty",
   "/build-support",
+  "/etc",  # Some of our tests use sample data from here
   "/pants-plugins",
   "/pulumi",
   "/src/js/grapl-cdk",
@@ -39,21 +41,23 @@ root_patterns = [
   "/src/python/analyzer-deployer",
   "/src/python/analyzer_executor/src",
   "/src/python/analyzer_executor/tests",
-  "/src/python/engagement-creator/src",
-  "/src/python/engagement-creator/tests",
+  "/src/python/engagement-creator",
   "/src/python/engagement_edge",
-  "/src/python/engagement_edge/tests",
+  "/src/python/graphql_endpoint_tests",
   "/src/python/grapl_analyzerlib",
   "/src/python/grapl-common",
+  "/src/python/graplctl",
   "/src/python/grapl-dgraph-ttl",
   "/src/python/grapl_e2e_tests",
-  "/src/python/graplctl",
   "/src/python/graplinc",
   "/src/python/grapl-model-plugin-deployer/src",
   "/src/python/grapl-model-plugin-deployer/tests",
   "/src/python/grapl_provision",
   "/src/python/grapl-tests-common",
-  "/src/python/grapl-ux-router/src"
+  "/src/python/grapl-ux-router",
+  "/src/python/provisioner/src",
+  "/src/python/provisioner/tests",
+  "/src/python/repl",
 ]
 
 [python-setup]
@@ -102,3 +106,6 @@ args = [ "--suppress-no-test-exit-code" ]
 version = "mypy==0.800"
 config = "src/python/mypy.ini"
 args = [ "--show-error-codes" ]
+
+[ipython]
+version = "ipython==7.20.0"

@@ -1,9 +1,9 @@
-import * as cdk from '@aws-cdk/core';
-import * as dynamodb from '@aws-cdk/aws-dynamodb';
-import * as iam from '@aws-cdk/aws-iam';
+import * as cdk from "@aws-cdk/core";
+import * as dynamodb from "@aws-cdk/aws-dynamodb";
+import * as iam from "@aws-cdk/aws-iam";
 
-import { Service } from './service';
-import { RemovalPolicy } from '@aws-cdk/core';
+import { Service } from "./service";
+import { RemovalPolicy } from "@aws-cdk/core";
 
 export interface UserAuthDbProps {
     table_name: string;
@@ -15,10 +15,10 @@ export class UserAuthDb extends cdk.Construct {
     constructor(scope: cdk.Construct, id: string, props: UserAuthDbProps) {
         super(scope, id);
 
-        this.user_auth_table = new dynamodb.Table(this, 'UserAuthTable', {
+        this.user_auth_table = new dynamodb.Table(this, "UserAuthTable", {
             tableName: props.table_name,
             partitionKey: {
-                name: 'username',
+                name: "username",
                 type: dynamodb.AttributeType.STRING,
             },
             serverSideEncryption: true,

@@ -1,19 +1,34 @@
-use std::convert::TryFrom;
+use std::{
+    convert::TryFrom,
+    sync::Arc,
+};
 
 use async_trait::async_trait;
 use grapl_graph_descriptions::graph_description::*;
+use itertools::{
+    Either,
+    Itertools,
+};
 use log::*;
-use sqs_executor::{cache::Cache,
-                   errors::{CheckedError,
-                            Recoverable},
-                   event_handler::{CompletedEvents,
-                                   EventHandler}};
+use sqs_executor::{
+    cache::Cache,
+    errors::{
+        CheckedError,
+        Recoverable,
+    },
+    event_handler::{
+        CompletedEvents,
+        EventHandler,
+    },
+};
 
-use crate::{metrics::OSQuerySubgraphGeneratorMetrics,
-            parsers::PartiallyDeserializedOSQueryLog};
+use crate::{
+    metrics::OSQuerySubgraphGeneratorMetrics,
+    parsers::PartiallyDeserializedOSQueryLog,
+};
 
 #[derive(Clone)]
-pub(crate) struct OSQuerySubgraphGenerator<C>
+pub struct OSQuerySubgraphGenerator<C>
 where
     C: Cache + Clone + Send + Sync + 'static,
 {
@@ -47,7 +62,7 @@ impl<C> EventHandler for OSQuerySubgraphGenerator<C>
 where
     C: Cache + Clone + Send + Sync + 'static,
 {
-    type InputEvent = Vec<PartiallyDeserializedOSQueryLog>;
+    type InputEvent = Vec<Result<PartiallyDeserializedOSQueryLog, Arc<serde_json::Error>>>;
     type OutputEvent = GraphDescription;
     type Error = OSQuerySubgraphGeneratorError;
 
@@ -58,7 +73,17 @@ where
     ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
         info!("Processing {} incoming OSQuery log events.", input.len());
 
-        let (subgraphs, errors): (Vec<_>, Vec<_>) = input
+        let (deserialized_lines, deserialization_errors): (Vec<_>, Vec<_>) =
+            input.into_iter().partition_map(|line| match line {
+                Ok(value) => Either::Left(value),
+                Err(error) => Either::Right(error),
+            });
+
+        for error in deserialization_errors {
+            error!("Deserialization error: {}", error);
+        }
+
+        let (subgraphs, errors): (Vec<_>, Vec<_>) = deserialized_lines
             .into_iter()
             .map(|log| GraphDescription::try_from(log))
             .partition(|result| result.is_ok());

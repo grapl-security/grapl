@@ -1,151 +1,236 @@
 # AWS setup
+
+## Warnings
+
 **NOTE that setting up Grapl *will* incur AWS charges! This can amount to hundreds of dollars a month based on the configuration.**
-This setup script is designed for testing, and may include breaking changes in future versions, increased charges in future versions, or may otherwise require manually working with CloudFormation. 
+This setup script is designed for testing, and may include breaking changes in future versions, increased charges in future versions, or may otherwise require manually working with CloudFormation.
 If you need a way to set up Grapl in a stable, forwards compatible manner, please get in contact with us directly.
 
-## Installing Dependencies
-To get started, you'll need to install the following dependencies:
+## Preparation
+
+### Local AWS credentials
+
+See full instructions [here](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html).
+
+You should have a local file `~/.aws/credentials`, with an entry resembling this format:
+
+```
+[my_profile]
+aws_access_key_id=...
+aws_secret_access_key=...
+aws_session_token=...
+```
+
+You will need the **profile** to configure your account, if you haven't already:
+
+`aws configure --profile "my_profile"`
+
+If your profile's name is not "default", then note it down, as you will need to include it as a parameter in later steps.
+
+### Installing Dependencies
+
+You'll need to have the following dependencies installed:
 
 - Node
-- Typescript
-- AWS CDK: `npm i -g aws-cdk@X.Y.Z` 
+- TypeScript
+- AWS CDK:
+  - `npm i -g aws-cdk@X.Y.Z`
   - version must be >= the version in [Grapl's package.json file](https://github.com/grapl-security/grapl/blob/main/src/js/grapl-cdk/package.json) - for instance, `@1.71.0`
-- AWS CLI: `pip install awscli`
+- AWS CLI:
+  - your choice of the following:
+    - `pip install awscli`
+    - https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2-docker.html
+      - helpful alias: `alias aws='docker run --rm -it -v ~/.aws:/root/.aws -v $(pwd):/aws -e AWS_PROFILE amazon/aws-cli'`
+- (optional) Python libraries for running Grapl demo ([boto3](https://github.com/boto/boto3), [zstd](https://pypi.org/project/zstd/)):
+  - `pip install boto3 zstd`
 
-You'll also need to have local AWS credentials, and a configuration profile. Instructions [here](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html).
+### Clone Grapl Git repository
 
-If you intend to use Grapl's provided demo data, you'll allso need some Python3 dependencies.
-- [boto3](https://github.com/boto/boto3)
-- [zstd](https://pypi.org/project/zstd/)
-
-
-## Clone from repo
-First things first, clone the repo:
 ```bash
 git clone https://github.com/grapl-security/grapl.git
-cd grapl/src/js/grapl-cdk/
+cd grapl/
 ```
 
-## Build deployment artifacts
+The remaining steps assume your working directory is the Grapl repository.
 
-To execute a local Grapl build, run the following in Grapl's root:
+### Build deployment artifacts
 
-```bash
-TAG=$GRAPL_VERSION make zip
-```
+Deployment artifacts are build via `make zip`.
 
-`GRAPL_VERSION` can be any name you want. Just make note of it, we'll
-use it in the next step.
-
-Alternatively, you can set TAG in a file named `.env` in the Grapl root directory. Ex:
+If environmental variable `TAG` is set, it will be a custom name for the build.  If it is unset, it will default to "latest".
 
 ```bash
+# build with 'latest' TAG:
+make zip
+
+# build with a one-off custom TAG:
+$ TAG=my_grapl_test make zip
+
+# or set a fixed custom TAG in .env:
 $ cat .env
-TAG="v0.0.1-example"
+TAG="my_grapl_test"
 $ make zip
 ```
 
-Similar can be done for the environment variables corresponding to CDK
-deployment parameters documented in the following section.
+After `make zip` finishes, you can inspect `src/js/grapl-cdk/zips/` to see the build outputs:
 
-Your build outputs should appear in the `src/js/grapl-cdk/zips/` directory.
+```bash
+ls ./src/js/grapl-cdk/zips/
+```
 
-## Configure
-There are a few CDK deployment parameters you'll need to configure before you can deploy. 
-Each of these can be found in `bin/deployment_parameters.ts`:
+They should be named according to the value of `TAG`.
 
-1. `deployName` (required)
+### Configure CDK deployment parameters
 
-    Name for the deployment to AWS. We recommend prefixing the
-    deployment name with "Grapl-" to help identify Grapl resources in
-    your AWS account, however this isn't necessary.
+Grapl's CDK deployment parameters are set as environmental variables.
 
-    Note: This name must be globally (AWS) unique, as names for AWS S3
-    buckets will be dervied from this.
+For a direct code reference, c.f. `src/js/grapl-cdk/bin/deployment_parameters.ts`.
 
-    env: `GRAPL_DEPLOYMENT_NAME`
+#### Recommended approach
 
-2. `graplVersion`
+If you are deploying to production, we recommend saving a `source`-able
+collection of these environment variables:
 
-    The version of Grapl to deploy. This string will be used to look
-    for the appropriate filenames in the `zips/` directory.
+```bash
+# example values
+export DEPLOYMENT_NAME="grapl-deployment-name"
+export GRAPL_VERSION="latest" # if you set TAG, update this too
+export GRAPL_REGION="us-xxxx-n"
+export GRAPL_CDK_WATCHFUL_EMAIL="email-for-watchful@example.com"
+export GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL="email-for-op-alarm@example.com"
+export GRAPL_CDK_SECURITY_ALARMS_EMAIL="email-for-sec-alarm@example.com"
+export GRAPL_DGRAPH_INSTANCE_TYPE='xn.size' # e.g., 'i3.large'
+```
+#### Parameter explanation
+<!-- The repeated "1." is expanded out to the correct number when rendered -->
 
-    Defaults to `latest`.
+1. `DEPLOYMENT_NAME` (required)
 
-    env: `GRAPL_VERSION`
+    A name for the deployment to AWS.  ([AWS naming requirements](https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-s3-bucket-naming-requirements.html) apply)
 
-3. `watchfulEmail` (optional)
+    This name must be globally (AWS) unique, as names for AWS S3 buckets will be dervied from this.
 
-    Setting this enables [Watchful](https://github.com/eladb/cdk-watchful) for
-    monitoring Grapl with email alerts.
+    We recommend prefixing the deployment name with "Grapl-" to help identify Grapl resources in your AWS account.
 
-    env: `GRAPL_CDK_WATCHFUL_EMAIL`
+1. `GRAPL_VERSION` (required, if TAG changed)
 
-4. `operationalAlarmsEmail` (optional)
+    Which locally built version of Grapl to deploy.
+
+    This string will be used to identify build outputs by their filenames in the `src/js/grapl-cdk/zips/` directory.
+
+    If you changed `TAG` earlier, you must set this to be that same value.
+
+    Otherwise, you may safely let it default to 'latest'.
+
+1. `GRAPL_REGION` (required)
+
+    This is your [AWS region](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html).
+
+1. `GRAPL_CDK_WATCHFUL_EMAIL` (optional)
+
+    Setting this enables [Watchful](https://github.com/eladb/cdk-watchful) for monitoring Grapl with email alerts.
+
+1. `GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL` (required)
 
     Setting this enables alarms meant for the operator of the Grapl stack.
 
-    env: `GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL`
+1. `GRAPL_CDK_SECURITY_ALARMS_EMAIL` (required)
 
-5. `securityAlarmsEmail` (optional)
+    Setting this enables alarms meant for the consumer of the Grapl stack, for example, "a new risk node has been found".
 
-    Setting this enables alarms meant for the consumer of the Grapl
-    stack, for example, "a new risk node has been found".
+### AWS CDK bootstrap
 
-    env: `GRAPL_CDK_SECURITY_ALARMS_EMAIL`
-
-Alternatively, these can be set via the environment variables
-mentioned for each above. The environment variables take precedence
-over the values in `bin/deployment_parameters.ts`.
-
-When deploying to production we recommend *not* using environment
-variables for setting parameters, but rather set them in
-`bin/deployment_parameters.ts` and save the changes in a git
-branch. This should help future maintenance of the deployment.
-
-## Deploy CDK
-To deploy Grapl with the CDK, execute the following from the `src/js/grapl-cdk` directory.
+Before using AWS CDK to deploy Grapl we'll need to bootstrap the account for use with CDK:
 
 ```bash
-npm i
-npm run build
 env CDK_NEW_BOOTSTRAP=1 cdk bootstrap \
   --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess
-
-# This last step should take a while - roughly an hour.
-./deploy_all.sh
 ```
 
-If you have configured an email address for Watchful (see previous
-section) you should receive an email with subject *"AWS Notification -
-Subscription Confirmation"* containing a link to activate the
-subscription. Click the link to begin receiving CloudWatch alerts.
+Depending on your environment you may need to specify the AWS account and region to bootstrap:
 
-## Provisioning Dgraph
-Next, we need to spin up some EC2 instances that will host the graph database, Dgraph.
+```bash
+env CDK_NEW_BOOTSTRAP=1 cdk bootstrap \
+  --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess \
+  aws://<ACCOUNT-NUMBER>/<REGION>
+```
 
-[Follow the instructions here.](./dgraph_provision)
+## `graplctl`
 
-## Provisioning Grapl
-At this point you need to provision the Graph databases and create a user. 
-- Go to the AWS Console
-- Open AWS Sagemaker from the Services list
-- Click 'Notebook Instances' on the left bar
-- Click 'Open Jupyter' next to the single notebook
-- Finally, hit the 'Upload' button and navigate to `$GRAPL_REPO_ROOT/etc/Grapl\ Provision.ipynb`
+### Installation
 
-You should be presented with a view something like this:
+We use the `graplctl` utility to deploy Grapl to AWS. To install
+`graplctl` run the following command in the Grapl checkout root:
 
-![](https://s3.amazonaws.com/media-p.slid.es/uploads/650602/images/6396963/Screenshot_from_2019-07-27_22-27-35.png)
+``` bash
+make graplctl
+```
 
+This will build the `graplctl` binary and install it in the `./bin/`
+directory. You can familiarize yourself with `graplctl` by running
 
-Run each cell in the notebook, and it will:
-* Set up the schemas for your graph database
-* Create a username + password, which you can use to log into your Grapl instance.
-  * Hide this password somewhere safe - it's the only time we'll give it to you!
+``` bash
+./bin/graplctl --help
+```
+
+#### Usage notes for setup
+
+If your AWS profile is not named 'default', you will need to explicitly provide it as a parameter:
+
+- as a command line invocation parameter
+- as an environmenal variable
+- or as an entry in `.env`
+
+### How to deploy Grapl
+
+*Warning: these commands spin up infrastructure in your AWS
+account. Running these commands will incur charges.*
+
+To deploy Grapl with `graplctl`, execute the following from the Grapl root:
+
+```bash
+./bin/graplctl aws deploy --all --dgraph-instance-type i3.large .
+```
+
+Note that we've selected `i3.large` instances for our DGraph
+database. If you'd like to choose a different instance class, you may
+see the available options by running:
+
+``` bash
+bin/graplctl aws deploy --help
+```
+
+### Provision Grapl
+
+After we deploy to AWS successfully, we need to provision Grapl by executing the following from the root of Grapl:
+```bash
+./bin/graplctl aws provision
+```
+which will invoke the provisioner lambda.
+
+## DGraph operations
+
+You can manage the DGraph cluster with the docker swarm tooling by
+logging into one of the swarm managers with SSM. If you forget which
+instances are the swarm managers, you can find them by running
+`graplctl swarm managers`. For your convenience, `graplctl` also
+provides an `exec` command you can use to run a bash command remotely
+on a swarm manager. For example, to list all the nodes in the Dgraph
+swarm you can run something like the following:
+
+``` bash
+bin/graplctl swarm exec --swarm-id my-swarm-id -- docker node ls
+```
+
+If you forget which `swarm-id` is associated with your Dgraph cluster,
+you may list all the swarm IDs in your deployment by running `bin/graplctl
+swarm ls`.
 
 ### Demo Data
-You can send some test data up to the service by going to the root of the grapl repo and calling:
+
+You can send some test data up to the service by going to the root of
+the grapl repo and calling:
+
 ```bash
 cd $GRAPL_ROOT
 
@@ -153,18 +238,25 @@ cd $GRAPL_ROOT
 etc/aws/upload_analyzer_prod.sh
 
 # upload logs
-AWS_REGION=$GRAPL_REGION \ 
+AWS_REGION=$GRAPL_REGION \
 python3 etc/local_grapl/bin/upload-sysmon-logs.py \
-  --deployment_name $GRAPL_DEPLOYMENT_NAME \
-  --logfile etc/sample_data/eventlog.xml 
+  --deployment_name $DEPLOYMENT_NAME \
+  --logfile etc/sample_data/eventlog.xml
 ```
 
-*Note that this will likely impose charges to your AWS account.*
-
-You can then view the progress of this data flowing through your deployment
-by looking at the Cloudwatch Dashboard named 
-`{GRAPL_DEPLOYMENT_NAME}-PipelineDashboard`.
+You can then view the progress of this data flowing through your
+deployment by looking at the Cloudwatch Dashboard named
+`{DEPLOYMENT_NAME}-PipelineDashboard`.
 
 ### Accessing the Grapl UX (Engagement Edge)
-You can find the base url in `src/js/grapl-cdk/cdk-output.json`; just append
-a `/index.html` to the URL in that file.
+
+You can find the base url in `src/js/grapl-cdk/cdk-output.json`; just
+append a `/index.html` to the URL in that file.
+
+### Logging In To Grapl
+
+To login to Grapl, your username will be your deployment name followed by `-grapl-test-user`. For example, if your deployment was named `test-deployment`, your username would be `test-deployment-grapl-test-user`.
+
+To retrieve the password for your grapl deployment, navigate to "AWS Secrets Manager" and click on "Secrets".
+
+Click on the "Secret name" url that represents your deployment name followed by `-TestUserPassword`. The link will bring you to the "secret details" screen. Scroll down to the section labeled "Secret Value" and click the "Retrieve Secret Value" button. The password for your deployment will appear under "Plaintext".

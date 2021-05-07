@@ -1,33 +1,34 @@
-import * as cdk from '@aws-cdk/core';
-import * as ec2 from '@aws-cdk/aws-ec2';
-import * as iam from '@aws-cdk/aws-iam';
-import * as lambda from '@aws-cdk/aws-lambda';
-import * as s3 from '@aws-cdk/aws-s3';
-import * as sns from '@aws-cdk/aws-sns';
-import * as sqs from '@aws-cdk/aws-sqs';
-import * as subscriptions from '@aws-cdk/aws-sns-subscriptions';
-import { LambdaDestination } from '@aws-cdk/aws-logs-destinations';
-import { FilterPattern } from '@aws-cdk/aws-logs';
-import { SqsEventSource } from '@aws-cdk/aws-lambda-event-sources';
-import { Watchful } from 'cdk-watchful';
+import * as cdk from "@aws-cdk/core";
+import * as ec2 from "@aws-cdk/aws-ec2";
+import * as iam from "@aws-cdk/aws-iam";
+import * as lambda from "@aws-cdk/aws-lambda";
+import * as s3 from "@aws-cdk/aws-s3";
+import * as sns from "@aws-cdk/aws-sns";
+import * as sqs from "@aws-cdk/aws-sqs";
+import * as subscriptions from "@aws-cdk/aws-sns-subscriptions";
+import { LambdaDestination } from "@aws-cdk/aws-logs-destinations";
+import { FilterPattern } from "@aws-cdk/aws-logs";
+import { SqsEventSource } from "@aws-cdk/aws-lambda-event-sources";
+import { Watchful } from "cdk-watchful";
+import * as service_common from "./service_common";
 
 class Queues {
     readonly queue: sqs.Queue;
     readonly retryQueue: sqs.Queue;
 
     constructor(scope: cdk.Construct, queueName: string) {
-        const dead_letter_queue = new sqs.Queue(scope, 'DeadLetterQueue', {
-            queueName: queueName + '-dead-letter-queue',
+        const dead_letter_queue = new sqs.Queue(scope, "DeadLetterQueue", {
+            queueName: queueName + "-dead-letter-queue",
         });
 
-        this.retryQueue = new sqs.Queue(scope, 'RetryQueue', {
-            queueName: queueName + '-retry-queue',
+        this.retryQueue = new sqs.Queue(scope, "RetryQueue", {
+            queueName: queueName + "-retry-queue",
             deadLetterQueue: { queue: dead_letter_queue, maxReceiveCount: 3 },
             visibilityTimeout: cdk.Duration.seconds(360),
         });
 
-        this.queue = new sqs.Queue(scope, 'Queue', {
-            queueName: queueName + '-queue',
+        this.queue = new sqs.Queue(scope, "Queue", {
+            queueName: queueName + "-queue",
             deadLetterQueue: { queue: this.retryQueue, maxReceiveCount: 3 },
             visibilityTimeout: cdk.Duration.seconds(180),
         });
@@ -78,66 +79,71 @@ export class Service {
         const runtime =
             opt && opt.runtime
                 ? opt.runtime
-                // amazon linux - comes with glibc etc
-                : new lambda.Runtime('provided.al2', lambda.RuntimeFamily.OTHER, {
-                      supportsInlineCode: true,
-                  });
+                : // amazon linux - comes with glibc etc
+                  new lambda.Runtime(
+                      "provided.al2",
+                      lambda.RuntimeFamily.OTHER,
+                      {
+                          supportsInlineCode: true,
+                      }
+                  );
 
-        const handler = (function(): string {
-            if(runtime === lambda.Runtime.PYTHON_3_7) {
+        const handler = (function (): string {
+            if (runtime === lambda.Runtime.PYTHON_3_7) {
                 if (opt && opt.py_entrypoint) {
                     // Set opt.py_entrypoint to manually specify how to resolve the `lambda_handler` function.
-                    return opt.py_entrypoint
+                    return opt.py_entrypoint;
                 } else {
                     // For one-file python services, where we assume everything is in <name>.py
-                    return `${name}.lambda_handler`
+                    return `${name}.lambda_handler`;
                 }
             } else {
-                return name
+                return name;
             }
-        })()
+        })();
 
         const queues = new Queues(scope, serviceName.toLowerCase());
 
         if (environment) {
             environment.SOURCE_QUEUE_URL = queues.queue.queueUrl;
-            environment.RUST_BACKTRACE = '1';
+            environment.RUST_BACKTRACE = "1";
         }
 
-        const role = new iam.Role(scope, 'ExecutionRole', {
-            assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
-            roleName: serviceName + '-HandlerRole',
-            description: 'Lambda execution role for: ' + serviceName,
+        const role = new iam.Role(scope, "ExecutionRole", {
+            assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
+            roleName: serviceName + "-HandlerRole",
+            description: "Lambda execution role for: " + serviceName,
             managedPolicies: [
                 iam.ManagedPolicy.fromAwsManagedPolicyName(
-                    'service-role/AWSLambdaBasicExecutionRole' // FIXME: remove managed policy
+                    "service-role/AWSLambdaBasicExecutionRole" // FIXME: remove managed policy
                 ),
                 iam.ManagedPolicy.fromAwsManagedPolicyName(
-                    'service-role/AWSLambdaVPCAccessExecutionRole' // FIXME: remove managed policy
+                    "service-role/AWSLambdaVPCAccessExecutionRole" // FIXME: remove managed policy
                 ),
             ],
         });
 
-        const event_handler = new lambda.Function(scope, 'Handler', {
+        const event_handler = new lambda.Function(scope, "Handler", {
             runtime: runtime,
             handler: handler,
-            functionName: serviceName + '-Handler',
+            functionName: serviceName + "-Handler",
             code: lambda.Code.asset(`./zips/${name}-${props.version}.zip`),
             vpc: props.vpc,
             environment: {
-                IS_RETRY: 'False',
+                IS_RETRY: "False",
                 ...environment,
             },
             timeout: cdk.Duration.seconds(45),
             memorySize: 128,
             description: props.version,
             role,
+            logRetention: service_common.LOG_RETENTION,
         });
-        event_handler.currentVersion.addAlias('live');
+        event_handler.currentVersion.addAlias("live");
 
         if (props.watchful) {
             props.watchful.watchLambdaFunction(
-                name + '-Handler',
+                name + "-Handler",
                 event_handler
             );
         }
@@ -150,28 +156,29 @@ export class Service {
             environment.SOURCE_QUEUE_URL = queues.retryQueue.queueUrl;
         }
 
-        let event_retry_handler = new lambda.Function(scope, 'RetryHandler', {
+        let event_retry_handler = new lambda.Function(scope, "RetryHandler", {
             runtime: runtime,
             handler: handler,
-            functionName: serviceName + '-RetryHandler',
+            functionName: serviceName + "-RetryHandler",
             code: lambda.Code.asset(
                 `./zips/${retry_code_name}-${props.version}.zip`
             ),
             vpc: props.vpc,
             environment: {
-                IS_RETRY: 'True',
+                IS_RETRY: "True",
                 ...environment,
             },
             timeout: cdk.Duration.seconds(90),
             memorySize: 256,
             description: props.version,
             role,
+            logRetention: service_common.LOG_RETENTION,
         });
-        event_retry_handler.currentVersion.addAlias('live');
+        event_retry_handler.currentVersion.addAlias("live");
 
         if (props.watchful) {
             props.watchful.watchLambdaFunction(
-                name + '-RetryHandler',
+                name + "-RetryHandler",
                 event_retry_handler
             );
         }
@@ -205,21 +212,24 @@ export class Service {
         if (props.metric_forwarder) {
             const forwarder_lambda = props.metric_forwarder.event_handler;
             this.forwardMetricsLogs(scope, event_handler, forwarder_lambda);
-            this.forwardMetricsLogs(scope, event_retry_handler, forwarder_lambda);
+            this.forwardMetricsLogs(
+                scope,
+                event_retry_handler,
+                forwarder_lambda
+            );
         }
-
     }
 
     readsFrom(bucket: s3.IBucket, with_list?: Boolean) {
         let policy = new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
-            actions: ['s3:GetObject'],
-            resources: [bucket.bucketArn + '/*'],
+            actions: ["s3:GetObject"],
+            resources: [bucket.bucketArn + "/*"],
         });
 
         if (with_list === true) {
             policy.addResources(bucket.bucketArn);
-            policy.addActions('s3:ListBucket');
+            policy.addActions("s3:ListBucket");
         }
 
         this.event_handler.addToRolePolicy(policy);
@@ -229,7 +239,7 @@ export class Service {
     publishesToTopic(publishes_to: sns.ITopic) {
         const topicPolicy = new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
-            actions: ['sns:CreateTopic', 'sns:Publish'],
+            actions: ["sns:CreateTopic", "sns:Publish"],
             resources: [publishes_to.topicArn],
         });
 
@@ -249,7 +259,7 @@ export class Service {
 
         const config = subscription.bind(topic);
 
-        new sns.Subscription(scope, 'Subscription', {
+        new sns.Subscription(scope, "Subscription", {
             topic: topic,
             endpoint: config.endpoint,
             filterPolicy: config.filterPolicy,
@@ -258,7 +268,11 @@ export class Service {
         });
     }
 
-    forwardMetricsLogs(scope: cdk.Construct, fromLambdaFn: lambda.Function, toLambdaFn: lambda.IFunction) {
+    forwardMetricsLogs(
+        scope: cdk.Construct,
+        fromLambdaFn: lambda.Function,
+        toLambdaFn: lambda.IFunction
+    ) {
         const logGroup = fromLambdaFn.logGroup;
         logGroup.addSubscriptionFilter(
             "send_metrics_to_lambda_" + fromLambdaFn.node.uniqueId,
@@ -266,6 +280,6 @@ export class Service {
                 destination: new LambdaDestination(toLambdaFn),
                 filterPattern: FilterPattern.literal("MONITORING"),
             }
-        )
+        );
     }
 }

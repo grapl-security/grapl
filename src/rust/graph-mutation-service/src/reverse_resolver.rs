@@ -1,19 +1,27 @@
-use std::{collections::HashMap,
-          io::Stdout};
+use std::{
+    collections::HashMap,
+    io::Stdout,
+};
 
 // pub use grapl_graph_descriptions::*;
 pub use dgraph_tonic::Status;
 use grapl_graph_descriptions::Edge;
 use grapl_observe::metric_reporter::MetricReporter;
-use grapl_utils::{future_ext::GraplFutureExt,
-                  rusoto_ext::dynamodb::GraplDynamoDbClientExt};
+use grapl_utils::{
+    future_ext::GraplFutureExt,
+    rusoto_ext::dynamodb::GraplDynamoDbClientExt,
+};
 use lazy_static::lazy_static;
-use rusoto_dynamodb::{AttributeValue,
-                      BatchGetItemInput,
-                      DynamoDbClient,
-                      KeysAndAttributes};
-use serde::{Deserialize,
-            Serialize};
+use rusoto_dynamodb::{
+    AttributeValue,
+    BatchGetItemInput,
+    DynamoDbClient,
+    KeysAndAttributes,
+};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 #[derive(Debug, thiserror::Error)]
 pub enum ReverseEdgeResolverError {

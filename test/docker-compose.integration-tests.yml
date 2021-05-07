@@ -3,18 +3,15 @@ version: "3.8"
 # environment variable PWD is assumed to be grapl root directory
 
 services:
-
-  grapl-rust-node-identifier-integration-tests:
-    image: grapl/grapl-node-identifier-test:${TAG:-latest}
+  rust-node-identifier-integration-tests:
+    image: grapl/rust-integration-tests:${TAG:-latest}
     build:
       context: ${PWD}/src
       dockerfile: rust/Dockerfile
-      target: build-test-integration
+      target: build-test
       args:
-        - CARGO_PROFILE=debug
-    command: bash -c "
-      wait-for-it grapl-provision:${WAIT_PORT} --timeout=180 &&
-      cargo test --manifest-path node-identifier/Cargo.toml --features integration -- --nocapture"
+        - RUST_BUILD=test-integration
+    command: cargo test --features node-identifier/integration --test '*'
     environment:
       - AWS_REGION
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
@@ -38,6 +35,7 @@ services:
       - DYNAMODB_ACCESS_KEY_ID
       - DYNAMODB_ACCESS_KEY_SECRET
 
+<<<<<<< HEAD
   grapl-rust-graph-merger-integration-tests:
     image: grapl/grapl-graph-merger-test:${TAG:-latest}
     build:
@@ -83,6 +81,19 @@ services:
       - SOURCE_QUEUE_URL="${SQS_ENDPOINT}/queue/grapl-graph-merger-queue"
       - MG_ALPHAS
 
+=======
+  rust-sqs-executor-integration-tests:
+    image: grapl/rust-integration-tests:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: rust/Dockerfile
+      target: build-test
+      args:
+        - RUST_BUILD=test-integration
+    command: cargo test --features sqs-executor/integration --test '*'
+    environment:
+      - REDIS_ENDPOINT
+>>>>>>> main
 
   grapl-analyzerlib-integration-tests:
     image: grapl/grapl-analyzerlib-test:${TAG:-latest}
@@ -91,10 +102,9 @@ services:
       dockerfile: ./python/Dockerfile
       target: grapl-analyzerlib-test
     command: bash -c '
-      wait-for-it grapl-provision:${WAIT_PORT} --timeout=180 &&
       source venv/bin/activate &&
       cd grapl_analyzerlib &&
-      py.test -n auto -m "integration_test"'
+      py.test -v -n auto -m "integration_test"'
     environment:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
       - DEPLOYMENT_NAME
@@ -128,7 +138,6 @@ services:
       dockerfile: ./python/Dockerfile
       target: engagement-edge-test
     command: bash -c '
-      wait-for-it ${GRAPL_AUTH_HOST}:${GRAPL_AUTH_PORT} --timeout=180 &&
       source venv/bin/activate &&
       cd engagement_edge &&
       py.test -n auto -m "integration_test"'
@@ -136,20 +145,60 @@ services:
       - IS_LOCAL=True
       - DEPLOYMENT_NAME
       - UX_BUCKET_URL="ux_bucket_url"
-      - GRAPL_AUTH_HOST
-      - GRAPL_AUTH_PORT
+      - GRAPL_API_HOST
+      - GRAPL_HTTP_FRONTEND_PORT
 
-  cypress-integration-tests:
-    image: grapl/grapl-cypress:${TAG:-latest}
+  # TODO: Re-enable these tests after the following issues are resolved:
+  # - https://github.com/grapl-security/issue-tracker/issues/385
+  # - https://github.com/grapl-security/issue-tracker/issues/386
+  # - https://github.com/grapl-security/issue-tracker/issues/387
+  # cypress-integration-tests:
+  #   image: grapl/grapl-cypress:${TAG:-latest}
+  #   build:
+  #     context: ${PWD}/test
+  #     dockerfile: ./Dockerfile.cypress
+  #     target: grapl-cypress
+  #   user: ${UID}:${GID}
+  #   volumes:
+  #     - "./integration-outputs/screenshots:/test/cypress/screenshots"
+  #     - "./integration-outputs/videos:/test/cypress/videos"
+  #   command: |
+  #     /bin/bash -c "
+  #       CYPRESS_BASE_URL=http://${GRAPL_API_HOST}:${GRAPL_HTTP_FRONTEND_PORT} cypress run --browser chrome --headless
+  #     "
+  #   environment:
+  #     - GRAPL_API_HOST
+
+  graphql-endpoint-tests:
+    image: grapl/graphql-endpoint-tests:${TAG:-latest}
     build:
-      context: ${PWD}/test
-      dockerfile: ./Dockerfile
-      target: grapl-cypress
+      context: ${PWD}/src
+      dockerfile: ./python/Dockerfile
+      target: graphql-endpoint-tests
     command: |
-      /bin/bash -c "
-        wait-for-it grapl-provision:${WAIT_PORT} --timeout=120 &&
-        cypress run --browser chrome --headless
-      "
+      /bin/bash -c '
+        source venv/bin/activate &&
+        cd graphql_endpoint_tests &&
+        py.test --capture=no -n 1 -m "integration_test"
+      '
+    environment:
+      - AWS_REGION
+      - DEBUG_SERVICES=${DEBUG_SERVICES:-}
+      - DEPLOYMENT_NAME
+      - DYNAMODB_ENDPOINT
+      - DYNAMODB_ACCESS_KEY_ID
+      - DYNAMODB_ACCESS_KEY_SECRET
+      - GRAPL_API_HOST
+      - GRAPL_HTTP_FRONTEND_PORT
+      - GRAPL_GRAPHQL_HOST
+      - GRAPL_GRAPHQL_PORT
+      - GRAPL_MODEL_PLUGIN_DEPLOYER_HOST
+      - GRAPL_MODEL_PLUGIN_DEPLOYER_PORT
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
+      - MG_ALPHAS
+      - VSC_DEBUGGER_PORT=${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT_TESTS}
+    ports:
+      - ${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT_TESTS}:${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT_TESTS}
 
 networks:
   default:

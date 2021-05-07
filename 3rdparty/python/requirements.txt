@@ -1,8 +1,11 @@
 # Any Python dependencies used by our code should be declared here.
 boto3
-chalice
+botocore
+chalice==1.22.4
+click
 hypothesis
 mypy_boto3_dynamodb
+mypy_boto3_lambda
 mypy_boto3_s3
 mypy_boto3_sagemaker
 mypy_boto3_secretsmanager
@@ -10,9 +13,19 @@ mypy_boto3_sqs
 protobuf>=3.12.1
 pulumi>=2.0.0,<3.0.0
 pulumi-aws>=3.2.0,<4.0.0
+pulumi_random
 pydgraph
 pyjwt
+pytest
 requests
 redis
 typing_extensions
 zstd
+
+# This was introduced when we updated to Pants 2.4.0; lambdex (which
+# we use to generate AWS lambda zip files) has requirements that
+# conflict with the setuptools that Pants pulls in. We should remove
+# this at the earliest possible convenience.
+#
+# I *think* this may be related to https://github.com/wickman/lambdex/pull/8
+setuptools>=50.3.0,<50.4

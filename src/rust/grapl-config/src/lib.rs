@@ -1,16 +1,24 @@
-use std::{io::Stdout,
-          str::FromStr,
-          time::Duration};
+use std::{
+    io::Stdout,
+    str::FromStr,
+    time::Duration,
+};
 
 use color_eyre::Help;
 use grapl_observe::metric_reporter::MetricReporter;
-use rusoto_core::{Region,
-                  RusotoError};
+use rusoto_core::{
+    Region,
+    RusotoError,
+};
 use rusoto_s3::S3;
-use rusoto_sqs::{ListQueuesRequest,
-                 Sqs};
-use sqs_executor::{make_ten,
-                   redis_cache::RedisCache};
+use rusoto_sqs::{
+    ListQueuesRequest,
+    Sqs,
+};
+use sqs_executor::{
+    make_ten,
+    redis_cache::RedisCache,
+};
 use tracing::debug;
 use tracing_subscriber::EnvFilter;
 
@@ -51,9 +59,19 @@ pub fn is_local() -> bool {
 }
 
 pub async fn event_cache(env: &ServiceEnv) -> RedisCache {
-    let cache_address =
-        std::env::var("EVENT_CACHE_CLUSTER_ADDRESS").expect("EVENT_CACHE_CLUSTER_ADDRESS");
-    RedisCache::new(
+    let cache_address = std::env::var("REDIS_ENDPOINT").expect("REDIS_ENDPOINT");
+    if !cache_address.starts_with("redis://") {
+        panic!(
+            "Expected redis client with redis://, but got {}",
+            cache_address
+        );
+    }
+    let lru_cache_size = std::env::var("LRU_CACHE_SIZE")
+        .unwrap_or(String::from("1000000"))
+        .parse::<usize>()
+        .unwrap_or(1_000_000);
+    RedisCache::with_lru_capacity(
+        lru_cache_size,
         cache_address.to_owned(),
         MetricReporter::<Stdout>::new(&env.service_name),
     )
@@ -234,4 +252,8 @@ pub fn ip_connection_history_table_name() -> String {
 
 pub fn asset_id_mappings_table_name() -> String {
     std::env::var("ASSET_ID_MAPPINGS").expect("ASSET_ID_MAPPINGS")
+}
+
+pub fn source_compression() -> String {
+    std::env::var("SOURCE_COMPRESSION").unwrap_or(String::from("Zstd"))
 }

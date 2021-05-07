@@ -1,11 +1,15 @@
-use std::{collections::HashMap,
-          convert::TryFrom};
+use std::{
+    collections::HashMap,
+    convert::TryFrom,
+};
 
 use grapl_graph_descriptions::graph_description::*;
 use regex::Regex;
-use serde::{de::DeserializeOwned,
-            Deserialize,
-            Serialize};
+use serde::{
+    de::DeserializeOwned,
+    Deserialize,
+    Serialize,
+};
 use serde_json::Value;
 
 mod grapl_pack;
@@ -36,7 +40,7 @@ enum OSQueryAction {
 /// When converting this struct into a [Graph], it internally re-deserializes into a [OSQueryResponse]
 /// object with pack-specific columnar data.
 #[derive(Serialize, Deserialize, Clone)]
-pub(crate) struct PartiallyDeserializedOSQueryLog {
+pub struct PartiallyDeserializedOSQueryLog {
     pub(crate) name: String,
     #[serde(rename = "unixTime")]
     pub(crate) unix_time: u64,

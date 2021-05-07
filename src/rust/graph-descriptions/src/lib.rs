@@ -18,16 +18,23 @@ pub mod graph_mutation_service {
     ));
 }
 
-pub use node_property::Property::{DecrementOnlyInt as ProtoDecrementOnlyIntProp,
-                                  DecrementOnlyUint as ProtoDecrementOnlyUintProp,
-                                  ImmutableInt as ProtoImmutableIntProp,
-                                  ImmutableStr as ProtoImmutableStrProp,
-                                  ImmutableUint as ProtoImmutableUintProp,
-                                  IncrementOnlyInt as ProtoIncrementOnlyIntProp,
-                                  IncrementOnlyUint as ProtoIncrementOnlyUintProp};
 
-pub use crate::{graph_description::*,
-                node_property::Property};
+pub use crate::{graph_description::*,};
+
+pub use node_property::Property::{
+    DecrementOnlyInt as ProtoDecrementOnlyIntProp,
+    DecrementOnlyUint as ProtoDecrementOnlyUintProp,
+    ImmutableInt as ProtoImmutableIntProp,
+    ImmutableStr as ProtoImmutableStrProp,
+    ImmutableUint as ProtoImmutableUintProp,
+    IncrementOnlyInt as ProtoIncrementOnlyIntProp,
+    IncrementOnlyUint as ProtoIncrementOnlyUintProp,
+};
+
+pub use crate::{
+    graph_description::*,
+    node_property::Property,
+};
 
 // A helper macro to generate `From` impl boilerplate.
 macro_rules! impl_from_for_unit {
@@ -874,12 +881,16 @@ impl NodeProperty {
 
 #[cfg(test)]
 pub mod test {
-    use std::{collections::HashMap,
-              hash::Hasher};
+    use std::{
+        collections::HashMap,
+        hash::Hasher,
+    };
 
     #[cfg(not(feature = "fuzzing"))]
-    use quickcheck::{Arbitrary,
-                     Gen};
+    use quickcheck::{
+        Arbitrary,
+        Gen,
+    };
     use quickcheck_macros::quickcheck;
 
     use super::*;

@@ -1,25 +1,8 @@
 FROM rust:1-slim-buster AS base
 
-ARG CARGO_PROFILE=debug
+ARG RUST_BUILD=debug
 
 SHELL ["/bin/bash", "-c"]
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        wait-for-it \
-        ca-certificates \
-        netbase \
-        wget \
-        zip \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /tmp
-
-RUN wget -q https://github.com/mozilla/sccache/releases/download/v0.2.15/sccache-v0.2.15-x86_64-unknown-linux-musl.tar.gz && \
-    tar xvzf sccache-v0.2.15-x86_64-unknown-linux-musl.tar.gz && \
-    chmod +x sccache-v0.2.15-x86_64-unknown-linux-musl/sccache && \
-    cp sccache-v0.2.15-x86_64-unknown-linux-musl/sccache /usr/local/bin/sccache
-
-ENV RUSTC_WRAPPER=/usr/local/bin/sccache
 
 # Install rust toolchain before copying sources to avoid unecessarily
 # resinstalling on source file changes.
@@ -38,42 +21,81 @@ WORKDIR /grapl/rust
 
 
 # build
-#
-# the `base` stage isn't used by the build system, but let's 
-# make `base` and `build` in case it becomes convenient.
 ################################################################################
 FROM base AS build
 
-RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
-    --mount=type=cache,mode=0777,target=/usr/local/cargo/registry \
+RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
+    --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=secret,id=rust_env,dst=/grapl/env \
-    source /grapl/env; \
-    case "${CARGO_PROFILE}" in \
+    if [ -f /grapl/env ]; then source /grapl/env; fi && \
+    case "${RUST_BUILD}" in \
       debug) \
         cargo build ;; \
       release) \
         cargo build --release ;; \
       *) \
-        echo "ERROR: Unknown profile: ${CARGO_PROFILE}"; \
+        echo "ERROR:  Unknown RUST_BUILD option: ${RUST_BUILD}"; \
         exit 1 ;; \
     esac
 
+# Copy the build outputs to location that's not a cache mount.
+# TODO: switch to using --out-dir when stable: https://github.com/rust-lang/cargo/issues/6790
+RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
+    mkdir -p /dist && \
+    find "/grapl/rust/target/${RUST_BUILD}" -maxdepth 1 -type f -executable -exec cp {} /dist \;
 
 
-# zip
+# build-test
+# This target is not merged with the `build` target because the actions to run
+# after cargo are different when building for tests and building the services, 
+# and we'd rather not save all of the Rust `target/` directory to Docker image
+# if we don't have to.
 ################################################################################
-FROM build AS zip
+FROM base AS build-test
+
+RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
+    --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=secret,id=rust_env,dst=/grapl/env \
+    if [ -f /grapl/env ]; then source /grapl/env; fi && \
+    case "${RUST_BUILD}" in \
+      test) \
+        cargo test --no-run ;; \
+      test-integration) \
+        cargo test --features node-identifier/integration,sqs-executor/integration --test "*" --no-run ;; \
+      *) \
+        echo "ERROR: Unknown RUST_BUILD option: ${RUST_BUILD}"; \
+        exit 1 ;; \
+    esac
+
+# Save the mount cache to the Docker image, as these files are needed for
+# running the integration tests in containers. 
+RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
+    --mount=type=cache,target=/usr/local/cargo/registry \
+    cp -a /grapl/rust/target /tmp/target && \
+    cp -a /usr/local/cargo/registry /tmp/registry
+
+RUN mv /tmp/target /grapl/rust/target && \
+    mv /tmp/registry /usr/local/cargo/registry
+
+# metric-forwarder-zip
+################################################################################
+FROM build AS metric-forwarder-zip
+
+RUN --mount=type=cache,target=/var/lib/apt/lists \
+    apt-get update && apt-get install -y --no-install-recommends \
+        zip
 
 RUN mkdir -p /grapl/zips; \
     grapl-zip() { \
       TMPDIR="$(mktemp -d)"; \
       cd "$TMPDIR"; \
-      cp "/grapl/rust/target/${TARGET}/${CARGO_PROFILE}/${1}" bootstrap && \
+      cp "/dist/${1}" bootstrap && \
       zip --quiet -9 "/grapl/zips/${1}.zip" bootstrap; \
     }; \
     grapl-zip metric-forwarder
 
 
+<<<<<<< HEAD
 # build test stages
 ################################################################################
 FROM build AS build-test-unit
@@ -96,37 +118,38 @@ RUN --mount=type=cache,mode=0777,target=/root/.cache/sccache \
     cargo test --manifest-path graph-mutation-service/Cargo.toml --features integration --no-run
 
 
+=======
+>>>>>>> main
 # images for running services
 ################################################################################
 FROM debian:buster-slim AS rust-dist
 
-ARG CARGO_PROFILE=debug
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN --mount=type=cache,target=/var/lib/apt/lists \
+    apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \
-        netbase \
-    && rm -rf /var/lib/apt/lists/*
+        netbase
 
 USER nobody
 
 # analyzer-dispatcher
 FROM rust-dist AS analyzer-dispatcher-deploy
 
-COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/analyzer-dispatcher" /
+COPY --from=build /dist/analyzer-dispatcher /
 CMD ["/analyzer-dispatcher"]
 
 # generic-subgraph-generator
 FROM rust-dist AS generic-subgraph-generator-deploy
 
-COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/generic-subgraph-generator" /
+COPY --from=build /dist/generic-subgraph-generator /
 CMD ["/generic-subgraph-generator"]
 
 # graph-merger
 FROM rust-dist AS graph-merger-deploy
 
-COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/graph-merger" /
+COPY --from=build /dist/graph-merger /
 CMD ["/graph-merger"]
 
+<<<<<<< HEAD
 # graph-mutation-service
 FROM rust-dist AS graph-mutation-service-deploy
 
@@ -139,26 +162,28 @@ FROM rust-dist AS metric-forwarder-deploy
 COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/metric-forwarder" /
 CMD ["/metric-forwarder"]
 
+=======
+>>>>>>> main
 # node-identifier
 FROM rust-dist AS node-identifier-deploy
 
-COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/node-identifier" /
+COPY --from=build /dist/node-identifier /
 CMD ["/node-identifier"]
 
 # node-identifier-retry-handler
 FROM rust-dist AS node-identifier-retry-handler-deploy
 
-COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/node-identifier-retry-handler" /
+COPY --from=build /dist/node-identifier-retry-handler /
 CMD ["/node-identifier-retry-handler"]
 
 # sysmon-subgraph-generator
 FROM rust-dist AS sysmon-subgraph-generator-deploy
 
-COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/sysmon-subgraph-generator" /
+COPY --from=build /dist/sysmon-subgraph-generator /
 CMD ["/sysmon-subgraph-generator"]
 
 # osquery-subgraph-generator
 FROM rust-dist AS osquery-subgraph-generator-deploy
 
-COPY --from=build "/grapl/rust/target/${CARGO_PROFILE}/osquery-subgraph-generator" /
+COPY --from=build /dist/osquery-subgraph-generator /
 CMD ["/osquery-subgraph-generator"]

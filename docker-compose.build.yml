@@ -12,15 +12,6 @@ services:
   # Rust Services
   ########################################################################
 
-  grapl-metric-forwarder:
-    image: grapl/grapl-metric-forwarder:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: rust/Dockerfile
-      target: metric-forwarder-deploy
-      args:
-        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
-
   grapl-sysmon-subgraph-generator:
     image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
     build:
@@ -28,7 +19,7 @@ services:
       dockerfile: rust/Dockerfile
       target: sysmon-subgraph-generator-deploy
       args:
-        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
+        - RUST_BUILD=${RUST_BUILD:-debug}
 
   grapl-osquery-subgraph-generator:
     image: grapl/grapl-osquery-subgraph-generator:${TAG:-latest}
@@ -37,7 +28,7 @@ services:
       dockerfile: rust/Dockerfile
       target: osquery-subgraph-generator-deploy
       args:
-        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
+        - RUST_BUILD=${RUST_BUILD:-debug}
 
   grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
@@ -46,7 +37,7 @@ services:
       dockerfile: rust/Dockerfile
       target: node-identifier-deploy
       args:
-        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
+        - RUST_BUILD=${RUST_BUILD:-debug}
 
   grapl-node-identifier-retry-handler:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
@@ -55,7 +46,7 @@ services:
       dockerfile: rust/Dockerfile
       target: node-identifier-retry-handler-deploy
       args:
-        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
+        - RUST_BUILD=${RUST_BUILD:-debug}
 
   grapl-graph-merger:
     image: grapl/grapl-graph-merger:${TAG:-latest}
@@ -64,7 +55,7 @@ services:
       dockerfile: rust/Dockerfile
       target: graph-merger-deploy
       args:
-        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
+        - RUST_BUILD=${RUST_BUILD:-debug}
 
   grapl-graph-mutation-service:
     image: grapl/grapl-graph-mutation-service:${TAG:-latest}
@@ -82,7 +73,7 @@ services:
       dockerfile: rust/Dockerfile
       target: analyzer-dispatcher-deploy
       args:
-        - CARGO_PROFILE=${CARGO_PROFILE:-debug}
+        - RUST_BUILD=${RUST_BUILD:-debug}
 
   ########################################################################
   # Python Services
@@ -95,27 +86,12 @@ services:
       dockerfile: ./python/Dockerfile
       target: analyzer-executor-deploy
 
-  grapl-ux-router:
-    image: grapl/grapl-ux-router:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: ./python/Dockerfile
-      target: grapl-ux-router-deploy
-
   grapl-engagement-creator:
     image: grapl/grapl-engagement-creator:${TAG:-latest}
     build:
       context: src
       dockerfile: ./python/Dockerfile
       target: engagement-creator-deploy
-
-  # TODO: really, this service should be grapl-auth
-  grapl-engagement-edge:
-    image: grapl/grapl-engagement-edge:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: ./python/Dockerfile
-      target: engagement-edge-deploy
 
   grapl-model-plugin-deployer:
     image: grapl/grapl-model-plugin-deployer:${TAG:-latest}

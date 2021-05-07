@@ -9,14 +9,15 @@ import sys
 import traceback
 from collections import defaultdict
 from datetime import datetime
+from logging import Logger
 from multiprocessing import Pipe, Process
 from multiprocessing.connection import Connection
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterable, Iterator, List, Mapping, Optional
 
 import boto3  # type: ignore
-import redis
+from analyzer_executor_lib.redis_cache import EitherCache, construct_redis_client
 from analyzer_executor_lib.sqs_types import S3PutRecordDict, SQSMessageBody
 from grapl_analyzerlib.analyzer import Analyzer
 from grapl_analyzerlib.execution import ExecutionComplete, ExecutionFailed, ExecutionHit
@@ -30,7 +31,7 @@ from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
 
 if TYPE_CHECKING:
-    from mypy_boto3_s3 import S3Client, S3ServiceResource
+    from mypy_boto3_s3 import S3ServiceResource
     from mypy_boto3_sqs import SQSClient
 
 
@@ -49,16 +50,14 @@ except Exception as e:
     LOGGER.error("Failed to create model plugins directory", e)
 
 
-# TODO:  move generic cache stuff into its own utility file
-class NopCache(object):
-    def set(self, key, value):
-        pass
+def verbose_cast_to_int(input: Optional[str]) -> Optional[int]:
+    if not input:
+        return None
 
-    def get(self, key):
-        return False
-
-
-EitherCache = Union[NopCache, redis.Redis]
+    try:
+        return int(input)
+    except (TypeError, ValueError):
+        raise ValueError(f"Couldn't cast this env variable into an int: {input}")
 
 
 class AnalyzerExecutor:
@@ -67,12 +66,15 @@ class AnalyzerExecutor:
     CHUNK_SIZE_RETRY: int = 10
     CHUNK_SIZE_DEFAULT: int = 100
 
-    # singleton
-    _singleton = None
-
     def __init__(
-        self, message_cache, hit_cache, chunk_size, is_local, logger, metric_reporter
-    ):
+        self,
+        message_cache: EitherCache,
+        hit_cache: EitherCache,
+        chunk_size: int,
+        is_local: bool,
+        logger: Logger,
+        metric_reporter: MetricReporter,
+    ) -> None:
         self.message_cache = message_cache
         self.hit_cache = hit_cache
         self.chunk_size = chunk_size
@@ -81,81 +83,36 @@ class AnalyzerExecutor:
         self.metric_reporter = metric_reporter
 
     @classmethod
-    def singleton(cls) -> AnalyzerExecutor:
-        if not cls._singleton:
-            LOGGER.debug("initializing AnalyzerExecutor singleton")
-            is_local = bool(
-                os.getenv("IS_LOCAL", False)
-            )  # TODO move determination to grapl-common
+    def from_env(cls, env: Optional[Mapping[str, str]] = None) -> AnalyzerExecutor:
+        env = env or os.environ
+        is_local = bool(
+            env.get("IS_LOCAL", False)
+        )  # TODO move determination to grapl-common
 
-            # If we're retrying, change the chunk size
-            is_retry = os.getenv("IS_RETRY", False)
-            if is_retry == "True":
-                chunk_size = cls.CHUNK_SIZE_RETRY
-            else:
-                chunk_size = cls.CHUNK_SIZE_DEFAULT
+        # If we're retrying, change the chunk size
+        is_retry = bool(env.get("IS_RETRY", False))
+        if is_retry:
+            chunk_size = cls.CHUNK_SIZE_RETRY
+        else:
+            chunk_size = cls.CHUNK_SIZE_DEFAULT
 
-            # Set up message cache
-            messagecache_addr = os.getenv("MESSAGECACHE_ADDR")
-            messagecache_port: Optional[int] = None
-            messagecache_port_str = os.getenv("MESSAGECACHE_PORT")
-            if messagecache_port_str:
-                try:
-                    messagecache_port = int(messagecache_port_str)
-                except (TypeError, ValueError) as ex:
-                    LOGGER.error(
-                        f"can't connect to redis, MESSAGECACHE_PORT couldn't cast to int"
-                    )
-                    raise ex
+        # Set up message cache
+        messagecache_addr = env.get("MESSAGECACHE_ADDR")
+        messagecache_port: Optional[int] = verbose_cast_to_int(
+            env.get("MESSAGECACHE_PORT")
+        )
+        message_cache = construct_redis_client(messagecache_addr, messagecache_port)
 
-            if messagecache_addr and messagecache_port:
-                LOGGER.debug(
-                    f"message cache connecting to redis at {messagecache_addr}:{messagecache_port}"
-                )
-                message_cache = redis.Redis(
-                    host=messagecache_addr, port=messagecache_port, db=0
-                )
-            else:
-                LOGGER.error(
-                    f"message cache failed connecting to redis | addr:\t{messagecache_addr} | port:\t{messagecache_port}"
-                )
-                raise ValueError(
-                    f"incomplete redis connection details for message cache"
-                )
+        # Set up hit cache
+        hitcache_addr = env.get("HITCACHE_ADDR")
+        hitcache_port: Optional[int] = verbose_cast_to_int(env.get("HITCACHE_PORT"))
+        hit_cache = construct_redis_client(hitcache_addr, hitcache_port)
 
-            # Set up hit cache
-            hitcache_addr = os.getenv("HITCACHE_ADDR")
-            hitcache_port: Optional[int] = None
-            hitcache_port_str = os.getenv("HITCACHE_PORT")
-            if hitcache_port_str:
-                try:
-                    hitcache_port = int(hitcache_port_str)
-                except (TypeError, ValueError) as ex:
-                    LOGGER.error(
-                        f"can't connect to redis, HITCACHE_PORT couldn't cast to int"
-                    )
-                    raise ex
+        metric_reporter = MetricReporter.create("analyzer-executor")
 
-            if hitcache_addr and hitcache_port:
-                LOGGER.debug(
-                    f"hit cache connecting to redis at {hitcache_addr}:{hitcache_port}"
-                )
-                hit_cache = redis.Redis(
-                    host=hitcache_addr, port=int(hitcache_port), db=0
-                )
-            else:
-                LOGGER.error(
-                    f"hit cache failed connecting to redis | addr:\t{hitcache_addr} | port:\t{hitcache_port}"
-                )
-                raise ValueError(f"incomplete redis connection details for hit cache")
-
-            metric_reporter = MetricReporter.create("analyzer-executor")
-            # retain singleton
-            cls._singleton = cls(
-                message_cache, hit_cache, chunk_size, is_local, LOGGER, metric_reporter
-            )
-
-        return cls._singleton
+        return AnalyzerExecutor(
+            message_cache, hit_cache, chunk_size, is_local, LOGGER, metric_reporter
+        )
 
     def check_caches(
         self, file_hash: str, msg_id: str, node_key: str, analyzer_name: str
@@ -171,24 +128,25 @@ class AnalyzerExecutor:
 
             return False
 
+    def to_event_hash(self, components: Iterable[str]) -> str:
+        joined = ",".join(components)
+        event_hash = hashlib.sha256(joined.encode()).hexdigest()
+        return event_hash
+
     def check_msg_cache(self, file: str, node_key: str, msg_id: str) -> bool:
-        to_hash = str(file) + str(node_key) + str(msg_id)
-        event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
+        event_hash = self.to_event_hash((file, node_key, msg_id))
         return bool(self.message_cache.get(event_hash))
 
     def update_msg_cache(self, file: str, node_key: str, msg_id: str) -> None:
-        to_hash = str(file) + str(node_key) + str(msg_id)
-        event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
+        event_hash = self.to_event_hash((file, node_key, msg_id))
         self.message_cache.set(event_hash, "1")
 
     def check_hit_cache(self, file: str, node_key: str) -> bool:
-        to_hash = str(file) + str(node_key)
-        event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
+        event_hash = self.to_event_hash((file, node_key))
         return bool(self.hit_cache.get(event_hash))
 
     def update_hit_cache(self, file: str, node_key: str) -> None:
-        to_hash = str(file) + str(node_key)
-        event_hash = hashlib.sha256(to_hash.encode()).hexdigest()
+        event_hash = self.to_event_hash((file, node_key))
         self.hit_cache.set(event_hash, "1")
 
     async def handle_events(self, events: SQSMessageBody, context: Any) -> None:

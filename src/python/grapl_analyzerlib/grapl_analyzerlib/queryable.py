@@ -5,6 +5,7 @@ import json
 from collections import defaultdict
 from typing import (
     Any,
+    Callable,
     cast,
     Dict,
     TypeVar,
@@ -38,11 +39,12 @@ F = TypeVar("F", bound="Queryable")
 ToOneFilter = List[F]
 ToManyFilter = List[Tuple[F, ...]]
 EdgeFilter = Union[ToOneFilter[F], ToManyFilter[F]]
+F = TypeVar("F", bound=Callable)
 
 
-def with_str_prop(prop):
+def with_str_prop(prop: str) -> Callable[[F], F]:
     @functools.wraps(prop)
-    def _with_str_prop(func):
+    def _with_str_prop(func: F) -> F:
         @functools.wraps(func)
         def wrapper_with_str_prop(self, **kwargs):
             return self.with_str_property(prop, **kwargs)
@@ -52,9 +54,9 @@ def with_str_prop(prop):
     return _with_str_prop
 
 
-def with_int_prop(prop):
+def with_int_prop(prop: str) -> Callable[[F], F]:
     @functools.wraps(prop)
-    def _with_int_prop(func):
+    def _with_int_prop(func: F) -> F:
         @functools.wraps(func)
         def wrapper_with_int_prop(self, **kwargs):
             return self.with_int_property(prop, **kwargs)
@@ -87,7 +89,7 @@ class QueryFailedException(Exception):
 
 
 class Queryable(Generic[V, Q], Extendable, abc.ABC):
-    def __init__(self):
+    def __init__(self) -> None:
         self._property_filters: Dict[str, List[List[Cmp]]] = defaultdict(list)
         self._edge_filters: Dict[str, EdgeFilter[Q]] = defaultdict(list)
         self._id = str(uuid4())

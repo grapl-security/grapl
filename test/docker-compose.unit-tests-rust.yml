@@ -9,7 +9,7 @@ services:
     build:
       context: ${PWD}/src
       dockerfile: ./rust/Dockerfile
-      target: build-test-unit
+      target: build-test
       args:
-        - CARGO_PROFILE=debug
+        - RUST_BUILD=test
     command: cargo test

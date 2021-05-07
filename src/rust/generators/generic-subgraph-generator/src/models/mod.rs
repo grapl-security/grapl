@@ -5,18 +5,28 @@ mod process;
 use std::convert::TryFrom;
 
 use grapl_graph_descriptions::graph_description::*;
-use process::{ProcessStart,
-              ProcessStop};
-use serde::{Deserialize,
-            Serialize};
+use process::{
+    ProcessStart,
+    ProcessStop,
+};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
-use crate::models::{file::{FileCreate,
-                           FileDelete,
-                           FileRead,
-                           FileWrite},
-                    network::{ProcessInboundConnectionLog,
-                              ProcessOutboundConnectionLog},
-                    process::ProcessPortBindLog};
+use crate::models::{
+    file::{
+        FileCreate,
+        FileDelete,
+        FileRead,
+        FileWrite,
+    },
+    network::{
+        ProcessInboundConnectionLog,
+        ProcessOutboundConnectionLog,
+    },
+    process::ProcessPortBindLog,
+};
 
 #[derive(Clone, Debug, Hash, Serialize, Deserialize)]
 #[serde(tag = "eventname")]
