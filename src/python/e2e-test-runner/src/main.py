@@ -6,7 +6,7 @@ from grapl_tests_common.upload_analyzers import AnalyzerUpload
 from grapl_tests_common.upload_test_data import UploadSysmonLogsTestData
 
 
-def main() -> None:
+def main(_, __) -> None:
     wait_for_vsc_debugger("grapl_e2e_tests")
     analyzers = (
         AnalyzerUpload(
@@ -30,7 +30,3 @@ def main() -> None:
     )
 
     setup_tests.exec_pytest()
-
-
-if __name__ == "__main__":
-    main()

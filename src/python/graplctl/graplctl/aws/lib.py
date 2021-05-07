@@ -103,23 +103,32 @@ def destroy_grapl(
     LOGGER.info("destroyed all stacks")
 
 
-def provision_grapl(lambda_: LambdaClient, deployment_name: str) -> None:
-    LOGGER.info("invoking provisioner lambda")
+def _invoke_lambda(lambda_: LambdaClient, function_name: str) -> None:
+    LOGGER.info(f"invoking lambda {function_name}")
     result = lambda_.invoke(
-        FunctionName=f"{deployment_name}-Provisioner-Handler",
+        FunctionName=function_name,
         InvocationType="RequestResponse",
         LogType="Tail",
     )
 
     status = result["StatusCode"]
     logs = base64.b64decode(bytes(result["LogResult"], "utf-8")).decode("utf-8")
-    if status == 200:
+    if status == 200 and result.get("FunctionError") is None:
         for line in logs.splitlines():
             LOGGER.info(line)
-        LOGGER.info("provisioner lambda succeeded")
+        LOGGER.info(f"lambda invocation succeeded for {function_name}")
     else:
-        for line in logs.splitlines():
-            LOGGER.error(line)
-        raise Exception(
-            f"provisioner lambda failed with status {status}: {result['FunctionError']}"
+        LOGGER.error(
+            f"{''.join(l.decode('utf-8') for l in result['Payload'].iter_lines())}"
         )
+        raise Exception(
+            f"lambda invocation for {function_name} failed with status {status}: {result['FunctionError']}"
+        )
+
+
+def provision_grapl(lambda_: LambdaClient) -> None:
+    _invoke_lambda(lambda_=lambda_, function_name=f"provisioner")
+
+
+def run_e2e_tests(lambda_: LambdaClient) -> None:
+    _invoke_lambda(lambda_=lambda_, function_name=f"e2e-test-runner")

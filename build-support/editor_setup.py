@@ -42,6 +42,8 @@ BASE_PYRIGHTCONFIG: PyrightConfig = {
     "exclude": [
         "src/js/**",
         "src/rust/**",
+        "bin/**",
+        "dist/**",
     ],
     "executionEnvironments": [
         {"root": "pulumi"},
