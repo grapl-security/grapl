@@ -34,9 +34,7 @@ use rusoto_dynamodb::{
 use rusoto_sqs::SqsClient;
 use sessiondb::SessionDb;
 use sqs_executor::{
-    cache::{
-        Cache,
-    },
+    cache::Cache,
     event_handler::{
         CompletedEvents,
         EventHandler,
@@ -47,12 +45,13 @@ use sqs_executor::{
     time_based_key_fn,
 };
 use tap::tap::TapOptional;
+
 use crate::error::NodeIdentifierError;
 
 pub mod dynamic_sessiondb;
+mod error;
 pub mod sessiondb;
 pub mod sessions;
-mod error;
 
 /**
     The `NodeIdentifier` takes in graphs of previously unidentified nodes and performs identification
@@ -110,7 +109,7 @@ where
     pub async fn identify_nodes(
         &self,
         unidentified_subgraph: &GraphDescription,
-        identified_graph: &mut IdentifiedGraph
+        identified_graph: &mut IdentifiedGraph,
     ) -> (HashMap<String, String>, Option<failure::Error>) {
         let mut identified_nodekey_map = HashMap::new();
         let mut attribution_failure = None;
@@ -126,7 +125,10 @@ where
                 }
             };
 
-            identified_nodekey_map.insert(unidentified_node_key.to_owned(), identified_node.clone_node_key());
+            identified_nodekey_map.insert(
+                unidentified_node_key.to_owned(),
+                identified_node.clone_node_key(),
+            );
             identified_graph.add_node(identified_node);
         }
 
@@ -140,7 +142,7 @@ where
         &self,
         unidentified_subgraph: &GraphDescription,
         identified_graph: &mut IdentifiedGraph,
-        identified_nodekey_map: HashMap<String, String>
+        identified_nodekey_map: HashMap<String, String>,
     ) {
         let identified_node_edges = unidentified_subgraph.edges.iter()
             // filter out all edges for nodes that were not identified (also gets our from_key)
@@ -189,19 +191,19 @@ where
         _completed: &mut CompletedEvents,
     ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
         /*
-            1. for the nodes in the unidentified graph, do the following
-                1. identify each node
-                2. record the old node key -> new node key mapping
-                3. record which nodes failed to identify
-                4. place the correctly identified nodes into a new, identified graph
-            2. for the edges in the unidentified graph, do the following
-                1. for both the 'from' and 'to' sections, look up the old-node-key -> new-node-key map to fetch updated values
-                    1. if both are present, update edge and add it to the identified graph
-                    2. if one or more are missing, warn with an appropriate error message and skip the edge
-            3. if identified graph is empty, return as full error
-            4. if any nodes failed to identify or any errors occurred, return as a partial error
-            5. return as full graph
-         */
+           1. for the nodes in the unidentified graph, do the following
+               1. identify each node
+               2. record the old node key -> new node key mapping
+               3. record which nodes failed to identify
+               4. place the correctly identified nodes into a new, identified graph
+           2. for the edges in the unidentified graph, do the following
+               1. for both the 'from' and 'to' sections, look up the old-node-key -> new-node-key map to fetch updated values
+                   1. if both are present, update edge and add it to the identified graph
+                   2. if one or more are missing, warn with an appropriate error message and skip the edge
+           3. if identified graph is empty, return as full error
+           4. if any nodes failed to identify or any errors occurred, return as a partial error
+           5. return as full graph
+        */
 
         info!("Begin node identification process.");
 
@@ -218,14 +220,25 @@ where
 
         let mut identified_graph = IdentifiedGraph::new();
 
-        let (identified_nodekey_map, attribution_failure) =
-            self.identify_nodes(&unidentified_subgraph, &mut identified_graph).await;
+        let (identified_nodekey_map, attribution_failure) = self
+            .identify_nodes(&unidentified_subgraph, &mut identified_graph)
+            .await;
 
-        info!("PRE: unidentified_subgraph.edges.len() {}", unidentified_subgraph.edges.len());
+        info!(
+            "PRE: unidentified_subgraph.edges.len() {}",
+            unidentified_subgraph.edges.len()
+        );
 
-        self.identify_edges(&unidentified_subgraph, &mut identified_graph, identified_nodekey_map);
+        self.identify_edges(
+            &unidentified_subgraph,
+            &mut identified_graph,
+            identified_nodekey_map,
+        );
 
-        info!("POST: identified_graph.edges.len() {}", identified_graph.edges.len());
+        info!(
+            "POST: identified_graph.edges.len() {}",
+            identified_graph.edges.len()
+        );
 
         match attribution_failure {
             Some(_) if identified_graph.is_empty() => Err(Err(NodeIdentifierError::Unexpected)),
@@ -233,10 +246,13 @@ where
                 /* todo: error message is misleading. someone reading this would believe we identified
                  * a smaller number of nodes that actually identified (due to identities of nodes coalescing)
                  */
-                warn!("Partial Success; identified {} nodes", identified_graph.nodes.len());
+                warn!(
+                    "Partial Success; identified {} nodes",
+                    identified_graph.nodes.len()
+                );
 
                 Err(Ok((identified_graph, NodeIdentifierError::Unexpected))) // todo: Use a real error here
-            },
+            }
             None => {
                 info!("Identified all nodes");
 

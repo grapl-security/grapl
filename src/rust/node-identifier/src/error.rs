@@ -1,5 +1,7 @@
-use sqs_executor::errors::Recoverable;
-use sqs_executor::errors::CheckedError;
+use sqs_executor::errors::{
+    CheckedError,
+    Recoverable,
+};
 
 #[derive(thiserror::Error, Debug)]
 pub enum NodeIdentifierError {
