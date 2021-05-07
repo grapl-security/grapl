@@ -4,8 +4,8 @@ type Process @grapl(identity_algorithm: "session") {
     created_at: UInt! @create_time,
     last_seen_at: UInt! @last_seen_time,
     terminated_at: UInt! @terminate_time,
-    binary_file: File! @edge(reverse: "executed_as_processes", reverse_relationship: "ToOne"),
-    created_file: File! @edge(reverse: "created_by_process", reverse_relationship: "ToMany"),
+    binary_file: File! @edge(reverse: "executed_as_processes", reverse_relationship: "ToMany"),
+    created_file: [File!] @edge(reverse: "created_by_process", reverse_relationship: "ToMany"),
 }
 
 type File @grapl(identity_algorithm: "session") {
