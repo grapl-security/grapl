@@ -290,7 +290,7 @@ mod tests {
     }
 
     #[test]
-    #[ignore] 
+    #[ignore]
     // This codepath is nondeterministic. It's probably not worth our time to
     // fix, since we are probably moving off of Cloudwatch in the neat future.
     // I'm leaving it here as a "repro of a failure"
