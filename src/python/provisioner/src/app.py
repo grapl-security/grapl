@@ -110,32 +110,8 @@ def _retrieve_test_user_password(
         SecretId=f"{deployment_name}-TestUserPassword"
     )["SecretString"]
 
-
-def _validate_environment():
-    """Ensures that the required environment variables are present in the environment.
-
-    Other code actually reads the variables later.
-    """
-    required = [
-        "AWS_REGION",
-        "DYNAMODB_ACCESS_KEY_ID",
-        "DYNAMODB_ACCESS_KEY_SECRET",
-        "DYNAMODB_ENDPOINT",
-    ]
-
-    missing = [var for var in required if var not in os.environ]
-
-    if missing:
-        LOGGER.error(
-            f"The following environment variables are required, but are not present: {missing}"
-        )
-        sys.exit(1)
-
-
 def provision(event: Any = None, context: Any = None):
     LOGGER.info("provisioning grapl")
-    _validate_environment()
-    LOGGER.info("configuration is valid")
 
     graph_client = GraphClient()
     dynamodb: DynamoDBServiceResource = DynamoDBResourceFactory(boto3).from_env()
