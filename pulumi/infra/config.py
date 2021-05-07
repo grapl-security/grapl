@@ -32,7 +32,7 @@ leave it unset to use the default value of `latest`.
 """
 
 
-SERVICE_LOG_RETENTION_DAYS: Final[int] = 31
+SERVICE_LOG_RETENTION_DAYS: Final[int] = 30
 
 
 def mg_alphas() -> str:
