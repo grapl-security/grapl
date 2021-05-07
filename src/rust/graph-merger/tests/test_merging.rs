@@ -14,7 +14,6 @@ pub mod test {
         collections::HashMap,
         sync::{
             Arc,
-            Once,
         },
     };
 
@@ -28,13 +27,6 @@ pub mod test {
             Predicate,
         },
         queryblock::QueryBlockType,
-        schema::{
-            Indexing,
-            PredicateDefinition,
-            PredicateType,
-            Schema,
-            SchemaDefinition,
-        },
         EdgeBuilder,
         QueryBlockBuilder,
         QueryBuilder,
@@ -46,7 +38,6 @@ pub mod test {
     };
     use graph_merger_lib::{
         service::GraphMerger,
-        upserter::GraphMergeHelper,
     };
     use grapl_graph_descriptions::{
         graph_mutation_service::graph_mutation_rpc_client::GraphMutationRpcClient,

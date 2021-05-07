@@ -1044,7 +1044,6 @@ pub mod test {
         assert_eq!(original, x);
     }
 
-    
     #[quickcheck]
     fn test_merge_immutable_int(mut x: ImmutableIntProp, y: ImmutableIntProp) {
         init_test_env();

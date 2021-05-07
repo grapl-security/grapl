@@ -13,7 +13,6 @@ name = "graph_mutation_service_lib"
 [dependencies]
 anyhow = "1"
 dgraph-tonic = { version = "0.9", features = ["dgraph-1-1"] }
-dgraph_query_lib = "0.1.0"
 futures = { version = "0.3", default-features = false, features = ["alloc"] }
 futures-retry = "0.6"
 grapl-config = { path="../grapl-config" }
@@ -24,7 +23,6 @@ lazy_static = "1.4"
 lru = "0.6"
 prost = "0.7"
 prost-derive = "0.7"
-prost-types = "0.7"
 rusoto_dynamodb = { version="0.46", default_features = false, features=["rustls"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

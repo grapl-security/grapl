@@ -35,4 +35,7 @@ tracing-subscriber = "0.2"
 
 [features]
 default = []
-extra_assertions = []
+
+
+[package.metadata.cargo-udeps.ignore]
+build=["uuid"]
