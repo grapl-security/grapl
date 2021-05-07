@@ -62,3 +62,34 @@ class MetricForwarder(pulumi.ComponentResource):
         )
 
         self.register_outputs({})
+
+    def subscribe_to_log_group(
+        self, name: str, log_group: aws.cloudwatch.LogGroup
+    ) -> None:
+        """
+        Allows the metric forwarder to process `MONITORING` logs from the given log group.
+
+        `name` is used to create Pulumi resource names; it should reflect the thing feeding into the log group.
+        """
+
+        # Allow the metric forwarder to be invoked with by this
+        # lambda function's log group.
+        permission = aws.lambda_.Permission(
+            f"{name}-log-group-invokes-metric-forwarder",
+            principal=f"logs.amazonaws.com",
+            action="lambda:InvokeFunction",
+            function=self.function.function.arn,
+            source_arn=log_group.arn.apply(lambda arn: f"{arn}:*"),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        # Then, with that permission granted, configure the metric
+        # forwarder to receive all 'MONITORING' log messages from
+        # the lambda function.
+        aws.cloudwatch.LogSubscriptionFilter(
+            f"metric-forwarder-subscribes-to-{name}-monitoring-logs",
+            log_group=log_group.name,
+            filter_pattern="MONITORING",
+            destination_arn=self.function.function.arn,
+            opts=pulumi.ResourceOptions(depends_on=[permission], parent=self),
+        )
