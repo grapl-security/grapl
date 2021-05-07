@@ -267,12 +267,14 @@ services:
       GRAPH_MUTATION_ENDPOINT: "${GRAPH_MUTATION_ENDPOINT}"
     tty: false
     depends_on:
-      - dgraph
-      - grapl-provision
-      - grapl-graph-mutation-service
-      - localstack
-      - redis
-      - s3
+      dgraph:
+        condition: service_started
+      grapl-provision:
+        condition: service_completed_successfully
+      localstack:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   grapl-graph-mutation-service:
     image: grapl/grapl-graph-mutation-service:${TAG:-latest}

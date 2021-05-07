@@ -35,7 +35,6 @@ services:
       - DYNAMODB_ACCESS_KEY_ID
       - DYNAMODB_ACCESS_KEY_SECRET
 
-<<<<<<< HEAD
   grapl-rust-graph-merger-integration-tests:
     image: grapl/grapl-graph-merger-test:${TAG:-latest}
     build:
@@ -66,7 +65,7 @@ services:
       dockerfile: rust/Dockerfile
       target: build-test-integration
       args:
-        - CARGO_PROFILE=debug
+        - RUST_BUILD=debug
     command: bash -c "
       wait-for-it grapl-provision:${WAIT_PORT} --timeout=180 &&
       cargo test --manifest-path graph-mutation-service/Cargo.toml --features integration -- --nocapture"
@@ -77,11 +76,8 @@ services:
       - RUST_BACKTRACE=1
       - DEPLOYMENT_NAME
       - IS_LOCAL=True
-      - RETRY_QUEUE_URL="${SQS_ENDPOINT}/queue/grapl-graph-merger-retry-queue"
-      - SOURCE_QUEUE_URL="${SQS_ENDPOINT}/queue/grapl-graph-merger-queue"
       - MG_ALPHAS
 
-=======
   rust-sqs-executor-integration-tests:
     image: grapl/rust-integration-tests:${TAG:-latest}
     build:
@@ -93,7 +89,6 @@ services:
     command: cargo test --features sqs-executor/integration --test '*'
     environment:
       - REDIS_ENDPOINT
->>>>>>> main
 
   grapl-analyzerlib-integration-tests:
     image: grapl/grapl-analyzerlib-test:${TAG:-latest}
