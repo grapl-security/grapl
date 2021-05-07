@@ -1,10 +1,7 @@
 #![allow(unused)]
 #![allow(dead_code)]
 
-pub mod reverse_resolver;
 pub mod service;
-pub mod upsert_util;
-pub mod upserter;
 
 use std::{
     collections::HashMap,
@@ -39,13 +36,16 @@ use grapl_config::{
     },
     event_caches,
 };
-use grapl_graph_descriptions::graph_description::{
-    Edge,
-    EdgeList,
-    IdentifiedGraph,
-    IdentifiedNode,
-    MergedGraph,
-    MergedNode,
+use grapl_graph_descriptions::{
+    graph_description::{
+        Edge,
+        EdgeList,
+        IdentifiedGraph,
+        IdentifiedNode,
+        MergedGraph,
+        MergedNode,
+    },
+    graph_mutation_service::graph_mutation_rpc_client::GraphMutationRpcClient,
 };
 use grapl_observe::{
     dgraph_reporter::DgraphMetricReporter,
@@ -95,21 +95,16 @@ use sqs_executor::{
     s3_event_emitter::S3ToSqsEventNotifier,
     s3_event_retriever::S3PayloadRetriever,
 };
+use tonic::transport::Channel;
 use tracing::{
     error,
     info,
     warn,
 };
 
-use crate::{
-    reverse_resolver::{
-        get_r_edges_from_dynamodb,
-        ReverseEdgeResolver,
-    },
-    service::{
-        time_based_key_fn,
-        GraphMerger,
-    },
+use crate::service::{
+    time_based_key_fn,
+    GraphMerger,
 };
 
 #[tracing::instrument]
@@ -121,24 +116,24 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
 
     let cache = &mut event_caches(&env).await;
 
-    let mg_alphas = grapl_config::mg_alphas();
-
+    let mutation_endpoint = grapl_config::mutation_endpoint();
     // todo: the intitializer should give a cache to each service
     let graph_merger = &mut make_ten(async {
-        let mg_alphas_copy = mg_alphas.clone();
         tracing::debug!(
-            mg_alphas=?&mg_alphas_copy,
-            "Connecting to mg_alphas"
+            mutation_endpoint=?&mutation_endpoint,
+            "Connecting to mutation_endpoint"
         );
-        let dynamo = DynamoDbClient::from_env();
-        let reverse_edge_resolver =
-            ReverseEdgeResolver::new(dynamo, MetricReporter::new(&env.service_name), 1000);
+        let graph_mutation_client: GraphMutationRpcClient<Channel> =
+            GraphMutationRpcClient::connect(mutation_endpoint)
+                .await
+                .expect("Failed to connect to graph-mutation-service");
+
         GraphMerger::new(
-            mg_alphas_copy,
-            reverse_edge_resolver,
+            graph_mutation_client,
             MetricReporter::new(&env.service_name),
             cache[0].clone(),
         )
+        .await
     })
     .await;
 

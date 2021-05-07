@@ -44,16 +44,13 @@ rand = "0"
 dgraph_query_lib = "0.1"
 
 futures = "0.3"
-async-trait = "0.1"
+async-trait = "0.1.50"
 uuid = "0.8"
 tokio = { version = "1", features = ["sync", "rt", "macros", "time", "rt-multi-thread"] }
 chrono = "0.4"
-tracing = "0.1"
-thiserror = "1"
-tracing-futures = "0.2"
-tap = "1.0"
-lru = "0.6"
-futures-retry = "0.6"
+tonic = "0.4"
+tracing = "0.1.26"
+thiserror = "1.0.24"
 
 
 [dev-dependencies]

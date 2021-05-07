@@ -6,6 +6,18 @@ pub mod graph_description {
         "/graplinc.grapl.api.graph.v1beta1.rs"
     ));
 }
+
+pub use graph_description as v1beta1;
+
+pub mod graph_mutation_service {
+    // TODO: Restructure the Rust modules to better reflect the new
+    // Protobuf structure
+    include!(concat!(
+        env!("OUT_DIR"),
+        "/graplinc.grapl.api.graph.graph_mutation.rs"
+    ));
+}
+
 pub use node_property::Property::{
     DecrementOnlyInt as ProtoDecrementOnlyIntProp,
     DecrementOnlyUint as ProtoDecrementOnlyUintProp,
@@ -22,7 +34,7 @@ pub use crate::{
 };
 
 // A helper macro to generate `From` impl boilerplate.
-macro_rules ! impl_from_for_unit {
+macro_rules! impl_from_for_unit {
     ($into_t:ty, $field:tt, $from_t:ty) => {
         impl From<$from_t> for $into_t
         {
@@ -38,7 +50,7 @@ macro_rules ! impl_from_for_unit {
     };
 }
 
-macro_rules ! extra_assert {
+macro_rules! extra_assert {
     ($x:expr) => {
         #[cfg(feature = "extra_assertions")]
         {
@@ -48,6 +60,22 @@ macro_rules ! extra_assert {
     ($x:expr, $($tail:ty),*) => {
         extra_assert!($x);
         extra_assert!($($tail), *);
+    }
+}
+
+impl IdStrategy {
+    pub fn expect_session(&self) -> &Session {
+        match self.strategy {
+            Some(id_strategy::Strategy::Session(ref session)) => session,
+            _ => panic!("Expected session"),
+        }
+    }
+
+    pub fn expect_static(&self) -> &Static {
+        match self.strategy {
+            Some(id_strategy::Strategy::Static(ref st)) => st,
+            _ => panic!("Expected static"),
+        }
     }
 }
 
@@ -233,9 +261,9 @@ impl MergedGraph {
         &mut self,
         edge_name: impl Into<String>,
         from_node_key: impl Into<String>,
-        from_uid: impl Into<String>,
+        from_uid: impl Into<u64>,
         to_node_key: impl Into<String>,
-        to_uid: impl Into<String>,
+        to_uid: impl Into<u64>,
     ) {
         let edge_name = edge_name.into();
         let from_node_key = from_node_key.into();
@@ -277,9 +305,9 @@ impl MergedGraph {
                 self.add_edge(
                     edge.edge_name.clone(),
                     edge.from_node_key.clone(),
-                    edge.from_uid.clone(),
+                    edge.from_uid,
                     edge.to_node_key.clone(),
-                    edge.to_uid.clone(),
+                    edge.to_uid,
                 );
             }
         }
@@ -429,6 +457,7 @@ impl From<Session> for IdStrategy {
         }
     }
 }
+
 impl std::string::ToString for Property {
     fn to_string(&self) -> String {
         match self {
@@ -460,15 +489,16 @@ impl IncrementOnlyUintProp {
         self.prop = std::cmp::max(self.prop, other_prop.prop);
     }
 }
+
 impl ImmutableUintProp {
     pub fn as_inner(&self) -> u64 {
         self.prop
     }
     pub fn merge_property(&mut self, other_prop: &Self) {
         tracing::trace!(message="ImmutableUintProp merge", self_prop=?self, other_prop=?other_prop);
-        extra_assert! {debug_assert_eq!(*self, *other_prop)}
     }
 }
+
 impl DecrementOnlyUintProp {
     pub fn as_inner(&self) -> u64 {
         self.prop
@@ -477,6 +507,7 @@ impl DecrementOnlyUintProp {
         self.prop = std::cmp::min(self.prop, other_prop.prop);
     }
 }
+
 impl DecrementOnlyIntProp {
     pub fn as_inner(&self) -> i64 {
         self.prop
@@ -485,6 +516,7 @@ impl DecrementOnlyIntProp {
         self.prop = std::cmp::min(self.prop, other_prop.prop);
     }
 }
+
 impl IncrementOnlyIntProp {
     pub fn as_inner(&self) -> i64 {
         self.prop
@@ -495,15 +527,17 @@ impl IncrementOnlyIntProp {
         self.prop = std::cmp::max(self.prop, other_prop.prop);
     }
 }
+
 impl ImmutableIntProp {
     pub fn as_inner(&self) -> i64 {
         self.prop
     }
     pub fn merge_property(&mut self, other_prop: &Self) {
         tracing::trace!(message="ImmutableIntProp merge", self_prop=?self, other_prop=?other_prop);
-        extra_assert!(debug_assert_eq!(*self, *other_prop));
+        // This method purposefully does nothing
     }
 }
+
 impl ImmutableStrProp {
     pub fn as_inner(&self) -> &str {
         self.prop.as_str()
@@ -511,7 +545,7 @@ impl ImmutableStrProp {
 
     pub fn merge_property(&mut self, other_prop: &Self) {
         tracing::trace!(message="ImmutableStrProp merge", self_prop=?self, other_prop=?other_prop);
-        extra_assert!(debug_assert_eq!(*self, *other_prop));
+        // This method purposefully does nothing
     }
 }
 
@@ -632,8 +666,7 @@ impl MergedNode {
     }
 
     pub fn merge(&mut self, other: &Self) {
-        extra_assert!(debug_assert_eq!(self.node_type, other.node_type));
-        extra_assert!(debug_assert_eq!(self.node_key, other.node_key));
+        debug_assert_eq!(self.node_key, other.node_key);
         for (prop_name, prop_value) in other.properties.iter() {
             match self.properties.get_mut(prop_name) {
                 Some(self_prop) => self_prop.merge(prop_value),
@@ -753,31 +786,37 @@ impl From<ImmutableUintProp> for Property {
         Self::ImmutableUint(p)
     }
 }
+
 impl From<IncrementOnlyUintProp> for Property {
     fn from(p: IncrementOnlyUintProp) -> Self {
         Self::IncrementOnlyUint(p)
     }
 }
+
 impl From<DecrementOnlyUintProp> for Property {
     fn from(p: DecrementOnlyUintProp) -> Self {
         Self::DecrementOnlyUint(p)
     }
 }
+
 impl From<ImmutableIntProp> for Property {
     fn from(p: ImmutableIntProp) -> Self {
         Self::ImmutableInt(p)
     }
 }
+
 impl From<IncrementOnlyIntProp> for Property {
     fn from(p: IncrementOnlyIntProp) -> Self {
         Self::IncrementOnlyInt(p)
     }
 }
+
 impl From<DecrementOnlyIntProp> for Property {
     fn from(p: DecrementOnlyIntProp) -> Self {
         Self::DecrementOnlyInt(p)
     }
 }
+
 impl From<ImmutableStrProp> for Property {
     fn from(p: ImmutableStrProp) -> Self {
         Self::ImmutableStr(p)
@@ -858,6 +897,7 @@ pub mod test {
             }
         }
     }
+
     impl Arbitrary for DecrementOnlyIntProp {
         fn arbitrary(g: &mut Gen) -> Self {
             Self {
@@ -865,6 +905,7 @@ pub mod test {
             }
         }
     }
+
     impl Arbitrary for ImmutableIntProp {
         fn arbitrary(g: &mut Gen) -> Self {
             Self {
@@ -872,6 +913,7 @@ pub mod test {
             }
         }
     }
+
     impl Arbitrary for IncrementOnlyUintProp {
         fn arbitrary(g: &mut Gen) -> Self {
             Self {
@@ -879,6 +921,7 @@ pub mod test {
             }
         }
     }
+
     impl Arbitrary for DecrementOnlyUintProp {
         fn arbitrary(g: &mut Gen) -> Self {
             Self {
@@ -886,6 +929,7 @@ pub mod test {
             }
         }
     }
+
     impl Arbitrary for ImmutableUintProp {
         fn arbitrary(g: &mut Gen) -> Self {
             Self {
@@ -893,6 +937,7 @@ pub mod test {
             }
         }
     }
+
     impl Arbitrary for ImmutableStrProp {
         fn arbitrary(g: &mut Gen) -> Self {
             Self {
@@ -990,11 +1035,6 @@ pub mod test {
         let _ = ::tracing::subscriber::set_global_default(subscriber);
     }
 
-    // These tests mostly target ensuring that our merge functions are commutative and idempotent
-    // That said - immutable data is *not* commutative. Therefor, assertions around commutativity
-    // are disabled for for tests on immutable data via the "extra_assertions" feature
-
-    #[cfg(not(feature = "extra_assertions"))]
     #[quickcheck]
     fn test_merge_str(x: ImmutableStrProp, y: ImmutableStrProp) {
         init_test_env();
@@ -1004,7 +1044,6 @@ pub mod test {
         assert_eq!(original, x);
     }
 
-    #[cfg(not(feature = "extra_assertions"))]
     #[quickcheck]
     fn test_merge_immutable_int(mut x: ImmutableIntProp, y: ImmutableIntProp) {
         init_test_env();
@@ -1013,7 +1052,6 @@ pub mod test {
         assert_eq!(x, original);
     }
 
-    #[cfg(not(feature = "extra_assertions"))]
     #[quickcheck]
     fn test_merge_immutable_uint(mut x: ImmutableUintProp, y: ImmutableUintProp) {
         init_test_env();
@@ -1077,11 +1115,6 @@ pub mod test {
         if node_0.node_key != node_1.node_key {
             return;
         }
-        // let original = node_0.clone();
         node_0.merge(&node_1);
-
-        // for (_o_pred_name, o_pred_val) in original.iter() {
-        //     let mut copy = o_pred_val.clone();
-        // }
     }
 }

@@ -124,6 +124,12 @@ FROM rust-dist AS graph-merger-deploy
 COPY --from=build /dist/graph-merger /
 CMD ["/graph-merger"]
 
+# graph-mutation-service
+FROM rust-dist AS graph-mutation-service-deploy
+
+COPY --from=build "/dist/graph-mutation-service" /
+CMD ["/graph-mutation-service"]
+
 # node-identifier
 FROM rust-dist AS node-identifier-deploy
 

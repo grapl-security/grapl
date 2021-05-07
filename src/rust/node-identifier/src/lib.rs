@@ -1,5 +1,3 @@
-// #![allow(unused_must_use)]
-
 use std::{
     collections::{
         HashMap,
@@ -133,7 +131,6 @@ where
     CacheT: Cache + Clone + Send + Sync + 'static,
 {
     type InputEvent = GraphDescription;
-    // todo: IdentifiedGraph's should be emitted
     type OutputEvent = IdentifiedGraph;
     type Error = NodeIdentifierError;
 

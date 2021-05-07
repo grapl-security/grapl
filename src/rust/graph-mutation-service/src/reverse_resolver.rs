@@ -3,6 +3,8 @@ use std::{
     io::Stdout,
 };
 
+// pub use grapl_graph_descriptions::*;
+pub use dgraph_tonic::Status;
 use grapl_graph_descriptions::Edge;
 use grapl_observe::metric_reporter::MetricReporter;
 use grapl_utils::{
@@ -21,11 +23,23 @@ use serde::{
     Serialize,
 };
 
-use crate::service::GraphMergerError;
+#[derive(Debug, thiserror::Error)]
+pub enum ReverseEdgeResolverError {
+    #[error("No reverse edge found for {forward_edge}")]
+    NoReverseEdgeFound { forward_edge: String },
+    #[error("Unexpected")]
+    Unexpected(String),
+}
 
 lazy_static! {
     /// timeout for dynamodb queries
     static ref DYNAMODB_QUERY_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(3);
+}
+
+impl From<ReverseEdgeResolverError> for Status {
+    fn from(_err: ReverseEdgeResolverError) -> Status {
+        unimplemented!()
+    }
 }
 
 #[derive(Clone)]
@@ -53,7 +67,7 @@ impl ReverseEdgeResolver {
     pub async fn resolve_reverse_edges(
         &self,
         edges: Vec<Edge>,
-    ) -> Result<Vec<Edge>, GraphMergerError> {
+    ) -> Result<Vec<Edge>, ReverseEdgeResolverError> {
         if edges.is_empty() {
             return Ok(vec![]);
         }
@@ -138,7 +152,7 @@ struct EdgeMapping {
 pub async fn get_r_edges_from_dynamodb(
     client: &DynamoDbClient,
     f_edges: &[&String],
-) -> Result<HashMap<String, Option<String>>, GraphMergerError> {
+) -> Result<HashMap<String, Option<String>>, ReverseEdgeResolverError> {
     let schema_table_name = std::env::var("GRAPL_SCHEMA_TABLE").expect("GRAPL_SCHEMA_TABLE");
 
     let keys_and_attributes = make_keys(f_edges);
@@ -164,16 +178,16 @@ pub async fn get_r_edges_from_dynamodb(
         .batch_get_item_reliably(query)
         .timeout(*DYNAMODB_QUERY_TIMEOUT)
         .await
-        .map_err(|e| GraphMergerError::Unexpected(e.to_string()))?
-        .map_err(|e| GraphMergerError::Unexpected(e.to_string()))?
+        .map_err(|e| ReverseEdgeResolverError::Unexpected(e.to_string()))?
+        .map_err(|e| ReverseEdgeResolverError::Unexpected(e.to_string()))?
         .responses
-        .ok_or(GraphMergerError::Unexpected(
-            "Failed to fetch results from dynamodb".to_string(),
-        ))?
+        .ok_or(ReverseEdgeResolverError::Unexpected(format!(
+            "Failed to fetch results from dynamodb"
+        )))?
         .remove(&schema_table_name)
-        .ok_or(GraphMergerError::Unexpected(
-            "Missing data from expected table in dynamodb".to_string(),
-        ))?;
+        .ok_or(ReverseEdgeResolverError::Unexpected(format!(
+            "Missing data from expected table in dynamodb"
+        )))?;
 
     /*
        1. Remove entries without f_edge and r_edge

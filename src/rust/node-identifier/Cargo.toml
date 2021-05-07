@@ -56,7 +56,9 @@ hmap = "0.1"
 tracing = "0.1"
 chrono = "0.4"
 uuid = { version = "0.8", features=["v4"] }
+lazy_static = "1.4.0"
 
 [dev-dependencies]
 quickcheck = "1"
 quickcheck_macros = "1"
+tracing-subscriber = "0.2.18"

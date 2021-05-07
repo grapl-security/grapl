@@ -52,23 +52,25 @@ where
         unid: &UnidSession,
     ) -> Result<Option<Session>, Error> {
         info!("Finding first session after : {}", &self.table_name);
+        let expression_attribute_values = hmap! {
+            ":pseudo_key".to_owned() => AttributeValue {
+                s: unid.pseudo_key.clone().into(),
+                ..Default::default()
+            },
+            ":create_time".to_owned() => AttributeValue {
+                n: unid.timestamp.to_string().into(),
+                ..Default::default()
+            }
+        };
+
         let query = QueryInput {
             consistent_read: Some(true),
             limit: Some(1),
             table_name: self.table_name.clone(),
             key_condition_expression: Some(
-                "pseudo_key = :pseudo_key AND create_time >= :create_time".into(),
+                "pseudo_key = :pseudo_key AND create_time >= :create_time".to_string(),
             ),
-            expression_attribute_values: Some(hmap! {
-                ":pseudo_key".to_owned() => AttributeValue {
-                    s: unid.pseudo_key.clone().into(),
-                    ..Default::default()
-                },
-                ":create_time".to_owned() => AttributeValue {
-                    n: unid.timestamp.to_string().into(),
-                    ..Default::default()
-                }
-            }),
+            expression_attribute_values: Some(expression_attribute_values),
             ..Default::default()
         };
 
@@ -93,24 +95,25 @@ where
         unid: &UnidSession,
     ) -> Result<Option<Session>, Error> {
         info!("Finding last session before");
+        let expression_attribute_values = hmap! {
+            ":pseudo_key".to_owned() => AttributeValue {
+                s: unid.pseudo_key.clone().into(),
+                ..Default::default()
+            },
+            ":create_time".to_owned() => AttributeValue {
+                n: unid.timestamp.to_string().into(),
+                ..Default::default()
+            }
+        };
         let query = QueryInput {
             consistent_read: Some(true),
             limit: Some(1),
             scan_index_forward: Some(false),
             table_name: self.table_name.clone(),
             key_condition_expression: Some(
-                "pseudo_key = :pseudo_key AND create_time <= :create_time".into(),
+                "pseudo_key = :pseudo_key AND create_time <= :create_time".to_string(),
             ),
-            expression_attribute_values: Some(hmap! {
-                ":pseudo_key".to_owned() => AttributeValue {
-                    s: unid.pseudo_key.clone().into(),
-                    ..Default::default()
-                },
-                ":create_time".to_owned() => AttributeValue {
-                    n: unid.timestamp.to_string().into(),
-                    ..Default::default()
-                }
-            }),
+            expression_attribute_values: Some(expression_attribute_values),
             ..Default::default()
         };
 
@@ -144,8 +147,10 @@ where
         new_session.version += 1;
         // Create new session with new create_time, increment version
 
+        let item = serde_dynamodb::to_hashmap(&new_session).unwrap();
+
         let put_req = Put {
-            item: serde_dynamodb::to_hashmap(&new_session).unwrap(),
+            item,
             table_name: self.table_name.clone(),
             ..Default::default()
         };
@@ -290,8 +295,11 @@ where
 
     pub async fn create_session(&self, session: &Session) -> Result<(), Error> {
         info!("create session");
+
+        let item = serde_dynamodb::to_hashmap(&session).unwrap();
+
         let put_req = PutItemInput {
-            item: serde_dynamodb::to_hashmap(session).unwrap(),
+            item,
             table_name: self.table_name.clone(),
             ..Default::default()
         };
@@ -395,7 +403,7 @@ where
             is_create_canon: true,
             is_end_canon: false,
             version: 0,
-            pseudo_key: unid.pseudo_key,
+            pseudo_key: unid.pseudo_key.clone(),
         };
 
         info!("Creating session");
@@ -452,7 +460,7 @@ where
                 is_create_canon: false,
                 is_end_canon: false,
                 version: 0,
-                pseudo_key: unid.pseudo_key,
+                pseudo_key: unid.pseudo_key.clone(),
             };
             self.create_session(&session).await?;
 
