@@ -10,27 +10,6 @@ pub mod test {
 
 #[cfg(feature = "integration")]
 pub mod test {
-    use std::{collections::HashMap,
-              sync::Arc};
-
-    use dgraph_query_lib::{condition::{Condition,
-                                       ConditionValue},
-                           predicate::{Field,
-                                       Predicate},
-                           queryblock::QueryBlockType,
-                           EdgeBuilder,
-                           QueryBlockBuilder,
-                           QueryBuilder,
-                           ToQueryString};
-    use dgraph_tonic::{Client as DgraphClient,
-                       Query};
-    use graph_merger_lib::service::GraphMerger;
-    use grapl_graph_descriptions::{graph_mutation_service::graph_mutation_rpc_client::GraphMutationRpcClient,
-                                   *};
-    use grapl_observe::metric_reporter::MetricReporter;
-    use sqs_executor::{cache::NopCache,
-                       event_handler::{CompletedEvents,
-                                       EventHandler}};
     use std::{
         collections::HashMap,
         sync::{
@@ -65,8 +44,22 @@ pub mod test {
         Client as DgraphClient,
         Query,
     };
-    use graph_merger_lib::upserter::GraphMergeHelper;
-    use grapl_graph_descriptions::*;
+    use graph_merger_lib::{
+        service::GraphMerger,
+        upserter::GraphMergeHelper,
+    };
+    use grapl_graph_descriptions::{
+        graph_mutation_service::graph_mutation_rpc_client::GraphMutationRpcClient,
+        *,
+    };
+    use grapl_observe::metric_reporter::MetricReporter;
+    use sqs_executor::{
+        cache::NopCache,
+        event_handler::{
+            CompletedEvents,
+            EventHandler,
+        },
+    };
 
     async fn query_for_uid(dgraph_client: Arc<DgraphClient>, node_key: &str) -> u64 {
         let query_block = QueryBlockBuilder::default()

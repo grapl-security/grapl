@@ -98,7 +98,7 @@ where
             let subgraph = match GraphDescription::try_from(event) {
                 Ok(subgraph) => subgraph,
                 Err(e) => {
-                    error!("Failed to generate subgraphwith: {}", e);
+                    error!("Failed to generate subgraph with: {}", e);
                     failed = Some(eyre::Report::msg(e));
                     continue;
                 }

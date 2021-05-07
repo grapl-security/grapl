@@ -1,14 +1,22 @@
 use std::sync::Arc;
 
-use dgraph_tonic::{Client as DgraphClient,
-                   Mutate};
-use futures_retry::{FutureRetry,
-                    RetryPolicy};
-use grapl_graph_descriptions::{Edge,
-                               IdentifiedNode};
+use dgraph_tonic::{
+    Client as DgraphClient,
+    Mutate,
+};
+use futures_retry::{
+    FutureRetry,
+    RetryPolicy,
+};
+use grapl_graph_descriptions::{
+    Edge,
+    IdentifiedNode,
+};
 
-use crate::mutations::{edge_mutation::EdgeUpsertGenerator,
-                       node_mutation::NodeUpsertGenerator};
+use crate::mutations::{
+    edge_mutation::EdgeUpsertGenerator,
+    node_mutation::NodeUpsertGenerator,
+};
 
 #[derive(thiserror::Error, Debug)]
 pub enum UpsertManagerError {

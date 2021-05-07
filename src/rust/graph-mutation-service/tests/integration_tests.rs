@@ -2,17 +2,25 @@
 pub mod test {
     use std::collections::HashMap;
 
-    use dgraph_tonic::{Client as DgraphClient,
-                       Query};
-    use graph_mutation_service_lib::{mutations,
-                                     upsert_manager::UpsertManager};
-    use grapl_graph_descriptions::{DecrementOnlyUintProp,
-                                   Edge,
-                                   IdentifiedNode,
-                                   ImmutableUintProp,
-                                   IncrementOnlyUintProp};
-    use mutations::{edge_mutation::EdgeUpsertGenerator,
-                    node_mutation::NodeUpsertGenerator};
+    use dgraph_tonic::{
+        Client as DgraphClient,
+        Query,
+    };
+    use graph_mutation_service_lib::{
+        mutations,
+        upsert_manager::UpsertManager,
+    };
+    use grapl_graph_descriptions::{
+        DecrementOnlyUintProp,
+        Edge,
+        IdentifiedNode,
+        ImmutableUintProp,
+        IncrementOnlyUintProp,
+    };
+    use mutations::{
+        edge_mutation::EdgeUpsertGenerator,
+        node_mutation::NodeUpsertGenerator,
+    };
 
     fn init_test_env() {
         let subscriber = ::tracing_subscriber::FmtSubscriber::builder()

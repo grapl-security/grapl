@@ -1,9 +1,12 @@
-use std::io::Stdout;
-use std::time::{SystemTime, UNIX_EPOCH};
-use grapl_graph_descriptions::graph_mutation_service::*;
+use std::{
+    io::Stdout,
+    time::{
+        SystemTime,
+        UNIX_EPOCH,
+    },
+};
 
 use async_trait::async_trait;
-pub use grapl_graph_descriptions::graph_mutation_service::graph_mutation_rpc_client::GraphMutationRpcClient;
 use dgraph_tonic::{
     Client as DgraphClient,
     Mutate,
@@ -20,13 +23,17 @@ use grapl_config::{
     },
     event_caches,
 };
-use grapl_graph_descriptions::graph_description::{
-    Edge,
-    EdgeList,
-    IdentifiedGraph,
-    IdentifiedNode,
-    MergedGraph,
-    MergedNode,
+pub use grapl_graph_descriptions::graph_mutation_service::graph_mutation_rpc_client::GraphMutationRpcClient;
+use grapl_graph_descriptions::{
+    graph_description::{
+        Edge,
+        EdgeList,
+        IdentifiedGraph,
+        IdentifiedNode,
+        MergedGraph,
+        MergedNode,
+    },
+    graph_mutation_service::*,
 };
 use grapl_observe::{
     dgraph_reporter::DgraphMetricReporter,
@@ -59,7 +66,6 @@ use serde::{
     Serialize,
 };
 use serde_json::Value;
-use tonic::transport::Channel;
 use sqs_executor::{
     cache::{
         Cache,
@@ -77,6 +83,7 @@ use sqs_executor::{
     s3_event_emitter::S3ToSqsEventNotifier,
     s3_event_retriever::S3PayloadRetriever,
 };
+use tonic::transport::Channel;
 use tracing::{
     error,
     info,

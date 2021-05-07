@@ -280,12 +280,9 @@ services:
       <<: *aws-region
       <<: *dgraph-env
       <<: *dynamodb-env
-      EVENT_CACHE_CLUSTER_ADDRESS: "${REDIS_HOST}:${REDIS_PORT}"
       GRAPL_SCHEMA_TABLE: "${DEPLOYMENT_NAME}-grapl_schema_table"
       IS_LOCAL: "True"
       <<: *log-level
-      <<: *s3-env
-      <<: *sqs-env
       <<: *rust-backtrace
     tty: false
     depends_on:

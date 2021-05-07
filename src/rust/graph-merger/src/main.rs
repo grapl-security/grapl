@@ -29,16 +29,24 @@ use failure::{
     Error,
 };
 use graph_merger_lib;
-use grapl_config::{env_helpers::{s3_event_emitters_from_env,
-                                 FromEnv},
-                   event_caches};
-use grapl_graph_descriptions::{graph_description::{Edge,
-                                                   EdgeList,
-                                                   IdentifiedGraph,
-                                                   IdentifiedNode,
-                                                   MergedGraph,
-                                                   MergedNode},
-                               graph_mutation_service::graph_mutation_rpc_client::GraphMutationRpcClient};
+use grapl_config::{
+    env_helpers::{
+        s3_event_emitters_from_env,
+        FromEnv,
+    },
+    event_caches,
+};
+use grapl_graph_descriptions::{
+    graph_description::{
+        Edge,
+        EdgeList,
+        IdentifiedGraph,
+        IdentifiedNode,
+        MergedGraph,
+        MergedNode,
+    },
+    graph_mutation_service::graph_mutation_rpc_client::GraphMutationRpcClient,
+};
 use grapl_observe::{
     dgraph_reporter::DgraphMetricReporter,
     metric_reporter::{
@@ -70,8 +78,6 @@ use serde::{
     Serialize,
 };
 use serde_json::Value;
-use tonic::transport::Channel;
-
 use sqs_executor::{
     cache::{
         Cache,
@@ -89,17 +95,16 @@ use sqs_executor::{
     s3_event_emitter::S3ToSqsEventNotifier,
     s3_event_retriever::S3PayloadRetriever,
 };
+use tonic::transport::Channel;
 use tracing::{
     error,
     info,
     warn,
 };
 
-use crate::{
-    service::{
-        time_based_key_fn,
-        GraphMerger,
-    },
+use crate::service::{
+    time_based_key_fn,
+    GraphMerger,
 };
 
 #[tracing::instrument]
@@ -128,9 +133,9 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
             MetricReporter::new(&env.service_name),
             cache[0].clone(),
         )
-            .await
+        .await
     })
-        .await;
+    .await;
 
     let serializer = &mut make_ten(async { MergedGraphSerializer::default() }).await;
 
@@ -145,7 +150,7 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
             MetricReporter::new(&env.service_name),
         )
     })
-        .await;
+    .await;
 
     info!("Starting process_loop");
     sqs_executor::process_loop(
@@ -159,7 +164,7 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
         serializer,
         MetricReporter::new(&env.service_name),
     )
-        .await;
+    .await;
 
     info!("Exiting");
 

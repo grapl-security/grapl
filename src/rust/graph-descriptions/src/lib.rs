@@ -18,9 +18,6 @@ pub mod graph_mutation_service {
     ));
 }
 
-
-pub use crate::{graph_description::*,};
-
 pub use node_property::Property::{
     DecrementOnlyInt as ProtoDecrementOnlyIntProp,
     DecrementOnlyUint as ProtoDecrementOnlyUintProp,
@@ -499,7 +496,6 @@ impl ImmutableUintProp {
     }
     pub fn merge_property(&mut self, other_prop: &Self) {
         tracing::trace!(message="ImmutableUintProp merge", self_prop=?self, other_prop=?other_prop);
-        extra_assert! {debug_assert_eq!(*self, *other_prop)}
     }
 }
 
@@ -538,7 +534,7 @@ impl ImmutableIntProp {
     }
     pub fn merge_property(&mut self, other_prop: &Self) {
         tracing::trace!(message="ImmutableIntProp merge", self_prop=?self, other_prop=?other_prop);
-        extra_assert!(debug_assert_eq!(*self, *other_prop));
+        // This method purposefully does nothing
     }
 }
 
@@ -549,7 +545,7 @@ impl ImmutableStrProp {
 
     pub fn merge_property(&mut self, other_prop: &Self) {
         tracing::trace!(message="ImmutableStrProp merge", self_prop=?self, other_prop=?other_prop);
-        extra_assert!(debug_assert_eq!(*self, *other_prop));
+        // This method purposefully does nothing
     }
 }
 
@@ -670,8 +666,7 @@ impl MergedNode {
     }
 
     pub fn merge(&mut self, other: &Self) {
-        extra_assert!(debug_assert_eq!(self.node_type, other.node_type));
-        extra_assert!(debug_assert_eq!(self.node_key, other.node_key));
+        debug_assert_eq!(self.node_key, other.node_key);
         for (prop_name, prop_value) in other.properties.iter() {
             match self.properties.get_mut(prop_name) {
                 Some(self_prop) => self_prop.merge(prop_value),
@@ -1040,11 +1035,6 @@ pub mod test {
         let _ = ::tracing::subscriber::set_global_default(subscriber);
     }
 
-    // These tests mostly target ensuring that our merge functions are commutative and idempotent
-    // That said - immutable data is *not* commutative. Therefor, assertions around commutativity
-    // are disabled for for tests on immutable data via the "extra_assertions" feature
-
-    #[cfg(not(feature = "extra_assertions"))]
     #[quickcheck]
     fn test_merge_str(x: ImmutableStrProp, y: ImmutableStrProp) {
         init_test_env();
@@ -1054,7 +1044,7 @@ pub mod test {
         assert_eq!(original, x);
     }
 
-    #[cfg(not(feature = "extra_assertions"))]
+    
     #[quickcheck]
     fn test_merge_immutable_int(mut x: ImmutableIntProp, y: ImmutableIntProp) {
         init_test_env();
@@ -1063,7 +1053,6 @@ pub mod test {
         assert_eq!(x, original);
     }
 
-    #[cfg(not(feature = "extra_assertions"))]
     #[quickcheck]
     fn test_merge_immutable_uint(mut x: ImmutableUintProp, y: ImmutableUintProp) {
         init_test_env();
@@ -1127,11 +1116,6 @@ pub mod test {
         if node_0.node_key != node_1.node_key {
             return;
         }
-        // let original = node_0.clone();
         node_0.merge(&node_1);
-
-        // for (_o_pred_name, o_pred_val) in original.iter() {
-        //     let mut copy = o_pred_val.clone();
-        // }
     }
 }

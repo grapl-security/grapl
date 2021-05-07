@@ -1,9 +1,15 @@
-use crate::{mutations::{escape::Escaped,
-                        upsert_helpers::{gen_immutable_mutations,
-                                         gen_immutable_query},
-                        QueryInput,
-                        UpsertGenerator},
-            v1beta1::ImmutableIntProp};
+use crate::{
+    mutations::{
+        escape::Escaped,
+        upsert_helpers::{
+            gen_immutable_mutations,
+            gen_immutable_query,
+        },
+        QueryInput,
+        UpsertGenerator,
+    },
+    v1beta1::ImmutableIntProp,
+};
 
 #[derive(Default)]
 pub struct ImmutableIntUpsertGenerator {

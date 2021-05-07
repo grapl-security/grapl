@@ -29,15 +29,15 @@ async fn test_subgraph_generation_process_create() {
         Err(Ok((subgraph, e))) => {
             assert!(
                 !subgraph.is_empty(),
-                "Generated subgraphwas empty and errors were generated"
+                "Generated subgraph was empty and errors were generated"
             );
             panic!(
-                "OSQuery subgraphgenerator failed to generate subgraphwith error: {}",
+                "OSQuery subgraph generator failed to generate subgraph with error: {}",
                 e
             );
         }
         Err(Err(e)) => panic!(
-            "OSQuery subgraphgenerator failed to generate subgraphwith error: {}",
+            "OSQuery subgraph generator failed to generate subgraph with error: {}",
             e
         ),
     };

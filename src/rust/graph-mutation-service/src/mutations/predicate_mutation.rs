@@ -1,14 +1,20 @@
-use crate::{mutations::{decr_only_int_mutation::DecrementOnlyIntUpsertGenerator,
-                        decr_only_uint_mutation::DecrementOnlyUintUpsertGenerator,
-                        immutable_int_mutation::ImmutableIntUpsertGenerator,
-                        immutable_string_mutation::ImmutableStringUpsertGenerator,
-                        immutable_uint_mutation::ImmutableUintUpsertGenerator,
-                        incr_only_int_mutation::IncrementOnlyIntUpsertGenerator,
-                        incr_only_uint_mutation::IncrementOnlyUintUpsertGenerator,
-                        QueryInput,
-                        UpsertGenerator},
-            v1beta1::{node_property,
-                      NodeProperty}};
+use crate::{
+    mutations::{
+        decr_only_int_mutation::DecrementOnlyIntUpsertGenerator,
+        decr_only_uint_mutation::DecrementOnlyUintUpsertGenerator,
+        immutable_int_mutation::ImmutableIntUpsertGenerator,
+        immutable_string_mutation::ImmutableStringUpsertGenerator,
+        immutable_uint_mutation::ImmutableUintUpsertGenerator,
+        incr_only_int_mutation::IncrementOnlyIntUpsertGenerator,
+        incr_only_uint_mutation::IncrementOnlyUintUpsertGenerator,
+        QueryInput,
+        UpsertGenerator,
+    },
+    v1beta1::{
+        node_property,
+        NodeProperty,
+    },
+};
 
 #[derive(Default)]
 pub struct NodePropertyUpsertGenerator {

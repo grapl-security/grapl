@@ -1,10 +1,14 @@
 use grapl_graph_descriptions::IdentifiedNode;
 
-use crate::mutations::{escape::{escape_quote,
-                                Escaped},
-                       predicate_mutation::NodePropertyUpsertGenerator,
-                       QueryInput,
-                       UpsertGenerator};
+use crate::mutations::{
+    escape::{
+        escape_quote,
+        Escaped,
+    },
+    predicate_mutation::NodePropertyUpsertGenerator,
+    QueryInput,
+    UpsertGenerator,
+};
 
 #[derive(Default)]
 pub struct NodeUpsertGenerator {

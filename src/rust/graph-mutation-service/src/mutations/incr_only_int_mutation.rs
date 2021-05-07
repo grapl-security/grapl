@@ -1,10 +1,14 @@
 use grapl_graph_descriptions::IncrementOnlyIntProp;
 
-use crate::mutations::{escape::Escaped,
-                       upsert_helpers::{gen_mutations,
-                                        gen_query},
-                       QueryInput,
-                       UpsertGenerator};
+use crate::mutations::{
+    escape::Escaped,
+    upsert_helpers::{
+        gen_mutations,
+        gen_query,
+    },
+    QueryInput,
+    UpsertGenerator,
+};
 
 #[derive(Default)]
 pub struct IncrementOnlyIntUpsertGenerator {

@@ -1,7 +1,9 @@
 use std::fmt::Formatter;
 
-use grapl_graph_descriptions::{ImmutableIntProp,
-                               ImmutableUintProp};
+use grapl_graph_descriptions::{
+    ImmutableIntProp,
+    ImmutableUintProp,
+};
 
 #[derive(Clone, Debug)]
 pub struct Escaped(String);

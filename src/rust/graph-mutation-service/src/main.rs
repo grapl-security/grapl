@@ -1,22 +1,38 @@
-use dgraph_tonic::{Client as DgraphClient,
-                   Status};
-use graph_mutation_service_lib::reverse_resolver::{ReverseEdgeResolver,
-                                                   ReverseEdgeResolverError};
+use dgraph_tonic::{
+    Client as DgraphClient,
+    Status,
+};
+use graph_mutation_service_lib::reverse_resolver::{
+    ReverseEdgeResolver,
+    ReverseEdgeResolverError,
+};
 use grapl_config::env_helpers::FromEnv;
 use grapl_graph_descriptions::graph_mutation_service::graph_mutation_rpc_server::GraphMutationRpcServer;
-pub use grapl_graph_descriptions::{graph_mutation_service::{graph_mutation_rpc_server::GraphMutationRpc,
-                                                            *},
-                                   *};
+pub use grapl_graph_descriptions::{
+    graph_mutation_service::{
+        graph_mutation_rpc_server::GraphMutationRpc,
+        *,
+    },
+    *,
+};
 use grapl_observe::metric_reporter::MetricReporter;
 use rusoto_dynamodb::DynamoDbClient;
-use tonic::{transport::Server,
-            Request,
-            Response};
+use tonic::{
+    transport::Server,
+    Request,
+    Response,
+};
 
-use crate::{mutations::{edge_mutation::EdgeUpsertGenerator,
-                        node_mutation::NodeUpsertGenerator},
-            upsert_manager::{UpsertManager,
-                             UpsertManagerError}};
+use crate::{
+    mutations::{
+        edge_mutation::EdgeUpsertGenerator,
+        node_mutation::NodeUpsertGenerator,
+    },
+    upsert_manager::{
+        UpsertManager,
+        UpsertManagerError,
+    },
+};
 
 pub mod mutations;
 pub mod upsert_manager;
