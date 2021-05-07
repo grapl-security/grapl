@@ -22,8 +22,9 @@ from infra.node_identifier import NodeIdentifier
 from infra.osquery_generator import OSQueryGenerator
 from infra.provision_lambda import Provisioner
 from infra.quiet_docker_build_output import quiet_docker_output
-from infra.secret import JWTSecret
+from infra.secret import JWTSecret, TestUserPassword
 from infra.sysmon_generator import SysmonGenerator
+from infra.service_queue import ServiceQueue
 
 
 def _create_dgraph_cluster(network: Network) -> DgraphCluster:
@@ -58,6 +59,8 @@ def main() -> None:
     DGraphTTL(network=network, dgraph_cluster=dgraph_cluster)
 
     secret = JWTSecret()
+
+    test_user_password = TestUserPassword()
 
     dynamodb_tables = dynamodb.DynamoDB()
 
@@ -163,7 +166,7 @@ def main() -> None:
             forwarder=forwarder,
         )
 
-        E2eTestRunner()
+        E2eTestRunner(network=network)
 
     EngagementCreator(
         input_emitter=analyzer_matched_emitter,
@@ -177,6 +180,7 @@ def main() -> None:
         secret=secret,
         db=dynamodb_tables,
         dgraph_cluster=dgraph_cluster,
+        test_user_password=test_user_password,
     )
 
     OpsAlarms(name="ops-alarms")
