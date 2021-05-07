@@ -4,11 +4,11 @@ from dataclasses import dataclass, field
 from typing import Mapping, Optional, Union
 
 import pulumi_aws as aws
-from infra import service_shared
 from infra.config import (
     DEPLOYMENT_NAME,
     GLOBAL_LAMBDA_ZIP_TAG,
     LOCAL_GRAPL,
+    SERVICE_LOG_RETENTION_DAYS,
     import_aware_opts,
 )
 from infra.metric_forwarder import MetricForwarder
@@ -186,7 +186,7 @@ class Lambda(pulumi.ComponentResource):
             f"{name}-log-group",
             name=f"/aws/lambda/{lambda_name}",
             opts=pulumi.ResourceOptions(parent=self),
-            retention_in_days=service_shared.get_service_log_retention_days(),
+            retention_in_days=SERVICE_LOG_RETENTION_DAYS,
         )
 
         if forwarder:
