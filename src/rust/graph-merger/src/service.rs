@@ -103,20 +103,14 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct GraphMerger<CacheT>
-where
-    CacheT: Cache + Clone + Send + Sync + 'static,
-{
+pub struct GraphMerger<CacheT: Cache> {
     mg_client: Arc<DgraphClient>,
     reverse_edge_resolver: ReverseEdgeResolver,
     metric_reporter: MetricReporter<Stdout>,
     cache: CacheT,
 }
 
-impl<CacheT> GraphMerger<CacheT>
-where
-    CacheT: Cache + Clone + Send + Sync + 'static,
-{
+impl<CacheT: Cache> GraphMerger<CacheT> {
     pub fn new(
         mg_alphas: Vec<String>,
         reverse_edge_resolver: ReverseEdgeResolver,
@@ -147,10 +141,7 @@ impl CheckedError for GraphMergerError {
 }
 
 #[async_trait]
-impl<CacheT> EventHandler for GraphMerger<CacheT>
-where
-    CacheT: Cache + Clone + Send + Sync + 'static,
-{
+impl<CacheT: Cache> EventHandler for GraphMerger<CacheT> {
     type InputEvent = IdentifiedGraph;
     type OutputEvent = MergedGraph;
     type Error = GraphMergerError;

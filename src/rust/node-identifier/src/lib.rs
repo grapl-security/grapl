@@ -26,11 +26,9 @@ use grapl_service::{
     decoder::ProtoDecoder,
     serialization::IdentifiedGraphSerializer,
 };
+use grapl_utils::rusoto_ext::dynamodb::GraplDynamoDbClientExt;
 use log::*;
-use rusoto_dynamodb::{
-    DynamoDb,
-    DynamoDbClient,
-};
+use rusoto_dynamodb::DynamoDbClient;
 use rusoto_sqs::SqsClient;
 use sessiondb::SessionDb;
 use sqs_executor::{
@@ -65,8 +63,8 @@ pub mod sessions;
 #[derive(Clone)]
 pub struct NodeIdentifier<D, CacheT>
 where
-    D: DynamoDb + Clone + Send + Sync,
-    CacheT: Cache + Clone + Send + Sync,
+    D: GraplDynamoDbClientExt,
+    CacheT: Cache,
 {
     dynamic_identifier: NodeDescriptionIdentifier<D>,
     node_id_db: D,
@@ -76,8 +74,8 @@ where
 
 impl<D, CacheT> NodeIdentifier<D, CacheT>
 where
-    D: DynamoDb + Clone + Send + Sync,
-    CacheT: Cache + Clone + Send + Sync,
+    D: GraplDynamoDbClientExt,
+    CacheT: Cache,
 {
     pub fn new(
         dynamic_identifier: NodeDescriptionIdentifier<D>,
@@ -178,8 +176,8 @@ where
 #[async_trait]
 impl<D, CacheT> EventHandler for NodeIdentifier<D, CacheT>
 where
-    D: DynamoDb + Clone + Send + Sync,
-    CacheT: Cache + Clone + Send + Sync,
+    D: GraplDynamoDbClientExt,
+    CacheT: Cache,
 {
     type InputEvent = GraphDescription;
     type OutputEvent = IdentifiedGraph;

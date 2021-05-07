@@ -1854,6 +1854,7 @@ dependencies = [
  "grapl-graph-descriptions",
  "grapl-observe",
  "grapl-service",
+ "grapl-utils",
  "hex",
  "hmap",
  "log",
