@@ -1,0 +1,22 @@
+version: "3.8"
+# environment variable PWD is assumed to be grapl root directory
+services:
+  ux-router-integration-tests:
+    image: grapl/grapl-ux-router-test:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: ./python/Dockerfile
+      target: grapl-ux-router-test
+    command: bash -c '
+      source venv/bin/activate &&
+      cd grapl-ux-router &&
+      export PYTHONPATH="$${PYTHONPATH}:$$(pwd)/src" &&
+      pytest -n auto -m "integration_test"'
+    environment:
+      - GRAPL_UX_BUCKET="local-grapl-ux-bucket"
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
+      - IS_LOCAL=True
+      - IS_RETRY=False
+networks:
+  default:
+    name: grapl-ux-router-network
