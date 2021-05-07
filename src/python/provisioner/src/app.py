@@ -110,6 +110,7 @@ def _retrieve_test_user_password(
         SecretId=f"{deployment_name}-TestUserPassword"
     )["SecretString"]
 
+
 def provision(event: Any = None, context: Any = None):
     LOGGER.info("provisioning grapl")
 
