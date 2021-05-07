@@ -113,13 +113,14 @@ def _invoke_lambda(lambda_: LambdaClient, function_name: str) -> None:
 
     status = result["StatusCode"]
     logs = base64.b64decode(bytes(result["LogResult"], "utf-8")).decode("utf-8")
-    if status == 200:
+    if status == 200 and result.get("FunctionError") is None:
         for line in logs.splitlines():
             LOGGER.info(line)
         LOGGER.info(f"lambda invocation succeeded for {function_name}")
     else:
-        for line in logs.splitlines():
-            LOGGER.error(line)
+        LOGGER.error(
+            f"{''.join(l.decode('utf-8') for l in result['Payload'].iter_lines())}"
+        )
         raise Exception(
             f"lambda invocation for {function_name} failed with status {status}: {result['FunctionError']}"
         )
