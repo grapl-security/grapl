@@ -165,19 +165,21 @@ where
             ..Default::default()
         };
 
-        self.dynamo.transact_write_items(TransactWriteItemsInput {
-            transact_items: vec![
-                TransactWriteItem {
-                    delete: del_req.into(),
-                    ..Default::default()
-                },
-                TransactWriteItem {
-                    put: put_req.into(),
-                    ..Default::default()
-                },
-            ],
-            ..Default::default()
-        }).await?;
+        self.dynamo
+            .transact_write_items(TransactWriteItemsInput {
+                transact_items: vec![
+                    TransactWriteItem {
+                        delete: del_req.into(),
+                        ..Default::default()
+                    },
+                    TransactWriteItem {
+                        put: put_req.into(),
+                        ..Default::default()
+                    },
+                ],
+                ..Default::default()
+            })
+            .await?;
 
         Ok(())
     }
