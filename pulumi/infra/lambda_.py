@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import Mapping, Optional, Union
 
 import pulumi_aws as aws
+from infra import service_shared
 from infra.config import (
     DEPLOYMENT_NAME,
     GLOBAL_LAMBDA_ZIP_TAG,
@@ -178,17 +179,17 @@ class Lambda(pulumi.ComponentResource):
                 opts=import_aware_opts(f"{lambda_name}/live", parent=self),
             )
 
+        # Lambda function output is automatically sent to log
+        # groups named like this; we create one explicitly so we can
+        # specify retention rules.
+        self.log_group = aws.cloudwatch.LogGroup(
+            f"{name}-log-group",
+            name=f"/aws/lambda/{lambda_name}",
+            opts=pulumi.ResourceOptions(parent=self),
+            retention_in_days=service_shared.get_service_log_retention_days(),
+        )
+
         if forwarder:
-
-            # Lambda function output is automatically sent to log
-            # groups named like this; we create one explicitly for
-            # integration with the metric forwarder.
-            self.log_group = aws.cloudwatch.LogGroup(
-                f"{name}-log-group",
-                name=f"/aws/lambda/{lambda_name}",
-                opts=pulumi.ResourceOptions(parent=self),
-            )
-
             # Allow the metric forwarder to be invoked with by this
             # lambda function's log group.
             self.forwarder_permission = aws.lambda_.Permission(
