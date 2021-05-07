@@ -8,7 +8,6 @@ from infra.network import Network
 import pulumi
 
 
-# TODO: will need VPC here
 class MetricForwarder(pulumi.ComponentResource):
     def __init__(
         self, network: Network, opts: Optional[pulumi.ResourceOptions] = None
