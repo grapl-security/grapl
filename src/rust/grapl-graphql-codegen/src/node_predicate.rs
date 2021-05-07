@@ -142,28 +142,6 @@ impl NodePredicate {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn generate_viewable_get_predicate_method() {
-        let returned_str = "    def get_predicate_name(self, cached: bool = True) -> Optional[str]:\n        return self.get_str(\"predicate_name\", cached=cached)\n\n";
-        let node_predicate = NodePredicate {
-            predicate_name: String::from("predicate_name"),
-            description: None,
-            predicate_type: PredicateType::String,
-            conflict_resolution: ConflictResolution::Immutable,
-            identity_predicate_type: None,
-            nullable: true,
-        };
-        assert_eq!(
-            node_predicate.generate_viewable_get_predicate_method(),
-            returned_str
-        );
-    }
-}
-
 impl<'a> TryFrom<&Field<'a, &'a str>> for NodePredicate {
     type Error = CodeGenError<'a>;
 
@@ -195,5 +173,27 @@ pub fn is_nullable<'a>(field_type: &Type<'a, &'a str>) -> bool {
         Type::NonNullType(_) => false,
         Type::NamedType(_) => true,
         Type::ListType(_) => panic!("ListType not supported"),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn generate_viewable_get_predicate_method() {
+        let expected_str = "    def get_predicate_name(self, cached: bool = True) -> Optional[str]:\n        return self.get_str(\"predicate_name\", cached=cached)\n\n";
+        let node_predicate = NodePredicate {
+            predicate_name: String::from("predicate_name"),
+            description: None,
+            predicate_type: PredicateType::String,
+            conflict_resolution: ConflictResolution::Immutable,
+            identity_predicate_type: None,
+            nullable: true,
+        };
+        assert_eq!(
+            node_predicate.generate_viewable_get_predicate_method(),
+            expected_str
+        );
     }
 }

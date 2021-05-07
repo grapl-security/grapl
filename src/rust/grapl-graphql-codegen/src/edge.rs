@@ -55,18 +55,18 @@ impl Edge {
         let rev_edge_name = &self.reverse_edge_name;
         query_def = query_def
             + &format!(
-                r#"    def with_{}(self: {}Query, *{}: {}Query) -> {}Query:"#,
-                src_edge_name,
-                self.source_type_name,
-                src_edge_name,
-                self.target_type_name,
-                self.source_type_name
+                r#"    def with_{src_edge_name}(self: {source_type_name}Query, *{src_edge_name}: {target_type_name}Query) -> {source_type_name}Query:"#,
+                src_edge_name = src_edge_name,
+                source_type_name = self.source_type_name,
+                target_type_name = self.target_type_name,
             )
             + "\n";
         query_def = query_def
             + &format!(
-                r#"        return self.with_to_neighbor({}Query, "{}", "{}", {})"#,
-                self.source_type_name, src_edge_name, rev_edge_name, src_edge_name,
+                r#"        return self.with_to_neighbor({source_type_name}Query, "{src_edge_name}", "{rev_edge_name}", {src_edge_name})"#,
+                source_type_name = self.source_type_name,
+                src_edge_name = src_edge_name,
+                rev_edge_name = rev_edge_name,
             )
             + "\n";
         query_def
@@ -117,14 +117,20 @@ impl Edge {
 
         get_method = get_method
             + &format!(
-                "    def get_{}(self, {}{}: {}, cached={}) -> {}:",
-                edge_name, multi, edge_name, query_arg, cached, ret
+                "    def get_{edge_name}(self, {multi}{edge_name}: {query_arg}, cached={cached}) -> {ret}:",
+                edge_name=edge_name,
+                multi=multi,
+                query_arg=query_arg,
+                cached=cached,
+                ret=ret
             )
             + "\n";
         get_method = get_method
             + &format!(
-                r#"          return self.get_neighbor({}, "{}", "{}", {}, cached)"#,
-                edge_query_name, edge_name, reverse_edge_name, edge_name
+                r#"          return self.get_neighbor({edge_query_name}, "{edge_name}", "{reverse_edge_name}", {edge_name}, cached)"#,
+                edge_query_name = edge_query_name,
+                edge_name = edge_name,
+                reverse_edge_name = reverse_edge_name,
             );
         get_method = get_method + "\n";
 
