@@ -30,7 +30,7 @@ where
 }
 
 #[async_trait]
-pub trait Cache: Clone {
+pub trait Cache: Clone + Send + Sync {
     type CacheErrorT: CheckedError + Send + Sync + 'static;
 
     async fn all_exist<CA>(&mut self, cacheables: &[CA]) -> bool

@@ -4,6 +4,5 @@ use node_identifier::handler;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    handler(true).await?;
-    Ok(())
+    handler(true).await
 }

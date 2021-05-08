@@ -44,28 +44,19 @@ impl CheckedError for SysmonGeneratorError {
 }
 
 #[derive(Clone)]
-pub struct SysmonSubgraphGenerator<C>
-where
-    C: Cache + Clone + Send + Sync + 'static,
-{
+pub struct SysmonSubgraphGenerator<C: Cache> {
     cache: C,
     metrics: SysmonSubgraphGeneratorMetrics,
 }
 
-impl<C> SysmonSubgraphGenerator<C>
-where
-    C: Cache + Clone + Send + Sync + 'static,
-{
+impl<C: Cache> SysmonSubgraphGenerator<C> {
     pub fn new(cache: C, metrics: SysmonSubgraphGeneratorMetrics) -> Self {
         Self { cache, metrics }
     }
 }
 
 #[async_trait]
-impl<C> EventHandler for SysmonSubgraphGenerator<C>
-where
-    C: Cache + Clone + Send + Sync + 'static,
-{
+impl<C: Cache> EventHandler for SysmonSubgraphGenerator<C> {
     type InputEvent = Vec<Result<Event, crate::serialization::SysmonDecoderError>>;
     type OutputEvent = GraphDescription;
     type Error = SysmonGeneratorError;
