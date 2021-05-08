@@ -1,0 +1,20 @@
+# Ignore everything
+**
+
+# For pants
+!BUILD
+
+# Unit and Integration tests
+!tests/
+!integration/
+
+# Config files
+!pytest.ini
+!pyproject.toml
+!mypy.ini
+!coveragerc
+!requirements.txt
+!README.md
+
+# Source code
+!{{cookiecutter.project_slug}}

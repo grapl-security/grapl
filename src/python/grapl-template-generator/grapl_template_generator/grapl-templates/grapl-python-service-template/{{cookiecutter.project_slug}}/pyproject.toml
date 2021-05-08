@@ -1,0 +1,18 @@
+[tool.pytest.ini_options]
+minversion = "6.0"
+
+addopts = '''
+  --cov-branch
+  --cov-fail-under=1
+  --strict-markers
+  '''
+
+testpaths = [
+    "tests",
+    "integration_tests",
+]
+
+markers = [
+    "unit_test: marks tests as being unit tests (deselect with '-m \"not unit\"')",
+    "integration_test: marks tests as integration tests (deselect with '-m \"not integration\"')",
+]

@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "grapl_template_generator"
+version = "0.1.0"
+description = ""
+authors = ["colin <colin@graplsecurity.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+typed = "^0.6"
+pydantic = "^1.8.1"
+
+[tool.poetry.dev-dependencies]
+mypy = "^0.812"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
