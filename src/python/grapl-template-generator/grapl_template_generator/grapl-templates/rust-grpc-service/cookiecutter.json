@@ -1,0 +1,9 @@
+{
+    "project_name": "My New Project",
+    "project_slug": "{{ cookiecutter.project_name|lower|replace(' ', '-') }}",
+    "service_name": "{{ cookiecutter.project_name|replace(' ', '') }}",
+    "snake_project_name": "{{ cookiecutter.project_slug|replace('-', '_') }}",
+    "cargo-version": "1.52.0",
+    "rustc_channel": "stable",
+    "proto_path" : "proto/"
+}

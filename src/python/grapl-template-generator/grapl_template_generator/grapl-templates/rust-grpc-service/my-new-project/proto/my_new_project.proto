@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package MyNewProject;
+
+message MyNewProjectRequest {
+}
+
+
+message MyNewProjectResponse {
+}
+
+
+service MyNewProjectRpc {
+  rpc HandleRequest(MyNewProjectRequest) returns (MyNewProjectResponse) {}
+}
+

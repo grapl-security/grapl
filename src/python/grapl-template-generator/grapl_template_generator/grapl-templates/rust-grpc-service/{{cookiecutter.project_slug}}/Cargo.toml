@@ -1,0 +1,57 @@
+[package]
+name = "{{cookiecutter.snake_project_name}}"
+version = "0.1.0"
+authors = ["todo"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+
+[[bin]]
+name = "{{cookiecutter.project_slug}}"
+path = "src/main.rs"
+
+[lib]
+name = "{{cookiecutter.snake_project_name}}"
+
+
+[dependencies]
+thiserror = "1"
+
+# Types for protobuf
+bytes = "1.0"
+prost = "0.7"
+prost-derive = "0.7"
+
+# Execution driving libs
+async-stream = "0.3"
+
+tokio = { version = "1", features = ["rt-multi-thread", "time", "fs", "macros", "net"] }
+tokio-stream = "0.1"
+tonic = { version="0.4" }
+tower = { version = "0.4" }
+
+# tracing support
+tracing = "0.1.*"
+tracing-futures = "0.2.*"
+tracing-subscriber = "0.2.*"
+
+# Health Checks
+tonic-health = "0.3"
+
+
+[build-dependencies]
+tonic-build = { version="0.4", features = ["prost"] }
+
+[dev-dependencies]
+criterion = "0.3"
+test-context = "0.1"
+async-trait = "0.1"
+
+
+[[bench]]
+name = "{{cookiecutter.snake_project_name}}_benchmark"
+harness = false
+
+[features]
+integration = []
