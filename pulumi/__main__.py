@@ -3,6 +3,7 @@ from infra.api import Api
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.config import DEPLOYMENT_NAME, LOCAL_GRAPL
+from infra.dgraph_cluster import DgraphCluster
 from infra.dgraph_ttl import DGraphTTL
 from infra.engagement_creator import EngagementCreator
 from infra.metric_forwarder import MetricForwarder
@@ -18,7 +19,12 @@ if __name__ == "__main__":
 
     network = Network("grapl-network")
 
-    dgraph_ttl = DGraphTTL(network=network)
+    dgraph_cluster = DgraphCluster(
+        name="swarm",
+        vpc=network.vpc,
+    )
+
+    dgraph_ttl = DGraphTTL(network=network, dgraph_cluster=dgraph_cluster)
 
     secret = JWTSecret()
 
@@ -72,6 +78,7 @@ if __name__ == "__main__":
         ),
     )
     # TODO: How do we get the *contents* of this bucket uploaded?
+    # Max says: "I've introduced a `Bucket.upload_*` function, check it out :)
 
     api = Api(
         network=network,

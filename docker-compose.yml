@@ -104,7 +104,7 @@ services:
       - IMAGE_NAME=localstack/localstack:latest
       - EDGE_PORT=${LOCALSTACK_PORT}
       - HOSTNAME_EXTERNAL=${LOCALSTACK_HOST}
-      - SERVICES=apigateway,dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs
+      - SERVICES=apigateway,dynamodb,ec2,events,iam,lambda,logs,route53,s3,secretsmanager,sns,sqs
       - DEBUG=1
       # Once we put the lambdas behind the API gateway, overall test
       # time increased. Using the `docker` executor reliably takes at
@@ -470,7 +470,7 @@ services:
       /bin/bash -c "
          pulumi login --local &&
          pulumi stack init local-grapl --non-interactive &&
-         pulumi up --yes --skip-preview --stack=local-grapl &&
+         pulumi up --yes --skip-preview --stack=local-grapl --verbose 5 &&
 
          # Write the necessary outputs to the shared volume, for access by other containers
          pulumi stack output prod-api-id > /home/grapl/pulumi-outputs/prod-api-id
@@ -492,6 +492,8 @@ services:
         read_only: false
     environment:
       PULUMI_CONFIG_PASSPHRASE: local-grapl-passphrase
+      # Other environment variables like MG_ALPHAS are passed in via 
+      # Pulumi.local-grapl.yaml
     depends_on:
       localstack:
         condition: service_healthy

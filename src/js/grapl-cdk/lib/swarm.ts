@@ -95,7 +95,9 @@ export class Swarm extends cdk.Construct {
         // run the CloudWatch Agent.
         swarmInstanceRole.addManagedPolicy(
             iam.ManagedPolicy.fromAwsManagedPolicyName(
-                "CloudWatchAgentServerPolicy" // FIXME: don't use managed policy
+                // FIXME: don't use managed policy
+                // https://github.com/grapl-security/issue-tracker/issues/106
+                "CloudWatchAgentServerPolicy"
             )
         );
 
