@@ -17,6 +17,13 @@ name = "grapl_model_plugin_deployer"
 
 [dependencies]
 thiserror = "1"
+rusoto_s3 = { version="0.46.0", default_features = false, features=["rustls"] }
+rusoto_dynamodb = { version="0.46.0", default_features = false, features=["rustls"] }
+uuid = { version = "0.8", features=["v4"] }
+
+grapl-config = { path = "../grapl-config" }
+grapl-graphql-codegen = { path = "../grapl-graphql-codegen" }
+
 
 # Types for protobuf
 bytes = "1.0"

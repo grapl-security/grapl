@@ -253,3 +253,8 @@ pub fn asset_id_mappings_table_name() -> String {
 pub fn source_compression() -> String {
     std::env::var("SOURCE_COMPRESSION").unwrap_or(String::from("Zstd"))
 }
+
+pub fn grapl_model_plugin_bucket() -> String {
+    std::env::var("GRAPL_MODEL_PLUGIN_BUCKET").expect("GRAPL_MODEL_PLUGIN_BUCKET")
+}
+

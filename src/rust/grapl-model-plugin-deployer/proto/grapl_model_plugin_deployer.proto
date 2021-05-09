@@ -5,6 +5,8 @@ package GraplModelPluginDeployer;
 message GraplModelPluginDeployerRequest {
   string modelPluginSchema = 1;
   int32 schemaVersion = 2;
+  string requestId = 3;
+  string clientName = 4;
 }
 
 

@@ -1,0 +1,21 @@
+[package]
+name = "grapl-graphql-codegen"
+version = "0.1.0"
+authors = ["colin <colin@graplsecurity.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "grapl_graphql_codegen"
+
+[[bin]]
+name = "grapl-graphql-codegen"
+
+[dependencies]
+graphql-parser = "0.3.0"
+serde_json = "1.0.62"
+thiserror = "1.0.24"
+structopt = "0.3.21"
+color-eyre = "0.5.11"
+tracing = "0.1.25"
+tracing-subscriber = "0.2.17"
