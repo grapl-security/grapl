@@ -55,17 +55,11 @@ impl CheckedError for GenericSubgraphGeneratorError {
 ///
 /// Keep in mind that this generator expects the logs to have been compressed with ZStandard before processing.
 #[derive(Clone)]
-pub struct GenericSubgraphGenerator<C>
-where
-    C: Cache + Clone + Send + Sync + 'static,
-{
+pub struct GenericSubgraphGenerator<C: Cache> {
     cache: C,
 }
 
-impl<C> GenericSubgraphGenerator<C>
-where
-    C: Cache + Clone + Send + Sync + 'static,
-{
+impl<C: Cache> GenericSubgraphGenerator<C> {
     pub fn new(cache: C) -> Self {
         Self { cache }
     }
@@ -122,10 +116,7 @@ where
 }
 
 #[async_trait]
-impl<C> EventHandler for GenericSubgraphGenerator<C>
-where
-    C: Cache + Clone + Send + Sync + 'static,
-{
+impl<C: Cache> EventHandler for GenericSubgraphGenerator<C> {
     type InputEvent = Vec<GenericEvent>;
     type OutputEvent = GraphDescription;
     type Error = GenericSubgraphGeneratorError;

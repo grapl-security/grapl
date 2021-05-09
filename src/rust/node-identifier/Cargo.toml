@@ -21,6 +21,7 @@ grapl-graph-descriptions = { path="../graph-descriptions", version="*"}
 grapl-config = {path="../grapl-config", version="*"}
 grapl-observe = {path="../grapl-observe", version="*"}
 grapl-service = {path="../grapl-service"}
+grapl-utils = {path = "../grapl-utils"}
 
 bytes = "1"
 failure = "0.1"
@@ -56,6 +57,7 @@ hmap = "0.1"
 tracing = "0.1"
 chrono = "0.4"
 uuid = { version = "0.8", features=["v4"] }
+tap = "1"
 
 [dev-dependencies]
 quickcheck = "1"
