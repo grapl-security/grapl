@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package GraplModelPluginDeployer;
+
+message GraplModelPluginDeployerRequest {
+  string modelPluginSchema = 1;
+  int32 schemaVersion = 2;
+}
+
+
+message GraplModelPluginDeployerResponse {
+}
+
+
+service GraplModelPluginDeployerRpc {
+  rpc DeployPlugin(GraplModelPluginDeployerRequest) returns (GraplModelPluginDeployerResponse) {}
+}
