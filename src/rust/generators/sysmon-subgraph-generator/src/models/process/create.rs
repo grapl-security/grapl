@@ -111,10 +111,9 @@ mod tests {
         graph.nodes.values().find(|n| {
             n.properties
                 .iter()
-                .find(|(p_name, p_value)| {
+                .any(|(p_name, p_value)| {
                     &p_name.as_str() == &o_p_name && p_value.property.clone().unwrap() == o_p_value
                 })
-                .is_some()
         })
     }
 
