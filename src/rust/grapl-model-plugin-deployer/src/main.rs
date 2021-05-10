@@ -5,6 +5,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_env_filter(::tracing_subscriber::EnvFilter::from_default_env())
         .init();
 
-    my_new_project::server::exec_service().await?;
+    grapl_model_plugin_deployer::server::exec_service().await?;
     Ok(())
 }

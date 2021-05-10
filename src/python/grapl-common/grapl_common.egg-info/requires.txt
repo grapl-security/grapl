@@ -1,0 +1,4 @@
+typing_extensions
+
+[typecheck]
+mypy

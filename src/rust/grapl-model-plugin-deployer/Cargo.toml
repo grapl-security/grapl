@@ -1,5 +1,5 @@
 [package]
-name = "my_new_project"
+name = "grapl_model_plugin_deployer"
 version = "0.1.0"
 authors = ["todo"]
 edition = "2018"
@@ -8,11 +8,11 @@ edition = "2018"
 
 
 [[bin]]
-name = "my-new-project"
+name = "grapl-model-plugin-deployer"
 path = "src/main.rs"
 
 [lib]
-name = "my_new_project"
+name = "grapl_model_plugin_deployer"
 
 
 [dependencies]
@@ -50,7 +50,7 @@ async-trait = "0.1"
 
 
 [[bench]]
-name = "my_new_project_benchmark"
+name = "grapl_model_plugin_deployer_benchmark"
 harness = false
 
 [features]

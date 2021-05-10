@@ -3,8 +3,8 @@
 pub mod server;
 pub mod client;
 
-pub mod my_new_project {
-    tonic::include_proto!("my_new_project");
+pub mod grapl_model_plugin_deployer {
+    tonic::include_proto!("grapl_model_plugin_deployer");
 }
 
 #[cfg(test)]

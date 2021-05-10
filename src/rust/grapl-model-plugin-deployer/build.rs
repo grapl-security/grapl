@@ -6,7 +6,7 @@ fn main() {
         .build_client(true)
         .compile(
             &[
-                "proto/my_new_project.proto",
+                "proto/grapl_model_plugin_deployer.proto",
             ],
             &["proto/"],
         )

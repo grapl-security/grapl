@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package GraplModelPluginDeployer;
+
+message GraplModelPluginDeployerRequest {
+}
+
+
+message GraplModelPluginDeployerResponse {
+}
+
+
+service GraplModelPluginDeployerRpc {
+  rpc HandleRequest(GraplModelPluginDeployerRequest) returns (GraplModelPluginDeployerResponse) {}
+}
+
