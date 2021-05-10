@@ -225,7 +225,8 @@ test-typecheck: build-test-typecheck ## Build and run typecheck tests (non-Pants
 test-typecheck-pants: ## Typecheck Python code with Pants
 	./pants typecheck \
 	pulumi:: \
-	build-support::
+	build-support:: \
+	src/python/grapl-common::
 
 .PHONY: test-integration
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
