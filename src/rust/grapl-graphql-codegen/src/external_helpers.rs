@@ -11,7 +11,7 @@ use color_eyre::eyre::Result;
 
 /// Helpers for the CLI, allowing it to execute the generated code
 pub fn execute_python(code: &[u8]) -> Result<Output> {
-    let mut py_interpreter = Command::new("python")
+    let mut py_interpreter = Command::new("python3")
         .arg("-")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
