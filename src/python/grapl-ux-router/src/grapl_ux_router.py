@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import gzip as web_compress
 import json
 import os
 import time
@@ -20,8 +19,6 @@ IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 UX_BUCKET_NAME = os.environ["UX_BUCKET_NAME"]
 
 LOGGER = get_module_grapl_logger()
-
-CONTENT_ENCODING = "gzip"
 
 # Must never hold more than 15 values
 MEDIA_TYPE_MAP = {
@@ -124,7 +121,6 @@ def _route_to_resource(resource_name: str) -> Response:
     if not resource:
         return not_found()
     content_type = get_media_type(resource_name)
-    # encoded = encode_meta(resource, resource_name)
     LOGGER.debug(
         f"setting content-type:  content_type: {content_type} resource_name: {resource_name}"
     )
@@ -145,7 +141,6 @@ def _route_to_resource(resource_name: str) -> Response:
             "Access-Control-Allow-Methods": "GET,OPTIONS",
             "X-Requested-With": "*",
             "Access-Control-Allow-Headers": "Content-Encoding, Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With",
-            # **content_encoding
         },
     )
 
