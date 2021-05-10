@@ -93,6 +93,8 @@ pub fn generate_process_create_subgraph(
 }
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use grapl_graph_descriptions::{
         graph_description::node_property::Property,
         ImmutableUintProp,

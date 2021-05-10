@@ -180,12 +180,7 @@ impl GraphMergeHelper {
                 }
             };
 
-            merged_graph.add_node(MergedNode {
-                uid,
-                node_key,
-                node_type,
-                properties,
-            });
+            merged_graph.add_node(MergedNode { properties, uid, node_key, node_type });
         }
         node_key_map_to_uid
     }

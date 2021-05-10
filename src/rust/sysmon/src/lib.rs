@@ -10,6 +10,7 @@ extern crate uuid;
 use std::{
     collections::HashMap,
     convert::TryFrom,
+    str::FromStr,
 };
 
 use anyhow::{
@@ -48,9 +49,10 @@ pub enum Event {
     OutboundNetwork(NetworkEvent),
 }
 
-impl Event {
-    pub fn from_str(s: impl AsRef<str>) -> Result<Self> {
-        let s = s.as_ref();
+impl FromStr for Event {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         serde_xml_rs::from_str::<ProcessCreateEvent>(s)
             .map(|p| Event::ProcessCreate(p))
             .or_else(|_| serde_xml_rs::from_str::<FileCreateEvent>(s).map(|f| Event::FileCreate(f)))

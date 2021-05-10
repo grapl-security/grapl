@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use grapl_service::decoder::decompress::PayloadDecompressionError;
 use sqs_executor::{
     errors::{
@@ -63,7 +65,7 @@ impl PayloadDecoder<Vec<Result<Event, SysmonDecoderError>>> for SysmonDecoder {
                         || event.contains(&"EventID>11<"[..]))
             })
             .map(|event| {
-                Event::from_str(event)
+                Event::from_str(&event)
                     .map_err(|e| SysmonDecoderError::DeserializeError(e.to_string()))
             })
             .collect();

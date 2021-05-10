@@ -52,9 +52,7 @@ impl CheckedError for InnerDeleteMessageError {
 // about what went wrong, so we must assume a transient error
 impl CheckedError for InnerPutObjectError {
     fn error_type(&self) -> Recoverable {
-        match self {
-            _ => Recoverable::Transient,
-        }
+        Recoverable::Transient
     }
 }
 
