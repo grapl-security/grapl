@@ -2,6 +2,7 @@ import os
 from typing import Any
 
 import pulumi_aws as aws
+from typing_extensions import Final
 
 import pulumi
 
@@ -29,6 +30,9 @@ Use the environment variable `GRAPL_LAMBDA_TAG` to specify a tag, or
 leave it unset to use the default value of `latest`.
 
 """
+
+
+SERVICE_LOG_RETENTION_DAYS: Final[int] = 30
 
 
 def mg_alphas() -> str:

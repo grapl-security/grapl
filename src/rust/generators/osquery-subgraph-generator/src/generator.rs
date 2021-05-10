@@ -28,18 +28,12 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct OSQuerySubgraphGenerator<C>
-where
-    C: Cache + Clone + Send + Sync + 'static,
-{
+pub struct OSQuerySubgraphGenerator<C: Cache> {
     cache: C,
     metrics: OSQuerySubgraphGeneratorMetrics,
 }
 
-impl<C> OSQuerySubgraphGenerator<C>
-where
-    C: Cache + Clone + Send + Sync + 'static,
-{
+impl<C: Cache> OSQuerySubgraphGenerator<C> {
     pub fn new(cache: C, metrics: OSQuerySubgraphGeneratorMetrics) -> Self {
         Self { cache, metrics }
     }
@@ -58,10 +52,7 @@ impl CheckedError for OSQuerySubgraphGeneratorError {
 }
 
 #[async_trait]
-impl<C> EventHandler for OSQuerySubgraphGenerator<C>
-where
-    C: Cache + Clone + Send + Sync + 'static,
-{
+impl<C: Cache> EventHandler for OSQuerySubgraphGenerator<C> {
     type InputEvent = Vec<Result<PartiallyDeserializedOSQueryLog, Arc<serde_json::Error>>>;
     type OutputEvent = GraphDescription;
     type Error = OSQuerySubgraphGeneratorError;

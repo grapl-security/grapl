@@ -14,7 +14,7 @@ use rusoto_dynamodb::{
 const DYNAMODB_MAX_BATCH_GET_ITEM_SIZE: usize = 100;
 
 #[async_trait]
-pub trait GraplDynamoDbClientExt: DynamoDb {
+pub trait GraplDynamoDbClientExt: DynamoDb + Send + Sync {
     /**
         The original `batch_get_item` method imposes some restrictions on querying. Namely:
         * You must request 100 or fewer items otherwise an error is returned
@@ -167,4 +167,4 @@ pub trait GraplDynamoDbClientExt: DynamoDb {
     }
 }
 
-impl<I> GraplDynamoDbClientExt for I where I: DynamoDb + Sized {}
+impl<I> GraplDynamoDbClientExt for I where I: DynamoDb + Send + Sync + Sized {}

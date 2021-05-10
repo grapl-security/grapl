@@ -1,14 +1,4 @@
-use std::{
-    collections::{
-        HashMap,
-        HashSet,
-    },
-    fmt::Debug,
-    sync::{
-        Arc,
-        Mutex,
-    },
-};
+use std::collections::HashMap;
 
 use async_trait::async_trait;
 use dynamic_sessiondb::{
@@ -34,22 +24,13 @@ use grapl_service::{
     decoder::ProtoDecoder,
     serialization::IdentifiedGraphSerializer,
 };
+use grapl_utils::rusoto_ext::dynamodb::GraplDynamoDbClientExt;
 use log::*;
-use rusoto_dynamodb::{
-    DynamoDb,
-    DynamoDbClient,
-};
+use rusoto_dynamodb::DynamoDbClient;
 use rusoto_sqs::SqsClient;
 use sessiondb::SessionDb;
 use sqs_executor::{
-    cache::{
-        Cache,
-        Cacheable,
-    },
-    errors::{
-        CheckedError,
-        Recoverable,
-    },
+    cache::Cache,
     event_handler::{
         CompletedEvents,
         EventHandler,
@@ -59,23 +40,29 @@ use sqs_executor::{
     s3_event_retriever::S3PayloadRetriever,
     time_based_key_fn,
 };
+use tap::tap::TapOptional;
 
-macro_rules! wait_on {
-    ($x:expr) => {{
-        $x.await
-    }};
-}
+use crate::error::NodeIdentifierError;
 
 pub mod dynamic_sessiondb;
-
+mod error;
 pub mod sessiondb;
 pub mod sessions;
 
+/**
+    The `NodeIdentifier` takes in graphs of previously unidentified nodes and performs identification
+    based on the configured strategies for that node type.
+
+    The strategies come in two variants:
+
+    * [Session](`grapl_graph_descriptions::graph_description::Session`) - strategy used for nodes with lifetimes (e.g. process, network connection)
+    * [Static](`grapl_graph_descriptions::graph_description::Static`) - strategy used for nodes with canonical and unique identifiers (e.g. aws events)
+*/
 #[derive(Clone)]
 pub struct NodeIdentifier<D, CacheT>
 where
-    D: DynamoDb + Clone + Send + Sync + 'static,
-    CacheT: Cache + Clone + Send + Sync + 'static,
+    D: GraplDynamoDbClientExt,
+    CacheT: Cache,
 {
     dynamic_identifier: NodeDescriptionIdentifier<D>,
     node_id_db: D,
@@ -85,8 +72,8 @@ where
 
 impl<D, CacheT> NodeIdentifier<D, CacheT>
 where
-    D: DynamoDb + Clone + Send + Sync + 'static,
-    CacheT: Cache + Clone + Send + Sync + 'static,
+    D: GraplDynamoDbClientExt,
+    CacheT: Cache,
 {
     pub fn new(
         dynamic_identifier: NodeDescriptionIdentifier<D>,
@@ -110,25 +97,85 @@ where
             .await?;
         Ok(new_node.into())
     }
-}
 
-#[derive(thiserror::Error, Debug)]
-pub enum NodeIdentifierError {
-    #[error("Unexpected error")]
-    Unexpected,
-}
+    /// Performs batch identification of unidentified nodes into identified nodes.
+    ///
+    /// A map of unidentified node keys to identified node keys will be returned in addition to the
+    /// last error, if any, that occurred while identifying nodes.
+    pub async fn identify_nodes(
+        &self,
+        unidentified_subgraph: &GraphDescription,
+        identified_graph: &mut IdentifiedGraph,
+    ) -> (HashMap<String, String>, Option<failure::Error>) {
+        let mut identified_nodekey_map = HashMap::new();
+        let mut attribution_failure = None;
 
-impl CheckedError for NodeIdentifierError {
-    fn error_type(&self) -> Recoverable {
-        Recoverable::Transient
+        // new method
+        for (unidentified_node_key, unidentified_node) in unidentified_subgraph.nodes.iter() {
+            let identified_node = match self.attribute_node_key(&unidentified_node).await {
+                Ok(identified_node) => identified_node,
+                Err(e) => {
+                    warn!("Failed to attribute node_key with: {}", e);
+                    attribution_failure = Some(e);
+                    continue;
+                }
+            };
+
+            identified_nodekey_map.insert(
+                unidentified_node_key.to_owned(),
+                identified_node.clone_node_key(),
+            );
+            identified_graph.add_node(identified_node);
+        }
+
+        (identified_nodekey_map, attribution_failure)
+    }
+
+    /// Takes the edges in the `unidentified_graph` and inserts ones that can be properly identified
+    /// into the `identified_graph` using the `identified_nodekey_map` returned from a previous
+    /// node key identification process.
+    pub fn identify_edges(
+        &self,
+        unidentified_subgraph: &GraphDescription,
+        identified_graph: &mut IdentifiedGraph,
+        identified_nodekey_map: HashMap<String, String>,
+    ) {
+        let identified_node_edges = unidentified_subgraph.edges.iter()
+            // filter out all edges for nodes that were not identified (also gets our from_key)
+            .filter_map(|(from_key, edge_list)| {
+                identified_nodekey_map.get(from_key)
+                    .tap_none(|| tracing::warn!(message = "Could not get node_key mapping for from_key", from_key=?from_key))
+                    .map(|identified_from_key| (identified_from_key, edge_list))
+            });
+
+        // for each of the edges from identified nodes...
+        for (identified_from_key, edge_list) in identified_node_edges {
+            // map the to_key for each edge with the new, identified to_key
+            let identified_edges = edge_list.edges.iter()
+                .filter_map(|edge| {
+                    // check if
+                    identified_nodekey_map.get(&edge.to_node_key)
+                        .tap_none(|| tracing::warn!(message="Could not get node_key mapping for to_key", to_key=?edge.to_node_key))
+                        .map(|identified_to_edge| (identified_to_edge, &edge.edge_name))
+                });
+
+            // add all identified edges into the `identified_graph`
+            for (identified_to_key, edge_name) in identified_edges {
+                identified_graph.add_edge(
+                    edge_name.to_owned(),
+                    identified_from_key.to_owned(),
+                    identified_to_key.to_owned(),
+                );
+            }
+        }
     }
 }
 
 #[async_trait]
 impl<D, CacheT> EventHandler for NodeIdentifier<D, CacheT>
 where
-    D: DynamoDb + Clone + Send + Sync + 'static,
-    CacheT: Cache + Clone + Send + Sync + 'static,
+    D: GraplDynamoDbClientExt,
+    CacheT: Cache,
 {
     type InputEvent = GraphDescription;
     type OutputEvent = IdentifiedGraph;
@@ -136,128 +183,82 @@ where
 
     async fn handle_event(
         &mut self,
-        unid_subgraph: GraphDescription,
+        unidentified_subgraph: GraphDescription,
         _completed: &mut CompletedEvents,
     ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
-        let mut attribution_failure = None;
+        /*
+           1. for the nodes in the unidentified graph, do the following
+               1. identify each node
+               2. record the old node key -> new node key mapping
+               3. record which nodes failed to identify
+               4. place the correctly identified nodes into a new, identified graph
+           2. for the edges in the unidentified graph, do the following
+               1. for both the 'from' and 'to' sections, look up the old-node-key -> new-node-key map to fetch updated values
+                   1. if both are present, update edge and add it to the identified graph
+                   2. if one or more are missing, warn with an appropriate error message and skip the edge
+           3. if identified graph is empty, return as full error
+           4. if any nodes failed to identify or any errors occurred, return as a partial error
+           5. return as full graph
+        */
 
-        info!("Handling raw event");
+        info!("Begin node identification process.");
 
-        if unid_subgraph.is_empty() {
+        if unidentified_subgraph.is_empty() {
             warn!("Received empty subgraph");
             return Ok(IdentifiedGraph::new());
         }
 
         info!(
-            "unid_subgraph: {} nodes {} edges",
-            unid_subgraph.nodes.len(),
-            unid_subgraph.edges.len(),
+            "unidentified_subgraph: {} nodes {} edges",
+            unidentified_subgraph.nodes.len(),
+            unidentified_subgraph.edges.len(),
         );
 
-        let mut dead_node_ids = HashSet::new();
-        let mut unid_id_map = HashMap::new();
-
-        let output_subgraph = unid_subgraph;
-        // new method
         let mut identified_graph = IdentifiedGraph::new();
-        for (old_node_key, old_node) in output_subgraph.nodes.iter() {
-            let node = old_node.clone();
 
-            let node = match self.attribute_node_key(&node).await {
-                Ok(node) => node,
-                Err(e) => {
-                    warn!("Failed to attribute node_key with: {}", e);
-                    dead_node_ids.insert(node.clone_node_key());
-
-                    attribution_failure = Some(e);
-                    continue;
-                }
-            };
-            unid_id_map.insert(old_node_key.to_owned(), node.clone_node_key());
-            identified_graph.add_node(node);
-        }
+        let (identified_nodekey_map, attribution_failure) = self
+            .identify_nodes(&unidentified_subgraph, &mut identified_graph)
+            .await;
 
         info!(
-            "PRE: output_subgraph.edges.len() {}",
-            output_subgraph.edges.len()
+            "PRE: unidentified_subgraph.edges.len() {}",
+            unidentified_subgraph.edges.len()
         );
 
-        for (old_key, edge_list) in output_subgraph.edges.iter() {
-            if dead_node_ids.contains(old_key) {
-                continue;
-            };
-
-            for edge in &edge_list.edges {
-                let from_key = unid_id_map.get(&edge.from_node_key);
-                let to_key = unid_id_map.get(&edge.to_node_key);
-
-                let (from_key, to_key) = match (from_key, to_key) {
-                    (Some(from_key), Some(to_key)) => (from_key, to_key),
-                    (Some(from_key), None) => {
-                        tracing::warn!(
-                            message="Could not get node_key mapping for from_key",
-                            from_key=?from_key,
-                        );
-                        continue;
-                    }
-                    (None, Some(to_key)) => {
-                        tracing::warn!(
-                            message="Could not get node_key mapping for to_key",
-                            to_key=?to_key,
-                        );
-                        continue;
-                    }
-                    (None, None) => {
-                        tracing::warn!(
-                            message="Could not get node_key mapping for from_key and to_key",
-                            from_key=?from_key,
-                            to_key=?to_key,
-                        );
-                        continue;
-                    }
-                };
-
-                identified_graph.add_edge(
-                    edge.edge_name.to_owned(),
-                    from_key.to_owned(),
-                    to_key.to_owned(),
-                );
-            }
-        }
+        self.identify_edges(
+            &unidentified_subgraph,
+            &mut identified_graph,
+            identified_nodekey_map,
+        );
 
         info!(
             "POST: identified_graph.edges.len() {}",
             identified_graph.edges.len()
         );
 
-        // Remove dead nodes and edges from output_graph
-        let dead_node_ids: HashSet<&str> = dead_node_ids.iter().map(String::as_str).collect();
+        match attribution_failure {
+            Some(_) if identified_graph.is_empty() => Err(Err(NodeIdentifierError::Unexpected)),
+            Some(_) => {
+                /* todo: error message is misleading. someone reading this would believe we identified
+                 * a smaller number of nodes that actually identified (due to identities of nodes coalescing)
+                 */
+                warn!(
+                    "Partial Success; identified {} nodes",
+                    identified_graph.nodes.len()
+                );
 
-        if identified_graph.is_empty() {
-            // todo: Use a better error
-            if let Some(_e) = attribution_failure {
-                return Err(Err(NodeIdentifierError::Unexpected));
+                Err(Ok((identified_graph, NodeIdentifierError::Unexpected))) // todo: Use a real error here
             }
-            return Ok(IdentifiedGraph::new());
-        }
+            None => {
+                info!("Identified all nodes");
 
-        if !dead_node_ids.is_empty() || attribution_failure.is_some() {
-            info!(
-                "Partial Success, identified {} nodes",
-                identified_graph.nodes.len()
-            );
-            Err(Ok(
-                (identified_graph, NodeIdentifierError::Unexpected), // todo: Use a real error here
-            ))
-        } else {
-            info!("Identified all nodes");
-            Ok(identified_graph)
+                Ok(identified_graph)
+            }
         }
     }
 }
 
-pub async fn handler(_should_default: bool) -> Result<(), Box<dyn std::error::Error>> {
-    let should_default = true;
+pub async fn handler(should_default: bool) -> Result<(), Box<dyn std::error::Error>> {
     let (env, _guard) = grapl_config::init_grapl_env!();
     let source_queue_url = grapl_config::source_queue_url();
 
@@ -266,12 +267,10 @@ pub async fn handler(_should_default: bool) -> Result<(), Box<dyn std::error::Er
         env=?env,
         "handler_init"
     );
+
     let sqs_client = SqsClient::from_env();
-
     let cache = &mut event_caches(&env).await;
-
     let serializer = &mut make_ten(async { IdentifiedGraphSerializer::default() }).await;
-
     let s3_emitter =
         &mut s3_event_emitters_from_env(&env, time_based_key_fn, S3ToSqsEventNotifier::from(&env))
             .await;
@@ -287,7 +286,7 @@ pub async fn handler(_should_default: bool) -> Result<(), Box<dyn std::error::Er
 
     let dynamo = DynamoDbClient::from_env();
     let dyn_session_db = SessionDb::new(dynamo.clone(), grapl_config::dynamic_session_table_name());
-    let dyn_mapping_db = DynamicMappingDb::new(DynamoDbClient::from_env());
+    let dyn_mapping_db = DynamicMappingDb::new(dynamo.clone());
 
     let dyn_node_identifier =
         NodeDescriptionIdentifier::new(dyn_session_db, dyn_mapping_db, should_default);
@@ -295,7 +294,7 @@ pub async fn handler(_should_default: bool) -> Result<(), Box<dyn std::error::Er
     let node_identifier = &mut make_ten(async {
         NodeIdentifier::new(
             dyn_node_identifier,
-            dynamo.clone(),
+            dynamo,
             should_default,
             cache[0].to_owned(),
         )
@@ -318,59 +317,4 @@ pub async fn handler(_should_default: bool) -> Result<(), Box<dyn std::error::Er
 
     info!("Exiting");
     Ok(())
-}
-
-#[derive(Clone, Default)]
-pub struct HashCache {
-    cache: Arc<Mutex<std::collections::HashSet<Vec<u8>>>>,
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum HashCacheError {
-    #[error("Unreachable error")]
-    Unreachable,
-}
-
-impl CheckedError for HashCacheError {
-    fn error_type(&self) -> Recoverable {
-        Recoverable::Persistent
-    }
-}
-
-#[async_trait]
-impl Cache for HashCache {
-    type CacheErrorT = HashCacheError;
-
-    async fn all_exist<CA>(&mut self, cacheables: &[CA]) -> bool
-    where
-        CA: Cacheable + Send + Sync + Clone + 'static,
-    {
-        let self_cache = self.cache.lock().unwrap();
-
-        cacheables
-            .into_iter()
-            .all(|c| self_cache.contains(&c.identity()))
-    }
-
-    async fn store<CA>(&mut self, cacheable: CA) -> Result<(), HashCacheError>
-    where
-        CA: Cacheable + Send + Sync + Clone + 'static,
-    {
-        let mut self_cache = self.cache.lock().unwrap();
-        self_cache.insert(cacheable.identity());
-        Ok(())
-    }
-
-    async fn filter_cached<CA>(&mut self, cacheables: &[CA]) -> Vec<CA>
-    where
-        CA: Cacheable + Send + Sync + Clone + 'static,
-    {
-        let self_cache = self.cache.lock().unwrap();
-
-        cacheables
-            .iter()
-            .cloned()
-            .filter(|c| self_cache.contains(&c.identity()))
-            .collect()
-    }
 }

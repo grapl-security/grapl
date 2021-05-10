@@ -130,10 +130,7 @@ impl CheckedError for GraphMergerError {
 }
 
 #[async_trait]
-impl<CacheT> EventHandler for GraphMerger<CacheT>
-where
-    CacheT: Cache + Clone + Send + Sync + 'static,
-{
+impl<CacheT: Cache> EventHandler for GraphMerger<CacheT> {
     type InputEvent = IdentifiedGraph;
     type OutputEvent = MergedGraph;
     type Error = GraphMergerError;
