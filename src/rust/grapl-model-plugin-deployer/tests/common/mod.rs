@@ -1,8 +1,8 @@
 use test_context::AsyncTestContext;
-use my_new_project::client::{Channel, Timeout};
+use grapl_model_plugin_deployer::client::{Channel, Timeout};
 use tonic::transport::NamedService;
-use my_new_project::server::MyNewProjectRpcServer;
-use my_new_project::server::MyNewProject;
+use grapl_model_plugin_deployer::server::GraplModelPluginDeployerRpcServer;
+use grapl_model_plugin_deployer::server::GraplModelPluginDeployer;
 use std::time::Duration;
 use tonic_health::proto::health_client::HealthClient;
 use tonic_health::proto::HealthCheckRequest;
@@ -18,7 +18,7 @@ impl AsyncTestContext for ServiceContext {
             .init();
 
         tokio::task::spawn(async move {
-            my_new_project::server::exec_service().await
+            grapl_model_plugin_deployer::server::exec_service().await
                 .expect("Failed to execute service");
         });
         until_health().await
@@ -55,7 +55,7 @@ async fn _until_health() -> Result<(), Box<dyn std::error::Error>> {
     let mut client = HealthClient::new(timeout_channel);
 
     let request = HealthCheckRequest {
-        service: MyNewProjectRpcServer::<MyNewProject>::NAME.to_string(),
+        service: GraplModelPluginDeployerRpcServer::<GraplModelPluginDeployer>::NAME.to_string(),
     };
     let response = client.check(request).await?;
     let response = response.into_inner();

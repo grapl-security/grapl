@@ -2,7 +2,12 @@ syntax = "proto3";
 
 package {{cookiecutter.service_name}};
 
+message GraplRequestMeta {
+    string clientId = 1;
+}
+
 message {{cookiecutter.service_name}}Request {
+    GraplRequestMeta graplRequestMeta = 1;
 }
 
 

@@ -18,7 +18,7 @@ services:
       /bin/bash -c "
         source venv/bin/activate &&
         pip install mypy &&
-        mypy analyzer_executor/**/*.py
+        mypy --exclude=".*/grapl\-templates/" analyzer_executor/**/*.py
         "
 
   typecheck-grapl-common:
@@ -32,7 +32,7 @@ services:
         source venv/bin/activate &&
         cd grapl-common &&
         pip install '.[typecheck]' &&
-        mypy .
+        mypy --exclude=".*/grapl\-templates/" .
         "
   
   typecheck-grapl-tests-common:
@@ -46,7 +46,7 @@ services:
         source venv/bin/activate &&
         cd grapl-tests-common &&
         pip install '.[typecheck]' &&
-        mypy .
+        mypy --exclude=".*/grapl\-templates/" .
         "
   
   typecheck-engagement-creator:
@@ -59,7 +59,7 @@ services:
       /bin/bash -c "
         source venv/bin/activate &&
         cd engagement-creator &&
-        mypy .
+        mypy --exclude=".*/grapl\-templates/" .
         "
 
   typecheck-e2e-tests:
@@ -72,7 +72,7 @@ services:
       /bin/bash -c "
         source venv/bin/activate &&
         pip install mypy &&
-        mypy -p grapl_e2e_tests
+        mypy --exclude=".*/grapl\-templates/" -p grapl_e2e_tests
         "
   
   typecheck-graphql-endpoint-tests:
@@ -85,7 +85,7 @@ services:
       /bin/bash -c "
         source venv/bin/activate &&
         pip install mypy &&
-        mypy -p graphql_endpoint_tests
+        mypy  --exclude=".*/grapl\-templates/" -p graphql_endpoint_tests
         "
 
   # typecheck-analyzer-deployer:
@@ -103,7 +103,7 @@ services:
         touch venv/lib/python3.7/site-packages/chalice/py.typed &&
         cd model-plugin-deployer &&
         pip install mypy &&
-        mypy .
+        mypy --exclude=".*/grapl\-templates/" .
         "
 
   typecheck-engagement-edge:
@@ -117,7 +117,7 @@ services:
         source venv/bin/activate &&
         touch venv/lib/python3.7/site-packages/chalice/py.typed &&
         cd engagement_edge &&
-        mypy .
+        mypy --exclude=".*/grapl\-templates/" .
         "
 
   typecheck-grapl-analyzerlib:

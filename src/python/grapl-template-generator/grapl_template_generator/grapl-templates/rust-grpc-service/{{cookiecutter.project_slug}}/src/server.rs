@@ -10,15 +10,25 @@ pub struct {{cookiecutter.service_name}} {}
 
 #[tonic::async_trait]
 impl {{cookiecutter.service_name}}Rpc for {{cookiecutter.service_name}} {
+
+    #[tracing::instrument(
+        source_addr = request.remote_addr(),
+        client_id = request.get_ref().grapl_request_meta.client_id,
+        skip(self, request),
+    )]
     async fn handle_request(
         &self,
         request: Request<{{cookiecutter.service_name}}Request>,
     ) -> Result<Response<{{cookiecutter.service_name}}Response>, Status> {
-        println!("Got a request from {:?}", request.remote_addr());
+        let start = quanta::Instant::now();
 
         let reply = {{cookiecutter.service_name}}Response {
 
         };
+
+        let delta = quanta::Instant::now().duration_since(start);
+        metrics::histogram!("request_ns", delta);
+
         Ok(Response::new(reply))
     }
 }
@@ -30,18 +40,22 @@ pub async fn exec_service()  -> Result<(), Box<dyn std::error::Error>> {
     .await;
 
     let addr = "[::1]:50051".parse().unwrap();
-    let my_new_project_instance = {{cookiecutter.service_name}}::default();
+    let {{cookiecutter.snake_project_name}}_instance = {{cookiecutter.service_name}}::default();
 
     tracing::info!(
-    message="HealthServer + {{cookiecutter.service_name}} listening",
-    addr=?addr,
+        message="HealthServer + {{cookiecutter.service_name}} listening",
+        addr=?addr,
     );
 
+    metrics::register_counter!("request_count", "count of requests made to endpoint");
+    metrics::register_histogram!("request_ns", "nanoseconds for request execution");
+
+
     Server::builder()
-    .add_service(health_service)
-    .add_service({{cookiecutter.service_name}}RpcServer::new(my_new_project_instance))
-    .serve(addr)
-    .await?;
+        .add_service(health_service)
+        .add_service({{cookiecutter.service_name}}RpcServer::new({{cookiecutter.snake_project_name}}_instance))
+        .serve(addr)
+        .await?;
 
     Ok(())
 }
