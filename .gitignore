@@ -2,6 +2,8 @@
 .DS_Store
 .ninja_log
 .pytype/
+*.egg-info/
+
 # Test outputs
 test/integration-outputs
 # Artifacts dumped from dump_artifacts.py script
