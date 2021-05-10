@@ -1,5 +1,6 @@
 # Mac OS
 .DS_Store
+*.egg-info/
 
 # Test outputs
 test/integration-outputs
