@@ -7,6 +7,14 @@ services:
   #
   # Python services
   #
+  # All of these either are, or depend on, grapl-analyzerlib, which
+  # must be typechecked with PyType at the moment. Due to a bug in how
+  # Pants invokes MyPy, it will attempt to typecheck grapl-analyzerlib
+  # even when only being instructed to typecheck something that
+  # depends on it.
+  #
+  # Until we can type grapl-analyzerlib with MyPy, we'll need to
+  # typecheck these libraries here.
 
   typecheck-analyzer-executor:
     image: grapl/analyzer-executor-test:${TAG:-latest}
