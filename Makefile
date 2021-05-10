@@ -226,6 +226,7 @@ test-typecheck-pants: ## Typecheck Python code with Pants
 	./pants typecheck \
 	pulumi:: \
 	build-support:: \
+	src/python/engagement_edge:: \
 	src/python/grapl-common::
 
 .PHONY: test-integration

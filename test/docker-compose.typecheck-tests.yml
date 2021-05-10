@@ -92,20 +92,6 @@ services:
         mypy .
         "
 
-  typecheck-engagement-edge:
-    image: grapl/grapl-engagement-edge-test:${TAG:-latest}
-    build:
-      context: ${PWD}/src
-      dockerfile: ./python/Dockerfile
-      target: engagement-edge-test
-    command: |
-      /bin/bash -c "
-        source venv/bin/activate &&
-        touch venv/lib/python3.7/site-packages/chalice/py.typed &&
-        cd engagement_edge &&
-        mypy .
-        "
-
   typecheck-grapl-analyzerlib:
     image: grapl/grapl-analyzerlib-test:${TAG:-latest}
     build:
