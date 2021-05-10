@@ -6,6 +6,7 @@ reorder_imports = true
 reorder_modules = true
 
 # Unstable formatting directives
+# Tracking issue for formatting of imports https://github.com/rust-lang/rustfmt/issues/3361
 group_imports = "StdExternalCrate"
 imports_layout = "Vertical"
 imports_granularity = "Crate"
