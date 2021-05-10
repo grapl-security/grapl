@@ -4,7 +4,7 @@ grapl_python_distribution(
     ],
     provides = setup_py(
         name = "grapl-http-service",
-        version = "0.1.0", # TODO: remove VERSION file? Or read from it?
+        version = "0.1.0",
         description = "Library for building Grapl HTTP Services"
     )
 )

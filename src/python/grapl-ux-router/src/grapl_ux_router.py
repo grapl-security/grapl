@@ -95,16 +95,6 @@ UX_BUCKET = LazyUxBucket()
 
 app = init(app_name="grapl-ux-edge")
 
-# If we ever have more than 16 binary types we need to
-# instead explicitly set it for every response
-# https://aws.github.io/chalice/api.html#APIGateway.binary_types
-if len(MEDIA_TYPE_MAP) >= 14:
-    LOGGER.error("MEDIA_TYPE_MAP length is too high")
-elif len(MEDIA_TYPE_MAP) >= 13:
-    LOGGER.warning("MEDIA_TYPE_MAP length is too high")
-# for _media_type in MEDIA_TYPE_MAP.values():
-#     app.api.binary_types.append(_media_type)
-
 
 def get_media_type(resource_name: str) -> str:
     name_parts = resource_name.split(".")
