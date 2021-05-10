@@ -102,14 +102,6 @@ RUN source venv/bin/activate && \
     pip install . && \
     python setup.py sdist bdist_wheel
 
-# test
-FROM grapl-common-build AS grapl-common-test
-
-## Install test requirements
-COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
-RUN python_test_deps/install_requirements.sh
-
-
 # grapl_analyzerlib
 ################################################################################
 
