@@ -1,0 +1,6 @@
+pytest
+pytest-cov
+hypothesis
+pyjwt
+chalice
+boto3_stubs

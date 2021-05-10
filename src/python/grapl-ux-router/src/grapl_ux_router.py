@@ -2,28 +2,24 @@ from __future__ import annotations
 
 import gzip as web_compress
 import json
-import logging
 import os
-import sys
 import time
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Optional, Union
 
 import boto3
-from chalice import Chalice, Response
+from chalice import Response
+
 from grapl_common.env_helpers import S3ResourceFactory
+from grapl_common.grapl_logger import get_module_grapl_logger
+from grapl_http_service.grapl_http_service import init, not_found, respond
 
 if TYPE_CHECKING:
     from mypy_boto3_s3.service_resource import Bucket
 
-    pass
-
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
-GRAPL_LOG_LEVEL = os.environ.get("GRAPL_LOG_LEVEL", "ERROR")
 UX_BUCKET_NAME = os.environ["UX_BUCKET_NAME"]
 
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(GRAPL_LOG_LEVEL)
-LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+LOGGER = get_module_grapl_logger()
 
 CONTENT_ENCODING = "gzip"
 
@@ -100,96 +96,17 @@ class LazyUxBucket:
 
 UX_BUCKET = LazyUxBucket()
 
-
-app = Chalice(app_name="grapl-ux-edge")
+app = init(app_name="grapl-ux-edge")
 
 # If we ever have more than 16 binary types we need to
 # instead explicitly set it for every response
 # https://aws.github.io/chalice/api.html#APIGateway.binary_types
 if len(MEDIA_TYPE_MAP) >= 14:
     LOGGER.error("MEDIA_TYPE_MAP length is too high")
-elif len(MEDIA_TYPE_MAP) >= 11:
+elif len(MEDIA_TYPE_MAP) >= 13:
     LOGGER.warning("MEDIA_TYPE_MAP length is too high")
-for _media_type in MEDIA_TYPE_MAP.values():
-    app.api.binary_types.append(_media_type)
-
-# TODO: We should allow this in AWS too with another flag
-if IS_LOCAL:
-    app.debug = True
-
-# Sometimes we pass in a dict. Sometimes we pass the string "True". Weird.
-Res = Union[Dict[str, Any], str]
-
-
-def respond(
-    err: Optional[str],
-    res: Optional[Res] = None,
-    headers: Optional[Dict[str, Any]] = None,
-) -> Response:
-
-    if not headers:
-        headers = {}
-
-    if IS_LOCAL:
-        override = app.current_request.headers.get("origin", "")
-        headers = {"Access-Control-Allow-Origin": override, **headers}
-
-    compressed_body = web_compress.compress(
-        {"error": err} if err else json.dumps({"success": res})
-    )
-
-    return Response(
-        body=compressed_body,
-        status_code=400 if err else 200,
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Credentials": "false",
-            "Content-Type": "application/json",
-            "Content-Encoding": CONTENT_ENCODING,
-            "Access-Control-Allow-Methods": "GET,OPTIONS",
-            "X-Requested-With": "*",
-            "Access-Control-Allow-Headers": "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With",
-            **headers,
-        },
-    )
-
-
-RouteFn = TypeVar("RouteFn", bound=Callable[..., Response])
-
-
-def no_auth(path: str) -> Callable[[RouteFn], RouteFn]:
-    if not IS_LOCAL:
-        path = "/{proxy+}" + path
-
-    def route_wrapper(route_fn: RouteFn) -> RouteFn:
-        @app.route(path, methods=["OPTIONS", "GET"])
-        def inner_route() -> Response:
-            if app.current_request.method == "OPTIONS":
-                return respond(None, {})
-            try:
-                return route_fn()
-            except Exception as e:
-                LOGGER.error(f"path {path} had an error: {e}")
-                return respond("Unexpected Error")
-
-        return cast(RouteFn, inner_route)
-
-    return route_wrapper
-
-
-def not_found() -> Response:
-    body = json.dumps({"Error": "Not Found"}).encode("utf8")
-    return Response(
-        status_code=404,
-        body=web_compress.compress(body),
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Credentials": "false",
-            "Access-Control-Allow-Methods": "GET,OPTIONS",
-            "X-Requested-With": "*",
-            "Access-Control-Allow-Headers": "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With",
-        },
-    )
+# for _media_type in MEDIA_TYPE_MAP.values():
+#     app.api.binary_types.append(_media_type)
 
 
 def get_media_type(resource_name: str) -> str:
@@ -207,21 +124,28 @@ def _route_to_resource(resource_name: str) -> Response:
     if not resource:
         return not_found()
     content_type = get_media_type(resource_name)
+    # encoded = encode_meta(resource, resource_name)
     LOGGER.debug(
         f"setting content-type:  content_type: {content_type} resource_name: {resource_name}"
     )
+
+    if content_type.startswith("text/"):
+        resource = resource.decode('utf8')
+    elif content_type == "application/json":
+        resource = json.loads(resource.decode('utf8'))
+
     return Response(
-        body=web_compress.compress(resource),
+        body=resource,
         status_code=200,
         headers={
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Credentials": "false",
             "Content-Type": content_type,
-            "Content-Encoding": CONTENT_ENCODING,
             "Cache-Control": "max-age=60",
             "Access-Control-Allow-Methods": "GET,OPTIONS",
             "X-Requested-With": "*",
             "Access-Control-Allow-Headers": "Content-Encoding, Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With",
+            # **content_encoding
         },
     )
 
@@ -275,12 +199,14 @@ if IS_LOCAL:
             return respond(None, {})
         return _route_to_resource(app.current_request.context["path"].lstrip("/"))
 
+
     @app.route("/static/css/{proxy+}", methods=["OPTIONS", "GET"])
     def static_css_resource_root_nop_route() -> Response:
         LOGGER.info(f'static_css_resource {app.current_request.context["path"]}')
         if app.current_request.method == "OPTIONS":
             return respond(None, {})
         return _route_to_resource(app.current_request.context["path"].lstrip("/"))
+
 
     @app.route("/static/media/{proxy+}", methods=["OPTIONS", "GET"])
     def static_media_resource_root_nop_route() -> Response:

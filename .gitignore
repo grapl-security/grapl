@@ -1,6 +1,5 @@
 # Mac OS
 .DS_Store
-
 # Test outputs
 test/integration-outputs
 # Artifacts dumped from dump_artifacts.py script
@@ -17,6 +16,7 @@ __pycache__/
 .mypy_cache
 .hypothesis
 .pytype/
+*.egg-info/
 
 # Rust outputs
 target/

@@ -107,10 +107,6 @@ def check_jwt(headers: Mapping[str, Any]) -> bool:
         return False
 
 
-def verify_payload(payload_body, key, signature):
-    new_signature = "sha1=" + hmac.new(key, payload_body, sha1).hexdigest()
-    return new_signature == signature
-
 
 def get_schema_objects(meta_globals: Dict[str, Any]) -> Dict[str, BaseSchema]:
     def is_schema(schema_cls: Type[Schema]) -> bool:

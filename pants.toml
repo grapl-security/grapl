@@ -45,6 +45,7 @@ root_patterns = [
   "/src/python/engagement_edge",
   "/src/python/graphql_endpoint_tests",
   "/src/python/grapl_analyzerlib",
+  "/src/python/grapl-http-service",
   "/src/python/grapl-common",
   "/src/python/graplctl",
   "/src/python/grapl-dgraph-ttl",

@@ -3,14 +3,14 @@ import json
 import os
 from typing import Dict, Iterable, Iterator, List, Optional, Tuple, Union
 
-from chalice import Chalice
 from grapl_analyzerlib.grapl_client import GraphClient
+from grapl_http_service.grapl_http_service import init
 
 GRAPL_DGRAPH_TTL_S = int(os.environ.get("GRAPL_DGRAPH_TTL_S", "-1"))
 GRAPL_LOG_LEVEL = os.environ.get("GRAPL_LOG_LEVEL", "ERROR")
 GRAPL_TTL_DELETE_BATCH_SIZE = int(os.environ.get("GRAPL_TTL_DELETE_BATCH_SIZE", "1000"))
 
-app = Chalice(app_name="grapl-dgraph-ttl")
+app = init(app_name="grapl-dgraph-ttl")
 app.log.setLevel(GRAPL_LOG_LEVEL)
 
 

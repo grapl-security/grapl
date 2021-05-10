@@ -2,11 +2,11 @@ import dataclasses
 from typing import List, Optional
 
 import boto3
-from chalice import Chalice
+from grapl_http_service.grapl_http_service import init
 from mypy_boto3_dynamodb import DynamoDBServiceResource
 from mypy_boto3_sqs import SQSServiceResource
 
-app = Chalice(app_name="analyzer-deployer")
+app = init(app_name="analyzer-deployer")
 
 
 def _create_queue(queue_name: str):

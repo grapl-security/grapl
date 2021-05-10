@@ -3,3 +3,4 @@ boto3
 pyjwt==2.0.*
 grapl_analyzerlib
 chalice==1.22.4
+grapl_http_service

@@ -110,6 +110,33 @@ COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_t
 RUN python_test_deps/install_requirements.sh
 
 
+# grapl-http-service
+################################################################################
+
+# build
+FROM grapl-python-build AS grapl-http-service-build
+
+COPY --chown=grapl python/grapl-http-service grapl-http-service
+COPY --chown=grapl --from=grapl-common-build /home/grapl/grapl-common grapl-common
+
+RUN source venv/bin/activate && \
+    cd grapl-common && \
+    pip install . && \
+    python setup.py sdist bdist_wheel
+
+RUN source venv/bin/activate && \
+    cd grapl-http-service && \
+    pip install . && \
+    python setup.py sdist bdist_wheel
+
+# test
+FROM grapl-http-service AS grapl-http-service-test
+
+## Install test requirements
+COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
+RUN python_test_deps/install_requirements.sh
+
+
 # grapl_analyzerlib
 ################################################################################
 
@@ -214,6 +241,11 @@ FROM grapl-python-build AS engagement-edge-build
 
 COPY --chown=grapl python/engagement_edge engagement_edge
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
+COPY --chown=grapl --from=grapl-http-service-build /home/grapl/grapl-http-service grapl-http-service
+
+RUN source venv/bin/activate && \
+    cd grapl-http-service && \
+    pip install .
 
 RUN source venv/bin/activate && \
     cd engagement_edge && \
@@ -245,11 +277,16 @@ FROM grapl-python-build AS grapl-ux-router-build
 
 COPY --chown=grapl python/grapl-ux-router grapl-ux-router
 COPY --chown=grapl --from=grapl-common-build /home/grapl/grapl-common grapl-common
+COPY --chown=grapl --from=grapl-http-service-build /home/grapl/grapl-http-service grapl-http-service
 
 # Install requirement `grapl_common` - we could also manually COPY the `venv/site_packages`,
 # but the pip install is cleaner.
 RUN source venv/bin/activate && \
     cd grapl-common && \
+    pip install .
+
+RUN source venv/bin/activate && \
+    cd grapl-http-service && \
     pip install .
 
 RUN source venv/bin/activate && \
@@ -265,6 +302,7 @@ FROM grapl-python-build AS dgraph-ttl-build
 
 COPY --chown=grapl python/grapl-dgraph-ttl dgraph-ttl
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
+COPY --chown=grapl --from=grapl-http-service-build /home/grapl/venv venv
 
 RUN source venv/bin/activate && \
     pip install -r dgraph-ttl/requirements.txt
