@@ -41,7 +41,7 @@ pub mod test {
         let query_block = QueryBlockBuilder::default()
             .query_type(QueryBlockType::query())
             .root_filter(Condition::EQ(
-                format!("node_key"),
+                "node_key".to_string(),
                 ConditionValue::string(node_key),
             ))
             .predicates(vec![Predicate::Field(Field::new("uid"))])
@@ -319,7 +319,7 @@ pub mod test {
         let query_block = QueryBlockBuilder::default()
             .query_type(QueryBlockType::query())
             .root_filter(Condition::EQ(
-                format!("node_key"),
+                "node_key".to_string(),
                 ConditionValue::string(node_key),
             ))
             .predicates(vec![Predicate::Field(Field::new("uid"))])
@@ -379,7 +379,7 @@ pub mod test {
         let query_block = QueryBlockBuilder::default()
             .query_type(QueryBlockType::query())
             .root_filter(Condition::EQ(
-                format!("node_key"),
+                "node_key".to_string(),
                 ConditionValue::string(node_key),
             ))
             .predicates(vec![

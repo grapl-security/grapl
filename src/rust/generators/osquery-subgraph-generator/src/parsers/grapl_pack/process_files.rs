@@ -65,7 +65,7 @@ impl TryFrom<OSQueryResponse<OSQueryProcessFileQuery>> for GraphDescription {
 
         // TODO: maybe we should set deleted time and created time for the file here?
         match process_file_event.action {
-            OSQueryAction::ADDED => {
+            OSQueryAction::Added => {
                 file.with_created_timestamp(process_file_event.unix_time);
 
                 graph.add_edge(
@@ -74,7 +74,7 @@ impl TryFrom<OSQueryResponse<OSQueryProcessFileQuery>> for GraphDescription {
                     file.clone_node_key(),
                 );
             }
-            OSQueryAction::REMOVED => {
+            OSQueryAction::Removed => {
                 file.with_deleted_timestamp(process_file_event.unix_time);
 
                 graph.add_edge(

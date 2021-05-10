@@ -29,9 +29,9 @@ struct OSQueryResponse<C> {
 #[derive(Serialize, Deserialize)]
 enum OSQueryAction {
     #[serde(rename = "added")]
-    ADDED,
+    Added,
     #[serde(rename = "removed")]
-    REMOVED,
+    Removed,
     Other(String),
 }
 
