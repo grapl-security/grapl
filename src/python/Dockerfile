@@ -228,27 +228,6 @@ RUN source venv/bin/activate && \
     cd grapl-tests-common && \
     pip install .
 
-
-# grapl-ux-router
-################################################################################
-
-# build
-FROM grapl-python-build AS grapl-ux-router-build
-
-COPY --chown=grapl python/grapl-ux-router grapl-ux-router
-COPY --chown=grapl --from=grapl-common-build /home/grapl/grapl-common grapl-common
-
-# Install requirement `grapl_common` - we could also manually COPY the `venv/site_packages`,
-# but the pip install is cleaner.
-RUN source venv/bin/activate && \
-    cd grapl-common && \
-    pip install .
-
-RUN source venv/bin/activate && \
-    cd grapl-ux-router && \
-    pip install .
-
-
 # dgraph-ttl
 ################################################################################
 
