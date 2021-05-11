@@ -146,12 +146,9 @@ impl NodeType {
         let mut node_schema_method = String::with_capacity(128);
         let schema_name = format!("{}Schema", self.type_name);
 
-        node_schema_method = node_schema_method + r#"    @classmethod"# + "\n";
-        node_schema_method = node_schema_method
-            + r#"    def node_schema(cls) -> "grapl_analyzerlib.schema.Schema":"#
-            + "\n";
-        node_schema_method =
-            node_schema_method + &format!(r#"        return {}()"#, schema_name) + "\n";
+        node_schema_method += "    @classmethod\n";
+        node_schema_method += "    def node_schema(cls) -> 'grapl_analyzerlib.schema.Schema':\n";
+        node_schema_method += &format!("        return {}()\n", schema_name);
         node_schema_method
     }
 
@@ -170,13 +167,13 @@ impl NodeType {
         );
 
         queryable += "\n";
-        queryable = queryable
-            + "class "
-            + &query_name
-            + &format!(
-                "(grapl_analyzerlib.nodes.entity.EntityQuery['{}', '{}']):\n",
-                v, q
-            );
+        queryable.push_str("class ");
+        queryable.push_str(&query_name);
+
+        queryable += &format!(
+            "(grapl_analyzerlib.nodes.entity.EntityQuery['{}', '{}']):\n",
+            v, q
+        );
 
         for predicate in self.predicates.iter() {
             queryable.push_str(&predicate.generate_python_query_def());
@@ -207,14 +204,15 @@ impl NodeType {
         );
 
         viewable += "\n";
-        viewable = viewable
-            + "class "
-            + &v
-            + &format!(
-                "(grapl_analyzerlib.nodes.entity.EntityView['{}', '{}']):\n",
-                v, q
-            );
-        viewable = viewable + "    queryable = " + &q + "\n\n";
+        viewable.push_str("class ");
+        viewable.push_str(&v);
+        viewable += &format!(
+            "(grapl_analyzerlib.nodes.entity.EntityView['{}', '{}']):\n",
+            v, q
+        );
+        viewable += "    queryable = ";
+        viewable += &q;
+        viewable += "\n\n";
         viewable += "    def __init__(\n";
         viewable += "        self,\n";
         viewable += "        uid: int,\n";
@@ -224,12 +222,14 @@ impl NodeType {
 
         for predicate in self.predicates.iter() {
             let parameter = generate_parameter_from_predicate(predicate);
-            viewable = viewable + "        " + &parameter + "\n";
+            viewable += "        ";
+            viewable += &parameter;
+            viewable += "\n";
         }
 
         for edge in self.edges.iter() {
             let parameter = generate_parameter_from_edge(edge);
-            viewable = viewable + "        " + &parameter + "\n";
+            viewable += &format!("        {}\n", &parameter);
         }
 
         viewable += "        **kwargs,\n";
@@ -238,12 +238,12 @@ impl NodeType {
 
         for predicate in self.predicates.iter() {
             let predicate = generate_set_predicate_from_predicate(predicate);
-            viewable = viewable + "        " + &predicate + "\n";
+            viewable += &format!("        {}\n", &predicate);
         }
 
         for edge in self.edges.iter() {
             let predicate = generate_set_predicate_from_edge(edge);
-            viewable = viewable + "        " + &predicate + "\n";
+            viewable += &format!("        {}\n", &predicate);
         }
         viewable.push('\n');
         viewable += &self.generate_viewable_get_methods();
@@ -312,7 +312,7 @@ impl NodeType {
         let mut schema_str = String::with_capacity(256);
         schema_str += "    @staticmethod\n";
         schema_str += "    def self_type() -> str:\n";
-        schema_str = schema_str + &format!(r#"        return "{}""#, self.type_name) + "\n";
+        schema_str += &format!("        return '{}'\n", self.type_name);
         schema_str
     }
 
@@ -323,23 +323,24 @@ impl NodeType {
         let lower_node_name = self.type_name.to_lowercase();
 
         schema_str += "\n";
-        schema_str = schema_str
-            + "class "
-            + &schema_name
-            + "(grapl_analyzerlib.nodes.entity.EntitySchema):\n";
+        // schema_str = schema_str
+        schema_str.push_str("class ");
+        schema_str.push_str(&schema_name);
+        schema_str.push_str("(grapl_analyzerlib.nodes.entity.EntitySchema):\n");
         schema_str += "    def __init__(self):\n";
-        schema_str = schema_str + "        super(" + &schema_name + ", self).__init__(\n";
-        schema_str = schema_str
-            + "            default_"
-            + &lower_node_name
-            + "_properties(),"
-            + " default_"
-            + &lower_node_name
-            + "_edges(),"
-            + " lambda: "
-            + &view_name
-            + "\n";
-        schema_str += "        );\n";
+
+        schema_str += &format!("        super({}, self).__init__(\n", &schema_name);
+
+        schema_str.push_str("            default_");
+        schema_str.push_str(&lower_node_name);
+        schema_str.push_str("_properties(),");
+        schema_str.push_str(" default_");
+        schema_str.push_str(&lower_node_name);
+        schema_str.push_str("_edges(),");
+        schema_str.push_str(" lambda: ");
+        schema_str.push_str(&view_name);
+        schema_str.push_str("\n");
+        schema_str.push_str("        );\n");
         schema_str
     }
 
@@ -348,16 +349,19 @@ impl NodeType {
 
         let lower_node_name = self.type_name.to_lowercase();
 
-        def = def
-            + r#"def default_"#
-            + &lower_node_name
-            + r#"_properties() -> Dict[str, grapl_analyzerlib.node_types.PropType]:"#
-            + "\n";
-        def = def + r#"    return {"# + "\n";
+        def.push_str(r#"def default_"#);
+        def.push_str(&lower_node_name);
+        def.push_str(r#"_properties() -> Dict[str, grapl_analyzerlib.node_types.PropType]:"#);
+        def.push_str("\n");
+        def.push_str("    return {\n");
+
         for predicate in self.predicates.iter() {
-            let predicate_name = format!(r#""{}""#, &predicate.predicate_name);
+            let predicate_name = format!("'{}'", &predicate.predicate_name);
             let prop_primitive_t = predicate.predicate_type.into_python_prop_primitive();
-            def = def + &format!("        {}: {},\n", predicate_name, prop_primitive_t);
+            def.push_str(&format!(
+                "        {}: {},\n",
+                predicate_name, prop_primitive_t
+            ));
         }
 
         def += r#"    }"#;
@@ -369,16 +373,14 @@ impl NodeType {
 
         let lower_node_name = self.type_name.to_lowercase();
 
-        def = def
-            + r#"def default_"#
-            + &lower_node_name
-            + r#"_edges() -> Dict[str, Tuple[grapl_analyzerlib.node_types.EdgeT, str]]:"#
-            + "\n";
-        def = def + r#"    return {"# + "\n";
+        def.push_str("def default_");
+        def.push_str(&lower_node_name);
+        def.push_str("_edges() -> Dict[str, Tuple[grapl_analyzerlib.node_types.EdgeT, str]]:\n");
+        def += "    return {\n";
         for edge in self.edges.iter() {
-            def = def + &edge.generate_edge_relationship();
+            def.push_str(&edge.generate_edge_relationship());
         }
-        def += r#"    }"#;
+        def += "    }";
         def
     }
 }
