@@ -28,7 +28,6 @@ use failure::{
     bail,
     Error,
 };
-
 use grapl_config::{
     env_helpers::{
         s3_event_emitters_from_env,

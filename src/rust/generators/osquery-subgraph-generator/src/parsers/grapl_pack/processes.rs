@@ -36,8 +36,7 @@ pub(crate) struct OSQueryProcessQuery {
 
 impl PartiallyDeserializedOSQueryLog {
     pub(crate) fn to_graph_from_grapl_processes(self) -> Result<GraphDescription, failure::Error> {
-        OSQueryResponse::<OSQueryProcessQuery>::try_from(self)
-            .map(GraphDescription::try_from)?
+        OSQueryResponse::<OSQueryProcessQuery>::try_from(self).map(GraphDescription::try_from)?
     }
 }
 

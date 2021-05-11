@@ -49,8 +49,7 @@ pub(crate) enum OSQueryFileAction {
 
 impl PartiallyDeserializedOSQueryLog {
     pub(crate) fn to_graph_from_grapl_files(self) -> Result<GraphDescription, failure::Error> {
-        OSQueryResponse::<OSQueryFileQuery>::try_from(self)
-            .map(GraphDescription::try_from)?
+        OSQueryResponse::<OSQueryFileQuery>::try_from(self).map(GraphDescription::try_from)?
     }
 }
 
