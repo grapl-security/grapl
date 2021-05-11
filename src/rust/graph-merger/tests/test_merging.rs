@@ -12,9 +12,7 @@ pub mod test {
 pub mod test {
     use std::{
         collections::HashMap,
-        sync::{
-            Arc,
-        },
+        sync::Arc,
     };
 
     use dgraph_query_lib::{
@@ -36,9 +34,7 @@ pub mod test {
         Client as DgraphClient,
         Query,
     };
-    use graph_merger_lib::{
-        service::GraphMerger,
-    };
+    use graph_merger_lib::service::GraphMerger;
     use grapl_graph_descriptions::{
         graph_mutation_service::graph_mutation_rpc_client::GraphMutationRpcClient,
         *,
