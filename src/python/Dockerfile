@@ -296,17 +296,6 @@ CMD source venv/bin/activate && \
     cd grapl-notebook && \
     jupyter notebook --ip="0.0.0.0"
 
-# test
-FROM grapl-notebook AS grapl-notebook-test
-
-# This file will improve once #444 lands
-# primarily to use pre-downloaded tools instead of downloading again
-
-RUN source venv/bin/activate && \
-    pip install nbqa mypy boto3-stubs[essential]
-
-
-
 #
 # Local provision
 ################################################################################
