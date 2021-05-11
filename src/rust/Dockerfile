@@ -147,3 +147,6 @@ FROM rust-dist AS osquery-subgraph-generator-deploy
 
 COPY --from=build /dist/osquery-subgraph-generator /
 CMD ["/osquery-subgraph-generator"]
+
+
+
