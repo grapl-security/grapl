@@ -40,7 +40,7 @@ services:
     build:
       context: ${PWD}/src
       dockerfile: rust/Dockerfile
-      target: build-test-integration
+      target: build-test
       args:
         - CARGO_PROFILE=debug
     command: bash -c "
@@ -63,7 +63,7 @@ services:
     build:
       context: ${PWD}/src
       dockerfile: rust/Dockerfile
-      target: build-test-integration
+      target: build-test
       args:
         - RUST_BUILD=debug
     command: bash -c "
