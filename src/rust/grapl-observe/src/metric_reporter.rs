@@ -191,7 +191,7 @@ impl Clone for MetricReporter<Vec<u8>> {
         Self {
             buffer: self.buffer.clone(),
             out: self.out.clone(),
-            utc_now: self.utc_now.clone(),
+            utc_now: self.utc_now,
             service_name: self.service_name.clone(),
         }
     }
@@ -202,7 +202,7 @@ impl Clone for MetricReporter<Stdout> {
         Self {
             buffer: self.buffer.clone(),
             out: self.out.clone(),
-            utc_now: self.utc_now.clone(),
+            utc_now: self.utc_now,
             service_name: self.service_name.clone(),
         }
     }
@@ -293,7 +293,7 @@ mod tests {
             "MONITORING|test_service|2020-01-01T01:23:45.000Z|metric_name:123.45|c|@0.75",
             "MONITORING|test_service|2020-01-01T01:23:45.000Z|metric_name:123.45|g|#key:value",
         ];
-        let actual: Vec<&str> = written.split("\n").collect();
+        let actual: Vec<&str> = written.split('\n').collect();
         for (expected, actual) in expected.iter().zip(actual.iter()) {
             assert_eq!(expected, actual)
         }

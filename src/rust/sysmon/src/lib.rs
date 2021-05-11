@@ -54,8 +54,8 @@ impl FromStr for Event {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         serde_xml_rs::from_str::<ProcessCreateEvent>(s)
-            .map(|p| Event::ProcessCreate(p))
-            .or_else(|_| serde_xml_rs::from_str::<FileCreateEvent>(s).map(|f| Event::FileCreate(f)))
+            .map(Event::ProcessCreate)
+            .or_else(|_| serde_xml_rs::from_str::<FileCreateEvent>(s).map(Event::FileCreate))
             .or_else(|_| {
                 serde_xml_rs::from_str::<NetworkEvent>(s).map(|n| {
                     if n.event_data.initiated {
@@ -731,7 +731,7 @@ mod tests {
     </Event>
     "#;
 
-    const HEADER: &'static str = r#"
+    const HEADER: &str = r#"
         <System>
             <Provider Name="Microsoft-Windows-Sysmon" Guid="{5770385F-C22A-43E0-BF4C-06F5698FFBD9}" />
             <EventID>1</EventID>

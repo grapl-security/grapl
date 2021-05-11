@@ -17,14 +17,14 @@ use syn::{
     Type,
 };
 
-const CREATE_TIME: &'static str = "create_time";
-const LAST_SEEN_TIME: &'static str = "last_seen_time";
-const TERMINATE_TIME: &'static str = "terminate_time";
-const IMMUTABLE: &'static str = "immutable";
-const INCREMENT: &'static str = "increment";
-const DECREMENT: &'static str = "decrement";
+const CREATE_TIME: &str = "create_time";
+const LAST_SEEN_TIME: &str = "last_seen_time";
+const TERMINATE_TIME: &str = "terminate_time";
+const IMMUTABLE: &str = "immutable";
+const INCREMENT: &str = "increment";
+const DECREMENT: &str = "decrement";
 
-const PSEUDO_KEY: &'static str = "pseudo_key";
+const PSEUDO_KEY: &str = "pseudo_key";
 
 fn name_and_ty(field: &Field) -> (&Ident, &Type, String) {
     let mut resolution = None;
@@ -299,7 +299,7 @@ fn on_grapl_attrs(attr: &Attribute, mut on: impl FnMut(&str)) {
     }
 
     let id = &attr.path.segments[0].ident;
-    if id.to_string() != "grapl" {
+    if *id != "grapl" {
         return;
     }
 

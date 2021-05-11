@@ -23,7 +23,7 @@ where
         let results: Vec<_> = decompressed
             .split(|byte| *byte == b'\n')
             .filter(|line| !line.is_empty())
-            .map(|line| serde_json::from_slice(line).map_err(|err| Arc::new(err)))
+            .map(|line| serde_json::from_slice(line).map_err(Arc::new))
             .collect();
 
         Ok(results)

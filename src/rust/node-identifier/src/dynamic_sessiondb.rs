@@ -85,7 +85,7 @@ where
 
         match item {
             Some(item) => {
-                let mapping: ResolvedMapping = serde_dynamodb::from_hashmap(item.clone())?;
+                let mapping: ResolvedMapping = serde_dynamodb::from_hashmap(item)?;
                 Ok(Some(mapping.mapping))
             }
             None => Ok(None),

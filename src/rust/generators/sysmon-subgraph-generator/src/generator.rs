@@ -80,7 +80,7 @@ impl<C: Cache> EventHandler for SysmonSubgraphGenerator<C> {
 
         let subgraph_results: Vec<_> = deserialized_events
             .into_iter()
-            .map(|event| GraphDescription::try_from(event))
+            .map(GraphDescription::try_from)
             .collect();
 
         // Report subgraph generation metrics

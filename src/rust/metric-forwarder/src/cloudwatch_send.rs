@@ -78,7 +78,7 @@ pub async fn put_metric_data(
         responses.len(),
         num_failures
     );
-    let first_failure = responses.iter().filter(|resp| resp.is_err()).next();
+    let first_failure = responses.iter().find(|resp| resp.is_err());
     match first_failure {
         Some(Err(e)) => Err(MetricForwarderError::PutMetricDataError(e.to_string())),
         _ => Ok(()),
@@ -146,7 +146,7 @@ impl From<&BTreeMap<String, String>> for Dimensions {
     fn from(source: &BTreeMap<String, String>) -> Dimensions {
         Dimensions(
             source
-                .into_iter()
+                .iter()
                 .map(|(k, v)| Dimension {
                     name: k.to_string(),
                     value: v.to_string(),
@@ -159,7 +159,7 @@ impl From<&BTreeMap<String, String>> for Dimensions {
 impl Dimensions {
     fn find_dimension(&self, dimension_name: &str) -> Option<Dimension> {
         let found = self.0.iter().find(|ref d| d.name == dimension_name);
-        return found.map(Dimension::clone);
+        found.map(Dimension::clone)
     }
 
     fn remove_dimension(&mut self, dimension: &Dimension) {
@@ -239,7 +239,7 @@ fn statsd_as_cloudwatch_metric(stat: Stat) -> MetricDatum {
 mod tests {
     use super::*;
 
-    const SERVICE_NAME: &'static str = "cool_service";
+    const SERVICE_NAME: &str = "cool_service";
 
     #[test]
     fn test_convert_one_stat_into_datum() {
@@ -257,7 +257,7 @@ mod tests {
                 tags: None,
                 metric: statsd_parser::Metric::Counter(counter),
             },
-            service_name: service_name,
+            service_name,
         };
 
         let datum: MetricDatum = stat.into();

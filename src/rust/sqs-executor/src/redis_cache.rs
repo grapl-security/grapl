@@ -99,7 +99,7 @@ impl RedisCache {
         CA: Cacheable + Send + Sync + Clone + 'static,
     {
         let get_identities = |cacheables: &Vec<CA>| -> Vec<Vec<u8>> {
-            cacheables.into_iter().map(|c| c.identity()).collect()
+            cacheables.iter().map(|c| c.identity()).collect()
         };
 
         // Check LRU
@@ -219,7 +219,7 @@ impl RedisCache {
             .collect();
         self.connection_manager
             .set_multiple(&kv_pairs)
-            .timeout(REDIS_REQUEST_TIMEOUT.clone())
+            .timeout(*REDIS_REQUEST_TIMEOUT)
             .await??;
 
         Ok(())

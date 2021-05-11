@@ -105,7 +105,7 @@ fn main() -> Result<()> {
 
     // `output` being none implies we should write to stdout
     if opt.output.is_none() {
-        for (i, s) in all_code.split("\n").enumerate() {
+        for (i, s) in all_code.split('\n').enumerate() {
             if opt.line_num {
                 // https://doc.rust-lang.org/std/fmt/#fillalignment
                 // right-pad the line numbers

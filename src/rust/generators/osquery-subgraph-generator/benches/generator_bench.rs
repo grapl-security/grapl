@@ -18,7 +18,7 @@ use sqs_executor::{
 };
 use tokio::runtime::Runtime;
 
-const OSQUERY_SAMPLE_DATA_FILE: &'static str = "sample_data/osquery_data.log";
+const OSQUERY_SAMPLE_DATA_FILE: &str = "sample_data/osquery_data.log";
 
 async fn osquery_generator_process_events(
     osquery_test_events: <OSQuerySubgraphGenerator<NopCache> as EventHandler>::InputEvent,

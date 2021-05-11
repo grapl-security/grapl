@@ -28,7 +28,7 @@ use failure::{
     bail,
     Error,
 };
-use graph_merger_lib;
+
 use grapl_config::{
     env_helpers::{
         s3_event_emitters_from_env,

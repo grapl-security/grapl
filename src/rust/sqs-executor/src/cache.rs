@@ -50,7 +50,7 @@ pub trait Cache: Clone + Send + Sync {
     where
         CA: Cacheable + Send + Sync + Clone + 'static,
     {
-        for cacheable in cacheables.into_iter() {
+        for cacheable in cacheables.iter() {
             self.store(cacheable.identity()).await?;
         }
         Ok(())

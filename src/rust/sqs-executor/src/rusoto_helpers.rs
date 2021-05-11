@@ -101,7 +101,7 @@ where
 
     let messages = messages
         .expect("timeout")
-        .map(|m| m.messages.unwrap_or_else(|| vec![]));
+        .map(|m| m.messages.unwrap_or_else(std::vec::Vec::new));
 
     if let Ok(ref msgs) = messages {
         metric_reporter

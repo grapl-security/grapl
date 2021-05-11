@@ -36,7 +36,7 @@ impl PartiallyDeserializedOSQueryLog {
         self,
     ) -> Result<GraphDescription, failure::Error> {
         OSQueryResponse::<OSQueryProcessFileQuery>::try_from(self)
-            .map(|response| GraphDescription::try_from(response))?
+            .map(GraphDescription::try_from)?
     }
 }
 

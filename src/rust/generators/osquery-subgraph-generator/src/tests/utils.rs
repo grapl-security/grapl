@@ -12,7 +12,7 @@ pub(crate) async fn read_osquery_test_data(
 ) -> Vec<Result<PartiallyDeserializedOSQueryLog, Arc<serde_json::Error>>> {
     let file_data = fs::read(format!("sample_data/{}", path))
         .await
-        .expect(&format!("Failed to read test data ({}).", path));
+        .unwrap_or_else(|_| panic!("Failed to read test data ({}).", path));
     let mut decoder = NdjsonDecoder::default();
 
     decoder.decode(file_data).unwrap()

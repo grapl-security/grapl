@@ -18,7 +18,7 @@ use sysmon_subgraph_generator_lib::{
 };
 use tokio::runtime::Runtime;
 
-const SYSMON_SAMPLE_DATA_FILE: &'static str = "sample_data/events6.xml";
+const SYSMON_SAMPLE_DATA_FILE: &str = "sample_data/events6.xml";
 
 async fn sysmon_generator_process_events(
     sysmon_test_events: <SysmonSubgraphGenerator<NopCache> as EventHandler>::InputEvent,

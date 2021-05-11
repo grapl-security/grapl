@@ -176,7 +176,7 @@ where
                         on_emit
                             .event_notification(output_bucket, key)
                             .await
-                            .map_err(|e| S3EventEmitterError::OnEmitError(e))
+                            .map_err(S3EventEmitterError::OnEmitError)
                             .tap_err(|e| error!("event_notification failed: {:?}", e))?;
                         Ok(())
                     }

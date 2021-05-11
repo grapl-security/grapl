@@ -76,7 +76,7 @@ impl<C: Cache> EventHandler for OSQuerySubgraphGenerator<C> {
 
         let (subgraphs, errors): (Vec<_>, Vec<_>) = deserialized_lines
             .into_iter()
-            .map(|log| GraphDescription::try_from(log))
+            .map(GraphDescription::try_from)
             .partition(|result| result.is_ok());
 
         for res in errors.iter().map(|e| e.as_ref().err()) {
@@ -98,7 +98,7 @@ impl<C: Cache> EventHandler for OSQuerySubgraphGenerator<C> {
         } else {
             let sqs_executor_error = errors
                 .into_iter()
-                .map(|err| OSQuerySubgraphGeneratorError::Unexpected(err))
+                .map(OSQuerySubgraphGeneratorError::Unexpected)
                 .next()
                 .unwrap();
 

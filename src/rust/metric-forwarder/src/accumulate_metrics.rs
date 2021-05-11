@@ -93,10 +93,10 @@ impl PartialEq for WrappedMetricDatum {
         let self_dims = WrappedDimensions::from(&self.0.dimensions);
         let other_dims = WrappedDimensions::from(&self.0.dimensions);
 
-        return self.0.metric_name == other.0.metric_name
+        self.0.metric_name == other.0.metric_name
             && self.0.unit == other.0.unit
             && self_dims == other_dims
-            && self.trunc_timestamp() == other.trunc_timestamp();
+            && self.trunc_timestamp() == other.trunc_timestamp()
     }
 }
 impl Eq for WrappedMetricDatum {}
@@ -302,7 +302,7 @@ mod tests {
             metric(1.0),
             metric(1.0),
             metric_with_diff_dims.clone(),
-            metric_with_diff_dims.clone(),
+            metric_with_diff_dims,
         ];
 
         let mut output = accumulate_metric_data(input);

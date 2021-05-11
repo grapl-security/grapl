@@ -1047,7 +1047,7 @@ pub mod test {
     #[quickcheck]
     fn test_merge_immutable_int(mut x: ImmutableIntProp, y: ImmutableIntProp) {
         init_test_env();
-        let original = x.clone();
+        let original = x;
         x.merge_property(&y);
         assert_eq!(x, original);
     }
@@ -1055,7 +1055,7 @@ pub mod test {
     #[quickcheck]
     fn test_merge_immutable_uint(mut x: ImmutableUintProp, y: ImmutableUintProp) {
         init_test_env();
-        let original = x.clone();
+        let original = x;
         x.merge_property(&y);
         assert_eq!(x, original);
     }
@@ -1096,13 +1096,13 @@ pub mod test {
         }
         properties.sort_unstable();
         let max_value = properties.iter().max().unwrap().to_owned();
-        let mut first_x = properties[0].clone();
+        let mut first_x = properties[0];
         for property in properties.iter() {
             first_x.merge_property(property)
         }
 
         let properties: Vec<_> = properties.into_iter().rev().collect();
-        let mut first_y = properties[0].clone();
+        let mut first_y = properties[0];
         for property in properties.iter() {
             first_y.merge_property(property)
         }
