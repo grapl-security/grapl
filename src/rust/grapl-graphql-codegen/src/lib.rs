@@ -13,4 +13,3 @@ pub mod node_type;
 pub mod predicate_type;
 
 pub use graphql_parser::schema::parse_schema;
-

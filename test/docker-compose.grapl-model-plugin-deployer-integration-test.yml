@@ -1,0 +1,25 @@
+version: "3.8"
+
+# environment variable PWD is assumed to be grapl root directory
+
+services:
+  grapl-model-plugin-deployer:
+    image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: rust/Dockerfile
+      target: build-test-integration
+      args:
+        - CARGO_PROFILE=debug
+    command: bash -c "
+      cargo test --manifest-path grapl-model-plugin-deployer/Cargo.toml --features integration -- --nocapture"
+    environment:
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
+      - RUST_LOG=DEBUG
+      - RUST_BACKTRACE=1
+      - DEPLOYMENT_NAME
+      - IS_LOCAL=True
+
+networks:
+  default:
+    name: grapl-network

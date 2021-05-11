@@ -2,15 +2,26 @@ syntax = "proto3";
 
 package GraplModelPluginDeployer;
 
+message GraplRequestMeta {
+  string requestId = 1;
+  string clientName = 2;
+}
+
 message GraplModelPluginDeployerRequest {
-  string modelPluginSchema = 1;
-  int32 schemaVersion = 2;
-  string requestId = 3;
-  string clientName = 4;
+  GraplRequestMeta requestMeta = 1;
+  string modelPluginSchema = 2;
+  uint32 schemaVersion = 3;
 }
 
 
+message SchemaVersionConflictError {
+    string errorMessage = 1;
+}
+
 message GraplModelPluginDeployerResponse {
+    oneof error {
+        SchemaVersionConflictError e = 1;
+    }
 }
 
 

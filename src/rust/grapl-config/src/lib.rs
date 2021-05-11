@@ -257,4 +257,3 @@ pub fn source_compression() -> String {
 pub fn grapl_model_plugin_bucket() -> String {
     std::env::var("GRAPL_MODEL_PLUGIN_BUCKET").expect("GRAPL_MODEL_PLUGIN_BUCKET")
 }
-

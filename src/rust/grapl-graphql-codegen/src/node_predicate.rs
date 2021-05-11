@@ -25,6 +25,7 @@ pub struct NodePredicate {
     pub conflict_resolution: ConflictResolution,
     pub identity_predicate_type: Option<IdentityPredicateType>,
     pub nullable: bool,
+    pub is_set: bool,
 }
 
 impl NodePredicate {
@@ -155,6 +156,7 @@ impl<'a> TryFrom<&Field<'a, &'a str>> for NodePredicate {
             .iter()
             .find_map(|d| IdentityPredicateType::opt_from(d));
         let nullable = is_nullable(field_type);
+        let is_set = is_set(field_type);
         let conflict_resolution = value.directives.as_slice().try_into()?;
 
         Ok(Self {
@@ -164,6 +166,7 @@ impl<'a> TryFrom<&Field<'a, &'a str>> for NodePredicate {
             conflict_resolution,
             identity_predicate_type,
             nullable,
+            is_set,
         })
     }
 }
@@ -173,6 +176,14 @@ pub fn is_nullable<'a>(field_type: &Type<'a, &'a str>) -> bool {
         Type::NonNullType(_) => false,
         Type::NamedType(_) => true,
         Type::ListType(_) => panic!("ListType not supported"),
+    }
+}
+
+pub fn is_set<'a>(field_type: &Type<'a, &'a str>) -> bool {
+    match field_type {
+        Type::NonNullType(_) => false,
+        Type::NamedType(_) => false,
+        Type::ListType(_) => true,
     }
 }
 
@@ -190,6 +201,7 @@ mod tests {
             conflict_resolution: ConflictResolution::Immutable,
             identity_predicate_type: None,
             nullable: true,
+            is_set: false,
         };
         assert_eq!(
             node_predicate.generate_viewable_get_predicate_method(),

@@ -1,12 +1,18 @@
-use test_context::AsyncTestContext;
-use grapl_model_plugin_deployer::client::{Channel, Timeout};
-use tonic::transport::NamedService;
-use grapl_model_plugin_deployer::server::GraplModelPluginDeployerRpcServer;
-use grapl_model_plugin_deployer::server::GraplModelPluginDeployer;
 use std::time::Duration;
-use tonic_health::proto::health_client::HealthClient;
-use tonic_health::proto::HealthCheckRequest;
-use tonic_health::proto::health_check_response::ServingStatus;
+
+use grapl_model_plugin_deployer_lib::{
+    server::{
+        GraplModelPluginDeployer,
+        GraplModelPluginDeployerRpcServer,
+    },
+};
+use test_context::AsyncTestContext;
+use tonic_health::proto::{
+    health_check_response::ServingStatus,
+    health_client::HealthClient,
+    HealthCheckRequest,
+};
+use tonic::transport::NamedService;
 
 pub struct ServiceContext {}
 
@@ -18,17 +24,16 @@ impl AsyncTestContext for ServiceContext {
             .init();
 
         tokio::task::spawn(async move {
-            grapl_model_plugin_deployer::server::exec_service().await
+            grapl_model_plugin_deployer_lib::server::exec_service()
+                .await
                 .expect("Failed to execute service");
         });
-        until_health().await
-            .expect("Service was never healthy");
+        until_health().await.expect("Service was never healthy");
         Self {}
     }
 
     async fn teardown(self) {}
 }
-
 
 async fn until_health() -> Result<(), Box<dyn std::error::Error>> {
     for i in 0.. {
@@ -48,9 +53,9 @@ async fn until_health() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn _until_health() -> Result<(), Box<dyn std::error::Error>> {
-    let channel = Channel::from_static("http://[::1]:50051").connect().await?;
+    let channel = tonic::transport::Channel::from_static("http://[::1]:50051").connect().await?;
 
-    let timeout_channel = Timeout::new(channel, Duration::from_millis(1000));
+    let timeout_channel = tower::timeout::Timeout::new(channel, Duration::from_millis(1000));
 
     let mut client = HealthClient::new(timeout_channel);
 
@@ -60,11 +65,7 @@ async fn _until_health() -> Result<(), Box<dyn std::error::Error>> {
     let response = client.check(request).await?;
     let response = response.into_inner();
     match response.status() {
-        ServingStatus::Serving => {
-            Ok(())
-        }
-        other => {
-            Err(format!("Not serving: {:?}", other).into())
-        }
+        ServingStatus::Serving => Ok(()),
+        other => Err(format!("Not serving: {:?}", other).into()),
     }
 }

@@ -201,6 +201,8 @@ export class GraplCdkStack extends cdk.Stack {
             }
         );
 
+
+
         const analyzer_executor = new AnalyzerExecutor(
             this,
             "analyzer-executor",

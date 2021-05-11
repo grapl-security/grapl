@@ -1,18 +1,18 @@
+mod common;
 
 #[cfg(integration)]
 mod integration_tests {
 
-    mod common;
+    use std::time::Duration;
 
     use common::ServiceContext;
+    use grapl_model_plugin_deployer::client::{
+        Channel,
+        GraplModelPluginDeployerRequest,
+        GraplModelPluginDeployerRpcClient,
+        Timeout,
+    };
     use test_context::futures;
-
-    use grapl_model_plugin_deployer::client::GraplModelPluginDeployerRpcClient;
-    use grapl_model_plugin_deployer::client::GraplModelPluginDeployerRequest;
-    use grapl_model_plugin_deployer::client::Channel;
-    use grapl_model_plugin_deployer::client::Timeout;
-
-    use std::time::Duration;
 
     const MODEL_PLUGIN_SCHEMA: &str = r#"
 type Process @grapl(identity_algorithm: "session") {
@@ -58,5 +58,4 @@ type SomePluginExtendsProcess @grapl(extends: "Process") {
         let _response = client.handle_request(request).await?;
         panic!("This test could use some work!");
     }
-
 }
