@@ -296,6 +296,19 @@ services:
       localstack:
         condition: service_healthy
 
+    grapl-router-api:
+      image: grapl/grapl-router-api:${TAG:-latest}
+      environment:
+        <<: *aws-region
+        IS_LOCAL: "true"
+        <<: *log-level
+        <<: *s3-env
+        <<: *rust-backtrace
+      tty: false
+      depends_on:
+        localstack:
+          condition: service_healthy
+
   ########################################################################
   # Python Services
   ########################################################################

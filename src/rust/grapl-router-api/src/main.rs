@@ -1,6 +1,7 @@
 use actix_web::{ App, HttpServer};
 use grapl_api_service::model_plugin_deployer_router::deploy::grapl_model_plugin_deployer;
 
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // set up tracing

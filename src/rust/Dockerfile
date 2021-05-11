@@ -149,4 +149,11 @@ COPY --from=build /dist/osquery-subgraph-generator /
 CMD ["/osquery-subgraph-generator"]
 
 
+# router-api
+FROM rust-dist AS router-api-deploy
+
+COPY --from=build /dist/router-api /
+CMD ["/router-api"]
+
+
 

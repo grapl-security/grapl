@@ -66,6 +66,15 @@ services:
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
+  grapl-router-api:
+    image: grapl/grapl-router-api:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: rust/Dockerfile
+      target: router-api-deploy
+      args:
+        - RUST_BUILD=${RUST_BUILD:-debug}
+
   ########################################################################
   # Python Services
   ########################################################################
