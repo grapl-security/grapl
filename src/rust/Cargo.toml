@@ -19,4 +19,5 @@ members = [
     "./sqs-executor",
     "./sysmon",
     "./grapl-service",
+    "./grapl-graphql-codegen",
 ]
