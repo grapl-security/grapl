@@ -34,6 +34,7 @@ import { Provisioner } from "./services/provisioner";
 import { SysmonGraphGenerator } from "./services/sysmon_graph_generator";
 import { OSQueryGraphGenerator } from "./services/osquery_graph_generator";
 import { LogLevels } from "../bin/deployment_parameters";
+import { GraphMutationServiceStack } from "./services/graph_mutation_service";
 
 export interface GraplServiceProps {
     deploymentName: string;
@@ -224,12 +225,25 @@ export class GraplCdkStack extends cdk.Stack {
             }
         );
 
+        const graph_mutation_service = new GraphMutationServiceStack(
+            this,
+            "graph-mutation-service",
+            {
+                ...graplProps,
+                graphMutationServiceRustBuild: undefined,
+                grpcPort: 5500,
+                schemaDb: schema_table,
+            }
+        )
+
         const graph_merger = new GraphMerger(this, "graph-merger", {
             writesTo: analyzer_dispatch.bucket,
             schemaTable: schema_table,
             ...graplProps,
             ...enableMetricsProps,
         });
+
+        graph_mutation_service.grantAccess(graph_merger.service.service.service);
 
         const node_identifier = new NodeIdentifier(this, "node-identifier", {
             writesTo: graph_merger.bucket,

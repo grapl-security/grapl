@@ -2,18 +2,18 @@ import * as cdk from "@aws-cdk/core";
 import * as ec2 from "@aws-cdk/aws-ec2";
 import * as ecs from "@aws-cdk/aws-ecs";
 import * as servicediscovery from "@aws-cdk/aws-servicediscovery";
-import * as service_common from "./service_common";
+import * as service_common from "../service_common";
 import * as logs from "@aws-cdk/aws-logs";
 
-import {GraplServiceProps} from "./grapl-cdk-stack";
+import {GraplServiceProps} from "../grapl-cdk-stack";
 import {ContainerImage} from "@aws-cdk/aws-ecs";
-import {RUST_DOCKERFILE, SRC_DIR} from "./dockerfile_paths";
+import {RUST_DOCKERFILE, SRC_DIR} from "../dockerfile_paths";
 import {IConnectable} from "@aws-cdk/aws-ec2";
-import {SchemaDb} from "./schemadb";
+import {SchemaDb} from "../schemadb";
 
 interface GraphMutationServiceProps extends GraplServiceProps {
-    graphMutationServiceRustBuild: string | undefined;
-    grpcPort: number | undefined;
+    graphMutationServiceRustBuild?: string | undefined;
+    grpcPort?: number | undefined;
     schemaDb: SchemaDb;
 }
 
