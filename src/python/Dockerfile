@@ -228,36 +228,6 @@ RUN source venv/bin/activate && \
     cd grapl-tests-common && \
     pip install .
 
-# dgraph-ttl
-################################################################################
-
-# build
-FROM grapl-python-build AS dgraph-ttl-build
-
-COPY --chown=grapl python/grapl-dgraph-ttl dgraph-ttl
-COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
-
-RUN source venv/bin/activate && \
-    pip install -r dgraph-ttl/requirements.txt
-
-# deploy
-FROM grapl-python-deploy AS dgraph-ttl-deploy
-
-COPY --chown=grapl --from=dgraph-ttl-build /home/grapl/venv venv
-COPY --chown=grapl --from=dgraph-ttl-build /home/grapl/dgraph-ttl app
-
-CMD source venv/bin/activate && \
-    cd app && \
-    chalice local --no-autoreload --host=0.0.0.0 --port=8124
-
-# test
-FROM dgraph-ttl-build AS dgraph-ttl-test
-
-## Install test requirements
-COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
-RUN python_test_deps/install_requirements.sh
-
-
 # model-plugin-deployer
 ################################################################################
 

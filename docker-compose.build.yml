@@ -91,13 +91,6 @@ services:
       dockerfile: ./python/Dockerfile
       target: model-plugin-deployer-deploy
 
-  grapl-dgraph-ttl:
-    image: grapl/grapl-dgraph-ttl:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: ./python/Dockerfile
-      target: dgraph-ttl-deploy
-
   ########################################################################
   # Web Services
   ########################################################################
