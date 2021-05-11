@@ -339,7 +339,7 @@ impl NodeType {
         schema_str.push_str("_edges(),");
         schema_str.push_str(" lambda: ");
         schema_str.push_str(&view_name);
-        schema_str.push_str("\n");
+        schema_str.push('\n');
         schema_str.push_str("        );\n");
         schema_str
     }
@@ -352,7 +352,7 @@ impl NodeType {
         def.push_str(r#"def default_"#);
         def.push_str(&lower_node_name);
         def.push_str(r#"_properties() -> Dict[str, grapl_analyzerlib.node_types.PropType]:"#);
-        def.push_str("\n");
+        def.push('\n');
         def.push_str("    return {\n");
 
         for predicate in self.predicates.iter() {
