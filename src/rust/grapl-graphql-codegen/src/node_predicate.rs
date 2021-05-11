@@ -160,7 +160,7 @@ mod tests {
 
     #[test]
     fn generate_viewable_get_predicate_method() {
-        let expected_str = "    def get_predicate_name(self, cached: bool = True) -> Optional[str]:\n        return self.get_str(\"predicate_name\", cached=cached)\n\n";
+        let expected_str = "    def get_predicate_name(self, cached: bool = True) -> Optional[str]:\n        return self.get_str('predicate_name', cached=cached)\n\n";
         let node_predicate = NodePredicate {
             predicate_name: String::from("predicate_name"),
             description: None,
@@ -170,8 +170,8 @@ mod tests {
             nullable: true,
         };
         assert_eq!(
-            node_predicate.generate_viewable_get_predicate_method(),
-            expected_str
+            expected_str,
+            node_predicate.generate_viewable_get_predicate_method()
         );
     }
 }
