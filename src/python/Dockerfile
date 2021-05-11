@@ -177,15 +177,6 @@ RUN source venv/bin/activate && \
     cd engagement-creator && \
     pip install .
 
-# deploy
-FROM grapl-python-deploy AS engagement-creator-deploy
-
-COPY --chown=grapl --from=engagement-creator-build /home/grapl/venv venv
-COPY --chown=grapl --from=engagement-creator-build /home/grapl/engagement-creator engagement-creator
-
-CMD source /venv/bin/activate && \
-    python3 /engagement-creator/src/engagement_creator.py
-
 # test
 FROM engagement-creator-build AS engagement-creator-test
 
