@@ -72,7 +72,7 @@ non-trivial formatting change.)
 [env]: https://rust-lang.github.io/rustup/environment-variables.html
 [history]: https://rust-lang.github.io/rustup-components-history/x86_64-unknown-linux-gnu.html
 [options]: https://rust-lang.github.io/rustfmt/
-[rustfmt_toml]: .src/rust/.rustfmt.toml
+[rustfmt_toml]: .rustfmt.toml
 
 # Python Chores
 

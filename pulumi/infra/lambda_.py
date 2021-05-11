@@ -185,33 +185,11 @@ class Lambda(pulumi.ComponentResource):
         self.log_group = aws.cloudwatch.LogGroup(
             f"{name}-log-group",
             name=f"/aws/lambda/{lambda_name}",
-            opts=pulumi.ResourceOptions(parent=self),
             retention_in_days=SERVICE_LOG_RETENTION_DAYS,
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
         if forwarder:
-            # Allow the metric forwarder to be invoked with by this
-            # lambda function's log group.
-            self.forwarder_permission = aws.lambda_.Permission(
-                f"{name}-log-group-invokes-metric-forwarder",
-                principal=f"logs.amazonaws.com",
-                action="lambda:InvokeFunction",
-                function=forwarder.function.function.arn,
-                source_arn=self.log_group.arn.apply(lambda arn: f"{arn}:*"),
-                opts=pulumi.ResourceOptions(parent=self),
-            )
-
-            # Then, with that permission granted, configure the metric
-            # forwarder to receive all 'MONITORING' log messages from
-            # the lambda function.
-            self.forwarder_subscription_filter = aws.cloudwatch.LogSubscriptionFilter(
-                f"metric-forwarder-subscribes-to-{name}-monitoring-logs",
-                log_group=self.log_group.name,
-                filter_pattern="MONITORING",
-                destination_arn=forwarder.function.function.arn,
-                opts=pulumi.ResourceOptions(
-                    depends_on=[self.forwarder_permission], parent=self
-                ),
-            )
+            forwarder.subscribe_to_log_group(name, self.log_group)
 
         self.register_outputs({})
