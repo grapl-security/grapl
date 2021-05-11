@@ -81,14 +81,6 @@ RUN source venv/bin/activate && \
     python setup.py sdist bdist_wheel && \
     pip install dist/*.whl
 
-# test
-FROM graplinc-grapl-api-build AS graplinc-grapl-api-test
-
-## Install test requirements
-COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
-RUN python_test_deps/install_requirements.sh
-
-
 # grapl-common
 ################################################################################
 
