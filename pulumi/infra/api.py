@@ -6,6 +6,7 @@ from infra.config import LOCAL_GRAPL
 from infra.dynamodb import DynamoDB
 from infra.engagement_edge import EngagementEdge
 from infra.engagement_notebook import EngagementNotebook
+from infra.graphql import GraphQL
 from infra.lambda_ import Lambda
 from infra.model_plugin_deployer import ModelPluginDeployer
 from infra.network import Network
@@ -222,7 +223,7 @@ class Api(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        # This doesn't work in LocalStack for some reason
+        # These don't work in LocalStack for some reason
         if not LOCAL_GRAPL:
             self.model_plugin_deployer = ModelPluginDeployer(
                 network=network,
@@ -232,6 +233,12 @@ class Api(pulumi.ComponentResource):
                 plugins_bucket=plugins_bucket,
             )
 
+            self.graphql_endpoint = GraphQL(
+                network=network,
+                secret=secret,
+                ux_bucket=ux_bucket,
+            )
+
         self.proxies = [
             self._add_proxy_resource_integration(self.ux_router.function),
             self._add_proxy_resource_integration(
@@ -239,12 +246,18 @@ class Api(pulumi.ComponentResource):
             ),
         ]
 
-        # This doesn't work in LocalStack for some reason
+        # These don't work in LocalStack for some reason
         if not LOCAL_GRAPL:
-            self.proxies.append(
-                self._add_proxy_resource_integration(
-                    self.model_plugin_deployer.function, path_part="modelPluginDeployer"
-                )
+            self.proxies.extend(
+                [
+                    self._add_proxy_resource_integration(
+                        self.model_plugin_deployer.function,
+                        path_part="modelPluginDeployer",
+                    ),
+                    self._add_proxy_resource_integration(
+                        self.graphql_endpoint.function, path_part="graphQlEndpoint"
+                    ),
+                ]
             )
 
         # This MUST be called after all integrations are registered in

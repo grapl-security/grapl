@@ -381,8 +381,8 @@ zip-pants: ## Generate Lambda zip artifacts using pants
 # everything is migrated to Pulumi, we can consolidate this target
 # with other zip-generating targets
 modern-lambdas: ## Generate lambda zips that are used in local Grapl and Pulumi deployments
-	$(DOCKER_BUILDX_BAKE) -f docker-compose.lambda-zips.rust.yml
-	docker-compose -f docker-compose.lambda-zips.rust.yml up
+	$(DOCKER_BUILDX_BAKE) -f docker-compose.lambda-zips.rust.yml -f docker-compose.lambda-zips.js.yml
+	docker-compose -f docker-compose.lambda-zips.rust.yml -f docker-compose.lambda-zips.js.yml up
 	$(MAKE) zip-pants
 
 .PHONY: push
