@@ -42,6 +42,24 @@ as well: `local-grapl-passphrase`. Setting this in the
 `PULUMI_CONFIG_PASSPHRASE` environment variable can make it easier to
 interact with this stack on your machine.
 
+# Running against AWS
+
+If you'd like to run against your own AWS account, you should make a
+new stack for this. This will be your personal stack, so make sure to
+set `PULUMI_CONFIG_PASSPHRASE` accordingly.
+
+```
+pulumi stack init <NAME>
+pulumi config set aws:region us-east-1
+pulumi config set grapl:import_from_existing False
+```
+
+Then, you should set your `AWS_PROFILE` in your environment, and then
+run `aws sso login`.
+
+Now, when you run `pulumi up`, you will be provisioning infrastructure
+in your AWS account.
+
 # Migrating from CDK
 
 To help evaluate the faithfulness of this Pulumi port of our CDK
