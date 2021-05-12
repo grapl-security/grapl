@@ -89,7 +89,7 @@ impl Edge {
             + "\n";
         edge_relationship =
             edge_relationship + &format!(r#"            "{}""#, self.reverse_edge_name) + "\n";
-        edge_relationship = edge_relationship + "        ),\n";
+        edge_relationship += "        ),\n";
         edge_relationship
     }
 
@@ -110,7 +110,7 @@ impl Edge {
             false => (
                 "*",
                 "False",
-                format!("{}", edge_query_name),
+                edge_query_name.to_string(),
                 format!("'List[{}]'", edge_view_name),
             ),
         };
@@ -132,7 +132,7 @@ impl Edge {
                 edge_name = edge_name,
                 reverse_edge_name = reverse_edge_name,
             );
-        get_method = get_method + "\n";
+        get_method += "\n";
 
         get_method
     }
