@@ -48,7 +48,7 @@ export class ModelPluginDeployer extends cdk.NestedStack {
 
         const event_handler = new lambda.Function(this, "Handler", {
             runtime: lambda.Runtime.PYTHON_3_7,
-            handler: `grapl_model_plugin_deployer.app`,
+            handler: `lambdex_handler.handler`,
             functionName: serviceName + "-Handler",
             code: lambda.Code.fromAsset(
                 `./zips/model-plugin-deployer-${props.version}.zip`

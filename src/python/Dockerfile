@@ -292,15 +292,6 @@ RUN source venv/bin/activate && \
     cd model-plugin-deployer && \
     pip install .
 
-# zip
-FROM model-plugin-deployer-build AS model-plugin-deployer-zip
-
-RUN LAMBDA_DIR=$(pwd); \
-    cd ~/venv/lib/python3.7/site-packages && \
-    zip -q9r -dg "${LAMBDA_DIR}/lambda.zip" ./ && \
-    cd ~/model-plugin-deployer/src && \
-    find . -type f -name "*.py" -exec zip -g "${LAMBDA_DIR}/lambda.zip" "{}" \;
-
 # deploy
 FROM grapl-python-deploy AS model-plugin-deployer-deploy
 
