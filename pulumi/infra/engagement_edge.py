@@ -1,7 +1,7 @@
 from typing import Optional
 
 from infra.bucket import Bucket
-from infra.config import GLOBAL_LAMBDA_ZIP_TAG
+from infra.config import GLOBAL_LAMBDA_ZIP_TAG, configurable_envvars
 from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
 from infra.engagement_notebook import EngagementNotebook
@@ -39,7 +39,7 @@ class EngagementEdge(pulumi.ComponentResource):
                 description=GLOBAL_LAMBDA_ZIP_TAG,
                 code_path=code_path_for(name),
                 env={
-                    "GRAPL_LOG_LEVEL": "DEBUG",
+                    **configurable_envvars(name, ["GRAPL_LOG_LEVEL"]),
                     # TODO: Not clear that this is even used.
                     "MG_ALPHAS": dgraph_cluster.alpha_host_port,
                     "JWT_SECRET_ID": secret.secret.arn,

@@ -1,6 +1,6 @@
 import os
 import re
-from typing import Any
+from typing import Any, Mapping, Sequence
 
 import pulumi_aws as aws
 from typing_extensions import Final
@@ -51,6 +51,56 @@ leave it unset to use the default value of `latest`.
 SERVICE_LOG_RETENTION_DAYS: Final[int] = 30
 
 DGRAPH_LOG_RETENTION_DAYS: Final[int] = 7
+
+DEFAULT_ENVVARS = {
+    "GRAPL_LOG_LEVEL": "DEBUG",
+    "RUST_LOG": "DEBUG",
+    "RUST_BACKTRACE": "0",
+}
+
+
+def configurable_envvar(service_name: str, var: str) -> str:
+    """Look up the desired environment variable in Pulumi configuration for the given service or return a default value.
+
+    Your configuration YAML should look like this:
+
+    config:
+      grapl:env_vars:
+        <SERVICE_NAME>:
+          <VARIABLE_NAME>: <VARIABLE_VALUE>
+    """
+    config_key = "env_vars"
+
+    vars = (pulumi.Config().get_object(config_key) or {}).get(service_name, {})
+    value = vars.get(var) or DEFAULT_ENVVARS.get(var)
+    if not value:
+        raise ValueError(
+            f"""
+        You have tried to retrieve a value for the '{var}' environment variable for the
+        '{service_name}' service, but we have no record of this variable!
+
+        Please edit your Pulumi.{DEPLOYMENT_NAME}.yaml file and add the following:
+
+        config:
+          {pulumi.get_project()}:{config_key}:
+            {service_name}:
+              {var}: <YOUR_DESIRED_VALUE>
+
+        If '{var}' is a common variable shared across many services, consider adding it to
+        the DEFAULT_ENVVARS dictionary in {__file__} instead.
+
+        """
+        )
+    else:
+        return value
+
+
+def configurable_envvars(service_name: str, vars: Sequence[str]) -> Mapping[str, str]:
+    """Return a map of environment variable values for the named service,
+    pulled from Pulumi configuration or default values, suitable for
+    splicing into other environment maps for configuring services.
+    """
+    return {v: configurable_envvar(service_name, v) for v in vars}
 
 
 # Yes I hate the 'Any' type just as much as you do, but there's

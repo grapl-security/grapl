@@ -1,7 +1,7 @@
 from typing import Optional
 
 from infra.bucket import Bucket
-from infra.config import GLOBAL_LAMBDA_ZIP_TAG, LOCAL_GRAPL
+from infra.config import GLOBAL_LAMBDA_ZIP_TAG, LOCAL_GRAPL, configurable_envvars
 from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
 from infra.lambda_ import Lambda, LambdaExecutionRole, PythonLambdaArgs, code_path_for
@@ -38,7 +38,7 @@ class ModelPluginDeployer(pulumi.ComponentResource):
                 handler="lambdex_handler.handler",
                 code_path=code_path_for(name),
                 env={
-                    "GRAPL_LOG_LEVEL": "INFO",
+                    **configurable_envvars(name, ["GRAPL_LOG_LEVEL"]),
                     "MG_ALPHAS": dgraph_cluster.alpha_host_port,
                     "JWT_SECRET_ID": secret.secret.arn
                     if not LOCAL_GRAPL
@@ -56,8 +56,6 @@ class ModelPluginDeployer(pulumi.ComponentResource):
             forwarder=forwarder,
             opts=pulumi.ResourceOptions(parent=self),
         )
-
-        # TODO: allow connections to DGraph
 
         secret.grant_read_permissions_to(self.role)
 
