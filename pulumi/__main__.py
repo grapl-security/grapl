@@ -2,6 +2,7 @@ from infra import dynamodb, emitter
 from infra.api import Api
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
+from infra.cache import Cache
 from infra.config import DEPLOYMENT_NAME, LOCAL_GRAPL
 from infra.dgraph_ttl import DGraphTTL
 from infra.engagement_creator import EngagementCreator
@@ -23,6 +24,9 @@ if __name__ == "__main__":
     secret = JWTSecret()
 
     dynamodb_tables = dynamodb.DynamoDB()
+
+    if not LOCAL_GRAPL:
+        cache = Cache("main-cache", network=network)
 
     model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)
     Bucket("analyzers-bucket", sse=True)
