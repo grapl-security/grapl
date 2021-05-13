@@ -47,7 +47,7 @@ impl NodePredicate {
         comparisons = comparisons
             + r#"        regexp: Optional["grapl_analyzerlib.comparators.OneOrMany[grapl_analyzerlib.comparators.StrOrNot]"] = None,"#
             + "\n";
-        comparisons = comparisons + r#"        distance_lt: Optional[Tuple[str, int]] = None,"#;
+        comparisons += r#"        distance_lt: Optional[Tuple[str, int]] = None,"#;
         comparisons
     }
 
@@ -89,29 +89,29 @@ impl NodePredicate {
         query_def = query_def + "        *," + "\n";
         query_def = query_def + &self.generate_python_query_comparisons() + "\n";
         query_def = query_def + "    ):" + "\n";
-        query_def = query_def + "        (\n";
+        query_def += "        (\n";
         query_def = query_def + "            self.with_" + &python_ty + "_property(\n";
         query_def = query_def + "                \"" + &self.predicate_name + "\",\n";
 
         match self.predicate_type {
             PredicateType::String => {
-                query_def = query_def + "                eq=eq,\n";
-                query_def = query_def + "                contains=contains,\n";
-                query_def = query_def + "                starts_with=starts_with,\n";
-                query_def = query_def + "                ends_with=ends_with,\n";
-                query_def = query_def + "                regexp=regexp,\n";
-                query_def = query_def + "                distance_lt=distance_lt\n";
+                query_def += "                eq=eq,\n";
+                query_def += "                contains=contains,\n";
+                query_def += "                starts_with=starts_with,\n";
+                query_def += "                ends_with=ends_with,\n";
+                query_def += "                regexp=regexp,\n";
+                query_def += "                distance_lt=distance_lt\n";
             }
             PredicateType::U64 | PredicateType::I64 => {
-                query_def = query_def + "                eq=eq,\n";
-                query_def = query_def + "                gt=gt,\n";
-                query_def = query_def + "                ge=ge,\n";
-                query_def = query_def + "                lt=lt,\n";
-                query_def = query_def + "                le=le,\n";
+                query_def += "                eq=eq,\n";
+                query_def += "                gt=gt,\n";
+                query_def += "                ge=ge,\n";
+                query_def += "                lt=lt,\n";
+                query_def += "                le=le,\n";
             }
         }
-        query_def = query_def + "            )\n";
-        query_def = query_def + "        )\n";
+        query_def += "            )\n";
+        query_def += "        )\n";
         query_def = query_def + "        return self" + "\n";
         query_def
     }

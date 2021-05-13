@@ -215,12 +215,12 @@ impl NodeType {
                 v, q
             );
         viewable = viewable + "    queryable = " + &q + "\n\n";
-        viewable = viewable + "    def __init__(\n";
-        viewable = viewable + "        self,\n";
-        viewable = viewable + "        uid: int,\n";
-        viewable = viewable + "        node_key: str,\n";
-        viewable = viewable + "        graph_client: Any,\n";
-        viewable = viewable + "        node_types: Set[str],\n";
+        viewable += "    def __init__(\n";
+        viewable += "        self,\n";
+        viewable += "        uid: int,\n";
+        viewable += "        node_key: str,\n";
+        viewable += "        graph_client: Any,\n";
+        viewable += "        node_types: Set[str],\n";
 
         for predicate in self.predicates.iter() {
             let parameter = generate_parameter_from_predicate(predicate);
@@ -232,10 +232,9 @@ impl NodeType {
             viewable = viewable + "        " + &parameter + "\n";
         }
 
-        viewable = viewable + "        **kwargs,\n";
-        viewable = viewable + "    ) -> None:\n";
-        viewable = viewable
-            + "        super().__init__(uid, node_key, graph_client, node_types, **kwargs)\n";
+        viewable += "        **kwargs,\n";
+        viewable += "    ) -> None:\n";
+        viewable += "        super().__init__(uid, node_key, graph_client, node_types, **kwargs)\n";
 
         for predicate in self.predicates.iter() {
             let predicate = generate_set_predicate_from_predicate(predicate);
@@ -246,7 +245,7 @@ impl NodeType {
             let predicate = generate_set_predicate_from_edge(edge);
             viewable = viewable + "        " + &predicate + "\n";
         }
-        viewable.push_str("\n");
+        viewable.push('\n');
         viewable += &self.generate_viewable_get_methods();
 
         viewable
@@ -311,8 +310,8 @@ impl NodeType {
 
     pub fn generate_python_schema_self_type(&self) -> String {
         let mut schema_str = String::with_capacity(256);
-        schema_str = schema_str + "    @staticmethod\n";
-        schema_str = schema_str + "    def self_type() -> str:\n";
+        schema_str += "    @staticmethod\n";
+        schema_str += "    def self_type() -> str:\n";
         schema_str = schema_str + &format!(r#"        return "{}""#, self.type_name) + "\n";
         schema_str
     }
@@ -328,7 +327,7 @@ impl NodeType {
             + "class "
             + &schema_name
             + "(grapl_analyzerlib.nodes.entity.EntitySchema):\n";
-        schema_str = schema_str + "    def __init__(self):\n";
+        schema_str += "    def __init__(self):\n";
         schema_str = schema_str + "        super(" + &schema_name + ", self).__init__(\n";
         schema_str = schema_str
             + "            default_"
@@ -340,7 +339,7 @@ impl NodeType {
             + " lambda: "
             + &view_name
             + "\n";
-        schema_str = schema_str + "        );\n";
+        schema_str += "        );\n";
         schema_str
     }
 
@@ -361,7 +360,7 @@ impl NodeType {
             def = def + &format!("        {}: {},\n", predicate_name, prop_primitive_t);
         }
 
-        def = def + r#"    }"#;
+        def += r#"    }"#;
         def
     }
 
@@ -379,7 +378,7 @@ impl NodeType {
         for edge in self.edges.iter() {
             def = def + &edge.generate_edge_relationship();
         }
-        def = def + r#"    }"#;
+        def += r#"    }"#;
         def
     }
 }
