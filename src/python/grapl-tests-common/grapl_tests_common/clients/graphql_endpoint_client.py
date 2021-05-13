@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 from http import HTTPStatus
 from typing import Any, Dict, Optional, cast
 
@@ -9,6 +10,10 @@ import requests
 GqlLensDict = Dict[str, Any]
 GraphqlType = Dict[str, Any]
 _JSON_CONTENT_TYPE_HEADERS = {"Content-type": "application/json"}
+
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
+LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
 class GraphQLException(Exception):
@@ -30,7 +35,12 @@ class GraphqlEndpointClient:
             params={"query": query, "variables": json.dumps(variables or {})},
             cookies={"grapl_jwt": self.jwt},
         )
-        assert resp.status_code == HTTPStatus.OK, resp.json()
+        if resp.status_code != HTTPStatus.OK:
+            resp_str = "\\n".join(resp.iter_lines())
+            LOGGER.error(
+                f'status {resp.status_code} from graphql endpoint for query "{query}" with variables "{variables}": "{resp_str or "no response"}"'
+            )
+        assert resp.status_code == HTTPStatus.OK, "\n".join(resp.iter_lines())
         return cast(Dict[str, Any], resp.json()["data"])
 
     def query_for_scope(self, lens_name: str) -> GqlLensDict:

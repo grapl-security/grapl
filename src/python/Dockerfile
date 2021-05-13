@@ -234,25 +234,14 @@ CMD source venv/bin/activate && \
     cd grapl-notebook && \
     jupyter notebook --ip="0.0.0.0"
 
-#
-# graplctl
-################################################################################
+# test
+FROM grapl-notebook AS grapl-notebook-test
 
-FROM python:3.7-slim-buster AS graplctl
-RUN adduser \
-    --disabled-password \
-    --gecos '' \
-    --home /home/grapl \
-    --shell /bin/bash \
-    grapl
-USER grapl
-ENV USER=grapl
-WORKDIR /home/grapl
-RUN mkdir -p /home/grapl/bin
-RUN mkdir -p /home/grapl/.aws
-RUN echo "[default]\naws_access_key_id=${AWS_ACCESS_KEY_ID}\naws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" > /home/grapl/.aws/credentials
-COPY --chown=grapl ./bin/graplctl /home/grapl/bin/graplctl
-ENV PATH=/home/grapl/bin:$PATH
+# This file will improve once #444 lands
+# primarily to use pre-downloaded tools instead of downloading again
+
+RUN source venv/bin/activate && \
+    pip install nbqa mypy boto3-stubs[essential]
 
 # grapl-tests-common-build
 ################################################################################
