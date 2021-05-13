@@ -4,26 +4,11 @@ import logging
 import sys
 from os import environ
 from sys import stdout
-from typing import TYPE_CHECKING, List, Sequence
+from typing import List
 
-import boto3
 import pytest
 import requests
-from grapl_common.env_helpers import (
-    S3ClientFactory,
-    SQSClientFactory,
-    get_deployment_name,
-)
 from grapl_tests_common.dump_dynamodb import dump_dynamodb
-from grapl_tests_common.types import S3ServiceResource
-from grapl_tests_common.upload_analyzers import AnalyzerUpload, upload_analyzers
-from grapl_tests_common.upload_test_data import UploadTestData
-from grapl_tests_common.wait import WaitForS3Bucket, WaitForSqsQueue, wait_for
-
-if TYPE_CHECKING:
-    from mypy_boto3_s3 import S3Client
-    from mypy_boto3_sqs import SQSClient
-
 
 # Toggle if you want to dump databases, logs, etc.
 DUMP_ARTIFACTS = bool(environ.get("DUMP_ARTIFACTS", False))
@@ -31,61 +16,16 @@ DUMP_ARTIFACTS = bool(environ.get("DUMP_ARTIFACTS", False))
 logging.basicConfig(stream=stdout, level=logging.INFO)
 
 
-def _upload_test_data(
-    s3_client: S3ServiceResource,
-    sqs_client: SQSClient,
-    test_data: Sequence[UploadTestData],
-) -> None:
-    logging.info(f"Uploading test data...")
-
-    for datum in test_data:
-        datum.upload(s3_client, sqs_client)
-
-
-def _create_s3_client() -> S3Client:
-    return S3ClientFactory(boto3).from_env()
-
-
-def _create_sqs_client() -> SQSClient:
-    return SQSClientFactory(boto3).from_env()
-
-
-def setup_tests(
-    analyzers: Sequence[AnalyzerUpload],
-    test_data: Sequence[UploadTestData],
-) -> None:
-    s3_client = _create_s3_client()
-    sqs_client = _create_sqs_client()
-
-    wait_for(
-        [
-            # for uploading analyzers
-            WaitForS3Bucket(s3_client, f"{get_deployment_name()}-analyzers-bucket"),
-            # for upload-sysmon-logs.py
-            WaitForS3Bucket(s3_client, f"{get_deployment_name()}-sysmon-log-bucket"),
-            WaitForSqsQueue(
-                sqs_client, f"{get_deployment_name()}-sysmon-generator-queue"
-            ),
-        ]
-    )
-
-    upload_analyzers(s3_client, analyzers, get_deployment_name())
-    _upload_test_data(s3_client, sqs_client, test_data)
-    # You may want to sleep(30) to let the pipeline do its thing, but setup won't force it.
-
-
 def _after_tests() -> None:
     """
     Add any "after tests are executed, but before docker-compose down" stuff here.
     """
-
-    dgraph_host = environ["DGRAPH_HOST"]
-    dgraph_alpha = environ["DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT"]
-
     # Issue a command to dgraph to export the whole database.
     # This is then stored on a volume, `dgraph_export` (defined in docker-compose.yml)
     # The contents of the volume are made available to Github Actions via `dump_artifacts.py`.
     if DUMP_ARTIFACTS:
+        dgraph_host = environ["DGRAPH_HOST"]
+        dgraph_alpha = environ["DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT"]
         logging.info("Executing post-test database dumps")
         export_request = requests.get(
             f"http://{dgraph_host}:{dgraph_alpha}/admin/export"
