@@ -526,9 +526,9 @@ services:
     command: |
       /bin/bash -c "
           graplctl \
-              --grapl-region us-east-1 \
-              --grapl-deployment-name local-grapl \
-              --grapl-version FIXME \
+              --grapl-region $AWS_REGION \
+              --grapl-deployment-name $DEPLOYMENT_NAME \
+              --grapl-version $DEPLOYMENT_NAME \
               --aws-profile default \
               aws provision --yes
       "

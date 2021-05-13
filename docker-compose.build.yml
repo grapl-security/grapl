@@ -117,7 +117,7 @@ services:
     image: grapl/graplctl:${TAG:-latest}
     build:
       context: .
-      dockerfile: ./src/python/Dockerfile
+      dockerfile: ./src/python/graplctl/graplctl.Dockerfile
 
   grapl-pulumi:
     image: grapl/grapl-local-pulumi:${TAG:-latest}
