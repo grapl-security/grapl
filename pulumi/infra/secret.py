@@ -97,7 +97,7 @@ class TestUserPassword(pulumi.ComponentResource):
                 opts=pulumi.ResourceOptions(parent=self),
             ),
             None,
-            opts
+            opts,
         )
 
         self.random_uuid = random.RandomUuid(
