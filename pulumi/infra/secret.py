@@ -90,9 +90,14 @@ class TestUserPassword(pulumi.ComponentResource):
 
         self.secret = aws.secretsmanager.Secret(
             "test-user-password",
-            name=f"{DEPLOYMENT_NAME}-TestUserPassword",
-            description="The Grapl test user's password",
-            opts=pulumi.ResourceOptions(parent=self),
+            aws.secretsmanager.Secret(
+                "test-user-password",
+                name=f"{DEPLOYMENT_NAME}-TestUserPassword",
+                description="The Grapl test user's password",
+                opts=pulumi.ResourceOptions(parent=self),
+            ),
+            None,
+            opts
         )
 
         self.random_uuid = random.RandomUuid(
