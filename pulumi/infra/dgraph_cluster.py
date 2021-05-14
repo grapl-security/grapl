@@ -73,3 +73,21 @@ class DgraphCluster(pulumi.ComponentResource):
         self.swarm.allow_connections_from(
             other, Ec2Port("tcp", 9080), opts=ResourceOptions(parent=self)
         )
+
+
+class LocalStandInDgraphCluster(DgraphCluster):
+    """
+    We can't use the real DgraphCluster object yet because
+    we are in this about-to-kill-off-local-grapl limbo world.
+
+    However, I still want to feed an object matching its API into
+    other lambdas, to replace `mg_alphas()`.
+    """
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def alpha_host_port(self) -> pulumi.Output[str]:
+        config = pulumi.Config()
+        as_str = config.get("MG_ALPHAS") or f"{DEPLOYMENT_NAME}.dgraph.grapl:9080"
+        return Output.concat(as_str)

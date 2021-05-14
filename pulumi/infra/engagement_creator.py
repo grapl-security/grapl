@@ -6,8 +6,8 @@ from infra.config import (
     DEPLOYMENT_NAME,
     GLOBAL_LAMBDA_ZIP_TAG,
     import_aware_opts,
-    mg_alphas,
 )
+from infra.dgraph_cluster import DgraphCluster
 from infra.emitter import EventEmitter
 from infra.lambda_ import code_path_for
 from infra.metric_forwarder import MetricForwarder
@@ -19,7 +19,11 @@ import pulumi
 
 class EngagementCreator(Service):
     def __init__(
-        self, source_emitter: EventEmitter, network: Network, forwarder: MetricForwarder
+        self,
+        source_emitter: EventEmitter,
+        network: Network,
+        forwarder: MetricForwarder,
+        dgraph_cluster: DgraphCluster,
     ) -> None:
 
         name = "engagement-creator"
@@ -32,7 +36,7 @@ class EngagementCreator(Service):
             network=network,
             env={
                 "GRAPL_LOG_LEVEL": "INFO",
-                "MG_ALPHAS": mg_alphas(),
+                "MG_ALPHAS": dgraph_cluster.alpha_host_port(),
             },
         )
 

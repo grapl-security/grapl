@@ -53,18 +53,6 @@ SERVICE_LOG_RETENTION_DAYS: Final[int] = 30
 DGRAPH_LOG_RETENTION_DAYS: Final[int] = 7
 
 
-def mg_alphas() -> str:
-    """Temporarily return a value to use as an `MG_ALPHAS` environment variable for services that need it until we pull Dgraph provisioning into Pulumi.
-
-    This can be set explicitly on a stack-basis with the MG_ALPHAS
-    config key. Otherwise, a value is constructed from the deployment
-    name, as it was in our CDK code.
-
-    """
-    config = pulumi.Config()
-    return config.get("MG_ALPHAS") or f"{DEPLOYMENT_NAME}.dgraph.grapl:9080"
-
-
 # Yes I hate the 'Any' type just as much as you do, but there's
 # apparently not a way to type kwargs right now.
 def import_aware_opts(resource_id: str, **kwargs: Any) -> pulumi.ResourceOptions:

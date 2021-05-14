@@ -1,15 +1,26 @@
-from infra import dynamodb, emitter
+from infra import dgraph_cluster, dynamodb, emitter
 from infra.api import Api
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.config import DEPLOYMENT_NAME, LOCAL_GRAPL
-from infra.dgraph_cluster import DgraphCluster
+from infra.dgraph_cluster import DgraphCluster, LocalStandInDgraphCluster
 from infra.dgraph_ttl import DGraphTTL
 from infra.engagement_creator import EngagementCreator
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.secret import JWTSecret
 from infra.service_queue import ServiceQueue
+
+
+def _get_dgraph_cluster(network: Network) -> DgraphCluster:
+    if LOCAL_GRAPL:
+        return LocalStandInDgraphCluster()
+    else:
+        return DgraphCluster(
+            name="swarm",
+            vpc=network.vpc,
+        )
+
 
 if __name__ == "__main__":
 
@@ -19,10 +30,7 @@ if __name__ == "__main__":
 
     network = Network("grapl-network")
 
-    dgraph_cluster = DgraphCluster(
-        name="swarm",
-        vpc=network.vpc,
-    )
+    dgraph_cluster = _get_dgraph_cluster(network=network)
 
     dgraph_ttl = DGraphTTL(network=network, dgraph_cluster=dgraph_cluster)
 
@@ -62,7 +70,10 @@ if __name__ == "__main__":
     forwarder = MetricForwarder(network=network)
 
     ec = EngagementCreator(
-        source_emitter=analyzer_matched, network=network, forwarder=forwarder
+        source_emitter=analyzer_matched,
+        network=network,
+        forwarder=forwarder,
+        dgraph_cluster=dgraph_cluster,
     )
 
     ########################################################################
@@ -86,6 +97,7 @@ if __name__ == "__main__":
         ux_bucket=ux_bucket,
         db=dynamodb_tables,
         plugins_bucket=model_plugins_bucket,
+        dgraph_cluster=dgraph_cluster,
     )
 
     ########################################################################

@@ -3,6 +3,7 @@ from typing import Optional
 import pulumi_aws as aws
 from infra.bucket import Bucket
 from infra.config import LOCAL_GRAPL
+from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
 from infra.engagement_edge import EngagementEdge
 from infra.engagement_notebook import EngagementNotebook
@@ -136,6 +137,7 @@ class Api(pulumi.ComponentResource):
         ux_bucket: Bucket,
         plugins_bucket: Bucket,
         db: DynamoDB,
+        dgraph_cluster: DgraphCluster,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         name = "api-gateway"
@@ -220,6 +222,7 @@ class Api(pulumi.ComponentResource):
             ux_bucket=ux_bucket,
             db=db,
             notebook=self.notebook,
+            dgraph_cluster=dgraph_cluster,
             opts=pulumi.ResourceOptions(parent=self),
         )
 
@@ -231,12 +234,14 @@ class Api(pulumi.ComponentResource):
                 secret=secret,
                 ux_bucket=ux_bucket,
                 plugins_bucket=plugins_bucket,
+                dgraph_cluster=dgraph_cluster,
             )
 
             self.graphql_endpoint = GraphQL(
                 network=network,
                 secret=secret,
                 ux_bucket=ux_bucket,
+                dgraph_cluster=dgraph_cluster,
             )
 
         self.proxies = [
