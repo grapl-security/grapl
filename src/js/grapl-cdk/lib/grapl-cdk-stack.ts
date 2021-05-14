@@ -34,35 +34,36 @@ import { Provisioner } from "./services/provisioner";
 import { SysmonGraphGenerator } from "./services/sysmon_graph_generator";
 import { OSQueryGraphGenerator } from "./services/osquery_graph_generator";
 import { LogLevels } from "../bin/deployment_parameters";
+import {GraphMutationService} from "./services/graph_mutation_service";
 
 export interface GraplServiceProps {
-    deploymentName: string;
-    logLevels: LogLevels<string>;
-    version: string;
-    jwtSecret: secretsmanager.Secret;
-    vpc: ec2.IVpc;
-    dgraphSwarmCluster: DGraphSwarmCluster;
-    userAuthTable: UserAuthDb;
-    watchful?: Watchful;
-    metricForwarder?: Service;
+    readonly deploymentName: string;
+    readonly logLevels: LogLevels<string>;
+    readonly version: string;
+    readonly jwtSecret: secretsmanager.Secret;
+    readonly vpc: ec2.IVpc;
+    readonly dgraphSwarmCluster: DGraphSwarmCluster;
+    readonly userAuthTable: UserAuthDb;
+    readonly watchful?: Watchful;
+    readonly metricForwarder?: Service;
 }
 
 export interface GraplStackProps extends cdk.StackProps {
-    stackName: string;
-    logLevels: LogLevels<string>;
-    version: string;
-    watchfulEmail?: string;
-    operationalAlarmsEmail: string;
-    securityAlarmsEmail: string;
+    readonly stackName: string;
+    readonly logLevels: LogLevels<string>;
+    readonly version: string;
+    readonly watchfulEmail?: string;
+    readonly operationalAlarmsEmail: string;
+    readonly securityAlarmsEmail: string;
 }
 
 export class GraplCdkStack extends cdk.Stack {
-    deploymentName: string;
-    engagement_edge: EngagementEdge;
-    graphql_endpoint: GraphQLEndpoint;
-    ux_router: UxRouter;
-    model_plugin_deployer: ModelPluginDeployer;
-    edgeApiGateway: apigateway.RestApi;
+    readonly deploymentName: string;
+    readonly engagement_edge: EngagementEdge;
+    readonly graphql_endpoint: GraphQLEndpoint;
+    readonly ux_router: UxRouter;
+    readonly model_plugin_deployer: ModelPluginDeployer;
+    readonly edgeApiGateway: apigateway.RestApi;
 
     constructor(scope: cdk.Construct, id: string, props: GraplStackProps) {
         super(scope, id, props);
@@ -224,12 +225,22 @@ export class GraplCdkStack extends cdk.Stack {
             }
         );
 
+        const graph_mutation_service = new GraphMutationService(
+            this, "graph-mutation-service", {
+                graphMutationServiceRustBuild: "debug",
+                schemaDb: schema_table,
+                grpcPort: 5500,
+                ...graplProps
+            }
+        );
+
         const graph_merger = new GraphMerger(this, "graph-merger", {
             writesTo: analyzer_dispatch.bucket,
-            schemaTable: schema_table,
+            graphMutationService: graph_mutation_service,
             ...graplProps,
             ...enableMetricsProps,
         });
+
 
         const node_identifier = new NodeIdentifier(this, "node-identifier", {
             writesTo: graph_merger.bucket,

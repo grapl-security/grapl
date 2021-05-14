@@ -4,15 +4,15 @@ import * as s3 from "@aws-cdk/aws-s3";
 import { EventEmitter } from "../event_emitters";
 import { RedisCluster } from "../redis";
 import { GraplServiceProps } from "../grapl-cdk-stack";
-import { SchemaDb } from "../schemadb";
 import { ContainerImage } from "@aws-cdk/aws-ecs";
 import { FargateService } from "../fargate_service";
 import { GraplS3Bucket } from "../grapl_s3_bucket";
 import { SRC_DIR, RUST_DOCKERFILE } from "../dockerfile_paths";
+import { GraphMutationService } from "./graph_mutation_service";
 
 export interface GraphMergerProps extends GraplServiceProps {
     writesTo: s3.IBucket;
-    schemaTable: SchemaDb;
+    graphMutationService: GraphMutationService;
 }
 
 export class GraphMerger extends cdk.NestedStack {
@@ -42,13 +42,12 @@ export class GraphMerger extends cdk.NestedStack {
             deploymentName: props.deploymentName,
             environment: {
                 REDIS_ENDPOINT: event_cache.address,
+                GRAPH_MUTATION_ENDPOINT: props.graphMutationService.endpoint,
                 DEPLOYMENT_NAME: deployment_name,
                 RUST_LOG: props.logLevels.graphMergerLogLevel,
                 SUBGRAPH_MERGED_BUCKET: props.writesTo.bucketName,
-                MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
                 MERGED_CACHE_ADDR: event_cache.cluster.attrRedisEndpointAddress,
                 MERGED_CACHE_PORT: event_cache.cluster.attrRedisEndpointPort,
-                GRAPL_SCHEMA_TABLE: props.schemaTable.schema_table.tableName,
             },
             vpc: props.vpc,
             eventEmitter: subgraphs_generated,
@@ -66,20 +65,11 @@ export class GraphMerger extends cdk.NestedStack {
             metric_forwarder: props.metricForwarder,
         });
 
-        // probably only needs 9080
-        this.service.service.cluster.connections.allowToAnyIpv4(
-            ec2.Port.allTcp()
+        props.graphMutationService.grantAccess(
+            this.service.service.service.connections
         );
-        // probably only needs 9080
-        this.service.retryService.cluster.connections.allowToAnyIpv4(
-            ec2.Port.allTcp()
-        );
-        props.schemaTable.allowRead(this.service);
-        props.dgraphSwarmCluster.allowConnectionsFrom(
-            this.service.service.service
-        );
-        props.dgraphSwarmCluster.allowConnectionsFrom(
-            this.service.retryService.service
+        props.graphMutationService.grantAccess(
+            this.service.retryService.service.connections
         );
     }
 }

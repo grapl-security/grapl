@@ -118,8 +118,8 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
     let mutation_endpoint = grapl_config::mutation_endpoint();
     // todo: the intitializer should give a cache to each service
     let graph_merger = &mut make_ten(async {
-        tracing::debug!(
-            mutation_endpoint=?&mutation_endpoint,
+        tracing::info!(
+            mutation_endpoint=%&mutation_endpoint,
             "Connecting to mutation_endpoint"
         );
         let graph_mutation_client: GraphMutationRpcClient<Channel> =

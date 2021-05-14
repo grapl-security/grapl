@@ -2,25 +2,26 @@ import * as cdk from "@aws-cdk/core";
 import * as ec2 from "@aws-cdk/aws-ec2";
 import * as ecs from "@aws-cdk/aws-ecs";
 import * as servicediscovery from "@aws-cdk/aws-servicediscovery";
-import * as service_common from "./service_common";
+import * as service_common from "../service_common";
 import * as logs from "@aws-cdk/aws-logs";
 
-import { GraplServiceProps } from "./grapl-cdk-stack";
-import { ContainerImage } from "@aws-cdk/aws-ecs";
-import { RUST_DOCKERFILE, SRC_DIR } from "./dockerfile_paths";
-import { IConnectable } from "@aws-cdk/aws-ec2";
-import { SchemaDb } from "./schemadb";
+import {GraplServiceProps} from "../grapl-cdk-stack";
+import {ContainerImage} from "@aws-cdk/aws-ecs";
+import {RUST_DOCKERFILE, SRC_DIR} from "../dockerfile_paths";
+import {IConnectable} from "@aws-cdk/aws-ec2";
+import {SchemaDb} from "../schemadb";
 
 interface GraphMutationServiceProps extends GraplServiceProps {
-    graphMutationServiceRustBuild: string | undefined;
-    grpcPort: number | undefined;
-    schemaDb: SchemaDb;
+    readonly graphMutationServiceRustBuild: string | undefined;
+    readonly grpcPort: number | undefined;
+    readonly schemaDb: SchemaDb;
 }
 
-export class GraphMutationServiceStack extends cdk.Construct {
+export class GraphMutationService extends cdk.Construct {
     readonly serviceName: string;
     readonly fargateService: ecs.FargateService;
     readonly grpcPort: number;
+    readonly endpoint: string;
 
     constructor(
         scope: cdk.Construct,
@@ -71,6 +72,8 @@ export class GraphMutationServiceStack extends cdk.Construct {
             containerPort: this.grpcPort,
         });
 
+        // serviceContainer.
+
         this.fargateService = new ecs.FargateService(
             this,
             "graph_mutation_fargate_service",
@@ -83,9 +86,19 @@ export class GraphMutationServiceStack extends cdk.Construct {
                     dnsRecordType: servicediscovery.DnsRecordType.A,
                     dnsTtl: cdk.Duration.seconds(10),
                     failureThreshold: 2,
-                    name: "graph-mutation-service",
+                    name: `${props.deploymentName}.graph-mutation-service.grapl`,
+                    container: serviceContainer,
+                    containerPort: this.grpcPort,
                 },
             }
+        );
+        // probably only needs 9080
+        this.fargateService.cluster.connections.allowToAnyIpv4(
+            ec2.Port.allTcp()
+        );
+
+        props.dgraphSwarmCluster.allowConnectionsFrom(
+            this.fargateService.cluster.connections
         );
 
         props.schemaDb.allowReadFromRole(
@@ -94,6 +107,9 @@ export class GraphMutationServiceStack extends cdk.Construct {
         props.dgraphSwarmCluster.allowConnectionsFrom(
             this.fargateService.cluster.connections
         );
+
+        this.endpoint = `http://${this.fargateService.cluster.defaultCloudMapNamespace?.namespaceName}:5500`;
+
     }
 
     grantAccess = (access_from: IConnectable): void => {
