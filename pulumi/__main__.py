@@ -1,4 +1,4 @@
-from infra import dgraph_cluster, dynamodb, emitter
+from infra import dynamodb, emitter
 from infra.api import Api
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
@@ -22,15 +22,14 @@ def _get_dgraph_cluster(network: Network) -> DgraphCluster:
         )
 
 
-if __name__ == "__main__":
-
+def main() -> None:
     # These tags will be added to all provisioned infrastructure
     # objects.
     register_auto_tags({"grapl deployment": DEPLOYMENT_NAME})
 
     network = Network("grapl-network")
 
-    dgraph_cluster = _get_dgraph_cluster(network=network)
+    dgraph_cluster: DgraphCluster = _get_dgraph_cluster(network=network)
 
     dgraph_ttl = DGraphTTL(network=network, dgraph_cluster=dgraph_cluster)
 
@@ -108,3 +107,7 @@ if __name__ == "__main__":
         user.local_grapl_user(
             dynamodb_tables.user_auth_table, "grapluser", "graplpassword"
         )
+
+
+if __name__ == "__main__":
+    main()

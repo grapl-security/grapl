@@ -260,7 +260,7 @@ class Swarm(pulumi.ComponentResource):
         )
 
         self.role = aws.iam.Role(
-            f"{DEPLOYMENT_NAME}-grapl-swarm-role",  # TODO seems wrong
+            f"{DEPLOYMENT_NAME}-grapl-swarm-role",
             description="IAM role for Swarm instances",
             assume_role_policy=json.dumps(
                 {
@@ -317,20 +317,24 @@ class Swarm(pulumi.ComponentResource):
         return Output.concat(self.swarm_hosted_zone.name, ":9080")
 
     def allow_connections_from(
-        self, other: Any, port_range: Ec2Port, opts: ResourceOptions
+        self, other: aws.ec2.SecurityGroup, port_range: Ec2Port, opts: ResourceOptions
     ) -> None:
 
-        # declare a mutation
-        ingress_name_fut = Output.concat(
-            "ingress_to_",
-            self.security_group.name,
+        descriptor = Output.concat(
             "_from_",
             other.name,
+            "_to_",
+            self.security_group.name,
             "_for_",
             str(port_range),
         )
 
-        # We'll accept communications from Other into SecurityGroup
+        ingress_name_fut = Output.concat(
+            "ingress",
+            descriptor
+        )
+
+        # We'll accept connections from Other into SecurityGroup
         ingress_name_fut.apply(
             lambda name: aws.ec2.SecurityGroupRule(
                 name,
@@ -343,5 +347,20 @@ class Swarm(pulumi.ComponentResource):
             )
         )
 
-        # TODO
-        # The other must allow egress from Other
+        # Allow connections out of Other to Self
+        egress_name_fut = Output.concat(
+            "egress",
+            descriptor
+        )
+
+        egress_name_fut.apply(
+            lambda name: aws.ec2.SecurityGroupRule(
+                name,
+                opts=opts,
+                type="egress",
+                from_port=port_range.port,
+                to_port=port_range.port,
+                protocol=port_range.protocol,
+                security_group_id=other.id,
+            )
+        )

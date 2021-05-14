@@ -69,7 +69,7 @@ class DgraphCluster(pulumi.ComponentResource):
     def alpha_host_port(self) -> pulumi.Output[str]:
         return self.swarm.cluster_host_port()
 
-    def allow_connections_from(self, other: Any) -> None:
+    def allow_connections_from(self, other: aws.ec2.SecurityGroup) -> None:
         self.swarm.allow_connections_from(
             other, Ec2Port("tcp", 9080), opts=ResourceOptions(parent=self)
         )
@@ -91,3 +91,6 @@ class LocalStandInDgraphCluster(DgraphCluster):
         config = pulumi.Config()
         as_str = config.get("MG_ALPHAS") or f"{DEPLOYMENT_NAME}.dgraph.grapl:9080"
         return Output.concat(as_str)
+
+    def allow_connections_from(self, other: aws.ec2.SecurityGroup) -> None:
+        pass
