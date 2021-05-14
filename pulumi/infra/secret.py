@@ -69,7 +69,7 @@ class JWTSecret(_Secret):
                 opts=pulumi.ResourceOptions(parent=self),
             ),
             None,
-            opts
+            opts,
         )
 
         self.random_uuid = random.RandomUuid(
@@ -104,7 +104,7 @@ class TestUserPassword(_Secret):
                 opts=pulumi.ResourceOptions(parent=self),
             ),
             None,
-            opts
+            opts,
         )
 
         self.random_uuid = random.RandomUuid(
