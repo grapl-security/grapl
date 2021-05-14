@@ -81,7 +81,9 @@ class EventEmitter(pulumi.ComponentResource):
             # straddle CDK and Pulumi; it'll go away once we're
             # totally migrated.
             opts=import_aware_opts(
-                bucket_physical_name(logical_bucket_name), parent=self
+                bucket_physical_name(logical_bucket_name),
+                parent=self,
+                depends_on=[self.topic_policy_attachment],
             ),
         )
 
