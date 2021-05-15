@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, Optional, Sequence, Tuple
 
 import pulumi_aws as aws
+from infra import policies
 from infra.bucket import Bucket
 from infra.config import DEPLOYMENT_NAME, DGRAPH_LOG_RETENTION_DAYS
 from infra.connectable import SwarmConnectable
@@ -30,164 +31,15 @@ class Ec2Port:
             from_port=self.port,
             to_port=self.port,
             protocol=self.protocol,
+            self=True,
         )
         egress = aws.ec2.SecurityGroupEgressArgs(
             from_port=self.port,
             to_port=self.port,
             protocol=self.protocol,
+            self=True,
         )
         return (ingress, egress)
-
-
-def _attach_AmazonSSMManagedInstanceCore(
-    role: aws.iam.Role, opts: pulumi.ResourceOptions
-) -> aws.iam.RolePolicyAttachment:
-    """
-    https://github.com/grapl-security/issue-tracker/issues/106
-    Moving away from managed server policies.
-    """
-    policy_name = "demanaged_AmazonSSMManagedInstanceCore"
-    policy = aws.iam.Policy(
-        policy_name,
-        policy=json.dumps(
-            {
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "ssm:DescribeAssociation",
-                            "ssm:GetDeployablePatchSnapshotForInstance",
-                            "ssm:GetDocument",
-                            "ssm:DescribeDocument",
-                            "ssm:GetManifest",
-                            "ssm:GetParameter",
-                            "ssm:GetParameters",
-                            "ssm:ListAssociations",
-                            "ssm:ListInstanceAssociations",
-                            "ssm:PutInventory",
-                            "ssm:PutComplianceItems",
-                            "ssm:PutConfigurePackageResult",
-                            "ssm:UpdateAssociationStatus",
-                            "ssm:UpdateInstanceAssociationStatus",
-                            "ssm:UpdateInstanceInformation",
-                        ],
-                        "Resource": "*",
-                    },
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "ssmmessages:CreateControlChannel",
-                            "ssmmessages:CreateDataChannel",
-                            "ssmmessages:OpenControlChannel",
-                            "ssmmessages:OpenDataChannel",
-                        ],
-                        "Resource": "*",
-                    },
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "ec2messages:AcknowledgeMessage",
-                            "ec2messages:DeleteMessage",
-                            "ec2messages:FailMessage",
-                            "ec2messages:GetEndpoint",
-                            "ec2messages:GetMessages",
-                            "ec2messages:SendReply",
-                        ],
-                        "Resource": "*",
-                    },
-                ],
-            }
-        ),
-        opts=opts,
-    )
-    return aws.iam.RolePolicyAttachment(
-        f"attach_{policy_name}",
-        role=role.name,
-        policy_arn=policy.arn,
-        opts=opts,
-    )
-
-
-def _attach_CloudWatchAgentServerPolicy(
-    role: aws.iam.Role, opts: pulumi.ResourceOptions
-) -> aws.iam.RolePolicyAttachment:
-    """
-    https://github.com/grapl-security/issue-tracker/issues/106
-    Moving away from managed server policies.
-    """
-    policy_name = "demanaged_CloudWatchAgentServerPolicy"
-    policy = aws.iam.Policy(
-        policy_name,
-        policy=json.dumps(
-            {
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Action": [
-                            "cloudwatch:PutMetricData",
-                            "ec2:DescribeVolumes",
-                            "ec2:DescribeTags",
-                            "logs:PutLogEvents",
-                            "logs:DescribeLogStreams",
-                            "logs:DescribeLogGroups",
-                            "logs:CreateLogStream",
-                            "logs:CreateLogGroup",
-                        ],
-                        "Resource": "*",
-                    },
-                    {
-                        "Effect": "Allow",
-                        "Action": ["ssm:GetParameter"],
-                        "Resource": "arn:aws:ssm:*:*:parameter/AmazonCloudWatch-*",
-                    },
-                ],
-            }
-        ),
-        opts=opts,
-    )
-    return aws.iam.RolePolicyAttachment(
-        f"attach_{policy_name}",
-        role=role.name,
-        policy_arn=policy.arn,
-        opts=opts,
-    )
-
-
-def _attach_policy_to_ship_logs_to_cloudwatch(
-    role: aws.iam.Role, log_group: aws.cloudwatch.LogGroup, opts: pulumi.ResourceOptions
-) -> aws.iam.RolePolicyAttachment:
-    policy_name = "policy_to_ship_logs_to_cloudwatch"
-    policy = log_group.arn.apply(
-        lambda arn: aws.iam.Policy(
-            policy_name,
-            policy=json.dumps(
-                {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                        {
-                            "Effect": "Allow",
-                            "Action": [
-                                "logs:CreateLogGroup",
-                                "logs:CreateLogStream",
-                                "logs:PutLogEvents",
-                                "logs:DescribeLogStreams",
-                            ],
-                            "Resource": f"{arn}:*",
-                        }
-                    ],
-                }
-            ),
-            opts=opts,
-        ),
-    )
-    return aws.iam.RolePolicyAttachment(
-        f"attach_{policy_name}",
-        role=role.name,
-        policy_arn=policy.arn,
-        opts=opts,
-    )
 
 
 def get_swarm_log_group() -> aws.cloudwatch.LogGroup:
@@ -229,7 +81,7 @@ class Swarm(pulumi.ComponentResource):
             )
         ]
 
-        ingress_rules = [*(ingress for ingress, _ in internal_rules)]
+        ingress_rules = [ingress for ingress, _ in internal_rules]
 
         # allow hosts in the swarm security group to make outbound
         # connections to the Internet for these services:
@@ -240,14 +92,15 @@ class Swarm(pulumi.ComponentResource):
                 from_port=443,
                 to_port=443,
                 protocol="tcp",
+                self=True,
             ),
             aws.ec2.SecurityGroupEgressArgs(
                 from_port=80,
                 to_port=80,
                 protocol="tcp",
+                self=True,
             ),
-            *(egress for _, egress in internal_rules),
-        ]
+        ] + [egress for _, egress in internal_rules]
 
         self.security_group = aws.ec2.SecurityGroup(
             "SwarmSecurityGroup",
@@ -281,9 +134,9 @@ class Swarm(pulumi.ComponentResource):
 
         # CloudWatchAgentServerPolicy allows the Swarm instances to
         # run the CloudWatch Agent.
-        _attach_CloudWatchAgentServerPolicy(role=self.role, opts=child_opts)
-        _attach_AmazonSSMManagedInstanceCore(role=self.role, opts=child_opts)
-        _attach_policy_to_ship_logs_to_cloudwatch(
+        policies._attach_CloudWatchAgentServerPolicy(role=self.role, opts=child_opts)
+        policies._attach_AmazonSSMManagedInstanceCore(role=self.role, opts=child_opts)
+        policies._attach_policy_to_ship_logs_to_cloudwatch(
             role=self.role, log_group=log_group, opts=child_opts
         )
 
@@ -319,48 +172,36 @@ class Swarm(pulumi.ComponentResource):
     def allow_connections_from(
         self, other: aws.ec2.SecurityGroup, port_range: Ec2Port, opts: ResourceOptions
     ) -> None:
-
-        descriptor = Output.concat(
-            "_from_",
-            other.name,
+        descriptor = "".join([
+            "from_",
+            other._name,
             "_to_",
-            self.security_group.name,
+            self.security_group._name,
             "_for_",
             str(port_range),
-        )
-
-        ingress_name_fut = Output.concat(
-            "ingress",
-            descriptor
-        )
+        ])
 
         # We'll accept connections from Other into SecurityGroup
-        ingress_name_fut.apply(
-            lambda name: aws.ec2.SecurityGroupRule(
-                name,
-                opts=opts,
-                type="ingress",
-                from_port=port_range.port,
-                to_port=port_range.port,
-                protocol=port_range.protocol,
-                security_group_id=self.security_group.id,
-            )
+        aws.ec2.SecurityGroupRule(
+            f"ingress_{descriptor}",
+            opts=opts,
+            type="ingress",
+            source_security_group_id=other.id,
+            security_group_id=self.security_group.id,
+            from_port=port_range.port,
+            to_port=port_range.port,
+            protocol=port_range.protocol,
         )
 
         # Allow connections out of Other to Self
-        egress_name_fut = Output.concat(
-            "egress",
-            descriptor
-        )
-
-        egress_name_fut.apply(
-            lambda name: aws.ec2.SecurityGroupRule(
-                name,
-                opts=opts,
-                type="egress",
-                from_port=port_range.port,
-                to_port=port_range.port,
-                protocol=port_range.protocol,
-                security_group_id=other.id,
-            )
+        aws.ec2.SecurityGroupRule(
+            f"egress_{descriptor}",
+            opts=opts,
+            type="egress",
+            # Perhaps this is wrong
+            source_security_group_id=self.security_group.id,
+            security_group_id=other.id,
+            from_port=port_range.port,
+            to_port=port_range.port,
+            protocol=port_range.protocol,
         )

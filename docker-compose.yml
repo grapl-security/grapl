@@ -470,7 +470,7 @@ services:
       /bin/bash -c "
          pulumi login --local &&
          pulumi stack init local-grapl --non-interactive &&
-         pulumi up --yes --skip-preview --stack=local-grapl --verbose 5 &&
+         pulumi up --yes --skip-preview --stack=local-grapl &&
 
          # Write the necessary outputs to the shared volume, for access by other containers
          pulumi stack output prod-api-id > /home/grapl/pulumi-outputs/prod-api-id
