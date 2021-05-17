@@ -172,14 +172,16 @@ class Swarm(pulumi.ComponentResource):
     def allow_connections_from(
         self, other: aws.ec2.SecurityGroup, port_range: Ec2Port, opts: ResourceOptions
     ) -> None:
-        descriptor = "".join([
-            "from_",
-            other._name,
-            "_to_",
-            self.security_group._name,
-            "_for_",
-            str(port_range),
-        ])
+        descriptor = "".join(
+            [
+                "from_",
+                other._name,
+                "_to_",
+                self.security_group._name,
+                "_for_",
+                str(port_range),
+            ]
+        )
 
         # We'll accept connections from Other into SecurityGroup
         aws.ec2.SecurityGroupRule(

@@ -63,5 +63,6 @@ class GraphQL(pulumi.ComponentResource):
         # TODO: add permissions for DGraph
 
         secret.grant_read_permissions_to(self.role)
+        dgraph_cluster.allow_connections_from(self.function.security_group)
 
         self.register_outputs({})

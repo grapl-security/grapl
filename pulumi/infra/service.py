@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Mapping, Optional, Union
+from typing import Mapping, Optional, Sequence, Union
 
 from infra.lambda_ import LambdaExecutionRole, PythonLambdaArgs
 from infra.metric_forwarder import MetricForwarder
@@ -48,7 +48,7 @@ class Service(pulumi.ComponentResource):
             env={**env, "SOURCE_QUEUE_URL": self.queue.queue.id, "IS_RETRY": "False"},
         )
 
-        self.handler = QueueDrivenLambda(
+        self._handler = QueueDrivenLambda(
             f"{name}-Handler",
             self.queue.queue,
             args=args,
@@ -59,7 +59,7 @@ class Service(pulumi.ComponentResource):
 
         # Note: The retry handler gets twice the memory and twice the
         # timeout as the "normal" handler.
-        self.retry_handler = QueueDrivenLambda(
+        self._retry_handler = QueueDrivenLambda(
             f"{name}-RetryHandler",
             self.queue.retry_queue,
             args=dataclasses.replace(
@@ -78,3 +78,7 @@ class Service(pulumi.ComponentResource):
         )
 
         self.register_outputs({})
+
+    @property
+    def handlers(self) -> Sequence[QueueDrivenLambda]:
+        return (self._handler, self._retry_handler)

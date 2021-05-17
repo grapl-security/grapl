@@ -4,6 +4,7 @@ from typing import Optional
 import pulumi_aws as aws
 from infra.bucket import Bucket
 from infra.config import DEPLOYMENT_NAME
+from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
 from infra.network import Network
 
@@ -16,6 +17,7 @@ class EngagementNotebook(pulumi.ComponentResource):
         network: Network,
         db: DynamoDB,
         plugins_bucket: Bucket,
+        dgraph_cluster: DgraphCluster,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
 
@@ -39,6 +41,7 @@ class EngagementNotebook(pulumi.ComponentResource):
             ],
             opts=pulumi.ResourceOptions(parent=self),
         )
+        dgraph_cluster.allow_connections_from(self.security_group)
 
         # TODO: Allow connections to DGraph
 

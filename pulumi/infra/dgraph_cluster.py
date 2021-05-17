@@ -70,6 +70,9 @@ class DgraphCluster(pulumi.ComponentResource):
         return self.swarm.cluster_host_port()
 
     def allow_connections_from(self, other: aws.ec2.SecurityGroup) -> None:
+        """
+        Need to pass in a lambda? Access its `.function.security_group`
+        """
         self.swarm.allow_connections_from(
             other, Ec2Port("tcp", 9080), opts=ResourceOptions(parent=self)
         )

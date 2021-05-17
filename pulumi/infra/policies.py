@@ -1,6 +1,7 @@
 import json
 
 import pulumi_aws as aws
+
 import pulumi
 
 
@@ -153,4 +154,3 @@ def _attach_policy_to_ship_logs_to_cloudwatch(
         policy_arn=policy.arn,
         opts=opts,
     )
-

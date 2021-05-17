@@ -112,4 +112,7 @@ class EngagementCreator(Service):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
+        for handler in self.handlers:
+            dgraph_cluster.allow_connections_from(handler.function.security_group)
+
         self.register_outputs({})

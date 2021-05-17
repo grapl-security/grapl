@@ -313,4 +313,4 @@ RUN mkdir /mnt/dynamodb_dump && chown grapl /mnt/dynamodb_dump
 USER grapl
 
 RUN source venv/bin/activate && \
-    pip install zstd
+    pip install zstd==1.4.9.1
