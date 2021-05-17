@@ -1,7 +1,8 @@
 from typing import Optional
 
 from infra.bucket import Bucket
-from infra.config import DEPLOYMENT_NAME, GLOBAL_LAMBDA_ZIP_TAG, mg_alphas
+from infra.config import DEPLOYMENT_NAME, GLOBAL_LAMBDA_ZIP_TAG
+from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
 from infra.engagement_notebook import EngagementNotebook
 from infra.lambda_ import Lambda, LambdaExecutionRole, PythonLambdaArgs, code_path_for
@@ -16,7 +17,8 @@ class Provisioner(pulumi.ComponentResource):
         self,
         network: Network,
         secret: JWTSecret,
-        db: DynamoDB,
+        dynamodb: DynamoDB,
+        dgraph_cluster: DgraphCluster,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
 
@@ -35,7 +37,7 @@ class Provisioner(pulumi.ComponentResource):
                     "GRAPL_LOG_LEVEL": "DEBUG",
                     "DEPLOYMENT_NAME": pulumi.get_stack(),
                     # TODO: Not clear that this is even used.
-                    "MG_ALPHAS": mg_alphas(),
+                    "MG_ALPHAS": dgraph_cluster.alpha_host_port(),
                     "GRAPL_TEST_USER_NAME": f"{DEPLOYMENT_NAME}-grapl-test-user",
                 },
                 timeout=600,
@@ -46,12 +48,6 @@ class Provisioner(pulumi.ComponentResource):
             # TODO: Forwarder????
             opts=pulumi.ResourceOptions(parent=self),
         )
-
-        # TODO: Original infrastructure code allowed access to DGraph,
-        # but it's not clear this is even necessary.
-
-        if notebook:
-            notebook.grant_presigned_url_permissions_to(self.role)
 
         secret.grant_read_permissions_to(self.role)
         db.user_auth_table.grant_read_permissions_to(self.role)

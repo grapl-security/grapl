@@ -8,6 +8,7 @@ from infra.dgraph_ttl import DGraphTTL
 from infra.engagement_creator import EngagementCreator
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
+from infra.provision_lambda import Provisioner
 from infra.secret import JWTSecret
 from infra.service_queue import ServiceQueue
 
@@ -72,6 +73,13 @@ def main() -> None:
         source_emitter=analyzer_matched,
         network=network,
         forwarder=forwarder,
+        dgraph_cluster=dgraph_cluster,
+    )
+
+    provisioner = Provisioner(
+        network=network,
+        secret=secret,
+        dynamodb=dynamodb_tables,
         dgraph_cluster=dgraph_cluster,
     )
 
