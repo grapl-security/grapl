@@ -210,6 +210,7 @@ class Api(pulumi.ComponentResource):
                 network=network,
                 db=db,
                 plugins_bucket=plugins_bucket,
+                dgraph_cluster=dgraph_cluster,
                 opts=pulumi.ResourceOptions(parent=self),
             )
             if not LOCAL_GRAPL
