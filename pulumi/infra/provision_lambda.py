@@ -22,7 +22,7 @@ class Provisioner(pulumi.ComponentResource):
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
 
-        name = "provisioner"
+        name = f"provisioner"
         super().__init__("grapl:Provisioner", name, None, opts)
 
         self.role = LambdaExecutionRole(name, opts=pulumi.ResourceOptions(parent=self))
@@ -45,11 +45,12 @@ class Provisioner(pulumi.ComponentResource):
                 execution_role=self.role,
             ),
             network=network,
+            override_name=f"{DEPLOYMENT_NAME}-Provisioner-Handler",
             # TODO: Forwarder????
             opts=pulumi.ResourceOptions(parent=self),
         )
 
         secret.grant_read_permissions_to(self.role)
-        db.user_auth_table.grant_read_permissions_to(self.role)
+        dynamodb.user_auth_table.grant_read_permissions_to(self.role)
 
         self.register_outputs({})
