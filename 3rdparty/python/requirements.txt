@@ -20,7 +20,7 @@ pytest
 requests
 redis
 typing_extensions
-zstd
+zstd==1.4.9.1
 
 # This was introduced when we updated to Pants 2.4.0; lambdex (which
 # we use to generate AWS lambda zip files) has requirements that
