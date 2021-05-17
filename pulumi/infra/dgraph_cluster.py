@@ -84,7 +84,7 @@ class LocalStandInDgraphCluster(DgraphCluster):
     other lambdas, to replace `mg_alphas()`.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         pass
 
     def alpha_host_port(self) -> pulumi.Output[str]:
