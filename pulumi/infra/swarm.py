@@ -130,7 +130,7 @@ class Swarm(pulumi.ComponentResource):
 
         # InstanceProfile for swarm instances
         aws.iam.InstanceProfile(
-            "{name}-swarm-instance-profile",
+            f"{name}-swarm-instance-profile",
             opts=child_opts,
             role=self.role.name,
             name=f"{DEPLOYMENT_NAME}-swarm-instance-profile",
@@ -147,7 +147,7 @@ class Swarm(pulumi.ComponentResource):
         )
 
         self.swarm_hosted_zone = aws.route53.Zone(
-            "{name}-swarm-zone",
+            f"{name}-swarm-zone",
             name=f"{DEPLOYMENT_NAME}.dgraph.grapl",
             vpcs=[
                 aws.route53.ZoneVpcArgs(
