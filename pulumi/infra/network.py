@@ -3,6 +3,7 @@ import math
 from typing import Optional
 
 import pulumi_aws as aws
+from infra.config import DEPLOYMENT_NAME
 
 import pulumi
 
@@ -42,13 +43,14 @@ class Network(pulumi.ComponentResource):
         # them.
 
         cidr_block = ipaddress.ip_network("10.0.0.0/16")
+        name_for_graplctl = f"{DEPLOYMENT_NAME}-grapl-vpc"
 
         self.vpc = aws.ec2.Vpc(
             f"{name}-vpc",
             cidr_block=str(cidr_block),
             enable_dns_hostnames=True,
             enable_dns_support=True,
-            tags={"Name": name},
+            tags={"name": name_for_graplctl},
             opts=pulumi.ResourceOptions(parent=self),
         )
 
@@ -99,7 +101,11 @@ class Network(pulumi.ComponentResource):
                 availability_zone=az,
                 cidr_block=str(subnet),
                 map_public_ip_on_launch=False,
-                tags={"Name": f"{name}-{az}-private-subnet"},
+                tags={
+                    "Name": f"{name}-{az}-private-subnet",
+                    # Consumed by `grapl_subnet_ids` in graplctl
+                    "graplctl_get_subnet_tag": f"{DEPLOYMENT_NAME}-private-subnet",
+                },
                 opts=pulumi.ResourceOptions(parent=self),
             )
             for az, subnet in zip(
