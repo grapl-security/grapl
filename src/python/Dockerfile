@@ -25,8 +25,6 @@ USER grapl
 ENV USER=grapl
 WORKDIR /home/grapl
 
-COPY ./python/mypy.ini /home/grapl/mypy.ini
-
 RUN python3 -mvenv venv && \
     source venv/bin/activate && \
     pip install --upgrade pip && \
