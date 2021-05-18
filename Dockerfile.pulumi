@@ -1,4 +1,4 @@
-FROM python:3.7-slim-buster as pants-base
+FROM python:3.7-slim-buster as grapl-local-pulumi
 
 SHELL ["/bin/bash", "-c"]
 
@@ -40,6 +40,10 @@ COPY --chown=grapl pyproject.toml pyproject.toml
 COPY --chown=grapl src/python/mypy.ini src/python/mypy.ini
 COPY --chown=grapl pants.toml pants.toml
 COPY --chown=grapl 3rdparty 3rdparty
+# Consumed as SWARM_INIT_DIR
+COPY --chown=grapl src/js/grapl-cdk/swarm src/js/grapl-cdk/swarm
+# Consumed as DGRAPH_CONFIG_DIR
+COPY --chown=grapl src/js/grapl-cdk/dgraph src/js/grapl-cdk/dgraph
 
 # To bootstrap Pants
 # We need to ignore both Pants' cache as well as our Pulumi venv in

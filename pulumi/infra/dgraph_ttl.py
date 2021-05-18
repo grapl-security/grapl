@@ -1,7 +1,8 @@
 from typing import Optional
 
 import pulumi_aws as aws
-from infra.config import GLOBAL_LAMBDA_ZIP_TAG, mg_alphas
+from infra.config import GLOBAL_LAMBDA_ZIP_TAG
+from infra.dgraph_cluster import DgraphCluster
 from infra.lambda_ import Lambda, LambdaExecutionRole, PythonLambdaArgs, code_path_for
 from infra.network import Network
 
@@ -10,7 +11,10 @@ import pulumi
 
 class DGraphTTL(pulumi.ComponentResource):
     def __init__(
-        self, network: Network, opts: Optional[pulumi.ResourceOptions] = None
+        self,
+        network: Network,
+        dgraph_cluster: DgraphCluster,
+        opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
 
         name = "dgraph-ttl"
@@ -30,7 +34,7 @@ class DGraphTTL(pulumi.ComponentResource):
                 code_path=code_path_for(name),
                 env={
                     "GRAPL_LOG_LEVEL": "INFO",
-                    "MG_ALPHAS": mg_alphas(),
+                    "MG_ALPHAS": dgraph_cluster.alpha_host_port,
                     "GRAPL_DGRAPH_TTL_S": str(60 * 60 * 24 * 31),  # 1 month
                     "GRAPL_TTL_DELETE_BATCH_SIZE": "1000",
                 },
@@ -55,5 +59,7 @@ class DGraphTTL(pulumi.ComponentResource):
             rule=self.scheduling_rule.name,
             opts=pulumi.ResourceOptions(parent=self),
         )
+
+        dgraph_cluster.allow_connections_from(self.function.security_group)
 
         self.register_outputs({})

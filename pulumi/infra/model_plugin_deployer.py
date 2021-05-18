@@ -1,7 +1,8 @@
 from typing import Optional
 
 from infra.bucket import Bucket
-from infra.config import GLOBAL_LAMBDA_ZIP_TAG, LOCAL_GRAPL, mg_alphas
+from infra.config import GLOBAL_LAMBDA_ZIP_TAG, LOCAL_GRAPL
+from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
 from infra.lambda_ import Lambda, LambdaExecutionRole, PythonLambdaArgs, code_path_for
 from infra.metric_forwarder import MetricForwarder
@@ -19,6 +20,7 @@ class ModelPluginDeployer(pulumi.ComponentResource):
         secret: JWTSecret,
         ux_bucket: Bucket,
         plugins_bucket: Bucket,
+        dgraph_cluster: DgraphCluster,
         forwarder: Optional[MetricForwarder] = None,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
@@ -37,7 +39,7 @@ class ModelPluginDeployer(pulumi.ComponentResource):
                 code_path=code_path_for(name),
                 env={
                     "GRAPL_LOG_LEVEL": "INFO",
-                    "MG_ALPHAS": mg_alphas(),
+                    "MG_ALPHAS": dgraph_cluster.alpha_host_port,
                     "JWT_SECRET_ID": secret.secret.arn
                     if not LOCAL_GRAPL
                     else "JWT_SECRET_ID",
@@ -71,5 +73,7 @@ class ModelPluginDeployer(pulumi.ComponentResource):
         plugins_bucket.grant_read_write_permissions_to(self.role)
 
         plugins_bucket.grant_delete_permissions_to(self.role)
+
+        dgraph_cluster.allow_connections_from(self.function.security_group)
 
         self.register_outputs({})

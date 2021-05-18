@@ -3,6 +3,7 @@ from infra.api import Api
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.config import DEPLOYMENT_NAME, LOCAL_GRAPL
+from infra.dgraph_cluster import DgraphCluster, LocalStandInDgraphCluster
 from infra.dgraph_ttl import DGraphTTL
 from infra.engagement_creator import EngagementCreator
 from infra.metric_forwarder import MetricForwarder
@@ -10,15 +11,27 @@ from infra.network import Network
 from infra.secret import JWTSecret
 from infra.service_queue import ServiceQueue
 
-if __name__ == "__main__":
 
+def _create_dgraph_cluster(network: Network) -> DgraphCluster:
+    if LOCAL_GRAPL:
+        return LocalStandInDgraphCluster()
+    else:
+        return DgraphCluster(
+            name=f"{DEPLOYMENT_NAME}-dgraph",
+            vpc=network.vpc,
+        )
+
+
+def main() -> None:
     # These tags will be added to all provisioned infrastructure
     # objects.
     register_auto_tags({"grapl deployment": DEPLOYMENT_NAME})
 
     network = Network("grapl-network")
 
-    dgraph_ttl = DGraphTTL(network=network)
+    dgraph_cluster: DgraphCluster = _create_dgraph_cluster(network=network)
+
+    dgraph_ttl = DGraphTTL(network=network, dgraph_cluster=dgraph_cluster)
 
     secret = JWTSecret()
 
@@ -56,7 +69,10 @@ if __name__ == "__main__":
     forwarder = MetricForwarder(network=network)
 
     ec = EngagementCreator(
-        source_emitter=analyzer_matched, network=network, forwarder=forwarder
+        source_emitter=analyzer_matched,
+        network=network,
+        forwarder=forwarder,
+        dgraph_cluster=dgraph_cluster,
     )
 
     ########################################################################
@@ -72,6 +88,7 @@ if __name__ == "__main__":
         ),
     )
     # TODO: How do we get the *contents* of this bucket uploaded?
+    # Max says: "I've introduced a `Bucket.upload_*` function, check it out :)
 
     api = Api(
         network=network,
@@ -79,6 +96,7 @@ if __name__ == "__main__":
         ux_bucket=ux_bucket,
         db=dynamodb_tables,
         plugins_bucket=model_plugins_bucket,
+        dgraph_cluster=dgraph_cluster,
     )
 
     ########################################################################
@@ -89,3 +107,7 @@ if __name__ == "__main__":
         user.local_grapl_user(
             dynamodb_tables.user_auth_table, "grapluser", "graplpassword"
         )
+
+
+if __name__ == "__main__":
+    main()

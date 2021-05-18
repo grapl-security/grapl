@@ -1,4 +1,5 @@
 import os
+import re
 from typing import Any
 
 import pulumi_aws as aws
@@ -8,6 +9,21 @@ import pulumi
 
 # This will be incorporated into various infrastructure object names.
 DEPLOYMENT_NAME = pulumi.get_stack()
+
+
+def _validate_deployment_name() -> None:
+    # ^ and $ capture the whole string: start and end
+    # Must start with an alpha
+    # Must end with an alpha or number
+    # In the middle, - and _ are fine
+    regex = re.compile("^[a-z]([a-z0-9_-]?[a-z0-9]+)*$")
+    if regex.match(DEPLOYMENT_NAME) is None:
+        raise ValueError(
+            f"Deployment name {DEPLOYMENT_NAME} is invalid - should match regex {regex}."
+        )
+
+
+_validate_deployment_name()
 
 # Use this to modify behavior or configuration for provisioning in
 # Local Grapl (as opposed to any other real deployment)
@@ -34,17 +50,7 @@ leave it unset to use the default value of `latest`.
 
 SERVICE_LOG_RETENTION_DAYS: Final[int] = 30
 
-
-def mg_alphas() -> str:
-    """Temporarily return a value to use as an `MG_ALPHAS` environment variable for services that need it until we pull Dgraph provisioning into Pulumi.
-
-    This can be set explicitly on a stack-basis with the MG_ALPHAS
-    config key. Otherwise, a value is constructed from the deployment
-    name, as it was in our CDK code.
-
-    """
-    config = pulumi.Config()
-    return config.get("MG_ALPHAS") or f"{DEPLOYMENT_NAME}.dgraph.grapl:9080"
+DGRAPH_LOG_RETENTION_DAYS: Final[int] = 7
 
 
 # Yes I hate the 'Any' type just as much as you do, but there's

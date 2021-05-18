@@ -2,7 +2,8 @@ from typing import Optional
 
 import pulumi_aws as aws
 from infra.bucket import Bucket
-from infra.config import GLOBAL_LAMBDA_ZIP_TAG, LOCAL_GRAPL, mg_alphas
+from infra.config import GLOBAL_LAMBDA_ZIP_TAG, LOCAL_GRAPL
+from infra.dgraph_cluster import DgraphCluster
 from infra.lambda_ import Lambda, LambdaArgs, LambdaExecutionRole, code_path_for
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
@@ -17,6 +18,7 @@ class GraphQL(pulumi.ComponentResource):
         secret: JWTSecret,
         ux_bucket: Bucket,
         network: Network,
+        dgraph_cluster: DgraphCluster,
         forwarder: Optional[MetricForwarder] = None,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
@@ -36,7 +38,7 @@ class GraphQL(pulumi.ComponentResource):
                 code_path=code_path_for(name),
                 package_type="Zip",
                 env={
-                    "MG_ALPHAS": mg_alphas(),
+                    "MG_ALPHAS": dgraph_cluster.alpha_host_port,
                     "JWT_SECRET_ID": secret.secret.arn
                     if not LOCAL_GRAPL
                     else "JWT_SECRET_ID",  # TODO: Don't think this is
@@ -61,5 +63,6 @@ class GraphQL(pulumi.ComponentResource):
         # TODO: add permissions for DGraph
 
         secret.grant_read_permissions_to(self.role)
+        dgraph_cluster.allow_connections_from(self.function.security_group)
 
         self.register_outputs({})
