@@ -17,7 +17,7 @@ def _create_dgraph_cluster(network: Network) -> DgraphCluster:
         return LocalStandInDgraphCluster()
     else:
         return DgraphCluster(
-            name=f"{DEPLOYMENT_NAME}-dgraph-cluster",
+            name=f"{DEPLOYMENT_NAME}-dgraph",
             vpc=network.vpc,
         )
 

@@ -25,7 +25,7 @@ class DgraphCluster(pulumi.ComponentResource):
         child_opts = pulumi.ResourceOptions(parent=self)
 
         self.swarm = Swarm(
-            name=f"{name}-dgraph-swarm",
+            name=f"{name}-swarm",
             vpc=vpc,
             internal_service_ports=[
                 Ec2Port("tcp", x)

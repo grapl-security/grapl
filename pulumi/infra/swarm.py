@@ -100,7 +100,7 @@ class Swarm(pulumi.ComponentResource):
         ] + [egress for _, egress in internal_rules]
 
         self.security_group = aws.ec2.SecurityGroup(
-            f"{name}-swarm-security-group",
+            f"{name}-sec-group",
             description=f"Docker Swarm security group",
             ingress=ingress_rules,
             egress=egress_rules,
@@ -109,7 +109,7 @@ class Swarm(pulumi.ComponentResource):
         )
 
         self.role = aws.iam.Role(
-            f"{name}-grapl-swarm-role",
+            f"{name}-role",
             description="IAM role for Swarm instances",
             assume_role_policy=json.dumps(
                 {
@@ -130,7 +130,7 @@ class Swarm(pulumi.ComponentResource):
 
         # InstanceProfile for swarm instances
         aws.iam.InstanceProfile(
-            f"{name}-swarm-instance-profile",
+            f"{name}-instance-profile",
             opts=child_opts,
             role=self.role.name,
             name=f"{DEPLOYMENT_NAME}-swarm-instance-profile",
@@ -147,7 +147,7 @@ class Swarm(pulumi.ComponentResource):
         )
 
         self.swarm_hosted_zone = aws.route53.Zone(
-            f"{name}-swarm-zone",
+            f"{name}-hosted-zone",
             name=f"{DEPLOYMENT_NAME}.dgraph.grapl",
             vpcs=[
                 aws.route53.ZoneVpcArgs(
@@ -186,7 +186,7 @@ class Swarm(pulumi.ComponentResource):
 
         # We'll accept connections from Other into SecurityGroup
         aws.ec2.SecurityGroupRule(
-            f"ingress_{descriptor}",
+            f"ingress-{descriptor}",
             type="ingress",
             source_security_group_id=other.id,
             security_group_id=self.security_group.id,
@@ -198,7 +198,7 @@ class Swarm(pulumi.ComponentResource):
 
         # Allow connections out of Other to Self
         aws.ec2.SecurityGroupRule(
-            f"egress_{descriptor}",
+            f"egress-{descriptor}",
             type="egress",
             # Perhaps the source security group is wrong
             # https://grapl-internal.slack.com/archives/C017DKYF55H/p1621030148014300
