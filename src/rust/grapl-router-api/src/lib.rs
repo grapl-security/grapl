@@ -1,4 +1,5 @@
 pub mod model_plugin_deployer_router;
+mod notebook_router;
 
 use actix_web::{Request, Response};
 use crate::model_plugin_deployer_router::deploy::Response;
