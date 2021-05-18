@@ -38,6 +38,9 @@ class Ec2Port:
         )
         return (ingress, egress)
 
+    def __str__(self) -> str:
+        return f"Ec2Port({self.protocol}:{self.port})"
+
 
 class Swarm(pulumi.ComponentResource):
     def __init__(
@@ -45,12 +48,17 @@ class Swarm(pulumi.ComponentResource):
         name: str,
         vpc: aws.ec2.Vpc,
         internal_service_ports: Sequence[Ec2Port],
-        log_group: aws.cloudwatch.LogGroup,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         super().__init__("grapl:SwarmResource", name=name, props=None, opts=opts)
 
         child_opts = pulumi.ResourceOptions(parent=self)
+
+        self.log_group = aws.cloudwatch.LogGroup(
+            f"{name}-logs",
+            retention_in_days=DGRAPH_LOG_RETENTION_DAYS,
+            opts=child_opts,
+        )
 
         # allow hosts in the swarm security group to communicate
         # internally on the following ports:
@@ -92,17 +100,16 @@ class Swarm(pulumi.ComponentResource):
         ] + [egress for _, egress in internal_rules]
 
         self.security_group = aws.ec2.SecurityGroup(
-            "SwarmSecurityGroup",
-            opts=child_opts,
+            f"{name}-swarm-security-group",
             description=f"Docker Swarm security group",
             ingress=ingress_rules,
             egress=egress_rules,
             vpc_id=vpc.id,
-            name=f"{DEPLOYMENT_NAME}-grapl-swarm",
+            opts=child_opts,
         )
 
         self.role = aws.iam.Role(
-            f"{DEPLOYMENT_NAME}-grapl-swarm-role",
+            f"{name}-grapl-swarm-role",
             description="IAM role for Swarm instances",
             assume_role_policy=json.dumps(
                 {
@@ -121,6 +128,14 @@ class Swarm(pulumi.ComponentResource):
             opts=child_opts,
         )
 
+        # InstanceProfile for swarm instances
+        aws.iam.InstanceProfile(
+            "{name}-swarm-instance-profile",
+            opts=child_opts,
+            role=self.role.name,
+            name=f"{DEPLOYMENT_NAME}-swarm-instance-profile",
+        )
+
         # CloudWatchAgentServerPolicy allows the Swarm instances to
         # run the CloudWatch Agent.
         policies.attach_policy(
@@ -128,11 +143,11 @@ class Swarm(pulumi.ComponentResource):
         )
         policies.attach_policy(role=self.role, policy=policies.SSM_POLICY)
         policies._attach_policy_to_ship_logs_to_cloudwatch(
-            role=self.role, log_group=log_group, opts=child_opts
+            role=self.role, log_group=self.log_group, opts=child_opts
         )
 
         self.swarm_hosted_zone = aws.route53.Zone(
-            "SwarmZone",
+            "{name}-swarm-zone",
             name=f"{DEPLOYMENT_NAME}.dgraph.grapl",
             vpcs=[
                 aws.route53.ZoneVpcArgs(
@@ -149,27 +164,22 @@ class Swarm(pulumi.ComponentResource):
         self.swarm_config_bucket.grant_read_permissions_to(self.role)
         self.swarm_config_bucket.upload_to_bucket(SWARM_INIT_DIR)
 
-        # InstanceProfile for swarm instances
-        aws.iam.InstanceProfile(
-            "SwarmInstanceProfile",
-            opts=child_opts,
-            role=self.role.name,
-            name=f"{DEPLOYMENT_NAME}-swarm-instance-profile",
-        )
+        self.register_outputs({})
 
+    @property
     def cluster_host_port(self) -> pulumi.Output[str]:
         return Output.concat(self.swarm_hosted_zone.name, ":9080")
 
     def allow_connections_from(
-        self, other: aws.ec2.SecurityGroup, port_range: Ec2Port, opts: ResourceOptions
+        self,
+        other: aws.ec2.SecurityGroup,
+        port_range: Ec2Port,
     ) -> None:
-        descriptor = "".join(
+        descriptor = "-".join(
             [
-                "from_",
+                "from",
                 other._name,
-                "_to_",
-                self.security_group._name,
-                "_for_",
+                "for",
                 str(port_range),
             ]
         )
@@ -177,24 +187,26 @@ class Swarm(pulumi.ComponentResource):
         # We'll accept connections from Other into SecurityGroup
         aws.ec2.SecurityGroupRule(
             f"ingress_{descriptor}",
-            opts=opts,
             type="ingress",
             source_security_group_id=other.id,
             security_group_id=self.security_group.id,
             from_port=port_range.port,
             to_port=port_range.port,
             protocol=port_range.protocol,
+            opts=pulumi.ResourceOptions(parent=self.security_group),
         )
 
         # Allow connections out of Other to Self
         aws.ec2.SecurityGroupRule(
             f"egress_{descriptor}",
-            opts=opts,
             type="egress",
-            # Perhaps this is wrong
+            # Perhaps the source security group is wrong
+            # https://grapl-internal.slack.com/archives/C017DKYF55H/p1621030148014300
+            # Comparing with CDK output, seems semi right
             source_security_group_id=self.security_group.id,
             security_group_id=other.id,
             from_port=port_range.port,
             to_port=port_range.port,
             protocol=port_range.protocol,
+            opts=pulumi.ResourceOptions(parent=self.security_group),
         )

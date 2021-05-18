@@ -24,16 +24,9 @@ class DgraphCluster(pulumi.ComponentResource):
         super().__init__("grapl:DgraphSwarmCluster", name=name, props=None, opts=opts)
         child_opts = pulumi.ResourceOptions(parent=self)
 
-        self.log_group = aws.cloudwatch.LogGroup(
-            f"{name}-dgraph-logs",
-            retention_in_days=DGRAPH_LOG_RETENTION_DAYS,
-            opts=child_opts,
-        )
-
         self.swarm = Swarm(
             name=f"{name}-dgraph-swarm",
             vpc=vpc,
-            log_group=self.log_group,
             internal_service_ports=[
                 Ec2Port("tcp", x)
                 for x in (
@@ -62,10 +55,12 @@ class DgraphCluster(pulumi.ComponentResource):
         self.dgraph_config_bucket.grant_read_permissions_to(self.swarm.role)
         self.dgraph_config_bucket.upload_to_bucket(DGRAPH_CONFIG_DIR)
 
+        self.register_outputs({})
+
     @property
     def alpha_host_port(self) -> pulumi.Output[str]:
         # endpoint might be a better name
-        return self.swarm.cluster_host_port()
+        return self.swarm.cluster_host_port
 
     def allow_connections_from(self, other: aws.ec2.SecurityGroup) -> None:
         """
