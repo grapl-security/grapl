@@ -31,13 +31,12 @@ class Bucket(aws.s3.Bucket):
 
         """
         self.logical_bucket_name = logical_bucket_name
-        self.physical_bucket_name = bucket_physical_name(logical_bucket_name)
 
         sse_config = sse_configuration() if sse else None
 
         super().__init__(
             logical_bucket_name,
-            bucket=self.physical_bucket_name,
+            bucket=bucket_physical_name(logical_bucket_name),
             force_destroy=True,
             website=website_args,
             server_side_encryption_configuration=sse_config,

@@ -34,7 +34,7 @@ class DGraphTTL(pulumi.ComponentResource):
                 code_path=code_path_for(name),
                 env={
                     "GRAPL_LOG_LEVEL": "INFO",
-                    "MG_ALPHAS": dgraph_cluster.alpha_host_port(),
+                    "MG_ALPHAS": dgraph_cluster.alpha_host_port,
                     "GRAPL_DGRAPH_TTL_S": str(60 * 60 * 24 * 31),  # 1 month
                     "GRAPL_TTL_DELETE_BATCH_SIZE": "1000",
                 },

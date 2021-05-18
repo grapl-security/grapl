@@ -36,7 +36,7 @@ class EngagementCreator(Service):
             network=network,
             env={
                 "GRAPL_LOG_LEVEL": "INFO",
-                "MG_ALPHAS": dgraph_cluster.alpha_host_port(),
+                "MG_ALPHAS": dgraph_cluster.alpha_host_port,
             },
         )
 

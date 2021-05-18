@@ -43,8 +43,6 @@ class EngagementNotebook(pulumi.ComponentResource):
         )
         dgraph_cluster.allow_connections_from(self.security_group)
 
-        # TODO: Allow connections to DGraph
-
         # TODO: Consider creating a base role class... pass in name,
         # description, principal, optional managed arns, and opts
         self.role = aws.iam.Role(

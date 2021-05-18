@@ -1,14 +1,10 @@
-import json
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional, Sequence, Tuple
+from typing import Any, Optional
 
 import pulumi_aws as aws
 from infra.bucket import Bucket
 from infra.config import DEPLOYMENT_NAME, DGRAPH_LOG_RETENTION_DAYS
 from infra.swarm import Ec2Port, Swarm
-from pulumi_aws.ec2 import security_group
-from pulumi_aws.ec2.vpc import Vpc
 
 import pulumi
 from pulumi.output import Output
@@ -22,27 +18,27 @@ class DgraphCluster(pulumi.ComponentResource):
     def __init__(
         self,
         name: str,
-        vpc: Vpc,
+        vpc: aws.ec2.Vpc,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         super().__init__("grapl:DgraphSwarmCluster", name=name, props=None, opts=opts)
         child_opts = pulumi.ResourceOptions(parent=self)
 
         self.log_group = aws.cloudwatch.LogGroup(
-            f"{DEPLOYMENT_NAME}-grapl-dgraph",
+            f"{name}-dgraph-logs",
             retention_in_days=DGRAPH_LOG_RETENTION_DAYS,
             opts=child_opts,
         )
 
         self.swarm = Swarm(
-            name="swarm",
+            name=f"{name}-dgraph-swarm",
             vpc=vpc,
             log_group=self.log_group,
             internal_service_ports=[
                 Ec2Port("tcp", x)
                 for x in (
-                    # Not 100% sure where these come from, I suspect they're
-                    # DGraph alpha/zero port numbers.
+                    # DGraph alpha/zero port numbers
+                    # https://dgraph.io/docs/deploy/dgraph-zero/
                     5080,
                     6080,
                     7081,
@@ -66,7 +62,9 @@ class DgraphCluster(pulumi.ComponentResource):
         self.dgraph_config_bucket.grant_read_permissions_to(self.swarm.role)
         self.dgraph_config_bucket.upload_to_bucket(DGRAPH_CONFIG_DIR)
 
+    @property
     def alpha_host_port(self) -> pulumi.Output[str]:
+        # endpoint might be a better name
         return self.swarm.cluster_host_port()
 
     def allow_connections_from(self, other: aws.ec2.SecurityGroup) -> None:
@@ -90,10 +88,11 @@ class LocalStandInDgraphCluster(DgraphCluster):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         pass
 
+    @property
     def alpha_host_port(self) -> pulumi.Output[str]:
         config = pulumi.Config()
-        as_str = config.get("MG_ALPHAS") or f"{DEPLOYMENT_NAME}.dgraph.grapl:9080"
-        return Output.concat(as_str)
+        endpoint = config.get("MG_ALPHAS") or f"{DEPLOYMENT_NAME}.dgraph.grapl:9080"
+        return Output.from_input(endpoint)
 
     def allow_connections_from(self, other: aws.ec2.SecurityGroup) -> None:
         pass

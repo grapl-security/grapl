@@ -1,15 +1,12 @@
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional, Sequence, Tuple
+from typing import Optional, Sequence, Tuple
 
 import pulumi_aws as aws
 from infra import policies
 from infra.bucket import Bucket
 from infra.config import DEPLOYMENT_NAME, DGRAPH_LOG_RETENTION_DAYS
-from infra.connectable import SwarmConnectable
-from pulumi_aws.ec2 import security_group
-from pulumi_aws.ec2.vpc import Vpc
 
 import pulumi
 from pulumi.output import Output
@@ -42,19 +39,11 @@ class Ec2Port:
         return (ingress, egress)
 
 
-def get_swarm_log_group() -> aws.cloudwatch.LogGroup:
-    # TODO temp
-    return aws.cloudwatch.LogGroup(
-        f"{DEPLOYMENT_NAME}-grapl-dgraph",
-        retention_in_days=DGRAPH_LOG_RETENTION_DAYS,
-    )
-
-
 class Swarm(pulumi.ComponentResource):
     def __init__(
         self,
         name: str,
-        vpc: Vpc,
+        vpc: aws.ec2.Vpc,
         internal_service_ports: Sequence[Ec2Port],
         log_group: aws.cloudwatch.LogGroup,
         opts: Optional[pulumi.ResourceOptions] = None,
@@ -134,8 +123,10 @@ class Swarm(pulumi.ComponentResource):
 
         # CloudWatchAgentServerPolicy allows the Swarm instances to
         # run the CloudWatch Agent.
-        policies._attach_CloudWatchAgentServerPolicy(role=self.role, opts=child_opts)
-        policies._attach_AmazonSSMManagedInstanceCore(role=self.role, opts=child_opts)
+        policies.attach_policy(
+            role=self.role, policy=policies.CLOUDWATCH_AGENT_SERVER_POLICY
+        )
+        policies.attach_policy(role=self.role, policy=policies.SSM_POLICY)
         policies._attach_policy_to_ship_logs_to_cloudwatch(
             role=self.role, log_group=log_group, opts=child_opts
         )

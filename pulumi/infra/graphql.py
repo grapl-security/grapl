@@ -38,7 +38,7 @@ class GraphQL(pulumi.ComponentResource):
                 code_path=code_path_for(name),
                 package_type="Zip",
                 env={
-                    "MG_ALPHAS": dgraph_cluster.alpha_host_port(),
+                    "MG_ALPHAS": dgraph_cluster.alpha_host_port,
                     "JWT_SECRET_ID": secret.secret.arn
                     if not LOCAL_GRAPL
                     else "JWT_SECRET_ID",  # TODO: Don't think this is

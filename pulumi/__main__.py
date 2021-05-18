@@ -12,12 +12,12 @@ from infra.secret import JWTSecret
 from infra.service_queue import ServiceQueue
 
 
-def _get_dgraph_cluster(network: Network) -> DgraphCluster:
+def _create_dgraph_cluster(network: Network) -> DgraphCluster:
     if LOCAL_GRAPL:
         return LocalStandInDgraphCluster()
     else:
         return DgraphCluster(
-            name="swarm",
+            name=f"{DEPLOYMENT_NAME}-dgraph-cluster",
             vpc=network.vpc,
         )
 
@@ -29,7 +29,7 @@ def main() -> None:
 
     network = Network("grapl-network")
 
-    dgraph_cluster: DgraphCluster = _get_dgraph_cluster(network=network)
+    dgraph_cluster: DgraphCluster = _create_dgraph_cluster(network=network)
 
     dgraph_ttl = DGraphTTL(network=network, dgraph_cluster=dgraph_cluster)
 

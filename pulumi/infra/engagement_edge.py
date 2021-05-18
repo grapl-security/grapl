@@ -41,7 +41,7 @@ class EngagementEdge(pulumi.ComponentResource):
                 env={
                     "GRAPL_LOG_LEVEL": "DEBUG",
                     # TODO: Not clear that this is even used.
-                    "MG_ALPHAS": dgraph_cluster.alpha_host_port(),
+                    "MG_ALPHAS": dgraph_cluster.alpha_host_port,
                     "JWT_SECRET_ID": secret.secret.arn,
                     "USER_AUTH_TABLE": db.user_auth_table.name,
                     # TODO: Not clear that this is even used.

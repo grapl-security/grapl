@@ -39,7 +39,7 @@ class ModelPluginDeployer(pulumi.ComponentResource):
                 code_path=code_path_for(name),
                 env={
                     "GRAPL_LOG_LEVEL": "INFO",
-                    "MG_ALPHAS": dgraph_cluster.alpha_host_port(),
+                    "MG_ALPHAS": dgraph_cluster.alpha_host_port,
                     "JWT_SECRET_ID": secret.secret.arn
                     if not LOCAL_GRAPL
                     else "JWT_SECRET_ID",
