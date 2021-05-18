@@ -5,7 +5,7 @@ from itertools import cycle
 from time import sleep
 from typing import Any, Callable, Dict, Mapping, Optional, Sequence
 
-import botocore
+import botocore  # type: ignore
 from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.nodes.base import BaseQuery, BaseView
 from grapl_common.retry import retry
