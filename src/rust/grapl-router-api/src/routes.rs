@@ -22,5 +22,4 @@ pub fn api() -> impl HttpServiceFactory + 'static {
     actix_web::web::scope("/api")
         .service(grapl_model_plugin_deployer)
         // .service(grapl_model_plugin_whatever)
-
 }
