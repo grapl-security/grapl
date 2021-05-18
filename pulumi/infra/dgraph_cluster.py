@@ -66,9 +66,7 @@ class DgraphCluster(pulumi.ComponentResource):
         """
         Need to pass in a lambda? Access its `.function.security_group`
         """
-        self.swarm.allow_connections_from(
-            other, Ec2Port("tcp", 9080), opts=ResourceOptions(parent=self)
-        )
+        self.swarm.allow_connections_from(other, Ec2Port("tcp", 9080))
 
 
 class LocalStandInDgraphCluster(DgraphCluster):

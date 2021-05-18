@@ -99,7 +99,7 @@ def attach_policy(
     """
 
     return aws.iam.RolePolicyAttachment(
-        f"attach-{SSM_POLICY._name}-to-{role._name}",
+        f"attach-{policy._name}-to-{role._name}",
         role=role.name,
         policy_arn=policy.arn,
         opts=pulumi.ResourceOptions(parent=policy),
