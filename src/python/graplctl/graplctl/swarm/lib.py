@@ -40,7 +40,8 @@ REGION_TO_AMI_ID = {
 
 @contextmanager
 def benchmark() -> Iterator[List[timedelta]]:
-    will_contain_result = []  # basically a Box<timedelta>
+    # basically a Box<timedelta>. Should make a class with an Optional.
+    will_contain_result = []  
     start = datetime.utcnow()
     yield will_contain_result
     end = datetime.utcnow()
@@ -161,7 +162,7 @@ def create_instances(
             while instance.state["Name"].lower() != "running":
                 time.sleep(2)
                 instance.load()
-        time_taken = "{b[0].total_seconds} seconds"
+        time_taken = f"{b[0].total_seconds} seconds)"
         LOGGER.info(f'instance {instance.instance_id} is "running" ({time_taken}')
 
     for instance in instances:
@@ -172,13 +173,21 @@ def create_instances(
             instance_information = ssm.describe_instance_information(
                 Filters=[{"Key": "InstanceIds", "Values": [instance.instance_id]}]
             )["InstanceInformationList"]
-            if (
-                len(instance_information) < 1
-                or instance_information[0]["PingStatus"] != "Online"
-            ):
+
+            if len(instance_information) < 1:
+                # Takes a second to populate that it's doing something
                 time.sleep(2)
             elif instance_information[0]["PingStatus"] == "Online":
                 break
+            elif instance_information[0]["PingStatus"] == "ConnectionLost":
+                raise Exception(
+                    "Connection lost to {instance.instance_id}, meaning it failed health check."
+                    " You may need to destroy and retry."
+                )
+            else:
+                #
+                time.sleep(2)
+
         LOGGER.info(f'instance {instance.instance_id} is "Online"')
 
     return [Ec2Instance.from_boto_instance(instance) for instance in instances]
