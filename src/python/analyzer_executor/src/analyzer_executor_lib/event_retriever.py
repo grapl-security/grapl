@@ -4,8 +4,8 @@ import time
 import traceback
 from typing import TYPE_CHECKING, Iterator
 
-import boto3
-import botocore.exceptions
+import boto3  # type: ignore
+import botocore.exceptions  # type: ignore
 from analyzer_executor_lib.sqs_types import SQSMessage
 from grapl_common.env_helpers import SQSClientFactory
 from grapl_common.grapl_logger import get_module_grapl_logger
