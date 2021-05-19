@@ -1,16 +1,21 @@
 use std::convert::TryFrom;
 
-use failure::{
-    bail,
-    Error,
-};
+use failure::Error;
 use hmap::hmap;
-use log::{
-    info,
-    warn,
+use log::info;
+use rusoto_dynamodb::{
+    AttributeValue,
+    AttributeValueUpdate,
+    Delete,
+    Put,
+    QueryInput,
+    TransactWriteItem,
+    TransactWriteItemsInput,
+    UpdateItemInput,
+    WriteRequest,
+    PutRequest,
+    BatchWriteItemInput
 };
-use rusoto_core::RusotoError;
-use rusoto_dynamodb::{AttributeValue, AttributeValueUpdate, Delete, DeleteItemInput, Put, PutItemInput, QueryInput, TransactWriteItem, TransactWriteItemsInput, UpdateItemInput, WriteRequest, PutRequest, BatchWriteItemInput};
 use uuid::Uuid;
 
 use crate::sessions::*;
@@ -37,86 +42,6 @@ where
         Self {
             dynamo,
             table_name: table_name.into(),
-        }
-    }
-
-    pub async fn find_first_session_after(
-        &self,
-        unid: &UnidSession,
-    ) -> Result<Option<Session>, Error> {
-        info!("Finding first session after : {}", &self.table_name);
-        let query = QueryInput {
-            consistent_read: Some(true),
-            limit: Some(1),
-            table_name: self.table_name.clone(),
-            key_condition_expression: Some(
-                "pseudo_key = :pseudo_key AND create_time >= :create_time".into(),
-            ),
-            expression_attribute_values: Some(hmap! {
-                ":pseudo_key".to_owned() => AttributeValue {
-                    s: unid.pseudo_key.clone().into(),
-                    ..Default::default()
-                },
-                ":create_time".to_owned() => AttributeValue {
-                    n: unid.timestamp.to_string().into(),
-                    ..Default::default()
-                }
-            }),
-            ..Default::default()
-        };
-
-        let res = self.dynamo.query(query).await;
-        if let Err(RusotoError::Unknown(ref e)) = res {
-            bail!("Query failed with error: {:?}", e);
-        };
-
-        if let Some(items) = res?.items {
-            match &items[..] {
-                [] => Ok(None),
-                [item] => Session::try_from(item.clone()).map(Option::from),
-                _ => bail!("Unexpected number of items returned"),
-            }
-        } else {
-            Ok(None)
-        }
-    }
-
-    pub async fn find_last_session_before(
-        &self,
-        unid: &UnidSession,
-    ) -> Result<Option<Session>, Error> {
-        info!("Finding last session before");
-        let query = QueryInput {
-            consistent_read: Some(true),
-            limit: Some(1),
-            scan_index_forward: Some(false),
-            table_name: self.table_name.clone(),
-            key_condition_expression: Some(
-                "pseudo_key = :pseudo_key AND create_time <= :create_time".into(),
-            ),
-            expression_attribute_values: Some(hmap! {
-                ":pseudo_key".to_owned() => AttributeValue {
-                    s: unid.pseudo_key.clone().into(),
-                    ..Default::default()
-                },
-                ":create_time".to_owned() => AttributeValue {
-                    n: unid.timestamp.to_string().into(),
-                    ..Default::default()
-                }
-            }),
-            ..Default::default()
-        };
-
-        let res = self.dynamo.query(query).await?;
-
-        if let Some(items) = res.items {
-            match &items[..] {
-                [] => Ok(None),
-                [item] => Session::try_from(item.clone()).map(Option::from),
-                _ => bail!("Unexpected number of items returned"),
-            }
-        } else {
-            Ok(None)
         }
     }
 
@@ -283,184 +208,6 @@ where
         Ok(())
     }
 
-    pub async fn create_session(&self, session: &Session) -> Result<(), Error> {
-        info!("create session");
-        let put_req = PutItemInput {
-            item: serde_dynamodb::to_hashmap(session).unwrap(),
-            table_name: self.table_name.clone(),
-            ..Default::default()
-        };
-
-        self.dynamo.put_item(put_req).await?;
-
-        Ok(())
-    }
-
-    pub async fn delete_session(&self, session: &Session) -> Result<(), Error> {
-        info!("delete session");
-        let del_req = DeleteItemInput {
-            key: hmap! {
-                "pseudo_key".to_owned() => AttributeValue {
-                    s: session.pseudo_key.clone().into(),
-                    ..Default::default()
-                },
-                "create_time".to_owned() => AttributeValue {
-                    n: session.create_time.to_string().into(),
-                    ..Default::default()
-                }
-            },
-            table_name: self.table_name.clone(),
-            ..Default::default()
-        };
-
-        self.dynamo.delete_item(del_req).await?;
-        Ok(())
-    }
-
-    pub async fn handle_creation_event(&self, unid: UnidSession) -> Result<String, Error> {
-        info!(
-            "Handling unid session creation, pseudo_key: {:?} seen at: {}.",
-            unid.pseudo_key, unid.timestamp
-        );
-
-        // Look for first session where session.create_time >= unid.create_time
-        let session = self.find_first_session_after(&unid).await?;
-
-        if let Some(session) = session {
-            // If session.is_create_canon is false,
-            // This means that there is a 'Guessed' session in the future,
-            // and we should consider this the canonical ID for that session
-            if !session.is_create_canon && session.create_time != unid.timestamp {
-                info!("Extending session create_time");
-                self.update_session_create_time(&session, unid.timestamp, true)
-                    .await?;
-                return Ok(session.session_id);
-            }
-
-            tracing::debug!(
-                "UNID: {} - {} - {}",
-                unid.pseudo_key,
-                unid.timestamp,
-                unid.pseudo_key
-            );
-
-            // If the timestamps are the same, we've found the session_id
-            // No need to update the database here - it's already canonical,
-            // with an accurate timestamp
-            if skewed_cmp(unid.timestamp, session.create_time) {
-                info!("Found existing session with exact create time");
-                return Ok(session.session_id);
-            }
-
-            // We should never be looking at a case where the query returned
-            // a create_time less than the unid.timestamp
-            if unid.timestamp > session.create_time {
-                bail!(
-                    "unid.timestamp > session.create_time {} {}",
-                    unid.timestamp,
-                    session.create_time
-                );
-            }
-        }
-
-        // Look for last session where session.create_time <= unid.create_time
-        let session = self.find_last_session_before(&unid).await?;
-
-        if let Some(session) = session {
-            // If session.end_time >= unid.create_time (indicates overlapping sessions, error)
-            // This will correct that session so that it does not overlap anymore.
-            if session.end_time >= unid.timestamp {
-                warn!(
-                    "Found session created before new session. Fixing overlapping end_time.
-                    {:?}
-                    {:?}
-                ",
-                    session, unid
-                );
-                // if session.end_time is NOT canonical, we can update it
-                //                self.update_session_end_time(&session, unid.timestamp - 100, session.is_end_canon)?;
-            }
-        }
-
-        // Create new session, return new session id
-        let session = Session {
-            session_id: Uuid::new_v4().to_string(),
-            create_time: unid.timestamp,
-            end_time: unid.timestamp + 101,
-            is_create_canon: true,
-            is_end_canon: false,
-            version: 0,
-            pseudo_key: unid.pseudo_key,
-        };
-
-        info!("Creating session");
-        self.create_session(&session).await?;
-        Ok(session.session_id)
-    }
-
-    pub async fn handle_last_seen(
-        &self,
-        unid: UnidSession,
-        should_default: bool,
-    ) -> Result<String, Error> {
-        info!(
-            "Handling unid session, pseudo_key: {:?} seen at: {}.",
-            unid.pseudo_key, unid.timestamp
-        );
-
-        // Look for session where session.create_time <= unid.create_time <= session.end_time
-        // Look for last session where session.create_time <= unid.create_time
-        let session = self.find_last_session_before(&unid).await?;
-        if let Some(mut session) = session {
-            if unid.timestamp < session.end_time || skewed_cmp(unid.timestamp, session.end_time) {
-                info!("Identified session because it fell within a timeline.");
-                return Ok(session.session_id);
-            }
-
-            if !session.is_end_canon {
-                session.end_time = unid.timestamp;
-                info!("Updating session end_time.");
-                //                self.update_session_end_time(&session, unid.timestamp, false)?;
-
-                return Ok(session.session_id);
-            }
-        }
-
-        let session = self.find_first_session_after(&unid).await?;
-        if let Some(session) = session {
-            if !session.is_create_canon {
-                info!("Found a later, non canonical session. Extending create_time..");
-
-                self.update_session_create_time(&session, unid.timestamp, false)
-                    .await?;
-                return Ok(session.session_id);
-            }
-        }
-
-        if should_default {
-            info!("Defaulting and creating new session.");
-            let session_id = Uuid::new_v4().to_string();
-            let session = Session {
-                session_id: session_id.clone(),
-                create_time: unid.timestamp,
-                end_time: unid.timestamp + 101,
-                is_create_canon: false,
-                is_end_canon: false,
-                version: 0,
-                pseudo_key: unid.pseudo_key,
-            };
-            self.create_session(&session).await?;
-
-            Ok(session_id)
-        } else {
-            warn!("Could not attribute session. Not defaulting.");
-            bail!(
-                "Could not attribute session. should_default {}. Not defaulting.",
-                should_default
-            )
-        }
-    }
-
     /// Given a collection of sessions, attempt to create all them.
     async fn create_sessions(
         &self,
@@ -604,50 +351,111 @@ where
         &self,
         first_after_session_pairs: Vec<(UnidSessionNode, Session)>
     ) -> Result<Vec<AttributedNode>, Error> {
-        unimplemented!()
+        let mut results = Vec::new();
+
+        for (UnidSessionNode(mut node_desc, unid_session), session) in first_after_session_pairs {
+            let attributed_node = match skewed_cmp(unid_session.timestamp, session.create_time) {
+                // If session.is_create_canon is false,
+                // This means that there is a 'Guessed' session in the future,
+                // and we should consider this the canonical ID for that session
+                _ if !session.is_create_canon && session.create_time != unid_session.timestamp => {
+                    info!("Extending session create_time");
+
+                    self.update_session_create_time(&session, unid_session.timestamp, true).await?;
+
+                    let old_key = node_desc.clone_node_key();
+                    node_desc.node_key = session.session_id.clone();
+
+                    AttributedNode::new(node_desc, old_key)
+                },
+                true => {
+                    info!("Found existing session with exact create time");
+
+                    let old_key = node_desc.clone_node_key();
+                    node_desc.node_key = session.session_id.clone();
+
+                    AttributedNode::new(node_desc, old_key)
+                },
+                false => todo!("Handle this error case (unid.timestamp > session.create_time)")
+            };
+
+            results.push(attributed_node);
+        }
+
+        Ok(results)
     }
 
     async fn process_last_before_session_nodes(
         &self,
         last_before_session_pairs: Vec<(UnidSessionNode, Session)>
     ) -> Result<Vec<AttributedNode>, Error> {
-        unimplemented!()
+        let mut results = Vec::new();
+
+        for (UnidSessionNode(mut node_desc, unid_session), session) in last_before_session_pairs {
+            let attributed_node = match !session.is_end_canon {
+                _ if unid_session.timestamp < session.end_time || skewed_cmp(unid_session.timestamp, session.end_time) => {
+                    info!("Identified session because it fell within a timeline.");
+
+                    let old_key = node_desc.clone_node_key();
+                    node_desc.node_key = session.session_id.clone();
+
+                    AttributedNode::new(node_desc, old_key)
+                },
+                true => {
+                    info!("Updating session end_time.");
+                    self.update_session_end_time(&session, unid_session.timestamp, false).await?;
+
+                    let old_key = node_desc.clone_node_key();
+                    node_desc.node_key = session.session_id.clone();
+
+                    AttributedNode::new(node_desc, old_key)
+                },
+                _ => continue
+            };
+
+            results.push(attributed_node);
+        }
+
+        Ok(results)
     }
 
     async fn handle_creation_unid_sessions(
         &self,
         creation_unids: Vec<UnidSessionNode>
     ) -> Result<Vec<AttributedNode>, Error> {
-        let first_after_session_results = self.find_first_sessions_after(creation_unids).await?;
-
         let (
-            first_after_session_pairs,
+            first_after_attributed_nodes,
             no_session_nodes
-        ) = self.split_session_pairs(first_after_session_results);
+        ) = {
+            let first_after_session_results = self.find_first_sessions_after(creation_unids).await?;
 
-        let first_after_attributed_nodes = self.process_first_after_session_nodes(first_after_session_pairs).await?;
+            let (
+                first_after_session_pairs,
+                no_session_nodes
+            ) = self.split_session_pairs(first_after_session_results);
+
+            let first_after_attributed_nodes = self.process_first_after_session_nodes(first_after_session_pairs).await?;
+
+            (first_after_attributed_nodes, no_session_nodes)
+        };
 
         let (
             last_before_attributed_nodes,
             no_session_nodes
-        ) = match no_session_nodes.is_empty() {
-            true => {
-                let last_before_session_results = self.find_last_sessions_before(no_session_nodes).await?;
+        ) = if !no_session_nodes.is_empty() {
+            let last_before_session_results = self.find_last_sessions_before(no_session_nodes).await?;
 
-                let (
-                    last_before_session_pairs,
-                    no_session_nodes
-                ) = self.split_session_pairs(last_before_session_results);
+            let (
+                last_before_session_pairs,
+                no_session_nodes
+            ) = self.split_session_pairs(last_before_session_results);
 
-                let last_before_attributed_nodes = self.process_last_before_session_nodes(last_before_session_pairs).await?;
+            let last_before_attributed_nodes = self.process_last_before_session_nodes(last_before_session_pairs).await?;
 
-                (last_before_attributed_nodes, no_session_nodes)
-            },
-            false => (vec![], vec![])
+            (last_before_attributed_nodes, no_session_nodes)
+        } else {
+            (vec![], vec![])
         };
-
-
-        // TODO: process last_after sessions
 
         let (
             newly_attributed_nodes,
@@ -658,7 +466,7 @@ where
                 let session = Session {
                     session_id: Uuid::new_v4().to_string(),
                     create_time: unid_session.timestamp,
-                    end_time: unid_session.timestamp + 101,
+                    end_time: unid_session.timestamp + 101, // todo: constant for this instead of magic number
                     is_create_canon: true,
                     is_end_canon: false,
                     version: 0,
@@ -688,9 +496,42 @@ where
     async fn handle_last_seen_unid_sessions(
         &self,
         last_seen_unids: Vec<UnidSessionNode>,
-        should_default: bool
+        _should_default: bool
     ) -> Result<Vec<AttributedNode>, Error> {
-        unimplemented!()
+        let last_before_session_results = self.find_last_sessions_before(last_seen_unids).await?;
+
+        let (
+            last_before_session_pairs,
+            no_session_nodes
+        ) = self.split_session_pairs(last_before_session_results);
+
+        let last_before_attributed_nodes = self.process_last_before_session_nodes(last_before_session_pairs).await?;
+
+        let (
+            first_after_attributed_nodes,
+            _no_session_nodes
+        ) = if !no_session_nodes.is_empty() {
+            let first_after_session_results = self.find_first_sessions_after(no_session_nodes).await?;
+
+            let (
+                first_after_session_pairs,
+                no_session_nodes
+            ) = self.split_session_pairs(first_after_session_results);
+
+            let first_after_attributed_nodes = self.process_first_after_session_nodes(first_after_session_pairs).await?;
+
+            (first_after_attributed_nodes, no_session_nodes)
+        } else {
+            (vec![], vec![])
+        };
+
+        // todo: do something with `should_default`
+
+        let results: Vec<_> = first_after_attributed_nodes.into_iter()
+            .chain(last_before_attributed_nodes)
+            .collect();
+
+        Ok(results)
     }
 
     pub async fn identify_unid_session_nodes(
@@ -725,7 +566,7 @@ pub fn skewed_cmp(ts_1: u64, ts_2: u64) -> bool {
     ts_1 - 10 < ts_2 && ts_1 + 10 > ts_2
 }
 
-pub(crate) struct UnidSessionNode(NodeDescription, UnidSession);
+pub struct UnidSessionNode(NodeDescription, UnidSession);
 
 impl UnidSessionNode {
     pub(crate) fn new(node: NodeDescription, unid_session: UnidSession) -> Self {

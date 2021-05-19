@@ -240,9 +240,9 @@ where
     }
 }
 
-pub(crate) struct AttributedNode {
-    pub(crate) attributed_node_description: IdentifiedNode,
-    pub(crate) previous_node_key: String
+pub struct AttributedNode {
+    pub attributed_node_description: IdentifiedNode,
+    pub previous_node_key: String
 }
 
 impl AttributedNode {
