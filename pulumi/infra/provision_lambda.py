@@ -34,9 +34,9 @@ class Provisioner(pulumi.ComponentResource):
                 description=GLOBAL_LAMBDA_ZIP_TAG,
                 code_path=code_path_for(name),
                 env={
+                    # TODO: this is mostly copy pasted, figure out what we actually need
                     "GRAPL_LOG_LEVEL": "DEBUG",
                     "DEPLOYMENT_NAME": pulumi.get_stack(),
-                    # TODO: Not clear that this is even used.
                     "MG_ALPHAS": dgraph_cluster.alpha_host_port(),
                     "GRAPL_TEST_USER_NAME": f"{DEPLOYMENT_NAME}-grapl-test-user",
                 },
@@ -52,5 +52,6 @@ class Provisioner(pulumi.ComponentResource):
 
         secret.grant_read_permissions_to(self.role)
         dynamodb.user_auth_table.grant_read_permissions_to(self.role)
+        dgraph_cluster.allow_connections_from(self.function.security_group)
 
         self.register_outputs({})

@@ -43,14 +43,13 @@ class Network(pulumi.ComponentResource):
         # them.
 
         cidr_block = ipaddress.ip_network("10.0.0.0/16")
-        name_for_graplctl = f"{DEPLOYMENT_NAME}-grapl-vpc"
 
         self.vpc = aws.ec2.Vpc(
             f"{name}-vpc",
             cidr_block=str(cidr_block),
             enable_dns_hostnames=True,
             enable_dns_support=True,
-            tags={"name": name_for_graplctl},
+            tags={"Name": name},
             opts=pulumi.ResourceOptions(parent=self),
         )
 

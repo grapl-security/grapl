@@ -78,7 +78,7 @@ def grapl_subnet_ids(
     ):
         yield subnet.subnet_id
 
-    # We tag things in Pulumi slightly differently.
+    # We tag things in Pulumi slightly differently, see the Network resource.
     for subnet in ec2.Vpc(swarm_vpc_id).subnets.filter(
         Filters=[
             {
@@ -173,21 +173,15 @@ def create_instances(
             instance_information = ssm.describe_instance_information(
                 Filters=[{"Key": "InstanceIds", "Values": [instance.instance_id]}]
             )["InstanceInformationList"]
-
-            if len(instance_information) < 1:
-                # Takes a second to populate that it's doing something
+            if (
+                len(instance_information) < 1
+                or instance_information[0]["PingStatus"] != "Online"
+            ):
+                LOGGER.debug("Sleeping, got instance info: ", extra=instance_information)
                 time.sleep(2)
             elif instance_information[0]["PingStatus"] == "Online":
                 break
-            elif instance_information[0]["PingStatus"] == "ConnectionLost":
-                raise Exception(
-                    "Connection lost to {instance.instance_id}, meaning it failed health check."
-                    " You may need to destroy and retry."
-                )
-            else:
-                #
-                time.sleep(2)
-
+        
         LOGGER.info(f'instance {instance.instance_id} is "Online"')
 
     return [Ec2Instance.from_boto_instance(instance) for instance in instances]
