@@ -50,7 +50,6 @@ export class NodeIdentifier extends cdk.NestedStack {
                     event_cache.cluster.attrRedisEndpointAddress,
                 RETRY_IDENTITY_CACHE_PORT:
                     event_cache.cluster.attrRedisEndpointPort,
-                STATIC_MAPPING_TABLE: history_db.static_mapping_table.tableName,
                 DYNAMIC_SESSION_TABLE:
                     history_db.dynamic_session_table.tableName,
                 PROCESS_HISTORY_TABLE: history_db.proc_history.tableName,

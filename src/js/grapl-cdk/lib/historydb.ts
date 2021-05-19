@@ -31,7 +31,6 @@ export class HistoryDb extends cdk.Construct {
     readonly ip_connection_history: dynamodb.Table;
     readonly asset_history: dynamodb.Table;
     readonly dynamic_session_table: dynamodb.Table;
-    readonly static_mapping_table: dynamodb.Table;
 
     constructor(scope: cdk.Construct, id: string, props: GraplServiceProps) {
         super(scope, id);
@@ -78,20 +77,6 @@ export class HistoryDb extends cdk.Construct {
             billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
             removalPolicy: RemovalPolicy.DESTROY,
         });
-
-        this.static_mapping_table = new dynamodb.Table(
-            this,
-            "StaticMappingTable",
-            {
-                tableName: props.deploymentName + "-static_mapping_table",
-                partitionKey: {
-                    name: "pseudo_key",
-                    type: dynamodb.AttributeType.STRING,
-                },
-                billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-                removalPolicy: RemovalPolicy.DESTROY,
-            }
-        );
     }
 
     allowReadWrite2(service: FargateService) {
@@ -103,7 +88,6 @@ export class HistoryDb extends cdk.Construct {
             this.network_connection_history,
             this.ip_connection_history,
             this.asset_history,
-            this.static_mapping_table,
             this.dynamic_session_table,
         ];
         for (const table of tables) {
@@ -125,7 +109,6 @@ export class HistoryDb extends cdk.Construct {
         );
         this.ip_connection_history.grantReadWriteData(service.event_handler);
         this.asset_history.grantReadWriteData(service.event_handler);
-        this.static_mapping_table.grantReadWriteData(service.event_handler);
         this.dynamic_session_table.grantReadWriteData(service.event_handler);
 
         this.proc_history.grantReadWriteData(service.event_retry_handler);
@@ -143,9 +126,6 @@ export class HistoryDb extends cdk.Construct {
             service.event_retry_handler
         );
         this.asset_history.grantReadWriteData(service.event_retry_handler);
-        this.static_mapping_table.grantReadWriteData(
-            service.event_retry_handler
-        );
         this.dynamic_session_table.grantReadWriteData(
             service.event_retry_handler
         );

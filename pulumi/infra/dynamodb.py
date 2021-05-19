@@ -153,13 +153,6 @@ class DynamoDB(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self.static_mapping_table = DynamoDBTable(
-            f"{DEPLOYMENT_NAME}-static_mapping_table",
-            attrs=[{"name": "pseudo_key", "type": "S"}],
-            hash_key="pseudo_key",
-            opts=pulumi.ResourceOptions(parent=self),
-        )
-
         self.user_auth_table = DynamoDBTable(
             f"{DEPLOYMENT_NAME}-user_auth_table",
             attrs=[{"name": "username", "type": "S"}],

@@ -30,7 +30,6 @@ x-common-variables:
     NETWORK_CONNECTION_HISTORY_TABLE: ${DEPLOYMENT_NAME}-network_connection_history_table
     OUTBOUND_CONNECTION_HISTORY_TABLE: ${DEPLOYMENT_NAME}-outbound_connection_history_table
     PROCESS_HISTORY_TABLE: ${DEPLOYMENT_NAME}-process_history_table
-    STATIC_MAPPING_TABLE: ${DEPLOYMENT_NAME}-static_mapping_table
   log-level: &log-level
     GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-ERROR}"
     RUST_LOG: "${RUST_LOG:-ERROR}"

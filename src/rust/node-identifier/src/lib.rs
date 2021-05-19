@@ -3,11 +3,7 @@
 use std::collections::HashMap;
 
 use async_trait::async_trait;
-use dynamic_sessiondb::{
-    DynamicMappingDb,
-    NodeDescriptionIdentifier,
-};
-use failure::Error;
+use dynamic_sessiondb::NodeDescriptionIdentifier;
 use grapl_config::{
     env_helpers::{
         s3_event_emitters_from_env,
@@ -18,8 +14,6 @@ use grapl_config::{
 use grapl_graph_descriptions::graph_description::{
     GraphDescription,
     IdentifiedGraph,
-    IdentifiedNode,
-    NodeDescription,
 };
 use grapl_observe::metric_reporter::MetricReporter;
 use grapl_service::{
@@ -45,6 +39,7 @@ use sqs_executor::{
 use tap::tap::TapOptional;
 
 use crate::error::NodeIdentifierError;
+use crate::dynamic_sessiondb::AttributedNode;
 
 pub mod dynamic_sessiondb;
 mod error;
@@ -91,15 +86,6 @@ where
         }
     }
 
-    // todo: We should be yielding IdentifiedNode's here
-    async fn attribute_node_key(&self, node: &NodeDescription) -> Result<IdentifiedNode, Error> {
-        let new_node = self
-            .dynamic_identifier
-            .attribute_dynamic_node(&node)
-            .await?;
-        Ok(new_node.into())
-    }
-
     /// Performs batch identification of unidentified nodes into identified nodes.
     ///
     /// A map of unidentified node keys to identified node keys will be returned in addition to the
@@ -112,22 +98,24 @@ where
         let mut identified_nodekey_map = HashMap::new();
         let mut attribution_failure = None;
 
-        // new method
-        for (unidentified_node_key, unidentified_node) in unidentified_subgraph.nodes.iter() {
-            let identified_node = match self.attribute_node_key(&unidentified_node).await {
-                Ok(identified_node) => identified_node,
-                Err(e) => {
-                    warn!("Failed to attribute node_key with: {}", e);
-                    attribution_failure = Some(e);
-                    continue;
-                }
-            };
+        let unidentified_nodes = unidentified_subgraph.nodes.iter()
+            .map(|(_, node)| node)
+            .collect();
 
-            identified_nodekey_map.insert(
-                unidentified_node_key.to_owned(),
-                identified_node.clone_node_key(),
-            );
-            identified_graph.add_node(identified_node);
+        let attribution_results = self.dynamic_identifier.attribute_nodes(unidentified_nodes).await;
+
+        for attribution_result in attribution_results {
+            match attribution_result {
+                Ok(AttributedNode { attributed_node_description, previous_node_key }) => {
+                    identified_nodekey_map.insert(
+                        previous_node_key,
+                        attributed_node_description.clone_node_key()
+                    );
+
+                    identified_graph.add_node(attributed_node_description);
+                },
+                Err(error) => attribution_failure = Some(error)
+            }
         }
 
         (identified_nodekey_map, attribution_failure)
@@ -288,10 +276,8 @@ pub async fn handler(should_default: bool) -> Result<(), Box<dyn std::error::Err
 
     let dynamo = DynamoDbClient::from_env();
     let dyn_session_db = SessionDb::new(dynamo.clone(), grapl_config::dynamic_session_table_name());
-    let dyn_mapping_db = DynamicMappingDb::new(dynamo.clone());
 
-    let dyn_node_identifier =
-        NodeDescriptionIdentifier::new(dyn_session_db, dyn_mapping_db, should_default);
+    let dyn_node_identifier = NodeDescriptionIdentifier::new(dyn_session_db, should_default);
 
     let node_identifier = &mut make_ten(async {
         NodeIdentifier::new(

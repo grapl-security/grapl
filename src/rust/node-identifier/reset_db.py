@@ -12,7 +12,6 @@ table_names = [
     "ip_connection_history_table",
     "asset_id_mappings",
     "dynamic_session_table",
-    "static_mapping_table",
 ]
 
 tables = {}
