@@ -1,24 +1,25 @@
+// use grapl_router_api::model_plugin_deployer_router::delete::grapl_model_plugin_delete;
+
+//
+// pub fn get_path(_path: String) -> String {
+//     // if path == "/modelPluginDeployer"{
+//     //     deploy();
+//     // }
+//     //
+//     // if path == "/deleteModelPlugin"{
+//     //     delete();
+//     // }
+//     //
+//     // if path == "list" {
+//     //     list();
+//     // }
+//     return "test".to_string();
+//
+// }
+
+
+
 pub mod model_plugin_deployer_router;
-mod notebook_router;
-
-use actix_web::{Request, Response};
-use crate::model_plugin_deployer_router::deploy::Response;
-
-
-let mut request = Request::builder();
-    request.uri("https://www.rust-lang.org/")
-    .header("User-Agent", "my-awesome-agent/1.0");
-
-if needs_awesome_header() {
-    request.header("Awesome", "yes");
-}
-
-let response = send(request.body(()).unwrap());
-
-fn send(req: Request<()>) -> Response<()> {
-    ...
-}
-
 
 #[cfg(test)]
 mod tests {
