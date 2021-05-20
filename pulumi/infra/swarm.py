@@ -23,7 +23,7 @@ class Ec2Port:
     protocol: str
     port: int
 
-    def to_network_io_args(
+    def allow_internally(
         self,
     ) -> Tuple[aws.ec2.SecurityGroupIngressArgs, aws.ec2.SecurityGroupEgressArgs]:
         ingress = aws.ec2.SecurityGroupIngressArgs(
@@ -39,6 +39,16 @@ class Ec2Port:
             self=True,
         )
         return (ingress, egress)
+    
+    def allow_outbound_any_ip(
+        self
+    ) -> aws.ec2.SecurityGroupEgressArgs:
+            return aws.ec2.SecurityGroupEgressArgs(
+                from_port=self.port,
+                to_port=self.port,
+                protocol=self.protocol,
+                cidr_blocks=[TRAFFIC_FROM_ANYWHERE_CIDR],
+            )
 
     def __str__(self) -> str:
         return f"Ec2Port({self.protocol}:{self.port})"
@@ -69,7 +79,7 @@ class Swarm(pulumi.ComponentResource):
         #   TCP + UDP 7946 -- container network discovery
         #   UDP 4789 -- overlay network traffic
         internal_rules = [
-            port.to_network_io_args()
+            port.allow_internally()
             for port in (
                 Ec2Port("tcp", 2376),
                 Ec2Port("tcp", 2377),
@@ -87,18 +97,11 @@ class Swarm(pulumi.ComponentResource):
         #   TCP 443 -- AWS SSM Agent (for handshake)
         #   TCP 80 -- yum package manager and wget (install Docker)
         egress_rules = [
-            aws.ec2.SecurityGroupEgressArgs(
-                from_port=443,
-                to_port=443,
-                protocol="tcp",
-                cidr_blocks=[TRAFFIC_FROM_ANYWHERE_CIDR],
-            ),
-            aws.ec2.SecurityGroupEgressArgs(
-                from_port=80,
-                to_port=80,
-                protocol="tcp",
-                cidr_blocks=[TRAFFIC_FROM_ANYWHERE_CIDR],
-            ),
+            port.allow_outbound_any_ip()
+            for port in (
+                Ec2Port("tcp", 443),
+                Ec2Port("tcp", 80),
+            )
         ] + [egress for _, egress in internal_rules]
 
         self.security_group = aws.ec2.SecurityGroup(
