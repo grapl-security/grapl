@@ -34,7 +34,7 @@ export class E2eTestRunner extends cdk.NestedStack {
         const event_handler = new lambda.Function(this, "Handler", {
             runtime: lambda.Runtime.PYTHON_3_7,
             handler: "lambdex_handler.handler",
-            functionName: `${serviceName}-Handler`,
+            functionName: "e2e-test-runner",
             code: lambda.Code.fromAsset(
                 `./zips/e2e-test-runner-${props.version}.zip`
             ),
