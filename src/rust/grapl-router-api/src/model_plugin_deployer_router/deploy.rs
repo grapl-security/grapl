@@ -1,4 +1,5 @@
 use actix_web::{post, Responder, HttpResponse};
+use crate::make_request;
 
 // actix procedural macros that route incoming http requests
 #[post("/modelPluginDeployer/deploy")]
@@ -6,7 +7,7 @@ pub async fn grapl_model_plugin_deployer(req_body: String) -> impl Responder { /
     HttpResponse::Ok().body(req_body);
     //curl("http:colinapi.com")
     //.await
-
+    make_request("/modelPluginDeployer/deploy");
     // CALL MODEL-PLUGIN-DEPOYER GRPC CLIENT
 
     // we come in on a path. Based on that path, we route the request to the appropriate service.

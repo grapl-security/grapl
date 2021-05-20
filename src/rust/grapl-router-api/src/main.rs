@@ -1,7 +1,10 @@
 use grapl_router_api::model_plugin_deployer_router::deploy::grapl_model_plugin_deployer;
 use actix_web::HttpServer;
 #[actix_web::main]// tell actix-web to start a runtime and execute main functions as first task
-async fn main() -> std::io::Result<()> {
+
+type StdErr = Box<dyn std::error::Error>;
+
+async fn main() -> Result<(), StdErr> {
     // set up tracing
     // set up integration tests
 

@@ -17,6 +17,24 @@
 //
 // }
 
+// use actix_web::HttpRequest;
+// use std::thread::Builder;
+// use actix_web::http::{Method, Uri};
+use http::{Request, Response};
+
+
+pub async fn make_request(path: &str) -> Response<()>{
+    let request = Request::post(format!("http://localhost:8000/{}", path)) // replace with Colins Grpc
+        .body(())
+        .unwrap();
+
+    // return request;
+
+    match request.await {
+        Ok(res) => res,
+        Err(err) => err,
+    }
+}
 
 
 pub mod model_plugin_deployer_router;
