@@ -109,11 +109,26 @@ def get_command_results(
             break
 
     for instance_id in instance_ids:
-        invocation = ssm.get_command_invocation(
-            CommandId=command_id,
-            InstanceId=instance_id,
-            PluginName="runShellScript",
+        LOGGER.info(
+            f"retrieving invocation metadata for command {command_id} on instance {instance_id}"
         )
+        bad = True
+        while bad:
+            try:
+                invocation = ssm.get_command_invocation(
+                    CommandId=command_id,
+                    InstanceId=instance_id,
+                    PluginName="runShellScript",
+                )
+                bad = False
+                LOGGER.info(
+                    f"retrieved invocation metadata for command {command_id} on instance {instance_id}"
+                )
+            except ssm.exceptions.InvalidPluginName:
+                LOGGER.warn(
+                    f"waiting for invocation metadata to become available for command {command_id} on instance {instance_id}"
+                )
+                time.sleep(2)
 
         if invocation["Status"] == "Success":
             yield instance_id, invocation["StandardOutputContent"].strip()
