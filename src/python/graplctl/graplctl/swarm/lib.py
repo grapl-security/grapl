@@ -41,7 +41,7 @@ REGION_TO_AMI_ID = {
 @contextmanager
 def benchmark() -> Iterator[List[timedelta]]:
     # basically a Box<timedelta>. Should make a class with an Optional.
-    will_contain_result = []  
+    will_contain_result = []
     start = datetime.utcnow()
     yield will_contain_result
     end = datetime.utcnow()
@@ -52,12 +52,33 @@ def benchmark() -> Iterator[List[timedelta]]:
 
 def swarm_security_group_id(ec2: EC2ServiceResource, deployment_name: str) -> str:
     """Return the security group ID for the swarm security group"""
-    result = ec2.security_groups.filter(
-        Filters=[
-            {"Name": "group-name", "Values": [f"{deployment_name.lower()}-grapl-swarm"]}
-        ]
+    cdk_group_name = f"{deployment_name.lower()}-grapl-swarm"
+    cdk_result = list(
+        ec2.security_groups.filter(
+            Filters=[{"Name": "group-name", "Values": [cdk_group_name]}]
+        )
     )
-    return list(result)[0].group_id
+
+    # Pulumi names are less predictable, so we'll do it by tag name instead.
+    #
+    pulumi_result = list(
+        ec2.security_groups.filter(
+            Filters=[
+                {
+                    "Name": "tag:swarm-sec-group-for-deployment",
+                    "Values": [deployment_name.lower()],
+                }
+            ]
+        )
+    )
+
+    result = [*cdk_result, *pulumi_result]
+
+    if not result:
+        raise Exception(
+            f"Couldn't find a Swarm security group with desired name or tags."
+        )
+    return result[0].group_id
 
 
 def swarm_vpc_id(ec2: EC2ServiceResource, swarm_security_group_id: str) -> str:
@@ -162,7 +183,7 @@ def create_instances(
             while instance.state["Name"].lower() != "running":
                 time.sleep(2)
                 instance.load()
-        time_taken = f"{b[0].total_seconds} seconds)"
+        time_taken = f"{b[0].total_seconds()} seconds)"
         LOGGER.info(f'instance {instance.instance_id} is "running" ({time_taken}')
 
     for instance in instances:
@@ -177,11 +198,15 @@ def create_instances(
                 len(instance_information) < 1
                 or instance_information[0]["PingStatus"] != "Online"
             ):
-                LOGGER.debug("Sleeping, got instance info: ", extra=instance_information)
+                import pprint
+
+                LOGGER.debug(
+                    f"Sleeping, got instance info: {pprint.pformat(instance_information)}",
+                )
                 time.sleep(2)
             elif instance_information[0]["PingStatus"] == "Online":
                 break
-        
+
         LOGGER.info(f'instance {instance.instance_id} is "Online"')
 
     return [Ec2Instance.from_boto_instance(instance) for instance in instances]
@@ -494,7 +519,8 @@ def create_swarm(
     import pdb
 
     pdb.set_trace()
-    if swarm_id in set(swarm_ls(graplctl_state)):
+    existing_swarm_ids = set(swarm_ls(graplctl_state))
+    if swarm_id in existing_swarm_ids:
         LOGGER.warn(f"swarm {swarm_id} already exists")
         return False  # bail early if the swarm already exists
 

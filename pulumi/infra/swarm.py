@@ -15,6 +15,8 @@ from pulumi.resource import ResourceOptions
 # These are COPYd in from Dockerfile.pulumi
 SWARM_INIT_DIR = Path("../src/js/grapl-cdk/swarm").resolve()
 
+TRAFFIC_FROM_ANYWHERE_CIDR = "0.0.0.0/0"
+
 
 @dataclass
 class Ec2Port:
@@ -89,13 +91,13 @@ class Swarm(pulumi.ComponentResource):
                 from_port=443,
                 to_port=443,
                 protocol="tcp",
-                self=True,
+                cidr_blocks=[TRAFFIC_FROM_ANYWHERE_CIDR],
             ),
             aws.ec2.SecurityGroupEgressArgs(
                 from_port=80,
                 to_port=80,
                 protocol="tcp",
-                self=True,
+                cidr_blocks=[TRAFFIC_FROM_ANYWHERE_CIDR],
             ),
         ] + [egress for _, egress in internal_rules]
 
@@ -105,6 +107,7 @@ class Swarm(pulumi.ComponentResource):
             ingress=ingress_rules,
             egress=egress_rules,
             vpc_id=vpc.id,
+            tags={"swarm-sec-group-for-deployment": f"{DEPLOYMENT_NAME}"},
             opts=child_opts,
         )
 

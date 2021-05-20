@@ -37,7 +37,7 @@ class Provisioner(pulumi.ComponentResource):
                     # TODO: this is mostly copy pasted, figure out what we actually need
                     "GRAPL_LOG_LEVEL": "DEBUG",
                     "DEPLOYMENT_NAME": pulumi.get_stack(),
-                    "MG_ALPHAS": dgraph_cluster.alpha_host_port(),
+                    "MG_ALPHAS": dgraph_cluster.alpha_host_port,
                     "GRAPL_TEST_USER_NAME": f"{DEPLOYMENT_NAME}-grapl-test-user",
                 },
                 timeout=600,
