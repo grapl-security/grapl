@@ -35,7 +35,7 @@ export class Provisioner extends cdk.NestedStack {
         const event_handler = new lambda.Function(this, "Handler", {
             runtime: lambda.Runtime.PYTHON_3_7,
             handler: "lambdex_handler.handler",
-            functionName: `${serviceName}-Handler`,
+            functionName: "provisioner",
             code: lambda.Code.fromAsset(
                 `./zips/provisioner-${props.version}.zip`
             ),
