@@ -115,7 +115,6 @@ def get_command_results(
             command_id=command_id,
             instance_id=instance_id,
         )
-
         if invocation["Status"] == "Success":
             yield instance_id, invocation["StandardOutputContent"].strip()
         else:
