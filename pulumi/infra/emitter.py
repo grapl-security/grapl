@@ -4,6 +4,7 @@ from typing import Optional
 import pulumi_aws as aws
 from infra.bucket import Bucket, bucket_physical_name
 from infra.config import AWS_ACCOUNT_ID, DEPLOYMENT_NAME, import_aware_opts
+from infra.policies import attach_policy
 
 import pulumi
 
@@ -22,6 +23,59 @@ class EventEmitter(pulumi.ComponentResource):
         logical_bucket_name = f"{event_name}-bucket"
         self.bucket = Bucket(
             logical_bucket_name, sse=True, opts=pulumi.ResourceOptions(parent=self)
+        )
+
+        # TODO: Unclear if this should be attached to our Bucket
+        # abstraction or here. Will keep it here for the time being.
+        #
+        # One nice thing about keeping it here is that we aren't
+        # creating policies for buckets that won't need them.
+        self.bucket_object_read_policy = aws.iam.Policy(
+            f"read-objects-from-{logical_bucket_name}",
+            description=self.bucket.bucket.apply(
+                lambda n: f"Read *only* objects from {n} bucket"
+            ),
+            policy=self.bucket.arn.apply(
+                lambda bucket_arn: json.dumps(
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                "Action": "s3:GetObject",
+                                "Resource": f"{bucket_arn}/*",
+                            }
+                        ],
+                    }
+                )
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.bucket_write_policy = aws.iam.Policy(
+            f"write-objects-to-{logical_bucket_name}",
+            description=self.bucket.bucket.apply(
+                lambda n: f"Write objects to {n} bucket"
+            ),
+            policy=self.bucket.arn.apply(
+                lambda bucket_arn: json.dumps(
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                "Action": [
+                                    "s3:Abort*",
+                                    "s3:DeleteObject*",
+                                    "s3:PutObject*",
+                                ],
+                                "Resource": [bucket_arn, f"{bucket_arn}/*"],
+                            }
+                        ],
+                    }
+                )
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
         region = aws.get_region().name
@@ -88,3 +142,9 @@ class EventEmitter(pulumi.ComponentResource):
         )
 
         self.register_outputs({})
+
+    def grant_write_to(self, role: aws.iam.Role) -> None:
+        attach_policy(self.bucket_write_policy, role)
+
+    def grant_read_to(self, role: aws.iam.Role) -> None:
+        attach_policy(self.bucket_object_read_policy, role)

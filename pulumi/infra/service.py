@@ -10,7 +10,6 @@ from infra.service_queue import ServiceQueue
 import pulumi
 
 
-# TODO: Needs a VPC
 class Service(pulumi.ComponentResource):
     def __init__(
         self,

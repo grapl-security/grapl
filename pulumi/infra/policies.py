@@ -89,15 +89,37 @@ CLOUDWATCH_AGENT_SERVER_POLICY: Final[aws.iam.Policy] = aws.iam.Policy(
     ),
 )
 
+ECR_TOKEN_POLICY: Final[aws.iam.Policy] = aws.iam.Policy(
+    "ECR-authorization-token-policy",
+    description="Get ECR Authorization Tokens",
+    policy=json.dumps(
+        {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": "ecr:GetAuthorizationToken",
+                    "Resource": "*",
+                }
+            ],
+        }
+    ),
+)
+
 
 def attach_policy(
-    role: aws.iam.Role, policy: aws.iam.Policy
+    policy: aws.iam.Policy, role: aws.iam.Role
 ) -> aws.iam.RolePolicyAttachment:
-    """
-    https://github.com/grapl-security/issue-tracker/issues/106
-    Moving away from managed server policies.
-    """
+    """Attaches the `policy` to the `role`.
 
+    The resulting `RolePolicyAttachment` is created as a child
+    resource of the policy. Naming of the resource is also handled.
+
+    Prefer this over the direct creation of a `RolePolicyAttachment`
+    whenever possible to promote consistency across our
+    infrastructure.
+
+    """
     return aws.iam.RolePolicyAttachment(
         f"attach-{policy._name}-to-{role._name}",
         role=role.name,

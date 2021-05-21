@@ -66,16 +66,57 @@ class Cache(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        # NOTE: This only works because we have single node
-        # clusters. If we add more, we should abstract this in a
-        # better way.
-
-        # TODO: Why can't I export this?
-        # self.address = pulumi.Output.concat(
-        #     self.cluster.cache_nodes[0].address, ":", self.cluster.cache_nodes[0].port
-        # )
-
-        pulumi.export(f"{name}-cache-host", self.cluster.cache_nodes[0].address)
-        pulumi.export(f"{name}-cache-port", self.cluster.cache_nodes[0].port)
-
         self.register_outputs({})
+
+    @property
+    def endpoint(self) -> pulumi.Output[str]:
+        """
+        Return an endpoint URL for accessing this cache from other services.
+
+        Uses the "redis://" protocol.
+        """
+        # NOTE: This only works because we have single node
+        # clusters. If we add more, we should expose them all in a
+        # better way.
+        return pulumi.Output.all(
+            host=self.host,  # type: ignore[arg-type]
+            port=self.port,  # type: ignore[arg-type]
+        ).apply(lambda args: f"redis://{args['host']}:{args['port']}")
+
+    @property
+    def host(self) -> pulumi.Output[str]:
+        """
+        Returns the host of the first (and only) node in the cluster.
+        """
+        return self.cluster.cache_nodes[0].address  # type: ignore[no-any-return]
+
+    @property
+    def port(self) -> pulumi.Output[int]:
+        """
+        Returns the port of the first (and only) node in the cluster.
+        """
+        return self.cluster.cache_nodes[0].port  # type: ignore[no-any-return]
+
+    def allow_egress_to_cache_for(
+        self, name: str, origin: aws.ec2.SecurityGroup
+    ) -> None:
+        """
+        Create an egress rule for the `origin` security group, allowing communication to the cache's port.
+
+        The security group rule will be a child of the `origin` security group Pulumi resource.
+
+        `name` is a descriptive string that will be incorporated into the Pulumi resource name of the security group rule.
+        """
+        aws.ec2.SecurityGroupRule(
+            f"{name}-egress-to-cache",
+            type="egress",
+            description=self.cluster.id.apply(
+                lambda id: f"Allow outbound traffic to Redis cluster {id}"
+            ),
+            from_port=self.port,
+            to_port=self.port,
+            protocol=aws.ec2.ProtocolType.TCP,
+            security_group_id=origin.id,
+            source_security_group_id=self.security_group.id,
+            opts=pulumi.ResourceOptions(parent=origin),
+        )

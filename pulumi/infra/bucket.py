@@ -71,6 +71,61 @@ class Bucket(aws.s3.Bucket):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
+    def grant_get_and_list_to(self, role: aws.iam.Role) -> None:
+        """Grants GetObject on all the objects in the bucket, and ListBucket
+        on the bucket itself.
+
+        We may be able to use this for other permissions, but this was
+        a specific structure ported over from our CDK code.
+
+        """
+        aws.iam.RolePolicy(
+            f"{role._name}-get-and-list-{self._name}",
+            role=role.name,
+            policy=self.arn.apply(
+                lambda bucket_arn: json.dumps(
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                "Action": "s3:GetObject",
+                                "Resource": f"{bucket_arn}/*",
+                            },
+                            {
+                                "Effect": "Allow",
+                                "Action": "s3:ListBucket",
+                                "Resource": bucket_arn,
+                            },
+                        ],
+                    }
+                )
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+    def grant_get_to(self, role: aws.iam.Role) -> None:
+        """Grants GetObject on all the objects in the bucket."""
+        aws.iam.RolePolicy(
+            f"{role._name}-get-{self._name}",
+            role=role.name,
+            policy=self.arn.apply(
+                lambda bucket_arn: json.dumps(
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                "Action": "s3:GetObject",
+                                "Resource": f"{bucket_arn}/*",
+                            },
+                        ],
+                    }
+                )
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
     def grant_read_write_permissions_to(self, role: aws.iam.Role) -> None:
         """ Gives the provided `Role` the ability to read from and write to this bucket. """
         aws.iam.RolePolicy(
