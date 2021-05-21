@@ -4,7 +4,7 @@ from typing import Mapping, Optional, Sequence, Tuple, Union
 import pulumi_aws as aws
 import pulumi_docker as docker
 from infra.cache import Cache
-from infra.config import DEPLOYMENT_NAME
+from infra.config import DEPLOYMENT_NAME, SERVICE_LOG_RETENTION_DAYS
 from infra.emitter import EventEmitter
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
@@ -61,7 +61,7 @@ class FargateExecutionRole(aws.iam.Role):
         )
 
 
-class AWSFargateService(pulumi.ComponentResource):
+class _AWSFargateService(pulumi.ComponentResource):
     def __init__(
         self,
         name: str,
@@ -132,6 +132,7 @@ class AWSFargateService(pulumi.ComponentResource):
         self.log_group = aws.cloudwatch.LogGroup(
             f"{name}-log-group",
             name=f"/grapl/{DEPLOYMENT_NAME}/{name}",
+            retention_in_days=SERVICE_LOG_RETENTION_DAYS,
             opts=pulumi.ResourceOptions(parent=self),
         )
 
@@ -269,7 +270,7 @@ class FargateService(pulumi.ComponentResource):
         # uses the same image.
         (repository, image_name) = self._repository_and_image(name, image)
 
-        self.default_service = AWSFargateService(
+        self.default_service = _AWSFargateService(
             f"{name}-default",
             cluster=self.ecs_cluster,
             queue=self.queue,
@@ -294,7 +295,7 @@ class FargateService(pulumi.ComponentResource):
             else (repository, image_name)
         )
 
-        self.retry_service = AWSFargateService(
+        self.retry_service = _AWSFargateService(
             retry_name,
             cluster=self.ecs_cluster,
             queue=self.queue,
