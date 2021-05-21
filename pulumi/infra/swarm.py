@@ -24,28 +24,46 @@ class Ec2Port:
 
     def allow_internally(
         self,
-    ) -> Tuple[aws.ec2.SecurityGroupIngressArgs, aws.ec2.SecurityGroupEgressArgs]:
-        ingress = aws.ec2.SecurityGroupIngressArgs(
+        sg: aws.ec2.SecurityGroup,
+    ) -> Tuple[aws.ec2.SecurityGroupRule, aws.ec2.SecurityGroupRule]:
+        ingress = aws.ec2.SecurityGroupRule(
+            f"internal-ingress-{self}",
+            type="ingress",
+            security_group_id=sg.id,
             from_port=self.port,
             to_port=self.port,
             protocol=self.protocol,
             self=True,
+            opts=pulumi.ResourceOptions(parent=sg),
         )
-        egress = aws.ec2.SecurityGroupEgressArgs(
+
+        egress = aws.ec2.SecurityGroupRule(
+            f"internal-egress-{self}",
+            type="egress",
+            security_group_id=sg.id,
             from_port=self.port,
             to_port=self.port,
             protocol=self.protocol,
             self=True,
+            opts=pulumi.ResourceOptions(parent=sg),
         )
+
         return (ingress, egress)
 
-    def allow_outbound_any_ip(self) -> aws.ec2.SecurityGroupEgressArgs:
-        return aws.ec2.SecurityGroupEgressArgs(
+    def allow_outbound_any_ip(
+        self, sg: aws.ec2.SecurityGroup
+    ) -> aws.ec2.SecurityGroupRule:
+        egress = aws.ec2.SecurityGroupRule(
+            f"outbound-any-ip-egress-{self}",
+            type="egress",
+            security_group_id=sg.id,
             from_port=self.port,
             to_port=self.port,
             protocol=self.protocol,
             cidr_blocks=[TRAFFIC_FROM_ANYWHERE_CIDR],
+            opts=pulumi.ResourceOptions(parent=sg),
         )
+        return egress
 
     def __str__(self) -> str:
         return f"Ec2Port({self.protocol}:{self.port})"
@@ -68,38 +86,6 @@ class Swarm(pulumi.ComponentResource):
             retention_in_days=DGRAPH_LOG_RETENTION_DAYS,
             opts=child_opts,
         )
-
-        # allow hosts in the swarm security group to communicate
-        # internally on the following ports:
-        #   TCP 2376 -- secure docker client
-        #   TCP 2377 -- inter-node communication (only needed on manager nodes)
-        #   TCP + UDP 7946 -- container network discovery
-        #   UDP 4789 -- overlay network traffic
-        internal_rules = [
-            port.allow_internally()
-            for port in (
-                Ec2Port("tcp", 2376),
-                Ec2Port("tcp", 2377),
-                Ec2Port("tcp", 7946),
-                Ec2Port("udp", 7946),
-                Ec2Port("udp", 4789),
-                *internal_service_ports,
-            )
-        ]
-
-        ingress_rules = [ingress for ingress, _ in internal_rules]
-
-        # allow hosts in the swarm security group to make outbound
-        # connections to the Internet for these services:
-        #   TCP 443 -- AWS SSM Agent (for handshake)
-        #   TCP 80 -- yum package manager and wget (install Docker)
-        egress_rules = [
-            port.allow_outbound_any_ip()
-            for port in (
-                Ec2Port("tcp", 443),
-                Ec2Port("tcp", 80),
-            )
-        ] + [egress for _, egress in internal_rules]
 
         self.security_group = aws.ec2.SecurityGroup(
             f"{name}-sec-group",
@@ -128,6 +114,8 @@ class Swarm(pulumi.ComponentResource):
             ),
             opts=child_opts,
         )
+
+        self._open_initial_ports(internal_service_ports)
 
         # InstanceProfile for swarm instances
         aws.iam.InstanceProfile(
@@ -171,6 +159,32 @@ class Swarm(pulumi.ComponentResource):
     def cluster_host_port(self) -> pulumi.Output[str]:
         return Output.concat(self.swarm_hosted_zone.name, ":9080")
 
+    def _open_initial_ports(self, internal_service_ports: Sequence[Ec2Port]) -> None:
+        # allow hosts in the swarm security group to communicate
+        # internally on the following ports:
+        #   TCP 2376 -- secure docker client
+        #   TCP 2377 -- inter-node communication (only needed on manager nodes)
+        #   TCP + UDP 7946 -- container network discovery
+        for port in (
+            Ec2Port("tcp", 2376),
+            Ec2Port("tcp", 2377),
+            Ec2Port("tcp", 7946),
+            Ec2Port("udp", 7946),
+            Ec2Port("udp", 4789),
+            *internal_service_ports,
+        ):  #   UDP 4789 -- overlay network traffic
+            port.allow_internally(self.security_group)
+
+        # allow hosts in the swarm security group to make outbound
+        # connections to the Internet for these services:
+        #   TCP 443 -- AWS SSM Agent (for handshake)
+        #   TCP 80 -- yum package manager and wget (install Docker)
+        for port in (
+            Ec2Port("tcp", 443),
+            Ec2Port("tcp", 80),
+        ):
+            port.allow_outbound_any_ip(self.security_group)
+
     def allow_connections_from(
         self,
         other: aws.ec2.SecurityGroup,
@@ -201,9 +215,9 @@ class Swarm(pulumi.ComponentResource):
         aws.ec2.SecurityGroupRule(
             f"egress-{descriptor}",
             type="egress",
-            # Perhaps the source security group is wrong
-            # https://grapl-internal.slack.com/archives/C017DKYF55H/p1621030148014300
-            # Comparing with CDK output, seems semi right
+            # Awful naming scheme
+            # https://grapl-internal.slack.com/archives/C017DKYF55H/p1621459760032000
+            # For egress, `source` is where it's going
             source_security_group_id=self.security_group.id,
             security_group_id=other.id,
             from_port=port_range.port,

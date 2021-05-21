@@ -44,7 +44,7 @@ def _find_operational_alarms_arn(sns: SNSClient, deployment_name: str) -> str:
         None,
     )
     if not arn:
-        raise Exception(f"Couldn't find a good candidate arn among {all_topic_arns}")
+        raise Exception(f"Couldn't find a good Operational Alarms ARN among {all_topic_arns}")
     return arn
 
 
@@ -320,7 +320,8 @@ def create_dgraph(graplctl_state: State, instance_type: InstanceTypeType) -> boo
     )
 
     LOGGER.info(f"waiting 5min for cloudwatch metrics to propagate...")
-    with progressbar(ticker(300), length=300) as bar:
+    progressbar_len = 5 * 60  # seconds
+    with progressbar(ticker(progressbar_len), length=progressbar_len) as bar:
         for _ in bar:
             continue
 
