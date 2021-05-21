@@ -6,7 +6,6 @@ use grapl_config::env_helpers::FromEnv;
 use node_identifier::{
     sessiondb::SessionDb,
     sessions::{
-        Session,
         UnidSession,
     },
 };
@@ -24,6 +23,8 @@ use rusoto_dynamodb::{
     ProvisionedThroughput,
 };
 use tokio::runtime::Runtime;
+use grapl_graph_descriptions::NodeDescription;
+use node_identifier::sessiondb::UnidSessionNode;
 
 async fn try_create_table(
     dynamo: &impl DynamoDb,
@@ -89,19 +90,29 @@ fn canon_create_on_empty_timeline(asset_id: String, pid: u64) {
 
     let session_db = SessionDb::new(dynamo, table_name);
 
+    let node_desc = NodeDescription {
+        properties: Default::default(),
+        node_key: "NODE_KEY".to_string(),
+        node_type: "NODE_TYPE".to_string(),
+        id_strategy: vec![]
+    };
+
     let unid = UnidSession {
         pseudo_key: format!("{}{}", asset_id, pid),
         timestamp: 1544301484600,
         is_creation: true,
     };
 
-    let session_id = runtime
-        .block_on(session_db.handle_unid_session(unid, false))
-        .expect("Failed to create session");
+    let unid_session_node = UnidSessionNode(node_desc, unid);
 
-    assert!(!session_id.is_empty());
+    let attributed_nodes = runtime
+        .block_on(session_db.identify_unid_session_nodes(vec![unid_session_node], false))
+        .expect("Failed to identify node");
+
+    assert!(!attributed_nodes.is_empty());
 }
 
+/*
 // Given a timeline with a single session, where that session has a non canon
 //      creation time 'X'
 // When a canonical creation event comes in with a creation time of 'Y'
@@ -284,3 +295,4 @@ fn update_end_time(asset_id: String, pid: u64) {
 
     assert_eq!(session_id, "SessionId");
 }
+*/

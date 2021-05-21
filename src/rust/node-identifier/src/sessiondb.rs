@@ -566,7 +566,7 @@ pub fn skewed_cmp(ts_1: u64, ts_2: u64) -> bool {
     ts_1 - 10 < ts_2 && ts_1 + 10 > ts_2
 }
 
-pub struct UnidSessionNode(NodeDescription, UnidSession);
+pub struct UnidSessionNode(pub NodeDescription, pub UnidSession);
 
 impl UnidSessionNode {
     pub(crate) fn new(node: NodeDescription, unid_session: UnidSession) -> Self {
