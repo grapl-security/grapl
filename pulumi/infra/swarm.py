@@ -106,7 +106,7 @@ class Swarm(pulumi.ComponentResource):
             f"{name}-sec-group",
             description=f"Docker Swarm security group",
             vpc_id=vpc.id,
-            tags={"swarm-sec-group-for-deployment": f"{DEPLOYMENT_NAME}"},
+            tags={"swarm-sec-group-for-deployment": "{DEPLOYMENT_NAME}"},
             opts=child_opts,
         )
 

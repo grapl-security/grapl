@@ -22,7 +22,7 @@ class Provisioner(pulumi.ComponentResource):
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
 
-        name = f"provisioner"
+        name = "provisioner"
         super().__init__("grapl:Provisioner", name, None, opts)
 
         self.role = LambdaExecutionRole(name, opts=pulumi.ResourceOptions(parent=self))
@@ -36,7 +36,7 @@ class Provisioner(pulumi.ComponentResource):
                 env={
                     # TODO: this is mostly copy pasted, figure out what we actually need
                     "GRAPL_LOG_LEVEL": "DEBUG",
-                    "DEPLOYMENT_NAME": pulumi.get_stack(),
+                    "DEPLOYMENT_NAME": DEPLOYMENT_NAME,
                     "MG_ALPHAS": dgraph_cluster.alpha_host_port,
                     "GRAPL_TEST_USER_NAME": f"{DEPLOYMENT_NAME}-grapl-test-user",
                 },
@@ -45,8 +45,9 @@ class Provisioner(pulumi.ComponentResource):
                 execution_role=self.role,
             ),
             network=network,
+            # graplctl currently expects a very specific function name.
+            # in the future we should just have it pull from pulumi outputs.
             override_name=f"{DEPLOYMENT_NAME}-Provisioner-Handler",
-            # TODO: Forwarder????
             opts=pulumi.ResourceOptions(parent=self),
         )
 
