@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Iterator, List, Optional, Tuple
 
 from botocore.client import ClientError
 from click import progressbar
+from grapl_common.grapl_logger import get_module_grapl_logger
 
 if TYPE_CHECKING:
     from mypy_boto3_cloudwatch.client import CloudWatchClient
@@ -19,9 +20,7 @@ if TYPE_CHECKING:
 import graplctl.swarm.lib as docker_swarm_ops
 from graplctl.common import Ec2Instance, State, Tag, get_command_results, ticker
 
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
-LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+LOGGER = get_module_grapl_logger(log_to_stdout=True)
 
 CW_NAMESPACE = "CWAgent"
 CW_DISK_USAGE_METRIC_NAME = "disk_used_percent"

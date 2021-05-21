@@ -1,10 +1,12 @@
 import json
-from typing import Optional
+from pathlib import Path
+from typing import List, Optional, Sequence
 
 import pulumi_aws as aws
 from infra.config import DEPLOYMENT_NAME
 
 import pulumi
+from pulumi.resource import ResourceOptions
 
 
 class Bucket(aws.s3.Bucket):
@@ -28,13 +30,13 @@ class Bucket(aws.s3.Bucket):
         opts: `pulumi.ResourceOptions` for this resource.
 
         """
-        physical_bucket_name = bucket_physical_name(logical_bucket_name)
+        self.logical_bucket_name = logical_bucket_name
 
         sse_config = sse_configuration() if sse else None
 
         super().__init__(
             logical_bucket_name,
-            bucket=physical_bucket_name,
+            bucket=bucket_physical_name(logical_bucket_name),
             force_destroy=True,
             website=website_args,
             server_side_encryption_configuration=sse_config,
@@ -62,6 +64,61 @@ class Bucket(aws.s3.Bucket):
                                 ],
                                 "Resource": [bucket_arn, f"{bucket_arn}/*"],
                             }
+                        ],
+                    }
+                )
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+    def grant_get_and_list_to(self, role: aws.iam.Role) -> None:
+        """Grants GetObject on all the objects in the bucket, and ListBucket
+        on the bucket itself.
+
+        We may be able to use this for other permissions, but this was
+        a specific structure ported over from our CDK code.
+
+        """
+        aws.iam.RolePolicy(
+            f"{role._name}-get-and-list-{self._name}",
+            role=role.name,
+            policy=self.arn.apply(
+                lambda bucket_arn: json.dumps(
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                "Action": "s3:GetObject",
+                                "Resource": f"{bucket_arn}/*",
+                            },
+                            {
+                                "Effect": "Allow",
+                                "Action": "s3:ListBucket",
+                                "Resource": bucket_arn,
+                            },
+                        ],
+                    }
+                )
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+    def grant_get_to(self, role: aws.iam.Role) -> None:
+        """Grants GetObject on all the objects in the bucket."""
+        aws.iam.RolePolicy(
+            f"{role._name}-get-{self._name}",
+            role=role.name,
+            policy=self.arn.apply(
+                lambda bucket_arn: json.dumps(
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                "Action": "s3:GetObject",
+                                "Resource": f"{bucket_arn}/*",
+                            },
                         ],
                     }
                 )
@@ -126,6 +183,50 @@ class Bucket(aws.s3.Bucket):
             ),
             opts=pulumi.ResourceOptions(parent=self),
         )
+
+    def _upload_file_to_bucket(
+        self, file_path: Path, root_path: Path
+    ) -> aws.s3.BucketObject:
+        """ Compare with CDK's s3deploy.BucketDeployment """
+        assert (
+            file_path.is_file()
+        ), f"Use `upload_dir_to_bucket` for directory {file_path}"
+        name = str(file_path.relative_to(root_path))
+        return aws.s3.BucketObject(
+            name,
+            bucket=self.id,
+            source=pulumi.FileAsset(file_path),
+            opts=ResourceOptions(parent=self)
+            # Do we need to specify mimetype?
+        )
+
+    def upload_to_bucket(
+        self, file_path: Path, root_path: Optional[Path] = None
+    ) -> List[aws.s3.BucketObject]:
+        """
+        Compare with CDK's s3deploy.BucketDeployment
+
+        root_path is so that if you pass in
+        file_path="someplace/some_dir", root_path = "someplace"
+        the uploaded files can be named
+        "some_dir/a.txt"
+        "some_dir/b.txt"
+        "some_dir/subdir/c.txt"
+        """
+        if file_path.is_file():
+            return [self._upload_file_to_bucket(file_path, root_path=file_path.parent)]
+        elif file_path.is_dir():
+            root_path = root_path or file_path
+            # Flattens it
+            return sum(
+                (
+                    self.upload_to_bucket(child, root_path=root_path)
+                    for child in file_path.iterdir()
+                ),
+                [],
+            )
+        else:
+            raise ValueError(f"Neither a file nor a dir - does it exist?: {file_path}")
 
 
 def bucket_physical_name(logical_name: str) -> str:

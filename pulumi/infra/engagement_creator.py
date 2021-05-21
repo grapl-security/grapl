@@ -5,9 +5,10 @@ from infra.config import (
     AWS_ACCOUNT_ID,
     DEPLOYMENT_NAME,
     GLOBAL_LAMBDA_ZIP_TAG,
+    configurable_envvars,
     import_aware_opts,
-    mg_alphas,
 )
+from infra.dgraph_cluster import DgraphCluster
 from infra.emitter import EventEmitter
 from infra.lambda_ import code_path_for
 from infra.metric_forwarder import MetricForwarder
@@ -19,7 +20,11 @@ import pulumi
 
 class EngagementCreator(Service):
     def __init__(
-        self, source_emitter: EventEmitter, network: Network, forwarder: MetricForwarder
+        self,
+        input_emitter: EventEmitter,
+        network: Network,
+        forwarder: MetricForwarder,
+        dgraph_cluster: DgraphCluster,
     ) -> None:
 
         name = "engagement-creator"
@@ -31,46 +36,13 @@ class EngagementCreator(Service):
             lambda_code_path=code_path_for("engagement-creator"),
             network=network,
             env={
-                "GRAPL_LOG_LEVEL": "INFO",
-                "MG_ALPHAS": mg_alphas(),
+                **configurable_envvars(name, ["GRAPL_LOG_LEVEL"]),
+                "MG_ALPHAS": dgraph_cluster.alpha_host_port,
             },
         )
 
-        self.bucket_policy_attachment = aws.iam.RolePolicy(
-            f"{name}-reads-from-emitter-bucket",
-            name=f"{DEPLOYMENT_NAME}-{name}-reads-from-emitter-bucket",
-            role=self.role.name,
-            policy=source_emitter.bucket.arn.apply(
-                lambda bucket_arn: json.dumps(
-                    {
-                        "Version": "2012-10-17",
-                        "Statement": [
-                            {
-                                "Sid": "0",
-                                "Effect": "Allow",
-                                "Action": "s3:GetObject",
-                                "Resource": f"{bucket_arn}/*",
-                            }
-                        ],
-                    }
-                )
-            ),
-            opts=pulumi.ResourceOptions(parent=self),
-        )
-
-        # NOTE: The main queue from the service's ServiceQueue is being
-        # wired up to the topic from the event emitter.... but this
-        # only seems to happen for the Engagement Creator service, and
-        # not generally. We may want to revisit how things are
-        # abstracted to reflect this a bit more cleanly.
-        self.subscription = aws.sns.TopicSubscription(
-            f"{name}-subscribes-to-emitter-topic",  # TODO more descriptive
-            protocol="sqs",
-            endpoint=self.queue.queue.arn,
-            topic=source_emitter.topic.arn,
-            raw_message_delivery=True,
-            opts=pulumi.ResourceOptions(parent=self),
-        )
+        self.queue.subscribe_to_emitter(input_emitter)
+        input_emitter.grant_read_to(self.role)
 
         region = aws.get_region().name
         physical_topic_name = f"{DEPLOYMENT_NAME}-engagements-created-topic"
@@ -107,5 +79,8 @@ class EngagementCreator(Service):
             policy=publish_to_topic_policy,
             opts=pulumi.ResourceOptions(parent=self),
         )
+
+        for handler in self.handlers:
+            dgraph_cluster.allow_connections_from(handler.function.security_group)
 
         self.register_outputs({})

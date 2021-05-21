@@ -1,7 +1,8 @@
 from typing import Optional
 
 from infra.bucket import Bucket
-from infra.config import GLOBAL_LAMBDA_ZIP_TAG, mg_alphas
+from infra.config import GLOBAL_LAMBDA_ZIP_TAG, configurable_envvars
+from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
 from infra.engagement_notebook import EngagementNotebook
 from infra.lambda_ import Lambda, LambdaExecutionRole, PythonLambdaArgs, code_path_for
@@ -19,6 +20,7 @@ class EngagementEdge(pulumi.ComponentResource):
         secret: JWTSecret,
         ux_bucket: Bucket,
         db: DynamoDB,
+        dgraph_cluster: DgraphCluster,
         # This is optional ONLY because Localstack doesn't support
         # sagemaker :(
         notebook: Optional[EngagementNotebook] = None,
@@ -37,9 +39,9 @@ class EngagementEdge(pulumi.ComponentResource):
                 description=GLOBAL_LAMBDA_ZIP_TAG,
                 code_path=code_path_for(name),
                 env={
-                    "GRAPL_LOG_LEVEL": "DEBUG",
+                    **configurable_envvars(name, ["GRAPL_LOG_LEVEL"]),
                     # TODO: Not clear that this is even used.
-                    "MG_ALPHAS": mg_alphas(),
+                    "MG_ALPHAS": dgraph_cluster.alpha_host_port,
                     "JWT_SECRET_ID": secret.secret.arn,
                     "USER_AUTH_TABLE": db.user_auth_table.name,
                     # TODO: Not clear that this is even used.
@@ -68,5 +70,6 @@ class EngagementEdge(pulumi.ComponentResource):
 
         secret.grant_read_permissions_to(self.role)
         db.user_auth_table.grant_read_permissions_to(self.role)
+        dgraph_cluster.allow_connections_from(self.function.security_group)
 
         self.register_outputs({})

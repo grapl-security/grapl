@@ -1,8 +1,7 @@
 from typing import Optional
 
-import pulumi_aws as aws
 from infra.bucket import Bucket
-from infra.config import GLOBAL_LAMBDA_ZIP_TAG
+from infra.config import GLOBAL_LAMBDA_ZIP_TAG, configurable_envvars
 from infra.lambda_ import Lambda, LambdaExecutionRole, PythonLambdaArgs, code_path_for
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
@@ -33,7 +32,10 @@ class UxRouter(pulumi.ComponentResource):
                 description=GLOBAL_LAMBDA_ZIP_TAG,
                 handler="lambdex_handler.handler",
                 code_path=code_path_for(name),
-                env={"GRAPL_LOG_LEVEL": "INFO", "UX_BUCKET_NAME": ux_bucket.bucket},
+                env={
+                    **configurable_envvars(name, ["GRAPL_LOG_LEVEL"]),
+                    "UX_BUCKET_NAME": ux_bucket.bucket,
+                },
                 timeout=5,
                 memory_size=128,
             ),
