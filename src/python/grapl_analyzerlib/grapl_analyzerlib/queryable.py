@@ -30,10 +30,10 @@ from grapl_analyzerlib.extendable import Extendable
 from grapl_analyzerlib.grapl_client import GraphClient
 
 if TYPE_CHECKING:
-    from grapl_analyzerlib.viewable import Viewable
+    from grapl_analyzerlib.viewable import Viewable  # noqa: F401
 
 Q = TypeVar("Q", bound="Queryable")
-V = TypeVar("V", bound=Viewable)
+V = TypeVar("V", bound="Viewable")
 F = TypeVar("F", bound="Queryable")
 
 ToOneFilter = List[F]

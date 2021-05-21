@@ -20,7 +20,7 @@ from typing import (
 )
 
 if TYPE_CHECKING:
-    from grapl_analyzerlib.queryable import Queryable
+    from grapl_analyzerlib.queryable import Queryable  # noqa: F401
 
 from grapl_analyzerlib.extendable import Extendable
 from grapl_analyzerlib.grapl_client import GraphClient
@@ -34,7 +34,7 @@ LOGGER.setLevel(LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 V = TypeVar("V", bound="Viewable")
-Q = TypeVar("Q", bound=Queryable)
+Q = TypeVar("Q", bound="Queryable")
 T = TypeVar("T")
 OneOrMany = Union[List[T], T]
 
