@@ -79,8 +79,8 @@ class Cache(pulumi.ComponentResource):
         # clusters. If we add more, we should expose them all in a
         # better way.
         return pulumi.Output.all(
-            host=self.host,
-            port=self.port,
+            host=self.host,  # type: ignore[arg-type]
+            port=self.port,  # type: ignore[arg-type]
         ).apply(lambda args: f"redis://{args['host']}:{args['port']}")
 
     @property
@@ -88,14 +88,14 @@ class Cache(pulumi.ComponentResource):
         """
         Returns the host of the first (and only) node in the cluster.
         """
-        return self.cluster.cache_nodes[0].address
+        return self.cluster.cache_nodes[0].address  # type: ignore[no-any-return]
 
     @property
     def port(self) -> pulumi.Output[int]:
         """
         Returns the port of the first (and only) node in the cluster.
         """
-        return self.cluster.cache_nodes[0].port
+        return self.cluster.cache_nodes[0].port  # type: ignore[no-any-return]
 
     def allow_egress_to_cache_for(
         self, name: str, origin: aws.ec2.SecurityGroup

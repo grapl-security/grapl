@@ -104,7 +104,7 @@ class Repository(pulumi.ComponentResource):
 
         <AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/<DEPLOYMENT_NAME>/<NAME>
         """
-        return self.repository.repository_url
+        return self.repository.repository_url  # type: ignore[no-any-return]
 
     def grant_access_to(self, role: aws.iam.Role) -> None:
         attach_policy(self.access_policy, role)

@@ -158,7 +158,7 @@ class AWSFargateService(pulumi.ComponentResource):
 
         forwarder.subscribe_to_log_group(name, self.log_group)
 
-        self.task = aws.ecs.TaskDefinition(
+        self.task = aws.ecs.TaskDefinition(  # type: ignore[call-overload]
             f"{name}-task",
             family=f"{DEPLOYMENT_NAME}-{name}-task",
             container_definitions=pulumi.Output.all(
