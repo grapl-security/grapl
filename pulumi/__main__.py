@@ -1,3 +1,5 @@
+import os
+
 from infra import dynamodb, emitter
 from infra.analyzer_dispatcher import AnalyzerDispatcher
 from infra.analyzer_executor import AnalyzerExecutor
@@ -30,6 +32,14 @@ def _create_dgraph_cluster(network: Network) -> DgraphCluster:
 
 
 def main() -> None:
+
+    if not LOCAL_GRAPL:
+        # Fargate services build their own images and need this
+        # variable currently. We don't want this to be checked in
+        # Local Grapl, though.
+        if not os.getenv("DOCKER_BUILDKIT"):
+            raise KeyError("Please re-run with 'DOCKER_BUILDKIT=1'")
+
     # These tags will be added to all provisioned infrastructure
     # objects.
     register_auto_tags({"grapl deployment": DEPLOYMENT_NAME})
