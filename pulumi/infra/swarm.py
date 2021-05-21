@@ -25,8 +25,8 @@ class Ec2Port:
     def allow_internally(
         self,
         sg: aws.ec2.SecurityGroup,
-    ) -> Tuple[aws.ec2.SecurityGroupRule, aws.ec2.SecurityGroupRule]:
-        ingress = aws.ec2.SecurityGroupRule(
+    ) -> None:
+        aws.ec2.SecurityGroupRule(
             f"internal-ingress-{self}",
             type="ingress",
             security_group_id=sg.id,
@@ -37,7 +37,7 @@ class Ec2Port:
             opts=pulumi.ResourceOptions(parent=sg),
         )
 
-        egress = aws.ec2.SecurityGroupRule(
+        aws.ec2.SecurityGroupRule(
             f"internal-egress-{self}",
             type="egress",
             security_group_id=sg.id,
@@ -48,12 +48,8 @@ class Ec2Port:
             opts=pulumi.ResourceOptions(parent=sg),
         )
 
-        return (ingress, egress)
-
-    def allow_outbound_any_ip(
-        self, sg: aws.ec2.SecurityGroup
-    ) -> aws.ec2.SecurityGroupRule:
-        egress = aws.ec2.SecurityGroupRule(
+    def allow_outbound_any_ip(self, sg: aws.ec2.SecurityGroup) -> None:
+        aws.ec2.SecurityGroupRule(
             f"outbound-any-ip-egress-{self}",
             type="egress",
             security_group_id=sg.id,
@@ -63,7 +59,6 @@ class Ec2Port:
             cidr_blocks=[TRAFFIC_FROM_ANYWHERE_CIDR],
             opts=pulumi.ResourceOptions(parent=sg),
         )
-        return egress
 
     def __str__(self) -> str:
         return f"Ec2Port({self.protocol}:{self.port})"

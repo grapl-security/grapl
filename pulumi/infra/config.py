@@ -59,6 +59,17 @@ DEFAULT_ENVVARS = {
 }
 
 
+def _require_env_var(key: str) -> str:
+    value = os.getenv(key)
+    if not value:
+        raise KeyError(f"Missing environment variable '{key}'.")
+    return value
+
+
+# Boy, this env name was not forward-thinking
+OPERATIONAL_ALARMS_EMAIL = _require_env_var("GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL")
+
+
 def configurable_envvar(service_name: str, var: str) -> str:
     """Look up the desired environment variable in Pulumi configuration for the given service or return a default value.
 
