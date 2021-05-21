@@ -39,16 +39,14 @@ class Ec2Port:
             self=True,
         )
         return (ingress, egress)
-    
-    def allow_outbound_any_ip(
-        self
-    ) -> aws.ec2.SecurityGroupEgressArgs:
-            return aws.ec2.SecurityGroupEgressArgs(
-                from_port=self.port,
-                to_port=self.port,
-                protocol=self.protocol,
-                cidr_blocks=[TRAFFIC_FROM_ANYWHERE_CIDR],
-            )
+
+    def allow_outbound_any_ip(self) -> aws.ec2.SecurityGroupEgressArgs:
+        return aws.ec2.SecurityGroupEgressArgs(
+            from_port=self.port,
+            to_port=self.port,
+            protocol=self.protocol,
+            cidr_blocks=[TRAFFIC_FROM_ANYWHERE_CIDR],
+        )
 
     def __str__(self) -> str:
         return f"Ec2Port({self.protocol}:{self.port})"
@@ -107,8 +105,6 @@ class Swarm(pulumi.ComponentResource):
         self.security_group = aws.ec2.SecurityGroup(
             f"{name}-sec-group",
             description=f"Docker Swarm security group",
-            ingress=ingress_rules,
-            egress=egress_rules,
             vpc_id=vpc.id,
             tags={"swarm-sec-group-for-deployment": f"{DEPLOYMENT_NAME}"},
             opts=child_opts,

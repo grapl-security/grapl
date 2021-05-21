@@ -3,13 +3,12 @@ from __future__ import annotations
 import base64
 import itertools
 import json
-import os
+import pprint
 import shlex
-import sys
 import time
-from contextlib import contextmanager
-from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Callable, Dict, Iterator, List, Optional, Set
+
+from grapl_common.utils.benchmark import benchmark_ctx
 
 if TYPE_CHECKING:
     from mypy_boto3_ec2 import EC2ServiceResource
@@ -36,18 +35,6 @@ REGION_TO_AMI_ID = {
     "us-west-1": "ami-0e4035ae3f70c400f",
     "us-west-2": "ami-0528a5175983e7f28",
 }
-
-
-@contextmanager
-def benchmark() -> Iterator[List[timedelta]]:
-    # basically a Box<timedelta>. Should make a class with an Optional.
-    will_contain_result = []
-    start = datetime.utcnow()
-    yield will_contain_result
-    end = datetime.utcnow()
-
-    result = end - start
-    will_contain_result.append(result)
 
 
 def swarm_security_group_id(ec2: EC2ServiceResource, deployment_name: str) -> str:
@@ -179,12 +166,11 @@ def create_instances(
 
     for instance in instances:
         LOGGER.info(f'waiting for instance {instance.instance_id} to report "running"')
-        with benchmark() as b:
+        with benchmark_ctx() as bench:
             while instance.state["Name"].lower() != "running":
                 time.sleep(2)
                 instance.load()
-        time_taken = f"{b[0].total_seconds()} seconds)"
-        LOGGER.info(f'instance {instance.instance_id} is "running" ({time_taken}')
+        LOGGER.info(f'instance {instance.instance_id} is "running" ({bench})')
 
     for instance in instances:
         LOGGER.info(
@@ -198,8 +184,6 @@ def create_instances(
                 len(instance_information) < 1
                 or instance_information[0]["PingStatus"] != "Online"
             ):
-                import pprint
-
                 LOGGER.debug(
                     f"Sleeping, got instance info: {pprint.pformat(instance_information)}",
                 )
@@ -516,9 +500,6 @@ def create_swarm(
     docker_daemon_config: Optional[Dict] = None,
     extra_init: Optional[Callable[[SSMClient, str, List[Ec2Instance]], None]] = None,
 ) -> bool:
-    import pdb
-
-    pdb.set_trace()
     existing_swarm_ids = set(swarm_ls(graplctl_state))
     if swarm_id in existing_swarm_ids:
         LOGGER.warn(f"swarm {swarm_id} already exists")
