@@ -12,11 +12,11 @@ os=$(uname --kernel-name)
 arch=$(uname --machine)
 
 curl --silent \
-     --show-error \
-     --location \
-     "https://github.com/bufbuild/buf/releases/download/v${version}/buf-${os}-${arch}" \
-     --output buf
+    --show-error \
+    --location \
+    "https://github.com/bufbuild/buf/releases/download/v${version}/buf-${os}-${arch}" \
+    --output buf
 
 chmod +x buf
 
->&2 echo "Installation of 'buf' version ${version} to the current directory is complete"
+echo >&2 "Installation of 'buf' version ${version} to the current directory is complete"

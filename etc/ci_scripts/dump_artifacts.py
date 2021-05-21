@@ -59,11 +59,13 @@ def _lambda_names() -> List[str]:
     # We always use the us-east-1 region, and don't change the account
     # ID from Localstack's default of 000000000000; if that ever
     # changes, this prefix would need to be changed accordingly.
-    lambda_container_prefix="localstack_lambda_arn_aws_lambda_us-east-1_000000000000_function_"
-    containers=_container_names_by_prefix(lambda_container_prefix)
+    lambda_container_prefix = (
+        "localstack_lambda_arn_aws_lambda_us-east-1_000000000000_function_"
+    )
+    containers = _container_names_by_prefix(lambda_container_prefix)
 
     # Chop off the prefix to get just the names of the lambda functions
-    return [name.replace(lambda_container_prefix, "") for name in containers ]
+    return [name.replace(lambda_container_prefix, "") for name in containers]
 
 
 def _dump_lambda_log(lambda_name: str, dir: Path) -> None:
@@ -91,15 +93,15 @@ def _dump_lambda_log(lambda_name: str, dir: Path) -> None:
                 "--endpoint-url=http://localhost:4566",
                 "logs",
                 "tail",
-                f"/aws/lambda/{lambda_name}"
+                f"/aws/lambda/{lambda_name}",
             ],
             stdout=out_stream,
             env={
                 "PATH": os.environ["PATH"],
                 # "test" is the value assumed by Localstack
                 "AWS_ACCESS_KEY_ID": "test",
-                "AWS_SECRET_ACCESS_KEY": "test"
-            }
+                "AWS_SECRET_ACCESS_KEY": "test",
+            },
         )
 
 
@@ -117,6 +119,7 @@ def _dump_docker_log(container_name: str, dir: Path) -> None:
             shell=True,
         )
 
+
 def dump_docker_ps(dir: Path) -> None:
     """
     run `docker ps` and dump to $DIR/docker_ps.log
@@ -131,6 +134,7 @@ def dump_docker_ps(dir: Path) -> None:
             shell=True,
         )
 
+
 def dump_all_logs(compose_project: str, artifacts_dir: Path) -> None:
     containers = _container_names_by_prefix(compose_project)
     for container in containers:
@@ -139,24 +143,23 @@ def dump_all_logs(compose_project: str, artifacts_dir: Path) -> None:
         _dump_lambda_log(lambda_fn, dir=artifacts_dir)
 
 
-def dump_volume(compose_project: Optional[str], volume_name: str, artifacts_dir: Path) -> None:
+def dump_volume(
+    compose_project: Optional[str], volume_name: str, artifacts_dir: Path
+) -> None:
     # Make a temporary container with the volume mounted
     # docker-compose prefixes volume names with the compose project name.
     prefix = f"{compose_project}_" if compose_project else ""
-    container_id = (
-        subprocess.run(
-            f"docker run -d --volume {prefix}{volume_name}:/{volume_name} alpine true",
-            shell=True,
-            capture_output=True,
-            text=True)
-        .stdout.strip()
-    )
+    container_id = subprocess.run(
+        f"docker run -d --volume {prefix}{volume_name}:/{volume_name} alpine true",
+        shell=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
     print(f"Temporary container {container_id}")
 
     # Copy contents of /mounted_volume into artifacts_dir
     subprocess.run(
-        f"docker cp {container_id}:/{volume_name} {artifacts_dir}",
-        shell=True
+        f"docker cp {container_id}:/{volume_name} {artifacts_dir}", shell=True
     )
 
     subprocess.run(f"docker rm {container_id}", shell=True)
@@ -183,7 +186,13 @@ if __name__ == "__main__":
 
     dump_docker_ps(artifacts_dir)
     dump_all_logs(compose_project=compose_project, artifacts_dir=artifacts_dir)
-    dump_volume(compose_project=compose_project, volume_name="dgraph_export", artifacts_dir=artifacts_dir)
+    dump_volume(
+        compose_project=compose_project,
+        volume_name="dgraph_export",
+        artifacts_dir=artifacts_dir,
+    )
     # dynamodb dump is done in the e2e binary, which is outside compose - hence, no compose project.
-    dump_volume(compose_project=None, volume_name="dynamodb_dump", artifacts_dir=artifacts_dir)
+    dump_volume(
+        compose_project=None, volume_name="dynamodb_dump", artifacts_dir=artifacts_dir
+    )
     logging.info(f"Dumped to {artifacts_dir}")

@@ -6,19 +6,13 @@ TODO: I believe this script is superceded by `upload-sysmon-logs`, which takes i
 
 import argparse
 import json
+import random
+import string
+import time
 from datetime import datetime
 
-try:
-    from typing import Any, Dict, Union, Optional
-except:
-    pass
-
-import time
-import string
 import boto3
-import random
 import zstd
-import sys
 
 
 def rand_str(l):
