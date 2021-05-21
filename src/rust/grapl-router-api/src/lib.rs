@@ -19,23 +19,21 @@
 
 // use actix_web::HttpRequest;
 // use std::thread::Builder;
-// use actix_web::http::{Method, Uri};
-use http::{Request, Response};
+// use std::thread::Builder;
+// use http::{Request, Response}; // this library just describes types
+// use ^^ to implement the http client but it's not a client itself
 
+use::reqwest;
 
-pub async fn make_request(path: &str) -> Response<()>{
-    let request = Request::post(format!("http://localhost:8000/{}", path)) // replace with Colins Grpc
-        .body(())
-        .unwrap();
+pub async fn make_request(path: &str) ->  Result<(), Box<dyn std::error::Error>>{
+    let client = reqwest::Client::new();
+    let response = client.post(format!("http://localhost:8000/{}", path))
+        .body("tbd")
+        .send()
+        .await?;
 
-    // return request;
-
-    match request.await {
-        Ok(res) => res,
-        Err(err) => err,
-    }
+    Ok(())
 }
-
 
 pub mod model_plugin_deployer_router;
 
