@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, TypeVar, List, Set, Dict, Tuple, Optional, Union
+from typing import Any, TypeVar, List, Set, Dict, Tuple, Optional
 
 from grapl_analyzerlib.analyzer import OneOrMany
 from grapl_analyzerlib.node_types import (

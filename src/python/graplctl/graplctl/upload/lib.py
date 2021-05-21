@@ -8,7 +8,6 @@ from grapl_tests_common.upload_analyzers import AnalyzerUpload, upload_analyzers
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
-    from mypy_boto3_sqs.client import SQSClient
 
 
 def upload_analyzer(

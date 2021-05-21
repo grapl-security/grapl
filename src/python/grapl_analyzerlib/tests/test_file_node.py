@@ -1,13 +1,10 @@
 import unittest
-import json
 
-from typing import cast, Dict, Type, Any, Optional
-from uuid import uuid4
+from typing import cast, Optional
 
 import hypothesis
 
 import hypothesis.strategies as st
-from grapl_analyzerlib.node_types import PropType
 
 from hypothesis import given
 
@@ -15,8 +12,7 @@ import pytest
 
 from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.nodes.file import FileQuery, FileView
-from grapl_analyzerlib.viewable import Viewable
-from grapl_analyzerlib.test_utils.dgraph_utils import upsert, create_edge
+from grapl_analyzerlib.test_utils.dgraph_utils import upsert
 
 
 def get_or_create_file_node(

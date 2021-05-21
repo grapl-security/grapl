@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import List, Optional, Sequence
+from typing import List, Optional
 
 import pulumi_aws as aws
 from infra.config import DEPLOYMENT_NAME

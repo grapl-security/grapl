@@ -3,13 +3,11 @@ import logging
 import os
 import sys
 
-from typing import Any, Dict, List, Tuple, Union, Optional, cast, TypeVar, Set
+from typing import Any, Dict, List, Tuple, Union, Optional, cast, TypeVar
 
 from grapl_analyzerlib.viewable import traverse_view_iter
 
 from grapl_analyzerlib.nodes.entity import EntityView, EntityQuery
-
-from grapl_analyzerlib.nodes.base import BaseView
 
 from grapl_analyzerlib.grapl_client import GraphClient
 from pydgraph import Txn

@@ -20,7 +20,7 @@ from typing import (
 )
 
 if TYPE_CHECKING:
-    from grapl_analyzerlib.queryable import Queryable
+    from grapl_analyzerlib.queryable import Queryable  # noqa: F401
 
 from grapl_analyzerlib.extendable import Extendable
 from grapl_analyzerlib.grapl_client import GraphClient

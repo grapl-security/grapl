@@ -6,9 +6,9 @@ import string
 import time
 from dataclasses import dataclass
 from datetime import datetime
-from os import PathLike, environ
+from os import PathLike
 from sys import maxsize
-from typing import TYPE_CHECKING, Callable, Iterator, List, Optional, cast
+from typing import TYPE_CHECKING, Iterator, List, Optional, cast
 
 from grapl_common.env_helpers import S3ClientFactory, SQSClientFactory
 

@@ -3,14 +3,30 @@ from grapl_analyzerlib.nodes.process import (
     ProcessQuery,
 )
 
-from grapl_analyzerlib.nodes.asset import AssetView, AssetQuery, AssetSchema
+from grapl_analyzerlib.nodes.asset import (
+    AssetView,
+    AssetQuery,
+    AssetSchema,
+)
 from grapl_analyzerlib.nodes.base import BaseView, BaseQuery, BaseSchema
-from grapl_analyzerlib.nodes.entity import EntityView, EntityQuery, EntitySchema
-from grapl_analyzerlib.nodes.process import ProcessView, ProcessQuery, ProcessSchema
+from grapl_analyzerlib.nodes.entity import (
+    EntityView,
+    EntityQuery,
+    EntitySchema,
+)
+from grapl_analyzerlib.nodes.process import (
+    ProcessView,
+    ProcessQuery,
+    ProcessSchema,
+)
 from grapl_analyzerlib.nodes.file import FileView, FileQuery, FileSchema
 from grapl_analyzerlib.nodes.risk import RiskView, RiskQuery, RiskSchema
 from grapl_analyzerlib.nodes.lens import LensView, LensQuery, LensSchema
-from grapl_analyzerlib.nodes.ip_port import IpPortView, IpPortQuery, IpPortSchema
+from grapl_analyzerlib.nodes.ip_port import (
+    IpPortView,
+    IpPortQuery,
+    IpPortSchema,
+)
 from grapl_analyzerlib.nodes.ip_address import (
     IpAddressView,
     IpAddressQuery,
