@@ -37,6 +37,7 @@ ENV PATH=/home/grapl/pulumi-bin:${PATH}
 COPY --chown=grapl pants pants
 COPY --chown=grapl pants-plugins pants-plugins
 COPY --chown=grapl pyproject.toml pyproject.toml
+COPY --chown=grapl .flake8 .flake8
 COPY --chown=grapl src/python/mypy.ini src/python/mypy.ini
 COPY --chown=grapl pants.toml pants.toml
 COPY --chown=grapl 3rdparty 3rdparty

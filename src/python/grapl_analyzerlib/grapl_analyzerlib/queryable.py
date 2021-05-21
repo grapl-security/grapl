@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from grapl_analyzerlib.viewable import Viewable
 
 Q = TypeVar("Q", bound="Queryable")
-V = TypeVar("V", bound="Viewable")
+V = TypeVar("V", bound=Viewable)
 F = TypeVar("F", bound="Queryable")
 
 ToOneFilter = List[F]
@@ -261,4 +261,4 @@ class Queryable(Generic[V, Q], Extendable, abc.ABC):
 
 from grapl_analyzerlib.schema import Schema
 from grapl_analyzerlib.comparators import Cmp, Eq
-from grapl_analyzerlib.query_gen import gen_query, gen_query_parameterized, VarAllocator
+from grapl_analyzerlib.query_gen import gen_query, gen_query_parameterized

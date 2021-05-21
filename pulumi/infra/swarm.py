@@ -10,7 +10,6 @@ from infra.config import DEPLOYMENT_NAME, DGRAPH_LOG_RETENTION_DAYS
 
 import pulumi
 from pulumi.output import Output
-from pulumi.resource import ResourceOptions
 
 # These are COPYd in from Dockerfile.pulumi
 SWARM_INIT_DIR = Path("../src/js/grapl-cdk/swarm").resolve()

@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from typing import Any, ContextManager, Dict, Sequence
-from unittest.mock import ANY, MagicMock, Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 from click.testing import CliRunner, Result
 from graplctl import cli

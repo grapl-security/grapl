@@ -3,12 +3,10 @@ from __future__ import annotations
 import json
 import logging
 import os
-import re
 import sys
 import time
 from hashlib import pbkdf2_hmac, sha256
 from hmac import compare_digest
-from http import HTTPStatus
 from random import uniform
 from typing import (
     TYPE_CHECKING,
@@ -25,7 +23,7 @@ from typing import (
 
 import boto3
 import jwt
-from chalice import Chalice, CORSConfig, Response
+from chalice import Chalice, Response
 from grapl_common.debugger.vsc_debugger import wait_for_vsc_debugger
 from grapl_common.env_helpers import (
     DynamoDBResourceFactory,

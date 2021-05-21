@@ -8,7 +8,7 @@ from typing import Optional, TYPE_CHECKING
 from pathlib import Path
 
 if TYPE_CHECKING:
-    from mypy_boto3_s3 import S3ServiceResource, S3Client
+    from mypy_boto3_s3 import S3Client
 
 GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
 LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL

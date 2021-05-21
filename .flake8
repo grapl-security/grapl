@@ -1,0 +1,14 @@
+[flake8]
+disable-noqa
+select =
+    # F401: unused imports
+    F401
+ignore =
+    # E501: line too long
+    E501
+per-file-ignores =
+    # This file is basically *all* imported-but-unused
+    src/python/grapl_analyzerlib/grapl_analyzerlib/prelude.py: F401
+exclude =
+    # This is apparently a generated file
+    src/python/grapl_analyzerlib/grapl_analyzerlib/graph_description_pb2.pyi

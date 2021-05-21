@@ -2,7 +2,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from enum import Enum
 from sys import stdout
-from typing import Callable, Iterator, Optional, Sequence, TextIO, Union
+from typing import Callable, Iterator, Optional, Sequence, Union
 
 from grapl_common.metrics.statsd_formatter import (
     DEFAULT_SAMPLE_RATE,

@@ -4,7 +4,7 @@ import json
 import os
 import sys
 import time
-from typing import TYPE_CHECKING, List
+from typing import List
 
 import boto3
 import pydgraph
@@ -32,9 +32,6 @@ from grapl_analyzerlib.prelude import (
 from grapl_analyzerlib.provision import provision_common
 from grapl_common.env_helpers import DynamoDBResourceFactory
 from grapl_common.grapl_logger import get_module_grapl_logger
-
-if TYPE_CHECKING:
-    from mypy_boto3_dynamodb import DynamoDBServiceResource
 
 LOGGER = get_module_grapl_logger(default_log_level="INFO")
 

@@ -48,7 +48,6 @@ IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 LOGGER = get_module_grapl_logger(default_log_level="ERROR")
 
 if TYPE_CHECKING:
-    from mypy_boto3_dynamodb import DynamoDBServiceResource
     from mypy_boto3_s3 import S3Client
 
 try:

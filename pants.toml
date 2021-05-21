@@ -4,6 +4,7 @@ backend_packages = [
   "pants.backend.awslambda.python",
   "pants.backend.codegen.protobuf.python",
   "pants.backend.python",
+  "pants.backend.python.lint.flake8",
   "pants.backend.python.lint.isort",
   "pants.backend.python.lint.black",
   "pants.backend.python.typecheck.mypy",
@@ -108,3 +109,6 @@ args = [ "--show-error-codes" ]
 
 [ipython]
 version = "ipython==7.20.0"
+
+[flake8]
+config = ".flake8"

@@ -1,7 +1,5 @@
 import abc
 
-from typing import Generic, Type, TypeVar
-
 
 class Extendable(abc.ABC):
     @classmethod

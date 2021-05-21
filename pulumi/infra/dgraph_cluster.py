@@ -3,12 +3,11 @@ from typing import Any, Optional
 
 import pulumi_aws as aws
 from infra.bucket import Bucket
-from infra.config import DEPLOYMENT_NAME, DGRAPH_LOG_RETENTION_DAYS
+from infra.config import DEPLOYMENT_NAME
 from infra.swarm import Ec2Port, Swarm
 
 import pulumi
 from pulumi.output import Output
-from pulumi.resource import ResourceOptions
 
 # These are COPYd in from Dockerfile.pulumi
 DGRAPH_CONFIG_DIR = Path("../src/js/grapl-cdk/dgraph").resolve()

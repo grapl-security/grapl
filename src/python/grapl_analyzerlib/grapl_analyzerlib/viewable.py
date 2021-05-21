@@ -34,7 +34,7 @@ LOGGER.setLevel(LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 V = TypeVar("V", bound="Viewable")
-Q = TypeVar("Q", bound="Queryable")
+Q = TypeVar("Q", bound=Queryable)
 T = TypeVar("T")
 OneOrMany = Union[List[T], T]
 

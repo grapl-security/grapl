@@ -1,5 +1,5 @@
 import unittest
-from typing import NewType, Dict, cast
+from typing import NewType, Dict
 
 import hypothesis.strategies as st
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from os import PathLike, environ
+from os import PathLike
 from typing import TYPE_CHECKING
 
 from grapl_common.env_helpers import get_deployment_name

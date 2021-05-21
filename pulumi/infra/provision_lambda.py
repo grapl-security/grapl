@@ -1,10 +1,8 @@
 from typing import Optional
 
-from infra.bucket import Bucket
 from infra.config import DEPLOYMENT_NAME, GLOBAL_LAMBDA_ZIP_TAG
 from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
-from infra.engagement_notebook import EngagementNotebook
 from infra.lambda_ import Lambda, LambdaExecutionRole, PythonLambdaArgs, code_path_for
 from infra.network import Network
 from infra.secret import JWTSecret
