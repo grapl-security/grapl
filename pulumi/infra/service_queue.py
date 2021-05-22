@@ -2,7 +2,7 @@ import json
 from typing import Optional
 
 import pulumi_aws as aws
-from infra.config import AWS_ACCOUNT_ID, DEPLOYMENT_NAME, import_aware_opts
+from infra.config import DEPLOYMENT_NAME
 from infra.emitter import EventEmitter
 from infra.policies import attach_policy
 
@@ -36,10 +36,6 @@ class ServiceQueue(pulumi.ComponentResource):
         # TODO: delete_before_replace is only needed if we're
         # overriding the name of the queues
 
-        # Queues have to be imported by URL, which includes the
-        # account ID
-        queue_import_prefix = f"https://queue.amazonaws.com/{AWS_ACCOUNT_ID}"
-
         logical_dead_letter_name = f"{name}-dead-letter-queue"
         physical_dead_letter_name = f"{DEPLOYMENT_NAME}-{logical_dead_letter_name}"
         self.dead_letter_queue = aws.sqs.Queue(
@@ -47,8 +43,7 @@ class ServiceQueue(pulumi.ComponentResource):
             name=physical_dead_letter_name,
             message_retention_seconds=message_retention_seconds,
             visibility_timeout_seconds=30,
-            opts=import_aware_opts(
-                f"{queue_import_prefix}/{physical_dead_letter_name}",
+            opts=pulumi.ResourceOptions(
                 parent=self,
                 delete_before_replace=True,
             ),
@@ -62,8 +57,7 @@ class ServiceQueue(pulumi.ComponentResource):
             message_retention_seconds=message_retention_seconds,
             visibility_timeout_seconds=360,
             redrive_policy=self.dead_letter_queue.arn.apply(redrive_policy),
-            opts=import_aware_opts(
-                f"{queue_import_prefix}/{physical_retry_name}",
+            opts=pulumi.ResourceOptions(
                 parent=self,
                 delete_before_replace=True,
             ),
@@ -77,8 +71,7 @@ class ServiceQueue(pulumi.ComponentResource):
             message_retention_seconds=message_retention_seconds,
             visibility_timeout_seconds=180,
             redrive_policy=self.retry_queue.arn.apply(redrive_policy),
-            opts=import_aware_opts(
-                f"{queue_import_prefix}/{physical_queue_name}",
+            opts=pulumi.ResourceOptions(
                 parent=self,
                 delete_before_replace=True,
             ),
