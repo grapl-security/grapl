@@ -65,8 +65,6 @@ class ModelPluginDeployer(pulumi.ComponentResource):
 
         plugins_bucket.grant_read_write_permissions_to(self.role)
 
-        plugins_bucket.grant_delete_permissions_to(self.role)
-
         dgraph_cluster.allow_connections_from(self.function.security_group)
 
         self.register_outputs({})

@@ -138,30 +138,6 @@ class Bucket(aws.s3.Bucket):
             opts=pulumi.ResourceOptions(parent=role),
         )
 
-    def grant_delete_permissions_to(self, role: aws.iam.Role) -> None:
-        """ Adds the ability to delete objects from this bucket to the provided `Role`. """
-        aws.iam.RolePolicy(
-            f"{role._name}-deletes-{self._name}",
-            role=role.name,
-            policy=self.arn.apply(
-                lambda bucket_arn: json.dumps(
-                    {
-                        "Version": "2012-10-17",
-                        "Statement": [
-                            {
-                                "Effect": "Allow",
-                                # TODO: Prefer to enumerate specific
-                                # actions rather than wildcards
-                                "Action": "s3:DeleteObject*",
-                                "Resource": f"{bucket_arn}/*",
-                            }
-                        ],
-                    }
-                )
-            ),
-            opts=pulumi.ResourceOptions(parent=role),
-        )
-
     def _upload_file_to_bucket(
         self, file_path: Path, root_path: Path
     ) -> aws.s3.BucketObject:
