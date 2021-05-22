@@ -75,6 +75,14 @@ steps:
       automatic:
         limit: 3
 
+  - label: ":bash::jeans: Linting"
+    command:
+      - make lint-shell
+    plugins:
+      - gencer/cache#v2.4.8:
+          id: pants-shell
+          <<: *pants_cache_config
+
   - label: ":python::jeans: Unit Tests"
     command:
       - make test-unit-python
@@ -106,7 +114,7 @@ steps:
   - label: ":typescript::docker: Unit Tests"
     command:
       - make test-unit-js
-  
+
   - label: ":typescript::lint-roller: Lint Typescript/JS"
     command:
       - make lint-js
