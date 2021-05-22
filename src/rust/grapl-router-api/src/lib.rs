@@ -1,6 +1,4 @@
-// use grapl_router_api::model_plugin_deployer_router::delete::grapl_model_plugin_delete;
 
-//
 // pub fn get_path(_path: String) -> String {
 //     // if path == "/modelPluginDeployer"{
 //     //     deploy();
@@ -17,18 +15,16 @@
 //
 // }
 
-// use actix_web::HttpRequest;
-// use std::thread::Builder;
-// use std::thread::Builder;
-// use http::{Request, Response}; // this library just describes types
-// use ^^ to implement the http client but it's not a client itself
 
 use::reqwest;
+// use actix_web::body::Body;
+use actix_web::HttpResponse;
 
-pub async fn make_request(path: &str) ->  Result<(), Box<dyn std::error::Error>>{
+
+pub async fn make_request(path: &str, body: HttpResponse) ->  Result<(), Box<dyn std::error::Error>>{
     let client = reqwest::Client::new();
     let response = client.post(format!("http://localhost:8000/{}", path))
-        .body("tbd")
+        .body(body)
         .send()
         .await?;
 

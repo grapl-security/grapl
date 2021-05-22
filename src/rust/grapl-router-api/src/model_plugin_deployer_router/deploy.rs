@@ -1,14 +1,18 @@
-use actix_web::{post, Responder, HttpResponse};
 use crate::make_request;
+use actix_web::{post, Responder, HttpResponse};
+
 
 // actix procedural macros that route incoming http requests
 #[post("/modelPluginDeployer/deploy")]
 pub async fn grapl_model_plugin_deployer(req_body: String) -> impl Responder { // IDK what this body is yet - will change types
-    HttpResponse::Ok().body(req_body);
-    //curl("http:colinapi.com")
-    //.await
-    make_request("/modelPluginDeployer/deploy");
+    let body = HttpResponse::Ok().body(req_body);
     // CALL MODEL-PLUGIN-DEPOYER GRPC CLIENT
+    make_request("/modelPluginDeployer/deploy", body);
+
+
+
+    // We will make a post request to our new actix server
+    // This will route us to the appropriate model plugin deployer service.
 
     // we come in on a path. Based on that path, we route the request to the appropriate service.
 
@@ -20,5 +24,4 @@ pub async fn grapl_model_plugin_deployer(req_body: String) -> impl Responder { /
     // every route in service can have a file
     // setup & write tests with an http client
 
-    ""
 }
