@@ -56,8 +56,20 @@ class Bucket(aws.s3.Bucket):
                             {
                                 "Effect": "Allow",
                                 "Action": [
-                                    # TODO: Prefer to enumerate specific
-                                    # actions rather than wildcards
+                                    "s3:GetBucketAcl",
+                                    "s3:GetBucketCORS",
+                                    "s3:GetBucketLocation",
+                                    "s3:GetBucketLogging",
+                                    "s3:GetBucketNotification",
+                                    "s3:GetBucketObjectLockConfiguration",
+                                    "s3:GetBucketOwnershipControls",
+                                    "s3:GetBucketPolicy",
+                                    "s3:GetBucketPolicyStatus",
+                                    "s3:GetBucketPublicAccessBlock",
+                                    "s3:GetBucketRequestPayment",
+                                    "s3:GetBucketTagging",
+                                    "s3:GetBucketVersioning",
+                                    "s3:GetBucketWebsite",
                                     "s3:GetObject",
                                     "s3:GetObjectAcl",
                                     "s3:GetObjectLegalHold",
@@ -69,7 +81,6 @@ class Bucket(aws.s3.Bucket):
                                     "s3:GetObjectVersionForReplication",
                                     "s3:GetObjectVersionTagging",
                                     "s3:GetObjectVersionTorrent",
-                                    "s3:GetBucket*",
                                     "s3:ListAccessPoints",
                                     "s3:ListAccessPointsForObjectLambda",
                                     "s3:ListAllMyBuckets",
@@ -140,7 +151,20 @@ class Bucket(aws.s3.Bucket):
                                 # enumerate the *specific*
                                 # actions that are needed.
                                 "Action": [
-                                    "s3:GetBucket*",
+                                    "s3:GetBucketAcl",
+                                    "s3:GetBucketCORS",
+                                    "s3:GetBucketLocation",
+                                    "s3:GetBucketLogging",
+                                    "s3:GetBucketNotification",
+                                    "s3:GetBucketObjectLockConfiguration",
+                                    "s3:GetBucketOwnershipControls",
+                                    "s3:GetBucketPolicy",
+                                    "s3:GetBucketPolicyStatus",
+                                    "s3:GetBucketPublicAccessBlock",
+                                    "s3:GetBucketRequestPayment",
+                                    "s3:GetBucketTagging",
+                                    "s3:GetBucketVersioning",
+                                    "s3:GetBucketWebsite",
                                     "s3:GetObject",
                                     "s3:GetObjectAcl",
                                     "s3:GetObjectLegalHold",
