@@ -115,45 +115,17 @@ class Bucket(aws.s3.Bucket):
                         "Statement": [
                             {
                                 "Effect": "Allow",
-                                # TODO: Prefer to split
-                                # these up by bucket /
-                                # object, as well as
-                                # enumerate the *specific*
-                                # actions that are needed.
+                                "Action": "s3:ListBucket",
+                                "Resource": bucket_arn,
+                            },
+                            {
+                                "Effect": "Allow",
                                 "Action": [
                                     "s3:GetObject",
-                                    "s3:GetObjectAcl",
-                                    "s3:GetObjectLegalHold",
-                                    "s3:GetObjectRetention",
-                                    "s3:GetObjectTagging",
-                                    "s3:GetObjectTorrent",
-                                    "s3:GetObjectVersion",
-                                    "s3:GetObjectVersionAcl",
-                                    "s3:GetObjectVersionForReplication",
-                                    "s3:GetObjectVersionTagging",
-                                    "s3:GetObjectVersionTorrent",
-                                    "s3:ListAccessPoints",
-                                    "s3:ListAccessPointsForObjectLambda",
-                                    "s3:ListAllMyBuckets",
-                                    "s3:ListBucket",
-                                    "s3:ListBucketMultipartUploads",
-                                    "s3:ListBucketVersions",
-                                    "s3:ListJobs",
-                                    "s3:ListMultipartUploadParts",
-                                    "s3:ListStorageLensConfigurations",
                                     "s3:DeleteObject",
-                                    "s3:DeleteObjectTagging",
-                                    "s3:DeleteObjectVersion",
-                                    "s3:DeleteObjectVersionTagging",
                                     "s3:PutObject",
-                                    "s3:PutObjectAcl",
-                                    "s3:PutObjectLegalHold",
-                                    "s3:PutObjectRetention",
-                                    "s3:PutObjectTagging",
-                                    "s3:PutObjectVersionAcl",
-                                    "s3:PutObjectVersionTagging",
                                 ],
-                                "Resource": [bucket_arn, f"{bucket_arn}/*"],
+                                "Resource": f"{bucket_arn}/*",
                             },
                         ],
                     }
