@@ -103,7 +103,7 @@ class EventEmitter(pulumi.ComponentResource):
                                     "s3:PutObjectVersionAcl",
                                     "s3:PutObjectVersionTagging",
                                 ],
-                                "Resource": [bucket_arn, f"{bucket_arn}/*"],
+                                "Resource": f"{bucket_arn}/*",
                             }
                         ],
                     }
