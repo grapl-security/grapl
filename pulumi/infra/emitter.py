@@ -91,7 +91,10 @@ class EventEmitter(pulumi.ComponentResource):
                                 "Effect": "Allow",
                                 "Action": [
                                     "s3:AbortMultipartUpload",
-                                    "s3:DeleteObject*",
+                                    "s3:DeleteObject",
+                                    "s3:DeleteObjectTagging",
+                                    "s3:DeleteObjectVersion",
+                                    "s3:DeleteObjectVersionTagging",
                                     "s3:PutObject*",
                                 ],
                                 "Resource": [bucket_arn, f"{bucket_arn}/*"],
