@@ -90,10 +90,6 @@ class EventEmitter(pulumi.ComponentResource):
                             {
                                 "Effect": "Allow",
                                 "Action": [
-                                    "s3:DeleteObject",
-                                    "s3:DeleteObjectTagging",
-                                    "s3:DeleteObjectVersion",
-                                    "s3:DeleteObjectVersionTagging",
                                     "s3:PutObject",
                                     "s3:PutObjectAcl",
                                     "s3:PutObjectLegalHold",
