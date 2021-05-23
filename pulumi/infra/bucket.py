@@ -58,7 +58,17 @@ class Bucket(aws.s3.Bucket):
                                 "Action": [
                                     # TODO: Prefer to enumerate specific
                                     # actions rather than wildcards
-                                    "s3:GetObject*",
+                                    "s3:GetObject",
+                                    "s3:GetObjectAcl",
+                                    "s3:GetObjectLegalHold",
+                                    "s3:GetObjectRetention",
+                                    "s3:GetObjectTagging",
+                                    "s3:GetObjectTorrent",
+                                    "s3:GetObjectVersion",
+                                    "s3:GetObjectVersionAcl",
+                                    "s3:GetObjectVersionForReplication",
+                                    "s3:GetObjectVersionTagging",
+                                    "s3:GetObjectVersionTorrent",
                                     "s3:GetBucket*",
                                     "s3:ListAccessPoints",
                                     "s3:ListAccessPointsForObjectLambda",
@@ -130,8 +140,18 @@ class Bucket(aws.s3.Bucket):
                                 # enumerate the *specific*
                                 # actions that are needed.
                                 "Action": [
-                                    "s3:GetObject*",
                                     "s3:GetBucket*",
+                                    "s3:GetObject",
+                                    "s3:GetObjectAcl",
+                                    "s3:GetObjectLegalHold",
+                                    "s3:GetObjectRetention",
+                                    "s3:GetObjectTagging",
+                                    "s3:GetObjectTorrent",
+                                    "s3:GetObjectVersion",
+                                    "s3:GetObjectVersionAcl",
+                                    "s3:GetObjectVersionForReplication",
+                                    "s3:GetObjectVersionTagging",
+                                    "s3:GetObjectVersionTorrent",
                                     "s3:ListAccessPoints",
                                     "s3:ListAccessPointsForObjectLambda",
                                     "s3:ListAllMyBuckets",
