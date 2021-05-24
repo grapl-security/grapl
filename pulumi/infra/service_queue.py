@@ -2,6 +2,7 @@ import json
 from typing import Optional
 
 import pulumi_aws as aws
+from infra import queue_policy
 from infra.config import DEPLOYMENT_NAME
 from infra.emitter import EventEmitter
 
@@ -106,22 +107,22 @@ class ServiceQueue(pulumi.ComponentResource):
         return self.dead_letter_queue.id
 
     def grant_main_queue_consumption_to(self, role: aws.iam.Role) -> None:
-        _queue_consumption_policy(self.queue, role)
+        queue_policy.consumption_policy(self.queue, role)
 
     def grant_retry_queue_consumption_to(self, role: aws.iam.Role) -> None:
-        _queue_consumption_policy(self.retry_queue, role)
+        queue_policy.consumption_policy(self.retry_queue, role)
 
     def grant_dead_letter_queue_consumption_to(self, role: aws.iam.Role) -> None:
-        _queue_consumption_policy(self.dead_letter_queue, role)
+        queue_policy.consumption_policy(self.dead_letter_queue, role)
 
     def grant_main_queue_send_to(self, role: aws.iam.Role) -> None:
-        _queue_send_policy(self.queue, role)
+        queue_policy.send_policy(self.queue, role)
 
     def grant_retry_queue_send_to(self, role: aws.iam.Role) -> None:
-        _queue_send_policy(self.retry_queue, role)
+        queue_policy.send_policy(self.retry_queue, role)
 
     def grant_dead_letter_queue_send_to(self, role: aws.iam.Role) -> None:
-        _queue_send_policy(self.dead_letter_queue, role)
+        queue_policy.send_policy(self.dead_letter_queue, role)
 
     def subscribe_to_emitter(self, emitter: EventEmitter) -> None:
         """
@@ -135,57 +136,3 @@ class ServiceQueue(pulumi.ComponentResource):
             raw_message_delivery=True,
             opts=pulumi.ResourceOptions(parent=emitter.topic),
         )
-
-
-def _queue_consumption_policy(queue: aws.sqs.Queue, role: aws.iam.Role) -> None:
-    aws.iam.RolePolicy(
-        f"{role._name}-consumes-from-{queue._name}",
-        role=role.name,
-        policy=queue.arn.apply(
-            lambda arn: json.dumps(
-                {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                        {
-                            "Effect": "Allow",
-                            "Action": [
-                                "sqs:ChangeMessageVisibility",
-                                "sqs:DeleteMessage",
-                                "sqs:GetQueueAttributes",
-                                "sqs:GetQueueUrl",
-                                "sqs:ReceiveMessage",
-                            ],
-                            "Resource": arn,
-                        }
-                    ],
-                }
-            )
-        ),
-        opts=pulumi.ResourceOptions(parent=role),
-    )
-
-
-def _queue_send_policy(queue: aws.sqs.Queue, role: aws.iam.Role) -> None:
-    aws.iam.RolePolicy(
-        f"{role._name}-writes-to-{queue._name}",
-        role=role.name,
-        policy=queue.arn.apply(
-            lambda arn: json.dumps(
-                {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                        {
-                            "Effect": "Allow",
-                            "Action": [
-                                "sqs:SendMessage",
-                                "sqs:GetQueueAttributes",
-                                "sqs:GetQueueUrl",
-                            ],
-                            "Resource": arn,
-                        }
-                    ],
-                }
-            )
-        ),
-        opts=pulumi.ResourceOptions(parent=role),
-    )
