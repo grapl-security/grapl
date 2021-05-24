@@ -49,7 +49,7 @@ class Network(pulumi.ComponentResource):
             cidr_block=str(cidr_block),
             enable_dns_hostnames=True,
             enable_dns_support=True,
-            tags={"Name": name},
+            tags={"Name": f"{name}-{DEPLOYMENT_NAME}"},
             opts=pulumi.ResourceOptions(parent=self),
         )
 
@@ -85,7 +85,7 @@ class Network(pulumi.ComponentResource):
                 availability_zone=az,
                 cidr_block=str(subnet),
                 map_public_ip_on_launch=True,
-                tags={"Name": f"{name}-{az}-public-subnet"},
+                tags={"Name": f"{name}-{DEPLOYMENT_NAME}-{az}-public-subnet"},
                 opts=pulumi.ResourceOptions(parent=self),
             )
             for az, subnet in zip(
@@ -101,7 +101,7 @@ class Network(pulumi.ComponentResource):
                 cidr_block=str(subnet),
                 map_public_ip_on_launch=False,
                 tags={
-                    "Name": f"{name}-{az}-private-subnet",
+                    "Name": f"{name}-{DEPLOYMENT_NAME}-{az}-private-subnet",
                     # Consumed by `grapl_subnet_ids` in graplctl
                     "graplctl_get_subnet_tag": f"{DEPLOYMENT_NAME}-private-subnet",
                 },
