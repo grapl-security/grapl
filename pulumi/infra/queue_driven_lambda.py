@@ -1,7 +1,7 @@
-import json
 from typing import Optional
 
 import pulumi_aws as aws
+from infra import queue_policy
 from infra.lambda_ import Lambda, LambdaArgs
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
@@ -32,31 +32,7 @@ class QueueDrivenLambda(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self.policy = aws.iam.RolePolicy(
-            f"{name}-consumes-from-queue",
-            role=args.execution_role.name,
-            policy=queue.arn.apply(
-                lambda arn: json.dumps(
-                    {
-                        "Version": "2012-10-17",
-                        "Statement": [
-                            {
-                                "Effect": "Allow",
-                                "Action": [
-                                    "sqs:ChangeMessageVisibility",
-                                    "sqs:DeleteMessage",
-                                    "sqs:GetQueueAttributes",
-                                    "sqs:GetQueueUrl",
-                                    "sqs:ReceiveMessage",
-                                ],
-                                "Resource": arn,
-                            }
-                        ],
-                    }
-                )
-            ),
-            opts=pulumi.ResourceOptions(parent=args.execution_role),
-        )
+        queue_policy.consumption_policy(queue, args.execution_role)
 
         self.event_source_mapping = aws.lambda_.EventSourceMapping(
             f"queue-triggers-{name}",
