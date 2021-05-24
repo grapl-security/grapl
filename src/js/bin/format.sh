@@ -1,27 +1,28 @@
 #!/bin/bash
 set -u
-shopt -s globstar  # ** now actually works
+shopt -s globstar # ** now actually works
 
 mode=""
 
-while (( "$#" )); do
+while (("$#")); do
     case "$1" in
-        -c|--check|--ci)
+        -c | --check | --ci)
             mode="check"
             shift
             ;;
-        -u|--update)
+        -u | --update)
             mode="update"
             shift
             ;;
-        -h|--help)
+        -h | --help)
             mode="help"
             shift
+            ;;
     esac
 done
 
 printHelp() {
-    cat >&2 <<EOF
+    cat >&2 << EOF
 
     Usage: $0 <OPTIONS>
 
@@ -43,25 +44,25 @@ EOF
 
 prettier_arg=""
 if [ "${mode}" == "check" ]; then
-    prettier_arg="--check";
+    prettier_arg="--check"
 elif [ "${mode}" == "update" ]; then
-    prettier_arg="--write";
+    prettier_arg="--write"
 elif [ "${mode}" == "help" ]; then
-    printHelp;
-else printHelp;
+    printHelp
+else
+    printHelp
 fi
 
 checkPrettierInstalled() {
     set +e # Don't fail if this is exit 1!
     npm list --depth 1 --global prettier > /dev/null 2>&1
     not_installed=$?
-    set -e 
+    set -e
     if [ "$not_installed" -ne "0" ]; then
-        echo "Installing prettier" && npm install -g prettier;
+        echo "Installing prettier" && npm install -g prettier
     fi
 }
 checkPrettierInstalled
-
 
 prettier \
     --config grapl-cdk/.prettierrc.toml \
@@ -71,4 +72,4 @@ prettier \
     grapl-cdk/lib/**/*.ts \
     grapl-cdk/test/**/*.ts \
     engagement_view/src/**/*.ts \
-    engagement_view/src/**/*.tsx \
+    engagement_view/src/**/*.tsx
