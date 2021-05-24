@@ -67,7 +67,7 @@ class EngagementCreator(Service):
             name=f"{DEPLOYMENT_NAME}-{name}-publishes-to-topic",
             role=self.role.name,
             policy=publish_to_topic_policy,
-            opts=pulumi.ResourceOptions(parent=self),
+            opts=pulumi.ResourceOptions(parent=self.role),
         )
 
         for handler in self.handlers:

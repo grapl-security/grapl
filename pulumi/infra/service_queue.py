@@ -161,7 +161,7 @@ def _queue_consumption_policy(queue: aws.sqs.Queue, role: aws.iam.Role) -> None:
                 }
             )
         ),
-        opts=pulumi.ResourceOptions(parent=queue),
+        opts=pulumi.ResourceOptions(parent=role),
     )
 
 
@@ -187,5 +187,5 @@ def _queue_send_policy(queue: aws.sqs.Queue, role: aws.iam.Role) -> None:
                 }
             )
         ),
-        opts=pulumi.ResourceOptions(parent=queue),
+        opts=pulumi.ResourceOptions(parent=role),
     )

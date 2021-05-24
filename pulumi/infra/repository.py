@@ -102,5 +102,5 @@ class Repository(pulumi.ComponentResource):
                     }
                 )
             ),
-            opts=pulumi.ResourceOptions(parent=self.repository),
+            opts=pulumi.ResourceOptions(parent=role),
         )

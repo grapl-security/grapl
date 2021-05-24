@@ -55,7 +55,7 @@ class QueueDrivenLambda(pulumi.ComponentResource):
                     }
                 )
             ),
-            opts=pulumi.ResourceOptions(parent=self),
+            opts=pulumi.ResourceOptions(parent=args.execution_role),
         )
 
         self.event_source_mapping = aws.lambda_.EventSourceMapping(

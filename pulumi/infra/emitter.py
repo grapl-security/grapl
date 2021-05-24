@@ -100,7 +100,7 @@ class EventEmitter(pulumi.ComponentResource):
                     }
                 )
             ),
-            opts=pulumi.ResourceOptions(parent=self),
+            opts=pulumi.ResourceOptions(parent=role),
         )
 
     def grant_read_to(self, role: aws.iam.Role) -> None:
@@ -121,5 +121,5 @@ class EventEmitter(pulumi.ComponentResource):
                     }
                 )
             ),
-            opts=pulumi.ResourceOptions(parent=self),
+            opts=pulumi.ResourceOptions(parent=role),
         )

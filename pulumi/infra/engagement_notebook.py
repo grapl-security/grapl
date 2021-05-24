@@ -104,5 +104,5 @@ class EngagementNotebook(pulumi.ComponentResource):
                     }
                 )
             ),
-            opts=pulumi.ResourceOptions(parent=self),
+            opts=pulumi.ResourceOptions(parent=role),
         )

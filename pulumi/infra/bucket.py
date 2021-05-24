@@ -68,7 +68,7 @@ class Bucket(aws.s3.Bucket):
                     }
                 )
             ),
-            opts=pulumi.ResourceOptions(parent=self),
+            opts=pulumi.ResourceOptions(parent=role),
         )
 
     def grant_get_and_list_to(self, role: aws.iam.Role) -> None:
@@ -101,7 +101,7 @@ class Bucket(aws.s3.Bucket):
                     }
                 )
             ),
-            opts=pulumi.ResourceOptions(parent=self),
+            opts=pulumi.ResourceOptions(parent=role),
         )
 
     def grant_get_to(self, role: aws.iam.Role) -> None:
@@ -123,7 +123,7 @@ class Bucket(aws.s3.Bucket):
                     }
                 )
             ),
-            opts=pulumi.ResourceOptions(parent=self),
+            opts=pulumi.ResourceOptions(parent=role),
         )
 
     def grant_read_write_permissions_to(self, role: aws.iam.Role) -> None:
@@ -157,7 +157,7 @@ class Bucket(aws.s3.Bucket):
                     }
                 )
             ),
-            opts=pulumi.ResourceOptions(parent=self),
+            opts=pulumi.ResourceOptions(parent=role),
         )
 
     def grant_delete_permissions_to(self, role: aws.iam.Role) -> None:
@@ -181,7 +181,7 @@ class Bucket(aws.s3.Bucket):
                     }
                 )
             ),
-            opts=pulumi.ResourceOptions(parent=self),
+            opts=pulumi.ResourceOptions(parent=role),
         )
 
     def _upload_file_to_bucket(
