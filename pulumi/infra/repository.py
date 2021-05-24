@@ -5,7 +5,6 @@ from typing import Optional
 import pulumi_aws as aws
 import pulumi_docker as docker
 from infra.config import AWS_ACCOUNT_ID, DEPLOYMENT_NAME
-from infra.policies import attach_policy
 
 import pulumi
 
@@ -66,14 +65,25 @@ class Repository(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self, delete_before_replace=True),
         )
 
-        # This is the policy that would need to be attached to Fargate
-        # execution roles (for services that pull images from this
-        # repository, of course).
-        self.access_policy = aws.iam.Policy(
-            f"{image_name}-repository-access-policy",
-            description=self.repository.name.apply(
-                lambda n: f"Access images from {n} repository"
-            ),
+        self.register_outputs({})
+
+    @property
+    def registry_qualified_name(self) -> pulumi.Output[str]:
+        """
+        The fully-qualified image name for this repository, not including tags, e.g.,
+
+        <AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/<DEPLOYMENT_NAME>/<NAME>
+        """
+        return self.repository.repository_url  # type: ignore[no-any-return]
+
+    def grant_access_to(self, role: aws.iam.Role) -> None:
+        """This is the policy that would need to be attached to Fargate
+        execution roles (for services that pull images from this
+        repository, of course)."""
+
+        aws.iam.RolePolicy(
+            f"{role._name}-accesses-{self.repository._name}",
+            role=role.name,
             policy=self.repository.arn.apply(
                 lambda arn: json.dumps(
                     {
@@ -92,19 +102,5 @@ class Repository(pulumi.ComponentResource):
                     }
                 )
             ),
-            opts=pulumi.ResourceOptions(parent=self.repository),
+            opts=pulumi.ResourceOptions(parent=role),
         )
-
-        self.register_outputs({})
-
-    @property
-    def registry_qualified_name(self) -> pulumi.Output[str]:
-        """
-        The fully-qualified image name for this repository, not including tags, e.g.,
-
-        <AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/<DEPLOYMENT_NAME>/<NAME>
-        """
-        return self.repository.repository_url  # type: ignore[no-any-return]
-
-    def grant_access_to(self, role: aws.iam.Role) -> None:
-        attach_policy(self.access_policy, role)

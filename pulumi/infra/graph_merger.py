@@ -1,4 +1,5 @@
 import pulumi_docker as docker
+from infra import dynamodb
 from infra.cache import Cache
 from infra.config import configurable_envvars
 from infra.dgraph_cluster import DgraphCluster
@@ -52,14 +53,10 @@ class GraphMerger(FargateService):
         # environment.
         #
         # Investigate this further: is the properties table needed?
-        db.schema_table.grant_read_permissions_to(self.default_service.task_role)
-        db.schema_table.grant_read_permissions_to(self.retry_service.task_role)
-        db.schema_properties_table.grant_read_permissions_to(
-            self.default_service.task_role
-        )
-        db.schema_properties_table.grant_read_permissions_to(
-            self.retry_service.task_role
-        )
+        for role in [self.default_service.task_role, self.retry_service.task_role]:
+            dynamodb.grant_read_on_tables(
+                role, [db.schema_table, db.schema_properties_table]
+            )
 
         # TODO: Interestingly, the CDK code doesn't have this, even though
         # the other services do.

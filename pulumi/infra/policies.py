@@ -128,7 +128,7 @@ def attach_policy(
     )
 
 
-def _attach_policy_to_ship_logs_to_cloudwatch(
+def attach_policy_to_ship_logs_to_cloudwatch(
     role: aws.iam.Role, log_group: aws.cloudwatch.LogGroup, opts: pulumi.ResourceOptions
 ) -> aws.iam.RolePolicyAttachment:
     # This seems like it's a strict subset of CLOUDWATCH_AGENT_SERVER_POLICY

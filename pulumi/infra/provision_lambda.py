@@ -1,5 +1,6 @@
 from typing import Optional
 
+from infra import dynamodb
 from infra.config import DEPLOYMENT_NAME, GLOBAL_LAMBDA_ZIP_TAG
 from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
@@ -15,7 +16,7 @@ class Provisioner(pulumi.ComponentResource):
         self,
         network: Network,
         secret: JWTSecret,
-        dynamodb: DynamoDB,
+        db: DynamoDB,
         dgraph_cluster: DgraphCluster,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
@@ -50,7 +51,9 @@ class Provisioner(pulumi.ComponentResource):
         )
 
         secret.grant_read_permissions_to(self.role)
-        dynamodb.user_auth_table.grant_read_permissions_to(self.role)
+
+        dynamodb.grant_read_on_tables(self.role, [db.user_auth_table])
+
         dgraph_cluster.allow_connections_from(self.function.security_group)
 
         self.register_outputs({})
