@@ -1,13 +1,7 @@
 import json
 
 import pulumi_aws as aws
-from infra.config import (
-    AWS_ACCOUNT_ID,
-    DEPLOYMENT_NAME,
-    GLOBAL_LAMBDA_ZIP_TAG,
-    configurable_envvars,
-    import_aware_opts,
-)
+from infra.config import DEPLOYMENT_NAME, GLOBAL_LAMBDA_ZIP_TAG, configurable_envvars
 from infra.dgraph_cluster import DgraphCluster
 from infra.emitter import EventEmitter
 from infra.lambda_ import code_path_for
@@ -44,15 +38,11 @@ class EngagementCreator(Service):
         self.queue.subscribe_to_emitter(input_emitter)
         input_emitter.grant_read_to(self.role)
 
-        region = aws.get_region().name
         physical_topic_name = f"{DEPLOYMENT_NAME}-engagements-created-topic"
-        topic_lookup_arn = (
-            f"arn:aws:sns:{region}:{AWS_ACCOUNT_ID}:{physical_topic_name}"
-        )
         self.created_topic = aws.sns.Topic(
             "engagements-created-topic",
             name=physical_topic_name,
-            opts=import_aware_opts(topic_lookup_arn, parent=self),
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
         publish_to_topic_policy = self.created_topic.arn.apply(
