@@ -121,6 +121,8 @@ def create_instances(
 
     instances = []
     for subnet_id in subnet_ids:
+        swarm_role = "swarm-manager" if swarm_manager else "swarm-worker"
+        instance_name = f"{deployment_name}-{swarm_role}"
         if counts[subnet_id] > 0:
             instances.extend(
                 ec2.create_instances(
@@ -135,6 +137,11 @@ def create_instances(
                                 t.into_boto_tag_specification()
                                 for t in [
                                     Tag(
+                                        # Just used for the Name column in ec2 console
+                                        key="Name",
+                                        value=instance_name,
+                                    ),
+                                    Tag(
                                         key="grapl-deployment-name",
                                         value=f"{deployment_name.lower()}",
                                     ),
@@ -144,9 +151,7 @@ def create_instances(
                                     Tag(key="grapl-region", value=f"{region.lower()}"),
                                     Tag(
                                         key="grapl-swarm-role",
-                                        value="swarm-manager"
-                                        if swarm_manager
-                                        else "swarm-worker",
+                                        value=swarm_role,
                                     ),
                                     Tag(key="grapl-swarm-id", value=swarm_id),
                                 ]
