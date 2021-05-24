@@ -2,6 +2,7 @@ import json
 from typing import Optional
 
 import pulumi_aws as aws
+from infra import dynamodb
 from infra.bucket import Bucket
 from infra.config import DEPLOYMENT_NAME
 from infra.dgraph_cluster import DgraphCluster
@@ -63,8 +64,9 @@ class EngagementNotebook(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        db.user_auth_table.grant_read_write_permissions_to(self.role)
-        db.schema_table.grant_read_write_permissions_to(self.role)
+        dynamodb.grant_read_write_on_tables(
+            self.role, [db.user_auth_table, db.schema_table]
+        )
         plugins_bucket.grant_read_permissions_to(self.role)
 
         self.notebook = aws.sagemaker.NotebookInstance(

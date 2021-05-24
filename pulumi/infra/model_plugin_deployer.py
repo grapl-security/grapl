@@ -1,5 +1,6 @@
 from typing import Optional
 
+from infra import dynamodb
 from infra.bucket import Bucket
 from infra.config import GLOBAL_LAMBDA_ZIP_TAG, LOCAL_GRAPL, configurable_envvars
 from infra.dgraph_cluster import DgraphCluster
@@ -59,14 +60,8 @@ class ModelPluginDeployer(pulumi.ComponentResource):
 
         secret.grant_read_permissions_to(self.role)
 
-        # TODO: Consider moving these permission-granting functions
-        # into the dynamodb module (but still register them
-        # here... just want to centralize the logic).
-
-        # Read permissions for user auth DynamoDB table
-        db.user_auth_table.grant_read_permissions_to(self.role)
-
-        db.schema_table.grant_read_write_permissions_to(self.role)
+        dynamodb.grant_read_on_tables(self.role, [db.user_auth_table])
+        dynamodb.grant_read_write_on_tables(self.role, [db.schema_table])
 
         plugins_bucket.grant_read_write_permissions_to(self.role)
 

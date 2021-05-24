@@ -1,5 +1,6 @@
 from typing import Optional
 
+from infra import dynamodb
 from infra.bucket import Bucket
 from infra.config import GLOBAL_LAMBDA_ZIP_TAG, configurable_envvars
 from infra.dgraph_cluster import DgraphCluster
@@ -69,7 +70,7 @@ class EngagementEdge(pulumi.ComponentResource):
             notebook.grant_presigned_url_permissions_to(self.role)
 
         secret.grant_read_permissions_to(self.role)
-        db.user_auth_table.grant_read_permissions_to(self.role)
+        dynamodb.grant_read_on_tables(self.role, [db.user_auth_table])
         dgraph_cluster.allow_connections_from(self.function.security_group)
 
         self.register_outputs({})
