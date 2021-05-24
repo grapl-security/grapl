@@ -4,7 +4,6 @@ from typing import Optional
 import pulumi_aws as aws
 from infra.config import DEPLOYMENT_NAME
 from infra.emitter import EventEmitter
-from infra.policies import attach_policy
 
 import pulumi
 
@@ -77,24 +76,6 @@ class ServiceQueue(pulumi.ComponentResource):
             ),
         )
 
-        self.queue_consumption_policy = _queue_consumption_policy(
-            logical_queue_name, self.queue
-        )
-        self.retry_consumption_policy = _queue_consumption_policy(
-            logical_retry_name, self.retry_queue
-        )
-        self.dead_letter_consumption_policy = _queue_consumption_policy(
-            logical_dead_letter_name, self.dead_letter_queue
-        )
-
-        self.queue_send_policy = _queue_send_policy(logical_queue_name, self.queue)
-        self.retry_send_policy = _queue_send_policy(
-            logical_retry_name, self.retry_queue
-        )
-        self.dead_letter_send_policy = _queue_send_policy(
-            logical_dead_letter_name, self.dead_letter_queue
-        )
-
         self.register_outputs({})
 
     # Yes, the `id` property of an SQS queue is actually a URL.
@@ -125,22 +106,22 @@ class ServiceQueue(pulumi.ComponentResource):
         return self.dead_letter_queue.id
 
     def grant_main_queue_consumption_to(self, role: aws.iam.Role) -> None:
-        attach_policy(self.queue_consumption_policy, role)
+        _queue_consumption_policy(self.queue, role)
 
     def grant_retry_queue_consumption_to(self, role: aws.iam.Role) -> None:
-        attach_policy(self.retry_consumption_policy, role)
+        _queue_consumption_policy(self.retry_queue, role)
 
     def grant_dead_letter_queue_consumption_to(self, role: aws.iam.Role) -> None:
-        attach_policy(self.dead_letter_consumption_policy, role)
+        _queue_consumption_policy(self.dead_letter_queue, role)
 
     def grant_main_queue_send_to(self, role: aws.iam.Role) -> None:
-        attach_policy(self.queue_send_policy, role)
+        _queue_send_policy(self.queue, role)
 
     def grant_retry_queue_send_to(self, role: aws.iam.Role) -> None:
-        attach_policy(self.retry_send_policy, role)
+        _queue_send_policy(self.retry_queue, role)
 
     def grant_dead_letter_queue_send_to(self, role: aws.iam.Role) -> None:
-        attach_policy(self.dead_letter_send_policy, role)
+        _queue_send_policy(self.dead_letter_queue, role)
 
     def subscribe_to_emitter(self, emitter: EventEmitter) -> None:
         """
@@ -156,15 +137,10 @@ class ServiceQueue(pulumi.ComponentResource):
         )
 
 
-def _queue_consumption_policy(queue_name: str, queue: aws.sqs.Queue) -> aws.iam.Policy:
-    """Create an IAM Policy to consume messages from the given SQS queue.
-
-    queue_name is folded into the Policy resource name, and has to be a string (rather than a Pulumi Output).
-    """
-    return aws.iam.Policy(
-        f"consume-from-{queue_name}",
-        # We interpolate on queue.name to get the physical name
-        description=queue.name.apply(lambda n: f"Consume messages from the {n} queue"),
+def _queue_consumption_policy(queue: aws.sqs.Queue, role: aws.iam.Role) -> None:
+    aws.iam.RolePolicy(
+        f"{role._name}-consumes-from-{queue._name}",
+        role=role.name,
         policy=queue.arn.apply(
             lambda arn: json.dumps(
                 {
@@ -189,11 +165,10 @@ def _queue_consumption_policy(queue_name: str, queue: aws.sqs.Queue) -> aws.iam.
     )
 
 
-def _queue_send_policy(queue_name: str, queue: aws.sqs.Queue) -> aws.iam.Policy:
-    return aws.iam.Policy(
-        f"write-to-{queue_name}",
-        # We interpolate on queue.name to get the physical name
-        description=queue.name.apply(lambda n: f"Send messages from the {n} queue"),
+def _queue_send_policy(queue: aws.sqs.Queue, role: aws.iam.Role) -> None:
+    aws.iam.RolePolicy(
+        f"{role._name}-writes-to-{queue._name}",
+        role=role.name,
         policy=queue.arn.apply(
             lambda arn: json.dumps(
                 {
