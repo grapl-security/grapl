@@ -127,7 +127,7 @@ class Bucket(aws.s3.Bucket):
                                     "s3:List*",
                                     "s3:DeleteObject*",
                                     "s3:PutObject*",
-                                    "s3:Abort*",
+                                    "s3:AbortMultipartUpload",
                                 ],
                                 "Resource": [bucket_arn, f"{bucket_arn}/*"],
                             },

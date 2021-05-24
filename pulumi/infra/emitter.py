@@ -90,7 +90,7 @@ class EventEmitter(pulumi.ComponentResource):
                             {
                                 "Effect": "Allow",
                                 "Action": [
-                                    "s3:Abort*",
+                                    "s3:AbortMultipartUpload",
                                     "s3:DeleteObject*",
                                     "s3:PutObject*",
                                 ],
