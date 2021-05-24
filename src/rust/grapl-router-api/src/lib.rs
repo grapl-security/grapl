@@ -1,4 +1,4 @@
-
+#![allow(warnings)]
 // pub fn get_path(_path: String) -> String {
 //     // if path == "/modelPluginDeployer"{
 //     //     deploy();
@@ -17,18 +17,31 @@
 
 
 use::reqwest;
-// use actix_web::body::Body;
-use actix_web::HttpResponse;
+use actix_web::{HttpResponse};
+
+use reqwest::Body;
+use serde::{Serialize, Deserialize};
+use crate::model_plugin_deployer_router::deploy::DeployRequest;
 
 
-pub async fn make_request(path: &str, body: HttpResponse) ->  Result<(), Box<dyn std::error::Error>>{
+#[derive(Serialize, Deserialize)]
+pub struct PluginObject {
+    name: String,
+}
+
+pub async fn make_request(path: &str, body: DeployRequest) ->  Result<PluginObject, Box<dyn std::error::Error>> { // dyn, dynamic, we don't know what type
     let client = reqwest::Client::new();
-    let response = client.post(format!("http://localhost:8000/{}", path))
-        .body(body)
+
+
+    let response: PluginObject = client.post(format!("http://localhost:8000/modelPluginDeployer/{}", path)) // we need to change this
+        .json(&body)
         .send()
+        .await?
+        .json()
         .await?;
 
-    Ok(())
+
+    return Ok(response)
 }
 
 pub mod model_plugin_deployer_router;
