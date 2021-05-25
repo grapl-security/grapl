@@ -41,7 +41,7 @@ class IamRoleView(EntityView[SelfV, SelfQ]):
         self,
         graph_client: GraphClient,
         node_key: str,
-        uid: str,
+        uid: int,
         node_types: Set[str],
         arn: Optional[str] = None,
         role_name: Optional[str] = None,
