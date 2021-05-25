@@ -42,9 +42,6 @@ services:
         mypy -p grapl_e2e_tests
         "
 
-  # typecheck-analyzer-deployer:
-  #   image: grapl/grapl-analyzer-deployer-test:${TAG:-latest}
-
   typecheck-grapl-analyzerlib:
     image: grapl/grapl-analyzerlib-test:${TAG:-latest}
     build:
