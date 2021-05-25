@@ -29,20 +29,6 @@ services:
         mypy analyzer_executor/**/*.py
         "
 
-  typecheck-grapl-tests-common:
-    image: grapl/grapl-tests-common-python-build:${TAG:-latest}
-    build:
-      context: ${PWD}/src
-      dockerfile: ./python/Dockerfile
-      target: grapl-tests-common-build
-    command: |
-      /bin/bash -c "
-        source venv/bin/activate &&
-        cd grapl-tests-common &&
-        pip install '.[typecheck]' &&
-        mypy .
-        "
-  
   typecheck-engagement-creator:
     image: grapl/grapl-engagement-creator-test:${TAG:-latest}
     build:
