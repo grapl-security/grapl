@@ -1,6 +1,4 @@
-python_library(
-    skip_mypy=True
-)
+python_library()
 
 python_awslambda(
     name="lambda",
