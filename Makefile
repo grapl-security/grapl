@@ -211,22 +211,18 @@ test-unit-js: export COMPOSE_FILE := ./test/docker-compose.unit-tests-js.yml
 test-unit-js: build-test-unit-js ## Build and run unit tests - JavaScript only
 	test/docker-compose-with-error.sh
 
-.PHONY: test-typecheck
-test-typecheck: export COMPOSE_PROJECT_NAME := grapl-typecheck_tests
-test-typecheck: export COMPOSE_FILE := ./test/docker-compose.typecheck-tests.yml
-test-typecheck: build-test-typecheck ## Build and run typecheck tests (non-Pants)
+.PHONY: test-typecheck-docker
+test-typecheck-docker: export COMPOSE_PROJECT_NAME := grapl-typecheck_tests
+test-typecheck-docker: export COMPOSE_FILE := ./test/docker-compose.typecheck-tests.yml
+test-typecheck-docker: build-test-typecheck ## Build and run typecheck tests (non-Pants)
 	test/docker-compose-with-error.sh
 
-# Right now, we're only typechecking a select portion of code with
-# Pants until grapl-analyzerlib can be typed with MyPy; see
-# https://github.com/pantsbuild/pants/issues/11553
 .PHONY: test-typecheck-pants
 test-typecheck-pants: ## Typecheck Python code with Pants
-	./pants typecheck \
-	pulumi:: \
-	build-support:: \
-	src/python/engagement_edge:: \
-	src/python/grapl-common::
+	./pants typecheck ::
+
+.PHONY: test-typecheck
+test-typecheck: test-typecheck-docker test-typecheck-pants ## Typecheck all Python Code
 
 .PHONY: test-integration
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
