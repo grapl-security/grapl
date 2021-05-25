@@ -41,19 +41,6 @@ services:
         pip install mypy &&
         mypy -p grapl_e2e_tests
         "
-  
-  typecheck-graphql-endpoint-tests:
-    image: grapl/graphql-endpoint-tests:${TAG:-latest}
-    build:
-      context: ${PWD}/src
-      dockerfile: ./python/Dockerfile
-      target: graphql-endpoint-tests
-    command: |
-      /bin/bash -c "
-        source venv/bin/activate &&
-        pip install mypy &&
-        mypy -p graphql_endpoint_tests
-        "
 
   # typecheck-analyzer-deployer:
   #   image: grapl/grapl-analyzer-deployer-test:${TAG:-latest}
