@@ -61,7 +61,7 @@ class MetricForwarder(pulumi.ComponentResource):
                     ],
                 }
             ),
-            opts=pulumi.ResourceOptions(parent=self),
+            opts=pulumi.ResourceOptions(parent=self.role),
         )
 
         self.register_outputs({})

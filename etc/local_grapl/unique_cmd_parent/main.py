@@ -1,14 +1,14 @@
 from typing import Any, Type
 
-from grapl_analyzerlib.analyzer import Analyzer, OneOrMany, A
+from grapl_analyzerlib.analyzer import A, Analyzer, OneOrMany
 from grapl_analyzerlib.counters import ParentChildCounter
 from grapl_analyzerlib.execution import ExecutionHit
 from grapl_analyzerlib.prelude import (
     AssetQuery,
+    GraphClient,
+    Not,
     ProcessQuery,
     ProcessView,
-    Not,
-    GraphClient,
 )
 
 

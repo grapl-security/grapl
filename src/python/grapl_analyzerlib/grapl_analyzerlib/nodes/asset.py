@@ -7,9 +7,7 @@ from grapl_analyzerlib.node_types import (
     PropPrimitive,
     EdgeRelationship,
 )
-from grapl_analyzerlib.queryable import Queryable
 from grapl_analyzerlib.schema import Schema
-from grapl_analyzerlib.nodes.base import BaseView
 from grapl_analyzerlib.nodes.entity import EntitySchema, EntityQuery, EntityView
 
 AQ = TypeVar("AQ", bound="AssetQuery")

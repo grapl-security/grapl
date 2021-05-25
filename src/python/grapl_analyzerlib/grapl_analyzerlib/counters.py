@@ -1,7 +1,7 @@
 import enum
 from typing import Optional, Any
 
-from grapl_analyzerlib.queryable import Queryable, gen_query_parameterized
+from grapl_analyzerlib.queryable import Queryable
 from grapl_analyzerlib.prelude import ProcessQuery
 from grapl_analyzerlib.grapl_client import GraphClient
 

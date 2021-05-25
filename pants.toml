@@ -1,12 +1,16 @@
 [GLOBAL]
-pants_version = "2.4.0"
+pants_version = "2.5.0"
 backend_packages = [
   "pants.backend.awslambda.python",
   "pants.backend.codegen.protobuf.python",
   "pants.backend.python",
+  "pants.backend.python.lint.flake8",
   "pants.backend.python.lint.isort",
   "pants.backend.python.lint.black",
   "pants.backend.python.typecheck.mypy",
+  "pants.backend.shell",
+  "pants.backend.shell.lint.shellcheck",
+  "pants.backend.shell.lint.shfmt",
   "grapl_setup_py"
 ]
 
@@ -108,3 +112,12 @@ args = [ "--show-error-codes" ]
 
 [ipython]
 version = "ipython==7.20.0"
+
+[flake8]
+config = ".flake8"
+
+[shfmt]
+# Indent with 4 spaces
+# Indent switch cases
+# Redirect operators are followed by a space
+args = ["-i 4", "-ci", "-sr"]

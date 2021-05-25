@@ -10,7 +10,6 @@ from infra.config import DEPLOYMENT_NAME, DGRAPH_LOG_RETENTION_DAYS
 
 import pulumi
 from pulumi.output import Output
-from pulumi.resource import ResourceOptions
 
 # These are COPYd in from Dockerfile.pulumi
 SWARM_INIT_DIR = Path("../src/js/grapl-cdk/swarm").resolve()
@@ -144,7 +143,7 @@ class Swarm(pulumi.ComponentResource):
             role=self.role, policy=policies.CLOUDWATCH_AGENT_SERVER_POLICY
         )
         policies.attach_policy(role=self.role, policy=policies.SSM_POLICY)
-        policies._attach_policy_to_ship_logs_to_cloudwatch(
+        policies.attach_policy_to_ship_logs_to_cloudwatch(
             role=self.role, log_group=self.log_group, opts=child_opts
         )
 

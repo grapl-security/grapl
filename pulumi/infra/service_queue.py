@@ -2,9 +2,9 @@ import json
 from typing import Optional
 
 import pulumi_aws as aws
-from infra.config import AWS_ACCOUNT_ID, DEPLOYMENT_NAME, import_aware_opts
+from infra import queue_policy
+from infra.config import DEPLOYMENT_NAME
 from infra.emitter import EventEmitter
-from infra.policies import attach_policy
 
 import pulumi
 
@@ -36,10 +36,6 @@ class ServiceQueue(pulumi.ComponentResource):
         # TODO: delete_before_replace is only needed if we're
         # overriding the name of the queues
 
-        # Queues have to be imported by URL, which includes the
-        # account ID
-        queue_import_prefix = f"https://queue.amazonaws.com/{AWS_ACCOUNT_ID}"
-
         logical_dead_letter_name = f"{name}-dead-letter-queue"
         physical_dead_letter_name = f"{DEPLOYMENT_NAME}-{logical_dead_letter_name}"
         self.dead_letter_queue = aws.sqs.Queue(
@@ -47,8 +43,7 @@ class ServiceQueue(pulumi.ComponentResource):
             name=physical_dead_letter_name,
             message_retention_seconds=message_retention_seconds,
             visibility_timeout_seconds=30,
-            opts=import_aware_opts(
-                f"{queue_import_prefix}/{physical_dead_letter_name}",
+            opts=pulumi.ResourceOptions(
                 parent=self,
                 delete_before_replace=True,
             ),
@@ -62,8 +57,7 @@ class ServiceQueue(pulumi.ComponentResource):
             message_retention_seconds=message_retention_seconds,
             visibility_timeout_seconds=360,
             redrive_policy=self.dead_letter_queue.arn.apply(redrive_policy),
-            opts=import_aware_opts(
-                f"{queue_import_prefix}/{physical_retry_name}",
+            opts=pulumi.ResourceOptions(
                 parent=self,
                 delete_before_replace=True,
             ),
@@ -77,29 +71,10 @@ class ServiceQueue(pulumi.ComponentResource):
             message_retention_seconds=message_retention_seconds,
             visibility_timeout_seconds=180,
             redrive_policy=self.retry_queue.arn.apply(redrive_policy),
-            opts=import_aware_opts(
-                f"{queue_import_prefix}/{physical_queue_name}",
+            opts=pulumi.ResourceOptions(
                 parent=self,
                 delete_before_replace=True,
             ),
-        )
-
-        self.queue_consumption_policy = _queue_consumption_policy(
-            logical_queue_name, self.queue
-        )
-        self.retry_consumption_policy = _queue_consumption_policy(
-            logical_retry_name, self.retry_queue
-        )
-        self.dead_letter_consumption_policy = _queue_consumption_policy(
-            logical_dead_letter_name, self.dead_letter_queue
-        )
-
-        self.queue_send_policy = _queue_send_policy(logical_queue_name, self.queue)
-        self.retry_send_policy = _queue_send_policy(
-            logical_retry_name, self.retry_queue
-        )
-        self.dead_letter_send_policy = _queue_send_policy(
-            logical_dead_letter_name, self.dead_letter_queue
         )
 
         self.register_outputs({})
@@ -132,22 +107,22 @@ class ServiceQueue(pulumi.ComponentResource):
         return self.dead_letter_queue.id
 
     def grant_main_queue_consumption_to(self, role: aws.iam.Role) -> None:
-        attach_policy(self.queue_consumption_policy, role)
+        queue_policy.consumption_policy(self.queue, role)
 
     def grant_retry_queue_consumption_to(self, role: aws.iam.Role) -> None:
-        attach_policy(self.retry_consumption_policy, role)
+        queue_policy.consumption_policy(self.retry_queue, role)
 
     def grant_dead_letter_queue_consumption_to(self, role: aws.iam.Role) -> None:
-        attach_policy(self.dead_letter_consumption_policy, role)
+        queue_policy.consumption_policy(self.dead_letter_queue, role)
 
     def grant_main_queue_send_to(self, role: aws.iam.Role) -> None:
-        attach_policy(self.queue_send_policy, role)
+        queue_policy.send_policy(self.queue, role)
 
     def grant_retry_queue_send_to(self, role: aws.iam.Role) -> None:
-        attach_policy(self.retry_send_policy, role)
+        queue_policy.send_policy(self.retry_queue, role)
 
     def grant_dead_letter_queue_send_to(self, role: aws.iam.Role) -> None:
-        attach_policy(self.dead_letter_send_policy, role)
+        queue_policy.send_policy(self.dead_letter_queue, role)
 
     def subscribe_to_emitter(self, emitter: EventEmitter) -> None:
         """
@@ -161,63 +136,3 @@ class ServiceQueue(pulumi.ComponentResource):
             raw_message_delivery=True,
             opts=pulumi.ResourceOptions(parent=emitter.topic),
         )
-
-
-def _queue_consumption_policy(queue_name: str, queue: aws.sqs.Queue) -> aws.iam.Policy:
-    """Create an IAM Policy to consume messages from the given SQS queue.
-
-    queue_name is folded into the Policy resource name, and has to be a string (rather than a Pulumi Output).
-    """
-    return aws.iam.Policy(
-        f"consume-from-{queue_name}",
-        # We interpolate on queue.name to get the physical name
-        description=queue.name.apply(lambda n: f"Consume messages from the {n} queue"),
-        policy=queue.arn.apply(
-            lambda arn: json.dumps(
-                {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                        {
-                            "Effect": "Allow",
-                            "Action": [
-                                "sqs:ChangeMessageVisibility",
-                                "sqs:DeleteMessage",
-                                "sqs:GetQueueAttributes",
-                                "sqs:GetQueueUrl",
-                                "sqs:ReceiveMessage",
-                            ],
-                            "Resource": arn,
-                        }
-                    ],
-                }
-            )
-        ),
-        opts=pulumi.ResourceOptions(parent=queue),
-    )
-
-
-def _queue_send_policy(queue_name: str, queue: aws.sqs.Queue) -> aws.iam.Policy:
-    return aws.iam.Policy(
-        f"write-to-{queue_name}",
-        # We interpolate on queue.name to get the physical name
-        description=queue.name.apply(lambda n: f"Send messages from the {n} queue"),
-        policy=queue.arn.apply(
-            lambda arn: json.dumps(
-                {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                        {
-                            "Effect": "Allow",
-                            "Action": [
-                                "sqs:SendMessage",
-                                "sqs:GetQueueAttributes",
-                                "sqs:GetQueueUrl",
-                            ],
-                            "Resource": arn,
-                        }
-                    ],
-                }
-            )
-        ),
-        opts=pulumi.ResourceOptions(parent=queue),
-    )

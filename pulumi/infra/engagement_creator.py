@@ -1,21 +1,10 @@
-import json
-
-import pulumi_aws as aws
-from infra.config import (
-    AWS_ACCOUNT_ID,
-    DEPLOYMENT_NAME,
-    GLOBAL_LAMBDA_ZIP_TAG,
-    configurable_envvars,
-    import_aware_opts,
-)
+from infra.config import GLOBAL_LAMBDA_ZIP_TAG, configurable_envvars
 from infra.dgraph_cluster import DgraphCluster
 from infra.emitter import EventEmitter
 from infra.lambda_ import code_path_for
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.service import Service
-
-import pulumi
 
 
 class EngagementCreator(Service):
@@ -43,42 +32,6 @@ class EngagementCreator(Service):
 
         self.queue.subscribe_to_emitter(input_emitter)
         input_emitter.grant_read_to(self.role)
-
-        region = aws.get_region().name
-        physical_topic_name = f"{DEPLOYMENT_NAME}-engagements-created-topic"
-        topic_lookup_arn = (
-            f"arn:aws:sns:{region}:{AWS_ACCOUNT_ID}:{physical_topic_name}"
-        )
-        self.created_topic = aws.sns.Topic(
-            "engagements-created-topic",
-            name=physical_topic_name,
-            opts=import_aware_opts(topic_lookup_arn, parent=self),
-        )
-
-        publish_to_topic_policy = self.created_topic.arn.apply(
-            lambda topic_arn: json.dumps(
-                {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                        {
-                            "Effect": "Allow",
-                            # TODO: Do we need CreateTopic? In any
-                            # event, this is what was in our CDK code
-                            "Action": ["sns:CreateTopic", "sns:Publish"],
-                            "Resource": topic_arn,
-                        }
-                    ],
-                }
-            )
-        )
-
-        self.topic_policy_attachment = aws.iam.RolePolicy(
-            f"{name}-publishes-to-topic",
-            name=f"{DEPLOYMENT_NAME}-{name}-publishes-to-topic",
-            role=self.role.name,
-            policy=publish_to_topic_policy,
-            opts=pulumi.ResourceOptions(parent=self),
-        )
 
         for handler in self.handlers:
             dgraph_cluster.allow_connections_from(handler.function.security_group)

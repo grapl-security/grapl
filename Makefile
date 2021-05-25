@@ -273,14 +273,18 @@ lint-rust: ## Run Rust lint checks
 
 .PHONY: lint-python
 lint-python: ## Run Python lint checks
-	./pants lint ::
+	./pants filter --target-type=python_library,python_tests :: | xargs ./pants lint
+
+.PHONY: lint-shell
+lint-shell: ## Run Shell lint checks
+	./pants filter --target-type=shell_library :: | xargs ./pants lint
 
 .PHONY: lint-js
 lint-js: build-formatter ## Run js lint checks
 	docker-compose -f docker-compose.formatter.yml up lint-js
 
 .PHONY: lint
-lint: lint-python lint-js lint-rust ## Run all lint checks
+lint: lint-python lint-js lint-rust lint-shell ## Run all lint checks
 
 ##@ Formatting 💅
 
@@ -301,7 +305,7 @@ format: format-python format-js format-rust ## Reformat all code
 
 .PHONY: package-python-libs
 package-python-libs: ## Create Python distributions for public libraries
-	./pants filter --filter-target-type=python_distribution :: | xargs ./pants package
+	./pants filter --target-type=python_distribution :: | xargs ./pants package
 
 ##@ Local Grapl 💻
 
@@ -367,7 +371,7 @@ zip: build-lambdas ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/
 
 .PHONY: zip-pants
 zip-pants: ## Generate Lambda zip artifacts using pants
-	./pants filter --filter-target-type=python_awslambda :: | xargs ./pants package
+	./pants filter --target-type=python_awslambda :: | xargs ./pants package
 	cp ./dist/src.python.provisioner.src/lambda.zip ./src/js/grapl-cdk/zips/provisioner-$(TAG).zip
 	cp ./dist/src.python.engagement-creator/engagement-creator.zip ./src/js/grapl-cdk/zips/engagement-creator-$(TAG).zip
 	cp ./dist/src.python.grapl-dgraph-ttl/lambda.zip ./src/js/grapl-cdk/zips/dgraph-ttl-$(TAG).zip

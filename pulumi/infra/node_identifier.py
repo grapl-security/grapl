@@ -1,4 +1,5 @@
 import pulumi_docker as docker
+from infra import dynamodb
 from infra.cache import Cache
 from infra.config import configurable_envvars
 from infra.dynamodb import DynamoDB
@@ -61,22 +62,25 @@ class NodeIdentifier(FargateService):
             network=network,
         )
 
-        for table in (
-            db.static_mapping_table,
-            db.dynamic_session_table,
-            db.process_history_table,
-            db.file_history_table,
-            db.inbound_connection_history_table,
-            db.outbound_connection_history_table,
-            db.network_connection_history_table,
-            db.ip_connection_history_table,
-            db.asset_id_mappings,
-        ):
-            # Note that these permissions are only granted to the
-            # default service's task role, *not* the retry service.
-            #
-            # Also, these are the same tables that were passed to the
-            # service via environment variables above.
-            table.grant_read_write_permissions_to(self.default_service.task_role)
+        # Note that these permissions are only granted to the
+        # default service's task role, *not* the retry service.
+        # (This is probably a mistake).
+        #
+        # Also, these are the same tables that were passed to the
+        # service via environment variables above.
+        dynamodb.grant_read_write_on_tables(
+            self.default_service.task_role,
+            [
+                db.static_mapping_table,
+                db.dynamic_session_table,
+                db.process_history_table,
+                db.file_history_table,
+                db.inbound_connection_history_table,
+                db.outbound_connection_history_table,
+                db.network_connection_history_table,
+                db.ip_connection_history_table,
+                db.asset_id_mappings,
+            ],
+        )
 
         self.allow_egress_to_cache(cache)

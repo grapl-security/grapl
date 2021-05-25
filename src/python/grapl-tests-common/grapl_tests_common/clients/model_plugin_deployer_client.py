@@ -3,10 +3,8 @@ Mostly copied from etc/local_grapl/bin/upload_plugin.py
 """
 from __future__ import annotations
 
-import json
 import logging
 import os
-import sys
 from http import HTTPStatus
 from pathlib import Path
 from typing import Dict

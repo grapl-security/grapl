@@ -1,6 +1,6 @@
 import os
 import re
-from typing import Any, Mapping, Sequence
+from typing import Mapping, Sequence
 
 import pulumi_aws as aws
 from typing_extensions import Final
@@ -101,35 +101,3 @@ def configurable_envvars(service_name: str, vars: Sequence[str]) -> Mapping[str,
     splicing into other environment maps for configuring services.
     """
     return {v: configurable_envvar(service_name, v) for v in vars}
-
-
-# Yes I hate the 'Any' type just as much as you do, but there's
-# apparently not a way to type kwargs right now.
-def import_aware_opts(resource_id: str, **kwargs: Any) -> pulumi.ResourceOptions:
-    """Pass the resource ID that corresponds to a particular resource
-    when you're importing from existing infrastructure, as well as any
-    other kwargs that `pulumi.ResourceOptions` would accept.
-
-    If the Pulumi stack is currently configured to import (rather than
-    create), the appropriate configuration will be injected into the
-    `ResourceOptions` that is returned.
-
-    Otherwise, a `ResourceOptions` constructed from the given kwargs
-    will be returned.
-
-    This should be used to generate `ResourceOptions` for *all* resources!
-
-    To enable importing, rather than creating, set the following
-    config for the stack:
-
-        pulumi config set grapl:import_from_existing True
-
-    """
-
-    import_from_existing = pulumi.Config().require_bool("import_from_existing")
-
-    given_opts = pulumi.ResourceOptions(**kwargs)
-    import_opts = pulumi.ResourceOptions(
-        import_=resource_id if import_from_existing else None
-    )
-    return pulumi.ResourceOptions.merge(given_opts, import_opts)

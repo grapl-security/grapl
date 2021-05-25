@@ -1,15 +1,12 @@
 import argparse
 import json
 import os
-
-from typing import Any, Iterator
 from datetime import datetime
+from typing import Iterator
 
 import boto3
-
 from mypy_boto3_s3.client import S3Client
 from mypy_boto3_sqs.client import SQSClient
-
 
 IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 

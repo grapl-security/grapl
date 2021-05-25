@@ -153,10 +153,10 @@ def main() -> None:
         dgraph_cluster=dgraph_cluster,
     )
 
-    provisioner = Provisioner(
+    Provisioner(
         network=network,
         secret=secret,
-        dynamodb=dynamodb_tables,
+        db=dynamodb_tables,
         dgraph_cluster=dgraph_cluster,
     )
 
