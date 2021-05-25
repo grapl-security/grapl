@@ -1,3 +1,1 @@
-python_tests(
-    skip_mypy=True
-)
+python_tests()
