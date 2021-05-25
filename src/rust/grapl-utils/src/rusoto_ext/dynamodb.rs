@@ -190,7 +190,7 @@ pub trait GraplDynamoDbClientExt: DynamoDb + Send + Sync {
             let mut writes_to_process = HashMap::new();
 
             pending_writes
-                .drain(0 .. DYNAMODB_MAX_BATCH_WRITE_ITEM_SIZE)
+                .drain(0 ..std::cmp::min(pending_writes.len(), DYNAMODB_MAX_BATCH_WRITE_ITEM_SIZE))
                 .for_each(|(table_name, write_request)| {
                     writes_to_process
                         .entry(table_name)

@@ -25,6 +25,7 @@ use rusoto_dynamodb::{
 use tokio::runtime::Runtime;
 use grapl_graph_descriptions::NodeDescription;
 use node_identifier::sessiondb::UnidSessionNode;
+use node_identifier::sessions::Session;
 
 async fn try_create_table(
     dynamo: &impl DynamoDb,
@@ -112,7 +113,6 @@ fn canon_create_on_empty_timeline(asset_id: String, pid: u64) {
     assert!(!attributed_nodes.is_empty());
 }
 
-/*
 // Given a timeline with a single session, where that session has a non canon
 //      creation time 'X'
 // When a canonical creation event comes in with a creation time of 'Y'
@@ -141,8 +141,15 @@ fn canon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
     };
 
     runtime
-        .block_on(session_db.create_session(&session))
+        .block_on(session_db.create_sessions(vec![session]))
         .expect("Failed to create session");
+
+    let node_desc = NodeDescription {
+        properties: Default::default(),
+        node_key: "NODE_KEY".to_string(),
+        node_type: "NODE_TYPE".to_string(),
+        id_strategy: vec![]
+    };
 
     // When a canonical creation event comes in with a creation time of 'Y'
     //      where 'Y' < 'X'
@@ -152,11 +159,16 @@ fn canon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
         is_creation: true,
     };
 
-    let session_id = runtime
-        .block_on(session_db.handle_unid_session(unid, false))
+    let unid_session_node = UnidSessionNode(node_desc, unid);
+
+    let attributed_nodes = runtime
+        .block_on(session_db.identify_unid_session_nodes(vec![unid_session_node], false))
         .expect("Failed to handle unid");
 
-    assert_eq!(session_id, "SessionId");
+    let first_attributed_node = attributed_nodes.get(0)
+        .expect("Failed to identify node.");
+
+    assert_eq!(first_attributed_node.attributed_node_description.node_key, "SessionId");
 }
 
 // Given a timeline with a single session, where that session has a non canon
@@ -187,8 +199,15 @@ fn noncanon_create_update_existing_non_canon_create(asset_id: String, pid: u64) 
     };
 
     runtime
-        .block_on(session_db.create_session(&session))
+        .block_on(session_db.create_sessions(vec![session]))
         .expect("Failed to create session");
+
+    let node_desc = NodeDescription {
+        properties: Default::default(),
+        node_key: "NODE_KEY".to_string(),
+        node_type: "NODE_TYPE".to_string(),
+        id_strategy: vec![]
+    };
 
     // When a noncanonical creation event comes in with a creation time of 'Y'
     //      where 'Y' < 'X'
@@ -198,12 +217,17 @@ fn noncanon_create_update_existing_non_canon_create(asset_id: String, pid: u64) 
         is_creation: false,
     };
 
-    let session_id = runtime
-        .block_on(session_db.handle_unid_session(unid, false))
-        .expect("Failed to handle unid");
+    let unid_session_node = UnidSessionNode(node_desc, unid);
+
+    let attributed_nodes = runtime
+        .block_on(session_db.identify_unid_session_nodes(vec![unid_session_node], false))
+        .expect("Failed to identify unid session nodes.");
+
+    let attributed_node = attributed_nodes.get(0)
+        .expect("Failed to identify node.");
 
     // TODO: Assert that the create time was updated correctly
-    assert_eq!(session_id, "SessionId");
+    assert_eq!(attributed_node.attributed_node_description.node_key, "SessionId");
 }
 
 // Given an empty timeline
@@ -219,15 +243,24 @@ fn noncanon_create_on_empty_timeline_with_default(asset_id: String, pid: u64) {
 
     let session_db = SessionDb::new(dynamo, table_name);
 
+    let node_desc = NodeDescription {
+        properties: Default::default(),
+        node_key: "NODE_KEY".to_string(),
+        node_type: "NODE_TYPE".to_string(),
+        id_strategy: vec![]
+    };
+
     let unid = UnidSession {
         pseudo_key: format!("{}{}", asset_id, pid),
         timestamp: 1_544_301_484_500,
         is_creation: false,
     };
 
+    let unid_session_node = UnidSessionNode(node_desc, unid);
+
     let session_id = runtime
-        .block_on(session_db.handle_unid_session(unid, true))
-        .expect("Failed to create session");
+        .block_on(session_db.identify_unid_session_nodes(vec![unid_session_node], true))
+        .expect("Failed to perform identification.");
 
     assert!(!session_id.is_empty());
 }
@@ -245,13 +278,22 @@ fn noncanon_create_on_empty_timeline_without_default() {
 
     let session_db = SessionDb::new(dynamo, table_name);
 
+    let node_desc = NodeDescription {
+        properties: Default::default(),
+        node_key: "NODE_KEY".to_string(),
+        node_type: "NODE_TYPE".to_string(),
+        id_strategy: vec![]
+    };
+
     let unid = UnidSession {
         pseudo_key: "asset_id_a1234".into(),
         timestamp: 1_544_301_484_500,
         is_creation: false,
     };
 
-    let session_id = runtime.block_on(session_db.handle_unid_session(unid, false));
+    let unid_session_node = UnidSessionNode(node_desc, unid);
+
+    let session_id = runtime.block_on(session_db.identify_unid_session_nodes(vec![unid_session_node], false));
     assert!(session_id.is_err());
 }
 
@@ -278,8 +320,15 @@ fn update_end_time(asset_id: String, pid: u64) {
     };
 
     runtime
-        .block_on(session_db.create_session(&session))
+        .block_on(session_db.create_sessions(vec![session]))
         .expect("Failed to create session");
+
+    let node_desc = NodeDescription {
+        properties: Default::default(),
+        node_key: "NODE_KEY".to_string(),
+        node_type: "NODE_TYPE".to_string(),
+        id_strategy: vec![]
+    };
 
     // When a canonical creation event comes in with an end time of 'Y'
     //      where 'Y' < 'X'
@@ -289,10 +338,13 @@ fn update_end_time(asset_id: String, pid: u64) {
         is_creation: false,
     };
 
-    let session_id = runtime
-        .block_on(session_db.handle_unid_session(unid, false))
+    let unid_session_node = UnidSessionNode(node_desc, unid);
+
+    let attributed_nodes = runtime
+        .block_on(session_db.identify_unid_session_nodes(vec![unid_session_node], false))
         .expect("Failed to handle unid");
 
-    assert_eq!(session_id, "SessionId");
+    let attributed_node = attributed_nodes.get(0).expect("");
+
+    assert_eq!(attributed_node.attributed_node_description.node_key, "SessionId");
 }
-*/

@@ -1,11 +1,13 @@
 use std::convert::TryFrom;
 
-use failure::Error;
+use failure::{
+    Error,
+    bail
+};
 use hmap::hmap;
 use log::info;
 use rusoto_dynamodb::{
     AttributeValue,
-    AttributeValueUpdate,
     Delete,
     Put,
     QueryInput,
@@ -116,27 +118,20 @@ where
                     ..Default::default()
                 }
             },
-            attribute_updates: Some(hmap! {
-                "is_create_canon".to_owned() => AttributeValueUpdate {
-                    value: Some(AttributeValue {
-                            bool: true.into(),
-                            ..Default::default()
-                        }),
+            update_expression: Some(format!("SET is_create_canon = :canon_is_create, version = :new_version")),
+            table_name: self.table_name.clone(),
+            condition_expression: Some("version = :current_version".into()),
+            expression_attribute_values: Some(hmap! {
+                ":current_version".to_owned() => AttributeValue {
+                    n: session.version.to_string().into(),
                     ..Default::default()
                 },
-                "version".to_owned() => AttributeValueUpdate {
-                    value: Some(AttributeValue {
-                        n: (session.version + 1).to_string().into(),
-                        ..Default::default()
-                    }),
+                ":new_version".to_owned() => AttributeValue {
+                    n: (session.version + 1).to_string().into(),
                     ..Default::default()
-                }
-            }),
-            table_name: self.table_name.clone(),
-            condition_expression: Some("version = :version".into()),
-            expression_attribute_values: Some(hmap! {
-                ":version".to_owned() => AttributeValue {
-                    n: session.version.to_string().into(),
+                },
+                ":canon_is_create".to_owned() => AttributeValue {
+                    bool: true.into(),
                     ..Default::default()
                 }
             }),
@@ -168,35 +163,24 @@ where
                     ..Default::default()
                 }
             },
-            attribute_updates: Some(hmap! {
-                "end_time".to_owned() => AttributeValueUpdate {
-                    value: Some(AttributeValue {
-                        n: new_time.to_string().into(),
-                        ..Default::default()
-                    }),
-                    ..Default::default()
-                },
-                "is_end_canon".to_owned() => AttributeValueUpdate {
-                    value: Some(AttributeValue {
-                            bool: is_canon.into(),
-                            ..Default::default()
-                        }),
-                    ..Default::default()
-                },
-                "version".to_owned() => AttributeValueUpdate {
-                    value: Some(AttributeValue {
-                        n: (session.version + 1).to_string().into(),
-                        ..Default::default()
-                    }),
-                    ..Default::default()
-
-                }
-            }),
+            update_expression: Some(format!("SET end_time = :end_time, is_end_canon = :is_end_canon, version = :new_version")),
             table_name: self.table_name.clone(),
             condition_expression: Some("version = :version".into()),
             expression_attribute_values: Some(hmap! {
                 ":version".to_owned() => AttributeValue {
                     n: session.version.to_string().into(),
+                    ..Default::default()
+                },
+                ":new_version".to_owned() => AttributeValue {
+                    n: (session.version + 1).to_string().into(),
+                    ..Default::default()
+                },
+                ":is_end_canon".to_owned() => AttributeValue {
+                    bool: is_canon.into(),
+                    ..Default::default()
+                },
+                ":end_time".to_owned() => AttributeValue {
+                    n: new_time.to_string().into(),
                     ..Default::default()
                 }
             }),
@@ -208,8 +192,40 @@ where
         Ok(())
     }
 
+    async fn create_sessions_from_unid_session_nodes(&self, unid_sessions: Vec<UnidSessionNode>, is_create_canon: bool) -> Result<Vec<AttributedNode>, Error> {
+        let (
+            newly_attributed_nodes,
+            sessions
+        ): (Vec<_>, Vec<_>) = unid_sessions.into_iter()
+            .map(|UnidSessionNode(mut node_desc, unid_session)| {
+                let old_key = node_desc.clone_node_key();
+                let session = Session {
+                    session_id: Uuid::new_v4().to_string(),
+                    create_time: unid_session.timestamp,
+                    end_time: unid_session.timestamp + 101, // todo: constant for this instead of magic number
+                    is_create_canon: is_create_canon,
+                    is_end_canon: false,
+                    version: 0,
+                    pseudo_key: unid_session.pseudo_key,
+                };
+
+                // set the new, canonical node_key for our previously unidentified node
+                node_desc.node_key = session.session_id.clone();
+
+                let attributed_node = AttributedNode::new(node_desc, old_key);
+
+                (attributed_node, session)
+            }).unzip();
+
+        if !sessions.is_empty() {
+            self.create_sessions(sessions).await?;
+        }
+
+        Ok(newly_attributed_nodes)
+    }
+
     /// Given a collection of sessions, attempt to create all them.
-    async fn create_sessions(
+    pub async fn create_sessions(
         &self,
         sessions: Vec<Session>
     ) -> Result<(), Error> {
@@ -457,33 +473,7 @@ where
             (vec![], vec![])
         };
 
-        let (
-            newly_attributed_nodes,
-            sessions
-        ): (Vec<_>, Vec<_>) = no_session_nodes.into_iter()
-            .map(|UnidSessionNode(mut node_desc, unid_session)| {
-                let old_key = node_desc.clone_node_key();
-                let session = Session {
-                    session_id: Uuid::new_v4().to_string(),
-                    create_time: unid_session.timestamp,
-                    end_time: unid_session.timestamp + 101, // todo: constant for this instead of magic number
-                    is_create_canon: true,
-                    is_end_canon: false,
-                    version: 0,
-                    pseudo_key: unid_session.pseudo_key,
-                };
-
-                // set the new, canonical node_key for our previously unidentified node
-                node_desc.node_key = session.session_id.clone();
-
-                let attributed_node = AttributedNode::new(node_desc, old_key);
-
-                (attributed_node, session)
-            }).unzip();
-
-        if !sessions.is_empty() {
-            self.create_sessions(sessions).await?;
-        }
+        let newly_attributed_nodes = self.create_sessions_from_unid_session_nodes(no_session_nodes, true).await?;
 
         let all_results: Vec<_> = newly_attributed_nodes.into_iter()
             .chain(last_before_attributed_nodes)
@@ -496,7 +486,7 @@ where
     async fn handle_last_seen_unid_sessions(
         &self,
         last_seen_unids: Vec<UnidSessionNode>,
-        _should_default: bool
+        should_default: bool
     ) -> Result<Vec<AttributedNode>, Error> {
         let last_before_session_results = self.find_last_sessions_before(last_seen_unids).await?;
 
@@ -509,7 +499,7 @@ where
 
         let (
             first_after_attributed_nodes,
-            _no_session_nodes
+            no_session_nodes
         ) = if !no_session_nodes.is_empty() {
             let first_after_session_results = self.find_first_sessions_after(no_session_nodes).await?;
 
@@ -525,10 +515,20 @@ where
             (vec![], vec![])
         };
 
-        // todo: do something with `should_default`
+        let newly_attributed_nodes = match no_session_nodes {
+            session_nodes if !session_nodes.is_empty() && should_default => {
+                self.create_sessions_from_unid_session_nodes(session_nodes, false).await?
+            },
+            session_nodes if session_nodes.is_empty() => vec![],
+            _ => bail!(
+                "Could not attribute session. should_default {}. Not defaulting.",
+                should_default
+            )
+        };
 
         let results: Vec<_> = first_after_attributed_nodes.into_iter()
             .chain(last_before_attributed_nodes)
+            .chain(newly_attributed_nodes)
             .collect();
 
         Ok(results)
