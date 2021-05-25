@@ -3,27 +3,35 @@ use actix_web::{post, Error, HttpResponse, Responder};
 use::reqwest;
 use actix_web::body::Body;
 use serde::{Serialize, Deserialize};
-use thiserror::Error;
-
-
-#[derive(Error, Debug)]
-pub enum DeployError {
-    #[error("Source contains no data")]
-    EmptySource,
-
-    /// Represents a failure to read from input.
-    #[error("Read error")]
-    ReadError { source: std::io::Error },
-
-    /// Represents all other cases of `std::io::Error`.
-    #[error(transparent)]
-    IOError(#[from] std::io::Error),
-}
+// use actix_web::error::InternalError;
+// use actix_web::http::StatusCode;
+// use actix_web::web::Json;
 
 #[derive(Serialize, Deserialize)]
 pub struct DeployRequest{
     name: String,
 }
+
+#[derive(thiserror::Error, Debug)]
+pub enum CustomError {
+
+    #[error("Request Error")]
+    RequestError(#[from] reqwest::Error),
+
+    #[error("Invalid schema contents")]
+    InvalidSchema,
+
+    #[error("Unable to read schema contents")]
+    ReadError,
+
+    #[error("Internal Server Error")]
+    ServerError,
+
+
+
+}
+
+
 
 // actix procedural macros that route incoming http requests
 #[post("/modelPluginDeployer/deploy")]
@@ -35,19 +43,23 @@ pub async fn grapl_model_plugin_deployer(body: actix_web::web::Json<DeployReques
 
     match response{
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => {
-            if e == 0 {
-                return Err(DeployError::EmptySource);
-            }
 
-            if e == "read error"{
-                Err(DeployError::ReadError);
-            } else {
-                return Err(DeployError::IOError);
-            }
-
-
+        Err(CustomError::InvalidSchema) => {
+            HttpResponse::BadRequest()
+                .finish()
         }
+
+        Err(CustomError::ReadError) => {
+            HttpResponse::Conflict()
+                .finish()
+        }
+
+        Err(CustomError::ServerError) => {
+            HttpResponse::BadRequest()
+            .finish()
+        }
+
+        Err(CustomError::RequestError(_)) =>  HttpResponse::InternalServerError().finish(),
     }
 }
 

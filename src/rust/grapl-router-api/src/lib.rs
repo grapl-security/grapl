@@ -21,7 +21,7 @@ use actix_web::{HttpResponse};
 
 use reqwest::Body;
 use serde::{Serialize, Deserialize};
-use crate::model_plugin_deployer_router::deploy::DeployRequest;
+use crate::model_plugin_deployer_router::deploy::{DeployRequest, CustomError};
 
 
 #[derive(Serialize, Deserialize)]
@@ -29,7 +29,7 @@ pub struct PluginObject {
     name: String,
 }
 
-pub async fn make_request(path: &str, body: DeployRequest) ->  Result<PluginObject, Box<dyn std::error::Error>> { // dyn, dynamic, we don't know what type
+pub async fn make_request(path: &str, body: DeployRequest) ->  Result<PluginObject, CustomError> { // dyn, dynamic, we don't know what type
     let client = reqwest::Client::new();
 
 
