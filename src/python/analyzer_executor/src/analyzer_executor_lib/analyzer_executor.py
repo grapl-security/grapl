@@ -293,8 +293,14 @@ class AnalyzerExecutor:
                             analyzer.on_response(response, sender)
 
     def execute_file(
-        self, name: str, file: str, graph: SubgraphView, sender, msg_id, chunk_size
-    ):
+        self,
+        name: str,
+        file: str,
+        graph: SubgraphView,
+        sender: Connection,
+        msg_id: str,
+        chunk_size: int,
+    ) -> None:
         try:
             pool = ThreadPool(processes=4)
 
