@@ -76,6 +76,7 @@ inits = true
 
 [python-protobuf]
 runtime_dependencies = ["3rdparty/python:protobuf"]
+mypy_plugin = true
 
 [black]
 config = "pyproject.toml"
@@ -106,9 +107,9 @@ pytest_plugins = [
 args = [ "--suppress-no-test-exit-code" ]
 
 [mypy]
-version = "mypy==0.800"
+version = "mypy==0.812"
 config = "src/python/mypy.ini"
-args = [ "--show-error-codes" ]
+args = [ "--show-error-codes" ] #, "--verbose" ]
 
 [ipython]
 version = "ipython==7.20.0"
