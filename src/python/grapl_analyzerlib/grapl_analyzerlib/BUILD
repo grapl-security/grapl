@@ -4,7 +4,8 @@ python_library(
         # dependency resolution, but something appears to be off with
         # it.
         "src/python/graplinc/graplinc/grapl/api"
-    ]
+    ],
+    skip_mypy=True
 )
 
 py_typed()
