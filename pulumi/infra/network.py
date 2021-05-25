@@ -115,6 +115,9 @@ class Network(pulumi.ComponentResource):
         self.internet_gateway = aws.ec2.InternetGateway(
             f"{name}-internet-gateway",
             vpc_id=self.vpc.id,
+            tags={
+                "Name": f"{DEPLOYMENT_NAME}-internet-gateway",
+            },
             opts=pulumi.ResourceOptions(parent=self),
         )
 
@@ -135,9 +138,56 @@ class Network(pulumi.ComponentResource):
             # This is id instead of allocation_id because of a bug
             # https://github.com/pulumi/pulumi-aws/issues/498
             allocation_id=self.eip.id,
+            tags={
+                "Name": f"{DEPLOYMENT_NAME}-nat-gateway",
+            },
             opts=pulumi.ResourceOptions(
                 parent=self, depends_on=[self.internet_gateway]
             ),
         )
+
+        for subnet in self.public_subnets:
+            name = f"route-for-{subnet._name}"
+            route_table = aws.ec2.RouteTable(
+                name,
+                vpc_id=self.vpc.id,
+                routes=[
+                    aws.ec2.RouteTableRouteArgs(
+                        cidr_block="0.0.0.0/0",
+                        gateway_id=self.internet_gateway.id,
+                    )
+                ],
+                tags={"Name": name},
+                opts=pulumi.ResourceOptions(parent=subnet),
+            )
+
+            aws.ec2.RouteTableAssociation(
+                f"assoc-{subnet._name}",
+                subnet_id=subnet.id,
+                route_table_id=route_table.id,
+                opts=pulumi.ResourceOptions(parent=subnet),
+            )
+
+        for subnet in self.private_subnets:
+            name = f"route-for-{subnet._name}"
+            route_table = aws.ec2.RouteTable(
+                name,
+                vpc_id=self.vpc.id,
+                routes=[
+                    aws.ec2.RouteTableRouteArgs(
+                        cidr_block="0.0.0.0/0",
+                        nat_gateway_id=self.nat_gateway.id,
+                    )
+                ],
+                tags={"Name": name},
+                opts=pulumi.ResourceOptions(parent=subnet),
+            )
+
+            aws.ec2.RouteTableAssociation(
+                f"assoc-{subnet._name}",
+                subnet_id=subnet.id,
+                route_table_id=route_table.id,
+                opts=pulumi.ResourceOptions(parent=subnet),
+            )
 
         self.register_outputs({})
