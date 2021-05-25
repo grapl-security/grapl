@@ -155,32 +155,6 @@ ENV IS_RETRY=False
 COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
 RUN python_test_deps/install_requirements.sh
 
-
-# engagement-creator
-################################################################################
-
-# build
-FROM grapl-python-build AS engagement-creator-build
-
-COPY --chown=grapl python/engagement-creator engagement-creator
-COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
-
-RUN source venv/bin/activate && \
-    cd engagement-creator && \
-    pip install .
-
-# test
-FROM engagement-creator-build AS engagement-creator-test
-
-## Install test requirements
-COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
-RUN python_test_deps/install_requirements.sh
-
-RUN source venv/bin/activate && \
-    cd engagement-creator && \
-    pip install .[typecheck]
-
-
 # engagement-edge
 ################################################################################
 

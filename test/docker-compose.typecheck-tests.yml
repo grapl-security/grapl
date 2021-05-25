@@ -29,19 +29,6 @@ services:
         mypy analyzer_executor/**/*.py
         "
 
-  typecheck-engagement-creator:
-    image: grapl/grapl-engagement-creator-test:${TAG:-latest}
-    build:
-      context: ${PWD}/src
-      dockerfile: ./python/Dockerfile
-      target: engagement-creator-test
-    command: |
-      /bin/bash -c "
-        source venv/bin/activate &&
-        cd engagement-creator &&
-        mypy .
-        "
-
   typecheck-e2e-tests:
     image: grapl/grapl-e2e-tests-build:${TAG:-latest}
     build:

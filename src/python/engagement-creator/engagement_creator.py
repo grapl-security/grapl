@@ -89,7 +89,7 @@ def download_s3_file(s3: S3ServiceResource, bucket: str, key: str) -> bytes:
     key = key.replace("%3D", "=")
     LOGGER.info("Downloading s3 file from: {} {}".format(bucket, key))
     obj = s3.Object(bucket, key)
-    return obj.get()["Body"].read()
+    return cast(bytes, obj.get()["Body"].read())
 
 
 def create_edge(
