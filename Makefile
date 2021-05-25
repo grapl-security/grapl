@@ -377,7 +377,7 @@ zip-pants: ## Generate Lambda zip artifacts using pants
 	cp ./dist/src.python.grapl-dgraph-ttl/lambda.zip ./src/js/grapl-cdk/zips/dgraph-ttl-$(TAG).zip
 	cp ./dist/src.python.engagement_edge/engagement_edge.zip ./src/js/grapl-cdk/zips/engagement-edge-$(TAG).zip
 	cp ./dist/src.python.grapl-ux-router/grapl-ux-router.zip ./src/js/grapl-cdk/zips/ux-router-$(TAG).zip
-	cp ./dist/src.python.grapl-model-plugin-deployer/grapl-model-plugin-deployer.zip ./src/js/grapl-cdk/zips/model-plugin-deployer-$(TAG).zip
+	cp ./dist/src.python.grapl-model-plugin-deployer/lambda.zip ./src/js/grapl-cdk/zips/model-plugin-deployer-$(TAG).zip
 
 # This target is intended to help ease the transition to Pulumi, and
 # using lambdas in local Grapl testing deployments. Essentially, every

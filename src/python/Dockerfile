@@ -222,7 +222,7 @@ COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
 
 RUN source venv/bin/activate && \
     cd model-plugin-deployer && \
-    pip install .
+    pip install -r requirements.txt
 
 # deploy
 FROM grapl-python-deploy AS model-plugin-deployer-deploy
@@ -232,7 +232,7 @@ COPY --chown=grapl --from=model-plugin-deployer-build /home/grapl/venv venv
 RUN source venv/bin/activate && \
     chalice new-project app/
 
-COPY --chown=grapl --from=model-plugin-deployer-build /home/grapl/model-plugin-deployer/src/grapl_model_plugin_deployer.py app/app.py
+COPY --chown=grapl --from=model-plugin-deployer-build /home/grapl/model-plugin-deployer/grapl_model_plugin_deployer.py app/app.py
 
 CMD source venv/bin/activate && \
     cd app && \
