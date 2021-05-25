@@ -3,22 +3,21 @@ from __future__ import annotations
 import base64
 import itertools
 import json
-import logging
-import os
+import pprint
 import shlex
-import sys
 import time
 from typing import TYPE_CHECKING, Callable, Dict, Iterator, List, Optional, Set
+
+from grapl_common.utils.benchmark import benchmark_ctx
 
 if TYPE_CHECKING:
     from mypy_boto3_ec2 import EC2ServiceResource
     from mypy_boto3_ssm import SSMClient
 
+from grapl_common.grapl_logger import get_module_grapl_logger
 from graplctl.common import Ec2Instance, State, Tag, get_command_results
 
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
-LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+LOGGER = get_module_grapl_logger(log_to_stdout=True)
 
 # This mapping was compiled on 2020-10-14 by running the
 # following query for each region:
@@ -40,12 +39,33 @@ REGION_TO_AMI_ID = {
 
 def swarm_security_group_id(ec2: EC2ServiceResource, deployment_name: str) -> str:
     """Return the security group ID for the swarm security group"""
-    result = ec2.security_groups.filter(
-        Filters=[
-            {"Name": "group-name", "Values": [f"{deployment_name.lower()}-grapl-swarm"]}
-        ]
+    cdk_group_name = f"{deployment_name.lower()}-grapl-swarm"
+    cdk_result = list(
+        ec2.security_groups.filter(
+            Filters=[{"Name": "group-name", "Values": [cdk_group_name]}]
+        )
     )
-    return list(result)[0].group_id
+
+    # Pulumi names are less predictable, so we'll do it by tag name instead.
+    #
+    pulumi_result = list(
+        ec2.security_groups.filter(
+            Filters=[
+                {
+                    "Name": "tag:swarm-sec-group-for-deployment",
+                    "Values": [deployment_name.lower()],
+                }
+            ]
+        )
+    )
+
+    result = [*cdk_result, *pulumi_result]
+
+    if not result:
+        raise Exception(
+            f"Couldn't find a Swarm security group with desired name or tags."
+        )
+    return result[0].group_id
 
 
 def swarm_vpc_id(ec2: EC2ServiceResource, swarm_security_group_id: str) -> str:
@@ -57,10 +77,22 @@ def grapl_subnet_ids(
     ec2: EC2ServiceResource, swarm_vpc_id: str, deployment_name: str
 ) -> Iterator[str]:
     """Yields the subnet IDs for the grapl deployment"""
+    # For CDK subnets
     for subnet in ec2.Vpc(swarm_vpc_id).subnets.filter(
         Filters=[
             {"Name": "tag:aws-cdk:subnet-type", "Values": ["Private"]},
             {"Name": "tag:name", "Values": [f"{deployment_name.lower()}-grapl-vpc"]},
+        ]
+    ):
+        yield subnet.subnet_id
+
+    # We tag things in Pulumi slightly differently, see the Network resource.
+    for subnet in ec2.Vpc(swarm_vpc_id).subnets.filter(
+        Filters=[
+            {
+                "Name": "tag:graplctl_get_subnet_tag",
+                "Values": [f"{deployment_name}-private-subnet"],
+            },
         ]
     ):
         yield subnet.subnet_id
@@ -134,10 +166,11 @@ def create_instances(
 
     for instance in instances:
         LOGGER.info(f'waiting for instance {instance.instance_id} to report "running"')
-        while instance.state["Name"].lower() != "running":
-            time.sleep(2)
-            instance.load()
-        LOGGER.info(f'instance {instance.instance_id} is "running"')
+        with benchmark_ctx() as bench:
+            while instance.state["Name"].lower() != "running":
+                time.sleep(2)
+                instance.load()
+        LOGGER.info(f'instance {instance.instance_id} is "running" ({bench})')
 
     for instance in instances:
         LOGGER.info(
@@ -151,9 +184,13 @@ def create_instances(
                 len(instance_information) < 1
                 or instance_information[0]["PingStatus"] != "Online"
             ):
+                LOGGER.debug(
+                    f"Sleeping, got instance info: {pprint.pformat(instance_information)}",
+                )
                 time.sleep(2)
             elif instance_information[0]["PingStatus"] == "Online":
                 break
+
         LOGGER.info(f'instance {instance.instance_id} is "Online"')
 
     return [Ec2Instance.from_boto_instance(instance) for instance in instances]
@@ -463,7 +500,8 @@ def create_swarm(
     docker_daemon_config: Optional[Dict] = None,
     extra_init: Optional[Callable[[SSMClient, str, List[Ec2Instance]], None]] = None,
 ) -> bool:
-    if swarm_id in set(swarm_ls(graplctl_state)):
+    existing_swarm_ids = set(swarm_ls(graplctl_state))
+    if swarm_id in existing_swarm_ids:
         LOGGER.warn(f"swarm {swarm_id} already exists")
         return False  # bail early if the swarm already exists
 
@@ -484,6 +522,7 @@ def create_swarm(
             deployment_name=graplctl_state.grapl_deployment_name,
         )
     )
+    assert subnet_ids, "Couldn't find any matching VPC subnets in `grapl_subnet_ids`"
     LOGGER.info(f"retrieved subnet ids in vpc {vpc_id}")
 
     LOGGER.info(f"creating manager instances in vpc {vpc_id}")

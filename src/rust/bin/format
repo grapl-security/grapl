@@ -14,33 +14,34 @@ set -euo pipefail
 # Note that you will need your Rustup profile set to something higher
 # than "minimal" (e.g., "default"), since `rustup` isn't included in
 # "minimal".
-export RUSTUP_TOOLCHAIN="nightly-2021-03-25"
+export RUSTUP_TOOLCHAIN="nightly-2021-05-10"
 
 # Default to checking formatting in the absence of any options.
 mode="check"
 
-while (( "$#" )); do
+while (("$#")); do
     case "$1" in
-        -e|--editor)
+        -e | --editor)
             mode="editor"
             shift
             ;;
-        -c|--check|--ci)
+        -c | --check | --ci)
             mode="check"
             shift
             ;;
-        -u|--update)
+        -u | --update)
             mode="update"
             shift
             ;;
-        -h|--help)
+        -h | --help)
             mode="help"
             shift
+            ;;
     esac
 done
 
 if [ "${mode}" == "help" ]; then
-    cat >&2 <<EOF
+    cat >&2 << EOF
 
     Usage: $0 <OPTIONS>
 
@@ -72,10 +73,10 @@ if [ "${mode}" == "editor" ]; then
 fi
 
 if [ "${mode}" == "update" ]; then
-    >&2 echo "$0: Updating all Rust code formatting"
+    echo >&2 "$0: Updating all Rust code formatting"
     cargo fmt --all
     exit $?
 fi
 
->&2 echo "$0: Checking all Rust code formatting"
+echo >&2 "$0: Checking all Rust code formatting"
 cargo fmt --all -- --check

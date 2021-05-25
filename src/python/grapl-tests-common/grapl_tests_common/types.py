@@ -1,4 +1,4 @@
-from typing import Any, NamedTuple
+from typing import Any
 
 # mypy later maybe
 S3ServiceResource = Any

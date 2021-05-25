@@ -4,7 +4,9 @@ import os
 import sys
 
 
-def get_module_grapl_logger(default_log_level: str = "ERROR") -> logging.Logger:
+def get_module_grapl_logger(
+    default_log_level: str = "ERROR", log_to_stdout: bool = False
+) -> logging.Logger:
     """
     Callers should put
     LOGGER = get_module_grapl_logger()
@@ -15,6 +17,10 @@ def get_module_grapl_logger(default_log_level: str = "ERROR") -> logging.Logger:
     assert caller_module
     logger = logging.getLogger(caller_module.__name__)
     logger.setLevel(os.getenv("GRAPL_LOG_LEVEL", default_log_level))
-    # While a lot of our code defines this, I believe it just doubles our log output
-    # logger.addHandler(logging.StreamHandler(stream=sys.stdout))
+
+    # While a lot of our code defines this, it's possible it just doubles our log output
+    # However, it makes sense for stuff like graplctl that don't currently
+    # create log files
+    if log_to_stdout:
+        logger.addHandler(logging.StreamHandler(stream=sys.stdout))
     return logger

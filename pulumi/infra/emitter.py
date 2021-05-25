@@ -2,8 +2,8 @@ import json
 from typing import Optional
 
 import pulumi_aws as aws
-from infra.bucket import Bucket, bucket_physical_name
-from infra.config import AWS_ACCOUNT_ID, DEPLOYMENT_NAME, import_aware_opts
+from infra.bucket import Bucket
+from infra.config import DEPLOYMENT_NAME
 
 import pulumi
 
@@ -24,15 +24,11 @@ class EventEmitter(pulumi.ComponentResource):
             logical_bucket_name, sse=True, opts=pulumi.ResourceOptions(parent=self)
         )
 
-        region = aws.get_region().name
         physical_topic_name = f"{DEPLOYMENT_NAME}-{event_name}-topic"
-        topic_lookup_arn = (
-            f"arn:aws:sns:{region}:{AWS_ACCOUNT_ID}:{physical_topic_name}"
-        )
         self.topic = aws.sns.Topic(
             f"{event_name}-topic",
             name=physical_topic_name,
-            opts=import_aware_opts(topic_lookup_arn, parent=self),
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
         # This is a resource-based policy to allow our bucket to
@@ -62,7 +58,7 @@ class EventEmitter(pulumi.ComponentResource):
                     }
                 )
             ),
-            opts=import_aware_opts(topic_lookup_arn, parent=self),
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
         self.bucket_notification = aws.s3.BucketNotification(
@@ -74,15 +70,56 @@ class EventEmitter(pulumi.ComponentResource):
                     events=["s3:ObjectCreated:*"],
                 )
             ],
-            # Ideally, I'd like to use `self.bucket.id` for this, but
-            # that isn't going to be available from the Pulumi
-            # resource at planning time, which is when we'd need this
-            # string.  However, we're only going to need this while we
-            # straddle CDK and Pulumi; it'll go away once we're
-            # totally migrated.
-            opts=import_aware_opts(
-                bucket_physical_name(logical_bucket_name), parent=self
+            opts=pulumi.ResourceOptions(
+                parent=self,
+                depends_on=[self.topic_policy_attachment],
             ),
         )
 
         self.register_outputs({})
+
+    def grant_write_to(self, role: aws.iam.Role) -> None:
+        aws.iam.RolePolicy(
+            f"{role._name}-writes-objects-to-{self.bucket._name}",
+            role=role.name,
+            policy=self.bucket.arn.apply(
+                lambda bucket_arn: json.dumps(
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                "Action": [
+                                    "s3:Abort*",
+                                    "s3:DeleteObject*",
+                                    "s3:PutObject*",
+                                ],
+                                "Resource": [bucket_arn, f"{bucket_arn}/*"],
+                            }
+                        ],
+                    }
+                )
+            ),
+            opts=pulumi.ResourceOptions(parent=role),
+        )
+
+    def grant_read_to(self, role: aws.iam.Role) -> None:
+        aws.iam.RolePolicy(
+            f"{role._name}-reads-objects-from-{self.bucket._name}",
+            role=role.name,
+            policy=self.bucket.arn.apply(
+                lambda bucket_arn: json.dumps(
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                "Action": "s3:GetObject",
+                                "Resource": f"{bucket_arn}/*",
+                            }
+                        ],
+                    }
+                )
+            ),
+            opts=pulumi.ResourceOptions(parent=role),
+        )

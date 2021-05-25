@@ -81,14 +81,6 @@ RUN source venv/bin/activate && \
     python setup.py sdist bdist_wheel && \
     pip install dist/*.whl
 
-# test
-FROM graplinc-grapl-api-build AS graplinc-grapl-api-test
-
-## Install test requirements
-COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
-RUN python_test_deps/install_requirements.sh
-
-
 # grapl-common
 ################################################################################
 
@@ -101,14 +93,6 @@ RUN source venv/bin/activate && \
     cd grapl-common && \
     pip install . && \
     python setup.py sdist bdist_wheel
-
-# test
-FROM grapl-common-build AS grapl-common-test
-
-## Install test requirements
-COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
-RUN python_test_deps/install_requirements.sh
-
 
 # grapl_analyzerlib
 ################################################################################
@@ -185,15 +169,6 @@ RUN source venv/bin/activate && \
     cd engagement-creator && \
     pip install .
 
-# deploy
-FROM grapl-python-deploy AS engagement-creator-deploy
-
-COPY --chown=grapl --from=engagement-creator-build /home/grapl/venv venv
-COPY --chown=grapl --from=engagement-creator-build /home/grapl/engagement-creator engagement-creator
-
-CMD source /venv/bin/activate && \
-    python3 /engagement-creator/src/engagement_creator.py
-
 # test
 FROM engagement-creator-build AS engagement-creator-test
 
@@ -236,57 +211,6 @@ RUN source venv/bin/activate && \
     cd grapl-tests-common && \
     pip install .
 
-
-# grapl-ux-router
-################################################################################
-
-# build
-FROM grapl-python-build AS grapl-ux-router-build
-
-COPY --chown=grapl python/grapl-ux-router grapl-ux-router
-COPY --chown=grapl --from=grapl-common-build /home/grapl/grapl-common grapl-common
-
-# Install requirement `grapl_common` - we could also manually COPY the `venv/site_packages`,
-# but the pip install is cleaner.
-RUN source venv/bin/activate && \
-    cd grapl-common && \
-    pip install .
-
-RUN source venv/bin/activate && \
-    cd grapl-ux-router && \
-    pip install .
-
-
-# dgraph-ttl
-################################################################################
-
-# build
-FROM grapl-python-build AS dgraph-ttl-build
-
-COPY --chown=grapl python/grapl-dgraph-ttl dgraph-ttl
-COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
-
-RUN source venv/bin/activate && \
-    pip install -r dgraph-ttl/requirements.txt
-
-# deploy
-FROM grapl-python-deploy AS dgraph-ttl-deploy
-
-COPY --chown=grapl --from=dgraph-ttl-build /home/grapl/venv venv
-COPY --chown=grapl --from=dgraph-ttl-build /home/grapl/dgraph-ttl app
-
-CMD source venv/bin/activate && \
-    cd app && \
-    chalice local --no-autoreload --host=0.0.0.0 --port=8124
-
-# test
-FROM dgraph-ttl-build AS dgraph-ttl-test
-
-## Install test requirements
-COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
-RUN python_test_deps/install_requirements.sh
-
-
 # model-plugin-deployer
 ################################################################################
 
@@ -299,15 +223,6 @@ COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
 RUN source venv/bin/activate && \
     cd model-plugin-deployer && \
     pip install .
-
-# zip
-FROM model-plugin-deployer-build AS model-plugin-deployer-zip
-
-RUN LAMBDA_DIR=$(pwd); \
-    cd ~/venv/lib/python3.7/site-packages && \
-    zip -q9r -dg "${LAMBDA_DIR}/lambda.zip" ./ && \
-    cd ~/model-plugin-deployer/src && \
-    find . -type f -name "*.py" -exec zip -g "${LAMBDA_DIR}/lambda.zip" "{}" \;
 
 # deploy
 FROM grapl-python-deploy AS model-plugin-deployer-deploy
@@ -355,17 +270,6 @@ CMD source venv/bin/activate && \
     cd grapl-notebook && \
     jupyter notebook --ip="0.0.0.0"
 
-# test
-FROM grapl-notebook AS grapl-notebook-test
-
-# This file will improve once #444 lands
-# primarily to use pre-downloaded tools instead of downloading again
-
-RUN source venv/bin/activate && \
-    pip install nbqa mypy boto3-stubs[essential]
-
-
-
 #
 # Local provision
 ################################################################################
@@ -409,4 +313,4 @@ RUN mkdir /mnt/dynamodb_dump && chown grapl /mnt/dynamodb_dump
 USER grapl
 
 RUN source venv/bin/activate && \
-    pip install zstd
+    pip install zstd==1.4.9.1

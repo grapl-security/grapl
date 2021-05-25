@@ -18,7 +18,6 @@ COMPOSE_PROJECT_NAME ?= grapl
 export
 
 export EVERY_LAMBDA_COMPOSE_FILE=--file docker-compose.lambda-zips.js.yml \
-	--file docker-compose.lambda-zips.python.yml \
 	--file docker-compose.lambda-zips.rust.yml
 
 export EVERY_COMPOSE_FILE=--file docker-compose.yml \
@@ -218,18 +217,16 @@ test-typecheck: export COMPOSE_FILE := ./test/docker-compose.typecheck-tests.yml
 test-typecheck: build-test-typecheck ## Build and run typecheck tests (non-Pants)
 	test/docker-compose-with-error.sh
 
-.PHONY: test-typecheck-pulumi
-test-typecheck-pulumi: ## Typecheck Pulumi Python code
-	./pants typecheck pulumi::
-
-.PHONY: test-typecheck-build-support
-test-typecheck-build-support: ## Typecheck build-support Python code
-	./pants typecheck build-support::
-
 # Right now, we're only typechecking a select portion of code with
-# Pants until CM fixes https://github.com/pantsbuild/pants/issues/11553
+# Pants until grapl-analyzerlib can be typed with MyPy; see
+# https://github.com/pantsbuild/pants/issues/11553
 .PHONY: test-typecheck-pants
-test-typecheck-pants: test-typecheck-pulumi test-typecheck-build-support ## Typecheck Python code with Pants
+test-typecheck-pants: ## Typecheck Python code with Pants
+	./pants typecheck \
+	pulumi:: \
+	build-support:: \
+	src/python/engagement_edge:: \
+	src/python/grapl-common::
 
 .PHONY: test-integration
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
@@ -276,14 +273,18 @@ lint-rust: ## Run Rust lint checks
 
 .PHONY: lint-python
 lint-python: ## Run Python lint checks
-	./pants lint ::
+	./pants filter --target-type=python_library,python_tests :: | xargs ./pants lint
+
+.PHONY: lint-shell
+lint-shell: ## Run Shell lint checks
+	./pants filter --target-type=shell_library :: | xargs ./pants lint
 
 .PHONY: lint-js
 lint-js: build-formatter ## Run js lint checks
 	docker-compose -f docker-compose.formatter.yml up lint-js
 
 .PHONY: lint
-lint: lint-python lint-js lint-rust ## Run all lint checks
+lint: lint-python lint-js lint-rust lint-shell ## Run all lint checks
 
 ##@ Formatting 💅
 
@@ -304,7 +305,7 @@ format: format-python format-js format-rust ## Reformat all code
 
 .PHONY: package-python-libs
 package-python-libs: ## Create Python distributions for public libraries
-	./pants filter --filter-target-type=python_distribution :: | xargs ./pants package
+	./pants filter --target-type=python_distribution :: | xargs ./pants package
 
 ##@ Local Grapl 💻
 
@@ -370,12 +371,13 @@ zip: build-lambdas ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/
 
 .PHONY: zip-pants
 zip-pants: ## Generate Lambda zip artifacts using pants
-	./pants filter --filter-target-type=python_awslambda :: | xargs ./pants package
+	./pants filter --target-type=python_awslambda :: | xargs ./pants package
 	cp ./dist/src.python.provisioner.src/lambda.zip ./src/js/grapl-cdk/zips/provisioner-$(TAG).zip
 	cp ./dist/src.python.engagement-creator/engagement-creator.zip ./src/js/grapl-cdk/zips/engagement-creator-$(TAG).zip
 	cp ./dist/src.python.grapl-dgraph-ttl/lambda.zip ./src/js/grapl-cdk/zips/dgraph-ttl-$(TAG).zip
 	cp ./dist/src.python.engagement_edge/engagement_edge.zip ./src/js/grapl-cdk/zips/engagement-edge-$(TAG).zip
 	cp ./dist/src.python.grapl-ux-router/grapl-ux-router.zip ./src/js/grapl-cdk/zips/ux-router-$(TAG).zip
+	cp ./dist/src.python.grapl-model-plugin-deployer/grapl-model-plugin-deployer.zip ./src/js/grapl-cdk/zips/model-plugin-deployer-$(TAG).zip
 
 # This target is intended to help ease the transition to Pulumi, and
 # using lambdas in local Grapl testing deployments. Essentially, every
@@ -383,8 +385,8 @@ zip-pants: ## Generate Lambda zip artifacts using pants
 # everything is migrated to Pulumi, we can consolidate this target
 # with other zip-generating targets
 modern-lambdas: ## Generate lambda zips that are used in local Grapl and Pulumi deployments
-	$(DOCKER_BUILDX_BAKE) -f docker-compose.lambda-zips.rust.yml
-	docker-compose -f docker-compose.lambda-zips.rust.yml up
+	$(DOCKER_BUILDX_BAKE) -f docker-compose.lambda-zips.rust.yml -f docker-compose.lambda-zips.js.yml
+	docker-compose -f docker-compose.lambda-zips.rust.yml -f docker-compose.lambda-zips.js.yml up
 	$(MAKE) zip-pants
 
 .PHONY: push

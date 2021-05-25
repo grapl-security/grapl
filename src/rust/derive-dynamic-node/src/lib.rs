@@ -147,9 +147,9 @@ pub fn derive_node_description(input: TokenStream) -> TokenStream {
             }
         }
 
-        impl Into<grapl_graph_descriptions::graph_description::NodeDescription> for #node_name {
-            fn into(self) -> NodeDescription {
-                self.dynamic_node
+        impl From<#node_name> for grapl_graph_descriptions::graph_description::NodeDescription {
+            fn from(n: #node_name) -> grapl_graph_descriptions::graph_description::NodeDescription {
+                n.dynamic_node
             }
         }
     );

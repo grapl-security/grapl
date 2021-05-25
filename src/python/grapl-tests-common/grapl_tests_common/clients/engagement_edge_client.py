@@ -1,8 +1,6 @@
-import logging
 import os
 from http import HTTPStatus
 from typing import Optional
-from urllib.error import HTTPError
 
 import requests
 

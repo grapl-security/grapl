@@ -56,9 +56,7 @@ pub enum RedisCacheError {
 
 impl CheckedError for RedisCacheError {
     fn error_type(&self) -> Recoverable {
-        match self {
-            _ => Recoverable::Transient,
-        }
+        Recoverable::Transient
     }
 }
 

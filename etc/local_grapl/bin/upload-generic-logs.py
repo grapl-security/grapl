@@ -1,20 +1,14 @@
 #!/usr/bin/env python
 import argparse
 import json
+import os
+import random
+import string
+import time
 from datetime import datetime
 
-try:
-    from typing import Any, Dict, Union, Optional
-except:
-    pass
-
-import os
-import time
-import string
 import boto3
-import random
 import zstd
-import sys
 
 
 def rand_str(l):

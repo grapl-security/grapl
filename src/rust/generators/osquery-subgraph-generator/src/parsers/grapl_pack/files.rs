@@ -35,15 +35,16 @@ pub(crate) struct OSQueryFileQuery {
 }
 
 #[derive(Serialize, Deserialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub(crate) enum OSQueryFileAction {
-    ACCESSED,
-    ATTRIBUTES_MODIFIED,
-    UPDATED,
-    CREATED,
-    DELETED,
-    MOVED_FROM,
-    MOVED_TO,
-    OPENED,
+    Accessed,
+    AttributesModified,
+    Updated,
+    Created,
+    Deleted,
+    MovedFrom,
+    MovedTo,
+    Opened,
 }
 
 impl PartiallyDeserializedOSQueryLog {
@@ -75,10 +76,10 @@ impl TryFrom<OSQueryResponse<OSQueryFileQuery>> for GraphDescription {
            seem like they could easily be represented by using create/deletes.
         */
         match &file_event.columns.action {
-            OSQueryFileAction::CREATED | OSQueryFileAction::MOVED_FROM => {
+            OSQueryFileAction::Created | OSQueryFileAction::MovedFrom => {
                 subject_file.with_created_timestamp(file_event.columns.time)
             }
-            OSQueryFileAction::DELETED | OSQueryFileAction::MOVED_TO => {
+            OSQueryFileAction::Deleted | OSQueryFileAction::MovedTo => {
                 subject_file.with_deleted_timestamp(file_event.columns.time)
             }
             _ => subject_file.with_last_seen_timestamp(file_event.columns.time),

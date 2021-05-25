@@ -1,4 +1,3 @@
-from datetime import timedelta
 from typing import Any, Dict, List
 from unittest import TestCase
 
@@ -81,7 +80,7 @@ def _query_graphql_endpoint_for_lenses(
             uid,
             node_key,
             lens_name,
-            score, 
+            score,
             lens_type,
         }
     }

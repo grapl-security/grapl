@@ -9,7 +9,6 @@ from infra.config import (
     GLOBAL_LAMBDA_ZIP_TAG,
     LOCAL_GRAPL,
     SERVICE_LOG_RETENTION_DAYS,
-    import_aware_opts,
 )
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
@@ -129,6 +128,7 @@ class Lambda(pulumi.ComponentResource):
         args: LambdaArgs,
         network: Network,
         forwarder: Optional[MetricForwarder] = None,
+        override_name: Optional[str] = None,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         super().__init__("grapl:Lambda", name, None, opts)
@@ -146,7 +146,7 @@ class Lambda(pulumi.ComponentResource):
         lambda_name = f"{DEPLOYMENT_NAME}-{name}"
         self.function = aws.lambda_.Function(
             f"{name}-lambda",
-            name=name,
+            name=override_name or name,
             description=args.description,
             runtime=args.runtime,
             package_type=args.package_type,
@@ -161,7 +161,7 @@ class Lambda(pulumi.ComponentResource):
                 security_group_ids=[self.security_group.id],
                 subnet_ids=[net.id for net in network.private_subnets],
             ),
-            opts=import_aware_opts(lambda_name, parent=self),
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
         if not LOCAL_GRAPL:
@@ -176,7 +176,7 @@ class Lambda(pulumi.ComponentResource):
                 function_name=self.function.arn,
                 function_version=self.function.version,
                 name="live",
-                opts=import_aware_opts(f"{lambda_name}/live", parent=self),
+                opts=pulumi.ResourceOptions(parent=self),
             )
 
         # Lambda function output is automatically sent to log

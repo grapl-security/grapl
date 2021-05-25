@@ -20,4 +20,5 @@ members = [
     "./sysmon",
     "./grapl-service",
     "./grapl-router-api",
+    "./grapl-graphql-codegen",
 ]

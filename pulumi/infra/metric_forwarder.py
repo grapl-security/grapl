@@ -2,7 +2,7 @@ import json
 from typing import Optional
 
 import pulumi_aws as aws
-from infra.config import GLOBAL_LAMBDA_ZIP_TAG
+from infra.config import GLOBAL_LAMBDA_ZIP_TAG, configurable_envvars
 from infra.network import Network
 
 import pulumi
@@ -33,7 +33,11 @@ class MetricForwarder(pulumi.ComponentResource):
                 handler="metric-forwarder",
                 code_path=code_path_for("metric-forwarder"),
                 package_type="Zip",
-                env={"GRAPL_LOG_LEVEL": "INFO", "RUST_BACKTRACE": "1"},
+                env={
+                    **configurable_envvars(
+                        "metric-forwarder", ["RUST_LOG", "RUST_BACKTRACE"]
+                    ),
+                },
                 memory_size=128,
                 timeout=45,
             ),
@@ -57,7 +61,7 @@ class MetricForwarder(pulumi.ComponentResource):
                     ],
                 }
             ),
-            opts=pulumi.ResourceOptions(parent=self),
+            opts=pulumi.ResourceOptions(parent=self.role),
         )
 
         self.register_outputs({})

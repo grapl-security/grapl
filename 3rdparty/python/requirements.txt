@@ -13,6 +13,7 @@ mypy_boto3_sqs
 protobuf>=3.12.1
 pulumi>=3.0.0,<4.0.0
 pulumi-aws>=4.0.0,<5.0.0
+pulumi_docker
 pulumi_random
 pydgraph
 pyjwt
@@ -20,12 +21,4 @@ pytest
 requests
 redis
 typing_extensions
-zstd
-
-# This was introduced when we updated to Pants 2.4.0; lambdex (which
-# we use to generate AWS lambda zip files) has requirements that
-# conflict with the setuptools that Pants pulls in. We should remove
-# this at the earliest possible convenience.
-#
-# I *think* this may be related to https://github.com/wickman/lambdex/pull/8
-setuptools>=50.3.0,<50.4
+zstd==1.4.9.1
