@@ -373,7 +373,7 @@ zip: build-lambdas ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/
 zip-pants: ## Generate Lambda zip artifacts using pants
 	./pants filter --target-type=python_awslambda :: | xargs ./pants package
 	cp ./dist/src.python.provisioner.src/lambda.zip ./src/js/grapl-cdk/zips/provisioner-$(TAG).zip
-	cp ./dist/src.python.engagement-creator/engagement-creator.zip ./src/js/grapl-cdk/zips/engagement-creator-$(TAG).zip
+	cp ./dist/src.python.engagement-creator/lambda.zip ./src/js/grapl-cdk/zips/engagement-creator-$(TAG).zip
 	cp ./dist/src.python.grapl-dgraph-ttl/lambda.zip ./src/js/grapl-cdk/zips/dgraph-ttl-$(TAG).zip
 	cp ./dist/src.python.engagement_edge/engagement_edge.zip ./src/js/grapl-cdk/zips/engagement-edge-$(TAG).zip
 	cp ./dist/src.python.grapl-ux-router/lambda.zip ./src/js/grapl-cdk/zips/ux-router-$(TAG).zip
