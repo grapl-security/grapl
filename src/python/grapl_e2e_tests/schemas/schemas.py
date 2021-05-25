@@ -30,7 +30,7 @@ class IamRoleQuery(EntityQuery[SelfV, SelfQ]):
         super(IamRoleQuery, self).__init__()
 
     @classmethod
-    def node_schema(cls) -> "IamRoleNodeSchema":
+    def node_schema(cls) -> IamRoleNodeSchema:
         return IamRoleNodeSchema()
 
 
@@ -55,5 +55,5 @@ class IamRoleView(EntityView[SelfV, SelfQ]):
         self.set_predicate("role_name", role_name)
 
     @classmethod
-    def node_schema(cls) -> "IamRoleNodeSchema":
+    def node_schema(cls) -> IamRoleNodeSchema:
         return IamRoleNodeSchema()
