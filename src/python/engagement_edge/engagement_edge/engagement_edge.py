@@ -24,13 +24,13 @@ from typing import (
 import boto3
 import jwt
 from chalice import Chalice, Response
+from engagement_edge.env_vars import DEPLOYMENT_NAME, GRAPL_LOG_LEVEL, IS_LOCAL
+from engagement_edge.sagemaker import create_sagemaker_client
 from grapl_common.debugger.vsc_debugger import wait_for_vsc_debugger
 from grapl_common.env_helpers import (
     DynamoDBResourceFactory,
     SecretsManagerClientFactory,
 )
-from src.lib.env_vars import DEPLOYMENT_NAME, GRAPL_LOG_LEVEL, IS_LOCAL
-from src.lib.sagemaker import create_sagemaker_client
 
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
