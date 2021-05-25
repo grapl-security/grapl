@@ -51,8 +51,10 @@ class IamRoleView(EntityView[SelfV, SelfQ]):
             uid, node_key, graph_client, node_types, **kwargs
         )
 
-        self.set_predicate("arn", arn)
-        self.set_predicate("role_name", role_name)
+        if arn:
+            self.set_predicate("arn", arn)
+        if role_name:
+            self.set_predicate("role_name", role_name)
 
     @classmethod
     def node_schema(cls) -> IamRoleNodeSchema:
