@@ -8,4 +8,6 @@ pants_requirement(
     dist="pantsbuild.pants.testutil"
 )
 
-python_library()
+python_library(
+    skip_mypy=True
+)
