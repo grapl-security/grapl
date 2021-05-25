@@ -155,32 +155,6 @@ ENV IS_RETRY=False
 COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
 RUN python_test_deps/install_requirements.sh
 
-
-# engagement-creator
-################################################################################
-
-# build
-FROM grapl-python-build AS engagement-creator-build
-
-COPY --chown=grapl python/engagement-creator engagement-creator
-COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
-
-RUN source venv/bin/activate && \
-    cd engagement-creator && \
-    pip install .
-
-# test
-FROM engagement-creator-build AS engagement-creator-test
-
-## Install test requirements
-COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
-RUN python_test_deps/install_requirements.sh
-
-RUN source venv/bin/activate && \
-    cd engagement-creator && \
-    pip install .[typecheck]
-
-
 # engagement-edge
 ################################################################################
 
@@ -222,7 +196,7 @@ COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
 
 RUN source venv/bin/activate && \
     cd model-plugin-deployer && \
-    pip install .
+    pip install -r requirements.txt
 
 # deploy
 FROM grapl-python-deploy AS model-plugin-deployer-deploy
@@ -232,19 +206,11 @@ COPY --chown=grapl --from=model-plugin-deployer-build /home/grapl/venv venv
 RUN source venv/bin/activate && \
     chalice new-project app/
 
-COPY --chown=grapl --from=model-plugin-deployer-build /home/grapl/model-plugin-deployer/src/grapl_model_plugin_deployer.py app/app.py
+COPY --chown=grapl --from=model-plugin-deployer-build /home/grapl/model-plugin-deployer/grapl_model_plugin_deployer.py app/app.py
 
 CMD source venv/bin/activate && \
     cd app && \
     chalice local --no-autoreload --host=0.0.0.0 --port=8123
-
-# test
-FROM model-plugin-deployer-build AS model-plugin-deployer-test
-
-## Install test requirements
-COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
-RUN python_test_deps/install_requirements.sh
-
 
 # Notebook
 ################################################################################

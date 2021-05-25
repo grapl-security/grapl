@@ -29,33 +29,6 @@ services:
         mypy analyzer_executor/**/*.py
         "
 
-  typecheck-grapl-tests-common:
-    image: grapl/grapl-tests-common-python-build:${TAG:-latest}
-    build:
-      context: ${PWD}/src
-      dockerfile: ./python/Dockerfile
-      target: grapl-tests-common-build
-    command: |
-      /bin/bash -c "
-        source venv/bin/activate &&
-        cd grapl-tests-common &&
-        pip install '.[typecheck]' &&
-        mypy .
-        "
-  
-  typecheck-engagement-creator:
-    image: grapl/grapl-engagement-creator-test:${TAG:-latest}
-    build:
-      context: ${PWD}/src
-      dockerfile: ./python/Dockerfile
-      target: engagement-creator-test
-    command: |
-      /bin/bash -c "
-        source venv/bin/activate &&
-        cd engagement-creator &&
-        mypy .
-        "
-
   typecheck-e2e-tests:
     image: grapl/grapl-e2e-tests-build:${TAG:-latest}
     build:
@@ -67,37 +40,6 @@ services:
         source venv/bin/activate &&
         pip install mypy &&
         mypy -p grapl_e2e_tests
-        "
-  
-  typecheck-graphql-endpoint-tests:
-    image: grapl/graphql-endpoint-tests:${TAG:-latest}
-    build:
-      context: ${PWD}/src
-      dockerfile: ./python/Dockerfile
-      target: graphql-endpoint-tests
-    command: |
-      /bin/bash -c "
-        source venv/bin/activate &&
-        pip install mypy &&
-        mypy -p graphql_endpoint_tests
-        "
-
-  # typecheck-analyzer-deployer:
-  #   image: grapl/grapl-analyzer-deployer-test:${TAG:-latest}
-
-  typecheck-model-plugin-deployer:
-    image: grapl/grapl-model-plugin-deployer-test:${TAG:-latest}
-    build:
-      context: ${PWD}/src
-      dockerfile: ./python/Dockerfile
-      target: model-plugin-deployer-test
-    command: |
-      /bin/bash -c "
-        source venv/bin/activate &&
-        touch venv/lib/python3.7/site-packages/chalice/py.typed &&
-        cd model-plugin-deployer &&
-        pip install mypy &&
-        mypy .
         "
 
   typecheck-grapl-analyzerlib:

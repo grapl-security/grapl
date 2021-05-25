@@ -1,4 +1,7 @@
+python_library()
+
 python_awslambda(
+    name="lambda",
     runtime="python3.7",
-    handler="src/grapl_model_plugin_deployer.py:app"
+    handler="grapl_model_plugin_deployer.py:app"
 )
