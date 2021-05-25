@@ -70,7 +70,7 @@ class LazyUxBucket:
 
         # todo: We could just compress right here instead of allocating this intermediary
         # Or we could compress the files in s3?
-        return obj.get()["Body"].read()
+        return cast(bytes, obj.get()["Body"].read())
 
     def _retrieve_bucket(self) -> Bucket:
         if IS_LOCAL:
@@ -135,7 +135,7 @@ def respond(
         headers = {"Access-Control-Allow-Origin": override, **headers}
 
     compressed_body = web_compress.compress(
-        {"error": err} if err else json.dumps({"success": res})
+        json.dumps({"error": err} if err else {"success": res}).encode()
     )
 
     return Response(
