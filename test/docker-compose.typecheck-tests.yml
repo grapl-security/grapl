@@ -45,21 +45,6 @@ services:
   # typecheck-analyzer-deployer:
   #   image: grapl/grapl-analyzer-deployer-test:${TAG:-latest}
 
-  typecheck-model-plugin-deployer:
-    image: grapl/grapl-model-plugin-deployer-test:${TAG:-latest}
-    build:
-      context: ${PWD}/src
-      dockerfile: ./python/Dockerfile
-      target: model-plugin-deployer-test
-    command: |
-      /bin/bash -c "
-        source venv/bin/activate &&
-        touch venv/lib/python3.7/site-packages/chalice/py.typed &&
-        cd model-plugin-deployer &&
-        pip install mypy &&
-        mypy .
-        "
-
   typecheck-grapl-analyzerlib:
     image: grapl/grapl-analyzerlib-test:${TAG:-latest}
     build:

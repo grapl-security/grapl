@@ -212,14 +212,6 @@ CMD source venv/bin/activate && \
     cd app && \
     chalice local --no-autoreload --host=0.0.0.0 --port=8123
 
-# test
-FROM model-plugin-deployer-build AS model-plugin-deployer-test
-
-## Install test requirements
-COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
-RUN python_test_deps/install_requirements.sh
-
-
 # Notebook
 ################################################################################
 
