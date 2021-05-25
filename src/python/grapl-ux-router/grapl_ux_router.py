@@ -135,7 +135,7 @@ def respond(
         headers = {"Access-Control-Allow-Origin": override, **headers}
 
     compressed_body = web_compress.compress(
-        {"error": err} if err else json.dumps({"success": res})
+        json.dumps({"error": err} if err else {"success": res}).encode()
     )
 
     return Response(
