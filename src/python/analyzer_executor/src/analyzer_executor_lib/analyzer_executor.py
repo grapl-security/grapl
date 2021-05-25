@@ -477,7 +477,7 @@ def send_s3_event(
     queue_url: str,
     output_bucket: str,
     output_path: str,
-):
+) -> None:
     sqs_client.send_message(
         QueueUrl=queue_url,
         MessageBody=into_sqs_message(
