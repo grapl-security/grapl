@@ -2,5 +2,5 @@ python_library()
 
 python_tests(
   name="tests",
-  sources=["**/*.py"],
+  sources=["tests.py"],
 )
