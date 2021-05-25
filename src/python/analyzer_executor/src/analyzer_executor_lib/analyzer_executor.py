@@ -382,7 +382,7 @@ def get_analyzer_objects(dgraph_client: GraphClient) -> Dict[str, Analyzer]:
     }
 
 
-def chunker(seq, size):
+def chunker(seq: List[BaseView], size: int) -> List[List[BaseView]]:
     return [seq[pos : pos + size] for pos in range(0, len(seq), size)]
 
 
