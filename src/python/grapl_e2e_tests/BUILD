@@ -1,6 +1,9 @@
-python_library()
+python_library(
+    skip_mypy=True
+)
 
 python_tests(
   name="tests",
-  sources=["**/*.py"]
+  sources=["**/*.py"],
+  skip_mypy=True
 )
