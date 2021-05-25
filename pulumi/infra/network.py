@@ -182,7 +182,7 @@ class Network(pulumi.ComponentResource):
                 tags={"Name": name},
                 opts=pulumi.ResourceOptions(parent=subnet),
             )
-    
+
             aws.ec2.RouteTableAssociation(
                 f"assoc-{subnet._name}",
                 subnet_id=subnet.id,
