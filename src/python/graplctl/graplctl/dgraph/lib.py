@@ -44,7 +44,9 @@ def _find_operational_alarms_arn(sns: SNSClient, deployment_name: str) -> str:
         None,
     )
     if not arn:
-        raise Exception(f"Couldn't find a good Operational Alarms ARN among {all_topic_arns}")
+        raise Exception(
+            f"Couldn't find a good Operational Alarms ARN among {all_topic_arns}"
+        )
     return arn
 
 
