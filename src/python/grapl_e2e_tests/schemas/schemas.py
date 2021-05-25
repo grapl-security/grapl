@@ -35,7 +35,7 @@ class IamRoleQuery(EntityQuery[SelfV, SelfQ]):
 
 
 class IamRoleView(EntityView[SelfV, SelfQ]):
-    queryable = IamRoleQuery
+    queryable = IamRoleQuery  # type: ignore[assignment]
 
     def __init__(  # type: ignore[no-untyped-def]
         self,
