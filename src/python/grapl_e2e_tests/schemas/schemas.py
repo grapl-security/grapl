@@ -37,7 +37,7 @@ class IamRoleQuery(EntityQuery[SelfV, SelfQ]):
 class IamRoleView(EntityView[SelfV, SelfQ]):
     queryable = IamRoleQuery
 
-    def __init__(
+    def __init__(  # type: ignore[no-untyped-def]
         self,
         graph_client: GraphClient,
         node_key: str,
@@ -46,7 +46,7 @@ class IamRoleView(EntityView[SelfV, SelfQ]):
         arn: Optional[str] = None,
         role_name: Optional[str] = None,
         **kwargs,
-    ):
+    ) -> None:
         super(IamRoleView, self).__init__(
             uid, node_key, graph_client, node_types, **kwargs
         )
