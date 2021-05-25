@@ -244,13 +244,13 @@ class AnalyzerExecutor:
 
     def exec_analyzers(
         self,
-        dg_client,
+        dg_client: GraphClient,
         file: str,
         msg_id: str,
         nodes: List[BaseView],
         analyzers: Dict[str, Analyzer],
         sender: Any,
-    ):
+    ) -> None:
         if not analyzers:
             self.logger.warning("Received empty dict of analyzers")
             return
@@ -310,7 +310,9 @@ class AnalyzerExecutor:
             for nodes in chunker([n for n in graph.node_iter()], chunk_size):
                 self.logger.info(f"Querying {len(nodes)} nodes")
 
-                def exec_analyzer(nodes, sender):
+                def exec_analyzer(
+                    nodes: List[BaseView], sender: Connection
+                ) -> List[BaseView]:
                     try:
                         self.exec_analyzers(
                             client, file, msg_id, nodes, analyzers, sender
