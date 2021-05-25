@@ -5,6 +5,21 @@ use actix_web::body::Body;
 use serde::{Serialize, Deserialize};
 use thiserror::Error;
 
+
+#[derive(Error, Debug)]
+pub enum DeployError {
+    #[error("Source contains no data")]
+    EmptySource,
+
+    /// Represents a failure to read from input.
+    #[error("Read error")]
+    ReadError { source: std::io::Error },
+
+    /// Represents all other cases of `std::io::Error`.
+    #[error(transparent)]
+    IOError(#[from] std::io::Error),
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct DeployRequest{
     name: String,
@@ -13,7 +28,7 @@ pub struct DeployRequest{
 // actix procedural macros that route incoming http requests
 #[post("/modelPluginDeployer/deploy")]
 pub async fn grapl_model_plugin_deployer(body: actix_web::web::Json<DeployRequest>) -> impl Responder {
-    // CALL MODEL-PLUGIN-DEPOYER GRPC CLIENT
+    // CALL MODEL-PLUGIN-DEPlOYER GRPC CLIENT
     let body = body.into_inner();
     let response = make_request("deploy", body)
         .await;
@@ -21,7 +36,17 @@ pub async fn grapl_model_plugin_deployer(body: actix_web::web::Json<DeployReques
     match response{
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => {
-            unimplemented!()
+            if e == 0 {
+                return Err(DeployError::EmptySource);
+            }
+
+            if e == "read error"{
+                Err(DeployError::ReadError);
+            } else {
+                return Err(DeployError::IOError);
+            }
+
+
         }
     }
 }
