@@ -14,7 +14,17 @@ from multiprocessing import Pipe, Process
 from multiprocessing.connection import Connection
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Iterable, Iterator, List, Mapping, Optional
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    cast,
+)
 
 import boto3  # type: ignore
 from analyzer_executor_lib.redis_cache import EitherCache, construct_redis_client
@@ -360,7 +370,7 @@ def parse_s3_event(s3: S3ServiceResource, event: S3PutRecordDict) -> str:
 
 def download_s3_file(s3: S3ServiceResource, bucket: str, key: str) -> str:
     obj = s3.Object(bucket, key)
-    return obj.get()["Body"].read().decode("utf-8")
+    return cast(bytes, obj.get()["Body"].read()).decode("utf-8")
 
 
 def is_analyzer(analyzer_name: str, analyzer_cls: type) -> bool:
