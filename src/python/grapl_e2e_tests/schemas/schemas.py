@@ -7,7 +7,7 @@ from grapl_analyzerlib.prelude import *
 
 
 class IamRoleNodeSchema(EntitySchema):
-    def __init__(self):
+    def __init__(self) -> None:
         super(IamRoleNodeSchema, self).__init__(
             properties={
                 "arn": PropType(PropPrimitive.Str, False),
