@@ -363,7 +363,7 @@ def download_s3_file(s3: S3ServiceResource, bucket: str, key: str) -> str:
     return obj.get()["Body"].read().decode("utf-8")
 
 
-def is_analyzer(analyzer_name, analyzer_cls):
+def is_analyzer(analyzer_name: str, analyzer_cls: type) -> bool:
     if analyzer_name == "Analyzer":  # This is the base class
         return False
     return (
