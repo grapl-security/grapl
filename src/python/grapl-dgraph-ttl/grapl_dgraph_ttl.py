@@ -1,7 +1,7 @@
 import datetime
 import json
 import os
-from typing import Dict, Iterable, Iterator, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Tuple, Union, cast
 
 from chalice import Chalice
 from grapl_analyzerlib.grapl_client import GraphClient
@@ -36,7 +36,7 @@ def query_batch(
         app.log.debug(f"retrieving batch: {query}")
         batch = txn.query(query)
         app.log.debug(f"retrieved batch: {batch.json}")
-        return json.loads(batch.json)["q"]
+        return json.loads(batch.json)["q"]  # type: ignore
     finally:
         txn.discard()
 
@@ -68,7 +68,7 @@ def expired_entities(
 
 def nodes(entities: Iterable[Dict[str, Union[Dict, str]]]) -> Iterator[str]:
     for entity in entities:
-        yield entity["uid"]
+        yield cast(str, entity["uid"])
 
 
 def edges(
@@ -116,7 +116,7 @@ def delete_edges(client: GraphClient, edges: Iterator[Tuple[str, str, str]]) -> 
 
 
 def create_edge_obj(
-    src_uid: int, predicate: str, dest_uid: int
+    src_uid: str, predicate: str, dest_uid: str
 ) -> Dict[str, Union[Dict, str]]:
     if predicate.startswith("~"):  # this is a reverse edge
         return {"uid": dest_uid, predicate.lstrip("~"): {"uid": src_uid}}
@@ -125,7 +125,7 @@ def create_edge_obj(
 
 
 @app.lambda_function(name="prune_expired_subgraphs")
-def prune_expired_subgraphs(event, lambda_context) -> None:
+def prune_expired_subgraphs(event: Dict[str, Any], lambda_context: Any) -> None:
     if GRAPL_DGRAPH_TTL_S > 0:
         client = GraphClient()
 
