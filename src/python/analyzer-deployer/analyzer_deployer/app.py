@@ -1,5 +1,5 @@
 import dataclasses
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import boto3
 from chalice import Chalice
@@ -9,7 +9,7 @@ from mypy_boto3_sqs import SQSServiceResource
 app = Chalice(app_name="analyzer-deployer")
 
 
-def _create_queue(queue_name: str):
+def _create_queue(queue_name: str) -> None:
     client: SQSServiceResource = boto3.resource("sqs")
     client.create_queue(QueueName=queue_name)
     pass
@@ -77,6 +77,6 @@ def _create_analyzer(
 
 
 @app.route("/1/analyzers", methods=["POST"])
-def create_analyzer():
+def create_analyzer() -> Dict[str, Any]:
     dynamodb_client = boto3.resource("dynamodb")
     return dataclasses.asdict(_create_analyzer(dynamodb_client))
