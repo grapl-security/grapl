@@ -1,6 +1,7 @@
 import * as cdk from "@aws-cdk/core";
 import * as iam from "@aws-cdk/aws-iam";
 import * as lambda from "@aws-cdk/aws-lambda";
+import * as apigateway from "@aws-cdk/aws-apigateway";
 
 import { GraplServiceProps } from "../grapl-cdk-stack";
 import { SchemaDb } from "../schemadb";
@@ -9,6 +10,7 @@ import { Provisioner } from "./provisioner";
 export interface E2eTestRunnerProps extends GraplServiceProps {
     schemaDb: SchemaDb;
     provisioner: Provisioner;
+    edgeApiGateway: apigateway.RestApi;
 }
 
 export class E2eTestRunner extends cdk.NestedStack {
@@ -44,6 +46,7 @@ export class E2eTestRunner extends cdk.NestedStack {
                 DEPLOYMENT_NAME: props.deploymentName,
                 GRAPL_TEST_USER_NAME: `${props.deploymentName}-grapl-test-user`,
                 MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
+                GRAPL_API_HOST: props.edgeApiGateway.urlForPath("/"),
             },
             timeout: cdk.Duration.seconds(600),
             memorySize: 128,

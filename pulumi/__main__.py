@@ -220,5 +220,6 @@ def main() -> None:
         dgraph_cluster=dgraph_cluster,
     )
 
+
 if __name__ == "__main__":
     main()
