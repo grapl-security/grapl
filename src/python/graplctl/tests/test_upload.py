@@ -6,7 +6,7 @@ from tests.shared import invoke_with_default_args, patch_boto3_session
 
 def test_upload_analyzer__path_is_wrong() -> None:
     main_py_path = "some_inexistent_dir/main.py"
-    with patch_boto3_session() as mock_session:
+    with patch_boto3_session():
         result = invoke_with_default_args(
             [
                 "upload",

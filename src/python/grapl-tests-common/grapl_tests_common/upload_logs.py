@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
     from mypy_boto3_sqs import SQSClient
 
-import boto3  # type: ignore
+import boto3
 import zstd  # type: ignore
 
 

@@ -12,6 +12,8 @@ from grapl_common.utils.benchmark import benchmark_ctx
 
 if TYPE_CHECKING:
     from mypy_boto3_ec2 import EC2ServiceResource
+    from mypy_boto3_ec2.type_defs import FilterTypeDef
+    from mypy_boto3_ec2.literals import InstanceTypeType
     from mypy_boto3_ssm import SSMClient
 
 from grapl_common.grapl_logger import get_module_grapl_logger
@@ -108,7 +110,7 @@ def create_instances(
     swarm_id: str,
     ami_id: str,
     count: int,
-    instance_type: str,
+    instance_type: InstanceTypeType,
     security_group_id: str,
     subnet_ids: Set[str],
 ) -> List[Ec2Instance]:
@@ -227,7 +229,9 @@ def swarm_instances(
             )
         )
 
-    filters = [{"Name": f"tag:{t.key}", "Values": [t.value]} for t in tags]
+    filters: List[FilterTypeDef] = [
+        {"Name": f"tag:{t.key}", "Values": [t.value]} for t in tags
+    ]
     filters.append({"Name": "instance-state-name", "Values": ["running"]})
 
     for instance in ec2.instances.filter(Filters=filters):
@@ -316,7 +320,7 @@ def extract_join_token(
     ssm: SSMClient,
     deployment_name: str,
     manager_instance: Ec2Instance,
-    manager=False,
+    manager: bool = False,
 ) -> str:
     """Returns the join token for the swarm cluster"""
     command = ssm.send_command(
@@ -500,7 +504,7 @@ def create_swarm(
     graplctl_state: State,
     num_managers: int,
     num_workers: int,
-    instance_type: str,
+    instance_type: InstanceTypeType,
     swarm_id: str,
     docker_daemon_config: Optional[Dict] = None,
     extra_init: Optional[Callable[[SSMClient, str, List[Ec2Instance]], None]] = None,
@@ -679,7 +683,7 @@ def create_swarm(
     return True
 
 
-def destroy_swarm(graplctl_state: State, swarm_id: str):
+def destroy_swarm(graplctl_state: State, swarm_id: str) -> None:
     for instance in swarm_instances(
         ec2=graplctl_state.ec2,
         deployment_name=graplctl_state.grapl_deployment_name,
@@ -687,7 +691,5 @@ def destroy_swarm(graplctl_state: State, swarm_id: str):
         region=graplctl_state.grapl_region,
         swarm_id=swarm_id,
     ):
-        graplctl_state.ec2.Instance(instance.instance_id).terminate(
-            InstanceIds=[instance.instance_id]
-        )
+        graplctl_state.ec2.Instance(instance.instance_id).terminate()
         LOGGER.info(f"terminated instance {instance.instance_id}")
