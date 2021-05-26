@@ -316,7 +316,7 @@ def extract_join_token(
     ssm: SSMClient,
     deployment_name: str,
     manager_instance: Ec2Instance,
-    manager=False,
+    manager: bool = False,
 ) -> str:
     """Returns the join token for the swarm cluster"""
     command = ssm.send_command(
