@@ -13,6 +13,8 @@ if TYPE_CHECKING:
     from mypy_boto3_route53 import Route53Client
     from mypy_boto3_sns.client import SNSClient
     from mypy_boto3_ssm import SSMClient
+    from mypy_boto3_ec2.literals import InstanceTypeType
+
 
 import graplctl.swarm.lib as docker_swarm_ops
 from graplctl.common import Ec2Instance, State, Tag, get_command_results, ticker
@@ -279,7 +281,7 @@ def deploy_dgraph(
     LOGGER.info(f"command {command_id} instance {instance_id}: {result}")
 
 
-def create_dgraph(graplctl_state: State, instance_type: str) -> bool:
+def create_dgraph(graplctl_state: State, instance_type: InstanceTypeType) -> bool:
     swarm_id = f"{graplctl_state.grapl_deployment_name.lower()}-dgraph-swarm"
     LOGGER.info(f"creating dgraph swarm {swarm_id}")
     if not docker_swarm_ops.create_swarm(

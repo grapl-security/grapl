@@ -1,6 +1,7 @@
 import click
 import graplctl.dgraph.lib as dgraph_ops
 from graplctl.common import State, pass_graplctl_state
+from mypy_boto3_ec2.literals import InstanceTypeType
 
 #
 # dgraph operational commands
@@ -27,7 +28,7 @@ def dgraph(
     required=True,
 )
 @pass_graplctl_state
-def create(graplctl_state: State, instance_type: str) -> None:
+def create(graplctl_state: State, instance_type: InstanceTypeType) -> None:
     """spin up a swarm cluster and deploy dgraph on it"""
     click.echo(f"creating dgraph cluster of {instance_type} instances")
     if not dgraph_ops.create_dgraph(

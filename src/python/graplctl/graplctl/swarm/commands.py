@@ -4,6 +4,7 @@ from typing import List
 import click
 import graplctl.swarm.lib as docker_swarm_ops
 from graplctl.common import State, pass_graplctl_state
+from mypy_boto3_ec2.literals import InstanceTypeType
 
 #
 # swarm operational commands
@@ -56,7 +57,7 @@ def create(
     graplctl_state: State,
     num_managers: int,
     num_workers: int,
-    instance_type: str,
+    instance_type: InstanceTypeType,
     swarm_id: str,
 ) -> None:
     """start ec2 instances and join them as a docker swarm cluster"""
@@ -176,7 +177,7 @@ def scale(
     graplctl_state: State,
     num_managers: int,
     num_workers: int,
-    instance_type: str,
+    instance_type: InstanceTypeType,
     swarm_id: str,
 ) -> None:
     """scale up a docker swarm cluster"""

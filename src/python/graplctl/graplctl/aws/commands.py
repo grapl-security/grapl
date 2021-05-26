@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pathlib
 from os import PathLike
+from typing import TYPE_CHECKING
 
 import click
 import graplctl.aws.lib as aws_cdk_ops
@@ -9,6 +10,10 @@ import graplctl.dgraph.lib as dgraph_ops
 import graplctl.swarm.lib as docker_swarm_ops
 from grapl_common.utils.find_grapl_root import find_grapl_root
 from graplctl.common import State, pass_graplctl_state
+
+if TYPE_CHECKING:
+    from mypy_boto3_ec2.literals import InstanceTypeType
+
 
 #
 # aws deployment & provisioning commands
@@ -46,7 +51,10 @@ def aws(
 @click.confirmation_option(prompt=f"this will incur aws charges, ok?")
 @pass_graplctl_state
 def deploy(
-    graplctl_state: State, all: bool, dgraph_instance_type: str, grapl_root: PathLike
+    graplctl_state: State,
+    all: bool,
+    dgraph_instance_type: InstanceTypeType,
+    grapl_root: PathLike,
 ) -> None:
     """deploy grapl to aws"""
     click.echo("deploying grapl cdk stacks to aws")

@@ -12,6 +12,7 @@ from grapl_common.utils.benchmark import benchmark_ctx
 
 if TYPE_CHECKING:
     from mypy_boto3_ec2 import EC2ServiceResource
+    from mypy_boto3_ec2.literals import InstanceTypeType
     from mypy_boto3_ssm import SSMClient
 
 from grapl_common.grapl_logger import get_module_grapl_logger
@@ -108,7 +109,7 @@ def create_instances(
     swarm_id: str,
     ami_id: str,
     count: int,
-    instance_type: str,
+    instance_type: InstanceTypeType,
     security_group_id: str,
     subnet_ids: Set[str],
 ) -> List[Ec2Instance]:
@@ -500,7 +501,7 @@ def create_swarm(
     graplctl_state: State,
     num_managers: int,
     num_workers: int,
-    instance_type: str,
+    instance_type: InstanceTypeType,
     swarm_id: str,
     docker_daemon_config: Optional[Dict] = None,
     extra_init: Optional[Callable[[SSMClient, str, List[Ec2Instance]], None]] = None,
