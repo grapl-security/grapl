@@ -93,10 +93,9 @@ def configurable_envvar(service_name: str, var: str) -> str:
         return value
 
 
-def grapl_api_host() -> str:
-    """Return the "host" for the Grapl API. This is"""
-    config = pulumi.Config()
-    host = config.get("GRAPL_API_HOST")
-    if host is None:
-        raise Exception("GRAPL_API_HOST is unset")
-    return host
+def configurable_envvars(service_name: str, vars: Sequence[str]) -> Mapping[str, str]:
+    """Return a map of environment variable values for the named service,
+    pulled from Pulumi configuration or default values, suitable for
+    splicing into other environment maps for configuring services.
+    """
+    return {v: configurable_envvar(service_name, v) for v in vars}
