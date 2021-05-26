@@ -1,6 +1,5 @@
 import os
 import re
-from typing import Any, Mapping, Sequence, Tuple
 
 import pulumi_aws as aws
 from typing_extensions import Final
@@ -114,47 +113,10 @@ def configurable_envvar(service_name: str, var: str) -> str:
         return value
 
 
-def model_plugin_deployer_host_port() -> Tuple[str, int]:
-    """Return the host, port pair for the model-plugin-deployer. This
-    is a hack that should be removed once the model-plugin-deployer
-    lambda is migrated to Pulumi.
-
-    """
-    config = pulumi.Config()
-    host = config.get("GRAPL_MODEL_PLUGIN_DEPLOYER_HOST")
-    if host is None:
-        raise Exception("GRAPL_MODEL_PLUGIN_DEPLOYER_HOST is unset")
-    port = config.get_int("GRAPL_MODEL_PLUGIN_DEPLOYER_PORT")
-    if port is None:
-        raise Exception("GRAPL_MODEL_PLUGIN_DEPLOYER_PORT is unset")
-    return host, port
-
-
-def grapl_api_host_port() -> Tuple[str, int]:
-    """Return the host, port pair for the model-plugin-deployer. This
-    is a hack that should be removed once the Grapl API is migrated to Pulumi.
-
-    """
+def grapl_api_host() -> str:
+    """Return the "host" for the Grapl API. This is"""
     config = pulumi.Config()
     host = config.get("GRAPL_API_HOST")
     if host is None:
         raise Exception("GRAPL_API_HOST is unset")
-    port = config.get_int("GRAPL_HTTP_FRONTEND_PORT")
-    if port is None:
-        raise Exception("GRAPL_HTTP_FRONTEND_PORT is unset")
-    return host, port
-
-
-def grapl_graphql_host_port() -> Tuple[str, int]:
-    """Return the host, port pair for the model-plugin-deployer. This
-    is a hack that should be removed once the graphql service is migrated to Pulumi.
-
-    """
-    config = pulumi.Config()
-    host = config.get("GRAPL_GRAPHQL_HOST")
-    if host is None:
-        raise Exception("GRAPL_GRAPHQL_HOST is unset")
-    port = config.get_int("GRAPL_GRAPHQL_PORT")
-    if port is None:
-        raise Exception("GRAPL_GRAPHQL_PORT is unset")
-    return host, port
+    return host

@@ -14,10 +14,6 @@ GraphqlType = Dict[str, Any]
 
 LOGGER = get_module_grapl_logger(log_to_stdout=True)
 
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
-LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
-
 
 class GraphQLException(Exception):
     pass
