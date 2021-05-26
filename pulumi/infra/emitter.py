@@ -79,27 +79,7 @@ class EventEmitter(pulumi.ComponentResource):
         self.register_outputs({})
 
     def grant_write_to(self, role: aws.iam.Role) -> None:
-        aws.iam.RolePolicy(
-            f"{role._name}-writes-objects-to-{self.bucket._name}",
-            role=role.name,
-            policy=self.bucket.arn.apply(
-                lambda bucket_arn: json.dumps(
-                    {
-                        "Version": "2012-10-17",
-                        "Statement": [
-                            {
-                                "Effect": "Allow",
-                                "Action": [
-                                    "s3:PutObject",
-                                ],
-                                "Resource": f"{bucket_arn}/*",
-                            }
-                        ],
-                    }
-                )
-            ),
-            opts=pulumi.ResourceOptions(parent=role),
-        )
+        self.bucket.grant_put_permission_to(role)
 
     def grant_read_to(self, role: aws.iam.Role) -> None:
         self.bucket.grant_read_permission_to(role)
