@@ -37,8 +37,10 @@ class EventEmitter(pulumi.ComponentResource):
         self.topic_policy_attachment = aws.sns.TopicPolicy(
             f"{event_name}-bucket-publishes-to-topic",
             arn=self.topic.arn,
-            policy=pulumi.Output.all(self.topic.arn, self.bucket.arn).apply(
-                lambda topic_and_bucket: json.dumps(
+            policy=pulumi.Output.all(
+                topic_arn=self.topic.arn, bucket_arn=self.bucket.arn
+            ).apply(
+                lambda inputs: json.dumps(
                     {
                         "Version": "2012-10-17",
                         "Statement": [
@@ -49,9 +51,9 @@ class EventEmitter(pulumi.ComponentResource):
                                     "Service": "s3.amazonaws.com",
                                 },
                                 "Action": "sns:Publish",
-                                "Resource": topic_and_bucket[0],
+                                "Resource": inputs["topic_arn"],
                                 "Condition": {
-                                    "ArnLike": {"aws:SourceArn": topic_and_bucket[1]}
+                                    "ArnLike": {"aws:SourceArn": inputs["bucket_arn"]}
                                 },
                             }
                         ],
