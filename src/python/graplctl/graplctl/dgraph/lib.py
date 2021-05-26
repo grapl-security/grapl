@@ -339,7 +339,9 @@ def create_dgraph(graplctl_state: State, instance_type: InstanceTypeType) -> boo
         ssm=graplctl_state.ssm,
         deployment_name=graplctl_state.grapl_deployment_name,
         manager_instance=manager_instance,
-        worker_instances=tuple(
+        # Here, we only have two workers for Dgraph in our current
+        # setup, so we'll ignore the type discrepancy here.
+        worker_instances=tuple(  # type: ignore[arg-type]
             instance
             for instance in swarm_instances
             if Tag(key="grapl-swarm-role", value="swarm-worker") in instance.tags
