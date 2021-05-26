@@ -14,7 +14,17 @@ from multiprocessing import Pipe, Process
 from multiprocessing.connection import Connection
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Iterable, Iterator, List, Mapping, Optional
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    cast,
+)
 
 import boto3  # type: ignore
 from analyzer_executor_lib.redis_cache import EitherCache, construct_redis_client
@@ -244,13 +254,13 @@ class AnalyzerExecutor:
 
     def exec_analyzers(
         self,
-        dg_client,
+        dg_client: GraphClient,
         file: str,
         msg_id: str,
         nodes: List[BaseView],
         analyzers: Dict[str, Analyzer],
         sender: Any,
-    ):
+    ) -> None:
         if not analyzers:
             self.logger.warning("Received empty dict of analyzers")
             return
@@ -293,8 +303,14 @@ class AnalyzerExecutor:
                             analyzer.on_response(response, sender)
 
     def execute_file(
-        self, name: str, file: str, graph: SubgraphView, sender, msg_id, chunk_size
-    ):
+        self,
+        name: str,
+        file: str,
+        graph: SubgraphView,
+        sender: Connection,
+        msg_id: str,
+        chunk_size: int,
+    ) -> None:
         try:
             pool = ThreadPool(processes=4)
 
@@ -310,7 +326,9 @@ class AnalyzerExecutor:
             for nodes in chunker([n for n in graph.node_iter()], chunk_size):
                 self.logger.info(f"Querying {len(nodes)} nodes")
 
-                def exec_analyzer(nodes, sender):
+                def exec_analyzer(
+                    nodes: List[BaseView], sender: Connection
+                ) -> List[BaseView]:
                     try:
                         self.exec_analyzers(
                             client, file, msg_id, nodes, analyzers, sender
@@ -352,10 +370,10 @@ def parse_s3_event(s3: S3ServiceResource, event: S3PutRecordDict) -> str:
 
 def download_s3_file(s3: S3ServiceResource, bucket: str, key: str) -> str:
     obj = s3.Object(bucket, key)
-    return obj.get()["Body"].read().decode("utf-8")
+    return cast(bytes, obj.get()["Body"].read()).decode("utf-8")
 
 
-def is_analyzer(analyzer_name, analyzer_cls):
+def is_analyzer(analyzer_name: str, analyzer_cls: type) -> bool:
     if analyzer_name == "Analyzer":  # This is the base class
         return False
     return (
@@ -374,7 +392,7 @@ def get_analyzer_objects(dgraph_client: GraphClient) -> Dict[str, Analyzer]:
     }
 
 
-def chunker(seq, size):
+def chunker(seq: List[BaseView], size: int) -> List[List[BaseView]]:
     return [seq[pos : pos + size] for pos in range(0, len(seq), size)]
 
 
@@ -459,7 +477,7 @@ def send_s3_event(
     queue_url: str,
     output_bucket: str,
     output_path: str,
-):
+) -> None:
     sqs_client.send_message(
         QueueUrl=queue_url,
         MessageBody=into_sqs_message(
