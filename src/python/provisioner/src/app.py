@@ -44,7 +44,7 @@ def _provision_graph(
     schema_properties_table = provision_common.get_schema_properties_table(
         dynamodb, deployment_name=DEPLOYMENT_NAME
     )
-    schemas = (
+    schemas = [
         AssetSchema(),
         ProcessSchema(),
         FileSchema(),
@@ -56,7 +56,7 @@ def _provision_graph(
         ProcessOutboundConnectionSchema(),
         RiskSchema(),
         LensSchema(),
-    )
+    ]
 
     for schema in schemas:
         schema.init_reverse()
@@ -72,7 +72,7 @@ def _provision_graph(
         provision_common.store_schema_properties(schema_properties_table, schema)
 
 
-def _hash_password(cleartext, salt) -> str:
+def _hash_password(cleartext: bytes, salt: bytes) -> str:
     hashed = sha256(cleartext).digest()
     return pbkdf2_hmac("sha256", hashed, salt, 512000).hex()
 
@@ -101,13 +101,13 @@ def _create_user(
 
 def _retrieve_test_user_password(
     secretsmanager: SecretsmanagerClient, deployment_name: str
-):
+) -> str:
     return secretsmanager.get_secret_value(
         SecretId=f"{deployment_name}-TestUserPassword"
     )["SecretString"]
 
 
-def provision(event: Any = None, context: Any = None):
+def provision(event: Any = None, context: Any = None) -> None:
     graph_client = GraphClient()
     dynamodb: DynamoDBServiceResource = boto3.resource("dynamodb")
     secretsmanager: SecretsmanagerClient = boto3.client("secretsmanager")
