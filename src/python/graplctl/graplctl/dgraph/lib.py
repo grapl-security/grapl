@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from mypy_boto3_cloudwatch.client import CloudWatchClient
     from mypy_boto3_cloudwatch.type_defs import MetricTypeDef
     from mypy_boto3_route53 import Route53Client
+    from mypy_boto3_route53.type_defs import ChangeTypeDef
     from mypy_boto3_sns.client import SNSClient
     from mypy_boto3_ssm import SSMClient
     from mypy_boto3_ec2.literals import InstanceTypeType
@@ -159,7 +160,7 @@ def remove_dns_ip(
         if ip != ip_address
     ]
 
-    change = {
+    change: ChangeTypeDef = {
         "Action": "DELETE",  # delete the A record if this is the last address
         "ResourceRecordSet": {
             "Name": dns_name,
