@@ -36,12 +36,12 @@ from grapl_common.grapl_logger import get_module_grapl_logger
 LOGGER = get_module_grapl_logger(default_log_level="INFO")
 
 
-def set_schema(client, schema) -> None:
+def set_schema(client: GraphClient, schema: str) -> None:
     op = pydgraph.Operation(schema=schema)
     client.alter(op)
 
 
-def drop_all(client) -> None:
+def drop_all(client: GraphClient) -> None:
     op = pydgraph.Operation(drop_all=True)
     client.alter(op)
 
@@ -128,7 +128,7 @@ def query_dgraph_type(client: GraphClient, type_name: str):
     return predicate_metas
 
 
-def extend_schema(graph_client: GraphClient, schema: BaseSchema):
+def extend_schema(graph_client: GraphClient, schema: BaseSchema) -> None:
     predicate_metas = query_dgraph_type(graph_client, schema.self_type())
 
     for predicate_meta in predicate_metas:
@@ -146,10 +146,10 @@ def provision_master_graph(
     set_schema(master_graph_client, mg_schema_str)
 
 
-def provision_mg(mclient) -> None:
+def provision_mg(mclient: GraphClient) -> None:
     drop_all(mclient)
 
-    schemas = (
+    schemas = [
         AssetSchema(),
         ProcessSchema(),
         FileSchema(),
@@ -161,7 +161,7 @@ def provision_mg(mclient) -> None:
         ProcessOutboundConnectionSchema(),
         RiskSchema(),
         LensSchema(),
-    )
+    ]
 
     for schema in schemas:
         schema.init_reverse()
@@ -188,7 +188,7 @@ def provision_mg(mclient) -> None:
 DEPLOYMENT_NAME = "local-grapl"
 
 
-def validate_environment():
+def validate_environment() -> None:
     """Ensures that the required environment variables are present in the environment.
 
     Other code actually reads the variables later.
