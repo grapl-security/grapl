@@ -4,7 +4,7 @@ import json
 import os
 import sys
 import time
-from typing import List
+from typing import Any, Dict, List, Union, cast
 
 import boto3
 import pydgraph
@@ -56,7 +56,7 @@ def format_schemas(schema_defs: List[BaseSchema]) -> str:
     )
 
 
-def query_dgraph_predicate(client: GraphClient, predicate_name: str):
+def query_dgraph_predicate(client: GraphClient, predicate_name: str) -> Dict[str, Any]:
     query = f"""
         schema(pred: {predicate_name}) {{  }}
     """
@@ -66,42 +66,44 @@ def query_dgraph_predicate(client: GraphClient, predicate_name: str):
     finally:
         txn.discard()
 
-    return res
+    return cast(Dict[str, Any], res)
 
 
-def meta_into_edge(schema, predicate_meta):
+def meta_into_edge(schema: BaseSchema, predicate_meta: Dict[str, Any]) -> EdgeT:
     if predicate_meta.get("list"):
         return EdgeT(type(schema), BaseSchema, EdgeRelationship.OneToMany)
     else:
         return EdgeT(type(schema), BaseSchema, EdgeRelationship.OneToOne)
 
 
-def meta_into_property(schema, predicate_meta):
-    is_set = predicate_meta.get("list")
+def meta_into_property(predicate_meta: Dict[str, Any]) -> PropType:
+    is_set = predicate_meta["list"]
     type_name = predicate_meta["type"]
-    primitive = None
-    if type_name == "string":
-        primitive = PropPrimitive.Str
-    if type_name == "int":
-        primitive = PropPrimitive.Int
-    if type_name == "bool":
-        primitive = PropPrimitive.Bool
+    primitives = {
+        "string": PropPrimitive.Str,
+        "int": PropPrimitive.Int,
+        "bool": PropPrimitive.Bool,
+    }
 
-    return PropType(primitive, is_set, index=predicate_meta.get("index", []))
+    return PropType(
+        primitives[type_name], is_set, index=predicate_meta.get("index", [])
+    )
 
 
-def meta_into_predicate(schema, predicate_meta):
+def meta_into_predicate(
+    schema: BaseSchema, predicate_meta: Dict[str, Any]
+) -> Union[EdgeT, PropType]:
     try:
         if predicate_meta["type"] == "uid":
             return meta_into_edge(schema, predicate_meta)
         else:
-            return meta_into_property(schema, predicate_meta)
+            return meta_into_property(predicate_meta)
     except Exception as e:
         LOGGER.error(f"Failed to convert meta to predicate: {predicate_meta} {e}")
         raise e
 
 
-def query_dgraph_type(client: GraphClient, type_name: str):
+def query_dgraph_type(client: GraphClient, type_name: str) -> List[Dict[str, Any]]:
     query = f"""
         schema(type: {type_name}) {{ type }}
     """
