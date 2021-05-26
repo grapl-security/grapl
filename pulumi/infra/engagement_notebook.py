@@ -67,7 +67,7 @@ class EngagementNotebook(pulumi.ComponentResource):
         dynamodb.grant_read_write_on_tables(
             self.role, [db.user_auth_table, db.schema_table]
         )
-        plugins_bucket.grant_read_permissions_to(self.role)
+        plugins_bucket.grant_get_and_list_to(self.role)
 
         self.notebook = aws.sagemaker.NotebookInstance(
             f"{name}-instance",
