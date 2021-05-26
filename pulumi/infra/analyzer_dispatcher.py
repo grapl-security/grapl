@@ -3,7 +3,7 @@ from infra.bucket import Bucket
 from infra.cache import Cache
 from infra.config import configurable_envvars
 from infra.emitter import EventEmitter
-from infra.fargate_service import FargateService
+from infra.fargate_service import FargateService, GraplDockerBuild
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 
@@ -21,12 +21,10 @@ class AnalyzerDispatcher(FargateService):
 
         super().__init__(
             "analyzer-dispatcher",
-            image=docker.DockerBuild(
+            image=GraplDockerBuild(
                 dockerfile="../src/rust/Dockerfile",
                 target="analyzer-dispatcher-deploy",
                 context="../src",
-                args={"RUST_BUILD": "debug"},
-                env={"DOCKER_BUILDKIT": "1"},
             ),
             command="/analyzer-dispatcher",
             env={
