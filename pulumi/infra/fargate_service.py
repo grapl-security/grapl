@@ -36,7 +36,6 @@ class GraplDockerBuild(docker.DockerBuild):
             env={**(env or {}), "DOCKER_BUILDKIT": 1},
             args={**(args or {}), "RUST_BUILD": "debug"},
             target=target,
-
             # Quiet the Docker builds at `pulumi up` time
             # ...except it doesn't work with `buildx` yet
             # https://github.com/docker/buildx/issues/401

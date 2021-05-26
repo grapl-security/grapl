@@ -1,4 +1,3 @@
-import pulumi_docker as docker
 from infra import dynamodb
 from infra.cache import Cache
 from infra.config import configurable_envvars

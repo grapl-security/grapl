@@ -1,4 +1,3 @@
-import pulumi_docker as docker
 from infra.cache import Cache
 from infra.config import configurable_envvars
 from infra.emitter import EventEmitter
