@@ -1,6 +1,5 @@
 python_library(
     name="graplctl_lib",
-    skip_mypy=True,
     dependencies=[
         'src/python/grapl-common:grapl-common',
     ],
