@@ -12,6 +12,7 @@ from grapl_common.utils.benchmark import benchmark_ctx
 
 if TYPE_CHECKING:
     from mypy_boto3_ec2 import EC2ServiceResource
+    from mypy_boto3_ec2.type_defs import FilterTypeDef
     from mypy_boto3_ec2.literals import InstanceTypeType
     from mypy_boto3_ssm import SSMClient
 
@@ -228,7 +229,9 @@ def swarm_instances(
             )
         )
 
-    filters = [{"Name": f"tag:{t.key}", "Values": [t.value]} for t in tags]
+    filters: List[FilterTypeDef] = [
+        {"Name": f"tag:{t.key}", "Values": [t.value]} for t in tags
+    ]
     filters.append({"Name": "instance-state-name", "Values": ["running"]})
 
     for instance in ec2.instances.filter(Filters=filters):
