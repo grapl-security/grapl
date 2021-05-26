@@ -70,6 +70,14 @@ export class DGraphSwarmCluster extends cdk.NestedStack {
         });
     }
 
+    public alphaHost(): string {
+        return this.dgraphSwarmCluster.clusterHost();
+    }
+
+    public alphaPort(): number {
+        return this.dgraphSwarmCluster.clusterPort();
+    }
+
     public alphaHostPort(): string {
         return this.dgraphSwarmCluster.clusterHostPort();
     }

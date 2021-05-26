@@ -343,6 +343,7 @@ export class GraplCdkStack extends cdk.Stack {
         new E2eTestRunner(this, "e2e-test-runner", {
             schemaDb: schema_table,
             provisioner: provisioner,
+            edgeApiGateway: edgeApi,
             ...graplProps,
         })
     }
