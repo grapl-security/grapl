@@ -196,7 +196,6 @@ class Bucket(aws.s3.Bucket):
                                     "s3:PutObjectTagging",
                                     "s3:PutObjectVersionAcl",
                                     "s3:PutObjectVersionTagging",
-                                    "s3:AbortMultipartUpload",
                                 ],
                                 "Resource": [bucket_arn, f"{bucket_arn}/*"],
                             },
