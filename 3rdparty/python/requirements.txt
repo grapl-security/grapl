@@ -5,17 +5,17 @@ chalice==1.22.4
 # Chalice requires a Click in 7, <=8
 click==7.1.2
 hypothesis
-mypy_boto3_cloudwatch==1.17.71
-mypy_boto3_dynamodb==1.17.71
-mypy_boto3_ec2==1.17.71
-mypy_boto3_lambda==1.17.71
-mypy_boto3_route53==1.17.71
-mypy_boto3_s3==1.17.71
-mypy_boto3_sagemaker==1.17.71
-mypy_boto3_secretsmanager==1.17.71
-mypy_boto3_sqs==1.17.71
-mypy_boto3_sns==1.17.71
-mypy_boto3_ssm==1.17.71
+mypy_boto3_cloudwatch
+mypy_boto3_dynamodb
+mypy_boto3_ec2
+mypy_boto3_lambda
+mypy_boto3_route53
+mypy_boto3_s3
+mypy_boto3_sagemaker
+mypy_boto3_secretsmanager
+mypy_boto3_sqs
+mypy_boto3_sns
+mypy_boto3_ssm
 protobuf>=3.12.1
 pulumi>=3.0.0,<4.0.0
 # 4.7.0 is broken: https://github.com/pulumi/pulumi-aws/issues/1519
