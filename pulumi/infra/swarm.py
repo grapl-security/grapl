@@ -145,7 +145,7 @@ class Swarm(pulumi.ComponentResource):
             logical_bucket_name="swarm-config-bucket",
             opts=child_opts,
         )
-        self.swarm_config_bucket.grant_read_permissions_to(self.role)
+        self.swarm_config_bucket.grant_read_permission_to(self.role)
         self.swarm_config_bucket.upload_to_bucket(SWARM_INIT_DIR)
 
         self.register_outputs({})

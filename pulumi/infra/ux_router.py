@@ -46,7 +46,7 @@ class UxRouter(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        ux_bucket.grant_read_permissions_to(self.role)
+        ux_bucket.grant_read_permission_to(self.role)
         secret.grant_read_permissions_to(self.role)
 
         self.register_outputs({})
