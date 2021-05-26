@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Any, ContextManager, Dict, Sequence
+from typing import Any, Dict, Iterator, Sequence, cast
 from unittest.mock import MagicMock, Mock, patch
 
 from click.testing import CliRunner, Result
@@ -52,7 +52,7 @@ class BotoSessionMock:
 
 
 @contextmanager
-def patch_boto3_session() -> ContextManager[BotoSessionMock]:
+def patch_boto3_session() -> Iterator[BotoSessionMock]:
     with patch.object(
         cli.boto3, cli.boto3.Session.__name__, spec_set=cli.boto3.Session
     ) as p_session_cls:
