@@ -102,22 +102,4 @@ class EventEmitter(pulumi.ComponentResource):
         )
 
     def grant_read_to(self, role: aws.iam.Role) -> None:
-        aws.iam.RolePolicy(
-            f"{role._name}-reads-objects-from-{self.bucket._name}",
-            role=role.name,
-            policy=self.bucket.arn.apply(
-                lambda bucket_arn: json.dumps(
-                    {
-                        "Version": "2012-10-17",
-                        "Statement": [
-                            {
-                                "Effect": "Allow",
-                                "Action": "s3:GetObject",
-                                "Resource": f"{bucket_arn}/*",
-                            }
-                        ],
-                    }
-                )
-            ),
-            opts=pulumi.ResourceOptions(parent=role),
-        )
+        self.bucket.grant_read_permission_to(role)
