@@ -26,9 +26,9 @@ class ModelPluginDeployerClient:
 
     @staticmethod
     def from_env() -> ModelPluginDeployerClient:
-        hostname = os.environ["GRAPL_MODEL_PLUGIN_DEPLOYER_HOST"]
-        port = os.environ["GRAPL_MODEL_PLUGIN_DEPLOYER_PORT"]
-        return ModelPluginDeployerClient(endpoint=f"http://{hostname}:{port}")
+        return ModelPluginDeployerClient(
+            endpoint=f'http://{os.environ["GRAPL_API_HOST"]}/modelPluginDeployer'
+        )
 
     def deploy(
         self,
