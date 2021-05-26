@@ -45,6 +45,8 @@ export class Provisioner extends cdk.NestedStack {
                 DEPLOYMENT_NAME: props.deploymentName,
                 GRAPL_TEST_USER_NAME: `${props.deploymentName}-grapl-test-user`,
                 MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
+                DGRAPH_HOST: props.dgraphSwarmCluster.alphaHost(),
+                DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT: `${props.dgraphSwarmCluster.alphaPort()}`,
             },
             timeout: cdk.Duration.seconds(600),
             memorySize: 128,

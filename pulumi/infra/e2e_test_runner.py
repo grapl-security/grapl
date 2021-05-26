@@ -1,21 +1,9 @@
 from typing import Optional
 from urllib.parse import urlparse
 
-<<<<<<< HEAD
 from infra.api import Api
 from infra.config import DEPLOYMENT_NAME, GLOBAL_LAMBDA_ZIP_TAG, GRAPL_TEST_USER_NAME
 from infra.dgraph_cluster import DgraphCluster
-=======
-import pulumi_aws as aws
-from infra.config import (
-    DEPLOYMENT_NAME,
-    GLOBAL_LAMBDA_ZIP_TAG,
-    grapl_api_host_port,
-    grapl_graphql_host_port,
-    mg_alphas,
-    model_plugin_deployer_host_port,
-)
->>>>>>> make provisioner lambda run in localstack and e2e tests run in lambda
 from infra.network import Network
 from infra.secret import JWTSecret, TestUserPassword
 from infra.swarm import Ec2Port
@@ -50,16 +38,6 @@ class E2eTestRunner(pulumi.ComponentResource):
             name,
             opts=pulumi.ResourceOptions(parent=self),
         )
-<<<<<<< HEAD
-=======
-
-        (
-            model_plugin_deployer_host,
-            model_plugin_deployer_port,
-        ) = model_plugin_deployer_host_port()
-        api_host, api_port = grapl_api_host_port()
-        graphql_host, graphql_port = grapl_graphql_host_port()
->>>>>>> make provisioner lambda run in localstack and e2e tests run in lambda
         self.function = Lambda(
             name,
             args=PythonLambdaArgs(
@@ -69,22 +47,11 @@ class E2eTestRunner(pulumi.ComponentResource):
                 env={
                     "GRAPL_LOG_LEVEL": "DEBUG",
                     "DEPLOYMENT_NAME": DEPLOYMENT_NAME,
-<<<<<<< HEAD
                     "GRAPL_TEST_USER_NAME": GRAPL_TEST_USER_NAME,
                     "MG_ALPHAS": dgraph_cluster.alpha_host_port,
                     "GRAPL_API_HOST": api.invoke_url.apply(
                         lambda url: urlparse(url).netloc
                     ),
-=======
-                    "GRAPL_TEST_USER_NAME": f"{DEPLOYMENT_NAME}-test-user",
-                    "MG_ALPHAS": mg_alphas(),
-                    "GRAPL_MODEL_PLUGIN_DEPLOYER_HOST": model_plugin_deployer_host,
-                    "GRAPL_MODEL_PLUGIN_DEPLOYER_PORT": f"{model_plugin_deployer_port}",
-                    "GRAPL_API_HOST": api_host,
-                    "GRAPL_HTTP_FRONTEND_PORT": f"{api_port}",
-                    "GRAPL_GRAPHQL_HOST": graphql_host,
-                    "GRAPL_GRAPHQL_PORT": f"{graphql_port}",
->>>>>>> make provisioner lambda run in localstack and e2e tests run in lambda
                 },
                 timeout=60 * 5,  # 5 minutes
                 memory_size=256,
