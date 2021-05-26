@@ -58,7 +58,7 @@ class AnalyzerExecutor(FargateService):
         # service; that appears to be a bug
         analyzers_bucket.grant_get_and_list_to(self.default_service.task_role)
         model_plugins_bucket.grant_get_and_list_to(self.default_service.task_role)
-        output_emitter.bucket.grant_get_to(self.default_service.task_role)
+        output_emitter.grant_read_to(self.default_service.task_role)
 
         # TODO: CDK doesn't actually have this for some reason
         self.allow_egress_to_cache(cache)

@@ -56,11 +56,40 @@ class Bucket(aws.s3.Bucket):
                             {
                                 "Effect": "Allow",
                                 "Action": [
-                                    # TODO: Prefer to enumerate specific
-                                    # actions rather than wildcards
-                                    "s3:GetObject*",
-                                    "s3:GetBucket*",
-                                    "s3:List*",
+                                    "s3:GetBucketAcl",
+                                    "s3:GetBucketCORS",
+                                    "s3:GetBucketLocation",
+                                    "s3:GetBucketLogging",
+                                    "s3:GetBucketNotification",
+                                    "s3:GetBucketObjectLockConfiguration",
+                                    "s3:GetBucketOwnershipControls",
+                                    "s3:GetBucketPolicy",
+                                    "s3:GetBucketPolicyStatus",
+                                    "s3:GetBucketPublicAccessBlock",
+                                    "s3:GetBucketRequestPayment",
+                                    "s3:GetBucketTagging",
+                                    "s3:GetBucketVersioning",
+                                    "s3:GetBucketWebsite",
+                                    "s3:GetObject",
+                                    "s3:GetObjectAcl",
+                                    "s3:GetObjectLegalHold",
+                                    "s3:GetObjectRetention",
+                                    "s3:GetObjectTagging",
+                                    "s3:GetObjectTorrent",
+                                    "s3:GetObjectVersion",
+                                    "s3:GetObjectVersionAcl",
+                                    "s3:GetObjectVersionForReplication",
+                                    "s3:GetObjectVersionTagging",
+                                    "s3:GetObjectVersionTorrent",
+                                    "s3:ListAccessPoints",
+                                    "s3:ListAccessPointsForObjectLambda",
+                                    "s3:ListAllMyBuckets",
+                                    "s3:ListBucket",
+                                    "s3:ListBucketMultipartUploads",
+                                    "s3:ListBucketVersions",
+                                    "s3:ListJobs",
+                                    "s3:ListMultipartUploadParts",
+                                    "s3:ListStorageLensConfigurations",
                                 ],
                                 "Resource": [bucket_arn, f"{bucket_arn}/*"],
                             }
@@ -104,28 +133,6 @@ class Bucket(aws.s3.Bucket):
             opts=pulumi.ResourceOptions(parent=role),
         )
 
-    def grant_get_to(self, role: aws.iam.Role) -> None:
-        """Grants GetObject on all the objects in the bucket."""
-        aws.iam.RolePolicy(
-            f"{role._name}-get-{self._name}",
-            role=role.name,
-            policy=self.arn.apply(
-                lambda bucket_arn: json.dumps(
-                    {
-                        "Version": "2012-10-17",
-                        "Statement": [
-                            {
-                                "Effect": "Allow",
-                                "Action": "s3:GetObject",
-                                "Resource": f"{bucket_arn}/*",
-                            },
-                        ],
-                    }
-                )
-            ),
-            opts=pulumi.ResourceOptions(parent=role),
-        )
-
     def grant_read_write_permissions_to(self, role: aws.iam.Role) -> None:
         """ Gives the provided `Role` the ability to read from and write to this bucket. """
         aws.iam.RolePolicy(
@@ -144,39 +151,55 @@ class Bucket(aws.s3.Bucket):
                                 # enumerate the *specific*
                                 # actions that are needed.
                                 "Action": [
-                                    "s3:GetObject*",
-                                    "s3:GetBucket*",
-                                    "s3:List*",
-                                    "s3:DeleteObject*",
-                                    "s3:PutObject*",
-                                    "s3:Abort*",
+                                    "s3:GetBucketAcl",
+                                    "s3:GetBucketCORS",
+                                    "s3:GetBucketLocation",
+                                    "s3:GetBucketLogging",
+                                    "s3:GetBucketNotification",
+                                    "s3:GetBucketObjectLockConfiguration",
+                                    "s3:GetBucketOwnershipControls",
+                                    "s3:GetBucketPolicy",
+                                    "s3:GetBucketPolicyStatus",
+                                    "s3:GetBucketPublicAccessBlock",
+                                    "s3:GetBucketRequestPayment",
+                                    "s3:GetBucketTagging",
+                                    "s3:GetBucketVersioning",
+                                    "s3:GetBucketWebsite",
+                                    "s3:GetObject",
+                                    "s3:GetObjectAcl",
+                                    "s3:GetObjectLegalHold",
+                                    "s3:GetObjectRetention",
+                                    "s3:GetObjectTagging",
+                                    "s3:GetObjectTorrent",
+                                    "s3:GetObjectVersion",
+                                    "s3:GetObjectVersionAcl",
+                                    "s3:GetObjectVersionForReplication",
+                                    "s3:GetObjectVersionTagging",
+                                    "s3:GetObjectVersionTorrent",
+                                    "s3:ListAccessPoints",
+                                    "s3:ListAccessPointsForObjectLambda",
+                                    "s3:ListAllMyBuckets",
+                                    "s3:ListBucket",
+                                    "s3:ListBucketMultipartUploads",
+                                    "s3:ListBucketVersions",
+                                    "s3:ListJobs",
+                                    "s3:ListMultipartUploadParts",
+                                    "s3:ListStorageLensConfigurations",
+                                    "s3:DeleteObject",
+                                    "s3:DeleteObjectTagging",
+                                    "s3:DeleteObjectVersion",
+                                    "s3:DeleteObjectVersionTagging",
+                                    "s3:PutObject",
+                                    "s3:PutObjectAcl",
+                                    "s3:PutObjectLegalHold",
+                                    "s3:PutObjectRetention",
+                                    "s3:PutObjectTagging",
+                                    "s3:PutObjectVersionAcl",
+                                    "s3:PutObjectVersionTagging",
+                                    "s3:AbortMultipartUpload",
                                 ],
                                 "Resource": [bucket_arn, f"{bucket_arn}/*"],
                             },
-                        ],
-                    }
-                )
-            ),
-            opts=pulumi.ResourceOptions(parent=role),
-        )
-
-    def grant_delete_permissions_to(self, role: aws.iam.Role) -> None:
-        """ Adds the ability to delete objects from this bucket to the provided `Role`. """
-        aws.iam.RolePolicy(
-            f"{role._name}-deletes-{self._name}",
-            role=role.name,
-            policy=self.arn.apply(
-                lambda bucket_arn: json.dumps(
-                    {
-                        "Version": "2012-10-17",
-                        "Statement": [
-                            {
-                                "Effect": "Allow",
-                                # TODO: Prefer to enumerate specific
-                                # actions rather than wildcards
-                                "Action": "s3:DeleteObject*",
-                                "Resource": f"{bucket_arn}/*",
-                            }
                         ],
                     }
                 )
