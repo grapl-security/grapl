@@ -679,7 +679,7 @@ def create_swarm(
     return True
 
 
-def destroy_swarm(graplctl_state: State, swarm_id: str):
+def destroy_swarm(graplctl_state: State, swarm_id: str) -> None:
     for instance in swarm_instances(
         ec2=graplctl_state.ec2,
         deployment_name=graplctl_state.grapl_deployment_name,

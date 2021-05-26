@@ -366,7 +366,7 @@ def create_dgraph(graplctl_state: State, instance_type: str) -> bool:
     return True
 
 
-def remove_dgraph_dns(graplctl_state: State, swarm_id: str):
+def remove_dgraph_dns(graplctl_state: State, swarm_id: str) -> None:
     hosted_zone_id = graplctl_state.route53.list_hosted_zones_by_name(
         DNSName=f"{graplctl_state.grapl_deployment_name.lower()}.dgraph.grapl"
     )["HostedZones"][0]["Id"]

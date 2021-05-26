@@ -15,7 +15,7 @@ from graplctl.upload.lib import upload_analyzer
 def upload(
     graplctl_state: State,
     ctx: click.Context,
-):
+) -> None:
     """commands like "upload analyzer" or "upload sysmon logs" """
     pass
 
