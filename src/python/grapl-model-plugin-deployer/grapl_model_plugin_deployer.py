@@ -23,7 +23,7 @@ from typing import (
     cast,
 )
 
-import boto3  # type: ignore
+import boto3
 import jwt
 from chalice import Chalice, Response
 from grapl_analyzerlib.prelude import *
