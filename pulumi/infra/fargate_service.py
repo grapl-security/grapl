@@ -136,7 +136,7 @@ class _AWSFargateService(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self.execution_role_writes_logs = aws.iam.RolePolicy(
+        aws.iam.RolePolicy(
             f"{name}-write-log-events",
             role=self.execution_role.name,
             policy=self.log_group.arn.apply(
