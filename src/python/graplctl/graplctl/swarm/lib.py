@@ -687,7 +687,5 @@ def destroy_swarm(graplctl_state: State, swarm_id: str):
         region=graplctl_state.grapl_region,
         swarm_id=swarm_id,
     ):
-        graplctl_state.ec2.Instance(instance.instance_id).terminate(
-            InstanceIds=[instance.instance_id]
-        )
+        graplctl_state.ec2.Instance(instance.instance_id).terminate()
         LOGGER.info(f"terminated instance {instance.instance_id}")
