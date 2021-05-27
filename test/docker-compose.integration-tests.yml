@@ -82,7 +82,6 @@ services:
       - MESSAGECACHE_ADDR=${REDIS_HOST}
       - MESSAGECACHE_PORT=${REDIS_PORT}
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
-      - IS_LOCAL=True
       - IS_RETRY=False
 
   engagement-edge-integration-tests:
