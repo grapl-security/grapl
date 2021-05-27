@@ -5,6 +5,7 @@ from typing import Optional
 
 import boto3
 import requests
+from grapl_common.env_helpers import SecretsManagerClientFactory
 
 _JSON_CONTENT_TYPE_HEADERS = {"Content-type": "application/json"}
 _ORIGIN = {
@@ -17,7 +18,7 @@ class EngagementEdgeException(Exception):
 
 
 def _get_test_user_password(deployment_name: str) -> str:
-    secretsmanager = boto3.client("secretsmanager")
+    secretsmanager = SecretsManagerClientFactory(boto3).from_env()
     return secretsmanager.get_secret_value(
         SecretId=f"{deployment_name}-TestUserPassword"
     )["SecretString"]

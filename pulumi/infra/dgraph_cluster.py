@@ -84,7 +84,7 @@ class LocalStandInDgraphCluster(DgraphCluster):
     @property
     def alpha_host_port(self) -> pulumi.Output[str]:
         config = pulumi.Config()
-        endpoint = config.get("MG_ALPHAS") or f"{DEPLOYMENT_NAME}.dgraph.grapl:9080"
+        endpoint = config.require("MG_ALPHAS")
         return Output.from_input(endpoint)
 
     def allow_connections_from(self, other: aws.ec2.SecurityGroup) -> None:

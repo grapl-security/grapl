@@ -1,5 +1,6 @@
 import os
 import re
+from typing import Mapping, Sequence
 
 import pulumi_aws as aws
 from typing_extensions import Final
@@ -8,6 +9,9 @@ import pulumi
 
 # This will be incorporated into various infrastructure object names.
 DEPLOYMENT_NAME = pulumi.get_stack()
+
+# This must be the same as the value defined in local-grapl.env
+GRAPL_TEST_USER_NAME = f"{DEPLOYMENT_NAME}-grapl-test-user"
 
 
 def _validate_deployment_name() -> None:
