@@ -96,7 +96,6 @@ services:
       cd engagement_edge &&
       py.test -n auto -m "integration_test"'
     environment:
-      - IS_LOCAL=True
       - DEPLOYMENT_NAME
       - UX_BUCKET_URL="ux_bucket_url"
       - GRAPL_API_HOST
