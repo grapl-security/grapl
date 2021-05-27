@@ -12,6 +12,8 @@ _ORIGIN = {
     "Origin": "https://local-grapl-engagement-ux-bucket.s3.amazonaws.com",
 }
 
+IS_LOCAL = bool(os.getenv("IS_LOCAL", default=False))
+
 
 class EngagementEdgeException(Exception):
     pass
@@ -35,7 +37,9 @@ def _sha_and_pepper(username: str, password: str) -> str:
 
 class EngagementEdgeClient:
     def __init__(self) -> None:
-        self.endpoint = f'http://{os.environ["GRAPL_API_HOST"]}/auth'
+        port = int(os.environ["GRAPL_HTTP_FRONTEND_PORT"]) if IS_LOCAL else 443
+        protocol = "http" if IS_LOCAL else "https"
+        self.endpoint = f'{protocol}://{os.environ["GRAPL_API_HOST"]}:{port}/auth'
 
     def get_jwt(self) -> str:
         username = os.environ["GRAPL_TEST_USER_NAME"]

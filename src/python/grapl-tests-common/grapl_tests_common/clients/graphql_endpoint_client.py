@@ -11,6 +11,8 @@ import requests
 GqlLensDict = Dict[str, Any]
 GraphqlType = Dict[str, Any]
 
+IS_LOCAL = bool(os.getenv("IS_LOCAL", default=False))
+
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
@@ -22,7 +24,9 @@ class GraphQLException(Exception):
 
 class GraphqlEndpointClient:
     def __init__(self, jwt: str) -> None:
-        self.endpoint = f'http://{os.environ["GRAPL_API_HOST"]}/graphQlEndpoint'
+        port = int(os.environ["GRAPL_HTTP_FRONTEND_PORT"]) if IS_LOCAL else 443
+        protocol = "http" if IS_LOCAL else "https"
+        self.endpoint = f'{protocol}://{os.environ["GRAPL_API_HOST"]}:{port}/graphQlEndpoint'
         self.jwt = jwt
 
     def query(
@@ -34,11 +38,11 @@ class GraphqlEndpointClient:
             cookies={"grapl_jwt": self.jwt},
         )
         if resp.status_code != HTTPStatus.OK:
-            resp_str = "\\n".join(resp.iter_lines())
+            resp_str = "\\n".join(resp.iter_lines(decode_unicode=True))
             LOGGER.error(
                 f'status {resp.status_code} from graphql endpoint for query "{query}" with variables "{variables}": "{resp_str or "no response"}"'
             )
-        assert resp.status_code == HTTPStatus.OK, "\n".join(resp.iter_lines())
+        assert resp.status_code == HTTPStatus.OK, "\n".join(resp.iter_lines(decode_unicode=True))
         return cast(Dict[str, Any], resp.json()["data"])
 
     def query_for_scope(self, lens_name: str) -> GqlLensDict:
