@@ -72,15 +72,19 @@ def main() -> None:
     model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)
 
     if LOCAL_GRAPL:
-        # We need to create these queues in Local Grapl, because they
-        # are otherwise created in the FargateService instances below;
-        # we don't run Fargate services in Local Grapl.
+        # We need to create these queues, and wire them up to their
+        # respective emitters, in Local Grapl, because they are
+        # otherwise created in the FargateService instances below; we
+        # don't run Fargate services in Local Grapl.
         #
         # T_T
         from infra.service_queue import ServiceQueue
 
         sysmon_generator_queue = ServiceQueue("sysmon-generator")
+        sysmon_generator_queue.subscribe_to_emitter(sysmon_log_emitter)
+
         osquery_generator_queue = ServiceQueue("osquery-generator")
+        osquery_generator_queue.subscribe_to_emitter(osquery_log_emitter)
 
         node_identifier_queue = ServiceQueue("node-identifier")
         node_identifier_queue.subscribe_to_emitter(unid_subgraphs_generated_emitter)
@@ -93,6 +97,7 @@ def main() -> None:
 
         analyzer_executor_queue = ServiceQueue("analyzer-executor")
         analyzer_executor_queue.subscribe_to_emitter(dispatched_analyzer_emitter)
+
     else:
         # No Fargate or Elasticache in Local Grapl
         cache = Cache("main-cache", network=network)
