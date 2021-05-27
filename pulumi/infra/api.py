@@ -268,9 +268,16 @@ class Api(pulumi.ComponentResource):
 
         # This MUST be called after all integrations are registered in
         # self.proxies!
-        self._create_deployment()
+        self.stage = self._create_deployment()
+        pulumi.export("prod-api-url", self.stage.invoke_url)
+        pulumi.export("prod-api-id", self.stage.rest_api)
 
         self.register_outputs({})
+
+    @property
+    def invoke_url(self) -> pulumi.Output[str]:
+        """ Returns the invocation URL of the "prod" stage of this API gateway. """
+        return self.stage.invoke_url  # type: ignore[no-any-return]
 
     def _add_proxy_resource_integration(
         self,
@@ -285,7 +292,7 @@ class Api(pulumi.ComponentResource):
         )
         # self.triggers[lambda_fn.function._name] = lambda_fn.code_hash
 
-    def _create_deployment(self) -> None:
+    def _create_deployment(self) -> aws.apigateway.Stage:
         """ ONLY CALL THIS AFTER ALL RESOURCES ARE REGISTERED ON THE API GATEWAY! """
         deployment = aws.apigateway.Deployment(
             f"{self.rest_api._name}-deployment",
@@ -304,5 +311,4 @@ class Api(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        pulumi.export("prod-api-url", stage.invoke_url)
-        pulumi.export("prod-api-id", stage.rest_api)
+        return stage
