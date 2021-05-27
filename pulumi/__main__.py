@@ -83,7 +83,9 @@ def main() -> None:
         osquery_generator_queue = ServiceQueue("osquery-generator")
         node_identifier_queue = ServiceQueue("node-identifier")
         graph_merger_queue = ServiceQueue("graph-merger")
+
         analyzer_dispatcher_queue = ServiceQueue("analyzer-dispatcher")
+        analyzer_dispatcher_queue.subscribe_to_emitter(subgraphs_merged_emitter)
 
         analyzer_executor_queue = ServiceQueue("analyzer-executor")
         analyzer_executor_queue.subscribe_to_emitter(dispatched_analyzer_emitter)
