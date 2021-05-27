@@ -1,5 +1,5 @@
 import json
-from typing import Dict, Optional
+from typing import Optional
 
 import pulumi_aws as aws
 import pulumi_random as random

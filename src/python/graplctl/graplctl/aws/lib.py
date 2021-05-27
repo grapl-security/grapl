@@ -126,9 +126,9 @@ def _invoke_lambda(lambda_: LambdaClient, function_name: str) -> None:
         )
 
 
-def provision_grapl(lambda_: LambdaClient) -> None:
-    _invoke_lambda(lambda_=lambda_, function_name=f"provisioner")
+def provision_grapl(lambda_: LambdaClient, deployment_name: str) -> None:
+    _invoke_lambda(lambda_=lambda_, function_name=f"{deployment_name}-provisioner")
 
 
-def run_e2e_tests(lambda_: LambdaClient) -> None:
-    _invoke_lambda(lambda_=lambda_, function_name=f"e2e-test-runner")
+def run_e2e_tests(lambda_: LambdaClient, deployment_name: str) -> None:
+    _invoke_lambda(lambda_=lambda_, function_name=f"{deployment_name}-e2e-test-runner")

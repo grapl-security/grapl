@@ -4,9 +4,10 @@ import pulumi_aws as aws
 from infra.config import (
     DEPLOYMENT_NAME,
     GLOBAL_LAMBDA_ZIP_TAG,
-    grapl_api_host,
-    mg_alphas,
+    GRAPL_TEST_USER_NAME,
+    LOCAL_GRAPL,
 )
+from infra.dgraph_cluster import DgraphCluster
 from infra.network import Network
 
 import pulumi
@@ -14,7 +15,10 @@ import pulumi
 
 class E2eTestRunner(pulumi.ComponentResource):
     def __init__(
-        self, network: Network, opts: Optional[pulumi.ResourceOptions] = None
+        self,
+        network: Network,
+        dgraph_cluster: DgraphCluster,
+        opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         name = "e2e-test-runner"
         super().__init__("grapl:E2eTestRunner", name, None, opts)
@@ -27,7 +31,6 @@ class E2eTestRunner(pulumi.ComponentResource):
             name,
             opts=pulumi.ResourceOptions(parent=self),
         )
-        api_host = grapl_api_host()
         self.function = Lambda(
             name,
             args=LambdaArgs(
@@ -40,14 +43,16 @@ class E2eTestRunner(pulumi.ComponentResource):
                 env={
                     "GRAPL_LOG_LEVEL": "INFO",
                     "DEPLOYMENT_NAME": DEPLOYMENT_NAME,
-                    "GRAPL_TEST_USER_NAME": f"{DEPLOYMENT_NAME}-test-user",
-                    "MG_ALPHAS": mg_alphas(),
-                    "GRAPL_API_HOST": api_host,
+                    "GRAPL_TEST_USER_NAME": GRAPL_TEST_USER_NAME,
+                    "MG_ALPHAS": dgraph_cluster.alpha_host_port,
+                    "GRAPL_API_HOST": "FIXME" if not LOCAL_GRAPL else "api.grapl.test",
                 },
                 memory_size=128,
                 timeout=600,
             ),
             opts=pulumi.ResourceOptions(parent=self),
+            # graplctl expects this specific function name :(
+            override_name=f"{DEPLOYMENT_NAME}-e2e-test-runner]",
             network=network,
         )
 

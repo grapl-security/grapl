@@ -119,13 +119,13 @@ services:
   localstack:
     # TODO: 0.12.11 is the one we want once it's released; until then
     # we need an unreleased fix for lambda invocation
-    image: localstack/localstack:latest
+    image: localstack/localstack:0.12.11
     ports:
       # We'll expose localstack's edge port for ease of use with
       # things like the AWS CLI, Pulumi, etc.
       - 127.0.0.1:${LOCALSTACK_PORT}:${LOCALSTACK_PORT}
     environment:
-      - IMAGE_NAME=localstack/localstack:latest
+      - IMAGE_NAME=localstack/localstack:0.12.11
       - EDGE_PORT=${LOCALSTACK_PORT}
       - HOSTNAME_EXTERNAL=${LOCALSTACK_HOST}
       - SERVICES=apigateway,dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs
@@ -502,7 +502,7 @@ services:
         read_only: false
     environment:
       PULUMI_CONFIG_PASSPHRASE: local-grapl-passphrase
-      # Other environment variables like MG_ALPHAS are passed in via 
+      # Other environment variables like MG_ALPHAS are passed in via
       # Pulumi.local-grapl.yaml
     depends_on:
       localstack:
