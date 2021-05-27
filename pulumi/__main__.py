@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 
-from infra.api import Api
 from infra import dynamodb, emitter
 from infra.alarms import OpsAlarms
 from infra.analyzer_dispatcher import AnalyzerDispatcher
@@ -26,6 +25,7 @@ from infra.secret import JWTSecret, TestUserPassword
 from infra.sysmon_generator import SysmonGenerator
 from infra.secret import JWTSecret, TestUserPassword
 from infra.service_queue import ServiceQueue
+from infra.sysmon_generator import SysmonGenerator
 
 
 def _create_dgraph_cluster(network: Network) -> DgraphCluster:

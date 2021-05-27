@@ -1,5 +1,6 @@
 import os
 import re
+from typing import Mapping, Sequence
 
 import pulumi_aws as aws
 from typing_extensions import Final
