@@ -81,7 +81,9 @@ def main() -> None:
 
         sysmon_generator_queue = ServiceQueue("sysmon-generator")
         osquery_generator_queue = ServiceQueue("osquery-generator")
+
         node_identifier_queue = ServiceQueue("node-identifier")
+        node_identifier_queue.subscribe_to_emitter(unid_subgraphs_generated_emitter)
 
         graph_merger_queue = ServiceQueue("graph-merger")
         graph_merger_queue.subscribe_to_emitter(subgraphs_generated_emitter)

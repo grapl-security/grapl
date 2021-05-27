@@ -152,9 +152,7 @@ services:
       <<: *aws-region
       DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-sysmon-generator-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-unid-subgraphs-generated-bucket"
-      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-queue"
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
-      IS_LOCAL: "True"
       <<: *log-level
       RETRY_QUEUE_URL: "${SQS_ENDPOINT}/000000000000/${DEPLOYMENT_NAME}-sysmon-generator-retry-queue"
       <<: *s3-env
@@ -177,9 +175,7 @@ services:
       DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
       DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-unid-subgraphs-generated-bucket"
-      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-queue"
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
-      IS_LOCAL: "True"
       <<: *log-level
       RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-retry-queue"
       <<: *s3-env
