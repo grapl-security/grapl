@@ -1,3 +1,4 @@
+from infra.api import Api
 from typing import Optional
 from urllib.parse import urlparse
 
