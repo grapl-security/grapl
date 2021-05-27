@@ -60,9 +60,15 @@ DEFAULT_ENVVARS = {
 
 
 def _require_env_var(key: str) -> str:
-    value = os.getenv(key)
+    """
+    Grab a key from env variables, or fallback to Pulumi.xyz.yaml
+    """
+    value = os.getenv(key) or pulumi.Config().get(key)
     if not value:
-        raise KeyError(f"Missing environment variable '{key}'.")
+        raise KeyError(
+            f"Missing environment variable '{key}'. "
+            f"Add it to env variables or `Pulumi.{DEPLOYMENT_NAME}.yaml`."
+        )
     return value
 
 

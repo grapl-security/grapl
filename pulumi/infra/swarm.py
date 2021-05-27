@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Sequence, Tuple
+from typing import Optional, Sequence
 
 import pulumi_aws as aws
 from infra import policies
