@@ -1,6 +1,7 @@
 import os
 
 from infra import dynamodb, emitter
+from infra.alarms import OpsAlarms
 from infra.analyzer_dispatcher import AnalyzerDispatcher
 from infra.analyzer_executor import AnalyzerExecutor
 from infra.api import Api
@@ -159,6 +160,8 @@ def main() -> None:
         db=dynamodb_tables,
         dgraph_cluster=dgraph_cluster,
     )
+
+    OpsAlarms(name="ops-alarms")
 
     ########################################################################
 
