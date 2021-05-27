@@ -6,10 +6,6 @@ import sys
 import types
 from typing import cast, Callable, Type, TypeVar, Any, Dict, Tuple, Union
 
-import typing_extensions
-
-IS_LOCAL: typing_extensions.Final[bool] = bool(os.environ.get("IS_LOCAL", False))
-
 GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
 LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
 LOGGER = logging.getLogger(__name__)

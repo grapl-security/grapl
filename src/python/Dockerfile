@@ -148,7 +148,6 @@ CMD source venv/bin/activate && \
 # test
 FROM analyzer-executor-build AS analyzer-executor-test
 
-ENV IS_LOCAL=True
 ENV IS_RETRY=False
 
 ## Install test requirements
@@ -171,7 +170,6 @@ RUN source venv/bin/activate && \
 # test
 FROM engagement-edge-build AS engagement-edge-test
 
-ENV IS_LOCAL=True
 ENV DEPLOYMENT_NAME=local-grapl
 ENV UX_BUCKET_URL="ux_bucket_url"
 
