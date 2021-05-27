@@ -310,7 +310,6 @@ services:
       GRPC_ENABLE_FORK_SUPPORT: "1"
       HITCACHE_ADDR: "${REDIS_HOST}"
       HITCACHE_PORT: "${REDIS_PORT}"
-      IS_LOCAL: "True"
       IS_RETRY: "False"
       <<: *log-level
       MESSAGECACHE_ADDR: "${REDIS_HOST}"
