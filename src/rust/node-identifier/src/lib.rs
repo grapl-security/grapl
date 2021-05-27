@@ -38,7 +38,6 @@ use sqs_executor::{
         EventHandler,
     },
     make_ten,
-    s3_event_emitter::S3ToSqsEventNotifier,
     s3_event_retriever::S3PayloadRetriever,
     time_based_key_fn,
 };
@@ -273,9 +272,7 @@ pub async fn handler(should_default: bool) -> Result<(), Box<dyn std::error::Err
     let sqs_client = SqsClient::from_env();
     let cache = &mut event_caches(&env).await;
     let serializer = &mut make_ten(async { IdentifiedGraphSerializer::default() }).await;
-    let s3_emitter =
-        &mut s3_event_emitters_from_env(&env, time_based_key_fn, S3ToSqsEventNotifier::from(&env))
-            .await;
+    let s3_emitter = &mut s3_event_emitters_from_env(&env, time_based_key_fn).await;
 
     let s3_payload_retriever = &mut make_ten(async {
         S3PayloadRetriever::new(
