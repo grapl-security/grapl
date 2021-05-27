@@ -44,6 +44,7 @@ RUN touch \
   metric-forwarder-latest.zip \
   model-plugin-deployer-latest.zip \
   ux-router-latest.zip \
-  provisioner-latest.zip
+  provisioner-latest.zip \
+  e2e-test-runner-latest.zip
 
 WORKDIR /home/grapl/src/js/grapl-cdk

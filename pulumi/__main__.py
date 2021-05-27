@@ -1,6 +1,5 @@
 import os
 
-from infra.api import Api
 from infra import dynamodb, emitter
 from infra.analyzer_dispatcher import AnalyzerDispatcher
 from infra.analyzer_executor import AnalyzerExecutor
@@ -19,10 +18,9 @@ from infra.network import Network
 from infra.node_identifier import NodeIdentifier
 from infra.osquery_generator import OSQueryGenerator
 from infra.provision_lambda import Provisioner
-from infra.provisioner import Provisioner
-from infra.sysmon_generator import SysmonGenerator
 from infra.secret import JWTSecret, TestUserPassword
 from infra.service_queue import ServiceQueue
+from infra.sysmon_generator import SysmonGenerator
 
 
 def _create_dgraph_cluster(network: Network) -> DgraphCluster:
@@ -152,7 +150,7 @@ def main() -> None:
             forwarder=forwarder,
         )
 
-        E2eTestRunner(network=network)
+        E2eTestRunner(network=network, dgraph_cluster=dgraph_cluster)
 
     EngagementCreator(
         input_emitter=analyzer_matched_emitter,
@@ -166,7 +164,6 @@ def main() -> None:
         secret=secret,
         db=dynamodb_tables,
         dgraph_cluster=dgraph_cluster,
-        test_user_password=test_user_password,
     )
 
     ########################################################################

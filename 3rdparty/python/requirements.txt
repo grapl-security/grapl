@@ -1,5 +1,5 @@
 # Any Python dependencies used by our code should be declared here.
-boto3==1.17.71
+boto3
 botocore
 chalice==1.22.4
 click
