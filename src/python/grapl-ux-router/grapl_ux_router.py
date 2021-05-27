@@ -17,7 +17,6 @@ if TYPE_CHECKING:
 
     pass
 
-IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
 GRAPL_LOG_LEVEL = os.environ.get("GRAPL_LOG_LEVEL", "ERROR")
 UX_BUCKET_NAME = os.environ["UX_BUCKET_NAME"]
 
@@ -41,9 +40,6 @@ MEDIA_TYPE_MAP = {
     "map": "application/json",
     "": "application/octet-stream",
 }
-
-if IS_LOCAL:
-    assert len(MEDIA_TYPE_MAP) < 15
 
 
 class LazyUxBucket:
@@ -73,29 +69,8 @@ class LazyUxBucket:
         return cast(bytes, obj.get()["Body"].read())
 
     def _retrieve_bucket(self) -> Bucket:
-        if IS_LOCAL:
-            return self._retrieve_bucket_local()
-        else:
-            s3 = S3ResourceFactory(boto3).from_env()
-            return s3.Bucket(UX_BUCKET_NAME)
-
-    def _retrieve_bucket_local(self) -> Bucket:
-        timeout_secs = 30
-        bucket: Optional[Bucket] = None
-
-        for _ in range(timeout_secs):
-            try:
-                s3 = S3ResourceFactory(boto3).from_env()
-                bucket = s3.Bucket(UX_BUCKET_NAME)
-                break
-            except Exception as e:
-                LOGGER.debug(e)
-                time.sleep(1)
-        if not bucket:
-            raise TimeoutError(
-                f"Expected s3 ux bucket to be available within {timeout_secs} seconds"
-            )
-        return bucket
+        s3 = S3ResourceFactory(boto3).from_env()
+        return s3.Bucket(UX_BUCKET_NAME)
 
 
 UX_BUCKET = LazyUxBucket()
@@ -113,9 +88,7 @@ elif len(MEDIA_TYPE_MAP) >= 11:
 for _media_type in MEDIA_TYPE_MAP.values():
     app.api.binary_types.append(_media_type)
 
-# TODO: We should allow this in AWS too with another flag
-if IS_LOCAL:
-    app.debug = True
+# TODO: We should toggle app.debug with a flag
 
 # Sometimes we pass in a dict. Sometimes we pass the string "True". Weird.
 Res = Union[Dict[str, Any], str]
@@ -129,10 +102,6 @@ def respond(
 
     if not headers:
         headers = {}
-
-    if IS_LOCAL:
-        override = app.current_request.headers.get("origin", "")
-        headers = {"Access-Control-Allow-Origin": override, **headers}
 
     compressed_body = web_compress.compress(
         json.dumps({"error": err} if err else {"success": res}).encode()
@@ -158,8 +127,8 @@ RouteFn = TypeVar("RouteFn", bound=Callable[..., Response])
 
 
 def no_auth(path: str) -> Callable[[RouteFn], RouteFn]:
-    if not IS_LOCAL:
-        path = "/{proxy+}" + path
+    # TODO: Investigate this; it should not be required!
+    path = "/{proxy+}" + path
 
     def route_wrapper(route_fn: RouteFn) -> RouteFn:
         @app.route(path, methods=["OPTIONS", "GET"])
@@ -264,27 +233,3 @@ def root_nop_route() -> Response:
     if app.current_request.method == "OPTIONS":
         return respond(None, {})
     return _route_to_resource("index.html")
-
-
-if IS_LOCAL:
-
-    @app.route("/static/js/{proxy+}", methods=["OPTIONS", "GET"])
-    def static_js_resource_root_nop_route() -> Response:
-        LOGGER.info(f'static_js_resource {app.current_request.context["path"]}')
-        if app.current_request.method == "OPTIONS":
-            return respond(None, {})
-        return _route_to_resource(app.current_request.context["path"].lstrip("/"))
-
-    @app.route("/static/css/{proxy+}", methods=["OPTIONS", "GET"])
-    def static_css_resource_root_nop_route() -> Response:
-        LOGGER.info(f'static_css_resource {app.current_request.context["path"]}')
-        if app.current_request.method == "OPTIONS":
-            return respond(None, {})
-        return _route_to_resource(app.current_request.context["path"].lstrip("/"))
-
-    @app.route("/static/media/{proxy+}", methods=["OPTIONS", "GET"])
-    def static_media_resource_root_nop_route() -> Response:
-        LOGGER.info(f'static_media_resource {app.current_request.context["path"]}')
-        if app.current_request.method == "OPTIONS":
-            return respond(None, {})
-        return _route_to_resource(app.current_request.context["path"].lstrip("/"))
