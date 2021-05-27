@@ -149,8 +149,6 @@ def main() -> None:
             forwarder=forwarder,
         )
 
-        E2eTestRunner(network=network, dgraph_cluster=dgraph_cluster)
-
     EngagementCreator(
         input_emitter=analyzer_matched_emitter,
         network=network,
@@ -180,7 +178,7 @@ def main() -> None:
     # TODO: How do we get the *contents* of this bucket uploaded?
     # Max says: "I've introduced a `Bucket.upload_*` function, check it out :)
 
-    Api(
+    api = Api(
         network=network,
         secret=secret,
         ux_bucket=ux_bucket,
@@ -188,6 +186,9 @@ def main() -> None:
         plugins_bucket=model_plugins_bucket,
         dgraph_cluster=dgraph_cluster,
     )
+
+    if not LOCAL_GRAPL:
+        E2eTestRunner(network=network, dgraph_cluster=dgraph_cluster, api=api)
 
 
 if __name__ == "__main__":

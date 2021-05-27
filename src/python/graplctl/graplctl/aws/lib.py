@@ -119,7 +119,7 @@ def _invoke_lambda(lambda_: LambdaClient, function_name: str) -> None:
         LOGGER.info(f"lambda invocation succeeded for {function_name}")
     else:
         LOGGER.error(
-            f"{''.join(l.decode('utf-8') for l in result['Payload'].iter_lines())}"
+            f"{''.join(l.decode('utf-8') for l in result['Payload'].readlines())}"
         )
         raise Exception(
             f"lambda invocation for {function_name} failed with status {status}: {result['FunctionError']}"
