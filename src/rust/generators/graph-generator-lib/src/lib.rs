@@ -18,7 +18,6 @@ use sqs_executor::{
     event_handler::EventHandler,
     make_ten,
     redis_cache::RedisCache,
-    s3_event_emitter::S3ToSqsEventNotifier,
     s3_event_retriever::S3PayloadRetriever,
     time_based_key_fn,
 };
@@ -65,9 +64,7 @@ pub async fn run_graph_generator<
 
     let serializer = &mut make_ten(async { GraphDescriptionSerializer::default() }).await;
 
-    let s3_emitter =
-        &mut s3_event_emitters_from_env(&env, time_based_key_fn, S3ToSqsEventNotifier::from(&env))
-            .await;
+    let s3_emitter = &mut s3_event_emitters_from_env(&env, time_based_key_fn).await;
 
     let s3_payload_retriever = &mut make_ten(async {
         S3PayloadRetriever::new(
