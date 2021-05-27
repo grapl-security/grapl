@@ -200,11 +200,9 @@ services:
       <<: *aws-region
       DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-subgraphs-generated-bucket"
-      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-queue"
       <<: *dynamodb-env
       <<: *dynamodb-mapping-tables
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
-      IS_LOCAL: "true"
       <<: *log-level
       RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-retry-queue"
       <<: *s3-env
@@ -226,11 +224,9 @@ services:
       <<: *aws-region
       DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-subgraphs-generated-bucket"
-      DEST_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-queue"
       <<: *dynamodb-env
       <<: *dynamodb-mapping-tables
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
-      IS_LOCAL: "True"
       <<: *log-level
       RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
       <<: *s3-env
