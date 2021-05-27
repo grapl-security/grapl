@@ -164,8 +164,6 @@ def main() -> None:
             forwarder=forwarder,
         )
 
-        E2eTestRunner(network=network, dgraph_cluster=dgraph_cluster)
-
     EngagementCreator(
         input_emitter=analyzer_matched_emitter,
         network=network,
@@ -207,7 +205,7 @@ def main() -> None:
         except FileNotFoundError as e:
             raise Exception("You probably need to `make pulumi-prep` first") from e
 
-    Api(
+    api = Api(
         network=network,
         secret=secret,
         ux_bucket=ux_bucket,
@@ -216,6 +214,9 @@ def main() -> None:
         forwarder=forwarder,
         dgraph_cluster=dgraph_cluster,
     )
+
+    if not LOCAL_GRAPL:
+        E2eTestRunner(network=network, dgraph_cluster=dgraph_cluster, api=api)
 
 
 if __name__ == "__main__":

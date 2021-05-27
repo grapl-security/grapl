@@ -134,7 +134,7 @@ def provision(graplctl_state: State) -> None:
 
 @aws.command()
 @pass_graplctl_state
-def test(graplctl_state: State):
+def test(graplctl_state: State) -> None:
     """run end-to-end tests in aws"""
     click.echo("running end-to-end tests")
     aws_cdk_ops.run_e2e_tests(

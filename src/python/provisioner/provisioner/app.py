@@ -111,7 +111,7 @@ def _retrieve_test_user_password(
     )["SecretString"]
 
 
-def provision(event: Any = None, context: Any = None):
+def provision(event: Any = None, context: Any = None) -> None:
     LOGGER.info("provisioning grapl")
 
     graph_client = GraphClient()
