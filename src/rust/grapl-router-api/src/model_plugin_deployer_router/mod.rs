@@ -1,1 +1,1 @@
-pub mod deploy;
+pub mod routes;

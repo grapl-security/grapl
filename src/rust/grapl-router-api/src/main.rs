@@ -1,5 +1,5 @@
-use grapl_router_api::model_plugin_deployer_router::deploy::grapl_model_plugin_deployer;
 use actix_web::HttpServer;
+use grapl_router_api::model_plugin_deployer_router::routes::grapl_model_plugin_deployer;
 
 type StdErr = Box<dyn std::error::Error>;
 

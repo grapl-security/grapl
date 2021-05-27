@@ -1,4 +1,4 @@
-use crate::make_request;
+use crate::{make_request, request_with_body};
 use actix_web::{post, Error, HttpResponse, Responder};
 use::reqwest;
 use actix_web::body::Body;
@@ -26,11 +26,7 @@ pub enum CustomError {
 
     #[error("Internal Server Error")]
     ServerError,
-
-
-
 }
-
 
 
 // actix procedural macros that route incoming http requests
@@ -38,7 +34,7 @@ pub enum CustomError {
 pub async fn grapl_model_plugin_deployer(body: actix_web::web::Json<DeployRequest>) -> impl Responder {
     // CALL MODEL-PLUGIN-DEPlOYER GRPC CLIENT
     let body = body.into_inner();
-    let response = make_request("deploy", body)
+    let response = request_with_body("deploy", body)
         .await;
 
     match response{
@@ -63,13 +59,71 @@ pub async fn grapl_model_plugin_deployer(body: actix_web::web::Json<DeployReques
     }
 }
 
+#[post("/modelPluginDeployer/deletePlugin")]
+pub async fn delete_plugin(body: actix_web::web::Json<DeployRequest>) -> impl Responder {
+    let body = body.into_inner();
+    
+    let response = request_with_body("delete", body)
+        .await;
+
+    match response{
+        Ok(response) => HttpResponse::Ok().json(response),
+
+        Err(CustomError::InvalidSchema) => {
+            HttpResponse::BadRequest()
+                .finish()
+        }
+
+        Err(CustomError::ReadError) => {
+            HttpResponse::Conflict()
+                .finish()
+        }
+
+        Err(CustomError::ServerError) => {
+            HttpResponse::BadRequest()
+                .finish()
+        }
+
+        Err(CustomError::RequestError(_)) =>  HttpResponse::InternalServerError().finish(),
+    }
+}
+// actix procedural macros that route incoming http requests
+#[post("/modelPluginDeployer/listPlugins")]
+pub async fn list_plugin() -> impl Responder {
+    let response = make_request("listPlugins")
+        .await;
+
+    match response{
+        Ok(response) => HttpResponse::Ok().json(response),
+
+        Err(CustomError::InvalidSchema) => {
+            HttpResponse::BadRequest()
+                .finish()
+        }
+
+        Err(CustomError::ReadError) => {
+            HttpResponse::Conflict()
+                .finish()
+        }
+
+        Err(CustomError::ServerError) => {
+            HttpResponse::BadRequest()
+                .finish()
+        }
+
+        Err(CustomError::RequestError(_)) =>  HttpResponse::InternalServerError().finish(),
+    }
+}
+
+
+
 
 // We will make a post request to our new actix server
 // This will route us to the appropriate model plugin deployer service.
 
 // we come in on a path. Based on that path, we route the request to the appropriate service.
 
-// route to the graplModelPluginDeployer
+// X route to the graplModelPluginDeployer
 // setup & write tests with an http client
 // use grcp client for model-plugin-deployer
 // X set up docker stuff
