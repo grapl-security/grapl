@@ -19,7 +19,6 @@ from infra.node_identifier import NodeIdentifier
 from infra.osquery_generator import OSQueryGenerator
 from infra.provision_lambda import Provisioner
 from infra.secret import JWTSecret, TestUserPassword
-from infra.service_queue import ServiceQueue
 from infra.sysmon_generator import SysmonGenerator
 
 
