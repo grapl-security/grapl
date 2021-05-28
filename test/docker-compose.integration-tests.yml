@@ -59,7 +59,6 @@ services:
     environment:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
       - DEPLOYMENT_NAME
-      - IS_LOCAL=True
       - MG_ALPHAS
 
   # grapl-analyzer-deployer-integration-tests:
