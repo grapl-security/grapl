@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import boto3
+import boto3  # type: ignore
 import click
 import graplctl.swarm.lib as docker_swarm_ops
 from graplctl import __version__, common

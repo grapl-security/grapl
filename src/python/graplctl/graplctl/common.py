@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from mypy_boto3_sns import SNSClient
     from mypy_boto3_sqs import SQSClient
     from mypy_boto3_ssm.client import SSMClient
+    from mypy_boto3_ssm.type_defs import GetCommandInvocationResultTypeDef
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
@@ -118,9 +119,18 @@ def get_command_results(
         if invocation["Status"] == "Success":
             yield instance_id, invocation["StandardOutputContent"].strip()
         else:
-            LOGGER.error(
-                f"command {command_id} instance {instance_id}: {invocation['StandardErrorContent']}"
-            )
-            raise Exception(
-                f"ssm command {command_id} failed on instance {instance_id} with Status: \"{invocation['Status']}\""
-            )
+            raise SSMException(invocation)
+
+
+class SSMException(Exception):
+    def __init__(self, invocation: GetCommandInvocationResultTypeDef) -> None:
+        msg = "\n".join(
+            [
+                "",
+                f"STDERR: {invocation['StandardErrorContent']}",
+                f"STDOUT: {invocation['StandardOutputContent']}",
+                f"TO DEBUG: Try: aws ssm start-session --target {invocation['InstanceId']}",
+            ]
+        )
+        super(SSMException, self).__init__(msg)
+        self.invocation = invocation
