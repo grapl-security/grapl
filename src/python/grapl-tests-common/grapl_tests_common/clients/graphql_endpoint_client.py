@@ -41,12 +41,10 @@ class GraphqlEndpointClient:
         )
         if resp.status_code != HTTPStatus.OK:
             resp_str = "\\n".join(resp.iter_lines(decode_unicode=True))
-            LOGGER.error(
-                f'status {resp.status_code} from graphql endpoint for query "{query}" with variables "{variables}": "{resp_str or "no response"}"'
+            raise AssertionError(
+                f'Status {resp.status_code} from graphql endpoint for query "{query}" with variables "{variables}"\n'
+                f'Response: "{resp_str or "no response"}"'
             )
-        assert resp.status_code == HTTPStatus.OK, "\n".join(
-            resp.iter_lines(decode_unicode=True)
-        )
         return cast(Dict[str, Any], resp.json()["data"])
 
     def query_for_scope(self, lens_name: str) -> GqlLensDict:
