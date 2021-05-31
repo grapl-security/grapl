@@ -49,7 +49,6 @@ use crate::{
     event_handler::CompletedEvents,
     event_retriever::PayloadRetriever,
     event_status::EventStatus,
-    s3_event_emitter::OnEventEmit,
 };
 
 pub mod cache;
@@ -142,8 +141,6 @@ async fn process_message<
     HandlerErrorT,
     SerializerErrorT,
     S3ClientT,
-    OnEmit,
-    OnEmitError,
     F,
     CompletionEventSerializerT,
 >(
@@ -160,7 +157,7 @@ async fn process_message<
         InputEventT,
         DecoderErrorT,
     >,
-    s3_emitter: &mut S3EventEmitter<S3ClientT, F, OnEmit, OnEmitError>,
+    s3_emitter: &mut S3EventEmitter<S3ClientT, F>,
     serializer: &mut CompletionEventSerializerT,
     mut metric_reporter: MetricReporter<Stdout>,
 ) where
@@ -177,8 +174,6 @@ async fn process_message<
     SerializerErrorT: Error + Debug + Send + Sync + 'static,
     S3ClientT: S3 + Clone + Send + Sync + 'static,
     F: Clone + Fn(&[u8]) -> String + Send + Sync + 'static,
-    OnEmit: Clone + OnEventEmit<Error = OnEmitError> + Send + Sync + 'static,
-    OnEmitError: CheckedError + Send,
     CompletionEventSerializerT: CompletionEventSerializer<
         CompletedEvent = OutputEventT,
         Output = Vec<u8>,
@@ -377,8 +372,6 @@ async fn _process_loop<
     SerializerErrorT,
     S3ClientT,
     F,
-    OnEmit,
-    OnEmitError,
     CompletionEventSerializerT,
 >(
     queue_url: String,
@@ -388,7 +381,7 @@ async fn _process_loop<
     event_handler: &mut [EventHandlerT; 10],
     s3_payload_retriever: &mut [S3PayloadRetriever<S3ClientT, SInit, DecoderT, InputEventT, DecoderErrorT>;
              10],
-    s3_emitter: &mut [S3EventEmitter<S3ClientT, F, OnEmit, OnEmitError>; 10],
+    s3_emitter: &mut [S3EventEmitter<S3ClientT, F>; 10],
     serializer: &mut [CompletionEventSerializerT; 10],
     mut metric_reporter: MetricReporter<Stdout>,
 ) where
@@ -405,8 +398,6 @@ async fn _process_loop<
     SerializerErrorT: Error + Debug + Send + Sync + 'static,
     S3ClientT: S3 + Clone + Send + Sync + 'static,
     F: Clone + Fn(&[u8]) -> String + Send + Sync + 'static,
-    OnEmit: Clone + OnEventEmit<Error = OnEmitError> + Send + Sync + 'static,
-    OnEmitError: CheckedError + Send,
     CompletionEventSerializerT: CompletionEventSerializer<
         CompletedEvent = OutputEventT,
         Output = Vec<u8>,
@@ -524,8 +515,6 @@ pub async fn process_loop<
     HandlerErrorT,
     SerializerErrorT,
     S3ClientT,
-    OnEmit,
-    OnEmitError,
     F,
     CompletionEventSerializerT,
 >(
@@ -536,7 +525,7 @@ pub async fn process_loop<
     event_handler: &mut [EventHandlerT; 10],
     s3_payload_retriever: &mut [S3PayloadRetriever<S3ClientT, SInit, DecoderT, InputEventT, DecoderErrorT>;
              10],
-    s3_emitter: &mut [S3EventEmitter<S3ClientT, F, OnEmit, OnEmitError>; 10],
+    s3_emitter: &mut [S3EventEmitter<S3ClientT, F>; 10],
     serializer: &mut [CompletionEventSerializerT; 10],
     metric_reporter: MetricReporter<Stdout>,
 ) where
@@ -553,8 +542,6 @@ pub async fn process_loop<
     SerializerErrorT: Error + Debug + Send + Sync + 'static,
     S3ClientT: S3 + Clone + Send + Sync + 'static,
     F: Clone + Fn(&[u8]) -> String + Send + Sync + 'static,
-    OnEmit: Clone + OnEventEmit<Error = OnEmitError> + Send + Sync + 'static,
-    OnEmitError: CheckedError + Send,
     CompletionEventSerializerT: CompletionEventSerializer<
         CompletedEvent = OutputEventT,
         Output = Vec<u8>,

@@ -32,14 +32,22 @@ impl NodePredicate {
     pub fn generate_python_str_comparisons(&self) -> String {
         let mut comparisons = String::with_capacity(256);
 
-        comparisons += "        eq: Optional[grapl_analyzerlib.comparators.StrOrNot] = None,\n";
-        comparisons += "        contains: Optional[grapl_analyzerlib.comparators.OneOrMany[grapl_analyzerlib.comparators.StrOrNot]] = None,\n";
-        comparisons +=
-            "        starts_with: Optional[grapl_analyzerlib.comparators.StrOrNot] = None,\n";
-        comparisons +=
-            "        ends_with: Optional[grapl_analyzerlib.comparators.StrOrNot] = None,\n";
-        comparisons += "        regexp: Optional[grapl_analyzerlib.comparators.OneOrMany[grapl_analyzerlib.comparators.StrOrNot]] = None,\n";
-        comparisons += "        distance_lt: Optional[Tuple[str, int]] = None,";
+        comparisons = comparisons
+            + r#"        eq: Optional[grapl_analyzerlib.comparators.StrOrNot] = None,"#
+            + "\n";
+        comparisons = comparisons
+            + r#"        contains: Optional["grapl_analyzerlib.comparators.OneOrMany[grapl_analyzerlib.comparators.StrOrNot]"] = None,"#
+            + "\n";
+        comparisons = comparisons
+            + r#"        starts_with: Optional["grapl_analyzerlib.comparators.StrOrNot"] = None,"#
+            + "\n";
+        comparisons = comparisons
+            + r#"        ends_with: Optional["grapl_analyzerlib.comparators.StrOrNot"] = None,"#
+            + "\n";
+        comparisons = comparisons
+            + r#"        regexp: Optional["grapl_analyzerlib.comparators.OneOrMany[grapl_analyzerlib.comparators.StrOrNot]"] = None,"#
+            + "\n";
+        comparisons += r#"        distance_lt: Optional[Tuple[str, int]] = None,"#;
         comparisons
     }
 
@@ -66,14 +74,14 @@ impl NodePredicate {
         let mut query_def = String::with_capacity(256);
         let python_ty = self.predicate_type.into_python_primitive_type();
 
-        query_def += &format!("    def with_{}(\n", self.predicate_name);
-        query_def += "        self,\n";
-        query_def += "        *,\n";
-        query_def += &self.generate_python_query_comparisons();
-        query_def += "\n    ):\n";
+        query_def = query_def + &format!("    def with_{}(", self.predicate_name) + "\n";
+        query_def = query_def + "        self," + "\n";
+        query_def = query_def + "        *," + "\n";
+        query_def = query_def + &self.generate_python_query_comparisons() + "\n";
+        query_def = query_def + "    ):" + "\n";
         query_def += "        (\n";
-        query_def += &format!("            self.with_{}_property(\n", &python_ty);
-        query_def += &format!("                \"{}\",\n", self.predicate_name);
+        query_def = query_def + "            self.with_" + &python_ty + "_property(\n";
+        query_def = query_def + "                \"" + &self.predicate_name + "\",\n";
 
         match self.predicate_type {
             PredicateType::String => {
@@ -94,7 +102,7 @@ impl NodePredicate {
         }
         query_def += "            )\n";
         query_def += "        )\n";
-        query_def += "        return self\n";
+        query_def = query_def + "        return self" + "\n";
         query_def
     }
 

@@ -204,15 +204,14 @@ impl NodeType {
         );
 
         viewable += "\n";
-        viewable.push_str("class ");
-        viewable.push_str(&v);
-        viewable += &format!(
-            "(grapl_analyzerlib.nodes.entity.EntityView['{}', '{}']):\n",
-            v, q
-        );
-        viewable += "    queryable = ";
-        viewable += &q;
-        viewable += "\n\n";
+        viewable = viewable
+            + "class "
+            + &v
+            + &format!(
+                "(grapl_analyzerlib.nodes.entity.EntityView['{}', '{}']):\n",
+                v, q
+            );
+        viewable = viewable + "    queryable = " + &q + "\n\n";
         viewable += "    def __init__(\n";
         viewable += "        self,\n";
         viewable += "        uid: int,\n";
@@ -312,7 +311,7 @@ impl NodeType {
         let mut schema_str = String::with_capacity(256);
         schema_str += "    @staticmethod\n";
         schema_str += "    def self_type() -> str:\n";
-        schema_str += &format!("        return '{}'\n", self.type_name);
+        schema_str = schema_str + &format!(r#"        return "{}""#, self.type_name) + "\n";
         schema_str
     }
 
@@ -323,24 +322,23 @@ impl NodeType {
         let lower_node_name = self.type_name.to_lowercase();
 
         schema_str += "\n";
-        // schema_str = schema_str
-        schema_str.push_str("class ");
-        schema_str.push_str(&schema_name);
-        schema_str.push_str("(grapl_analyzerlib.nodes.entity.EntitySchema):\n");
+        schema_str = schema_str
+            + "class "
+            + &schema_name
+            + "(grapl_analyzerlib.nodes.entity.EntitySchema):\n";
         schema_str += "    def __init__(self):\n";
-
-        schema_str += &format!("        super({}, self).__init__(\n", &schema_name);
-
-        schema_str.push_str("            default_");
-        schema_str.push_str(&lower_node_name);
-        schema_str.push_str("_properties(),");
-        schema_str.push_str(" default_");
-        schema_str.push_str(&lower_node_name);
-        schema_str.push_str("_edges(),");
-        schema_str.push_str(" lambda: ");
-        schema_str.push_str(&view_name);
-        schema_str.push('\n');
-        schema_str.push_str("        );\n");
+        schema_str = schema_str + "        super(" + &schema_name + ", self).__init__(\n";
+        schema_str = schema_str
+            + "            default_"
+            + &lower_node_name
+            + "_properties(),"
+            + " default_"
+            + &lower_node_name
+            + "_edges(),"
+            + " lambda: "
+            + &view_name
+            + "\n";
+        schema_str += "        );\n";
         schema_str
     }
 
@@ -380,7 +378,7 @@ impl NodeType {
         for edge in self.edges.iter() {
             def.push_str(&edge.generate_edge_relationship());
         }
-        def += "    }";
+        def += r#"    }"#;
         def
     }
 }

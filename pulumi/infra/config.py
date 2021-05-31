@@ -1,5 +1,6 @@
 import os
-from typing import Any
+import re
+from typing import Mapping, Sequence
 
 import pulumi_aws as aws
 from typing_extensions import Final
@@ -8,6 +9,21 @@ import pulumi
 
 # This will be incorporated into various infrastructure object names.
 DEPLOYMENT_NAME = pulumi.get_stack()
+
+
+def _validate_deployment_name() -> None:
+    # ^ and $ capture the whole string: start and end
+    # Must start with an alpha
+    # Must end with an alpha or number
+    # In the middle, - and _ are fine
+    regex = re.compile("^[a-z]([a-z0-9_-]?[a-z0-9]+)*$")
+    if regex.match(DEPLOYMENT_NAME) is None:
+        raise ValueError(
+            f"Deployment name {DEPLOYMENT_NAME} is invalid - should match regex {regex}."
+        )
+
+
+_validate_deployment_name()
 
 # Use this to modify behavior or configuration for provisioning in
 # Local Grapl (as opposed to any other real deployment)
@@ -34,46 +50,71 @@ leave it unset to use the default value of `latest`.
 
 SERVICE_LOG_RETENTION_DAYS: Final[int] = 30
 
+DGRAPH_LOG_RETENTION_DAYS: Final[int] = 7
 
-def mg_alphas() -> str:
-    """Temporarily return a value to use as an `MG_ALPHAS` environment variable for services that need it until we pull Dgraph provisioning into Pulumi.
+DEFAULT_ENVVARS = {
+    "GRAPL_LOG_LEVEL": "DEBUG",
+    "RUST_LOG": "DEBUG",
+    "RUST_BACKTRACE": "0",
+}
 
-    This can be set explicitly on a stack-basis with the MG_ALPHAS
-    config key. Otherwise, a value is constructed from the deployment
-    name, as it was in our CDK code.
 
+def _require_env_var(key: str) -> str:
     """
-    config = pulumi.Config()
-    return config.get("MG_ALPHAS") or f"{DEPLOYMENT_NAME}.dgraph.grapl:9080"
-
-
-# Yes I hate the 'Any' type just as much as you do, but there's
-# apparently not a way to type kwargs right now.
-def import_aware_opts(resource_id: str, **kwargs: Any) -> pulumi.ResourceOptions:
-    """Pass the resource ID that corresponds to a particular resource
-    when you're importing from existing infrastructure, as well as any
-    other kwargs that `pulumi.ResourceOptions` would accept.
-
-    If the Pulumi stack is currently configured to import (rather than
-    create), the appropriate configuration will be injected into the
-    `ResourceOptions` that is returned.
-
-    Otherwise, a `ResourceOptions` constructed from the given kwargs
-    will be returned.
-
-    This should be used to generate `ResourceOptions` for *all* resources!
-
-    To enable importing, rather than creating, set the following
-    config for the stack:
-
-        pulumi config set grapl:import_from_existing True
-
+    Grab a key from env variables, or fallback to Pulumi.xyz.yaml
     """
+    value = os.getenv(key) or pulumi.Config().get(key)
+    if not value:
+        raise KeyError(
+            f"Missing environment variable '{key}'. "
+            f"Add it to env variables or `Pulumi.{DEPLOYMENT_NAME}.yaml`."
+        )
+    return value
 
-    import_from_existing = pulumi.Config().require_bool("import_from_existing")
 
-    given_opts = pulumi.ResourceOptions(**kwargs)
-    import_opts = pulumi.ResourceOptions(
-        import_=resource_id if import_from_existing else None
-    )
-    return pulumi.ResourceOptions.merge(given_opts, import_opts)
+# Boy, this env name was not forward-thinking
+OPERATIONAL_ALARMS_EMAIL = _require_env_var("GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL")
+
+
+def configurable_envvar(service_name: str, var: str) -> str:
+    """Look up the desired environment variable in Pulumi configuration for the given service or return a default value.
+
+    Your configuration YAML should look like this:
+
+    config:
+      grapl:env_vars:
+        <SERVICE_NAME>:
+          <VARIABLE_NAME>: <VARIABLE_VALUE>
+    """
+    config_key = "env_vars"
+
+    vars = (pulumi.Config().get_object(config_key) or {}).get(service_name, {})
+    value = vars.get(var) or DEFAULT_ENVVARS.get(var)
+    if not value:
+        raise ValueError(
+            f"""
+        You have tried to retrieve a value for the '{var}' environment variable for the
+        '{service_name}' service, but we have no record of this variable!
+
+        Please edit your Pulumi.{DEPLOYMENT_NAME}.yaml file and add the following:
+
+        config:
+          {pulumi.get_project()}:{config_key}:
+            {service_name}:
+              {var}: <YOUR_DESIRED_VALUE>
+
+        If '{var}' is a common variable shared across many services, consider adding it to
+        the DEFAULT_ENVVARS dictionary in {__file__} instead.
+
+        """
+        )
+    else:
+        return value
+
+
+def configurable_envvars(service_name: str, vars: Sequence[str]) -> Mapping[str, str]:
+    """Return a map of environment variable values for the named service,
+    pulled from Pulumi configuration or default values, suitable for
+    splicing into other environment maps for configuring services.
+    """
+    return {v: configurable_envvar(service_name, v) for v in vars}

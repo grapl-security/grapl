@@ -37,7 +37,6 @@ macro_rules! init_grapl_env {
 #[derive(Debug)]
 pub struct ServiceEnv {
     pub service_name: String,
-    pub is_local: bool,
 }
 
 pub fn _init_grapl_env(
@@ -45,17 +44,10 @@ pub fn _init_grapl_env(
 ) -> (ServiceEnv, tracing_appender::non_blocking::WorkerGuard) {
     let env = ServiceEnv {
         service_name: service_name.to_string(),
-        is_local: is_local(),
     };
-    let tracing_guard = _init_grapl_log(&env);
+    let tracing_guard = _init_grapl_log();
     tracing::info!(env=?env, "initializing environment");
     (env, tracing_guard)
-}
-
-pub fn is_local() -> bool {
-    std::env::var("IS_LOCAL")
-        .map(|is_local| is_local.to_lowercase() == "true")
-        .unwrap_or(false)
 }
 
 pub async fn event_cache(env: &ServiceEnv) -> RedisCache {
@@ -87,10 +79,6 @@ pub fn dest_bucket() -> String {
     std::env::var("DEST_BUCKET_NAME").expect("DEST_BUCKET_NAME")
 }
 
-pub fn dest_queue_url() -> String {
-    std::env::var("DEST_QUEUE_URL").expect("DEST_QUEUE_URL")
-}
-
 pub fn region() -> Region {
     let region_override_endpoint = std::env::var("AWS_REGION_ENDPOINT_OVERRIDE");
 
@@ -106,21 +94,14 @@ pub fn region() -> Region {
     }
 }
 
-pub fn _init_grapl_log(env: &ServiceEnv) -> tracing_appender::non_blocking::WorkerGuard {
+pub fn _init_grapl_log() -> tracing_appender::non_blocking::WorkerGuard {
     let filter = EnvFilter::from_default_env();
     let (non_blocking, guard) = tracing_appender::non_blocking(std::io::stdout());
-    if env.is_local {
-        tracing_subscriber::fmt()
-            .with_env_filter(filter)
-            .with_writer(non_blocking)
-            .init();
-    } else {
-        tracing_subscriber::fmt()
-            .json()
-            .with_env_filter(filter)
-            .with_writer(non_blocking)
-            .init();
-    }
+    tracing_subscriber::fmt()
+        .json()
+        .with_env_filter(filter)
+        .with_writer(non_blocking)
+        .init();
     guard
 }
 

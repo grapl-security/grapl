@@ -4,6 +4,7 @@ from typing import List
 import click
 import graplctl.swarm.lib as docker_swarm_ops
 from graplctl.common import State, pass_graplctl_state
+from mypy_boto3_ec2.literals import InstanceTypeType
 
 #
 # swarm operational commands
@@ -16,7 +17,7 @@ from graplctl.common import State, pass_graplctl_state
 def swarm(
     graplctl_state: State,
     ctx: click.Context,
-):
+) -> None:
     """commands for operating docker swarm clusters"""
     pass
 
@@ -56,7 +57,7 @@ def create(
     graplctl_state: State,
     num_managers: int,
     num_workers: int,
-    instance_type: str,
+    instance_type: InstanceTypeType,
     swarm_id: str,
 ) -> None:
     """start ec2 instances and join them as a docker swarm cluster"""
@@ -71,7 +72,7 @@ def create(
 
 @swarm.command()
 @pass_graplctl_state
-def ls(graplctl_state: State):
+def ls(graplctl_state: State) -> None:
     """list swarm ids for each of the swarm clusters"""
     for swarm_id in docker_swarm_ops.swarm_ls(graplctl_state):
         click.echo(swarm_id)
@@ -86,7 +87,7 @@ def ls(graplctl_state: State):
     required=True,
 )
 @pass_graplctl_state
-def managers(graplctl_state: State, swarm_id: str):
+def managers(graplctl_state: State, swarm_id: str) -> None:
     """get instance ids for a docker swarm's managers"""
     for manager_instance in docker_swarm_ops.swarm_instances(
         ec2=graplctl_state.ec2,
@@ -109,7 +110,7 @@ def managers(graplctl_state: State, swarm_id: str):
 )
 @click.confirmation_option(prompt="this will destroy the swarm cluster, ok?")
 @pass_graplctl_state
-def destroy(graplctl_state: State, swarm_id: str):
+def destroy(graplctl_state: State, swarm_id: str) -> None:
     """terminate a docker swarm cluster's instances"""
     click.echo(f"destroying swarm {swarm_id}")
     docker_swarm_ops.destroy_swarm(graplctl_state=graplctl_state, swarm_id=swarm_id)
@@ -126,7 +127,7 @@ def destroy(graplctl_state: State, swarm_id: str):
 )
 @click.argument("command", nargs=-1, type=click.STRING)
 @pass_graplctl_state
-def swarm_exec(graplctl_state: State, swarm_id: str, command: List[str]):
+def swarm_exec(graplctl_state: State, swarm_id: str, command: List[str]) -> None:
     """execute a command on a swarm manager"""
     click.echo(
         docker_swarm_ops.exec_(
@@ -176,9 +177,9 @@ def scale(
     graplctl_state: State,
     num_managers: int,
     num_workers: int,
-    instance_type: str,
+    instance_type: InstanceTypeType,
     swarm_id: str,
-):
+) -> None:
     """scale up a docker swarm cluster"""
     if num_managers + num_workers < 1:
         raise click.BadOptionUsage(

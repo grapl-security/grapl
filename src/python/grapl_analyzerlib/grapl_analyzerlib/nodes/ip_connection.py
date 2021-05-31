@@ -1,16 +1,10 @@
 from __future__ import annotations
-from collections import defaultdict
 from typing import (
-    Any,
     TypeVar,
-    List,
     Set,
-    Type,
     Dict,
     Tuple,
     Optional,
-    Iterator,
-    Union,
     TYPE_CHECKING,
 )
 
@@ -21,17 +15,10 @@ from grapl_analyzerlib.node_types import (
     EdgeRelationship,
 )
 from grapl_analyzerlib.queryable import (
-    Queryable,
-    EdgeFilter,
-    ToOneFilter,
-    ToManyFilter,
-    with_to_neighbor,
     with_str_prop,
     with_int_prop,
 )
 from grapl_analyzerlib.schema import Schema
-from grapl_analyzerlib.viewable import Viewable, V, Q
-from grapl_analyzerlib.comparators import StrCmp, Eq, Distance
 from grapl_analyzerlib.nodes.entity import EntityQuery, EntityView, EntitySchema
 from grapl_analyzerlib.comparators import IntOrNot, StrOrNot, OneOrMany
 

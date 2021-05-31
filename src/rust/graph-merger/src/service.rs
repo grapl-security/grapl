@@ -34,7 +34,6 @@ use sqs_executor::{
     errors::{CheckedError, Recoverable},
     event_handler::{CompletedEvents, EventHandler},
     make_ten,
-    s3_event_emitter::S3ToSqsEventNotifier,
     s3_event_retriever::S3PayloadRetriever,
 };
 use tonic::transport::Channel;

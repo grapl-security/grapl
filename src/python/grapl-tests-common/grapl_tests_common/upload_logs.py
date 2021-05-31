@@ -6,9 +6,9 @@ import string
 import time
 from dataclasses import dataclass
 from datetime import datetime
-from os import PathLike, environ
+from os import PathLike
 from sys import maxsize
-from typing import TYPE_CHECKING, Callable, Iterator, List, Optional, cast
+from typing import TYPE_CHECKING, Iterator, List, Optional, cast
 
 from grapl_common.env_helpers import S3ClientFactory, SQSClientFactory
 
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
     from mypy_boto3_sqs import SQSClient
 
-import boto3  # type: ignore
+import boto3
 import zstd  # type: ignore
 
 

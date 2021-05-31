@@ -8,7 +8,6 @@ from grapl_tests_common.upload_analyzers import AnalyzerUpload, upload_analyzers
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
-    from mypy_boto3_sqs.client import SQSClient
 
 
 def upload_analyzer(
@@ -21,7 +20,7 @@ def upload_analyzer(
     # where the 'unique_cmd_parent' is the name of the analyzer
     name = analyzer_main_py.parent.name
     s3_key = f"analyzers/{name}/main.py"
-    upload_request = AnalyzerUpload(local_path=analyzer_main_py, s3_key=s3_key)
+    upload_request = AnalyzerUpload(local_path=str(analyzer_main_py), s3_key=s3_key)
     upload_analyzers(
         s3_client=s3_client,
         analyzers=(upload_request,),

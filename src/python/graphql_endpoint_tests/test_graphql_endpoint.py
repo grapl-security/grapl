@@ -1,5 +1,4 @@
-from datetime import timedelta
-from typing import Any, Dict, List
+from typing import Any, Dict, List, cast
 from unittest import TestCase
 
 import hypothesis
@@ -21,7 +20,7 @@ GqlLensDict = Dict[str, Any]
 
 @pytest.mark.integration_test
 class TestGraphqlEndpoint(TestCase):
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args, **kwargs) -> None:  # type: ignore
         super(TestGraphqlEndpoint, self).__init__(*args, **kwargs)
         wait_for_vsc_debugger(service="graphql_endpoint_tests")
 
@@ -81,10 +80,10 @@ def _query_graphql_endpoint_for_lenses(
             uid,
             node_key,
             lens_name,
-            score, 
+            score,
             lens_type,
         }
     }
     """
     resp = gql_client.query(query)
-    return resp["lenses"]
+    return cast(List[Dict[str, Any]], resp["lenses"])

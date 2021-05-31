@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import logging
-import os
 from pathlib import Path
 from pprint import pformat as pretty_format
 from typing import TYPE_CHECKING, Any, Optional
 
-import boto3  # type: ignore
+import boto3
 from grapl_common.env_helpers import DynamoDBResourceFactory
 
 if TYPE_CHECKING:

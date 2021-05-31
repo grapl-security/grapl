@@ -13,13 +13,8 @@ use rusoto_dynamodb::DynamoDbClient;
 use rusoto_s3::S3Client;
 use rusoto_sqs::SqsClient;
 use sqs_executor::{
-    errors::CheckedError,
     make_ten,
-    s3_event_emitter::{
-        OnEventEmit,
-        S3EventEmitter,
-        S3ToSqsEventNotifier,
-    },
+    s3_event_emitter::S3EventEmitter,
 };
 
 use crate::ServiceEnv;
@@ -31,19 +26,6 @@ pub trait AsyncFrom<T, S> {
 
 pub trait FromEnv<S> {
     fn from_env() -> S;
-}
-
-impl From<&ServiceEnv> for S3ToSqsEventNotifier<SqsClient> {
-    fn from(env: &ServiceEnv) -> Self {
-        // todo: When local we should return a different event notifier
-        let sqs_client = SqsClient::from_env();
-        let dest_queue_url = if env.is_local {
-            crate::dest_queue_url()
-        } else {
-            "".to_string()
-        };
-        Self::new(env.is_local, sqs_client, dest_queue_url)
-    }
 }
 
 impl FromEnv<CloudWatchClient> for CloudWatchClient {
@@ -254,34 +236,24 @@ impl From<&ServiceEnv> for MetricReporter<Stdout> {
     }
 }
 
-pub fn s3_event_emitter_from_env<F, OnEmit, OnEmitError>(
-    env: &ServiceEnv,
-    key_fn: F,
-    on_emit: OnEmit,
-) -> S3EventEmitter<S3Client, F, OnEmit, OnEmitError>
+pub fn s3_event_emitter_from_env<F>(env: &ServiceEnv, key_fn: F) -> S3EventEmitter<S3Client, F>
 where
     F: Clone + Fn(&[u8]) -> String + Send + Sync + 'static,
-    OnEmit: Clone + OnEventEmit<Error = OnEmitError> + Send + Sync + 'static,
-    OnEmitError: CheckedError + Send + Sync + 'static,
 {
     S3EventEmitter::new(
         S3Client::from_env(),
         crate::dest_bucket(),
         key_fn,
-        on_emit,
         MetricReporter::new(&env.service_name),
     )
 }
 
-pub async fn s3_event_emitters_from_env<F, OnEmit, OnEmitError>(
+pub async fn s3_event_emitters_from_env<F>(
     env: &ServiceEnv,
     key_fn: F,
-    on_emit: OnEmit,
-) -> [S3EventEmitter<S3Client, F, OnEmit, OnEmitError>; 10]
+) -> [S3EventEmitter<S3Client, F>; 10]
 where
     F: Clone + Fn(&[u8]) -> String + Send + Sync + 'static,
-    OnEmit: Clone + OnEventEmit<Error = OnEmitError> + Send + Sync + 'static,
-    OnEmitError: CheckedError + Send + Sync + 'static,
 {
-    make_ten(async { s3_event_emitter_from_env(env, key_fn, on_emit) }).await
+    make_ten(async { s3_event_emitter_from_env(env, key_fn) }).await
 }

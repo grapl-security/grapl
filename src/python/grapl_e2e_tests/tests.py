@@ -177,14 +177,7 @@ def check_plugin_path_has_schemas_file(
     files: List[str],
 ) -> None:
     logging.info(f"files: {files}")
-    for filename in files:
-        if "schemas.py" in filename:
-            assert True, f"Found Schemas in plugin path"
-        else:
-            logging.error(
-                "Did not find schemas.py file. Please add this file and try again, thanks!"
-            )
-            assert False, f"Did not find schemas.py file in {files}"
+    assert "schemas.py" in files, f"Did not find schemas.py file in {files}"
 
 
 def get_plugin_list(model_plugin_client: ModelPluginDeployerClient) -> None:

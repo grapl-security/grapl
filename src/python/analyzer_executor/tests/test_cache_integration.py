@@ -1,6 +1,6 @@
 import os
 from copy import deepcopy
-from typing import Callable, Mapping, Optional
+from typing import Mapping, Optional
 
 import hypothesis
 import pytest

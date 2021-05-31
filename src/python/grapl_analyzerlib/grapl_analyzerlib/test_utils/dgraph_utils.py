@@ -4,7 +4,6 @@ import json
 import unittest
 from typing import Dict, Any, Type
 
-from grapl_analyzerlib.viewable import Viewable
 from grapl_analyzerlib.queryable import V
 from grapl_analyzerlib.grapl_client import GraphClient
 

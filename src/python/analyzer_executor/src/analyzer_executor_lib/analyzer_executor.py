@@ -8,15 +8,24 @@ import os
 import sys
 import traceback
 from collections import defaultdict
-from datetime import datetime
 from logging import Logger
 from multiprocessing import Pipe, Process
 from multiprocessing.connection import Connection
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Iterable, Iterator, List, Mapping, Optional
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    cast,
+)
 
-import boto3  # type: ignore
+import boto3
 from analyzer_executor_lib.redis_cache import EitherCache, construct_redis_client
 from analyzer_executor_lib.sqs_types import S3PutRecordDict, SQSMessageBody
 from grapl_analyzerlib.analyzer import Analyzer
@@ -26,13 +35,12 @@ from grapl_analyzerlib.nodes.base import BaseView
 from grapl_analyzerlib.plugin_retriever import load_plugins
 from grapl_analyzerlib.queryable import Queryable
 from grapl_analyzerlib.subgraph_view import SubgraphView
-from grapl_common.env_helpers import S3ResourceFactory, SQSClientFactory
+from grapl_common.env_helpers import S3ResourceFactory
 from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
-    from mypy_boto3_sqs import SQSClient
 
 
 # Set up logger (this is for the whole file, including static methods)
@@ -71,23 +79,18 @@ class AnalyzerExecutor:
         message_cache: EitherCache,
         hit_cache: EitherCache,
         chunk_size: int,
-        is_local: bool,
         logger: Logger,
         metric_reporter: MetricReporter,
     ) -> None:
         self.message_cache = message_cache
         self.hit_cache = hit_cache
         self.chunk_size = chunk_size
-        self.is_local = is_local
         self.logger = logger
         self.metric_reporter = metric_reporter
 
     @classmethod
     def from_env(cls, env: Optional[Mapping[str, str]] = None) -> AnalyzerExecutor:
         env = env or os.environ
-        is_local = bool(
-            env.get("IS_LOCAL", False)
-        )  # TODO move determination to grapl-common
 
         # If we're retrying, change the chunk size
         is_retry = bool(env.get("IS_RETRY", False))
@@ -111,7 +114,7 @@ class AnalyzerExecutor:
         metric_reporter = MetricReporter.create("analyzer-executor")
 
         return AnalyzerExecutor(
-            message_cache, hit_cache, chunk_size, is_local, LOGGER, metric_reporter
+            message_cache, hit_cache, chunk_size, LOGGER, metric_reporter
         )
 
     def check_caches(
@@ -199,7 +202,7 @@ class AnalyzerExecutor:
                     "analyzer-executor.emit_event.ms",
                     (TagPair("analyzer_name", exec_hit.analyzer_name),),
                 ):
-                    emit_event(s3, exec_hit, self.is_local)
+                    emit_event(s3, exec_hit)
                 self.update_msg_cache(analyzer, exec_hit.root_node_key, message["key"])
                 self.update_hit_cache(analyzer_name, exec_hit.root_node_key)
 
@@ -244,13 +247,13 @@ class AnalyzerExecutor:
 
     def exec_analyzers(
         self,
-        dg_client,
+        dg_client: GraphClient,
         file: str,
         msg_id: str,
         nodes: List[BaseView],
         analyzers: Dict[str, Analyzer],
         sender: Any,
-    ):
+    ) -> None:
         if not analyzers:
             self.logger.warning("Received empty dict of analyzers")
             return
@@ -293,8 +296,14 @@ class AnalyzerExecutor:
                             analyzer.on_response(response, sender)
 
     def execute_file(
-        self, name: str, file: str, graph: SubgraphView, sender, msg_id, chunk_size
-    ):
+        self,
+        name: str,
+        file: str,
+        graph: SubgraphView,
+        sender: Connection,
+        msg_id: str,
+        chunk_size: int,
+    ) -> None:
         try:
             pool = ThreadPool(processes=4)
 
@@ -310,7 +319,9 @@ class AnalyzerExecutor:
             for nodes in chunker([n for n in graph.node_iter()], chunk_size):
                 self.logger.info(f"Querying {len(nodes)} nodes")
 
-                def exec_analyzer(nodes, sender):
+                def exec_analyzer(
+                    nodes: List[BaseView], sender: Connection
+                ) -> List[BaseView]:
                     try:
                         self.exec_analyzers(
                             client, file, msg_id, nodes, analyzers, sender
@@ -352,10 +363,10 @@ def parse_s3_event(s3: S3ServiceResource, event: S3PutRecordDict) -> str:
 
 def download_s3_file(s3: S3ServiceResource, bucket: str, key: str) -> str:
     obj = s3.Object(bucket, key)
-    return obj.get()["Body"].read().decode("utf-8")
+    return cast(bytes, obj.get()["Body"].read()).decode("utf-8")
 
 
-def is_analyzer(analyzer_name, analyzer_cls):
+def is_analyzer(analyzer_name: str, analyzer_cls: type) -> bool:
     if analyzer_name == "Analyzer":  # This is the base class
         return False
     return (
@@ -374,11 +385,11 @@ def get_analyzer_objects(dgraph_client: GraphClient) -> Dict[str, Analyzer]:
     }
 
 
-def chunker(seq, size):
+def chunker(seq: List[BaseView], size: int) -> List[List[BaseView]]:
     return [seq[pos : pos + size] for pos in range(0, len(seq), size)]
 
 
-def emit_event(s3: S3ServiceResource, event: ExecutionHit, is_local: bool) -> None:
+def emit_event(s3: S3ServiceResource, event: ExecutionHit) -> None:
     LOGGER.info(f"emitting event for: {event.analyzer_name, event.nodes}")
 
     event_s = json.dumps(
@@ -398,72 +409,3 @@ def emit_event(s3: S3ServiceResource, event: ExecutionHit, is_local: bool) -> No
         f"{os.environ['DEPLOYMENT_NAME']}-analyzer-matched-subgraphs-bucket", key
     )
     obj.put(Body=event_s.encode("utf-8"))
-
-    # TODO fargate: always emit manual events
-    if is_local:
-        # Local = manual eventing
-
-        deployment_name = os.environ["DEPLOYMENT_NAME"]
-
-        sqs = SQSClientFactory(boto3).from_env()
-        send_s3_event(
-            sqs,
-            f"{os.environ['SQS_ENDPOINT']}/queue/{deployment_name}-engagement-creator-queue",
-            "local-grapl-analyzer-matched-subgraphs-bucket",
-            key,
-        )
-
-
-### LOCAL HANDLER
-
-
-def into_sqs_message(bucket: str, key: str) -> str:
-    return json.dumps(
-        {
-            "Records": [
-                {
-                    "eventTime": datetime.utcnow().isoformat(),
-                    "principalId": {
-                        "principalId": None,
-                    },
-                    "requestParameters": {
-                        "sourceIpAddress": None,
-                    },
-                    "responseElements": {},
-                    "s3": {
-                        "schemaVersion": None,
-                        "configurationId": None,
-                        "bucket": {
-                            "name": bucket,
-                            "ownerIdentity": {
-                                "principalId": None,
-                            },
-                        },
-                        "object": {
-                            "key": key,
-                            "size": 0,
-                            "urlDecodedKey": None,
-                            "versionId": None,
-                            "eTag": None,
-                            "sequencer": None,
-                        },
-                    },
-                }
-            ]
-        }
-    )
-
-
-def send_s3_event(
-    sqs_client: SQSClient,
-    queue_url: str,
-    output_bucket: str,
-    output_path: str,
-):
-    sqs_client.send_message(
-        QueueUrl=queue_url,
-        MessageBody=into_sqs_message(
-            bucket=output_bucket,
-            key=output_path,
-        ),
-    )

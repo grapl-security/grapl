@@ -1,8 +1,8 @@
 from typing import Any
 
 from grapl_analyzerlib.analyzer import Analyzer, OneOrMany
-from grapl_analyzerlib.prelude import Not, AssetQuery, ProcessQuery, ProcessView
 from grapl_analyzerlib.execution import ExecutionHit
+from grapl_analyzerlib.prelude import AssetQuery, Not, ProcessQuery, ProcessView
 
 
 class SuspiciousSvchost(Analyzer):

@@ -4,7 +4,7 @@ import json
 import os
 import sys
 import time
-from typing import TYPE_CHECKING, List
+from typing import Any, Dict, List, Union, cast
 
 import boto3
 import pydgraph
@@ -33,18 +33,15 @@ from grapl_analyzerlib.provision import provision_common
 from grapl_common.env_helpers import DynamoDBResourceFactory
 from grapl_common.grapl_logger import get_module_grapl_logger
 
-if TYPE_CHECKING:
-    from mypy_boto3_dynamodb import DynamoDBServiceResource
-
 LOGGER = get_module_grapl_logger(default_log_level="INFO")
 
 
-def set_schema(client, schema) -> None:
+def set_schema(client: GraphClient, schema: str) -> None:
     op = pydgraph.Operation(schema=schema)
     client.alter(op)
 
 
-def drop_all(client) -> None:
+def drop_all(client: GraphClient) -> None:
     op = pydgraph.Operation(drop_all=True)
     client.alter(op)
 
@@ -59,7 +56,7 @@ def format_schemas(schema_defs: List[BaseSchema]) -> str:
     )
 
 
-def query_dgraph_predicate(client: GraphClient, predicate_name: str):
+def query_dgraph_predicate(client: GraphClient, predicate_name: str) -> Dict[str, Any]:
     query = f"""
         schema(pred: {predicate_name}) {{  }}
     """
@@ -69,42 +66,44 @@ def query_dgraph_predicate(client: GraphClient, predicate_name: str):
     finally:
         txn.discard()
 
-    return res
+    return cast(Dict[str, Any], res)
 
 
-def meta_into_edge(schema, predicate_meta):
+def meta_into_edge(schema: BaseSchema, predicate_meta: Dict[str, Any]) -> EdgeT:
     if predicate_meta.get("list"):
         return EdgeT(type(schema), BaseSchema, EdgeRelationship.OneToMany)
     else:
         return EdgeT(type(schema), BaseSchema, EdgeRelationship.OneToOne)
 
 
-def meta_into_property(schema, predicate_meta):
-    is_set = predicate_meta.get("list")
+def meta_into_property(predicate_meta: Dict[str, Any]) -> PropType:
+    is_set = predicate_meta["list"]
     type_name = predicate_meta["type"]
-    primitive = None
-    if type_name == "string":
-        primitive = PropPrimitive.Str
-    if type_name == "int":
-        primitive = PropPrimitive.Int
-    if type_name == "bool":
-        primitive = PropPrimitive.Bool
+    primitives = {
+        "string": PropPrimitive.Str,
+        "int": PropPrimitive.Int,
+        "bool": PropPrimitive.Bool,
+    }
 
-    return PropType(primitive, is_set, index=predicate_meta.get("index", []))
+    return PropType(
+        primitives[type_name], is_set, index=predicate_meta.get("index", [])
+    )
 
 
-def meta_into_predicate(schema, predicate_meta):
+def meta_into_predicate(
+    schema: BaseSchema, predicate_meta: Dict[str, Any]
+) -> Union[EdgeT, PropType]:
     try:
         if predicate_meta["type"] == "uid":
             return meta_into_edge(schema, predicate_meta)
         else:
-            return meta_into_property(schema, predicate_meta)
+            return meta_into_property(predicate_meta)
     except Exception as e:
         LOGGER.error(f"Failed to convert meta to predicate: {predicate_meta} {e}")
         raise e
 
 
-def query_dgraph_type(client: GraphClient, type_name: str):
+def query_dgraph_type(client: GraphClient, type_name: str) -> List[Dict[str, Any]]:
     query = f"""
         schema(type: {type_name}) {{ type }}
     """
@@ -131,7 +130,7 @@ def query_dgraph_type(client: GraphClient, type_name: str):
     return predicate_metas
 
 
-def extend_schema(graph_client: GraphClient, schema: BaseSchema):
+def extend_schema(graph_client: GraphClient, schema: BaseSchema) -> None:
     predicate_metas = query_dgraph_type(graph_client, schema.self_type())
 
     for predicate_meta in predicate_metas:
@@ -149,10 +148,10 @@ def provision_master_graph(
     set_schema(master_graph_client, mg_schema_str)
 
 
-def provision_mg(mclient) -> None:
+def provision_mg(mclient: GraphClient) -> None:
     drop_all(mclient)
 
-    schemas = (
+    schemas = [
         AssetSchema(),
         ProcessSchema(),
         FileSchema(),
@@ -164,7 +163,7 @@ def provision_mg(mclient) -> None:
         ProcessOutboundConnectionSchema(),
         RiskSchema(),
         LensSchema(),
-    )
+    ]
 
     for schema in schemas:
         schema.init_reverse()
@@ -191,7 +190,7 @@ def provision_mg(mclient) -> None:
 DEPLOYMENT_NAME = "local-grapl"
 
 
-def validate_environment():
+def validate_environment() -> None:
     """Ensures that the required environment variables are present in the environment.
 
     Other code actually reads the variables later.

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pathlib
 from os import PathLike
+from typing import TYPE_CHECKING
 
 import click
 import graplctl.aws.lib as aws_cdk_ops
@@ -9,6 +10,10 @@ import graplctl.dgraph.lib as dgraph_ops
 import graplctl.swarm.lib as docker_swarm_ops
 from grapl_common.utils.find_grapl_root import find_grapl_root
 from graplctl.common import State, pass_graplctl_state
+
+if TYPE_CHECKING:
+    from mypy_boto3_ec2.literals import InstanceTypeType
+
 
 #
 # aws deployment & provisioning commands
@@ -21,7 +26,7 @@ from graplctl.common import State, pass_graplctl_state
 def aws(
     graplctl_state: State,
     ctx: click.Context,
-):
+) -> None:
     """commands for managing grapl aws resources"""
     pass
 
@@ -46,8 +51,11 @@ def aws(
 @click.confirmation_option(prompt=f"this will incur aws charges, ok?")
 @pass_graplctl_state
 def deploy(
-    graplctl_state: State, all: bool, dgraph_instance_type: str, grapl_root: PathLike
-):
+    graplctl_state: State,
+    all: bool,
+    dgraph_instance_type: InstanceTypeType,
+    grapl_root: PathLike,
+) -> None:
     """deploy grapl to aws"""
     click.echo("deploying grapl cdk stacks to aws")
     aws_cdk_ops.deploy_grapl(
@@ -81,7 +89,7 @@ def deploy(
     prompt=f"this will tear down the entire grapl deployment, ok?"
 )
 @pass_graplctl_state
-def destroy(graplctl_state: State, all: bool, grapl_root: PathLike):
+def destroy(graplctl_state: State, all: bool, grapl_root: PathLike) -> None:
     """tear down grapl in aws"""
     click.echo("destroying all grapl aws resources")
 
@@ -114,7 +122,7 @@ def destroy(graplctl_state: State, all: bool, grapl_root: PathLike):
 @aws.command()
 @click.confirmation_option(prompt=f"this will incur aws charges, ok?")
 @pass_graplctl_state
-def provision(graplctl_state: State):
+def provision(graplctl_state: State) -> None:
     """provision the grapl deployment"""
     click.echo("provisioning grapl deployment")
     aws_cdk_ops.provision_grapl(

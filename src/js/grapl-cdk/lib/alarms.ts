@@ -90,6 +90,7 @@ export class OperationalAlarms extends cdk.Construct {
             topic_name: "operational-alarms-sink",
             ...props,
         };
+        // Dgraph swarm cluster alarms are sent to this sink.
         const alarm_sink = new AlarmSink(this, "alarm_sink", alarm_sink_props);
     }
 }

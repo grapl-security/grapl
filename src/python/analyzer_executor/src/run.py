@@ -17,7 +17,7 @@ wait_for_vsc_debugger(service="analyzer_executor")
 LOGGER = get_module_grapl_logger()
 
 
-async def main():
+async def main() -> None:
     """
     Some TODOs:
     - make sure SOURCE_QUEUE_URL is also specified in CDK

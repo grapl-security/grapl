@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import unittest
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Coroutine
 from unittest.mock import Mock
 
 import pytest

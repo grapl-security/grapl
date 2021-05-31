@@ -3,10 +3,13 @@ from typing import Optional
 import pulumi_aws as aws
 from infra.bucket import Bucket
 from infra.config import LOCAL_GRAPL
+from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
 from infra.engagement_edge import EngagementEdge
 from infra.engagement_notebook import EngagementNotebook
+from infra.graphql import GraphQL
 from infra.lambda_ import Lambda
+from infra.model_plugin_deployer import ModelPluginDeployer
 from infra.network import Network
 from infra.secret import JWTSecret
 from infra.ux_router import UxRouter
@@ -134,6 +137,7 @@ class Api(pulumi.ComponentResource):
         ux_bucket: Bucket,
         plugins_bucket: Bucket,
         db: DynamoDB,
+        dgraph_cluster: DgraphCluster,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         name = "api-gateway"
@@ -206,6 +210,7 @@ class Api(pulumi.ComponentResource):
                 network=network,
                 db=db,
                 plugins_bucket=plugins_bucket,
+                dgraph_cluster=dgraph_cluster,
                 opts=pulumi.ResourceOptions(parent=self),
             )
             if not LOCAL_GRAPL
@@ -218,8 +223,27 @@ class Api(pulumi.ComponentResource):
             ux_bucket=ux_bucket,
             db=db,
             notebook=self.notebook,
+            dgraph_cluster=dgraph_cluster,
             opts=pulumi.ResourceOptions(parent=self),
         )
+
+        # These don't work in LocalStack for some reason
+        if not LOCAL_GRAPL:
+            self.model_plugin_deployer = ModelPluginDeployer(
+                network=network,
+                db=db,
+                secret=secret,
+                ux_bucket=ux_bucket,
+                plugins_bucket=plugins_bucket,
+                dgraph_cluster=dgraph_cluster,
+            )
+
+            self.graphql_endpoint = GraphQL(
+                network=network,
+                secret=secret,
+                ux_bucket=ux_bucket,
+                dgraph_cluster=dgraph_cluster,
+            )
 
         self.proxies = [
             self._add_proxy_resource_integration(self.ux_router.function),
@@ -228,11 +252,32 @@ class Api(pulumi.ComponentResource):
             ),
         ]
 
+        # These don't work in LocalStack for some reason
+        if not LOCAL_GRAPL:
+            self.proxies.extend(
+                [
+                    self._add_proxy_resource_integration(
+                        self.model_plugin_deployer.function,
+                        path_part="modelPluginDeployer",
+                    ),
+                    self._add_proxy_resource_integration(
+                        self.graphql_endpoint.function, path_part="graphQlEndpoint"
+                    ),
+                ]
+            )
+
         # This MUST be called after all integrations are registered in
         # self.proxies!
-        self._create_deployment()
+        self.stage = self._create_deployment()
+        pulumi.export("prod-api-url", self.stage.invoke_url)
+        pulumi.export("prod-api-id", self.stage.rest_api)
 
         self.register_outputs({})
+
+    @property
+    def invoke_url(self) -> pulumi.Output[str]:
+        """ Returns the invocation URL of the "prod" stage of this API gateway. """
+        return self.stage.invoke_url  # type: ignore[no-any-return]
 
     def _add_proxy_resource_integration(
         self,
@@ -247,7 +292,7 @@ class Api(pulumi.ComponentResource):
         )
         # self.triggers[lambda_fn.function._name] = lambda_fn.code_hash
 
-    def _create_deployment(self) -> None:
+    def _create_deployment(self) -> aws.apigateway.Stage:
         """ ONLY CALL THIS AFTER ALL RESOURCES ARE REGISTERED ON THE API GATEWAY! """
         deployment = aws.apigateway.Deployment(
             f"{self.rest_api._name}-deployment",
@@ -266,5 +311,4 @@ class Api(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        pulumi.export("prod-api-url", stage.invoke_url)
-        pulumi.export("prod-api-id", stage.rest_api)
+        return stage

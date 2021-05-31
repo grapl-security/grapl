@@ -1,6 +1,6 @@
 from contextlib import contextmanager
-from typing import Any, ContextManager, Dict, Sequence
-from unittest.mock import ANY, MagicMock, Mock, patch
+from typing import Any, Dict, Iterator, Sequence, cast
+from unittest.mock import MagicMock, Mock, patch
 
 from click.testing import CliRunner, Result
 from graplctl import cli
@@ -35,7 +35,7 @@ class BotoSessionMock:
         self.session.client.side_effect = _memoize_client
 
     def client(self, client_name: str) -> Mock:
-        return self.session.client(client_name)
+        return cast(Mock, self.session.client(client_name))
 
     def return_fake_queues(self) -> None:
         sqs_client = self.client("sqs")
@@ -52,7 +52,7 @@ class BotoSessionMock:
 
 
 @contextmanager
-def patch_boto3_session() -> ContextManager[BotoSessionMock]:
+def patch_boto3_session() -> Iterator[BotoSessionMock]:
     with patch.object(
         cli.boto3, cli.boto3.Session.__name__, spec_set=cli.boto3.Session
     ) as p_session_cls:

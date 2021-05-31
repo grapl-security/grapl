@@ -1,5 +1,5 @@
 import json
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Sequence
 
 import pulumi_aws as aws
 from infra.config import DEPLOYMENT_NAME
@@ -37,70 +37,6 @@ class DynamoDBTable(aws.dynamodb.Table):
             range_key=range_key,
             billing_mode="PAY_PER_REQUEST",
             opts=opts,
-        )
-
-    def grant_read_permissions_to(self, role: aws.iam.Role) -> None:
-        """ Adds the ability to read from this table to the provided `Role`. """
-        aws.iam.RolePolicy(
-            f"{role._name}-reads-{self._name}",
-            role=role.name,
-            policy=self.arn.apply(
-                lambda table_arn: json.dumps(
-                    {
-                        "Version": "2012-10-17",
-                        "Statement": [
-                            {
-                                "Effect": "Allow",
-                                "Action": [
-                                    "dynamodb:BatchGetItem",
-                                    "dynamodb:GetRecords",
-                                    "dynamodb:GetShardIterator",
-                                    "dynamodb:Query",
-                                    "dynamodb:GetItem",
-                                    "dynamodb:Scan",
-                                ],
-                                "Resource": table_arn,
-                            }
-                        ],
-                    }
-                )
-            ),
-            opts=pulumi.ResourceOptions(parent=self),
-        )
-
-    def grant_read_write_permissions_to(self, role: aws.iam.Role) -> None:
-        """ Gives the provided `Role` the ability to read from and write to this table. """
-        aws.iam.RolePolicy(
-            f"{role._name}-reads-and-writes-{self._name}",
-            role=role.name,
-            policy=self.arn.apply(
-                lambda table_arn: json.dumps(
-                    {
-                        "Version": "2012-10-17",
-                        "Statement": [
-                            {
-                                "Effect": "Allow",
-                                "Action": [
-                                    # Read
-                                    "dynamodb:BatchGetItem",
-                                    "dynamodb:GetRecords",
-                                    "dynamodb:GetShardIterator",
-                                    "dynamodb:Query",
-                                    "dynamodb:GetItem",
-                                    "dynamodb:Scan",
-                                    # Write
-                                    "dynamodb:BatchWriteItem",
-                                    "dynamodb:PutItem",
-                                    "dynamodb:UpdateItem",
-                                    "dynamodb:DeleteItem",
-                                ],
-                                "Resource": table_arn,
-                            }
-                        ],
-                    }
-                )
-            ),
-            opts=pulumi.ResourceOptions(parent=self),
         )
 
 
@@ -209,3 +145,79 @@ class DynamoDB(pulumi.ComponentResource):
         )
 
         self.register_outputs({})
+
+
+def grant_read_write_on_tables(
+    role: aws.iam.Role, tables: Sequence[aws.dynamodb.Table]
+) -> None:
+    """Rather than granting permissions to each table individually, we
+    grant to multiple tables at once in order to keep overall Role sizes
+    down.
+    """
+    aws.iam.RolePolicy(
+        f"{role._name}-reads-and-writes-dynamodb-tables",
+        role=role.name,
+        policy=pulumi.Output.all(*[t.arn for t in tables]).apply(
+            lambda arns: json.dumps(
+                {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                # Read
+                                "dynamodb:BatchGetItem",
+                                "dynamodb:GetRecords",
+                                "dynamodb:GetShardIterator",
+                                "dynamodb:Query",
+                                "dynamodb:GetItem",
+                                "dynamodb:Scan",
+                                # Write
+                                "dynamodb:BatchWriteItem",
+                                "dynamodb:PutItem",
+                                "dynamodb:UpdateItem",
+                                "dynamodb:DeleteItem",
+                            ],
+                            "Resource": [a for a in arns],
+                        }
+                    ],
+                }
+            )
+        ),
+        opts=pulumi.ResourceOptions(parent=role),
+    )
+
+
+def grant_read_on_tables(
+    role: aws.iam.Role, tables: Sequence[aws.dynamodb.Table]
+) -> None:
+    """Rather than granting permissions to each table individually, we
+    grant to multiple tables at once in order to keep overall Role sizes
+    down.
+    """
+    aws.iam.RolePolicy(
+        f"{role._name}-reads-dynamodb-tables",
+        role=role.name,
+        policy=pulumi.Output.all(*[t.arn for t in tables]).apply(
+            lambda arns: json.dumps(
+                {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "dynamodb:BatchGetItem",
+                                "dynamodb:GetRecords",
+                                "dynamodb:GetShardIterator",
+                                "dynamodb:Query",
+                                "dynamodb:GetItem",
+                                "dynamodb:Scan",
+                            ],
+                            "Resource": [a for a in arns],
+                        }
+                    ],
+                }
+            )
+        ),
+        opts=pulumi.ResourceOptions(parent=role),
+    )
