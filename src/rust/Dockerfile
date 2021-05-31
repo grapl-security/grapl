@@ -126,7 +126,7 @@ CMD ["/graph-merger"]
 
 # graph-mutation-service
 FROM rust-dist AS graph-mutation-service-deploy
-
+EXPOSE 5500
 COPY --from=build "/dist/graph-mutation-service" /
 CMD ["/graph-mutation-service"]
 

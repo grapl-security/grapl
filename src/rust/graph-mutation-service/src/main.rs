@@ -41,6 +41,13 @@ pub mod upsert_manager;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (env, _guard) = grapl_config::init_grapl_env!();
 
+    let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
+    health_reporter
+    .set_serving::<GraphMutationRpcServer<GraphMutationService>>()
+    .await;
+
+
+
     let mg_alphas = grapl_config::mg_alphas();
     let dgraph_client =
         std::sync::Arc::new(DgraphClient::new(mg_alphas).expect("Failed to create dgraph client."));
@@ -58,6 +65,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("GraphMutationRpcServer listening on {}", addr);
 
     Server::builder()
+        .add_service(health_service)
         .add_service(GraphMutationRpcServer::new(service))
         .serve(addr)
         .await?;
@@ -129,6 +137,14 @@ impl GraphMutationService {
 
 #[tonic::async_trait]
 impl GraphMutationRpc for GraphMutationService {
+    #[tracing::instrument(
+        fields(
+            remote_address = ? request.remote_addr(),
+            trace_id =? uuid::Uuid::new_v4(),
+        ),
+        skip(self, request),
+        err,
+    )]
     async fn set_node(
         &self,
         request: Request<SetNodeRequest>,
@@ -150,6 +166,14 @@ impl GraphMutationRpc for GraphMutationService {
         }))
     }
 
+    #[tracing::instrument(
+        fields(
+            remote_address = ? request.remote_addr(),
+            trace_id =? uuid::Uuid::new_v4(),
+        ),
+        skip(self, request),
+        err,
+    )]
     async fn set_edge(
         &self,
         request: Request<SetEdgeRequest>,

@@ -1,94 +1,44 @@
 use std::{
     io::Stdout,
-    time::{
-        SystemTime,
-        UNIX_EPOCH,
-    },
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 use async_trait::async_trait;
-use dgraph_tonic::{
-    Client as DgraphClient,
-    Mutate,
-    Query,
-};
-use failure::{
-    bail,
-    Error,
-};
+use dgraph_tonic::{Client as DgraphClient, Mutate, Query};
+use failure::{bail, Error};
 use grapl_config::{
-    env_helpers::{
-        s3_event_emitters_from_env,
-        FromEnv,
-    },
+    env_helpers::{s3_event_emitters_from_env, FromEnv},
     event_caches,
 };
 pub use grapl_graph_descriptions::graph_mutation_service::graph_mutation_rpc_client::GraphMutationRpcClient;
 use grapl_graph_descriptions::{
-    graph_description::{
-        Edge,
-        EdgeList,
-        IdentifiedGraph,
-        IdentifiedNode,
-        MergedGraph,
-        MergedNode,
-    },
+    graph_description::{Edge, EdgeList, IdentifiedGraph, IdentifiedNode, MergedGraph, MergedNode},
     graph_mutation_service::*,
 };
 use grapl_observe::{
     dgraph_reporter::DgraphMetricReporter,
-    metric_reporter::{
-        tag,
-        MetricReporter,
-    },
+    metric_reporter::{tag, MetricReporter},
 };
-use grapl_service::{
-    decoder::ProtoDecoder,
-    serialization::MergedGraphSerializer,
-};
-use grapl_utils::{
-    future_ext::GraplFutureExt,
-    rusoto_ext::dynamodb::GraplDynamoDbClientExt,
-};
+use grapl_service::{decoder::ProtoDecoder, serialization::MergedGraphSerializer};
+use grapl_utils::{future_ext::GraplFutureExt, rusoto_ext::dynamodb::GraplDynamoDbClientExt};
 use lazy_static::lazy_static;
 use rusoto_dynamodb::{
-    AttributeValue,
-    BatchGetItemInput,
-    DynamoDb,
-    DynamoDbClient,
-    GetItemInput,
-    KeysAndAttributes,
+    AttributeValue, BatchGetItemInput, DynamoDb, DynamoDbClient, GetItemInput, KeysAndAttributes,
 };
 use rusoto_s3::S3Client;
 use rusoto_sqs::SqsClient;
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sqs_executor::{
-    cache::{
-        Cache,
-        Cacheable,
-    },
-    errors::{
-        CheckedError,
-        Recoverable,
-    },
-    event_handler::{
-        CompletedEvents,
-        EventHandler,
-    },
+    cache::{Cache, Cacheable},
+    errors::{CheckedError, Recoverable},
+    event_handler::{CompletedEvents, EventHandler},
     make_ten,
     s3_event_emitter::S3ToSqsEventNotifier,
     s3_event_retriever::S3PayloadRetriever,
 };
 use tonic::transport::Channel;
-use tracing::{
-    error,
-    info,
-    warn,
-};
+use tracing::{error, info, warn};
 
 #[derive(Clone)]
 pub struct GraphMerger<CacheT>
@@ -121,6 +71,8 @@ where
 pub enum GraphMergerError {
     #[error("UnexpectedError")]
     Unexpected(String),
+    #[error("GrpcError")]
+    GrpcError(#[from] tonic::Status),
 }
 
 impl CheckedError for GraphMergerError {
@@ -153,50 +105,52 @@ impl<CacheT: Cache> EventHandler for GraphMerger<CacheT> {
         );
 
         let mut merged_graph = MergedGraph::new();
-        let mut node_requests = Vec::with_capacity(subgraph.nodes.len());
-        let mut edge_requests = Vec::with_capacity(subgraph.edges.len());
+        let mut node_responses = Vec::with_capacity(subgraph.nodes.len());
+        let mut edge_responses = Vec::with_capacity(subgraph.edges.len());
+
+        let mut failed = None;
 
         for (_, node) in subgraph.nodes.into_iter() {
             let mut graph_mutation_client = self.graph_mutation_client.clone();
-            node_requests.push(async move {
-                let node_uid = graph_mutation_client
-                    .set_node(SetNodeRequest {
-                        node: Some(node.clone()),
-                    })
-                    .await
-                    .expect("Failed to upsert node")
-                    .into_inner()
-                    .rpc_result
-                    .unwrap();
-                (node_uid, node)
-            });
-        }
+            let r = graph_mutation_client
+                .set_node(SetNodeRequest {
+                    node: Some(node.clone()),
+                })
+                .await;
 
+            match r {
+                Err(e) => {
+                    tracing::error!(message="Failed to upsert node2", err=?e);
+                    failed = Some(e);
+                }
+                Ok(r) => {
+                    let node_uid = r.into_inner().rpc_result.unwrap();
+                    node_responses.push((node_uid, node));
+                }
+            }
+        }
         for (_, EdgeList { edges }) in subgraph.edges.into_iter() {
             for edge in edges {
                 let mut graph_mutation_client = self.graph_mutation_client.clone();
-                edge_requests.push(async move {
-                    let set_edge_res = graph_mutation_client
-                        .set_edge(SetEdgeRequest {
-                            edge: Some(edge.clone()),
-                        })
-                        .await
-                        .expect("Failed to upsert edge")
-                        .into_inner()
-                        .rpc_result
-                        .unwrap();
-                    (set_edge_res, edge)
-                })
+                let r = graph_mutation_client
+                    .set_edge(SetEdgeRequest {
+                        edge: Some(edge.clone()),
+                    })
+                    .await;
+                match r {
+                    Err(e) => {
+                        tracing::error!(message="Failed to upsert edge", err=?e);
+                        failed = Some(e);
+                    }
+                    Ok(r) => {
+                        let edge_res = r.into_inner().rpc_result.unwrap();
+                        edge_responses.push((edge_res, edge))
+                    }
+                }
             }
         }
 
-        let (node_requests, edge_requests) = futures::future::join(
-            futures::future::join_all(node_requests),
-            futures::future::join_all(edge_requests),
-        )
-        .await;
-
-        for (node_uid, node) in node_requests {
+        for (node_uid, node) in node_responses {
             tracing::debug!(message="set_node", set_node_res=?node_uid);
             if let set_node_result::RpcResult::Set(SetNodeSuccess { node_uid }) = node_uid {
                 merged_graph.add_node(MergedNode {
@@ -205,10 +159,12 @@ impl<CacheT: Cache> EventHandler for GraphMerger<CacheT> {
                     node_type: node.node_type,
                     properties: node.properties,
                 });
+            } else {
+                tracing::error!(message="Failed to upsert node2", err=?node_uid);
             }
         }
 
-        for (set_edge_res, edge) in edge_requests {
+        for (set_edge_res, edge) in edge_responses {
             tracing::debug!(message="set_edge", set_edge_res=?set_edge_res);
             if let set_edge_result::RpcResult::Set(SetEdgeSuccess { src_uid, dst_uid }) =
                 set_edge_res
@@ -223,7 +179,11 @@ impl<CacheT: Cache> EventHandler for GraphMerger<CacheT> {
             }
         }
 
-        Ok(merged_graph)
+        if let Some(e) = failed {
+            Err(Ok((merged_graph, e.into())))
+        } else {
+            Ok(merged_graph)
+        }
     }
 }
 
