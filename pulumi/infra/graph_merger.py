@@ -5,6 +5,7 @@ from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
 from infra.emitter import EventEmitter
 from infra.fargate_service import FargateService, GraplDockerBuild
+from infra.graph_mutation_cluster import GraphMutationCluster
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 
@@ -15,7 +16,7 @@ class GraphMerger(FargateService):
         input_emitter: EventEmitter,
         output_emitter: EventEmitter,
         dgraph_cluster: DgraphCluster,
-        db: DynamoDB,
+        graph_mutation_service_cluster: GraphMutationCluster,
         network: Network,
         cache: Cache,
         forwarder: MetricForwarder,
@@ -33,7 +34,6 @@ class GraphMerger(FargateService):
                 **configurable_envvars("graph-merger", ["RUST_LOG", "RUST_BACKTRACE"]),
                 "REDIS_ENDPOINT": cache.endpoint,
                 "MG_ALPHAS": dgraph_cluster.alpha_host_port,
-                "GRAPL_SCHEMA_TABLE": db.schema_table.name,
             },
             input_emitter=input_emitter,
             output_emitter=output_emitter,
@@ -43,17 +43,8 @@ class GraphMerger(FargateService):
 
         dgraph_cluster.allow_connections_from(self.default_service.security_group)
         dgraph_cluster.allow_connections_from(self.retry_service.security_group)
-
-        # TODO: both the default and retry services get READ
-        # permissions on the schema and schema properties table, even
-        # though only the schema table was passed into the
-        # environment.
-        #
-        # Investigate this further: is the properties table needed?
-        for role in [self.default_service.task_role, self.retry_service.task_role]:
-            dynamodb.grant_read_on_tables(
-                role, [db.schema_table, db.schema_properties_table]
-            )
+        graph_mutation_service_cluster.allow_connections_from(self.default_service.security_group)
+        graph_mutation_service_cluster.allow_connections_from(self.retry_service.security_group)
 
         # TODO: Interestingly, the CDK code doesn't have this, even though
         # the other services do.

@@ -6,6 +6,7 @@ from typing import Optional, Sequence
 import pulumi_aws as aws
 from infra import policies
 from infra.bucket import Bucket
+# We should probably have this be more general / have this be service specific
 from infra.config import DEPLOYMENT_NAME, DGRAPH_LOG_RETENTION_DAYS
 
 import pulumi
@@ -23,8 +24,8 @@ class Ec2Port:
     port: int
 
     def allow_internally(
-        self,
-        sg: aws.ec2.SecurityGroup,
+            self,
+            sg: aws.ec2.SecurityGroup,
     ) -> None:
         aws.ec2.SecurityGroupRule(
             f"internal-ingress-{self}",
@@ -64,15 +65,16 @@ class Ec2Port:
         return f"Ec2Port({self.protocol}:{self.port})"
 
 
-class Swarm(pulumi.ComponentResource):
+class GrpcSwarm(pulumi.ComponentResource):
     def __init__(
-        self,
-        name: str,
-        vpc: aws.ec2.Vpc,
-        internal_service_ports: Sequence[Ec2Port],
-        opts: Optional[pulumi.ResourceOptions] = None,
+            self,
+            name: str,
+            service_name: str,
+            vpc: aws.ec2.Vpc,
+            internal_service_ports: Sequence[Ec2Port],
+            opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
-        super().__init__("grapl:GrpcSwarmResource", name=name, props=None, opts=opts)
+        super().__init__("grapl:SwarmResource", name=name, props=None, opts=opts)
 
         child_opts = pulumi.ResourceOptions(parent=self)
 
@@ -114,10 +116,10 @@ class Swarm(pulumi.ComponentResource):
 
         # InstanceProfile for swarm instances
         aws.iam.InstanceProfile(
-            f"{name}-instance-profile",
+            f"{name}-{service_name}-instance-profile",
             opts=child_opts,
             role=self.role.name,
-            name=f"{DEPLOYMENT_NAME}-swarm-instance-profile",
+            name=f"{DEPLOYMENT_NAME}-swarm-{service_name}-instance-profile",
         )
 
         # CloudWatchAgentServerPolicy allows the Swarm instances to
@@ -131,8 +133,8 @@ class Swarm(pulumi.ComponentResource):
         )
 
         self.swarm_hosted_zone = aws.route53.Zone(
-            f"{name}-hosted-zone",
-            name=f"{DEPLOYMENT_NAME}.dgraph.grapl",
+            f"{name}-{service_name}-hosted-zone",
+            name=f"{DEPLOYMENT_NAME}.{service_name}.grapl",
             vpcs=[
                 aws.route53.ZoneVpcArgs(
                     vpc_id=vpc.id,
@@ -142,7 +144,7 @@ class Swarm(pulumi.ComponentResource):
         )
 
         self.swarm_config_bucket = Bucket(
-            logical_bucket_name="swarm-config-bucket",
+            logical_bucket_name=f"{service_name}-swarm-config-bucket",
             opts=child_opts,
         )
         self.swarm_config_bucket.grant_read_permissions_to(self.role)
@@ -152,7 +154,7 @@ class Swarm(pulumi.ComponentResource):
 
     @property
     def cluster_host_port(self) -> pulumi.Output[str]:
-        return Output.concat(self.swarm_hosted_zone.name, ":9080")
+        return Output.concat(self.swarm_hosted_zone.name, ":5500")
 
     def _open_initial_ports(self, internal_service_ports: Sequence[Ec2Port]) -> None:
         # allow hosts in the swarm security group to communicate
@@ -161,12 +163,12 @@ class Swarm(pulumi.ComponentResource):
         #   TCP 2377 -- inter-node communication (only needed on manager nodes)
         #   TCP + UDP 7946 -- container network discovery
         for port in (
-            Ec2Port("tcp", 2376),
-            Ec2Port("tcp", 2377),
-            Ec2Port("tcp", 7946),
-            Ec2Port("udp", 7946),
-            Ec2Port("udp", 4789),
-            *internal_service_ports,
+                Ec2Port("tcp", 2376),
+                Ec2Port("tcp", 2377),
+                Ec2Port("tcp", 7946),
+                Ec2Port("udp", 7946),
+                Ec2Port("udp", 4789),
+                *internal_service_ports,
         ):  #   UDP 4789 -- overlay network traffic
             port.allow_internally(self.security_group)
 
@@ -175,15 +177,15 @@ class Swarm(pulumi.ComponentResource):
         #   TCP 443 -- AWS SSM Agent (for handshake)
         #   TCP 80 -- yum package manager and wget (install Docker)
         for port in (
-            Ec2Port("tcp", 443),
-            Ec2Port("tcp", 80),
+                Ec2Port("tcp", 443),
+                Ec2Port("tcp", 80),
         ):
             port.allow_outbound_any_ip(self.security_group)
 
     def allow_connections_from(
-        self,
-        other: aws.ec2.SecurityGroup,
-        port_range: Ec2Port,
+            self,
+            other: aws.ec2.SecurityGroup,
+            port_range: Ec2Port,
     ) -> None:
         descriptor = "-".join(
             [
