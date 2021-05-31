@@ -3,9 +3,6 @@ use actix_web::{post, Error, HttpResponse, Responder};
 use::reqwest;
 use actix_web::body::Body;
 use serde::{Serialize, Deserialize};
-// use actix_web::error::InternalError;
-// use actix_web::http::StatusCode;
-// use actix_web::web::Json;
 
 #[derive(Serialize, Deserialize)]
 pub struct DeployRequest{
@@ -62,7 +59,7 @@ pub async fn grapl_model_plugin_deployer(body: actix_web::web::Json<DeployReques
 #[post("/modelPluginDeployer/deletePlugin")]
 pub async fn delete_plugin(body: actix_web::web::Json<DeployRequest>) -> impl Responder {
     let body = body.into_inner();
-    
+
     let response = request_with_body("delete", body)
         .await;
 
@@ -114,8 +111,6 @@ pub async fn list_plugin() -> impl Responder {
         Err(CustomError::RequestError(_)) =>  HttpResponse::InternalServerError().finish(),
     }
 }
-
-
 
 
 // We will make a post request to our new actix server
