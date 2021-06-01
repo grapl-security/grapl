@@ -119,9 +119,8 @@ pub async fn list_plugin() -> impl Responder {
 // we come in on a path. Based on that path, we route the request to the appropriate service.
 
 // X route to the graplModelPluginDeployer
-// setup & write tests with an http client
-// use grcp client for model-plugin-deployer
 // X set up docker stuff
 
-// every service can have a directory
-// every route in service can have a file
+// setup & write tests with an http client
+// use grcp client for model-plugin-deployer
+
