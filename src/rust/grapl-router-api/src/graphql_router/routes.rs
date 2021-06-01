@@ -1,12 +1,12 @@
-use crate::{graphql_request_with_body};
 use actix_web::{post, get, Error, HttpResponse, Responder};
 use::reqwest;
 use actix_web::body::Body;
 use serde::{Serialize, Deserialize};
+use crate::graphql_request;
 
 
 #[derive(Serialize, Deserialize)]
-pub struct GraphQLRes {
+pub struct GraphQLBody {
     body: Vec<u8>,
 }
 
@@ -15,17 +15,18 @@ pub enum GraphQLError {
     #[error("RequestError")]
     RequestError(#[from] reqwest::Error),
 
-    #[error("Internal Server Error")]
-    ServerError,
-
     #[error("No Content")]
     NoContent,
+
+
+    #[error("Bad Request")]
+    BadRequest,
 }
 
 #[post("/graphql")]
-pub async fn graphql(body: actix_web::web::Json<GraphQLRes>) -> impl Responder {
+pub async fn graphql_router(body: actix_web::web::Json<GraphQLBody>) -> impl Responder {
     let body = body.into_inner();
-    let response = request_with_body("graphql", body)
+    let response = graphql_request("graphql", body)
         .await;
 
     match response{

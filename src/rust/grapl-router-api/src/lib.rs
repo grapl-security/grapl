@@ -6,11 +6,13 @@ use reqwest::Body;
 use serde::{Serialize, Deserialize};
 use crate::model_plugin_deployer_router::routes::{DeployRequest, CustomError};
 use crate::auth_router::routes::{LoginBody, AuthError};
+use crate::graphql_router::routes::{GraphQLBody, GraphQLError};
 use serde::__private::Result::Ok;
 use serde::__private::Vec;
 
 pub mod model_plugin_deployer_router;
 pub mod auth_router;
+pub mod graphql_router;
 
 #[derive(Serialize, Deserialize)]
 pub struct PluginObject {
@@ -27,6 +29,19 @@ pub struct PluginList {
 pub struct AuthBody{
     username: String,
     password: String,
+}
+
+pub async fn graphql_request(path: &str, body: GraphQLBody) ->  Result<GraphQLBody, GraphQLError> { // dyn, dynamic, we don't know what type
+    let client = reqwest::Client::new();
+
+    let response: GraphQLBody = client.post(format!("http://localhost:8000/login/{}", path)) // we need to change this
+        .json(&body)
+        .send()
+        .await?
+        .json()
+        .await?;
+
+    return Ok(response)
 }
 
 pub async fn login_request_with_body(path: &str, body: LoginBody) ->  Result<AuthBody, AuthError> { // dyn, dynamic, we don't know what type
