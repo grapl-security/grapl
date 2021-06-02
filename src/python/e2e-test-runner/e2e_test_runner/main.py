@@ -11,5 +11,5 @@ def main(_: Any, __: Any) -> None:
     if os.path.exists("/tmp/schemas"):
         shutil.rmtree("/tmp/schemas")
     os.mkdir("/tmp/schemas")
-    shutil.copyfile("schemas.py", "/tmp/schemas/schemas.py")
+    shutil.copyfile("e2e_test_runner/schemas.py", "/tmp/schemas/schemas.py")
     setup_tests.exec_pytest()
