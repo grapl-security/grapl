@@ -8,7 +8,7 @@ type StdErr = Box<dyn std::error::Error>;
 
 #[actix_web::main]
 async fn main() -> Result<(), StdErr> {
-    // set up tracing
+    // set up tracing tracing-actix-web
     // set up integration tests
         HttpServer::new(move || {
                 actix_web::App::new()
