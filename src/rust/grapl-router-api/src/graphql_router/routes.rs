@@ -4,7 +4,6 @@ use actix_web::body::Body;
 use serde::{Serialize, Deserialize};
 use crate::graphql_request;
 
-
 #[derive(Serialize, Deserialize)]
 pub struct GraphQLBody {
     body: Vec<u8>,
@@ -41,7 +40,6 @@ pub async fn graphql_router(body: actix_web::web::Json<GraphQLBody>) -> impl Res
             HttpResponse::NoContent()
                 .finish()
         }
-
 
         Err(GraphQLError::RequestError(_)) =>  HttpResponse::InternalServerError().finish(),
 

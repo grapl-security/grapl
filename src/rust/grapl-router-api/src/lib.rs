@@ -1,15 +1,16 @@
 #![allow(warnings)]
 use::reqwest;
+use reqwest::Body;
+
 use actix_web::{HttpResponse, Result};
 
-use reqwest::Body;
 use serde::{Serialize, Deserialize};
-use crate::model_plugin_deployer_router::routes::{DeployRequest, CustomError};
-use crate::auth_router::routes::{LoginBody, AuthError};
-use crate::graphql_router::routes::{GraphQLBody, GraphQLError};
 use serde::__private::Result::Ok;
 use serde::__private::Vec;
 
+use crate::model_plugin_deployer_router::routes::{DeployRequest, CustomError};
+use crate::auth_router::routes::{LoginBody, AuthError};
+use crate::graphql_router::routes::{GraphQLBody, GraphQLError};
 pub mod model_plugin_deployer_router;
 pub mod auth_router;
 pub mod graphql_router;
@@ -24,17 +25,49 @@ pub struct PluginList {
     plugin_list: Vec<PluginObject>,
 }
 
-
 #[derive(Serialize, Deserialize)]
 pub struct AuthBody{
     username: String,
     password: String,
 }
 
+// #[derive(Serialize, Deserialize)]
+// pub enum BodyTypes {
+//     GraphQLBody,
+//     AuthBody,
+//     PluginObject,
+// }
+//
+// #[derive(Serialize, Deserialize)]
+// pub enum ErrorTypes {
+//     GraphQLError,
+//     AuthError,
+//     CustomError,
+// }
+//
+//
+//
+// pub async fn request(service: String, path: String, body: BodyTypes) ->  Result<BodyTypes, ErrorTypes> { // dyn, dynamic, we don't know what type
+//     let client = reqwest::Client::new();
+//
+//     if service == "model_plugin_deployer" {
+//         let response: BodyTypes = client.post(format!("http://localhost:8000/model_plugin_deployer/{}", path))
+//             .json(&body)
+//             .send()
+//             .await?
+//             .json()
+//             .await?;
+//
+//         return Ok(response);
+//     };
+// }
+
+
+
 pub async fn graphql_request(path: &str, body: GraphQLBody) ->  Result<GraphQLBody, GraphQLError> { // dyn, dynamic, we don't know what type
     let client = reqwest::Client::new();
 
-    let response: GraphQLBody = client.post(format!("http://localhost:8000/login/{}", path)) // we need to change this
+    let response: GraphQLBody = client.post(format!("http://localhost:8000/graphql/{}", path)) // we need to change this
         .json(&body)
         .send()
         .await?
