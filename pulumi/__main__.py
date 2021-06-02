@@ -1,6 +1,7 @@
 import os
 
 from infra import dynamodb, emitter
+from infra.alarms import OpsAlarms
 from infra.analyzer_dispatcher import AnalyzerDispatcher
 from infra.analyzer_executor import AnalyzerExecutor
 from infra.api import Api
@@ -71,22 +72,32 @@ def main() -> None:
     model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)
 
     if LOCAL_GRAPL:
-        # We need to create these queues in Local Grapl, because they
-        # are otherwise created in the FargateService instances below;
-        # we don't run Fargate services in Local Grapl.
+        # We need to create these queues, and wire them up to their
+        # respective emitters, in Local Grapl, because they are
+        # otherwise created in the FargateService instances below; we
+        # don't run Fargate services in Local Grapl.
         #
         # T_T
         from infra.service_queue import ServiceQueue
 
-        for service in [
-            "sysmon-generator",
-            "osquery-generator",
-            "node-identifier",
-            "graph-merger",
-            "analyzer-dispatcher",
-            "analyzer-executor",
-        ]:
-            ServiceQueue(service)
+        sysmon_generator_queue = ServiceQueue("sysmon-generator")
+        sysmon_generator_queue.subscribe_to_emitter(sysmon_log_emitter)
+
+        osquery_generator_queue = ServiceQueue("osquery-generator")
+        osquery_generator_queue.subscribe_to_emitter(osquery_log_emitter)
+
+        node_identifier_queue = ServiceQueue("node-identifier")
+        node_identifier_queue.subscribe_to_emitter(unid_subgraphs_generated_emitter)
+
+        graph_merger_queue = ServiceQueue("graph-merger")
+        graph_merger_queue.subscribe_to_emitter(subgraphs_generated_emitter)
+
+        analyzer_dispatcher_queue = ServiceQueue("analyzer-dispatcher")
+        analyzer_dispatcher_queue.subscribe_to_emitter(subgraphs_merged_emitter)
+
+        analyzer_executor_queue = ServiceQueue("analyzer-executor")
+        analyzer_executor_queue.subscribe_to_emitter(dispatched_analyzer_emitter)
+
     else:
         # No Fargate or Elasticache in Local Grapl
         cache = Cache("main-cache", network=network)
@@ -159,6 +170,8 @@ def main() -> None:
         db=dynamodb_tables,
         dgraph_cluster=dgraph_cluster,
     )
+
+    OpsAlarms(name="ops-alarms")
 
     ########################################################################
 

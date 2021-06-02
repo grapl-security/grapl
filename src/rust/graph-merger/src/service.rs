@@ -83,7 +83,6 @@ use sqs_executor::{
         EventHandler,
     },
     make_ten,
-    s3_event_emitter::S3ToSqsEventNotifier,
     s3_event_retriever::S3PayloadRetriever,
 };
 use tracing::{

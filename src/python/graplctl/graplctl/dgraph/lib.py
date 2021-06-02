@@ -11,8 +11,11 @@ if TYPE_CHECKING:
     from mypy_boto3_cloudwatch.client import CloudWatchClient
     from mypy_boto3_cloudwatch.type_defs import MetricTypeDef
     from mypy_boto3_route53 import Route53Client
+    from mypy_boto3_route53.type_defs import ChangeTypeDef
     from mypy_boto3_sns.client import SNSClient
     from mypy_boto3_ssm import SSMClient
+    from mypy_boto3_ec2.literals import InstanceTypeType
+
 
 import graplctl.swarm.lib as docker_swarm_ops
 from graplctl.common import Ec2Instance, State, Tag, get_command_results, ticker
@@ -41,7 +44,9 @@ def _find_operational_alarms_arn(sns: SNSClient, deployment_name: str) -> str:
         None,
     )
     if not arn:
-        raise Exception(f"Couldn't find a good candidate arn among {all_topic_arns}")
+        raise Exception(
+            f"Couldn't find a good Operational Alarms ARN among {all_topic_arns}"
+        )
     return arn
 
 
@@ -157,7 +162,7 @@ def remove_dns_ip(
         if ip != ip_address
     ]
 
-    change = {
+    change: ChangeTypeDef = {
         "Action": "DELETE",  # delete the A record if this is the last address
         "ResourceRecordSet": {
             "Name": dns_name,
@@ -279,7 +284,7 @@ def deploy_dgraph(
     LOGGER.info(f"command {command_id} instance {instance_id}: {result}")
 
 
-def create_dgraph(graplctl_state: State, instance_type: str) -> bool:
+def create_dgraph(graplctl_state: State, instance_type: InstanceTypeType) -> bool:
     swarm_id = f"{graplctl_state.grapl_deployment_name.lower()}-dgraph-swarm"
     LOGGER.info(f"creating dgraph swarm {swarm_id}")
     if not docker_swarm_ops.create_swarm(
@@ -317,7 +322,8 @@ def create_dgraph(graplctl_state: State, instance_type: str) -> bool:
     )
 
     LOGGER.info(f"waiting 5min for cloudwatch metrics to propagate...")
-    with progressbar(ticker(300), length=300) as bar:
+    progressbar_len = 5 * 60  # seconds
+    with progressbar(ticker(progressbar_len), length=progressbar_len) as bar:
         for _ in bar:
             continue
 
@@ -336,7 +342,9 @@ def create_dgraph(graplctl_state: State, instance_type: str) -> bool:
         ssm=graplctl_state.ssm,
         deployment_name=graplctl_state.grapl_deployment_name,
         manager_instance=manager_instance,
-        worker_instances=tuple(
+        # Here, we only have two workers for Dgraph in our current
+        # setup, so we'll ignore the type discrepancy here.
+        worker_instances=tuple(  # type: ignore[arg-type]
             instance
             for instance in swarm_instances
             if Tag(key="grapl-swarm-role", value="swarm-worker") in instance.tags
@@ -366,7 +374,7 @@ def create_dgraph(graplctl_state: State, instance_type: str) -> bool:
     return True
 
 
-def remove_dgraph_dns(graplctl_state: State, swarm_id: str):
+def remove_dgraph_dns(graplctl_state: State, swarm_id: str) -> None:
     hosted_zone_id = graplctl_state.route53.list_hosted_zones_by_name(
         DNSName=f"{graplctl_state.grapl_deployment_name.lower()}.dgraph.grapl"
     )["HostedZones"][0]["Id"]

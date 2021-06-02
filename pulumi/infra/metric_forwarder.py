@@ -46,7 +46,7 @@ class MetricForwarder(pulumi.ComponentResource):
         )
 
         # This allows us to write our metrics to cloudwatch
-        self.cloudwatch_policy = aws.iam.RolePolicy(
+        aws.iam.RolePolicy(
             f"{name}-writes-to-cloudwatch",
             role=self.role.name,
             policy=json.dumps(

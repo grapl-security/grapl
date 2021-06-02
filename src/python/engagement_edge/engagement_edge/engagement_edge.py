@@ -24,13 +24,13 @@ from typing import (
 import boto3
 import jwt
 from chalice import Chalice, Response
+from engagement_edge.env_vars import DEPLOYMENT_NAME, GRAPL_LOG_LEVEL
+from engagement_edge.sagemaker import create_sagemaker_client
 from grapl_common.debugger.vsc_debugger import wait_for_vsc_debugger
 from grapl_common.env_helpers import (
     DynamoDBResourceFactory,
     SecretsManagerClientFactory,
 )
-from src.lib.env_vars import DEPLOYMENT_NAME, GRAPL_LOG_LEVEL, IS_LOCAL
-from src.lib.sagemaker import create_sagemaker_client
 
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
@@ -54,39 +54,13 @@ class LazyJwtSecret:
         return self.secret
 
     def _retrieve_jwt_secret(self) -> str:
-        if IS_LOCAL:
-            return self._retrieve_jwt_secret_local()
-        else:
-            jwt_secret_id = os.environ["JWT_SECRET_ID"]
+        jwt_secret_id = os.environ["JWT_SECRET_ID"]
 
-            secretsmanager = SecretsManagerClientFactory(boto3).from_env()
+        secretsmanager = SecretsManagerClientFactory(boto3).from_env()
 
-            jwt_secret: str = secretsmanager.get_secret_value(
-                SecretId=jwt_secret_id,
-            )["SecretString"]
-            return jwt_secret
-
-    def _retrieve_jwt_secret_local(self) -> str:
-        # Theory: This whole code block is deprecated by the `wait-for-it grapl-provision`,
-        # which guarantees that the JWT Secret is, now, in the secretsmanager. - wimax
-
-        timeout_secs = 30
-        jwt_secret: Optional[str] = None
-
-        for _ in range(timeout_secs):
-            try:
-                secretsmanager = SecretsManagerClientFactory(boto3).from_env()
-                jwt_secret = secretsmanager.get_secret_value(
-                    SecretId="JWT_SECRET_ID",
-                )["SecretString"]
-                break
-            except Exception as e:
-                LOGGER.debug(e)
-                time.sleep(1)
-        if not jwt_secret:
-            raise TimeoutError(
-                f"Expected secretsmanager to be available within {timeout_secs} seconds"
-            )
+        jwt_secret: str = secretsmanager.get_secret_value(
+            SecretId=jwt_secret_id,
+        )["SecretString"]
         return jwt_secret
 
 
@@ -119,11 +93,6 @@ def respond(
 
     if not headers:
         headers = {}
-
-    if IS_LOCAL:  # Overwrite headers
-        override = app.current_request.headers.get("origin", "")
-        LOGGER.warning(f"overriding origin for IS_LOCAL:\t'[{override}]")
-        headers = {"Access-Control-Allow-Origin": override, **headers}
 
     if not err:  # Set response format for success
         body = json.dumps({"success": res})
@@ -226,10 +195,7 @@ def lambda_login(event: Any) -> Optional[str]:
     login_res = login(body["username"], body["password"])
     # Clear out the password from the dict, to avoid accidentally logging it
     body["password"] = ""
-    if IS_LOCAL:
-        cookie = f"grapl_jwt={login_res}; HttpOnly; path=/"
-    else:
-        cookie = f"grapl_jwt={login_res}; secure; HttpOnly; SameSite=None; path=/"
+    cookie = f"grapl_jwt={login_res}; secure; HttpOnly; SameSite=None; path=/"
 
     if login_res:
         return cookie

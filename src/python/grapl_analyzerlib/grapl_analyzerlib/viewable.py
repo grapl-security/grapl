@@ -25,8 +25,6 @@ if TYPE_CHECKING:
 from grapl_analyzerlib.extendable import Extendable
 from grapl_analyzerlib.grapl_client import GraphClient
 
-IS_LOCAL: bool = bool(os.environ.get("IS_LOCAL", False))
-
 GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
 LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
 LOGGER = logging.getLogger(__name__)

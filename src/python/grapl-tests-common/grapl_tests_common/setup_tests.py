@@ -6,7 +6,7 @@ from os import environ
 from sys import stdout
 from typing import TYPE_CHECKING, List, Sequence
 
-import boto3  # type: ignore
+import boto3
 import pytest
 import requests
 from grapl_common.env_helpers import (

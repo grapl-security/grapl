@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     import mypy_boto3_ec2.service_resource as ec2_resources
     from mypy_boto3_cloudwatch.client import CloudWatchClient
     from mypy_boto3_ec2 import EC2ServiceResource
+    from mypy_boto3_ec2.type_defs import TagTypeDef
     from mypy_boto3_lambda import LambdaClient
     from mypy_boto3_route53 import Route53Client
     from mypy_boto3_s3 import S3Client
@@ -62,7 +63,7 @@ class Tag:
     key: str
     value: str
 
-    def into_boto_tag_specification(self) -> Dict[str, str]:
+    def into_boto_tag_specification(self) -> TagTypeDef:
         return {"Key": self.key, "Value": self.value}
 
     @classmethod

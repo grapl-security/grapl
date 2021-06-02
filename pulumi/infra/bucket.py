@@ -55,15 +55,14 @@ class Bucket(aws.s3.Bucket):
                         "Statement": [
                             {
                                 "Effect": "Allow",
-                                "Action": [
-                                    # TODO: Prefer to enumerate specific
-                                    # actions rather than wildcards
-                                    "s3:GetObject*",
-                                    "s3:GetBucket*",
-                                    "s3:List*",
-                                ],
-                                "Resource": [bucket_arn, f"{bucket_arn}/*"],
-                            }
+                                "Action": "s3:GetObject",
+                                "Resource": f"{bucket_arn}/*",
+                            },
+                            {
+                                "Effect": "Allow",
+                                "Action": "s3:ListBucket",
+                                "Resource": bucket_arn,
+                            },
                         ],
                     }
                 )
@@ -104,28 +103,6 @@ class Bucket(aws.s3.Bucket):
             opts=pulumi.ResourceOptions(parent=role),
         )
 
-    def grant_get_to(self, role: aws.iam.Role) -> None:
-        """Grants GetObject on all the objects in the bucket."""
-        aws.iam.RolePolicy(
-            f"{role._name}-get-{self._name}",
-            role=role.name,
-            policy=self.arn.apply(
-                lambda bucket_arn: json.dumps(
-                    {
-                        "Version": "2012-10-17",
-                        "Statement": [
-                            {
-                                "Effect": "Allow",
-                                "Action": "s3:GetObject",
-                                "Resource": f"{bucket_arn}/*",
-                            },
-                        ],
-                    }
-                )
-            ),
-            opts=pulumi.ResourceOptions(parent=role),
-        )
-
     def grant_read_write_permissions_to(self, role: aws.iam.Role) -> None:
         """ Gives the provided `Role` the ability to read from and write to this bucket. """
         aws.iam.RolePolicy(
@@ -138,45 +115,18 @@ class Bucket(aws.s3.Bucket):
                         "Statement": [
                             {
                                 "Effect": "Allow",
-                                # TODO: Prefer to split
-                                # these up by bucket /
-                                # object, as well as
-                                # enumerate the *specific*
-                                # actions that are needed.
-                                "Action": [
-                                    "s3:GetObject*",
-                                    "s3:GetBucket*",
-                                    "s3:List*",
-                                    "s3:DeleteObject*",
-                                    "s3:PutObject*",
-                                    "s3:Abort*",
-                                ],
-                                "Resource": [bucket_arn, f"{bucket_arn}/*"],
+                                "Action": "s3:ListBucket",
+                                "Resource": bucket_arn,
                             },
-                        ],
-                    }
-                )
-            ),
-            opts=pulumi.ResourceOptions(parent=role),
-        )
-
-    def grant_delete_permissions_to(self, role: aws.iam.Role) -> None:
-        """ Adds the ability to delete objects from this bucket to the provided `Role`. """
-        aws.iam.RolePolicy(
-            f"{role._name}-deletes-{self._name}",
-            role=role.name,
-            policy=self.arn.apply(
-                lambda bucket_arn: json.dumps(
-                    {
-                        "Version": "2012-10-17",
-                        "Statement": [
                             {
                                 "Effect": "Allow",
-                                # TODO: Prefer to enumerate specific
-                                # actions rather than wildcards
-                                "Action": "s3:DeleteObject*",
+                                "Action": [
+                                    "s3:GetObject",
+                                    "s3:DeleteObject",
+                                    "s3:PutObject",
+                                ],
                                 "Resource": f"{bucket_arn}/*",
-                            }
+                            },
                         ],
                     }
                 )

@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 import base64
-import hmac
 import inspect
 import json
 import os
 import sys
 import threading
 import traceback
-from hashlib import sha1
 from http import HTTPStatus
 from pathlib import Path
 from typing import (
@@ -25,7 +23,7 @@ from typing import (
     cast,
 )
 
-import boto3  # type: ignore
+import boto3
 import jwt
 from chalice import Chalice, Response
 from grapl_analyzerlib.prelude import *
@@ -104,11 +102,6 @@ def check_jwt(headers: Mapping[str, Any]) -> bool:
     except Exception:
         LOGGER.error(traceback.format_exc())
         return False
-
-
-def verify_payload(payload_body, key, signature):
-    new_signature = "sha1=" + hmac.new(key, payload_body, sha1).hexdigest()
-    return new_signature == signature
 
 
 def get_schema_objects(meta_globals: Dict[str, Any]) -> Dict[str, BaseSchema]:
@@ -274,7 +267,7 @@ def requires_auth(path: str) -> Callable[[RouteFn], RouteFn]:
 
     def route_wrapper(route_fn: RouteFn) -> RouteFn:
         @app.route(path, methods=["OPTIONS", "POST"])
-        def inner_route():
+        def inner_route() -> Response:
             if app.current_request.method == "OPTIONS":
                 return respond(err=None, res={})
 
@@ -403,7 +396,7 @@ def list_model_plugins() -> Response:
     return respond(err=None, res={"plugin_list": plugin_names})
 
 
-def delete_plugin(s3_client, plugin_name) -> None:
+def delete_plugin(s3_client: S3Client, plugin_name: str) -> None:
     plugin_bucket = (os.environ["DEPLOYMENT_NAME"] + "-model-plugins-bucket").lower()
 
     list_response = s3_client.list_objects_v2(

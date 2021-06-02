@@ -1,10 +1,9 @@
-import pulumi_docker as docker
 from infra.bucket import Bucket
 from infra.cache import Cache
 from infra.config import configurable_envvars
 from infra.dgraph_cluster import DgraphCluster
 from infra.emitter import EventEmitter
-from infra.fargate_service import FargateService
+from infra.fargate_service import FargateService, GraplDockerBuild
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 
@@ -24,11 +23,10 @@ class AnalyzerExecutor(FargateService):
 
         super().__init__(
             "analyzer-executor",
-            image=docker.DockerBuild(
+            image=GraplDockerBuild(
                 dockerfile="../src/python/Dockerfile",
                 target="analyzer-executor-deploy",
                 context="../src",
-                env={"DOCKER_BUILDKIT": "1"},
             ),
             command="/analyzer-executor",
             env={
@@ -58,7 +56,7 @@ class AnalyzerExecutor(FargateService):
         # service; that appears to be a bug
         analyzers_bucket.grant_get_and_list_to(self.default_service.task_role)
         model_plugins_bucket.grant_get_and_list_to(self.default_service.task_role)
-        output_emitter.bucket.grant_get_to(self.default_service.task_role)
+        output_emitter.grant_read_to(self.default_service.task_role)
 
         # TODO: CDK doesn't actually have this for some reason
         self.allow_egress_to_cache(cache)

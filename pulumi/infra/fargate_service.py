@@ -11,8 +11,36 @@ from infra.network import Network
 from infra.policies import ECR_TOKEN_POLICY, attach_policy
 from infra.repository import Repository, registry_credentials
 from infra.service_queue import ServiceQueue
+from typing_extensions import Literal
 
 import pulumi
+
+KnownDockerfile = Literal[
+    "../src/rust/Dockerfile",
+    "../src/python/Dockerfile",
+]
+
+
+class GraplDockerBuild(docker.DockerBuild):
+    def __init__(
+        self,
+        dockerfile: KnownDockerfile,
+        target: str,
+        context: Optional[str] = None,
+        args: Optional[Mapping[str, pulumi.Input[str]]] = None,
+        env: Optional[Mapping[str, str]] = None,
+    ):
+        super().__init__(
+            context=context,
+            dockerfile=dockerfile,
+            env={**(env or {}), "DOCKER_BUILDKIT": 1},
+            args={**(args or {}), "RUST_BUILD": "debug"},
+            target=target,
+            # Quiet the Docker builds at `pulumi up` time
+            # ...except it doesn't work with `buildx` yet
+            # https://github.com/docker/buildx/issues/401
+            # extra_options=("--quiet",),
+        )
 
 
 class FargateTaskRole(aws.iam.Role):
@@ -136,7 +164,7 @@ class _AWSFargateService(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self.execution_role_writes_logs = aws.iam.RolePolicy(
+        aws.iam.RolePolicy(
             f"{name}-write-log-events",
             role=self.execution_role.name,
             policy=self.log_group.arn.apply(

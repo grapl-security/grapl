@@ -18,7 +18,6 @@ services:
       - RUST_LOG=INFO
       - RUST_BACKTRACE=1
       - DEPLOYMENT_NAME
-      - IS_LOCAL=True
       - MG_ALPHAS
       - SOURCE_QUEUE_URL=${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-retry-queue
       - GRAPH_MERGER_QUEUE_URL=${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-queue
@@ -60,7 +59,6 @@ services:
     environment:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
       - DEPLOYMENT_NAME
-      - IS_LOCAL=True
       - MG_ALPHAS
 
   # grapl-analyzer-deployer-integration-tests:
@@ -82,7 +80,6 @@ services:
       - MESSAGECACHE_ADDR=${REDIS_HOST}
       - MESSAGECACHE_PORT=${REDIS_PORT}
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
-      - IS_LOCAL=True
       - IS_RETRY=False
 
   engagement-edge-integration-tests:
@@ -96,7 +93,6 @@ services:
       cd engagement_edge &&
       py.test -n auto -m "integration_test"'
     environment:
-      - IS_LOCAL=True
       - DEPLOYMENT_NAME
       - UX_BUCKET_URL="ux_bucket_url"
       - GRAPL_API_HOST

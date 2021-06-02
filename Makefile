@@ -211,22 +211,18 @@ test-unit-js: export COMPOSE_FILE := ./test/docker-compose.unit-tests-js.yml
 test-unit-js: build-test-unit-js ## Build and run unit tests - JavaScript only
 	test/docker-compose-with-error.sh
 
-.PHONY: test-typecheck
-test-typecheck: export COMPOSE_PROJECT_NAME := grapl-typecheck_tests
-test-typecheck: export COMPOSE_FILE := ./test/docker-compose.typecheck-tests.yml
-test-typecheck: build-test-typecheck ## Build and run typecheck tests (non-Pants)
+.PHONY: test-typecheck-docker
+test-typecheck-docker: export COMPOSE_PROJECT_NAME := grapl-typecheck_tests
+test-typecheck-docker: export COMPOSE_FILE := ./test/docker-compose.typecheck-tests.yml
+test-typecheck-docker: build-test-typecheck ## Build and run typecheck tests (non-Pants)
 	test/docker-compose-with-error.sh
 
-# Right now, we're only typechecking a select portion of code with
-# Pants until grapl-analyzerlib can be typed with MyPy; see
-# https://github.com/pantsbuild/pants/issues/11553
 .PHONY: test-typecheck-pants
 test-typecheck-pants: ## Typecheck Python code with Pants
-	./pants typecheck \
-	pulumi:: \
-	build-support:: \
-	src/python/engagement_edge:: \
-	src/python/grapl-common::
+	./pants typecheck ::
+
+.PHONY: test-typecheck
+test-typecheck: test-typecheck-docker test-typecheck-pants ## Typecheck all Python Code
 
 .PHONY: test-integration
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
@@ -373,11 +369,11 @@ zip: build-lambdas ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/
 zip-pants: ## Generate Lambda zip artifacts using pants
 	./pants filter --target-type=python_awslambda :: | xargs ./pants package
 	cp ./dist/src.python.provisioner.src/lambda.zip ./src/js/grapl-cdk/zips/provisioner-$(TAG).zip
-	cp ./dist/src.python.engagement-creator/engagement-creator.zip ./src/js/grapl-cdk/zips/engagement-creator-$(TAG).zip
+	cp ./dist/src.python.engagement-creator/lambda.zip ./src/js/grapl-cdk/zips/engagement-creator-$(TAG).zip
 	cp ./dist/src.python.grapl-dgraph-ttl/lambda.zip ./src/js/grapl-cdk/zips/dgraph-ttl-$(TAG).zip
 	cp ./dist/src.python.engagement_edge/engagement_edge.zip ./src/js/grapl-cdk/zips/engagement-edge-$(TAG).zip
-	cp ./dist/src.python.grapl-ux-router/grapl-ux-router.zip ./src/js/grapl-cdk/zips/ux-router-$(TAG).zip
-	cp ./dist/src.python.grapl-model-plugin-deployer/grapl-model-plugin-deployer.zip ./src/js/grapl-cdk/zips/model-plugin-deployer-$(TAG).zip
+	cp ./dist/src.python.grapl-ux-router/lambda.zip ./src/js/grapl-cdk/zips/ux-router-$(TAG).zip
+	cp ./dist/src.python.grapl-model-plugin-deployer/lambda.zip ./src/js/grapl-cdk/zips/model-plugin-deployer-$(TAG).zip
 
 # This target is intended to help ease the transition to Pulumi, and
 # using lambdas in local Grapl testing deployments. Essentially, every

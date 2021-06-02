@@ -1,8 +1,8 @@
 import unittest
 
 import pytest
+from engagement_edge.engagement_edge import JWT_SECRET
 from grapl_tests_common.clients.engagement_edge_client import EngagementEdgeClient
-from src.engagement_edge import JWT_SECRET
 
 # gross hack because engagement edge is pseudo singleton
 JWT_SECRET.secret = "hey im a fake secret"

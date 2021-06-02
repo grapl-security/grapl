@@ -51,10 +51,6 @@ def _client_get(client_create_fn: Callable[..., Any], params: ClientGetParams) -
     if not region:
         raise FromEnvException("Please set AWS_REGION= or AWS_DEFAULT_REGION=")
 
-    # Not needed long term, more to help migrate to `env_helpers`.
-    # Notably, when `is_local` is not set, it won't break anything.
-    is_local = os.getenv("IS_LOCAL", None)
-
     # Unlike Rust FromEnv, we rely on boto3's built in region handling.
 
     if _running_in_localstack():
@@ -62,9 +58,6 @@ def _client_get(client_create_fn: Callable[..., Any], params: ClientGetParams) -
     elif all((endpoint_url, access_key_id, access_key_secret)):
         # Local, all are passed in from docker-compose.yml
         logging.info(f"Creating a local client for {which_service}")
-        assert (
-            is_local != False
-        ), f"You must pass in credentials for a local {which_service} client"
         return client_create_fn(
             params.boto3_client_name,
             endpoint_url=endpoint_url,
@@ -83,9 +76,6 @@ def _client_get(client_create_fn: Callable[..., Any], params: ClientGetParams) -
     elif not any((endpoint_url, access_key_id, access_key_secret)):
         # AWS
         logging.info("Creating a prod client")
-        assert (
-            is_local != True
-        ), f"You can't pass in credentials for a prod {which_service} client"
         return client_create_fn(
             params.boto3_client_name,
             region_name=region,

@@ -1,4 +1,7 @@
+python_library()
+
 python_awslambda(
+    name="lambda",
     runtime="python3.7",
-    handler="src/engagement_creator.py:lambda_handler",
+    handler="engagement_creator.py:lambda_handler",
 )

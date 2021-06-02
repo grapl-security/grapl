@@ -108,7 +108,7 @@ steps:
   # TODO: Consider beefy queue
   - label: ":python::docker: Typechecking (:no_entry_sign::jeans:)"
     command:
-      - make test-typecheck
+      - make test-typecheck-docker
 
   # TODO: Consider beefy queue
   - label: ":typescript::docker: Unit Tests"

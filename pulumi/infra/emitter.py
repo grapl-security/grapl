@@ -90,11 +90,9 @@ class EventEmitter(pulumi.ComponentResource):
                             {
                                 "Effect": "Allow",
                                 "Action": [
-                                    "s3:Abort*",
-                                    "s3:DeleteObject*",
-                                    "s3:PutObject*",
+                                    "s3:PutObject",
                                 ],
-                                "Resource": [bucket_arn, f"{bucket_arn}/*"],
+                                "Resource": f"{bucket_arn}/*",
                             }
                         ],
                     }

@@ -12,6 +12,8 @@ from grapl_common.utils.benchmark import benchmark_ctx
 
 if TYPE_CHECKING:
     from mypy_boto3_ec2 import EC2ServiceResource
+    from mypy_boto3_ec2.type_defs import FilterTypeDef
+    from mypy_boto3_ec2.literals import InstanceTypeType
     from mypy_boto3_ssm import SSMClient
 
 from grapl_common.grapl_logger import get_module_grapl_logger
@@ -108,7 +110,7 @@ def create_instances(
     swarm_id: str,
     ami_id: str,
     count: int,
-    instance_type: str,
+    instance_type: InstanceTypeType,
     security_group_id: str,
     subnet_ids: Set[str],
 ) -> List[Ec2Instance]:
@@ -121,6 +123,8 @@ def create_instances(
 
     instances = []
     for subnet_id in subnet_ids:
+        swarm_role = "swarm-manager" if swarm_manager else "swarm-worker"
+        instance_name = f"{deployment_name}-{swarm_role}"
         if counts[subnet_id] > 0:
             instances.extend(
                 ec2.create_instances(
@@ -135,6 +139,11 @@ def create_instances(
                                 t.into_boto_tag_specification()
                                 for t in [
                                     Tag(
+                                        # Just used for the Name column in ec2 console
+                                        key="Name",
+                                        value=instance_name,
+                                    ),
+                                    Tag(
                                         key="grapl-deployment-name",
                                         value=f"{deployment_name.lower()}",
                                     ),
@@ -144,9 +153,7 @@ def create_instances(
                                     Tag(key="grapl-region", value=f"{region.lower()}"),
                                     Tag(
                                         key="grapl-swarm-role",
-                                        value="swarm-manager"
-                                        if swarm_manager
-                                        else "swarm-worker",
+                                        value=swarm_role,
                                     ),
                                     Tag(key="grapl-swarm-id", value=swarm_id),
                                 ]
@@ -222,7 +229,9 @@ def swarm_instances(
             )
         )
 
-    filters = [{"Name": f"tag:{t.key}", "Values": [t.value]} for t in tags]
+    filters: List[FilterTypeDef] = [
+        {"Name": f"tag:{t.key}", "Values": [t.value]} for t in tags
+    ]
     filters.append({"Name": "instance-state-name", "Values": ["running"]})
 
     for instance in ec2.instances.filter(Filters=filters):
@@ -311,7 +320,7 @@ def extract_join_token(
     ssm: SSMClient,
     deployment_name: str,
     manager_instance: Ec2Instance,
-    manager=False,
+    manager: bool = False,
 ) -> str:
     """Returns the join token for the swarm cluster"""
     command = ssm.send_command(
@@ -495,7 +504,7 @@ def create_swarm(
     graplctl_state: State,
     num_managers: int,
     num_workers: int,
-    instance_type: str,
+    instance_type: InstanceTypeType,
     swarm_id: str,
     docker_daemon_config: Optional[Dict] = None,
     extra_init: Optional[Callable[[SSMClient, str, List[Ec2Instance]], None]] = None,
@@ -674,7 +683,7 @@ def create_swarm(
     return True
 
 
-def destroy_swarm(graplctl_state: State, swarm_id: str):
+def destroy_swarm(graplctl_state: State, swarm_id: str) -> None:
     for instance in swarm_instances(
         ec2=graplctl_state.ec2,
         deployment_name=graplctl_state.grapl_deployment_name,
@@ -682,7 +691,5 @@ def destroy_swarm(graplctl_state: State, swarm_id: str):
         region=graplctl_state.grapl_region,
         swarm_id=swarm_id,
     ):
-        graplctl_state.ec2.Instance(instance.instance_id).terminate(
-            InstanceIds=[instance.instance_id]
-        )
+        graplctl_state.ec2.Instance(instance.instance_id).terminate()
         LOGGER.info(f"terminated instance {instance.instance_id}")
