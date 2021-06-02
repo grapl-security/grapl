@@ -25,6 +25,7 @@ pub enum CustomError {
     ServerError,
 }
 
+// accept http requests, translate to grpc requests.
 
 // actix procedural macros that route incoming http requests
 #[post("/modelPluginDeployer/deploy")]
@@ -122,5 +123,12 @@ pub async fn list_plugin() -> impl Responder {
 // X set up docker stuff
 
 // setup & write tests with an http client
-// use grcp client for model-plugin-deployer
+// use grpc client for model-plugin-deployer
+
+// add more logging
+// documentation
+
+// NEXT: Framework for integration
+// When will Actix4 Be released? and what is it?
+
 
