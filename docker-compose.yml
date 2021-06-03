@@ -20,6 +20,10 @@ x-common-variables:
     CLOUDWATCH_ENDPOINT: ${CLOUDWATCH_ENDPOINT}
   dgraph-env: &dgraph-env
     MG_ALPHAS: ${MG_ALPHAS}
+  dynamodb-env: &dynamodb-env
+    DYNAMODB_ACCESS_KEY_ID: ${DYNAMODB_ACCESS_KEY_ID}
+    DYNAMODB_ACCESS_KEY_SECRET: ${DYNAMODB_ACCESS_KEY_SECRET}
+    DYNAMODB_ENDPOINT: ${DYNAMODB_ENDPOINT}
   # TODO: Ensure these are matched with what's in provision_local_identity_table.py
   dynamodb-mapping-tables: &dynamodb-mapping-tables
     ASSET_ID_MAPPINGS: ${DEPLOYMENT_NAME}-asset_id_mappings
