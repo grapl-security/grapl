@@ -14,6 +14,6 @@ sudo -u ec2-user \
     AWS02_NAME="$3" \
     AWS03_NAME="$4" \
     AWS_LOGS_GROUP="${GRAPL_DEPLOY_NAME}-grapl-dgraph" \
-    -- docker stack deploy -c ~ec2-user/docker-compose-dgraph.yml dgraph
+    -- docker stack deploy -c docker-compose-dgraph.yml dgraph
 
 echo "deployed dgraph"
