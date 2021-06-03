@@ -5,7 +5,7 @@ import sys
 
 
 def get_module_grapl_logger(
-    default_log_level: str = "ERROR", log_to_stdout: bool = False
+    default_log_level: str = "INFO", log_to_stdout: bool = False
 ) -> logging.Logger:
     """
     Callers should put
