@@ -26,6 +26,21 @@ pants_ignore = [
   "src/js/grapl-cdk/cdk.out",
 ]
 
+plugins = [
+  "toolchain.pants.plugin==0.12.0"
+]
+
+remote_cache_read = true
+remote_cache_write = true
+remote_store_address = "grpcs://cache.toolchain.com:443"
+remote_auth_plugin = "toolchain.pants.auth.plugin:toolchain_auth_plugin"
+
+[toolchain-setup]
+repo = "grapl"
+
+[buildsense]
+enable = true
+
 # Given how our code is currently structured, with package and test
 # code for every project in their own directory, I believe we have to
 # list each of those top-level containing directories here in order
