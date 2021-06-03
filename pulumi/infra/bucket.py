@@ -43,8 +43,8 @@ class Bucket(aws.s3.Bucket):
             opts=opts,
         )
 
-    def grant_read_permissions_to(self, role: aws.iam.Role) -> None:
-        """ Adds the ability to read from this bucket to the provided `Role`. """
+    def grant_read_permission_to(self, role: aws.iam.Role) -> None:
+        """ Adds the ability to read objects from this bucket to the provided `Role`. """
         aws.iam.RolePolicy(
             f"{role._name}-reads-{self._name}",
             role=role.name,
@@ -57,12 +57,7 @@ class Bucket(aws.s3.Bucket):
                                 "Effect": "Allow",
                                 "Action": "s3:GetObject",
                                 "Resource": f"{bucket_arn}/*",
-                            },
-                            {
-                                "Effect": "Allow",
-                                "Action": "s3:ListBucket",
-                                "Resource": bucket_arn,
-                            },
+                            }
                         ],
                     }
                 )
