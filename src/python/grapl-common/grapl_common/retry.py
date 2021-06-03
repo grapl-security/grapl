@@ -1,6 +1,6 @@
 import time
 from functools import wraps
-from typing import Callable, Type, TypeVar
+from typing import Any, Callable, Type, TypeVar, cast
 
 F = TypeVar("F", bound=Callable)
 
@@ -34,7 +34,7 @@ def retry(
 
     def deco_retry(f: F) -> F:
         @wraps(f)
-        def f_retry(*args, **kwargs):
+        def f_retry(*args: Any, **kwargs: Any) -> Any:
             mtries, mdelay = tries, delay
             while mtries > 1:
                 try:
@@ -52,6 +52,6 @@ def retry(
 
             return f(*args, **kwargs)
 
-        return f_retry  # true decorator
+        return cast(F, f_retry)  # true decorator
 
     return deco_retry

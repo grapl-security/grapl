@@ -16,7 +16,6 @@ if TYPE_CHECKING:
     from mypy_boto3_ssm import SSMClient
     from mypy_boto3_ec2.literals import InstanceTypeType
 
-
 import graplctl.swarm.lib as docker_swarm_ops
 from graplctl.common import Ec2Instance, State, Tag, get_command_results, ticker
 
@@ -88,6 +87,24 @@ def _find_metric_for_instance(
     return metrics[0]
 
 
+def can_create_disk_usage_alarms(
+    cloudwatch: CloudWatchClient,
+    sns: SNSClient,
+    instance_id: str,
+    deployment_name: str,
+) -> bool:
+    """
+    Ensure that the requirements for `create_disk_usage_alarm` exist
+    """
+    try:
+        _find_operational_alarms_arn(sns, deployment_name)
+        _find_metric_for_instance(cloudwatch, instance_id, path="/")
+        _find_metric_for_instance(cloudwatch, instance_id, path="/dgraph")
+        return True
+    except Exception:
+        return False
+
+
 def create_disk_usage_alarms(
     cloudwatch: CloudWatchClient,
     sns: SNSClient,
@@ -97,6 +114,9 @@ def create_disk_usage_alarms(
     """Create disk usage alarms for the / and /dgraph partitions"""
     ops_alarm_action = _find_operational_alarms_arn(sns, deployment_name)
     root_metric = _find_metric_for_instance(cloudwatch, instance_id, path="/")
+    dgraph_partition_metric = _find_metric_for_instance(
+        cloudwatch, instance_id, path="/dgraph"
+    )
     cloudwatch.put_metric_alarm(
         AlarmActions=[ops_alarm_action],
         AlarmName=f"/ disk_used_percent ({instance_id})",
@@ -113,9 +133,6 @@ def create_disk_usage_alarms(
         Dimensions=root_metric["Dimensions"],
     )
 
-    dgraph_partition_metric = _find_metric_for_instance(
-        cloudwatch, instance_id, path="/dgraph"
-    )
     cloudwatch.put_metric_alarm(
         AlarmActions=[ops_alarm_action],
         AlarmName=f"/dgraph disk_used_percent ({instance_id})",
@@ -321,11 +338,32 @@ def create_dgraph(graplctl_state: State, instance_type: InstanceTypeType) -> boo
         )
     )
 
-    LOGGER.info(f"waiting 5min for cloudwatch metrics to propagate...")
-    progressbar_len = 5 * 60  # seconds
-    with progressbar(ticker(progressbar_len), length=progressbar_len) as bar:
-        for _ in bar:
-            continue
+    progressbar_secs = 30
+    total_attempts = 10
+    for attempt_num in range(1, total_attempts + 1):
+        break_after_progressbar = False
+        # Display {total_attempts} {progressbar_secs}-second progress bars; bail if the next step can proceed
+        if all(
+            can_create_disk_usage_alarms(
+                instance_id=instance.instance_id,
+                cloudwatch=graplctl_state.cloudwatch,
+                sns=graplctl_state.sns,
+                deployment_name=graplctl_state.grapl_deployment_name,
+            )
+            for instance in swarm_instances
+        ):
+            # Sleep once more, because cloudwatch sometimes has
+            # nondeterministic results while it propagates - yes, really
+            break_after_progressbar = True
+        with progressbar(
+            iterable=ticker(progressbar_secs),
+            length=progressbar_secs,
+            label=f"Waiting for cloudwatch metrics to propagate (attempt {attempt_num}/{total_attempts})",
+        ) as bar:
+            for _ in bar:
+                continue
+        if break_after_progressbar:
+            break
 
     LOGGER.info(f"creating disk usage alarms for dgraph in swarm {swarm_id}")
     for instance in swarm_instances:
