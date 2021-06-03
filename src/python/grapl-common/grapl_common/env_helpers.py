@@ -71,10 +71,7 @@ def _client_get(
         localstack_config = Config(
             read_timeout=120,
         )
-        if config is not None:
-            config = config.merge(localstack_config)
-        else:
-            config = localstack_config
+        config = (config or Config()).merge(localstack_config)
 
         return _localstack_client(
             client_create_fn, params, region=region, config=config

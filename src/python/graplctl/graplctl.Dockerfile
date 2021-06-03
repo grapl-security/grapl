@@ -14,6 +14,6 @@ ENV USER=grapl
 WORKDIR /home/grapl
 RUN mkdir -p /home/grapl/bin
 RUN mkdir -p /home/grapl/.aws
-RUN echo "[default]\naws_access_key_id=${AWS_ACCESS_KEY_ID}\naws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" > /home/grapl/.aws/credentials
+RUN echo "[default]\naws_access_key_id=fake\naws_secret_access_key=fake" > /home/grapl/.aws/credentials
 COPY --chown=grapl ./bin/graplctl /home/grapl/bin/graplctl
 ENV PATH=/home/grapl/bin:$PATH
