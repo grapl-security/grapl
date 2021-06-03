@@ -13,6 +13,7 @@ mypy_boto3_route53
 mypy_boto3_s3
 mypy_boto3_sagemaker
 mypy_boto3_secretsmanager
+mypy_boto3_sns
 mypy_boto3_sqs
 mypy_boto3_ssm
 protobuf>=3.12.1
