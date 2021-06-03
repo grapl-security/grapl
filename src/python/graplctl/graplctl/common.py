@@ -110,10 +110,10 @@ def get_command_results(
             break
 
     for instance_id in instance_ids:
-        invocation = ssm.get_command_invocation(
-            CommandId=command_id,
-            InstanceId=instance_id,
-            PluginName="runShellScript",
+        invocation = get_command_invocation(
+            ssm=ssm,
+            command_id=command_id,
+            instance_id=instance_id,
         )
 
         if invocation["Status"] == "Success":
@@ -121,6 +121,35 @@ def get_command_results(
         else:
             raise SSMException(invocation)
 
+def get_command_invocation(
+    ssm: SSMClient,
+    command_id: str,
+    instance_id: str,
+) -> GetCommandInvocationResultTypeDef:
+    """
+    get-command-invocation commonly throws an awfully named exception: InvalidPluginName.
+    The actual meaning? This invocation hasn't become available.
+    This wrapper makes it a bit more sane to use.
+    """
+    LOGGER.info(
+        f"retrieving invocation metadata for command {command_id} on instance {instance_id}"
+    )
+    while True:
+        try:
+            result = ssm.get_command_invocation(
+                CommandId=command_id,
+                InstanceId=instance_id,
+                PluginName="runShellScript",
+            )
+            LOGGER.info(
+                f"retrieved invocation metadata for command {command_id} on instance {instance_id}"
+            )
+            return result
+        except ssm.exceptions.InvalidPluginName:
+            LOGGER.warn(
+                f"waiting for invocation metadata to become available for command {command_id} on instance {instance_id}"
+            )
+            time.sleep(2)
 
 class SSMException(Exception):
     def __init__(self, invocation: GetCommandInvocationResultTypeDef) -> None:
