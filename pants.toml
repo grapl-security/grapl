@@ -41,6 +41,12 @@ repo = "grapl"
 [buildsense]
 enable = true
 
+# See https://www.pantsbuild.org/docs/anonymous-telemetry
+[anonymous-telemetry]
+enabled = true
+# Randomly generated with `uuidgen --random`
+repo_id = "f416be7b-e109-4915-8eba-940bcfa310c1"
+
 # Given how our code is currently structured, with package and test
 # code for every project in their own directory, I believe we have to
 # list each of those top-level containing directories here in order
