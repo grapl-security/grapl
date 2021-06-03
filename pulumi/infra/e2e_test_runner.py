@@ -1,10 +1,6 @@
 from typing import Optional
 from urllib.parse import urlparse
 
-<<<<<<< HEAD
-=======
-import pulumi_aws as aws
->>>>>>> lints
 from infra.api import Api
 from infra.config import DEPLOYMENT_NAME, GLOBAL_LAMBDA_ZIP_TAG, GRAPL_TEST_USER_NAME
 from infra.dgraph_cluster import DgraphCluster

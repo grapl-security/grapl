@@ -25,7 +25,7 @@ from typing import (
     cast,
 )
 
-import boto3  # type: ignore
+import boto3
 from analyzer_executor_lib.redis_cache import EitherCache, construct_redis_client
 from analyzer_executor_lib.sqs_types import S3PutRecordDict, SQSMessageBody
 from grapl_analyzerlib.analyzer import Analyzer
