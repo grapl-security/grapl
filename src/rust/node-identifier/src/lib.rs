@@ -38,8 +38,10 @@ use sqs_executor::{
 };
 use tap::tap::TapOptional;
 
-use crate::error::NodeIdentifierError;
-use crate::dynamic_sessiondb::AttributedNode;
+use crate::{
+    dynamic_sessiondb::AttributedNode,
+    error::NodeIdentifierError,
+};
 
 pub mod dynamic_sessiondb;
 mod error;
@@ -98,23 +100,31 @@ where
         let mut identified_nodekey_map = HashMap::new();
         let mut attribution_failure = None;
 
-        let unidentified_nodes = unidentified_subgraph.nodes.iter()
+        let unidentified_nodes = unidentified_subgraph
+            .nodes
+            .iter()
             .map(|(_, node)| node)
             .collect();
 
-        let attribution_results = self.dynamic_identifier.attribute_nodes(unidentified_nodes).await;
+        let attribution_results = self
+            .dynamic_identifier
+            .attribute_nodes(unidentified_nodes)
+            .await;
 
         for attribution_result in attribution_results {
             match attribution_result {
-                Ok(AttributedNode { attributed_node_description, previous_node_key }) => {
+                Ok(AttributedNode {
+                    attributed_node_description,
+                    previous_node_key,
+                }) => {
                     identified_nodekey_map.insert(
                         previous_node_key,
-                        attributed_node_description.clone_node_key()
+                        attributed_node_description.clone_node_key(),
                     );
 
                     identified_graph.add_node(attributed_node_description);
-                },
-                Err(error) => attribution_failure = Some(error)
+                }
+                Err(error) => attribution_failure = Some(error),
             }
         }
 

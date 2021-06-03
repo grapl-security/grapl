@@ -1,9 +1,22 @@
 use std::collections::HashMap;
 
 use async_trait::async_trait;
-use rusoto_core::RusotoError;
-use rusoto_dynamodb::{AttributeValue, BatchGetItemError, BatchGetItemInput, BatchGetItemOutput, DynamoDb, KeysAndAttributes, QueryInput, QueryOutput, QueryError, BatchWriteItemInput, BatchWriteItemOutput, BatchWriteItemError};
 use futures::StreamExt;
+use rusoto_core::RusotoError;
+use rusoto_dynamodb::{
+    AttributeValue,
+    BatchGetItemError,
+    BatchGetItemInput,
+    BatchGetItemOutput,
+    BatchWriteItemError,
+    BatchWriteItemInput,
+    BatchWriteItemOutput,
+    DynamoDb,
+    KeysAndAttributes,
+    QueryError,
+    QueryInput,
+    QueryOutput,
+};
 
 const DYNAMODB_MAX_BATCH_GET_ITEM_SIZE: usize = 100;
 const DYNAMODB_MAX_BATCH_WRITE_ITEM_SIZE: usize = 25;
@@ -138,16 +151,16 @@ pub trait GraplDynamoDbClientExt: DynamoDb + Send + Sync {
             // if a response was too large, we may have unprocessed keys.
             // we can just directly insert these back into pending items for processing
             if let Some(unprocessed_keys) = response.unprocessed_keys {
-                let unprocessed_keys: Vec<_> = unprocessed_keys
-                    .into_iter()
-                    .flat_map(|(table_name, keys_and_attributes)| {
-                        keys_and_attributes
-                            .keys
-                            .into_iter()
-                            .map(|row_keys| (table_name.clone(), row_keys))
-                            .collect::<Vec<_>>()
-                    })
-                    .collect();
+                let unprocessed_keys =
+                    unprocessed_keys
+                        .into_iter()
+                        .flat_map(|(table_name, keys_and_attributes)| {
+                            keys_and_attributes
+                                .keys
+                                .into_iter()
+                                .map(|row_keys| (table_name.clone(), row_keys))
+                                .collect::<Vec<_>>()
+                        });
 
                 pending_items.extend(unprocessed_keys);
             }
@@ -168,20 +181,23 @@ pub trait GraplDynamoDbClientExt: DynamoDb + Send + Sync {
     /// over limits imposed on the size of BatchWriteItem operations in DynamoDB.
     async fn batch_write_item_reliably(
         &self,
-        batch_write_item: BatchWriteItemInput
+        batch_write_item: BatchWriteItemInput,
     ) -> Result<BatchWriteItemOutput, RusotoError<BatchWriteItemError>> {
         let BatchWriteItemInput {
             request_items,
             return_consumed_capacity,
-            return_item_collection_metrics
+            return_item_collection_metrics,
         } = batch_write_item;
 
-        let mut pending_writes: Vec<_> = request_items.into_iter()
+        let mut pending_writes: Vec<_> = request_items
+            .into_iter()
             .flat_map(|(table_name, write_requests)| {
-                write_requests.into_iter()
+                write_requests
+                    .into_iter()
                     .map(|write_request| (table_name.clone(), write_request))
                     .collect::<Vec<_>>()
-            }).collect();
+            })
+            .collect();
 
         let mut total_consumed_capacity = Vec::new();
         let mut item_collection_metrics = HashMap::new();
@@ -190,7 +206,7 @@ pub trait GraplDynamoDbClientExt: DynamoDb + Send + Sync {
             let mut writes_to_process = HashMap::new();
 
             pending_writes
-                .drain(0 ..std::cmp::min(pending_writes.len(), DYNAMODB_MAX_BATCH_WRITE_ITEM_SIZE))
+                .drain(0..std::cmp::min(pending_writes.len(), DYNAMODB_MAX_BATCH_WRITE_ITEM_SIZE))
                 .for_each(|(table_name, write_request)| {
                     writes_to_process
                         .entry(table_name)
@@ -201,7 +217,7 @@ pub trait GraplDynamoDbClientExt: DynamoDb + Send + Sync {
             let batch_write_operation = BatchWriteItemInput {
                 request_items: writes_to_process,
                 return_consumed_capacity: return_consumed_capacity.clone(),
-                return_item_collection_metrics: return_item_collection_metrics.clone()
+                return_item_collection_metrics: return_item_collection_metrics.clone(),
             };
 
             let batch_write_response = self.batch_write_item(batch_write_operation).await?;
@@ -212,21 +228,23 @@ pub trait GraplDynamoDbClientExt: DynamoDb + Send + Sync {
             }
 
             if let Some(metrics) = batch_write_response.item_collection_metrics {
-                metrics.into_iter()
-                    .for_each(|(table_name, item_metrics)| {
-                        item_collection_metrics.entry(table_name)
-                            .or_insert(Vec::new())
-                            .extend(item_metrics);
-                    });
+                metrics.into_iter().for_each(|(table_name, item_metrics)| {
+                    item_collection_metrics
+                        .entry(table_name)
+                        .or_insert(Vec::new())
+                        .extend(item_metrics);
+                });
             }
 
             if let Some(unprocessed_items) = batch_write_response.unprocessed_items {
-                let flattened_unprocessed_items: Vec<_> = unprocessed_items.into_iter()
-                    .flat_map(|(table_name, write_requests)| {
-                        write_requests.into_iter()
-                            .map(|write_request| (table_name.clone(), write_request))
-                            .collect::<Vec<_>>()
-                    }).collect();
+                let flattened_unprocessed_items =
+                    unprocessed_items
+                        .into_iter()
+                        .flat_map(|(table_name, write_requests)| {
+                            write_requests
+                                .into_iter()
+                                .map(move |write_request| (table_name.clone(), write_request))
+                        });
 
                 pending_writes.extend(flattened_unprocessed_items);
             }
@@ -234,35 +252,36 @@ pub trait GraplDynamoDbClientExt: DynamoDb + Send + Sync {
 
         let output = BatchWriteItemOutput {
             consumed_capacity: return_consumed_capacity.map(|_| total_consumed_capacity),
-            item_collection_metrics: return_item_collection_metrics.map(|_| item_collection_metrics),
-            unprocessed_items: None
+            item_collection_metrics: return_item_collection_metrics
+                .map(|_| item_collection_metrics),
+            unprocessed_items: None,
         };
-        
+
         Ok(output)
     }
 
     /**
-        This method is to enable ordered, batch querying against DynamoDB by running queries, concurrently.
+       This method is to enable ordered, batch querying against DynamoDB by running queries, concurrently.
 
-        This solves a problem that is a fundamental limitation of DynamoDB itself.
-        Currently, DynamoDB does not expose a batch query interface. This isn't just a limitation in
-        rusoto, but one imposed by AWS and DynamoDB itself.
+       This solves a problem that is a fundamental limitation of DynamoDB itself.
+       Currently, DynamoDB does not expose a batch query interface. This isn't just a limitation in
+       rusoto, but one imposed by AWS and DynamoDB itself.
 
-        One thing to consider is that any independent query can fail; however, to emulate a 'batch-like'
-        api, we'll return the first error, if any, otherwise we'll return a collection of the query outputs.
+       One thing to consider is that any independent query can fail; however, to emulate a 'batch-like'
+       api, we'll return the first error, if any, otherwise we'll return a collection of the query outputs.
 
-        This is typically the ideal situation as we often produce an error if a fatal condition is encountered,
-        regardless of the amount of items we're processing.
+       This is typically the ideal situation as we often produce an error if a fatal condition is encountered,
+       regardless of the amount of items we're processing.
 
-        This is especially ideal with regards to [`QueryError`] as it only has 4 variants:
-        * InternalServerError -> potentially recoverable via retrying
-        * ProvisionedThroughputExceeded -> likely fatal
-        * RequestLimitExceeded -> likely fatal
-        * ResourceNotFound -> fatal for this particular query
-     */
+       This is especially ideal with regards to [`QueryError`] as it only has 4 variants:
+       * InternalServerError -> potentially recoverable via retrying
+       * ProvisionedThroughputExceeded -> likely fatal
+       * RequestLimitExceeded -> likely fatal
+       * ResourceNotFound -> fatal for this particular query
+    */
     async fn batch_query(
         &self,
-        queries: Vec<QueryInput>
+        queries: Vec<QueryInput>,
     ) -> Result<Vec<QueryOutput>, RusotoError<QueryError>> {
         let batch_query_results: Vec<_> = futures::stream::iter(queries.into_iter())
             .map(|query| self.query(query))
@@ -273,18 +292,18 @@ pub trait GraplDynamoDbClientExt: DynamoDb + Send + Sync {
         let error_occurred = batch_query_results.iter().any(Result::is_err);
 
         if error_occurred {
-            let error = batch_query_results.into_iter()
-                .find_map(|query_result| {
-                    match query_result {
-                        Err(error) => Some(error),
-                        _ => None
-                    }
+            let error = batch_query_results
+                .into_iter()
+                .find_map(|query_result| match query_result {
+                    Err(error) => Some(error),
+                    _ => None,
                 })
                 .unwrap();
 
             Err(error)
         } else {
-            let successful_query_results = batch_query_results.into_iter()
+            let successful_query_results = batch_query_results
+                .into_iter()
                 .map(Result::unwrap)
                 .collect();
 

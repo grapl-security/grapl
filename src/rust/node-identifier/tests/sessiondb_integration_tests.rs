@@ -3,9 +3,14 @@
 use std::time::Duration;
 
 use grapl_config::env_helpers::FromEnv;
+use grapl_graph_descriptions::NodeDescription;
 use node_identifier::{
-    sessiondb::SessionDb,
+    sessiondb::{
+        SessionDb,
+        UnidSessionNode,
+    },
     sessions::{
+        Session,
         UnidSession,
     },
 };
@@ -23,9 +28,6 @@ use rusoto_dynamodb::{
     ProvisionedThroughput,
 };
 use tokio::runtime::Runtime;
-use grapl_graph_descriptions::NodeDescription;
-use node_identifier::sessiondb::UnidSessionNode;
-use node_identifier::sessions::Session;
 
 async fn try_create_table(
     dynamo: &impl DynamoDb,
@@ -95,7 +97,7 @@ fn canon_create_on_empty_timeline(asset_id: String, pid: u64) {
         properties: Default::default(),
         node_key: "NODE_KEY".to_string(),
         node_type: "NODE_TYPE".to_string(),
-        id_strategy: vec![]
+        id_strategy: vec![],
     };
 
     let unid = UnidSession {
@@ -148,7 +150,7 @@ fn canon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
         properties: Default::default(),
         node_key: "NODE_KEY".to_string(),
         node_type: "NODE_TYPE".to_string(),
-        id_strategy: vec![]
+        id_strategy: vec![],
     };
 
     // When a canonical creation event comes in with a creation time of 'Y'
@@ -165,10 +167,12 @@ fn canon_create_update_existing_non_canon_create(asset_id: String, pid: u64) {
         .block_on(session_db.identify_unid_session_nodes(vec![unid_session_node], false))
         .expect("Failed to handle unid");
 
-    let first_attributed_node = attributed_nodes.get(0)
-        .expect("Failed to identify node.");
+    let first_attributed_node = attributed_nodes.get(0).expect("Failed to identify node.");
 
-    assert_eq!(first_attributed_node.attributed_node_description.node_key, "SessionId");
+    assert_eq!(
+        first_attributed_node.attributed_node_description.node_key,
+        "SessionId"
+    );
 }
 
 // Given a timeline with a single session, where that session has a non canon
@@ -206,7 +210,7 @@ fn noncanon_create_update_existing_non_canon_create(asset_id: String, pid: u64) 
         properties: Default::default(),
         node_key: "NODE_KEY".to_string(),
         node_type: "NODE_TYPE".to_string(),
-        id_strategy: vec![]
+        id_strategy: vec![],
     };
 
     // When a noncanonical creation event comes in with a creation time of 'Y'
@@ -223,11 +227,13 @@ fn noncanon_create_update_existing_non_canon_create(asset_id: String, pid: u64) 
         .block_on(session_db.identify_unid_session_nodes(vec![unid_session_node], false))
         .expect("Failed to identify unid session nodes.");
 
-    let attributed_node = attributed_nodes.get(0)
-        .expect("Failed to identify node.");
+    let attributed_node = attributed_nodes.get(0).expect("Failed to identify node.");
 
     // TODO: Assert that the create time was updated correctly
-    assert_eq!(attributed_node.attributed_node_description.node_key, "SessionId");
+    assert_eq!(
+        attributed_node.attributed_node_description.node_key,
+        "SessionId"
+    );
 }
 
 // Given an empty timeline
@@ -247,7 +253,7 @@ fn noncanon_create_on_empty_timeline_with_default(asset_id: String, pid: u64) {
         properties: Default::default(),
         node_key: "NODE_KEY".to_string(),
         node_type: "NODE_TYPE".to_string(),
-        id_strategy: vec![]
+        id_strategy: vec![],
     };
 
     let unid = UnidSession {
@@ -282,7 +288,7 @@ fn noncanon_create_on_empty_timeline_without_default() {
         properties: Default::default(),
         node_key: "NODE_KEY".to_string(),
         node_type: "NODE_TYPE".to_string(),
-        id_strategy: vec![]
+        id_strategy: vec![],
     };
 
     let unid = UnidSession {
@@ -293,7 +299,8 @@ fn noncanon_create_on_empty_timeline_without_default() {
 
     let unid_session_node = UnidSessionNode(node_desc, unid);
 
-    let session_id = runtime.block_on(session_db.identify_unid_session_nodes(vec![unid_session_node], false));
+    let session_id =
+        runtime.block_on(session_db.identify_unid_session_nodes(vec![unid_session_node], false));
     assert!(session_id.is_err());
 }
 
@@ -327,7 +334,7 @@ fn update_end_time(asset_id: String, pid: u64) {
         properties: Default::default(),
         node_key: "NODE_KEY".to_string(),
         node_type: "NODE_TYPE".to_string(),
-        id_strategy: vec![]
+        id_strategy: vec![],
     };
 
     // When a canonical creation event comes in with an end time of 'Y'
@@ -346,5 +353,8 @@ fn update_end_time(asset_id: String, pid: u64) {
 
     let attributed_node = attributed_nodes.get(0).expect("");
 
-    assert_eq!(attributed_node.attributed_node_description.node_key, "SessionId");
+    assert_eq!(
+        attributed_node.attributed_node_description.node_key,
+        "SessionId"
+    );
 }

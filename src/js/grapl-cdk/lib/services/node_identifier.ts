@@ -52,17 +52,6 @@ export class NodeIdentifier extends cdk.NestedStack {
                     event_cache.cluster.attrRedisEndpointPort,
                 DYNAMIC_SESSION_TABLE:
                     history_db.dynamic_session_table.tableName,
-                PROCESS_HISTORY_TABLE: history_db.proc_history.tableName,
-                FILE_HISTORY_TABLE: history_db.file_history.tableName,
-                INBOUND_CONNECTION_HISTORY_TABLE:
-                    history_db.inbound_connection_history.tableName,
-                OUTBOUND_CONNECTION_HISTORY_TABLE:
-                    history_db.outbound_connection_history.tableName,
-                NETWORK_CONNECTION_HISTORY_TABLE:
-                    history_db.network_connection_history.tableName,
-                IP_CONNECTION_HISTORY_TABLE:
-                    history_db.ip_connection_history.tableName,
-                ASSET_ID_MAPPINGS: history_db.asset_history.tableName,
             },
             vpc: props.vpc,
             eventEmitter: unid_subgraphs,

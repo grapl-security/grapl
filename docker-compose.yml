@@ -22,14 +22,7 @@ x-common-variables:
     DYNAMODB_ENDPOINT: ${DYNAMODB_ENDPOINT}
   # TODO: Ensure these are matched with what's in provision_local_identity_table.py
   dynamodb-mapping-tables: &dynamodb-mapping-tables
-    ASSET_ID_MAPPINGS: ${DEPLOYMENT_NAME}-asset_id_mappings
     DYNAMIC_SESSION_TABLE: ${DEPLOYMENT_NAME}-dynamic_session_table
-    FILE_HISTORY_TABLE: ${DEPLOYMENT_NAME}-file_history_table
-    INBOUND_CONNECTION_HISTORY_TABLE: ${DEPLOYMENT_NAME}-inbound_connection_history_table
-    IP_CONNECTION_HISTORY_TABLE: ${DEPLOYMENT_NAME}-ip_connection_history_table
-    NETWORK_CONNECTION_HISTORY_TABLE: ${DEPLOYMENT_NAME}-network_connection_history_table
-    OUTBOUND_CONNECTION_HISTORY_TABLE: ${DEPLOYMENT_NAME}-outbound_connection_history_table
-    PROCESS_HISTORY_TABLE: ${DEPLOYMENT_NAME}-process_history_table
   log-level: &log-level
     GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-ERROR}"
     RUST_LOG: "${RUST_LOG:-ERROR}"
