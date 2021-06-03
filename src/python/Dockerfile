@@ -267,9 +267,3 @@ COPY --chown=grapl python/graphql_endpoint_tests graphql_endpoint_tests
 # e2e tests
 ################################################################################
 FROM graplctl AS e2e-tests
-CMD graplctl \
-    --grapl-region us-east-1 \
-    --grapl-deployment-name local-grapl \
-    --grapl-version FIXME \
-    --aws-profile default \
-    aws test

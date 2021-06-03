@@ -1,6 +1,5 @@
 from typing import Optional
 
-import pulumi_aws as aws
 from infra.api import Api
 from infra.config import DEPLOYMENT_NAME, GLOBAL_LAMBDA_ZIP_TAG, GRAPL_TEST_USER_NAME
 from infra.dgraph_cluster import DgraphCluster
@@ -20,9 +19,12 @@ class E2eTestRunner(pulumi.ComponentResource):
         name = "e2e-test-runner"
         super().__init__("grapl:E2eTestRunner", name, None, opts)
 
-        # Importing here avoids circular import hell between E2eTestrunner and
-        # Lambda
-        from infra.lambda_ import Lambda, LambdaArgs, LambdaExecutionRole, code_path_for
+        from infra.lambda_ import (
+            Lambda,
+            LambdaExecutionRole,
+            PythonLambdaArgs,
+            code_path_for,
+        )
 
         self.role = LambdaExecutionRole(
             name,
@@ -30,13 +32,11 @@ class E2eTestRunner(pulumi.ComponentResource):
         )
         self.function = Lambda(
             name,
-            args=LambdaArgs(
+            args=PythonLambdaArgs(
                 description=GLOBAL_LAMBDA_ZIP_TAG,
                 execution_role=self.role,
-                runtime=aws.lambda_.Runtime.PYTHON3D7,
                 handler="lambdex_handler.handler",
                 code_path=code_path_for(name),
-                package_type="Zip",
                 env={
                     "GRAPL_LOG_LEVEL": "INFO",
                     "DEPLOYMENT_NAME": DEPLOYMENT_NAME,
@@ -44,13 +44,12 @@ class E2eTestRunner(pulumi.ComponentResource):
                     "MG_ALPHAS": dgraph_cluster.alpha_host_port,
                     "GRAPL_API_HOST": api.invoke_url,
                 },
-                memory_size=128,
                 timeout=600,
             ),
-            opts=pulumi.ResourceOptions(parent=self),
             # graplctl expects this specific function name :(
             override_name=f"{DEPLOYMENT_NAME}-e2e-test-runner]",
             network=network,
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
         self.register_outputs({})

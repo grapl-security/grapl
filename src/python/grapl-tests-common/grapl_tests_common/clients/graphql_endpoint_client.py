@@ -1,11 +1,10 @@
 import json
-import logging
 import os
-import sys
 from http import HTTPStatus
 from typing import Any, Dict, Optional, cast
 
 import requests
+from grapl_common.grapl_logger import get_module_grapl_logger
 
 # Would be nice to improve this as a TypedDict
 GqlLensDict = Dict[str, Any]
@@ -13,9 +12,7 @@ GraphqlType = Dict[str, Any]
 
 IS_LOCAL = bool(os.getenv("IS_LOCAL", default=False))
 
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
-LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+LOGGER = get_module_grapl_logger(log_to_stdout=True)
 
 
 class GraphQLException(Exception):
