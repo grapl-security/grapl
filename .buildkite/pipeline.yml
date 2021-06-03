@@ -2,16 +2,6 @@
 env:
   PANTS_CONFIG_FILES: "['pants.toml', 'pants.ci.toml']"
 
-pants_cache_config: &pants_cache_config
-  # Individual jobs must provide an `id` key. We'll first attempt to
-  # restore from a cache on the current branch, and fall back to the
-  # corresponding cache on the main branch.
-  key: "cache-{{ id }}-{{ checksum '3rdparty/python/constraints.txt' }}-{{ git.branch }}"
-  restore-keys:
-    - "cache-{{ id }}-{{ checksum '3rdparty/python/constraints.txt' }}-main"
-  paths:
-    - ".cache"
-
 # TODO: Cache for JS, Rust deps
 
 # TODO: Will want to use sccache for Rust, I think
@@ -67,10 +57,6 @@ steps:
   - label: ":python::jeans: Linting"
     command:
       - make lint-python
-    plugins:
-      - gencer/cache#v2.4.8:
-          id: pants-lint
-          <<: *pants_cache_config
     retry:
       automatic:
         limit: 3
@@ -78,18 +64,10 @@ steps:
   - label: ":bash::jeans: Linting"
     command:
       - make lint-shell
-    plugins:
-      - gencer/cache#v2.4.8:
-          id: pants-shell
-          <<: *pants_cache_config
 
   - label: ":python::jeans: Unit Tests"
     command:
       - make test-unit-python
-    plugins:
-      - gencer/cache#v2.4.8:
-          id: pants-unit-test
-          <<: *pants_cache_config
     retry:
       automatic:
         limit: 3
@@ -97,10 +75,6 @@ steps:
   - label: ":python::jeans: Typechecking"
     command:
       - make test-typecheck-pants
-    plugins:
-      - gencer/cache#v2.4.8:
-          id: pants-typecheck
-          <<: *pants_cache_config
     retry:
       automatic:
         limit: 3
@@ -123,10 +97,6 @@ steps:
   - label: ":aws-lambda::package: Create Lambda Zips"
     command:
       - make zip
-    plugins:
-      - gencer/cache#v2.4.8:
-          id: pants-zip
-          <<: *pants_cache_config
 
   - label: ":hammer: Integration Tests"
     command:
