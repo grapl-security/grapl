@@ -29,7 +29,13 @@ def _deploy_dgraph(
         ["docker", "service", "ls"],
     ]
     for command in commands:
-        result = subprocess.run(command, check=True, capture_output=True)
+        try:
+            result = subprocess.run(command, check=True, capture_output=True)
+        except subprocess.CalledProcessError as e:
+            # Just make sure we flush both
+            sys.stdout.write(e.stdout.decode("utf-8"))
+            sys.stderr.write(e.stderr.decode("utf-8"))
+            raise e
         yield result.stdout.decode("utf-8")
 
 
