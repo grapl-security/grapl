@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import json
-from time import sleep
 from typing import TYPE_CHECKING, Iterator, List, Optional, Tuple
 
 from botocore.client import ClientError
 from click import progressbar
 from grapl_common.grapl_logger import get_module_grapl_logger
-from grapl_common.retry import retry
 
 if TYPE_CHECKING:
     from mypy_boto3_cloudwatch.client import CloudWatchClient
