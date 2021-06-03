@@ -16,6 +16,7 @@ RUN adduser \
 
 USER grapl
 ENV USER=grapl
+ENV PANTS_CONFIG_FILES="['pants.toml', 'pants.ci.toml']"
 WORKDIR /home/grapl/workdir
 
 # These file are currently needed in order to execute any pants command.
@@ -25,6 +26,7 @@ COPY --chown=grapl pyproject.toml pyproject.toml
 COPY --chown=grapl src/python/mypy.ini src/python/mypy.ini
 COPY --chown=grapl .flake8 .flake8
 COPY --chown=grapl pants.toml pants.toml
+COPY --chown=grapl pants.ci.toml pants.ci.toml
 COPY --chown=grapl 3rdparty 3rdparty
 
 RUN ./pants --version

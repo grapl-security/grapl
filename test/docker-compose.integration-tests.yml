@@ -12,6 +12,7 @@ x-common-variables:
   pants-test: &pants-test
     PANTS_TEST_OUTPUT: "all"
     PANTS_PYTEST_ARGS: "-v -m 'integration_test'"
+    TOOLCHAIN_AUTH_TOKEN:
 
 services:
   rust-integration-tests:
