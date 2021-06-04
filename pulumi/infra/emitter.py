@@ -37,8 +37,10 @@ class EventEmitter(pulumi.ComponentResource):
         self.topic_policy_attachment = aws.sns.TopicPolicy(
             f"{event_name}-bucket-publishes-to-topic",
             arn=self.topic.arn,
-            policy=pulumi.Output.all(self.topic.arn, self.bucket.arn).apply(
-                lambda topic_and_bucket: json.dumps(
+            policy=pulumi.Output.all(
+                topic_arn=self.topic.arn, bucket_arn=self.bucket.arn
+            ).apply(
+                lambda inputs: json.dumps(
                     {
                         "Version": "2012-10-17",
                         "Statement": [
@@ -49,9 +51,9 @@ class EventEmitter(pulumi.ComponentResource):
                                     "Service": "s3.amazonaws.com",
                                 },
                                 "Action": "sns:Publish",
-                                "Resource": topic_and_bucket[0],
+                                "Resource": inputs["topic_arn"],
                                 "Condition": {
-                                    "ArnLike": {"aws:SourceArn": topic_and_bucket[1]}
+                                    "ArnLike": {"aws:SourceArn": inputs["bucket_arn"]}
                                 },
                             }
                         ],
@@ -79,45 +81,7 @@ class EventEmitter(pulumi.ComponentResource):
         self.register_outputs({})
 
     def grant_write_to(self, role: aws.iam.Role) -> None:
-        aws.iam.RolePolicy(
-            f"{role._name}-writes-objects-to-{self.bucket._name}",
-            role=role.name,
-            policy=self.bucket.arn.apply(
-                lambda bucket_arn: json.dumps(
-                    {
-                        "Version": "2012-10-17",
-                        "Statement": [
-                            {
-                                "Effect": "Allow",
-                                "Action": [
-                                    "s3:PutObject",
-                                ],
-                                "Resource": f"{bucket_arn}/*",
-                            }
-                        ],
-                    }
-                )
-            ),
-            opts=pulumi.ResourceOptions(parent=role),
-        )
+        self.bucket.grant_put_permission_to(role)
 
     def grant_read_to(self, role: aws.iam.Role) -> None:
-        aws.iam.RolePolicy(
-            f"{role._name}-reads-objects-from-{self.bucket._name}",
-            role=role.name,
-            policy=self.bucket.arn.apply(
-                lambda bucket_arn: json.dumps(
-                    {
-                        "Version": "2012-10-17",
-                        "Statement": [
-                            {
-                                "Effect": "Allow",
-                                "Action": "s3:GetObject",
-                                "Resource": f"{bucket_arn}/*",
-                            }
-                        ],
-                    }
-                )
-            ),
-            opts=pulumi.ResourceOptions(parent=role),
-        )
+        self.bucket.grant_read_permission_to(role)

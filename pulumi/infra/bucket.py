@@ -65,6 +65,28 @@ class Bucket(aws.s3.Bucket):
             opts=pulumi.ResourceOptions(parent=role),
         )
 
+    def grant_put_permission_to(self, role: aws.iam.Role) -> None:
+        """ Adds the ability to put objects into this bucket to the provided `Role`. """
+        aws.iam.RolePolicy(
+            f"{role._name}-writes-objects-to-{self._name}",
+            role=role.name,
+            policy=self.arn.apply(
+                lambda bucket_arn: json.dumps(
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                "Action": "s3:PutObject",
+                                "Resource": f"{bucket_arn}/*",
+                            }
+                        ],
+                    }
+                )
+            ),
+            opts=pulumi.ResourceOptions(parent=role),
+        )
+
     def grant_get_and_list_to(self, role: aws.iam.Role) -> None:
         """Grants GetObject on all the objects in the bucket, and ListBucket
         on the bucket itself.
