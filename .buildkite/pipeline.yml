@@ -16,9 +16,6 @@ steps:
       - docker#v3.8.0:
           image: "node"
           entrypoint: "bash"
-    soft_fail:
-      # Allow failures of "unloved" check
-      - exit_status: 2
 
   - label: ":large_blue_square::lint-roller: Lint Protobuf"
     command:

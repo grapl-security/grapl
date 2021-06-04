@@ -27,5 +27,9 @@ echo -e "--- :octocat::broken_heart: Finding 'unloved' files"
 unloved=$(github-codeowners audit --only-git --unloved)
 if [ -n "${unloved}" ]; then
     echo "${unloved}"
-    exit 2
+    # TODO: Eventually, we will want to fail if there are unowned
+    # files. Due to a bug (?) in the Buildkite docker plugin, it
+    # doesn't appear that we can soft-fail on an exit status other
+    # than 1. So, for now, we'll just let this pass
+    # exit 2
 fi
