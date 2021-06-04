@@ -18,7 +18,7 @@ class QueueDrivenLambda(pulumi.ComponentResource):
         queue: aws.sqs.Queue,
         args: LambdaArgs,
         network: Network,
-        forwarder: Optional[MetricForwarder] = None,
+        forwarder: MetricForwarder,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
 
@@ -28,9 +28,10 @@ class QueueDrivenLambda(pulumi.ComponentResource):
             name,
             args=args,
             network=network,
-            forwarder=forwarder,
             opts=pulumi.ResourceOptions(parent=self),
         )
+
+        forwarder.subscribe_to_log_group(name, self.function.log_group)
 
         queue_policy.consumption_policy(queue, args.execution_role)
 

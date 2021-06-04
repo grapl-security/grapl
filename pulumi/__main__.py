@@ -200,6 +200,7 @@ def main() -> None:
         ux_bucket=ux_bucket,
         db=dynamodb_tables,
         plugins_bucket=model_plugins_bucket,
+        forwarder=forwarder,
         dgraph_cluster=dgraph_cluster,
     )
 
