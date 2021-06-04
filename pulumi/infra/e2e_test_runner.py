@@ -4,6 +4,7 @@ from infra.api import Api
 from infra.config import DEPLOYMENT_NAME, GLOBAL_LAMBDA_ZIP_TAG, GRAPL_TEST_USER_NAME
 from infra.dgraph_cluster import DgraphCluster
 from infra.network import Network
+from infra.secret import JWTSecret, TestUserPassword
 
 import pulumi
 
@@ -14,6 +15,8 @@ class E2eTestRunner(pulumi.ComponentResource):
         network: Network,
         dgraph_cluster: DgraphCluster,
         api: Api,
+        jwt_secret: JWTSecret,
+        test_user_password: TestUserPassword,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         name = "e2e-test-runner"
@@ -51,5 +54,9 @@ class E2eTestRunner(pulumi.ComponentResource):
             network=network,
             opts=pulumi.ResourceOptions(parent=self),
         )
+
+        jwt_secret.grant_read_permissions_to(self.role)
+        test_user_password.grant_read_permissions_to(self.role)
+        dgraph_cluster.allow_connections_from(self.function.security_group)
 
         self.register_outputs({})

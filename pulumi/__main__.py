@@ -56,7 +56,7 @@ def main() -> None:
 
     DGraphTTL(network=network, dgraph_cluster=dgraph_cluster)
 
-    secret = JWTSecret()
+    jwt_secret = JWTSecret()
 
     test_user_password = TestUserPassword()
 
@@ -173,7 +173,7 @@ def main() -> None:
 
     Provisioner(
         network=network,
-        secret=secret,
+        test_user_password=test_user_password,
         db=dynamodb_tables,
         dgraph_cluster=dgraph_cluster,
     )
@@ -207,7 +207,7 @@ def main() -> None:
 
     api = Api(
         network=network,
-        secret=secret,
+        secret=jwt_secret,
         ux_bucket=ux_bucket,
         db=dynamodb_tables,
         plugins_bucket=model_plugins_bucket,
@@ -216,7 +216,13 @@ def main() -> None:
     )
 
     if not LOCAL_GRAPL:
-        E2eTestRunner(network=network, dgraph_cluster=dgraph_cluster, api=api)
+        E2eTestRunner(
+            network=network,
+            dgraph_cluster=dgraph_cluster,
+            api=api,
+            jwt_secret=jwt_secret,
+            test_user_password=test_user_password,
+        )
 
 
 if __name__ == "__main__":
