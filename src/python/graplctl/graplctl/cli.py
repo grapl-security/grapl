@@ -3,6 +3,7 @@ from __future__ import annotations
 import boto3
 import click
 import graplctl.swarm.lib as docker_swarm_ops
+from botocore.client import Config
 from grapl_common.env_helpers import (
     CloudWatchClientFactory,
     EC2ResourceFactory,
@@ -72,6 +73,9 @@ def main(
     aws_profile: str,
 ) -> None:
     session = boto3.session.Session(profile_name=aws_profile)
+    lambda_config = Config(
+        read_timeout=60 * 5 + 10  # 10s longer than e2e-test-runner and provisioner
+    )
     ctx.obj = State(
         grapl_region,
         grapl_deployment_name,
@@ -84,7 +88,9 @@ def main(
         sns=SNSClientFactory(session).from_env(region=grapl_region),
         route53=Route53ClientFactory(session).from_env(region=grapl_region),
         sqs=SQSClientFactory(session).from_env(region=grapl_region),
-        lambda_=LambdaClientFactory(session).from_env(region=grapl_region),
+        lambda_=LambdaClientFactory(session).from_env(
+            region=grapl_region, config=lambda_config
+        ),
     )
 
 

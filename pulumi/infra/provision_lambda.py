@@ -7,6 +7,7 @@ from infra.dynamodb import DynamoDB
 from infra.lambda_ import Lambda, LambdaExecutionRole, PythonLambdaArgs, code_path_for
 from infra.network import Network
 from infra.secret import TestUserPassword
+from infra.swarm import Ec2Port
 
 import pulumi
 
@@ -39,7 +40,7 @@ class Provisioner(pulumi.ComponentResource):
                     "MG_ALPHAS": dgraph_cluster.alpha_host_port,
                     "GRAPL_TEST_USER_NAME": f"{DEPLOYMENT_NAME}-grapl-test-user",
                 },
-                timeout=600,
+                timeout=60 * 5,  # 5 minutes
                 memory_size=256,
                 execution_role=self.role,
             ),
@@ -48,6 +49,8 @@ class Provisioner(pulumi.ComponentResource):
             override_name=f"{DEPLOYMENT_NAME}-provisioner",
             opts=pulumi.ResourceOptions(parent=self),
         )
+
+        Ec2Port("tcp", 443).allow_outbound_any_ip(self.function.security_group)
 
         test_user_password.grant_read_permissions_to(self.role)
 
