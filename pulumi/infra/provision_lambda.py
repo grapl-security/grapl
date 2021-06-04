@@ -6,7 +6,7 @@ from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
 from infra.lambda_ import Lambda, LambdaExecutionRole, PythonLambdaArgs, code_path_for
 from infra.network import Network
-from infra.secret import JWTSecret
+from infra.secret import TestUserPassword
 
 import pulumi
 
@@ -15,7 +15,7 @@ class Provisioner(pulumi.ComponentResource):
     def __init__(
         self,
         network: Network,
-        secret: JWTSecret,
+        test_user_password: TestUserPassword,
         db: DynamoDB,
         dgraph_cluster: DgraphCluster,
         opts: Optional[pulumi.ResourceOptions] = None,
@@ -49,9 +49,11 @@ class Provisioner(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        secret.grant_read_permissions_to(self.role)
+        test_user_password.grant_read_permissions_to(self.role)
 
-        dynamodb.grant_read_on_tables(self.role, [db.user_auth_table])
+        dynamodb.grant_read_write_on_tables(
+            self.role, [db.user_auth_table, db.schema_table, db.schema_properties_table]
+        )
 
         dgraph_cluster.allow_connections_from(self.function.security_group)
 
