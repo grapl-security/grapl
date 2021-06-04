@@ -19,7 +19,7 @@ class GraphQL(pulumi.ComponentResource):
         ux_bucket: Bucket,
         network: Network,
         dgraph_cluster: DgraphCluster,
-        forwarder: Optional[MetricForwarder] = None,
+        forwarder: MetricForwarder,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
 
@@ -56,9 +56,10 @@ class GraphQL(pulumi.ComponentResource):
                 memory_size=128,
             ),
             network=network,
-            forwarder=forwarder,
             opts=pulumi.ResourceOptions(parent=self),
         )
+
+        forwarder.subscribe_to_log_group(name, self.function.log_group)
 
         secret.grant_read_permissions_to(self.role)
         dgraph_cluster.allow_connections_from(self.function.security_group)

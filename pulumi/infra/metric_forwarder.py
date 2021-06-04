@@ -3,6 +3,7 @@ from typing import Optional
 
 import pulumi_aws as aws
 from infra.config import GLOBAL_LAMBDA_ZIP_TAG, configurable_envvars
+from infra.lambda_ import Lambda, LambdaArgs, LambdaExecutionRole, code_path_for
 from infra.network import Network
 
 import pulumi
@@ -14,10 +15,6 @@ class MetricForwarder(pulumi.ComponentResource):
     ) -> None:
         name = "metric-forwarder"
         super().__init__("grapl:MetricForwarder", name, None, opts)
-
-        # Importing here avoids circular import hell between
-        # MetricForwarder and Lambda
-        from infra.lambda_ import Lambda, LambdaArgs, LambdaExecutionRole, code_path_for
 
         self.role = LambdaExecutionRole(
             name,
