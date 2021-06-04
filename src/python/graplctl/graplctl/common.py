@@ -121,6 +121,7 @@ def get_command_results(
         else:
             raise SSMException(invocation)
 
+
 def get_command_invocation(
     ssm: SSMClient,
     command_id: str,
@@ -150,6 +151,7 @@ def get_command_invocation(
                 f"waiting for invocation metadata to become available for command {command_id} on instance {instance_id}"
             )
             time.sleep(2)
+
 
 class SSMException(Exception):
     def __init__(self, invocation: GetCommandInvocationResultTypeDef) -> None:
