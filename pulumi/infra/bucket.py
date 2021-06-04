@@ -72,6 +72,7 @@ class Bucket(aws.s3.Bucket):
         We may be able to use this for other permissions, but this was
         a specific structure ported over from our CDK code.
 
+        NOTE: For SSM RunRemoteScript commands, use buckets with this grant.
         """
         aws.iam.RolePolicy(
             f"{role._name}-get-and-list-{self._name}",
