@@ -7,6 +7,7 @@ from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
 from infra.engagement_notebook import EngagementNotebook
 from infra.lambda_ import Lambda, LambdaExecutionRole, PythonLambdaArgs, code_path_for
+from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.secret import JWTSecret
 
@@ -22,6 +23,7 @@ class EngagementEdge(pulumi.ComponentResource):
         ux_bucket: Bucket,
         db: DynamoDB,
         dgraph_cluster: DgraphCluster,
+        forwarder: MetricForwarder,
         # This is optional ONLY because Localstack doesn't support
         # sagemaker :(
         notebook: Optional[EngagementNotebook] = None,
@@ -59,9 +61,10 @@ class EngagementEdge(pulumi.ComponentResource):
                 execution_role=self.role,
             ),
             network=network,
-            # TODO: Forwarder????
             opts=pulumi.ResourceOptions(parent=self),
         )
+
+        forwarder.subscribe_to_log_group(name, self.function.log_group)
 
         # TODO: Original infrastructure code allowed access to DGraph,
         # but it's not clear this is even necessary.
