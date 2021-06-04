@@ -54,7 +54,7 @@ class JWTSecret(pulumi.ComponentResource):
         The name of the resource is formed from the Pulumi name of the `Role`.
         """
         aws.iam.RolePolicy(
-            f"{role._name}-reads-secret",
+            f"{role._name}-reads-jwt-secret",
             role=role.name,
             policy=self.secret.arn.apply(
                 lambda secret_arn: json.dumps(
@@ -119,7 +119,7 @@ class TestUserPassword(pulumi.ComponentResource):
         The name of the resource is formed from the Pulumi name of the `Role`.
         """
         aws.iam.RolePolicy(
-            f"{role._name}-reads-secret",
+            f"{role._name}-reads-test-user-password",
             role=role.name,
             policy=self.secret.arn.apply(
                 lambda secret_arn: json.dumps(
