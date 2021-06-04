@@ -10,6 +10,13 @@ env:
 
 steps:
 
+  - label: ":github: Validate CODEOWNERS"
+    command: ".buildkite/scripts/validate_codeowners.sh"
+    plugins:
+      - docker#v3.8.0:
+          image: "node"
+          entrypoint: "bash"
+
   - label: ":large_blue_square::lint-roller: Lint Protobuf"
     command:
       - buf lint --verbose
