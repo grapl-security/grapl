@@ -126,34 +126,3 @@ def attach_policy(
         policy_arn=policy.arn,
         opts=pulumi.ResourceOptions(parent=policy),
     )
-
-
-def attach_policy_to_ship_logs_to_cloudwatch(
-    role: aws.iam.Role, log_group: aws.cloudwatch.LogGroup, opts: pulumi.ResourceOptions
-) -> aws.iam.RolePolicyAttachment:
-    # This seems like it's a strict subset of CLOUDWATCH_AGENT_SERVER_POLICY
-    # and there's a good chance it can be removed.
-    policy = aws.iam.Policy(
-        "policy-to-ship-logs-to-cloudwatch",
-        policy=log_group.arn.apply(
-            lambda arn: json.dumps(
-                {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                        {
-                            "Effect": "Allow",
-                            "Action": [
-                                "logs:CreateLogGroup",
-                                "logs:CreateLogStream",
-                                "logs:PutLogEvents",
-                                "logs:DescribeLogStreams",
-                            ],
-                            "Resource": f"{arn}:*",
-                        }
-                    ],
-                }
-            )
-        ),
-        opts=opts,
-    )
-    return attach_policy(role=role, policy=policy)

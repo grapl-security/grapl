@@ -126,9 +126,6 @@ class Swarm(pulumi.ComponentResource):
             role=self.role, policy=policies.CLOUDWATCH_AGENT_SERVER_POLICY
         )
         policies.attach_policy(role=self.role, policy=policies.SSM_POLICY)
-        policies.attach_policy_to_ship_logs_to_cloudwatch(
-            role=self.role, log_group=self.log_group, opts=child_opts
-        )
 
         self.swarm_hosted_zone = aws.route53.Zone(
             f"{name}-hosted-zone",
