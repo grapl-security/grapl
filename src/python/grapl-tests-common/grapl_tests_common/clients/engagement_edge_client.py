@@ -16,6 +16,8 @@ _ORIGIN = {
 
 LOGGER = get_module_grapl_logger(default_log_level="DEBUG")
 
+LOGGER = get_module_grapl_logger(default_log_level="DEBUG")
+
 
 class EngagementEdgeException(Exception):
     pass
