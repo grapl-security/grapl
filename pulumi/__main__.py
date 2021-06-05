@@ -20,6 +20,7 @@ from infra.osquery_generator import OSQueryGenerator
 from infra.provision_lambda import Provisioner
 from infra.secret import JWTSecret
 from infra.sysmon_generator import SysmonGenerator
+from infra.grapl_router_api import GraplRouterApi
 
 
 def _create_dgraph_cluster(network: Network) -> DgraphCluster:
@@ -66,6 +67,7 @@ def main() -> None:
     subgraphs_merged_emitter = emitter.EventEmitter("subgraphs-merged")
     dispatched_analyzer_emitter = emitter.EventEmitter("dispatched-analyzer")
     analyzer_matched_emitter = emitter.EventEmitter("analyzer-matched-subgraphs")
+    grapl_router_api = emitter.EventEmitter("grapl-router-api")
 
     # TODO: No _infrastructure_ currently *writes* to this bucket
     analyzers_bucket = Bucket("analyzers-bucket", sse=True)
@@ -122,6 +124,14 @@ def main() -> None:
             input_emitter=unid_subgraphs_generated_emitter,
             output_emitter=subgraphs_generated_emitter,
             db=dynamodb_tables,
+            network=network,
+            cache=cache,
+            forwarder=forwarder,
+        )
+
+        GraplRouterApi(
+            input_emitter=unid_subgraphs_generated_emitter,
+            output_emitter=subgraphs_generated_emitter,
             network=network,
             cache=cache,
             forwarder=forwarder,
