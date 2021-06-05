@@ -87,6 +87,7 @@ pub async fn make_request(path: &str) ->  Result<PluginList, CustomError> {
 mod tests {
     #[test]
     fn get_body() {
-        assert_eq!(2 + 2)
+        let test_var = 2 + 2;
+        assert_eq!(test_var, 4);
     }
 }
