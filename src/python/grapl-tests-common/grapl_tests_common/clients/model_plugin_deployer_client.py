@@ -13,7 +13,6 @@ import requests
 from grapl_tests_common.clients.common import endpoint_url
 
 _JSON_CONTENT_TYPE_HEADERS = {"Content-type": "application/json"}
-IS_LOCAL = bool(os.getenv("IS_LOCAL", default=False))
 
 
 class ModelPluginDeployerException(Exception):
