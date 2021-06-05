@@ -39,7 +39,7 @@ class JWTSecret(pulumi.ComponentResource):
 
         # TODO: What do we do about rotation?
         self.version = aws.secretsmanager.SecretVersion(
-            "secret",
+            "jwt-secret-version",
             secret_id=self.secret.id,
             secret_string=self.random_uuid.result,
             opts=pulumi.ResourceOptions(parent=self),
@@ -104,7 +104,7 @@ class TestUserPassword(pulumi.ComponentResource):
 
         # TODO: What do we do about rotation?
         self.version = aws.secretsmanager.SecretVersion(
-            "secret",
+            "test-user-password-version",
             secret_id=self.secret.id,
             secret_string=self.random_uuid.result,
             opts=pulumi.ResourceOptions(parent=self),
