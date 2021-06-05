@@ -1,16 +1,14 @@
 import json
-import os
 from http import HTTPStatus
 from typing import Any, Dict, Optional, cast
 
 import requests
 from grapl_common.grapl_logger import get_module_grapl_logger
+from grapl_tests_common.clients.common import endpoint_url
 
 # Would be nice to improve this as a TypedDict
 GqlLensDict = Dict[str, Any]
 GraphqlType = Dict[str, Any]
-
-IS_LOCAL = bool(os.getenv("IS_LOCAL", default=False))
 
 LOGGER = get_module_grapl_logger(log_to_stdout=True)
 
@@ -21,11 +19,7 @@ class GraphQLException(Exception):
 
 class GraphqlEndpointClient:
     def __init__(self, jwt: str) -> None:
-        port = int(os.environ["GRAPL_HTTP_FRONTEND_PORT"]) if IS_LOCAL else 443
-        protocol = "http" if IS_LOCAL else "https"
-        self.endpoint = (
-            f'{protocol}://{os.environ["GRAPL_API_HOST"]}:{port}/graphQlEndpoint'
-        )
+        self.endpoint = endpoint_url("/graphQlEndpoint")
         self.jwt = jwt
 
     def query(

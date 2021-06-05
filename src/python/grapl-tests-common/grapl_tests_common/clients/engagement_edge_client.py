@@ -7,13 +7,12 @@ import boto3
 import requests
 from grapl_common.env_helpers import SecretsManagerClientFactory
 from grapl_common.grapl_logger import get_module_grapl_logger
+from grapl_tests_common.clients.common import endpoint_url
 
 _JSON_CONTENT_TYPE_HEADERS = {"Content-type": "application/json"}
 _ORIGIN = {
     "Origin": "https://local-grapl-engagement-ux-bucket.s3.amazonaws.com",
 }
-
-IS_LOCAL = bool(os.getenv("IS_LOCAL", default=False))
 
 LOGGER = get_module_grapl_logger(default_log_level="DEBUG")
 
@@ -41,9 +40,7 @@ def _sha_and_pepper(username: str, password: str) -> str:
 
 class EngagementEdgeClient:
     def __init__(self) -> None:
-        port = int(os.environ["GRAPL_HTTP_FRONTEND_PORT"]) if IS_LOCAL else 443
-        protocol = "http" if IS_LOCAL else "https"
-        self.endpoint = f'{protocol}://{os.environ["GRAPL_API_HOST"]}:{port}/auth'
+        self.endpoint = endpoint_url("/auth")
         LOGGER.debug(f"created EngagementEdgeClient for endpoint {self.endpoint}")
 
     def get_jwt(self) -> str:
