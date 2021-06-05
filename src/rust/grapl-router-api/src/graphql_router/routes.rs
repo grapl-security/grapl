@@ -1,7 +1,17 @@
-use actix_web::{post, get, Error, HttpResponse, Responder};
-use::reqwest;
-use actix_web::body::Body;
-use serde::{Serialize, Deserialize};
+use ::reqwest;
+use actix_web::{
+    body::Body,
+    get,
+    post,
+    Error,
+    HttpResponse,
+    Responder,
+};
+use serde::{
+    Deserialize,
+    Serialize,
+};
+
 use crate::graphql_request;
 
 #[derive(Serialize, Deserialize)]
@@ -17,7 +27,6 @@ pub enum GraphQLError {
     #[error("No Content")]
     NoContent,
 
-
     #[error("Bad Request")]
     BadRequest,
 }
@@ -25,23 +34,15 @@ pub enum GraphQLError {
 #[post("/graphql")]
 pub async fn graphql_router(body: actix_web::web::Json<GraphQLBody>) -> impl Responder {
     let body = body.into_inner();
-    let response = graphql_request("graphql", body)
-        .await;
+    let response = graphql_request("graphql", body).await;
 
-    match response{
+    match response {
         Ok(response) => HttpResponse::Ok().json(response),
 
-        Err(GraphQLError::BadRequest) => {
-            HttpResponse::BadRequest()
-                .finish()
-        }
+        Err(GraphQLError::BadRequest) => HttpResponse::BadRequest().finish(),
 
-        Err(GraphQLError::NoContent) => {
-            HttpResponse::NoContent()
-                .finish()
-        }
+        Err(GraphQLError::NoContent) => HttpResponse::NoContent().finish(),
 
-        Err(GraphQLError::RequestError(_)) =>  HttpResponse::InternalServerError().finish(),
-
+        Err(GraphQLError::RequestError(_)) => HttpResponse::InternalServerError().finish(),
     }
 }

@@ -1,17 +1,28 @@
-use crate::{make_request, request_with_body};
-use actix_web::{post, Error, HttpResponse, Responder};
-use::reqwest;
-use actix_web::body::Body;
-use serde::{Serialize, Deserialize};
+use ::reqwest;
+use actix_web::{
+    body::Body,
+    post,
+    Error,
+    HttpResponse,
+    Responder,
+};
+use serde::{
+    Deserialize,
+    Serialize,
+};
+
+use crate::{
+    make_request,
+    request_with_body,
+};
 
 #[derive(Serialize, Deserialize)]
-pub struct DeployRequest{
+pub struct DeployRequest {
     name: String,
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum CustomError {
-
     #[error("Request Error")]
     RequestError(#[from] reqwest::Error),
 
@@ -29,31 +40,23 @@ pub enum CustomError {
 
 // actix procedural macros that route incoming http requests
 #[post("/modelPluginDeployer/deploy")]
-pub async fn grapl_model_plugin_deployer(body: actix_web::web::Json<DeployRequest>) -> impl Responder {
+pub async fn grapl_model_plugin_deployer(
+    body: actix_web::web::Json<DeployRequest>,
+) -> impl Responder {
     // CALL MODEL-PLUGIN-DEPlOYER GRPC CLIENT
     let body = body.into_inner();
-    let response = request_with_body("deploy", body)
-        .await;
+    let response = request_with_body("deploy", body).await;
 
-    match response{
+    match response {
         Ok(response) => HttpResponse::Ok().json(response),
 
-        Err(CustomError::InvalidSchema) => {
-            HttpResponse::BadRequest()
-                .finish()
-        }
+        Err(CustomError::InvalidSchema) => HttpResponse::BadRequest().finish(),
 
-        Err(CustomError::ReadError) => {
-            HttpResponse::Conflict()
-                .finish()
-        }
+        Err(CustomError::ReadError) => HttpResponse::Conflict().finish(),
 
-        Err(CustomError::ServerError) => {
-            HttpResponse::BadRequest()
-            .finish()
-        }
+        Err(CustomError::ServerError) => HttpResponse::BadRequest().finish(),
 
-        Err(CustomError::RequestError(_)) =>  HttpResponse::InternalServerError().finish(),
+        Err(CustomError::RequestError(_)) => HttpResponse::InternalServerError().finish(),
     }
 }
 
@@ -61,58 +64,37 @@ pub async fn grapl_model_plugin_deployer(body: actix_web::web::Json<DeployReques
 pub async fn delete_plugin(body: actix_web::web::Json<DeployRequest>) -> impl Responder {
     let body = body.into_inner();
 
-    let response = request_with_body("delete", body)
-        .await;
+    let response = request_with_body("delete", body).await;
 
-    match response{
+    match response {
         Ok(response) => HttpResponse::Ok().json(response),
 
-        Err(CustomError::InvalidSchema) => {
-            HttpResponse::BadRequest()
-                .finish()
-        }
+        Err(CustomError::InvalidSchema) => HttpResponse::BadRequest().finish(),
 
-        Err(CustomError::ReadError) => {
-            HttpResponse::Conflict()
-                .finish()
-        }
+        Err(CustomError::ReadError) => HttpResponse::Conflict().finish(),
 
-        Err(CustomError::ServerError) => {
-            HttpResponse::BadRequest()
-                .finish()
-        }
+        Err(CustomError::ServerError) => HttpResponse::BadRequest().finish(),
 
-        Err(CustomError::RequestError(_)) =>  HttpResponse::InternalServerError().finish(),
+        Err(CustomError::RequestError(_)) => HttpResponse::InternalServerError().finish(),
     }
 }
 // actix procedural macros that route incoming http requests
 #[post("/modelPluginDeployer/listPlugins")]
 pub async fn list_plugin() -> impl Responder {
-    let response = make_request("listPlugins")
-        .await;
+    let response = make_request("listPlugins").await;
 
-    match response{
+    match response {
         Ok(response) => HttpResponse::Ok().json(response),
 
-        Err(CustomError::InvalidSchema) => {
-            HttpResponse::BadRequest()
-                .finish()
-        }
+        Err(CustomError::InvalidSchema) => HttpResponse::BadRequest().finish(),
 
-        Err(CustomError::ReadError) => {
-            HttpResponse::Conflict()
-                .finish()
-        }
+        Err(CustomError::ReadError) => HttpResponse::Conflict().finish(),
 
-        Err(CustomError::ServerError) => {
-            HttpResponse::BadRequest()
-                .finish()
-        }
+        Err(CustomError::ServerError) => HttpResponse::BadRequest().finish(),
 
-        Err(CustomError::RequestError(_)) =>  HttpResponse::InternalServerError().finish(),
+        Err(CustomError::RequestError(_)) => HttpResponse::InternalServerError().finish(),
     }
 }
-
 
 // We will make a post request to our new actix server
 // This will route us to the appropriate model plugin deployer service.
@@ -130,5 +112,3 @@ pub async fn list_plugin() -> impl Responder {
 
 // NEXT: Framework for integration
 // When will Actix4 Be released? and what is it?
-
-

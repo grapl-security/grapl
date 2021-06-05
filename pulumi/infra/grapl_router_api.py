@@ -1,20 +1,19 @@
-from infra.fargate_service import FargateService, GraplDockerBuild
-from infra.emitter import EventEmitter
-from infra.metric_forwarder import MetricForwarder
-from infra.network import Network
 from infra.cache import Cache
 from infra.config import configurable_envvars
-
+from infra.emitter import EventEmitter
+from infra.fargate_service import FargateService, GraplDockerBuild
+from infra.metric_forwarder import MetricForwarder
+from infra.network import Network
 
 
 class GraplRouterApi(FargateService):
     def __init__(
-            self,
-            input_emitter: EventEmitter,
-            output_emitter: EventEmitter,
-            network: Network,
-            cache: Cache,
-            forwarder: MetricForwarder,
+        self,
+        input_emitter: EventEmitter,
+        output_emitter: EventEmitter,
+        network: Network,
+        cache: Cache,
+        forwarder: MetricForwarder,
     ) -> None:
 
         super().__init__(
@@ -31,11 +30,12 @@ class GraplRouterApi(FargateService):
             ),
             command="/grapl-router-api",
             env={
-                **configurable_envvars("grapl_router_api", ["RUST_LOG", "RUST_BACKTRACE"]),
+                **configurable_envvars(
+                    "grapl_router_api", ["RUST_LOG", "RUST_BACKTRACE"]
+                ),
             },
             input_emitter=input_emitter,
             output_emitter=output_emitter,
             forwarder=forwarder,
             network=network,
         )
-

@@ -13,6 +13,7 @@ from infra.dgraph_cluster import DgraphCluster, LocalStandInDgraphCluster
 from infra.dgraph_ttl import DGraphTTL
 from infra.engagement_creator import EngagementCreator
 from infra.graph_merger import GraphMerger
+from infra.grapl_router_api import GraplRouterApi
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.node_identifier import NodeIdentifier
@@ -20,7 +21,6 @@ from infra.osquery_generator import OSQueryGenerator
 from infra.provision_lambda import Provisioner
 from infra.secret import JWTSecret
 from infra.sysmon_generator import SysmonGenerator
-from infra.grapl_router_api import GraplRouterApi
 
 
 def _create_dgraph_cluster(network: Network) -> DgraphCluster:
