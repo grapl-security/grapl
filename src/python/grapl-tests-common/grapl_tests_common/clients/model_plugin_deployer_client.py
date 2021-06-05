@@ -10,9 +10,9 @@ from pathlib import Path
 from typing import Dict
 
 import requests
+from grapl_tests_common.clients.common import endpoint_url
 
 _JSON_CONTENT_TYPE_HEADERS = {"Content-type": "application/json"}
-IS_LOCAL = bool(os.getenv("IS_LOCAL", default=False))
 
 
 class ModelPluginDeployerException(Exception):
@@ -27,11 +27,7 @@ class ModelPluginDeployerClient:
 
     @staticmethod
     def from_env() -> ModelPluginDeployerClient:
-        port = int(os.environ["GRAPL_HTTP_FRONTEND_PORT"]) if IS_LOCAL else 443
-        protocol = "http" if IS_LOCAL else "https"
-        return ModelPluginDeployerClient(
-            endpoint=f'{protocol}://{os.environ["GRAPL_API_HOST"]}:{port}/modelPluginDeployer'
-        )
+        return ModelPluginDeployerClient(endpoint=endpoint_url("/modelPluginDeployer"))
 
     def deploy(
         self,
