@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from infra import dynamodb, emitter
 from infra.alarms import OpsAlarms
@@ -200,8 +201,13 @@ def main() -> None:
             index_document="index.html",
         ),
     )
-    # TODO: How do we get the *contents* of this bucket uploaded?
-    # Max says: "I've introduced a `Bucket.upload_*` function, check it out :)
+    # Note: This requires `yarn build` to have been run first
+    if not LOCAL_GRAPL:
+        # Not doing this in Local Grapl at the moment, as we have
+        # another means of doing this. We should harmonize this, of
+        # course.
+        ENGAGEMENT_VIEW_DIR = Path("../src/js/engagement_view/build").resolve()
+        ux_bucket.upload_to_bucket(ENGAGEMENT_VIEW_DIR)
 
     Api(
         network=network,
@@ -209,6 +215,7 @@ def main() -> None:
         ux_bucket=ux_bucket,
         db=dynamodb_tables,
         plugins_bucket=model_plugins_bucket,
+        forwarder=forwarder,
         dgraph_cluster=dgraph_cluster,
     )
 

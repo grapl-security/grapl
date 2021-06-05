@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from mypy_boto3_sns import SNSClient
     from mypy_boto3_sqs import SQSClient
     from mypy_boto3_ssm.client import SSMClient
+    from mypy_boto3_ssm.type_defs import GetCommandInvocationResultTypeDef
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
@@ -109,18 +110,58 @@ def get_command_results(
             break
 
     for instance_id in instance_ids:
-        invocation = ssm.get_command_invocation(
-            CommandId=command_id,
-            InstanceId=instance_id,
-            PluginName="runShellScript",
+        invocation = get_command_invocation(
+            ssm=ssm,
+            command_id=command_id,
+            instance_id=instance_id,
         )
 
         if invocation["Status"] == "Success":
             yield instance_id, invocation["StandardOutputContent"].strip()
         else:
-            LOGGER.error(
-                f"command {command_id} instance {instance_id}: {invocation['StandardErrorContent']}"
+            raise SSMException(invocation)
+
+
+def get_command_invocation(
+    ssm: SSMClient,
+    command_id: str,
+    instance_id: str,
+) -> GetCommandInvocationResultTypeDef:
+    """
+    get-command-invocation commonly throws an awfully named exception: InvalidPluginName.
+    The actual meaning? This invocation hasn't become available.
+    This wrapper makes it a bit more sane to use.
+    """
+    LOGGER.info(
+        f"retrieving invocation metadata for command {command_id} on instance {instance_id}"
+    )
+    while True:
+        try:
+            result = ssm.get_command_invocation(
+                CommandId=command_id,
+                InstanceId=instance_id,
+                PluginName="runShellScript",
             )
-            raise Exception(
-                f"ssm command {command_id} failed on instance {instance_id} with Status: \"{invocation['Status']}\""
+            LOGGER.info(
+                f"retrieved invocation metadata for command {command_id} on instance {instance_id}"
             )
+            return result
+        except ssm.exceptions.InvalidPluginName:
+            LOGGER.warn(
+                f"waiting for invocation metadata to become available for command {command_id} on instance {instance_id}"
+            )
+            time.sleep(2)
+
+
+class SSMException(Exception):
+    def __init__(self, invocation: GetCommandInvocationResultTypeDef) -> None:
+        msg = "\n".join(
+            [
+                "",
+                f"STDERR: {invocation['StandardErrorContent']}",
+                f"STDOUT: {invocation['StandardOutputContent']}",
+                f"TO DEBUG: Try: aws ssm start-session --target {invocation['InstanceId']}",
+            ]
+        )
+        super(SSMException, self).__init__(msg)
+        self.invocation = invocation

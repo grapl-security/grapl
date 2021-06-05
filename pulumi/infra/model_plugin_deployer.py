@@ -22,7 +22,7 @@ class ModelPluginDeployer(pulumi.ComponentResource):
         ux_bucket: Bucket,
         plugins_bucket: Bucket,
         dgraph_cluster: DgraphCluster,
-        forwarder: Optional[MetricForwarder] = None,
+        forwarder: MetricForwarder,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
 
@@ -54,9 +54,10 @@ class ModelPluginDeployer(pulumi.ComponentResource):
                 memory_size=256,
             ),
             network=network,
-            forwarder=forwarder,
             opts=pulumi.ResourceOptions(parent=self),
         )
+
+        forwarder.subscribe_to_log_group(name, self.function.log_group)
 
         secret.grant_read_permissions_to(self.role)
 

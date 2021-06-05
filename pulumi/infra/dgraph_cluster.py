@@ -51,7 +51,7 @@ class DgraphCluster(pulumi.ComponentResource):
             logical_bucket_name="dgraph-config-bucket",
             opts=child_opts,
         )
-        self.dgraph_config_bucket.grant_read_permissions_to(self.swarm.role)
+        self.dgraph_config_bucket.grant_get_and_list_to(self.swarm.role)
         self.dgraph_config_bucket.upload_to_bucket(DGRAPH_CONFIG_DIR)
 
         self.register_outputs({})
