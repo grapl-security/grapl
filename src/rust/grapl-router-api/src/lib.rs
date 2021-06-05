@@ -1,9 +1,7 @@
 use ::reqwest;
 use actix_web::{
-    HttpResponse,
     Result,
 };
-use reqwest::Body;
 use serde::{
     Deserialize,
     Serialize,

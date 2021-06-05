@@ -1,8 +1,6 @@
 use ::reqwest;
 use actix_web::{
-    body::Body,
     post,
-    Error,
     HttpResponse,
     Responder,
 };
