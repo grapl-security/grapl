@@ -54,7 +54,9 @@ class BotoSessionMock:
 @contextmanager
 def patch_boto3_session() -> Iterator[BotoSessionMock]:
     with patch.object(
-        cli.boto3, cli.boto3.Session.__name__, spec_set=cli.boto3.Session
+        cli.boto3.session,
+        cli.boto3.session.Session.__name__,
+        spec_set=cli.boto3.session.Session,
     ) as p_session_cls:
         session = Mock(name="Session instance")
         p_session_cls.return_value = session

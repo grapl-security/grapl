@@ -61,7 +61,7 @@ def main(
     grapl_version: str,
     aws_profile: str,
 ) -> None:
-    session = boto3.Session(profile_name=aws_profile)
+    session = boto3.session.Session(profile_name=aws_profile)
     ctx.obj = State(
         grapl_region,
         grapl_deployment_name,

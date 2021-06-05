@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, Mapping, Optional, Sequence
 import botocore
 from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.nodes.base import BaseQuery, BaseView
-from grapl_analyzerlib.retry import retry
+from grapl_common.retry import retry
 from typing_extensions import Protocol
 
 

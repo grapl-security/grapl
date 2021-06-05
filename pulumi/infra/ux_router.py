@@ -16,7 +16,7 @@ class UxRouter(pulumi.ComponentResource):
         network: Network,
         secret: JWTSecret,
         ux_bucket: Bucket,
-        forwarder: Optional[MetricForwarder] = None,
+        forwarder: MetricForwarder,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
 
@@ -42,11 +42,12 @@ class UxRouter(pulumi.ComponentResource):
             # TODO: I don't think we need a network, because I don't
             # think this needs access to anything in the VPC itself.
             network=network,
-            forwarder=forwarder,
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        ux_bucket.grant_read_permissions_to(self.role)
+        forwarder.subscribe_to_log_group(name, self.function.log_group)
+
+        ux_bucket.grant_read_permission_to(self.role)
         secret.grant_read_permissions_to(self.role)
 
         self.register_outputs({})

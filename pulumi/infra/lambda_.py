@@ -10,7 +10,6 @@ from infra.config import (
     LOCAL_GRAPL,
     SERVICE_LOG_RETENTION_DAYS,
 )
-from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from typing_extensions import Literal
 
@@ -127,7 +126,6 @@ class Lambda(pulumi.ComponentResource):
         name: str,
         args: LambdaArgs,
         network: Network,
-        forwarder: Optional[MetricForwarder] = None,
         override_name: Optional[str] = None,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
@@ -188,8 +186,5 @@ class Lambda(pulumi.ComponentResource):
             retention_in_days=SERVICE_LOG_RETENTION_DAYS,
             opts=pulumi.ResourceOptions(parent=self),
         )
-
-        if forwarder:
-            forwarder.subscribe_to_log_group(name, self.log_group)
 
         self.register_outputs({})

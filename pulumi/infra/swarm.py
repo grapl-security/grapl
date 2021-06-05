@@ -126,9 +126,6 @@ class Swarm(pulumi.ComponentResource):
             role=self.role, policy=policies.CLOUDWATCH_AGENT_SERVER_POLICY
         )
         policies.attach_policy(role=self.role, policy=policies.SSM_POLICY)
-        policies.attach_policy_to_ship_logs_to_cloudwatch(
-            role=self.role, log_group=self.log_group, opts=child_opts
-        )
 
         self.swarm_hosted_zone = aws.route53.Zone(
             f"{name}-hosted-zone",
@@ -145,7 +142,7 @@ class Swarm(pulumi.ComponentResource):
             logical_bucket_name="swarm-config-bucket",
             opts=child_opts,
         )
-        self.swarm_config_bucket.grant_read_permissions_to(self.role)
+        self.swarm_config_bucket.grant_get_and_list_to(self.role)
         self.swarm_config_bucket.upload_to_bucket(SWARM_INIT_DIR)
 
         self.register_outputs({})

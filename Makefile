@@ -181,6 +181,10 @@ graplctl: ## Build graplctl and install it to the project root
 	cp ./dist/src.python.graplctl.graplctl/graplctl.pex ./bin/graplctl
 	printf -- '\n${FMT_BOLD}Graplctl${FMT_END} written to ${FMT_BLUE}./bin/graplctl${FMT_END}\n'
 
+.PHONY: build-ux
+build-ux: ## Build website assets
+	cd src/js/engagement_view && yarn install && yarn build
+
 ##@ Test 🧪
 
 .PHONY: test
@@ -405,3 +409,6 @@ populate-venv: ## Set up a Python virtualenv (you'll have to activate manually!)
 .PHONY: repl
 repl: ## Run an interactive ipython repl that can import from grapl-common etc
 	./pants --no-pantsd repl --shell=ipython src/python/repl
+
+.PHONY: pulumi-prep
+pulumi-prep: modern-lambdas build-ux ## Prepare some artifacts in advance of running a Pulumi update (does not run Pulumi!)

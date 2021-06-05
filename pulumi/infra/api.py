@@ -9,6 +9,7 @@ from infra.engagement_edge import EngagementEdge
 from infra.engagement_notebook import EngagementNotebook
 from infra.graphql import GraphQL
 from infra.lambda_ import Lambda
+from infra.metric_forwarder import MetricForwarder
 from infra.model_plugin_deployer import ModelPluginDeployer
 from infra.network import Network
 from infra.secret import JWTSecret
@@ -138,6 +139,7 @@ class Api(pulumi.ComponentResource):
         plugins_bucket: Bucket,
         db: DynamoDB,
         dgraph_cluster: DgraphCluster,
+        forwarder: MetricForwarder,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         name = "api-gateway"
@@ -202,6 +204,7 @@ class Api(pulumi.ComponentResource):
             network=network,
             secret=secret,
             ux_bucket=ux_bucket,
+            forwarder=forwarder,
         )
 
         # Sagemaker isn't currently supported in Localstack :/
@@ -223,6 +226,7 @@ class Api(pulumi.ComponentResource):
             ux_bucket=ux_bucket,
             db=db,
             notebook=self.notebook,
+            forwarder=forwarder,
             dgraph_cluster=dgraph_cluster,
             opts=pulumi.ResourceOptions(parent=self),
         )
@@ -236,6 +240,7 @@ class Api(pulumi.ComponentResource):
                 ux_bucket=ux_bucket,
                 plugins_bucket=plugins_bucket,
                 dgraph_cluster=dgraph_cluster,
+                forwarder=forwarder,
             )
 
             self.graphql_endpoint = GraphQL(
@@ -243,6 +248,7 @@ class Api(pulumi.ComponentResource):
                 secret=secret,
                 ux_bucket=ux_bucket,
                 dgraph_cluster=dgraph_cluster,
+                forwarder=forwarder,
             )
 
         self.proxies = [
