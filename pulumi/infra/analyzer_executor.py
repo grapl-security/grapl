@@ -58,5 +58,8 @@ class AnalyzerExecutor(FargateService):
         model_plugins_bucket.grant_get_and_list_to(self.default_service.task_role)
         output_emitter.grant_read_to(self.default_service.task_role)
 
+        # analyzers_bucket.grant_outbound_to('analyzer-executor-default', self.default_service.security_group)
+        # analyzers_bucket.grant_outbound_to('analyzer-executor-retry', self.retry_service.security_group)
+
         # TODO: CDK doesn't actually have this for some reason
         self.allow_egress_to_cache(cache)

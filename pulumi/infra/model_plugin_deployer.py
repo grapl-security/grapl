@@ -64,6 +64,7 @@ class ModelPluginDeployer(pulumi.ComponentResource):
         dynamodb.grant_read_write_on_tables(self.role, [db.schema_table])
 
         plugins_bucket.grant_read_write_permissions_to(self.role)
+        Bucket.grant_outbound_to('model-plugin-deployer', self.function.security_group)
 
         dgraph_cluster.allow_connections_from(self.function.security_group)
 

@@ -3,6 +3,8 @@ from typing import Mapping, Optional, Sequence, Tuple, Union
 
 import pulumi_aws as aws
 import pulumi_docker as docker
+
+from infra.bucket import Bucket
 from infra.cache import Cache
 from infra.config import DEPLOYMENT_NAME, SERVICE_LOG_RETENTION_DAYS
 from infra.emitter import EventEmitter
@@ -337,6 +339,9 @@ class FargateService(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
         retry_repository.grant_access_to(self.retry_service.execution_role)
+
+        # Bucket.grant_outbound_to(self.default_service.security_group)
+        # Bucket.grant_outbound_to(self.retry_service.security_group)
 
         self.register_outputs({})
 

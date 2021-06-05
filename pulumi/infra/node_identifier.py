@@ -1,4 +1,5 @@
 from infra import dynamodb
+from infra.bucket import Bucket
 from infra.cache import Cache
 from infra.config import configurable_envvars
 from infra.dynamodb import DynamoDB

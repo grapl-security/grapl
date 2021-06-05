@@ -43,6 +43,20 @@ class Bucket(aws.s3.Bucket):
             opts=opts,
         )
 
+    @staticmethod
+    def grant_outbound_to(service_name: str, security_group: aws.ec2.SecurityGroup) -> None:
+        ...
+        # aws.ec2.SecurityGroupRule(
+        #     f"outbound-any-ip-egress-{service_name}-443",
+        #     type="egress",
+        #     security_group_id=security_group.id,
+        #     from_port=443,
+        #     to_port=443,
+        #     protocol='TCP',
+        #     cidr_blocks=['0.0.0.0/0'],
+        #     opts=pulumi.ResourceOptions(parent=security_group),
+        # )
+
     def grant_read_permissions_to(self, role: aws.iam.Role) -> None:
         """ Adds the ability to read from this bucket to the provided `Role`. """
         aws.iam.RolePolicy(

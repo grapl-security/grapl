@@ -62,7 +62,7 @@ class Network(pulumi.ComponentResource):
         # be further divided by availability zone
         public, private = cidr_block.subnets()
 
-        # Always assume at least 2 availibity zones; no region has
+        # Always assume at least 2 availability zones; no region has
         # less. us-east-1 currently has the most AZs at 6.
         #
         # TODO: Consider parameterizing this value. This just happens

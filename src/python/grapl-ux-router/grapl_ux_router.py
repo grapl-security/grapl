@@ -56,8 +56,6 @@ class LazyUxBucket:
         start = int(time.time())
         try:
             obj = bucket.Object(resource_name)
-            end = int(time.time())
-            LOGGER.debug(f"retrieved object {resource_name} after {end - start}")
         except Exception as e:
             # TODO: We should only return None in cases where the object doesn't exist
             end = int(time.time())
@@ -66,7 +64,10 @@ class LazyUxBucket:
 
         # todo: We could just compress right here instead of allocating this intermediary
         # Or we could compress the files in s3?
-        return cast(bytes, obj.get()["Body"].read())
+        retrieved = cast(bytes, obj.get()['Body'].read())
+        end = int(time.time())
+        LOGGER.debug(f"retrieved object {resource_name} after {end - start}")
+        return retrieved
 
     def _retrieve_bucket(self) -> Bucket:
         s3 = S3ResourceFactory(boto3).from_env()
