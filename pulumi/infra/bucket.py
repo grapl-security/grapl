@@ -4,6 +4,7 @@ from typing import List, Optional
 
 import pulumi_aws as aws
 from infra.config import DEPLOYMENT_NAME
+from infra.ec2 import Ec2Port
 
 import pulumi
 from pulumi.resource import ResourceOptions
@@ -169,11 +170,13 @@ class Bucket(aws.s3.Bucket):
         )
 
     def upload_to_bucket(
-        self, file_path: Path, root_path: Optional[Path] = None
+        self,
+        file_path: Path,
+        root_path: Optional[Path] = None,
+        preserve_path: Optional[Path] = None,
     ) -> List[aws.s3.BucketObject]:
         """
         Compare with CDK's s3deploy.BucketDeployment
-
         root_path is so that if you pass in
         file_path="someplace/some_dir", root_path = "someplace"
         the uploaded files can be named
@@ -182,13 +185,19 @@ class Bucket(aws.s3.Bucket):
         "some_dir/subdir/c.txt"
         """
         if file_path.is_file():
-            return [self._upload_file_to_bucket(file_path, root_path=file_path.parent)]
+            if preserve_path:
+                root_path = preserve_path
+            else:
+                root_path = file_path.parent
+            return [self._upload_file_to_bucket(file_path, root_path=root_path)]
         elif file_path.is_dir():
             root_path = root_path or file_path
             # Flattens it
             return sum(
                 (
-                    self.upload_to_bucket(child, root_path=root_path)
+                    self.upload_to_bucket(
+                        child, root_path=root_path, preserve_path=preserve_path
+                    )
                     for child in file_path.iterdir()
                 ),
                 [],

@@ -192,7 +192,9 @@ def main() -> None:
         # another means of doing this. We should harmonize this, of
         # course.
         ENGAGEMENT_VIEW_DIR = Path("../src/js/engagement_view/build").resolve()
-        ux_bucket.upload_to_bucket(ENGAGEMENT_VIEW_DIR)
+        ux_bucket.upload_to_bucket(
+            ENGAGEMENT_VIEW_DIR, preserve_path=ENGAGEMENT_VIEW_DIR
+        )
 
     Api(
         network=network,

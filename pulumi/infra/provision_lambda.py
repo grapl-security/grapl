@@ -4,6 +4,7 @@ from infra import dynamodb
 from infra.config import DEPLOYMENT_NAME, GLOBAL_LAMBDA_ZIP_TAG
 from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
+from infra.ec2 import Ec2Port
 from infra.lambda_ import Lambda, LambdaExecutionRole, PythonLambdaArgs, code_path_for
 from infra.network import Network
 from infra.secret import JWTSecret
