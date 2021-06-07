@@ -1,11 +1,11 @@
 [package]
 name = "grapl-router-api"
 version = "0.1.0"
-authors = ["grapl <andrea@graplsecurity.com>"]
+authors = ["grapl <graplsecurity.com>"]
 edition = "2018"
 
 [[bin]]
-name = "main"
+name = "router-api"
 path = "src/main.rs"
 
 [lib]

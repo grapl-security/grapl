@@ -1,8 +1,5 @@
 use ::reqwest;
-use actix_web::{
-    Result,
-};
-
+use actix_web::Result;
 use serde::{
     Deserialize,
     Serialize,
