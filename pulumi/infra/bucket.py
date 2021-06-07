@@ -173,31 +173,27 @@ class Bucket(aws.s3.Bucket):
         self,
         file_path: Path,
         root_path: Optional[Path] = None,
-        preserve_path: Optional[Path] = None,
     ) -> List[aws.s3.BucketObject]:
         """
         Compare with CDK's s3deploy.BucketDeployment
-        root_path is so that if you pass in
-        file_path="someplace/some_dir", root_path = "someplace"
+        root_path is so that:
+
+        given file_path="someplace/some_dir", root_path = "someplace"
         the uploaded files can be named
         "some_dir/a.txt"
         "some_dir/b.txt"
         "some_dir/subdir/c.txt"
+        basically, the `root_path` becomes the `/` on the s3 side
         """
         if file_path.is_file():
-            if preserve_path:
-                root_path = preserve_path
-            else:
-                root_path = file_path.parent
+            root_path = root_path or file_path.parent
             return [self._upload_file_to_bucket(file_path, root_path=root_path)]
         elif file_path.is_dir():
             root_path = root_path or file_path
             # Flattens it
             return sum(
                 (
-                    self.upload_to_bucket(
-                        child, root_path=root_path, preserve_path=preserve_path
-                    )
+                    self.upload_to_bucket(child, root_path=root_path)
                     for child in file_path.iterdir()
                 ),
                 [],
