@@ -4,7 +4,9 @@ from typing import Any, Optional
 import pulumi_aws as aws
 from infra.bucket import Bucket
 from infra.config import DEPLOYMENT_NAME
-from infra.swarm import Ec2Port, Swarm
+from infra.ec2 import Ec2Port
+from infra.network import Network
+from infra.swarm import Swarm
 
 import pulumi
 from pulumi.output import Output
@@ -17,7 +19,7 @@ class DgraphCluster(pulumi.ComponentResource):
     def __init__(
         self,
         name: str,
-        vpc: aws.ec2.Vpc,
+        vpc: Network,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         super().__init__("grapl:DgraphSwarmCluster", name=name, props=None, opts=opts)

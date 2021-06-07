@@ -6,73 +6,25 @@ from typing import Optional, Sequence
 import pulumi_aws as aws
 from infra import policies
 from infra.bucket import Bucket
+
 # We should probably have this be more general / have this be service specific
 from infra.config import DEPLOYMENT_NAME, DGRAPH_LOG_RETENTION_DAYS
-
+from infra.ec2 import Ec2Port, TRAFFIC_FROM_ANYWHERE_CIDR
 import pulumi
 from pulumi.output import Output
 
 # These are COPYd in from Dockerfile.pulumi
 SWARM_INIT_DIR = Path("../src/js/grapl-cdk/swarm").resolve()
 
-TRAFFIC_FROM_ANYWHERE_CIDR = "0.0.0.0/0"
-
-
-@dataclass
-class Ec2Port:
-    protocol: str
-    port: int
-
-    def allow_internally(
-            self,
-            sg: aws.ec2.SecurityGroup,
-    ) -> None:
-        aws.ec2.SecurityGroupRule(
-            f"internal-ingress-{self}",
-            type="ingress",
-            security_group_id=sg.id,
-            from_port=self.port,
-            to_port=self.port,
-            protocol=self.protocol,
-            self=True,
-            opts=pulumi.ResourceOptions(parent=sg),
-        )
-
-        aws.ec2.SecurityGroupRule(
-            f"internal-egress-{self}",
-            type="egress",
-            security_group_id=sg.id,
-            from_port=self.port,
-            to_port=self.port,
-            protocol=self.protocol,
-            self=True,
-            opts=pulumi.ResourceOptions(parent=sg),
-        )
-
-    def allow_outbound_any_ip(self, sg: aws.ec2.SecurityGroup) -> None:
-        aws.ec2.SecurityGroupRule(
-            f"outbound-any-ip-egress-{self}",
-            type="egress",
-            security_group_id=sg.id,
-            from_port=self.port,
-            to_port=self.port,
-            protocol=self.protocol,
-            cidr_blocks=[TRAFFIC_FROM_ANYWHERE_CIDR],
-            opts=pulumi.ResourceOptions(parent=sg),
-        )
-
-    def __str__(self) -> str:
-        return f"Ec2Port({self.protocol}:{self.port})"
-
 
 class GrpcSwarm(pulumi.ComponentResource):
     def __init__(
-            self,
-            name: str,
-            service_name: str,
-            vpc: aws.ec2.Vpc,
-            internal_service_ports: Sequence[Ec2Port],
-            opts: Optional[pulumi.ResourceOptions] = None,
+        self,
+        name: str,
+        service_name: str,
+        vpc: aws.ec2.Vpc,
+        internal_service_ports: Sequence[Ec2Port],
+        opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         super().__init__("grapl:SwarmResource", name=name, props=None, opts=opts)
 
@@ -128,9 +80,6 @@ class GrpcSwarm(pulumi.ComponentResource):
             role=self.role, policy=policies.CLOUDWATCH_AGENT_SERVER_POLICY
         )
         policies.attach_policy(role=self.role, policy=policies.SSM_POLICY)
-        policies.attach_policy_to_ship_logs_to_cloudwatch(
-            role=self.role, log_group=self.log_group, opts=child_opts
-        )
 
         self.swarm_hosted_zone = aws.route53.Zone(
             f"{name}-{service_name}-hosted-zone",
@@ -147,7 +96,7 @@ class GrpcSwarm(pulumi.ComponentResource):
             logical_bucket_name=f"{service_name}-swarm-config-bucket",
             opts=child_opts,
         )
-        self.swarm_config_bucket.grant_read_permissions_to(self.role)
+        self.swarm_config_bucket.grant_read_permission_to(self.role)
         self.swarm_config_bucket.upload_to_bucket(SWARM_INIT_DIR)
 
         self.register_outputs({})
@@ -163,12 +112,12 @@ class GrpcSwarm(pulumi.ComponentResource):
         #   TCP 2377 -- inter-node communication (only needed on manager nodes)
         #   TCP + UDP 7946 -- container network discovery
         for port in (
-                Ec2Port("tcp", 2376),
-                Ec2Port("tcp", 2377),
-                Ec2Port("tcp", 7946),
-                Ec2Port("udp", 7946),
-                Ec2Port("udp", 4789),
-                *internal_service_ports,
+            Ec2Port("tcp", 2376),
+            Ec2Port("tcp", 2377),
+            Ec2Port("tcp", 7946),
+            Ec2Port("udp", 7946),
+            Ec2Port("udp", 4789),
+            *internal_service_ports,
         ):  #   UDP 4789 -- overlay network traffic
             port.allow_internally(self.security_group)
 
@@ -177,15 +126,15 @@ class GrpcSwarm(pulumi.ComponentResource):
         #   TCP 443 -- AWS SSM Agent (for handshake)
         #   TCP 80 -- yum package manager and wget (install Docker)
         for port in (
-                Ec2Port("tcp", 443),
-                Ec2Port("tcp", 80),
+            Ec2Port("tcp", 443),
+            Ec2Port("tcp", 80),
         ):
             port.allow_outbound_any_ip(self.security_group)
 
     def allow_connections_from(
-            self,
-            other: aws.ec2.SecurityGroup,
-            port_range: Ec2Port,
+        self,
+        other: aws.ec2.SecurityGroup,
+        port_range: Ec2Port,
     ) -> None:
         descriptor = "-".join(
             [

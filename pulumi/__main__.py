@@ -15,7 +15,10 @@ from infra.dgraph_ttl import DGraphTTL
 from infra.dynamodb import DynamoDB
 from infra.engagement_creator import EngagementCreator
 from infra.graph_merger import GraphMerger
-from infra.graph_mutation_cluster import GraphMutationCluster, LocalStandInGraphMutationCluster
+from infra.graph_mutation_cluster import (
+    GraphMutationCluster,
+    LocalStandInGraphMutationCluster,
+)
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.node_identifier import NodeIdentifier
@@ -31,7 +34,7 @@ def _create_dgraph_cluster(network: Network) -> DgraphCluster:
     else:
         return DgraphCluster(
             name=f"{DEPLOYMENT_NAME}-dgraph",
-            vpc=network.vpc,
+            vpc=network,
         )
 
 
@@ -62,14 +65,17 @@ def main() -> None:
     dynamodb_tables = dynamodb.DynamoDB()
 
     dgraph_cluster: DgraphCluster = _create_dgraph_cluster(network=network)
-    graph_mutation_service_cluster: GraphMutationCluster = _create_grpc_cluster(network=network, db=dynamodb_tables)
+    graph_mutation_service_cluster: GraphMutationCluster = _create_grpc_cluster(
+        network=network, db=dynamodb_tables
+    )
 
-    dgraph_cluster.allow_connections_from(graph_mutation_service_cluster.swarm.security_group)
+    dgraph_cluster.allow_connections_from(
+        graph_mutation_service_cluster.swarm.security_group
+    )
 
     DGraphTTL(network=network, dgraph_cluster=dgraph_cluster)
 
     secret = JWTSecret()
-
 
     forwarder = MetricForwarder(network=network)
 
@@ -207,7 +213,9 @@ def main() -> None:
         # another means of doing this. We should harmonize this, of
         # course.
         ENGAGEMENT_VIEW_DIR = Path("../src/js/engagement_view/build").resolve()
-        ux_bucket.upload_to_bucket(ENGAGEMENT_VIEW_DIR)
+        ux_bucket.upload_to_bucket(
+            ENGAGEMENT_VIEW_DIR, preserve_path=ENGAGEMENT_VIEW_DIR
+        )
 
     Api(
         network=network,

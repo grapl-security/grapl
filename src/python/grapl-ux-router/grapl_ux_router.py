@@ -56,17 +56,25 @@ class LazyUxBucket:
         start = int(time.time())
         try:
             obj = bucket.Object(resource_name)
+            # todo: We could just compress right here instead of allocating this intermediary
+            # Or we could compress the files in s3?
+            retrieved = cast(bytes, obj.get()['Body'].read())
+            end = int(time.time())
+            LOGGER.debug(f"retrieved object {resource_name} after {end - start}")
+        except bucket.meta.client.exceptions.AccessDenied as e:
+            end = int(time.time())
+            LOGGER.warning(f"Failed to retrieve object: {e} after {end - start}")
+            return None
+        except bucket.meta.client.exceptions.NoSuchKey as e:
+            end = int(time.time())
+            LOGGER.debug(f"Failed to retrieve object: {e} after {end - start}")
+            return None
         except Exception as e:
             # TODO: We should only return None in cases where the object doesn't exist
             end = int(time.time())
             LOGGER.warning(f"Failed to retrieve object: {e} after {end - start}")
-            return None
+            raise
 
-        # todo: We could just compress right here instead of allocating this intermediary
-        # Or we could compress the files in s3?
-        retrieved = cast(bytes, obj.get()['Body'].read())
-        end = int(time.time())
-        LOGGER.debug(f"retrieved object {resource_name} after {end - start}")
         return retrieved
 
     def _retrieve_bucket(self) -> Bucket:
@@ -173,6 +181,7 @@ def get_media_type(resource_name: str) -> str:
 
 
 def _route_to_resource(resource_name: str) -> Response:
+    LOGGER.info(f"fetching {resource_name}")
     resource = UX_BUCKET.get_resource(resource_name)
     if not resource:
         return not_found()

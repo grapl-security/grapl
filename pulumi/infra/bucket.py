@@ -44,8 +44,14 @@ class Bucket(aws.s3.Bucket):
         )
 
     @staticmethod
-    def grant_outbound_to(service_name: str, security_group: aws.ec2.SecurityGroup) -> None:
-        ...
+    def grant_outbound_to(
+        service_name: str, security_group: aws.ec2.SecurityGroup
+    ) -> None:
+
+        from infra.ec2 import Ec2Port
+
+        Ec2Port("tcp", 443).allow_outbound_any_ip(security_group)
+
         # aws.ec2.SecurityGroupRule(
         #     f"outbound-any-ip-egress-{service_name}-443",
         #     type="egress",
@@ -183,7 +189,10 @@ class Bucket(aws.s3.Bucket):
         )
 
     def upload_to_bucket(
-        self, file_path: Path, root_path: Optional[Path] = None
+        self,
+        file_path: Path,
+        root_path: Optional[Path] = None,
+        preserve_path: Optional[Path] = None,
     ) -> List[aws.s3.BucketObject]:
         """
         Compare with CDK's s3deploy.BucketDeployment
@@ -196,13 +205,19 @@ class Bucket(aws.s3.Bucket):
         "some_dir/subdir/c.txt"
         """
         if file_path.is_file():
-            return [self._upload_file_to_bucket(file_path, root_path=file_path.parent)]
+            if preserve_path:
+                root_path = preserve_path
+            else:
+                root_path = file_path.parent
+            return [self._upload_file_to_bucket(file_path, root_path=root_path)]
         elif file_path.is_dir():
             root_path = root_path or file_path
             # Flattens it
             return sum(
                 (
-                    self.upload_to_bucket(child, root_path=root_path)
+                    self.upload_to_bucket(
+                        child, root_path=root_path, preserve_path=preserve_path
+                    )
                     for child in file_path.iterdir()
                 ),
                 [],

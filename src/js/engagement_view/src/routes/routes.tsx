@@ -12,10 +12,10 @@ export default function Routes() {
     return (
         <HashRouter>
             <Switch>
-                <Route exact path="/login" component={LogIn} />
                 <Route exact path="/" component={Dashboard} />
-                <Route exact path="/plugins" component={UploadPlugin} />
-                <Route exact path="/engagements" component={EngagementUx} />
+                <Route path="/login" component={LogIn} />
+                <Route path="/plugins" component={UploadPlugin} />
+                <Route path="/engagements" component={EngagementUx} />
             </Switch>
         </HashRouter>
     );

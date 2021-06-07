@@ -42,7 +42,7 @@ class Network(pulumi.ComponentResource):
         # it could be useful in the future to have Pulumi be aware of
         # them.
 
-        cidr_block = ipaddress.ip_network("10.0.0.0/16")
+        cidr_block = ipaddress.ip_network("10.0.0.0/24")
 
         self.vpc = aws.ec2.Vpc(
             f"{name}-vpc",
@@ -62,14 +62,14 @@ class Network(pulumi.ComponentResource):
         # be further divided by availability zone
         public, private = cidr_block.subnets()
 
-        # Always assume at least 2 availability zones; no region has
+        # Always assume at least 3 availability zones; no region has
         # less. us-east-1 currently has the most AZs at 6.
         #
         # TODO: Consider parameterizing this value. This just happens
         # to be what we ended up with from our CDK usage. Also
         # consider implications of scaling up/down with the
         # delete/recreate semantics of subnets (which can't overlap).
-        desired_az_spread = 2
+        desired_az_spread = 3
         num_azs = min(desired_az_spread, len(azs))
         # 2 AZs => 2 subnets
         # 3 AZs => 4 subnets (extra 1 doesn't actually get created)

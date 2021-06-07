@@ -10,7 +10,8 @@ from pulumi.output import Output
 from infra.bucket import Bucket
 from infra.config import DEPLOYMENT_NAME
 from infra.dynamodb import DynamoDB
-from infra.grpc_swarm import Ec2Port, GrpcSwarm
+from infra.grpc_swarm import GrpcSwarm
+from infra.ec2 import Ec2Port
 
 # These are COPYd in from Dockerfile.pulumi
 _CONFIG_DIR: Final[Path] = Path("../src/js/grapl-cdk/graph_mutation_service").resolve()
@@ -18,17 +19,22 @@ _CONFIG_DIR: Final[Path] = Path("../src/js/grapl-cdk/graph_mutation_service").re
 
 class GraphMutationCluster(pulumi.ComponentResource):
     def __init__(
-            self,
-            vpc: aws.ec2.Vpc,
-            db: DynamoDB,
-            opts: Optional[pulumi.ResourceOptions] = None,
+        self,
+        vpc: aws.ec2.Vpc,
+        db: DynamoDB,
+        opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
-        super().__init__("grapl:GrpcSwarmCluster", name='graph-mutation-service', props=None, opts=opts)
+        super().__init__(
+            "grapl:GrpcSwarmCluster",
+            name="graph-mutation-service",
+            props=None,
+            opts=opts,
+        )
         child_opts = pulumi.ResourceOptions(parent=self)
 
         self.swarm = GrpcSwarm(
             name=f"{DEPLOYMENT_NAME}-graph-mutation-service-swarm",
-            service_name='graph-mutation-service',
+            service_name="graph-mutation-service",
             vpc=vpc,
             internal_service_ports=[
                 Ec2Port("tcp", 5500),
@@ -45,7 +51,7 @@ class GraphMutationCluster(pulumi.ComponentResource):
             logical_bucket_name="graph-mutation-service-config-bucket",
             opts=child_opts,
         )
-        self.service_config_bucket.grant_read_permissions_to(self.swarm.role)
+        self.service_config_bucket.grant_read_permission_to(self.swarm.role)
         self.service_config_bucket.upload_to_bucket(_CONFIG_DIR)
 
         self.register_outputs({})
@@ -77,7 +83,10 @@ class LocalStandInGraphMutationCluster(GraphMutationCluster):
     @property
     def alpha_host_port(self) -> pulumi.Output[str]:
         config = pulumi.Config()
-        endpoint = config.get("MG_ALPHAS") or f"{DEPLOYMENT_NAME}.graph-mutation-service.grapl:5500"
+        endpoint = (
+            config.get("MG_ALPHAS")
+            or f"{DEPLOYMENT_NAME}.graph-mutation-service.grapl:5500"
+        )
         return Output.from_input(endpoint)
 
     def allow_connections_from(self, other: aws.ec2.SecurityGroup) -> None:

@@ -63,7 +63,9 @@ class EngagementEdge(pulumi.ComponentResource):
             network=network,
             opts=pulumi.ResourceOptions(parent=self),
         )
+        from infra.ec2 import Ec2Port
 
+        Ec2Port("tcp", 443).allow_outbound_any_ip(self.function.security_group)
         forwarder.subscribe_to_log_group(name, self.function.log_group)
 
         # TODO: Original infrastructure code allowed access to DGraph,

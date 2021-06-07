@@ -43,8 +43,12 @@ class GraphMerger(FargateService):
 
         dgraph_cluster.allow_connections_from(self.default_service.security_group)
         dgraph_cluster.allow_connections_from(self.retry_service.security_group)
-        graph_mutation_service_cluster.allow_connections_from(self.default_service.security_group)
-        graph_mutation_service_cluster.allow_connections_from(self.retry_service.security_group)
+        graph_mutation_service_cluster.allow_connections_from(
+            self.default_service.security_group
+        )
+        graph_mutation_service_cluster.allow_connections_from(
+            self.retry_service.security_group
+        )
 
         # TODO: Interestingly, the CDK code doesn't have this, even though
         # the other services do.

@@ -12,63 +12,18 @@ import pulumi
 from pulumi.output import Output
 
 # These are COPYd in from Dockerfile.pulumi
+from infra.ec2 import Ec2Port
+from infra.ec2_cluster import Ec2Cluster
+from infra.network import Network
+
 SWARM_INIT_DIR = Path("../src/js/grapl-cdk/swarm").resolve()
-
-TRAFFIC_FROM_ANYWHERE_CIDR = "0.0.0.0/0"
-
-
-@dataclass
-class Ec2Port:
-    protocol: str
-    port: int
-
-    def allow_internally(
-        self,
-        sg: aws.ec2.SecurityGroup,
-    ) -> None:
-        aws.ec2.SecurityGroupRule(
-            f"internal-ingress-{self}",
-            type="ingress",
-            security_group_id=sg.id,
-            from_port=self.port,
-            to_port=self.port,
-            protocol=self.protocol,
-            self=True,
-            opts=pulumi.ResourceOptions(parent=sg),
-        )
-
-        aws.ec2.SecurityGroupRule(
-            f"internal-egress-{self}",
-            type="egress",
-            security_group_id=sg.id,
-            from_port=self.port,
-            to_port=self.port,
-            protocol=self.protocol,
-            self=True,
-            opts=pulumi.ResourceOptions(parent=sg),
-        )
-
-    def allow_outbound_any_ip(self, sg: aws.ec2.SecurityGroup) -> None:
-        aws.ec2.SecurityGroupRule(
-            f"outbound-any-ip-egress-{self}",
-            type="egress",
-            security_group_id=sg.id,
-            from_port=self.port,
-            to_port=self.port,
-            protocol=self.protocol,
-            cidr_blocks=[TRAFFIC_FROM_ANYWHERE_CIDR],
-            opts=pulumi.ResourceOptions(parent=sg),
-        )
-
-    def __str__(self) -> str:
-        return f"Ec2Port({self.protocol}:{self.port})"
 
 
 class Swarm(pulumi.ComponentResource):
     def __init__(
         self,
         name: str,
-        vpc: aws.ec2.Vpc,
+        vpc: Network,
         internal_service_ports: Sequence[Ec2Port],
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
@@ -85,7 +40,7 @@ class Swarm(pulumi.ComponentResource):
         self.security_group = aws.ec2.SecurityGroup(
             f"{name}-sec-group",
             description=f"Docker Swarm security group",
-            vpc_id=vpc.id,
+            vpc_id=vpc.vpc.id,
             tags={"swarm-sec-group-for-deployment": DEPLOYMENT_NAME},
             opts=child_opts,
         )
@@ -113,7 +68,7 @@ class Swarm(pulumi.ComponentResource):
         self._open_initial_ports(internal_service_ports)
 
         # InstanceProfile for swarm instances
-        aws.iam.InstanceProfile(
+        self.instance_profile = aws.iam.InstanceProfile(
             f"{name}-instance-profile",
             opts=child_opts,
             role=self.role.name,
@@ -132,7 +87,7 @@ class Swarm(pulumi.ComponentResource):
             name=f"{DEPLOYMENT_NAME}.dgraph.grapl",
             vpcs=[
                 aws.route53.ZoneVpcArgs(
-                    vpc_id=vpc.id,
+                    vpc_id=vpc.vpc.id,
                 )
             ],
             opts=child_opts,
@@ -144,6 +99,18 @@ class Swarm(pulumi.ComponentResource):
         )
         self.swarm_config_bucket.grant_get_and_list_to(self.role)
         self.swarm_config_bucket.upload_to_bucket(SWARM_INIT_DIR)
+
+        self.cluster = Ec2Cluster(
+            f"{name}-cluster",
+            vpc,
+            quorum_size=1,
+            quorums=1,
+            ami="ami-03657b56516ab7912",
+            instance_type="i3.large",
+            iam_instance_profile=self.instance_profile,
+            vpc_security_group_ids=[self.security_group.vpc_id],
+            opts=child_opts,
+        )
 
         self.register_outputs({})
 
