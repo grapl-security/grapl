@@ -6,7 +6,7 @@ from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 
 
-class GraplRouterApi(FargateService):
+class RouterApi(FargateService):
     def __init__(
         self,
         input_emitter: EventEmitter,
@@ -17,21 +17,21 @@ class GraplRouterApi(FargateService):
     ) -> None:
 
         super().__init__(
-            "graph-merger",
+            "router-api",
             image=GraplDockerBuild(
                 dockerfile="../src/rust/Dockerfile",
-                target="grapl-router-api-deploy",  # check this
+                target="router-api-deploy",  # check this
                 context="../src",
             ),
             retry_image=GraplDockerBuild(
                 dockerfile="../src/rust/Dockerfile",
-                target="grapl-router-api-retry-handler-deploy",
+                target="router-api-retry-handler-deploy",
                 context="../src",
             ),
-            command="/grapl-router-api",
+            command="/router-api",
             env={
                 **configurable_envvars(
-                    "grapl_router_api", ["RUST_LOG", "RUST_BACKTRACE"]
+                    "router_api", ["RUST_LOG", "RUST_BACKTRACE"]
                 ),
             },
             input_emitter=input_emitter,

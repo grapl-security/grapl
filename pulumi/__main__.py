@@ -14,7 +14,7 @@ from infra.dgraph_cluster import DgraphCluster, LocalStandInDgraphCluster
 from infra.dgraph_ttl import DGraphTTL
 from infra.engagement_creator import EngagementCreator
 from infra.graph_merger import GraphMerger
-from infra.grapl_router_api import GraplRouterApi
+from infra.router_api import RouterApi
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.node_identifier import NodeIdentifier
@@ -68,7 +68,7 @@ def main() -> None:
     subgraphs_merged_emitter = emitter.EventEmitter("subgraphs-merged")
     dispatched_analyzer_emitter = emitter.EventEmitter("dispatched-analyzer")
     analyzer_matched_emitter = emitter.EventEmitter("analyzer-matched-subgraphs")
-    grapl_router_api = emitter.EventEmitter("grapl-router-api")
+    router_api = emitter.EventEmitter("router-api")
 
     # TODO: No _infrastructure_ currently *writes* to this bucket
     analyzers_bucket = Bucket("analyzers-bucket", sse=True)
