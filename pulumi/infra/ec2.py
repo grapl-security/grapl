@@ -51,4 +51,4 @@ class Ec2Port:
         )
 
     def __str__(self) -> str:
-        return f"Ec2Port({self.protocol}:{self.port})"
+        return f"{self.protocol}:{self.port}"
