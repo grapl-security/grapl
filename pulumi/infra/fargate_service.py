@@ -1,5 +1,5 @@
 import json
-from typing import Iterator, Mapping, Optional, Sequence, Tuple, Union
+from typing import Mapping, Optional, Sequence, Tuple, Union
 
 import pulumi_aws as aws
 import pulumi_docker as docker
