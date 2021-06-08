@@ -198,7 +198,9 @@ class Bucket(aws.s3.Bucket):
                 [],
             )
         else:
-            raise ValueError(f"Neither a file nor a dir - does it exist?: {file_path}")
+            raise FileNotFoundError(
+                f"Neither a file nor a dir - does it exist?: {file_path}"
+            )
 
 
 def bucket_physical_name(logical_name: str) -> str:
