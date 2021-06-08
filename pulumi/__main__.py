@@ -192,7 +192,12 @@ def main() -> None:
         # another means of doing this. We should harmonize this, of
         # course.
         ENGAGEMENT_VIEW_DIR = Path("../src/js/engagement_view/build").resolve()
-        ux_bucket.upload_to_bucket(ENGAGEMENT_VIEW_DIR, root_path=ENGAGEMENT_VIEW_DIR)
+        try:
+            ux_bucket.upload_to_bucket(
+                ENGAGEMENT_VIEW_DIR, root_path=ENGAGEMENT_VIEW_DIR
+            )
+        except FileNotFoundError as e:
+            raise Exception("You probably need to `make pulumi-prep` first") from e
 
     Api(
         network=network,
