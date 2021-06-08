@@ -1,6 +1,8 @@
 import dataclasses
+from abc import ABC
 from typing import Mapping, Optional, Sequence, Union
 
+from infra.ec2 import Ec2Port
 from infra.lambda_ import LambdaExecutionRole, PythonLambdaArgs
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
@@ -10,7 +12,7 @@ from infra.service_queue import ServiceQueue
 import pulumi
 
 
-class Service(pulumi.ComponentResource):
+class Service(pulumi.ComponentResource, ABC):
     def __init__(
         self,
         name: str,
@@ -76,7 +78,17 @@ class Service(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
+        self._setup_default_ports()
+
         self.register_outputs({})
+
+    def _setup_default_ports(self) -> None:
+        """
+        Can be overridden by subclasses. Most services are fine having an outbound 443.
+        Has a cognate in fargate_service.py.
+        """
+        for handler in self.handlers:
+            Ec2Port("tcp", 443).allow_outbound_any_ip(handler.function.security_group)
 
     @property
     def handlers(self) -> Sequence[QueueDrivenLambda]:

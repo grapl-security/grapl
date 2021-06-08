@@ -1,10 +1,11 @@
 import json
-from typing import Mapping, Optional, Sequence, Tuple, Union
+from typing import Iterator, Mapping, Optional, Sequence, Tuple, Union
 
 import pulumi_aws as aws
 import pulumi_docker as docker
 from infra.cache import Cache
 from infra.config import DEPLOYMENT_NAME, SERVICE_LOG_RETENTION_DAYS
+from infra.ec2 import Ec2Port
 from infra.emitter import EventEmitter
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
@@ -338,14 +339,26 @@ class FargateService(pulumi.ComponentResource):
         )
         retry_repository.grant_access_to(self.retry_service.execution_role)
 
+        self.services = (self.default_service, self.retry_service)
+
+        self._setup_default_ports()
+
         self.register_outputs({})
+
+    def _setup_default_ports(self) -> None:
+        """
+        Can be overridden by subclasses. Most services are fine having an outbound 443.
+        Has a cognate in service.py.
+        """
+        for svc in self.services:
+            Ec2Port("tcp", 443).allow_outbound_any_ip(svc.security_group)
 
     def allow_egress_to_cache(self, cache: Cache) -> None:
         """
         Allow both the default and retry services to connect to the `cache`.
         """
-        for s in (self.default_service, self.retry_service):
-            cache.allow_egress_to_cache_for(s._name, s.security_group)
+        for svc in self.services:
+            cache.allow_egress_to_cache_for(svc._name, svc.security_group)
 
     def _repository_and_image(
         self, name: str, build: docker.DockerBuild
