@@ -40,7 +40,7 @@ class Ec2Port:
 
     def allow_outbound_any_ip(self, sg: aws.ec2.SecurityGroup) -> None:
         aws.ec2.SecurityGroupRule(
-            f"outbound-any-ip-egress-{self}",
+            f"outbound-any-ip-egress-{self}-to-{sg._name}",
             type="egress",
             security_group_id=sg.id,
             from_port=self.port,
@@ -51,4 +51,4 @@ class Ec2Port:
         )
 
     def __str__(self) -> str:
-        return f"Ec2Port({self.protocol}:{self.port})"
+        return f"{self.protocol}:{self.port}"

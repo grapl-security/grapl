@@ -49,14 +49,11 @@ class AnalyzerExecutor(FargateService):
             network=network,
         )
 
-        dgraph_cluster.allow_connections_from(self.default_service.security_group)
-        dgraph_cluster.allow_connections_from(self.retry_service.security_group)
-
-        # TODO: These permissions are not granted to the retry
-        # service; that appears to be a bug
-        analyzers_bucket.grant_get_and_list_to(self.default_service.task_role)
-        model_plugins_bucket.grant_get_and_list_to(self.default_service.task_role)
-        output_emitter.grant_read_to(self.default_service.task_role)
+        for svc in self.services:
+            dgraph_cluster.allow_connections_from(svc.security_group)
+            analyzers_bucket.grant_get_and_list_to(svc.task_role)
+            model_plugins_bucket.grant_get_and_list_to(svc.task_role)
+            output_emitter.grant_read_to(svc.task_role)
 
         # TODO: CDK doesn't actually have this for some reason
         self.allow_egress_to_cache(cache)
