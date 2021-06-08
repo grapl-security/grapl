@@ -1,5 +1,4 @@
 import dataclasses
-from abc import ABC
 from typing import Mapping, Optional, Sequence, Union
 
 from infra.ec2 import Ec2Port
@@ -12,7 +11,7 @@ from infra.service_queue import ServiceQueue
 import pulumi
 
 
-class Service(pulumi.ComponentResource, ABC):
+class Service(pulumi.ComponentResource):
     def __init__(
         self,
         name: str,
