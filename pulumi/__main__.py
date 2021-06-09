@@ -1,3 +1,8 @@
+from typing import List
+
+import pulumi
+from infra.fargate_service import FargateService
+from infra.pipeline_dashboard import PipelineDashboard
 import os
 from pathlib import Path
 
@@ -49,6 +54,9 @@ def main() -> None:
     # objects.
     register_auto_tags({"grapl deployment": DEPLOYMENT_NAME})
 
+    from unittest.mock import patch
+    patcher = patch.object(pulumi.log, pulumi.log.warn.__name__).start()
+
     network = Network("grapl-network")
 
     dgraph_cluster: DgraphCluster = _create_dgraph_cluster(network=network)
@@ -74,6 +82,8 @@ def main() -> None:
     # TODO: No _infrastructure_ currently *writes* to this bucket
     analyzers_bucket = Bucket("analyzers-bucket", sse=True)
     model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)
+
+    fargate_services: List[FargateService] = []
 
     if LOCAL_GRAPL:
         # We need to create these queues, and wire them up to their
@@ -106,7 +116,7 @@ def main() -> None:
         # No Fargate or Elasticache in Local Grapl
         cache = Cache("main-cache", network=network)
 
-        SysmonGenerator(
+        sysmon_generator = SysmonGenerator(
             input_emitter=sysmon_log_emitter,
             output_emitter=unid_subgraphs_generated_emitter,
             network=network,
@@ -114,7 +124,7 @@ def main() -> None:
             forwarder=forwarder,
         )
 
-        OSQueryGenerator(
+        osquery_generator = OSQueryGenerator(
             input_emitter=osquery_log_emitter,
             output_emitter=unid_subgraphs_generated_emitter,
             network=network,
@@ -122,7 +132,7 @@ def main() -> None:
             forwarder=forwarder,
         )
 
-        NodeIdentifier(
+        node_identifier = NodeIdentifier(
             input_emitter=unid_subgraphs_generated_emitter,
             output_emitter=subgraphs_generated_emitter,
             db=dynamodb_tables,
@@ -161,6 +171,10 @@ def main() -> None:
             forwarder=forwarder,
         )
 
+        fargate_services.append(sysmon_generator)
+        fargate_services.append(osquery_generator)
+        fargate_services.append(node_identifier)
+
     EngagementCreator(
         input_emitter=analyzer_matched_emitter,
         network=network,
@@ -176,6 +190,11 @@ def main() -> None:
     )
 
     OpsAlarms(name="ops-alarms")
+
+    PipelineDashboard(
+        fargate_services=fargate_services,
+        lambdas=[]
+    )
 
     ########################################################################
 
@@ -211,6 +230,7 @@ def main() -> None:
         forwarder=forwarder,
         dgraph_cluster=dgraph_cluster,
     )
+
 
     ########################################################################
 
