@@ -24,7 +24,7 @@ T = TypeVar("T", covariant=True)
 
 
 class FromEnv(Protocol[T]):
-    def from_env(self) -> T:
+    def from_env(self, config: Optional[Config] = None) -> T:
         pass
 
 
@@ -47,7 +47,6 @@ ClientGetParams = NamedTuple(
 def _client_get(
     client_create_fn: Callable[..., Any],
     params: ClientGetParams,
-    region: Optional[str] = None,
     config: Optional[Config] = None,
 ) -> Any:
     """
@@ -60,10 +59,9 @@ def _client_get(
     access_session_token = os.getenv(params.access_session_token)
 
     # AWS_REGION is Fargate-specific, most AWS stuff uses AWS_DEFAULT_REGION.
+    region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION")
     if not region:
-        region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION")
-        if not region:
-            raise FromEnvException("Please set AWS_REGION= or AWS_DEFAULT_REGION=")
+        raise FromEnvException("Please set AWS_REGION= or AWS_DEFAULT_REGION=")
 
     # Unlike Rust FromEnv, we rely on boto3's built in region handling.
 
@@ -165,11 +163,9 @@ class SQSClientFactory(FromEnv["SQSClient"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(
-        self, region: Optional[str] = None, config: Optional[Config] = None
-    ) -> SQSClient:
+    def from_env(self, config: Optional[Config] = None) -> SQSClient:
         client: SQSClient = _client_get(
-            self.client_create_fn, _SQSParams, region=region, config=config
+            self.client_create_fn, _SQSParams, config=config
         )
         return client
 
@@ -187,11 +183,9 @@ class SNSClientFactory(FromEnv["SNSClient"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(
-        self, region: Optional[str] = None, config: Optional[Config] = None
-    ) -> SNSClient:
+    def from_env(self, config: Optional[Config] = None) -> SNSClient:
         client: SNSClient = _client_get(
-            self.client_create_fn, _SNSParams, region=region, config=config
+            self.client_create_fn, _SNSParams, config=config
         )
         return client
 
@@ -209,11 +203,9 @@ class EC2ResourceFactory(FromEnv["EC2ServiceResource"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.resource
 
-    def from_env(
-        self, region: Optional[str] = None, config: Optional[Config] = None
-    ) -> EC2ServiceResource:
+    def from_env(self, config: Optional[Config] = None) -> EC2ServiceResource:
         client: EC2ServiceResource = _client_get(
-            self.client_create_fn, _EC2Params, region=region, config=config
+            self.client_create_fn, _EC2Params, config=config
         )
         return client
 
@@ -231,11 +223,9 @@ class SSMClientFactory(FromEnv["SSMClient"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(
-        self, region: Optional[str] = None, config: Optional[Config] = None
-    ) -> SSMClient:
+    def from_env(self, config: Optional[Config] = None) -> SSMClient:
         client: SSMClient = _client_get(
-            self.client_create_fn, _SSMParams, region=region, config=config
+            self.client_create_fn, _SSMParams, config=config
         )
         return client
 
@@ -253,11 +243,9 @@ class CloudWatchClientFactory(FromEnv["CloudWatchClient"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(
-        self, region: Optional[str] = None, config: Optional[Config] = None
-    ) -> CloudWatchClient:
+    def from_env(self, config: Optional[Config] = None) -> CloudWatchClient:
         client: CloudWatchClient = _client_get(
-            self.client_create_fn, _CloudWatchParams, region=region, config=config
+            self.client_create_fn, _CloudWatchParams, config=config
         )
         return client
 
@@ -275,11 +263,9 @@ class LambdaClientFactory(FromEnv["LambdaClient"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(
-        self, region: Optional[str] = None, config: Optional[Config] = None
-    ) -> LambdaClient:
+    def from_env(self, config: Optional[Config] = None) -> LambdaClient:
         client: LambdaClient = _client_get(
-            self.client_create_fn, _LambdaParams, region=region, config=config
+            self.client_create_fn, _LambdaParams, config=config
         )
         return client
 
@@ -297,11 +283,9 @@ class Route53ClientFactory(FromEnv["Route53Client"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(
-        self, region: Optional[str] = None, config: Optional[Config] = None
-    ) -> Route53Client:
+    def from_env(self, config: Optional[Config] = None) -> Route53Client:
         client: Route53Client = _client_get(
-            self.client_create_fn, _Route53Params, region=region, config=config
+            self.client_create_fn, _Route53Params, config=config
         )
         return client
 
@@ -319,12 +303,8 @@ class S3ClientFactory(FromEnv["S3Client"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(
-        self, region: Optional[str] = None, config: Optional[Config] = None
-    ) -> S3Client:
-        client: S3Client = _client_get(
-            self.client_create_fn, _S3Params, region=region, config=config
-        )
+    def from_env(self, config: Optional[Config] = None) -> S3Client:
+        client: S3Client = _client_get(self.client_create_fn, _S3Params, config=config)
         return client
 
 
@@ -332,11 +312,9 @@ class S3ResourceFactory(FromEnv["S3ServiceResource"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.resource
 
-    def from_env(
-        self, region: Optional[str] = None, config: Optional[Config] = None
-    ) -> S3ServiceResource:
+    def from_env(self, config: Optional[Config] = None) -> S3ServiceResource:
         client: S3ServiceResource = _client_get(
-            self.client_create_fn, _S3Params, region=region, config=config
+            self.client_create_fn, _S3Params, config=config
         )
         return client
 
@@ -354,11 +332,9 @@ class DynamoDBResourceFactory(FromEnv["DynamoDBServiceResource"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.resource
 
-    def from_env(
-        self, region: Optional[str] = None, config: Optional[Config] = None
-    ) -> DynamoDBServiceResource:
+    def from_env(self, config: Optional[Config] = None) -> DynamoDBServiceResource:
         client: DynamoDBServiceResource = _client_get(
-            self.client_create_fn, _DynamoDBParams, region=region, config=config
+            self.client_create_fn, _DynamoDBParams, config=config
         )
         return client
 
@@ -367,9 +343,9 @@ class DynamoDBClientFactory(FromEnv["DynamoDBClient"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(self, region: Optional[str] = None) -> DynamoDBClient:
+    def from_env(self, config: Optional[Config] = None) -> DynamoDBClient:
         client: DynamoDBClient = _client_get(
-            self.client_create_fn, _DynamoDBParams, region=region
+            self.client_create_fn, _DynamoDBParams, config=config
         )
         return client
 
@@ -387,11 +363,9 @@ class SecretsManagerClientFactory(FromEnv["SecretsManagerClient"]):
     def __init__(self, boto3_module: Any):
         self.client_create_fn = boto3_module.client
 
-    def from_env(
-        self, region: Optional[str] = None, config: Optional[Config] = None
-    ) -> SecretsManagerClient:
+    def from_env(self, config: Optional[Config] = None) -> SecretsManagerClient:
         client: SecretsManagerClient = _client_get(
-            self.client_create_fn, _SecretsManagerParams, region=region, config=config
+            self.client_create_fn, _SecretsManagerParams, config=config
         )
         return client
 
