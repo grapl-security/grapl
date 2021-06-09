@@ -130,7 +130,7 @@ def main() -> None:
             forwarder=forwarder,
         )
 
-        GraplRouterApi(
+        RouterApi(
             input_emitter=unid_subgraphs_generated_emitter,
             output_emitter=subgraphs_generated_emitter,
             network=network,
