@@ -1,8 +1,8 @@
 use ::reqwest;
 use actix_web::Result;
 use serde::{
-    Deserialize,
     de::DeserializeOwned,
+    Deserialize,
     Serialize,
     __private::{
         Result::Ok,
@@ -50,7 +50,7 @@ where
     B: Into<Option<I>>,
     R: DeserializeOwned,
     I: Serialize,
-    E: From<reqwest::Error>
+    E: From<reqwest::Error>,
 {
     let client = reqwest::Client::new();
 
@@ -77,7 +77,10 @@ pub async fn login_request_with_body(path: &str, body: LoginBody) -> Result<Auth
     do_request(path, body).await
 }
 
-pub async fn request_with_body(path: &str, body: DeployRequest) -> Result<PluginObject, CustomError> {
+pub async fn request_with_body(
+    path: &str,
+    body: DeployRequest,
+) -> Result<PluginObject, CustomError> {
     do_request(path, body).await
 }
 

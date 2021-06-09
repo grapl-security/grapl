@@ -66,12 +66,12 @@ services:
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
-  grapl-router-api:
-    image: grapl/grapl-router-api:${TAG:-latest}
+  grapl-web-ui:
+    image: grapl/grapl-web-ui:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile
-      target: router-api-deploy
+      target: web-ui-deploy
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
 

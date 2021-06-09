@@ -19,6 +19,6 @@ members = [
     "./sqs-executor",
     "./sysmon",
     "./grapl-service",
-    "./grapl-router-api",
+    "./grapl-web-ui",   
     "./grapl-graphql-codegen",
 ]

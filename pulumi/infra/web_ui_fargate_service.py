@@ -23,12 +23,12 @@ KnownDockerfile = Literal[
 
 class GraplDockerBuild(docker.DockerBuild):
     def __init__(
-            self,
-            dockerfile: KnownDockerfile,
-            target: str,
-            context: Optional[str] = None,
-            args: Optional[Mapping[str, pulumi.Input[str]]] = None,
-            env: Optional[Mapping[str, str]] = None,
+        self,
+        dockerfile: KnownDockerfile,
+        target: str,
+        context: Optional[str] = None,
+        args: Optional[Mapping[str, pulumi.Input[str]]] = None,
+        env: Optional[Mapping[str, str]] = None,
     ):
         super().__init__(
             context=context,
@@ -45,7 +45,7 @@ class GraplDockerBuild(docker.DockerBuild):
 
 class FargateTaskRole(aws.iam.Role):
     def __init__(
-            self, name: str, opts: Optional[pulumi.ResourceOptions] = None
+        self, name: str, opts: Optional[pulumi.ResourceOptions] = None
     ) -> None:
         super().__init__(
             f"{name}-task-role",
@@ -68,7 +68,7 @@ class FargateTaskRole(aws.iam.Role):
 
 class FargateExecutionRole(aws.iam.Role):
     def __init__(
-            self, name: str, opts: Optional[pulumi.ResourceOptions] = None
+        self, name: str, opts: Optional[pulumi.ResourceOptions] = None
     ) -> None:
         super().__init__(
             f"{name}-execution-role",
@@ -91,15 +91,15 @@ class FargateExecutionRole(aws.iam.Role):
 
 class _WebUiAWSFargateService(pulumi.ComponentResource):
     def __init__(
-            self,
-            name: str,
-            cluster: aws.ecs.Cluster,
-            network: Network,
-            image: pulumi.Output[str],
-            command: str,
-            env: Mapping[str, Union[str, pulumi.Output[str]]],
-            forwarder: MetricForwarder,
-            opts: Optional[pulumi.ResourceOptions] = None,
+        self,
+        name: str,
+        cluster: aws.ecs.Cluster,
+        network: Network,
+        image: pulumi.Output[str],
+        command: str,
+        env: Mapping[str, Union[str, pulumi.Output[str]]],
+        forwarder: MetricForwarder,
+        opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
 
         super().__init__("grapl:WebUiAWSFargateService", name, None, opts)
@@ -222,14 +222,14 @@ class _WebUiAWSFargateService(pulumi.ComponentResource):
 
 class WebUiFargateService(pulumi.ComponentResource):
     def __init__(
-            self,
-            name: str,
-            network: Network,
-            image: docker.DockerBuild,
-            command: str,
-            env: Mapping[str, Union[str, pulumi.Output[str]]],
-            forwarder: MetricForwarder,
-            opts: Optional[pulumi.ResourceOptions] = None,
+        self,
+        name: str,
+        network: Network,
+        image: docker.DockerBuild,
+        command: str,
+        env: Mapping[str, Union[str, pulumi.Output[str]]],
+        forwarder: MetricForwarder,
+        opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         super().__init__("grapl:WebUiFargateService", name, None, opts)
 
@@ -261,10 +261,12 @@ class WebUiFargateService(pulumi.ComponentResource):
         """
         Allow both the default and retry services to connect to the `cache`.
         """
-        cache.allow_egress_to_cache_for(self.default_service._name, self.default_service.security_group)
+        cache.allow_egress_to_cache_for(
+            self.default_service._name, self.default_service.security_group
+        )
 
     def _repository_and_image(
-            self, name: str, build: docker.DockerBuild
+        self, name: str, build: docker.DockerBuild
     ) -> Tuple[Repository, pulumi.Output[str]]:
 
         repository = Repository(name, opts=pulumi.ResourceOptions(parent=self))

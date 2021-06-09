@@ -14,12 +14,12 @@ from infra.dgraph_cluster import DgraphCluster, LocalStandInDgraphCluster
 from infra.dgraph_ttl import DGraphTTL
 from infra.engagement_creator import EngagementCreator
 from infra.graph_merger import GraphMerger
-from infra.router_api import RouterApi
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.node_identifier import NodeIdentifier
 from infra.osquery_generator import OSQueryGenerator
 from infra.provision_lambda import Provisioner
+from infra.router_api import RouterApi
 from infra.secret import JWTSecret
 from infra.sysmon_generator import SysmonGenerator
 
@@ -68,7 +68,7 @@ def main() -> None:
     subgraphs_merged_emitter = emitter.EventEmitter("subgraphs-merged")
     dispatched_analyzer_emitter = emitter.EventEmitter("dispatched-analyzer")
     analyzer_matched_emitter = emitter.EventEmitter("analyzer-matched-subgraphs")
-    router_api = emitter.EventEmitter("router-api")
+    web_ui = emitter.EventEmitter("web-ui")
 
     # TODO: No _infrastructure_ currently *writes* to this bucket
     analyzers_bucket = Bucket("analyzers-bucket", sse=True)

@@ -6,7 +6,7 @@ from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 
 
-class RouterApi(FargateService):
+class WebUi(FargateService):
     def __init__(
         self,
         input_emitter: EventEmitter,
@@ -17,22 +17,20 @@ class RouterApi(FargateService):
     ) -> None:
 
         super().__init__(
-            "router-api",
+            "web-ui",
             image=GraplDockerBuild(
                 dockerfile="../src/rust/Dockerfile",
-                target="router-api-deploy",  # check this
+                target="web-ui-deploy",  # check this
                 context="../src",
             ),
             retry_image=GraplDockerBuild(
                 dockerfile="../src/rust/Dockerfile",
-                target="router-api-retry-handler-deploy",
+                target="web-ui-retry-handler-deploy",
                 context="../src",
             ),
-            command="/router-api",
+            command="/web-ui",
             env={
-                **configurable_envvars(
-                    "router_api", ["RUST_LOG", "RUST_BACKTRACE"]
-                ),
+                **configurable_envvars("web_ui", ["RUST_LOG", "RUST_BACKTRACE"]),
             },
             input_emitter=input_emitter,
             output_emitter=output_emitter,

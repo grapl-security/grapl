@@ -283,8 +283,8 @@ services:
       localstack:
         condition: service_healthy
 
-  grapl-router-api:
-    image: grapl/grapl-router-api:${TAG:-latest}
+  grapl-web-ui:
+    image: grapl/grapl-web-ui:${TAG:-latest}
     environment:
       <<: *aws-region
       IS_LOCAL: "true"
