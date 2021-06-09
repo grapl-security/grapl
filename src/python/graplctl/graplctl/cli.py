@@ -81,16 +81,14 @@ def main(
         grapl_deployment_name,
         grapl_version,
         aws_profile,
-        ec2=EC2ResourceFactory(session).from_env(region=grapl_region),
-        ssm=SSMClientFactory(session).from_env(region=grapl_region),
-        cloudwatch=CloudWatchClientFactory(session).from_env(region=grapl_region),
-        s3=S3ClientFactory(session).from_env(region=grapl_region),
-        sns=SNSClientFactory(session).from_env(region=grapl_region),
-        route53=Route53ClientFactory(session).from_env(region=grapl_region),
-        sqs=SQSClientFactory(session).from_env(region=grapl_region),
-        lambda_=LambdaClientFactory(session).from_env(
-            region=grapl_region, config=lambda_config
-        ),
+        ec2=EC2ResourceFactory(session).from_env(),
+        ssm=SSMClientFactory(session).from_env(),
+        cloudwatch=CloudWatchClientFactory(session).from_env(),
+        s3=S3ClientFactory(session).from_env(),
+        sns=SNSClientFactory(session).from_env(),
+        route53=Route53ClientFactory(session).from_env(),
+        sqs=SQSClientFactory(session).from_env(),
+        lambda_=LambdaClientFactory(session).from_env(config=lambda_config),
     )
 
 
