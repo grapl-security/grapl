@@ -58,15 +58,17 @@ def _client_get(
     access_key_secret = os.getenv(params.access_key_secret_key)
     access_session_token = os.getenv(params.access_session_token)
 
-    # AWS_REGION is Fargate-specific, most AWS stuff uses AWS_DEFAULT_REGION.
-    if config is not None and config.region_name is None:
-        region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION")
-        if not region:
-            raise FromEnvException("Please set AWS_REGION= or AWS_DEFAULT_REGION=")
-    else:
+    # determine the aws region
+    if config is not None and config.region_name is not None:
+        # prefer config's region if set
         region = config.region_name
+    else:
+        region = os.getenv("AWS_DEFAULT_REGION") or os.getenv("AWS_REGION")
 
-    # Unlike Rust FromEnv, we rely on boto3's built in region handling.
+    if not region:
+        raise FromEnvException(
+            "Please set AWS_REGION, AWS_DEFAULT_REGION, or config.region_name"
+        )
 
     if _running_in_localstack():
         localstack_config = Config(
