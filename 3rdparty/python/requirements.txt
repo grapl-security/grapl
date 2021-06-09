@@ -2,7 +2,8 @@
 boto3
 botocore
 chalice==1.22.4
-click
+# Chalice requires a Click in 7, <=8
+click==7.1.2
 hypothesis
 mypy_boto3_cloudwatch
 mypy_boto3_dynamodb
