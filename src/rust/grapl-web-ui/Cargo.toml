@@ -1,0 +1,24 @@
+[package]
+name = "grapl-web-ui"
+version = "0.1.0"
+authors = ["grapl <graplsecurity.com>"]
+edition = "2018"
+
+[[bin]]
+name = "web-ui"
+path = "src/main.rs"
+
+[lib]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+#actix-web = "3.3.2"
+env_logger = "0.6"
+serde = {version = "1.0", features = ["derive"]}
+http = "0.1.19"
+reqwest = {version = "0.11.3", default-features=false, features = ["json", "rustls-tls"]}
+thiserror = "1.0.24"
+tracing-actix-web = "0.4.0-beta.1"
+tracing = "0.1"
+actix-web = "4.0.0-beta.6"
