@@ -2,7 +2,8 @@
 boto3
 botocore
 chalice==1.22.4
-click
+# Chalice requires a Click in 7, <=8
+click==7.1.2
 hypothesis
 mypy_boto3_cloudwatch
 mypy_boto3_dynamodb
@@ -17,7 +18,8 @@ mypy_boto3_sqs
 mypy_boto3_ssm
 protobuf>=3.12.1
 pulumi>=3.0.0,<4.0.0
-pulumi-aws>=4.0.0,<5.0.0
+# 4.7.0 is broken: https://github.com/pulumi/pulumi-aws/issues/1519
+pulumi-aws>=4.0.0,<5.0.0,<4.7.0
 pulumi_docker
 pulumi_random
 pydgraph

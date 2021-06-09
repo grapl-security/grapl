@@ -24,7 +24,7 @@ Ec2Instance = common.Ec2Instance
 @click.option(
     "-r",
     "--grapl-region",
-    type=click.Choice(docker_swarm_ops.REGION_TO_AMI_ID.keys()),
+    type=click.Choice(list(docker_swarm_ops.REGION_TO_AMI_ID.keys())),
     envvar="GRAPL_REGION",
     help="grapl region to target [$GRAPL_REGION]",
     required=True,
