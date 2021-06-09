@@ -73,21 +73,22 @@ def main(
     aws_profile: str,
 ) -> None:
     session = boto3.session.Session(profile_name=aws_profile)
+    config = Config(region_name=grapl_region)
     lambda_config = Config(
         read_timeout=60 * 5 + 10  # 10s longer than e2e-test-runner and provisioner
-    )
+    ).merge(config)
     ctx.obj = State(
         grapl_region,
         grapl_deployment_name,
         grapl_version,
         aws_profile,
-        ec2=EC2ResourceFactory(session).from_env(),
-        ssm=SSMClientFactory(session).from_env(),
-        cloudwatch=CloudWatchClientFactory(session).from_env(),
-        s3=S3ClientFactory(session).from_env(),
-        sns=SNSClientFactory(session).from_env(),
-        route53=Route53ClientFactory(session).from_env(),
-        sqs=SQSClientFactory(session).from_env(),
+        ec2=EC2ResourceFactory(session).from_env(config=config),
+        ssm=SSMClientFactory(session).from_env(config=config),
+        cloudwatch=CloudWatchClientFactory(session).from_env(config=config),
+        s3=S3ClientFactory(session).from_env(config=config),
+        sns=SNSClientFactory(session).from_env(config=config),
+        route53=Route53ClientFactory(session).from_env(config=config),
+        sqs=SQSClientFactory(session).from_env(config=config),
         lambda_=LambdaClientFactory(session).from_env(config=lambda_config),
     )
 
