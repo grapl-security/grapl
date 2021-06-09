@@ -115,8 +115,8 @@ def provision(event: Any = None, context: Any = None) -> None:
     LOGGER.info("provisioning grapl")
 
     graph_client = GraphClient()
-    dynamodb: DynamoDBServiceResource = DynamoDBResourceFactory(boto3).from_env()
-    secretsmanager: SecretsmanagerClient = SecretsManagerClientFactory(boto3).from_env()
+    dynamodb= DynamoDBResourceFactory(boto3).from_env()
+    secretsmanager = SecretsManagerClientFactory(boto3).from_env()
 
     LOGGER.info("provisioning graph")
     _provision_graph(graph_client=graph_client, dynamodb=dynamodb)
