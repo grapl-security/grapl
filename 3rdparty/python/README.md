@@ -1,6 +1,6 @@
 # requirements.txt
 Declare all your dependencies.
-Ideally, we'd pin everything in here, but it's not the end of the universe if a few are unpinned.
+Things should probably only be pinned in here if they need to be for some reason (and that reason should be documented in a comment).
 
 # constraints.txt
 Generated from `requirements.txt`
