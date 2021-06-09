@@ -6,6 +6,7 @@ from typing import cast
 
 from botocore.response import StreamingBody
 from mypy_boto3_lambda import LambdaClient
+from mypy_boto3_lambda.type_defs import InvocationResponseTypeDef
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
@@ -14,6 +15,16 @@ LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 GRAPL_CDK_RELATIVE_PATH = "src/js/grapl-cdk"
 EDGE_UX_DIRECTORY = "/edge_ux_post_replace"
 CDK_OUT_FILENAME = "cdk-output.json"
+
+
+def _extract_invocation_response_error_payload(
+    result: InvocationResponseTypeDef,
+) -> str:
+    """extract the payload of a lambda invocation error response in
+    a format amenable to logging"""
+    return "\\n".join(
+        l.decode("utf-8") for l in cast(StreamingBody, result["Payload"]).iter_lines()
+    )
 
 
 def _invoke_lambda(lambda_: LambdaClient, function_name: str) -> None:
@@ -32,7 +43,7 @@ def _invoke_lambda(lambda_: LambdaClient, function_name: str) -> None:
         LOGGER.info(f"lambda invocation succeeded for {function_name}")
     else:
         LOGGER.error(
-            f"{''.join(l.decode('utf-8') for l in cast(StreamingBody, result['Payload']).iter_lines())}"
+            f"lambda invocation for {function_name} returned error response {_extract_invocation_response_error_payload(result)}"
         )
         raise Exception(
             f"lambda invocation for {function_name} failed with status {status}: {result['FunctionError']}"
