@@ -5,53 +5,43 @@ Feel free to replace all of this with a Grafana dashboard asap.
 """
 
 import json
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
-from pulumi.output import Output
+from typing import Any, Dict, List
 
 import pulumi_aws as aws
-import pulumi_docker as docker
-from infra.cache import Cache
-from infra.config import DEPLOYMENT_NAME, SERVICE_LOG_RETENTION_DAYS
-from infra.ec2 import Ec2Port
-from infra.emitter import EventEmitter
+from infra.config import DEPLOYMENT_NAME
 from infra.fargate_service import FargateService
 from infra.lambda_ import Lambda
-from infra.metric_forwarder import MetricForwarder
-from infra.network import Network
-from infra.policies import ECR_TOKEN_POLICY, attach_policy
-from infra.repository import Repository, registry_credentials
-from infra.service_queue import ServiceQueue
-from pulumi_aws.cloudwatch import dashboard
-from typing_extensions import Literal
+from infra.service_queue import ServiceQueueNames
 
 import pulumi
+from pulumi.output import Output
 
 
-def service_queue_widget(queues: ServiceQueue) -> Dict[str, Any]:
+def service_queue_widget(names: ServiceQueueNames) -> Dict[str, Any]:
     properties = {
         "view": "timeSeries",
-        "title": f"Queues for {queues._name}",
+        "title": f"Queues for {names.service_name}",
         "region": "us-east-1",
         "metrics": [
             [
                 "AWS/SQS",
                 "NumberOfMessagesReceived",
                 "QueueName",
-                queues.queue.name,
+                names.queue,
                 {"color": "#2ca02c", "label": "Queue", "stat": "Sum"},
             ],
             [
                 "AWS/SQS",
                 "NumberOfMessagesReceived",
                 "QueueName",
-                queues.retry_queue.name,
+                names.retry_queue,
                 {"color": "#ff7f0e", "label": "Retry", "stat": "Sum"},
             ],
             [
                 "AWS/SQS",
                 "ApproximateNumberOfMessagesVisible",
                 "QueueName",
-                queues.dead_letter_queue.name,
+                names.dead_letter_queue,
                 {"color": "#d62728", "label": "Dead", "stat": "Maximum"},
             ],
         ],
@@ -106,24 +96,23 @@ def lambda_invoke_widget(lambda_resource: Lambda) -> Dict[str, Any]:
     }
 """
 
+
 class PipelineDashboard(pulumi.ComponentResource):
     def __init__(
-        self, 
+        self,
         fargate_services: List[FargateService],
         lambdas: List[Lambda],
     ) -> None:
+        def create_dashboard_json(args: Dict[str, Any]) -> str:
+            service_queue_names: List[ServiceQueueNames] = args["service_queue_names"]
+            widgets: List[Dict[str, Any]] = [
+                service_queue_widget(sqn) for sqn in service_queue_names
+            ]
+            return json.dumps({"widgets": widgets})
 
-        def into_dashboard_body(args: Dict[str, Any]) -> str:
-            fargate_services = args['fargate_services']
-            return json.dumps({
-                "widgets": [
-                    service_queue_widget(fg_svc.queue) for fg_svc in fargate_services
-                ] 
-                # + [ lambda_invoke_widget(lambda_resource) for lambda_resource in lambdas]
-            })
         dashboard_body = Output.all(
-            fargate_services=fargate_services
-        ).apply(into_dashboard_body)
+            service_queue_names=[fgs.queue.queue_names for fgs in fargate_services]
+        ).apply(create_dashboard_json)
 
         dashboard = aws.cloudwatch.Dashboard(
             "pipeline-dashboard",

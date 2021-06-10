@@ -1,10 +1,6 @@
-from typing import List
-
-import pulumi
-from infra.fargate_service import FargateService
-from infra.pipeline_dashboard import PipelineDashboard
 import os
 from pathlib import Path
+from typing import List
 
 from infra import dynamodb, emitter
 from infra.alarms import OpsAlarms
@@ -18,15 +14,19 @@ from infra.config import DEPLOYMENT_NAME, LOCAL_GRAPL
 from infra.dgraph_cluster import DgraphCluster, LocalStandInDgraphCluster
 from infra.dgraph_ttl import DGraphTTL
 from infra.engagement_creator import EngagementCreator
+from infra.fargate_service import FargateService
 from infra.graph_merger import GraphMerger
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.node_identifier import NodeIdentifier
 from infra.osquery_generator import OSQueryGenerator
+from infra.pipeline_dashboard import PipelineDashboard
 from infra.provision_lambda import Provisioner
 from infra.quiet_docker_build_output import quiet_docker_output
 from infra.secret import JWTSecret
 from infra.sysmon_generator import SysmonGenerator
+
+import pulumi
 
 
 def _create_dgraph_cluster(network: Network) -> DgraphCluster:
@@ -53,9 +53,6 @@ def main() -> None:
     # These tags will be added to all provisioned infrastructure
     # objects.
     register_auto_tags({"grapl deployment": DEPLOYMENT_NAME})
-
-    from unittest.mock import patch
-    patcher = patch.object(pulumi.log, pulumi.log.warn.__name__).start()
 
     network = Network("grapl-network")
 
@@ -191,10 +188,7 @@ def main() -> None:
 
     OpsAlarms(name="ops-alarms")
 
-    PipelineDashboard(
-        fargate_services=fargate_services,
-        lambdas=[]
-    )
+    PipelineDashboard(fargate_services=fargate_services, lambdas=[])
 
     ########################################################################
 
@@ -230,7 +224,6 @@ def main() -> None:
         forwarder=forwarder,
         dgraph_cluster=dgraph_cluster,
     )
-
 
     ########################################################################
 
