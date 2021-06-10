@@ -509,18 +509,14 @@ services:
         condition: service_healthy
 
   provisioner:
-    image: grapl/graplctl:${TAG:-latest}
+    image: grapl/provisioner:${TAG:-latest}
     command: |
       /bin/bash -c "
-          graplctl \
-              --grapl-region $AWS_REGION \
-              --grapl-deployment-name $DEPLOYMENT_NAME \
-              --grapl-version $DEPLOYMENT_NAME \
-              --aws-profile default \
-              aws provision --yes
+          python -c 'import lambdex_handler; lambdex_handler.handler(None, None)'
       "
     environment:
       <<: *aws-region
+      <<: *dgraph-env
       <<: *dynamodb-env
       <<: *secretsmanager-env
       <<: *sqs-env
@@ -534,6 +530,8 @@ services:
       GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-INFO}"
       AWS_ACCESS_KEY_ID: "${FAKE_AWS_ACCESS_KEY_ID}"
       AWS_SECRET_ACCESS_KEY: "${FAKE_AWS_SECRET_ACCESS_KEY}"
+      DEPLOYMENT_NAME: "${DEPLOYMENT_NAME}"
+      GRAPL_TEST_USER_NAME: "${DEPLOYMENT_NAME}-grapl-test-user"
     tty: true
     depends_on:
       dgraph:

@@ -124,3 +124,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.pulumi
+
+  provisioner:
+    image: grapl/provisioner:${TAG:-latest}
+    build:
+      context: .
+      dockerfile: ./src/python/provisioner/provisioner.Dockerfile

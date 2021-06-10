@@ -34,7 +34,6 @@ class Provisioner(pulumi.ComponentResource):
                 description=GLOBAL_LAMBDA_ZIP_TAG,
                 code_path=code_path_for(name),
                 env={
-                    # TODO: this is mostly copy pasted, figure out what we actually need
                     "GRAPL_LOG_LEVEL": "DEBUG",
                     "DEPLOYMENT_NAME": DEPLOYMENT_NAME,
                     "MG_ALPHAS": dgraph_cluster.alpha_host_port,
