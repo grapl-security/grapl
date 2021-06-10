@@ -33,3 +33,11 @@ message Histogram {
     double value = 3;
     repeated Label labels = 4;
 }
+
+message MetricMessage {
+    oneof metric {
+        Counter counter = 1;
+        Gauge gauge = 2;
+        Histogram histogram = 3;
+    }
+}

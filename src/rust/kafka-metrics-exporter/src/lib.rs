@@ -13,6 +13,8 @@ use tokio::sync::mpsc::error::SendError;
 use metric_message::Counter;
 use metric_message::Gauge;
 use metric_message::Histogram;
+use metric_message::MetricMessage;
+
 use tracing::Instrument;
 
 pub mod counter;
@@ -61,9 +63,20 @@ impl<C, R> KafkaMetricExporterBuilder<C, R>
         let producer = self.producer;
 
         tokio::spawn(async move {
+            let mut payload = Vec::with_capacity(256);
             while let Some(metric) = rx.recv().await {
+                payload.clear();
+                if let Err(e) = metric.payload.encode(&mut payload) {
+                    tracing::error!(
+                            message="Failed to serialize metric",
+                            metric=?metric,
+                            error=?e,
+                        );
+                    continue;
+                };
+
+
                 tracing::debug!(message = "Emitting metric as kafka record");
-                let payload = metric.payload;
                 let timestamp = Some(metric.timestamp);
                 let key = metric.key.to_be_bytes();
 
@@ -103,9 +116,9 @@ impl<C, R> KafkaMetricExporterBuilder<C, R>
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct Metric {
-    payload: Vec<u8>,
+    payload: MetricMessage,
     timestamp: i64,
     key: u64,
 }
@@ -147,7 +160,14 @@ impl KafkaRecorder {
             clock: quanta::Clock::new(),
         }, rx)
     }
+
+
+    fn make_timestamp(&self) -> i64 {
+        // Note that this timestamp may be slightly behind reality
+        self.clock.recent().as_unix_duration().as_millis() as i64
+    }
 }
+
 
 impl Recorder for KafkaRecorder
 {
@@ -186,22 +206,9 @@ impl Recorder for KafkaRecorder
             value=&value,
         );
         let counter = Counter::from((key, value));
-        let mut payload = Vec::with_capacity(256);
-        let payload = match counter.encode(&mut payload) {
-            Ok(_) => payload,
-            Err(e) => {
-                tracing::error!(
-                    message="Failed to serialize counter",
-                    payload=?payload,
-                    error=?e,
-                );
-                return;
-            }
-        };
-
         let metric = Metric {
-            payload,
-            timestamp: self.clock.recent().as_unix_duration().as_millis() as i64,
+            payload: counter.into(),
+            timestamp: self.make_timestamp(),
             key: key.get_hash(),
         };
 
@@ -216,22 +223,9 @@ impl Recorder for KafkaRecorder
             value=?value,
         );
         let gauge = Gauge::from((key, value));
-        let mut payload = Vec::with_capacity(256);
-        let payload = match gauge.encode(&mut payload) {
-            Ok(_) => payload,
-            Err(e) => {
-                tracing::error!(
-                    message="Failed to serialize gauge",
-                    payload=?payload,
-                    error=?e,
-                );
-                return;
-            }
-        };
-
         let metric = Metric {
-            payload,
-            timestamp: self.clock.recent().as_unix_duration().as_millis() as i64,
+            payload: gauge.into(),
+            timestamp: self.make_timestamp(),
             key: key.get_hash(),
         };
 
@@ -246,22 +240,9 @@ impl Recorder for KafkaRecorder
             value=?value,
         );
         let histogram = Histogram::from((key, value));
-        let mut payload = Vec::with_capacity(256);
-        let payload = match histogram.encode(&mut payload) {
-            Ok(_) => payload,
-            Err(e) => {
-                tracing::error!(
-                    message="Failed to serialize histogram",
-                    payload=?payload,
-                    error=?e,
-                );
-                return;
-            }
-        };
-
         let metric = Metric {
-            payload,
-            timestamp: self.clock.recent().as_unix_duration().as_millis() as i64,
+            payload: histogram.into(),
+            timestamp: self.make_timestamp(),
             key: key.get_hash(),
         };
 
