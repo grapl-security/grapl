@@ -263,7 +263,3 @@ RUN source venv/bin/activate && \
 FROM grapl-tests-common-build AS graphql-endpoint-tests
 
 COPY --chown=grapl python/graphql_endpoint_tests graphql_endpoint_tests
-
-# e2e tests
-################################################################################
-FROM graplctl AS e2e-tests

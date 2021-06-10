@@ -6,7 +6,7 @@ import {
 } from "graphql";
 
 const DEFAULT_STACK_LIMIT = 2; // otherwise you'd have recursion while expanding all the types
-const TABBING = 2; // size of a tab, in number of spaces
+const TABBING = 4; // size of a tab, in number of spaces
 
 export class QueryGenerator {
     constructor(readonly GraplEntityType: GraphQLUnionType) {}
@@ -106,7 +106,7 @@ query LensScopeByName($lens_name: String!) {
         dgraph_type,
         score,
         display,
-        scope { 
+        scope {
 ${scopeDefinition.join(",")}
         }
     }
