@@ -20,8 +20,8 @@ use crate::{
         GraphQLError,
     },
     model_plugin_deployer_router::routes::{
-        CustomError,
         DeployRequest,
+        PluginError,
     },
 };
 
@@ -68,24 +68,22 @@ where
 }
 
 pub async fn graphql_request(path: &str, body: GraphQLBody) -> Result<GraphQLBody, GraphQLError> {
-    // dyn, dynamic, we don't know what type
     do_request(path, body).await
 }
 
 pub async fn login_request_with_body(path: &str, body: LoginBody) -> Result<AuthBody, AuthError> {
-    // dyn, dynamic, we don't know what type
     do_request(path, body).await
 }
 
 pub async fn request_with_body(
     path: &str,
     body: DeployRequest,
-) -> Result<PluginObject, CustomError> {
+) -> Result<PluginObject, PluginError> {
     do_request(path, body).await
 }
 
-pub async fn make_request(path: &str) -> Result<PluginList, CustomError> {
-    do_request(path, None).await
+pub async fn make_request(path: &str) -> Result<PluginList, PluginError> {
+    do_request::<_, _, (), _>(path, None).await
 }
 
 #[cfg(test)]

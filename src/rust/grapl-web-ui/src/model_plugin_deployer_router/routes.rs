@@ -20,7 +20,7 @@ pub struct DeployRequest {
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum CustomError {
+pub enum PluginError {
     #[error("Request Error")]
     RequestError(#[from] reqwest::Error),
 
@@ -48,13 +48,13 @@ pub async fn grapl_model_plugin_deployer(
     match response {
         Ok(response) => HttpResponse::Ok().json(response),
 
-        Err(CustomError::InvalidSchema) => HttpResponse::BadRequest().finish(),
+        Err(PluginError::InvalidSchema) => HttpResponse::BadRequest().finish(),
 
-        Err(CustomError::ReadError) => HttpResponse::Conflict().finish(),
+        Err(PluginError::ReadError) => HttpResponse::Conflict().finish(),
 
-        Err(CustomError::ServerError) => HttpResponse::BadRequest().finish(),
+        Err(PluginError::ServerError) => HttpResponse::BadRequest().finish(),
 
-        Err(CustomError::RequestError(_)) => HttpResponse::InternalServerError().finish(),
+        Err(PluginError::RequestError(_)) => HttpResponse::InternalServerError().finish(),
     }
 }
 
@@ -67,13 +67,13 @@ pub async fn delete_plugin(body: actix_web::web::Json<DeployRequest>) -> impl Re
     match response {
         Ok(response) => HttpResponse::Ok().json(response),
 
-        Err(CustomError::InvalidSchema) => HttpResponse::BadRequest().finish(),
+        Err(PluginError::InvalidSchema) => HttpResponse::BadRequest().finish(),
 
-        Err(CustomError::ReadError) => HttpResponse::Conflict().finish(),
+        Err(PluginError::ReadError) => HttpResponse::Conflict().finish(),
 
-        Err(CustomError::ServerError) => HttpResponse::BadRequest().finish(),
+        Err(PluginError::ServerError) => HttpResponse::BadRequest().finish(),
 
-        Err(CustomError::RequestError(_)) => HttpResponse::InternalServerError().finish(),
+        Err(PluginError::RequestError(_)) => HttpResponse::InternalServerError().finish(),
     }
 }
 // actix procedural macros that route incoming http requests
@@ -84,13 +84,13 @@ pub async fn list_plugin() -> impl Responder {
     match response {
         Ok(response) => HttpResponse::Ok().json(response),
 
-        Err(CustomError::InvalidSchema) => HttpResponse::BadRequest().finish(),
+        Err(PluginError::InvalidSchema) => HttpResponse::BadRequest().finish(),
 
-        Err(CustomError::ReadError) => HttpResponse::Conflict().finish(),
+        Err(PluginError::ReadError) => HttpResponse::Conflict().finish(),
 
-        Err(CustomError::ServerError) => HttpResponse::BadRequest().finish(),
+        Err(PluginError::ServerError) => HttpResponse::BadRequest().finish(),
 
-        Err(CustomError::RequestError(_)) => HttpResponse::InternalServerError().finish(),
+        Err(PluginError::RequestError(_)) => HttpResponse::InternalServerError().finish(),
     }
 }
 

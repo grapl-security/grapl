@@ -19,9 +19,9 @@ from infra.network import Network
 from infra.node_identifier import NodeIdentifier
 from infra.osquery_generator import OSQueryGenerator
 from infra.provision_lambda import Provisioner
-from infra.router_api import RouterApi
 from infra.secret import JWTSecret
 from infra.sysmon_generator import SysmonGenerator
+from infra.web_ui import WebUi
 
 
 def _create_dgraph_cluster(network: Network) -> DgraphCluster:
@@ -130,7 +130,7 @@ def main() -> None:
             forwarder=forwarder,
         )
 
-        RouterApi(
+        WebUi(
             input_emitter=unid_subgraphs_generated_emitter,
             output_emitter=subgraphs_generated_emitter,
             network=network,

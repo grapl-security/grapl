@@ -5,12 +5,10 @@ import pulumi_aws as aws
 import pulumi_docker as docker
 from infra.cache import Cache
 from infra.config import DEPLOYMENT_NAME, SERVICE_LOG_RETENTION_DAYS
-from infra.emitter import EventEmitter
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.policies import ECR_TOKEN_POLICY, attach_policy
 from infra.repository import Repository, registry_credentials
-from infra.service_queue import ServiceQueue
 from typing_extensions import Literal
 
 import pulumi
