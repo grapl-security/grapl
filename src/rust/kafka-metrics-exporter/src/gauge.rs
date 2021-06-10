@@ -21,7 +21,6 @@ impl Gauge {
     pub fn new(name: impl Into<String>, value: GaugeValue, labels: Vec<Label>) -> Self {
         let (gauge_type, value) = split_gauge_value(&value);
         Self {
-            metric_type: "gauge".to_string(),
             name: name.into(),
             gauge_type,
             value,

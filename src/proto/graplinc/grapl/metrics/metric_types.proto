@@ -2,42 +2,69 @@ syntax = "proto3";
 
 package metric_types;
 
+// Metrics are always defined by a name, but can optionally be assigned “labels”,
+// which are key/value pairs that provide metadata about the key. Labels are
+// typically used for differentiating the context of when an where a metric are emitted.
 message Label {
+    // Key of this label
     string key = 1;
+    // Value of this label
     string value = 2;
 }
 
+// Counters represent a single monotonic value, which means the value can only be incremented,
+// not decremented, and always starts out with an initial value of zero.
 message Counter {
-    string metric_type = 1;
-    string name = 2;
-    uint64 value = 3;
-    repeated Label labels = 4;
+    // The name of the metric
+    string name = 1;
+    // The value to increment the counter by
+    uint64 value = 2;
+    // Associated labels for the metric
+    repeated Label labels = 3;
 }
 
+// Gauges represent a single value that can go up or down over time,
+// and always starts out with an initial value of zero.
 message Gauge {
     enum GaugeType {
+        // Sets the value of the gauge to this value.
         ABSOLUTE = 0;
+        // Increments the value of the gauge by this much.
         INCREMENT = 1;
+        // Decrements the value of the gauge by this much.
         DECREMENT = 2;
     }
-    string metric_type = 1;
-    GaugeType gauge_type = 2;
-    string name = 3;
-    double value = 4;
-    repeated Label labels = 5;
-}
-
-message Histogram {
-    string metric_type = 1;
+    // The gauge operation
+    GaugeType gauge_type = 1;
+    // The name of the metric
     string name = 2;
+    // The value, to be applied based on the GaugeType
     double value = 3;
+    // Associated labels for the metric
     repeated Label labels = 4;
 }
 
+// Histograms measure the distribution of values for a given set of measurements,
+// and start with no initial values.
+message Histogram {
+    // The name of the metric
+    string name = 1;
+    // Histograms are represented as f64 values, but often come from another source, such as a time measurement.
+    // If created from a Duration, represents seconds
+    double value = 2;
+    // Associated labels for the metric
+    repeated Label labels = 3;
+}
+
+// A simple metric wrapper that's just a 'oneof'
 message MetricWrapper {
+    // The inner metric
     oneof metric {
+        // If the metric is a Counter
         Counter counter = 1;
+        // If the metric is a Gauge
         Gauge gauge = 2;
+        // If the metric is a Histogram
         Histogram histogram = 3;
     }
 }

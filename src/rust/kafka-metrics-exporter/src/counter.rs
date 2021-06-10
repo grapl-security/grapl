@@ -8,7 +8,6 @@ use crate::metric_message::{
 impl Counter {
     pub fn new(name: impl Into<String>, value: u64, labels: Vec<Label>) -> Self {
         Self {
-            metric_type: "counter".to_string(),
             name: name.into(),
             value,
             labels,

@@ -8,7 +8,6 @@ use crate::metric_message::{
 impl Histogram {
     pub fn new(name: impl Into<String>, value: f64, labels: Vec<Label>) -> Self {
         Self {
-            metric_type: "histogram".to_string(),
             name: name.into(),
             value,
             labels,
