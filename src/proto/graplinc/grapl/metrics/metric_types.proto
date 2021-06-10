@@ -27,12 +27,14 @@ message Counter {
 // and always starts out with an initial value of zero.
 message Gauge {
     enum GaugeType {
+        // Protobuf makes me specify a 0 value, it's invalid
+        INVALID_UNSPECIFIED = 0;
         // Sets the value of the gauge to this value.
-        ABSOLUTE = 0;
+        GAUGE_TYPE_ABSOLUTE =1;
         // Increments the value of the gauge by this much.
-        INCREMENT = 1;
+        GAUGE_TYPE_INCREMENT = 2;
         // Decrements the value of the gauge by this much.
-        DECREMENT = 2;
+        GAUGE_TYPE_DECREMENT = 3;
     }
     // The gauge operation
     GaugeType gauge_type = 1;
