@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package metric_message;
+
+message Label {
+    string key = 1;
+    string value = 2;
+}
+
+message Counter {
+    string metric_type = 1;
+    string name = 2;
+    uint64 value = 3;
+    repeated Label labels = 4;
+}
+
+message Gauge {
+    enum GaugeType {
+        ABSOLUTE = 0;
+        INCREMENT = 1;
+        DECREMENT = 2;
+    }
+    string metric_type = 1;
+    GaugeType gauge_type = 2;
+    string name = 3;
+    double value = 4;
+    repeated Label labels = 5;
+}
+
+message Histogram {
+    string metric_type = 1;
+    string name = 2;
+    double value = 3;
+    repeated Label labels = 4;
+}
