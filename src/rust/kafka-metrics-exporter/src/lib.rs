@@ -1,20 +1,39 @@
 use std::time::Duration;
 
-use metrics::{GaugeValue, Key, Recorder, Unit};
-use metrics::SetRecorderError;
+use metric_message::{
+    Counter,
+    Gauge,
+    Histogram,
+    MetricWrapper,
+};
+use metrics::{
+    GaugeValue,
+    Key,
+    Recorder,
+    SetRecorderError,
+    Unit,
+};
 use prost::Message;
-use rdkafka::client::{ClientContext, DefaultClientContext};
-use rdkafka::producer::{FutureProducer, Producer};
-use rdkafka::producer::FutureRecord as Record;
-use rdkafka::util::{AsyncRuntime, DefaultRuntime};
-use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
-use tokio::sync::mpsc::error::SendError;
-
-use metric_message::Counter;
-use metric_message::Gauge;
-use metric_message::Histogram;
-use metric_message::MetricMessage;
-
+use rdkafka::{
+    client::{
+        ClientContext,
+        DefaultClientContext,
+    },
+    producer::{
+        FutureProducer,
+        FutureRecord as Record,
+        Producer,
+    },
+    util::{
+        AsyncRuntime,
+        DefaultRuntime,
+    },
+};
+use tokio::sync::mpsc::{
+    error::SendError,
+    UnboundedReceiver,
+    UnboundedSender,
+};
 use tracing::Instrument;
 
 pub mod counter;
@@ -23,20 +42,19 @@ pub mod histogram;
 pub mod label;
 pub mod metric_message;
 
-
 pub struct KafkaMetricExporterBuilder<C = DefaultClientContext, R = DefaultRuntime>
-    where
-        C: ClientContext + 'static,
-        R: AsyncRuntime
+where
+    C: ClientContext + 'static,
+    R: AsyncRuntime,
 {
     producer: FutureProducer<C, R>,
     topic_name: String,
 }
 
 impl<C, R> KafkaMetricExporterBuilder<C, R>
-    where
-        C: ClientContext + 'static,
-        R: AsyncRuntime,
+where
+    C: ClientContext + 'static,
+    R: AsyncRuntime,
 {
     pub fn new(topic_name: impl Into<String>, producer: FutureProducer<C, R>) -> Self {
         Self {
@@ -62,55 +80,54 @@ impl<C, R> KafkaMetricExporterBuilder<C, R>
         let topic = self.topic_name;
         let producer = self.producer;
 
-        tokio::spawn(async move {
-            let mut payload = Vec::with_capacity(256);
-            while let Some(metric) = rx.recv().await {
-                payload.clear();
-                if let Err(e) = metric.payload.encode(&mut payload) {
-                    tracing::error!(
+        tokio::spawn(
+            async move {
+                let mut payload = Vec::with_capacity(256);
+                while let Some(metric) = rx.recv().await {
+                    payload.clear();
+                    if let Err(e) = metric.payload.encode(&mut payload) {
+                        tracing::error!(
                             message="Failed to serialize metric",
                             metric=?metric,
                             error=?e,
                         );
-                    continue;
-                };
+                        continue;
+                    };
 
+                    tracing::debug!(message = "Emitting metric as kafka record");
+                    let timestamp = Some(metric.timestamp);
+                    let key = metric.key.to_be_bytes();
 
-                tracing::debug!(message = "Emitting metric as kafka record");
-                let timestamp = Some(metric.timestamp);
-                let key = metric.key.to_be_bytes();
-
-                let record = Record {
-                    topic: &topic,
-                    partition: None,
-                    payload: Some(payload.as_slice()),
-                    key: Some(&key),
-                    timestamp,
-                    headers: None,
-                };
-                match producer.send(record, Duration::from_secs(3)).await {
-                    Ok((partition, offset)) => {
-                        tracing::debug!(
-                            message="Metric published",
-                            topic=%&topic,
-                            partition=?partition,
-                            offset=?offset,
-                        );
-                    }
-                    Err((e, _)) => {
-                        tracing::error!(
-                            message="Failed to send message to kafka",
-                            topic=%&topic,
-                            error=?e,
-                        );
-
+                    let record = Record {
+                        topic: &topic,
+                        partition: None,
+                        payload: Some(payload.as_slice()),
+                        key: Some(&key),
+                        timestamp,
+                        headers: None,
+                    };
+                    match producer.send(record, Duration::from_secs(3)).await {
+                        Ok((partition, offset)) => {
+                            tracing::debug!(
+                                message="Metric published",
+                                topic=%&topic,
+                                partition=?partition,
+                                offset=?offset,
+                            );
+                        }
+                        Err((e, _)) => {
+                            tracing::error!(
+                                message="Failed to send message to kafka",
+                                topic=%&topic,
+                                error=?e,
+                            );
+                        }
                     }
                 }
+                producer.flush(Duration::from_secs(3));
             }
-            producer.flush(Duration::from_secs(3));
-
-        }
-            .instrument(tracing::debug_span!("recv loop")));
+            .instrument(tracing::debug_span!("recv loop")),
+        );
 
         Ok(())
     }
@@ -118,7 +135,7 @@ impl<C, R> KafkaMetricExporterBuilder<C, R>
 
 #[derive(Clone, Debug)]
 struct Metric {
-    payload: MetricMessage,
+    payload: MetricWrapper,
     timestamp: i64,
     key: u64,
 }
@@ -130,9 +147,7 @@ struct MetricsBuffer {
 
 impl MetricsBuffer {
     fn new(buffer: UnboundedSender<Metric>) -> Self {
-        Self {
-            buffer,
-        }
+        Self { buffer }
     }
 
     fn push(&self, metric: Metric) {
@@ -145,8 +160,7 @@ impl MetricsBuffer {
 }
 
 #[derive(Clone)]
-struct KafkaRecorder
-{
+struct KafkaRecorder {
     buffered_metrics: MetricsBuffer,
     clock: quanta::Clock,
 }
@@ -155,12 +169,14 @@ impl KafkaRecorder {
     fn new() -> (Self, UnboundedReceiver<Metric>) {
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
 
-        (Self {
-            buffered_metrics: MetricsBuffer::new(tx),
-            clock: quanta::Clock::new(),
-        }, rx)
+        (
+            Self {
+                buffered_metrics: MetricsBuffer::new(tx),
+                clock: quanta::Clock::new(),
+            },
+            rx,
+        )
     }
-
 
     fn make_timestamp(&self) -> i64 {
         // Note that this timestamp may be slightly behind reality
@@ -168,9 +184,7 @@ impl KafkaRecorder {
     }
 }
 
-
-impl Recorder for KafkaRecorder
-{
+impl Recorder for KafkaRecorder {
     fn register_counter(&self, key: &Key, unit: Option<Unit>, description: Option<&'static str>) {
         tracing::trace!(
             message="register_counter - does nothing for KafkaMetricExporter",

@@ -1,6 +1,13 @@
-use crate::metric_message::{Gauge, Label};
-use metrics::{GaugeValue, Key};
-use crate::metric_message::gauge::GaugeType;
+use metrics::{
+    GaugeValue,
+    Key,
+};
+
+use crate::metric_message::{
+    gauge::GaugeType,
+    Gauge,
+    Label,
+};
 
 fn split_gauge_value(gauge_value: &GaugeValue) -> (i32, f64) {
     match gauge_value {
@@ -11,11 +18,7 @@ fn split_gauge_value(gauge_value: &GaugeValue) -> (i32, f64) {
 }
 
 impl Gauge {
-    pub fn new(
-        name: impl Into<String>,
-        value: GaugeValue,
-        labels: Vec<Label>,
-    ) -> Self {
+    pub fn new(name: impl Into<String>, value: GaugeValue, labels: Vec<Label>) -> Self {
         let (gauge_type, value) = split_gauge_value(&value);
         Self {
             metric_type: "gauge".to_string(),
@@ -30,10 +33,6 @@ impl Gauge {
 impl From<(&Key, GaugeValue)> for Gauge {
     fn from((key, value): (&Key, GaugeValue)) -> Self {
         let labels = key.labels().map(Label::from).collect();
-        Gauge::new(
-            key.name().to_string(),
-            value,
-            labels,
-        )
+        Gauge::new(key.name().to_string(), value, labels)
     }
 }

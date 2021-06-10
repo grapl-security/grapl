@@ -1,14 +1,25 @@
-
 #[cfg(feature = "integration")]
 mod integration_tests {
     use kafka_metrics_exporter::KafkaMetricExporterBuilder;
-    use rdkafka::producer::FutureProducer;
-    use rdkafka::config::{FromClientConfig, RDKafkaLogLevel};
-    use metrics::{counter, histogram};
-    use rdkafka::consumer::stream_consumer::StreamConsumer;
+    use metrics::{
+        counter,
+        histogram,
+    };
+    use rdkafka::{
+        config::{
+            FromClientConfig,
+            RDKafkaLogLevel,
+        },
+        consumer::{
+            stream_consumer::StreamConsumer,
+            CommitMode,
+            Consumer,
+            DefaultConsumerContext,
+        },
+        producer::FutureProducer,
+        util::DefaultRuntime,
+    };
     use tokio_stream::StreamExt;
-    use rdkafka::util::DefaultRuntime;
-    use rdkafka::consumer::{DefaultConsumerContext, Consumer, CommitMode};
 
     fn producer_init() -> Result<FutureProducer, Box<dyn std::error::Error>> {
         let brokers = "kafka:9092";
@@ -23,7 +34,9 @@ mod integration_tests {
         Ok(producer)
     }
 
-    fn consumer_init() -> Result<StreamConsumer<DefaultConsumerContext, DefaultRuntime>, Box<dyn std::error::Error>> {
+    fn consumer_init(
+    ) -> Result<StreamConsumer<DefaultConsumerContext, DefaultRuntime>, Box<dyn std::error::Error>>
+    {
         let brokers = "kafka:9092";
         let mut client_config = rdkafka::ClientConfig::new();
         client_config
@@ -35,7 +48,6 @@ mod integration_tests {
             .set("enable.auto.commit", "true")
             .set("max.poll.interval.ms", "10000")
             .set("request.timeout.ms", "1000")
-            //.set("statistics.interval.ms", "30000")
             .set("auto.offset.reset", "earliest")
             .set_log_level(RDKafkaLogLevel::Debug);
         tracing::info!(config=?client_config, message="Created Consumer ClientConfig");
@@ -56,27 +68,26 @@ mod integration_tests {
             .finish();
         let _ = ::tracing::subscriber::set_global_default(subscriber);
 
-        tracing::info!(topic_name="test-topic", message="Starting smoketest");
+        tracing::info!(topic_name = "test-topic", message = "Starting smoketest");
         let producer: FutureProducer = producer_init()?;
-        KafkaMetricExporterBuilder::new(
-            "test-topic",
-            producer,
-        ).install()?;
-        tracing::info!(topic_name="test-topic", message="Created producer");
+        KafkaMetricExporterBuilder::new("test-topic", producer).install()?;
+        tracing::info!(topic_name = "test-topic", message = "Created producer");
 
         histogram!("process.query_time", 1234f64);
         counter!("process.query_row_count", 1000);
 
         let consumer = consumer_init()?;
-        tracing::info!(message="Creating stream");
+        tracing::info!(message = "Creating stream");
         let mut stream = consumer.stream();
-        let metric_0 = stream.next().await
-            .expect("metric_0")?;
-        let metric_1 = stream.next().await
-            .expect("metric_1")?;
+        let metric_0 = stream.next().await.expect("metric_0")?;
+        let metric_1 = stream.next().await.expect("metric_1")?;
 
-        consumer.commit_message(&metric_0, CommitMode::Sync).expect("commit_message");
-        consumer.commit_message(&metric_1, CommitMode::Sync).expect("commit_message");
+        consumer
+            .commit_message(&metric_0, CommitMode::Sync)
+            .expect("commit_message");
+        consumer
+            .commit_message(&metric_1, CommitMode::Sync)
+            .expect("commit_message");
         Ok(())
     }
 }

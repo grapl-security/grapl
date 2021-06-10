@@ -1,33 +1,25 @@
-include!(concat!(env!("OUT_DIR"), "/metric_message.rs"));
+include!(concat!(env!("OUT_DIR"), "/metric_types.rs"));
 
-impl From<Counter> for MetricMessage {
+impl From<Counter> for MetricWrapper {
     fn from(counter: Counter) -> Self {
-        MetricMessage {
-            metric: Some(
-                metric_message::Metric::Counter(counter)
-            )
+        MetricWrapper {
+            metric: Some(metric_wrapper::Metric::Counter(counter)),
         }
     }
 }
 
-
-impl From<Gauge> for MetricMessage {
+impl From<Gauge> for MetricWrapper {
     fn from(gauge: Gauge) -> Self {
-        MetricMessage {
-            metric: Some(
-                metric_message::Metric::Gauge(gauge)
-            )
+        MetricWrapper {
+            metric: Some(metric_wrapper::Metric::Gauge(gauge)),
         }
     }
 }
 
-
-impl From<Histogram> for MetricMessage {
+impl From<Histogram> for MetricWrapper {
     fn from(histogram: Histogram) -> Self {
-        MetricMessage {
-            metric: Some(
-                metric_message::Metric::Histogram(histogram)
-            )
+        MetricWrapper {
+            metric: Some(metric_wrapper::Metric::Histogram(histogram)),
         }
     }
 }
