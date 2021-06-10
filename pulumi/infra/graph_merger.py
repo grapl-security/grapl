@@ -41,16 +41,22 @@ class GraphMerger(FargateService):
             network=network,
         )
 
-        dgraph_cluster.allow_connections_from(self.default_service.security_group)
-        dgraph_cluster.allow_connections_from(self.retry_service.security_group)
+        for svc in self.services:
+            dgraph_cluster.allow_connections_from(svc.security_group)
 
         # TODO: both the default and retry services get READ
         # permissions on the schema and schema properties table, even
         # though only the schema table was passed into the
         # environment.
         #
-        # Investigate this further: is the properties table needed?
-        for role in [self.default_service.task_role, self.retry_service.task_role]:
+        # Update (wimax Jun 2021): The properties table *is* needed, it was introduced
+        # as part of the "python schema ---> json dynamodb ---> graphql schema"
+        # pipeline.
+        # It doesn't use the passed-in-via-environment mechanism because
+        # of the `get_schema_properties_table` in common.
+        # TODO: That function should be changed to instead depend on environment variables.
+
+        for role in [svc.task_role for svc in self.services]:
             dynamodb.grant_read_on_tables(
                 role, [db.schema_table, db.schema_properties_table]
             )

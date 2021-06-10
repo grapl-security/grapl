@@ -39,7 +39,7 @@ class AnalyzerDispatcher(FargateService):
             network=network,
         )
 
-        analyzers_bucket.grant_get_and_list_to(self.default_service.task_role)
-        analyzers_bucket.grant_get_and_list_to(self.retry_service.task_role)
+        for svc in self.services:
+            analyzers_bucket.grant_get_and_list_to(svc.task_role)
 
         self.allow_egress_to_cache(cache)
