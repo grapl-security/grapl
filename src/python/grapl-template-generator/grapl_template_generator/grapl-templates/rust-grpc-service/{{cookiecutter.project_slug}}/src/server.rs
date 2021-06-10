@@ -13,7 +13,7 @@ impl {{cookiecutter.service_name}}Rpc for {{cookiecutter.service_name}} {
 
     #[tracing::instrument(
         source_addr = request.remote_addr(),
-        client_id = request.get_ref().grapl_request_meta.client_id,
+        client_id = request.get_ref().request_meta.client_id,
         skip(self, request),
     )]
     async fn handle_request(
