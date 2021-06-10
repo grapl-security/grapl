@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package graplinc.grapl.metrics.metric_types.v1;
+package graplinc.grapl.metrics.v1.metric_types;
 
 // Metrics are always defined by a name, but can optionally be assigned “labels”,
 // which are key/value pairs that provide metadata about the key. Labels are
@@ -29,7 +29,7 @@ message Gauge {
     // Variants representing the gauge operations
     enum GaugeType {
         // Protobuf makes me specify a 0 value, it's invalid
-        INVALID_UNSPECIFIED = 0;
+        GAUGE_TYPE_UNSPECIFIED = 0;
         // Sets the value of the gauge to this value.
         GAUGE_TYPE_ABSOLUTE =1;
         // Increments the value of the gauge by this much.
