@@ -15,8 +15,8 @@ import pulumi
 def quiet_docker_output() -> None:
     """
     Replace `pulumi.log.warn` with a function that quiets any `msg`
-    called from the module `pulumi_docker.docker`.
-    Disable behavior with QUIET_DOCKER_OUTPUT=0
+    called from the module `pulumi_docker`.
+    Disable behavior with VERBOSE_DOCKER_OUTPUT=1
     """
     skip_quiet = os.getenv("VERBOSE_DOCKER_OUTPUT", default=0)
     if skip_quiet:
