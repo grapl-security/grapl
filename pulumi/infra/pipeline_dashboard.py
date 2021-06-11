@@ -71,7 +71,8 @@ class PipelineDashboard(pulumi.ComponentResource):
             ]
             # Due to Cloudwatch's widget system, the last-added widget is at the top.
             # (you could get around this by manually specifying `y:` on the widget, but, ew, no.)
-            return json.dumps({"widgets": widgets.reverse()})
+            widgets.reverse()
+            return json.dumps({"widgets": widgets})
 
         dashboard_body = Output.all(
             service_queue_names=[service.queue.queue_names for service in services],
