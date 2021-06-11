@@ -33,7 +33,6 @@ import { NodeIdentifier } from "./services/node_identifier";
 import { Provisioner } from "./services/provisioner";
 import { SysmonGraphGenerator } from "./services/sysmon_graph_generator";
 import { OSQueryGraphGenerator } from "./services/osquery_graph_generator";
-import { E2eTestRunner } from "./services/e2e-test-runner";
 import { LogLevels } from "../bin/deployment_parameters";
 
 export interface GraplServiceProps {
@@ -339,12 +338,5 @@ export class GraplCdkStack extends cdk.Stack {
             schemaDb: schema_table,
             ...graplProps,
         });
-
-        new E2eTestRunner(this, "e2e-test-runner", {
-            schemaDb: schema_table,
-            provisioner: provisioner,
-            edgeApiGateway: edgeApi,
-            ...graplProps,
-        })
     }
 }
