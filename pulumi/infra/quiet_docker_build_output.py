@@ -18,8 +18,8 @@ def quiet_docker_output() -> None:
     called from the module `pulumi_docker.docker`.
     Disable behavior with QUIET_DOCKER_OUTPUT=0
     """
-    should_quiet = os.getenv("QUIET_DOCKER_OUTPUT", default=1)
-    if not should_quiet:
+    skip_quiet = os.getenv("VERBOSE_DOCKER_OUTPUT", default=0)
+    if skip_quiet:
         return
 
     original_warn = pulumi.log.warn
@@ -32,8 +32,8 @@ def quiet_docker_output() -> None:
     ) -> None:
         # Same method signature as original_warn
         callers = first_n_callers_in_stack(n=6)
-        if any(c == "pulumi_docker.docker" for c in callers):
-            msg = "<redacted Docker spew from `quiet_docker_output`>"
+        if any("pulumi_docker" in module_name for module_name in callers):
+            msg = "(redacted Docker spew from `quiet_docker_output`)"
         original_warn(
             msg=msg, resource=resource, stream_id=stream_id, ephemeral=ephemeral
         )
@@ -47,7 +47,8 @@ def first_n_callers_in_stack(n: int) -> List[str]:
     Get the names of the modules in the current stack call context
     """
     caller_stacks = [inspect.stack()[i] for i in range(1, n)]
+    caller_modules = [inspect.getmodule(stack[0]) for stack in caller_stacks]
     caller_module_names = [
-        inspect.getmodule(stack[0]).__name__ for stack in caller_stacks
+        module.__name__ for module in caller_modules if module  # filter nones
     ]
     return caller_module_names

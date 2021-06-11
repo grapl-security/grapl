@@ -19,7 +19,7 @@ from infra.network import Network
 from infra.node_identifier import NodeIdentifier
 from infra.osquery_generator import OSQueryGenerator
 from infra.provision_lambda import Provisioner
-from infra.quiet_docker_build_spam import quiet_docker_output
+from infra.quiet_docker_build_output import quiet_docker_output
 from infra.secret import JWTSecret
 from infra.sysmon_generator import SysmonGenerator
 
