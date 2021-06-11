@@ -54,12 +54,10 @@ def service_queue_widget(names: ServiceQueueNames) -> Dict[str, Any]:
         "width": 24,
         "height": 6,
         "x": 0,
-        "y": 6,
         "properties": properties,
     }
 
 
-"""
 def lambda_invoke_widget(lambda_resource: Lambda) -> Dict[str, Any]:
     assert isinstance(lambda_resource.function._name, str)
 
@@ -94,7 +92,6 @@ def lambda_invoke_widget(lambda_resource: Lambda) -> Dict[str, Any]:
         "y": 36,
         "properties": properties,
     }
-"""
 
 
 class PipelineDashboard(pulumi.ComponentResource):
@@ -108,10 +105,13 @@ class PipelineDashboard(pulumi.ComponentResource):
             widgets: List[Dict[str, Any]] = [
                 service_queue_widget(sqn) for sqn in service_queue_names
             ]
-            return json.dumps({"widgets": widgets})
+            # Due to Cloudwatch's widget system, the last-added widget is at the top.
+            # (you could get around this by manually specifying `y:` on the widget, but, ew, no.)
+            return json.dumps({"widgets": reversed(widgets)})
 
         dashboard_body = Output.all(
-            service_queue_names=[fgs.queue.queue_names for fgs in fargate_services]
+            service_queue_names=[fgs.queue.queue_names for fgs in fargate_services],
+            lambdas=[],
         ).apply(create_dashboard_json)
 
         dashboard = aws.cloudwatch.Dashboard(

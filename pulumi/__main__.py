@@ -138,7 +138,7 @@ def main() -> None:
             forwarder=forwarder,
         )
 
-        GraphMerger(
+        graph_merger = GraphMerger(
             input_emitter=subgraphs_generated_emitter,
             output_emitter=subgraphs_merged_emitter,
             dgraph_cluster=dgraph_cluster,
@@ -148,7 +148,7 @@ def main() -> None:
             forwarder=forwarder,
         )
 
-        AnalyzerDispatcher(
+        analyzer_dispatcher = AnalyzerDispatcher(
             input_emitter=subgraphs_merged_emitter,
             output_emitter=dispatched_analyzer_emitter,
             analyzers_bucket=analyzers_bucket,
@@ -157,7 +157,7 @@ def main() -> None:
             forwarder=forwarder,
         )
 
-        AnalyzerExecutor(
+        analyzer_executor = AnalyzerExecutor(
             input_emitter=dispatched_analyzer_emitter,
             output_emitter=analyzer_matched_emitter,
             dgraph_cluster=dgraph_cluster,
@@ -168,9 +168,14 @@ def main() -> None:
             forwarder=forwarder,
         )
 
-        fargate_services.append(sysmon_generator)
-        fargate_services.append(osquery_generator)
-        fargate_services.append(node_identifier)
+        fargate_services.extend([
+            sysmon_generator,
+            osquery_generator,
+            node_identifier,
+            graph_merger, 
+            analyzer_dispatcher, 
+            analyzer_executor,
+        ])
 
     EngagementCreator(
         input_emitter=analyzer_matched_emitter,
