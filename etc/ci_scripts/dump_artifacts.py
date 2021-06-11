@@ -93,7 +93,9 @@ def _dump_lambda_log(lambda_name: str, dir: Path) -> None:
 
     """
     destination = dir / f"{lambda_name}_lambda.log"
-    logging.debug(f"Dumping logs for '{lambda_name}' lambda function to '{destination}'")
+    logging.debug(
+        f"Dumping logs for '{lambda_name}' lambda function to '{destination}'"
+    )
     with open(destination, "wb") as out_stream:
         subprocess.run(
             [
