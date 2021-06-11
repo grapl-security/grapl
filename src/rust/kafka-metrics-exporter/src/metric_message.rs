@@ -1,6 +1,6 @@
 include!(concat!(
     env!("OUT_DIR"),
-    "/graplinc.grapl.metrics.metric_types.v1.rs"
+    "/graplinc.grapl.metrics.v1.rs"
 ));
 
 impl From<Counter> for MetricWrapper {
