@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import inspect
 import os
-from typing import Any, List, Optional
-from unittest.mock import call, patch
+from typing import List, Optional
+from unittest.mock import patch
 
 import pulumi
 
