@@ -154,7 +154,7 @@ build-test-typecheck:
 	docker buildx bake --file ./test/docker-compose.typecheck-tests.yml
 
 .PHONY: build-test-integration
-build-test-integration: graplctl build-services
+build-test-integration: graplctl modern-lambdas build-services
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.integration-tests.yml
 
@@ -233,7 +233,7 @@ test-typecheck: test-typecheck-docker test-typecheck-pants ## Typecheck all Pyth
 .PHONY: test-integration
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
 test-integration: export COMPOSE_FILE := ./test/docker-compose.integration-tests.yml
-test-integration: build-test-integration modern-lambdas ## Build and run integration tests
+test-integration: modern-lambdas build-test-integration ## Build and run integration tests
 	$(MAKE) test-with-env
 
 .PHONY: test-e2e
@@ -414,4 +414,4 @@ repl: ## Run an interactive ipython repl that can import from grapl-common etc
 	./pants --no-pantsd repl --shell=ipython src/python/repl
 
 .PHONY: pulumi-prep
-pulumi-prep: modern-lambdas build-ux ## Prepare some artifacts in advance of running a Pulumi update (does not run Pulumi!)
+pulumi-prep: graplctl modern-lambdas build-ux ## Prepare some artifacts in advance of running a Pulumi update (does not run Pulumi!)
