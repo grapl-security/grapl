@@ -18,7 +18,7 @@ message Counter {
     // The name of the metric
     string name = 1;
     // The value to increment the counter by
-    uint64 value = 2;
+    uint64 increment = 2;
     // Associated labels for the metric
     repeated Label labels = 3;
 }

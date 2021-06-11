@@ -6,10 +6,10 @@ use crate::metric_message::{
 };
 
 impl Counter {
-    pub fn new(name: impl Into<String>, value: u64, labels: Vec<Label>) -> Self {
+    pub fn new(name: impl Into<String>, increment: u64, labels: Vec<Label>) -> Self {
         Self {
             name: name.into(),
-            value,
+            increment,
             labels,
         }
     }
