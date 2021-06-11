@@ -11,6 +11,7 @@ import pulumi_aws as aws
 from infra.config import DEPLOYMENT_NAME
 from infra.fargate_service import FargateService
 from infra.lambda_ import Lambda
+from infra.service import ServiceLike
 from infra.service_queue import ServiceQueueNames
 
 import pulumi
@@ -58,47 +59,10 @@ def service_queue_widget(names: ServiceQueueNames) -> Dict[str, Any]:
     }
 
 
-def lambda_invoke_widget(lambda_resource: Lambda) -> Dict[str, Any]:
-    assert isinstance(lambda_resource.function._name, str)
-
-    properties = {
-        "view": "timeSeries",
-        "title": f"Invoke {lambda_resource.function._name}",
-        "region": "us-east-1",
-        "metrics": [
-            [
-                "AWS/Lambda",
-                "Invocations",
-                "FunctionName",
-                lambda_resource.function._name,
-                {"color": "#1f77b4", "stat": "Sum"},
-            ],
-            [
-                "AWS/Lambda",
-                "Errors",
-                "FunctionName",
-                lambda_resource.function._name,
-                {"color": "#d62728", "stat": "Sum"},
-            ],
-        ],
-        "yAxis": {},
-        "liveData": True,
-    }
-    return {
-        "type": "metric",
-        "width": 12,
-        "height": 6,
-        "x": 0,
-        "y": 36,
-        "properties": properties,
-    }
-
-
 class PipelineDashboard(pulumi.ComponentResource):
     def __init__(
         self,
-        fargate_services: List[FargateService],
-        lambdas: List[Lambda],
+        services: List[ServiceLike],
     ) -> None:
         def create_dashboard_json(args: Dict[str, Any]) -> str:
             service_queue_names: List[ServiceQueueNames] = args["service_queue_names"]
@@ -107,14 +71,13 @@ class PipelineDashboard(pulumi.ComponentResource):
             ]
             # Due to Cloudwatch's widget system, the last-added widget is at the top.
             # (you could get around this by manually specifying `y:` on the widget, but, ew, no.)
-            return json.dumps({"widgets": reversed(widgets)})
+            return json.dumps({"widgets": widgets.reverse()})
 
         dashboard_body = Output.all(
-            service_queue_names=[fgs.queue.queue_names for fgs in fargate_services],
-            lambdas=[],
+            service_queue_names=[service.queue.queue_names for service in services],
         ).apply(create_dashboard_json)
 
-        dashboard = aws.cloudwatch.Dashboard(
+        aws.cloudwatch.Dashboard(
             "pipeline-dashboard",
             dashboard_body=dashboard_body,
             dashboard_name=f"{DEPLOYMENT_NAME}-pipeline-dashboard",

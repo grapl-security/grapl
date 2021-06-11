@@ -24,6 +24,7 @@ from infra.pipeline_dashboard import PipelineDashboard
 from infra.provision_lambda import Provisioner
 from infra.quiet_docker_build_output import quiet_docker_output
 from infra.secret import JWTSecret
+from infra.service import ServiceLike
 from infra.sysmon_generator import SysmonGenerator
 
 import pulumi
@@ -80,7 +81,7 @@ def main() -> None:
     analyzers_bucket = Bucket("analyzers-bucket", sse=True)
     model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)
 
-    fargate_services: List[FargateService] = []
+    services: List[ServiceLike] = []
 
     if LOCAL_GRAPL:
         # We need to create these queues, and wire them up to their
@@ -168,21 +169,24 @@ def main() -> None:
             forwarder=forwarder,
         )
 
-        fargate_services.extend([
-            sysmon_generator,
-            osquery_generator,
-            node_identifier,
-            graph_merger, 
-            analyzer_dispatcher, 
-            analyzer_executor,
-        ])
+        services.extend(
+            [
+                sysmon_generator,
+                osquery_generator,
+                node_identifier,
+                graph_merger,
+                analyzer_dispatcher,
+                analyzer_executor,
+            ]
+        )
 
-    EngagementCreator(
+    engagement_creator = EngagementCreator(
         input_emitter=analyzer_matched_emitter,
         network=network,
         forwarder=forwarder,
         dgraph_cluster=dgraph_cluster,
     )
+    services.append(engagement_creator)
 
     Provisioner(
         network=network,
@@ -193,7 +197,7 @@ def main() -> None:
 
     OpsAlarms(name="ops-alarms")
 
-    PipelineDashboard(fargate_services=fargate_services, lambdas=[])
+    PipelineDashboard(services=services)
 
     ########################################################################
 
