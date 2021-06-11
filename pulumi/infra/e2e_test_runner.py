@@ -12,7 +12,6 @@ import pulumi
 
 
 class E2eTestRunner(pulumi.ComponentResource):
-
     def __init__(
         self,
         network: Network,
