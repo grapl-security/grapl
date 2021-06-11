@@ -19,6 +19,7 @@ from infra.network import Network
 from infra.node_identifier import NodeIdentifier
 from infra.osquery_generator import OSQueryGenerator
 from infra.provision_lambda import Provisioner
+from infra.quiet_docker_build_spam import quiet_docker_output
 from infra.secret import JWTSecret
 from infra.sysmon_generator import SysmonGenerator
 
@@ -41,6 +42,8 @@ def main() -> None:
         # Local Grapl, though.
         if not os.getenv("DOCKER_BUILDKIT"):
             raise KeyError("Please re-run with 'DOCKER_BUILDKIT=1'")
+
+    quiet_docker_output()
 
     # These tags will be added to all provisioned infrastructure
     # objects.
