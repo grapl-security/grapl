@@ -4,7 +4,7 @@ package graplinc.grapl.metrics.v1;
 
 // Metrics are always defined by a name, but can optionally be assigned “labels”,
 // which are key/value pairs that provide metadata about the key. Labels are
-// typically used for differentiating the context of when an where a metric are emitted.
+// typically used for differentiating the context of when and where a metric are emitted.
 message Label {
     // Key of this label
     string key = 1;
