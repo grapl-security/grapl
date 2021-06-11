@@ -14,7 +14,6 @@ from infra.config import DEPLOYMENT_NAME, LOCAL_GRAPL
 from infra.dgraph_cluster import DgraphCluster, LocalStandInDgraphCluster
 from infra.dgraph_ttl import DGraphTTL
 from infra.engagement_creator import EngagementCreator
-from infra.fargate_service import FargateService
 from infra.graph_merger import GraphMerger
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
@@ -26,8 +25,6 @@ from infra.quiet_docker_build_output import quiet_docker_output
 from infra.secret import JWTSecret
 from infra.service import ServiceLike
 from infra.sysmon_generator import SysmonGenerator
-
-import pulumi
 
 
 def _create_dgraph_cluster(network: Network) -> DgraphCluster:
