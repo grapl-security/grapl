@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package graplinc.grapl.metrics.v1.metric_types;
+package graplinc.grapl.metrics.v1;
 
 // Metrics are always defined by a name, but can optionally be assigned “labels”,
 // which are key/value pairs that provide metadata about the key. Labels are
