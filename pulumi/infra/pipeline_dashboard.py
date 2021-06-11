@@ -9,8 +9,6 @@ from typing import Any, Dict, List
 
 import pulumi_aws as aws
 from infra.config import DEPLOYMENT_NAME
-from infra.fargate_service import FargateService
-from infra.lambda_ import Lambda
 from infra.service import ServiceLike
 from infra.service_queue import ServiceQueueNames
 
