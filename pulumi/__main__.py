@@ -173,13 +173,6 @@ def main() -> None:
         dgraph_cluster=dgraph_cluster,
     )
 
-    Provisioner(
-        network=network,
-        test_user_password=test_user_password,
-        db=dynamodb_tables,
-        dgraph_cluster=dgraph_cluster,
-    )
-
     OpsAlarms(name="ops-alarms")
 
     ########################################################################
@@ -194,6 +187,16 @@ def main() -> None:
             index_document="index.html",
         ),
     )
+
+    api = Api(
+        network=network,
+        secret=jwt_secret,
+        ux_bucket=ux_bucket,
+        db=dynamodb_tables,
+        plugins_bucket=model_plugins_bucket,
+        forwarder=forwarder,
+        dgraph_cluster=dgraph_cluster,
+    )
     # Note: This requires `yarn build` to have been run first
     if not LOCAL_GRAPL:
         # Not doing this in Local Grapl at the moment, as we have
@@ -207,17 +210,13 @@ def main() -> None:
         except FileNotFoundError as e:
             raise Exception("You probably need to `make pulumi-prep` first") from e
 
-    api = Api(
-        network=network,
-        secret=jwt_secret,
-        ux_bucket=ux_bucket,
-        db=dynamodb_tables,
-        plugins_bucket=model_plugins_bucket,
-        forwarder=forwarder,
-        dgraph_cluster=dgraph_cluster,
-    )
+        Provisioner(
+            network=network,
+            test_user_password=test_user_password,
+            db=dynamodb_tables,
+            dgraph_cluster=dgraph_cluster,
+        )
 
-    if not LOCAL_GRAPL:
         E2eTestRunner(
             network=network,
             dgraph_cluster=dgraph_cluster,

@@ -113,12 +113,6 @@ services:
   # Utility Services
   ########################################################################
 
-  graplctl:
-    image: grapl/graplctl:${TAG:-latest}
-    build:
-      context: .
-      dockerfile: ./src/python/graplctl/graplctl.Dockerfile
-
   grapl-pulumi:
     image: grapl/grapl-local-pulumi:${TAG:-latest}
     build:

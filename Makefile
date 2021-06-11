@@ -26,6 +26,7 @@ export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 	--file ./test/docker-compose.integration-tests.yml \
 	--file ./test/docker-compose.e2e-tests.yml \
 	--file ./test/docker-compose.typecheck-tests.yml \
+        --file ./test/docker-compose.graplctl.yml \
 	${EVERY_LAMBDA_COMPOSE_FILE}
 
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
@@ -153,7 +154,7 @@ build-test-typecheck:
 	docker buildx bake --file ./test/docker-compose.typecheck-tests.yml
 
 .PHONY: build-test-integration
-build-test-integration: build-services
+build-test-integration: graplctl build-services
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.integration-tests.yml
 
@@ -179,7 +180,8 @@ build-formatter:
 graplctl: ## Build graplctl and install it to the project root
 	./pants package ./src/python/graplctl/graplctl
 	cp ./dist/src.python.graplctl.graplctl/graplctl.pex ./bin/graplctl
-	printf -- '\n${FMT_BOLD}Graplctl${FMT_END} written to ${FMT_BLUE}./bin/graplctl${FMT_END}\n'
+	printf -- '\n${FMT_BOLD}graplctl${FMT_END} written to ${FMT_BLUE}./bin/graplctl${FMT_END}\n'
+	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.graplctl.yml
 
 .PHONY: build-ux
 build-ux: ## Build website assets
@@ -231,7 +233,7 @@ test-typecheck: test-typecheck-docker test-typecheck-pants ## Typecheck all Pyth
 .PHONY: test-integration
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
 test-integration: export COMPOSE_FILE := ./test/docker-compose.integration-tests.yml
-test-integration: graplctl build-test-integration modern-lambdas ## Build and run integration tests
+test-integration: build-test-integration modern-lambdas ## Build and run integration tests
 	$(MAKE) test-with-env
 
 .PHONY: test-e2e
