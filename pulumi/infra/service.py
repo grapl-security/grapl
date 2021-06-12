@@ -7,8 +7,17 @@ from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.queue_driven_lambda import QueueDrivenLambda
 from infra.service_queue import ServiceQueue
+from typing_extensions import Protocol
 
 import pulumi
+
+
+class ServiceLike(Protocol):
+    """
+    Describes shared properties between Service and FargateService.
+    """
+
+    queue: ServiceQueue
 
 
 class Service(pulumi.ComponentResource):

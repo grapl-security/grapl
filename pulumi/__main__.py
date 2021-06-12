@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import List
 
 from infra import dynamodb, emitter
 from infra.alarms import OpsAlarms
@@ -19,9 +20,11 @@ from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.node_identifier import NodeIdentifier
 from infra.osquery_generator import OSQueryGenerator
+from infra.pipeline_dashboard import PipelineDashboard
 from infra.provision_lambda import Provisioner
 from infra.quiet_docker_build_output import quiet_docker_output
 from infra.secret import JWTSecret, TestUserPassword
+from infra.service import ServiceLike
 from infra.service_queue import ServiceQueue  # noqa: F401
 from infra.sysmon_generator import SysmonGenerator
 
@@ -79,6 +82,8 @@ def main() -> None:
     analyzers_bucket = Bucket("analyzers-bucket", sse=True)
     model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)
 
+    services: List[ServiceLike] = []
+
     if LOCAL_GRAPL:
         # We need to create these queues, and wire them up to their
         # respective emitters, in Local Grapl, because they are
@@ -110,7 +115,7 @@ def main() -> None:
         # No Fargate or Elasticache in Local Grapl
         cache = Cache("main-cache", network=network)
 
-        SysmonGenerator(
+        sysmon_generator = SysmonGenerator(
             input_emitter=sysmon_log_emitter,
             output_emitter=unid_subgraphs_generated_emitter,
             network=network,
@@ -118,7 +123,7 @@ def main() -> None:
             forwarder=forwarder,
         )
 
-        OSQueryGenerator(
+        osquery_generator = OSQueryGenerator(
             input_emitter=osquery_log_emitter,
             output_emitter=unid_subgraphs_generated_emitter,
             network=network,
@@ -126,7 +131,7 @@ def main() -> None:
             forwarder=forwarder,
         )
 
-        NodeIdentifier(
+        node_identifier = NodeIdentifier(
             input_emitter=unid_subgraphs_generated_emitter,
             output_emitter=subgraphs_generated_emitter,
             db=dynamodb_tables,
@@ -135,7 +140,7 @@ def main() -> None:
             forwarder=forwarder,
         )
 
-        GraphMerger(
+        graph_merger = GraphMerger(
             input_emitter=subgraphs_generated_emitter,
             output_emitter=subgraphs_merged_emitter,
             dgraph_cluster=dgraph_cluster,
@@ -145,7 +150,7 @@ def main() -> None:
             forwarder=forwarder,
         )
 
-        AnalyzerDispatcher(
+        analyzer_dispatcher = AnalyzerDispatcher(
             input_emitter=subgraphs_merged_emitter,
             output_emitter=dispatched_analyzer_emitter,
             analyzers_bucket=analyzers_bucket,
@@ -154,7 +159,7 @@ def main() -> None:
             forwarder=forwarder,
         )
 
-        AnalyzerExecutor(
+        analyzer_executor = AnalyzerExecutor(
             input_emitter=dispatched_analyzer_emitter,
             output_emitter=analyzer_matched_emitter,
             dgraph_cluster=dgraph_cluster,
@@ -165,14 +170,28 @@ def main() -> None:
             forwarder=forwarder,
         )
 
-    EngagementCreator(
+        services.extend(
+            [
+                sysmon_generator,
+                osquery_generator,
+                node_identifier,
+                graph_merger,
+                analyzer_dispatcher,
+                analyzer_executor,
+            ]
+        )
+
+    engagement_creator = EngagementCreator(
         input_emitter=analyzer_matched_emitter,
         network=network,
         forwarder=forwarder,
         dgraph_cluster=dgraph_cluster,
     )
+    services.append(engagement_creator)
 
     OpsAlarms(name="ops-alarms")
+
+    PipelineDashboard(services=services)
 
     ########################################################################
 

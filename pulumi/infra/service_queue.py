@@ -1,5 +1,5 @@
 import json
-from typing import Optional
+from typing import NamedTuple, Optional
 
 import pulumi_aws as aws
 from infra import queue_policy
@@ -7,6 +7,13 @@ from infra.config import DEPLOYMENT_NAME
 from infra.emitter import EventEmitter
 
 import pulumi
+
+
+class ServiceQueueNames(NamedTuple):
+    service_name: str
+    queue: str
+    retry_queue: str
+    dead_letter_queue: str
 
 
 class ServiceQueue(pulumi.ComponentResource):
@@ -105,6 +112,18 @@ class ServiceQueue(pulumi.ComponentResource):
     @property
     def dead_letter_queue_url(self) -> pulumi.Output[str]:
         return self.dead_letter_queue.id
+
+    @property
+    def queue_names(self) -> pulumi.Output[ServiceQueueNames]:
+        """
+        Helps de-complicate creating dashboards off this service.
+        """
+        return pulumi.Output.all(
+            self._name,
+            self.queue.name,
+            self.retry_queue.name,
+            self.dead_letter_queue.name,
+        ).apply(lambda args: ServiceQueueNames(*args))
 
     def grant_main_queue_consumption_to(self, role: aws.iam.Role) -> None:
         queue_policy.consumption_policy(self.queue, role)

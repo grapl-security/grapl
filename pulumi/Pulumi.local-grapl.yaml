@@ -3,6 +3,7 @@ config:
   aws:accessKey: test
   aws:endpoints:
   - apigateway: http://localhost:4566
+    cloudwatch: http://localhost:4566
     cloudwatchevents: http://localhost:4566
     cloudwatchlogs: http://localhost:4566
     dynamodb: http://localhost:4566

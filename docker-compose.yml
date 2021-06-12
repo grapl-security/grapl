@@ -128,7 +128,7 @@ services:
       - IMAGE_NAME=localstack/localstack:0.12.11
       - EDGE_PORT=${LOCALSTACK_PORT}
       - HOSTNAME_EXTERNAL=${LOCALSTACK_HOST}
-      - SERVICES=apigateway,dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs
+      - SERVICES=apigateway,cloudwatch,dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs
       - DEBUG=1
       # Once we put the lambdas behind the API gateway, overall test
       # time increased. Using the `docker` executor reliably takes at
