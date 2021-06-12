@@ -62,10 +62,18 @@ def _lambda_names() -> List[str]:
     lambda_container_prefix = (
         "localstack_lambda_arn_aws_lambda_us-east-1_000000000000_function_"
     )
-    containers = _container_names_by_prefix(lambda_container_prefix)
+    try:
+        containers = _container_names_by_prefix(lambda_container_prefix)
 
-    # Chop off the prefix to get just the names of the lambda functions
-    return [name.replace(lambda_container_prefix, "") for name in containers]
+        # Chop off the prefix to get just the names of the lambda functions
+        return [name.replace(lambda_container_prefix, "") for name in containers]
+    except ValueError as e:
+        logging.warning(
+            "Couldn't find any lambda function artifacts. Most likely, the stack did not"
+            " completely succeed starting, meaning no lambdas were ever invoked."
+            " Scroll up and check for errors!"
+        )
+        return []
 
 
 def _dump_lambda_log(lambda_name: str, dir: Path) -> None:
@@ -85,7 +93,9 @@ def _dump_lambda_log(lambda_name: str, dir: Path) -> None:
 
     """
     destination = dir / f"{lambda_name}_lambda.log"
-    logging.info(f"Dumping logs for '{lambda_name}' lambda function to '{destination}'")
+    logging.debug(
+        f"Dumping logs for '{lambda_name}' lambda function to '{destination}'"
+    )
     with open(destination, "wb") as out_stream:
         subprocess.run(
             [
@@ -110,7 +120,7 @@ def _dump_docker_log(container_name: str, dir: Path) -> None:
     run `docker logs` and dump to $DIR/$CONTAINER_NAME.log
     """
     destination = dir / f"{container_name}.log"
-    logging.info(f"Dumping logs for '{container_name}' container to '{destination}'")
+    logging.debug(f"Dumping logs for '{container_name}' container to '{destination}'")
     with open(destination, "wb") as out_stream:
         subprocess.run(
             f"docker logs --timestamps {container_name}",
@@ -125,7 +135,7 @@ def dump_docker_ps(dir: Path) -> None:
     run `docker ps` and dump to $DIR/docker_ps.log
     """
     destination = dir / "docker_ps.log"
-    logging.info(f"Dumping 'docker ps' to '{destination}'")
+    logging.debug(f"Dumping 'docker ps' to '{destination}'")
     with open(destination, "wb") as out_stream:
         subprocess.run(
             f"docker ps",
