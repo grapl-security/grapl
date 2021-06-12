@@ -234,15 +234,14 @@ CMD source venv/bin/activate && \
     cd grapl-notebook && \
     jupyter notebook --ip="0.0.0.0"
 
-#
-# Local provision
-################################################################################
+# test
+FROM grapl-notebook AS grapl-notebook-test
 
-# build
-FROM grapl-python-build AS grapl-provision
+# This file will improve once #444 lands
+# primarily to use pre-downloaded tools instead of downloading again
 
-COPY --chown=grapl python/grapl_provision grapl_local_provision
-COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
+RUN source venv/bin/activate && \
+    pip install nbqa mypy boto3-stubs[essential]
 
 # grapl-tests-common-build
 ################################################################################
@@ -264,17 +263,3 @@ RUN source venv/bin/activate && \
 FROM grapl-tests-common-build AS graphql-endpoint-tests
 
 COPY --chown=grapl python/graphql_endpoint_tests graphql_endpoint_tests
-
-# E2E tests
-################################################################################
-FROM grapl-tests-common-build AS grapl-e2e-tests-build
-
-COPY --chown=grapl python/grapl_e2e_tests grapl_e2e_tests
-
-# Allow user `grapl` to write to the mount point
-USER root
-RUN mkdir /mnt/dynamodb_dump && chown grapl /mnt/dynamodb_dump
-USER grapl
-
-RUN source venv/bin/activate && \
-    pip install zstd==1.4.9.1

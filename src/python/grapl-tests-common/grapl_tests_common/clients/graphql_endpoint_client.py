@@ -1,14 +1,16 @@
 import json
-import os
 from http import HTTPStatus
 from typing import Any, Dict, Optional, cast
 
 import requests
+from grapl_common.grapl_logger import get_module_grapl_logger
+from grapl_tests_common.clients.common import endpoint_url
 
 # Would be nice to improve this as a TypedDict
 GqlLensDict = Dict[str, Any]
 GraphqlType = Dict[str, Any]
-_JSON_CONTENT_TYPE_HEADERS = {"Content-type": "application/json"}
+
+LOGGER = get_module_grapl_logger(log_to_stdout=True)
 
 
 class GraphQLException(Exception):
@@ -17,20 +19,23 @@ class GraphQLException(Exception):
 
 class GraphqlEndpointClient:
     def __init__(self, jwt: str) -> None:
-        hostname = os.environ["GRAPL_GRAPHQL_HOST"]
-        port = os.environ["GRAPL_GRAPHQL_PORT"]
-        self.endpoint = f"http://{hostname}:{port}"
+        self.endpoint = endpoint_url("/graphQlEndpoint")
         self.jwt = jwt
 
     def query(
         self, query: str, variables: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         resp = requests.post(
-            f"{self.endpoint}/graphQlEndpoint/graphql",
+            f"{self.endpoint}/graphql",
             params={"query": query, "variables": json.dumps(variables or {})},
             cookies={"grapl_jwt": self.jwt},
         )
-        assert resp.status_code == HTTPStatus.OK, resp.json()
+        if resp.status_code != HTTPStatus.OK:
+            resp_str = "\\n".join(resp.iter_lines(decode_unicode=True))
+            raise AssertionError(
+                f'Status {resp.status_code} from graphql endpoint for query "{query}" with variables "{variables}"\n'
+                f'Response: "{resp_str or "no response"}"'
+            )
         return cast(Dict[str, Any], resp.json()["data"])
 
     def query_for_scope(self, lens_name: str) -> GqlLensDict:

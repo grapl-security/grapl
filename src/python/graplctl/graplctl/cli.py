@@ -3,6 +3,17 @@ from __future__ import annotations
 import boto3
 import click
 import graplctl.swarm.lib as docker_swarm_ops
+from botocore.client import Config
+from grapl_common.env_helpers import (
+    CloudWatchClientFactory,
+    EC2ResourceFactory,
+    LambdaClientFactory,
+    Route53ClientFactory,
+    S3ClientFactory,
+    SNSClientFactory,
+    SQSClientFactory,
+    SSMClientFactory,
+)
 from graplctl import __version__, common
 from graplctl.aws.commands import aws
 from graplctl.common import State
@@ -62,19 +73,23 @@ def main(
     aws_profile: str,
 ) -> None:
     session = boto3.session.Session(profile_name=aws_profile)
+    config = Config(region_name=grapl_region)
+    lambda_config = Config(
+        read_timeout=60 * 5 + 10  # 10s longer than e2e-test-runner and provisioner
+    ).merge(config)
     ctx.obj = State(
         grapl_region,
         grapl_deployment_name,
         grapl_version,
         aws_profile,
-        ec2=session.resource("ec2", region_name=grapl_region),
-        ssm=session.client("ssm", region_name=grapl_region),
-        cloudwatch=session.client("cloudwatch", region_name=grapl_region),
-        s3=session.client("s3", region_name=grapl_region),
-        sns=session.client("sns", region_name=grapl_region),
-        route53=session.client("route53", region_name=grapl_region),
-        sqs=session.client("sqs", region_name=grapl_region),
-        lambda_=session.client("lambda", region_name=grapl_region),
+        ec2=EC2ResourceFactory(session).from_env(config=config),
+        ssm=SSMClientFactory(session).from_env(config=config),
+        cloudwatch=CloudWatchClientFactory(session).from_env(config=config),
+        s3=S3ClientFactory(session).from_env(config=config),
+        sns=SNSClientFactory(session).from_env(config=config),
+        route53=Route53ClientFactory(session).from_env(config=config),
+        sqs=SQSClientFactory(session).from_env(config=config),
+        lambda_=LambdaClientFactory(session).from_env(config=lambda_config),
     )
 
 

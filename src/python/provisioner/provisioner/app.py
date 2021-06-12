@@ -22,6 +22,10 @@ from grapl_analyzerlib.prelude import (
     RiskSchema,
 )
 from grapl_analyzerlib.provision import provision_common
+from grapl_common.env_helpers import (
+    DynamoDBResourceFactory,
+    SecretsManagerClientFactory,
+)
 
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb import DynamoDBServiceResource
@@ -108,15 +112,20 @@ def _retrieve_test_user_password(
 
 
 def provision(event: Any = None, context: Any = None) -> None:
+    LOGGER.info("provisioning grapl")
+
     graph_client = GraphClient()
-    dynamodb: DynamoDBServiceResource = boto3.resource("dynamodb")
-    secretsmanager: SecretsmanagerClient = boto3.client("secretsmanager")
+    dynamodb = DynamoDBResourceFactory(boto3).from_env()
+    secretsmanager = SecretsManagerClientFactory(boto3).from_env()
 
+    LOGGER.info("provisioning graph")
     _provision_graph(graph_client=graph_client, dynamodb=dynamodb)
+    LOGGER.info("provisioned graph")
 
+    LOGGER.info("retrieving test user password")
     password = _retrieve_test_user_password(secretsmanager, DEPLOYMENT_NAME)
+    LOGGER.info("retrieved test user password")
+
+    LOGGER.info("creating test user")
     _create_user(dynamodb=dynamodb, username=GRAPL_TEST_USER_NAME, cleartext=password)
-
-
-if __name__ == "__main__":
-    provision()
+    LOGGER.info("created test user")

@@ -49,6 +49,7 @@ new stack for this. This will be your personal stack, so make sure to
 set `PULUMI_CONFIG_PASSPHRASE` accordingly.
 
 ```
+pulumi login --local
 pulumi stack init <NAME>
 pulumi config set aws:region us-east-1
 ```

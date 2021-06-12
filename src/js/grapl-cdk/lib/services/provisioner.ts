@@ -35,7 +35,7 @@ export class Provisioner extends cdk.NestedStack {
         const event_handler = new lambda.Function(this, "Handler", {
             runtime: lambda.Runtime.PYTHON_3_7,
             handler: "lambdex_handler.handler",
-            functionName: `${serviceName}-Handler`,
+            functionName: "provisioner",
             code: lambda.Code.fromAsset(
                 `./zips/provisioner-${props.version}.zip`
             ),
@@ -45,6 +45,8 @@ export class Provisioner extends cdk.NestedStack {
                 DEPLOYMENT_NAME: props.deploymentName,
                 GRAPL_TEST_USER_NAME: `${props.deploymentName}-grapl-test-user`,
                 MG_ALPHAS: props.dgraphSwarmCluster.alphaHostPort(),
+                DGRAPH_HOST: props.dgraphSwarmCluster.alphaHost(),
+                DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT: `${props.dgraphSwarmCluster.alphaPort()}`,
             },
             timeout: cdk.Duration.seconds(600),
             memorySize: 128,

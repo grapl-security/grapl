@@ -10,6 +10,11 @@ server {
   resolver 127.0.0.11 ipv6=off;
   listen 3128;
 
+  # https://stackoverflow.com/questions/1067334/how-to-set-the-allowed-url-length-for-a-nginx-request-error-code-414-uri-too
+  # We kept getting 414s with requests to graphql endpoint
+  large_client_header_buffers 4 64k;
+
+
   location /auth/ {
     proxy_pass http://${LOCALSTACK_HOST}:${LOCALSTACK_PORT}/restapis/${API_GATEWAY_API_ID}/prod/_user_request_/auth/;
   }

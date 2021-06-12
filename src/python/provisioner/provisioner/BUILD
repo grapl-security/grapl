@@ -1,4 +1,6 @@
-python_library()
+python_library(
+    sources=["*.py"]
+)
 
 python_awslambda(
     name="lambda",

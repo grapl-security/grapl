@@ -1,6 +1,4 @@
 build-support/grapl-venv
-dist
-etc/sample_data
 **/node_modules
 .pants.d
 .pants.workdir.file_lock*

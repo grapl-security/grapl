@@ -93,10 +93,16 @@ services:
       cd engagement_edge &&
       py.test -n auto -m "integration_test"'
     environment:
+      - AWS_REGION
+      - IS_LOCAL=True
       - DEPLOYMENT_NAME
       - UX_BUCKET_URL="ux_bucket_url"
       - GRAPL_API_HOST
       - GRAPL_HTTP_FRONTEND_PORT
+      - GRAPL_TEST_USER_NAME
+      - SECRETSMANAGER_ACCESS_KEY_ID
+      - SECRETSMANAGER_ACCESS_KEY_SECRET
+      - SECRETSMANAGER_ENDPOINT
 
   # TODO: Re-enable these tests after the following issues are resolved:
   # - https://github.com/grapl-security/issue-tracker/issues/385
@@ -133,6 +139,7 @@ services:
       '
     environment:
       - AWS_REGION
+      - IS_LOCAL=True
       - DEBUG_SERVICES=${DEBUG_SERVICES:-}
       - DEPLOYMENT_NAME
       - DYNAMODB_ENDPOINT
@@ -140,10 +147,10 @@ services:
       - DYNAMODB_ACCESS_KEY_SECRET
       - GRAPL_API_HOST
       - GRAPL_HTTP_FRONTEND_PORT
-      - GRAPL_GRAPHQL_HOST
-      - GRAPL_GRAPHQL_PORT
-      - GRAPL_MODEL_PLUGIN_DEPLOYER_HOST
-      - GRAPL_MODEL_PLUGIN_DEPLOYER_PORT
+      - GRAPL_TEST_USER_NAME
+      - SECRETSMANAGER_ACCESS_KEY_ID
+      - SECRETSMANAGER_ACCESS_KEY_SECRET
+      - SECRETSMANAGER_ENDPOINT
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
       - MG_ALPHAS
       - VSC_DEBUGGER_PORT=${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT_TESTS}

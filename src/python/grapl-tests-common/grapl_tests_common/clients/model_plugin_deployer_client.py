@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Dict
 
 import requests
+from grapl_tests_common.clients.common import endpoint_url
 
 _JSON_CONTENT_TYPE_HEADERS = {"Content-type": "application/json"}
 
@@ -26,9 +27,7 @@ class ModelPluginDeployerClient:
 
     @staticmethod
     def from_env() -> ModelPluginDeployerClient:
-        hostname = os.environ["GRAPL_MODEL_PLUGIN_DEPLOYER_HOST"]
-        port = os.environ["GRAPL_MODEL_PLUGIN_DEPLOYER_PORT"]
-        return ModelPluginDeployerClient(endpoint=f"http://{hostname}:{port}")
+        return ModelPluginDeployerClient(endpoint=endpoint_url("/modelPluginDeployer"))
 
     def deploy(
         self,

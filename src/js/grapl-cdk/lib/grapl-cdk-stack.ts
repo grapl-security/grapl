@@ -25,7 +25,6 @@ import { DGraphSwarmCluster } from "./services/dgraph_swarm_cluster";
 import { ModelPluginDeployer } from "./services/model_plugin_deployer";
 import { MetricForwarder } from "./services/metric_forwarder";
 import { EngagementCreator } from "./services/engagement_creator";
-import { DGraphTtl } from "./services/dgraph_ttl";
 import { AnalyzerExecutor } from "./services/analyzer_executor";
 import { AnalyzerDispatch } from "./services/analyzer_dispatcher";
 import { GraphMerger } from "./services/graph_merger";
@@ -178,8 +177,6 @@ export class GraplCdkStack extends cdk.Stack {
                 ...enableMetricsProps,
             }
         );
-
-        new DGraphTtl(this, "dgraph-ttl", graplProps);
 
         const model_plugins_bucket = new GraplS3Bucket(
             this,
@@ -334,7 +331,7 @@ export class GraplCdkStack extends cdk.Stack {
             ],
         });
 
-        new Provisioner(this, "provisioner", {
+        const provisioner = new Provisioner(this, "provisioner", {
             schemaDb: schema_table,
             ...graplProps,
         });

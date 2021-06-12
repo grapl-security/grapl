@@ -1,13 +1,12 @@
 import base64
 import logging
 import os
-import pathlib
-import shutil
-import subprocess
 import sys
-from typing import IO, AnyStr
+from typing import cast
 
+from botocore.response import StreamingBody
 from mypy_boto3_lambda import LambdaClient
+from mypy_boto3_lambda.type_defs import InvocationResponseTypeDef
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
@@ -18,108 +17,42 @@ EDGE_UX_DIRECTORY = "/edge_ux_post_replace"
 CDK_OUT_FILENAME = "cdk-output.json"
 
 
-def _run_shell_cmd(
-    cmd: str,
-    cwd: pathlib.Path,
-    stdout: IO[AnyStr],
-    stderr: IO[AnyStr],
-) -> subprocess.CompletedProcess:
-    return subprocess.run(
-        cmd,
-        stdout=stdout,
-        stderr=stderr,
-        check=True,
-        shell=True,
-        cwd=cwd.as_posix(),
-        executable="/bin/bash",
+def _extract_invocation_response_error_payload(
+    result: InvocationResponseTypeDef,
+) -> str:
+    """extract the payload of a lambda invocation error response in
+    a format amenable to logging"""
+    return "\\n".join(
+        l.decode("utf-8") for l in cast(StreamingBody, result["Payload"]).iter_lines()
     )
 
 
-def deploy_grapl(
-    grapl_root: pathlib.Path, aws_profile: str, stdout: IO[AnyStr], stderr: IO[AnyStr]
-) -> None:
-    grapl_cdk_dir = pathlib.Path(grapl_root.absolute(), GRAPL_CDK_RELATIVE_PATH)
-    edge_ux_artifact_dir = pathlib.Path(grapl_cdk_dir, EDGE_UX_DIRECTORY)
-    outputs_file = pathlib.Path(grapl_cdk_dir, CDK_OUT_FILENAME)
-
-    if edge_ux_artifact_dir.exists():
-        shutil.rmtree(edge_ux_artifact_dir)
-
-    os.mkdir(edge_ux_artifact_dir)
-
-    LOGGER.info("building cdk")
-    _run_shell_cmd("npm run build", cwd=grapl_cdk_dir, stdout=stdout, stderr=stderr)
-    LOGGER.info("built cdk")
-
-    LOGGER.info("deploying Grapl stack")
-    _run_shell_cmd(
-        f"cdk deploy --require-approval=never --profile={aws_profile} --outputs-file={outputs_file.as_posix()} Grapl",
-        cwd=grapl_cdk_dir,
-        stdout=stdout,
-        stderr=stderr,
-    )
-    LOGGER.info("deployed Grapl stack")
-
-    shutil.rmtree(edge_ux_artifact_dir)
-    os.mkdir(edge_ux_artifact_dir)
-
-    LOGGER.info("creating edge UX package")
-    _run_shell_cmd(
-        "npm run create_edge_ux_package",
-        cwd=grapl_cdk_dir,
-        stdout=stdout,
-        stderr=stderr,
-    )
-    LOGGER.info("created edge UX package")
-
-    LOGGER.info("deploying EngagementUX stack")
-    _run_shell_cmd(
-        f"cdk deploy --require-approval=never --profile={aws_profile} --outputs-file={outputs_file.as_posix()} EngagementUX",
-        cwd=grapl_cdk_dir,
-        stdout=stdout,
-        stderr=stderr,
-    )
-    LOGGER.info("deployed EngagementUX stack")
-
-    shutil.rmtree(edge_ux_artifact_dir)
-
-
-def destroy_grapl(
-    grapl_root: pathlib.Path, aws_profile: str, stdout: IO[AnyStr], stderr: IO[AnyStr]
-) -> None:
-    grapl_cdk_dir = pathlib.Path(grapl_root.absolute(), GRAPL_CDK_RELATIVE_PATH)
-
-    LOGGER.info("building cdk")
-    _run_shell_cmd("npm run build", cwd=grapl_cdk_dir, stdout=stdout, stderr=stderr)
-    LOGGER.info("built cdk")
-
-    LOGGER.info("destroying all stacks")
-    _run_shell_cmd(
-        f'cdk destroy --profile={aws_profile} --force --require-approval=never "*"',
-        cwd=grapl_cdk_dir,
-        stdout=stdout,
-        stderr=stderr,
-    )
-    LOGGER.info("destroyed all stacks")
-
-
-def provision_grapl(lambda_: LambdaClient, deployment_name: str) -> None:
-    LOGGER.info("invoking provisioner lambda")
+def _invoke_lambda(lambda_: LambdaClient, function_name: str) -> None:
+    LOGGER.info(f"invoking lambda {function_name}")
     result = lambda_.invoke(
-        FunctionName=f"{deployment_name}-Provisioner-Handler",
+        FunctionName=function_name,
         InvocationType="RequestResponse",
         LogType="Tail",
     )
 
     status = result["StatusCode"]
     logs = base64.b64decode(bytes(result["LogResult"], "utf-8")).decode("utf-8")
-    if status == 200:
+    if status == 200 and result.get("FunctionError") is None:
         for line in logs.splitlines():
             LOGGER.info(line)
-        LOGGER.info("provisioner lambda succeeded")
+        LOGGER.info(f"lambda invocation succeeded for {function_name}")
     else:
-        for line in logs.splitlines():
-            LOGGER.error(line)
-        raise Exception(
-            f"provisioner lambda failed with status {status}: {result['FunctionError']}"
+        LOGGER.error(
+            f"lambda invocation for {function_name} returned error response {_extract_invocation_response_error_payload(result)}"
         )
+        raise Exception(
+            f"lambda invocation for {function_name} failed with status {status}: {result['FunctionError']}"
+        )
+
+
+def provision_grapl(lambda_: LambdaClient, deployment_name: str) -> None:
+    _invoke_lambda(lambda_=lambda_, function_name=f"{deployment_name}-provisioner")
+
+
+def run_e2e_tests(lambda_: LambdaClient, deployment_name: str) -> None:
+    _invoke_lambda(lambda_=lambda_, function_name=f"{deployment_name}-e2e-test-runner")

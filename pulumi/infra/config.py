@@ -10,6 +10,9 @@ import pulumi
 # This will be incorporated into various infrastructure object names.
 DEPLOYMENT_NAME = pulumi.get_stack()
 
+# This must be the same as the value defined in local-grapl.env
+GRAPL_TEST_USER_NAME = f"{DEPLOYMENT_NAME}-grapl-test-user"
+
 
 def _validate_deployment_name() -> None:
     # ^ and $ capture the whole string: start and end
@@ -87,7 +90,6 @@ def configurable_envvar(service_name: str, var: str) -> str:
           <VARIABLE_NAME>: <VARIABLE_VALUE>
     """
     config_key = "env_vars"
-
     vars = (pulumi.Config().get_object(config_key) or {}).get(service_name, {})
     value = vars.get(var) or DEFAULT_ENVVARS.get(var)
     if not value:

@@ -67,6 +67,7 @@ root_patterns = [
   "/src/python/analyzer_executor/src",
   "/src/python/analyzer_executor/tests",
   "/src/python/engagement-creator",
+  "/src/python/e2e-test-runner",
   "/src/python/engagement_edge",
   "/src/python/graphql_endpoint_tests",
   "/src/python/grapl_analyzerlib",
@@ -76,11 +77,9 @@ root_patterns = [
   "/src/python/grapl_e2e_tests",
   "/src/python/graplinc",
   "/src/python/grapl-model-plugin-deployer",
-  "/src/python/grapl_provision",
   "/src/python/grapl-tests-common",
   "/src/python/grapl-ux-router",
-  "/src/python/provisioner/src",
-  "/src/python/provisioner/tests",
+  "/src/python/provisioner",
   "/src/python/repl",
 ]
 

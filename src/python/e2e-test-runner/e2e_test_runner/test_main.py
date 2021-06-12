@@ -52,13 +52,13 @@ class TestEndToEnd(TestCase):
                 5,
             )
 
-        wait_for_one(WaitForCondition(scope_has_N_items), timeout_secs=240)
+        wait_for_one(WaitForCondition(scope_has_N_items), timeout_secs=300)
         gql_client = GraphqlEndpointClient(jwt=EngagementEdgeClient().get_jwt())
         wait_for_one(
             WaitForNoException(
                 lambda: ensure_graphql_lens_scope_no_errors(gql_client, LENS_NAME)
             ),
-            timeout_secs=40,
+            timeout_secs=300,
         )
 
     # -------------------------- MODEL PLUGIN TESTS -------------------------------------------
@@ -160,7 +160,7 @@ def upload_model_plugin(
     model_plugin_client: ModelPluginDeployerClient,
 ) -> None:
     logging.info("Making request to /deploy to upload model plugins")
-    plugin_path = "./schemas"
+    plugin_path = "/tmp/schemas"
     jwt = EngagementEdgeClient().get_jwt()
     files = os.listdir(plugin_path)
     check_plugin_path_has_schemas_file(files)

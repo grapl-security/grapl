@@ -26,6 +26,7 @@ export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 	--file ./test/docker-compose.integration-tests.yml \
 	--file ./test/docker-compose.e2e-tests.yml \
 	--file ./test/docker-compose.typecheck-tests.yml \
+        --file ./test/docker-compose.graplctl.yml \
 	${EVERY_LAMBDA_COMPOSE_FILE}
 
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
@@ -153,12 +154,12 @@ build-test-typecheck:
 	docker buildx bake --file ./test/docker-compose.typecheck-tests.yml
 
 .PHONY: build-test-integration
-build-test-integration: build-services
+build-test-integration: graplctl modern-lambdas build-services
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.integration-tests.yml
 
 .PHONY: build-test-e2e
-build-test-e2e: build-services
+build-test-e2e: graplctl modern-lambdas build-services
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.yml
 
@@ -179,7 +180,8 @@ build-formatter:
 graplctl: ## Build graplctl and install it to the project root
 	./pants package ./src/python/graplctl/graplctl
 	cp ./dist/src.python.graplctl.graplctl/graplctl.pex ./bin/graplctl
-	printf -- '\n${FMT_BOLD}Graplctl${FMT_END} written to ${FMT_BLUE}./bin/graplctl${FMT_END}\n'
+	printf -- '\n${FMT_BOLD}graplctl${FMT_END} written to ${FMT_BLUE}./bin/graplctl${FMT_END}\n'
+	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.graplctl.yml
 
 .PHONY: build-ux
 build-ux: ## Build website assets
@@ -231,13 +233,13 @@ test-typecheck: test-typecheck-docker test-typecheck-pants ## Typecheck all Pyth
 .PHONY: test-integration
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
 test-integration: export COMPOSE_FILE := ./test/docker-compose.integration-tests.yml
-test-integration: build-test-integration modern-lambdas ## Build and run integration tests
+test-integration: modern-lambdas build-test-integration ## Build and run integration tests
 	$(MAKE) test-with-env
 
 .PHONY: test-e2e
 test-e2e: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_E2E_TESTS)
 test-e2e: export export COMPOSE_FILE := ./test/docker-compose.e2e-tests.yml
-test-e2e: build-test-e2e modern-lambdas ## Build and run e2e tests
+test-e2e: build-test-e2e ## Build and run e2e tests
 	$(MAKE) test-with-env
 
 # This target is not intended to be used directly from the command line, it's
@@ -372,12 +374,13 @@ zip: build-lambdas ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/
 .PHONY: zip-pants
 zip-pants: ## Generate Lambda zip artifacts using pants
 	./pants filter --target-type=python_awslambda :: | xargs ./pants package
-	cp ./dist/src.python.provisioner.src/lambda.zip ./src/js/grapl-cdk/zips/provisioner-$(TAG).zip
+	cp ./dist/src.python.provisioner.provisioner/lambda.zip ./src/js/grapl-cdk/zips/provisioner-$(TAG).zip
 	cp ./dist/src.python.engagement-creator/lambda.zip ./src/js/grapl-cdk/zips/engagement-creator-$(TAG).zip
 	cp ./dist/src.python.grapl-dgraph-ttl/lambda.zip ./src/js/grapl-cdk/zips/dgraph-ttl-$(TAG).zip
 	cp ./dist/src.python.engagement_edge/engagement_edge.zip ./src/js/grapl-cdk/zips/engagement-edge-$(TAG).zip
 	cp ./dist/src.python.grapl-ux-router/lambda.zip ./src/js/grapl-cdk/zips/ux-router-$(TAG).zip
 	cp ./dist/src.python.grapl-model-plugin-deployer/lambda.zip ./src/js/grapl-cdk/zips/model-plugin-deployer-$(TAG).zip
+	cp ./dist/src.python.e2e-test-runner.e2e_test_runner/lambda.zip ./src/js/grapl-cdk/zips/e2e-test-runner-$(TAG).zip
 
 # This target is intended to help ease the transition to Pulumi, and
 # using lambdas in local Grapl testing deployments. Essentially, every
@@ -411,4 +414,4 @@ repl: ## Run an interactive ipython repl that can import from grapl-common etc
 	./pants --no-pantsd repl --shell=ipython src/python/repl
 
 .PHONY: pulumi-prep
-pulumi-prep: modern-lambdas build-ux ## Prepare some artifacts in advance of running a Pulumi update (does not run Pulumi!)
+pulumi-prep: graplctl modern-lambdas build-ux ## Prepare some artifacts in advance of running a Pulumi update (does not run Pulumi!)

@@ -166,7 +166,15 @@ export class Swarm extends cdk.Construct {
         this.swarmSecurityGroup.connections.allowFrom(other, portRange);
     }
 
+    public clusterHost(): string {
+        return this.swarmHostedZone.zoneName;
+    }
+
+    public clusterPort(): number {
+        return 9080;
+    }
+
     public clusterHostPort(): string {
-        return `${this.swarmHostedZone.zoneName}:9080`;
+        return `${this.clusterHost()}:${this.clusterPort()}`;
     }
 }

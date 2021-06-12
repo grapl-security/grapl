@@ -14,6 +14,10 @@ x-common-variables:
   aws-region: &aws-region
     AWS_DEFAULT_REGION: ${AWS_REGION} # boto3 prefers this one
     AWS_REGION: ${AWS_REGION}
+  cloudwatch-env: &cloudwatch-env
+    CLOUDWATCH_ACCESS_KEY_ID: ${CLOUDWATCH_ACCESS_KEY_ID}
+    CLOUDWATCH_ACCESS_KEY_SECRET: ${CLOUDWATCH_ACCESS_KEY_SECRET}
+    CLOUDWATCH_ENDPOINT: ${CLOUDWATCH_ENDPOINT}
   dgraph-env: &dgraph-env
     MG_ALPHAS: ${MG_ALPHAS}
   dynamodb-env: &dynamodb-env
@@ -31,23 +35,43 @@ x-common-variables:
     OUTBOUND_CONNECTION_HISTORY_TABLE: ${DEPLOYMENT_NAME}-outbound_connection_history_table
     PROCESS_HISTORY_TABLE: ${DEPLOYMENT_NAME}-process_history_table
     STATIC_MAPPING_TABLE: ${DEPLOYMENT_NAME}-static_mapping_table
+  ec2-env: &ec2-env
+    EC2_ACCESS_KEY_ID: ${EC2_ACCESS_KEY_ID}
+    EC2_ACCESS_KEY_SECRET: ${EC2_ACCESS_KEY_SECRET}
+    EC2_ENDPOINT: ${EC2_ENDPOINT}
+  lambda-env: &lambda-env
+    LAMBDA_ACCESS_KEY_ID: ${LAMBDA_ACCESS_KEY_ID}
+    LAMBDA_ACCESS_KEY_SECRET: ${LAMBDA_ACCESS_KEY_SECRET}
+    LAMBDA_ENDPOINT: ${LAMBDA_ENDPOINT}
   log-level: &log-level
     GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-ERROR}"
     RUST_LOG: "${RUST_LOG:-ERROR}"
-  secretsmanager-env: &secretsmanager-env
-    SECRETSMANAGER_ACCESS_KEY_ID: ${SECRETSMANAGER_ACCESS_KEY_ID}
-    SECRETSMANAGER_ACCESS_KEY_SECRET: ${SECRETSMANAGER_ACCESS_KEY_SECRET}
-    SECRETSMANAGER_ENDPOINT: ${SECRETSMANAGER_ENDPOINT}
+  route53-env: &route53-env
+    ROUTE53_ACCESS_KEY_ID: ${ROUTE53_ACCESS_KEY_ID}
+    ROUTE53_ACCESS_KEY_SECRET: ${ROUTE53_ACCESS_KEY_SECRET}
+    ROUTE53_ENDPOINT: ${ROUTE53_ENDPOINT}
+  rust-backtrace: &rust-backtrace
+    RUST_BACKTRACE: ${RUST_BACKTRACE}
   s3-env: &s3-env
     S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
     S3_ACCESS_KEY_SECRET: ${S3_ACCESS_KEY_SECRET}
     S3_ENDPOINT: ${S3_ENDPOINT}
+  secretsmanager-env: &secretsmanager-env
+    SECRETSMANAGER_ACCESS_KEY_ID: ${SECRETSMANAGER_ACCESS_KEY_ID}
+    SECRETSMANAGER_ACCESS_KEY_SECRET: ${SECRETSMANAGER_ACCESS_KEY_SECRET}
+    SECRETSMANAGER_ENDPOINT: ${SECRETSMANAGER_ENDPOINT}
+  sns-env: &sns-env
+    SNS_ACCESS_KEY_ID: ${SNS_ACCESS_KEY_ID}
+    SNS_ACCESS_KEY_SECRET: ${SNS_ACCESS_KEY_SECRET}
+    SNS_ENDPOINT: ${SNS_ENDPOINT}
   sqs-env: &sqs-env
     SQS_ACCESS_KEY_ID: ${SQS_ACCESS_KEY_ID}
     SQS_ACCESS_KEY_SECRET: ${SQS_ACCESS_KEY_SECRET}
     SQS_ENDPOINT: ${SQS_ENDPOINT}
-  rust-backtrace: &rust-backtrace
-    RUST_BACKTRACE: ${RUST_BACKTRACE}
+  ssm-env: &ssm-env
+    SSM_ACCESS_KEY_ID: ${SSM_ACCESS_KEY_ID}
+    SSM_ACCESS_KEY_SECRET: ${SSM_ACCESS_KEY_SECRET}
+    SSM_ENDPOINT: ${SSM_ENDPOINT}
 
 services:
   ########################################################################
@@ -95,13 +119,13 @@ services:
   localstack:
     # TODO: 0.12.11 is the one we want once it's released; until then
     # we need an unreleased fix for lambda invocation
-    image: localstack/localstack:latest
+    image: localstack/localstack:0.12.11
     ports:
       # We'll expose localstack's edge port for ease of use with
       # things like the AWS CLI, Pulumi, etc.
       - 127.0.0.1:${LOCALSTACK_PORT}:${LOCALSTACK_PORT}
     environment:
-      - IMAGE_NAME=localstack/localstack:latest
+      - IMAGE_NAME=localstack/localstack:0.12.11
       - EDGE_PORT=${LOCALSTACK_PORT}
       - HOSTNAME_EXTERNAL=${LOCALSTACK_HOST}
       - SERVICES=apigateway,cloudwatch,dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs
@@ -160,7 +184,7 @@ services:
       <<: *sqs-env
       <<: *rust-backtrace
     depends_on:
-      grapl-provision:
+      provisioner:
         condition: service_completed_successfully
       localstack:
         condition: service_healthy
@@ -183,7 +207,7 @@ services:
       <<: *sqs-env
       <<: *rust-backtrace
     depends_on:
-      grapl-provision:
+      provisioner:
         condition: service_completed_successfully
       localstack:
         condition: service_healthy
@@ -207,7 +231,7 @@ services:
       <<: *rust-backtrace
     tty: false
     depends_on:
-      grapl-provision:
+      provisioner:
         condition: service_completed_successfully
       localstack:
         condition: service_healthy
@@ -231,7 +255,7 @@ services:
       <<: *rust-backtrace
     tty: false
     depends_on:
-      grapl-provision:
+      provisioner:
         condition: service_completed_successfully
       localstack:
         condition: service_healthy
@@ -258,7 +282,7 @@ services:
     depends_on:
       dgraph:
         condition: service_started
-      grapl-provision:
+      provisioner:
         condition: service_completed_successfully
       localstack:
         condition: service_healthy
@@ -312,7 +336,7 @@ services:
     depends_on:
       dgraph:
         condition: service_started
-      grapl-provision:
+      provisioner:
         condition: service_completed_successfully
       localstack:
         condition: service_healthy
@@ -345,7 +369,7 @@ services:
         condition: service_started
       localstack:
         condition: service_healthy
-      grapl-provision:
+      provisioner:
         condition: service_completed_successfully
     ports:
       - 127.0.0.1:${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}:${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}
@@ -402,7 +426,7 @@ services:
       <<: *aws-region
       <<: *s3-env
     depends_on:
-      grapl-provision:
+      provisioner:
         condition: service_completed_successfully
 
   grapl-graphql-endpoint:
@@ -426,7 +450,7 @@ services:
         condition: service_started
       localstack:
         condition: service_healthy
-      grapl-provision:
+      provisioner:
         condition: service_completed_successfully
     ports:
       - 127.0.0.1:${GRAPL_GRAPHQL_PORT}:${GRAPL_GRAPHQL_PORT}
@@ -478,28 +502,36 @@ services:
         read_only: false
     environment:
       PULUMI_CONFIG_PASSPHRASE: local-grapl-passphrase
-      # Other environment variables like MG_ALPHAS are passed in via 
+      # Other environment variables like MG_ALPHAS are passed in via
       # Pulumi.local-grapl.yaml
     depends_on:
       localstack:
         condition: service_healthy
 
-  grapl-provision:
-    image: grapl/grapl-provision:${TAG:-latest}
+  provisioner:
+    image: grapl/provisioner:${TAG:-latest}
     command: |
       /bin/bash -c "
-        export TIMEOUT=35 &&
-        . venv/bin/activate &&
-        python /home/grapl/grapl_local_provision/grapl_provision.py
+          python -c 'import lambdex_handler; lambdex_handler.handler(None, None)'
       "
     environment:
       <<: *aws-region
       <<: *dgraph-env
       <<: *dynamodb-env
       <<: *secretsmanager-env
-      GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-INFO}"
-      <<: *s3-env
       <<: *sqs-env
+      <<: *sns-env
+      <<: *ec2-env
+      <<: *ssm-env
+      <<: *cloudwatch-env
+      <<: *lambda-env
+      <<: *route53-env
+      <<: *s3-env
+      GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-INFO}"
+      AWS_ACCESS_KEY_ID: "${FAKE_AWS_ACCESS_KEY_ID}"
+      AWS_SECRET_ACCESS_KEY: "${FAKE_AWS_SECRET_ACCESS_KEY}"
+      DEPLOYMENT_NAME: "${DEPLOYMENT_NAME}"
+      GRAPL_TEST_USER_NAME: "${DEPLOYMENT_NAME}-grapl-test-user"
     tty: true
     depends_on:
       dgraph:

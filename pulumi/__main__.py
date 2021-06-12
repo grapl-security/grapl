@@ -13,6 +13,7 @@ from infra.cache import Cache
 from infra.config import DEPLOYMENT_NAME, LOCAL_GRAPL
 from infra.dgraph_cluster import DgraphCluster, LocalStandInDgraphCluster
 from infra.dgraph_ttl import DGraphTTL
+from infra.e2e_test_runner import E2eTestRunner
 from infra.engagement_creator import EngagementCreator
 from infra.graph_merger import GraphMerger
 from infra.metric_forwarder import MetricForwarder
@@ -22,8 +23,9 @@ from infra.osquery_generator import OSQueryGenerator
 from infra.pipeline_dashboard import PipelineDashboard
 from infra.provision_lambda import Provisioner
 from infra.quiet_docker_build_output import quiet_docker_output
-from infra.secret import JWTSecret
+from infra.secret import JWTSecret, TestUserPassword
 from infra.service import ServiceLike
+from infra.service_queue import ServiceQueue  # noqa: F401
 from infra.sysmon_generator import SysmonGenerator
 
 
@@ -58,7 +60,9 @@ def main() -> None:
 
     DGraphTTL(network=network, dgraph_cluster=dgraph_cluster)
 
-    secret = JWTSecret()
+    jwt_secret = JWTSecret()
+
+    test_user_password = TestUserPassword()
 
     dynamodb_tables = dynamodb.DynamoDB()
 
@@ -185,13 +189,6 @@ def main() -> None:
     )
     services.append(engagement_creator)
 
-    Provisioner(
-        network=network,
-        secret=secret,
-        db=dynamodb_tables,
-        dgraph_cluster=dgraph_cluster,
-    )
-
     OpsAlarms(name="ops-alarms")
 
     PipelineDashboard(services=services)
@@ -208,6 +205,16 @@ def main() -> None:
             index_document="index.html",
         ),
     )
+
+    api = Api(
+        network=network,
+        secret=jwt_secret,
+        ux_bucket=ux_bucket,
+        db=dynamodb_tables,
+        plugins_bucket=model_plugins_bucket,
+        forwarder=forwarder,
+        dgraph_cluster=dgraph_cluster,
+    )
     # Note: This requires `yarn build` to have been run first
     if not LOCAL_GRAPL:
         # Not doing this in Local Grapl at the moment, as we have
@@ -221,23 +228,19 @@ def main() -> None:
         except FileNotFoundError as e:
             raise Exception("You probably need to `make pulumi-prep` first") from e
 
-    Api(
-        network=network,
-        secret=secret,
-        ux_bucket=ux_bucket,
-        db=dynamodb_tables,
-        plugins_bucket=model_plugins_bucket,
-        forwarder=forwarder,
-        dgraph_cluster=dgraph_cluster,
-    )
+        Provisioner(
+            network=network,
+            test_user_password=test_user_password,
+            db=dynamodb_tables,
+            dgraph_cluster=dgraph_cluster,
+        )
 
-    ########################################################################
-
-    if LOCAL_GRAPL:
-        from infra.local import user
-
-        user.local_grapl_user(
-            dynamodb_tables.user_auth_table, "grapluser", "graplpassword"
+        E2eTestRunner(
+            network=network,
+            dgraph_cluster=dgraph_cluster,
+            api=api,
+            jwt_secret=jwt_secret,
+            test_user_password=test_user_password,
         )
 
 
