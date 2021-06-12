@@ -52,7 +52,6 @@ def service_queue_widget(names: ServiceQueueNames) -> Dict[str, Any]:
         "type": "metric",
         "width": 24,
         "height": 6,
-        "x": 0,
         "properties": properties,
     }
 
@@ -67,9 +66,6 @@ class PipelineDashboard(pulumi.ComponentResource):
             widgets: List[Dict[str, Any]] = [
                 service_queue_widget(sqn) for sqn in service_queue_names
             ]
-            # Due to Cloudwatch's widget system, the last-added widget is at the top.
-            # (you could get around this by manually specifying `y:` on the widget, but, ew, no.)
-            widgets.reverse()
             return json.dumps({"widgets": widgets})
 
         dashboard_body = Output.all(
