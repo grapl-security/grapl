@@ -3,6 +3,7 @@
 members = [
     "./analyzer-dispatcher",
     "./derive-dynamic-node",
+    "./dgraph-metrics-collector",
     "./endpoint-plugin",
     "./generators/generic-subgraph-generator",
     "./generators/graph-generator-lib",

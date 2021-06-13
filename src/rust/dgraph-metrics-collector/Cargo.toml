@@ -1,0 +1,22 @@
+[package]
+name = "dgraph-metrics-collector"
+version = "0.1.0"
+authors = ["colin <colin@graplsecurity.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+chrono = "0.4.19"
+grapl-config = { path = "../grapl-config" }
+kafka-metrics-exporter = { path = "../kafka-metrics-exporter" }
+lazy_static = "1.4.0"
+metrics = "0.16.0"
+prometheus-parse = "0.2.1"
+rdkafka = "0.26.0"
+regex = "1.5.4"
+reqwest = { version = "0.11.3", features = ["rustls", "json"] }
+tokio = {version = "1", features=["full"]}
+tracing = "0.1.26"
+tracing-subscriber = "0.2.18"
+unicase = "2.6.0"
