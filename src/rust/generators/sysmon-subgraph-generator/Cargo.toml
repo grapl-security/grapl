@@ -39,7 +39,6 @@ rusoto_core = {version="0.46.0", default_features = false, features=["rustls"]}
 rusoto_sqs = {version="0.46.0", default_features = false, features=["rustls"]}
 rusoto_credential = "0.46.0"
 futures = "0.3"
-aws_lambda_events = "0.4"
 
 async-trait = "0.1"
 thiserror = "1.0"

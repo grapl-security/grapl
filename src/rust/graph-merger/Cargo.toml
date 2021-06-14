@@ -33,8 +33,6 @@ rusoto_sqs = { version="0.46.0", default_features = false, features=["rustls"] }
 rusoto_dynamodb = { version="0.46", default_features = false, features=["rustls"] }
 rusoto_credential = "0.46"
 
-aws_lambda_events = "0.4"
-
 sha2 = "0"
 
 zstd = "0.7"
@@ -51,7 +49,6 @@ chrono = "0.4"
 tracing = "0.1"
 thiserror = "1"
 tracing-futures = "0.2"
-tap = "1.0"
 lru = "0.6"
 futures-retry = "0.6"
 

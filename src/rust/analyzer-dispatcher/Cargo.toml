@@ -9,7 +9,6 @@ grapl-graph-descriptions = { path="../graph-descriptions", version="*" }
 grapl-config = {path="../grapl-config", version="*"}
 grapl-observe = {path = "../grapl-observe"}
 grapl-service = {path="../grapl-service"}
-aws_lambda_events = "0.4"
 futures = "0.3"
 
 base64 = "0.13"
