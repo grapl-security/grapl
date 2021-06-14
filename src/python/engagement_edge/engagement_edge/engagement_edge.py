@@ -23,7 +23,6 @@ from typing import (
 
 import boto3
 import jwt
-
 from botocore.client import Config
 from chalice import Chalice, Response
 from engagement_edge.env_vars import DEPLOYMENT_NAME, GRAPL_LOG_LEVEL
