@@ -4,6 +4,7 @@ import pulumi_aws as aws
 from infra.bucket import Bucket
 from infra.config import GLOBAL_LAMBDA_ZIP_TAG, LOCAL_GRAPL
 from infra.dgraph_cluster import DgraphCluster
+from infra.ec2 import Ec2Port
 from infra.lambda_ import Lambda, LambdaArgs, LambdaExecutionRole, code_path_for
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
@@ -58,6 +59,8 @@ class GraphQL(pulumi.ComponentResource):
             network=network,
             opts=pulumi.ResourceOptions(parent=self),
         )
+
+        Ec2Port("tcp", 443).allow_outbound_any_ip(self.function.security_group)
 
         forwarder.subscribe_to_log_group(name, self.function.log_group)
 

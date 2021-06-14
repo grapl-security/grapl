@@ -5,6 +5,7 @@ from infra.bucket import Bucket
 from infra.config import GLOBAL_LAMBDA_ZIP_TAG, LOCAL_GRAPL, configurable_envvars
 from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
+from infra.ec2 import Ec2Port
 from infra.lambda_ import Lambda, LambdaExecutionRole, PythonLambdaArgs, code_path_for
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
@@ -56,6 +57,8 @@ class ModelPluginDeployer(pulumi.ComponentResource):
             network=network,
             opts=pulumi.ResourceOptions(parent=self),
         )
+
+        Ec2Port("tcp", 443).allow_outbound_any_ip(self.function.security_group)
 
         forwarder.subscribe_to_log_group(name, self.function.log_group)
 

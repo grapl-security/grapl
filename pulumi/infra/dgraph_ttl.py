@@ -3,6 +3,7 @@ from typing import Optional
 import pulumi_aws as aws
 from infra.config import GLOBAL_LAMBDA_ZIP_TAG, configurable_envvars
 from infra.dgraph_cluster import DgraphCluster
+from infra.ec2 import Ec2Port
 from infra.lambda_ import Lambda, LambdaExecutionRole, PythonLambdaArgs, code_path_for
 from infra.network import Network
 
@@ -44,6 +45,8 @@ class DGraphTTL(pulumi.ComponentResource):
             network=network,
             opts=pulumi.ResourceOptions(parent=self),
         )
+
+        Ec2Port("tcp", 443).allow_outbound_any_ip(self.function.security_group)
 
         self.scheduling_rule = aws.cloudwatch.EventRule(
             f"{name}-hourly-trigger",
