@@ -43,7 +43,6 @@ name = "analyzer-dispatcher"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "aws_lambda_events",
  "base64 0.13.0",
  "bytes 1.0.1",
  "chrono",
@@ -860,11 +859,8 @@ version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "17392a012ea30ef05a610aa97dfb49496e71c9f676b27879922ea5bdf60d9d3f"
 dependencies = [
- "atty",
- "humantime",
  "log",
  "regex",
- "termcolor",
 ]
 
 [[package]]
@@ -1084,7 +1080,6 @@ name = "generic-subgraph-generator"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "aws_lambda_events",
  "endpoint-plugin",
  "eyre",
  "futures 0.3.14",
@@ -1143,7 +1138,6 @@ checksum = "f6503fe142514ca4799d4c26297c4248239fe8838d827db6bd6065c6ed29a6ce"
 name = "graph-generator-lib"
 version = "0.1.9"
 dependencies = [
- "aws_lambda_events",
  "base64 0.13.0",
  "chrono",
  "grapl-config",
@@ -1171,7 +1165,6 @@ version = "1.0.0"
 dependencies = [
  "anyhow",
  "async-trait",
- "aws_lambda_events",
  "base64 0.13.0",
  "chrono",
  "dgraph-tonic",
@@ -1199,7 +1192,6 @@ dependencies = [
  "serde_json",
  "sha2",
  "sqs-executor",
- "tap",
  "thiserror",
  "tokio 1.6.1",
  "tracing",
@@ -1266,7 +1258,6 @@ dependencies = [
  "rand 0.8.3",
  "serde",
  "serde_derive",
- "test-env-log",
  "tracing",
  "tracing-subscriber",
 ]
@@ -1485,12 +1476,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "494b4d60369511e7dea41cf646832512a94e542f68bb9c49e54518e0f468eb47"
 
 [[package]]
-name = "humantime"
-version = "2.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4"
-
-[[package]]
 name = "hyper"
 version = "0.12.36"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1658,14 +1643,11 @@ dependencies = [
 name = "kafka-metrics-exporter"
 version = "0.1.0"
 dependencies = [
- "async-stream 0.3.2",
- "env_logger",
  "metrics",
  "prost",
  "prost-build",
  "quanta",
  "rdkafka",
- "test-env-log",
  "tokio 1.6.1",
  "tokio-stream",
  "tracing",
@@ -2044,7 +2026,6 @@ name = "node-identifier"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "aws_lambda_events",
  "base64 0.13.0",
  "bytes 1.0.1",
  "chrono",
@@ -3410,7 +3391,6 @@ name = "sysmon-subgraph-generator"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "aws_lambda_events",
  "chrono",
  "criterion",
  "endpoint-plugin",
@@ -3474,26 +3454,6 @@ dependencies = [
  "redox_syscall 0.2.6",
  "remove_dir_all",
  "winapi 0.3.9",
-]
-
-[[package]]
-name = "termcolor"
-version = "1.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2dfed899f0eb03f32ee8c6a0aabdb8a7949659e3466561fc0adf54e26d88c5f4"
-dependencies = [
- "winapi-util",
-]
-
-[[package]]
-name = "test-env-log"
-version = "0.2.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b3e4b132a630cc8a0d06cfcb400da67adef3d0087a94b3332d4692908f0c2544"
-dependencies = [
- "proc-macro2 1.0.26",
- "quote 1.0.9",
- "syn 1.0.69",
 ]
 
 [[package]]
