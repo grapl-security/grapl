@@ -541,6 +541,50 @@ services:
       grapl-pulumi:
         condition: service_completed_successfully
 
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka-provision:
+    image: confluentinc/cp-kafka:latest
+    command: |
+      /bin/bash -c "! kafka-topics \
+                    --create \
+                    --zookeeper \
+                    zookeeper:2181 \
+                    --replication-factor 1 \
+                    --partitions 1 \
+                    --topic test-topic \
+                    --if-not-exists
+      "
+    restart: on-failure
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "nc", "-vz", "kafka", "9092"]
+      retries: 5
+      interval: 5s
+      timeout: 10s
+      start_period: 5s
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+
+
 networks:
   default:
     name: grapl-network

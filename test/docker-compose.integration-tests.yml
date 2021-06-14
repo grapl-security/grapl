@@ -104,6 +104,16 @@ services:
       - SECRETSMANAGER_ACCESS_KEY_SECRET
       - SECRETSMANAGER_ENDPOINT
 
+  kafka-metrics-exporter-integration-tests:
+    image: grapl/kafka-metrics-exporter-test:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: rust/Dockerfile
+      target: build-test
+      args:
+        - RUST_BUILD=test-integration
+    command: cargo test --features kafka-metrics-exporter/integration --test '*'
+
   # TODO: Re-enable these tests after the following issues are resolved:
   # - https://github.com/grapl-security/issue-tracker/issues/385
   # - https://github.com/grapl-security/issue-tracker/issues/386
