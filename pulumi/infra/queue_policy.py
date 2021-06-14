@@ -71,3 +71,36 @@ def send_policy(queue: aws.sqs.Queue, role: aws.iam.Role) -> None:
         ),
         opts=pulumi.ResourceOptions(parent=role),
     )
+
+
+def allow_send_from_topic(queue: aws.sqs.Queue, topic: aws.sns.Topic) -> None:
+    """
+    Set a policy on Queue
+    that allows SendMessages from Topic
+    """
+    policy = pulumi.Output.all(queue_arn=queue.arn, topic_arn=topic.arn).apply(
+        lambda input: json.dumps(
+            {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Principal": {"Service": "sns.amazonaws.com"},
+                        "Action": [
+                            "sqs:SendMessage",
+                        ],
+                        "Resource": input["queue_arn"],
+                        "Condition": {
+                            "ArnEquals": {"aws:SourceArn": input["topic_arn"]}
+                        },
+                    }
+                ],
+            }
+        )
+    )
+    aws.sqs.QueuePolicy(
+        f"allow-send-from-{topic._name}",
+        queue_url=queue.id,
+        policy=policy,
+        opts=pulumi.ResourceOptions(parent=queue),
+    )

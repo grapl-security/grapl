@@ -155,3 +155,5 @@ class ServiceQueue(pulumi.ComponentResource):
             raw_message_delivery=True,
             opts=pulumi.ResourceOptions(parent=emitter.topic),
         )
+
+        queue_policy.allow_send_from_topic(self.queue, emitter.topic)
