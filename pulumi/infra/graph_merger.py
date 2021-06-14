@@ -41,26 +41,22 @@ class GraphMerger(FargateService):
             network=network,
         )
 
-        for svc in self.services:
-            dgraph_cluster.allow_connections_from(svc.security_group)
+        for service in self.services:
+            dgraph_cluster.allow_connections_from(service.security_group)
 
-        # TODO: both the default and retry services get READ
-        # permissions on the schema and schema properties table, even
-        # though only the schema table was passed into the
-        # environment.
-        #
-        # Update (wimax Jun 2021): The properties table *is* needed, it was introduced
-        # as part of the "python schema ---> json dynamodb ---> graphql schema"
-        # pipeline.
-        # It doesn't use the passed-in-via-environment mechanism because
-        # of the `get_schema_properties_table` in common.
-        # TODO: That function should be changed to instead depend on environment variables.
-
-        for role in [svc.task_role for svc in self.services]:
+            # TODO: both the default and retry services get READ
+            # permissions on the schema and schema properties table, even
+            # though only the schema table was passed into the
+            # environment.
+            #
+            # Update (wimax Jun 2021): The properties table *is* needed, it was introduced
+            # as part of the "python schema ---> json dynamodb ---> graphql schema"
+            # pipeline.
+            # It doesn't use the passed-in-via-environment mechanism because
+            # of the `get_schema_properties_table` in common.
+            # TODO: That function should be changed to instead depend on environment variables.
             dynamodb.grant_read_on_tables(
-                role, [db.schema_table, db.schema_properties_table]
+                service.task_role, [db.schema_table, db.schema_properties_table]
             )
 
-        # TODO: Interestingly, the CDK code doesn't have this, even though
-        # the other services do.
-        # self.allow_egress_to_cache(cache)
+        self.allow_egress_to_cache(cache)
