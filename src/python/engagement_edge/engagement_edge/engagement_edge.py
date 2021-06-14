@@ -23,6 +23,8 @@ from typing import (
 
 import boto3
 import jwt
+
+from botocore.client import Config
 from chalice import Chalice, Response
 from engagement_edge.env_vars import DEPLOYMENT_NAME, GRAPL_LOG_LEVEL
 from engagement_edge.sagemaker import create_sagemaker_client
@@ -145,7 +147,12 @@ def hash_password(cleartext: bytes, salt: Salt) -> str:
 
 def user_auth_table() -> Table:
     global DYNAMO
-    DYNAMO = DYNAMO or DynamoDBResourceFactory(boto3).from_env()
+    DYNAMO = DYNAMO or DynamoDBResourceFactory(boto3).from_env(
+        config=Config(
+            connect_timeout=5,
+            read_timeout=5,
+        )
+    )
 
     return DYNAMO.Table(os.environ["USER_AUTH_TABLE"])
 
