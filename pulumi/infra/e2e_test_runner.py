@@ -50,7 +50,7 @@ class E2eTestRunner(pulumi.ComponentResource):
                         lambda url: urlparse(url).netloc
                     ),
                 },
-                timeout=60 * 5,  # 5 minutes
+                timeout=60 * 15,  # 15 minutes
                 memory_size=256,
                 execution_role=self.role,
             ),

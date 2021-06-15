@@ -39,7 +39,7 @@ class Provisioner(pulumi.ComponentResource):
                     "MG_ALPHAS": dgraph_cluster.alpha_host_port,
                     "GRAPL_TEST_USER_NAME": f"{DEPLOYMENT_NAME}-grapl-test-user",
                 },
-                timeout=60 * 5,  # 5 minutes
+                timeout=60 * 15,  # 15 minutes
                 memory_size=256,
                 execution_role=self.role,
             ),
