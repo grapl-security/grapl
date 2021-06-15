@@ -5,7 +5,7 @@ Feel free to replace all of this with a Grafana dashboard asap.
 """
 
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 import pulumi_aws as aws
 from infra.config import DEPLOYMENT_NAME
@@ -15,35 +15,73 @@ from infra.service_queue import ServiceQueueNames
 import pulumi
 from pulumi.output import Output
 
+CWMetric = List[Union[str, Dict[str, Any]]]
+
 
 def service_queue_widget(names: ServiceQueueNames) -> Dict[str, Any]:
-    properties = {
-        "view": "timeSeries",
-        "title": f"Queues for {names.service_name}",
-        "region": "us-east-1",
-        "metrics": [
-            [
-                "AWS/SQS",
-                "NumberOfMessagesReceived",
-                "QueueName",
-                names.queue,
-                {"color": "#2ca02c", "label": "Queue", "stat": "Sum"},
-            ],
-            [
-                "AWS/SQS",
-                "NumberOfMessagesReceived",
-                "QueueName",
-                names.retry_queue,
-                {"color": "#ff7f0e", "label": "Retry", "stat": "Sum"},
-            ],
+    all_queues = {
+        names.queue: {
+            "id": "Default",
+            "color": "#2ca02c",
+        },
+        names.retry_queue: {
+            "id": "Retry",
+            "color": "#ff7f0e",
+        },
+        names.dead_letter_queue: {
+            "id": "DLQ",
+            "color": "#d62728",
+        },
+    }
+
+    def all_metrics() -> List[CWMetric]:
+        # Sum "Messages Visible" (in the queue) with "Messages Not Visible" (sent to service, but processing)
+        # but hide the two separate metrics
+        messages_visible: List[CWMetric] = [
             [
                 "AWS/SQS",
                 "ApproximateNumberOfMessagesVisible",
                 "QueueName",
-                names.dead_letter_queue,
-                {"color": "#d62728", "label": "Dead", "stat": "Maximum"},
-            ],
-        ],
+                q,
+                {"stat": "Sum", "visible": False, "id": props["id"]},
+            ]
+            for q, props in all_queues.items()
+        ]
+
+        messages_not_visible: List[CWMetric] = [
+            [
+                "AWS/SQS",
+                "ApproximateNumberOfMessagesNotVisible",
+                "QueueName",
+                q,
+                {"stat": "Sum", "visible": False, "id": props["id"]},
+            ]
+            for q, props in all_queues.items()
+        ]
+
+        summed: List[CWMetric] = [
+            [
+                {
+                    # We filter the above metrics by their id field
+                    "expression": f'SUM(METRICS("{props["id"]}"))',
+                    "label": props["id"],
+                    "color": props["color"],
+                }
+            ]
+            for q, props in all_queues.items()
+        ]
+
+        return [
+            *messages_visible,
+            *messages_not_visible,
+            *summed,
+        ]
+
+    properties = {
+        "view": "timeSeries",
+        "title": f"{names.service_name} queue: num messages",
+        "region": "us-east-1",
+        "metrics": all_metrics(),
         "yAxis": {},
         "liveData": True,
     }
@@ -51,7 +89,7 @@ def service_queue_widget(names: ServiceQueueNames) -> Dict[str, Any]:
     return {
         "type": "metric",
         "width": 24,
-        "height": 6,
+        "height": 3,
         "properties": properties,
     }
 
