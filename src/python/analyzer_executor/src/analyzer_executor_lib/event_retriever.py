@@ -2,37 +2,14 @@ from __future__ import annotations
 
 import time
 import traceback
-from typing import TYPE_CHECKING, Iterator
+from typing import Iterator
 
 import boto3
-import botocore.exceptions
 from analyzer_executor_lib.sqs_types import SQSMessage
 from grapl_common.env_helpers import SQSClientFactory
 from grapl_common.grapl_logger import get_module_grapl_logger
 
-if TYPE_CHECKING:
-    from mypy_boto3_sqs import SQSClient
-
 LOGGER = get_module_grapl_logger()
-
-
-def _ensure_alive(sqs: SQSClient, queue_url: str) -> None:
-    queue_name = queue_url.split("/")[-1]
-    while True:
-        try:
-            if "QueueUrls" not in sqs.list_queues(QueueNamePrefix=queue_name):
-                LOGGER.info(f"Waiting for {queue_name} to be created")
-                time.sleep(5)
-                continue
-        except (
-            botocore.exceptions.BotoCoreError,
-            botocore.exceptions.ClientError,
-            botocore.parsers.ResponseParserError,
-        ):
-            LOGGER.debug("Waiting for SQS to become available", exc_info=True)
-            time.sleep(5)
-            continue
-        return
 
 
 class EventRetriever:
@@ -49,7 +26,6 @@ class EventRetriever:
         while True:
             try:
                 sqs = SQSClientFactory(boto3).from_env()
-                _ensure_alive(sqs, self.queue_url)
 
                 res = sqs.receive_message(
                     QueueUrl=self.queue_url,

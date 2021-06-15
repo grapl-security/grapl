@@ -178,10 +178,13 @@ class Lambda(pulumi.ComponentResource):
             )
 
         # Lambda function output is automatically sent to log
-        # groups named like this; we create one explicitly so we can
+        # groups named like this; we denote this one explicitly so we can
         # specify retention rules.
         self.log_group = aws.cloudwatch.LogGroup(
             f"{name}-log-group",
+            # Don't change - or rather, if you decide to, 
+            # follow these instructions:
+             #https://www.pulumi.com/docs/reference/pkg/aws/lambda/function/#cloudwatch-logging-and-permissions 
             name=f"/aws/lambda/{lambda_name}",
             retention_in_days=SERVICE_LOG_RETENTION_DAYS,
             opts=pulumi.ResourceOptions(parent=self),
