@@ -28,7 +28,6 @@ class AnalyzerExecutor(FargateService):
                 target="analyzer-executor-deploy",
                 context="../src",
             ),
-            command="/analyzer-executor",
             env={
                 **configurable_envvars("analyzer-executor", ["GRAPL_LOG_LEVEL"]),
                 "ANALYZER_MATCH_BUCKET": analyzers_bucket.bucket,
@@ -55,5 +54,4 @@ class AnalyzerExecutor(FargateService):
             model_plugins_bucket.grant_get_and_list_to(svc.task_role)
             output_emitter.grant_read_to(svc.task_role)
 
-        # TODO: CDK doesn't actually have this for some reason
         self.allow_egress_to_cache(cache)
