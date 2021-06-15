@@ -100,11 +100,14 @@ class _AWSFargateService(pulumi.ComponentResource):
         output_emitter: EventEmitter,
         network: Network,
         image: pulumi.Output[str],
-        command: str,
+        command: Optional[str],
         env: Mapping[str, Union[str, pulumi.Output[str]]],
         forwarder: MetricForwarder,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
+        """
+        :param command: supply an override to the CMD defined in the Dockerfile.
+        """
 
         super().__init__("grapl:AWSFargateService", name, None, opts)
 
@@ -207,7 +210,6 @@ class _AWSFargateService(pulumi.ComponentResource):
                             # are named this. Perhaps due to CDK's
                             # QueueProcessingFargateService abstraction?
                             "name": "QueueProcessingContainer",
-                            "command": [command],
                             "image": inputs["image"],
                             "environment": _environment_from_map(
                                 {
@@ -228,6 +230,7 @@ class _AWSFargateService(pulumi.ComponentResource):
                                     "awslogs-group": inputs["log_group"],
                                 },
                             },
+                            **({"command": [command]} if command else {}),
                         },
                     ]
                 )
@@ -277,9 +280,9 @@ class FargateService(pulumi.ComponentResource):
         output_emitter: EventEmitter,
         network: Network,
         image: docker.DockerBuild,
-        command: str,
         env: Mapping[str, Union[str, pulumi.Output[str]]],
         forwarder: MetricForwarder,
+        command: Optional[str] = None,
         retry_image: Optional[docker.DockerBuild] = None,
         retry_command: Optional[str] = None,
         opts: Optional[pulumi.ResourceOptions] = None,
