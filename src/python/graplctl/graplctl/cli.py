@@ -75,7 +75,7 @@ def main(
     session = boto3.session.Session(profile_name=aws_profile)
     config = Config(region_name=grapl_region)
     lambda_config = Config(
-        read_timeout=60 * 5 + 10  # 10s longer than e2e-test-runner and provisioner
+        read_timeout=60 * 15 + 10  # 10s longer than e2e-test-runner and provisioner
     ).merge(config)
     ctx.obj = State(
         grapl_region,
