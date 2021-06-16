@@ -21,16 +21,18 @@ from graplctl.common import Ec2Instance, State, Tag, get_command_results
 
 LOGGER = get_module_grapl_logger(log_to_stdout=True)
 
-# This mapping was compiled on 2020-10-14 by running the
-# following query for each region:
-#
-# aws ec2 describe-images \
-#   --owners amazon \
-#   --filters 'Name=name,Values=amzn2-ami-hvm-2.0.????????.?-x86_64-gp2' 'Name=state,Values=available' \
-#   --query 'reverse(sort_by(Images, &CreationDate))[:1]' \
-#   --region us-east-1
-#
-# It should probably be updated periodically.
+"""
+This mapping was compiled on 2020-10-14 by running the
+following query for each region:
+
+aws ec2 describe-images \
+  --owners amazon \
+  --filters 'Name=name,Values=amzn2-ami-hvm-2.0.????????.?-x86_64-gp2' 'Name=state,Values=available' \
+  --query 'reverse(sort_by(Images, &CreationDate))[:1]' \
+  --region us-east-1
+
+It should probably be updated periodically.
+"""
 REGION_TO_AMI_ID = {
     "us-east-1": "ami-0947d2ba12ee1ff75",
     "us-east-2": "ami-03657b56516ab7912",
