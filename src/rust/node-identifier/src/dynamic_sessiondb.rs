@@ -12,10 +12,6 @@ use grapl_graph_descriptions::graph_description::{
     Session as SessionStrategy,
     *,
 };
-use log::{
-    info,
-    warn,
-};
 use rusoto_dynamodb::{
     AttributeValue,
     DynamoDb,
@@ -29,6 +25,11 @@ use serde::{
 use sha2::{
     Digest,
     Sha256,
+};
+use tracing::{
+    info,
+    trace_span,
+    warn,
 };
 
 use crate::{
@@ -63,6 +64,7 @@ where
         Self { dyn_mapping_db }
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn direct_map(&self, input: &str) -> Result<Option<String>, Error> {
         let mut key: HashMap<String, AttributeValue> = HashMap::new();
 
@@ -92,8 +94,8 @@ where
         }
     }
 
+    #[tracing::instrument(skip(self), err)]
     pub async fn create_mapping(&self, input: String, maps_to: String) -> Result<(), Error> {
-        info!("Creating dynamic mapping for: {} {}", input, maps_to);
         let mapping = DirectMapping {
             pseudo_key: input,
             mapping: maps_to,
@@ -137,6 +139,7 @@ where
         }
     }
 
+    #[tracing::instrument(skip(self, node, strategy), err)]
     async fn primary_session_key(
         &self,
         node: &mut NodeDescription,
@@ -168,6 +171,7 @@ where
 
     /// Because statically identified nodes are uniquely identifiable based on their static properties
     /// we can avoid fetching from dynamodb and calculate a node key by hashing the properties deterministically
+    #[tracing::instrument(skip(self, node, strategy), err)]
     fn get_static_node_key(
         &self,
         node: &NodeDescription,
@@ -194,6 +198,7 @@ where
         Ok(hex::encode(hasher.finalize()))
     }
 
+    #[tracing::instrument(skip(self, strategy), err)]
     pub async fn attribute_dynamic_session(
         &self,
         node: NodeDescription,
@@ -236,6 +241,7 @@ where
         Ok(attributed_node)
     }
 
+    #[tracing::instrument(skip(self, node, strategy), err)]
     pub async fn attribute_static_mapping(
         &self,
         mut node: NodeDescription,
@@ -247,6 +253,7 @@ where
         Ok(node)
     }
 
+    #[tracing::instrument(skip(self, node), err)]
     pub async fn attribute_dynamic_node(
         &self,
         node: &NodeDescription,
@@ -272,6 +279,7 @@ where
         Ok(attributed_node)
     }
 
+    #[tracing::instrument(skip(self, unid_graph, _unid_id_map))]
     pub async fn attribute_dynamic_nodes(
         &self,
         unid_graph: GraphDescription,
@@ -283,16 +291,18 @@ where
         output_graph.edges = unid_graph.edges;
 
         for node in unid_graph.nodes.values() {
+            let span = trace_span!("dynamic attribution loop", node_key=?node.node_key);
+            let _enter = span.enter();
             let new_node = match self.attribute_dynamic_node(&node).await {
                 Ok(node) => node,
                 Err(e) => {
-                    warn!("Failed to attribute dynamic node: {}", e);
+                    warn!(message="Failed to attribute dynamic node", error=?e);
                     dead_nodes.insert(node.node_key.as_ref());
                     continue;
                 }
             };
 
-            info!("Attributed NodeDescription");
+            info!(message="Attributed NodeDescription", old_key=?node.node_key, new_key=?new_node.node_key);
 
             unid_id_map.insert(node.clone_node_key(), new_node.clone_node_key());
             output_graph.add_node(new_node);
@@ -302,7 +312,7 @@ where
             info!("Attributed all dynamic nodes");
             Ok(output_graph)
         } else {
-            warn!("Failed to attribute {} dynamic nodes", dead_nodes.len());
+            warn!(message="Failed to attribute dynamic nodes", dead_nodes=?dead_nodes.len());
             Err(output_graph)
         }
     }

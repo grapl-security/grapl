@@ -2038,7 +2038,6 @@ dependencies = [
  "grapl-utils",
  "hex",
  "hmap",
- "log",
  "prost",
  "quickcheck",
  "quickcheck_macros",
@@ -3165,7 +3164,6 @@ name = "sqs-executor"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "aws_lambda_events",
  "chrono",
  "futures 0.3.14",
  "futures-util",

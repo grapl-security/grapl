@@ -181,15 +181,11 @@ async fn process_message<
     >,
 {
     let message_id = next_message.message_id.as_ref().unwrap().as_str();
-    let inner_loop_span = tracing::span!(
-        tracing::Level::INFO,
-        "inner_loop_span",
-        message_id = message_id,
-    );
+    let inner_loop_span = tracing::trace_span!("inner_loop_span", message_id = message_id,);
     let _enter = inner_loop_span.enter();
 
     if cache.all_exist(&[message_id.to_owned()]).await {
-        info!(
+        debug!(
             message_id = message_id,
             "Message has already been processed",
         );
@@ -200,10 +196,10 @@ async fn process_message<
             metric_reporter,
         )
         .await
-        .unwrap_or_else(|e| error!("delete_message failed: {:?}", e));
+        .unwrap_or_else(|e| error!(message="delete_message failed", error=?e));
         return;
     }
-    info!(message_id = message_id, "Retrieving payload from",);
+    debug!(message = "Retrieving payload from s3");
     let receipt_handle = next_message
         .receipt_handle
         .as_ref()
@@ -247,7 +243,7 @@ async fn process_message<
                     metric_reporter.clone(),
                 )
                 .await
-                .unwrap_or_else(|e| error!("move_to_dead_letter failed: {:?}", e));
+                .unwrap_or_else(|e| error!(message="move_to_dead_letter failed", error=?e));
             }
             return;
         }
@@ -267,7 +263,9 @@ async fn process_message<
                 ms as f64,
                 &[tag("success", processing_result.is_ok())],
             )
-            .unwrap_or_else(|e| error!("failed to report event_handler.handle_event.ms: {:?}", e));
+            .unwrap_or_else(
+                |e| error!(message="failed to report event_handler.handle_event.ms", error=?e),
+            );
         processing_result
     }
     .await;
@@ -288,7 +286,7 @@ async fn process_message<
             cache
                 .store(next_message.message_id.clone().unwrap().into_bytes())
                 .await
-                .unwrap_or_else(|e| error!("cache.store failed: {:?}", e));
+                .unwrap_or_else(|e| error!(message="cache.store failed", error=?e));
             cache_completed(cache, &mut completed).await;
             // ack the message - we could probably not block on this
 
@@ -300,13 +298,13 @@ async fn process_message<
                 metric_reporter.clone(),
             )
             .await
-            .unwrap_or_else(|e| error!("delete_message failed: {:?}", e));
+            .unwrap_or_else(|e| error!(message="delete_message failed", error=?e));
         }
         Err(Ok((partial, e))) => {
             error!(
-                "Handler failed with: {:?} Recoverable: {:?}",
-                e,
-                e.error_type()
+                message="EventHandler failed",
+                error=?e,
+                recoverable=?e.error_type()
             );
             let event = serializer
                 .serialize_completed_events(&[partial])
@@ -331,7 +329,7 @@ async fn process_message<
                     metric_reporter.clone(),
                 )
                 .await
-                .unwrap_or_else(|e| error!("move_to_dead_letter failed: {:?}", e));
+                .unwrap_or_else(|e| error!(message="move_to_dead_letter failed", error=?e));
             }
         }
         Err(Err(e)) => {
@@ -351,7 +349,7 @@ async fn process_message<
                     metric_reporter.clone(),
                 )
                 .await
-                .unwrap_or_else(|e| error!("move_to_dead_letter failed: {:?}", e));
+                .unwrap_or_else(|e| error!(message="move_to_dead_letter failed", error=?e));
             }
             // should we retry? idk
             // otherwise we can just do nothing
@@ -410,11 +408,7 @@ async fn _process_loop<
             i = 2;
         }
 
-        let span = tracing::span!(
-            tracing::Level::DEBUG,
-            "inner_process_loop",
-            queue_url = queue_url.as_str(),
-        );
+        let span = tracing::trace_span!("inner_process_loop", queue_url = queue_url.as_str(),);
         let _enter = span.enter();
         let message_batch = rusoto_helpers::get_message(
             queue_url.to_string(),
