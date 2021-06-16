@@ -65,11 +65,8 @@ checkPrettierInstalled() {
 checkPrettierInstalled
 
 prettier \
-    --config grapl-cdk/.prettierrc.toml \
+    --config prettierrc.toml \
     ${prettier_arg} \
     graphql_endpoint/**/*.ts \
-    grapl-cdk/bin/**/*.ts \
-    grapl-cdk/lib/**/*.ts \
-    grapl-cdk/test/**/*.ts \
     engagement_view/src/**/*.ts \
     engagement_view/src/**/*.tsx

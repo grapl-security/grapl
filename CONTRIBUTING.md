@@ -65,34 +65,7 @@ make build
 ```
 
 You can see all the Make targets available by running `make help` in
-Grapl root. For example:
-
-```
-$ make help
-build                Alias for `services` (default)
-build-all            Build all targets (incl. services, tests, zip)
-build-services       Build Grapl services
-build-aws            Build services for Grapl in AWS (subset of all services)
-test-unit            Build and run unit tests
-test-unit-rust       Build and run unit tests - Rust only
-test-unit-python     Build and run unit tests - Python only
-test-unit-js         Build and run unit tests - JavaScript only
-test-typecheck       Build and run typecheck tests
-test-integration     Build and run integration tests
-test-e2e             Build and run e2e tests
-test                 Run all tests
-lint-rust            Run Rust lint checks
-lint-python          Run Python lint checks
-lint                 Run all lint checks
-clean                Prune all docker build cache and remove Grapl containers and images
-clean-mount-cache    Prune all docker mount cache (used by sccache)
-release              'make build-services' with cargo --release
-zip                  Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
-deploy               CDK deploy to AWS
-up                   Build Grapl services and launch docker-compose up
-down                 docker-compose down
-help                 Print this help
-```
+Grapl root.
 
 See [BUILDING.md](BUILDING.md) for a more in-depth description of
 Grapl's build system.

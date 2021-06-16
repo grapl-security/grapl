@@ -367,20 +367,20 @@ clean-artifacts: ## Remove all dumped artifacts from test runs (see dump_artifac
 	rm -Rf test_artifacts
 
 .PHONY: zip
-zip: build-lambdas ## Generate zips for deploying to AWS (src/js/grapl-cdk/zips/)
+zip: build-lambdas ## Generate zips for deploying to AWS
 	$(MAKE) zip-pants
 	docker-compose $(EVERY_LAMBDA_COMPOSE_FILE) up
 
 .PHONY: zip-pants
 zip-pants: ## Generate Lambda zip artifacts using pants
 	./pants filter --target-type=python_awslambda :: | xargs ./pants package
-	cp ./dist/src.python.provisioner.provisioner/lambda.zip ./src/js/grapl-cdk/zips/provisioner-$(TAG).zip
-	cp ./dist/src.python.engagement-creator/lambda.zip ./src/js/grapl-cdk/zips/engagement-creator-$(TAG).zip
-	cp ./dist/src.python.grapl-dgraph-ttl/lambda.zip ./src/js/grapl-cdk/zips/dgraph-ttl-$(TAG).zip
-	cp ./dist/src.python.engagement_edge/engagement_edge.zip ./src/js/grapl-cdk/zips/engagement-edge-$(TAG).zip
-	cp ./dist/src.python.grapl-ux-router/lambda.zip ./src/js/grapl-cdk/zips/ux-router-$(TAG).zip
-	cp ./dist/src.python.grapl-model-plugin-deployer/lambda.zip ./src/js/grapl-cdk/zips/model-plugin-deployer-$(TAG).zip
-	cp ./dist/src.python.e2e-test-runner.e2e_test_runner/lambda.zip ./src/js/grapl-cdk/zips/e2e-test-runner-$(TAG).zip
+	cp ./dist/src.python.provisioner.provisioner/lambda.zip ./src/aws-provision/zips/provisioner-$(TAG).zip
+	cp ./dist/src.python.engagement-creator/lambda.zip ./src/aws-provision/zips/engagement-creator-$(TAG).zip
+	cp ./dist/src.python.grapl-dgraph-ttl/lambda.zip ./src/aws-provision/zips/dgraph-ttl-$(TAG).zip
+	cp ./dist/src.python.engagement_edge/engagement_edge.zip ./src/aws-provision/zips/engagement-edge-$(TAG).zip
+	cp ./dist/src.python.grapl-ux-router/lambda.zip ./src/aws-provision/zips/ux-router-$(TAG).zip
+	cp ./dist/src.python.grapl-model-plugin-deployer/lambda.zip ./src/aws-provision/zips/model-plugin-deployer-$(TAG).zip
+	cp ./dist/src.python.e2e-test-runner.e2e_test_runner/lambda.zip ./src/aws-provision/zips/e2e-test-runner-$(TAG).zip
 
 # This target is intended to help ease the transition to Pulumi, and
 # using lambdas in local Grapl testing deployments. Essentially, every

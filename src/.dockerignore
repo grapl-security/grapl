@@ -3,7 +3,6 @@
 
 rust/target
 
-js/grapl-cdk/zips
-js/grapl-cdk/cdk.out
+aws-provision/zips
 
 js/engagement_view/build

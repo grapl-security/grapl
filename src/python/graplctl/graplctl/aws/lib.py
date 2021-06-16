@@ -12,7 +12,6 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
-GRAPL_CDK_RELATIVE_PATH = "src/js/grapl-cdk"
 EDGE_UX_DIRECTORY = "/edge_ux_post_replace"
 CDK_OUT_FILENAME = "cdk-output.json"
 

@@ -11,7 +11,7 @@ services:
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
     volumes:
-      - ./src/js/grapl-cdk/zips:/tmp/zips
+      - ./src/aws-provision/zips:/tmp/zips
     user: ${UID}:${GID}
     working_dir: /grapl/zips
     environment:

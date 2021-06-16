@@ -12,14 +12,6 @@ services:
       target: engagement-view-deps
     command: sh -c 'CI=true yarn test'
 
-  grapl-cdk-test:
-    image: grapl/grapl-cdk-test:${TAG:-latest}
-    build:
-      context: ${PWD}/src
-      dockerfile: js/grapl-cdk/Dockerfile
-      target: grapl-cdk-test
-    command: npm run test
-  
   grapl-graphql-endpoint-test:
     image: grapl/grapl-graphql-endpoint:${TAG:-latest}
     build:
