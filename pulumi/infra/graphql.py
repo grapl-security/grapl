@@ -1,9 +1,11 @@
 from typing import Optional
 
 import pulumi_aws as aws
+from infra import dynamodb
 from infra.bucket import Bucket
 from infra.config import GLOBAL_LAMBDA_ZIP_TAG, LOCAL_GRAPL
 from infra.dgraph_cluster import DgraphCluster
+from infra.dynamodb import DynamoDB
 from infra.ec2 import Ec2Port
 from infra.lambda_ import Lambda, LambdaArgs, LambdaExecutionRole, code_path_for
 from infra.metric_forwarder import MetricForwarder
@@ -19,6 +21,7 @@ class GraphQL(pulumi.ComponentResource):
         secret: JWTSecret,
         ux_bucket: Bucket,
         network: Network,
+        db: DynamoDB,
         dgraph_cluster: DgraphCluster,
         forwarder: MetricForwarder,
         opts: Optional[pulumi.ResourceOptions] = None,
@@ -65,6 +68,11 @@ class GraphQL(pulumi.ComponentResource):
         forwarder.subscribe_to_log_group(name, self.function.log_group)
 
         secret.grant_read_permissions_to(self.role)
+
+        dynamodb.grant_read_write_on_tables(
+            self.role, [db.schema_properties_table, db.schema_table]
+        )
+
         dgraph_cluster.allow_connections_from(self.function.security_group)
 
         self.register_outputs({})
