@@ -17,6 +17,8 @@ def upload(
     ctx: click.Context,
 ) -> None:
     """commands like "upload analyzer" or "upload sysmon logs" """
+    # TODO: Disallow any uploads until we've confirmed we've provisioned
+    # https://github.com/grapl-security/issue-tracker/issues/340
     pass
 
 

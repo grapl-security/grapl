@@ -68,6 +68,7 @@ def _wipe_dynamodb_table(table: Table) -> None:
 
     response = table.scan(ProjectionExpression=projection_expression)
     data = response.get("Items")
+    assert data, f"Expected items, got {data}"
 
     while "LastEvaluatedKey" in response:
         response = table.scan(
@@ -90,5 +91,12 @@ def run_e2e_tests(lambda_: LambdaClient, deployment_name: str) -> None:
 
 
 def wipe_dynamodb(dynamodb: DynamoDBServiceResource, deployment_name: str) -> None:
-    table = dynamodb.Table(f"{deployment_name}-dynamic_session_table")
-    _wipe_dynamodb_table(table)
+    session_table = dynamodb.Table(f"{deployment_name}-dynamic_session_table")
+    schema_table = dynamodb.Table(f"{deployment_name}-schema_table")
+    schema_properties_table = dynamodb.Table(
+        f"{deployment_name}-schema_properties_table"
+    )
+    for table in (session_table, schema_table, schema_properties_table):
+        LOGGER.info(f"Wiping {table}")
+        _wipe_dynamodb_table(table)
+        LOGGER.info(f"Wiped {table}")

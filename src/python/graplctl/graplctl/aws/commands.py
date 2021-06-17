@@ -3,6 +3,7 @@ from __future__ import annotations
 import click
 import graplctl.aws.lib as aws_lib
 from graplctl.common import State, pass_graplctl_state
+from graplctl.dgraph import commands as dgraph_commands
 
 #
 # aws deployment & provisioning commands
@@ -25,6 +26,7 @@ def aws(
 @pass_graplctl_state
 def provision(graplctl_state: State) -> None:
     """provision the grapl deployment"""
+    # TODO: Make idempotent
     click.echo("provisioning grapl deployment")
     aws_lib.provision_grapl(
         lambda_=graplctl_state.lambda_,
@@ -41,14 +43,17 @@ def provision(graplctl_state: State) -> None:
     prompt=f"really wanna make sure, this will wipe your dgraph and dynamodb"
 )
 @pass_graplctl_state
-def wipe_dynamodb(graplctl_state: State) -> None:
+@click.pass_context
+def wipe_state(ctx: click.Context, graplctl_state: State) -> None:
     """Wipe dynamodb"""
     click.echo("Wiping dynamodb")
     aws_lib.wipe_dynamodb(
         dynamodb=graplctl_state.dynamodb,
         deployment_name=graplctl_state.grapl_deployment_name,
     )
-    click.echo("don't forget to graplctl dgraph destroy + create")
+    click.echo("Wiped dynamodb")
+    # Also destroy dgraph
+    ctx.forward(dgraph_commands.destroy)
 
 
 @aws.command()
