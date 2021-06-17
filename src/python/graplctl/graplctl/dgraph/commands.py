@@ -31,6 +31,7 @@ def dgraph(
 @pass_graplctl_state
 def create(graplctl_state: State, instance_type: InstanceTypeType) -> None:
     """spin up a swarm cluster and deploy dgraph on it"""
+    # TODO: Make idempotent
     click.echo(f"creating dgraph cluster of {instance_type} instances")
     if not dgraph_ops.create_dgraph(
         graplctl_state=graplctl_state, instance_type=instance_type
@@ -38,6 +39,7 @@ def create(graplctl_state: State, instance_type: InstanceTypeType) -> None:
         click.echo("dgraph cluster already exists")
         return
     click.echo(f"created dgraph cluster of {instance_type} instances")
+    click.echo(f"(Don't forget to `graplctl aws provision` next!)")
 
 
 @dgraph.command()

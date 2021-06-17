@@ -12,6 +12,7 @@ import click
 if TYPE_CHECKING:
     import mypy_boto3_ec2.service_resource as ec2_resources
     from mypy_boto3_cloudwatch.client import CloudWatchClient
+    from mypy_boto3_dynamodb import DynamoDBServiceResource
     from mypy_boto3_ec2 import EC2ServiceResource
     from mypy_boto3_ec2.type_defs import TagTypeDef
     from mypy_boto3_lambda import LambdaClient
@@ -45,14 +46,16 @@ class State:
     grapl_deployment_name: str
     grapl_version: str
     aws_profile: str
-    ec2: EC2ServiceResource
-    ssm: SSMClient
+
     cloudwatch: CloudWatchClient
+    dynamodb: DynamoDBServiceResource
+    ec2: EC2ServiceResource
+    lambda_: LambdaClient
+    route53: Route53Client
     s3: S3Client
     sns: SNSClient
-    route53: Route53Client
     sqs: SQSClient
-    lambda_: LambdaClient
+    ssm: SSMClient
 
 
 # Prefer this to `pass_obj`
