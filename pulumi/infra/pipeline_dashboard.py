@@ -21,15 +21,15 @@ CWMetric = List[Union[str, Dict[str, Any]]]
 def service_queue_widget(names: ServiceQueueNames) -> Dict[str, Any]:
     all_queues = {
         names.queue: {
-            "id": "Default",
+            "id": "default",
             "color": "#2ca02c",
         },
         names.retry_queue: {
-            "id": "Retry",
+            "id": "retry",
             "color": "#ff7f0e",
         },
         names.dead_letter_queue: {
-            "id": "DLQ",
+            "id": "dlq",
             "color": "#d62728",
         },
     }
