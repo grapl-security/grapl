@@ -4,8 +4,7 @@ build-support/grapl-venv
 .pants.workdir.file_lock*
 .pids
 **/__pycache__
-src/js/grapl-cdk/cdk.out/**
-src/js/grapl-cdk/zips
+src/aws-provision/zips
 src/rust/target/**
 .yarn
 test_artifacts/**

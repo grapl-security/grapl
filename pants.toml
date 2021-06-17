@@ -23,7 +23,6 @@ build_file_prelude_globs = [
 ]
 
 pants_ignore = [
-  "src/js/grapl-cdk/cdk.out",
 ]
 
 plugins = [
@@ -61,7 +60,7 @@ root_patterns = [
   "/etc",  # Some of our tests use sample data from here
   "/pants-plugins",
   "/pulumi",
-  "/src/js/grapl-cdk",
+  "/src/aws-provision",
   "/src/proto",
   "/src/python/analyzer-deployer",
   "/src/python/analyzer_executor/src",

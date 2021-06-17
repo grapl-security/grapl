@@ -10,7 +10,7 @@ import pulumi
 from pulumi.output import Output
 
 # These are COPYd in from Dockerfile.pulumi
-DGRAPH_CONFIG_DIR = Path("../src/js/grapl-cdk/dgraph").resolve()
+DGRAPH_CONFIG_DIR = Path("../src/aws-provision/dgraph").resolve()
 
 
 class DgraphCluster(pulumi.ComponentResource):

@@ -9,7 +9,7 @@ services:
       dockerfile: js/graphql_endpoint/Dockerfile
       target: graphql-endpoint-zip
     volumes:
-      - ./src/js/grapl-cdk/zips:/grapl
+      - ./src/aws-provision/zips:/grapl
     user: ${UID}:${GID}
     working_dir: /grapl
     environment:

@@ -12,7 +12,7 @@ import pulumi
 from pulumi.output import Output
 
 # These are COPYd in from Dockerfile.pulumi
-SWARM_INIT_DIR = Path("../src/js/grapl-cdk/swarm").resolve()
+SWARM_INIT_DIR = Path("../src/aws-provision/swarm").resolve()
 
 
 class Swarm(pulumi.ComponentResource):
