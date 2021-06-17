@@ -1,7 +1,6 @@
 from typing import Optional
 
 import pulumi_aws as aws
-
 from infra import dynamodb
 from infra.bucket import Bucket
 from infra.config import GLOBAL_LAMBDA_ZIP_TAG, LOCAL_GRAPL
