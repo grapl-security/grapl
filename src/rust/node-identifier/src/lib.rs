@@ -27,7 +27,6 @@ use grapl_service::{
     serialization::IdentifiedGraphSerializer,
 };
 use grapl_utils::rusoto_ext::dynamodb::GraplDynamoDbClientExt;
-use log::*;
 use rusoto_dynamodb::DynamoDbClient;
 use rusoto_sqs::SqsClient;
 use sessiondb::SessionDb;
@@ -42,6 +41,10 @@ use sqs_executor::{
     time_based_key_fn,
 };
 use tap::tap::TapOptional;
+use tracing::{
+    info,
+    warn,
+};
 
 use crate::error::NodeIdentifierError;
 
@@ -91,6 +94,7 @@ where
     }
 
     // todo: We should be yielding IdentifiedNode's here
+    #[tracing::instrument(fields(node_key=?node.node_key), skip(self, node))]
     async fn attribute_node_key(&self, node: &NodeDescription) -> Result<IdentifiedNode, Error> {
         let new_node = self
             .dynamic_identifier
@@ -103,6 +107,7 @@ where
     ///
     /// A map of unidentified node keys to identified node keys will be returned in addition to the
     /// last error, if any, that occurred while identifying nodes.
+    #[tracing::instrument(skip(self, unidentified_subgraph, identified_graph))]
     pub async fn identify_nodes(
         &self,
         unidentified_subgraph: &GraphDescription,
@@ -116,7 +121,11 @@ where
             let identified_node = match self.attribute_node_key(&unidentified_node).await {
                 Ok(identified_node) => identified_node,
                 Err(e) => {
-                    warn!("Failed to attribute node_key with: {}", e);
+                    warn!(
+                        message="Failed to attribute node_key",
+                        node_key=?unidentified_node_key,
+                        error=?e
+                    );
                     attribution_failure = Some(e);
                     continue;
                 }
@@ -135,6 +144,12 @@ where
     /// Takes the edges in the `unidentified_graph` and inserts ones that can be properly identified
     /// into the `identified_graph` using the `identified_nodekey_map` returned from a previous
     /// node key identification process.
+    #[tracing::instrument(skip(
+        self,
+        unidentified_subgraph,
+        identified_graph,
+        identified_nodekey_map
+    ))]
     pub fn identify_edges(
         &self,
         unidentified_subgraph: &GraphDescription,
@@ -145,7 +160,13 @@ where
             // filter out all edges for nodes that were not identified (also gets our from_key)
             .filter_map(|(from_key, edge_list)| {
                 identified_nodekey_map.get(from_key)
-                    .tap_none(|| tracing::warn!(message = "Could not get node_key mapping for from_key", from_key=?from_key))
+                    .tap_none(|| tracing::warn!(
+                        message = concat!(
+                            "Could not get node_key mapping for from_key.",
+                            "This means we can't identify the edge because we rely on the node to first be identified."
+                        ),
+                        from_key=?from_key,
+                    ))
                     .map(|identified_from_key| (identified_from_key, edge_list))
             });
 
@@ -156,7 +177,14 @@ where
                 .filter_map(|edge| {
                     // check if
                     identified_nodekey_map.get(&edge.to_node_key)
-                        .tap_none(|| tracing::warn!(message="Could not get node_key mapping for to_key", to_key=?edge.to_node_key))
+                        .tap_none(|| tracing::warn!(
+                                message=concat!(
+                                    "Could not get node_key mapping for to_key.",
+                                    "This means we can't identify the edge because we rely on the node to first be identified."
+                                ),
+                                to_key=?edge.to_node_key
+                            )
+                        )
                         .map(|identified_to_edge| (identified_to_edge, &edge.edge_name))
                 });
 
@@ -182,6 +210,7 @@ where
     type OutputEvent = IdentifiedGraph;
     type Error = NodeIdentifierError;
 
+    #[tracing::instrument(skip(self, unidentified_subgraph, _completed))]
     async fn handle_event(
         &mut self,
         unidentified_subgraph: GraphDescription,
@@ -202,18 +231,16 @@ where
            5. return as full graph
         */
 
-        info!("Begin node identification process.");
+        info!(
+            message="Identifying a new graph",
+            node_count=?unidentified_subgraph.nodes.len(),
+            edge_count=?unidentified_subgraph.edges.len(),
+        );
 
         if unidentified_subgraph.is_empty() {
-            warn!("Received empty subgraph");
+            warn!("Received empty subgraph.");
             return Ok(IdentifiedGraph::new());
         }
-
-        info!(
-            "unidentified_subgraph: {} nodes {} edges",
-            unidentified_subgraph.nodes.len(),
-            unidentified_subgraph.edges.len(),
-        );
 
         let mut identified_graph = IdentifiedGraph::new();
 
@@ -222,8 +249,9 @@ where
             .await;
 
         info!(
-            "PRE: unidentified_subgraph.edges.len() {}",
-            unidentified_subgraph.edges.len()
+            message="Performed node identification",
+            total_edges=?unidentified_subgraph.nodes.len(),
+            identified_edges=?identified_graph.nodes.len()
         );
 
         self.identify_edges(
@@ -233,8 +261,9 @@ where
         );
 
         info!(
-            "POST: identified_graph.edges.len() {}",
-            identified_graph.edges.len()
+            message = "Performed edge identification",
+            total_edges = unidentified_subgraph.edges.len(),
+            identified_edges = identified_graph.edges.len()
         );
 
         match attribution_failure {
@@ -244,8 +273,9 @@ where
                  * a smaller number of nodes that actually identified (due to identities of nodes coalescing)
                  */
                 warn!(
-                    "Partial Success; identified {} nodes",
-                    identified_graph.nodes.len()
+                    message = "Partial Success",
+                    identified_nodes = identified_graph.nodes.len(),
+                    identified_edges = identified_graph.edges.len(),
                 );
 
                 Err(Ok((identified_graph, NodeIdentifierError::Unexpected))) // todo: Use a real error here

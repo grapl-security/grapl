@@ -5,10 +5,6 @@ use failure::{
     Error,
 };
 use hmap::hmap;
-use log::{
-    info,
-    warn,
-};
 use rusoto_core::RusotoError;
 use rusoto_dynamodb::{
     AttributeValue,
@@ -22,6 +18,10 @@ use rusoto_dynamodb::{
     TransactWriteItem,
     TransactWriteItemsInput,
     UpdateItemInput,
+};
+use tracing::{
+    info,
+    warn,
 };
 use uuid::Uuid;
 
@@ -47,11 +47,12 @@ where
         }
     }
 
+    #[tracing::instrument(skip(self, unid), err)]
     pub async fn find_first_session_after(
         &self,
         unid: &UnidSession,
     ) -> Result<Option<Session>, Error> {
-        info!("Finding first session after : {}", &self.table_name);
+        info!(message="Finding first session after", table_name=?&self.table_name);
         let query = QueryInput {
             consistent_read: Some(true),
             limit: Some(1),
@@ -88,11 +89,12 @@ where
         }
     }
 
+    #[tracing::instrument(skip(self, unid), err)]
     pub async fn find_last_session_before(
         &self,
         unid: &UnidSession,
     ) -> Result<Option<Session>, Error> {
-        info!("Finding last session before");
+        info!(message = "Finding last session before");
         let query = QueryInput {
             consistent_read: Some(true),
             limit: Some(1),
@@ -131,13 +133,14 @@ where
     // Instead, in one transaction, the row must be deleted and recreated with the
     // new create_time
     // This method assumes that the `session` passed in has already been modified
+    #[tracing::instrument(skip(self, session), err)]
     pub async fn update_session_create_time(
         &self,
         session: &Session,
         new_time: u64,
         is_canon: bool,
     ) -> Result<(), Error> {
-        info!("Updating session create time");
+        info!(message = "Updating session create time");
         let mut new_session = session.to_owned();
         new_session.create_time = new_time;
         new_session.is_create_canon = is_canon;
@@ -184,8 +187,9 @@ where
         Ok(())
     }
 
+    #[tracing::instrument(skip(self, session), err)]
     pub async fn make_create_time_canonical(&self, session: &Session) -> Result<(), Error> {
-        info!("Updating session end time");
+        info!(message = "Updating session end time");
         // Use version as a constraint
         let upd_req = UpdateItemInput {
             key: hmap! {
@@ -231,13 +235,14 @@ where
     }
 
     // Update version, and use it as a constraint
+    #[tracing::instrument(skip(self, session), err)]
     pub async fn update_session_end_time(
         &self,
         session: &Session,
         new_time: u64,
         is_canon: bool,
     ) -> Result<(), Error> {
-        info!("Updating session end time");
+        info!(message = "Updating session end time");
         // Use version as a constraint
         let upd_req = UpdateItemInput {
             key: hmap! {
@@ -290,8 +295,8 @@ where
         Ok(())
     }
 
+    #[tracing::instrument(skip(self, session), err)]
     pub async fn create_session(&self, session: &Session) -> Result<(), Error> {
-        info!("create session");
         let put_req = PutItemInput {
             item: serde_dynamodb::to_hashmap(session).unwrap(),
             table_name: self.table_name.clone(),
@@ -303,8 +308,8 @@ where
         Ok(())
     }
 
+    #[tracing::instrument(skip(self, session), err)]
     pub async fn delete_session(&self, session: &Session) -> Result<(), Error> {
-        info!("delete session");
         let del_req = DeleteItemInput {
             key: hmap! {
                 "pseudo_key".to_owned() => AttributeValue {
@@ -324,10 +329,11 @@ where
         Ok(())
     }
 
+    #[tracing::instrument(skip(self, unid), err)]
     pub async fn handle_creation_event(&self, unid: UnidSession) -> Result<String, Error> {
         info!(
-            "Handling unid session creation, pseudo_key: {:?} seen at: {}.",
-            unid.pseudo_key, unid.timestamp
+            message="Handling unid session creation",
+            pseudo_key=?unid.pseudo_key, timestamp=?unid.timestamp
         );
 
         // Look for first session where session.create_time >= unid.create_time
@@ -338,7 +344,7 @@ where
             // This means that there is a 'Guessed' session in the future,
             // and we should consider this the canonical ID for that session
             if !session.is_create_canon && session.create_time != unid.timestamp {
-                info!("Extending session create_time");
+                info!(message = "Extending session create_time");
                 self.update_session_create_time(&session, unid.timestamp, true)
                     .await?;
                 return Ok(session.session_id);
@@ -355,7 +361,7 @@ where
             // No need to update the database here - it's already canonical,
             // with an accurate timestamp
             if skewed_cmp(unid.timestamp, session.create_time) {
-                info!("Found existing session with exact create time");
+                info!(message = "Found existing session with exact create time");
                 return Ok(session.session_id);
             }
 
@@ -400,19 +406,20 @@ where
             pseudo_key: unid.pseudo_key,
         };
 
-        info!("Creating session");
+        info!(message = "Creating session");
         self.create_session(&session).await?;
         Ok(session.session_id)
     }
 
+    #[tracing::instrument(skip(self, unid), err)]
     pub async fn handle_last_seen(
         &self,
         unid: UnidSession,
         should_default: bool,
     ) -> Result<String, Error> {
         info!(
-            "Handling unid session, pseudo_key: {:?} seen at: {}.",
-            unid.pseudo_key, unid.timestamp
+            message="Handling unid session",
+            pseudo_key=?unid.pseudo_key, timestamp=?unid.timestamp
         );
 
         // Look for session where session.create_time <= unid.create_time <= session.end_time
@@ -420,13 +427,13 @@ where
         let session = self.find_last_session_before(&unid).await?;
         if let Some(mut session) = session {
             if unid.timestamp < session.end_time || skewed_cmp(unid.timestamp, session.end_time) {
-                info!("Identified session because it fell within a timeline.");
+                info!(message = "Identified session because it fell within a timeline.");
                 return Ok(session.session_id);
             }
 
             if !session.is_end_canon {
                 session.end_time = unid.timestamp;
-                info!("Updating session end_time.");
+                info!(message = "Updating session end_time.");
                 //                self.update_session_end_time(&session, unid.timestamp, false)?;
 
                 return Ok(session.session_id);
@@ -436,7 +443,7 @@ where
         let session = self.find_first_session_after(&unid).await?;
         if let Some(session) = session {
             if !session.is_create_canon {
-                info!("Found a later, non canonical session. Extending create_time..");
+                info!(message = "Found a later, non canonical session. Extending create_time.");
 
                 self.update_session_create_time(&session, unid.timestamp, false)
                     .await?;
@@ -445,7 +452,7 @@ where
         }
 
         if should_default {
-            info!("Defaulting and creating new session.");
+            info!(message = "Defaulting and creating new session.");
             let session_id = Uuid::new_v4().to_string();
             let session = Session {
                 session_id: session_id.clone(),
@@ -460,7 +467,7 @@ where
 
             Ok(session_id)
         } else {
-            warn!("Could not attribute session. Not defaulting.");
+            warn!(message = "Could not attribute session. Not defaulting.");
             bail!(
                 "Could not attribute session. should_default {}. Not defaulting.",
                 should_default
@@ -468,6 +475,7 @@ where
         }
     }
 
+    #[tracing::instrument(skip(self), err)]
     pub async fn handle_unid_session(
         &self,
         mut unid: UnidSession,

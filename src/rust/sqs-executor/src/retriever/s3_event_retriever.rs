@@ -32,7 +32,6 @@ use tokio::{
 use tracing::{
     debug,
     error,
-    info,
 };
 
 use crate::{
@@ -170,7 +169,16 @@ where
 
         let bucket = record["bucket"]["name"].as_str().expect("bucket name");
         let key = record["object"]["key"].as_str().expect("object key");
-        debug!("Retrieving S3 payload from: {} / {}", bucket, key);
+
+        let inner_loop_span = tracing::trace_span!(
+            "s3.retrieve_event",
+            bucket=?bucket,
+            key=?key,
+        );
+        let _enter = inner_loop_span.enter();
+
+        debug!(message = "Retrieving S3 payload",);
+
         let region = &event["Records"][0]["awsRegion"].as_str().expect("region");
         let s3 = self.get_client(region.to_string());
         let s3_data = s3.get_object(GetObjectRequest {
@@ -189,9 +197,9 @@ where
                         ms as f64,
                         &[tag("success", s3_data.is_ok())],
                     )
-                    .unwrap_or_else(|e| {
-                        error!("failed to report s3_consumer.get_object.ms: {:?}", e)
-                    });
+                    .unwrap_or_else(
+                        |e| error!(message="failed to report s3_consumer.get_object.ms", error=?e),
+                    );
                 s3_data
             })
             .await??;
@@ -203,7 +211,7 @@ where
             object_size as usize
         };
 
-        info!("Retrieved s3 payload with size : {:?}", prealloc);
+        debug!(message="Retrieved s3 payload", object_size=?object_size);
 
         let mut body = Vec::with_capacity(prealloc);
 
@@ -220,16 +228,16 @@ where
                         ms as f64,
                         &[tag("success", res.is_ok())],
                     )
-                    .unwrap_or_else(|e| {
-                        error!("failed to report s3_consumer.read_to_end.ms: {:?}", e)
-                    });
+                    .unwrap_or_else(
+                        |e| error!(message="failed to report s3_consumer.read_to_end.ms", error=?e),
+                    );
                 res
             })
             .await?;
 
         self.metric_reporter
             .gauge("s3_retriever.bytes", body.len() as f64, &[])
-            .unwrap_or_else(|e| error!("failed to report s3_retriever.bytes: {:?}", e));
+            .unwrap_or_else(|e| error!(message="failed to report s3_retriever.bytes", error=?e));
 
         debug!("Read s3 payload body");
 
@@ -242,7 +250,9 @@ where
                 HistogramUnit::Micros,
                 &[tag("success", true)][..],
             )
-            .unwrap_or_else(|e| error!("failed to report s3_retriever.decoded.micros: {:?}", e));
+            .unwrap_or_else(
+                |e| error!(message="failed to report s3_retriever.decoded.micros", error=?e),
+            );
 
         Ok(Some(decoded?))
     }

@@ -37,7 +37,6 @@ rusoto_credential = "0.46"
 serde_dynamodb = {version="0.7", default_features = false, features=["rustls"]}
 
 sha2 = "0.9"
-log = "0.4"
 
 sqs-executor = { path = "../sqs-executor/" }
 zstd = "0.7"
@@ -52,10 +51,10 @@ hex = "0.4"
 async-trait = "0.1"
 tokio = { version = "1", features = ["sync", "macros", "time", "rt-multi-thread"] }
 hmap = "0.1"
-tracing = "0.1"
 chrono = "0.4"
 uuid = { version = "0.8", features=["v4"] }
 tap = "1"
+tracing = "0.1.26"
 
 [dev-dependencies]
 quickcheck = "1"
