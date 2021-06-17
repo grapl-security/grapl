@@ -55,6 +55,7 @@ class GraphQL(pulumi.ComponentResource):
                     "UX_BUCKET_URL": pulumi.Output.concat(
                         "https://", ux_bucket.bucket_regional_domain_name
                     ),
+                    "GRAPL_SCHEMA_PROPERTIES_TABLE": db.schema_properties_table.name,
                 },
                 timeout=30,
                 memory_size=128,
