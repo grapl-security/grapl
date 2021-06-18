@@ -5,6 +5,7 @@ from pathlib import Path
 
 import click
 from grapl_tests_common.upload_logs import upload_osquery_logs, upload_sysmon_logs
+from graplctl import idempotency_checks
 from graplctl.common import State, pass_graplctl_state
 from graplctl.upload.lib import upload_analyzer
 
@@ -19,7 +20,10 @@ def upload(
     """commands like "upload analyzer" or "upload sysmon logs" """
     # TODO: Disallow any uploads until we've confirmed we've provisioned
     # https://github.com/grapl-security/issue-tracker/issues/340
-    pass
+    assert idempotency_checks.is_grapl_provisioned(
+        dynamodb=graplctl_state.dynamodb,
+        deployment_name=graplctl_state.grapl_deployment_name,
+    ), "You can't upload anything to grapl until it's provisioned."
 
 
 @upload.command()
