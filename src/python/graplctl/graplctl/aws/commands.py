@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import click
 import graplctl.aws.lib as aws_lib
+from graplctl import idempotency_checks
 from graplctl.common import State, pass_graplctl_state
 from graplctl.dgraph import commands as dgraph_commands
 
@@ -26,7 +27,10 @@ def aws(
 @pass_graplctl_state
 def provision(graplctl_state: State) -> None:
     """provision the grapl deployment"""
-    # TODO: Make idempotent
+    assert not idempotency_checks.is_grapl_provisioned(
+        dynamodb=graplctl_state.dynamodb,
+        deployment_name=graplctl_state.grapl_deployment_name,
+    ), "Grapl is already provisioned!"
     click.echo("provisioning grapl deployment")
     aws_lib.provision_grapl(
         lambda_=graplctl_state.lambda_,
@@ -46,6 +50,10 @@ def provision(graplctl_state: State) -> None:
 @click.pass_context
 def wipe_state(ctx: click.Context, graplctl_state: State) -> None:
     """Wipe dynamodb"""
+    assert idempotency_checks.is_grapl_provisioned(
+        dynamodb=graplctl_state.dynamodb,
+        deployment_name=graplctl_state.grapl_deployment_name,
+    ), "Grapl hasn't been provisioned yet."
     click.echo("Wiping dynamodb")
     aws_lib.wipe_dynamodb(
         dynamodb=graplctl_state.dynamodb,
