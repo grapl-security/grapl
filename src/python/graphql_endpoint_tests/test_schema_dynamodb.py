@@ -3,7 +3,6 @@ Schema generation happens at the provision stage, which doesn't really have an
 associated test suite yet. So, for the time being, just gonna shoehorn it
 into graphql endpoint tests (which are *consumers* of the dynamodb node schemas)
 """
-import os
 from typing import cast
 from unittest import TestCase
 
