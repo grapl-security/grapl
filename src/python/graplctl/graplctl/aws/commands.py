@@ -27,6 +27,7 @@ def aws(
 @pass_graplctl_state
 def provision(graplctl_state: State) -> None:
     """provision the grapl deployment"""
+    # TODO: Add a check that dgraph has been created
     assert not idempotency_checks.is_grapl_provisioned(
         dynamodb=graplctl_state.dynamodb,
         deployment_name=graplctl_state.grapl_deployment_name,
