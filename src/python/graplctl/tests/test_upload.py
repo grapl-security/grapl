@@ -1,12 +1,30 @@
-from unittest.mock import ANY, call
+from unittest.mock import ANY, MagicMock, call
 
+import pytest
+from mypy_boto3_dynamodb.service_resource import Table
 from tests.fake_uploads.fake_analyzer import main as fake_analyzer_main_py
-from tests.shared import invoke_with_default_args, patch_boto3_session
+from tests.shared import BotoSessionMock, invoke_with_default_args, patch_boto3_session
+
+
+def test_upload__not_provisioned_yet() -> None:
+    with patch_boto3_session() as mock_session:
+        _mock_grapl_is_provisioned(mock_session, is_provisioned=False)
+        with pytest.raises(AssertionError) as raised:
+            result = invoke_with_default_args(
+                [
+                    "upload",
+                    "analyzer",
+                ],
+            )
+
+    assert "You can't upload anything to grapl until it's provisioned" in str(
+        raised.value
+    )
 
 
 def test_upload_analyzer__path_is_wrong() -> None:
     main_py_path = "some_inexistent_dir/main.py"
-    with patch_boto3_session():
+    with patch_boto3_session() as mock_session:
         result = invoke_with_default_args(
             [
                 "upload",
@@ -95,3 +113,15 @@ def test_upload_osquery__calls_s3() -> None:
         in result.output
     )
     assert "Completed uploading 236 chunks" in result.output
+
+
+def _mock_grapl_is_provisioned(
+    mock_session: BotoSessionMock, is_provisioned: bool
+) -> None:
+    table_instance = MagicMock("Mock DynamoDB table", spec_set=Table)
+    table_instance.scan.return_value = {
+        "Items": (
+            ["fool graplctl into thinking we're provisioned"] if is_provisioned else []
+        )
+    }
+    mock_session.resource("dynamodb").Table.return_value = table_instance

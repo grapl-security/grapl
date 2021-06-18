@@ -33,9 +33,13 @@ class BotoSessionMock:
             return self.clients[service_name]
 
         self.session.client.side_effect = _memoize_client
+        self.session.resource.side_effect = _memoize_client
 
     def client(self, client_name: str) -> Mock:
         return cast(Mock, self.session.client(client_name))
+
+    def resource(self, client_name: str) -> Mock:
+        return self.client(client_name)
 
     def return_fake_queues(self) -> None:
         sqs_client = self.client("sqs")
