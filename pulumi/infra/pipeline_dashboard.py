@@ -18,7 +18,7 @@ from pulumi.output import Output
 CWMetric = List[Union[str, Dict[str, Any]]]
 
 
-def service_queue_widget(names: ServiceQueueNames) -> Dict[str, Any]:
+def service_queue_widgets(names: ServiceQueueNames) -> List[Dict[str, Any]]:
     all_queues = {
         names.queue: {
             "id": "default",
@@ -34,7 +34,20 @@ def service_queue_widget(names: ServiceQueueNames) -> Dict[str, Any]:
         },
     }
 
-    def all_metrics() -> List[CWMetric]:
+    def messages_processed() -> List[CWMetric]:
+        messages_deleted: List[CWMetric] = [
+            [
+                "AWS/SQS",
+                "NumberOfMessagesDeleted",
+                "QueueName",
+                q,
+                {"stat": "Sum", "label": props["id"], "color": props["color"]},
+            ]
+            for q, props in all_queues.items()
+        ]
+        return messages_deleted
+
+    def messages_in_flight_or_queued() -> List[CWMetric]:
         # Sum "Messages Visible" (in the queue) with "Messages Not Visible" (sent to service, but processing)
         # but hide the two separate metrics
         messages_visible: List[CWMetric] = [
@@ -48,7 +61,7 @@ def service_queue_widget(names: ServiceQueueNames) -> Dict[str, Any]:
             for q, props in all_queues.items()
         ]
 
-        messages_not_visible: List[CWMetric] = [
+        messages_in_flight: List[CWMetric] = [
             [
                 "AWS/SQS",
                 "ApproximateNumberOfMessagesNotVisible",
@@ -73,25 +86,43 @@ def service_queue_widget(names: ServiceQueueNames) -> Dict[str, Any]:
 
         return [
             *messages_visible,
-            *messages_not_visible,
+            *messages_in_flight,
             *summed,
         ]
 
-    properties = {
+    messages_in_flight_or_queued_props = {
         "view": "timeSeries",
-        "title": f"{names.service_name} queue: num messages",
+        "title": f"{names.service_name} queue: messages in flight, or queued",
         "region": "us-east-1",
-        "metrics": all_metrics(),
+        "metrics": messages_in_flight_or_queued(),
         "yAxis": {},
         "liveData": True,
     }
 
-    return {
+    messages_in_flight_or_queued_widget = {
         "type": "metric",
-        "width": 24,
+        "width": 12,
         "height": 3,
-        "properties": properties,
+        "properties": messages_in_flight_or_queued_props,
     }
+
+    messages_processed_props = {
+        "view": "timeSeries",
+        "title": f"{names.service_name} queue: msgs processed",
+        "region": "us-east-1",
+        "metrics": messages_processed(),
+        "yAxis": {},
+        "liveData": True,
+    }
+
+    messages_processed_widget = {
+        "type": "metric",
+        "width": 12,
+        "height": 3,
+        "properties": messages_processed_props,
+    }
+
+    return [messages_in_flight_or_queued_widget, messages_processed_widget]
 
 
 class PipelineDashboard(pulumi.ComponentResource):
@@ -101,9 +132,9 @@ class PipelineDashboard(pulumi.ComponentResource):
     ) -> None:
         def create_dashboard_json(args: Dict[str, Any]) -> str:
             service_queue_names: List[ServiceQueueNames] = args["service_queue_names"]
-            widgets: List[Dict[str, Any]] = [
-                service_queue_widget(sqn) for sqn in service_queue_names
-            ]
+            widgets: List[Dict[str, Any]] = sum(
+                [service_queue_widgets(sqn) for sqn in service_queue_names], []
+            )
             return json.dumps({"widgets": widgets})
 
         dashboard_body = Output.all(
