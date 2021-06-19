@@ -5,7 +5,7 @@ import os
 from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, TypeVar
 
 from botocore.client import Config
-from grapl_common.dev_assertions import assert_local, assert_not_local
+from grapl_common.dev_assertions import assert_not_local
 from typing_extensions import Protocol
 
 if TYPE_CHECKING:
@@ -83,7 +83,6 @@ def _client_get(
     elif all((endpoint_url, access_key_id, access_key_secret)):
         # Local, all are passed in from docker-compose.yml
         logging.info(f"Creating a local client for {which_service}")
-        assert_local(f"You should only pass in endpoint/key/secret when running locally.")
         return client_create_fn(
             params.boto3_client_name,
             endpoint_url=endpoint_url,
