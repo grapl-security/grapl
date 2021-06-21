@@ -26,8 +26,7 @@ docker-compose up --force-recreate ${TARGETS}
 EXIT_CODE=0
 ALL_TESTS=$(docker-compose ps --quiet ${TARGETS})
 for test in $ALL_TESTS; do
-    test_exit_code_str=$(docker inspect -f "{{ .State.ExitCode }}" "${test}")
-    test_exit_code=$(($test_exit_code_str + 0)) # cast to int
+    test_exit_code=$(docker inspect -f "{{ .State.ExitCode }}" "${test}")
     if [[ ${test_exit_code} -ne 0 ]]; then
         EXIT_CODE=$test_exit_code
         break
