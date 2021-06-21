@@ -247,7 +247,6 @@ test-e2e: build-test-e2e ## Build and run e2e tests
 .PHONY: test-with-env
 test-with-env: # (Do not include help text - not to be used directly)
 	stopGrapl() {
-		EXIT_CODE=$$?
 		# skip if KEEP_TEST_ENV is set
 		if [[ -z "${KEEP_TEST_ENV}" ]]; then
 			echo "Tearing down test environment"
@@ -258,7 +257,6 @@ test-with-env: # (Do not include help text - not to be used directly)
 		unset COMPOSE_FILE
 		etc/ci_scripts/dump_artifacts.py --compose-project=${COMPOSE_PROJECT_NAME}
 		docker-compose --file docker-compose.yml stop;
-		exit $$EXIT_CODE
 	}
 	# Ensure we call stop even after test failure, and return exit code from
 	# the test, not the stop command.
