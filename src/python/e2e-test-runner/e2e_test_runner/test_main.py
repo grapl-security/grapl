@@ -23,10 +23,6 @@ LENS_NAME = "DESKTOP-FVSHABR"
 GqlLensDict = Dict[str, Any]
 
 
-class TestException(Exception):
-    pass
-
-
 @pytest.mark.integration_test
 class TestEndToEnd(TestCase):
     def test_expected_data_in_dgraph(self) -> None:
