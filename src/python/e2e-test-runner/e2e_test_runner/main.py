@@ -1,7 +1,6 @@
 import os
 import shutil
 import sys
-
 from typing import Any
 
 from grapl_common.debugger.vsc_debugger import wait_for_vsc_debugger
