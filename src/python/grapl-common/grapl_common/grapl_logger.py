@@ -4,8 +4,8 @@ import os
 import sys
 
 
-def get_module_grapl_logger(
-    default_log_level: str = "INFO", log_to_stdout: bool = False
+def get_module_grapl_logger(  # TODO: delete this function
+    default_log_level: str = "INFO", log_to_stdout: bool = True
 ) -> logging.Logger:
     """
     Callers should put
