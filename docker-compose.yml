@@ -125,7 +125,7 @@ services:
       test: ["CMD", "nc", "-vz", "kafka", "9092"]
       retries: 5
       interval: 5s
-      timeout: 10s
+      timeout: 30s
       start_period: 15s
     environment:
       <<: *kafka-broker-env
