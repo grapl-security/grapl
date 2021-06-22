@@ -39,6 +39,18 @@ x-common-variables:
     EC2_ACCESS_KEY_ID: ${EC2_ACCESS_KEY_ID}
     EC2_ACCESS_KEY_SECRET: ${EC2_ACCESS_KEY_SECRET}
     EC2_ENDPOINT: ${EC2_ENDPOINT}
+  kafka-broker-env: &kafka-broker-env
+    KAFKA_BROKER_ID: 1
+    KAFKA_ZOOKEEPER_CONNECT: "${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT}"
+    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+    KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://${KAFKA_BROKER_HOST}:9092,PLAINTEXT_HOST://localhost:29092
+    KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    KAFKA_JMX_PORT: ${KAFKA_JMX_PORT}
+    KAFKA_JMX_HOSTNAME: localhost
+    KAFKA_LOG4J_ROOT_LOGLEVEL: INFO
   lambda-env: &lambda-env
     LAMBDA_ACCESS_KEY_ID: ${LAMBDA_ACCESS_KEY_ID}
     LAMBDA_ACCESS_KEY_SECRET: ${LAMBDA_ACCESS_KEY_SECRET}
@@ -72,6 +84,9 @@ x-common-variables:
     SSM_ACCESS_KEY_ID: ${SSM_ACCESS_KEY_ID}
     SSM_ACCESS_KEY_SECRET: ${SSM_ACCESS_KEY_SECRET}
     SSM_ENDPOINT: ${SSM_ENDPOINT}
+  zookeeper-env: &zookeeper-env
+    ZOOKEEPER_CLIENT_PORT: ${ZOOKEEPER_PORT}
+    ZOOKEEPER_TICK_TIME: 2000
 
 services:
   ########################################################################
@@ -95,6 +110,26 @@ services:
       default:
         aliases:
           - ${DGRAPH_HOST}
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:6.2.0
+    environment:
+      <<: *zookeeper-env
+
+  kafka-broker:
+    image: confluentinc/cp-kafka:6.2.0
+    depends_on:
+      - zookeeper
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "nc", "-vz", "kafka", "9092"]
+      retries: 5
+      interval: 5s
+      timeout: 10s
+      start_period: 15s
+    environment:
+      <<: *kafka-broker-env
+
 
   # dev uses 1 big redis instance, prod has 1:1 redis per grapl
   # service... maybe transitory, this will eventually match prod
@@ -541,14 +576,8 @@ services:
       grapl-pulumi:
         condition: service_completed_successfully
 
-  zookeeper:
-    image: confluentinc/cp-zookeeper:latest
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-
   kafka-provision:
-    image: confluentinc/cp-kafka:latest
+    image: confluentinc/cp-kafka:6.2.0
     command: |
       /bin/bash -c "! kafka-topics \
                     --create \
@@ -561,29 +590,8 @@ services:
       "
     restart: on-failure
     depends_on:
-      kafka:
+      kafka-broker:
         condition: service_healthy
-
-  kafka:
-    image: confluentinc/cp-kafka:latest
-    depends_on:
-      - zookeeper
-    restart: on-failure
-    healthcheck:
-      test: ["CMD", "nc", "-vz", "kafka", "9092"]
-      retries: 5
-      interval: 5s
-      timeout: 10s
-      start_period: 15s
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://kafka:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-
-
 
 networks:
   default:
