@@ -35,13 +35,7 @@ class FromEnvException(Exception):
 
 ClientGetParams = NamedTuple(
     "ClientGetParams",
-    (
-        ("boto3_client_name", str),  # e.g. "s3" or "sqs"
-        ("endpoint_url_key", str),  # e.g. "SQS_ENDPOINT"
-        ("access_key_id_key", str),
-        ("access_key_secret_key", str),
-        ("access_session_token", str),
-    ),
+    (("boto3_client_name", str),),  # e.g. "s3" or "sqs"
 )
 
 
@@ -54,10 +48,10 @@ def _client_get(
     :param client_create_fn: the `boto3.client` or `boto3.resource` function
     """
     which_service = params.boto3_client_name
-    endpoint_url = os.getenv(params.endpoint_url_key)
-    access_key_id = os.getenv(params.access_key_id_key)
-    access_key_secret = os.getenv(params.access_key_secret_key)
-    access_session_token = os.getenv(params.access_session_token)
+    endpoint_url = os.getenv("GRAPL_AWS_ENDPOINT")
+    access_key_id = os.getenv("GRAPL_AWS_ACCESS_KEY_ID")
+    access_key_secret = os.getenv("GRAPL_AWS_ACCESS_KEY_SECRET")
+    access_session_token = os.getenv("GRAPL_AWS_ACCESS_SESSION_TOKEN")
 
     # determine the aws region
     if config is not None and config.region_name is not None:
@@ -162,10 +156,6 @@ def _localstack_client(
 
 _SQSParams = ClientGetParams(
     boto3_client_name="sqs",
-    endpoint_url_key="SQS_ENDPOINT",
-    access_key_id_key="SQS_ACCESS_KEY_ID",
-    access_key_secret_key="SQS_ACCESS_KEY_SECRET",
-    access_session_token="SQS_ACCESS_SESSION_TOKEN",
 )
 
 
@@ -182,10 +172,6 @@ class SQSClientFactory(FromEnv["SQSClient"]):
 
 _SNSParams = ClientGetParams(
     boto3_client_name="sns",
-    endpoint_url_key="SNS_ENDPOINT",
-    access_key_id_key="SNS_ACCESS_KEY_ID",
-    access_key_secret_key="SNS_ACCESS_KEY_SECRET",
-    access_session_token="SNS_ACCESS_SESSION_TOKEN",
 )
 
 
@@ -202,10 +188,6 @@ class SNSClientFactory(FromEnv["SNSClient"]):
 
 _EC2Params = ClientGetParams(
     boto3_client_name="ec2",
-    endpoint_url_key="EC2_ENDPOINT",
-    access_key_id_key="EC2_ACCESS_KEY_ID",
-    access_key_secret_key="EC2_ACCESS_KEY_SECRET",
-    access_session_token="EC2_ACCESS_SESSION_TOKEN",
 )
 
 
@@ -222,10 +204,6 @@ class EC2ResourceFactory(FromEnv["EC2ServiceResource"]):
 
 _SSMParams = ClientGetParams(
     boto3_client_name="ssm",
-    endpoint_url_key="SSM_ENDPOINT",
-    access_key_id_key="SSM_ACCESS_KEY_ID",
-    access_key_secret_key="SSM_ACCESS_KEY_SECRET",
-    access_session_token="SSM_ACCESS_SESSION_TOKEN",
 )
 
 
@@ -242,10 +220,6 @@ class SSMClientFactory(FromEnv["SSMClient"]):
 
 _CloudWatchParams = ClientGetParams(
     boto3_client_name="cloudwatch",
-    endpoint_url_key="CLOUDWATCH_ENDPOINT",
-    access_key_id_key="CLOUDWATCH_ACCESS_KEY_ID",
-    access_key_secret_key="CLOUDWATCH_ACCESS_KEY_SECRET",
-    access_session_token="CLOUDWATCH_ACCESS_SESSION_TOKEN",
 )
 
 
@@ -262,10 +236,6 @@ class CloudWatchClientFactory(FromEnv["CloudWatchClient"]):
 
 _LambdaParams = ClientGetParams(
     boto3_client_name="lambda",
-    endpoint_url_key="LAMBDA_ENDPOINT",
-    access_key_id_key="LAMBDA_ACCESS_KEY_ID",
-    access_key_secret_key="LAMBDA_ACCESS_KEY_SECRET",
-    access_session_token="LAMBDA_ACCESS_SESSION_TOKEN",
 )
 
 
@@ -282,10 +252,6 @@ class LambdaClientFactory(FromEnv["LambdaClient"]):
 
 _Route53Params = ClientGetParams(
     boto3_client_name="route53",
-    endpoint_url_key="ROUTE53_ENDPOINT",
-    access_key_id_key="ROUTE53_ACCESS_KEY_ID",
-    access_key_secret_key="ROUTE53_ACCESS_KEY_SECRET",
-    access_session_token="ROUTE53_ACCESS_SESSION_TOKEN",
 )
 
 
@@ -302,10 +268,6 @@ class Route53ClientFactory(FromEnv["Route53Client"]):
 
 _S3Params = ClientGetParams(
     boto3_client_name="s3",
-    endpoint_url_key="S3_ENDPOINT",
-    access_key_id_key="S3_ACCESS_KEY_ID",
-    access_key_secret_key="S3_ACCESS_KEY_SECRET",
-    access_session_token="S3_ACCESS_SESSION_TOKEN",
 )
 
 
@@ -331,10 +293,6 @@ class S3ResourceFactory(FromEnv["S3ServiceResource"]):
 
 _DynamoDBParams = ClientGetParams(
     boto3_client_name="dynamodb",
-    endpoint_url_key="DYNAMODB_ENDPOINT",
-    access_key_id_key="DYNAMODB_ACCESS_KEY_ID",
-    access_key_secret_key="DYNAMODB_ACCESS_KEY_SECRET",
-    access_session_token="DYNAMODB_ACCESS_SESSION_TOKEN",
 )
 
 
@@ -362,10 +320,6 @@ class DynamoDBClientFactory(FromEnv["DynamoDBClient"]):
 
 _SecretsManagerParams = ClientGetParams(
     boto3_client_name="secretsmanager",
-    endpoint_url_key="SECRETSMANAGER_ENDPOINT",
-    access_key_id_key="SECRETSMANAGER_ACCESS_KEY_ID",
-    access_key_secret_key="SECRETSMANAGER_ACCESS_KEY_SECRET",
-    access_session_token="SECRETSMANAGER_ACCESS_SESSION_TOKEN",
 )
 
 

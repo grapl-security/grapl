@@ -6,16 +6,12 @@ from unittest.mock import patch
 from botocore.config import Config
 from grapl_common.env_helpers import ClientGetParams, FromEnvException, _client_get
 
-_FAKE_ENDPOINT_URL = "FAKE_ENDPOINT_URL"
-_FAKE_AWS_ACCESS_KEY_ID_KEY = "FAKE_AWS_ACCESS_KEY_ID"
-_FAKE_AWS_SECRET_ACCESS_KEY_KEY = "FAKE_AWS_SECRET_ACCESS_KEY"
-_FAKE_AWS_SESSION_TOKEN_KEY = "FAKE_AWS_SESSION_TOKEN"
+_FAKE_ENDPOINT_URL = "GRAPL_AWS_ENDPOINT_URL"
+_FAKE_AWS_ACCESS_KEY_ID_KEY = "GRAPL_AWS_ACCESS_KEY_ID"
+_FAKE_AWS_SECRET_ACCESS_KEY_KEY = "GRAPL_AWS_SECRET_ACCESS_KEY"
+_FAKE_AWS_SESSION_TOKEN_KEY = "GRAPL_AWS_SESSION_TOKEN"
 _CLIENT_GET_PARAMS = ClientGetParams(
     "fake_boto3",  # boto3_client_name
-    _FAKE_ENDPOINT_URL,  # endpoint_url_key
-    _FAKE_AWS_ACCESS_KEY_ID_KEY,  # access_key_id_key
-    _FAKE_AWS_SECRET_ACCESS_KEY_KEY,  # access_key_secret_key
-    _FAKE_AWS_SESSION_TOKEN_KEY,  # access_session_token
 )
 
 
