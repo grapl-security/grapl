@@ -115,21 +115,26 @@ services:
     image: confluentinc/cp-zookeeper:6.2.0
     environment:
       <<: *zookeeper-env
+    healthcheck:
+      test: ["CMD", "echo", "ruok", "|", "nc", "-w", "2", "-q", "2", "localhost", "${ZOOKEEPER_PORT}", "|", "grep", "imok"]
+      retries: 5
+      interval: 5s
+      timeout: 30s
+      start_period: 15s
 
   kafka-broker:
     image: confluentinc/cp-kafka:6.2.0
     depends_on:
-      - zookeeper
-    restart: on-failure
+      zookeeper:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "nc", "-vz", "kafka", "9092"]
+      test: ["CMD", "nc", "-vz", "kafka-broker", "${KAFKA_BROKER_PORT}"]
       retries: 5
       interval: 5s
       timeout: 30s
       start_period: 15s
     environment:
       <<: *kafka-broker-env
-
 
   # dev uses 1 big redis instance, prod has 1:1 redis per grapl
   # service... maybe transitory, this will eventually match prod
@@ -152,8 +157,6 @@ services:
           - ${REDIS_HOST}
 
   localstack:
-    # TODO: 0.12.11 is the one we want once it's released; until then
-    # we need an unreleased fix for lambda invocation
     image: localstack/localstack:0.12.11
     ports:
       # We'll expose localstack's edge port for ease of use with
