@@ -14,7 +14,7 @@ x-common-variables:
   aws-env: &aws-env
     AWS_ENDPOINT: ${AWS_ENDPOINT}
     AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-    AWS_ACCESS_KEY_SECRET: ${AWS_ACCESS_KEY_SECRET
+    AWS_ACCESS_KEY_SECRET: ${AWS_ACCESS_KEY_SECRET}
     AWS_DEFAULT_REGION: ${AWS_REGION} # boto3 prefers this one
     AWS_REGION: ${AWS_REGION}
   dgraph-env: &dgraph-env
@@ -126,8 +126,6 @@ services:
       # things like the AWS CLI, Pulumi, etc.
       - 127.0.0.1:${LOCALSTACK_PORT}:${LOCALSTACK_PORT}
     environment:
-      - AWS_ACCESS_KEY_ID
-      - AWS_ACCESS_KEY_SECRET
       - IMAGE_NAME=localstack/localstack:0.12.11
       - EDGE_PORT=${LOCALSTACK_PORT}
       - HOSTNAME_EXTERNAL=${LOCALSTACK_HOST}
@@ -148,6 +146,8 @@ services:
     healthcheck:
       test: |
         bash -c '
+          export AWS_ACCESS_KEY_ID=${FAKE_AWS_ACCESS_KEY_ID} &&
+          export AWS_SECRET_ACCESS_KEY=${FAKE_AWS_SECRET_ACCESS_KEY} &&
           aws --endpoint-url=http://${LOCALSTACK_HOST}:${LOCALSTACK_PORT} s3 ls
         '
       # Probe failure during this period will not be counted towards the maximum number of retries
@@ -343,7 +343,6 @@ services:
       <<: *dgraph-env
       IS_LOCAL: "True"
       <<: *log-level
-      <<: *secretsmanager-env
       UX_BUCKET_URL: "localhost"
     tty: true
     depends_on:
@@ -421,7 +420,6 @@ services:
       PORT: ${GRAPL_GRAPHQL_PORT}
       GRAPL_SCHEMA_PROPERTIES_TABLE: "${DEPLOYMENT_NAME}-grapl_schema_properties_table"
       GRAPL_SCHEMA_TABLE: "${DEPLOYMENT_NAME}-grapl_schema_table"
-      <<: *secretsmanager-env
       DEBUG_SERVICES: "${DEBUG_SERVICES:-}"
       VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT: "${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}"
     depends_on:
