@@ -148,17 +148,17 @@ services:
         py.test --capture=no -n 1 -m "integration_test"
       '
     environment:
-      - AWS_ACCESS_KEY_ID
-      - AWS_ACCESS_KEY_SECRET
-      - AWS_ENDPOINT
       - AWS_REGION
-      - IS_LOCAL=True
       - DEBUG_SERVICES=${DEBUG_SERVICES:-}
       - DEPLOYMENT_NAME
       - GRAPL_API_HOST
+      - GRAPL_AWS_ACCESS_KEY_ID
+      - GRAPL_AWS_ACCESS_KEY_SECRET
+      - GRAPL_AWS_ENDPOINT
       - GRAPL_HTTP_FRONTEND_PORT
-      - GRAPL_TEST_USER_NAME
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
+      - GRAPL_TEST_USER_NAME
+      - IS_LOCAL=True
       - MG_ALPHAS
       - VSC_DEBUGGER_PORT=${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT_TESTS}
     ports:
