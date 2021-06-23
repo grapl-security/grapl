@@ -1,21 +1,10 @@
 #[cfg(feature = "integration")]
 mod integration_tests {
     use kafka_metrics_exporter::KafkaMetricExporterBuilder;
-    use metrics::{
-        counter,
-        histogram,
-    };
+    use metrics::{counter, histogram};
     use rdkafka::{
-        config::{
-            FromClientConfig,
-            RDKafkaLogLevel,
-        },
-        consumer::{
-            stream_consumer::StreamConsumer,
-            CommitMode,
-            Consumer,
-            DefaultConsumerContext,
-        },
+        config::{FromClientConfig, RDKafkaLogLevel},
+        consumer::{stream_consumer::StreamConsumer, CommitMode, Consumer, DefaultConsumerContext},
         producer::FutureProducer,
         util::DefaultRuntime,
     };
@@ -79,8 +68,12 @@ mod integration_tests {
         let consumer = consumer_init()?;
         tracing::info!(message = "Creating stream");
         let mut stream = consumer.stream();
-        let metric_0 = stream.next().await.expect("metric_0")?;
-        let metric_1 = stream.next().await.expect("metric_1")?;
+        let metric_0 = tokio::time::timeout(std::time::Duration::from_secs(3), stream.next())
+            .await?
+            .expect("metric_0")?;
+        let metric_1 = tokio::time::timeout(std::time::Duration::from_secs(3), stream.next())
+            .await?
+            .expect("metric_1")?;
 
         consumer
             .commit_message(&metric_0, CommitMode::Sync)
