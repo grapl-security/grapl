@@ -48,10 +48,10 @@ def _client_get(
     :param client_create_fn: the `boto3.client` or `boto3.resource` function
     """
     which_service = params.boto3_client_name
-    endpoint_url = os.getenv("AWS_ENDPOINT")
-    access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
-    access_key_secret = os.getenv("AWS_ACCESS_KEY_SECRET")
-    access_session_token = os.getenv("AWS_ACCESS_SESSION_TOKEN")
+    endpoint_url = os.getenv("GRAPL_AWS_ENDPOINT")
+    access_key_id = os.getenv("GRAPL_AWS_ACCESS_KEY_ID")
+    access_key_secret = os.getenv("GRAPL_AWS_ACCESS_KEY_SECRET")
+    access_session_token = os.getenv("GRAPL_AWS_ACCESS_SESSION_TOKEN")
 
     # determine the aws region
     if config is not None and config.region_name is not None:

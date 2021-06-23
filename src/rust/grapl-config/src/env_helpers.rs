@@ -19,9 +19,9 @@ use sqs_executor::{
 
 use crate::ServiceEnv;
 
-const ENV_ENDPOINT: &'static str = "AWS_ENDPOINT";
-const ENV_ACCESS_KEY_ID: &'static str = "AWS_ACCESS_KEY_ID";
-const ENV_ACCESS_KEY_SECRET: &'static str = "AWS_ACCESS_KEY_SECRET";
+const ENV_ENDPOINT: &'static str = "GRAPL_AWS_ENDPOINT";
+const ENV_ACCESS_KEY_ID: &'static str = "GRAPL_AWS_ACCESS_KEY_ID";
+const ENV_ACCESS_KEY_SECRET: &'static str = "GRAPL_AWS_ACCESS_KEY_SECRET";
 
 #[async_trait::async_trait]
 pub trait AsyncFrom<T, S> {

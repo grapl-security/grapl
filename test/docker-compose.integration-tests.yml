@@ -13,17 +13,17 @@ services:
         - RUST_BUILD=test-integration
     command: cargo test --features node-identifier/integration --test '*'
     environment:
-      - AWS_ACCESS_KEY_ID
-      - AWS_ACCESS_KEY_SECRET
-      - AWS_ENDPOINT
       - AWS_REGION
-      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
-      - RUST_LOG=INFO
-      - RUST_BACKTRACE=1
       - DEPLOYMENT_NAME
+      - GRAPL_AWS_ACCESS_KEY_ID
+      - GRAPL_AWS_ACCESS_KEY_SECRET
+      - GRAPL_AWS_ENDPOINT
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
       - MG_ALPHAS
-      - SOURCE_QUEUE_URL=${AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-retry-queue
-      - GRAPH_MERGER_QUEUE_URL=${AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-queue
+      - RUST_BACKTRACE=1
+      - RUST_LOG=INFO
+      - SOURCE_QUEUE_URL=${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-retry-queue
+      - GRAPH_MERGER_QUEUE_URL=${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-queue
       - STATIC_MAPPING_TABLE=${DEPLOYMENT_NAME}-static_mapping_table
       - DYNAMIC_SESSION_TABLE=${DEPLOYMENT_NAME}-dynamic_session_table
       - PROCESS_HISTORY_TABLE=${DEPLOYMENT_NAME}-process_history_table
@@ -93,16 +93,16 @@ services:
       cd engagement_edge &&
       py.test -n auto -m "integration_test"'
     environment:
-      - AWS_ACCESS_KEY_ID
-      - AWS_ACCESS_KEY_SECRET
-      - AWS_ENDPOINT
       - AWS_REGION
-      - IS_LOCAL=True
       - DEPLOYMENT_NAME
-      - UX_BUCKET_URL="ux_bucket_url"
       - GRAPL_API_HOST
+      - GRAPL_AWS_ACCESS_KEY_ID
+      - GRAPL_AWS_ACCESS_KEY_SECRET
+      - GRAPL_AWS_ENDPOINT
       - GRAPL_HTTP_FRONTEND_PORT
       - GRAPL_TEST_USER_NAME
+      - IS_LOCAL=True
+      - UX_BUCKET_URL="ux_bucket_url"
 
   kafka-metrics-exporter-integration-tests:
     image: grapl/kafka-metrics-exporter-test:${TAG:-latest}

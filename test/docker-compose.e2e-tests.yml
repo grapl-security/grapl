@@ -38,19 +38,19 @@ services:
       - dynamodb_dump:/mnt/dynamodb_dump
       - ${PWD}/etc:/home/grapl/etc:ro
     environment:
-      - AWS_ACCESS_KEY_ID
-      - AWS_ACCESS_KEY_SECRET
-      - AWS_ENDPOINT
       - AWS_REGION
-      - DEPLOYMENT_NAME
       - DEBUG_SERVICES=${DEBUG_SERVICES:-}
-      - GRAPL_LOG_LEVEL
-      - IS_LOCAL="True"
-      - VSC_DEBUGGER_PORT
-      - MG_ALPHAS
+      - DEPLOYMENT_NAME
       - GRAPL_API_HOST
+      - GRAPL_AWS_ACCESS_KEY_ID
+      - GRAPL_AWS_ACCESS_KEY_SECRET
+      - GRAPL_AWS_ENDPOINT
       - GRAPL_HTTP_FRONTEND_PORT
+      - GRAPL_LOG_LEVEL
       - GRAPL_TEST_USER_NAME
+      - IS_LOCAL="True"
+      - MG_ALPHAS
+      - VSC_DEBUGGER_PORT
     ports:
       - ${VSC_DEBUGGER_PORT_FOR_GRAPL_E2E_TESTS}:${VSC_DEBUGGER_PORT_FOR_GRAPL_E2E_TESTS}
 

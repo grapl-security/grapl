@@ -66,11 +66,11 @@ def main(deployment_name, logfile):
     if deployment_name == "local-grapl":
         s3 = boto3.client(
             "s3",
-            endpoint_url=os.environ["AWS_ENDPOINT"],
-            aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
-            aws_secret_access_key=os.environ["AWS_ACCESS_KEY_SECRET"],
+            endpoint_url=os.environ["GRAPL_AWS_ENDPOINT"],
+            aws_access_key_id=os.environ["GRAPL_AWS_ACCESS_KEY_ID"],
+            aws_secret_access_key=os.environ["GRAPL_AWS_ACCESS_KEY_SECRET"],
         )
-        sqs = boto3.client("sqs", endpoint_url=os.environ["AWS_ENDPOINT"])
+        sqs = boto3.client("sqs", endpoint_url=os.environ["GRAPL_AWS_ENDPOINT"])
 
     else:
         s3 = boto3.client("s3")
@@ -100,7 +100,7 @@ def main(deployment_name, logfile):
         # local-grapl relies on manual eventing
         if sqs:
             sqs.send_message(
-                QueueUrl=f"{os.environ['AWS_ENDPOINT']}/queue/grapl-generic-graph-generator-queue",
+                QueueUrl=f"{os.environ['GRAPL_AWS_ENDPOINT']}/queue/grapl-generic-graph-generator-queue",
                 MessageBody=into_sqs_message(
                     bucket="{}-sysmon-log-bucket".format(deployment_name), key=key
                 ),

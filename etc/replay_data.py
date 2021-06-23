@@ -75,10 +75,10 @@ def get_sqs_client() -> SQSClient:
     if IS_LOCAL:
         return boto3.client(
             "sqs",
-            endpoint_url=os.environ["AWS_ENDPOINT"],
+            endpoint_url=os.environ["GRAPL_AWS_ENDPOINT"],
             region_name=os.environ["AWS_REGION"],
-            aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
-            aws_secret_access_key=os.environ["AWS_ACCESS_KEY_SECRET"],
+            aws_access_key_id=os.environ["GRAPL_AWS_ACCESS_KEY_ID"],
+            aws_secret_access_key=os.environ["GRAPL_AWS_ACCESS_KEY_SECRET"],
         )
     else:
         return boto3.client("sqs")
@@ -88,9 +88,9 @@ def get_s3_client() -> S3Client:
     if IS_LOCAL:
         return boto3.client(
             "s3",
-            endpoint_url=os.environ["AWS_ENDPOINT"],
-            aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
-            aws_secret_access_key=os.environ["AWS_ACCESS_KEY_SECRET"],
+            endpoint_url=os.environ["GRAPL_AWS_ENDPOINT"],
+            aws_access_key_id=os.environ["GRAPL_AWS_ACCESS_KEY_ID"],
+            aws_secret_access_key=os.environ["GRAPL_AWS_ACCESS_KEY_SECRET"],
         )
 
     else:

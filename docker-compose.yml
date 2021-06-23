@@ -12,9 +12,9 @@ volumes:
 
 x-common-variables:
   aws-env: &aws-env
-    AWS_ENDPOINT: ${AWS_ENDPOINT}
-    AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-    AWS_ACCESS_KEY_SECRET: ${AWS_ACCESS_KEY_SECRET}
+    GRAPL_AWS_ENDPOINT: ${GRAPL_AWS_ENDPOINT}
+    GRAPL_AWS_ACCESS_KEY_ID: ${GRAPL_AWS_ACCESS_KEY_ID}
+    GRAPL_AWS_ACCESS_KEY_SECRET: ${GRAPL_AWS_ACCESS_KEY_SECRET}
     AWS_DEFAULT_REGION: ${AWS_REGION} # boto3 prefers this one
     AWS_REGION: ${AWS_REGION}
   dgraph-env: &dgraph-env
@@ -175,12 +175,12 @@ services:
     tty: false
     environment:
       <<: *aws-env
-      DEAD_LETTER_QUEUE_URL: "${AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-sysmon-generator-dead-letter-queue"
+      DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-sysmon-generator-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-unid-subgraphs-generated-bucket"
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
       <<: *log-level
-      RETRY_QUEUE_URL: "${AWS_ENDPOINT}/000000000000/${DEPLOYMENT_NAME}-sysmon-generator-retry-queue"
-      SOURCE_QUEUE_URL: "${AWS_ENDPOINT}/000000000000/${DEPLOYMENT_NAME}-sysmon-generator-queue"
+      RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/000000000000/${DEPLOYMENT_NAME}-sysmon-generator-retry-queue"
+      SOURCE_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/000000000000/${DEPLOYMENT_NAME}-sysmon-generator-queue"
       <<: *rust-backtrace
     depends_on:
       provisioner:
@@ -196,12 +196,12 @@ services:
     environment:
       <<: *aws-env
       DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
-      DEAD_LETTER_QUEUE_URL: "${AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-dead-letter-queue"
+      DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-unid-subgraphs-generated-bucket"
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
       <<: *log-level
-      RETRY_QUEUE_URL: "${AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-retry-queue"
-      SOURCE_QUEUE_URL: "${AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-queue"
+      RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-retry-queue"
+      SOURCE_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-queue"
       <<: *rust-backtrace
     depends_on:
       provisioner:
@@ -215,13 +215,13 @@ services:
     image: grapl/grapl-node-identifier:${TAG:-latest}
     environment:
       <<: *aws-env
-      DEAD_LETTER_QUEUE_URL: "${AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
+      DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-subgraphs-generated-bucket"
       <<: *dynamodb-mapping-tables
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
       <<: *log-level
-      RETRY_QUEUE_URL: "${AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-retry-queue"
-      SOURCE_QUEUE_URL: "${AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-queue"
+      RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-retry-queue"
+      SOURCE_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-queue"
       <<: *rust-backtrace
     tty: false
     depends_on:
@@ -236,13 +236,13 @@ services:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
     environment:
       <<: *aws-env
-      DEAD_LETTER_QUEUE_URL: "${AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
+      DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-subgraphs-generated-bucket"
       <<: *dynamodb-mapping-tables
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
       <<: *log-level
-      RETRY_QUEUE_URL: "${AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
-      SOURCE_QUEUE_URL: "${AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-retry-queue"
+      RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
+      SOURCE_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-retry-queue"
       <<: *rust-backtrace
     tty: false
     depends_on:
@@ -257,14 +257,14 @@ services:
     image: grapl/grapl-graph-merger:${TAG:-latest}
     environment:
       <<: *aws-env
-      DEAD_LETTER_QUEUE_URL: "${AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-dead-letter-queue"
+      DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-subgraphs-merged-bucket"
       <<: *dgraph-env
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
       GRAPL_SCHEMA_TABLE: "${DEPLOYMENT_NAME}-grapl_schema_table"
       <<: *log-level
-      RETRY_QUEUE_URL: "${AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-retry-queue"
-      SOURCE_QUEUE_URL: "${AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-queue"
+      RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-retry-queue"
+      SOURCE_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-queue"
       <<: *rust-backtrace
     tty: false
     depends_on:
@@ -282,11 +282,11 @@ services:
     environment:
       ANALYZER_BUCKET: "${DEPLOYMENT_NAME}-analyzers-bucket"
       <<: *aws-env
-      DEAD_LETTER_QUEUE_URL: "${AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-dead-letter-queue"
+      DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-dispatched-analyzer-bucket"
       <<: *log-level
-      RETRY_QUEUE_URL: "${AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-retry-queue"
-      SOURCE_QUEUE_URL: "${AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-queue"
+      RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-retry-queue"
+      SOURCE_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-queue"
       <<: *rust-backtrace
     tty: false
     depends_on:
@@ -311,8 +311,8 @@ services:
       <<: *log-level
       MESSAGECACHE_ADDR: "${REDIS_HOST}"
       MESSAGECACHE_PORT: "${REDIS_PORT}"
-      RETRY_QUEUE_URL: "${AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-executor-retry-queue"
-      SOURCE_QUEUE_URL: "${AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-executor-queue"
+      RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-executor-retry-queue"
+      SOURCE_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-executor-queue"
       VSC_DEBUGGER_PORT: "${VSC_DEBUGGER_PORT_FOR_ANALYZER_EXECUTOR}"
     tty: true
     ports:
