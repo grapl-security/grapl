@@ -574,7 +574,7 @@ services:
       retries: 5
       interval: 5s
       timeout: 10s
-      start_period: 5s
+      start_period: 15s
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181

@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import dataclasses
-import logging
-import os
-import sys
 import time
 from typing import TYPE_CHECKING, Dict, Iterator, List, Tuple
 
 import click
+from grapl_common.grapl_logger import get_module_grapl_logger
 
 if TYPE_CHECKING:
     import mypy_boto3_ec2.service_resource as ec2_resources
@@ -23,9 +21,7 @@ if TYPE_CHECKING:
     from mypy_boto3_ssm.client import SSMClient
     from mypy_boto3_ssm.type_defs import GetCommandInvocationResultTypeDef
 
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
-LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+LOGGER = get_module_grapl_logger(log_to_stdout=True)
 
 IN_PROGRESS_STATUSES = {
     "Pending",

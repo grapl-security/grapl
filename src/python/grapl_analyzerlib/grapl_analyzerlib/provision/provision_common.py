@@ -10,6 +10,7 @@ from grapl_analyzerlib.node_types import PropType
 from grapl_analyzerlib.provision.meta_into import meta_into_predicate
 from grapl_analyzerlib.provision.queries import query_dgraph_type
 
+from grapl_common.resources import known_dynamodb_tables
 from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.schema import Schema
@@ -17,7 +18,6 @@ from grapl_analyzerlib.nodes.base import BaseSchema
 import pydgraph
 
 if TYPE_CHECKING:
-    from mypy_boto3_dynamodb import DynamoDBServiceResource
     from mypy_boto3_dynamodb.service_resource import Table
 
 
@@ -42,16 +42,9 @@ SchemaPropertyDict = Dict[str, Any]
 SchemaDict = Dict[str, Any]
 
 
-def get_schema_table(dynamodb: DynamoDBServiceResource, deployment_name: str) -> Table:
-    table = dynamodb.Table(f"{deployment_name}-grapl_schema_table")
-    return table
-
-
-def get_schema_properties_table(
-    dynamodb: DynamoDBServiceResource, deployment_name: str
-) -> Table:
-    table = dynamodb.Table(f"{deployment_name}-grapl_schema_properties_table")
-    return table
+# just some aliases
+get_schema_table = known_dynamodb_tables.schema_table
+get_schema_properties_table = known_dynamodb_tables.schema_properties_table
 
 
 def store_schema_properties(table: Table, schema: Schema) -> None:

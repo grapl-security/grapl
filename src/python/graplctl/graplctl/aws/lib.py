@@ -1,20 +1,14 @@
 import base64
-import logging
-import os
-import sys
 from typing import cast
 
 from botocore.response import StreamingBody
+from grapl_common.grapl_logger import get_module_grapl_logger
+from grapl_common.resources import known_dynamodb_tables
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 from mypy_boto3_lambda import LambdaClient
 from mypy_boto3_lambda.type_defs import InvocationResponseTypeDef
 
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
-LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
-
-EDGE_UX_DIRECTORY = "/edge_ux_post_replace"
-CDK_OUT_FILENAME = "cdk-output.json"
+LOGGER = get_module_grapl_logger(log_to_stdout=True)
 
 
 def _extract_invocation_response_error_payload(
@@ -91,10 +85,10 @@ def run_e2e_tests(lambda_: LambdaClient, deployment_name: str) -> None:
 
 
 def wipe_dynamodb(dynamodb: DynamoDBServiceResource, deployment_name: str) -> None:
-    session_table = dynamodb.Table(f"{deployment_name}-dynamic_session_table")
-    schema_table = dynamodb.Table(f"{deployment_name}-grapl_schema_table")
-    schema_properties_table = dynamodb.Table(
-        f"{deployment_name}-grapl_schema_properties_table"
+    session_table = known_dynamodb_tables.session_table(dynamodb, deployment_name)
+    schema_table = known_dynamodb_tables.schema_table(dynamodb, deployment_name)
+    schema_properties_table = known_dynamodb_tables.schema_properties_table(
+        dynamodb, deployment_name
     )
     for table in (session_table, schema_table, schema_properties_table):
         LOGGER.info(f"Wiping {table}")

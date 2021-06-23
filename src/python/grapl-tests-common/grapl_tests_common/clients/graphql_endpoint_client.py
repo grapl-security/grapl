@@ -27,7 +27,7 @@ class GraphqlEndpointClient:
     ) -> Dict[str, Any]:
         resp = requests.post(
             f"{self.endpoint}/graphql",
-            params={"query": query, "variables": json.dumps(variables or {})},
+            json={"query": query, "variables": json.dumps(variables or {})},
             cookies={"grapl_jwt": self.jwt},
         )
         if resp.status_code != HTTPStatus.OK:

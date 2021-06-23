@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-import logging
-import sys
+import os
 from os import environ
-from sys import stdout
 from typing import List
 
 import pytest
 import requests
+from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_tests_common.dump_dynamodb import dump_dynamodb
 
 # Toggle if you want to dump databases, logs, etc.
 DUMP_ARTIFACTS = bool(environ.get("DUMP_ARTIFACTS", False))
 
-logging.basicConfig(stream=stdout, level=logging.INFO)
+LOGGER = get_module_grapl_logger()
+GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL", "INFO")
 
 
 def _after_tests() -> None:
@@ -26,7 +26,7 @@ def _after_tests() -> None:
     if DUMP_ARTIFACTS:
         dgraph_host = environ["DGRAPH_HOST"]
         dgraph_alpha = environ["DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT"]
-        logging.info("Executing post-test database dumps")
+        LOGGER.info("Executing post-test database dumps")
         export_request = requests.get(
             f"http://{dgraph_host}:{dgraph_alpha}/admin/export"
         )
@@ -34,12 +34,19 @@ def _after_tests() -> None:
         dump_dynamodb()
 
 
-def exec_pytest() -> None:
+def exec_pytest() -> int:
     pytest_args: List[str] = []
     if environ.get("PYTEST_EXPRESSION"):
         pytest_args.extend(("-k", environ["PYTEST_EXPRESSION"]))
 
-    result = pytest.main(["--capture=no", *pytest_args])  # disable stdout capture
+    result = pytest.main(
+        [
+            "--capture=no",
+            f"--log-level={GRAPL_LOG_LEVEL}",
+            f"--log-cli-level={GRAPL_LOG_LEVEL}",
+            *pytest_args,
+        ]
+    )  # disable stdout capture
     _after_tests()
 
-    sys.exit(result)
+    return result

@@ -3,7 +3,6 @@ Schema generation happens at the provision stage, which doesn't really have an
 associated test suite yet. So, for the time being, just gonna shoehorn it
 into graphql endpoint tests (which are *consumers* of the dynamodb node schemas)
 """
-import os
 from typing import cast
 from unittest import TestCase
 
@@ -13,6 +12,7 @@ from grapl_analyzerlib.node_types import PropPrimitive
 from grapl_analyzerlib.provision import provision_common
 from grapl_common.env_helpers import DynamoDBResourceFactory
 from grapl_common.grapl_logger import get_module_grapl_logger
+from grapl_common.resources import known_dynamodb_tables
 
 LOGGER = get_module_grapl_logger()
 
@@ -23,8 +23,8 @@ class TestSchemaStoredInDynamodb(TestCase):
         self,
     ) -> None:
         resource = DynamoDBResourceFactory(boto3).from_env()
-        schema_props_table = resource.Table(
-            f"{os.environ['DEPLOYMENT_NAME']}-grapl_schema_properties_table"
+        schema_props_table = known_dynamodb_tables.schema_properties_table(
+            dynamodb=resource
         )
 
         asset_type = cast(

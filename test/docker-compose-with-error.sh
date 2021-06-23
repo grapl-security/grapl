@@ -5,7 +5,7 @@
 # which services to run, instead of all of them, which is the default behavior.
 TARGETS="${TARGETS}"
 
-set -e
+set -eu
 
 usage() {
     echo "Usage: [TARGETS=\"service1 service2\"] $0" 1>&2
@@ -26,10 +26,12 @@ docker-compose up --force-recreate ${TARGETS}
 EXIT_CODE=0
 ALL_TESTS=$(docker-compose ps --quiet ${TARGETS})
 for test in $ALL_TESTS; do
-    if ! docker inspect -f "{{ .State.ExitCode }}" "${test}" | grep -q ^0; then
-        EXIT_CODE=$?
+    test_exit_code=$(docker inspect -f "{{ .State.ExitCode }}" "${test}")
+    if [[ ${test_exit_code} -ne 0 ]]; then
+        EXIT_CODE=$test_exit_code
         break
     fi
 done
 
+echo "docker-compose-with-error: exit code $EXIT_CODE"
 exit $EXIT_CODE
