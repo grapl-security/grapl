@@ -1,28 +1,17 @@
 #[cfg(feature = "integration")]
 mod integration_tests {
     use kafka_metrics_exporter::KafkaMetricExporterBuilder;
-    use metrics::{
-        counter,
-        histogram,
-    };
+    use metrics::{counter, histogram};
     use rdkafka::{
-        config::{
-            FromClientConfig,
-            RDKafkaLogLevel,
-        },
-        consumer::{
-            stream_consumer::StreamConsumer,
-            CommitMode,
-            Consumer,
-            DefaultConsumerContext,
-        },
+        config::{FromClientConfig, RDKafkaLogLevel},
+        consumer::{stream_consumer::StreamConsumer, CommitMode, Consumer, DefaultConsumerContext},
         producer::FutureProducer,
         util::DefaultRuntime,
     };
     use tokio_stream::StreamExt;
 
     fn producer_init() -> Result<FutureProducer, Box<dyn std::error::Error>> {
-        let brokers = "kafka:9092";
+        let brokers = "kafka-broker:9092";
         let mut client_config = rdkafka::ClientConfig::new();
         client_config
             .set("client.id", "test-producer")
@@ -37,7 +26,7 @@ mod integration_tests {
     fn consumer_init(
     ) -> Result<StreamConsumer<DefaultConsumerContext, DefaultRuntime>, Box<dyn std::error::Error>>
     {
-        let brokers = "kafka:9092";
+        let brokers = "kafka-broker:9092";
         let mut client_config = rdkafka::ClientConfig::new();
         client_config
             .set("group.id", "integration-tests-consumers")

@@ -585,7 +585,7 @@ services:
       /bin/bash -c "! kafka-topics \
                     --create \
                     --zookeeper \
-                    zookeeper:2181 \
+                    ${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT} \
                     --replication-factor 1 \
                     --partitions 1 \
                     --topic test-topic \
