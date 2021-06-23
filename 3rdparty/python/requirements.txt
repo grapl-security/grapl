@@ -21,6 +21,7 @@ pulumi>=3.0.0,<4.0.0
 # 4.7.0 is broken: https://github.com/pulumi/pulumi-aws/issues/1519
 pulumi-aws>=4.0.0,<5.0.0,<4.7.0
 pulumi_docker
+pulumi_kafka
 pulumi_random
 pydgraph
 pyjwt
