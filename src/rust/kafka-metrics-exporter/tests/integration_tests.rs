@@ -1,21 +1,10 @@
 #[cfg(feature = "integration")]
 mod integration_tests {
     use kafka_metrics_exporter::KafkaMetricExporterBuilder;
-    use metrics::{
-        counter,
-        histogram,
-    };
+    use metrics::{counter, histogram};
     use rdkafka::{
-        config::{
-            FromClientConfig,
-            RDKafkaLogLevel,
-        },
-        consumer::{
-            stream_consumer::StreamConsumer,
-            CommitMode,
-            Consumer,
-            DefaultConsumerContext,
-        },
+        config::{FromClientConfig, RDKafkaLogLevel},
+        consumer::{stream_consumer::StreamConsumer, CommitMode, Consumer, DefaultConsumerContext},
         producer::FutureProducer,
         util::DefaultRuntime,
     };
@@ -54,7 +43,7 @@ mod integration_tests {
 
         let consumer = StreamConsumer::from_config(&client_config)?;
         consumer
-            .subscribe(&["test-topic"])
+            .subscribe(&["metrics"])
             .expect("Can't subscribe to specified topic");
         Ok(consumer)
     }
@@ -68,10 +57,10 @@ mod integration_tests {
             .finish();
         let _ = ::tracing::subscriber::set_global_default(subscriber);
 
-        tracing::info!(topic_name = "test-topic", message = "Starting smoketest");
+        tracing::info!(topic_name = "metrics", message = "Starting smoketest");
         let producer: FutureProducer = producer_init()?;
-        KafkaMetricExporterBuilder::new("test-topic", producer).install()?;
-        tracing::info!(topic_name = "test-topic", message = "Created producer");
+        KafkaMetricExporterBuilder::new("metrics", producer).install()?;
+        tracing::info!(topic_name = "metrics", message = "Created producer");
 
         histogram!("process.query_time", 1234f64);
         counter!("process.query_row_count", 1000);
