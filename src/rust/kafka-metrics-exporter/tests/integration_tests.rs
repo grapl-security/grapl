@@ -1,10 +1,21 @@
 #[cfg(feature = "integration")]
 mod integration_tests {
     use kafka_metrics_exporter::KafkaMetricExporterBuilder;
-    use metrics::{counter, histogram};
+    use metrics::{
+        counter,
+        histogram,
+    };
     use rdkafka::{
-        config::{FromClientConfig, RDKafkaLogLevel},
-        consumer::{stream_consumer::StreamConsumer, CommitMode, Consumer, DefaultConsumerContext},
+        config::{
+            FromClientConfig,
+            RDKafkaLogLevel,
+        },
+        consumer::{
+            stream_consumer::StreamConsumer,
+            CommitMode,
+            Consumer,
+            DefaultConsumerContext,
+        },
         producer::FutureProducer,
         util::DefaultRuntime,
     };
