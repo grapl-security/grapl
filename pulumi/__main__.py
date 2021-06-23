@@ -16,6 +16,7 @@ from infra.dgraph_ttl import DGraphTTL
 from infra.e2e_test_runner import E2eTestRunner
 from infra.engagement_creator import EngagementCreator
 from infra.graph_merger import GraphMerger
+from infra.kafka import Kafka
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.node_identifier import NodeIdentifier
@@ -110,6 +111,8 @@ def main() -> None:
 
         analyzer_executor_queue = ServiceQueue("analyzer-executor")
         analyzer_executor_queue.subscribe_to_emitter(dispatched_analyzer_emitter)
+
+        kafka = Kafka("kafka")
 
     else:
         # No Fargate or Elasticache in Local Grapl

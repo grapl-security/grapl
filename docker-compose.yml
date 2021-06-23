@@ -484,6 +484,8 @@ services:
     depends_on:
       localstack:
         condition: service_healthy
+      kafka-broker:
+        condition: service_healthy
 
   provisioner:
     image: grapl/provisioner:${TAG:-latest}
@@ -505,23 +507,6 @@ services:
         condition: service_healthy
       grapl-pulumi:
         condition: service_completed_successfully
-
-  kafka-provision:
-    image: confluentinc/cp-kafka:6.2.0
-    command: |
-      /bin/bash -c "! kafka-topics \
-                    --create \
-                    --zookeeper \
-                    ${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT} \
-                    --replication-factor 1 \
-                    --partitions 1 \
-                    --topic test-topic \
-                    --if-not-exists
-      "
-    restart: on-failure
-    depends_on:
-      kafka-broker:
-        condition: service_healthy
 
 networks:
   default:
