@@ -138,7 +138,8 @@ def dump_docker_ps(dir: Path) -> None:
     logging.debug(f"Dumping 'docker ps' to '{destination}'")
     with open(destination, "wb") as out_stream:
         subprocess.run(
-            f"docker ps",
+            # --all includes containers that have already exited
+            f"docker ps --all",
             stdout=out_stream,
             stderr=out_stream,
             shell=True,
