@@ -1,0 +1,17 @@
+{
+    "name": "pack_grapl_processes",
+    "hostIdentifier": "ip-172-31-46-189.us-east-2.compute.internal",
+    "calendarTime": "Thu Oct 22 20:54:42 2020 UTC",
+    "unixTime": 1603400082,
+    "epoch": 0,
+    "counter": 0,
+    "numerics": false,
+    "columns": {
+        "cmdline": "",
+        "parent": "8753",
+        "path": "/usr/bin/bash",
+        "pid": "9355",
+        "time": "1603399763"
+    },
+    "action": "added"
+}

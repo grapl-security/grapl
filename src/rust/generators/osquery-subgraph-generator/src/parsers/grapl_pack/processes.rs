@@ -1,5 +1,3 @@
-use std::convert::TryFrom;
-
 use endpoint_plugin::{
     AssetNode,
     FileNode,
@@ -15,14 +13,21 @@ use serde::{
 };
 
 use super::from_str;
-use crate::parsers::{
-    OSQueryResponse,
-    PartiallyDeserializedOSQueryLog,
-};
+use crate::parsers::OSQueryAction;
+
+#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
+#[serde(rename_all = "camelCase")]
+pub struct ProcessEvent {
+    host_identifier: String,
+    calendar_time: String,
+    unix_time: u64,
+    action: OSQueryAction,
+    columns: ProcessEventColumns,
+}
 
 /// See https://osquery.io/schema/4.5.0/#processes
-#[derive(Serialize, Deserialize)]
-pub(crate) struct OSQueryProcessQuery {
+#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
+pub struct ProcessEventColumns {
     #[serde(deserialize_with = "from_str")]
     pid: u64,
     name: Option<String>,
@@ -34,17 +39,11 @@ pub(crate) struct OSQueryProcessQuery {
     time: i64,
 }
 
-impl PartiallyDeserializedOSQueryLog {
-    pub(crate) fn to_graph_from_grapl_processes(self) -> Result<GraphDescription, failure::Error> {
-        OSQueryResponse::<OSQueryProcessQuery>::try_from(self)
-            .map(|response| GraphDescription::try_from(response))?
-    }
-}
+impl From<ProcessEvent> for GraphDescription {
+    #[tracing::instrument]
+    fn from(process_event: ProcessEvent) -> Self {
+        tracing::trace!(message = "Building Graph from ProcessEvent.");
 
-impl TryFrom<OSQueryResponse<OSQueryProcessQuery>> for GraphDescription {
-    type Error = failure::Error;
-
-    fn try_from(process_event: OSQueryResponse<OSQueryProcessQuery>) -> Result<Self, Self::Error> {
         let mut graph = GraphDescription::new();
 
         // this field can be -1 in cases of error
@@ -123,6 +122,24 @@ impl TryFrom<OSQueryResponse<OSQueryProcessQuery>> for GraphDescription {
         graph.add_node(child);
         graph.add_node(asset);
 
-        Ok(graph)
+        graph
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::parsers::OSQueryEvent;
+
+    #[test]
+    fn parse_pack_grapl_processes_json() {
+        let test_json = std::fs::read_to_string("sample_data/unit/pack_grapl_processes.json")
+            .expect("unable to read test file.");
+
+        let event: OSQueryEvent =
+            serde_json::from_str(&test_json).expect("serde_json::from_str failed.");
+        match event {
+            OSQueryEvent::Process(_) => {}
+            _ => panic!("expected OSQueryEvent::Process"),
+        };
     }
 }

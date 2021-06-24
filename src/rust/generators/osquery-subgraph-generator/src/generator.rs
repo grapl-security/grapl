@@ -1,15 +1,5 @@
-use std::{
-    convert::TryFrom,
-    sync::Arc,
-};
-
 use async_trait::async_trait;
 use grapl_graph_descriptions::graph_description::*;
-use itertools::{
-    Either,
-    Itertools,
-};
-use log::*;
 use sqs_executor::{
     cache::Cache,
     errors::{
@@ -20,89 +10,78 @@ use sqs_executor::{
         CompletedEvents,
         EventHandler,
     },
+    event_status::EventStatus,
 };
 
 use crate::{
     metrics::OSQuerySubgraphGeneratorMetrics,
-    parsers::PartiallyDeserializedOSQueryLog,
+    parsers::OSQueryEvent,
 };
 
 #[derive(Clone)]
-pub struct OSQuerySubgraphGenerator<C: Cache> {
+pub struct OSQuerySubgraphGenerator<C>
+where
+    C: Cache + Clone + Send + Sync + 'static,
+{
     cache: C,
     metrics: OSQuerySubgraphGeneratorMetrics,
 }
 
-impl<C: Cache> OSQuerySubgraphGenerator<C> {
+impl<C> OSQuerySubgraphGenerator<C>
+where
+    C: Cache + Clone + Send + Sync + 'static,
+{
     pub fn new(cache: C, metrics: OSQuerySubgraphGeneratorMetrics) -> Self {
         Self { cache, metrics }
     }
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum OSQuerySubgraphGeneratorError {
-    #[error("Unexpected")]
-    Unexpected(failure::Error),
-}
+pub enum OSQuerySubgraphGeneratorError {}
 
 impl CheckedError for OSQuerySubgraphGeneratorError {
     fn error_type(&self) -> Recoverable {
-        Recoverable::Transient
+        Recoverable::Persistent
     }
 }
 
 #[async_trait]
 impl<C: Cache> EventHandler for OSQuerySubgraphGenerator<C> {
-    type InputEvent = Vec<Result<PartiallyDeserializedOSQueryLog, Arc<serde_json::Error>>>;
+    type InputEvent = Vec<OSQueryEvent>;
     type OutputEvent = GraphDescription;
     type Error = OSQuerySubgraphGeneratorError;
 
+    #[tracing::instrument(skip(self, events, completed))]
     async fn handle_event(
         &mut self,
-        input: Self::InputEvent,
-        _completed: &mut CompletedEvents,
+        events: Self::InputEvent,
+        completed: &mut CompletedEvents,
     ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
-        info!("Processing {} incoming OSQuery log events.", input.len());
+        tracing::info!(
+            message = "Processing incoming events.",
+            num_events = events.len()
+        );
 
-        let (deserialized_lines, deserialization_errors): (Vec<_>, Vec<_>) =
-            input.into_iter().partition_map(|line| match line {
-                Ok(value) => Either::Left(value),
-                Err(error) => Either::Right(error),
-            });
+        // Skip events we've successfully processed and stored in the event cache.
+        let events = self.cache.filter_cached(&events).await;
 
-        for error in deserialization_errors {
-            error!("Deserialization error: {}", error);
-        }
-
-        let (subgraphs, errors): (Vec<_>, Vec<_>) = deserialized_lines
+        let final_subgraph = events
             .into_iter()
-            .map(|log| GraphDescription::try_from(log))
-            .partition(|result| result.is_ok());
-
-        for res in errors.iter().map(|e| e.as_ref().err()) {
-            self.metrics.report_handle_event_success(&res);
-        }
-        let final_subgraph = subgraphs
-            .into_iter()
-            .filter_map(|subgraph| subgraph.ok())
+            .map(|event| {
+                completed.add_identity(&event, EventStatus::Success);
+                GraphDescription::from(event)
+            })
             .fold(GraphDescription::new(), |mut current_graph, subgraph| {
                 current_graph.merge(&subgraph);
                 current_graph
             });
 
-        let errors: Vec<failure::Error> =
-            errors.into_iter().filter_map(|item| item.err()).collect();
+        tracing::info!(
+            message = "Completed mapping subgraphs",
+            num_completed = completed.len()
+        );
+        self.metrics.report_subgraph_generation();
 
-        if errors.is_empty() {
-            Ok(final_subgraph)
-        } else {
-            let sqs_executor_error = errors
-                .into_iter()
-                .map(|err| OSQuerySubgraphGeneratorError::Unexpected(err))
-                .next()
-                .unwrap();
-
-            Err(Ok((final_subgraph, sqs_executor_error)))
-        }
+        Ok(final_subgraph)
     }
 }
