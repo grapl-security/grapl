@@ -3,7 +3,6 @@ pub use grapl_service::serialization::{
     GraphDescriptionSerializer,
     GraphDescriptionSerializerError,
 };
-use log::*;
 use sysmon_subgraph_generator_lib::{
     generator::SysmonSubgraphGenerator,
     metrics::SysmonSubgraphGeneratorMetrics,
@@ -11,10 +10,16 @@ use sysmon_subgraph_generator_lib::{
 };
 
 #[tokio::main]
+#[tracing::instrument]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (env, _guard) = grapl_config::init_grapl_env!();
     let service_name = env.service_name.clone();
-    info!("Starting sysmon-subgraph-generator");
+
+    tracing::info!(
+        message = "Starting generator.",
+        name =% service_name
+    );
+
     run_graph_generator(
         env,
         move |cache| {
