@@ -14,13 +14,16 @@ services:
     command: cargo test --features node-identifier/integration --test '*'
     environment:
       - AWS_REGION
-      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
-      - RUST_LOG=INFO
-      - RUST_BACKTRACE=1
       - DEPLOYMENT_NAME
+      - GRAPL_AWS_ACCESS_KEY_ID
+      - GRAPL_AWS_ACCESS_KEY_SECRET
+      - GRAPL_AWS_ENDPOINT
+      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
       - MG_ALPHAS
-      - SOURCE_QUEUE_URL=${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-retry-queue
-      - GRAPH_MERGER_QUEUE_URL=${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-queue
+      - RUST_BACKTRACE=1
+      - RUST_LOG=INFO
+      - SOURCE_QUEUE_URL=${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-retry-queue
+      - GRAPH_MERGER_QUEUE_URL=${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-queue
       - STATIC_MAPPING_TABLE=${DEPLOYMENT_NAME}-static_mapping_table
       - DYNAMIC_SESSION_TABLE=${DEPLOYMENT_NAME}-dynamic_session_table
       - PROCESS_HISTORY_TABLE=${DEPLOYMENT_NAME}-process_history_table
@@ -30,9 +33,6 @@ services:
       - NETWORK_CONNECTION_HISTORY_TABLE=${DEPLOYMENT_NAME}-network_connection_history_table
       - IP_CONNECTION_HISTORY_TABLE=${DEPLOYMENT_NAME}-ip_connection_history_table
       - ASSET_ID_MAPPINGS=${DEPLOYMENT_NAME}-asset_id_mappings
-      - DYNAMODB_ENDPOINT
-      - DYNAMODB_ACCESS_KEY_ID
-      - DYNAMODB_ACCESS_KEY_SECRET
 
   rust-sqs-executor-integration-tests:
     image: grapl/rust-integration-tests:${TAG:-latest}
@@ -94,15 +94,15 @@ services:
       py.test -n auto -m "integration_test"'
     environment:
       - AWS_REGION
-      - IS_LOCAL=True
       - DEPLOYMENT_NAME
-      - UX_BUCKET_URL="ux_bucket_url"
       - GRAPL_API_HOST
+      - GRAPL_AWS_ACCESS_KEY_ID
+      - GRAPL_AWS_ACCESS_KEY_SECRET
+      - GRAPL_AWS_ENDPOINT
       - GRAPL_HTTP_FRONTEND_PORT
       - GRAPL_TEST_USER_NAME
-      - SECRETSMANAGER_ACCESS_KEY_ID
-      - SECRETSMANAGER_ACCESS_KEY_SECRET
-      - SECRETSMANAGER_ENDPOINT
+      - IS_LOCAL=True
+      - UX_BUCKET_URL="ux_bucket_url"
 
   kafka-metrics-exporter-integration-tests:
     image: grapl/kafka-metrics-exporter-test:${TAG:-latest}
@@ -149,19 +149,16 @@ services:
       '
     environment:
       - AWS_REGION
-      - IS_LOCAL=True
       - DEBUG_SERVICES=${DEBUG_SERVICES:-}
       - DEPLOYMENT_NAME
-      - DYNAMODB_ENDPOINT
-      - DYNAMODB_ACCESS_KEY_ID
-      - DYNAMODB_ACCESS_KEY_SECRET
       - GRAPL_API_HOST
+      - GRAPL_AWS_ACCESS_KEY_ID
+      - GRAPL_AWS_ACCESS_KEY_SECRET
+      - GRAPL_AWS_ENDPOINT
       - GRAPL_HTTP_FRONTEND_PORT
-      - GRAPL_TEST_USER_NAME
-      - SECRETSMANAGER_ACCESS_KEY_ID
-      - SECRETSMANAGER_ACCESS_KEY_SECRET
-      - SECRETSMANAGER_ENDPOINT
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
+      - GRAPL_TEST_USER_NAME
+      - IS_LOCAL=True
       - MG_ALPHAS
       - VSC_DEBUGGER_PORT=${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT_TESTS}
     ports:

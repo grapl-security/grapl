@@ -4,7 +4,6 @@ use chrono::{
     Utc,
 };
 use grapl_graph_descriptions::graph_description::*;
-use log::*;
 use sysmon::Event;
 
 use crate::generator::SysmonGeneratorError;
@@ -35,26 +34,27 @@ fn get_event_type(event: Event) -> String {
 impl SysmonTryFrom<Event> for GraphDescription {
     type Error = SysmonGeneratorError;
 
+    #[tracing::instrument]
     fn try_from(instance: Event) -> Result<Self, Self::Error> {
         match instance {
             Event::ProcessCreate(event) => {
-                info!("Handling process create");
+                tracing::info!(event = "ProcessCreate");
 
                 let result = process::generate_process_create_subgraph(&event);
 
                 if let Err(e) = &result {
-                    warn!("Failed to process process start event: {}", e);
+                    tracing::warn!(message="Failed to process process start event.", error=?e);
                 }
 
                 result
             }
             Event::FileCreate(event) => {
-                info!("FileCreate");
+                tracing::info!(event = "FileCreate");
 
                 let result = file::generate_file_create_subgraph(&event);
 
                 if let Err(e) = &result {
-                    warn!("Failed to process file create event: {}", e);
+                    tracing::warn!(message="Failed to process file create event", error=?e);
                 }
 
                 result
@@ -71,12 +71,12 @@ impl SysmonTryFrom<Event> for GraphDescription {
             //     result
             // }
             Event::OutboundNetwork(event) => {
-                info!("OutboundNetwork");
+                tracing::info!(event = "OutboundNetwork");
 
                 let result = network::generate_outbound_connection_subgraph(&event);
 
                 if let Err(e) = &result {
-                    warn!("Failed to process outbound network event: {}", e);
+                    tracing::warn!(message="Failed to process outbound network event.", error=?e);
                 }
 
                 result
@@ -84,7 +84,7 @@ impl SysmonTryFrom<Event> for GraphDescription {
             unsupported_event => {
                 let message = format!("Unsupported event_type: {:?}", unsupported_event);
 
-                warn!("{}", message);
+                tracing::warn!(message =% message);
 
                 Err(SysmonGeneratorError::UnsupportedEventType(get_event_type(
                     unsupported_event,

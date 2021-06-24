@@ -11,19 +11,14 @@ volumes:
     # need to be accessible in test containers.
 
 x-common-variables:
-  aws-region: &aws-region
+  aws-env: &aws-env
+    GRAPL_AWS_ENDPOINT: ${GRAPL_AWS_ENDPOINT}
+    GRAPL_AWS_ACCESS_KEY_ID: ${GRAPL_AWS_ACCESS_KEY_ID}
+    GRAPL_AWS_ACCESS_KEY_SECRET: ${GRAPL_AWS_ACCESS_KEY_SECRET}
     AWS_DEFAULT_REGION: ${AWS_REGION} # boto3 prefers this one
     AWS_REGION: ${AWS_REGION}
-  cloudwatch-env: &cloudwatch-env
-    CLOUDWATCH_ACCESS_KEY_ID: ${CLOUDWATCH_ACCESS_KEY_ID}
-    CLOUDWATCH_ACCESS_KEY_SECRET: ${CLOUDWATCH_ACCESS_KEY_SECRET}
-    CLOUDWATCH_ENDPOINT: ${CLOUDWATCH_ENDPOINT}
   dgraph-env: &dgraph-env
     MG_ALPHAS: ${MG_ALPHAS}
-  dynamodb-env: &dynamodb-env
-    DYNAMODB_ACCESS_KEY_ID: ${DYNAMODB_ACCESS_KEY_ID}
-    DYNAMODB_ACCESS_KEY_SECRET: ${DYNAMODB_ACCESS_KEY_SECRET}
-    DYNAMODB_ENDPOINT: ${DYNAMODB_ENDPOINT}
   # TODO: Ensure these are matched with what's in provision_local_identity_table.py
   dynamodb-mapping-tables: &dynamodb-mapping-tables
     ASSET_ID_MAPPINGS: ${DEPLOYMENT_NAME}-asset_id_mappings
@@ -35,43 +30,27 @@ x-common-variables:
     OUTBOUND_CONNECTION_HISTORY_TABLE: ${DEPLOYMENT_NAME}-outbound_connection_history_table
     PROCESS_HISTORY_TABLE: ${DEPLOYMENT_NAME}-process_history_table
     STATIC_MAPPING_TABLE: ${DEPLOYMENT_NAME}-static_mapping_table
-  ec2-env: &ec2-env
-    EC2_ACCESS_KEY_ID: ${EC2_ACCESS_KEY_ID}
-    EC2_ACCESS_KEY_SECRET: ${EC2_ACCESS_KEY_SECRET}
-    EC2_ENDPOINT: ${EC2_ENDPOINT}
-  lambda-env: &lambda-env
-    LAMBDA_ACCESS_KEY_ID: ${LAMBDA_ACCESS_KEY_ID}
-    LAMBDA_ACCESS_KEY_SECRET: ${LAMBDA_ACCESS_KEY_SECRET}
-    LAMBDA_ENDPOINT: ${LAMBDA_ENDPOINT}
+  kafka-broker-env: &kafka-broker-env
+    KAFKA_BROKER_ID: 1
+    KAFKA_ZOOKEEPER_CONNECT: "${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT}"
+    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+    KAFKA_LISTENERS: PLAINTEXT://${KAFKA_BROKER_HOST}:9092
+    KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://${KAFKA_BROKER_HOST}:9092
+    KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    KAFKA_JMX_PORT: ${KAFKA_JMX_PORT}
+    KAFKA_JMX_HOSTNAME: localhost
+    KAFKA_LOG4J_ROOT_LOGLEVEL: INFO
   log-level: &log-level
     GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-ERROR}"
     RUST_LOG: "${RUST_LOG:-ERROR}"
-  route53-env: &route53-env
-    ROUTE53_ACCESS_KEY_ID: ${ROUTE53_ACCESS_KEY_ID}
-    ROUTE53_ACCESS_KEY_SECRET: ${ROUTE53_ACCESS_KEY_SECRET}
-    ROUTE53_ENDPOINT: ${ROUTE53_ENDPOINT}
   rust-backtrace: &rust-backtrace
     RUST_BACKTRACE: ${RUST_BACKTRACE}
-  s3-env: &s3-env
-    S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
-    S3_ACCESS_KEY_SECRET: ${S3_ACCESS_KEY_SECRET}
-    S3_ENDPOINT: ${S3_ENDPOINT}
-  secretsmanager-env: &secretsmanager-env
-    SECRETSMANAGER_ACCESS_KEY_ID: ${SECRETSMANAGER_ACCESS_KEY_ID}
-    SECRETSMANAGER_ACCESS_KEY_SECRET: ${SECRETSMANAGER_ACCESS_KEY_SECRET}
-    SECRETSMANAGER_ENDPOINT: ${SECRETSMANAGER_ENDPOINT}
-  sns-env: &sns-env
-    SNS_ACCESS_KEY_ID: ${SNS_ACCESS_KEY_ID}
-    SNS_ACCESS_KEY_SECRET: ${SNS_ACCESS_KEY_SECRET}
-    SNS_ENDPOINT: ${SNS_ENDPOINT}
-  sqs-env: &sqs-env
-    SQS_ACCESS_KEY_ID: ${SQS_ACCESS_KEY_ID}
-    SQS_ACCESS_KEY_SECRET: ${SQS_ACCESS_KEY_SECRET}
-    SQS_ENDPOINT: ${SQS_ENDPOINT}
-  ssm-env: &ssm-env
-    SSM_ACCESS_KEY_ID: ${SSM_ACCESS_KEY_ID}
-    SSM_ACCESS_KEY_SECRET: ${SSM_ACCESS_KEY_SECRET}
-    SSM_ENDPOINT: ${SSM_ENDPOINT}
+  zookeeper-env: &zookeeper-env
+    ZOOKEEPER_CLIENT_PORT: ${ZOOKEEPER_PORT}
+    ZOOKEEPER_TICK_TIME: 2000
 
 services:
   ########################################################################
@@ -96,6 +75,31 @@ services:
         aliases:
           - ${DGRAPH_HOST}
 
+  zookeeper:
+    image: confluentinc/cp-zookeeper:6.2.0
+    environment:
+      <<: *zookeeper-env
+    healthcheck:
+      test: ["CMD", "echo", "ruok", "|", "nc", "-w", "2", "-q", "2", "localhost", "${ZOOKEEPER_PORT}", "|", "grep", "imok"]
+      retries: 5
+      interval: 5s
+      timeout: 30s
+      start_period: 15s
+
+  kafka-broker:
+    image: confluentinc/cp-kafka:6.2.0
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "nc", "-vz", "kafka-broker", "${KAFKA_BROKER_PORT}"]
+      retries: 5
+      interval: 5s
+      timeout: 30s
+      start_period: 15s
+    environment:
+      <<: *kafka-broker-env
+
   # dev uses 1 big redis instance, prod has 1:1 redis per grapl
   # service... maybe transitory, this will eventually match prod
   redis:
@@ -117,8 +121,6 @@ services:
           - ${REDIS_HOST}
 
   localstack:
-    # TODO: 0.12.11 is the one we want once it's released; until then
-    # we need an unreleased fix for lambda invocation
     image: localstack/localstack:0.12.11
     ports:
       # We'll expose localstack's edge port for ease of use with
@@ -173,15 +175,13 @@ services:
     image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
     tty: false
     environment:
-      <<: *aws-region
-      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-sysmon-generator-dead-letter-queue"
+      <<: *aws-env
+      DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-sysmon-generator-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-unid-subgraphs-generated-bucket"
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
       <<: *log-level
-      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/000000000000/${DEPLOYMENT_NAME}-sysmon-generator-retry-queue"
-      <<: *s3-env
-      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/000000000000/${DEPLOYMENT_NAME}-sysmon-generator-queue"
-      <<: *sqs-env
+      RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/000000000000/${DEPLOYMENT_NAME}-sysmon-generator-retry-queue"
+      SOURCE_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/000000000000/${DEPLOYMENT_NAME}-sysmon-generator-queue"
       <<: *rust-backtrace
     depends_on:
       provisioner:
@@ -195,16 +195,14 @@ services:
     image: grapl/grapl-osquery-subgraph-generator:${TAG:-latest}
     tty: false
     environment:
-      <<: *aws-region
+      <<: *aws-env
       DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
-      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-dead-letter-queue"
+      DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-unid-subgraphs-generated-bucket"
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
       <<: *log-level
-      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-retry-queue"
-      <<: *s3-env
-      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-queue"
-      <<: *sqs-env
+      RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-retry-queue"
+      SOURCE_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-queue"
       <<: *rust-backtrace
     depends_on:
       provisioner:
@@ -217,17 +215,14 @@ services:
   grapl-node-identifier:
     image: grapl/grapl-node-identifier:${TAG:-latest}
     environment:
-      <<: *aws-region
-      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
+      <<: *aws-env
+      DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-subgraphs-generated-bucket"
-      <<: *dynamodb-env
       <<: *dynamodb-mapping-tables
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
       <<: *log-level
-      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-retry-queue"
-      <<: *s3-env
-      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-queue"
-      <<: *sqs-env
+      RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-retry-queue"
+      SOURCE_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-queue"
       <<: *rust-backtrace
     tty: false
     depends_on:
@@ -241,17 +236,14 @@ services:
   grapl-node-identifier-retry-handler:
     image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
     environment:
-      <<: *aws-region
-      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
+      <<: *aws-env
+      DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-subgraphs-generated-bucket"
-      <<: *dynamodb-env
       <<: *dynamodb-mapping-tables
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
       <<: *log-level
-      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
-      <<: *s3-env
-      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-retry-queue"
-      <<: *sqs-env
+      RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
+      SOURCE_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-retry-queue"
       <<: *rust-backtrace
     tty: false
     depends_on:
@@ -265,18 +257,15 @@ services:
   grapl-graph-merger:
     image: grapl/grapl-graph-merger:${TAG:-latest}
     environment:
-      <<: *aws-region
-      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-dead-letter-queue"
+      <<: *aws-env
+      DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-subgraphs-merged-bucket"
       <<: *dgraph-env
-      <<: *dynamodb-env
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
       GRAPL_SCHEMA_TABLE: "${DEPLOYMENT_NAME}-grapl_schema_table"
       <<: *log-level
-      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-retry-queue"
-      <<: *s3-env
-      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-queue"
-      <<: *sqs-env
+      RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-retry-queue"
+      SOURCE_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-queue"
       <<: *rust-backtrace
     tty: false
     depends_on:
@@ -293,14 +282,12 @@ services:
     image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
     environment:
       ANALYZER_BUCKET: "${DEPLOYMENT_NAME}-analyzers-bucket"
-      <<: *aws-region
-      DEAD_LETTER_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-dead-letter-queue"
+      <<: *aws-env
+      DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-dispatched-analyzer-bucket"
       <<: *log-level
-      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-retry-queue"
-      <<: *s3-env
-      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-queue"
-      <<: *sqs-env
+      RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-retry-queue"
+      SOURCE_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-queue"
       <<: *rust-backtrace
     tty: false
     depends_on:
@@ -314,7 +301,7 @@ services:
   grapl-analyzer-executor:
     image: grapl/grapl-analyzer-executor:${TAG:-latest}
     environment:
-      <<: *aws-region
+      <<: *aws-env
       DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
       DEBUG_SERVICES: "${DEBUG_SERVICES:-}"
       <<: *dgraph-env
@@ -325,10 +312,8 @@ services:
       <<: *log-level
       MESSAGECACHE_ADDR: "${REDIS_HOST}"
       MESSAGECACHE_PORT: "${REDIS_PORT}"
-      RETRY_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-executor-retry-queue"
-      <<: *s3-env
-      SOURCE_QUEUE_URL: "${SQS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-executor-queue"
-      <<: *sqs-env
+      RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-executor-retry-queue"
+      SOURCE_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-executor-queue"
       VSC_DEBUGGER_PORT: "${VSC_DEBUGGER_PORT_FOR_ANALYZER_EXECUTOR}"
     tty: true
     ports:
@@ -355,13 +340,10 @@ services:
           --port=${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}
       '
     environment:
-      <<: *aws-region
+      <<: *aws-env
       <<: *dgraph-env
-      <<: *dynamodb-env
       IS_LOCAL: "True"
       <<: *log-level
-      <<: *s3-env
-      <<: *secretsmanager-env
       UX_BUCKET_URL: "localhost"
     tty: true
     depends_on:
@@ -423,8 +405,7 @@ services:
     command: |
       /bin/bash -c "./upload_local.sh"
     environment:
-      <<: *aws-region
-      <<: *s3-env
+      <<: *aws-env
     depends_on:
       provisioner:
         condition: service_completed_successfully
@@ -433,16 +414,13 @@ services:
     image: grapl/grapl-graphql-endpoint:${TAG:-latest}
     command: bash -c "./start_potentially_with_debugger.sh"
     environment:
-      <<: *aws-region
+      <<: *aws-env
       <<: *dgraph-env
-      <<: *dynamodb-env
       IS_LOCAL: "True"
       JWT_SECRET_ID: "JWT_SECRET_ID"
       PORT: ${GRAPL_GRAPHQL_PORT}
       GRAPL_SCHEMA_PROPERTIES_TABLE: "${DEPLOYMENT_NAME}-grapl_schema_properties_table"
       GRAPL_SCHEMA_TABLE: "${DEPLOYMENT_NAME}-grapl_schema_table"
-      <<: *dynamodb-env
-      <<: *secretsmanager-env
       DEBUG_SERVICES: "${DEBUG_SERVICES:-}"
       VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT: "${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}"
     depends_on:
@@ -507,6 +485,8 @@ services:
     depends_on:
       localstack:
         condition: service_healthy
+      kafka-broker:
+        condition: service_healthy
 
   provisioner:
     image: grapl/provisioner:${TAG:-latest}
@@ -515,21 +495,9 @@ services:
           python -c 'import lambdex_handler; lambdex_handler.handler(None, None)'
       "
     environment:
-      <<: *aws-region
+      <<: *aws-env
       <<: *dgraph-env
-      <<: *dynamodb-env
-      <<: *secretsmanager-env
-      <<: *sqs-env
-      <<: *sns-env
-      <<: *ec2-env
-      <<: *ssm-env
-      <<: *cloudwatch-env
-      <<: *lambda-env
-      <<: *route53-env
-      <<: *s3-env
       GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-INFO}"
-      AWS_ACCESS_KEY_ID: "${FAKE_AWS_ACCESS_KEY_ID}"
-      AWS_SECRET_ACCESS_KEY: "${FAKE_AWS_SECRET_ACCESS_KEY}"
       DEPLOYMENT_NAME: "${DEPLOYMENT_NAME}"
       GRAPL_TEST_USER_NAME: "${DEPLOYMENT_NAME}-grapl-test-user"
     tty: true
@@ -540,50 +508,6 @@ services:
         condition: service_healthy
       grapl-pulumi:
         condition: service_completed_successfully
-
-  zookeeper:
-    image: confluentinc/cp-zookeeper:latest
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-
-  kafka-provision:
-    image: confluentinc/cp-kafka:latest
-    command: |
-      /bin/bash -c "! kafka-topics \
-                    --create \
-                    --zookeeper \
-                    zookeeper:2181 \
-                    --replication-factor 1 \
-                    --partitions 1 \
-                    --topic test-topic \
-                    --if-not-exists
-      "
-    restart: on-failure
-    depends_on:
-      kafka:
-        condition: service_healthy
-
-  kafka:
-    image: confluentinc/cp-kafka:latest
-    depends_on:
-      - zookeeper
-    restart: on-failure
-    healthcheck:
-      test: ["CMD", "nc", "-vz", "kafka", "9092"]
-      retries: 5
-      interval: 5s
-      timeout: 10s
-      start_period: 15s
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://kafka:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-
-
 
 networks:
   default:

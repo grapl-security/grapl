@@ -1,5 +1,5 @@
 [GLOBAL]
-pants_version = "2.5.1rc0"
+pants_version = "2.5.1rc3"
 backend_packages = [
   "pants.backend.awslambda.python",
   "pants.backend.codegen.protobuf.python",
@@ -26,7 +26,7 @@ pants_ignore = [
 ]
 
 plugins = [
-  "toolchain.pants.plugin==0.12.0"
+  "toolchain.pants.plugin==0.13.0"
 ]
 
 remote_cache_read = true

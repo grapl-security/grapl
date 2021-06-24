@@ -5,7 +5,6 @@ use grapl_observe::metric_reporter::{
     MetricReporter,
     TagPair,
 };
-use log::*;
 
 pub enum Status {
     Success,
@@ -45,6 +44,7 @@ impl SysmonSubgraphGeneratorMetrics {
 }
 
 impl SysmonSubgraphGeneratorMetrics {
+    #[tracing::instrument(skip(self, event_result))]
     pub fn report_handle_event_success<T, E>(
         &mut self,
         event_result: &Result<T, Result<(T, E), E>>,
@@ -56,9 +56,10 @@ impl SysmonSubgraphGeneratorMetrics {
                 1.0,
                 &[TagPair(common_strs::STATUS, status.to_str())],
             )
-            .unwrap_or_else(|e| warn!("Metric failed: {}", e))
+            .unwrap_or_else(|e| tracing::warn!(message="Metric failed.", error=?e))
     }
 
+    #[tracing::instrument(skip(self, result))]
     pub fn report_subgraph_generation<T, E>(&mut self, result: &Result<T, E>) {
         let status = match result {
             Ok(_) => common_strs::SUCCESS,
@@ -71,6 +72,6 @@ impl SysmonSubgraphGeneratorMetrics {
                 1.0,
                 &[TagPair(common_strs::STATUS, status)],
             )
-            .unwrap_or_else(|e| warn!("Metric failed: {}", e))
+            .unwrap_or_else(|e| tracing::warn!(message="Metric failed.", error=?e))
     }
 }

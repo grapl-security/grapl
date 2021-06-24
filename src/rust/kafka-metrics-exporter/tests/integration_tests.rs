@@ -22,7 +22,7 @@ mod integration_tests {
     use tokio_stream::StreamExt;
 
     fn producer_init() -> Result<FutureProducer, Box<dyn std::error::Error>> {
-        let brokers = "kafka:9092";
+        let brokers = "kafka-broker:9092";
         let mut client_config = rdkafka::ClientConfig::new();
         client_config
             .set("client.id", "test-producer")
@@ -37,7 +37,7 @@ mod integration_tests {
     fn consumer_init(
     ) -> Result<StreamConsumer<DefaultConsumerContext, DefaultRuntime>, Box<dyn std::error::Error>>
     {
-        let brokers = "kafka:9092";
+        let brokers = "kafka-broker:9092";
         let mut client_config = rdkafka::ClientConfig::new();
         client_config
             .set("group.id", "integration-tests-consumers")
@@ -54,7 +54,7 @@ mod integration_tests {
 
         let consumer = StreamConsumer::from_config(&client_config)?;
         consumer
-            .subscribe(&["test-topic"])
+            .subscribe(&["metrics"])
             .expect("Can't subscribe to specified topic");
         Ok(consumer)
     }
@@ -68,10 +68,10 @@ mod integration_tests {
             .finish();
         let _ = ::tracing::subscriber::set_global_default(subscriber);
 
-        tracing::info!(topic_name = "test-topic", message = "Starting smoketest");
+        tracing::info!(topic_name = "metrics", message = "Starting smoketest");
         let producer: FutureProducer = producer_init()?;
-        KafkaMetricExporterBuilder::new("test-topic", producer).install()?;
-        tracing::info!(topic_name = "test-topic", message = "Created producer");
+        KafkaMetricExporterBuilder::new("metrics", producer).install()?;
+        tracing::info!(topic_name = "metrics", message = "Created producer");
 
         histogram!("process.query_time", 1234f64);
         counter!("process.query_row_count", 1000);

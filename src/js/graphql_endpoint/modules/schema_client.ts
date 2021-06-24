@@ -4,14 +4,14 @@ import * as util_dynamodb from "@aws-sdk/util-dynamodb";
 import * as aws_types from "@aws-sdk/types";
 
 function getDynamodbClient() {
-    if ("DYNAMODB_ENDPOINT" in process.env) {
+    if ("GRAPL_AWS_ENDPOINT" in process.env) {
         // Running locally
         const credentials: aws_types.Credentials = {
-            accessKeyId: process.env.DYNAMODB_ACCESS_KEY_ID,
-            secretAccessKey: process.env.DYNAMODB_ACCESS_KEY_SECRET,
+            accessKeyId: process.env.GRAPL_AWS_ACCESS_KEY_ID,
+            secretAccessKey: process.env.GRAPL_AWS_ACCESS_KEY_SECRET,
         };
         return new dynamodb.DynamoDB({
-            endpoint: process.env.DYNAMODB_ENDPOINT,
+            endpoint: process.env.GRAPL_AWS_ENDPOINT,
             credentials: credentials,
         });
     } else {
