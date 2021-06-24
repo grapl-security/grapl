@@ -1,7 +1,3 @@
-#![allow(non_camel_case_types)]
-
-use std::convert::TryFrom;
-
 use endpoint_plugin::{
     AssetNode,
     FileNode,
@@ -15,14 +11,21 @@ use serde::{
 };
 
 use super::from_str;
-use crate::parsers::{
-    OSQueryResponse,
-    PartiallyDeserializedOSQueryLog,
-};
+use crate::parsers::OSQueryAction;
+
+#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
+#[serde(rename_all = "camelCase")]
+pub struct FileEvent {
+    host_identifier: String,
+    calendar_time: String,
+    unix_time: u64,
+    action: OSQueryAction,
+    columns: FileEventColumns,
+}
 
 /// See https://osquery.io/schema/4.5.0/#processes
-#[derive(Serialize, Deserialize)]
-pub(crate) struct OSQueryFileQuery {
+#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
+pub struct FileEventColumns {
     target_path: String,
     action: OSQueryFileAction,
     inode: String,
@@ -34,7 +37,7 @@ pub(crate) struct OSQueryFileQuery {
     time: u64,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub(crate) enum OSQueryFileAction {
     Accessed,
@@ -47,17 +50,11 @@ pub(crate) enum OSQueryFileAction {
     Opened,
 }
 
-impl PartiallyDeserializedOSQueryLog {
-    pub(crate) fn to_graph_from_grapl_files(self) -> Result<GraphDescription, failure::Error> {
-        OSQueryResponse::<OSQueryFileQuery>::try_from(self)
-            .map(|response| GraphDescription::try_from(response))?
-    }
-}
+impl From<FileEvent> for GraphDescription {
+    #[tracing::instrument]
+    fn from(file_event: FileEvent) -> Self {
+        tracing::trace!(message = "Building Graph from FileEvent.");
 
-impl TryFrom<OSQueryResponse<OSQueryFileQuery>> for GraphDescription {
-    type Error = failure::Error;
-
-    fn try_from(file_event: OSQueryResponse<OSQueryFileQuery>) -> Result<Self, Self::Error> {
         let mut graph = GraphDescription::new();
 
         let mut asset = AssetNode::new(AssetNode::static_strategy());
@@ -94,6 +91,24 @@ impl TryFrom<OSQueryResponse<OSQueryFileQuery>> for GraphDescription {
         graph.add_node(asset);
         graph.add_node(subject_file);
 
-        Ok(graph)
+        graph
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::parsers::OSQueryEvent;
+
+    #[test]
+    fn parse_pack_grapl_files_json() {
+        let test_json = std::fs::read_to_string("sample_data/unit/pack_grapl_files.json")
+            .expect("unable to read test file.");
+
+        let event: OSQueryEvent =
+            serde_json::from_str(&test_json).expect("serde_json::from_str failed.");
+        match event {
+            OSQueryEvent::File(_) => {}
+            _ => panic!("expected OSQueryEvent::File"),
+        };
     }
 }

@@ -45,9 +45,8 @@ fn bench_osquery_generator_1000_events(c: &mut Criterion) {
 
         NdjsonDecoder::default()
             .decode(test_data_bytes)
-            .expect("Failed to decompress raw data.") // error only occurs on decompression
+            .expect("Failed to decode raw data.") // error only occurs on decompression
             .into_iter()
-            .filter(|log| log.is_ok())
             .take(1_000)
             .collect()
     });

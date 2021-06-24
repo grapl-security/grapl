@@ -1,15 +1,9 @@
-use std::sync::Arc;
-
 use grapl_service::decoder::NdjsonDecoder;
 use sqs_executor::event_decoder::PayloadDecoder;
 use tokio::fs;
 
-use crate::parsers::PartiallyDeserializedOSQueryLog;
-
 #[cfg(test)]
-pub(crate) async fn read_osquery_test_data(
-    path: &str,
-) -> Vec<Result<PartiallyDeserializedOSQueryLog, Arc<serde_json::Error>>> {
+pub(crate) async fn read_osquery_test_data(path: &str) -> Vec<crate::parsers::OSQueryEvent> {
     let file_data = fs::read(format!("sample_data/{}", path))
         .await
         .expect(&format!("Failed to read test data ({}).", path));

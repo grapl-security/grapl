@@ -1,0 +1,15 @@
+{
+    "name": "pack_grapl_process-files",
+    "hostIdentifier": "ip-172-31-46-189.us-east-2.compute.internal",
+    "calendarTime": "Thu Oct 22 21:05:20 2020 UTC",
+    "unixTime": 1603400720,
+    "epoch": 0,
+    "counter": 19,
+    "numerics": false,
+    "columns": {
+        "fd": "4",
+        "path": "/var/osquery/osquery.db/LOCK",
+        "pid": "9214"
+    },
+    "action": "removed"
+}
