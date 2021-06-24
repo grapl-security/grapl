@@ -61,7 +61,7 @@ impl<C> EventHandler for SysmonSubgraphGenerator<C>
 where
     C: Cache + Clone + Send + Sync + 'static,
 {
-    type InputEvent = Vec<Result<sysmon::Event, crate::serialization::SysmonDecoderError>>;
+    type InputEvent = Vec<sysmon::Event>;
     type OutputEvent = GraphDescription;
     type Error = SysmonGeneratorError;
 
@@ -76,23 +76,12 @@ where
             num_events = events.len()
         );
 
-        let deserialized_events: Vec<_> = events
-            .into_iter()
-            .filter_map(|event| match event {
-                Ok(event) => Some(event),
-                Err(error) => {
-                    tracing::error!(message="Deserialization error.", error=?error);
-                    None
-                }
-            })
-            .collect();
-
         // Skip events we've successfully processed and stored in the event cache.
-        let deserialized_events = self.cache.filter_cached(&deserialized_events).await;
+        let events = self.cache.filter_cached(&events).await;
 
         let mut last_error: Option<SysmonGeneratorError> = None;
 
-        let subgraphs: Vec<_> = deserialized_events
+        let subgraphs: Vec<_> = events
             .into_iter()
             .filter_map(|event| {
                 let result = GraphDescription::try_from(event.clone());
