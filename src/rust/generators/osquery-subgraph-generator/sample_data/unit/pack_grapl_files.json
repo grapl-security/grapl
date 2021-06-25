@@ -1,0 +1,29 @@
+{
+    "name": "pack_grapl_files",
+    "hostIdentifier": "ip-172-31-46-189.us-east-2.compute.internal",
+    "calendarTime": "Thu Oct 22 21:05:26 2020 UTC",
+    "unixTime": 1603400726,
+    "epoch": 0,
+    "counter": 0,
+    "numerics": false,
+    "columns": {
+        "action": "ACCESSED",
+        "atime": "1599180507",
+        "category": "temp",
+        "ctime": "1603395939",
+        "gid": "0",
+        "hashed": "0",
+        "inode": "101",
+        "md5": "",
+        "mode": "1777",
+        "mtime": "1603395939",
+        "sha1": "",
+        "sha256": "",
+        "size": "4096",
+        "target_path": "/tmp/",
+        "time": "1603395948",
+        "transaction_id": "0",
+        "uid": "0"
+    },
+    "action": "removed"
+}

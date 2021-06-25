@@ -1,5 +1,3 @@
-use std::convert::TryFrom;
-
 use endpoint_plugin::{
     AssetNode,
     FileNode,
@@ -15,15 +13,20 @@ use serde::{
 };
 
 use super::from_str;
-use crate::parsers::{
-    OSQueryAction,
-    OSQueryResponse,
-    PartiallyDeserializedOSQueryLog,
-};
+use crate::parsers::OSQueryAction;
 
-/// See https://osquery.io/schema/4.5.0/#processes
-#[derive(Serialize, Deserialize)]
-pub(crate) struct OSQueryProcessFileQuery {
+#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
+#[serde(rename_all = "camelCase")]
+pub struct ProcessFileInteractionEvent {
+    host_identifier: String,
+    calendar_time: String,
+    unix_time: u64,
+    action: OSQueryAction,
+    columns: ProcessFileInteractionEventColumns,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Hash)]
+pub struct ProcessFileInteractionEventColumns {
     #[serde(deserialize_with = "from_str")]
     fd: u64,
     path: String,
@@ -31,21 +34,11 @@ pub(crate) struct OSQueryProcessFileQuery {
     pid: u64,
 }
 
-impl PartiallyDeserializedOSQueryLog {
-    pub(crate) fn to_graph_from_grapl_process_file(
-        self,
-    ) -> Result<GraphDescription, failure::Error> {
-        OSQueryResponse::<OSQueryProcessFileQuery>::try_from(self)
-            .map(|response| GraphDescription::try_from(response))?
-    }
-}
+impl From<ProcessFileInteractionEvent> for GraphDescription {
+    #[tracing::instrument]
+    fn from(process_file_event: ProcessFileInteractionEvent) -> Self {
+        tracing::trace!(message = "Building Graph from ProcessFileInteractionEvent.");
 
-impl TryFrom<OSQueryResponse<OSQueryProcessFileQuery>> for GraphDescription {
-    type Error = failure::Error;
-
-    fn try_from(
-        process_file_event: OSQueryResponse<OSQueryProcessFileQuery>,
-    ) -> Result<Self, Self::Error> {
         let mut graph = GraphDescription::new();
 
         let mut asset = AssetNode::new(AssetNode::static_strategy());
@@ -104,6 +97,24 @@ impl TryFrom<OSQueryResponse<OSQueryProcessFileQuery>> for GraphDescription {
         graph.add_node(file);
         graph.add_node(process);
 
-        Ok(graph)
+        graph
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::parsers::OSQueryEvent;
+
+    #[test]
+    fn parse_pack_grapl_process_files_json() {
+        let test_json = std::fs::read_to_string("sample_data/unit/pack_grapl_process-files.json")
+            .expect("unable to read test file.");
+
+        let event: OSQueryEvent =
+            serde_json::from_str(&test_json).expect("serde_json::from_str failed.");
+        match event {
+            OSQueryEvent::ProcessFileAction(_) => {}
+            _ => panic!("expected OSQueryEvent::ProcessFileAction"),
+        };
     }
 }
