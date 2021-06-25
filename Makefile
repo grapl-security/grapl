@@ -256,7 +256,7 @@ test-with-env: # (Do not include help text - not to be used directly)
 		# Unset COMPOSE_FILE to help ensure it will be ignored with use of --file
 		unset COMPOSE_FILE
 		etc/ci_scripts/dump_artifacts.py --compose-project=${COMPOSE_PROJECT_NAME}
-		docker-compose --file docker-compose.yml stop;
+		$(MAKE) down
 	}
 	# Ensure we call stop even after test failure, and return exit code from
 	# the test, not the stop command.
