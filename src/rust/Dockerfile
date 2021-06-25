@@ -70,7 +70,7 @@ RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
       test) \
         cargo test --no-run ;; \
       test-integration) \
-        cargo test --features node-identifier/integration,sqs-executor/integration --test "*" --no-run ;; \
+        cargo test --features node-identifier/integration,sqs-executor/integration,kafka-metrics-exporter/integration --test "*" --no-run ;; \
       *) \
         echo "ERROR: Unknown RUST_BUILD option: ${RUST_BUILD}"; \
         exit 1 ;; \
