@@ -145,9 +145,13 @@ pub mod test {
 
             std::thread::spawn(move || {
                 let rt = tokio::runtime::Runtime::new().expect("failed to init runtime");
+                let mg_alpha = grapl_config::mg_alphas()
+                    .pop()
+                    .expect("Dgraph Alpha not specified.");
+
                 rt.block_on(async {
-                    let dgraph_client = DgraphClient::new("http://127.0.0.1:9080")
-                        .expect("Failed to create dgraph client.");
+                    let dgraph_client =
+                        DgraphClient::new(mg_alpha).expect("Failed to create dgraph client.");
 
                     dgraph_client
                         .alter(dgraph_tonic::Operation {
@@ -174,10 +178,13 @@ pub mod test {
     #[tokio::test(flavor = "multi_thread")]
     async fn test_upsert_edge_and_retrieve() -> Result<(), Box<dyn std::error::Error>> {
         init_test_env();
+        let mg_alpha = grapl_config::mg_alphas()
+            .pop()
+            .expect("Dgraph Alpha not specified.");
+
         let mut identified_graph = IdentifiedGraph::new();
         let mut merged_graph = MergedGraph::new();
-        let dgraph_client =
-            DgraphClient::new("http://127.0.0.1:9080").expect("Failed to create dgraph client.");
+        let dgraph_client = DgraphClient::new(mg_alpha).expect("Failed to create dgraph client.");
         let dgraph_client = std::sync::Arc::new(dgraph_client);
         let mut properties = HashMap::new();
         properties.insert(
@@ -269,9 +276,11 @@ pub mod test {
     #[tokio::test(flavor = "multi_thread")]
     async fn test_upsert_idempotency() -> Result<(), Box<dyn std::error::Error>> {
         init_test_env();
+        let mg_alpha = grapl_config::mg_alphas()
+            .pop()
+            .expect("Dgraph Alpha not specified.");
 
-        let dgraph_client =
-            DgraphClient::new("http://127.0.0.1:9080").expect("Failed to create dgraph client.");
+        let dgraph_client = DgraphClient::new(mg_alpha).expect("Failed to create dgraph client.");
         let dgraph_client = std::sync::Arc::new(dgraph_client);
 
         let node_key = "test_upsert_idempotency-example-node-key";
@@ -348,9 +357,11 @@ pub mod test {
     #[tokio::test(flavor = "multi_thread")]
     async fn test_upsert_multifield() -> Result<(), Box<dyn std::error::Error>> {
         init_test_env();
+        let mg_alpha = grapl_config::mg_alphas()
+            .pop()
+            .expect("Dgraph Alpha not specified.");
 
-        let dgraph_client =
-            DgraphClient::new("http://127.0.0.1:9080").expect("Failed to create dgraph client.");
+        let dgraph_client = DgraphClient::new(mg_alpha).expect("Failed to create dgraph client.");
         let dgraph_client = std::sync::Arc::new(dgraph_client);
 
         let node_key = "test_upsert_multifield-example-node-key";
