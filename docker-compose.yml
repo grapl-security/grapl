@@ -121,13 +121,13 @@ services:
           - ${REDIS_HOST}
 
   localstack:
-    image: localstack/localstack:0.12.11
+    image: localstack/localstack:latest # When it's released, pin to 0.12.14
     ports:
       # We'll expose localstack's edge port for ease of use with
       # things like the AWS CLI, Pulumi, etc.
       - 127.0.0.1:${LOCALSTACK_PORT}:${LOCALSTACK_PORT}
     environment:
-      - IMAGE_NAME=localstack/localstack:0.12.11
+      - IMAGE_NAME=localstack/localstack:latest # When it's released, pin to 0.12.14
       - EDGE_PORT=${LOCALSTACK_PORT}
       - HOSTNAME_EXTERNAL=${LOCALSTACK_HOST}
       - SERVICES=apigateway,cloudwatch,dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs
