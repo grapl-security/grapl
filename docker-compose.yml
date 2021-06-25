@@ -88,12 +88,6 @@ services:
 
   kafka-broker:
     image: confluentinc/cp-kafka:6.2.0
-    command: |
-      sh -c "
-        # Same hack we use to disable persistence in the Redis container
-        rm -rf /var/lib/kafka/data/* &&
-        /etc/confluent/docker/run
-      "
     depends_on:
       zookeeper:
         condition: service_healthy
