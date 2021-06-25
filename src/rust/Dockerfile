@@ -4,6 +4,15 @@ ARG RUST_BUILD=debug
 
 SHELL ["/bin/bash", "-c"]
 
+# Necessary for rdkafka
+RUN --mount=type=cache,target=/var/lib/apt/lists \
+    apt-get update && apt-get install -y --no-install-recommends \
+        python3 \
+        cmake \
+        libzstd-dev \
+        build-essential \
+        zlib1g-dev
+
 # Install rust toolchain before copying sources to avoid unecessarily
 # resinstalling on source file changes.
 WORKDIR /grapl
@@ -23,15 +32,6 @@ WORKDIR /grapl/rust
 # build
 ################################################################################
 FROM base AS build
-
-# Necessary for rdkafka
-RUN --mount=type=cache,target=/var/lib/apt/lists \
-    apt-get update && apt-get install -y --no-install-recommends \
-        python3 \
-        cmake \
-        libzstd-dev \
-        build-essential \
-        zlib1g-dev
 
 RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/registry \
@@ -61,15 +61,6 @@ RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
 # if we don't have to.
 ################################################################################
 FROM base AS build-test
-
-# Necessary for rdkafka
-RUN --mount=type=cache,target=/var/lib/apt/lists \
-    apt-get update && apt-get install -y --no-install-recommends \
-        python3 \
-        cmake \
-        libzstd-dev \
-        build-essential \
-        zlib1g-dev
 
 RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/registry \
@@ -101,12 +92,7 @@ FROM build AS metric-forwarder-zip
 
 RUN --mount=type=cache,target=/var/lib/apt/lists \
     apt-get update && apt-get install -y --no-install-recommends \
-        zip \
-        python3 \
-        cmake \
-        libzstd-dev \
-        build-essential \
-        zlib1g-dev
+        zip
 
 RUN mkdir -p /grapl/zips; \
     grapl-zip() { \
