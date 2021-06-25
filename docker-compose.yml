@@ -77,6 +77,12 @@ services:
 
   zookeeper:
     image: confluentinc/cp-zookeeper:6.2.0
+    command: |
+      sh -c "
+        # Same hack we use to disable persistence in the Redis container
+        rm -rf /var/lib/zookeeper/data/* &&
+        /etc/confluent/docker/run
+      "
     environment:
       <<: *zookeeper-env
     healthcheck:
@@ -88,6 +94,12 @@ services:
 
   kafka-broker:
     image: confluentinc/cp-kafka:6.2.0
+    command: |
+      sh -c "
+        # Same hack we use to disable persistence in the Redis container
+        rm -rf /var/lib/kafka/data/* &&
+        /etc/confluent/docker/run
+      "
     depends_on:
       zookeeper:
         condition: service_healthy
@@ -456,12 +468,12 @@ services:
     image: grapl/grapl-local-pulumi:${TAG:-latest}
     command: |
       /bin/bash -c "
-         pulumi login --local &&
-         pulumi stack init local-grapl --non-interactive &&
-         pulumi up --yes --skip-preview --stack=local-grapl &&
+        pulumi login --local &&
+        pulumi stack init local-grapl --non-interactive &&
+        pulumi up --yes --skip-preview --stack=local-grapl &&
 
-         # Write the necessary outputs to the shared volume, for access by other containers
-         pulumi stack output prod-api-id > /home/grapl/pulumi-outputs/prod-api-id
+        # Write the necessary outputs to the shared volume, for access by other containers
+        pulumi stack output prod-api-id > /home/grapl/pulumi-outputs/prod-api-id
       "
     # Our local-grapl Pulumi stack is configured to communicate with
     # localhost. By participating in the network namespace of our
