@@ -12,7 +12,7 @@ services:
       target: build-test
       args:
         - RUST_BUILD=test-integration
-    command: cargo test --features sqs-executor/integration,node-identifier/integration,kafka-metrics-exporter/integration --test '*'
+    command: cargo test --features sqs-executor/integration,node-identifier/integration,kafka-metrics-exporter/integration,graph-merger/integration --test '*'
     environment:
       - AWS_REGION
       - DEPLOYMENT_NAME
