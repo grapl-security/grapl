@@ -77,12 +77,6 @@ services:
 
   zookeeper:
     image: confluentinc/cp-zookeeper:6.2.0
-    command: |
-      sh -c "
-        # Same hack we use to disable persistence in the Redis container
-        rm -rf /var/lib/zookeeper/data/* &&
-        /etc/confluent/docker/run
-      "
     environment:
       <<: *zookeeper-env
     healthcheck:
