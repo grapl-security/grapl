@@ -8,8 +8,8 @@ use serde::{
     Deserializer,
 };
 
-mod files;
-mod process_files;
+pub mod files;
+pub mod process_files;
 pub mod processes;
 
 fn from_str<'de, D, T>(deserializer: D) -> Result<T, D::Error>

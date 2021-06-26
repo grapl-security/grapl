@@ -154,17 +154,17 @@ build-test-typecheck:
 	docker buildx bake --file ./test/docker-compose.typecheck-tests.yml
 
 .PHONY: build-test-integration
-build-test-integration: graplctl modern-lambdas build-services
+build-test-integration: modern-lambdas build-services
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.integration-tests.yml
 
 .PHONY: build-test-e2e
-build-test-e2e: graplctl modern-lambdas build-services
+build-test-e2e: modern-lambdas build-services
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.yml
 
 .PHONY: build-services
-build-services: ## Build Grapl services
+build-services: graplctl ## Build Grapl services
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
 
 .PHONY: build-lambdas
@@ -256,7 +256,7 @@ test-with-env: # (Do not include help text - not to be used directly)
 		# Unset COMPOSE_FILE to help ensure it will be ignored with use of --file
 		unset COMPOSE_FILE
 		etc/ci_scripts/dump_artifacts.py --compose-project=${COMPOSE_PROJECT_NAME}
-		docker-compose --file docker-compose.yml stop;
+		$(MAKE) down
 	}
 	# Ensure we call stop even after test failure, and return exit code from
 	# the test, not the stop command.
@@ -329,7 +329,7 @@ up-detach: build-services ## Bring up local Grapl and detach to return control t
 	unset COMPOSE_FILE
 	docker-compose \
 		--file docker-compose.yml \
-		up --detach --force-recreate
+		up --detach --force-recreate --always-recreate-deps
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers

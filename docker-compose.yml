@@ -395,6 +395,11 @@ services:
         # We must wait until Pulumi has created the API gateway so we
         # know what its URL is.
         condition: service_completed_successfully
+      grapl-engagement-view-uploader:
+        # nginx doesn't actually depend on engagement-view-uploader,
+        # but we need *some* service to declare a dependency on the
+        # engagement-view-uploader in order to catch non-0 exit codes
+        condition: service_completed_successfully
     networks:
       default:
         aliases:
@@ -456,12 +461,12 @@ services:
     image: grapl/grapl-local-pulumi:${TAG:-latest}
     command: |
       /bin/bash -c "
-         pulumi login --local &&
-         pulumi stack init local-grapl --non-interactive &&
-         pulumi up --yes --skip-preview --stack=local-grapl &&
+        pulumi login --local &&
+        pulumi stack init local-grapl --non-interactive &&
+        pulumi up --yes --skip-preview --stack=local-grapl &&
 
-         # Write the necessary outputs to the shared volume, for access by other containers
-         pulumi stack output prod-api-id > /home/grapl/pulumi-outputs/prod-api-id
+        # Write the necessary outputs to the shared volume, for access by other containers
+        pulumi stack output prod-api-id > /home/grapl/pulumi-outputs/prod-api-id
       "
     # Our local-grapl Pulumi stack is configured to communicate with
     # localhost. By participating in the network namespace of our

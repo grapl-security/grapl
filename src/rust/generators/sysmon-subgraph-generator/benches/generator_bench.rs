@@ -50,7 +50,6 @@ fn bench_sysmon_generator_1000_events(c: &mut Criterion) {
             .decode(test_data_bytes)
             .expect("Unable to parse sysmon sample data into sysmon events.")
             .into_iter()
-            .filter(|item| item.is_ok())
             .take(1_000)
             .collect()
     });

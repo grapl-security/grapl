@@ -9,6 +9,8 @@ services:
     build:
       context: .
       dockerfile: ./src/python/e2e-test-runner/e2e-test-runner.Dockerfile
+      args:
+        - TAG=${TAG:-latest}
     command: |
       /bin/bash -c "
           graplctl \
