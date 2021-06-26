@@ -154,17 +154,17 @@ build-test-typecheck:
 	docker buildx bake --file ./test/docker-compose.typecheck-tests.yml
 
 .PHONY: build-test-integration
-build-test-integration: graplctl modern-lambdas build-services
+build-test-integration: modern-lambdas build-services
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.integration-tests.yml
 
 .PHONY: build-test-e2e
-build-test-e2e: graplctl modern-lambdas build-services
+build-test-e2e: modern-lambdas build-services
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.yml
 
 .PHONY: build-services
-build-services: ## Build Grapl services
+build-services: graplctl ## Build Grapl services
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
 
 .PHONY: build-lambdas
