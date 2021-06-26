@@ -62,6 +62,8 @@ RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
 ################################################################################
 FROM base AS build-test
 
+ENV RUST_INTEGRATION_TEST_FEATURES="node-identifier/integration,sqs-executor/integration,kafka-metrics-exporter/integration"
+
 RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=secret,id=rust_env,dst=/grapl/env \
@@ -70,7 +72,7 @@ RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
       test) \
         cargo test --no-run ;; \
       test-integration) \
-        cargo test --features node-identifier/integration,sqs-executor/integration,kafka-metrics-exporter/integration --test "*" --no-run ;; \
+        cargo test --features "${RUST_INTEGRATION_TEST_FEATURES}" --test "*" --no-run ;; \
       *) \
         echo "ERROR: Unknown RUST_BUILD option: ${RUST_BUILD}"; \
         exit 1 ;; \
@@ -85,6 +87,8 @@ RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
 
 RUN mv /tmp/target /grapl/rust/target && \
     mv /tmp/registry /usr/local/cargo/registry
+
+CMD [ "bash", "-c", "cargo test --features \"${RUST_INTEGRATION_TEST_FEATURES}\" --test \"*\"" ]
 
 # metric-forwarder-zip
 ################################################################################

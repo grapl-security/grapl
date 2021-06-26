@@ -12,7 +12,8 @@ services:
       target: build-test
       args:
         - RUST_BUILD=test-integration
-    command: cargo test --features sqs-executor/integration,node-identifier/integration,kafka-metrics-exporter/integration --test '*'
+    # Use the default command defined in the Dockerfile for running integration tests.
+    # command: <do not use>
     environment:
       - AWS_REGION
       - DEPLOYMENT_NAME
