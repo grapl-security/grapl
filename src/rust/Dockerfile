@@ -64,6 +64,8 @@ FROM base AS build-test
 
 ENV RUST_INTEGRATION_TEST_FEATURES="node-identifier/integration,sqs-executor/integration,kafka-metrics-exporter/integration"
 
+# At the end of the test run, save the mount cache to the Docker image, as
+# these files are needed for running the integration tests in containers. 
 RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=secret,id=rust_env,dst=/grapl/env \
@@ -76,17 +78,15 @@ RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
       *) \
         echo "ERROR: Unknown RUST_BUILD option: ${RUST_BUILD}"; \
         exit 1 ;; \
-    esac
-
-# Save the mount cache to the Docker image, as these files are needed for
-# running the integration tests in containers. 
-RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
-    --mount=type=cache,target=/usr/local/cargo/registry \
+    esac && \
     cp -a /grapl/rust/target /tmp/target && \
     cp -a /usr/local/cargo/registry /tmp/registry
 
-RUN mv /tmp/target /grapl/rust/target && \
-    mv /tmp/registry /usr/local/cargo/registry
+# Move the files back to where they belong.
+# The mv command is apparently very slow here, cp and rm is much faster
+RUN cp -ar /tmp/target/. /grapl/rust/target/ && \
+    cp -ar /tmp/registry/. /usr/local/cargo/registry/ && \
+    rm -rf /tmp/{target,registry}
 
 CMD [ "bash", "-c", "cargo test --features \"${RUST_INTEGRATION_TEST_FEATURES}\" --test \"*\"" ]
 
