@@ -4,6 +4,15 @@ ARG RUST_BUILD=debug
 
 SHELL ["/bin/bash", "-c"]
 
+# Necessary for rdkafka
+RUN --mount=type=cache,target=/var/lib/apt/lists \
+    apt-get update && apt-get install -y --no-install-recommends \
+        python3 \
+        cmake \
+        libzstd-dev \
+        build-essential \
+        zlib1g-dev
+
 # Install rust toolchain before copying sources to avoid unecessarily
 # resinstalling on source file changes.
 WORKDIR /grapl
@@ -23,15 +32,6 @@ WORKDIR /grapl/rust
 # build
 ################################################################################
 FROM base AS build
-
-# Necessary for rdkafka
-RUN --mount=type=cache,target=/var/lib/apt/lists \
-    apt-get update && apt-get install -y --no-install-recommends \
-        python3 \
-        cmake \
-        libzstd-dev \
-        build-essential \
-        zlib1g-dev
 
 RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/registry \
@@ -62,15 +62,10 @@ RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
 ################################################################################
 FROM base AS build-test
 
-# Necessary for rdkafka
-RUN --mount=type=cache,target=/var/lib/apt/lists \
-    apt-get update && apt-get install -y --no-install-recommends \
-        python3 \
-        cmake \
-        libzstd-dev \
-        build-essential \
-        zlib1g-dev
+ENV RUST_INTEGRATION_TEST_FEATURES="node-identifier/integration,sqs-executor/integration,kafka-metrics-exporter/integration"
 
+# At the end of the test run, save the mount cache to the Docker image, as
+# these files are needed for running the integration tests in containers. 
 RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=secret,id=rust_env,dst=/grapl/env \
@@ -79,21 +74,21 @@ RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
       test) \
         cargo test --no-run ;; \
       test-integration) \
-        cargo test --features node-identifier/integration,sqs-executor/integration --test "*" --no-run ;; \
+        cargo test --features "${RUST_INTEGRATION_TEST_FEATURES}" --test "*" --no-run ;; \
       *) \
         echo "ERROR: Unknown RUST_BUILD option: ${RUST_BUILD}"; \
         exit 1 ;; \
-    esac
-
-# Save the mount cache to the Docker image, as these files are needed for
-# running the integration tests in containers. 
-RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
-    --mount=type=cache,target=/usr/local/cargo/registry \
+    esac && \
     cp -a /grapl/rust/target /tmp/target && \
     cp -a /usr/local/cargo/registry /tmp/registry
 
-RUN mv /tmp/target /grapl/rust/target && \
-    mv /tmp/registry /usr/local/cargo/registry
+# Move the files back to where they belong.
+# The mv command is apparently very slow here, cp and rm is much faster
+RUN cp -ar /tmp/target/. /grapl/rust/target/ && \
+    cp -ar /tmp/registry/. /usr/local/cargo/registry/ && \
+    rm -rf /tmp/{target,registry}
+
+CMD [ "bash", "-c", "cargo test --features \"${RUST_INTEGRATION_TEST_FEATURES}\" --test \"*\"" ]
 
 # metric-forwarder-zip
 ################################################################################
@@ -101,12 +96,7 @@ FROM build AS metric-forwarder-zip
 
 RUN --mount=type=cache,target=/var/lib/apt/lists \
     apt-get update && apt-get install -y --no-install-recommends \
-        zip \
-        python3 \
-        cmake \
-        libzstd-dev \
-        build-essential \
-        zlib1g-dev
+        zip
 
 RUN mkdir -p /grapl/zips; \
     grapl-zip() { \

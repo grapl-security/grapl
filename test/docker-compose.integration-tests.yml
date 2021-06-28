@@ -3,7 +3,8 @@ version: "3.8"
 # environment variable PWD is assumed to be grapl root directory
 
 services:
-  rust-node-identifier-integration-tests:
+
+  rust-integration-tests:
     image: grapl/rust-integration-tests:${TAG:-latest}
     build:
       context: ${PWD}/src
@@ -11,7 +12,8 @@ services:
       target: build-test
       args:
         - RUST_BUILD=test-integration
-    command: cargo test --features node-identifier/integration --test '*'
+    # Use the default command defined in the Dockerfile for running integration tests.
+    # command: <do not use>
     environment:
       - AWS_REGION
       - DEPLOYMENT_NAME
@@ -33,17 +35,6 @@ services:
       - NETWORK_CONNECTION_HISTORY_TABLE=${DEPLOYMENT_NAME}-network_connection_history_table
       - IP_CONNECTION_HISTORY_TABLE=${DEPLOYMENT_NAME}-ip_connection_history_table
       - ASSET_ID_MAPPINGS=${DEPLOYMENT_NAME}-asset_id_mappings
-
-  rust-sqs-executor-integration-tests:
-    image: grapl/rust-integration-tests:${TAG:-latest}
-    build:
-      context: ${PWD}/src
-      dockerfile: rust/Dockerfile
-      target: build-test
-      args:
-        - RUST_BUILD=test-integration
-    command: cargo test --features sqs-executor/integration --test '*'
-    environment:
       - REDIS_ENDPOINT
 
   grapl-analyzerlib-integration-tests:
@@ -103,16 +94,6 @@ services:
       - GRAPL_TEST_USER_NAME
       - IS_LOCAL=True
       - UX_BUCKET_URL="ux_bucket_url"
-
-  kafka-metrics-exporter-integration-tests:
-    image: grapl/kafka-metrics-exporter-test:${TAG:-latest}
-    build:
-      context: ${PWD}/src
-      dockerfile: rust/Dockerfile
-      target: build-test
-      args:
-        - RUST_BUILD=test-integration
-    command: cargo test --features kafka-metrics-exporter/integration --test '*'
 
   # TODO: Re-enable these tests after the following issues are resolved:
   # - https://github.com/grapl-security/issue-tracker/issues/385
