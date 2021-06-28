@@ -36,7 +36,7 @@ LOCAL_GRAPL = DEPLOYMENT_NAME == "local-grapl"
 # that includes the AWS account ID.
 AWS_ACCOUNT_ID = "000000000000" if LOCAL_GRAPL else aws.get_caller_identity().account_id
 
-GLOBAL_LAMBDA_ZIP_TAG = os.getenv("GRAPL_LAMBDA_TAG", "latest")
+GLOBAL_LAMBDA_ZIP_TAG = os.getenv("TAG", "latest")
 """Filename tag for all lambda function ZIP files.
 
 All our lambda function ZIP files currently have a name like:
@@ -45,7 +45,7 @@ All our lambda function ZIP files currently have a name like:
 
 Since all the lambdas share the same tag, we can specify this globally.
 
-Use the environment variable `GRAPL_LAMBDA_TAG` to specify a tag, or
+Use the environment variable `TAG` to specify a tag, or
 leave it unset to use the default value of `latest`.
 
 """
