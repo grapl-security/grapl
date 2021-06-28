@@ -23,7 +23,7 @@ steps:
 
   - label: ":large_blue_square::face_with_symbols_on_mouth: Protobuf Breaking Changes"
     command:
-      - buf breaking --against="${BUILDKITE_REPO}.git" --verbose
+      - "buf breaking --against=https://github.com/grapl-security/grapl.git --verbose"
 
   - label: ":rust: rustfmt"
     command:
