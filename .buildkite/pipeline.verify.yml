@@ -1,6 +1,7 @@
 ---
 env:
   PANTS_CONFIG_FILES: "['pants.toml', 'pants.ci.toml']"
+  TAG: ci-pipeline
 
 # TODO: Cache for JS, Rust deps
 

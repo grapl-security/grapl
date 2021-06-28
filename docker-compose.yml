@@ -484,6 +484,7 @@ services:
         target: /home/grapl/pulumi-outputs
         read_only: false
     environment:
+      TAG:
       PULUMI_CONFIG_PASSPHRASE: local-grapl-passphrase
       # Other environment variables like MG_ALPHAS are passed in via
       # Pulumi.local-grapl.yaml

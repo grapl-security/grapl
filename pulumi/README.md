@@ -95,7 +95,7 @@ This is the directory in which ZIP archives of our lambda functions
 are found. If overriding, an absolute path may be used. If a relative
 path is given, it must be relative to the `pulumi` directory.
 
-## GRAPL_LAMBDA_TAG
+## TAG
 
 Default Value: `latest`
 
