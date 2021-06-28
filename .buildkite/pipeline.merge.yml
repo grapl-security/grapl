@@ -1,0 +1,6 @@
+---
+
+steps:
+  - label: "Hello World :earth_asia::earth_americas::earth_africa:"
+    command:
+      - "echo 'Hello World'"
