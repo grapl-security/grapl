@@ -3,7 +3,6 @@ extern crate chrono;
 #[macro_use]
 extern crate derive_is_enum_variant;
 extern crate serde;
-extern crate serde_derive;
 extern crate serde_xml_rs;
 extern crate uuid;
 
