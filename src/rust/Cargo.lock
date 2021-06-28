@@ -3372,7 +3372,6 @@ dependencies = [
  "failure",
  "serde",
  "serde-xml-rs",
- "serde_derive",
  "uuid",
 ]
 
