@@ -2,7 +2,7 @@ from typing import Optional
 from urllib.parse import urlparse
 
 from infra.api import Api
-from infra.config import DEPLOYMENT_NAME, GLOBAL_LAMBDA_ZIP_TAG, GRAPL_TEST_USER_NAME
+from infra.config import DEPLOYMENT_NAME, GRAPL_TEST_USER_NAME
 from infra.dgraph_cluster import DgraphCluster
 from infra.network import Network
 from infra.secret import JWTSecret, TestUserPassword
@@ -38,7 +38,6 @@ class E2eTestRunner(pulumi.ComponentResource):
         self.function = Lambda(
             name,
             args=PythonLambdaArgs(
-                description=GLOBAL_LAMBDA_ZIP_TAG,
                 handler="lambdex_handler.handler",
                 code_path=code_path_for(name),
                 env={

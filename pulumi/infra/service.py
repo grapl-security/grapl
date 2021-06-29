@@ -25,11 +25,11 @@ class Service(pulumi.ComponentResource):
         self,
         name: str,
         forwarder: MetricForwarder,
-        lambda_description: str,
         lambda_handler_fn: str,
         lambda_code_path: str,
         network: Network,
         env: Mapping[str, Union[str, pulumi.Output[str]]],
+        lambda_description: Optional[str] = None,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         super().__init__("grapl:Service", name, None, opts)

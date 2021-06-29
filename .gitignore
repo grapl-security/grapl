@@ -30,7 +30,6 @@ src/js/engagement_view/.yarn/install-state.gz
 
 # Distribution / packaging
 build/
-dist/
 *.zip
 
 # IDE files
@@ -49,6 +48,7 @@ pyrightconfig.json
 ########################################################################
 /.pants.d/
 /dist/
+!/dist/.gitkeep
 /.pids
 /.pants.workdir.file_lock*
 /.cache

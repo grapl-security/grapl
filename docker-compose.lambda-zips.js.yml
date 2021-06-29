@@ -9,9 +9,7 @@ services:
       dockerfile: js/graphql_endpoint/Dockerfile
       target: graphql-endpoint-zip
     volumes:
-      - ./src/aws-provision/zips:/grapl
+      - ./dist:/grapl
     user: ${UID}:${GID}
     working_dir: /grapl
-    environment:
-      - TAG=${TAG:-latest}
-    command: cp /home/grapl/lambda.zip graphql-endpoint-${TAG:-latest}.zip
+    command: cp /home/grapl/lambda.zip graphql-endpoint-lambda.zip

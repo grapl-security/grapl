@@ -1,7 +1,7 @@
 from typing import Optional
 
 from infra.bucket import Bucket
-from infra.config import GLOBAL_LAMBDA_ZIP_TAG, configurable_envvars
+from infra.config import configurable_envvars
 from infra.ec2 import Ec2Port
 from infra.lambda_ import Lambda, LambdaExecutionRole, PythonLambdaArgs, code_path_for
 from infra.metric_forwarder import MetricForwarder
@@ -30,7 +30,6 @@ class UxRouter(pulumi.ComponentResource):
             name,
             args=PythonLambdaArgs(
                 execution_role=self.role,
-                description=GLOBAL_LAMBDA_ZIP_TAG,
                 handler="lambdex_handler.handler",
                 code_path=code_path_for(name),
                 env={
