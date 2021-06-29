@@ -2,7 +2,7 @@ from typing import Optional
 
 from infra import dynamodb
 from infra.bucket import Bucket
-from infra.config import GLOBAL_LAMBDA_ZIP_TAG, LOCAL_GRAPL, configurable_envvars
+from infra.config import LOCAL_GRAPL, configurable_envvars
 from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
 from infra.ec2 import Ec2Port
@@ -36,7 +36,6 @@ class ModelPluginDeployer(pulumi.ComponentResource):
             name,
             args=PythonLambdaArgs(
                 execution_role=self.role,
-                description=GLOBAL_LAMBDA_ZIP_TAG,
                 handler="lambdex_handler.handler",
                 code_path=code_path_for(name),
                 env={

@@ -4,12 +4,7 @@ from dataclasses import dataclass, field
 from typing import Mapping, Optional, Union
 
 import pulumi_aws as aws
-from infra.config import (
-    DEPLOYMENT_NAME,
-    GLOBAL_LAMBDA_ZIP_TAG,
-    LOCAL_GRAPL,
-    SERVICE_LOG_RETENTION_DAYS,
-)
+from infra.config import DEPLOYMENT_NAME, LOCAL_GRAPL, SERVICE_LOG_RETENTION_DAYS
 from infra.network import Network
 from typing_extensions import Literal
 
@@ -19,16 +14,13 @@ import pulumi
 def code_path_for(lambda_fn: str) -> str:
     """Given the name of a lambda, return the local path of the ZIP archive for that lambda.
 
-    Looks in "<REPOSITORY_ROOT>/src/aws-provision/zips" currently, but
+    Looks in "<REPOSITORY_ROOT>/dist" currently, but
     this can be overridden by setting the `GRAPL_LAMBDA_ZIP_DIR`
     environment variable to an appropriate directory.
 
-    Uses the globally-defined "tag" (see `GLOBAL_LAMBDA_ZIP_TAG`) to
-    put together the appropriate file name.
-
     """
-    root_dir = os.getenv("GRAPL_LAMBDA_ZIP_DIR", "../src/aws-provision/zips")
-    return f"{root_dir}/{lambda_fn}-{GLOBAL_LAMBDA_ZIP_TAG}.zip"
+    root_dir = os.getenv("GRAPL_LAMBDA_ZIP_DIR", "../dist")
+    return f"{root_dir}/{lambda_fn}-lambda.zip"
 
 
 LambdaPackageType = Literal["Zip", "Image"]
@@ -53,9 +45,6 @@ class LambdaArgs:
     """ The path to a local file on disk that contains the code for this
     function."""
 
-    description: str
-    """ Textual description of what this function does. """
-
     runtime: aws.lambda_.Runtime
     """ The lambda runtime to use for this function. """
 
@@ -70,6 +59,9 @@ class LambdaArgs:
 
     env: Mapping[str, Union[str, pulumi.Output[str]]]
     """ Environment variables to set for each function invocation. """
+
+    description: Optional[str] = None
+    """ Textual description of what this function does. """
 
 
 @dataclass(frozen=True)

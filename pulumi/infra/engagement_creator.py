@@ -1,4 +1,4 @@
-from infra.config import GLOBAL_LAMBDA_ZIP_TAG, configurable_envvars
+from infra.config import configurable_envvars
 from infra.dgraph_cluster import DgraphCluster
 from infra.emitter import EventEmitter
 from infra.lambda_ import code_path_for
@@ -20,7 +20,6 @@ class EngagementCreator(Service):
         super().__init__(
             name,
             forwarder=forwarder,
-            lambda_description=GLOBAL_LAMBDA_ZIP_TAG,
             lambda_handler_fn="lambdex_handler.handler",
             lambda_code_path=code_path_for("engagement-creator"),
             network=network,

@@ -2,7 +2,7 @@ import json
 from typing import Optional
 
 import pulumi_aws as aws
-from infra.config import GLOBAL_LAMBDA_ZIP_TAG, configurable_envvars
+from infra.config import configurable_envvars
 from infra.lambda_ import Lambda, LambdaArgs, LambdaExecutionRole, code_path_for
 from infra.network import Network
 
@@ -24,7 +24,6 @@ class MetricForwarder(pulumi.ComponentResource):
         self.function = Lambda(
             name,
             args=LambdaArgs(
-                description=GLOBAL_LAMBDA_ZIP_TAG,
                 execution_role=self.role,
                 runtime=aws.lambda_.Runtime.CUSTOM_AL2,
                 handler="metric-forwarder",

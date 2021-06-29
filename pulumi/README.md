@@ -89,21 +89,11 @@ really stack-specific; they're more general.
 
 ## GRAPL_LAMBDA_ZIP_DIR
 
-Default Value: `../src/aws-provision/zips`
+Default Value: `../dist/`
 
 This is the directory in which ZIP archives of our lambda functions
 are found. If overriding, an absolute path may be used. If a relative
 path is given, it must be relative to the `pulumi` directory.
-
-## TAG
-
-Default Value: `latest`
-
-Currently, our lambda ZIP archives are named as
-`<LAMBDA_NAME>-<TAG>.zip`. Examples might be
-"engagement-creator-v0.0.1.zip" or
-"metric-forwarder-latest.zip". Importantly, all ZIP archives share the
-same value for `TAG`.
 
 [pulumi]: https://pulumi.com
 [ls]: https://localstack.cloud/

@@ -1,7 +1,7 @@
 from typing import Optional
 
 import pulumi_aws as aws
-from infra.config import GLOBAL_LAMBDA_ZIP_TAG, configurable_envvars
+from infra.config import configurable_envvars
 from infra.dgraph_cluster import DgraphCluster
 from infra.ec2 import Ec2Port
 from infra.lambda_ import Lambda, LambdaExecutionRole, PythonLambdaArgs, code_path_for
@@ -30,7 +30,6 @@ class DGraphTTL(pulumi.ComponentResource):
             f"{name}-Handler",
             args=PythonLambdaArgs(
                 execution_role=self.role,
-                description=GLOBAL_LAMBDA_ZIP_TAG,
                 handler="lambdex_handler.handler",
                 code_path=code_path_for(name),
                 env={

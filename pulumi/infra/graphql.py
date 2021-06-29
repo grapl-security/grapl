@@ -3,7 +3,7 @@ from typing import Optional
 import pulumi_aws as aws
 from infra import dynamodb
 from infra.bucket import Bucket
-from infra.config import GLOBAL_LAMBDA_ZIP_TAG, LOCAL_GRAPL
+from infra.config import LOCAL_GRAPL
 from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
 from infra.ec2 import Ec2Port
@@ -36,7 +36,6 @@ class GraphQL(pulumi.ComponentResource):
             name,
             args=LambdaArgs(
                 execution_role=self.role,
-                description=GLOBAL_LAMBDA_ZIP_TAG,
                 handler="server.handler",
                 runtime=aws.lambda_.Runtime.NODE_JS14D_X,
                 code_path=code_path_for(name),

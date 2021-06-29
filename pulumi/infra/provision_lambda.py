@@ -1,7 +1,7 @@
 from typing import Optional
 
 from infra import dynamodb
-from infra.config import DEPLOYMENT_NAME, GLOBAL_LAMBDA_ZIP_TAG
+from infra.config import DEPLOYMENT_NAME
 from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
 from infra.lambda_ import Lambda, LambdaExecutionRole, PythonLambdaArgs, code_path_for
@@ -31,7 +31,6 @@ class Provisioner(pulumi.ComponentResource):
             name,
             args=PythonLambdaArgs(
                 handler="lambdex_handler.handler",
-                description=GLOBAL_LAMBDA_ZIP_TAG,
                 code_path=code_path_for(name),
                 env={
                     "GRAPL_LOG_LEVEL": "DEBUG",

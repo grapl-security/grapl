@@ -2,7 +2,7 @@ from typing import Optional
 
 from infra import dynamodb
 from infra.bucket import Bucket
-from infra.config import GLOBAL_LAMBDA_ZIP_TAG, configurable_envvars
+from infra.config import configurable_envvars
 from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
 from infra.ec2 import Ec2Port
@@ -40,7 +40,6 @@ class EngagementEdge(pulumi.ComponentResource):
             name,
             args=PythonLambdaArgs(
                 handler="lambdex_handler.handler",
-                description=GLOBAL_LAMBDA_ZIP_TAG,
                 code_path=code_path_for(name),
                 env={
                     **configurable_envvars(name, ["GRAPL_LOG_LEVEL"]),
