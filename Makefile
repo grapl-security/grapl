@@ -125,14 +125,6 @@ help: ## Print this help
 .PHONY: build
 build: build-services ## Alias for `services` (default)
 
-.PHONY: build-release
-build-release: ## 'make build-services' with cargo --release
-	$(MAKE) RUST_BUILD=release build-services
-
-.PHONY: build-all
-build-all: ## Build all targets (incl. services, tests, zip)
-	$(WITH_LOCAL_GRAPL_ENV) $(DOCKER_BUILDX_BAKE) $(EVERY_COMPOSE_FILE)
-
 .PHONY: build-test-unit
 build-test-unit:
 	$(DOCKER_BUILDX_BAKE) \
