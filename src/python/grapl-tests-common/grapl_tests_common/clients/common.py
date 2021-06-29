@@ -1,7 +1,9 @@
 import os
 from typing import Optional
 
-IS_LOCAL = bool(os.getenv("IS_LOCAL", default=False))
+from grapl_common.utils.primitive_convertors import to_bool
+
+IS_LOCAL = to_bool(os.getenv("IS_LOCAL", default=False))
 
 
 def endpoint_url(suffix: Optional[str]) -> str:

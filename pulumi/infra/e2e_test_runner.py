@@ -42,6 +42,7 @@ class E2eTestRunner(pulumi.ComponentResource):
                 handler="lambdex_handler.handler",
                 code_path=code_path_for(name),
                 env={
+                    "IS_LOCAL": str(False),
                     "GRAPL_LOG_LEVEL": "DEBUG",
                     "DEPLOYMENT_NAME": DEPLOYMENT_NAME,
                     "GRAPL_TEST_USER_NAME": GRAPL_TEST_USER_NAME,
