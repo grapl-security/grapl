@@ -36,12 +36,13 @@ from grapl_common.env_helpers import (
     get_deployment_name,
 )
 from grapl_common.grapl_logger import get_module_grapl_logger
+from grapl_common.utils.primitive_convertors import to_bool
 
 sys.path.append("/tmp/")
 
 T = TypeVar("T")
 
-IS_LOCAL = bool(os.environ.get("IS_LOCAL", False))
+IS_LOCAL = to_bool(os.environ.get("IS_LOCAL", False))
 
 LOGGER = get_module_grapl_logger(default_log_level="ERROR")
 

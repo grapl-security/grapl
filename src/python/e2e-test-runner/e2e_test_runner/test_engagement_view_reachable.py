@@ -1,12 +1,9 @@
-import os
 from http import HTTPStatus
 from unittest import TestCase
 
 import pytest
 import requests
 from grapl_tests_common.clients.common import endpoint_url
-
-_IS_LOCAL = os.environ["IS_LOCAL"]
 
 
 class EngagementViewScraper:
@@ -28,7 +25,6 @@ class TestEngagementViewReachable(TestCase):
     But - a small smoke test is beneficial here.
     """
 
-    @pytest.mark.skipif(condition=not _IS_LOCAL, reason="currently broken in aws")
     def test_engagement_view_reachable_when_is_local(self) -> None:
         scraper = EngagementViewScraper()
         resp = scraper.get_index()

@@ -50,7 +50,7 @@ services:
       - GRAPL_HTTP_FRONTEND_PORT
       - GRAPL_LOG_LEVEL
       - GRAPL_TEST_USER_NAME
-      - IS_LOCAL="True"
+      - IS_LOCAL=True
       - MG_ALPHAS
       - VSC_DEBUGGER_PORT
     ports:
