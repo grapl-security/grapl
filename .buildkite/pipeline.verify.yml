@@ -101,10 +101,11 @@ steps:
     command:
       - make lint-js
 
-  # TODO: Consider beefy queue
   - label: ":aws-lambda::package: Create Lambda Zips"
     command:
-      - make zip
+      - make lambdas
+    agents:
+      queue: "beefy"
 
   - label: ":hammer: Integration Tests"
     command:

@@ -154,22 +154,18 @@ build-test-typecheck:
 	docker buildx bake --file ./test/docker-compose.typecheck-tests.yml
 
 .PHONY: build-test-integration
-build-test-integration: modern-lambdas build-services
+build-test-integration: lambdas build-services
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.integration-tests.yml
 
 .PHONY: build-test-e2e
-build-test-e2e: modern-lambdas build-services
+build-test-e2e: lambdas build-services
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.yml
 
 .PHONY: build-services
 build-services: graplctl ## Build Grapl services
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
-
-.PHONY: build-lambdas
-build-lambdas: ## Build services for Grapl in AWS (subset of all services)
-	$(DOCKER_BUILDX_BAKE) $(EVERY_LAMBDA_COMPOSE_FILE)
 
 .PHONY: build-formatter
 build-formatter:
@@ -186,6 +182,23 @@ graplctl: ## Build graplctl and install it to the project root
 .PHONY: build-ux
 build-ux: ## Build website assets
 	cd src/js/engagement_view && yarn install && yarn build
+
+.PHONY: lambdas
+lambdas: lambdas-rust lambdas-js lambdas-python ## Generate all lambda zip files
+
+.PHONY: lambdas-rust
+lambdas-rust: ## Build Rust lambda zips
+	$(DOCKER_BUILDX_BAKE) -f docker-compose.lambda-zips.rust.yml
+	docker-compose -f docker-compose.lambda-zips.rust.yml up
+
+.PHONY: lambdas-js
+lambdas-js: ## Build JS lambda zips
+	$(DOCKER_BUILDX_BAKE) -f docker-compose.lambda-zips.js.yml
+	docker-compose -f docker-compose.lambda-zips.js.yml up
+
+.PHONY: lambdas-python
+lambdas-python: ## Build Python lambda zips
+	./pants filter --target-type=python_awslambda :: | xargs ./pants package
 
 ##@ Test 🧪
 
@@ -233,7 +246,7 @@ test-typecheck: test-typecheck-docker test-typecheck-pants ## Typecheck all Pyth
 .PHONY: test-integration
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
 test-integration: export COMPOSE_FILE := ./test/docker-compose.integration-tests.yml
-test-integration: modern-lambdas build-test-integration ## Build and run integration tests
+test-integration: lambdas build-test-integration ## Build and run integration tests
 	$(MAKE) test-with-env
 
 .PHONY: test-e2e
@@ -313,7 +326,7 @@ package-python-libs: ## Create Python distributions for public libraries
 
 .PHONY: up
 up: export COMPOSE_PROJECT_NAME="grapl"
-up: build-services modern-lambdas ## Build Grapl services and launch docker-compose up
+up: build-services lambdas ## Build Grapl services and launch docker-compose up
 	$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose -f docker-compose.yml up
 
@@ -366,25 +379,6 @@ clean-mount-cache: ## Prune all docker mount cache (used by sccache)
 clean-artifacts: ## Remove all dumped artifacts from test runs (see dump_artifacts.py)
 	rm -Rf test_artifacts
 
-.PHONY: zip
-zip: build-lambdas ## Generate zips for deploying to AWS
-	$(MAKE) zip-pants
-	docker-compose $(EVERY_LAMBDA_COMPOSE_FILE) up
-
-.PHONY: zip-pants
-zip-pants: ## Generate Lambda zip artifacts using pants
-	./pants filter --target-type=python_awslambda :: | xargs ./pants package
-
-# This target is intended to help ease the transition to Pulumi, and
-# using lambdas in local Grapl testing deployments. Essentially, every
-# lambda that is deployed by Pulumi should be built here. Once
-# everything is migrated to Pulumi, we can consolidate this target
-# with other zip-generating targets
-modern-lambdas: ## Generate lambda zips that are used in local Grapl and Pulumi deployments
-	$(DOCKER_BUILDX_BAKE) -f docker-compose.lambda-zips.rust.yml -f docker-compose.lambda-zips.js.yml
-	docker-compose -f docker-compose.lambda-zips.rust.yml -f docker-compose.lambda-zips.js.yml up
-	$(MAKE) zip-pants
-
 .PHONY: push
 push: ## Push Grapl containers to Docker Hub
 	docker-compose --file=docker-compose.build.yml push
@@ -407,4 +401,4 @@ repl: ## Run an interactive ipython repl that can import from grapl-common etc
 	./pants --no-pantsd repl --shell=ipython src/python/repl
 
 .PHONY: pulumi-prep
-pulumi-prep: graplctl modern-lambdas build-ux ## Prepare some artifacts in advance of running a Pulumi update (does not run Pulumi!)
+pulumi-prep: graplctl lambdas build-ux ## Prepare some artifacts in advance of running a Pulumi update (does not run Pulumi!)
