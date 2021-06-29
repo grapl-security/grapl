@@ -11,4 +11,4 @@ def to_bool(input: Optional[Union[str, bool]]) -> Optional[bool]:
     elif input in ("False", "false"):
         return False
     else:
-        raise ValueError(f"Invalid bool value: {input}")
+        raise ValueError(f"Invalid bool value: {repr(input)}")
