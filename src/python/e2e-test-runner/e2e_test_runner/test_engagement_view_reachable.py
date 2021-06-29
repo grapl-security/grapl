@@ -1,13 +1,9 @@
-import os
 from http import HTTPStatus
 from unittest import TestCase
 
 import pytest
 import requests
-from grapl_common.utils.primitive_convertors import to_bool
 from grapl_tests_common.clients.common import endpoint_url
-
-_IS_LOCAL = to_bool(os.environ["IS_LOCAL"])
 
 
 class EngagementViewScraper:
