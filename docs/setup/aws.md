@@ -55,7 +55,7 @@ The remaining steps assume your working directory is the Grapl repository.
 
 ### Build deployment artifacts
 
-Deployment artifacts are build via `make zip`.
+Deployment artifacts are build via `make lambdas`.
 
 If environmental variable `TAG` is set, it will be a custom name for the build.
 If it is unset, it will default to "latest".
