@@ -122,9 +122,6 @@ help: ## Print this help
 
 ##@ Build 🔨
 
-.PHONY: build
-build: build-services ## Alias for `services` (default)
-
 .PHONY: build-test-unit
 build-test-unit:
 	$(DOCKER_BUILDX_BAKE) \
