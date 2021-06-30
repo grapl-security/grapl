@@ -1,19 +1,31 @@
-use crate::authn::AuthenticatedUser;
-use actix_web::{FromRequest, HttpRequest};
-use std::future::Future;
-use actix_web::dev::Payload;
-use std::ops::Deref;
-use std::pin::Pin;
-use crate::error::WebSecError;
+use std::{
+    future::Future,
+    ops::Deref,
+    pin::Pin,
+};
+
+use actix_web::{
+    dev::Payload,
+    FromRequest,
+    HttpRequest,
+};
+
+use crate::{
+    authn::AuthenticatedUser,
+    error::WebSecError,
+};
 
 pub trait CapabilityT: Sized {
     type Resource: Clone;
 
-    fn get_capability(auth: &AuthenticatedUser, resource: &Self::Resource) -> Result<Self, WebSecError>;
+    fn get_capability(
+        auth: &AuthenticatedUser,
+        resource: &Self::Resource,
+    ) -> Result<Self, WebSecError>;
 }
 
 pub struct Capability<C: CapabilityT> {
-    inner: C
+    inner: C,
 }
 
 impl<C: CapabilityT> Deref for Capability<C> {
@@ -33,7 +45,8 @@ impl<C: CapabilityT<Resource = ()>> FromRequest for Capability<C> {
         let capability_req = req.clone();
 
         Box::pin(async move {
-            let auth_user = AuthenticatedUser::from_request(&capability_req, &mut Payload::None).await?;
+            let auth_user =
+                AuthenticatedUser::from_request(&capability_req, &mut Payload::None).await?;
 
             let inner = C::get_capability(&auth_user, &())?;
 

@@ -1,5 +1,5 @@
-mod user;
 mod dynamodb;
+mod user;
 
-pub use user::AuthenticatedUser;
 pub use dynamodb::GraplRole;
+pub use user::AuthenticatedUser;

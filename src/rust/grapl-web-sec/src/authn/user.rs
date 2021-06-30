@@ -1,11 +1,18 @@
-use actix_web::{FromRequest, HttpRequest};
 use std::pin::Pin;
+
+use actix_web::{
+    dev::Payload,
+    FromRequest,
+    HttpRequest,
+};
 use futures::Future;
-use actix_web::dev::Payload;
 use grapl_config::env_helpers::FromEnv;
 use rusoto_dynamodb::DynamoDbClient;
-use crate::error::WebSecError;
-use crate::authn::GraplRole;
+
+use crate::{
+    authn::GraplRole,
+    error::WebSecError,
+};
 
 const SESSION_TOKEN: &'static str = "SESSION_TOKEN";
 
@@ -13,7 +20,7 @@ const SESSION_TOKEN: &'static str = "SESSION_TOKEN";
 #[derive(Clone)]
 pub struct AuthenticatedUser {
     identity: String,
-    role: GraplRole
+    role: GraplRole,
 }
 
 impl AuthenticatedUser {
@@ -33,7 +40,7 @@ impl AuthenticatedUser {
     pub fn test_user(identity: &str, role: GraplRole) -> Self {
         Self {
             identity: identity.to_string(),
-            role
+            role,
         }
     }
 }
@@ -45,6 +52,7 @@ impl FromRequest for AuthenticatedUser {
 
     fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
         use actix_session::UserSession;
+
         use crate::authn::dynamodb;
 
         let session_storage = req.get_session();
@@ -52,16 +60,18 @@ impl FromRequest for AuthenticatedUser {
         let attempt_authentication = async move {
             let dynamodb_client = DynamoDbClient::from_env();
 
-            let session_token: String = session_storage.get(SESSION_TOKEN)
+            let session_token: String = session_storage
+                .get(SESSION_TOKEN)
                 .map_err(|_| WebSecError::MissingSession)?
                 .ok_or(WebSecError::MissingSession)?;
 
-            let session_row = dynamodb::get_valid_session_row(&dynamodb_client, session_token).await?;
+            let session_row =
+                dynamodb::get_valid_session_row(&dynamodb_client, session_token).await?;
             let user_row = dynamodb::get_user_row(&dynamodb_client, &session_row.username).await?;
 
             let authenticated_user = AuthenticatedUser {
                 identity: session_row.username,
-                role: user_row.role
+                role: user_row.role,
             };
 
             Ok(authenticated_user)

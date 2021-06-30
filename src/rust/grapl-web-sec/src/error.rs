@@ -1,9 +1,15 @@
-use thiserror::Error;
+use std::fmt::{
+    Display,
+    Formatter,
+};
+
+use actix_web::{
+    http::StatusCode,
+    ResponseError,
+};
 use rusoto_core::RusotoError;
-use actix_web::ResponseError;
-use actix_web::http::StatusCode;
-use std::fmt::{Display, Formatter};
 use rusoto_dynamodb::GetItemError;
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum WebSecError {
@@ -14,7 +20,7 @@ pub enum WebSecError {
     ArgonError(argon2::Error),
     PasswordHashingError(argon2::password_hash::Error),
     SessionCreationError,
-    Unauthorized
+    Unauthorized,
 }
 
 impl ResponseError for WebSecError {
@@ -27,9 +33,9 @@ impl Display for WebSecError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
         match self {
             WebSecError::MissingSession
-                | WebSecError::InvalidSession
-                | WebSecError::AuthenticationFailure => formatter.write_str("Unauthenticated"),
-            _ => formatter.write_str("Unauthorized")
+            | WebSecError::InvalidSession
+            | WebSecError::AuthenticationFailure => formatter.write_str("Unauthenticated"),
+            _ => formatter.write_str("Unauthorized"),
         }
     }
 }
