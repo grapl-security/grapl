@@ -83,7 +83,7 @@ def _hash_password(cleartext: bytes, salt: bytes) -> str:
 
 
 def _create_user(
-    dynamodb: DynamoDBServiceResource, username: str, cleartext: str
+    dynamodb: DynamoDBServiceResource, username: str, cleartext: str, role: str
 ) -> None:
     assert cleartext
     table = dynamodb.Table(DEPLOYMENT_NAME + "-user_auth_table")
@@ -120,5 +120,5 @@ def provision(event: Any = None, context: Any = None) -> None:
     LOGGER.info("retrieved test user password")
 
     LOGGER.info("creating test user")
-    _create_user(dynamodb=dynamodb, username=GRAPL_TEST_USER_NAME, cleartext=password)
+    _create_user(dynamodb=dynamodb, username=GRAPL_TEST_USER_NAME, cleartext=password, role="owner")
     LOGGER.info("created test user")
