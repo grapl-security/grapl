@@ -146,17 +146,17 @@ build-test-typecheck:
 	docker buildx bake --file ./test/docker-compose.typecheck-tests.yml
 
 .PHONY: build-test-integration
-build-test-integration: lambdas build-services
+build-test-integration: build-services
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.integration-tests.yml
 
 .PHONY: build-test-e2e
-build-test-e2e: lambdas build-services
+build-test-e2e: build-services
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.yml
 
 .PHONY: build-services
-build-services: graplctl ## Build Grapl services
+build-services: graplctl lambdas ## Build Grapl services
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
 
 .PHONY: build-formatter
@@ -238,7 +238,7 @@ test-typecheck: test-typecheck-docker test-typecheck-pants ## Typecheck all Pyth
 .PHONY: test-integration
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
 test-integration: export COMPOSE_FILE := ./test/docker-compose.integration-tests.yml
-test-integration: lambdas build-test-integration ## Build and run integration tests
+test-integration: build-test-integration ## Build and run integration tests
 	$(MAKE) test-with-env
 
 .PHONY: test-e2e
@@ -318,7 +318,7 @@ package-python-libs: ## Create Python distributions for public libraries
 
 .PHONY: up
 up: export COMPOSE_PROJECT_NAME="grapl"
-up: build-services lambdas ## Build Grapl services and launch docker-compose up
+up: build-services ## Build Grapl services and launch docker-compose up
 	$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose -f docker-compose.yml up
 
