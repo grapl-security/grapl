@@ -16,6 +16,7 @@ members = [
     "./grapl-observe",
     "./grapl-service",
     "./grapl-utils",
+    "./grapl-web-sec",
     "./kafka-metrics-exporter",
     "./metric-forwarder",
     "./node-identifier",

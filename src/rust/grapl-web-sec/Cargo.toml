@@ -1,0 +1,26 @@
+[package]
+name = "grapl-web-sec"
+version = "0.1.0"
+authors = ["Nathanial Lattimer <nlattimer@graplsecurity.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+thiserror = "1"
+async-trait = "0.1"
+actix-session = "0.4"
+actix-web = "3"
+hmap = "0.1"
+rusoto_core = { version = "0.46", default_features = false, features = ["rustls"] }
+rusoto_dynamodb = { version = "0.46", default_features = false, features = ["rustls"] }
+serde = "1"
+serde_dynamodb = "0.8"
+grapl-config = { path = "../grapl-config" }
+tracing = "0.1"
+futures = "0.3"
+chrono = "0.4"
+rand = "0.8"
+lazy_static = "1"
+tap = "1"
+argon2 = "0.2.1"
