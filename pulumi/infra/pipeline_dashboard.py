@@ -11,9 +11,9 @@ import pulumi_aws as aws
 from infra.config import DEPLOYMENT_NAME
 from infra.service import ServiceLike
 from infra.service_queue import ServiceQueueNames
+from pulumi.output import Output
 
 import pulumi
-from pulumi.output import Output
 
 CWMetric = List[Union[str, Dict[str, Any]]]
 

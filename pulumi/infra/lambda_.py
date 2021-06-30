@@ -4,7 +4,12 @@ from dataclasses import dataclass, field
 from typing import Mapping, Optional, Union
 
 import pulumi_aws as aws
-from infra.config import DEPLOYMENT_NAME, LOCAL_GRAPL, SERVICE_LOG_RETENTION_DAYS
+from infra.config import (
+    DEPLOYMENT_NAME,
+    LOCAL_GRAPL,
+    SERVICE_LOG_RETENTION_DAYS,
+    repository_path,
+)
 from infra.network import Network
 from typing_extensions import Literal
 
@@ -19,7 +24,7 @@ def code_path_for(lambda_fn: str) -> str:
     environment variable to an appropriate directory.
 
     """
-    root_dir = os.getenv("GRAPL_LAMBDA_ZIP_DIR", "../dist")
+    root_dir = os.getenv("GRAPL_LAMBDA_ZIP_DIR", repository_path("dist"))
     return f"{root_dir}/{lambda_fn}-lambda.zip"
 
 

@@ -1,18 +1,17 @@
 import json
-from pathlib import Path
 from typing import Optional, Sequence
 
 import pulumi_aws as aws
 from infra import policies
 from infra.bucket import Bucket
-from infra.config import DEPLOYMENT_NAME, DGRAPH_LOG_RETENTION_DAYS
+from infra.config import DEPLOYMENT_NAME, DGRAPH_LOG_RETENTION_DAYS, repository_path
 from infra.ec2 import Ec2Port
-
-import pulumi
 from pulumi.output import Output
 
+import pulumi
+
 # These are COPYd in from Dockerfile.pulumi
-SWARM_INIT_DIR = Path("../src/aws-provision/swarm").resolve()
+SWARM_INIT_DIR = repository_path("src/aws-provision/swarm")
 
 
 class Swarm(pulumi.ComponentResource):

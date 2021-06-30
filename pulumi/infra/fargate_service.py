@@ -12,20 +12,14 @@ from infra.network import Network
 from infra.policies import ECR_TOKEN_POLICY, attach_policy
 from infra.repository import Repository, registry_credentials
 from infra.service_queue import ServiceQueue
-from typing_extensions import Literal
 
 import pulumi
-
-KnownDockerfile = Literal[
-    "../src/rust/Dockerfile",
-    "../src/python/Dockerfile",
-]
 
 
 class GraplDockerBuild(docker.DockerBuild):
     def __init__(
         self,
-        dockerfile: KnownDockerfile,
+        dockerfile: str,
         target: str,
         context: Optional[str] = None,
         args: Optional[Mapping[str, pulumi.Input[str]]] = None,

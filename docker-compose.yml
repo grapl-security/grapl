@@ -461,6 +461,7 @@ services:
     image: grapl/grapl-local-pulumi:${TAG:-latest}
     command: |
       /bin/bash -c "
+        cd grapl &&
         pulumi login --local &&
         pulumi stack init local-grapl --non-interactive &&
         pulumi up --yes --skip-preview --stack=local-grapl &&

@@ -1,5 +1,5 @@
 from infra.cache import Cache
-from infra.config import configurable_envvars
+from infra.config import configurable_envvars, repository_path
 from infra.emitter import EventEmitter
 from infra.fargate_service import FargateService, GraplDockerBuild
 from infra.metric_forwarder import MetricForwarder
@@ -18,9 +18,9 @@ class OSQueryGenerator(FargateService):
         super().__init__(
             "osquery-generator",
             image=GraplDockerBuild(
-                dockerfile="../src/rust/Dockerfile",
+                dockerfile=str(repository_path("src/rust/Dockerfile")),
                 target="osquery-subgraph-generator-deploy",
-                context="../src",
+                context=str(repository_path("src")),
             ),
             command="/osquery-subgraph-generator",
             env={

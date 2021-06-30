@@ -1,5 +1,6 @@
 import os
 import re
+from pathlib import Path
 from typing import Mapping, Sequence
 
 import pulumi_aws as aws
@@ -12,6 +13,17 @@ DEPLOYMENT_NAME = pulumi.get_stack()
 
 # This must be the same as the value defined in local-grapl.env
 GRAPL_TEST_USER_NAME = f"{DEPLOYMENT_NAME}-grapl-test-user"
+
+# Sometimes we need to refer to other code or artifacts relative to
+# the repository root.
+REPOSITORY_ROOT = os.path.join(os.path.dirname(__file__), "../..")
+
+
+def repository_path(relative_path: str) -> Path:
+    """
+    Resolve `relative_path` relative to the root of the repository.
+    """
+    return Path(os.path.join(REPOSITORY_ROOT), relative_path).resolve()
 
 
 def _validate_deployment_name() -> None:

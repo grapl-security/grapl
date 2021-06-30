@@ -1,5 +1,8 @@
+import sys
+
+sys.path.insert(0, "..")
+
 import os
-from pathlib import Path
 from typing import List
 
 from infra import dynamodb, emitter
@@ -26,7 +29,6 @@ from infra.provision_lambda import Provisioner
 from infra.quiet_docker_build_output import quiet_docker_output
 from infra.secret import JWTSecret, TestUserPassword
 from infra.service import ServiceLike
-from infra.service_queue import ServiceQueue  # noqa: F401
 from infra.sysmon_generator import SysmonGenerator
 
 
@@ -220,10 +222,12 @@ def main() -> None:
     )
     # Note: This requires `yarn build` to have been run first
     if not LOCAL_GRAPL:
+        from infra.config import repository_path
+
         # Not doing this in Local Grapl at the moment, as we have
         # another means of doing this. We should harmonize this, of
         # course.
-        ENGAGEMENT_VIEW_DIR = Path("../src/js/engagement_view/build").resolve()
+        ENGAGEMENT_VIEW_DIR = repository_path("src/js/engagement_view/build").resolve()
         try:
             ux_bucket.upload_to_bucket(
                 ENGAGEMENT_VIEW_DIR, root_path=ENGAGEMENT_VIEW_DIR
