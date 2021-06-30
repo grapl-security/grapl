@@ -1,4 +1,5 @@
 # Any Python dependencies used by our code should be declared here.
+argon2-cffi
 boto3
 botocore
 chalice==1.22.4

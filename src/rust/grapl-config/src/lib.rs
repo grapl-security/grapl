@@ -203,6 +203,14 @@ pub fn dynamic_session_table_name() -> String {
     std::env::var("DYNAMIC_SESSION_TABLE").expect("DYNAMIC_SESSION_TABLE")
 }
 
+pub fn user_auth_table_name() -> String {
+    std::env::var("USER_AUTH_TABLE").expect("USER_AUTH_TABLE")
+}
+
+pub fn user_session_table_name() -> String {
+    std::env::var("USER_SESSION_TABLE").expect("USER_SESSION_TABLE")
+}
+
 pub fn process_history_table_name() -> String {
     std::env::var("PROCESS_HISTORY_TABLE").expect("PROCESS_HISTORY_TABLE")
 }
