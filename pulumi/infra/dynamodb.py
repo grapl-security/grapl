@@ -41,7 +41,7 @@ class DynamoDBTable(aws.dynamodb.Table):
 
 
 class DynamoDBHistoryTable(DynamoDBTable):
-    """ Specialization of our `DynamoDBTable` to represent all our "history" tables, which share the same structure. """
+    """Specialization of our `DynamoDBTable` to represent all our "history" tables, which share the same structure."""
 
     def __init__(
         self, name: str, opts: Optional[pulumi.ResourceOptions] = None

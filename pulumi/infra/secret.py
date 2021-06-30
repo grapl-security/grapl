@@ -9,7 +9,7 @@ import pulumi
 
 
 class JWTSecret(pulumi.ComponentResource):
-    """ Represents the frontend's JWT secret stored in Secretsmanager. """
+    """Represents the frontend's JWT secret stored in Secretsmanager."""
 
     def __init__(self, opts: Optional[pulumi.ResourceOptions] = None) -> None:
         super().__init__(
@@ -78,7 +78,7 @@ class JWTSecret(pulumi.ComponentResource):
 
 
 class TestUserPassword(pulumi.ComponentResource):
-    """ Grapl password for the test user. """
+    """Grapl password for the test user."""
 
     def __init__(self, opts: Optional[pulumi.ResourceOptions] = None) -> None:
         super().__init__(

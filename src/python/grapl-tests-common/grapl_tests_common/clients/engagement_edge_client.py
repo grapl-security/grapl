@@ -1,4 +1,3 @@
-import hashlib
 import os
 from http import HTTPStatus
 from typing import Optional
@@ -27,6 +26,7 @@ def _get_test_user_password(deployment_name: str) -> str:
     return secretsmanager.get_secret_value(
         SecretId=f"{deployment_name}-TestUserPassword"
     )["SecretString"]
+
 
 class EngagementEdgeClient:
     def __init__(self) -> None:

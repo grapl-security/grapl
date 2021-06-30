@@ -66,7 +66,7 @@ class LambdaArgs:
 
 @dataclass(frozen=True)
 class PythonLambdaArgs(LambdaArgs):
-    """ Arguments for instantiating a Python ZIP lambda function. """
+    """Arguments for instantiating a Python ZIP lambda function."""
 
     runtime: aws.lambda_.Runtime = aws.lambda_.Runtime.PYTHON3D7
     package_type: LambdaPackageType = "Zip"

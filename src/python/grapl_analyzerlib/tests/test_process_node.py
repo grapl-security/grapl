@@ -34,7 +34,7 @@ def assert_equal_props(a: Viewable, b: Viewable) -> None:
 
 
 def assert_equal_identity(a: Viewable, b: Viewable) -> None:
-    """ Assert these nodes have the same type and uuid """
+    """Assert these nodes have the same type and uuid"""
     assert a.node_key == b.node_key
 
 

@@ -3,11 +3,11 @@ from __future__ import annotations
 import logging
 import os
 import sys
-from argon2 import PasswordHasher
 from hashlib import pbkdf2_hmac, sha256
 from typing import TYPE_CHECKING, Any
 
 import boto3
+from argon2 import PasswordHasher
 from grapl_analyzerlib.prelude import (
     AssetSchema,
     FileSchema,
@@ -88,14 +88,12 @@ def _create_user(
     assert cleartext
     table = dynamodb.Table(DEPLOYMENT_NAME + "-user_auth_table")
 
-    password_hasher = PasswordHasher(
-        time_cost=2,
-        memory_cost=102400,
-        parallelism=8
-    )
+    password_hasher = PasswordHasher(time_cost=2, memory_cost=102400, parallelism=8)
     password_hash = password_hasher.hash(cleartext)
 
-    table.put_item(Item={"username": username, "password_hash": password_hash, "role": role})
+    table.put_item(
+        Item={"username": username, "password_hash": password_hash, "role": role}
+    )
 
 
 def _retrieve_test_user_password(

@@ -16,7 +16,7 @@ DEFAULT_ARGS = [
 
 
 class BotoSessionMock:
-    """ Add any useful mutations to the session mock to this class. """
+    """Add any useful mutations to the session mock to this class."""
 
     def __init__(self, session: Mock) -> None:
         self.session = session

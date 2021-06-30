@@ -10,7 +10,7 @@ import pulumi
 
 
 class QueueDrivenLambda(pulumi.ComponentResource):
-    """ A lambda function that is triggered by an SQS queue. """
+    """A lambda function that is triggered by an SQS queue."""
 
     def __init__(
         self,
