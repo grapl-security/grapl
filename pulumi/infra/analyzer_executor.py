@@ -1,6 +1,6 @@
 from infra.bucket import Bucket
 from infra.cache import Cache
-from infra.config import configurable_envvars
+from infra.config import configurable_envvars, repository_path
 from infra.dgraph_cluster import DgraphCluster
 from infra.emitter import EventEmitter
 from infra.fargate_service import FargateService, GraplDockerBuild
@@ -24,9 +24,9 @@ class AnalyzerExecutor(FargateService):
         super().__init__(
             "analyzer-executor",
             image=GraplDockerBuild(
-                dockerfile="../src/python/Dockerfile",
+                dockerfile=str(repository_path("src/python/Dockerfile")),
                 target="analyzer-executor-deploy",
-                context="../src",
+                context=str(repository_path("src")),
             ),
             env={
                 **configurable_envvars("analyzer-executor", ["GRAPL_LOG_LEVEL"]),

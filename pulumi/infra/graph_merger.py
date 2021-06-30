@@ -1,6 +1,6 @@
 from infra import dynamodb
 from infra.cache import Cache
-from infra.config import configurable_envvars
+from infra.config import configurable_envvars, repository_path
 from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
 from infra.emitter import EventEmitter
@@ -24,9 +24,9 @@ class GraphMerger(FargateService):
         super().__init__(
             "graph-merger",
             image=GraplDockerBuild(
-                dockerfile="../src/rust/Dockerfile",
+                dockerfile=str(repository_path("src/rust/Dockerfile")),
                 target="graph-merger-deploy",
-                context="../src",
+                context=str(repository_path("src")),
             ),
             command="/graph-merger",
             env={

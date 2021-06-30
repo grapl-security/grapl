@@ -1,6 +1,6 @@
 from infra import dynamodb
 from infra.cache import Cache
-from infra.config import configurable_envvars
+from infra.config import configurable_envvars, repository_path
 from infra.dynamodb import DynamoDB
 from infra.emitter import EventEmitter
 from infra.fargate_service import FargateService, GraplDockerBuild
@@ -22,14 +22,14 @@ class NodeIdentifier(FargateService):
         super().__init__(
             "node-identifier",
             image=GraplDockerBuild(
-                dockerfile="../src/rust/Dockerfile",
+                dockerfile=str(repository_path("src/rust/Dockerfile")),
                 target="node-identifier-deploy",
-                context="../src",
+                context=str(repository_path("src")),
             ),
             retry_image=GraplDockerBuild(
-                dockerfile="../src/rust/Dockerfile",
+                dockerfile=str(repository_path("src/rust/Dockerfile")),
                 target="node-identifier-retry-handler-deploy",
-                context="../src",
+                context=str(repository_path("src")),
             ),
             command="/node-identifier",
             retry_command="/node-identifier-retry-handler",

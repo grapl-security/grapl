@@ -1,6 +1,6 @@
 from infra.bucket import Bucket
 from infra.cache import Cache
-from infra.config import configurable_envvars
+from infra.config import configurable_envvars, repository_path
 from infra.emitter import EventEmitter
 from infra.fargate_service import FargateService, GraplDockerBuild
 from infra.metric_forwarder import MetricForwarder
@@ -21,9 +21,9 @@ class AnalyzerDispatcher(FargateService):
         super().__init__(
             "analyzer-dispatcher",
             image=GraplDockerBuild(
-                dockerfile="../src/rust/Dockerfile",
+                dockerfile=str(repository_path("src/rust/Dockerfile")),
                 target="analyzer-dispatcher-deploy",
-                context="../src",
+                context=str(repository_path("src")),
             ),
             command="/analyzer-dispatcher",
             env={

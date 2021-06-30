@@ -4,9 +4,9 @@ from typing import List, Optional
 
 import pulumi_aws as aws
 from infra.config import DEPLOYMENT_NAME
+from pulumi.resource import ResourceOptions
 
 import pulumi
-from pulumi.resource import ResourceOptions
 
 
 class Bucket(aws.s3.Bucket):

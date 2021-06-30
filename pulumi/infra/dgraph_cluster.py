@@ -1,16 +1,16 @@
-from pathlib import Path
 from typing import Any, Optional
 
 import pulumi_aws as aws
 from infra.bucket import Bucket
+from infra.config import repository_path
 from infra.ec2 import Ec2Port
 from infra.swarm import Swarm
-
-import pulumi
 from pulumi.output import Output
 
+import pulumi
+
 # These are COPYd in from Dockerfile.pulumi
-DGRAPH_CONFIG_DIR = Path("../src/aws-provision/dgraph").resolve()
+DGRAPH_CONFIG_DIR = repository_path("src/aws-provision/dgraph")
 
 
 class DgraphCluster(pulumi.ComponentResource):
