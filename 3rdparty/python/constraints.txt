@@ -5,8 +5,8 @@ argon2-cffi==20.1.0
 Arpeggio==1.10.2
 attrs==20.3.0
 blessed==1.17.6
-boto3==1.17.103
-botocore==1.20.103
+boto3==1.17.102
+botocore==1.20.102
 bugout==0.1.12
 certifi==2021.5.30
 cffi==1.14.5
@@ -23,9 +23,9 @@ importlib-metadata==4.6.0
 iniconfig==1.1.1
 inquirer==2.7.0
 jmespath==0.10.0
-mypy-boto3-cloudwatch==1.17.103
-mypy-boto3-dynamodb==1.17.103
-mypy-boto3-ec2==1.17.103
+mypy-boto3-cloudwatch==1.17.102.post1
+mypy-boto3-dynamodb==1.17.102.post1
+mypy-boto3-ec2==1.17.102.post1
 mypy-boto3-lambda==1.17.102.post1
 mypy-boto3-route53==1.17.102.post1
 mypy-boto3-s3==1.17.102.post1

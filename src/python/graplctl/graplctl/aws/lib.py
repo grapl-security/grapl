@@ -1,9 +1,10 @@
 import base64
-from typing import cast
+from typing import cast, TYPE_CHECKING
 
 from botocore.response import StreamingBody
 from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_common.resources import known_dynamodb_tables
+
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 from mypy_boto3_lambda import LambdaClient
 from mypy_boto3_lambda.type_defs import InvocationResponseTypeDef
