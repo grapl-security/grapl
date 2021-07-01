@@ -1,0 +1,33 @@
+config:
+  aws:region: "us-east-1"
+  grapl:env_vars:
+    analyzer-dispatcher:
+      RUST_BACKTRACE: "1"
+      RUST_LOG: "DEBUG"
+    analyzer-executor:
+      GRAPL_LOG_LEVEL: "DEBUG"
+    dgraph-ttl:
+      GRAPL_LOG_LEVEL: "DEBUG"
+    engagement-creator:
+      GRAPL_LOG_LEVEL: "DEBUG"
+    engagement-edge:
+      GRAPL_LOG_LEVEL: "DEBUG"
+    graph-merger:
+      RUST_BACKTRACE: "1"
+      RUST_LOG: "DEBUG"
+    metric-forwarder:
+      RUST_BACKTRACE: "1"
+      RUST_LOG: "DEBUG"
+    model-plugin-deployer:
+      GRAPL_LOG_LEVEL: "DEBUG"
+    node-identifier:
+      RUST_BACKTRACE: "1"
+      RUST_LOG: "DEBUG"
+    osquery-generator:
+      RUST_BACKTRACE: "1"
+      RUST_LOG: "DEBUG"
+    sysmon-generator:
+      RUST_BACKTRACE: "1"
+      RUST_LOG: "DEBUG"
+    ux-router:
+      GRAPL_LOG_LEVEL: "DEBUG"
