@@ -4,16 +4,16 @@ version: "3.8"
 
 services:
 
-  grapl-engagement-view-test:
-    image: grapl/grapl-engagement-view-build:${TAG:-latest}
-    build: 
+  engagement-view-test:
+    image: grapl/engagement-view-build:${TAG:-latest}
+    build:
       context: ${PWD}/src
       dockerfile: js/engagement_view/Dockerfile
       target: engagement-view-deps
     command: sh -c 'CI=true yarn test'
 
-  grapl-graphql-endpoint-test:
-    image: grapl/grapl-graphql-endpoint:${TAG:-latest}
+  graphql-endpoint-test:
+    image: grapl/graphql-endpoint:${TAG:-latest}
     build:
       context: ${PWD}/src
       dockerfile: js/graphql_endpoint/Dockerfile

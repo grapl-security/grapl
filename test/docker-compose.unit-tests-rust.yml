@@ -4,7 +4,7 @@ version: "3.8"
 
 services:
 
-  grapl-rust-test:
+  rust-test:
     image: grapl/rust-test-unit:${TAG:-latest}
     build:
       context: ${PWD}/src
