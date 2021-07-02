@@ -1,9 +1,10 @@
 #!/bin/bash
 # shellcheck disable=SC2086
 
-# You can pass TARGETS to this script to specify
-# which services to run, instead of all of them, which is the default behavior.
-TARGETS="${TARGETS}"
+# This script will honor the TARGETS environment variable to specify
+# which services to run, instead of all of them, which is the default
+# behavior.
+TARGETS="${TARGETS:-}"
 
 set -eu
 
