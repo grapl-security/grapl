@@ -1,8 +1,8 @@
 version: "3.8"
 
 services:
-  typecheck-grapl-analyzerlib:
-    image: grapl/grapl-analyzerlib-test:${TAG:-latest}
+  typecheck-analyzerlib:
+    image: grapl/analyzerlib-test:${TAG:-latest}
     build:
       context: ${PWD}/src
       dockerfile: ./python/Dockerfile

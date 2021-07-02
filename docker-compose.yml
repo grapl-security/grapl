@@ -171,8 +171,8 @@ services:
   ########################################################################
 
 
-  grapl-sysmon-subgraph-generator:
-    image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
+  sysmon-subgraph-generator:
+    image: grapl/sysmon-subgraph-generator:${TAG:-latest}
     tty: false
     environment:
       <<: *aws-env
@@ -191,8 +191,8 @@ services:
       redis:
         condition: service_healthy
 
-  grapl-osquery-subgraph-generator:
-    image: grapl/grapl-osquery-subgraph-generator:${TAG:-latest}
+  osquery-subgraph-generator:
+    image: grapl/osquery-subgraph-generator:${TAG:-latest}
     tty: false
     environment:
       <<: *aws-env
@@ -212,8 +212,8 @@ services:
       redis:
         condition: service_healthy
 
-  grapl-node-identifier:
-    image: grapl/grapl-node-identifier:${TAG:-latest}
+  node-identifier:
+    image: grapl/node-identifier:${TAG:-latest}
     environment:
       <<: *aws-env
       DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
@@ -233,8 +233,8 @@ services:
       redis:
         condition: service_healthy
 
-  grapl-node-identifier-retry-handler:
-    image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
+  node-identifier-retry-handler:
+    image: grapl/node-identifier-retry-handler:${TAG:-latest}
     environment:
       <<: *aws-env
       DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
@@ -254,8 +254,8 @@ services:
       redis:
         condition: service_healthy
 
-  grapl-graph-merger:
-    image: grapl/grapl-graph-merger:${TAG:-latest}
+  graph-merger:
+    image: grapl/graph-merger:${TAG:-latest}
     environment:
       <<: *aws-env
       DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-dead-letter-queue"
@@ -278,8 +278,8 @@ services:
       redis:
         condition: service_healthy
 
-  grapl-analyzer-dispatcher:
-    image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
+  analyzer-dispatcher:
+    image: grapl/analyzer-dispatcher:${TAG:-latest}
     environment:
       ANALYZER_BUCKET: "${DEPLOYMENT_NAME}-analyzers-bucket"
       <<: *aws-env
@@ -298,8 +298,8 @@ services:
   # Python Services
   ########################################################################
 
-  grapl-analyzer-executor:
-    image: grapl/grapl-analyzer-executor:${TAG:-latest}
+  analyzer-executor:
+    image: grapl/analyzer-executor:${TAG:-latest}
     environment:
       <<: *aws-env
       DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
@@ -328,8 +328,8 @@ services:
       redis:
         condition: service_healthy
 
-  grapl-model-plugin-deployer:
-    image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
+  model-plugin-deployer:
+    image: grapl/model-plugin-deployer:${TAG:-latest}
     command: |
       /bin/sh -c '
         . venv/bin/activate &&
@@ -387,15 +387,15 @@ services:
       - LOCALSTACK_HOST
       - LOCALSTACK_PORT
     depends_on:
-      grapl-model-plugin-deployer:
+      model-plugin-deployer:
         condition: service_started
-      grapl-graphql-endpoint:
+      graphql-endpoint:
         condition: service_started
-      grapl-pulumi:
+      pulumi:
         # We must wait until Pulumi has created the API gateway so we
         # know what its URL is.
         condition: service_completed_successfully
-      grapl-engagement-view-uploader:
+      engagement-view-uploader:
         # nginx doesn't actually depend on engagement-view-uploader,
         # but we need *some* service to declare a dependency on the
         # engagement-view-uploader in order to catch non-0 exit codes
@@ -405,8 +405,8 @@ services:
         aliases:
           - ${GRAPL_API_HOST}
 
-  grapl-engagement-view-uploader:
-    image: grapl/grapl-engagement-view:${TAG:-latest}
+  engagement-view-uploader:
+    image: grapl/engagement-view:${TAG:-latest}
     command: |
       /bin/bash -c "./upload_local.sh"
     environment:
@@ -415,8 +415,8 @@ services:
       provisioner:
         condition: service_completed_successfully
 
-  grapl-graphql-endpoint:
-    image: grapl/grapl-graphql-endpoint:${TAG:-latest}
+  graphql-endpoint:
+    image: grapl/graphql-endpoint:${TAG:-latest}
     command: bash -c "./start_potentially_with_debugger.sh"
     environment:
       <<: *aws-env
@@ -444,7 +444,7 @@ services:
           - ${GRAPL_GRAPHQL_HOST}
 
   grapl-notebook:
-    image: grapl/grapl-notebook:${TAG:-latest}
+    image: grapl/notebook:${TAG:-latest}
     user: grapl
     environment:
       <<: *dgraph-env
@@ -457,8 +457,8 @@ services:
   # Utility Services
   ########################################################################
 
-  grapl-pulumi:
-    image: grapl/grapl-local-pulumi:${TAG:-latest}
+  pulumi:
+    image: grapl/local-pulumi:${TAG:-latest}
     command: |
       /bin/bash -c "
         cd grapl &&
@@ -513,7 +513,7 @@ services:
         condition: service_started
       localstack:
         condition: service_healthy
-      grapl-pulumi:
+      pulumi:
         condition: service_completed_successfully
 
 networks:
