@@ -1,0 +1,28 @@
+# Overrides to be used only in CI environments.
+#
+# Enable using:
+#
+#     export PANTS_CONFIG_FILES="['pants.toml','pants.ci.toml']"
+#
+# This will overlay any values from this file onto those from the
+# regular `pants.toml` file.
+#
+# (It also appears that specifying just `pants.ci.toml` will also
+# work, taking `pants.toml` to be the always-present base by
+# convention, but being explicit never hurt.)
+[GLOBAL]
+dynamic_ui = false
+colors = true
+
+# Since multiple jobs could run on the same Buildkite worker node, we
+# need to make sure the cache directories are isolated.
+local_store_dir = ".cache/pants/lmdb_store"
+named_caches_dir = ".cache/pants/named_caches"
+
+pants_ignore = [
+  ".cache/pants/named_caches",
+  ".cache/pants/lmdb_store",
+]
+
+[auth]
+from_env_var = "TOOLCHAIN_AUTH_TOKEN"

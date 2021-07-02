@@ -1,0 +1,9 @@
+# Pants-related artifacts
+# https://www.pantsbuild.org/docs/gitignore
+########################################################################
+/.pants.d/
+/dist/
+/.pids
+/.pants.workdir.file_lock*
+
+.envrc
