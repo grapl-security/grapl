@@ -1,22 +1,22 @@
 config:
   aws:region: us-east-1
   grapl:artifacts:
-    analyzer-dispatcher: 20210706171953-287716ec
-    analyzer-executor: 20210706171953-287716ec
-    dgraph-ttl: 20210706171953-287716ec
-    e2e-test-runner: 20210706171953-287716ec
-    engagement-creator: 20210706171953-287716ec
-    engagement-edge: 20210706171953-287716ec
-    graph-merger: 20210706171953-287716ec
-    graphql-endpoint: 20210706171953-287716ec
-    metric-forwarder: 20210706171953-287716ec
-    model-plugin-deployer: 20210706171953-287716ec
-    node-identifier: 20210706171953-287716ec
-    node-identifier-retry-handler: 20210706171953-287716ec
-    osquery-subgraph-generator: 20210706171953-287716ec
-    provisioner: 20210706171953-287716ec
-    sysmon-subgraph-generator: 20210706171953-287716ec
-    ux-router: 20210706171953-287716ec
+    analyzer-dispatcher: 20210706180215-bc3fa14c
+    analyzer-executor: 20210706180215-bc3fa14c
+    dgraph-ttl: 20210706180215-bc3fa14c
+    e2e-test-runner: 20210706180215-bc3fa14c
+    engagement-creator: 20210706180215-bc3fa14c
+    engagement-edge: 20210706180215-bc3fa14c
+    graph-merger: 20210706180215-bc3fa14c
+    graphql-endpoint: 20210706180215-bc3fa14c
+    metric-forwarder: 20210706180215-bc3fa14c
+    model-plugin-deployer: 20210706180215-bc3fa14c
+    node-identifier: 20210706180215-bc3fa14c
+    node-identifier-retry-handler: 20210706180215-bc3fa14c
+    osquery-subgraph-generator: 20210706180215-bc3fa14c
+    provisioner: 20210706180215-bc3fa14c
+    sysmon-subgraph-generator: 20210706180215-bc3fa14c
+    ux-router: 20210706180215-bc3fa14c
   grapl:env_vars:
     analyzer-dispatcher:
       RUST_BACKTRACE: "1"
