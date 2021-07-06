@@ -13,7 +13,7 @@ from infra.api import Api
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
-from infra.config import DEPLOYMENT_NAME, LOCAL_GRAPL
+from infra.config import DEPLOYMENT_NAME, LOCAL_GRAPL, configured_version_for
 from infra.dgraph_cluster import DgraphCluster, LocalStandInDgraphCluster
 from infra.dgraph_ttl import DGraphTTL
 from infra.e2e_test_runner import E2eTestRunner
@@ -227,13 +227,44 @@ def main() -> None:
         # Not doing this in Local Grapl at the moment, as we have
         # another means of doing this. We should harmonize this, of
         # course.
-        ENGAGEMENT_VIEW_DIR = repository_path("src/js/engagement_view/build").resolve()
+        # If we have a version for the grapl-ux, we should have
+        # downloaded the artifact from the artifact repository and
+        # unpacked it into a version-tagged directory for us to pull
+        # from.
+        #
+        # We have to do this because there isn't an apparent way in
+        # Pulumi to expand a tarball into an S3 bucket. If that every
+        # becomes possible, we should us it, by all means!
+        #
+        # If there's no configured version, we just pull from the
+        # build directory in the local source tree (it will need to
+        # have been built first, too).
+        grapl_ux_version = configured_version_for("grapl-ux")
+        directory = (
+            f"dist/grapl-ux-{grapl_ux_version}"
+            if grapl_ux_version
+            else "src/js/engagement_view/build"
+        )
+        ENGAGEMENT_VIEW_DIR = repository_path(directory).resolve()
+
         try:
             ux_bucket.upload_to_bucket(
                 ENGAGEMENT_VIEW_DIR, root_path=ENGAGEMENT_VIEW_DIR
             )
         except FileNotFoundError as e:
-            raise Exception("You probably need to `make pulumi-prep` first") from e
+            raise Exception(
+                """
+            You need to either build or download UX assets first.
+
+            If you have a pinned version for `grapl-ux` in your stack configuration, please run
+
+                pulumi/bin/prepare_grapl_ux_depencency.sh grapl/<STACK>
+
+            If you do *not* have a pinned version in your stack configuration, you can run the above, or
+
+                make build-ux
+            """
+            ) from e
 
         Provisioner(
             network=network,

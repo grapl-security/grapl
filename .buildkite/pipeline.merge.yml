@@ -90,7 +90,18 @@ steps:
                 label: ":pipeline: Upload AMI Build"
                 command: "buildkite-agent pipeline upload .buildkite/pipeline.merge.ami-build.yml"
 
-  # This will also wait for the uploaded pipeline, if we did decide to upload it.
+  - label: "Build UX Assets"
+    plugins:
+      - chronotc/monorepo-diff#v2.0.4:
+          diff: .buildkite/shared/scripts/diff.sh
+          watch:
+            - path:
+                - "src/js/engagement_view"
+                - ".buildkite/scripts/build_and_upload_ux.sh"
+              config:
+                command:
+                  - ".buildkite/scripts/build_and_upload_ux.sh"
+
   - wait
 
   # The names of the input files depend on the files that can be
@@ -104,6 +115,7 @@ steps:
         container_artifacts.json
         grapl-nomad-consul-server.artifacts.json
         grapl-nomad-consul-client.artifacts.json
+        ux_artifacts.json
 
   - wait
 
