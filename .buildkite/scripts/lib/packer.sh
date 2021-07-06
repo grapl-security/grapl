@@ -8,5 +8,6 @@ build_ami() {
 
     # shellcheck disable=SC2086
     packer build ${PACKER_VARS:-} packer/nomad-server
+    # shellcheck disable=SC2086
     packer build ${PACKER_VARS:-} packer/grapl-server
 }

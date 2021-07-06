@@ -107,7 +107,7 @@ build {
   ]
 
   post-processor "manifest" {
-    output = "packer-manifest.json" # The default value; just being explicit
+    output = "nomad-server.packer-manifest.json"
   }
 
   provisioner "file" {

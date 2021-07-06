@@ -111,6 +111,10 @@ build {
     "source.amazon-ebs.grapl-base-service-image"
   ]
 
+  post-processor "manifest" {
+    output = "grapl-service.packer-manifest.json"
+  }
+
   provisioner "file" {
     source = "${path.root}/files"
     destination = "/tmp/"

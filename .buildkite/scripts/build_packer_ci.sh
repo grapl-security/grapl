@@ -8,7 +8,11 @@ set -euo pipefail
 
 source .buildkite/scripts/lib/packer.sh
 
-readonly manifest="packer-manifest.json"
+# Also specified in the HCLs
+readonly manifests=(
+    "grapl-service.packer-manifest.json"
+    "nomad-server.packer-manifest.json"
+)
 
 echo -e "--- :packer: Performing build of AMI"
 export GIT_SHA="${BUILDKITE_COMMIT}"
@@ -18,12 +22,14 @@ export GIT_BRANCH="${BUILDKITE_BRANCH}"
 # This is in the `packer.sh` sourced above
 build_ami
 
-echo -e "--- :packer: Manifest Contents"
-cat "${manifest}"
-echo
+for manifest in "${manifests[@]}"; do
+    echo -e "--- :packer: Manifest ${manifest} Contents"
+    cat "${manifest}"
+    echo
 
-echo -e "--- :buildkite: Uploading ${manifest} file"
-buildkite-agent artifact upload "${manifest}"
+    echo -e "--- :buildkite: Uploading ${manifest} file"
+    buildkite-agent artifact upload "${manifest}"
 
-# Just to be safe, because subsequent runs can append to it
-rm "${manifest}"
+    # Just to be safe, because subsequent runs can append to it
+    rm "${manifest}"
+done
