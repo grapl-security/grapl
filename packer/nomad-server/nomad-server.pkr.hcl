@@ -59,15 +59,6 @@ locals {
   }
 }
 
-packer {
-  required_plugins {
-    amazon = {
-      version = ">= 0.0.1"
-      source  = "github.com/hashicorp/amazon"
-    }
-  }
-}
-
 source "amazon-ebs" "nomad-server-image" {
   ami_name      = "grapl-nomad-server-${local.formatted_timestamp}"
   instance_type = "t2.micro"
