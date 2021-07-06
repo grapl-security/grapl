@@ -1,0 +1,21 @@
+---
+env:
+  PANTS_CONFIG_FILES: "['pants.toml', 'pants.ci.toml']"
+
+# This is defined in a separate pipeline file because
+# chronotc/monorepo-diff does not currently have support for plugin
+# (or key) configuration on commands.
+#
+# :(
+
+steps:
+  - label: ":packer: AMI Test Build"
+    command: ".buildkite/scripts/test_packer.sh"
+    key: ami-test  # Needed for local pre-command hook
+    plugins:
+      - docker#v3.8.0:
+          image: "hashicorp/packer:1.7.2"
+          entrypoint: bash
+          propagate-aws-auth-tokens: true
+    agents:
+      queue: "packer"
