@@ -126,6 +126,8 @@ steps:
       # just have to log in so we can manipulate pulumi configs.
       queue: "pulumi"
 
+  - wait
+
   - label: ":writing_hand: Record successful build"
     command:
       - .buildkite/shared/steps/record_successful_pipeline_run.sh
