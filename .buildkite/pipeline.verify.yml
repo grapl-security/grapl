@@ -111,7 +111,7 @@ steps:
     command:
       - .buildkite/scripts/integration.sh
     agents:
-      queue: "docker"
+      queue: "beefy"
     artifact_paths:
       - "test_artifacts/**/*"
 
@@ -119,6 +119,6 @@ steps:
     command:
       - .buildkite/scripts/e2e.sh
     agents:
-      queue: "docker"
+      queue: "beefy"
     artifact_paths:
       - "test_artifacts/**/*"
