@@ -1,0 +1,13 @@
+[Unit]
+Description=Hashicorp's Consul
+
+[Service]
+Type=simple
+WorkingDirectory=/var/lib/consul
+User=consul
+Group=nfsnobody
+ExecStart=/usr/bin/consul agent -config-dir /var/lib/consul/ -log-file /var/lib/consul/log/
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

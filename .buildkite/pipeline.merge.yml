@@ -78,6 +78,19 @@ steps:
 
   - wait
 
+  - label: ":thinking_face: AMI Build?"
+    plugins:
+      - chronotc/monorepo-diff#v2.0.4:
+          diff: .buildkite/shared/scripts/diff.sh
+          watch:
+            - path:
+                - "packer/"
+                - ".buildkite/scripts/build_packer_ci.sh"
+                - ".buildkite/scripts/lib/packer.sh"
+              config:
+                label: ":pipeline: Upload AMI Build"
+                command: "buildkite-agent pipeline upload .buildkite/pipeline.merge.ami-build.yml"
+
   # The names of the input files depend on the files that can be
   # uploaded to Buildkite from previous steps in this pipeline.
   - label: "Merge artifacts files"
