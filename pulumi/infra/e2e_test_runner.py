@@ -27,8 +27,8 @@ class E2eTestRunner(pulumi.ComponentResource):
         from infra.lambda_ import (
             Lambda,
             LambdaExecutionRole,
+            LambdaResolver,
             PythonLambdaArgs,
-            code_path_for,
         )
 
         self.role = LambdaExecutionRole(
@@ -39,7 +39,7 @@ class E2eTestRunner(pulumi.ComponentResource):
             name,
             args=PythonLambdaArgs(
                 handler="lambdex_handler.handler",
-                code_path=code_path_for(name),
+                code=LambdaResolver.resolve(name),
                 env={
                     "IS_LOCAL": str(False),
                     "GRAPL_LOG_LEVEL": "DEBUG",

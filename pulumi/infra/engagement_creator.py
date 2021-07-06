@@ -1,7 +1,7 @@
 from infra.config import configurable_envvars
 from infra.dgraph_cluster import DgraphCluster
 from infra.emitter import EventEmitter
-from infra.lambda_ import code_path_for
+from infra.lambda_ import LambdaResolver
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.service import Service
@@ -21,7 +21,7 @@ class EngagementCreator(Service):
             name,
             forwarder=forwarder,
             lambda_handler_fn="lambdex_handler.handler",
-            lambda_code_path=code_path_for("engagement-creator"),
+            lambda_code=LambdaResolver.resolve("engagement-creator"),
             network=network,
             env={
                 **configurable_envvars(name, ["GRAPL_LOG_LEVEL"]),

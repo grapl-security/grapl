@@ -3,7 +3,7 @@ from typing import Optional
 
 import pulumi_aws as aws
 from infra.config import configurable_envvars
-from infra.lambda_ import Lambda, LambdaArgs, LambdaExecutionRole, code_path_for
+from infra.lambda_ import Lambda, LambdaArgs, LambdaExecutionRole, LambdaResolver
 from infra.network import Network
 
 import pulumi
@@ -27,7 +27,7 @@ class MetricForwarder(pulumi.ComponentResource):
                 execution_role=self.role,
                 runtime=aws.lambda_.Runtime.CUSTOM_AL2,
                 handler="metric-forwarder",
-                code_path=code_path_for("metric-forwarder"),
+                code=LambdaResolver.resolve("metric-forwarder"),
                 package_type="Zip",
                 env={
                     **configurable_envvars(

@@ -6,7 +6,7 @@ from infra.config import LOCAL_GRAPL, configurable_envvars
 from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
 from infra.ec2 import Ec2Port
-from infra.lambda_ import Lambda, LambdaExecutionRole, PythonLambdaArgs, code_path_for
+from infra.lambda_ import Lambda, LambdaExecutionRole, LambdaResolver, PythonLambdaArgs
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.secret import JWTSecret
@@ -37,7 +37,7 @@ class ModelPluginDeployer(pulumi.ComponentResource):
             args=PythonLambdaArgs(
                 execution_role=self.role,
                 handler="lambdex_handler.handler",
-                code_path=code_path_for(name),
+                code=LambdaResolver.resolve(name),
                 env={
                     **configurable_envvars(name, ["GRAPL_LOG_LEVEL"]),
                     "MG_ALPHAS": dgraph_cluster.alpha_host_port,
