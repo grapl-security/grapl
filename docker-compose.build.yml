@@ -39,12 +39,12 @@ services:
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
-  node-identifier-retry-handler:
-    image: grapl/node-identifier-retry-handler:${TAG:-latest}
+  node-identifier-retry:
+    image: grapl/node-identifier-retry:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile
-      target: node-identifier-retry-handler-deploy
+      target: node-identifier-retry-deploy
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
