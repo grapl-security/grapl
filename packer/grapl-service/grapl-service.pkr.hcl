@@ -47,22 +47,33 @@ locals {
   }
 }
 
-packer {
-  required_plugins {
-    amazon = {
-      version = ">= 0.0.1"
-      source  = "github.com/hashicorp/amazon"
-    }
+locals { 
+  # We append a timestamp to the AMI name to create unique names.
+  formatted_timestamp = formatdate("YYYYMMDDhhmmss", timestamp())
+
+  # Copied from src/python/graplctl/graplctl/swarm/lib.py
+  region_to_base_ami_id = {
+    us-east-1 = "ami-0947d2ba12ee1ff75"
   }
+
+  build_region = "us-east-1"
+  copy_ami_to_regions = [
+    "us-east-2",
+    "us-west-1",
+    "us-west-2",
+  ]
 }
 
 source "amazon-ebs" "grapl-base-service-image" {
-  ami_name      = "grapl-base-service-aws"
+  ami_name      = "grapl-base-service-aws-${local.formatted_timestamp}"
   instance_type = "t2.micro"
-  region        = "us-east-2"
+  # Where it's built and made available
+  region        = local.build_region
+  # Where we copy it after it's built
+  ami_regions   = local.copy_ami_to_regions 
   source_ami_filter {
     filters = {
-      image-id            = "ami-0a8d76686b0740efe"
+      image-id            = local.region_to_base_ami_id[local.build_region]
       root-device-type    = "ebs"
       virtualization-type = "hvm"
     }
@@ -101,17 +112,17 @@ build {
   ]
 
   provisioner "file" {
-    source = "files"
+    source = "${path.root}/files"
     destination = "/tmp/"
   }
 
   provisioner "shell" {
     execute_command = "{{.Vars}} sudo --preserve-env bash -x '{{.Path}}'"
     scripts = [
-      "scripts/packages.sh",
-      "scripts/download-files.sh",
-      "scripts/consul.sh",
-      "scripts/nomad.sh",
+      "${path.root}/scripts/packages.sh",
+      "${path.root}/scripts/download-files.sh",
+      "${path.root}/scripts/consul.sh",
+      "${path.root}/scripts/nomad.sh",
     ]
   }
 }

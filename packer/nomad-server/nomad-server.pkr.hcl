@@ -47,10 +47,7 @@ locals {
 
   # Copied from src/python/graplctl/graplctl/swarm/lib.py
   region_to_base_ami_id = {
-    us-east-1 = "ami-0947d2ba12ee1ff75"  # <--- only one we use
-    us-east-2 = "ami-03657b56516ab7912"
-    us-west-1 = "ami-0e4035ae3f70c400f"
-    us-west-2 = "ami-0528a5175983e7f28"
+    us-east-1 = "ami-0947d2ba12ee1ff75"
   }
 
   build_region = "us-east-1"
