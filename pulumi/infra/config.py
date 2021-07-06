@@ -1,7 +1,7 @@
 import os
 import re
 from pathlib import Path
-from typing import Mapping, Sequence
+from typing import Mapping, Optional, Sequence
 
 import pulumi_aws as aws
 from typing_extensions import Final
@@ -132,3 +132,23 @@ def configurable_envvars(service_name: str, vars: Sequence[str]) -> Mapping[str,
     splicing into other environment maps for configuring services.
     """
     return {v: configurable_envvar(service_name, v) for v in vars}
+
+
+def configured_version_for(artifact_name: str) -> Optional[str]:
+    """Given the name of an artifact, retrieves the version of that
+    artifact from the current stack configuration. Returns `None` if
+    no version has been specified for that artifact.
+
+    In general, we will have versions specified for all artifacts when
+    doing deploys of release candidates to automated testing and
+    production infrastructure. However, individual developers working
+    on features _may_ wish to specify concrete versions for some
+    artifacts, while leaving others unspecified. In the latter case,
+    artifacts built locally from the current code checkout will be
+    used instead. This allows developers to deploy the code they are
+    currently iterating on to their own sandbox environments.
+
+    """
+    artifacts = pulumi.Config().get_object("artifacts") or {}
+    version = artifacts.get(artifact_name)
+    return version
