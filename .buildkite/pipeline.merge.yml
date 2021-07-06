@@ -5,6 +5,7 @@ env:
 steps:
 
   - label: ":aws-lambda::rust: Build Rust Lambdas"
+    key: "rust-lambdas"
     plugins:
       - chronotc/monorepo-diff#v2.0.4:
           diff: .buildkite/shared/scripts/diff.sh
@@ -21,6 +22,7 @@ steps:
                   queue: "docker"
 
   - label: ":aws-lambda::typescript: Build Typescript Lambdas"
+    key: "js-lambdas"
     plugins:
       - chronotc/monorepo-diff#v2.0.4:
           diff: .buildkite/shared/scripts/diff.sh
@@ -37,11 +39,11 @@ steps:
                   queue: "docker"
 
   - label: ":aws-lambda::python: Build Python Lambdas"
+    key: "python-lambdas"
     command:
       # Strictly speaking, this would also build Python wheels, but
       # those aren't named *-lambda.zip
       - "./pants --changed-since=internal/last-successful-merge --changed-dependees=transitive package"
-    key: "python-lambdas"
     artifact_paths:
       - "dist/*-lambda.zip"
 
