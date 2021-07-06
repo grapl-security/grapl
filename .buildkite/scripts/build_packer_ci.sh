@@ -16,7 +16,7 @@ export GIT_BRANCH="${BUILDKITE_BRANCH}"
 : "${BUILDKITE_BUILD_NUMBER}"
 
 # This is in `.buildkite/scripts/lib/packer.sh`
-build_ami
+PACKER_VARS="-var 'region=us-east-1'" build_ami
 
 echo -e "--- :packer: Manifest Contents"
 cat "${manifest}"

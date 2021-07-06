@@ -34,11 +34,6 @@ variable "region" {
   type        = string
 }
 
-variable "base_ami_id" {
-  description = "The Amazon Linux AMI ID to use as a base image. Must be the right region!"
-  type        = string
-}
-
 locals {
   # These are various metadata tags we can add to the resulting
   # AMI. If any are unset (like the Buildkite build number, if
@@ -48,6 +43,19 @@ locals {
     "git:sha"                = "${var.git_sha}"
     "git:branch"             = "${var.git_branch}"
     "buildkite:build_number" = "${var.buildkite_build_number}"
+  }
+}
+
+locals { 
+  # We append a timestamp to the AMI name to create unique names.
+  formatted_timestamp = formatdate("YYYYMMDDhhmmss", timestamp())
+
+  # Copied from src/python/graplctl/graplctl/swarm/lib.py
+  region_to_base_ami_id = {
+    us-east-1 = "ami-0947d2ba12ee1ff75"
+    us-east-2 = "ami-03657b56516ab7912"
+    us-west-1 = "ami-0e4035ae3f70c400f"
+    us-west-2 = "ami-0528a5175983e7f28"
   }
 }
 
@@ -61,12 +69,12 @@ packer {
 }
 
 source "amazon-ebs" "nomad-server-image" {
-  ami_name      = "nomad-server-aws"
+  ami_name      = "grapl-nomad-server-${local.formatted_timestamp}"
   instance_type = "t2.micro"
   region        = var.region
   source_ami_filter {
     filters = {
-      image-id            = var.base_ami_id
+      image-id            = local.region_to_base_ami_id[var.region]
       root-device-type    = "ebs"
       virtualization-type = "hvm"
     }
@@ -104,18 +112,22 @@ build {
     "source.amazon-ebs.nomad-server-image"
   ]
 
+  post-processor "manifest" {
+    output = "packer-manifest.json" # The default value; just being explicit
+  }
+
   provisioner "file" {
-    source = "files"
+    source = "${path.root}/files"
     destination = "/tmp/"
   }
 
   provisioner "shell" {
     execute_command = "{{.Vars}} sudo --preserve-env bash -x '{{.Path}}'"
     scripts = [
-      "scripts/packages.sh",
-      "scripts/download-files.sh",
-      "scripts/consul.sh",
-      "scripts/nomad.sh",
+      "${path.root}/scripts/packages.sh",
+      "${path.root}/scripts/download-files.sh",
+      "${path.root}/scripts/consul.sh",
+      "${path.root}/scripts/nomad.sh",
     ]
   }
 }
