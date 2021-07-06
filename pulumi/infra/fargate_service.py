@@ -1,10 +1,14 @@
 import json
-from typing import Mapping, Optional, Sequence, Tuple, Union
+from typing import Mapping, Optional, Sequence, Tuple, Union, cast
 
 import pulumi_aws as aws
 import pulumi_docker as docker
 from infra.cache import Cache
-from infra.config import DEPLOYMENT_NAME, SERVICE_LOG_RETENTION_DAYS
+from infra.config import (
+    DEPLOYMENT_NAME,
+    SERVICE_LOG_RETENTION_DAYS,
+    configured_version_for,
+)
 from infra.ec2 import Ec2Port
 from infra.emitter import EventEmitter
 from infra.metric_forwarder import MetricForwarder
@@ -309,7 +313,8 @@ class FargateService(pulumi.ComponentResource):
             forwarder=forwarder,
             opts=pulumi.ResourceOptions(parent=self),
         )
-        repository.grant_access_to(self.default_service.execution_role)
+        if repository:
+            repository.grant_access_to(self.default_service.execution_role)
 
         # If a separate retry image was provided, create a separate
         # repository for it; otherwise, reuse the existing repository
@@ -334,7 +339,8 @@ class FargateService(pulumi.ComponentResource):
             forwarder=forwarder,
             opts=pulumi.ResourceOptions(parent=self),
         )
-        retry_repository.grant_access_to(self.retry_service.execution_role)
+        if retry_repository:
+            retry_repository.grant_access_to(self.retry_service.execution_role)
 
         self.services = (self.default_service, self.retry_service)
 
@@ -359,21 +365,33 @@ class FargateService(pulumi.ComponentResource):
 
     def _repository_and_image(
         self, name: str, build: docker.DockerBuild
-    ) -> Tuple[Repository, pulumi.Output[str]]:
+    ) -> Tuple[Optional[Repository], pulumi.Output[str]]:
 
-        repository = Repository(name, opts=pulumi.ResourceOptions(parent=self))
+        version = configured_version_for(name)
+        if version:
+            image_name = f"docker.cloudsmith.io/grapl/raw/{name}:{version}"
+            pulumi.info(f"Version found for {name}: {version} ({image_name})")
+            # It's a bit of a bummer to need this cast :/
+            return (None, cast(pulumi.Output[str], image_name))
+        else:
+            # create ECR, build image, push to ECR, return output
+            pulumi.info(
+                f"Version NOT found for {name}; performing local container image build"
+            )
 
-        image = docker.Image(
-            name,
-            image_name=repository.registry_qualified_name,
-            build=build,
-            registry=registry_credentials(),
-            opts=pulumi.ResourceOptions(parent=self),
-        )
+            repository = Repository(name, opts=pulumi.ResourceOptions(parent=self))
 
-        # The built image name will have a checksum appended to it,
-        # thus eliminating the need to use tags.
-        return (repository, image.image_name)
+            image = docker.Image(
+                name,
+                image_name=repository.registry_qualified_name,
+                build=build,
+                registry=registry_credentials(),
+                opts=pulumi.ResourceOptions(parent=self),
+            )
+
+            # The built image name will have a checksum appended to it,
+            # thus eliminating the need to use tags.
+            return (repository, image.image_name)
 
 
 def _environment_from_map(env: Mapping[str, str]) -> Sequence[Mapping[str, str]]:
