@@ -5,68 +5,42 @@ env:
 steps:
 
   - label: ":aws-lambda::rust: Build Rust Lambdas"
-    command:
-      - "make lambdas-rust"
-    key: "rust-lambdas"
-    artifact_paths:
-      - "dist/*-lambda.zip"
-    agents:
-      queue: "docker"
-
-    # TODO: Add this conditionality after the first run-through, so
-    # the tags the diffing logic is based on are created naturally.
-    #
-    # plugins:
-    #   - chronotc/monorepo-diff#v2.0.4:
-    #       diff: .buildkite/shared/scripts/diff.sh
-    #       watch:
-    #         - path:
-    #             - "src/rust/"  # This is not minimal, obviously
-    #             - "docker-compose.lambda-zips.rust.yml"
-    #           config:
-    #             command:
-    #               - "make lambdas-rust"
-    #             artifact_paths:
-    #               - "dist/*-lambda.zip"
-    #             agents:
-    #               queue: "docker"
+    plugins:
+      - chronotc/monorepo-diff#v2.0.4:
+          diff: .buildkite/shared/scripts/diff.sh
+          watch:
+            - path:
+                - "src/rust/"  # This is not minimal, obviously
+                - "docker-compose.lambda-zips.rust.yml"
+              config:
+                command:
+                  - "make lambdas-rust"
+                artifact_paths:
+                  - "dist/*-lambda.zip"
+                agents:
+                  queue: "docker"
 
   - label: ":aws-lambda::typescript: Build Typescript Lambdas"
-    command:
-      - "make lambdas-js"
-    key: "js-lambdas"
-    artifact_paths:
-      - "dist/*-lambda.zip"
-    agents:
-      queue: "docker"
-
-    # TODO: Add this conditionality after the first run-through, so
-    # the tags the diffing logic is based on are created naturally.
-    #
-    # plugins:
-    #   - chronotc/monorepo-diff#v2.0.4:
-    #       # diff: .buildkite/shared/scripts/diff.sh
-    #       watch:
-    #         - path:
-    #             - "src/js/"  # This is not minimal, obviously
-    #             - "docker-compose.lambda-zips.js.yml"
-    #           config:
-    #             command:
-    #               - "make lambdas-js"
-    #             artifact_paths:
-    #               - "dist/*-lambda.zip"
-    #             agents:
-    #               queue: "docker"
+    plugins:
+      - chronotc/monorepo-diff#v2.0.4:
+          diff: .buildkite/shared/scripts/diff.sh
+          watch:
+            - path:
+                - "src/js/"  # This is not minimal, obviously
+                - "docker-compose.lambda-zips.js.yml"
+              config:
+                command:
+                  - "make lambdas-js"
+                artifact_paths:
+                  - "dist/*-lambda.zip"
+                agents:
+                  queue: "docker"
 
   - label: ":aws-lambda::python: Build Python Lambdas"
     command:
-      - "make lambdas-python"
-      # TODO: Add this conditionality after the first run-through, so
-      # the tags the diffing logic is based on are created naturally.
-      #
       # Strictly speaking, this would also build Python wheels, but
       # those aren't named *-lambda.zip
-      # - "./pants --changed-since=internal/last-successful-merge --changed-dependees=transitive package"
+      - "./pants --changed-since=internal/last-successful-merge --changed-dependees=transitive package"
     key: "python-lambdas"
     artifact_paths:
       - "dist/*-lambda.zip"
