@@ -34,12 +34,6 @@ variable "region" {
   type        = string
 }
 
-variable "build_ami" {
-  description = "Whether or not to actually build an AMI. Set to `false` for doing testing"
-  type        = bool
-  default     = true
-}
-
 locals {
   # These are various metadata tags we can add to the resulting
   # AMI. If any are unset (like the Buildkite build number, if
@@ -88,7 +82,6 @@ source "amazon-ebs" "nomad-server-image" {
     owners = ["amazon"]
   }
 
-  skip_create_ami = "${var.build_ami == true ? false : true}"
 
   ssh_username = "ec2-user"
 
