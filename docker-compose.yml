@@ -233,8 +233,8 @@ services:
       redis:
         condition: service_healthy
 
-  node-identifier-retry-handler:
-    image: grapl/node-identifier-retry-handler:${TAG:-latest}
+  node-identifier-retry:
+    image: grapl/node-identifier-retry:${TAG:-latest}
     environment:
       <<: *aws-env
       DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"

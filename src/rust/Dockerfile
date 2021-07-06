@@ -141,11 +141,11 @@ FROM rust-dist AS node-identifier-deploy
 COPY --from=build /dist/node-identifier /
 CMD ["/node-identifier"]
 
-# node-identifier-retry-handler
-FROM rust-dist AS node-identifier-retry-handler-deploy
+# node-identifier-retry
+FROM rust-dist AS node-identifier-retry-deploy
 
-COPY --from=build /dist/node-identifier-retry-handler /
-CMD ["/node-identifier-retry-handler"]
+COPY --from=build /dist/node-identifier-retry /
+CMD ["/node-identifier-retry"]
 
 # sysmon-subgraph-generator
 FROM rust-dist AS sysmon-subgraph-generator-deploy

@@ -31,7 +31,7 @@ services=(
     graphql-endpoint
     model-plugin-deployer
     node-identifier
-    node-identifier-retry-handler
+    node-identifier-retry
     osquery-subgraph-generator
     sysmon-subgraph-generator
 )
