@@ -8,6 +8,7 @@ from infra.config import (
     DEPLOYMENT_NAME,
     LOCAL_GRAPL,
     SERVICE_LOG_RETENTION_DAYS,
+    configured_version_for,
     repository_path,
 )
 from infra.network import Network
@@ -47,8 +48,7 @@ class LambdaResolver:
         the given lambda function in the stack configuration "artifacts"
         object.
         """
-        artifacts = pulumi.Config().get_object("artifacts") or {}
-        version = artifacts.get(lambda_fn)
+        version = configured_version_for(lambda_fn)
         if version:
             url = LambdaResolver._cloudsmith_url(lambda_fn, version, "raw")
             pulumi.info(f"Version found for {lambda_fn}: {version} ({url})")

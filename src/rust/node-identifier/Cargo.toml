@@ -10,8 +10,8 @@ path = "src/bin/node-identifier.rs"
 
 
 [[bin]]
-name = "node-identifier-retry-handler"
-path = "src/bin/node-identifier-retry-handler.rs"
+name = "node-identifier-retry"
+path = "src/bin/node-identifier-retry.rs"
 
 [features]
 integration = []
