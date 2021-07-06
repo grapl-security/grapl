@@ -1,8 +1,8 @@
+# This file borrows heavily from the pattern defined in `pipeline-infrastructure`.
+
 ---
 env:
   PANTS_CONFIG_FILES: "['pants.toml', 'pants.ci.toml']"
-
-# This file borrows heavily from the pattern defined in `pipeline-infrastructure`.
 
 # This is defined in a separate pipeline file because
 # chronotc/monorepo-diff does not currently have support for plugin
@@ -12,7 +12,6 @@ env:
 steps:
   - label: ":packer: AMI Build"
     command: ".buildkite/scripts/build_packer_ci.sh"
-    key: ami-build  # Needed for local pre-command hook
     plugins:
       - docker#v3.8.0:
           image: "hashicorp/packer:1.7.2"

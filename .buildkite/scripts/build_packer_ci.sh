@@ -15,8 +15,8 @@ export GIT_SHA="${BUILDKITE_COMMIT}"
 export GIT_BRANCH="${BUILDKITE_BRANCH}"
 : "${BUILDKITE_BUILD_NUMBER}"
 
-# This is in `.buildkite/scripts/lib/packer.sh`
-PACKER_VARS="" build_ami
+# This is in the `packer.sh` sourced above
+build_ami
 
 echo -e "--- :packer: Manifest Contents"
 cat "${manifest}"

@@ -1,3 +1,5 @@
+# This file borrows heavily from the pattern defined in `pipeline-infrastructure`.
+
 ---
 env:
   PANTS_CONFIG_FILES: "['pants.toml', 'pants.ci.toml']"
@@ -13,7 +15,6 @@ steps:
 
   - label: ":packer: AMI Test Build"
     command: ".buildkite/scripts/test_packer.sh"
-    key: ami-test  # Needed for local pre-command hook
     plugins:
       - docker#v3.8.0:
           image: "hashicorp/packer:1.7.2"
