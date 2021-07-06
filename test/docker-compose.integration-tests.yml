@@ -37,8 +37,8 @@ services:
       - ASSET_ID_MAPPINGS=${DEPLOYMENT_NAME}-asset_id_mappings
       - REDIS_ENDPOINT
 
-  grapl-analyzerlib-integration-tests:
-    image: grapl/grapl-analyzerlib-test:${TAG:-latest}
+  analyzerlib-integration-tests:
+    image: grapl/analyzerlib-test:${TAG:-latest}
     build:
       context: ${PWD}/src
       dockerfile: ./python/Dockerfile
@@ -55,7 +55,7 @@ services:
   # grapl-analyzer-deployer-integration-tests:
 
   analyzer-executor-integration-tests:
-    image: grapl/grapl-analyzer-executor-test:${TAG:-latest}
+    image: grapl/analyzer-executor-test:${TAG:-latest}
     build:
       context: ${PWD}/src
       dockerfile: ./python/Dockerfile

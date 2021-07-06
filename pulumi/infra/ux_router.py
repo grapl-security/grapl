@@ -3,7 +3,7 @@ from typing import Optional
 from infra.bucket import Bucket
 from infra.config import configurable_envvars
 from infra.ec2 import Ec2Port
-from infra.lambda_ import Lambda, LambdaExecutionRole, PythonLambdaArgs, code_path_for
+from infra.lambda_ import Lambda, LambdaExecutionRole, LambdaResolver, PythonLambdaArgs
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.secret import JWTSecret
@@ -31,7 +31,7 @@ class UxRouter(pulumi.ComponentResource):
             args=PythonLambdaArgs(
                 execution_role=self.role,
                 handler="lambdex_handler.handler",
-                code_path=code_path_for(name),
+                code=LambdaResolver.resolve(name),
                 env={
                     **configurable_envvars(name, ["GRAPL_LOG_LEVEL"]),
                     "UX_BUCKET_NAME": ux_bucket.bucket,

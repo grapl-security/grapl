@@ -2,8 +2,8 @@ version: "3.8"
 
 services:
 
-  grapl-metric-forwarder-zip:
-    image: grapl/rust-zip:${TAG:-latest}
+  metric-forwarder-zip:
+    image: grapl/metric-forwarder-zip:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile

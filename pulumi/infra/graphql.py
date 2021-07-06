@@ -7,7 +7,7 @@ from infra.config import LOCAL_GRAPL
 from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
 from infra.ec2 import Ec2Port
-from infra.lambda_ import Lambda, LambdaArgs, LambdaExecutionRole, code_path_for
+from infra.lambda_ import Lambda, LambdaArgs, LambdaExecutionRole, LambdaResolver
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.secret import JWTSecret
@@ -38,7 +38,7 @@ class GraphQL(pulumi.ComponentResource):
                 execution_role=self.role,
                 handler="server.handler",
                 runtime=aws.lambda_.Runtime.NODE_JS14D_X,
-                code_path=code_path_for(name),
+                code=LambdaResolver.resolve(name),
                 package_type="Zip",
                 env={
                     "MG_ALPHAS": dgraph_cluster.alpha_host_port,

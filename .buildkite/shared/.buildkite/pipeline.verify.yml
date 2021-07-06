@@ -1,0 +1,12 @@
+---
+env:
+  PANTS_CONFIG_FILES: "['pants.toml', 'pants.ci.toml']"
+
+steps:
+  - label: ":bash: Linting"
+    command:
+      - "./pants lint ::"
+
+  - label: ":bash: Testing"
+    command:
+      - "./pants test ::"

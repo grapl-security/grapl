@@ -12,8 +12,8 @@ services:
   # Rust Services
   ########################################################################
 
-  grapl-sysmon-subgraph-generator:
-    image: grapl/grapl-sysmon-subgraph-generator:${TAG:-latest}
+  sysmon-subgraph-generator:
+    image: grapl/sysmon-subgraph-generator:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -21,8 +21,8 @@ services:
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
-  grapl-osquery-subgraph-generator:
-    image: grapl/grapl-osquery-subgraph-generator:${TAG:-latest}
+  osquery-subgraph-generator:
+    image: grapl/osquery-subgraph-generator:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -30,8 +30,8 @@ services:
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
-  grapl-node-identifier:
-    image: grapl/grapl-node-identifier:${TAG:-latest}
+  node-identifier:
+    image: grapl/node-identifier:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -39,8 +39,8 @@ services:
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
-  grapl-node-identifier-retry-handler:
-    image: grapl/grapl-node-identifier-retry-handler:${TAG:-latest}
+  node-identifier-retry-handler:
+    image: grapl/node-identifier-retry-handler:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -48,8 +48,8 @@ services:
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
-  grapl-graph-merger:
-    image: grapl/grapl-graph-merger:${TAG:-latest}
+  graph-merger:
+    image: grapl/graph-merger:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -57,8 +57,8 @@ services:
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
-  grapl-analyzer-dispatcher:
-    image: grapl/grapl-analyzer-dispatcher:${TAG:-latest}
+  analyzer-dispatcher:
+    image: grapl/analyzer-dispatcher:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -70,15 +70,15 @@ services:
   # Python Services
   ########################################################################
 
-  grapl-analyzer-executor:
-    image: grapl/grapl-analyzer-executor:${TAG:-latest}
+  analyzer-executor:
+    image: grapl/analyzer-executor:${TAG:-latest}
     build:
       context: src
       dockerfile: ./python/Dockerfile
       target: analyzer-executor-deploy
 
-  grapl-model-plugin-deployer:
-    image: grapl/grapl-model-plugin-deployer:${TAG:-latest}
+  model-plugin-deployer:
+    image: grapl/model-plugin-deployer:${TAG:-latest}
     build:
       context: src
       dockerfile: ./python/Dockerfile
@@ -88,22 +88,22 @@ services:
   # Web Services
   ########################################################################
 
-  grapl-engagement-view-uploader:
-    image: grapl/grapl-engagement-view:${TAG:-latest}
+  engagement-view-uploader:
+    image: grapl/engagement-view:${TAG:-latest}
     build:
       context: src
       dockerfile: js/engagement_view/Dockerfile
       target: engagement-view-local-deploy
 
-  grapl-graphql-endpoint:
-    image: grapl/grapl-graphql-endpoint:${TAG:-latest}
+  graphql-endpoint:
+    image: grapl/graphql-endpoint:${TAG:-latest}
     build:
       context: src
       dockerfile: js/graphql_endpoint/Dockerfile
       target: graphql-endpoint-deploy
 
-  grapl-notebook:
-    image: grapl/grapl-notebook:${TAG:-latest}
+  notebook:
+    image: grapl/notebook:${TAG:-latest}
     build:
       context: src
       dockerfile: ./python/Dockerfile
@@ -113,8 +113,8 @@ services:
   # Utility Services
   ########################################################################
 
-  grapl-pulumi:
-    image: grapl/grapl-local-pulumi:${TAG:-latest}
+  pulumi:
+    image: grapl/local-pulumi:${TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile.pulumi

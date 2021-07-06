@@ -7,7 +7,7 @@ from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
 from infra.ec2 import Ec2Port
 from infra.engagement_notebook import EngagementNotebook
-from infra.lambda_ import Lambda, LambdaExecutionRole, PythonLambdaArgs, code_path_for
+from infra.lambda_ import Lambda, LambdaExecutionRole, LambdaResolver, PythonLambdaArgs
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.secret import JWTSecret
@@ -40,7 +40,7 @@ class EngagementEdge(pulumi.ComponentResource):
             name,
             args=PythonLambdaArgs(
                 handler="lambdex_handler.handler",
-                code_path=code_path_for(name),
+                code=LambdaResolver.resolve(name),
                 env={
                     **configurable_envvars(name, ["GRAPL_LOG_LEVEL"]),
                     # TODO: Not clear that this is even used.

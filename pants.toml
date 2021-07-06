@@ -141,3 +141,20 @@ config = ".flake8"
 # Indent switch cases
 # Redirect operators are followed by a space
 args = ["-i 4", "-ci", "-sr"]
+
+[test]
+output = "all"
+
+[shellcheck]
+# Currently, Pants only knows about v0.7.1, but v0.7.2 has some nice
+# relative sourcing features we'd like to take advantage of, namely,
+# `script-path=SOURCEDIR`. In particular, this is required to "play
+# nicely" with the `git subtree`-imported code from
+# grapl-security/buildkite-common.
+#
+# Once Pants knows about v0.7.2 natively, we can remove these
+# configuration values.
+version = "v0.7.2"
+known_versions = [
+  "v0.7.2|linux|70423609f27b504d6c0c47e340f33652aea975e45f312324f2dbf91c95a3b188|1382204"
+]

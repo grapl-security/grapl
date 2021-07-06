@@ -16,16 +16,46 @@ from typing_extensions import Literal
 import pulumi
 
 
-def code_path_for(lambda_fn: str) -> str:
-    """Given the name of a lambda, return the local path of the ZIP archive for that lambda.
-
-    Looks in "<REPOSITORY_ROOT>/dist" currently, but
-    this can be overridden by setting the `GRAPL_LAMBDA_ZIP_DIR`
-    environment variable to an appropriate directory.
-
+class LambdaResolver:
+    """Encapsulates the logic required to generate a `pulumi.Archive` for
+    a given AWS Lambda function, whether from a local directory or
+    from a remote Cloudsmith repository.
     """
-    root_dir = os.getenv("GRAPL_LAMBDA_ZIP_DIR", repository_path("dist"))
-    return f"{root_dir}/{lambda_fn}-lambda.zip"
+
+    @staticmethod
+    def _code_path_for(lambda_fn: str) -> str:
+        """Given the name of a lambda, return the local path of the ZIP archive for that lambda.
+
+        Looks in "<REPOSITORY_ROOT>/dist" currently, but
+        this can be overridden by setting the `GRAPL_LAMBDA_ZIP_DIR`
+        environment variable to an appropriate directory.
+        """
+        root_dir = os.getenv("GRAPL_LAMBDA_ZIP_DIR", repository_path("dist"))
+        return f"{root_dir}/{lambda_fn}-lambda.zip"
+
+    @staticmethod
+    def _cloudsmith_url(lambda_fn: str, version: str, repository: str) -> str:
+        # TODO: The repository should be configurable somehow (perhaps
+        # by explicitly setting it in stack configuration).
+        return f"https://dl.cloudsmith.io/public/grapl/{repository}/raw/versions/{version}/{lambda_fn}-lambda.zip"
+
+    @staticmethod
+    def resolve(lambda_fn: str) -> pulumi.Archive:
+        """Resolve the code for a lambda function, either from a local directory or from our Cloudsmith repository.
+
+        Downloading from Cloudsmith relies on a version being found for
+        the given lambda function in the stack configuration "artifacts"
+        object.
+        """
+        artifacts = pulumi.Config().get_object("artifacts") or {}
+        version = artifacts.get(lambda_fn)
+        if version:
+            url = LambdaResolver._cloudsmith_url(lambda_fn, version, "raw")
+            pulumi.info(f"Version found for {lambda_fn}: {version} ({url})")
+            return pulumi.RemoteArchive(url)
+        else:
+            pulumi.info(f"Version NOT found for {lambda_fn}; using local file")
+            return pulumi.FileArchive(LambdaResolver._code_path_for(lambda_fn))
 
 
 LambdaPackageType = Literal["Zip", "Image"]
@@ -46,9 +76,8 @@ class LambdaArgs:
     handler: str
     """ The entrypoint for the function. """
 
-    code_path: str
-    """ The path to a local file on disk that contains the code for this
-    function."""
+    code: pulumi.Archive
+    """ The actual code for the lambda function."""
 
     runtime: aws.lambda_.Runtime
     """ The lambda runtime to use for this function. """
@@ -146,7 +175,7 @@ class Lambda(pulumi.ComponentResource):
             runtime=args.runtime,
             package_type=args.package_type,
             handler=args.handler,
-            code=pulumi.FileArchive(args.code_path),
+            code=args.code,
             environment=aws.lambda_.FunctionEnvironmentArgs(variables=args.env),
             memory_size=args.memory_size,
             timeout=args.timeout,

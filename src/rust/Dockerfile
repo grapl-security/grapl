@@ -110,14 +110,12 @@ RUN mkdir -p /grapl/zips; \
 
 # images for running services
 ################################################################################
-FROM debian:buster-slim AS rust-dist
+# More information about the base image used here can be found at: 
+# https://github.com/GoogleContainerTools/distroless/blob/main/cc/README.md.
+# For debugging see: https://github.com/GoogleContainerTools/distroless#debug-images
+FROM gcr.io/distroless/cc AS rust-dist
 
-RUN --mount=type=cache,target=/var/lib/apt/lists \
-    apt-get update && apt-get install -y --no-install-recommends \
-        ca-certificates \
-        netbase
-
-USER nobody
+USER nonroot
 
 # analyzer-dispatcher
 FROM rust-dist AS analyzer-dispatcher-deploy

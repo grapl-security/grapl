@@ -4,7 +4,7 @@ from infra import dynamodb
 from infra.config import DEPLOYMENT_NAME
 from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
-from infra.lambda_ import Lambda, LambdaExecutionRole, PythonLambdaArgs, code_path_for
+from infra.lambda_ import Lambda, LambdaExecutionRole, LambdaResolver, PythonLambdaArgs
 from infra.network import Network
 from infra.secret import TestUserPassword
 from infra.swarm import Ec2Port
@@ -31,7 +31,7 @@ class Provisioner(pulumi.ComponentResource):
             name,
             args=PythonLambdaArgs(
                 handler="lambdex_handler.handler",
-                code_path=code_path_for(name),
+                code=LambdaResolver.resolve(name),
                 env={
                     "GRAPL_LOG_LEVEL": "DEBUG",
                     "DEPLOYMENT_NAME": DEPLOYMENT_NAME,
