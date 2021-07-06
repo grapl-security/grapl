@@ -29,11 +29,6 @@ variable "aws_profile" {
   default     = env("AWS_PROFILE")
 }
 
-variable "region" {
-  description = "The AWS region to create this AMI in"
-  type        = string
-}
-
 locals {
   # These are various metadata tags we can add to the resulting
   # AMI. If any are unset (like the Buildkite build number, if
@@ -52,20 +47,30 @@ locals {
 
   # Copied from src/python/graplctl/graplctl/swarm/lib.py
   region_to_base_ami_id = {
-    us-east-1 = "ami-0947d2ba12ee1ff75"
+    us-east-1 = "ami-0947d2ba12ee1ff75"  # <--- only one we use
     us-east-2 = "ami-03657b56516ab7912"
     us-west-1 = "ami-0e4035ae3f70c400f"
     us-west-2 = "ami-0528a5175983e7f28"
   }
+
+  build_region = "us-east-1"
+  copy_ami_to_regions = [
+    "us-east-2",
+    "us-west-1",
+    "us-west-2",
+  ]
 }
 
 source "amazon-ebs" "nomad-server-image" {
   ami_name      = "grapl-nomad-server-${local.formatted_timestamp}"
   instance_type = "t2.micro"
-  region        = var.region
+  # Where it's built and made available
+  region        = local.build_region
+  # Where we copy it after it's built
+  ami_regions   = local.copy_ami_to_regions 
   source_ami_filter {
     filters = {
-      image-id            = local.region_to_base_ami_id[var.region]
+      image-id            = local.region_to_base_ami_id[local.build_region]
       root-device-type    = "ebs"
       virtualization-type = "hvm"
     }
