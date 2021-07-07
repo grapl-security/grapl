@@ -11,7 +11,7 @@ upload_artifacts_file() {
     root_name=$(echo "${manifest_file}" | cut -d "." -f1)
     readonly root_name
     # e.g. "grapl-service.artifacts.json"
-    readonly artifacts_file="${root_name}.${ARTIFACTS_FILE}"
+    readonly artifacts_file="${root_name}.${ARTIFACTS_FILE_SUFFIX}"
 
     # Download Packer manifest
     echo -e "--- :buildkite: Download Packer manifest"
@@ -28,7 +28,6 @@ upload_artifacts_file() {
     ami_id=$(jq -r '.builds[-1].artifact_id' "${manifest_file}" | cut -d ":" -f2)
     echo "${ami_id}"
 
-    # TODO wimax July 2021: I may need a different artifacts file name per AMI
     # Creating artifacts file
     echo -c "--- :gear: Creating ${artifacts_file} file"
     echo "{\"ami\":\"${ami_id}\"}" > "${artifacts_file}"
