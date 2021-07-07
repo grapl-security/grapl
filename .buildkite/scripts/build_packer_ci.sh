@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# TODO: Deduplicate - https://github.com/grapl-security/issue-tracker/issues/614
+
 # Build our AMI in Buildkite, supplying the necessary
 # information to create metadata tags.
 # This is called from .buildkite/pipeline.merge.ami-build.yml
@@ -7,12 +9,7 @@
 set -euo pipefail
 
 source .buildkite/scripts/lib/packer.sh
-
-# Also specified in the HCLs
-readonly manifests=(
-    "grapl-service.packer-manifest.json"
-    "nomad-server.packer-manifest.json"
-)
+source .buildkite/scripts/lib/packer_constants.sh
 
 echo -e "--- :packer: Performing build of AMI"
 export GIT_SHA="${BUILDKITE_COMMIT}"
@@ -22,7 +19,7 @@ export GIT_BRANCH="${BUILDKITE_BRANCH}"
 # This is in the `packer.sh` sourced above
 build_ami
 
-for manifest in "${manifests[@]}"; do
+for manifest in "${PACKER_MANIFESTS[@]}"; do
     echo -e "--- :packer: Manifest ${manifest} Contents"
     cat "${manifest}"
     echo

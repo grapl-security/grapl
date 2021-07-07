@@ -17,8 +17,8 @@
 # in other jobs.
 readonly ARTIFACTS_FILE="artifacts.json"
 
-# Our Packer build is configured with a manifest post-processor; this
-# is the name of the output file.
-#
-# See https://www.packer.io/docs/post-processors/manifest for details.
-readonly PACKER_MANIFEST_FILE="packer-manifest.json"
+# These are the two manifest files. Their name is specified in hcl.
+readonly PACKER_MANIFESTS=(
+    "grapl-service.packer-manifest.json"
+    "nomad-server.packer-manifest.json"
+)

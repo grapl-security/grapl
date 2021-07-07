@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# TODO: Deduplicate - https://github.com/grapl-security/issue-tracker/issues/614
+
 # Build our AMI on a local workstation, supplying the necessary
 # information to create metadata tags.
 
