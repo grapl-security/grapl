@@ -76,21 +76,12 @@ build {
   sources = ["source.amazon-ebs.amazon-linux-2-amd64-ami"]
 
   provisioner "shell" {
-    inline = ["sudo yum install -y git"]
-    only   = ["amazon-linux-2-amd64-ami"]
-  }
-
-  provisioner "shell" {
-    inline       = ["mkdir -p /tmp/terraform-aws-nomad"]
-    pause_before = "30s"
-  }
-
-  # As recommended in https://github.com/hashicorp/terraform-aws-nomad/tree/master/examples/nomad-consul-ami readme
-  provisioner "shell" {
     inline = [
+      "sudo yum install -y git"
+      # As recommended in https://github.com/hashicorp/terraform-aws-nomad/tree/master/examples/nomad-consul-ami readme
       "git clone --branch ${var.terraform_aws_nomad_version} https://github.com/hashicorp/terraform-aws-nomad.git /tmp/terraform-aws-nomad",
       "/tmp/terraform-aws-nomad/modules/install-nomad/install-nomad --version ${var.nomad_version}"
-    ]
+      ]
   }
 
   provisioner "shell" {
