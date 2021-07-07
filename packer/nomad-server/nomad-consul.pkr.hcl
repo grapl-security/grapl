@@ -77,10 +77,10 @@ build {
 
   provisioner "shell" {
     inline = [
-      "sudo yum install -y git"
+      "sudo yum install -y git",
       # As recommended in https://github.com/hashicorp/terraform-aws-nomad/tree/master/examples/nomad-consul-ami readme
       "git clone --branch ${var.terraform_aws_nomad_version} https://github.com/hashicorp/terraform-aws-nomad.git /tmp/terraform-aws-nomad",
-      "/tmp/terraform-aws-nomad/modules/install-nomad/install-nomad --version ${var.nomad_version}"
+      "/tmp/terraform-aws-nomad/modules/install-nomad/install-nomad --version ${var.nomad_version}",
       ]
   }
 
