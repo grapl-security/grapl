@@ -18,6 +18,8 @@ steps:
           entrypoint: bash
           propagate-environment: true
     agents:
+      # TODO: change this to a different queue
+      # https://github.com/grapl-security/issue-tracker/issues/613
       queue: "packer"
 
   # This just has to extract the AMI ID and jam it into the artifact

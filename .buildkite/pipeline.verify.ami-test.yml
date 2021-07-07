@@ -21,4 +21,6 @@ steps:
           entrypoint: bash
           propagate-aws-auth-tokens: true
     agents:
+      # TODO: change this to a different queue
+      # https://github.com/grapl-security/issue-tracker/issues/613
       queue: "packer"
