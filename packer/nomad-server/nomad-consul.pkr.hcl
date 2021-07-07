@@ -33,6 +33,11 @@ variable "nomad_version" {
   default = "1.1.1"
 }
 
+variable "terraform_aws_nomad_version" {
+  type = string
+  default = "v0.9.1"
+}
+
 locals {
   formatted_timestamp = formatdate("YYYYMMDDhhmmss", timestamp())
   copy_ami_to_regions = [
@@ -80,9 +85,12 @@ build {
     pause_before = "30s"
   }
 
-  provisioner "file" {
-    destination = "/tmp/terraform-aws-nomad"
-    source      = "${path.root}/../../"
+  # As recommended in https://github.com/hashicorp/terraform-aws-nomad/tree/master/examples/nomad-consul-ami readme
+  provisioner "shell" {
+    inline = [
+      "git clone --branch ${var.terraform_aws_nomad_version} https://github.com/hashicorp/terraform-aws-nomad.git /tmp/terraform-aws-nomad",
+      "/tmp/terraform-aws-nomad/modules/install-nomad/install-nomad --version ${var.nomad_version}"
+    ]
   }
 
   provisioner "shell" {
