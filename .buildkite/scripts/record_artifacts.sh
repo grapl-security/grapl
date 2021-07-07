@@ -30,7 +30,8 @@ upload_artifacts_file() {
 
     # Creating artifacts file
     echo -c "--- :gear: Creating ${artifacts_file} file"
-    echo "{\"ami\":\"${ami_id}\"}" > "${artifacts_file}"
+    # TODO: This should also have regions in the near future
+    echo "{\"${root_name}-ami\":\"${ami_id}\"}" > "${artifacts_file}"
     jq '.' "${artifacts_file}"
 
     # Uploading artifacts file

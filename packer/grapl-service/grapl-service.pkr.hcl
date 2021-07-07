@@ -53,6 +53,7 @@ locals {
 
   # Copied from src/python/graplctl/graplctl/swarm/lib.py
   region_to_base_ami_id = {
+    # just a basic Amazon Linux 2 image (see above file for details on how we retrieved it)
     us-east-1 = "ami-0947d2ba12ee1ff75"
   }
 
@@ -66,6 +67,7 @@ locals {
 
 source "amazon-ebs" "grapl-base-service-image" {
   ami_name      = "grapl-base-service-aws-${local.formatted_timestamp}"
+  # The instance that builds it. (We may want beefier!)
   instance_type = "t2.micro"
   # Where it's built and made available
   region        = local.build_region
@@ -77,7 +79,6 @@ source "amazon-ebs" "grapl-base-service-image" {
       root-device-type    = "ebs"
       virtualization-type = "hvm"
     }
-    most_recent = true
     owners      = ["amazon"]
   }
 
@@ -102,7 +103,7 @@ source "amazon-ebs" "grapl-base-service-image" {
     device_name           = "/dev/xvda"
     volume_type           = "gp2"
     volume_size           = "${var.volume_size}"
-    delete_on_termination = false
+    delete_on_termination = true
   }
 }
 
