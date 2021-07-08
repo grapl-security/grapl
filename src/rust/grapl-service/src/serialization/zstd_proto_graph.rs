@@ -1,4 +1,4 @@
-use grapl_graph_descriptions::graph_description::*;
+use rust_proto::graph_descriptions::*;
 use prost::EncodeError;
 use sqs_executor::completion_event_serializer::CompletionEventSerializer;
 use tracing::{

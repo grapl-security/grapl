@@ -30,7 +30,7 @@ use grapl_config::{
     },
     event_caches,
 };
-use grapl_graph_descriptions::graph_description::{
+use rust_proto::graph_descriptions::{
     Edge,
     EdgeList,
     IdentifiedGraph,

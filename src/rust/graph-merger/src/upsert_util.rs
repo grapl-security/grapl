@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use grapl_graph_descriptions::{
-    graph_description::*,
+use rust_proto::{
+    graph_descriptions::*,
     node_property::Property,
 };
 use node_property::Property::{

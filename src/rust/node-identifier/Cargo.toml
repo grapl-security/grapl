@@ -16,11 +16,12 @@ path = "src/bin/node-identifier-retry.rs"
 integration = []
 
 [dependencies]
-grapl-graph-descriptions = { path = "../graph-descriptions", version = "*" }
-grapl-config = { path = "../grapl-config", version = "*" }
-grapl-observe = { path = "../grapl-observe", version = "*" }
-grapl-service = { path = "../grapl-service" }
-grapl-utils = { path = "../grapl-utils" }
+rust-proto = { path="../rust-proto", version="*"}
+grapl-config = {path="../grapl-config", version="*"}
+grapl-observe = {path="../grapl-observe", version="*"}
+grapl-service = {path="../grapl-service"}
+grapl-utils = {path = "../grapl-utils"}
+
 bytes = "1"
 failure = "0.1"
 prost = "0.7"
@@ -66,3 +67,6 @@ tracing = "0.1.26"
 [dev-dependencies]
 quickcheck = "1"
 quickcheck_macros = "1"
+
+[build-dependencies]
+prost-build = "0.7.0"
