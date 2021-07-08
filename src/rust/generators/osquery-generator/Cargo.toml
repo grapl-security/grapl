@@ -15,11 +15,11 @@ name = "generator_bench"
 harness = false
 
 [dependencies]
-grapl-graph-descriptions = { path = "../../graph-descriptions", version = "*" }
-endpoint-plugin = { path = "../../endpoint-plugin" }
-grapl-config = { path = "../../grapl-config", version = "*" }
-grapl-observe = { path = "../../grapl-observe", version = "*" }
-graph-generator-lib = { path = "../graph-generator-lib", version = "*" }
+rust-proto = { path="../../rust-proto", version="*" }
+endpoint-plugin = { path="../../endpoint-plugin" }
+grapl-config = { path = "../../grapl-config", version="*" }
+grapl-observe = { path = "../../grapl-observe", version="*" }
+graph-generator-lib = { path="../graph-generator-lib", version="*" }
 grapl-service = { path = "../../grapl-service" }
 sqs-executor = { path = "../../sqs-executor/" }
 serde = { version = "1.0", features = ["derive"] }

@@ -7,7 +7,7 @@ use failure::{
     bail,
     Error,
 };
-use grapl_graph_descriptions::graph_description::{
+use rust_proto::graph_descriptions::{
     id_strategy,
     Session as SessionStrategy,
     *,

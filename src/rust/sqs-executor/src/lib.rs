@@ -1,55 +1,41 @@
-pub mod retriever;
-
 use std::{
     error::Error,
     fmt::Debug,
     future::Future,
     io::Stdout,
     panic::AssertUnwindSafe,
-    time::{
-        Duration,
-        SystemTime,
-        UNIX_EPOCH,
-    },
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
+
+use futures_util::FutureExt;
+use rusoto_core::RusotoError;
+use rusoto_s3::S3;
+use rusoto_sqs::{ListQueuesError, ListQueuesRequest, Message as SqsMessage, Sqs};
+use tracing::{debug, error, info};
 
 use event_emitter::EventEmitter;
 use event_handler::EventHandler;
-use futures_util::FutureExt;
 use grapl_observe::{
-    metric_reporter::{
-        tag,
-        MetricReporter,
-    },
+    metric_reporter::{MetricReporter, tag},
     timers::TimedFutureExt,
 };
-use rusoto_s3::S3;
-use rusoto_sqs::{
-    ListQueuesError,
-    ListQueuesRequest,
-    Message as SqsMessage,
-    Sqs,
-};
+pub use retriever::{event_retriever, s3_event_retriever};
 use s3_event_emitter::S3EventEmitter;
 use s3_event_retriever::S3PayloadRetriever;
-use tracing::{
-    debug,
-    error,
-    info,
-};
 
 use crate::{
     cache::Cache,
     completion_event_serializer::CompletionEventSerializer,
-    errors::{
-        CheckedError,
-        Recoverable,
-    },
+    errors::{CheckedError, Recoverable},
     event_decoder::PayloadDecoder,
     event_handler::CompletedEvents,
     event_retriever::PayloadRetriever,
     event_status::EventStatus,
 };
+use crate::sqs_timeout_manager::keep_alive;
+use prost::Message;
+
+pub mod retriever;
 
 pub mod cache;
 pub mod completion_event_serializer;
@@ -57,14 +43,6 @@ pub mod errors;
 pub mod event_decoder;
 pub mod event_emitter;
 pub mod event_handler;
-pub use retriever::{
-    event_retriever,
-    s3_event_retriever,
-};
-use rusoto_core::RusotoError;
-
-use crate::sqs_timeout_manager::keep_alive;
-
 pub mod event_status;
 pub mod key_creator;
 pub mod redis_cache;
@@ -181,7 +159,7 @@ async fn process_message<
     >,
 {
     let message_id = next_message.message_id.as_ref().unwrap().as_str();
-    let inner_loop_span = tracing::trace_span!("inner_loop_span", message_id = message_id,);
+    let inner_loop_span = tracing::trace_span!("inner_loop_span", message_id = message_id, trace_id=tracing::field::Empty);
     let _enter = inner_loop_span.enter();
 
     if cache.all_exist(&[message_id.to_owned()]).await {
@@ -215,8 +193,8 @@ async fn process_message<
     );
     let payload = s3_payload_retriever.retrieve_event(&next_message).await;
 
-    let events = match payload {
-        Ok(Some(events)) => events,
+    let (meta, events) = match payload {
+        Ok(Some((meta, events))) => (meta, events),
         Ok(None) => {
             rusoto_helpers::delete_message(
                 sqs_client.clone(),
@@ -249,6 +227,10 @@ async fn process_message<
         }
     };
 
+    let trace_id: uuid::Uuid = meta.trace_id.unwrap().into();
+    let trace_id = trace_id.to_string();
+    inner_loop_span.record("trace_id", &trace_id.as_str());
+
     // todo: We can lift this
     let mut completed = CompletedEvents::default();
 
@@ -273,13 +255,34 @@ async fn process_message<
     match processing_result {
         Ok(total) => {
             // encode event
-            let event = serializer
+            let events = serializer
                 .serialize_completed_events(&[total])
                 .expect("Serializing failed");
+
+            if events.is_empty() {
+                tracing::debug!(message = "Serialized events produced no output");
+                return;
+            }
+
+            let mut envelopes = vec![];
+            for event in events {
+                let envelope = rust_proto::services::Envelope {
+                    metadata: None,
+                    inner_type: "".to_string(),
+                    inner_message: event
+                };
+                let mut encoded = vec![];
+                if let Err(e) = envelope.encode(&mut encoded) {
+                    tracing::error!(message="Failed to encode message", error=?e);
+                    continue
+                };
+                envelopes.push(encoded);
+            }
+
             // emit event
             // todo: we should retry event emission
             s3_emitter
-                .emit_event(event)
+                .emit_event(envelopes)
                 .await
                 .expect("Failed to emit event");
 
@@ -306,16 +309,37 @@ async fn process_message<
                 error=?e,
                 recoverable=?e.error_type()
             );
-            let event = serializer
+            let events = serializer
                 .serialize_completed_events(&[partial])
                 .expect("Serializing failed");
             // emit event
             // todo: we should retry event emission
+            if events.is_empty() {
+                tracing::debug!(message = "Serialized events produced no output");
+                return;
+            }
+
+            let mut envelopes = vec![];
+            for event in events {
+                let envelope = rust_proto::services::Envelope {
+                    metadata: None,
+                    inner_type: "".to_string(),
+                    inner_message: event
+                };
+                let mut encoded = vec![];
+                if let Err(e) = envelope.encode(&mut encoded) {
+                    tracing::error!(message="Failed to encode message", error=?e);
+                    continue
+                };
+                envelopes.push(encoded);
+            }
+
+            // emit event
+            // todo: we should retry event emission
             s3_emitter
-                .emit_event(event)
+                .emit_event(envelopes)
                 .await
                 .expect("Failed to emit event");
-
             cache_completed(cache, &mut completed).await;
 
             if let Recoverable::Persistent = e.error_type() {
