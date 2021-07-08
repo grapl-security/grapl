@@ -142,11 +142,16 @@ build {
   # If you have custom Nomad config (.hcl) files, you may want to copy them 
   # into the config directory (default: /opt/nomad/config).
   provisioner "file" {
-    source      = "${path.root}/conf/"
+    source      = "${path.root}/nomad-config/"
     destination = "/opt/nomad/config/"
   }
 
+  provisioner "file" {
+    source      = "${path.root}/consul-config/"
+    destination = "/opt/consul/config/"
+  } 
+
   post-processor "manifest" {
-    output = "${ami_name_prefix}.packer-manifest.json"
+    output = "${var.ami_name_prefix}.packer-manifest.json"
   }
 }

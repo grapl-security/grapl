@@ -152,6 +152,6 @@ build {
   } 
 
   post-processor "manifest" {
-    output = "${ami_name_prefix}.packer-manifest.json"
+    output = "${var.ami_name_prefix}.packer-manifest.json"
   }
 }
