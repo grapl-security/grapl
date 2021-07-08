@@ -143,18 +143,18 @@ build {
   # into the config directory (default: /opt/nomad/config).
   provisioner "file" {
     source      = "${path.root}/nomad-config"
-    destination = "/tmp/nomad/config"
+    destination = "/tmp/"
   }
 
   provisioner "file" {
     source      = "${path.root}/consul-config"
-    destination = "/tmp/consul/config"
+    destination = "/tmp/"
   } 
 
   provisioner "shell" {
     inline = [
-      "sudo cp /tmp/nomad/config/* /opt/nomad/config",
-      "sudo cp /tmp/consul/config/* /opt/consul/config",
+      "sudo cp /tmp/nomad-config/* /opt/nomad/config",
+      "sudo cp /tmp/consul-config/* /opt/consul/config",
     ]
   }
 
