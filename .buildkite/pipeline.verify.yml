@@ -123,7 +123,7 @@ steps:
     artifact_paths:
       - "test_artifacts/**/*"
   
-  - label: "Packer Linting"
+  - label: ":packer::lint-roller: Packer Linting"
     command:
       - make lint-packer
   
