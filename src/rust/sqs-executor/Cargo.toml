@@ -11,23 +11,14 @@ integration = []
 [dependencies]
 grapl-observe = { path = "../grapl-observe" }
 grapl-utils = { path = "../grapl-utils" }
-rusoto_core = { version = "0.46", default_features = false, features = [
-  "rustls"
-] }
-rusoto_s3 = { version = "0.46", default_features = false, features = [
-  "rustls"
-] }
-rusoto_sqs = { version = "0.46", default_features = false, features = [
-  "rustls"
-] }
-tokio = { version = "1", features = [
-  "io-util",
-  "sync",
-  "rt",
-  "macros",
-  "time",
-  "rt-multi-thread"
-] }
+rust-proto = { path = "../rust-proto/" }
+
+rusoto_core = {version = "0.46", default_features = false, features=["rustls"]}
+rusoto_s3 = {version = "0.46", default_features = false, features=["rustls"]}
+rusoto_sqs = {version = "0.46", default_features = false, features=["rustls"]}
+
+tokio = { version = "1", features = ["io-util", "sync", "rt", "macros", "time", "rt-multi-thread"] }
+
 redis = { version = "0.20", features = ["tokio-comp", "connection-manager"] }
 serde = "1.0"
 serde_json = "1.0"

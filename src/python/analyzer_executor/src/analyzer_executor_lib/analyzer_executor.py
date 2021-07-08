@@ -36,6 +36,7 @@ from grapl_analyzerlib.plugin_retriever import load_plugins
 from grapl_analyzerlib.queryable import Queryable
 from grapl_analyzerlib.subgraph_view import SubgraphView
 from grapl_common.env_helpers import S3ResourceFactory
+from grapl_common.envelope import Envelope
 from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
 
@@ -202,10 +203,11 @@ class AnalyzerExecutor:
                 )
             analyzer_name = message["key"].split("/")[-2]
 
-            subgraph = SubgraphView.from_proto(client, bytes(message["subgraph"]))
+            envelope = Envelope.from_proto(bytes(message["subgraph"]))
+            subgraph = SubgraphView.from_proto(client, envelope.inner_message)
 
             # TODO: Validate signature of S3 file
-            LOGGER.info(f"event {event}")
+            LOGGER.info(f"event {event} {envelope.metadata}")
             rx: Connection
             tx: Connection
             rx, tx = Pipe(duplex=False)

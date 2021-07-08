@@ -3,7 +3,7 @@ use derive_dynamic_node::{
     GraplStaticId,
     NodeDescription,
 };
-use grapl_graph_descriptions::graph_description::*;
+use rust_proto::graph_descriptions::*;
 use log::info;
 use serde_derive::Deserialize;
 
