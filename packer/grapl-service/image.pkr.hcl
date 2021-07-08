@@ -138,6 +138,14 @@ build {
     script = "${path.root}/setup_nomad_consul.sh"
   }
 
+  # https://github.com/hashicorp/terraform-aws-nomad/tree/master/modules/install-nomad says
+  # If you have custom Nomad config (.hcl) files, you may want to copy them 
+  # into the config directory (default: /opt/nomad/config).
+  provisioner "file" {
+    source      = "${path.root}/conf/"
+    destination = "/opt/nomad/config/"
+  }
+
   post-processor "manifest" {
     output = "${ami_name_prefix}.packer-manifest.json"
   }
