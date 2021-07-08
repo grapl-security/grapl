@@ -126,9 +126,11 @@ steps:
   - label: ":packer::lint-roller: Packer Linting"
     command:
       - make lint-packer
-    skip: "hangs on buildkite, see below yaml comment"
-    # https://github.com/grapl-security/issue-tracker/issues/615
-    # fun fact: `skip` can be a max of 70 chars long
+    # Silently hangs unless the following is specified
+    plugins:
+      - docker#v3.8.0:
+          image: "hashicorp/packer:1.7.2"
+          entrypoint: bash
   
   - label: ":thinking_face: AMI Test?"
     # Don't want to run this again in the merge pipeline, since
