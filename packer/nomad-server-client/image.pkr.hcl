@@ -156,8 +156,8 @@ build {
   provisioner "shell" {
     inline = [
       # Only copy <the client> or <the server> file names
-      "sudo cp /tmp/nomad-config/${config_file_names} /opt/nomad/config",
-      "sudo cp /tmp/consul-config/${config_file_names} /opt/consul/config",
+      "sudo cp /tmp/nomad-config/${local.config_file_names} /opt/nomad/config",
+      "sudo cp /tmp/consul-config/${local.config_file_names} /opt/consul/config",
     ]
   }
 
