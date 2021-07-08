@@ -15,10 +15,12 @@
 # When a pipeline generates artifacts, it should record this in a file
 # of this name and upload it as a Buildkite artifact for consumption
 # in other jobs.
-readonly ARTIFACTS_FILE_SUFFIX="artifacts.json"
+readonly ARTIFACTS_FILE_SUFFIX=".artifacts.json"
 
-# These are the two manifest files. Their name is specified in hcl.
-readonly PACKER_MANIFESTS=(
-    "grapl-service.packer-manifest.json"
-    "nomad-server.packer-manifest.json"
+# These are specified in `local.image_name`
+readonly PACKER_IMAGE_NAMES=(
+    "grapl-nomad-consul-server"
+    "grapl-nomad-consul-client"
 )
+
+readonly PACKER_MANIFEST_SUFFIX = ".packer-manifest.json"

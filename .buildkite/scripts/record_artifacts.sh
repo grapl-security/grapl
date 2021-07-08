@@ -5,13 +5,15 @@ set -euo pipefail
 source .buildkite/scripts/lib/packer_constants.sh
 
 upload_artifacts_file() {
-    # e.g. "grapl-service.packer-manifest.json"
-    readonly manifest_file=$1
+    # Takes in the name of an image, like "image_name", and expects to find
+    # a corresponding packer manifest names "image_name.packer-manifest.json".
+
     # e.g. "grapl-service"
-    root_name=$(echo "${manifest_file}" | cut -d "." -f1)
-    readonly root_name
+    readonly root_name=$1
+    # e.g. "grapl-service.packer-manifest.json"
+    readonly manifest_file="${root_name}${PACKER_MANIFEST_SUFFIX}"
     # e.g. "grapl-service.artifacts.json"
-    readonly artifacts_file="${root_name}.${ARTIFACTS_FILE_SUFFIX}"
+    readonly artifacts_file="${root_name}${ARTIFACTS_FILE_SUFFIX}"
 
     # Download Packer manifest
     echo -e "--- :buildkite: Download Packer manifest"
@@ -39,6 +41,6 @@ upload_artifacts_file() {
     buildkite-agent artifact upload "${artifacts_file}"
 }
 
-for manifest_file in "${PACKER_MANIFESTS[@]}"; do
-    upload_artifacts_file "${manifest_file}"
+for image_name in "${PACKER_IMAGE_NAMES[@]}"; do
+    upload_artifacts_file "${image_name}"
 done

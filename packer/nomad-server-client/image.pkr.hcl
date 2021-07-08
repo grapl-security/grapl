@@ -9,7 +9,7 @@ variable "is_server" {
   type        = bool
 }
 
-variable "terraform_consul_module_tag" {
+variable "terraform_aws_consul_tag" {
   description = "Version tag of terraform-aws-consul to checkout"
   type        = string
   default     = "v0.10.1"
@@ -51,6 +51,12 @@ variable "buildkite_build_number" {
   default     = env("BUILDKITE_BUILD_NUMBER")
 }
 
+variable "aws_build_region" {
+  description = "Region to build thge AMI in"
+  type        = string
+  default     = "us-east-1"
+}
+
 locals {
   # These are various metadata tags we can add to the resulting
   # AMI. If any are unset (like the Buildkite build number, if
@@ -63,18 +69,22 @@ locals {
   }
 
   formatted_timestamp = formatdate("YYYYMMDDhhmmss", timestamp())
-  ami_build_region = "us-east-1"
   copy_ami_to_regions = [
     "us-east-2",
     "us-west-1",
     "us-west-2",
   ]
   image_name = var.is_server ? "grapl-nomad-consul-server" : "grapl-nomad-consul-client"
+
+  # The names of the <client or server> files in consul-config & nomad-config
+  # Fun fact: alphabetically, they need to be after "default"
+  config_file_names = var.is_server ? "grapl-server*" : "grapl-client*"
 }
 
 data "amazon-ami" "amazon-linux-2-x86_64" {
   filters = {
-    architecture                       = "x86_64"
+    architecture = "x86_64"
+    # Yes, quoting is required
     "block-device-mapping.volume-type" = "gp2"
     name                               = "*amzn2-ami-hvm-*"
     root-device-type                   = "ebs"
@@ -82,14 +92,14 @@ data "amazon-ami" "amazon-linux-2-x86_64" {
   }
   most_recent = true
   owners      = ["amazon"]
-  region      = local.ami_build_region
+  region      = var.aws_build_region
 }
 
 source "amazon-ebs" "amazon-linux-2-amd64-ami" {
   ami_description = "An Amazon Linux 2 x86_64 AMI that has Nomad and Consul installed."
-  ami_name        = "${var.image_name}-amazon-linux-2-amd64-${local.formatted_timestamp}"
+  ami_name        = "${local.image_name}-al2-x64-${local.formatted_timestamp}"
   instance_type   = "t2.micro"
-  region          = local.ami_build_region
+  region          = var.aws_build_region
   # Where we copy it after it's built
   ami_regions  = local.copy_ami_to_regions
   source_ami   = data.amazon-ami.amazon-linux-2-x86_64.id
@@ -125,8 +135,8 @@ build {
     environment_vars = [
       "NOMAD_VERSION=${var.nomad_version}",
       "CONSUL_VERSION=${var.consul_version}",
-      "TERRAFORM_AWS_CONSUL_TAG=${var.terraform_consul_module_tag}",
-      "TERRAFORM_AWS_NOMAD_TAG=${var.terraform_nomad_module_tag}",
+      "TERRAFORM_AWS_CONSUL_TAG=${var.terraform_aws_consul_tag}",
+      "TERRAFORM_AWS_NOMAD_TAG=${var.terraform_aws_nomad_tag}",
     ]
     script = "${path.root}/setup_nomad_consul.sh"
   }
@@ -145,12 +155,13 @@ build {
 
   provisioner "shell" {
     inline = [
-      "sudo cp /tmp/nomad-config/* /opt/nomad/config",
-      "sudo cp /tmp/consul-config/* /opt/consul/config",
+      # Only copy <the client> or <the server> file names
+      "sudo cp /tmp/nomad-config/${config_file_names} /opt/nomad/config",
+      "sudo cp /tmp/consul-config/${config_file_names} /opt/consul/config",
     ]
   }
 
   post-processor "manifest" {
-    output = "${var.image_name}.packer-manifest.json"
+    output = "${local.image_name}.packer-manifest.json"
   }
 }
