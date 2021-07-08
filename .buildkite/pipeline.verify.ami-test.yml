@@ -11,8 +11,6 @@ env:
 # :(
 
 steps:
-  # TODO: lint packer
-
   - label: ":packer: AMI Test Build"
     command: ".buildkite/scripts/test_packer.sh"
     plugins:
