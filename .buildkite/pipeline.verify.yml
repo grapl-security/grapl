@@ -123,6 +123,10 @@ steps:
     artifact_paths:
       - "test_artifacts/**/*"
   
+  - label: "Packer Linting"
+    command:
+      - make lint-packer
+  
   - label: ":thinking_face: AMI Test?"
     # Don't want to run this again in the merge pipeline, since
     # building the image does exactly the same thing. We don't want to

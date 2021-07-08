@@ -287,8 +287,12 @@ lint-shell: ## Run Shell lint checks
 lint-js: build-formatter ## Run js lint checks
 	docker-compose -f docker-compose.formatter.yml up lint-js
 
+.PHONY: lint-packer
+lint-packer: ## Check to see if Packer templates are formatted properly
+	.buildkite/scripts/lint_packer.sh
+
 .PHONY: lint
-lint: lint-python lint-js lint-rust lint-shell ## Run all lint checks
+lint: lint-python lint-js lint-rust lint-shell lint-packer ## Run all lint checks
 
 ##@ Formatting 💅
 
