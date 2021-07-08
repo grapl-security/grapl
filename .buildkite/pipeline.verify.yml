@@ -126,6 +126,7 @@ steps:
   - label: ":packer::lint-roller: Packer Linting"
     command:
       - make lint-packer
+    skip: "it hangs on Buildkite for some reason - https://github.com/grapl-security/issue-tracker/issues/615"
   
   - label: ":thinking_face: AMI Test?"
     # Don't want to run this again in the merge pipeline, since
