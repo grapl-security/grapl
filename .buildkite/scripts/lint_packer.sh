@@ -2,4 +2,6 @@
 set -euo pipefail
 
 echo "--- Linting Packer"
-packer fmt -check -diff -recursive packer
+# Ideally we could do the following.
+# packer fmt -check -diff -recursive packer/
+packer fmt -check -diff packer/nomad-server-client/image.pkr.hcl
