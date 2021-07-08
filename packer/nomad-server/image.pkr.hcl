@@ -121,9 +121,6 @@ build {
   provisioner "shell" {
     inline = [
       "sudo yum install -y git",
-      # As recommended in https://github.com/hashicorp/terraform-aws-nomad/tree/master/examples/nomad-consul-ami readme
-      "git clone --branch ${var.terraform_aws_nomad_tag} https://github.com/hashicorp/terraform-aws-nomad.git /tmp/terraform-aws-nomad",
-      "/tmp/terraform-aws-nomad/modules/install-nomad/install-nomad --version ${var.nomad_version}",
     ]
   }
 
@@ -131,7 +128,8 @@ build {
     environment_vars = [
       "NOMAD_VERSION=${var.nomad_version}",
       "CONSUL_VERSION=${var.consul_version}",
-      "CONSUL_MODULE_VERSION=${var.terraform_consul_module_tag}"
+      "TERRAFORM_AWS_CONSUL_TAG=${var.terraform_consul_module_tag}"
+      "TERRAFORM_AWS_NOMAD_TAG=${var.terraform_nomad_module_tag}"
     ]
     script = "${path.root}/setup_nomad_consul.sh"
   }
