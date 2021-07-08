@@ -120,7 +120,7 @@ source "amazon-ebs" "amazon-linux-2-amd64-ami" {
   }
 
   skip_create_ami = "${var.build_ami == true ? false : true}"
-  ssh_timeout = "10m"
+  ssh_timeout     = "10m"
 }
 
 build {
