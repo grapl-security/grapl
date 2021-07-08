@@ -138,17 +138,25 @@ build {
     script = "${path.root}/setup_nomad_consul.sh"
   }
 
+  # Premake the directories to shove the configs into
+  provisioner "shell" {
+    inline = [
+      "mkdir /opt/nomad/config",
+      "mkdir /opt/consul/config",
+    ]
+  }
+
   # https://github.com/hashicorp/terraform-aws-nomad/tree/master/modules/install-nomad says
   # If you have custom Nomad config (.hcl) files, you may want to copy them 
   # into the config directory (default: /opt/nomad/config).
   provisioner "file" {
-    source      = "${path.root}/nomad-config/"
-    destination = "/opt/nomad/config/"
+    source      = "${path.root}/nomad-config"
+    destination = "/opt/nomad/config"
   }
 
   provisioner "file" {
-    source      = "${path.root}/consul-config/"
-    destination = "/opt/consul/config/"
+    source      = "${path.root}/consul-config"
+    destination = "/opt/consul/config"
   } 
 
   post-processor "manifest" {
