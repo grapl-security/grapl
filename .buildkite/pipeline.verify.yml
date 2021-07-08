@@ -125,8 +125,9 @@ steps:
   
   - label: ":packer::lint-roller: Packer Linting"
     command:
-      - make lint-packer
-    # Silently hangs unless the following is specified
+      # Since we run it in a container, we can't use the `make` for it
+      - .buildkite/scripts/lint_packer.sh
+    # Silently hangs unless the following is specified.
     plugins:
       - docker#v3.8.0:
           image: "hashicorp/packer:1.7.2"
