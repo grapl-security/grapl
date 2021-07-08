@@ -43,17 +43,13 @@ use futures_retry::{
     FutureRetry,
     RetryPolicy,
 };
-use grapl_graph_descriptions::{
-    graph_description::*,
+use rust_proto::{
+    graph_descriptions::*,
     node_property::Property,
-    MergedGraph,
 };
 use grapl_utils::iter_ext::GraplIterExt;
-// use grapl_graph_descriptions::Edge;
-// use grapl_graph_descriptions::EdgeList;
-// use grapl_graph_descriptions::MergedNode;
-// use grapl_graph_descriptions::IdentifiedNode;
-pub use node_property::Property::{
+
+pub use rust_proto::node_property::Property::{
     DecrementOnlyInt as ProtoDecrementOnlyIntProp,
     DecrementOnlyUint as ProtoDecrementOnlyUintProp,
     ImmutableInt as ProtoImmutableIntProp,

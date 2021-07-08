@@ -12,7 +12,7 @@ use grapl_config::env_helpers::{
     s3_event_emitters_from_env,
     FromEnv,
 };
-use grapl_graph_descriptions::graph_description::*;
+use rust_proto::graph_descriptions::*;
 use grapl_observe::metric_reporter::MetricReporter;
 use grapl_service::decoder::ProtoDecoder;
 use log::{

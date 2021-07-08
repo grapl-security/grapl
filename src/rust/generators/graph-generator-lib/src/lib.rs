@@ -7,7 +7,7 @@ use grapl_config::{
     event_caches,
     ServiceEnv,
 };
-pub use grapl_graph_descriptions::graph_description::*;
+pub use rust_proto::graph_descriptions::*;
 pub use grapl_observe::metric_reporter::MetricReporter;
 use grapl_service::serialization::GraphDescriptionSerializer;
 use rusoto_s3::S3Client;
