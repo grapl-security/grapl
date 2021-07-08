@@ -308,8 +308,12 @@ format-python: ## Reformat all Python code
 format-js: build-formatter ## Reformat all js/ts code
 	docker-compose -f docker-compose.formatter.yml up format-js
 
+.PHONY: format-packer
+format-packer: ## Reformat all Packer HCLs
+	packer fmt -recursive packer/
+
 .PHONY: format
-format: format-python format-js format-rust ## Reformat all code
+format: format-python format-js format-rust format-packer ## Reformat all code
 
 .PHONY: package-python-libs
 package-python-libs: ## Create Python distributions for public libraries
