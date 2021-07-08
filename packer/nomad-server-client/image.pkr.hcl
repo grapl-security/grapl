@@ -83,10 +83,12 @@ locals {
 
 data "amazon-ami" "amazon-linux-2-x86_64" {
   filters = {
-    architecture        = "x86_64"
-    name                = "*amzn2-ami-hvm-*"
-    root-device-type    = "ebs"
-    virtualization-type = "hvm"
+    architecture = "x86_64"
+    # Yes, quoting is required
+    "block-device-mapping.volume-type" = "gp2"
+    name                               = "*amzn2-ami-hvm-*"
+    root-device-type                   = "ebs"
+    virtualization-type                = "hvm"
   }
   most_recent = true
   owners      = ["amazon"]
@@ -115,10 +117,6 @@ source "amazon-ebs" "amazon-linux-2-amd64-ami" {
       key   = tag.key
       value = tag.value
     }
-  }
-
-  launch_block_device_mappings {
-    volume_type = "gp2"
   }
 
   skip_create_ami = "${var.build_ami == true ? false : true}"
