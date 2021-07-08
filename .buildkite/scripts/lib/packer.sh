@@ -7,7 +7,7 @@ build_ami() {
     # PACKER_VARS="-var build_ami=false" build_ami
 
     # shellcheck disable=SC2086
-    packer build -debug ${PACKER_VARS:-} packer/nomad-server
+    packer build ${PACKER_VARS:-} packer/nomad-server
     # shellcheck disable=SC2086
-    packer build -debug ${PACKER_VARS:-} packer/grapl-service
+    packer build ${PACKER_VARS:-} packer/grapl-service
 }
