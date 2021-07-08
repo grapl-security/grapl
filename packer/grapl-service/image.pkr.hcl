@@ -10,7 +10,7 @@ variable "build_ami" {
 
 variable "ami_name_prefix" {
   type    = string
-  default = "nomad-consul"
+  default = "grapl-service"
 }
 
 variable "aws_region" {
@@ -139,6 +139,6 @@ build {
   }
 
   post-processor "manifest" {
-    output = "nomad-server.packer-manifest.json"
+    output = "${ami_name_prefix}.packer-manifest.json"
   }
 }
