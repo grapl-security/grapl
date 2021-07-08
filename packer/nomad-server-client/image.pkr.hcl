@@ -83,12 +83,14 @@ locals {
 
 data "amazon-ami" "amazon-linux-2-x86_64" {
   filters = {
-    architecture = "x86_64"
-    # Yes, quoting is required
+    architecture        = "x86_64"
+    name                = "*amzn2-ami-hvm-*"
+    root-device-type    = "ebs"
+    virtualization-type = "hvm"
+
+    # Yes, quoting is required. This is an Amazon-defined key and not a Packer concept.
+    # https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeImages.html
     "block-device-mapping.volume-type" = "gp2"
-    name                               = "*amzn2-ami-hvm-*"
-    root-device-type                   = "ebs"
-    virtualization-type                = "hvm"
   }
   most_recent = true
   owners      = ["amazon"]
