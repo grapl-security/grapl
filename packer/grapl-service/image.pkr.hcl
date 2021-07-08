@@ -141,8 +141,8 @@ build {
   # Premake the directories to shove the configs into
   provisioner "shell" {
     inline = [
-      "mkdir /opt/nomad/config",
-      "mkdir /opt/consul/config",
+      #"mkdir /opt/nomad/config",
+      #"mkdir /opt/consul/config",
     ]
   }
 
