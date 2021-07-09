@@ -1,5 +1,5 @@
-use rust_proto::graph_descriptions::*;
 use prost::EncodeError;
+use rust_proto::graph_descriptions::*;
 use sqs_executor::completion_event_serializer::CompletionEventSerializer;
 use tracing::{
     debug,

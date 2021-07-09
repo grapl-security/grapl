@@ -477,7 +477,7 @@ fn change_on_dir(root_dir: &str) -> Result<(), Box<dyn std::error::Error>> {
     for entry in std::fs::read_dir(current_dir.join(root_dir))? {
         let entry = entry?;
         if !entry.metadata()?.is_file() {
-            continue
+            continue;
         }
         let path = entry.path();
         println!("cargo:rerun-if-changed={}", path.display());

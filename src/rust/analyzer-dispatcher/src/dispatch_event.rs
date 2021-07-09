@@ -1,5 +1,5 @@
-use rust_proto::graph_descriptions::*;
 use prost::Message;
+use rust_proto::graph_descriptions::*;
 use serde::{
     Deserialize,
     Serialize,
