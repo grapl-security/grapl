@@ -43,12 +43,7 @@ use futures_retry::{
     FutureRetry,
     RetryPolicy,
 };
-use rust_proto::{
-    graph_descriptions::*,
-    node_property::Property,
-};
 use grapl_utils::iter_ext::GraplIterExt;
-
 pub use rust_proto::node_property::Property::{
     DecrementOnlyInt as ProtoDecrementOnlyIntProp,
     DecrementOnlyUint as ProtoDecrementOnlyUintProp,
@@ -57,6 +52,10 @@ pub use rust_proto::node_property::Property::{
     ImmutableUint as ProtoImmutableUintProp,
     IncrementOnlyInt as ProtoIncrementOnlyIntProp,
     IncrementOnlyUint as ProtoIncrementOnlyUintProp,
+};
+use rust_proto::{
+    graph_descriptions::*,
+    node_property::Property,
 };
 
 use crate::upsert_util;

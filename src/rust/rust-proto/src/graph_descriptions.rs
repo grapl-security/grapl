@@ -1,5 +1,4 @@
-pub use crate::graplinc::grapl::api::graph::v1beta1::*;
-
+pub use node_property::Property;
 use node_property::Property::{
     DecrementOnlyInt as ProtoDecrementOnlyIntProp,
     DecrementOnlyUint as ProtoDecrementOnlyUintProp,
@@ -10,7 +9,7 @@ use node_property::Property::{
     IncrementOnlyUint as ProtoIncrementOnlyUintProp,
 };
 
-pub use node_property::Property;
+pub use crate::graplinc::grapl::api::graph::v1beta1::*;
 
 // A helper macro to generate `From` impl boilerplate.
 macro_rules ! impl_from_for_unit {

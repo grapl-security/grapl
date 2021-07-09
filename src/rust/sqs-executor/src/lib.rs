@@ -4,36 +4,57 @@ use std::{
     future::Future,
     io::Stdout,
     panic::AssertUnwindSafe,
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{
+        Duration,
+        SystemTime,
+        UNIX_EPOCH,
+    },
 };
-
-use futures_util::FutureExt;
-use rusoto_core::RusotoError;
-use rusoto_s3::S3;
-use rusoto_sqs::{ListQueuesError, ListQueuesRequest, Message as SqsMessage, Sqs};
-use tracing::{debug, error, info};
 
 use event_emitter::EventEmitter;
 use event_handler::EventHandler;
+use futures_util::FutureExt;
 use grapl_observe::{
-    metric_reporter::{MetricReporter, tag},
+    metric_reporter::{
+        tag,
+        MetricReporter,
+    },
     timers::TimedFutureExt,
 };
-pub use retriever::{event_retriever, s3_event_retriever};
+use prost::Message;
+pub use retriever::{
+    event_retriever,
+    s3_event_retriever,
+};
+use rusoto_core::RusotoError;
+use rusoto_s3::S3;
+use rusoto_sqs::{
+    ListQueuesError,
+    ListQueuesRequest,
+    Message as SqsMessage,
+    Sqs,
+};
 use s3_event_emitter::S3EventEmitter;
 use s3_event_retriever::S3PayloadRetriever;
+use tracing::{
+    debug,
+    error,
+    info,
+};
 
 use crate::{
     cache::Cache,
     completion_event_serializer::CompletionEventSerializer,
-    errors::{CheckedError, Recoverable},
+    errors::{
+        CheckedError,
+        Recoverable,
+    },
     event_decoder::PayloadDecoder,
     event_handler::CompletedEvents,
     event_retriever::PayloadRetriever,
     event_status::EventStatus,
+    sqs_timeout_manager::keep_alive,
 };
-use crate::sqs_timeout_manager::keep_alive;
-use prost::Message;
 
 pub mod retriever;
 
@@ -159,7 +180,11 @@ async fn process_message<
     >,
 {
     let message_id = next_message.message_id.as_ref().unwrap().as_str();
-    let inner_loop_span = tracing::trace_span!("inner_loop_span", message_id = message_id, trace_id=tracing::field::Empty);
+    let inner_loop_span = tracing::trace_span!(
+        "inner_loop_span",
+        message_id = message_id,
+        trace_id = tracing::field::Empty
+    );
     let _enter = inner_loop_span.enter();
 
     if cache.all_exist(&[message_id.to_owned()]).await {
@@ -227,7 +252,7 @@ async fn process_message<
         }
     };
 
-    let trace_id: uuid::Uuid = meta.trace_id.unwrap().into();
+    let trace_id: uuid::Uuid = meta.trace_id.clone().unwrap().into();
     let trace_id = trace_id.to_string();
     inner_loop_span.record("trace_id", &trace_id.as_str());
 
@@ -267,14 +292,14 @@ async fn process_message<
             let mut envelopes = vec![];
             for event in events {
                 let envelope = rust_proto::services::Envelope {
-                    metadata: None,
+                    metadata: Some(meta.clone()),
                     inner_type: "".to_string(),
-                    inner_message: event
+                    inner_message: event,
                 };
                 let mut encoded = vec![];
                 if let Err(e) = envelope.encode(&mut encoded) {
                     tracing::error!(message="Failed to encode message", error=?e);
-                    continue
+                    continue;
                 };
                 envelopes.push(encoded);
             }
@@ -322,14 +347,14 @@ async fn process_message<
             let mut envelopes = vec![];
             for event in events {
                 let envelope = rust_proto::services::Envelope {
-                    metadata: None,
+                    metadata: Some(meta.clone()),
                     inner_type: "".to_string(),
-                    inner_message: event
+                    inner_message: event,
                 };
                 let mut encoded = vec![];
                 if let Err(e) = envelope.encode(&mut encoded) {
                     tracing::error!(message="Failed to encode message", error=?e);
-                    continue
+                    continue;
                 };
                 envelopes.push(encoded);
             }
