@@ -6,7 +6,6 @@
 set -euo pipefail
 
 source .buildkite/scripts/lib/packer.sh
-source .buildkite/scripts/lib/packer_constants.sh
 
 echo -e "--- :packer: Performing test build of AMI"
 PACKER_VARS="-var build_ami=false" build_ami "${PACKER_IMAGE_NAME}"
