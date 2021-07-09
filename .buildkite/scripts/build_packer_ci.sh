@@ -12,9 +12,8 @@ source .buildkite/scripts/lib/packer.sh
 
 export GIT_SHA="${BUILDKITE_COMMIT}"
 export GIT_BRANCH="${BUILDKITE_BRANCH}"
-# This syntax marks these two as required
+# This : syntax does nothing; but in unison with `set -u` marks these two vars as required.
 : "${BUILDKITE_BUILD_NUMBER}"
-
 # it is worried that I confused this with PACKER_IMAGE_NAMES. I didn't.
 # shellcheck disable=SC2153
 : "${PACKER_IMAGE_NAME}"

@@ -4,9 +4,14 @@ variable "build_ami" {
   default     = true
 }
 
-variable "is_server" {
-  description = "Is this image for the Nomad/Consul server, or its client?"
-  type        = bool
+variable "image_name" {
+  description = "The name of this AMI image. Also is included in the packer-manifest name."
+  type        = string
+
+  validation {
+    condition     = var.image_name == "grapl-nomad-consul-server" || var.image_name == "grapl-nomad-consul-client"
+    error_message = "${var.image_name} is not one of 2 accepted image names"
+  }
 }
 
 variable "terraform_aws_consul_tag" {
@@ -94,11 +99,12 @@ locals {
     "us-west-1",
     "us-west-2",
   ]
-  image_name = var.is_server ? "grapl-nomad-consul-server" : "grapl-nomad-consul-client"
+
+  is_server = var.image_name == "grapl-nomad-consul-server"
 
   # The names of the <client or server> files in consul-config & nomad-config
   # Fun fact: alphabetically, they need to be after "default"
-  config_file_names = var.is_server ? "grapl-server*" : "grapl-client*"
+  config_file_names = local.is_server ? "grapl-server*" : "grapl-client*"
 }
 
 data "amazon-ami" "amazon-linux-2-x86_64" {
@@ -119,7 +125,7 @@ data "amazon-ami" "amazon-linux-2-x86_64" {
 
 source "amazon-ebs" "amazon-linux-2-amd64-ami" {
   ami_description = "An Amazon Linux 2 x86_64 AMI that has Nomad and Consul installed."
-  ami_name        = "${local.image_name}-al2-x64-${local.formatted_timestamp}"
+  ami_name        = "${var.image_name}-al2-x64-${local.formatted_timestamp}"
   instance_type   = "t2.micro"
   region          = var.aws_build_region
   # Where we copy it after it's built
@@ -193,6 +199,6 @@ build {
   }
 
   post-processor "manifest" {
-    output = "${local.image_name}.packer-manifest.json"
+    output = "${var.image_name}.packer-manifest.json"
   }
 }

@@ -212,6 +212,7 @@ test-unit-rust: build-test-unit-rust ## Build and run unit tests - Rust only
 # If you need to `pdb` these tests, add a `--debug` between `test` and `::`
 test-unit-python: ## Run Python unit tests under Pants
 	./pants --tag="-needs_work" test :: --pytest-args="-m \"not integration_test\""
+# TODO: split this up so it uses a `./pants filter` to choose python tests and shell tests respectively
 
 .PHONY: test-unit-js
 test-unit-js: export COMPOSE_PROJECT_NAME := grapl-test-unit-js

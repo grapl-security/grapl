@@ -12,16 +12,8 @@ build_ami() {
 
     local -r packer_image_name="$1"
 
-    if [ "${packer_image_name}" == "${PACKER_IMAGE_NAME_SERVER}" ]; then
-        # shellcheck disable=SC2086
-        packer build ${PACKER_VARS:-} -var is_server=true packer/nomad-server-client
-    elif [ "${packer_image_name}" == "${PACKER_IMAGE_NAME_CLIENT}" ]; then
-        # shellcheck disable=SC2086
-        packer build ${PACKER_VARS:-} -var is_server=false packer/nomad-server-client
-    else
-        echo "Unknown PACKER_IMAGE_NAME ${packer_image_name}"
-        exit 42
-    fi
+    # shellcheck disable=SC2086
+    packer build ${PACKER_VARS:-} -var "image_name=${packer_image_name}" packer/nomad-server-client
 }
 
 upload_manifest() {
