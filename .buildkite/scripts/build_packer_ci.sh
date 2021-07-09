@@ -19,7 +19,7 @@ export GIT_BRANCH="${BUILDKITE_BRANCH}"
 # shellcheck disable=SC2153
 : "${PACKER_IMAGE_NAME}"
 
-buildPackerCI() {
+build_packer_ci() {
     echo -e "--- :packer: Performing build of AMI"
 
     # Both defined in packer.sh
@@ -27,4 +27,4 @@ buildPackerCI() {
     upload_manifest "${PACKER_IMAGE_NAME}"
 }
 
-buildPackerCI
+build_packer_ci
