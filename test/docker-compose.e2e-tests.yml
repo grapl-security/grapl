@@ -3,7 +3,6 @@ version: "3.8"
 # environment variable PWD is assumed to be grapl root directory
 
 services:
-
   e2e-tests:
     image: grapl/e2e-tests:${TAG:-latest}
     build:

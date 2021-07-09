@@ -3,7 +3,6 @@ version: "3.8"
 # environment variable PWD is assumed to be grapl root directory
 
 services:
-
   rust-integration-tests:
     image: grapl/rust-integration-tests:${TAG:-latest}
     build:

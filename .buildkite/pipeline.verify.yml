@@ -97,9 +97,9 @@ steps:
     command:
       - make test-unit-js
 
-  - label: ":typescript::lint-roller: Lint Typescript/JS"
+  - label: ":typescript::yaml::lint-roller: Lint using Prettier"
     command:
-      - make lint-js
+      - make lint-prettier
 
   - label: ":aws-lambda::package: Create Lambda Zips"
     command:

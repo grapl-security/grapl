@@ -55,13 +55,13 @@ Lint 🧹
   lint-rust                                       Run Rust lint checks
   lint-python                                     Run Python lint checks
   lint-shell                                      Run Shell lint checks
-  lint-js                                         Run js lint checks
+  lint-prettier                                   Run js/ts/yaml lint checks
   lint                                            Run all lint checks
 
 Formatting 💅
   format-rust                                     Reformat all Rust code
   format-python                                   Reformat all Python code
-  format-js                                       Reformat all js/ts code
+  format-prettier                                 Reformat all js/ts/yaml code
   format                                          Reformat all code
   package-python-libs                             Create Python distributions for public libraries
 
