@@ -1,0 +1,24 @@
+# This file borrows heavily from the pattern defined in `pipeline-infrastructure`.
+
+---
+env:
+  PANTS_CONFIG_FILES: "['pants.toml', 'pants.ci.toml']"
+
+# This is defined in a separate pipeline file because
+# chronotc/monorepo-diff does not currently have support for plugin
+# (or key) configuration on commands.
+#
+# :(
+
+steps:
+  - label: ":packer: AMI Test Build"
+    command: ".buildkite/scripts/test_packer.sh"
+    plugins:
+      - docker#v3.8.0:
+          image: "hashicorp/packer:1.7.2"
+          entrypoint: bash
+          # No need for propagate-aws-auth-tokens - packer automatically uses the metadata
+    agents:
+      # TODO: change this to a different queue
+      # https://github.com/grapl-security/issue-tracker/issues/613
+      queue: "packer"
