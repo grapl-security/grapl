@@ -39,6 +39,7 @@ from grapl_common.env_helpers import S3ResourceFactory
 from grapl_common.envelope import Envelope
 from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
+from graplinc.grapl.api.services.v1beta1.types_pb2 import Meta
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
@@ -223,7 +224,7 @@ class AnalyzerExecutor:
                     "analyzer-executor.emit_event.ms",
                     (TagPair("analyzer_name", exec_hit.analyzer_name),),
                 ):
-                    emit_event(self.analyzer_matched_subgraphs_bucket, s3, exec_hit)
+                    emit_event(s3, exec_hit, envelope.metadata)
                 self.update_msg_cache(analyzer, exec_hit.root_node_key, message["key"])
                 self.update_hit_cache(analyzer_name, exec_hit.root_node_key)
 
@@ -233,7 +234,7 @@ class AnalyzerExecutor:
         self,
         rx: Connection,
         analyzer_name: str,
-    ) -> Iterator[ExecutionHit]:
+    ) -> Iterator[ExecutionHit]k:
         """
         Keep polling the spawned Process, and yield any ExecutionHits.
         (This will probably disappear if Analyzers move to Docker images.)
@@ -353,7 +354,7 @@ class AnalyzerExecutor:
                         self.logger.error(traceback.format_exc())
                         self.logger.error(
                             f"Execution of {name} failed with {e} {e.args}"
-                        )
+
                         sender.send(ExecutionFailed())
                         raise
 
@@ -410,10 +411,12 @@ def chunker(seq: List[BaseView], size: int) -> List[List[BaseView]]:
     return [seq[pos : pos + size] for pos in range(0, len(seq), size)]
 
 
-def emit_event(
-    analyzer_matched_subgraphs_bucket: str, s3: S3ServiceResource, event: ExecutionHit
-) -> None:
+def emit_event(s3: S3ServiceResource, event: ExecutionHit, metadata: Meta) -> None:
     LOGGER.info(f"emitting event for: {event.analyzer_name, event.nodes}")
+
+    meta_dict = {
+        "trace_id": metadata.trace_id,
+    }
 
     event_s = json.dumps(
         {
@@ -423,6 +426,7 @@ def emit_event(
             "risk_score": event.risk_score,
             "lenses": event.lenses,
             "risky_node_keys": event.risky_node_keys,
+            "metadata": meta_dict,
         }
     )
     event_hash = hashlib.sha256(event_s.encode())

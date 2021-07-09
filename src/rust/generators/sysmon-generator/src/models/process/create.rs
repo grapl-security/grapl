@@ -97,7 +97,7 @@ mod tests {
 
     use rust_proto::{
         graph_descriptions::node_property::Property,
-        ImmutableUintProp,
+        graph_descriptions::ImmutableUintProp,
     };
     use sysmon::*;
 
