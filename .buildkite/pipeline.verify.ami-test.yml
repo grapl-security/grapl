@@ -17,7 +17,7 @@ steps:
       - docker#v3.8.0:
           image: "hashicorp/packer:1.7.2"
           entrypoint: bash
-          propagate-aws-auth-tokens: true
+          # No need for propagate-aws-auth-tokens - packer automatically uses the metadata
     agents:
       # TODO: change this to a different queue
       # https://github.com/grapl-security/issue-tracker/issues/613
