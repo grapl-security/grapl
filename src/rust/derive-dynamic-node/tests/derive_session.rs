@@ -45,9 +45,7 @@ fn test_session() {
         .unwrap();
 
     let strategy = match strategy {
-        rust_proto::graph_descriptions::id_strategy::Strategy::Session(strategy) => {
-            strategy
-        }
+        rust_proto::graph_descriptions::id_strategy::Strategy::Session(strategy) => strategy,
         _ => panic!("Expected session"),
     };
     assert_eq!(strategy.create_time, 0u64);

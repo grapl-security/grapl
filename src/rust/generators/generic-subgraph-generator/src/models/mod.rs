@@ -4,11 +4,11 @@ mod process;
 
 use std::convert::TryFrom;
 
-use rust_proto::graph_descriptions::*;
 use process::{
     ProcessStart,
     ProcessStop,
 };
+use rust_proto::graph_descriptions::*;
 use serde::{
     Deserialize,
     Serialize,

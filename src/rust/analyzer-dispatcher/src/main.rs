@@ -12,7 +12,6 @@ use grapl_config::env_helpers::{
     s3_event_emitters_from_env,
     FromEnv,
 };
-use rust_proto::graph_descriptions::*;
 use grapl_observe::metric_reporter::MetricReporter;
 use grapl_service::decoder::ProtoDecoder;
 use log::{
@@ -27,6 +26,7 @@ use rusoto_s3::{
     S3,
 };
 use rusoto_sqs::SqsClient;
+use rust_proto::graph_descriptions::*;
 use sqs_executor::{
     cache::NopCache,
     errors::{

@@ -25,6 +25,7 @@ use rusoto_s3::{
     S3,
 };
 use rusoto_sqs::Message as SqsMessage;
+use rust_proto::services::Meta;
 use tokio::{
     io::AsyncReadExt,
     time::error::Elapsed,
@@ -42,7 +43,6 @@ use crate::{
     event_decoder::PayloadDecoder,
     PayloadRetriever,
 };
-use rust_proto::services::Meta;
 
 pub struct S3PayloadRetriever<S, SInit, D, E, DecoderErrorT>
 where
@@ -159,7 +159,10 @@ where
     type Error = S3PayloadRetrieverError<DecoderErrorT>;
 
     #[tracing::instrument(skip(self, msg))]
-    async fn retrieve_event(&mut self, msg: &Self::Message) -> Result<Option<(Meta, E)>, Self::Error> {
+    async fn retrieve_event(
+        &mut self,
+        msg: &Self::Message,
+    ) -> Result<Option<(Meta, E)>, Self::Error> {
         let body = msg.body.as_ref().unwrap();
         debug!("Got body from message: {}", body);
         let event: serde_json::Value = serde_json::from_str(body)?;
@@ -246,7 +249,8 @@ where
         debug!("Read s3 payload body");
 
         let envelope: rust_proto::services::Envelope = prost::Message::decode(&body[..])?;
-        let meta = envelope.metadata
+        let meta = envelope
+            .metadata
             .expect("Meta must be set at the front of the pipeline");
         let body = envelope.inner_message;
 

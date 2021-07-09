@@ -13,13 +13,6 @@ use grapl_config::{
     },
     event_caches,
 };
-
-use rust_proto::graph_descriptions::{
-    GraphDescription,
-    IdentifiedGraph,
-    IdentifiedNode,
-    NodeDescription,
-};
 use grapl_observe::metric_reporter::MetricReporter;
 use grapl_service::{
     decoder::ProtoDecoder,
@@ -28,6 +21,12 @@ use grapl_service::{
 use grapl_utils::rusoto_ext::dynamodb::GraplDynamoDbClientExt;
 use rusoto_dynamodb::DynamoDbClient;
 use rusoto_sqs::SqsClient;
+use rust_proto::graph_descriptions::{
+    GraphDescription,
+    IdentifiedGraph,
+    IdentifiedNode,
+    NodeDescription,
+};
 use sessiondb::SessionDb;
 use sqs_executor::{
     cache::Cache,
