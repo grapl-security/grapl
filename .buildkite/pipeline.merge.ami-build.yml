@@ -22,9 +22,10 @@ steps:
       # https://github.com/grapl-security/issue-tracker/issues/613
       queue: "packer"
 
+  - wait
+
   # This just has to extract the AMI ID and jam it into the artifact
   # store to pick up later.
   - label: ":writing_hand: Record AMI ID"
     command:
       - .buildkite/scripts/record_artifacts.sh
-    depends_on: "ami-build"
