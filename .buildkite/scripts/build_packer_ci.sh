@@ -9,24 +9,19 @@
 set -euo pipefail
 
 source .buildkite/scripts/lib/packer.sh
-source .buildkite/scripts/lib/packer_constants.sh
 
-echo -e "--- :packer: Performing build of AMI"
 export GIT_SHA="${BUILDKITE_COMMIT}"
 export GIT_BRANCH="${BUILDKITE_BRANCH}"
+# Marks these two as required
 : "${BUILDKITE_BUILD_NUMBER}"
+: "${PACKER_IMAGE_NAME}"
 
-# This is in the `packer.sh` sourced above
-build_ami
+buildPackerCI() {
+    echo -e "--- :packer: Performing build of AMI"
 
-for manifest in "${PACKER_MANIFESTS[@]}"; do
-    echo -e "--- :packer: Manifest ${manifest} Contents"
-    cat "${manifest}"
-    echo
+    # Both defined in packer.sh
+    build_ami "${PACKER_IMAGE_NAME}"
+    upload_manifest "${PACKER_IMAGE_NAME}"
+}
 
-    echo -e "--- :buildkite: Uploading ${manifest} file"
-    buildkite-agent artifact upload "${manifest}"
-
-    # Just to be safe, because subsequent runs can append to it
-    rm "${manifest}"
-done
+buildPackerCI

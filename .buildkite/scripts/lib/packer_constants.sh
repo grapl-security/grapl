@@ -18,9 +18,11 @@
 readonly ARTIFACTS_FILE_SUFFIX=".artifacts.json"
 
 # These are specified in `local.image_name`
+readonly PACKER_IMAGE_NAME_SERVER="grapl-nomad-consul-server"
+readonly PACKER_IMAGE_NAME_CLIENT="grapl-nomad-consul-client"
 readonly PACKER_IMAGE_NAMES=(
-    "grapl-nomad-consul-server"
-    "grapl-nomad-consul-client"
+    "${PACKER_IMAGE_NAME_SERVER}"
+    "${PACKER_IMAGE_NAME_CLIENT}"
 )
 
 readonly PACKER_MANIFEST_SUFFIX=".packer-manifest.json"
