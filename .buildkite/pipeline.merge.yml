@@ -87,6 +87,7 @@ steps:
                 - "packer/"
                 - ".buildkite/scripts/build_packer_ci.sh"
                 - ".buildkite/scripts/lib/packer.sh"
+                - ".buildkite/scripts/lib/packer_constants.sh"
               config:
                 label: ":pipeline: Upload AMI Build"
                 command: "buildkite-agent pipeline upload .buildkite/pipeline.merge.ami-build.yml"
