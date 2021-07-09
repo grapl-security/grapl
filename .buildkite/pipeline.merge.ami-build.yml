@@ -12,10 +12,18 @@ env:
 steps:
   - label: ":packer: AMI Build"
     command: ".buildkite/scripts/build_packer_ci.sh"
+    key: "ami-build" # Used to tag the Packer Builder instance
     plugins:
       - docker#v3.8.0:
           image: "hashicorp/packer:1.7.2"
           entrypoint: bash
+          environment:
+            - "BUILDKITE_BRANCH"
+            - "BUILDKITE_BUILD_NUMBER"
+            - "BUILDKITE_COMMIT"
+            - "BUILDKITE_PIPELINE_NAME"
+            - "BUILDKITE_STEP_KEY"
+
           propagate-environment: true
     agents:
       # TODO: change this to a different queue

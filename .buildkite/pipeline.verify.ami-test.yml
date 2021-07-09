@@ -13,11 +13,18 @@ env:
 steps:
   - label: ":packer: AMI Test Build"
     command: ".buildkite/scripts/test_packer.sh"
+    key: "ami-test" # Used to tag the Packer Builder instance
     plugins:
       - docker#v3.8.0:
           image: "hashicorp/packer:1.7.2"
           entrypoint: bash
-          # No need for propagate-aws-auth-tokens - packer automatically uses the metadata
+          environment:
+            - "BUILDKITE_BRANCH"
+            - "BUILDKITE_BUILD_NUMBER"
+            - "BUILDKITE_COMMIT"
+            - "BUILDKITE_PIPELINE_NAME"
+            - "BUILDKITE_STEP_KEY"
+
     agents:
       # TODO: change this to a different queue
       # https://github.com/grapl-security/issue-tracker/issues/613

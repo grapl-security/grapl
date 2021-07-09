@@ -51,6 +51,18 @@ variable "buildkite_build_number" {
   default     = env("BUILDKITE_BUILD_NUMBER")
 }
 
+variable "buildkite_pipeline_name" {
+  description = "The Buildkite pipeline this AMI was built in. If present, will be used to tag the instance used to build the AMI."
+  type        = string
+  default     = env("BUILDKITE_PIPELINE_NAME")
+}
+
+variable "buildkite_step_key" {
+  description = "The key of the step in the Buildkite pipeline this AMI was built in. If present, will be used to tag the instance used to build the AMI."
+  type        = string
+  default     = env("BUILDKITE_STEP_KEY")
+}
+
 variable "aws_build_region" {
   description = "Region to build thge AMI in"
   type        = string
@@ -66,6 +78,14 @@ locals {
     "git:sha"                = "${var.git_sha}"
     "git:branch"             = "${var.git_branch}"
     "buildkite:build_number" = "${var.buildkite_build_number}"
+  }
+
+  # These tags will be added to the instance used to build the AMI. If
+  # they are not present, no tags will be added.
+  run_tags_from_env = {
+    "buildkite:pipeline"     = "${var.buildkite_pipeline_name}"
+    "buildkite:build_number" = "${var.buildkite_build_number}"
+    "buildkite:step"         = "${var.buildkite_step_key}"
   }
 
   formatted_timestamp = formatdate("YYYYMMDDhhmmss", timestamp())
@@ -118,6 +138,14 @@ source "amazon-ebs" "amazon-linux-2-amd64-ami" {
     content {
       key   = tag.key
       value = tag.value
+    }
+  }
+
+  dynamic "run_tag" {
+    for_each = { for key, value in local.run_tags_from_env : key => value if value != "" }
+    content {
+      key   = run_tag.key
+      value = run_tag.value
     }
   }
 
