@@ -14,7 +14,7 @@ steps:
   - label: ":packer: AMI Test Build: Server"
     key: "ami-test-server" # Used to tag the Packer Builder instance
     command: ".buildkite/scripts/tests_in_ci/packer_integration_test.sh"
-    lugins:
+    plugins:
       - docker#v3.8.0:
           image: "hashicorp/packer:1.7.2"
           entrypoint: bash
