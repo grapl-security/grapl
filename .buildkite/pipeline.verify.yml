@@ -143,8 +143,11 @@ steps:
           diff: .buildkite/shared/scripts/diff.sh
           watch:
             - path:
-                - "packer/"
                 - ".buildkite/scripts/test_packer.sh"
+                - "packer/"
+                - ".buildkite/scripts/build_packer_ci.sh"
+                - ".buildkite/scripts/lib/packer.sh"
+                - ".buildkite/scripts/lib/packer_constants.sh"
               config:
                 label: ":pipeline: Upload AMI Test"
                 command: "buildkite-agent pipeline upload .buildkite/pipeline.verify.ami-test.yml"

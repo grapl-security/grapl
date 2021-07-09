@@ -23,4 +23,4 @@ readonly PACKER_IMAGE_NAMES=(
     "grapl-nomad-consul-client"
 )
 
-readonly PACKER_MANIFEST_SUFFIX = ".packer-manifest.json"
+readonly PACKER_MANIFEST_SUFFIX=".packer-manifest.json"
