@@ -19,6 +19,11 @@ steps:
           entrypoint: bash
           propagate-environment: true
           environment:
+            - "BUILDKITE_BRANCH"
+            - "BUILDKITE_BUILD_NUMBER"
+            - "BUILDKITE_COMMIT"
+            - "BUILDKITE_PIPELINE_NAME"
+            - "BUILDKITE_STEP_KEY"
             - "PACKER_IMAGE_NAME=grapl-nomad-consul-server"
     agents:
       # TODO: change this to a different queue
@@ -32,6 +37,7 @@ steps:
       - docker#v3.8.0:
           image: "hashicorp/packer:1.7.2"
           entrypoint: bash
+          propagate-environment: true
           environment:
             - "BUILDKITE_BRANCH"
             - "BUILDKITE_BUILD_NUMBER"
@@ -39,7 +45,6 @@ steps:
             - "BUILDKITE_PIPELINE_NAME"
             - "BUILDKITE_STEP_KEY"
             - "PACKER_IMAGE_NAME=grapl-nomad-consul-client"
-          propagate-environment: true
     agents:
       # TODO: change this to a different queue
       # https://github.com/grapl-security/issue-tracker/issues/613

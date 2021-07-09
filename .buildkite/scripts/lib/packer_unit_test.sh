@@ -29,7 +29,6 @@ buildkite-agent() {
     fi
 
 }
-alias buildkite-agent=mock_buildkite_agent
 
 test_upload_manifest() {
     local -r image_name="fakeimage"

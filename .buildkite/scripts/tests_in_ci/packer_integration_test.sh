@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # This test runs in `pipeline.verify.ami-test.yml.`
+# It is *NOT* shunit.
 
 # TODO: Deduplicate - https://github.com/grapl-security/issue-tracker/issues/614
 

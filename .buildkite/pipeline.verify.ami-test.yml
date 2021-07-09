@@ -12,9 +12,9 @@ env:
 
 steps:
   - label: ":packer: AMI Test Build: Server"
-    command: ".buildkite/scripts/lib/packer_integration_test.sh"
     key: "ami-test-server" # Used to tag the Packer Builder instance
-    plugins:
+    command: ".buildkite/scripts/tests_in_ci/packer_integration_test.sh"
+    lugins:
       - docker#v3.8.0:
           image: "hashicorp/packer:1.7.2"
           entrypoint: bash
@@ -32,7 +32,8 @@ steps:
       queue: "packer"
 
   - label: ":packer: AMI Test Build: Client"
-    command: ".buildkite/scripts/lib/packer_integration_test.sh"
+    key: "ami-test-client" # Used to tag the Packer Builder instance
+    command: ".buildkite/scripts/tests_in_ci/packer_integration_test.sh"
     env:
       PACKER_IMAGE_NAME: "grapl-nomad-consul-client"
     plugins:
