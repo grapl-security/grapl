@@ -19,7 +19,7 @@ steps:
           entrypoint: bash
           propagate-environment: true
           environment:
-            PACKER_IMAGE_NAME: grapl-nomad-consul-server
+            - "PACKER_IMAGE_NAME=grapl-nomad-consul-server"
     agents:
       # TODO: change this to a different queue
       # https://github.com/grapl-security/issue-tracker/issues/613
@@ -38,10 +38,8 @@ steps:
             - "BUILDKITE_COMMIT"
             - "BUILDKITE_PIPELINE_NAME"
             - "BUILDKITE_STEP_KEY"
-
+            - "PACKER_IMAGE_NAME=grapl-nomad-consul-client"
           propagate-environment: true
-          environment:
-            PACKER_IMAGE_NAME: grapl-nomad-consul-client
     agents:
       # TODO: change this to a different queue
       # https://github.com/grapl-security/issue-tracker/issues/613

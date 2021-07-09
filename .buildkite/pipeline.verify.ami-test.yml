@@ -11,20 +11,21 @@ env:
 # :(
 
 steps:
-<<<<<<< HEAD
-  - label: ":packer: AMI Test Build"
-    command: ".buildkite/scripts/test_packer.sh"
-    key: "ami-test" # Used to tag the Packer Builder instance
-=======
   - label: ":packer: AMI Test Build: Server"
     command: ".buildkite/scripts/lib/packer_integration_test.sh"
+    key: "ami-test-server" # Used to tag the Packer Builder instance
     plugins:
       - docker#v3.8.0:
           image: "hashicorp/packer:1.7.2"
           entrypoint: bash
           # No need for propagate-aws-auth-tokens - packer automatically uses the metadata
           environment:
-            PACKER_IMAGE_NAME: grapl-nomad-consul-server
+            - "BUILDKITE_BRANCH"
+            - "BUILDKITE_BUILD_NUMBER"
+            - "BUILDKITE_COMMIT"
+            - "BUILDKITE_PIPELINE_NAME"
+            - "BUILDKITE_STEP_KEY"
+            - "PACKER_IMAGE_NAME=grapl-nomad-consul-server"
     agents:
       # TODO: change this to a different queue
       # https://github.com/grapl-security/issue-tracker/issues/613
@@ -34,24 +35,17 @@ steps:
     command: ".buildkite/scripts/lib/packer_integration_test.sh"
     env:
       PACKER_IMAGE_NAME: "grapl-nomad-consul-client"
->>>>>>> Parallelize AMI builds, and add loooots of testing
     plugins:
       - docker#v3.8.0:
           image: "hashicorp/packer:1.7.2"
           entrypoint: bash
-<<<<<<< HEAD
           environment:
             - "BUILDKITE_BRANCH"
             - "BUILDKITE_BUILD_NUMBER"
             - "BUILDKITE_COMMIT"
             - "BUILDKITE_PIPELINE_NAME"
             - "BUILDKITE_STEP_KEY"
-
-=======
-          # No need for propagate-aws-auth-tokens - packer automatically uses the metadata
-          environment:
-            PACKER_IMAGE_NAME: grapl-nomad-consul-client
->>>>>>> docker has its own environment thing
+            - "PACKER_IMAGE_NAME=grapl-nomad-consul-client"
     agents:
       # TODO: change this to a different queue
       # https://github.com/grapl-security/issue-tracker/issues/613
