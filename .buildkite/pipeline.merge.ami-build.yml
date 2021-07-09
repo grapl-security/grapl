@@ -13,13 +13,13 @@ steps:
   - label: ":packer: AMI Build Server"
     command: ".buildkite/scripts/build_packer_ci.sh"
     key: "ami-build-server" # Used to tag the Packer Builder instance
-    env:
-      PACKER_IMAGE_NAME: grapl-nomad-consul-server
     plugins:
       - docker#v3.8.0:
           image: "hashicorp/packer:1.7.2"
           entrypoint: bash
           propagate-environment: true
+          environment:
+            PACKER_IMAGE_NAME: grapl-nomad-consul-server
     agents:
       # TODO: change this to a different queue
       # https://github.com/grapl-security/issue-tracker/issues/613
@@ -28,8 +28,6 @@ steps:
   - label: ":packer: AMI Build Client"
     command: ".buildkite/scripts/build_packer_ci.sh"
     key: "ami-build-client"
-    env:
-      PACKER_IMAGE_NAME: grapl-nomad-consul-client
     plugins:
       - docker#v3.8.0:
           image: "hashicorp/packer:1.7.2"
@@ -42,6 +40,8 @@ steps:
             - "BUILDKITE_STEP_KEY"
 
           propagate-environment: true
+          environment:
+            PACKER_IMAGE_NAME: grapl-nomad-consul-client
     agents:
       # TODO: change this to a different queue
       # https://github.com/grapl-security/issue-tracker/issues/613
