@@ -64,9 +64,15 @@ checkPrettierInstalled() {
 }
 checkPrettierInstalled
 
+# As specified in `docker-compose.formatter.yml`
+readonly repo_root="/mnt/grapl_repo_rw"
+
 prettier \
     --config prettierrc.toml \
     ${prettier_arg} \
     graphql_endpoint/**/*.ts \
     engagement_view/src/**/*.ts \
-    engagement_view/src/**/*.tsx
+    engagement_view/src/**/*.tsx \
+    ${repo_root}/**/*.yml \
+    ${repo_root}/**/*.yaml \
+    ${repo_root}/**/*.json
