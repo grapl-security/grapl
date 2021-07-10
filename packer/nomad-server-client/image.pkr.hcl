@@ -10,7 +10,7 @@ variable "image_name" {
 
   validation {
     condition     = var.image_name == "grapl-nomad-consul-server" || var.image_name == "grapl-nomad-consul-client"
-    error_message = "That is not one of 2 accepted image names: grapl-nomad-consul-server, grapl-nomad-consul-client"
+    error_message = "That is not one of 2 accepted image names (grapl-nomad-consul-server, grapl-nomad-consul-client)."
   }
 }
 
