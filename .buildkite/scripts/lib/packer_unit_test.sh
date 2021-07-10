@@ -11,7 +11,7 @@ oneTimeSetUp() {
 test_build_fake_image_name() {
     stdout=$(build_ami "fakeimage")
     exitcode=$?
-    assertContains "fakeimage is not one of the 2 accepted image names" "${stdout}"
+    assertContains "That is not one of the 2 accepted image names" "${stdout}"
     assertNotEquals 0 $exitcode
 }
 
