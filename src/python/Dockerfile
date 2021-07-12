@@ -88,18 +88,6 @@ RUN cd python/graplinc-grapl-api && \
     python setup.py sdist bdist_wheel && \
     pip install dist/*.whl
 
-# grapl-common
-################################################################################
-
-# build
-FROM grapl-python-build AS grapl-common-build
-
-COPY --chown=grapl src/python/grapl-common grapl-common
-
-RUN cd grapl-common && \
-    pip install . && \
-    python setup.py sdist bdist_wheel
-
 # grapl_analyzerlib
 ################################################################################
 
@@ -108,12 +96,9 @@ FROM grapl-python-build AS grapl-analyzerlib-build
 
 COPY --chown=grapl src/python/grapl_analyzerlib grapl_analyzerlib
 COPY --chown=grapl --from=graplinc-grapl-api-build /home/grapl/venv venv
-COPY --chown=grapl --from=grapl-common-build /home/grapl/grapl-common grapl-common
 
-# Install requirement `grapl_common` - we could also manually COPY the `venv/site_packages`,
-# but the pip install is cleaner.
-RUN cd grapl-common && \
-    pip install .
+RUN --mount=type=bind,source=dist,target=/grapl-dist cd /grapl-dist && \
+    pip install grapl_common-*.whl
 
 RUN cd grapl_analyzerlib && \
     pip install . && \
