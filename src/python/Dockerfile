@@ -25,9 +25,13 @@ USER grapl
 ENV USER=grapl
 WORKDIR /home/grapl
 
-RUN python3 -mvenv venv && \
-    source venv/bin/activate && \
-    pip install --upgrade pip && \
+# Automatically ensures that our virtualenv is created and active on
+# all subsequent actions
+ENV VIRTUAL_ENV=/home/grapl/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+RUN pip install --upgrade pip && \
     pip install wheel grpcio chalice hypothesis pytest pytest-xdist
 
 # base deploy
@@ -52,9 +56,13 @@ RUN adduser \
 USER grapl
 WORKDIR /home/grapl
 
-RUN python3 -mvenv venv && \
-    source venv/bin/activate && \
-    pip install --upgrade pip
+# Automatically ensures that our virtualenv is created and active on
+# all subsequent actions!
+ENV VIRTUAL_ENV=/home/grapl/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+RUN pip install --upgrade pip
 
 # test deps
 ################################################################################
@@ -76,8 +84,7 @@ FROM grapl-python-build AS graplinc-grapl-api-build
 COPY --chown=grapl proto proto
 COPY --chown=grapl python/graplinc-grapl-api python/graplinc-grapl-api
 
-RUN source venv/bin/activate && \
-    cd python/graplinc-grapl-api && \
+RUN cd python/graplinc-grapl-api && \
     python setup.py sdist bdist_wheel && \
     pip install dist/*.whl
 
@@ -89,8 +96,7 @@ FROM grapl-python-build AS grapl-common-build
 
 COPY --chown=grapl python/grapl-common grapl-common
 
-RUN source venv/bin/activate && \
-    cd grapl-common && \
+RUN cd grapl-common && \
     pip install . && \
     python setup.py sdist bdist_wheel
 
@@ -106,12 +112,10 @@ COPY --chown=grapl --from=grapl-common-build /home/grapl/grapl-common grapl-comm
 
 # Install requirement `grapl_common` - we could also manually COPY the `venv/site_packages`,
 # but the pip install is cleaner.
-RUN source venv/bin/activate && \
-    cd grapl-common && \
+RUN cd grapl-common && \
     pip install .
 
-RUN source venv/bin/activate && \
-    cd grapl_analyzerlib && \
+RUN cd grapl_analyzerlib && \
     pip install . && \
     python setup.py sdist bdist_wheel
 
@@ -132,8 +136,7 @@ FROM grapl-python-build AS analyzer-executor-build
 COPY --chown=grapl python/analyzer_executor analyzer_executor
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
 
-RUN source venv/bin/activate && \
-    cd analyzer_executor && \
+RUN cd analyzer_executor && \
     pip install .
 
 # deploy
@@ -142,8 +145,7 @@ FROM grapl-python-deploy AS analyzer-executor-deploy
 COPY --chown=grapl --from=analyzer-executor-build /home/grapl/venv venv
 COPY --chown=grapl --from=analyzer-executor-build /home/grapl/analyzer_executor analyzer_executor
 
-CMD source venv/bin/activate && \
-    python3 analyzer_executor/src/run.py
+CMD python3 analyzer_executor/src/run.py
 
 # test
 FROM analyzer-executor-build AS analyzer-executor-test
@@ -163,8 +165,7 @@ FROM grapl-python-build AS engagement-edge-build
 COPY --chown=grapl python/engagement_edge engagement_edge
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
 
-RUN source venv/bin/activate && \
-    cd engagement_edge && \
+RUN cd engagement_edge && \
     pip install .
 
 # test
@@ -179,8 +180,7 @@ RUN python_test_deps/install_requirements.sh
 
 ## Steal and install grapl-tests-common
 COPY --chown=grapl python/grapl-tests-common grapl-tests-common
-RUN source venv/bin/activate && \
-    cd grapl-tests-common && \
+RUN cd grapl-tests-common && \
     pip install .
 
 # model-plugin-deployer
@@ -192,8 +192,7 @@ FROM grapl-python-build AS model-plugin-deployer-build
 COPY --chown=grapl python/grapl-model-plugin-deployer model-plugin-deployer
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
 
-RUN source venv/bin/activate && \
-    cd model-plugin-deployer && \
+RUN cd model-plugin-deployer && \
     pip install -r requirements.txt
 
 # deploy
@@ -201,13 +200,11 @@ FROM grapl-python-deploy AS model-plugin-deployer-deploy
 
 COPY --chown=grapl --from=model-plugin-deployer-build /home/grapl/venv venv
 
-RUN source venv/bin/activate && \
-    chalice new-project app/
+RUN chalice new-project app/
 
 COPY --chown=grapl --from=model-plugin-deployer-build /home/grapl/model-plugin-deployer/grapl_model_plugin_deployer.py app/app.py
 
-CMD source venv/bin/activate && \
-    cd app && \
+CMD cd app && \
     chalice local --no-autoreload --host=0.0.0.0 --port=8123
 
 # Notebook
@@ -221,8 +218,7 @@ EXPOSE 8888
 
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
 
-RUN source venv/bin/activate && \
-    pip install jupyter
+RUN pip install jupyter
 
 # Set up jupyter-notebook stuff
 RUN mkdir -p grapl-notebook/model_plugins
@@ -230,8 +226,7 @@ COPY --chown=grapl python/grapl-notebook/jupyter_notebook_config.py /home/grapl/
 COPY --chown=grapl python/grapl-notebook/Demo_Engagement.ipynb grapl-notebook/
 
 ## Run it
-CMD source venv/bin/activate && \
-    cd grapl-notebook && \
+CMD cd grapl-notebook && \
     jupyter notebook --ip="0.0.0.0"
 
 # test
@@ -240,8 +235,7 @@ FROM grapl-notebook AS grapl-notebook-test
 # This file will improve once #444 lands
 # primarily to use pre-downloaded tools instead of downloading again
 
-RUN source venv/bin/activate && \
-    pip install nbqa mypy boto3-stubs[essential]
+RUN pip install nbqa mypy boto3-stubs[essential]
 
 # grapl-tests-common-build
 ################################################################################
@@ -253,8 +247,7 @@ COPY --from=python-test-deps /home/grapl/python_test_deps python_test_deps
 RUN python_test_deps/install_requirements.sh
 
 COPY --chown=grapl python/grapl-tests-common grapl-tests-common
-RUN source venv/bin/activate && \
-    cd grapl-tests-common && \
+RUN cd grapl-tests-common && \
     pip install . && \
     python setup.py sdist bdist_wheel
 
