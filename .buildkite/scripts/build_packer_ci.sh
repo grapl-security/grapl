@@ -9,24 +9,21 @@
 set -euo pipefail
 
 source .buildkite/scripts/lib/packer.sh
-source .buildkite/scripts/lib/packer_constants.sh
 
-echo -e "--- :packer: Performing build of AMI"
 export GIT_SHA="${BUILDKITE_COMMIT}"
 export GIT_BRANCH="${BUILDKITE_BRANCH}"
+# This : syntax does nothing; but in unison with `set -u` marks these two vars as required.
 : "${BUILDKITE_BUILD_NUMBER}"
+# it is worried that I confused this with PACKER_IMAGE_NAMES. I didn't.
+# shellcheck disable=SC2153
+: "${PACKER_IMAGE_NAME}"
 
-# This is in the `packer.sh` sourced above
-build_ami
+build_packer_ci() {
+    echo -e "--- :packer: Performing build of AMI"
 
-for manifest in "${PACKER_MANIFESTS[@]}"; do
-    echo -e "--- :packer: Manifest ${manifest} Contents"
-    cat "${manifest}"
-    echo
+    # Both defined in packer.sh
+    build_ami "${PACKER_IMAGE_NAME}"
+    upload_manifest "${PACKER_IMAGE_NAME}"
+}
 
-    echo -e "--- :buildkite: Uploading ${manifest} file"
-    buildkite-agent artifact upload "${manifest}"
-
-    # Just to be safe, because subsequent runs can append to it
-    rm "${manifest}"
-done
+build_packer_ci

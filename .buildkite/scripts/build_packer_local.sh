@@ -14,4 +14,4 @@ export GIT_SHA
 GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 export GIT_BRANCH
 
-build_ami
+build_ami "$@"
