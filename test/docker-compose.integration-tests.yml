@@ -39,8 +39,8 @@ services:
   analyzerlib-integration-tests:
     image: grapl/analyzerlib-test:${TAG:-latest}
     build:
-      context: ${PWD}/src
-      dockerfile: ./python/Dockerfile
+      context: ${PWD}
+      dockerfile: ./src/python/Dockerfile
       target: grapl-analyzerlib-test
     command: bash -c '
       cd grapl_analyzerlib &&
@@ -55,8 +55,8 @@ services:
   analyzer-executor-integration-tests:
     image: grapl/analyzer-executor-test:${TAG:-latest}
     build:
-      context: ${PWD}/src
-      dockerfile: ./python/Dockerfile
+      context: ${PWD}
+      dockerfile: ./src/python/Dockerfile
       target: analyzer-executor-test
     command: bash -c '
       cd analyzer_executor &&
@@ -73,8 +73,8 @@ services:
   engagement-edge-integration-tests:
     image: grapl/grapl-engagement-edge-test:${TAG:-latest}
     build:
-      context: ${PWD}/src
-      dockerfile: ./python/Dockerfile
+      context: ${PWD}
+      dockerfile: ./src/python/Dockerfile
       target: engagement-edge-test
     command: bash -c '
       cd engagement_edge &&
@@ -115,8 +115,8 @@ services:
   graphql-endpoint-tests:
     image: grapl/graphql-endpoint-tests:${TAG:-latest}
     build:
-      context: ${PWD}/src
-      dockerfile: ./python/Dockerfile
+      context: ${PWD}
+      dockerfile: ./src/python/Dockerfile
       target: graphql-endpoint-tests
     command: |
       /bin/bash -c '

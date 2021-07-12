@@ -4,8 +4,8 @@ services:
   typecheck-analyzerlib:
     image: grapl/analyzerlib-test:${TAG:-latest}
     build:
-      context: ${PWD}/src
-      dockerfile: ./python/Dockerfile
+      context: ${PWD}
+      dockerfile: ./src/python/Dockerfile
       target: grapl-analyzerlib-test
     command: |
       /bin/bash -c "

@@ -72,15 +72,15 @@ services:
   analyzer-executor:
     image: grapl/analyzer-executor:${TAG:-latest}
     build:
-      context: src
-      dockerfile: ./python/Dockerfile
+      context: .
+      dockerfile: ./src/python/Dockerfile
       target: analyzer-executor-deploy
 
   model-plugin-deployer:
     image: grapl/model-plugin-deployer:${TAG:-latest}
     build:
-      context: src
-      dockerfile: ./python/Dockerfile
+      context: .
+      dockerfile: ./src/python/Dockerfile
       target: model-plugin-deployer-deploy
 
   ########################################################################
@@ -104,8 +104,8 @@ services:
   notebook:
     image: grapl/notebook:${TAG:-latest}
     build:
-      context: src
-      dockerfile: ./python/Dockerfile
+      context: .
+      dockerfile: ./src/python/Dockerfile
       target: grapl-notebook
 
   ########################################################################
