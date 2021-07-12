@@ -9,7 +9,7 @@ variable "image_name" {
   type        = string
 
   validation {
-    condition     = var.image_name == "grapl-nomad-consul-server" || var.image_name == "grapl-nomad-consul-client"
+    condition     = contains(["grapl-nomad-consul-server", "grapl-nomad-consul-client"], var.image_name)
     error_message = "That is not one of 2 accepted image names (grapl-nomad-consul-server, grapl-nomad-consul-client)."
   }
 }

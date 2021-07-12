@@ -1,5 +1,5 @@
 shell_library()
 
 shunit2_tests(
-    name="tests",
+    name="tests"
 )

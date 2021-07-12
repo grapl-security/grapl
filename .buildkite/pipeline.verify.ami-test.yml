@@ -34,8 +34,6 @@ steps:
   - label: ":packer: AMI Test Build: Client"
     key: "ami-test-client" # Used to tag the Packer Builder instance
     command: ".buildkite/scripts/tests_in_ci/packer_integration_test.sh"
-    env:
-      PACKER_IMAGE_NAME: "grapl-nomad-consul-client"
     plugins:
       - docker#v3.8.0:
           image: "hashicorp/packer:1.7.2"
