@@ -36,7 +36,7 @@ from grapl_analyzerlib.plugin_retriever import load_plugins
 from grapl_analyzerlib.queryable import Queryable
 from grapl_analyzerlib.subgraph_view import SubgraphView
 from grapl_common.env_helpers import S3ResourceFactory
-from grapl_common.envelope import Envelope
+from grapl_common.envelope import Envelope, proto_uuid_to_pyuuid
 from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
 from graplinc.grapl.api.services.v1beta1.types_pb2 import Meta
@@ -190,7 +190,9 @@ class AnalyzerExecutor:
         for event in events["Records"]:
             data = parse_s3_event(s3, event)
 
-            message = json.loads(data)
+            envelope = Envelope.from_proto(data)
+
+            message = json.loads(envelope.inner_message)
 
             LOGGER.info(f'Executing Analyzer: {message["key"]}')
 
@@ -201,11 +203,10 @@ class AnalyzerExecutor:
                     s3,
                     self.analyzers_bucket,
                     message["key"],
-                )
+                ).decode('utf8')
             analyzer_name = message["key"].split("/")[-2]
 
-            envelope = Envelope.from_proto(bytes(message["subgraph"]))
-            subgraph = SubgraphView.from_proto(client, envelope.inner_message)
+            subgraph = SubgraphView.from_proto(client, bytes(message['subgraph']))
 
             # TODO: Validate signature of S3 file
             LOGGER.info(f"event {event} {envelope.metadata}")
@@ -373,7 +374,7 @@ class AnalyzerExecutor:
             raise
 
 
-def parse_s3_event(s3: S3ServiceResource, event: S3PutRecordDict) -> str:
+def parse_s3_event(s3: S3ServiceResource, event: S3PutRecordDict) -> bytes:
     try:
         bucket = event["s3"]["bucket"]["name"]
         key = event["s3"]["object"]["key"]
@@ -383,9 +384,9 @@ def parse_s3_event(s3: S3ServiceResource, event: S3PutRecordDict) -> str:
     return download_s3_file(s3, bucket, key)
 
 
-def download_s3_file(s3: S3ServiceResource, bucket: str, key: str) -> str:
+def download_s3_file(s3: S3ServiceResource, bucket: str, key: str) -> bytes:
     obj = s3.Object(bucket, key)
-    return cast(bytes, obj.get()["Body"].read()).decode("utf-8")
+    return cast(bytes, obj.get()["Body"].read())
 
 
 def is_analyzer(analyzer_name: str, analyzer_cls: type) -> bool:
@@ -415,7 +416,7 @@ def emit_event(s3: S3ServiceResource, event: ExecutionHit, metadata: Meta) -> No
     LOGGER.info(f"emitting event for: {event.analyzer_name, event.nodes}")
 
     meta_dict = {
-        "trace_id": metadata.trace_id,
+        "trace_id": str(proto_uuid_to_pyuuid(metadata.trace_id)),
     }
 
     event_s = json.dumps(
