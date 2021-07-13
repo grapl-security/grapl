@@ -27,6 +27,7 @@ upload_manifest() {
 
     echo -e "--- :buildkite: Uploading ${manifest} file"
     buildkite-agent artifact upload "${manifest}"
+    # This artifact then gets picked up by the "Record AMI IDs" step in Buildkite
 
     # Just to be safe, because subsequent runs can append to it
     rm "${manifest}"

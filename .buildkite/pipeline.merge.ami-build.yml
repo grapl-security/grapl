@@ -52,8 +52,8 @@ steps:
 
   - wait
 
-  # This just has to extract the AMI ID and jam it into the artifact
+  # This just has to extract the AMI IDs and jam it into the artifact
   # store to pick up later.
-  - label: ":writing_hand: Record AMI ID"
+  - label: ":writing_hand: Record AMI IDs"
     command:
       - .buildkite/scripts/record_artifacts.sh
