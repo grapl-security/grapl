@@ -1,5 +1,5 @@
 [GLOBAL]
-pants_version = "2.5.1rc3"
+pants_version = "2.6.0rc1"
 backend_packages = [
   "pants.backend.awslambda.python",
   "pants.backend.codegen.protobuf.python",
@@ -25,26 +25,26 @@ build_file_prelude_globs = [
 pants_ignore = [
 ]
 
-# plugins = [
-#   "toolchain.pants.plugin==0.13.0"
-# ]
+plugins = [
+  "toolchain.pants.plugin==0.13.1"
+]
 
-# remote_cache_read = true
-# remote_cache_write = true
-# remote_store_address = "grpcs://cache.toolchain.com:443"
-# remote_auth_plugin = "toolchain.pants.auth.plugin:toolchain_auth_plugin"
+remote_cache_read = true
+remote_cache_write = true
+remote_store_address = "grpcs://cache.toolchain.com:443"
+remote_auth_plugin = "toolchain.pants.auth.plugin:toolchain_auth_plugin"
 
-# [toolchain-setup]
-# repo = "grapl"
+[toolchain-setup]
+repo = "grapl"
 
-# [buildsense]
-# enable = true
+[buildsense]
+enable = true
 
-# # See https://www.pantsbuild.org/docs/anonymous-telemetry
-# [anonymous-telemetry]
-# enabled = true
-# # Randomly generated with `uuidgen --random`
-# repo_id = "f416be7b-e109-4915-8eba-940bcfa310c1"
+# See https://www.pantsbuild.org/docs/anonymous-telemetry
+[anonymous-telemetry]
+enabled = true
+# Randomly generated with `uuidgen --random`
+repo_id = "f416be7b-e109-4915-8eba-940bcfa310c1"
 
 # Given how our code is currently structured, with package and test
 # code for every project in their own directory, I believe we have to
