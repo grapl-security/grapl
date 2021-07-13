@@ -11,19 +11,17 @@ message ProtoUuidV4 {
 }
 
 // Metadata about a specific message, or its context
-message Meta {
-  // The name of the service/ client that produced this message
-  string client_id = 1;
+message Metadata {
   // Customer identity
-  ProtoUuidV4 tenant_id = 2;
+  ProtoUuidV4 tenant_id = 1;
   // Unique identity representing a unified request throughout Grapl
-  ProtoUuidV4 trace_id = 3;
+  ProtoUuidV4 trace_id = 2;
 }
 
 // A generic wrapper around other messages
 message Envelope {
   // Metadata about this message
-  Meta metadata = 1;
+  Metadata metadata = 1;
   // The string name of this message's type
   string inner_type = 2;
   // The raw encoded bytes of the inner message
