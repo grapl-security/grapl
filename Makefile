@@ -139,7 +139,7 @@ build-test-unit-js:
 		--file ./test/docker-compose.unit-tests-js.yml
 
 .PHONY: build-test-typecheck
-build-test-typecheck:
+build-test-typecheck: build-python-wheels
 	docker buildx bake --file ./test/docker-compose.typecheck-tests.yml
 
 .PHONY: build-test-integration
@@ -152,8 +152,12 @@ build-test-e2e: build-services
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.yml
 
+.PHONY: build-python-wheels
+build-python-wheels:  ## Build all Python wheels
+	./pants filter --target-type=python_distribution :: | xargs ./pants package
+
 .PHONY: build-services
-build-services: graplctl lambdas ## Build Grapl services
+build-services: graplctl lambdas build-python-wheels ## Build Grapl services
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
 
 .PHONY: build-formatter

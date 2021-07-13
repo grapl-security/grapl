@@ -9,7 +9,6 @@ services:
       target: grapl-analyzerlib-test
     command: |
       /bin/bash -c "
-        source venv/bin/activate &&
         cd grapl_analyzerlib &&
         pip install '.[typecheck]' &&
         pytype --config ./pytype.cfg .
