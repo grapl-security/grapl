@@ -89,7 +89,7 @@ steps:
               config:
                 label: ":pipeline: Upload AMI Build"
                 command: "buildkite-agent pipeline upload .buildkite/pipeline.merge.ami-build.yml"
-  
+
   # This will also wait for the uploaded pipeline, if we did decide to upload it.
   - wait
 
@@ -97,10 +97,12 @@ steps:
   # uploaded to Buildkite from previous steps in this pipeline.
   - label: "Merge artifacts files"
     command:
-      - .buildkite/scripts/merge_artifact_files.sh \
-        lambda_artifacts.json \
-        container_artifacts.json \
-        grapl-nomad-consul-server.artifacts.json \
+      # yaml fyi: `>` collapses newlines into normal spaces
+      - >
+        .buildkite/scripts/merge_artifact_files.sh
+        lambda_artifacts.json
+        container_artifacts.json
+        grapl-nomad-consul-server.artifacts.json
         grapl-nomad-consul-client.artifacts.json
 
   - wait
