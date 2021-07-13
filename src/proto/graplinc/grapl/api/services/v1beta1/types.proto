@@ -23,6 +23,8 @@ message Envelope {
   // Metadata about this message
   Metadata metadata = 1;
   // The string name of this message's type
+  // This needs to be the fully-qualified name of the protobuf type used to serialize this message
+  // ex: "graplinc.grapl.api.graph.v1beta1.GraphDescription"
   string inner_type = 2;
   // The raw encoded bytes of the inner message
   bytes inner_message = 3;

@@ -4,7 +4,7 @@ import uuid
 from uuid import uuid4
 
 from graplinc.grapl.api.services.v1beta1.types_pb2 import Envelope as _Envelope
-from graplinc.grapl.api.services.v1beta1.types_pb2 import Meta, ProtoUuidV4
+from graplinc.grapl.api.services.v1beta1.types_pb2 import Metadata, ProtoUuidV4
 
 
 def proto_uuid_to_pyuuid(proto_uuid: ProtoUuidV4) -> uuid.UUID:
@@ -28,9 +28,8 @@ def pyuuid_to_proto_uuid(pyuuid: uuid.UUID) -> ProtoUuidV4:
     return proto_uuid
 
 
-def init_metadata(client_id: str) -> Meta:
-    metadata = Meta()
-    metadata.client_id = client_id
+def init_metadata() -> Metadata:
+    metadata = Metadata()
     metadata.trace_id.CopyFrom(pyuuid_to_proto_uuid(uuid4()))
     metadata.tenant_id.CopyFrom(pyuuid_to_proto_uuid(uuid4()))
     return metadata
@@ -41,7 +40,7 @@ class Envelope(object):
         self.envelope = envelope
 
     @staticmethod
-    def from_parts(metadata: Meta, inner_message: bytes, inner_type: str) -> Envelope:
+    def from_parts(metadata: Metadata, inner_message: bytes, inner_type: str) -> Envelope:
         envelope = _Envelope()
         envelope.metadata.CopyFrom(metadata)
         envelope.inner_message = inner_message
@@ -55,11 +54,11 @@ class Envelope(object):
 
         return Envelope(envelope)
 
-    def SerializeToString(self) -> str:
+    def serialize_to_string(self) -> str:
         return self.envelope.SerializeToString()
 
     @property
-    def metadata(self) -> Meta:
+    def metadata(self) -> Metadata:
         return self.envelope.metadata
 
     @property

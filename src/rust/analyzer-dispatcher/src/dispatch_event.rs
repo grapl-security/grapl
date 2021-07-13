@@ -6,6 +6,7 @@ use serde::{
 };
 use serde_json::json;
 use sqs_executor::completion_event_serializer::CompletionEventSerializer;
+use rust_proto::services::ServiceMessage;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AnalyzerDispatchEvent {
@@ -18,6 +19,28 @@ impl AnalyzerDispatchEvent {
         Self { key, subgraph }
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AnalyzerDispatchEvents {
+    events: Vec<AnalyzerDispatchEvent>,
+}
+
+impl AnalyzerDispatchEvents {
+    pub fn new() -> Self {
+        Self {events: vec![]}
+    }
+}
+
+impl From<Vec<AnalyzerDispatchEvent>> for AnalyzerDispatchEvents {
+    fn from(events: Vec<AnalyzerDispatchEvent>) -> Self {
+        Self {events}
+    }
+}
+
+impl ServiceMessage for AnalyzerDispatchEvents {
+    const TYPE_NAME: &'static str = "AnalyzerDispatchEvent";
+}
+
 
 #[derive(thiserror::Error, Debug)]
 pub enum DispatchEventEncoderError {
@@ -35,7 +58,7 @@ pub struct AnalyzerDispatchSerializer {
 }
 
 impl CompletionEventSerializer for AnalyzerDispatchSerializer {
-    type CompletedEvent = Vec<AnalyzerDispatchEvent>;
+    type CompletedEvent = AnalyzerDispatchEvents;
     type Output = Vec<u8>;
     type Error = DispatchEventEncoderError;
 
@@ -43,7 +66,7 @@ impl CompletionEventSerializer for AnalyzerDispatchSerializer {
         &mut self,
         completed_events: &[Self::CompletedEvent],
     ) -> Result<Vec<Self::Output>, Self::Error> {
-        let unique_events: Vec<_> = completed_events.iter().flatten().collect();
+        let unique_events: Vec<_> = completed_events.iter().map(|e| &e.events).flatten().collect();
 
         let mut final_subgraph = MergedGraph::new();
 
