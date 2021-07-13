@@ -76,8 +76,6 @@ steps:
     agents:
       queue: "artifact-uploaders"
 
-  - wait
-
   - label: ":thinking_face: AMI Build?"
     plugins:
       - chronotc/monorepo-diff#v2.0.4:
