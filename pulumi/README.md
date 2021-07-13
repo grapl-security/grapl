@@ -1,24 +1,44 @@
 Grapl Infrastructure
 ====================
 
-Grapl is (or will soon be) deployed to AWS using [Pulumi][pulumi].
+Grapl is deployed to AWS using [Pulumi][pulumi].
 
-# "Local Grapl"
-For testing locally, we use [Localstack][ls]. Our `local-grapl` Pulumi
-stack is configured by default to point toward an instance of
-Localstack running on the default port on `localhost`. After
-installing Localstack, you should be able to run `localstack start`,
-and then `pulumi up` against the `local-grapl` stack and deploy to
-your Localstack instance. When working purely on infrastructure, this
-can be a way to iterate quickly.
+# Projects
+We can divide our infrastructure into different Pulumi projects, each
+of which can have their own individual instances ("stacks") and
+lifecycle.
+
+At the moment, projects will live within their own sub-directory in
+the [`pulumi`](./) directory. Our Python code also lives in this directory,
+under [`infra`](./infra).
+
+Currently we have the following projects:
+## [grapl](./grapl)
+
+This is the main definition of the Grapl service infrastructure.
+
+The following stacks have been defined for this project:
+
+### [local-grapl](./grapl/Pulumi.local-grapl.yaml)
+This configuration is strictly for running the (subset) of Grapl that
+can be supported by [Localstack][ls] in our current integration and
+end-to-end tests, implemented with Docker Compose.
+
+It is only intended to be run in "local" Pulumi mode (i.e., not
+connected to the Pulumi SaaS).
+
+### [testing](./grapl/Pulumi.testing.yaml)
+This is a persistent environment, attached to Grapl's Pulumi SaaS
+account. It is only to be updated in the context of Grapl's automated
+release pipeline.
 
 # Getting Started
 
 We're using the Python SDK for Pulumi. As such, we'll need to have
 access to the appropriate Python libraries when we run the `pulumi`
 CLI. If you have not already done so, run `make populate-venv` from
-the repository root, and follow the instructions it gives you at the
-end.
+the repository root, and **follow the instructions it gives you at the
+end.**
 
 To run Pulumi locally, we'll need to login locally, thus avoiding
 communication with the hosted Pulumi service.
@@ -27,12 +47,14 @@ communication with the hosted Pulumi service.
 pulumi login --local
 ```
 
-Then, you must initialize the `local-grapl` stack on your
+Then, only if you are wanting to interact directly with Localstack for
+some reason, you must initialize the `local-grapl` stack on your
 machine. This will create the necessary state to manage the stack, but
 the configuration will be pulled from the `Pulumi.local-grapl.yaml`
 file that already exists within this repository.
 
 ```sh
+cd grapl
 pulumi stack init local-grapl
 ```
 
@@ -42,13 +64,19 @@ as well: `local-grapl-passphrase`. Setting this in the
 `PULUMI_CONFIG_PASSPHRASE` environment variable can make it easier to
 interact with this stack on your machine.
 
+In general, though, it will be rare that you'll really need to do this.
+
 # Running against AWS
 
 If you'd like to run against your own AWS account, you should make a
 new stack for this. This will be your personal stack, so make sure to
 set `PULUMI_CONFIG_PASSPHRASE` accordingly.
 
+Note that developer "sandboxes" like this are __not__ currently
+managed by our Pulumi SaaS account.
+
 ```
+cd grapl
 pulumi login --local
 pulumi stack init <NAME>
 pulumi config set aws:region us-east-1
@@ -59,26 +87,6 @@ run `aws sso login`.
 
 Now, when you run `pulumi up`, you will be provisioning infrastructure
 in your AWS account.
-
-## CDK and Pulumi Configuration Caveat
-
-If you are interacting with CDK and Pulumi at the same time (e.g.,
-you're in the middle of helping migrate from one to the other), you
-will need to be scrupulous about keeping your AWS credentials
-up-to-date.
-
-Pulumi can operate just fine with `aws sso login`. CDK, on the other
-hand, cannot, so we have to add credentials to our
-`~/.aws/credentials` file to interact with it.
-
-If, however, your on-disk credentials are out of date, regardless of
-the fact that you may have just logged in with `aws sso login`, your
-Pulumi runs will hang, because it's looking at that file and getting
-invalid information.
-
-To preserve your sanity, get into the habit of updating your
-credentials file regularly if you're working with both CDK and Pulumi
-at the same time.
 
 # Environment Variables
 At the moment, we have a few bits of configuration we're specifying in
