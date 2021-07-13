@@ -1,29 +1,27 @@
-use std::convert::TryFrom;
-
 use uuid::Uuid;
 
 pub use crate::graplinc::grapl::api::services::v1beta1::*;
 
-pub trait ServiceMessage: prost::Message {
+pub trait ServiceMessage {
     const TYPE_NAME: &'static str;
 }
 
-impl<M> TryFrom<(Meta, M)> for Envelope
-where
-    M: ServiceMessage,
-{
-    type Error = prost::EncodeError;
-
-    fn try_from((metadata, inner_message): (Meta, M)) -> Result<Self, Self::Error> {
-        let mut inner_message_buf = Vec::new();
-        inner_message.encode(&mut inner_message_buf)?;
-        Ok(Self {
-            metadata: Some(metadata),
-            inner_type: M::TYPE_NAME.to_string(),
-            inner_message: inner_message_buf,
-        })
-    }
-}
+// impl<M> TryFrom<(Metadata, M)> for Envelope
+// where
+//     M: ServiceMessage + prost::Message,
+// {
+//     type Error = prost::EncodeError;
+//
+//     fn try_from((metadata, inner_message): (Metadata, M)) -> Result<Self, Self::Error> {
+//         let mut inner_message_buf = Vec::new();
+//         inner_message.encode(&mut inner_message_buf)?;
+//         Ok(Self {
+//             metadata: Some(metadata),
+//             inner_type: M::TYPE_NAME.to_string(),
+//             inner_message: inner_message_buf,
+//         })
+//     }
+// }
 
 impl ProtoUuidV4 {
     pub fn new() -> Self {

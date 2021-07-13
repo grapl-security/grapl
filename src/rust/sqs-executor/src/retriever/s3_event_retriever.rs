@@ -25,7 +25,7 @@ use rusoto_s3::{
     S3,
 };
 use rusoto_sqs::Message as SqsMessage;
-use rust_proto::services::Meta;
+use rust_proto::services::Metadata;
 use tokio::{
     io::AsyncReadExt,
     time::error::Elapsed,
@@ -162,7 +162,7 @@ where
     async fn retrieve_event(
         &mut self,
         msg: &Self::Message,
-    ) -> Result<Option<(Meta, E)>, Self::Error> {
+    ) -> Result<Option<(Metadata, E)>, Self::Error> {
         let body = msg.body.as_ref().unwrap();
         debug!("Got body from message: {}", body);
         let event: serde_json::Value = serde_json::from_str(body)?;
