@@ -251,7 +251,7 @@ where
         let envelope: rust_proto::services::Envelope = prost::Message::decode(&body[..])?;
         let meta = envelope
             .metadata
-            .expect("Meta must be set at the front of the pipeline");
+            .expect("Metadata must be set at the front of the pipeline");
         let body = envelope.inner_message;
 
         let (decoded, ms) = time_it(|| self.decoder.decode(body));
