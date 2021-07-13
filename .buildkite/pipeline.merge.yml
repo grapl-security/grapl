@@ -92,6 +92,9 @@ steps:
               config:
                 label: ":pipeline: Upload AMI Build"
                 command: "buildkite-agent pipeline upload .buildkite/pipeline.merge.ami-build.yml"
+  
+  # This will also wait for the uploaded pipeline, if we did decide to upload it.
+  - wait
 
   # The names of the input files depend on the files that can be
   # uploaded to Buildkite from previous steps in this pipeline.
