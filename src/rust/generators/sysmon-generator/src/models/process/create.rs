@@ -95,9 +95,9 @@ pub fn generate_process_create_subgraph(
 mod tests {
     use std::str::FromStr;
 
-    use rust_proto::{
-        graph_descriptions::node_property::Property,
-        graph_descriptions::ImmutableUintProp,
+    use rust_proto::graph_descriptions::{
+        node_property::Property,
+        ImmutableUintProp,
     };
     use sysmon::*;
 

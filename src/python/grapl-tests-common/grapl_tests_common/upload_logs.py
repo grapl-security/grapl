@@ -148,7 +148,7 @@ def upload_logs(
         envelope = Envelope.from_parts(
             metadata=init_metadata("upload_logs-test"),
             inner_message=chunk_body,
-            inner_type="RawEvents"
+            inner_type="RawEvents",
         )
 
         s3.put_object(Body=envelope.SerializeToString(), Bucket=bucket, Key=key)
