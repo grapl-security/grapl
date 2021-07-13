@@ -86,7 +86,7 @@ steps:
             - path:
                 - "packer/"
                 - ".buildkite/scripts/build_packer_ci.sh"
-                - ".buildkite/scripts/record_artifacts.sh
+                - ".buildkite/scripts/record_artifacts.sh"
                 - ".buildkite/scripts/lib/packer.sh"
                 - ".buildkite/scripts/lib/packer_constants.sh"
               config:
