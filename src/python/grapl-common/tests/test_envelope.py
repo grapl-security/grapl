@@ -1,7 +1,7 @@
 import unittest
 import uuid
 
-from grapl_common.envelope import pyuuid_to_proto_uuid, proto_uuid_to_pyuuid
+from grapl_common.envelope import proto_uuid_to_pyuuid, pyuuid_to_proto_uuid
 
 
 class TestProtoUuidv4(unittest.TestCase):
