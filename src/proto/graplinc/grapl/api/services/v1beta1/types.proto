@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package graplinc.grapl.api.services.v1beta1;
 
-// A protobuf, encoded by splitting the 128bit representation into two 64bit values
+// A protobuf uuid, encoded by splitting the 128bit representation into two 64bit values
 message ProtoUuidV4 {
   // Least significant bytes
   fixed64 lsb = 1;
@@ -20,8 +20,12 @@ message Meta {
   ProtoUuidV4 trace_id = 3;
 }
 
+// A generic wrapper around other messages
 message Envelope {
+  // Metadata about this message
   Meta metadata = 1;
+  // The string name of this message's type
   string inner_type = 2;
+  // The raw encoded bytes of the inner message
   bytes inner_message = 3;
 }
