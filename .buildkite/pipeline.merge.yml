@@ -3,7 +3,6 @@ env:
   PANTS_CONFIG_FILES: "['pants.toml', 'pants.ci.toml']"
 
 steps:
-
   - label: ":aws-lambda::rust: Build Rust Lambdas"
     key: "rust-lambdas"
     plugins:
@@ -11,7 +10,7 @@ steps:
           diff: .buildkite/shared/scripts/diff.sh
           watch:
             - path:
-                - "src/rust/"  # This is not minimal, obviously
+                - "src/rust/" # This is not minimal, obviously
                 - "docker-compose.lambda-zips.rust.yml"
               config:
                 command:
@@ -28,7 +27,7 @@ steps:
           diff: .buildkite/shared/scripts/diff.sh
           watch:
             - path:
-                - "src/js/"  # This is not minimal, obviously
+                - "src/js/" # This is not minimal, obviously
                 - "docker-compose.lambda-zips.js.yml"
               config:
                 command:

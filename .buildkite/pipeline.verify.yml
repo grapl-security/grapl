@@ -10,7 +10,6 @@ env:
 # TODO: possibly just us Docker for caching?
 
 steps:
-
   - label: ":github: Validate CODEOWNERS"
     command: ".buildkite/scripts/validate_codeowners.sh"
     plugins:
@@ -122,7 +121,7 @@ steps:
       queue: "beefy"
     artifact_paths:
       - "test_artifacts/**/*"
-  
+
   - label: ":packer::lint-roller: Packer Linting"
     command:
       # Since we run it in a container, we can't use the `make` for it
@@ -132,7 +131,7 @@ steps:
       - docker#v3.8.0:
           image: "hashicorp/packer:1.7.2"
           entrypoint: bash
-  
+
   - label: ":thinking_face: AMI Test?"
     # Don't want to run this again in the merge pipeline, since
     # building the image does exactly the same thing. We don't want to

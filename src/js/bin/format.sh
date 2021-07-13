@@ -81,4 +81,6 @@ prettier \
     --config prettierrc-yaml.toml \
     ${prettier_arg} \
     ${repo_root}/**/*.yml \
-    ${repo_root}/**/*.yaml
+    ${repo_root}/**/*.yaml \
+    ${repo_root}/.buildkite/**/*.yml \
+    ${repo_root}/.github/**/*.yml
