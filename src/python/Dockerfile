@@ -69,7 +69,7 @@ RUN pip install --upgrade pip
 
 FROM grapl-python-build AS python-test-deps
 
-COPY --chown=grapl python/python_test_deps python_test_deps
+COPY --chown=grapl src/python/python_test_deps python_test_deps
 
 RUN python_test_deps/download_requirements.sh
 
@@ -81,24 +81,12 @@ RUN python_test_deps/download_requirements.sh
 # build
 FROM grapl-python-build AS graplinc-grapl-api-build
 
-COPY --chown=grapl proto proto
-COPY --chown=grapl python/graplinc-grapl-api python/graplinc-grapl-api
+COPY --chown=grapl src/proto proto
+COPY --chown=grapl src/python/graplinc-grapl-api python/graplinc-grapl-api
 
 RUN cd python/graplinc-grapl-api && \
     python setup.py sdist bdist_wheel && \
     pip install dist/*.whl
-
-# grapl-common
-################################################################################
-
-# build
-FROM grapl-python-build AS grapl-common-build
-
-COPY --chown=grapl python/grapl-common grapl-common
-
-RUN cd grapl-common && \
-    pip install . && \
-    python setup.py sdist bdist_wheel
 
 # grapl_analyzerlib
 ################################################################################
@@ -106,14 +94,11 @@ RUN cd grapl-common && \
 # build
 FROM grapl-python-build AS grapl-analyzerlib-build
 
-COPY --chown=grapl python/grapl_analyzerlib grapl_analyzerlib
+COPY --chown=grapl src/python/grapl_analyzerlib grapl_analyzerlib
 COPY --chown=grapl --from=graplinc-grapl-api-build /home/grapl/venv venv
-COPY --chown=grapl --from=grapl-common-build /home/grapl/grapl-common grapl-common
 
-# Install requirement `grapl_common` - we could also manually COPY the `venv/site_packages`,
-# but the pip install is cleaner.
-RUN cd grapl-common && \
-    pip install .
+RUN --mount=type=bind,source=dist,target=/grapl-dist cd /grapl-dist && \
+    pip install grapl_common-*.whl
 
 RUN cd grapl_analyzerlib && \
     pip install . && \
@@ -133,7 +118,7 @@ RUN python_test_deps/install_requirements.sh
 # build
 FROM grapl-python-build AS analyzer-executor-build
 
-COPY --chown=grapl python/analyzer_executor analyzer_executor
+COPY --chown=grapl src/python/analyzer_executor analyzer_executor
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
 
 RUN cd analyzer_executor && \
@@ -162,7 +147,7 @@ RUN python_test_deps/install_requirements.sh
 # build
 FROM grapl-python-build AS engagement-edge-build
 
-COPY --chown=grapl python/engagement_edge engagement_edge
+COPY --chown=grapl src/python/engagement_edge engagement_edge
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
 
 RUN cd engagement_edge && \
@@ -179,7 +164,7 @@ COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_t
 RUN python_test_deps/install_requirements.sh
 
 ## Steal and install grapl-tests-common
-COPY --chown=grapl python/grapl-tests-common grapl-tests-common
+COPY --chown=grapl src/python/grapl-tests-common grapl-tests-common
 RUN cd grapl-tests-common && \
     pip install .
 
@@ -189,7 +174,7 @@ RUN cd grapl-tests-common && \
 # build
 FROM grapl-python-build AS model-plugin-deployer-build
 
-COPY --chown=grapl python/grapl-model-plugin-deployer model-plugin-deployer
+COPY --chown=grapl src/python/grapl-model-plugin-deployer model-plugin-deployer
 COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
 
 RUN cd model-plugin-deployer && \
@@ -222,8 +207,8 @@ RUN pip install jupyter
 
 # Set up jupyter-notebook stuff
 RUN mkdir -p grapl-notebook/model_plugins
-COPY --chown=grapl python/grapl-notebook/jupyter_notebook_config.py /home/grapl/.jupyter/
-COPY --chown=grapl python/grapl-notebook/Demo_Engagement.ipynb grapl-notebook/
+COPY --chown=grapl src/python/grapl-notebook/jupyter_notebook_config.py /home/grapl/.jupyter/
+COPY --chown=grapl src/python/grapl-notebook/Demo_Engagement.ipynb grapl-notebook/
 
 ## Run it
 CMD cd grapl-notebook && \
@@ -246,7 +231,7 @@ COPY --from=python-test-deps /home/grapl/python_test_deps python_test_deps
 
 RUN python_test_deps/install_requirements.sh
 
-COPY --chown=grapl python/grapl-tests-common grapl-tests-common
+COPY --chown=grapl src/python/grapl-tests-common grapl-tests-common
 RUN cd grapl-tests-common && \
     pip install . && \
     python setup.py sdist bdist_wheel
@@ -255,4 +240,4 @@ RUN cd grapl-tests-common && \
 ################################################################################
 FROM grapl-tests-common-build AS graphql-endpoint-tests
 
-COPY --chown=grapl python/graphql_endpoint_tests graphql_endpoint_tests
+COPY --chown=grapl src/python/graphql_endpoint_tests graphql_endpoint_tests
