@@ -24,5 +24,5 @@ pants_ignore = [
   ".cache/pants/lmdb_store",
 ]
 
-[auth]
-from_env_var = "TOOLCHAIN_AUTH_TOKEN"
+# [auth]
+# from_env_var = "TOOLCHAIN_AUTH_TOKEN"
