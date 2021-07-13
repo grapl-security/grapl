@@ -33,7 +33,8 @@ artifact_json() {
 # `$ARTIFACT_FILE_DIRECTORY`.
 #
 # Does not fail if the file was not generated and uploaded during the
-# current Buildkite pipeline (which is a legitimate scenario).
+# current Buildkite pipeline (which is a legitimate scenario - for example,
+# we only *sometimes* generate new AMI IDs.)
 download_artifact_file() {
     local -r artifacts_file="${1}"
     mkdir -p "${ARTIFACT_FILE_DIRECTORY}"
