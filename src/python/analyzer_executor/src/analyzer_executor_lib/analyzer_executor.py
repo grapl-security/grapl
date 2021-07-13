@@ -39,7 +39,7 @@ from grapl_common.env_helpers import S3ResourceFactory
 from grapl_common.envelope import Envelope, proto_uuid_to_pyuuid
 from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
-from graplinc.grapl.api.services.v1beta1.types_pb2 import Meta
+from graplinc.grapl.api.services.v1beta1.types_pb2 import Metadata
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
@@ -413,7 +413,7 @@ def chunker(seq: List[BaseView], size: int) -> List[List[BaseView]]:
     return [seq[pos : pos + size] for pos in range(0, len(seq), size)]
 
 
-def emit_event(s3: S3ServiceResource, event: ExecutionHit, metadata: Meta) -> None:
+def emit_event(s3: S3ServiceResource, event: ExecutionHit, metadata: Metadata) -> None:
     LOGGER.info(f"emitting event for: {event.analyzer_name, event.nodes}")
 
     meta_dict = {

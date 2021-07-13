@@ -1,15 +1,13 @@
 pub use node_property::Property;
 use node_property::Property::{
-    DecrementOnlyInt as ProtoDecrementOnlyIntProp,
-    DecrementOnlyUint as ProtoDecrementOnlyUintProp,
-    ImmutableInt as ProtoImmutableIntProp,
-    ImmutableStr as ProtoImmutableStrProp,
-    ImmutableUint as ProtoImmutableUintProp,
-    IncrementOnlyInt as ProtoIncrementOnlyIntProp,
+    DecrementOnlyInt as ProtoDecrementOnlyIntProp, DecrementOnlyUint as ProtoDecrementOnlyUintProp,
+    ImmutableInt as ProtoImmutableIntProp, ImmutableStr as ProtoImmutableStrProp,
+    ImmutableUint as ProtoImmutableUintProp, IncrementOnlyInt as ProtoIncrementOnlyIntProp,
     IncrementOnlyUint as ProtoIncrementOnlyUintProp,
 };
 
 pub use crate::graplinc::grapl::api::graph::v1beta1::*;
+use crate::services::ServiceMessage;
 
 // A helper macro to generate `From` impl boilerplate.
 macro_rules ! impl_from_for_unit {
@@ -46,6 +44,10 @@ impl EdgeList {
         let Self { edges } = self;
         edges
     }
+}
+
+impl ServiceMessage for GraphDescription {
+    const TYPE_NAME: &'static str = "graplinc.grapl.api.graph.v1beta1.GraphDescription";
 }
 
 impl GraphDescription {
@@ -190,6 +192,10 @@ impl IdentifiedGraph {
     }
 }
 
+impl ServiceMessage for IdentifiedGraph {
+    const TYPE_NAME: &'static str = "graplinc.grapl.api.graph.v1beta1.IdentifiedGraph";
+}
+
 impl MergedGraph {
     pub fn new() -> Self {
         Self {
@@ -302,6 +308,12 @@ impl NodeDescription {
         self.node_key.clone()
     }
 }
+
+
+impl ServiceMessage for MergedGraph {
+    const TYPE_NAME: &'static str = "graplinc.grapl.api.graph.v1beta1.MergedGraph";
+}
+
 
 impl IdentifiedNode {
     pub fn merge(&mut self, other: &Self) {
@@ -827,16 +839,10 @@ impl NodeProperty {
 
 #[cfg(test)]
 pub mod test {
-    use std::{
-        collections::HashMap,
-        hash::Hasher,
-    };
+    use std::{collections::HashMap, hash::Hasher};
 
     #[cfg(not(feature = "fuzzing"))]
-    use quickcheck::{
-        Arbitrary,
-        Gen,
-    };
+    use quickcheck::{Arbitrary, Gen};
     use quickcheck_macros::quickcheck;
 
     use super::*;

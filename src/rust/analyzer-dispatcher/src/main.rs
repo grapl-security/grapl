@@ -42,10 +42,7 @@ use sqs_executor::{
     time_based_key_fn,
 };
 
-use crate::dispatch_event::{
-    AnalyzerDispatchEvent,
-    AnalyzerDispatchSerializer,
-};
+use crate::dispatch_event::{AnalyzerDispatchEvent, AnalyzerDispatchSerializer, AnalyzerDispatchEvents};
 
 pub mod dispatch_event;
 
@@ -115,7 +112,7 @@ where
     S: S3 + Send + Sync + 'static,
 {
     type InputEvent = MergedGraph;
-    type OutputEvent = Vec<AnalyzerDispatchEvent>;
+    type OutputEvent = AnalyzerDispatchEvents;
     type Error = AnalyzerDispatcherError;
 
     async fn handle_event(
@@ -127,7 +124,7 @@ where
 
         if subgraph.is_empty() {
             warn!("Attempted to handle empty subgraph");
-            return Ok(vec![]);
+            return Ok(AnalyzerDispatchEvents::new());
         }
 
         info!("Retrieving S3 keys");
@@ -159,11 +156,11 @@ where
 
         if let Some(e) = failed {
             Err(Ok((
-                dispatch_events,
+                AnalyzerDispatchEvents::from(dispatch_events),
                 AnalyzerDispatcherError::Unexpected(e.to_string()),
             )))
         } else {
-            Ok(dispatch_events)
+            Ok(AnalyzerDispatchEvents::from(dispatch_events))
         }
     }
 }

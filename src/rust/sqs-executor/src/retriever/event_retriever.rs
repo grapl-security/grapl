@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use rust_proto::services::Meta;
+use rust_proto::services::Metadata;
 
 use crate::errors::CheckedError;
 
@@ -10,5 +10,5 @@ pub trait PayloadRetriever<T> {
     async fn retrieve_event(
         &mut self,
         msg: &Self::Message,
-    ) -> Result<Option<(Meta, T)>, Self::Error>;
+    ) -> Result<Option<(Metadata, T)>, Self::Error>;
 }

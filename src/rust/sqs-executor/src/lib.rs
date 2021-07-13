@@ -56,6 +56,8 @@ use crate::{
     sqs_timeout_manager::keep_alive,
 };
 
+use rust_proto::services::ServiceMessage;
+
 pub mod retriever;
 
 pub mod cache;
@@ -168,7 +170,7 @@ async fn process_message<
     InputEventT: Send,
     EventHandlerT:
         EventHandler<InputEvent = InputEventT, OutputEvent = OutputEventT, Error = HandlerErrorT>,
-    OutputEventT: Clone + Send + Sync + 'static,
+    OutputEventT: ServiceMessage +  Clone + Send + Sync + 'static,
     HandlerErrorT: CheckedError + Debug + Send + Sync + 'static,
     SerializerErrorT: Error + Debug + Send + Sync + 'static,
     S3ClientT: S3 + Clone + Send + Sync + 'static,
@@ -293,7 +295,7 @@ async fn process_message<
             for event in events {
                 let envelope = rust_proto::services::Envelope {
                     metadata: Some(meta.clone()),
-                    inner_type: "".to_string(),
+                    inner_type: OutputEventT::TYPE_NAME.to_string(),
                     inner_message: event,
                 };
                 let mut encoded = vec![];
@@ -348,7 +350,7 @@ async fn process_message<
             for event in events {
                 let envelope = rust_proto::services::Envelope {
                     metadata: Some(meta.clone()),
-                    inner_type: "".to_string(),
+                    inner_type: OutputEventT::TYPE_NAME.to_string(),
                     inner_message: event,
                 };
                 let mut encoded = vec![];
@@ -440,7 +442,7 @@ async fn _process_loop<
     InputEventT: Send,
     EventHandlerT:
         EventHandler<InputEvent = InputEventT, OutputEvent = OutputEventT, Error = HandlerErrorT>,
-    OutputEventT: Clone + Send + Sync + 'static,
+    OutputEventT: ServiceMessage + Clone + Send + Sync + 'static,
     HandlerErrorT: CheckedError + Debug + Send + Sync + 'static,
     SerializerErrorT: Error + Debug + Send + Sync + 'static,
     S3ClientT: S3 + Clone + Send + Sync + 'static,
@@ -580,7 +582,7 @@ pub async fn process_loop<
     InputEventT: Send,
     EventHandlerT:
         EventHandler<InputEvent = InputEventT, OutputEvent = OutputEventT, Error = HandlerErrorT>,
-    OutputEventT: Clone + Send + Sync + 'static,
+    OutputEventT: ServiceMessage + Clone + Send + Sync + 'static,
     HandlerErrorT: CheckedError + Debug + Send + Sync + 'static,
     SerializerErrorT: Error + Debug + Send + Sync + 'static,
     S3ClientT: S3 + Clone + Send + Sync + 'static,

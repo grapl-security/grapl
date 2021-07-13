@@ -146,12 +146,12 @@ def upload_logs(
             + rand_str(6)
         )
         envelope = Envelope.from_parts(
-            metadata=init_metadata("upload_logs-test"),
+            metadata=init_metadata(),
             inner_message=chunk_body,
             inner_type="RawEvents",
         )
 
-        s3.put_object(Body=envelope.SerializeToString(), Bucket=bucket, Key=key)
+        s3.put_object(Body=envelope.serialize_to_string(), Bucket=bucket, Key=key)
 
         # local-grapl relies on manual eventing
         if requires_manual_eventing:
