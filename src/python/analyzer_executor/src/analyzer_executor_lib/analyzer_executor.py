@@ -191,7 +191,8 @@ class AnalyzerExecutor:
             data = parse_s3_event(s3, event)
 
             envelope = Envelope.from_proto(data)
-
+            # Keep in mind that, today, we don't communicate this message via protobuf but instead
+            # we use JSON. It would be worth changing this in another issue.
             message = json.loads(envelope.inner_message)
 
             LOGGER.info(f'Executing Analyzer: {message["key"]}')
