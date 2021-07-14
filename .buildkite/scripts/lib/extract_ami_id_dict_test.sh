@@ -9,10 +9,10 @@ test_extract_ami_id_dict() {
     expected=$(
         cat << EOF
 {
-  "us-east-1": "ami-111",
-  "us-east-2": "ami-222",
-  "us-west-1": "ami-333",
-  "us-west-2": "ami-444"
+  "imgname.us-east-1": "ami-111",
+  "imgname.us-east-2": "ami-222",
+  "imgname.us-west-1": "ami-333",
+  "imgname.us-west-2": "ami-444"
 }
 EOF
     )

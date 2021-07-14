@@ -28,14 +28,13 @@ upload_artifacts_file() {
     # The raw artifact ID is like: "us-east-1:ami-0123456789abcdef0";
 
     # Creates a dict that looks like
-    # { "us-east-1": "ami-111", "us-east-2": "ami-222", ...}
+    # { "imagename.us-east-1": "ami-111", "imagename.us-east-2": "ami-222", ...}
     local -r ami_ids_dict=$(jq --raw-output --arg IMAGE_NAME ${packer_image_name} --from-file "${jq_filter_path}" "${manifest_file}")
     echo "${ami_ids_dict}"
 
     # Creating artifacts file
     echo -c "--- :gear: Creating ${artifacts_file} file"
-    echo "{\"${packer_image_name}-amis\": ${ami_ids_dict}}" > "${artifacts_file}"
-    jq '.' "${artifacts_file}"
+    echo "${ami_ids_dict}" > "${artifacts_file}"
 
     # Uploading artifacts file
     echo -c "--- :buildkite: Uploading ${artifacts_file} file"
