@@ -29,7 +29,7 @@ upload_artifacts_file() {
 
     # Creates a dict that looks like
     # { "imagename.us-east-1": "ami-111", "imagename.us-east-2": "ami-222", ...}
-    local -r ami_ids_dict=$(jq --raw-output --arg IMAGE_NAME ${packer_image_name} --from-file "${jq_filter_path}" "${manifest_file}")
+    local -r ami_ids_dict=$(jq --raw-output --arg IMAGE_NAME "${packer_image_name}" --from-file "${jq_filter_path}" "${manifest_file}")
     echo "${ami_ids_dict}"
 
     # Creating artifacts file
