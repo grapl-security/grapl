@@ -121,7 +121,7 @@ steps:
     agents:
       # Has to be pulumi, even though we're not *running* pulumi; we
       # just have to log in so we can manipulate pulumi configs.
-      queue: "pulumi"
+      queue: "pulumi-staging"
 
   - wait
 
