@@ -23,3 +23,4 @@ merge_artifact_files > "${ALL_ARTIFACTS_JSON_FILE}"
 
 echo "--- :buildkite: Uploading ${ALL_ARTIFACTS_JSON_FILE} file"
 buildkite-agent artifact upload "${ALL_ARTIFACTS_JSON_FILE}"
+# This artifact then gets picked up by the "Create new release candidate" step in Buildkite

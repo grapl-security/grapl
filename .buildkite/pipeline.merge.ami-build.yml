@@ -1,0 +1,55 @@
+# This file borrows heavily from the pattern defined in `pipeline-infrastructure`.
+
+---
+env:
+  PANTS_CONFIG_FILES: "['pants.toml', 'pants.ci.toml']"
+
+# This is defined in a separate pipeline file because
+# chronotc/monorepo-diff does not currently have support for plugin
+# (or key) configuration on commands.
+# :(
+
+steps:
+  - label: ":packer: AMI Build Server"
+    command: ".buildkite/scripts/build_packer_ci.sh"
+    key: "ami-build-server" # Used to tag the Packer Builder instance
+    plugins:
+      - docker#v3.8.0:
+          image: "hashicorp/packer:1.7.2"
+          entrypoint: bash
+          propagate-aws-auth-tokens: true
+          environment:
+            - "BUILDKITE_BRANCH"
+            - "BUILDKITE_BUILD_NUMBER"
+            - "BUILDKITE_COMMIT"
+            - "BUILDKITE_PIPELINE_NAME"
+            - "BUILDKITE_STEP_KEY"
+            - "PACKER_IMAGE_NAME=grapl-nomad-consul-server"
+    agents:
+      queue: "packer-staging"
+
+  - label: ":packer: AMI Build Client"
+    command: ".buildkite/scripts/build_packer_ci.sh"
+    key: "ami-build-client" # Used to tag the Packer Builder instance
+    plugins:
+      - docker#v3.8.0:
+          image: "hashicorp/packer:1.7.2"
+          entrypoint: bash
+          propagate-aws-auth-tokens: true
+          environment:
+            - "BUILDKITE_BRANCH"
+            - "BUILDKITE_BUILD_NUMBER"
+            - "BUILDKITE_COMMIT"
+            - "BUILDKITE_PIPELINE_NAME"
+            - "BUILDKITE_STEP_KEY"
+            - "PACKER_IMAGE_NAME=grapl-nomad-consul-client"
+    agents:
+      queue: "packer-staging"
+
+  - wait
+
+  # This just has to extract the AMI IDs and jam it into the artifact
+  # store to pick up later.
+  - label: ":writing_hand: Record AMI IDs"
+    command:
+      - .buildkite/scripts/record_artifacts.sh

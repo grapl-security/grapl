@@ -1,0 +1,4 @@
+# Different config for yaml (4 spacing results in super long stuff!)
+tabWidth = 2
+useTabs = false 
+singleQuote = false  # in-line with our Python black linting

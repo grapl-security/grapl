@@ -80,7 +80,23 @@ services:
     environment:
       <<: *zookeeper-env
     healthcheck:
-      test: ["CMD", "echo", "ruok", "|", "nc", "-w", "2", "-q", "2", "localhost", "${ZOOKEEPER_PORT}", "|", "grep", "imok"]
+      test:
+        [
+          "CMD",
+          "echo",
+          "ruok",
+          "|",
+          "nc",
+          "-w",
+          "2",
+          "-q",
+          "2",
+          "localhost",
+          "${ZOOKEEPER_PORT}",
+          "|",
+          "grep",
+          "imok",
+        ]
       retries: 5
       interval: 5s
       timeout: 30s
@@ -121,13 +137,13 @@ services:
           - ${REDIS_HOST}
 
   localstack:
-    image: localstack/localstack:latest # When it's released, pin to 0.12.14
+    image: localstack/localstack:0.12.15
     ports:
       # We'll expose localstack's edge port for ease of use with
       # things like the AWS CLI, Pulumi, etc.
       - 127.0.0.1:${LOCALSTACK_PORT}:${LOCALSTACK_PORT}
     environment:
-      - IMAGE_NAME=localstack/localstack:latest # When it's released, pin to 0.12.14
+      - IMAGE_NAME=localstack/localstack:0.12.15
       - EDGE_PORT=${LOCALSTACK_PORT}
       - HOSTNAME_EXTERNAL=${LOCALSTACK_HOST}
       - SERVICES=apigateway,cloudwatch,dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs
@@ -169,7 +185,6 @@ services:
   ########################################################################
   # Rust Services
   ########################################################################
-
 
   sysmon-subgraph-generator:
     image: grapl/sysmon-subgraph-generator:${TAG:-latest}

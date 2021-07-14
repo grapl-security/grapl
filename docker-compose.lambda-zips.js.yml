@@ -1,7 +1,6 @@
 version: "3.8"
 
 services:
-
   graphql-endpoint-zip:
     image: grapl/graphql-endpoint-zip:${TAG:-latest}
     build:

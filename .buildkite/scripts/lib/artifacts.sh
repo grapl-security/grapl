@@ -33,7 +33,8 @@ artifact_json() {
 # `$ARTIFACT_FILE_DIRECTORY`.
 #
 # Does not fail if the file was not generated and uploaded during the
-# current Buildkite pipeline (which is a legitimate scenario).
+# current Buildkite pipeline (which is a legitimate scenario - for example,
+# we only *sometimes* generate new AMI IDs.)
 download_artifact_file() {
     local -r artifacts_file="${1}"
     mkdir -p "${ARTIFACT_FILE_DIRECTORY}"
@@ -41,6 +42,10 @@ download_artifact_file() {
     if ! (buildkite-agent artifact download "${artifacts_file}" "${ARTIFACT_FILE_DIRECTORY}"); then
         echo "No file found"
     fi
+    # TODO: Would be nice to validate the artifacts. Right now there are some restrictions:
+    # - json file must be a flat associative array of key -> primitive (no nested maps, arrays)
+    #     bad: {"im": {"nested": true}}
+    #     good: {"im.nested": true}
 }
 
 # Given a directory of JSON files (assumed to represent JSON objects),

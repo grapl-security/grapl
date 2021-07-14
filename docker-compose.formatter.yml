@@ -11,10 +11,13 @@ x-common-variables:
         target: /mnt/grapl_repo_rw
 
 services:
-  lint-js:
+  # Prettier can actually lint many more things than just ts/js.
+  # For now we use it for yaml as well.
+
+  lint-prettier:
     <<: *formatter-image
     command: /bin/bash -c 'cd /mnt/grapl_repo_rw/src/js; bin/format.sh --check'
 
-  format-js:
+  format-prettier:
     <<: *formatter-image
     command: /bin/bash -c 'cd /mnt/grapl_repo_rw/src/js; bin/format.sh --update'

@@ -3,7 +3,6 @@ version: "3.8"
 # environment variable PWD is assumed to be grapl root directory
 
 services:
-
   rust-integration-tests:
     image: grapl/rust-integration-tests:${TAG:-latest}
     build:
@@ -40,11 +39,10 @@ services:
   analyzerlib-integration-tests:
     image: grapl/analyzerlib-test:${TAG:-latest}
     build:
-      context: ${PWD}/src
-      dockerfile: ./python/Dockerfile
+      context: ${PWD}
+      dockerfile: ./src/python/Dockerfile
       target: grapl-analyzerlib-test
     command: bash -c '
-      source venv/bin/activate &&
       cd grapl_analyzerlib &&
       py.test -v -n auto -m "integration_test"'
     environment:
@@ -57,11 +55,10 @@ services:
   analyzer-executor-integration-tests:
     image: grapl/analyzer-executor-test:${TAG:-latest}
     build:
-      context: ${PWD}/src
-      dockerfile: ./python/Dockerfile
+      context: ${PWD}
+      dockerfile: ./src/python/Dockerfile
       target: analyzer-executor-test
     command: bash -c '
-      source venv/bin/activate &&
       cd analyzer_executor &&
       export PYTHONPATH="$${PYTHONPATH}:$$(pwd)/src" &&
       py.test -n auto -m "integration_test"'
@@ -76,11 +73,10 @@ services:
   engagement-edge-integration-tests:
     image: grapl/grapl-engagement-edge-test:${TAG:-latest}
     build:
-      context: ${PWD}/src
-      dockerfile: ./python/Dockerfile
+      context: ${PWD}
+      dockerfile: ./src/python/Dockerfile
       target: engagement-edge-test
     command: bash -c '
-      source venv/bin/activate &&
       cd engagement_edge &&
       py.test -n auto -m "integration_test"'
     environment:
@@ -119,12 +115,11 @@ services:
   graphql-endpoint-tests:
     image: grapl/graphql-endpoint-tests:${TAG:-latest}
     build:
-      context: ${PWD}/src
-      dockerfile: ./python/Dockerfile
+      context: ${PWD}
+      dockerfile: ./src/python/Dockerfile
       target: graphql-endpoint-tests
     command: |
       /bin/bash -c '
-        source venv/bin/activate &&
         cd graphql_endpoint_tests &&
         py.test --capture=no -n 1 -m "integration_test"
       '

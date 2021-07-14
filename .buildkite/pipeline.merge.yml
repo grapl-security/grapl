@@ -3,7 +3,6 @@ env:
   PANTS_CONFIG_FILES: "['pants.toml', 'pants.ci.toml']"
 
 steps:
-
   - label: ":aws-lambda::rust: Build Rust Lambdas"
     key: "rust-lambdas"
     plugins:
@@ -11,7 +10,7 @@ steps:
           diff: .buildkite/shared/scripts/diff.sh
           watch:
             - path:
-                - "src/rust/"  # This is not minimal, obviously
+                - "src/rust/" # This is not minimal, obviously
                 - "docker-compose.lambda-zips.rust.yml"
               config:
                 command:
@@ -28,7 +27,7 @@ steps:
           diff: .buildkite/shared/scripts/diff.sh
           watch:
             - path:
-                - "src/js/"  # This is not minimal, obviously
+                - "src/js/" # This is not minimal, obviously
                 - "docker-compose.lambda-zips.js.yml"
               config:
                 command:
@@ -76,13 +75,35 @@ steps:
     agents:
       queue: "artifact-uploaders"
 
+  - label: ":thinking_face: AMI Build?"
+    plugins:
+      - chronotc/monorepo-diff#v2.0.4:
+          diff: .buildkite/shared/scripts/diff.sh
+          watch:
+            - path:
+                - "packer/"
+                - ".buildkite/scripts/build_packer_ci.sh"
+                - ".buildkite/scripts/record_artifacts.sh"
+                - ".buildkite/scripts/lib/packer.sh"
+                - ".buildkite/scripts/lib/packer_constants.sh"
+              config:
+                label: ":pipeline: Upload AMI Build"
+                command: "buildkite-agent pipeline upload .buildkite/pipeline.merge.ami-build.yml"
+
+  # This will also wait for the uploaded pipeline, if we did decide to upload it.
   - wait
 
   # The names of the input files depend on the files that can be
   # uploaded to Buildkite from previous steps in this pipeline.
   - label: "Merge artifacts files"
     command:
-      - .buildkite/scripts/merge_artifact_files.sh lambda_artifacts.json container_artifacts.json
+      # yaml fyi: `>` collapses newlines into normal spaces
+      - >
+        .buildkite/scripts/merge_artifact_files.sh
+        lambda_artifacts.json
+        container_artifacts.json
+        grapl-nomad-consul-server.artifacts.json
+        grapl-nomad-consul-client.artifacts.json
 
   - wait
 
@@ -100,7 +121,7 @@ steps:
     agents:
       # Has to be pulumi, even though we're not *running* pulumi; we
       # just have to log in so we can manipulate pulumi configs.
-      queue: "pulumi"
+      queue: "pulumi-staging"
 
   - wait
 
