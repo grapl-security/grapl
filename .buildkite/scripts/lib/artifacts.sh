@@ -42,6 +42,10 @@ download_artifact_file() {
     if ! (buildkite-agent artifact download "${artifacts_file}" "${ARTIFACT_FILE_DIRECTORY}"); then
         echo "No file found"
     fi
+    # TODO: Would be nice to validate the artifacts. Right now there are some restrictions:
+    # - json file must be a flat associative array of key -> primitive (no nested maps, arrays)
+    #     bad: {"im": {"nested": true}}
+    #     good: {"im.nested": true}
 }
 
 # Given a directory of JSON files (assumed to represent JSON objects),
