@@ -23,6 +23,7 @@ echo -e "--- :buildkite: Download artifacts file"
 if (buildkite-agent artifact download "${ALL_ARTIFACTS_JSON_FILE}" .); then
     artifacts_json="$(cat "${ALL_ARTIFACTS_JSON_FILE}")"
 else
+    echo "^^^ +++" # Un-collapses this section in Buildkite, making it more obvious we couldn't download
     artifacts_json="{}"
 fi
 
