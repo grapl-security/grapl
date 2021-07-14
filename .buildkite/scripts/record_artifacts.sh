@@ -10,11 +10,11 @@ upload_artifacts_file() {
     # a corresponding packer manifest names "image_name.packer-manifest.json".
 
     # e.g. "grapl-service"
-    local -r root_name=$1
+    local -r packer_image_name=$1
     # e.g. "grapl-service.packer-manifest.json"
-    local -r manifest_file="${root_name}${PACKER_MANIFEST_SUFFIX}"
+    local -r manifest_file="${packer_image_name}${PACKER_MANIFEST_SUFFIX}"
     # e.g. "grapl-service.artifacts.json"
-    local -r artifacts_file="${root_name}${ARTIFACTS_FILE_SUFFIX}"
+    local -r artifacts_file="${packer_image_name}${ARTIFACTS_FILE_SUFFIX}"
 
     # Download Packer manifest
     echo -e "--- :buildkite: Download Packer manifest"
@@ -29,12 +29,12 @@ upload_artifacts_file() {
 
     # Creates a dict that looks like
     # { "us-east-1": "ami-111", "us-east-2": "ami-222", ...}
-    local -r ami_ids_dict=$(jq --raw-output --from-file "${jq_filter_path}" "${manifest_file}")
+    local -r ami_ids_dict=$(jq --raw-output --arg IMAGE_NAME ${packer_image_name} --from-file "${jq_filter_path}" "${manifest_file}")
     echo "${ami_ids_dict}"
 
     # Creating artifacts file
     echo -c "--- :gear: Creating ${artifacts_file} file"
-    echo "{\"${root_name}-amis\": ${ami_ids_dict}}" > "${artifacts_file}"
+    echo "{\"${packer_image_name}-amis\": ${ami_ids_dict}}" > "${artifacts_file}"
     jq '.' "${artifacts_file}"
 
     # Uploading artifacts file

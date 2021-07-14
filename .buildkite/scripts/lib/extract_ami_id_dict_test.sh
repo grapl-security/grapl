@@ -4,7 +4,8 @@ readonly jq_filter_path=".buildkite/scripts/lib/extract_ami_id_dict.jq"
 readonly example_manifest_file=".buildkite/scripts/lib/example_packer_artifact.json"
 
 test_extract_ami_id_dict() {
-    actual=$(jq --raw-output --from-file "${jq_filter_path}" "${example_manifest_file}")
+    packer_image_name="imgname"
+    actual=$(jq --raw-output --arg IMAGE_NAME ${packer_image_name} --from-file "${jq_filter_path}" "${example_manifest_file}")
     expected=$(
         cat << EOF
 {

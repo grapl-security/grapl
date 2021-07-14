@@ -11,6 +11,8 @@
 # [ ["us-east-1": "ami-111"], ...]
 | map(split(":"))
 
+# sample output:
+# { "us-east-1": "ami-111", }
 | reduce .[] as $region_and_ami_id(
     {};  # becomes `.` in below context
     .[$region_and_ami_id[0]] = $region_and_ami_id[1]  # {[k] = v}
