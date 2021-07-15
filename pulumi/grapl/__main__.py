@@ -3,7 +3,7 @@ import sys
 sys.path.insert(0, "..")
 
 import os
-from typing import List
+from typing import List, Mapping, Union, cast
 
 from infra import dynamodb, emitter
 from infra.alarms import OpsAlarms
@@ -96,6 +96,67 @@ def main() -> None:
 
     services: List[ServiceLike] = []
 
+    import pulumi
+
+    confluent: Mapping[
+        str,
+        Union[
+            pulumi.Output[str],
+            Mapping[str, pulumi.Output[str]],
+        ],
+    ] = (
+        {
+            "bootstrap_servers": "kafka-broker:9092",
+            "grapl_pulumi": {
+                "api_key": "fake",
+                "api_secret": "fake",
+                "service_account_id": "fake",
+            },
+            "pipeline-gateway": {
+                "api_key": "fake",
+                "api_secret": "fake",
+                "service_account_id": "fake",
+            },
+            "graph-generator": {
+                "api_key": "fake",
+                "api_secret": "fake",
+                "service_account_id": "fake",
+            },
+            "node-identifier": {
+                "api_key": "fake",
+                "api_secret": "fake",
+                "service_account_id": "fake",
+            },
+            "node-identifier-retry": {
+                "api_key": "fake",
+                "api_secret": "fake",
+                "service_account_id": "fake",
+            },
+            "graph-merger": {
+                "api_key": "fake",
+                "api_secret": "fake",
+                "service_account_id": "fake",
+            },
+            "analyzer-executor": {
+                "api_key": "fake",
+                "api_secret": "fake",
+                "service_account_id": "fake",
+            },
+            "engagement-creator": {
+                "api_key": "fake",
+                "api_secret": "fake",
+                "service_account_id": "fake",
+            },
+        }
+        if LOCAL_GRAPL
+        else pulumi.StackReference(
+            "confluent-cloud-infrastructure-stack-reference",
+            stack_name=f"grapl/confluent-cloud-infrastructure/{FIXME}",
+        ).get_output("confluent")
+    )
+
+    kafka = Kafka("kafka", confluent=confluent)
+
     if LOCAL_GRAPL:
         # We need to create these queues, and wire them up to their
         # respective emitters, in Local Grapl, because they are
@@ -122,9 +183,6 @@ def main() -> None:
 
         analyzer_executor_queue = ServiceQueue("analyzer-executor")
         analyzer_executor_queue.subscribe_to_emitter(dispatched_analyzer_emitter)
-
-        kafka = Kafka("kafka")
-
     else:
         nomad_cluster = NomadCluster(
             "nomad-cluster",

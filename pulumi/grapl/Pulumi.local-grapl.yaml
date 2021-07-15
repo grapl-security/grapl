@@ -23,5 +23,5 @@ config:
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: "fake-ops-email@fake.domain"
   grapl:GRAPL_API_HOST: api.grapl.test
   kafka:bootstrapServers:
-    - "kafka-broker:9092"
+    -
   kafka:tlsEnabled: false
