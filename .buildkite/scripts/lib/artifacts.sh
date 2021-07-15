@@ -40,6 +40,7 @@ download_artifact_file() {
     mkdir -p "${ARTIFACT_FILE_DIRECTORY}"
     echo -e "--- :buildkite: Download '${artifacts_file}' artifacts file"
     if ! (buildkite-agent artifact download "${artifacts_file}" "${ARTIFACT_FILE_DIRECTORY}"); then
+        echo "^^^ +++" # Un-collapses this section in Buildkite, making it more obvious we couldn't download
         echo "No file found"
     fi
     # TODO: Would be nice to validate the artifacts. Right now there are some restrictions:
