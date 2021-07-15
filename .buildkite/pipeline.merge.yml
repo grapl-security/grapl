@@ -121,7 +121,8 @@ steps:
     agents:
       # Has to be pulumi, even though we're not *running* pulumi; we
       # just have to log in so we can manipulate pulumi configs.
-      queue: "pulumi-staging"
+      # `pulumi-cicd` chosen due to https://github.com/grapl-security/issue-tracker/issues/618
+      queue: "pulumi-cicd"
 
   - wait
 

@@ -35,5 +35,6 @@ if (buildkite-agent artifact download "dist/*${LAMBDA_SUFFIX}" .); then
     echo "--- :buildkite: Uploading ${LAMBDA_ARTIFACTS_FILE} file"
     buildkite-agent artifact upload "${LAMBDA_ARTIFACTS_FILE}"
 else
+    echo "^^^ +++" # Un-collapses this section in Buildkite, making it more obvious we couldn't download
     echo "No artifacts to upload"
 fi
