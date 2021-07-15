@@ -3,6 +3,8 @@
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
+source "$(dirname "${BASH_SOURCE[0]}")/json_tools.sh"
+# shellcheck source-path=SCRIPTDIR
 source "$(dirname "${BASH_SOURCE[0]}")/util.sh"
 # shellcheck source-path=SCRIPTDIR
 source "$(dirname "${BASH_SOURCE[0]}")/pulumi.sh"
@@ -16,11 +18,14 @@ source "$(dirname "${BASH_SOURCE[0]}")/pulumi.sh"
 #     pulumi config set --path "artifacts.foo" "123" --cwd=pulumi/cicd --stack=grapl/production
 #     pulumi config set --path "artifacts.bar" "456" --cwd=pulumi/cicd --stack=grapl/production
 #
+
 add_artifacts() {
     local -r stack="${1}"
     local -r input_json="${2}"
 
-    jq -r 'to_entries | .[] | [.key, .value] | @tsv' <<< "${input_json}" |
+    flattened_input_json=$(flatten_json "${input_json}")
+
+    jq -r 'to_entries | .[] | [.key, .value] | @tsv' <<< "${flattened_input_json}" |
         while IFS=$'\t' read -r key value; do
             pulumi config set \
                 --path "artifacts.${key}" \
