@@ -2,17 +2,21 @@
 # This will grab a subset of keys from `origin/rc`'s Pulumi.testing.yaml.
 set -euo pipefail
 
-readonly THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
+THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
+readonly THIS_DIR
 
 ensureRightDir() {
-    cd $THIS_DIR/../grapl
+    cd "$THIS_DIR/../grapl"
 }
 ensureRightDir
 
 # Read from $1 or default to what `pulumi stack` says
-readonly CURRENT_STACK="${1:-$(pulumi stack --show-name)}"
-readonly GRAPL_ROOT="$(git rev-parse --show-toplevel)"
-readonly RC_CONFIG_FILE="/tmp/rc_pulumi_testing.yaml"
+CURRENT_STACK="${1:-$(pulumi stack --show-name)}"
+GRAPL_ROOT="$(git rev-parse --show-toplevel)"
+RC_CONFIG_FILE="/tmp/rc_pulumi_testing.yaml"
+readonly CURRENT_STACK
+readonly GRAPL_ROOT
+readonly RC_CONFIG_FILE
 
 confirmModify() {
     read -r -p "This will modify your ${CURRENT_STACK} config. Continue (y/n)?" choice
@@ -29,6 +33,7 @@ add_artifacts() {
     local -r stack="${1}"
     local -r input_json="${2}"
 
+    # shellcheck source=/dev/null
     source "${GRAPL_ROOT}/.buildkite/shared/lib/json_tools.sh"
     flattened_input_json=$(flatten_json "${input_json}")
 
@@ -36,8 +41,8 @@ add_artifacts() {
         while IFS=$'\t' read -r key value; do
             pulumi config set \
                 --path "artifacts.${key}" \
-                "${value}"
-                --stack "${CURRENT_STACK}"
+                "${value}" \
+                --stack "${stack}"
         done
 }
 
