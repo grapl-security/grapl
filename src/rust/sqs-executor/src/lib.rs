@@ -34,6 +34,7 @@ use rusoto_sqs::{
     Message as SqsMessage,
     Sqs,
 };
+use rust_proto::services::ServiceMessage;
 use s3_event_emitter::S3EventEmitter;
 use s3_event_retriever::S3PayloadRetriever;
 use tracing::{
@@ -55,8 +56,6 @@ use crate::{
     event_status::EventStatus,
     sqs_timeout_manager::keep_alive,
 };
-
-use rust_proto::services::ServiceMessage;
 
 pub mod retriever;
 
@@ -170,7 +169,7 @@ async fn process_message<
     InputEventT: Send,
     EventHandlerT:
         EventHandler<InputEvent = InputEventT, OutputEvent = OutputEventT, Error = HandlerErrorT>,
-    OutputEventT: ServiceMessage +  Clone + Send + Sync + 'static,
+    OutputEventT: ServiceMessage + Clone + Send + Sync + 'static,
     HandlerErrorT: CheckedError + Debug + Send + Sync + 'static,
     SerializerErrorT: Error + Debug + Send + Sync + 'static,
     S3ClientT: S3 + Clone + Send + Sync + 'static,

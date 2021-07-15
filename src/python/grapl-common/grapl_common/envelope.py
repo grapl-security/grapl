@@ -4,7 +4,8 @@ import json
 import uuid
 
 from graplinc.grapl.api.services.v1beta1.types_pb2 import Envelope as ProtoEnvelope
-from graplinc.grapl.api.services.v1beta1.types_pb2 import Metadata as ProtoMetadata, ProtoUuidV4
+from graplinc.grapl.api.services.v1beta1.types_pb2 import Metadata as ProtoMetadata
+from graplinc.grapl.api.services.v1beta1.types_pb2 import ProtoUuidV4
 
 
 def proto_uuid_to_pyuuid(proto_uuid: ProtoUuidV4) -> uuid.UUID:
@@ -66,10 +67,10 @@ class Metadata(object):
 
 class Envelope(object):
     def __init__(
-            self,
-            metadata: Metadata,
-            inner_message: bytes,
-            inner_type: str,
+        self,
+        metadata: Metadata,
+        inner_message: bytes,
+        inner_type: str,
     ) -> None:
         self.metadata = metadata
         self.inner_message = inner_message
@@ -84,18 +85,18 @@ class Envelope(object):
     @staticmethod
     def from_proto(envelope: ProtoEnvelope) -> Envelope:
         return Envelope.from_proto_parts(
-            envelope.metadata, envelope.inner_message, envelope.inner_type,
+            envelope.metadata,
+            envelope.inner_message,
+            envelope.inner_type,
         )
 
     @staticmethod
     def from_proto_parts(
-            metadata: ProtoMetadata,
-            inner_message: bytes,
-            inner_type: str,
+        metadata: ProtoMetadata,
+        inner_message: bytes,
+        inner_type: str,
     ) -> Envelope:
-        return Envelope(
-            Metadata.from_proto(metadata), inner_message, inner_type
-        )
+        return Envelope(Metadata.from_proto(metadata), inner_message, inner_type)
 
     def to_proto(self) -> ProtoMetadata:
         metadata = ProtoMetadata()
@@ -116,9 +117,11 @@ class Envelope(object):
         return self.inner_message
 
     def __str__(self) -> str:
-        return "Envelope " + json.dumps({
-            'metadata': vars(self.metadata),
-            'inner_type': self.inner_type,
-            # The message isn't valid utf8, and it could be huge, so just print out its length
-            'inner_message_len': len(self.inner_message)
-        })
+        return "Envelope " + json.dumps(
+            {
+                "metadata": vars(self.metadata),
+                "inner_type": self.inner_type,
+                # The message isn't valid utf8, and it could be huge, so just print out its length
+                "inner_message_len": len(self.inner_message),
+            }
+        )

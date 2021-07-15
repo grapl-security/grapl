@@ -42,7 +42,11 @@ use sqs_executor::{
     time_based_key_fn,
 };
 
-use crate::dispatch_event::{AnalyzerDispatchEvent, AnalyzerDispatchSerializer, AnalyzerDispatchEvents};
+use crate::dispatch_event::{
+    AnalyzerDispatchEvent,
+    AnalyzerDispatchEvents,
+    AnalyzerDispatchSerializer,
+};
 
 pub mod dispatch_event;
 
