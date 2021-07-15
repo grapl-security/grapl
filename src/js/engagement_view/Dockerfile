@@ -10,7 +10,7 @@ COPY js/engagement_view/.yarnrc.yml .yarnrc.yml
 COPY js/engagement_view/.yarn/releases .yarn/releases
 
 RUN yarn set version berry
-RUN yarn install
+RUN --mount=type=cache,target=.yarn/cache/ yarn install
 
 # now copy all sources
 COPY js/engagement_view .
@@ -20,8 +20,8 @@ COPY js/engagement_view .
 FROM engagement-view-deps AS engagement-view-build
 
 # build sources
-RUN yarn add react-scripts
-RUN yarn build
+RUN --mount=type=cache,target=.yarn/cache/ yarn add react-scripts
+RUN --mount=type=cache,target=.yarn/cache/ yarn build
 
 # no-op the base image cmd, so it doesn't launch a Node repl
 CMD :
@@ -37,3 +37,4 @@ RUN python3 -m pip install awscli
 
 COPY --from=engagement-view-build /grapl /grapl
 WORKDIR /grapl
+
