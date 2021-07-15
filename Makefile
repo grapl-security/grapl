@@ -433,6 +433,10 @@ clean-artifacts: ## Remove all dumped artifacts from test runs (see dump_artifac
 push: ## Push Grapl containers to Docker Hub
 	docker-compose --file=docker-compose.build.yml push
 
+.PHONY: push-local
+push-local: ## Push Grapl container to local registry
+	REGISTRY=localhost:5000 docker-compose --file=docker-compose.build.yml push
+
 .PHONY: e2e-logs
 e2e-logs: ## All docker-compose logs
 	$(WITH_LOCAL_GRAPL_ENV)

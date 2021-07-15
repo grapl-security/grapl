@@ -1,6 +1,32 @@
+# For rust logging output
+variable "RUST_LOG" {
+    type = string
+    default = "INFO"
+}
+
+# Which tag to use for grapl-specific images
+variable "tag" {
+    type = string
+    default = "latest"
+}
+
+# The container registry that we can find grapl-specific services
 variable "container_registry" {
     type = string
-    default = "http://localhost:5000"
+    default = "localhost:5000"
+}
+
+variable "aws_region" {
+    type = string
+}
+
+variable "aws_sqs_url" {
+    type = string
+}
+
+variable "aws_account_id" {
+    type = string
+    default = "0000000000"
 }
 
 variable "dgraph_replicas" {
@@ -9,6 +35,32 @@ variable "dgraph_replicas" {
 }
 
 variable "dgraph_shards" {
+    type = number
+    default = 1
+}
+
+# Where is redis located?
+variable "redis_endpoint" {
+    type = string
+}
+
+# What is the name of the schema table?
+variable "schema_table_name" {
+    type = string
+}
+
+variable "destination_bucket_name" {
+    type = string
+}
+
+# How many graph mergers should be running in tandem
+variable "graph_mergers" {
+    type = number
+    default = 1
+}
+
+# How many node identifiers should be running in tandem
+variable "node_identifiers" {
     type = number
     default = 1
 }
@@ -28,7 +80,11 @@ locals {
         grpc_private_port: zero_id + 5080,
     }]
 
+    # String that contains all of the Zeros for the Alphas to talk to and ensure they don't go down when one dies
     zero_alpha_connect_str = join(",", [for zero_id in range(0, var.dgraph_replicas): "localhost:${zero_id + 5080}"])
+
+    # String that contains all of the running Alphas for clients connecting to Dgraph (so they can do loadbalancing)
+    alpha_grpc_connect_str = join(",", [for alpha in local.dgraph_alphas: "localhost:${alpha.grpc_public_port}"])
 }
 
 job "grapl-core" {
@@ -48,7 +104,7 @@ job "grapl-core" {
         canary = 1
         max_parallel = 1
         # The min amount of reported "healthy" time before a instance is considered healthy and an allocation is opened up for further updates
-        min_healthy_time = "1m"
+        min_healthy_time = "15s"
     }
 
     group "dgraph-zero-leader" {
@@ -145,7 +201,7 @@ job "grapl-core" {
                                 local_bind_port = 5080
                             }
 
-                            # Connect this Zero follower to other Zero followers
+                            # Connect this Zero follower to other Zero followers (but not to itself, obviously)
                             dynamic "upstreams" {
                                 iterator = zero_follower
                                 for_each = [for zero_follower in local.dgraph_zeros: zero_follower if zero_follower.id != zero.value.id]
@@ -223,7 +279,7 @@ job "grapl-core" {
                                 }
                             }
 
-                            # Connect this Alpha to Other Alphas
+                            # Connect this Alpha to Other Alphas (but not to itself, obviously)
                             dynamic "upstreams" {
                                 iterator = alpha_peer
                                 for_each = [for alpha_peer in local.dgraph_alphas: alpha_peer if alpha_peer.id != alpha.value.id]
@@ -232,6 +288,60 @@ job "grapl-core" {
                                     destination_name = "dgraph-alpha-${alpha_peer.value.id}-grpc-private"
                                     local_bind_port = alpha_peer.value.grpc_private_port
                                 }
+                            }
+                        }
+                    }
+                }
+            }
+
+            service {
+                name = "dgraph-alpha-${alpha.value.id}-grpc-public"
+                port = "${alpha.value.grpc_public_port}"
+
+                connect {
+                    sidecar_service { }
+                }
+            }
+        }
+    }
+
+    group "grapl-graph-merger" {
+        count = var.graph_mergers
+
+        network {
+            mode = "bridge"
+        }
+
+        task "graph-merger" {
+            driver = "docker"
+
+            config {
+                image = "${var.container_registry}/graph-merger:${var.tag}"
+                args = ["/graph-merger"]
+            }
+
+            env {
+                REDIS_ENDPOINT = "${var.redis_endpoint}"
+                MG_ALPHAS = "${local.alpha_grpc_connect_str}"
+                GRAPL_SCHEMA_TABLE = "${var.schema_table_name}"
+                AWS_REGION = "${var.aws_region}"
+                DEST_BUCKET_NAME = "${var.destination_bucket_name}"
+                SOURCE_QUEUE_URL = "${var.aws_sqs_url}/${var.aws_account_id}/graph-merger-queue"
+                DEAD_LETTER_QUEUE_URL = "${var.aws_sqs_url}/${var.aws_account_id}/graph-merger-dead-letter-queue"
+            }
+        }
+
+        service {
+            connect {
+                sidecar_service {
+                    proxy {
+                        dynamic "upstreams" {
+                            iterator = alpha
+                            for_each = local.dgraph_alphas
+
+                            content {
+                                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
+                                local_bind_port = alpha.value.grpc_public_port
                             }
                         }
                     }
