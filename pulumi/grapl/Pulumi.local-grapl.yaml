@@ -22,6 +22,3 @@ config:
   grapl:MG_ALPHAS: dgraph.grapl.test:9080
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: "fake-ops-email@fake.domain"
   grapl:GRAPL_API_HOST: api.grapl.test
-  kafka:bootstrapServers:
-    -
-  kafka:tlsEnabled: false
