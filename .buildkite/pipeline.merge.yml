@@ -119,10 +119,7 @@ steps:
       # we have a clean slate.
       BUILDKITE_CLEAN_CHECKOUT: true
     agents:
-      # Has to be pulumi, even though we're not *running* pulumi; we
-      # just have to log in so we can manipulate pulumi configs.
-      # `pulumi-cicd` chosen due to https://github.com/grapl-security/issue-tracker/issues/618
-      queue: "pulumi-cicd"
+      queue: "rc"
 
   - wait
 
