@@ -41,11 +41,10 @@ add_artifacts() {
 
 main() {
     confirmModify
-    # Grab latest `rc` config file
+
+    echo "--- Grab artifacts from origin/rc config file"
     git fetch origin
     git show origin/rc:pulumi/grapl/Pulumi.testing.yaml > ${RC_CONFIG_FILE}
-
-    echo "--- Grab artifacts from rc config file"
     local -r artifacts=$(pulumi config --config-file="${RC_CONFIG_FILE}" get artifacts)
 
     echo "--- Grab a subset of keys from artifacts"
