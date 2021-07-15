@@ -36,10 +36,9 @@ from grapl_analyzerlib.plugin_retriever import load_plugins
 from grapl_analyzerlib.queryable import Queryable
 from grapl_analyzerlib.subgraph_view import SubgraphView
 from grapl_common.env_helpers import S3ResourceFactory
-from grapl_common.envelope import Envelope, proto_uuid_to_pyuuid
+from grapl_common.envelope import Envelope, Metadata
 from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
-from graplinc.grapl.api.services.v1beta1.types_pb2 import Metadata
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
@@ -190,7 +189,7 @@ class AnalyzerExecutor:
         for event in events["Records"]:
             data = parse_s3_event(s3, event)
 
-            envelope = Envelope.from_proto(data)
+            envelope = Envelope.from_proto_bytes(data)
             # Keep in mind that, today, we don't communicate this message via protobuf but instead
             # we use JSON. It would be worth changing this in another issue.
             message = json.loads(envelope.inner_message)
@@ -417,7 +416,7 @@ def emit_event(s3: S3ServiceResource, event: ExecutionHit, metadata: Metadata) -
     LOGGER.info(f"emitting event for: {event.analyzer_name, event.nodes}")
 
     meta_dict = {
-        "trace_id": str(proto_uuid_to_pyuuid(metadata.trace_id)),
+        "trace_id": str(metadata.get_trace_id()),
     }
 
     event_s = json.dumps(
