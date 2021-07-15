@@ -9,9 +9,10 @@ ensureRightDir() {
 }
 ensureRightDir
 
+# Read from $1 or default to what `pulumi stack` says
+readonly CURRENT_STACK="${1:-$(pulumi stack --show-name)}"
 readonly GRAPL_ROOT="$(git rev-parse --show-toplevel)"
 readonly RC_CONFIG_FILE="/tmp/rc_pulumi_testing.yaml"
-readonly CURRENT_STACK="$(pulumi stack --show-name)"
 
 confirmModify() {
     read -r -p "This will modify your ${CURRENT_STACK} config. Continue (y/n)?" choice
@@ -36,6 +37,7 @@ add_artifacts() {
             pulumi config set \
                 --path "artifacts.${key}" \
                 "${value}"
+                --stack "${CURRENT_STACK}"
         done
 }
 
@@ -47,21 +49,14 @@ main() {
     git show origin/rc:pulumi/grapl/Pulumi.testing.yaml > ${RC_CONFIG_FILE}
     local -r artifacts=$(pulumi config --config-file="${RC_CONFIG_FILE}" get artifacts)
 
-    echo "--- Grab a subset of keys from artifacts"
-    local -r artifacts_subset=$(jq --raw-output --from-file "${THIS_DIR}/subset_of_artifacts.jq" <<< "${artifacts}")
-    echo "New artifacts subset: ${artifacts_subset}"
-
     echo "--- Modify the current stack"
-    add_artifacts "${CURRENT_STACK}" "${artifacts_subset}"
+    add_artifacts "${CURRENT_STACK}" "${artifacts}"
 
-    # ensure it worked
-    local -r get_result=$(pulumi config get --path artifacts.grapl-nomad-consul-client.us-east-1)
-    if [[ $get_result =~ ami-.* ]]; then
-        exit 0
-    else
-        echo "Unexpected result for $(pulumi config get): ${get_result}"
-        exit 42
-    fi
+    pulumi config --stack "${CURRENT_STACK}"
+
+    echo "--- !!! VERY IMPORTANT !!!"
+    echo "Any artifacts defined in here *WILL* override anything you built locally, "
+    echo " so selectively remove whatever you happen to be working on at a given time."
 
 }
 
