@@ -1,12 +1,14 @@
 import os
 import re
 from pathlib import Path
-from typing import Mapping, Optional, Sequence
+from typing import Mapping, Optional, Sequence, Type, TypeVar, cast
 
 import pulumi_aws as aws
 from typing_extensions import Final
 
 import pulumi
+
+T = TypeVar("T", bound=object)
 
 # This will be incorporated into various infrastructure object names.
 DEPLOYMENT_NAME = pulumi.get_stack()
@@ -134,6 +136,7 @@ def configurable_envvars(service_name: str, vars: Sequence[str]) -> Mapping[str,
     return {v: configurable_envvar(service_name, v) for v in vars}
 
 
+# TODO: The verbiage "version" here is a bit restrictive.
 def configured_version_for(artifact_name: str) -> Optional[str]:
     """Given the name of an artifact, retrieves the version of that
     artifact from the current stack configuration. Returns `None` if
@@ -152,3 +155,25 @@ def configured_version_for(artifact_name: str) -> Optional[str]:
     artifacts = pulumi.Config().get_object("artifacts") or {}
     version = artifacts.get(artifact_name)
     return version
+
+
+def require_artifact(artifact_name: str, klass: Type[T]) -> T:
+    """
+    Given the name of an artifact, retrieves the value of that
+    artifact from the current stack configuration.
+    Raise a helpful exception if no entry is found for that artifact.
+    """
+    artifacts = pulumi.Config().get_object("artifacts") or {}
+    artifact = artifacts.get(artifact_name)
+    assert artifact is not None, (
+        f"We couldn't find an artifact named {artifact_name} in your stack."
+        "\nYou likely want to run `pulumi/bin/copy_artifacts_from_rc.sh`, which"
+        " will grab concrete artifact values from our latest `origin/rc` branch."
+        "\nDon't forget to remove artifacts you don't need after running it!"
+    )
+    if isinstance(artifact, klass):
+        return artifact
+    else:
+        raise AssertionError(
+            f"Expected artifact to be a {klass} but was {type(artifact)}"
+        )

@@ -3,13 +3,29 @@ from typing import Optional, Sequence
 
 import pulumi_aws as aws
 from infra import policies
-from infra.config import DEPLOYMENT_NAME, DGRAPH_LOG_RETENTION_DAYS
+from infra.config import DEPLOYMENT_NAME, DGRAPH_LOG_RETENTION_DAYS, require_artifact
 from infra.ec2 import Ec2Port
 from infra.ec2_cluster import Ec2Cluster
 from infra.network import Network
 from infra.policies import EC2_DESCRIBE_INSTANCES_POLICY
 
 import pulumi
+
+_SERVER_IMAGE_NAME = "grapl-nomad-consul-server"
+_CLIENT_IMAGE_NAME = "grapl-nomad-consul-server"
+
+
+def get_ami_id(packer_image_name: str) -> str:
+    """
+    Grab AMI IDs from your stack file (Pulumi.stackname.yaml).
+    There's a good chance those values don't exist for you yet, in which case,
+    follow the instructions in `require_artifact`.
+    """
+    assert packer_image_name in (
+        _SERVER_IMAGE_NAME,
+        _CLIENT_IMAGE_NAME,
+    ), f"Unexpected packer_image_name: {packer_image_name}"
+    return require_artifact(f"{packer_image_name}.{aws.get_region().name}", str)
 
 
 class NomadServer(pulumi.ComponentResource):
@@ -26,7 +42,7 @@ class NomadServer(pulumi.ComponentResource):
 
         self.log_group = aws.cloudwatch.LogGroup(
             f"{name}-logs",
-            retention_in_days=DGRAPH_LOG_RETENTION_DAYS,
+            retention_in_days=DGRAPH_LOG_RETENTION_DAYS,  # TODO: ??
             opts=child_opts,
         )
 
@@ -76,14 +92,14 @@ class NomadServer(pulumi.ComponentResource):
 
         policies.attach_policy(role=self.role, policy=EC2_DESCRIBE_INSTANCES_POLICY)
 
-        nomad_ami = "ami-12345"
+        nomad_server_ami = get_ami_id(_SERVER_IMAGE_NAME)
 
         nomad_servers = Ec2Cluster(
             name="nomad-servers",
             vpc=network,
             quorum_size=3,
             quorums=1,
-            ami=nomad_ami,
+            ami=nomad_server_ami,
             instance_type="t2.micro",
             iam_instance_profile=instance_profile,
             vpc_security_group_ids=[self.security_group.id],
