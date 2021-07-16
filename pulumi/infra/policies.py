@@ -60,7 +60,7 @@ SSM_POLICY: Final[aws.iam.Policy] = aws.iam.Policy(
 )
 
 EC2_DESCRIBE_INSTANCES_POLICY: Final[aws.iam.Policy] = aws.iam.Policy(
-    'ec2-DescribeInstances',
+    "ec2-DescribeInstances",
     policy=json.dumps(
         {
             "Version": "2012-10-17",
@@ -70,11 +70,11 @@ EC2_DESCRIBE_INSTANCES_POLICY: Final[aws.iam.Policy] = aws.iam.Policy(
                     "Action": [
                         "ec2:DescribeTags",
                         "ec2:DescribeInstances",
-                        "autoscaling:DescribeAutoScalingGroups"
+                        "autoscaling:DescribeAutoScalingGroups",
                     ],
-                    "Resource": "*"
+                    "Resource": "*",
                 }
-            ]
+            ],
         }
     ),
 )

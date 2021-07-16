@@ -71,7 +71,7 @@ source "amazon-ebs" "nomad-server-image" {
       virtualization-type = "hvm"
     }
     most_recent = true
-    owners = ["amazon"]
+    owners      = ["amazon"]
   }
 
   ssh_username = "ec2-user"
@@ -105,7 +105,7 @@ build {
   ]
 
   provisioner "file" {
-    source = "files"
+    source      = "files"
     destination = "/tmp/"
   }
 
