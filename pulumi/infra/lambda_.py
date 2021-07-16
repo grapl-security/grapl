@@ -1,8 +1,8 @@
 import json
 import os
 from dataclasses import dataclass, field
-from typing import Mapping, Optional, Union
 from pathlib import Path
+from typing import Mapping, Optional, Union
 
 import pulumi_aws as aws
 from infra.config import (
@@ -35,7 +35,9 @@ class LambdaResolver:
         root_dir = os.getenv("GRAPL_LAMBDA_ZIP_DIR", repository_path("dist"))
         path = f"{root_dir}/{lambda_fn}-lambda.zip"
         if not Path(path).resolve().exists():
-            raise Exception(f"Couldn't find lambda zip for {lambda_fn} - consider a `make pulumi-prep`.")
+            raise Exception(
+                f"Couldn't find lambda zip for {lambda_fn} - consider a `make pulumi-prep`."
+            )
         return path
 
     @staticmethod

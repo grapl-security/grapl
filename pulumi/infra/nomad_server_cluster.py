@@ -3,7 +3,12 @@ from typing import Dict, Optional, Sequence
 
 import pulumi_aws as aws
 from infra import policies
-from infra.config import ArtifactException, DEPLOYMENT_NAME, DGRAPH_LOG_RETENTION_DAYS, require_artifact
+from infra.config import (
+    DEPLOYMENT_NAME,
+    DGRAPH_LOG_RETENTION_DAYS,
+    ArtifactException,
+    require_artifact,
+)
 from infra.ec2 import Ec2Port
 from infra.ec2_cluster import Ec2Cluster
 from infra.network import Network
@@ -31,6 +36,7 @@ def get_ami_id(packer_image_name: str) -> str:
     if ami is None:
         raise ArtifactException(f"Couldn't find an AMI for region {region}")
     return ami
+
 
 class NomadServer(pulumi.ComponentResource):
     def __init__(
