@@ -75,6 +75,8 @@ DEFAULT_ENVVARS = {
     "RUST_BACKTRACE": "0",
 }
 
+class ArtifactException(Exception):
+    pass
 
 def _require_env_var(key: str) -> str:
     """
@@ -165,15 +167,16 @@ def require_artifact(artifact_name: str, klass: Type[T]) -> T:
     """
     artifacts = pulumi.Config().get_object("artifacts") or {}
     artifact = artifacts.get(artifact_name)
-    assert artifact is not None, (
-        f"We couldn't find an artifact named {artifact_name} in your stack."
-        "\nYou likely want to run `pulumi/bin/copy_artifacts_from_rc.sh`, which"
-        " will grab concrete artifact values from our latest `origin/rc` branch."
-        "\nDon't forget to remove artifacts you don't need after running it!"
-    )
+    if artifact is None:
+        raise ArtifactException(
+            f"We couldn't find an artifact named {artifact_name} in your stack."
+            "\nYou likely want to run `pulumi/bin/copy_artifacts_from_rc.sh`, which"
+            " will grab concrete artifact values from our latest `origin/rc` branch."
+            "\nDon't forget to remove artifacts you don't need after running it!"
+        )
     if isinstance(artifact, klass):
         return artifact
     else:
-        raise AssertionError(
+        raise ArtifactException(
             f"Expected artifact to be a {klass} but was {type(artifact)}"
         )

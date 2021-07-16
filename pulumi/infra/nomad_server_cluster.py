@@ -1,9 +1,9 @@
 import json
-from typing import Optional, Sequence
+from typing import Dict, Optional, Sequence
 
 import pulumi_aws as aws
 from infra import policies
-from infra.config import DEPLOYMENT_NAME, DGRAPH_LOG_RETENTION_DAYS, require_artifact
+from infra.config import ArtifactException, DEPLOYMENT_NAME, DGRAPH_LOG_RETENTION_DAYS, require_artifact
 from infra.ec2 import Ec2Port
 from infra.ec2_cluster import Ec2Cluster
 from infra.network import Network
@@ -25,8 +25,12 @@ def get_ami_id(packer_image_name: str) -> str:
         _SERVER_IMAGE_NAME,
         _CLIENT_IMAGE_NAME,
     ), f"Unexpected packer_image_name: {packer_image_name}"
-    return require_artifact(f"{packer_image_name}.{aws.get_region().name}", str)
-
+    region_to_ami: Dict[str, str] = require_artifact(f"{packer_image_name}", Dict)
+    region = aws.get_region().name
+    ami = region_to_ami.get(region, None)
+    if ami is None:
+        raise ArtifactException(f"Couldn't find an AMI for region {region}")
+    return ami
 
 class NomadServer(pulumi.ComponentResource):
     def __init__(

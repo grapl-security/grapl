@@ -2,6 +2,7 @@ import json
 import os
 from dataclasses import dataclass, field
 from typing import Mapping, Optional, Union
+from pathlib import Path
 
 import pulumi_aws as aws
 from infra.config import (
@@ -32,7 +33,10 @@ class LambdaResolver:
         environment variable to an appropriate directory.
         """
         root_dir = os.getenv("GRAPL_LAMBDA_ZIP_DIR", repository_path("dist"))
-        return f"{root_dir}/{lambda_fn}-lambda.zip"
+        path = f"{root_dir}/{lambda_fn}-lambda.zip"
+        if not Path(path).resolve().exists():
+            raise Exception(f"Couldn't find lambda zip for {lambda_fn} - consider a `make pulumi-prep`.")
+        return path
 
     @staticmethod
     def _cloudsmith_url(lambda_fn: str, version: str, repository: str) -> str:
