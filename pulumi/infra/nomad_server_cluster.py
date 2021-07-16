@@ -5,7 +5,7 @@ import pulumi_aws as aws
 from infra import policies
 from infra.config import DEPLOYMENT_NAME, DGRAPH_LOG_RETENTION_DAYS
 from infra.ec2 import Ec2Port
-from infra.ec2 import Ec2Cluster
+from infra.ec2_cluster import Ec2Cluster
 from infra.network import Network
 from infra.policies import EC2_DESCRIBE_INSTANCES_POLICY
 
