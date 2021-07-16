@@ -75,8 +75,10 @@ DEFAULT_ENVVARS = {
     "RUST_BACKTRACE": "0",
 }
 
+
 class ArtifactException(Exception):
     pass
+
 
 def _require_env_var(key: str) -> str:
     """
