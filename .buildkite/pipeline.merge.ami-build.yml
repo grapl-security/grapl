@@ -25,6 +25,10 @@ steps:
             - "BUILDKITE_PIPELINE_NAME"
             - "BUILDKITE_STEP_KEY"
             - "PACKER_IMAGE_NAME=grapl-nomad-consul-server"
+            # I hate these last two, but it seems to be necessary at
+            # the moment while this runs inside a Docker container.
+            - "BUILDKITE_ARTIFACT_UPLOAD_DESTINATION"
+            - "BUILDKITE_S3_DEFAULT_REGION"
     agents:
       queue: "packer-staging"
 
@@ -43,6 +47,10 @@ steps:
             - "BUILDKITE_PIPELINE_NAME"
             - "BUILDKITE_STEP_KEY"
             - "PACKER_IMAGE_NAME=grapl-nomad-consul-client"
+            # I hate these last two, but it seems to be necessary at
+            # the moment while this runs inside a Docker container.
+            - "BUILDKITE_ARTIFACT_UPLOAD_DESTINATION"
+            - "BUILDKITE_S3_DEFAULT_REGION"
     agents:
       queue: "packer-staging"
 
