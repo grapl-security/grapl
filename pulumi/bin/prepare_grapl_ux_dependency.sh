@@ -69,10 +69,10 @@ retrieve_targz_from_cloudsmith() {
     # run from any subdirectory.
     REPOSITORY_ROOT=$(git rev-parse --show-toplevel)
     readonly REPOSITORY_ROOT
-    cd "${REPOSITORY_ROOT}" || exit 2
+    cd "${REPOSITORY_ROOT}"
 
     ux_version=$(
-        cd pulumi/grapl || exit 1
+        cd pulumi/grapl
         pulumi config get --path artifacts.grapl-ux --stack="${stack}"
     ) || true
     readonly ux_version
