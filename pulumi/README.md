@@ -54,7 +54,7 @@ the configuration will be pulled from the `Pulumi.local-grapl.yaml`
 file that already exists within this repository.
 
 ```sh
-cd grapl  # $GRAPL_ROOT/pulumi/grapl
+cd $GRAPL_ROOT/pulumi/grapl
 pulumi stack init local-grapl
 ```
 
@@ -77,7 +77,7 @@ managed by our Pulumi SaaS account.
 
 ```sh
 export STACK_NAME=<NAME>
-cd grapl  # $GRAPL_ROOT/pulumi/grapl
+cd $GRAPL_ROOT/pulumi/grapl
 pulumi login --local
 pulumi stack init "${STACK_NAME}"
 pulumi config set aws:region us-east-1
