@@ -1,5 +1,4 @@
 import itertools
-from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence, Union
 
 import pulumi_aws as aws

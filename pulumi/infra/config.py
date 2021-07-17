@@ -1,7 +1,7 @@
 import os
 import re
 from pathlib import Path
-from typing import Mapping, Optional, Sequence, Type, TypeVar, cast
+from typing import Mapping, Optional, Sequence, Type, TypeVar
 
 import pulumi_aws as aws
 from typing_extensions import Final
