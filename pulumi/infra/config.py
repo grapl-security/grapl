@@ -1,14 +1,12 @@
 import os
 import re
 from pathlib import Path
-from typing import Mapping, Optional, Sequence, Type, TypeVar
+from typing import Any, Mapping, Optional, Sequence
 
 import pulumi_aws as aws
 from typing_extensions import Final
 
 import pulumi
-
-T = TypeVar("T", bound=object)
 
 # This will be incorporated into various infrastructure object names.
 DEPLOYMENT_NAME = pulumi.get_stack()
@@ -161,7 +159,8 @@ def configured_version_for(artifact_name: str) -> Optional[str]:
     return version
 
 
-def require_artifact(artifact_name: str, klass: Type[T]) -> T:
+# This should be (x: str, y: Type[T]) -> T, but: https://github.com/python/mypy/issues/9773
+def require_artifact(artifact_name: str) -> Any:
     """
     Given the name of an artifact, retrieves the value of that
     artifact from the current stack configuration.
@@ -176,9 +175,4 @@ def require_artifact(artifact_name: str, klass: Type[T]) -> T:
             " will grab concrete artifact values from our latest `origin/rc` branch."
             "\nDon't forget to remove artifacts you don't need after running it!"
         )
-    if isinstance(artifact, klass):
-        return artifact
-    else:
-        raise ArtifactException(
-            f"Expected artifact to be a {klass} but was {type(artifact)}"
-        )
+    return artifact
