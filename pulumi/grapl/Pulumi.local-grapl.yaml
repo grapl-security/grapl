@@ -25,3 +25,13 @@ config:
   kafka:bootstrapServers:
     - "kafka-broker:9092"
   kafka:tlsEnabled: false
+
+  grapl:artifacts:
+    # You probably don't want any service versions in here.
+
+    # You DO need to specify AMIs (they're require_artifact()'d)
+    # Since this is local-grapl, we don't need real AMIs for Localstack EC2
+    grapl-nomad-consul-client:
+      us-east-1: ami-000fake
+    grapl-nomad-consul-server:
+      us-east-1: ami-001fake
