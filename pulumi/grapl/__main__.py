@@ -220,20 +220,14 @@ def main() -> None:
         forwarder=forwarder,
         dgraph_cluster=dgraph_cluster,
     )
-    # Note: This requires `yarn build` to have been run first
-    if not LOCAL_GRAPL:
-        from infra.config import repository_path
 
-        # Not doing this in Local Grapl at the moment, as we have
-        # another means of doing this. We should harmonize this, of
-        # course.
-        ENGAGEMENT_VIEW_DIR = repository_path("src/js/engagement_view/build").resolve()
-        try:
-            ux_bucket.upload_to_bucket(
-                ENGAGEMENT_VIEW_DIR, root_path=ENGAGEMENT_VIEW_DIR
-            )
-        except FileNotFoundError as e:
-            raise Exception("You probably need to `make pulumi-prep` first") from e
+    if not LOCAL_GRAPL:
+        from infra.ux import populate_ux_bucket
+
+        # TODO: We are not populating the UX bucket in Local Grapl at
+        # the moment, as we have another means of doing this. We
+        # should harmonize this, of course.
+        populate_ux_bucket(ux_bucket)
 
         Provisioner(
             network=network,

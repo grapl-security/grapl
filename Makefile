@@ -176,6 +176,24 @@ graplctl: ## Build graplctl and install it to the project root
 build-ux: ## Build website assets
 	cd src/js/engagement_view && yarn install && yarn build
 
+# Create the dist directory if necessary; don't need to document this
+# formally for `make help`, though.
+dist:
+	mkdir dist
+
+# This is used to create the artifact that will be uploaded to our
+# artifact repository in CI, and will be the artifact that is used by
+# our Pulumi deployments.
+.PHONY: ux-tarball
+ux-tarball: build-ux dist ## Build website asset tarball
+	tar \
+		--create \
+		--gzip \
+		--verbose \
+		--file="dist/grapl-ux.tar.gz" \
+		--directory=src/js/engagement_view/build \
+		.
+
 .PHONY: lambdas
 lambdas: lambdas-rust lambdas-js lambdas-python ## Generate all lambda zip files
 
