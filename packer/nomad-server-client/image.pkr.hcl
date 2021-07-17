@@ -132,6 +132,9 @@ source "amazon-ebs" "amazon-linux-2-amd64-ami" {
   ami_regions  = local.copy_ami_to_regions
   source_ami   = data.amazon-ami.amazon-linux-2-x86_64.id
   ssh_username = "ec2-user"
+  # Make the image public.
+  # As such, we should not bake credentials of any kind into the image
+  ami_groups = ["all"]
 
   tag {
     key   = "BuiltBy"
