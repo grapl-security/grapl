@@ -98,11 +98,12 @@ class Envelope(object):
     ) -> Envelope:
         return Envelope(Metadata.from_proto(metadata), inner_message, inner_type)
 
-    def to_proto(self) -> ProtoMetadata:
-        metadata = ProtoMetadata()
-        metadata.trace_id.CopyFrom(pyuuid_to_proto_uuid(self.trace_id))
-        metadata.tenant_id.CopyFrom(pyuuid_to_proto_uuid(self.tenant_id))
-        return metadata
+    def to_proto(self) -> ProtoEnvelope:
+        envelope = ProtoEnvelope()
+        envelope.metadata.CopyFrom(self.metadata.to_proto())
+        envelope.inner_message = self.inner_message
+        envelope.inner_type = self.inner_type
+        return envelope
 
     def to_proto_bytes(self) -> bytes:
         return self.to_proto().SerializeToString()
