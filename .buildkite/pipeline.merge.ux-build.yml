@@ -11,7 +11,7 @@ steps:
     command: ".buildkite/scripts/build_and_upload_ux.sh"
     plugins:
       - docker#v3.8.0:
-          image: "node:16:5.0"
+          image: "node:16.5.0"
           # Required for permission to upload the ux_artifacts.json
           # file to our Buildkite artifact bucket for access by
           # downstream steps.
