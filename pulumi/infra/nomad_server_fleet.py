@@ -19,6 +19,9 @@ class NomadServerFleet(pulumi.ComponentResource):
     they are colocated.
     The image is defined in `image.pkr.hcl` and is based on:
     https://github.com/hashicorp/terraform-aws-nomad/tree/master/examples/nomad-consul-ami
+
+    This decision can be revisited, in which case you'd want to look at
+    https://github.com/hashicorp/terraform-aws-nomad/tree/master/examples/nomad-consul-separate-cluster
     """
 
     def __init__(
