@@ -8,9 +8,9 @@ from typing_extensions import Literal
 import pulumi
 from pulumi import Output
 
-# Note that a Quorum of 1 will lose data across updates, not suitable
+# Note that a ClusterSize of 1 will lose data across updates, not suitable
 # for databases but fine for stateless services
-QuorumSize = Union[Literal[1], Literal[3], Literal[5]]
+ClusterSize = Union[Literal[1], Literal[3], Literal[5]]
 
 
 class Ec2Cluster(pulumi.ComponentResource):
@@ -18,8 +18,9 @@ class Ec2Cluster(pulumi.ComponentResource):
         self,
         name: str,
         vpc: Network,
-        quorum_size: QuorumSize,
-        quorums: int,  # Number of quorums to actually build
+        # So, a `num_subclusters: 3` * `cluster_size: 5` means 15 instances
+        subcluster_size: ClusterSize,
+        num_subclusters: int,
         ami: str,
         instance_type: str,
         iam_instance_profile: aws.iam.InstanceProfile,
@@ -31,14 +32,14 @@ class Ec2Cluster(pulumi.ComponentResource):
         child_opts = pulumi.ResourceOptions(parent=self)
 
         self.instances = []
-        for i in range(0, quorums):
+        for i in range(0, num_subclusters):
             self.instances.extend(
-                self._build_quorum(
-                    f"{name}-quorum-{i}",
+                self._build_subcluster(
+                    f"{name}-cluster-{i}",
                     vpc,
                     ami,
                     instance_type,
-                    quorum_size,
+                    subcluster_size,
                     iam_instance_profile,
                     vpc_security_group_ids,
                     instance_tags,
@@ -52,12 +53,12 @@ class Ec2Cluster(pulumi.ComponentResource):
         )
 
     @staticmethod
-    def _build_quorum(
+    def _build_subcluster(
         name: str,
         vpc: Network,
         ami: str,
         instance_type: str,
-        quorum_size: QuorumSize,
+        subcluster_size: ClusterSize,
         iam_instance_profile: aws.iam.InstanceProfile,
         vpc_security_group_ids: Sequence[Output[str]],
         instance_tags: Dict[str, str],
@@ -65,12 +66,12 @@ class Ec2Cluster(pulumi.ComponentResource):
     ) -> List[aws.ec2.Instance]:
         instances = []
         # We're going to create each instance in a different private subnet. This way
-        # our quorum will be resilient to AZ failures so long as there are quorum_size - 1 nodes
+        # our cluster will be resilient to AZ failures so long as there are cluster_size - 1 nodes
         # are still available
 
         _subnets = vpc.private_subnets
         subnets = itertools.cycle(_subnets)
-        for i in range(0, quorum_size):
+        for i in range(0, subcluster_size):
             print(f"name: {name}-{i}")
             subnet = next(subnets)
             network_interface = aws.ec2.NetworkInterface(
@@ -97,10 +98,12 @@ class Ec2Cluster(pulumi.ComponentResource):
                 ),
                 tags=instance_tags,
                 iam_instance_profile=iam_instance_profile.name,
-                # vpc_security_group_ids=vpc_security_group_ids,
-                metadata_options=aws.ec2.InstanceMetadataOptionsArgs(  # Consul relies on EC2 metadata
+                # Consul relies on EC2 metadata
+                metadata_options=aws.ec2.InstanceMetadataOptionsArgs(
                     http_endpoint="enabled",
-                    http_tokens="optional",  # Can we at least use v2? Should verify.
+                    # There's a chance we can change this to "required", which forces IMDSv2,
+                    # but we haven't tested that yet.
+                    http_tokens="optional",
                 ),
                 opts=child_opts,
             )

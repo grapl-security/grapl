@@ -92,8 +92,8 @@ class NomadServerFleet(pulumi.ComponentResource):
         nomad_servers = Ec2Cluster(
             name="nomad-servers",
             vpc=network,
-            quorum_size=3,
-            quorums=1,
+            subcluster_size=3,
+            num_subclusters=1,
             ami=nomad_server_ami,
             instance_type="t2.micro",
             iam_instance_profile=instance_profile,
@@ -128,16 +128,6 @@ class NomadServerFleet(pulumi.ComponentResource):
             *internal_service_ports,
         ):
             port.allow_internally(self.security_group)
-
-        # allow hosts in the nomad-server security group to make outbound
-        # connections to the Internet for these services:
-        #   TCP 443 -- AWS SSM Agent (for handshake)
-        #   TCP 80 -- yum package manager and wget
-        for port in (
-            Ec2Port("tcp", 443),
-            Ec2Port("tcp", 80),
-        ):
-            port.allow_outbound_any_ip(self.security_group)
 
     def allow_connections_from(
         self,
