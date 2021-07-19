@@ -13,7 +13,7 @@ from infra.policies import EC2_DESCRIBE_INSTANCES_POLICY
 import pulumi
 
 
-class NomadServer(pulumi.ComponentResource):
+class NomadCluster(pulumi.ComponentResource):
     def __init__(
         self,
         name: str,
