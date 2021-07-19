@@ -8,6 +8,7 @@ steps:
     plugins:
       - chronotc/monorepo-diff#v2.0.4:
           diff: .buildkite/shared/scripts/diff.sh
+          log_level: "debug"
           watch:
             - path:
                 - "src/rust/" # This is not minimal, obviously
@@ -25,6 +26,7 @@ steps:
     plugins:
       - chronotc/monorepo-diff#v2.0.4:
           diff: .buildkite/shared/scripts/diff.sh
+          log_level: "debug"
           watch:
             - path:
                 - "src/js/" # This is not minimal, obviously
@@ -79,6 +81,7 @@ steps:
     plugins:
       - chronotc/monorepo-diff#v2.0.4:
           diff: .buildkite/shared/scripts/diff.sh
+          log_level: "debug"
           watch:
             - path:
                 - "packer/"
