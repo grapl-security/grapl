@@ -89,14 +89,15 @@ class NomadServerFleet(pulumi.ComponentResource):
 
         nomad_server_ami = get_ami_id("grapl-nomad-consul-server")
 
+        # When we decide to do multiple clusters,
+        # make sure to spread out the private subnets they're attached to.
         nomad_servers = Ec2Cluster(
             name="nomad-servers",
-            vpc=network,
-            subcluster_size=3,
-            num_subclusters=1,
             ami=nomad_server_ami,
+            num_instances=3,
             instance_type="t2.micro",
             iam_instance_profile=instance_profile,
+            vpc_private_subnet=network.private_subnets[0],
             vpc_security_group_ids=[self.security_group.id],
             instance_tags={
                 "nomad-server-sec-group-for-deployment": DEPLOYMENT_NAME,
