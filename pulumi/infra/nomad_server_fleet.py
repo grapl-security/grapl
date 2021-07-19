@@ -13,7 +13,14 @@ from infra.policies import EC2_DESCRIBE_INSTANCES_POLICY
 import pulumi
 
 
-class NomadServerCluster(pulumi.ComponentResource):
+class NomadServerFleet(pulumi.ComponentResource):
+    """
+    NOTE: We also currently bake in the Consul server into the Nomad server;
+    they are colocated.
+    The image is defined in `image.pkr.hcl` and is based on:
+    https://github.com/hashicorp/terraform-aws-nomad/tree/master/examples/nomad-consul-ami
+    """
+
     def __init__(
         self,
         name: str,
@@ -21,7 +28,7 @@ class NomadServerCluster(pulumi.ComponentResource):
         internal_service_ports: Sequence[Ec2Port],
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
-        super().__init__("grapl:Nomad serverResource", name=name, props=None, opts=opts)
+        super().__init__("grapl:NomadServerFleet", name=name, props=None, opts=opts)
         child_opts = pulumi.ResourceOptions(parent=self)
         vpc = network.vpc
 
