@@ -24,9 +24,10 @@ class AnalyzerExecutor(FargateService):
         super().__init__(
             "analyzer-executor",
             image=GraplDockerBuild(
+                # Should match entry in `docker-compose.build.yml`
                 dockerfile=str(repository_path("src/python/Dockerfile")),
                 target="analyzer-executor-deploy",
-                context=str(repository_path("src")),
+                context=str(repository_path(".")),
             ),
             env={
                 **configurable_envvars("analyzer-executor", ["GRAPL_LOG_LEVEL"]),

@@ -23,6 +23,7 @@ from infra.kafka import Kafka
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.node_identifier import NodeIdentifier
+from infra.nomad_cluster import NomadCluster
 from infra.osquery_generator import OSQueryGenerator
 from infra.pipeline_dashboard import PipelineDashboard
 from infra.provision_lambda import Provisioner
@@ -117,6 +118,11 @@ def main() -> None:
         kafka = Kafka("kafka")
 
     else:
+        nomad_cluster = NomadCluster(
+            "nomad-cluster",
+            network=network,
+        )
+
         # No Fargate or Elasticache in Local Grapl
         cache = Cache("main-cache", network=network)
 

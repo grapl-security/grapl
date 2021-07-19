@@ -1,7 +1,7 @@
 import os
 import re
 from pathlib import Path
-from typing import Mapping, Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence
 
 import pulumi_aws as aws
 from typing_extensions import Final
@@ -74,6 +74,10 @@ DEFAULT_ENVVARS = {
 }
 
 
+class ArtifactException(Exception):
+    pass
+
+
 def _require_env_var(key: str) -> str:
     """
     Grab a key from env variables, or fallback to Pulumi.xyz.yaml
@@ -134,6 +138,7 @@ def configurable_envvars(service_name: str, vars: Sequence[str]) -> Mapping[str,
     return {v: configurable_envvar(service_name, v) for v in vars}
 
 
+# TODO: The verbiage "version" here is a bit restrictive.
 def configured_version_for(artifact_name: str) -> Optional[str]:
     """Given the name of an artifact, retrieves the version of that
     artifact from the current stack configuration. Returns `None` if
@@ -152,3 +157,22 @@ def configured_version_for(artifact_name: str) -> Optional[str]:
     artifacts = pulumi.Config().get_object("artifacts") or {}
     version = artifacts.get(artifact_name)
     return version
+
+
+# This should be (x: str, y: Type[T]) -> T, but: https://github.com/python/mypy/issues/9773
+def require_artifact(artifact_name: str) -> Any:
+    """
+    Given the name of an artifact, retrieves the value of that
+    artifact from the current stack configuration.
+    Raise a helpful exception if no entry is found for that artifact.
+    """
+    artifacts = pulumi.Config().get_object("artifacts") or {}
+    artifact = artifacts.get(artifact_name)
+    if artifact is None:
+        raise ArtifactException(
+            f"We couldn't find an artifact named {artifact_name} in your stack."
+            "\nYou likely want to run `pulumi/bin/copy_artifacts_from_rc.sh`, which"
+            " will grab concrete artifact values from our latest `origin/rc` branch."
+            "\nDon't forget to remove artifacts you don't need after running it!"
+        )
+    return artifact
