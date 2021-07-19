@@ -94,10 +94,12 @@ steps:
     plugins:
       - chronotc/monorepo-diff#v2.0.4:
           diff: .buildkite/shared/scripts/diff.sh
+          log_level: "debug"
           watch:
             - path:
                 - "src/js/engagement_view"
                 - ".buildkite/scripts/build_and_upload_ux.sh"
+                - ".buildkite/pipeline.merge.yml" # just temporarily!
               config:
                 command:
                   - ".buildkite/scripts/build_and_upload_ux.sh"
