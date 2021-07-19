@@ -1,0 +1,18 @@
+---
+env:
+  PANTS_CONFIG_FILES: "['pants.toml', 'pants.ci.toml']"
+
+# This is defined in a separate pipeline file because
+# chronotc/monorepo-diff does not currently have support for plugin
+# configuration on commands.
+
+steps:
+  - label: ":yarn: Build UX Assets"
+    command: ".buildkite/scripts/build_and_upload_ux.sh"
+    plugins:
+      - docker#v3.8.0:
+          image: "node:16:5.0"
+          # Required for permission to upload the ux_artifacts.json
+          # file to our Buildkite artifact bucket for access by
+          # downstream steps.
+          propagate-aws-auth-tokens: true
