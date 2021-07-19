@@ -6,6 +6,7 @@ botocore
 chalice==1.22.4
 # Chalice requires a Click in 7, <=8
 click==7.1.2
+confluent-kafka
 hypothesis
 mypy_boto3_cloudwatch
 mypy_boto3_dynamodb

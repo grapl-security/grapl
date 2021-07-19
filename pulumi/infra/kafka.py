@@ -1,11 +1,10 @@
 from typing import Mapping, Optional, Union
-from pulumi.resource import ResourceOptions
 
 import pulumi_kafka as kafka
+from infra.config import LOCAL_GRAPL
+from pulumi.resource import ResourceOptions
 
 import pulumi
-
-from infra.config import LOCAL_GRAPL
 
 
 class Kafka(pulumi.ComponentResource):
@@ -32,10 +31,17 @@ class Kafka(pulumi.ComponentResource):
                 bootstrap_servers=[confluent["bootstrap_servers"]],
                 opts=opts,
                 sasl_mechanism="plain",
-                sasl_password=confluent["grapl_pulumi"]["api_key"],
-                sasl_username=confluent["grapl_pulumi"]["api_secret"],
+                sasl_username=confluent["grapl_pulumi"]["api_key"],
+                sasl_password=confluent["grapl_pulumi"]["api_secret"],
                 tls_enabled=True,
             )
+
+        # These are all the services the confluent-cloud-infra project is aware
+        # of. We use this value to e.g. allow every service to access metrics
+        # and logs topics.
+        services = set(confluent.keys()).difference(
+            {"bootstrap_servers", "grapl_pulumi"}
+        )
 
         #
         # metrics topic
@@ -50,9 +56,6 @@ class Kafka(pulumi.ComponentResource):
         )
 
         if not LOCAL_GRAPL:
-            services = set(confluent.keys()).difference(
-                {"bootstrap_servers", "grapl_pulumi"}
-            )
             for service in services:
                 # give every service write access to the metrics topic
                 kafka.Acl(
@@ -65,3 +68,40 @@ class Kafka(pulumi.ComponentResource):
                     acl_operation="Write",
                     acl_permission_type="Allow",
                 )
+
+        #
+        # logs topic
+        #
+
+        kafka.Topic(
+            "logs-topic",
+            opts=pulumi.ResourceOptions(provider=provider),
+            name="logs",
+            replication_factor=1,
+            partitions=1,
+        )
+
+        if not LOCAL_GRAPL:
+            services = set(confluent.keys()).difference(
+                {"bootstrap_servers", "grapl_pulumi"}
+            )
+            for service in services:
+                # give every service write access to the logs topic
+                kafka.Acl(
+                    f"{service}-logs-topic-acl",
+                    opts=pulumi.ResourceOptions(provider=provider),
+                    acl_resource_name="logs",
+                    acl_resource_type="Topic",
+                    acl_principal=f"User:{confluent[service]['service_account_id']}",
+                    acl_host="*",
+                    acl_operation="Write",
+                    acl_permission_type="Allow",
+                )
+
+        #
+        # pipeline service topics
+        #
+
+        # TODO: create pipeline topics as needed, with ACLs such that only the
+        # services which need write access have write access and only the
+        # services which need read access have read access.
