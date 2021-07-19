@@ -23,7 +23,7 @@ from infra.kafka import Kafka
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.node_identifier import NodeIdentifier
-from infra.nomad_cluster import NomadCluster
+from infra.nomad_server_cluster import NomadServer
 from infra.osquery_generator import OSQueryGenerator
 from infra.pipeline_dashboard import PipelineDashboard
 from infra.provision_lambda import Provisioner
@@ -212,8 +212,8 @@ def main() -> None:
         ),
     )
 
-    nomad_cluster = NomadCluster(
-        "nomad-cluster",
+    nomad_server_cluster = NomadServer(
+        "nomad-server",
         network=network,
         internal_service_ports=(),
     )
