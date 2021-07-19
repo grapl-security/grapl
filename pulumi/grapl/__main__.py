@@ -118,6 +118,11 @@ def main() -> None:
         kafka = Kafka("kafka")
 
     else:
+        nomad_cluster = NomadCluster(
+            "nomad-cluster",
+            network=network,
+        )
+
         # No Fargate or Elasticache in Local Grapl
         cache = Cache("main-cache", network=network)
 
@@ -210,11 +215,6 @@ def main() -> None:
         website_args=aws.s3.BucketWebsiteArgs(
             index_document="index.html",
         ),
-    )
-
-    nomad_cluster = NomadCluster(
-        "nomad-cluster",
-        network=network,
     )
 
     api = Api(
