@@ -147,6 +147,7 @@ steps:
     plugins:
       - chronotc/monorepo-diff#v2.0.4:
           diff: .buildkite/shared/scripts/diff.sh
+          log_level: "debug"
           watch:
             - path:
                 - ".buildkite/scripts/test_packer.sh"
