@@ -20,30 +20,6 @@ variable "terraform_aws_consul_tag" {
   default     = "v0.10.1"
 }
 
-variable "terraform_aws_nomad_tag" {
-  description = "Version tag of terraform-aws-nomad to checkout"
-  type        = string
-  default     = "v0.9.1"
-}
-
-variable "consul_version" {
-  description = "Version of consul to use"
-  type        = string
-  default     = "1.9.6"
-}
-
-variable "nomad_version" {
-  description = "Version of Nomad to use"
-  type        = string
-  default     = "1.1.1"
-}
-
-variable "vector_version" {
-  description = "Version of Vector to use"
-  type        = string
-  default     = "0.15.0"
-}
-
 variable "git_sha" {
   description = "The git SHA of the commit the AMI is being generated from. If present, will be used to tag the AMI."
   type        = string
@@ -78,6 +54,40 @@ variable "aws_build_region" {
   description = "Region to build thge AMI in"
   type        = string
   default     = "us-east-1"
+}
+
+####################
+# Software Versions
+####################
+
+variable "terraform_aws_nomad_tag" {
+  description = "Version tag of terraform-aws-nomad to checkout"
+  type        = string
+  default     = "v0.9.1"
+}
+
+variable "consul_version" {
+  description = "Version of consul to use"
+  type        = string
+  default     = "1.9.6"
+}
+
+variable "nomad_version" {
+  description = "Version of Nomad to use"
+  type        = string
+  default     = "1.1.1"
+}
+
+variable "vector_version" {
+  description = "Version of Vector to use"
+  type        = string
+  default     = "0.15.0"
+}
+
+variable "osquery_version" {
+  description = "Version of OSQuery to use"
+  type        = string
+  default     = "4.9.0"
 }
 
 locals {
@@ -177,6 +187,10 @@ build {
     ]
   }
 
+  #################### 
+  # Install software
+  #################### 
+
   provisioner "shell" {
     environment_vars = [
       "NOMAD_VERSION=${var.nomad_version}",
@@ -194,6 +208,17 @@ build {
     script = "${path.root}/setup_vector.sh"
   }
 
+  provisioner "shell" {
+    environment_vars = [
+      "OSQUERY_VERSION=${var.osquery_version}",
+    ]
+    script = "${path.root}/setup_osquery.sh"
+  }
+
+  #################### 
+  # Copy over config files
+  #################### 
+
   # Copy Nomad/Consul/Vector/etc configs to a temp spot.
   # We can't copy directly into, say, `/opt` because we need sudo perms.
   provisioner "file" {
@@ -208,9 +233,14 @@ build {
       "sudo cp /tmp/configs/nomad-config/${local.config_file_names} /opt/nomad/config",
       "sudo cp /tmp/configs/consul-config/${local.config_file_names} /opt/consul/config",
 
-      "sudo cp /tmp/configs/vector-config/vector.toml /etc/vector/vector.toml"
+      "sudo cp /tmp/configs/vector-config/vector.toml /etc/vector/vector.toml",
+      "sudo cp /tmp/configs/osquery-config/osquery.conf /etc/osquery/osquery.conf",
     ]
   }
+
+  #################### 
+  # Post-processors
+  #################### 
 
   post-processor "manifest" {
     output = "${var.image_name}.packer-manifest.json"

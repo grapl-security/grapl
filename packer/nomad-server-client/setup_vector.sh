@@ -4,12 +4,13 @@
 # - https://vector.dev/docs/setup/installation/package-managers/yum/
 set -euo pipefail
 
-# Add repo to YUM
+echo "--- Add repo"
 curl -1sLf \
   'https://repositories.timber.io/public/vector/cfg/setup/bash.rpm.sh' \
 | sudo -E bash
 
+echo "--- Install Vector"
 sudo yum install --assumeyes "vector-${VECTOR_VERSION}"
 
-# Ensure it's all working correctly
+echo "--- Ensure it's all working correctly"
 vector --version
