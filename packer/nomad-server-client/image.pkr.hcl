@@ -187,26 +187,6 @@ build {
     script = "${path.root}/setup_nomad_consul.sh"
   }
 
-  # Copy Nomad configs to a temp spot on its way to `/opt/nomad/config`
-  provisioner "file" {
-    source      = "${path.root}/nomad-config"
-    destination = "/tmp/"
-  }
-
-  # Copy Consul configs to a temp spot on its way to `/opt/consul/config`
-  provisioner "file" {
-    source      = "${path.root}/consul-config"
-    destination = "/tmp/"
-  }
-
-  provisioner "shell" {
-    inline = [
-      # Only copy <the client> or <the server> file names
-      "sudo cp /tmp/nomad-config/${local.config_file_names} /opt/nomad/config",
-      "sudo cp /tmp/consul-config/${local.config_file_names} /opt/consul/config",
-    ]
-  }
-
   provisioner "shell" {
     environment_vars = [
       "VECTOR_VERSION=${var.vector_version}",
@@ -214,10 +194,22 @@ build {
     script = "${path.root}/setup_vector.sh"
   }
 
+  # Copy Nomad/Consul/Vector/etc configs to a temp spot.
+  # We can't copy directly into, say, `/opt` because we need sudo perms.
   provisioner "file" {
-    # Default config spot for Vector
-    source      = "${path.root}/vector-config/vector.toml"
-    destination = "/etc/vector/vector.toml"
+    source      = "${path.root}/configs"
+    destination = "/tmp/configs"
+  }
+
+  # Copy the above configs into their final spots
+  provisioner "shell" {
+    inline = [
+      # Only copy <the client> or <the server> file names
+      "sudo cp /tmp/configs/nomad-config/${local.config_file_names} /opt/nomad/config",
+      "sudo cp /tmp/configs/consul-config/${local.config_file_names} /opt/consul/config",
+
+      "sudo cp /tmp/configs/vector-config/vector.toml /etc/vector/vector.toml"
+    ]
   }
 
   post-processor "manifest" {
