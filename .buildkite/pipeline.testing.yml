@@ -1,0 +1,13 @@
+---
+env:
+  PANTS_CONFIG_FILES: "['pants.toml', 'pants.ci.toml']"
+
+# This pipeline is for running tests against deployed infrastructure
+# from our grapl/testing stack.
+
+steps:
+
+  # TODO: replace this with something meaningful
+  - label: "Hello World :earth_asia::earth_americas::earth_africa:"
+    command:
+      - echo 'Hello World'
