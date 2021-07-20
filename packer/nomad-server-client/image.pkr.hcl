@@ -57,7 +57,7 @@ variable "aws_build_region" {
 }
 
 ####################
-# Dependency versions
+# Program Versions
 ####################
 
 variable "terraform_aws_nomad_tag" {
@@ -216,7 +216,7 @@ build {
   }
 
   #################### 
-  # Set up config files
+  # Copy over config files
   #################### 
 
   # Copy Nomad/Consul/Vector/etc configs to a temp spot.
