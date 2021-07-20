@@ -42,7 +42,7 @@ pluggy==0.13.1
 protobuf==3.17.3
 psutil==5.8.0
 pulumi==3.7.1
-pulumi-aws==4.6.0
+pulumi-aws==4.9.0
 pulumi-docker==3.0.0
 pulumi-kafka==3.0.1
 pulumi-random==4.2.0
