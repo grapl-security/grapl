@@ -144,6 +144,9 @@ steps:
     # building the image does exactly the same thing. We don't want to
     # waste time.
     if: build.env("BUILDKITE_PIPELINE_NAME") == "grapl/verify"
+    env:
+      # Ensure we get the most up-to-date git tags to compare against
+      BUILDKITE_CLEAN_CHECKOUT: true
     plugins:
       - chronotc/monorepo-diff#v2.0.4:
           diff: .buildkite/shared/scripts/diff.sh

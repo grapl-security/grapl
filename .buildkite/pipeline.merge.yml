@@ -5,6 +5,9 @@ env:
 steps:
   - label: ":aws-lambda::rust: Build Rust Lambdas"
     key: "rust-lambdas"
+    env:
+      # Ensure we get the most up-to-date git tags to compare against
+      BUILDKITE_CLEAN_CHECKOUT: true
     plugins:
       - chronotc/monorepo-diff#v2.0.4:
           diff: .buildkite/shared/scripts/diff.sh
@@ -23,6 +26,9 @@ steps:
 
   - label: ":aws-lambda::typescript: Build Typescript Lambdas"
     key: "js-lambdas"
+    env:
+      # Ensure we get the most up-to-date git tags to compare against
+      BUILDKITE_CLEAN_CHECKOUT: true
     plugins:
       - chronotc/monorepo-diff#v2.0.4:
           diff: .buildkite/shared/scripts/diff.sh
@@ -78,6 +84,9 @@ steps:
       queue: "artifact-uploaders"
 
   - label: ":thinking_face: AMI Build?"
+    env:
+      # Ensure we get the most up-to-date git tags to compare against
+      BUILDKITE_CLEAN_CHECKOUT: true
     plugins:
       - chronotc/monorepo-diff#v2.0.4:
           diff: .buildkite/shared/scripts/diff.sh
@@ -94,6 +103,9 @@ steps:
                 command: "buildkite-agent pipeline upload .buildkite/pipeline.merge.ami-build.yml"
 
   - label: ":thinking_face: UX Build?"
+    env:
+      # Ensure we get the most up-to-date git tags to compare against
+      BUILDKITE_CLEAN_CHECKOUT: true
     plugins:
       - chronotc/monorepo-diff#v2.0.4:
           diff: .buildkite/shared/scripts/diff.sh
