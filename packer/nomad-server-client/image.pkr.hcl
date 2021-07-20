@@ -187,6 +187,10 @@ build {
     ]
   }
 
+  #################### 
+  # Install programs
+  #################### 
+
   provisioner "shell" {
     environment_vars = [
       "NOMAD_VERSION=${var.nomad_version}",
@@ -204,6 +208,17 @@ build {
     script = "${path.root}/setup_vector.sh"
   }
 
+  provisioner "shell" {
+    environment_vars = [
+      "OSQUERY_VERSION=${var.osquery_version}",
+    ]
+    script = "${path.root}/setup_osquery.sh"
+  }
+
+  #################### 
+  # Set up config files
+  #################### 
+
   # Copy Nomad/Consul/Vector/etc configs to a temp spot.
   # We can't copy directly into, say, `/opt` because we need sudo perms.
   provisioner "file" {
@@ -218,16 +233,14 @@ build {
       "sudo cp /tmp/configs/nomad-config/${local.config_file_names} /opt/nomad/config",
       "sudo cp /tmp/configs/consul-config/${local.config_file_names} /opt/consul/config",
 
-      "sudo cp /tmp/configs/vector-config/vector.toml /etc/vector/vector.toml"
+      "sudo cp /tmp/configs/vector-config/vector.toml /etc/vector/vector.toml",
+      "sudo cp /tmp/configs/osquery-config/osquery.conf /etc/osquery/osquery.conf",
     ]
   }
 
-  provisioner "shell" {
-    environment_vars = [
-      "OSQUERY_VERSION=${var.osquery_version}",
-    ]
-    script = "${path.root}/setup_osquery.sh"
-  }
+  #################### 
+  # Post-processors
+  #################### 
 
   post-processor "manifest" {
     output = "${var.image_name}.packer-manifest.json"
