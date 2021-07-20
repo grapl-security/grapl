@@ -41,7 +41,7 @@ variable "nomad_version" {
 variable "vector_version" {
   description = "Version of Vector to use"
   type        = string
-  default     = "0.15.0"
+  default     = "0.14.0"
 }
 
 variable "git_sha" {
