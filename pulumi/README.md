@@ -54,7 +54,7 @@ the configuration will be pulled from the `Pulumi.local-grapl.yaml`
 file that already exists within this repository.
 
 ```sh
-cd grapl
+cd $GRAPL_ROOT/pulumi/grapl
 pulumi stack init local-grapl
 ```
 
@@ -75,11 +75,18 @@ set `PULUMI_CONFIG_PASSPHRASE` accordingly.
 Note that developer "sandboxes" like this are __not__ currently
 managed by our Pulumi SaaS account.
 
-```
-cd grapl
+```sh
+export STACK_NAME=<NAME>
+cd $GRAPL_ROOT/pulumi/grapl
 pulumi login --local
-pulumi stack init <NAME>
+pulumi stack init "${STACK_NAME}"
 pulumi config set aws:region us-east-1
+
+# Copy some required artifacts - namely AMIs - from `origin/rc`
+../bin/copy_artifacts_from_rc.sh "${STACK_NAME}"
+
+# You likely want to remove non-required artifacts from your stackfile now
+vim "Pulumi.${STACK_NAME}.yaml"
 ```
 
 Then, you should set your `AWS_PROFILE` in your environment, and then

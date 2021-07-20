@@ -69,6 +69,7 @@ services:
   # Python Services
   ########################################################################
 
+  # should match `pulumi/infra/analyzer_executor.py`'s GraplDockerBuild
   analyzer-executor:
     image: grapl/analyzer-executor:${TAG:-latest}
     build:

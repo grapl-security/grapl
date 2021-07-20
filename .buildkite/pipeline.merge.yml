@@ -8,6 +8,7 @@ steps:
     plugins:
       - chronotc/monorepo-diff#v2.0.4:
           diff: .buildkite/shared/scripts/diff.sh
+          log_level: "debug"
           watch:
             - path:
                 - "src/rust/" # This is not minimal, obviously
@@ -25,6 +26,7 @@ steps:
     plugins:
       - chronotc/monorepo-diff#v2.0.4:
           diff: .buildkite/shared/scripts/diff.sh
+          log_level: "debug"
           watch:
             - path:
                 - "src/js/" # This is not minimal, obviously
@@ -79,6 +81,7 @@ steps:
     plugins:
       - chronotc/monorepo-diff#v2.0.4:
           diff: .buildkite/shared/scripts/diff.sh
+          log_level: "debug"
           watch:
             - path:
                 - "packer/"
@@ -90,19 +93,19 @@ steps:
                 label: ":pipeline: Upload AMI Build"
                 command: "buildkite-agent pipeline upload .buildkite/pipeline.merge.ami-build.yml"
 
-  - label: "Build UX Assets"
-    plugins:
-      - chronotc/monorepo-diff#v2.0.4:
-          diff: .buildkite/shared/scripts/diff.sh
-          log_level: "debug"
-          watch:
-            - path:
-                - "src/js/engagement_view"
-                - ".buildkite/scripts/build_and_upload_ux.sh"
-                - ".buildkite/pipeline.merge.yml" # just temporarily!
-              config:
-                command:
-                  - ".buildkite/scripts/build_and_upload_ux.sh"
+  # - label: ":thinking_face: UX Build?"
+  #   plugins:
+  #     - chronotc/monorepo-diff#v2.0.4:
+  #         diff: .buildkite/shared/scripts/diff.sh
+  #         log_level: "debug"
+  #         watch:
+  #           - path:
+  #               - "src/js/engagement_view/"
+  #               - ".buildkite/scripts/build_and_upload_ux.sh"
+  #               - ".buildkite/pipeline.merge.ux-build.yml"
+  #             config:
+  #               label: ":pipeline: Upload UX Build"
+  #               command: "buildkite-agent pipeline upload .buildkite/pipeline.merge.ux-build.yml"
 
   - wait
 
