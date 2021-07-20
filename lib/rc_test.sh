@@ -74,12 +74,13 @@ tearDown() {
 }
 
 test_add_artifacts_with_artifacts() {
-    add_artifacts cicd/production '{"app1":"v1.0.0","app2":"v1.2.0"}'
+    add_artifacts cicd/production '{"app1":"v1.0.0","app2":"v1.2.0","nested_map":{"k":"v"}}'
 
     expected=$(
         cat << EOF
 pulumi config set --path artifacts.app1 v1.0.0 --cwd=pulumi/cicd --stack=grapl/cicd/production
 pulumi config set --path artifacts.app2 v1.2.0 --cwd=pulumi/cicd --stack=grapl/cicd/production
+pulumi config set --path artifacts.nested_map.k v --cwd=pulumi/cicd --stack=grapl/cicd/production
 EOF
     )
 
