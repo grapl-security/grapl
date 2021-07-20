@@ -1,14 +1,14 @@
 config:
   aws:region: us-east-1
   grapl:artifacts:
-    analyzer-dispatcher: 20210719235037-d86713c9
-    analyzer-executor: 20210719235037-d86713c9
+    analyzer-dispatcher: 20210720145336-a85c54d1
+    analyzer-executor: 20210720145336-a85c54d1
     dgraph-ttl: 20210706192702-6001e5a3
     e2e-test-runner: 20210706192702-6001e5a3
     engagement-creator: 20210706192702-6001e5a3
     engagement-edge: 20210706192702-6001e5a3
-    graph-merger: 20210719235037-d86713c9
-    graphql-endpoint: 20210719235037-d86713c9
+    graph-merger: 20210720145336-a85c54d1
+    graphql-endpoint: 20210720145336-a85c54d1
     grapl-nomad-consul-client:
       us-east-1: ami-066bf0862dba44f54
       us-east-2: ami-0884a50a2813c5b2a
@@ -19,14 +19,15 @@ config:
       us-east-2: ami-0f4c70b31c19b9091
       us-west-1: ami-0071b8f0ef514b585
       us-west-2: ami-0731431cd32c71d34
+    grapl-ux: 20210720145336-a85c54d1
     metric-forwarder: 20210706192702-6001e5a3
-    model-plugin-deployer: 20210719235037-d86713c9
-    node-identifier: 20210719235037-d86713c9
-    node-identifier-retry: 20210719235037-d86713c9
+    model-plugin-deployer: 20210720145336-a85c54d1
+    node-identifier: 20210720145336-a85c54d1
+    node-identifier-retry: 20210720145336-a85c54d1
     node-identifier-retry-handler: 20210706190216-95cec5cb
-    osquery-subgraph-generator: 20210719235037-d86713c9
+    osquery-subgraph-generator: 20210720145336-a85c54d1
     provisioner: 20210706192702-6001e5a3
-    sysmon-subgraph-generator: 20210719235037-d86713c9
+    sysmon-subgraph-generator: 20210720145336-a85c54d1
     ux-router: 20210706192702-6001e5a3
   grapl:env_vars:
     analyzer-dispatcher:
