@@ -214,11 +214,10 @@ build {
     script = "${path.root}/setup_vector.sh"
   }
 
-  # `vector` invokes will need to specify this config, like
-  # `vector -c /tmp/vector-config/vector.toml`
   provisioner "file" {
-    source      = "${path.root}/vector-config"
-    destination = "/tmp/"
+    # Default config spot for Vector
+    source      = "${path.root}/vector-config/vector.toml"
+    destination = "/etc/vector/vector.toml"
   }
 
   post-processor "manifest" {
