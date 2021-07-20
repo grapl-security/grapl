@@ -91,8 +91,7 @@ def _require_env_var(key: str) -> str:
     return value
 
 
-# Boy, this env name was not forward-thinking
-OPERATIONAL_ALARMS_EMAIL = _require_env_var("GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL")
+OPERATIONAL_ALARMS_EMAIL = _require_env_var("GRAPL_OPERATIONAL_ALARMS_EMAIL")
 
 
 def configurable_envvar(service_name: str, var: str) -> str:
