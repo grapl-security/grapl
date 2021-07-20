@@ -20,7 +20,7 @@ config:
   aws:skipCredentialsValidation: "true"
   aws:skipRequestingAccountId: "true"
   grapl:MG_ALPHAS: dgraph.grapl.test:9080
-  grapl:GRAPL_CDK_OPERATIONAL_ALARMS_EMAIL: "fake-ops-email@fake.domain"
+  grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: "fake-ops-email@fake.domain"
   grapl:GRAPL_API_HOST: api.grapl.test
   kafka:bootstrapServers:
     - "kafka-broker:9092"
