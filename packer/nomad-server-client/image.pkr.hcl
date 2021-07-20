@@ -173,7 +173,7 @@ build {
 
   provisioner "shell" {
     inline = [
-      "sudo yum install -y git",
+      "sudo yum install --assumeyes git",
     ]
   }
 
