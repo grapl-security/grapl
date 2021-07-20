@@ -9,7 +9,7 @@ readonly UNDERLINE="\\u001b[4m"
 
 # Additional constants
 readonly python=python3
-readonly virtualenv=build-support/grapl-venv
+readonly virtualenv=build-support/venv
 readonly pip="${virtualenv}/bin/pip"
 readonly requirements_file=3rdparty/python/requirements.txt
 readonly constraints_file=3rdparty/python/constraints.txt
@@ -70,7 +70,7 @@ function exit_message() {
     log
     log "Alternatively, if using 'direnv', add the following 2 lines to an '.envrc' file in the repository root:"
     log
-    log "export VIRTUAL_ENV=build-support/grapl-venv"
+    log "export VIRTUAL_ENV=${virtualenv}"
     log "PATH_add \${VIRTUAL_ENV}/bin"
 }
 
