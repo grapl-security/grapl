@@ -44,6 +44,15 @@ _validate_deployment_name()
 # Local Grapl (as opposed to any other real deployment)
 LOCAL_GRAPL = DEPLOYMENT_NAME == "local-grapl"
 
+# A "real" deployment is one that will be deployed in our CI/CD
+# environment, not a developer sandbox environment.
+#
+# (At the moment, we only have "testing"; this can grow to include
+# other deployments in the future. Another option would be to declare
+# a convention for developer sandbox environments and have logic pivot
+# on that, instead.)
+REAL_DEPLOYMENT = DEPLOYMENT_NAME in ("testing")
+
 # For importing some objects, we have to construct a URL, ARN, etc
 # that includes the AWS account ID.
 AWS_ACCOUNT_ID = "000000000000" if LOCAL_GRAPL else aws.get_caller_identity().account_id
