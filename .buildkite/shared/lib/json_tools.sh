@@ -14,8 +14,8 @@ flatten_json() {
     local -r input_json="${1}"
     # https://stackoverflow.com/a/37557003
     jq -r '
-        . as $in 
-        | reduce leaf_paths as $path (
+        . as $in
+        | reduce paths(scalars) as $path (
             {};
             . + { ($path | map(tostring) | join(".")): $in | getpath($path) }
         )
