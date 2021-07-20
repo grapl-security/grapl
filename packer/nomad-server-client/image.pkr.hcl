@@ -57,7 +57,7 @@ variable "aws_build_region" {
 }
 
 ####################
-# Program Versions
+# Software Versions
 ####################
 
 variable "terraform_aws_nomad_tag" {
@@ -188,7 +188,7 @@ build {
   }
 
   #################### 
-  # Install programs
+  # Install software
   #################### 
 
   provisioner "shell" {

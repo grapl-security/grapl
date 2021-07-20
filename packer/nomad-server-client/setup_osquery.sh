@@ -12,5 +12,6 @@ sudo yum-config-manager --enable osquery-s3-rpm-repo
 
 sudo yum install --assumeyes osquery
 
-# Ensure it's all working correctly
+# Ensure it's all working correctly.
 osqueryi --version
+# Yes, the `i` at the end is not a typo
