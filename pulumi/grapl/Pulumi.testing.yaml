@@ -1,33 +1,34 @@
 config:
   aws:region: us-east-1
+  grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: operational-alarms@graplsecurity.com
   grapl:artifacts:
-    analyzer-dispatcher: 20210720182617-f1ba6cbd
-    analyzer-executor: 20210720182617-f1ba6cbd
+    analyzer-dispatcher: 20210720210036-578c74ea
+    analyzer-executor: 20210720210036-578c74ea
     dgraph-ttl: 20210706192702-6001e5a3
     e2e-test-runner: 20210706192702-6001e5a3
     engagement-creator: 20210706192702-6001e5a3
     engagement-edge: 20210706192702-6001e5a3
-    graph-merger: 20210720182617-f1ba6cbd
-    graphql-endpoint: 20210720182617-f1ba6cbd
+    graph-merger: 20210720210036-578c74ea
+    graphql-endpoint: 20210720210036-578c74ea
     grapl-nomad-consul-client:
-      us-east-1: ami-066bf0862dba44f54
-      us-east-2: ami-0884a50a2813c5b2a
-      us-west-1: ami-0668c5bb82b544ed3
-      us-west-2: ami-0e0ec76665d48f4f8
+      us-east-1: ami-0d0a900b5ff6adfe0
+      us-east-2: ami-0f6fb6919cb54cf7e
+      us-west-1: ami-094d60ca6553b464f
+      us-west-2: ami-00948eb36889d6ba8
     grapl-nomad-consul-server:
-      us-east-1: ami-0a199a26c1df6c1aa
-      us-east-2: ami-0f4c70b31c19b9091
-      us-west-1: ami-0071b8f0ef514b585
-      us-west-2: ami-0731431cd32c71d34
+      us-east-1: ami-0a19f32f287118723
+      us-east-2: ami-0bc1c40498209247a
+      us-west-1: ami-0b28ebf3a9c3ffbae
+      us-west-2: ami-02e94e6ce289ec79e
     grapl-ux: 20210720145336-a85c54d1
     metric-forwarder: 20210706192702-6001e5a3
-    model-plugin-deployer: 20210720182617-f1ba6cbd
-    node-identifier: 20210720182617-f1ba6cbd
-    node-identifier-retry: 20210720182617-f1ba6cbd
+    model-plugin-deployer: 20210720210036-578c74ea
+    node-identifier: 20210720210036-578c74ea
+    node-identifier-retry: 20210720210036-578c74ea
     node-identifier-retry-handler: 20210706190216-95cec5cb
-    osquery-subgraph-generator: 20210720182617-f1ba6cbd
+    osquery-subgraph-generator: 20210720210036-578c74ea
     provisioner: 20210706192702-6001e5a3
-    sysmon-subgraph-generator: 20210720182617-f1ba6cbd
+    sysmon-subgraph-generator: 20210720210036-578c74ea
     ux-router: 20210706192702-6001e5a3
   grapl:env_vars:
     analyzer-dispatcher:

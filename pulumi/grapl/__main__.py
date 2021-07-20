@@ -13,7 +13,7 @@ from infra.api import Api
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
-from infra.config import DEPLOYMENT_NAME, LOCAL_GRAPL
+from infra.config import DEPLOYMENT_NAME, LOCAL_GRAPL, REAL_DEPLOYMENT
 from infra.dgraph_cluster import DgraphCluster, LocalStandInDgraphCluster
 from infra.dgraph_ttl import DGraphTTL
 from infra.e2e_test_runner import E2eTestRunner
@@ -45,10 +45,11 @@ def _create_dgraph_cluster(network: Network) -> DgraphCluster:
 
 def main() -> None:
 
-    if not LOCAL_GRAPL:
+    if not (LOCAL_GRAPL or REAL_DEPLOYMENT):
         # Fargate services build their own images and need this
         # variable currently. We don't want this to be checked in
-        # Local Grapl, though.
+        # Local Grapl, or "real" deployments, though; only developer
+        # sandboxes.
         if not os.getenv("DOCKER_BUILDKIT"):
             raise KeyError("Please re-run with 'DOCKER_BUILDKIT=1'")
 
