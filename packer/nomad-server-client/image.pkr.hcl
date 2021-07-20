@@ -38,6 +38,12 @@ variable "nomad_version" {
   default     = "1.1.1"
 }
 
+variable "vector_version" {
+  description = "Version of Vector to use"
+  type        = string
+  default     = "0.15.0"
+}
+
 variable "git_sha" {
   description = "The git SHA of the commit the AMI is being generated from. If present, will be used to tag the AMI."
   type        = string
@@ -167,7 +173,7 @@ build {
 
   provisioner "shell" {
     inline = [
-      "sudo yum install -y git",
+      "sudo yum install --assumeyes git",
     ]
   }
 
@@ -181,23 +187,28 @@ build {
     script = "${path.root}/setup_nomad_consul.sh"
   }
 
-  # Copy Nomad configs to a temp spot on its way to `/opt/nomad/config`
-  provisioner "file" {
-    source      = "${path.root}/nomad-config"
-    destination = "/tmp/"
+  provisioner "shell" {
+    environment_vars = [
+      "VECTOR_VERSION=${var.vector_version}",
+    ]
+    script = "${path.root}/setup_vector.sh"
   }
 
-  # Copy Consul configs to a temp spot on its way to `/opt/consul/config`
+  # Copy Nomad/Consul/Vector/etc configs to a temp spot.
+  # We can't copy directly into, say, `/opt` because we need sudo perms.
   provisioner "file" {
-    source      = "${path.root}/consul-config"
-    destination = "/tmp/"
+    source      = "${path.root}/configs"
+    destination = "/tmp/configs"
   }
 
+  # Copy the above configs into their final spots
   provisioner "shell" {
     inline = [
       # Only copy <the client> or <the server> file names
-      "sudo cp /tmp/nomad-config/${local.config_file_names} /opt/nomad/config",
-      "sudo cp /tmp/consul-config/${local.config_file_names} /opt/consul/config",
+      "sudo cp /tmp/configs/nomad-config/${local.config_file_names} /opt/nomad/config",
+      "sudo cp /tmp/configs/consul-config/${local.config_file_names} /opt/consul/config",
+
+      "sudo cp /tmp/configs/vector-config/vector.toml /etc/vector/vector.toml"
     ]
   }
 
