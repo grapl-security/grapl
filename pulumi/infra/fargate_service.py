@@ -6,6 +6,7 @@ import pulumi_docker as docker
 from infra.cache import Cache
 from infra.config import (
     DEPLOYMENT_NAME,
+    REAL_DEPLOYMENT,
     SERVICE_LOG_RETENTION_DAYS,
     configured_version_for,
 )
@@ -185,7 +186,15 @@ class _AWSFargateService(pulumi.ComponentResource):
             ),
             opts=pulumi.ResourceOptions(parent=self.execution_role),
         )
-        attach_policy(ECR_TOKEN_POLICY, self.execution_role)
+
+        # This is only needed if we're actually pulling from ECR,
+        # which we don't do in production (because we're pulling from
+        # Cloudsmith). The only time we use ECR is when we build a
+        # Docker container locally, and that'll only happen for
+        # individual developer sandbox deployments.
+        # TODO: This feels hacky; consider other ways to model this.
+        if not REAL_DEPLOYMENT:
+            attach_policy(ECR_TOKEN_POLICY, self.execution_role)
 
         forwarder.subscribe_to_log_group(name, self.log_group)
 
