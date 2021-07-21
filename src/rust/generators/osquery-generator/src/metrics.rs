@@ -7,13 +7,13 @@ use grapl_observe::metric_reporter::{
 };
 
 #[derive(Clone)]
-pub struct OSQuerySubgraphGeneratorMetrics {
+pub struct OSQueryGeneratorMetrics {
     metric_reporter: MetricReporter<Stdout>,
 }
 
-impl OSQuerySubgraphGeneratorMetrics {
-    pub fn new(service_name: &str) -> OSQuerySubgraphGeneratorMetrics {
-        OSQuerySubgraphGeneratorMetrics {
+impl OSQueryGeneratorMetrics {
+    pub fn new(service_name: &str) -> OSQueryGeneratorMetrics {
+        OSQueryGeneratorMetrics {
             metric_reporter: MetricReporter::<Stdout>::new(service_name),
         }
     }
@@ -21,7 +21,7 @@ impl OSQuerySubgraphGeneratorMetrics {
     pub fn report_subgraph_generation(&mut self) {
         self.metric_reporter
             .gauge(
-                "osquery-subgraph-generation",
+                "osquery-generation",
                 1.0,
                 &[TagPair(common_strs::STATUS, common_strs::SUCCESS)],
             )

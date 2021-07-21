@@ -32,7 +32,7 @@ services=(
     model-plugin-deployer
     node-identifier
     node-identifier-retry
-    osquery-subgraph-generator
+    osquery-generator
     sysmon-generator
 )
 

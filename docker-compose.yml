@@ -206,8 +206,8 @@ services:
       redis:
         condition: service_healthy
 
-  osquery-subgraph-generator:
-    image: grapl/osquery-subgraph-generator:${TAG:-latest}
+  osquery-generator:
+    image: grapl/osquery-generator:${TAG:-latest}
     tty: false
     environment:
       <<: *aws-env

@@ -20,12 +20,12 @@ services:
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
-  osquery-subgraph-generator:
-    image: grapl/osquery-subgraph-generator:${TAG:-latest}
+  osquery-generator:
+    image: grapl/osquery-generator:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile
-      target: osquery-subgraph-generator-deploy
+      target: osquery-generator-deploy
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
 

@@ -1,11 +1,11 @@
 [package]
-name = "osquery-subgraph-generator"
+name = "osquery-generator"
 version = "0.1.0"
 authors = ["Nathanial Lattimer <nlattimer@graplsecurity.com>"]
 edition = "2018"
 
 [lib]
-name = "osquery_subgraph_generator_lib"
+name = "osquery_generator_lib"
 
 [dev-dependencies]
 criterion = { version = "0.3", features = ["async_tokio", "html_reports"] }

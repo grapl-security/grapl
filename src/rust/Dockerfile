@@ -153,8 +153,8 @@ FROM rust-dist AS sysmon-generator-deploy
 COPY --from=build /dist/sysmon-generator /
 CMD ["/sysmon-generator"]
 
-# osquery-subgraph-generator
-FROM rust-dist AS osquery-subgraph-generator-deploy
+# osquery-generator
+FROM rust-dist AS osquery-generator-deploy
 
-COPY --from=build /dist/osquery-subgraph-generator /
-CMD ["/osquery-subgraph-generator"]
+COPY --from=build /dist/osquery-generator /
+CMD ["/osquery-generator"]

@@ -6,7 +6,7 @@ members = [
     "./endpoint-plugin",
     "./generators/generic-subgraph-generator",
     "./generators/graph-generator-lib",
-    "./generators/osquery-subgraph-generator",
+    "./generators/osquery-generator",
     "./generators/sysmon-generator",
     "./graph-descriptions",
     "./graph-merger",

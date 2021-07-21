@@ -4,9 +4,9 @@ use criterion::{
     Criterion,
 };
 use grapl_service::decoder::ndjson::NdjsonDecoder;
-use osquery_subgraph_generator_lib::{
-    generator::OSQuerySubgraphGenerator,
-    metrics::OSQuerySubgraphGeneratorMetrics,
+use osquery_generator_lib::{
+    generator::OSQueryGenerator,
+    metrics::OSQueryGeneratorMetrics,
 };
 use sqs_executor::{
     cache::NopCache,
@@ -21,12 +21,10 @@ use tokio::runtime::Runtime;
 const OSQUERY_SAMPLE_DATA_FILE: &'static str = "sample_data/osquery_data.log";
 
 async fn osquery_generator_process_events(
-    osquery_test_events: <OSQuerySubgraphGenerator<NopCache> as EventHandler>::InputEvent,
+    osquery_test_events: <OSQueryGenerator<NopCache> as EventHandler>::InputEvent,
 ) {
-    let mut generator = OSQuerySubgraphGenerator::new(
-        NopCache {},
-        OSQuerySubgraphGeneratorMetrics::new("OSQUERY_TEST"),
-    );
+    let mut generator =
+        OSQueryGenerator::new(NopCache {}, OSQueryGeneratorMetrics::new("OSQUERY_TEST"));
 
     let mut completed_events = CompletedEvents { identities: vec![] };
 
