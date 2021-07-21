@@ -31,19 +31,19 @@ impl Status {
 }
 
 #[derive(Clone)]
-pub struct SysmonSubgraphGeneratorMetrics {
+pub struct SysmonGeneratorMetrics {
     metric_reporter: MetricReporter<Stdout>,
 }
 
-impl SysmonSubgraphGeneratorMetrics {
-    pub fn new(service_name: &str) -> SysmonSubgraphGeneratorMetrics {
-        SysmonSubgraphGeneratorMetrics {
+impl SysmonGeneratorMetrics {
+    pub fn new(service_name: &str) -> SysmonGeneratorMetrics {
+        SysmonGeneratorMetrics {
             metric_reporter: MetricReporter::<Stdout>::new(service_name),
         }
     }
 }
 
-impl SysmonSubgraphGeneratorMetrics {
+impl SysmonGeneratorMetrics {
     #[tracing::instrument(skip(self, event_result))]
     pub fn report_handle_event_success<T, E>(
         &mut self,
@@ -68,7 +68,7 @@ impl SysmonSubgraphGeneratorMetrics {
 
         self.metric_reporter
             .gauge(
-                "sysmon-subgraph-generation",
+                "sysmon-generation",
                 1.0,
                 &[TagPair(common_strs::STATUS, status)],
             )

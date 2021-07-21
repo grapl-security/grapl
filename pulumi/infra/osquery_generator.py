@@ -19,10 +19,10 @@ class OSQueryGenerator(FargateService):
             "osquery-generator",
             image=GraplDockerBuild(
                 dockerfile=str(repository_path("src/rust/Dockerfile")),
-                target="osquery-subgraph-generator-deploy",
+                target="osquery-generator-deploy",
                 context=str(repository_path("src")),
             ),
-            command="/osquery-subgraph-generator",
+            command="/osquery-generator",
             env={
                 **configurable_envvars(
                     "osquery-generator", ["RUST_LOG", "RUST_BACKTRACE"]

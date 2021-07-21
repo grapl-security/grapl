@@ -11,21 +11,21 @@ services:
   # Rust Services
   ########################################################################
 
-  sysmon-subgraph-generator:
-    image: grapl/sysmon-subgraph-generator:${TAG:-latest}
+  sysmon-generator:
+    image: grapl/sysmon-generator:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile
-      target: sysmon-subgraph-generator-deploy
+      target: sysmon-generator-deploy
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
-  osquery-subgraph-generator:
-    image: grapl/osquery-subgraph-generator:${TAG:-latest}
+  osquery-generator:
+    image: grapl/osquery-generator:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile
-      target: osquery-subgraph-generator-deploy
+      target: osquery-generator-deploy
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
 

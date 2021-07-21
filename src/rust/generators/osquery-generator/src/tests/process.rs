@@ -7,15 +7,15 @@ use sqs_executor::{
 };
 
 use crate::{
-    generator::OSQuerySubgraphGenerator,
-    metrics::OSQuerySubgraphGeneratorMetrics,
+    generator::OSQueryGenerator,
+    metrics::OSQueryGeneratorMetrics,
     tests::utils,
 };
 
 #[tokio::test]
 async fn test_subgraph_generation_process_create() {
-    let metrics = OSQuerySubgraphGeneratorMetrics::new("osquery-subgraph-generator");
-    let mut generator = OSQuerySubgraphGenerator::new(NopCache {}, metrics);
+    let metrics = OSQueryGeneratorMetrics::new("osquery-generator");
+    let mut generator = OSQueryGenerator::new(NopCache {}, metrics);
 
     let logs = utils::read_osquery_test_data("process_create.zstd").await;
 
