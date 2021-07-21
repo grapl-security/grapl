@@ -3,9 +3,9 @@ pub use grapl_service::serialization::{
     GraphDescriptionSerializer,
     GraphDescriptionSerializerError,
 };
-use sysmon_subgraph_generator_lib::{
-    generator::SysmonSubgraphGenerator,
-    metrics::SysmonSubgraphGeneratorMetrics,
+use sysmon_generator_lib::{
+    generator::SysmonGenerator,
+    metrics::SysmonGeneratorMetrics,
     serialization::SysmonDecoder,
 };
 
@@ -22,9 +22,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     run_graph_generator(
         env,
-        move |cache| {
-            SysmonSubgraphGenerator::new(cache, SysmonSubgraphGeneratorMetrics::new(&service_name))
-        },
+        move |cache| SysmonGenerator::new(cache, SysmonGeneratorMetrics::new(&service_name)),
         SysmonDecoder::default(),
     )
     .await;

@@ -21,10 +21,10 @@ class SysmonGenerator(FargateService):
             "sysmon-generator",
             image=GraplDockerBuild(
                 dockerfile=str(repository_path("src/rust/Dockerfile")),
-                target="sysmon-subgraph-generator-deploy",
+                target="sysmon-generator-deploy",
                 context=str(repository_path("src")),
             ),
-            command="/sysmon-subgraph-generator",
+            command="/sysmon-generator",
             env={
                 **configurable_envvars(
                     "sysmon-generator", ["RUST_LOG", "RUST_BACKTRACE"]

@@ -14,7 +14,7 @@ use sqs_executor::{
 };
 
 use crate::{
-    metrics::SysmonSubgraphGeneratorMetrics,
+    metrics::SysmonGeneratorMetrics,
     models::SysmonTryFrom,
 };
 
@@ -39,25 +39,25 @@ impl CheckedError for SysmonGeneratorError {
 }
 
 #[derive(Clone)]
-pub struct SysmonSubgraphGenerator<C>
+pub struct SysmonGenerator<C>
 where
     C: Cache + Clone + Send + Sync + 'static,
 {
     cache: C,
-    metrics: SysmonSubgraphGeneratorMetrics,
+    metrics: SysmonGeneratorMetrics,
 }
 
-impl<C> SysmonSubgraphGenerator<C>
+impl<C> SysmonGenerator<C>
 where
     C: Cache + Clone + Send + Sync + 'static,
 {
-    pub fn new(cache: C, metrics: SysmonSubgraphGeneratorMetrics) -> Self {
+    pub fn new(cache: C, metrics: SysmonGeneratorMetrics) -> Self {
         Self { cache, metrics }
     }
 }
 
 #[async_trait]
-impl<C> EventHandler for SysmonSubgraphGenerator<C>
+impl<C> EventHandler for SysmonGenerator<C>
 where
     C: Cache + Clone + Send + Sync + 'static,
 {

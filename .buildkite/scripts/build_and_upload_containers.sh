@@ -33,7 +33,7 @@ services=(
     node-identifier
     node-identifier-retry
     osquery-subgraph-generator
-    sysmon-subgraph-generator
+    sysmon-generator
 )
 
 cloudsmith_tag() {

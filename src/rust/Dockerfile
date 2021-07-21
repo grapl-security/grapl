@@ -147,11 +147,11 @@ FROM rust-dist AS node-identifier-retry-deploy
 COPY --from=build /dist/node-identifier-retry /
 CMD ["/node-identifier-retry"]
 
-# sysmon-subgraph-generator
-FROM rust-dist AS sysmon-subgraph-generator-deploy
+# sysmon-generator
+FROM rust-dist AS sysmon-generator-deploy
 
-COPY --from=build /dist/sysmon-subgraph-generator /
-CMD ["/sysmon-subgraph-generator"]
+COPY --from=build /dist/sysmon-generator /
+CMD ["/sysmon-generator"]
 
 # osquery-subgraph-generator
 FROM rust-dist AS osquery-subgraph-generator-deploy

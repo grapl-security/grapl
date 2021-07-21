@@ -11,9 +11,9 @@ use sqs_executor::{
         EventHandler,
     },
 };
-use sysmon_subgraph_generator_lib::{
-    generator::SysmonSubgraphGenerator,
-    metrics::SysmonSubgraphGeneratorMetrics,
+use sysmon_generator_lib::{
+    generator::SysmonGenerator,
+    metrics::SysmonGeneratorMetrics,
     serialization::SysmonDecoder,
 };
 use tokio::runtime::Runtime;
@@ -21,12 +21,10 @@ use tokio::runtime::Runtime;
 const SYSMON_SAMPLE_DATA_FILE: &'static str = "sample_data/events6.xml";
 
 async fn sysmon_generator_process_events(
-    sysmon_test_events: <SysmonSubgraphGenerator<NopCache> as EventHandler>::InputEvent,
+    sysmon_test_events: <SysmonGenerator<NopCache> as EventHandler>::InputEvent,
 ) {
-    let mut generator = SysmonSubgraphGenerator::new(
-        NopCache {},
-        SysmonSubgraphGeneratorMetrics::new("SYSMON_TEST"),
-    );
+    let mut generator =
+        SysmonGenerator::new(NopCache {}, SysmonGeneratorMetrics::new("SYSMON_TEST"));
 
     let mut completed_events = CompletedEvents { identities: vec![] };
 

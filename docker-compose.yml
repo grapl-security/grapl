@@ -186,8 +186,8 @@ services:
   # Rust Services
   ########################################################################
 
-  sysmon-subgraph-generator:
-    image: grapl/sysmon-subgraph-generator:${TAG:-latest}
+  sysmon-generator:
+    image: grapl/sysmon-generator:${TAG:-latest}
     tty: false
     environment:
       <<: *aws-env

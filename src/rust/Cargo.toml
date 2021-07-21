@@ -7,7 +7,7 @@ members = [
     "./generators/generic-subgraph-generator",
     "./generators/graph-generator-lib",
     "./generators/osquery-subgraph-generator",
-    "./generators/sysmon-subgraph-generator",
+    "./generators/sysmon-generator",
     "./graph-descriptions",
     "./graph-merger",
     "./grapl",
