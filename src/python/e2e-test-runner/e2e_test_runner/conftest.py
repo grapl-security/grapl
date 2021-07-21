@@ -5,7 +5,7 @@ import pytest
 
 # Applies it to every test function automatically.
 @pytest.fixture(scope="function", autouse=True)
-def set_noisy_loggers_to_log_level_info(caplog):
+def set_noisy_loggers_to_log_level_info(caplog: pytest.LogCaptureFixture) -> None:
     # We globally declare every logger should use DEBUG in `exec_pytest`,
     # and here we piecemeal set some of the less useful loggers to a
     # different level.
