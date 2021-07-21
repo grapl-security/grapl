@@ -2,7 +2,6 @@ import logging
 from typing import Any, Dict, Mapping
 from unittest import TestCase
 
-import pytest
 from grapl_analyzerlib.nodes.lens import LensQuery, LensView
 from grapl_tests_common.clients.engagement_edge_client import EngagementEdgeClient
 from grapl_tests_common.clients.graphql_endpoint_client import GraphqlEndpointClient
