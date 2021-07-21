@@ -158,3 +158,17 @@ steps:
               config:
                 label: ":pipeline: Upload AMI Test"
                 command: "buildkite-agent pipeline upload .buildkite/pipeline.verify.ami-test.yml"
+
+
+  - label: ":thinking_face::rust: Cargo Audit?"
+    plugins:
+      - chronotc/monorepo-diff#v2.0.4:
+          diff: .buildkite/shared/scripts/diff.sh
+          log_level: "debug"
+          watch:
+            - path:
+                - "**/Cargo.toml"
+                - "**/Cargo.lock"
+              config:
+                label: ":pipeline: Upload Cargo Audit"
+                command: ".buildkite/pipeline.cargo-audit.sh | buildkite-agent pipeline upload"
