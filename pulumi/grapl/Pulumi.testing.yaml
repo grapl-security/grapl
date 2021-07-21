@@ -27,10 +27,8 @@ config:
     node-identifier-retry: 20210721190018-24bfd1a8
     node-identifier-retry-handler: 20210706190216-95cec5cb
     osquery-generator: 20210721190018-24bfd1a8
-    osquery-subgraph-generator: 20210721183353-0e7f674d
     provisioner: 20210721183353-0e7f674d
     sysmon-generator: 20210721190018-24bfd1a8
-    sysmon-subgraph-generator: 20210721183353-0e7f674d
     ux-router: 20210721183353-0e7f674d
   grapl:env_vars:
     analyzer-dispatcher:
