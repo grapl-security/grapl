@@ -14,42 +14,42 @@ use sqs_executor::{
 };
 
 use crate::{
-    metrics::OSQuerySubgraphGeneratorMetrics,
+    metrics::OSQueryGeneratorMetrics,
     parsers::OSQueryEvent,
 };
 
 #[derive(Clone)]
-pub struct OSQuerySubgraphGenerator<C>
+pub struct OSQueryGenerator<C>
 where
     C: Cache + Clone + Send + Sync + 'static,
 {
     cache: C,
-    metrics: OSQuerySubgraphGeneratorMetrics,
+    metrics: OSQueryGeneratorMetrics,
 }
 
-impl<C> OSQuerySubgraphGenerator<C>
+impl<C> OSQueryGenerator<C>
 where
     C: Cache + Clone + Send + Sync + 'static,
 {
-    pub fn new(cache: C, metrics: OSQuerySubgraphGeneratorMetrics) -> Self {
+    pub fn new(cache: C, metrics: OSQueryGeneratorMetrics) -> Self {
         Self { cache, metrics }
     }
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum OSQuerySubgraphGeneratorError {}
+pub enum OSQueryGeneratorError {}
 
-impl CheckedError for OSQuerySubgraphGeneratorError {
+impl CheckedError for OSQueryGeneratorError {
     fn error_type(&self) -> Recoverable {
         Recoverable::Persistent
     }
 }
 
 #[async_trait]
-impl<C: Cache> EventHandler for OSQuerySubgraphGenerator<C> {
+impl<C: Cache> EventHandler for OSQueryGenerator<C> {
     type InputEvent = Vec<OSQueryEvent>;
     type OutputEvent = GraphDescription;
-    type Error = OSQuerySubgraphGeneratorError;
+    type Error = OSQueryGeneratorError;
 
     #[tracing::instrument(skip(self, events, completed))]
     async fn handle_event(

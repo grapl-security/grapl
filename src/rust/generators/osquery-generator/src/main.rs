@@ -1,7 +1,7 @@
 use graph_generator_lib::*;
-use osquery_subgraph_generator_lib::{
-    generator::OSQuerySubgraphGenerator,
-    metrics::OSQuerySubgraphGeneratorMetrics,
+use osquery_generator_lib::{
+    generator::OSQueryGenerator,
+    metrics::OSQueryGeneratorMetrics,
 };
 #[tokio::main]
 #[tracing::instrument]
@@ -16,12 +16,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     run_graph_generator(
         env,
-        move |cache| {
-            OSQuerySubgraphGenerator::new(
-                cache,
-                OSQuerySubgraphGeneratorMetrics::new(&service_name),
-            )
-        },
+        move |cache| OSQueryGenerator::new(cache, OSQueryGeneratorMetrics::new(&service_name)),
         grapl_service::decoder::NdjsonDecoder::default(),
     )
     .await;

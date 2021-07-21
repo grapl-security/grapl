@@ -2160,7 +2160,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "osquery-subgraph-generator"
+name = "osquery-generator"
 version = "0.1.0"
 dependencies = [
  "async-trait",
@@ -3376,7 +3376,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "sysmon-subgraph-generator"
+name = "sysmon-generator"
 version = "1.0.0"
 dependencies = [
  "async-trait",

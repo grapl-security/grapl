@@ -1,11 +1,11 @@
 [package]
-name = "sysmon-subgraph-generator"
+name = "sysmon-generator"
 version = "1.0.0"
 authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2018"
 
 [lib]
-name = "sysmon_subgraph_generator_lib"
+name = "sysmon_generator_lib"
 
 [dev-dependencies]
 criterion = { version = "0.3", features = ["async_tokio", "html_reports"] }

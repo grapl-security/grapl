@@ -32,8 +32,8 @@ services=(
     model-plugin-deployer
     node-identifier
     node-identifier-retry
-    osquery-subgraph-generator
-    sysmon-subgraph-generator
+    osquery-generator
+    sysmon-generator
 )
 
 cloudsmith_tag() {
