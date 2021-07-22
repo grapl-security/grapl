@@ -1,8 +1,8 @@
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut config = prost_build::Config::new();
-    println!("cargo:rerun-if-changed={}", "Cargo.toml");
-    println!("cargo:rerun-if-changed={}", "Cargo.lock");
-    println!("cargo:rerun-if-changed={}", "build.rs");
+    println!("cargo:rerun-if-changed=Cargo.toml");
+    println!("cargo:rerun-if-changed=Cargo.lock");
+    println!("cargo:rerun-if-changed=build.rs");
 
     change_on_dir("../../proto/")?;
     change_on_dir("src/")?;

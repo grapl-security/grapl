@@ -33,6 +33,12 @@ impl AnalyzerDispatchEvents {
     }
 }
 
+impl Default for AnalyzerDispatchEvents {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl From<Vec<AnalyzerDispatchEvent>> for AnalyzerDispatchEvents {
     fn from(events: Vec<AnalyzerDispatchEvent>) -> Self {
         Self { events }
