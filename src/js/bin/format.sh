@@ -28,14 +28,14 @@ printHelp() {
 
     Options:
 
-    -c|--check|--ci: Check the formatting of all js/ts code. Use this
-    in CI jobs. If no other options are given, this is the default
-    behavior.
+    -c|--check|--ci: Check the formatting of all js/ts/md code. Use
+    this in CI jobs. If no other options are given, this is the
+    default behavior.
 
     -h|--help: Print this help message.
 
-    -u|--update: Format all js/ts code. Use this after updating the
-    nightly version of js/ts used for formatting, updating
+    -u|--update: Format all js/ts/md code. Use this after updating
+    the nightly version of js/ts used for formatting, updating
     configuration options, or any other time you just want to make
     sure all the code is up to date.
 EOF
@@ -84,3 +84,10 @@ prettier \
     ${repo_root}/**/*.yaml \
     ${repo_root}/.buildkite/**/*.yml \
     ${repo_root}/.github/**/*.yml
+
+# No config for markdown
+prettier \
+    ${prettier_arg} \
+    --prose-wrap always \
+    --print-width 80 \
+    ${repo_root}"/{,!(**/(target|*venv)/**)}**/*.md"
