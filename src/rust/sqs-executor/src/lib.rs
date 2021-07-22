@@ -34,7 +34,7 @@ use rusoto_sqs::{
     Message as SqsMessage,
     Sqs,
 };
-use rust_proto::services::ServiceMessage;
+use rust_proto::pipeline::ServiceMessage;
 use s3_event_emitter::S3EventEmitter;
 use s3_event_retriever::S3PayloadRetriever;
 use tracing::{
@@ -292,7 +292,7 @@ async fn process_message<
 
             let mut envelopes = vec![];
             for event in events {
-                let envelope = rust_proto::services::Envelope {
+                let envelope = rust_proto::pipeline::Envelope {
                     metadata: Some(meta.clone()),
                     inner_type: OutputEventT::TYPE_NAME.to_string(),
                     inner_message: event,
@@ -347,7 +347,7 @@ async fn process_message<
 
             let mut envelopes = vec![];
             for event in events {
-                let envelope = rust_proto::services::Envelope {
+                let envelope = rust_proto::pipeline::Envelope {
                     metadata: Some(meta.clone()),
                     inner_type: OutputEventT::TYPE_NAME.to_string(),
                     inner_message: event,
