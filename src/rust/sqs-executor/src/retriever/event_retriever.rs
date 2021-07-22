@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use rust_proto::services::Metadata;
+use rust_proto::pipeline::Metadata;
 
 use crate::errors::CheckedError;
 

@@ -1,7 +1,7 @@
 use prost::Message;
 use rust_proto::{
     graph_descriptions::*,
-    services::ServiceMessage,
+    pipeline::ServiceMessage,
 };
 use serde::{
     Deserialize,

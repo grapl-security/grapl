@@ -25,7 +25,7 @@ use rusoto_s3::{
     S3,
 };
 use rusoto_sqs::Message as SqsMessage;
-use rust_proto::services::Metadata;
+use rust_proto::pipeline::Metadata;
 use tokio::{
     io::AsyncReadExt,
     time::error::Elapsed,
@@ -248,7 +248,7 @@ where
 
         debug!("Read s3 payload body");
 
-        let envelope: rust_proto::services::Envelope = prost::Message::decode(&body[..])?;
+        let envelope: rust_proto::pipeline::Envelope = prost::Message::decode(&body[..])?;
         let meta = envelope
             .metadata
             .expect("Metadata must be set at the front of the pipeline");

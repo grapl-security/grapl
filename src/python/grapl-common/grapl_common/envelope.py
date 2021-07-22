@@ -3,9 +3,9 @@ from __future__ import annotations
 import json
 import uuid
 
-from graplinc.grapl.api.services.v1beta1.types_pb2 import Envelope as ProtoEnvelope
-from graplinc.grapl.api.services.v1beta1.types_pb2 import Metadata as ProtoMetadata
-from graplinc.grapl.api.services.v1beta1.types_pb2 import ProtoUuidV4
+from graplinc.grapl.pipeline.v1beta1.types_pb2 import Envelope as ProtoEnvelope
+from graplinc.grapl.pipeline.v1beta1.types_pb2 import Metadata as ProtoMetadata
+from graplinc.grapl.pipeline.v1beta1.types_pb2 import ProtoUuidV4
 
 
 def proto_uuid_to_pyuuid(proto_uuid: ProtoUuidV4) -> uuid.UUID:

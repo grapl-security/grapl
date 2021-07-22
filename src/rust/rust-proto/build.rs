@@ -464,7 +464,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .compile_protos(
             &[
                 "../../proto/graplinc/grapl/api/graph/v1beta1/types.proto",
-                "../../proto/graplinc/grapl/api/services/v1beta1/types.proto",
+                "../../proto/graplinc/grapl/pipeline/v1beta1/types.proto",
             ],
             &["../../proto/"],
         )
