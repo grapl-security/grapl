@@ -7,10 +7,11 @@ from typing import List
 import pytest
 import requests
 from grapl_common.grapl_logger import get_module_grapl_logger
+from grapl_common.utils.primitive_convertors import to_bool
 from grapl_tests_common.dump_dynamodb import dump_dynamodb
 
 # Toggle if you want to dump databases, logs, etc.
-DUMP_ARTIFACTS = bool(environ.get("DUMP_ARTIFACTS", False))
+DUMP_ARTIFACTS = to_bool(environ.get("DUMP_ARTIFACTS", False))
 
 LOGGER = get_module_grapl_logger()
 GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL", "INFO")
