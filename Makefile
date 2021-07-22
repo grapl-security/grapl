@@ -368,7 +368,7 @@ up-detach: build-services ## Bring up local Grapl and detach to return control t
 	unset COMPOSE_FILE
 	docker-compose \
 		--file docker-compose.yml \
-		up --detach --force-recreate --always-recreate-deps
+		up --detach --force-recreate --always-recreate-deps --renew-anon-volumes
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
