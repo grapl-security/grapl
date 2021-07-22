@@ -10,7 +10,7 @@ use node_property::Property::{
 };
 
 pub use crate::graplinc::grapl::api::graph::v1beta1::*;
-use crate::services::ServiceMessage;
+use crate::pipeline::ServiceMessage;
 
 // A helper macro to generate `From` impl boilerplate.
 macro_rules ! impl_from_for_unit {
