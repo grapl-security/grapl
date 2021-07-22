@@ -2,7 +2,6 @@ import logging
 from typing import Any, Dict, Mapping
 
 from grapl_analyzerlib.nodes.lens import LensQuery, LensView
-from grapl_tests_common.clients.engagement_edge_client import EngagementEdgeClient
 from grapl_tests_common.clients.graphql_endpoint_client import GraphqlEndpointClient
 from grapl_tests_common.subset_equals import subset_equals
 from grapl_tests_common.wait import (
@@ -16,7 +15,7 @@ LENS_NAME = "DESKTOP-FVSHABR"
 GqlLensDict = Dict[str, Any]
 
 
-def test_expected_data_in_dgraph() -> None:
+def test_expected_data_in_dgraph(jwt: str) -> None:
     # There is some unidentified, nondeterministic failure with e2e.
     # We fall into one of three buckets:
     # - No lens
@@ -46,7 +45,7 @@ def test_expected_data_in_dgraph() -> None:
     # TODO: Consider using `pytest-order` to make this a separate test that
     # depends on the above test having been run.
 
-    gql_client = GraphqlEndpointClient(jwt=EngagementEdgeClient().get_jwt())
+    gql_client = GraphqlEndpointClient(jwt=jwt)
     wait_for_one(
         WaitForNoException(
             lambda: ensure_graphql_lens_scope_no_errors(gql_client, LENS_NAME)
