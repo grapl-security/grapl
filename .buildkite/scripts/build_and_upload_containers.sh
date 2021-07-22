@@ -23,13 +23,13 @@ export TAG
 # TODO: This name may change
 readonly CLOUDSMITH_DOCKER_REGISTRY="docker.cloudsmith.io/grapl/raw"
 
-# These are defined in docker-compose.build.yml
+# These are defined in docker-compose.build.yml. There are other
+# services defined in that file for other reasons; we do not need to
+# build them all.
 services=(
     analyzer-dispatcher
     analyzer-executor
     graph-merger
-    graphql-endpoint
-    model-plugin-deployer
     node-identifier
     node-identifier-retry
     osquery-generator
