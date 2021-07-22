@@ -6,7 +6,6 @@ env:
 # from our grapl/testing stack.
 
 steps:
-
   # TODO: replace this with something meaningful
   - label: "Hello World :earth_asia::earth_americas::earth_africa:"
     command:
