@@ -2,11 +2,11 @@
 
 ## Warnings
 
-**NOTE that setting up Grapl *will* incur AWS charges! This can amount to
-hundreds of dollars a month based on the configuration.**  This setup script is
+**NOTE that setting up Grapl _will_ incur AWS charges! This can amount to
+hundreds of dollars a month based on the configuration.** This setup script is
 designed for testing, and may include breaking changes in future versions,
 increased charges in future versions, or may otherwise require manually working
-with CloudFormation.  If you need a way to set up Grapl in a stable, forwards
+with CloudFormation. If you need a way to set up Grapl in a stable, forwards
 compatible manner, please get in contact with us directly.
 
 ## Preparation
@@ -42,7 +42,8 @@ You'll need to have the following dependencies installed:
   - your choice of the following:
     - `pip install awscli`
     - https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2-docker.html
-      - helpful alias: `alias aws='docker run --rm -it -v ~/.aws:/root/.aws -v $(pwd):/aws -e AWS_PROFILE amazon/aws-cli'`
+      - helpful alias:
+        `alias aws='docker run --rm -it -v ~/.aws:/root/.aws -v $(pwd):/aws -e AWS_PROFILE amazon/aws-cli'`
 
 ### Clone Grapl Git repository
 
@@ -88,14 +89,14 @@ We use the `graplctl` utility to manage Grapl in AWS.
 
 To install `graplctl` run the following command in the Grapl checkout root:
 
-``` bash
+```bash
 make graplctl
 ```
 
-This will build the `graplctl` binary and install it in the `./bin/`
-directory. You can familiarize yourself with `graplctl` by running
+This will build the `graplctl` binary and install it in the `./bin/` directory.
+You can familiarize yourself with `graplctl` by running
 
-``` bash
+```bash
 ./bin/graplctl --help
 ```
 
@@ -109,8 +110,8 @@ it as a parameter:
 
 ### How to spin up DGraph
 
-*Warning: these commands spin up infrastructure in your AWS
-account. Running these commands will incur charges.*
+_Warning: these commands spin up infrastructure in your AWS account. Running
+these commands will incur charges._
 
 To spin up DGraph with `graplctl`, execute the following from the Grapl root:
 
@@ -122,7 +123,7 @@ Note that we've selected `i3.large` instances for our DGraph database. If you'd
 like to choose a different instance class, you may see the available options by
 running:
 
-``` bash
+```bash
 bin/graplctl aws deploy --help
 ```
 
@@ -146,11 +147,11 @@ and execute the end-to-end tests in AWS.
 
 To deploy the test analyzers, run the following `graplctl` commands:
 
-``` bash
+```bash
 ./bin/graplctl upload analyzer --analyzer_main_py etc/local_grapl/unique_cmd_parent/main.py
 ```
 
-``` bash
+```bash
 ./bin/graplctl upload analyzer --analyzer_main_py etc/local_grapl/suspicious_svchost/main.py
 ```
 
@@ -160,7 +161,7 @@ Now Grapl is ready to analyze a test dataset.
 
 To upload the test data, run the following `graplctl` command:
 
-``` bash
+```bash
 ./bin/graplctl upload sysmon --logfile etc/sample_data/eventlog.xml
 ```
 
@@ -171,7 +172,7 @@ kick off the Grapl data pipeline.
 
 To execute the end-to-end tests, run the following `graplctl` command:
 
-``` bash
+```bash
 ./bin/graplctl aws test
 ```
 
@@ -188,25 +189,22 @@ To retrieve the password for your grapl deployment, navigate to "AWS Secrets
 Manager" and click on "Secrets".
 
 Click on the "Secret name" url that represents your deployment name followed by
-`-TestUserPassword`. The link will bring you to the "secret details"
-screen. Scroll down to the section labeled "Secret Value" and click the
-"Retrieve Secret Value" button. The password for your deployment will appear
-under "Plaintext".
+`-TestUserPassword`. The link will bring you to the "secret details" screen.
+Scroll down to the section labeled "Secret Value" and click the "Retrieve Secret
+Value" button. The password for your deployment will appear under "Plaintext".
 
 ## DGraph operations
 
-You can manage the DGraph cluster with the docker swarm tooling by
-logging into one of the swarm managers with SSM. If you forget which
-instances are the swarm managers, you can find them by running
-`graplctl swarm managers`. For your convenience, `graplctl` also
-provides an `exec` command you can use to run a bash command remotely
-on a swarm manager. For example, to list all the nodes in the Dgraph
-swarm you can run something like the following:
+You can manage the DGraph cluster with the docker swarm tooling by logging into
+one of the swarm managers with SSM. If you forget which instances are the swarm
+managers, you can find them by running `graplctl swarm managers`. For your
+convenience, `graplctl` also provides an `exec` command you can use to run a
+bash command remotely on a swarm manager. For example, to list all the nodes in
+the Dgraph swarm you can run something like the following:
 
-``` bash
+```bash
 bin/graplctl swarm exec --swarm-id my-swarm-id -- docker node ls
 ```
 
-If you forget which `swarm-id` is associated with your Dgraph cluster,
-you may list all the swarm IDs in your deployment by running `bin/graplctl
-swarm ls`.
+If you forget which `swarm-id` is associated with your Dgraph cluster, you may
+list all the swarm IDs in your deployment by running `bin/graplctl swarm ls`.

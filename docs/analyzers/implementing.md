@@ -2,12 +2,13 @@
 
 Analyzers are the attack signatures that power Grapl's realtime detection logic.
 
-Though implementing analyzers is simple, we can build extremely powerful and efficient
-logic to catch all sorts of attacker behaviors.
+Though implementing analyzers is simple, we can build extremely powerful and
+efficient logic to catch all sorts of attacker behaviors.
 
 ### The Analyzer Base Class
 
-To implement an Analyzer we must inherit from the Analyzer [abstract base class](https://docs.python.org/3/library/abc.html).
+To implement an Analyzer we must inherit from the Analyzer
+[abstract base class](https://docs.python.org/3/library/abc.html).
 
 ```python
 A = TypeVar("A", bound="Analyzer")
@@ -29,14 +30,13 @@ class Analyzer(abc.ABC):
         pass
 ```
 
-
 ###### Analyzer.build
 
-Returns an instance of your analyzer. This allows you to move dependency management
-out of your `__init__`.
+Returns an instance of your analyzer. This allows you to move dependency
+management out of your `__init__`.
 
 `cls` - the Class for your analyzer, which you should use for construction.
-`graph_client` - an instance of a GraphClient 
+`graph_client` - an instance of a GraphClient
 
 ```python
 @classmethod
@@ -44,9 +44,10 @@ def build(cls: Type[A], graph_client: GraphClient) -> A:
     return cls(dgraph_client)
 ```
 
-
 ###### Analyzer.get_queries
-`get_queries` is where you define any of your graph signatures, either one or multiple.
+
+`get_queries` is where you define any of your graph signatures, either one or
+multiple.
 
 All queries returned must have the same type for the root node.
 
@@ -58,28 +59,30 @@ def get_queries(self) -> OneOrMany[Queryable]:
     pass
 ```
 
+###### Analyzer.on_response
 
-###### Analyzer.on_response 
-`on_response` is called if any of the sigantures from `get_queries` matched a graph.
+`on_response` is called if any of the sigantures from `get_queries` matched a
+graph.
 
-This method is where you can perform any subsequent logic that you couldn't fit into your
-query, such as hitting an external threatfeed API, performing a count, etc.
+This method is where you can perform any subsequent logic that you couldn't fit
+into your query, such as hitting an external threatfeed API, performing a count,
+etc.
 
-`response` - Guaranteed to be the Viewable type associated with the Queryable(s) returned
-by `get_queries`
+`response` - Guaranteed to be the Viewable type associated with the Queryable(s)
+returned by `get_queries`
 
 `output` - Provides a `send` method that takes an ExecutionHit
+
 ```python
 @abc.abstractmethod
 def on_response(self, response: Viewable, output: Any):
     pass
 ```
 
-
 #### SuspiciousSvchost Example
 
-Heres an example - we're going to write some logic to look for suspicious executions
-of `svchost`.
+Heres an example - we're going to write some logic to look for suspicious
+executions of `svchost`.
 
 ```python
 class SuspiciousSvchost(Analyzer):
@@ -113,8 +116,9 @@ class SuspiciousSvchost(Analyzer):
         )
 ```
 
-We've got a very straightforward Analyzer here. We don't need any custom `build` or __init__,
-and our `on_response` contains no logic other than sending out an ExecutionHit.
+We've got a very straightforward Analyzer here. We don't need any custom `build`
+or **init**, and our `on_response` contains no logic other than sending out an
+ExecutionHit.
 
 ```python
     def get_queries(self) -> OneOrMany[ProcessQuery]:
@@ -137,9 +141,10 @@ and our `on_response` contains no logic other than sending out an ExecutionHit.
         )
 ```
 
-The query is straightforward. We have a curated whitelist of parent processes for svchost.exe.
+The query is straightforward. We have a curated whitelist of parent processes
+for svchost.exe.
 
-Any process that is *not* one of those is considered "invalid".
+Any process that is _not_ one of those is considered "invalid".
 
 ```python
     ProcessQuery() # Any Process
@@ -150,17 +155,19 @@ Any process that is *not* one of those is considered "invalid".
     )
 ```
 
-Our query is therefor read as:
-Any Process, with a process_name that exactly matches `invalid_parents`, with any child process,
-where the child process_name that exactly matches `svchost.exe`.
-
+Our query is therefor read as: Any Process, with a process_name that exactly
+matches `invalid_parents`, with any child process, where the child process_name
+that exactly matches `svchost.exe`.
 
 #### Adding Context
-We may want to add some optional context to our query, without requiring that context
-for our Analyzer to match. We can do this easily in our `on_response` implenentation.
 
-In the `on_response` method the `response` is going to be the root node of what our query
-matched - in our case, this will be some invalid parent of svchost.exe.
+We may want to add some optional context to our query, without requiring that
+context for our Analyzer to match. We can do this easily in our `on_response`
+implenentation.
+
+In the `on_response` method the `response` is going to be the root node of what
+our query matched - in our case, this will be some invalid parent of
+svchost.exe.
 
 Some interesting context might be to get the binary path of that svchost.exe and
 the parent process of our invalid_parent.
@@ -169,7 +176,7 @@ the parent process of our invalid_parent.
     def on_response(self, response: ProcessView, output: Any):
         # Let's get the parent of our invalid_parent
         response.get_parent()
-        
+
         # And the binary paths for any suspect child processes
         for child in response.children:
             if child.get_bin_file():
@@ -184,9 +191,8 @@ the parent process of our invalid_parent.
         )
 ```
 
-Unlike with the queries in `get_queries', which have to be an exact match, our context
-is purely optional. We grab the information if it's available, but if it isn't we'll
-just move on.`
+Unlike with the queries in
+`get_queries', which have to be an exact match, our context is purely optional. We grab the information if it's available, but if it isn't we'll just move on.`
 
-If the information is there we'll have so much more information when this triggers, 
-almost certainly enough to triage this without much investigation.
+If the information is there we'll have so much more information when this
+triggers, almost certainly enough to triage this without much investigation.
