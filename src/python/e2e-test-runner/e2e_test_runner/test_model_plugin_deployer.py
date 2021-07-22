@@ -10,14 +10,17 @@ from grapl_tests_common.clients.model_plugin_deployer_client import (
 
 
 def test_upload_plugin(jwt: str) -> None:
+    # We haven't uploaed `schemas.py` yet, so IamRole shouldn't exist in
+    # the graphql schema.
+    gql_client = GraphqlEndpointClient(jwt)
+    assert "IamRole" not in gql_client.get_scope_query()
+
     _upload_model_plugin(
         model_plugin_client=ModelPluginDeployerClient.from_env(), jwt=jwt
     )
-    # After uploading plugin, we'd expect the schemas from our neighbor file
-    # `schemas.py` to show up in Graphql's schema as well.
-    gql_client = GraphqlEndpointClient(jwt)
-    scope_query = gql_client.get_scope_query()
-    assert "IamRoleNodeSchema" in scope_query
+
+    # After uploading plugin, we'd expect to see it.
+    assert "IamRole" in gql_client.get_scope_query()
 
 
 @pytest.mark.xfail  # TODO: Remove once list plugins is resolved
