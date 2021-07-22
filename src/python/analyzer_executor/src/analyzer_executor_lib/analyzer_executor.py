@@ -76,12 +76,18 @@ class AnalyzerExecutor:
 
     def __init__(
         self,
+        model_plugins_bucket: str,
+        analyzers_bucket: str,
+        analyzer_matched_subgraphs_bucket: str,
         message_cache: EitherCache,
         hit_cache: EitherCache,
         chunk_size: int,
         logger: Logger,
         metric_reporter: MetricReporter,
     ) -> None:
+        self.model_plugins_bucket = model_plugins_bucket
+        self.analyzers_bucket = analyzers_bucket
+        self.analyzer_matched_subgraphs_bucket = analyzer_matched_subgraphs_bucket
         self.message_cache = message_cache
         self.hit_cache = hit_cache
         self.chunk_size = chunk_size
@@ -113,8 +119,21 @@ class AnalyzerExecutor:
 
         metric_reporter = MetricReporter.create("analyzer-executor")
 
+        model_plugins_bucket = env["GRAPL_MODEL_PLUGINS_BUCKET"]
+        analyzers_bucket = env["GRAPL_ANALYZERS_BUCKET"]
+        analyzer_matched_subgraphs_bucket = env[
+            "GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET"
+        ]
+
         return AnalyzerExecutor(
-            message_cache, hit_cache, chunk_size, LOGGER, metric_reporter
+            model_plugins_bucket=model_plugins_bucket,
+            analyzers_bucket=analyzers_bucket,
+            analyzer_matched_subgraphs_bucket=analyzer_matched_subgraphs_bucket,
+            message_cache=message_cache,
+            hit_cache=hit_cache,
+            chunk_size=chunk_size,
+            logger=LOGGER,
+            metric_reporter=metric_reporter,
         )
 
     def check_caches(
@@ -161,7 +180,7 @@ class AnalyzerExecutor:
         s3 = S3ResourceFactory(boto3).from_env()
 
         load_plugins(
-            os.environ["DEPLOYMENT_NAME"],
+            self.model_plugins_bucket,
             s3.meta.client,
             os.path.abspath(MODEL_PLUGINS_DIR),
         )
@@ -178,7 +197,7 @@ class AnalyzerExecutor:
             ):
                 analyzer = download_s3_file(
                     s3,
-                    f"{os.environ['DEPLOYMENT_NAME']}-analyzers-bucket",
+                    self.analyzers_bucket,
                     message["key"],
                 )
             analyzer_name = message["key"].split("/")[-2]
@@ -202,7 +221,7 @@ class AnalyzerExecutor:
                     "analyzer-executor.emit_event.ms",
                     (TagPair("analyzer_name", exec_hit.analyzer_name),),
                 ):
-                    emit_event(s3, exec_hit)
+                    emit_event(self.analyzer_matched_subgraphs_bucket, s3, exec_hit)
                 self.update_msg_cache(analyzer, exec_hit.root_node_key, message["key"])
                 self.update_hit_cache(analyzer_name, exec_hit.root_node_key)
 
@@ -389,7 +408,9 @@ def chunker(seq: List[BaseView], size: int) -> List[List[BaseView]]:
     return [seq[pos : pos + size] for pos in range(0, len(seq), size)]
 
 
-def emit_event(s3: S3ServiceResource, event: ExecutionHit) -> None:
+def emit_event(
+    analyzer_matched_subgraphs_bucket: str, s3: S3ServiceResource, event: ExecutionHit
+) -> None:
     LOGGER.info(f"emitting event for: {event.analyzer_name, event.nodes}")
 
     event_s = json.dumps(
@@ -405,7 +426,5 @@ def emit_event(s3: S3ServiceResource, event: ExecutionHit) -> None:
     event_hash = hashlib.sha256(event_s.encode())
     key = base64.urlsafe_b64encode(event_hash.digest()).decode("utf-8")
 
-    obj = s3.Object(
-        f"{os.environ['DEPLOYMENT_NAME']}-analyzer-matched-subgraphs-bucket", key
-    )
+    obj = s3.Object(analyzer_matched_subgraphs_bucket, key)
     obj.put(Body=event_s.encode("utf-8"))

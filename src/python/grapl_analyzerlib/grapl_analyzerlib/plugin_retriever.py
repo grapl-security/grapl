@@ -17,9 +17,9 @@ LOGGER.setLevel(LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
-def load_plugins(deployment_name: str, s3: S3Client, path=None) -> None:
+def load_plugins(model_plugins_bucket: str, s3: S3Client, path=None) -> None:
     PluginRetriever(
-        plugin_bucket=deployment_name + "-model-plugins-bucket",
+        plugin_bucket=model_plugins_bucket,
         plugin_directory="./model_plugins/",
         s3_client=s3,
     ).retrieve(overwrite=True, path=path)

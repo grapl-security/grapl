@@ -315,6 +315,13 @@ services:
 
   analyzer-executor:
     image: grapl/analyzer-executor:${TAG:-latest}
+    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+    command:
+      - |
+        export GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET=$$(cat /pulumi-outputs/analyzer-matched-subgraphs-bucket)
+        export GRAPL_ANALYZERS_BUCKET=$$(cat /pulumi-outputs/analyzers-bucket)
+        export GRAPL_MODEL_PLUGINS_BUCKET=$$(cat /pulumi-outputs/model-plugins-bucket)
+        python3 analyzer_executor/src/run.py
     environment:
       <<: *aws-env
       DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
@@ -342,6 +349,14 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      pulumi:
+        # We must wait until Pulumi has created the buckets to know what their names are
+        condition: service_completed_successfully
+    volumes:
+      - type: volume
+        source: pulumi_outputs
+        target: /pulumi-outputs
+        read_only: true
 
   model-plugin-deployer:
     image: grapl/model-plugin-deployer:${TAG:-latest}
@@ -484,6 +499,9 @@ services:
 
         # Write the necessary outputs to the shared volume, for access by other containers
         outputs=(
+          analyzer-matched-subgraphs-bucket
+          analyzers-bucket
+          model-plugins-bucket
           prod-api-id
         )
         for output in "$${outputs[@]}"; do
