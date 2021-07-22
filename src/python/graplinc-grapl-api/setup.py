@@ -195,8 +195,8 @@ setup(
             "graplinc.grapl.api",
             "graplinc.grapl.api.graph",
             "graplinc.grapl.api.graph.v1beta1",
-            "graplinc.grapl.api.services",
-            "graplinc.grapl.api.services.v1beta1",
+            "graplinc.grapl.pipeline",
+            "graplinc.grapl.pipeline.v1beta1",
         ]
     ),
     zip_safe=False,
