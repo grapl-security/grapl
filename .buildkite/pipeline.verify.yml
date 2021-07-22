@@ -159,7 +159,6 @@ steps:
                 label: ":pipeline: Upload AMI Test"
                 command: "buildkite-agent pipeline upload .buildkite/pipeline.verify.ami-test.yml"
 
-
   - label: ":thinking_face::rust: Cargo Audit?"
     plugins:
       - chronotc/monorepo-diff#v2.0.4:

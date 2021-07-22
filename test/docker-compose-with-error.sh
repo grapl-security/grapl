@@ -21,7 +21,11 @@ usage() {
 }
 
 # Execute the 'up'
-docker-compose up --force-recreate --always-recreate-deps ${TARGETS}
+docker-compose up \
+    --force-recreate \
+    --always-recreate-deps \
+    --renew-anon-volumes
+${TARGETS}
 
 # check for container exit codes other than 0
 EXIT_CODE=0
