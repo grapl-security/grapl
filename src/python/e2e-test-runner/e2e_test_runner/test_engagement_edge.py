@@ -8,13 +8,11 @@ Perhaps it's just "does it work in AWS?"
 from grapl_tests_common.clients.engagement_edge_client import EngagementEdgeClient
 
 
-def test_check_login() -> None:
-    jwt = EngagementEdgeClient().get_jwt()
+def test_check_login(jwt: str) -> None:
     assert jwt != None
 
 
-def test_get_notebook_url() -> None:
-    jwt = EngagementEdgeClient().get_jwt()
+def test_get_notebook_url(jwt: str) -> None:
     notebook_url = EngagementEdgeClient().get_notebook(jwt)
     if (
         "localhost:8888" in notebook_url

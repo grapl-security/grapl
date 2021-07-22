@@ -1,6 +1,20 @@
+"""
+in order to share your fixtures across your entire module, py.test 
+suggests you define all your fixtures within one single conftest.py file.
+~ https://gist.github.com/peterhurford/09f7dcda0ab04b95c026c60fa49c2a68
+
+Additionally, they do not need to be imported in tests that depend on them.
+Just use by name.
+"""
 import logging
 
 import pytest
+from grapl_tests_common.clients.engagement_edge_client import EngagementEdgeClient
+
+
+@pytest.fixture
+def jwt() -> str:
+    return EngagementEdgeClient().get_jwt()
 
 
 # Applies it to every test function automatically.
