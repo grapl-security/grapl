@@ -25,7 +25,7 @@ import boto3
 import jwt
 from botocore.client import Config
 from chalice import Chalice, Response
-from engagement_edge.env_vars import DEPLOYMENT_NAME, GRAPL_LOG_LEVEL
+from engagement_edge.env_vars import GRAPL_LOG_LEVEL
 from engagement_edge.sagemaker import create_sagemaker_client
 from grapl_common.debugger.vsc_debugger import wait_for_vsc_debugger
 from grapl_common.env_helpers import (
@@ -66,6 +66,8 @@ class LazyJwtSecret:
 
 
 JWT_SECRET = LazyJwtSecret()
+
+NOTEBOOK_NAME = os.environ["GRAPL_NOTEBOOK_INSTANCE"]
 
 DYNAMO: Optional[DynamoDBServiceResource] = None
 
@@ -275,10 +277,8 @@ def check_login() -> Response:
 
 @requires_auth("/getNotebook")
 def get_notebook() -> Response:
-    # cross-reference with `engagement.ts` notebookInstanceName
-    notebook_name = f"{DEPLOYMENT_NAME}-Notebook"
     client = create_sagemaker_client()
-    url = client.get_presigned_url(notebook_name)
+    url = client.get_presigned_url(NOTEBOOK_NAME)
     return respond(err=None, res={"notebook_url": url})
 
 

@@ -1,7 +1,7 @@
 from typing import Optional
 
 from infra import dynamodb
-from infra.config import configurable_envvars
+from infra.config import DEPLOYMENT_NAME, configurable_envvars
 from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
 from infra.ec2 import Ec2Port
@@ -45,10 +45,14 @@ class EngagementEdge(pulumi.ComponentResource):
                     "MG_ALPHAS": dgraph_cluster.alpha_host_port,
                     "JWT_SECRET_ID": secret.secret.arn,
                     "USER_AUTH_TABLE": db.user_auth_table.name,
-                    # TODO: We *should* be passing in the name of the
-                    # notebook here, rather than assuming the name is
-                    # based on DEPLOYMENT_NAME.
                     "DEPLOYMENT_NAME": pulumi.get_stack(),
+                    # TODO: This is a bit unfortunate... and only
+                    # because Localstack doesn't support
+                    # sagemaker. The alternative is to add additional
+                    # "IS_LOCAL" logic to the engagement-edge service.
+                    "GRAPL_NOTEBOOK_INSTANCE": notebook.name
+                    if notebook
+                    else f"{DEPLOYMENT_NAME}-Notebook",
                 },
                 timeout=25,
                 memory_size=256,
