@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package graplinc.grapl.api.services.v1beta1;
+package graplinc.grapl.pipeline.v1beta1;
 
 // A protobuf uuid, encoded by splitting the 128bit representation into two 64bit values
 message ProtoUuidV4 {
