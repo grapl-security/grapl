@@ -1,7 +1,6 @@
 from typing import Optional
 
 from infra import dynamodb
-from infra.bucket import Bucket
 from infra.config import configurable_envvars
 from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
@@ -21,7 +20,6 @@ class EngagementEdge(pulumi.ComponentResource):
         self,
         network: Network,
         secret: JWTSecret,
-        ux_bucket: Bucket,
         db: DynamoDB,
         dgraph_cluster: DgraphCluster,
         forwarder: MetricForwarder,
@@ -47,10 +45,6 @@ class EngagementEdge(pulumi.ComponentResource):
                     "MG_ALPHAS": dgraph_cluster.alpha_host_port,
                     "JWT_SECRET_ID": secret.secret.arn,
                     "USER_AUTH_TABLE": db.user_auth_table.name,
-                    # TODO: Not clear that this is even used.
-                    "UX_BUCKET_URL": pulumi.Output.concat(
-                        "https://", ux_bucket.bucket_regional_domain_name
-                    ),
                     # TODO: We *should* be passing in the name of the
                     # notebook here, rather than assuming the name is
                     # based on DEPLOYMENT_NAME.
