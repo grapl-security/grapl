@@ -31,9 +31,9 @@ CMD :
 # we need pip to install awscli
 FROM python:3.7-slim-buster AS engagement-view-local-deploy
 
-SHELL ["/bin/bash", "-c"]
-
 RUN python3 -m pip install awscli
 
 COPY --from=engagement-view-build /grapl /grapl
 WORKDIR /grapl
+
+CMD ["./upload_local.sh"]
