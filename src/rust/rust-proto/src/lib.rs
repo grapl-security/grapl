@@ -14,7 +14,7 @@ pub(crate) mod graplinc {
             pub(crate) mod v1beta1 {
                 include!(concat!(
                     env!("OUT_DIR"),
-                    "/graplinc.grapl.api.services.v1beta1.rs"
+                    "/graplinc.grapl.pipeline.v1beta1.rs"
                 ));
             }
         }
