@@ -237,7 +237,6 @@ class Api(pulumi.ComponentResource):
                 network=network,
                 db=db,
                 secret=secret,
-                ux_bucket=ux_bucket,
                 plugins_bucket=plugins_bucket,
                 dgraph_cluster=dgraph_cluster,
                 forwarder=forwarder,

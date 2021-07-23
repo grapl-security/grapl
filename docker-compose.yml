@@ -375,7 +375,6 @@ services:
       <<: *dgraph-env
       IS_LOCAL: "True"
       <<: *log-level
-      UX_BUCKET_URL: "localhost"
     tty: true
     depends_on:
       dgraph:

@@ -20,7 +20,6 @@ class ModelPluginDeployer(pulumi.ComponentResource):
         network: Network,
         db: DynamoDB,
         secret: JWTSecret,
-        ux_bucket: Bucket,
         plugins_bucket: Bucket,
         dgraph_cluster: DgraphCluster,
         forwarder: MetricForwarder,
@@ -47,9 +46,6 @@ class ModelPluginDeployer(pulumi.ComponentResource):
                     else "JWT_SECRET_ID",
                     "USER_AUTH_TABLE": db.user_auth_table.id,
                     "DEPLOYMENT_NAME": pulumi.get_stack(),
-                    "UX_BUCKET_URL": pulumi.Output.concat(
-                        "https://", ux_bucket.bucket_regional_domain_name
-                    ),
                 },
                 timeout=25,
                 memory_size=256,
