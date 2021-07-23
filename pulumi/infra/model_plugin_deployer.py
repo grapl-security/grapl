@@ -40,6 +40,7 @@ class ModelPluginDeployer(pulumi.ComponentResource):
                 code=LambdaResolver.resolve(name),
                 env={
                     **configurable_envvars(name, ["GRAPL_LOG_LEVEL"]),
+                    "GRAPL_MODEL_PLUGINS_BUCKET": plugins_bucket.bucket,
                     "MG_ALPHAS": dgraph_cluster.alpha_host_port,
                     "JWT_SECRET_ID": secret.secret.arn
                     if not LOCAL_GRAPL
