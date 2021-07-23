@@ -113,7 +113,11 @@ RUN mkdir -p /grapl/zips; \
 # More information about the base image used here can be found at: 
 # https://github.com/GoogleContainerTools/distroless/blob/main/cc/README.md.
 # For debugging see: https://github.com/GoogleContainerTools/distroless#debug-images
-FROM gcr.io/distroless/cc AS rust-dist
+
+# NOTE: we're using the debug containers at the moment so we have a
+# shell; this lets us inject our Pulumi outputs in Local Grapl. If
+# not for that, we could use the standard non-debug images.
+FROM gcr.io/distroless/cc:debug AS rust-dist
 
 USER nonroot
 
