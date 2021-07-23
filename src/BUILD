@@ -6,7 +6,9 @@ grapl_python_distribution(
     name = "graplinc_grapl_api",
     dependencies = [
         "src/proto/graplinc/grapl/api",
-        "src/python/graplinc/graplinc/grapl/api"
+        "src/python/graplinc/graplinc/grapl/api",
+        "src/proto/graplinc/grapl/pipeline",
+        "src/python/graplinc/graplinc/grapl/pipeline"
     ],
     provides = setup_py(
         name = "graplinc-grapl-api",
