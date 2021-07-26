@@ -1,12 +1,7 @@
-import copy
 import logging
 import os
-import uuid
-from pathlib import Path
-from typing import Any, Dict, List, Mapping
+from typing import Any, Dict, Mapping
 
-import pytest
-from confluent_kafka import Consumer, Producer, TopicPartition
 from grapl_analyzerlib.nodes.lens import LensQuery, LensView
 from grapl_tests_common.clients.graphql_endpoint_client import GraphqlEndpointClient
 from grapl_tests_common.subset_equals import subset_equals
@@ -19,20 +14,6 @@ from grapl_tests_common.wait import (
 
 LENS_NAME = "DESKTOP-FVSHABR"
 GqlLensDict = Dict[str, Any]
-IS_LOCAL = bool(os.getenv("IS_LOCAL", ""))
-KAFKA_CLIENT_CONFIG = {
-    "bootstrap.servers": os.environ["KAFKA_BOOTSTRAP_SERVERS"],
-    "security.protocol": "PLAINTEXT" if IS_LOCAL else "SASL_SSL",
-}
-
-if not IS_LOCAL:
-    # TODO: use Vault, configure Kafka to use SASL and ACLs locally
-    # See:
-    #   https://github.com/grapl-security/issue-tracker/issues/621
-    #   https://github.com/grapl-security/issue-tracker/issues/622
-    KAFKA_CLIENT_CONFIG["sasl.username"] = os.environ["KAFKA_SASL_USERNAME"]
-    KAFKA_CLIENT_CONFIG["sasl.password"] = os.environ["KAFKA_SASL_PASSWORD"]
-
 
 def test_expected_data_in_dgraph(jwt: str) -> None:
     # There is some unidentified, nondeterministic failure with e2e.
@@ -71,72 +52,6 @@ def test_expected_data_in_dgraph(jwt: str) -> None:
         ),
         timeout_secs=300,
     )
-
-
-def kafka_producer() -> Producer:
-    producer_config = copy.deepcopy(KAFKA_CLIENT_CONFIG)
-    producer_config["acks"] = "all"
-    return Producer(producer_config)
-
-
-def kafka_consumer(topic: str) -> Consumer:
-    consumer_config = copy.deepcopy(KAFKA_CLIENT_CONFIG)
-    consumer_config["group.id"] = "e2e-tests"
-    consumer_config["auto.offset.reset"] = "earliest"
-
-    consumer = Consumer(consumer_config)
-    consumer.subscribe([topic])
-
-    return consumer
-
-
-def _producer_callback(err, _) -> None:
-    assert err is None
-
-
-def test_kafka_can_write_metrics(
-    kafka_producer: Producer, metrics_consumer: Consumer
-) -> None:
-    msg_id = str(uuid.uuid4())
-    kafka_producer.produce(
-        topic="metrics", key=f"{msg_id}", value="test", callback=_producer_callback
-    )
-    kafka_producer.flush()
-
-    msgs = metrics_consumer.consume(timeout=10)
-    assert len(msgs) == 1
-    msg = msgs[0]
-
-    metrics_consumer.close()
-
-    assert msg is not None
-    assert msg.error() is None
-    assert msg.key().decode("utf-8") == msg_id
-    assert msg.value().decode("utf-8") == "test"
-
-
-def test_kafka_can_write_logs(
-    kafka_producer: Producer, logs_consumer: Consumer
-) -> None:
-    msg_id = str(uuid.uuid4())
-    kafka_producer.produce(
-        topic="logs",
-        key=f"{msg_id}",
-        value="test",
-        callback=lambda err, _: _producer_callback,
-    )
-    kafka_producer.flush()
-
-    msgs = logs_consumer.consume(timeout=10)
-    assert len(msgs) == 1
-    msg = msgs[0]
-
-    logs_consumer.close()
-
-    assert msg is not None
-    assert msg.error() is None
-    assert msg.key().decode("utf-8") == msg_id
-    assert msg.value().decode("utf-8") == "test"
 
 
 def ensure_graphql_lens_scope_no_errors(
