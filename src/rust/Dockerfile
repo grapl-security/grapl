@@ -121,40 +121,40 @@ USER nonroot
 FROM rust-dist AS analyzer-dispatcher-deploy
 
 COPY --from=build /dist/analyzer-dispatcher /
-CMD ["/analyzer-dispatcher"]
+ENTRYPOINT ["/analyzer-dispatcher"]
 
 # generic-subgraph-generator
 FROM rust-dist AS generic-subgraph-generator-deploy
 
 COPY --from=build /dist/generic-subgraph-generator /
-CMD ["/generic-subgraph-generator"]
+ENTRYPOINT ["/generic-subgraph-generator"]
 
 # graph-merger
 FROM rust-dist AS graph-merger-deploy
 
 COPY --from=build /dist/graph-merger /
-CMD ["/graph-merger"]
+ENTRYPOINT ["/graph-merger"]
 
 # node-identifier
 FROM rust-dist AS node-identifier-deploy
 
 COPY --from=build /dist/node-identifier /
-CMD ["/node-identifier"]
+ENTRYPOINT ["/node-identifier"]
 
 # node-identifier-retry
 FROM rust-dist AS node-identifier-retry-deploy
 
 COPY --from=build /dist/node-identifier-retry /
-CMD ["/node-identifier-retry"]
+ENTRYPOINT ["/node-identifier-retry"]
 
 # sysmon-generator
 FROM rust-dist AS sysmon-generator-deploy
 
 COPY --from=build /dist/sysmon-generator /
-CMD ["/sysmon-generator"]
+ENTRYPOINT ["/sysmon-generator"]
 
 # osquery-generator
 FROM rust-dist AS osquery-generator-deploy
 
 COPY --from=build /dist/osquery-generator /
-CMD ["/osquery-generator"]
+ENTRYPOINT ["/osquery-generator"]
