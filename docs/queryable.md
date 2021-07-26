@@ -147,9 +147,10 @@ ProcessQuery()
 
 ##### All Together
 
-This query matches a process with a process_name that either is _not_ 'foo' but
-ends with '.exe', _or_ it will match a process with a process containing "bar"
-_and_ "baz".
+This query matches a process with:
+
+- a `process_name` that is _not_ 'foo' but ends with '.exe'
+- _or_ a `process_name` that contains both "bar" _and_ "baz".
 
 ```python3
 ProcessQuery()
