@@ -2,33 +2,33 @@ config:
   aws:region: us-east-1
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: operational-alarms@graplsecurity.com
   grapl:artifacts:
-    analyzer-dispatcher: 20210726155640-489df399
-    analyzer-executor: 20210726155640-489df399
+    analyzer-dispatcher: 20210726191320-077d1870
+    analyzer-executor: 20210726191320-077d1870
     dgraph-ttl: 20210721183353-0e7f674d
     e2e-test-runner: 20210722181849-58620b54
     engagement-creator: 20210721183353-0e7f674d
     engagement-edge: 20210721183353-0e7f674d
-    graph-merger: 20210726155640-489df399
+    graph-merger: 20210726191320-077d1870
     graphql-endpoint: 20210706192702-6001e5a3
     grapl-nomad-consul-client:
-      us-east-1: ami-05f2659e55a9c2609
-      us-east-2: ami-048ff9710cb4fa2e5
-      us-west-1: ami-0e0b734a41ef47896
-      us-west-2: ami-05507989e937fb212
+      us-east-1: ami-066d7db71ff0dc1f2
+      us-east-2: ami-04c7ad36d7d6c96f4
+      us-west-1: ami-0055c01741738b013
+      us-west-2: ami-0f56c509a078e00d1
     grapl-nomad-consul-server:
-      us-east-1: ami-0ef48bfdf9f3852e2
-      us-east-2: ami-065441e99becfcffd
-      us-west-1: ami-03b58a4bd7f1c401a
-      us-west-2: ami-0cbc54e5c569dd276
+      us-east-1: ami-054e39ac00f916d5f
+      us-east-2: ami-0942e2540aeaf62d7
+      us-west-1: ami-0ad7f658c924219bd
+      us-west-2: ami-0d19aac593e33cae4
     grapl-ux: 20210722223412-93fb949f
     metric-forwarder: 20210706192702-6001e5a3
     model-plugin-deployer: 20210721183353-0e7f674d
-    node-identifier: 20210726155640-489df399
-    node-identifier-retry: 20210726155640-489df399
+    node-identifier: 20210726191320-077d1870
+    node-identifier-retry: 20210726191320-077d1870
     node-identifier-retry-handler: 20210706190216-95cec5cb
-    osquery-generator: 20210726155640-489df399
+    osquery-generator: 20210726191320-077d1870
     provisioner: 20210721183353-0e7f674d
-    sysmon-generator: 20210726155640-489df399
+    sysmon-generator: 20210726191320-077d1870
     ux-router: 20210721183353-0e7f674d
   grapl:env_vars:
     analyzer-dispatcher:

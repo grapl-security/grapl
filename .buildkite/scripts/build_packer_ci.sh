@@ -8,6 +8,7 @@
 
 set -euo pipefail
 
+source .buildkite/scripts/lib/aws.sh
 source .buildkite/scripts/lib/packer.sh
 
 export GIT_SHA="${BUILDKITE_COMMIT}"
@@ -18,11 +19,20 @@ export GIT_BRANCH="${BUILDKITE_BRANCH}"
 # shellcheck disable=SC2153
 : "${PACKER_IMAGE_NAME}"
 
+# As long as this is running inside a Docker container, we have to
+# make sure we pass these in.
+: "${BUILDKITE_ARTIFACT_UPLOAD_DESTINATION}"
+: "${BUILDKITE_S3_DEFAULT_REGION}"
+
 build_packer_ci() {
     echo -e "--- :packer: Performing build of AMI"
 
     # Both defined in packer.sh
     build_ami "${PACKER_IMAGE_NAME}"
+
+    # HACK; see documentation of this function for details
+    unset_aws_variables
+
     upload_manifest "${PACKER_IMAGE_NAME}"
 }
 
