@@ -416,7 +416,7 @@ def emit_event(s3: S3ServiceResource, event: ExecutionHit, metadata: Metadata) -
     LOGGER.info(f"emitting event for: {event.analyzer_name, event.nodes}")
 
     meta_dict = {
-        "trace_id": str(metadata.get_trace_id()),
+        "trace_id": str(metadata.trace_id),
     }
 
     event_s = json.dumps(
