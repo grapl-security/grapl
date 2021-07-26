@@ -62,7 +62,12 @@ class Metadata(object):
         return self.to_proto().SerializeToString()
 
     def __str__(self) -> str:
-        return "Metadata " + json.dumps(vars(self))
+        return "Metadata " + json.dumps(
+            {
+                "trace_id": str(self.trace_id),
+                "tenant_id": str(self.tenant_id),
+            }
+        )
 
 
 class Envelope(object):
