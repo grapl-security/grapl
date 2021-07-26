@@ -90,7 +90,7 @@ def test_kafka_can_write_logs(
         topic="logs",
         key=f"{msg_id}",
         value="test",
-        callback=lambda err, _: _producer_callback,
+        callback=_producer_callback,
     )
     kafka_producer.flush()
 
