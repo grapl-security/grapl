@@ -158,6 +158,7 @@ class Lambda(pulumi.ComponentResource):
         name: str,
         args: LambdaArgs,
         network: Network,
+        override_name: Optional[str] = None,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         super().__init__("grapl:Lambda", name, None, opts)
@@ -173,10 +174,9 @@ class Lambda(pulumi.ComponentResource):
         )
 
         lambda_name = f"{DEPLOYMENT_NAME}-{name}"
-        # remove these from scope - everyone should use `lambda_name`
         self.function = aws.lambda_.Function(
             f"{name}-lambda",
-            name=lambda_name,
+            name=override_name or name,
             description=args.description,
             runtime=args.runtime,
             package_type=args.package_type,

@@ -43,6 +43,8 @@ class Provisioner(pulumi.ComponentResource):
                 execution_role=self.role,
             ),
             network=network,
+            # graplctl expects this specific function name :(
+            override_name=f"{DEPLOYMENT_NAME}-provisioner",
             opts=pulumi.ResourceOptions(parent=self),
         )
 
