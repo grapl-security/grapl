@@ -41,15 +41,7 @@ REGION_TO_AMI_ID = {
 
 def swarm_security_group_id(ec2: EC2ServiceResource, deployment_name: str) -> str:
     """Return the security group ID for the swarm security group"""
-    cdk_group_name = f"{deployment_name.lower()}-grapl-swarm"
-    cdk_result = list(
-        ec2.security_groups.filter(
-            Filters=[{"Name": "group-name", "Values": [cdk_group_name]}]
-        )
-    )
-
-    # Pulumi names are less predictable, so we'll do it by tag name instead.
-    #
+    # Find Pulumi-generated security groups by tag
     pulumi_result = list(
         ec2.security_groups.filter(
             Filters=[
@@ -61,7 +53,7 @@ def swarm_security_group_id(ec2: EC2ServiceResource, deployment_name: str) -> st
         )
     )
 
-    result = [*cdk_result, *pulumi_result]
+    result = [*pulumi_result]
 
     if not result:
         raise Exception(
@@ -79,16 +71,7 @@ def grapl_subnet_ids(
     ec2: EC2ServiceResource, swarm_vpc_id: str, deployment_name: str
 ) -> Iterator[str]:
     """Yields the subnet IDs for the grapl deployment"""
-    # For CDK subnets
-    for subnet in ec2.Vpc(swarm_vpc_id).subnets.filter(
-        Filters=[
-            {"Name": "tag:aws-cdk:subnet-type", "Values": ["Private"]},
-            {"Name": "tag:name", "Values": [f"{deployment_name.lower()}-grapl-vpc"]},
-        ]
-    ):
-        yield subnet.subnet_id
-
-    # We tag things in Pulumi slightly differently, see the Network resource.
+    # We tag subnets in Pulumi with `graplctl_get_subnet_tag`.
     for subnet in ec2.Vpc(swarm_vpc_id).subnets.filter(
         Filters=[
             {
