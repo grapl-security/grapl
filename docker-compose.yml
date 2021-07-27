@@ -445,13 +445,24 @@ services:
 
   engagement-view-uploader:
     image: grapl/engagement-view:${TAG:-latest}
-    command: |
-      /bin/bash -c "./upload_local.sh"
+    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+    command:
+      - |
+        export GRAPL_UX_BUCKET=$$(cat /pulumi-outputs/ux-bucket)
+        ./upload_local.sh
     environment:
       <<: *aws-env
     depends_on:
       provisioner:
         condition: service_completed_successfully
+      pulumi:
+        # We must wait until Pulumi has created the buckets to know what their names are
+        condition: service_completed_successfully
+    volumes:
+      - type: volume
+        source: pulumi_outputs
+        target: /pulumi-outputs
+        read_only: true
 
   graphql-endpoint:
     image: grapl/graphql-endpoint:${TAG:-latest}
@@ -511,6 +522,7 @@ services:
           analyzers-bucket
           model-plugins-bucket
           prod-api-id
+          ux-bucket
         )
         for output in "$${outputs[@]}"; do
           pulumi stack output "$${output}" > "/home/grapl/pulumi-outputs/$${output}"
