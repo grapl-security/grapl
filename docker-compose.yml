@@ -128,7 +128,10 @@ services:
         rm -f /data/dump.rdb
         redis-server
     healthcheck:
-      test: bash -c 'redis-cli -h 127.0.0.1 ping | grep PONG'
+      test:
+        - CMD-SHELL
+        - |
+          redis-cli -h 127.0.0.1 ping | grep PONG
       interval: 5s
       timeout: 10s
       start_period: 10s
