@@ -22,7 +22,6 @@ class OSQueryGenerator(FargateService):
                 target="osquery-generator-deploy",
                 context=str(repository_path("src")),
             ),
-            command="/osquery-generator",
             env={
                 **configurable_envvars(
                     "osquery-generator", ["RUST_LOG", "RUST_BACKTRACE"]

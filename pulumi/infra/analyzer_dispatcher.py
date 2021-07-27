@@ -25,7 +25,6 @@ class AnalyzerDispatcher(FargateService):
                 target="analyzer-dispatcher-deploy",
                 context=str(repository_path("src")),
             ),
-            command="/analyzer-dispatcher",
             env={
                 **configurable_envvars(
                     "analyzer-dispatcher", ["RUST_LOG", "RUST_BACKTRACE"]
