@@ -8,7 +8,7 @@ edition = "2018"
 [dependencies]
 metrics = "0.16.0"
 rdkafka = "0.26.0"
-tokio = { version = "1.6.1", features = ["full", "sync"] }
+tokio = { version = "1", features = ["full", "sync"] }
 tracing = "0.1.26"
 prost = "0.7.0"
 quanta = "0.7.2"
