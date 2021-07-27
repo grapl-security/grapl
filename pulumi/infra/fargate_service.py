@@ -1,5 +1,5 @@
 import json
-from typing import Mapping, Optional, Sequence, Tuple, Union, cast
+from typing import List, Mapping, Optional, Sequence, Tuple, Union, cast
 
 import pulumi_aws as aws
 import pulumi_docker as docker
@@ -99,9 +99,10 @@ class _AWSFargateService(pulumi.ComponentResource):
         output_emitter: EventEmitter,
         network: Network,
         image: pulumi.Output[str],
-        command: Optional[str],
         env: Mapping[str, Union[str, pulumi.Output[str]]],
         forwarder: MetricForwarder,
+        entrypoint: Optional[List[str]] = None,
+        command: Optional[List[str]] = None,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         """
@@ -237,7 +238,8 @@ class _AWSFargateService(pulumi.ComponentResource):
                                     "awslogs-group": inputs["log_group"],
                                 },
                             },
-                            **({"command": [command]} if command else {}),
+                            **({"entryPoint": entrypoint} if entrypoint else {}),
+                            **({"command": command} if command else {}),
                         },
                     ]
                 )
@@ -289,9 +291,11 @@ class FargateService(pulumi.ComponentResource):
         image: docker.DockerBuild,
         env: Mapping[str, Union[str, pulumi.Output[str]]],
         forwarder: MetricForwarder,
-        command: Optional[str] = None,
+        entrypoint: Optional[List[str]] = None,
+        command: Optional[List[str]] = None,
         retry_image: Optional[docker.DockerBuild] = None,
-        retry_command: Optional[str] = None,
+        retry_entrypoint: Optional[List[str]] = None,
+        retry_command: Optional[List[str]] = None,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         super().__init__("grapl:FargateService", name, None, opts)
@@ -317,6 +321,7 @@ class FargateService(pulumi.ComponentResource):
             output_emitter=output_emitter,
             network=network,
             image=image_name,
+            entrypoint=entrypoint,
             command=command,
             env=env,
             forwarder=forwarder,
@@ -343,6 +348,7 @@ class FargateService(pulumi.ComponentResource):
             output_emitter=output_emitter,
             network=network,
             image=retry_image_name,
+            entrypoint=retry_entrypoint or entrypoint,
             command=retry_command or command,
             env=env,
             forwarder=forwarder,
