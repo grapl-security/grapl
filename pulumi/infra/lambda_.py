@@ -172,11 +172,10 @@ class Lambda(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        lambda_name = f"{DEPLOYMENT_NAME}-{name}"
-        # remove these from scope - everyone should use `lambda_name`
+        name_with_deployment_prefix = f"{DEPLOYMENT_NAME}-{name}"
         self.function = aws.lambda_.Function(
             f"{name}-lambda",
-            name=lambda_name,
+            name=name_with_deployment_prefix,
             description=args.description,
             runtime=args.runtime,
             package_type=args.package_type,
@@ -217,7 +216,7 @@ class Lambda(pulumi.ComponentResource):
             # Don't change - or rather, if you decide to,
             # follow these instructions:
             # https://www.pulumi.com/docs/reference/pkg/aws/lambda/function/#cloudwatch-logging-and-permissions
-            name=f"/aws/lambda/{lambda_name}",
+            name=f"/aws/lambda/{name_with_deployment_prefix}",
             retention_in_days=SERVICE_LOG_RETENTION_DAYS,
             opts=pulumi.ResourceOptions(parent=self),
         )
