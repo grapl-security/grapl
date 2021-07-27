@@ -123,7 +123,7 @@ where
         subgraph: Self::InputEvent,
         _completed: &mut CompletedEvents,
     ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
-        let bucket = std::env::var("ANALYZER_BUCKET").expect("ANALYZER_BUCKET");
+        let bucket = std::env::var("GRAPL_ANALYZERS_BUCKET").expect("GRAPL_ANALYZERS_BUCKET");
 
         if subgraph.is_empty() {
             warn!("Attempted to handle empty subgraph");

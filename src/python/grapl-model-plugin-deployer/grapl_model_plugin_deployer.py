@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import base64
+import concurrent.futures
 import inspect
 import json
 import os
 import sys
-import threading
 import traceback
 from http import HTTPStatus
 from pathlib import Path
@@ -45,6 +45,8 @@ T = TypeVar("T")
 IS_LOCAL = to_bool(os.environ.get("IS_LOCAL", False))
 
 LOGGER = get_module_grapl_logger(default_log_level="ERROR")
+
+MODEL_PLUGINS_BUCKET = os.environ["GRAPL_MODEL_PLUGINS_BUCKET"]
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
@@ -168,8 +170,6 @@ def provision_schemas(graph_client: GraphClient, raw_schemas: List[bytes]) -> No
 
 
 def upload_plugin(s3_client: S3Client, key: str, contents: str) -> Optional[Response]:
-    plugin_bucket = (os.environ["DEPLOYMENT_NAME"] + "-model-plugins-bucket").lower()
-
     plugin_parts = key.split("/")
     plugin_name = plugin_parts[0]
     plugin_key = "/".join(plugin_parts[1:])
@@ -188,7 +188,7 @@ def upload_plugin(s3_client: S3Client, key: str, contents: str) -> Optional[Resp
     try:
         s3_client.put_object(
             Body=contents.encode("utf-8"),
-            Bucket=plugin_bucket,
+            Bucket=MODEL_PLUGINS_BUCKET,
             Key=plugin_name
             + "/"
             + base64.encodebytes((plugin_key.encode("utf8"))).decode(),
@@ -277,8 +277,8 @@ def requires_auth(path: str) -> Callable[[RouteFn], RouteFn]:
                 return respond(err="Must log in", status_code=HTTPStatus.UNAUTHORIZED)
             try:
                 return route_fn()
-            except Exception as e:
-                LOGGER.error(f"Route {path} failed", e)
+            except Exception:
+                LOGGER.error(f"Route {path} failed", exc_info=True)
                 return respond(err="Unexpected error, see Model Plugin Deployer logs")
 
         return cast(RouteFn, inner_route)
@@ -297,8 +297,8 @@ def no_auth(path: str) -> Callable[[RouteFn], RouteFn]:
                 return respond(err=None, res={})
             try:
                 return route_fn()
-            except Exception as e:
-                LOGGER.error(f"Route {path} failed ", e)
+            except Exception:
+                LOGGER.error(f"Route {path} failed ", exc_info=True)
                 return respond(err="Unexpected error, see Model Plugin Deployer logs")
 
         return cast(RouteFn, inner_route)
@@ -325,23 +325,26 @@ def upload_plugins(
         with open(os.path.join("/tmp/model_plugins/", path), "w") as f:
             f.write(contents)
 
-    th = threading.Thread(
-        target=provision_schemas,
-        args=(
-            GraphClient(),
-            raw_schemas,
-        ),
-    )
-    th.start()
+    # Since we need to communicate data from the `provision_schemas`
+    # - namely, exceptions - concurrent.futures is more idiomatic than
+    # threading.Thread
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        provision_schema_fut = executor.submit(
+            provision_schemas, GraphClient(), raw_schemas
+        )
 
-    try:
-        for path, file in plugin_files.items():
-            upload_resp = upload_plugin(s3_client, path, file)
-            if upload_resp:
-                return upload_resp
-    finally:
-        th.join()
-    return None
+        try:
+            for path, file in plugin_files.items():
+                upload_resp = upload_plugin(s3_client, path, file)
+                if upload_resp:
+                    return upload_resp
+        finally:
+            for completed_future in concurrent.futures.as_completed(
+                [provision_schema_fut]
+            ):
+                # This will also propagate any exceptions from that thread into the main thread
+                completed_future.result()
+        return None
 
 
 # We expect a body of:
@@ -368,8 +371,7 @@ def deploy() -> Response:
 
 
 def get_plugin_list(s3: S3Client) -> List[str]:
-    plugin_bucket = (os.environ["DEPLOYMENT_NAME"] + "-model-plugins-bucket").lower()
-    list_response = s3.list_objects_v2(Bucket=plugin_bucket)
+    list_response = s3.list_objects_v2(Bucket=MODEL_PLUGINS_BUCKET)
     if not list_response.get("Contents"):
         return []
 
@@ -398,10 +400,8 @@ def list_model_plugins() -> Response:
 
 
 def delete_plugin(s3_client: S3Client, plugin_name: str) -> None:
-    plugin_bucket = (os.environ["DEPLOYMENT_NAME"] + "-model-plugins-bucket").lower()
-
     list_response = s3_client.list_objects_v2(
-        Bucket=plugin_bucket,
+        Bucket=MODEL_PLUGINS_BUCKET,
         Prefix=plugin_name,
     )
 
@@ -409,7 +409,7 @@ def delete_plugin(s3_client: S3Client, plugin_name: str) -> None:
         return
 
     for response in list_response["Contents"]:
-        s3_client.delete_object(Bucket=plugin_bucket, Key=response["Key"])
+        s3_client.delete_object(Bucket=MODEL_PLUGINS_BUCKET, Key=response["Key"])
 
 
 @requires_auth("/deleteModelPlugin")

@@ -295,8 +295,15 @@ services:
 
   analyzer-dispatcher:
     image: grapl/analyzer-dispatcher:${TAG:-latest}
+    # The default entrypoint is ["/analyzer-dispatcher"];
+    # "/busybox/sh" is the shell present present in the
+    # distroless/cc:debug container.
+    entrypoint: ["/busybox/sh", "-o", "errexit", "-o", "nounset", "-c"]
+    command:
+      - |
+        export GRAPL_ANALYZERS_BUCKET=$$(cat /pulumi-outputs/analyzers-bucket)
+        /analyzer-dispatcher
     environment:
-      ANALYZER_BUCKET: "${DEPLOYMENT_NAME}-analyzers-bucket"
       <<: *aws-env
       DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-dead-letter-queue"
       DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-dispatched-analyzer-bucket"
@@ -308,6 +315,14 @@ services:
     depends_on:
       localstack:
         condition: service_healthy
+      pulumi:
+        # We must wait until Pulumi has created the buckets to know what their names are
+        condition: service_completed_successfully
+    volumes:
+      - type: volume
+        source: pulumi_outputs
+        target: /pulumi-outputs
+        read_only: true
 
   ########################################################################
   # Python Services
@@ -359,21 +374,22 @@ services:
 
   model-plugin-deployer:
     image: grapl/model-plugin-deployer:${TAG:-latest}
-    command: |
-      /bin/sh -c '
-        . venv/bin/activate &&
-        cd /home/grapl/app &&
+    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+    command:
+      - |
+        export GRAPL_MODEL_PLUGINS_BUCKET=$$(cat /pulumi-outputs/model-plugins-bucket)
+        . venv/bin/activate
+        cd /home/grapl/app
         chalice local \
           --no-autoreload \
           --host=0.0.0.0 \
           --port=${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}
-      '
+
     environment:
       <<: *aws-env
       <<: *dgraph-env
       IS_LOCAL: "True"
       <<: *log-level
-      UX_BUCKET_URL: "localhost"
     tty: true
     depends_on:
       dgraph:
@@ -382,6 +398,14 @@ services:
         condition: service_healthy
       provisioner:
         condition: service_completed_successfully
+      pulumi:
+        # We must wait until Pulumi has created the buckets to know what their names are
+        condition: service_completed_successfully
+    volumes:
+      - type: volume
+        source: pulumi_outputs
+        target: /pulumi-outputs
+        read_only: true
     ports:
       - 127.0.0.1:${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}:${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}
     networks:
@@ -436,13 +460,24 @@ services:
 
   engagement-view-uploader:
     image: grapl/engagement-view:${TAG:-latest}
-    command: |
-      /bin/bash -c "./upload_local.sh"
+    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+    command:
+      - |
+        export GRAPL_UX_BUCKET=$$(cat /pulumi-outputs/ux-bucket)
+        ./upload_local.sh
     environment:
       <<: *aws-env
     depends_on:
       provisioner:
         condition: service_completed_successfully
+      pulumi:
+        # We must wait until Pulumi has created the buckets to know what their names are
+        condition: service_completed_successfully
+    volumes:
+      - type: volume
+        source: pulumi_outputs
+        target: /pulumi-outputs
+        read_only: true
 
   graphql-endpoint:
     image: grapl/graphql-endpoint:${TAG:-latest}
@@ -502,6 +537,7 @@ services:
           analyzers-bucket
           model-plugins-bucket
           prod-api-id
+          ux-bucket
         )
         for output in "$${outputs[@]}"; do
           pulumi stack output "$${output}" > "/home/grapl/pulumi-outputs/$${output}"

@@ -20,7 +20,6 @@ class ModelPluginDeployer(pulumi.ComponentResource):
         network: Network,
         db: DynamoDB,
         secret: JWTSecret,
-        ux_bucket: Bucket,
         plugins_bucket: Bucket,
         dgraph_cluster: DgraphCluster,
         forwarder: MetricForwarder,
@@ -40,15 +39,13 @@ class ModelPluginDeployer(pulumi.ComponentResource):
                 code=LambdaResolver.resolve(name),
                 env={
                     **configurable_envvars(name, ["GRAPL_LOG_LEVEL"]),
+                    "GRAPL_MODEL_PLUGINS_BUCKET": plugins_bucket.bucket,
                     "MG_ALPHAS": dgraph_cluster.alpha_host_port,
                     "JWT_SECRET_ID": secret.secret.arn
                     if not LOCAL_GRAPL
                     else "JWT_SECRET_ID",
                     "USER_AUTH_TABLE": db.user_auth_table.id,
                     "DEPLOYMENT_NAME": pulumi.get_stack(),
-                    "UX_BUCKET_URL": pulumi.Output.concat(
-                        "https://", ux_bucket.bucket_regional_domain_name
-                    ),
                 },
                 timeout=25,
                 memory_size=256,
@@ -64,7 +61,9 @@ class ModelPluginDeployer(pulumi.ComponentResource):
         secret.grant_read_permissions_to(self.role)
 
         dynamodb.grant_read_on_tables(self.role, [db.user_auth_table])
-        dynamodb.grant_read_write_on_tables(self.role, [db.schema_table])
+        dynamodb.grant_read_write_on_tables(
+            self.role, [db.schema_table, db.schema_properties_table]
+        )
 
         plugins_bucket.grant_read_write_permissions_to(self.role)
 

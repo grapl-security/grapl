@@ -225,6 +225,7 @@ def main() -> None:
             index_document="index.html",
         ),
     )
+    pulumi.export("ux-bucket", ux_bucket.bucket)
 
     api = Api(
         network=network,
