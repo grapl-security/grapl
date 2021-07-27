@@ -120,12 +120,13 @@ services:
   # service... maybe transitory, this will eventually match prod
   redis:
     image: redis:latest
-    command: |
-      sh -c "
+    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+    command:
+      - |
         # hack from https://stackoverflow.com/questions/54533308/disable-redis-persistence-in-docker
         # to disable persistence
-        rm -f /data/dump.rdb && redis-server
-      "
+        rm -f /data/dump.rdb
+        redis-server
     healthcheck:
       test: bash -c 'redis-cli -h 127.0.0.1 ping | grep PONG'
       interval: 5s
