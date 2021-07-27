@@ -482,7 +482,8 @@ services:
 
   graphql-endpoint:
     image: grapl/graphql-endpoint:${TAG:-latest}
-    command: bash -c "./start_potentially_with_debugger.sh"
+    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+    command: ./start_potentially_with_debugger.sh
     environment:
       <<: *aws-env
       <<: *dgraph-env
