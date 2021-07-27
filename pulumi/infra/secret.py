@@ -92,6 +92,7 @@ class TestUserPassword(pulumi.ComponentResource):
             "test-user-password",
             name=f"{DEPLOYMENT_NAME}-TestUserPassword",
             description="The Grapl test user's password",
+            recovery_window_in_days=0,  # delete immediately
             opts=pulumi.ResourceOptions(parent=self),
         )
 
