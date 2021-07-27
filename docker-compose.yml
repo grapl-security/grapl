@@ -165,12 +165,12 @@ services:
       - DATA_DIR=${DATA_DIR- }
     privileged: true # for docker lambda execution
     healthcheck:
-      test: |
-        bash -c '
-          export AWS_ACCESS_KEY_ID=${FAKE_AWS_ACCESS_KEY_ID} &&
-          export AWS_SECRET_ACCESS_KEY=${FAKE_AWS_SECRET_ACCESS_KEY} &&
+      test:
+        - CMD-SHELL
+        - |
+          export AWS_ACCESS_KEY_ID=${FAKE_AWS_ACCESS_KEY_ID}
+          export AWS_SECRET_ACCESS_KEY=${FAKE_AWS_SECRET_ACCESS_KEY}
           aws --endpoint-url=http://${LOCALSTACK_HOST}:${LOCALSTACK_PORT} s3 ls
-        '
       # Probe failure during this period will not be counted towards the maximum number of retries
       start_period: 30s
       # Health check is executed every `interval` seconds.
