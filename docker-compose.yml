@@ -420,11 +420,11 @@ services:
 
   nginx:
     image: nginxinc/nginx-unprivileged
-    command: |
-      /bin/bash -c "
-        export API_GATEWAY_API_ID=$$(cat /pulumi-outputs/prod-api-id) &&
+    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+    command:
+      - |
+        export API_GATEWAY_API_ID=$$(cat /pulumi-outputs/prod-api-id)
         /docker-entrypoint.sh nginx -g 'daemon off;'
-      "
     volumes:
       - ./etc/local_grapl/nginx_templates:/etc/nginx/templates
       - type: volume
