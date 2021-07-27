@@ -24,7 +24,6 @@ class SysmonGenerator(FargateService):
                 target="sysmon-generator-deploy",
                 context=str(repository_path("src")),
             ),
-            command="/sysmon-generator",
             env={
                 **configurable_envvars(
                     "sysmon-generator", ["RUST_LOG", "RUST_BACKTRACE"]

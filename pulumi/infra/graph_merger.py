@@ -28,7 +28,6 @@ class GraphMerger(FargateService):
                 target="graph-merger-deploy",
                 context=str(repository_path("src")),
             ),
-            command="/graph-merger",
             env={
                 **configurable_envvars("graph-merger", ["RUST_LOG", "RUST_BACKTRACE"]),
                 "REDIS_ENDPOINT": cache.endpoint,

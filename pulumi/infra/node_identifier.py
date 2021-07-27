@@ -31,8 +31,6 @@ class NodeIdentifier(FargateService):
                 target="node-identifier-retry-deploy",
                 context=str(repository_path("src")),
             ),
-            command="/node-identifier",
-            retry_command="/node-identifier-retry",
             env={
                 **configurable_envvars(
                     "node-identifier", ["RUST_LOG", "RUST_BACKTRACE"]
