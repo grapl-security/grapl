@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import base64
+import concurrent.futures
 import inspect
 import json
 import os
 import sys
-import threading
 import traceback
 from http import HTTPStatus
 from pathlib import Path
@@ -277,8 +277,8 @@ def requires_auth(path: str) -> Callable[[RouteFn], RouteFn]:
                 return respond(err="Must log in", status_code=HTTPStatus.UNAUTHORIZED)
             try:
                 return route_fn()
-            except Exception as e:
-                LOGGER.error(f"Route {path} failed", e)
+            except Exception:
+                LOGGER.error(f"Route {path} failed", exc_info=True)
                 return respond(err="Unexpected error, see Model Plugin Deployer logs")
 
         return cast(RouteFn, inner_route)
@@ -297,8 +297,8 @@ def no_auth(path: str) -> Callable[[RouteFn], RouteFn]:
                 return respond(err=None, res={})
             try:
                 return route_fn()
-            except Exception as e:
-                LOGGER.error(f"Route {path} failed ", e)
+            except Exception:
+                LOGGER.error(f"Route {path} failed ", exc_info=True)
                 return respond(err="Unexpected error, see Model Plugin Deployer logs")
 
         return cast(RouteFn, inner_route)
@@ -325,23 +325,26 @@ def upload_plugins(
         with open(os.path.join("/tmp/model_plugins/", path), "w") as f:
             f.write(contents)
 
-    th = threading.Thread(
-        target=provision_schemas,
-        args=(
-            GraphClient(),
-            raw_schemas,
-        ),
-    )
-    th.start()
+    # Since we need to communicate data from the `provision_schemas`
+    # - namely, exceptions - concurrent.futures is more idiomatic than
+    # threading.Thread
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        provision_schema_fut = executor.submit(
+            provision_schemas, GraphClient(), raw_schemas
+        )
 
-    try:
-        for path, file in plugin_files.items():
-            upload_resp = upload_plugin(s3_client, path, file)
-            if upload_resp:
-                return upload_resp
-    finally:
-        th.join()
-    return None
+        try:
+            for path, file in plugin_files.items():
+                upload_resp = upload_plugin(s3_client, path, file)
+                if upload_resp:
+                    return upload_resp
+        finally:
+            for completed_future in concurrent.futures.as_completed(
+                [provision_schema_fut]
+            ):
+                # This will also propagate any exceptions from that thread into the main thread
+                completed_future.result()
+        return None
 
 
 # We expect a body of:

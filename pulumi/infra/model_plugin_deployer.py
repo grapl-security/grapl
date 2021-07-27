@@ -61,7 +61,9 @@ class ModelPluginDeployer(pulumi.ComponentResource):
         secret.grant_read_permissions_to(self.role)
 
         dynamodb.grant_read_on_tables(self.role, [db.user_auth_table])
-        dynamodb.grant_read_write_on_tables(self.role, [db.schema_table])
+        dynamodb.grant_read_write_on_tables(
+            self.role, [db.schema_table, db.schema_properties_table]
+        )
 
         plugins_bucket.grant_read_write_permissions_to(self.role)
 
