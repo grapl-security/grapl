@@ -572,10 +572,11 @@ services:
 
   provisioner:
     image: grapl/provisioner:${TAG:-latest}
-    command: |
-      /bin/bash -c "
-          python -c 'import lambdex_handler; lambdex_handler.handler(None, None)'
-      "
+    entrypoint: ["python", "-c"]
+    command:
+      - |
+        import lambdex_handler
+        lambdex_handler.handler(None, None)
     environment:
       <<: *aws-env
       <<: *dgraph-env
