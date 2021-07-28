@@ -576,7 +576,7 @@ services:
 
   provisioner:
     image: grapl/provisioner:${TAG:-latest}
-    entrypoint: ["python", "-c"]
+    entrypoint: ["python3", "-c"]
     command:
       - |
         import lambdex_handler

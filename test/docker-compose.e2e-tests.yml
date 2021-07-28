@@ -34,7 +34,7 @@ services:
               --aws-profile default \
               upload sysmon \
               --logfile ./etc/sample_data/eventlog.xml
-        python -c 'import lambdex_handler; lambdex_handler.handler(None, None)'
+        python3 -c 'import lambdex_handler; lambdex_handler.handler(None, None)'
     volumes:
       - dynamodb_dump:/mnt/dynamodb_dump
       - ${PWD}/etc:/home/grapl/etc:ro
