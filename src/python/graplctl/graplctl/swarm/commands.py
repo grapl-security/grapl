@@ -51,6 +51,13 @@ def swarm(
     help="unique id for this swarm cluster (random default)",
     default=str(uuid.uuid4()),
 )
+@click.option(
+    "-s" "--swarm-config-bucket",
+    type=click.STRING,
+    help="Name of the S3 bucket with Swarm config files for the cluster",
+    required=True,
+    envvar="GRAPL_SWARM_CONFIG_BUCKET",
+)
 @click.confirmation_option(prompt=f"this will incur aws charges, ok?")
 @pass_graplctl_state
 def create(
@@ -59,6 +66,7 @@ def create(
     num_workers: int,
     instance_type: InstanceTypeType,
     swarm_id: str,
+    swarm_config_bucket: str,
 ) -> None:
     """start ec2 instances and join them as a docker swarm cluster"""
     docker_swarm_ops.create_swarm(
@@ -67,6 +75,7 @@ def create(
         num_workers=num_workers,
         instance_type=instance_type,
         swarm_id=swarm_id,
+        swarm_config_bucket=swarm_config_bucket,
     )
 
 
@@ -125,15 +134,25 @@ def destroy(graplctl_state: State, swarm_id: str) -> None:
     help="unique id of the swarm cluster",
     required=True,
 )
+@click.option(
+    "-s" "--swarm-config-bucket",
+    type=click.STRING,
+    help="Name of the S3 bucket with Swarm config files for the cluster",
+    required=True,
+    envvar="GRAPL_SWARM_CONFIG_BUCKET",
+)
 @click.argument("command", nargs=-1, type=click.STRING)
 @pass_graplctl_state
-def swarm_exec(graplctl_state: State, swarm_id: str, command: List[str]) -> None:
+def swarm_exec(
+    graplctl_state: State, swarm_id: str, swarm_config_bucket: str, command: List[str]
+) -> None:
     """execute a command on a swarm manager"""
     click.echo(
         docker_swarm_ops.exec_(
             ec2=graplctl_state.ec2,
             ssm=graplctl_state.ssm,
             deployment_name=graplctl_state.grapl_deployment_name,
+            swarm_config_bucket=swarm_config_bucket,
             region=graplctl_state.grapl_region,
             version=graplctl_state.grapl_version,
             swarm_id=swarm_id,
@@ -171,6 +190,13 @@ def swarm_exec(graplctl_state: State, swarm_id: str, command: List[str]) -> None
     help="unique id of the swarm cluster",
     required=True,
 )
+@click.option(
+    "-s" "--swarm-config-bucket",
+    type=click.STRING,
+    help="Name of the S3 bucket with Swarm config files for the cluster",
+    required=True,
+    envvar="GRAPL_SWARM_CONFIG_BUCKET",
+)
 @click.confirmation_option(prompt=f"this will incur aws charges, ok?")
 @pass_graplctl_state
 def scale(
@@ -179,6 +205,7 @@ def scale(
     num_workers: int,
     instance_type: InstanceTypeType,
     swarm_id: str,
+    swarm_config_bucket: str,
 ) -> None:
     """scale up a docker swarm cluster"""
     if num_managers + num_workers < 1:
@@ -262,7 +289,7 @@ def scale(
     )
     docker_swarm_ops.init_instances(
         ssm=graplctl_state.ssm,
-        deployment_name=graplctl_state.grapl_deployment_name,
+        swarm_config_bucket=swarm_config_bucket,
         instances=all_instances,
     )
     click.echo(
@@ -275,7 +302,7 @@ def scale(
         )
         manager_join_token = docker_swarm_ops.extract_join_token(
             ssm=graplctl_state.ssm,
-            deployment_name=graplctl_state.grapl_deployment_name,
+            swarm_config_bucket=swarm_config_bucket,
             manager_instance=manager_instance,
             manager=True,
         )
@@ -289,7 +316,7 @@ def scale(
         docker_swarm_ops.join_swarm_nodes(
             ec2=graplctl_state.ec2,
             ssm=graplctl_state.ssm,
-            deployment_name=graplctl_state.grapl_deployment_name,
+            swarm_config_bucket=swarm_config_bucket,
             instances=manager_instances,
             join_token=manager_join_token,
             manager=True,
@@ -305,7 +332,7 @@ def scale(
         )
         worker_join_token = docker_swarm_ops.extract_join_token(
             ssm=graplctl_state.ssm,
-            deployment_name=graplctl_state.grapl_deployment_name,
+            swarm_config_bucket=swarm_config_bucket,
             manager_instance=manager_instance,
             manager=False,
         )
@@ -319,7 +346,7 @@ def scale(
         docker_swarm_ops.join_swarm_nodes(
             ec2=graplctl_state.ec2,
             ssm=graplctl_state.ssm,
-            deployment_name=graplctl_state.grapl_deployment_name,
+            swarm_config_bucket=swarm_config_bucket,
             instances=worker_instances,
             join_token=worker_join_token,
             manager=False,

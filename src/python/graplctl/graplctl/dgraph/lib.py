@@ -245,7 +245,7 @@ def insert_dns_ip(
 
 def init_dgraph(
     ssm: SSMClient,
-    deployment_name: str,
+    dgraph_config_bucket: str,
     instances: List[Ec2Instance],
 ) -> None:
     """configure the docker swarm cluster instances for dgraph"""
@@ -258,11 +258,11 @@ def init_dgraph(
             "sourceInfo": [
                 json.dumps(
                     {
-                        "path": f"https://s3.amazonaws.com/{deployment_name.lower()}-dgraph-config-bucket/dgraph_init.py"
+                        "path": f"https://s3.amazonaws.com/{dgraph_config_bucket}/dgraph_init.py"
                     }
                 )
             ],
-            "commandLine": [f"/usr/bin/python3 dgraph_init.py {deployment_name}"],
+            "commandLine": [f"/usr/bin/python3 dgraph_init.py {dgraph_config_bucket}"],
         },
     )
     command_id = command["Command"]["CommandId"]
@@ -272,11 +272,13 @@ def init_dgraph(
 
 def deploy_dgraph(
     ssm: SSMClient,
-    deployment_name: str,
     manager_instance: Ec2Instance,
     worker_instances: Tuple[Ec2Instance, Ec2Instance],
+    dgraph_config_bucket: str,
+    dgraph_logs_group: str,
 ) -> None:
     """deploy dgraph on the docker swarm cluster"""
+
     command = ssm.send_command(
         InstanceIds=[manager_instance.instance_id],
         DocumentName="AWS-RunRemoteScript",
@@ -285,12 +287,12 @@ def deploy_dgraph(
             "sourceInfo": [
                 json.dumps(
                     {
-                        "path": f"https://s3.amazonaws.com/{deployment_name.lower()}-dgraph-config-bucket/dgraph_deploy.py"
+                        "path": f"https://s3.amazonaws.com/{dgraph_config_bucket}/dgraph_deploy.py"
                     }
                 )
             ],
             "commandLine": [
-                f"/usr/bin/python3 dgraph_deploy.py {deployment_name.lower()} {manager_instance.private_dns_name} {worker_instances[0].private_dns_name} {worker_instances[1].private_dns_name}"
+                f"/usr/bin/python3 dgraph_deploy.py {manager_instance.private_dns_name} {worker_instances[0].private_dns_name} {worker_instances[1].private_dns_name} {dgraph_config_bucket} {dgraph_logs_group}"
             ],
         },
     )
@@ -301,7 +303,13 @@ def deploy_dgraph(
     LOGGER.info(f"command {command_id} instance {instance_id}: {result}")
 
 
-def create_dgraph(graplctl_state: State, instance_type: InstanceTypeType) -> bool:
+def create_dgraph(
+    graplctl_state: State,
+    instance_type: InstanceTypeType,
+    dgraph_config_bucket: str,
+    dgraph_logs_group: str,
+    swarm_config_bucket: str,
+) -> bool:
     swarm_id = f"{graplctl_state.grapl_deployment_name.lower()}-dgraph-swarm"
     LOGGER.info(f"creating dgraph swarm {swarm_id}")
     if not docker_swarm_ops.create_swarm(
@@ -310,8 +318,10 @@ def create_dgraph(graplctl_state: State, instance_type: InstanceTypeType) -> boo
         num_workers=2,
         instance_type=instance_type,
         swarm_id=swarm_id,
+        swarm_config_bucket=swarm_config_bucket,
         docker_daemon_config={"data-root": "/dgraph"},
         extra_init=init_dgraph,
+        dgraph_config_bucket=dgraph_config_bucket,
     ):
         LOGGER.warn(f"dgraph swarm {swarm_id} already exists")
         return False  # bail early because the dgraph deployment already exists
@@ -376,9 +386,9 @@ def create_dgraph(graplctl_state: State, instance_type: InstanceTypeType) -> boo
     LOGGER.info(f"created disk usage alarms for dgraph in swarm {swarm_id}")
 
     LOGGER.info(f"deploying dgraph in swarm {swarm_id}")
+
     deploy_dgraph(
         ssm=graplctl_state.ssm,
-        deployment_name=graplctl_state.grapl_deployment_name,
         manager_instance=manager_instance,
         # Here, we only have two workers for Dgraph in our current
         # setup, so we'll ignore the type discrepancy here.
@@ -387,6 +397,8 @@ def create_dgraph(graplctl_state: State, instance_type: InstanceTypeType) -> boo
             for instance in swarm_instances
             if Tag(key="grapl-swarm-role", value="swarm-worker") in instance.tags
         ),
+        dgraph_config_bucket=dgraph_config_bucket,
+        dgraph_logs_group=dgraph_logs_group,
     )
     LOGGER.info(f"deployed dgraph in swarm {swarm_id}")
 

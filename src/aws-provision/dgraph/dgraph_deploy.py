@@ -4,26 +4,29 @@ from typing import Iterator, Tuple
 
 
 def _deploy_dgraph(
-    deployment_name: str,
     manager_hostname: str,
     worker_hostnames: Tuple[str, str],
+    dgraph_config_bucket: str,
+    dgraph_logs_group: str,
 ) -> Iterator[str]:
     """Deploy DGraph on a docker swarm cluster"""
+
     commands = [
         [
             "aws",
             "s3",
             "cp",
-            f"s3://{deployment_name.lower()}-dgraph-config-bucket/dgraph_deploy.sh",
+            f"s3://{dgraph_config_bucket}/dgraph_deploy.sh",
             ".",
         ],
         [
             "bash",
             "dgraph_deploy.sh",
-            deployment_name.lower(),
             manager_hostname,
             worker_hostnames[0],
             worker_hostnames[1],
+            dgraph_config_bucket,
+            dgraph_logs_group,
         ],
         ["sleep", "15"],
         ["docker", "service", "ls"],
@@ -40,17 +43,24 @@ def _deploy_dgraph(
 
 
 def main(
-    deployment_name: str,
     manager_hostname: str,
     worker_hostnames: Tuple[str, str],
+    dgraph_config_bucket: str,
+    dgraph_logs_group: str,
 ) -> None:
-    for result in _deploy_dgraph(deployment_name, manager_hostname, worker_hostnames):
+    for result in _deploy_dgraph(
+        manager_hostname,
+        worker_hostnames,
+        dgraph_config_bucket,
+        dgraph_logs_group,
+    ):
         sys.stdout.write(result)
 
 
 if __name__ == "__main__":
     main(
-        deployment_name=sys.argv[1],
-        manager_hostname=sys.argv[2],
-        worker_hostnames=(sys.argv[3], sys.argv[4]),
+        manager_hostname=sys.argv[1],
+        worker_hostnames=(sys.argv[2], sys.argv[3]),
+        dgraph_config_bucket=sys.argv[4],
+        dgraph_logs_group=sys.argv[5],
     )
