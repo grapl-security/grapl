@@ -96,8 +96,6 @@ def main() -> None:
 
     services: List[ServiceLike] = []
 
-    import pulumi
-
     confluent: Mapping[
         str,
         Union[
