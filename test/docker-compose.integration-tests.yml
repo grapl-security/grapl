@@ -144,11 +144,11 @@ services:
       context: ${PWD}
       dockerfile: ./src/python/Dockerfile
       target: graphql-endpoint-tests
-    command: |
-      /bin/bash -c '
-        cd graphql_endpoint_tests &&
+    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+    command:
+      - |
+        cd graphql_endpoint_tests
         py.test --capture=no -n 1 -m "integration_test"
-      '
     environment:
       - AWS_REGION
       - DEBUG_SERVICES=${DEBUG_SERVICES:-}
