@@ -100,9 +100,11 @@ services:
       context: ${PWD}
       dockerfile: ./src/python/Dockerfile
       target: engagement-edge-test
-    command: bash -c '
-      cd engagement_edge &&
-      py.test -n auto -m "integration_test"'
+    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+    command:
+      - |
+        cd engagement_edge
+        py.test -n auto -m "integration_test"
     environment:
       - AWS_REGION
       - DEPLOYMENT_NAME
