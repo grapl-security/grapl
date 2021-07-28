@@ -45,7 +45,7 @@ services:
         awslogs-stream: "envoy"
 
   zero:
-    image: dgraph/dgraph:v20.07.1
+    image: dgraph/dgraph:v21.03.1
     volumes:
       - data-volume:/dgraph
     ports:
@@ -68,7 +68,7 @@ services:
       - envoy
 
   alpha1:
-    image: dgraph/dgraph:v20.07.1
+    image: dgraph/dgraph:v21.03.1
     hostname: "alpha1"
     volumes:
       - data-volume:/dgraph
@@ -96,7 +96,7 @@ services:
       - zero
 
   alpha2:
-    image: dgraph/dgraph:v20.07.1
+    image: dgraph/dgraph:v21.03.1
     hostname: "alpha2"
     volumes:
       - data-volume:/dgraph
@@ -124,7 +124,7 @@ services:
       - zero
 
   alpha3:
-    image: dgraph/dgraph:v20.07.1
+    image: dgraph/dgraph:v21.03.1
     hostname: "alpha3"
     volumes:
       - data-volume:/dgraph
