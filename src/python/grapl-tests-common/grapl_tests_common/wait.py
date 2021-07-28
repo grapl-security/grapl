@@ -8,8 +8,11 @@ from typing import Any, Callable, Dict, Mapping, Optional, Sequence
 import botocore
 from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.nodes.base import BaseQuery, BaseView
+from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_common.retry import retry
 from typing_extensions import Protocol
+
+LOGGER = get_module_grapl_logger()
 
 
 class WaitForResource(Protocol):
@@ -100,7 +103,7 @@ class WaitForQuery(WaitForResource):
         self.query = query
         self.graph_client = graph_client or GraphClient()
 
-    @retry()
+    @retry(exception_cls=Exception, logger=LOGGER)
     def acquire(self) -> Optional[BaseView]:
         result = self.query.query_first(self.graph_client)
         return result

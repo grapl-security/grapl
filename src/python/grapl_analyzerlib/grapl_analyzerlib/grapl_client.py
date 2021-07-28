@@ -4,12 +4,15 @@ from typing import Iterator, List, Optional, Tuple
 from grpc import CallCredentials
 
 from pydgraph import DgraphClient, DgraphClientStub, Txn
+from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_common.retry import retry
 from contextlib import contextmanager
 
 import pydgraph
 
 from grapl_common.time_utils import SecsDuration
+
+LOGGER = get_module_grapl_logger()
 
 # https://dgraph.io/docs/clients/python/#setting-metadata-headers
 DgraphMetadata = List[Tuple[str, str]]
@@ -18,7 +21,7 @@ DgraphMetadata = List[Tuple[str, str]]
 def mg_alphas() -> Iterator[Tuple[str, int]]:
     # MG_ALPHAS being the list of "master graph alphas"
     # (master graph is an outdated term we don't really use in grapl anymore)
-    # alpha being one of the Dgraph cluster's node types 
+    # alpha being one of the Dgraph cluster's node types
     # (https://dgraph.io/docs/get-started/#dgraph)
     mg_alphas = os.environ["MG_ALPHAS"].split(",")
     for mg_alpha in mg_alphas:
@@ -50,7 +53,7 @@ class GraphClient(DgraphClient):
         finally:
             txn.discard()
 
-    @retry(ExceptionToCheck=pydgraph.RetriableError)
+    @retry(exception_cls=pydgraph.RetriableError, logger=LOGGER)
     def alter(
         self,
         operation: pydgraph.Operation,
