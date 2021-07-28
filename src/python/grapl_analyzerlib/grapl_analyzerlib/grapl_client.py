@@ -53,7 +53,12 @@ class GraphClient(DgraphClient):
         finally:
             txn.discard()
 
-    @retry(exception_cls=pydgraph.RetriableError, logger=LOGGER, tries=10)
+    @retry(
+        exception_cls=pydgraph.RetriableError, 
+        logger=LOGGER, 
+        tries=10,
+        backoff=1,  # linear, not exponential
+    )
     def alter(
         self,
         operation: pydgraph.Operation,
