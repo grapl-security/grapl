@@ -10,31 +10,31 @@ services:
       dockerfile: ./src/python/e2e-test-runner/e2e-test-runner.Dockerfile
       args:
         - TAG=${TAG:-latest}
-    command: |
-      /bin/bash -c "
-          graplctl \
+    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+    command:
+      - |
+        graplctl \
               --grapl-region $AWS_REGION \
               --grapl-deployment-name $DEPLOYMENT_NAME \
               --grapl-version $DEPLOYMENT_NAME \
               --aws-profile default \
               upload analyzer \
-              --analyzer_main_py ./etc/local_grapl/suspicious_svchost/main.py && \
-          graplctl \
+              --analyzer_main_py ./etc/local_grapl/suspicious_svchost/main.py
+        graplctl \
               --grapl-region $AWS_REGION \
               --grapl-deployment-name $DEPLOYMENT_NAME \
               --grapl-version $DEPLOYMENT_NAME \
               --aws-profile default \
               upload analyzer \
-              --analyzer_main_py ./etc/local_grapl/unique_cmd_parent/main.py && \
-          graplctl \
+              --analyzer_main_py ./etc/local_grapl/unique_cmd_parent/main.py
+        graplctl \
               --grapl-region $AWS_REGION \
               --grapl-deployment-name $DEPLOYMENT_NAME \
               --grapl-version $DEPLOYMENT_NAME \
               --aws-profile default \
               upload sysmon \
-              --logfile ./etc/sample_data/eventlog.xml && \
-          python -c 'import lambdex_handler; lambdex_handler.handler(None, None)'
-      "
+              --logfile ./etc/sample_data/eventlog.xml
+        python3 -c 'import lambdex_handler; lambdex_handler.handler(None, None)'
     volumes:
       - dynamodb_dump:/mnt/dynamodb_dump
       - ${PWD}/etc:/home/grapl/etc:ro
