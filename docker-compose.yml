@@ -120,14 +120,18 @@ services:
   # service... maybe transitory, this will eventually match prod
   redis:
     image: redis:latest
-    command: |
-      sh -c "
+    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+    command:
+      - |
         # hack from https://stackoverflow.com/questions/54533308/disable-redis-persistence-in-docker
         # to disable persistence
-        rm -f /data/dump.rdb && redis-server
-      "
+        rm -f /data/dump.rdb
+        redis-server
     healthcheck:
-      test: bash -c 'redis-cli -h 127.0.0.1 ping | grep PONG'
+      test:
+        - CMD-SHELL
+        - |
+          redis-cli -h 127.0.0.1 ping | grep PONG
       interval: 5s
       timeout: 10s
       start_period: 10s
@@ -161,12 +165,12 @@ services:
       - DATA_DIR=${DATA_DIR- }
     privileged: true # for docker lambda execution
     healthcheck:
-      test: |
-        bash -c '
-          export AWS_ACCESS_KEY_ID=${FAKE_AWS_ACCESS_KEY_ID} &&
-          export AWS_SECRET_ACCESS_KEY=${FAKE_AWS_SECRET_ACCESS_KEY} &&
+      test:
+        - CMD-SHELL
+        - |
+          export AWS_ACCESS_KEY_ID=${FAKE_AWS_ACCESS_KEY_ID}
+          export AWS_SECRET_ACCESS_KEY=${FAKE_AWS_SECRET_ACCESS_KEY}
           aws --endpoint-url=http://${LOCALSTACK_HOST}:${LOCALSTACK_PORT} s3 ls
-        '
       # Probe failure during this period will not be counted towards the maximum number of retries
       start_period: 30s
       # Health check is executed every `interval` seconds.
@@ -419,11 +423,11 @@ services:
 
   nginx:
     image: nginxinc/nginx-unprivileged
-    command: |
-      /bin/bash -c "
-        export API_GATEWAY_API_ID=$$(cat /pulumi-outputs/prod-api-id) &&
+    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+    command:
+      - |
+        export API_GATEWAY_API_ID=$$(cat /pulumi-outputs/prod-api-id)
         /docker-entrypoint.sh nginx -g 'daemon off;'
-      "
     volumes:
       - ./etc/local_grapl/nginx_templates:/etc/nginx/templates
       - type: volume
@@ -481,7 +485,8 @@ services:
 
   graphql-endpoint:
     image: grapl/graphql-endpoint:${TAG:-latest}
-    command: bash -c "./start_potentially_with_debugger.sh"
+    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+    command: ./start_potentially_with_debugger.sh
     environment:
       <<: *aws-env
       <<: *dgraph-env
@@ -571,10 +576,11 @@ services:
 
   provisioner:
     image: grapl/provisioner:${TAG:-latest}
-    command: |
-      /bin/bash -c "
-          python -c 'import lambdex_handler; lambdex_handler.handler(None, None)'
-      "
+    entrypoint: ["python3", "-c"]
+    command:
+      - |
+        import lambdex_handler
+        lambdex_handler.handler(None, None)
     environment:
       <<: *aws-env
       <<: *dgraph-env
