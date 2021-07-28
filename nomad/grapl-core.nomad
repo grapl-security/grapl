@@ -49,6 +49,11 @@ variable "schema_table_name" {
     type = string
 }
 
+variable "session_table" {
+    type = string
+    default = "dynamic_session_table"
+}
+
 variable "destination_bucket_name" {
     type = string
 }
@@ -61,6 +66,11 @@ variable "graph_mergers" {
 
 # How many node identifiers should be running in tandem
 variable "node_identifiers" {
+    type = number
+    default = 1
+}
+
+variable "node_identifiers_retry" {
     type = number
     default = 1
 }
@@ -302,6 +312,15 @@ job "grapl-core" {
                     sidecar_service { }
                 }
             }
+
+            service {
+                name = "dgraph-alpha-${alpha.value.id}-http"
+                port = "${alpha.value.http_port}"
+
+                connect {
+                    sidecar_service { }
+                }
+            }
         }
     }
 
@@ -346,6 +365,62 @@ job "grapl-core" {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    group "grapl-node-identifier" {
+        count = var.node_identifiers
+
+        network {
+            mode = "bridge"
+        }
+
+        task "node-identifier" {
+            driver = "docker"
+
+            config {
+                image = "${var.container_registry}/node-identifier:${var.tag}"
+                args = ["/node-identifier"]
+            }
+
+            env {
+                REDIS_ENDPOINT = "${var.redis_endpoint}"
+                MG_ALPHAS = "${local.alpha_grpc_connect_str}"
+                GRAPL_SCHEMA_TABLE = "${var.schema_table_name}"
+                AWS_REGION = "${var.aws_region}"
+                DYNAMIC_SESSION_TABLE = "${var.session_table}"
+                DEST_BUCKET_NAME = "${var.destination_bucket_name}"
+                SOURCE_QUEUE_URL = "${var.aws_sqs_url}/${var.aws_account_id}/node-identifier-queue"
+                DEAD_LETTER_QUEUE_URL = "${var.aws_sqs_url}/${var.aws_account_id}/node-identifier-dead-letter-queue"
+            }
+        }
+    }
+
+    group "grapl-node-identifier-retry" {
+        count = var.node_identifiers_retry
+
+        network {
+            mode = "bridge"
+        }
+
+        task "node-identifier-retry" {
+            driver = "docker"
+
+            config {
+                image = "${var.container_registry}/node-identifier-retry:${var.tag}"
+                args = ["/node-identifier-retry"]
+            }
+
+            env {
+                REDIS_ENDPOINT = "${var.redis_endpoint}"
+                MG_ALPHAS = "${local.alpha_grpc_connect_str}"
+                GRAPL_SCHEMA_TABLE = "${var.schema_table_name}"
+                AWS_REGION = "${var.aws_region}"
+                DYNAMIC_SESSION_TABLE = "${var.session_table}"
+                DEST_BUCKET_NAME = "${var.destination_bucket_name}"
+                SOURCE_QUEUE_URL = "${var.aws_sqs_url}/${var.aws_account_id}/node-identifier-retry-queue"
+                DEAD_LETTER_QUEUE_URL = "${var.aws_sqs_url}/${var.aws_account_id}/node-identifier-retry-dead-letter-queue"
             }
         }
     }

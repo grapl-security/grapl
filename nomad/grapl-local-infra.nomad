@@ -7,7 +7,7 @@ job "grapl-local-infra" {
     group "redis" {
         network {
             port "redis" {
-                to = 6379
+                static = 6379
             }
         }
 
@@ -24,7 +24,7 @@ job "grapl-local-infra" {
     group "dynamodb" {
         network {
             port "dynamodb" {
-                to = 8000
+                static = 6666
             }
         }
 
@@ -41,7 +41,7 @@ job "grapl-local-infra" {
     group "sqs" {
         network {
             port "sqs" {
-                to = 9324
+                static = 9324
             }
         }
 
@@ -51,6 +51,23 @@ job "grapl-local-infra" {
             config {
                 image = "graze/sqs-local:latest"
                 ports = ["sqs"]
+            }
+        }
+    }
+
+    group "ratel" {
+        network {
+            port "ratel" {
+                static = 8000
+            }
+        }
+
+        task "ratel" {
+            driver = "docker"
+
+            config {
+                image = "dgraph/ratel:latest"
+                ports = ["ratel"]
             }
         }
     }
