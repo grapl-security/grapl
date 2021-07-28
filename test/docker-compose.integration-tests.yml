@@ -47,9 +47,11 @@ services:
       context: ${PWD}
       dockerfile: ./src/python/Dockerfile
       target: grapl-analyzerlib-test
-    command: bash -c '
-      cd grapl_analyzerlib &&
-      py.test -v -n auto -m "integration_test"'
+    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+    command:
+      - |
+        cd grapl_analyzerlib
+        py.test -v -n auto -m "integration_test"
     environment:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
       - DEPLOYMENT_NAME
