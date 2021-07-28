@@ -46,7 +46,6 @@ def retry(
                     if on_falsey and not result:
                         time.sleep(mdelay)
                     else:
-                        logger.debug(f"{retry_label} success")
                         return result
                 except exception_cls as e:
                     iteration = tries - mtries + 1
