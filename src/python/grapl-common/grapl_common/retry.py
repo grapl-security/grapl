@@ -9,7 +9,7 @@ F = TypeVar("F", bound=Callable)
 def retry(
     exception_cls: Type[Exception],
     logger: logging.Logger,
-    on_falsey: bool = True,
+    on_falsey: bool = False,
     tries: int = 3,
     delay: float = 0.5,
     backoff: int = 2,
@@ -39,16 +39,19 @@ def retry(
         def f_retry(*args: Any, **kwargs: Any) -> Any:
             mtries, mdelay = tries, delay
             while mtries > 1:
+
                 try:
                     result = f(*args, **kwargs)
 
                     if on_falsey and not result:
                         time.sleep(mdelay)
                     else:
+                        logger.debug(f"{retry_label} success")
                         return result
                 except exception_cls as e:
                     iteration = tries - mtries + 1
-                    logger.warn(f"@retry: {iteration}/{tries} failed due to: {e}")
+                    retry_label = f"@retry: {iteration}/{tries}"
+                    logger.debug(f"{retry_label} failed due to {e}")
                     time.sleep(mdelay)
                 finally:
                     mtries -= 1

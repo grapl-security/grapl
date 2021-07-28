@@ -9,7 +9,6 @@ from grapl_tests_common.clients.model_plugin_deployer_client import (
 )
 
 
-@pytest.mark.xfail(reason="https://github.com/grapl-security/issue-tracker/issues/625")
 def test_upload_plugin(jwt: str) -> None:
     # We haven't uploaed `schemas.py` yet, so IamRole shouldn't exist in
     # the graphql schema.
