@@ -50,13 +50,11 @@ variable "schema_table_name" {
     type = string
 }
 
+# https://github.com/grapl-security/grapl/blob/af6f2c197d52e9941047aab813c30d2cbfd54523/pulumi/infra/dynamodb.py#L118
+# Without deployment name
 variable "session_table" {
     type = string
     default = "dynamic_session_table"
-}
-
-variable "destination_bucket_name" {
-    type = string
 }
 
 # How many graph mergers should be running in tandem
@@ -345,7 +343,8 @@ job "grapl-core" {
                 MG_ALPHAS = "${local.alpha_grpc_connect_str}"
                 GRAPL_SCHEMA_TABLE = "${var.schema_table_name}"
                 AWS_REGION = "${var.aws_region}"
-                DEST_BUCKET_NAME = "${var.destination_bucket_name}"
+                # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L165
+                DEST_BUCKET_NAME = "subgraphs-merged-bucket"
                 SOURCE_QUEUE_URL = "${var.aws_sqs_url}/${var.aws_account_id}/graph-merger-queue"
                 DEAD_LETTER_QUEUE_URL = "${var.aws_sqs_url}/${var.aws_account_id}/graph-merger-dead-letter-queue"
             }
@@ -391,7 +390,8 @@ job "grapl-core" {
                 GRAPL_SCHEMA_TABLE = "${var.schema_table_name}"
                 AWS_REGION = "${var.aws_region}"
                 DYNAMIC_SESSION_TABLE = "${var.session_table}"
-                DEST_BUCKET_NAME = "${var.destination_bucket_name}"
+                # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L156
+                DEST_BUCKET_NAME = "subgraphs-generated-bucket"
                 SOURCE_QUEUE_URL = "${var.aws_sqs_url}/${var.aws_account_id}/node-identifier-queue"
                 DEAD_LETTER_QUEUE_URL = "${var.aws_sqs_url}/${var.aws_account_id}/node-identifier-dead-letter-queue"
             }
@@ -419,7 +419,7 @@ job "grapl-core" {
                 GRAPL_SCHEMA_TABLE = "${var.schema_table_name}"
                 AWS_REGION = "${var.aws_region}"
                 DYNAMIC_SESSION_TABLE = "${var.session_table}"
-                DEST_BUCKET_NAME = "${var.destination_bucket_name}"
+                DEST_BUCKET_NAME = "subgraphs-generated-bucket"
                 SOURCE_QUEUE_URL = "${var.aws_sqs_url}/${var.aws_account_id}/node-identifier-retry-queue"
                 DEAD_LETTER_QUEUE_URL = "${var.aws_sqs_url}/${var.aws_account_id}/node-identifier-retry-dead-letter-queue"
             }
