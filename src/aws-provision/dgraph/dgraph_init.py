@@ -3,7 +3,7 @@ import sys
 from typing import Iterator
 
 
-def _init_dgraph(deployment_name: str) -> Iterator[str]:
+def _init_dgraph(dgraph_config_bucket: str) -> Iterator[str]:
     """Initialize a DGraph instance. Make sure the instance_init.py
     command has completed before running this command."""
     commands = [
@@ -11,7 +11,7 @@ def _init_dgraph(deployment_name: str) -> Iterator[str]:
             "aws",
             "s3",
             "cp",
-            f"s3://{deployment_name.lower()}-dgraph-config-bucket/dgraph_init.sh",
+            f"s3://{dgraph_config_bucket}/dgraph_init.sh",
             ".",
         ],
         ["bash", "dgraph_init.sh"],
@@ -21,9 +21,9 @@ def _init_dgraph(deployment_name: str) -> Iterator[str]:
         yield result.stdout.decode("utf-8")
 
 
-def main(deployment_name: str) -> None:
+def main(dgraph_config_bucket: str) -> None:
     # run all the command to initialize the instance
-    for result in _init_dgraph(deployment_name):
+    for result in _init_dgraph(dgraph_config_bucket):
         sys.stdout.write(result)
 
 

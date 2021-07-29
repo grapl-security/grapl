@@ -3,21 +3,23 @@
 set -euo pipefail
 
 echo "--- Deploying dgraph ---"
-readonly grapl_deploy_name="$1"
-readonly manager="${2}"
-readonly worker1="${3}"
-readonly worker2="${4}"
 
-sudo -u ec2-user -- aws s3 cp "s3://${grapl_deploy_name}-dgraph-config-bucket/docker-compose-dgraph.yml" ~ec2-user/
-sudo -u ec2-user -- aws s3 cp "s3://${grapl_deploy_name}-dgraph-config-bucket/envoy.yaml" ~ec2-user/
+readonly manager_hostname="${1}"
+readonly worker_0_hostname="${2}"
+readonly worker_1_hostname="${3}"
+readonly dgraph_config_bucket="${4}"
+readonly dgraph_logs_group="${5}"
+
+sudo -u ec2-user -- aws s3 cp "s3://${dgraph_config_bucket}/docker-compose-dgraph.yml" ~ec2-user/
+sudo -u ec2-user -- aws s3 cp "s3://${dgraph_config_bucket}/envoy.yaml" ~ec2-user/
 
 sudo -u ec2-user \
     --login \
     PWD=~ec2-user \
-    AWS01_NAME="${manager}" \
-    AWS02_NAME="${worker1}" \
-    AWS03_NAME="${worker2}" \
-    AWS_LOGS_GROUP="${grapl_deploy_name}-grapl-dgraph" \
+    AWS01_NAME="${manager_hostname}" \
+    AWS02_NAME="${worker_0_hostname}" \
+    AWS03_NAME="${worker_1_hostname}" \
+    AWS_LOGS_GROUP="${dgraph_logs_group}" \
     -- docker stack deploy -c docker-compose-dgraph.yml dgraph
 
 echo "--- Deployed dgraph ---"

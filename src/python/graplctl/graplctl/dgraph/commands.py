@@ -28,13 +28,47 @@ def dgraph(
     help="EC2 instance type for swarm nodes",
     required=True,
 )
+@click.option(
+    "-b",
+    "--dgraph-config-bucket",
+    help="Name of the S3 bucket with Dgraph config files for the cluster",
+    type=click.STRING,
+    required=True,
+    envvar="GRAPL_DGRAPH_CONFIG_BUCKET",
+)
+@click.option(
+    "-l",
+    "--dgraph-logs-group",
+    help="The name of the AWS logs group to which the containers of the Dgraph Swarm cluster will send their log streams",
+    type=click.STRING,
+    required=True,
+    envvar="GRAPL_DGRAPH_LOGS_GROUP",
+)
+@click.option(
+    "-s",
+    "--swarm-config-bucket",
+    type=click.STRING,
+    help="Name of the S3 bucket with Swarm config files for the cluster",
+    required=True,
+    envvar="GRAPL_SWARM_CONFIG_BUCKET",
+)
 @pass_graplctl_state
-def create(graplctl_state: State, instance_type: InstanceTypeType) -> None:
+def create(
+    graplctl_state: State,
+    instance_type: InstanceTypeType,
+    dgraph_config_bucket: str,
+    dgraph_logs_group: str,
+    swarm_config_bucket: str,
+) -> None:
     """spin up a swarm cluster and deploy dgraph on it"""
     # TODO: Make idempotent
     click.echo(f"creating dgraph cluster of {instance_type} instances")
     if not dgraph_ops.create_dgraph(
-        graplctl_state=graplctl_state, instance_type=instance_type
+        graplctl_state=graplctl_state,
+        instance_type=instance_type,
+        dgraph_config_bucket=dgraph_config_bucket,
+        dgraph_logs_group=dgraph_logs_group,
+        swarm_config_bucket=swarm_config_bucket,
     ):
         click.echo("dgraph cluster already exists")
         return

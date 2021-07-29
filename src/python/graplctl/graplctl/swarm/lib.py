@@ -257,7 +257,7 @@ def swarm_ids(
 
 
 def init_instances(
-    ssm: SSMClient, deployment_name: str, instances: List[Ec2Instance]
+    ssm: SSMClient, swarm_config_bucket: str, instances: List[Ec2Instance]
 ) -> None:
     """Initialize the EC2 instances"""
     instance_ids = [instance.instance_id for instance in instances]
@@ -269,7 +269,7 @@ def init_instances(
             "sourceInfo": [
                 json.dumps(
                     {
-                        "path": f"https://s3.amazonaws.com/{deployment_name.lower()}-swarm-config-bucket/instance_init.py"
+                        "path": f"https://s3.amazonaws.com/{swarm_config_bucket}/instance_init.py"
                     }
                 )
             ],
@@ -284,7 +284,7 @@ def init_instances(
 def init_docker_swarm(
     ec2: EC2ServiceResource,
     ssm: SSMClient,
-    deployment_name: str,
+    swarm_config_bucket: str,
     manager_instance: Ec2Instance,
 ) -> None:
     """Initialize the docker swarm cluster"""
@@ -296,7 +296,7 @@ def init_docker_swarm(
             "sourceInfo": [
                 json.dumps(
                     {
-                        "path": f"https://s3.amazonaws.com/{deployment_name.lower()}-swarm-config-bucket/swarm_init.py"
+                        "path": f"https://s3.amazonaws.com/{swarm_config_bucket}/swarm_init.py"
                     }
                 )
             ],
@@ -318,7 +318,7 @@ def init_docker_swarm(
 
 def extract_join_token(
     ssm: SSMClient,
-    deployment_name: str,
+    swarm_config_bucket: str,
     manager_instance: Ec2Instance,
     manager: bool = False,
 ) -> str:
@@ -331,7 +331,7 @@ def extract_join_token(
             "sourceInfo": [
                 json.dumps(
                     {
-                        "path": f"https://s3.amazonaws.com/{deployment_name.lower()}-swarm-config-bucket/swarm_token.py"
+                        "path": f"https://s3.amazonaws.com/{swarm_config_bucket}/swarm_token.py"
                     }
                 )
             ],
@@ -346,7 +346,7 @@ def extract_join_token(
 def join_swarm_nodes(
     ec2: EC2ServiceResource,
     ssm: SSMClient,
-    deployment_name: str,
+    swarm_config_bucket: str,
     instances: List[Ec2Instance],
     join_token: str,
     manager: bool,
@@ -362,7 +362,7 @@ def join_swarm_nodes(
             "sourceInfo": [
                 json.dumps(
                     {
-                        "path": f"https://s3.amazonaws.com/{deployment_name.lower()}-swarm-config-bucket/swarm_join.py"
+                        "path": f"https://s3.amazonaws.com/{swarm_config_bucket}/swarm_join.py"
                     }
                 )
             ],
@@ -388,7 +388,7 @@ def join_swarm_nodes(
 
 
 def restart_daemons(
-    ssm: SSMClient, deployment_name: str, instances: List[Ec2Instance]
+    ssm: SSMClient, swarm_config_bucket: str, instances: List[Ec2Instance]
 ) -> None:
     """Restart the cloudwatch agent and docker daemon"""
     instance_ids = [instance.instance_id for instance in instances]
@@ -400,7 +400,7 @@ def restart_daemons(
             "sourceInfo": [
                 json.dumps(
                     {
-                        "path": f"https://s3.amazonaws.com/{deployment_name.lower()}-swarm-config-bucket/restart_daemons.py"
+                        "path": f"https://s3.amazonaws.com/{swarm_config_bucket}/restart_daemons.py"
                     }
                 )
             ],
@@ -417,7 +417,7 @@ def restart_daemons(
 
 def configure_docker_daemon(
     ssm: SSMClient,
-    deployment_name: str,
+    swarm_config_bucket: str,
     instances: List[Ec2Instance],
     config: Dict,
 ) -> None:
@@ -431,7 +431,7 @@ def configure_docker_daemon(
             "sourceInfo": [
                 json.dumps(
                     {
-                        "path": f"https://s3.amazonaws.com/{deployment_name.lower()}-swarm-config-bucket/configure_docker_daemon.py"
+                        "path": f"https://s3.amazonaws.com/{swarm_config_bucket}/configure_docker_daemon.py"
                     }
                 )
             ],
@@ -450,6 +450,7 @@ def exec_(
     ec2: EC2ServiceResource,
     ssm: SSMClient,
     deployment_name: str,
+    swarm_config_bucket: str,
     version: str,
     region: str,
     swarm_id: str,
@@ -477,7 +478,7 @@ def exec_(
             "sourceInfo": [
                 json.dumps(
                     {
-                        "path": f"https://s3.amazonaws.com/{deployment_name.lower()}-swarm-config-bucket/swarm_exec.py"
+                        "path": f"https://s3.amazonaws.com/{swarm_config_bucket}/swarm_exec.py"
                     }
                 )
             ],
@@ -500,15 +501,27 @@ def swarm_ls(graplctl_state: State) -> Iterator[str]:
         yield swarm_id
 
 
+# The `dgraph_config_bucket` argument is a bit unfortunate in what is
+# ostensibly a Swarm-focused library. However, our abstraction here
+# was always a bit leaky. In any event, we only ever use Swarm with
+# Dgraph, there are no plans to use anything else with Swarm, and we
+# don't plan on using Swarm for much longer anyway. This is the
+# argument that will always be passed to the `extra_init` function, if
+# present.
 def create_swarm(
     graplctl_state: State,
     num_managers: int,
     num_workers: int,
     instance_type: InstanceTypeType,
     swarm_id: str,
+    swarm_config_bucket: str,
+    dgraph_config_bucket: Optional[str] = None,
     docker_daemon_config: Optional[Dict] = None,
     extra_init: Optional[Callable[[SSMClient, str, List[Ec2Instance]], None]] = None,
 ) -> bool:
+
+    deployment_name = graplctl_state.grapl_deployment_name
+
     existing_swarm_ids = set(swarm_ls(graplctl_state))
     if swarm_id in existing_swarm_ids:
         LOGGER.warn(f"swarm {swarm_id} already exists")
@@ -517,7 +530,7 @@ def create_swarm(
     ami_id = REGION_TO_AMI_ID[graplctl_state.grapl_region.lower()]
     security_group_id = swarm_security_group_id(
         ec2=graplctl_state.ec2,
-        deployment_name=graplctl_state.grapl_deployment_name,
+        deployment_name=deployment_name,
     )
     vpc_id = swarm_vpc_id(
         ec2=graplctl_state.ec2, swarm_security_group_id=security_group_id
@@ -528,7 +541,7 @@ def create_swarm(
         grapl_subnet_ids(
             ec2=graplctl_state.ec2,
             swarm_vpc_id=vpc_id,
-            deployment_name=graplctl_state.grapl_deployment_name,
+            deployment_name=deployment_name,
         )
     )
     assert subnet_ids, "Couldn't find any matching VPC subnets in `grapl_subnet_ids`"
@@ -538,7 +551,7 @@ def create_swarm(
     manager_instances = create_instances(
         ec2=graplctl_state.ec2,
         ssm=graplctl_state.ssm,
-        deployment_name=graplctl_state.grapl_deployment_name,
+        deployment_name=deployment_name,
         region=graplctl_state.grapl_region,
         version=graplctl_state.grapl_version,
         swarm_manager=True,
@@ -556,7 +569,7 @@ def create_swarm(
     worker_instances = create_instances(
         ec2=graplctl_state.ec2,
         ssm=graplctl_state.ssm,
-        deployment_name=graplctl_state.grapl_deployment_name,
+        deployment_name=deployment_name,
         region=graplctl_state.grapl_region,
         version=graplctl_state.grapl_version,
         swarm_manager=False,
@@ -576,16 +589,17 @@ def create_swarm(
     LOGGER.info(f"initializing instances {instance_ids_str}")
     init_instances(
         ssm=graplctl_state.ssm,
-        deployment_name=graplctl_state.grapl_deployment_name,
+        swarm_config_bucket=swarm_config_bucket,
         instances=all_instances,
     )
     LOGGER.info(f"initialized instances {instance_ids_str}")
 
     if extra_init is not None:
+        assert dgraph_config_bucket
         LOGGER.info(f"performing extra initialization on instances {instance_ids_str}")
         extra_init(
             graplctl_state.ssm,
-            graplctl_state.grapl_deployment_name,
+            dgraph_config_bucket,
             all_instances,
         )
         LOGGER.info(f"performed extra initialization on instances {instance_ids_str}")
@@ -594,7 +608,7 @@ def create_swarm(
         LOGGER.info(f"configuring docker daemon on instances {instance_ids_str}")
         configure_docker_daemon(
             ssm=graplctl_state.ssm,
-            deployment_name=graplctl_state.grapl_deployment_name,
+            swarm_config_bucket=swarm_config_bucket,
             instances=all_instances,
             config=docker_daemon_config,
         )
@@ -603,7 +617,7 @@ def create_swarm(
     LOGGER.info(f"restarting daemons on instances {instance_ids_str}")
     restart_daemons(
         ssm=graplctl_state.ssm,
-        deployment_name=graplctl_state.grapl_deployment_name,
+        swarm_config_bucket=swarm_config_bucket,
         instances=all_instances,
     )
     LOGGER.info(f"restarted daemons on instances {instance_ids_str}")
@@ -615,7 +629,7 @@ def create_swarm(
     init_docker_swarm(
         ec2=graplctl_state.ec2,
         ssm=graplctl_state.ssm,
-        deployment_name=graplctl_state.grapl_deployment_name,
+        swarm_config_bucket=swarm_config_bucket,
         manager_instance=manager_instance,
     )
     LOGGER.info(
@@ -628,7 +642,7 @@ def create_swarm(
         )
         manager_join_token = extract_join_token(
             ssm=graplctl_state.ssm,
-            deployment_name=graplctl_state.grapl_deployment_name,
+            swarm_config_bucket=swarm_config_bucket,
             manager_instance=manager_instance,
             manager=True,
         )
@@ -645,7 +659,7 @@ def create_swarm(
         join_swarm_nodes(
             ec2=graplctl_state.ec2,
             ssm=graplctl_state.ssm,
-            deployment_name=graplctl_state.grapl_deployment_name,
+            swarm_config_bucket=swarm_config_bucket,
             instances=manager_instances[1:],
             join_token=manager_join_token,
             manager=True,
@@ -660,7 +674,7 @@ def create_swarm(
     )
     worker_join_token = extract_join_token(
         ssm=graplctl_state.ssm,
-        deployment_name=graplctl_state.grapl_deployment_name,
+        swarm_config_bucket=swarm_config_bucket,
         manager_instance=manager_instance,
         manager=False,
     )
@@ -672,7 +686,7 @@ def create_swarm(
     join_swarm_nodes(
         ec2=graplctl_state.ec2,
         ssm=graplctl_state.ssm,
-        deployment_name=graplctl_state.grapl_deployment_name,
+        swarm_config_bucket=swarm_config_bucket,
         instances=worker_instances,
         join_token=worker_join_token,
         manager=False,

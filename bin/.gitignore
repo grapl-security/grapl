@@ -1,2 +1,2 @@
-*
-!.gitignore
+# This binary is generated and put here by `make graplctl`
+graplctl
