@@ -64,9 +64,6 @@ steps:
   - label: ":python::jeans: Linting"
     command:
       - make lint-python
-    retry:
-      automatic:
-        limit: 3
 
   - label: ":bash::jeans: Linting"
     command:
@@ -75,16 +72,10 @@ steps:
   - label: ":python::jeans: Unit Tests"
     command:
       - make test-unit-python
-    retry:
-      automatic:
-        limit: 3
 
   - label: ":python::jeans: Typechecking"
     command:
       - make test-typecheck-pants
-    retry:
-      automatic:
-        limit: 3
 
   # TODO: Consider beefy queue
   - label: ":python::docker: Typechecking (:no_entry_sign::jeans:)"

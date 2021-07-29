@@ -31,6 +31,7 @@ class Swarm(pulumi.ComponentResource):
             retention_in_days=DGRAPH_LOG_RETENTION_DAYS,
             opts=child_opts,
         )
+        pulumi.export("dgraph-logs-group", self.log_group.name)
 
         self.security_group = aws.ec2.SecurityGroup(
             f"{name}-sec-group",
@@ -92,6 +93,8 @@ class Swarm(pulumi.ComponentResource):
             logical_bucket_name="swarm-config-bucket",
             opts=child_opts,
         )
+        pulumi.export("swarm-config-bucket", self.swarm_config_bucket.bucket)
+
         self.swarm_config_bucket.grant_get_and_list_to(self.role)
         self.swarm_config_bucket.upload_to_bucket(SWARM_INIT_DIR)
 
