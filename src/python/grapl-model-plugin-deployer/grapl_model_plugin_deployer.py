@@ -138,7 +138,7 @@ def provision_schemas(graph_client: GraphClient, raw_schemas: List[bytes]) -> No
 
     # Now fetch the schemas back, as Python classes, from meta_globals
     schemas = list(get_schema_objects(meta_globals).values())
-    LOGGER.info(f"deploying schemas: {[s.self_type() for s in schemas]}")
+    LOGGER.info(f"Deploying schemas: {[s.self_type() for s in schemas]}")
 
     LOGGER.info("init_reverse")
     for schema in schemas:
@@ -167,6 +167,7 @@ def provision_schemas(graph_client: GraphClient, raw_schemas: List[bytes]) -> No
     for schema in schemas:
         provision_common.store_schema(schema_table, schema)
         provision_common.store_schema_properties(schema_properties_table, schema)
+    LOGGER.info("provision_schemas() complete")
 
 
 def upload_plugin(s3_client: S3Client, key: str, contents: str) -> Optional[Response]:
@@ -339,11 +340,13 @@ def upload_plugins(
                 if upload_resp:
                     return upload_resp
         finally:
+            LOGGER.debug("upload_plugins() awaiting futures")
             for completed_future in concurrent.futures.as_completed(
                 [provision_schema_fut]
             ):
                 # This will also propagate any exceptions from that thread into the main thread
                 completed_future.result()
+            LOGGER.debug("upload_plugins() futures completed")
         return None
 
 

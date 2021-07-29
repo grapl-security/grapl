@@ -1,3 +1,4 @@
+import logging
 import time
 from functools import wraps
 from typing import Any, Callable, Type, TypeVar, cast
@@ -6,8 +7,9 @@ F = TypeVar("F", bound=Callable)
 
 
 def retry(
-    ExceptionToCheck: Type[Exception] = Exception,
-    on_falsey: bool = True,
+    exception_cls: Type[Exception],
+    logger: logging.Logger,
+    on_falsey: bool = False,
     tries: int = 3,
     delay: float = 0.5,
     backoff: int = 2,
@@ -20,7 +22,7 @@ def retry(
     http://www.saltycrane.com/blog/2009/11/trying-out-retry-decorator-python/
     original from: http://wiki.python.org/moin/PythonDecoratorLibrary#Retry
 
-    :param ExceptionToCheck: the exception to check. may be a tuple of
+    :param exception_cls: the exception to check. may be a tuple of
         exceptions to check
     :param on_falsey: Check if result is falsey, and retry if it is
 
@@ -32,11 +34,14 @@ def retry(
         each retry
     """
 
+    assert backoff >= 1, "Backoff must be 1 (linear) or greater (exponential)"
+
     def deco_retry(f: F) -> F:
         @wraps(f)
         def f_retry(*args: Any, **kwargs: Any) -> Any:
             mtries, mdelay = tries, delay
             while mtries > 1:
+
                 try:
                     result = f(*args, **kwargs)
 
@@ -44,7 +49,10 @@ def retry(
                         time.sleep(mdelay)
                     else:
                         return result
-                except ExceptionToCheck:
+                except exception_cls as e:
+                    iteration = tries - mtries + 1
+                    retry_label = f"@retry: {iteration}/{tries}"
+                    logger.debug(f"{retry_label} failed due to {e}")
                     time.sleep(mdelay)
                 finally:
                     mtries -= 1
