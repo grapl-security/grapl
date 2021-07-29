@@ -48,7 +48,7 @@ class DgraphCluster(pulumi.ComponentResource):
         )
 
         self.dgraph_config_bucket = Bucket(
-            logical_bucket_name="dgraph-config-bucket",
+            "dgraph-config-bucket",
             opts=child_opts,
         )
         pulumi.export("dgraph-config-bucket", self.dgraph_config_bucket.bucket)
