@@ -1,10 +1,9 @@
 import json
-from typing import Optional
+from typing import Optional, cast
 
 import pulumi_aws as aws
 from infra import dynamodb
 from infra.bucket import Bucket
-from infra.config import DEPLOYMENT_NAME
 from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
 from infra.network import Network
@@ -71,21 +70,21 @@ class EngagementNotebook(pulumi.ComponentResource):
 
         self.notebook = aws.sagemaker.NotebookInstance(
             f"{name}-instance",
-            # TODO: Remove this name eventually; currently
-            # engagement-edge relies on it being set like this.
-            # Remove delete_before_replace below once we make this change.
-            name=f"{DEPLOYMENT_NAME}-Notebook",
             instance_type="ml.t2.medium",
             role_arn=self.role.arn,
             security_groups=[self.security_group.id],
             subnet_id=network.private_subnets[0].id,
             direct_internet_access="Enabled",  # TODO: this is the default... needed?
-            # Only using delete_before_replace while we are specifying
-            # a concrete physical name
-            opts=pulumi.ResourceOptions(parent=self, delete_before_replace=True),
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
+        pulumi.export("notebook-instance", self.notebook.name)
+
         self.register_outputs({})
+
+    @property
+    def name(self) -> pulumi.Output[str]:
+        return cast(pulumi.Output[str], self.notebook.name)
 
     # See https://github.com/grapl-security/issue-tracker/issues/115 for details.
     def grant_presigned_url_permissions_to(self, role: aws.iam.Role) -> None:
