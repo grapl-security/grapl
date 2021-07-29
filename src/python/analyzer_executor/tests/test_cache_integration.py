@@ -27,13 +27,9 @@ class AnalyzerExecutorCacheDeleters:
 
 
 def fake_os_env(
-    stub_env: bool = False,
     env_addr: Optional[str] = None,
     env_port: Optional[str] = None,
 ) -> Mapping[str, str]:
-    if not stub_env:
-        return os.environ
-
     new_os_environ = deepcopy(os.environ)
     if env_addr:
         new_os_environ["MESSAGECACHE_ADDR"] = env_addr
@@ -58,19 +54,13 @@ def test_connection_info() -> None:
     """
 
     with pytest.raises(ValueError):
-        ae = AnalyzerExecutor.from_env(
-            fake_os_env(stub_env=True, env_addr=SAMPLE_ADDR, env_port=None)
-        )
+        ae = AnalyzerExecutor.from_env(fake_os_env(env_addr=SAMPLE_ADDR, env_port=None))
 
     with pytest.raises(ValueError):
-        ae = AnalyzerExecutor.from_env(
-            fake_os_env(stub_env=True, env_addr=None, env_port=SAMPLE_PORT)
-        )
+        ae = AnalyzerExecutor.from_env(fake_os_env(env_addr=None, env_port=SAMPLE_PORT))
 
     with pytest.raises(ValueError):
-        ae = AnalyzerExecutor.from_env(
-            fake_os_env(stub_env=True, env_addr=None, env_port=None)
-        )
+        ae = AnalyzerExecutor.from_env(fake_os_env(env_addr=None, env_port=None))
 
 
 @hypothesis.given(
@@ -92,7 +82,7 @@ def test_hit_cache(
     Initializes the AnalyzerExecutor singleton with Redis connection params
     sourced from the environment, expecting hit cache to populate.
     """
-    ae = AnalyzerExecutor.from_env(fake_os_env(stub_env=False))
+    ae = AnalyzerExecutor.from_env()
 
     assert not ae.check_hit_cache(k1, k2)
     ae.update_hit_cache(k1, k2)
@@ -123,7 +113,7 @@ def test_message_cache(
     Initializes the AnalyzerExecutor singleton with Redis connection params
     sourced from the environment, expecting message cache to populate.
     """
-    ae = AnalyzerExecutor.from_env(fake_os_env(stub_env=False))
+    ae = AnalyzerExecutor.from_env()
 
     assert not ae.check_msg_cache(k1, k2, k3)
     ae.update_msg_cache(k1, k2, k3)
