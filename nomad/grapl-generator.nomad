@@ -3,11 +3,6 @@ variable "tenant_id" {
     description = "The opaque tenant id."
 }
 
-variable "generator_name" {
-    type = string
-    description = "A name unique to the generator for this tenant."
-}
-
 variable "generator_ingest" {
     type = string
     description = "The expected data ingest type. e.g. sysmon."
@@ -24,7 +19,7 @@ variable "generator_count" {
 }
 
 job "grapl-tenant-generator" {
-    namespace = "grapl-tenant-generator-${var.tenant_id}-${var.generator_name}"
+    namespace = "generator-${var.tenant_id}-${var.generator_ingest}"
     datacenters = ["dc1"]
 
     type = "service"
@@ -58,8 +53,7 @@ job "grapl-tenant-generator" {
             }
 
             env {
-                tenant_id = "${var.tenant_id}"
-                GENERATOR_NAME = "${var.generator_name}"
+                TENANT_ID = "${var.tenant_id}"
                 INGEST_TYPE = "${var.generator_ingest}"
             }
 
@@ -70,8 +64,8 @@ job "grapl-tenant-generator" {
             service {
                 name = "generator-${var.tenant_id}-${var.generator_ingest}"
                 port = "generator_receiver"
-                tags = ["generator-${var.tenant_id}-${var.generator_name}"]
-                canary_tags = ["canary-generator-${var.tenant_id}-${var.generator_name}"]
+                tags = ["generator-${var.tenant_id}"]
+                canary_tags = ["canary-generator-${var.tenant_id}"]
             }
         }
     }
