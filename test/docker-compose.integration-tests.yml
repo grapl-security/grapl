@@ -7,6 +7,13 @@ volumes:
   # here so we can have access to outputs from the stack in our tests.
   pulumi_outputs:
 
+x-common-variables:
+  read-only-pulumi-mnt: &read-only-pulumi-mnt
+    type: volume
+    source: pulumi_outputs
+    target: /mnt/pulumi-outputs
+    read_only: true
+
 services:
   rust-integration-tests:
     image: grapl/rust-integration-tests:${TAG:-latest}
@@ -68,9 +75,9 @@ services:
     entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
     command:
       - |
-        export GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET=$$(cat /pulumi-outputs/analyzer-matched-subgraphs-bucket) &&
-        export GRAPL_ANALYZERS_BUCKET=$$(cat /pulumi-outputs/analyzers-bucket)
-        export GRAPL_MODEL_PLUGINS_BUCKET=$$(cat /pulumi-outputs/model-plugins-bucket)
+        export GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET=$$(cat /mnt/pulumi-outputs/analyzer-matched-subgraphs-bucket) &&
+        export GRAPL_ANALYZERS_BUCKET=$$(cat /mnt/pulumi-outputs/analyzers-bucket)
+        export GRAPL_MODEL_PLUGINS_BUCKET=$$(cat /mnt/pulumi-outputs/model-plugins-bucket)
         cd analyzer_executor
         export PYTHONPATH="$${PYTHONPATH:-}:$$(pwd)/src"
         py.test -n auto -m "integration_test"
@@ -89,10 +96,7 @@ services:
     # bring up the entire local Grapl instance first (which includes
     # running Pulumi), and _then_ execute these tests.
     volumes:
-      - type: volume
-        source: pulumi_outputs
-        target: /pulumi-outputs
-        read_only: true
+      - *read-only-pulumi-mnt
 
   engagement-edge-integration-tests:
     image: grapl/grapl-engagement-edge-test:${TAG:-latest}

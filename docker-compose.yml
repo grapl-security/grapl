@@ -11,6 +11,11 @@ volumes:
     # need to be accessible in test containers.
 
 x-common-variables:
+  read-only-pulumi-mnt: &read-only-pulumi-mnt
+    type: volume
+    source: pulumi_outputs
+    target: /mnt/pulumi-outputs
+    read_only: true
   aws-env: &aws-env
     GRAPL_AWS_ENDPOINT: ${GRAPL_AWS_ENDPOINT}
     GRAPL_AWS_ACCESS_KEY_ID: ${GRAPL_AWS_ACCESS_KEY_ID}
@@ -305,7 +310,7 @@ services:
     entrypoint: ["/busybox/sh", "-o", "errexit", "-o", "nounset", "-c"]
     command:
       - |
-        export GRAPL_ANALYZERS_BUCKET=$$(cat /pulumi-outputs/analyzers-bucket)
+        export GRAPL_ANALYZERS_BUCKET=$$(cat /mnt/pulumi-outputs/analyzers-bucket)
         /analyzer-dispatcher
     environment:
       <<: *aws-env
@@ -323,10 +328,7 @@ services:
         # We must wait until Pulumi has created the buckets to know what their names are
         condition: service_completed_successfully
     volumes:
-      - type: volume
-        source: pulumi_outputs
-        target: /pulumi-outputs
-        read_only: true
+      - *read-only-pulumi-mnt
 
   ########################################################################
   # Python Services
@@ -337,9 +339,9 @@ services:
     entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
     command:
       - |
-        export GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET=$$(cat /pulumi-outputs/analyzer-matched-subgraphs-bucket)
-        export GRAPL_ANALYZERS_BUCKET=$$(cat /pulumi-outputs/analyzers-bucket)
-        export GRAPL_MODEL_PLUGINS_BUCKET=$$(cat /pulumi-outputs/model-plugins-bucket)
+        export GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET=$$(cat /mnt/pulumi-outputs/analyzer-matched-subgraphs-bucket)
+        export GRAPL_ANALYZERS_BUCKET=$$(cat /mnt/pulumi-outputs/analyzers-bucket)
+        export GRAPL_MODEL_PLUGINS_BUCKET=$$(cat /mnt/pulumi-outputs/model-plugins-bucket)
         python3 analyzer_executor/src/run.py
     environment:
       <<: *aws-env
@@ -371,17 +373,14 @@ services:
         # We must wait until Pulumi has created the buckets to know what their names are
         condition: service_completed_successfully
     volumes:
-      - type: volume
-        source: pulumi_outputs
-        target: /pulumi-outputs
-        read_only: true
+      - *read-only-pulumi-mnt
 
   model-plugin-deployer:
     image: grapl/model-plugin-deployer:${TAG:-latest}
     entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
     command:
       - |
-        export GRAPL_MODEL_PLUGINS_BUCKET=$$(cat /pulumi-outputs/model-plugins-bucket)
+        export GRAPL_MODEL_PLUGINS_BUCKET=$$(cat /mnt/pulumi-outputs/model-plugins-bucket)
         . venv/bin/activate
         cd /home/grapl/app
         chalice local \
@@ -406,10 +405,7 @@ services:
         # We must wait until Pulumi has created the buckets to know what their names are
         condition: service_completed_successfully
     volumes:
-      - type: volume
-        source: pulumi_outputs
-        target: /pulumi-outputs
-        read_only: true
+      - *read-only-pulumi-mnt
     ports:
       - 127.0.0.1:${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}:${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}
     networks:
@@ -426,14 +422,11 @@ services:
     entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
     command:
       - |
-        export API_GATEWAY_API_ID=$$(cat /pulumi-outputs/prod-api-id)
+        export API_GATEWAY_API_ID=$$(cat /mnt/pulumi-outputs/prod-api-id)
         /docker-entrypoint.sh nginx -g 'daemon off;'
     volumes:
       - ./etc/local_grapl/nginx_templates:/etc/nginx/templates
-      - type: volume
-        source: pulumi_outputs
-        target: /pulumi-outputs
-        read_only: true
+      - *read-only-pulumi-mnt
     ports:
       - "127.0.0.1:1234:${GRAPL_HTTP_FRONTEND_PORT}"
     environment:
@@ -467,7 +460,7 @@ services:
     entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
     command:
       - |
-        export GRAPL_UX_BUCKET=$$(cat /pulumi-outputs/ux-bucket)
+        export GRAPL_UX_BUCKET=$$(cat /mnt/pulumi-outputs/ux-bucket)
         ./upload_local.sh
     environment:
       <<: *aws-env
@@ -478,10 +471,7 @@ services:
         # We must wait until Pulumi has created the buckets to know what their names are
         condition: service_completed_successfully
     volumes:
-      - type: volume
-        source: pulumi_outputs
-        target: /pulumi-outputs
-        read_only: true
+      - *read-only-pulumi-mnt
 
   graphql-endpoint:
     image: grapl/graphql-endpoint:${TAG:-latest}
@@ -562,7 +552,7 @@ services:
       - type: volume
         source: pulumi_outputs
         target: /home/grapl/pulumi-outputs
-        read_only: false
+        read_only: false # MUST be able to write
     environment:
       TAG:
       PULUMI_CONFIG_PASSPHRASE: local-grapl-passphrase
