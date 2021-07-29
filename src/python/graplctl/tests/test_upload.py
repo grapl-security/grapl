@@ -46,6 +46,8 @@ def test_upload_analyzer__calls_s3() -> None:
                 "analyzer",
                 "--analyzer_main_py",
                 str(main_py_path),
+                "--analyzers-bucket",
+                "fake-deployment-analyzers-bucket",
             ],
         )
 

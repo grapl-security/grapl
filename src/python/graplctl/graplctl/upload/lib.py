@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 def upload_analyzer(
     s3_client: S3Client,
-    deployment_name: str,
+    analyzers_bucket: str,
     analyzer_main_py: Path,
 ) -> None:
     # The assumption is that the input path is something like
@@ -24,6 +24,6 @@ def upload_analyzer(
     upload_analyzers(
         s3_client=s3_client,
         analyzers=(upload_request,),
-        deployment_name=deployment_name,
+        analyzers_bucket=analyzers_bucket,
     )
     click.echo(f"Uploaded analyzer '{name}'")

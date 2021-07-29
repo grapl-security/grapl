@@ -2,6 +2,13 @@ version: "3.8"
 
 # environment variable PWD is assumed to be grapl root directory
 
+x-common-variables:
+  read-only-pulumi-mnt: &read-only-pulumi-mnt
+    type: volume
+    source: pulumi_outputs
+    target: /mnt/pulumi-outputs
+    read_only: true
+
 services:
   e2e-tests:
     image: grapl/e2e-tests:${TAG:-latest}
@@ -13,6 +20,7 @@ services:
     entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
     command:
       - |
+        export GRAPL_ANALYZERS_BUCKET=$$(cat /mnt/pulumi-outputs/analyzers-bucket)
         graplctl \
               --grapl-region $AWS_REGION \
               --grapl-deployment-name $DEPLOYMENT_NAME \
@@ -38,6 +46,7 @@ services:
     volumes:
       - dynamodb_dump:/mnt/dynamodb_dump
       - ${PWD}/etc:/home/grapl/etc:ro
+      - *read-only-pulumi-mnt
     environment:
       - AWS_REGION
       - DEBUG_SERVICES=${DEBUG_SERVICES:-}
@@ -57,6 +66,7 @@ services:
 
 volumes:
   dynamodb_dump:
+  pulumi_outputs:
 networks:
   default:
     name: grapl-network

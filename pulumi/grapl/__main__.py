@@ -89,7 +89,6 @@ def main() -> None:
         "analyzer-matched-subgraphs-bucket", analyzer_matched_emitter.bucket.bucket
     )
 
-    # TODO: No _infrastructure_ currently *writes* to this bucket
     analyzers_bucket = Bucket("analyzers-bucket", sse=True)
     pulumi.export("analyzers-bucket", analyzers_bucket.bucket)
     model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)

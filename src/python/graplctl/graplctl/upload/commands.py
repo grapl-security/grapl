@@ -33,12 +33,21 @@ def upload(
     required=True,
     help="Path to the analyzer's `main.py`",
 )
+@click.option(
+    "--analyzers-bucket",
+    help="Name of the S3 bucket to upload analyzers to",
+    type=click.STRING,
+    required=True,
+    envvar="GRAPL_ANALYZERS_BUCKET",
+)
 @pass_graplctl_state
-def analyzer(graplctl_state: State, analyzer_main_py: PathLike) -> None:
+def analyzer(
+    graplctl_state: State, analyzers_bucket: str, analyzer_main_py: PathLike
+) -> None:
     """Upload an analyzer to the S3 bucket"""
     upload_analyzer(
         graplctl_state.s3,
-        graplctl_state.grapl_deployment_name,
+        analyzers_bucket=analyzers_bucket,
         analyzer_main_py=Path(analyzer_main_py).resolve(),
     )
 
