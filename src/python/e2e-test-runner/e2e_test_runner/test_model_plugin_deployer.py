@@ -2,7 +2,6 @@ import logging
 import os
 from pathlib import Path
 
-import pytest
 from grapl_tests_common.clients.graphql_endpoint_client import GraphqlEndpointClient
 from grapl_tests_common.clients.model_plugin_deployer_client import (
     ModelPluginDeployerClient,

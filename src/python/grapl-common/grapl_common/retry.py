@@ -34,6 +34,8 @@ def retry(
         each retry
     """
 
+    assert backoff >= 1, "Backoff must be 1 (linear) or greater (exponential)"
+
     def deco_retry(f: F) -> F:
         @wraps(f)
         def f_retry(*args: Any, **kwargs: Any) -> Any:
