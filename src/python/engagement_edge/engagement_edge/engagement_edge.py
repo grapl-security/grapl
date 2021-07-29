@@ -25,7 +25,6 @@ import boto3
 import jwt
 from botocore.client import Config
 from chalice import Chalice, Response
-from engagement_edge.env_vars import GRAPL_LOG_LEVEL
 from engagement_edge.sagemaker import create_sagemaker_client
 from grapl_common.debugger.vsc_debugger import wait_for_vsc_debugger
 from grapl_common.env_helpers import (
@@ -39,6 +38,7 @@ if TYPE_CHECKING:
     Salt = bytes
 
 LOGGER = logging.getLogger(__name__)
+GRAPL_LOG_LEVEL = os.environ.get("GRAPL_LOG_LEVEL", "ERROR")
 LOGGER.setLevel(GRAPL_LOG_LEVEL)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
