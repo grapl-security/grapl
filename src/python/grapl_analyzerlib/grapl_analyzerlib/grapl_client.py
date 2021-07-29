@@ -3,13 +3,10 @@ import os
 from typing import Iterator, List, Optional, Tuple
 from grpc import CallCredentials
 
-from pydgraph import DgraphClient, DgraphClientStub, Txn
+from pydgraph import DgraphClient, DgraphClientStub, Txn, RetriableError, Operation
+from contextlib import contextmanager
 from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_common.retry import retry
-from contextlib import contextmanager
-
-import pydgraph
-
 from grapl_common.time_utils import SecsDuration
 
 LOGGER = get_module_grapl_logger()
@@ -54,14 +51,14 @@ class GraphClient(DgraphClient):
             txn.discard()
 
     @retry(
-        exception_cls=pydgraph.RetriableError,
+        exception_cls=RetriableError,
         logger=LOGGER,
         tries=10,
         backoff=1,  # linear, not exponential
     )
     def alter(
         self,
-        operation: pydgraph.Operation,
+        operation: Operation,
         timeout: Optional[SecsDuration] = None,
         metadata: Optional[DgraphMetadata] = None,
         credentials: Optional[CallCredentials] = None,
