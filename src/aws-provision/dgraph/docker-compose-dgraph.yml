@@ -45,7 +45,7 @@ services:
         awslogs-stream: "envoy"
 
   zero:
-    image: dgraph/dgraph:v20.07.1
+    image: dgraph/dgraph:v21.03.1
     volumes:
       - data-volume:/dgraph
     ports:
@@ -68,7 +68,7 @@ services:
       - envoy
 
   alpha1:
-    image: dgraph/dgraph:v20.07.1
+    image: dgraph/dgraph:v21.03.1
     hostname: "alpha1"
     volumes:
       - data-volume:/dgraph
@@ -90,13 +90,13 @@ services:
         awslogs-create-group: "true"
         awslogs-group: ${AWS_LOGS_GROUP}
         awslogs-stream: "alpha1"
-    command: dgraph alpha --my=alpha1:7081 --lru_mb=2048 --zero=zero:5080 -o 1 --whitelist=10.0.0.0/8
+    command: dgraph alpha --my=alpha1:7081 --cache size-mb=2048 --zero=zero:5080 -o 1 --security whitelist=10.0.0.0/8
     depends_on:
       - envoy
       - zero
 
   alpha2:
-    image: dgraph/dgraph:v20.07.1
+    image: dgraph/dgraph:v21.03.1
     hostname: "alpha2"
     volumes:
       - data-volume:/dgraph
@@ -118,13 +118,13 @@ services:
         awslogs-create-group: "true"
         awslogs-group: ${AWS_LOGS_GROUP}
         awslogs-stream: "alpha2"
-    command: dgraph alpha --my=alpha2:7082 --lru_mb=2048 --zero=zero:5080 -o 2 --whitelist=10.0.0.0/8
+    command: dgraph alpha --my=alpha2:7082 --cache size-mb=204 --zero=zero:5080 -o 2 --security whitelist=10.0.0.0/8
     depends_on:
       - envoy
       - zero
 
   alpha3:
-    image: dgraph/dgraph:v20.07.1
+    image: dgraph/dgraph:v21.03.1
     hostname: "alpha3"
     volumes:
       - data-volume:/dgraph
@@ -146,7 +146,7 @@ services:
         awslogs-create-group: "true"
         awslogs-group: ${AWS_LOGS_GROUP}
         awslogs-stream: "alpha3"
-    command: dgraph alpha --my=alpha3:7083 --lru_mb=2048 --zero=zero:5080 -o 3 --whitelist=10.0.0.0/8
+    command: dgraph alpha --my=alpha3:7083 --cache size-mb=204 --zero=zero:5080 -o 3 --security whitelist=10.0.0.0/8
     depends_on:
       - envoy
       - zero
