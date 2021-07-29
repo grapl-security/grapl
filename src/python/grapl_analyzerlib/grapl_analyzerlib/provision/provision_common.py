@@ -116,8 +116,9 @@ def format_schemas(schema_defs: List[BaseSchema]) -> str:
 
 def set_schema(client: GraphClient, schema: str) -> None:
     op = pydgraph.Operation(schema=schema, run_in_background=True)
-    LOGGER.info(f"setting dgraph schema {schema}")
+    LOGGER.info(f"Setting dgraph schema: {schema}")
     client.alter(op)
+    LOGGER.info(f"Completed setting dgraph schema")
 
 
 def _get_reverse_edge(schema_table: Table, schema: BaseSchema, f_edge) -> str:
