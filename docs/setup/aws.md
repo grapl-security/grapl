@@ -108,6 +108,18 @@ it as a parameter:
 - as a command line invocation parameter
 - as an environmenal variable
 
+#### Usage with Pulumi
+
+Several commands will need references to things like S3 buckets or AWS log
+groups. While you can pass these values directly, you can also pull them from a
+Pulumi stack's outputs automatically.
+
+To do this, you will need to export `GRAPLCTL_PULUMI_STACK` in your environment,
+and then use the `./bin/graplctl-pulumi.sh` wrapper _instead_ of invoking
+`graplctl` directly.
+
+For further details, please read the documentation in that script.
+
 ### How to spin up DGraph
 
 _Warning: these commands spin up infrastructure in your AWS account. Running
