@@ -3,7 +3,6 @@ import * as jwt from "jsonwebtoken";
 import * as AWS from "aws-sdk";
 import { getAwsClient } from "./env_helpers";
 
-const IS_LOCAL = process.env.IS_LOCAL == "True" || null; // get this from environment
 const JWT_SECRET_ID = process.env.JWT_SECRET_ID; // get this from environment
 
 // Acts as a local cache of the secret so we don't have to refetch it every time
