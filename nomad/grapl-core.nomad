@@ -18,6 +18,7 @@ variable "container_registry" {
 
 variable "aws_region" {
     type = string
+    default = "us-west-2"
 }
 
 variable "aws_sqs_url" {
@@ -26,7 +27,7 @@ variable "aws_sqs_url" {
 
 variable "aws_account_id" {
     type = string
-    default = "0000000000"
+    default = "000000000000"
 }
 
 variable "dgraph_replicas" {
@@ -340,6 +341,8 @@ job "grapl-core" {
             }
 
             env {
+                AWS_ACCESS_KEY_ID = "x"
+                AWS_SECRET_ACCESS_KEY = "x"
                 REDIS_ENDPOINT = "${var.redis_endpoint}"
                 MG_ALPHAS = "${local.alpha_grpc_connect_str}"
                 GRAPL_SCHEMA_TABLE = "${var.schema_table_name}"
