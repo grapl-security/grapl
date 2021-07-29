@@ -59,7 +59,7 @@ services:
 
   dgraph:
     tty: false
-    image: dgraph/standalone:v20.07.1
+    image: dgraph/standalone:v21.03.1
     ports:
       # required to access the RATEL interface for dgraph
       - 127.0.0.1:${DGRAPH_RATEL_HTTP_EXTERNAL_PUBLIC_PORT}:${DGRAPH_RATEL_HTTP_EXTERNAL_PUBLIC_PORT}
