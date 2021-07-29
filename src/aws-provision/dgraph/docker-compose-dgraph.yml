@@ -90,7 +90,7 @@ services:
         awslogs-create-group: "true"
         awslogs-group: ${AWS_LOGS_GROUP}
         awslogs-stream: "alpha1"
-    command: dgraph alpha --my=alpha1:7081 --cache size-mb=2048 --zero=zero:5080 -o 1 --whitelist=10.0.0.0/8
+    command: dgraph alpha --my=alpha1:7081 --cache size-mb=2048 --zero=zero:5080 -o 1 --security whitelist=10.0.0.0/8
     depends_on:
       - envoy
       - zero
@@ -118,7 +118,7 @@ services:
         awslogs-create-group: "true"
         awslogs-group: ${AWS_LOGS_GROUP}
         awslogs-stream: "alpha2"
-    command: dgraph alpha --my=alpha2:7082 --cache size-mb=204 --zero=zero:5080 -o 2 --whitelist=10.0.0.0/8
+    command: dgraph alpha --my=alpha2:7082 --cache size-mb=204 --zero=zero:5080 -o 2 --security whitelist=10.0.0.0/8
     depends_on:
       - envoy
       - zero
@@ -146,7 +146,7 @@ services:
         awslogs-create-group: "true"
         awslogs-group: ${AWS_LOGS_GROUP}
         awslogs-stream: "alpha3"
-    command: dgraph alpha --my=alpha3:7083 --cache size-mb=204 --zero=zero:5080 -o 3 --whitelist=10.0.0.0/8
+    command: dgraph alpha --my=alpha3:7083 --cache size-mb=204 --zero=zero:5080 -o 3 --security whitelist=10.0.0.0/8
     depends_on:
       - envoy
       - zero

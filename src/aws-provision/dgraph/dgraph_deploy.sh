@@ -22,5 +22,5 @@ sudo -u ec2-user \
 
 echo "--- Deployed dgraph ---"
 
-echo "Issues with one of the services? To debug, SSM into ${manager} and run:"
-echo "sudo -u ec2-user --login docker service logs dgraph_alpha1 (or any other service)"
+# To debug services that don't work, SSM into the manager and
+# sudo -u ec2-user --login docker service logs dgraph_alpha1 (or any other service)
