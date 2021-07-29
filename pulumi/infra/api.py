@@ -223,7 +223,6 @@ class Api(pulumi.ComponentResource):
         self.engagement_edge = EngagementEdge(
             network=network,
             secret=secret,
-            ux_bucket=ux_bucket,
             db=db,
             notebook=self.notebook,
             forwarder=forwarder,

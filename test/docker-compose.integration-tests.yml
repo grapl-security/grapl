@@ -120,6 +120,7 @@ services:
       - GRAPL_TEST_USER_NAME
       - IS_LOCAL=True
       - UX_BUCKET_URL="ux_bucket_url"
+      - GRAPL_NOTEBOOK_INSTANCE="local-grapl-Notebook"
 
   # TODO: Re-enable these tests after the following issues are resolved:
   # - https://github.com/grapl-security/issue-tracker/issues/385
