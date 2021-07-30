@@ -23,6 +23,7 @@ class EventEmitter(pulumi.ComponentResource):
         self.bucket = Bucket(
             logical_bucket_name, sse=True, opts=pulumi.ResourceOptions(parent=self)
         )
+        pulumi.export(logical_bucket_name, self.bucket.bucket)
 
         physical_topic_name = f"{DEPLOYMENT_NAME}-{event_name}-topic"
         self.topic = aws.sns.Topic(
