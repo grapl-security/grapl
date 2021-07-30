@@ -582,9 +582,11 @@ services:
           analyzers-bucket
           dispatched-analyzer-bucket
           model-plugins-bucket
+          osquery-log-bucket
           prod-api-id
           subgraphs-generated-bucket
           subgraphs-merged-bucket
+          sysmon-log-bucket
           unid-subgraphs-generated-bucket
           ux-bucket
         )

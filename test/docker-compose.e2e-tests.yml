@@ -21,6 +21,9 @@ services:
     command:
       - |
         export GRAPL_ANALYZERS_BUCKET=$$(cat /mnt/pulumi-outputs/analyzers-bucket)
+        export GRAPL_OSQUERY_LOG_BUCKET=$$(cat /mnt/pulumi-outputs/osquery-log-bucket)
+        export GRAPL_SYSMON_LOG_BUCKET=$$(cat /mnt/pulumi-outputs/sysmon-log-bucket)
+
         graplctl \
               --grapl-region $AWS_REGION \
               --grapl-deployment-name $DEPLOYMENT_NAME \
