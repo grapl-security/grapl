@@ -19,7 +19,6 @@ COPY js/engagement_view .
 FROM engagement-view-deps AS engagement-view-build
 
 # build sources
-RUN yarn add react-scripts
 RUN yarn build
 
 
