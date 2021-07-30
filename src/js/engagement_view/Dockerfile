@@ -1,6 +1,5 @@
-FROM node:alpine3.10 AS engagement-view-deps
+FROM node:16-buster-slim AS engagement-view-deps
 
-RUN apk add bash yarn
 WORKDIR /grapl
 
 # install deps as separate steps to leverage build cache
@@ -20,11 +19,8 @@ COPY js/engagement_view .
 FROM engagement-view-deps AS engagement-view-build
 
 # build sources
-RUN yarn add react-scripts
 RUN yarn build
 
-# no-op the base image cmd, so it doesn't launch a Node repl
-CMD :
 
 # create an image that we can deploy from locally
 ################################################################################
