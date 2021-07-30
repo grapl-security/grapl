@@ -22,8 +22,6 @@ FROM engagement-view-deps AS engagement-view-build
 RUN yarn add react-scripts
 RUN yarn build
 
-# no-op the base image cmd, so it doesn't launch a Node repl
-CMD :
 
 # create an image that we can deploy from locally
 ################################################################################
