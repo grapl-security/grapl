@@ -1,4 +1,4 @@
-FROM node:alpine3.10 AS engagement-view-deps
+FROM node:16-buster-slim AS engagement-view-deps
 
 WORKDIR /grapl
 
