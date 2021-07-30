@@ -2,13 +2,13 @@ config:
   aws:region: us-east-1
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: operational-alarms@graplsecurity.com
   grapl:artifacts:
-    analyzer-dispatcher: 20210730171802-fa6cd918
-    analyzer-executor: 20210730171802-fa6cd918
+    analyzer-dispatcher: 20210730181658-ae3e8c72
+    analyzer-executor: 20210730181658-ae3e8c72
     dgraph-ttl: 20210729230857-86533bd1
     e2e-test-runner: 20210729230857-86533bd1
     engagement-creator: 20210729230857-86533bd1
     engagement-edge: 20210729191513-004c9251
-    graph-merger: 20210730171802-fa6cd918
+    graph-merger: 20210730181658-ae3e8c72
     graphql-endpoint: 20210706192702-6001e5a3
     grapl-nomad-consul-client:
       us-east-1: ami-066d7db71ff0dc1f2
@@ -20,15 +20,15 @@ config:
       us-east-2: ami-0942e2540aeaf62d7
       us-west-1: ami-0ad7f658c924219bd
       us-west-2: ami-0d19aac593e33cae4
-    grapl-ux: 20210727211744-1c2d4f6d
+    grapl-ux: 20210730181658-ae3e8c72
     metric-forwarder: 20210706192702-6001e5a3
     model-plugin-deployer: 20210729230857-86533bd1
-    node-identifier: 20210730171802-fa6cd918
-    node-identifier-retry: 20210730171802-fa6cd918
+    node-identifier: 20210730181658-ae3e8c72
+    node-identifier-retry: 20210730181658-ae3e8c72
     node-identifier-retry-handler: 20210706190216-95cec5cb
-    osquery-generator: 20210730171802-fa6cd918
+    osquery-generator: 20210730181658-ae3e8c72
     provisioner: 20210729230857-86533bd1
-    sysmon-generator: 20210730171802-fa6cd918
+    sysmon-generator: 20210730181658-ae3e8c72
     ux-router: 20210721183353-0e7f674d
   grapl:env_vars:
     analyzer-dispatcher:
