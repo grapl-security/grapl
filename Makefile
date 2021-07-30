@@ -140,7 +140,8 @@ build-test-unit-js:
 
 .PHONY: build-test-typecheck
 build-test-typecheck: build-python-wheels
-	docker buildx bake --file ./test/docker-compose.typecheck-tests.yml
+	$(DOCKER_BUILDX_BAKE) \
+		--file ./test/docker-compose.typecheck-tests.yml
 
 .PHONY: build-test-integration
 build-test-integration: build-services
