@@ -17,7 +17,9 @@ services:
   lint-prettier:
     <<: *formatter-image
     command: /bin/bash -c 'cd /mnt/grapl_repo_rw/src/js; bin/format.sh --check'
+    user: ${UID}:${GID}
 
   format-prettier:
     <<: *formatter-image
     command: /bin/bash -c 'cd /mnt/grapl_repo_rw/src/js; bin/format.sh --update'
+    user: ${UID}:${GID}
