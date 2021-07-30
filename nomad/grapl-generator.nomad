@@ -64,8 +64,8 @@ job "grapl-tenant-generator" {
             service {
                 name = "generator-${var.tenant_id}-${var.generator_ingest}"
                 port = "generator_receiver"
-                tags = ["generator-${var.tenant_id}"]
-                canary_tags = ["canary-generator-${var.tenant_id}"]
+                tags = ["generator-${var.tenant_id}", "generator-${var.generator_ingest}"]
+                canary_tags = ["canary-generator-${var.tenant_id}", "canary-generator-${var.generator_ingest}"]
             }
         }
     }
