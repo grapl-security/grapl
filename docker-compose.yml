@@ -320,10 +320,15 @@ services:
 
   graph-merger:
     image: grapl/graph-merger:${TAG:-latest}
+    entrypoint: ["/busybox/sh", "-o", "errexit", "-o", "nounset", "-c"]
+    command:
+      - |
+        # TODO: Rename this variable to be in line with our others?
+        export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/subgraphs-merged-bucket)
+        /graph-merger
     environment:
       <<: *aws-env
       DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-dead-letter-queue"
-      DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-subgraphs-merged-bucket"
       <<: *dgraph-env
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
       GRAPL_SCHEMA_TABLE: "${DEPLOYMENT_NAME}-grapl_schema_table"
@@ -341,6 +346,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      pulumi:
+        # We must wait until Pulumi has created the buckets to know what their names are
+        condition: service_completed_successfully
+    volumes:
+      - *read-only-pulumi-mnt
 
   analyzer-dispatcher:
     image: grapl/analyzer-dispatcher:${TAG:-latest}
@@ -573,6 +583,7 @@ services:
           model-plugins-bucket
           prod-api-id
           subgraphs-generated-bucket
+          subgraphs-merged-bucket
           unid-subgraphs-generated-bucket
           ux-bucket
         )
