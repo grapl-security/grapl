@@ -258,10 +258,15 @@ services:
 
   node-identifier:
     image: grapl/node-identifier:${TAG:-latest}
+    entrypoint: ["/busybox/sh", "-o", "errexit", "-o", "nounset", "-c"]
+    command:
+      - |
+        # TODO: Rename this variable to be in line with our others?
+        export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/subgraphs-generated-bucket)
+        /node-identifier
     environment:
       <<: *aws-env
       DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
-      DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-subgraphs-generated-bucket"
       <<: *dynamodb-mapping-tables
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
       <<: *log-level
@@ -276,6 +281,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      pulumi:
+        # We must wait until Pulumi has created the buckets to know what their names are
+        condition: service_completed_successfully
+    volumes:
+      - *read-only-pulumi-mnt
 
   node-identifier-retry:
     image: grapl/node-identifier-retry:${TAG:-latest}
@@ -552,6 +562,7 @@ services:
           analyzers-bucket
           model-plugins-bucket
           prod-api-id
+          subgraphs-generated-bucket
           unid-subgraphs-generated-bucket
           ux-bucket
         )
