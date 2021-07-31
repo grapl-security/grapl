@@ -169,6 +169,7 @@ querying capabilities.
 
 
 ## Setup
-Grapl can run locally on your computer, or you can deploy to AWS.
+You can setup Grapl to run...
+- [locally on your computer](https://www.graplsecurity.com/post/how-to-run-grapl-on-your-computer-in-15-minutes)
+- [deploy on AWS](https://grapl.readthedocs.io/en/main/setup/aws.html#aws-setup) for optimal experience
 
-https://grapl.readthedocs.io/en/main/setup/local.html
