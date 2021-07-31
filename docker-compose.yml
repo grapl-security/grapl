@@ -228,11 +228,16 @@ services:
   osquery-generator:
     image: grapl/osquery-generator:${TAG:-latest}
     tty: false
+    entrypoint: ["/busybox/sh", "-o", "errexit", "-o", "nounset", "-c"]
+    command:
+      - |
+        # TODO: Rename this variable to be in line with our others?
+        export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/unid-subgraphs-generated-bucket)
+        /osquery-generator
     environment:
       <<: *aws-env
       DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
       DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-dead-letter-queue"
-      DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-unid-subgraphs-generated-bucket"
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
       <<: *log-level
       RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-retry-queue"
@@ -245,6 +250,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      pulumi:
+        # We must wait until Pulumi has created the buckets to know what their names are
+        condition: service_completed_successfully
+    volumes:
+      - *read-only-pulumi-mnt
 
   node-identifier:
     image: grapl/node-identifier:${TAG:-latest}
