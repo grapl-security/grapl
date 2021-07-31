@@ -361,11 +361,11 @@ services:
     command:
       - |
         export GRAPL_ANALYZERS_BUCKET=$$(cat /mnt/pulumi-outputs/analyzers-bucket)
+        export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/dispatched-analyzer-bucket)
         /analyzer-dispatcher
     environment:
       <<: *aws-env
       DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-dead-letter-queue"
-      DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-dispatched-analyzer-bucket"
       <<: *log-level
       RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-retry-queue"
       SOURCE_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-queue"
@@ -580,6 +580,7 @@ services:
         outputs=(
           analyzer-matched-subgraphs-bucket
           analyzers-bucket
+          dispatched-analyzer-bucket
           model-plugins-bucket
           prod-api-id
           subgraphs-generated-bucket
