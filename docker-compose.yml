@@ -586,12 +586,21 @@ services:
         outputs=(
           analyzer-matched-subgraphs-bucket
           analyzers-bucket
+          asset-id-mappings-table
           dispatched-analyzer-bucket
+          dynamic-session-table
+          file-history-table
+          inbound-connection-history-table
+          ip-connection-history-table
           model-plugins-bucket
+          network-connection-history-table
           osquery-log-bucket
+          outbound-connection-history-table
+          process-history-table
           prod-api-id
           schema-properties-table
           schema-table
+          static-mapping-table
           subgraphs-generated-bucket
           subgraphs-merged-bucket
           sysmon-log-bucket
