@@ -325,13 +325,13 @@ services:
       - |
         # TODO: Rename this variable to be in line with our others?
         export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/subgraphs-merged-bucket)
+        export GRAPL_SCHEMA_TABLE=$$(cat /mnt/pulumi-outputs/schema-table)
         /graph-merger
     environment:
       <<: *aws-env
       DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-dead-letter-queue"
       <<: *dgraph-env
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
-      GRAPL_SCHEMA_TABLE: "${DEPLOYMENT_NAME}-grapl_schema_table"
       <<: *log-level
       RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-retry-queue"
       SOURCE_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-queue"
@@ -584,6 +584,7 @@ services:
           model-plugins-bucket
           osquery-log-bucket
           prod-api-id
+          schema-table
           subgraphs-generated-bucket
           subgraphs-merged-bucket
           sysmon-log-bucket
