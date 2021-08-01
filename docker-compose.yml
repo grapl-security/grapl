@@ -526,15 +526,17 @@ services:
   graphql-endpoint:
     image: grapl/graphql-endpoint:${TAG:-latest}
     entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
-    command: ./start_potentially_with_debugger.sh
+    command:
+      - |
+        export GRAPL_SCHEMA_PROPERTIES_TABLE=$$(cat /mnt/pulumi-outputs/schema-properties-table)
+        export GRAPL_SCHEMA_TABLE=$$(cat /mnt/pulumi-outputs/schema-table)
+        ./start_potentially_with_debugger.sh
     environment:
       <<: *aws-env
       <<: *dgraph-env
       IS_LOCAL: "True"
       JWT_SECRET_ID: "JWT_SECRET_ID"
       PORT: ${GRAPL_GRAPHQL_PORT}
-      GRAPL_SCHEMA_PROPERTIES_TABLE: "${DEPLOYMENT_NAME}-grapl_schema_properties_table"
-      GRAPL_SCHEMA_TABLE: "${DEPLOYMENT_NAME}-grapl_schema_table"
       DEBUG_SERVICES: "${DEBUG_SERVICES:-}"
       VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT: "${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}"
     depends_on:
@@ -544,6 +546,8 @@ services:
         condition: service_healthy
       provisioner:
         condition: service_completed_successfully
+      pulumi:
+        condition: service_completed_successfully
     ports:
       - 127.0.0.1:${GRAPL_GRAPHQL_PORT}:${GRAPL_GRAPHQL_PORT}
       - 127.0.0.1:${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}:${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}
@@ -551,6 +555,8 @@ services:
       default:
         aliases:
           - ${GRAPL_GRAPHQL_HOST}
+    volumes:
+      - *read-only-pulumi-mnt
 
   grapl-notebook:
     image: grapl/notebook:${TAG:-latest}
@@ -584,6 +590,7 @@ services:
           model-plugins-bucket
           osquery-log-bucket
           prod-api-id
+          schema-properties-table
           schema-table
           subgraphs-generated-bucket
           subgraphs-merged-bucket
