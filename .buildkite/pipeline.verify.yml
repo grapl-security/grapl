@@ -91,6 +91,10 @@ steps:
     command:
       - make lint-prettier
 
+  - label: "Build docs :book:"
+    command:
+      - make build-docs
+
   - label: ":yarn: Build UX"
     command: make build-ux
     plugins:

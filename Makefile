@@ -441,3 +441,7 @@ pulumi-prep: graplctl lambdas build-ux ## Prepare some artifacts in advance of r
 .PHONY: update-buildkite-shared
 update-buildkite-shared: ## Pull in changes from grapl-security/buildkite-common
 	git subtree pull --prefix .buildkite/shared git@github.com:grapl-security/buildkite-common.git main --squash
+
+.PHONY: build-docs
+build-docs: ## Build the Sphinx docs
+	./docs/build_docs.sh
