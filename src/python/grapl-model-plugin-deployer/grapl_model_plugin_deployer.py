@@ -47,6 +47,7 @@ IS_LOCAL = to_bool(os.environ.get("IS_LOCAL", False))
 LOGGER = get_module_grapl_logger(default_log_level="ERROR")
 
 MODEL_PLUGINS_BUCKET = os.environ["GRAPL_MODEL_PLUGINS_BUCKET"]
+SCHEMA_TABLE = os.environ["GRAPL_SCHEMA_TABLE"]
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
@@ -145,9 +146,7 @@ def provision_schemas(graph_client: GraphClient, raw_schemas: List[bytes]) -> No
         schema.init_reverse()
 
     dynamodb = DynamoDBResourceFactory(boto3).from_env()
-    schema_table = provision_common.get_schema_table(
-        dynamodb, deployment_name=deployment_name
-    )
+    schema_table = dynamodb.Table(SCHEMA_TABLE)
     schema_properties_table = provision_common.get_schema_properties_table(
         dynamodb, deployment_name=deployment_name
     )

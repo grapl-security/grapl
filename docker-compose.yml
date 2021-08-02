@@ -431,6 +431,8 @@ services:
     command:
       - |
         export GRAPL_MODEL_PLUGINS_BUCKET=$$(cat /mnt/pulumi-outputs/model-plugins-bucket)
+        export GRAPL_SCHEMA_TABLE=$$(cat /mnt/pulumi-outputs/schema-table)
+
         . venv/bin/activate
         cd /home/grapl/app
         chalice local \
