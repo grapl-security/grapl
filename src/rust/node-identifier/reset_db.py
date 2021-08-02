@@ -5,7 +5,6 @@ import boto3
 table_names = [
     "process_history_table",
     "node_id_retry_table",
-    "outbound_connection_history_table",
     "dynamic_session_table",
     "static_mapping_table",
 ]
