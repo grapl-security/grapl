@@ -83,7 +83,7 @@ def _create_user(
     dynamodb: DynamoDBServiceResource, username: str, cleartext: str
 ) -> None:
     assert cleartext
-    table = dynamodb.Table(DEPLOYMENT_NAME + "-user_auth_table")
+    table = dynamodb.Table(os.environ["GRAPL_USER_AUTH_TABLE"])
 
     # We hash before calling 'hashed_password' because the frontend will also perform
     # client side hashing
