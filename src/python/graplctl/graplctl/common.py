@@ -44,6 +44,7 @@ class State:
     aws_profile: str
     schema_table: str
     schema_properties_table: str
+    dynamic_session_table: str
 
     cloudwatch: CloudWatchClient
     dynamodb: DynamoDBServiceResource
