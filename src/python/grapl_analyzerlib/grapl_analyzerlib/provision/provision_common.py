@@ -10,7 +10,6 @@ from grapl_analyzerlib.node_types import PropType
 from grapl_analyzerlib.provision.meta_into import meta_into_predicate
 from grapl_analyzerlib.provision.queries import query_dgraph_type
 
-from grapl_common.resources import known_dynamodb_tables
 from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_analyzerlib.grapl_client import GraphClient
 from grapl_analyzerlib.schema import Schema
@@ -42,10 +41,6 @@ class SchemaDict(TypedDict):
 """
 SchemaPropertyDict = Dict[str, Any]
 SchemaDict = Dict[str, Any]
-
-
-# just some aliases
-get_schema_properties_table = known_dynamodb_tables.schema_properties_table
 
 
 def store_schema_properties(table: Table, schema: Schema) -> None:

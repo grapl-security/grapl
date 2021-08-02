@@ -38,15 +38,14 @@ LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 DEPLOYMENT_NAME = os.environ["DEPLOYMENT_NAME"]
 GRAPL_TEST_USER_NAME = os.environ["GRAPL_TEST_USER_NAME"]
 GRAPL_SCHEMA_TABLE = os.environ["GRAPL_SCHEMA_TABLE"]
+GRAPL_SCHEMA_PROPERTIES_TABLE = os.environ["GRAPL_SCHEMA_PROPERTIES_TABLE"]
 
 
 def _provision_graph(
     graph_client: GraphClient, dynamodb: DynamoDBServiceResource
 ) -> None:
     schema_table = dynamodb.Table(GRAPL_SCHEMA_TABLE)
-    schema_properties_table = provision_common.get_schema_properties_table(
-        dynamodb, deployment_name=DEPLOYMENT_NAME
-    )
+    schema_properties_table = dynamodb.Table(GRAPL_SCHEMA_PROPERTIES_TABLE)
     schemas = [
         AssetSchema(),
         ProcessSchema(),
