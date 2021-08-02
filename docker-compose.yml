@@ -222,15 +222,15 @@ services:
       - |
         # TODO: Rename this variable to be in line with our others?
         export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/unid-subgraphs-generated-bucket)
+        export DEAD_LETTER_QUEUE_URL=$$(cat /mnt/pulumi-outputs/osquery-generator-dead-letter-queue)
+        export RETRY_QUEUE_URL=$$(cat /mnt/pulumi-outputs/osquery-generator-retry-queue)
+        export SOURCE_QUEUE_URL=$$(cat /mnt/pulumi-outputs/osquery-generator-queue)
         /osquery-generator
     environment:
       <<: *aws-env
       DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
-      DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-dead-letter-queue"
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
       <<: *log-level
-      RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-retry-queue"
-      SOURCE_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-queue"
       <<: *rust-backtrace
     depends_on:
       provisioner:
@@ -583,6 +583,9 @@ services:
           dispatched-analyzer-bucket
           dynamic-session-table
           model-plugins-bucket
+          osquery-generator-dead-letter-queue
+          osquery-generator-queue
+          osquery-generator-retry-queue
           osquery-log-bucket
           prod-api-id
           schema-properties-table
