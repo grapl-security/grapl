@@ -40,22 +40,6 @@ class DynamoDBTable(aws.dynamodb.Table):
         )
 
 
-class DynamoDBHistoryTable(DynamoDBTable):
-    """ Specialization of our `DynamoDBTable` to represent all our "history" tables, which share the same structure. """
-
-    def __init__(
-        self, name: str, opts: Optional[pulumi.ResourceOptions] = None
-    ) -> None:
-
-        super().__init__(
-            name,
-            [{"name": "pseudo_key", "type": "S"}, {"name": "create_time", "type": "N"}],
-            hash_key="pseudo_key",
-            range_key="create_time",
-            opts=opts,
-        )
-
-
 class DynamoDB(pulumi.ComponentResource):
     """Consolidates the creation of all our DynamoDB tables.
 
@@ -107,8 +91,14 @@ class DynamoDB(pulumi.ComponentResource):
         )
         pulumi.export("user-auth-table", self.user_auth_table.name)
 
-        self.dynamic_session_table = DynamoDBHistoryTable(
+        self.dynamic_session_table = DynamoDBTable(
             f"{DEPLOYMENT_NAME}-dynamic_session_table",
+            attrs=[
+                {"name": "pseudo_key", "type": "S"},
+                {"name": "create_time", "type": "N"},
+            ],
+            hash_key="pseudo_key",
+            range_key="create_time",
             opts=pulumi.ResourceOptions(parent=self),
         )
         pulumi.export("dynamic-session-table", self.dynamic_session_table.name)
