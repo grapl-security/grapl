@@ -157,6 +157,8 @@ services:
     entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
     command:
       - |
+        export GRAPL_SCHEMA_PROPERTIES_TABLE=$$(cat /mnt/pulumi-outputs/schema-properties-table)
+
         cd graphql_endpoint_tests
         py.test --capture=no -n 1 -m "integration_test"
     environment:
@@ -175,7 +177,8 @@ services:
       - VSC_DEBUGGER_PORT=${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT_TESTS}
     ports:
       - ${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT_TESTS}:${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT_TESTS}
-
+    volumes:
+      - *read-only-pulumi-mnt
 networks:
   default:
     name: grapl-network
