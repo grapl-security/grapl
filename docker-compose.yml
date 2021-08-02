@@ -582,7 +582,6 @@ services:
           analyzers-bucket
           dispatched-analyzer-bucket
           dynamic-session-table
-          ip-connection-history-table
           model-plugins-bucket
           network-connection-history-table
           osquery-log-bucket
