@@ -196,11 +196,11 @@ where
 }
 
 pub fn static_mapping_table_name() -> String {
-    std::env::var("STATIC_MAPPING_TABLE").expect("STATIC_MAPPING_TABLE")
+    std::env::var("GRAPL_STATIC_MAPPING_TABLE").expect("GRAPL_STATIC_MAPPING_TABLE")
 }
 
 pub fn dynamic_session_table_name() -> String {
-    std::env::var("DYNAMIC_SESSION_TABLE").expect("DYNAMIC_SESSION_TABLE")
+    std::env::var("GRAPL_DYNAMIC_SESSION_TABLE").expect("GRAPL_DYNAMIC_SESSION_TABLE")
 }
 
 pub fn source_compression() -> String {

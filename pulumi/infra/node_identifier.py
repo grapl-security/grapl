@@ -39,8 +39,8 @@ class NodeIdentifier(FargateService):
                 # TODO: If the retry handler doesn't get permission to
                 # interact with these tables, then it probably
                 # shouldn't get these environment variables.
-                "STATIC_MAPPING_TABLE": db.static_mapping_table.name,
-                "DYNAMIC_SESSION_TABLE": db.dynamic_session_table.name,
+                "GRAPL_STATIC_MAPPING_TABLE": db.static_mapping_table.name,
+                "GRAPL_DYNAMIC_SESSION_TABLE": db.dynamic_session_table.name,
             },
             input_emitter=input_emitter,
             output_emitter=output_emitter,
