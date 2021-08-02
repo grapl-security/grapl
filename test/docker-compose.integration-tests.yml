@@ -26,14 +26,7 @@ services:
     entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
     command:
       - |
-        export ASSET_ID_MAPPINGS=$$(cat /mnt/pulumi-outputs/asset-id-mappings-table)
         export DYNAMIC_SESSION_TABLE=$$(cat /mnt/pulumi-outputs/dynamic-session-table)
-        export FILE_HISTORY_TABLE=$$(cat /mnt/pulumi-outputs/file-history-table)
-        export INBOUND_CONNECTION_HISTORY_TABLE=$$(cat /mnt/pulumi-outputs/inbound-connection-history-table)
-        export IP_CONNECTION_HISTORY_TABLE=$$(cat /mnt/pulumi-outputs/ip-connection-history-table)
-        export NETWORK_CONNECTION_HISTORY_TABLE=$$(cat /mnt/pulumi-outputs/network-connection-history-table)
-        export OUTBOUND_CONNECTION_HISTORY_TABLE=$$(cat /mnt/pulumi-outputs/outbound-connection-history-table)
-        export PROCESS_HISTORY_TABLE=$$(cat /mnt/pulumi-outputs/process-history-table)
         export STATIC_MAPPING_TABLE=$$(cat /mnt/pulumi-outputs/static-mapping-table)
 
         cargo test --features "$$RUST_INTEGRATION_TEST_FEATURES" --test "*"

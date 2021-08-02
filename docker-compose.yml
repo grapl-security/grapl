@@ -24,17 +24,6 @@ x-common-variables:
     AWS_REGION: ${AWS_REGION}
   dgraph-env: &dgraph-env
     MG_ALPHAS: ${MG_ALPHAS}
-  # TODO: Ensure these are matched with what's in provision_local_identity_table.py
-  dynamodb-mapping-tables: &dynamodb-mapping-tables
-    ASSET_ID_MAPPINGS: ${DEPLOYMENT_NAME}-asset_id_mappings
-    DYNAMIC_SESSION_TABLE: ${DEPLOYMENT_NAME}-dynamic_session_table
-    FILE_HISTORY_TABLE: ${DEPLOYMENT_NAME}-file_history_table
-    INBOUND_CONNECTION_HISTORY_TABLE: ${DEPLOYMENT_NAME}-inbound_connection_history_table
-    IP_CONNECTION_HISTORY_TABLE: ${DEPLOYMENT_NAME}-ip_connection_history_table
-    NETWORK_CONNECTION_HISTORY_TABLE: ${DEPLOYMENT_NAME}-network_connection_history_table
-    OUTBOUND_CONNECTION_HISTORY_TABLE: ${DEPLOYMENT_NAME}-outbound_connection_history_table
-    PROCESS_HISTORY_TABLE: ${DEPLOYMENT_NAME}-process_history_table
-    STATIC_MAPPING_TABLE: ${DEPLOYMENT_NAME}-static_mapping_table
   kafka-broker-env: &kafka-broker-env
     KAFKA_BROKER_ID: 1
     KAFKA_ZOOKEEPER_CONNECT: "${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT}"
@@ -263,11 +252,12 @@ services:
       - |
         # TODO: Rename this variable to be in line with our others?
         export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/subgraphs-generated-bucket)
+        export STATIC_MAPPING_TABLE=$$(cat /mnt/pulumi-outputs/static-mapping-table)
+        export DYNAMIC_SESSION_TABLE=$$(cat /mnt/pulumi-outputs/dynamic-session-table)
         /node-identifier
     environment:
       <<: *aws-env
       DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
-      <<: *dynamodb-mapping-tables
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
       <<: *log-level
       RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-retry-queue"
@@ -294,11 +284,12 @@ services:
       - |
         # TODO: Rename this variable to be in line with our others?
         export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/subgraphs-generated-bucket)
+        export GRAPL_STATIC_MAPPING_TABLE=$$(cat /mnt/pulumi-outputs/static-mapping-table)
+        export GRAPL_DYNAMIC_SESSION_TABLE=$$(cat /mnt/pulumi-outputs/dynamic-session-table)
         /node-identifier-retry
     environment:
       <<: *aws-env
       DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
-      <<: *dynamodb-mapping-tables
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
       <<: *log-level
       RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"

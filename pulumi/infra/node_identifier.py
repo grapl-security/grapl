@@ -41,13 +41,6 @@ class NodeIdentifier(FargateService):
                 # shouldn't get these environment variables.
                 "STATIC_MAPPING_TABLE": db.static_mapping_table.name,
                 "DYNAMIC_SESSION_TABLE": db.dynamic_session_table.name,
-                "PROCESS_HISTORY_TABLE": db.process_history_table.name,
-                "FILE_HISTORY_TABLE": db.file_history_table.name,
-                "INBOUND_CONNECTION_HISTORY_TABLE": db.inbound_connection_history_table.name,
-                "OUTBOUND_CONNECTION_HISTORY_TABLE": db.outbound_connection_history_table.name,
-                "NETWORK_CONNECTION_HISTORY_TABLE": db.network_connection_history_table.name,
-                "IP_CONNECTION_HISTORY_TABLE": db.ip_connection_history_table.name,
-                "ASSET_ID_MAPPINGS": db.asset_id_mappings.name,
             },
             input_emitter=input_emitter,
             output_emitter=output_emitter,
