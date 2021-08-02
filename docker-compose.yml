@@ -383,6 +383,8 @@ services:
         export GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET=$$(cat /mnt/pulumi-outputs/analyzer-matched-subgraphs-bucket)
         export GRAPL_ANALYZERS_BUCKET=$$(cat /mnt/pulumi-outputs/analyzers-bucket)
         export GRAPL_MODEL_PLUGINS_BUCKET=$$(cat /mnt/pulumi-outputs/model-plugins-bucket)
+        export RETRY_QUEUE_URL=$$(cat /mnt/pulumi-outputs/analyzer-executor-retry-queue)
+        export SOURCE_QUEUE_URL=$$(cat /mnt/pulumi-outputs/analyzer-executor-queue)
         python3 analyzer_executor/src/run.py
     environment:
       <<: *aws-env
@@ -395,8 +397,6 @@ services:
       <<: *log-level
       MESSAGECACHE_ADDR: "${REDIS_HOST}"
       MESSAGECACHE_PORT: "${REDIS_PORT}"
-      RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-executor-retry-queue"
-      SOURCE_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-executor-queue"
       VSC_DEBUGGER_PORT: "${VSC_DEBUGGER_PORT_FOR_ANALYZER_EXECUTOR}"
     tty: true
     ports:
@@ -581,6 +581,8 @@ services:
           analyzer-dispatcher-dead-letter-queue
           analyzer-dispatcher-queue
           analyzer-dispatcher-retry-queue
+          analyzer-executor-queue
+          analyzer-executor-retry-queue
           analyzer-matched-subgraphs-bucket
           analyzers-bucket
           dispatched-analyzer-bucket
