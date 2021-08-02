@@ -155,7 +155,7 @@ def user_auth_table() -> Table:
         )
     )
 
-    return DYNAMO.Table(os.environ["USER_AUTH_TABLE"])
+    return DYNAMO.Table(os.environ["GRAPL_USER_AUTH_TABLE"])
 
 
 def login(username: str, password: str) -> Optional[str]:
