@@ -62,7 +62,6 @@ class NodeIdentifier(FargateService):
                     db.outbound_connection_history_table,
                     db.network_connection_history_table,
                     db.ip_connection_history_table,
-                    db.asset_id_mappings,
                 ],
             )
 

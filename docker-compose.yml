@@ -580,7 +580,6 @@ services:
         outputs=(
           analyzer-matched-subgraphs-bucket
           analyzers-bucket
-          asset-id-mappings-table
           dispatched-analyzer-bucket
           dynamic-session-table
           file-history-table

@@ -107,18 +107,6 @@ class DynamoDB(pulumi.ComponentResource):
         )
         pulumi.export("user-auth-table", self.user_auth_table.name)
 
-        self.asset_id_mappings = DynamoDBTable(
-            f"{DEPLOYMENT_NAME}-asset_id_mappings",
-            attrs=[
-                {"name": "pseudo_key", "type": "S"},
-                {"name": "c_timestamp", "type": "N"},
-            ],
-            hash_key="pseudo_key",
-            range_key="c_timestamp",
-            opts=pulumi.ResourceOptions(parent=self),
-        )
-        pulumi.export("asset-id-mappings-table", self.asset_id_mappings.name)
-
         self.dynamic_session_table = DynamoDBHistoryTable(
             f"{DEPLOYMENT_NAME}-dynamic_session_table",
             opts=pulumi.ResourceOptions(parent=self),

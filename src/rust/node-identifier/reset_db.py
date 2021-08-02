@@ -10,7 +10,6 @@ table_names = [
     "inbound_connection_history_table",
     "network_connection_history_table",
     "ip_connection_history_table",
-    "asset_id_mappings",
     "dynamic_session_table",
     "static_mapping_table",
 ]
