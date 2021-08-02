@@ -37,6 +37,7 @@ class Provisioner(pulumi.ComponentResource):
                     "DEPLOYMENT_NAME": DEPLOYMENT_NAME,
                     "MG_ALPHAS": dgraph_cluster.alpha_host_port,
                     "GRAPL_TEST_USER_NAME": f"{DEPLOYMENT_NAME}-grapl-test-user",
+                    "GRAPL_SCHEMA_TABLE": db.schema_table.name,
                 },
                 timeout=60 * 15,  # 15 minutes
                 memory_size=256,

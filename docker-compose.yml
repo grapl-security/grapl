@@ -641,11 +641,11 @@ services:
 
   provisioner:
     image: grapl/provisioner:${TAG:-latest}
-    entrypoint: ["python3", "-c"]
+    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
     command:
       - |
-        import lambdex_handler
-        lambdex_handler.handler(None, None)
+        export GRAPL_SCHEMA_TABLE=$$(cat /mnt/pulumi-outputs/schema-table)
+        python3 -c "import lambdex_handler; lambdex_handler.handler(None, None)"
     environment:
       <<: *aws-env
       <<: *dgraph-env
@@ -660,6 +660,8 @@ services:
         condition: service_healthy
       pulumi:
         condition: service_completed_successfully
+    volumes:
+      - *read-only-pulumi-mnt
 
 networks:
   default:
