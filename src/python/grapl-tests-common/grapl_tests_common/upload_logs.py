@@ -66,7 +66,7 @@ def into_sqs_message(bucket: str, key: str) -> str:
 
 @dataclass
 class GeneratorOptions:
-    bucket_suffix: str
+    bucket: str
     queue_suffix: str
     key_infix: str
 
@@ -75,10 +75,10 @@ class GeneratorOptions:
 
 
 class SysmonGeneratorOptions(GeneratorOptions):
-    def __init__(self) -> None:
+    def __init__(self, bucket: str) -> None:
         super().__init__(
             queue_suffix=f"sysmon-generator-queue",
-            bucket_suffix="sysmon-log-bucket",
+            bucket=bucket,
             key_infix="sysmon",
         )
 
@@ -88,10 +88,10 @@ class SysmonGeneratorOptions(GeneratorOptions):
 
 
 class OSQueryGeneratorOptions(GeneratorOptions):
-    def __init__(self) -> None:
+    def __init__(self, bucket: str) -> None:
         super().__init__(
             queue_suffix=f"osquery-generator-queue",
-            bucket_suffix="osquery-log-bucket",
+            bucket=bucket,
             key_infix="osquery",
         )
 
@@ -129,7 +129,7 @@ def upload_logs(
     def chunker(seq: List[bytes], size: int) -> Iterator[List[bytes]]:
         return (seq[pos : pos + size] for pos in range(0, len(seq), size))
 
-    bucket = f"{deployment_name}-{generator_options.bucket_suffix}"
+    bucket = generator_options.bucket
     queue = f"{deployment_name}-{generator_options.queue_suffix}"
 
     chunk_count = 0
@@ -162,6 +162,7 @@ def upload_logs(
 def upload_sysmon_logs(
     deployment_name: str,
     logfile: PathLike,
+    log_bucket: str,
     delay: int = 0,
     batch_size: int = 100,
     s3_client: Optional[S3Client] = None,
@@ -171,7 +172,7 @@ def upload_sysmon_logs(
     upload_logs(
         deployment_name=deployment_name,
         logfile=logfile,
-        generator_options=SysmonGeneratorOptions(),
+        generator_options=SysmonGeneratorOptions(bucket=log_bucket),
         delay=delay,
         batch_size=batch_size,
         s3_client=s3_client,
@@ -182,6 +183,7 @@ def upload_sysmon_logs(
 def upload_osquery_logs(
     deployment_name: str,
     logfile: PathLike,
+    log_bucket: str,
     delay: int = 0,
     batch_size: int = 100,
     s3_client: Optional[S3Client] = None,
@@ -190,7 +192,7 @@ def upload_osquery_logs(
     upload_logs(
         deployment_name=deployment_name,
         logfile=logfile,
-        generator_options=OSQueryGeneratorOptions(),
+        generator_options=OSQueryGeneratorOptions(bucket=log_bucket),
         delay=delay,
         batch_size=batch_size,
         s3_client=s3_client,

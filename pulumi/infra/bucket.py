@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import List, Optional
 
 import pulumi_aws as aws
-from infra.config import DEPLOYMENT_NAME
 from pulumi.resource import ResourceOptions
 
 import pulumi
@@ -12,14 +11,14 @@ import pulumi
 class Bucket(aws.s3.Bucket):
     def __init__(
         self,
-        logical_bucket_name: str,
+        name: str,
         sse: bool = False,
         website_args: Optional[aws.s3.BucketWebsiteArgs] = None,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         """Abstracts logic for creating an S3 bucket for our purposes.
 
-        logical_bucket_name: What we call this bucket in Pulumi terms.
+        name: The Pulumi resource name. The physical bucket name will begin with this, and will receive a random suffix.
 
         sse: Whether or not to apply server-side encryption of
         bucket contents
@@ -30,13 +29,10 @@ class Bucket(aws.s3.Bucket):
         opts: `pulumi.ResourceOptions` for this resource.
 
         """
-        self.logical_bucket_name = logical_bucket_name
-
         sse_config = sse_configuration() if sse else None
 
         super().__init__(
-            logical_bucket_name,
-            bucket=bucket_physical_name(logical_bucket_name),
+            name,
             force_destroy=True,
             website=website_args,
             server_side_encryption_configuration=sse_config,
@@ -201,17 +197,6 @@ class Bucket(aws.s3.Bucket):
             raise FileNotFoundError(
                 f"Neither a file nor a dir - does it exist?: {file_path}"
             )
-
-
-def bucket_physical_name(logical_name: str) -> str:
-    """Compute the physical name of a bucket, given its logical name.
-
-    Mainly useful to help with resource importation logic on certain
-    resources; may not be needed as a separate function once
-    everything is managed by Pulumi.
-
-    """
-    return f"{DEPLOYMENT_NAME}-{logical_name}"
 
 
 def sse_configuration() -> aws.s3.BucketServerSideEncryptionConfigurationArgs:

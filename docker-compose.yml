@@ -198,10 +198,15 @@ services:
   sysmon-generator:
     image: grapl/sysmon-generator:${TAG:-latest}
     tty: false
+    entrypoint: ["/busybox/sh", "-o", "errexit", "-o", "nounset", "-c"]
+    command:
+      - |
+        # TODO: Rename this variable to be in line with our others?
+        export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/unid-subgraphs-generated-bucket)
+        /sysmon-generator
     environment:
       <<: *aws-env
       DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-sysmon-generator-dead-letter-queue"
-      DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-unid-subgraphs-generated-bucket"
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
       <<: *log-level
       RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/000000000000/${DEPLOYMENT_NAME}-sysmon-generator-retry-queue"
@@ -214,15 +219,25 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      pulumi:
+        # We must wait until Pulumi has created the buckets to know what their names are
+        condition: service_completed_successfully
+    volumes:
+      - *read-only-pulumi-mnt
 
   osquery-generator:
     image: grapl/osquery-generator:${TAG:-latest}
     tty: false
+    entrypoint: ["/busybox/sh", "-o", "errexit", "-o", "nounset", "-c"]
+    command:
+      - |
+        # TODO: Rename this variable to be in line with our others?
+        export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/unid-subgraphs-generated-bucket)
+        /osquery-generator
     environment:
       <<: *aws-env
       DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
       DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-dead-letter-queue"
-      DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-unid-subgraphs-generated-bucket"
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
       <<: *log-level
       RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-osquery-generator-retry-queue"
@@ -235,13 +250,23 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      pulumi:
+        # We must wait until Pulumi has created the buckets to know what their names are
+        condition: service_completed_successfully
+    volumes:
+      - *read-only-pulumi-mnt
 
   node-identifier:
     image: grapl/node-identifier:${TAG:-latest}
+    entrypoint: ["/busybox/sh", "-o", "errexit", "-o", "nounset", "-c"]
+    command:
+      - |
+        # TODO: Rename this variable to be in line with our others?
+        export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/subgraphs-generated-bucket)
+        /node-identifier
     environment:
       <<: *aws-env
       DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
-      DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-subgraphs-generated-bucket"
       <<: *dynamodb-mapping-tables
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
       <<: *log-level
@@ -256,13 +281,23 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      pulumi:
+        # We must wait until Pulumi has created the buckets to know what their names are
+        condition: service_completed_successfully
+    volumes:
+      - *read-only-pulumi-mnt
 
   node-identifier-retry:
     image: grapl/node-identifier-retry:${TAG:-latest}
+    entrypoint: ["/busybox/sh", "-o", "errexit", "-o", "nounset", "-c"]
+    command:
+      - |
+        # TODO: Rename this variable to be in line with our others?
+        export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/subgraphs-generated-bucket)
+        /node-identifier-retry
     environment:
       <<: *aws-env
       DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
-      DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-subgraphs-generated-bucket"
       <<: *dynamodb-mapping-tables
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
       <<: *log-level
@@ -277,13 +312,23 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      pulumi:
+        # We must wait until Pulumi has created the buckets to know what their names are
+        condition: service_completed_successfully
+    volumes:
+      - *read-only-pulumi-mnt
 
   graph-merger:
     image: grapl/graph-merger:${TAG:-latest}
+    entrypoint: ["/busybox/sh", "-o", "errexit", "-o", "nounset", "-c"]
+    command:
+      - |
+        # TODO: Rename this variable to be in line with our others?
+        export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/subgraphs-merged-bucket)
+        /graph-merger
     environment:
       <<: *aws-env
       DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-dead-letter-queue"
-      DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-subgraphs-merged-bucket"
       <<: *dgraph-env
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
       GRAPL_SCHEMA_TABLE: "${DEPLOYMENT_NAME}-grapl_schema_table"
@@ -301,6 +346,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      pulumi:
+        # We must wait until Pulumi has created the buckets to know what their names are
+        condition: service_completed_successfully
+    volumes:
+      - *read-only-pulumi-mnt
 
   analyzer-dispatcher:
     image: grapl/analyzer-dispatcher:${TAG:-latest}
@@ -311,11 +361,11 @@ services:
     command:
       - |
         export GRAPL_ANALYZERS_BUCKET=$$(cat /mnt/pulumi-outputs/analyzers-bucket)
+        export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/dispatched-analyzer-bucket)
         /analyzer-dispatcher
     environment:
       <<: *aws-env
       DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-dead-letter-queue"
-      DEST_BUCKET_NAME: "${DEPLOYMENT_NAME}-dispatched-analyzer-bucket"
       <<: *log-level
       RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-retry-queue"
       SOURCE_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-queue"
@@ -530,8 +580,14 @@ services:
         outputs=(
           analyzer-matched-subgraphs-bucket
           analyzers-bucket
+          dispatched-analyzer-bucket
           model-plugins-bucket
+          osquery-log-bucket
           prod-api-id
+          subgraphs-generated-bucket
+          subgraphs-merged-bucket
+          sysmon-log-bucket
+          unid-subgraphs-generated-bucket
           ux-bucket
         )
         for output in "$${outputs[@]}"; do

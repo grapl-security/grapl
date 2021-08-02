@@ -33,12 +33,21 @@ def upload(
     required=True,
     help="Path to the analyzer's `main.py`",
 )
+@click.option(
+    "--analyzers-bucket",
+    help="Name of the S3 bucket to upload analyzers to",
+    type=click.STRING,
+    required=True,
+    envvar="GRAPL_ANALYZERS_BUCKET",
+)
 @pass_graplctl_state
-def analyzer(graplctl_state: State, analyzer_main_py: PathLike) -> None:
+def analyzer(
+    graplctl_state: State, analyzers_bucket: str, analyzer_main_py: PathLike
+) -> None:
     """Upload an analyzer to the S3 bucket"""
     upload_analyzer(
         graplctl_state.s3,
-        graplctl_state.grapl_deployment_name,
+        analyzers_bucket=analyzers_bucket,
         analyzer_main_py=Path(analyzer_main_py).resolve(),
     )
 
@@ -50,13 +59,21 @@ def analyzer(graplctl_state: State, analyzer_main_py: PathLike) -> None:
     required=True,
     help="The log file to upload",
 )
+@click.option(
+    "--log-bucket",
+    help="The name of the S3 bucket to which Sysmon logs should be uploaded",
+    type=click.STRING,
+    required=True,
+    envvar="GRAPL_SYSMON_LOG_BUCKET",
+)
 @pass_graplctl_state
-def sysmon(graplctl_state: State, logfile: PathLike) -> None:
+def sysmon(graplctl_state: State, logfile: PathLike, log_bucket: str) -> None:
     """Upload a Sysmon log file to the S3 bucket"""
     upload_sysmon_logs(
         s3_client=graplctl_state.s3,
         sqs_client=graplctl_state.sqs,
         deployment_name=graplctl_state.grapl_deployment_name,
+        log_bucket=log_bucket,
         logfile=Path(logfile).resolve(),
     )
 
@@ -68,12 +85,20 @@ def sysmon(graplctl_state: State, logfile: PathLike) -> None:
     required=True,
     help="The log file to upload",
 )
+@click.option(
+    "--log-bucket",
+    help="The name of the S3 bucket to which OSQuery logs should be uploaded",
+    type=click.STRING,
+    required=True,
+    envvar="GRAPL_OSQUERY_LOG_BUCKET",
+)
 @pass_graplctl_state
-def osquery(graplctl_state: State, logfile: PathLike) -> None:
+def osquery(graplctl_state: State, logfile: PathLike, log_bucket: str) -> None:
     """Upload an OSQuery log file to the S3 bucket"""
     upload_osquery_logs(
         s3_client=graplctl_state.s3,
         sqs_client=graplctl_state.sqs,
         deployment_name=graplctl_state.grapl_deployment_name,
+        log_bucket=log_bucket,
         logfile=Path(logfile).resolve(),
     )
