@@ -6,7 +6,6 @@ table_names = [
     "process_history_table",
     "node_id_retry_table",
     "outbound_connection_history_table",
-    "inbound_connection_history_table",
     "network_connection_history_table",
     "ip_connection_history_table",
     "dynamic_session_table",
