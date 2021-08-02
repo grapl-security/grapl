@@ -74,18 +74,11 @@ To run your images locally, execute the following command in the
 project root (after building):
 
 ``` bash
-TAG=latest docker-compose up
+make up
 ```
 
-Alerternatively, you can use `make up` to rebuild the sources and launch `docker-compoes up`.
-
-Note that the `TAG=latest` is redundant, it's shown here because if
-you specified a different tag in your build step above you would want
-to specify that same tag here.
-
-See [these
-docs](https://grapl.readthedocs.io/en/latest/setup/local.html#local-grapl)
-for a more in-depth guide to operating Grapl locally.
+See [our ReadTheDocs](https://grapl.readthedocs.io/en/latest/setup/)
+for a more in-depth guide to operating Grapl.
 
 We heartily welcome code contributions, but we request for the sake of
 planning and project management that each contribution be associated
