@@ -1,5 +1,4 @@
 from grapl_common.grapl_logger import get_module_grapl_logger
-from grapl_common.resources import known_dynamodb_tables
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 
 LOGGER = get_module_grapl_logger(log_to_stdout=True)
@@ -7,13 +6,13 @@ LOGGER = get_module_grapl_logger(log_to_stdout=True)
 
 def is_grapl_provisioned(
     dynamodb: DynamoDBServiceResource,
-    deployment_name: str,
+    schema_table: str,
 ) -> bool:
     """
-    We are doing a very simple check - "is there >0 things in schema_properties_table?"
+    We are doing a very simple check - "is there >0 things in schema_table?"
     to infer whether any provisioning has taken place.
     """
-    table = known_dynamodb_tables.schema_table(dynamodb, deployment_name)
+    table = dynamodb.Table(schema_table)
     return not _table_is_empty(table)
 
 
