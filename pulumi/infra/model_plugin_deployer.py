@@ -46,6 +46,7 @@ class ModelPluginDeployer(pulumi.ComponentResource):
                     else "JWT_SECRET_ID",
                     "USER_AUTH_TABLE": db.user_auth_table.id,
                     "DEPLOYMENT_NAME": pulumi.get_stack(),
+                    "GRAPL_SCHEMA_PROPERTIES_TABLE": db.schema_properties_table.id,
                     "GRAPL_SCHEMA_TABLE": db.schema_table.id,
                 },
                 timeout=25,

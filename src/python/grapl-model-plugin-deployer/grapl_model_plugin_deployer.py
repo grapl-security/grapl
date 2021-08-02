@@ -33,7 +33,6 @@ from grapl_common.env_helpers import (
     DynamoDBResourceFactory,
     S3ClientFactory,
     SecretsManagerClientFactory,
-    get_deployment_name,
 )
 from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_common.utils.primitive_convertors import to_bool
@@ -48,6 +47,7 @@ LOGGER = get_module_grapl_logger(default_log_level="ERROR")
 
 MODEL_PLUGINS_BUCKET = os.environ["GRAPL_MODEL_PLUGINS_BUCKET"]
 SCHEMA_TABLE = os.environ["GRAPL_SCHEMA_TABLE"]
+SCHEMA_PROPERTIES_TABLE = os.environ["GRAPL_SCHEMA_PROPERTIES_TABLE"]
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
@@ -129,8 +129,6 @@ def provision_schemas(graph_client: GraphClient, raw_schemas: List[bytes]) -> No
     """
     `raw_schemas` is a list of raw, exec'able python code contained in a `schema.py` file
     """
-    deployment_name = get_deployment_name()
-
     # For every schema, exec the schema. The new schemas in scope in the file
     # are then written to `meta_globals`.
     meta_globals: Dict[str, Any] = {}
@@ -147,9 +145,7 @@ def provision_schemas(graph_client: GraphClient, raw_schemas: List[bytes]) -> No
 
     dynamodb = DynamoDBResourceFactory(boto3).from_env()
     schema_table = dynamodb.Table(SCHEMA_TABLE)
-    schema_properties_table = provision_common.get_schema_properties_table(
-        dynamodb, deployment_name=deployment_name
-    )
+    schema_properties_table = dynamodb.Table(SCHEMA_PROPERTIES_TABLE)
 
     LOGGER.info("Merge the schemas with what exists in the graph")
     for schema in schemas:
