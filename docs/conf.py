@@ -19,10 +19,10 @@ import sys
 
 py_roots = [
     "../src/python/grapl_analyzerlib/",
+    "../src/python/grapl-common/",
 ]
 for py_root in py_roots:
     sys.path.insert(0, os.path.abspath(os.path.abspath(py_root)))
-
 
 autodoc_mock_imports = [
     "grpc",
@@ -44,6 +44,7 @@ author = "Grapl Security"
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
+    # TODO: Upgrade to Myst parser; recommonmark is EOL
     "recommonmark",
     "sphinx_rtd_theme",
 ]
