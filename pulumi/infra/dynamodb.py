@@ -113,12 +113,6 @@ class DynamoDB(pulumi.ComponentResource):
         )
         pulumi.export("dynamic-session-table", self.dynamic_session_table.name)
 
-        self.file_history_table = DynamoDBHistoryTable(
-            f"{DEPLOYMENT_NAME}-file_history_table",
-            opts=pulumi.ResourceOptions(parent=self),
-        )
-        pulumi.export("file-history-table", self.file_history_table.name)
-
         self.inbound_connection_history_table = DynamoDBHistoryTable(
             f"{DEPLOYMENT_NAME}-inbound_connection_history_table",
             opts=pulumi.ResourceOptions(parent=self),

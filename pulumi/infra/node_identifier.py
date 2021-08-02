@@ -57,7 +57,6 @@ class NodeIdentifier(FargateService):
                     db.static_mapping_table,
                     db.dynamic_session_table,
                     db.process_history_table,
-                    db.file_history_table,
                     db.inbound_connection_history_table,
                     db.outbound_connection_history_table,
                     db.network_connection_history_table,

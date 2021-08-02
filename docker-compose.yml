@@ -582,7 +582,6 @@ services:
           analyzers-bucket
           dispatched-analyzer-bucket
           dynamic-session-table
-          file-history-table
           inbound-connection-history-table
           ip-connection-history-table
           model-plugins-bucket

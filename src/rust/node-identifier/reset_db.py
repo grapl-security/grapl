@@ -4,7 +4,6 @@ import boto3
 
 table_names = [
     "process_history_table",
-    "file_history_table",
     "node_id_retry_table",
     "outbound_connection_history_table",
     "inbound_connection_history_table",
