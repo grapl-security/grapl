@@ -583,7 +583,6 @@ services:
           dispatched-analyzer-bucket
           dynamic-session-table
           model-plugins-bucket
-          network-connection-history-table
           osquery-log-bucket
           outbound-connection-history-table
           process-history-table
