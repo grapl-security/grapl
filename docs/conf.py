@@ -44,6 +44,7 @@ author = "Grapl Security"
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
+    # TODO: Upgrade to Myst parser; recommonmark is EOL
     "recommonmark",
     "sphinx_rtd_theme",
 ]

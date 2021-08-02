@@ -25,7 +25,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Run `docs/run_local.sh`
+      - name: Run `docs/build_docs.sh`
         run: |
           cd docs
-          ./run_local.sh
+          ./build_docs.sh
