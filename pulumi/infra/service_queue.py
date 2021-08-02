@@ -55,6 +55,7 @@ class ServiceQueue(pulumi.ComponentResource):
                 delete_before_replace=True,
             ),
         )
+        pulumi.export(logical_dead_letter_name, self.dead_letter_queue.id)
 
         logical_retry_name = f"{name}-retry-queue"
         physical_retry_name = f"{DEPLOYMENT_NAME}-{logical_retry_name}"
@@ -69,6 +70,7 @@ class ServiceQueue(pulumi.ComponentResource):
                 delete_before_replace=True,
             ),
         )
+        pulumi.export(logical_retry_name, self.retry_queue.id)
 
         logical_queue_name = f"{name}-queue"
         physical_queue_name = f"{DEPLOYMENT_NAME}-{logical_queue_name}"
@@ -83,6 +85,7 @@ class ServiceQueue(pulumi.ComponentResource):
                 delete_before_replace=True,
             ),
         )
+        pulumi.export(logical_queue_name, self.queue.id)
 
         self.register_outputs({})
 
