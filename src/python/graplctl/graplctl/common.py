@@ -43,6 +43,7 @@ class State:
     grapl_version: str
     aws_profile: str
     schema_table: str
+    schema_properties_table: str
 
     cloudwatch: CloudWatchClient
     dynamodb: DynamoDBServiceResource

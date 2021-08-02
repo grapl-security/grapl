@@ -71,6 +71,12 @@ Ec2Instance = common.Ec2Instance
     envvar="GRAPL_SCHEMA_TABLE",
     help="The name of the DynamoDB table that holds the schema",
 )
+@click.option(
+    "--schema-properties-table",
+    type=click.STRING,
+    envvar="GRAPL_SCHEMA_PROPERTIES_TABLE",
+    help="The name of the DynamoDB table that holds the schema properties",
+)
 @click.pass_context
 def main(
     ctx: click.Context,
@@ -79,6 +85,7 @@ def main(
     grapl_version: str,
     aws_profile: str,
     schema_table: str,
+    schema_properties_table: str,
 ) -> None:
     session = boto3.session.Session(profile_name=aws_profile)
     config = Config(region_name=grapl_region)
@@ -100,6 +107,7 @@ def main(
         sqs=SQSClientFactory(session).from_env(config=config),
         ssm=SSMClientFactory(session).from_env(config=config),
         schema_table=schema_table,
+        schema_properties_table=schema_properties_table,
     )
 
 

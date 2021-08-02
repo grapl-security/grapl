@@ -60,6 +60,7 @@ def wipe_state(ctx: click.Context, graplctl_state: State) -> None:
         dynamodb=graplctl_state.dynamodb,
         deployment_name=graplctl_state.grapl_deployment_name,
         schema_table_name=graplctl_state.schema_table,
+        schema_properties_table_name=graplctl_state.schema_properties_table,
     )
     click.echo("Wiped dynamodb")
     # Also destroy dgraph

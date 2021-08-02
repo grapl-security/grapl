@@ -85,13 +85,14 @@ def run_e2e_tests(lambda_: LambdaClient, deployment_name: str) -> None:
 
 
 def wipe_dynamodb(
-    dynamodb: DynamoDBServiceResource, deployment_name: str, schema_table_name: str
+    dynamodb: DynamoDBServiceResource,
+    deployment_name: str,
+    schema_table_name: str,
+    schema_properties_table_name: str,
 ) -> None:
     session_table = known_dynamodb_tables.session_table(dynamodb, deployment_name)
     schema_table = dynamodb.Table(schema_table_name)
-    schema_properties_table = known_dynamodb_tables.schema_properties_table(
-        dynamodb, deployment_name
-    )
+    schema_properties_table = dynamodb.Table(schema_properties_table_name)
     for table in (session_table, schema_table, schema_properties_table):
         LOGGER.info(f"Wiping {table}")
         _wipe_dynamodb_table(table)

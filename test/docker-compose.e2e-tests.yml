@@ -24,6 +24,7 @@ services:
         export GRAPL_OSQUERY_LOG_BUCKET=$$(cat /mnt/pulumi-outputs/osquery-log-bucket)
         export GRAPL_SYSMON_LOG_BUCKET=$$(cat /mnt/pulumi-outputs/sysmon-log-bucket)
         export GRAPL_SCHEMA_TABLE=$$(cat /mnt/pulumi-outputs/schema-table)
+        export GRAPL_SCHEMA_PROPERTIES_TABLE=$$(cat /mnt/pulumi-outputs/schema-properties-table)
 
         graplctl \
               --grapl-region $AWS_REGION \
