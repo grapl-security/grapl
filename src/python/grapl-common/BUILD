@@ -4,7 +4,6 @@ grapl_python_distribution(
         "./grapl_common:py_typed",
         "./grapl_common/debugger",
         "./grapl_common/metrics",
-        "./grapl_common/resources",
         "./grapl_common/utils",
     ],
     provides = setup_py(
