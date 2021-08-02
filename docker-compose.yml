@@ -353,13 +353,13 @@ services:
       - |
         export GRAPL_ANALYZERS_BUCKET=$$(cat /mnt/pulumi-outputs/analyzers-bucket)
         export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/dispatched-analyzer-bucket)
+        export DEAD_LETTER_QUEUE_URL=$$(cat /mnt/pulumi-outputs/analyzer-dispatcher-dead-letter-queue)
+        export RETRY_QUEUE_URL=$$(cat /mnt/pulumi-outputs/analyzer-dispatcher-retry-queue)
+        export SOURCE_QUEUE_URL=$$(cat /mnt/pulumi-outputs/analyzer-dispatcher-queue)
         /analyzer-dispatcher
     environment:
       <<: *aws-env
-      DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-dead-letter-queue"
       <<: *log-level
-      RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-retry-queue"
-      SOURCE_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-analyzer-dispatcher-queue"
       <<: *rust-backtrace
     tty: false
     depends_on:
@@ -578,6 +578,9 @@ services:
 
         # Write the necessary outputs to the shared volume, for access by other containers
         outputs=(
+          analyzer-dispatcher-dead-letter-queue
+          analyzer-dispatcher-queue
+          analyzer-dispatcher-retry-queue
           analyzer-matched-subgraphs-bucket
           analyzers-bucket
           dispatched-analyzer-bucket
