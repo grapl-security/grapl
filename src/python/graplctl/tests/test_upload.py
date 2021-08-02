@@ -46,6 +46,8 @@ def test_upload_analyzer__calls_s3() -> None:
                 "analyzer",
                 "--analyzer_main_py",
                 str(main_py_path),
+                "--analyzers-bucket",
+                "fake-deployment-analyzers-bucket",
             ],
         )
 
@@ -63,7 +65,14 @@ def test_upload_sysmon__calls_s3() -> None:
     with patch_boto3_session() as mock_session:
         sample_data_path = "etc/sample_data/eventlog.xml"
         result = invoke_with_default_args(
-            ["upload", "sysmon", "--logfile", sample_data_path],
+            [
+                "upload",
+                "sysmon",
+                "--logfile",
+                sample_data_path,
+                "--log-bucket",
+                "fake-deployment-sysmon-log-bucket",
+            ],
         )
 
     mock_s3_client = mock_session.client("s3")
@@ -91,7 +100,14 @@ def test_upload_osquery__calls_s3() -> None:
     with patch_boto3_session() as mock_session:
         sample_data_path = "etc/sample_data/osquery_data.log"
         result = invoke_with_default_args(
-            ["upload", "osquery", "--logfile", sample_data_path],
+            [
+                "upload",
+                "osquery",
+                "--logfile",
+                sample_data_path,
+                "--log-bucket",
+                "fake-deployment-osquery-log-bucket",
+            ],
         )
 
     mock_s3_client = mock_session.client("s3")

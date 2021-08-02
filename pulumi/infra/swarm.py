@@ -90,7 +90,7 @@ class Swarm(pulumi.ComponentResource):
         )
 
         self.swarm_config_bucket = Bucket(
-            logical_bucket_name="swarm-config-bucket",
+            "swarm-config-bucket",
             opts=child_opts,
         )
         pulumi.export("swarm-config-bucket", self.swarm_config_bucket.bucket)
