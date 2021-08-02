@@ -28,7 +28,6 @@ class DynamoDBTable(aws.dynamodb.Table):
 
         super().__init__(
             name,
-            name=name,
             attributes=[
                 aws.dynamodb.TableAttributeArgs(name=a["name"], type=a["type"])
                 for a in attrs
