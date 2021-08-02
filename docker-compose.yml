@@ -317,15 +317,15 @@ services:
         # TODO: Rename this variable to be in line with our others?
         export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/subgraphs-merged-bucket)
         export GRAPL_SCHEMA_TABLE=$$(cat /mnt/pulumi-outputs/schema-table)
+        export DEAD_LETTER_QUEUE_URL=$$(cat /mnt/pulumi-outputs/graph-merger-dead-letter-queue)
+        export RETRY_QUEUE_URL=$$(cat /mnt/pulumi-outputs/graph-merger-retry-queue)
+        export SOURCE_QUEUE_URL=$$(cat /mnt/pulumi-outputs/graph-merger-queue)
         /graph-merger
     environment:
       <<: *aws-env
-      DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-dead-letter-queue"
       <<: *dgraph-env
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
       <<: *log-level
-      RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-retry-queue"
-      SOURCE_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-queue"
       <<: *rust-backtrace
     tty: false
     depends_on:
@@ -582,6 +582,9 @@ services:
           analyzers-bucket
           dispatched-analyzer-bucket
           dynamic-session-table
+          graph-merger-dead-letter-queue
+          graph-merger-queue
+          graph-merger-retry-queue
           model-plugins-bucket
           node-identifier-dead-letter-queue
           node-identifier-queue
