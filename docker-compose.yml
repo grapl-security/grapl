@@ -584,7 +584,6 @@ services:
           dynamic-session-table
           model-plugins-bucket
           osquery-log-bucket
-          process-history-table
           prod-api-id
           schema-properties-table
           schema-table
