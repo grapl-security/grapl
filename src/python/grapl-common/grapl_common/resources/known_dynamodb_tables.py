@@ -22,12 +22,6 @@ def _get_table(
     return dynamodb.Table(f"{deployment_name}{suffix}")
 
 
-def schema_table(
-    dynamodb: DynamoDBServiceResource, deployment_name: Optional[str] = None
-) -> Table:
-    return _get_table(dynamodb, "-grapl_schema_table", deployment_name=deployment_name)
-
-
 def schema_properties_table(
     dynamodb: DynamoDBServiceResource, deployment_name: Optional[str] = None
 ) -> Table:

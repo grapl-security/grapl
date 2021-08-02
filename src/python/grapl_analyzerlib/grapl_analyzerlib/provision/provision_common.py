@@ -45,7 +45,6 @@ SchemaDict = Dict[str, Any]
 
 
 # just some aliases
-get_schema_table = known_dynamodb_tables.schema_table
 get_schema_properties_table = known_dynamodb_tables.schema_properties_table
 
 
