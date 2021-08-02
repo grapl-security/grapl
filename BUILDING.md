@@ -22,68 +22,7 @@ locally for a nice interactive development experience.
 ### Getting started
 
 Our Makefile defines a number of targets for building, testing and running
-Grapl locally. A listing of helpful targets can be printed with `make help`:
-
-```
-$ make help
-
-Usage: make <target>
-  help                                            Print this help
-
-Build 🔨
-  build                                           Alias for `services` (default)
-  build-release                                   'make build-services' with cargo --release
-  build-all                                       Build all targets (incl. services, tests, zip)
-  build-services                                  Build Grapl services
-  build-lambdas                                   Build services for Grapl in AWS (subset of all services)
-  graplctl                                        Build graplctl and install it to the project root
-  build-ux                                        Build website assets
-
-Test 🧪
-  test                                            Run all tests
-  test-unit                                       Build and run unit tests
-  test-unit-rust                                  Build and run unit tests - Rust only
-  test-unit-python                                Run Python unit tests under Pants
-  test-unit-js                                    Build and run unit tests - JavaScript only
-  test-typecheck-docker                           Build and run typecheck tests (non-Pants)
-  test-typecheck-pants                            Typecheck Python code with Pants
-  test-typecheck                                  Typecheck all Python Code
-  test-integration                                Build and run integration tests
-  test-e2e                                        Build and run e2e tests
-
-Lint 🧹
-  lint-rust                                       Run Rust lint checks
-  lint-python                                     Run Python lint checks
-  lint-shell                                      Run Shell lint checks
-  lint-prettier                                   Run js/ts/yaml lint checks
-  lint                                            Run all lint checks
-
-Formatting 💅
-  format-rust                                     Reformat all Rust code
-  format-python                                   Reformat all Python code
-  format-prettier                                 Reformat all js/ts/yaml code
-  format                                          Reformat all code
-  package-python-libs                             Create Python distributions for public libraries
-
-Local Grapl 💻
-  up                                              Build Grapl services and launch docker-compose up
-  up-detach                                       Bring up local Grapl and detach to return control to tty
-  down                                            docker-compose down - both stops and removes the containers
-  stop                                            docker-compose stop - stops (but preserves) the containers
-
-Utility ⚙
-  clean                                           Prune all docker build cache and remove Grapl containers and images
-  clean-mount-cache                               Prune all docker mount cache (used by sccache)
-  clean-artifacts                                 Remove all dumped artifacts from test runs (see dump_artifacts.py)
-  zip                                             Generate zips for deploying to AWS
-  zip-pants                                       Generate Lambda zip artifacts using pants
-  modern-lambdas                                  Generate lambda zips that are used in local Grapl and Pulumi deployments
-  push                                            Push Grapl containers to Docker Hub
-  e2e-logs                                        All docker-compose logs
-  populate-venv                                   Set up a Python virtualenv (you'll have to activate manually!)
-  repl                                            Run an interactive ipython repl that can import from grapl-common etc
-  pulumi-prep                                     Prepare some artifacts in advance of running a Pulumi update (does not run Pulumi!)
-```
+Grapl locally. A listing of helpful targets can be printed with `make help`.
 
 Examples:
 
