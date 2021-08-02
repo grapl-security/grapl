@@ -1,7 +1,9 @@
 #!/bin/bash
 
-
 set -euo pipefail
+
+THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
+cd "${THIS_DIR}"
 
 python3 -m venv venv
 source venv/bin/activate

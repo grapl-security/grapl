@@ -76,10 +76,11 @@ $ make pulumi-prep
 
 ## Spin up infrastructure with Pulumi
 
-See [pulumi/README.md](https://github.com/grapl-security/grapl/blob/main/pulumi/README.md) for instructions to spin up
-infrastructure in AWS with Pulumi. Once you have successfully deployed Grapl
-with Pulumi, return here and follow the instructions in the following section to
-provision Grapl and run the tests.
+See
+[pulumi/README.md](https://github.com/grapl-security/grapl/blob/main/pulumi/README.md)
+for instructions to spin up infrastructure in AWS with Pulumi. Once you have
+successfully deployed Grapl with Pulumi, return here and follow the instructions
+in the following section to provision Grapl and run the tests.
 
 ## `graplctl`
 
