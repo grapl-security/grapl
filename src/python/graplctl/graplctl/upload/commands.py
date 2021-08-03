@@ -66,14 +66,24 @@ def analyzer(
     required=True,
     envvar="GRAPL_SYSMON_LOG_BUCKET",
 )
+@click.option(
+    "--queue-url",
+    help="The URL of the SQS queue for Sysmon logs",
+    type=click.STRING,
+    required=True,
+    envvar="GRAPL_SYSMON_GENERATOR_QUEUE",
+)
 @pass_graplctl_state
-def sysmon(graplctl_state: State, logfile: PathLike, log_bucket: str) -> None:
+def sysmon(
+    graplctl_state: State, logfile: PathLike, log_bucket: str, queue_url: str
+) -> None:
     """Upload a Sysmon log file to the S3 bucket"""
     upload_sysmon_logs(
         s3_client=graplctl_state.s3,
         sqs_client=graplctl_state.sqs,
         deployment_name=graplctl_state.grapl_deployment_name,
         log_bucket=log_bucket,
+        queue_url=queue_url,
         logfile=Path(logfile).resolve(),
     )
 
@@ -92,13 +102,23 @@ def sysmon(graplctl_state: State, logfile: PathLike, log_bucket: str) -> None:
     required=True,
     envvar="GRAPL_OSQUERY_LOG_BUCKET",
 )
+@click.option(
+    "--queue-url",
+    help="The URL of the SQS queue for OSQuery logs",
+    type=click.STRING,
+    required=True,
+    envvar="GRAPL_OSQUERY_GENERATOR_QUEUE",
+)
 @pass_graplctl_state
-def osquery(graplctl_state: State, logfile: PathLike, log_bucket: str) -> None:
+def osquery(
+    graplctl_state: State, logfile: PathLike, log_bucket: str, queue_url: str
+) -> None:
     """Upload an OSQuery log file to the S3 bucket"""
     upload_osquery_logs(
         s3_client=graplctl_state.s3,
         sqs_client=graplctl_state.sqs,
         deployment_name=graplctl_state.grapl_deployment_name,
         log_bucket=log_bucket,
+        queue_url=queue_url,
         logfile=Path(logfile).resolve(),
     )

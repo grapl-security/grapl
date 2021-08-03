@@ -40,8 +40,6 @@ services:
       - MG_ALPHAS
       - RUST_BACKTRACE=1
       - RUST_LOG=INFO
-      - SOURCE_QUEUE_URL=${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-retry-queue
-      - GRAPH_MERGER_QUEUE_URL=${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-queue
       - REDIS_ENDPOINT
     volumes:
       - *read-only-pulumi-mnt
