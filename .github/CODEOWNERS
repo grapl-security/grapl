@@ -1,24 +1,92 @@
 /3rdparty/ @christophermaier
+/bin/ @christophermaier
 /buf.yaml @christophermaier
 BUILD @christophermaier
+/BUILDING.md @christophermaier
 /.buildkite/ @christophermaier
 /build-support/ @christophermaier
-CHORES.md @christophermaier
+/CHORES.md @christophermaier
+/CODE_OF_CONDUCT.md @christophermaier
+/CONTRIBUTING.md @christophermaier
 /debugger/ @christophermaier
 /docker-compose*.yml @christophermaier
+*Dockerfile* @christophermaier @inickles-grapl
 /Dockerfile.pulumi @christophermaier
+.dockerignore @christophermaier @inickles-grapl
+/docs/ @wimax-grapl
 /EDITOR_SETUP.md @christophermaier
+/etc/ @christophermaier
+/etc/ci_scripts/ @wimax-grapl
+/etc/formatter/ @wimax-grapl
 /etc/install_buf.sh @christophermaier
+/etc/sample_data/ @jgrillo-grapl
 /.flake8 @christophermaier
+.gitattributes @christophermaier
 /.github/ @christophermaier
+.gitignore @christophermaier
+/LICENSE @christophermaier
 /local-grapl.env @christophermaier
 /Makefile @christophermaier
+/nomad @d0nut-grapl
+/packer/ @wimax-grapl @christophermaier
 /pants @christophermaier
 /pants.ci.toml @christophermaier
 /pants-plugins/ @christophermaier
 /pants.toml @christophermaier
 /pulumi/ @christophermaier
 /pyproject.toml @christophermaier
+/README.md @christophermaier
 /.rustfmt.toml @christophermaier
+/src/aws-provision/ @jgrillo-grapl
+/src/js/engagement_view/ @andrea-grapl
+/src/js/graphql_endpoint/ @andrea-grapl
+/src/proto/ @jgrillo-grapl @christophermaier
+/src/python/analyzer_executor/ @wimax-grapl
+/src/python/e2e-test-runner/ @jgrillo-grapl
+/src/python/engagement-creator/ @wimax-grapl
+/src/python/engagement_edge/ @colin-grapl
+/src/python/graphql_endpoint_tests/ @wimax-grapl
+/src/python/grapl_analyzerlib/ @colin-grapl
+/src/python/grapl-common/ @wimax-grapl
+/src/python/graplctl/ @jgrillo-grapl
+/src/python/grapl-dgraph-ttl/ @jgrillo-grapl
+/src/python/graplinc/ @christophermaier
+/src/python/graplinc-grapl-api/ @christophermaier
+/src/python/grapl-model-plugin-deployer/ @colin-grapl
+/src/python/grapl-notebook/ @wimax-grapl
+/src/python/grapl-tests-common/ @wimax-grapl
+/src/python/grapl-ux-router/ @colin-grapl
+/src/python/mypy.ini @christophermaier @wimax-grapl
+/src/python/provisioner/ @jgrillo-grapl
+/src/python/python_test_deps/ @christophermaier
+/src/rust/analyzer-dispatcher/ @jgrillo-grapl
 /src/rust/bin/ @christophermaier
 /src/rust/.cargo @christophermaier
+/src/rust/Cargo.lock @christophermaier
+/src/rust/Cargo.toml @christophermaier
+/src/rust/derive-dynamic-node/ @colin-grapl
+/src/rust/endpoint-plugin/ @inickles-grapl
+/src/rust/generators/ @inickles-grapl
+/src/rust/graph-descriptions/ @jgrillo-grapl @christophermaier
+/src/rust/graph-merger/ @jgrillo-grapl
+/src/rust/grapl-config/ @inickles-grapl @wimax-grapl
+/src/rust/grapl-graphql-codegen/ @colin-grapl
+/src/rust/grapl/ @inickles-grapl
+/src/rust/grapl-observe/ @wimax-grapl
+/src/rust/grapl-service/ @inickles-grapl
+/src/rust/grapl-utils/ @inickles-grapl
+/src/rust/kafka-metrics-exporter/ @jgrillo-grapl
+/src/rust/metric-forwarder/ @wimax-grapl
+/src/rust/node-identifier/ @colin-grapl
+/src/rust/rust-toolchain @inickles-grapl
+/src/rust/sqs-executor/ @inickles-grapl
+/src/rust/sysmon/ @inickles-grapl
+/test/cypress/ @inickles-grapl @andrea-grapl
+/test/cypress.json @inickles-grapl @andrea-grapl
+/test/docker-compose* @inickles-grapl @christophermaier
+/test/Dockerfile.cypress @inickles-grapl @andrea-grapl
+/test/package.json @inickles-grapl @andrea-grapl
+/test/yarn.lock @inickles-grapl @andrea-grapl
+
+# This needs to be kept at the end??
+.gitkeep @christophermaier
