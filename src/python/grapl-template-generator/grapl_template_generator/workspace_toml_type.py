@@ -1,10 +1,7 @@
-from typing import List, TypedDict
+from typing import List
 
+from typing_extensions import TypedDict
 
-Workspace = TypedDict('Workspace', {
-    'members': List[str]
-})
+Workspace = TypedDict("Workspace", {"members": List[str]})
 
-WorkspaceToml = TypedDict('WorkspaceToml', {
-    'workspace': Workspace
-})
+WorkspaceToml = TypedDict("WorkspaceToml", {"workspace": Workspace})

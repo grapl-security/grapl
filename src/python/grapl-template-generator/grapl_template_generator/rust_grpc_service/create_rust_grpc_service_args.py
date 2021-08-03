@@ -1,9 +1,11 @@
-import re
-from typing import Final, Literal, Union
+from __future__ import annotations
 
-from pydantic import BaseModel, validator
+import re
+from typing import Union
 
 from grapl_template_generator.common_types import VersionConstraint
+from pydantic import BaseModel, validator
+from typing_extensions import Final, Literal
 
 # grapl-templates/rust-grpc-service/cookiecutter.json
 # {
@@ -35,22 +37,25 @@ class CreateRustGrpcServiceArgs(BaseModel):
     """
     example: 'graph-mutation-service'
     """
+
     package_name: str
     cargo_version: VersionConstraint
     rustc_channel: Union[Literal["nightly"], Literal["stable"], Literal["beta"]]
 
-    @validator('package_name')
+    @validator("package_name")
     def validate_package_name(cls, package_name: str) -> str:
-        _assert_match('package_name', _CRATE_NAME, package_name)
+        _assert_match("package_name", _CRATE_NAME, package_name)
         return package_name
 
-    @validator('cargo_version')
+    @validator("cargo_version")
     def validate_cargo_version(cls, cargo_version: str) -> str:
-        _assert_match('cargo_version', _VERSION_RE, cargo_version)
+        _assert_match("cargo_version", _VERSION_RE, cargo_version)
         return cargo_version
 
-    @validator('rustc_channel')
+    @validator("rustc_channel")
     def validate_rustc_channel(cls, rustc_channel: str) -> str:
-        if rustc_channel not in ('stable', 'beta', 'nightly'):
-            raise ValueError(f"Must set valid rustc_channel - stable, beta, or nightly. Not {rustc_channel}")
+        if rustc_channel not in ("stable", "beta", "nightly"):
+            raise ValueError(
+                f"Must set valid rustc_channel - stable, beta, or nightly. Not {rustc_channel}"
+            )
         return rustc_channel

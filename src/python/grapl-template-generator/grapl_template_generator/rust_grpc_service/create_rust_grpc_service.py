@@ -1,12 +1,12 @@
-from typing import cast
+from pathlib import Path
+from typing import Tuple, cast
 
 import toml
 from cookiecutter.main import cookiecutter
-
 from grapl_common.utils.find_grapl_root import find_grapl_root
-from grapl_template_generator.rust_grpc_service.create_rust_grpc_service_args import CreateRustGrpcServiceArgs
-from os.path import join as pathjoin
-
+from grapl_template_generator.rust_grpc_service.create_rust_grpc_service_args import (
+    CreateRustGrpcServiceArgs,
+)
 from grapl_template_generator.workspace_toml_type import WorkspaceToml
 
 
@@ -26,14 +26,20 @@ class RustGrpcServiceTemplateExecutor(object):
         self.cargo_version = args.cargo_version
         self.rustc_channel = args.rustc_channel
 
-        self.grapl_root = find_grapl_root()  # type: str
-        self.rust_src_path = pathjoin(self.grapl_root, "src/rust/")
-        self.python_src_path = pathjoin(self.grapl_root, "src/python/")
-        self.template_path = pathjoin(
-            self.python_src_path,
-            "grapl-template-generator/grapl_template_generator/grapl-templates/rust-grpc-service/",
+        grapl_root = find_grapl_root()
+        assert grapl_root, "Expected to find Grapl root"
+
+        self.grapl_root = grapl_root
+        self.rust_src_path = self.grapl_root / "src" / "rust"
+        self.python_src_path = self.grapl_root / "src" / "python"
+        self.template_path = (
+            self.python_src_path
+            / "grapl-template-generator"
+            / "grapl_template_generator"
+            / "grapl-templates"
+            / "rust-grpc-service"
         )
-        self.project_path = pathjoin(self.rust_src_path, self.project_name)
+        self.project_path = self.rust_src_path / self.project_name
 
     def precheck(self) -> None:
         ...
@@ -44,21 +50,25 @@ class RustGrpcServiceTemplateExecutor(object):
             no_input=True,
             output_dir=self.rust_src_path,
             extra_context={
-                'project_name': self.project_name,
-                'project_slug': self.project_slug,
-                'service_name': self.service_name,
-                'snake_project_name': self.snake_project_name,
-                'cargo_version': self.cargo_version,
-                'rustc_channel': self.rustc_channel,
-            }
+                "project_name": self.project_name,
+                "project_slug": self.project_slug,
+                "service_name": self.service_name,
+                "snake_project_name": self.snake_project_name,
+                "cargo_version": self.cargo_version,
+                "rustc_channel": self.rustc_channel,
+            },
         )
 
-    def attach_to_workspace(self) -> None:
-        workspace_path = pathjoin(self.rust_src_path, "Cargo.toml")
+    def get_toml_for_workspace(self) -> Tuple[Path, WorkspaceToml]:
+        workspace_path = self.rust_src_path / "Cargo.toml"
         workspace_toml = cast(WorkspaceToml, toml.load(workspace_path))
-        workspace_toml['workspace']['members'].append(f'./{self.project_slug}')
-        workspace_toml['workspace']['members'].sort()
-        with open(workspace_path, 'w') as f:
+        return workspace_path, workspace_toml
+
+    def attach_to_workspace(self) -> None:
+        workspace_path, workspace_toml = self.get_toml_for_workspace()
+        workspace_toml["workspace"]["members"].append(f"./{self.project_slug}")
+        workspace_toml["workspace"]["members"].sort()
+        with open(workspace_path, "w") as f:
             t = toml.dumps(workspace_toml)
             t = t.replace("[ ", "[\n   ")
             t = ",\n  ".join(t.split(","))
@@ -66,8 +76,8 @@ class RustGrpcServiceTemplateExecutor(object):
             f.write(t)
 
     def check_workspace(self) -> None:
-        workspace_toml = cast(WorkspaceToml, toml.load(pathjoin(self.rust_src_path, "Cargo.toml")))
-        for member in workspace_toml['workspace']['members']:
+        _, workspace_toml = self.get_toml_for_workspace()
+        for member in workspace_toml["workspace"]["members"]:
             if member.endswith(self.project_slug):
                 raise ValueError(f"Member already exists in workspace {member}")
 
