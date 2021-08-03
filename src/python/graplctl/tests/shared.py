@@ -41,19 +41,6 @@ class BotoSessionMock:
     def resource(self, client_name: str) -> Mock:
         return self.client(client_name)
 
-    def return_fake_queues(self) -> None:
-        sqs_client = self.client("sqs")
-        sqs_client.list_queues.return_value = {
-            "QueueUrls": [
-                "http://queue1",
-                "http://queue1-retry-queue",
-                "http://queue1-dead-letter-queue",
-                "http://queue2",
-                "http://queue2-retry-queue",
-                "http://queue2-dead-letter-queue",
-            ]
-        }
-
 
 @contextmanager
 def patch_boto3_session() -> Iterator[BotoSessionMock]:
