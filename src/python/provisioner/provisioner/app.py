@@ -37,17 +37,15 @@ LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 DEPLOYMENT_NAME = os.environ["DEPLOYMENT_NAME"]
 GRAPL_TEST_USER_NAME = os.environ["GRAPL_TEST_USER_NAME"]
+GRAPL_SCHEMA_TABLE = os.environ["GRAPL_SCHEMA_TABLE"]
+GRAPL_SCHEMA_PROPERTIES_TABLE = os.environ["GRAPL_SCHEMA_PROPERTIES_TABLE"]
 
 
 def _provision_graph(
     graph_client: GraphClient, dynamodb: DynamoDBServiceResource
 ) -> None:
-    schema_table = provision_common.get_schema_table(
-        dynamodb, deployment_name=DEPLOYMENT_NAME
-    )
-    schema_properties_table = provision_common.get_schema_properties_table(
-        dynamodb, deployment_name=DEPLOYMENT_NAME
-    )
+    schema_table = dynamodb.Table(GRAPL_SCHEMA_TABLE)
+    schema_properties_table = dynamodb.Table(GRAPL_SCHEMA_PROPERTIES_TABLE)
     schemas = [
         AssetSchema(),
         ProcessSchema(),
@@ -85,7 +83,7 @@ def _create_user(
     dynamodb: DynamoDBServiceResource, username: str, cleartext: str
 ) -> None:
     assert cleartext
-    table = dynamodb.Table(DEPLOYMENT_NAME + "-user_auth_table")
+    table = dynamodb.Table(os.environ["GRAPL_USER_AUTH_TABLE"])
 
     # We hash before calling 'hashed_password' because the frontend will also perform
     # client side hashing

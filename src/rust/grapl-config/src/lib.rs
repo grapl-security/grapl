@@ -196,39 +196,11 @@ where
 }
 
 pub fn static_mapping_table_name() -> String {
-    std::env::var("STATIC_MAPPING_TABLE").expect("STATIC_MAPPING_TABLE")
+    std::env::var("GRAPL_STATIC_MAPPING_TABLE").expect("GRAPL_STATIC_MAPPING_TABLE")
 }
 
 pub fn dynamic_session_table_name() -> String {
-    std::env::var("DYNAMIC_SESSION_TABLE").expect("DYNAMIC_SESSION_TABLE")
-}
-
-pub fn process_history_table_name() -> String {
-    std::env::var("PROCESS_HISTORY_TABLE").expect("PROCESS_HISTORY_TABLE")
-}
-
-pub fn file_history_table_name() -> String {
-    std::env::var("FILE_HISTORY_TABLE").expect("FILE_HISTORY_TABLE")
-}
-
-pub fn inbound_connection_history_table_name() -> String {
-    std::env::var("INBOUND_CONNECTION_HISTORY_TABLE").expect("INBOUND_CONNECTION_HISTORY_TABLE")
-}
-
-pub fn outbound_connection_history_table_name() -> String {
-    std::env::var("OUTBOUND_CONNECTION_HISTORY_TABLE").expect("OUTBOUND_CONNECTION_HISTORY_TABLE")
-}
-
-pub fn network_connection_history_table_name() -> String {
-    std::env::var("NETWORK_CONNECTION_HISTORY_TABLE").expect("NETWORK_CONNECTION_HISTORY_TABLE")
-}
-
-pub fn ip_connection_history_table_name() -> String {
-    std::env::var("IP_CONNECTION_HISTORY_TABLE").expect("IP_CONNECTION_HISTORY_TABLE")
-}
-
-pub fn asset_id_mappings_table_name() -> String {
-    std::env::var("ASSET_ID_MAPPINGS").expect("ASSET_ID_MAPPINGS")
+    std::env::var("GRAPL_DYNAMIC_SESSION_TABLE").expect("GRAPL_DYNAMIC_SESSION_TABLE")
 }
 
 pub fn source_compression() -> String {

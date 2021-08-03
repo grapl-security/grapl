@@ -44,7 +44,7 @@ class EngagementEdge(pulumi.ComponentResource):
                     # TODO: Not clear that this is even used.
                     "MG_ALPHAS": dgraph_cluster.alpha_host_port,
                     "JWT_SECRET_ID": secret.secret.arn,
-                    "USER_AUTH_TABLE": db.user_auth_table.name,
+                    "GRAPL_USER_AUTH_TABLE": db.user_auth_table.name,
                     # TODO: This is a bit unfortunate... and only
                     # because Localstack doesn't support
                     # sagemaker. The alternative is to add additional

@@ -28,7 +28,6 @@ class DynamoDBTable(aws.dynamodb.Table):
 
         super().__init__(
             name,
-            name=name,
             attributes=[
                 aws.dynamodb.TableAttributeArgs(name=a["name"], type=a["type"])
                 for a in attrs
@@ -36,22 +35,6 @@ class DynamoDBTable(aws.dynamodb.Table):
             hash_key=hash_key,
             range_key=range_key,
             billing_mode="PAY_PER_REQUEST",
-            opts=opts,
-        )
-
-
-class DynamoDBHistoryTable(DynamoDBTable):
-    """ Specialization of our `DynamoDBTable` to represent all our "history" tables, which share the same structure. """
-
-    def __init__(
-        self, name: str, opts: Optional[pulumi.ResourceOptions] = None
-    ) -> None:
-
-        super().__init__(
-            name,
-            [{"name": "pseudo_key", "type": "S"}, {"name": "create_time", "type": "N"}],
-            hash_key="pseudo_key",
-            range_key="create_time",
             opts=opts,
         )
 
@@ -81,6 +64,7 @@ class DynamoDB(pulumi.ComponentResource):
             hash_key="node_type",
             opts=pulumi.ResourceOptions(parent=self),
         )
+        pulumi.export("schema-properties-table", self.schema_properties_table.name)
 
         self.schema_table = DynamoDBTable(
             f"{DEPLOYMENT_NAME}-grapl_schema_table",
@@ -88,6 +72,7 @@ class DynamoDB(pulumi.ComponentResource):
             hash_key="f_edge",
             opts=pulumi.ResourceOptions(parent=self),
         )
+        pulumi.export("schema-table", self.schema_table.name)
 
         self.static_mapping_table = DynamoDBTable(
             f"{DEPLOYMENT_NAME}-static_mapping_table",
@@ -95,6 +80,7 @@ class DynamoDB(pulumi.ComponentResource):
             hash_key="pseudo_key",
             opts=pulumi.ResourceOptions(parent=self),
         )
+        pulumi.export("static-mapping-table", self.static_mapping_table.name)
 
         self.user_auth_table = DynamoDBTable(
             f"{DEPLOYMENT_NAME}-user_auth_table",
@@ -102,47 +88,19 @@ class DynamoDB(pulumi.ComponentResource):
             hash_key="username",
             opts=pulumi.ResourceOptions(parent=self),
         )
+        pulumi.export("user-auth-table", self.user_auth_table.name)
 
-        self.asset_id_mappings = DynamoDBTable(
-            f"{DEPLOYMENT_NAME}-asset_id_mappings",
+        self.dynamic_session_table = DynamoDBTable(
+            f"{DEPLOYMENT_NAME}-dynamic_session_table",
             attrs=[
                 {"name": "pseudo_key", "type": "S"},
-                {"name": "c_timestamp", "type": "N"},
+                {"name": "create_time", "type": "N"},
             ],
             hash_key="pseudo_key",
-            range_key="c_timestamp",
+            range_key="create_time",
             opts=pulumi.ResourceOptions(parent=self),
         )
-
-        self.dynamic_session_table = DynamoDBHistoryTable(
-            f"{DEPLOYMENT_NAME}-dynamic_session_table",
-            opts=pulumi.ResourceOptions(parent=self),
-        )
-
-        self.file_history_table = DynamoDBHistoryTable(
-            f"{DEPLOYMENT_NAME}-file_history_table",
-            opts=pulumi.ResourceOptions(parent=self),
-        )
-        self.inbound_connection_history_table = DynamoDBHistoryTable(
-            f"{DEPLOYMENT_NAME}-inbound_connection_history_table",
-            opts=pulumi.ResourceOptions(parent=self),
-        )
-        self.ip_connection_history_table = DynamoDBHistoryTable(
-            f"{DEPLOYMENT_NAME}-ip_connection_history_table",
-            opts=pulumi.ResourceOptions(parent=self),
-        )
-        self.network_connection_history_table = DynamoDBHistoryTable(
-            f"{DEPLOYMENT_NAME}-network_connection_history_table",
-            opts=pulumi.ResourceOptions(parent=self),
-        )
-        self.outbound_connection_history_table = DynamoDBHistoryTable(
-            f"{DEPLOYMENT_NAME}-outbound_connection_history_table",
-            opts=pulumi.ResourceOptions(parent=self),
-        )
-        self.process_history_table = DynamoDBHistoryTable(
-            f"{DEPLOYMENT_NAME}-process_history_table",
-            opts=pulumi.ResourceOptions(parent=self),
-        )
+        pulumi.export("dynamic-session-table", self.dynamic_session_table.name)
 
         self.register_outputs({})
 

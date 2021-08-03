@@ -44,8 +44,9 @@ class ModelPluginDeployer(pulumi.ComponentResource):
                     "JWT_SECRET_ID": secret.secret.arn
                     if not LOCAL_GRAPL
                     else "JWT_SECRET_ID",
-                    "USER_AUTH_TABLE": db.user_auth_table.id,
                     "DEPLOYMENT_NAME": pulumi.get_stack(),
+                    "GRAPL_SCHEMA_PROPERTIES_TABLE": db.schema_properties_table.id,
+                    "GRAPL_SCHEMA_TABLE": db.schema_table.id,
                 },
                 timeout=25,
                 memory_size=256,
@@ -60,7 +61,6 @@ class ModelPluginDeployer(pulumi.ComponentResource):
 
         secret.grant_read_permissions_to(self.role)
 
-        dynamodb.grant_read_on_tables(self.role, [db.user_auth_table])
         dynamodb.grant_read_write_on_tables(
             self.role, [db.schema_table, db.schema_properties_table]
         )
