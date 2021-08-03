@@ -8,20 +8,6 @@ from grapl_template_generator.python_http_service.create_python_http_service_arg
     CreatePythonHttpServiceArgs,
 )
 
-# grapl-templates/grapl-python-service-template/cookiecutter.json
-# {
-#     "project_name": "My New Project",
-#     "project_slug": "{{ cookiecutter.project_name|lower|replace(' ', '-') }}",
-#     "pkg_name": "{{ cookiecutter.project_slug|replace('-', '_') }}",
-#     "pants_version": "2.5.0",
-#     "pants_python_interpreter_constraints": "CPython==3.7.*",
-#     "pants_black_version_constraint": "black==20.8b1",
-#     "pants_isort_version_constraint": "isort==5.6.4",
-#     "pants_mypy_version_constraint": "mypy==0.800",
-#     "lambda_handler": "lambda_handler"
-# }
-
-
 class PythonHttpServiceTemplateExecutor(object):
     def __init__(self, args: CreatePythonHttpServiceArgs) -> None:
         self.project_name = args.project_name
@@ -52,7 +38,7 @@ class PythonHttpServiceTemplateExecutor(object):
 
     def execute_template(self) -> None:
         cookiecutter(
-            self.template_path,
+            str(self.template_path),
             no_input=True,
             output_dir=self.python_src_path,
             extra_context={
