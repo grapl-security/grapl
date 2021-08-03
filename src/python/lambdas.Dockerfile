@@ -24,8 +24,11 @@ USER grapl
 ENV USER=grapl
 WORKDIR /home/grapl
 RUN mkdir -p /home/grapl/bin
+
+# Boto expects to see the default AWS profile in ~/.aws/config.
 RUN mkdir -p /home/grapl/.aws
-RUN echo "[default]\naws_access_key_id=fake\naws_secret_access_key=fake" > /home/grapl/.aws/credentials
+RUN echo "[default]" > /home/grapl/.aws/credentials
+
 ENV PATH=/home/grapl/bin:$PATH
 
 # Copy in graplctl
