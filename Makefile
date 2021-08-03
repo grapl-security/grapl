@@ -26,7 +26,6 @@ export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 	--file ./test/docker-compose.integration-tests.yml \
 	--file ./test/docker-compose.e2e-tests.yml \
 	--file ./test/docker-compose.typecheck-tests.yml \
-        --file ./test/docker-compose.graplctl.yml \
 	${EVERY_LAMBDA_COMPOSE_FILE}
 
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
@@ -171,7 +170,6 @@ graplctl: ## Build graplctl and install it to the project root
 	./pants package ./src/python/graplctl/graplctl
 	cp ./dist/src.python.graplctl.graplctl/graplctl.pex ./bin/graplctl
 	printf -- '\n${FMT_BOLD}graplctl${FMT_END} written to ${FMT_BLUE}./bin/graplctl${FMT_END}\n'
-	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.graplctl.yml
 
 .PHONY: build-ux
 build-ux: ## Build website assets
