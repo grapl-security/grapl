@@ -24,17 +24,6 @@ x-common-variables:
     AWS_REGION: ${AWS_REGION}
   dgraph-env: &dgraph-env
     MG_ALPHAS: ${MG_ALPHAS}
-  # TODO: Ensure these are matched with what's in provision_local_identity_table.py
-  dynamodb-mapping-tables: &dynamodb-mapping-tables
-    ASSET_ID_MAPPINGS: ${DEPLOYMENT_NAME}-asset_id_mappings
-    DYNAMIC_SESSION_TABLE: ${DEPLOYMENT_NAME}-dynamic_session_table
-    FILE_HISTORY_TABLE: ${DEPLOYMENT_NAME}-file_history_table
-    INBOUND_CONNECTION_HISTORY_TABLE: ${DEPLOYMENT_NAME}-inbound_connection_history_table
-    IP_CONNECTION_HISTORY_TABLE: ${DEPLOYMENT_NAME}-ip_connection_history_table
-    NETWORK_CONNECTION_HISTORY_TABLE: ${DEPLOYMENT_NAME}-network_connection_history_table
-    OUTBOUND_CONNECTION_HISTORY_TABLE: ${DEPLOYMENT_NAME}-outbound_connection_history_table
-    PROCESS_HISTORY_TABLE: ${DEPLOYMENT_NAME}-process_history_table
-    STATIC_MAPPING_TABLE: ${DEPLOYMENT_NAME}-static_mapping_table
   kafka-broker-env: &kafka-broker-env
     KAFKA_BROKER_ID: 1
     KAFKA_ZOOKEEPER_CONNECT: "${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT}"
@@ -263,11 +252,12 @@ services:
       - |
         # TODO: Rename this variable to be in line with our others?
         export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/subgraphs-generated-bucket)
+        export GRAPL_STATIC_MAPPING_TABLE=$$(cat /mnt/pulumi-outputs/static-mapping-table)
+        export GRAPL_DYNAMIC_SESSION_TABLE=$$(cat /mnt/pulumi-outputs/dynamic-session-table)
         /node-identifier
     environment:
       <<: *aws-env
       DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
-      <<: *dynamodb-mapping-tables
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
       <<: *log-level
       RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-retry-queue"
@@ -294,11 +284,12 @@ services:
       - |
         # TODO: Rename this variable to be in line with our others?
         export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/subgraphs-generated-bucket)
+        export GRAPL_STATIC_MAPPING_TABLE=$$(cat /mnt/pulumi-outputs/static-mapping-table)
+        export GRAPL_DYNAMIC_SESSION_TABLE=$$(cat /mnt/pulumi-outputs/dynamic-session-table)
         /node-identifier-retry
     environment:
       <<: *aws-env
       DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
-      <<: *dynamodb-mapping-tables
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
       <<: *log-level
       RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-dead-letter-queue"
@@ -325,13 +316,13 @@ services:
       - |
         # TODO: Rename this variable to be in line with our others?
         export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/subgraphs-merged-bucket)
+        export GRAPL_SCHEMA_TABLE=$$(cat /mnt/pulumi-outputs/schema-table)
         /graph-merger
     environment:
       <<: *aws-env
       DEAD_LETTER_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-dead-letter-queue"
       <<: *dgraph-env
       REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
-      GRAPL_SCHEMA_TABLE: "${DEPLOYMENT_NAME}-grapl_schema_table"
       <<: *log-level
       RETRY_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-retry-queue"
       SOURCE_QUEUE_URL: "${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-queue"
@@ -431,6 +422,9 @@ services:
     command:
       - |
         export GRAPL_MODEL_PLUGINS_BUCKET=$$(cat /mnt/pulumi-outputs/model-plugins-bucket)
+        export GRAPL_SCHEMA_TABLE=$$(cat /mnt/pulumi-outputs/schema-table)
+        export GRAPL_SCHEMA_PROPERTIES_TABLE=$$(cat /mnt/pulumi-outputs/schema-properties-table)
+
         . venv/bin/activate
         cd /home/grapl/app
         chalice local \
@@ -526,15 +520,17 @@ services:
   graphql-endpoint:
     image: grapl/graphql-endpoint:${TAG:-latest}
     entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
-    command: ./start_potentially_with_debugger.sh
+    command:
+      - |
+        export GRAPL_SCHEMA_PROPERTIES_TABLE=$$(cat /mnt/pulumi-outputs/schema-properties-table)
+        export GRAPL_SCHEMA_TABLE=$$(cat /mnt/pulumi-outputs/schema-table)
+        ./start_potentially_with_debugger.sh
     environment:
       <<: *aws-env
       <<: *dgraph-env
       IS_LOCAL: "True"
       JWT_SECRET_ID: "JWT_SECRET_ID"
       PORT: ${GRAPL_GRAPHQL_PORT}
-      GRAPL_SCHEMA_PROPERTIES_TABLE: "${DEPLOYMENT_NAME}-grapl_schema_properties_table"
-      GRAPL_SCHEMA_TABLE: "${DEPLOYMENT_NAME}-grapl_schema_table"
       DEBUG_SERVICES: "${DEBUG_SERVICES:-}"
       VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT: "${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}"
     depends_on:
@@ -544,6 +540,8 @@ services:
         condition: service_healthy
       provisioner:
         condition: service_completed_successfully
+      pulumi:
+        condition: service_completed_successfully
     ports:
       - 127.0.0.1:${GRAPL_GRAPHQL_PORT}:${GRAPL_GRAPHQL_PORT}
       - 127.0.0.1:${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}:${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}
@@ -551,6 +549,8 @@ services:
       default:
         aliases:
           - ${GRAPL_GRAPHQL_HOST}
+    volumes:
+      - *read-only-pulumi-mnt
 
   grapl-notebook:
     image: grapl/notebook:${TAG:-latest}
@@ -581,13 +581,18 @@ services:
           analyzer-matched-subgraphs-bucket
           analyzers-bucket
           dispatched-analyzer-bucket
+          dynamic-session-table
           model-plugins-bucket
           osquery-log-bucket
           prod-api-id
+          schema-properties-table
+          schema-table
+          static-mapping-table
           subgraphs-generated-bucket
           subgraphs-merged-bucket
           sysmon-log-bucket
           unid-subgraphs-generated-bucket
+          user-auth-table
           ux-bucket
         )
         for output in "$${outputs[@]}"; do
@@ -622,11 +627,14 @@ services:
 
   provisioner:
     image: grapl/provisioner:${TAG:-latest}
-    entrypoint: ["python3", "-c"]
+    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
     command:
       - |
-        import lambdex_handler
-        lambdex_handler.handler(None, None)
+        export GRAPL_SCHEMA_TABLE=$$(cat /mnt/pulumi-outputs/schema-table)
+        export GRAPL_SCHEMA_PROPERTIES_TABLE=$$(cat /mnt/pulumi-outputs/schema-properties-table)
+        export GRAPL_USER_AUTH_TABLE=$$(cat /mnt/pulumi-outputs/user-auth-table)
+
+        python3 -c "import lambdex_handler; lambdex_handler.handler(None, None)"
     environment:
       <<: *aws-env
       <<: *dgraph-env
@@ -641,6 +649,8 @@ services:
         condition: service_healthy
       pulumi:
         condition: service_completed_successfully
+    volumes:
+      - *read-only-pulumi-mnt
 
 networks:
   default:

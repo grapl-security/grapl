@@ -30,7 +30,7 @@ def provision(graplctl_state: State) -> None:
     # TODO: Add a check that dgraph has been created
     assert not idempotency_checks.is_grapl_provisioned(
         dynamodb=graplctl_state.dynamodb,
-        deployment_name=graplctl_state.grapl_deployment_name,
+        schema_table=graplctl_state.schema_table,
     ), "Grapl is already provisioned!"
     click.echo("provisioning grapl deployment")
     aws_lib.provision_grapl(
@@ -53,12 +53,14 @@ def wipe_state(ctx: click.Context, graplctl_state: State) -> None:
     """Wipe dynamodb"""
     assert idempotency_checks.is_grapl_provisioned(
         dynamodb=graplctl_state.dynamodb,
-        deployment_name=graplctl_state.grapl_deployment_name,
+        schema_table=graplctl_state.schema_table,
     ), "Grapl hasn't been provisioned yet."
     click.echo("Wiping dynamodb")
     aws_lib.wipe_dynamodb(
         dynamodb=graplctl_state.dynamodb,
-        deployment_name=graplctl_state.grapl_deployment_name,
+        schema_table_name=graplctl_state.schema_table,
+        schema_properties_table_name=graplctl_state.schema_properties_table,
+        dynamic_session_table_name=graplctl_state.dynamic_session_table,
     )
     click.echo("Wiped dynamodb")
     # Also destroy dgraph

@@ -23,8 +23,13 @@ services:
       target: build-test
       args:
         - RUST_BUILD=test-integration
-    # Use the default command defined in the Dockerfile for running integration tests.
-    # command: <do not use>
+    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+    command:
+      - |
+        export GRAPL_DYNAMIC_SESSION_TABLE=$$(cat /mnt/pulumi-outputs/dynamic-session-table)
+        export GRAPL_STATIC_MAPPING_TABLE=$$(cat /mnt/pulumi-outputs/static-mapping-table)
+
+        cargo test --features "$$RUST_INTEGRATION_TEST_FEATURES" --test "*"
     environment:
       - AWS_REGION
       - DEPLOYMENT_NAME
@@ -37,16 +42,9 @@ services:
       - RUST_LOG=INFO
       - SOURCE_QUEUE_URL=${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-node-identifier-retry-queue
       - GRAPH_MERGER_QUEUE_URL=${GRAPL_AWS_ENDPOINT}/queue/${DEPLOYMENT_NAME}-graph-merger-queue
-      - STATIC_MAPPING_TABLE=${DEPLOYMENT_NAME}-static_mapping_table
-      - DYNAMIC_SESSION_TABLE=${DEPLOYMENT_NAME}-dynamic_session_table
-      - PROCESS_HISTORY_TABLE=${DEPLOYMENT_NAME}-process_history_table
-      - FILE_HISTORY_TABLE=${DEPLOYMENT_NAME}-file_history_table
-      - INBOUND_CONNECTION_HISTORY_TABLE=${DEPLOYMENT_NAME}-inbound_connection_history_table
-      - OUTBOUND_CONNECTION_HISTORY_TABLE=${DEPLOYMENT_NAME}-outbound_connection_history_table
-      - NETWORK_CONNECTION_HISTORY_TABLE=${DEPLOYMENT_NAME}-network_connection_history_table
-      - IP_CONNECTION_HISTORY_TABLE=${DEPLOYMENT_NAME}-ip_connection_history_table
-      - ASSET_ID_MAPPINGS=${DEPLOYMENT_NAME}-asset_id_mappings
       - REDIS_ENDPOINT
+    volumes:
+      - *read-only-pulumi-mnt
 
   analyzerlib-integration-tests:
     image: grapl/analyzerlib-test:${TAG:-latest}
@@ -152,6 +150,8 @@ services:
     entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
     command:
       - |
+        export GRAPL_SCHEMA_PROPERTIES_TABLE=$$(cat /mnt/pulumi-outputs/schema-properties-table)
+
         cd graphql_endpoint_tests
         py.test --capture=no -n 1 -m "integration_test"
     environment:
@@ -170,7 +170,8 @@ services:
       - VSC_DEBUGGER_PORT=${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT_TESTS}
     ports:
       - ${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT_TESTS}:${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT_TESTS}
-
+    volumes:
+      - *read-only-pulumi-mnt
 networks:
   default:
     name: grapl-network

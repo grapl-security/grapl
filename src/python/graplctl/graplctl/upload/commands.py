@@ -22,7 +22,7 @@ def upload(
     # https://github.com/grapl-security/issue-tracker/issues/340
     assert idempotency_checks.is_grapl_provisioned(
         dynamodb=graplctl_state.dynamodb,
-        deployment_name=graplctl_state.grapl_deployment_name,
+        schema_table=graplctl_state.schema_table,
     ), "You can't upload anything to grapl until it's provisioned."
 
 

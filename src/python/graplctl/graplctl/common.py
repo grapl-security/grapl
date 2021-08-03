@@ -42,6 +42,9 @@ class State:
     grapl_deployment_name: str
     grapl_version: str
     aws_profile: str
+    schema_table: str
+    schema_properties_table: str
+    dynamic_session_table: str
 
     cloudwatch: CloudWatchClient
     dynamodb: DynamoDBServiceResource
