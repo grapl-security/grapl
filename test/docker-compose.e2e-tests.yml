@@ -14,9 +14,8 @@ services:
     image: grapl/e2e-tests:${TAG:-latest}
     build:
       context: .
-      dockerfile: ./src/python/e2e-test-runner/e2e-test-runner.Dockerfile
-      args:
-        - TAG=${TAG:-latest}
+      dockerfile: ./src/python/lambdas.Dockerfile
+      target: e2e-tests
     entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
     command:
       - |
