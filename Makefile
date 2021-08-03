@@ -166,10 +166,18 @@ build-formatter:
 		--file ./docker-compose.formatter.yml
 
 .PHONY: graplctl
-graplctl: ## Build graplctl and install it to the project root
+graplctl: ## Build graplctl and install it to ./bin
 	./pants package ./src/python/graplctl/graplctl
 	cp ./dist/src.python.graplctl.graplctl/graplctl.pex ./bin/graplctl
 	printf -- '\n${FMT_BOLD}graplctl${FMT_END} written to ${FMT_BLUE}./bin/graplctl${FMT_END}\n'
+
+.PHONY: grapl-template-generator
+grapl-template-generator: ## Build the Grapl Template Generator and install it to ./bin
+	./pants package ./src/python/grapl-template-generator/grapl_template_generator
+	cp \
+		./dist/src.python.grapl-template-generator.grapl_template_generator/grapl_template_generator.pex \
+		./bin/grapl-template-generator
+	printf -- '\n${FMT_BOLD}Template Generator${FMT_END} written to ${FMT_BLUE}./bin/grapl-template-generator${FMT_END}\n'
 
 .PHONY: build-ux
 build-ux: ## Build website assets
