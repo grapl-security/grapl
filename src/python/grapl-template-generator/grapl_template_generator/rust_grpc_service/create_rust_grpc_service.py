@@ -26,6 +26,8 @@ class RustGrpcServiceTemplateExecutor(object):
         self.cargo_version = args.cargo_version
         self.rustc_channel = args.rustc_channel
 
+        # TODO: In the future, it might prove more robust to package these
+        # templates as a resources() goal, as opposed to just reading from src/
         grapl_root = find_grapl_root()
         assert grapl_root, "Expected to find Grapl root"
 
@@ -46,7 +48,7 @@ class RustGrpcServiceTemplateExecutor(object):
 
     def execute_template(self) -> None:
         cookiecutter(
-            self.template_path,
+            str(self.template_path),
             no_input=True,
             output_dir=self.rust_src_path,
             extra_context={
@@ -69,11 +71,8 @@ class RustGrpcServiceTemplateExecutor(object):
         workspace_toml["workspace"]["members"].append(f"./{self.project_slug}")
         workspace_toml["workspace"]["members"].sort()
         with open(workspace_path, "w") as f:
-            t = toml.dumps(workspace_toml)
-            t = t.replace("[ ", "[\n   ")
-            t = ",\n  ".join(t.split(","))
-            t = t.replace("  ]", "]")
-            f.write(t)
+            toml_str = toml.dumps(workspace_toml)
+            f.write(toml_str)
 
     def check_workspace(self) -> None:
         _, workspace_toml = self.get_toml_for_workspace()

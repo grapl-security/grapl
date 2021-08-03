@@ -1,4 +1,5 @@
-from typing import cast
+from pathlib import Path
+from typing import Tuple, cast
 
 import toml
 from cookiecutter.main import cookiecutter
@@ -7,6 +8,7 @@ from grapl_template_generator.pants_toml_type import PantsToml
 from grapl_template_generator.python_http_service.create_python_http_service_args import (
     CreatePythonHttpServiceArgs,
 )
+
 
 class PythonHttpServiceTemplateExecutor(object):
     def __init__(self, args: CreatePythonHttpServiceArgs) -> None:
@@ -22,6 +24,8 @@ class PythonHttpServiceTemplateExecutor(object):
         self.pants_mypy_version_constraint = args.pants_mypy_version_constraint
         self.lambda_handler = args.lambda_handler
 
+        # TODO: In the future, it might prove more robust to package these
+        # templates as a resources() goal, as opposed to just reading from src/
         grapl_root = find_grapl_root()
         assert grapl_root, "Expected to find Grapl root"
 
@@ -55,7 +59,18 @@ class PythonHttpServiceTemplateExecutor(object):
         )
 
     def attach_to_pants_toml(self) -> None:
-        ...
+        new_root_pattern = str(self.project_path.relative_to(self.grapl_root))
+        assert new_root_pattern.startswith(
+            "src/python"
+        ), f"Unexpected root pattern {new_root_pattern}"
+
+        pants_toml_path, pants_toml = self.get_pants_toml()
+        root_patterns = pants_toml["source"]["root_patterns"]
+        root_patterns.append(new_root_pattern)
+        root_patterns.sort()
+        with open(pants_toml_path, "w") as f:
+            toml_str = toml.dumps(pants_toml)
+            f.write(toml_str)
 
     def precheck(self) -> None:
         # Check for the project already existing
@@ -67,10 +82,13 @@ class PythonHttpServiceTemplateExecutor(object):
         if self.project_path.exists():
             raise ValueError(f"Project already exists at {self.project_path}")
 
+    def get_pants_toml(self) -> Tuple[Path, PantsToml]:
+        path = self.grapl_root / "pants.toml"
+        pants_toml = cast(PantsToml, toml.load(path))
+        return path, pants_toml
+
     def check_pants(self) -> None:
-        pants_toml: PantsToml = cast(
-            PantsToml, toml.load(self.grapl_root / "pants.toml")
-        )
+        _, pants_toml = self.get_pants_toml()
         root_patterns = pants_toml["source"]["root_patterns"]
 
         for pat in root_patterns:
