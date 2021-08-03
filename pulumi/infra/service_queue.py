@@ -3,7 +3,6 @@ from typing import NamedTuple, Optional
 
 import pulumi_aws as aws
 from infra import queue_policy
-from infra.config import DEPLOYMENT_NAME
 from infra.emitter import EventEmitter
 
 import pulumi
@@ -40,49 +39,40 @@ class ServiceQueue(pulumi.ComponentResource):
                 }
             )
 
-        # TODO: delete_before_replace is only needed if we're
-        # overriding the name of the queues
-
-        logical_dead_letter_name = f"{name}-dead-letter-queue"
-        physical_dead_letter_name = f"{DEPLOYMENT_NAME}-{logical_dead_letter_name}"
+        dead_letter_name = f"{name}-dead-letter-queue"
         self.dead_letter_queue = aws.sqs.Queue(
-            logical_dead_letter_name,
-            name=physical_dead_letter_name,
+            dead_letter_name,
             message_retention_seconds=message_retention_seconds,
             visibility_timeout_seconds=30,
             opts=pulumi.ResourceOptions(
                 parent=self,
-                delete_before_replace=True,
             ),
         )
+        pulumi.export(dead_letter_name, self.dead_letter_queue_url)
 
-        logical_retry_name = f"{name}-retry-queue"
-        physical_retry_name = f"{DEPLOYMENT_NAME}-{logical_retry_name}"
+        retry_name = f"{name}-retry-queue"
         self.retry_queue = aws.sqs.Queue(
-            logical_retry_name,
-            name=physical_retry_name,
+            retry_name,
             message_retention_seconds=message_retention_seconds,
             visibility_timeout_seconds=360,
             redrive_policy=self.dead_letter_queue.arn.apply(redrive_policy),
             opts=pulumi.ResourceOptions(
                 parent=self,
-                delete_before_replace=True,
             ),
         )
+        pulumi.export(retry_name, self.retry_queue_url)
 
-        logical_queue_name = f"{name}-queue"
-        physical_queue_name = f"{DEPLOYMENT_NAME}-{logical_queue_name}"
+        queue_name = f"{name}-queue"
         self.queue = aws.sqs.Queue(
-            logical_queue_name,
-            name=physical_queue_name,
+            queue_name,
             message_retention_seconds=message_retention_seconds,
             visibility_timeout_seconds=180,
             redrive_policy=self.retry_queue.arn.apply(redrive_policy),
             opts=pulumi.ResourceOptions(
                 parent=self,
-                delete_before_replace=True,
             ),
         )
+        pulumi.export(queue_name, self.main_queue_url)
 
         self.register_outputs({})
 

@@ -67,7 +67,7 @@ def into_sqs_message(bucket: str, key: str) -> str:
 @dataclass
 class GeneratorOptions:
     bucket: str
-    queue_suffix: str
+    queue_url: str
     key_infix: str
 
     def encode_chunk(self, input: List[bytes]) -> bytes:
@@ -75,9 +75,9 @@ class GeneratorOptions:
 
 
 class SysmonGeneratorOptions(GeneratorOptions):
-    def __init__(self, bucket: str) -> None:
+    def __init__(self, bucket: str, queue_url: str) -> None:
         super().__init__(
-            queue_suffix=f"sysmon-generator-queue",
+            queue_url=queue_url,
             bucket=bucket,
             key_infix="sysmon",
         )
@@ -88,9 +88,9 @@ class SysmonGeneratorOptions(GeneratorOptions):
 
 
 class OSQueryGeneratorOptions(GeneratorOptions):
-    def __init__(self, bucket: str) -> None:
+    def __init__(self, bucket: str, queue_url: str) -> None:
         super().__init__(
-            queue_suffix=f"osquery-generator-queue",
+            queue_url=queue_url,
             bucket=bucket,
             key_infix="osquery",
         )
@@ -130,7 +130,7 @@ def upload_logs(
         return (seq[pos : pos + size] for pos in range(0, len(seq), size))
 
     bucket = generator_options.bucket
-    queue = f"{deployment_name}-{generator_options.queue_suffix}"
+    queue_url = generator_options.queue_url
 
     chunk_count = 0
     for chunk in chunker(body, batch_size):
@@ -148,9 +148,8 @@ def upload_logs(
 
         # local-grapl relies on manual eventing
         if requires_manual_eventing:
-            endpoint_url = sqs._endpoint.host  # type: ignore
             sqs.send_message(
-                QueueUrl=f"{endpoint_url}/queue/{queue}",
+                QueueUrl=queue_url,
                 MessageBody=into_sqs_message(bucket=bucket, key=key),
             )
 
@@ -163,6 +162,7 @@ def upload_sysmon_logs(
     deployment_name: str,
     logfile: PathLike,
     log_bucket: str,
+    queue_url: str,
     delay: int = 0,
     batch_size: int = 100,
     s3_client: Optional[S3Client] = None,
@@ -172,7 +172,9 @@ def upload_sysmon_logs(
     upload_logs(
         deployment_name=deployment_name,
         logfile=logfile,
-        generator_options=SysmonGeneratorOptions(bucket=log_bucket),
+        generator_options=SysmonGeneratorOptions(
+            bucket=log_bucket, queue_url=queue_url
+        ),
         delay=delay,
         batch_size=batch_size,
         s3_client=s3_client,
@@ -184,6 +186,7 @@ def upload_osquery_logs(
     deployment_name: str,
     logfile: PathLike,
     log_bucket: str,
+    queue_url: str,
     delay: int = 0,
     batch_size: int = 100,
     s3_client: Optional[S3Client] = None,
@@ -192,7 +195,9 @@ def upload_osquery_logs(
     upload_logs(
         deployment_name=deployment_name,
         logfile=logfile,
-        generator_options=OSQueryGeneratorOptions(bucket=log_bucket),
+        generator_options=OSQueryGeneratorOptions(
+            bucket=log_bucket, queue_url=queue_url
+        ),
         delay=delay,
         batch_size=batch_size,
         s3_client=s3_client,

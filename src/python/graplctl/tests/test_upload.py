@@ -72,6 +72,8 @@ def test_upload_sysmon__calls_s3() -> None:
                 sample_data_path,
                 "--log-bucket",
                 "fake-deployment-sysmon-log-bucket",
+                "--queue-url",
+                "fake-sysmon-queue",
             ],
         )
 
@@ -107,6 +109,8 @@ def test_upload_osquery__calls_s3() -> None:
                 sample_data_path,
                 "--log-bucket",
                 "fake-deployment-osquery-log-bucket",
+                "--queue-url",
+                "fake-osquery-queue",
             ],
         )
 

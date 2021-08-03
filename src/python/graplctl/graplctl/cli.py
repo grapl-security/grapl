@@ -19,7 +19,6 @@ from graplctl import __version__, common
 from graplctl.aws.commands import aws
 from graplctl.common import State
 from graplctl.dgraph.commands import dgraph
-from graplctl.queues.commands import queues
 from graplctl.swarm.commands import swarm
 from graplctl.upload.commands import upload
 
@@ -121,6 +120,5 @@ def main(
 
 main.add_command(aws)
 main.add_command(dgraph)
-main.add_command(queues)
 main.add_command(swarm)
 main.add_command(upload)
