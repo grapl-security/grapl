@@ -188,6 +188,12 @@ build-lambda-zips-python: build-python-wheels ## Build Python lambda zips
 build-python-wheels:  ## Build all Python wheels
 	./pants filter --target-type=python_distribution :: | xargs ./pants package
 
+.PHONY: build-docker-images-local
+build-docker-images-local: 
+	$(WITH_LOCAL_GRAPL_ENV) \
+	$(MAKE) build-services
+	$(MAKE) push-local
+
 .PHONY: build-docker-images
 build-docker-images: graplctl
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
@@ -429,13 +435,19 @@ clean-mount-cache: ## Prune all docker mount cache (used by sccache)
 clean-artifacts: ## Remove all dumped artifacts from test runs (see dump_artifacts.py)
 	rm -Rf test_artifacts
 
+.PHONY: run-registry
+run-registry: 
+	nomad/local/local_grapl_registry.sh
+
 .PHONY: push
 push: ## Push Grapl containers to Docker Hub
 	docker-compose --file=docker-compose.build.yml push
 
 .PHONY: push-local
 push-local: ## Push Grapl container to local registry
-	REGISTRY=localhost:5000 docker-compose --file=docker-compose.build.yml push
+	$(MAKE) run-registry
+	$(WITH_LOCAL_GRAPL_ENV) \
+	$(MAKE) push
 
 .PHONY: e2e-logs
 e2e-logs: ## All docker-compose logs

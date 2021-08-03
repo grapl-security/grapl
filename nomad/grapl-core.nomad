@@ -56,7 +56,7 @@ variable "session_table" {
     default = "dynamic_session_table"
 }
 
-variable "graph_mergers" {
+variable "num_graph_mergers" {
     type = number
     default = 1
     description = "The number of graph merger instances to run."
@@ -68,13 +68,13 @@ variable "graph_merger_tag" {
     description = "The tagged version of the graph_merger we should deploy."
 }
 
-variable "node_identifiers" {
+variable "num_node_identifiers" {
     type = number
     default = 1
     description = "The number of node identifiers to run."
 }
 
-variable "node_identifiers_retry" {
+variable "num_node_identifier_retries" {
     type = number
     default = 1
     description = "The number of node identifier retries to run."
@@ -147,7 +147,7 @@ job "grapl-core" {
                 args = [
                     "dgraph",
                     "zero",
-                    "--my", "localhost:5080",
+                    "--my", "localhost:${local.dgraph_zero_grpc_private_port_base}",
                     "--replicas", "${var.dgraph_replicas}",
                     "--raft", "idx=1",
                 ]
@@ -156,7 +156,7 @@ job "grapl-core" {
 
         service {
             name = "dgraph-zero-0-grpc-private"
-            port = "5080"
+            port = "${local.dgraph_zero_grpc_private_port_base}"
             tags = ["dgraph", "zero", "grpc"]
 
             connect {
@@ -212,7 +212,7 @@ job "grapl-core" {
                         "--replicas", "${var.dgraph_replicas}",
                         "--raft", "idx=${zero.value.id + 1}",
                         "--port_offset", "${zero.value.id}",
-                        "--peer", "localhost:5080"
+                        "--peer", "localhost:${local.dgraph_zero_grpc_private_port_base}"
                     ]
                 }
             }
@@ -227,7 +227,7 @@ job "grapl-core" {
                             # Connect to the Zero leader
                             upstreams {
                                 destination_name = "dgraph-zero-0-grpc-private"
-                                local_bind_port = 5080
+                                local_bind_port = local.dgraph_zero_grpc_private_port_base
                             }
 
                             # Connect this Zero follower to other Zero followers (but not to itself, obviously)
@@ -295,7 +295,7 @@ job "grapl-core" {
                             # Connect to the Zero leader
                             upstreams {
                                 destination_name = "dgraph-zero-0-grpc-private"
-                                local_bind_port = 5080
+                                local_bind_port = local.dgraph_zero_grpc_private_port_base
                             }
 
                             # Connect this Alpha to Zero followers
@@ -347,7 +347,7 @@ job "grapl-core" {
     }
 
     group "grapl-graph-merger" {
-        count = var.graph_mergers
+        count = var.num_graph_mergers
 
         network {
             mode = "bridge"
@@ -393,7 +393,7 @@ job "grapl-core" {
     }
 
     group "grapl-node-identifier" {
-        count = var.node_identifiers
+        count = var.num_node_identifiers
 
         network {
             mode = "bridge"
@@ -422,7 +422,7 @@ job "grapl-core" {
     }
 
     group "grapl-node-identifier-retry" {
-        count = var.node_identifiers_retry
+        count = var.num_node_identifier_retries
 
         network {
             mode = "bridge"
