@@ -7,20 +7,7 @@ from grapl_template_generator.common_types import VersionConstraint
 from pydantic import BaseModel, validator
 from typing_extensions import Final, Literal
 
-# grapl-templates/rust-grpc-service/cookiecutter.json
-# {
-#     "project_name": "My New Project",
-#     "project_slug": "{{ cookiecutter.project_name|lower|replace(' ', '-') }}",
-#     "service_name": "{{ cookiecutter.project_name|replace(' ', '') }}",
-#     "snake_project_name": "{{ cookiecutter.project_slug|replace('-', '_') }}",
-#     "cargo-version": "1.52.0",
-#     "rustc_channel": "stable",
-#     "proto_path" : "proto/"
-# }
-
-
 _CRATE_NAME: Final[re.Pattern[str]] = re.compile("[-a-z]*")
-_VERSION_CONSTRAINT: Final[re.Pattern[str]] = re.compile("[\w][\w\d_]+=[ab\d\*\.]+")
 _VERSION_RE: Final[re.Pattern[str]] = re.compile("\d+\.\d+\.\d+")
 
 

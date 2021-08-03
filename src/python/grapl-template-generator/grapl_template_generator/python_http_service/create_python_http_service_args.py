@@ -28,9 +28,6 @@ class CreatePythonHttpServiceArgs(BaseModel):
     project_name: str
     pants_version: str
     pants_python_interpreter_constraints: VersionConstraint
-    pants_black_version_constraint: VersionConstraint
-    pants_isort_version_constraint: VersionConstraint
-    pants_mypy_version_constraint: VersionConstraint
     lambda_handler: str
 
     @validator("project_name")
@@ -53,36 +50,3 @@ class CreatePythonHttpServiceArgs(BaseModel):
             pants_python_interpreter_constraints,
         )
         return pants_python_interpreter_constraints
-
-    @validator("pants_black_version_constraint")
-    def pants_black_version_constraint_is_valid(
-        cls, pants_black_version_constraint: str
-    ) -> str:
-        _assert_match(
-            "pants_black_version_constraint",
-            _VERSION_CONSTRAINT,
-            pants_black_version_constraint,
-        )
-        return pants_black_version_constraint
-
-    @validator("pants_isort_version_constraint")
-    def pants_isort_version_constraint_is_valid(
-        cls, pants_isort_version_constraint: str
-    ) -> str:
-        _assert_match(
-            "pants_isort_version_constraint",
-            _VERSION_CONSTRAINT,
-            pants_isort_version_constraint,
-        )
-        return pants_isort_version_constraint
-
-    @validator("pants_mypy_version_constraint")
-    def pants_mypy_version_constraint_is_valid(
-        cls, pants_mypy_version_constraint: str
-    ) -> VersionConstraint:
-        _assert_match(
-            "pants_mypy_version_constraint",
-            _VERSION_CONSTRAINT,
-            pants_mypy_version_constraint,
-        )
-        return VersionConstraint(pants_mypy_version_constraint)

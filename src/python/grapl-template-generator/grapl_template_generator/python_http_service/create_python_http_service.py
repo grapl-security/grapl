@@ -19,9 +19,6 @@ class PythonHttpServiceTemplateExecutor(object):
         self.pants_python_interpreter_constraints = (
             args.pants_python_interpreter_constraints
         )
-        self.pants_black_version_constraint = args.pants_black_version_constraint
-        self.pants_isort_version_constraint = args.pants_isort_version_constraint
-        self.pants_mypy_version_constraint = args.pants_mypy_version_constraint
         self.lambda_handler = args.lambda_handler
 
         # TODO: In the future, it might prove more robust to package these
@@ -51,9 +48,6 @@ class PythonHttpServiceTemplateExecutor(object):
                 "pkg_name": self.pkg_name,
                 "pants_version": self.pants_version,
                 "pants_python_interpreter_constraints": self.pants_python_interpreter_constraints,
-                "pants_black_version_constraint": self.pants_black_version_constraint,
-                "pants_isort_version_constraint": self.pants_isort_version_constraint,
-                "pants_mypy_version_constraint": self.pants_mypy_version_constraint,
                 "lambda_handler": self.lambda_handler,
             },
         )

@@ -1,4 +1,0 @@
-aws-lambda-typing
-pytest
-pytest-cov
-hypothesis
