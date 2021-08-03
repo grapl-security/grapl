@@ -2,8 +2,9 @@ from pathlib import Path
 from typing import Tuple, cast
 
 import toml
+import typer
 from cookiecutter.main import cookiecutter
-from grapl_common.utils.find_grapl_root import find_grapl_root  # type: ignore
+from grapl_common.utils.find_grapl_root import find_grapl_root
 from grapl_template_generator.pants_toml_type import PantsToml
 from grapl_template_generator.python_http_service.create_python_http_service_args import (
     CreatePythonHttpServiceArgs,
@@ -35,7 +36,7 @@ class PythonHttpServiceTemplateExecutor(object):
             / "grapl-templates"
             / "grapl-python-service-template"
         )
-        self.project_path = self.python_src_path / self.project_name
+        self.project_path = self.python_src_path / self.project_slug
 
     def execute_template(self) -> None:
         cookiecutter(
@@ -53,18 +54,17 @@ class PythonHttpServiceTemplateExecutor(object):
         )
 
     def attach_to_pants_toml(self) -> None:
-        new_root_pattern = str(self.project_path.relative_to(self.grapl_root))
+        # Theoretically, we could automate this step. Unfortunately, the python
+        # toml encoder doesn't want to play nicely with our existing comments.
+
+        new_root_pattern = f"/{self.project_path.relative_to(self.grapl_root)}"
         assert new_root_pattern.startswith(
-            "src/python"
+            "/src/python"
         ), f"Unexpected root pattern {new_root_pattern}"
 
-        pants_toml_path, pants_toml = self.get_pants_toml()
-        root_patterns = pants_toml["source"]["root_patterns"]
-        root_patterns.append(new_root_pattern)
-        root_patterns.sort()
-        with open(pants_toml_path, "w") as f:
-            toml_str = toml.dumps(pants_toml)
-            f.write(toml_str)
+        typer.echo(
+            f"NOTE: Please add {new_root_pattern} to pants.toml's source[root_patterns]"
+        )
 
     def precheck(self) -> None:
         # Check for the project already existing
