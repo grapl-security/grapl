@@ -42,6 +42,7 @@ def py_http(
         lambda_handler=lambda_handler,
     )
     create_python_http_service(args)
+    typer.echo(f"Created a Python HTTP service named {project_name}")
 
 
 @app.command(name="rust-grpc")
@@ -56,6 +57,7 @@ def rust_grpc(
         rustc_channel=rustc_channel,
     )
     create_rust_grpc_service(args)
+    typer.echo(f"Created a Rust GRPC service named {package_name}")
 
 
 if __name__ == "__main__":
