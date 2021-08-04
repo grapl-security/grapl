@@ -30,6 +30,9 @@ export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
 
+# https://www.docker.com/blog/faster-builds-in-compose-thanks-to-buildkit-support/
+DOCKER_COMPOSE_WITH_BUILDX := COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose
+
 COMPOSE_PROJECT_INTEGRATION_TESTS := grapl-integration_tests
 COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
 
@@ -312,11 +315,8 @@ lint-shell: ## Run Shell lint checks
 	./pants filter --target-type=shell_library,shunit2_tests :: | xargs ./pants lint
 
 .PHONY: lint-prettier
-lint-prettier: build-formatter ## Run ts/js/yaml lint checks
-	# `docker-compose run` will also propagate the correct exit code.
-	# We could explore tossing `docker-compose` and switching to `docker run`,
-	# like `grapl/grapl-rfcs`.
-	docker-compose \
+lint-prettier: ## Lint a number of filetypes, including js/ts/yaml/toml
+	$(DOCKER_COMPOSE_WITH_BUILDX) \
 		--file docker-compose.formatter.yml \
 		run lint-prettier
 
@@ -342,9 +342,8 @@ format-shell: ## Reformat all shell_libraries
 	./pants filter --target-type=shell_library,shunit2_tests :: | xargs ./pants fmt
 
 .PHONY: format-prettier
-format-prettier: build-formatter ## Reformat js/ts/yaml
-	# `docker-compose run` will also propagate the correct exit code.
-	docker-compose \
+format-prettier: ## Reformat a number of filetypes, including js/ts/yaml/toml
+	$(DOCKER_COMPOSE_WITH_BUILDX) \
 		--file docker-compose.formatter.yml \
 		run format-prettier
 
