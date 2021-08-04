@@ -9,8 +9,3 @@ services:
       target: metric-forwarder-zip
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
-    volumes:
-      - ./dist:/tmp/zips
-    user: ${UID}:${GID}
-    working_dir: /grapl/zips
-    command: sh -c 'cp /grapl/zips/metric-forwarder.zip /tmp/zips/metric-forwarder-lambda.zip'

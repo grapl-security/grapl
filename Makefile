@@ -9,6 +9,7 @@ TAG ?= latest
 RUST_BUILD ?= debug
 UID = $(shell id -u)
 GID = $(shell id -g)
+PWD = $(shell pwd)
 DOCKER_BUILDX_BAKE_OPTS ?=
 ifneq ($(GRAPL_RUST_ENV_FILE),)
 DOCKER_BUILDX_BAKE_OPTS += --set *.secrets=id=rust_env,src="$(GRAPL_RUST_ENV_FILE)"
@@ -17,16 +18,12 @@ COMPOSE_IGNORE_ORPHANS=1
 COMPOSE_PROJECT_NAME ?= grapl
 export
 
-export EVERY_LAMBDA_COMPOSE_FILE=--file docker-compose.lambda-zips.js.yml \
-	--file docker-compose.lambda-zips.rust.yml
-
 export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 	--file ./test/docker-compose.unit-tests-rust.yml \
 	--file ./test/docker-compose.unit-tests-js.yml \
 	--file ./test/docker-compose.integration-tests.yml \
 	--file ./test/docker-compose.e2e-tests.yml \
-	--file ./test/docker-compose.typecheck-tests.yml \
-	${EVERY_LAMBDA_COMPOSE_FILE}
+	--file ./test/docker-compose.typecheck-tests.yml
 
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
 
@@ -143,22 +140,56 @@ build-test-typecheck: build-python-wheels
 		--file ./test/docker-compose.typecheck-tests.yml
 
 .PHONY: build-test-integration
-build-test-integration: build-services
+build-test-integration: build
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.integration-tests.yml
 
 .PHONY: build-test-e2e
-build-test-e2e: build-services
+build-test-e2e: build
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.yml
+
+.PHONY: build-lambda-zips
+build-lambda-zips: build-lambda-zips-rust build-lambda-zips-js build-lambda-zips-python ## Generate all lambda zip files
+
+.PHONY: build-lambda-zips-rust
+build-lambda-zips-rust: export COMPOSE_FILE := docker-compose.lambda-zips.rust.yml
+build-lambda-zips-rust: ## Build Rust lambda zips
+	$(DOCKER_BUILDX_BAKE) --file "${COMPOSE_FILE}"
+	# Extract the zip from the Docker image.
+	# Rely on the default CMD for copying artifact to /dist mount point.
+	docker-compose run \
+		--rm \
+		--user "${UID}:${GID}" \
+		--volume="${PWD}/dist":/dist \
+		metric-forwarder-zip
+
+.PHONY: build-lambda-zips-js
+build-lambda-zips-js: export COMPOSE_FILE := docker-compose.lambda-zips.js.yml
+build-lambda-zips-js: ## Build JS lambda zips
+	$(DOCKER_BUILDX_BAKE) --file "${COMPOSE_FILE}"
+	# Extract the zip from the Docker image.
+	# Rely on the default CMD for copying artifact to /dist mount point.
+	docker-compose run \
+		--rm \
+		--user "${UID}:${GID}" \
+		--volume="${PWD}/dist":/dist \
+		graphql-endpoint-zip
+
+.PHONY: build-lambda-zips-python
+build-lambda-zips-python: build-python-wheels ## Build Python lambda zips
+	./pants filter --target-type=python_awslambda :: | xargs ./pants package
 
 .PHONY: build-python-wheels
 build-python-wheels:  ## Build all Python wheels
 	./pants filter --target-type=python_distribution :: | xargs ./pants package
 
-.PHONY: build-services
-build-services: graplctl lambdas build-python-wheels ## Build Grapl services
+.PHONY: build-docker-images
+build-docker-images: graplctl
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
+
+.PHONY: build
+build: build-lambda-zips build-docker-images ## Build Grapl services
 
 .PHONY: build-formatter
 build-formatter:
@@ -187,23 +218,6 @@ ux-tarball: build-ux ## Build website asset tarball
 		--file="dist/grapl-ux.tar.gz" \
 		--directory=src/js/engagement_view/build \
 		.
-
-.PHONY: lambdas
-lambdas: lambdas-rust lambdas-js lambdas-python ## Generate all lambda zip files
-
-.PHONY: lambdas-rust
-lambdas-rust: ## Build Rust lambda zips
-	$(DOCKER_BUILDX_BAKE) -f docker-compose.lambda-zips.rust.yml
-	docker-compose -f docker-compose.lambda-zips.rust.yml up
-
-.PHONY: lambdas-js
-lambdas-js: ## Build JS lambda zips
-	$(DOCKER_BUILDX_BAKE) -f docker-compose.lambda-zips.js.yml
-	docker-compose -f docker-compose.lambda-zips.js.yml up
-
-.PHONY: lambdas-python
-lambdas-python: ## Build Python lambda zips
-	./pants filter --target-type=python_awslambda :: | xargs ./pants package
 
 ##@ Test 🧪
 
@@ -358,12 +372,12 @@ package-python-libs: ## Create Python distributions for public libraries
 
 .PHONY: up
 up: export COMPOSE_PROJECT_NAME="grapl"
-up: build-services ## Build Grapl services and launch docker-compose up
+up: build ## Build Grapl services and launch docker-compose up
 	$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose -f docker-compose.yml up
 
 .PHONY: up-detach
-up-detach: build-services ## Bring up local Grapl and detach to return control to tty
+up-detach: build ## Bring up local Grapl and detach to return control to tty
 	# Primarily used for bringing up an environment for integration testing.
 	# For use with a project name consider setting COMPOSE_PROJECT_NAME env var
 	# Usage: `make up-detach`
