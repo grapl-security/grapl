@@ -55,7 +55,8 @@ class PythonHttpServiceTemplateExecutor(object):
 
     def attach_to_pants_toml(self) -> None:
         # Theoretically, we could automate this step. Unfortunately, the python
-        # toml encoder doesn't want to play nicely with our existing comments.
+        # toml encoder/decoder doesn't want to play nicely with our comments.
+        # https://github.com/uiri/toml/issues/371
 
         new_root_pattern = f"/{self.project_path.relative_to(self.grapl_root)}"
         assert new_root_pattern.startswith(

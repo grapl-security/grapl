@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Tuple, cast
 
 import toml
+import typer
 from cookiecutter.main import cookiecutter
 from grapl_common.utils.find_grapl_root import find_grapl_root
 from grapl_template_generator.rust_grpc_service.create_rust_grpc_service_args import (
@@ -67,12 +68,13 @@ class RustGrpcServiceTemplateExecutor(object):
         return workspace_path, workspace_toml
 
     def attach_to_workspace(self) -> None:
-        workspace_path, workspace_toml = self.get_toml_for_workspace()
-        workspace_toml["workspace"]["members"].append(f"./{self.project_slug}")
-        workspace_toml["workspace"]["members"].sort()
-        with open(workspace_path, "w") as f:
-            toml_str = toml.dumps(workspace_toml)
-            f.write(toml_str)
+        # Theoretically, we could automate this step. Unfortunately, the python
+        # toml encoder/decoder doesn't want to play nicely with our comments.
+        # https://github.com/uiri/toml/issues/371
+        new_workspace_member = f"./{self.project_slug}"
+        typer.echo(
+            f"NOTE: Please add {new_workspace_member} to cargo.toml's [workspace][members]"
+        )
 
     def check_workspace(self) -> None:
         _, workspace_toml = self.get_toml_for_workspace()
