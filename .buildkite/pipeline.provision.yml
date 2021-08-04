@@ -14,8 +14,7 @@ steps:
     agents:
       queue: "pulumi-staging"
 
-  - block: ":rocket: Proceed?"
-    prompt: "Unblock to perform a pulumi update to the testing environment"
+  - wait
 
   - label: ":pulumi: Update grapl/testing environment in Staging account"
     command:
