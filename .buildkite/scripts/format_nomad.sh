@@ -5,4 +5,4 @@ set -euo pipefail
 # Packer, however, won't pick up nomad files (even if their extension is .hcl)
 # so we're going to pass in each nomad file, individually
 
-find nomad/ -type f -name "*.nomad" | xargs -n 1 packer fmt 
+find nomad/ -type f -name "*.nomad" -print0 | xargs --null -n 1 packer fmt

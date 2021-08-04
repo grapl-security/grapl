@@ -2,4 +2,4 @@
 set -euo pipefail
 
 echo "--- Linting Nomad"
-find nomad/ -type f -name "*.nomad" | xargs -n 1 packer fmt -check -diff
+find nomad/ -type f -name "*.nomad" -print0 | xargs -n 1 --null packer fmt -check -diff
