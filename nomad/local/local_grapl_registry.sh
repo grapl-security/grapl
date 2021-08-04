@@ -5,9 +5,9 @@ set -euo pipefail
 GRAPL_LOCAL_REGISTRY_PORT=5000
 GRAPL_LOCAL_REGISTRY_NAME="grapl_local_registry"
 
-if [[ ! -z "$(docker ps --quiet --filter name="${GRAPL_LOCAL_REGISTRY_NAME}")" ]]; then
+if [[ -n "$(docker ps --quiet --filter name="${GRAPL_LOCAL_REGISTRY_NAME}")" ]]; then
     echo "already running."
-elif [[ ! -z "$(docker container ls --all --quiet --filter name="${GRAPL_LOCAL_REGISTRY_NAME}")" ]]; then
+elif [[ -n "$(docker container ls --all --quiet --filter name="${GRAPL_LOCAL_REGISTRY_NAME}")" ]]; then
     echo "Container exists but stopped. Restarting.."
     docker start "${GRAPL_LOCAL_REGISTRY_NAME}"
 else
