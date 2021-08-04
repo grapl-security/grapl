@@ -21,7 +21,7 @@ prost-build = "0.7"
 
 [dev-dependencies]
 quickcheck = "1.0"
-quickcheck_macros = { version="1" }
+quickcheck_macros = { version = "1" }
 tracing-subscriber = "0.2"
 
 [features]

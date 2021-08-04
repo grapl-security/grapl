@@ -56,7 +56,7 @@ fi
 # As specified in `docker-compose.formatter.yml`
 readonly repo_root="/mnt/grapl_repo_rw"
 
-echo "--- Formatting .ts, .tsx"
+echo "--- Prettier Typescript"
 prettier \
     --config prettierrc.toml \
     ${prettier_arg} \
@@ -65,7 +65,7 @@ prettier \
     ${repo_root}/src/js/engagement_view/src/**/*.tsx
 
 # Slightly different config for yaml
-echo "--- Formatting YAML"
+echo "--- Prettier YAML"
 prettier \
     --config prettierrc-yaml.toml \
     ${prettier_arg} \
@@ -75,7 +75,7 @@ prettier \
     ${repo_root}/.github/**/*.yml
 
 # No config for markdown
-echo "--- Formatting Markdown"
+echo "--- Prettier Markdown"
 prettier \
     ${prettier_arg} \
     --prose-wrap always \
@@ -83,7 +83,7 @@ prettier \
     ${repo_root}"/{,!(**/(target|*venv)/**)}**/*.md"
 
 # No config for markdown
-echo "--- Formatting TOML"
+echo "--- Prettier TOML"
 prettier \
     ${prettier_arg} \
     --prose-wrap always \

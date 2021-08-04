@@ -5,12 +5,10 @@ authors = ["colin <colin@graplsecurity.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 sqs-executor = { path = "../sqs-executor" }
 grapl-graph-descriptions = { path = "../graph-descriptions" }
 grapl-config = { path = "../grapl-config" }
-
 zstd = "0.7"
 libflate = "1"
 prost = "0.7"

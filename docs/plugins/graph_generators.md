@@ -87,6 +87,7 @@ Modify the `Cargo.toml` to include our Grapl generator library:
 ```toml
 [dependencies]
 graph-generator-lib = "*"
+
 ```
 
 This library will provide the primitives we need in order to parse our data into

@@ -1,19 +1,12 @@
 [GLOBAL]
 pants_version = "2.6.0rc1"
 backend_packages = [
-    "pants.backend.shell",
-    "pants.backend.shell.lint.shellcheck",
-    "pants.backend.shell.lint.shfmt"
+  "pants.backend.shell",
+  "pants.backend.shell.lint.shellcheck",
+  "pants.backend.shell.lint.shfmt"
 ]
-
-pants_ignore = [
-    "!.buildkite/"
-]
-
-plugins = [
-  "toolchain.pants.plugin==0.13.1"
-]
-
+pants_ignore = ["!.buildkite/"]
+plugins = ["toolchain.pants.plugin==0.13.1"]
 remote_cache_read = true
 remote_cache_write = true
 remote_store_address = "grpcs://cache.toolchain.com:443"
@@ -36,7 +29,6 @@ repo_id = "a848c0d7-1ac6-4098-92f8-c33db5cb4fc0"
 #     "/3rdparty",
 #     "/pulumi"
 # ]
-
 [shfmt]
 # Indent with 4 spaces
 # Indent switch cases

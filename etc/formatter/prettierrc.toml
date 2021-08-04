@@ -1,5 +1,5 @@
 trailingComma = "es5"
 tabWidth = 4
-useTabs = false 
+useTabs = false
 semi = true
-singleQuote = false  # in-line with our Python black linting
+singleQuote = false # in-line with our Python black linting

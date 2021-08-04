@@ -1,5 +1,4 @@
 # pyproject as specified by PEP 518
-
 [tool.black]
 target_version = ['py36']
 include = '\.pyi?$'

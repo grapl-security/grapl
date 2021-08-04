@@ -5,24 +5,38 @@ authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2018"
 description = "Config and utility library for Grapl services"
 license = "Apache-2.0"
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 log = "0.4.*"
 sqs-executor = { path = "../sqs-executor/" }
 grapl-observe = { path = "../grapl-observe/" }
-
-rusoto_s3 = { version="0.46.0", default_features = false, features=["rustls"] }
-rusoto_core = { version="0.46.0", default_features = false, features=["rustls"] }
-rusoto_sqs = { version="0.46.0", default_features = false, features=["rustls"] }
-rusoto_dynamodb = { version="0.46.0", default_features = false, features=["rustls"] }
-rusoto_cloudwatch = { version="0.46.0", default_features = false, features=["rustls"] }
-rusoto_credential = { version="0.46.0", default_features = false }
-
+rusoto_s3 = { version = "0.46.0", default_features = false, features = [
+  "rustls"
+] }
+rusoto_core = { version = "0.46.0", default_features = false, features = [
+  "rustls"
+] }
+rusoto_sqs = { version = "0.46.0", default_features = false, features = [
+  "rustls"
+] }
+rusoto_dynamodb = { version = "0.46.0", default_features = false, features = [
+  "rustls"
+] }
+rusoto_cloudwatch = { version = "0.46.0", default_features = false, features = [
+  "rustls"
+] }
+rusoto_credential = { version = "0.46.0", default_features = false }
 tracing = "0.1"
 tracing-subscriber = "0.2"
 tracing-futures = "0.2"
-tokio = { version = "1", features = ["sync", "rt", "macros", "time", "rt-multi-thread"] }
+tokio = { version = "1", features = [
+  "sync",
+  "rt",
+  "macros",
+  "time",
+  "rt-multi-thread"
+] }
 color-eyre = "0.5"
 eyre = "0.6"
 async-trait = "0.1"

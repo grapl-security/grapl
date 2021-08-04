@@ -15,21 +15,26 @@ name = "generator_bench"
 harness = false
 
 [dependencies]
-grapl-graph-descriptions = { path="../../graph-descriptions", version="*" }
-endpoint-plugin = { path="../../endpoint-plugin", version="*" }
-grapl-config = { path = "../../grapl-config", version="*" }
-grapl-observe = { path = "../../grapl-observe", version="*" }
-graph-generator-lib = { path="../graph-generator-lib" }
+grapl-graph-descriptions = { path = "../../graph-descriptions", version = "*" }
+endpoint-plugin = { path = "../../endpoint-plugin", version = "*" }
+grapl-config = { path = "../../grapl-config", version = "*" }
+grapl-observe = { path = "../../grapl-observe", version = "*" }
+graph-generator-lib = { path = "../graph-generator-lib" }
 grapl-service = { path = "../../grapl-service/" }
 sqs-executor = { path = "../../sqs-executor/" }
-
 sysmon = { path = "../../sysmon/" }
-
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 async-trait = "0.1"
-tokio = { version = "1", features = ["sync", "rt", "macros", "time", "rt-multi-thread", "fs"] }
+tokio = { version = "1", features = [
+  "sync",
+  "rt",
+  "macros",
+  "time",
+  "rt-multi-thread",
+  "fs"
+] }
 thiserror = "1.0"
 tracing = "0.1"
 chrono = "0.4"
-uuid = { version = "0.8", features=["v4"] }
+uuid = { version = "0.8", features = ["v4"] }
