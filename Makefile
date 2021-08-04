@@ -31,6 +31,8 @@ export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
 
 # https://www.docker.com/blog/faster-builds-in-compose-thanks-to-buildkit-support/
+# For now, only use this for when you want to `docker-compose run` a single 
+# target
 DOCKER_COMPOSE_WITH_BUILDX := COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose
 
 COMPOSE_PROJECT_INTEGRATION_TESTS := grapl-integration_tests
@@ -124,17 +126,6 @@ help: ## Print this help
 
 ##@ Build 🔨
 
-.PHONY: build-test-unit
-build-test-unit:
-	$(DOCKER_BUILDX_BAKE) \
-		--file ./test/docker-compose.unit-tests-rust.yml \
-		--file ./test/docker-compose.unit-tests-js.yml
-
-.PHONY: build-test-unit-rust
-build-test-unit-rust:
-	$(DOCKER_BUILDX_BAKE) \
-		--file ./test/docker-compose.unit-tests-rust.yml
-
 .PHONY: build-test-unit-js
 build-test-unit-js:
 	$(DOCKER_BUILDX_BAKE) \
@@ -219,16 +210,14 @@ lambdas-python: ## Build Python lambda zips
 test: test-unit test-integration test-e2e test-typecheck ## Run all tests
 
 .PHONY: test-unit
-test-unit: export COMPOSE_PROJECT_NAME := grapl-test-unit
-test-unit: export COMPOSE_FILE := ./test/docker-compose.unit-tests-rust.yml:./test/docker-compose.unit-tests-js.yml
-test-unit: build-test-unit test-unit-python test-unit-shell ## Build and run unit tests
-	test/docker-compose-with-error.sh
+test-unit: test-unit-rust test-unit-js test-unit-python test-unit-shell ## Build and run unit tests
 
 .PHONY: test-unit-rust
 test-unit-rust: export COMPOSE_PROJECT_NAME := grapl-test-unit-rust
-test-unit-rust: export COMPOSE_FILE := ./test/docker-compose.unit-tests-rust.yml
-test-unit-rust: build-test-unit-rust ## Build and run unit tests - Rust only
-	test/docker-compose-with-error.sh
+test-unit-rust: ## Build and run unit tests - Rust only
+	$(DOCKER_COMPOSE_WITH_BUILDX) \
+		--file ./test/docker-compose.unit-tests-rust.yml \
+		run rust-test
 
 .PHONY: test-unit-python
 # Long term, it would be nice to organize the tests with Pants
