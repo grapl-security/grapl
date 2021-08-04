@@ -5,8 +5,8 @@ authors = ["Max Wittek <wimax@graplsecurity.com>"]
 edition = "2018"
 description = "Metrics and logging tooling for Grapl"
 license = "Apache-2.0"
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 pin-project = "1.0"
 chrono = "0.4"

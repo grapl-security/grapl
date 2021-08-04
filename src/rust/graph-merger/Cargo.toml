@@ -11,10 +11,10 @@ name = "graph-merger"
 name = "graph_merger_lib"
 
 [dependencies]
-grapl-graph-descriptions = { path="../graph-descriptions"}
-grapl-config = {path="../grapl-config", version="*"}
-grapl-observe = {path="../grapl-observe", version="*"}
-grapl-service = { path="../grapl-service" }
+grapl-graph-descriptions = { path = "../graph-descriptions" }
+grapl-config = { path = "../grapl-config", version = "*" }
+grapl-observe = { path = "../grapl-observe", version = "*" }
+grapl-service = { path = "../grapl-service" }
 grapl-utils = { path = "../grapl-utils" }
 lazy_static = "1.4"
 anyhow = "1.0"
@@ -23,28 +23,37 @@ serde = "1.0"
 serde_json = "1.0"
 serde_derive = "1.0"
 log = "0.4"
-
 dgraph-tonic = { version = "0.9", features = ["dgraph-1-1"] }
 sqs-executor = { path = "../sqs-executor/" }
-
-rusoto_s3 = { version="0.46.0", default_features = false, features=["rustls"] }
-rusoto_core = { version="0.46.0", default_features = false, features=["rustls"] }
-rusoto_sqs = { version="0.46.0", default_features = false, features=["rustls"] }
-rusoto_dynamodb = { version="0.46", default_features = false, features=["rustls"] }
+rusoto_s3 = { version = "0.46.0", default_features = false, features = [
+  "rustls"
+] }
+rusoto_core = { version = "0.46.0", default_features = false, features = [
+  "rustls"
+] }
+rusoto_sqs = { version = "0.46.0", default_features = false, features = [
+  "rustls"
+] }
+rusoto_dynamodb = { version = "0.46", default_features = false, features = [
+  "rustls"
+] }
 rusoto_credential = "0.46"
-
 sha2 = "0"
-
 zstd = "0.7"
 prost = "0.7"
 base64 = "0"
 rand = "0"
 dgraph_query_lib = "0.1"
-
 futures = "0.3"
 async-trait = "0.1"
 uuid = "0.8"
-tokio = { version = "1", features = ["sync", "rt", "macros", "time", "rt-multi-thread"] }
+tokio = { version = "1", features = [
+  "sync",
+  "rt",
+  "macros",
+  "time",
+  "rt-multi-thread"
+] }
 chrono = "0.4"
 tracing = "0.1"
 thiserror = "1"
@@ -52,10 +61,8 @@ tracing-futures = "0.2"
 lru = "0.6"
 futures-retry = "0.6"
 
-
 [dev-dependencies]
 tracing-subscriber = "0.2"
-
 
 [features]
 integration = []
