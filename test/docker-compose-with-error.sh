@@ -21,8 +21,7 @@ usage() {
 }
 
 # Execute the 'up'
-COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 \
-    docker-compose up \
+docker-compose up \
     --force-recreate \
     --always-recreate-deps \
     --renew-anon-volumes \

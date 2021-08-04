@@ -124,6 +124,37 @@ help: ## Print this help
 
 ##@ Build 🔨
 
+.PHONY: build-test-unit
+build-test-unit:
+	$(DOCKER_BUILDX_BAKE) \
+		--file ./test/docker-compose.unit-tests-rust.yml \
+		--file ./test/docker-compose.unit-tests-js.yml
+
+.PHONY: build-test-unit-rust
+build-test-unit-rust:
+	$(DOCKER_BUILDX_BAKE) \
+		--file ./test/docker-compose.unit-tests-rust.yml
+
+.PHONY: build-test-unit-js
+build-test-unit-js:
+	$(DOCKER_BUILDX_BAKE) \
+		--file ./test/docker-compose.unit-tests-js.yml
+
+.PHONY: build-test-typecheck
+build-test-typecheck: build-python-wheels
+	$(DOCKER_BUILDX_BAKE) \
+		--file ./test/docker-compose.typecheck-tests.yml
+
+.PHONY: build-test-integration
+build-test-integration: build-services
+	$(WITH_LOCAL_GRAPL_ENV) \
+	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.integration-tests.yml
+
+.PHONY: build-test-e2e
+build-test-e2e: build-services
+	$(WITH_LOCAL_GRAPL_ENV) \
+	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.yml
+
 .PHONY: build-python-wheels
 build-python-wheels:  ## Build all Python wheels
 	./pants filter --target-type=python_distribution :: | xargs ./pants package
@@ -190,13 +221,13 @@ test: test-unit test-integration test-e2e test-typecheck ## Run all tests
 .PHONY: test-unit
 test-unit: export COMPOSE_PROJECT_NAME := grapl-test-unit
 test-unit: export COMPOSE_FILE := ./test/docker-compose.unit-tests-rust.yml:./test/docker-compose.unit-tests-js.yml
-test-unit: test-unit-python test-unit-shell ## Build and run unit tests
+test-unit: build-test-unit test-unit-python test-unit-shell ## Build and run unit tests
 	test/docker-compose-with-error.sh
 
 .PHONY: test-unit-rust
 test-unit-rust: export COMPOSE_PROJECT_NAME := grapl-test-unit-rust
 test-unit-rust: export COMPOSE_FILE := ./test/docker-compose.unit-tests-rust.yml
-test-unit-rust: ## Build and run unit tests - Rust only
+test-unit-rust: build-test-unit-rust ## Build and run unit tests - Rust only
 	test/docker-compose-with-error.sh
 
 .PHONY: test-unit-python
@@ -216,13 +247,13 @@ test-unit-shell: ## Run shunit2 tests under Pants
 .PHONY: test-unit-js
 test-unit-js: export COMPOSE_PROJECT_NAME := grapl-test-unit-js
 test-unit-js: export COMPOSE_FILE := ./test/docker-compose.unit-tests-js.yml
-test-unit-js: ## Build and run unit tests - JavaScript only
+test-unit-js: build-test-unit-js ## Build and run unit tests - JavaScript only
 	test/docker-compose-with-error.sh
 
 .PHONY: test-typecheck-docker
 test-typecheck-docker: export COMPOSE_PROJECT_NAME := grapl-typecheck_tests
 test-typecheck-docker: export COMPOSE_FILE := ./test/docker-compose.typecheck-tests.yml
-test-typecheck-docker: build-python-wheels ## Build and run typecheck tests (non-Pants)
+test-typecheck-docker: build-test-typecheck ## Build and run typecheck tests (non-Pants)
 	test/docker-compose-with-error.sh
 
 .PHONY: test-typecheck-pants
@@ -235,13 +266,13 @@ test-typecheck: test-typecheck-docker test-typecheck-pants ## Typecheck all Pyth
 .PHONY: test-integration
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
 test-integration: export COMPOSE_FILE := ./test/docker-compose.integration-tests.yml
-test-integration: build-services ## Build and run integration tests
+test-integration: build-test-integration ## Build and run integration tests
 	$(MAKE) test-with-env
 
 .PHONY: test-e2e
 test-e2e: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_E2E_TESTS)
 test-e2e: export export COMPOSE_FILE := ./test/docker-compose.e2e-tests.yml
-test-e2e: build-services ## Build and run e2e tests
+test-e2e: build-test-e2e ## Build and run e2e tests
 	$(MAKE) test-with-env
 
 # This target is not intended to be used directly from the command line, it's
