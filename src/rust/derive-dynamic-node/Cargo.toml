@@ -3,12 +3,10 @@ name = "derive-dynamic-node"
 version = "1.0.1"
 authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2018"
-
 description = "Derive macro work creating Grapl plugins"
 license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [lib]
 proc-macro = true
 
@@ -18,10 +16,9 @@ quote = "1"
 proc-macro2 = "1"
 
 [dev-dependencies]
-grapl-graph-descriptions = { path="../graph-descriptions", version="*" }
-
+grapl-graph-descriptions = { path = "../graph-descriptions", version = "*" }
 serde = "1"
 serde_json = "1"
 serde_derive = "1"
 log = "0.4"
-uuid = { version = "0.8", features=["v4"] }
+uuid = { version = "0.8", features = ["v4"] }

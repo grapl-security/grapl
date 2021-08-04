@@ -53,30 +53,19 @@ else
     printHelp
 fi
 
-checkPrettierInstalled() {
-    set +e # Don't fail if this is exit 1!
-    npm list --depth 1 --global prettier > /dev/null 2>&1
-    not_installed=$?
-    set -e
-    if [ "$not_installed" -ne "0" ]; then
-        echo "Installing prettier" && npm install -g prettier
-    fi
-}
-checkPrettierInstalled
-
 # As specified in `docker-compose.formatter.yml`
 readonly repo_root="/mnt/grapl_repo_rw"
 
-echo "--- Formatting .ts, .tsx"
+echo "--- Prettier Typescript"
 prettier \
     --config prettierrc.toml \
     ${prettier_arg} \
-    graphql_endpoint/**/*.ts \
-    engagement_view/src/**/*.ts \
-    engagement_view/src/**/*.tsx
+    ${repo_root}/src/js/graphql_endpoint/**/*.ts \
+    ${repo_root}/src/js/engagement_view/src/**/*.ts \
+    ${repo_root}/src/js/engagement_view/src/**/*.tsx
 
 # Slightly different config for yaml
-echo "--- Formatting .yml, .yaml"
+echo "--- Prettier YAML"
 prettier \
     --config prettierrc-yaml.toml \
     ${prettier_arg} \
@@ -86,8 +75,17 @@ prettier \
     ${repo_root}/.github/**/*.yml
 
 # No config for markdown
+echo "--- Prettier Markdown"
 prettier \
     ${prettier_arg} \
     --prose-wrap always \
     --print-width 80 \
     ${repo_root}"/{,!(**/(target|*venv)/**)}**/*.md"
+
+# No config for markdown
+echo "--- Prettier TOML"
+prettier \
+    ${prettier_arg} \
+    --prose-wrap always \
+    --print-width 80 \
+    ${repo_root}"/{,!(**/(target|*venv)/**)}**/*.toml"

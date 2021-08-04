@@ -5,29 +5,38 @@ authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-grapl-graph-descriptions = { path="../graph-descriptions", version="*" }
-grapl-config = {path="../grapl-config", version="*"}
-grapl-observe = {path = "../grapl-observe"}
-grapl-service = {path="../grapl-service"}
+grapl-graph-descriptions = { path = "../graph-descriptions", version = "*" }
+grapl-config = { path = "../grapl-config", version = "*" }
+grapl-observe = { path = "../grapl-observe" }
+grapl-service = { path = "../grapl-service" }
 futures = "0.3"
-
 base64 = "0.13"
 bytes = "1"
 failure = "0.1"
 log = "0.4"
 prost = "0.7"
-
-rusoto_s3 = { version="0.46", default_features = false, features=["rustls"] }
-rusoto_core = { version="0.46", default_features = false, features=["rustls"] }
-rusoto_sqs = { version="0.46", default_features = false, features=["rustls"] }
+rusoto_s3 = { version = "0.46", default_features = false, features = [
+  "rustls"
+] }
+rusoto_core = { version = "0.46", default_features = false, features = [
+  "rustls"
+] }
+rusoto_sqs = { version = "0.46", default_features = false, features = [
+  "rustls"
+] }
 rusoto_credential = "0.46"
-
 async-trait = "0.1"
 zstd = "0.7"
-tokio = { version = "1", features = ["sync", "rt", "macros", "time", "rt-multi-thread"] }
+tokio = { version = "1", features = [
+  "sync",
+  "rt",
+  "macros",
+  "time",
+  "rt-multi-thread"
+] }
 chrono = "0.4"
 sqs-executor = { path = "../sqs-executor/" }
 thiserror = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-uuid = { version = "0.8", features=["v4"] }
+uuid = { version = "0.8", features = ["v4"] }

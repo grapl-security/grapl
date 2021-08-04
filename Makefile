@@ -309,7 +309,7 @@ lint-python: ## Run Python lint checks
 
 .PHONY: lint-shell
 lint-shell: ## Run Shell lint checks
-	./pants filter --target-type=shell_library :: | xargs ./pants lint
+	./pants filter --target-type=shell_library,shunit2_tests :: | xargs ./pants lint
 
 .PHONY: lint-prettier
 lint-prettier: build-formatter ## Run ts/js/yaml lint checks
@@ -335,7 +335,11 @@ format-rust: ## Reformat all Rust code
 
 .PHONY: format-python
 format-python: ## Reformat all Python code
-	./pants fmt ::
+	./pants filter --target-type=python_library,python_tests :: | xargs ./pants fmt
+
+.PHONY: format-shell
+format-shell: ## Reformat all shell_libraries
+	./pants filter --target-type=shell_library,shunit2_tests :: | xargs ./pants fmt
 
 .PHONY: format-prettier
 format-prettier: build-formatter ## Reformat js/ts/yaml
@@ -349,7 +353,7 @@ format-packer: ## Reformat all Packer HCLs
 	packer fmt -recursive packer/
 
 .PHONY: format
-format: format-python format-prettier format-rust format-packer ## Reformat all code
+format: format-python format-shell format-prettier format-rust format-packer ## Reformat all code
 
 .PHONY: package-python-libs
 package-python-libs: ## Create Python distributions for public libraries

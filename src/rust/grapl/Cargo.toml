@@ -1,13 +1,13 @@
 [package]
 name = "grapl"
-version = "0.3.1"  # The next-to-be-released tag
+version = "0.3.1" # The next-to-be-released tag
 authors = ["Max Wittek <wimax@graplsecurity.com>"]
 edition = "2018"
 description = "One crate for all your Grapl needs"
 license = "Apache-2.0"
 
 [dependencies]
-derive-dynamic-node = { path="../derive-dynamic-node" }
+derive-dynamic-node = { path = "../derive-dynamic-node" }
 graph-generator-lib = { path = "../generators/graph-generator-lib/" }
-grapl-config = { path="../grapl-config" }
-grapl-graph-descriptions = { path="../graph-descriptions" }
+grapl-config = { path = "../grapl-config" }
+grapl-graph-descriptions = { path = "../graph-descriptions" }

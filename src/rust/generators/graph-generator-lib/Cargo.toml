@@ -7,26 +7,28 @@ description = "Library for writing Grapl generator services"
 license = "Apache-2.0"
 
 [dependencies]
-grapl-graph-descriptions = { path="../../graph-descriptions", version="0.2.*" }
-sqs-executor = {path="../../sqs-executor"}
-grapl-service = {path="../../grapl-service"}
-
-grapl-observe = {path = "../../grapl-observe"}
-
+grapl-graph-descriptions = { path = "../../graph-descriptions", version = "0.2.*" }
+sqs-executor = { path = "../../sqs-executor" }
+grapl-service = { path = "../../grapl-service" }
+grapl-observe = { path = "../../grapl-observe" }
 sha2 = "0.9"
-rusoto_s3 = { version="0.46.0", default_features = false, features=["rustls"] }
-rusoto_core = { version="0.46.0", default_features = false, features=["rustls"] }
-rusoto_sqs = { version="0.46.0", default_features = false, features=["rustls"] }
-grapl-config = { path="../../grapl-config", version="0.0.*" }
+rusoto_s3 = { version = "0.46.0", default_features = false, features = [
+  "rustls"
+] }
+rusoto_core = { version = "0.46.0", default_features = false, features = [
+  "rustls"
+] }
+rusoto_sqs = { version = "0.46.0", default_features = false, features = [
+  "rustls"
+] }
+grapl-config = { path = "../../grapl-config", version = "0.0.*" }
 tracing = "0.1.22"
 rusoto_credential = "0.46.0"
-
 base64 = "0"
 prost = "0.7"
 serde = "1"
 serde_json = "1"
 log = "0"
 zstd = "0.7"
-
 chrono = "0.4"
 tokio = "1"
