@@ -344,7 +344,7 @@ lint-packer: ## Check to see if Packer templates are formatted properly
 	.buildkite/scripts/lint_packer.sh
 
 .PHONY: lint
-lint: lint-python lint-prettier lint-rust lint-shell lint-packer ## Run all lint checks
+lint: lint-python lint-prettier lint-rust lint-shell lint-hcl ## Run all lint checks
 
 ##@ Formatting 💅
 
@@ -367,9 +367,10 @@ format-prettier: build-formatter ## Reformat js/ts/yaml
 		--file docker-compose.formatter.yml \
 		run --rm format-prettier
 
-.PHONY: format-packer
-format-packer: ## Reformat all Packer HCLs
+.PHONY: format-hcl
+format-hcl: ## Reformat all HCLs
 	packer fmt -recursive packer/
+	.buildkite/scripts/format_nomad.sh
 
 .PHONY: format
 format: format-python format-shell format-prettier format-rust format-packer ## Reformat all code
