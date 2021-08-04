@@ -54,25 +54,12 @@ class Ec2Cluster(pulumi.ComponentResource):
     ) -> List[aws.ec2.Instance]:
         instances = []
         for i in range(0, num_instances):
-            network_interface = aws.ec2.NetworkInterface(
-                f"ec2-eni-{name}-{i}",
-                subnet_id=vpc_private_subnet.id,
-                security_groups=vpc_security_group_ids,
-                tags={
-                    "Name": "primary_network_interface",
-                },
-                opts=child_opts,
-            )
             instance = aws.ec2.Instance(
                 f"ec2-inst-{name}-{i}",
                 ami=ami,
                 instance_type=instance_type,
-                network_interfaces=[
-                    aws.ec2.InstanceNetworkInterfaceArgs(
-                        network_interface_id=network_interface.id,
-                        device_index=0,
-                    )
-                ],
+                subnet_id=vpc_private_subnet.id,
+                vpc_security_group_ids=vpc_security_group_ids,
                 credit_specification=aws.ec2.InstanceCreditSpecificationArgs(
                     cpu_credits="unlimited",
                 ),
