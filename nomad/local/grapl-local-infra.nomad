@@ -1,74 +1,74 @@
 # This job is to spin up infrastructure needed to run Grapl locally (e.g. Redis) that we don't necessarily want to deploy in production (because AWS will manage it)
 job "grapl-local-infra" {
-    datacenters = ["dc1"]
+  datacenters = ["dc1"]
 
-    type = "service"
+  type = "service"
 
-    group "redis" {
-        network {
-            port "redis" {
-                static = 6379
-            }
-        }
-
-        task "redis" {
-            driver = "docker"
-
-            config {
-                image = "redis:latest"
-                ports = ["redis"]
-            }
-        }
+  group "redis" {
+    network {
+      port "redis" {
+        static = 6379
+      }
     }
 
-    group "dynamodb" {
-        network {
-            port "dynamodb" {
-                static = 6666
-            }
-        }
+    task "redis" {
+      driver = "docker"
 
-        task "dynamodb" {
-            driver = "docker"
+      config {
+        image = "redis:latest"
+        ports = ["redis"]
+      }
+    }
+  }
 
-            config {
-                image = "amazon/dynamodb-local:latest"
-                ports = ["dynamodb"]
-            }
-        }
+  group "dynamodb" {
+    network {
+      port "dynamodb" {
+        static = 6666
+      }
     }
 
-    group "sqs" {
-        network {
-            port "sqs" {
-                static = 9324
-            }
-        }
+    task "dynamodb" {
+      driver = "docker"
 
-        task "sqs" {
-            driver = "docker"
+      config {
+        image = "amazon/dynamodb-local:latest"
+        ports = ["dynamodb"]
+      }
+    }
+  }
 
-            config {
-                image = "graze/sqs-local:latest"
-                ports = ["sqs"]
-            }
-        }
+  group "sqs" {
+    network {
+      port "sqs" {
+        static = 9324
+      }
     }
 
-    group "ratel" {
-        network {
-            port "ratel" {
-                static = 8000
-            }
-        }
+    task "sqs" {
+      driver = "docker"
 
-        task "ratel" {
-            driver = "docker"
-
-            config {
-                image = "dgraph/ratel:latest"
-                ports = ["ratel"]
-            }
-        }
+      config {
+        image = "graze/sqs-local:latest"
+        ports = ["sqs"]
+      }
     }
+  }
+
+  group "ratel" {
+    network {
+      port "ratel" {
+        static = 8000
+      }
+    }
+
+    task "ratel" {
+      driver = "docker"
+
+      config {
+        image = "dgraph/ratel:latest"
+        ports = ["ratel"]
+      }
+    }
+  }
 }

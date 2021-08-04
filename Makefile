@@ -436,7 +436,7 @@ clean-artifacts: ## Remove all dumped artifacts from test runs (see dump_artifac
 	rm -Rf test_artifacts
 
 .PHONY: run-registry
-run-registry: 
+run-registry: ## Ensure that a local docker registry is running (which is required for local Nomad deployments.
 	nomad/local/local_grapl_registry.sh
 
 .PHONY: push
@@ -446,8 +446,7 @@ push: ## Push Grapl containers to Docker Hub
 .PHONY: push-local
 push-local: ## Push Grapl container to local registry
 	$(MAKE) run-registry
-	$(WITH_LOCAL_GRAPL_ENV) \
-	$(MAKE) push
+	$(WITH_LOCAL_GRAPL_ENV) $(MAKE) push
 
 .PHONY: e2e-logs
 e2e-logs: ## All docker-compose logs
