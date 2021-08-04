@@ -441,7 +441,7 @@ run-registry: ## Ensure that a local docker registry is running (which is requir
 	nomad/local/local_grapl_registry.sh
 
 .PHONY: push
-push: ## Push Grapl containers to Docker Hub
+push: ## Push Grapl containers to supplied DOCKER_REGISTRY
 	docker-compose --file=docker-compose.build.yml push
 
 .PHONY: push-local
