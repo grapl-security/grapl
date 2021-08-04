@@ -1,6 +1,0 @@
-boto3==1.15.9
-boto3-stubs[essential]==1.14.44
-chalice==1.22.4
-hypothesis
-pytest
-pytest-xdist
