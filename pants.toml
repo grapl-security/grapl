@@ -62,7 +62,6 @@ root_patterns = [
   "/pulumi",
   "/src/aws-provision",
   "/src/proto",
-  "/src/python/analyzer-deployer",
   "/src/python/analyzer_executor/src",
   "/src/python/analyzer_executor/tests",
   "/src/python/engagement-creator",

@@ -60,8 +60,6 @@ services:
       - DEPLOYMENT_NAME
       - MG_ALPHAS
 
-  # grapl-analyzer-deployer-integration-tests:
-
   analyzer-executor-integration-tests:
     image: grapl/analyzer-executor-test:${TAG:-latest}
     build:
