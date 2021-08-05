@@ -42,13 +42,9 @@ def py_http(
 @app.command(name="rust-grpc")
 def rust_grpc(
     package_name: str,
-    cargo_version: str = typer.Argument("1.52.0"),
-    rustc_channel: str = typer.Argument("stable"),
 ) -> None:
     args = CreateRustGrpcServiceArgs(
         package_name=package_name,
-        cargo_version=cargo_version,
-        rustc_channel=rustc_channel,
     )
     create_rust_grpc_service(args)
     typer.echo(f"Created a Rust GRPC service named {package_name}")
