@@ -1,8 +1,6 @@
 {
-    "project_name": "My New Project",
-    "project_slug": "{{ cookiecutter.project_name|lower|replace(' ', '-') }}",
-    "pkg_name": "{{ cookiecutter.project_slug|replace('-', '_') }}",
-    "pants_version": "2.5.0",
-    "pants_python_interpreter_constraints": "CPython==3.7.*",
-    "lambda_handler": "lambda_handler"
+    "project_name": "{{ cookiecutter.project_name }}",
+    "project_slug": "{{ cookiecutter.project_slug }}",
+    "pkg_name": "{{ cookiecutter.pkg_name }}",
+    "lambda_handler": "{{ cookiecutter.lambda_handler }}"
 }

@@ -47,8 +47,6 @@ class PythonHttpServiceTemplateExecutor(object):
                 "project_name": self.project_name,
                 "project_slug": self.project_slug,
                 "pkg_name": self.pkg_name,
-                "pants_version": self.pants_version,
-                "pants_python_interpreter_constraints": self.pants_python_interpreter_constraints,
                 "lambda_handler": self.lambda_handler,
             },
         )
