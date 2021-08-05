@@ -42,7 +42,11 @@ class RustGrpcServiceTemplateExecutor(object):
             / "grapl-templates"
             / "rust-grpc-service"
         )
-        self.project_path = self.rust_src_path / self.project_name
+        self.project_path = self.rust_src_path / self.project_slug
+        # We also have to manually move the generated protos to a specific directory.
+        self.proto_destination = (
+            self.grapl_root / "src/proto/graplinc/grapl/api" / self.snake_project_name
+        )
 
     def precheck(self) -> None:
         ...
@@ -61,6 +65,19 @@ class RustGrpcServiceTemplateExecutor(object):
                 "rustc_channel": self.rustc_channel,
             },
         )
+        self.move_protos_to_global_proto_dir()
+
+    def move_protos_to_global_proto_dir(self) -> None:
+        self.proto_destination.mkdir(exist_ok=True)
+        proto_filenames = [
+            f"{self.snake_project_name}.proto",
+            f"{self.snake_project_name}_health.proto",
+        ]
+        for proto_filename in proto_filenames:
+            proto_file = Path(self.project_path / "proto" / proto_filename).resolve(
+                strict=True
+            )
+            proto_file.rename(self.proto_destination / proto_filename)
 
     def get_toml_for_workspace(self) -> Tuple[Path, WorkspaceToml]:
         workspace_path = self.rust_src_path / "Cargo.toml"
