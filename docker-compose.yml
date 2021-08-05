@@ -348,7 +348,7 @@ services:
       - |
         export GRAPL_ANALYZERS_BUCKET=$$(cat /mnt/pulumi-outputs/analyzers-bucket)
         export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/dispatched-analyzer-bucket)
-        export DEAD_LETTER_QUEUE_URL=$$(cat /mnt/pulumi-outputs/analyzer-dispatcher-dead-letter-queue)
+        export DEAD_LETTER_QUEUE_URL=$$(cat /mnt/pulumi-outputs/analyzer-dispatcher-retry-queue)
         export SOURCE_QUEUE_URL=$$(cat /mnt/pulumi-outputs/analyzer-dispatcher-queue)
         /analyzer-dispatcher
     environment:
