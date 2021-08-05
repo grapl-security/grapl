@@ -126,7 +126,10 @@ steps:
 
   - label: ":hammer: E2E Tests"
     command:
-      - .buildkite/scripts/e2e.sh
+      - make test-e2e
+    env:
+      GRAPL_LOG_LEVEL: "DEBUG"
+      DUMP_ARTIFACTS: "True"
     agents:
       queue: "beefy"
     artifact_paths:
