@@ -153,24 +153,28 @@ build-test-e2e: build
 build-lambda-zips: build-lambda-zips-rust build-lambda-zips-js build-lambda-zips-python ## Generate all lambda zip files
 
 .PHONY: build-lambda-zips-rust
-build-lambda-zips-rust: export COMPOSE_FILE := docker-compose.lambda-zips.rust.yml
 build-lambda-zips-rust: ## Build Rust lambda zips
-	$(DOCKER_BUILDX_BAKE) --file "${COMPOSE_FILE}"
+	$(DOCKER_BUILDX_BAKE) \
+		--file docker-compose.lambda-zips.rust.yml
 	# Extract the zip from the Docker image.
 	# Rely on the default CMD for copying artifact to /dist mount point.
-	docker-compose run \
+	docker-compose \
+		--file docker-compose.lambda-zips.rust.yml \
+		run \
 		--rm \
 		--user "${UID}:${GID}" \
 		--volume="${PWD}/dist":/dist \
 		metric-forwarder-zip
 
 .PHONY: build-lambda-zips-js
-build-lambda-zips-js: export COMPOSE_FILE := docker-compose.lambda-zips.js.yml
 build-lambda-zips-js: ## Build JS lambda zips
-	$(DOCKER_BUILDX_BAKE) --file "${COMPOSE_FILE}"
+	$(DOCKER_BUILDX_BAKE) \
+		--file docker-compose.lambda-zips.js.yml
 	# Extract the zip from the Docker image.
 	# Rely on the default CMD for copying artifact to /dist mount point.
-	docker-compose run \
+	docker-compose \
+		--file docker-compose.lambda-zips.js.yml \
+		run \
 		--rm \
 		--user "${UID}:${GID}" \
 		--volume="${PWD}/dist":/dist \
