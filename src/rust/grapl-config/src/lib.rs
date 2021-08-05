@@ -117,10 +117,6 @@ pub fn dead_letter_queue_url() -> String {
     std::env::var("DEAD_LETTER_QUEUE_URL").expect("DEAD_LETTER_QUEUE_URL")
 }
 
-pub fn retry_queue_url() -> String {
-    std::env::var("RETRY_QUEUE_URL").expect("RETRY_QUEUE_URL")
-}
-
 pub fn mg_alphas() -> Vec<String> {
     return std::env::var("MG_ALPHAS")
         .expect("MG_ALPHAS")
