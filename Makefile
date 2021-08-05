@@ -313,7 +313,7 @@ lint-prettier: build-formatter ## Run ts/js/yaml lint checks
 	# like `grapl/grapl-rfcs`.
 	docker-compose \
 		--file docker-compose.formatter.yml \
-		run lint-prettier
+		run --rm lint-prettier
 
 .PHONY: lint-packer
 lint-packer: ## Check to see if Packer templates are formatted properly
@@ -341,7 +341,7 @@ format-prettier: build-formatter ## Reformat js/ts/yaml
 	# `docker-compose run` will also propagate the correct exit code.
 	docker-compose \
 		--file docker-compose.formatter.yml \
-		run format-prettier
+		run --rm format-prettier
 
 .PHONY: format-packer
 format-packer: ## Reformat all Packer HCLs
