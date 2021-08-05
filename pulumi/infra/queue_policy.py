@@ -42,37 +42,6 @@ def consumption_policy(queue: aws.sqs.Queue, role: aws.iam.Role) -> None:
     )
 
 
-def send_policy(queue: aws.sqs.Queue, role: aws.iam.Role) -> None:
-    """
-    Adds an inline policy to `role` for sending messages into `queue`.
-
-    The resulting `RolePolicy` resource is a child of the role.
-    """
-    aws.iam.RolePolicy(
-        f"{role._name}-writes-to-{queue._name}",
-        role=role.name,
-        policy=queue.arn.apply(
-            lambda arn: json.dumps(
-                {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                        {
-                            "Effect": "Allow",
-                            "Action": [
-                                "sqs:SendMessage",
-                                "sqs:GetQueueAttributes",
-                                "sqs:GetQueueUrl",
-                            ],
-                            "Resource": arn,
-                        }
-                    ],
-                }
-            )
-        ),
-        opts=pulumi.ResourceOptions(parent=role),
-    )
-
-
 def allow_send_from_topic(queue: aws.sqs.Queue, topic: aws.sns.Topic) -> None:
     """
     Set a policy on Queue

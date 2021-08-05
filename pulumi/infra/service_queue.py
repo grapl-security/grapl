@@ -40,6 +40,52 @@ class ServiceConfiguration(NamedTuple):
         """ The URL of the dead-letter queue."""
         return self.dead_letter_queue.id
 
+    def grant_queue_permissions_to(self, role: aws.iam.Role) -> None:
+        """Adds an inline policy to `role` for consuming messages from
+        `main_queue` and writing messages to `dead_letter_queue`.
+
+        The resulting `RolePolicy` resource is a child of the role.
+
+        """
+        aws.iam.RolePolicy(
+            f"{role._name}-reads-{self.main_queue._name}-writes-{self.dead_letter_queue._name}",
+            role=role.name,
+            policy=pulumi.Output.all(
+                main_arn=self.main_queue.arn, dead_letter_arn=self.dead_letter_queue.arn
+            ).apply(
+                lambda inputs: json.dumps(
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Sid": "Read from main queue",
+                                "Effect": "Allow",
+                                "Action": [
+                                    "sqs:ChangeMessageVisibility",
+                                    "sqs:DeleteMessage",
+                                    "sqs:GetQueueAttributes",
+                                    "sqs:GetQueueUrl",
+                                    "sqs:ReceiveMessage",
+                                ],
+                                "Resource": inputs["main_arn"],
+                            },
+                            {
+                                "Sid": "Write to dead-letter queue",
+                                "Effect": "Allow",
+                                "Action": [
+                                    "sqs:SendMessage",
+                                    "sqs:GetQueueAttributes",
+                                    "sqs:GetQueueUrl",
+                                ],
+                                "Resource": inputs["dead_letter_arn"],
+                            },
+                        ],
+                    }
+                )
+            ),
+            opts=pulumi.ResourceOptions(parent=role),
+        )
+
 
 class ServiceQueue(pulumi.ComponentResource):
     """
@@ -140,24 +186,6 @@ class ServiceQueue(pulumi.ComponentResource):
             self.retry_queue.name,
             self.dead_letter_queue.name,
         ).apply(lambda args: ServiceQueueNames(*args))
-
-    def grant_main_queue_consumption_to(self, role: aws.iam.Role) -> None:
-        queue_policy.consumption_policy(self.queue, role)
-
-    def grant_retry_queue_consumption_to(self, role: aws.iam.Role) -> None:
-        queue_policy.consumption_policy(self.retry_queue, role)
-
-    def grant_dead_letter_queue_consumption_to(self, role: aws.iam.Role) -> None:
-        queue_policy.consumption_policy(self.dead_letter_queue, role)
-
-    def grant_main_queue_send_to(self, role: aws.iam.Role) -> None:
-        queue_policy.send_policy(self.queue, role)
-
-    def grant_retry_queue_send_to(self, role: aws.iam.Role) -> None:
-        queue_policy.send_policy(self.retry_queue, role)
-
-    def grant_dead_letter_queue_send_to(self, role: aws.iam.Role) -> None:
-        queue_policy.send_policy(self.dead_letter_queue, role)
 
     def subscribe_to_emitter(self, emitter: EventEmitter) -> None:
         """
