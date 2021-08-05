@@ -373,7 +373,7 @@ format-hcl: ## Reformat all HCLs
 	.buildkite/scripts/format_nomad.sh
 
 .PHONY: format
-format: format-python format-shell format-prettier format-rust format-packer ## Reformat all code
+format: format-python format-shell format-prettier format-rust format-hcl ## Reformat all code
 
 .PHONY: package-python-libs
 package-python-libs: ## Create Python distributions for public libraries
