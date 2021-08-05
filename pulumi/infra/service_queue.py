@@ -15,6 +15,32 @@ class ServiceQueueNames(NamedTuple):
     dead_letter_queue: str
 
 
+class ServiceConfiguration(NamedTuple):
+    """Encapsulates the information needed to configure a service to interact with a `ServiceQueue`.
+
+    In particular, services will have one queue from which they will
+    pull messages (the "main queue"), and one queue to which they will
+    write messages that could not be processed (the "dead-letter
+    queue"). Depending on whether the service is a "default" service
+    or a "retry" service, the specific identities of these queues will
+    be different.
+
+    """
+
+    main_queue: aws.sqs.Queue
+    dead_letter_queue: aws.sqs.Queue
+
+    @property
+    def main_url(self) -> pulumi.Output[str]:
+        """ The URL of the main queue."""
+        return self.main_queue.id
+
+    @property
+    def dead_letter_url(self) -> pulumi.Output[str]:
+        """ The URL of the dead-letter queue."""
+        return self.dead_letter_queue.id
+
+
 class ServiceQueue(pulumi.ComponentResource):
     """
     Each service currently deals with three queues. The main queue
@@ -147,3 +173,16 @@ class ServiceQueue(pulumi.ComponentResource):
         )
 
         queue_policy.allow_send_from_topic(self.queue, emitter.topic)
+
+    def default_service_configuration(self) -> ServiceConfiguration:
+        """
+        Information needed to configure a "default" service to interact with this `ServiceQueue`.
+        """
+        return ServiceConfiguration(self.queue, self.retry_queue)
+
+    def retry_service_configuration(self) -> ServiceConfiguration:
+        """Information needed to configure a "retry" service to interact with
+        this `ServiceQueue`.
+
+        """
+        return ServiceConfiguration(self.retry_queue, self.dead_letter_queue)

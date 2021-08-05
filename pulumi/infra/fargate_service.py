@@ -16,7 +16,7 @@ from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.policies import ECR_TOKEN_POLICY, attach_policy
 from infra.repository import Repository, registry_credentials
-from infra.service_queue import ServiceQueue
+from infra.service_queue import ServiceConfiguration, ServiceQueue
 
 import pulumi
 
@@ -94,6 +94,7 @@ class _AWSFargateService(pulumi.ComponentResource):
         self,
         name: str,
         cluster: aws.ecs.Cluster,
+        service_configuration: ServiceConfiguration,
         queue: ServiceQueue,
         input_emitter: EventEmitter,
         output_emitter: EventEmitter,
@@ -203,8 +204,8 @@ class _AWSFargateService(pulumi.ComponentResource):
             f"{name}-task",
             family=f"{DEPLOYMENT_NAME}-{name}-task",
             container_definitions=pulumi.Output.all(
-                queue_url=queue.main_queue_url,
-                dead_letter_url=queue.dead_letter_queue_url,
+                queue_url=service_configuration.main_url,
+                dead_letter_url=service_configuration.dead_letter_url,
                 log_group=self.log_group.name,
                 bucket=output_emitter.bucket.bucket,
                 image=image,
@@ -315,6 +316,7 @@ class FargateService(pulumi.ComponentResource):
             f"{name}-default",
             cluster=self.ecs_cluster,
             queue=self.queue,
+            service_configuration=self.queue.default_service_configuration(),
             input_emitter=input_emitter,
             output_emitter=output_emitter,
             network=network,
@@ -342,6 +344,7 @@ class FargateService(pulumi.ComponentResource):
             retry_name,
             cluster=self.ecs_cluster,
             queue=self.queue,
+            service_configuration=self.queue.retry_service_configuration(),
             input_emitter=input_emitter,
             output_emitter=output_emitter,
             network=network,
