@@ -116,7 +116,9 @@ steps:
 
   - label: ":hammer: Integration Tests"
     command:
-      - .buildkite/scripts/integration.sh
+      - make test-integration
+    env:
+      GRAPL_LOG_LEVEL: "DEBUG"
     agents:
       queue: "beefy"
     artifact_paths:
