@@ -107,10 +107,18 @@ steps:
       - make lambdas
     agents:
       queue: "beefy"
+    # There are some issues with the docker nature of this step at the
+    # moment that can cause this to spuriously fail; we'll just
+    # automatically retry it for the time being.
+    retry:
+      automatic:
+        limit: 2
 
   - label: ":hammer: Integration Tests"
     command:
-      - .buildkite/scripts/integration.sh
+      - make test-integration
+    env:
+      GRAPL_LOG_LEVEL: "DEBUG"
     agents:
       queue: "beefy"
     artifact_paths:
@@ -118,7 +126,10 @@ steps:
 
   - label: ":hammer: E2E Tests"
     command:
-      - .buildkite/scripts/e2e.sh
+      - make test-e2e
+    env:
+      GRAPL_LOG_LEVEL: "DEBUG"
+      DUMP_ARTIFACTS: "True"
     agents:
       queue: "beefy"
     artifact_paths:
