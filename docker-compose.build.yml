@@ -104,8 +104,8 @@ services:
   graphql-endpoint:
     image: grapl/graphql-endpoint:${TAG:-latest}
     build:
-      context: src
-      dockerfile: js/graphql_endpoint/Dockerfile
+      context: src/js/graphql_endpoint
+      dockerfile: Dockerfile
       target: graphql-endpoint-deploy
 
   notebook:

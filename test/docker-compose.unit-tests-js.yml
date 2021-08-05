@@ -14,8 +14,8 @@ services:
   graphql-endpoint-test:
     image: grapl/graphql-endpoint:${TAG:-latest}
     build:
-      context: ${PWD}/src
-      dockerfile: js/graphql_endpoint/Dockerfile
+      context: ${PWD}/src/js/graphql_endpoint
+      dockerfile: Dockerfile
       target: graphql-endpoint-deploy
     command: bash -c "
       cd .. && npx jest"

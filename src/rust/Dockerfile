@@ -47,8 +47,8 @@ RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
 # Copy the build outputs to location that's not a cache mount.
 # TODO: switch to using --out-dir when stable: https://github.com/rust-lang/cargo/issues/6790
 RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
-    mkdir -p /dist && \
-    find "/grapl/rust/target/${RUST_BUILD}" -maxdepth 1 -type f -executable -exec cp {} /dist \;
+    mkdir -p /outputs && \
+    find "/grapl/rust/target/${RUST_BUILD}" -maxdepth 1 -type f -executable -exec cp {} /outputs \;
 
 
 # build-test
@@ -99,10 +99,14 @@ RUN mkdir -p /grapl/zips; \
     grapl-zip() { \
       TMPDIR="$(mktemp -d)"; \
       cd "$TMPDIR"; \
-      cp "/dist/${1}" bootstrap && \
-      zip --quiet -9 "/grapl/zips/${1}.zip" bootstrap; \
+      cp "/outputs/${1}" bootstrap && \
+      zip --quiet -9 "/grapl/zips/${1}-lambda.zip" bootstrap; \
     }; \
     grapl-zip metric-forwarder
+
+# This defines a default command for extracting the metric-forwarder zip to a
+# container mount point at /dist
+CMD [ "cp", "/grapl/zips/metric-forwarder-lambda.zip", "/dist" ]
 
 
 # images for running services
@@ -121,41 +125,41 @@ USER nonroot
 # analyzer-dispatcher
 FROM rust-dist AS analyzer-dispatcher-deploy
 
-COPY --from=build /dist/analyzer-dispatcher /
+COPY --from=build /outputs/analyzer-dispatcher /
 ENTRYPOINT ["/analyzer-dispatcher"]
 
 # generic-subgraph-generator
 FROM rust-dist AS generic-subgraph-generator-deploy
 
-COPY --from=build /dist/generic-subgraph-generator /
+COPY --from=build /outputs/generic-subgraph-generator /
 ENTRYPOINT ["/generic-subgraph-generator"]
 
 # graph-merger
 FROM rust-dist AS graph-merger-deploy
 
-COPY --from=build /dist/graph-merger /
+COPY --from=build /outputs/graph-merger /
 ENTRYPOINT ["/graph-merger"]
 
 # node-identifier
 FROM rust-dist AS node-identifier-deploy
 
-COPY --from=build /dist/node-identifier /
+COPY --from=build /outputs/node-identifier /
 ENTRYPOINT ["/node-identifier"]
 
 # node-identifier-retry
 FROM rust-dist AS node-identifier-retry-deploy
 
-COPY --from=build /dist/node-identifier-retry /
+COPY --from=build /outputs/node-identifier-retry /
 ENTRYPOINT ["/node-identifier-retry"]
 
 # sysmon-generator
 FROM rust-dist AS sysmon-generator-deploy
 
-COPY --from=build /dist/sysmon-generator /
+COPY --from=build /outputs/sysmon-generator /
 ENTRYPOINT ["/sysmon-generator"]
 
 # osquery-generator
 FROM rust-dist AS osquery-generator-deploy
 
-COPY --from=build /dist/osquery-generator /
+COPY --from=build /outputs/osquery-generator /
 ENTRYPOINT ["/osquery-generator"]

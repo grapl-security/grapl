@@ -4,11 +4,6 @@ services:
   graphql-endpoint-zip:
     image: grapl/graphql-endpoint-zip:${TAG:-latest}
     build:
-      context: src
-      dockerfile: js/graphql_endpoint/Dockerfile
+      context: src/js/graphql_endpoint
+      dockerfile: Dockerfile
       target: graphql-endpoint-zip
-    volumes:
-      - ./dist:/grapl
-    user: ${UID}:${GID}
-    working_dir: /grapl
-    command: cp /home/grapl/lambda.zip graphql-endpoint-lambda.zip
