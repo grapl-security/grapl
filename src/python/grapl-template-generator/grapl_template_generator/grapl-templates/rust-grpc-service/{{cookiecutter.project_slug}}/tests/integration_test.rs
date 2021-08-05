@@ -5,6 +5,7 @@ use test_context::futures;
 
 use {{cookiecutter.snake_project_name}}::client::{{cookiecutter.service_name}}RpcClient;
 use {{cookiecutter.snake_project_name}}::client::{{cookiecutter.service_name}}Request;
+use {{cookiecutter.snake_project_name}}::client::GraplRequestMeta;
 use {{cookiecutter.snake_project_name}}::client::Channel;
 use {{cookiecutter.snake_project_name}}::client::Timeout;
 
@@ -19,8 +20,12 @@ async fn smoketest(_ctx: &mut ServiceContext) -> Result<(), Box<dyn std::error::
 
     let mut client = {{cookiecutter.service_name}}RpcClient::new(timeout_channel);
 
-    let request = tonic::Request::new({{cookiecutter.service_name}}Request {});
+    let request = tonic::Request::new({{cookiecutter.service_name}}Request {
+        grapl_request_meta: GraplRequestMeta {
+            client_id: "some_integration_test".to_string()
+        }.into()
+    });
 
     let _response = client.handle_request(request).await?;
-    panic!("This test could use some work!");
+    todo!("This test could use some work!");
 }
