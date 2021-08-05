@@ -104,7 +104,7 @@ steps:
 
   - label: ":aws-lambda::package: Create Lambda Zips"
     command:
-      - make lambdas
+      - make build-lambda-zips
     agents:
       queue: "beefy"
     # There are some issues with the docker nature of this step at the

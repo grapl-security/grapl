@@ -15,7 +15,7 @@ steps:
                 - "docker-compose.lambda-zips.rust.yml"
               config:
                 command:
-                  - "make lambdas-rust"
+                  - "make build-lambda-zips-rust"
                 artifact_paths:
                   - "dist/*-lambda.zip"
                 agents:
@@ -33,7 +33,7 @@ steps:
                 - "docker-compose.lambda-zips.js.yml"
               config:
                 command:
-                  - "make lambdas-js"
+                  - "make build-lambda-zips-js"
                 artifact_paths:
                   - "dist/*-lambda.zip"
                 agents:
