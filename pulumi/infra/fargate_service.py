@@ -204,7 +204,6 @@ class _AWSFargateService(pulumi.ComponentResource):
             family=f"{DEPLOYMENT_NAME}-{name}-task",
             container_definitions=pulumi.Output.all(
                 queue_url=queue.main_queue_url,
-                retry_url=queue.retry_queue_url,
                 dead_letter_url=queue.dead_letter_queue_url,
                 log_group=self.log_group.name,
                 bucket=output_emitter.bucket.bucket,
@@ -226,7 +225,6 @@ class _AWSFargateService(pulumi.ComponentResource):
                                     "DEST_BUCKET_NAME": inputs["bucket"],
                                     "DEPLOYMENT_NAME": DEPLOYMENT_NAME,
                                     "DEAD_LETTER_QUEUE_URL": inputs["dead_letter_url"],
-                                    "RETRY_QUEUE_URL": inputs["retry_url"],
                                     **inputs["env"],
                                 }
                             ),

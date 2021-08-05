@@ -20,9 +20,7 @@ LOGGER = get_module_grapl_logger()
 async def main() -> None:
     """
     Some TODOs:
-    - make sure SOURCE_QUEUE_URL is also specified in CDK
     - add
-      RETRY_QUEUE_URL
       DEAD_LETTER_QUEUE_URL
       DEST_QUEUE_URL
     - pull the manual eventing out of `handle_events` and into an EventEmitter (maybe?)
