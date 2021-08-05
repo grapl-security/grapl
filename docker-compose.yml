@@ -192,7 +192,7 @@ services:
       - |
         # TODO: Rename this variable to be in line with our others?
         export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/unid-subgraphs-generated-bucket)
-        export DEAD_LETTER_QUEUE_URL=$$(cat /mnt/pulumi-outputs/sysmon-generator-dead-letter-queue)
+        export DEAD_LETTER_QUEUE_URL=$$(cat /mnt/pulumi-outputs/sysmon-generator-retry-queue)
         export SOURCE_QUEUE_URL=$$(cat /mnt/pulumi-outputs/sysmon-generator-queue)
         /sysmon-generator
     environment:
