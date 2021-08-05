@@ -98,8 +98,16 @@ variable "node_identifier_dead_letter_queue" {
 }
 
 variable "subgraphs_merged_bucket" {
+  type = string
+  default = "subgraphs-merged-bucket"
+  description = "The destination bucket for merged subgraphs. Used by Graph Merger."
+}
 
-} 
+variable "subgraphs_generated_bucket" {
+  type = string
+  default = "subgraphs-generated-bucket"
+  description = "The destination bucket for generated subgraphs. Used by Node identifier."
+}
 
 locals {
   dgraph_zero_grpc_private_port_base  = 5080
@@ -382,7 +390,7 @@ job "grapl-core" {
         GRAPL_SCHEMA_TABLE = "${var.schema_table_name}"
         AWS_REGION         = "${var.aws_region}"
         # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L165
-        DEST_BUCKET_NAME      = "subgraphs-merged-bucket"
+        DEST_BUCKET_NAME      = "${var.subgraphs_merged_bucket}"
         SOURCE_QUEUE_URL      = "${var.graph_merger_queue}"
         DEAD_LETTER_QUEUE_URL = "${var.graph_merger_dead_letter_queue}"
       }
@@ -429,9 +437,9 @@ job "grapl-core" {
         AWS_REGION                  = "${var.aws_region}"
         GRAPL_DYNAMIC_SESSION_TABLE = "${var.session_table}"
         # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L156
-        DEST_BUCKET_NAME      = "subgraphs-generated-bucket"
+        DEST_BUCKET_NAME      = "${var.subgraphs_generated_bucket}"
         SOURCE_QUEUE_URL      = "${var.node_identifier_queue}"
-        DEAD_LETTER_QUEUE_URL = "${var.node_identifier_retry_queue}"
+        DEAD_LETTER_QUEUE_URL = "${var.node_identifier_dead_letter_queue}"
       }
     }
   }
@@ -457,7 +465,7 @@ job "grapl-core" {
         GRAPL_SCHEMA_TABLE          = "${var.schema_table_name}"
         AWS_REGION                  = "${var.aws_region}"
         GRAPL_DYNAMIC_SESSION_TABLE = "${var.session_table}"
-        DEST_BUCKET_NAME            = "subgraphs-generated-bucket"
+        DEST_BUCKET_NAME            = "${var.subgraphs_generated_bucket}"
         SOURCE_QUEUE_URL            = "${var.node_identifier_queue}"
         DEAD_LETTER_QUEUE_URL       = "${var.node_identifier_dead_letter_queue}"
       }
