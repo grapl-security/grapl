@@ -71,8 +71,6 @@ if IS_LOCAL:
         except Exception as e:
             LOGGER.debug(e)
             time.sleep(1)
-
-    os.environ["DEPLOYMENT_NAME"] = "local-grapl"
 else:
     JWT_SECRET_ID = os.environ["JWT_SECRET_ID"]
 
@@ -196,9 +194,6 @@ def upload_plugin(s3_client: S3Client, key: str, contents: str) -> Optional[Resp
         return respond(
             err=msg,
         )
-
-
-DEPLOYMENT_NAME = os.environ["DEPLOYMENT_NAME"]
 
 
 # Sometimes we pass in a dict. Sometimes we pass the string "True". Weird.

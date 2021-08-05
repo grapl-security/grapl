@@ -44,7 +44,6 @@ class ModelPluginDeployer(pulumi.ComponentResource):
                     "JWT_SECRET_ID": secret.secret.arn
                     if not LOCAL_GRAPL
                     else "JWT_SECRET_ID",
-                    "DEPLOYMENT_NAME": pulumi.get_stack(),
                     "GRAPL_SCHEMA_PROPERTIES_TABLE": db.schema_properties_table.id,
                     "GRAPL_SCHEMA_TABLE": db.schema_table.id,
                 },
