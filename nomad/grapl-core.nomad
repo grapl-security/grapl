@@ -15,15 +15,6 @@ variable "aws_region" {
   default = "us-west-2"
 }
 
-variable "aws_sqs_url" {
-  type = string
-}
-
-variable "aws_account_id" {
-  type    = string
-  default = "000000000000"
-}
-
 variable "dgraph_tag" {
   type        = string
   default     = "v21.03.1"
@@ -68,6 +59,16 @@ variable "graph_merger_tag" {
   description = "The tagged version of the graph_merger we should deploy."
 }
 
+variable "graph_merger_queue" {
+  type = string
+  default = "http://localhost:9324/000000000000/graph-merger-queue"
+}
+
+variable "graph_merger_dead_letter_queue" {
+  type = string
+  default = "http://localhost:9324/000000000000/graph-merger-dead-letter-queue"
+}
+
 variable "num_node_identifiers" {
   type        = number
   default     = 1
@@ -85,6 +86,20 @@ variable "node_identifier_tag" {
   default     = "latest"
   description = "The tagged version of the node_identifier and the node_identifier_retry we should deploy."
 }
+
+variable "node_identifier_queue" {
+  type = string
+  default = "http://localhost:9324/000000000000/node-identifier-queue"
+}
+
+variable "node_identifier_dead_letter_queue" {
+  type = string
+  default = "http://localhost:9324/000000000000/node-identifier-dead-letter-queue"
+}
+
+variable "subgraphs_merged_bucket" {
+
+} 
 
 locals {
   dgraph_zero_grpc_private_port_base  = 5080
@@ -368,8 +383,8 @@ job "grapl-core" {
         AWS_REGION         = "${var.aws_region}"
         # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L165
         DEST_BUCKET_NAME      = "subgraphs-merged-bucket"
-        SOURCE_QUEUE_URL      = "${var.aws_sqs_url}/${var.aws_account_id}/graph-merger-queue"
-        DEAD_LETTER_QUEUE_URL = "${var.aws_sqs_url}/${var.aws_account_id}/graph-merger-dead-letter-queue"
+        SOURCE_QUEUE_URL      = "${var.graph_merger_queue}"
+        DEAD_LETTER_QUEUE_URL = "${var.graph_merger_dead_letter_queue}"
       }
     }
 
@@ -415,8 +430,8 @@ job "grapl-core" {
         GRAPL_DYNAMIC_SESSION_TABLE = "${var.session_table}"
         # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L156
         DEST_BUCKET_NAME      = "subgraphs-generated-bucket"
-        SOURCE_QUEUE_URL      = "${var.aws_sqs_url}/${var.aws_account_id}/node-identifier-queue"
-        DEAD_LETTER_QUEUE_URL = "${var.aws_sqs_url}/${var.aws_account_id}/node-identifier-dead-letter-queue"
+        SOURCE_QUEUE_URL      = "${var.node_identifier_queue}"
+        DEAD_LETTER_QUEUE_URL = "${var.node_identifier_retry_queue}"
       }
     }
   }
@@ -443,8 +458,8 @@ job "grapl-core" {
         AWS_REGION                  = "${var.aws_region}"
         GRAPL_DYNAMIC_SESSION_TABLE = "${var.session_table}"
         DEST_BUCKET_NAME            = "subgraphs-generated-bucket"
-        SOURCE_QUEUE_URL            = "${var.aws_sqs_url}/${var.aws_account_id}/node-identifier-retry-queue"
-        DEAD_LETTER_QUEUE_URL       = "${var.aws_sqs_url}/${var.aws_account_id}/node-identifier-retry-dead-letter-queue"
+        SOURCE_QUEUE_URL            = "${var.node_identifier_queue}"
+        DEAD_LETTER_QUEUE_URL       = "${var.node_identifier_dead_letter_queue}"
       }
     }
   }
