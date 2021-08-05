@@ -177,3 +177,20 @@ steps:
               config:
                 label: ":pipeline: Upload Cargo Audit"
                 command: ".buildkite/pipeline.cargo-audit.sh | buildkite-agent pipeline upload"
+
+    # The preview mainly functions as a kind of smoke test here more
+    # than actually trying to do a meaningful preview. If we can do a
+    # successful preview, our code at least "compiles".
+  - label: ":pulumi: Pulumi Preview grapl/testing environment"
+    command:
+      # This is slightly hacky, but means we don't need to build packages locally first
+      - git fetch origin rc
+      - git show origin/rc:pulumi/grapl/Pulumi.testing.yaml > pulumi/grapl/Pulumi.testing.yaml
+      - pulumi/bin/prepare_grapl_ux_dependency.sh grapl/testing
+      - .buildkite/shared/steps/pulumi_preview.sh grapl/testing
+    plugins:
+      - seek-oss/aws-sm#v2.3.1:
+          env:
+            PULUMI_ACCESS_TOKEN: "pulumi-token"
+    agents:
+      queue: "pulumi-staging"
