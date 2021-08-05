@@ -38,7 +38,7 @@ def populate_ux_bucket(ux_bucket: Bucket) -> None:
 
             If you have a pinned version for `grapl-ux` in your stack configuration, please run
 
-                pulumi/bin/prepare_grapl_ux_depencency.sh grapl/<STACK>
+                pulumi/bin/prepare_grapl_ux_dependency.sh grapl/<STACK>
 
             If you do *not* have a pinned version in your stack configuration, you can run the above, or
 
