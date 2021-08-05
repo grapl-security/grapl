@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from typing import Union
 
 from pydantic import BaseModel, validator
 from typing_extensions import Final
