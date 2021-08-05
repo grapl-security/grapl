@@ -5,15 +5,12 @@ authors = ["todo"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-
 [[bin]]
 name = "{{cookiecutter.project_slug}}"
 path = "src/main.rs"
 
 [lib]
 name = "{{cookiecutter.snake_project_name}}"
-
 
 [dependencies]
 thiserror = "1"
@@ -23,9 +20,15 @@ prost = "0.7"
 prost-derive = "0.7"
 # Execution driving libs
 async-stream = "0.3"
-tokio = { version = "1", features = ["rt-multi-thread", "time", "fs", "macros", "net"] }
+tokio = { version = "1", features = [
+  "rt-multi-thread",
+  "time",
+  "fs",
+  "macros",
+  "net"
+] }
 tokio-stream = "0.1"
-tonic = { version="0.4" }
+tonic = { version = "0.4" }
 tower = { version = "0.4" }
 # Tracing support
 tracing = "0.1.*"
@@ -47,7 +50,7 @@ test-context = "0.1"
 async-trait = "0.1"
 
 [build-dependencies]
-tonic-build = { version="0.4", features = ["prost"] }
+tonic-build = { version = "0.4", features = ["prost"] }
 
 [[bench]]
 name = "{{cookiecutter.snake_project_name}}_benchmark"
