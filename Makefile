@@ -191,7 +191,7 @@ build-python-wheels:  ## Build all Python wheels
 .PHONY: build-docker-images-local
 build-docker-images-local: 
 	$(WITH_LOCAL_GRAPL_ENV) \
-	$(MAKE) build-services
+	$(MAKE) build-docker-images
 	$(MAKE) push-local
 
 .PHONY: build-docker-images
