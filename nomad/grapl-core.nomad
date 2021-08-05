@@ -357,7 +357,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}/graph-merger:${var.graph_merger_tag}"
+        image = "${var.container_registry}/grapl/graph-merger:${var.graph_merger_tag}"
       }
 
       env {
@@ -403,7 +403,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}/node-identifier:${var.node_identifier_tag}"
+        image = "${var.container_registry}/grapl/node-identifier:${var.node_identifier_tag}"
       }
 
       env {
@@ -432,7 +432,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}/node-identifier-retry:${var.node_identifier_tag}"
+        image = "${var.container_registry}/grapl/node-identifier-retry:${var.node_identifier_tag}"
       }
 
       env {
