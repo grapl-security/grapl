@@ -62,4 +62,4 @@ steps:
     command:
       - .buildkite/scripts/record_artifacts.sh
     artifact_paths:
-      - "artifact_manifests/*.grapl-artifacts.json"
+      - "*.grapl-artifacts.json"

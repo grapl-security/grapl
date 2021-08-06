@@ -14,7 +14,7 @@ set -euo pipefail
 source .buildkite/scripts/lib/artifacts.sh
 
 echo "--- :buildkite: Downloading all artifact files"
-buildkite-agent artifact download "${ARTIFACT_FILE_DIRECTORY}/*" .
+buildkite-agent artifact download "*.${ARTIFACTS_FILE_EXTENSION}" .
 
 merge_artifact_files > "${ALL_ARTIFACTS_JSON_FILE}"
 

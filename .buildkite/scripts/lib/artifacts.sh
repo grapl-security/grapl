@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-readonly ARTIFACT_FILE_DIRECTORY=artifact_manifests
-
 # The name of the file that we will merge all artifact JSON
 # information into.
 readonly ALL_ARTIFACTS_JSON_FILE="all_artifacts.json"
@@ -39,22 +37,10 @@ artifact_json() {
     done | jq --null-input '[inputs] | from_entries'
 }
 
-# Given a directory of our JSON artifact files (assumed to represent
-# JSON objects), merge them into a single JSON object, sent to
-# standard output.
-#
-# Clients should favor `merge_artifact_files` over calling this
-# function directly. (The logic is implemented this way to facilitate
-# testing.)
-_merge_artifact_files_impl() {
-    local -r directory="${1}"
-    jq --slurp 'reduce .[] as $item ({}; . * $item)' "${directory}/"*".${ARTIFACTS_FILE_EXTENSION}"
-}
-
-# Merge all the artifact files in `${ARTIFACT_FILE_DIRECTORY}` and
-# send the resulting JSON object to standard output.
+# Merge all the artifact JSON files in the current directory and send
+# the resulting JSON object to standard output.
 merge_artifact_files() {
-    _merge_artifact_files_impl "${ARTIFACT_FILE_DIRECTORY}"
+    jq --slurp 'reduce .[] as $item ({}; . * $item)' -- *".${ARTIFACTS_FILE_EXTENSION}"
 }
 
 # Generate a file name for an artifacts JSON file. The `slug` is just
@@ -64,17 +50,10 @@ merge_artifact_files() {
 # artifact files that are uploaded by different jobs. All you have to
 # do is make sure the `slug` is unique within the job.
 #
-# Additionally, these paths are all inside the
-# `${ARTIFACT_FILE_DIRECTORY}`. As a convenience, this function call
-# also creates that directory if it does not already exist, ensuring
-# that you can use this path without any additional work.
-#
 #     $ artifacts_file_for monkeypants
-#     # => artifact_manifests/monkeypants-e44f9784-e20e-4b93-a21d-f41fd5869db9.grapl-artifacts.json
+#     # => monkeypants-e44f9784-e20e-4b93-a21d-f41fd5869db9.grapl-artifacts.json
 #
 artifacts_file_for() {
     local -r slug="${1}"
-
-    mkdir -p "${ARTIFACT_FILE_DIRECTORY}"
-    echo "${ARTIFACT_FILE_DIRECTORY}/${slug}-${BUILDKITE_JOB_ID}.${ARTIFACTS_FILE_EXTENSION}"
+    echo "${slug}-${BUILDKITE_JOB_ID}.${ARTIFACTS_FILE_EXTENSION}"
 }

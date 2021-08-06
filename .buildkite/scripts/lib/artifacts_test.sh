@@ -37,13 +37,13 @@ EOF
         "${actual}"
 }
 
-test__merge_artifact_files_impl() {
+test_merge_artifact_files() {
     echo '{"first": 1}' > "first.${ARTIFACTS_FILE_EXTENSION}"
     echo '{"second": 2}' > "second.${ARTIFACTS_FILE_EXTENSION}"
     echo '{"third": 3}' > "third.${ARTIFACTS_FILE_EXTENSION}"
     echo '{"first": "overwritten!"}' > "fourth.${ARTIFACTS_FILE_EXTENSION}"
 
-    actual="$(_merge_artifact_files_impl .)"
+    actual="$(merge_artifact_files)"
 
     expected=$(
         cat << EOF
@@ -56,6 +56,18 @@ EOF
     )
 
     assertEquals "Failed to generate expected JSON" \
+        "${expected}" \
+        "${actual}"
+}
+
+test_artifacts_file_for() {
+    actual=$(
+        export BUILDKITE_JOB_ID="aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        artifacts_file_for stuff
+    )
+
+    expected="stuff-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee.grapl-artifacts.json"
+    assertEquals "Failed to generate expected artifacts file name!" \
         "${expected}" \
         "${actual}"
 }
