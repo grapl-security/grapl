@@ -105,7 +105,7 @@ where
             subgraphs
                 .iter()
                 .fold(GraphDescription::new(), |mut current_graph, subgraph| {
-                    current_graph.merge(&subgraph);
+                    current_graph.merge(subgraph);
                     current_graph
                 });
 

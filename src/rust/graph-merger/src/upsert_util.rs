@@ -99,8 +99,8 @@ pub(crate) fn build_upserts(
             predicate_param as u128,
             &creation_var_name,
             &node_key,
-            &node_type,
-            &prop_name,
+            node_type,
+            prop_name,
             &prop_value,
         );
         inner_queries.push_str(&next_query);

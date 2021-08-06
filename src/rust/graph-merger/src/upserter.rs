@@ -81,7 +81,7 @@ impl GraphMergeHelper {
         let node_key_map_to_uid = self
             .upsert_nodes(dgraph_client.clone(), identified_graph, merged_graph)
             .await;
-        self.upsert_edges(dgraph_client, &identified_graph, node_key_map_to_uid)
+        self.upsert_edges(dgraph_client, identified_graph, node_key_map_to_uid)
             .await;
     }
 
@@ -114,7 +114,7 @@ impl GraphMergeHelper {
             let mut combined_query = String::new();
             let mut all_mutations = Vec::new();
             for (query_block, mutations) in upsert_chunk.iter() {
-                combined_query.push_str(&query_block);
+                combined_query.push_str(query_block);
                 all_mutations.extend_from_slice(mutations);
             }
 
@@ -256,7 +256,7 @@ impl GraphMergeHelper {
 
                 let (from_uid, to_uid) = (from_uid.to_string(), to_uid.to_string());
                 let mutation_unit = MutationUnit::new(MutationUID::uid(&from_uid)).predicate(
-                    &edge_name,
+                    edge_name,
                     MutationPredicateValue::Edges(vec![MutationUID::uid(&to_uid)]),
                 );
                 mutation_units.push(mutation_unit);

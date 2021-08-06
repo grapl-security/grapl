@@ -158,7 +158,7 @@ impl From<&BTreeMap<String, String>> for Dimensions {
 
 impl Dimensions {
     fn find_dimension(&self, dimension_name: &str) -> Option<Dimension> {
-        let found = self.0.iter().find(|ref d| d.name == dimension_name);
+        let found = self.0.iter().find(|d| d.name == dimension_name);
         return found.map(Dimension::clone);
     }
 

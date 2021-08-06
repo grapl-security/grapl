@@ -42,7 +42,7 @@ where
                 let mut next_chunk = Vec::with_capacity(self.chunk_size);
                 next_chunk.push(item);
 
-                while let Some(item) = self.inner.next() {
+                for item in &mut self.inner {
                     next_chunk.push(item);
 
                     // we know that chunk_size must be larger than 1
