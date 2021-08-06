@@ -7,8 +7,8 @@ use crate::{
     metric_error::{
         MetricError,
         MetricError::{
-            MetricInvalidCharacterError,
-            MetricInvalidSampleRateError,
+            InvalidCharacter,
+            InvalidSampleRate,
         },
     },
     metric_reporter::TagPair,
@@ -21,7 +21,7 @@ lazy_static! {
 pub fn reject_invalid_chars(s: &str) -> Result<(), MetricError> {
     let matched = INVALID_CHARS.is_match(s);
     if matched {
-        Err(MetricInvalidCharacterError())
+        Err(InvalidCharacter())
     } else {
         Ok(())
     }
@@ -77,7 +77,7 @@ pub fn statsd_format(
             if rate >= 0.0 && rate < 1.0 {
                 write!(buf, "|@{sample_rate}", sample_rate = rate)?;
             } else {
-                return Err(MetricInvalidSampleRateError());
+                return Err(InvalidSampleRate());
             }
         }
         _ => {}
@@ -140,7 +140,7 @@ mod tests {
         for invalid_str in INVALID_STRS.iter() {
             let result = reject_invalid_chars(invalid_str);
             match result.expect_err("else panic") {
-                MetricError::MetricInvalidCharacterError() => Ok(()),
+                MetricError::InvalidCharacter() => Ok(()),
                 _ => Err(String::from("expected invalid character error")),
             }?
         }
@@ -191,7 +191,7 @@ mod tests {
             &make_empty_tags(),
         );
         match result.expect_err("") {
-            MetricError::MetricInvalidSampleRateError() => Ok(()),
+            MetricError::InvalidSampleRate() => Ok(()),
             _ => Err(String::from("unexpected err")),
         }
     }
@@ -225,7 +225,7 @@ mod tests {
             &[TagPair("some|key", "val")],
         );
         match result.expect_err("") {
-            MetricError::MetricInvalidCharacterError() => Ok(()),
+            MetricError::InvalidCharacter() => Ok(()),
             _ => Err(String::from("unexpected err")),
         }
     }

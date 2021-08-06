@@ -59,9 +59,9 @@ mod tests {
 
     #[test]
     fn implies_cacheable() {
-        assert_eq!(ConflictResolution::Immutable.implies_cacheable(), true);
-        assert_eq!(ConflictResolution::IncrementOnly.implies_cacheable(), false);
-        assert_eq!(ConflictResolution::DecrementOnly.implies_cacheable(), false);
+        assert!(ConflictResolution::Immutable.implies_cacheable());
+        assert!(!ConflictResolution::IncrementOnly.implies_cacheable());
+        assert!(!ConflictResolution::DecrementOnly.implies_cacheable());
     }
 }
 

@@ -96,10 +96,7 @@ where
     // todo: We should be yielding IdentifiedNode's here
     #[tracing::instrument(fields(node_key=?node.node_key), skip(self, node))]
     async fn attribute_node_key(&self, node: &NodeDescription) -> Result<IdentifiedNode, Error> {
-        let new_node = self
-            .dynamic_identifier
-            .attribute_dynamic_node(&node)
-            .await?;
+        let new_node = self.dynamic_identifier.attribute_dynamic_node(node).await?;
         Ok(new_node.into())
     }
 
@@ -118,7 +115,7 @@ where
 
         // new method
         for (unidentified_node_key, unidentified_node) in unidentified_subgraph.nodes.iter() {
-            let identified_node = match self.attribute_node_key(&unidentified_node).await {
+            let identified_node = match self.attribute_node_key(unidentified_node).await {
                 Ok(identified_node) => identified_node,
                 Err(e) => {
                     warn!(

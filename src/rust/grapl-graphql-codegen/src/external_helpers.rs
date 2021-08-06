@@ -42,7 +42,7 @@ pub fn validate_code(code: &str) -> Result<()> {
     let output = execute_python(code.as_bytes())?;
     assert!(output.status.success());
 
-    let output = execute_mypy(&code)?;
+    let output = execute_mypy(code)?;
     assert!(output.status.success());
     Ok(())
 }

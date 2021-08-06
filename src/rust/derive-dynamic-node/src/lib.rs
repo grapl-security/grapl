@@ -27,7 +27,7 @@ const DECREMENT: &str = "decrement";
 fn name_and_ty(field: &Field) -> (&Ident, &Type, String) {
     let mut resolution = None;
     for attr in &field.attrs {
-        on_grapl_attrs(&attr, |attr| {
+        on_grapl_attrs(attr, |attr| {
             match attr {
                 IMMUTABLE | INCREMENT | DECREMENT => resolution = Some(attr.to_string()),
                 _ => (),
@@ -315,7 +315,7 @@ fn assert_meta_attr_combo(field: &Field, meta_attr_match_a: &str, meta_attr_matc
     let mut a_matched = false;
     let mut b_matched = false;
     for attr in &field.attrs {
-        on_grapl_attrs(&attr, |meta_attr| {
+        on_grapl_attrs(attr, |meta_attr| {
             a_matched |= meta_attr == meta_attr_match_a;
             b_matched |= meta_attr == meta_attr_match_b;
         });
@@ -418,9 +418,9 @@ fn identity_prop_setter(field: &Field, property_name: &Ident) -> TS2 {
     }
 
     let ident = match (created_time_prop, last_seen_time_prop, terminated_time_prop) {
-        (true, _, _) => syn::Ident::new(&CREATE_TIME, field.span()),
-        (_, true, _) => syn::Ident::new(&LAST_SEEN_TIME, field.span()),
-        (_, _, true) => syn::Ident::new(&TERMINATE_TIME, field.span()),
+        (true, _, _) => syn::Ident::new(CREATE_TIME, field.span()),
+        (_, true, _) => syn::Ident::new(LAST_SEEN_TIME, field.span()),
+        (_, _, true) => syn::Ident::new(TERMINATE_TIME, field.span()),
         _ => return quote!(),
     };
     quote!(
@@ -452,7 +452,7 @@ fn property_methods(field: &Field) -> TS2 {
     let set_identity_prop = identity_prop_setter(field, &inner_property_name);
     let mut implementation: TS2 = quote!();
 
-    let (return_type, method_ident) = match resolvable_type_from(&property_type, &resolution_name) {
+    let (return_type, method_ident) = match resolvable_type_from(property_type, &resolution_name) {
         Some(property_type) => property_type,
         None => return implementation,
     };
@@ -509,7 +509,7 @@ fn property_methods(field: &Field) -> TS2 {
 
 fn set_timestamp_from_meta(field: &Field, prop_name: &str, time_prop: &mut Option<String>) {
     for attr in &field.attrs {
-        on_grapl_attrs(&attr, |meta_attr| {
+        on_grapl_attrs(attr, |meta_attr| {
             if meta_attr == prop_name {
                 if time_prop.is_some() {
                     panic!("Can not set {} property more than once", prop_name);

@@ -55,17 +55,15 @@ pub trait GraplDynamoDbClientExt: DynamoDb + Send + Sync {
                 .request_items
                 .into_iter()
                 .flat_map(|(table, mut keys_and_attributes)| {
-                    let request_items: Vec<_> = keys_and_attributes
+                    let request_items = keys_and_attributes
                         .keys
                         .drain(0..keys_and_attributes.keys.len())
-                        .collect();
+                        .map(|row_properties| (table.clone(), row_properties))
+                        .collect::<Vec<(String, HashMap<String, AttributeValue>)>>();
 
                     key_and_attribute_shells.insert(table.clone(), keys_and_attributes);
 
                     request_items
-                        .into_iter()
-                        .map(|row_properties| (table.clone(), row_properties))
-                        .collect::<Vec<(String, HashMap<String, AttributeValue>)>>()
                 })
                 .collect();
 

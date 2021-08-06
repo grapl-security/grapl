@@ -156,7 +156,7 @@ pub fn init_s3_client(region_name: &str) -> S3Client {
             name: region_name.to_owned(),
             endpoint: custom_endpoint,
         },
-        None => Region::from_str(&region_name)
+        None => Region::from_str(region_name)
             .unwrap_or_else(|e| panic!("Invalid region name: {:?} {:?}", region_name, e)),
     };
 
