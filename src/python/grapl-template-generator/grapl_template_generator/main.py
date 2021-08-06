@@ -15,8 +15,7 @@ Generators for:
 
 app = typer.Typer()
 
-
-@app.command(name="rust-grpc")
+@app.command(name="rust-grpc", help="Create a Rust gRPC project.")
 def rust_grpc(
     package_name: str,
 ) -> None:
