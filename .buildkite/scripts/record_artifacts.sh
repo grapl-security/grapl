@@ -15,7 +15,7 @@ generate_artifacts_file() {
     # e.g. "grapl-service.packer-manifest.json"
     local -r manifest_file="${packer_image_name}${PACKER_MANIFEST_SUFFIX}"
     # e.g. "grapl-service.artifacts.json"
-    local -r artifacts_file="${ARTIFACT_FILE_DIRECTORY}/${packer_image_name}${ARTIFACTS_FILE_SUFFIX}"
+    local -r artifacts_file="$(artifacts_file_for "${packer_image_name}")"
 
     # Download Packer manifest
     echo -e "--- :buildkite: Download Packer manifest"
@@ -38,7 +38,6 @@ generate_artifacts_file() {
     echo "${ami_ids_dict}" > "${artifacts_file}"
 }
 
-mkdir "${ARTIFACT_FILE_DIRECTORY}"
 for image_name in "${PACKER_IMAGE_NAMES[@]}"; do
     generate_artifacts_file "${image_name}"
 done
