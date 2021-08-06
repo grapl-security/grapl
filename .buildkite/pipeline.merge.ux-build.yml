@@ -23,4 +23,4 @@ steps:
     agents:
       queue: "artifact-uploaders"
     artifact_paths:
-      - "artifact_manifests/*.json"
+      - "artifact_manifests/*.grapl-artifacts.json"
