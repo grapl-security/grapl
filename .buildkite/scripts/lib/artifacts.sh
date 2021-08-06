@@ -29,26 +29,6 @@ artifact_json() {
     done | jq --null-input '[inputs] | from_entries'
 }
 
-# Download a given artifact file from Buildkite into
-# `$ARTIFACT_FILE_DIRECTORY`.
-#
-# Does not fail if the file was not generated and uploaded during the
-# current Buildkite pipeline (which is a legitimate scenario - for example,
-# we only *sometimes* generate new AMI IDs.)
-download_artifact_file() {
-    local -r artifacts_file="${1}"
-    mkdir -p "${ARTIFACT_FILE_DIRECTORY}"
-    echo -e "--- :buildkite: Download '${artifacts_file}' artifacts file"
-    if ! (buildkite-agent artifact download "${artifacts_file}" "${ARTIFACT_FILE_DIRECTORY}"); then
-        echo "^^^ +++" # Un-collapses this section in Buildkite, making it more obvious we couldn't download
-        echo "No file found"
-    fi
-    # TODO: Would be nice to validate the artifacts. Right now there are some restrictions:
-    # - json file must be a flat associative array of key -> primitive (no nested maps, arrays)
-    #     bad: {"im": {"nested": true}}
-    #     good: {"im.nested": true}
-}
-
 # Given a directory of JSON files (assumed to represent JSON objects),
 # merge them into a single JSON object, sent to standard output.
 #
