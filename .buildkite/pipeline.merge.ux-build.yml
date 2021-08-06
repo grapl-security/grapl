@@ -22,3 +22,5 @@ steps:
             CLOUDSMITH_API_KEY: "cloudsmith-token"
     agents:
       queue: "artifact-uploaders"
+    artifact_paths:
+      - "artifact_manifests/*.json"

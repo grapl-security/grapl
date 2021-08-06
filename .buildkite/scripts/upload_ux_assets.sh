@@ -23,9 +23,6 @@ main() {
 
     mkdir "${ARTIFACT_FILE_DIRECTORY}"
     artifact_json "${version}" "grapl-ux" > "${ARTIFACT_FILE_DIRECTORY}/${UX_ARTIFACTS_FILE}"
-
-    echo "--- :buildkite: Uploading ${ARTIFACT_FILE_DIRECTORY}/${UX_ARTIFACTS_FILE} file"
-    buildkite-agent artifact upload "${ARTIFACT_FILE_DIRECTORY}/${UX_ARTIFACTS_FILE}"
 }
 
 main
