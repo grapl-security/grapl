@@ -30,8 +30,7 @@ if (buildkite-agent artifact download "dist/*${LAMBDA_SUFFIX}" .); then
     done
 
     # Generate artifacts JSON file for lambda zip files
-    mkdir "${ARTIFACT_FILE_DIRECTORY}"
-    artifact_json "${version}" "${lambda_artifacts[@]}" > "${ARTIFACT_FILE_DIRECTORY}/${LAMBDA_ARTIFACTS_FILE}"
+    artifact_json "${version}" "${lambda_artifacts[@]}" > "$(artifacts_file_for lambdas)"
 else
     echo "^^^ +++" # Un-collapses this section in Buildkite, making it more obvious we couldn't download
     echo "No artifacts to upload"
