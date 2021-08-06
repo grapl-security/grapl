@@ -1,5 +1,6 @@
 use tonic::{transport::Server, Request, Response, Status};
 
+use crate::{{cookiecutter.snake_project_name}}::get_socket_addr;
 use crate::{{cookiecutter.snake_project_name}}::{{cookiecutter.service_name}}Request;
 pub use crate::{{cookiecutter.snake_project_name}}::{{cookiecutter.service_name}}Response;
 pub use crate::{{cookiecutter.snake_project_name}}::{{cookiecutter.snake_project_name}}_rpc_server::{{cookiecutter.service_name}}Rpc;
@@ -46,7 +47,7 @@ pub async fn exec_service()  -> Result<(), Box<dyn std::error::Error>> {
     .set_serving::<{{cookiecutter.service_name}}RpcServer<{{cookiecutter.service_name}}>>()
     .await;
 
-    let addr = "[::1]:50051".parse().unwrap();
+    let addr = get_socket_addr().parse().unwrap();
     let {{cookiecutter.snake_project_name}}_instance = {{cookiecutter.service_name}}::default();
 
     tracing::info!(

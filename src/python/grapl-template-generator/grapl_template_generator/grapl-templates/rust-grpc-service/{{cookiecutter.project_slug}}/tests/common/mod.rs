@@ -3,6 +3,7 @@ use {{cookiecutter.snake_project_name}}::client::{Channel, Timeout};
 use tonic::transport::NamedService;
 use {{cookiecutter.snake_project_name}}::server::{{cookiecutter.service_name}}RpcServer;
 use {{cookiecutter.snake_project_name}}::server::{{cookiecutter.service_name}};
+use {{cookiecutter.snake_project_name}}::{{cookiecutter.snake_project_name}}::get_socket_addr;
 use std::time::Duration;
 use tonic_health::proto::health_client::HealthClient;
 use tonic_health::proto::HealthCheckRequest;
@@ -48,7 +49,8 @@ async fn until_health() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn _until_health() -> Result<(), Box<dyn std::error::Error>> {
-    let channel = Channel::from_static("http://[::1]:50051").connect().await?;
+    let endpoint = format!("http://{}", get_socket_addr());
+    let channel = Channel::from_shared(endpoint)?.connect().await?;
 
     let timeout_channel = Timeout::new(channel, Duration::from_millis(1000));
 
