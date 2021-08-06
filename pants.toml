@@ -22,11 +22,6 @@ build_file_prelude_globs = [
   "pants-plugins/macros.py",
 ]
 
-build_ignore = [
-  # The BUILD inside our Cookiecutter template
-  "src/python/grapl-template-generator/grapl_template_generator/grapl-templates/grapl-python-service-template/*"
-]
-
 pants_ignore = [
 ]
 

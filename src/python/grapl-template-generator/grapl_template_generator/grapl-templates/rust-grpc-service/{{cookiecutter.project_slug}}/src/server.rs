@@ -6,7 +6,10 @@ pub use crate::{{cookiecutter.snake_project_name}}::{{cookiecutter.snake_project
 pub use crate::{{cookiecutter.snake_project_name}}::{{cookiecutter.snake_project_name}}_rpc_server::{{cookiecutter.service_name}}RpcServer;
 
 #[derive(Default)]
-pub struct {{cookiecutter.service_name}} {}
+pub struct {{cookiecutter.service_name}} {
+    // Right now this struct just exists so we can attach behaviors to it.
+    // If you need state later, you can add it.
+}
 
 #[tonic::async_trait]
 impl {{cookiecutter.service_name}}Rpc for {{cookiecutter.service_name}} {
