@@ -188,6 +188,12 @@ build-lambda-zips-python: build-python-wheels ## Build Python lambda zips
 build-python-wheels:  ## Build all Python wheels
 	./pants filter --target-type=python_distribution :: | xargs ./pants package
 
+.PHONY: build-docker-images-local
+build-docker-images-local: 
+	$(WITH_LOCAL_GRAPL_ENV) \
+	$(MAKE) build-docker-images
+	$(MAKE) push-local
+
 .PHONY: build-docker-images
 build-docker-images: graplctl
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
@@ -338,7 +344,7 @@ lint-packer: ## Check to see if Packer templates are formatted properly
 	.buildkite/scripts/lint_packer.sh
 
 .PHONY: lint
-lint: lint-python lint-prettier lint-rust lint-shell lint-packer ## Run all lint checks
+lint: lint-python lint-prettier lint-rust lint-shell lint-hcl ## Run all lint checks
 
 ##@ Formatting 💅
 
@@ -361,12 +367,13 @@ format-prettier: build-formatter ## Reformat js/ts/yaml
 		--file docker-compose.formatter.yml \
 		run --rm format-prettier
 
-.PHONY: format-packer
-format-packer: ## Reformat all Packer HCLs
+.PHONY: format-hcl
+format-hcl: ## Reformat all HCLs
 	packer fmt -recursive packer/
+	.buildkite/scripts/format_nomad.sh
 
 .PHONY: format
-format: format-python format-shell format-prettier format-rust format-packer ## Reformat all code
+format: format-python format-shell format-prettier format-rust format-hcl ## Reformat all code
 
 .PHONY: package-python-libs
 package-python-libs: ## Create Python distributions for public libraries
@@ -429,9 +436,18 @@ clean-mount-cache: ## Prune all docker mount cache (used by sccache)
 clean-artifacts: ## Remove all dumped artifacts from test runs (see dump_artifacts.py)
 	rm -Rf test_artifacts
 
+.PHONY: run-registry
+run-registry: ## Ensure that a local docker registry is running (which is required for local Nomad deployments.
+	nomad/local/local_grapl_registry.sh
+
 .PHONY: push
-push: ## Push Grapl containers to Docker Hub
+push: ## Push Grapl containers to supplied DOCKER_REGISTRY
 	docker-compose --file=docker-compose.build.yml push
+
+.PHONY: push-local
+push-local: ## Push Grapl container to local registry
+	$(MAKE) run-registry
+	$(WITH_LOCAL_GRAPL_ENV) $(MAKE) push
 
 .PHONY: e2e-logs
 e2e-logs: ## All docker-compose logs
