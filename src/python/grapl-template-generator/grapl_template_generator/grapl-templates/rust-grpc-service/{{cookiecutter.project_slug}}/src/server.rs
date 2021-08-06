@@ -21,8 +21,12 @@ impl {{cookiecutter.service_name}}Rpc for {{cookiecutter.service_name}} {
     )]
     async fn handle_request(
         &self,
-        _request: Request<{{cookiecutter.service_name}}Request>,
+        request: Request<{{cookiecutter.service_name}}Request>,
     ) -> Result<Response<{{cookiecutter.service_name}}Response>, Status> {
+        // Prevents a dead-code error.
+        // Remove this when you actually do something with this code. 
+        let _dummy = request; // or whatever field a request might have
+
         let start = quanta::Instant::now();
 
         let reply = {{cookiecutter.service_name}}Response {

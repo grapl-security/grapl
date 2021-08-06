@@ -1,8 +1,3 @@
-use std::time::Duration;
-
-use metrics_util::MetricKindMask;
-
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _subscriber = ::tracing_subscriber::FmtSubscriber::builder()

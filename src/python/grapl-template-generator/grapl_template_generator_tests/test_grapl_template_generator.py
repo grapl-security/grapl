@@ -2,7 +2,11 @@ from grapl_template_generator_tests.shared import invoke_main
 
 
 def test_very_basic_invoke() -> None:
-    result = invoke_main(["--help",])
+    result = invoke_main(
+        [
+            "--help",
+        ]
+    )
 
     assert "Create a Rust gRPC project" in result.stdout
 
