@@ -62,6 +62,8 @@ steps:
           server: docker.cloudsmith.io
     agents:
       queue: "docker"
+    artifact_paths:
+      - "artifact_manifests/*.json"
 
   - label: ":aws-lambda::cloudsmith: Upload Lambda ZIPs"
     command:

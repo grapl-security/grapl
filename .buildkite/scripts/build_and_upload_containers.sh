@@ -76,6 +76,3 @@ artifact_file="container_artifacts.json"
 # promoting containers across repositories
 mkdir "${ARTIFACT_FILE_DIRECTORY}"
 artifact_json "${TAG}" "${services[@]}" > "${ARTIFACT_FILE_DIRECTORY}/${artifact_file}"
-
-echo "--- :buildkite: Uploading ${ARTIFACT_FILE_DIRECTORY}/${artifact_file} file"
-buildkite-agent artifact upload "${ARTIFACT_FILE_DIRECTORY}/${artifact_file}"
