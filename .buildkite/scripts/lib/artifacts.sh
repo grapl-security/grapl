@@ -45,3 +45,25 @@ _merge_artifact_files_impl() {
 merge_artifact_files() {
     _merge_artifact_files_impl "${ARTIFACT_FILE_DIRECTORY}"
 }
+
+# Generate a file name for an artifacts.json file. The `slug` is just
+# a meaningful name you give to describe the file. The
+# `${BUILDKITE_JOB_ID}` is also incorporated into the file name, meaning
+# that you don't have to care about naming collisions between artifact
+# files that are uploaded by different jobs. All you have to do is
+# make sure the `slug` is unique within the job.
+#
+# Additionally, these paths are all inside the
+# `${ARTIFACT_FILE_DIRECTORY}`. As a convenience, this function call
+# also creates that directory if it does not already exist, ensuring
+# that you can use this path without any additional work.
+#
+#     $ artifacts_file_for monkeypants
+#     # => artifact_manifests/monkeypants-e44f9784-e20e-4b93-a21d-f41fd5869db9.artifacts.json
+#
+artifacts_file_for() {
+    local -r slug="${1}"
+
+    mkdir -p "${ARTIFACT_FILE_DIRECTORY}"
+    echo "${ARTIFACT_FILE_DIRECTORY}/${slug}-${BUILDKITE_JOB_ID}.artifacts.json"
+}
