@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-readonly ARTIFACT_FILE_DIRECTORY=all_artifacts_files
+readonly ARTIFACT_FILE_DIRECTORY=artifact_manifests
 
 # The name of the file that we will merge all artifact JSON
 # information into.
