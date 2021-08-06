@@ -4,7 +4,6 @@ from grapl_template_generator_tests.shared import invoke_main
 def test_very_basic_invoke() -> None:
     result = invoke_main([])
 
-    assert "py-http" in result.stdout
     assert "rust-grpc" in result.stdout
 
 

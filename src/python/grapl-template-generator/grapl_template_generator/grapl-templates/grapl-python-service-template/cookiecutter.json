@@ -1,6 +1,0 @@
-{
-    "project_name": "{{ cookiecutter.project_name }}",
-    "project_slug": "{{ cookiecutter.project_slug }}",
-    "pkg_name": "{{ cookiecutter.pkg_name }}",
-    "lambda_handler": "{{ cookiecutter.lambda_handler }}"
-}
