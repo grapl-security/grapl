@@ -38,10 +38,10 @@ EOF
 }
 
 test__merge_artifact_files_impl() {
-    echo '{"first": 1}' > first.json
-    echo '{"second": 2}' > second.json
-    echo '{"third": 3}' > third.json
-    echo '{"first": "overwritten!"}' > fourth.json
+    echo '{"first": 1}' > "first.${ARTIFACTS_FILE_EXTENSION}"
+    echo '{"second": 2}' > "second.${ARTIFACTS_FILE_EXTENSION}"
+    echo '{"third": 3}' > "third.${ARTIFACTS_FILE_EXTENSION}"
+    echo '{"first": "overwritten!"}' > "fourth.${ARTIFACTS_FILE_EXTENSION}"
 
     actual="$(_merge_artifact_files_impl .)"
 

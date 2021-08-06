@@ -7,6 +7,16 @@ readonly ARTIFACT_FILE_DIRECTORY=artifact_manifests
 readonly ALL_ARTIFACTS_JSON_FILE="all_artifacts.json"
 export ALL_ARTIFACTS_JSON_FILE
 
+# The extension all our artifact JSON files will have. Such a file
+# should contain a single flat JSON object.
+#
+# The extension includes "grapl" to prevent the (admittedly unlikely)
+# scenario of somehow having some _other_ file with an
+# "artifacts.json" extension sneaking into a file glob somewhere.
+#
+# It also makes things _super_ obvious and searchable.
+readonly ARTIFACTS_FILE_EXTENSION="grapl-artifacts.json"
+
 # Generate a flat JSON object for a number of artifacts that have the
 # same version.
 #
@@ -29,15 +39,16 @@ artifact_json() {
     done | jq --null-input '[inputs] | from_entries'
 }
 
-# Given a directory of JSON files (assumed to represent JSON objects),
-# merge them into a single JSON object, sent to standard output.
+# Given a directory of our JSON artifact files (assumed to represent
+# JSON objects), merge them into a single JSON object, sent to
+# standard output.
 #
 # Clients should favor `merge_artifact_files` over calling this
 # function directly. (The logic is implemented this way to facilitate
 # testing.)
 _merge_artifact_files_impl() {
     local -r directory="${1}"
-    jq --slurp 'reduce .[] as $item ({}; . * $item)' "${directory}/"*.json
+    jq --slurp 'reduce .[] as $item ({}; . * $item)' "${directory}/"*".${ARTIFACTS_FILE_EXTENSION}"
 }
 
 # Merge all the artifact files in `${ARTIFACT_FILE_DIRECTORY}` and
@@ -46,12 +57,12 @@ merge_artifact_files() {
     _merge_artifact_files_impl "${ARTIFACT_FILE_DIRECTORY}"
 }
 
-# Generate a file name for an artifacts.json file. The `slug` is just
+# Generate a file name for an artifacts JSON file. The `slug` is just
 # a meaningful name you give to describe the file. The
-# `${BUILDKITE_JOB_ID}` is also incorporated into the file name, meaning
-# that you don't have to care about naming collisions between artifact
-# files that are uploaded by different jobs. All you have to do is
-# make sure the `slug` is unique within the job.
+# `${BUILDKITE_JOB_ID}` is also incorporated into the file name,
+# meaning that you don't have to care about naming collisions between
+# artifact files that are uploaded by different jobs. All you have to
+# do is make sure the `slug` is unique within the job.
 #
 # Additionally, these paths are all inside the
 # `${ARTIFACT_FILE_DIRECTORY}`. As a convenience, this function call
@@ -59,11 +70,11 @@ merge_artifact_files() {
 # that you can use this path without any additional work.
 #
 #     $ artifacts_file_for monkeypants
-#     # => artifact_manifests/monkeypants-e44f9784-e20e-4b93-a21d-f41fd5869db9.artifacts.json
+#     # => artifact_manifests/monkeypants-e44f9784-e20e-4b93-a21d-f41fd5869db9.grapl-artifacts.json
 #
 artifacts_file_for() {
     local -r slug="${1}"
 
     mkdir -p "${ARTIFACT_FILE_DIRECTORY}"
-    echo "${ARTIFACT_FILE_DIRECTORY}/${slug}-${BUILDKITE_JOB_ID}.artifacts.json"
+    echo "${ARTIFACT_FILE_DIRECTORY}/${slug}-${BUILDKITE_JOB_ID}.${ARTIFACTS_FILE_EXTENSION}"
 }

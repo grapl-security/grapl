@@ -114,8 +114,8 @@ steps:
 
   - wait
 
-  # Downloads and operates on all the artifact.json files that were
-  # uploaded in any previous steps of this pipeline.
+  # Downloads and operates on all the *.grapl-artifacts.json files
+  # that were uploaded in any previous steps of this pipeline.
   - label: "Merge artifacts files"
     command:
       - .buildkite/scripts/merge_artifact_files.sh
