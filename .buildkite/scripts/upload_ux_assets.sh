@@ -11,7 +11,6 @@ main() {
     # This is the name defined in the top-level Makefile in the
     # `ux-tarball` target.
     local -r UX_FILENAME="grapl-ux.tar.gz"
-    local -r UX_ARTIFACTS_FILE="ux_artifacts.json"
 
     echo "--- :buildkite: Retrieving UX tarball"
     buildkite-agent artifact download "dist/${UX_FILENAME}" .
@@ -21,8 +20,7 @@ main() {
     echo "--- :cloudsmith: Uploading ${UX_FILENAME} version ${version}"
     upload_raw_file_to_cloudsmith "dist/${UX_FILENAME}" "${version}" raw
 
-    mkdir "${ARTIFACT_FILE_DIRECTORY}"
-    artifact_json "${version}" "grapl-ux" > "${ARTIFACT_FILE_DIRECTORY}/${UX_ARTIFACTS_FILE}"
+    artifact_json "${version}" "grapl-ux" > "$(artifacts_file_for ux)"
 }
 
 main
