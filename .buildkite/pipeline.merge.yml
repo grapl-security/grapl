@@ -119,8 +119,8 @@ steps:
         .buildkite/scripts/merge_artifact_files.sh
         artifact_manifests/lambda_artifacts.json
         artifact_manifests/container_artifacts.json
-        grapl-nomad-consul-server.artifacts.json
-        grapl-nomad-consul-client.artifacts.json
+        artifact_manifests/grapl-nomad-consul-server.artifacts.json
+        artifact_manifests/grapl-nomad-consul-client.artifacts.json
         ux_artifacts.json
 
   - wait

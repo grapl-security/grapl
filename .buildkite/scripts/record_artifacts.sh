@@ -2,6 +2,7 @@
 
 set -euo pipefail
 
+source .buildkite/scripts/lib/artifacts.sh
 source .buildkite/scripts/lib/packer_constants.sh
 readonly jq_filter_path=".buildkite/scripts/lib/extract_ami_id_dict.jq"
 
@@ -14,7 +15,7 @@ upload_artifacts_file() {
     # e.g. "grapl-service.packer-manifest.json"
     local -r manifest_file="${packer_image_name}${PACKER_MANIFEST_SUFFIX}"
     # e.g. "grapl-service.artifacts.json"
-    local -r artifacts_file="${packer_image_name}${ARTIFACTS_FILE_SUFFIX}"
+    local -r artifacts_file="${ARTIFACT_FILE_DIRECTORY}/${packer_image_name}${ARTIFACTS_FILE_SUFFIX}"
 
     # Download Packer manifest
     echo -e "--- :buildkite: Download Packer manifest"
@@ -37,11 +38,12 @@ upload_artifacts_file() {
     echo "${ami_ids_dict}" > "${artifacts_file}"
 
     # Uploading artifacts file
-    echo -c "--- :buildkite: Uploading ${artifacts_file} file"
-    buildkite-agent artifact upload "${artifacts_file}"
+    echo -c "--- :buildkite: Uploading ${ARTIFACT_FILE_DIRECTORY}/${artifacts_file} file"
+    buildkite-agent artifact upload "${ARTIFACT_FILE_DIRECTORY}/${artifacts_file}"
     # This artifact then gets picked up by the "Merge artifacts files" step in Buildkite
 }
 
+mkdir "${ARTIFACT_FILE_DIRECTORY}"
 for image_name in "${PACKER_IMAGE_NAMES[@]}"; do
     upload_artifacts_file "${image_name}"
 done
