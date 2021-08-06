@@ -247,7 +247,7 @@ where
         mut node: NodeDescription,
         strategy: &Static,
     ) -> Result<NodeDescription, Error> {
-        let static_node_key = self.get_static_node_key(&node, &strategy)?;
+        let static_node_key = self.get_static_node_key(&node, strategy)?;
         node.set_key(static_node_key);
 
         Ok(node)
@@ -265,13 +265,13 @@ where
             id_strategy::Strategy::Session(ref strategy) => {
                 info!("Attributing dynamic node via session");
                 attributed_node = self
-                    .attribute_dynamic_session(attributed_node, &strategy)
+                    .attribute_dynamic_session(attributed_node, strategy)
                     .await?;
             }
             id_strategy::Strategy::Static(ref strategy) => {
                 info!("Attributing dynamic node via static mapping");
                 attributed_node = self
-                    .attribute_static_mapping(attributed_node, &strategy)
+                    .attribute_static_mapping(attributed_node, strategy)
                     .await?;
             }
         }
@@ -293,7 +293,7 @@ where
         for node in unid_graph.nodes.values() {
             let span = trace_span!("dynamic attribution loop", node_key=?node.node_key);
             let _enter = span.enter();
-            let new_node = match self.attribute_dynamic_node(&node).await {
+            let new_node = match self.attribute_dynamic_node(node).await {
                 Ok(node) => node,
                 Err(e) => {
                     warn!(message="Failed to attribute dynamic node", error=?e);

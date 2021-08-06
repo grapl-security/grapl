@@ -107,7 +107,7 @@ impl<'a> WrappedDimensions<'a> {
     /// This is then used for hashing (btreemap chosen because it provides order)
     fn dimensions_as_map(&self) -> BTreeMap<&str, &str> {
         let mut map = BTreeMap::new();
-        self.0.iter().for_each(|ref dim| {
+        self.0.iter().for_each(|dim| {
             map.insert(dim.name.as_str(), dim.value.as_str());
         });
         map
