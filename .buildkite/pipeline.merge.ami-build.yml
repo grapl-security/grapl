@@ -61,3 +61,5 @@ steps:
   - label: ":writing_hand: Record AMI IDs"
     command:
       - .buildkite/scripts/record_artifacts.sh
+    artifact_paths:
+      - "artifact_manifests/*.json"

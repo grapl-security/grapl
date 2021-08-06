@@ -6,7 +6,7 @@ source .buildkite/scripts/lib/artifacts.sh
 source .buildkite/scripts/lib/packer_constants.sh
 readonly jq_filter_path=".buildkite/scripts/lib/extract_ami_id_dict.jq"
 
-upload_artifacts_file() {
+generate_artifacts_file() {
     # Takes in the name of an image, like "image_name", and expects to find
     # a corresponding packer manifest names "image_name.packer-manifest.json".
 
@@ -36,14 +36,9 @@ upload_artifacts_file() {
     # Creating artifacts file
     echo -c "--- :gear: Creating ${artifacts_file} file"
     echo "${ami_ids_dict}" > "${artifacts_file}"
-
-    # Uploading artifacts file
-    echo -c "--- :buildkite: Uploading ${ARTIFACT_FILE_DIRECTORY}/${artifacts_file} file"
-    buildkite-agent artifact upload "${ARTIFACT_FILE_DIRECTORY}/${artifacts_file}"
-    # This artifact then gets picked up by the "Merge artifacts files" step in Buildkite
 }
 
 mkdir "${ARTIFACT_FILE_DIRECTORY}"
 for image_name in "${PACKER_IMAGE_NAMES[@]}"; do
-    upload_artifacts_file "${image_name}"
+    generate_artifacts_file "${image_name}"
 done
