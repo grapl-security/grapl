@@ -74,7 +74,8 @@ artifact_file="container_artifacts.json"
 # TODO: Do we want to put the complete container image name in for
 # each service? Perhaps not, particularly if we're going to be
 # promoting containers across repositories
-artifact_json "${TAG}" "${services[@]}" > "${artifact_file}"
+mkdir "${ARTIFACT_FILE_DIRECTORY}"
+artifact_json "${TAG}" "${services[@]}" > "${ARTIFACT_FILE_DIRECTORY}/${artifact_file}"
 
-echo "--- :buildkite: Uploading ${artifact_file} file"
-buildkite-agent artifact upload "${artifact_file}"
+echo "--- :buildkite: Uploading ${ARTIFACT_FILE_DIRECTORY}/${artifact_file} file"
+buildkite-agent artifact upload "${ARTIFACT_FILE_DIRECTORY}/${artifact_file}"
