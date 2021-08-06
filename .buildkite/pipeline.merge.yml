@@ -63,7 +63,7 @@ steps:
     agents:
       queue: "docker"
     artifact_paths:
-      - "artifact_manifests/*.json"
+      - "artifact_manifests/*.grapl-artifacts.json"
 
   - label: ":aws-lambda::cloudsmith: Upload Lambda ZIPs"
     command:
