@@ -18,11 +18,9 @@ impl {{cookiecutter.service_name}}Rpc for {{cookiecutter.service_name}} {
     )]
     async fn handle_request(
         &self,
-        request: Request<{{cookiecutter.service_name}}Request>,
+        _request: Request<{{cookiecutter.service_name}}Request>,
     ) -> Result<Response<{{cookiecutter.service_name}}Response>, Status> {
         let start = quanta::Instant::now();
-
-        print!("This is here to shush an unused-variable warning: {:?}", request);
 
         let reply = {{cookiecutter.service_name}}Response {
 

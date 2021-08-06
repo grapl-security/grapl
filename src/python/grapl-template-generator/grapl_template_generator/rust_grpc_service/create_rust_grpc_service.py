@@ -11,7 +11,7 @@ from grapl_template_generator.rust_grpc_service.create_rust_grpc_service_args im
 from grapl_template_generator.workspace_toml_type import WorkspaceToml
 
 
-def capitalize_words(input: str) -> str:
+def camel_case_ify(input: str) -> str:
     output = ""
     for word in input.split(" "):
         output += word.capitalize()
@@ -20,7 +20,7 @@ def capitalize_words(input: str) -> str:
 
 class RustGrpcServiceTemplateExecutor(object):
     def __init__(self, args: CreateRustGrpcServiceArgs) -> None:
-        self.project_name = capitalize_words(args.package_name.replace("-", " "))
+        self.project_name = camel_case_ify(args.package_name.replace("-", " "))
         self.project_slug = args.package_name
         self.service_name = self.project_name.replace(" ", "")
         self.snake_project_name = self.project_slug.lower().replace("-", "_")

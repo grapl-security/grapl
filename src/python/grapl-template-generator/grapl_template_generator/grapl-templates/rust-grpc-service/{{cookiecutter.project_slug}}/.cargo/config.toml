@@ -1,5 +1,0 @@
-[build]
-rustflags = ["--deny=warnings"]
-
-[http]
-ssl-version.min = "tlsv1.2"

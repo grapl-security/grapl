@@ -1,5 +1,3 @@
-#![warn(clippy::all)]
-
 pub mod server;
 pub mod client;
 

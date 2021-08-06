@@ -5,7 +5,6 @@ fn main() {
         .build_server(true)
         .build_client(true)
         .compile(
-            // These protos are moved to this directory by `def move_protos_to_global_proto_dir`
             &[
                 "../../proto/graplinc/grapl/api/{{cookiecutter.snake_project_name}}/{{cookiecutter.snake_project_name}}.proto",
                 "../../proto/graplinc/grapl/api/{{cookiecutter.snake_project_name}}/{{cookiecutter.snake_project_name}}_health.proto",
