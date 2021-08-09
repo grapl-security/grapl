@@ -1,4 +1,4 @@
-use crate::{{cookiecutter.snake_project_name}}::get_socket_addr;
+use {{cookiecutter.snake_project_name}}::{{cookiecutter.snake_project_name}}::get_socket_addr;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
