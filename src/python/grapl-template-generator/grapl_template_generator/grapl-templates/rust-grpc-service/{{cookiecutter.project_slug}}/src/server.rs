@@ -49,14 +49,13 @@ pub async fn exec_service(socket_addr: SocketAddr)  -> Result<(), Box<dyn std::e
 
     let {{cookiecutter.snake_project_name}}_instance = {{cookiecutter.service_name}}::default();
 
-    tracing::info!(
-        message="HealthServer + {{cookiecutter.service_name}} listening",
-        addr=?socket_addr,
-    );
-
     metrics::register_counter!("request_count", "count of requests made to endpoint");
     metrics::register_histogram!("request_ns", "nanoseconds for request execution");
 
+    tracing::info!(
+        message="About to start {{cookiecutter.service_name}} + HealthServer",
+        addr=?socket_addr,
+    );
 
     Server::builder()
         .add_service(health_service)

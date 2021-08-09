@@ -7,13 +7,15 @@ use {{cookiecutter.snake_project_name}}::client::{{cookiecutter.service_name}}Rp
 use {{cookiecutter.snake_project_name}}::client::{{cookiecutter.service_name}}Request;
 use {{cookiecutter.snake_project_name}}::client::Channel;
 use {{cookiecutter.snake_project_name}}::client::Timeout;
+use {{cookiecutter.snake_project_name}}::{{cookiecutter.snake_project_name}}::get_socket_addr;
 
 use std::time::Duration;
 
 #[test_context::test_context(ServiceContext)]
 #[tokio::test]
 async fn smoketest(_ctx: &mut ServiceContext) -> Result<(), Box<dyn std::error::Error>> {
-    let channel = Channel::from_static("http://[::1]:50051").connect().await?;
+    let endpoint = format!("http://{}", get_socket_addr());
+    let channel = Channel::from_shared(endpoint)?.connect().await?;
 
     let timeout_channel = Timeout::new(channel, Duration::from_millis(1000));
 

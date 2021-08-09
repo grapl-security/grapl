@@ -22,7 +22,7 @@ impl AsyncTestContext for ServiceContext {
             {{cookiecutter.snake_project_name}}::server::exec_service().await
                 .expect("Failed to execute service");
         });
-        until_health().await
+        wait_for_healthcheck().await
             .expect("Service was never healthy");
         Self {}
     }
@@ -31,9 +31,12 @@ impl AsyncTestContext for ServiceContext {
 }
 
 
-async fn until_health() -> Result<(), Box<dyn std::error::Error>> {
+async fn wait_for_healthcheck() -> Result<(), Box<dyn std::error::Error>> {
+    // Wait until the health check succeeds. Try up to 5 times with
+    // increasing backoff.
+
     for i in 0.. {
-        match _until_health().await {
+        match _healthcheck().await {
             Ok(()) => return Ok(()),
             Err(e) => {
                 if i == 5 {
@@ -48,7 +51,9 @@ async fn until_health() -> Result<(), Box<dyn std::error::Error>> {
     unreachable!()
 }
 
-async fn _until_health() -> Result<(), Box<dyn std::error::Error>> {
+async fn _healthcheck() -> Result<(), Box<dyn std::error::Error>> {
+    // Check if the healthcheck request succeeds.
+
     let endpoint = format!("http://{}", get_socket_addr());
     let channel = Channel::from_shared(endpoint)?.connect().await?;
 
