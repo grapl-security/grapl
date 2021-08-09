@@ -34,9 +34,9 @@ class RustGrpcServiceTemplateExecutor(object):
 
         self.grapl_root = grapl_root
         self.rust_src_path = self.grapl_root / "src" / "rust"
-        self.python_src_path = self.grapl_root / "src" / "python"
+        python_src_path = self.grapl_root / "src" / "python"
         self.template_path = (
-            self.python_src_path
+            python_src_path
             / "grapl-template-generator"
             / "grapl_template_generator"
             / "grapl-templates"
