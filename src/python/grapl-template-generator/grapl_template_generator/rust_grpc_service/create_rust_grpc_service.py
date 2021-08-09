@@ -24,6 +24,7 @@ class RustGrpcServiceTemplateExecutor(object):
         self.project_slug = args.package_name
         self.service_name = self.project_name.replace(" ", "")
         self.snake_project_name = self.project_slug.lower().replace("-", "_")
+        self.snake_project_name_caps = self.snake_project_name.upper()  # for env vars
 
         # TODO: In the future, it might prove more robust to package these
         # templates as a resources() goal, as opposed to just reading from src/
@@ -59,6 +60,7 @@ class RustGrpcServiceTemplateExecutor(object):
                 "project_slug": self.project_slug,
                 "service_name": self.service_name,
                 "snake_project_name": self.snake_project_name,
+                "snake_project_name_caps": self.snake_project_name_caps,
             },
         )
         self.move_protos_to_global_proto_dir()

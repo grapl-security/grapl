@@ -2,5 +2,6 @@
     "project_name": "{{ cookiecutter.project_name }}",
     "project_slug": "{{ cookiecutter.project_slog }}",
     "service_name": "{{ cookiecutter.service_name }}",
-    "snake_project_name": "{{ cookiecutter.snake_project_name }}"
+    "snake_project_name": "{{ cookiecutter.snake_project_name }}",
+    "snake_project_name_caps": "{{ cookiecutter.snake_project_name_caps }}"
 }
