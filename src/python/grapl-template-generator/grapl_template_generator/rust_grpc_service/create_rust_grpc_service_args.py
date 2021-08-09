@@ -22,9 +22,9 @@ class CreateRustGrpcServiceArgs(BaseModel):
     example: 'graph-mutation-service'
     """
 
-    package_name: str
+    crate_name: str
 
-    @validator("package_name")
-    def validate_package_name(cls, package_name: str) -> str:
-        _assert_match("package_name", _CRATE_NAME, package_name)
-        return package_name
+    @validator("crate_name")
+    def validate_package_name(cls, crate_name: str) -> str:
+        _assert_match("crate_name", _CRATE_NAME, crate_name)
+        return crate_name

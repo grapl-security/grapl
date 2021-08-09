@@ -18,13 +18,13 @@ app = typer.Typer()
 
 @app.command(name="rust-grpc", help="Create a Rust gRPC project.")
 def rust_grpc(
-    package_name: str,
+    crate_name: str,
 ) -> None:
     args = CreateRustGrpcServiceArgs(
-        package_name=package_name,
+        crate_name=crate_name,
     )
     create_rust_grpc_service(args)
-    typer.echo(f"Created a Rust GRPC service named {package_name}")
+    typer.echo(f"Created a Rust GRPC service named {crate_name}")
 
 
 if __name__ == "__main__":
