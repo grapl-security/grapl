@@ -20,10 +20,10 @@ def camel_case_ify(input: str) -> str:
 
 class RustGrpcServiceTemplateExecutor(object):
     def __init__(self, args: CreateRustGrpcServiceArgs) -> None:
-        self.service_name = camel_case_ify(args.crate_name.replace("-", " "))
+        self.crate_name = camel_case_ify(args.crate_name.replace("-", " "))
         self.project_slug = args.crate_name
         self.snake_project_name = self.project_slug.lower().replace("-", "_")
-        self.snake_project_name_caps = self.snake_project_name.upper()  # for
+        self.snake_project_name_caps = self.snake_project_name.upper()  # for env variables
 
         # TODO: In the future, it might prove more robust to package these
         # templates as a resources() goal, as opposed to just reading from src/
@@ -55,8 +55,8 @@ class RustGrpcServiceTemplateExecutor(object):
             no_input=True,
             output_dir=self.rust_src_path,
             extra_context={
+                "crate_name": self.crate_name,
                 "project_slug": self.project_slug,
-                "service_name": self.service_name,
                 "snake_project_name": self.snake_project_name,
                 "snake_project_name_caps": self.snake_project_name_caps,
             },
