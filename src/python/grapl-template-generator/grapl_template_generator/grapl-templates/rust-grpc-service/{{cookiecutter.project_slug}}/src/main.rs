@@ -6,7 +6,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_env_filter(::tracing_subscriber::EnvFilter::from_default_env())
         .init();
     
-    let socket_addr = get_socket_addr().parse().unwrap();
+    let socket_addr = get_socket_addr().parse()?;
 
     {{cookiecutter.snake_project_name}}::server::exec_service(socket_addr).await?;
     Ok(())
