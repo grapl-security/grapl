@@ -23,7 +23,9 @@ class RustGrpcServiceTemplateExecutor(object):
         self.crate_name = camel_case_ify(args.crate_name.replace("-", " "))
         self.project_slug = args.crate_name
         self.snake_project_name = self.project_slug.lower().replace("-", "_")
-        self.snake_project_name_caps = self.snake_project_name.upper()  # for env variables
+        self.snake_project_name_caps = (
+            self.snake_project_name.upper()
+        )  # for env variables
 
         # TODO: In the future, it might prove more robust to package these
         # templates as a resources() goal, as opposed to just reading from src/
