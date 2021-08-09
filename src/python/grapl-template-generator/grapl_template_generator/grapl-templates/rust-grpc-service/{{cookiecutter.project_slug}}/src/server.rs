@@ -1,6 +1,6 @@
 use tonic::{transport::Server, Request, Response, Status};
+use std::net::SocketAddr;
 
-use crate::{{cookiecutter.snake_project_name}}::get_socket_addr;
 use crate::{{cookiecutter.snake_project_name}}::{{cookiecutter.service_name}}Request;
 pub use crate::{{cookiecutter.snake_project_name}}::{{cookiecutter.service_name}}Response;
 pub use crate::{{cookiecutter.snake_project_name}}::{{cookiecutter.snake_project_name}}_rpc_server::{{cookiecutter.service_name}}Rpc;
@@ -41,18 +41,17 @@ impl {{cookiecutter.service_name}}Rpc for {{cookiecutter.service_name}} {
     }
 }
 
-pub async fn exec_service()  -> Result<(), Box<dyn std::error::Error>> {
+pub async fn exec_service(socket_addr: SocketAddr)  -> Result<(), Box<dyn std::error::Error>> {
     let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
     health_reporter
     .set_serving::<{{cookiecutter.service_name}}RpcServer<{{cookiecutter.service_name}}>>()
     .await;
 
-    let addr = get_socket_addr().parse().unwrap();
     let {{cookiecutter.snake_project_name}}_instance = {{cookiecutter.service_name}}::default();
 
     tracing::info!(
         message="HealthServer + {{cookiecutter.service_name}} listening",
-        addr=?addr,
+        addr=?socket_addr,
     );
 
     metrics::register_counter!("request_count", "count of requests made to endpoint");
@@ -62,7 +61,7 @@ pub async fn exec_service()  -> Result<(), Box<dyn std::error::Error>> {
     Server::builder()
         .add_service(health_service)
         .add_service({{cookiecutter.service_name}}RpcServer::new({{cookiecutter.snake_project_name}}_instance))
-        .serve(addr)
+        .serve(socket_addr)
         .await?;
 
     Ok(())
