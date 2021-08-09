@@ -30,9 +30,9 @@ def _invoke_lambda(lambda_: LambdaClient, function_name: str) -> None:
 
     status = result["StatusCode"]
     logs = base64.b64decode(bytes(result["LogResult"], "utf-8")).decode("utf-8")
+    for line in logs.splitlines():
+        LOGGER.info(line)
     if status == 200 and result.get("FunctionError") is None:
-        for line in logs.splitlines():
-            LOGGER.info(line)
         LOGGER.info(f"lambda invocation succeeded for {function_name}")
     else:
         LOGGER.error(
