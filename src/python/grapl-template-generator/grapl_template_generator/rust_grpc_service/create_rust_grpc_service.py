@@ -47,7 +47,7 @@ class RustGrpcServiceTemplateExecutor(object):
         )
 
     def precheck(self) -> None:
-        ...
+        pass
 
     def execute_template(self) -> None:
         cookiecutter(
