@@ -295,7 +295,7 @@ test-integration: build-test-integration ## Build and run integration tests
 
 .PHONY: test-grapl-template-generator
 test-grapl-template-generator:  # Test that the Grapl Template Generator spits out something compilable.
-	./src/python/grapl-template-generator/grapl_template_generator_tests/test_grapl_template_generator_e2e.sh
+	./src/python/grapl-template-generator/grapl_template_generator_tests/integration_test.sh
 
 .PHONY: test-e2e
 test-e2e: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_E2E_TESTS)
