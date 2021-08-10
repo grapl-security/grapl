@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Tuple, cast
 
 import typer
 from cookiecutter.main import cookiecutter
