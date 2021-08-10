@@ -60,12 +60,12 @@ variable "graph_merger_tag" {
 }
 
 variable "graph_merger_queue" {
-  type = string
+  type    = string
   default = "http://localhost:9324/000000000000/graph-merger-queue"
 }
 
 variable "graph_merger_dead_letter_queue" {
-  type = string
+  type    = string
   default = "http://localhost:9324/000000000000/graph-merger-dead-letter-queue"
 }
 
@@ -88,24 +88,24 @@ variable "node_identifier_tag" {
 }
 
 variable "node_identifier_queue" {
-  type = string
+  type    = string
   default = "http://localhost:9324/000000000000/node-identifier-queue"
 }
 
 variable "node_identifier_dead_letter_queue" {
-  type = string
+  type    = string
   default = "http://localhost:9324/000000000000/node-identifier-dead-letter-queue"
 }
 
 variable "subgraphs_merged_bucket" {
-  type = string
-  default = "subgraphs-merged-bucket"
+  type        = string
+  default     = "subgraphs-merged-bucket"
   description = "The destination bucket for merged subgraphs. Used by Graph Merger."
 }
 
 variable "subgraphs_generated_bucket" {
-  type = string
-  default = "subgraphs-generated-bucket"
+  type        = string
+  default     = "subgraphs-generated-bucket"
   description = "The destination bucket for generated subgraphs. Used by Node identifier."
 }
 
