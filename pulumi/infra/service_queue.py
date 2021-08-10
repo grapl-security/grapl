@@ -58,7 +58,7 @@ class ServiceConfiguration(NamedTuple):
                         "Version": "2012-10-17",
                         "Statement": [
                             {
-                                "Sid": "Read from main queue",
+                                "Sid": "ReadFromMainQueue",
                                 "Effect": "Allow",
                                 "Action": [
                                     "sqs:ChangeMessageVisibility",
@@ -70,7 +70,7 @@ class ServiceConfiguration(NamedTuple):
                                 "Resource": inputs["main_arn"],
                             },
                             {
-                                "Sid": "Write to dead-letter queue",
+                                "Sid": "WriteToDeadLetterQueue",
                                 "Effect": "Allow",
                                 "Action": [
                                     "sqs:SendMessage",
