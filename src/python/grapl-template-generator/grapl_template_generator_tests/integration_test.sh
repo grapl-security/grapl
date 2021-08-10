@@ -20,5 +20,7 @@ grep cool-test-service ./src/rust/Cargo.toml
 # Cool, that means we can `make build-test-rust` and ensure it all compiled correctly.
 make build-test-unit-rust
 
+# Do some clean-up on the user's behalf
 rm -r ./src/proto/graplinc/grapl/api/cool_test_service/
 rm -r ./src/rust/cool-test-service
+git checkout HEAD -- src/rust/Cargo.toml
