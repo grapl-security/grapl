@@ -1,3 +1,4 @@
+import os
 import subprocess
 from pathlib import Path
 from typing import Optional
@@ -5,7 +6,14 @@ from typing import Optional
 
 def find_grapl_root() -> Optional[Path]:
     # We could potentially add other heuristics here.
-    return _find_grapl_root_based_off_git_in_pwd()
+    return _find_grapl_root_based_off_env() or _find_grapl_root_based_off_git_in_pwd()
+
+
+def _find_grapl_root_based_off_env() -> Optional[Path]:
+    path_str = os.environ.get("GRAPL_ROOT")
+    if not path_str:
+        return None
+    return Path(path_str).resolve()
 
 
 def _find_grapl_root_based_off_git_in_pwd() -> Optional[Path]:
@@ -14,16 +22,16 @@ def _find_grapl_root_based_off_git_in_pwd() -> Optional[Path]:
     if git_repo_root is None:
         return None
 
-    git_repo_root_path = Path(git_repo_root)
+    git_repo_root_path = Path(git_repo_root).resolve()
     del git_repo_root
 
-    # https://stackoverflow.com/a/51794340
-    repo_basename = _quietly_execute("basename $(git remote get-url origin)")
-    if repo_basename == "grapl.git":
+    if git_repo_root_path.name == "grapl":
         # It's pretty likely that we've found the grapl root.
         return git_repo_root_path
     else:
-        raise Exception(f"We seem to be in a non-Grapl root, which is weird: {git_repo_root_path}")
+        raise Exception(
+            "We seem to be in a non-Grapl root, which is weird: {git_repo_root_path}"
+        )
 
 
 def _quietly_execute(cmd: str) -> Optional[str]:
