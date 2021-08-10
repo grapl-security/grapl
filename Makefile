@@ -239,9 +239,6 @@ ux-tarball: build-ux ## Build website asset tarball
 
 ##@ Test 🧪
 
-.PHONY: test
-test: test-unit test-integration test-e2e test-typecheck test-grapl-template-generator ## Run all tests
-
 .PHONY: test-unit
 test-unit: export COMPOSE_PROJECT_NAME := grapl-test-unit
 test-unit: export COMPOSE_FILE := ./test/docker-compose.unit-tests-rust.yml:./test/docker-compose.unit-tests-js.yml
