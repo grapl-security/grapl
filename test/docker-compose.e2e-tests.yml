@@ -31,21 +31,18 @@ services:
               --grapl-region $AWS_REGION \
               --grapl-deployment-name $DEPLOYMENT_NAME \
               --grapl-version $DEPLOYMENT_NAME \
-              --aws-profile default \
               upload analyzer \
               --analyzer_main_py ./etc/local_grapl/suspicious_svchost/main.py
         graplctl \
               --grapl-region $AWS_REGION \
               --grapl-deployment-name $DEPLOYMENT_NAME \
               --grapl-version $DEPLOYMENT_NAME \
-              --aws-profile default \
               upload analyzer \
               --analyzer_main_py ./etc/local_grapl/unique_cmd_parent/main.py
         graplctl \
               --grapl-region $AWS_REGION \
               --grapl-deployment-name $DEPLOYMENT_NAME \
               --grapl-version $DEPLOYMENT_NAME \
-              --aws-profile default \
               upload sysmon \
               --logfile ./etc/sample_data/eventlog.xml
         python3 -c 'import lambdex_handler; lambdex_handler.handler(None, None)'
