@@ -57,14 +57,6 @@ Ec2Instance = common.Ec2Instance
     required=True,
 )
 @click.option(
-    "-p",
-    "--aws-profile",
-    type=click.STRING,
-    envvar="AWS_PROFILE",
-    help='aws auth profile [$AWS_PROFILE] ("default")',
-    default="default",
-)
-@click.option(
     "--schema-table",
     type=click.STRING,
     envvar="GRAPL_SCHEMA_TABLE",
@@ -88,12 +80,11 @@ def main(
     grapl_region: str,
     grapl_deployment_name: str,
     grapl_version: str,
-    aws_profile: str,
     schema_table: str,
     schema_properties_table: str,
     dynamic_session_table: str,
 ) -> None:
-    session = boto3.session.Session(profile_name=aws_profile)
+    session = boto3.session.Session()
     config = Config(region_name=grapl_region)
     lambda_config = Config(
         read_timeout=60 * 15 + 10  # 10s longer than e2e-test-runner and provisioner
@@ -102,7 +93,6 @@ def main(
         grapl_region,
         grapl_deployment_name,
         grapl_version,
-        aws_profile,
         cloudwatch=CloudWatchClientFactory(session).from_env(config=config),
         dynamodb=DynamoDBResourceFactory(session).from_env(config=config),
         ec2=EC2ResourceFactory(session).from_env(config=config),
