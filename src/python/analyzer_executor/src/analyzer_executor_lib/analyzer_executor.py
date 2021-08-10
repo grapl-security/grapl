@@ -235,7 +235,7 @@ class AnalyzerExecutor:
         self,
         rx: Connection,
         analyzer_name: str,
-    ) -> Iterator[ExecutionHit]k:
+    ) -> Iterator[ExecutionHit]:
         """
         Keep polling the spawned Process, and yield any ExecutionHits.
         (This will probably disappear if Analyzers move to Docker images.)
@@ -355,9 +355,9 @@ class AnalyzerExecutor:
                         self.logger.error(traceback.format_exc())
                         self.logger.error(
                             f"Execution of {name} failed with {e} {e.args}"
-
+                        )
                         sender.send(ExecutionFailed())
-                        raise
+                        raise e
 
                 pool.apply_async(exec_analyzer, args=(nodes, sender))
 
