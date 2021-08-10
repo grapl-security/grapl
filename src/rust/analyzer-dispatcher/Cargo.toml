@@ -5,10 +5,10 @@ authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-rust-proto = { path="../rust-proto", version="*" }
-grapl-config = {path="../grapl-config", version="*"}
-grapl-observe = {path = "../grapl-observe"}
-grapl-service = {path="../grapl-service"}
+rust-proto = { path = "../rust-proto", version = "*" }
+grapl-config = { path = "../grapl-config", version = "*" }
+grapl-observe = { path = "../grapl-observe" }
+grapl-service = { path = "../grapl-service" }
 futures = "0.3"
 base64 = "0.13"
 bytes = "1"

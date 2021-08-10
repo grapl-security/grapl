@@ -16,12 +16,11 @@ path = "src/bin/node-identifier-retry.rs"
 integration = []
 
 [dependencies]
-rust-proto = { path="../rust-proto", version="*"}
-grapl-config = {path="../grapl-config", version="*"}
-grapl-observe = {path="../grapl-observe", version="*"}
-grapl-service = {path="../grapl-service"}
-grapl-utils = {path = "../grapl-utils"}
-
+rust-proto = { path = "../rust-proto", version = "*" }
+grapl-config = { path = "../grapl-config", version = "*" }
+grapl-observe = { path = "../grapl-observe", version = "*" }
+grapl-service = { path = "../grapl-service" }
+grapl-utils = { path = "../grapl-utils" }
 bytes = "1"
 failure = "0.1"
 prost = "0.7"

@@ -7,10 +7,10 @@ description = "Library for writing Grapl generator services"
 license = "Apache-2.0"
 
 [dependencies]
-rust-proto = { path="../../rust-proto", version="0.2.*" }
-sqs-executor = {path="../../sqs-executor"}
-grapl-service = {path="../../grapl-service"}
-grapl-observe = {path = "../../grapl-observe"}
+rust-proto = { path = "../../rust-proto", version = "0.2.*" }
+sqs-executor = { path = "../../sqs-executor" }
+grapl-service = { path = "../../grapl-service" }
+grapl-observe = { path = "../../grapl-observe" }
 sha2 = "0.9"
 rusoto_s3 = { version = "0.46.0", default_features = false, features = [
   "rustls"
