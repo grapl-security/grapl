@@ -14,14 +14,12 @@ def _find_grapl_root_based_off_git_in_pwd() -> Optional[Path]:
     if git_repo_root is None:
         return None
 
-    git_repo_root_path = Path(git_repo_root)
+    git_repo_root_path = Path(git_repo_root).resolve()
     del git_repo_root
 
-    if git_repo_root_path.name == "grapl":
-        # It's pretty likely that we've found the grapl root.
-        return git_repo_root_path
-
-    return None
+    # One could add a check here that this is the Grapl repo - and not just any
+    # git repo - but let's save that fight for another day.
+    return git_repo_root_path
 
 
 def _quietly_execute(cmd: str) -> Optional[str]:

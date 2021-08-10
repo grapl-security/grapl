@@ -1,13 +1,12 @@
 from pathlib import Path
-from typing import Tuple, cast
 
-import toml
 import typer
 from cookiecutter.main import cookiecutter
 from grapl_common.utils.find_grapl_root import find_grapl_root
 from grapl_template_generator.rust_grpc_service.create_rust_grpc_service_args import (
     CreateRustGrpcServiceArgs,
 )
+from grapl_template_generator.rw_toml import ReadWriteToml
 from grapl_template_generator.workspace_toml_type import WorkspaceToml
 
 
@@ -48,6 +47,8 @@ class RustGrpcServiceTemplateExecutor(object):
             self.grapl_root / "src/proto/graplinc/grapl/api" / self.snake_project_name
         )
 
+        self.update_cargo_toml = args.update_cargo_toml
+
     def precheck(self) -> None:
         pass
 
@@ -77,23 +78,32 @@ class RustGrpcServiceTemplateExecutor(object):
             )
             proto_file.rename(self.proto_destination / proto_filename)
 
-    def get_toml_for_workspace(self) -> Tuple[Path, WorkspaceToml]:
+    def get_toml_for_workspace(self) -> ReadWriteToml[WorkspaceToml]:
         workspace_path = self.rust_src_path / "Cargo.toml"
-        workspace_toml = cast(WorkspaceToml, toml.load(workspace_path))
-        return workspace_path, workspace_toml
+        return ReadWriteToml(workspace_path)
 
     def attach_to_workspace(self) -> None:
-        # Theoretically, we could automate this step. Unfortunately, the python
+        # Theoretically, we could always automate this step. Unfortunately, the python
         # toml encoder/decoder doesn't want to play nicely with our comments.
         # https://github.com/uiri/toml/issues/371
+
         new_workspace_member = f"./{self.project_slug}"
-        typer.echo(
-            f"NOTE: Please add {new_workspace_member} to cargo.toml's [workspace][members]"
-        )
+        if self.update_cargo_toml:
+            workspace_toml = self.get_toml_for_workspace()
+            workspace_toml.loaded_toml["workspace"]["members"].append(
+                f"./{self.project_slug}"
+            )
+            workspace_toml.loaded_toml["workspace"]["members"].sort()
+            workspace_toml.write()
+
+        else:
+            typer.echo(
+                f"NOTE: Please add {new_workspace_member} to cargo.toml's [workspace][members]"
+            )
 
     def check_workspace(self) -> None:
-        _, workspace_toml = self.get_toml_for_workspace()
-        for member in workspace_toml["workspace"]["members"]:
+        workspace_toml = self.get_toml_for_workspace()
+        for member in workspace_toml.loaded_toml["workspace"]["members"]:
             if member.endswith(self.project_slug):
                 raise ValueError(f"Member already exists in workspace {member}")
 

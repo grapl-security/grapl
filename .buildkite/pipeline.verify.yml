@@ -60,6 +60,12 @@ steps:
       - make test-unit-rust
     agents:
       queue: "beefy"
+  
+  - label: ":writing_hand: Test Grapl Template Generator"
+    command:
+      - make test-grapl-template-generator
+    agents:
+      queue: "beefy"
 
   - label: ":python::jeans: Linting"
     command:
