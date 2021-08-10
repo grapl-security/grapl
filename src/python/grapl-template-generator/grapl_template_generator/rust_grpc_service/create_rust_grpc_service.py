@@ -48,6 +48,8 @@ class RustGrpcServiceTemplateExecutor(object):
             self.grapl_root / "src/proto/graplinc/grapl/api" / self.snake_project_name
         )
 
+        self.update_cargo_toml = args.update_cargo_toml
+
     def precheck(self) -> None:
         pass
 
@@ -83,9 +85,11 @@ class RustGrpcServiceTemplateExecutor(object):
         return workspace_path, workspace_toml
 
     def attach_to_workspace(self) -> None:
-        # Theoretically, we could automate this step. Unfortunately, the python
+        # Theoretically, we could always automate this step. Unfortunately, the python
         # toml encoder/decoder doesn't want to play nicely with our comments.
         # https://github.com/uiri/toml/issues/371
+
+        if not self.ar
         new_workspace_member = f"./{self.project_slug}"
         typer.echo(
             f"NOTE: Please add {new_workspace_member} to cargo.toml's [workspace][members]"

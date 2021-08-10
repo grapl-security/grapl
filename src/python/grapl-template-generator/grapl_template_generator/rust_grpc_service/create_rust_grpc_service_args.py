@@ -23,6 +23,7 @@ class CreateRustGrpcServiceArgs(BaseModel):
     """
 
     crate_name: str
+    update_cargo_toml: bool
 
     @validator("crate_name")
     def validate_package_name(cls, crate_name: str) -> str:
