@@ -5,9 +5,9 @@ authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-rust-proto = { path="../../rust-proto", version="*"}
-endpoint-plugin = { path="../../endpoint-plugin", version="*"}
-grapl-config = {path="../../grapl-config", version="*"}
+rust-proto = { path = "../../rust-proto", version = "*" }
+endpoint-plugin = { path = "../../endpoint-plugin", version = "*" }
+grapl-config = { path = "../../grapl-config", version = "*" }
 sqs-executor = { path = "../../sqs-executor/" }
 grapl-service = { path = "../../grapl-service/" }
 grapl-observe = { path = "../../grapl-observe/" }
