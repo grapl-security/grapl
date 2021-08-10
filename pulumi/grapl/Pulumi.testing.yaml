@@ -2,33 +2,33 @@ config:
   aws:region: us-east-1
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: operational-alarms@graplsecurity.com
   grapl:artifacts:
-    analyzer-dispatcher: 20210810130404-d5873b5c
-    analyzer-executor: 20210810130404-d5873b5c
+    analyzer-dispatcher: 20210810130425-a63fb1df
+    analyzer-executor: 20210810130425-a63fb1df
     dgraph-ttl: 20210729230857-86533bd1
     e2e-test-runner: 20210803182404-f938b7e0
     engagement-creator: 20210729230857-86533bd1
     engagement-edge: 20210803183416-7f1a2eaf
-    graph-merger: 20210810130404-d5873b5c
+    graph-merger: 20210810130425-a63fb1df
     graphql-endpoint: 20210706192702-6001e5a3
     grapl-nomad-consul-client:
-      us-east-1: ami-09a5a48be32cb9a73
-      us-east-2: ami-079bc40a162008b65
-      us-west-1: ami-0e19794d971944d24
-      us-west-2: ami-08408dbd5739a060f
+      us-east-1: ami-0bc207803b7202acd
+      us-east-2: ami-0d2c737f1b938e0ce
+      us-west-1: ami-080046f2292f8cf50
+      us-west-2: ami-0b6dc43af1ec3f004
     grapl-nomad-consul-server:
-      us-east-1: ami-0bd5e79449be4c99b
-      us-east-2: ami-0cd89c81d2904084f
-      us-west-1: ami-0d70b26ec774395b0
-      us-west-2: ami-0e22f2473168d2d95
-    grapl-ux: 20210805133701-0f55c9fb
+      us-east-1: ami-008a9904d6bade13d
+      us-east-2: ami-0c4b98b8713fedab6
+      us-west-1: ami-013553b759c5d0a94
+      us-west-2: ami-019b4c6d43e6e9d6b
+    grapl-ux: 20210810130425-a63fb1df
     metric-forwarder: 20210706192702-6001e5a3
     model-plugin-deployer: 20210805182227-37008b22
-    node-identifier: 20210810130404-d5873b5c
-    node-identifier-retry: 20210810130404-d5873b5c
+    node-identifier: 20210810130425-a63fb1df
+    node-identifier-retry: 20210810130425-a63fb1df
     node-identifier-retry-handler: 20210706190216-95cec5cb
-    osquery-generator: 20210810130404-d5873b5c
+    osquery-generator: 20210810130425-a63fb1df
     provisioner: 20210803183416-7f1a2eaf
-    sysmon-generator: 20210810130404-d5873b5c
+    sysmon-generator: 20210810130425-a63fb1df
     ux-router: 20210721183353-0e7f674d
   grapl:env_vars:
     analyzer-dispatcher:
