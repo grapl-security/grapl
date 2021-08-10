@@ -20,8 +20,8 @@ def _find_grapl_root_based_off_git_in_pwd() -> Optional[Path]:
     if git_repo_root_path.name == "grapl":
         # It's pretty likely that we've found the grapl root.
         return git_repo_root_path
-
-    return None
+    else:
+        raise Exception("We seem to be in a non-Grapl root, which is weird: {git_repo_root_path}")
 
 
 def _quietly_execute(cmd: str) -> Optional[str]:

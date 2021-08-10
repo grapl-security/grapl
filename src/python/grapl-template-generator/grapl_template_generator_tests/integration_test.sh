@@ -12,7 +12,7 @@ GRAPL_ROOT="$(git rev-parse --show-toplevel)"
 cd "${GRAPL_ROOT}"
 
 make grapl-template-generator
-./bin/grapl-template-generator --hax-update-cargo-toml cool-test-service
+GRAPL_ROOT="${GRAPL_ROOT}" ./bin/grapl-template-generator --hax-update-cargo-toml cool-test-service
 
 # Did the new service show up in cargo.toml?
 grep cool-test-service ./src/rust/Cargo.toml
