@@ -239,9 +239,6 @@ ux-tarball: build-ux ## Build website asset tarball
 
 ##@ Test 🧪
 
-.PHONY: test
-test: test-unit test-integration test-e2e test-typecheck ## Run all tests
-
 .PHONY: test-unit
 test-unit: export COMPOSE_PROJECT_NAME := grapl-test-unit
 test-unit: export COMPOSE_FILE := ./test/docker-compose.unit-tests-rust.yml:./test/docker-compose.unit-tests-js.yml
@@ -292,6 +289,10 @@ test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_T
 test-integration: export COMPOSE_FILE := ./test/docker-compose.integration-tests.yml
 test-integration: build-test-integration ## Build and run integration tests
 	$(MAKE) test-with-env
+
+.PHONY: test-grapl-template-generator
+test-grapl-template-generator:  # Test that the Grapl Template Generator spits out something compilable.
+	./src/python/grapl-template-generator/grapl_template_generator_tests/integration_test.sh
 
 .PHONY: test-e2e
 test-e2e: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_E2E_TESTS)
