@@ -15,7 +15,7 @@ JWT_SECRET.secret = "hey im a fake secret"
 
 class TestEngagementEdgeChalice(unittest.TestCase):
     # Unit, not integration, for the record.
-    def test_requires_auth_fails_without_cookie_headers(self):
+    def test_requires_auth_fails_without_cookie_headers(self) -> None:
         with Client(app) as client:
             result = client.http.post(
                 "/getNotebook",
@@ -25,7 +25,7 @@ class TestEngagementEdgeChalice(unittest.TestCase):
             "error": "Must log in: No grapl_jwt cookie supplied."
         }
 
-    def test_requires_auth_fails_with_incorrect_cookie_headers(self):
+    def test_requires_auth_fails_with_incorrect_cookie_headers(self) -> None:
         with Client(app) as client:
             result = client.http.post(
                 "/getNotebook", headers={"Cookie": "grapl_jwt=im-not-a-jwt"}
