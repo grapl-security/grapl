@@ -6,6 +6,7 @@ botocore
 chalice==1.22.4
 # Chalice requires a Click in 7, <=8
 click==7.1.2
+cookiecutter==1.7.3
 hypothesis
 mypy_boto3_cloudwatch
 mypy_boto3_dynamodb
@@ -20,6 +21,9 @@ mypy_boto3_sqs
 mypy_boto3_ssm
 protobuf>=3.12.1
 pulumi>=3.0.0,<4.0.0
+pydantic==1.8.2
+typer==0.3.2
+toml==0.10.2
 
 # 4.7.0 to 4.9.0 are broken typecheck-wise: https://github.com/pulumi/pulumi-aws/issues/1519
 # 4.10.0 to 4.13.0 causes sigsegv: https://github.com/pulumi/pulumi-aws/issues/1575

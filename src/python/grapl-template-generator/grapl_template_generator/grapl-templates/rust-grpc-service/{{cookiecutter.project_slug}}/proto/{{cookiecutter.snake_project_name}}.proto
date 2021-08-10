@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package {{cookiecutter.crate_name}};
+
+message {{cookiecutter.crate_name}}Request {
+}
+
+
+message {{cookiecutter.crate_name}}Response {
+}
+
+
+service {{cookiecutter.crate_name}}Rpc {
+  rpc HandleRequest({{cookiecutter.crate_name}}Request) returns ({{cookiecutter.crate_name}}Response) {}
+}
+
