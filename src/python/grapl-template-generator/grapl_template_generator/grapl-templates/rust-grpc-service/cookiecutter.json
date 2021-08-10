@@ -1,0 +1,6 @@
+{
+    "project_slug": "{{ cookiecutter.project_slog }}",
+    "crate_name": "{{ cookiecutter.crate_name }}",
+    "snake_project_name": "{{ cookiecutter.snake_project_name }}",
+    "snake_project_name_caps": "{{ cookiecutter.snake_project_name_caps }}"
+}
