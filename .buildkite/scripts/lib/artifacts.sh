@@ -1,11 +1,19 @@
 #!/usr/bin/env bash
 
-readonly ARTIFACT_FILE_DIRECTORY=all_artifacts_files
-
 # The name of the file that we will merge all artifact JSON
 # information into.
 readonly ALL_ARTIFACTS_JSON_FILE="all_artifacts.json"
 export ALL_ARTIFACTS_JSON_FILE
+
+# The extension all our artifact JSON files will have. Such a file
+# should contain a single flat JSON object.
+#
+# The extension includes "grapl" to prevent the (admittedly unlikely)
+# scenario of somehow having some _other_ file with an
+# "artifacts.json" extension sneaking into a file glob somewhere.
+#
+# It also makes things _super_ obvious and searchable.
+readonly ARTIFACTS_FILE_EXTENSION="grapl-artifacts.json"
 
 # Generate a flat JSON object for a number of artifacts that have the
 # same version.
@@ -29,39 +37,23 @@ artifact_json() {
     done | jq --null-input '[inputs] | from_entries'
 }
 
-# Download a given artifact file from Buildkite into
-# `$ARTIFACT_FILE_DIRECTORY`.
-#
-# Does not fail if the file was not generated and uploaded during the
-# current Buildkite pipeline (which is a legitimate scenario - for example,
-# we only *sometimes* generate new AMI IDs.)
-download_artifact_file() {
-    local -r artifacts_file="${1}"
-    mkdir -p "${ARTIFACT_FILE_DIRECTORY}"
-    echo -e "--- :buildkite: Download '${artifacts_file}' artifacts file"
-    if ! (buildkite-agent artifact download "${artifacts_file}" "${ARTIFACT_FILE_DIRECTORY}"); then
-        echo "^^^ +++" # Un-collapses this section in Buildkite, making it more obvious we couldn't download
-        echo "No file found"
-    fi
-    # TODO: Would be nice to validate the artifacts. Right now there are some restrictions:
-    # - json file must be a flat associative array of key -> primitive (no nested maps, arrays)
-    #     bad: {"im": {"nested": true}}
-    #     good: {"im.nested": true}
-}
-
-# Given a directory of JSON files (assumed to represent JSON objects),
-# merge them into a single JSON object, sent to standard output.
-#
-# Clients should favor `merge_artifact_files` over calling this
-# function directly. (The logic is implemented this way to facilitate
-# testing.)
-_merge_artifact_files_impl() {
-    local -r directory="${1}"
-    jq --slurp 'reduce .[] as $item ({}; . * $item)' "${directory}/"*.json
-}
-
-# Merge all the artifact files in `${ARTIFACT_FILE_DIRECTORY}` and
-# send the resulting JSON object to standard output.
+# Merge all the artifact JSON files in the current directory and send
+# the resulting JSON object to standard output.
 merge_artifact_files() {
-    _merge_artifact_files_impl "${ARTIFACT_FILE_DIRECTORY}"
+    jq --slurp 'reduce .[] as $item ({}; . * $item)' -- *".${ARTIFACTS_FILE_EXTENSION}"
+}
+
+# Generate a file name for an artifacts JSON file. The `slug` is just
+# a meaningful name you give to describe the file. The
+# `${BUILDKITE_JOB_ID}` is also incorporated into the file name,
+# meaning that you don't have to care about naming collisions between
+# artifact files that are uploaded by different jobs. All you have to
+# do is make sure the `slug` is unique within the job.
+#
+#     $ artifacts_file_for monkeypants
+#     # => monkeypants-e44f9784-e20e-4b93-a21d-f41fd5869db9.grapl-artifacts.json
+#
+artifacts_file_for() {
+    local -r slug="${1}"
+    echo "${slug}-${BUILDKITE_JOB_ID}.${ARTIFACTS_FILE_EXTENSION}"
 }
