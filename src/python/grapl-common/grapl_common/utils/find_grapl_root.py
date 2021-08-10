@@ -29,6 +29,8 @@ def _find_grapl_root_based_off_git_in_pwd() -> Optional[Path]:
         # It's pretty likely that we've found the grapl root.
         return git_repo_root_path
     else:
+        # This actually happens in Buildkite. Its folder is named grapl-verify.
+        # If that's the case, specify GRAPL_ROOT=
         raise Exception(
             "We seem to be in a non-Grapl root, which is weird: {git_repo_root_path}"
         )
