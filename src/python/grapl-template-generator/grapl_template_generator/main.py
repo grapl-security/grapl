@@ -20,12 +20,12 @@ app = typer.Typer()
 def rust_grpc(
     crate_name: str,
     hax_update_cargo_toml: bool = typer.Option(
-        False, help="Update the Cargo.toml. You *may* lose some comments. Not recommended for anything but testing."
+        False,
+        help="Update the Cargo.toml. You *may* lose some comments. Not recommended for anything but testing.",
     ),
 ) -> None:
     args = CreateRustGrpcServiceArgs(
-        crate_name=crate_name,
-        update_cargo_toml=hax_update_cargo_toml
+        crate_name=crate_name, update_cargo_toml=hax_update_cargo_toml
     )
     create_rust_grpc_service(args)
     typer.echo(f"Created a Rust GRPC service named {crate_name}")
