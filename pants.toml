@@ -112,7 +112,8 @@ version = "isort==5.6.4"
 
 [pytest]
 pytest_plugins = [
-  "pytest-custom_exit_code"
+  "pytest-custom_exit_code",
+  "pytest-cov"
 ]
 # This comes from the pytest-custom_exit_code plugin, and is
 # specifically for running tests with Pytest filtering, like:
@@ -144,6 +145,14 @@ args = ["-i 4", "-ci", "-sr"]
 
 [test]
 output = "all"
+use_coverage = "true"
+
+[coverage-py]
+report = ["xml"]
+# coverage.py only reports statistics based on the files it
+# encounters, not on all the files in the repository; this counteracts
+# that.
+global_report = "true"
 
 [shellcheck]
 # Currently, Pants only knows about v0.7.1, but v0.7.2 has some nice

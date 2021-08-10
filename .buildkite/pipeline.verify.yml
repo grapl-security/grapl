@@ -78,6 +78,8 @@ steps:
   - label: ":python::jeans: Unit Tests"
     command:
       - make test-unit-python
+      # TODO: abstract this to a hook/plugin
+      - codecov --file=dist/coverage/python/coverage.xml
 
   - label: ":python::jeans: Typechecking"
     command:
