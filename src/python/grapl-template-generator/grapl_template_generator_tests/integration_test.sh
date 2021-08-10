@@ -9,6 +9,7 @@ set -euo pipefail
 git diff HEAD --exit-code > /dev/null 2>&1 || (echo "Your git tree is dirty; bailing!" && exit 42)
 
 GRAPL_ROOT="$(git rev-parse --show-toplevel)"
+test -f "${GRAPL_ROOT}/.grapl-root-marker" || (echo "This is not the Grapl repo" && exit 42)
 cd "${GRAPL_ROOT}"
 
 make grapl-template-generator

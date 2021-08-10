@@ -1,4 +1,3 @@
-import os
 import subprocess
 from pathlib import Path
 from typing import Optional
@@ -6,14 +5,7 @@ from typing import Optional
 
 def find_grapl_root() -> Optional[Path]:
     # We could potentially add other heuristics here.
-    return _find_grapl_root_based_off_env() or _find_grapl_root_based_off_git_in_pwd()
-
-
-def _find_grapl_root_based_off_env() -> Optional[Path]:
-    path_str = os.environ.get("GRAPL_ROOT")
-    if not path_str:
-        return None
-    return Path(path_str).resolve()
+    return _find_grapl_root_based_off_git_in_pwd()
 
 
 def _find_grapl_root_based_off_git_in_pwd() -> Optional[Path]:
@@ -25,14 +17,12 @@ def _find_grapl_root_based_off_git_in_pwd() -> Optional[Path]:
     git_repo_root_path = Path(git_repo_root).resolve()
     del git_repo_root
 
-    if git_repo_root_path.name == "grapl":
+    if (git_repo_root_path / ".grapl-root-marker").exists():
         # It's pretty likely that we've found the grapl root.
         return git_repo_root_path
     else:
-        # This actually happens in Buildkite. Its folder is named grapl-verify.
-        # If that's the case, specify GRAPL_ROOT=
         raise Exception(
-            "We seem to be in a non-Grapl root, which is weird: {git_repo_root_path}"
+            "We seem to be in a non-Grapl git repo, which is weird: {git_repo_root_path}"
         )
 
 

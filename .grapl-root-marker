@@ -1,0 +1,7 @@
+This is a completely arbitrary file that simply signifies 
+"yes, this is the grapl repo's root directory"
+
+The contents are not important.
+
+Use this in conjunction with `git rev-parse --show-toplevel` to get a pretty 
+good signal that you're in the right place.
