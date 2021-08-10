@@ -22,7 +22,7 @@ def _find_grapl_root_based_off_git_in_pwd() -> Optional[Path]:
         return git_repo_root_path
     else:
         raise Exception(
-            "We seem to be in a non-Grapl git repo, which is weird: {git_repo_root_path}"
+            f"We seem to be in a non-Grapl git repo, which is weird: {git_repo_root_path}"
         )
 
 
