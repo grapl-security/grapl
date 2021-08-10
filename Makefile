@@ -199,7 +199,7 @@ build-python-wheels:  ## Build all Python wheels
 	./pants filter --target-type=python_distribution :: | xargs ./pants package
 
 .PHONY: build-docker-images-local
-build-docker-images-local: 
+build-docker-images-local:
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(MAKE) build-docker-images
 	$(MAKE) push-local
