@@ -15,6 +15,78 @@ class ServiceQueueNames(NamedTuple):
     dead_letter_queue: str
 
 
+class ServiceConfiguration(NamedTuple):
+    """Encapsulates the information needed to configure a service to interact with a `ServiceQueue`.
+
+    In particular, services will have one queue from which they will
+    pull messages (the "main queue"), and one queue to which they will
+    write messages that could not be processed (the "dead-letter
+    queue"). Depending on whether the service is a "default" service
+    or a "retry" service, the specific identities of these queues will
+    be different.
+
+    """
+
+    main_queue: aws.sqs.Queue
+    dead_letter_queue: aws.sqs.Queue
+
+    @property
+    def main_url(self) -> pulumi.Output[str]:
+        """ The URL of the main queue."""
+        return self.main_queue.id
+
+    @property
+    def dead_letter_url(self) -> pulumi.Output[str]:
+        """ The URL of the dead-letter queue."""
+        return self.dead_letter_queue.id
+
+    def grant_queue_permissions_to(self, role: aws.iam.Role) -> None:
+        """Adds an inline policy to `role` for consuming messages from
+        `main_queue` and writing messages to `dead_letter_queue`.
+
+        The resulting `RolePolicy` resource is a child of the role.
+
+        """
+        aws.iam.RolePolicy(
+            f"{role._name}-reads-{self.main_queue._name}-writes-{self.dead_letter_queue._name}",
+            role=role.name,
+            policy=pulumi.Output.all(
+                main_arn=self.main_queue.arn, dead_letter_arn=self.dead_letter_queue.arn
+            ).apply(
+                lambda inputs: json.dumps(
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Sid": "Read from main queue",
+                                "Effect": "Allow",
+                                "Action": [
+                                    "sqs:ChangeMessageVisibility",
+                                    "sqs:DeleteMessage",
+                                    "sqs:GetQueueAttributes",
+                                    "sqs:GetQueueUrl",
+                                    "sqs:ReceiveMessage",
+                                ],
+                                "Resource": inputs["main_arn"],
+                            },
+                            {
+                                "Sid": "Write to dead-letter queue",
+                                "Effect": "Allow",
+                                "Action": [
+                                    "sqs:SendMessage",
+                                    "sqs:GetQueueAttributes",
+                                    "sqs:GetQueueUrl",
+                                ],
+                                "Resource": inputs["dead_letter_arn"],
+                            },
+                        ],
+                    }
+                )
+            ),
+            opts=pulumi.ResourceOptions(parent=role),
+        )
+
+
 class ServiceQueue(pulumi.ComponentResource):
     """
     Each service currently deals with three queues. The main queue
@@ -115,24 +187,6 @@ class ServiceQueue(pulumi.ComponentResource):
             self.dead_letter_queue.name,
         ).apply(lambda args: ServiceQueueNames(*args))
 
-    def grant_main_queue_consumption_to(self, role: aws.iam.Role) -> None:
-        queue_policy.consumption_policy(self.queue, role)
-
-    def grant_retry_queue_consumption_to(self, role: aws.iam.Role) -> None:
-        queue_policy.consumption_policy(self.retry_queue, role)
-
-    def grant_dead_letter_queue_consumption_to(self, role: aws.iam.Role) -> None:
-        queue_policy.consumption_policy(self.dead_letter_queue, role)
-
-    def grant_main_queue_send_to(self, role: aws.iam.Role) -> None:
-        queue_policy.send_policy(self.queue, role)
-
-    def grant_retry_queue_send_to(self, role: aws.iam.Role) -> None:
-        queue_policy.send_policy(self.retry_queue, role)
-
-    def grant_dead_letter_queue_send_to(self, role: aws.iam.Role) -> None:
-        queue_policy.send_policy(self.dead_letter_queue, role)
-
     def subscribe_to_emitter(self, emitter: EventEmitter) -> None:
         """
         Enable this queue to be fed by events from `emitter`.
@@ -147,3 +201,16 @@ class ServiceQueue(pulumi.ComponentResource):
         )
 
         queue_policy.allow_send_from_topic(self.queue, emitter.topic)
+
+    def default_service_configuration(self) -> ServiceConfiguration:
+        """
+        Information needed to configure a "default" service to interact with this `ServiceQueue`.
+        """
+        return ServiceConfiguration(self.queue, self.retry_queue)
+
+    def retry_service_configuration(self) -> ServiceConfiguration:
+        """Information needed to configure a "retry" service to interact with
+        this `ServiceQueue`.
+
+        """
+        return ServiceConfiguration(self.retry_queue, self.dead_letter_queue)

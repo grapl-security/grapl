@@ -62,6 +62,8 @@ steps:
           server: docker.cloudsmith.io
     agents:
       queue: "docker"
+    artifact_paths:
+      - "*.grapl-artifacts.json"
 
   - label: ":aws-lambda::cloudsmith: Upload Lambda ZIPs"
     command:
@@ -76,6 +78,8 @@ steps:
             CLOUDSMITH_API_KEY: "cloudsmith-token"
     agents:
       queue: "artifact-uploaders"
+    artifact_paths:
+      - "*.grapl-artifacts.json"
 
   - label: ":thinking_face: AMI Build?"
     plugins:
@@ -110,18 +114,11 @@ steps:
 
   - wait
 
-  # The names of the input files depend on the files that can be
-  # uploaded to Buildkite from previous steps in this pipeline.
+  # Downloads and operates on all the *.grapl-artifacts.json files
+  # that were uploaded in any previous steps of this pipeline.
   - label: "Merge artifacts files"
     command:
-      # yaml fyi: `>` collapses newlines into normal spaces
-      - >
-        .buildkite/scripts/merge_artifact_files.sh
-        lambda_artifacts.json
-        container_artifacts.json
-        grapl-nomad-consul-server.artifacts.json
-        grapl-nomad-consul-client.artifacts.json
-        ux_artifacts.json
+      - .buildkite/scripts/merge_artifact_files.sh
 
   - wait
 

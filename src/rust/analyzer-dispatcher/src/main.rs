@@ -176,7 +176,9 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
     let sqs_client = SqsClient::from_env();
     let _s3_client = S3Client::from_env();
     let source_queue_url = grapl_config::source_queue_url();
+    let dead_letter_queue_url = grapl_config::dead_letter_queue_url();
     debug!("Queue Url: {}", source_queue_url);
+    debug!("Dead-Letter Queue Url: {}", dead_letter_queue_url);
 
     let cache = &mut make_ten(async {
         NopCache {} // the AnalyzerDispatcher is not idempotent :(
@@ -205,7 +207,7 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
     info!("Starting process_loop");
     sqs_executor::process_loop(
         source_queue_url,
-        std::env::var("DEAD_LETTER_QUEUE_URL").expect("DEAD_LETTER_QUEUE_URL"),
+        dead_letter_queue_url,
         cache,
         sqs_client.clone(),
         analyzer_dispatcher,

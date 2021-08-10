@@ -330,7 +330,7 @@ pub async fn handler(should_default: bool) -> Result<(), Box<dyn std::error::Err
     info!("Starting process_loop");
     sqs_executor::process_loop(
         grapl_config::source_queue_url(),
-        std::env::var("DEAD_LETTER_QUEUE_URL").expect("DEAD_LETTER_QUEUE_URL"),
+        grapl_config::dead_letter_queue_url(),
         cache,
         sqs_client.clone(),
         node_identifier,
