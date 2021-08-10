@@ -24,7 +24,6 @@ BUILD @christophermaier
 .gitattributes @christophermaier
 /.github/ @christophermaier
 .gitignore @christophermaier
-.grapl-root-marker @wimax-grapl
 /LICENSE @christophermaier
 /local-grapl.env @christophermaier
 /Makefile @christophermaier
