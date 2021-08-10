@@ -17,13 +17,9 @@ def _find_grapl_root_based_off_git_in_pwd() -> Optional[Path]:
     git_repo_root_path = Path(git_repo_root).resolve()
     del git_repo_root
 
-    if (git_repo_root_path / ".grapl-root-marker").exists():
-        # It's pretty likely that we've found the grapl root.
-        return git_repo_root_path
-    else:
-        raise Exception(
-            f"We seem to be in a non-Grapl git repo, which is weird: {git_repo_root_path}"
-        )
+    # One could add a check here that this is the Grapl repo - and not just any
+    # git repo - but let's save that fight for another day.
+    return git_repo_root_path
 
 
 def _quietly_execute(cmd: str) -> Optional[str]:
