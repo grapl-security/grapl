@@ -16,7 +16,7 @@ from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.policies import ECR_TOKEN_POLICY, attach_policy
 from infra.repository import Repository, registry_credentials
-from infra.service_queue import ServiceQueue
+from infra.service_queue import ServiceConfiguration, ServiceQueue
 
 import pulumi
 
@@ -94,7 +94,7 @@ class _AWSFargateService(pulumi.ComponentResource):
         self,
         name: str,
         cluster: aws.ecs.Cluster,
-        queue: ServiceQueue,
+        service_configuration: ServiceConfiguration,
         input_emitter: EventEmitter,
         output_emitter: EventEmitter,
         network: Network,
@@ -113,38 +113,7 @@ class _AWSFargateService(pulumi.ComponentResource):
 
         self.task_role = FargateTaskRole(name, opts=pulumi.ResourceOptions(parent=self))
 
-        ########################################################################
-        # TODO: CDK code has us consuming from all queues, but that's
-        # likely excessive. The default service probably just needs to
-        # consume from the main queue; similarly for the retry service
-        # and retry queue
-        #
-        # We should probably bundle this concept up into a single
-        # policy (one for the "default" case and one for the "retry"
-        # case), and then put this into the ServiceQueue object. Then,
-        # anything that needs to behave as a "default service" can
-        # just attach the appropriate policy; similarly for things
-        # that behave like "retry services".
-        #
-        # That would likely allow us to unify the Fargate- and
-        # Lambda-based services, too.
-        queue.grant_main_queue_consumption_to(self.task_role)
-        queue.grant_retry_queue_consumption_to(self.task_role)
-        queue.grant_dead_letter_queue_consumption_to(self.task_role)
-        ########################################################################
-
-        ########################################################################
-        # TODO: As above, we don't need everything to be able to send
-        # to all our queues.
-        #
-        # If we take the approach advocated above with a single policy
-        # laying out the behavior we want, then these attachments can
-        # go away, since they will have been subsumed into the ones
-        # above.
-        queue.grant_main_queue_send_to(self.task_role)
-        queue.grant_retry_queue_send_to(self.task_role)
-        queue.grant_dead_letter_queue_send_to(self.task_role)
-        ########################################################################
+        service_configuration.grant_queue_permissions_to(self.task_role)
 
         input_emitter.grant_read_to(self.task_role)
         output_emitter.grant_write_to(self.task_role)
@@ -203,9 +172,8 @@ class _AWSFargateService(pulumi.ComponentResource):
             f"{name}-task",
             family=f"{DEPLOYMENT_NAME}-{name}-task",
             container_definitions=pulumi.Output.all(
-                queue_url=queue.main_queue_url,
-                retry_url=queue.retry_queue_url,
-                dead_letter_url=queue.dead_letter_queue_url,
+                queue_url=service_configuration.main_url,
+                dead_letter_url=service_configuration.dead_letter_url,
                 log_group=self.log_group.name,
                 bucket=output_emitter.bucket.bucket,
                 image=image,
@@ -226,7 +194,6 @@ class _AWSFargateService(pulumi.ComponentResource):
                                     "DEST_BUCKET_NAME": inputs["bucket"],
                                     "DEPLOYMENT_NAME": DEPLOYMENT_NAME,
                                     "DEAD_LETTER_QUEUE_URL": inputs["dead_letter_url"],
-                                    "RETRY_QUEUE_URL": inputs["retry_url"],
                                     **inputs["env"],
                                 }
                             ),
@@ -316,7 +283,7 @@ class FargateService(pulumi.ComponentResource):
         self.default_service = _AWSFargateService(
             f"{name}-default",
             cluster=self.ecs_cluster,
-            queue=self.queue,
+            service_configuration=self.queue.default_service_configuration(),
             input_emitter=input_emitter,
             output_emitter=output_emitter,
             network=network,
@@ -343,7 +310,7 @@ class FargateService(pulumi.ComponentResource):
         self.retry_service = _AWSFargateService(
             retry_name,
             cluster=self.ecs_cluster,
-            queue=self.queue,
+            service_configuration=self.queue.retry_service_configuration(),
             input_emitter=input_emitter,
             output_emitter=output_emitter,
             network=network,

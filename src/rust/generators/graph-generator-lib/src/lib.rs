@@ -79,11 +79,9 @@ pub async fn run_graph_generator<
     .await;
 
     info!("Starting process_loop");
-    let queue_url = grapl_config::source_queue_url();
-
     sqs_executor::process_loop(
-        queue_url,
-        std::env::var("DEAD_LETTER_QUEUE_URL").expect("DEAD_LETTER_QUEUE_URL"),
+        grapl_config::source_queue_url(),
+        grapl_config::dead_letter_queue_url(),
         cache,
         sqs_client.clone(),
         subgraph_generator,
