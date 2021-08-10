@@ -54,6 +54,7 @@ BUILD @christophermaier
 /src/python/graplinc-grapl-api/ @christophermaier
 /src/python/grapl-model-plugin-deployer/ @colin-grapl
 /src/python/grapl-notebook/ @wimax-grapl
+/src/python/grapl-template-generator/ @wimax-grapl
 /src/python/grapl-tests-common/ @wimax-grapl
 /src/python/grapl-ux-router/ @colin-grapl
 /src/python/mypy.ini @christophermaier @wimax-grapl
