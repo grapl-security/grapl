@@ -189,7 +189,7 @@ build-python-wheels:  ## Build all Python wheels
 	./pants filter --target-type=python_distribution :: | xargs ./pants package
 
 .PHONY: build-docker-images-local
-build-docker-images-local: 
+build-docker-images-local:
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(MAKE) build-docker-images
 	$(MAKE) push-local
@@ -352,8 +352,12 @@ lint-prettier: build-formatter ## Run ts/js/yaml lint checks
 lint-packer: ## Check to see if Packer templates are formatted properly
 	.buildkite/scripts/lint_packer.sh
 
+.PHONY: lint-protobuf
+lint-protobuf: ## Check that all our protobufs are up to snuff
+	./buf lint
+
 .PHONY: lint
-lint: lint-python lint-prettier lint-rust lint-shell lint-hcl ## Run all lint checks
+lint: lint-python lint-prettier lint-rust lint-shell lint-hcl lint-protobuf ## Run all lint checks
 
 ##@ Formatting 💅
 
