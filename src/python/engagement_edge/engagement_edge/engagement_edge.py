@@ -67,8 +67,6 @@ class LazyJwtSecret:
 
 JWT_SECRET = LazyJwtSecret()
 
-NOTEBOOK_NAME = os.environ["GRAPL_NOTEBOOK_INSTANCE"]
-
 DYNAMO: Optional[DynamoDBServiceResource] = None
 
 app = Chalice(app_name="engagement-edge")
@@ -178,7 +176,7 @@ def login(username: str, password: str) -> Optional[str]:
     return jwt.encode({"username": username}, JWT_SECRET.get(), algorithm="HS256")
 
 
-def check_jwt(headers: Mapping[str, Any]) -> bool:
+def check_jwt(headers: Mapping[str, Any]) -> Tuple[bool, str]:
     encoded_jwt = None
     for cookie in headers.get("Cookie", "").split(";"):
         if "grapl_jwt=" in cookie:
@@ -186,14 +184,14 @@ def check_jwt(headers: Mapping[str, Any]) -> bool:
 
     if not encoded_jwt:
         LOGGER.info("encoded_jwt %s", encoded_jwt)
-        return False
+        return False, "No grapl_jwt cookie supplied."
 
     try:
         jwt.decode(encoded_jwt, JWT_SECRET.get(), algorithms=["HS256"])
-        return True
+        return True, ""
     except Exception as e:
         LOGGER.error("jwt.decode %s", e)
-        return False
+        return False, "Could not decode grapl_jwt cookie."
 
 
 def lambda_login(event: Any) -> Optional[str]:
@@ -220,9 +218,11 @@ def requires_auth(path: str) -> Callable[[RouteFn], RouteFn]:
             if app.current_request.method == "OPTIONS":
                 return respond(None, {})
 
-            if not check_jwt(app.current_request.headers):
+            jwt_ok, reason = check_jwt(app.current_request.headers)
+            if not jwt_ok:
                 LOGGER.warning("not logged in")
-                return respond("Must log in", status_code=403)
+                return respond(f"Must log in: {reason}", status_code=403)
+
             try:
                 return route_fn()
             except Exception as e:
@@ -269,7 +269,8 @@ def check_login() -> Response:
     LOGGER.debug(f"/checkLogin {app.current_request}")
     request = app.current_request
 
-    if check_jwt(request.headers):
+    jwt_ok, reason = check_jwt(request.headers)
+    if jwt_ok:
         return respond(None, "True")
     else:
         return respond(None, "False")
@@ -278,7 +279,8 @@ def check_login() -> Response:
 @requires_auth("/getNotebook")
 def get_notebook() -> Response:
     client = create_sagemaker_client()
-    url = client.get_presigned_url(NOTEBOOK_NAME)
+    notebook_instance_name = os.environ["GRAPL_NOTEBOOK_INSTANCE"]
+    url = client.get_presigned_url(notebook_instance_name)
     return respond(err=None, res={"notebook_url": url})
 
 
