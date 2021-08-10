@@ -11,4 +11,6 @@ pex_binary(
     zip_safe=False,
 )
 
-shell_library()
+shell_library(
+    name="shell_lib"
+)
