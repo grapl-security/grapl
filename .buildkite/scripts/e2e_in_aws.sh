@@ -43,8 +43,8 @@ echo "--- :arrow_up::cloud: Uploading sample data"
     --logfile etc/sample_data/eventlog.xml
 
 echo "--- :sob: Sleep a little while for Reasons (TM)"
-for i in {1..60}; do
-    echo "Sleeping ${i}/60 seconds"
+for i in {1..120}; do
+    echo "Sleeping ${i}/120 seconds"
     sleep 1
 done
 
