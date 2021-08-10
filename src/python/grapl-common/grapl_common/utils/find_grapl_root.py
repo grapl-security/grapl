@@ -17,11 +17,13 @@ def _find_grapl_root_based_off_git_in_pwd() -> Optional[Path]:
     git_repo_root_path = Path(git_repo_root)
     del git_repo_root
 
-    if git_repo_root_path.name == "grapl":
+    # https://stackoverflow.com/a/51794340
+    repo_basename = _quietly_execute("basename $(git remote get-url origin)")
+    if repo_basename == "grapl.git":
         # It's pretty likely that we've found the grapl root.
         return git_repo_root_path
     else:
-        raise Exception("We seem to be in a non-Grapl root, which is weird: {git_repo_root_path}")
+        raise Exception(f"We seem to be in a non-Grapl root, which is weird: {git_repo_root_path}")
 
 
 def _quietly_execute(cmd: str) -> Optional[str]:
