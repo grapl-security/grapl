@@ -6,7 +6,15 @@ env:
 # from our grapl/testing stack.
 
 steps:
-  # TODO: replace this with something meaningful
-  - label: "Hello World :earth_asia::earth_americas::earth_africa:"
+  # This step relies on Pulumi stack outputs to target the correct
+  # deployment, so we need access to the token, and have to run in the
+  # correct AWS account.
+  - label: ":aws: E2E tests in AWS"
     command:
-      - echo 'Hello World'
+      - .buildkite/scripts/e2e_in_aws.sh testing
+    plugins:
+      - seek-oss/aws-sm#v2.3.1:
+          env:
+            PULUMI_ACCESS_TOKEN: "pulumi-token"
+    agents:
+      queue: "pulumi-staging"
