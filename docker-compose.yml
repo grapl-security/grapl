@@ -135,13 +135,12 @@ services:
           - ${REDIS_HOST}
 
   localstack:
-    image: localstack/localstack:0.12.15
+    image: localstack/localstack-full:0.12.15 # -full includes elasticmq
     ports:
       # We'll expose localstack's edge port for ease of use with
       # things like the AWS CLI, Pulumi, etc.
       - 127.0.0.1:${LOCALSTACK_PORT}:${LOCALSTACK_PORT}
     environment:
-      - IMAGE_NAME=localstack/localstack:0.12.15
       - EDGE_PORT=${LOCALSTACK_PORT}
       - HOSTNAME_EXTERNAL=${LOCALSTACK_HOST}
       - SERVICES=apigateway,cloudwatch,dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs
@@ -157,6 +156,9 @@ services:
       # Without this, the lambda containers are attached to the bridge network
       - LAMBDA_DOCKER_NETWORK=grapl-network
       - DATA_DIR=${DATA_DIR- }
+      # The default SQS implementation uses `moto`; `elasticmq` is much more
+      # fully-featured.
+      - SQS_PROVIDER=elasticmq
     privileged: true # for docker lambda execution
     healthcheck:
       test:

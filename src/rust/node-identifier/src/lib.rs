@@ -286,6 +286,17 @@ where
     }
 }
 
+/// # Arguments
+/// ## should_default
+/// should_default (and, further into the code, should_guess) controls the
+/// node identification process behavior around Session-strategy nodes.
+/// If a node uses the Session strategy (common for processes, or network
+/// connections) then the behavior is non-deterministic and heuristic-based.
+/// This argument dictates if a new "session" should be created for a node
+/// if the identification process failed.
+/// New session tracking is expected behavior for the retry handler,
+/// but not for the first-pass node identifier (so additional context can
+/// be received before we determine that a node needs a new session).
 pub async fn handler(should_default: bool) -> Result<(), Box<dyn std::error::Error>> {
     let (env, _guard) = grapl_config::init_grapl_env!();
     let source_queue_url = grapl_config::source_queue_url();
