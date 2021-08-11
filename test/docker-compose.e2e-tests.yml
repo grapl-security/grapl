@@ -28,21 +28,12 @@ services:
         export GRAPL_SCHEMA_PROPERTIES_TABLE=$$(cat /mnt/pulumi-outputs/schema-properties-table)
 
         graplctl \
-              --grapl-region $AWS_REGION \
-              --grapl-deployment-name $DEPLOYMENT_NAME \
-              --grapl-version $DEPLOYMENT_NAME \
               upload analyzer \
               --analyzer_main_py ./etc/local_grapl/suspicious_svchost/main.py
         graplctl \
-              --grapl-region $AWS_REGION \
-              --grapl-deployment-name $DEPLOYMENT_NAME \
-              --grapl-version $DEPLOYMENT_NAME \
               upload analyzer \
               --analyzer_main_py ./etc/local_grapl/unique_cmd_parent/main.py
         graplctl \
-              --grapl-region $AWS_REGION \
-              --grapl-deployment-name $DEPLOYMENT_NAME \
-              --grapl-version $DEPLOYMENT_NAME \
               upload sysmon \
               --logfile ./etc/sample_data/eventlog.xml
         python3 -c 'import lambdex_handler; lambdex_handler.handler(None, None)'
@@ -64,6 +55,8 @@ services:
       - IS_LOCAL=True
       - MG_ALPHAS
       - VSC_DEBUGGER_PORT
+      - GRAPL_VERSION=${DEPLOYMENT_NAME}
+      - GRAPL_REGION=${AWS_REGION}
     ports:
       - ${VSC_DEBUGGER_PORT_FOR_GRAPL_E2E_TESTS}:${VSC_DEBUGGER_PORT_FOR_GRAPL_E2E_TESTS}
 
