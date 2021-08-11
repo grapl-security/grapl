@@ -40,18 +40,18 @@ BUILD @christophermaier
 /src/aws-provision/ @jgrillo-grapl
 /src/js/engagement_view/ @andrea-grapl
 /src/js/graphql_endpoint/ @andrea-grapl
-/src/proto/ @wg-data-infra
-/src/python/analyzer_executor/ @wimax-grapl @wg-data-infra
+/src/proto/ @grapl-security/wg-data-infra
+/src/python/analyzer_executor/ @wimax-grapl @grapl-security/wg-data-infra
 /src/python/e2e-test-runner/ @jgrillo-grapl
-/src/python/engagement-creator/ @wimax-grapl @wg-data-infra
+/src/python/engagement-creator/ @wimax-grapl @grapl-security/wg-data-infra
 /src/python/engagement_edge/ @colin-grapl
 /src/python/graphql_endpoint_tests/ @wimax-grapl
 /src/python/grapl_analyzerlib/ @colin-grapl
 /src/python/grapl-common/ @wimax-grapl
 /src/python/graplctl/ @jgrillo-grapl
-/src/python/grapl-dgraph-ttl/ @wg-data-infra
-/src/python/graplinc/ @wg-data-infra
-/src/python/graplinc-grapl-api/ @wg-data-infra
+/src/python/grapl-dgraph-ttl/ @grapl-security/wg-data-infra
+/src/python/graplinc/ @grapl-security/wg-data-infra
+/src/python/graplinc-grapl-api/ @grapl-security/wg-data-infra
 /src/python/grapl-model-plugin-deployer/ @colin-grapl
 /src/python/grapl-notebook/ @wimax-grapl
 /src/python/grapl-template-generator/ @wimax-grapl @colin-grapl
@@ -60,7 +60,7 @@ BUILD @christophermaier
 /src/python/mypy.ini @christophermaier @wimax-grapl
 /src/python/provisioner/ @jgrillo-grapl
 /src/python/python_test_deps/ @christophermaier
-/src/rust/analyzer-dispatcher/ @wg-data-infra
+/src/rust/analyzer-dispatcher/ @grapl-security/wg-data-infra
 /src/rust/bin/ @christophermaier
 /src/rust/.cargo @christophermaier
 /src/rust/Cargo.lock @christophermaier
@@ -68,8 +68,8 @@ BUILD @christophermaier
 /src/rust/derive-dynamic-node/ @colin-grapl
 /src/rust/endpoint-plugin/ @inickles-grapl
 /src/rust/generators/ @inickles-grapl
-/src/rust/graph-descriptions/ @wg-data-infra
-/src/rust/graph-merger/ @wg-data-infra
+/src/rust/graph-descriptions/ @grapl-security/wg-data-infra
+/src/rust/graph-merger/ @grapl-security/wg-data-infra
 /src/rust/grapl-config/ @inickles-grapl @wimax-grapl
 /src/rust/grapl-graphql-codegen/ @colin-grapl
 /src/rust/grapl/ @inickles-grapl
@@ -78,9 +78,9 @@ BUILD @christophermaier
 /src/rust/grapl-utils/ @inickles-grapl
 /src/rust/kafka-metrics-exporter/ @jgrillo-grapl
 /src/rust/metric-forwarder/ @wimax-grapl
-/src/rust/node-identifier/ @colin-grapl @wg-data-infra
+/src/rust/node-identifier/ @colin-grapl @grapl-security/wg-data-infra
 /src/rust/rust-toolchain @inickles-grapl
-/src/rust/sqs-executor/ @inickles-grapl @wg-data-infra
+/src/rust/sqs-executor/ @inickles-grapl @grapl-security/wg-data-infra
 /src/rust/sysmon/ @inickles-grapl
 /test/cypress/ @inickles-grapl @andrea-grapl
 /test/cypress.json @inickles-grapl @andrea-grapl
