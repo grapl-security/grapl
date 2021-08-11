@@ -1,7 +1,11 @@
+pub use grapl_pipeline::{
+    Envelope,
+    Metadata,
+    Uuid,
+};
 use uuid;
 
 pub use crate::graplinc::grapl::pipeline::v1beta1 as grapl_pipeline;
-pub use grapl_pipeline::{Envelope, Metadata, Uuid};
 
 pub trait ServiceMessage {
     const TYPE_NAME: &'static str;
