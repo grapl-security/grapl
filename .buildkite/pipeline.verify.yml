@@ -44,7 +44,7 @@ steps:
       - codecov --file=dist/coverage/rust/cobertura.xml
     agents:
       queue: "beefy"
-  
+
   - label: ":writing_hand: Test Grapl Template Generator"
     command:
       - make test-grapl-template-generator
