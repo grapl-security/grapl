@@ -49,7 +49,11 @@ class E2eTestRunner(pulumi.ComponentResource):
                     "GRAPL_API_HOST": api.invoke_url.apply(
                         lambda url: urlparse(url).netloc
                     ),
-                    "TIMEOUT_SECS": "500",
+                    # This is *horribly* pessimistic; we basically
+                    # want AWS killing this lambda to be the thing
+                    # that fails it while we figure out why things
+                    # seem to take so long in AWS.
+                    "TIMEOUT_SECS": str(60 * 15),  # 15 minutes
                 },
                 timeout=60 * 15,  # 15 minutes
                 memory_size=256,
