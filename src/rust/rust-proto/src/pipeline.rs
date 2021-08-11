@@ -1,19 +1,20 @@
-use uuid::Uuid;
+use uuid;
 
-pub use crate::graplinc::grapl::pipeline::v1beta1::*;
+pub use crate::graplinc::grapl::pipeline::v1beta1 as grapl_pipeline;
+pub use grapl_pipeline::{Envelope, Metadata, Uuid};
 
 pub trait ServiceMessage {
     const TYPE_NAME: &'static str;
 }
 
-impl ProtoUuidV4 {
+impl grapl_pipeline::Uuid {
     pub fn new() -> Self {
         Self::from(uuid::Uuid::new_v4())
     }
 }
 
-impl From<ProtoUuidV4> for uuid::Uuid {
-    fn from(p: ProtoUuidV4) -> Self {
+impl From<grapl_pipeline::Uuid> for uuid::Uuid {
+    fn from(p: grapl_pipeline::Uuid) -> Self {
         let lsb: [u8; 8] = p.lsb.to_le_bytes();
         let msb: [u8; 8] = p.msb.to_le_bytes();
         let u: u128 = u128::from_le_bytes([
@@ -25,8 +26,8 @@ impl From<ProtoUuidV4> for uuid::Uuid {
     }
 }
 
-impl From<uuid::Uuid> for ProtoUuidV4 {
-    fn from(u: Uuid) -> Self {
+impl From<uuid::Uuid> for grapl_pipeline::Uuid {
+    fn from(u: uuid::Uuid) -> Self {
         let u = u.as_u128();
         let u_le: [u8; 16] = u.to_le_bytes();
         // Ugly, but `Index` isn't const, so Rust can't figure
@@ -48,12 +49,12 @@ mod tests {
     #[test]
     fn test_equality_from_uuid() {
         for _ in 0..1000 {
-            // start with a Uuid
+            // start with a uuid::Uuid
             let u0 = uuid::Uuid::new_v4();
-            // Convert it into a ProtoUuidV4
-            let pu: ProtoUuidV4 = u0.clone().into();
-            // Then back to a Uuid
-            let u1: Uuid = pu.into();
+            // Convert it into a protobuf Uuid
+            let pu: grapl_pipeline::Uuid = u0.clone().into();
+            // Then back to a uuid::Uuid
+            let u1: uuid::Uuid = pu.into();
             // Hopefully it hasn't changed
             assert_eq!(u0, u1);
         }
@@ -62,12 +63,12 @@ mod tests {
     #[test]
     fn test_equality_from_proto_uuid() {
         for _ in 0..1000 {
-            // start with a ProtoUuid
-            let pu0 = ProtoUuidV4::new();
-            // Convert it into a Uuid
-            let u: Uuid = pu0.clone().into();
-            // Then back to a ProtoUuid
-            let pu1: ProtoUuidV4 = u.into();
+            // start with a protobuf Uuid
+            let pu0 = grapl_pipeline::Uuid::new();
+            // Convert it into a uuid::Uuid
+            let u: uuid::Uuid = pu0.clone().into();
+            // Then back to a protobuf Uuid
+            let pu1: grapl_pipeline::Uuid = u.into();
             // Hopefully it hasn't changed
             assert_eq!(pu0, pu1);
         }
