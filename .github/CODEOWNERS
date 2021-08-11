@@ -78,7 +78,7 @@ BUILD @christophermaier
 /src/rust/grapl-utils/ @inickles-grapl
 /src/rust/kafka-metrics-exporter/ @jgrillo-grapl
 /src/rust/metric-forwarder/ @wimax-grapl
-/src/rust/node-identifier/ @colin-grapl @grapl-security/wg-data-infra
+/src/rust/node-identifier/ @grapl-security/wg-data-infra
 /src/rust/rust-toolchain @inickles-grapl
 /src/rust/sqs-executor/ @inickles-grapl @grapl-security/wg-data-infra
 /src/rust/sysmon/ @inickles-grapl
