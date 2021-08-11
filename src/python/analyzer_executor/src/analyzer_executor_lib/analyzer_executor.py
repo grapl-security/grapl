@@ -189,7 +189,7 @@ class AnalyzerExecutor:
         for event in events["Records"]:
             data = parse_s3_event(s3, event)
 
-            envelope = Envelope.from_proto_bytes(data)
+            envelope = Envelope.deserialize(data)
             # Keep in mind that, today, we don't communicate this message via protobuf but instead
             # we use JSON. It would be worth changing this in another issue.
             message = json.loads(envelope.inner_message)
@@ -225,7 +225,12 @@ class AnalyzerExecutor:
                     "analyzer-executor.emit_event.ms",
                     (TagPair("analyzer_name", exec_hit.analyzer_name),),
                 ):
-                    emit_event(s3, exec_hit, envelope.metadata)
+                    emit_event(
+                        self.analyzer_matched_subgraphs_bucket,
+                        s3,
+                        exec_hit,
+                        envelope.metadata,
+                    )
                 self.update_msg_cache(analyzer, exec_hit.root_node_key, message["key"])
                 self.update_hit_cache(analyzer_name, exec_hit.root_node_key)
 
@@ -412,7 +417,12 @@ def chunker(seq: List[BaseView], size: int) -> List[List[BaseView]]:
     return [seq[pos : pos + size] for pos in range(0, len(seq), size)]
 
 
-def emit_event(s3: S3ServiceResource, event: ExecutionHit, metadata: Metadata) -> None:
+def emit_event(
+    analyzer_matched_subgraphs_bucket: str,
+    s3: S3ServiceResource,
+    event: ExecutionHit,
+    metadata: Metadata,
+) -> None:
     LOGGER.info(f"emitting event for: {event.analyzer_name, event.nodes}")
 
     meta_dict = {
