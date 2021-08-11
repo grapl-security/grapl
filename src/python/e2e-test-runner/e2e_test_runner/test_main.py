@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Any, Dict, Mapping
 
 from grapl_analyzerlib.nodes.lens import LensQuery, LensView
@@ -14,6 +15,8 @@ from grapl_tests_common.wait import (
 LENS_NAME = "DESKTOP-FVSHABR"
 GqlLensDict = Dict[str, Any]
 
+TIMEOUT_SECS = int(os.getenv("TIMEOUT_SECS", "300"))
+
 
 def test_expected_data_in_dgraph(jwt: str) -> None:
     # There is some unidentified, nondeterministic failure with e2e.
@@ -23,7 +26,7 @@ def test_expected_data_in_dgraph(jwt: str) -> None:
     # - Lens with 4 scope
     # - Lens with 5 scope (correct)
     query = LensQuery().with_lens_name(LENS_NAME)
-    lens: LensView = wait_for_one(WaitForQuery(query), timeout_secs=120)
+    lens: LensView = wait_for_one(WaitForQuery(query), timeout_secs=TIMEOUT_SECS)
     assert lens.get_lens_name() == LENS_NAME
     # lens scope is not atomic
 
@@ -38,7 +41,7 @@ def test_expected_data_in_dgraph(jwt: str) -> None:
             5,
         )
 
-    wait_for_one(WaitForCondition(scope_has_N_items), timeout_secs=300)
+    wait_for_one(WaitForCondition(scope_has_N_items), timeout_secs=TIMEOUT_SECS)
 
     # Now that we've confirmed that the expected data has shown up in dgraph,
     # let's see what the GraphQL endpoint says.
@@ -50,7 +53,7 @@ def test_expected_data_in_dgraph(jwt: str) -> None:
         WaitForNoException(
             lambda: ensure_graphql_lens_scope_no_errors(gql_client, LENS_NAME)
         ),
-        timeout_secs=300,
+        timeout_secs=TIMEOUT_SECS,
     )
 
 

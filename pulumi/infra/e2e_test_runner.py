@@ -49,6 +49,7 @@ class E2eTestRunner(pulumi.ComponentResource):
                     "GRAPL_API_HOST": api.invoke_url.apply(
                         lambda url: urlparse(url).netloc
                     ),
+                    "TIMEOUT_SECS": "500",
                 },
                 timeout=60 * 15,  # 15 minutes
                 memory_size=256,
