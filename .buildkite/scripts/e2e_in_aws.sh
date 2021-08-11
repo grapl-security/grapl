@@ -16,6 +16,15 @@ GRAPL_REGION="$(pulumi config get aws:region --stack="${GRAPLCTL_PULUMI_STACK}" 
 export GRAPL_REGION
 export GRAPL_VERSION="${BUILDKITE_PIPELINE_ID}"
 
+snooze() {
+    local -r seconds="${1}"
+    echo "--- :sob: Sleep a little to let things settle"
+    for i in $(seq 1 "${seconds}"); do
+        echo "Sleeping ${i}/${seconds} seconds"
+        sleep 1
+    done
+}
+
 ########################################################################
 
 echo "--- :building_construction: Building graplctl binary"
@@ -31,6 +40,8 @@ echo "--- :building_construction: Create Dgraph cluster"
 echo "--- :house_with_garden: Provision environment"
 ./bin/graplctl-pulumi.sh aws provision --yes
 
+snooze 30
+
 echo "--- :arrow_up::cloud: Uploading analyzers"
 ./bin/graplctl-pulumi.sh upload analyzer \
     --analyzer_main_py etc/local_grapl/unique_cmd_parent/main.py
@@ -38,9 +49,13 @@ echo "--- :arrow_up::cloud: Uploading analyzers"
 ./bin/graplctl-pulumi.sh upload analyzer \
     --analyzer_main_py etc/local_grapl/suspicious_svchost/main.py
 
+snooze 30
+
 echo "--- :arrow_up::cloud: Uploading sample data"
 ./bin/graplctl-pulumi.sh upload sysmon \
     --logfile etc/sample_data/eventlog.xml
+
+snooze 30
 
 echo "--- :running::running::running: Running tests"
 ./bin/graplctl-pulumi.sh aws test
