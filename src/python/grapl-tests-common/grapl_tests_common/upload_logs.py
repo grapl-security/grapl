@@ -4,6 +4,7 @@ import json
 import random
 import string
 import time
+import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from os import PathLike
@@ -146,12 +147,15 @@ def upload_logs(
             + rand_str(6)
         )
         envelope = Envelope(
-            metadata=Metadata.new(),
+            metadata=Metadata(
+                tenant_id=uuid.uuid4(),  # FIXME: be smarter here.
+                trace_id=uuid.uuid4(),  # FIXME: and here.
+            ),
             inner_message=chunk_body,
             inner_type="RawEvents",
         )
 
-        s3.put_object(Body=envelope.to_proto_bytes(), Bucket=bucket, Key=key)
+        s3.put_object(Body=envelope.serialize(), Bucket=bucket, Key=key)
 
         # local-grapl relies on manual eventing
         if requires_manual_eventing:
