@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import uuid
 
+from typing import cast
+
 from graplinc.grapl.pipeline.v1beta1.types_pb2 import Envelope as _Envelope
 from graplinc.grapl.pipeline.v1beta1.types_pb2 import Metadata as _Metadata
 from graplinc.grapl.pipeline.v1beta1.types_pb2 import Uuid as _Uuid
@@ -36,7 +38,7 @@ class Uuid(object):
         return uuid.UUID(bytes=lsb_bytes + msb_bytes)
 
     def serialize(self) -> bytes:
-        return self._into_proto().SerializeToString()
+        return cast(bytes, self._into_proto().SerializeToString())
 
     @staticmethod
     def _from_proto(proto_uuid: _Uuid) -> Uuid:
@@ -57,10 +59,10 @@ class Uuid(object):
     def __hash__(self) -> int:
         return hash(self.into_uuid())
 
-    def __eq__(self, other: Uuid) -> bool:
-        return (
-            self.__class__ == other.__class__ and self.into_uuid() == other.into_uuid()
-        )
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Uuid):
+            return NotImplemented
+        return self.into_uuid() == other.into_uuid()
 
 
 class Metadata(object):
@@ -78,7 +80,7 @@ class Metadata(object):
         return Metadata._from_proto(metadata)
 
     def serialize(self) -> bytes:
-        return self._into_proto().SerializeToString()
+        return cast(bytes, self._into_proto().SerializeToString())
 
     @staticmethod
     def _from_proto_parts(trace_id: _Uuid, tenant_id: _Uuid) -> Metadata:
@@ -111,10 +113,11 @@ class Metadata(object):
     def __hash__(self) -> int:
         return hash((self.trace_id, self.tenant_id))
 
-    def __eq__(self, other: Metadata) -> bool:
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Metadata):
+            return NotImplemented
         return (
-            self.__class__ == other.__class__
-            and self.trace_id == other.trace_id
+            self.trace_id == other.trace_id
             and self.tenant_id == other.tenant_id
         )
 
@@ -141,7 +144,7 @@ class Envelope(object):
         return Envelope._from_proto(envelope)
 
     def serialize(self) -> bytes:
-        return self._into_proto().SerializeToString()
+        return cast(bytes, self._into_proto().SerializeToString())
 
     @staticmethod
     def _from_proto(envelope: _Envelope) -> Envelope:
@@ -182,7 +185,9 @@ class Envelope(object):
     def __hash__(self) -> int:
         return hash((self.metadata, self.inner_message, self.inner_type))
 
-    def __eq__(self, other: Envelope) -> bool:
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Envelope):
+            return NotImplemented
         return (
             self.metadata == other.metadata
             and self.inner_message == other.inner_message
