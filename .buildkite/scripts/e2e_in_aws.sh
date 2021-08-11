@@ -42,11 +42,5 @@ echo "--- :arrow_up::cloud: Uploading sample data"
 ./bin/graplctl-pulumi.sh upload sysmon \
     --logfile etc/sample_data/eventlog.xml
 
-echo "--- :sob: Sleep a little while for Reasons (TM)"
-for i in {1..120}; do
-    echo "Sleeping ${i}/120 seconds"
-    sleep 1
-done
-
 echo "--- :running::running::running: Running tests"
 ./bin/graplctl-pulumi.sh aws test
