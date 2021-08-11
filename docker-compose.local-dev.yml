@@ -1,0 +1,65 @@
+# This is provided just to help make local development of the UI a bit
+# easier by encapsulating some commonly-needed graplctl commands
+# together in a way that they can be easily used against a Grapl
+# system brought up using our `make up` target.
+#
+# If you find a better way to do this, by all means, DO IT! :)
+
+version: "3.8"
+
+x-common-variables:
+  read-only-pulumi-mnt: &read-only-pulumi-mnt
+    type: volume
+    source: pulumi_outputs
+    target: /mnt/pulumi-outputs
+    read_only: true
+  aws-env: &aws-env
+    GRAPL_AWS_ENDPOINT: ${GRAPL_AWS_ENDPOINT}
+    GRAPL_AWS_ACCESS_KEY_ID: ${GRAPL_AWS_ACCESS_KEY_ID}
+    GRAPL_AWS_ACCESS_KEY_SECRET: ${GRAPL_AWS_ACCESS_KEY_SECRET}
+    AWS_DEFAULT_REGION: ${AWS_REGION} # boto3 prefers this one
+    AWS_REGION: ${AWS_REGION}
+
+services:
+  local-graplctl:
+    image: grapl/local-graplctl
+    build:
+      context: .
+      dockerfile: ./src/python/lambdas.Dockerfile
+      target: grapl-python-runner-base
+    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+    command:
+      - |
+        export GRAPL_ANALYZERS_BUCKET=$$(cat /mnt/pulumi-outputs/analyzers-bucket)
+        export GRAPL_OSQUERY_GENERATOR_QUEUE=$$(cat /mnt/pulumi-outputs/osquery-generator-queue)
+        export GRAPL_OSQUERY_LOG_BUCKET=$$(cat /mnt/pulumi-outputs/osquery-log-bucket)
+        export GRAPL_SYSMON_GENERATOR_QUEUE=$$(cat /mnt/pulumi-outputs/sysmon-generator-queue)
+        export GRAPL_SYSMON_LOG_BUCKET=$$(cat /mnt/pulumi-outputs/sysmon-log-bucket)
+        export GRAPL_SCHEMA_TABLE=$$(cat /mnt/pulumi-outputs/schema-table)
+        export GRAPL_SCHEMA_PROPERTIES_TABLE=$$(cat /mnt/pulumi-outputs/schema-properties-table)
+
+        graplctl \
+              upload analyzer \
+              --analyzer_main_py ./etc/local_grapl/suspicious_svchost/main.py
+        graplctl \
+              upload analyzer \
+              --analyzer_main_py ./etc/local_grapl/unique_cmd_parent/main.py
+        graplctl \
+              upload sysmon \
+              --logfile ./etc/sample_data/eventlog.xml
+    working_dir: /workdir
+    volumes:
+      - type: bind
+        source: .
+        target: /workdir
+        read_only: true
+        volume:
+          nocopy: true
+      - *read-only-pulumi-mnt
+    environment:
+      GRAPL_REGION: ${AWS_REGION}
+      DEPLOYMENT_NAME: local-grapl
+      GRAPL_VERSION: ${DEPLOYMENT_NAME}
+      GRAPL_AWS_ACCESS_KEY_ID:
+      GRAPL_AWS_ACCESS_KEY_SECRET:
+      GRAPL_AWS_ENDPOINT:

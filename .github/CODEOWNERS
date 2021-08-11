@@ -26,6 +26,7 @@ BUILD @christophermaier
 .gitignore @christophermaier
 /LICENSE @christophermaier
 /local-grapl.env @christophermaier
+/LOCAL_UI_WORKFLOW.md @christophermaier
 /Makefile @christophermaier
 /nomad @d0nut-grapl
 /packer/ @wimax-grapl @christophermaier
