@@ -348,9 +348,10 @@ lint-prettier: build-formatter ## Run ts/js/yaml lint checks
 		--file docker-compose.formatter.yml \
 		run --rm lint-prettier
 
-.PHONY: lint-packer
-lint-packer: ## Check to see if Packer templates are formatted properly
+.PHONY: lint-hcl
+lint-hcl: ## Check to see if Packer templates are formatted properly
 	.buildkite/scripts/lint_packer.sh
+	.buildkite/scripts/lint_nomad.sh
 
 .PHONY: lint
 lint: lint-python lint-prettier lint-rust lint-shell lint-hcl ## Run all lint checks
