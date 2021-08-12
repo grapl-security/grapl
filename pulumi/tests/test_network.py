@@ -38,9 +38,9 @@ class TestingNetwork(unittest.TestCase):
 
         def check_number_of_subnets(args):
             public_subnets, private_subnets = args
-            self.assertEqual(len(public_subnets), 2, f'There should be 2 public subnets since desired_az_spread is 2')
-            self.assertEqual(len(public_subnets), len(private_subnets),
-                             f'There should be the same number of public subnets and private subnets')
+            assert len(public_subnets) == 2, f'There should be 2 public subnets since desired_az_spread is 2'
+            assert len(public_subnets) == len(private_subnets), \
+                f'There should be the same number of public subnets and private subnets'
 
         return pulumi.Output.all(network.public_subnets, network.private_subnets).apply(check_number_of_subnets)
 
@@ -50,8 +50,8 @@ class TestingNetwork(unittest.TestCase):
 
         def check_public_subnet_tags(args):
             urn, tags = args
-            self.assertIsNotNone(tags, f'Subnet {urn} must have tags')
-            self.assertIn("Name", tags, f'Subnet {urn} must have a Name tag')
+            assert tags, f'Subnet {urn} must have tags'
+            assert "Name" in tags, f'Subnet {urn} must have a Name tag'
 
         return pulumi.Output.all(network.public_subnets[0].urn, network.public_subnets[0].tags).apply(check_public_subnet_tags)
 
@@ -61,7 +61,7 @@ class TestingNetwork(unittest.TestCase):
 
         def check_private_subnet_tags(args):
             urn, tags = args
-            self.assertIsNotNone(tags, f'Subnet {urn} must have tags')
-            self.assertIn("Name", tags, f'Subnet {urn} must have a Name tag')
+            assert tags, f'Subnet {urn} must have tags'
+            assert "Name" in tags, f'Subnet {urn} must have a Name tag'
 
         return pulumi.Output.all(network.private_subnets[0].urn, network.public_subnets[0].tags).apply(check_private_subnet_tags)
