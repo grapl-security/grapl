@@ -4,7 +4,8 @@
   "description": "grapl graphql server",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "jest"
   },
   "author": "Grapl Inc.",
   "license": "ISC",
