@@ -94,8 +94,8 @@ services:
   engagement-view-uploader:
     image: ${DOCKER_REGISTRY:-docker.io}/grapl/engagement-view:${TAG:-latest}
     build:
-      context: src
-      dockerfile: js/engagement_view/Dockerfile
+      context: src/js/engagement_view
+      dockerfile: Dockerfile
       target: engagement-view-local-deploy
 
   # This container build exists only for Local Grapl; if we are able
