@@ -18,3 +18,9 @@ steps:
             PULUMI_ACCESS_TOKEN: "pulumi-token"
     agents:
       queue: "pulumi-staging"
+    # This test is notoriously flaky, in that it can take widely
+    # varying amounts of time to complete, which can run afoul of the
+    # (very) generous timeouts we have given it.
+    retry:
+      automatic:
+        limit: 2
