@@ -1,1 +1,5 @@
-python_tests()
+python_tests(
+    dependencies=[
+        '3rdparty/python:setuptools'
+    ],
+)

@@ -36,5 +36,6 @@ pyjwt
 pytest
 requests
 redis
+setuptools
 typing_extensions
 zstd==1.4.9.1
