@@ -71,6 +71,7 @@ class Network(pulumi.ComponentResource):
         # delete/recreate semantics of subnets (which can't overlap).
         desired_az_spread = 2
         num_azs = min(desired_az_spread, len(azs))
+        # Once desired_az_spread is parameterized the below will be true. Until then it will always be 2 or fewer.
         # 2 AZs => 2 subnets
         # 3 AZs => 4 subnets (extra 1 doesn't actually get created)
         # 4 AZs => 4 subnets
