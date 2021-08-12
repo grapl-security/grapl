@@ -94,6 +94,7 @@ steps:
   - label: ":typescript::docker: Unit Tests"
     command:
       - make test-unit-js
+      - codecov --file=dist/coverage/js/**/clover.xml
 
   - label: ":typescript::yaml::lint-roller: Lint using Prettier"
     command:

@@ -2,6 +2,13 @@ version: "3.8"
 
 # environment variable PWD is assumed to be grapl root directory
 
+x-common-variables:
+  dist-for-coverage-mnt: &dist-for-coverage-mnt
+    type: bind
+    source: ${PWD}/dist
+    target: /dist
+    read_only: false
+
 services:
   engagement-view-test:
     image: grapl/engagement-view-build:${TAG:-latest}
@@ -9,7 +16,10 @@ services:
       context: ${PWD}/src/js/engagement_view
       dockerfile: Dockerfile
       target: engagement-view-deps
-    command: yarn test --coverage --watchAll=false
+    user: ${UID}:${GID}
+    command: yarn test --coverage --watchAll=false --coverageDirectory=/dist/coverage/js/engagement-view
+    volumes:
+      - *dist-for-coverage-mnt
 
   graphql-endpoint-test:
     image: grapl/graphql-endpoint:${TAG:-latest}
@@ -17,5 +27,8 @@ services:
       context: ${PWD}/src/js/graphql_endpoint
       dockerfile: Dockerfile
       target: graphql-endpoint-deploy
+    user: ${UID}:${GID}
     working_dir: /home/grapl/lambda
-    command: yarn test --coverage --watchAll=false
+    command: yarn test --coverage --watchAll=false --coverageDirectory=/dist/coverage/js/graphql-endpoint
+    volumes:
+      - *dist-for-coverage-mnt
