@@ -101,14 +101,17 @@ class ServiceQueue(pulumi.ComponentResource):
 
         message_retention_seconds = 60 * 60 * 24 * 4  # 4 days
 
-        # `arn` is the ARN of a queue. This is a function because of
-        # the need to use Output.apply on the ARN.
-        def redrive_policy(arn: pulumi.Output) -> str:
-            return json.dumps(
-                {
-                    "deadLetterTargetArn": arn,
-                    "maxReceiveCount": 3,
-                }
+        # `arn` is the ARN of a queue.
+        def redrive_policy(
+            arn: pulumi.Output, receive_count: int
+        ) -> pulumi.Output[str]:
+            return arn.apply(
+                lambda resolved_arn: json.dumps(
+                    {
+                        "deadLetterTargetArn": resolved_arn,
+                        "maxReceiveCount": receive_count,
+                    }
+                )
             )
 
         dead_letter_name = f"{name}-dead-letter-queue"
@@ -127,7 +130,7 @@ class ServiceQueue(pulumi.ComponentResource):
             retry_name,
             message_retention_seconds=message_retention_seconds,
             visibility_timeout_seconds=360,
-            redrive_policy=self.dead_letter_queue.arn.apply(redrive_policy),
+            redrive_policy=redrive_policy(self.dead_letter_queue.arn, 3),
             opts=pulumi.ResourceOptions(
                 parent=self,
             ),
@@ -139,7 +142,7 @@ class ServiceQueue(pulumi.ComponentResource):
             queue_name,
             message_retention_seconds=message_retention_seconds,
             visibility_timeout_seconds=180,
-            redrive_policy=self.retry_queue.arn.apply(redrive_policy),
+            redrive_policy=redrive_policy(self.retry_queue.arn, 1),
             opts=pulumi.ResourceOptions(
                 parent=self,
             ),
