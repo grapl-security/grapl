@@ -9,7 +9,9 @@ services:
       context: ${PWD}/src/js/engagement_view
       dockerfile: Dockerfile
       target: engagement-view-deps
-    command: sh -c 'CI=true yarn test'
+    command: yarn test
+    environment:
+      CI: "true"
 
   graphql-endpoint-test:
     image: grapl/graphql-endpoint:${TAG:-latest}
@@ -17,5 +19,5 @@ services:
       context: ${PWD}/src/js/graphql_endpoint
       dockerfile: Dockerfile
       target: graphql-endpoint-deploy
-    command: bash -c "
-      cd .. && npx jest"
+    working_dir: /home/grapl/lambda
+    command: npx jest
