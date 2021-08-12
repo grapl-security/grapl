@@ -9,9 +9,7 @@ services:
       context: ${PWD}/src/js/engagement_view
       dockerfile: Dockerfile
       target: engagement-view-deps
-    command: yarn test
-    environment:
-      CI: "true"
+    command: yarn test --coverage --watchAll=false
 
   graphql-endpoint-test:
     image: grapl/graphql-endpoint:${TAG:-latest}
@@ -20,4 +18,4 @@ services:
       dockerfile: Dockerfile
       target: graphql-endpoint-deploy
     working_dir: /home/grapl/lambda
-    command: npx jest
+    command: yarn test --coverage --watchAll=false
