@@ -3,16 +3,16 @@ FROM node:16-buster-slim AS engagement-view-deps
 WORKDIR /grapl
 
 # install deps as separate steps to leverage build cache
-COPY js/engagement_view/package.json package.json
-COPY js/engagement_view/yarn.lock yarn.lock
-COPY js/engagement_view/.yarnrc.yml .yarnrc.yml
-COPY js/engagement_view/.yarn/releases .yarn/releases
+COPY package.json package.json
+COPY yarn.lock yarn.lock
+COPY .yarnrc.yml .yarnrc.yml
+COPY .yarn/releases .yarn/releases
 
 RUN yarn set version berry
 RUN yarn install
 
 # now copy all sources
-COPY js/engagement_view .
+COPY . .
 
 # create production build
 ################################################################################

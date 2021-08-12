@@ -6,8 +6,8 @@ services:
   engagement-view-test:
     image: grapl/engagement-view-build:${TAG:-latest}
     build:
-      context: ${PWD}/src
-      dockerfile: js/engagement_view/Dockerfile
+      context: ${PWD}/src/js/engagement_view
+      dockerfile: Dockerfile
       target: engagement-view-deps
     command: sh -c 'CI=true yarn test'
 
