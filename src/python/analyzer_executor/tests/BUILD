@@ -1,1 +1,10 @@
-python_tests()
+python_tests(
+    extra_env_vars=[
+        "HITCACHE_ADDR",
+        "HITCACHE_PORT",
+        "MESSAGECACHE_ADDR",
+        "MESSAGECACHE_PORT",
+        "GRAPL_LOG_LEVEL",
+        "IS_RETRY",
+    ]
+)

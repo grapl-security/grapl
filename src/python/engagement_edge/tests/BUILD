@@ -1,1 +1,15 @@
-python_tests()
+python_tests(
+    extra_env_vars=[
+        "AWS_REGION",
+        "DEPLOYMENT_NAME",
+        "GRAPL_API_HOST",
+        "GRAPL_AWS_ACCESS_KEY_ID",
+        "GRAPL_AWS_ACCESS_KEY_SECRET",
+        "GRAPL_AWS_ENDPOINT",
+        "GRAPL_HTTP_FRONTEND_PORT",
+        "GRAPL_TEST_USER_NAME",
+        "IS_LOCAL",
+        "UX_BUCKET_URL",
+        "GRAPL_NOTEBOOK_INSTANCE",
+    ]
+)

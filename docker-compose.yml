@@ -380,7 +380,7 @@ services:
         export GRAPL_ANALYZERS_BUCKET=$$(cat /mnt/pulumi-outputs/analyzers-bucket)
         export GRAPL_MODEL_PLUGINS_BUCKET=$$(cat /mnt/pulumi-outputs/model-plugins-bucket)
         export SOURCE_QUEUE_URL=$$(cat /mnt/pulumi-outputs/analyzer-executor-queue)
-        python3 analyzer_executor/src/run.py
+        ./analyzer-executor.pex
     environment:
       <<: *aws-env
       DEBUG_SERVICES: "${DEBUG_SERVICES:-}"
@@ -419,14 +419,7 @@ services:
         export GRAPL_MODEL_PLUGINS_BUCKET=$$(cat /mnt/pulumi-outputs/model-plugins-bucket)
         export GRAPL_SCHEMA_TABLE=$$(cat /mnt/pulumi-outputs/schema-table)
         export GRAPL_SCHEMA_PROPERTIES_TABLE=$$(cat /mnt/pulumi-outputs/schema-properties-table)
-
-        . venv/bin/activate
-        cd /home/grapl/app
-        chalice local \
-          --no-autoreload \
-          --host=0.0.0.0 \
-          --port=${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}
-
+        python3 -c 'import lambdex_handler; lambdex_handler.handler(None, None)'
     environment:
       <<: *aws-env
       <<: *dgraph-env

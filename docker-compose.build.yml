@@ -75,7 +75,7 @@ services:
     build:
       context: .
       dockerfile: ./src/python/Dockerfile
-      target: analyzer-executor-deploy
+      target: analyzer-executor
 
   # This container build exists only for Local Grapl; if we are able
   # to deploy model-plugin-deployer as an actual Lambda there, we can
@@ -85,7 +85,7 @@ services:
     build:
       context: .
       dockerfile: ./src/python/Dockerfile
-      target: model-plugin-deployer-deploy
+      target: model-plugin-deployer
 
   ########################################################################
   # Web Services
