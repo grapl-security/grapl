@@ -3,8 +3,9 @@ grapl_python_distribution(
         "src:graplinc_python_protobuf_stubs",
     ],
     provides = setup_py(
-        name = "python-proto",
+        name = "python_proto",
         version = "0.0.1",
+        readme = "README.md",
         description = "protobuf serde library for grapl's python services",
     ),
 )

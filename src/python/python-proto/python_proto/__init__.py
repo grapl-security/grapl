@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import ABCMeta, abstractmethod, abstractstaticmethod
 from typing import Any
 
@@ -16,6 +18,7 @@ class SerDe(metaclass=ABCMeta):
             callable(subclass._into_proto)
         )
 
+    @staticmethod
     @abstractstaticmethod
     def deserialize(bytes_: bytes) -> SerDe:
         raise NotImplementedError
@@ -24,6 +27,7 @@ class SerDe(metaclass=ABCMeta):
     def serialize(self) -> bytes:
         raise NotImplementedError
 
+    @staticmethod
     @abstractstaticmethod
     def _from_proto(proto: Any) -> SerDe:
         raise NotImplementedError

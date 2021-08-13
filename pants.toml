@@ -79,7 +79,8 @@ root_patterns = [
   "/src/python/grapl-tests-common",
   "/src/python/grapl-ux-router",
   "/src/python/provisioner",
-  "/src/python/python-proto",
+  "/src/python/python-proto/python_proto",
+  "/src/python/python-proto/tests",
   "/src/python/repl",
 ]
 
