@@ -58,6 +58,7 @@ BUILD @christophermaier
 /src/python/mypy.ini @christophermaier @wimax-grapl
 /src/python/provisioner/ @jgrillo-grapl
 /src/python/python_test_deps/ @christophermaier
+/src/python/python-proto/ @grapl-security/wg-data-infra
 /src/rust/analyzer-dispatcher/ @grapl-security/wg-data-infra
 /src/rust/bin/ @christophermaier
 /src/rust/.cargo @christophermaier
@@ -77,6 +78,7 @@ BUILD @christophermaier
 /src/rust/kafka-metrics-exporter/ @jgrillo-grapl
 /src/rust/metric-forwarder/ @wimax-grapl
 /src/rust/node-identifier/ @grapl-security/wg-data-infra
+/src/rust/rust-proto/ @grapl-security/wg-data-infra
 /src/rust/rust-toolchain @inickles-grapl
 /src/rust/sqs-executor/ @inickles-grapl @grapl-security/wg-data-infra
 /src/rust/sysmon/ @inickles-grapl
