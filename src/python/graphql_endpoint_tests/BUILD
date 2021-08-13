@@ -13,6 +13,7 @@ python_tests(
         "GRAPL_AWS_ENDPOINT",
         "GRAPL_HTTP_FRONTEND_PORT",
         "GRAPL_LOG_LEVEL",
+        "GRAPL_SCHEMA_PROPERTIES_TABLE",
         "GRAPL_TEST_USER_NAME",
         "IS_LOCAL",
         "MG_ALPHAS",
