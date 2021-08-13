@@ -58,6 +58,7 @@ steps:
   - label: ":rust::docker: Unit Tests"
     command:
       - make test-unit-rust
+      - codecov --file=dist/coverage/rust/cobertura.xml
     agents:
       queue: "beefy"
   

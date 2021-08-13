@@ -11,4 +11,20 @@ services:
       target: build-test
       args:
         - RUST_BUILD=test
-    command: cargo test
+    security_opt:
+      # Required for Tarpaulin to work in Docker
+      - seccomp:unconfined
+    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+    command:
+      - |
+        cargo tarpaulin --out=Xml --output-dir=/dist/coverage/rust
+        # This `chown` is a hack to be able to run Tarpaulin in the
+        # container (as it is currently configured), but also
+        # outputting the coverage file to the workstation without it
+        # being owned by root.
+        chown --recursive ${UID}:${GID} /dist/coverage/rust
+    volumes:
+      - type: bind
+        source: ${PWD}/dist
+        target: /dist
+        read_only: false

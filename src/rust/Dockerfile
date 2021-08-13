@@ -4,11 +4,14 @@ ARG RUST_BUILD=debug
 
 SHELL ["/bin/bash", "-c"]
 
-# Necessary for rdkafka
+# Necessary for rdkafka; pkg-config & libssl-dev for cargo-tarpaulin build
 RUN --mount=type=cache,target=/var/lib/apt/lists \
     apt-get update && apt-get install -y --no-install-recommends \
         zlib1g-dev \
-        build-essential
+        build-essential \
+        pkg-config \
+        libssl-dev
+
 
 # Install rust toolchain before copying sources to avoid unecessarily
 # resinstalling on source file changes.
@@ -60,6 +63,10 @@ RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
 FROM base AS build-test
 
 ENV RUST_INTEGRATION_TEST_FEATURES="node-identifier/integration,sqs-executor/integration,kafka-metrics-exporter/integration"
+
+# For test coverage reports
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    cargo install cargo-tarpaulin
 
 # At the end of the test run, save the mount cache to the Docker image, as
 # these files are needed for running the integration tests in containers. 
