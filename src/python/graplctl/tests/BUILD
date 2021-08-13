@@ -1,7 +1,6 @@
 python_tests(
     dependencies=[
-        "//etc/sample_data",
-        "//src/python/graplinc/graplinc/grapl/pipeline",
+        "etc/sample_data",
     ]
 )
 

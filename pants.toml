@@ -61,7 +61,7 @@ root_patterns = [
   "/pants-plugins",
   "/pulumi",
   "/src/aws-provision",
-  "/src/proto",
+  "/src/proto/graplinc",
   "/src/python/analyzer_executor/src",
   "/src/python/analyzer_executor/tests",
   "/src/python/e2e-test-runner",
@@ -79,6 +79,7 @@ root_patterns = [
   "/src/python/grapl-tests-common",
   "/src/python/grapl-ux-router",
   "/src/python/provisioner",
+  "/src/python/python-proto",
   "/src/python/repl",
 ]
 
