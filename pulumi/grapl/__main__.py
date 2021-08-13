@@ -59,7 +59,7 @@ def main() -> None:
 
     # These tags will be added to all provisioned infrastructure
     # objects.
-    register_auto_tags({"grapl deployment": DEPLOYMENT_NAME})
+    register_auto_tags({"grapl deployment": DEPLOYMENT_NAME, "managed_by": "pulumi"})
 
     network = Network("grapl-network")
 

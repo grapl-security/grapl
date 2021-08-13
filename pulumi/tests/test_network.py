@@ -1,6 +1,4 @@
-import sys
 import unittest
-from unittest.mock import MagicMock, patch
 
 import pulumi
 
@@ -21,13 +19,10 @@ class MyMocks(pulumi.runtime.Mocks):
 
 pulumi.runtime.set_mocks(MyMocks())
 
-sys.modules["infra.network.infra.config"] = MagicMock()
-
 # mocks must be defined prior to importing pulumi resources
 from infra.network import Network
 
 
-@patch("infra.config.DEPLOYMENT_NAME", "unit-test-grapl")
 class TestingNetwork(unittest.TestCase):
     @pulumi.runtime.test
     def test_number_of_subnets(self):
