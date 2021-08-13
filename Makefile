@@ -128,6 +128,10 @@ help: ## Print this help
 
 ##@ Build 🔨
 
+.PHONY: build-analyzer-executor
+build-analyzer-executor:
+	./pants package ./src/python/analyzer_executor/src
+
 .PHONY: build-test-unit
 build-test-unit:
 	$(DOCKER_BUILDX_BAKE) \
@@ -160,7 +164,7 @@ build-test-e2e: build
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.yml
 
 .PHONY: build-lambda-zips
-build-lambda-zips: build-lambda-zips-rust build-lambda-zips-js build-lambda-zips-python ## Generate all lambda zip files
+build-lambda-zips: build-lambda-zips-rust build-lambda-zips-js build-lambda-zips-python build-analyzer-executor ## Generate all lambda zip files
 
 .PHONY: build-lambda-zips-rust
 build-lambda-zips-rust: ## Build Rust lambda zips
@@ -400,10 +404,6 @@ format-hcl: ## Reformat all HCLs
 
 .PHONY: format
 format: format-python format-shell format-prettier format-rust format-hcl ## Reformat all code
-
-.PHONY: package-python-libs
-package-python-libs: ## Create Python distributions for public libraries
-	./pants filter --target-type=python_distribution :: | xargs ./pants package
 
 ##@ Local Grapl 💻
 

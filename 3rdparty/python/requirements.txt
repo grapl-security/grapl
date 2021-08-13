@@ -36,5 +36,7 @@ pyjwt
 pytest
 requests
 redis
+setuptools>=50.3.0,<57.0
 typing_extensions
+wheel<0.37,>=0.35.1
 zstd==1.4.9.1
