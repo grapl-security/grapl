@@ -1,7 +1,5 @@
 syntax = "proto3";
 
-import "google/protobuf/wrappers.proto";
-
 package graplinc.grapl.api.graph.v1beta1;
 
 // The Session Identity Strategy is used to derive a canonical identity for any node that has a
