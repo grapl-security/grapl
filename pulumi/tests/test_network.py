@@ -4,11 +4,11 @@ import pulumi
 
 
 class MyMocks(pulumi.runtime.Mocks):
-    def new_resource(self, args: pulumi.runtime.MockResourceArgs):
+    def new_resource(self, args: pulumi.runtime.MockResourceArgs) -> list:
         outputs = args.inputs
         return [args.name + "_id", outputs]
 
-    def call(self, args: pulumi.runtime.MockCallArgs):
+    def call(self, args: pulumi.runtime.MockCallArgs) -> dict:
         if args.token == "aws:index/getAvailabilityZones:getAvailabilityZones":
             return {"names": ["a", "b", "c"], "state": "available"}
         # This is necessary since infra.config calls this
@@ -25,10 +25,10 @@ from infra.network import Network
 
 class TestingNetwork(unittest.TestCase):
     @pulumi.runtime.test
-    def test_number_of_subnets(self):
+    def test_number_of_subnets(self) -> pulumi.Output:
         network = Network("test_public_subnets")
 
-        def check_number_of_subnets(args):
+        def check_number_of_subnets(args) -> None:
             public_subnets, private_subnets = args
             assert (
                 len(public_subnets) == 2
@@ -42,10 +42,10 @@ class TestingNetwork(unittest.TestCase):
         )
 
     @pulumi.runtime.test
-    def test_public_subnet_tags(self):
+    def test_public_subnet_tags(self) -> pulumi.Output:
         network = Network("test_public_subnet_tags")
 
-        def check_public_subnet_tags(args):
+        def check_public_subnet_tags(args) -> None:
             urn, tags = args
             assert tags, f"Subnet {urn} must have tags"
             assert "Name" in tags, f"Subnet {urn} must have a Name tag"
@@ -55,10 +55,10 @@ class TestingNetwork(unittest.TestCase):
         ).apply(check_public_subnet_tags)
 
     @pulumi.runtime.test
-    def test_private_subnet_tags(self):
+    def test_private_subnet_tags(self) -> pulumi.Output:
         network = Network("test_private_subnet_tags")
 
-        def check_private_subnet_tags(args):
+        def check_private_subnet_tags(args) -> None:
             urn, tags = args
             assert tags, f"Subnet {urn} must have tags"
             assert "Name" in tags, f"Subnet {urn} must have a Name tag"
