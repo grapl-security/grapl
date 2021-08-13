@@ -1,7 +1,8 @@
-import pulumi
 import sys
 import unittest
 from unittest.mock import MagicMock, patch
+
+import pulumi
 
 
 class MyMocks(pulumi.runtime.Mocks):
