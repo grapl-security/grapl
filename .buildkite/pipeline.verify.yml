@@ -40,23 +40,6 @@ steps:
 
   - label: ":rust: Unit Tests"
     command:
-      - cd src/rust
-      - cargo test
-    agents:
-      queue: "beefy"
-
-  - label: ":rust: Unit Tests via Docker plugin"
-    command:
-      - cd src/rust
-      - cargo test
-    plugins:
-      - docker#v3.8.0:
-          image: "rust:1.51.0"
-    agents:
-      queue: "beefy"
-
-  - label: ":rust::docker: Unit Tests"
-    command:
       - make test-unit-rust
       - codecov --file=dist/coverage/rust/cobertura.xml
     agents:
