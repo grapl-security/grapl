@@ -3,7 +3,7 @@
 # out dependencies properly. Since this depends on both Python code
 # and protobuf code, it has to be "higher" than both of them.
 grapl_python_distribution(
-    name = "graplinc_python_protobuf_stubs",
+    name = "graplinc_grapl_api",
     dependencies = [
         "src/proto:graplinc",
     ],

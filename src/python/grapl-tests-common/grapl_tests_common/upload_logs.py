@@ -12,7 +12,7 @@ from sys import maxsize
 from typing import TYPE_CHECKING, Iterator, List, Optional, cast
 
 from grapl_common.env_helpers import S3ClientFactory, SQSClientFactory
-from python_proto.envelope import Envelope, Metadata
+from python_proto.pipeline import Envelope, Metadata
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client

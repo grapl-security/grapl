@@ -1,5 +1,1 @@
-python_tests(
-    dependencies=[
-        "src/python/python-proto/python_proto",
-    ]
-)
+python_tests()
