@@ -25,8 +25,6 @@ class MyMocks(pulumi.runtime.Mocks):
 
 pulumi.runtime.set_mocks(MyMocks())
 
-# Environment variable is required on import so we can't monkeypatch. Set it here for now
-os.environ["GRAPL_OPERATIONAL_ALARMS_EMAIL"] = "fake-ops-email@fake.domain"
 sys.modules['infra.network.infra.config'] = MagicMock()
 
 # mocks must be defined prior to importing pulumi resources
