@@ -3,7 +3,6 @@ grapl_python_distribution(
         "./grapl_tests_common",
         "./grapl_tests_common:py_typed",
         "./grapl_tests_common/clients",
-        "src/python/python-proto/python_proto",
     ],
     provides = setup_py(
         name = "grapl-tests-common",
