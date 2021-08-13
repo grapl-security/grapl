@@ -41,10 +41,11 @@ steps:
   - label: ":rust: Unit Tests"
     command:
       - make test-unit-rust
-      - codecov --file=dist/coverage/rust/cobertura.xml
+    plugins:
+      - grapl-security/codecov#v0.1.0
     agents:
       queue: "beefy"
-  
+
   - label: ":writing_hand: Test Grapl Template Generator"
     command:
       - make test-grapl-template-generator
@@ -62,8 +63,8 @@ steps:
   - label: ":python::jeans: Unit Tests"
     command:
       - make test-unit-python
-      # TODO: abstract this to a hook/plugin
-      - codecov --file=dist/coverage/python/coverage.xml
+    plugins:
+      - grapl-security/codecov#v0.1.0
 
   - label: ":python::jeans: Typechecking"
     command:
@@ -78,7 +79,8 @@ steps:
   - label: ":typescript::docker: Unit Tests"
     command:
       - make test-unit-js
-      - codecov --file=dist/coverage/js/**/clover.xml
+    plugins:
+      - grapl-security/codecov#v0.1.0
 
   - label: ":typescript::yaml::lint-roller: Lint using Prettier"
     command:
