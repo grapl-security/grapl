@@ -4,5 +4,5 @@ protobuf_library(
     # at this level, rather than specifying BUILD files in each
     # subdirectory.
     sources=["**/*.proto"],
-    python_source_root="src/python/graplinc"
+    python_source_root="src/python/graplinc/graplinc"
 )
