@@ -1,5 +1,5 @@
 python_library(
     dependencies=[
-        "src/python/graplinc/graplinc"
+        "src/python/graplinc"
     ]
 )
