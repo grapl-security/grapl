@@ -6,6 +6,11 @@ x-common-variables:
     source: .
     target: /workdir
     read_only: true
+  read-write-workdir: &read-write-workdir
+    type: bind
+    source: .
+    target: /workdir
+    read_only: false
 
 services:
   buf-lint:
@@ -21,3 +26,15 @@ services:
     working_dir: /workdir
     volumes:
       - *read-only-workdir
+
+  hcl-lint:
+    image: docker.cloudsmith.io/grapl/releases/hcl-formatter:1.7.4
+    command: lint
+    volumes:
+      - *read-only-workdir
+
+  hcl-format:
+    image: docker.cloudsmith.io/grapl/releases/hcl-formatter:1.7.4
+    command: format
+    volumes:
+      - *read-write-workdir

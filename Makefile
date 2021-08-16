@@ -10,6 +10,7 @@ RUST_BUILD ?= debug
 UID = $(shell id -u)
 GID = $(shell id -g)
 PWD = $(shell pwd)
+COMPOSE_USER=${UID}:${GID}
 DOCKER_BUILDX_BAKE_OPTS ?=
 ifneq ($(GRAPL_RUST_ENV_FILE),)
 DOCKER_BUILDX_BAKE_OPTS += --set *.secrets=id=rust_env,src="$(GRAPL_RUST_ENV_FILE)"
@@ -350,8 +351,7 @@ lint-prettier: build-formatter ## Run ts/js/yaml lint checks
 
 .PHONY: lint-hcl
 lint-hcl: ## Check to see if Packer templates are formatted properly
-	.buildkite/scripts/lint_packer.sh
-	.buildkite/scripts/lint_nomad.sh
+	docker-compose --file=docker-compose.check.yml run --rm hcl-lint
 
 .PHONY: lint-proto
 lint-proto: ## Lint all protobuf definitions
@@ -387,8 +387,7 @@ format-prettier: build-formatter ## Reformat js/ts/yaml
 
 .PHONY: format-hcl
 format-hcl: ## Reformat all HCLs
-	packer fmt -recursive packer/
-	.buildkite/scripts/format_nomad.sh
+	docker-compose --file=docker-compose.check.yml run --rm --user=${COMPOSE_USER} hcl-format
 
 .PHONY: format
 format: format-python format-shell format-prettier format-rust format-hcl ## Reformat all code
