@@ -128,15 +128,9 @@ steps:
     artifact_paths:
       - "test_artifacts/**/*"
 
-  - label: ":packer::lint-roller: Packer Linting"
+  - label: ":lint-roller::packer::nomad: Lint HCL files"
     command:
-      # Since we run it in a container, we can't use the `make` for it
-      - .buildkite/scripts/lint_packer.sh
-    # Silently hangs unless the following is specified.
-    plugins:
-      - docker#v3.8.0:
-          image: "hashicorp/packer:1.7.2"
-          entrypoint: bash
+      - make lint-hcl
 
   - label: ":thinking_face: AMI Test?"
     # Don't want to run this again in the merge pipeline, since

@@ -50,7 +50,6 @@ BUILD @christophermaier
 /src/python/grapl-common/ @wimax-grapl
 /src/python/graplctl/ @jgrillo-grapl
 /src/python/grapl-dgraph-ttl/ @grapl-security/wg-data-infra
-/src/python/graplinc/ @grapl-security/wg-data-infra
 /src/python/graplinc-grapl-api/ @grapl-security/wg-data-infra
 /src/python/grapl-model-plugin-deployer/ @colin-grapl
 /src/python/grapl-notebook/ @wimax-grapl

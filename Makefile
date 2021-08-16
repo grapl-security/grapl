@@ -10,6 +10,7 @@ RUST_BUILD ?= debug
 UID = $(shell id -u)
 GID = $(shell id -g)
 PWD = $(shell pwd)
+COMPOSE_USER=${UID}:${GID}
 DOCKER_BUILDX_BAKE_OPTS ?=
 ifneq ($(GRAPL_RUST_ENV_FILE),)
 DOCKER_BUILDX_BAKE_OPTS += --set *.secrets=id=rust_env,src="$(GRAPL_RUST_ENV_FILE)"
@@ -30,6 +31,15 @@ DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
 COMPOSE_PROJECT_INTEGRATION_TESTS := grapl-integration_tests
 COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
 
+# All the services defined in the docker-compose.check.yml file are
+# run with the same general arguments; just supply the service name to
+# run.
+#
+# While we would ultimately like to run all these containers as a
+# non-root user, some currently seem to require that; to accommodate
+# all such images, we provide two helpful macros.
+DOCKER_COMPOSE_CHECK := docker-compose --file=docker-compose.check.yml run --rm
+NONROOT_DOCKER_COMPOSE_CHECK := ${DOCKER_COMPOSE_CHECK} --user=${COMPOSE_USER}
 
 # Use a single shell for each of our targets, which allows us to use the 'trap'
 # built-in in our targets. We set the 'errexit' shell option to preserve
@@ -350,16 +360,15 @@ lint-prettier: build-formatter ## Run ts/js/yaml lint checks
 
 .PHONY: lint-hcl
 lint-hcl: ## Check to see if Packer templates are formatted properly
-	.buildkite/scripts/lint_packer.sh
-	.buildkite/scripts/lint_nomad.sh
+	${NONROOT_DOCKER_COMPOSE_CHECK} hcl-lint
 
 .PHONY: lint-proto
 lint-proto: ## Lint all protobuf definitions
-	docker-compose --file=docker-compose.check.yml run --rm buf-lint
+	${DOCKER_COMPOSE_CHECK} buf-lint
 
 .PHONY: lint-proto-breaking
 lint-proto-breaking: ## Check protobuf definitions for breaking changes
-	docker-compose --file=docker-compose.check.yml run --rm buf-breaking-change
+	${DOCKER_COMPOSE_CHECK} buf-breaking-change
 
 .PHONY: lint
 lint: lint-python lint-prettier lint-rust lint-shell lint-hcl lint-proto lint-proto-breaking ## Run all lint checks
@@ -387,8 +396,7 @@ format-prettier: build-formatter ## Reformat js/ts/yaml
 
 .PHONY: format-hcl
 format-hcl: ## Reformat all HCLs
-	packer fmt -recursive packer/
-	.buildkite/scripts/format_nomad.sh
+	${NONROOT_DOCKER_COMPOSE_CHECK} hcl-format
 
 .PHONY: format
 format: format-python format-shell format-prettier format-rust format-hcl ## Reformat all code
