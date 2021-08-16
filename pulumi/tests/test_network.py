@@ -1,14 +1,17 @@
 import unittest
 
 import pulumi
+from typing import Optional, Tuple
 
 
 class MyMocks(pulumi.runtime.Mocks):
-    def new_resource(self, args: pulumi.runtime.MockResourceArgs) -> list:
+    def new_resource(self, args: pulumi.runtime.MockResourceArgs) -> Tuple[Optional[str], dict]:
         outputs = args.inputs
-        return [args.name + "_id", outputs]
+        return args.name + "_id", outputs
 
-    def call(self, args: pulumi.runtime.MockCallArgs) -> dict:
+    # Officially call() should return Tuple[dict, Optional[List[Tuple[str,str]]]]. However there's a bug where when a
+    # dict is not returned, call doesn't work as expected
+    def call(self, args: pulumi.runtime.MockCallArgs) -> dict:  # type: ignore
         if args.token == "aws:index/getAvailabilityZones:getAvailabilityZones":
             return {"names": ["a", "b", "c"], "state": "available"}
         # This is necessary since infra.config calls this
