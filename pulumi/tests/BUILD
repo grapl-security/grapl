@@ -4,4 +4,5 @@ python_tests(
     dependencies=[
         '3rdparty/python:setuptools'
     ],
+    skip_mypy=True
 )
