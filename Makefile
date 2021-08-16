@@ -353,8 +353,16 @@ lint-hcl: ## Check to see if Packer templates are formatted properly
 	.buildkite/scripts/lint_packer.sh
 	.buildkite/scripts/lint_nomad.sh
 
+.PHONY: lint-proto
+lint-proto: ## Lint all protobuf definitions
+	docker-compose --file=docker-compose.check.yml run --rm buf-lint
+
+.PHONY: lint-proto-breaking
+lint-proto-breaking: ## Check protobuf definitions for breaking changes
+	docker-compose --file=docker-compose.check.yml run --rm buf-breaking-change
+
 .PHONY: lint
-lint: lint-python lint-prettier lint-rust lint-shell lint-hcl ## Run all lint checks
+lint: lint-python lint-prettier lint-rust lint-shell lint-hcl lint-proto lint-proto-breaking ## Run all lint checks
 
 ##@ Formatting 💅
 
