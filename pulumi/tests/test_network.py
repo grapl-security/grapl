@@ -1,7 +1,7 @@
 import unittest
+from typing import Optional, Tuple
 
 import pulumi
-from typing import Optional, Tuple
 
 
 class MyMocks(pulumi.runtime.Mocks):
