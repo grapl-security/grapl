@@ -5,12 +5,11 @@
 grapl_python_distribution(
     name = "graplinc_grapl_api",
     dependencies = [
-        "src/proto/graplinc/grapl/api",
-        "src/python/graplinc/graplinc/grapl/api"
+        "src/proto:graplinc",
     ],
     provides = setup_py(
         name = "graplinc-grapl-api",
-        readme = "src/python/graplinc/graplinc/grapl/api/README.md",
+        readme = "src/proto/graplinc/README.python-codegen.md",
         version = "0.1.1",
         description = "Protobuf code for interacting with the Grapl API",
     )
