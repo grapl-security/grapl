@@ -5,7 +5,9 @@ from typing import Optional, Tuple
 
 
 class MyMocks(pulumi.runtime.Mocks):
-    def new_resource(self, args: pulumi.runtime.MockResourceArgs) -> Tuple[Optional[str], dict]:
+    def new_resource(
+        self, args: pulumi.runtime.MockResourceArgs
+    ) -> Tuple[Optional[str], dict]:
         outputs = args.inputs
         return args.name + "_id", outputs
 
