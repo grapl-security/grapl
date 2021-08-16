@@ -1,9 +1,7 @@
 import unittest
-from typing import Optional, Tuple, TypeVar
+from typing import Optional, Tuple
 
 import pulumi
-
-T = TypeVar("T")
 
 
 class MyMocks(pulumi.runtime.Mocks):
@@ -35,7 +33,7 @@ class TestingNetwork(unittest.TestCase):
     def test_number_of_subnets(self) -> pulumi.Output:
         network = Network("test_public_subnets")
 
-        def check_number_of_subnets(args: pulumi.Output.Input[pulumi.Output.T]) -> None:
+        def check_number_of_subnets(args: list) -> None:
             public_subnets, private_subnets = args
             assert (
                 len(public_subnets) == 2
@@ -52,9 +50,7 @@ class TestingNetwork(unittest.TestCase):
     def test_public_subnet_tags(self) -> pulumi.Output:
         network = Network("test_public_subnet_tags")
 
-        def check_public_subnet_tags(
-            args: pulumi.Output.Input[pulumi.Output.T],
-        ) -> None:
+        def check_public_subnet_tags(args: list) -> None:
             urn, tags = args
             assert tags, f"Subnet {urn} must have tags"
             assert "Name" in tags, f"Subnet {urn} must have a Name tag"
@@ -67,9 +63,7 @@ class TestingNetwork(unittest.TestCase):
     def test_private_subnet_tags(self) -> pulumi.Output:
         network = Network("test_private_subnet_tags")
 
-        def check_private_subnet_tags(
-            args: pulumi.Output.Input[pulumi.Output.T],
-        ) -> None:
+        def check_private_subnet_tags(args: list) -> None:
             urn, tags = args
             assert tags, f"Subnet {urn} must have tags"
             assert "Name" in tags, f"Subnet {urn} must have a Name tag"
