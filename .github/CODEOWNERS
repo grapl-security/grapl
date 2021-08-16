@@ -18,7 +18,6 @@ BUILD @christophermaier
 /etc/ @christophermaier
 /etc/ci_scripts/ @wimax-grapl
 /etc/formatter/ @wimax-grapl
-/etc/install_buf.sh @christophermaier
 /etc/sample_data/ @jgrillo-grapl
 /.flake8 @christophermaier
 .gitattributes @christophermaier
