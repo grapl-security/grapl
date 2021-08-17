@@ -20,14 +20,30 @@ use crate::model_plugin_deployer::{
     SchemaType,
 };
 
+/// Right now this struct just exists so we can attach behaviors to it.
+/// If you need state later, you can add it.
 #[derive(Default)]
-pub struct ModelPluginDeployer {
-    // Right now this struct just exists so we can attach behaviors to it.
-// If you need state later, you can add it.
+pub struct ModelPluginDeployer {}
+
+impl ModelPluginDeployer {
+    /// The actual business logic for `deploy_model`
+    fn handle_deploy_model(
+        &self,
+        inner_request: DeployModelRequest,
+    ) -> Result<DeployModelResponse, Status> {
+        match SchemaType::from_i32(inner_request.schema_type) {
+            Some(SchemaType::Graphql) => {
+                // TODO: Read the schema as graphql
+                Ok(DeployModelResponse {})
+            }
+            _ => Err(Status::new(Code::InvalidArgument, "Unhandled schema type")),
+        }
+    }
 }
 
 #[tonic::async_trait]
 impl ModelPluginDeployerRpc for ModelPluginDeployer {
+    /// Bind `handle_deploy_model` to the grpc service
     #[tracing::instrument(
         source_addr = request.remote_addr(),
         client_id = request.get_ref().request_meta.client_id,
@@ -38,16 +54,8 @@ impl ModelPluginDeployerRpc for ModelPluginDeployer {
         request: Request<DeployModelRequest>,
     ) -> Result<Response<DeployModelResponse>, Status> {
         let start = quanta::Instant::now();
-
-        let message = request.into_inner();
-        match SchemaType::from_i32(message.schema_type) {
-            Some(SchemaType::Graphql) => {
-                // Read the schema as graphql
-            }
-            _ => return Err(Status::new(Code::InvalidArgument, "Unhandled schema type")),
-        }
-
-        let reply = DeployModelResponse {};
+        let inner_request = request.into_inner();
+        let reply = self.handle_deploy_model(inner_request)?;
 
         let delta = quanta::Instant::now().duration_since(start);
         metrics::histogram!("request_ns", delta);
@@ -88,11 +96,10 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_deploy_model_validation() -> Result<(), String> {
+    async fn test_handle_deploy_model_validation() -> Result<(), String> {
         let service_instance = ModelPluginDeployer::default();
         let inner_request = DeployModelRequest::default();
-        let outer_request = Request::new(inner_request);
-        let response = service_instance.deploy_model(outer_request).await;
+        let response = service_instance.handle_deploy_model(inner_request);
         match response {
             Ok(_) => Err("Unexpected OK".into()),
             Err(status) => {
