@@ -64,6 +64,16 @@ services:
       target: analyzer-dispatcher-deploy
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
+        
+  # TODO: Rename once we deprecate python `model-plugin-deployer-v1`
+  model-plugin-deployer-v2:
+    image: ${DOCKER_REGISTRY:-docker.io}/grapl/model-plugin-deployer-v2:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: rust/Dockerfile
+      target: model-plugin-deployer-deploy
+      args:
+        - RUST_BUILD=${RUST_BUILD:-debug}
 
   grapl-web-ui:
     image: grapl/grapl-web-ui:${TAG:-latest}
