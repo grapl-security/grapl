@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package graplinc.grapl.api.model_plugin_deployer.v1;
+
+enum SchemaType {
+    UNKNOWN = 0;
+    GRAPHQL = 1;
+}
+
+message DeployModelRequest {
+    // The actual schema, in whichever format specified by schema_type
+    bytes schema = 1;
+    // Supported types, for now: graphql
+    SchemaType schema_type = 2;
+}
+
+
+message DeployModelResponse {
+    // In the future, we'll want to return any errors here.
+}
+
+
+service ModelPluginDeployerRpc {
+      rpc DeployModel (DeployModelRequest) returns (DeployModelResponse) {}
+}
+
