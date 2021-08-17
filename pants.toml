@@ -1,5 +1,5 @@
 [GLOBAL]
-pants_version = "2.6.0rc1"
+pants_version = "2.6.0"
 backend_packages = [
   "pants.backend.awslambda.python",
   "pants.backend.codegen.protobuf.python",
