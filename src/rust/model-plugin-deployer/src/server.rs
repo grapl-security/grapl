@@ -1,22 +1,33 @@
-use tonic::Code;
-use tonic::{transport::Server, Request, Response, Status};
 use std::net::SocketAddr;
 
-use crate::model_plugin_deployer::DeployModelRequest;
-use crate::model_plugin_deployer::SchemaType;
-pub use crate::model_plugin_deployer::DeployModelResponse;
-pub use crate::model_plugin_deployer::model_plugin_deployer_rpc_server::ModelPluginDeployerRpc;
-pub use crate::model_plugin_deployer::model_plugin_deployer_rpc_server::ModelPluginDeployerRpcServer;
+use tonic::{
+    transport::Server,
+    Code,
+    Request,
+    Response,
+    Status,
+};
+
+pub use crate::model_plugin_deployer::{
+    model_plugin_deployer_rpc_server::{
+        ModelPluginDeployerRpc,
+        ModelPluginDeployerRpcServer,
+    },
+    DeployModelResponse,
+};
+use crate::model_plugin_deployer::{
+    DeployModelRequest,
+    SchemaType,
+};
 
 #[derive(Default)]
 pub struct ModelPluginDeployer {
     // Right now this struct just exists so we can attach behaviors to it.
-    // If you need state later, you can add it.
+// If you need state later, you can add it.
 }
 
 #[tonic::async_trait]
 impl ModelPluginDeployerRpc for ModelPluginDeployer {
-
     #[tracing::instrument(
         source_addr = request.remote_addr(),
         client_id = request.get_ref().request_meta.client_id,
@@ -32,20 +43,11 @@ impl ModelPluginDeployerRpc for ModelPluginDeployer {
         match SchemaType::from_i32(message.schema_type) {
             Some(SchemaType::Graphql) => {
                 // Read the schema as graphql
-            },
-            _ => {
-                return Err(
-                    Status::new(
-                        Code::InvalidArgument, "Unhandled schema type"
-                    )
-                )
             }
+            _ => return Err(Status::new(Code::InvalidArgument, "Unhandled schema type")),
         }
 
-
-        let reply = DeployModelResponse {
-
-        };
+        let reply = DeployModelResponse {};
 
         let delta = quanta::Instant::now().duration_since(start);
         metrics::histogram!("request_ns", delta);
@@ -54,11 +56,11 @@ impl ModelPluginDeployerRpc for ModelPluginDeployer {
     }
 }
 
-pub async fn exec_service(socket_addr: SocketAddr)  -> Result<(), Box<dyn std::error::Error>> {
+pub async fn exec_service(socket_addr: SocketAddr) -> Result<(), Box<dyn std::error::Error>> {
     let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
     health_reporter
-    .set_serving::<ModelPluginDeployerRpcServer<ModelPluginDeployer>>()
-    .await;
+        .set_serving::<ModelPluginDeployerRpcServer<ModelPluginDeployer>>()
+        .await;
 
     let model_plugin_deployer_instance = ModelPluginDeployer::default();
 
@@ -72,9 +74,32 @@ pub async fn exec_service(socket_addr: SocketAddr)  -> Result<(), Box<dyn std::e
 
     Server::builder()
         .add_service(health_service)
-        .add_service(ModelPluginDeployerRpcServer::new(model_plugin_deployer_instance))
+        .add_service(ModelPluginDeployerRpcServer::new(
+            model_plugin_deployer_instance,
+        ))
         .serve(socket_addr)
         .await?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_deploy_model_validation() -> Result<(), String> {
+        let service_instance = ModelPluginDeployer::default();
+        let inner_request = DeployModelRequest::default();
+        let outer_request = Request::new(inner_request);
+        let response = service_instance.deploy_model(outer_request).await;
+        match response {
+            Ok(_) => Err("Unexpected OK".into()),
+            Err(status) => {
+                assert_eq!(status.code(), Code::InvalidArgument);
+                assert_eq!(status.message(), "Unhandled schema type");
+                Ok(())
+            }
+        }
+    }
 }

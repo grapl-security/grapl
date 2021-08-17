@@ -2,8 +2,8 @@
 This module just re-exports the server, client, and protos. No need to modify.
 */
 
-pub mod server;
 pub mod client;
+pub mod server;
 
 pub mod model_plugin_deployer {
     // In the future, this will be in rust-proto.
@@ -15,13 +15,5 @@ pub mod model_plugin_deployer {
         let env_var_name = "MODEL_PLUGIN_DEPLOYER_GRPC_PORT";
         let port = std::env::var(env_var_name).expect(env_var_name);
         return format!("[::1]:{}", port);
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test() {
-        todo!("Write some tests!")
     }
 }
