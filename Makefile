@@ -271,7 +271,7 @@ test-unit-rust: build-test-unit-rust ## Build and run unit tests - Rust only
 # If you need to `pdb` these tests, add a `--debug` after `./pants test`
 test-unit-python: ## Run Python unit tests under Pants
 	./pants filter --filter-target-type="python_tests" :: \
-	| xargs ./pants --print-stacktrace --tag="-needs_work" test --pytest-args="-m \"not integration_test\""
+	| xargs ./pants --tag="-needs_work" test --pytest-args="-m \"not integration_test\""
 
 
 .PHONY: test-unit-shell
