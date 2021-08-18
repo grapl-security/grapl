@@ -38,7 +38,7 @@ from grapl_analyzerlib.subgraph_view import SubgraphView
 from grapl_common.env_helpers import S3ResourceFactory
 from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
-from python_proto.envelope import Envelope, Metadata
+from python_proto.pipeline import Envelope, Metadata
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
