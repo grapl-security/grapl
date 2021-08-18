@@ -170,3 +170,10 @@ FROM rust-dist AS osquery-generator-deploy
 
 COPY --from=build /outputs/osquery-generator /
 ENTRYPOINT ["/osquery-generator"]
+
+# web-ui
+FROM rust-dist AS grapl-web-ui
+
+COPY --from=build /outputs/grapl-web-ui /
+COPY rust/grapl-web-ui/frontend /frontend
+ENTRYPOINT ["/grapl-web-ui"]

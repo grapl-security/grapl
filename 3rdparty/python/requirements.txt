@@ -1,6 +1,7 @@
 # Any Python dependencies used by our code should be declared here.
 # !!!!! Don't forget to regenerate the constraints from this! (see readme.md)
 
+argon2-cffi
 boto3
 botocore
 chalice==1.22.4

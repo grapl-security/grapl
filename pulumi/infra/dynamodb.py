@@ -90,6 +90,14 @@ class DynamoDB(pulumi.ComponentResource):
         )
         pulumi.export("user-auth-table", self.user_auth_table.name)
 
+        self.user_session_table = DynamoDBTable(
+            f"{DEPLOYMENT_NAME}-user_session_table",
+            attrs=[{"name": "session_token", "type": "S"}],
+            hash_key="session_token",
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+        pulumi.export("user-session-table", self.user_session_table.name)
+
         self.dynamic_session_table = DynamoDBTable(
             f"{DEPLOYMENT_NAME}-dynamic_session_table",
             attrs=[

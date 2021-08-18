@@ -65,6 +65,15 @@ services:
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
+  grapl-web-ui:
+    image: ${DOCKER_REGISTRY:-docker.io}/grapl/grapl-web-ui:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: rust/Dockerfile
+      target: grapl-web-ui
+      args:
+        - RUST_BUILD=${RUST_BUILD:-debug}
+
   ########################################################################
   # Python Services
   ########################################################################
