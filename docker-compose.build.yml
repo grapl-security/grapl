@@ -64,6 +64,16 @@ services:
       target: analyzer-dispatcher-deploy
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
+        
+  # TODO: Rename once we deprecate python `model-plugin-deployer-v1`
+  model-plugin-deployer-v2:
+    image: ${DOCKER_REGISTRY:-docker.io}/grapl/model-plugin-deployer-v2:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: rust/Dockerfile
+      target: model-plugin-deployer-deploy
+      args:
+        - RUST_BUILD=${RUST_BUILD:-debug}
 
   ########################################################################
   # Python Services
@@ -80,8 +90,8 @@ services:
   # This container build exists only for Local Grapl; if we are able
   # to deploy model-plugin-deployer as an actual Lambda there, we can
   # get rid of this.
-  model-plugin-deployer:
-    image: ${DOCKER_REGISTRY:-docker.io}/grapl/model-plugin-deployer:${TAG:-latest}
+  model-plugin-deployer-v1:
+    image: ${DOCKER_REGISTRY:-docker.io}/grapl/model-plugin-deployer-v1:${TAG:-latest}
     build:
       context: .
       dockerfile: ./src/python/Dockerfile

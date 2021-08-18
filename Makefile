@@ -411,7 +411,7 @@ package-python-libs: ## Create Python distributions for public libraries
 up: export COMPOSE_PROJECT_NAME="grapl"
 up: build ## Build Grapl services and launch docker-compose up
 	$(WITH_LOCAL_GRAPL_ENV)
-	docker-compose -f docker-compose.yml up
+	docker-compose -f docker-compose.yml up $${TARGETS:-}
 
 .PHONY: up-detach
 up-detach: build ## Bring up local Grapl and detach to return control to tty

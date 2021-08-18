@@ -170,3 +170,9 @@ FROM rust-dist AS osquery-generator-deploy
 
 COPY --from=build /outputs/osquery-generator /
 ENTRYPOINT ["/osquery-generator"]
+# osquery-generator
+
+FROM rust-dist AS model-plugin-deployer-deploy
+
+COPY --from=build /outputs/model-plugin-deployer /
+ENTRYPOINT ["/model-plugin-deployer"]

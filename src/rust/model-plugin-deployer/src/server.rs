@@ -65,7 +65,7 @@ impl ModelPluginDeployerRpc for ModelPluginDeployer {
 }
 
 pub async fn exec_service(socket_addr: SocketAddr) -> Result<(), Box<dyn std::error::Error>> {
-    let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
+    let (mut health_reporter, _health_service) = tonic_health::server::health_reporter();
     health_reporter
         .set_serving::<ModelPluginDeployerRpcServer<ModelPluginDeployer>>()
         .await;
@@ -81,7 +81,7 @@ pub async fn exec_service(socket_addr: SocketAddr) -> Result<(), Box<dyn std::er
     );
 
     Server::builder()
-        .add_service(health_service)
+        //.add_service(health_service)
         .add_service(ModelPluginDeployerRpcServer::new(
             model_plugin_deployer_instance,
         ))
