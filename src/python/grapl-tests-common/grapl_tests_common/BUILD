@@ -1,6 +1,6 @@
 python_library(
     dependencies=[
-        "src/python/python-proto:python_proto",
+        "src/python/python-proto",
     ]
 )
 
