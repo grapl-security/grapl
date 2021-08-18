@@ -73,7 +73,6 @@ root_patterns = [
   "/src/python/graplctl",
   "/src/python/grapl-dgraph-ttl",
   "/src/python/grapl_e2e_tests",
-  "/src/python/graplinc/graplinc",
   "/src/python/grapl-model-plugin-deployer",
   "/src/python/grapl-template-generator",
   "/src/python/grapl-tests-common",
