@@ -5,6 +5,7 @@ use model_plugin_deployer::client::ModelPluginDeployerRpcClient;
 use crate::client::DeployModelRequest;
 
 #[tokio::test]
+#[cfg(feature = "integration")]
 async fn test_deploy_model() {
     let client = ModelPluginDeployerRpcClient::new();
     let request = tonic::Request::new(DeployModelRequest {

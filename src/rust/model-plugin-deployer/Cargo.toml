@@ -1,5 +1,5 @@
 [package]
-name = "model_plugin_deployer"
+name = "model-plugin-deployer"
 version = "0.1.0"
 authors = ["engineering@graplsecurity.com"]
 edition = "2018"

@@ -2087,7 +2087,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "model_plugin_deployer"
+name = "model-plugin-deployer"
 version = "0.1.0"
 dependencies = [
  "async-stream 0.3.2",
