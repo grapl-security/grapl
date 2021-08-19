@@ -1,8 +1,20 @@
 [package]
-name = "grapl-user-management"
+name = "usermanagement"
 version = "0.1.0"
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[[bin]] # Bin to run the HelloWorld gRPC server
+name = "usermanagement-server"
+path = "src/server.rs"
+
+[[bin]] # Bin to run the HelloWorld gRPC client
+name = "usermanagement-client"
+path = "src/client.rs"
 
 [dependencies]
+tonic = "0.5"
+prost = "0.8"
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
+
+[build-dependencies]
+tonic-build = "0.5"
