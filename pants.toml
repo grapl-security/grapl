@@ -133,7 +133,7 @@ args = [ "--suppress-no-test-exit-code" ]
 lockfile = "3rdparty/python/mypy.lockfile"
 version = "mypy==0.812"
 config = "src/python/mypy.ini"
-args = [ "--show-error-codes" ] #, "--verbose" ]
+args = [ "--show-error-codes", "--namespace-packages" ] #, "--verbose" ]
 
 [ipython]
 version = "ipython==7.20.0"

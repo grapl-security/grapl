@@ -21,7 +21,7 @@ class Uuid(SerDe):
     @staticmethod
     def deserialize(bytes_: bytes) -> Uuid:
         uuid_ = _Uuid()
-        uuid_.parseFromString(bytes_)
+        uuid_.ParseFromString(bytes_)
         return Uuid._from_proto(proto_uuid=uuid_)
 
     @staticmethod
