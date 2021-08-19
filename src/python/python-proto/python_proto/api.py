@@ -1,5 +1,4 @@
-from graplinc.grapl.api.graph.v1beta1.types_pb2 import MergedEdgeList, MergedGraph
-
+from graplinc.grapl.api.graph.v1beta1.types_pb2 import MergedEdgeList as _MergedEdgeList
 from python_proto import SerDe
 
 
