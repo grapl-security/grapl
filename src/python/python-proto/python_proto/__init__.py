@@ -3,19 +3,19 @@ from __future__ import annotations
 from abc import ABCMeta, abstractmethod, abstractstaticmethod
 from typing import Any
 
-class SerDe(metaclass=ABCMeta):
 
+class SerDe(metaclass=ABCMeta):
     @classmethod
-    def __subclasshook__(cls, subclass: Any):
+    def __subclasshook__(cls, subclass: Any) -> bool:
         return (
-            hasattr(subclass, "deserialize") and
-            callable(subclass.deserialize) and
-            hasattr(subclass, "serialize") and
-            callable(subclass.serialize) and
-            hasattr(subclass, "_from_proto") and
-            callable(subclass._from_proto) and
-            hasattr(subclass, "_into_proto") and
-            callable(subclass._into_proto)
+            hasattr(subclass, "deserialize")
+            and callable(subclass.deserialize)
+            and hasattr(subclass, "serialize")
+            and callable(subclass.serialize)
+            and hasattr(subclass, "_from_proto")
+            and callable(subclass._from_proto)
+            and hasattr(subclass, "_into_proto")
+            and callable(subclass._into_proto)
         )
 
     @staticmethod

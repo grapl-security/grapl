@@ -2,14 +2,13 @@ from __future__ import annotations
 
 import json
 import uuid
-
 from typing import cast
 
 from graplinc.grapl.pipeline.v1beta1.types_pb2 import Envelope as _Envelope
 from graplinc.grapl.pipeline.v1beta1.types_pb2 import Metadata as _Metadata
 from graplinc.grapl.pipeline.v1beta1.types_pb2 import Uuid as _Uuid
-
 from python_proto import SerDe
+
 
 class Uuid(SerDe):
     lsb: int
@@ -117,10 +116,7 @@ class Metadata(SerDe):
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Metadata):
             return NotImplemented
-        return (
-            self.trace_id == other.trace_id
-            and self.tenant_id == other.tenant_id
-        )
+        return self.trace_id == other.trace_id and self.tenant_id == other.tenant_id
 
 
 class Envelope(SerDe):
