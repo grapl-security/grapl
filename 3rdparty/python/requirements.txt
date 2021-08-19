@@ -30,6 +30,7 @@ toml==0.10.2
 pulumi-aws>=4.0.0,<5.0.0,==4.6.0
 pulumi_docker
 pulumi_kafka
+pulumi_policy
 pulumi_random
 pydgraph
 pyjwt
