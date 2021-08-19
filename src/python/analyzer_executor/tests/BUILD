@@ -4,7 +4,10 @@ python_tests(
         "HITCACHE_PORT",
         "MESSAGECACHE_ADDR",
         "MESSAGECACHE_PORT",
+        "GRAPL_ANALYZERS_BUCKET",
+        "GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET",
         "GRAPL_LOG_LEVEL",
+        "GRAPL_MODEL_PLUGINS_BUCKET",
         "IS_RETRY",
     ]
 )
