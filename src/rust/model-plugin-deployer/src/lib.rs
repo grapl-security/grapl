@@ -15,6 +15,6 @@ pub mod model_plugin_deployer {
         let env_var_name = "GRAPL_MODEL_PLUGIN_DEPLOYER_GRPC_PORT";
         let port = std::env::var(env_var_name).expect(env_var_name);
         // [::] means ipv6 version of 0.0.0.0
-        return format!("[::]:{}", port);
+        return format!("0.0.0.0:{}", port);
     }
 }
