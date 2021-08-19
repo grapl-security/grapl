@@ -2094,6 +2094,7 @@ dependencies = [
  "async-trait",
  "bytes 1.0.1",
  "criterion",
+ "grapl-config",
  "metrics 0.15.1",
  "metrics-util",
  "prost",

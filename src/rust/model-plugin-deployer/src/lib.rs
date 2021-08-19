@@ -14,6 +14,7 @@ pub mod model_plugin_deployer {
     pub fn get_socket_addr() -> String {
         let env_var_name = "GRAPL_MODEL_PLUGIN_DEPLOYER_GRPC_PORT";
         let port = std::env::var(env_var_name).expect(env_var_name);
-        return format!("[::1]:{}", port);
+        // [::] means ipv6 version of 0.0.0.0
+        return format!("[::]:{}", port);
     }
 }

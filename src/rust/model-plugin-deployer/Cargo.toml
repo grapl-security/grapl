@@ -40,6 +40,8 @@ tonic-health = "0.3"
 metrics = "0.15"
 metrics-util = "0.7"
 quanta = "0.7"
+# Other grapl libs
+grapl-config = { path = "../grapl-config" }
 
 [dev-dependencies]
 # Benchmarking
