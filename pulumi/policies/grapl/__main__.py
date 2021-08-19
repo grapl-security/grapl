@@ -7,21 +7,24 @@ from pulumi_policy import (
 )
 
 
-def s3_no_public_read_validator(args: ResourceValidationArgs, report_violation: ReportViolation):
+def s3_no_public_read_validator(
+    args: ResourceValidationArgs, report_violation: ReportViolation
+):
     if args.resource_type == "aws:s3/bucket:Bucket" and "acl" in args.props:
         acl = args.props["acl"]
         if acl == "public-read" or acl == "public-read-write":
             report_violation(
-                "You cannot set public-read or public-read-write on an S3 bucket. " +
-                "Read more about ACLs here: https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html")
+                "You cannot set public-read or public-read-write on an S3 bucket. "
+                + "Read more about ACLs here: https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html"
+            )
 
 
-def iam_no_s3_list_validator(args: ResourceValidationArgs, report_violation: ReportViolation):
+def iam_no_s3_list_validator(
+    args: ResourceValidationArgs, report_violation: ReportViolation
+):
     if args.resource_type == "aws:iam/rolepolicy:RolePolicy" and "policy" in args.props:
         if "s3:ListBucket" in args.props["policy"]:
-            report_violation(
-                "You should not require s3:ListBucket permissions"
-            )
+            report_violation("You should not require s3:ListBucket permissions")
 
 
 s3_no_public_read = ResourceValidationPolicy(
