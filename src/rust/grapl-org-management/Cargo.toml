@@ -1,14 +1,14 @@
 [package]
-name = "usermanagement"
+name = "orgmanagement"
 version = "0.1.0"
 edition = "2018"
 
-[[bin]] # Bin to run the HelloWorld gRPC server
-name = "usermanagement-server"
+[[bin]] # Bin to run org management gRPC server
+name = "orgmanagement-server"
 path = "src/server.rs"
 
-[[bin]] # Bin to run the HelloWorld gRPC client
-name = "usermanagement-client"
+[[bin]] # Bin to run org management gRPC client
+name = "orgmanagement-client"
 path = "src/client.rs"
 
 [dependencies]

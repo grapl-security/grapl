@@ -1,23 +1,23 @@
 use tonic::{transport::Server, Request, Response, Status};
-use user_management::greeter_server::{Greeter, GreeterServer};
-use user_management::{HelloReply, HelloRequest};
+use org_management::orgmanagement_server::{OrganizationManager, OrgManagementServer};
+use org_management::{OrgReply, OrgRequest};
 
-pub mod user_management {
-    tonic::include_proto!("usermanagement");
+pub mod org_management {
+    tonic::include_proto!("orgmanagement");
 }
 
 #[derive(Debug, Default)]
-pub struct MyGreeter {}
+pub struct Organization {}
 
 #[tonic::async_trait]
-impl Greeter for MyGreeter {
+impl OrganizationManager for Organization {
     async fn say_hello(
         &self,
-        request: Request<HelloRequest>,
-    ) -> Result<Response<HelloReply>, Status> {
+        request: Request<OrgRequest>,
+    ) -> Result<Response<OrgReply>, Status> {
         println!("Got a request: {:?}", request);
 
-        let reply = user_management::HelloReply {
+        let reply = org_management::OrgReply {
             message: format!("Hello {}!", request.into_inner().name).into(),
         };
 
@@ -28,10 +28,10 @@ impl Greeter for MyGreeter {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let addr = "[::1]:50051".parse()?;
-    let greeter = MyGreeter::default();
+    let org = Organization::default();
 
     Server::builder()
-        .add_service(GreeterServer::new(greeter))
+        .add_service(OrgManagementServer::new(org))
         .serve(addr)
         .await?;
 

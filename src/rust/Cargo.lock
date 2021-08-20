@@ -2186,6 +2186,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "orgmanagement"
+version = "0.1.0"
+dependencies = [
+ "prost 0.8.0",
+ "tokio 1.9.0",
+ "tonic 0.5.2",
+ "tonic-build 0.5.2",
+]
+
+[[package]]
 name = "osquery-generator"
 version = "0.1.0"
 dependencies = [
@@ -4268,16 +4278,6 @@ dependencies = [
  "idna",
  "matches",
  "percent-encoding",
-]
-
-[[package]]
-name = "usermanagement"
-version = "0.1.0"
-dependencies = [
- "prost 0.8.0",
- "tokio 1.9.0",
- "tonic 0.5.2",
- "tonic-build 0.5.2",
 ]
 
 [[package]]

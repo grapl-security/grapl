@@ -14,7 +14,7 @@ members = [
   "./grapl-graphql-codegen",
   "./grapl-observe",
   "./grapl-service",
-  "./grapl-user-management",
+  "./grapl-org-management",
   "./grapl-utils",
   "./kafka-metrics-exporter",
   "./metric-forwarder",
