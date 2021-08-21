@@ -1,14 +1,15 @@
 syntax = "proto3";
 package orgmanagement;
 
+
+message CreateOrgRequest {
+  string name = 1;
+}
+
+message CreateOrgReply {
+  string message = 1;
+}
+
 service OrganizationManager {
-    rpc SayHello (OrgRequest) returns (OrgReply);
-}
-
-message OrgRequest {
-   string name = 1;
-}
-
-message OrgReply {
-    string message = 1;
+  rpc CreateOrg (CreateOrgRequest) returns (CreateOrgReply);
 }

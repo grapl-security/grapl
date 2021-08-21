@@ -1,6 +1,9 @@
-pub mod server;
-pub mod client;
+use grapl_org_management::server;
 
-fn main() {
-    println!("Hello, world!");
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    server::start_server().await?;
+    println!("Test");
+    Ok(())
 }
