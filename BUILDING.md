@@ -247,7 +247,7 @@ If you are on ChromeOS you will also need to run the following due to https://gi
 This will allow Nomad to run bridge networks
 ```bash
 sudo mkdir -p /lib/modules/$(uname -r)/
-sudo echo '_/bridge.ko' > /lib/modules/$(uname -r)/modules.builtin
+echo '_/bridge.ko' | sudo tee -a /lib/modules/$(uname -r)/modules.builtin
 ```
 
 ### Running Nomad locally
@@ -278,7 +278,7 @@ nomad job run \
     -var "dgraph_replicas=1" \
     -var "dgraph_shards=1" \
     -var "redis_endpoint=redis://$LOCAL_REDIS_ENDPOINT" \
-    -var "schema_table_name=$GRAPL_SCHEMA_TABLE"
+    -var "schema_table_name=$GRAPL_SCHEMA_TABLE" \
     nomad/grapl-core.nomad
 ```
 
