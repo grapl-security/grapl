@@ -375,12 +375,12 @@ services:
       - |
           /model-plugin-deployer
     environment:
-      GRAPL_MODEL_PLUGIN_DEPLOYER_GRPC_PORT: "${GRAPL_MODEL_PLUGIN_DEPLOYER_GRPC_PORT}"
+      GRAPL_MODEL_PLUGIN_DEPLOYER_V2_PORT: "${GRAPL_MODEL_PLUGIN_DEPLOYER_V2_PORT}"
       <<: *log-level
       <<: *rust-backtrace
     tty: false
     ports:
-      - 127.0.0.1:${GRAPL_MODEL_PLUGIN_DEPLOYER_GRPC_PORT}:${GRAPL_MODEL_PLUGIN_DEPLOYER_GRPC_PORT}
+      - 127.0.0.1:${GRAPL_MODEL_PLUGIN_DEPLOYER_V2_PORT}:${GRAPL_MODEL_PLUGIN_DEPLOYER_V2_PORT}
     networks:
       default:
         aliases:
