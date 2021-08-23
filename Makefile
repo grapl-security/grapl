@@ -493,7 +493,7 @@ repl: ## Run an interactive ipython repl that can import from grapl-common etc
 	./pants --no-pantsd repl --shell=ipython src/python/repl
 
 .PHONY: pulumi-prep
-pulumi-prep: graplctl lambdas build-ux ## Prepare some artifacts in advance of running a Pulumi update (does not run Pulumi!)
+pulumi-prep: graplctl build-lambda-zips ux-tarball ## Prepare some artifacts in advance of running a Pulumi update (does not run Pulumi!)
 
 .PHONY: update-buildkite-shared
 update-buildkite-shared: ## Pull in changes from grapl-security/buildkite-common
