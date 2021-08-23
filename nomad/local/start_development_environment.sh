@@ -6,6 +6,17 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
+# ensure that all dependencies are available
+if [[ -z $(command -v nomad) ]]; then
+    echo "Nomad must be installed. Please follow the install instructions at https://www.nomadproject.io/downloads"
+    exit 2
+fi
+
+if [[ -z $(command -v consul) ]]; then
+    echo "Consul must be installed. Please follow the install instructions at https://www.consul.io/downloads"
+    exit 2
+fi
+
 trap 'kill $(jobs -p)' EXIT
 
 echo "Starting nomad and consul locally."
