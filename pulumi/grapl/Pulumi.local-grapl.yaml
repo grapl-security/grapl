@@ -2,7 +2,7 @@ encryptionsalt: v1:KRH5XXw/Vv4=:v1:Mi1EOttYFIuFy8Zl:u/QoTfZuh9c5m6Jyw2L3mAKC+VNs
 config:
   aws:accessKey: test
   aws:endpoints:
-    - apigateway: http://localhost:4566
+      apigateway: http://localhost:4566
       cloudwatch: http://localhost:4566
       cloudwatchevents: http://localhost:4566
       cloudwatchlogs: http://localhost:4566
