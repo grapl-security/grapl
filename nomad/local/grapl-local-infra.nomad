@@ -1,3 +1,30 @@
+# The following variables are all-caps to clue in users that they're
+# imported from `local-grapl.env`.
+variable "FAKE_AWS_ACCESS_KEY_ID" {
+  type = string
+  description = "Fake AWS Access Key ID for Localstack and clients"
+}
+
+variable "FAKE_AWS_SECRET_ACCESS_KEY" {
+  type = string
+  description = "Fake AWS Secret Access Key for Localstack and clients"
+}
+
+variable "LOCALSTACK_PORT" {
+  type = string
+  description = "Port for Localstack"
+}
+
+variable "LOCALSTACK_HOST" {
+  type = string
+  description = "External hostname for Localstack"
+}
+
+
+####################
+# Jobspecs
+####################
+
 # This job is to spin up infrastructure needed to run Grapl locally (e.g. Redis) that we don't necessarily want to deploy in production (because AWS will manage it)
 job "grapl-local-infra" {
   datacenters = ["dc1"]
@@ -21,36 +48,46 @@ job "grapl-local-infra" {
     }
   }
 
-  group "dynamodb" {
+  group "localstack" {
     network {
-      port "dynamodb" {
-        static = 6666
+      mode = "bridge"
+
+      port "localstack" {
+        static = var.LOCALSTACK_PORT
       }
     }
 
-    task "dynamodb" {
+    task "localstack" {
+      # TODO: How to do health check?
+
       driver = "docker"
 
       config {
-        image = "amazon/dynamodb-local:latest"
-        ports = ["dynamodb"]
+        # `-full` includes elasticmq; once we move to kafka, we can remove it
+        image = "localstack/localstack-full:0.12.15"
+        # Was running into this: https://github.com/localstack/localstack/issues/1349
+        memory_hard_limit = 2048
+        ports = ["localstack"]
+        privileged = true
+        volumes = [
+           "/var/run/docker.sock:/var/run/docker.sock"
+        ]
+        # Do not set Docker's `network_mode` if you specify a group network_mode
+        network_aliases = [
+          var.LOCALSTACK_HOST
+        ]
       }
-    }
-  }
 
-  group "sqs" {
-    network {
-      port "sqs" {
-        static = 9324
-      }
-    }
-
-    task "sqs" {
-      driver = "docker"
-
-      config {
-        image = "graze/sqs-local:latest"
-        ports = ["sqs"]
+      env {
+        EDGE_PORT = var.LOCALSTACK_PORT
+        HOSTNAME_EXTERNAL = var.LOCALSTACK_HOST
+        SERVICES = "apigateway,cloudwatch,dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs"
+        DEBUG = 1
+        LAMBDA_EXECUTOR = docker-reuse
+        # TODO: MAIN_CONTAINER_NAME = 
+        LAMBDA_DOCKER_NETWORK = grapl-network
+        # TODO? DATA_DIR =
+        SQS_PROVIDER = elasticmq
       }
     }
   }
