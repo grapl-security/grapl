@@ -401,10 +401,6 @@ format-hcl: ## Reformat all HCLs
 .PHONY: format
 format: format-python format-shell format-prettier format-rust format-hcl ## Reformat all code
 
-.PHONY: package-python-libs
-package-python-libs: ## Create Python distributions for public libraries
-	./pants filter --target-type=python_distribution :: | xargs ./pants package
-
 ##@ Local Grapl 💻
 
 .PHONY: up
@@ -493,7 +489,7 @@ repl: ## Run an interactive ipython repl that can import from grapl-common etc
 	./pants --no-pantsd repl --shell=ipython src/python/repl
 
 .PHONY: pulumi-prep
-pulumi-prep: graplctl build-lambda-zips build-ux ## Prepare some artifacts in advance of running a Pulumi update (does not run Pulumi!)
+pulumi-prep: graplctl build-lambda-zips ux-tarball ## Prepare some artifacts in advance of running a Pulumi update (does not run Pulumi!)
 
 .PHONY: update-buildkite-shared
 update-buildkite-shared: ## Pull in changes from grapl-security/buildkite-common

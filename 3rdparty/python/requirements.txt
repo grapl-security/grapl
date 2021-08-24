@@ -21,10 +21,6 @@ mypy_boto3_sqs
 mypy_boto3_ssm
 protobuf>=3.12.1
 pulumi>=3.0.0,<4.0.0
-pydantic==1.8.2
-typer==0.3.2
-toml==0.10.2
-
 # 4.7.0 to 4.9.0 are broken typecheck-wise: https://github.com/pulumi/pulumi-aws/issues/1519
 # 4.10.0 to 4.13.0 causes sigsegv: https://github.com/pulumi/pulumi-aws/issues/1575
 pulumi-aws>=4.0.0,<5.0.0,==4.6.0
@@ -32,12 +28,15 @@ pulumi_docker
 pulumi_kafka
 pulumi_policy
 pulumi_random
+pydantic==1.8.2
 pydgraph
 pyjwt
 pytest
 requests
 redis
 setuptools
+toml==0.10.2
+typer==0.3.2
 typing_extensions
 # pants package with pants 2.6.0rc1 currently requires wheel < 0.37.
 wheel>=0.36,<0.37
