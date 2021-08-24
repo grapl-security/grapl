@@ -401,10 +401,6 @@ format-hcl: ## Reformat all HCLs
 .PHONY: format
 format: format-python format-shell format-prettier format-rust format-hcl ## Reformat all code
 
-.PHONY: package-python-libs
-package-python-libs: ## Create Python distributions for public libraries
-	./pants filter --target-type=python_distribution :: | xargs ./pants package
-
 ##@ Local Grapl 💻
 
 .PHONY: up
