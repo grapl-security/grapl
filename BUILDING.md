@@ -82,7 +82,7 @@ read from a `.env` in the root of the Grapl respository.
 
 ### sccache
 
-By default, our builds will use Mozilla's
+By default, our builds use Mozilla's
 [sccache](https://github.com/mozilla/sccache) to cache builds in a [cache mount
 type](https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/syntax.md#run---mounttypecache).
 This improves performance for local development experience as Rust sources
@@ -138,7 +138,7 @@ multiple Docker images with a single BuildKit command, which allows us to
 leverage BuildKit concurrency across all stages. The Docker build arguments for
 each service and container are defined in various Docker Compose files.
 
-For exmaple, to build Grapl services we have the following Make target:
+For example, to build Grapl services we have the following Make target:
 
 ```Makefile
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
@@ -170,10 +170,9 @@ be found under the `test` directory.
 
 ### Running tests
 
-Most Grapl Dockerfiles have build targets specific for running tests, which 
-
+Most Grapl Dockerfiles have build targets specific for running tests.
 Docker Compose is used to define the containers for running tests, as well as
-the how the image for the container should be built. The following is the
+how the image for the container should be built. The following is the
 definition for Rust unit tests
 ([test/docker-compose.unit-tests-rust.yml](./test/docker-compose.unit-tests-rust.yml)):
 
@@ -228,28 +227,73 @@ testing. Example:
 TAG=main docker-compose up
 ```
 
+## Nomad
+Grapl is transitioning to Nomad as our container orchestration. This will replace both AWS Fargate and docker-compose.
+
+### Nomad local development setup
+Have docker and docker-compose installed. Install Nomad and Consult following the instructions at 
+https://www.nomadproject.io/downloads and https://www.consul.io/downloads respectively.
+
+Install CNI plugins:
+
+```bash
+sudo mkdir -p /opt/cni/bin
+cd /opt/cni/bin
+sudo wget https://github.com/containernetworking/plugins/releases/download/v1.0.0/cni-plugins-linux-amd64-v1.0.0.tgz
+sudo tar -xf cni-plugins-linux-amd64-v1.0.0.tgz
+```
+
+If you are on ChromeOS you will also need to run the following due to https://github.com/hashicorp/nomad/issues/10902.
+This will allow Nomad to run bridge networks
+```bash
+sudo mkdir -p /lib/modules/$(uname -r)/
+echo '_/bridge.ko' | sudo tee -a /lib/modules/$(uname -r)/modules.builtin
+```
+
+### Running Nomad locally
+
+1. Set up local registry, build and push containers to local registry
+```bash
+make build-docker-images-local
+```
+
+2. Start local Nomad environment
+```bash
+sudo ./nomad/local/start_development_environment.sh
+```
+
+3. Create dynamodb tables
+This will involve running pulumi locally to generate dynamodb tables. Currently the commands are TBD
+
+4. Deploy Grapl Core
+```bash
+# Get redis endpoint in IP:PORT format automatically
+export LOCAL_REDIS_ENDPOINT=`docker ps | grep "redis" | awk '{print $10}' | awk '{split($0,a,"-"); print a[1]}'`
+nomad job run \
+    -var "container_registry=localhost:5000" \
+    -var "dgraph_replicas=1" \
+    -var "dgraph_shards=1" \
+    -var "redis_endpoint=redis://$LOCAL_REDIS_ENDPOINT" \
+    -var "schema_table_name=$GRAPL_SCHEMA_TABLE" \
+    nomad/grapl-core.nomad
+```
+
+
 ## The CI system
 
-We use [Github Actions](https://github.com/features/actions) for
+We use [BuildKite](https://buildkite.com/) for
 automated builds, automated tests, and automated releases. There are
-three workflow definitions:
+three primary workflow definitions:
 
-  - [grapl-lint.yml](./.github/workflows/grapl-lint.yml) -- This
-    workflow runs on every PR, and every time a PR is updated. It
-    makes sure our Python and Rust sources are formatted properly, and
-    that Python versions have been bumped (e.g. that Python artifacts
-    can be pushed to PyPI).
-  - [grapl-build.yml](./.github/workflows/grapl-build.yml) -- This
-    workflow also runs on every PR and every PR update. It runs all
-    build and test targets, and performs some additional
-    analysis on the codebase (e.g. [LGTM](https://lgtm.com/) checks).
-  - [grapl-release.yml](./github/workflows/grapl-release.yml) -- This
-    workflow runs every time we cut a [Github
-    Release](https://github.com/grapl-security/grapl/releases). It
-    builds all the release artifacts, runs all the tests, publishes
-    all the Grapl images to Dockerhub so folks can run local Grapl
-    easily and publishes Python libraries to PyPI.
-  - [cargo-audit.yml](./github/workflows/cargo-audit.yml) -- Runs [cargo
+  - [pipeline.verify.yml](./.buildkite/pipeline.verify.yml) -- This
+    workflow runs on every PR, and every time a PR is updated. This runs all 
+    formatting and linting checks, runs all build and test targets and 
+    tests performs some additional analysis on the codebase 
+    (e.g. [LGTM](https://lgtm.com/) checks).
+  - [pipeline.merge.yml](./buildkite/pipeline.merge.yml) -- This
+    workflow runs every time we merge a PR into main.  It
+    builds all the release artifacts, and creates a release candidate.
+  - [cargo-audit.yml](./buildkite/pipeline.cargo-audit.sh) -- Runs [cargo
     audit](https://github.com/RustSec/cargo-audit) to check our Rust
     dependencies for security vulnerabilities on every PR when Rust dependencies
     are changed. Also periodically runs over _all_ Rust dependencies unconditionally.
