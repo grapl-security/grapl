@@ -135,7 +135,8 @@ services:
           - ${REDIS_HOST}
 
   localstack:
-    image: localstack/localstack-full:0.12.15 # -full includes elasticmq
+    #image: localstack/localstack-full:0.12.15 # -full includes elasticmq
+    image: grapl/localstack:${TAG:-latest}
     ports:
       # We'll expose localstack's edge port for ease of use with
       # things like the AWS CLI, Pulumi, etc.
