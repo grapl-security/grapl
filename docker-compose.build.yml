@@ -77,16 +77,6 @@ services:
       dockerfile: ./src/python/Dockerfile
       target: analyzer-executor
 
-  # This container build exists only for Local Grapl; if we are able
-  # to deploy model-plugin-deployer as an actual Lambda there, we can
-  # get rid of this.
-  model-plugin-deployer:
-    image: ${DOCKER_REGISTRY:-docker.io}/grapl/model-plugin-deployer:${TAG:-latest}
-    build:
-      context: .
-      dockerfile: ./src/python/Dockerfile
-      target: model-plugin-deployer
-
   ########################################################################
   # Web Services
   ########################################################################

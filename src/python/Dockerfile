@@ -22,18 +22,6 @@ FROM grapl-python-base AS analyzer-executor
 COPY ./dist/analyzer-executor.pex /home/grapl/analyzer-executor.pex
 CMD ["./analyzer-executor.pex"]
 
-# model-plugin-deployer (local grapl only)
-################################################################################
-FROM grapl-python-base AS model-plugin-deployer
-USER root
-RUN apt-get update && apt-get -y install --no-install-recommends \
-        unzip \
-    && rm -rf /var/lib/apt/lists/*
-USER grapl
-COPY ./dist/model-plugin-deployer-lambda.zip /home/grapl/model-plugin-deployer-lambda.zip
-RUN unzip model-plugin-deployer-lambda.zip
-CMD ["python3", "-c", "'import lambdex_handler; lambdex_handler.handler(None, None)'"]
-
 # grapl-notebook
 ################################################################################
 FROM grapl-python-base AS grapl-notebook

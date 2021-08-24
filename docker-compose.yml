@@ -412,40 +412,6 @@ services:
     volumes:
       - *read-only-pulumi-mnt
 
-  model-plugin-deployer:
-    image: grapl/model-plugin-deployer:${TAG:-latest}
-    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
-    command:
-      - |
-        export GRAPL_MODEL_PLUGINS_BUCKET=$$(cat /mnt/pulumi-outputs/model-plugins-bucket)
-        export GRAPL_SCHEMA_TABLE=$$(cat /mnt/pulumi-outputs/schema-table)
-        export GRAPL_SCHEMA_PROPERTIES_TABLE=$$(cat /mnt/pulumi-outputs/schema-properties-table)
-        python3 -c 'import lambdex_handler; lambdex_handler.handler(None, None)'
-    environment:
-      <<: *aws-env
-      <<: *dgraph-env
-      IS_LOCAL: "True"
-      <<: *log-level
-    tty: true
-    depends_on:
-      dgraph:
-        condition: service_started
-      localstack:
-        condition: service_healthy
-      provisioner:
-        condition: service_completed_successfully
-      pulumi:
-        # We must wait until Pulumi has created the buckets to know what their names are
-        condition: service_completed_successfully
-    volumes:
-      - *read-only-pulumi-mnt
-    ports:
-      - 127.0.0.1:${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}:${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}
-    networks:
-      default:
-        aliases:
-          - ${GRAPL_MODEL_PLUGIN_DEPLOYER_HOST}
-
   ########################################################################
   # Web Services
   ########################################################################
@@ -470,8 +436,8 @@ services:
       - LOCALSTACK_HOST
       - LOCALSTACK_PORT
     depends_on:
-      model-plugin-deployer:
-        condition: service_started
+      # model-plugin-deployer:
+      #   condition: service_started
       graphql-endpoint:
         condition: service_started
       pulumi:
