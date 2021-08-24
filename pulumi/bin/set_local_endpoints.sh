@@ -25,8 +25,8 @@ confirmModify() {
 }
 
 get_endpoints() {
-  SQS_ENDPOINT=$(docker ps | grep sqs | awk '{ print $11 }' | awk -F"-" '{ print $1 }')
-  DYNAMO_ENDPOINT=$(docker ps | grep dynamo | awk '{ print $12 }' | awk -F"-" '{ print $1 }')
+  SQS_ENDPOINT=$(docker ps --format "{{.Names}} {{.Ports}}" | grep sqs | awk '{ print $2 }' | awk -F"-" '{ print $1 }')
+  DYNAMO_ENDPOINT=$(docker ps --format "{{.Names}} {{.Ports}}" | grep dynamo | awk '{ print $2 }' | awk -F"-" '{ print $1 }')
   LOCALSTACK_ENDPOINT="http://localhost:4566"
 
   JSON_STRING=$( jq -n \
