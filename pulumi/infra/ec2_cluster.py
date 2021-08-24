@@ -54,6 +54,7 @@ class Ec2Cluster(pulumi.ComponentResource):
     ) -> List[aws.ec2.Instance]:
         instances = []
         for i in range(0, num_instances):
+            instance_tags["Name"] = f"{name}-{i}"
             instance = aws.ec2.Instance(
                 f"ec2-inst-{name}-{i}",
                 ami=ami,
