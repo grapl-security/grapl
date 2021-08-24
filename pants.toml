@@ -133,6 +133,12 @@ args = [ "--suppress-no-test-exit-code" ]
 lockfile = "3rdparty/python/mypy.lockfile"
 version = "mypy==0.812"
 config = "src/python/mypy.ini"
+# read this section of the mypy docs:
+#
+# https://mypy.readthedocs.io/en/stable/command_line.html#cmdoption-mypy-namespace-packages
+#
+# for the raison d'être for "--namespace-packages". Tl;dr: it makes mypy work
+# with our protobuf stubs.
 args = [ "--show-error-codes", "--namespace-packages" ] #, "--verbose" ]
 
 [ipython]
