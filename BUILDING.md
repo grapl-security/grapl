@@ -267,7 +267,8 @@ sudo ./nomad/local/start_development_environment.sh
 nomad job run nomad/local/grapl-local-infra.nomad
 ```
 
-4. Create dynamodb tables 
+4. Create dynamodb tables
+This will involve running pulumi locally to generate dynamodb tables. Currently the commands are TBD
 
 5. Deploy Grapl Core
 ```bash
