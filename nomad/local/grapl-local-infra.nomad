@@ -1,22 +1,28 @@
+variable "container_registry" {
+  type        = string
+  default     = "localhost:5000"
+  description = "The container registry in which we can find Grapl services."
+}
+
 # The following variables are all-caps to clue in users that they're
 # imported from `local-grapl.env`.
 variable "FAKE_AWS_ACCESS_KEY_ID" {
-  type = string
+  type        = string
   description = "Fake AWS Access Key ID for Localstack and clients"
 }
 
 variable "FAKE_AWS_SECRET_ACCESS_KEY" {
-  type = string
+  type        = string
   description = "Fake AWS Secret Access Key for Localstack and clients"
 }
 
 variable "LOCALSTACK_PORT" {
-  type = string
+  type        = string
   description = "Port for Localstack"
 }
 
 variable "LOCALSTACK_HOST" {
-  type = string
+  type        = string
   description = "External hostname for Localstack"
 }
 
@@ -63,14 +69,14 @@ job "grapl-local-infra" {
       driver = "docker"
 
       config {
-        # `-full` includes elasticmq; once we move to kafka, we can remove it
-        image = "localstack/localstack-full:0.12.15"
+        # Once we move to Kafka, we can go back to the non-fork.
+        image = "${var.container_registry}/grapl/localstack:latest"
         # Was running into this: https://github.com/localstack/localstack/issues/1349
         memory_hard_limit = 2048
-        ports = ["localstack"]
-        privileged = true
+        ports             = ["localstack"]
+        privileged        = true
         volumes = [
-           "/var/run/docker.sock:/var/run/docker.sock"
+          "/var/run/docker.sock:/var/run/docker.sock"
         ]
         # Do not set Docker's `network_mode` if you specify a group network_mode
         network_aliases = [
@@ -79,11 +85,11 @@ job "grapl-local-infra" {
       }
 
       env {
-        EDGE_PORT = var.LOCALSTACK_PORT
+        EDGE_PORT         = var.LOCALSTACK_PORT
         HOSTNAME_EXTERNAL = var.LOCALSTACK_HOST
-        SERVICES = "apigateway,cloudwatch,dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs"
-        DEBUG = 1
-        LAMBDA_EXECUTOR = docker-reuse
+        SERVICES          = "apigateway,cloudwatch,dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs"
+        DEBUG             = 1
+        LAMBDA_EXECUTOR   = docker-reuse
         # TODO: MAIN_CONTAINER_NAME = 
         LAMBDA_DOCKER_NETWORK = grapl-network
         # TODO? DATA_DIR =
