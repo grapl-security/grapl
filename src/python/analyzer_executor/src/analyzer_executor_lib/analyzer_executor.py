@@ -26,6 +26,7 @@ from typing import (
 )
 
 import boto3
+import grapl_analyzerlib.counters  # noqa: F401
 from analyzer_executor_lib.redis_cache import EitherCache, construct_redis_client
 from analyzer_executor_lib.sqs_types import S3PutRecordDict, SQSMessageBody
 from grapl_analyzerlib.analyzer import Analyzer
