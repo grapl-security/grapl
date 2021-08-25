@@ -125,6 +125,12 @@ services:
       context: .
       dockerfile: Dockerfile.pulumi
 
+  localstack:
+    image: ${DOCKER_REGISTRY:-docker.io}/grapl/localstack:${TAG:-latest}
+    build:
+      context: localstack
+      dockerfile: Dockerfile
+
   provisioner:
     image: ${DOCKER_REGISTRY:-docker.io}/grapl/provisioner:${TAG:-latest}
     build:
