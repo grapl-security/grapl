@@ -463,7 +463,7 @@ run-registry: ## Ensure that a local docker registry is running (which is requir
 	nomad/local/local_grapl_registry.sh
 
 .PHONY: start-nomad-dev
-start-nomad-dev: run-registry  ## Start the Nomad development environment
+start-nomad-dev: push-local  ## Start the Nomad development environment
 	$(WITH_LOCAL_GRAPL_ENV)
 	sudo --preserve-env nomad/local/start_development_environment.sh
 
