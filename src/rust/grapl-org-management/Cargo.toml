@@ -15,7 +15,8 @@ tonic = "0.5"
 prost = "0.8"
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 uuid = { version = "0.4", features = ["serde", "v4"] }
-rusoto_dynamodb = "0.47.0"
+sqlx = { version = "0.5", features = [ "runtime-tokio-rustls", "postgres" ] }
+async-std = { version = "1.6", features = [ "attributes" ] }
 
 [build-dependencies]
 tonic-build = "0.5"

@@ -2,7 +2,7 @@ syntax = "proto3";
 package orgmanagement;
 
 message CreateOrgRequest {
-  string display_name = 1;
+  string org_display_name = 1;
   string admin_username = 2;
   string admin_email = 3;
   string admin_password = 4;
@@ -11,6 +11,7 @@ message CreateOrgRequest {
 
 message CreateOrgReply {
   string organization_id  =  1; // This SHOULD be a UUID, but we don't know how to handle it, so we're stringing it along for now.
+  string admin_user_id = 2;
 }
 
 service OrganizationManager {
