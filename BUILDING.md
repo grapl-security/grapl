@@ -259,7 +259,8 @@ make build-docker-images-local
 
 2. Start local Nomad environment
 ```bash
-sudo ./nomad/local/start_development_environment.sh
+# NOTE: Requires sudo privileges.
+make start-nomad-dev
 ```
 
 3. Create dynamodb tables
