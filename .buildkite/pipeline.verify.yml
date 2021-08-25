@@ -68,12 +68,7 @@ steps:
 
   - label: ":python::jeans: Typechecking"
     command:
-      - make test-typecheck-pants
-
-  # TODO: Consider beefy queue
-  - label: ":python::docker: Typechecking (:no_entry_sign::jeans:)"
-    command:
-      - make test-typecheck-docker
+      - make test-typecheck
 
   # TODO: Consider beefy queue
   - label: ":typescript::docker: Unit Tests"
