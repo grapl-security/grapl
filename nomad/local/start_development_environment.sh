@@ -6,6 +6,13 @@ THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
 GRAPL_ROOT="$(git rev-parse --show-toplevel)"
 cd "${THIS_DIR}"
 
+# Ensure script is being run with `local-grapl.env` variables
+# via `make start-nomad-dev`
+if [[ ! -v LOCALSTACK_PORT ]]; then
+    echo "!!! Run this with 'make start-nomad-dev'"
+    exit 1
+fi
+
 # This guard is strictly informative. nomad agent -dev-connect cannot run without root
 if [[ $EUID -ne 0 ]]; then
     echo "This script must be run as root"
@@ -31,27 +38,19 @@ consul agent -dev &
 # Potential improvement: Wait 5s and then check the PIDs, see they're still running
 
 # Wait a short period of time before attempting to deploy infrastructure
+# shellcheck disable=SC2016
 timeout 30 bash -c -- 'while [[ -z $(nomad status | grep running) ]]; do printf "Nomad is not ready";sleep 1;done'
 
 echo "Nomad: http://localhost:4646/"
 echo "Consul: http://localhost:8500/"
 
-# Import environment variables from `local-grapl.env`
-set -o allexport
-. ${GRAPL_ROOT}/local-grapl.env
-set +o allexport
-
-GRAPL_LOCAL_VARS="
--var LOCALSTACK_PORT=${LOCALSTACK_PORT}
--var LOCALSTACK_HOST=${LOCALSTACK_HOST}
--var FAKE_AWS_ACCESS_KEY_ID=${FAKE_AWS_ACCESS_KEY_ID}
--var FAKE_AWS_SECRET_ACCESS_KEY=${FAKE_AWS_SECRET_ACCESS_KEY}
-"
-
 echo "Deploying local infrastructure."
 nomad job run \
-    ${GRAPL_LOCAL_VARS} \
-    ${GRAPL_ROOT}/nomad/local/grapl-local-infra.nomad
+    -var "LOCALSTACK_PORT=${LOCALSTACK_PORT}" \
+    -var "LOCALSTACK_HOST=${LOCALSTACK_HOST}" \
+    -var "FAKE_AWS_ACCESS_KEY_ID=${FAKE_AWS_ACCESS_KEY_ID}" \
+    -var "FAKE_AWS_SECRET_ACCESS_KEY=${FAKE_AWS_SECRET_ACCESS_KEY}" \
+    "${GRAPL_ROOT}"/nomad/local/grapl-local-infra.nomad
 
 echo "Deployment complete; ctrl + c to terminate".
 

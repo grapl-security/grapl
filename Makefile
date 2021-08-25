@@ -462,6 +462,11 @@ clean-artifacts: ## Remove all dumped artifacts from test runs (see dump_artifac
 run-registry: ## Ensure that a local docker registry is running (which is required for local Nomad deployments.
 	nomad/local/local_grapl_registry.sh
 
+.PHONY: start-nomad-dev
+start-nomad-dev: run-registry  ## Start the Nomad development environment
+	$(WITH_LOCAL_GRAPL_ENV)
+	sudo --preserve-env nomad/local/start_development_environment.sh
+
 .PHONY: push
 push: ## Push Grapl containers to supplied DOCKER_REGISTRY
 	docker-compose --file=docker-compose.build.yml push
