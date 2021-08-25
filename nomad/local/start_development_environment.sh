@@ -27,15 +27,11 @@ trap 'kill $(jobs -p)' EXIT
 
 echo "Starting nomad and consul locally."
 nomad agent -config="nomad-agent-conf.nomad" -dev-connect &
-NOMAD_AGENT_PID=$!
 consul agent -dev &
-CONSUL_AGENT_PID=$!
+# Potential improvement: Wait 5s and then check the PIDs, see they're still running
 
 # Wait a short period of time before attempting to deploy infrastructure
-sleep 10s
-echo "Checking health"
-
-# TODO: Use the PIDs to ask, are the agents still alive?
+timeout 30 bash -c -- 'while [[ -z $(nomad status | grep running) ]]; do printf "Nomad is not ready";sleep 1;done'
 
 echo "Nomad: http://localhost:4646/"
 echo "Consul: http://localhost:8500/"
