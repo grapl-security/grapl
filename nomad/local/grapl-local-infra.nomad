@@ -87,24 +87,24 @@ job "grapl-local-infra" {
         HOSTNAME_EXTERNAL = var.LOCALSTACK_HOST
         LAMBDA_EXECUTOR   = "docker-reuse"
         SERVICES          = "apigateway,cloudwatch,dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs"
-        SQS_PROVIDER = "elasticmq"
+        SQS_PROVIDER      = "elasticmq"
 
         # These two are only required for Lambda support.
         # Container name is *not* configurable.
-        MAIN_CONTAINER_NAME="${NOMAD_TASK_NAME}-${NOMAD_ALLOC_ID}"
+        MAIN_CONTAINER_NAME   = "${NOMAD_TASK_NAME}-${NOMAD_ALLOC_ID}"
         LAMBDA_DOCKER_NETWORK = "grapl-network"
 
         # These are not used by localstack, but are used by the health check.
-        AWS_ACCESS_KEY_ID = var.FAKE_AWS_ACCESS_KEY_ID
+        AWS_ACCESS_KEY_ID     = var.FAKE_AWS_ACCESS_KEY_ID
         AWS_SECRET_ACCESS_KEY = var.FAKE_AWS_SECRET_ACCESS_KEY
       }
 
       service {
         check {
-          type     = "script"
-          name     = "check_s3_ls"
-          command  = "/bin/bash"
-          args     = [
+          type    = "script"
+          name    = "check_s3_ls"
+          command = "/bin/bash"
+          args = [
             "-c",
             "aws --endpoint-url=http://localhost:${EDGE_PORT} s3 ls",
           ]
@@ -112,8 +112,8 @@ job "grapl-local-infra" {
           timeout  = "10s"
 
           check_restart {
-            limit = 2
-            grace = "30s"
+            limit           = 2
+            grace           = "30s"
             ignore_warnings = false
           }
         }

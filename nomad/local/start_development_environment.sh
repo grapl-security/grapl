@@ -37,7 +37,9 @@ echo "Nomad: http://localhost:4646/"
 echo "Consul: http://localhost:8500/"
 
 # Import environment variables from `local-grapl.env`
-set -o allexport; . ${GRAPL_ROOT}/local-grapl.env; set +o allexport;
+set -o allexport
+. ${GRAPL_ROOT}/local-grapl.env
+set +o allexport
 
 GRAPL_LOCAL_VARS="
 -var LOCALSTACK_PORT=${LOCALSTACK_PORT}
