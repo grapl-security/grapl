@@ -78,23 +78,45 @@ job "grapl-local-infra" {
         volumes = [
           "/var/run/docker.sock:/var/run/docker.sock"
         ]
-        # Do not set Docker's `network_mode` if you specify a group network_mode
         network_aliases = [
           var.LOCALSTACK_HOST
         ]
       }
 
       env {
+        DEBUG             = 1
         EDGE_PORT         = var.LOCALSTACK_PORT
         HOSTNAME_EXTERNAL = var.LOCALSTACK_HOST
-        SERVICES          = "apigateway,cloudwatch,dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs"
-        DEBUG             = 1
         LAMBDA_EXECUTOR   = docker-reuse
-        # TODO: MAIN_CONTAINER_NAME = 
-        LAMBDA_DOCKER_NETWORK = grapl-network
-        # TODO? DATA_DIR =
+        SERVICES          = "apigateway,cloudwatch,dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs"
         SQS_PROVIDER = elasticmq
+
+        # These two are only required for Lambda support.
+        # Container name is *not* configurable.
+        MAIN_CONTAINER_NAME="${NOMAD_TASK_NAME}-${NOMAD_ALLOC_ID}"
+        LAMBDA_DOCKER_NETWORK = grapl-network
       }
+
+      service {
+        check {
+          type     = "script"
+          name     = "check_s3_ls"
+          command  = "/bin/bash"
+          args     = [
+            "-c",
+            "AWS_ACCESS_KEY_ID=${var.FAKE_AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${var.FAKE_AWS_SECRET_ACCESS_KEY} aws --endpoint-url=http://${var.LOCALSTACK_HOST}:${var.LOCALSTACK_PORT} s3 ls",
+          ]
+          interval = "5s"
+          timeout  = "10s"
+
+          check_restart {
+            limit = 3
+            grace = "30s"
+            ignore_warnings = false
+          }
+        }
+      }
+
     }
   }
 
