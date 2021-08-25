@@ -2,26 +2,28 @@ encryptionsalt: v1:KRH5XXw/Vv4=:v1:Mi1EOttYFIuFy8Zl:u/QoTfZuh9c5m6Jyw2L3mAKC+VNs
 config:
   aws:accessKey: test
   aws:endpoints:
-    - apigateway: http://localhost:4566
-      cloudwatch: http://localhost:4566
-      cloudwatchevents: http://localhost:4566
-      cloudwatchlogs: http://localhost:4566
-      dynamodb: http://localhost:4566
-      ec2: http://localhost:4566
-      iam: http://localhost:4566
-      lambda: http://localhost:4566
-      s3: http://localhost:4566
-      secretsmanager: http://localhost:4566
-      sns: http://localhost:4566
-      sqs: http://localhost:4566
+  - apigateway: http://localhost:4566
+    cloudwatch: http://localhost:4566
+    cloudwatchevents: http://localhost:4566
+    cloudwatchlogs: http://localhost:4566
+    dynamodb: http://localhost:4566
+    ec2: http://localhost:4566
+    iam: http://localhost:4566
+    lambda: http://localhost:4566
+    s3: http://localhost:4566
+    secretsmanager: http://localhost:4566
+    sns: http://localhost:4566
+    sqs: http://localhost:4566
   aws:region: us-east-1
   aws:s3ForcePathStyle: "true"
   aws:secretKey: test
   aws:skipCredentialsValidation: "true"
   aws:skipRequestingAccountId: "true"
-  grapl:MG_ALPHAS: dgraph.grapl.test:9080
-  grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: "fake-ops-email@fake.domain"
   grapl:GRAPL_API_HOST: api.grapl.test
+  grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: fake-ops-email@fake.domain
+  grapl:MG_ALPHAS: dgraph.grapl.test:9080
+  grapl:REDIS_ENDPOINT: 100.115.92.202:6379
   kafka:bootstrapServers:
-    - "kafka-broker:9092"
-  kafka:tlsEnabled: false
+  - kafka-broker:9092
+  kafka:tlsEnabled: "false"
+  nomad:address: http://localhost:4646
