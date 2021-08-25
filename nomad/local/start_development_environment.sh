@@ -35,7 +35,6 @@ trap 'kill $(jobs -p)' EXIT
 echo "Starting nomad and consul locally."
 nomad agent -config="nomad-agent-conf.nomad" -dev-connect &
 consul agent -dev &
-# Potential improvement: Wait 5s and then check the PIDs, see they're still running
 
 # Wait a short period of time before attempting to deploy infrastructure
 # shellcheck disable=SC2016
