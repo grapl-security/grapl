@@ -142,7 +142,7 @@ variable "aws_access_key_secret" {
 }
 
 variable "aws_endpoint" {
-  type        = string
+  type = string
 }
 
 variable "deployment_name" {
@@ -532,12 +532,12 @@ job "grapl-core" {
       }
 
       env {
-        RUST_LOG                      = "${var.rust_log}"
-        GRAPL_UX_BUCKET               = "${var.ux_bucket}"
-        AWS_REGION                    = "${var.aws_region}"
-        GRAPL_AWS_ACCESS_KEY_ID       = "${var.aws_access_key_id}"
-        GRAPL_AWS_ACCESS_KEY_SECRET   = "${var.aws_access_key_secret}"
-        GRAPL_AWS_ENDPOINT            = "${var.aws_endpoint}"
+        RUST_LOG                    = "${var.rust_log}"
+        GRAPL_UX_BUCKET             = "${var.ux_bucket}"
+        AWS_REGION                  = "${var.aws_region}"
+        GRAPL_AWS_ACCESS_KEY_ID     = "${var.aws_access_key_id}"
+        GRAPL_AWS_ACCESS_KEY_SECRET = "${var.aws_access_key_secret}"
+        GRAPL_AWS_ENDPOINT          = "${var.aws_endpoint}"
       }
     }
 
@@ -573,6 +573,8 @@ job "grapl-core" {
         GRAPL_UX_BUCKET               = "${var.ux_bucket}"
         AWS_REGION                    = "${var.aws_region}"
         MG_ALPHAS                     = "${local.alpha_grpc_connect_str}"
+        GRAPL_SCHEMA_TABLE            = "${var.schema_table_name}"
+        GRAPL_SCHEMA_PROPERTIES_TABLE = "${var.schema_properties_table_name}"
         GRAPL_AWS_ACCESS_KEY_ID       = "${var.aws_access_key_id}"
         GRAPL_AWS_ACCESS_KEY_SECRET   = "${var.aws_access_key_secret}"
         GRAPL_AWS_ENDPOINT            = "${var.aws_endpoint}"
