@@ -8,7 +8,7 @@ cd "${THIS_DIR}"
 
 # Ensure script is being run with `local-grapl.env` variables
 # via `make start-nomad-dev`
-if [[ ! -v LOCALSTACK_PORT ]]; then
+if [[ ! -v DOCKER_REGISTRY ]]; then
     echo "!!! Run this with 'make start-nomad-dev'"
     exit 1
 fi
