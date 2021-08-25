@@ -24,6 +24,7 @@ from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.node_identifier import NodeIdentifier
 from infra.nomad_cluster import NomadCluster
+from infra.nomad_job import NomadJob
 from infra.osquery_generator import OSQueryGenerator
 from infra.pipeline_dashboard import PipelineDashboard
 from infra.provision_lambda import Provisioner
@@ -123,7 +124,14 @@ def main() -> None:
         analyzer_executor_queue = ServiceQueue("analyzer-executor")
         analyzer_executor_queue.subscribe_to_emitter(dispatched_analyzer_emitter)
 
-        kafka = Kafka("kafka")
+
+        job_vars = {
+            "redis_endpoint": pulumi.Config().get("REDIS_ENDPOINT"),
+            "schema_table_name": dynamodb_tables.schema_table.name,
+        }
+        nomad_job = NomadJob("grapl-core", job_vars)
+
+        #kafka = Kafka("kafka")
 
     else:
         nomad_cluster = NomadCluster(
