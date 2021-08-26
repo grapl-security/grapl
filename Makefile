@@ -429,12 +429,6 @@ up-pulumi:  ## launch pulumi via docker-compose up
 	$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose -f docker-compose.yml up pulumi
 
-.PHONY: up-provisioner
-up-provisioner: export COMPOSE_PROJECT_NAME="grapl"
-up-provisioner:  ## launch pulumi via docker-compose up
-	$(WITH_LOCAL_GRAPL_ENV)
-	docker-compose -f docker-compose.yml up provisioner
-
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
 	$(WITH_LOCAL_GRAPL_ENV)
