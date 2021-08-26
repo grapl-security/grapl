@@ -44,7 +44,6 @@ variable "schema_table_name" {
 # https://github.com/grapl-security/grapl/blob/af6f2c197d52e9941047aab813c30d2cbfd54523/pulumi/infra/dynamodb.py#L118
 variable "session_table" {
   type    = string
-  default = "dynamic_session_table"
 }
 
 variable "num_graph_mergers" {
@@ -89,23 +88,19 @@ variable "node_identifier_tag" {
 
 variable "node_identifier_queue" {
   type    = string
-  default = "http://localhost:9324/000000000000/node-identifier-queue"
 }
 
 variable "node_identifier_dead_letter_queue" {
   type    = string
-  default = "http://localhost:9324/000000000000/node-identifier-dead-letter-queue"
 }
 
 variable "subgraphs_merged_bucket" {
   type        = string
-  default     = "subgraphs-merged-bucket"
   description = "The destination bucket for merged subgraphs. Used by Graph Merger."
 }
 
 variable "subgraphs_generated_bucket" {
   type        = string
-  default     = "subgraphs-generated-bucket"
   description = "The destination bucket for generated subgraphs. Used by Node identifier."
 }
 
@@ -384,15 +379,15 @@ job "grapl-core" {
       }
 
       env {
-        RUST_LOG           = "${var.rust_log}"
-        REDIS_ENDPOINT     = "${var.redis_endpoint}"
-        MG_ALPHAS          = "${local.alpha_grpc_connect_str}"
-        GRAPL_SCHEMA_TABLE = "${var.schema_table_name}"
-        AWS_REGION         = "${var.aws_region}"
+        RUST_LOG           = var.rust_log
+        REDIS_ENDPOINT     = var.redis_endpoint
+        MG_ALPHAS          = local.alpha_grpc_connect_str
+        GRAPL_SCHEMA_TABLE = var.schema_table_name
+        AWS_REGION         = var.aws_region
         # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L165
-        DEST_BUCKET_NAME      = "${var.subgraphs_merged_bucket}"
-        SOURCE_QUEUE_URL      = "${var.graph_merger_queue}"
-        DEAD_LETTER_QUEUE_URL = "${var.graph_merger_dead_letter_queue}"
+        DEST_BUCKET_NAME      = var.subgraphs_merged_bucket
+        SOURCE_QUEUE_URL      = var.graph_merger_queue
+        DEAD_LETTER_QUEUE_URL = var.graph_merger_dead_letter_queue
       }
     }
 

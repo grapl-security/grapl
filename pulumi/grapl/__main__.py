@@ -34,6 +34,8 @@ from infra.service import ServiceLike
 from infra.sysmon_generator import SysmonGenerator
 
 import pulumi
+import pulumi_aws as aws
+
 
 
 def _create_dgraph_cluster(network: Network) -> DgraphCluster:
@@ -124,12 +126,17 @@ def main() -> None:
         analyzer_executor_queue = ServiceQueue("analyzer-executor")
         analyzer_executor_queue.subscribe_to_emitter(dispatched_analyzer_emitter)
 
-
         job_vars = pulumi.Output.all(
-            schema_table_name=dynamodb_tables.schema_table.name
+            session_table=dynamodb_tables.dynamic_session_table.name,
+            schema_table_name=dynamodb_tables.schema_table.name,
+            node_identifier_queue=node_identifier_queue.main_queue_url,
+            node_identifier_dead_letter_queue=node_identifier_queue.dead_letter_queue_url,
+            subgraphs_merged_bucket=subgraphs_merged_emitter.bucket,
+            subgraphs_generated_bucket=subgraphs_generated_emitter.bucket,
         ).apply(lambda inputs: {
             "redis_endpoint": pulumi.Config().get("REDIS_ENDPOINT"),
-            "schema_table_name": inputs["schema_table_name"]
+            #"aws_region": aws.get_region(),
+            **inputs,
         })
         nomad_job = NomadJob("grapl-core", job_vars)
 
@@ -225,8 +232,6 @@ def main() -> None:
     ########################################################################
 
     # TODO: create everything inside of Api class
-
-    import pulumi_aws as aws
 
     ux_bucket = Bucket(
         "engagement-ux-bucket",
