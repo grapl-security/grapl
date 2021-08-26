@@ -56,8 +56,6 @@ job "grapl-local-infra" {
 
   group "localstack" {
     network {
-      mode = "bridge"
-
       port "localstack" {
         to = var.LOCALSTACK_PORT
       }
@@ -76,6 +74,7 @@ job "grapl-local-infra" {
         volumes = [
           "/var/run/docker.sock:/var/run/docker.sock"
         ]
+        network_mode = "grapl-network"
         network_aliases = [
           var.LOCALSTACK_HOST
         ]
