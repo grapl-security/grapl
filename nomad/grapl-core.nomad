@@ -48,7 +48,7 @@ variable "schema_properties_table_name" {
 
 # https://github.com/grapl-security/grapl/blob/af6f2c197d52e9941047aab813c30d2cbfd54523/pulumi/infra/dynamodb.py#L118
 variable "session_table" {
-  type    = string
+  type = string
 }
 
 variable "num_graph_mergers" {
@@ -92,11 +92,11 @@ variable "node_identifier_tag" {
 }
 
 variable "node_identifier_queue" {
-  type    = string
+  type = string
 }
 
 variable "node_identifier_dead_letter_queue" {
-  type    = string
+  type = string
 }
 
 variable "subgraphs_merged_bucket" {

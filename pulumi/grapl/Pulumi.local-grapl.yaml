@@ -2,18 +2,18 @@ encryptionsalt: v1:KRH5XXw/Vv4=:v1:Mi1EOttYFIuFy8Zl:u/QoTfZuh9c5m6Jyw2L3mAKC+VNs
 config:
   aws:accessKey: test
   aws:endpoints:
-  - apigateway: http://aws.grapl.test:4566
-    cloudwatch: http://aws.grapl.test:4566
-    cloudwatchevents: http://aws.grapl.test:4566
-    cloudwatchlogs: http://aws.grapl.test:4566
-    dynamodb: http://aws.grapl.test:4566
-    ec2: http://aws.grapl.test:4566
-    iam: http://aws.grapl.test:4566
-    lambda: http://aws.grapl.test:4566
-    s3: http://aws.grapl.test:4566
-    secretsmanager: http://aws.grapl.test:4566
-    sns: http://aws.grapl.test:4566
-    sqs: http://aws.grapl.test:4566
+    - apigateway: http://aws.grapl.test:4566
+      cloudwatch: http://aws.grapl.test:4566
+      cloudwatchevents: http://aws.grapl.test:4566
+      cloudwatchlogs: http://aws.grapl.test:4566
+      dynamodb: http://aws.grapl.test:4566
+      ec2: http://aws.grapl.test:4566
+      iam: http://aws.grapl.test:4566
+      lambda: http://aws.grapl.test:4566
+      s3: http://aws.grapl.test:4566
+      secretsmanager: http://aws.grapl.test:4566
+      sns: http://aws.grapl.test:4566
+      sqs: http://aws.grapl.test:4566
   aws:region: us-east-1
   aws:s3ForcePathStyle: "true"
   aws:secretKey: test
@@ -24,6 +24,6 @@ config:
   grapl:MG_ALPHAS: dgraph.grapl.test:9080
   grapl:REDIS_ENDPOINT: redis://redis.grapl.test:6379
   kafka:bootstrapServers:
-  - kafka-broker:9092
+    - kafka-broker:9092
   kafka:tlsEnabled: "false"
   nomad:address: http://host.docker.internal:4646

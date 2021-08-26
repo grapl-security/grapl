@@ -531,7 +531,6 @@ services:
       # This lets Pulumi talk to the host's Nomad
       - "host.docker.internal:host-gateway"
 
-
   provisioner:
     image: grapl/provisioner:${TAG:-latest}
     entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]

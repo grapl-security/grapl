@@ -5,6 +5,7 @@ sys.path.insert(0, "..")
 import os
 from typing import List
 
+import pulumi_aws as aws
 from infra import dynamodb, emitter
 from infra.alarms import OpsAlarms
 from infra.analyzer_dispatcher import AnalyzerDispatcher
@@ -34,8 +35,6 @@ from infra.service import ServiceLike
 from infra.sysmon_generator import SysmonGenerator
 
 import pulumi
-import pulumi_aws as aws
-
 
 
 def _create_dgraph_cluster(network: Network) -> DgraphCluster:
@@ -133,14 +132,16 @@ def main() -> None:
             node_identifier_dead_letter_queue=node_identifier_queue.dead_letter_queue_url,
             subgraphs_merged_bucket=subgraphs_merged_emitter.bucket,
             subgraphs_generated_bucket=subgraphs_generated_emitter.bucket,
-        ).apply(lambda inputs: {
-            "redis_endpoint": pulumi.Config().get("REDIS_ENDPOINT"),
-            #"aws_region": aws.get_region(),
-            **inputs,
-        })
+        ).apply(
+            lambda inputs: {
+                "redis_endpoint": pulumi.Config().get("REDIS_ENDPOINT"),
+                # "aws_region": aws.get_region(),
+                **inputs,
+            }
+        )
         nomad_job = NomadJob("grapl-core", job_vars)
 
-        #kafka = Kafka("kafka")
+        # kafka = Kafka("kafka")
 
     else:
         nomad_cluster = NomadCluster(
