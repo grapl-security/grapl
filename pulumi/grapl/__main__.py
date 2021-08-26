@@ -125,10 +125,12 @@ def main() -> None:
         analyzer_executor_queue.subscribe_to_emitter(dispatched_analyzer_emitter)
 
 
-        job_vars = {
+        job_vars = pulumi.Output.all(
+            schema_table_name=dynamodb_tables.schema_table.name
+        ).apply(lambda inputs: {
             "redis_endpoint": pulumi.Config().get("REDIS_ENDPOINT"),
-            "schema_table_name": dynamodb_tables.schema_table.name,
-        }
+            "schema_table_name": inputs["schema_table_name"]
+        })
         nomad_job = NomadJob("grapl-core", job_vars)
 
         #kafka = Kafka("kafka")

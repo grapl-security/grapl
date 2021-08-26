@@ -72,4 +72,7 @@ RUN pip install --upgrade pip wheel && \
 # and with the correct permissions, in order for us to be able to
 # write to it.
 RUN mkdir /home/grapl/pulumi-outputs
+
+# Make nomad files available to Pulumi
+COPY --chown=grapl nomad nomad
 WORKDIR /home/grapl/pulumi

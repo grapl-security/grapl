@@ -43,6 +43,9 @@ timeout 30 bash -c -- 'while [[ -z $(nomad status | grep running) ]]; do printf 
 echo "Nomad: http://localhost:4646/"
 echo "Consul: http://localhost:8500/"
 
+# Before we deploy Localstack, we need to ensure the Docker network exists
+docker network create grapl-network || true
+
 echo "Deploying local infrastructure."
 nomad job run \
     -var "LOCALSTACK_PORT=${LOCALSTACK_PORT}" \
