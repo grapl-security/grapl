@@ -26,6 +26,7 @@ pulumi>=3.0.0,<4.0.0
 pulumi-aws>=4.0.0,<5.0.0,==4.6.0
 pulumi_docker
 pulumi_kafka
+pulumi_policy
 pulumi_random
 pydantic==1.8.2
 pydgraph
