@@ -41,6 +41,11 @@ variable "schema_table_name" {
   description = "What is the name of the schema table?"
 }
 
+variable "schema_properties_table_name" {
+  type        = string
+  description = "What is the name of the schema properties table?"
+}
+
 # https://github.com/grapl-security/grapl/blob/af6f2c197d52e9941047aab813c30d2cbfd54523/pulumi/infra/dynamodb.py#L118
 variable "session_table" {
   type    = string
@@ -108,6 +113,44 @@ variable "subgraphs_generated_bucket" {
   default     = "subgraphs-generated-bucket"
   description = "The destination bucket for generated subgraphs. Used by Node identifier."
 }
+
+variable "engagement_view_tag" {
+  type        = string
+  default     = "latest"
+  description = "The image tag for the engagement view."
+}
+
+variable "ux_bucket" {
+  type        = string
+  description = "The grapl UX bucket for the engagement view."
+}
+
+variable "graphql_endpoint_tag" {
+  type        = string
+  default     = "latest"
+  description = "The image tag for the graphql endpoint docker image."
+}
+
+variable "aws_access_key_id" {
+  type        = string
+  description = "The aws access key id used to interact with AWS."
+}
+
+variable "aws_access_key_secret" {
+  type        = string
+  description = "The aws access key secret used to interact with AWS."
+}
+
+variable "aws_endpoint" {
+  type        = string
+  description = "The endpoint in which we can expect to find and interact with AWS."
+}
+
+variable "deployment_name" {
+  type        = string
+  description = "The deployment name"
+}
+
 
 locals {
   dgraph_zero_grpc_private_port_base  = 5080
@@ -468,6 +511,82 @@ job "grapl-core" {
         DEST_BUCKET_NAME            = "${var.subgraphs_generated_bucket}"
         SOURCE_QUEUE_URL            = "${var.node_identifier_queue}"
         DEAD_LETTER_QUEUE_URL       = "${var.node_identifier_dead_letter_queue}"
+      }
+    }
+  }
+
+  group "engagement-view" {
+    network {
+      mode = "bridge"
+
+      port "engagement-view" {
+        to = 1234
+      }
+    }
+
+    task "engagement-view" {
+      driver = "docker"
+
+      config {
+        image = "${var.container_registry}/grapl/engagement-view:${var.engagement_view_tag}"
+      }
+
+      env {
+        RUST_LOG                    = "${var.rust_log}"
+        GRAPL_UX_BUCKET             = "${var.ux_bucket}"
+        AWS_REGION                  = "${var.aws_region}"
+        GRAPL_AWS_ACCESS_KEY_ID     = "${var.aws_access_key_id}"
+        GRAPL_AWS_ACCESS_KEY_SECRET = "${var.aws_access_key_secret}"
+        GRAPL_AWS_ENDPOINT          = "${var.aws_endpoint}"
+      }
+    }
+
+    service {
+      name = "engagement-view"
+      port = "engagement-view"
+
+      connect {
+        sidecar_service {}
+      }
+    }
+  }
+
+  group "graphql-endpoint" {
+    network {
+      mode = "bridge"
+
+      port "graphql-endpoint" {
+        to = 5000
+      }
+    }
+
+    task "graphql-endpoint" {
+      driver = "docker"
+
+      config {
+        image = "${var.container_registry}/grapl/graphql-endpoint:${var.graphql_endpoint_tag}"
+      }
+
+      env {
+        DEPLOYMENT_NAME               = "${var.deployment_name}"
+        RUST_LOG                      = "${var.rust_log}"
+        GRAPL_UX_BUCKET               = "${var.ux_bucket}"
+        AWS_REGION                    = "${var.aws_region}"
+        MG_ALPHAS                     = "${local.alpha_grpc_connect_str}"
+        GRAPL_SCHEMA_TABLE            = "${var.schema_table_name}"
+        GRAPL_SCHEMA_PROPERTIES_TABLE = "${var.schema_properties_table_name}"
+        GRAPL_AWS_ACCESS_KEY_ID       = "${var.aws_access_key_id}"
+        GRAPL_AWS_ACCESS_KEY_SECRET   = "${var.aws_access_key_secret}"
+        GRAPL_AWS_ENDPOINT            = "${var.aws_endpoint}"
+      }
+    }
+
+    service {
+      name = "graphql-endpoint"
+      port = "graphql-endpoint"
+
+      connect {
+        sidecar_service {}
       }
     }
   }
