@@ -50,6 +50,11 @@ job "grapl-local-infra" {
       config {
         image = "redis:latest"
         ports = ["redis"]
+        network_mode = "grapl-network"
+        network_aliases = [
+          # TODO: import as var
+          "redis.grapl.test",
+        ]
       }
     }
   }
