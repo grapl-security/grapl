@@ -423,6 +423,18 @@ up-detach: build ## Bring up local Grapl and detach to return control to tty
 		--file docker-compose.yml \
 		up --detach --force-recreate --always-recreate-deps --renew-anon-volumes
 
+.PHONY: up-pulumi
+up-pulumi: export COMPOSE_PROJECT_NAME="grapl"
+up-pulumi:  ## launch pulumi via docker-compose up
+	$(WITH_LOCAL_GRAPL_ENV)
+	docker-compose -f docker-compose.yml up pulumi
+
+.PHONY: up-provisioner
+up-provisioner: export COMPOSE_PROJECT_NAME="grapl"
+up-provisioner:  ## launch pulumi via docker-compose up
+	$(WITH_LOCAL_GRAPL_ENV)
+	docker-compose -f docker-compose.yml up provisioner
+
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
 	$(WITH_LOCAL_GRAPL_ENV)
