@@ -142,12 +142,12 @@ variable "aws_access_key_secret" {
 }
 
 variable "aws_endpoint" {
-  type = string
+  type        = string
+  description = "The endpoint in which we can expect to find and interact with AWS."
 }
 
 variable "deployment_name" {
   type        = string
-  default     = "local"
   description = "The deployment name"
 }
 
@@ -519,7 +519,7 @@ job "grapl-core" {
     network {
       mode = "bridge"
 
-      port "engagement_port" {
+      port "engagement-view" {
         to = 1234
       }
     }
@@ -543,7 +543,7 @@ job "grapl-core" {
 
     service {
       name = "engagement-view"
-      port = "engagement_port"
+      port = "engagement-view"
 
       connect {
         sidecar_service {}
@@ -555,7 +555,7 @@ job "grapl-core" {
     network {
       mode = "bridge"
 
-      port "graphql_port" {
+      port "graphql-endpoint" {
         to = 5000
       }
     }
@@ -583,7 +583,7 @@ job "grapl-core" {
 
     service {
       name = "graphql-endpoint"
-      port = "graphql_port"
+      port = "graphql-endpoint"
 
       connect {
         sidecar_service {}
