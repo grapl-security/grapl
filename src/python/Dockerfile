@@ -36,6 +36,7 @@ CMD ["jupyter", "notebook", "--ip", "0.0.0.0"]
 # python-integration-tests
 ################################################################################
 FROM grapl-python-base AS python-integration-tests
+ARG UID
 USER root
 RUN apt-get update && apt-get -y install --no-install-recommends \
         build-essential \
@@ -44,4 +45,5 @@ RUN apt-get update && apt-get -y install --no-install-recommends \
         unzip \
     && rm -rf /var/lib/apt/lists/*
 RUN apt-get update && apt-get -y install --no-install-recommends curl unzip
-USER grapl
+USER ${UID}
+WORKDIR /home/grapl

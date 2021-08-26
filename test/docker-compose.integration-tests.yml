@@ -13,6 +13,11 @@ x-common-variables:
     source: pulumi_outputs
     target: /mnt/pulumi-outputs
     read_only: true
+  read-write-grapl-repo-mnt: &read-write-grapl-repo-mnt
+    type: bind
+    source: ${PWD}
+    target: /mnt/grapl
+    read_only: false
 
 services:
   rust-integration-tests:
@@ -50,8 +55,9 @@ services:
       context: ${PWD}
       dockerfile: src/python/Dockerfile
       target: python-integration-tests
-    user: ${UID}:${GID}
-    working_dir: /home/grapl
+      args:
+        - UID=${UID}
+    user: ${UID}
     command:
       - |
         export GRAPL_ANALYZERS_BUCKET=$$(cat /mnt/pulumi-outputs/analyzers-bucket)
@@ -88,8 +94,7 @@ services:
       - ${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT_TESTS}:${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT_TESTS}
     volumes:
       - *read-only-pulumi-mnt
-      # mount the grapl repo rw
-      - "../:/mnt/grapl"
+      - *read-write-grapl-repo-mnt
 
 networks:
   default:
