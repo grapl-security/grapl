@@ -54,11 +54,6 @@ variable "redis_endpoint" {
   description = "Where can services find redis?"
 }
 
-variable "schema_properties_table" {
-  type = string
-  description = "What is the name of the schema properties table?"
-}
-
 variable "schema_table_name" {
   type        = string
   description = "What is the name of the schema table?"
@@ -70,8 +65,9 @@ variable "schema_properties_table_name" {
 }
 
 # https://github.com/grapl-security/grapl/blob/af6f2c197d52e9941047aab813c30d2cbfd54523/pulumi/infra/dynamodb.py#L118
-variable "session_table" {
+variable "session_table_name" {
   type = string
+  description = "What is the name of the session table?"
 }
 
 variable "num_graph_mergers" {
@@ -513,7 +509,7 @@ job "grapl-core" {
         AWS_DEFAULT_REGION= var.aws_region # boto3 prefers this one
         AWS_REGION= var.aws_region
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
-        GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table
+        GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name
         GRAPL_USER_AUTH_TABLE = var.user_auth_table
         GRAPL_TEST_USER_NAME = var.grapl_test_user_name
       }
@@ -539,7 +535,7 @@ job "grapl-core" {
         REDIS_ENDPOINT              = var.redis_endpoint
         MG_ALPHAS                   = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
-        GRAPL_DYNAMIC_SESSION_TABLE = var.session_table
+        GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
         # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L156
         DEST_BUCKET_NAME      = var.subgraphs_generated_bucket
         SOURCE_QUEUE_URL      = var.node_identifier_queue
@@ -574,7 +570,7 @@ job "grapl-core" {
         REDIS_ENDPOINT              = var.redis_endpoint
         MG_ALPHAS                   = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
-        GRAPL_DYNAMIC_SESSION_TABLE = var.session_table
+        GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
         DEST_BUCKET_NAME            = var.subgraphs_generated_bucket
         SOURCE_QUEUE_URL            = var.node_identifier_retry_queue
         DEAD_LETTER_QUEUE_URL       = var.node_identifier_dead_letter_queue
