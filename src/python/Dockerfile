@@ -46,4 +46,5 @@ RUN apt-get update && apt-get -y install --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 RUN apt-get update && apt-get -y install --no-install-recommends curl unzip
 USER ${UID}
+ENV HOME=/home/grapl
 WORKDIR /home/grapl
