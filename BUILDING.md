@@ -266,8 +266,6 @@ make start-nomad-dev
 3. Run pulumi
 make up-pulumi
 
-make up-provisioner
-
 ## The CI system
 
 We use [BuildKite](https://buildkite.com/) for
