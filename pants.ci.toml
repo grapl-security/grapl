@@ -16,12 +16,12 @@ colors = true
 
 # Since multiple jobs could run on the same Buildkite worker node, we
 # need to make sure the cache directories are isolated.
-local_store_dir = "$HOME/.cache/pants/lmdb_store"
-named_caches_dir = "$HOME/.cache/pants/named_caches"
+local_store_dir = ".cache/pants/lmdb_store"
+named_caches_dir = ".cache/pants/named_caches"
 
 pants_ignore = [
-  "$HOME/.cache/pants/named_caches",
-  "$HOME/.cache/pants/lmdb_store",
+  ".cache/pants/named_caches",
+  ".cache/pants/lmdb_store",
 ]
 
 [auth]
