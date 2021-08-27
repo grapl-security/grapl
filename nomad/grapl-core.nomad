@@ -10,6 +10,22 @@ variable "container_registry" {
   description = "The container registry in which we can find Grapl services."
 }
 
+variable "aws_access_key_id" {
+  type    = string
+  default = "test"
+}
+
+variable "aws_access_key_secret" {
+  type    = string
+  default = "test"
+}
+
+variable "aws_endpoint" {
+  type = string
+  description = "The AWS API endpoint"
+  default = "http://aws.grapl.test:4566"
+}
+
 variable "aws_region" {
   type    = string
   default = "us-west-2"
@@ -193,7 +209,6 @@ locals {
 
   # String that contains all of the running Alphas for clients connecting to Dgraph (so they can do loadbalancing)
   alpha_grpc_connect_str = join(",", [for alpha in local.dgraph_alphas : "localhost:${alpha.grpc_public_port}"])
-
 }
 
 job "grapl-core" {
@@ -444,12 +459,16 @@ job "grapl-core" {
       }
 
       env {
+        GRAPL_AWS_ENDPOINT= var.aws_endpoint
+        GRAPL_AWS_ACCESS_KEY_ID= var.aws_access_key_id
+        GRAPL_AWS_ACCESS_KEY_SECRET= var.aws_access_key_secret
+        AWS_DEFAULT_REGION= var.aws_region # boto3 prefers this one
+        AWS_REGION= var.aws_region
         RUST_LOG           = var.rust_log
         RUST_BACKTRACE=1
         REDIS_ENDPOINT     = var.redis_endpoint
         MG_ALPHAS          = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE = var.schema_table_name
-        AWS_REGION         = var.aws_region
         # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L165
         DEST_BUCKET_NAME      = var.subgraphs_merged_bucket
         SOURCE_QUEUE_URL      = var.graph_merger_queue
@@ -497,11 +516,15 @@ job "grapl-core" {
       }
 
       env {
-        GRAPL_SCHEMA_TABLE          = "${var.schema_table_name}"
-        AWS_REGION                  = "${var.aws_region}"
-        GRAPL_SCHEMA_PROPERTIES_TABLE = "${var.schema_properties_table}"
-        GRAPL_USER_AUTH_TABLE = "${var.user_auth_table}"
-        GRAPL_TEST_USER_NAME = "${var.grapl_test_user_name}"
+        GRAPL_AWS_ENDPOINT= var.aws_endpoint
+        GRAPL_AWS_ACCESS_KEY_ID= var.aws_access_key_id
+        GRAPL_AWS_ACCESS_KEY_SECRET= var.aws_access_key_secret
+        AWS_DEFAULT_REGION= var.aws_region # boto3 prefers this one
+        AWS_REGION= var.aws_region
+        GRAPL_SCHEMA_TABLE          = var.schema_table_name
+        GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table
+        GRAPL_USER_AUTH_TABLE = var.user_auth_table
+        GRAPL_TEST_USER_NAME = var.grapl_test_user_name
       }
 
     }
@@ -516,17 +539,21 @@ job "grapl-core" {
       }
 
       env {
-        RUST_LOG                    = "${var.rust_log}"
+        GRAPL_AWS_ENDPOINT= var.aws_endpoint
+        GRAPL_AWS_ACCESS_KEY_ID= var.aws_access_key_id
+        GRAPL_AWS_ACCESS_KEY_SECRET= var.aws_access_key_secret
+        AWS_DEFAULT_REGION= var.aws_region # boto3 prefers this one
+        AWS_REGION= var.aws_region
+        RUST_LOG                    = var.rust_log
         RUST_BACKTRACE=1
-        REDIS_ENDPOINT              = "${var.redis_endpoint}"
-        MG_ALPHAS                   = "${local.alpha_grpc_connect_str}"
-        GRAPL_SCHEMA_TABLE          = "${var.schema_table_name}"
-        AWS_REGION                  = "${var.aws_region}"
-        GRAPL_DYNAMIC_SESSION_TABLE = "${var.session_table}"
+        REDIS_ENDPOINT              = var.redis_endpoint
+        MG_ALPHAS                   = local.alpha_grpc_connect_str
+        GRAPL_SCHEMA_TABLE          = var.schema_table_name
+        GRAPL_DYNAMIC_SESSION_TABLE = var.session_table
         # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L156
-        DEST_BUCKET_NAME      = "${var.subgraphs_generated_bucket}"
-        SOURCE_QUEUE_URL      = "${var.node_identifier_queue}"
-        DEAD_LETTER_QUEUE_URL = "${var.node_identifier_dead_letter_queue}"
+        DEST_BUCKET_NAME      = var.subgraphs_generated_bucket
+        SOURCE_QUEUE_URL      = var.node_identifier_queue
+        DEAD_LETTER_QUEUE_URL = var.node_identifier_dead_letter_queue
       }
     }
   }
@@ -547,16 +574,21 @@ job "grapl-core" {
       }
 
       env {
-        RUST_LOG                    = "${var.rust_log}"
+        GRAPL_AWS_ENDPOINT= var.aws_endpoint
+        GRAPL_AWS_ACCESS_KEY_ID= var.aws_access_key_id
+        GRAPL_AWS_ACCESS_KEY_SECRET= var.aws_access_key_secret
+        AWS_DEFAULT_REGION= var.aws_region # boto3 prefers this one
+        AWS_REGION= var.aws_region
+        RUST_LOG                    = var.rust_log
         RUST_BACKTRACE=1
-        REDIS_ENDPOINT              = "${var.redis_endpoint}"
-        MG_ALPHAS                   = "${local.alpha_grpc_connect_str}"
-        GRAPL_SCHEMA_TABLE          = "${var.schema_table_name}"
-        AWS_REGION                  = "${var.aws_region}"
-        GRAPL_DYNAMIC_SESSION_TABLE = "${var.session_table}"
-        DEST_BUCKET_NAME            = "${var.subgraphs_generated_bucket}"
-        SOURCE_QUEUE_URL            = "${var.node_identifier_queue}"
-        DEAD_LETTER_QUEUE_URL       = "${var.node_identifier_dead_letter_queue}"
+        REDIS_ENDPOINT              = var.redis_endpoint
+        MG_ALPHAS                   = local.alpha_grpc_connect_str
+        GRAPL_SCHEMA_TABLE          = var.schema_table_name
+        AWS_REGION                  = var.aws_region
+        GRAPL_DYNAMIC_SESSION_TABLE = var.session_table
+        DEST_BUCKET_NAME            = var.subgraphs_generated_bucket
+        SOURCE_QUEUE_URL            = var.node_identifier_queue
+        DEAD_LETTER_QUEUE_URL       = var.node_identifier_dead_letter_queue
       }
     }
   }
