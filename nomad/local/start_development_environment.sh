@@ -36,20 +36,7 @@ echo "Starting nomad and consul locally."
 nomad agent -config="nomad-agent-conf.nomad" -dev-connect &
 consul agent -dev &
 
-# Wait a short period of time before attempting to deploy infrastructure
-# shellcheck disable=SC2016
-timeout 30 bash -c -- 'while [[ -z $(nomad status | grep running) ]]; do printf "Nomad is not ready";sleep 1;done'
-
-echo "Nomad: http://localhost:4646/"
-echo "Consul: http://localhost:8500/"
-
-echo "Deploying local infrastructure."
-nomad job run \
-    -var "LOCALSTACK_PORT=${LOCALSTACK_PORT}" \
-    -var "LOCALSTACK_HOST=${LOCALSTACK_HOST}" \
-    -var "FAKE_AWS_ACCESS_KEY_ID=${FAKE_AWS_ACCESS_KEY_ID}" \
-    -var "FAKE_AWS_SECRET_ACCESS_KEY=${FAKE_AWS_SECRET_ACCESS_KEY}" \
-    "${GRAPL_ROOT}"/nomad/local/grapl-local-infra.nomad
+./nomad_run_local_infra.sh
 
 echo "Deployment complete; ctrl + c to terminate".
 
