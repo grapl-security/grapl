@@ -538,7 +538,6 @@ job "grapl-core" {
 
       config {
         image = "${var.container_registry}/grapl/node-identifier:${var.node_identifier_tag}"
-        entrypoint = ["/busybox/sh", "-o", "errexit", "-o", "nounset", "-c"]
         network_mode = "grapl-network"
       }
 
@@ -588,7 +587,6 @@ job "grapl-core" {
         REDIS_ENDPOINT              = var.redis_endpoint
         MG_ALPHAS                   = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
-        AWS_REGION                  = var.aws_region
         GRAPL_DYNAMIC_SESSION_TABLE = var.session_table
         DEST_BUCKET_NAME            = var.subgraphs_generated_bucket
         SOURCE_QUEUE_URL            = var.node_identifier_retry_queue
