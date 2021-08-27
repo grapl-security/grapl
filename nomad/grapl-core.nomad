@@ -36,6 +36,11 @@ variable "redis_endpoint" {
   description = "Where can services find redis?"
 }
 
+variable "schema_properties_table" {
+  type = string
+  description = "What is the name of the schema properties table?"
+}
+
 variable "schema_table_name" {
   type        = string
   description = "What is the name of the schema table?"
@@ -73,6 +78,12 @@ variable "graph_merger_dead_letter_queue" {
   default = "http://localhost:9324/000000000000/graph-merger-dead-letter-queue"
 }
 
+variable "grapl_test_user_name" {
+  type = string
+  description = "The name of the test user"
+  default = "grapl-test-user"
+}
+
 variable "num_node_identifiers" {
   type        = number
   default     = 1
@@ -97,6 +108,12 @@ variable "node_identifier_queue" {
 
 variable "node_identifier_dead_letter_queue" {
   type = string
+}
+
+variable "provisioner_tag" {
+  type        = string
+  default     = "latest"
+  description = "The tagged version of the provisioner we should deploy."
 }
 
 variable "subgraphs_merged_bucket" {
@@ -146,6 +163,10 @@ variable "deployment_name" {
   description = "The deployment name"
 }
 
+variable "user_auth_table" {
+  type = string
+  description = "What si the name of the user auth table?"
+}
 
 locals {
   dgraph_zero_grpc_private_port_base  = 5080
@@ -410,19 +431,21 @@ job "grapl-core" {
   group "grapl-graph-merger" {
     count = var.num_graph_mergers
 
-    network {
-      mode = "bridge"
-    }
+//    network {
+//      mode = "bridge"
+//    }
 
     task "graph-merger" {
       driver = "docker"
 
       config {
         image = "${var.container_registry}/grapl/graph-merger:${var.graph_merger_tag}"
+        network_mode = "grapl-network"
       }
 
       env {
         RUST_LOG           = var.rust_log
+        RUST_BACKTRACE=1
         REDIS_ENDPOINT     = var.redis_endpoint
         MG_ALPHAS          = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE = var.schema_table_name
@@ -434,30 +457,53 @@ job "grapl-core" {
       }
     }
 
-    service {
-      connect {
-        sidecar_service {
-          proxy {
-            dynamic "upstreams" {
-              iterator = alpha
-              for_each = local.dgraph_alphas
-
-              content {
-                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
-                local_bind_port  = alpha.value.grpc_public_port
-              }
-            }
-          }
-        }
-      }
-    }
+//    service {
+//      connect {
+//        sidecar_service {
+//          proxy {
+//            dynamic "upstreams" {
+//              iterator = alpha
+//              for_each = local.dgraph_alphas
+//
+//              content {
+//                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
+//                local_bind_port  = alpha.value.grpc_public_port
+//              }
+//            }
+//          }
+//        }
+//      }
+//    }
   }
 
   group "grapl-node-identifier" {
     count = var.num_node_identifiers
 
-    network {
-      mode = "bridge"
+//    network {
+//      mode = "bridge"
+//    }
+
+    task "provisioner" {
+      driver = "docker"
+
+      config {
+        image = "${var.container_registry}/grapl/provisioner:${var.provisioner_tag}"
+        network_mode = "grapl-network"
+      }
+
+      lifecycle {
+        hook    = "prestart"
+        sidecar = false
+      }
+
+      env {
+        GRAPL_SCHEMA_TABLE          = "${var.schema_table_name}"
+        AWS_REGION                  = "${var.aws_region}"
+        GRAPL_SCHEMA_PROPERTIES_TABLE = "${var.schema_properties_table}"
+        GRAPL_USER_AUTH_TABLE = "${var.user_auth_table}"
+        GRAPL_TEST_USER_NAME = "${var.grapl_test_user_name}"
+      }
+
     }
 
     task "node-identifier" {
@@ -465,10 +511,13 @@ job "grapl-core" {
 
       config {
         image = "${var.container_registry}/grapl/node-identifier:${var.node_identifier_tag}"
+        entrypoint = ["/busybox/sh", "-o", "errexit", "-o", "nounset", "-c"]
+        network_mode = "grapl-network"
       }
 
       env {
         RUST_LOG                    = "${var.rust_log}"
+        RUST_BACKTRACE=1
         REDIS_ENDPOINT              = "${var.redis_endpoint}"
         MG_ALPHAS                   = "${local.alpha_grpc_connect_str}"
         GRAPL_SCHEMA_TABLE          = "${var.schema_table_name}"
@@ -485,19 +534,21 @@ job "grapl-core" {
   group "grapl-node-identifier-retry" {
     count = var.num_node_identifier_retries
 
-    network {
-      mode = "bridge"
-    }
+//    network {
+//      mode = "bridge"
+//    }
 
     task "node-identifier-retry" {
       driver = "docker"
 
       config {
         image = "${var.container_registry}/grapl/node-identifier-retry:${var.node_identifier_tag}"
+        network_mode = "grapl-network"
       }
 
       env {
         RUST_LOG                    = "${var.rust_log}"
+        RUST_BACKTRACE=1
         REDIS_ENDPOINT              = "${var.redis_endpoint}"
         MG_ALPHAS                   = "${local.alpha_grpc_connect_str}"
         GRAPL_SCHEMA_TABLE          = "${var.schema_table_name}"

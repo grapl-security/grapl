@@ -127,13 +127,16 @@ def main() -> None:
 
         job_vars = pulumi.Output.all(
             session_table=dynamodb_tables.dynamic_session_table.name,
+            schema_properties_table=dynamodb_tables.schema_properties_table.name,
             schema_table_name=dynamodb_tables.schema_table.name,
             node_identifier_queue=node_identifier_queue.main_queue_url,
             node_identifier_dead_letter_queue=node_identifier_queue.dead_letter_queue_url,
             subgraphs_merged_bucket=subgraphs_merged_emitter.bucket,
             subgraphs_generated_bucket=subgraphs_generated_emitter.bucket,
+            user_auth_table=dynamodb_tables.user_auth_table.name,
         ).apply(
             lambda inputs: {
+                "grapl_test_user_name": f"{DEPLOYMENT_NAME}-grapl-test-user",
                 "redis_endpoint": pulumi.Config().get("REDIS_ENDPOINT"),
                 # "aws_region": aws.get_region(),
                 **inputs,
