@@ -55,9 +55,6 @@ services:
       context: ${PWD}
       dockerfile: src/python/Dockerfile
       target: python-integration-tests
-      args:
-        - UID=${UID}
-    user: ${UID}
     command:
       - |
         export GRAPL_ANALYZERS_BUCKET=$$(cat /mnt/pulumi-outputs/analyzers-bucket)
