@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Optional
 
 import pulumi_nomad as nomad
 from infra.config import DEPLOYMENT_NAME
@@ -10,7 +10,7 @@ class NomadJob(pulumi.ComponentResource):
     def __init__(
         self,
         name: str,
-        vars: Dict[str, str],
+        vars: pulumi.Output,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         super().__init__("grapl:NomadJob", name, None, opts)
@@ -22,7 +22,7 @@ class NomadJob(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-    def _file(self, nomad_file: str):
+    def _file(self, nomad_file: str) -> str:
         with open(nomad_file) as f:
             jobspec = f.read()
             f.close()
