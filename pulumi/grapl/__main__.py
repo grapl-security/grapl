@@ -126,11 +126,14 @@ def main() -> None:
         analyzer_executor_queue.subscribe_to_emitter(dispatched_analyzer_emitter)
 
         job_vars = pulumi.Output.all(
+            graph_merger_queue=graph_merger_queue.main_queue_url,
+            graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
             session_table=dynamodb_tables.dynamic_session_table.name,
             schema_properties_table=dynamodb_tables.schema_properties_table.name,
             schema_table_name=dynamodb_tables.schema_table.name,
             node_identifier_queue=node_identifier_queue.main_queue_url,
             node_identifier_dead_letter_queue=node_identifier_queue.dead_letter_queue_url,
+            node_identifier_retry_queue=node_identifier_queue.retry_queue_url,
             subgraphs_merged_bucket=subgraphs_merged_emitter.bucket,
             subgraphs_generated_bucket=subgraphs_generated_emitter.bucket,
             user_auth_table=dynamodb_tables.user_auth_table.name,

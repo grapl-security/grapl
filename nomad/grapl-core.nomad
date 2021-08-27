@@ -126,6 +126,10 @@ variable "node_identifier_dead_letter_queue" {
   type = string
 }
 
+variable "node_identifier_retry_queue" {
+  type = string
+}
+
 variable "provisioner_tag" {
   type        = string
   default     = "latest"
@@ -587,7 +591,7 @@ job "grapl-core" {
         AWS_REGION                  = var.aws_region
         GRAPL_DYNAMIC_SESSION_TABLE = var.session_table
         DEST_BUCKET_NAME            = var.subgraphs_generated_bucket
-        SOURCE_QUEUE_URL            = var.node_identifier_queue
+        SOURCE_QUEUE_URL            = var.node_identifier_retry_queue
         DEAD_LETTER_QUEUE_URL       = var.node_identifier_dead_letter_queue
       }
     }
