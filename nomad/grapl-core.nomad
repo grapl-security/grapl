@@ -13,16 +13,18 @@ variable "container_registry" {
 variable "aws_access_key_id" {
   type    = string
   default = "test"
+  description = "The aws access key id used to interact with AWS."
 }
 
 variable "aws_access_key_secret" {
   type    = string
   default = "test"
+  description = "The aws access key secret used to interact with AWS."
 }
 
 variable "aws_endpoint" {
   type = string
-  description = "The AWS API endpoint"
+  description = "The endpoint in which we can expect to find and interact with AWS."
   default = "http://aws.grapl.test:4566"
 }
 
@@ -163,21 +165,6 @@ variable "graphql_endpoint_tag" {
   description = "The image tag for the graphql endpoint docker image."
 }
 
-variable "aws_access_key_id" {
-  type        = string
-  description = "The aws access key id used to interact with AWS."
-}
-
-variable "aws_access_key_secret" {
-  type        = string
-  description = "The aws access key secret used to interact with AWS."
-}
-
-variable "aws_endpoint" {
-  type        = string
-  description = "The endpoint in which we can expect to find and interact with AWS."
-}
-
 variable "deployment_name" {
   type        = string
   description = "The deployment name"
@@ -185,7 +172,7 @@ variable "deployment_name" {
 
 variable "user_auth_table" {
   type = string
-  description = "What si the name of the user auth table?"
+  description = "What is the name of the user auth table?"
 }
 
 locals {
