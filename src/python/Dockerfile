@@ -45,5 +45,7 @@ RUN apt-get update && apt-get -y install --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 RUN apt-get update && apt-get -y install --no-install-recommends curl unzip
 USER grapl
-ENV HOME=/home/grapl
-WORKDIR /home/grapl
+RUN mkdir -p /tmp/pants/named_caches
+RUN mkdir -p /tmp/pants/lmdb_store
+ENV PANTS_NAMED_CACHES_DIR=/tmp/pants/named_caches
+ENV PANTS_LOCAL_STORE_DIR=/tmp/pants/lmdb_store
