@@ -578,21 +578,28 @@ job "grapl-core" {
     }
   }
 
-  group "engagement-view" {
+  group "graphql-endpoint" {
     network {
 //      mode = "bridge"
 
-      port "engagement-view" {
-        to = 1234
+      port "graphql-endpoint" {
+        to = 5000
       }
     }
 
+    // engagement-view just uploads the ux tarball. For the moment this is set to run as an init container but should
+    // probably be run from Buildkite instead
     task "engagement-view" {
       driver = "docker"
 
       config {
         image = "${var.container_registry}/grapl/engagement-view:${var.engagement_view_tag}"
         network_mode = "grapl-network"
+      }
+
+      lifecycle {
+        hook    = "prestart"
+        sidecar = false
       }
 
       env {
@@ -602,25 +609,6 @@ job "grapl-core" {
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
         GRAPL_AWS_ENDPOINT          = var.aws_endpoint
-      }
-    }
-
-//    service {
-//      name = "engagement-view"
-//      port = "engagement-view"
-//
-//      connect {
-//        sidecar_service {}
-//      }
-//    }
-  }
-
-  group "graphql-endpoint" {
-    network {
-//      mode = "bridge"
-
-      port "graphql-endpoint" {
-        to = 5000
       }
     }
 
