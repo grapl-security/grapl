@@ -250,7 +250,6 @@ def main() -> None:
 
     # TODO: create everything inside of Api class
 
-
     api = Api(
         network=network,
         secret=jwt_secret,

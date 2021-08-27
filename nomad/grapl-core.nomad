@@ -580,7 +580,7 @@ job "grapl-core" {
 
   group "graphql-endpoint" {
     network {
-//      mode = "bridge"
+      //      mode = "bridge"
 
       port "graphql-endpoint" {
         to = 5000
@@ -593,7 +593,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}/grapl/engagement-view:${var.engagement_view_tag}"
+        image        = "${var.container_registry}/grapl/engagement-view:${var.engagement_view_tag}"
         network_mode = "grapl-network"
       }
 
@@ -616,7 +616,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}/grapl/graphql-endpoint:${var.graphql_endpoint_tag}"
+        image        = "${var.container_registry}/grapl/graphql-endpoint:${var.graphql_endpoint_tag}"
         network_mode = "grapl-network"
       }
 
@@ -631,19 +631,19 @@ job "grapl-core" {
         GRAPL_AWS_ACCESS_KEY_ID       = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET   = var.aws_access_key_secret
         GRAPL_AWS_ENDPOINT            = var.aws_endpoint
-        IS_LOCAL= "True"
-        JWT_SECRET_ID= "JWT_SECRET_ID"
-        PORT= 5000
+        IS_LOCAL                      = "True"
+        JWT_SECRET_ID                 = "JWT_SECRET_ID"
+        PORT                          = 5000
       }
     }
 
-//    service {
-//      name = "graphql-endpoint"
-//      port = "graphql-endpoint"
-//
-//      connect {
-//        sidecar_service {}
-//      }
-//    }
+    //    service {
+    //      name = "graphql-endpoint"
+    //      port = "graphql-endpoint"
+    //
+    //      connect {
+    //        sidecar_service {}
+    //      }
+    //    }
   }
 }
