@@ -3,7 +3,6 @@
 set -euo pipefail
 
 THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
-GRAPL_ROOT="$(git rev-parse --show-toplevel)"
 cd "${THIS_DIR}"
 
 # Ensure script is being run with `local-grapl.env` variables

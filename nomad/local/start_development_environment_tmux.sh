@@ -6,7 +6,6 @@
 set -euo pipefail
 
 THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
-GRAPL_ROOT="$(git rev-parse --show-toplevel)"
 cd "${THIS_DIR}"
 
 # Ensure script is being run with `local-grapl.env` variables
@@ -39,33 +38,40 @@ if [[ -z $(command -v tmux) ]]; then
 fi
 
 # -d = detached; -s = session name; -t = target window
-tmux kill-session -t '=start_development_environment' || true
-tmux new-session -d -s start_development_environment
+SESSION="start_development_environment"
+WINDOW="${SESSION}:0"
+tmux kill-session -t "${SESSION}" || true
+tmux new-session -d -s "${SESSION}"
+tmux set -g mouse on
 
-tmux new-window -d -t '=start_development_environment' -n nomad_agent
-tmux send-keys -t '=start_development_environment:=nomad_agent' \
+# Setup your panes
+tmux split-window -h -p 20
+tmux split-window -v
+LEFT="${WINDOW}.0"
+TOP_RIGHT="${WINDOW}.1"
+BOTTOM_RIGHT="${WINDOW}.2"
+
+# Kick off Nomad Agent
+tmux send-keys -t $TOP_RIGHT \
     'nomad agent -config="nomad-agent-conf.nomad" -dev-connect' \
     Enter
 
-tmux new-window -d -t '=start_development_environment' -n consul_agent
-tmux send-keys -t '=start_development_environment:=consul_agent' \
+# Kick off Consul agent
+tmux send-keys -t $BOTTOM_RIGHT \
     'consul agent -dev' \
     Enter
 
-tmux new-window -d -t '=start_development_environment' -n nomad_client
-tmux send-keys -t '=start_development_environment:=nomad_client' \
+# Deploy your infra
+tmux send-keys -t $LEFT \
     "echo '--- To kill session: Ctrl-B + :kill-session'" Enter \
-    "echo '--- To change windows: Ctrl-B + W'" Enter
+    "echo '--- To change windows: Ctrl-B + w'" Enter \
+    "./nomad_run_local_infra.sh" Enter
 
-tmux send-keys -t '=start_development_environment:=nomad_client' \
-    "./nomad_run_local_infra.sh" \
-    Enter
-
-# Get rid of default window, it's useless
-tmux kill-window -t '=start_development_environment:=0'
-tmux switch-client -t '=start_development_environment' ||
-tmux attach-session -t '=start_development_environment'
+tmux switch-client -t "${SESSION}" ||
+    tmux attach-session -t "${SESSION}"
 
 # After we `kill-session` the tmux, we fall back to here
-killall nomad
-killall consul
+killall nomad || true
+echo "hey"
+killall consul || true
+echo "hi"
