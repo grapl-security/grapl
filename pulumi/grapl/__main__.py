@@ -98,6 +98,14 @@ def main() -> None:
 
     services: List[ServiceLike] = []
 
+    ux_bucket = Bucket(
+        "engagement-ux-bucket",
+        website_args=aws.s3.BucketWebsiteArgs(
+            index_document="index.html",
+        ),
+    )
+    pulumi.export("ux-bucket", ux_bucket.bucket)
+
     if LOCAL_GRAPL:
         # We need to create these queues, and wire them up to their
         # respective emitters, in Local Grapl, because they are
@@ -128,8 +136,8 @@ def main() -> None:
         job_vars = pulumi.Output.all(
             graph_merger_queue=graph_merger_queue.main_queue_url,
             graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
-            session_table=dynamodb_tables.dynamic_session_table.name,
-            schema_properties_table=dynamodb_tables.schema_properties_table.name,
+            session_table_name=dynamodb_tables.dynamic_session_table.name,
+            schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
             schema_table_name=dynamodb_tables.schema_table.name,
             node_identifier_queue=node_identifier_queue.main_queue_url,
             node_identifier_dead_letter_queue=node_identifier_queue.dead_letter_queue_url,
@@ -137,8 +145,10 @@ def main() -> None:
             subgraphs_merged_bucket=subgraphs_merged_emitter.bucket,
             subgraphs_generated_bucket=subgraphs_generated_emitter.bucket,
             user_auth_table=dynamodb_tables.user_auth_table.name,
+            ux_bucket=ux_bucket.bucket,
         ).apply(
             lambda inputs: {
+                "deployment_name": DEPLOYMENT_NAME,
                 "grapl_test_user_name": f"{DEPLOYMENT_NAME}-grapl-test-user",
                 "redis_endpoint": pulumi.Config().get("REDIS_ENDPOINT"),
                 # "aws_region": aws.get_region(),
@@ -240,13 +250,6 @@ def main() -> None:
 
     # TODO: create everything inside of Api class
 
-    ux_bucket = Bucket(
-        "engagement-ux-bucket",
-        website_args=aws.s3.BucketWebsiteArgs(
-            index_document="index.html",
-        ),
-    )
-    pulumi.export("ux-bucket", ux_bucket.bucket)
 
     api = Api(
         network=network,
