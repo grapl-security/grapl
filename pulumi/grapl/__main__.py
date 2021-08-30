@@ -154,6 +154,9 @@ def main() -> None:
                 "grapl_test_user_name": GRAPL_TEST_USER_NAME,
                 "redis_endpoint": pulumi.Config().get("REDIS_ENDPOINT"),
                 # "aws_region": aws.get_region(),
+
+                # TODO: consider replacing with the previous per-service `configurable_envvars`
+                "rust_log": "DEBUG",
                 **inputs,
             }
         )

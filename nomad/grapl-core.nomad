@@ -1,6 +1,5 @@
 variable "rust_log" {
   type        = string
-  default     = "INFO"
   description = "Controls the logging behavior of Rust-based services."
 }
 
@@ -485,24 +484,28 @@ job "grapl-core" {
   group "grapl-node-identifier" {
     count = var.num_node_identifiers
 
-    //    network {
-    //      mode = "bridge"
-    //    }
+    network {
+      mode = "bridge"
+    }
 
+    # We don't need to necessarily attach the provisioner to `node-identifier` - just
+    # _any_ task.
     task "provisioner" {
       driver = "docker"
 
       config {
         image        = "${var.container_registry}/grapl/provisioner:${var.provisioner_tag}"
-        network_mode = "grapl-network"
       }
 
       lifecycle {
         hook    = "prestart"
+        # Ephemeral, not long-lived
         sidecar = false
       }
 
       env {
+        MG_ALPHAS                     = local.alpha_grpc_connect_str
+        DEPLOYMENT_NAME               = var.deployment_name
         GRAPL_AWS_ENDPOINT            = var.aws_endpoint
         GRAPL_AWS_ACCESS_KEY_ID       = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET   = var.aws_access_key_secret
@@ -512,6 +515,7 @@ job "grapl-core" {
         GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name
         GRAPL_USER_AUTH_TABLE         = var.user_auth_table
         GRAPL_TEST_USER_NAME          = var.grapl_test_user_name
+        GRAPL_LOG_LEVEL               = var.rust_log  # TODO: revisit
       }
 
     }
@@ -533,7 +537,7 @@ job "grapl-core" {
         RUST_LOG                    = var.rust_log
         RUST_BACKTRACE              = 1
         REDIS_ENDPOINT              = var.redis_endpoint
-        MG_ALPHAS                   = local.alpha_grpc_connect_str
+        MG_ALPHAS                   = local.alpha_grpc_connect_str  # alpha_grpc_connect_str won't work if network mode = grapl network
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
         GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
         # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L156

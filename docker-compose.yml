@@ -51,24 +51,6 @@ services:
   # Cloud Infrastructure Dependencies
   ########################################################################
 
-  dgraph:
-    tty: false
-    image: dgraph/standalone:v21.03.1
-    ports:
-      # required to access the RATEL interface for dgraph
-      - 127.0.0.1:${DGRAPH_RATEL_HTTP_EXTERNAL_PUBLIC_PORT}:${DGRAPH_RATEL_HTTP_EXTERNAL_PUBLIC_PORT}
-      # required for RATEL interface to operate properly
-      - 127.0.0.1:${DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT}:${DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT}
-    volumes:
-      - type: volume
-        source: dgraph_export
-        # Hitting :8080/admin/export will force an export to be written to this directory.
-        target: /dgraph/export
-    networks:
-      default:
-        aliases:
-          - ${DGRAPH_HOST}
-
   zookeeper:
     image: confluentinc/cp-zookeeper:6.2.0
     environment:
@@ -131,8 +113,6 @@ services:
       <<: *log-level
       <<: *rust-backtrace
     depends_on:
-      provisioner:
-        condition: service_completed_successfully
       pulumi:
         # We must wait until Pulumi has created the buckets to know what their names are
         condition: service_completed_successfully
@@ -157,91 +137,6 @@ services:
       <<: *log-level
       <<: *rust-backtrace
     depends_on:
-      provisioner:
-        condition: service_completed_successfully
-      pulumi:
-        # We must wait until Pulumi has created the buckets to know what their names are
-        condition: service_completed_successfully
-    volumes:
-      - *read-only-pulumi-mnt
-
-  node-identifier:
-    image: grapl/node-identifier:${TAG:-latest}
-    entrypoint: ["/busybox/sh", "-o", "errexit", "-o", "nounset", "-c"]
-    command:
-      - |
-        # TODO: Rename this variable to be in line with our others?
-        export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/subgraphs-generated-bucket)
-        export GRAPL_STATIC_MAPPING_TABLE=$$(cat /mnt/pulumi-outputs/static-mapping-table)
-        export GRAPL_DYNAMIC_SESSION_TABLE=$$(cat /mnt/pulumi-outputs/dynamic-session-table)
-        export DEAD_LETTER_QUEUE_URL=$$(cat /mnt/pulumi-outputs/node-identifier-retry-queue)
-        export SOURCE_QUEUE_URL=$$(cat /mnt/pulumi-outputs/node-identifier-queue)
-        /node-identifier
-    environment:
-      <<: *aws-env
-      REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
-      <<: *log-level
-      <<: *rust-backtrace
-    tty: false
-    depends_on:
-      provisioner:
-        condition: service_completed_successfully
-      pulumi:
-        # We must wait until Pulumi has created the buckets to know what their names are
-        condition: service_completed_successfully
-    volumes:
-      - *read-only-pulumi-mnt
-
-  node-identifier-retry:
-    image: grapl/node-identifier-retry:${TAG:-latest}
-    entrypoint: ["/busybox/sh", "-o", "errexit", "-o", "nounset", "-c"]
-    command:
-      - |
-        # TODO: Rename this variable to be in line with our others?
-        export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/subgraphs-generated-bucket)
-        export GRAPL_STATIC_MAPPING_TABLE=$$(cat /mnt/pulumi-outputs/static-mapping-table)
-        export GRAPL_DYNAMIC_SESSION_TABLE=$$(cat /mnt/pulumi-outputs/dynamic-session-table)
-        export DEAD_LETTER_QUEUE_URL=$$(cat /mnt/pulumi-outputs/node-identifier-dead-letter-queue)
-        export SOURCE_QUEUE_URL=$$(cat /mnt/pulumi-outputs/node-identifier-retry-queue)
-        /node-identifier-retry
-    environment:
-      <<: *aws-env
-      REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
-      <<: *log-level
-      <<: *rust-backtrace
-    tty: false
-    depends_on:
-      provisioner:
-        condition: service_completed_successfully
-      pulumi:
-        # We must wait until Pulumi has created the buckets to know what their names are
-        condition: service_completed_successfully
-    volumes:
-      - *read-only-pulumi-mnt
-
-  graph-merger:
-    image: grapl/graph-merger:${TAG:-latest}
-    entrypoint: ["/busybox/sh", "-o", "errexit", "-o", "nounset", "-c"]
-    command:
-      - |
-        # TODO: Rename this variable to be in line with our others?
-        export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/subgraphs-merged-bucket)
-        export GRAPL_SCHEMA_TABLE=$$(cat /mnt/pulumi-outputs/schema-table)
-        export DEAD_LETTER_QUEUE_URL=$$(cat /mnt/pulumi-outputs/graph-merger-retry-queue)
-        export SOURCE_QUEUE_URL=$$(cat /mnt/pulumi-outputs/graph-merger-queue)
-        /graph-merger
-    environment:
-      <<: *aws-env
-      <<: *dgraph-env
-      REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
-      <<: *log-level
-      <<: *rust-backtrace
-    tty: false
-    depends_on:
-      dgraph:
-        condition: service_started
-      provisioner:
-        condition: service_completed_successfully
       pulumi:
         # We must wait until Pulumi has created the buckets to know what their names are
         condition: service_completed_successfully
@@ -303,10 +198,6 @@ services:
     ports:
       - 127.0.0.1:${VSC_DEBUGGER_PORT_FOR_ANALYZER_EXECUTOR}:${VSC_DEBUGGER_PORT_FOR_ANALYZER_EXECUTOR}
     depends_on:
-      dgraph:
-        condition: service_started
-      provisioner:
-        condition: service_completed_successfully
       pulumi:
         # We must wait until Pulumi has created the buckets to know what their names are
         condition: service_completed_successfully
@@ -336,10 +227,6 @@ services:
       <<: *log-level
     tty: true
     depends_on:
-      dgraph:
-        condition: service_started
-      provisioner:
-        condition: service_completed_successfully
       pulumi:
         # We must wait until Pulumi has created the buckets to know what their names are
         condition: service_completed_successfully
@@ -404,8 +291,6 @@ services:
     environment:
       <<: *aws-env
     depends_on:
-      provisioner:
-        condition: service_completed_successfully
       pulumi:
         # We must wait until Pulumi has created the buckets to know what their names are
         condition: service_completed_successfully
@@ -429,10 +314,6 @@ services:
       DEBUG_SERVICES: "${DEBUG_SERVICES:-}"
       VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT: "${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}"
     depends_on:
-      dgraph:
-        condition: service_started
-      provisioner:
-        condition: service_completed_successfully
       pulumi:
         condition: service_completed_successfully
     ports:
@@ -450,8 +331,6 @@ services:
     user: grapl
     environment:
       <<: *dgraph-env
-    depends_on:
-      - dgraph
     ports:
       - 127.0.0.1:${GRAPL_NOTEBOOK_PORT}:${GRAPL_NOTEBOOK_PORT}
 
@@ -530,31 +409,6 @@ services:
       # Expose the host Linux machine, despite being on the Grapl network.
       # This lets Pulumi talk to the host's Nomad
       - "host.docker.internal:host-gateway"
-
-  provisioner:
-    image: grapl/provisioner:${TAG:-latest}
-    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
-    command:
-      - |
-        export GRAPL_SCHEMA_TABLE=$$(cat /mnt/pulumi-outputs/schema-table)
-        export GRAPL_SCHEMA_PROPERTIES_TABLE=$$(cat /mnt/pulumi-outputs/schema-properties-table)
-        export GRAPL_USER_AUTH_TABLE=$$(cat /mnt/pulumi-outputs/user-auth-table)
-
-        python3 -c "import lambdex_handler; lambdex_handler.handler(None, None)"
-    environment:
-      <<: *aws-env
-      <<: *dgraph-env
-      GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-INFO}"
-      DEPLOYMENT_NAME: "${DEPLOYMENT_NAME}"
-      GRAPL_TEST_USER_NAME: "${DEPLOYMENT_NAME}-grapl-test-user"
-    tty: true
-    depends_on:
-      dgraph:
-        condition: service_started
-      pulumi:
-        condition: service_completed_successfully
-    volumes:
-      - *read-only-pulumi-mnt
 
 networks:
   default:
