@@ -49,3 +49,4 @@ RUN mkdir -p /tmp/pants/named_caches
 RUN mkdir -p /tmp/pants/lmdb_store
 ENV PANTS_NAMED_CACHES_DIR=/tmp/pants/named_caches
 ENV PANTS_LOCAL_STORE_DIR=/tmp/pants/lmdb_store
+ENV PANTS_SETUP_CACHE=/tmp/pants/setup
