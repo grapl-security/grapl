@@ -44,11 +44,11 @@ RUN apt-get update && apt-get -y install --no-install-recommends \
         unzip \
     && rm -rf /var/lib/apt/lists/*
 RUN apt-get update && apt-get -y install --no-install-recommends curl unzip
-RUN mkdir -p /tmp/pants && chmod 777 /tmp/pants
+RUN mkdir -p /tmp/pants && chmod -R 777 /tmp/pants
 USER grapl
-RUN mkdir -p /tmp/pants/named_caches
-RUN mkdir -p /tmp/pants/lmdb_store
-RUN mkdir -p /tmp/pants/setup
+RUN mkdir -p /tmp/pants/named_caches && chmod -R 777 /tmp/pants/named_caches
+RUN mkdir -p /tmp/pants/lmdb_store && chmod -R 777 /tmp/pants/lmb_store
+RUN mkdir -p /tmp/pants/setup && chmod -R 777 /tmp/pants/setup
 ENV PANTS_NAMED_CACHES_DIR=/tmp/pants/named_caches
 ENV PANTS_LOCAL_STORE_DIR=/tmp/pants/lmdb_store
 ENV PANTS_SETUP_CACHE=/tmp/pants/setup
