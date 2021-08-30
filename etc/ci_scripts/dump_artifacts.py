@@ -146,6 +146,11 @@ def dump_docker_ps(dir: Path) -> None:
             shell=True,
         )
 
+def _dump_nomad_consul_logs(artifacts_dir: Path) -> None:
+    nomad_log_path = Path("/tmp/nomad-agent.log").resolve()
+    consul_log_path = Path("/tmp/consul-agent.log").resolve()
+    shutil.copy2(nomad_log_path, artifacts_dir)
+    shutil.copy2(consul_log_path, artifacts_dir)
 
 def _dump_nomad_consul_logs(artifacts_dir: Path) -> None:
     nomad_log_path = Path("/tmp/nomad-agent.log").resolve()

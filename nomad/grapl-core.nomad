@@ -547,6 +547,8 @@ job "grapl-core" {
       mode = "bridge"
     }
 
+    # We don't need to necessarily attach the provisioner to `node-identifier` - just
+    # _any_ task.
     task "provisioner" {
       driver = "docker"
 
