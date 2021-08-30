@@ -8,7 +8,6 @@ edition = "2018"
 async-trait = "0.1.51"
 futures = "0.3.16"
 grapl-config = { path = "../grapl-config", version = "*" }
-lazy_static = "1.4.0"
 pin-utils = "0.1.0"
 rdkafka = "0.26.0"
 thiserror = "1.0.26"

@@ -1657,7 +1657,6 @@ dependencies = [
  "async-trait",
  "futures 0.3.17",
  "grapl-config",
- "lazy_static",
  "num_cpus",
  "pin-utils",
  "rdkafka",
