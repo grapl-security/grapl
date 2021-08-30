@@ -11,6 +11,7 @@ members = [
   "./graph-merger",
   "./grapl",
   "./grapl-config",
+  "./kafka-executor",
   "./grapl-graphql-codegen",
   "./grapl-observe",
   "./grapl-service",
