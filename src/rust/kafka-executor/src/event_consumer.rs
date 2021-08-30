@@ -1,5 +1,3 @@
-
-
 use grapl_config::env_helpers::FromEnv;
 use rdkafka::{
     config::{

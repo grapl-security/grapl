@@ -54,7 +54,7 @@ impl EventProducer {
                     topic=%&self.topic_name,
                     error=%e,
                 );
-                Err(e)?;
+                return Err(e.into());
             }
         }
 

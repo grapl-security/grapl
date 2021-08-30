@@ -3,26 +3,22 @@ use std::pin::Pin;
 use pin_utils::pin_mut;
 use rdkafka::{
     consumer::{
+        CommitMode,
         Consumer,
         DefaultConsumerContext,
     },
-    Message,
     message::BorrowedMessage,
     util::DefaultRuntime,
+    Message,
 };
 use tokio_stream::StreamExt;
 
-
-
 use crate::{
-    errors::CheckedError,
     event_consumer::EventConsumer,
     event_handler::EventHandler,
     event_producer::EventProducer,
 };
-use rdkafka::consumer::CommitMode;
 
-pub mod errors;
 pub mod event_consumer;
 pub mod event_decoder;
 pub mod event_encoder;
@@ -45,7 +41,7 @@ pub mod event_producer;
 pub async fn service_loop<
     InputEventT: Send + Sync + 'static,
     OutputEventT: Send + Sync + 'static,
-    EventHandlerErrorT: CheckedError + Send + Unpin + 'static,
+    EventHandlerErrorT: std::error::Error + Send + Unpin + 'static,
     EventHandlerT: EventHandler<
             InputEvent = InputEventT,
             OutputEvent = OutputEventT,
@@ -107,7 +103,7 @@ pub async fn service_loop<
 async fn process_message<
     InputEventT: Send + 'static,
     OutputEventT: Send + 'static,
-    EventHandlerErrorT: CheckedError + Send + 'static,
+    EventHandlerErrorT: std::error::Error + Send + 'static,
     EventHandlerT: EventHandler<
             InputEvent = InputEventT,
             OutputEvent = OutputEventT,
@@ -176,16 +172,10 @@ mod tests {
         stream::FuturesUnordered,
         StreamExt,
     };
-    
-    
-
     use grapl_config::env_helpers::FromEnv;
 
+    use super::*;
     use crate::{
-        errors::{
-            CheckedError,
-            Recoverable,
-        },
         event_consumer::EventConsumer,
         event_decoder::EventDeserializer,
         event_encoder::EventSerializer,
@@ -193,20 +183,10 @@ mod tests {
         event_producer::EventProducer,
     };
 
-    use super::*;
-
     #[derive(Debug, thiserror::Error)]
     enum ExampleError {
         #[error("JsonError")]
         JsonError(#[from] serde_json::Error),
-    }
-
-    impl CheckedError for ExampleError {
-        fn error_type(&self) -> Recoverable {
-            match self {
-                ExampleError::JsonError(_) => Recoverable::Persistent,
-            }
-        }
     }
 
     #[derive(Clone)]
@@ -217,7 +197,7 @@ mod tests {
         type Error = ExampleError;
 
         fn deserialize(&mut self, event: &[u8]) -> Result<Self::InputEvent, Self::Error> {
-            Ok(serde_json::from_slice(&event)?)
+            Ok(serde_json::from_slice(event)?)
         }
     }
 
