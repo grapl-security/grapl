@@ -12,7 +12,7 @@ use rdkafka::{
 };
 use tokio_stream::StreamExt;
 
-use grapl_config::env_helpers::FromEnv;
+
 
 use crate::{
     errors::CheckedError,
@@ -20,6 +20,7 @@ use crate::{
     event_handler::EventHandler,
     event_producer::EventProducer,
 };
+use rdkafka::consumer::CommitMode;
 
 pub mod errors;
 pub mod event_consumer;
@@ -175,15 +176,8 @@ mod tests {
         stream::FuturesUnordered,
         StreamExt,
     };
-    use pin_utils::pin_mut;
-    use rdkafka::{
-        consumer::{
-            CommitMode,
-            Consumer,
-        },
-        Message,
-        util::DefaultRuntime,
-    };
+    
+    
 
     use grapl_config::env_helpers::FromEnv;
 
