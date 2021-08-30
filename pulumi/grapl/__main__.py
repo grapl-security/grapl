@@ -133,6 +133,8 @@ def main() -> None:
         analyzer_executor_queue = ServiceQueue("analyzer-executor")
         analyzer_executor_queue.subscribe_to_emitter(dispatched_analyzer_emitter)
 
+        kafka = Kafka("kafka")
+
         job_vars = pulumi.Output.all(
             graph_merger_queue=graph_merger_queue.main_queue_url,
             graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
@@ -157,7 +159,7 @@ def main() -> None:
         )
         nomad_job = NomadJob("grapl-core", job_vars)
 
-        # kafka = Kafka("kafka")
+
 
     else:
         nomad_cluster = NomadCluster(
