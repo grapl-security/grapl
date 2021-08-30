@@ -159,8 +159,6 @@ def main() -> None:
         )
         nomad_job = NomadJob("grapl-core", job_vars)
 
-
-
     else:
         nomad_cluster = NomadCluster(
             "nomad-cluster",
