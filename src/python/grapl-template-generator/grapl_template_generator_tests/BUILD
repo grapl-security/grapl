@@ -6,6 +6,8 @@ python_library(
 )
 
 # get format checks on the test
+# test is run manually from CI, not by Pants
 shell_library(
-    name="shell_lib"
+    name="shell_lib",
+    sources=["integration_test.sh"],
 )
