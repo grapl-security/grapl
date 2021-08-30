@@ -3,6 +3,7 @@ members = [
   "./analyzer-dispatcher",
   "./derive-dynamic-node",
   "./endpoint-plugin",
+  "./kafka-s3-shim",
   "./generators/generic-subgraph-generator",
   "./generators/graph-generator-lib",
   "./generators/osquery-generator",
