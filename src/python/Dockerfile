@@ -44,6 +44,13 @@ RUN apt-get update && apt-get -y install --no-install-recommends \
         unzip \
     && rm -rf /var/lib/apt/lists/*
 RUN apt-get update && apt-get -y install --no-install-recommends curl unzip
+RUN adduser \
+        --disabled-password \
+        --gecos '' \
+        --home /home/grapl \
+        --shell /bin/bash \
+        --uid 2000 \
+        pants_ci
 RUN mkdir -p /tmp/pants && chmod -R 777 /tmp/pants
 USER grapl
 RUN mkdir -p /tmp/pants/named_caches && chmod -R 777 /tmp/pants/named_caches
