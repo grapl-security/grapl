@@ -423,12 +423,6 @@ up-detach: build ## Bring up local Grapl and detach to return control to tty
 		--file docker-compose.yml \
 		up --detach --force-recreate --always-recreate-deps --renew-anon-volumes
 
-.PHONY: up-pulumi
-up-pulumi: export COMPOSE_PROJECT_NAME="grapl"
-up-pulumi:  ## launch pulumi via docker-compose up
-	$(WITH_LOCAL_GRAPL_ENV)
-	docker-compose -f docker-compose.yml up pulumi
-
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
 	$(WITH_LOCAL_GRAPL_ENV)
@@ -472,6 +466,12 @@ run-registry: ## Ensure that a local docker registry is running (which is requir
 start-nomad-dev: push-local  ## Start the Nomad development environment
 	$(WITH_LOCAL_GRAPL_ENV)
 	nomad/local/start_development_environment_tmux.sh
+
+.PHONY: pulumi
+pulumi: export COMPOSE_PROJECT_NAME="grapl"
+pulumi:  ## launch pulumi via docker-compose up
+	$(WITH_LOCAL_GRAPL_ENV)
+	docker-compose -f docker-compose.yml run pulumi
 
 .PHONY: push
 push: ## Push Grapl containers to supplied DOCKER_REGISTRY
