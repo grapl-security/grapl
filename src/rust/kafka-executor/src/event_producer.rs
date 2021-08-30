@@ -23,13 +23,13 @@ pub enum EventProducerError {
 }
 
 #[derive(Clone)]
-pub struct EventProducer {
+pub struct KafkaProducer {
     producer: FutureProducer,
     pub(crate) topic_name: String,
 }
 
-impl EventProducer {
-    pub async fn emit_event(&self, payload: &[u8]) -> Result<(), EventProducerError> {
+impl KafkaProducer {
+    pub async fn produce(&self, payload: &[u8]) -> Result<(), EventProducerError> {
         let record: FutureRecord<[u8], _> = FutureRecord {
             topic: &self.topic_name,
             payload: Some(payload),
@@ -63,7 +63,7 @@ impl EventProducer {
 }
 
 // We may want to add more tunables https://github.com/edenhill/librdkafka/blob/master/INTRODUCTION.md#performance
-impl FromEnv<Self> for EventProducer {
+impl FromEnv<Self> for KafkaProducer {
     fn from_env() -> Self {
         let topic_name = std::env::var(KAFKA_PRODUCER_TOPIC).expect(KAFKA_PRODUCER_TOPIC);
         let brokers = std::env::var(KAFKA_PRODUCER_BROKERS).expect(KAFKA_PRODUCER_BROKERS);

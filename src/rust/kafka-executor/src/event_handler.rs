@@ -1,5 +1,5 @@
 #[async_trait::async_trait]
-pub trait EventHandler {
+pub trait StreamProcessor {
     type InputEvent;
     type OutputEvent;
     type Error: std::error::Error;

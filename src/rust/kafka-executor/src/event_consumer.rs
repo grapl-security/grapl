@@ -25,7 +25,7 @@ const KAFKA_CONSUMER_ENABLE_AUTO_COMMIT: &str = "KAFKA_CONSUMER_ENABLE_AUTO_COMM
 const KAFKA_CONSUMER_MAX_POLL_INTERVAL_MS: &str = "KAFKA_CONSUMER_MAX_POLL_INTERVAL_MS";
 const KAFKA_CONSUMER_REQUEST_TIMEOUT_MS: &str = "KAFKA_CONSUMER_REQUEST_TIMEOUT_MS";
 
-pub struct EventConsumer<C = DefaultConsumerContext, R = DefaultRuntime>
+pub struct KafkaConsumer<C = DefaultConsumerContext, R = DefaultRuntime>
 where
     C: ConsumerContext + 'static,
     R: AsyncRuntime,
@@ -35,7 +35,7 @@ where
 }
 
 // We may want to add more tunables https://github.com/edenhill/librdkafka/blob/master/INTRODUCTION.md#performance
-impl<R> FromEnv<Self> for EventConsumer<DefaultConsumerContext, R>
+impl<R> FromEnv<Self> for KafkaConsumer<DefaultConsumerContext, R>
 where
     R: AsyncRuntime,
 {

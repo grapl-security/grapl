@@ -14,9 +14,9 @@ use rdkafka::{
 use tokio_stream::StreamExt;
 
 use crate::{
-    event_consumer::EventConsumer,
-    event_handler::EventHandler,
-    event_producer::EventProducer,
+    event_consumer::KafkaConsumer,
+    event_handler::StreamProcessor,
+    event_producer::KafkaProducer,
 };
 
 pub mod event_consumer;
@@ -41,22 +41,22 @@ pub mod event_producer;
 pub async fn service_loop<
     InputEventT: Send + Sync + 'static,
     OutputEventT: Send + Sync + 'static,
-    EventHandlerErrorT: std::error::Error + Send + Unpin + 'static,
-    EventHandlerT: EventHandler<
+    StreamProcessorErrorT: std::error::Error + Send + Unpin + 'static,
+    StreamProcessorT: StreamProcessor<
             InputEvent = InputEventT,
             OutputEvent = OutputEventT,
-            Error = EventHandlerErrorT,
+            Error = StreamProcessorErrorT,
         > + Send
         + Unpin
         + 'static,
-    EventDeserializerT: event_decoder::EventDeserializer<InputEvent = InputEventT> + Send + Unpin + 'static,
-    EventSerializerT: event_encoder::EventSerializer<OutputEvent = OutputEventT> + Send + Unpin + 'static,
+    DeserializerT: event_decoder::Deserializer<InputEvent = InputEventT> + Send + Unpin + 'static,
+    SerializerT: event_encoder::Serializer<OutputEvent = OutputEventT> + Send + Unpin + 'static,
 >(
-    event_handler: EventHandlerT,
-    consumer: EventConsumer<DefaultConsumerContext, DefaultRuntime>,
-    producer: EventProducer,
-    deserializer: EventDeserializerT,
-    serializer: EventSerializerT,
+    event_handler: StreamProcessorT,
+    consumer: KafkaConsumer<DefaultConsumerContext, DefaultRuntime>,
+    producer: KafkaProducer,
+    deserializer: DeserializerT,
+    serializer: SerializerT,
 ) {
     pin_mut!(event_handler);
     pin_mut!(deserializer);
@@ -103,24 +103,27 @@ pub async fn service_loop<
 async fn process_message<
     InputEventT: Send + 'static,
     OutputEventT: Send + 'static,
-    EventHandlerErrorT: std::error::Error + Send + 'static,
-    EventHandlerT: EventHandler<
+    StreamProcessorErrorT: std::error::Error + Send + 'static,
+    StreamProcessorT: StreamProcessor<
             InputEvent = InputEventT,
             OutputEvent = OutputEventT,
-            Error = EventHandlerErrorT,
+            Error = StreamProcessorErrorT,
         > + Send
         + Unpin
         + 'static,
-    EventDeserializerT: event_decoder::EventDeserializer<InputEvent = InputEventT> + Unpin + Send + 'static,
-    EventSerializerT: event_encoder::EventSerializer<OutputEvent = OutputEventT> + Unpin + Send + 'static,
+    DeserializerT: event_decoder::Deserializer<InputEvent = InputEventT> + Unpin + Send + 'static,
+    SerializerT: event_encoder::Serializer<OutputEvent = OutputEventT> + Unpin + Send + 'static,
 >(
     message: BorrowedMessage<'_>,
-    mut event_handler: Pin<&mut EventHandlerT>,
-    consumer: &EventConsumer<DefaultConsumerContext, DefaultRuntime>,
-    producer: Pin<&EventProducer>,
-    mut deserializer: Pin<&mut EventDeserializerT>,
-    mut serializer: Pin<&mut EventSerializerT>,
+    mut event_handler: Pin<&mut StreamProcessorT>,
+    consumer: &KafkaConsumer<DefaultConsumerContext, DefaultRuntime>,
+    producer: Pin<&KafkaProducer>,
+    mut deserializer: Pin<&mut DeserializerT>,
+    mut serializer: Pin<&mut SerializerT>,
 ) {
+    // let envelope = message.payload().unwrap();
+    // let envelope = Envelope::from
+
     let event = match deserializer.deserialize(message.payload().unwrap()) {
         Ok(event) => event,
         Err(e) => {
@@ -153,7 +156,7 @@ async fn process_message<
         }
     };
 
-    if let Err(e) = producer.emit_event(&output).await {
+    if let Err(e) = producer.produce(&output).await {
         tracing::error!(
             message="Failed to emit event",
             error=%e,
@@ -176,11 +179,11 @@ mod tests {
 
     use super::*;
     use crate::{
-        event_consumer::EventConsumer,
-        event_decoder::EventDeserializer,
-        event_encoder::EventSerializer,
-        event_handler::EventHandler,
-        event_producer::EventProducer,
+        event_consumer::KafkaConsumer,
+        event_decoder::Deserializer,
+        event_encoder::Serializer,
+        event_handler::StreamProcessor,
+        event_producer::KafkaProducer,
     };
 
     #[derive(Debug, thiserror::Error)]
@@ -192,7 +195,7 @@ mod tests {
     #[derive(Clone)]
     struct JsonDeserializer {}
 
-    impl EventDeserializer for JsonDeserializer {
+    impl Deserializer for JsonDeserializer {
         type InputEvent = serde_json::Value;
         type Error = ExampleError;
 
@@ -204,7 +207,7 @@ mod tests {
     #[derive(Clone)]
     struct JsonSerializer {}
 
-    impl EventSerializer for JsonSerializer {
+    impl Serializer for JsonSerializer {
         type OutputEvent = serde_json::Value;
         type Error = ExampleError;
 
@@ -217,7 +220,7 @@ mod tests {
     struct ExampleHandler {}
 
     #[async_trait::async_trait]
-    impl EventHandler for ExampleHandler {
+    impl StreamProcessor for ExampleHandler {
         type InputEvent = serde_json::Value;
         type OutputEvent = serde_json::Value; // This will likely be protos in prod
         type Error = ExampleError;
@@ -239,8 +242,8 @@ mod tests {
             .map(|_| {
                 tokio::spawn(service_loop(
                     event_handler.clone(),
-                    EventConsumer::from_env(),
-                    EventProducer::from_env(),
+                    KafkaConsumer::from_env(),
+                    KafkaProducer::from_env(),
                     JsonDeserializer {},
                     JsonSerializer {},
                 ))
