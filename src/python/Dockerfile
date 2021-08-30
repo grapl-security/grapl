@@ -44,6 +44,7 @@ RUN apt-get update && apt-get -y install --no-install-recommends \
         unzip \
     && rm -rf /var/lib/apt/lists/*
 RUN apt-get update && apt-get -y install --no-install-recommends curl unzip
+RUN mkdir -p /tmp/pants && chmod 777 /tmp/pants
 USER grapl
 RUN mkdir -p /tmp/pants/named_caches
 RUN mkdir -p /tmp/pants/lmdb_store
