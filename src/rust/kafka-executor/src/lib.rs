@@ -44,23 +44,25 @@ pub mod event_producer;
 pub async fn service_loop<
     InputEventT:  Send + Sync + 'static,
     OutputEventT:  Send + Sync + 'static,
-    EventHandlerErrorT: CheckedError + Send + Sync + 'static,
+    EventHandlerErrorT: CheckedError + Send + Unpin + 'static,
     EventHandlerT: EventHandler<
             InputEvent = InputEventT,
             OutputEvent = OutputEventT,
             Error = EventHandlerErrorT,
-        > + Send + Clone
+        > + Send + Unpin
         + 'static,
-    EventDeserializerT: event_decoder::EventDeserializer<InputEvent = InputEventT> + Clone + Send + Sync + 'static,
-    EventSerializerT: event_encoder::EventSerializer<OutputEvent = OutputEventT> + Clone + Send + Sync + 'static,
+    EventDeserializerT: event_decoder::EventDeserializer<InputEvent = InputEventT> + Send + Unpin + 'static,
+    EventSerializerT: event_encoder::EventSerializer<OutputEvent = OutputEventT> + Send + Unpin + 'static,
 >(
     event_handler: EventHandlerT,
-    consumer: &'static EventConsumer<DefaultConsumerContext, DefaultRuntime>,
+    consumer: EventConsumer<DefaultConsumerContext, DefaultRuntime>,
     producer: EventProducer,
     deserializer: EventDeserializerT,
     serializer: EventSerializerT,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let sema = Arc::new(tokio::sync::Semaphore::new(std::cmp::max(1, num_cpus::get() - 1)));
+) {
+    pin_mut!(event_handler);
+    pin_mut!(deserializer);
+    pin_mut!(serializer);
 
     while let Some(message) = consumer.consumer.stream().next().await {
         let message = match message {
@@ -73,32 +75,16 @@ pub async fn service_loop<
                 continue;
             }
         };
-
-        let permit = loop {
-            let sema = sema.clone();
-            match tokio::time::timeout(
-                Duration::from_secs(1), sema.acquire_owned()
-            ).await {
-                Ok(permit) => break permit.expect("Sempahore can not be closed"),
-                Err(e) => {
-                    tracing::warn!(message="Failed to acquire semaphore");
-                }
-            }
-        };
-
         process_message(
-            permit,
             message,
-            event_handler.clone(),
+            event_handler.as_mut(),
             &consumer,
             producer.clone(),
-            deserializer.clone(),
-            serializer.clone(),
+            deserializer.as_mut(),
+            serializer.as_mut(),
         )
         .await;
     }
-
-    Ok(())
 }
 
 #[tracing::instrument(
@@ -116,75 +102,69 @@ pub async fn service_loop<
     )
 )]
 async fn process_message<
-    InputEventT:  Send + Sync + 'static,
-    OutputEventT:  Send + Sync + 'static,
-    EventHandlerErrorT: CheckedError + Send + Sync + 'static,
+    InputEventT:  Send + 'static,
+    OutputEventT:  Send + 'static,
+    EventHandlerErrorT: CheckedError + Send + 'static,
     EventHandlerT: EventHandler<
             InputEvent = InputEventT,
             OutputEvent = OutputEventT,
             Error = EventHandlerErrorT,
         >
-        + Send + 'static,
-    EventDeserializerT: event_decoder::EventDeserializer<InputEvent = InputEventT> + Send + Sync + 'static,
-    EventSerializerT: event_encoder::EventSerializer<OutputEvent = OutputEventT> + Send + Sync + 'static,
+        + Send + Unpin + 'static,
+    EventDeserializerT: event_decoder::EventDeserializer<InputEvent = InputEventT> + Unpin + Send + 'static,
+    EventSerializerT: event_encoder::EventSerializer<OutputEvent = OutputEventT> + Unpin + Send + 'static,
 >(
-    permit: OwnedSemaphorePermit,
-    message: BorrowedMessage<'static>,
-    mut event_handler: EventHandlerT,
-    consumer: &'static EventConsumer<DefaultConsumerContext, DefaultRuntime>,
+    message: BorrowedMessage<'_>,
+    mut event_handler: Pin<&mut EventHandlerT>,
+    consumer: &EventConsumer<DefaultConsumerContext, DefaultRuntime>,
     producer: EventProducer,
-    deserializer: EventDeserializerT,
-    serializer: EventSerializerT,
+    mut deserializer: Pin<&mut EventDeserializerT>,
+    mut serializer: Pin<&mut EventSerializerT>,
 ) {
 
-    let proc = async move {
-        drop(permit);  // forces capture
-        let event = match deserializer.decode_event(message.payload().unwrap()) {
-            Ok(event) => event,
-            Err(e) => {
-                tracing::error!(
+    let event = match deserializer.deserialize(message.payload().unwrap()) {
+        Ok(event) => event,
+        Err(e) => {
+            tracing::error!(
                 message="Failed to decode message payload",
                 error=%e,
             );
-                return;
-            }
-        };
-        let output = match event_handler.handle_event(event).await {
-            Ok(output) => output,
-            Err(e) => {
-                tracing::error!(
+            return;
+        }
+    };
+    let output = match event_handler.handle_event(event).await {
+        Ok(output) => output,
+        Err(e) => {
+            tracing::error!(
                 message="Failed to handle event",
                 error=%e,
             );
-                return;
-            }
-        };
+            return;
+        }
+    };
 
-        let output = match serializer.encode_event(output) {
-            Ok(output) => output,
-            Err(e) => {
-                tracing::error!(
+    let output = match serializer.serialize(output) {
+        Ok(output) => output,
+        Err(e) => {
+            tracing::error!(
                 message="Failed to encode message payload",
                 error=%e,
             );
-                return;
-            }
-        };
+            return;
+        }
+    };
 
-        if let Err(e) = producer.emit_event(&output).await {
-            tracing::error!(
+    if let Err(e) = producer.emit_event(&output).await {
+        tracing::error!(
             message="Failed to emit event",
             error=%e,
         );
-            return;
-        };
-
-        if let Err(e) = consumer.consumer.commit_message(&message, CommitMode::Sync) {
-            tracing::error!(message="Failed to commit message", error=%e);
-        };
+        return;
     };
 
-    tokio::task::spawn(proc.in_current_span());
+    if let Err(e) = consumer.consumer.commit_message(&message, CommitMode::Sync) {
+        tracing::error!(message="Failed to commit message", error=%e);
+    };
 }
 
 #[cfg(test)]
@@ -193,7 +173,7 @@ mod tests {
     use rdkafka::consumer::{CommitMode, Consumer};
     use rdkafka::util::DefaultRuntime;
     use rdkafka::Message;
-    use tokio_stream::StreamExt;
+    // use tokio_stream::StreamExt;
 
     use grapl_config::env_helpers::FromEnv;
 
@@ -205,6 +185,8 @@ mod tests {
     use crate::event_producer::EventProducer;
 
     use super::*;
+    use futures::stream::FuturesUnordered;
+    use futures::StreamExt;
 
     #[derive(Debug, thiserror::Error)]
     enum ExampleError {
@@ -227,7 +209,7 @@ mod tests {
         type InputEvent = serde_json::Value;
         type Error = ExampleError;
 
-        fn decode_event(&self, event: &[u8]) -> Result<Self::InputEvent, Self::Error> {
+        fn deserialize(&mut self, event: &[u8]) -> Result<Self::InputEvent, Self::Error> {
             Ok(serde_json::from_slice(&event)?)
         }
     }
@@ -239,7 +221,7 @@ mod tests {
         type OutputEvent = serde_json::Value;
         type Error = ExampleError;
 
-        fn encode_event(&self, event: Self::OutputEvent) -> Result<Vec<u8>, Self::Error> {
+        fn serialize(&mut self, event: Self::OutputEvent) -> Result<Vec<u8>, Self::Error> {
             Ok(serde_json::to_vec(&event)?)
         }
     }
@@ -264,34 +246,24 @@ mod tests {
 
     #[tokio::test]
     async fn it_works() -> Result<(), Box<dyn std::error::Error>> {
+
         let event_handler = ExampleHandler {};
 
-        // The consumer must be static since messages reference it.
-        lazy_static::lazy_static! {
-            static ref consumer: EventConsumer<DefaultConsumerContext, DefaultRuntime>
-                = {EventConsumer::from_env()};
-        }
-        let producer = EventProducer::from_env();
-
-        let deserializer = JsonDeserializer {};
-        let serializer = JsonSerializer {};
-
-        service_loop(
-            event_handler,
-            &consumer,
-            producer,
-            deserializer,
-            serializer,
-        ).await;
-        // process_message(
-        //     &message,
-        //     event_handler.as_mut(),
-        //     &consumer,
-        //     producer.clone(),
-        //     deserializer.as_mut(),
-        //     serializer.as_mut(),
-        // )
-        // .await?;
+        (0..num_cpus::get())
+            .map(|_| {
+                tokio::spawn(
+                    service_loop(
+                        event_handler.clone(),
+                        EventConsumer::from_env(),
+                        EventProducer::from_env(),
+                        JsonDeserializer {},
+                        JsonSerializer {},
+                    )
+                )
+            })
+            .collect::<FuturesUnordered<_>>()
+            .for_each(|_| async { () })
+            .await;
         Ok(())
     }
 }
