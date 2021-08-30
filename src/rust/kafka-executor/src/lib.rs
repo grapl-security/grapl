@@ -63,6 +63,7 @@ pub async fn service_loop<
     pin_mut!(event_handler);
     pin_mut!(deserializer);
     pin_mut!(serializer);
+    pin!(producer);
 
     while let Some(message) = consumer.consumer.stream().next().await {
         let message = match message {
@@ -79,7 +80,7 @@ pub async fn service_loop<
             message,
             event_handler.as_mut(),
             &consumer,
-            producer.clone(),
+            producer.as_ref(),
             deserializer.as_mut(),
             serializer.as_mut(),
         )
@@ -117,7 +118,7 @@ async fn process_message<
     message: BorrowedMessage<'_>,
     mut event_handler: Pin<&mut EventHandlerT>,
     consumer: &EventConsumer<DefaultConsumerContext, DefaultRuntime>,
-    producer: EventProducer,
+    producer: Pin<&EventProducer>,
     mut deserializer: Pin<&mut EventDeserializerT>,
     mut serializer: Pin<&mut EventSerializerT>,
 ) {
@@ -173,7 +174,6 @@ mod tests {
     use rdkafka::consumer::{CommitMode, Consumer};
     use rdkafka::util::DefaultRuntime;
     use rdkafka::Message;
-    // use tokio_stream::StreamExt;
 
     use grapl_config::env_helpers::FromEnv;
 

@@ -8,6 +8,7 @@ const KAFKA_PRODUCER_TOPIC: &str = "KAFKA_PRODUCER_TOPIC";
 const KAFKA_PRODUCER_BROKERS: &str = "KAFKA_PRODUCER_BROKERS";
 const KAFKA_PRODUCER_CLIENT_ID: &str = "KAFKA_PRODUCER_CLIENT_ID";
 const KAFKA_PRODUCER_BUFFERING_MAX_MS: &str = "KAFKA_PRODUCER_BUFFERING_MAX_MS";
+const KAFKA_PRODUCER_LINGER_MS: &str = "KAFKA_PRODUCER_LINGER_MS";
 
 #[derive(Debug, thiserror::Error)]
 pub enum EventProducerError {
@@ -71,6 +72,10 @@ impl FromEnv<Self> for EventProducer {
 
         if let Ok(queue_buffering_max_ms) = std::env::var(KAFKA_PRODUCER_BUFFERING_MAX_MS) {
             client_config.set("queue.buffering.max.ms", queue_buffering_max_ms);
+        }
+
+        if let Ok(linger_ms) = std::env::var(KAFKA_PRODUCER_LINGER_MS) {
+            client_config.set("linger.ms", linger_ms);
         }
 
         let producer =
