@@ -1,36 +1,22 @@
-use std::{
-    pin::Pin,
-    sync::Arc,
-    time::Duration,
-};
+use std::pin::Pin;
 
-use grapl_config::env_helpers::FromEnv;
 use pin_utils::pin_mut;
 use rdkafka::{
     consumer::{
-        CommitMode,
         Consumer,
         DefaultConsumerContext,
     },
-    error::KafkaError,
-    message::{
-        BorrowedMessage,
-        OwnedMessage,
-    },
-    util::DefaultRuntime,
     Message,
-};
-use tokio::sync::{
-    OwnedSemaphorePermit,
-    SemaphorePermit,
+    message::BorrowedMessage,
+    util::DefaultRuntime,
 };
 use tokio_stream::StreamExt;
-use tracing::Instrument;
+
+use grapl_config::env_helpers::FromEnv;
 
 use crate::{
     errors::CheckedError,
     event_consumer::EventConsumer,
-    event_decoder::EventDeserializer,
     event_handler::EventHandler,
     event_producer::EventProducer,
 };
@@ -78,7 +64,7 @@ pub async fn service_loop<
     pin_mut!(event_handler);
     pin_mut!(deserializer);
     pin_mut!(serializer);
-    pin!(producer);
+    let producer = Pin::new(&producer);
 
     while let Some(message) = consumer.consumer.stream().next().await {
         let message = match message {
@@ -189,18 +175,18 @@ mod tests {
         stream::FuturesUnordered,
         StreamExt,
     };
-    use grapl_config::env_helpers::FromEnv;
     use pin_utils::pin_mut;
     use rdkafka::{
         consumer::{
             CommitMode,
             Consumer,
         },
-        util::DefaultRuntime,
         Message,
+        util::DefaultRuntime,
     };
 
-    use super::*;
+    use grapl_config::env_helpers::FromEnv;
+
     use crate::{
         errors::{
             CheckedError,
@@ -212,6 +198,8 @@ mod tests {
         event_handler::EventHandler,
         event_producer::EventProducer,
     };
+
+    use super::*;
 
     #[derive(Debug, thiserror::Error)]
     enum ExampleError {
