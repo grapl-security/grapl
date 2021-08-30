@@ -1,8 +1,14 @@
-use grapl_config::env_helpers::FromEnv;
-use rdkafka::config::FromClientConfig;
-use rdkafka::error::KafkaError;
-use rdkafka::producer::{FutureProducer, FutureRecord};
 use std::time::Duration;
+
+use grapl_config::env_helpers::FromEnv;
+use rdkafka::{
+    config::FromClientConfig,
+    error::KafkaError,
+    producer::{
+        FutureProducer,
+        FutureRecord,
+    },
+};
 
 const KAFKA_PRODUCER_TOPIC: &str = "KAFKA_PRODUCER_TOPIC";
 const KAFKA_PRODUCER_BROKERS: &str = "KAFKA_PRODUCER_BROKERS";
@@ -55,7 +61,6 @@ impl EventProducer {
         Ok(())
     }
 }
-
 
 // We may want to add more tunables https://github.com/edenhill/librdkafka/blob/master/INTRODUCTION.md#performance
 impl FromEnv<Self> for EventProducer {

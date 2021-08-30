@@ -1,25 +1,39 @@
-#![allow(warnings)]
-
-use pin_utils::pin_mut;
-use rdkafka::consumer::{CommitMode, Consumer, DefaultConsumerContext};
-use rdkafka::util::DefaultRuntime;
-use rdkafka::Message;
-use tokio_stream::StreamExt;
+use std::{
+    pin::Pin,
+    sync::Arc,
+    time::Duration,
+};
 
 use grapl_config::env_helpers::FromEnv;
-
-use crate::errors::CheckedError;
-use crate::event_consumer::EventConsumer;
-use crate::event_decoder::EventDeserializer;
-use crate::event_handler::EventHandler;
-use crate::event_producer::EventProducer;
-use rdkafka::error::KafkaError;
-use rdkafka::message::{BorrowedMessage, OwnedMessage};
-use std::pin::Pin;
-use std::time::Duration;
-use tokio::sync::{SemaphorePermit, OwnedSemaphorePermit};
-use std::sync::Arc;
+use pin_utils::pin_mut;
+use rdkafka::{
+    consumer::{
+        CommitMode,
+        Consumer,
+        DefaultConsumerContext,
+    },
+    error::KafkaError,
+    message::{
+        BorrowedMessage,
+        OwnedMessage,
+    },
+    util::DefaultRuntime,
+    Message,
+};
+use tokio::sync::{
+    OwnedSemaphorePermit,
+    SemaphorePermit,
+};
+use tokio_stream::StreamExt;
 use tracing::Instrument;
+
+use crate::{
+    errors::CheckedError,
+    event_consumer::EventConsumer,
+    event_decoder::EventDeserializer,
+    event_handler::EventHandler,
+    event_producer::EventProducer,
+};
 
 pub mod errors;
 pub mod event_consumer;
@@ -42,14 +56,15 @@ pub mod event_producer;
     )
 )]
 pub async fn service_loop<
-    InputEventT:  Send + Sync + 'static,
-    OutputEventT:  Send + Sync + 'static,
+    InputEventT: Send + Sync + 'static,
+    OutputEventT: Send + Sync + 'static,
     EventHandlerErrorT: CheckedError + Send + Unpin + 'static,
     EventHandlerT: EventHandler<
             InputEvent = InputEventT,
             OutputEvent = OutputEventT,
             Error = EventHandlerErrorT,
-        > + Send + Unpin
+        > + Send
+        + Unpin
         + 'static,
     EventDeserializerT: event_decoder::EventDeserializer<InputEvent = InputEventT> + Send + Unpin + 'static,
     EventSerializerT: event_encoder::EventSerializer<OutputEvent = OutputEventT> + Send + Unpin + 'static,
@@ -103,15 +118,16 @@ pub async fn service_loop<
     )
 )]
 async fn process_message<
-    InputEventT:  Send + 'static,
-    OutputEventT:  Send + 'static,
+    InputEventT: Send + 'static,
+    OutputEventT: Send + 'static,
     EventHandlerErrorT: CheckedError + Send + 'static,
     EventHandlerT: EventHandler<
             InputEvent = InputEventT,
             OutputEvent = OutputEventT,
             Error = EventHandlerErrorT,
-        >
-        + Send + Unpin + 'static,
+        > + Send
+        + Unpin
+        + 'static,
     EventDeserializerT: event_decoder::EventDeserializer<InputEvent = InputEventT> + Unpin + Send + 'static,
     EventSerializerT: event_encoder::EventSerializer<OutputEvent = OutputEventT> + Unpin + Send + 'static,
 >(
@@ -122,7 +138,6 @@ async fn process_message<
     mut deserializer: Pin<&mut EventDeserializerT>,
     mut serializer: Pin<&mut EventSerializerT>,
 ) {
-
     let event = match deserializer.deserialize(message.payload().unwrap()) {
         Ok(event) => event,
         Err(e) => {
@@ -170,23 +185,33 @@ async fn process_message<
 
 #[cfg(test)]
 mod tests {
-    use pin_utils::pin_mut;
-    use rdkafka::consumer::{CommitMode, Consumer};
-    use rdkafka::util::DefaultRuntime;
-    use rdkafka::Message;
-
+    use futures::{
+        stream::FuturesUnordered,
+        StreamExt,
+    };
     use grapl_config::env_helpers::FromEnv;
-
-    use crate::errors::{CheckedError, Recoverable};
-    use crate::event_consumer::EventConsumer;
-    use crate::event_decoder::EventDeserializer;
-    use crate::event_encoder::EventSerializer;
-    use crate::event_handler::EventHandler;
-    use crate::event_producer::EventProducer;
+    use pin_utils::pin_mut;
+    use rdkafka::{
+        consumer::{
+            CommitMode,
+            Consumer,
+        },
+        util::DefaultRuntime,
+        Message,
+    };
 
     use super::*;
-    use futures::stream::FuturesUnordered;
-    use futures::StreamExt;
+    use crate::{
+        errors::{
+            CheckedError,
+            Recoverable,
+        },
+        event_consumer::EventConsumer,
+        event_decoder::EventDeserializer,
+        event_encoder::EventSerializer,
+        event_handler::EventHandler,
+        event_producer::EventProducer,
+    };
 
     #[derive(Debug, thiserror::Error)]
     enum ExampleError {
@@ -246,20 +271,17 @@ mod tests {
 
     #[tokio::test]
     async fn it_works() -> Result<(), Box<dyn std::error::Error>> {
-
         let event_handler = ExampleHandler {};
 
         (0..num_cpus::get())
             .map(|_| {
-                tokio::spawn(
-                    service_loop(
-                        event_handler.clone(),
-                        EventConsumer::from_env(),
-                        EventProducer::from_env(),
-                        JsonDeserializer {},
-                        JsonSerializer {},
-                    )
-                )
+                tokio::spawn(service_loop(
+                    event_handler.clone(),
+                    EventConsumer::from_env(),
+                    EventProducer::from_env(),
+                    JsonDeserializer {},
+                    JsonSerializer {},
+                ))
             })
             .collect::<FuturesUnordered<_>>()
             .for_each(|_| async { () })
