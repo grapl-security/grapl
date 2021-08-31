@@ -150,6 +150,7 @@ def main() -> None:
             ux_bucket=ux_bucket.bucket,
         ).apply(
             lambda inputs: {
+                "deployment_name": DEPLOYMENT_NAME,
                 "grapl_test_user_name": f"{DEPLOYMENT_NAME}-grapl-test-user",
                 "redis_endpoint": pulumi.Config().get("REDIS_ENDPOINT"),
                 # "aws_region": aws.get_region(),
