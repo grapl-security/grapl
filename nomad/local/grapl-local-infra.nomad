@@ -182,7 +182,7 @@ job "grapl-local-infra" {
 
       config {
         image = "confluentinc/cp-kafka:6.2.0"
-        ports = "kafka"
+        ports = ["kafka"]
         network_aliases = [
           var.KAFKA_BROKER_HOST
         ]
