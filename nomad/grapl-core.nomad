@@ -161,11 +161,6 @@ variable "graphql_endpoint_tag" {
   description = "The image tag for the graphql endpoint docker image."
 }
 
-variable "deployment_name" {
-  type        = string
-  description = "The deployment name"
-}
-
 variable "user_auth_table" {
   type        = string
   description = "What is the name of the user auth table?"
@@ -621,7 +616,6 @@ job "grapl-core" {
       }
 
       env {
-        DEPLOYMENT_NAME               = var.deployment_name
         RUST_LOG                      = var.rust_log
         GRAPL_UX_BUCKET               = var.ux_bucket
         AWS_REGION                    = var.aws_region
