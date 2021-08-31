@@ -264,7 +264,7 @@ make start-nomad-dev
 ```
 
 3. Run pulumi
-make up-pulumi
+make local-pulumi
 
 ## The CI system
 
