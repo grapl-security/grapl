@@ -6,6 +6,21 @@ variable "container_registry" {
 
 # The following variables are all-caps to clue in users that they're
 # imported from `local-grapl.env`.
+variable "KAFKA_BROKER_HOST" {
+  type = string
+  description = "External hostname for kafka"
+}
+
+variable "KAFKA_JMX_PORT" {
+  type        = string
+  description = "Port for kafka JMX"
+}
+
+variable "KAFKA_PORT" {
+  type        = string
+  description = "Port for kafka"
+}
+
 variable "FAKE_AWS_ACCESS_KEY_ID" {
   type        = string
   description = "Fake AWS Access Key ID for Localstack and clients"
@@ -24,6 +39,16 @@ variable "LOCALSTACK_PORT" {
 variable "LOCALSTACK_HOST" {
   type        = string
   description = "External hostname for Localstack"
+}
+
+variable "ZOOKEEPER_HOST" {
+  type = string
+  description = "External hostname for zookeeper"
+}
+
+variable "ZOOKEEPER_PORT" {
+  type        = string
+  description = "Port for zookeeper"
 }
 
 
@@ -139,6 +164,71 @@ job "grapl-local-infra" {
       config {
         image = "dgraph/ratel:latest"
         ports = ["ratel"]
+      }
+    }
+  }
+
+  group "kafka" {
+    network {
+      mode = "bridge"
+
+      port "kafka" {
+        to = var.KAFKA_PORT
+      }
+    }
+
+    task "kafka" {
+      driver = "docker"
+
+      config {
+        image = "confluentinc/cp-kafka:6.2.0"
+        ports = "kafka"
+        network_aliases = [
+          var.KAFKA_BROKER_HOST
+        ]
+      }
+
+      env {
+        KAFKA_BROKER_ID = 1
+        KAFKA_ZOOKEEPER_CONNECT = "${var.ZOOKEEPER_HOST}:${var.ZOOKEEPER_PORT}"
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP = "PLAINTEXT:PLAINTEXT"
+        KAFKA_LISTENERS= "PLAINTEXT://${KAFKA_BROKER_HOST}:${var.KAFKA_PORT}"
+        KAFKA_ADVERTISED_LISTENERS= "PLAINTEXT://${KAFKA_BROKER_HOST}:${var.KAFKA_PORT}"
+        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR= 1
+        KAFKA_TRANSACTION_STATE_LOG_MIN_ISR= 1
+        KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR= 1
+        KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS= 0
+        KAFKA_JMX_PORT= var.KAFKA_JMX_PORT
+        KAFKA_JMX_HOSTNAME= "localhost"
+        KAFKA_LOG4J_ROOT_LOGLEVEL= "INFO"
+
+      }
+    }
+  }
+
+  group "zookeeper" {
+    network {
+      mode = "bridge"
+
+      port "zookeeper" {
+        to = var.ZOOKEEPER_PORT
+      }
+    }
+
+    task "zookeeper" {
+      driver = "docker"
+
+      config {
+        image = "confluentinc/cp-zookeeper:6.2.0"
+        ports = ["zookeeper"]
+        network_aliases = [
+          var.ZOOKEEPER_HOST
+        ]
+      }
+
+      env {
+        ZOOKEEPER_CLIENT_PORT=var.ZOOKEEPER_PORT
+        ZOOKEEPER_TICK_TIME=2000
       }
     }
   }
