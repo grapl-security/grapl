@@ -7,7 +7,7 @@ variable "container_registry" {
 # The following variables are all-caps to clue in users that they're
 # imported from `local-grapl.env`.
 variable "KAFKA_BROKER_HOST" {
-  type = string
+  type        = string
   description = "External hostname for kafka"
 }
 
@@ -42,7 +42,7 @@ variable "LOCALSTACK_HOST" {
 }
 
 variable "ZOOKEEPER_HOST" {
-  type = string
+  type        = string
   description = "External hostname for zookeeper"
 }
 
@@ -189,18 +189,18 @@ job "grapl-local-infra" {
       }
 
       env {
-        KAFKA_BROKER_ID = 1
-        KAFKA_ZOOKEEPER_CONNECT = "${var.ZOOKEEPER_HOST}:${var.ZOOKEEPER_PORT}"
-        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP = "PLAINTEXT:PLAINTEXT"
-        KAFKA_LISTENERS= "PLAINTEXT://${KAFKA_BROKER_HOST}:${var.KAFKA_PORT}"
-        KAFKA_ADVERTISED_LISTENERS= "PLAINTEXT://${KAFKA_BROKER_HOST}:${var.KAFKA_PORT}"
-        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR= 1
-        KAFKA_TRANSACTION_STATE_LOG_MIN_ISR= 1
-        KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR= 1
-        KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS= 0
-        KAFKA_JMX_PORT= var.KAFKA_JMX_PORT
-        KAFKA_JMX_HOSTNAME= "localhost"
-        KAFKA_LOG4J_ROOT_LOGLEVEL= "INFO"
+        KAFKA_BROKER_ID                                = 1
+        KAFKA_ZOOKEEPER_CONNECT                        = "${var.ZOOKEEPER_HOST}:${var.ZOOKEEPER_PORT}"
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP           = "PLAINTEXT:PLAINTEXT"
+        KAFKA_LISTENERS                                = "PLAINTEXT://${KAFKA_BROKER_HOST}:${var.KAFKA_PORT}"
+        KAFKA_ADVERTISED_LISTENERS                     = "PLAINTEXT://${KAFKA_BROKER_HOST}:${var.KAFKA_PORT}"
+        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR         = 1
+        KAFKA_TRANSACTION_STATE_LOG_MIN_ISR            = 1
+        KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = 1
+        KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS         = 0
+        KAFKA_JMX_PORT                                 = var.KAFKA_JMX_PORT
+        KAFKA_JMX_HOSTNAME                             = "localhost"
+        KAFKA_LOG4J_ROOT_LOGLEVEL                      = "INFO"
 
       }
     }
@@ -227,8 +227,8 @@ job "grapl-local-infra" {
       }
 
       env {
-        ZOOKEEPER_CLIENT_PORT=var.ZOOKEEPER_PORT
-        ZOOKEEPER_TICK_TIME=2000
+        ZOOKEEPER_CLIENT_PORT = var.ZOOKEEPER_PORT
+        ZOOKEEPER_TICK_TIME   = 2000
       }
     }
   }
