@@ -4,12 +4,16 @@ use uuid::Uuid;
 use crate::org_management::organization_manager_server::{OrganizationManager, OrganizationManagerServer};
 use crate::org_management;
 use org_management::{CreateOrgReply, CreateOrgRequest};
+use sqlx::{Pool, Postgres};
+use sqlx::postgres::PgPoolOptions;
 
 #[derive(Debug, Default)]
-pub struct Organization {}
+pub struct OrganizationManagerRpc {
+    pool: Pool<Postgres>
+}
 
 #[tonic::async_trait]
-impl OrganizationManager for Organization {
+impl OrganizationManager for OrganizationManagerRpc {
     async fn create_org(
         &self,
         request: Request<CreateOrgRequest>,
@@ -33,7 +37,10 @@ impl OrganizationManager for Organization {
 
 pub async fn start_server() -> Result<(), Box<dyn std::error::Error>> {
     let addr = "[::1]:50051".parse()?;
-    let org = Organization::default();
+    let org = OrganizationManagerRpc::default();
+
+    let pool =
+        create_db_connection().await?; // move into this file, 
 
     Server::builder()
         .add_service(OrganizationManagerServer::new(org))
@@ -41,4 +48,12 @@ pub async fn start_server() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     Ok(())
+}
+
+async fn create_db_connection() -> Result<Pool<Postgres>, sqlx::Error> {
+    let url = std::env::var("POSTGRES_URL").expect("POSTGRES_URL");
+    let pool = PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&url).await?;
+    Ok(pool)
 }
