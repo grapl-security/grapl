@@ -523,9 +523,9 @@ services:
       PULUMI_CONFIG_PASSPHRASE: local-grapl-passphrase
       # Other environment variables like MG_ALPHAS are passed in via
       # Pulumi.local-grapl.yaml
-    #    depends_on:
-    #      kafka-broker:
-    #        condition: service_healthy
+    depends_on:
+      kafka-broker:
+        condition: service_healthy
     extra_hosts:
       # Expose the host Linux machine, despite being on the Grapl network.
       # This lets Pulumi talk to the host's Nomad
@@ -548,11 +548,11 @@ services:
       DEPLOYMENT_NAME: "${DEPLOYMENT_NAME}"
       GRAPL_TEST_USER_NAME: "${DEPLOYMENT_NAME}-grapl-test-user"
     tty: true
-    #    depends_on:
-    #      dgraph:
-    #        condition: service_started
-    #      pulumi:
-    #        condition: service_completed_successfully
+    depends_on:
+      dgraph:
+        condition: service_started
+      pulumi:
+        condition: service_completed_successfully
     volumes:
       - *read-only-pulumi-mnt
 

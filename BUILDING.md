@@ -263,7 +263,12 @@ make build-docker-images-local
 make start-nomad-dev
 ```
 
-3. Run pulumi
+3. Start Kafka
+```bash
+set -o allexport; . ./local-grapl.env; set +o allexport;
+docker-compose -f docker-compose.yml up kafka-broker
+```
+4. Run pulumi locally
 make local-pulumi
 
 ## The CI system
