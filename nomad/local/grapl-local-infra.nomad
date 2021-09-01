@@ -178,14 +178,16 @@ job "grapl-local-infra" {
 
       config {
         image = "confluentinc/cp-kafka:6.2.0"
+        # Hitting OOM errors
+        memory_hard_limit = 2048
       }
 
       env {
         KAFKA_BROKER_ID = 1
         KAFKA_ZOOKEEPER_CONNECT = "localhost:${var.ZOOKEEPER_PORT}"
         KAFKA_LISTENER_SECURITY_PROTOCOL_MAP = "PLAINTEXT:PLAINTEXT"
-        KAFKA_LISTENERS = "PLAINTEXT://${var.KAFKA_BROKER_HOST}:${var.KAFKA_BROKER_PORT}"
-        KAFKA_ADVERTISED_LISTENERS = "PLAINTEXT://${var.KAFKA_BROKER_HOST}:${var.KAFKA_BROKER_PORT}"
+        KAFKA_LISTENERS = "PLAINTEXT://localhost:${var.KAFKA_BROKER_PORT}"
+        KAFKA_ADVERTISED_LISTENERS = "PLAINTEXT://localhost:${var.KAFKA_BROKER_PORT}"
         KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR = 1
         KAFKA_TRANSACTION_STATE_LOG_MIN_ISR = 1
         KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = 1
