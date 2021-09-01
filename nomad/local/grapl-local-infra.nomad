@@ -189,6 +189,27 @@ job "grapl-local-infra" {
         KAFKA_JMX_HOSTNAME                             = "localhost"
         KAFKA_LOG4J_ROOT_LOGLEVEL                      = "INFO"
       }
+
+      service {
+        check {
+          type    = "script"
+          name    = "check_kafka"
+          command = "/bin/bash"
+          args = [
+            "-c",
+            "nc -vz localhost ${var.KAFKA_BROKER_PORT}",
+          ]
+          interval = "20s"
+          timeout  = "10s"
+
+          check_restart {
+            limit           = 2
+            grace           = "30s"
+            ignore_warnings = false
+          }
+        }
+      }
+
     }
 
     service {
