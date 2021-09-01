@@ -243,7 +243,29 @@ job "grapl-local-infra" {
       env {
         ZOOKEEPER_CLIENT_PORT = var.ZOOKEEPER_PORT
         ZOOKEEPER_TICK_TIME   = 2000
+        KAFKA_OPTS            = "-Dzookeeper.4lw.commands.whitelist=ruok"
       }
+
+      service {
+        check {
+          type    = "script"
+          name    = "check_zookeeper"
+          command = "/bin/bash"
+          args = [
+            "-c",
+            "echo ruok | nc -w 2  localhost 2181 | grep imok || exit 2",
+          ]
+          interval = "20s"
+          timeout  = "10s"
+
+          check_restart {
+            limit           = 2
+            grace           = "30s"
+            ignore_warnings = false
+          }
+        }
+      }
+
     }
 
     service {
