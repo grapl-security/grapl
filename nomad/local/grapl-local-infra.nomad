@@ -6,11 +6,6 @@ variable "container_registry" {
 
 # The following variables are all-caps to clue in users that they're
 # imported from `local-grapl.env`.
-variable "KAFKA_BROKER_HOST" {
-  type        = string
-  description = "External hostname for kafka"
-}
-
 variable "KAFKA_BROKER_PORT" {
   type        = string
   description = "Port for kafka broker"
@@ -39,11 +34,6 @@ variable "LOCALSTACK_PORT" {
 variable "LOCALSTACK_HOST" {
   type        = string
   description = "External hostname for Localstack"
-}
-
-variable "ZOOKEEPER_HOST" {
-  type        = string
-  description = "External hostname for zookeeper"
 }
 
 variable "ZOOKEEPER_PORT" {
