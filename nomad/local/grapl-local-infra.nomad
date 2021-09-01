@@ -171,10 +171,6 @@ job "grapl-local-infra" {
   group "kafka" {
     network {
       mode = "bridge"
-
-      port "kafka" {
-        to = var.KAFKA_BROKER_PORT
-      }
     }
 
     task "kafka" {
@@ -182,37 +178,49 @@ job "grapl-local-infra" {
 
       config {
         image = "confluentinc/cp-kafka:6.2.0"
-        ports = ["kafka"]
-        network_aliases = [
-          var.KAFKA_BROKER_HOST
-        ]
       }
 
       env {
-        KAFKA_BROKER_ID                                = 1
-        KAFKA_ZOOKEEPER_CONNECT                        = "${var.ZOOKEEPER_HOST}:${var.ZOOKEEPER_PORT}"
-        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP           = "PLAINTEXT:PLAINTEXT"
-        KAFKA_LISTENERS                                = "PLAINTEXT://${var.KAFKA_BROKER_HOST}:${var.KAFKA_BROKER_PORT}"
-        KAFKA_ADVERTISED_LISTENERS                     = "PLAINTEXT://${var.KAFKA_BROKER_HOST}:${var.KAFKA_BROKER_PORT}"
-        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR         = 1
-        KAFKA_TRANSACTION_STATE_LOG_MIN_ISR            = 1
+        KAFKA_BROKER_ID = 1
+        KAFKA_ZOOKEEPER_CONNECT = "localhost:${var.ZOOKEEPER_PORT}"
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP = "PLAINTEXT:PLAINTEXT"
+        KAFKA_LISTENERS = "PLAINTEXT://${var.KAFKA_BROKER_HOST}:${var.KAFKA_BROKER_PORT}"
+        KAFKA_ADVERTISED_LISTENERS = "PLAINTEXT://${var.KAFKA_BROKER_HOST}:${var.KAFKA_BROKER_PORT}"
+        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR = 1
+        KAFKA_TRANSACTION_STATE_LOG_MIN_ISR = 1
         KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = 1
-        KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS         = 0
-        KAFKA_JMX_PORT                                 = var.KAFKA_JMX_PORT
-        KAFKA_JMX_HOSTNAME                             = "localhost"
-        KAFKA_LOG4J_ROOT_LOGLEVEL                      = "INFO"
-
+        KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS = 0
+        KAFKA_JMX_PORT = var.KAFKA_JMX_PORT
+        KAFKA_JMX_HOSTNAME = "localhost"
+        KAFKA_LOG4J_ROOT_LOGLEVEL = "INFO"
       }
     }
+
+      service {
+        name = "kafka-broker"
+        port = var.KAFKA_BROKER_PORT
+        tags = ["kafka"]
+
+        connect {
+          sidecar_service {
+            proxy {
+              # connect to zookeeper
+              upstreams {
+                destination_name = "zookeeper"
+                local_bind_port = var.ZOOKEEPER_PORT
+              }
+            }
+          }
+        }
+
+      }
+
+
   }
 
   group "zookeeper" {
     network {
       mode = "bridge"
-
-      port "zookeeper" {
-        to = var.ZOOKEEPER_PORT
-      }
     }
 
     task "zookeeper" {
@@ -220,16 +228,32 @@ job "grapl-local-infra" {
 
       config {
         image = "confluentinc/cp-zookeeper:6.2.0"
-        ports = ["zookeeper"]
-        network_aliases = [
-          var.ZOOKEEPER_HOST
-        ]
       }
 
       env {
         ZOOKEEPER_CLIENT_PORT = var.ZOOKEEPER_PORT
-        ZOOKEEPER_TICK_TIME   = 2000
+        ZOOKEEPER_TICK_TIME = 2000
       }
     }
+
+      service {
+        name = "zookeeper"
+        port = var.ZOOKEEPER_PORT
+        tags = ["zookeeper"]
+
+        connect {
+          sidecar_service {
+            proxy {
+              upstreams {
+                destination_name =  "kafka-broker"
+                local_bind_port = var.KAFKA_BROKER_PORT
+              }
+            }
+          }
+        }
+
+      }
+
+
   }
 }
