@@ -24,7 +24,6 @@ variable "aws_access_key_secret" {
 variable "aws_endpoint" {
   type        = string
   description = "The endpoint in which we can expect to find and interact with AWS."
-  default     = "http://aws.grapl.test:4566"
 }
 
 variable "aws_region" {
@@ -481,15 +480,11 @@ job "grapl-core" {
     //    }
   }
 
-  group "grapl-node-identifier" {
-    count = var.num_node_identifiers
-
+  group "provisioner" {
     network {
       mode = "bridge"
     }
 
-    # We don't need to necessarily attach the provisioner to `node-identifier` - just
-    # _any_ task.
     task "provisioner" {
       driver = "docker"
 
@@ -498,7 +493,7 @@ job "grapl-core" {
       }
 
       lifecycle {
-        hook = "prestart"
+        hook = "poststart"
         # Ephemeral, not long-lived
         sidecar = false
       }
@@ -517,7 +512,32 @@ job "grapl-core" {
         GRAPL_TEST_USER_NAME          = var.grapl_test_user_name
         GRAPL_LOG_LEVEL               = var.rust_log # TODO: revisit
       }
+    }
 
+    service {
+      connect {
+        sidecar_service {
+          proxy {
+            dynamic "upstreams" {
+              iterator = alpha
+              for_each = local.dgraph_alphas
+
+              content {
+                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
+                local_bind_port  = alpha.value.grpc_public_port
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  group "grapl-node-identifier" {
+    count = var.num_node_identifiers
+
+    network {
+      mode = "bridge"
     }
 
     task "node-identifier" {

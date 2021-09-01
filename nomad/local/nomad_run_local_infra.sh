@@ -14,7 +14,6 @@ docker network create grapl-network || true
 
 nomad job run \
     -var "LOCALSTACK_PORT=${LOCALSTACK_PORT}" \
-    -var "LOCALSTACK_HOST=${LOCALSTACK_HOST}" \
     -var "FAKE_AWS_ACCESS_KEY_ID=${FAKE_AWS_ACCESS_KEY_ID}" \
     -var "FAKE_AWS_SECRET_ACCESS_KEY=${FAKE_AWS_SECRET_ACCESS_KEY}" \
     "${GRAPL_ROOT}"/nomad/local/grapl-local-infra.nomad

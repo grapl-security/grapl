@@ -21,15 +21,14 @@ variable "LOCALSTACK_PORT" {
   description = "Port for Localstack"
 }
 
-variable "LOCALSTACK_HOST" {
-  type        = string
-  description = "External hostname for Localstack"
-}
-
 
 ####################
 # Jobspecs
 ####################
+# NOTES:
+# - Services in `grapl-core.nomad` should not try to service-discover
+#   local-infra services via Consul Connect; use bridge+static.
+#   This is because these services won't exist in prod.
 
 # This job is to spin up infrastructure needed to run Grapl locally (e.g. Redis) that we don't necessarily want to deploy in production (because AWS will manage it)
 job "grapl-local-infra" {
@@ -38,7 +37,10 @@ job "grapl-local-infra" {
   type = "service"
 
   group "redis" {
+    # Redis will be available to Nomad Jobs (sans Consul Connect)
+    # and the Host OS at localhost:6379
     network {
+      mode = "bridge"
       port "redis" {
         static = 6379
       }
@@ -60,9 +62,12 @@ job "grapl-local-infra" {
   }
 
   group "localstack" {
+    # Localstack will be available to Nomad Jobs (sans Consul Connect)
+    # and the Host OS at localhost:4566
     network {
+      mode = "bridge"
       port "localstack" {
-        to = var.LOCALSTACK_PORT
+        static = var.LOCALSTACK_PORT
       }
     }
 
@@ -79,24 +84,20 @@ job "grapl-local-infra" {
         volumes = [
           "/var/run/docker.sock:/var/run/docker.sock"
         ]
-        network_mode = "grapl-network"
-        network_aliases = [
-          var.LOCALSTACK_HOST
-        ]
       }
 
       env {
-        DEBUG             = 1
-        EDGE_PORT         = var.LOCALSTACK_PORT
-        HOSTNAME_EXTERNAL = var.LOCALSTACK_HOST
-        LAMBDA_EXECUTOR   = "docker-reuse"
-        SERVICES          = "apigateway,cloudwatch,dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs"
-        SQS_PROVIDER      = "elasticmq"
+        DEBUG     = 1
+        EDGE_PORT = var.LOCALSTACK_PORT
+        #HOSTNAME_EXTERNAL = var.LOCALSTACK_HOST
+        LAMBDA_EXECUTOR = "docker-reuse"
+        SERVICES        = "apigateway,cloudwatch,dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs"
+        SQS_PROVIDER    = "elasticmq"
 
         # These two are only required for Lambda support.
         # Container name is *not* configurable.
-        MAIN_CONTAINER_NAME   = "${NOMAD_TASK_NAME}-${NOMAD_ALLOC_ID}"
-        LAMBDA_DOCKER_NETWORK = "grapl-network"
+        MAIN_CONTAINER_NAME = "${NOMAD_TASK_NAME}-${NOMAD_ALLOC_ID}"
+        #LAMBDA_DOCKER_NETWORK = "grapl-network"
 
         # These are not used by localstack, but are used by the health check.
         AWS_ACCESS_KEY_ID     = var.FAKE_AWS_ACCESS_KEY_ID
@@ -110,6 +111,7 @@ job "grapl-local-infra" {
           command = "/bin/bash"
           args = [
             "-c",
+            # This uses the stuff in env { } - not Nomad interpolation.
             "aws --endpoint-url=http://localhost:${EDGE_PORT} s3 ls",
           ]
           interval = "20s"
@@ -122,7 +124,6 @@ job "grapl-local-infra" {
           }
         }
       }
-
     }
   }
 
