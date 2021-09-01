@@ -446,6 +446,12 @@ start-nomad-dev: push-local  ## Start the Nomad development environment
 	$(WITH_LOCAL_GRAPL_ENV)
 	nomad/local/start_development_environment_tmux.sh
 
+.PHONY: local-pulumi
+local-pulumi: export COMPOSE_PROJECT_NAME="grapl"
+local-pulumi:  ## launch pulumi via docker-compose up
+	$(WITH_LOCAL_GRAPL_ENV)
+	docker-compose -f docker-compose.yml run pulumi
+
 .PHONY: push
 push: ## Push Grapl containers to supplied DOCKER_REGISTRY
 	docker-compose --file=docker-compose.build.yml push
