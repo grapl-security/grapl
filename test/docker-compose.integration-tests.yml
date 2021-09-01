@@ -59,9 +59,6 @@ services:
       - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
       - DEPLOYMENT_NAME
       - MG_ALPHAS
-    extra_hosts:
-      # Refer to the Dgraph Zero running in Nomad with this DNS
-      - "${DGRAPH_HOST}:host-gateway"
 
   analyzer-executor-integration-tests:
     image: grapl/analyzer-executor-test:${TAG:-latest}

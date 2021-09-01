@@ -420,7 +420,6 @@ up-detach: build ## Bring up local Grapl and detach to return control to tty
 	# We use this target with COMPOSE_FILE being set pointing to other files.
 	# Although it seems specifying the `--file` option overrides that, we'll
 	# explicitly unset that here to avoid potential surprises.
-	$(MAKE) stop-nomad-detach; $(MAKE) start-nomad-detach
 	unset COMPOSE_FILE
 	docker-compose \
 		--file docker-compose.yml \
