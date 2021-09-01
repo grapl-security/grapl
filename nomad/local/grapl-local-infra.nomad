@@ -208,13 +208,7 @@ job "grapl-local-infra" {
 
       connect {
         sidecar_service {
-          proxy {
-            # connect to zookeeper
-            upstreams {
-              destination_name = "zookeeper"
-              local_bind_port  = var.ZOOKEEPER_PORT
-            }
-          }
+
         }
       }
 
@@ -248,12 +242,7 @@ job "grapl-local-infra" {
 
       connect {
         sidecar_service {
-          proxy {
-            upstreams {
-              destination_name = "kafka-broker"
-              local_bind_port  = var.KAFKA_BROKER_PORT
-            }
-          }
+
         }
       }
 
