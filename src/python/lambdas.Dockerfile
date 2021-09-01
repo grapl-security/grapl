@@ -44,6 +44,4 @@ COPY --chown=grapl ./dist/provisioner-lambda.zip lambda.zip
 
 RUN unzip lambda.zip
 
-# ENTRYPOINT ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
-
 CMD ["python3", "-c", "import lambdex_handler; lambdex_handler.handler(None, None)"]

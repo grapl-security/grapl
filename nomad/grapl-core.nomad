@@ -494,11 +494,11 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image        = "${var.container_registry}/grapl/provisioner:${var.provisioner_tag}"
+        image = "${var.container_registry}/grapl/provisioner:${var.provisioner_tag}"
       }
 
       lifecycle {
-        hook    = "prestart"
+        hook = "prestart"
         # Ephemeral, not long-lived
         sidecar = false
       }
@@ -515,7 +515,7 @@ job "grapl-core" {
         GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name
         GRAPL_USER_AUTH_TABLE         = var.user_auth_table
         GRAPL_TEST_USER_NAME          = var.grapl_test_user_name
-        GRAPL_LOG_LEVEL               = var.rust_log  # TODO: revisit
+        GRAPL_LOG_LEVEL               = var.rust_log # TODO: revisit
       }
 
     }
@@ -537,7 +537,7 @@ job "grapl-core" {
         RUST_LOG                    = var.rust_log
         RUST_BACKTRACE              = 1
         REDIS_ENDPOINT              = var.redis_endpoint
-        MG_ALPHAS                   = local.alpha_grpc_connect_str  # alpha_grpc_connect_str won't work if network mode = grapl network
+        MG_ALPHAS                   = local.alpha_grpc_connect_str # alpha_grpc_connect_str won't work if network mode = grapl network
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
         GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
         # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L156
