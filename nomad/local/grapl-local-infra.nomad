@@ -183,39 +183,39 @@ job "grapl-local-infra" {
       }
 
       env {
-        KAFKA_BROKER_ID = 1
-        KAFKA_ZOOKEEPER_CONNECT = "localhost:${var.ZOOKEEPER_PORT}"
-        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP = "PLAINTEXT:PLAINTEXT"
-        KAFKA_LISTENERS = "PLAINTEXT://localhost:${var.KAFKA_BROKER_PORT}"
-        KAFKA_ADVERTISED_LISTENERS = "PLAINTEXT://localhost:${var.KAFKA_BROKER_PORT}"
-        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR = 1
-        KAFKA_TRANSACTION_STATE_LOG_MIN_ISR = 1
+        KAFKA_BROKER_ID                                = 1
+        KAFKA_ZOOKEEPER_CONNECT                        = "localhost:${var.ZOOKEEPER_PORT}"
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP           = "PLAINTEXT:PLAINTEXT"
+        KAFKA_LISTENERS                                = "PLAINTEXT://localhost:${var.KAFKA_BROKER_PORT}"
+        KAFKA_ADVERTISED_LISTENERS                     = "PLAINTEXT://localhost:${var.KAFKA_BROKER_PORT}"
+        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR         = 1
+        KAFKA_TRANSACTION_STATE_LOG_MIN_ISR            = 1
         KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = 1
-        KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS = 0
-        KAFKA_JMX_PORT = var.KAFKA_JMX_PORT
-        KAFKA_JMX_HOSTNAME = "localhost"
-        KAFKA_LOG4J_ROOT_LOGLEVEL = "INFO"
+        KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS         = 0
+        KAFKA_JMX_PORT                                 = var.KAFKA_JMX_PORT
+        KAFKA_JMX_HOSTNAME                             = "localhost"
+        KAFKA_LOG4J_ROOT_LOGLEVEL                      = "INFO"
       }
     }
 
-      service {
-        name = "kafka-broker"
-        port = var.KAFKA_BROKER_PORT
-        tags = ["kafka"]
+    service {
+      name = "kafka-broker"
+      port = var.KAFKA_BROKER_PORT
+      tags = ["kafka"]
 
-        connect {
-          sidecar_service {
-            proxy {
-              # connect to zookeeper
-              upstreams {
-                destination_name = "zookeeper"
-                local_bind_port = var.ZOOKEEPER_PORT
-              }
+      connect {
+        sidecar_service {
+          proxy {
+            # connect to zookeeper
+            upstreams {
+              destination_name = "zookeeper"
+              local_bind_port  = var.ZOOKEEPER_PORT
             }
           }
         }
-
       }
+
+    }
 
 
   }
@@ -234,27 +234,27 @@ job "grapl-local-infra" {
 
       env {
         ZOOKEEPER_CLIENT_PORT = var.ZOOKEEPER_PORT
-        ZOOKEEPER_TICK_TIME = 2000
+        ZOOKEEPER_TICK_TIME   = 2000
       }
     }
 
-      service {
-        name = "zookeeper"
-        port = var.ZOOKEEPER_PORT
-        tags = ["zookeeper"]
+    service {
+      name = "zookeeper"
+      port = var.ZOOKEEPER_PORT
+      tags = ["zookeeper"]
 
-        connect {
-          sidecar_service {
-            proxy {
-              upstreams {
-                destination_name =  "kafka-broker"
-                local_bind_port = var.KAFKA_BROKER_PORT
-              }
+      connect {
+        sidecar_service {
+          proxy {
+            upstreams {
+              destination_name = "kafka-broker"
+              local_bind_port  = var.KAFKA_BROKER_PORT
             }
           }
         }
-
       }
+
+    }
 
 
   }
