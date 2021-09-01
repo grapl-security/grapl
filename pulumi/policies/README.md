@@ -45,7 +45,7 @@ policy packs, they can be written in any supported language
 ## Testing policies
 
 ```shell
-cd cd pulumi/policies/3rdparty/awsguard && npm install
+cd pulumi/policies/3rdparty/awsguard && npm install
 cd ../../../grapl
 pulumi preview --policy-pack ../policies/grapl/ --policy-pack ../policies/3rdparty/awsguard/
 ```
