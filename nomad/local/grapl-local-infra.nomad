@@ -108,8 +108,14 @@ job "grapl-local-infra" {
       }
 
       env {
+<<<<<<< HEAD
         DEBUG           = 1
         EDGE_PORT       = var.LOCALSTACK_PORT
+=======
+        DEBUG     = 1
+        EDGE_PORT = var.LOCALSTACK_PORT
+        #HOSTNAME_EXTERNAL = var.LOCALSTACK_HOST
+>>>>>>> 875b2b9d... Move the local-infra services over to static+bridge
         LAMBDA_EXECUTOR = "docker-reuse"
         SERVICES        = "apigateway,cloudwatch,dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs"
         SQS_PROVIDER    = "elasticmq"

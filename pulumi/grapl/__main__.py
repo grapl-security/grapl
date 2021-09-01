@@ -144,12 +144,17 @@ def main() -> None:
             kafka = Kafka("kafka")
 
         job_vars = pulumi.Output.all(
+<<<<<<< HEAD
             analyzer_bucket=analyzers_bucket.bucket,
             analyzer_dispatched_bucket=dispatched_analyzer_emitter.bucket.bucket,
             analyzer_dispatcher_queue=analyzer_dispatcher_queue.main_queue_url,
             analyzer_executor_queue=analyzer_executor_queue.main_queue_url,
             analyzer_matched_subgraphs_bucket=analyzer_matched_emitter.bucket.bucket,
             analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url,
+=======
+            # Localstack is exposed statically on 4566. No consul-connect needed.
+            aws_endpoint="http://localhost:4566",
+>>>>>>> 875b2b9d... Move the local-infra services over to static+bridge
             graph_merger_queue=graph_merger_queue.main_queue_url,
             graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
             session_table_name=dynamodb_tables.dynamic_session_table.name,
