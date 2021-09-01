@@ -178,8 +178,11 @@ job "grapl-local-infra" {
 
       config {
         image = "confluentinc/cp-kafka:6.2.0"
-        # Hitting OOM errors
-        memory_hard_limit = 2048
+      }
+
+      resources {
+        cpu    = 500
+        memory = 1024
       }
 
       env {
