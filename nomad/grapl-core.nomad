@@ -539,7 +539,7 @@ job "grapl-core" {
         # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L156
         DEST_BUCKET_NAME      = var.subgraphs_generated_bucket
         SOURCE_QUEUE_URL      = var.node_identifier_queue
-        DEAD_LETTER_QUEUE_URL = var.node_identifier_dead_letter_queue
+        DEAD_LETTER_QUEUE_URL = var.node_identifier_retry_queue
       }
     }
   }
