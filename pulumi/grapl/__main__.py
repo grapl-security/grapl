@@ -5,6 +5,7 @@ sys.path.insert(0, "..")
 import os
 from typing import List
 
+import pulumi_aws as aws
 from infra import dynamodb, emitter
 from infra.alarms import OpsAlarms
 from infra.analyzer_dispatcher import AnalyzerDispatcher
@@ -13,7 +14,7 @@ from infra.api import Api
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
-from infra.config import DEPLOYMENT_NAME, LOCAL_GRAPL, REAL_DEPLOYMENT
+from infra.config import DEPLOYMENT_NAME, GRAPL_TEST_USER_NAME, LOCAL_GRAPL, REAL_DEPLOYMENT
 from infra.dgraph_cluster import DgraphCluster, LocalStandInDgraphCluster
 from infra.dgraph_ttl import DGraphTTL
 from infra.e2e_test_runner import E2eTestRunner
@@ -24,6 +25,7 @@ from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.node_identifier import NodeIdentifier
 from infra.nomad_cluster import NomadCluster
+from infra.nomad_job import NomadJob
 from infra.osquery_generator import OSQueryGenerator
 from infra.pipeline_dashboard import PipelineDashboard
 from infra.provision_lambda import Provisioner
@@ -96,6 +98,14 @@ def main() -> None:
 
     services: List[ServiceLike] = []
 
+    ux_bucket = Bucket(
+        "engagement-ux-bucket",
+        website_args=aws.s3.BucketWebsiteArgs(
+            index_document="index.html",
+        ),
+    )
+    pulumi.export("ux-bucket", ux_bucket.bucket)
+
     if LOCAL_GRAPL:
         # We need to create these queues, and wire them up to their
         # respective emitters, in Local Grapl, because they are
@@ -124,6 +134,30 @@ def main() -> None:
         analyzer_executor_queue.subscribe_to_emitter(dispatched_analyzer_emitter)
 
         kafka = Kafka("kafka")
+
+        job_vars = pulumi.Output.all(
+            graph_merger_queue=graph_merger_queue.main_queue_url,
+            graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
+            session_table_name=dynamodb_tables.dynamic_session_table.name,
+            schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
+            schema_table_name=dynamodb_tables.schema_table.name,
+            node_identifier_queue=node_identifier_queue.main_queue_url,
+            node_identifier_dead_letter_queue=node_identifier_queue.dead_letter_queue_url,
+            node_identifier_retry_queue=node_identifier_queue.retry_queue_url,
+            subgraphs_merged_bucket=subgraphs_merged_emitter.bucket,
+            subgraphs_generated_bucket=subgraphs_generated_emitter.bucket,
+            user_auth_table=dynamodb_tables.user_auth_table.name,
+            ux_bucket=ux_bucket.bucket,
+        ).apply(
+            lambda inputs: {
+                "deployment_name": DEPLOYMENT_NAME,
+                "grapl_test_user_name": GRAPL_TEST_USER_NAME,
+                "redis_endpoint": pulumi.Config().get("REDIS_ENDPOINT"),
+                # "aws_region": aws.get_region(),
+                **inputs,
+            }
+        )
+        nomad_job = NomadJob("grapl-core", job_vars)
 
     else:
         nomad_cluster = NomadCluster(
@@ -215,16 +249,6 @@ def main() -> None:
     ########################################################################
 
     # TODO: create everything inside of Api class
-
-    import pulumi_aws as aws
-
-    ux_bucket = Bucket(
-        "engagement-ux-bucket",
-        website_args=aws.s3.BucketWebsiteArgs(
-            index_document="index.html",
-        ),
-    )
-    pulumi.export("ux-bucket", ux_bucket.bucket)
 
     api = Api(
         network=network,

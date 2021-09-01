@@ -22,7 +22,13 @@ services:
 
   buf-breaking-change:
     image: bufbuild/buf:0.51.0
-    command: ["breaking", "--against", "https://github.com/grapl-security/grapl.git", "--verbose"]
+    command:
+      [
+        "breaking",
+        "--against",
+        "https://github.com/grapl-security/grapl.git",
+        "--verbose",
+      ]
     working_dir: /workdir
     volumes:
       - *read-only-workdir

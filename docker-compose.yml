@@ -110,79 +110,6 @@ services:
     environment:
       <<: *kafka-broker-env
 
-  # dev uses 1 big redis instance, prod has 1:1 redis per grapl
-  # service... maybe transitory, this will eventually match prod
-  redis:
-    image: redis:latest
-    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
-    command:
-      - |
-        # hack from https://stackoverflow.com/questions/54533308/disable-redis-persistence-in-docker
-        # to disable persistence
-        rm -f /data/dump.rdb
-        redis-server
-    healthcheck:
-      test:
-        - CMD-SHELL
-        - |
-          redis-cli -h 127.0.0.1 ping | grep PONG
-      interval: 5s
-      timeout: 10s
-      start_period: 10s
-    networks:
-      default:
-        aliases:
-          - ${REDIS_HOST}
-
-  localstack:
-    #image: localstack/localstack-full:0.12.15 # -full includes elasticmq
-    image: grapl/localstack:${TAG:-latest}
-    ports:
-      # We'll expose localstack's edge port for ease of use with
-      # things like the AWS CLI, Pulumi, etc.
-      - 127.0.0.1:${LOCALSTACK_PORT}:${LOCALSTACK_PORT}
-    environment:
-      - EDGE_PORT=${LOCALSTACK_PORT}
-      - HOSTNAME_EXTERNAL=${LOCALSTACK_HOST}
-      - SERVICES=apigateway,cloudwatch,dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs
-      - DEBUG=1
-      # Once we put the lambdas behind the API gateway, overall test
-      # time increased. Using the `docker` executor reliably takes at
-      # least 2x the time of `docker-reuse`. However, the containers
-      # generated are invisible to docker-compose, and Localstack
-      # doesn't shut them down, so we have to manage that on our own
-      # (see Makefile)
-      - LAMBDA_EXECUTOR=docker-reuse
-      - MAIN_CONTAINER_NAME=${COMPOSE_PROJECT_NAME}_localstack_1
-      # Without this, the lambda containers are attached to the bridge network
-      - LAMBDA_DOCKER_NETWORK=grapl-network
-      - DATA_DIR=${DATA_DIR- }
-      # The default SQS implementation uses `moto`; `elasticmq` is much more
-      # fully-featured.
-      - SQS_PROVIDER=elasticmq
-    privileged: true # for docker lambda execution
-    healthcheck:
-      test:
-        - CMD-SHELL
-        - |
-          export AWS_ACCESS_KEY_ID=${FAKE_AWS_ACCESS_KEY_ID}
-          export AWS_SECRET_ACCESS_KEY=${FAKE_AWS_SECRET_ACCESS_KEY}
-          aws --endpoint-url=http://${LOCALSTACK_HOST}:${LOCALSTACK_PORT} s3 ls
-      # Probe failure during this period will not be counted towards the maximum number of retries
-      start_period: 30s
-      # Health check is executed every `interval` seconds.
-      interval: 5s
-      # If a single run of the check takes longer than `timeout` seconds then the check is considered to have failed.
-      timeout: 10s
-      # It takes `retries` consecutive failures of the health check for the container to be considered unhealthy.
-      retries: 3
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
-    networks:
-      default:
-        aliases:
-          - ${LOCALSTACK_HOST}
-
   ########################################################################
   # Rust Services
   ########################################################################
@@ -206,10 +133,6 @@ services:
     depends_on:
       provisioner:
         condition: service_completed_successfully
-      localstack:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
       pulumi:
         # We must wait until Pulumi has created the buckets to know what their names are
         condition: service_completed_successfully
@@ -236,10 +159,6 @@ services:
     depends_on:
       provisioner:
         condition: service_completed_successfully
-      localstack:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
       pulumi:
         # We must wait until Pulumi has created the buckets to know what their names are
         condition: service_completed_successfully
@@ -267,10 +186,6 @@ services:
     depends_on:
       provisioner:
         condition: service_completed_successfully
-      localstack:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
       pulumi:
         # We must wait until Pulumi has created the buckets to know what their names are
         condition: service_completed_successfully
@@ -298,10 +213,6 @@ services:
     depends_on:
       provisioner:
         condition: service_completed_successfully
-      localstack:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
       pulumi:
         # We must wait until Pulumi has created the buckets to know what their names are
         condition: service_completed_successfully
@@ -331,10 +242,6 @@ services:
         condition: service_started
       provisioner:
         condition: service_completed_successfully
-      localstack:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
       pulumi:
         # We must wait until Pulumi has created the buckets to know what their names are
         condition: service_completed_successfully
@@ -360,8 +267,6 @@ services:
       <<: *rust-backtrace
     tty: false
     depends_on:
-      localstack:
-        condition: service_healthy
       pulumi:
         # We must wait until Pulumi has created the buckets to know what their names are
         condition: service_completed_successfully
@@ -402,10 +307,6 @@ services:
         condition: service_started
       provisioner:
         condition: service_completed_successfully
-      localstack:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
       pulumi:
         # We must wait until Pulumi has created the buckets to know what their names are
         condition: service_completed_successfully
@@ -437,8 +338,6 @@ services:
     depends_on:
       dgraph:
         condition: service_started
-      localstack:
-        condition: service_healthy
       provisioner:
         condition: service_completed_successfully
       pulumi:
@@ -532,8 +431,6 @@ services:
     depends_on:
       dgraph:
         condition: service_started
-      localstack:
-        condition: service_healthy
       provisioner:
         condition: service_completed_successfully
       pulumi:
@@ -612,12 +509,6 @@ services:
           pulumi stack output "$${output}" > "/home/grapl/pulumi-outputs/$${output}"
         done
 
-    # Our local-grapl Pulumi stack is configured to communicate with
-    # localhost. By participating in the network namespace of our
-    # localstack container, we can use the same stack configuration
-    # both inside this compose network, as well as from outside on our
-    # workstations.
-    network_mode: "service:localstack"
     volumes:
       - type: bind
         source: ./dist
@@ -633,10 +524,12 @@ services:
       # Other environment variables like MG_ALPHAS are passed in via
       # Pulumi.local-grapl.yaml
     depends_on:
-      localstack:
-        condition: service_healthy
       kafka-broker:
         condition: service_healthy
+    extra_hosts:
+      # Expose the host Linux machine, despite being on the Grapl network.
+      # This lets Pulumi talk to the host's Nomad
+      - "host.docker.internal:host-gateway"
 
   provisioner:
     image: grapl/provisioner:${TAG:-latest}
@@ -658,8 +551,6 @@ services:
     depends_on:
       dgraph:
         condition: service_started
-      localstack:
-        condition: service_healthy
       pulumi:
         condition: service_completed_successfully
     volumes:

@@ -48,16 +48,19 @@ job "grapl-local-infra" {
       driver = "docker"
 
       config {
-        image = "redis:latest"
-        ports = ["redis"]
+        image        = "redis:latest"
+        ports        = ["redis"]
+        network_mode = "grapl-network"
+        network_aliases = [
+          # TODO: import as var
+          "redis.grapl.test",
+        ]
       }
     }
   }
 
   group "localstack" {
     network {
-      mode = "bridge"
-
       port "localstack" {
         to = var.LOCALSTACK_PORT
       }
@@ -76,6 +79,7 @@ job "grapl-local-infra" {
         volumes = [
           "/var/run/docker.sock:/var/run/docker.sock"
         ]
+        network_mode = "grapl-network"
         network_aliases = [
           var.LOCALSTACK_HOST
         ]

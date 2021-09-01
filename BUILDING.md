@@ -263,22 +263,13 @@ make build-docker-images-local
 make start-nomad-dev
 ```
 
-3. Create dynamodb tables
-This will involve running pulumi locally to generate dynamodb tables. Currently the commands are TBD
-
-4. Deploy Grapl Core
+3. Start Kafka
 ```bash
-# Get redis endpoint in IP:PORT format automatically
-export LOCAL_REDIS_ENDPOINT=`docker ps | grep "redis" | awk '{print $10}' | awk '{split($0,a,"-"); print a[1]}'`
-nomad job run \
-    -var "container_registry=localhost:5000" \
-    -var "dgraph_replicas=1" \
-    -var "dgraph_shards=1" \
-    -var "redis_endpoint=redis://$LOCAL_REDIS_ENDPOINT" \
-    -var "schema_table_name=$GRAPL_SCHEMA_TABLE" \
-    nomad/grapl-core.nomad
+set -o allexport; . ./local-grapl.env; set +o allexport;
+docker-compose -f docker-compose.yml up kafka-broker
 ```
-
+4. Run pulumi locally
+make local-pulumi
 
 ## The CI system
 
