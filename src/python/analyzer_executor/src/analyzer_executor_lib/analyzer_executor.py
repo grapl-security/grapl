@@ -363,7 +363,7 @@ class AnalyzerExecutor:
                             f"Execution of {name} failed with {e} {e.args}"
                         )
                         sender.send(ExecutionFailed())
-                        raise e
+                        raise
 
                 pool.apply_async(exec_analyzer, args=(nodes, sender))
 
