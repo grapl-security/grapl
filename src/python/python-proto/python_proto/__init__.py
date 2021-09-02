@@ -29,9 +29,9 @@ class SerDe(metaclass=ABCMeta):
 
     @staticmethod
     @abstractstaticmethod
-    def _from_proto(proto: Any) -> SerDe:
+    def from_proto(proto: Any) -> SerDe:
         raise NotImplementedError
 
     @abstractmethod
-    def _into_proto(self) -> Any:
+    def into_proto(self) -> Any:
         raise NotImplementedError
