@@ -683,7 +683,7 @@ job "grapl-core" {
         GRAPL_ANALYZERS_BUCKET                  = var.analyzer_bucket
         GRAPL_MODEL_PLUGINS_BUCKET              = var.model_plugins_bucket
         SOURCE_QUEUE_URL                        = var.analyzer_executor_queue
-        GRPC_ENABLE_FORK_SUPPORT                = "1"
+        GRPC_ENABLE_FORK_SUPPORT                = 1
         HITCACHE_ADDR                           = local.redis_host
         HITCACHE_PORT                           = local.redis_port
         IS_RETRY                                = "False"
