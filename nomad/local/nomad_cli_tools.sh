@@ -13,6 +13,7 @@ nomad_node_id() {
 
 nomad_dispatch() {
     # Grab the new Job ID from the Dispatch command
+    # TODO: Probably just use the Nomad HTTP api for this
 
     local -r parameterized_batch_job="${1}"
     # Output looks like
@@ -34,4 +35,23 @@ nomad_dispatch_status() {
     local -r job_id="${1}"
     local -r curl_result=$(nomad_get_job "${job_id}")
     echo "${curl_result}" | jq -r ".Status"
+}
+
+await_nomad_dispatch_finish() {
+    local -r job_id="${1}"
+    local -r attempts=$((${2} + 0))  # make it an int
+
+    local status
+    for _ in  `seq 0 "${attempts}"`
+    do
+        status=$(nomad_dispatch_status "${job_id}")
+        if [ "${status}" = "dead" ]; then
+            return 0
+        else
+            >&2 echo "Integration tests still running - status: ${status}"
+            sleep 5
+        fi
+    done
+    >&2 echo "we done"
+    #return 1
 }
