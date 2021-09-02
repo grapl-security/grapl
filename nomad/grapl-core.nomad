@@ -243,6 +243,11 @@ locals {
 
   # String that contains all of the running Alphas for clients connecting to Dgraph (so they can do loadbalancing)
   alpha_grpc_connect_str = join(",", [for alpha in local.dgraph_alphas : "localhost:${alpha.grpc_public_port}"])
+
+  redis_trimmed = trimprefix("redis://", var.redis_endpoint)
+  redis =  split(":", local.redis_trimmed)
+  redis_host = local.redis[0]
+  redis_port = local.redis[1]
 }
 
 job "grapl-core" {
@@ -681,11 +686,11 @@ job "grapl-core" {
         GRAPL_MODEL_PLUGINS_BUCKET              = var.model_plugins_bucket
         SOURCE_QUEUE_URL                        = var.analyzer_executor_queue
         GRPC_ENABLE_FORK_SUPPORT                = "1"
-        HITCACHE_ADDR                           = "${REDIS_HOST}"
-        HITCACHE_PORT                           = "${REDIS_PORT}"
+        HITCACHE_ADDR                           = local.redis_host
+        HITCACHE_PORT                           = local.redis_port
         IS_RETRY                                = "False"
-        MESSAGECACHE_ADDR                       = "${REDIS_HOST}"
-        MESSAGECACHE_PORT                       = "${REDIS_PORT}"
+        MESSAGECACHE_ADDR                       = local.redis_host
+        MESSAGECACHE_PORT                       = local.redis_port
         # VSC_DEBUGGER_PORT: "${VSC_DEBUGGER_PORT_FOR_ANALYZER_EXECUTOR}"
       }
     }
