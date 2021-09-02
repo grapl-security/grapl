@@ -298,7 +298,7 @@ test-typecheck: test-typecheck-docker test-typecheck-pants ## Typecheck all Pyth
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
 test-integration: export COMPOSE_FILE := ./test/docker-compose.integration-tests.yml
 test-integration: build-test-integration ## Build and run integration tests
-	$(MAKE) test-with-env
+	$(MAKE) test-with-env EXEC_TEST_COMMAND=nomad/local/run_integration_tests.sh
 
 .PHONY: test-grapl-template-generator
 test-grapl-template-generator:  # Test that the Grapl Template Generator spits out something compilable.
@@ -308,10 +308,18 @@ test-grapl-template-generator:  # Test that the Grapl Template Generator spits o
 test-e2e: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_E2E_TESTS)
 test-e2e: export export COMPOSE_FILE := ./test/docker-compose.e2e-tests.yml
 test-e2e: build-test-e2e ## Build and run e2e tests
-	$(MAKE) test-with-env
+	$(MAKE) test-with-env-docker
 
 # This target is not intended to be used directly from the command line, it's
 # intended for tests in docker-compose files that need the Grapl environment.
+.PHONY: test-with-env-docker
+test-with-env-docker: # (Do not include help text - not to be used directly)
+	$(MAKE) test-with-env EXEC_TEST_COMMAND=test/docker-compose-with-error.sh
+
+# This target is not intended to be used directly from the command line.
+# Think of it as a Context Manager that:
+# - Before test-time, brings up a `make up-detach`
+# - After test-time, tears it all down and dumps artifacts.
 .PHONY: test-with-env
 test-with-env: # (Do not include help text - not to be used directly)
 	stopGrapl() {
@@ -333,7 +341,7 @@ test-with-env: # (Do not include help text - not to be used directly)
 	# Bring up the Grapl environment and detach
 	$(MAKE) up-detach
 	# Run tests and check exit codes from each test container
-	test/docker-compose-with-error.sh
+	$${EXEC_TEST_COMMAND}
 
 ##@ Lint 🧹
 
@@ -469,11 +477,6 @@ run-registry: ## Ensure that a local docker registry is running (which is requir
 start-nomad-dev: push-local  ## Start the Nomad development environment
 	$(WITH_LOCAL_GRAPL_ENV)
 	nomad/local/start_development_environment_tmux.sh
-
-.PHONY: integration-tests-nomad
-integration-tests-nomad:  ## Run integration tests under Nomad
-	$(WITH_LOCAL_GRAPL_ENV)
-	nomad/local/run_integration_tests.sh
 
 .PHONY: local-pulumi
 local-pulumi: export COMPOSE_PROJECT_NAME="grapl"

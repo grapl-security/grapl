@@ -2,7 +2,7 @@
 set -euo pipefail
 
 curl_quiet() {
-    # shellcheck disable=SC2086
+    # shellcheck disable=SC2068
     curl --location --silent --show-error $@
 }
 
@@ -38,21 +38,20 @@ nomad_dispatch_status() {
 }
 
 await_nomad_dispatch_finish() {
-    local -r job_id="${1}"
-    local -r attempts=$((${2} + 0))  # make it an int
+    local -r job_id=$1
+    local -r attempts=$2
 
     local status
-    for _ in  `seq 0 "${attempts}"`
-    do
+    for _ in $(seq 0 "${attempts}"); do
         status=$(nomad_dispatch_status "${job_id}")
         if [ "${status}" = "dead" ]; then
-            >&2 echo "Integration tests complete"
+            echo >&2 "Integration tests complete"
             return 0
         else
-            >&2 echo "Integration tests still running - status: ${status}"
+            echo >&2 "Integration tests still running - status: ${status}"
             sleep 5
         fi
     done
-    >&2 echo "Integration tests timed out - perhaps add more attempts?"
+    echo >&2 "Integration tests timed out - perhaps add more attempts?"
     return 1
 }
