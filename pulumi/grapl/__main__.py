@@ -14,7 +14,12 @@ from infra.api import Api
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
-from infra.config import DEPLOYMENT_NAME, GRAPL_TEST_USER_NAME, LOCAL_GRAPL, REAL_DEPLOYMENT
+from infra.config import (
+    DEPLOYMENT_NAME,
+    GRAPL_TEST_USER_NAME,
+    LOCAL_GRAPL,
+    REAL_DEPLOYMENT,
+)
 from infra.dgraph_cluster import DgraphCluster, LocalStandInDgraphCluster
 from infra.dgraph_ttl import DGraphTTL
 from infra.e2e_test_runner import E2eTestRunner
@@ -136,6 +141,11 @@ def main() -> None:
         kafka = Kafka("kafka")
 
         job_vars = pulumi.Output.all(
+            analyzer_bucket=analyzers_bucket.bucket,
+            # This should be dispatched-analyzer-bucket, which doesn't appear to exist?
+            analyzer_dispatched_bucket=analyzers_bucket.bucket,
+            analyzer_dispatcher_queue=analyzer_dispatcher_queue.main_queue_url,
+            analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url,
             graph_merger_queue=graph_merger_queue.main_queue_url,
             graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
             session_table_name=dynamodb_tables.dynamic_session_table.name,
