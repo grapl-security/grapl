@@ -12,10 +12,10 @@ class SerDe(metaclass=ABCMeta):
             and callable(subclass.deserialize)
             and hasattr(subclass, "serialize")
             and callable(subclass.serialize)
-            and hasattr(subclass, "_from_proto")
-            and callable(subclass._from_proto)
-            and hasattr(subclass, "_into_proto")
-            and callable(subclass._into_proto)
+            and hasattr(subclass, "from_proto")
+            and callable(subclass.from_proto)
+            and hasattr(subclass, "into_proto")
+            and callable(subclass.into_proto)
         )
 
     @staticmethod
