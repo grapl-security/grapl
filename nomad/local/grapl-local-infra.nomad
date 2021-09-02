@@ -6,6 +6,16 @@ variable "container_registry" {
 
 # The following variables are all-caps to clue in users that they're
 # imported from `local-grapl.env`.
+variable "KAFKA_BROKER_PORT" {
+  type        = string
+  description = "Port for kafka broker"
+}
+
+variable "KAFKA_JMX_PORT" {
+  type        = string
+  description = "Port for kafka JMX"
+}
+
 variable "FAKE_AWS_ACCESS_KEY_ID" {
   type        = string
   description = "Fake AWS Access Key ID for Localstack and clients"
@@ -24,6 +34,11 @@ variable "LOCALSTACK_PORT" {
 variable "LOCALSTACK_HOST" {
   type        = string
   description = "External hostname for Localstack"
+}
+
+variable "ZOOKEEPER_PORT" {
+  type        = string
+  description = "Port for zookeeper"
 }
 
 
@@ -141,5 +156,131 @@ job "grapl-local-infra" {
         ports = ["ratel"]
       }
     }
+  }
+
+  group "kafka" {
+    network {
+      mode = "bridge"
+    }
+
+    task "kafka" {
+      driver = "docker"
+
+      config {
+        image = "confluentinc/cp-kafka:6.2.0"
+      }
+
+      resources {
+        cpu    = 500
+        memory = 1024
+      }
+
+      env {
+        KAFKA_BROKER_ID                                = 1
+        KAFKA_ZOOKEEPER_CONNECT                        = "localhost:${var.ZOOKEEPER_PORT}"
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP           = "PLAINTEXT:PLAINTEXT"
+        KAFKA_LISTENERS                                = "PLAINTEXT://localhost:${var.KAFKA_BROKER_PORT}"
+        KAFKA_ADVERTISED_LISTENERS                     = "PLAINTEXT://localhost:${var.KAFKA_BROKER_PORT}"
+        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR         = 1
+        KAFKA_TRANSACTION_STATE_LOG_MIN_ISR            = 1
+        KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = 1
+        KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS         = 0
+        KAFKA_JMX_PORT                                 = var.KAFKA_JMX_PORT
+        KAFKA_JMX_HOSTNAME                             = "localhost"
+        KAFKA_LOG4J_ROOT_LOGLEVEL                      = "INFO"
+      }
+
+      service {
+        check {
+          type    = "script"
+          name    = "check_kafka"
+          command = "/bin/bash"
+          args = [
+            "-c",
+            "nc -vz localhost ${var.KAFKA_BROKER_PORT}",
+          ]
+          interval = "20s"
+          timeout  = "10s"
+
+          check_restart {
+            limit           = 2
+            grace           = "30s"
+            ignore_warnings = false
+          }
+        }
+      }
+
+    }
+
+    service {
+      name = "kafka-broker"
+      port = var.KAFKA_BROKER_PORT
+      tags = ["kafka"]
+
+      connect {
+        sidecar_service {
+
+        }
+      }
+
+    }
+
+
+  }
+
+  group "zookeeper" {
+    network {
+      mode = "bridge"
+    }
+
+    task "zookeeper" {
+      driver = "docker"
+
+      config {
+        image = "confluentinc/cp-zookeeper:6.2.0"
+      }
+
+      env {
+        ZOOKEEPER_CLIENT_PORT = var.ZOOKEEPER_PORT
+        ZOOKEEPER_TICK_TIME   = 2000
+        KAFKA_OPTS            = "-Dzookeeper.4lw.commands.whitelist=ruok"
+      }
+
+      service {
+        check {
+          type    = "script"
+          name    = "check_zookeeper"
+          command = "/bin/bash"
+          args = [
+            "-c",
+            "echo ruok | nc -w 2  localhost 2181 | grep imok || exit 2",
+          ]
+          interval = "20s"
+          timeout  = "10s"
+
+          check_restart {
+            limit           = 2
+            grace           = "30s"
+            ignore_warnings = false
+          }
+        }
+      }
+
+    }
+
+    service {
+      name = "zookeeper"
+      port = var.ZOOKEEPER_PORT
+      tags = ["zookeeper"]
+
+      connect {
+        sidecar_service {
+
+        }
+      }
+
+    }
+
+
   }
 }

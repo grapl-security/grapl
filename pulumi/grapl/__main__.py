@@ -14,7 +14,12 @@ from infra.api import Api
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
-from infra.config import DEPLOYMENT_NAME, GRAPL_TEST_USER_NAME, LOCAL_GRAPL, REAL_DEPLOYMENT
+from infra.config import (
+    DEPLOYMENT_NAME,
+    GRAPL_TEST_USER_NAME,
+    LOCAL_GRAPL,
+    REAL_DEPLOYMENT,
+)
 from infra.dgraph_cluster import DgraphCluster, LocalStandInDgraphCluster
 from infra.dgraph_ttl import DGraphTTL
 from infra.e2e_test_runner import E2eTestRunner
