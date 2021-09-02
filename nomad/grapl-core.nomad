@@ -676,8 +676,6 @@ job "grapl-core" {
         GRAPL_AWS_ENDPOINT          = var.aws_endpoint
         # python vars
         GRAPL_LOG_LEVEL = "INFO"
-        # presumably not needed but will confirm after
-        RUST_LOG = "INFO"
         # dgraph vars
         MG_ALPHAS = local.alpha_grpc_connect_str
         # service vars
