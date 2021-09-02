@@ -33,6 +33,26 @@ variable "aws_region" {
   default = "us-west-2"
 }
 
+variable "analyzer_bucket" {
+  type        = string
+  description = "The s3 bucket which the analyzer stores items to analyze"
+}
+
+variable "analyzer_dispatched_bucket" {
+  type        = string
+  description = "The s3 bucket which the analyzer stores items that have been processed"
+}
+
+variable "analyzer_dispatcher_queue" {
+  type        = string
+  description = "Main queue for the dispatcher"
+}
+
+variable "analyzer_dispatcher_dead_letter_queue" {
+  type        = string
+  description = "Dead letter queue for the analyzer services"
+}
+
 variable "dgraph_tag" {
   type        = string
   default     = "v21.03.1"
@@ -576,6 +596,35 @@ job "grapl-core" {
         DEAD_LETTER_QUEUE_URL       = var.node_identifier_dead_letter_queue
       }
     }
+  }
+
+  group "analyzer-dispatcher" {
+
+    task "analyzer-dispatcher" {
+      driver = "docker"
+
+      config {
+        image        = "${var.container_registry}/grapl/analyzer-dispatcher:${var.graphql_endpoint_tag}"
+        network_mode = "grapl-network"
+      }
+
+      env {
+        # AWS vars
+        AWS_REGION                  = var.aws_region
+        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
+        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
+        GRAPL_AWS_ENDPOINT          = var.aws_endpoint
+        # rust vars
+        RUST_LOG       = var.rust_log
+        RUST_BACKTRACE = 1
+        # service vars
+        GRAPL_ANALYZERS_BUCKET = var.analyzer_bucket
+        DEST_BUCKET_NAME       = var.analyzer_dispatched_bucket
+        DEAD_LETTER_QUEUE_URL  = var.analyzer_dispatcher_queue
+        SOURCE_QUEUE_URL       = var.analyzer_dispatcher_dead_letter_queue
+      }
+    }
+
   }
 
   group "graphql-endpoint" {

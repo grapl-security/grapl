@@ -141,6 +141,11 @@ def main() -> None:
         kafka = Kafka("kafka")
 
         job_vars = pulumi.Output.all(
+            analyzer_bucket=analyzers_bucket.bucket,
+            # This should be dispatched-analyzer-bucket, which doesn't appear to exist?
+            analyzer_dispatched_bucket=analyzers_bucket.bucket,
+            analyzer_dispatcher_queue=analyzer_dispatcher_queue.main_queue_url,
+            analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url,
             graph_merger_queue=graph_merger_queue.main_queue_url,
             graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
             session_table_name=dynamodb_tables.dynamic_session_table.name,
