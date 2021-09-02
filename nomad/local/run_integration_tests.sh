@@ -31,3 +31,7 @@ echo "--- Dispatching integration tests"
 
 DISPATCH_JOB_ID=$(nomad_dispatch integration-tests)
 echo "${DISPATCH_JOB_ID}"
+
+await_nomad_dispatch_finish "${DISPATCH_JOB_ID}" 10
+
+nomad_get_job "${DISPATCH_JOB_ID}" | jq ".JobSummary.Summary"
