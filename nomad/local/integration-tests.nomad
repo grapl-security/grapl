@@ -1,3 +1,7 @@
+# This setup is inspired by the following forum discussion:
+# https://discuss.hashicorp.com/t/best-practices-for-testing-against-services-in-nomad-consul-connect/29022
+# We'll submit integration tests to Nomad as 
+# 
 variable "container_registry" {
   type        = string
   default     = "localhost:5000"
@@ -42,8 +46,9 @@ locals {
 
 job "integration-tests" {
   datacenters = ["dc1"]
-
   type = "batch"
+  parameterized { }
+
   reschedule {
     # Make this a one-shot job
     attempts = 0
@@ -56,6 +61,25 @@ job "integration-tests" {
     restart {
       # Make this a one-shot job
       attempts = 0
+    }
+
+    network {
+      mode = "bridge"
+    }
+
+    # Enable service discovery
+    service {
+      connect {
+        sidecar_service {
+          proxy {
+            upstreams {
+              # This is a hack, because IDK how to share locals across files
+              destination_name = "dgraph-alpha-0-grpc-public"
+              local_bind_port  = 9080
+            }
+          }
+        }
+      }
     }
 
     task "rust-integration-tests" {
@@ -72,7 +96,9 @@ job "integration-tests" {
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
         GRAPL_LOG_LEVEL             = local.log_level
-        MG_ALPHAS                   = local.alpha_grpc_connect_str # TODO: Figure out how to do this
+        # This is a hack, because IDK how to share locals across files
+        #MG_ALPHAS                   = local.alpha_grpc_connect_str # TODO: Figure out how to do this
+        MG_ALPHAS = "localhost:9080"
         RUST_BACKTRACE              = 1
         RUST_LOG                    = local.log_level
         REDIS_ENDPOINT              = var.redis_endpoint

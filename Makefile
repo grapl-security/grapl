@@ -470,6 +470,11 @@ start-nomad-dev: push-local  ## Start the Nomad development environment
 	$(WITH_LOCAL_GRAPL_ENV)
 	nomad/local/start_development_environment_tmux.sh
 
+.PHONY: integration-tests-nomad
+integration-tests-nomad:  ## Run integration tests under Nomad
+	$(WITH_LOCAL_GRAPL_ENV)
+	nomad/local/run_integration_tests.sh
+
 .PHONY: local-pulumi
 local-pulumi: export COMPOSE_PROJECT_NAME="grapl"
 local-pulumi:  ## launch pulumi via docker-compose up
