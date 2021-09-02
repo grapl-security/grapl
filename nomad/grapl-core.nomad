@@ -60,7 +60,7 @@ variable "analyzer_dispatcher_tag" {
 }
 
 variable "analyzer_matched_subgraphs_bucket" {
-  type = string
+  type        = string
   description = "The s3 bucket used for storing matches"
 }
 
@@ -141,7 +141,7 @@ variable "grapl_test_user_name" {
 }
 
 variable "model_plugins_bucket" {
-  type = string
+  type        = string
   description = "The s3 bucket used for storing plugins"
 }
 
@@ -245,9 +245,9 @@ locals {
   alpha_grpc_connect_str = join(",", [for alpha in local.dgraph_alphas : "localhost:${alpha.grpc_public_port}"])
 
   redis_trimmed = trimprefix(var.redis_endpoint, "redis://")
-  redis =  split(":", local.redis_trimmed)
-  redis_host = local.redis[0]
-  redis_port = local.redis[1]
+  redis         = split(":", local.redis_trimmed)
+  redis_host    = local.redis[0]
+  redis_port    = local.redis[1]
 }
 
 job "grapl-core" {
