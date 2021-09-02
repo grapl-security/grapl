@@ -142,8 +142,7 @@ def main() -> None:
 
         job_vars = pulumi.Output.all(
             analyzer_bucket=analyzers_bucket.bucket,
-            # This should be dispatched-analyzer-bucket, which doesn't appear to exist?
-            analyzer_dispatched_bucket=analyzers_bucket.bucket,
+            analyzer_dispatched_bucket=dispatched_analyzer_emitter.bucket.bucket,
             analyzer_dispatcher_queue=analyzer_dispatcher_queue.main_queue_url,
             analyzer_executor_queue=analyzer_executor_queue.main_queue_url,
             analyzer_matched_subgraphs_bucket=analyzer_matched_emitter.bucket.bucket,
