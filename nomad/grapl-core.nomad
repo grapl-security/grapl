@@ -53,6 +53,28 @@ variable "analyzer_dispatcher_dead_letter_queue" {
   description = "Dead letter queue for the analyzer services"
 }
 
+variable "analyzer_dispatcher_tag" {
+  type        = string
+  default     = "latest"
+  description = "The tagged version of the analyzer-dispatcher we should deploy."
+}
+
+variable "analyzer_matched_subgraphs_bucket" {
+  type = string
+  description = "The s3 bucket used for storing matches"
+}
+
+variable "analyzer_executor_queue" {
+  type        = string
+  description = "Main queue for the executor"
+}
+
+variable "analyzer_executor_tag" {
+  type        = string
+  default     = "latest"
+  description = "The tagged version of the analyzer-executor we should deploy."
+}
+
 variable "dgraph_tag" {
   type        = string
   default     = "v21.03.1"
@@ -116,6 +138,11 @@ variable "grapl_test_user_name" {
   type        = string
   description = "The name of the test user"
   default     = "grapl-test-user"
+}
+
+variable "model_plugins_bucket" {
+  type = string
+  description = "The s3 bucket used for storing plugins"
 }
 
 variable "num_node_identifiers" {
@@ -604,7 +631,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image        = "${var.container_registry}/grapl/analyzer-dispatcher:${var.graphql_endpoint_tag}"
+        image        = "${var.container_registry}/grapl/analyzer-dispatcher:${var.analyzer_dispatcher_tag}"
         network_mode = "grapl-network"
       }
 
@@ -625,6 +652,43 @@ job "grapl-core" {
       }
     }
 
+  }
+
+  group "analyzer-executor" {
+    task "analyzer-executor" {
+      driver = "docker"
+
+      config {
+        image        = "${var.container_registry}/grapl/analyzer-executor:${var.analyzer_executor_tag}"
+        network_mode = "grapl-network"
+      }
+
+      env {
+        # AWS vars
+        AWS_REGION                  = var.aws_region
+        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
+        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
+        GRAPL_AWS_ENDPOINT          = var.aws_endpoint
+        # python vars
+        GRAPL_LOG_LEVEL = "INFO"
+        # presumably not needed but will confirm after
+        RUST_LOG = "INFO"
+        # dgraph vars
+        MG_ALPHAS = local.alpha_grpc_connect_str
+        # service vars
+        GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET = var.analyzer_matched_subgraphs_bucket
+        GRAPL_ANALYZERS_BUCKET                  = var.analyzer_bucket
+        GRAPL_MODEL_PLUGINS_BUCKET              = var.model_plugins_bucket
+        SOURCE_QUEUE_URL                        = var.analyzer_executor_queue
+        GRPC_ENABLE_FORK_SUPPORT                = "1"
+        HITCACHE_ADDR                           = "${REDIS_HOST}"
+        HITCACHE_PORT                           = "${REDIS_PORT}"
+        IS_RETRY                                = "False"
+        MESSAGECACHE_ADDR                       = "${REDIS_HOST}"
+        MESSAGECACHE_PORT                       = "${REDIS_PORT}"
+        # VSC_DEBUGGER_PORT: "${VSC_DEBUGGER_PORT_FOR_ANALYZER_EXECUTOR}"
+      }
+    }
   }
 
   group "graphql-endpoint" {
