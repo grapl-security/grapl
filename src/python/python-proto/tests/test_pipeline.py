@@ -7,8 +7,8 @@ from python_proto.pipeline import Uuid
 
 def test_uuid_roundtrip() -> None:
     original_uuid: uuid.UUID = uuid.uuid4()
-    proto_uuid = Uuid.from_uuid(uuid_=original_uuid)._into_proto()
-    converted_original = Uuid._from_proto(proto_uuid=proto_uuid).into_uuid()
-    converted_proto = Uuid.from_uuid(uuid_=converted_original)._into_proto()
+    proto_uuid = Uuid.from_uuid(uuid_=original_uuid).into_proto()
+    converted_original = Uuid.from_proto(proto_uuid=proto_uuid).into_uuid()
+    converted_proto = Uuid.from_uuid(uuid_=converted_original).into_proto()
     assert original_uuid == converted_original
     assert proto_uuid == converted_proto
