@@ -46,12 +46,13 @@ await_nomad_dispatch_finish() {
     do
         status=$(nomad_dispatch_status "${job_id}")
         if [ "${status}" = "dead" ]; then
+            >&2 echo "Integration tests complete"
             return 0
         else
             >&2 echo "Integration tests still running - status: ${status}"
             sleep 5
         fi
     done
-    >&2 echo "we done"
-    #return 1
+    >&2 echo "Integration tests timed out - perhaps add more attempts?"
+    return 1
 }
