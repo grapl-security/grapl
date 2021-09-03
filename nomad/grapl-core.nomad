@@ -23,7 +23,13 @@ variable "aws_access_key_secret" {
 
 variable "aws_endpoint" {
   type        = string
-  description = "The endpoint in which we can expect to find and interact with AWS."
+  description = <<EOF
+  The endpoint in which we can expect to find and interact with AWS. 
+  It accepts a special sentinel value, USE_LOCALSTACK_SENTINEL_VALUE, if the
+  user wishes to contact Localstack.
+
+  Prefer using `local.aws_endpoint`.
+EOF
 }
 
 variable "aws_region" {
@@ -199,7 +205,7 @@ locals {
   local_aws_endpoint = "http://${attr.unique.network.ip-address}:4566"
 
   # AWS endpoint to use when interacting with AWS. Prefer this over var.aws_endpoint
-  aws_endpoint = "${var.aws_endpoint != "" ? var.aws_endpoint : local.local_aws_endpoint}"
+  aws_endpoint = var.aws_endpoint != "USE_LOCALSTACK_SENTINEL_VALUE" ? var.aws_endpoint : local.local_aws_endpoint
 }
 
 job "grapl-core" {

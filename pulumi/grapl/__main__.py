@@ -141,8 +141,8 @@ def main() -> None:
         kafka = Kafka("kafka")
 
         job_vars = pulumi.Output.all(
-            # Localstack is exposed statically on 4566. No consul-connect needed.
-            aws_endpoint="",
+            # This is a special directive to our HCL file that tells it to use Localstack
+            aws_endpoint="USE_LOCALSTACK_SENTINEL_VALUE",
             graph_merger_queue=graph_merger_queue.main_queue_url,
             graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
             session_table_name=dynamodb_tables.dynamic_session_table.name,
