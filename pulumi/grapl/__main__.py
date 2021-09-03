@@ -141,13 +141,18 @@ def main() -> None:
         kafka = Kafka("kafka")
 
         job_vars = pulumi.Output.all(
-            # This is a special directive to our HCL file that tells it to use Localstack
-            aws_endpoint="USE_LOCALSTACK_SENTINEL_VALUE",
+            analyzer_bucket=analyzers_bucket.bucket,
+            analyzer_dispatched_bucket=dispatched_analyzer_emitter.bucket.bucket,
+            analyzer_dispatcher_queue=analyzer_dispatcher_queue.main_queue_url,
+            analyzer_executor_queue=analyzer_executor_queue.main_queue_url,
+            analyzer_matched_subgraphs_bucket=analyzer_matched_emitter.bucket.bucket,
+            analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url,
             graph_merger_queue=graph_merger_queue.main_queue_url,
             graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
             session_table_name=dynamodb_tables.dynamic_session_table.name,
             schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
             schema_table_name=dynamodb_tables.schema_table.name,
+            model_plugins_bucket=model_plugins_bucket.bucket,
             node_identifier_queue=node_identifier_queue.main_queue_url,
             node_identifier_dead_letter_queue=node_identifier_queue.dead_letter_queue_url,
             node_identifier_retry_queue=node_identifier_queue.retry_queue_url,
@@ -156,7 +161,9 @@ def main() -> None:
             user_auth_table=dynamodb_tables.user_auth_table.name,
             ux_bucket=ux_bucket.bucket,
         ).apply(
-            lambda inputs: {
+            lambda inputs: {     
+                # This is a special directive to our HCL file that tells it to use Localstack
+                "aws_endpoint": "USE_LOCALSTACK_SENTINEL_VALUE",
                 "deployment_name": DEPLOYMENT_NAME,
                 "grapl_test_user_name": GRAPL_TEST_USER_NAME,
                 "redis_endpoint": pulumi.Config().get("REDIS_ENDPOINT"),
