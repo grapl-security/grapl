@@ -42,6 +42,10 @@ variable "redis_endpoint" {
 
 locals {
   log_level = "DEBUG"
+  redis_trimmed = trimprefix(var.redis_endpoint, "redis://")
+  redis         = split(":", local.redis_trimmed)
+  redis_host    = local.redis[0]
+  redis_port    = local.redis[1]
 }
 
 job "integration-tests" {
@@ -140,10 +144,10 @@ job "integration-tests" {
         GRAPL_ANALYZERS_BUCKET=""
         GRAPL_MODEL_PLUGINS_BUCKET=""
 
-        HITCACHE_ADDR=""
-        HITCACHE_PORT=""
-        MESSAGECACHE_ADDR=""
-        MESSAGECACHE_PORT=""
+        HITCACHE_ADDR=local.redis_host
+        HITCACHE_PORT=local.redis_port
+        MESSAGECACHE_ADDR=local.redis_host
+        MESSAGECACHE_PORT=local.redis_port
         IS_RETRY=False
       }
 
