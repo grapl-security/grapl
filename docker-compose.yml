@@ -271,31 +271,10 @@ services:
         # We must wait until Pulumi has created the API gateway so we
         # know what its URL is.
         condition: service_completed_successfully
-      engagement-view-uploader:
-        # nginx doesn't actually depend on engagement-view-uploader,
-        # but we need *some* service to declare a dependency on the
-        # engagement-view-uploader in order to catch non-0 exit codes
-        condition: service_completed_successfully
     networks:
       default:
         aliases:
           - ${GRAPL_API_HOST}
-
-  engagement-view-uploader:
-    image: grapl/engagement-view:${TAG:-latest}
-    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
-    command:
-      - |
-        export GRAPL_UX_BUCKET=$$(cat /mnt/pulumi-outputs/ux-bucket)
-        ./upload_local.sh
-    environment:
-      <<: *aws-env
-    depends_on:
-      pulumi:
-        # We must wait until Pulumi has created the buckets to know what their names are
-        condition: service_completed_successfully
-    volumes:
-      - *read-only-pulumi-mnt
 
   graphql-endpoint:
     image: grapl/graphql-endpoint:${TAG:-latest}
