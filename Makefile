@@ -154,6 +154,11 @@ build-test-integration: build
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.integration-tests.yml
 
+.PHONY: push-integration
+push-integration: build-test-integration
+	$(WITH_LOCAL_GRAPL_ENV) \
+	docker-compose --file  ./test/docker-compose.integration-tests.yml push
+
 .PHONY: build-test-e2e
 build-test-e2e: build
 	$(WITH_LOCAL_GRAPL_ENV) \
@@ -477,6 +482,11 @@ run-registry: ## Ensure that a local docker registry is running (which is requir
 start-nomad-dev: push-local  ## Start the Nomad development environment
 	$(WITH_LOCAL_GRAPL_ENV)
 	nomad/local/start_development_environment_tmux.sh
+
+.PHONY: integration-tests-nomad
+integration-tests-nomad:  ## Run integration tests under Nomad
+	$(WITH_LOCAL_GRAPL_ENV)
+	nomad/local/run_integration_tests.sh
 
 .PHONY: local-pulumi
 local-pulumi: export COMPOSE_PROJECT_NAME="grapl"
