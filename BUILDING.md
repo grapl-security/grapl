@@ -271,6 +271,12 @@ docker-compose -f docker-compose.yml up kafka-broker
 4. Run pulumi locally
 make local-pulumi
 
+### Integration tests against nomad locally
+To run integration tests against nomad 
+```bash
+make integration-tests-nomad
+```
+
 ## The CI system
 
 We use [BuildKite](https://buildkite.com/) for
