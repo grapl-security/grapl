@@ -29,9 +29,14 @@ echo "--- Integration tests deployed!"
 
 echo "--- Dispatching integration tests"
 
-DISPATCH_JOB_ID=$(nomad_dispatch integration-tests)
-echo "${DISPATCH_JOB_ID}"
+job_id=$(nomad_dispatch integration-tests)
+echo "${job_id}"
 
-await_nomad_dispatch_finish "${DISPATCH_JOB_ID}" 10
+# Wait for them to finish
+await_nomad_dispatch_finish "${job_id}" 10
 
-nomad_get_job "${DISPATCH_JOB_ID}" | jq ".JobSummary.Summary"
+# Show how each job did
+nomad_get_per_task_results "${job_id}"
+
+# Exit if anything failed (thanks -euo pipefail!)
+check_for_task_failures_in_job "${job_id}"
