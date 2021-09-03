@@ -24,74 +24,13 @@ x-common-variables:
     AWS_REGION: ${AWS_REGION}
   dgraph-env: &dgraph-env
     MG_ALPHAS: ${MG_ALPHAS}
-  kafka-broker-env: &kafka-broker-env
-    KAFKA_BROKER_ID: 1
-    KAFKA_ZOOKEEPER_CONNECT: "${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT}"
-    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
-    KAFKA_LISTENERS: PLAINTEXT://${KAFKA_BROKER_HOST}:9092
-    KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://${KAFKA_BROKER_HOST}:9092
-    KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-    KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-    KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-    KAFKA_JMX_PORT: ${KAFKA_JMX_PORT}
-    KAFKA_JMX_HOSTNAME: localhost
-    KAFKA_LOG4J_ROOT_LOGLEVEL: INFO
   log-level: &log-level
     GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-ERROR}"
     RUST_LOG: "${RUST_LOG:-ERROR}"
   rust-backtrace: &rust-backtrace
     RUST_BACKTRACE: ${RUST_BACKTRACE}
-  zookeeper-env: &zookeeper-env
-    ZOOKEEPER_CLIENT_PORT: ${ZOOKEEPER_PORT}
-    ZOOKEEPER_TICK_TIME: 2000
 
 services:
-  ########################################################################
-  # Cloud Infrastructure Dependencies
-  ########################################################################
-
-  zookeeper:
-    image: confluentinc/cp-zookeeper:6.2.0
-    environment:
-      <<: *zookeeper-env
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "echo",
-          "ruok",
-          "|",
-          "nc",
-          "-w",
-          "2",
-          "-q",
-          "2",
-          "localhost",
-          "${ZOOKEEPER_PORT}",
-          "|",
-          "grep",
-          "imok",
-        ]
-      retries: 5
-      interval: 5s
-      timeout: 30s
-      start_period: 15s
-
-  kafka-broker:
-    image: confluentinc/cp-kafka:6.2.0
-    depends_on:
-      zookeeper:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "nc", "-vz", "kafka-broker", "${KAFKA_BROKER_PORT}"]
-      retries: 5
-      interval: 5s
-      timeout: 30s
-      start_period: 15s
-    environment:
-      <<: *kafka-broker-env
-
   ########################################################################
   # Rust Services
   ########################################################################
@@ -402,9 +341,6 @@ services:
       PULUMI_CONFIG_PASSPHRASE: local-grapl-passphrase
       # Other environment variables like MG_ALPHAS are passed in via
       # Pulumi.local-grapl.yaml
-    depends_on:
-      kafka-broker:
-        condition: service_healthy
     extra_hosts:
       # Expose the host Linux machine, despite being on the Grapl network.
       # This lets Pulumi talk to the host's Nomad
