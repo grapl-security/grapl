@@ -36,6 +36,11 @@ variable "ZOOKEEPER_PORT" {
   description = "Port for zookeeper"
 }
 
+locals {
+  # This is the equivalent of `localhost` within a bridge network
+  zookeeper_endpoint = "${attr.unique.network.ip-address}:${var.ZOOKEEPER_PORT}"
+}
+
 ####################
 # Jobspecs
 ####################
@@ -101,8 +106,8 @@ job "grapl-local-infra" {
       }
 
       env {
-        DEBUG     = 1
-        EDGE_PORT = var.LOCALSTACK_PORT
+        DEBUG           = 1
+        EDGE_PORT       = var.LOCALSTACK_PORT
         LAMBDA_EXECUTOR = "docker-reuse"
         SERVICES        = "apigateway,cloudwatch,dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs"
         SQS_PROVIDER    = "elasticmq"
@@ -160,6 +165,9 @@ job "grapl-local-infra" {
   group "kafka" {
     network {
       mode = "bridge"
+      port "kafka" {
+        static = var.KAFKA_JMX_PORT
+      }
     }
 
     task "kafka" {
@@ -176,7 +184,7 @@ job "grapl-local-infra" {
 
       env {
         KAFKA_BROKER_ID                                = 1
-        KAFKA_ZOOKEEPER_CONNECT                        = "localhost:${var.ZOOKEEPER_PORT}"
+        KAFKA_ZOOKEEPER_CONNECT                        = local.zookeeper_endpoint
         KAFKA_LISTENER_SECURITY_PROTOCOL_MAP           = "PLAINTEXT:PLAINTEXT"
         KAFKA_LISTENERS                                = "PLAINTEXT://localhost:${var.KAFKA_BROKER_PORT}"
         KAFKA_ADVERTISED_LISTENERS                     = "PLAINTEXT://localhost:${var.KAFKA_BROKER_PORT}"
@@ -210,26 +218,14 @@ job "grapl-local-infra" {
       }
 
     }
-
-    service {
-      name = "kafka-broker"
-      port = var.KAFKA_BROKER_PORT
-      tags = ["kafka"]
-
-      connect {
-        sidecar_service {
-
-        }
-      }
-
-    }
-
-
   }
 
   group "zookeeper" {
     network {
       mode = "bridge"
+      port "zookeeper" {
+        static = var.ZOOKEEPER_PORT
+      }
     }
 
     task "zookeeper" {
@@ -266,20 +262,5 @@ job "grapl-local-infra" {
       }
 
     }
-
-    service {
-      name = "zookeeper"
-      port = var.ZOOKEEPER_PORT
-      tags = ["zookeeper"]
-
-      connect {
-        sidecar_service {
-
-        }
-      }
-
-    }
-
-
   }
 }

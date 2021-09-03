@@ -161,7 +161,7 @@ def main() -> None:
             user_auth_table=dynamodb_tables.user_auth_table.name,
             ux_bucket=ux_bucket.bucket,
         ).apply(
-            lambda inputs: {     
+            lambda inputs: {
                 # This is a special directive to our HCL file that tells it to use Localstack
                 "aws_endpoint": "USE_LOCALSTACK_SENTINEL_VALUE",
                 "deployment_name": DEPLOYMENT_NAME,
