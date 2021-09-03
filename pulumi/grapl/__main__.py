@@ -143,11 +143,18 @@ def main() -> None:
         job_vars = pulumi.Output.all(
             # Localstack is exposed statically on 4566. No consul-connect needed.
             aws_endpoint="http://localhost:4566",
+            analyzer_bucket=analyzers_bucket.bucket,
+            analyzer_dispatched_bucket=dispatched_analyzer_emitter.bucket.bucket,
+            analyzer_dispatcher_queue=analyzer_dispatcher_queue.main_queue_url,
+            analyzer_executor_queue=analyzer_executor_queue.main_queue_url,
+            analyzer_matched_subgraphs_bucket=analyzer_matched_emitter.bucket.bucket,
+            analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url,
             graph_merger_queue=graph_merger_queue.main_queue_url,
             graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
             session_table_name=dynamodb_tables.dynamic_session_table.name,
             schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
             schema_table_name=dynamodb_tables.schema_table.name,
+            model_plugins_bucket=model_plugins_bucket.bucket,
             node_identifier_queue=node_identifier_queue.main_queue_url,
             node_identifier_dead_letter_queue=node_identifier_queue.dead_letter_queue_url,
             node_identifier_retry_queue=node_identifier_queue.retry_queue_url,
