@@ -24,12 +24,6 @@ nomad_dispatch() {
     echo "${job_id}"
 }
 
-nomad_get_job() {
-    # Assumes there's a single job matching job_id
-    local -r job_id="${1}"
-    curl_quiet --request GET "http://localhost:4646/v1/jobs?prefix=${job_id}" | jq -r ".[0]"
-}
-
 nomad_dispatch_status() {
     # returns one of "pending", "running", "dead"
     local -r job_id="${1}"
@@ -42,16 +36,24 @@ await_nomad_dispatch_finish() {
     local -r attempts=$2
 
     local status
-    for _ in $(seq 0 "${attempts}"); do
+    # The below could be replaced with blocking queries on Nomad.
+    for i in $(seq 1 "${attempts}"); do
         status=$(nomad_dispatch_status "${job_id}")
         if [ "${status}" = "dead" ]; then
-            echo >&2 "Integration tests complete"
+            echo >&2 -ne "\nIntegration tests complete"
             return 0
         else
-            echo >&2 "Integration tests still running - status: ${status}"
+            # the `\r` lets us rewrite the last line
+            echo >&2 -ne "[${i}/${attempts}] Integration tests still running - status: ${status}"\\r
             sleep 5
         fi
     done
-    echo >&2 "Integration tests timed out - perhaps add more attempts?"
+    echo >&2 -ne "\nIntegration tests timed out - perhaps add more attempts?"
     return 1
+}
+
+nomad_get_job() {
+    # Assumes there's a single job matching job_id
+    local -r job_id="${1}"
+    curl_quiet --request GET "http://localhost:4646/v1/jobs?prefix=${job_id}" | jq -r ".[0]"
 }
