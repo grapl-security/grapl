@@ -104,6 +104,52 @@ job "integration-tests" {
         REDIS_ENDPOINT              = var.redis_endpoint
       }
     }
+
+    task "analyzerlib-integration-tests" {
+      driver = "docker"
+
+      config {
+        image = "${var.container_registry}/grapl/analyzerlib-test:latest"
+      }
+
+      env {
+        DEPLOYMENT_NAME = var.deployment_name
+        GRAPL_LOG_LEVEL = local.log_level
+        MG_ALPHAS       = "localhost:9080"
+      }
+
+    }
+
+    task "analyzer-executor-integration-tests" {
+      driver = "docker"
+
+      config {
+        image = "${var.container_registry}/grapl/analyzer-executor-test:latest"
+      }
+
+      env {
+        # aws vars
+        AWS_REGION                  = var.aws_region
+        GRAPL_AWS_ENDPOINT          = var.aws_endpoint
+        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
+        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
+
+        GRAPL_LOG_LEVEL             = local.log_level
+
+        GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET=""
+        GRAPL_ANALYZERS_BUCKET=""
+        GRAPL_MODEL_PLUGINS_BUCKET=""
+
+        HITCACHE_ADDR=""
+        HITCACHE_PORT=""
+        MESSAGECACHE_ADDR=""
+        MESSAGECACHE_PORT=""
+        IS_RETRY=False
+      }
+
+    }
+
+
   }
 }
 
