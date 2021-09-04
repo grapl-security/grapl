@@ -38,7 +38,8 @@ variable "ZOOKEEPER_PORT" {
 
 locals {
   # This is the equivalent of `localhost` within a bridge network
-  zookeeper_endpoint = "${attr.unique.network.ip-address}:${var.ZOOKEEPER_PORT}"
+  localhost_within_bridge = attr.unique.network.ip-address
+  zookeeper_endpoint = "${local.localhost_within_bridge}:${var.ZOOKEEPER_PORT}"
 }
 
 ####################
@@ -166,7 +167,7 @@ job "grapl-local-infra" {
     network {
       mode = "bridge"
       port "kafka" {
-        static = var.KAFKA_JMX_PORT
+        static = var.KAFKA_BROKER_PORT
       }
     }
 
@@ -175,6 +176,7 @@ job "grapl-local-infra" {
 
       config {
         image = "confluentinc/cp-kafka:6.2.0"
+        ports = ["kafka"]
       }
 
       resources {
@@ -233,6 +235,7 @@ job "grapl-local-infra" {
 
       config {
         image = "confluentinc/cp-zookeeper:6.2.0"
+        ports = ["zookeeper"]  # may not be necesary
       }
 
       env {
