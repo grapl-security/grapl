@@ -71,13 +71,8 @@ job "grapl-local-infra" {
       driver = "docker"
 
       config {
-        image        = "redis:latest"
-        ports        = ["redis"]
-        network_mode = "grapl-network"
-        network_aliases = [
-          # TODO: import as var
-          "redis.grapl.test",
-        ]
+        image = "redis:latest"
+        ports = ["redis"]
       }
     }
   }
@@ -117,7 +112,6 @@ job "grapl-local-infra" {
         # These two are only required for Lambda support.
         # Container name is *not* configurable.
         MAIN_CONTAINER_NAME = "${NOMAD_TASK_NAME}-${NOMAD_ALLOC_ID}"
-        #LAMBDA_DOCKER_NETWORK = "grapl-network"
 
         # These are not used by localstack, but are used by the health check.
         AWS_ACCESS_KEY_ID     = var.FAKE_AWS_ACCESS_KEY_ID
