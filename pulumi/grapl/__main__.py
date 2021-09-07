@@ -138,7 +138,10 @@ def main() -> None:
         analyzer_executor_queue = ServiceQueue("analyzer-executor")
         analyzer_executor_queue.subscribe_to_emitter(dispatched_analyzer_emitter)
 
-        kafka = Kafka("kafka")
+        # Temporarily disabled due to Nomad migration
+        # https://github.com/grapl-security/issue-tracker/issues/670
+        if False:
+            kafka = Kafka("kafka")
 
         job_vars = pulumi.Output.all(
             # Localstack is exposed statically on 4566. No consul-connect needed.
@@ -164,6 +167,8 @@ def main() -> None:
             ux_bucket=ux_bucket.bucket,
         ).apply(
             lambda inputs: {
+                # This is a special directive to our HCL file that tells it to use Localstack
+                "aws_endpoint": "USE_LOCALSTACK_SENTINEL_VALUE",
                 "deployment_name": DEPLOYMENT_NAME,
                 "grapl_test_user_name": GRAPL_TEST_USER_NAME,
                 "redis_endpoint": pulumi.Config().get("REDIS_ENDPOINT"),

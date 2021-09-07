@@ -31,16 +31,17 @@ variable "LOCALSTACK_PORT" {
   description = "Port for Localstack"
 }
 
-variable "LOCALSTACK_HOST" {
-  type        = string
-  description = "External hostname for Localstack"
-}
-
 variable "ZOOKEEPER_PORT" {
   type        = string
   description = "Port for zookeeper"
 }
 
+locals {
+  # This is the equivalent of `localhost` within a bridge network.
+  # Useful for, for instance, talking to Zookeeper from Kafka without Consul Connect
+  localhost_within_bridge = attr.unique.network.ip-address
+  zookeeper_endpoint      = "${local.localhost_within_bridge}:${var.ZOOKEEPER_PORT}"
+}
 
 
 ####################
@@ -108,9 +109,8 @@ job "grapl-local-infra" {
       }
 
       env {
-        DEBUG     = 1
-        EDGE_PORT = var.LOCALSTACK_PORT
-        #HOSTNAME_EXTERNAL = var.LOCALSTACK_HOST
+        DEBUG           = 1
+        EDGE_PORT       = var.LOCALSTACK_PORT
         LAMBDA_EXECUTOR = "docker-reuse"
         SERVICES        = "apigateway,cloudwatch,dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs"
         SQS_PROVIDER    = "elasticmq"
@@ -168,6 +168,9 @@ job "grapl-local-infra" {
   group "kafka" {
     network {
       mode = "bridge"
+      port "kafka" {
+        static = var.KAFKA_BROKER_PORT
+      }
     }
 
     task "kafka" {
@@ -175,6 +178,7 @@ job "grapl-local-infra" {
 
       config {
         image = "confluentinc/cp-kafka:6.2.0"
+        ports = ["kafka"]
       }
 
       resources {
@@ -184,7 +188,7 @@ job "grapl-local-infra" {
 
       env {
         KAFKA_BROKER_ID                                = 1
-        KAFKA_ZOOKEEPER_CONNECT                        = "localhost:${var.ZOOKEEPER_PORT}"
+        KAFKA_ZOOKEEPER_CONNECT                        = local.zookeeper_endpoint
         KAFKA_LISTENER_SECURITY_PROTOCOL_MAP           = "PLAINTEXT:PLAINTEXT"
         KAFKA_LISTENERS                                = "PLAINTEXT://localhost:${var.KAFKA_BROKER_PORT}"
         KAFKA_ADVERTISED_LISTENERS                     = "PLAINTEXT://localhost:${var.KAFKA_BROKER_PORT}"
@@ -218,32 +222,14 @@ job "grapl-local-infra" {
       }
 
     }
-
-    service {
-      name = "kafka-broker"
-      port = var.KAFKA_BROKER_PORT
-      tags = ["kafka"]
-
-      connect {
-        sidecar_service {
-          proxy {
-            # connect to zookeeper
-            upstreams {
-              destination_name = "zookeeper"
-              local_bind_port  = var.ZOOKEEPER_PORT
-            }
-          }
-        }
-      }
-
-    }
-
-
   }
 
   group "zookeeper" {
     network {
       mode = "bridge"
+      port "zookeeper" {
+        static = var.ZOOKEEPER_PORT
+      }
     }
 
     task "zookeeper" {
@@ -251,6 +237,7 @@ job "grapl-local-infra" {
 
       config {
         image = "confluentinc/cp-zookeeper:6.2.0"
+        ports = ["zookeeper"] # may not be necesary
       }
 
       env {
@@ -280,25 +267,5 @@ job "grapl-local-infra" {
       }
 
     }
-
-    service {
-      name = "zookeeper"
-      port = var.ZOOKEEPER_PORT
-      tags = ["zookeeper"]
-
-      connect {
-        sidecar_service {
-          proxy {
-            upstreams {
-              destination_name = "kafka-broker"
-              local_bind_port  = var.KAFKA_BROKER_PORT
-            }
-          }
-        }
-      }
-
-    }
-
-
   }
 }
