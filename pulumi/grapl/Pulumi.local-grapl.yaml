@@ -2,18 +2,20 @@ encryptionsalt: v1:KRH5XXw/Vv4=:v1:Mi1EOttYFIuFy8Zl:u/QoTfZuh9c5m6Jyw2L3mAKC+VNs
 config:
   aws:accessKey: test
   aws:endpoints:
-    - apigateway: http://aws.grapl.test:4566
-      cloudwatch: http://aws.grapl.test:4566
-      cloudwatchevents: http://aws.grapl.test:4566
-      cloudwatchlogs: http://aws.grapl.test:4566
-      dynamodb: http://aws.grapl.test:4566
-      ec2: http://aws.grapl.test:4566
-      iam: http://aws.grapl.test:4566
-      lambda: http://aws.grapl.test:4566
-      s3: http://aws.grapl.test:4566
-      secretsmanager: http://aws.grapl.test:4566
-      sns: http://aws.grapl.test:4566
-      sqs: http://aws.grapl.test:4566
+    # Localstack in Nomad runs in network mode "bridge",
+    # making it available to the host OS at localhost:4566.
+    - apigateway: http://host.docker.internal:4566
+      cloudwatch: http://host.docker.internal:4566
+      cloudwatchevents: http://host.docker.internal:4566
+      cloudwatchlogs: http://host.docker.internal:4566
+      dynamodb: http://host.docker.internal:4566
+      ec2: http://host.docker.internal:4566
+      iam: http://host.docker.internal:4566
+      lambda: http://host.docker.internal:4566
+      s3: http://host.docker.internal:4566
+      secretsmanager: http://host.docker.internal:4566
+      sns: http://host.docker.internal:4566
+      sqs: http://host.docker.internal:4566
   aws:region: us-east-1
   aws:s3ForcePathStyle: "true"
   aws:secretKey: test
@@ -21,9 +23,12 @@ config:
   aws:skipRequestingAccountId: "true"
   grapl:GRAPL_API_HOST: api.grapl.test
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: fake-ops-email@fake.domain
-  grapl:MG_ALPHAS: dgraph.grapl.test:9080
-  grapl:REDIS_ENDPOINT: redis://redis.grapl.test:6379
+  grapl:MG_ALPHAS: "eventually-delete-this"
+
+  # Brought up in grapl-local-infra.nomad
+  grapl:REDIS_ENDPOINT: redis://host.docker.internal:6379
   kafka:bootstrapServers:
-    - kafka-broker:9092
+    - host.docker.internal:9092
   kafka:tlsEnabled: "false"
+  # Host OS's Nomad instance
   nomad:address: http://host.docker.internal:4646

@@ -394,6 +394,8 @@ up-detach: build ## Bring up local Grapl and detach to return control to tty
 	# For use with a project name consider setting COMPOSE_PROJECT_NAME env var
 	# Usage: `make up-detach`
 	$(WITH_LOCAL_GRAPL_ENV)
+	# Start the Nomad agent
+	$(MAKE) stop-nomad-detach; $(MAKE) start-nomad-detach
 	# We use this target with COMPOSE_FILE being set pointing to other files.
 	# Although it seems specifying the `--file` option overrides that, we'll
 	# explicitly unset that here to avoid potential surprises.
@@ -413,6 +415,7 @@ down: ## docker-compose down - both stops and removes the containers
 	docker-compose $(EVERY_COMPOSE_FILE) down --timeout=0
 	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
 	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
+	$(MAKE) stop-nomad-detach
 
 .PHONY: stop
 stop: ## docker-compose stop - stops (but preserves) the containers
@@ -452,8 +455,17 @@ local-pulumi:  ## launch pulumi via docker-compose up
 	$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose -f docker-compose.yml run pulumi
 
+.PHONY: start-nomad-detach
+start-nomad-detach: push-local  ## Start the Nomad environment, detached
+	$(WITH_LOCAL_GRAPL_ENV)
+	sudo --preserve-env nomad/local/start_detach.sh
+
+.PHONY: stop-nomad-detach
+stop-nomad-detach:  ## Stop Nomad CI environment
+	sudo --preserve-env nomad/local/stop_detach.sh
+
 .PHONY: push
-push: ## Push Grapl containers to supplied DOCKER_REGISTRY
+push: build-docker-images ## Push Grapl containers to supplied DOCKER_REGISTRY
 	docker-compose --file=docker-compose.build.yml push
 
 .PHONY: push-local
@@ -467,8 +479,10 @@ e2e-logs: ## All docker-compose logs
 	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) logs -f
 
 .PHONY: docker-kill-all
-docker-kill-all:  # Kill all currently running Docker containers
-	docker kill $$(docker ps -aq)
+docker-kill-all:  # Kill all currently running Docker containers except registry
+	# https://stackoverflow.com/a/46208493
+	TO_KILL=$$(docker ps --all --quiet | grep -v -E $$(docker ps -aq --filter='name=grapl_local_registry' | paste -sd "|" -))
+	docker kill $${TO_KILL}
 
 .PHONY: populate-venv
 populate-venv: ## Set up a Python virtualenv (you'll have to activate manually!)
