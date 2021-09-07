@@ -171,8 +171,8 @@ def main() -> None:
                 "aws_endpoint": "USE_LOCALSTACK_SENTINEL_VALUE",
                 "deployment_name": DEPLOYMENT_NAME,
                 "grapl_test_user_name": GRAPL_TEST_USER_NAME,
-                "redis_endpoint": pulumi.Config().get("REDIS_ENDPOINT"),
                 "aws_region": aws.get_region().name,
+                "redis_endpoint": "USE_REDIS_SENTINEL_VALUE",
                 # TODO: consider replacing with the previous per-service `configurable_envvars`
                 "rust_log": "DEBUG",
                 **inputs,
