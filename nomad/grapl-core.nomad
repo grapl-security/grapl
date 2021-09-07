@@ -129,11 +129,11 @@ variable "graph_merger_tag" {
 }
 
 variable "graph_merger_queue" {
-  type    = string
+  type = string
 }
 
 variable "graph_merger_dead_letter_queue" {
-  type    = string
+  type = string
 }
 
 variable "grapl_test_user_name" {

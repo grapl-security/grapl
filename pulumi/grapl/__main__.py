@@ -140,7 +140,8 @@ def main() -> None:
 
         # Temporarily disabled due to Nomad migration
         # https://github.com/grapl-security/issue-tracker/issues/670
-        # kafka = Kafka("kafka")
+        if False:
+            kafka = Kafka("kafka")
 
         job_vars = pulumi.Output.all(
             analyzer_bucket=analyzers_bucket.bucket,
