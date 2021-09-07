@@ -3,7 +3,7 @@
 
 # Test outputs
 test/integration-outputs
-# Artifacts dumped from dump_artifacts.py script
+# Artifacts dumped from `make dump-artifacts` script
 /test_artifacts/
 
 # Environments
