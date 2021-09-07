@@ -186,6 +186,8 @@ job "integration-tests" {
 
       config {
         image = "${var.container_registry}/grapl/analyzer-executor-test:latest"
+        entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+        command = "cd analyzer_executor && export PYTHONPATH=\"$(pwd)/src\"; py.test -n auto -m 'integration_test'"
       }
 
       env {
@@ -206,6 +208,11 @@ job "integration-tests" {
         MESSAGECACHE_ADDR = local.redis_host
         MESSAGECACHE_PORT = local.redis_port
         IS_RETRY          = False
+      }
+
+      resources {
+        cpu    = 500
+        memory = 1024
       }
 
     }
