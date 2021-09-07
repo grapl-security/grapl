@@ -254,7 +254,7 @@ locals {
 
   local_redis_endpoint = "redis://${attr.unique.network.ip-address}:6379"
   # redis endpoint to use when interacting with redis. Prefer this over var.redis_endpoint
-  redis_endpoint = var.aws_endpoint != "USE_LOCALSTACK_SENTINEL_VALUE" ? var.redis_endpoint : local.local_redis_endpoint
+  redis_endpoint = var.redis_endpoint != "USE_REDIS_SENTINEL_VALUE" ? var.redis_endpoint : local.local_redis_endpoint
 
   redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
   redis         = split(":", local.redis_trimmed)
