@@ -42,6 +42,7 @@ variable "redis_endpoint" {
 
 locals {
   log_level            = "DEBUG"
+  local_aws_endpoint =  "http://${attr.unique.network.ip-address}:4566"
   local_redis_endpoint = "redis://${attr.unique.network.ip-address}:6379"
 
   redis_trimmed = trimprefix(local.local_redis_endpoint, "redis://")
@@ -272,6 +273,70 @@ job "integration-tests" {
 
         IS_LOCAL  = true
         MG_ALPHAS = "localhost:9080"
+      }
+    }
+
+
+  }
+
+  group "engagement-edge-integration-tests" {
+    restart {
+      # Make this a one-shot job
+      attempts = 0
+    }
+
+    network {
+      mode = "bridge"
+    }
+
+    # Enable service discovery
+    service {
+      connect {
+        sidecar_service {
+          proxy {
+            upstreams {
+              # This is a hack, because IDK how to share locals across files
+              destination_name = "dgraph-alpha-0-grpc-public"
+              local_bind_port  = 9080
+            }
+          }
+        }
+      }
+    }
+    task "engagement-edge-integration-tests" {
+      driver = "docker"
+
+      config {
+        image      = "${var.container_registry}/grapl/grapl-engagement-edge-test:latest"
+        entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+        command    = "cd engagement_edge; py.test -n auto -m 'integration_test'"
+      }
+
+      env {
+        # aws vars
+        AWS_REGION                  = var.aws_region
+        GRAPL_AWS_ENDPOINT          = local.local_aws_endpoint
+        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
+        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
+
+        DEPLOYMENT_NAME = var.deployment_name
+        GRAPL_LOG_LEVEL = local.log_level
+
+        # These are placeholders since Ian is replacing the nginx service shortly
+        GRAPL_API_HOST           = "localhost"
+        GRAPL_HTTP_FRONTEND_PORT = 3128
+        GRAPL_TEST_USER_NAME     = ""
+
+        IS_LOCAL  = true
+        MG_ALPHAS = "localhost:9080"
+
+        UX_BUCKET_URL="ux_bucket_url"
+        GRAPL_NOTEBOOK_INSTANCE="local-grapl-Notebook"
+      }
+
+      resources {
+        cpu    = 500
+        memory = 1024
       }
     }
 
