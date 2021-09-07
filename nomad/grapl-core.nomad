@@ -130,12 +130,10 @@ variable "graph_merger_tag" {
 
 variable "graph_merger_queue" {
   type    = string
-  default = "http://aws.grapl.test:4566/000000000000/graph-merger-queue"
 }
 
 variable "graph_merger_dead_letter_queue" {
   type    = string
-  default = "http://aws.grapl.test:4566/000000000000/graph-merger-dead-letter-queue"
 }
 
 variable "grapl_test_user_name" {
