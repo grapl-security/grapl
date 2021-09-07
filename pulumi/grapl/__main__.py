@@ -1,4 +1,5 @@
 import sys
+from pathlib import Path
 
 sys.path.insert(0, "..")
 
@@ -19,6 +20,7 @@ from infra.config import (
     GRAPL_TEST_USER_NAME,
     LOCAL_GRAPL,
     REAL_DEPLOYMENT,
+    SHOULD_DEPLOY_INTEGRATION_TESTS,
 )
 from infra.dgraph_cluster import DgraphCluster, LocalStandInDgraphCluster
 from infra.dgraph_ttl import DGraphTTL
@@ -143,7 +145,7 @@ def main() -> None:
         if False:
             kafka = Kafka("kafka")
 
-        job_vars = pulumi.Output.all(
+        grapl_core_job_vars = pulumi.Output.all(
             analyzer_bucket=analyzers_bucket.bucket,
             analyzer_dispatched_bucket=dispatched_analyzer_emitter.bucket.bucket,
             analyzer_dispatcher_queue=analyzer_dispatcher_queue.main_queue_url,
@@ -170,13 +172,41 @@ def main() -> None:
                 "deployment_name": DEPLOYMENT_NAME,
                 "grapl_test_user_name": GRAPL_TEST_USER_NAME,
                 "redis_endpoint": "USE_REDIS_SENTINEL_VALUE",
-                # "aws_region": aws.get_region(),
+                "aws_region": aws.get_region().name,
                 # TODO: consider replacing with the previous per-service `configurable_envvars`
                 "rust_log": "DEBUG",
                 **inputs,
             }
         )
-        nomad_job = NomadJob("grapl-core", job_vars)
+
+        nomad_grapl_core = NomadJob(
+            "grapl-core",
+            jobspec=Path("../../nomad/grapl-core.nomad").resolve(),
+            vars=grapl_core_job_vars,
+        )
+
+        if SHOULD_DEPLOY_INTEGRATION_TESTS:
+            # Filter out which vars we need
+            integration_test_job_vars = grapl_core_job_vars.apply(
+                lambda inputs: {
+                    k: inputs[k]
+                    for k in inputs.keys()
+                    & {
+                        "aws_region",
+                        "deployment_name",
+                        "aws_access_key_id",
+                        "aws_access_key_secret",
+                        "aws_endpoint",
+                        "redis_endpoint",
+                    }
+                }
+            )
+
+            nomad_integration_tests = NomadJob(
+                "integration-tests",
+                jobspec=Path("../../nomad/local/integration-tests.nomad").resolve(),
+                vars=integration_test_job_vars,
+            )
 
     else:
         nomad_cluster = NomadCluster(

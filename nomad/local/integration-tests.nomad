@@ -9,8 +9,7 @@ variable "container_registry" {
 }
 
 variable "aws_region" {
-  type    = string
-  default = "us-west-2"
+  type = string
 }
 
 variable "deployment_name" {
