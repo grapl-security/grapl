@@ -1,6 +1,5 @@
 variable "rust_log" {
   type        = string
-  default     = "INFO"
   description = "Controls the logging behavior of Rust-based services."
 }
 
@@ -24,8 +23,13 @@ variable "aws_access_key_secret" {
 
 variable "aws_endpoint" {
   type        = string
-  description = "The endpoint in which we can expect to find and interact with AWS."
-  default     = "http://aws.grapl.test:4566"
+  description = <<EOF
+  The endpoint in which we can expect to find and interact with AWS. 
+  It accepts a special sentinel value, USE_LOCALSTACK_SENTINEL_VALUE, if the
+  user wishes to contact Localstack.
+
+  Prefer using `local.aws_endpoint`.
+EOF
 }
 
 variable "aws_region" {
@@ -125,13 +129,11 @@ variable "graph_merger_tag" {
 }
 
 variable "graph_merger_queue" {
-  type    = string
-  default = "http://aws.grapl.test:4566/000000000000/graph-merger-queue"
+  type = string
 }
 
 variable "graph_merger_dead_letter_queue" {
-  type    = string
-  default = "http://aws.grapl.test:4566/000000000000/graph-merger-dead-letter-queue"
+  type = string
 }
 
 variable "grapl_test_user_name" {
@@ -243,6 +245,12 @@ locals {
 
   # String that contains all of the running Alphas for clients connecting to Dgraph (so they can do loadbalancing)
   alpha_grpc_connect_str = join(",", [for alpha in local.dgraph_alphas : "localhost:${alpha.grpc_public_port}"])
+
+  # Used for local development
+  local_aws_endpoint = "http://${attr.unique.network.ip-address}:4566"
+
+  # AWS endpoint to use when interacting with AWS. Prefer this over var.aws_endpoint
+  aws_endpoint = var.aws_endpoint != "USE_LOCALSTACK_SENTINEL_VALUE" ? var.aws_endpoint : local.local_aws_endpoint
 
   redis_trimmed = trimprefix(var.redis_endpoint, "redis://")
   redis         = split(":", local.redis_trimmed)
@@ -498,7 +506,7 @@ job "grapl-core" {
       }
 
       env {
-        GRAPL_AWS_ENDPOINT          = var.aws_endpoint
+        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
         AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
@@ -534,28 +542,28 @@ job "grapl-core" {
     //    }
   }
 
-  group "grapl-node-identifier" {
-    count = var.num_node_identifiers
-
-    //    network {
-    //      mode = "bridge"
-    //    }
+  group "provisioner" {
+    network {
+      mode = "bridge"
+    }
 
     task "provisioner" {
       driver = "docker"
 
       config {
-        image        = "${var.container_registry}/grapl/provisioner:${var.provisioner_tag}"
-        network_mode = "grapl-network"
+        image = "${var.container_registry}/grapl/provisioner:${var.provisioner_tag}"
       }
 
       lifecycle {
-        hook    = "prestart"
+        hook = "poststart"
+        # Ephemeral, not long-lived
         sidecar = false
       }
 
       env {
-        GRAPL_AWS_ENDPOINT            = var.aws_endpoint
+        MG_ALPHAS                     = local.alpha_grpc_connect_str
+        DEPLOYMENT_NAME               = var.deployment_name
+        GRAPL_AWS_ENDPOINT            = local.aws_endpoint
         GRAPL_AWS_ACCESS_KEY_ID       = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET   = var.aws_access_key_secret
         AWS_DEFAULT_REGION            = var.aws_region # boto3 prefers this one
@@ -564,8 +572,34 @@ job "grapl-core" {
         GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name
         GRAPL_USER_AUTH_TABLE         = var.user_auth_table
         GRAPL_TEST_USER_NAME          = var.grapl_test_user_name
+        GRAPL_LOG_LEVEL               = var.rust_log # TODO: revisit
       }
+    }
 
+    service {
+      connect {
+        sidecar_service {
+          proxy {
+            dynamic "upstreams" {
+              iterator = alpha
+              for_each = local.dgraph_alphas
+
+              content {
+                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
+                local_bind_port  = alpha.value.grpc_public_port
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  group "grapl-node-identifier" {
+    count = var.num_node_identifiers
+
+    network {
+      mode = "bridge"
     }
 
     task "node-identifier" {
@@ -577,7 +611,7 @@ job "grapl-core" {
       }
 
       env {
-        GRAPL_AWS_ENDPOINT          = var.aws_endpoint
+        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
         AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
@@ -585,7 +619,7 @@ job "grapl-core" {
         RUST_LOG                    = var.rust_log
         RUST_BACKTRACE              = 1
         REDIS_ENDPOINT              = var.redis_endpoint
-        MG_ALPHAS                   = local.alpha_grpc_connect_str
+        MG_ALPHAS                   = local.alpha_grpc_connect_str # alpha_grpc_connect_str won't work if network mode = grapl network
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
         GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
         # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L156
@@ -612,7 +646,7 @@ job "grapl-core" {
       }
 
       env {
-        GRAPL_AWS_ENDPOINT          = var.aws_endpoint
+        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
         AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
@@ -723,7 +757,7 @@ job "grapl-core" {
         AWS_REGION                  = var.aws_region
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-        GRAPL_AWS_ENDPOINT          = var.aws_endpoint
+        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
       }
     }
 
@@ -745,7 +779,7 @@ job "grapl-core" {
         GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name
         GRAPL_AWS_ACCESS_KEY_ID       = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET   = var.aws_access_key_secret
-        GRAPL_AWS_ENDPOINT            = var.aws_endpoint
+        GRAPL_AWS_ENDPOINT            = local.aws_endpoint
         IS_LOCAL                      = "True"
         JWT_SECRET_ID                 = "JWT_SECRET_ID"
         PORT                          = 5000

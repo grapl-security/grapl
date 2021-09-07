@@ -24,92 +24,13 @@ x-common-variables:
     AWS_REGION: ${AWS_REGION}
   dgraph-env: &dgraph-env
     MG_ALPHAS: ${MG_ALPHAS}
-  kafka-broker-env: &kafka-broker-env
-    KAFKA_BROKER_ID: 1
-    KAFKA_ZOOKEEPER_CONNECT: "${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT}"
-    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
-    KAFKA_LISTENERS: PLAINTEXT://${KAFKA_BROKER_HOST}:9092
-    KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://${KAFKA_BROKER_HOST}:9092
-    KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-    KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-    KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-    KAFKA_JMX_PORT: ${KAFKA_JMX_PORT}
-    KAFKA_JMX_HOSTNAME: localhost
-    KAFKA_LOG4J_ROOT_LOGLEVEL: INFO
   log-level: &log-level
     GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-ERROR}"
     RUST_LOG: "${RUST_LOG:-ERROR}"
   rust-backtrace: &rust-backtrace
     RUST_BACKTRACE: ${RUST_BACKTRACE}
-  zookeeper-env: &zookeeper-env
-    ZOOKEEPER_CLIENT_PORT: ${ZOOKEEPER_PORT}
-    ZOOKEEPER_TICK_TIME: 2000
 
 services:
-  ########################################################################
-  # Cloud Infrastructure Dependencies
-  ########################################################################
-
-  dgraph:
-    tty: false
-    image: dgraph/standalone:v21.03.1
-    ports:
-      # required to access the RATEL interface for dgraph
-      - 127.0.0.1:${DGRAPH_RATEL_HTTP_EXTERNAL_PUBLIC_PORT}:${DGRAPH_RATEL_HTTP_EXTERNAL_PUBLIC_PORT}
-      # required for RATEL interface to operate properly
-      - 127.0.0.1:${DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT}:${DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT}
-    volumes:
-      - type: volume
-        source: dgraph_export
-        # Hitting :8080/admin/export will force an export to be written to this directory.
-        target: /dgraph/export
-    networks:
-      default:
-        aliases:
-          - ${DGRAPH_HOST}
-
-  zookeeper:
-    image: confluentinc/cp-zookeeper:6.2.0
-    environment:
-      <<: *zookeeper-env
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "echo",
-          "ruok",
-          "|",
-          "nc",
-          "-w",
-          "2",
-          "-q",
-          "2",
-          "localhost",
-          "${ZOOKEEPER_PORT}",
-          "|",
-          "grep",
-          "imok",
-        ]
-      retries: 5
-      interval: 5s
-      timeout: 30s
-      start_period: 15s
-
-  kafka-broker:
-    image: confluentinc/cp-kafka:6.2.0
-    depends_on:
-      zookeeper:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "nc", "-vz", "kafka-broker", "${KAFKA_BROKER_PORT}"]
-      retries: 5
-      interval: 5s
-      timeout: 30s
-      start_period: 15s
-    environment:
-      <<: *kafka-broker-env
-
   ########################################################################
   # Rust Services
   ########################################################################
@@ -131,8 +52,6 @@ services:
       <<: *log-level
       <<: *rust-backtrace
     depends_on:
-      provisioner:
-        condition: service_completed_successfully
       pulumi:
         # We must wait until Pulumi has created the buckets to know what their names are
         condition: service_completed_successfully
@@ -157,91 +76,6 @@ services:
       <<: *log-level
       <<: *rust-backtrace
     depends_on:
-      provisioner:
-        condition: service_completed_successfully
-      pulumi:
-        # We must wait until Pulumi has created the buckets to know what their names are
-        condition: service_completed_successfully
-    volumes:
-      - *read-only-pulumi-mnt
-
-  node-identifier:
-    image: grapl/node-identifier:${TAG:-latest}
-    entrypoint: ["/busybox/sh", "-o", "errexit", "-o", "nounset", "-c"]
-    command:
-      - |
-        # TODO: Rename this variable to be in line with our others?
-        export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/subgraphs-generated-bucket)
-        export GRAPL_STATIC_MAPPING_TABLE=$$(cat /mnt/pulumi-outputs/static-mapping-table)
-        export GRAPL_DYNAMIC_SESSION_TABLE=$$(cat /mnt/pulumi-outputs/dynamic-session-table)
-        export DEAD_LETTER_QUEUE_URL=$$(cat /mnt/pulumi-outputs/node-identifier-retry-queue)
-        export SOURCE_QUEUE_URL=$$(cat /mnt/pulumi-outputs/node-identifier-queue)
-        /node-identifier
-    environment:
-      <<: *aws-env
-      REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
-      <<: *log-level
-      <<: *rust-backtrace
-    tty: false
-    depends_on:
-      provisioner:
-        condition: service_completed_successfully
-      pulumi:
-        # We must wait until Pulumi has created the buckets to know what their names are
-        condition: service_completed_successfully
-    volumes:
-      - *read-only-pulumi-mnt
-
-  node-identifier-retry:
-    image: grapl/node-identifier-retry:${TAG:-latest}
-    entrypoint: ["/busybox/sh", "-o", "errexit", "-o", "nounset", "-c"]
-    command:
-      - |
-        # TODO: Rename this variable to be in line with our others?
-        export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/subgraphs-generated-bucket)
-        export GRAPL_STATIC_MAPPING_TABLE=$$(cat /mnt/pulumi-outputs/static-mapping-table)
-        export GRAPL_DYNAMIC_SESSION_TABLE=$$(cat /mnt/pulumi-outputs/dynamic-session-table)
-        export DEAD_LETTER_QUEUE_URL=$$(cat /mnt/pulumi-outputs/node-identifier-dead-letter-queue)
-        export SOURCE_QUEUE_URL=$$(cat /mnt/pulumi-outputs/node-identifier-retry-queue)
-        /node-identifier-retry
-    environment:
-      <<: *aws-env
-      REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
-      <<: *log-level
-      <<: *rust-backtrace
-    tty: false
-    depends_on:
-      provisioner:
-        condition: service_completed_successfully
-      pulumi:
-        # We must wait until Pulumi has created the buckets to know what their names are
-        condition: service_completed_successfully
-    volumes:
-      - *read-only-pulumi-mnt
-
-  graph-merger:
-    image: grapl/graph-merger:${TAG:-latest}
-    entrypoint: ["/busybox/sh", "-o", "errexit", "-o", "nounset", "-c"]
-    command:
-      - |
-        # TODO: Rename this variable to be in line with our others?
-        export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/subgraphs-merged-bucket)
-        export GRAPL_SCHEMA_TABLE=$$(cat /mnt/pulumi-outputs/schema-table)
-        export DEAD_LETTER_QUEUE_URL=$$(cat /mnt/pulumi-outputs/graph-merger-retry-queue)
-        export SOURCE_QUEUE_URL=$$(cat /mnt/pulumi-outputs/graph-merger-queue)
-        /graph-merger
-    environment:
-      <<: *aws-env
-      <<: *dgraph-env
-      REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
-      <<: *log-level
-      <<: *rust-backtrace
-    tty: false
-    depends_on:
-      dgraph:
-        condition: service_started
-      provisioner:
-        condition: service_completed_successfully
       pulumi:
         # We must wait until Pulumi has created the buckets to know what their names are
         condition: service_completed_successfully
@@ -303,10 +137,6 @@ services:
     ports:
       - 127.0.0.1:${VSC_DEBUGGER_PORT_FOR_ANALYZER_EXECUTOR}:${VSC_DEBUGGER_PORT_FOR_ANALYZER_EXECUTOR}
     depends_on:
-      dgraph:
-        condition: service_started
-      provisioner:
-        condition: service_completed_successfully
       pulumi:
         # We must wait until Pulumi has created the buckets to know what their names are
         condition: service_completed_successfully
@@ -345,33 +175,10 @@ services:
         # We must wait until Pulumi has created the API gateway so we
         # know what its URL is.
         condition: service_completed_successfully
-      engagement-view-uploader:
-        # nginx doesn't actually depend on engagement-view-uploader,
-        # but we need *some* service to declare a dependency on the
-        # engagement-view-uploader in order to catch non-0 exit codes
-        condition: service_completed_successfully
     networks:
       default:
         aliases:
           - ${GRAPL_API_HOST}
-
-  engagement-view-uploader:
-    image: grapl/engagement-view:${TAG:-latest}
-    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
-    command:
-      - |
-        export GRAPL_UX_BUCKET=$$(cat /mnt/pulumi-outputs/ux-bucket)
-        ./upload_local.sh
-    environment:
-      <<: *aws-env
-    depends_on:
-      provisioner:
-        condition: service_completed_successfully
-      pulumi:
-        # We must wait until Pulumi has created the buckets to know what their names are
-        condition: service_completed_successfully
-    volumes:
-      - *read-only-pulumi-mnt
 
   graphql-endpoint:
     image: grapl/graphql-endpoint:${TAG:-latest}
@@ -390,10 +197,6 @@ services:
       DEBUG_SERVICES: "${DEBUG_SERVICES:-}"
       VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT: "${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}"
     depends_on:
-      dgraph:
-        condition: service_started
-      provisioner:
-        condition: service_completed_successfully
       pulumi:
         condition: service_completed_successfully
     ports:
@@ -411,8 +214,6 @@ services:
     user: grapl
     environment:
       <<: *dgraph-env
-    depends_on:
-      - dgraph
     ports:
       - 127.0.0.1:${GRAPL_NOTEBOOK_PORT}:${GRAPL_NOTEBOOK_PORT}
 
@@ -484,38 +285,10 @@ services:
       PULUMI_CONFIG_PASSPHRASE: local-grapl-passphrase
       # Other environment variables like MG_ALPHAS are passed in via
       # Pulumi.local-grapl.yaml
-    depends_on:
-      kafka-broker:
-        condition: service_healthy
     extra_hosts:
       # Expose the host Linux machine, despite being on the Grapl network.
       # This lets Pulumi talk to the host's Nomad
       - "host.docker.internal:host-gateway"
-
-  provisioner:
-    image: grapl/provisioner:${TAG:-latest}
-    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
-    command:
-      - |
-        export GRAPL_SCHEMA_TABLE=$$(cat /mnt/pulumi-outputs/schema-table)
-        export GRAPL_SCHEMA_PROPERTIES_TABLE=$$(cat /mnt/pulumi-outputs/schema-properties-table)
-        export GRAPL_USER_AUTH_TABLE=$$(cat /mnt/pulumi-outputs/user-auth-table)
-
-        python3 -c "import lambdex_handler; lambdex_handler.handler(None, None)"
-    environment:
-      <<: *aws-env
-      <<: *dgraph-env
-      GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-INFO}"
-      DEPLOYMENT_NAME: "${DEPLOYMENT_NAME}"
-      GRAPL_TEST_USER_NAME: "${DEPLOYMENT_NAME}-grapl-test-user"
-    tty: true
-    depends_on:
-      dgraph:
-        condition: service_started
-      pulumi:
-        condition: service_completed_successfully
-    volumes:
-      - *read-only-pulumi-mnt
 
 networks:
   default:
