@@ -144,8 +144,6 @@ def main() -> None:
             kafka = Kafka("kafka")
 
         job_vars = pulumi.Output.all(
-            # Localstack is exposed statically on 4566. No consul-connect needed.
-            aws_endpoint="http://localhost:4566",
             analyzer_bucket=analyzers_bucket.bucket,
             analyzer_dispatched_bucket=dispatched_analyzer_emitter.bucket.bucket,
             analyzer_dispatcher_queue=analyzer_dispatcher_queue.main_queue_url,
