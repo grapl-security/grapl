@@ -33,8 +33,7 @@ EOF
 }
 
 variable "aws_region" {
-  type    = string
-  default = "us-west-2"
+  type = string
 }
 
 variable "analyzer_bucket" {
