@@ -42,7 +42,9 @@ variable "redis_endpoint" {
 
 locals {
   log_level     = "DEBUG"
-  redis_trimmed = trimprefix(var.redis_endpoint, "redis://")
+  local_redis_endpoint = "redis://${attr.unique.network.ip-address}:6379"
+
+  redis_trimmed = trimprefix(local.local_redis_endpoint, "redis://")
   redis         = split(":", local.redis_trimmed)
   redis_host    = local.redis[0]
   redis_port    = local.redis[1]
@@ -199,6 +201,8 @@ job "integration-tests" {
 
         GRAPL_LOG_LEVEL = local.log_level
 
+        # We don't appear to need this set.
+        # TODO double-check why
         GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET = ""
         GRAPL_ANALYZERS_BUCKET                  = ""
         GRAPL_MODEL_PLUGINS_BUCKET              = ""
