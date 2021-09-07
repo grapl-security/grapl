@@ -37,9 +37,10 @@ variable "ZOOKEEPER_PORT" {
 }
 
 locals {
-  # This is the equivalent of `localhost` within a bridge network
+  # This is the equivalent of `localhost` within a bridge network.
+  # Useful for, for instance, talking to Zookeeper from Kafka without Consul Connect
   localhost_within_bridge = attr.unique.network.ip-address
-  zookeeper_endpoint = "${local.localhost_within_bridge}:${var.ZOOKEEPER_PORT}"
+  zookeeper_endpoint      = "${local.localhost_within_bridge}:${var.ZOOKEEPER_PORT}"
 }
 
 ####################
@@ -235,7 +236,7 @@ job "grapl-local-infra" {
 
       config {
         image = "confluentinc/cp-zookeeper:6.2.0"
-        ports = ["zookeeper"]  # may not be necesary
+        ports = ["zookeeper"] # may not be necesary
       }
 
       env {
