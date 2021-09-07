@@ -230,6 +230,10 @@ grapl-template-generator: ## Build the Grapl Template Generator and install it t
 		./bin/grapl-template-generator
 	printf -- '\n${FMT_BOLD}Template Generator${FMT_END} written to ${FMT_BLUE}./bin/grapl-template-generator${FMT_END}\n'
 
+.PHONY: dump-artifacts
+dump-artifacts:  # Run the script that dumps Nomad/Docker logs after test runs
+	./pants run ./etc/ci_scripts/dump_artifacts --run-args="--compose-project=${COMPOSE_PROJECT_NAME}"
+
 .PHONY: build-ux
 build-ux: ## Build website assets
 	cd src/js/engagement_view && yarn install && yarn build
@@ -323,7 +327,7 @@ test-with-env: # (Do not include help text - not to be used directly)
 		fi
 		# Unset COMPOSE_FILE to help ensure it will be ignored with use of --file
 		unset COMPOSE_FILE
-		etc/ci_scripts/dump_artifacts.py --compose-project=${COMPOSE_PROJECT_NAME}
+		$(MAKE) dump-artifacts
 		$(MAKE) down
 	}
 	# Ensure we call stop even after test failure, and return exit code from
