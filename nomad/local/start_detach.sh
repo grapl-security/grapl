@@ -6,9 +6,9 @@ THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
 cd "${THIS_DIR}"
 
 # Ensure script is being run with `local-grapl.env` variables
-# via `make start-nomad-dev`
+# via `make start-nomad-ci`
 if [[ ! -v DOCKER_REGISTRY ]]; then
-    echo "!!! Run this with 'make start-nomad-dev'"
+    echo "!!! Run this with 'make start-nomad-ci'"
     exit 1
 fi
 
@@ -29,14 +29,12 @@ if [[ -z $(command -v consul) ]]; then
     exit 2
 fi
 
-trap 'kill $(jobs -p)' EXIT
-
-echo "Starting nomad and consul locally."
-nomad agent -config="nomad-agent-conf.nomad" -dev-connect &
-consul agent -dev &
+NOMAD_LOGS_DEST=/tmp/nomad-agent.log
+CONSUL_LOGS_DEST=/tmp/consul-agent.log
+echo "Starting nomad and consul locally. Logs @ ${NOMAD_LOGS_DEST} and ${CONSUL_LOGS_DEST}."
+# These will run forever until `make stop-nomad-ci` is invoked."
+nomad agent -config="nomad-agent-conf.nomad" -dev-connect > "${NOMAD_LOGS_DEST}" &
+consul agent -dev > "${CONSUL_LOGS_DEST}" &
 
 ./nomad_run_local_infra.sh
-
-echo "Deployment complete; ctrl + c to terminate".
-
-while true; do read -r; done
+echo "Deployment complete"

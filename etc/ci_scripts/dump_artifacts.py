@@ -2,6 +2,7 @@
 
 import logging
 import os
+import shutil
 import subprocess
 import sys
 from datetime import datetime
@@ -146,12 +147,20 @@ def dump_docker_ps(dir: Path) -> None:
         )
 
 
+def _dump_nomad_consul_logs(artifacts_dir: Path) -> None:
+    nomad_log_path = Path("/tmp/nomad-agent.log").resolve()
+    consul_log_path = Path("/tmp/consul-agent.log").resolve()
+    shutil.copy2(nomad_log_path, artifacts_dir)
+    shutil.copy2(consul_log_path, artifacts_dir)
+
+
 def dump_all_logs(compose_project: str, artifacts_dir: Path) -> None:
     containers = _container_names_by_prefix(compose_project)
     for container in containers:
         _dump_docker_log(container_name=container, dir=artifacts_dir)
     for lambda_fn in _lambda_names():
         _dump_lambda_log(lambda_fn, dir=artifacts_dir)
+    _dump_nomad_consul_logs(artifacts_dir)
 
 
 def dump_volume(

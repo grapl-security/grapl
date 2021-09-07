@@ -43,3 +43,5 @@ FROM grapl-python-runner-base AS provisioner
 COPY --chown=grapl ./dist/provisioner-lambda.zip lambda.zip
 
 RUN unzip lambda.zip
+
+CMD ["python3", "-c", "import lambdex_handler; lambdex_handler.handler(None, None)"]
