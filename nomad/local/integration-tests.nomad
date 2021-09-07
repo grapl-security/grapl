@@ -41,7 +41,7 @@ variable "redis_endpoint" {
 }
 
 locals {
-  log_level = "DEBUG"
+  log_level     = "DEBUG"
   redis_trimmed = trimprefix(var.redis_endpoint, "redis://")
   redis         = split(":", local.redis_trimmed)
   redis_host    = local.redis[0]
@@ -50,8 +50,8 @@ locals {
 
 job "integration-tests" {
   datacenters = ["dc1"]
-  type = "batch"
-  parameterized { }
+  type        = "batch"
+  parameterized {}
 
   reschedule {
     # Make this a one-shot job
@@ -102,10 +102,10 @@ job "integration-tests" {
         GRAPL_LOG_LEVEL             = local.log_level
         # This is a hack, because IDK how to share locals across files
         #MG_ALPHAS                   = local.alpha_grpc_connect_str # TODO: Figure out how to do this
-        MG_ALPHAS = "localhost:9080"
-        RUST_BACKTRACE              = 1
-        RUST_LOG                    = local.log_level
-        REDIS_ENDPOINT              = var.redis_endpoint
+        MG_ALPHAS      = "localhost:9080"
+        RUST_BACKTRACE = 1
+        RUST_LOG       = local.log_level
+        REDIS_ENDPOINT = var.redis_endpoint
       }
     }
 
@@ -138,19 +138,44 @@ job "integration-tests" {
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
 
-        GRAPL_LOG_LEVEL             = local.log_level
+        GRAPL_LOG_LEVEL = local.log_level
 
-        GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET=""
-        GRAPL_ANALYZERS_BUCKET=""
-        GRAPL_MODEL_PLUGINS_BUCKET=""
+        GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET = ""
+        GRAPL_ANALYZERS_BUCKET                  = ""
+        GRAPL_MODEL_PLUGINS_BUCKET              = ""
 
-        HITCACHE_ADDR=local.redis_host
-        HITCACHE_PORT=local.redis_port
-        MESSAGECACHE_ADDR=local.redis_host
-        MESSAGECACHE_PORT=local.redis_port
-        IS_RETRY=False
+        HITCACHE_ADDR     = local.redis_host
+        HITCACHE_PORT     = local.redis_port
+        MESSAGECACHE_ADDR = local.redis_host
+        MESSAGECACHE_PORT = local.redis_port
+        IS_RETRY          = False
       }
 
+    }
+
+    task "graphql-endpoint-tests" {
+      driver = "docker"
+
+      config {
+        image = "${var.container_registry}/grapl/graphql-endpoint-tests:latest"
+      }
+
+      env {
+        # aws vars
+        AWS_REGION                  = var.aws_region
+        GRAPL_AWS_ENDPOINT          = var.aws_endpoint
+        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
+        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
+
+        DEPLOYMENT_NAME = var.deployment_name
+        GRAPL_LOG_LEVEL = local.log_level
+
+        GRAPL_API_HOST           = ""
+        GRAPL_HTTP_FRONTEND_PORT = ""
+        GRAPL_TEST_USER_NAME     = ""
+        IS_LOCAL                 = True
+        MG_ALPHAS                = "localhost:9080"
+      }
     }
 
 
