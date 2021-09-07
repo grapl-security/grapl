@@ -23,7 +23,7 @@ def _after_tests() -> None:
     """
     # Issue a command to dgraph to export the whole database.
     # This is then stored on a volume, `dgraph_export` (defined in docker-compose.yml)
-    # The contents of the volume are made available to Github Actions via `dump_artifacts.py`.
+    # The contents of the volume are made available to Buildkite via `make dump-artifacts`
     if DUMP_ARTIFACTS:
         dgraph_host = environ["DGRAPH_HOST"]
         dgraph_alpha = environ["DGRAPH_ALPHA_HTTP_EXTERNAL_PUBLIC_PORT"]
