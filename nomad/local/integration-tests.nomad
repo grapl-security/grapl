@@ -139,12 +139,19 @@ job "integration-tests" {
 
       config {
         image = "${var.container_registry}/grapl/analyzerlib-test:latest"
+        entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+        command = "cd grapl_analyzerlib && py.test -v -n auto -m 'integration_test'"
       }
 
       env {
         DEPLOYMENT_NAME = var.deployment_name
         GRAPL_LOG_LEVEL = local.log_level
         MG_ALPHAS       = "localhost:9080"
+      }
+
+      resources {
+        cpu    = 500
+        memory = 1024
       }
 
     }
