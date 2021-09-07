@@ -41,7 +41,7 @@ variable "redis_endpoint" {
 }
 
 locals {
-  log_level     = "DEBUG"
+  log_level            = "DEBUG"
   local_redis_endpoint = "redis://${attr.unique.network.ip-address}:6379"
 
   redis_trimmed = trimprefix(local.local_redis_endpoint, "redis://")
@@ -140,9 +140,9 @@ job "integration-tests" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}/grapl/analyzerlib-test:latest"
+        image      = "${var.container_registry}/grapl/analyzerlib-test:latest"
         entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
-        command = "cd grapl_analyzerlib && py.test -v -n auto -m 'integration_test'"
+        command    = "cd grapl_analyzerlib && py.test -v -n auto -m 'integration_test'"
       }
 
       env {
@@ -187,9 +187,9 @@ job "integration-tests" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}/grapl/analyzer-executor-test:latest"
+        image      = "${var.container_registry}/grapl/analyzer-executor-test:latest"
         entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
-        command = "cd analyzer_executor && export PYTHONPATH=\"$(pwd)/src\"; py.test -n auto -m 'integration_test'"
+        command    = "cd analyzer_executor && export PYTHONPATH=\"$(pwd)/src\"; py.test -n auto -m 'integration_test'"
       }
 
       env {
@@ -211,7 +211,7 @@ job "integration-tests" {
         HITCACHE_PORT     = local.redis_port
         MESSAGECACHE_ADDR = local.redis_host
         MESSAGECACHE_PORT = local.redis_port
-        IS_RETRY          = False
+        IS_RETRY          = false
       }
 
       resources {
@@ -250,7 +250,9 @@ job "integration-tests" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}/grapl/graphql-endpoint-tests:latest"
+        image      = "${var.container_registry}/grapl/graphql-endpoint-tests:latest"
+        entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+        command    = "cd graphql_endpoint_tests; py.test --capture=no -n 1 -m 'integration_test'"
       }
 
       env {
@@ -263,11 +265,13 @@ job "integration-tests" {
         DEPLOYMENT_NAME = var.deployment_name
         GRAPL_LOG_LEVEL = local.log_level
 
-        GRAPL_API_HOST           = ""
-        GRAPL_HTTP_FRONTEND_PORT = ""
+        # These are placeholders since Ian is replacing the nginx service shortly
+        GRAPL_API_HOST           = "localhost"
+        GRAPL_HTTP_FRONTEND_PORT = 3128
         GRAPL_TEST_USER_NAME     = ""
-        IS_LOCAL                 = True
-        MG_ALPHAS                = "localhost:9080"
+
+        IS_LOCAL  = true
+        MG_ALPHAS = "localhost:9080"
       }
     }
 
