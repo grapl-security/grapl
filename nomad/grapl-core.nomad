@@ -252,7 +252,11 @@ locals {
   # AWS endpoint to use when interacting with AWS. Prefer this over var.aws_endpoint
   aws_endpoint = var.aws_endpoint != "USE_LOCALSTACK_SENTINEL_VALUE" ? var.aws_endpoint : local.local_aws_endpoint
 
-  redis_trimmed = trimprefix(var.redis_endpoint, "redis://")
+  local_redis_endpoint = "redis://${attr.unique.network.ip-address}:6379"
+  # redis endpoint to use when interacting with redis. Prefer this over var.redis_endpoint
+  redis_endpoint = var.redis_endpoint != "USE_REDIS_SENTINEL_VALUE" ? var.redis_endpoint : local.local_redis_endpoint
+
+  redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
   redis         = split(":", local.redis_trimmed)
   redis_host    = local.redis[0]
   redis_port    = local.redis[1]
@@ -513,7 +517,7 @@ job "grapl-core" {
         AWS_REGION                  = var.aws_region
         RUST_LOG                    = var.rust_log
         RUST_BACKTRACE              = 1
-        REDIS_ENDPOINT              = var.redis_endpoint
+        REDIS_ENDPOINT              = local.redis_endpoint
         MG_ALPHAS                   = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
         # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L165
@@ -618,7 +622,7 @@ job "grapl-core" {
         AWS_REGION                  = var.aws_region
         RUST_LOG                    = var.rust_log
         RUST_BACKTRACE              = 1
-        REDIS_ENDPOINT              = var.redis_endpoint
+        REDIS_ENDPOINT              = local.redis_endpoint
         MG_ALPHAS                   = local.alpha_grpc_connect_str # alpha_grpc_connect_str won't work if network mode = grapl network
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
         GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
@@ -653,7 +657,7 @@ job "grapl-core" {
         AWS_REGION                  = var.aws_region
         RUST_LOG                    = var.rust_log
         RUST_BACKTRACE              = 1
-        REDIS_ENDPOINT              = var.redis_endpoint
+        REDIS_ENDPOINT              = local.redis_endpoint
         MG_ALPHAS                   = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
         GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
@@ -707,7 +711,7 @@ job "grapl-core" {
         AWS_REGION                  = var.aws_region
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-        GRAPL_AWS_ENDPOINT          = var.aws_endpoint
+        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
         # python vars
         GRAPL_LOG_LEVEL = "INFO"
         # dgraph vars
