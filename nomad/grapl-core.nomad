@@ -575,7 +575,6 @@ job "grapl-core" {
         GRAPL_LOG_LEVEL               = var.rust_log # TODO: revisit
       }
     }
-<<<<<<< HEAD
 
     service {
       connect {
@@ -599,31 +598,6 @@ job "grapl-core" {
   group "grapl-node-identifier" {
     count = var.num_node_identifiers
 
-=======
-
-    service {
-      connect {
-        sidecar_service {
-          proxy {
-            dynamic "upstreams" {
-              iterator = alpha
-              for_each = local.dgraph_alphas
-
-              content {
-                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
-                local_bind_port  = alpha.value.grpc_public_port
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  group "grapl-node-identifier" {
-    count = var.num_node_identifiers
-
->>>>>>> 875b2b9d... Move the local-infra services over to static+bridge
     network {
       mode = "bridge"
     }

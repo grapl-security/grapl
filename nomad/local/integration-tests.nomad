@@ -46,8 +46,8 @@ locals {
 
 job "integration-tests" {
   datacenters = ["dc1"]
-  type = "batch"
-  parameterized { }
+  type        = "batch"
+  parameterized {}
 
   reschedule {
     # Make this a one-shot job
@@ -98,10 +98,10 @@ job "integration-tests" {
         GRAPL_LOG_LEVEL             = local.log_level
         # This is a hack, because IDK how to share locals across files
         #MG_ALPHAS                   = local.alpha_grpc_connect_str # TODO: Figure out how to do this
-        MG_ALPHAS = "localhost:9080"
-        RUST_BACKTRACE              = 1
-        RUST_LOG                    = local.log_level
-        REDIS_ENDPOINT              = var.redis_endpoint
+        MG_ALPHAS      = "localhost:9080"
+        RUST_BACKTRACE = 1
+        RUST_LOG       = local.log_level
+        REDIS_ENDPOINT = var.redis_endpoint
       }
     }
   }

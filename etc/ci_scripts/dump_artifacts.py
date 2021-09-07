@@ -153,6 +153,7 @@ def _dump_nomad_consul_logs(artifacts_dir: Path) -> None:
     shutil.copy2(nomad_log_path, artifacts_dir)
     shutil.copy2(consul_log_path, artifacts_dir)
 
+
 def dump_all_logs(compose_project: str, artifacts_dir: Path) -> None:
     containers = _container_names_by_prefix(compose_project)
     for container in containers:

@@ -1,5 +1,5 @@
 version: "3.8"
-# TODO: Eventually, this file will just be renamed 
+# TODO: Eventually, this file will just be renamed
 # `docker-compose.integration-tests.build.yml`
 # once Nomad migration is complete. Remove anything not in `image:` or `build:`.
 
