@@ -61,7 +61,7 @@ job "integration-tests" {
   # Specifies that this job is the most high priority job we have; nothing else should take precedence 
   priority = 100
 
-  group "integration-tests" {
+  group "rust-integration-tests" {
     restart {
       # Make this a one-shot job
       attempts = 0
@@ -108,6 +108,31 @@ job "integration-tests" {
         REDIS_ENDPOINT = var.redis_endpoint
       }
     }
+  }
+  group "analyzerlib-integration-tests" {
+    restart {
+      # Make this a one-shot job
+      attempts = 0
+    }
+
+    network {
+      mode = "bridge"
+    }
+
+    # Enable service discovery
+    service {
+      connect {
+        sidecar_service {
+          proxy {
+            upstreams {
+              # This is a hack, because IDK how to share locals across files
+              destination_name = "dgraph-alpha-0-grpc-public"
+              local_bind_port  = 9080
+            }
+          }
+        }
+      }
+    }
 
     task "analyzerlib-integration-tests" {
       driver = "docker"
@@ -123,7 +148,32 @@ job "integration-tests" {
       }
 
     }
+  }
 
+  group "analyzer-executor-integration-tests" {
+    restart {
+      # Make this a one-shot job
+      attempts = 0
+    }
+
+    network {
+      mode = "bridge"
+    }
+
+    # Enable service discovery
+    service {
+      connect {
+        sidecar_service {
+          proxy {
+            upstreams {
+              # This is a hack, because IDK how to share locals across files
+              destination_name = "dgraph-alpha-0-grpc-public"
+              local_bind_port  = 9080
+            }
+          }
+        }
+      }
+    }
     task "analyzer-executor-integration-tests" {
       driver = "docker"
 
@@ -152,7 +202,32 @@ job "integration-tests" {
       }
 
     }
+  }
 
+  group "graphql-endpoint-tests" {
+    restart {
+      # Make this a one-shot job
+      attempts = 0
+    }
+
+    network {
+      mode = "bridge"
+    }
+
+    # Enable service discovery
+    service {
+      connect {
+        sidecar_service {
+          proxy {
+            upstreams {
+              # This is a hack, because IDK how to share locals across files
+              destination_name = "dgraph-alpha-0-grpc-public"
+              local_bind_port  = 9080
+            }
+          }
+        }
+      }
+    }
     task "graphql-endpoint-tests" {
       driver = "docker"
 
