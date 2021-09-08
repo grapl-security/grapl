@@ -53,7 +53,7 @@ def main() -> None:
         compose_project=None, volume_name="dynamodb_dump", artifacts_dir=artifacts_dir
     )
 
-    nomad_artifacts.dump_all_nomad_consul_logs(artifacts_dir)
+    nomad_artifacts.dump_all(artifacts_dir)
     LOGGER.info(f"Dumped to {artifacts_dir}")
 
 
