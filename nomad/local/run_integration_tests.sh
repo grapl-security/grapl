@@ -17,8 +17,8 @@ echo "--- Dispatching integration tests"
 job_id=$(nomad_dispatch integration-tests)
 echo "${job_id}"
 
-# Wait for them to finish
-await_nomad_dispatch_finish "${job_id}" 300
+# Wait for them to finish. Give it 5 minutes (obviously, we need way more.)
+await_nomad_dispatch_finish "${job_id}" $((5 * 60))
 
 # Show how each job did
 nomad_get_per_task_results "${job_id}"
