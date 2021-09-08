@@ -154,11 +154,6 @@ build-test-integration: build
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.integration-tests.yml
 
-.PHONY: push-integration
-push-integration: build-test-integration
-	$(WITH_LOCAL_GRAPL_ENV) \
-	docker-compose --file  ./test/docker-compose.integration-tests.yml push
-
 .PHONY: build-test-e2e
 build-test-e2e: build
 	$(WITH_LOCAL_GRAPL_ENV) \
