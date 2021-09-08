@@ -101,4 +101,3 @@ def _write_nomad_logs(
                 filename = f"{task.name}.{output_type}.{alloc.short_alloc_id()}.log"
                 with (write_to_dir / filename).open("w") as file:
                     file.write(logs)
-
