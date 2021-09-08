@@ -22,7 +22,7 @@ mod integration_tests {
     use tokio_stream::StreamExt;
 
     fn producer_init() -> Result<FutureProducer, Box<dyn std::error::Error>> {
-        let brokers = "kafka-broker:9092";
+        let brokers = "kafka-broker:9092"; // TODO FIX!!!! We want to read this from env variable
         let mut client_config = rdkafka::ClientConfig::new();
         client_config
             .set("client.id", "test-producer")
@@ -37,7 +37,7 @@ mod integration_tests {
     fn consumer_init(
     ) -> Result<StreamConsumer<DefaultConsumerContext, DefaultRuntime>, Box<dyn std::error::Error>>
     {
-        let brokers = "kafka-broker:9092";
+        let brokers = "kafka-broker:9092"; // TODO FIX!!!! We want to read this from env variable
         let mut client_config = rdkafka::ClientConfig::new();
         client_config
             .set("group.id", "integration-tests-consumers")
