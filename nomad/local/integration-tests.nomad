@@ -201,11 +201,10 @@ job "integration-tests" {
 
         GRAPL_LOG_LEVEL = local.log_level
 
-        # We don't appear to need this set.
-        # TODO double-check why
-        GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET = ""
-        GRAPL_ANALYZERS_BUCKET                  = ""
-        GRAPL_MODEL_PLUGINS_BUCKET              = ""
+        # These environment vars need to exist but the values aren't actually exercised
+        GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
+        GRAPL_ANALYZERS_BUCKET                  = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
+        GRAPL_MODEL_PLUGINS_BUCKET              = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
 
         HITCACHE_ADDR     = local.redis_host
         HITCACHE_PORT     = local.redis_port
