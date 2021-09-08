@@ -296,9 +296,12 @@ test-typecheck: test-typecheck-docker test-typecheck-pants ## Typecheck all Pyth
 
 .PHONY: test-integration
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
-test-integration: export COMPOSE_FILE := ./test/docker-compose.integration-tests.yml
+#test-integration: export COMPOSE_FILE := ./test/docker-compose.integration-tests.yml
 test-integration: build-test-integration ## Build and run integration tests
-	$(MAKE) test-with-env
+	$(WITH_LOCAL_GRAPL_ENV)
+	docker-compose --file=test/docker-compose.integration-tests.yml push
+	export SHOULD_DEPLOY_INTEGRATION_TESTS=True  # This gets read in by `docker-compose.yml`'s pulumi
+	$(MAKE) test-with-env EXEC_TEST_COMMAND=nomad/local/run_integration_tests.sh
 
 .PHONY: test-grapl-template-generator
 test-grapl-template-generator:  # Test that the Grapl Template Generator spits out something compilable.
@@ -308,10 +311,18 @@ test-grapl-template-generator:  # Test that the Grapl Template Generator spits o
 test-e2e: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_E2E_TESTS)
 test-e2e: export export COMPOSE_FILE := ./test/docker-compose.e2e-tests.yml
 test-e2e: build-test-e2e ## Build and run e2e tests
-	$(MAKE) test-with-env
+	$(MAKE) test-with-env-docker
 
 # This target is not intended to be used directly from the command line, it's
 # intended for tests in docker-compose files that need the Grapl environment.
+.PHONY: test-with-env-docker
+test-with-env-docker: # (Do not include help text - not to be used directly)
+	$(MAKE) test-with-env EXEC_TEST_COMMAND=test/docker-compose-with-error.sh
+
+# This target is not intended to be used directly from the command line.
+# Think of it as a Context Manager that:
+# - Before test-time, brings up a `make up-detach`
+# - After test-time, tears it all down and dumps artifacts.
 .PHONY: test-with-env
 test-with-env: # (Do not include help text - not to be used directly)
 	stopGrapl() {
@@ -333,7 +344,7 @@ test-with-env: # (Do not include help text - not to be used directly)
 	# Bring up the Grapl environment and detach
 	$(MAKE) up-detach
 	# Run tests and check exit codes from each test container
-	test/docker-compose-with-error.sh
+	$${EXEC_TEST_COMMAND}
 
 ##@ Lint 🧹
 
@@ -432,11 +443,11 @@ down: ## docker-compose down - both stops and removes the containers
 	# spins up in our network, but that docker-compose doesn't know
 	# about. This must be the network that is used in Localstack's
 	# LAMBDA_DOCKER_NETWORK environment variable.
+	$(MAKE) stop-nomad-detach
 	-docker kill $(shell docker ps --quiet --filter=network=grapl-network)
 	docker-compose $(EVERY_COMPOSE_FILE) down --timeout=0
 	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
 	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
-	$(MAKE) stop-nomad-detach
 
 .PHONY: stop
 stop: ## docker-compose stop - stops (but preserves) the containers
