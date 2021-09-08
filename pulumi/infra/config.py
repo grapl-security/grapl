@@ -1,7 +1,7 @@
 import os
 import re
 from pathlib import Path
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence, Union
 
 import pulumi_aws as aws
 from typing_extensions import Final
@@ -17,6 +17,25 @@ GRAPL_TEST_USER_NAME = f"{DEPLOYMENT_NAME}-grapl-test-user"
 # Sometimes we need to refer to other code or artifacts relative to
 # the repository root.
 REPOSITORY_ROOT = os.path.join(os.path.dirname(__file__), "../..")
+
+
+def to_bool(input: Optional[Union[str, bool]]) -> Optional[bool]:
+    if isinstance(input, bool):
+        return input
+    elif input is None:
+        return None
+    elif input in ("True", "true"):
+        return True
+    elif input in ("False", "false"):
+        return False
+    else:
+        raise ValueError(f"Invalid bool value: {repr(input)}")
+
+
+# If true, optionally deploy integration tests to Nomad (without running them).
+SHOULD_DEPLOY_INTEGRATION_TESTS = to_bool(
+    os.getenv("SHOULD_DEPLOY_INTEGRATION_TESTS", False)
+)
 
 
 def repository_path(relative_path: str) -> Path:
