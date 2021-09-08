@@ -140,10 +140,7 @@ def main() -> None:
         analyzer_executor_queue = ServiceQueue("analyzer-executor")
         analyzer_executor_queue.subscribe_to_emitter(dispatched_analyzer_emitter)
 
-        # Temporarily disabled due to Nomad migration
-        # https://github.com/grapl-security/issue-tracker/issues/670
-        if False:
-            kafka = Kafka("kafka")
+        kafka = Kafka("kafka")
 
         grapl_core_job_vars = pulumi.Output.all(
             analyzer_bucket=analyzers_bucket.bucket,
