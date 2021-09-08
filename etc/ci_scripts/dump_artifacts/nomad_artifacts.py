@@ -7,7 +7,7 @@ import os
 import shutil
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 
 from nomad import Nomad
 from typing_extensions import Literal
@@ -60,9 +60,9 @@ class NomadTask:
     parent: NomadAllocation = dataclasses.field(repr=False)
 
     def get_logs(self, nomad_client: Nomad, type: OutOrErr) -> str:
-        return nomad_client.client.stream_logs.stream(
+        return cast(str, nomad_client.client.stream_logs.stream(
             self.parent.allocation_id, self.name, type=type, plain=True
-        )
+        ))
 
 
 def _get_nomad_logs_for_each_service(
