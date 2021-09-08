@@ -124,6 +124,7 @@ job "grapl-local-infra" {
           name    = "check_s3_ls"
           command = "/bin/bash"
           args = [
+            "-o", "errexit", "-o", "nounset",
             "-c",
             # This uses the stuff in env { } - not Nomad interpolation.
             "aws --endpoint-url=http://localhost:${EDGE_PORT} s3 ls",
@@ -143,6 +144,7 @@ job "grapl-local-infra" {
 
   group "ratel" {
     network {
+      mode = "bridge"
       port "ratel" {
         static = 8000
       }
@@ -163,6 +165,8 @@ job "grapl-local-infra" {
       mode = "bridge"
       port "kafka" {
         static = var.KAFKA_BROKER_PORT
+        to = var.KAFKA_BROKER_PORT
+        # For some reason, it failed without both.
       }
     }
 
@@ -180,18 +184,18 @@ job "grapl-local-infra" {
       }
 
       env {
+        KAFKA_BROKER_PORT                              = var.KAFKA_BROKER_PORT  # Only for the healthcheck
         KAFKA_BROKER_ID                                = 1
         KAFKA_ZOOKEEPER_CONNECT                        = local.zookeeper_endpoint
         KAFKA_LISTENER_SECURITY_PROTOCOL_MAP           = "PLAINTEXT:PLAINTEXT"
-        KAFKA_LISTENERS                                = "PLAINTEXT://localhost:${var.KAFKA_BROKER_PORT}"
-        KAFKA_ADVERTISED_LISTENERS                     = "PLAINTEXT://localhost:${var.KAFKA_BROKER_PORT}"
+        KAFKA_ADVERTISED_LISTENERS                     = "PLAINTEXT://${local.localhost_within_bridge}:${var.KAFKA_BROKER_PORT}"
         KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR         = 1
         KAFKA_TRANSACTION_STATE_LOG_MIN_ISR            = 1
         KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = 1
         KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS         = 0
         KAFKA_JMX_PORT                                 = var.KAFKA_JMX_PORT
         KAFKA_JMX_HOSTNAME                             = "localhost"
-        KAFKA_LOG4J_ROOT_LOGLEVEL                      = "INFO"
+        KAFKA_LOG4J_ROOT_LOGLEVEL                      = "DEBUG"
       }
 
       service {
@@ -199,9 +203,11 @@ job "grapl-local-infra" {
           type    = "script"
           name    = "check_kafka"
           command = "/bin/bash"
+          # Interpolated by bash, not nomad
           args = [
+            "-o", "errexit", "-o", "nounset",
             "-c",
-            "nc -vz localhost ${var.KAFKA_BROKER_PORT}",
+            "nc -vz localhost ${KAFKA_BROKER_PORT}",
           ]
           interval = "20s"
           timeout  = "10s"
@@ -222,6 +228,7 @@ job "grapl-local-infra" {
       mode = "bridge"
       port "zookeeper" {
         static = var.ZOOKEEPER_PORT
+        to = var.ZOOKEEPER_PORT
       }
     }
 
@@ -236,7 +243,7 @@ job "grapl-local-infra" {
       env {
         ZOOKEEPER_CLIENT_PORT = var.ZOOKEEPER_PORT
         ZOOKEEPER_TICK_TIME   = 2000
-        KAFKA_OPTS            = "-Dzookeeper.4lw.commands.whitelist=ruok"
+        KAFKA_OPTS            = "-Dzookeeper.4lw.commands.whitelist=ruok,dump"
       }
 
       service {
@@ -244,9 +251,11 @@ job "grapl-local-infra" {
           type    = "script"
           name    = "check_zookeeper"
           command = "/bin/bash"
+          # Interpolated by bash, not nomad
           args = [
+            "-o", "errexit", "-o", "nounset",
             "-c",
-            "echo ruok | nc -w 2  localhost 2181 | grep imok || exit 2",
+            "echo ruok | nc -w 2  localhost ${ZOOKEEPER_CLIENT_PORT} | grep imok || exit 2",
           ]
           interval = "20s"
           timeout  = "10s"

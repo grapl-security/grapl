@@ -28,7 +28,7 @@ config:
   # Brought up in grapl-local-infra.nomad
   grapl:REDIS_ENDPOINT: redis://host.docker.internal:6379
   kafka:bootstrapServers:
-    - host.docker.internal:9092
+    - "host.docker.internal:9092"
   kafka:tlsEnabled: "false"
   # Host OS's Nomad instance
   nomad:address: http://host.docker.internal:4646
