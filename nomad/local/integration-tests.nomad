@@ -41,7 +41,7 @@ variable "redis_endpoint" {
 
 locals {
   log_level            = "DEBUG"
-  local_aws_endpoint =  "http://${attr.unique.network.ip-address}:4566"
+  local_aws_endpoint   = "http://${attr.unique.network.ip-address}:4566"
   local_redis_endpoint = "redis://${attr.unique.network.ip-address}:6379"
 
   redis_trimmed = trimprefix(local.local_redis_endpoint, "redis://")
@@ -329,8 +329,8 @@ job "integration-tests" {
         IS_LOCAL  = true
         MG_ALPHAS = "localhost:9080"
 
-        UX_BUCKET_URL="ux_bucket_url"
-        GRAPL_NOTEBOOK_INSTANCE="local-grapl-Notebook"
+        UX_BUCKET_URL           = "ux_bucket_url"
+        GRAPL_NOTEBOOK_INSTANCE = "local-grapl-Notebook"
       }
 
       resources {
