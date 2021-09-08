@@ -33,8 +33,9 @@ pydantic==1.8.2
 pydgraph
 pyjwt
 pytest
-requests
+python-nomad==1.4.1
 redis
+requests
 setuptools
 toml==0.10.2
 typer==0.3.2
