@@ -1,4 +1,7 @@
 version: "3.8"
+# TODO: Eventually, this file will just be renamed
+# `docker-compose.integration-tests.build.yml`
+# once Nomad migration is complete. Remove anything not in `image:` or `build:`.
 
 # environment variable PWD is assumed to be grapl root directory
 
@@ -21,33 +24,13 @@ x-common-variables:
 
 services:
   rust-integration-tests:
-    image: grapl/rust-integration-tests:${TAG:-latest}
+    image: ${DOCKER_REGISTRY:-docker.io}/grapl/rust-integration-tests:${TAG:-latest}
     build:
       context: ${PWD}/src
       dockerfile: rust/Dockerfile
       target: build-test
       args:
         - RUST_BUILD=test-integration
-    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
-    command:
-      - |
-        export GRAPL_DYNAMIC_SESSION_TABLE=$$(cat /mnt/pulumi-outputs/dynamic-session-table)
-        export GRAPL_STATIC_MAPPING_TABLE=$$(cat /mnt/pulumi-outputs/static-mapping-table)
-
-        cargo test --features "$$RUST_INTEGRATION_TEST_FEATURES" --test "*"
-    environment:
-      - AWS_REGION
-      - DEPLOYMENT_NAME
-      - GRAPL_AWS_ACCESS_KEY_ID
-      - GRAPL_AWS_ACCESS_KEY_SECRET
-      - GRAPL_AWS_ENDPOINT
-      - GRAPL_LOG_LEVEL=${GRAPL_LOG_LEVEL:-INFO}
-      - MG_ALPHAS
-      - RUST_BACKTRACE=1
-      - RUST_LOG=INFO
-      - REDIS_ENDPOINT
-    volumes:
-      - *read-only-pulumi-mnt
 
   python-integration-tests:
     image: grapl/python-integration-tests:${TAG:-latest}

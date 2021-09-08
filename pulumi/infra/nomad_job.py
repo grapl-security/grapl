@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Optional
 
 import pulumi_nomad as nomad
@@ -10,14 +11,15 @@ class NomadJob(pulumi.ComponentResource):
     def __init__(
         self,
         name: str,
+        jobspec: Path,
         vars: pulumi.Output,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         super().__init__("grapl:NomadJob", name, None, opts)
 
         self.grapl_core = nomad.Job(
-            resource_name=f"{DEPLOYMENT_NAME}-grapl-core-job",
-            jobspec=self._file_contents("../../nomad/grapl-core.nomad"),
+            resource_name=f"{DEPLOYMENT_NAME}-{name}-job",
+            jobspec=self._file_contents(str(jobspec)),
             hcl2=nomad.JobHcl2Args(enabled=True, vars=vars),
             opts=pulumi.ResourceOptions(parent=self),
         )
