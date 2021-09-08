@@ -1,5 +1,6 @@
 python_requirements(
     module_mapping = {
-      "pyjwt": ["jwt"]
+      "pyjwt": ["jwt"],
+      "python-nomad": ["nomad"]
     }
 )
