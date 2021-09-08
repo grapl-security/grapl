@@ -43,6 +43,7 @@ locals {
   zookeeper_endpoint      = "${local.localhost_within_bridge}:${var.ZOOKEEPER_PORT}"
 }
 
+
 ####################
 # Jobspecs
 ####################
