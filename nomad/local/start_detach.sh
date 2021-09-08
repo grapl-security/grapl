@@ -12,12 +12,6 @@ if [[ ! -v DOCKER_REGISTRY ]]; then
     exit 1
 fi
 
-# This guard is strictly informative. nomad agent -dev-connect cannot run without root
-if [[ $EUID -ne 0 ]]; then
-    echo "This script must be run as root"
-    exit 1
-fi
-
 # ensure that all dependencies are available
 if [[ -z $(command -v nomad) ]]; then
     echo "Nomad must be installed. Please follow the install instructions at https://www.nomadproject.io/downloads"
@@ -33,7 +27,7 @@ NOMAD_LOGS_DEST=/tmp/nomad-agent.log
 CONSUL_LOGS_DEST=/tmp/consul-agent.log
 echo "Starting nomad and consul locally. Logs @ ${NOMAD_LOGS_DEST} and ${CONSUL_LOGS_DEST}."
 # These will run forever until `make stop-nomad-ci` is invoked."
-sudo nomad agent -config="nomad-agent-conf.nomad" -dev-connect > "${NOMAD_LOGS_DEST}" &
+sudo --preserve-env nomad agent -config="nomad-agent-conf.nomad" -dev-connect > "${NOMAD_LOGS_DEST}" &
 consul agent -dev > "${CONSUL_LOGS_DEST}" &
 
 ./nomad_run_local_infra.sh
