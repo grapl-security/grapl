@@ -8,7 +8,12 @@ variable "container_registry" {
 # imported from `local-grapl.env`.
 variable "KAFKA_BROKER_PORT" {
   type        = string
-  description = "Port for kafka broker"
+  description = "Kafka Broker's port to listen on, for other Nomad clients"
+}
+
+variable "KAFKA_BROKER_PORT_FOR_HOST_OS" {
+  type        = string
+  description = "Kafka Broker's port to listen on, for things on the host OS (like Pulumi)"
 }
 
 variable "KAFKA_JMX_PORT" {
@@ -163,10 +168,11 @@ job "grapl-local-infra" {
   group "kafka" {
     network {
       mode = "bridge"
-      port "kafka" {
+      port "kafka-for-other-nomad-tasks" {
         static = var.KAFKA_BROKER_PORT
-        to = var.KAFKA_BROKER_PORT
-        # For some reason, it failed without both.
+      }
+      port "kafka-for-host-os" {
+        static = var.KAFKA_BROKER_PORT_FOR_HOST_OS
       }
     }
 
@@ -175,7 +181,7 @@ job "grapl-local-infra" {
 
       config {
         image = "confluentinc/cp-kafka:6.2.0"
-        ports = ["kafka"]
+        ports = ["kafka-for-other-nomad-tasks", "kafka-for-host-os"]
       }
 
       resources {
@@ -184,18 +190,29 @@ job "grapl-local-infra" {
       }
 
       env {
-        KAFKA_BROKER_PORT                              = var.KAFKA_BROKER_PORT  # Only for the healthcheck
-        KAFKA_BROKER_ID                                = 1
-        KAFKA_ZOOKEEPER_CONNECT                        = local.zookeeper_endpoint
-        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP           = "PLAINTEXT:PLAINTEXT"
-        KAFKA_ADVERTISED_LISTENERS                     = "PLAINTEXT://${local.localhost_within_bridge}:${var.KAFKA_BROKER_PORT}"
+        KAFKA_BROKER_PORT       = 9092 # Only used by healthcheck
+        KAFKA_BROKER_ID         = 1
+        KAFKA_ZOOKEEPER_CONNECT = local.zookeeper_endpoint
+
+        # Some clients (like Pulumi) will need `host.docker.internal`
+        # Some clients (like grapl-core services) will need localhost_within_bridge
+        # We differentiate between which client it is based on which port we receive on. 
+        # So a receive on 29092 means HOST_OS
+        KAFKA_ADVERTISED_LISTENERS = join(",", [
+          "WITHIN_TASK://localhost:9092",
+          "HOST_OS://host.docker.internal:${var.KAFKA_BROKER_PORT_FOR_HOST_OS}",
+          "OTHER_NOMADS://${local.localhost_within_bridge}:${var.KAFKA_BROKER_PORT}"
+        ])
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP = "WITHIN_TASK:PLAINTEXT,HOST_OS:PLAINTEXT,OTHER_NOMADS:PLAINTEXT"
+        KAFKA_INTER_BROKER_LISTENER_NAME     = "WITHIN_TASK"
+
         KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR         = 1
         KAFKA_TRANSACTION_STATE_LOG_MIN_ISR            = 1
         KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = 1
         KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS         = 0
         KAFKA_JMX_PORT                                 = var.KAFKA_JMX_PORT
         KAFKA_JMX_HOSTNAME                             = "localhost"
-        KAFKA_LOG4J_ROOT_LOGLEVEL                      = "DEBUG"
+        KAFKA_LOG4J_ROOT_LOGLEVEL                      = "INFO"
       }
 
       service {
@@ -228,7 +245,7 @@ job "grapl-local-infra" {
       mode = "bridge"
       port "zookeeper" {
         static = var.ZOOKEEPER_PORT
-        to = var.ZOOKEEPER_PORT
+        to     = var.ZOOKEEPER_PORT
       }
     }
 

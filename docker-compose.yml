@@ -326,7 +326,6 @@ services:
       # Expose the host Linux machine, despite being on the Grapl network.
       # This lets Pulumi talk to the host's Nomad
       - "host.docker.internal:host-gateway"
-      #- "host.docker.internal:172.18.0.1"
 
 networks:
   default:

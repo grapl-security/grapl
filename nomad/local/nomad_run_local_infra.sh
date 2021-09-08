@@ -15,6 +15,7 @@ docker network create grapl-network || true
 nomad job run \
     -var "KAFKA_JMX_PORT=${KAFKA_JMX_PORT}" \
     -var "KAFKA_BROKER_PORT=${KAFKA_BROKER_PORT}" \
+    -var "KAFKA_BROKER_PORT_FOR_HOST_OS=${KAFKA_BROKER_PORT_FOR_HOST_OS}" \
     -var "LOCALSTACK_PORT=${LOCALSTACK_PORT}" \
     -var "ZOOKEEPER_PORT=${ZOOKEEPER_PORT}" \
     -var "FAKE_AWS_ACCESS_KEY_ID=${FAKE_AWS_ACCESS_KEY_ID}" \
