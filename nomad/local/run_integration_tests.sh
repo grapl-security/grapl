@@ -1,7 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-GRAPL_ROOT="$(git rev-parse --show-toplevel)"
 THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
 
 # shellcheck source-path=SCRIPTDIR
