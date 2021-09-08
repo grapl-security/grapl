@@ -82,31 +82,6 @@ services:
     volumes:
       - *read-only-pulumi-mnt
 
-  analyzer-dispatcher:
-    image: grapl/analyzer-dispatcher:${TAG:-latest}
-    # The default entrypoint is ["/analyzer-dispatcher"];
-    # "/busybox/sh" is the shell present present in the
-    # distroless/cc:debug container.
-    entrypoint: ["/busybox/sh", "-o", "errexit", "-o", "nounset", "-c"]
-    command:
-      - |
-        export GRAPL_ANALYZERS_BUCKET=$$(cat /mnt/pulumi-outputs/analyzers-bucket)
-        export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/dispatched-analyzer-bucket)
-        export DEAD_LETTER_QUEUE_URL=$$(cat /mnt/pulumi-outputs/analyzer-dispatcher-retry-queue)
-        export SOURCE_QUEUE_URL=$$(cat /mnt/pulumi-outputs/analyzer-dispatcher-queue)
-        /analyzer-dispatcher
-    environment:
-      <<: *aws-env
-      <<: *log-level
-      <<: *rust-backtrace
-    tty: false
-    depends_on:
-      pulumi:
-        # We must wait until Pulumi has created the buckets to know what their names are
-        condition: service_completed_successfully
-    volumes:
-      - *read-only-pulumi-mnt
-
   ########################################################################
   # Python Services
   ########################################################################

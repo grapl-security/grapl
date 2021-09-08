@@ -40,7 +40,14 @@ variable "redis_endpoint" {
 }
 
 locals {
-  log_level = "DEBUG"
+  log_level            = "DEBUG"
+  local_aws_endpoint   = "http://${attr.unique.network.ip-address}:4566"
+  local_redis_endpoint = "redis://${attr.unique.network.ip-address}:6379"
+
+  redis_trimmed = trimprefix(local.local_redis_endpoint, "redis://")
+  redis         = split(":", local.redis_trimmed)
+  redis_host    = local.redis[0]
+  redis_port    = local.redis[1]
 }
 
 job "integration-tests" {
@@ -56,7 +63,7 @@ job "integration-tests" {
   # Specifies that this job is the most high priority job we have; nothing else should take precedence 
   priority = 100
 
-  group "integration-tests" {
+  group "rust-integration-tests" {
     restart {
       # Make this a one-shot job
       attempts = 0
@@ -103,6 +110,235 @@ job "integration-tests" {
         REDIS_ENDPOINT = var.redis_endpoint
       }
     }
+  }
+  group "analyzerlib-integration-tests" {
+    restart {
+      # Make this a one-shot job
+      attempts = 0
+    }
+
+    network {
+      mode = "bridge"
+    }
+
+    # Enable service discovery
+    service {
+      connect {
+        sidecar_service {
+          proxy {
+            upstreams {
+              # This is a hack, because IDK how to share locals across files
+              destination_name = "dgraph-alpha-0-grpc-public"
+              local_bind_port  = 9080
+            }
+          }
+        }
+      }
+    }
+
+    task "analyzerlib-integration-tests" {
+      driver = "docker"
+
+      config {
+        image      = "${var.container_registry}/grapl/analyzerlib-test:latest"
+        entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+        command    = "cd grapl_analyzerlib && py.test -v -n auto -m 'integration_test'"
+      }
+
+      env {
+        DEPLOYMENT_NAME = var.deployment_name
+        GRAPL_LOG_LEVEL = local.log_level
+        MG_ALPHAS       = "localhost:9080"
+      }
+
+      resources {
+        cpu    = 500
+        memory = 1024
+      }
+
+    }
+  }
+
+  group "analyzer-executor-integration-tests" {
+    restart {
+      # Make this a one-shot job
+      attempts = 0
+    }
+
+    network {
+      mode = "bridge"
+    }
+
+    # Enable service discovery
+    service {
+      connect {
+        sidecar_service {
+          proxy {
+            upstreams {
+              # This is a hack, because IDK how to share locals across files
+              destination_name = "dgraph-alpha-0-grpc-public"
+              local_bind_port  = 9080
+            }
+          }
+        }
+      }
+    }
+    task "analyzer-executor-integration-tests" {
+      driver = "docker"
+
+      config {
+        image      = "${var.container_registry}/grapl/analyzer-executor-test:latest"
+        entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+        command    = "cd analyzer_executor && export PYTHONPATH=\"$(pwd)/src\"; py.test -n auto -m 'integration_test'"
+      }
+
+      env {
+        # aws vars
+        AWS_REGION                  = var.aws_region
+        GRAPL_AWS_ENDPOINT          = var.aws_endpoint
+        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
+        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
+
+        GRAPL_LOG_LEVEL = local.log_level
+
+        # These environment vars need to exist but the values aren't actually exercised
+        GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
+        GRAPL_ANALYZERS_BUCKET                  = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
+        GRAPL_MODEL_PLUGINS_BUCKET              = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
+
+        HITCACHE_ADDR     = local.redis_host
+        HITCACHE_PORT     = local.redis_port
+        MESSAGECACHE_ADDR = local.redis_host
+        MESSAGECACHE_PORT = local.redis_port
+        IS_RETRY          = false
+      }
+
+      resources {
+        cpu    = 500
+        memory = 1024
+      }
+
+    }
+  }
+
+  group "graphql-endpoint-tests" {
+    restart {
+      # Make this a one-shot job
+      attempts = 0
+    }
+
+    network {
+      mode = "bridge"
+    }
+
+    # Enable service discovery
+    service {
+      connect {
+        sidecar_service {
+          proxy {
+            upstreams {
+              # This is a hack, because IDK how to share locals across files
+              destination_name = "dgraph-alpha-0-grpc-public"
+              local_bind_port  = 9080
+            }
+          }
+        }
+      }
+    }
+    task "graphql-endpoint-tests" {
+      driver = "docker"
+
+      config {
+        image      = "${var.container_registry}/grapl/graphql-endpoint-tests:latest"
+        entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+        command    = "cd graphql_endpoint_tests; py.test --capture=no -n 1 -m 'integration_test'"
+      }
+
+      env {
+        # aws vars
+        AWS_REGION                  = var.aws_region
+        GRAPL_AWS_ENDPOINT          = var.aws_endpoint
+        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
+        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
+
+        DEPLOYMENT_NAME = var.deployment_name
+        GRAPL_LOG_LEVEL = local.log_level
+
+        # These are placeholders since Ian is replacing the nginx service shortly
+        GRAPL_API_HOST           = "localhost"
+        GRAPL_HTTP_FRONTEND_PORT = 3128
+        GRAPL_TEST_USER_NAME     = ""
+
+        IS_LOCAL  = true
+        MG_ALPHAS = "localhost:9080"
+      }
+    }
+
+
+  }
+
+  group "engagement-edge-integration-tests" {
+    restart {
+      # Make this a one-shot job
+      attempts = 0
+    }
+
+    network {
+      mode = "bridge"
+    }
+
+    # Enable service discovery
+    service {
+      connect {
+        sidecar_service {
+          proxy {
+            upstreams {
+              # This is a hack, because IDK how to share locals across files
+              destination_name = "dgraph-alpha-0-grpc-public"
+              local_bind_port  = 9080
+            }
+          }
+        }
+      }
+    }
+    task "engagement-edge-integration-tests" {
+      driver = "docker"
+
+      config {
+        image      = "${var.container_registry}/grapl/grapl-engagement-edge-test:latest"
+        entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+        command    = "cd engagement_edge; py.test -n auto -m 'integration_test'"
+      }
+
+      env {
+        # aws vars
+        AWS_REGION                  = var.aws_region
+        GRAPL_AWS_ENDPOINT          = local.local_aws_endpoint
+        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
+        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
+
+        DEPLOYMENT_NAME = var.deployment_name
+        GRAPL_LOG_LEVEL = local.log_level
+
+        # These are placeholders since Ian is replacing the nginx service shortly
+        GRAPL_API_HOST           = "localhost"
+        GRAPL_HTTP_FRONTEND_PORT = 3128
+        GRAPL_TEST_USER_NAME     = ""
+
+        IS_LOCAL  = true
+        MG_ALPHAS = "localhost:9080"
+
+        UX_BUCKET_URL           = "ux_bucket_url"
+        GRAPL_NOTEBOOK_INSTANCE = "local-grapl-Notebook"
+      }
+
+      resources {
+        cpu    = 500
+        memory = 1024
+      }
+    }
+
+
   }
 }
 
