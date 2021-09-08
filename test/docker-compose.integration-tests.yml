@@ -19,7 +19,7 @@ x-common-variables:
 
 services:
   rust-integration-tests:
-    image: grapl/rust-integration-tests:${TAG:-latest}
+    image: ${DOCKER_REGISTRY:-docker.io}/grapl/rust-integration-tests:${TAG:-latest}
     build:
       context: ${PWD}/src
       dockerfile: rust/Dockerfile
@@ -28,7 +28,7 @@ services:
         - RUST_BUILD=test-integration
 
   analyzerlib-integration-tests:
-    image: grapl/analyzerlib-test:${TAG:-latest}
+    image: ${DOCKER_REGISTRY:-docker.io}/grapl/analyzerlib-test:${TAG:-latest}
     build:
       context: ${PWD}
       dockerfile: ./src/python/Dockerfile
@@ -44,7 +44,7 @@ services:
       - MG_ALPHAS
 
   analyzer-executor-integration-tests:
-    image: grapl/analyzer-executor-test:${TAG:-latest}
+    image: ${DOCKER_REGISTRY:-docker.io}/grapl/analyzer-executor-test:${TAG:-latest}
     build:
       context: ${PWD}
       dockerfile: ./src/python/Dockerfile
@@ -76,7 +76,7 @@ services:
       - *read-only-pulumi-mnt
 
   engagement-edge-integration-tests:
-    image: grapl/grapl-engagement-edge-test:${TAG:-latest}
+    image: ${DOCKER_REGISTRY:-docker.io}/grapl/grapl-engagement-edge-test:${TAG:-latest}
     build:
       context: ${PWD}
       dockerfile: ./src/python/Dockerfile
@@ -121,7 +121,7 @@ services:
   #     - GRAPL_API_HOST
 
   graphql-endpoint-tests:
-    image: grapl/graphql-endpoint-tests:${TAG:-latest}
+    image: ${DOCKER_REGISTRY:-docker.io}/grapl/graphql-endpoint-tests:${TAG:-latest}
     build:
       context: ${PWD}
       dockerfile: ./src/python/Dockerfile

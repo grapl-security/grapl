@@ -19,7 +19,7 @@ job_id=$(nomad_dispatch integration-tests)
 echo "${job_id}"
 
 # Wait for them to finish
-await_nomad_dispatch_finish "${job_id}" 10
+await_nomad_dispatch_finish "${job_id}" 300
 
 # Show how each job did
 nomad_get_per_task_results "${job_id}"

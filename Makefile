@@ -296,8 +296,10 @@ test-typecheck: test-typecheck-docker test-typecheck-pants ## Typecheck all Pyth
 
 .PHONY: test-integration
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
-test-integration: export COMPOSE_FILE := ./test/docker-compose.integration-tests.yml
+#test-integration: export COMPOSE_FILE := ./test/docker-compose.integration-tests.yml
 test-integration: build-test-integration ## Build and run integration tests
+	$(WITH_LOCAL_GRAPL_ENV)
+	docker-compose --file=test/docker-compose.integration-tests.yml push
 	export SHOULD_DEPLOY_INTEGRATION_TESTS=True  # This gets read in by `docker-compose.yml`'s pulumi
 	$(MAKE) test-with-env EXEC_TEST_COMMAND=nomad/local/run_integration_tests.sh
 
