@@ -62,7 +62,7 @@ nomad_dispatch_status() {
 await_nomad_dispatch_finish() {
     # Just keep trying until the Dispatch has run to completion (or timeout)
     local -r job_id=$1
-    local -r attempts=$2 # in sleep-seconds
+    local -r attempts=$2  # in sleep-seconds
 
     local status
     # The below could be replaced with blocking queries on Nomad.
