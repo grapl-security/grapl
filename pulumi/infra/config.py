@@ -120,6 +120,8 @@ def _require_env_var(key: str) -> str:
 
 
 OPERATIONAL_ALARMS_EMAIL = _require_env_var("GRAPL_OPERATIONAL_ALARMS_EMAIL")
+REDIS_PORT = _require_env_var("REDIS_PORT")
+KAFKA_BROKER_PORT = _require_env_var("KAFKA_BROKER_PORT")
 
 
 def configurable_envvar(service_name: str, var: str) -> str:

@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Union, cast
 
 from nomad import Nomad
+from nomad.api.exceptions import URLNotFoundNomadException
 from typing_extensions import Literal
 
 LOGGER = logging.getLogger(__name__)
@@ -60,12 +61,16 @@ class NomadTask:
     parent: NomadAllocation = dataclasses.field(repr=False)
 
     def get_logs(self, nomad_client: Nomad, type: OutOrErr) -> str:
-        return cast(
-            str,
-            nomad_client.client.stream_logs.stream(
-                self.parent.allocation_id, self.name, type=type, plain=True
-            ),
-        )
+        try:
+            return cast(
+                str,
+                nomad_client.client.stream_logs.stream(
+                    self.parent.allocation_id, self.name, type=type, plain=True
+                ),
+            )
+        except URLNotFoundNomadException as e:
+            LOGGER.info(f"Couldn't get logs for {self.name}")
+            return None
 
 
 def _get_nomad_logs_for_each_service(

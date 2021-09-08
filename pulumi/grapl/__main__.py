@@ -4,10 +4,10 @@ from pathlib import Path
 sys.path.insert(0, "..")
 
 import os
-from typing import List
+from typing import Any, List, Mapping
 
 import pulumi_aws as aws
-from infra import dynamodb, emitter
+from infra import config, dynamodb, emitter
 from infra.alarms import OpsAlarms
 from infra.analyzer_dispatcher import AnalyzerDispatcher
 from infra.analyzer_executor import AnalyzerExecutor
@@ -15,13 +15,6 @@ from infra.api import Api
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
-from infra.config import (
-    DEPLOYMENT_NAME,
-    GRAPL_TEST_USER_NAME,
-    LOCAL_GRAPL,
-    REAL_DEPLOYMENT,
-    SHOULD_DEPLOY_INTEGRATION_TESTS,
-)
 from infra.dgraph_cluster import DgraphCluster, LocalStandInDgraphCluster
 from infra.dgraph_ttl import DGraphTTL
 from infra.e2e_test_runner import E2eTestRunner
@@ -45,18 +38,18 @@ import pulumi
 
 
 def _create_dgraph_cluster(network: Network) -> DgraphCluster:
-    if LOCAL_GRAPL:
+    if config.LOCAL_GRAPL:
         return LocalStandInDgraphCluster()
     else:
         return DgraphCluster(
-            name=f"{DEPLOYMENT_NAME}-dgraph",
+            name=f"{config.DEPLOYMENT_NAME}-dgraph",
             vpc=network.vpc,
         )
 
 
 def main() -> None:
 
-    if not (LOCAL_GRAPL or REAL_DEPLOYMENT):
+    if not (config.LOCAL_GRAPL or config.REAL_DEPLOYMENT):
         # Fargate services build their own images and need this
         # variable currently. We don't want this to be checked in
         # Local Grapl, or "real" deployments, though; only developer
@@ -68,7 +61,7 @@ def main() -> None:
 
     # These tags will be added to all provisioned infrastructure
     # objects.
-    register_auto_tags({"grapl deployment": DEPLOYMENT_NAME})
+    register_auto_tags({"grapl deployment": config.DEPLOYMENT_NAME})
 
     network = Network("grapl-network")
 
@@ -113,7 +106,7 @@ def main() -> None:
     )
     pulumi.export("ux-bucket", ux_bucket.bucket)
 
-    if LOCAL_GRAPL:
+    if config.LOCAL_GRAPL:
         # We need to create these queues, and wire them up to their
         # respective emitters, in Local Grapl, because they are
         # otherwise created in the FargateService instances below; we
@@ -166,8 +159,8 @@ def main() -> None:
             lambda inputs: {
                 # This is a special directive to our HCL file that tells it to use Localstack
                 "aws_endpoint": "USE_LOCALSTACK_SENTINEL_VALUE",
-                "deployment_name": DEPLOYMENT_NAME,
-                "grapl_test_user_name": GRAPL_TEST_USER_NAME,
+                "deployment_name": config.DEPLOYMENT_NAME,
+                "grapl_test_user_name": config.GRAPL_TEST_USER_NAME,
                 "aws_region": aws.get_region().name,
                 "redis_endpoint": "USE_REDIS_SENTINEL_VALUE",
                 # TODO: consider replacing with the previous per-service `configurable_envvars`
@@ -182,10 +175,13 @@ def main() -> None:
             vars=grapl_core_job_vars,
         )
 
-        if SHOULD_DEPLOY_INTEGRATION_TESTS:
-            # Filter out which vars we need
-            integration_test_job_vars = grapl_core_job_vars.apply(
-                lambda inputs: {
+        if config.SHOULD_DEPLOY_INTEGRATION_TESTS:
+
+            def _get_integration_test_job_vars(
+                inputs: Mapping[str, Any]
+            ) -> Mapping[str, Any]:
+                # Filter out which vars we need
+                subset = {
                     k: inputs[k]
                     for k in inputs.keys()
                     & {
@@ -194,9 +190,16 @@ def main() -> None:
                         "aws_access_key_id",
                         "aws_access_key_secret",
                         "aws_endpoint",
-                        "redis_endpoint",
                     }
                 }
+                integration_test_only_job_vars = {
+                    "kafka_broker_port": config.KAFKA_BROKER_PORT,
+                    "redis_port": config.REDIS_PORT,
+                }
+                return {**subset, **integration_test_only_job_vars}
+
+            integration_test_job_vars = grapl_core_job_vars.apply(
+                _get_integration_test_job_vars
             )
 
             nomad_integration_tests = NomadJob(
@@ -306,7 +309,7 @@ def main() -> None:
         dgraph_cluster=dgraph_cluster,
     )
 
-    if not LOCAL_GRAPL:
+    if not config.LOCAL_GRAPL:
         from infra.ux import populate_ux_bucket
 
         # TODO: We are not populating the UX bucket in Local Grapl at

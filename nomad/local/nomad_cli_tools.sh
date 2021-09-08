@@ -94,11 +94,17 @@ check_for_task_failures_in_job() {
     # Let the users know the full summary
     echo >&2 "${job_summary}"
 
-    local -r num_failed=$(echo "${job_summary}" | jq -r ".[].Failed")
+    # Sum/accum each 'failed'
+    local -r num_failed=$(echo "${job_summary}" | jq -r "[.[].Failed] | add")
 
     if [ "${num_failed}" != "0" ]; then
         # the `-e` and the weird escape codes are for color
-        echo -e "\n\n--- \e[30;46m${num_failed} jobs failed\e[m - exiting! ---"
+        important_looking_banner "${num_failed} jobs failed - exiting!"
         return 42
     fi
+}
+
+important_looking_banner() {
+    local -r message="${1}"
+    echo -e "\n\n--- \e[30;46m${message}\e[m ---"
 }
