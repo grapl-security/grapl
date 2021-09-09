@@ -125,6 +125,7 @@ job "grapl-local-infra" {
       }
 
       service {
+        name = "localstack"
         check {
           type    = "script"
           name    = "check_s3_ls"
@@ -217,6 +218,7 @@ job "grapl-local-infra" {
       }
 
       service {
+        name = "kafka"
         check {
           type    = "script"
           name    = "check_kafka"
@@ -265,6 +267,7 @@ job "grapl-local-infra" {
       }
 
       service {
+        name = "zookeeper"
         check {
           type    = "script"
           name    = "check_zookeeper"
