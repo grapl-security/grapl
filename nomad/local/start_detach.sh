@@ -29,8 +29,10 @@ NOMAD_LOGS_DEST=/tmp/nomad-agent.log
 CONSUL_LOGS_DEST=/tmp/consul-agent.log
 echo "Starting nomad and consul locally. Logs @ ${NOMAD_LOGS_DEST} and ${CONSUL_LOGS_DEST}."
 # These will run forever until `make stop-nomad-ci` is invoked."
-sudo nomad agent -config="nomad-agent-conf.nomad" -dev-connect
+sudo nomad agent -config="nomad-agent-conf.nomad" -dev-connect | tee "${NOMAD_LOGS_DEST}" &
+echo "nomad started..."
 consul agent -dev > "${CONSUL_LOGS_DEST}" &
+echo "consul started"
 
 ./nomad_run_local_infra.sh
 echo "Deployment complete"
