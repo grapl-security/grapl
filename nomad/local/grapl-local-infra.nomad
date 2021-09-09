@@ -83,6 +83,26 @@ job "grapl-local-infra" {
 
       service {
         name = "redis"
+
+        check {
+          type    = "script"
+          name    = "check_redis"
+          command = "/bin/bash"
+          # Interpolated by bash, not nomad
+          args = [
+            "-o", "errexit", "-o", "nounset",
+            "-c",
+            "redis-cli ping || exit 1",
+          ]
+          interval = "20s"
+          timeout  = "10s"
+
+          check_restart {
+            limit           = 2
+            grace           = "30s"
+            ignore_warnings = false
+          }
+        }
       }
     }
   }
