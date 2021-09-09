@@ -80,6 +80,10 @@ job "grapl-local-infra" {
         image = "redis:latest"
         ports = ["redis"]
       }
+
+      service {
+        name = "redis"
+      }
     }
   }
 
@@ -163,6 +167,10 @@ job "grapl-local-infra" {
       config {
         image = "dgraph/ratel:latest"
         ports = ["ratel"]
+      }
+
+      service {
+        name = "ratel"
       }
     }
   }
