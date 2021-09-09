@@ -6,7 +6,7 @@ edition = "2018"
 [lib]
 
 [[bin]] # Bin to run org management gRPC server
-name = "orgmanagement-server"
+name = "org-management"
 path = "src/main.rs"
 
 

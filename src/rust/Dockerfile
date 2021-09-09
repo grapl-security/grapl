@@ -170,3 +170,10 @@ FROM rust-dist AS osquery-generator-deploy
 
 COPY --from=build /outputs/osquery-generator /
 ENTRYPOINT ["/osquery-generator"]
+
+
+# org-management
+FROM rust-dist AS org-management-deploy
+
+COPY --from=build /outputs/org-management /
+ENTRYPOINT ["/org-management"]

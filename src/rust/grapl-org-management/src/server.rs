@@ -41,8 +41,7 @@ pub async fn start_server() -> Result<(), Box<dyn std::error::Error>> {
     let pool =
         create_db_connection()
             .await?;
-    let org = OrganizationManagerRpc{pool};
-
+    let org = OrganizationManagerRpc { pool };
 
 
     Server::builder()
@@ -54,11 +53,29 @@ pub async fn start_server() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn create_db_connection() -> Result<Pool<Postgres>, sqlx::Error> {
-    let url = std::env::var("POSTGRES_URL").expect("POSTGRES_URL");
+    let url = std::env::var("POSTGRES_URL")
+        .expect("POSTGRES_URL");
+
+
+    // let url = "postgres://localhost?dbname=org-management&user=grapl-user&password=grapl-rules";
+    // Create Connection Pool
     let pool = PgPoolOptions::new()
         .max_connections(5)
         .connect(&url)
         .await?;
 
+    // Create table if it doesn't already exist
+    sqlx::query(
+        r#"
+            CREATE TABLE IF NOT EXISTS organization (
+              id INTEGER PRIMARY,
+              name VARCHAR(255) NOT NULL,
+            );
+        "#,
+    )
+        .execute(&pool)
+        .await?;
+    // Insert Org Info
     Ok(pool)
 }
+

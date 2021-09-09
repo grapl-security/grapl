@@ -367,6 +367,43 @@ services:
     volumes:
       - *read-only-pulumi-mnt
 
+  org-management-db:
+    image: postgres
+    restart: always
+    tty: false
+    environment:
+      POSTGRES_PASSWORD:${SA_PASSWORD}
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-d", "postgres", "-U", "project"]
+      retries: 5
+      interval: 5s
+      timeout: 30s
+      start_period: 15s
+
+  org-management:
+    image: grapl/org-management:${TAG:-latest}
+    entrypoint: [ "/busybox/sh", "-o", "errexit", "-o", "nounset", "-c" ]
+    command:
+      - /org-management
+    environment:
+      POSTGRES_URL: postgres://${ORG_MANAGEMENT_DB_USERNAME}:${SA_PASSWORD}@${ORG_MANAGEMENT_DB_NAME}
+      <<: *aws-env
+      <<: *log-level
+      <<: *rust-backtrace
+    tty: false
+    depends_on:
+      provisioner:
+        condition: service_completed_successfully
+      org-management-db:
+        condition: service_healthy
+      pulumi:
+        # We must wait until Pulumi has created the buckets to know what their names are
+        condition: service_completed_successfully
+    volumes:
+      - *read-only-pulumi-mnt
+
+
+
   ########################################################################
   # Python Services
   ########################################################################
