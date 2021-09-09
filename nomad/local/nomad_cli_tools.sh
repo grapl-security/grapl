@@ -102,6 +102,7 @@ check_for_task_failures_in_job() {
     if [ "${num_failed}" != "0" ]; then
         # the `-e` and the weird escape codes are for color
         important_looking_banner "${num_failed} jobs failed - exiting!"
+        nomad_stop_job "${job_id}"
         return 42
     fi
 }

@@ -72,18 +72,28 @@ class NomadTask:
             LOGGER.info(f"Couldn't get logs for {self.name}")
             return None
 
+def _get_nomad_job_names(
+    nomad_client: Nomad
+) -> List[str]:
+    jobs: List[str] = [
+        j['ID'] 
+        for j in nomad_client.jobs
+        if not j['ParameterizedJob']
+    ]
+    return jobs
 
 def _get_nomad_logs_for_each_service(
     artifacts_dir: Path,
 ) -> Dict[str, List[NomadAllocation]]:
-    nomad = Nomad(host="localhost", timeout=5)
+    nomad_client = Nomad(host="localhost", timeout=5)
+    job_names = _get_nomad_job_names(nomad_client)
     job_to_allocs: Dict[str, List[NomadAllocation]] = {
-        job_name: [NomadAllocation(a) for a in nomad.job.get_allocations(job_name)]
-        for job_name in ("grapl-core", "grapl-local-infra", "integration-tests")
+        job_name: [NomadAllocation(a) for a in nomad_client.job.get_allocations(job_name)]
+        for job_name in job_names
     }
 
     for job, allocs in job_to_allocs.items():
-        _write_nomad_logs(nomad, artifacts_dir, job_name=job, allocs=allocs)
+        _write_nomad_logs(nomad_client, artifacts_dir, job_name=job, allocs=allocs)
 
     return job_to_allocs
 
