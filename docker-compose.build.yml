@@ -65,15 +65,6 @@ services:
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
-  grapl-org-management:
-    image: ${DOCKER_REGISTRY:-docker.io}/grapl/org-management:${TAG:-latest}
-    build:
-      context: src
-      dockerfile: rust/Dockerfile
-      target: org-management-deploy
-      args:
-        - RUST_BUILD=${RUST_BUILD:-debug}
-
   ########################################################################
   # Python Services
   ########################################################################
