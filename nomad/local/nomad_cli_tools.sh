@@ -14,14 +14,16 @@ nomad_node_id() {
 
 nomad_dispatch() {
     # Grab the new Job ID from the Dispatch command
-    # TODO: Probably just use the Nomad HTTP api for this
 
     local -r parameterized_batch_job="${1}"
-    # Output looks like
-    #
     local -r dispatch_output=$(curl_quiet --request POST --data "{}" "${NOMAD_ENDPOINT}/v1/job/${parameterized_batch_job}/dispatch")
     local -r job_id=$(echo "${dispatch_output}" | jq -r ".DispatchedJobID")
     echo "${job_id}"
+}
+
+nomad_stop_job() {
+    local -r job_id="${1}"
+    local -r dispatch_output=$(curl_quiet --request DELETE --data "{}" "${NOMAD_ENDPOINT}/v1/job/${job_id}")
 }
 
 nomad_get_allocation() {

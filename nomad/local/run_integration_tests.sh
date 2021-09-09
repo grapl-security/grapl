@@ -29,5 +29,7 @@ check_for_task_failures_in_job "${job_id}"
 
 if [ "${dispatch_timed_out}" -ne "0" ]; then
     important_looking_banner "Integration tests timed out."
+    nomad_stop_job "${job_id}"
+    sleep 5
     exit 42
 fi
