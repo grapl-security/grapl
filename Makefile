@@ -150,7 +150,7 @@ build-test-typecheck: build-python-wheels
 		--file ./test/docker-compose.typecheck-tests.yml
 
 .PHONY: build-test-integration
-build-test-integration: build
+build-test-integration: build-local
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.integration-tests.yml
 
@@ -209,6 +209,9 @@ build-docker-images: graplctl
 
 .PHONY: build
 build: build-lambda-zips build-docker-images ## Build Grapl services
+
+.PHONY: build-local
+build: build-lambda-zips build-docker-images-local ## Build Grapl services
 
 .PHONY: build-formatter
 build-formatter:
@@ -423,7 +426,7 @@ up: build ## Build Grapl services and launch docker-compose up
 	docker-compose -f docker-compose.yml up
 
 .PHONY: up-detach
-up-detach: build ## Bring up local Grapl and detach to return control to tty
+up-detach: build-local ## Bring up local Grapl and detach to return control to tty
 	# Primarily used for bringing up an environment for integration testing.
 	# For use with a project name consider setting COMPOSE_PROJECT_NAME env var
 	# Usage: `make up-detach`
