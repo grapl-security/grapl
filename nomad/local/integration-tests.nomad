@@ -34,28 +34,28 @@ variable "aws_endpoint" {
   description = "The endpoint in which we can expect to find and interact with AWS."
 }
 
-variable "redis_port" {
+variable "redis_endpoint" {
   type        = string
   description = "On which port can services find redis?"
 }
 
-variable "kafka_broker_port" {
+variable "kafka_endpoint" {
   type        = string
   description = "On which port can services find Kafka?"
 }
 
 locals {
-  # TODO: Do the "USE_LOCALHOST_SENTINEL_VALUE" check here in case we
-  # ever decide to run these against prod AWS
-
   log_level            = "DEBUG"
-  local_aws_endpoint   = "http://${attr.unique.network.ip-address}:4566"
-  local_redis_endpoint = "redis://${attr.unique.network.ip-address}:${var.redis_port}"
-  local_kafka_endpoint = "http://${attr.unique.network.ip-address}:${var.kafka_broker_port}"
+
+  # Prefer these over their `var` equivalents
+  aws_endpoint = replace(var.aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  redis_endpoint = replace(var.redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  kafka_endpoint = replace(var.kafka_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
 
   redis_trimmed = trimprefix(local.local_redis_endpoint, "redis://")
   redis         = split(":", local.redis_trimmed)
   redis_host    = local.redis[0]
+  redis_port    = local.redis[1]
 }
 
 job "integration-tests" {
@@ -219,9 +219,9 @@ job "integration-tests" {
         GRAPL_MODEL_PLUGINS_BUCKET              = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
 
         HITCACHE_ADDR     = local.redis_host
-        HITCACHE_PORT     = var.redis_port
+        HITCACHE_PORT     = local.redis_port
         MESSAGECACHE_ADDR = local.redis_host
-        MESSAGECACHE_PORT = var.redis_port
+        MESSAGECACHE_PORT = local.redis_port
         IS_RETRY          = false
       }
 
@@ -315,6 +315,7 @@ job "integration-tests" {
         }
       }
     }
+
     task "engagement-edge-integration-tests" {
       driver = "docker"
 

@@ -25,7 +25,7 @@ variable "aws_endpoint" {
   type        = string
   description = <<EOF
   The endpoint in which we can expect to find and interact with AWS. 
-  It accepts a special sentinel value, USE_LOCALSTACK_SENTINEL_VALUE, if the
+  It accepts a special sentinel value, LOCAL_GRAPL_REPLACE_IP, if the
   user wishes to contact Localstack.
 
   Prefer using `local.aws_endpoint`.
@@ -245,15 +245,9 @@ locals {
   # String that contains all of the running Alphas for clients connecting to Dgraph (so they can do loadbalancing)
   alpha_grpc_connect_str = join(",", [for alpha in local.dgraph_alphas : "localhost:${alpha.grpc_public_port}"])
 
-  # Used for local development
-  local_aws_endpoint = "http://${attr.unique.network.ip-address}:4566"
-
-  # AWS endpoint to use when interacting with AWS. Prefer this over var.aws_endpoint
-  aws_endpoint = var.aws_endpoint != "USE_LOCALSTACK_SENTINEL_VALUE" ? var.aws_endpoint : local.local_aws_endpoint
-
-  local_redis_endpoint = "redis://${attr.unique.network.ip-address}:6379"
-  # redis endpoint to use when interacting with redis. Prefer this over var.redis_endpoint
-  redis_endpoint = var.redis_endpoint != "USE_REDIS_SENTINEL_VALUE" ? var.redis_endpoint : local.local_redis_endpoint
+  # Prefer these over their `var` equivalents.
+  aws_endpoint = replace(var.aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  redis_endpoint = replace(var.redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
 
   redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
   redis         = split(":", local.redis_trimmed)
