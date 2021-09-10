@@ -72,15 +72,11 @@ class NomadTask:
             LOGGER.info(f"Couldn't get logs for {self.name}")
             return None
 
-def _get_nomad_job_names(
-    nomad_client: Nomad
-) -> List[str]:
-    jobs: List[str] = [
-        j['ID'] 
-        for j in nomad_client.jobs
-        if not j['ParameterizedJob']
-    ]
+
+def _get_nomad_job_names(nomad_client: Nomad) -> List[str]:
+    jobs: List[str] = [j["ID"] for j in nomad_client.jobs if not j["ParameterizedJob"]]
     return jobs
+
 
 def _get_nomad_logs_for_each_service(
     artifacts_dir: Path,
@@ -88,7 +84,9 @@ def _get_nomad_logs_for_each_service(
     nomad_client = Nomad(host="localhost", timeout=5)
     job_names = _get_nomad_job_names(nomad_client)
     job_to_allocs: Dict[str, List[NomadAllocation]] = {
-        job_name: [NomadAllocation(a) for a in nomad_client.job.get_allocations(job_name)]
+        job_name: [
+            NomadAllocation(a) for a in nomad_client.job.get_allocations(job_name)
+        ]
         for job_name in job_names
     }
 

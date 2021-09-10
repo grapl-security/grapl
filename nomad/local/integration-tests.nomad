@@ -323,7 +323,7 @@ job "integration-tests" {
 
       env {
         # aws vars
-        AWS_REGION                  = var.aws_region
+        AWS_REGION = var.aws_region
         # TODO: Do the "USE_LOCALHOST_SENTINEL_VALUE" check here in case we
         # ever decide to run these against prod AWS
         GRAPL_AWS_ENDPOINT          = local.local_aws_endpoint
