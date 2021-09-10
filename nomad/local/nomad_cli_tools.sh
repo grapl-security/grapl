@@ -21,6 +21,13 @@ nomad_dispatch() {
     echo "${job_id}"
 }
 
+url_to_nomad_job_in_ui() {
+    local job_id="${1}"
+    # urlencode
+    job_id=$(jq -rn --arg input "${job_id}" '$input|@uri')
+    echo "http://localhost:4646/ui/jobs/${job_id}"
+}
+
 nomad_stop_job() {
     local -r job_id="${1}"
     local -r dispatch_output=$(curl_quiet --request DELETE --data "{}" "${NOMAD_ENDPOINT}/v1/job/${job_id}")

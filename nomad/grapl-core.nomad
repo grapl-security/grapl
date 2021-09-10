@@ -254,7 +254,7 @@ locals {
   aws_endpoint   = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
   redis_endpoint = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
 
-  _redis_trimmed = trimprefix(local.local_redis_endpoint, "redis://")
+  _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
   _redis         = split(":", local._redis_trimmed)
   redis_host     = local._redis[0]
   redis_port     = local._redis[1]
@@ -692,7 +692,7 @@ job "grapl-core" {
         AWS_REGION                  = var.aws_region
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-        GRAPL_AWS_ENDPOINT          = var.aws_endpoint
+        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
         # rust vars
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = 1

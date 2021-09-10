@@ -437,6 +437,9 @@ up-detach: build-local ## Bring up local Grapl and detach to return control to t
 	# Although it seems specifying the `--file` option overrides that, we'll
 	# explicitly unset that here to avoid potential surprises.
 	unset COMPOSE_FILE
+
+	# TODO: This could potentially be replaced with a docker-compose run, but
+	#  it doesn't have all these useful flags
 	docker-compose \
 		--file docker-compose.yml \
 		up --force-recreate --always-recreate-deps --renew-anon-volumes \

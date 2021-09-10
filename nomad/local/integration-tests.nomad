@@ -52,7 +52,7 @@ locals {
   redis_endpoint = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
   kafka_endpoint = replace(var._kafka_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
 
-  _redis_trimmed = trimprefix(local.local_redis_endpoint, "redis://")
+  _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
   _redis         = split(":", local._redis_trimmed)
   redis_host     = local._redis[0]
   redis_port     = local._redis[1]
@@ -107,7 +107,7 @@ job "integration-tests" {
       env {
         AWS_REGION                  = var.aws_region
         DEPLOYMENT_NAME             = var.deployment_name
-        GRAPL_AWS_ENDPOINT          = local.local_aws_endpoint
+        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
         GRAPL_LOG_LEVEL             = local.log_level
@@ -116,8 +116,8 @@ job "integration-tests" {
         MG_ALPHAS      = "localhost:9080"
         RUST_BACKTRACE = 1
         RUST_LOG       = local.log_level
-        REDIS_ENDPOINT = local.local_redis_endpoint
-        KAFKA_ENDPOINT = local.local_kafka_endpoint
+        REDIS_ENDPOINT = local.redis_endpoint
+        KAFKA_ENDPOINT = local.kafka_endpoint
       }
     }
   }
@@ -207,7 +207,7 @@ job "integration-tests" {
       env {
         # aws vars
         AWS_REGION                  = var.aws_region
-        GRAPL_AWS_ENDPOINT          = local.local_aws_endpoint
+        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
 
@@ -270,7 +270,7 @@ job "integration-tests" {
       env {
         # aws vars
         AWS_REGION                  = var.aws_region
-        GRAPL_AWS_ENDPOINT          = local.local_aws_endpoint
+        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
 
@@ -328,7 +328,7 @@ job "integration-tests" {
       env {
         # aws vars
         AWS_REGION                  = var.aws_region
-        GRAPL_AWS_ENDPOINT          = local.local_aws_endpoint
+        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
 

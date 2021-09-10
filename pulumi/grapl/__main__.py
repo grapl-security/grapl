@@ -136,10 +136,10 @@ def main() -> None:
         kafka = Kafka("kafka")
 
         # These are created in `grapl-local-infra.nomad` and not applicable to prod.
-        # Nomad will replace the LOCAL_GRAPL_IP_REPLACE sentinel value with the correct IP.
-        aws_endpoint = "http://LOCAL_GRAPL_IP_REPLACE:4566"
-        kafka_endpoint = "LOCAL_GRAPL_IP_REPLACE:19092" # intentionally not 29092
-        redis_endpoint = "redis://LOCAL_GRAPL_IP_REPLACE:6379"
+        # Nomad will replace the LOCAL_GRAPL_REPLACE_IP sentinel value with the correct IP.
+        aws_endpoint = "http://LOCAL_GRAPL_REPLACE_IP:4566"
+        kafka_endpoint = "LOCAL_GRAPL_REPLACE_IP:19092"  # intentionally not 29092
+        redis_endpoint = "redis://LOCAL_GRAPL_REPLACE_IP:6379"
 
         grapl_core_job_vars = pulumi.Output.all(
             analyzer_bucket=analyzers_bucket.bucket,
