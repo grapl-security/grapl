@@ -14,14 +14,16 @@ nomad_node_id() {
 
 nomad_dispatch() {
     # Grab the new Job ID from the Dispatch command
-    # TODO: Probably just use the Nomad HTTP api for this
 
     local -r parameterized_batch_job="${1}"
-    # Output looks like
-    #
     local -r dispatch_output=$(curl_quiet --request POST --data "{}" "${NOMAD_ENDPOINT}/v1/job/${parameterized_batch_job}/dispatch")
     local -r job_id=$(echo "${dispatch_output}" | jq -r ".DispatchedJobID")
     echo "${job_id}"
+}
+
+nomad_stop_job() {
+    local -r job_id="${1}"
+    local -r dispatch_output=$(curl_quiet --request DELETE --data "{}" "${NOMAD_ENDPOINT}/v1/job/${job_id}")
 }
 
 nomad_get_allocation() {
@@ -94,11 +96,18 @@ check_for_task_failures_in_job() {
     # Let the users know the full summary
     echo >&2 "${job_summary}"
 
-    local -r num_failed=$(echo "${job_summary}" | jq -r ".[].Failed")
+    # Sum/accum each 'failed'
+    local -r num_failed=$(echo "${job_summary}" | jq -r "[.[].Failed] | add")
 
     if [ "${num_failed}" != "0" ]; then
         # the `-e` and the weird escape codes are for color
-        echo -e "\n\n--- \e[30;46m${num_failed} jobs failed\e[m - exiting! ---"
+        important_looking_banner "${num_failed} jobs failed - exiting!"
+        nomad_stop_job "${job_id}"
         return 42
     fi
+}
+
+important_looking_banner() {
+    local -r message="${1}"
+    echo -e "\n\n--- \e[30;46m${message}\e[m ---"
 }

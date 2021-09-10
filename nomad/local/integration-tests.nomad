@@ -34,20 +34,28 @@ variable "aws_endpoint" {
   description = "The endpoint in which we can expect to find and interact with AWS."
 }
 
-variable "redis_endpoint" {
+variable "redis_port" {
   type        = string
-  description = "Where can services find redis?"
+  description = "On which port can services find redis?"
+}
+
+variable "kafka_broker_port" {
+  type        = string
+  description = "On which port can services find Kafka?"
 }
 
 locals {
+  # TODO: Do the "USE_LOCALHOST_SENTINEL_VALUE" check here in case we
+  # ever decide to run these against prod AWS
+
   log_level            = "DEBUG"
   local_aws_endpoint   = "http://${attr.unique.network.ip-address}:4566"
-  local_redis_endpoint = "redis://${attr.unique.network.ip-address}:6379"
+  local_redis_endpoint = "redis://${attr.unique.network.ip-address}:${var.redis_port}"
+  local_kafka_endpoint = "http://${attr.unique.network.ip-address}:${var.kafka_broker_port}"
 
   redis_trimmed = trimprefix(local.local_redis_endpoint, "redis://")
   redis         = split(":", local.redis_trimmed)
   redis_host    = local.redis[0]
-  redis_port    = local.redis[1]
 }
 
 job "integration-tests" {
@@ -99,7 +107,7 @@ job "integration-tests" {
       env {
         AWS_REGION                  = var.aws_region
         DEPLOYMENT_NAME             = var.deployment_name
-        GRAPL_AWS_ENDPOINT          = var.aws_endpoint
+        GRAPL_AWS_ENDPOINT          = local.local_aws_endpoint
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
         GRAPL_LOG_LEVEL             = local.log_level
@@ -108,7 +116,8 @@ job "integration-tests" {
         MG_ALPHAS      = "localhost:9080"
         RUST_BACKTRACE = 1
         RUST_LOG       = local.log_level
-        REDIS_ENDPOINT = var.redis_endpoint
+        REDIS_ENDPOINT = local.local_redis_endpoint
+        KAFKA_ENDPOINT = local.local_kafka_endpoint
       }
     }
   }
@@ -198,7 +207,7 @@ job "integration-tests" {
       env {
         # aws vars
         AWS_REGION                  = var.aws_region
-        GRAPL_AWS_ENDPOINT          = var.aws_endpoint
+        GRAPL_AWS_ENDPOINT          = local.local_aws_endpoint
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
 
@@ -210,9 +219,9 @@ job "integration-tests" {
         GRAPL_MODEL_PLUGINS_BUCKET              = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
 
         HITCACHE_ADDR     = local.redis_host
-        HITCACHE_PORT     = local.redis_port
+        HITCACHE_PORT     = var.redis_port
         MESSAGECACHE_ADDR = local.redis_host
-        MESSAGECACHE_PORT = local.redis_port
+        MESSAGECACHE_PORT = var.redis_port
         IS_RETRY          = false
       }
 
@@ -261,7 +270,7 @@ job "integration-tests" {
       env {
         # aws vars
         AWS_REGION                  = var.aws_region
-        GRAPL_AWS_ENDPOINT          = var.aws_endpoint
+        GRAPL_AWS_ENDPOINT          = local.local_aws_endpoint
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
 

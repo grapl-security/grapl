@@ -92,7 +92,7 @@ RUN cp -ar /tmp/target/. /grapl/rust/target/ && \
     cp -ar /tmp/registry/. /usr/local/cargo/registry/ && \
     rm -rf /tmp/{target,registry}
 
-CMD [ "bash", "-c", "cargo test --features \"${RUST_INTEGRATION_TEST_FEATURES}\" --test \"*\"" ]
+CMD [ "bash", "-c", "cargo test --features \"${RUST_INTEGRATION_TEST_FEATURES}\" --test \"*\" -- --nocapture" ]
 
 # metric-forwarder-zip
 ################################################################################
