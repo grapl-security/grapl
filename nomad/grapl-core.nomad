@@ -526,23 +526,24 @@ job "grapl-core" {
       }
     }
 
-    //    service {
-    //      connect {
-    //        sidecar_service {
-    //          proxy {
-    //            dynamic "upstreams" {
-    //              iterator = alpha
-    //              for_each = local.dgraph_alphas
-    //
-    //              content {
-    //                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
-    //                local_bind_port  = alpha.value.grpc_public_port
-    //              }
-    //            }
-    //          }
-    //        }
-    //      }
-    //    }
+    service {
+      name = "graph-merger"
+      //      connect {
+      //        sidecar_service {
+      //          proxy {
+      //            dynamic "upstreams" {
+      //              iterator = alpha
+      //              for_each = local.dgraph_alphas
+      //
+      //              content {
+      //                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
+      //                local_bind_port  = alpha.value.grpc_public_port
+      //              }
+      //            }
+      //          }
+      //        }
+      //      }
+    }
   }
 
   group "provisioner" {
@@ -580,6 +581,7 @@ job "grapl-core" {
     }
 
     service {
+      name = "provisioner"
       connect {
         sidecar_service {
           proxy {
@@ -630,6 +632,10 @@ job "grapl-core" {
         SOURCE_QUEUE_URL      = var.node_identifier_queue
         DEAD_LETTER_QUEUE_URL = var.node_identifier_retry_queue
       }
+
+      service {
+        name = "node-identifier"
+      }
     }
   }
 
@@ -664,6 +670,11 @@ job "grapl-core" {
         SOURCE_QUEUE_URL            = var.node_identifier_retry_queue
         DEAD_LETTER_QUEUE_URL       = var.node_identifier_dead_letter_queue
       }
+
+      service {
+        name = "node-identifier-retry"
+      }
+
     }
   }
 
@@ -692,6 +703,11 @@ job "grapl-core" {
         DEAD_LETTER_QUEUE_URL  = var.analyzer_dispatcher_queue
         SOURCE_QUEUE_URL       = var.analyzer_dispatcher_dead_letter_queue
       }
+
+      service {
+        name = "analyzer-dispatcher"
+      }
+
     }
 
   }
@@ -727,6 +743,11 @@ job "grapl-core" {
         MESSAGECACHE_ADDR                       = local.redis_host
         MESSAGECACHE_PORT                       = local.redis_port
       }
+
+      service {
+        name = "analyzer-executor"
+      }
+
     }
   }
 
@@ -789,13 +810,13 @@ job "grapl-core" {
       }
     }
 
-    //    service {
-    //      name = "graphql-endpoint"
-    //      port = "graphql-endpoint"
-    //
-    //      connect {
-    //        sidecar_service {}
-    //      }
-    //    }
+    service {
+      name = "graphql-endpoint"
+      //      port = "graphql-endpoint"
+      //
+      //      connect {
+      //        sidecar_service {}
+      //      }
+    }
   }
 }
