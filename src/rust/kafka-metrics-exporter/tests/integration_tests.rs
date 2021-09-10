@@ -1,6 +1,10 @@
 #[cfg(feature = "integration")]
 mod integration_tests {
-    use kafka_metrics_exporter::KafkaMetricExporterBuilder;
+
+    use kafka_metrics_exporter::{
+        kafka_bootstrap_servers,
+        KafkaMetricExporterBuilder,
+    };
     use metrics::{
         counter,
         histogram,
@@ -22,12 +26,11 @@ mod integration_tests {
     use tokio_stream::StreamExt;
 
     fn producer_init() -> Result<FutureProducer, Box<dyn std::error::Error>> {
-        let brokers = "kafka-broker:9092"; // TODO FIX!!!! We want to read this from env variable
         let mut client_config = rdkafka::ClientConfig::new();
         client_config
             .set("client.id", "test-producer")
             .set("queue.buffering.max.ms", "0")
-            .set("bootstrap.servers", brokers);
+            .set("bootstrap.servers", kafka_bootstrap_servers().as_str());
         tracing::info!(config=?client_config, message="Created Producer ClientConfig");
 
         let producer: FutureProducer = FutureProducer::from_config(&client_config)?;
@@ -37,12 +40,11 @@ mod integration_tests {
     fn consumer_init(
     ) -> Result<StreamConsumer<DefaultConsumerContext, DefaultRuntime>, Box<dyn std::error::Error>>
     {
-        let brokers = "kafka-broker:9092"; // TODO FIX!!!! We want to read this from env variable
         let mut client_config = rdkafka::ClientConfig::new();
         client_config
             .set("group.id", "integration-tests-consumers")
             .set("client.id", "test-consumer")
-            .set("bootstrap.servers", brokers)
+            .set("bootstrap.servers", kafka_bootstrap_servers().as_str())
             .set("enable.partition.eof", "false")
             .set("session.timeout.ms", "6000")
             .set("enable.auto.commit", "true")
