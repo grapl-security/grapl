@@ -18,7 +18,7 @@ job_id=$(nomad_dispatch integration-tests)
 echo "${job_id}"
 
 dispatch_timed_out=0
-await_nomad_dispatch_finish "${job_id}" $((5 * 60)) && dispatch_timed_out=1
+await_nomad_dispatch_finish "${job_id}" $((5 * 60)) || dispatch_timed_out=1
 
 # Show how each job did
 # TODO: It'd be nice to show this *during* the await_nomad_dispatch_finish,

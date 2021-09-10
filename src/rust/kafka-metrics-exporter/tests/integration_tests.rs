@@ -1,7 +1,10 @@
 #[cfg(feature = "integration")]
 mod integration_tests {
 
-    use kafka_metrics_exporter::KafkaMetricExporterBuilder;
+    use kafka_metrics_exporter::{
+        kafka_bootstrap_servers,
+        KafkaMetricExporterBuilder,
+    };
     use metrics::{
         counter,
         histogram,
@@ -22,17 +25,12 @@ mod integration_tests {
     };
     use tokio_stream::StreamExt;
 
-    fn brokers() -> String {
-        let bucket = std::env::var("KAFKA_ENDPOINT").expect("KAFKA_ENDPOINT");
-        return bucket;
-    }
-
     fn producer_init() -> Result<FutureProducer, Box<dyn std::error::Error>> {
         let mut client_config = rdkafka::ClientConfig::new();
         client_config
             .set("client.id", "test-producer")
             .set("queue.buffering.max.ms", "0")
-            .set("bootstrap.servers", brokers().as_str());
+            .set("bootstrap.servers", kafka_boostrap_servers().as_str());
         tracing::info!(config=?client_config, message="Created Producer ClientConfig");
 
         let producer: FutureProducer = FutureProducer::from_config(&client_config)?;
@@ -46,7 +44,7 @@ mod integration_tests {
         client_config
             .set("group.id", "integration-tests-consumers")
             .set("client.id", "test-consumer")
-            .set("bootstrap.servers", brokers().as_str())
+            .set("bootstrap.servers", kafka_boostrap_servers().as_str())
             .set("enable.partition.eof", "false")
             .set("session.timeout.ms", "6000")
             .set("enable.auto.commit", "true")

@@ -45,6 +45,9 @@ variable "kafka_broker_port" {
 }
 
 locals {
+  # TODO: Do the "USE_LOCALHOST_SENTINEL_VALUE" check here in case we
+  # ever decide to run these against prod AWS
+
   log_level            = "DEBUG"
   local_aws_endpoint   = "http://${attr.unique.network.ip-address}:4566"
   local_redis_endpoint = "redis://${attr.unique.network.ip-address}:${var.redis_port}"
@@ -323,9 +326,7 @@ job "integration-tests" {
 
       env {
         # aws vars
-        AWS_REGION = var.aws_region
-        # TODO: Do the "USE_LOCALHOST_SENTINEL_VALUE" check here in case we
-        # ever decide to run these against prod AWS
+        AWS_REGION                  = var.aws_region
         GRAPL_AWS_ENDPOINT          = local.local_aws_endpoint
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret

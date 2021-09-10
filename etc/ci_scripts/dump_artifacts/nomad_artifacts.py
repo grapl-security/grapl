@@ -74,6 +74,12 @@ class NomadTask:
 
 
 def _get_nomad_job_names(nomad_client: Nomad) -> List[str]:
+    # Filter out the Parameterized Batch jobs, because those don't themselves have logs;
+    # the dispatched instances of them have jobs.
+    # Otherwise you'd see both of these:
+    # - integration_tests (param batch job) (no logs since nothing ran)
+    # - integration_tests/dispatch-12345 (a dispatched instance of integration_tests)
+
     jobs: List[str] = [j["ID"] for j in nomad_client.jobs if not j["ParameterizedJob"]]
     return jobs
 
