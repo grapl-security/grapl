@@ -29,33 +29,33 @@ variable "aws_access_key_secret" {
   description = "The aws access key secret used to interact with AWS."
 }
 
-variable "aws_endpoint" {
+variable "_aws_endpoint" {
   type        = string
   description = "The endpoint in which we can expect to find and interact with AWS."
 }
 
-variable "redis_endpoint" {
+variable "_redis_endpoint" {
   type        = string
   description = "On which port can services find redis?"
 }
 
-variable "kafka_endpoint" {
+variable "_kafka_endpoint" {
   type        = string
   description = "On which port can services find Kafka?"
 }
 
 locals {
-  log_level            = "DEBUG"
+  log_level = "DEBUG"
 
   # Prefer these over their `var` equivalents
-  aws_endpoint = replace(var.aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
-  redis_endpoint = replace(var.redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
-  kafka_endpoint = replace(var.kafka_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  aws_endpoint   = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  redis_endpoint = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  kafka_endpoint = replace(var._kafka_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
 
-  redis_trimmed = trimprefix(local.local_redis_endpoint, "redis://")
-  redis         = split(":", local.redis_trimmed)
-  redis_host    = local.redis[0]
-  redis_port    = local.redis[1]
+  _redis_trimmed = trimprefix(local.local_redis_endpoint, "redis://")
+  _redis         = split(":", local._redis_trimmed)
+  redis_host     = local._redis[0]
+  redis_port     = local._redis[1]
 }
 
 job "integration-tests" {

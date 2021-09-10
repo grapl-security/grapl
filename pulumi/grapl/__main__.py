@@ -164,11 +164,11 @@ def main() -> None:
         ).apply(
             lambda inputs: {
                 # This is a special directive to our HCL file that tells it to use Localstack
-                "aws_endpoint": aws_endpoint,
+                "_aws_endpoint": aws_endpoint,
                 "deployment_name": config.DEPLOYMENT_NAME,
                 "grapl_test_user_name": config.GRAPL_TEST_USER_NAME,
                 "aws_region": aws.get_region().name,
-                "redis_endpoint": redis_endpoint,
+                "_redis_endpoint": redis_endpoint,
                 # TODO: consider replacing with the previous per-service `configurable_envvars`
                 "rust_log": "DEBUG",
                 **inputs,
@@ -191,18 +191,16 @@ def main() -> None:
                     k: inputs[k]
                     for k in inputs.keys()
                     & {
-                        "aws_region",
-                        "deployment_name",
                         "aws_access_key_id",
                         "aws_access_key_secret",
-                        "aws_endpoint",
+                        "_aws_endpoint",
+                        "aws_region",
+                        "deployment_name",
+                        "_redis_endpoint",
                     }
                 }
-                # These two are very hacky, since it's a construct that only appears in
-                # Local, not Prod AWS.
                 integration_test_only_job_vars = {
-                    "kafka_endpoint": kafka_endpoint,
-                    "redis_endpoint": redis_endpoint,
+                    "_kafka_endpoint": kafka_endpoint,
                 }
                 return {**subset, **integration_test_only_job_vars}
 
