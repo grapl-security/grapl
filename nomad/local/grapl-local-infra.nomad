@@ -5,8 +5,8 @@ variable "container_registry" {
 }
 
 variable "localstack_tag" {
-  type = string
-  default = "dev"
+  type        = string
+  default     = "dev"
   description = "The tagged version of localstack we should deploy."
 }
 
