@@ -211,7 +211,7 @@ build-docker-images: graplctl
 build: build-lambda-zips build-docker-images ## Build Grapl services
 
 .PHONY: build-local
-build: build-lambda-zips build-docker-images-local ## Build Grapl services
+build-local: build-lambda-zips build-docker-images-local ## Build Grapl services
 
 .PHONY: build-formatter
 build-formatter:
