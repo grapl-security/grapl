@@ -439,7 +439,7 @@ up-detach: build-local ## Bring up local Grapl and detach to return control to t
 	unset COMPOSE_FILE
 	docker-compose \
 		--file docker-compose.yml \
-		up --detach --force-recreate --always-recreate-deps --renew-anon-volumes pulumi
+		run pulumi
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
