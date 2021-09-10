@@ -7,7 +7,7 @@ echo "Deploying local infrastructure."
 
 # Wait a short period of time before attempting to deploy infrastructure
 # shellcheck disable=SC2016
-timeout 30 bash -c -- 'while [[ -z $(nomad status 2>&1 | grep running) ]]; do printf "Waiting for nomad-agent\n";sleep 1;done'
+timeout 120 bash -c -- 'while [[ -z $(nomad status 2>&1 | grep running) ]]; do printf "Waiting for nomad-agent\n";sleep 1;done'
 
 # Before we deploy Localstack, we need to ensure the Docker network exists
 docker network create grapl-network || true
