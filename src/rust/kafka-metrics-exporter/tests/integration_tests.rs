@@ -30,7 +30,7 @@ mod integration_tests {
         client_config
             .set("client.id", "test-producer")
             .set("queue.buffering.max.ms", "0")
-            .set("bootstrap.servers", kafka_boostrap_servers().as_str());
+            .set("bootstrap.servers", kafka_bootstrap_servers().as_str());
         tracing::info!(config=?client_config, message="Created Producer ClientConfig");
 
         let producer: FutureProducer = FutureProducer::from_config(&client_config)?;
@@ -44,7 +44,7 @@ mod integration_tests {
         client_config
             .set("group.id", "integration-tests-consumers")
             .set("client.id", "test-consumer")
-            .set("bootstrap.servers", kafka_boostrap_servers().as_str())
+            .set("bootstrap.servers", kafka_bootstrap_servers().as_str())
             .set("enable.partition.eof", "false")
             .set("session.timeout.ms", "6000")
             .set("enable.auto.commit", "true")

@@ -192,9 +192,13 @@ def main() -> None:
                         "aws_endpoint",
                     }
                 }
+                # These two are very hacky, since it's a construct that only appears in
+                # Local, not Prod AWS.
+                redis_port = config._require_env_var("REDIS_PORT")
+                kafka_broker_port = config._require_env_var("KAFKA_BROKER_PORT")
                 integration_test_only_job_vars = {
-                    "kafka_broker_port": config.KAFKA_BROKER_PORT,
-                    "redis_port": config.REDIS_PORT,
+                    "kafka_broker_port": kafka_broker_port,
+                    "redis_port": redis_port,
                 }
                 return {**subset, **integration_test_only_job_vars}
 
