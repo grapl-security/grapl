@@ -111,7 +111,6 @@ steps:
 
   - label: ":hammer: Integration Tests"
     command:
-      - make run-registry
       - make test-integration
     env:
       GRAPL_LOG_LEVEL: "DEBUG"
