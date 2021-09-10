@@ -34,6 +34,36 @@ variable "aws_endpoint" {
   description = "The endpoint in which we can expect to find and interact with AWS."
 }
 
+variable "analyzer_executor_integration_tests_tag" {
+  type        = string
+  default     = "dev"
+  description = "The tagged version of the analyzer_executor_integration_tests we should deploy."
+}
+
+variable "analyzerlib_integration_tests_tag" {
+  type        = string
+  default     = "dev"
+  description = "The tagged version of the analyzerlib_integration_tests we should deploy."
+}
+
+variable "engagement_edge_integration_tests_tag" {
+  type        = string
+  default     = "dev"
+  description = "The tagged version of the engagement_edge_integration_tests we should deploy."
+}
+
+variable "graphql_endpoint_tests_tag" {
+  type        = string
+  default     = "dev"
+  description = "The tagged version of the graphql_endpoint_tests we should deploy."
+}
+
+variable "rust_integration_tests_tag" {
+  type        = string
+  default     = "dev"
+  description = "The tagged version of the rust-integration-tests we should deploy."
+}
+
 variable "redis_endpoint" {
   type        = string
   description = "Where can services find redis?"
@@ -93,7 +123,7 @@ job "integration-tests" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/rust-integration-tests:latest"
+        image = "${var.container_registry}grapl/rust-integration-tests:${var.rust_integration_tests_tag}"
       }
 
       env {
@@ -142,7 +172,7 @@ job "integration-tests" {
       driver = "docker"
 
       config {
-        image      = "${var.container_registry}grapl/analyzerlib-test:latest"
+        image      = "${var.container_registry}grapl/analyzerlib-test:${var.analyzerlib_integration_tests_tag}"
         entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
         command    = "cd grapl_analyzerlib && py.test -v -n auto -m 'integration_test'"
       }
@@ -190,7 +220,7 @@ job "integration-tests" {
       driver = "docker"
 
       config {
-        image      = "${var.container_registry}grapl/analyzer-executor-test:latest"
+        image      = "${var.container_registry}grapl/analyzer-executor-test:${var.analyzer_executor_integration_tests_tag}"
         entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
         command    = "cd analyzer_executor && export PYTHONPATH=\"$(pwd)/src\"; py.test -n auto -m 'integration_test'"
       }
@@ -253,7 +283,7 @@ job "integration-tests" {
       driver = "docker"
 
       config {
-        image      = "${var.container_registry}grapl/graphql-endpoint-tests:latest"
+        image      = "${var.container_registry}grapl/graphql-endpoint-tests:${var.graphql_endpoint_tests_tag}"
         entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
         command    = "cd graphql_endpoint_tests; py.test --capture=no -n 1 -m 'integration_test'"
       }
@@ -310,7 +340,7 @@ job "integration-tests" {
       driver = "docker"
 
       config {
-        image      = "${var.container_registry}grapl/grapl-engagement-edge-test:latest"
+        image      = "${var.container_registry}grapl/grapl-engagement-edge-test:${var.engagement_edge_integration_tests_tag}"
         entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
         command    = "cd engagement_edge; py.test -n auto -m 'integration_test'"
       }
