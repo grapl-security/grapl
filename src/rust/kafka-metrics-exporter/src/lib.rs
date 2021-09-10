@@ -263,3 +263,7 @@ impl Recorder for KafkaRecorder {
         self.buffered_metrics.push(metric);
     }
 }
+
+pub fn kafka_bootstrap_servers() -> String {
+    std::env::var("KAFKA_ENDPOINT").expect("KAFKA_ENDPOINT")
+}
