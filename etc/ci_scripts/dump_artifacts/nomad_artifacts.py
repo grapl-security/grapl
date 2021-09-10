@@ -7,7 +7,7 @@ import os
 import shutil
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Union, cast
+from typing import Any, Dict, List, Optional, Union, cast
 
 from nomad import Nomad
 from nomad.api.exceptions import URLNotFoundNomadException
@@ -60,7 +60,7 @@ class NomadTask:
     name: str
     parent: NomadAllocation = dataclasses.field(repr=False)
 
-    def get_logs(self, nomad_client: Nomad, type: OutOrErr) -> str:
+    def get_logs(self, nomad_client: Nomad, type: OutOrErr) -> Optional[str]:
         try:
             return cast(
                 str,
