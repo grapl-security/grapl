@@ -5,7 +5,7 @@
 .DEFAULT_GOAL := help
 
 -include .env
-TAG ?= latest
+TAG ?= dev
 RUST_BUILD ?= debug
 UID = $(shell id -u)
 GID = $(shell id -g)
