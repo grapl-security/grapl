@@ -4,8 +4,8 @@
 # 
 variable "container_registry" {
   type        = string
-  default     = "localhost:5000"
-  description = "The container registry in which we can find Grapl services."
+  default     = ""
+  description = "The container registry in which we can find Grapl services. Requires a trailing /"
 }
 
 variable "aws_region" {
@@ -93,7 +93,7 @@ job "integration-tests" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}/grapl/rust-integration-tests:latest"
+        image = "${var.container_registry}grapl/rust-integration-tests:latest"
       }
 
       env {
@@ -142,7 +142,7 @@ job "integration-tests" {
       driver = "docker"
 
       config {
-        image      = "${var.container_registry}/grapl/analyzerlib-test:latest"
+        image      = "${var.container_registry}grapl/analyzerlib-test:latest"
         entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
         command    = "cd grapl_analyzerlib && py.test -v -n auto -m 'integration_test'"
       }
@@ -190,7 +190,7 @@ job "integration-tests" {
       driver = "docker"
 
       config {
-        image      = "${var.container_registry}/grapl/analyzer-executor-test:latest"
+        image      = "${var.container_registry}grapl/analyzer-executor-test:latest"
         entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
         command    = "cd analyzer_executor && export PYTHONPATH=\"$(pwd)/src\"; py.test -n auto -m 'integration_test'"
       }
@@ -253,7 +253,7 @@ job "integration-tests" {
       driver = "docker"
 
       config {
-        image      = "${var.container_registry}/grapl/graphql-endpoint-tests:latest"
+        image      = "${var.container_registry}grapl/graphql-endpoint-tests:latest"
         entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
         command    = "cd graphql_endpoint_tests; py.test --capture=no -n 1 -m 'integration_test'"
       }
@@ -310,7 +310,7 @@ job "integration-tests" {
       driver = "docker"
 
       config {
-        image      = "${var.container_registry}/grapl/grapl-engagement-edge-test:latest"
+        image      = "${var.container_registry}grapl/grapl-engagement-edge-test:latest"
         entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
         command    = "cd engagement_edge; py.test -n auto -m 'integration_test'"
       }
