@@ -417,7 +417,7 @@ up-detach: build ## Bring up local Grapl and detach to return control to tty
 	unset COMPOSE_FILE
 	docker-compose \
 		--file docker-compose.yml \
-		up --detach --force-recreate --always-recreate-deps --renew-anon-volumes
+		up --detach --force-recreate --always-recreate-deps --renew-anon-volumes pulumi
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
@@ -473,11 +473,11 @@ local-pulumi:  ## launch pulumi via docker-compose up
 .PHONY: start-nomad-detach
 start-nomad-detach: push-local  ## Start the Nomad environment, detached
 	$(WITH_LOCAL_GRAPL_ENV)
-	sudo --preserve-env nomad/local/start_detach.sh
+	nomad/local/start_detach.sh
 
 .PHONY: stop-nomad-detach
 stop-nomad-detach:  ## Stop Nomad CI environment
-	sudo --preserve-env nomad/local/stop_detach.sh
+	nomad/local/stop_detach.sh
 
 .PHONY: push
 push: build-docker-images ## Push Grapl containers to supplied DOCKER_REGISTRY

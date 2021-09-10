@@ -2,5 +2,5 @@
 
 set -euo pipefail
 
-killall nomad || true
+sudo killall nomad || true
 killall consul || true
