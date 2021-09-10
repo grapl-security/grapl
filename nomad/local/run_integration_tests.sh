@@ -12,6 +12,10 @@ source "${THIS_DIR}/nomad_cli_tools.sh"
 # Now we have to actually dispatch a job; Pulumi simply uploaded
 # the jobspec, since it's a Parameterized Batch Job.
 
+# There's a potential race condition where pulumi may not have finished uploading the jobspec
+# shellcheck disable=SC2016
+timeout 30 bash -c -- 'while [[ -z $(nomad job inspect integration-tests 2>&1 | grep running) ]]; do printf "Waiting for jobspec\n";sleep 1;done'
+
 echo "--- Dispatching integration tests"
 
 job_id=$(nomad_dispatch integration-tests)
