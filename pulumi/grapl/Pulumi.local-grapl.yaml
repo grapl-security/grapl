@@ -23,7 +23,9 @@ config:
   aws:skipRequestingAccountId: "true"
   grapl:GRAPL_API_HOST: api.grapl.test
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: fake-ops-email@fake.domain
+  grapl:KAFKA_BROKER_PORT: 19092 # Same as local-grapl.env; intentionally not 29092
   grapl:MG_ALPHAS: "eventually-delete-this"
+  grapl:REDIS_PORT: 6379 # Same as local-grapl.env
 
   # Brought up in grapl-local-infra.nomad
   grapl:REDIS_ENDPOINT: redis://host.docker.internal:6379
