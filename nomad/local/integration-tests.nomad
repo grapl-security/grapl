@@ -75,6 +75,7 @@ job "integration-tests" {
 
     # Enable service discovery
     service {
+      name = "rust-integration-tests"
       connect {
         sidecar_service {
           proxy {
@@ -123,6 +124,7 @@ job "integration-tests" {
 
     # Enable service discovery
     service {
+      name = "analyzerlib-integration-tests"
       connect {
         sidecar_service {
           proxy {
@@ -171,6 +173,7 @@ job "integration-tests" {
 
     # Enable service discovery
     service {
+      name = "analyzer-executor-integration-tests"
       connect {
         sidecar_service {
           proxy {
@@ -233,6 +236,7 @@ job "integration-tests" {
 
     # Enable service discovery
     service {
+      name = "graphql-endpoint-tests"
       connect {
         sidecar_service {
           proxy {
@@ -289,6 +293,7 @@ job "integration-tests" {
 
     # Enable service discovery
     service {
+      name = "engagement-edge-integration-tests"
       connect {
         sidecar_service {
           proxy {
