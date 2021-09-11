@@ -11,7 +11,6 @@ source "${THIS_DIR}/nomad_cli_tools.sh"
 
 # Now we have to actually dispatch a job; Pulumi simply uploaded
 # the jobspec, since it's a Parameterized Batch Job.
-
 echo "--- Dispatching integration tests"
 
 job_id=$(nomad_dispatch integration-tests)

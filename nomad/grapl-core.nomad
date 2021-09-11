@@ -5,8 +5,8 @@ variable "rust_log" {
 
 variable "container_registry" {
   type        = string
-  default     = "localhost:5000"
-  description = "The container registry in which we can find Grapl services."
+  default     = ""
+  description = "The container registry in which we can find Grapl services. Requires a trailing /"
 }
 
 variable "aws_access_key_id" {
@@ -58,7 +58,7 @@ variable "analyzer_dispatcher_dead_letter_queue" {
 
 variable "analyzer_dispatcher_tag" {
   type        = string
-  default     = "latest"
+  default     = "dev"
   description = "The tagged version of the analyzer-dispatcher we should deploy."
 }
 
@@ -74,7 +74,7 @@ variable "analyzer_executor_queue" {
 
 variable "analyzer_executor_tag" {
   type        = string
-  default     = "latest"
+  default     = "dev"
   description = "The tagged version of the analyzer-executor we should deploy."
 }
 
@@ -123,7 +123,7 @@ variable "num_graph_mergers" {
 
 variable "graph_merger_tag" {
   type        = string
-  default     = "latest"
+  default     = "dev"
   description = "The tagged version of the graph_merger we should deploy."
 }
 
@@ -160,7 +160,7 @@ variable "num_node_identifier_retries" {
 
 variable "node_identifier_tag" {
   type        = string
-  default     = "latest"
+  default     = "dev"
   description = "The tagged version of the node_identifier and the node_identifier_retry we should deploy."
 }
 
@@ -178,7 +178,7 @@ variable "node_identifier_retry_queue" {
 
 variable "provisioner_tag" {
   type        = string
-  default     = "latest"
+  default     = "dev"
   description = "The tagged version of the provisioner we should deploy."
 }
 
@@ -194,7 +194,7 @@ variable "subgraphs_generated_bucket" {
 
 variable "engagement_view_tag" {
   type        = string
-  default     = "latest"
+  default     = "dev"
   description = "The image tag for the engagement view."
 }
 
@@ -205,7 +205,7 @@ variable "ux_bucket" {
 
 variable "graphql_endpoint_tag" {
   type        = string
-  default     = "latest"
+  default     = "dev"
   description = "The image tag for the graphql endpoint docker image."
 }
 
@@ -504,7 +504,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image        = "${var.container_registry}/grapl/graph-merger:${var.graph_merger_tag}"
+        image        = "${var.container_registry}grapl/graph-merger:${var.graph_merger_tag}"
         network_mode = "grapl-network"
       }
 
@@ -555,7 +555,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}/grapl/provisioner:${var.provisioner_tag}"
+        image = "${var.container_registry}grapl/provisioner:${var.provisioner_tag}"
       }
 
       lifecycle {
@@ -611,7 +611,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image        = "${var.container_registry}/grapl/node-identifier:${var.node_identifier_tag}"
+        image        = "${var.container_registry}grapl/node-identifier:${var.node_identifier_tag}"
         network_mode = "grapl-network"
       }
 
@@ -650,7 +650,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image        = "${var.container_registry}/grapl/node-identifier-retry:${var.node_identifier_tag}"
+        image        = "${var.container_registry}grapl/node-identifier-retry:${var.node_identifier_tag}"
         network_mode = "grapl-network"
       }
 
@@ -684,7 +684,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image        = "${var.container_registry}/grapl/analyzer-dispatcher:${var.analyzer_dispatcher_tag}"
+        image        = "${var.container_registry}grapl/analyzer-dispatcher:${var.analyzer_dispatcher_tag}"
         network_mode = "grapl-network"
       }
 
@@ -717,7 +717,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image        = "${var.container_registry}/grapl/analyzer-executor:${var.analyzer_executor_tag}"
+        image        = "${var.container_registry}grapl/analyzer-executor:${var.analyzer_executor_tag}"
         network_mode = "grapl-network"
       }
 
@@ -766,7 +766,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image        = "${var.container_registry}/grapl/engagement-view:${var.engagement_view_tag}"
+        image        = "${var.container_registry}grapl/engagement-view:${var.engagement_view_tag}"
         network_mode = "grapl-network"
       }
 
@@ -789,7 +789,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image        = "${var.container_registry}/grapl/graphql-endpoint:${var.graphql_endpoint_tag}"
+        image        = "${var.container_registry}grapl/graphql-endpoint:${var.graphql_endpoint_tag}"
         network_mode = "grapl-network"
       }
 
