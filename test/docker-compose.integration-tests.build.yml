@@ -1,0 +1,61 @@
+version: "3.8"
+# environment variable PWD is assumed to be grapl root directory
+
+services:
+  rust-integration-tests:
+    image: ${DOCKER_REGISTRY:-docker.io}/grapl/rust-integration-tests:${TAG:-latest}
+    build:
+      context: ${PWD}/src
+      dockerfile: rust/Dockerfile
+      target: build-test
+      args:
+        - RUST_BUILD=test-integration
+
+  analyzerlib-integration-tests:
+    image: ${DOCKER_REGISTRY:-docker.io}/grapl/analyzerlib-test:${TAG:-latest}
+    build:
+      context: ${PWD}
+      dockerfile: ./src/python/Dockerfile
+      target: grapl-analyzerlib-test
+
+  analyzer-executor-integration-tests:
+    image: ${DOCKER_REGISTRY:-docker.io}/grapl/analyzer-executor-test:${TAG:-latest}
+    build:
+      context: ${PWD}
+      dockerfile: ./src/python/Dockerfile
+      target: analyzer-executor-test
+
+  engagement-edge-integration-tests:
+    image: ${DOCKER_REGISTRY:-docker.io}/grapl/grapl-engagement-edge-test:${TAG:-latest}
+    build:
+      context: ${PWD}
+      dockerfile: ./src/python/Dockerfile
+      target: engagement-edge-test
+
+  # TODO: Re-enable these tests after the following issues are resolved:
+  # - https://github.com/grapl-security/issue-tracker/issues/385
+  # - https://github.com/grapl-security/issue-tracker/issues/386
+  # - https://github.com/grapl-security/issue-tracker/issues/387
+  # cypress-integration-tests:
+  #   image: grapl/grapl-cypress:${TAG:-latest}
+  #   build:
+  #     context: ${PWD}/test
+  #     dockerfile: ./Dockerfile.cypress
+  #     target: grapl-cypress
+  #   user: ${UID}:${GID}
+  #   volumes:
+  #     - "./integration-outputs/screenshots:/test/cypress/screenshots"
+  #     - "./integration-outputs/videos:/test/cypress/videos"
+  #   command: |
+  #     /bin/bash -c "
+  #       CYPRESS_BASE_URL=http://${GRAPL_API_HOST}:${GRAPL_HTTP_FRONTEND_PORT} cypress run --browser chrome --headless
+  #     "
+  #   environment:
+  #     - GRAPL_API_HOST
+
+  graphql-endpoint-tests:
+    image: ${DOCKER_REGISTRY:-docker.io}/grapl/graphql-endpoint-tests:${TAG:-latest}
+    build:
+      context: ${PWD}
+      dockerfile: ./src/python/Dockerfile
+      target: graphql-endpoint-tests
