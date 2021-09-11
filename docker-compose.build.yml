@@ -12,7 +12,7 @@ services:
   ########################################################################
 
   sysmon-generator:
-    image: ${DOCKER_REGISTRY:-docker.io}/grapl/sysmon-generator:${TAG:-latest}
+    image: grapl/sysmon-generator:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -21,7 +21,7 @@ services:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
   osquery-generator:
-    image: ${DOCKER_REGISTRY:-docker.io}/grapl/osquery-generator:${TAG:-latest}
+    image: grapl/osquery-generator:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -30,7 +30,7 @@ services:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
   node-identifier:
-    image: ${DOCKER_REGISTRY:-docker.io}/grapl/node-identifier:${TAG:-latest}
+    image: grapl/node-identifier:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -48,7 +48,7 @@ services:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
   graph-merger:
-    image: ${DOCKER_REGISTRY:-docker.io}/grapl/graph-merger:${TAG:-latest}
+    image: grapl/graph-merger:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -57,7 +57,7 @@ services:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
   analyzer-dispatcher:
-    image: ${DOCKER_REGISTRY:-docker.io}/grapl/analyzer-dispatcher:${TAG:-latest}
+    image: grapl/analyzer-dispatcher:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -71,7 +71,7 @@ services:
 
   # should match `pulumi/infra/analyzer_executor.py`'s GraplDockerBuild
   analyzer-executor:
-    image: ${DOCKER_REGISTRY:-docker.io}/grapl/analyzer-executor:${TAG:-latest}
+    image: grapl/analyzer-executor:${TAG:-latest}
     build:
       context: .
       dockerfile: ./src/python/Dockerfile
@@ -82,7 +82,7 @@ services:
   ########################################################################
 
   engagement-view-uploader:
-    image: ${DOCKER_REGISTRY:-docker.io}/grapl/engagement-view:${TAG:-latest}
+    image: grapl/engagement-view:${TAG:-latest}
     build:
       context: src/js/engagement_view
       dockerfile: Dockerfile
@@ -92,14 +92,14 @@ services:
   # to deploy graphql-endpoint as an actual Lambda there, we can get
   # rid of this.
   graphql-endpoint:
-    image: ${DOCKER_REGISTRY:-docker.io}/grapl/graphql-endpoint:${TAG:-latest}
+    image: grapl/graphql-endpoint:${TAG:-latest}
     build:
       context: src/js/graphql_endpoint
       dockerfile: Dockerfile
       target: graphql-endpoint-deploy
 
   notebook:
-    image: ${DOCKER_REGISTRY:-docker.io}/grapl/notebook:${TAG:-latest}
+    image: grapl/notebook:${TAG:-latest}
     build:
       context: .
       dockerfile: ./src/python/Dockerfile
@@ -110,19 +110,19 @@ services:
   ########################################################################
 
   pulumi:
-    image: ${DOCKER_REGISTRY:-docker.io}/grapl/local-pulumi:${TAG:-latest}
+    image: grapl/local-pulumi:${TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile.pulumi
 
   localstack:
-    image: ${DOCKER_REGISTRY:-docker.io}/grapl/localstack:${TAG:-latest}
+    image: grapl/localstack:${TAG:-latest}
     build:
       context: localstack
       dockerfile: Dockerfile
 
   provisioner:
-    image: ${DOCKER_REGISTRY:-docker.io}/grapl/provisioner:${TAG:-latest}
+    image: grapl/provisioner:${TAG:-latest}
     build:
       context: .
       dockerfile: ./src/python/lambdas.Dockerfile

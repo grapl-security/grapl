@@ -5,7 +5,7 @@
 .DEFAULT_GOAL := help
 
 -include .env
-TAG ?= latest
+TAG ?= dev
 RUST_BUILD ?= debug
 UID = $(shell id -u)
 GID = $(shell id -g)
@@ -148,7 +148,7 @@ build-test-unit-js:
 		--file ./test/docker-compose.unit-tests-js.yml
 
 .PHONY: build-test-integration
-build-test-integration: build
+build-test-integration: build-local
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.integration-tests.yml
 
@@ -198,6 +198,9 @@ build-docker-images: build-analyzer-executor graplctl
 
 .PHONY: build
 build: build-lambda-zips build-docker-images ## Build Grapl services
+
+.PHONY: build-local
+build-local: build-lambda-zips build-docker-images-local ## Build Grapl services
 
 .PHONY: build-formatter
 build-formatter:
@@ -282,7 +285,6 @@ test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_T
 #test-integration: export COMPOSE_FILE := ./test/docker-compose.integration-tests.yml
 test-integration: build-test-integration ## Build and run integration tests
 	$(WITH_LOCAL_GRAPL_ENV)
-	docker-compose --file=test/docker-compose.integration-tests.yml push
 	export SHOULD_DEPLOY_INTEGRATION_TESTS=True  # This gets read in by `docker-compose.yml`'s pulumi
 	$(MAKE) test-with-env EXEC_TEST_COMMAND=nomad/local/run_integration_tests.sh
 
@@ -404,7 +406,7 @@ up: build ## Build Grapl services and launch docker-compose up
 	docker-compose -f docker-compose.yml up
 
 .PHONY: up-detach
-up-detach: build ## Bring up local Grapl and detach to return control to tty
+up-detach: build-local ## Bring up local Grapl and detach to return control to tty
 	# Primarily used for bringing up an environment for integration testing.
 	# For use with a project name consider setting COMPOSE_PROJECT_NAME env var
 	# Usage: `make up-detach`
@@ -417,7 +419,9 @@ up-detach: build ## Bring up local Grapl and detach to return control to tty
 	unset COMPOSE_FILE
 	docker-compose \
 		--file docker-compose.yml \
-		up --detach --force-recreate --always-recreate-deps --renew-anon-volumes pulumi
+		up --force-recreate --always-recreate-deps --renew-anon-volumes \
+		--exit-code-from pulumi \
+		pulumi
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
@@ -455,12 +459,8 @@ clean-mount-cache: ## Prune all docker mount cache (used by sccache)
 clean-artifacts: ## Remove all dumped artifacts from test runs (see dump_artifacts.py)
 	rm -Rf test_artifacts
 
-.PHONY: run-registry
-run-registry: ## Ensure that a local docker registry is running (which is required for local Nomad deployments.
-	nomad/local/local_grapl_registry.sh
-
 .PHONY: start-nomad-dev
-start-nomad-dev: push-local  ## Start the Nomad development environment
+start-nomad-dev:  ## Start the Nomad development environment
 	$(WITH_LOCAL_GRAPL_ENV)
 	nomad/local/start_development_environment_tmux.sh
 
@@ -471,7 +471,7 @@ local-pulumi:  ## launch pulumi via docker-compose up
 	docker-compose -f docker-compose.yml run pulumi
 
 .PHONY: start-nomad-detach
-start-nomad-detach: push-local  ## Start the Nomad environment, detached
+start-nomad-detach:  ## Start the Nomad environment, detached
 	$(WITH_LOCAL_GRAPL_ENV)
 	nomad/local/start_detach.sh
 
@@ -482,11 +482,6 @@ stop-nomad-detach:  ## Stop Nomad CI environment
 .PHONY: push
 push: build-docker-images ## Push Grapl containers to supplied DOCKER_REGISTRY
 	docker-compose --file=docker-compose.build.yml push
-
-.PHONY: push-local
-push-local: ## Push Grapl container to local registry
-	$(MAKE) run-registry
-	$(WITH_LOCAL_GRAPL_ENV) $(MAKE) push
 
 .PHONY: e2e-logs
 e2e-logs: ## All docker-compose logs
