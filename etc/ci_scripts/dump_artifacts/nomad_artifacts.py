@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+
 import dataclasses
 import logging
 import os
@@ -50,7 +51,10 @@ class NomadAllocation:
         task_names = [
             t for t in input["TaskStates"].keys() if not t.startswith("connect-proxy")
         ]
-        self.tasks = [NomadTask(parent=self, name=t, events=input["TaskStates"][t]["Events"]) for t in task_names]
+        self.tasks = [
+            NomadTask(parent=self, name=t, events=input["TaskStates"][t]["Events"])
+            for t in task_names
+        ]
 
     def short_alloc_id(self) -> str:
         return self.allocation_id.split("-")[0]
@@ -60,7 +64,7 @@ class NomadAllocation:
 class NomadTask:
     name: str
     parent: NomadAllocation = dataclasses.field(repr=False)
-    events: any
+    events: List[Dict[any]]
 
     def get_logs(self, nomad_client: Nomad, type: OutOrErr) -> Optional[str]:
         try:
@@ -75,8 +79,10 @@ class NomadTask:
             return None
 
     def get_events(self):
-        event_list = [event["DisplayMessage"] for event in self.events]
-        return "\n".join(event_list)
+        if self.parent.status != "failed":
+            event_list = [event["DisplayMessage"] for event in self.events]
+            return "\n".join(event_list)
+        return ""
 
 
 def _get_nomad_job_names(nomad_client: Nomad) -> List[str]:
@@ -121,9 +127,10 @@ def _write_nomad_logs(
         for task in alloc.tasks:
             # publish task events
             events = task.get_events()
-            filename = f"{task.name}.events.{alloc.short_alloc_id()}.log"
-            with (write_to_dir / filename).open("w") as file:
-                file.write(events)
+            if events:
+                filename = f"{task.name}.events.{alloc.short_alloc_id()}.log"
+                with (write_to_dir / filename).open("w") as file:
+                    file.write(events)
 
             # publish logs
             for output_type in OUTPUT_TYPES:
