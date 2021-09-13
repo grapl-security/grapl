@@ -64,7 +64,7 @@ class NomadAllocation:
 class NomadTask:
     name: str
     parent: NomadAllocation = dataclasses.field(repr=False)
-    events: List[Dict[any]]
+    events: List[dict]
 
     def get_logs(self, nomad_client: Nomad, type: OutOrErr) -> Optional[str]:
         try:
@@ -78,7 +78,7 @@ class NomadTask:
             LOGGER.info(f"Couldn't get logs for {self.name}")
             return None
 
-    def get_events(self):
+    def get_events(self) -> str:
         if self.parent.status != "failed":
             event_list = [event["DisplayMessage"] for event in self.events]
             return "\n".join(event_list)
