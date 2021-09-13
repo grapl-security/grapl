@@ -6,7 +6,6 @@ import "./LogIn.css";
 import { loginStyles } from "./styles";
 import { LoginProps } from "types/CustomTypes";
 import { loginService } from "services/login/loginService";
-import { sha256WithPepper } from "./utils/passwordHashing";
 
 export const LogIn = (_: LoginProps) => {
     const useStyles = loginStyles;
@@ -31,14 +30,9 @@ export const LogIn = (_: LoginProps) => {
                     initialValues={{ userName: "", password: "" }}
                     validationSchema={validationSchema}
                     onSubmit={async (values) => {
-                        const password = await sha256WithPepper(
-                            values.userName,
-                            values.password
-                        );
-
                         const loginSuccess = await loginService(
                             values.userName,
-                            password
+                            values.password
                         );
 
                         if (loginSuccess === true) {

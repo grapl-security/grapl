@@ -204,7 +204,7 @@ build-docker-images-local:
 	$(MAKE) build-docker-images
 
 .PHONY: build-docker-images
-build-docker-images: graplctl
+build-docker-images: graplctl build-ux
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
 
 .PHONY: build
@@ -238,7 +238,25 @@ dump-artifacts:  # Run the script that dumps Nomad/Docker logs after test runs
 
 .PHONY: build-ux
 build-ux: ## Build website assets
-	cd src/js/engagement_view && yarn install && yarn build
+	# create the build directory in case it doesn't already exist.
+	mkdir -p "${PWD}/src/js/engagement_view/build"
+	# clear the build directory in case it previously existed and has outputs from previous builds
+	rm -rf "${PWD}/src/js/engagement_view/build/{*,.*}"
+	docker run \
+		--rm \
+		--interactive \
+		--tty \
+		--user "${UID}:${GID}" \
+		--workdir /engagement_view \
+		--mount type=bind,source="${PWD}/src/js/engagement_view",target=/engagement_view \
+		node:16-buster-slim \
+		yarn build
+	# update the grapl web UI
+	rm -rf "${PWD}/src/rust/grapl-web-ui/frontend/*"
+	cp -r \
+		"${PWD}/src/js/engagement_view/build/." \
+		"${PWD}/src/rust/grapl-web-ui/frontend/"
+
 
 # This is used to create the artifact that will be uploaded to our
 # artifact repository in CI, and will be the artifact that is used by

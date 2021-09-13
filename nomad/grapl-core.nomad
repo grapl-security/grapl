@@ -211,6 +211,12 @@ variable "graphql_endpoint_tag" {
   description = "The image tag for the graphql endpoint docker image."
 }
 
+variable "web_ui_tag" {
+  type        = string
+  default     = "dev"
+  description = "The image tag for the Grapl web UI docker image."
+}
+
 variable "deployment_name" {
   type        = string
   description = "The deployment name"
@@ -255,6 +261,10 @@ locals {
   _redis         = split(":", local._redis_trimmed)
   redis_host     = local._redis[0]
   redis_port     = local._redis[1]
+
+  # Grapl services
+  web_ui_port           = 8666
+  graphql_endpoint_port = 5000
 }
 
 job "grapl-core" {
@@ -813,6 +823,45 @@ job "grapl-core" {
       //      connect {
       //        sidecar_service {}
       //      }
+    }
+  }
+
+  group "web-ui" {
+    network {
+      mode = "bridge"
+
+      port "web-ui-port" {
+        static = local.web_ui_port
+      }
+    }
+
+    task "web-ui" {
+      driver = "docker"
+
+      config {
+        image  = "${var.container_registry}grapl/grapl-web-ui:${var.web_ui_tag}"
+        network_mode = "grapl-network"
+        ports = ["web-ui-port"]
+      }
+
+      env {
+        GRAPL_WEB_UI_BIND_ADDRESS = "0.0.0.0:${local.web_ui_port}"
+        GRAPL_GRAPHQL_ENDPOINT    = "localhost:${local.graphql_endpoint_port}"
+        RUST_LOG                  = var.rust_log
+      }
+    }
+
+    service {
+      connect {
+        sidecar_service {
+          proxy {
+            upstreams {
+              destination_name = "graphql-endpoint"
+              local_bind_port = local.graphql_endpoint_port
+            }
+          }
+        }
+      }
     }
   }
 }
