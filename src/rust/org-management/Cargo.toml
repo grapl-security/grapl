@@ -1,12 +1,12 @@
 [package]
-name = "grapl-org-management"
+name = "org-management"
 version = "0.1.0"
 edition = "2018"
 
 [lib]
 
 [[bin]] # Bin to run org management gRPC server
-name = "orgmanagement-server"
+name = "org-management"
 path = "src/main.rs"
 
 
@@ -17,6 +17,10 @@ tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 uuid = { version = "0.4", features = ["serde", "v4"] }
 sqlx = { version = "0.5", features = [ "runtime-tokio-rustls", "postgres" ] }
 async-std = { version = "1.6", features = [ "attributes" ] }
+tracing-futures = "0.2.5"
+tracing = "0.1.26"
+tracing-subscriber = "0.2.19"
+grapl-config = { path = "../grapl-config", version = "*" }
 
 [build-dependencies]
 tonic-build = "0.5"

@@ -36,15 +36,15 @@ impl OrganizationManager for OrganizationManagerRpc {
 }
 
 
+#[tracing::instrument(err)]
 pub async fn start_server() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "[::1]:50051".parse()?;
+    let addr = "0.0.0.0:5502".parse()?;
     let pool =
         create_db_connection()
             .await?;
-    let org = OrganizationManagerRpc{pool};
+    let org = OrganizationManagerRpc { pool };
 
-
-
+    tracing::info!(message="Listening on address", addr=?addr);
     Server::builder()
         .add_service(OrganizationManagerServer::new(org))
         .serve(addr)
@@ -53,12 +53,18 @@ pub async fn start_server() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[tracing::instrument(err)]
 async fn create_db_connection() -> Result<Pool<Postgres>, sqlx::Error> {
-    let url = std::env::var("POSTGRES_URL").expect("POSTGRES_URL");
+    let url = std::env::var("POSTGRES_URL")
+        .expect("POSTGRES_URL");
+
+    tracing::info!(message="connecting to postgres", url=%url);
+    // Create Connection Pool
     let pool = PgPoolOptions::new()
         .max_connections(5)
         .connect(&url)
         .await?;
-
+    // Insert Org Info
     Ok(pool)
 }
+

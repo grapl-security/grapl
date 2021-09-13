@@ -170,3 +170,18 @@ FROM rust-dist AS osquery-generator-deploy
 
 COPY --from=build /outputs/osquery-generator /
 ENTRYPOINT ["/osquery-generator"]
+
+
+# org-management
+FROM rust-dist AS org-management-deploy
+
+COPY --from=build /outputs/org-management /
+ENTRYPOINT ["/org-management"]
+
+# pull official base image
+FROM postgres:13-alpine AS org-management-postgres-deploy
+
+# run init.sql  
+COPY rust/init.sql /docker-entrypoint-initdb.d/
+
+#FROM library/postgres
