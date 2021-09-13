@@ -492,8 +492,7 @@ job "grapl-core" {
         check {
           type            = "http"
           name            = "http-dgraph-alpha-health-endpoint"
-          http            = "https://localhost:${alpha.value.http_port}/health"
-          tls_skip_verify = true
+          path            = "/health"
           method          = "GET"
           interval        = "30s"
           timeout         = "5s"
