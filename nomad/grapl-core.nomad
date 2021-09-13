@@ -488,6 +488,22 @@ job "grapl-core" {
         connect {
           sidecar_service {}
         }
+
+        check {
+          type = "http"
+          name = "http-dgraph-alpha-health-endpoint"
+          http: "https://localhost:${alpha.value.http_port}/health",
+          tls_skip_verify: true,
+          method: "GET",
+          interval = "30s"
+          timeout = "5s"
+
+          check_restart {
+            limit           = 3
+            grace           = "30s"
+            ignore_warnings = false
+          }
+        }
       }
     }
   }
