@@ -21,36 +21,39 @@ nomad_dispatch() {
     echo "${job_id}"
 }
 
+url_to_nomad_job_in_ui() {
+    local -r job_id="${1}"
+    # urlencode
+    local -r urlencode_job_id=$(jq -rn --arg input "${job_id}" '$input|@uri')
+    echo "http://localhost:4646/ui/jobs/${urlencode_job_id}"
+}
+
 nomad_stop_job() {
     local -r job_id="${1}"
     local -r dispatch_output=$(curl_quiet --request DELETE --data "{}" "${NOMAD_ENDPOINT}/v1/job/${job_id}")
 }
 
-nomad_get_allocation() {
-    local -r job_id=$1
-    # Output looks like https://www.nomadproject.io/api-docs/jobs#sample-response-5
-    local -r curl_result=$(curl_quiet "${NOMAD_ENDPOINT}/v1/job/${job_id}/allocations")
-    echo "${curl_result}"
-}
-
 nomad_get_per_task_results() {
-    local -r job_id=$1
+    # Returns something like {
+    #   "analyzer-executor-integration-tests": {
+    #     "Complete": 1
+    #   },
+    #   "graphql-endpoint-tests": {
+    #     "Failed": 1
+    #   }
+    # }
+    local -r job_id="${1}"
 
-    # This assumes there's only 1 Allocation per Job. That's probably right.
-    # Throw away most of the Allocation info; just the name of the task and whether it failed or not
-    JQ_COMMAND=$(
+    jq_filter_out_zero_fields=$(
         cat << EOF
-        .[0].TaskStates | to_entries | map(
-            {
-                key, 
-                value: {
-                    "Failed": .value.Failed
-                }
-            }
-        ) | from_entries
+        .JobSummary.Summary | to_entries | map({
+            key, 
+            value: .value | to_entries | map(select(.value > 0)) | from_entries 
+        }) | from_entries
 EOF
     )
-    nomad_get_allocation "${job_id}" | jq "${JQ_COMMAND}"
+    local -r job_summary=$(nomad_get_job "${job_id}" | jq "${jq_filter_out_zero_fields}")
+    echo "${job_summary}"
 }
 
 nomad_dispatch_status() {
@@ -93,8 +96,6 @@ check_for_task_failures_in_job() {
     local -r job_id="${1}"
 
     local -r job_summary=$(nomad_get_job "${job_id}" | jq ".JobSummary.Summary")
-    # Let the users know the full summary
-    echo >&2 "${job_summary}"
 
     # Sum/accum each 'failed'
     local -r num_failed=$(echo "${job_summary}" | jq -r "[.[].Failed] | add")

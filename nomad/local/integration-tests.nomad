@@ -29,33 +29,33 @@ variable "aws_access_key_secret" {
   description = "The aws access key secret used to interact with AWS."
 }
 
-variable "aws_endpoint" {
+variable "_aws_endpoint" {
   type        = string
   description = "The endpoint in which we can expect to find and interact with AWS."
 }
 
-variable "redis_port" {
+variable "_redis_endpoint" {
   type        = string
   description = "On which port can services find redis?"
 }
 
-variable "kafka_broker_port" {
+variable "_kafka_endpoint" {
   type        = string
   description = "On which port can services find Kafka?"
 }
 
 locals {
-  # TODO: Do the "USE_LOCALHOST_SENTINEL_VALUE" check here in case we
-  # ever decide to run these against prod AWS
+  log_level = "DEBUG"
 
-  log_level            = "DEBUG"
-  local_aws_endpoint   = "http://${attr.unique.network.ip-address}:4566"
-  local_redis_endpoint = "redis://${attr.unique.network.ip-address}:${var.redis_port}"
-  local_kafka_endpoint = "http://${attr.unique.network.ip-address}:${var.kafka_broker_port}"
+  # Prefer these over their `var` equivalents
+  aws_endpoint   = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  redis_endpoint = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  kafka_endpoint = replace(var._kafka_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
 
-  redis_trimmed = trimprefix(local.local_redis_endpoint, "redis://")
-  redis         = split(":", local.redis_trimmed)
-  redis_host    = local.redis[0]
+  _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
+  _redis         = split(":", local._redis_trimmed)
+  redis_host     = local._redis[0]
+  redis_port     = local._redis[1]
 }
 
 job "integration-tests" {
@@ -107,7 +107,7 @@ job "integration-tests" {
       env {
         AWS_REGION                  = var.aws_region
         DEPLOYMENT_NAME             = var.deployment_name
-        GRAPL_AWS_ENDPOINT          = local.local_aws_endpoint
+        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
         GRAPL_LOG_LEVEL             = local.log_level
@@ -116,8 +116,8 @@ job "integration-tests" {
         MG_ALPHAS      = "localhost:9080"
         RUST_BACKTRACE = 1
         RUST_LOG       = local.log_level
-        REDIS_ENDPOINT = local.local_redis_endpoint
-        KAFKA_ENDPOINT = local.local_kafka_endpoint
+        REDIS_ENDPOINT = local.redis_endpoint
+        KAFKA_ENDPOINT = local.kafka_endpoint
       }
     }
   }
@@ -207,7 +207,7 @@ job "integration-tests" {
       env {
         # aws vars
         AWS_REGION                  = var.aws_region
-        GRAPL_AWS_ENDPOINT          = local.local_aws_endpoint
+        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
 
@@ -219,9 +219,9 @@ job "integration-tests" {
         GRAPL_MODEL_PLUGINS_BUCKET              = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
 
         HITCACHE_ADDR     = local.redis_host
-        HITCACHE_PORT     = var.redis_port
+        HITCACHE_PORT     = local.redis_port
         MESSAGECACHE_ADDR = local.redis_host
-        MESSAGECACHE_PORT = var.redis_port
+        MESSAGECACHE_PORT = local.redis_port
         IS_RETRY          = false
       }
 
@@ -270,7 +270,7 @@ job "integration-tests" {
       env {
         # aws vars
         AWS_REGION                  = var.aws_region
-        GRAPL_AWS_ENDPOINT          = local.local_aws_endpoint
+        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
 
@@ -315,6 +315,7 @@ job "integration-tests" {
         }
       }
     }
+
     task "engagement-edge-integration-tests" {
       driver = "docker"
 
@@ -327,7 +328,7 @@ job "integration-tests" {
       env {
         # aws vars
         AWS_REGION                  = var.aws_region
-        GRAPL_AWS_ENDPOINT          = local.local_aws_endpoint
+        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
 
