@@ -1,10 +1,11 @@
-build-support/grapl-venv
+**/__pycache__
 **/node_modules
+.git/**
+.idea
 .pants.d
 .pants.workdir.file_lock*
 .pids
-**/__pycache__
-src/rust/target/**
 .yarn
+build-support/grapl-venv
+src/rust/target/**
 test_artifacts/**
-.git/**
