@@ -190,7 +190,6 @@ def main() -> None:
             ) -> Mapping[str, Any]:
                 # Filter out which vars we need
                 subset_keys = {
-                    "analyzer_bucket",
                     "aws_access_key_id",
                     "aws_access_key_secret",
                     "_aws_endpoint",
