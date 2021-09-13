@@ -79,10 +79,10 @@ class NomadTask:
             return None
 
     def get_events(self) -> str:
-        if self.parent.status != "failed":
-            event_list = [event["DisplayMessage"] for event in self.events]
-            return "\n".join(event_list)
-        return ""
+        #if self.parent.status != "failed":
+        event_list = [event["DisplayMessage"] for event in self.events]
+        return "\n".join(event_list)
+        #return ""
 
 
 def _get_nomad_job_names(nomad_client: Nomad) -> List[str]:
