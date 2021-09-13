@@ -11,13 +11,11 @@ variable "container_registry" {
 
 variable "aws_access_key_id" {
   type        = string
-  default     = "test"
   description = "The aws access key id used to interact with AWS."
 }
 
 variable "aws_access_key_secret" {
   type        = string
-  default     = "test"
   description = "The aws access key secret used to interact with AWS."
 }
 
@@ -143,7 +141,6 @@ variable "graph_merger_dead_letter_queue" {
 variable "grapl_test_user_name" {
   type        = string
   description = "The name of the test user"
-  default     = "grapl-test-user"
 }
 
 variable "model_plugins_bucket" {

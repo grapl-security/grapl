@@ -19,13 +19,11 @@ variable "deployment_name" {
 
 variable "aws_access_key_id" {
   type        = string
-  default     = "test"
   description = "The aws access key id used to interact with AWS."
 }
 
 variable "aws_access_key_secret" {
   type        = string
-  default     = "test"
   description = "The aws access key secret used to interact with AWS."
 }
 
