@@ -21,11 +21,11 @@ variable "aws_access_key_secret" {
   description = "The aws access key secret used to interact with AWS."
 }
 
-variable "aws_endpoint" {
+variable "_aws_endpoint" {
   type        = string
   description = <<EOF
   The endpoint in which we can expect to find and interact with AWS. 
-  It accepts a special sentinel value, USE_LOCALSTACK_SENTINEL_VALUE, if the
+  It accepts a special sentinel value domain, LOCAL_GRAPL_REPLACE_IP:xxxx, if the
   user wishes to contact Localstack.
 
   Prefer using `local.aws_endpoint`.
@@ -94,9 +94,14 @@ variable "dgraph_shards" {
   default = 1
 }
 
-variable "redis_endpoint" {
+variable "_redis_endpoint" {
   type        = string
-  description = "Where can services find redis?"
+  description = <<EOF
+  Where can services find Redis?
+
+  It accepts a special sentinel value domain, redis://LOCAL_GRAPL_REPLACE_IP:xxxx, if the
+  user wishes to contact Localstack.
+EOF
 }
 
 variable "schema_table_name" {
@@ -245,20 +250,14 @@ locals {
   # String that contains all of the running Alphas for clients connecting to Dgraph (so they can do loadbalancing)
   alpha_grpc_connect_str = join(",", [for alpha in local.dgraph_alphas : "localhost:${alpha.grpc_public_port}"])
 
-  # Used for local development
-  local_aws_endpoint = "http://${attr.unique.network.ip-address}:4566"
+  # Prefer these over their `var` equivalents.
+  aws_endpoint   = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  redis_endpoint = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
 
-  # AWS endpoint to use when interacting with AWS. Prefer this over var.aws_endpoint
-  aws_endpoint = var.aws_endpoint != "USE_LOCALSTACK_SENTINEL_VALUE" ? var.aws_endpoint : local.local_aws_endpoint
-
-  local_redis_endpoint = "redis://${attr.unique.network.ip-address}:6379"
-  # redis endpoint to use when interacting with redis. Prefer this over var.redis_endpoint
-  redis_endpoint = var.redis_endpoint != "USE_REDIS_SENTINEL_VALUE" ? var.redis_endpoint : local.local_redis_endpoint
-
-  redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
-  redis         = split(":", local.redis_trimmed)
-  redis_host    = local.redis[0]
-  redis_port    = local.redis[1]
+  _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
+  _redis         = split(":", local._redis_trimmed)
+  redis_host     = local._redis[0]
+  redis_port     = local._redis[1]
 }
 
 job "grapl-core" {
@@ -693,7 +692,7 @@ job "grapl-core" {
         AWS_REGION                  = var.aws_region
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-        GRAPL_AWS_ENDPOINT          = var.aws_endpoint
+        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
         # rust vars
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = 1

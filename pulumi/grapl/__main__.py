@@ -135,6 +135,12 @@ def main() -> None:
 
         kafka = Kafka("kafka")
 
+        # These are created in `grapl-local-infra.nomad` and not applicable to prod.
+        # Nomad will replace the LOCAL_GRAPL_REPLACE_IP sentinel value with the correct IP.
+        aws_endpoint = "http://LOCAL_GRAPL_REPLACE_IP:4566"
+        kafka_endpoint = "LOCAL_GRAPL_REPLACE_IP:19092"  # intentionally not 29092
+        redis_endpoint = "redis://LOCAL_GRAPL_REPLACE_IP:6379"
+
         grapl_core_job_vars = pulumi.Output.all(
             analyzer_bucket=analyzers_bucket.bucket,
             analyzer_dispatched_bucket=dispatched_analyzer_emitter.bucket.bucket,
@@ -158,11 +164,11 @@ def main() -> None:
         ).apply(
             lambda inputs: {
                 # This is a special directive to our HCL file that tells it to use Localstack
-                "aws_endpoint": "USE_LOCALSTACK_SENTINEL_VALUE",
+                "_aws_endpoint": aws_endpoint,
                 "deployment_name": config.DEPLOYMENT_NAME,
                 "grapl_test_user_name": config.GRAPL_TEST_USER_NAME,
                 "aws_region": aws.get_region().name,
-                "redis_endpoint": "USE_REDIS_SENTINEL_VALUE",
+                "_redis_endpoint": redis_endpoint,
                 # TODO: consider replacing with the previous per-service `configurable_envvars`
                 "rust_log": "DEBUG",
                 **inputs,
@@ -185,20 +191,16 @@ def main() -> None:
                     k: inputs[k]
                     for k in inputs.keys()
                     & {
-                        "aws_region",
-                        "deployment_name",
                         "aws_access_key_id",
                         "aws_access_key_secret",
-                        "aws_endpoint",
+                        "_aws_endpoint",
+                        "aws_region",
+                        "deployment_name",
+                        "_redis_endpoint",
                     }
                 }
-                # These two are very hacky, since it's a construct that only appears in
-                # Local, not Prod AWS.
-                redis_port = config._require_env_var("REDIS_PORT")
-                kafka_broker_port = config._require_env_var("KAFKA_BROKER_PORT")
                 integration_test_only_job_vars = {
-                    "kafka_broker_port": kafka_broker_port,
-                    "redis_port": redis_port,
+                    "_kafka_endpoint": kafka_endpoint,
                 }
                 return {**subset, **integration_test_only_job_vars}
 

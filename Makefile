@@ -22,7 +22,7 @@ export
 export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 	--file ./test/docker-compose.unit-tests-rust.yml \
 	--file ./test/docker-compose.unit-tests-js.yml \
-	--file ./test/docker-compose.integration-tests.yml \
+	--file ./test/docker-compose.integration-tests.build.yml \
 	--file ./test/docker-compose.e2e-tests.yml \
 	--file ./test/docker-compose.typecheck-tests.yml
 
@@ -152,7 +152,7 @@ build-test-typecheck: build-python-wheels
 .PHONY: build-test-integration
 build-test-integration: build-local
 	$(WITH_LOCAL_GRAPL_ENV) \
-	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.integration-tests.yml
+	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.integration-tests.build.yml
 
 .PHONY: build-test-e2e
 build-test-e2e: build
@@ -302,7 +302,6 @@ test-typecheck: test-typecheck-docker test-typecheck-pants ## Typecheck all Pyth
 
 .PHONY: test-integration
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
-#test-integration: export COMPOSE_FILE := ./test/docker-compose.integration-tests.yml
 test-integration: build-test-integration ## Build and run integration tests
 	$(WITH_LOCAL_GRAPL_ENV)
 	export SHOULD_DEPLOY_INTEGRATION_TESTS=True  # This gets read in by `docker-compose.yml`'s pulumi
@@ -437,6 +436,9 @@ up-detach: build-local ## Bring up local Grapl and detach to return control to t
 	# Although it seems specifying the `--file` option overrides that, we'll
 	# explicitly unset that here to avoid potential surprises.
 	unset COMPOSE_FILE
+
+	# TODO: This could potentially be replaced with a docker-compose run, but
+	#  it doesn't have all these useful flags
 	docker-compose \
 		--file docker-compose.yml \
 		up --force-recreate --always-recreate-deps --renew-anon-volumes \
