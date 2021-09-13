@@ -465,7 +465,7 @@ run-registry: ## Ensure that a local docker registry is running (which is requir
 .PHONY: start-nomad-dev
 start-nomad-dev: push-local  ## Start the Nomad development environment
 	$(WITH_LOCAL_GRAPL_ENV)
-	sudo --preserve-env nomad/local/start_development_environment.sh
+	nomad/local/start_development_environment_tmux.sh
 
 .PHONY: push
 push: ## Push Grapl containers to supplied DOCKER_REGISTRY

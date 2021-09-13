@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# This file is an alternative version of `start_development_environment.sh` that uses
+# tmux to split up logs from Nomad-Agent, Consul, and the nomad deployment itself.
+
 set -euo pipefail
 
 THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
@@ -9,12 +12,6 @@ cd "${THIS_DIR}"
 # via `make start-nomad-dev`
 if [[ ! -v DOCKER_REGISTRY ]]; then
     echo "!!! Run this with 'make start-nomad-dev'"
-    exit 1
-fi
-
-# This guard is strictly informative. nomad agent -dev-connect cannot run without root
-if [[ $EUID -ne 0 ]]; then
-    echo "This script must be run as root"
     exit 1
 fi
 
@@ -29,14 +26,11 @@ if [[ -z $(command -v consul) ]]; then
     exit 2
 fi
 
-trap 'kill $(jobs -p)' EXIT
+if [[ -z $(command -v tmuxinator) ]]; then
+    echo "tmuxinator must be installed. sudo apt-get install tmuxinator"
+    exit 2
+fi
 
-echo "Starting nomad and consul locally."
-nomad agent -config="nomad-agent-conf.nomad" -dev-connect &
-consul agent -dev &
-
-./nomad_run_local_infra.sh
-
-echo "Deployment complete; ctrl + c to terminate".
-
-while true; do read -r; done
+# NOTE: tmux 2.8 in apt works fine, but 3 enables features like named panes.
+# Worth exploring/enforcing.
+tmuxinator start project nomad-development-environment
