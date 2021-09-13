@@ -191,18 +191,15 @@ def main() -> None:
                 # Filter out which vars we need
                 subset_keys = {
                     "analyzer_bucket",
+                    "aws_access_key_id",
+                    "aws_access_key_secret",
                     "_aws_endpoint",
                     "aws_region",
                     "deployment_name",
                     "_redis_endpoint",
-                    "schema_properties_table_name",
-                    "schema_table_name",
                 }
 
-                subset = {
-                    k: inputs[k]
-                    for k in subset_keys
-                }
+                subset = {k: inputs[k] for k in subset_keys}
 
                 integration_test_only_job_vars = {
                     "_kafka_endpoint": kafka_endpoint,
