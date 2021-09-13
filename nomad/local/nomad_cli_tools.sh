@@ -22,10 +22,10 @@ nomad_dispatch() {
 }
 
 url_to_nomad_job_in_ui() {
-    local job_id="${1}"
+    local -r job_id="${1}"
     # urlencode
-    job_id=$(jq -rn --arg input "${job_id}" '$input|@uri')
-    echo "http://localhost:4646/ui/jobs/${job_id}"
+    local -r urlencode_job_id=$(jq -rn --arg input "${job_id}" '$input|@uri')
+    echo "http://localhost:4646/ui/jobs/${urlencode_job_id}"
 }
 
 nomad_stop_job() {
