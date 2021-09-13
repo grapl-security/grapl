@@ -6,14 +6,17 @@ THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
 # shellcheck source-path=SCRIPTDIR
 source "${THIS_DIR}/nomad_cli_tools.sh"
 
-# The Nomad integration test _definition_ is uploaded as part of
-# __main__.py's `nomad_integration_tests`.
+# The Nomad test _definition_ is uploaded as part of
+# Pulumi __main__.py's `NomadJob(...)` calls.
+
+readonly job_to_dispatch="${1}"
 
 # Now we have to actually dispatch a job; Pulumi simply uploaded
 # the jobspec, since it's a Parameterized Batch Job.
-echo "--- Dispatching integration tests"
+echo "--- Dispatching ${job_to_dispatch}"
 
-job_id=$(nomad_dispatch integration-tests)
+#job_id=$(nomad_dispatch integration-tests)
+job_id=$(nomad_dispatch "${job_to_dispatch}")
 echo "You can view job progress at $(url_to_nomad_job_in_ui "${job_id}")"
 
 dispatch_timed_out=0
@@ -27,7 +30,7 @@ nomad_get_per_task_results "${job_id}"
 check_for_task_failures_in_job "${job_id}"
 
 if [ "${dispatch_timed_out}" -ne "0" ]; then
-    important_looking_banner "Integration tests timed out."
+    important_looking_banner "${job_to_dispatch} timed out."
     nomad_stop_job "${job_id}"
     sleep 5
     exit 42

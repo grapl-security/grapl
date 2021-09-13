@@ -169,6 +169,8 @@ def main() -> None:
             graph_merger_queue=graph_merger_queue.main_queue_url,
             graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
             session_table_name=dynamodb_tables.dynamic_session_table.name,
+            sysmon_generator_queue=sysmon_generator_queue.main_queue_url,
+            sysmon_log_bucket=sysmon_log_emitter.bucket,
             schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
             schema_table_name=dynamodb_tables.schema_table.name,
             model_plugins_bucket=model_plugins_bucket.bucket,
@@ -189,7 +191,7 @@ def main() -> None:
                 # This is a special directive to our HCL file that tells it to use Localstack
                 "_aws_endpoint": aws_endpoint,
                 "deployment_name": config.DEPLOYMENT_NAME,
-                "grapl_test_user_name": config.GRAPL_TEST_USER_NAME,
+                "test_user_name": config.GRAPL_TEST_USER_NAME,
                 "aws_region": aws.get_region().name,
                 "_redis_endpoint": redis_endpoint,
                 # TODO: consider replacing with the previous per-service `configurable_envvars`
@@ -232,10 +234,39 @@ def main() -> None:
                 _get_integration_test_job_vars
             )
 
-            nomad_integration_tests = NomadJob(
+            integration_tests = NomadJob(
                 "integration-tests",
                 jobspec=Path("../../nomad/local/integration-tests.nomad").resolve(),
                 vars=integration_test_job_vars,
+            )
+
+        if config.SHOULD_DEPLOY_E2E_TESTS:
+
+            def _get_e2e_test_job_vars(inputs: Mapping[str, Any]) -> Mapping[str, Any]:
+                # Filter out which vars we need
+                subset_keys = {
+                    "analyzer_bucket",
+                    "aws_access_key_id",
+                    "aws_access_key_secret",
+                    "_aws_endpoint",
+                    "aws_region",
+                    "deployment_name",
+                    "test_user_name",
+                    "schema_properties_table_name",
+                    "schema_table_name",
+                    "sysmon_generator_queue",
+                    "sysmon_log_bucket",
+                }
+
+                subset = {k: inputs[k] for k in subset_keys}
+
+                return subset
+
+            e2e_test_job_vars = grapl_core_job_vars.apply(_get_e2e_test_job_vars)
+            e2e_tests = NomadJob(
+                "e2e-tests",
+                jobspec=Path("../../nomad/local/e2e-tests.nomad").resolve(),
+                vars=e2e_test_job_vars,
             )
 
     else:

@@ -42,19 +42,6 @@ services:
       - ${PWD}/etc:/home/grapl/etc:ro
       - *read-only-pulumi-mnt
     environment:
-      - AWS_REGION
-      - DEBUG_SERVICES=${DEBUG_SERVICES:-}
-      - DEPLOYMENT_NAME
-      - GRAPL_API_HOST
-      - GRAPL_AWS_ACCESS_KEY_ID
-      - GRAPL_AWS_ACCESS_KEY_SECRET
-      - GRAPL_AWS_ENDPOINT
-      - GRAPL_HTTP_FRONTEND_PORT
-      - GRAPL_LOG_LEVEL
-      - GRAPL_TEST_USER_NAME
-      - IS_LOCAL=True
-      - MG_ALPHAS
-      - VSC_DEBUGGER_PORT
       - GRAPL_VERSION=${DEPLOYMENT_NAME}
       - GRAPL_REGION=${AWS_REGION}
     ports:

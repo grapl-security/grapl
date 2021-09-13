@@ -148,7 +148,7 @@ variable "graph_merger_dead_letter_queue" {
   type = string
 }
 
-variable "grapl_test_user_name" {
+variable "test_user_name" {
   type        = string
   description = "The name of the test user"
 }
@@ -248,6 +248,12 @@ variable "sysmon_generator_queue" {
 
 variable "sysmon_generator_dead_letter_queue" {
   type = string
+}
+
+// TODO move to the other file for e2e tests
+variable "sysmon_log_bucket" {
+  type        = string
+  description = "The name of the S3 bucket to which Sysmon logs should be uploaded"
 }
 
 variable "osquery_generator_tag" {
@@ -688,7 +694,7 @@ job "grapl-core" {
         GRAPL_SCHEMA_TABLE            = var.schema_table_name
         GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name
         GRAPL_USER_AUTH_TABLE         = var.user_auth_table
-        GRAPL_TEST_USER_NAME          = var.grapl_test_user_name
+        GRAPL_TEST_USER_NAME          = var.test_user_name
         GRAPL_LOG_LEVEL               = var.rust_log # TODO: revisit
       }
     }

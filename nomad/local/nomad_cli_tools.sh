@@ -110,5 +110,5 @@ check_for_task_failures_in_job() {
 
 important_looking_banner() {
     local -r message="${1}"
-    echo -e "\n\n--- \e[30;46m${message}\e[m ---"
+    echo -e "\n\n--- \e[30;46m${message}\e[m ---\n"
 }
