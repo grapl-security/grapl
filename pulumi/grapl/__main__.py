@@ -148,6 +148,8 @@ def main() -> None:
             analyzer_executor_queue=analyzer_executor_queue.main_queue_url,
             analyzer_matched_subgraphs_bucket=analyzer_matched_emitter.bucket.bucket,
             analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url,
+            aws_access_key_id=aws.config.access_key,
+            aws_access_key_secret=aws.config.secret_key,
             graph_merger_queue=graph_merger_queue.main_queue_url,
             graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
             session_table_name=dynamodb_tables.dynamic_session_table.name,
@@ -187,18 +189,21 @@ def main() -> None:
                 inputs: Mapping[str, Any]
             ) -> Mapping[str, Any]:
                 # Filter out which vars we need
+                subset_keys = {
+                    "analyzer_bucket",
+                    "_aws_endpoint",
+                    "aws_region",
+                    "deployment_name",
+                    "_redis_endpoint",
+                    "schema_properties_table_name",
+                    "schema_table_name",
+                }
+
                 subset = {
                     k: inputs[k]
-                    for k in inputs.keys()
-                    & {
-                        "aws_access_key_id",
-                        "aws_access_key_secret",
-                        "_aws_endpoint",
-                        "aws_region",
-                        "deployment_name",
-                        "_redis_endpoint",
-                    }
+                    for k in subset_keys
                 }
+
                 integration_test_only_job_vars = {
                     "_kafka_endpoint": kafka_endpoint,
                 }
