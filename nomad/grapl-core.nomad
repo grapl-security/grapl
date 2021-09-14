@@ -344,6 +344,9 @@ job "grapl-core" {
     content {
       network {
         mode = "bridge"
+        port "healthcheck" {
+          to = -1
+        }
       }
 
       task "dgraph-zero" {
@@ -397,7 +400,34 @@ job "grapl-core" {
                   local_bind_port  = alpha.value.grpc_private_port
                 }
               }
+
+              # We need to expose the health check for consul to be able to reach it
+              expose {
+                path {
+                  path            = "/health"
+                  protocol        = "http"
+                  local_path_port = 6080
+                  listener_port   = "healthcheck"
+                }
+              }
+
             }
+          }
+        }
+
+        check {
+          type     = "http"
+          name     = "dgraph-alpha-http-healthcheck"
+          path     = "/health"
+          port     = "healthcheck"
+          method   = "GET"
+          interval = "30s"
+          timeout  = "5s"
+
+          check_restart {
+            limit           = 30
+            grace           = "30s"
+            ignore_warnings = false
           }
         }
       }
@@ -491,6 +521,7 @@ job "grapl-core" {
         connect {
           sidecar_service {
             proxy {
+              # We need to expose the health check for consul to be able to reach it
               expose {
                 path {
                   path            = "/health"
@@ -504,14 +535,13 @@ job "grapl-core" {
         }
 
         check {
-          # We can't use the normal http or grpc checks since there is no ingress for consul
-          type            = "http"
-          name            = "http-dgraph-alpha-health-endpoint"
-          path            = "/health"
+          type     = "http"
+          name     = "dgraph-alpha-http-healthcheck"
+          path     = "/health"
           port     = "healthcheck"
-          method          = "GET"
-          interval        = "30s"
-          timeout         = "5s"
+          method   = "GET"
+          interval = "30s"
+          timeout  = "5s"
 
           check_restart {
             limit           = 30
