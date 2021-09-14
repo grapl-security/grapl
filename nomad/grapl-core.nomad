@@ -224,7 +224,12 @@ variable "deployment_name" {
 
 variable "user_auth_table" {
   type        = string
-  description = "What is the name of the user auth table?"
+  description = "What is the name of the DynamoDB user auth table?"
+}
+
+variable "user_session_table" {
+  type        = string
+  description = "What is the name of the DynamoDB user session table?"
 }
 
 locals {
@@ -845,9 +850,13 @@ job "grapl-core" {
       }
 
       env {
+        GRAPL_USER_AUTH_TABLE = var.user_auth_table
+        GRAPL_USER_SESSION_TABLE = var.user_session_table
+
         GRAPL_WEB_UI_BIND_ADDRESS = "0.0.0.0:${local.web_ui_port}"
         GRAPL_GRAPHQL_ENDPOINT    = "localhost:${local.graphql_endpoint_port}"
         RUST_LOG                  = var.rust_log
+        RUST_BACKTRACE              = 1
       }
     }
 

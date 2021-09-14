@@ -162,6 +162,7 @@ def main() -> None:
             subgraphs_merged_bucket=subgraphs_merged_emitter.bucket,
             subgraphs_generated_bucket=subgraphs_generated_emitter.bucket,
             user_auth_table=dynamodb_tables.user_auth_table.name,
+            user_session_table=dynamodb_tables.user_session_table.name,
             ux_bucket=ux_bucket.bucket,
         ).apply(
             lambda inputs: {
