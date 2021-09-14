@@ -68,21 +68,22 @@ await_nomad_dispatch_finish() {
     # Just keep trying until the Dispatch has run to completion (or timeout)
     local -r job_id=$1
     local -r attempts=$2 # in sleep-seconds
+    local -r label=$3
 
     local status
     # The below could be replaced with blocking queries on Nomad.
     for i in $(seq 1 "${attempts}"); do
         status=$(nomad_dispatch_status "${job_id}")
         if [ "${status}" = "dead" ]; then
-            echo >&2 -ne "\nIntegration tests complete\n"
+            echo >&2 -ne "\n${label} complete\n"
             return 0
         else
             # the `\r` lets us rewrite the last line
-            echo >&2 -ne "[${i}/${attempts}] Integration tests still running - status: ${status}"\\r
+            echo >&2 -ne "[${i}/${attempts}] ${label} still running - status: ${status}"\\r
             sleep 1
         fi
     done
-    echo >&2 -ne "\nIntegration tests timed out - perhaps add more attempts?"
+    echo >&2 -ne "\n${label} timed out - perhaps add more attempts?"
     return 1
 }
 

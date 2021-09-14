@@ -250,12 +250,6 @@ variable "sysmon_generator_dead_letter_queue" {
   type = string
 }
 
-// TODO move to the other file for e2e tests
-variable "sysmon_log_bucket" {
-  type        = string
-  description = "The name of the S3 bucket to which Sysmon logs should be uploaded"
-}
-
 variable "osquery_generator_tag" {
   type        = string
   default     = "dev"
@@ -612,19 +606,18 @@ job "grapl-core" {
     }
   }
 
-  group "grapl-graph-merger" {
+  group "graph-merger" {
     count = var.num_graph_mergers
 
-    //    network {
-    //      mode = "bridge"
-    //    }
+    network {
+      mode = "bridge"
+    }
 
     task "graph-merger" {
       driver = "docker"
 
       config {
         image        = "${var.container_registry}grapl/graph-merger:${var.graph_merger_tag}"
-        network_mode = "grapl-network"
       }
 
       env {
@@ -647,21 +640,21 @@ job "grapl-core" {
 
     service {
       name = "graph-merger"
-      //      connect {
-      //        sidecar_service {
-      //          proxy {
-      //            dynamic "upstreams" {
-      //              iterator = alpha
-      //              for_each = local.dgraph_alphas
-      //
-      //              content {
-      //                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
-      //                local_bind_port  = alpha.value.grpc_public_port
-      //              }
-      //            }
-      //          }
-      //        }
-      //      }
+      connect {
+        sidecar_service {
+          proxy {
+            dynamic "upstreams" {
+              iterator = alpha
+              for_each = local.dgraph_alphas
+
+              content {
+                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
+                local_bind_port  = alpha.value.grpc_public_port
+              }
+            }
+          }
+        }
+      }
     }
   }
 
@@ -719,7 +712,7 @@ job "grapl-core" {
     }
   }
 
-  group "grapl-node-identifier" {
+  group "node-identifier" {
     count = var.num_node_identifiers
 
     network {
@@ -731,7 +724,6 @@ job "grapl-core" {
 
       config {
         image        = "${var.container_registry}grapl/node-identifier:${var.node_identifier_tag}"
-        network_mode = "grapl-network"
       }
 
       env {
@@ -758,19 +750,18 @@ job "grapl-core" {
     }
   }
 
-  group "grapl-node-identifier-retry" {
+  group "node-identifier-retry" {
     count = var.num_node_identifier_retries
 
-    //    network {
-    //      mode = "bridge"
-    //    }
+    network {
+      mode = "bridge"
+    }
 
     task "node-identifier-retry" {
       driver = "docker"
 
       config {
         image        = "${var.container_registry}grapl/node-identifier-retry:${var.node_identifier_tag}"
-        network_mode = "grapl-network"
       }
 
       env {
@@ -804,7 +795,6 @@ job "grapl-core" {
 
       config {
         image        = "${var.container_registry}grapl/analyzer-dispatcher:${var.analyzer_dispatcher_tag}"
-        network_mode = "grapl-network"
       }
 
       env {
@@ -819,8 +809,8 @@ job "grapl-core" {
         # service vars
         GRAPL_ANALYZERS_BUCKET = var.analyzer_bucket
         DEST_BUCKET_NAME       = var.analyzer_dispatched_bucket
-        DEAD_LETTER_QUEUE_URL  = var.analyzer_dispatcher_queue
-        SOURCE_QUEUE_URL       = var.analyzer_dispatcher_dead_letter_queue
+        SOURCE_QUEUE_URL       = var.analyzer_dispatcher_queue
+        DEAD_LETTER_QUEUE_URL  = var.analyzer_dispatcher_dead_letter_queue
       }
 
       service {
@@ -832,12 +822,15 @@ job "grapl-core" {
   }
 
   group "analyzer-executor" {
+    network {
+      mode = "bridge"
+    }
+
     task "analyzer-executor" {
       driver = "docker"
 
       config {
         image        = "${var.container_registry}grapl/analyzer-executor:${var.analyzer_executor_tag}"
-        network_mode = "grapl-network"
       }
 
       env {
@@ -862,9 +855,19 @@ job "grapl-core" {
         MESSAGECACHE_ADDR                       = local.redis_host
         MESSAGECACHE_PORT                       = local.redis_port
       }
+    }
 
-      service {
-        name = "analyzer-executor"
+    service {
+      name = "analyzer-executor"
+      connect {
+        sidecar_service {
+          proxy {
+            dynamic "upstreams" {
+              iterator = alpha
+              for_each = local.dgraph_alphas
+            }
+          }
+        }
       }
     }
   }

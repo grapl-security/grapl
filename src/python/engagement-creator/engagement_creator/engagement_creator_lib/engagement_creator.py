@@ -23,7 +23,7 @@ from grapl_analyzerlib.queryable import Queryable
 from grapl_analyzerlib.viewable import Viewable
 from grapl_common.env_helpers import S3ResourceFactory
 from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
-from grapl_common.sqs.sqs_types import SQSMessageBody
+from grapl_common.sqs.sqs_types import S3PutRecordDict, SQSMessageBody
 from mypy_boto3_s3 import S3ServiceResource
 from typing_extensions import Final, Literal
 
@@ -73,23 +73,18 @@ class EngagementCreatorMetrics:
             ],
         )
 
-
-def parse_s3_event(s3: S3ServiceResource, event: Any) -> bytes:
-    # Retrieve body of sns message
-    # Decode json body of sns message
-    LOGGER.debug("event is {}".format(event))
-
-    bucket = event["s3"]["bucket"]["name"]
-    key = event["s3"]["object"]["key"]
+def parse_s3_event(s3: S3ServiceResource, event: S3PutRecordDict) -> str:
+    try:
+        bucket = event["s3"]["bucket"]["name"]
+        key = event["s3"]["object"]["key"]
+    except KeyError:
+        LOGGER.error(f"Could not parse s3 event: {event}", exc_info=True)
+        raise
     return download_s3_file(s3, bucket, key)
 
-
-def download_s3_file(s3: S3ServiceResource, bucket: str, key: str) -> bytes:
-    key = key.replace("%3D", "=")
-    LOGGER.info("Downloading s3 file from: {} {}".format(bucket, key))
+def download_s3_file(s3: S3ServiceResource, bucket: str, key: str) -> str:
     obj = s3.Object(bucket, key)
-    return cast(bytes, obj.get()["Body"].read())
-
+    return cast(bytes, obj.get()["Body"].read()).decode("utf-8")
 
 def create_edge(
     client: GraphClient, from_uid: int, edge_name: str, to_uid: int
@@ -215,13 +210,11 @@ async def lambda_handler(s3_event: SQSMessageBody, context: Any) -> None:
 
 
 def _process_one_event(
-    event: Any,
+    event: S3PutRecordDict,
     s3: S3ServiceResource,
     mg_client: GraphClient,
     metrics: EngagementCreatorMetrics,
 ) -> None:
-    event = json.loads(event["body"])["Records"][0]
-
     data = parse_s3_event(s3, event)
     incident_graph = json.loads(data)
 

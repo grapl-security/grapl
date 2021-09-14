@@ -15,12 +15,15 @@ readonly job_to_dispatch="${1}"
 # the jobspec, since it's a Parameterized Batch Job.
 echo "--- Dispatching ${job_to_dispatch}"
 
-#job_id=$(nomad_dispatch integration-tests)
 job_id=$(nomad_dispatch "${job_to_dispatch}")
 echo "You can view job progress at $(url_to_nomad_job_in_ui "${job_id}")"
 
 dispatch_timed_out=0
-await_nomad_dispatch_finish "${job_id}" $((5 * 60)) || dispatch_timed_out=1
+await_nomad_dispatch_finish \
+    "${job_id}" \
+    $((5 * 60)) \
+    "${job_to_dispatch}" ||
+    dispatch_timed_out=1
 
 # Show how each job did
 # TODO: It'd be nice to show this *during* the await_nomad_dispatch_finish,

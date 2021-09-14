@@ -90,6 +90,7 @@ job "e2e-tests" {
 
     network {
       mode = "bridge"
+      # TODO: Reintroduce VSC_DEBUGGER_PORT_FOR_GRAPL_E2E_TESTS at some point
     }
 
     # Enable service discovery
@@ -102,6 +103,10 @@ job "e2e-tests" {
               # This is a hack, because IDK how to share locals across files
               destination_name = "dgraph-alpha-0-grpc-public"
               local_bind_port  = 9080
+            }
+            upstreams {
+              destination_name = "web-ui"
+              local_bind_port  = 1234
             }
           }
         }
@@ -162,16 +167,18 @@ EOF
         AWS_REGION = var.aws_region
         # TODO: Reintroduce DEBUG_SERVICES= at some point
         # TODO: Reintroduce VSC_DEBUGGER_PORT= at some point
-        # TODO: GRAPL_API_HOST - we need this for JWTs
-        # TODO: GRAPL_HTTP_FRONTEND_PORT - need this for JWTs
+
+        GRAPL_API_HOST           = "${NOMAD_UPSTREAM_IP_web-ui}"
+        GRAPL_HTTP_FRONTEND_PORT = "${NOMAD_UPSTREAM_PORT_web-ui}"
+
         DEPLOYMENT_NAME             = var.deployment_name
         GRAPL_AWS_ENDPOINT          = local.aws_endpoint
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
         GRAPL_LOG_LEVEL             = local.log_level
 
-        GRAPL_TEST_USER_NAME         = var.test_user_name  # Needed for EngagementEdgeClient
-        IS_LOCAL                     = true # Revisit for in-prod E2E
+        GRAPL_TEST_USER_NAME = var.test_user_name # Needed for EngagementEdgeClient
+        IS_LOCAL             = true               # Revisit for in-prod E2E
 
         MG_ALPHAS      = "localhost:9080"
         RUST_BACKTRACE = 1
