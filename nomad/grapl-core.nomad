@@ -413,6 +413,9 @@ job "grapl-core" {
     content {
       network {
         mode = "bridge"
+        port "healthcheck" {
+          to = -1
+        }
       }
 
       task "dgraph-alpha" {
@@ -486,23 +489,36 @@ job "grapl-core" {
         tags = ["dgraph", "alpha", "http"]
 
         connect {
-          sidecar_service {}
+          sidecar_service {
+            proxy {
+              expose {
+                path {
+                  path            = "/health"
+                  protocol        = "http"
+                  local_path_port = 8080
+                  listener_port   = "healthcheck"
+                }
+              }
+            }
+          }
         }
 
-//        check {
-//          type            = "http"
-//          name            = "http-dgraph-alpha-health-endpoint"
-//          path            = "/health"
-//          method          = "GET"
-//          interval        = "30s"
-//          timeout         = "5s"
-//
-//          check_restart {
-//            limit           = 3
-//            grace           = "30s"
-//            ignore_warnings = false
-//          }
-//        }
+        check {
+          # We can't use the normal http or grpc checks since there is no ingress for consul
+          type            = "http"
+          name            = "http-dgraph-alpha-health-endpoint"
+          path            = "/health"
+          port     = "healthcheck"
+          method          = "GET"
+          interval        = "30s"
+          timeout         = "5s"
+
+          check_restart {
+            limit           = 30
+            grace           = "30s"
+            ignore_warnings = false
+          }
+        }
       }
     }
   }
