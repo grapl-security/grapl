@@ -417,7 +417,7 @@ job "grapl-core" {
 
         check {
           type     = "http"
-          name     = "dgraph-alpha-http-healthcheck"
+          name     = "dgraph-zero-http-healthcheck"
           path     = "/health"
           port     = "healthcheck"
           method   = "GET"
@@ -425,7 +425,7 @@ job "grapl-core" {
           timeout  = "5s"
 
           check_restart {
-            limit           = 30
+            limit           = 3
             grace           = "30s"
             ignore_warnings = false
           }
@@ -544,7 +544,7 @@ job "grapl-core" {
           timeout  = "5s"
 
           check_restart {
-            limit           = 30
+            limit           = 3
             grace           = "30s"
             ignore_warnings = false
           }
