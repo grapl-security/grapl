@@ -22,7 +22,7 @@ enum GraplUiError {
 
 #[actix_web::main]
 async fn main() -> Result<(), GraplUiError> {
-    tracing_subscriber::fmt::init();
+    let (_env, _guard) = grapl_config::init_grapl_env!();
 
     let config = config::Config::from_env().tap_err(|e| tracing::error!("{}", e))?;
 
