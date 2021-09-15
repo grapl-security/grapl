@@ -475,6 +475,7 @@ up-detach: build-local ## Bring up local Grapl and detach to return control to t
 		up --force-recreate --always-recreate-deps --renew-anon-volumes \
 		--exit-code-from pulumi \
 		pulumi
+	echo "--- up-detach complete"
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers

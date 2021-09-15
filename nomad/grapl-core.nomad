@@ -194,17 +194,6 @@ variable "subgraphs_generated_bucket" {
   description = "The destination bucket for generated subgraphs. Used by Node identifier."
 }
 
-variable "engagement_view_tag" {
-  type        = string
-  default     = "dev"
-  description = "The image tag for the engagement view."
-}
-
-variable "ux_bucket" {
-  type        = string
-  description = "The grapl UX bucket for the engagement view."
-}
-
 variable "graphql_endpoint_tag" {
   type        = string
   default     = "dev"
@@ -764,36 +753,7 @@ job "grapl-core" {
 
   group "graphql-endpoint" {
     network {
-      //      mode = "bridge"
-
-      port "graphql-endpoint" {
-        to = 5000
-      }
-    }
-
-    // engagement-view just uploads the ux tarball. For the moment this is set to run as an init container but should
-    // probably be run from Buildkite instead
-    task "engagement-view" {
-      driver = "docker"
-
-      config {
-        image        = "${var.container_registry}grapl/engagement-view:${var.engagement_view_tag}"
-        network_mode = "grapl-network"
-      }
-
-      lifecycle {
-        hook    = "prestart"
-        sidecar = false
-      }
-
-      env {
-        RUST_LOG                    = var.rust_log
-        GRAPL_UX_BUCKET             = var.ux_bucket
-        AWS_REGION                  = var.aws_region
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
-      }
+      mode = "bridge"
     }
 
     task "graphql-endpoint" {
@@ -807,7 +767,6 @@ job "grapl-core" {
       env {
         DEPLOYMENT_NAME               = var.deployment_name
         RUST_LOG                      = var.rust_log
-        GRAPL_UX_BUCKET               = var.ux_bucket
         AWS_REGION                    = var.aws_region
         MG_ALPHAS                     = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE            = var.schema_table_name
@@ -817,17 +776,17 @@ job "grapl-core" {
         GRAPL_AWS_ENDPOINT            = local.aws_endpoint
         IS_LOCAL                      = "True"
         JWT_SECRET_ID                 = "JWT_SECRET_ID"
-        PORT                          = 5000
+        PORT                          = local.graphql_endpoint_port
       }
     }
 
     service {
       name = "graphql-endpoint"
-      //      port = "graphql-endpoint"
-      //
-      //      connect {
-      //        sidecar_service {}
-      //      }
+      port = local.graphql_endpoint_port
+
+      connect {
+        sidecar_service {}
+      }
     }
   }
 
@@ -837,6 +796,7 @@ job "grapl-core" {
 
       port "web-ui-port" {
         static = local.web_ui_port
+        to     = local.web_ui_port
       }
     }
 
@@ -844,33 +804,42 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image  = "${var.container_registry}grapl/grapl-web-ui:${var.web_ui_tag}"
-        network_mode = "grapl-network"
+        image = "${var.container_registry}grapl/grapl-web-ui:${var.web_ui_tag}"
         ports = ["web-ui-port"]
       }
 
       env {
-        GRAPL_USER_AUTH_TABLE = var.user_auth_table
+        # For the DynamoDB client
+        AWS_REGION                  = var.aws_region
+        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
+        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
+        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
+
+        GRAPL_USER_AUTH_TABLE    = var.user_auth_table
         GRAPL_USER_SESSION_TABLE = var.user_session_table
 
-        GRAPL_WEB_UI_BIND_ADDRESS = "0.0.0.0:${local.web_ui_port}"
-        GRAPL_GRAPHQL_ENDPOINT    = "localhost:${local.graphql_endpoint_port}"
-        RUST_LOG                  = var.rust_log
-        RUST_BACKTRACE              = 1
+        GRAPL_WEB_UI_BIND_ADDRESS            = "0.0.0.0:${local.web_ui_port}"
+        GRAPL_GRAPHQL_ENDPOINT               = "localhost:${local.graphql_endpoint_port}"
+        GRAPL_MODEL_PLUGIN_DEPLOYER_ENDPOINT = "TODO:1111" # !!! TODO
+        RUST_LOG                             = var.rust_log
+        RUST_BACKTRACE                       = 1
       }
     }
 
     service {
+      name = "web-ui"
       connect {
         sidecar_service {
           proxy {
             upstreams {
               destination_name = "graphql-endpoint"
-              local_bind_port = local.graphql_endpoint_port
+              local_bind_port  = local.graphql_endpoint_port
             }
           }
         }
       }
+
+      # TODO: check{}
     }
   }
 }

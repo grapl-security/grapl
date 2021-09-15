@@ -82,57 +82,57 @@ services:
     volumes:
       - *read-only-pulumi-mnt
 
-  grapl-web-ui:
-    image: grapl/grapl-web-ui:${TAG:-latest}
-    entrypoint: ["/busybox/sh", "-o", "errexit", "-o", "nounset", "-c"]
-    command:
-      - |
-        export GRAPL_USER_AUTH_TABLE=$$(cat /mnt/pulumi-outputs/user-auth-table)
-        export GRAPL_USER_SESSION_TABLE=$$(cat /mnt/pulumi-outputs/user-session-table)
-        /grapl-web-ui
-    environment:
-      GRAPL_WEB_UI_BIND_ADDRESS: 0.0.0.0:8666
-      GRAPL_GRAPHQL_ENDPOINT: "${GRAPHQL_ENDPOINT}"
-      GRAPL_MODEL_PLUGIN_DEPLOYER_ENDPOINT: "${MODEL_PLUGIN_DEPLOYER_ENDPOINT}"
-      <<: *aws-env
-      <<: *log-level
-      <<: *rust-backtrace
-    tty: true
-    ports:
-      - 127.0.0.1:8666:8666
-    depends_on:
-      pulumi:
-        # We must wait until Pulumi has created the buckets to know what their names are
-        condition: service_completed_successfully
-    volumes:
-      - *read-only-pulumi-mnt
+  # grapl-web-ui:
+  #   image: grapl/grapl-web-ui:${TAG:-latest}
+  #   entrypoint: ["/busybox/sh", "-o", "errexit", "-o", "nounset", "-c"]
+  #   command:
+  #     - |
+  #       export GRAPL_USER_AUTH_TABLE=$$(cat /mnt/pulumi-outputs/user-auth-table)
+  #       export GRAPL_USER_SESSION_TABLE=$$(cat /mnt/pulumi-outputs/user-session-table)
+  #       /grapl-web-ui
+  #   environment:
+  #     GRAPL_WEB_UI_BIND_ADDRESS: 0.0.0.0:8666
+  #     GRAPL_GRAPHQL_ENDPOINT: "${GRAPHQL_ENDPOINT}"
+  #     GRAPL_MODEL_PLUGIN_DEPLOYER_ENDPOINT: "${MODEL_PLUGIN_DEPLOYER_ENDPOINT}"
+  #     <<: *aws-env
+  #     <<: *log-level
+  #     <<: *rust-backtrace
+  #   tty: true
+  #   ports:
+  #     - 127.0.0.1:8666:8666
+  #   depends_on:
+  #     pulumi:
+  #       # We must wait until Pulumi has created the buckets to know what their names are
+  #       condition: service_completed_successfully
+  #   volumes:
+  #     - *read-only-pulumi-mnt
 
-  grapl-web-ui:
-    image: grapl/grapl-web-ui:${TAG:-latest}
-    entrypoint: ["/busybox/sh", "-o", "errexit", "-o", "nounset", "-c"]
-    command:
-      - |
-        export GRAPL_USER_AUTH_TABLE=$$(cat /mnt/pulumi-outputs/user-auth-table)
-        export GRAPL_USER_SESSION_TABLE=$$(cat /mnt/pulumi-outputs/user-session-table)
-        /grapl-web-ui
-    environment:
-      GRAPL_WEB_UI_BIND_ADDRESS: 0.0.0.0:8666
-      GRAPL_GRAPHQL_ENDPOINT: "${GRAPHQL_ENDPOINT}"
-      GRAPL_MODEL_PLUGIN_DEPLOYER_ENDPOINT: "${MODEL_PLUGIN_DEPLOYER_ENDPOINT}"
-      <<: *aws-env
-      <<: *log-level
-      <<: *rust-backtrace
-    tty: true
-    ports:
-      - 127.0.0.1:8666:8666
-    depends_on:
-      localstack:
-        condition: service_healthy
-      pulumi:
-        # We must wait until Pulumi has created the buckets to know what their names are
-        condition: service_completed_successfully
-    volumes:
-      - *read-only-pulumi-mnt
+  # grapl-web-ui:
+  #   image: grapl/grapl-web-ui:${TAG:-latest}
+  #   entrypoint: ["/busybox/sh", "-o", "errexit", "-o", "nounset", "-c"]
+  #   command:
+  #     - |
+  #       export GRAPL_USER_AUTH_TABLE=$$(cat /mnt/pulumi-outputs/user-auth-table)
+  #       export GRAPL_USER_SESSION_TABLE=$$(cat /mnt/pulumi-outputs/user-session-table)
+  #       /grapl-web-ui
+  #   environment:
+  #     GRAPL_WEB_UI_BIND_ADDRESS: 0.0.0.0:8666
+  #     GRAPL_GRAPHQL_ENDPOINT: "${GRAPHQL_ENDPOINT}"
+  #     GRAPL_MODEL_PLUGIN_DEPLOYER_ENDPOINT: "${MODEL_PLUGIN_DEPLOYER_ENDPOINT}"
+  #     <<: *aws-env
+  #     <<: *log-level
+  #     <<: *rust-backtrace
+  #   tty: true
+  #   ports:
+  #     - 127.0.0.1:8666:8666
+  #   depends_on:
+  #     localstack:
+  #       condition: service_healthy
+  #     pulumi:
+  #       # We must wait until Pulumi has created the buckets to know what their names are
+  #       condition: service_completed_successfully
+  #   volumes:
+  #     - *read-only-pulumi-mnt
 
   ########################################################################
   # Python Services

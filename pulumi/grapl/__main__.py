@@ -98,6 +98,7 @@ def main() -> None:
 
     services: List[ServiceLike] = []
 
+    # TODO: Potentially just removable
     ux_bucket = Bucket(
         "engagement-ux-bucket",
         website_args=aws.s3.BucketWebsiteArgs(
@@ -163,7 +164,6 @@ def main() -> None:
             subgraphs_generated_bucket=subgraphs_generated_emitter.bucket,
             user_auth_table=dynamodb_tables.user_auth_table.name,
             user_session_table=dynamodb_tables.user_session_table.name,
-            ux_bucket=ux_bucket.bucket,
         ).apply(
             lambda inputs: {
                 # This is a special directive to our HCL file that tells it to use Localstack

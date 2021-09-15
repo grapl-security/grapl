@@ -100,13 +100,6 @@ services:
   # Web Services
   ########################################################################
 
-  engagement-view-uploader:
-    image: grapl/engagement-view:${TAG:-latest}
-    build:
-      context: src/js/engagement_view
-      dockerfile: Dockerfile
-      target: engagement-view-local-deploy
-
   # This container build exists only for Local Grapl; if we are able
   # to deploy graphql-endpoint as an actual Lambda there, we can get
   # rid of this.
