@@ -279,7 +279,7 @@ job "integration-tests" {
 
         # These are placeholders since Ian is replacing the nginx service shortly
         GRAPL_API_HOST           = "localhost"
-        GRAPL_HTTP_FRONTEND_PORT = 3128
+        GRAPL_HTTP_FRONTEND_PORT = "${NOMAD_UPSTREAM_PORT_web-ui}"
         GRAPL_TEST_USER_NAME     = ""
 
         IS_LOCAL  = true
@@ -314,7 +314,7 @@ job "integration-tests" {
             upstreams {
               # This is a hack, because IDK how to share locals across files
               destination_name = "web-ui"
-              local_bind_port  = local.web_ui_port
+              local_bind_port  = 8666
             }
           }
         }
@@ -342,7 +342,7 @@ job "integration-tests" {
 
         # These are placeholders since Ian is replacing the nginx service shortly
         GRAPL_API_HOST           = "localhost"
-        GRAPL_HTTP_FRONTEND_PORT = local.web_ui_port
+        GRAPL_HTTP_FRONTEND_PORT = "${NOMAD_UPSTREAM_PORT_web-ui}"
         GRAPL_TEST_USER_NAME     = "local-grapl-grapl-test-user"
 
         IS_LOCAL  = true

@@ -27,7 +27,7 @@ def _get_test_user_password(deployment_name: str) -> str:
 
 class GraplWebClient:
     def __init__(self) -> None:
-        self.endpoint = endpoint_url("/auth")
+        self.endpoint = endpoint_url(suffix="")
         LOGGER.debug(f"created GraplWebClient for endpoint {self.endpoint}")
 
     def get_actix_session(self) -> str:
@@ -38,7 +38,7 @@ class GraplWebClient:
         )
 
         resp = requests.post(
-            f"{self.endpoint}/login",
+            f"{self.endpoint}/auth/login",
             json={
                 "username": username,
                 "password": password,
@@ -58,7 +58,7 @@ class GraplWebClient:
 
     def invalid_creds(self) -> requests.Response:
         resp = requests.post(
-            f"{self.endpoint}/login",
+            f"{self.endpoint}/auth/login",
             json={
                 "username": "fakeuser",
                 "password": "fakepassword",
@@ -71,7 +71,7 @@ class GraplWebClient:
 
     def empty_creds(self) -> requests.Response:
         resp = requests.post(
-            f"{self.endpoint}/login",
+            f"{self.endpoint}/auth/login",
             json={
                 "username": "",
                 "password": "",

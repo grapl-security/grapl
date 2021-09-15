@@ -38,7 +38,20 @@ class TestEngagementEdgeChalice(unittest.TestCase):
 
 
 @pytest.mark.integration_test
-class TestEngagementEdgeClient(unittest.TestCase):
-    def test_get_notebook_link(self) -> None:
+class TestGraplWebClient(unittest.TestCase):
+    """
+    Since EngagementEdge is about to die, we should just, like,
+    move this to e2e or something
+    """
+
+    def test_get_actix_session(self) -> None:
         client = GraplWebClient()
-        jwt = client.get_actix_session()
+        session = client.get_actix_session()
+
+    def test_check_invalid_creds(self) -> None:
+        resp = GraplWebClient().invalid_creds()
+        assert resp.status_code == 500
+
+    def test_check_empty_creds(self) -> None:
+        resp = GraplWebClient().empty_creds()
+        assert resp.status_code == 500
