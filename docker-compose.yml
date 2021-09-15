@@ -242,7 +242,6 @@ services:
           sysmon-log-bucket
           unid-subgraphs-generated-bucket
           user-auth-table
-          user-session-table
           ux-bucket
         )
         for output in "$${outputs[@]}"; do

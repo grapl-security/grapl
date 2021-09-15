@@ -442,19 +442,6 @@ up: build ## Build Grapl services and launch docker-compose up
 	$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose -f docker-compose.yml up
 
-.PHONY: up-base
-up-base: export COMPOSE_PROJECT_NAME="grapl"
-up-base: ## Build Grapl services and launch docker-compose up
-	$(WITH_LOCAL_GRAPL_ENV)
-	docker-compose -f docker-compose.base.yml up
-
-.PHONY: up-grapl
-up-grapl: export COMPOSE_PROJECT_NAME="grapl"
-up-grapl: build-docker-images ## Build Grapl services and launch docker-compose up
-	$(WITH_LOCAL_GRAPL_ENV)
-	docker-compose -f docker-compose.grapl.yml up
-
-
 .PHONY: up-detach
 up-detach: build-local ## Bring up local Grapl and detach to return control to tty
 	# Primarily used for bringing up an environment for integration testing.
