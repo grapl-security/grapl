@@ -50,6 +50,8 @@ locals {
   redis_endpoint = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
   kafka_endpoint = replace(var._kafka_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
 
+  web_ui_port = 3128
+
   _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
   _redis         = split(":", local._redis_trimmed)
   redis_host     = local._redis[0]
@@ -309,6 +311,11 @@ job "integration-tests" {
               destination_name = "dgraph-alpha-0-grpc-public"
               local_bind_port  = 9080
             }
+            upstreams {
+              # This is a hack, because IDK how to share locals across files
+              destination_name = "web-ui"
+              local_bind_port  = local.web_ui_port
+            }
           }
         }
       }
@@ -335,8 +342,8 @@ job "integration-tests" {
 
         # These are placeholders since Ian is replacing the nginx service shortly
         GRAPL_API_HOST           = "localhost"
-        GRAPL_HTTP_FRONTEND_PORT = 3128
-        GRAPL_TEST_USER_NAME     = ""
+        GRAPL_HTTP_FRONTEND_PORT = local.web_ui_port
+        GRAPL_TEST_USER_NAME     = "local-grapl-grapl-test-user"
 
         IS_LOCAL  = true
         MG_ALPHAS = "localhost:9080"

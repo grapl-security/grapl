@@ -828,6 +828,7 @@ job "grapl-core" {
 
     service {
       name = "web-ui"
+      port = "web-ui-port"
       connect {
         sidecar_service {
           proxy {

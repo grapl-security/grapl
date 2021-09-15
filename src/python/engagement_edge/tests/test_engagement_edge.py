@@ -4,6 +4,7 @@ import pytest
 from chalice.test import Client
 from engagement_edge.engagement_edge import JWT_SECRET, app
 from grapl_tests_common.clients.engagement_edge_client import EngagementEdgeClient
+from grapl_tests_common.clients.grapl_web_client import GraplWebClient
 
 # gross hack because engagement edge is pseudo singleton
 JWT_SECRET.secret = "hey im a fake secret"
@@ -39,7 +40,5 @@ class TestEngagementEdgeChalice(unittest.TestCase):
 @pytest.mark.integration_test
 class TestEngagementEdgeClient(unittest.TestCase):
     def test_get_notebook_link(self) -> None:
-        client = EngagementEdgeClient()
-        jwt = client.get_jwt()
-        notebook_url = client.get_notebook(jwt=jwt)
-        assert "localhost:8888" in notebook_url
+        client = GraplWebClient()
+        jwt = client.get_actix_session()
