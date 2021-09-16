@@ -257,7 +257,7 @@ locals {
   redis_port     = local._redis[1]
 
   # Grapl services
-  web_ui_port           = 8666
+  web_ui_port           = 1234
   graphql_endpoint_port = 5000
 }
 

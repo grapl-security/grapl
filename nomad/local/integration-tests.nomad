@@ -264,7 +264,7 @@ job "integration-tests" {
             }
             upstreams {
               destination_name = "web-ui"
-              local_bind_port  = 8666
+              local_bind_port  = 1234
             }
           }
         }
@@ -328,7 +328,7 @@ job "integration-tests" {
             }
             upstreams {
               destination_name = "web-ui"
-              local_bind_port  = 8666
+              local_bind_port  = 1234
             }
           }
         }
