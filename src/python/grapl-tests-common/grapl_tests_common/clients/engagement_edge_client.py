@@ -28,6 +28,8 @@ def _get_test_user_password(deployment_name: str) -> str:
     )["SecretString"]
 
 
+# TODO: This is replaced by GraplWebClient.
+# Will be ripping this out in a followup PR that also fixes up e2e tests.
 class EngagementEdgeClient:
     def __init__(self) -> None:
         self.endpoint = endpoint_url("/auth")

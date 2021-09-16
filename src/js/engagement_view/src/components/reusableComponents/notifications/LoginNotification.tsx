@@ -36,9 +36,6 @@ export default function LoginNotification() {
                             component="p"
                         >
                             You are not logged in and changes cannot be saved.
-                            EDIT: You may actually be logged in Actix-wise, this
-                            is just leftovers from Engagement View/Edge's JWT
-                            auth
                         </Typography>
                     </CardContent>
                 </CardActionArea>
