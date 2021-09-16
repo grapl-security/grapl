@@ -410,6 +410,11 @@ job "grapl-core" {
     content {
       network {
         mode = "bridge"
+        port "dgraph-alpha-port" {
+          # Primarily here to let us use ratel
+          static = alpha.value.http_port
+          to = alpha.value.http_port
+        }
       }
 
       task "dgraph-alpha" {
@@ -424,6 +429,7 @@ job "grapl-core" {
             "--port_offset", "${alpha.value.id}",
             "--zero", "${local.zero_alpha_connect_str}"
           ]
+          ports = ["dgraph-alpha-port"]
         }
       }
 
