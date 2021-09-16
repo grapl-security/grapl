@@ -304,6 +304,7 @@ job "integration-tests" {
 
   }
 
+  # TODO: Rename to `web-ui-integration-tests`
   group "engagement-edge-integration-tests" {
     restart {
       # Make this a one-shot job

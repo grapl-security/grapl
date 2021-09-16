@@ -788,7 +788,19 @@ job "grapl-core" {
       port = "graphql-endpoint-port"
 
       connect {
-        sidecar_service {}
+        sidecar_service {
+          proxy {
+            dynamic "upstreams" {
+              iterator = alpha
+              for_each = local.dgraph_alphas
+
+              content {
+                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
+                local_bind_port  = alpha.value.grpc_public_port
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -842,8 +854,6 @@ job "grapl-core" {
           }
         }
       }
-
-      # TODO: check{}
     }
   }
 }
