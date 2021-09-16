@@ -754,14 +754,17 @@ job "grapl-core" {
   group "graphql-endpoint" {
     network {
       mode = "bridge"
+      port "graphql-endpoint-port" {
+        static = local.graphql_endpoint_port
+      }
     }
 
     task "graphql-endpoint" {
       driver = "docker"
 
       config {
-        image        = "${var.container_registry}grapl/graphql-endpoint:${var.graphql_endpoint_tag}"
-        network_mode = "grapl-network"
+        image = "${var.container_registry}grapl/graphql-endpoint:${var.graphql_endpoint_tag}"
+        ports = ["graphql-endpoint-port"]
       }
 
       env {
@@ -782,7 +785,7 @@ job "grapl-core" {
 
     service {
       name = "graphql-endpoint"
-      port = local.graphql_endpoint_port
+      port = "graphql-endpoint-port"
 
       connect {
         sidecar_service {}
@@ -820,7 +823,7 @@ job "grapl-core" {
 
         GRAPL_WEB_UI_BIND_ADDRESS            = "0.0.0.0:${local.web_ui_port}"
         GRAPL_GRAPHQL_ENDPOINT               = "localhost:${local.graphql_endpoint_port}"
-        GRAPL_MODEL_PLUGIN_DEPLOYER_ENDPOINT = "TODO:1111" # !!! TODO
+        GRAPL_MODEL_PLUGIN_DEPLOYER_ENDPOINT = "TODO:1111" # Note - MPD is being replaced by a Rust service.
         RUST_LOG                             = var.rust_log
         RUST_BACKTRACE                       = 1
       }

@@ -81,5 +81,3 @@ class GraplWebClient:
             },
         )
         return resp
-
-    # TODO: Bring back `getNotebook` (or just kill this feature)

@@ -54,6 +54,8 @@ locals {
   _redis         = split(":", local._redis_trimmed)
   redis_host     = local._redis[0]
   redis_port     = local._redis[1]
+
+  test_user_name = "local-grapl-grapl-test-user"
 }
 
 job "integration-tests" {
@@ -252,6 +254,10 @@ job "integration-tests" {
               destination_name = "dgraph-alpha-0-grpc-public"
               local_bind_port  = 9080
             }
+            upstreams {
+              destination_name = "web-ui"
+              local_bind_port  = 8666
+            }
           }
         }
       }
@@ -278,7 +284,7 @@ job "integration-tests" {
         # These are placeholders since Ian is replacing the nginx service shortly
         GRAPL_API_HOST           = "localhost"
         GRAPL_HTTP_FRONTEND_PORT = "${NOMAD_UPSTREAM_PORT_web-ui}"
-        GRAPL_TEST_USER_NAME     = ""
+        GRAPL_TEST_USER_NAME     = local.test_user_name
 
         IS_LOCAL  = true
         MG_ALPHAS = "localhost:9080"
@@ -310,7 +316,6 @@ job "integration-tests" {
               local_bind_port  = 9080
             }
             upstreams {
-              # This is a hack, because IDK how to share locals across files
               destination_name = "web-ui"
               local_bind_port  = 8666
             }
@@ -341,7 +346,7 @@ job "integration-tests" {
         # These are placeholders since Ian is replacing the nginx service shortly
         GRAPL_API_HOST           = "localhost"
         GRAPL_HTTP_FRONTEND_PORT = "${NOMAD_UPSTREAM_PORT_web-ui}"
-        GRAPL_TEST_USER_NAME     = "local-grapl-grapl-test-user"
+        GRAPL_TEST_USER_NAME     = local.test_user_name
 
         IS_LOCAL  = true
         MG_ALPHAS = "localhost:9080"
