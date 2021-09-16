@@ -196,6 +196,8 @@ def main() -> None:
                     "_aws_endpoint",
                     "aws_region",
                     "deployment_name",
+                    "schema_properties_table_name",
+                    "grapl_test_user_name",
                     "_redis_endpoint",
                 }
 

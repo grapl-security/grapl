@@ -822,8 +822,8 @@ job "grapl-core" {
         GRAPL_USER_SESSION_TABLE = var.user_session_table
 
         GRAPL_WEB_UI_BIND_ADDRESS            = "0.0.0.0:${local.web_ui_port}"
-        GRAPL_GRAPHQL_ENDPOINT               = "localhost:${local.graphql_endpoint_port}"
-        GRAPL_MODEL_PLUGIN_DEPLOYER_ENDPOINT = "TODO:1111" # Note - MPD is being replaced by a Rust service.
+        GRAPL_GRAPHQL_ENDPOINT               = "http://localhost:${local.graphql_endpoint_port}"
+        GRAPL_MODEL_PLUGIN_DEPLOYER_ENDPOINT = "http://TODO:1111" # Note - MPD is being replaced by a Rust service.
         RUST_LOG                             = var.rust_log
         RUST_BACKTRACE                       = 1
       }
