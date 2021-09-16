@@ -129,6 +129,9 @@ steps:
       queue: "beefy"
     artifact_paths:
       - "test_artifacts/**/*"
+    retry:
+      automatic:
+        limit: 5
 
   - label: ":lint-roller::packer::nomad: Lint HCL files"
     command:
