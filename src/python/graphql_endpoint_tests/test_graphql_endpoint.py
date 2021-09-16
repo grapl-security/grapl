@@ -12,10 +12,15 @@ from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_tests_common.clients.graphql_endpoint_client import GraphqlEndpointClient
 from grapl_tests_common.clients.grapl_web_client import GraplWebClient
 from grapl_tests_common.scenarios.create_lens_with_nodes_in_scope import *
+from hypothesis import strategies as st
 
 LOGGER = get_module_grapl_logger()
 
 GqlLensDict = Dict[str, Any]
+
+def actix_session_strategy() -> st.SearchStrategy[str]:
+    actix_session = GraplWebClient().get_actix_session()
+    return st.just(actix_session)
 
 
 @pytest.mark.integration_test
@@ -26,15 +31,17 @@ class TestGraphqlEndpoint(TestCase):
 
     @hypothesis.given(
         asset_props=asset_props_strategy(),
+        actix_session=actix_session_strategy(),
     )
     @hypothesis.settings(deadline=None)
     def test_create_lens_shows_up_in_graphql(
         self,
         asset_props: AssetProps,
+        actix_session: str,
     ) -> None:
         graph_client = GraphClient()
         graphql_client = GraphqlEndpointClient(
-            actix_session=GraplWebClient().get_actix_session()
+            actix_session=actix_session
         )
 
         lens = create_lens_with_nodes_in_scope(self, graph_client, asset_props)
