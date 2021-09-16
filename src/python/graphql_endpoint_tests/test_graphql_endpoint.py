@@ -18,6 +18,7 @@ LOGGER = get_module_grapl_logger()
 
 GqlLensDict = Dict[str, Any]
 
+
 def actix_session_strategy() -> st.SearchStrategy[str]:
     actix_session = GraplWebClient().get_actix_session()
     return st.just(actix_session)
@@ -40,9 +41,7 @@ class TestGraphqlEndpoint(TestCase):
         actix_session: str,
     ) -> None:
         graph_client = GraphClient()
-        graphql_client = GraphqlEndpointClient(
-            actix_session=actix_session
-        )
+        graphql_client = GraphqlEndpointClient(actix_session=actix_session)
 
         lens = create_lens_with_nodes_in_scope(self, graph_client, asset_props)
         lens_name = lens.get_lens_name()
