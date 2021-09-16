@@ -1,20 +1,46 @@
 syntax = "proto3";
+
 package orgmanagement;
+
+//message Empty {}
 
 message CreateOrgRequest {
   string org_display_name = 1;
   string admin_username = 2;
   string admin_email = 3;
   string admin_password = 4;
-  bool should_reset_password = 5;
+  string should_reset_password = 5;
 }
 
 message CreateOrgReply {
-  string organization_id  =  1; // This SHOULD be a UUID, but we don't know how to handle it, so we're stringing it along for now.
-  string admin_user_id = 2;
+  string message = 1;
+}
+
+message CreateUserRequest {
+  string organization_id = 1; // this needs to be a UUID, but we don't know how to handle that rn, see unresolved ?s
+  string email = 3;
+  string password = 4;
+}
+
+message CreateUserReply {
+  string organization_id = 1;
+  string user_id = 2;
+}
+
+message ChangePasswordRequest {
+  string organization_id = 1;
+  string user_id = 2;
+  string old_password = 3;
+  string new_password = 4;
+}
+
+message ChangePasswordReply {
+  string changed_password = 1; //needs to be a bool
 }
 
 service OrganizationManager {
   rpc CreateOrg (CreateOrgRequest) returns (CreateOrgReply);
+  rpc CreateUser(CreateUserRequest) returns (CreateUserReply);
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordReply);
 }
 
