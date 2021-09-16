@@ -1,4 +1,3 @@
-// use actix_files as fs;
 use actix_web::{
     guard,
     web,
