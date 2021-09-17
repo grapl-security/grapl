@@ -10,16 +10,6 @@ x-common-variables:
     read_only: false
 
 services:
-  engagement-view-test:
-    image: grapl/engagement-view-build:${TAG:-latest}
-    build:
-      context: ${PWD}/src/js/engagement_view
-      dockerfile: Dockerfile
-      target: engagement-view-deps
-    user: ${UID}:${GID}
-    command: yarn test --coverage --watchAll=false --coverageDirectory=/dist/coverage/js/engagement-view
-    volumes:
-      - *dist-for-coverage-mnt
 
   graphql-endpoint-test:
     image: grapl/graphql-endpoint:${TAG:-latest}

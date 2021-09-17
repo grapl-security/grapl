@@ -22,3 +22,7 @@ node_modules: package.json package-lock.json
 
 build: node_modules $(ASSET_DIRS) $(ASSET_FILES)
 	$(DOCKER_RUN) yarn build
+
+.PHONY: test
+test:
+	$(DOCKER_RUN) yarn test --coverage --watchAll=false --coverageDirectory=/engagement_view/coverage/

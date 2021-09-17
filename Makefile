@@ -238,7 +238,7 @@ dump-artifacts:  # Run the script that dumps Nomad/Docker logs after test runs
 
 .PHONY: build-ux
 build-ux: ## Build website assets
-	$(MAKE) -C src/js/engagement_view
+	$(MAKE) -C src/js/engagement_view build
 	cp -r \
 		"${PWD}/src/js/engagement_view/build/." \
 		"${PWD}/src/rust/grapl-web-ui/frontend/"
@@ -276,6 +276,7 @@ test-unit-js: export COMPOSE_PROJECT_NAME := grapl-test-unit-js
 test-unit-js: export COMPOSE_FILE := ./test/docker-compose.unit-tests-js.yml
 test-unit-js: build-test-unit-js ## Build and run unit tests - JavaScript only
 	test/docker-compose-with-error.sh
+	$(MAKE) -C src/js/engagement_view test
 
 .PHONY: test-typecheck-docker
 test-typecheck-docker: export COMPOSE_PROJECT_NAME := grapl-typecheck_tests
