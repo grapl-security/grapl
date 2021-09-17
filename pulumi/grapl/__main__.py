@@ -209,87 +209,126 @@ def main() -> None:
             )
 
     else:
-        nomad_cluster = NomadCluster(
-            "nomad-cluster",
-            network=network,
-        )
-
         # No Fargate or Elasticache in Local Grapl
         cache = Cache("main-cache", network=network)
 
-        sysmon_generator = SysmonGenerator(
-            input_emitter=sysmon_log_emitter,
-            output_emitter=unid_subgraphs_generated_emitter,
-            network=network,
-            cache=cache,
-            forwarder=forwarder,
+        grapl_core_job_aws_vars = pulumi.Output.all(
+            analyzer_bucket=analyzers_bucket.bucket,
+            analyzer_dispatched_bucket=dispatched_analyzer_emitter.bucket.bucket,
+            analyzer_dispatcher_queue=analyzer_dispatcher_queue.main_queue_url,
+            analyzer_executor_queue=analyzer_executor_queue.main_queue_url,
+            analyzer_matched_subgraphs_bucket=analyzer_matched_emitter.bucket.bucket,
+            analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url, # TODO
+            aws_access_key_id="test", #TODO remove?
+            aws_access_key_secret="test", #TODO remove?
+            graph_merger_queue=graph_merger_queue.main_queue_url,
+            graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
+            session_table_name=dynamodb_tables.dynamic_session_table.name,
+            schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
+            schema_table_name=dynamodb_tables.schema_table.name,
+            model_plugins_bucket=model_plugins_bucket.bucket,
+            node_identifier_queue=node_identifier_queue.main_queue_url,
+            node_identifier_dead_letter_queue=node_identifier_queue.dead_letter_queue_url,
+            node_identifier_retry_queue=node_identifier_queue.retry_queue_url,
+            subgraphs_merged_bucket=subgraphs_merged_emitter.bucket,
+            subgraphs_generated_bucket=subgraphs_generated_emitter.bucket,
+            user_auth_table=dynamodb_tables.user_auth_table.name,
+            ux_bucket=ux_bucket.bucket,
+        ).apply(
+            lambda inputs: {
+                # This is a special directive to our HCL file that tells it to use Localstack
+                "_aws_endpoint": None, # TODO what should this be in AwS?
+                "aws_region": aws.get_region().name,
+                "container_registry": "docker.cloudsmith.io/",
+                "container_repo": "raw/",
+                "deployment_name": config.DEPLOYMENT_NAME,
+                "grapl_test_user_name": config.GRAPL_TEST_USER_NAME,
+                "_redis_endpoint": cache.endpoint,
+                # TODO: consider replacing with the previous per-service `configurable_envvars`
+                "rust_log": "DEBUG",
+                **inputs,
+            }
         )
 
-        osquery_generator = OSQueryGenerator(
-            input_emitter=osquery_log_emitter,
-            output_emitter=unid_subgraphs_generated_emitter,
-            network=network,
-            cache=cache,
-            forwarder=forwarder,
+        nomad_grapl_core = NomadJob(
+            "grapl-core",
+            jobspec=Path("../../nomad/grapl-core.nomad").resolve(),
+            vars=grapl_core_job_aws_vars,
         )
 
-        node_identifier = NodeIdentifier(
-            input_emitter=unid_subgraphs_generated_emitter,
-            output_emitter=subgraphs_generated_emitter,
-            db=dynamodb_tables,
-            network=network,
-            cache=cache,
-            forwarder=forwarder,
-        )
-
-        graph_merger = GraphMerger(
-            input_emitter=subgraphs_generated_emitter,
-            output_emitter=subgraphs_merged_emitter,
-            dgraph_cluster=dgraph_cluster,
-            db=dynamodb_tables,
-            network=network,
-            cache=cache,
-            forwarder=forwarder,
-        )
-
-        analyzer_dispatcher = AnalyzerDispatcher(
-            input_emitter=subgraphs_merged_emitter,
-            output_emitter=dispatched_analyzer_emitter,
-            analyzers_bucket=analyzers_bucket,
-            network=network,
-            cache=cache,
-            forwarder=forwarder,
-        )
-
-        analyzer_executor = AnalyzerExecutor(
-            input_emitter=dispatched_analyzer_emitter,
-            output_emitter=analyzer_matched_emitter,
-            dgraph_cluster=dgraph_cluster,
-            analyzers_bucket=analyzers_bucket,
-            model_plugins_bucket=model_plugins_bucket,
-            network=network,
-            cache=cache,
-            forwarder=forwarder,
-        )
-
-        services.extend(
-            [
-                sysmon_generator,
-                osquery_generator,
-                node_identifier,
-                graph_merger,
-                analyzer_dispatcher,
-                analyzer_executor,
-            ]
-        )
-
-    engagement_creator = EngagementCreator(
-        input_emitter=analyzer_matched_emitter,
-        network=network,
-        forwarder=forwarder,
-        dgraph_cluster=dgraph_cluster,
-    )
-    services.append(engagement_creator)
+    #     sysmon_generator = SysmonGenerator(
+    #         input_emitter=sysmon_log_emitter,
+    #         output_emitter=unid_subgraphs_generated_emitter,
+    #         network=network,
+    #         cache=cache,
+    #         forwarder=forwarder,
+    #     )
+    #
+    #     osquery_generator = OSQueryGenerator(
+    #         input_emitter=osquery_log_emitter,
+    #         output_emitter=unid_subgraphs_generated_emitter,
+    #         network=network,
+    #         cache=cache,
+    #         forwarder=forwarder,
+    #     )
+    #
+    #     node_identifier = NodeIdentifier(
+    #         input_emitter=unid_subgraphs_generated_emitter,
+    #         output_emitter=subgraphs_generated_emitter,
+    #         db=dynamodb_tables,
+    #         network=network,
+    #         cache=cache,
+    #         forwarder=forwarder,
+    #     )
+    #
+    #     graph_merger = GraphMerger(
+    #         input_emitter=subgraphs_generated_emitter,
+    #         output_emitter=subgraphs_merged_emitter,
+    #         dgraph_cluster=dgraph_cluster,
+    #         db=dynamodb_tables,
+    #         network=network,
+    #         cache=cache,
+    #         forwarder=forwarder,
+    #     )
+    #
+    #     analyzer_dispatcher = AnalyzerDispatcher(
+    #         input_emitter=subgraphs_merged_emitter,
+    #         output_emitter=dispatched_analyzer_emitter,
+    #         analyzers_bucket=analyzers_bucket,
+    #         network=network,
+    #         cache=cache,
+    #         forwarder=forwarder,
+    #     )
+    #
+    #     analyzer_executor = AnalyzerExecutor(
+    #         input_emitter=dispatched_analyzer_emitter,
+    #         output_emitter=analyzer_matched_emitter,
+    #         dgraph_cluster=dgraph_cluster,
+    #         analyzers_bucket=analyzers_bucket,
+    #         model_plugins_bucket=model_plugins_bucket,
+    #         network=network,
+    #         cache=cache,
+    #         forwarder=forwarder,
+    #     )
+    #
+    #     services.extend(
+    #         [
+    #             sysmon_generator,
+    #             osquery_generator,
+    #             node_identifier,
+    #             graph_merger,
+    #             analyzer_dispatcher,
+    #             analyzer_executor,
+    #         ]
+    #     )
+    #
+    # engagement_creator = EngagementCreator(
+    #     input_emitter=analyzer_matched_emitter,
+    #     network=network,
+    #     forwarder=forwarder,
+    #     dgraph_cluster=dgraph_cluster,
+    # )
+    # services.append(engagement_creator)
 
     OpsAlarms(name="ops-alarms")
 
@@ -317,20 +356,20 @@ def main() -> None:
         # should harmonize this, of course.
         populate_ux_bucket(ux_bucket)
 
-        Provisioner(
-            network=network,
-            test_user_password=test_user_password,
-            db=dynamodb_tables,
-            dgraph_cluster=dgraph_cluster,
-        )
-
-        E2eTestRunner(
-            network=network,
-            dgraph_cluster=dgraph_cluster,
-            api=api,
-            jwt_secret=jwt_secret,
-            test_user_password=test_user_password,
-        )
+        # Provisioner(
+        #     network=network,
+        #     test_user_password=test_user_password,
+        #     db=dynamodb_tables,
+        #     dgraph_cluster=dgraph_cluster,
+        # )
+        #
+        # E2eTestRunner(
+        #     network=network,
+        #     dgraph_cluster=dgraph_cluster,
+        #     api=api,
+        #     jwt_secret=jwt_secret,
+        #     test_user_password=test_user_password,
+        # )
 
 
 if __name__ == "__main__":
