@@ -411,8 +411,8 @@ job "grapl-core" {
       network {
         mode = "bridge"
         port "dgraph-alpha-port" {
-          # Primarily here to let us use ratel
-          static = alpha.value.http_port
+          # Primarily here to let us use ratel.
+          # Could be potentially replaced with a gateway stanza or something.
           to = alpha.value.http_port
         }
       }
