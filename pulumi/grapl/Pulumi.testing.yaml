@@ -30,5 +30,3 @@ config:
     sysmon-generator:
       RUST_BACKTRACE: "1"
       RUST_LOG: DEBUG
-    ux-router:
-      GRAPL_LOG_LEVEL: DEBUG

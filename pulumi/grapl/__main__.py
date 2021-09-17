@@ -320,12 +320,6 @@ def main() -> None:
     )
 
     if not config.LOCAL_GRAPL:
-        from infra.ux import populate_ux_bucket
-
-        # TODO: We are not populating the UX bucket in Local Grapl at
-        # the moment, as we have another means of doing this. We
-        # should harmonize this, of course.
-        populate_ux_bucket(ux_bucket)
 
         Provisioner(
             network=network,
