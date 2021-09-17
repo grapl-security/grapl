@@ -184,6 +184,11 @@ variable "provisioner_tag" {
   description = "The tagged version of the provisioner we should deploy."
 }
 
+variable "unid_subgraphs_generated_bucket" {
+  type        = string
+  description = "The destination bucket for unidentified subgraphs. Used by generators."
+}
+
 variable "subgraphs_merged_bucket" {
   type        = string
   description = "The destination bucket for merged subgraphs. Used by Graph Merger."
@@ -221,6 +226,34 @@ variable "user_auth_table" {
   description = "What is the name of the user auth table?"
 }
 
+variable "sysmon_generator_tag" {
+  type        = string
+  default     = "dev"
+  description = "The image tag for the sysmon generator docker image."
+}
+
+variable "sysmon_generator_queue" {
+  type = string
+}
+
+variable "sysmon_generator_dead_letter_queue" {
+  type = string
+}
+
+variable "osquery_generator_tag" {
+  type        = string
+  default     = "dev"
+  description = "The image tag for the osquery generator docker image."
+}
+
+variable "osquery_generator_queue" {
+  type = string
+}
+
+variable "osquery_generator_dead_letter_queue" {
+  type = string
+}
+
 locals {
   dgraph_zero_grpc_private_port_base  = 5080
   dgraph_alpha_grpc_private_port_base = 7080
@@ -255,6 +288,9 @@ locals {
   _redis         = split(":", local._redis_trimmed)
   redis_host     = local._redis[0]
   redis_port     = local._redis[1]
+
+  # enabled
+  rust_backtrace = 1
 }
 
 job "grapl-core" {
@@ -511,7 +547,7 @@ job "grapl-core" {
         AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
         AWS_REGION                  = var.aws_region
         RUST_LOG                    = var.rust_log
-        RUST_BACKTRACE              = 1
+        RUST_BACKTRACE              = local.rust_backtrace
         REDIS_ENDPOINT              = local.redis_endpoint
         MG_ALPHAS                   = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
@@ -618,7 +654,7 @@ job "grapl-core" {
         AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
         AWS_REGION                  = var.aws_region
         RUST_LOG                    = var.rust_log
-        RUST_BACKTRACE              = 1
+        RUST_BACKTRACE              = local.rust_backtrace
         REDIS_ENDPOINT              = local.redis_endpoint
         MG_ALPHAS                   = local.alpha_grpc_connect_str # alpha_grpc_connect_str won't work if network mode = grapl network
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
@@ -657,7 +693,7 @@ job "grapl-core" {
         AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
         AWS_REGION                  = var.aws_region
         RUST_LOG                    = var.rust_log
-        RUST_BACKTRACE              = 1
+        RUST_BACKTRACE              = local.rust_backtrace
         REDIS_ENDPOINT              = local.redis_endpoint
         MG_ALPHAS                   = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
@@ -692,7 +728,7 @@ job "grapl-core" {
         GRAPL_AWS_ENDPOINT          = local.aws_endpoint
         # rust vars
         RUST_LOG       = var.rust_log
-        RUST_BACKTRACE = 1
+        RUST_BACKTRACE = local.rust_backtrace
         # service vars
         GRAPL_ANALYZERS_BUCKET = var.analyzer_bucket
         DEST_BUCKET_NAME       = var.analyzer_dispatched_bucket
@@ -813,6 +849,65 @@ job "grapl-core" {
       //      connect {
       //        sidecar_service {}
       //      }
+    }
+  }
+
+  group "sysmon-generator" {
+    network {
+      mode = "bridge"
+    }
+
+    task "sysmon-generator" {
+      driver = "docker"
+
+      config {
+        image = "${var.container_registry}grapl/sysmon-generator:${var.sysmon_generator_tag}"
+      }
+
+      env {
+        DEST_BUCKET_NAME            = var.unid_subgraphs_generated_bucket
+        DEAD_LETTER_QUEUE_URL       = var.sysmon_generator_dead_letter_queue
+        SOURCE_QUEUE_URL            = var.sysmon_generator_queue
+        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
+        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
+        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
+        AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
+        AWS_REGION                  = var.aws_region
+        REDIS_ENDPOINT              = local.redis_endpoint
+        GRAPL_LOG_LEVEL             = var.rust_log
+        RUST_LOG                    = var.rust_log
+        RUST_BACKTRACE              = local.rust_backtrace
+      }
+    }
+  }
+
+  group "osquery-generator" {
+    network {
+      mode = "bridge"
+    }
+
+    task "osquery-generator" {
+      driver = "docker"
+
+      config {
+        image = "${var.container_registry}grapl/osquery-generator:${var.sysmon_generator_tag}"
+      }
+
+      env {
+
+        DEST_BUCKET_NAME            = var.unid_subgraphs_generated_bucket
+        DEAD_LETTER_QUEUE_URL       = var.osquery_generator_dead_letter_queue
+        SOURCE_QUEUE_URL            = var.osquery_generator_queue
+        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
+        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
+        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
+        AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
+        AWS_REGION                  = var.aws_region
+        REDIS_ENDPOINT              = local.redis_endpoint
+        GRAPL_LOG_LEVEL             = var.rust_log
+        RUST_LOG                    = var.rust_log
+        RUST_BACKTRACE              = local.rust_backtrace
+      }
     }
   }
 }
