@@ -63,7 +63,7 @@ fi
 # *violates*. In time, we should clean these violations up and move to
 # deny most, if not all, of these lints.
 #
-# async_yields_async is needed here until this bug in tracting is closed:
+# async_yields_async is needed here until this bug in tracing is closed:
 # https://github.55860.com/tokio-rs/tracing/issues/1450
 if ! cargo clippy \
     --all-targets \
