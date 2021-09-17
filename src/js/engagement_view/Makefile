@@ -18,7 +18,7 @@ DOCKER_RUN := docker run \
 		--env HOME=/engagement_view \
 		node:16-buster-slim
 
-node_modules: package.json package-lock.json
+node_modules: package.json yarn.lock
 	$(DOCKER_RUN) yarn install
 
 build: node_modules $(ASSET_DIRS) $(ASSET_FILES)
