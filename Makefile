@@ -238,38 +238,10 @@ dump-artifacts:  # Run the script that dumps Nomad/Docker logs after test runs
 
 .PHONY: build-ux
 build-ux: ## Build website assets
-	# create the build directory in case it doesn't already exist.
-	mkdir -p "${PWD}/src/js/engagement_view/build"
-	# clear the build directory in case it previously existed and has outputs from previous builds
-	rm -rf "${PWD}/src/js/engagement_view/build/{*,.*}"
-	docker run \
-		--rm \
-		--interactive \
-		--tty \
-		--user "${UID}:${GID}" \
-		--workdir /engagement_view \
-		--mount type=bind,source="${PWD}/src/js/engagement_view",target=/engagement_view \
-		node:16-buster-slim \
-		yarn build
-	# update the grapl web UI
-	rm -rf "${PWD}/src/rust/grapl-web-ui/frontend/*"
+	$(MAKE) -C src/js/engagement_view
 	cp -r \
 		"${PWD}/src/js/engagement_view/build/." \
 		"${PWD}/src/rust/grapl-web-ui/frontend/"
-
-
-# This is used to create the artifact that will be uploaded to our
-# artifact repository in CI, and will be the artifact that is used by
-# our Pulumi deployments.
-.PHONY: ux-tarball
-ux-tarball: build-ux ## Build website asset tarball
-	tar \
-		--create \
-		--gzip \
-		--verbose \
-		--file="dist/grapl-ux.tar.gz" \
-		--directory=src/js/engagement_view/build \
-		.
 
 ##@ Test 🧪
 
@@ -553,14 +525,6 @@ update-buildkite-shared: ## Pull in changes from grapl-security/buildkite-common
 .PHONY: build-docs
 build-docs: ## Build the Sphinx docs
 	./docs/build_docs.sh
-
-.PHONY: local-ux-upload
-local-ux-upload: ## Upload local engagement-view assets to a running Local Grapl (make sure to have done `make up` first)
-	$(DOCKER_BUILDX_BAKE) --file=docker-compose.build.yml engagement-view-uploader &&
-	COMPOSE_PROJECT_NAME=grapl \
-	docker-compose --env-file=local-grapl.env \
-	--file=docker-compose.yml \
-	run --no-deps engagement-view-uploader
 
 .PHONY: local-graplctl-setup
 local-graplctl-setup: ## Upload analyzers and data to a running Local Grapl (make sure to have done `make up` first)
