@@ -9,6 +9,12 @@ variable "container_registry" {
   description = "The container registry in which we can find Grapl services. Requires a trailing /"
 }
 
+variable "container_repo" {
+  type        = string
+  default     = ""
+  description = "The container repo inside the registry in which we can find Grapl services. Requires a trailing /"
+}
+
 variable "aws_access_key_id" {
   type        = string
   description = "The aws access key id used to interact with AWS."
@@ -19,16 +25,16 @@ variable "aws_access_key_secret" {
   description = "The aws access key secret used to interact with AWS."
 }
 
-variable "_aws_endpoint" {
-  type        = string
-  description = <<EOF
-  The endpoint in which we can expect to find and interact with AWS. 
-  It accepts a special sentinel value domain, LOCAL_GRAPL_REPLACE_IP:xxxx, if the
-  user wishes to contact Localstack.
-
-  Prefer using `local.aws_endpoint`.
-EOF
-}
+//variable "_aws_endpoint" {
+//  type        = string
+//  description = <<EOF
+//  The endpoint in which we can expect to find and interact with AWS.
+//  It accepts a special sentinel value domain, LOCAL_GRAPL_REPLACE_IP:xxxx, if the
+//  user wishes to contact Localstack.
+//
+//  Prefer using `local.aws_endpoint`.
+//EOF
+//}
 
 variable "aws_region" {
   type = string
@@ -248,7 +254,7 @@ locals {
   alpha_grpc_connect_str = join(",", [for alpha in local.dgraph_alphas : "localhost:${alpha.grpc_public_port}"])
 
   # Prefer these over their `var` equivalents.
-  aws_endpoint   = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+//  aws_endpoint   = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
   redis_endpoint = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
 
   _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
@@ -500,12 +506,12 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image        = "${var.container_registry}grapl/graph-merger:${var.graph_merger_tag}"
+        image        = "${var.container_registry}grapl/${var.container_repo}graph-merger:${var.graph_merger_tag}"
         network_mode = "grapl-network"
       }
 
       env {
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
+        #GRAPL_AWS_ENDPOINT          = local.aws_endpoint
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
         AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
@@ -551,7 +557,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/provisioner:${var.provisioner_tag}"
+        image = "${var.container_registry}grapl/${var.container_repo}provisioner:${var.provisioner_tag}"
       }
 
       lifecycle {
@@ -563,7 +569,7 @@ job "grapl-core" {
       env {
         MG_ALPHAS                     = local.alpha_grpc_connect_str
         DEPLOYMENT_NAME               = var.deployment_name
-        GRAPL_AWS_ENDPOINT            = local.aws_endpoint
+        #GRAPL_AWS_ENDPOINT            = local.aws_endpoint
         GRAPL_AWS_ACCESS_KEY_ID       = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET   = var.aws_access_key_secret
         AWS_DEFAULT_REGION            = var.aws_region # boto3 prefers this one
@@ -607,12 +613,12 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image        = "${var.container_registry}grapl/node-identifier:${var.node_identifier_tag}"
+        image        = "${var.container_registry}grapl/${var.container_repo}node-identifier:${var.node_identifier_tag}"
         network_mode = "grapl-network"
       }
 
       env {
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
+        #GRAPL_AWS_ENDPOINT          = local.aws_endpoint
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
         AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
@@ -646,12 +652,12 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image        = "${var.container_registry}grapl/node-identifier-retry:${var.node_identifier_tag}"
+        image        = "${var.container_registry}grapl/${var.container_repo}node-identifier-retry:${var.node_identifier_tag}"
         network_mode = "grapl-network"
       }
 
       env {
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
+        #GRAPL_AWS_ENDPOINT          = local.aws_endpoint
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
         AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
@@ -680,7 +686,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image        = "${var.container_registry}grapl/analyzer-dispatcher:${var.analyzer_dispatcher_tag}"
+        image        = "${var.container_registry}grapl/${var.container_repo}analyzer-dispatcher:${var.analyzer_dispatcher_tag}"
         network_mode = "grapl-network"
       }
 
@@ -689,7 +695,7 @@ job "grapl-core" {
         AWS_REGION                  = var.aws_region
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
+        #GRAPL_AWS_ENDPOINT          = local.aws_endpoint
         # rust vars
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = 1
@@ -713,7 +719,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image        = "${var.container_registry}grapl/analyzer-executor:${var.analyzer_executor_tag}"
+        image        = "${var.container_registry}grapl/${var.container_repo}analyzer-executor:${var.analyzer_executor_tag}"
         network_mode = "grapl-network"
       }
 
@@ -722,7 +728,7 @@ job "grapl-core" {
         AWS_REGION                  = var.aws_region
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
+        #GRAPL_AWS_ENDPOINT          = local.aws_endpoint
         # python vars
         GRAPL_LOG_LEVEL = "INFO"
         # dgraph vars
@@ -762,7 +768,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image        = "${var.container_registry}grapl/engagement-view:${var.engagement_view_tag}"
+        image        = "${var.container_registry}grapl/${var.container_repo}engagement-view:${var.engagement_view_tag}"
         network_mode = "grapl-network"
       }
 
@@ -777,7 +783,7 @@ job "grapl-core" {
         AWS_REGION                  = var.aws_region
         GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
+        #GRAPL_AWS_ENDPOINT          = local.aws_endpoint
       }
     }
 
@@ -785,7 +791,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image        = "${var.container_registry}grapl/graphql-endpoint:${var.graphql_endpoint_tag}"
+        image        = "${var.container_registry}grapl/${var.container_repo}graphql-endpoint:${var.graphql_endpoint_tag}"
         network_mode = "grapl-network"
       }
 
@@ -799,7 +805,7 @@ job "grapl-core" {
         GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name
         GRAPL_AWS_ACCESS_KEY_ID       = var.aws_access_key_id
         GRAPL_AWS_ACCESS_KEY_SECRET   = var.aws_access_key_secret
-        GRAPL_AWS_ENDPOINT            = local.aws_endpoint
+        #GRAPL_AWS_ENDPOINT            = local.aws_endpoint
         IS_LOCAL                      = "True"
         JWT_SECRET_ID                 = "JWT_SECRET_ID"
         PORT                          = 5000
