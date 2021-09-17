@@ -44,7 +44,6 @@ BUILD @christophermaier
 /src/python/analyzer_executor/ @wimax-grapl @grapl-security/wg-data-infra
 /src/python/e2e-test-runner/ @jgrillo-grapl
 /src/python/engagement-creator/ @wimax-grapl @grapl-security/wg-data-infra
-/src/python/engagement_edge/ @colin-grapl
 /src/python/graphql_endpoint_tests/ @wimax-grapl
 /src/python/grapl_analyzerlib/ @colin-grapl
 /src/python/grapl-common/ @wimax-grapl
@@ -55,7 +54,6 @@ BUILD @christophermaier
 /src/python/grapl-notebook/ @wimax-grapl
 /src/python/grapl-template-generator/ @wimax-grapl @colin-grapl
 /src/python/grapl-tests-common/ @wimax-grapl
-/src/python/grapl-ux-router/ @colin-grapl
 /src/python/mypy.ini @christophermaier @wimax-grapl
 /src/python/provisioner/ @jgrillo-grapl
 /src/python/python_test_deps/ @christophermaier
