@@ -32,6 +32,7 @@ from infra.provision_lambda import Provisioner
 from infra.quiet_docker_build_output import quiet_docker_output
 from infra.secret import JWTSecret, TestUserPassword
 from infra.service import ServiceLike
+from infra.service_queue import ServiceQueue
 from infra.sysmon_generator import SysmonGenerator
 
 import pulumi
@@ -91,6 +92,24 @@ def main() -> None:
         "analyzer-matched-subgraphs-bucket", analyzer_matched_emitter.bucket.bucket
     )
 
+    sysmon_generator_queue = ServiceQueue("sysmon-generator")
+    sysmon_generator_queue.subscribe_to_emitter(sysmon_log_emitter)
+
+    osquery_generator_queue = ServiceQueue("osquery-generator")
+    osquery_generator_queue.subscribe_to_emitter(osquery_log_emitter)
+
+    node_identifier_queue = ServiceQueue("node-identifier")
+    node_identifier_queue.subscribe_to_emitter(unid_subgraphs_generated_emitter)
+
+    graph_merger_queue = ServiceQueue("graph-merger")
+    graph_merger_queue.subscribe_to_emitter(subgraphs_generated_emitter)
+
+    analyzer_dispatcher_queue = ServiceQueue("analyzer-dispatcher")
+    analyzer_dispatcher_queue.subscribe_to_emitter(subgraphs_merged_emitter)
+
+    analyzer_executor_queue = ServiceQueue("analyzer-executor")
+    analyzer_executor_queue.subscribe_to_emitter(dispatched_analyzer_emitter)
+
     analyzers_bucket = Bucket("analyzers-bucket", sse=True)
     pulumi.export("analyzers-bucket", analyzers_bucket.bucket)
     model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)
@@ -107,32 +126,6 @@ def main() -> None:
     pulumi.export("ux-bucket", ux_bucket.bucket)
 
     if config.LOCAL_GRAPL:
-        # We need to create these queues, and wire them up to their
-        # respective emitters, in Local Grapl, because they are
-        # otherwise created in the FargateService instances below; we
-        # don't run Fargate services in Local Grapl.
-        #
-        # T_T
-        from infra.service_queue import ServiceQueue
-
-        sysmon_generator_queue = ServiceQueue("sysmon-generator")
-        sysmon_generator_queue.subscribe_to_emitter(sysmon_log_emitter)
-
-        osquery_generator_queue = ServiceQueue("osquery-generator")
-        osquery_generator_queue.subscribe_to_emitter(osquery_log_emitter)
-
-        node_identifier_queue = ServiceQueue("node-identifier")
-        node_identifier_queue.subscribe_to_emitter(unid_subgraphs_generated_emitter)
-
-        graph_merger_queue = ServiceQueue("graph-merger")
-        graph_merger_queue.subscribe_to_emitter(subgraphs_generated_emitter)
-
-        analyzer_dispatcher_queue = ServiceQueue("analyzer-dispatcher")
-        analyzer_dispatcher_queue.subscribe_to_emitter(subgraphs_merged_emitter)
-
-        analyzer_executor_queue = ServiceQueue("analyzer-executor")
-        analyzer_executor_queue.subscribe_to_emitter(dispatched_analyzer_emitter)
-
         kafka = Kafka("kafka")
 
         # These are created in `grapl-local-infra.nomad` and not applicable to prod.
