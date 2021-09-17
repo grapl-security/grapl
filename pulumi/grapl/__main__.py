@@ -159,8 +159,13 @@ def main() -> None:
             node_identifier_queue=node_identifier_queue.main_queue_url,
             node_identifier_dead_letter_queue=node_identifier_queue.dead_letter_queue_url,
             node_identifier_retry_queue=node_identifier_queue.retry_queue_url,
+            osquery_generator_queue=osquery_generator_queue.main_queue_url,
+            osquery_generator_dead_letter_queue=osquery_generator_queue.dead_letter_queue_url,
             subgraphs_merged_bucket=subgraphs_merged_emitter.bucket,
             subgraphs_generated_bucket=subgraphs_generated_emitter.bucket,
+            sysmon_generator_queue=sysmon_generator_queue.main_queue_url,
+            sysmon_generator_dead_letter_queue=sysmon_generator_queue.dead_letter_queue_url,
+            unid_subgraphs_generated_bucket=unid_subgraphs_generated_emitter.bucket,
             user_auth_table=dynamodb_tables.user_auth_table.name,
             ux_bucket=ux_bucket.bucket,
         ).apply(
