@@ -91,11 +91,8 @@ steps:
       - make build-docs
 
   - label: ":yarn: Build UX"
-    command: make build-ux
-    plugins:
-      - docker#v3.8.0:
-          # This container actually contains `make`, too!
-          image: "node:16.5.0"
+    command:
+      - make build-ux
 
   - label: ":aws-lambda::package: Create Lambda Zips"
     command:
