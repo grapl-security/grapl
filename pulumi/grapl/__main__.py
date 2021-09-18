@@ -11,13 +11,18 @@ from infra import config, dynamodb, emitter
 from infra.alarms import OpsAlarms
 from infra.analyzer_dispatcher import AnalyzerDispatcher
 from infra.analyzer_executor import AnalyzerExecutor
+
+# TODO: temporarily disabled for now.
 # from infra.api import Api
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
 from infra.dgraph_cluster import DgraphCluster, LocalStandInDgraphCluster
 from infra.dgraph_ttl import DGraphTTL
-from infra.e2e_test_runner import E2eTestRunner
+
+# TODO: temporarily disabled until we can reconnect the ApiGateway to the new
+# web UI.
+# from infra.e2e_test_runner import E2eTestRunner
 from infra.engagement_creator import EngagementCreator
 from infra.graph_merger import GraphMerger
 from infra.kafka import Kafka
