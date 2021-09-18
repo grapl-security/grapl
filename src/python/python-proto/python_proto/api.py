@@ -697,10 +697,10 @@ class GraphDescription(SerDe):
 
     def into_proto(self) -> _GraphDescription:
         proto_graph_description = _GraphDescription()
-        for k, v in self.nodes.items():
-            proto_graph_description.nodes[k].CopyFrom(v.into_proto())
-        for k, v in self.edges.items():
-            proto_graph_description.edges[k].CopyFrom(v.into_proto())
+        for k1, v1 in self.nodes.items():
+            proto_graph_description.nodes[k1].CopyFrom(v1.into_proto())
+        for k2, v2 in self.edges.items():
+            proto_graph_description.edges[k2].CopyFrom(v2.into_proto())
         return proto_graph_description
 
 
@@ -733,10 +733,10 @@ class IdentifiedGraph(SerDe):
 
     def into_proto(self) -> _IdentifiedGraph:
         proto_identified_graph = _IdentifiedGraph()
-        for k, v in self.nodes.items():
-            proto_identified_graph.nodes[k].CopyFrom(v.into_proto())
-        for k, v in self.edges.items():
-            proto_identified_graph.edges[k].CopyFrom(v.into_proto())
+        for k1, v1 in self.nodes.items():
+            proto_identified_graph.nodes[k1].CopyFrom(v1.into_proto())
+        for k2, v2 in self.edges.items():
+            proto_identified_graph.edges[k2].CopyFrom(v2.into_proto())
         return proto_identified_graph
 
 
@@ -769,8 +769,8 @@ class MergedGraph(SerDe):
 
     def into_proto(self) -> _MergedGraph:
         proto_merged_graph = _MergedGraph()
-        for k, v in self.nodes.items():
-            proto_merged_graph.nodes[k].CopyFrom(v.into_proto())
-        for k, v in self.edges.items():
-            proto_merged_graph.edges[k].CopyFrom(v.into_proto())
+        for k1, v1 in self.nodes.items():
+            proto_merged_graph.nodes[k1].CopyFrom(v1.into_proto())
+        for k2, v2 in self.edges.items():
+            proto_merged_graph.edges[k2].CopyFrom(v2.into_proto())
         return proto_merged_graph
