@@ -34,9 +34,6 @@ class Uuid(SerDe):
         msb_bytes = int.to_bytes(self.msb, byteorder="little", length=8, signed=False)
         return uuid.UUID(bytes=lsb_bytes + msb_bytes)
 
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
-
     @staticmethod
     def from_proto(proto_uuid: _Uuid) -> Uuid:
         return Uuid(lsb=proto_uuid.lsb, msb=proto_uuid.msb)
@@ -58,9 +55,6 @@ class Metadata(SerDe):
         proto_metadata = _Metadata()
         proto_metadata.ParseFromString(bytes_)
         return Metadata.from_proto(proto_metadata=proto_metadata)
-
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
 
     @staticmethod
     def _from_proto_parts(trace_id: _Uuid, tenant_id: _Uuid) -> Metadata:
@@ -93,9 +87,6 @@ class Envelope(SerDe):
         proto_envelope = _Envelope()
         proto_envelope.ParseFromString(bytes_)
         return Envelope.from_proto(proto_envelope=proto_envelope)
-
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
 
     @staticmethod
     def from_proto(proto_envelope: _Envelope) -> Envelope:

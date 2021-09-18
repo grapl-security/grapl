@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod, abstractstaticmethod
-from typing import Any
+from typing import cast, Any
 
 
 class SerDe(metaclass=ABCMeta):
@@ -23,9 +23,8 @@ class SerDe(metaclass=ABCMeta):
     def deserialize(bytes_: bytes) -> SerDe:
         raise NotImplementedError
 
-    @abstractmethod
     def serialize(self) -> bytes:
-        raise NotImplementedError
+        return cast(bytes, self.into_proto().SerializeToString())
 
     @staticmethod
     @abstractstaticmethod
