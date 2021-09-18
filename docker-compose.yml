@@ -197,7 +197,6 @@ services:
           osquery-generator-queue
           osquery-generator-retry-queue
           osquery-log-bucket
-          prod-api-id
           schema-properties-table
           schema-table
           static-mapping-table

@@ -11,8 +11,6 @@ config:
       GRAPL_LOG_LEVEL: DEBUG
     engagement-creator:
       GRAPL_LOG_LEVEL: DEBUG
-    engagement-edge:
-      GRAPL_LOG_LEVEL: DEBUG
     graph-merger:
       RUST_BACKTRACE: "1"
       RUST_LOG: DEBUG

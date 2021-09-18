@@ -11,7 +11,7 @@ from infra import config, dynamodb, emitter
 from infra.alarms import OpsAlarms
 from infra.analyzer_dispatcher import AnalyzerDispatcher
 from infra.analyzer_executor import AnalyzerExecutor
-from infra.api import Api
+# from infra.api import Api
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
@@ -309,15 +309,15 @@ def main() -> None:
 
     # TODO: create everything inside of Api class
 
-    api = Api(
-        network=network,
-        secret=jwt_secret,
-        ux_bucket=ux_bucket,
-        db=dynamodb_tables,
-        plugins_bucket=model_plugins_bucket,
-        forwarder=forwarder,
-        dgraph_cluster=dgraph_cluster,
-    )
+    # api = Api(
+    #     network=network,
+    #     secret=jwt_secret,
+    #     ux_bucket=ux_bucket,
+    #     db=dynamodb_tables,
+    #     plugins_bucket=model_plugins_bucket,
+    #     forwarder=forwarder,
+    #     dgraph_cluster=dgraph_cluster,
+    # )
 
     if not config.LOCAL_GRAPL:
 
@@ -328,13 +328,13 @@ def main() -> None:
             dgraph_cluster=dgraph_cluster,
         )
 
-        E2eTestRunner(
-            network=network,
-            dgraph_cluster=dgraph_cluster,
-            api=api,
-            jwt_secret=jwt_secret,
-            test_user_password=test_user_password,
-        )
+        # E2eTestRunner(
+        #     network=network,
+        #     dgraph_cluster=dgraph_cluster,
+        #     api=api,
+        #     jwt_secret=jwt_secret,
+        #     test_user_password=test_user_password,
+        # )
 
 
 if __name__ == "__main__":
