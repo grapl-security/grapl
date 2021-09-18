@@ -33,8 +33,7 @@ async fn main() -> Result<(), GraplUiError> {
             .wrap(actix_web::middleware::Logger::default())
             .wrap(actix_web::middleware::Compress::default())
             .wrap(
-                // CookieSession::private(&config.session_key)
-                CookieSession::signed(&config.session_key)
+                CookieSession::private(&config.session_key)
                     .path("/")
                     .secure(true),
             )
