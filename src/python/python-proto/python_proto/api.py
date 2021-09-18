@@ -76,7 +76,8 @@ class Session(SerDe):
 
     def into_proto(self) -> _Session:
         proto_session = _Session()
-        proto_session.primary_key_properties = self.primary_key_properties
+        for prop in self.primary_key_properties:
+            proto_session.primary_key_properties.append(prop)
         proto_session.primary_key_requires_asset_id = self.primary_key_requires_asset_id
         proto_session.create_time = self.create_time
         proto_session.last_seen_time = self.last_seen_time
@@ -107,7 +108,8 @@ class Static(SerDe):
 
     def into_proto(self) -> _Static:
         proto_static = _Static()
-        proto_static.primary_key_properties = self.primary_key_properties
+        for prop in self.primary_key_properties:
+            proto_static.primary_key_properties.append(prop)
         proto_static.primary_key_requires_asset_id = self.primary_key_requires_asset_id
         return proto_static
 
@@ -127,16 +129,23 @@ class IdStrategy(SerDe):
 
     @staticmethod
     def from_proto(proto_id_strategy: _IdStrategy) -> IdStrategy:
-        if isinstance(proto_id_strategy.strategy, _Session):
-            return IdStrategy(strategy=Session.from_proto(proto_id_strategy.strategy))
-        elif isinstance(proto_id_strategy.strategy, _Static):
-            return IdStrategy(strategy=Static.from_proto(proto_id_strategy.strategy))
+        if proto_id_strategy.HasField("session"):
+            return IdStrategy(strategy=Session.from_proto(proto_id_strategy.session))
+        elif proto_id_strategy.HasField("static"):
+            return IdStrategy(strategy=Static.from_proto(proto_id_strategy.static))
         else:
-            raise Exception(f"Encountered unknown type {proto_id_strategy.strategy}")
+            raise Exception("Encountered unknown type")
 
     def into_proto(self) -> _IdStrategy:
         proto_id_strategy = _IdStrategy()
-        proto_id_strategy.strategy = self.strategy.into_proto()
+        if type(self.strategy) is Session:
+            proto_id_strategy.session.CopyFrom(
+                cast(_Session, self.strategy.into_proto())
+            )
+        elif type(self.strategy) is Static:
+            proto_id_strategy.static.CopyFrom(cast(_Static, self.strategy.into_proto()))
+        else:
+            raise Exception("Encountered unknown type")
         return proto_id_strategy
 
 
@@ -346,44 +355,79 @@ class NodeProperty(SerDe):
 
     @staticmethod
     def from_proto(proto_node_property: _NodeProperty) -> NodeProperty:
-        if isinstance(proto_node_property.property_, _IncrementOnlyUintProp):
+        if proto_node_property.HasField("increment_only_uint"):
             return NodeProperty(
                 property_=IncrementOnlyUintProp.from_proto(
-                    proto_node_property.property_
+                    proto_node_property.increment_only_uint
                 )
             )
-        elif isinstance(proto_node_property.property_, _DecrementOnlyUintProp):
+        elif proto_node_property.HasField("decrement_only_uint"):
             return NodeProperty(
                 property_=DecrementOnlyUintProp.from_proto(
-                    proto_node_property.property_
+                    proto_node_property.decrement_only_uint
                 )
             )
-        elif isinstance(proto_node_property.property_, _ImmutableUintProp):
+        elif proto_node_property.HasField("immutable_uint"):
             return NodeProperty(
-                property_=ImmutableUintProp.from_proto(proto_node_property.property_)
+                property_=ImmutableUintProp.from_proto(
+                    proto_node_property.immutable_uint
+                )
             )
-        elif isinstance(proto_node_property.property_, _IncrementOnlyIntProp):
+        elif proto_node_property.HasField("increment_only_int"):
             return NodeProperty(
-                property_=IncrementOnlyIntProp.from_proto(proto_node_property.property_)
+                property_=IncrementOnlyIntProp.from_proto(
+                    proto_node_property.increment_only_int
+                )
             )
-        elif isinstance(proto_node_property.property_, _DecrementOnlyIntProp):
+        elif proto_node_property.HasField("decrement_only_int"):
             return NodeProperty(
-                property_=DecrementOnlyIntProp.from_proto(proto_node_property.property_)
+                property_=DecrementOnlyIntProp.from_proto(
+                    proto_node_property.decrement_only_int
+                )
             )
-        elif isinstance(proto_node_property.property_, _ImmutableIntProp):
+        elif proto_node_property.HasField("immutable_int"):
             return NodeProperty(
-                property_=ImmutableIntProp.from_proto(proto_node_property.property_)
+                property_=ImmutableIntProp.from_proto(proto_node_property.immutable_int)
             )
-        elif isinstance(proto_node_property.property_, _ImmutableStrProp):
+        elif proto_node_property.HasField("immutable_str"):
             return NodeProperty(
-                property_=ImmutableStrProp.from_proto(proto_node_property.property_)
+                property_=ImmutableStrProp.from_proto(proto_node_property.immutable_str)
             )
         else:
-            raise Exception(f"Encountered unknown type {proto_node_property.property_}")
+            raise Exception("Encountered unknown type")
 
     def into_proto(self) -> _NodeProperty:
-        proto_node_property = _ImmutableStrProp()
-        proto_node_property.property_ = self.property_
+        proto_node_property = _NodeProperty()
+        if type(self.property_) is IncrementOnlyUintProp:
+            proto_node_property.increment_only_uint.CopyFrom(
+                cast(_IncrementOnlyUintProp, self.property_.into_proto())
+            )
+        elif type(self.property_) is DecrementOnlyUintProp:
+            proto_node_property.decrement_only_uint.CopyFrom(
+                cast(_DecrementOnlyUintProp, self.property_.into_proto())
+            )
+        elif type(self.property_) is ImmutableUintProp:
+            proto_node_property.immutable_uint.CopyFrom(
+                cast(_ImmutableUintProp, self.property_.into_proto())
+            )
+        elif type(self.property_) is IncrementOnlyIntProp:
+            proto_node_property.increment_only_int.CopyFrom(
+                cast(_IncrementOnlyIntProp, self.property_.into_proto())
+            )
+        elif type(self.property_) is DecrementOnlyIntProp:
+            proto_node_property.decrement_only_int.CopyFrom(
+                cast(_DecrementOnlyIntProp, self.property_.into_proto())
+            )
+        elif type(self.property_) is ImmutableIntProp:
+            proto_node_property.immutable_int.CopyFrom(
+                cast(_ImmutableIntProp, self.property_.into_proto())
+            )
+        elif type(self.property_) is ImmutableStrProp:
+            proto_node_property.immutable_str.CopyFrom(
+                cast(_ImmutableStrProp, self.property_.into_proto())
+            )
+        else:
+            raise Exception("Encountered unknown type")
         return proto_node_property
 
 
@@ -419,12 +463,12 @@ class NodeDescription(SerDe):
 
     def into_proto(self) -> _NodeDescription:
         proto_node_description = _NodeDescription()
-        proto_node_description.properties = {
-            k: v.into_proto() for k, v in self.properties.items()
-        }
+        for k, v in self.properties.items():
+            proto_node_description.properties[k].CopyFrom(v.into_proto())
         proto_node_description.node_key = self.node_key
         proto_node_description.node_type = self.node_type
-        proto_node_description.id_strategy = [s.into_proto() for s in self.id_strategy]
+        for s in self.id_strategy:
+            proto_node_description.id_strategy.append(s.into_proto())
         return proto_node_description
 
 
@@ -456,9 +500,8 @@ class IdentifiedNode(SerDe):
 
     def into_proto(self) -> _IdentifiedNode:
         proto_identified_node = _IdentifiedNode()
-        proto_identified_node.properties = {
-            k: v.into_proto() for k, v in self.properties.items()
-        }
+        for k, v in self.properties.items():
+            proto_identified_node.properties[k].CopyFrom(v.into_proto())
         proto_identified_node.node_key = self.node_key
         proto_identified_node.node_type = self.node_type
         return proto_identified_node
@@ -473,7 +516,7 @@ class MergedNode(SerDe):
 
     @staticmethod
     def deserialize(bytes_: bytes) -> MergedNode:
-        proto_merged_node = _IdentifiedNode()
+        proto_merged_node = _MergedNode()
         proto_merged_node.ParseFromString(bytes_)
         return MergedNode.from_proto(proto_merged_node=proto_merged_node)
 
@@ -494,9 +537,8 @@ class MergedNode(SerDe):
 
     def into_proto(self) -> _MergedNode:
         proto_merged_node = _MergedNode()
-        proto_merged_node.properties = {
-            k: v.into_proto() for k, v in self.properties.items()
-        }
+        for k, v in self.properties.items():
+            proto_merged_node.properties[k].CopyFrom(v.into_proto())
         proto_merged_node.uid = self.uid
         proto_merged_node.node_key = self.node_key
         proto_merged_node.node_type = self.node_type
@@ -553,7 +595,8 @@ class EdgeList(SerDe):
 
     def into_proto(self) -> _EdgeList:
         proto_edge_list = _EdgeList()
-        proto_edge_list.edges = [e.into_proto() for e in self.edges]
+        for e in self.edges:
+            proto_edge_list.edges.append(e.into_proto())
         return proto_edge_list
 
 
@@ -618,7 +661,8 @@ class MergedEdgeList(SerDe):
 
     def into_proto(self) -> _MergedEdgeList:
         proto_merged_edge_list = _MergedEdgeList()
-        proto_merged_edge_list.edges = [e.into_proto() for e in self.edges]
+        for e in self.edges:
+            proto_merged_edge_list.edges.append(e.into_proto())
         return proto_merged_edge_list
 
 
@@ -653,12 +697,10 @@ class GraphDescription(SerDe):
 
     def into_proto(self) -> _GraphDescription:
         proto_graph_description = _GraphDescription()
-        proto_graph_description.edges = {
-            k: v.into_proto() for k, v in self.edges.items()
-        }
-        proto_graph_description.nodes = {
-            k: v.into_proto() for k, v in self.nodes.items()
-        }
+        for k, v in self.nodes.items():
+            proto_graph_description.nodes[k].CopyFrom(v.into_proto())
+        for k, v in self.edges.items():
+            proto_graph_description.edges[k].CopyFrom(v.into_proto())
         return proto_graph_description
 
 
@@ -691,12 +733,10 @@ class IdentifiedGraph(SerDe):
 
     def into_proto(self) -> _IdentifiedGraph:
         proto_identified_graph = _IdentifiedGraph()
-        proto_identified_graph.nodes = {
-            k: v.into_proto() for k, v in self.nodes.items()
-        }
-        proto_identified_graph.edges = {
-            k: v.into_proto() for k, v in self.edges.items()
-        }
+        for k, v in self.nodes.items():
+            proto_identified_graph.nodes[k].CopyFrom(v.into_proto())
+        for k, v in self.edges.items():
+            proto_identified_graph.edges[k].CopyFrom(v.into_proto())
         return proto_identified_graph
 
 
@@ -729,6 +769,8 @@ class MergedGraph(SerDe):
 
     def into_proto(self) -> _MergedGraph:
         proto_merged_graph = _MergedGraph()
-        proto_merged_graph.nodes = {k: v.into_proto() for k, v in self.nodes.items()}
-        proto_merged_graph.edges = {k: v.into_proto() for k, v in self.edges.items()}
+        for k, v in self.nodes.items():
+            proto_merged_graph.nodes[k].CopyFrom(v.into_proto())
+        for k, v in self.edges.items():
+            proto_merged_graph.edges[k].CopyFrom(v.into_proto())
         return proto_merged_graph
