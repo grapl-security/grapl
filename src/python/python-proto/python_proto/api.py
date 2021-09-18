@@ -61,9 +61,6 @@ class Session(SerDe):
         proto_session.ParseFromString(bytes_)
         return Session.from_proto(proto_session=proto_session)
 
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
-
     @staticmethod
     def from_proto(proto_session: _Session) -> Session:
         return Session(
@@ -96,9 +93,6 @@ class Static(SerDe):
         proto_static.ParseFromString(bytes_)
         return Static.from_proto(proto_static=proto_static)
 
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
-
     @staticmethod
     def from_proto(proto_static: _Static) -> Static:
         return Static(
@@ -123,9 +117,6 @@ class IdStrategy(SerDe):
         proto_id_strategy = _IdStrategy()
         proto_id_strategy.ParseFromString(bytes_)
         return IdStrategy.from_proto(proto_id_strategy=proto_id_strategy)
-
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
 
     @staticmethod
     def from_proto(proto_id_strategy: _IdStrategy) -> IdStrategy:
@@ -161,9 +152,6 @@ class IncrementOnlyUintProp(SerDe):
             proto_increment_only_uint_prop=proto_increment_only_uint_prop
         )
 
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
-
     @staticmethod
     def from_proto(
         proto_increment_only_uint_prop: _IncrementOnlyUintProp,
@@ -188,9 +176,6 @@ class ImmutableUintProp(SerDe):
             proto_immutable_uint_prop=proto_immutable_uint_prop
         )
 
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
-
     @staticmethod
     def from_proto(proto_immutable_uint_prop: _ImmutableUintProp) -> ImmutableUintProp:
         return ImmutableUintProp(prop=proto_immutable_uint_prop.prop)
@@ -212,9 +197,6 @@ class DecrementOnlyUintProp(SerDe):
         return DecrementOnlyUintProp.from_proto(
             proto_decrement_only_uint_prop=proto_decrement_only_uint_prop
         )
-
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
 
     @staticmethod
     def from_proto(
@@ -240,9 +222,6 @@ class IncrementOnlyIntProp(SerDe):
             proto_increment_only_int_prop=proto_increment_only_int_prop
         )
 
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
-
     @staticmethod
     def from_proto(
         proto_increment_only_int_prop: _IncrementOnlyIntProp,
@@ -266,9 +245,6 @@ class DecrementOnlyIntProp(SerDe):
         return DecrementOnlyIntProp.from_proto(
             proto_decrement_only_int_prop=proto_decrement_only_int_prop
         )
-
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
 
     @staticmethod
     def from_proto(
@@ -294,9 +270,6 @@ class ImmutableIntProp(SerDe):
             proto_immutable_int_prop=proto_immutable_int_prop
         )
 
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
-
     @staticmethod
     def from_proto(proto_immutable_int_prop: _ImmutableIntProp) -> ImmutableIntProp:
         return ImmutableIntProp(prop=proto_immutable_int_prop.prop)
@@ -318,9 +291,6 @@ class ImmutableStrProp(SerDe):
         return ImmutableStrProp.from_proto(
             proto_immutable_str_prop=proto_immutable_str_prop
         )
-
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
 
     @staticmethod
     def from_proto(proto_immutable_str_prop: _ImmutableStrProp) -> ImmutableStrProp:
@@ -349,9 +319,6 @@ class NodeProperty(SerDe):
         proto_node_property = _NodeProperty()
         proto_node_property.ParseFromString(bytes_)
         return NodeProperty.from_proto(proto_node_property=proto_node_property)
-
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
 
     @staticmethod
     def from_proto(proto_node_property: _NodeProperty) -> NodeProperty:
@@ -444,9 +411,6 @@ class NodeDescription(SerDe):
         proto_node_description.ParseFromString(bytes_)
         return NodeDescription.from_proto(proto_node_description=proto_node_description)
 
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
-
     @staticmethod
     def from_proto(proto_node_description: _NodeDescription) -> NodeDescription:
         return NodeDescription(
@@ -484,9 +448,6 @@ class IdentifiedNode(SerDe):
         proto_identified_node.ParseFromString(bytes_)
         return IdentifiedNode.from_proto(proto_identified_node=proto_identified_node)
 
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
-
     @staticmethod
     def from_proto(proto_identified_node: _IdentifiedNode) -> IdentifiedNode:
         return IdentifiedNode(
@@ -519,9 +480,6 @@ class MergedNode(SerDe):
         proto_merged_node = _MergedNode()
         proto_merged_node.ParseFromString(bytes_)
         return MergedNode.from_proto(proto_merged_node=proto_merged_node)
-
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
 
     @staticmethod
     def from_proto(proto_merged_node: _MergedNode) -> MergedNode:
@@ -557,9 +515,6 @@ class Edge(SerDe):
         proto_edge.ParseFromString(bytes_)
         return Edge.from_proto(proto_edge=proto_edge)
 
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
-
     @staticmethod
     def from_proto(proto_edge: _Edge) -> Edge:
         return Edge(
@@ -586,9 +541,6 @@ class EdgeList(SerDe):
         proto_edge_list.ParseFromString(bytes_)
         return EdgeList.from_proto(proto_edge_list=proto_edge_list)
 
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
-
     @staticmethod
     def from_proto(proto_edge_list: _EdgeList) -> EdgeList:
         return EdgeList(edges=[Edge.from_proto(e) for e in proto_edge_list.edges])
@@ -613,9 +565,6 @@ class MergedEdge(SerDe):
         proto_merged_edge = _MergedEdge()
         proto_merged_edge.ParseFromString(bytes_)
         return MergedEdge.from_proto(proto_merged_edge=proto_merged_edge)
-
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
 
     @staticmethod
     def from_proto(proto_merged_edge: _MergedEdge) -> MergedEdge:
@@ -650,9 +599,6 @@ class MergedEdgeList(SerDe):
         proto_merged_edge_list.ParseFromString(bytes_)
         return MergedEdgeList.from_proto(proto_merged_edge_list=proto_merged_edge_list)
 
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
-
     @staticmethod
     def from_proto(proto_merged_edge_list: _MergedEdgeList) -> MergedEdgeList:
         return MergedEdgeList(
@@ -678,9 +624,6 @@ class GraphDescription(SerDe):
         return GraphDescription.from_proto(
             proto_graph_description=proto_graph_description
         )
-
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
 
     @staticmethod
     def from_proto(proto_graph_description: _GraphDescription) -> GraphDescription:
@@ -715,9 +658,6 @@ class IdentifiedGraph(SerDe):
         proto_identified_graph.ParseFromString(bytes_)
         return IdentifiedGraph.from_proto(proto_identified_graph=proto_identified_graph)
 
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
-
     @staticmethod
     def from_proto(proto_identified_graph: _IdentifiedGraph) -> IdentifiedGraph:
         return IdentifiedGraph(
@@ -750,9 +690,6 @@ class MergedGraph(SerDe):
         proto_merged_graph = _MergedGraph()
         proto_merged_graph.ParseFromString(bytes_)
         return MergedGraph.from_proto(proto_merged_graph=proto_merged_graph)
-
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
 
     @staticmethod
     def from_proto(proto_merged_graph: _MergedGraph) -> MergedGraph:

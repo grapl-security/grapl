@@ -23,9 +23,6 @@ class Label(SerDe):
         proto_label.ParseFromString(bytes_)
         return Label.from_proto(proto_label=proto_label)
 
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
-
     @staticmethod
     def from_proto(proto_label: _Label) -> Label:
         return Label(key=proto_label.key, value=proto_label.value)
@@ -48,9 +45,6 @@ class Counter(SerDe):
         proto_counter = _Counter()
         proto_counter.ParseFromString(bytes_)
         return Counter.from_proto(proto_counter=proto_counter)
-
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
 
     @staticmethod
     def from_proto(proto_counter: _Counter) -> Counter:
@@ -89,9 +83,6 @@ class Gauge(SerDe):
         proto_gauge.ParseFromString(bytes_)
         return Gauge.from_proto(proto_gauge=proto_gauge)
 
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
-
     @staticmethod
     def from_proto(proto_gauge: _Gauge) -> Gauge:
         return Gauge(
@@ -123,9 +114,6 @@ class Histogram(SerDe):
         proto_histogram.ParseFromString(bytes_)
         return Histogram.from_proto(proto_histogram=proto_histogram)
 
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
-
     @staticmethod
     def from_proto(proto_histogram: _Histogram) -> Histogram:
         return Histogram(
@@ -152,9 +140,6 @@ class MetricWrapper(SerDe):
         proto_metric_wrapper = _MetricWrapper()
         proto_metric_wrapper.ParseFromString(bytes_)
         return MetricWrapper.from_proto(proto_metric_wrapper=proto_metric_wrapper)
-
-    def serialize(self) -> bytes:
-        return cast(bytes, self.into_proto().SerializeToString())
 
     @staticmethod
     def from_proto(proto_metric_wrapper: _MetricWrapper) -> MetricWrapper:
