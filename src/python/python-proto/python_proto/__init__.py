@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod, abstractstaticmethod
-from typing import cast, Any
+from typing import Any, cast
 
 
 class SerDe(metaclass=ABCMeta):
