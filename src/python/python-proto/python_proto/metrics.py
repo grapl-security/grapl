@@ -4,11 +4,11 @@ import dataclasses
 import enum
 from typing import Sequence, Union, cast
 
-from graplinc.grapl.metrics.v1beta1.types_pb2 import Counter as _Counter
-from graplinc.grapl.metrics.v1beta1.types_pb2 import Gauge as _Gauge
-from graplinc.grapl.metrics.v1beta1.types_pb2 import Histogram as _Histogram
-from graplinc.grapl.metrics.v1beta1.types_pb2 import Label as _Label
-from graplinc.grapl.metrics.v1beta1.types_pb2 import MetricWrapper as _MetricWrapper
+from graplinc.grapl.metrics.v1.metric_types_pb2 import Counter as _Counter
+from graplinc.grapl.metrics.v1.metric_types_pb2 import Gauge as _Gauge
+from graplinc.grapl.metrics.v1.metric_types_pb2 import Histogram as _Histogram
+from graplinc.grapl.metrics.v1.metric_types_pb2 import Label as _Label
+from graplinc.grapl.metrics.v1.metric_types_pb2 import MetricWrapper as _MetricWrapper
 from python_proto import SerDe
 
 
@@ -57,14 +57,15 @@ class Counter(SerDe):
         return Counter(
             name=proto_counter.name,
             increment=proto_counter.increment,
-            labels=proto_counter.labels,
+            labels=[Label.from_proto(l) for l in proto_counter.labels],
         )
 
     def into_proto(self) -> _Counter:
         proto_counter = _Counter()
         proto_counter.name = self.name
         proto_counter.increment = self.increment
-        proto_counter.labels = self.labels
+        for label in self.labels:
+            proto_counter.labels.append(label.into_proto())
         return proto_counter
 
 
@@ -94,18 +95,19 @@ class Gauge(SerDe):
     @staticmethod
     def from_proto(proto_gauge: _Gauge) -> Gauge:
         return Gauge(
-            gauge_type=GaugeType(proto_gauge.gauge_type),
+            gauge_type=GaugeType(_Gauge.GaugeType.Name(proto_gauge.gauge_type)),
             name=proto_gauge.name,
             value=proto_gauge.value,
-            labels=proto_gauge.labels,
+            labels=[Label.from_proto(l) for l in proto_gauge.labels],
         )
 
     def into_proto(self) -> _Gauge:
         proto_gauge = _Gauge()
-        proto_gauge.gauge_type = self.gauge_type.value
+        proto_gauge.gauge_type = _Gauge.GaugeType.Value(self.gauge_type.value)
         proto_gauge.name = self.name
         proto_gauge.value = self.value
-        proto_gauge.labels = self.labels
+        for label in self.labels:
+            proto_gauge.labels.append(label.into_proto())
         return proto_gauge
 
 
@@ -129,14 +131,15 @@ class Histogram(SerDe):
         return Histogram(
             name=proto_histogram.name,
             value=proto_histogram.value,
-            labels=proto_histogram.labels,
+            labels=[Label.from_proto(l) for l in proto_histogram.labels],
         )
 
     def into_proto(self) -> _Histogram:
         proto_histogram = _Histogram()
         proto_histogram.name = self.name
         proto_histogram.value = self.value
-        proto_histogram.labels = self.labels
+        for label in self.labels:
+            proto_histogram.labels.append(label.into_proto())
         return proto_histogram
 
 
@@ -155,18 +158,35 @@ class MetricWrapper(SerDe):
 
     @staticmethod
     def from_proto(proto_metric_wrapper: _MetricWrapper) -> MetricWrapper:
-        metric_proto = proto_metric_wrapper.metric
-        if isinstance(metric_proto, _Counter):
-            metric = Counter.from_proto(proto_counter=metric_proto.metric)
-        elif isinstance(metric_proto, _Gauge):
-            metric = Gauge.from_proto(proto_gauge=metric_proto.metric)
-        elif isinstance(metric_proto, _Histogram):
-            metric = Histogram.from_proto(proto_histogram=metric_proto.metric)
+        if proto_metric_wrapper.HasField("counter"):
+            metric = cast(
+                Union[Counter, Gauge, Histogram],
+                Counter.from_proto(proto_counter=proto_metric_wrapper.counter),
+            )
+        elif proto_metric_wrapper.HasField("gauge"):
+            metric = cast(
+                Union[Counter, Gauge, Histogram],
+                Gauge.from_proto(proto_gauge=proto_metric_wrapper.gauge),
+            )
+        elif proto_metric_wrapper.HasField("histogram"):
+            metric = cast(
+                Union[Counter, Gauge, Histogram],
+                Histogram.from_proto(proto_histogram=proto_metric_wrapper.histogram),
+            )
         else:
-            raise Exception(f"Encountered unknown type {metric_proto.metric}")
+            raise Exception("Encountered unknown type")
         return MetricWrapper(metric=metric)
 
     def into_proto(self) -> _MetricWrapper:
         proto_metric_wrapper = _MetricWrapper()
-        proto_metric_wrapper.metric = self.metric.into_proto()
+        if type(self.metric) is Counter:
+            proto_metric_wrapper.counter.CopyFrom(
+                cast(_Counter, self.metric.into_proto())
+            )
+        elif type(self.metric) is Gauge:
+            proto_metric_wrapper.gauge.CopyFrom(cast(_Gauge, self.metric.into_proto()))
+        elif type(self.metric) is Histogram:
+            proto_metric_wrapper.histogram.CopyFrom(
+                cast(_Histogram, self.metric.into_proto())
+            )
         return proto_metric_wrapper

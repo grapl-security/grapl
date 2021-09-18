@@ -6,7 +6,7 @@ from typing import Any
 
 class SerDe(metaclass=ABCMeta):
     @classmethod
-    def __subclasshook__(cls, subclass: Any) -> bool:
+    def __subclasshook__(cls, subclass: SerDe) -> bool:
         return (
             hasattr(subclass, "deserialize")
             and callable(subclass.deserialize)
