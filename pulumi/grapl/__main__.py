@@ -12,7 +12,8 @@ from infra.alarms import OpsAlarms
 from infra.analyzer_dispatcher import AnalyzerDispatcher
 from infra.analyzer_executor import AnalyzerExecutor
 
-# TODO: temporarily disabled for now.
+# TODO: temporarily disabled until we can reconnect the ApiGateway to the new
+# web UI.
 # from infra.api import Api
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
@@ -74,7 +75,9 @@ def main() -> None:
 
     DGraphTTL(network=network, dgraph_cluster=dgraph_cluster)
 
-    jwt_secret = JWTSecret()
+    # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
+    # web UI.
+    # jwt_secret = JWTSecret()
 
     test_user_password = TestUserPassword()
 

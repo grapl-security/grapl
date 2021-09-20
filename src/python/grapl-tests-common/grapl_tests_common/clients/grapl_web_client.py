@@ -33,7 +33,7 @@ class GraplWebClient:
     def get_actix_session(self) -> str:
         LOGGER.debug("retrieving actix cookie")
         username = os.environ["GRAPL_TEST_USER_NAME"]
-        password = password = _get_test_user_password(
+        password = _get_test_user_password(
             deployment_name=os.environ["DEPLOYMENT_NAME"]
         )
 

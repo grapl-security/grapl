@@ -38,7 +38,7 @@ class EngagementEdgeClient:
     def get_jwt(self) -> str:
         LOGGER.debug("retrieving jwt cookie")
         username = os.environ["GRAPL_TEST_USER_NAME"]
-        password = password = _get_test_user_password(
+        password = _get_test_user_password(
             deployment_name=os.environ["DEPLOYMENT_NAME"]
         )
 

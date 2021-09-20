@@ -111,8 +111,6 @@ def provision(event: Any = None, context: Any = None) -> None:
     password = _retrieve_test_user_password(secretsmanager, DEPLOYMENT_NAME)
     LOGGER.info("retrieved test user password")
 
-    LOGGER.info(password)
-
     LOGGER.info("creating test user")
     _create_user(
         dynamodb=dynamodb,
