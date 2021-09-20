@@ -90,10 +90,6 @@ steps:
     command:
       - make build-docs
 
-  - label: ":yarn: Build UX"
-    command:
-      - make build-ux
-
   - label: ":aws-lambda::package: Create Lambda Zips"
     command:
       - make build-lambda-zips
