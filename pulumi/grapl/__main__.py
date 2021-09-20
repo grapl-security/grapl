@@ -36,7 +36,10 @@ from infra.osquery_generator import OSQueryGenerator
 from infra.pipeline_dashboard import PipelineDashboard
 from infra.provision_lambda import Provisioner
 from infra.quiet_docker_build_output import quiet_docker_output
-from infra.secret import JWTSecret, TestUserPassword
+# TODO: temporarily disabled until we can reconnect the ApiGateway to the new
+# web UI.
+# from infra.secret import JWTSecret, TestUserPassword
+from infra.secret import TestUserPassword
 from infra.service import ServiceLike
 from infra.sysmon_generator import SysmonGenerator
 
