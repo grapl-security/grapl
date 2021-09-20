@@ -199,7 +199,7 @@ build-python-wheels:  ## Build all Python wheels
 	./pants filter --target-type=python_distribution :: | xargs ./pants package
 
 .PHONY: build-docker-images-local
-build-docker-images-local: 
+build-docker-images-local:
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(MAKE) build-docker-images
 	$(MAKE) push-local
@@ -359,7 +359,7 @@ lint-prettier: build-formatter ## Run ts/js/yaml lint checks
 		run --rm lint-prettier
 
 .PHONY: lint-hcl
-lint-hcl: ## Check to see if Packer templates are formatted properly
+lint-hcl: ## Check to see if HCL files are formatted properly
 	${NONROOT_DOCKER_COMPOSE_CHECK} hcl-lint
 
 .PHONY: lint-proto
