@@ -1,7 +1,3 @@
-python_library(
-    dependencies=[
-        "src/python/python-proto",
-    ],
-)
+python_library()
 
 py_typed()
