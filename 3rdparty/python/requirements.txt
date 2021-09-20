@@ -38,6 +38,4 @@ setuptools
 toml==0.10.2
 typer==0.3.2
 typing_extensions
-# pants package with pants 2.6.0rc1 currently requires wheel < 0.37.
-wheel>=0.36,<0.37
 zstd==1.4.9.1
