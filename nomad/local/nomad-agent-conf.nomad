@@ -13,3 +13,9 @@ plugin "docker" {
     }
   }
 }
+
+plugin "raw_exec" {
+  config {
+    enabled = true
+  }
+}
