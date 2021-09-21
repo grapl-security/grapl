@@ -26,6 +26,9 @@ ENV PATH=/home/grapl/bin:$PATH
 # Copy in graplctl
 COPY --chown=grapl ./bin/graplctl /home/grapl/bin/graplctl
 
+# Every Lambda's entrypoint can be this.
+CMD ["python3", "-c", "import lambdex_handler; lambdex_handler.handler(None, None)"]
+
 
 # e2e-tests
 ################################################################################
@@ -34,7 +37,7 @@ FROM grapl-python-runner-base AS e2e-tests
 COPY --chown=grapl ./dist/e2e-test-runner-lambda.zip lambda.zip
 
 RUN unzip lambda.zip
-
+RUN rm lambda.zip
 
 # provisioner
 ################################################################################
@@ -43,5 +46,13 @@ FROM grapl-python-runner-base AS provisioner
 COPY --chown=grapl ./dist/provisioner-lambda.zip lambda.zip
 
 RUN unzip lambda.zip
+RUN rm lambda.zip
 
-CMD ["python3", "-c", "import lambdex_handler; lambdex_handler.handler(None, None)"]
+# engagement-creator
+################################################################################
+FROM grapl-python-runner-base AS engagement-creator
+
+COPY --chown=grapl ./dist/engagement-creator-lambda.zip lambda.zip
+
+RUN unzip lambda.zip
+RUN rm lambda.zip

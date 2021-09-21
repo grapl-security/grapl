@@ -86,6 +86,13 @@ services:
       dockerfile: ./src/python/Dockerfile
       target: analyzer-executor-deploy
 
+  engagement-creator:
+    image: grapl/engagement-creator:${TAG:-latest}
+    build:
+      context: .
+      dockerfile: ./src/python/lambdas.Dockerfile
+      target: engagement-creator
+
   # This container build exists only for Local Grapl; if we are able
   # to deploy model-plugin-deployer as an actual Lambda there, we can
   # get rid of this.
