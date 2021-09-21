@@ -218,8 +218,8 @@ def main() -> None:
             analyzer_dispatcher_queue=analyzer_dispatcher_queue.main_queue_url,
             analyzer_executor_queue=analyzer_executor_queue.main_queue_url,
             analyzer_matched_subgraphs_bucket=analyzer_matched_emitter.bucket.bucket,
-            analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url, # TODO
-            aws_access_key_id="test", #TODO remove?
+            analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url,
+            aws_access_key_id="test", #TODO remove? What happens if we pass in NULL? Idealy we don't want this passed in at all since AWS should be using role-based IAM access
             aws_access_key_secret="test", #TODO remove?
             graph_merger_queue=graph_merger_queue.main_queue_url,
             graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
@@ -246,6 +246,15 @@ def main() -> None:
                 "_redis_endpoint": cache.endpoint,
                 # TODO: consider replacing with the previous per-service `configurable_envvars`
                 "rust_log": "DEBUG",
+                # Build Tags. We use per service tags so we can update services independently
+                "analyzer_dispatcher_tag": "20210920154305-c6d7c551",
+                "analyzer_executor_tag": "20210920154305-c6d7c551",
+                "graph_merger_tag": ":20210920154305-c6d7c551",
+                "graphql_endpoint_tag": "latest",
+                "engagement_view_tag": "latest",
+                "provisioner_tag": "latest",
+                "node_identifier_tag": "20210920154305-c6d7c551",
+                "dgraph_tag": "latest",
                 **inputs,
             }
         )
