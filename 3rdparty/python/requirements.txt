@@ -41,4 +41,4 @@ setuptools
 toml==0.10.2
 typer==0.3.2
 typing_extensions
-zstd==1.4.9.1
+zstd
