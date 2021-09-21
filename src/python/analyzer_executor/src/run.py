@@ -4,7 +4,7 @@ import os
 import boto3
 from analyzer_executor_lib.analyzer_executor import AnalyzerExecutor
 from analyzer_executor_lib.event_retriever import EventRetriever
-from analyzer_executor_lib.sqs_timeout_manager import (
+from grapl_common.sqs.sqs_timeout_manager import (
     SqsTimeoutManager,
     SqsTimeoutManagerException,
 )

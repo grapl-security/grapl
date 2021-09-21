@@ -47,12 +47,3 @@ COPY --chown=grapl ./dist/provisioner-lambda.zip lambda.zip
 
 RUN unzip lambda.zip
 RUN rm lambda.zip
-
-# engagement-creator
-################################################################################
-FROM grapl-python-runner-base AS engagement-creator
-
-COPY --chown=grapl ./dist/engagement-creator-lambda.zip lambda.zip
-
-RUN unzip lambda.zip
-RUN rm lambda.zip

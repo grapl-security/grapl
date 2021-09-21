@@ -5,11 +5,11 @@ import unittest
 from unittest.mock import Mock
 
 import pytest
-from analyzer_executor_lib.sqs_timeout_manager import (
+from grapl_common.sqs.sqs_timeout_manager import (
     SqsTimeoutManager,
     SqsTimeoutManagerException,
 )
-from analyzer_executor_lib.sqs_types import SQSMessageId, SQSReceiptHandle
+from grapl_common.sqs.sqs_types import SQSMessageId, SQSReceiptHandle
 
 
 class TestSqsTimeoutManager(unittest.TestCase):
