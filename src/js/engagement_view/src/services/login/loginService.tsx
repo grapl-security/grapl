@@ -12,7 +12,7 @@ export const loginService = async (username: string, password: string) => {
             `${DEV_API_EDGES.auth}/login`,
             loginBody
         );
-        return loginData["success"] === "True";
+        return loginData["success"] === true;
     } catch (e) {
         console.log("Login Error", e);
         return false;

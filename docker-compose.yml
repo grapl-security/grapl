@@ -86,103 +86,9 @@ services:
   # Python Services
   ########################################################################
 
-  analyzer-executor:
-    image: grapl/analyzer-executor:${TAG:-latest}
-    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
-    command:
-      - |
-        export GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET=$$(cat /mnt/pulumi-outputs/analyzer-matched-subgraphs-bucket)
-        export GRAPL_ANALYZERS_BUCKET=$$(cat /mnt/pulumi-outputs/analyzers-bucket)
-        export GRAPL_MODEL_PLUGINS_BUCKET=$$(cat /mnt/pulumi-outputs/model-plugins-bucket)
-        export SOURCE_QUEUE_URL=$$(cat /mnt/pulumi-outputs/analyzer-executor-queue)
-        ./analyzer-executor.pex
-    environment:
-      <<: *aws-env
-      DEBUG_SERVICES: "${DEBUG_SERVICES:-}"
-      <<: *dgraph-env
-      GRPC_ENABLE_FORK_SUPPORT: "1"
-      HITCACHE_ADDR: "${REDIS_HOST}"
-      HITCACHE_PORT: "${REDIS_PORT}"
-      IS_RETRY: "False"
-      <<: *log-level
-      MESSAGECACHE_ADDR: "${REDIS_HOST}"
-      MESSAGECACHE_PORT: "${REDIS_PORT}"
-      VSC_DEBUGGER_PORT: "${VSC_DEBUGGER_PORT_FOR_ANALYZER_EXECUTOR}"
-    tty: true
-    ports:
-      - 127.0.0.1:${VSC_DEBUGGER_PORT_FOR_ANALYZER_EXECUTOR}:${VSC_DEBUGGER_PORT_FOR_ANALYZER_EXECUTOR}
-    depends_on:
-      pulumi:
-        # We must wait until Pulumi has created the buckets to know what their names are
-        condition: service_completed_successfully
-    volumes:
-      - *read-only-pulumi-mnt
-
   ########################################################################
   # Web Services
   ########################################################################
-
-  nginx:
-    image: nginxinc/nginx-unprivileged
-    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
-    command:
-      - |
-        export API_GATEWAY_API_ID=$$(cat /mnt/pulumi-outputs/prod-api-id)
-        /docker-entrypoint.sh nginx -g 'daemon off;'
-    volumes:
-      - ./etc/local_grapl/nginx_templates:/etc/nginx/templates
-      - *read-only-pulumi-mnt
-    ports:
-      - "127.0.0.1:1234:${GRAPL_HTTP_FRONTEND_PORT}"
-    environment:
-      - GRAPL_GRAPHQL_HOST
-      - GRAPL_GRAPHQL_PORT
-      - GRAPL_MODEL_PLUGIN_DEPLOYER_HOST
-      - GRAPL_MODEL_PLUGIN_DEPLOYER_PORT
-      - LOCALSTACK_HOST
-      - LOCALSTACK_PORT
-    depends_on:
-      # model-plugin-deployer:
-      #   condition: service_started
-      graphql-endpoint:
-        condition: service_started
-      pulumi:
-        # We must wait until Pulumi has created the API gateway so we
-        # know what its URL is.
-        condition: service_completed_successfully
-    networks:
-      default:
-        aliases:
-          - ${GRAPL_API_HOST}
-
-  graphql-endpoint:
-    image: grapl/graphql-endpoint:${TAG:-latest}
-    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
-    command:
-      - |
-        export GRAPL_SCHEMA_PROPERTIES_TABLE=$$(cat /mnt/pulumi-outputs/schema-properties-table)
-        export GRAPL_SCHEMA_TABLE=$$(cat /mnt/pulumi-outputs/schema-table)
-        ./start_potentially_with_debugger.sh
-    environment:
-      <<: *aws-env
-      <<: *dgraph-env
-      IS_LOCAL: "True"
-      JWT_SECRET_ID: "JWT_SECRET_ID"
-      PORT: ${GRAPL_GRAPHQL_PORT}
-      DEBUG_SERVICES: "${DEBUG_SERVICES:-}"
-      VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT: "${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}"
-    depends_on:
-      pulumi:
-        condition: service_completed_successfully
-    ports:
-      - 127.0.0.1:${GRAPL_GRAPHQL_PORT}:${GRAPL_GRAPHQL_PORT}
-      - 127.0.0.1:${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}:${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}
-    networks:
-      default:
-        aliases:
-          - ${GRAPL_GRAPHQL_HOST}
-    volumes:
-      - *read-only-pulumi-mnt
 
   grapl-notebook:
     image: grapl/notebook:${TAG:-latest}
@@ -228,7 +134,6 @@ services:
           osquery-generator-queue
           osquery-generator-retry-queue
           osquery-log-bucket
-          prod-api-id
           schema-properties-table
           schema-table
           static-mapping-table
@@ -240,7 +145,6 @@ services:
           sysmon-log-bucket
           unid-subgraphs-generated-bucket
           user-auth-table
-          ux-bucket
         )
         for output in "$${outputs[@]}"; do
           pulumi stack output "$${output}" > "/home/grapl/pulumi-outputs/$${output}"
@@ -260,6 +164,10 @@ services:
       PULUMI_CONFIG_PASSPHRASE: local-grapl-passphrase
       # This gets exported to True by `make test-integration`
       SHOULD_DEPLOY_INTEGRATION_TESTS: "${SHOULD_DEPLOY_INTEGRATION_TESTS:-False}"
+      # This gets exported to True by `make test-e2e`
+      SHOULD_DEPLOY_E2E_TESTS: "${SHOULD_DEPLOY_E2E_TESTS:-False}"
+      DOCKER_USER: "${UID}:${GID}"
+      GRAPL_ROOT: "${GRAPL_ROOT}"
       # Other environment variables like MG_ALPHAS are passed in via
       # Pulumi.local-grapl.yaml
     extra_hosts:

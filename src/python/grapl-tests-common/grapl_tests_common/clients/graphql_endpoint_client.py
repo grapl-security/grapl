@@ -18,9 +18,9 @@ class GraphQLException(Exception):
 
 
 class GraphqlEndpointClient:
-    def __init__(self, jwt: str) -> None:
+    def __init__(self, actix_session: str) -> None:
         self.endpoint = endpoint_url("/graphQlEndpoint")
-        self.jwt = jwt
+        self.actix_session = actix_session
 
     def query(
         self, query: str, variables: Optional[Dict[str, Any]] = None
@@ -28,7 +28,7 @@ class GraphqlEndpointClient:
         resp = requests.post(
             f"{self.endpoint}/graphql",
             json={"query": query, "variables": json.dumps(variables or {})},
-            cookies={"grapl_jwt": self.jwt},
+            cookies={"actix-session": self.actix_session},
         )
         if resp.status_code != HTTPStatus.OK:
             resp_str = "\\n".join(resp.iter_lines(decode_unicode=True))

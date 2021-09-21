@@ -10,6 +10,7 @@ RUST_BUILD ?= debug
 UID = $(shell id -u)
 GID = $(shell id -g)
 PWD = $(shell pwd)
+GRAPL_ROOT = ${PWD}
 COMPOSE_USER=${UID}:${GID}
 DOCKER_BUILDX_BAKE_OPTS ?=
 ifneq ($(GRAPL_RUST_ENV_FILE),)
@@ -23,7 +24,7 @@ export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 	--file ./test/docker-compose.unit-tests-rust.yml \
 	--file ./test/docker-compose.unit-tests-js.yml \
 	--file ./test/docker-compose.integration-tests.build.yml \
-	--file ./test/docker-compose.e2e-tests.yml \
+	--file ./test/docker-compose.e2e-tests.build.yml \
 
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
 
@@ -127,9 +128,10 @@ help: ## Print this help
 
 ##@ Build 🔨
 
-.PHONY: build-analyzer-executor
-build-analyzer-executor:
+.PHONY: build-service-pexs
+build-service-pexs:
 	./pants package ./src/python/analyzer_executor/src
+	./pants package ./src/python/engagement-creator/engagement_creator:pex
 
 .PHONY: build-test-unit
 build-test-unit:
@@ -148,17 +150,17 @@ build-test-unit-js:
 		--file ./test/docker-compose.unit-tests-js.yml
 
 .PHONY: build-test-integration
-build-test-integration: build-local
+build-test-integration: build
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.integration-tests.build.yml
 
 .PHONY: build-test-e2e
 build-test-e2e: build
 	$(WITH_LOCAL_GRAPL_ENV) \
-	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.yml
+	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.build.yml
 
 .PHONY: build-lambda-zips
-build-lambda-zips: build-lambda-zips-rust build-lambda-zips-js build-lambda-zips-python ## Generate all lambda zip files
+build-lambda-zips: build-lambda-zips-rust build-lambda-zips-js build-lambda-zips-python build-service-pexs ## Generate all lambda zip files
 
 .PHONY: build-lambda-zips-rust
 build-lambda-zips-rust: ## Build Rust lambda zips
@@ -193,14 +195,11 @@ build-lambda-zips-python: ## Build Python lambda zips
 	./pants filter --target-type=python_awslambda :: | xargs ./pants package
 
 .PHONY: build-docker-images
-build-docker-images: build-analyzer-executor graplctl
+build-docker-images: graplctl build-ux
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
 
 .PHONY: build
 build: build-lambda-zips build-docker-images ## Build Grapl services
-
-.PHONY: build-local
-build-local: build-lambda-zips build-docker-images-local ## Build Grapl services
 
 .PHONY: build-formatter
 build-formatter:
@@ -227,20 +226,10 @@ dump-artifacts:  # Run the script that dumps Nomad/Docker logs after test runs
 
 .PHONY: build-ux
 build-ux: ## Build website assets
-	cd src/js/engagement_view && yarn install && yarn build
-
-# This is used to create the artifact that will be uploaded to our
-# artifact repository in CI, and will be the artifact that is used by
-# our Pulumi deployments.
-.PHONY: ux-tarball
-ux-tarball: build-ux ## Build website asset tarball
-	tar \
-		--create \
-		--gzip \
-		--verbose \
-		--file="dist/grapl-ux.tar.gz" \
-		--directory=src/js/engagement_view/build \
-		.
+	$(MAKE) -C src/js/engagement_view build
+	cp -r \
+		"${PWD}/src/js/engagement_view/build/." \
+		"${PWD}/src/rust/grapl-web-ui/frontend/"
 
 ##@ Test 🧪
 
@@ -275,6 +264,7 @@ test-unit-js: export COMPOSE_PROJECT_NAME := grapl-test-unit-js
 test-unit-js: export COMPOSE_FILE := ./test/docker-compose.unit-tests-js.yml
 test-unit-js: build-test-unit-js ## Build and run unit tests - JavaScript only
 	test/docker-compose-with-error.sh
+	$(MAKE) -C src/js/engagement_view test
 
 .PHONY: test-typecheck
 test-typecheck: ## Typecheck Python Code
@@ -285,7 +275,7 @@ test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_T
 test-integration: build-test-integration ## Build and run integration tests
 	$(WITH_LOCAL_GRAPL_ENV)
 	export SHOULD_DEPLOY_INTEGRATION_TESTS=True  # This gets read in by `docker-compose.yml`'s pulumi
-	$(MAKE) test-with-env EXEC_TEST_COMMAND=nomad/local/run_integration_tests.sh
+	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/local/run_parameterized_job.sh integration-tests 8"
 
 .PHONY: test-grapl-template-generator
 test-grapl-template-generator:  # Test that the Grapl Template Generator spits out something compilable.
@@ -293,9 +283,10 @@ test-grapl-template-generator:  # Test that the Grapl Template Generator spits o
 
 .PHONY: test-e2e
 test-e2e: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_E2E_TESTS)
-test-e2e: export export COMPOSE_FILE := ./test/docker-compose.e2e-tests.yml
 test-e2e: build-test-e2e ## Build and run e2e tests
-	$(MAKE) test-with-env-docker
+	$(WITH_LOCAL_GRAPL_ENV)
+	export SHOULD_DEPLOY_E2E_TESTS=True  # This gets read in by `docker-compose.yml`'s pulumi
+	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/local/run_parameterized_job.sh e2e-tests 6"
 
 # This target is not intended to be used directly from the command line, it's
 # intended for tests in docker-compose files that need the Grapl environment.
@@ -328,6 +319,7 @@ test-with-env: # (Do not include help text - not to be used directly)
 	# Bring up the Grapl environment and detach
 	$(MAKE) up-detach
 	# Run tests and check exit codes from each test container
+	echo "--- Executing test with environment"
 	$${EXEC_TEST_COMMAND}
 
 ##@ Lint 🧹
@@ -405,7 +397,7 @@ up: build ## Build Grapl services and launch docker-compose up
 	docker-compose -f docker-compose.yml up
 
 .PHONY: up-detach
-up-detach: build-local ## Bring up local Grapl and detach to return control to tty
+up-detach: build ## Bring up local Grapl and detach to return control to tty
 	# Primarily used for bringing up an environment for integration testing.
 	# For use with a project name consider setting COMPOSE_PROJECT_NAME env var
 	# Usage: `make up-detach`
@@ -419,11 +411,13 @@ up-detach: build-local ## Bring up local Grapl and detach to return control to t
 
 	# TODO: This could potentially be replaced with a docker-compose run, but
 	#  it doesn't have all these useful flags
+	echo "--- Starting Pulumi"
 	docker-compose \
 		--file docker-compose.yml \
 		up --force-recreate --always-recreate-deps --renew-anon-volumes \
 		--exit-code-from pulumi \
 		pulumi
+	echo "Pulumi complete"
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
@@ -433,7 +427,7 @@ down: ## docker-compose down - both stops and removes the containers
 	# about. This must be the network that is used in Localstack's
 	# LAMBDA_DOCKER_NETWORK environment variable.
 	$(MAKE) stop-nomad-detach
-	-docker kill $(shell docker ps --quiet --filter=network=grapl-network)
+	-docker kill $(shell docker ps --quiet --filter=network=grapl-network) || true
 	docker-compose $(EVERY_COMPOSE_FILE) down --timeout=0
 	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
 	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
@@ -460,11 +454,6 @@ clean-mount-cache: ## Prune all docker mount cache (used by sccache)
 .PHONY: clean-artifacts
 clean-artifacts: ## Remove all dumped artifacts from test runs (see dump_artifacts.py)
 	rm -Rf test_artifacts
-
-.PHONY: start-nomad-dev
-start-nomad-dev:  ## Start the Nomad development environment
-	$(WITH_LOCAL_GRAPL_ENV)
-	nomad/local/start_development_environment_tmux.sh
 
 .PHONY: local-pulumi
 local-pulumi: export COMPOSE_PROJECT_NAME="grapl"
@@ -514,14 +503,6 @@ update-buildkite-shared: ## Pull in changes from grapl-security/buildkite-common
 .PHONY: build-docs
 build-docs: ## Build the Sphinx docs
 	./docs/build_docs.sh
-
-.PHONY: local-ux-upload
-local-ux-upload: ## Upload local engagement-view assets to a running Local Grapl (make sure to have done `make up` first)
-	$(DOCKER_BUILDX_BAKE) --file=docker-compose.build.yml engagement-view-uploader &&
-	COMPOSE_PROJECT_NAME=grapl \
-	docker-compose --env-file=local-grapl.env \
-	--file=docker-compose.yml \
-	run --no-deps engagement-view-uploader
 
 .PHONY: local-graplctl-setup
 local-graplctl-setup: ## Upload analyzers and data to a running Local Grapl (make sure to have done `make up` first)
