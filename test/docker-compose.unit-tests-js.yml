@@ -10,7 +10,6 @@ x-common-variables:
     read_only: false
 
 services:
-
   graphql-endpoint-test:
     image: grapl/graphql-endpoint:${TAG:-latest}
     build:
