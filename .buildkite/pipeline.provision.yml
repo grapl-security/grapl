@@ -5,7 +5,6 @@ env:
 steps:
   - label: ":pulumi: Preview grapl/testing environment changes in Staging account"
     command:
-      - pulumi/bin/prepare_grapl_ux_dependency.sh grapl/testing
       - .buildkite/shared/steps/pulumi_preview.sh grapl/testing
     plugins:
       - seek-oss/aws-sm#v2.3.1:
@@ -18,7 +17,6 @@ steps:
 
   - label: ":pulumi: Update grapl/testing environment in Staging account"
     command:
-      - pulumi/bin/prepare_grapl_ux_dependency.sh grapl/testing
       - .buildkite/shared/steps/pulumi_up.sh grapl/testing
     plugins:
       - seek-oss/aws-sm#v2.3.1:
