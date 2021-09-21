@@ -74,7 +74,6 @@ root_patterns = [
   "/src/python/grapl-dgraph-ttl",
   "/src/python/grapl_e2e_tests",
   "/src/python/grapl-model-plugin-deployer",
-  "/src/python/pytype-analyzerlib-checker",
   "/src/python/grapl-template-generator",
   "/src/python/grapl-tests-common",
   "/src/python/grapl-ux-router",

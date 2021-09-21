@@ -32,7 +32,6 @@ pydantic==1.8.2
 pydgraph
 pyjwt
 pytest
-pytype
 requests
 redis
 setuptools
