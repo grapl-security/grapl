@@ -287,7 +287,7 @@ test-unit-js: build-test-unit-js ## Build and run unit tests - JavaScript only
 .PHONY: test-typecheck
 test-typecheck: ## Typecheck Python Code
 	./pants typecheck ::
-	./pants run src/python/pytype-analyzerlib-checker:analyzerlib-checker
+	. build-support/venv/bin/activate && ./pants run src/python/pytype-analyzerlib-checker:analyzerlib-checker && deactivate
 
 .PHONY: test-integration
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
