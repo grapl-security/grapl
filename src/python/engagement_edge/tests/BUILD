@@ -10,6 +10,5 @@ python_tests(
         "GRAPL_TEST_USER_NAME",
         "IS_LOCAL",
         "UX_BUCKET_URL",
-        "GRAPL_NOTEBOOK_INSTANCE",
     ]
 )
