@@ -236,11 +236,6 @@ def main() -> None:
             )
 
     else:
-        nomad_cluster = NomadCluster(
-            "nomad-cluster",
-            network=network,
-        )
-
         # No Fargate or Elasticache in Local Grapl
         cache = Cache("main-cache", network=network)
 

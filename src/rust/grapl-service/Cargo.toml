@@ -7,7 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 sqs-executor = { path = "../sqs-executor" }
-grapl-graph-descriptions = { path = "../graph-descriptions" }
+rust-proto = { path = "../rust-proto" }
 grapl-config = { path = "../grapl-config" }
 zstd = "0.7"
 libflate = "1"

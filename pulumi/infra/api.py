@@ -214,15 +214,6 @@ class Api(pulumi.ComponentResource):
 
         # These don't work in LocalStack for some reason
         if not LOCAL_GRAPL:
-            self.model_plugin_deployer = ModelPluginDeployer(
-                network=network,
-                db=db,
-                secret=secret,
-                plugins_bucket=plugins_bucket,
-                dgraph_cluster=dgraph_cluster,
-                forwarder=forwarder,
-            )
-
             self.graphql_endpoint = GraphQL(
                 network=network,
                 secret=secret,
@@ -238,10 +229,6 @@ class Api(pulumi.ComponentResource):
         if not LOCAL_GRAPL:
             self.proxies.extend(
                 [
-                    self._add_proxy_resource_integration(
-                        self.model_plugin_deployer.function,
-                        path_part="modelPluginDeployer",
-                    ),
                     self._add_proxy_resource_integration(
                         self.graphql_endpoint.function, path_part="graphQlEndpoint"
                     ),
