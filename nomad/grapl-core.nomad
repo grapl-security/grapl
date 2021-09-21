@@ -802,6 +802,10 @@ job "grapl-core" {
 
 
   group "engagement-creator" {
+    network {
+      mode = "bridge"
+    }
+
     task "engagement-creator" {
       driver = "docker"
 
@@ -810,6 +814,11 @@ job "grapl-core" {
       }
 
       env {
+        # AWS vars
+        AWS_REGION                  = var.aws_region
+        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
+        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
+        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
         # python vars
         GRAPL_LOG_LEVEL = var.rust_log
         # dgraph vars
@@ -834,8 +843,6 @@ job "grapl-core" {
           }
         }
       }
-    }
-
     }
   }
 
