@@ -39,6 +39,7 @@ UINT64_MIN = 0
 UINT64_MAX = 2 ** 64 - 1
 INT64_MIN = -(2 ** 63) - 1
 INT64_MAX = 2 ** 63 - 1
+MAX_LIST_SIZE = 5
 
 #
 # pipeline
@@ -82,7 +83,7 @@ def envelopes(
 
 
 def sessions(
-    primary_key_properties: st.SearchStrategy[Sequence[str]] = st.lists(st.text()),
+    primary_key_properties: st.SearchStrategy[Sequence[str]] = st.lists(st.text(), max_size=MAX_LIST_SIZE),
     primary_key_requires_asset_ids: st.SearchStrategy[bool] = st.booleans(),
     create_times: st.SearchStrategy[int] = st.integers(
         min_value=UINT64_MIN, max_value=UINT64_MAX
@@ -105,7 +106,7 @@ def sessions(
 
 
 def statics(
-    primary_key_properties: st.SearchStrategy[Sequence[str]] = st.lists(st.text()),
+    primary_key_properties: st.SearchStrategy[Sequence[str]] = st.lists(st.text(), max_size=MAX_LIST_SIZE),
     primary_key_requires_asset_ids: st.SearchStrategy[bool] = st.booleans(),
 ) -> st.SearchStrategy[Static]:
     return st.builds(
@@ -210,7 +211,7 @@ def node_descriptions(
     ),
     node_keys: st.SearchStrategy[str] = st.text(),
     node_types: st.SearchStrategy[str] = st.text(),
-    id_strategies: st.SearchStrategy[Sequence[IdStrategy]] = st.lists(id_strategies()),
+    id_strategies: st.SearchStrategy[Sequence[IdStrategy]] = st.lists(id_strategies(), max_size=MAX_LIST_SIZE),
 ) -> st.SearchStrategy[NodeDescription]:
     return st.builds(
         NodeDescription,
@@ -269,7 +270,7 @@ def edges(
 
 
 def edge_lists(
-    edges: st.SearchStrategy[Sequence[Edge]] = st.lists(edges()),
+    edges: st.SearchStrategy[Sequence[Edge]] = st.lists(edges(), max_size=MAX_LIST_SIZE),
 ) -> st.SearchStrategy[EdgeList]:
     return st.builds(
         EdgeList,
@@ -295,7 +296,7 @@ def merged_edges(
 
 
 def merged_edge_lists(
-    edges: st.SearchStrategy[Sequence[MergedEdge]] = st.lists(merged_edges()),
+    edges: st.SearchStrategy[Sequence[MergedEdge]] = st.lists(merged_edges(), max_size=MAX_LIST_SIZE),
 ) -> st.SearchStrategy[MergedEdgeList]:
     return st.builds(
         MergedEdgeList,
@@ -365,7 +366,7 @@ def counters(
     increments: st.SearchStrategy[int] = st.integers(
         min_value=UINT64_MIN, max_value=UINT64_MAX
     ),
-    labels: st.SearchStrategy[Sequence[Label]] = st.lists(labels()),
+    labels: st.SearchStrategy[Sequence[Label]] = st.lists(labels(), max_size=MAX_LIST_SIZE),
 ) -> st.SearchStrategy[Counter]:
     return st.builds(Counter, name=names, increment=increments, labels=labels)
 
@@ -378,7 +379,7 @@ def gauges(
     gauge_types: st.SearchStrategy[GaugeType] = gauge_types(),
     names: st.SearchStrategy[str] = st.text(),
     values: st.SearchStrategy[float] = st.floats(allow_nan=False, allow_infinity=False),
-    labels: st.SearchStrategy[Sequence[Label]] = st.lists(labels()),
+    labels: st.SearchStrategy[Sequence[Label]] = st.lists(labels(), max_size=MAX_LIST_SIZE),
 ) -> st.SearchStrategy[Gauge]:
     return st.builds(
         Gauge, gauge_type=gauge_types, name=names, value=values, labels=labels
@@ -388,7 +389,7 @@ def gauges(
 def histograms(
     names: st.SearchStrategy[str] = st.text(),
     values: st.SearchStrategy[float] = st.floats(allow_nan=False, allow_infinity=False),
-    labels: st.SearchStrategy[Sequence[Label]] = st.lists(labels()),
+    labels: st.SearchStrategy[Sequence[Label]] = st.lists(labels(), max_size=MAX_LIST_SIZE),
 ) -> st.SearchStrategy[Histogram]:
     return st.builds(Histogram, name=names, value=values, labels=labels)
 
