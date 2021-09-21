@@ -124,39 +124,6 @@ services:
   # Web Services
   ########################################################################
 
-  nginx:
-    image: nginxinc/nginx-unprivileged
-    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
-    command:
-      - |
-        export API_GATEWAY_API_ID=$$(cat /mnt/pulumi-outputs/prod-api-id)
-        /docker-entrypoint.sh nginx -g 'daemon off;'
-    volumes:
-      - ./etc/local_grapl/nginx_templates:/etc/nginx/templates
-      - *read-only-pulumi-mnt
-    ports:
-      - "127.0.0.1:1234:${GRAPL_HTTP_FRONTEND_PORT}"
-    environment:
-      - GRAPL_GRAPHQL_HOST
-      - GRAPL_GRAPHQL_PORT
-      - GRAPL_MODEL_PLUGIN_DEPLOYER_HOST
-      - GRAPL_MODEL_PLUGIN_DEPLOYER_PORT
-      - LOCALSTACK_HOST
-      - LOCALSTACK_PORT
-    depends_on:
-      model-plugin-deployer:
-        condition: service_started
-      graphql-endpoint:
-        condition: service_started
-      pulumi:
-        # We must wait until Pulumi has created the API gateway so we
-        # know what its URL is.
-        condition: service_completed_successfully
-    networks:
-      default:
-        aliases:
-          - ${GRAPL_API_HOST}
-
   graphql-endpoint:
     image: grapl/graphql-endpoint:${TAG:-latest}
     entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
@@ -230,7 +197,6 @@ services:
           osquery-generator-queue
           osquery-generator-retry-queue
           osquery-log-bucket
-          prod-api-id
           schema-properties-table
           schema-table
           static-mapping-table
@@ -242,7 +208,6 @@ services:
           sysmon-log-bucket
           unid-subgraphs-generated-bucket
           user-auth-table
-          ux-bucket
         )
         for output in "$${outputs[@]}"; do
           pulumi stack output "$${output}" > "/home/grapl/pulumi-outputs/$${output}"

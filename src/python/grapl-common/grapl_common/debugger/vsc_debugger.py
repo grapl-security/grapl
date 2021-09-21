@@ -17,7 +17,6 @@ LOGGER = get_module_grapl_logger()
 ServiceIdentifier = Literal[
     "grapl_e2e_tests",
     "analyzer_executor",
-    "engagement_edge",
     "graphql_endpoint_tests",
 ]
 

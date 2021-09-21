@@ -25,13 +25,6 @@ services:
       dockerfile: ./src/python/Dockerfile
       target: analyzer-executor-test
 
-  engagement-edge-integration-tests:
-    image: ${DOCKER_REGISTRY:-docker.io}/grapl/grapl-engagement-edge-test:${TAG:-latest}
-    build:
-      context: ${PWD}
-      dockerfile: ./src/python/Dockerfile
-      target: engagement-edge-test
-
   # TODO: Re-enable these tests after the following issues are resolved:
   # - https://github.com/grapl-security/issue-tracker/issues/385
   # - https://github.com/grapl-security/issue-tracker/issues/386

@@ -4,7 +4,6 @@ import * as express from "express";
 import * as graphqlHTTP from "express-graphql";
 import { getRootQuerySchema } from "./modules/root_query.js";
 import * as awsServerlessExpress from "aws-serverless-express";
-import { validateJwt } from "./modules/jwt.js";
 //@ts-ignore
 import * as regexEscape from "regex-escape";
 import { GraphQLError } from "graphql";
@@ -62,7 +61,7 @@ const corsDelegate = (req: cors.CorsRequest, callback: CorsCallback): void => {
     callback(null, corsOptions); // callback expects two parameters: error and options
 };
 
-const middleware = [cors(corsDelegate), validateJwt];
+const middleware = [cors(corsDelegate)];
 
 app.options("*", cors(corsDelegate));
 
