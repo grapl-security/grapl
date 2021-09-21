@@ -32,11 +32,6 @@ Each service's configuration should likely have a different path-mapping and a d
                         "remoteRoot": "/home/grapl/grapl_e2e_tests"
                     },
                     {
-                        // we rename engagement_edge for some reason; possibly a Chalice thing
-                        "localRoot": "${workspaceFolder}/src/python/engagement_edge/src/engagement_edge.py",
-                        "remoteRoot": "/home/grapl/app/app.py"
-                    },
-                    {
                         "localRoot": "${workspaceFolder}/src/python/grapl-tests-common/grapl_tests_common",
                         "remoteRoot": "../venv/lib/python3.7/site-packages/grapl_tests_common"
                     },

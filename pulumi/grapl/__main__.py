@@ -11,13 +11,19 @@ from infra import config, dynamodb, emitter
 from infra.alarms import OpsAlarms
 from infra.analyzer_dispatcher import AnalyzerDispatcher
 from infra.analyzer_executor import AnalyzerExecutor
-from infra.api import Api
+
+# TODO: temporarily disabled until we can reconnect the ApiGateway to the new
+# web UI.
+# from infra.api import Api
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
 from infra.dgraph_cluster import DgraphCluster, LocalStandInDgraphCluster
 from infra.dgraph_ttl import DGraphTTL
-from infra.e2e_test_runner import E2eTestRunner
+
+# TODO: temporarily disabled until we can reconnect the ApiGateway to the new
+# web UI.
+# from infra.e2e_test_runner import E2eTestRunner
 from infra.engagement_creator import EngagementCreator
 from infra.graph_merger import GraphMerger
 from infra.kafka import Kafka
@@ -30,7 +36,11 @@ from infra.osquery_generator import OSQueryGenerator
 from infra.pipeline_dashboard import PipelineDashboard
 from infra.provision_lambda import Provisioner
 from infra.quiet_docker_build_output import quiet_docker_output
-from infra.secret import JWTSecret, TestUserPassword
+
+# TODO: temporarily disabled until we can reconnect the ApiGateway to the new
+# web UI.
+# from infra.secret import JWTSecret, TestUserPassword
+from infra.secret import TestUserPassword
 from infra.service import ServiceLike
 from infra.service_queue import ServiceQueue
 from infra.sysmon_generator import SysmonGenerator
@@ -70,7 +80,9 @@ def main() -> None:
 
     DGraphTTL(network=network, dgraph_cluster=dgraph_cluster)
 
-    jwt_secret = JWTSecret()
+    # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
+    # web UI.
+    # jwt_secret = JWTSecret()
 
     test_user_password = TestUserPassword()
 
@@ -117,6 +129,7 @@ def main() -> None:
 
     services: List[ServiceLike] = []
 
+    # TODO: Potentially just removable
     ux_bucket = Bucket(
         "engagement-ux-bucket",
         website_args=aws.s3.BucketWebsiteArgs(
@@ -152,10 +165,15 @@ def main() -> None:
             node_identifier_queue=node_identifier_queue.main_queue_url,
             node_identifier_dead_letter_queue=node_identifier_queue.dead_letter_queue_url,
             node_identifier_retry_queue=node_identifier_queue.retry_queue_url,
+            osquery_generator_queue=osquery_generator_queue.main_queue_url,
+            osquery_generator_dead_letter_queue=osquery_generator_queue.dead_letter_queue_url,
             subgraphs_merged_bucket=subgraphs_merged_emitter.bucket,
             subgraphs_generated_bucket=subgraphs_generated_emitter.bucket,
+            sysmon_generator_queue=sysmon_generator_queue.main_queue_url,
+            sysmon_generator_dead_letter_queue=sysmon_generator_queue.dead_letter_queue_url,
+            unid_subgraphs_generated_bucket=unid_subgraphs_generated_emitter.bucket,
             user_auth_table=dynamodb_tables.user_auth_table.name,
-            ux_bucket=ux_bucket.bucket,
+            user_session_table=dynamodb_tables.user_session_table.name,
         ).apply(
             lambda inputs: {
                 # This is a special directive to our HCL file that tells it to use Localstack
@@ -188,6 +206,8 @@ def main() -> None:
                     "_aws_endpoint",
                     "aws_region",
                     "deployment_name",
+                    "schema_properties_table_name",
+                    "grapl_test_user_name",
                     "_redis_endpoint",
                 }
 
@@ -273,31 +293,27 @@ def main() -> None:
 
     # TODO: create everything inside of Api class
 
-    api = Api(
-        network=network,
-        secret=jwt_secret,
-        ux_bucket=ux_bucket,
-        db=dynamodb_tables,
-        plugins_bucket=model_plugins_bucket,
-        forwarder=forwarder,
-        dgraph_cluster=dgraph_cluster,
-    )
+    # api = Api(
+    #     network=network,
+    #     secret=jwt_secret,
+    #     ux_bucket=ux_bucket,
+    #     db=dynamodb_tables,
+    #     plugins_bucket=model_plugins_bucket,
+    #     forwarder=forwarder,
+    #     dgraph_cluster=dgraph_cluster,
+    # )
 
     if not config.LOCAL_GRAPL:
-        from infra.ux import populate_ux_bucket
 
-        # TODO: We are not populating the UX bucket in Local Grapl at
-        # the moment, as we have another means of doing this. We
-        # should harmonize this, of course.
-        populate_ux_bucket(ux_bucket)
 
-        # Provisioner(
-        #     network=network,
-        #     test_user_password=test_user_password,
-        #     db=dynamodb_tables,
-        #     dgraph_cluster=dgraph_cluster,
-        # )
-        #
+        Provisioner(
+            network=network,
+            test_user_password=test_user_password,
+            db=dynamodb_tables,
+            dgraph_cluster=dgraph_cluster,
+        )
+
+
         # E2eTestRunner(
         #     network=network,
         #     dgraph_cluster=dgraph_cluster,

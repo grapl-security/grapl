@@ -1,37 +1,24 @@
 import json
-import os
-from base64 import b64encode
-from hashlib import pbkdf2_hmac, sha256
 from typing import Dict
 
 import pulumi_aws as aws
+from argon2 import PasswordHasher
 
 import pulumi
 
 
 def local_user_item(username: str, cleartext: str) -> Dict[str, Dict[str, str]]:
-    # We hash before calling 'hashed_password' because the frontend will also perform
-    # client side hashing
-    cleartext += "f1dafbdcab924862a198deaa5b6bae29aef7f2a442f841da975f1c515529d254"
-    cleartext += username
+    """
+    Creates an "owner" account with the given username and password (cleartext)
+    """
 
-    hashed = sha256(cleartext.encode("utf8")).hexdigest()
-    for i in range(0, 5000):
-        hashed = sha256(hashed.encode("utf8")).hexdigest()
-
-    salt = os.urandom(16)
-    password = hash_password(hashed.encode("utf8"), salt)
+    password_hasher = PasswordHasher(time_cost=2, memory_cost=102400, parallelism=8)
+    password_hash = password_hasher.hash(cleartext)
 
     return {
-        "username": {"S": username},
-        "salt": {"B": str(b64encode(salt), "utf-8")},
-        "password": {"S": password},
+        "password_hash": {"S": password_hash},
+        "role": {"S": "owner"},
     }
-
-
-def hash_password(cleartext: bytes, salt: bytes) -> str:
-    hashed = sha256(cleartext).digest()
-    return pbkdf2_hmac("sha256", hashed, salt, 512000).hex()
 
 
 def local_grapl_user(table: aws.dynamodb.Table, username: str, cleartext: str) -> None:

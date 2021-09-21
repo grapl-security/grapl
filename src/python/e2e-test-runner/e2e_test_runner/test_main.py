@@ -48,7 +48,7 @@ def test_expected_data_in_dgraph(jwt: str) -> None:
     # TODO: Consider using `pytest-order` to make this a separate test that
     # depends on the above test having been run.
 
-    gql_client = GraphqlEndpointClient(jwt=jwt)
+    gql_client = GraphqlEndpointClient(actix_session=jwt)
     wait_for_one(
         WaitForNoException(
             lambda: ensure_graphql_lens_scope_no_errors(gql_client, LENS_NAME)
