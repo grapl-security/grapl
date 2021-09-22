@@ -158,15 +158,15 @@ def main() -> None:
             aws_access_key_secret=aws.config.secret_key,
             graph_merger_queue=graph_merger_queue.main_queue_url,
             graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
-            session_table_name=dynamodb_tables.dynamic_session_table.name,
-            schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
-            schema_table_name=dynamodb_tables.schema_table.name,
             model_plugins_bucket=model_plugins_bucket.bucket,
             node_identifier_queue=node_identifier_queue.main_queue_url,
             node_identifier_dead_letter_queue=node_identifier_queue.dead_letter_queue_url,
             node_identifier_retry_queue=node_identifier_queue.retry_queue_url,
             osquery_generator_queue=osquery_generator_queue.main_queue_url,
             osquery_generator_dead_letter_queue=osquery_generator_queue.dead_letter_queue_url,
+            schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
+            schema_table_name=dynamodb_tables.schema_table.name,
+            session_table_name=dynamodb_tables.dynamic_session_table.name,
             subgraphs_merged_bucket=subgraphs_merged_emitter.bucket,
             subgraphs_generated_bucket=subgraphs_generated_emitter.bucket,
             sysmon_generator_queue=sysmon_generator_queue.main_queue_url,
@@ -232,6 +232,8 @@ def main() -> None:
         # No Fargate or Elasticache in Local Grapl
         cache = Cache("main-cache", network=network)
 
+        aws_endpoint = "https://amazonaws.com"
+
         grapl_core_job_aws_vars = pulumi.Output.all(
             analyzer_bucket=analyzers_bucket.bucket,
             analyzer_dispatched_bucket=dispatched_analyzer_emitter.bucket.bucket,
@@ -239,25 +241,30 @@ def main() -> None:
             analyzer_executor_queue=analyzer_executor_queue.main_queue_url,
             analyzer_matched_subgraphs_bucket=analyzer_matched_emitter.bucket.bucket,
             analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url,
-            aws_access_key_id="test", #TODO remove? What happens if we pass in NULL? Idealy we don't want this passed in at all since AWS should be using role-based IAM access
-            aws_access_key_secret="test", #TODO remove?
+            aws_access_key_id="test",  # TODO remove? What happens if we pass in NULL? Idealy we don't want this passed in at all since AWS should be using role-based IAM access
+            aws_access_key_secret="test",  # TODO remove?
             graph_merger_queue=graph_merger_queue.main_queue_url,
             graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
-            session_table_name=dynamodb_tables.dynamic_session_table.name,
-            schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
-            schema_table_name=dynamodb_tables.schema_table.name,
             model_plugins_bucket=model_plugins_bucket.bucket,
             node_identifier_queue=node_identifier_queue.main_queue_url,
             node_identifier_dead_letter_queue=node_identifier_queue.dead_letter_queue_url,
             node_identifier_retry_queue=node_identifier_queue.retry_queue_url,
+            osquery_generator_queue=osquery_generator_queue.main_queue_url,
+            osquery_generator_dead_letter_queue=osquery_generator_queue.dead_letter_queue_url,
+            schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
+            schema_table_name=dynamodb_tables.schema_table.name,
+            session_table_name=dynamodb_tables.dynamic_session_table.name,
             subgraphs_merged_bucket=subgraphs_merged_emitter.bucket,
             subgraphs_generated_bucket=subgraphs_generated_emitter.bucket,
+            sysmon_generator_queue=sysmon_generator_queue.main_queue_url,
+            sysmon_generator_dead_letter_queue=sysmon_generator_queue.dead_letter_queue_url,
+            unid_subgraphs_generated_bucket=unid_subgraphs_generated_emitter.bucket,
             user_auth_table=dynamodb_tables.user_auth_table.name,
-            ux_bucket=ux_bucket.bucket,
+            user_session_table=dynamodb_tables.user_session_table.name,
         ).apply(
             lambda inputs: {
                 # This is a special directive to our HCL file that tells it to use Localstack
-                "_aws_endpoint": None, # TODO what should this be in AwS?
+                "_aws_endpoint": aws_endpoint,
                 "aws_region": aws.get_region().name,
                 "container_registry": "docker.cloudsmith.io/",
                 "container_repo": "raw/",
@@ -269,11 +276,11 @@ def main() -> None:
                 # Build Tags. We use per service tags so we can update services independently
                 "analyzer_dispatcher_tag": "20210920154305-c6d7c551",
                 "analyzer_executor_tag": "20210920154305-c6d7c551",
-                "graph_merger_tag": ":20210920154305-c6d7c551",
+                "graph_merger_tag": "20210920154305-c6d7c551",
                 "graphql_endpoint_tag": "latest",
-                "engagement_view_tag": "latest",
                 "provisioner_tag": "latest",
                 "node_identifier_tag": "20210920154305-c6d7c551",
+                "sysmon_generator_tag": "20210920154305-c6d7c551",
                 "dgraph_tag": "latest",
                 **inputs,
             }
@@ -305,14 +312,12 @@ def main() -> None:
 
     if not config.LOCAL_GRAPL:
 
-
         Provisioner(
             network=network,
             test_user_password=test_user_password,
             db=dynamodb_tables,
             dgraph_cluster=dgraph_cluster,
         )
-
 
         # E2eTestRunner(
         #     network=network,
