@@ -30,7 +30,6 @@ from infra.kafka import Kafka
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.node_identifier import NodeIdentifier
-from infra.nomad_cluster import NomadCluster
 from infra.nomad_job import NomadJob
 from infra.osquery_generator import OSQueryGenerator
 from infra.pipeline_dashboard import PipelineDashboard
@@ -222,6 +221,7 @@ def main() -> None:
 
                 integration_test_only_job_vars = {
                     "_kafka_endpoint": kafka_endpoint,
+                    "grapl_root": os.environ["GRAPL_ROOT"]
                 }
                 return {**subset, **integration_test_only_job_vars}
 

@@ -52,6 +52,11 @@ variable "grapl_test_user_name" {
   description = "The name of the test user"
 }
 
+variable "grapl_root" {
+  type        = string
+  description = "The root of the Grapl repo on the Host OS."
+}
+
 locals {
   log_level = "DEBUG"
 
@@ -151,50 +156,79 @@ job "integration-tests" {
               destination_name = "dgraph-alpha-0-grpc-public"
               local_bind_port  = 9080
             }
+            upstreams {
+              destination_name = "web-ui"
+              local_bind_port  = 1234
+            }
           }
         }
       }
     }
 
     task "python-integration-tests" {
-      driver = "raw_exec"  # Potentially dangerous if ever deployed to prod!
+      driver = "raw_exec" # Potentially dangerous if ever deployed to prod!
 
       config {
         command = "/bin/bash"
         args = [
-          "-o", "errexit", "-o", "nounset", "-c", 
+          "-o", "errexit", "-o", "nounset", "-c",
+          trimspace(<<EOF
+# aws vars
+export AWS_REGION="${var.aws_region}"
+export GRAPL_AWS_ENDPOINT="${local.aws_endpoint}"
+export GRAPL_AWS_ACCESS_KEY_ID="${var.aws_access_key_id}"
+export GRAPL_AWS_ACCESS_KEY_SECRET="${var.aws_access_key_secret}"
+
+export GRAPL_LOG_LEVEL="${local.log_level}"
+
+# These environment vars need to exist but the values aren't actually exercised
+export GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET="NOT_ACTUALLY_EXERCISED_IN_TESTS"
+export GRAPL_ANALYZERS_BUCKET="NOT_ACTUALLY_EXERCISED_IN_TESTS"
+export GRAPL_MODEL_PLUGINS_BUCKET="NOT_ACTUALLY_EXERCISED_IN_TESTS"
+
+export GRAPL_API_HOST="localhost"
+export GRAPL_HTTP_FRONTEND_PORT="${NOMAD_UPSTREAM_PORT_web-ui}"
+export GRAPL_TEST_USER_NAME="${var.grapl_test_user_name}"
+export GRAPL_SCHEMA_PROPERTIES_TABLE="${var.schema_properties_table_name}"
+
+export HITCACHE_ADDR="${local.redis_host}"
+export HITCACHE_PORT="${local.redis_port}"
+export MESSAGECACHE_ADDR="${local.redis_host}"
+export MESSAGECACHE_PORT="${local.redis_port}"
+export IS_RETRY="False"
+export IS_LOCAL="True"
+
+export DEPLOYMENT_NAME="${var.deployment_name}"
+export GRAPL_LOG_LEVEL="${local.log_level}"
+export MG_ALPHAS="localhost:9080"
+
+cd ${var.grapl_root}
+./pants filter --filter-target-type="python_tests" :: \
+  | xargs ./pants --tag="-needs_work" test --pytest-args="-m \"integration_test\""
+EOF
+          )
         ]
       }
+    }
 
-      env {
-        # aws vars
-        AWS_REGION                  = var.aws_region
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
+    task "clean-up-pants" {
+      # Executing pants as root above creates permissions problems in root/.pids
+      # The good news: it's always safe to delete `.pids
+      driver = "raw_exec"
 
-        GRAPL_LOG_LEVEL = local.log_level
+      lifecycle {
+        # Do it after other task stops - regardless of success
+        hook = "poststop"
+        # Ephemeral, not long-lived
+        sidecar = false
+      }
 
-        # These environment vars need to exist but the values aren't actually exercised
-        GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
-        GRAPL_ANALYZERS_BUCKET                  = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
-        GRAPL_MODEL_PLUGINS_BUCKET              = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
-
-        GRAPL_API_HOST           = "localhost"
-        GRAPL_HTTP_FRONTEND_PORT = "${NOMAD_UPSTREAM_PORT_web-ui}"
-        GRAPL_TEST_USER_NAME     = var.grapl_test_user_name
-        GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name
-
-        HITCACHE_ADDR     = local.redis_host
-        HITCACHE_PORT     = local.redis_port
-        MESSAGECACHE_ADDR = local.redis_host
-        MESSAGECACHE_PORT = local.redis_port
-        IS_RETRY          = "False"
-        IS_LOCAL = "True"
-
-        DEPLOYMENT_NAME = var.deployment_name
-        GRAPL_LOG_LEVEL = local.log_level
-        MG_ALPHAS       = "localhost:9080"
+      config {
+        command = "/bin/bash"
+        args = [
+          "-o", "errexit", "-o", "nounset", "-c",
+          "cd ${var.grapl_root} && rm -rf .pids"
+        ]
       }
     }
   }
