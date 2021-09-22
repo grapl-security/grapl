@@ -798,12 +798,9 @@ job "grapl-core" {
 
       service {
         name = "analyzer-executor"
-
       }
-
     }
   }
-
 
   group "engagement-creator" {
     network {
