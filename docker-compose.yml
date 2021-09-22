@@ -86,78 +86,9 @@ services:
   # Python Services
   ########################################################################
 
-  analyzer-executor:
-    image: grapl/analyzer-executor:${TAG:-latest}
-    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
-    command:
-      - |
-        export GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET=$$(cat /mnt/pulumi-outputs/analyzer-matched-subgraphs-bucket)
-        export GRAPL_ANALYZERS_BUCKET=$$(cat /mnt/pulumi-outputs/analyzers-bucket)
-        export GRAPL_MODEL_PLUGINS_BUCKET=$$(cat /mnt/pulumi-outputs/model-plugins-bucket)
-        export SOURCE_QUEUE_URL=$$(cat /mnt/pulumi-outputs/analyzer-executor-queue)
-        ./analyzer-executor.pex
-    environment:
-      <<: *aws-env
-      DEBUG_SERVICES: "${DEBUG_SERVICES:-}"
-      <<: *dgraph-env
-      GRPC_ENABLE_FORK_SUPPORT: "1"
-      HITCACHE_ADDR: "${REDIS_HOST}"
-      HITCACHE_PORT: "${REDIS_PORT}"
-      IS_RETRY: "False"
-      <<: *log-level
-      MESSAGECACHE_ADDR: "${REDIS_HOST}"
-      MESSAGECACHE_PORT: "${REDIS_PORT}"
-      VSC_DEBUGGER_PORT: "${VSC_DEBUGGER_PORT_FOR_ANALYZER_EXECUTOR}"
-    tty: true
-    ports:
-      - 127.0.0.1:${VSC_DEBUGGER_PORT_FOR_ANALYZER_EXECUTOR}:${VSC_DEBUGGER_PORT_FOR_ANALYZER_EXECUTOR}
-    depends_on:
-      dgraph:
-        condition: service_started
-      provisioner:
-        condition: service_completed_successfully
-      localstack:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      pulumi:
-        # We must wait until Pulumi has created the buckets to know what their names are
-        condition: service_completed_successfully
-    volumes:
-      - *read-only-pulumi-mnt
-
   ########################################################################
   # Web Services
   ########################################################################
-
-  graphql-endpoint:
-    image: grapl/graphql-endpoint:${TAG:-latest}
-    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
-    command:
-      - |
-        export GRAPL_SCHEMA_PROPERTIES_TABLE=$$(cat /mnt/pulumi-outputs/schema-properties-table)
-        export GRAPL_SCHEMA_TABLE=$$(cat /mnt/pulumi-outputs/schema-table)
-        ./start_potentially_with_debugger.sh
-    environment:
-      <<: *aws-env
-      <<: *dgraph-env
-      IS_LOCAL: "True"
-      JWT_SECRET_ID: "JWT_SECRET_ID"
-      PORT: ${GRAPL_GRAPHQL_PORT}
-      DEBUG_SERVICES: "${DEBUG_SERVICES:-}"
-      VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT: "${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}"
-    depends_on:
-      pulumi:
-        condition: service_completed_successfully
-    ports:
-      - 127.0.0.1:${GRAPL_GRAPHQL_PORT}:${GRAPL_GRAPHQL_PORT}
-      - 127.0.0.1:${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}:${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}
-    networks:
-      default:
-        aliases:
-          - ${GRAPL_GRAPHQL_HOST}
-    volumes:
-      - *read-only-pulumi-mnt
 
   grapl-notebook:
     image: grapl/notebook:${TAG:-latest}
@@ -235,6 +166,7 @@ services:
       SHOULD_DEPLOY_INTEGRATION_TESTS: "${SHOULD_DEPLOY_INTEGRATION_TESTS:-False}"
       # Other environment variables like MG_ALPHAS are passed in via
       # Pulumi.local-grapl.yaml
+      GRAPL_ROOT: "${PWD}"
     extra_hosts:
       # Expose the host Linux machine, despite being on the Grapl network.
       # This lets Pulumi talk to the host's Nomad
