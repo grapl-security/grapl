@@ -899,7 +899,6 @@ job "grapl-core" {
         SOURCE_QUEUE_URL = var.engagement_creator_queue
       }
     }
-<<<<<<< HEAD
 
     service {
       name = "engagement-creator"
@@ -910,47 +909,6 @@ job "grapl-core" {
               iterator = alpha
               for_each = local.dgraph_alphas
 
-=======
-  }
-
-  group "engagement-creator" {
-    network {
-      mode = "bridge"
-    }
-
-    task "engagement-creator" {
-      driver = "docker"
-
-      config {
-        image = "${var.container_registry}grapl/engagement-creator:${var.engagement_creator_tag}"
-      }
-
-      env {
-        # AWS vars
-        AWS_REGION                  = var.aws_region
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
-        # python vars
-        GRAPL_LOG_LEVEL = var.rust_log
-        # dgraph vars
-        MG_ALPHAS = local.alpha_grpc_connect_str
-
-        # service vars
-        SOURCE_QUEUE_URL = var.engagement_creator_queue
-      }
-    }
-
-    service {
-      name = "engagement-creator"
-      connect {
-        sidecar_service {
-          proxy {
-            dynamic "upstreams" {
-              iterator = alpha
-              for_each = local.dgraph_alphas
-
->>>>>>> ffe447632... Port engagement-creator from a Lambda to a service-that-retrieves-events (#1186)
               content {
                 destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
                 local_bind_port  = alpha.value.grpc_public_port
