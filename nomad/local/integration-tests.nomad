@@ -57,6 +57,11 @@ variable "grapl_root" {
   description = "The root of the Grapl repo on the Host OS."
 }
 
+variable "non_root_uid" {
+  type        = string
+  description = "The uid of the person who launched the 'sudo nomad agent'"
+}
+
 locals {
   log_level = "DEBUG"
 
@@ -170,6 +175,7 @@ job "integration-tests" {
       }
     }
 
+    # This is hacky as hell.
     task "python-integration-tests" {
       driver = "raw_exec" # Potentially dangerous if ever deployed to prod!
 
@@ -208,8 +214,11 @@ export GRAPL_LOG_LEVEL="${local.log_level}"
 export MG_ALPHAS="localhost:9080"
 
 cd ${var.grapl_root}
-./pants filter --filter-target-type="python_tests" :: \
-  | xargs ./pants --tag="-needs_work" test --pytest-args="-m \"integration_test\""
+# Executing pants as root above creates permissions problems in root/.pids, so
+# we pass down the UID from Makefile.
+# -E = preserve environment; -u = user
+sudo -E -u \#${var.non_root_uid} ./pants filter --filter-target-type="python_tests" :: \
+  | sudo -E -u \#${var.non_root_uid} xargs ./pants --tag="-needs_work" test --pytest-args="-m \"integration_test\""
 EOF
           )
         ]
@@ -217,8 +226,6 @@ EOF
     }
 
     task "clean-up-pants" {
-      # Executing pants as root above creates permissions problems in root/.pids
-      # The good news: it's always safe to delete `.pids
       driver = "raw_exec"
 
       lifecycle {
@@ -232,7 +239,8 @@ EOF
         command = "/bin/bash"
         args = [
           "-o", "errexit", "-o", "nounset", "-c",
-          "cd ${var.grapl_root} && rm -rf .pids"
+          "ls"
+          #"cd ${var.grapl_root} && rm -rf .pids"
         ]
       }
     }
