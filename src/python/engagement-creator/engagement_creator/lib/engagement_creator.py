@@ -77,6 +77,7 @@ def parse_s3_event(s3: S3ServiceResource, event: S3PutRecordDict) -> str:
     try:
         bucket = event["s3"]["bucket"]["name"]
         key = event["s3"]["object"]["key"]
+        key = key.replace("%3D", "=")
     except KeyError:
         LOGGER.error(f"Could not parse s3 event: {event}", exc_info=True)
         raise
