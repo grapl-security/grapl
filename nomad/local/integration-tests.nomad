@@ -132,6 +132,11 @@ job "integration-tests" {
         REDIS_ENDPOINT = local.redis_endpoint
         KAFKA_ENDPOINT = local.kafka_endpoint
       }
+
+      # Because Cargo does some... compiling... for some reason.... maybe.....
+      resources {
+        memory = 8192
+      }
     }
   }
 
