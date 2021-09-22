@@ -167,6 +167,7 @@ services:
       # Other environment variables like MG_ALPHAS are passed in via
       # Pulumi.local-grapl.yaml
       GRAPL_ROOT: "${PWD}"
+      UID: "${UID}"
     extra_hosts:
       # Expose the host Linux machine, despite being on the Grapl network.
       # This lets Pulumi talk to the host's Nomad
