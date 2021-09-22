@@ -10,7 +10,7 @@ services:
       target: build-test
       args:
         - RUST_BUILD=test-integration
-  
+
   # No Docker image for python integration tests - we run them against the Host OS!
 
   # TODO: Re-enable these tests after the following issues are resolved:
