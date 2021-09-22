@@ -26,6 +26,8 @@ from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
 from mypy_boto3_s3 import S3ServiceResource
 from typing_extensions import Final, Literal
 
+from grapl_common.sqs.sqs_types import SQSMessageBody
+
 GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
 LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL
 LOGGER = logging.getLogger(__name__)
@@ -35,9 +37,7 @@ LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 """
 https://docs.aws.amazon.com/AmazonS3/latest/dev/notification-content-structure.html
 """
-S3Event = Dict[str, Any]
-
-EventWithReceiptHandle = Tuple[S3Event, str]
+EventWithReceiptHandle = Tuple[SQSMessageBody, str]
 
 V = TypeVar("V", bound=Viewable)
 Q = TypeVar("Q", bound=Queryable)
@@ -199,7 +199,7 @@ def create_metrics_client() -> EngagementCreatorMetrics:
     return EngagementCreatorMetrics(SERVICE_NAME)
 
 
-def lambda_handler(s3_event: S3Event, context: Any) -> None:
+async def lambda_handler(s3_event: SQSMessageBody, context: Any) -> None:
     graph_client = GraphClient()
     s3 = S3ResourceFactory(boto3).from_env()
     metrics = create_metrics_client()

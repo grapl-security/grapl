@@ -22,7 +22,6 @@ async def main() -> None:
     Some TODOs:
     - add
       DEAD_LETTER_QUEUE_URL
-      DEST_QUEUE_URL
     - pull the manual eventing out of `handle_events` and into an EventEmitter (maybe?)
     """
     queue_url = os.environ["SOURCE_QUEUE_URL"]
