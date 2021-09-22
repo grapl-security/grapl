@@ -145,6 +145,9 @@ def main() -> None:
         analyzer_executor_queue = ServiceQueue("analyzer-executor")
         analyzer_executor_queue.subscribe_to_emitter(dispatched_analyzer_emitter)
 
+        engagement_creator_queue = ServiceQueue("engagement-creator")
+        engagement_creator_queue.subscribe_to_emitter(analyzer_matched_emitter)
+
         kafka = Kafka("kafka")
 
         # These are created in `grapl-local-infra.nomad` and not applicable to prod.
@@ -162,6 +165,7 @@ def main() -> None:
             analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url,
             aws_access_key_id=aws.config.access_key,
             aws_access_key_secret=aws.config.secret_key,
+            engagement_creator_queue=engagement_creator_queue.main_queue_url,
             graph_merger_queue=graph_merger_queue.main_queue_url,
             graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
             session_table_name=dynamodb_tables.dynamic_session_table.name,

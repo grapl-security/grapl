@@ -92,6 +92,10 @@ variable "dgraph_shards" {
   default = 1
 }
 
+variable "engagement_creator_queue" {
+  type = string
+}
+
 variable "engagement_creator_tag" {
   type        = string
   default     = "dev"
@@ -823,6 +827,9 @@ job "grapl-core" {
         GRAPL_LOG_LEVEL = var.rust_log
         # dgraph vars
         MG_ALPHAS = local.alpha_grpc_connect_str
+
+        # service vars
+        SOURCE_QUEUE_URL = var.engagement_creator_queue
       }
     }
 

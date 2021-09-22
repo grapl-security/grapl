@@ -19,9 +19,8 @@ LOGGER = get_module_grapl_logger()
 
 async def main() -> None:
     """
-    Some TODOs:
-    - add
-      DEAD_LETTER_QUEUE_URL
+    Some TODOs to bring this inline with sqs-executor in Rust:
+    - add the shortcut-to-DEAD_LETTER_QUEUE_URL case
     - pull the manual eventing out of `handle_events` and into an EventEmitter (maybe?)
     """
     queue_url = os.environ["SOURCE_QUEUE_URL"]
