@@ -11,20 +11,6 @@ services:
       args:
         - RUST_BUILD=test-integration
 
-  analyzerlib-integration-tests:
-    image: ${DOCKER_REGISTRY:-docker.io}/grapl/analyzerlib-test:${TAG:-latest}
-    build:
-      context: ${PWD}
-      dockerfile: ./src/python/Dockerfile
-      target: grapl-analyzerlib-test
-
-  analyzer-executor-integration-tests:
-    image: ${DOCKER_REGISTRY:-docker.io}/grapl/analyzer-executor-test:${TAG:-latest}
-    build:
-      context: ${PWD}
-      dockerfile: ./src/python/Dockerfile
-      target: analyzer-executor-test
-
   # TODO: Re-enable these tests after the following issues are resolved:
   # - https://github.com/grapl-security/issue-tracker/issues/385
   # - https://github.com/grapl-security/issue-tracker/issues/386
@@ -45,10 +31,3 @@ services:
   #     "
   #   environment:
   #     - GRAPL_API_HOST
-
-  graphql-endpoint-tests:
-    image: ${DOCKER_REGISTRY:-docker.io}/grapl/graphql-endpoint-tests:${TAG:-latest}
-    build:
-      context: ${PWD}
-      dockerfile: ./src/python/Dockerfile
-      target: graphql-endpoint-tests
