@@ -1,0 +1,30 @@
+[package]
+name = "grapl-web-ui"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+grapl-config = { path = "../grapl-config" }
+actix-web = "3"
+actix-files = "0.5"
+actix-session = "0.4"
+thiserror = "1"
+argon2 = { version = "0.2", features = ["std"] }
+futures = "0.3"
+futures-util = "0.3"
+rusoto_core = { version = "0.46", default_features = false, features = [
+  "rustls"
+] }
+rusoto_dynamodb = { version = "0.46", default_features = false, features = [
+  "rustls"
+] }
+tracing = "0.1"
+tracing-subscriber = "0.2"
+serde = "1"
+serde_dynamodb = "0.8"
+chrono = "0.4"
+rand = "0.8"
+tap = "1"
+hmap = "0.1"
+url = "2"
+tokio = "1"

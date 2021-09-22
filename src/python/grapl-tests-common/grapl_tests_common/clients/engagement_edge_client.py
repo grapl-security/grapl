@@ -1,4 +1,3 @@
-import hashlib
 import os
 from http import HTTPStatus
 from typing import Optional
@@ -29,15 +28,8 @@ def _get_test_user_password(deployment_name: str) -> str:
     )["SecretString"]
 
 
-def _sha_and_pepper(username: str, password: str) -> str:
-    # see src/js/engagement_view/src/components/login/utils/passwordHashing.tsx
-    pepper = "f1dafbdcab924862a198deaa5b6bae29aef7f2a442f841da975f1c515529d254"
-    hashed = hashlib.sha256((password + pepper + username).encode("utf-8"))
-    for _ in range(5000):
-        hashed = hashlib.sha256(hashed.hexdigest().encode("utf-8"))
-    return hashed.hexdigest()
-
-
+# TODO: This is replaced by GraplWebClient.
+# Will be ripping this out in a followup PR that also fixes up e2e tests.
 class EngagementEdgeClient:
     def __init__(self) -> None:
         self.endpoint = endpoint_url("/auth")
@@ -46,12 +38,10 @@ class EngagementEdgeClient:
     def get_jwt(self) -> str:
         LOGGER.debug("retrieving jwt cookie")
         username = os.environ["GRAPL_TEST_USER_NAME"]
-        password = _sha_and_pepper(
-            username=username,
-            password=_get_test_user_password(
-                deployment_name=os.environ["DEPLOYMENT_NAME"]
-            ),
+        password = _get_test_user_password(
+            deployment_name=os.environ["DEPLOYMENT_NAME"]
         )
+
         LOGGER.debug(f"logging in with user {username} at {self.endpoint}/login")
         resp = requests.post(
             f"{self.endpoint}/login",

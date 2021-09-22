@@ -11,13 +11,11 @@ variable "container_registry" {
 
 variable "aws_access_key_id" {
   type        = string
-  default     = "test"
   description = "The aws access key id used to interact with AWS."
 }
 
 variable "aws_access_key_secret" {
   type        = string
-  default     = "test"
   description = "The aws access key secret used to interact with AWS."
 }
 
@@ -143,7 +141,6 @@ variable "graph_merger_dead_letter_queue" {
 variable "grapl_test_user_name" {
   type        = string
   description = "The name of the test user"
-  default     = "grapl-test-user"
 }
 
 variable "model_plugins_bucket" {
@@ -187,6 +184,11 @@ variable "provisioner_tag" {
   description = "The tagged version of the provisioner we should deploy."
 }
 
+variable "unid_subgraphs_generated_bucket" {
+  type        = string
+  description = "The destination bucket for unidentified subgraphs. Used by generators."
+}
+
 variable "subgraphs_merged_bucket" {
   type        = string
   description = "The destination bucket for merged subgraphs. Used by Graph Merger."
@@ -197,21 +199,16 @@ variable "subgraphs_generated_bucket" {
   description = "The destination bucket for generated subgraphs. Used by Node identifier."
 }
 
-variable "engagement_view_tag" {
-  type        = string
-  default     = "dev"
-  description = "The image tag for the engagement view."
-}
-
-variable "ux_bucket" {
-  type        = string
-  description = "The grapl UX bucket for the engagement view."
-}
-
 variable "graphql_endpoint_tag" {
   type        = string
   default     = "dev"
   description = "The image tag for the graphql endpoint docker image."
+}
+
+variable "web_ui_tag" {
+  type        = string
+  default     = "dev"
+  description = "The image tag for the Grapl web UI docker image."
 }
 
 variable "deployment_name" {
@@ -221,7 +218,40 @@ variable "deployment_name" {
 
 variable "user_auth_table" {
   type        = string
-  description = "What is the name of the user auth table?"
+  description = "What is the name of the DynamoDB user auth table?"
+}
+
+variable "user_session_table" {
+  type        = string
+  description = "What is the name of the DynamoDB user session table?"
+}
+
+variable "sysmon_generator_tag" {
+  type        = string
+  default     = "dev"
+  description = "The image tag for the sysmon generator docker image."
+}
+
+variable "sysmon_generator_queue" {
+  type = string
+}
+
+variable "sysmon_generator_dead_letter_queue" {
+  type = string
+}
+
+variable "osquery_generator_tag" {
+  type        = string
+  default     = "dev"
+  description = "The image tag for the osquery generator docker image."
+}
+
+variable "osquery_generator_queue" {
+  type = string
+}
+
+variable "osquery_generator_dead_letter_queue" {
+  type = string
 }
 
 locals {
@@ -258,6 +288,13 @@ locals {
   _redis         = split(":", local._redis_trimmed)
   redis_host     = local._redis[0]
   redis_port     = local._redis[1]
+
+  # Grapl services
+  web_ui_port           = 1234
+  graphql_endpoint_port = 5000
+
+  # enabled
+  rust_backtrace = 1
 }
 
 job "grapl-core" {
@@ -446,6 +483,11 @@ job "grapl-core" {
         port "healthcheck" {
           to = -1
         }
+        port "dgraph-alpha-port" {
+          # Primarily here to let us use ratel.
+          # Could be potentially replaced with a gateway stanza or something.
+          to = alpha.value.http_port
+        }
       }
 
       task "dgraph-alpha" {
@@ -460,6 +502,7 @@ job "grapl-core" {
             "--port_offset", "${alpha.value.id}",
             "--zero", "${local.zero_alpha_connect_str}"
           ]
+          ports = ["dgraph-alpha-port"]
         }
       }
 
@@ -575,7 +618,7 @@ job "grapl-core" {
         AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
         AWS_REGION                  = var.aws_region
         RUST_LOG                    = var.rust_log
-        RUST_BACKTRACE              = 1
+        RUST_BACKTRACE              = local.rust_backtrace
         REDIS_ENDPOINT              = local.redis_endpoint
         MG_ALPHAS                   = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
@@ -682,7 +725,7 @@ job "grapl-core" {
         AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
         AWS_REGION                  = var.aws_region
         RUST_LOG                    = var.rust_log
-        RUST_BACKTRACE              = 1
+        RUST_BACKTRACE              = local.rust_backtrace
         REDIS_ENDPOINT              = local.redis_endpoint
         MG_ALPHAS                   = local.alpha_grpc_connect_str # alpha_grpc_connect_str won't work if network mode = grapl network
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
@@ -721,7 +764,7 @@ job "grapl-core" {
         AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
         AWS_REGION                  = var.aws_region
         RUST_LOG                    = var.rust_log
-        RUST_BACKTRACE              = 1
+        RUST_BACKTRACE              = local.rust_backtrace
         REDIS_ENDPOINT              = local.redis_endpoint
         MG_ALPHAS                   = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
@@ -756,7 +799,7 @@ job "grapl-core" {
         GRAPL_AWS_ENDPOINT          = local.aws_endpoint
         # rust vars
         RUST_LOG       = var.rust_log
-        RUST_BACKTRACE = 1
+        RUST_BACKTRACE = local.rust_backtrace
         # service vars
         GRAPL_ANALYZERS_BUCKET = var.analyzer_bucket
         DEST_BUCKET_NAME       = var.analyzer_dispatched_bucket
@@ -813,35 +856,9 @@ job "grapl-core" {
 
   group "graphql-endpoint" {
     network {
-      //      mode = "bridge"
-
-      port "graphql-endpoint" {
-        to = 5000
-      }
-    }
-
-    // engagement-view just uploads the ux tarball. For the moment this is set to run as an init container but should
-    // probably be run from Buildkite instead
-    task "engagement-view" {
-      driver = "docker"
-
-      config {
-        image        = "${var.container_registry}grapl/engagement-view:${var.engagement_view_tag}"
-        network_mode = "grapl-network"
-      }
-
-      lifecycle {
-        hook    = "prestart"
-        sidecar = false
-      }
-
-      env {
-        RUST_LOG                    = var.rust_log
-        GRAPL_UX_BUCKET             = var.ux_bucket
-        AWS_REGION                  = var.aws_region
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
+      mode = "bridge"
+      port "graphql-endpoint-port" {
+        static = local.graphql_endpoint_port
       }
     }
 
@@ -849,14 +866,13 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image        = "${var.container_registry}grapl/graphql-endpoint:${var.graphql_endpoint_tag}"
-        network_mode = "grapl-network"
+        image = "${var.container_registry}grapl/graphql-endpoint:${var.graphql_endpoint_tag}"
+        ports = ["graphql-endpoint-port"]
       }
 
       env {
         DEPLOYMENT_NAME               = var.deployment_name
         RUST_LOG                      = var.rust_log
-        GRAPL_UX_BUCKET               = var.ux_bucket
         AWS_REGION                    = var.aws_region
         MG_ALPHAS                     = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE            = var.schema_table_name
@@ -866,17 +882,140 @@ job "grapl-core" {
         GRAPL_AWS_ENDPOINT            = local.aws_endpoint
         IS_LOCAL                      = "True"
         JWT_SECRET_ID                 = "JWT_SECRET_ID"
-        PORT                          = 5000
+        PORT                          = local.graphql_endpoint_port
       }
     }
 
     service {
       name = "graphql-endpoint"
-      //      port = "graphql-endpoint"
-      //
-      //      connect {
-      //        sidecar_service {}
-      //      }
+      port = "graphql-endpoint-port"
+
+      connect {
+        sidecar_service {
+          proxy {
+            dynamic "upstreams" {
+              iterator = alpha
+              for_each = local.dgraph_alphas
+
+              content {
+                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
+                local_bind_port  = alpha.value.grpc_public_port
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  group "web-ui" {
+    network {
+      mode = "bridge"
+
+      port "web-ui-port" {
+        static = local.web_ui_port
+        to     = local.web_ui_port
+      }
+    }
+
+    task "web-ui" {
+      driver = "docker"
+
+      config {
+        image = "${var.container_registry}grapl/grapl-web-ui:${var.web_ui_tag}"
+        ports = ["web-ui-port"]
+      }
+
+      env {
+        # For the DynamoDB client
+        AWS_REGION                  = var.aws_region
+        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
+        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
+        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
+
+        GRAPL_USER_AUTH_TABLE    = var.user_auth_table
+        GRAPL_USER_SESSION_TABLE = var.user_session_table
+
+        GRAPL_WEB_UI_BIND_ADDRESS            = "0.0.0.0:${local.web_ui_port}"
+        GRAPL_GRAPHQL_ENDPOINT               = "http://localhost:${local.graphql_endpoint_port}"
+        GRAPL_MODEL_PLUGIN_DEPLOYER_ENDPOINT = "http://TODO:1111" # Note - MPD is being replaced by a Rust service.
+        RUST_LOG                             = var.rust_log
+        RUST_BACKTRACE                       = 1
+      }
+    }
+
+    service {
+      name = "web-ui"
+      port = "web-ui-port"
+      connect {
+        sidecar_service {
+          proxy {
+            upstreams {
+              destination_name = "graphql-endpoint"
+              local_bind_port  = local.graphql_endpoint_port
+            }
+          }
+        }
+      }
+    }
+  }
+
+  group "sysmon-generator" {
+    network {
+      mode = "bridge"
+    }
+
+    task "sysmon-generator" {
+      driver = "docker"
+
+      config {
+        image = "${var.container_registry}grapl/sysmon-generator:${var.sysmon_generator_tag}"
+      }
+
+      env {
+        DEST_BUCKET_NAME            = var.unid_subgraphs_generated_bucket
+        DEAD_LETTER_QUEUE_URL       = var.sysmon_generator_dead_letter_queue
+        SOURCE_QUEUE_URL            = var.sysmon_generator_queue
+        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
+        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
+        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
+        AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
+        AWS_REGION                  = var.aws_region
+        REDIS_ENDPOINT              = local.redis_endpoint
+        GRAPL_LOG_LEVEL             = var.rust_log
+        RUST_LOG                    = var.rust_log
+        RUST_BACKTRACE              = local.rust_backtrace
+      }
+    }
+  }
+
+  group "osquery-generator" {
+    network {
+      mode = "bridge"
+    }
+
+    task "osquery-generator" {
+      driver = "docker"
+
+      config {
+        image = "${var.container_registry}grapl/osquery-generator:${var.sysmon_generator_tag}"
+      }
+
+      env {
+
+        DEST_BUCKET_NAME            = var.unid_subgraphs_generated_bucket
+        DEAD_LETTER_QUEUE_URL       = var.osquery_generator_dead_letter_queue
+        SOURCE_QUEUE_URL            = var.osquery_generator_queue
+        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
+        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
+        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
+        AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
+        AWS_REGION                  = var.aws_region
+        REDIS_ENDPOINT              = local.redis_endpoint
+        GRAPL_LOG_LEVEL             = var.rust_log
+        RUST_LOG                    = var.rust_log
+        RUST_BACKTRACE              = local.rust_backtrace
+      }
     }
   }
 }

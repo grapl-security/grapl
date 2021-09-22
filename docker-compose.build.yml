@@ -65,6 +65,15 @@ services:
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
+  grapl-web-ui:
+    image: grapl/grapl-web-ui:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: rust/Dockerfile
+      target: grapl-web-ui
+      args:
+        - RUST_BUILD=${RUST_BUILD:-debug}
+
   ########################################################################
   # Python Services
   ########################################################################
@@ -90,13 +99,6 @@ services:
   ########################################################################
   # Web Services
   ########################################################################
-
-  engagement-view-uploader:
-    image: grapl/engagement-view:${TAG:-latest}
-    build:
-      context: src/js/engagement_view
-      dockerfile: Dockerfile
-      target: engagement-view-local-deploy
 
   # This container build exists only for Local Grapl; if we are able
   # to deploy graphql-endpoint as an actual Lambda there, we can get

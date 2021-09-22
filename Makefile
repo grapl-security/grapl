@@ -204,7 +204,7 @@ build-docker-images-local:
 	$(MAKE) build-docker-images
 
 .PHONY: build-docker-images
-build-docker-images: graplctl
+build-docker-images: graplctl build-ux
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
 
 .PHONY: build
@@ -238,20 +238,10 @@ dump-artifacts:  # Run the script that dumps Nomad/Docker logs after test runs
 
 .PHONY: build-ux
 build-ux: ## Build website assets
-	cd src/js/engagement_view && yarn install && yarn build
-
-# This is used to create the artifact that will be uploaded to our
-# artifact repository in CI, and will be the artifact that is used by
-# our Pulumi deployments.
-.PHONY: ux-tarball
-ux-tarball: build-ux ## Build website asset tarball
-	tar \
-		--create \
-		--gzip \
-		--verbose \
-		--file="dist/grapl-ux.tar.gz" \
-		--directory=src/js/engagement_view/build \
-		.
+	$(MAKE) -C src/js/engagement_view build
+	cp -r \
+		"${PWD}/src/js/engagement_view/build/." \
+		"${PWD}/src/rust/grapl-web-ui/frontend/"
 
 ##@ Test 🧪
 
@@ -286,6 +276,7 @@ test-unit-js: export COMPOSE_PROJECT_NAME := grapl-test-unit-js
 test-unit-js: export COMPOSE_FILE := ./test/docker-compose.unit-tests-js.yml
 test-unit-js: build-test-unit-js ## Build and run unit tests - JavaScript only
 	test/docker-compose-with-error.sh
+	$(MAKE) -C src/js/engagement_view test
 
 .PHONY: test-typecheck-docker
 test-typecheck-docker: export COMPOSE_PROJECT_NAME := grapl-typecheck_tests
@@ -444,6 +435,7 @@ up-detach: build-local ## Bring up local Grapl and detach to return control to t
 		up --force-recreate --always-recreate-deps --renew-anon-volumes \
 		--exit-code-from pulumi \
 		pulumi
+	echo "--- up-detach complete"
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
@@ -534,14 +526,6 @@ update-buildkite-shared: ## Pull in changes from grapl-security/buildkite-common
 .PHONY: build-docs
 build-docs: ## Build the Sphinx docs
 	./docs/build_docs.sh
-
-.PHONY: local-ux-upload
-local-ux-upload: ## Upload local engagement-view assets to a running Local Grapl (make sure to have done `make up` first)
-	$(DOCKER_BUILDX_BAKE) --file=docker-compose.build.yml engagement-view-uploader &&
-	COMPOSE_PROJECT_NAME=grapl \
-	docker-compose --env-file=local-grapl.env \
-	--file=docker-compose.yml \
-	run --no-deps engagement-view-uploader
 
 .PHONY: local-graplctl-setup
 local-graplctl-setup: ## Upload analyzers and data to a running Local Grapl (make sure to have done `make up` first)
