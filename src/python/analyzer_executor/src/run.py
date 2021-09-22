@@ -3,14 +3,14 @@ import os
 
 import boto3
 from analyzer_executor_lib.analyzer_executor import AnalyzerExecutor
+from grapl_common.debugger.vsc_debugger import wait_for_vsc_debugger
+from grapl_common.env_helpers import SQSClientFactory
+from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_common.sqs.event_retriever import EventRetriever
 from grapl_common.sqs.sqs_timeout_manager import (
     SqsTimeoutManager,
     SqsTimeoutManagerException,
 )
-from grapl_common.debugger.vsc_debugger import wait_for_vsc_debugger
-from grapl_common.env_helpers import SQSClientFactory
-from grapl_common.grapl_logger import get_module_grapl_logger
 
 wait_for_vsc_debugger(service="analyzer_executor")
 

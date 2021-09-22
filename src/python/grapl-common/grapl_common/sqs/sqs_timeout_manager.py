@@ -4,8 +4,8 @@ import asyncio
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Coroutine
 
-from grapl_common.sqs.sqs_types import SQSMessageId, SQSReceiptHandle
 from grapl_common.grapl_logger import get_module_grapl_logger
+from grapl_common.sqs.sqs_types import SQSMessageId, SQSReceiptHandle
 
 if TYPE_CHECKING:
     from mypy_boto3_sqs import SQSClient

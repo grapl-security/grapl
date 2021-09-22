@@ -23,10 +23,9 @@ from grapl_analyzerlib.queryable import Queryable
 from grapl_analyzerlib.viewable import Viewable
 from grapl_common.env_helpers import S3ResourceFactory
 from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
+from grapl_common.sqs.sqs_types import SQSMessageBody
 from mypy_boto3_s3 import S3ServiceResource
 from typing_extensions import Final, Literal
-
-from grapl_common.sqs.sqs_types import SQSMessageBody
 
 GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
 LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL

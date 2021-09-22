@@ -3,13 +3,13 @@ import os
 
 import boto3
 from engagement_creator_lib.engagement_creator import lambda_handler
+from grapl_common.env_helpers import SQSClientFactory
+from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_common.sqs.event_retriever import EventRetriever
 from grapl_common.sqs.sqs_timeout_manager import (
     SqsTimeoutManager,
     SqsTimeoutManagerException,
 )
-from grapl_common.env_helpers import SQSClientFactory
-from grapl_common.grapl_logger import get_module_grapl_logger
 
 LOGGER = get_module_grapl_logger()
 

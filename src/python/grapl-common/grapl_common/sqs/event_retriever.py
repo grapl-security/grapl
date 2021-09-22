@@ -5,9 +5,9 @@ import traceback
 from typing import Iterator
 
 import boto3
-from grapl_common.sqs.sqs_types import SQSMessage
 from grapl_common.env_helpers import SQSClientFactory
 from grapl_common.grapl_logger import get_module_grapl_logger
+from grapl_common.sqs.sqs_types import SQSMessage
 
 LOGGER = get_module_grapl_logger()
 

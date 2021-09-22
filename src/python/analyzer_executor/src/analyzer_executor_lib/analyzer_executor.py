@@ -27,7 +27,6 @@ from typing import (
 
 import boto3
 from analyzer_executor_lib.redis_cache import EitherCache, construct_redis_client
-from grapl_common.sqs.sqs_types import S3PutRecordDict, SQSMessageBody
 from grapl_analyzerlib.analyzer import Analyzer
 from grapl_analyzerlib.execution import ExecutionComplete, ExecutionFailed, ExecutionHit
 from grapl_analyzerlib.grapl_client import GraphClient
@@ -38,6 +37,7 @@ from grapl_analyzerlib.subgraph_view import SubgraphView
 from grapl_common.env_helpers import S3ResourceFactory
 from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
+from grapl_common.sqs.sqs_types import S3PutRecordDict, SQSMessageBody
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
