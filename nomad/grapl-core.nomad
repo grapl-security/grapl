@@ -381,6 +381,9 @@ job "grapl-core" {
     content {
       network {
         mode = "bridge"
+        port "healthcheck" {
+          to = -1
+        }
       }
 
       task "dgraph-zero" {
@@ -434,7 +437,34 @@ job "grapl-core" {
                   local_bind_port  = alpha.value.grpc_private_port
                 }
               }
+
+              # We need to expose the health check for consul to be able to reach it
+              expose {
+                path {
+                  path            = "/health"
+                  protocol        = "http"
+                  local_path_port = 6080
+                  listener_port   = "healthcheck"
+                }
+              }
+
             }
+          }
+        }
+
+        check {
+          type     = "http"
+          name     = "dgraph-zero-http-healthcheck"
+          path     = "/health"
+          port     = "healthcheck"
+          method   = "GET"
+          interval = "30s"
+          timeout  = "5s"
+
+          check_restart {
+            limit           = 3
+            grace           = "30s"
+            ignore_warnings = false
           }
         }
       }
@@ -450,6 +480,9 @@ job "grapl-core" {
     content {
       network {
         mode = "bridge"
+        port "healthcheck" {
+          to = -1
+        }
         port "dgraph-alpha-port" {
           # Primarily here to let us use ratel.
           # Could be potentially replaced with a gateway stanza or something.
@@ -529,7 +562,35 @@ job "grapl-core" {
         tags = ["dgraph", "alpha", "http"]
 
         connect {
-          sidecar_service {}
+          sidecar_service {
+            proxy {
+              # We need to expose the health check for consul to be able to reach it
+              expose {
+                path {
+                  path            = "/health"
+                  protocol        = "http"
+                  local_path_port = 8080
+                  listener_port   = "healthcheck"
+                }
+              }
+            }
+          }
+        }
+
+        check {
+          type     = "http"
+          name     = "dgraph-alpha-http-healthcheck"
+          path     = "/health"
+          port     = "healthcheck"
+          method   = "GET"
+          interval = "30s"
+          timeout  = "5s"
+
+          check_restart {
+            limit           = 3
+            grace           = "30s"
+            ignore_warnings = false
+          }
         }
       }
     }
