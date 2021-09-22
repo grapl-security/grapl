@@ -218,7 +218,7 @@ cd ${var.grapl_root}
 # we pass down the UID from Makefile.
 # -E = preserve environment; -u = user
 sudo -E -u \#${var.non_root_uid} ./pants filter --filter-target-type="python_tests" :: \
-  | sudo -E -u \#${var.non_root_uid} xargs ./pants --tag="-needs_work" test --pytest-args="-m \"integration_test\""
+  | xargs sudo -E -u \#${var.non_root_uid} ./pants --tag="-needs_work" test --pytest-args="-m \"integration_test\""
 EOF
           )
         ]
