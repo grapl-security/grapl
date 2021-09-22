@@ -47,6 +47,8 @@ class NomadAllocation:
         self.allocation_id = input["ID"]
         self.allocation_name = input["Name"]
         self.status = input["ClientStatus"]
+        if not input["TaskStates"]:
+            raise Exception(f"Why are there no TaskStates? {input}")
         # Remove tasks we don't super care about
         task_names = [
             t for t in input["TaskStates"].keys() if not t.startswith("connect-proxy")
@@ -109,7 +111,10 @@ def _get_nomad_logs_for_each_service(
     }
 
     for job, allocs in job_to_allocs.items():
-        _write_nomad_logs(nomad_client, artifacts_dir, job_name=job, allocs=allocs)
+        # Dispatch job names look like `integration-tests/dispatch-1632277984-ad265cfe`
+        # the second part is largely useless for us.
+        simplified_job_name = job.split("/")[0]
+        _write_nomad_logs(nomad_client, artifacts_dir, job_name=simplified_job_name, allocs=allocs)
 
     return job_to_allocs
 

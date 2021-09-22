@@ -617,7 +617,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image        = "${var.container_registry}grapl/graph-merger:${var.graph_merger_tag}"
+        image = "${var.container_registry}grapl/graph-merger:${var.graph_merger_tag}"
       }
 
       env {
@@ -723,7 +723,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image        = "${var.container_registry}grapl/node-identifier:${var.node_identifier_tag}"
+        image = "${var.container_registry}grapl/node-identifier:${var.node_identifier_tag}"
       }
 
       env {
@@ -761,7 +761,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image        = "${var.container_registry}grapl/node-identifier-retry:${var.node_identifier_tag}"
+        image = "${var.container_registry}grapl/node-identifier-retry:${var.node_identifier_tag}"
       }
 
       env {
@@ -794,7 +794,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image        = "${var.container_registry}grapl/analyzer-dispatcher:${var.analyzer_dispatcher_tag}"
+        image = "${var.container_registry}grapl/analyzer-dispatcher:${var.analyzer_dispatcher_tag}"
       }
 
       env {
@@ -830,7 +830,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image        = "${var.container_registry}grapl/analyzer-executor:${var.analyzer_executor_tag}"
+        image = "${var.container_registry}grapl/analyzer-executor:${var.analyzer_executor_tag}"
       }
 
       env {
@@ -865,6 +865,11 @@ job "grapl-core" {
             dynamic "upstreams" {
               iterator = alpha
               for_each = local.dgraph_alphas
+
+              content {
+                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
+                local_bind_port  = alpha.value.grpc_public_port
+              }
             }
           }
         }

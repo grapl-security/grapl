@@ -129,7 +129,8 @@ FROM grapl-python-deploy AS engagement-creator-deploy
 COPY --chown=grapl --from=engagement-creator-build /home/grapl/venv venv
 COPY --chown=grapl --from=engagement-creator-build /home/grapl/engagement-creator engagement-creator
 
-CMD python3 engagement-creator/src/run.py
+WORKDIR /home/grapl/engagement-creator
+CMD python3 engagement_creator/run.py
 
 
 # analyzer-executor
