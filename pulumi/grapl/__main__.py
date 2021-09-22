@@ -222,6 +222,7 @@ def main() -> None:
                 integration_test_only_job_vars = {
                     "_kafka_endpoint": kafka_endpoint,
                     "grapl_root": os.environ["GRAPL_ROOT"],
+                    "non_root_uid": os.environ["UID"],
                 }
                 return {**subset, **integration_test_only_job_vars}
 
