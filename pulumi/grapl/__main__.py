@@ -24,7 +24,6 @@ from infra.dgraph_ttl import DGraphTTL
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
 # from infra.e2e_test_runner import E2eTestRunner
-from infra.engagement_creator import EngagementCreator
 from infra.graph_merger import GraphMerger
 from infra.kafka import Kafka
 from infra.metric_forwarder import MetricForwarder
@@ -309,14 +308,6 @@ def main() -> None:
                 analyzer_executor,
             ]
         )
-
-    engagement_creator = EngagementCreator(
-        input_emitter=analyzer_matched_emitter,
-        network=network,
-        forwarder=forwarder,
-        dgraph_cluster=dgraph_cluster,
-    )
-    services.append(engagement_creator)
 
     OpsAlarms(name="ops-alarms")
 
