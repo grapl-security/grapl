@@ -2,7 +2,7 @@ import asyncio
 import os
 
 import boto3
-from engagement_creator.engagement_creator import lambda_handler
+from engagement_creator_lib.engagement_creator import lambda_handler
 from grapl_common.sqs.event_retriever import EventRetriever
 from grapl_common.sqs.sqs_timeout_manager import (
     SqsTimeoutManager,
