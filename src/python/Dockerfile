@@ -129,8 +129,11 @@ FROM grapl-python-deploy AS engagement-creator-deploy
 COPY --chown=grapl --from=engagement-creator-build /home/grapl/venv venv
 COPY --chown=grapl --from=engagement-creator-build /home/grapl/engagement-creator engagement-creator
 
+# Awful, stupid hacks around Python packaging.
+# But this will go away in like 2 days when I merge in data-tenancy.
 WORKDIR /home/grapl/engagement-creator
-CMD python3 engagement_creator/run.py
+RUN mv engagement_creator/run.py ./
+CMD python3 ./run.py
 
 
 # analyzer-executor
