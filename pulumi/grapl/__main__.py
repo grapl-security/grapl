@@ -24,7 +24,6 @@ from infra.dgraph_ttl import DGraphTTL
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
 # from infra.e2e_test_runner import E2eTestRunner
-from infra.engagement_creator import EngagementCreator
 from infra.graph_merger import GraphMerger
 from infra.kafka import Kafka
 from infra.metric_forwarder import MetricForwarder
@@ -122,6 +121,9 @@ def main() -> None:
     analyzer_executor_queue = ServiceQueue("analyzer-executor")
     analyzer_executor_queue.subscribe_to_emitter(dispatched_analyzer_emitter)
 
+    engagement_creator_queue = ServiceQueue("engagement-creator")
+    engagement_creator_queue.subscribe_to_emitter(analyzer_matched_emitter)
+
     analyzers_bucket = Bucket("analyzers-bucket", sse=True)
     pulumi.export("analyzers-bucket", analyzers_bucket.bucket)
     model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)
@@ -156,6 +158,7 @@ def main() -> None:
             analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url,
             aws_access_key_id=aws.config.access_key,
             aws_access_key_secret=aws.config.secret_key,
+            engagement_creator_queue=engagement_creator_queue.main_queue_url,
             graph_merger_queue=graph_merger_queue.main_queue_url,
             graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
             model_plugins_bucket=model_plugins_bucket.bucket,
@@ -240,6 +243,7 @@ def main() -> None:
             analyzer_executor_queue=analyzer_executor_queue.main_queue_url,
             analyzer_matched_subgraphs_bucket=analyzer_matched_emitter.bucket.bucket,
             analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url,
+            engagement_creator_queue=engagement_creator_queue.main_queue_url,
             graph_merger_queue=graph_merger_queue.main_queue_url,
             graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
             model_plugins_bucket=model_plugins_bucket.bucket,

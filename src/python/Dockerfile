@@ -111,6 +111,26 @@ FROM grapl-analyzerlib-build AS grapl-analyzerlib-test
 COPY --chown=grapl --from=python-test-deps /home/grapl/python_test_deps python_test_deps
 RUN python_test_deps/install_requirements.sh
 
+# engagement-creator (this will die when we merge data-tenancy from main into nomad)
+################################################################################
+
+# build
+FROM grapl-python-build AS engagement-creator-build
+
+COPY --chown=grapl src/python/engagement-creator engagement-creator
+COPY --chown=grapl --from=grapl-analyzerlib-build /home/grapl/venv venv
+
+RUN cd engagement-creator && \
+    pip install .
+
+# deploy
+FROM grapl-python-deploy AS engagement-creator-deploy
+
+COPY --chown=grapl --from=engagement-creator-build /home/grapl/venv venv
+COPY --chown=grapl --from=engagement-creator-build /home/grapl/engagement-creator engagement-creator
+
+CMD python3 engagement-creator/engagement_creator/run.py
+
 
 # analyzer-executor
 ################################################################################

@@ -101,6 +101,16 @@ variable "dgraph_shards" {
   default = 1
 }
 
+variable "engagement_creator_queue" {
+  type = string
+}
+
+variable "engagement_creator_tag" {
+  type        = string
+  default     = "dev"
+  description = "The tagged version of the engagement-creator we should deploy."
+}
+
 variable "_redis_endpoint" {
   type        = string
   description = <<EOF
@@ -398,6 +408,9 @@ job "grapl-core" {
     content {
       network {
         mode = "bridge"
+        port "healthcheck" {
+          to = -1
+        }
       }
 
       task "dgraph-zero" {
@@ -451,7 +464,34 @@ job "grapl-core" {
                   local_bind_port  = alpha.value.grpc_private_port
                 }
               }
+
+              # We need to expose the health check for consul to be able to reach it
+              expose {
+                path {
+                  path            = "/health"
+                  protocol        = "http"
+                  local_path_port = 6080
+                  listener_port   = "healthcheck"
+                }
+              }
+
             }
+          }
+        }
+
+        check {
+          type     = "http"
+          name     = "dgraph-zero-http-healthcheck"
+          path     = "/health"
+          port     = "healthcheck"
+          method   = "GET"
+          interval = "30s"
+          timeout  = "5s"
+
+          check_restart {
+            limit           = 3
+            grace           = "30s"
+            ignore_warnings = false
           }
         }
       }
@@ -467,6 +507,9 @@ job "grapl-core" {
     content {
       network {
         mode = "bridge"
+        port "healthcheck" {
+          to = -1
+        }
         port "dgraph-alpha-port" {
           # Primarily here to let us use ratel.
           # Could be potentially replaced with a gateway stanza or something.
@@ -546,7 +589,35 @@ job "grapl-core" {
         tags = ["dgraph", "alpha", "http"]
 
         connect {
-          sidecar_service {}
+          sidecar_service {
+            proxy {
+              # We need to expose the health check for consul to be able to reach it
+              expose {
+                path {
+                  path            = "/health"
+                  protocol        = "http"
+                  local_path_port = 8080
+                  listener_port   = "healthcheck"
+                }
+              }
+            }
+          }
+        }
+
+        check {
+          type     = "http"
+          name     = "dgraph-alpha-http-healthcheck"
+          path     = "/health"
+          port     = "healthcheck"
+          method   = "GET"
+          interval = "30s"
+          timeout  = "5s"
+
+          check_restart {
+            limit           = 3
+            grace           = "30s"
+            ignore_warnings = false
+          }
         }
       }
     }
@@ -819,7 +890,54 @@ job "grapl-core" {
       service {
         name = "analyzer-executor"
       }
+    }
+  }
 
+  group "engagement-creator" {
+    network {
+      mode = "bridge"
+    }
+
+    task "engagement-creator" {
+      driver = "docker"
+
+      config {
+        image = "${var.container_registry}grapl/engagement-creator:${var.engagement_creator_tag}"
+      }
+
+      env {
+        # AWS vars
+        AWS_REGION                  = var.aws_region
+        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
+        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
+        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
+        # python vars
+        GRAPL_LOG_LEVEL = var.rust_log
+        # dgraph vars
+        MG_ALPHAS = local.alpha_grpc_connect_str
+
+        # service vars
+        SOURCE_QUEUE_URL = var.engagement_creator_queue
+      }
+    }
+
+    service {
+      name = "engagement-creator"
+      connect {
+        sidecar_service {
+          proxy {
+            dynamic "upstreams" {
+              iterator = alpha
+              for_each = local.dgraph_alphas
+
+              content {
+                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
+                local_bind_port  = alpha.value.grpc_public_port
+              }
+            }
+          }
+        }
+      }
     }
   }
 
