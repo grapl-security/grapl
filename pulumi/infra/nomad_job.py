@@ -23,7 +23,7 @@ class NomadJob(pulumi.ComponentResource):
             hcl2=nomad.JobHcl2Args(enabled=True, vars=vars),
             opts=pulumi.ResourceOptions(parent=self),
             # Wait for all services to become healthy
-            detach=False
+            detach=False,
         )
 
     def _file_contents(self, nomad_file: str) -> str:
