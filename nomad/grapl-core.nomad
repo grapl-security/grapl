@@ -188,12 +188,6 @@ variable "node_identifier_retry_queue" {
   type = string
 }
 
-variable "provisioner_tag" {
-  type        = string
-  default     = "dev"
-  description = "The tagged version of the provisioner we should deploy."
-}
-
 variable "unid_subgraphs_generated_bucket" {
   type        = string
   description = "The destination bucket for unidentified subgraphs. Used by generators."
@@ -640,64 +634,6 @@ job "grapl-core" {
 
     service {
       name = "graph-merger"
-      connect {
-        sidecar_service {
-          proxy {
-            dynamic "upstreams" {
-              iterator = alpha
-              for_each = local.dgraph_alphas
-
-              content {
-                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
-                local_bind_port  = alpha.value.grpc_public_port
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  group "provisioner" {
-    network {
-      mode = "bridge"
-    }
-
-    task "provisioner" {
-      driver = "docker"
-
-      config {
-        image = "${var.container_registry}grapl/provisioner:${var.provisioner_tag}"
-        entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
-        # Give the database a bit to come online
-        # better solution would be a Consul `wait-for-it` or `nc/netcat` call
-        command    = "sleep 10 && python3 - c 'import lambdex_handler; lambdex_handler.handler(None, None)'"
-      }
-
-      lifecycle {
-        hook = "prestart"
-        # Ephemeral, not long-lived
-        sidecar = false
-      }
-
-      env {
-        MG_ALPHAS                     = local.alpha_grpc_connect_str
-        DEPLOYMENT_NAME               = var.deployment_name
-        GRAPL_AWS_ENDPOINT            = local.aws_endpoint
-        GRAPL_AWS_ACCESS_KEY_ID       = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET   = var.aws_access_key_secret
-        AWS_DEFAULT_REGION            = var.aws_region # boto3 prefers this one
-        AWS_REGION                    = var.aws_region
-        GRAPL_SCHEMA_TABLE            = var.schema_table_name
-        GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name
-        GRAPL_USER_AUTH_TABLE         = var.user_auth_table
-        GRAPL_TEST_USER_NAME          = var.test_user_name
-        GRAPL_LOG_LEVEL               = var.rust_log # TODO: revisit
-      }
-    }
-
-    service {
-      name = "provisioner"
       connect {
         sidecar_service {
           proxy {

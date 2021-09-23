@@ -175,11 +175,13 @@ def _write_allocation_task_statuses(
     allocs: List[NomadAllocation],
 ) -> None:
     statuses = "\n".join(
-        sorted([
-            f"{t.name}: state = {t.state}, restarts = {t.restarts}" 
-            for alloc in allocs
-            for t in alloc.tasks
-        ])
+        sorted(
+            [
+                f"{t.name}: state = {t.state}, restarts = {t.restarts}"
+                for alloc in allocs
+                for t in alloc.tasks
+            ]
+        )
     )
     with (job_dir / f"task_statuses.txt").open("w") as file:
         file.write(statuses)

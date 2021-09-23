@@ -200,6 +200,32 @@ def main() -> None:
             vars=grapl_core_job_vars,
         )
 
+        nomad_grapl_provision = NomadJob(
+            "grapl-provision",
+            jobspec=Path("../../nomad/grapl-provision.nomad").resolve(),
+            vars=pulumi.Output.all(
+                # A hack to declare "this depends on the previous one having completed first"
+                _unused_output_from_grapl_core=nomad_grapl_core.job.deployment_id,
+                **grapl_core_job_vars_inputs,
+            ).apply(
+                lambda inputs: {
+                    k: inputs[k]
+                    for k in {
+                        "aws_access_key_id",
+                        "aws_access_key_secret",
+                        "_aws_endpoint",
+                        "aws_region",
+                        "deployment_name",
+                        "schema_table_name",
+                        "schema_properties_table_name",
+                        "user_auth_table",
+                        "test_user_name",
+                        "rust_log",
+                    }
+                }
+            ),
+        )
+
         if config.SHOULD_DEPLOY_INTEGRATION_TESTS:
 
             def _get_integration_test_job_vars(

@@ -17,7 +17,7 @@ class NomadJob(pulumi.ComponentResource):
     ) -> None:
         super().__init__("grapl:NomadJob", name, None, opts)
 
-        self.grapl_core = nomad.Job(
+        self.job = nomad.Job(
             resource_name=f"{DEPLOYMENT_NAME}-{name}-job",
             jobspec=self._file_contents(str(jobspec)),
             hcl2=nomad.JobHcl2Args(enabled=True, vars=vars),
