@@ -150,8 +150,8 @@ def _write_nomad_logs(
     write_to_dir = artifacts_dir / job_name
     os.makedirs(write_to_dir, exist_ok=True)
 
+    _write_allocation_task_statuses(job_dir=write_to_dir, allocs=allocs)
     for alloc in allocs:
-        _write_allocation_task_statuses(job_dir=write_to_dir, alloc=alloc)
         for task in alloc.tasks:
             # publish task events
             events = task.get_events()
@@ -172,10 +172,14 @@ def _write_nomad_logs(
 
 def _write_allocation_task_statuses(
     job_dir: Path,
-    alloc: NomadAllocation,
+    allocs: List[NomadAllocation],
 ) -> None:
     statuses = "\n".join(
-        [f"{t.name}: state = {t.state}, restarts = {t.restarts}" for t in alloc.tasks]
+        sorted([
+            f"{t.name}: state = {t.state}, restarts = {t.restarts}" 
+            for alloc in allocs
+            for t in alloc.tasks
+        ])
     )
-    with open(job_dir / f"task_statuses.{alloc.short_alloc_id}.txt") as file:
+    with (job_dir / f"task_statuses.txt").open("w") as file:
         file.write(statuses)
