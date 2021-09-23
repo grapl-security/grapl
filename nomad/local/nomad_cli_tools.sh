@@ -7,11 +7,6 @@ curl_quiet() {
     curl --location --silent --show-error $@
 }
 
-nomad_node_id() {
-    # Assume there's only 1 node
-    nomad node status -self -json | jq --raw-output '.ID'
-}
-
 nomad_dispatch() {
     # Grab the new Job ID from the Dispatch command
 
