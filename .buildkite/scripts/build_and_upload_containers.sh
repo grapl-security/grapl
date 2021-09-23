@@ -41,8 +41,8 @@ cloudsmith_tag() {
     local -r tag="${2}"
     echo "${CLOUDSMITH_DOCKER_REGISTRY}/${service}:${tag}"
 }
-echo "--- :python: Building required Python wheels"
-make build-python-wheels
+echo "--- :python: Building analyzer-executor pex binary"
+make build-analyzer-executor
 
 for service in "${services[@]}"; do
     # Build a single service
