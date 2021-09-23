@@ -668,11 +668,14 @@ job "grapl-core" {
 
       config {
         image = "${var.container_registry}grapl/provisioner:${var.provisioner_tag}"
+        entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+        # Give the database a bit to come online
+        # better solution would be a Consul `wait-for-it` or `nc/netcat` call
+        command    = "sleep 10 && python3 - c 'import lambdex_handler; lambdex_handler.handler(None, None)'"
       }
 
       lifecycle {
-        # Since there's no other tasks in this group, it just runs at the end.
-        hook = "poststart"
+        hook = "prestart"
         # Ephemeral, not long-lived
         sidecar = false
       }
