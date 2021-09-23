@@ -120,6 +120,7 @@ job "e2e-tests" {
         image      = "${var.container_registry}grapl/e2e-tests:dev"
         entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
         command = trimspace(<<EOF
+graplctl await-provision
 graplctl upload analyzer --analyzer_main_py ./etc/local_grapl/suspicious_svchost/main.py
 graplctl upload analyzer --analyzer_main_py ./etc/local_grapl/unique_cmd_parent/main.py
 graplctl upload sysmon --logfile ./etc/sample_data/eventlog.xml
