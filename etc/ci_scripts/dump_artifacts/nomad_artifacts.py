@@ -68,6 +68,7 @@ class NomadAllocation:
             for t in task_names
         ]
 
+    @property
     def short_alloc_id(self) -> str:
         return self.allocation_id.split("-")[0]
 
@@ -155,7 +156,7 @@ def _write_nomad_logs(
             # publish task events
             events = task.get_events()
             if events:
-                filename = f"{task.name}.events.{alloc.short_alloc_id()}.log"
+                filename = f"{task.name}.events.{alloc.short_alloc_id}.log"
                 with (write_to_dir / filename).open("w") as file:
                     file.write(events)
 
@@ -164,7 +165,7 @@ def _write_nomad_logs(
                 logs = task.get_logs(nomad_client, output_type)
                 if not logs:
                     continue
-                filename = f"{task.name}.{output_type}.{alloc.short_alloc_id()}.log"
+                filename = f"{task.name}.{output_type}.{alloc.short_alloc_id}.log"
                 with (write_to_dir / filename).open("w") as file:
                     file.write(logs)
 
