@@ -567,19 +567,19 @@ job "grapl-core" {
       }
 
       template {
-        data = local.local_vars
+        data        = local.local_vars
         destination = "graph-merger.env"
-        env = true
+        env         = true
       }
 
       env {
-        AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
-        AWS_REGION                  = var.aws_region
-        RUST_LOG                    = var.rust_log
-        RUST_BACKTRACE              = local.rust_backtrace
-        REDIS_ENDPOINT              = local.redis_endpoint
-        MG_ALPHAS                   = local.alpha_grpc_connect_str
-        GRAPL_SCHEMA_TABLE          = var.schema_table_name
+        AWS_DEFAULT_REGION = var.aws_region # boto3 prefers this one
+        AWS_REGION         = var.aws_region
+        RUST_LOG           = var.rust_log
+        RUST_BACKTRACE     = local.rust_backtrace
+        REDIS_ENDPOINT     = local.redis_endpoint
+        MG_ALPHAS          = local.alpha_grpc_connect_str
+        GRAPL_SCHEMA_TABLE = var.schema_table_name
         # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L165
         DEST_BUCKET_NAME      = var.subgraphs_merged_bucket
         SOURCE_QUEUE_URL      = var.graph_merger_queue
@@ -626,9 +626,9 @@ job "grapl-core" {
       }
 
       template {
-        data = local.local_vars
+        data        = local.local_vars
         destination = "provisioner.env"
-        env = true
+        env         = true
       }
 
       env {
@@ -679,9 +679,9 @@ job "grapl-core" {
       }
 
       template {
-        data = local.local_vars
+        data        = local.local_vars
         destination = "node-identifier.env"
-        env = true
+        env         = true
       }
 
       env {
@@ -720,9 +720,9 @@ job "grapl-core" {
       }
 
       template {
-        data = local.local_vars
+        data        = local.local_vars
         destination = "node-identifier-retry.env"
-        env = true
+        env         = true
       }
 
       env {
@@ -756,14 +756,14 @@ job "grapl-core" {
       }
 
       template {
-        data = local.local_vars
+        data        = local.local_vars
         destination = "analyzer-dispatcher.env"
-        env = true
+        env         = true
       }
 
       env {
         # AWS vars
-        AWS_REGION                  = var.aws_region
+        AWS_REGION = var.aws_region
         # rust vars
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = local.rust_backtrace
@@ -791,14 +791,14 @@ job "grapl-core" {
       }
 
       template {
-        data = local.local_vars
+        data        = local.local_vars
         destination = "analyzer-executor.env"
-        env = true
+        env         = true
       }
 
       env {
         # AWS vars
-        AWS_REGION                  = var.aws_region
+        AWS_REGION = var.aws_region
         # python vars
         GRAPL_LOG_LEVEL = "INFO"
         # dgraph vars
@@ -840,9 +840,9 @@ job "grapl-core" {
       }
 
       template {
-        data = local.local_vars
+        data        = local.local_vars
         destination = "graphql-endpoint.env"
-        env = true
+        env         = true
       }
 
       env {
@@ -899,14 +899,14 @@ job "grapl-core" {
       }
 
       template {
-        data = local.local_vars
+        data        = local.local_vars
         destination = "web-ui.env"
-        env = true
+        env         = true
       }
 
       env {
         # For the DynamoDB client
-        AWS_REGION                  = var.aws_region
+        AWS_REGION = var.aws_region
 
         GRAPL_USER_AUTH_TABLE    = var.user_auth_table
         GRAPL_USER_SESSION_TABLE = var.user_session_table
@@ -948,21 +948,21 @@ job "grapl-core" {
       }
 
       template {
-        data = local.local_vars
+        data        = local.local_vars
         destination = "sysmon.env"
-        env = true
+        env         = true
       }
 
       env {
-        DEST_BUCKET_NAME            = var.unid_subgraphs_generated_bucket
-        DEAD_LETTER_QUEUE_URL       = var.sysmon_generator_dead_letter_queue
-        SOURCE_QUEUE_URL            = var.sysmon_generator_queue
-        AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
-        AWS_REGION                  = var.aws_region
-        REDIS_ENDPOINT              = local.redis_endpoint
-        GRAPL_LOG_LEVEL             = var.rust_log
-        RUST_LOG                    = var.rust_log
-        RUST_BACKTRACE              = local.rust_backtrace
+        DEST_BUCKET_NAME      = var.unid_subgraphs_generated_bucket
+        DEAD_LETTER_QUEUE_URL = var.sysmon_generator_dead_letter_queue
+        SOURCE_QUEUE_URL      = var.sysmon_generator_queue
+        AWS_DEFAULT_REGION    = var.aws_region # boto3 prefers this one
+        AWS_REGION            = var.aws_region
+        REDIS_ENDPOINT        = local.redis_endpoint
+        GRAPL_LOG_LEVEL       = var.rust_log
+        RUST_LOG              = var.rust_log
+        RUST_BACKTRACE        = local.rust_backtrace
       }
     }
   }
@@ -980,21 +980,21 @@ job "grapl-core" {
       }
 
       template {
-        data = local.local_vars
+        data        = local.local_vars
         destination = "osquery.env"
-        env = true
+        env         = true
       }
 
       env {
-        DEST_BUCKET_NAME            = var.unid_subgraphs_generated_bucket
-        DEAD_LETTER_QUEUE_URL       = var.osquery_generator_dead_letter_queue
-        SOURCE_QUEUE_URL            = var.osquery_generator_queue
-        AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
-        AWS_REGION                  = var.aws_region
-        REDIS_ENDPOINT              = local.redis_endpoint
-        GRAPL_LOG_LEVEL             = var.rust_log
-        RUST_LOG                    = var.rust_log
-        RUST_BACKTRACE              = local.rust_backtrace
+        DEST_BUCKET_NAME      = var.unid_subgraphs_generated_bucket
+        DEAD_LETTER_QUEUE_URL = var.osquery_generator_dead_letter_queue
+        SOURCE_QUEUE_URL      = var.osquery_generator_queue
+        AWS_DEFAULT_REGION    = var.aws_region # boto3 prefers this one
+        AWS_REGION            = var.aws_region
+        REDIS_ENDPOINT        = local.redis_endpoint
+        GRAPL_LOG_LEVEL       = var.rust_log
+        RUST_LOG              = var.rust_log
+        RUST_BACKTRACE        = local.rust_backtrace
       }
     }
   }

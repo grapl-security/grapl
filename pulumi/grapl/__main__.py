@@ -305,6 +305,7 @@ def main() -> None:
     #     dgraph_cluster=dgraph_cluster,
     # )
 
+
 #     if not config.LOCAL_GRAPL:
 #
 #         Provisioner(
@@ -314,13 +315,13 @@ def main() -> None:
 #             dgraph_cluster=dgraph_cluster,
 #         )
 
-        # E2eTestRunner(
-        #     network=network,
-        #     dgraph_cluster=dgraph_cluster,
-        #     api=api,
-        #     jwt_secret=jwt_secret,
-        #     test_user_password=test_user_password,
-        # )
+# E2eTestRunner(
+#     network=network,
+#     dgraph_cluster=dgraph_cluster,
+#     api=api,
+#     jwt_secret=jwt_secret,
+#     test_user_password=test_user_password,
+# )
 
 
 if __name__ == "__main__":
