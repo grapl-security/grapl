@@ -73,6 +73,7 @@ class EngagementCreatorMetrics:
             ],
         )
 
+
 def parse_s3_event(s3: S3ServiceResource, event: S3PutRecordDict) -> str:
     try:
         bucket = event["s3"]["bucket"]["name"]
@@ -83,9 +84,11 @@ def parse_s3_event(s3: S3ServiceResource, event: S3PutRecordDict) -> str:
         raise
     return download_s3_file(s3, bucket, key)
 
+
 def download_s3_file(s3: S3ServiceResource, bucket: str, key: str) -> str:
     obj = s3.Object(bucket, key)
     return cast(bytes, obj.get()["Body"].read()).decode("utf-8")
+
 
 def create_edge(
     client: GraphClient, from_uid: int, edge_name: str, to_uid: int

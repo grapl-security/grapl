@@ -54,7 +54,19 @@ class GraplWebClient:
             )
         return cookie
 
-    def invalid_creds(self) -> requests.Response:
+    def real_user_fake_password(self) -> requests.Response:
+        username = os.environ["GRAPL_TEST_USER_NAME"]
+        resp = requests.post(
+            f"{self.endpoint}/auth/login",
+            json={
+                "username": username,
+                "password": "fakepassword",
+            },
+            headers=_JSON_CONTENT_TYPE_HEADERS,
+        )
+        return resp
+
+    def nonexistent_user(self) -> requests.Response:
         resp = requests.post(
             f"{self.endpoint}/auth/login",
             json={
