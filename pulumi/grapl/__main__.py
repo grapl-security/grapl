@@ -9,8 +9,6 @@ from typing import Any, List, Mapping
 import pulumi_aws as aws
 from infra import config, dynamodb, emitter
 from infra.alarms import OpsAlarms
-from infra.analyzer_dispatcher import AnalyzerDispatcher
-from infra.analyzer_executor import AnalyzerExecutor
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
@@ -24,16 +22,11 @@ from infra.dgraph_ttl import DGraphTTL
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
 # from infra.e2e_test_runner import E2eTestRunner
-from infra.graph_merger import GraphMerger
 from infra.kafka import Kafka
 from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
-from infra.node_identifier import NodeIdentifier
-from infra.nomad_cluster import NomadCluster
 from infra.nomad_job import NomadJob
-from infra.osquery_generator import OSQueryGenerator
 from infra.pipeline_dashboard import PipelineDashboard
-from infra.provision_lambda import Provisioner
 from infra.quiet_docker_build_output import quiet_docker_output
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
@@ -42,7 +35,6 @@ from infra.quiet_docker_build_output import quiet_docker_output
 from infra.secret import TestUserPassword
 from infra.service import ServiceLike
 from infra.service_queue import ServiceQueue
-from infra.sysmon_generator import SysmonGenerator
 
 import pulumi
 
@@ -232,7 +224,6 @@ def main() -> None:
             )
 
     else:
-        # No Fargate or Elasticache in Local Grapl
         cache = Cache("main-cache", network=network)
         pulumi_config = pulumi.Config()
 
@@ -264,7 +255,6 @@ def main() -> None:
             user_session_table=dynamodb_tables.user_session_table.name,
         ).apply(
             lambda inputs: {
-                # This is a special directive to our HCL file that tells it to use Localstack
                 "aws_region": aws.get_region().name,
                 "container_registry": "docker.cloudsmith.io/",
                 "container_repo": "raw/",
