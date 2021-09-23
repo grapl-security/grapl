@@ -114,7 +114,9 @@ def _get_nomad_logs_for_each_service(
         # Dispatch job names look like `integration-tests/dispatch-1632277984-ad265cfe`
         # the second part is largely useless for us.
         simplified_job_name = job.split("/")[0]
-        _write_nomad_logs(nomad_client, artifacts_dir, job_name=simplified_job_name, allocs=allocs)
+        _write_nomad_logs(
+            nomad_client, artifacts_dir, job_name=simplified_job_name, allocs=allocs
+        )
 
     return job_to_allocs
 
