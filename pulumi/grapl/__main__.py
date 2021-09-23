@@ -232,8 +232,6 @@ def main() -> None:
         # No Fargate or Elasticache in Local Grapl
         cache = Cache("main-cache", network=network)
 
-        aws_endpoint = "https://amazonaws.com"
-
         grapl_core_job_aws_vars = pulumi.Output.all(
             analyzer_bucket=analyzers_bucket.bucket,
             analyzer_dispatched_bucket=dispatched_analyzer_emitter.bucket.bucket,
@@ -241,8 +239,6 @@ def main() -> None:
             analyzer_executor_queue=analyzer_executor_queue.main_queue_url,
             analyzer_matched_subgraphs_bucket=analyzer_matched_emitter.bucket.bucket,
             analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url,
-            aws_access_key_id="test",  # TODO remove? What happens if we pass in NULL? Idealy we don't want this passed in at all since AWS should be using role-based IAM access
-            aws_access_key_secret="test",  # TODO remove?
             graph_merger_queue=graph_merger_queue.main_queue_url,
             graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
             model_plugins_bucket=model_plugins_bucket.bucket,
@@ -264,7 +260,6 @@ def main() -> None:
         ).apply(
             lambda inputs: {
                 # This is a special directive to our HCL file that tells it to use Localstack
-                "_aws_endpoint": aws_endpoint,
                 "aws_region": aws.get_region().name,
                 "container_registry": "docker.cloudsmith.io/",
                 "container_repo": "raw/",

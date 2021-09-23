@@ -17,16 +17,19 @@ variable "container_repo" {
 
 variable "aws_access_key_id" {
   type        = string
+  default     = "DEFAULT_NOMAD_AWS_ACCESS_KEY_ID"
   description = "The aws access key id used to interact with AWS."
 }
 
 variable "aws_access_key_secret" {
   type        = string
+  default     = "DEFAULT_NOMAD_AWS_ACCESS_KEY_SECRET"
   description = "The aws access key secret used to interact with AWS."
 }
 
 variable "_aws_endpoint" {
   type        = string
+  default     = "DEFAULT_NOMAD_AWS_ENDPOINT"
   description = <<EOF
   The endpoint in which we can expect to find and interact with AWS.
   It accepts a special sentinel value domain, LOCAL_GRAPL_REPLACE_IP:xxxx, if the
@@ -301,6 +304,14 @@ locals {
 
   # enabled
   rust_backtrace = 1
+
+  heredoc = <<EOH
+GRAPL_AWS_ENDPOINT          = ${local.aws_endpoint}
+GRAPL_AWS_ACCESS_KEY_ID     = ${var.aws_access_key_id}
+GRAPL_AWS_ACCESS_KEY_SECRET = ${var.aws_access_key_secret}
+EOH
+
+  local_vars = (var._aws_endpoint != "http://LOCAL_GRAPL_REPLACE_IP:4566") ? "IN_AWS=TRUE" : local.heredoc
 }
 
 job "grapl-core" {
@@ -555,10 +566,13 @@ job "grapl-core" {
         image = "${var.container_registry}grapl/${var.container_repo}graph-merger:${var.graph_merger_tag}"
       }
 
+      template {
+        data = local.local_vars
+        destination = "graph-merger.env"
+        env = true
+      }
+
       env {
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
         AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
         AWS_REGION                  = var.aws_region
         RUST_LOG                    = var.rust_log
@@ -611,12 +625,15 @@ job "grapl-core" {
         sidecar = false
       }
 
+      template {
+        data = local.local_vars
+        destination = "provisioner.env"
+        env = true
+      }
+
       env {
         MG_ALPHAS                     = local.alpha_grpc_connect_str
         DEPLOYMENT_NAME               = var.deployment_name
-        GRAPL_AWS_ENDPOINT            = local.aws_endpoint
-        GRAPL_AWS_ACCESS_KEY_ID       = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET   = var.aws_access_key_secret
         AWS_DEFAULT_REGION            = var.aws_region # boto3 prefers this one
         AWS_REGION                    = var.aws_region
         GRAPL_SCHEMA_TABLE            = var.schema_table_name
@@ -661,10 +678,13 @@ job "grapl-core" {
         image = "${var.container_registry}grapl/${var.container_repo}node-identifier:${var.node_identifier_tag}"
       }
 
+      template {
+        data = local.local_vars
+        destination = "node-identifier.env"
+        env = true
+      }
+
       env {
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
         AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
         AWS_REGION                  = var.aws_region
         RUST_LOG                    = var.rust_log
@@ -699,10 +719,13 @@ job "grapl-core" {
         image = "${var.container_registry}grapl/${var.container_repo}node-identifier-retry:${var.node_identifier_tag}"
       }
 
+      template {
+        data = local.local_vars
+        destination = "node-identifier-retry.env"
+        env = true
+      }
+
       env {
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
         AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
         AWS_REGION                  = var.aws_region
         RUST_LOG                    = var.rust_log
@@ -732,12 +755,15 @@ job "grapl-core" {
         image = "${var.container_registry}grapl/${var.container_repo}analyzer-dispatcher:${var.analyzer_dispatcher_tag}"
       }
 
+      template {
+        data = local.local_vars
+        destination = "analyzer-dispatcher.env"
+        env = true
+      }
+
       env {
         # AWS vars
         AWS_REGION                  = var.aws_region
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
         # rust vars
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = local.rust_backtrace
@@ -764,12 +790,15 @@ job "grapl-core" {
         image = "${var.container_registry}grapl/${var.container_repo}analyzer-executor:${var.analyzer_executor_tag}"
       }
 
+      template {
+        data = local.local_vars
+        destination = "analyzer-executor.env"
+        env = true
+      }
+
       env {
         # AWS vars
         AWS_REGION                  = var.aws_region
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
         # python vars
         GRAPL_LOG_LEVEL = "INFO"
         # dgraph vars
@@ -810,6 +839,12 @@ job "grapl-core" {
         ports = ["graphql-endpoint-port"]
       }
 
+      template {
+        data = local.local_vars
+        destination = "graphql-endpoint.env"
+        env = true
+      }
+
       env {
         DEPLOYMENT_NAME               = var.deployment_name
         RUST_LOG                      = var.rust_log
@@ -817,9 +852,6 @@ job "grapl-core" {
         MG_ALPHAS                     = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE            = var.schema_table_name
         GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name
-        GRAPL_AWS_ACCESS_KEY_ID       = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET   = var.aws_access_key_secret
-        GRAPL_AWS_ENDPOINT            = local.aws_endpoint
         IS_LOCAL                      = "True"
         JWT_SECRET_ID                 = "JWT_SECRET_ID"
         PORT                          = local.graphql_endpoint_port
@@ -866,12 +898,15 @@ job "grapl-core" {
         ports = ["web-ui-port"]
       }
 
+      template {
+        data = local.local_vars
+        destination = "web-ui.env"
+        env = true
+      }
+
       env {
         # For the DynamoDB client
         AWS_REGION                  = var.aws_region
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
 
         GRAPL_USER_AUTH_TABLE    = var.user_auth_table
         GRAPL_USER_SESSION_TABLE = var.user_session_table
@@ -912,13 +947,16 @@ job "grapl-core" {
         image = "${var.container_registry}grapl/${var.container_repo}sysmon-generator:${var.sysmon_generator_tag}"
       }
 
+      template {
+        data = local.local_vars
+        destination = "sysmon.env"
+        env = true
+      }
+
       env {
         DEST_BUCKET_NAME            = var.unid_subgraphs_generated_bucket
         DEAD_LETTER_QUEUE_URL       = var.sysmon_generator_dead_letter_queue
         SOURCE_QUEUE_URL            = var.sysmon_generator_queue
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
         AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
         AWS_REGION                  = var.aws_region
         REDIS_ENDPOINT              = local.redis_endpoint
@@ -941,14 +979,16 @@ job "grapl-core" {
         image = "${var.container_registry}grapl/osquery-generator:${var.sysmon_generator_tag}"
       }
 
-      env {
+      template {
+        data = local.local_vars
+        destination = "osquery.env"
+        env = true
+      }
 
+      env {
         DEST_BUCKET_NAME            = var.unid_subgraphs_generated_bucket
         DEAD_LETTER_QUEUE_URL       = var.osquery_generator_dead_letter_queue
         SOURCE_QUEUE_URL            = var.osquery_generator_queue
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
         AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
         AWS_REGION                  = var.aws_region
         REDIS_ENDPOINT              = local.redis_endpoint
