@@ -22,4 +22,4 @@ nomad job run \
     -var "FAKE_AWS_SECRET_ACCESS_KEY=${FAKE_AWS_SECRET_ACCESS_KEY}" \
     "${GRAPL_ROOT}"/nomad/local/grapl-local-infra.nomad
 
-echo "--- Nomad jobs deployed!"
+echo -e "\n--- Nomad local-infra deployed!"

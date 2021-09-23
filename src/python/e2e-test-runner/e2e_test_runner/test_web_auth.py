@@ -22,7 +22,7 @@ def test_nonexistent_user() -> None:
 
 def test_check__empty_creds() -> None:
     resp = GraplWebClient().empty_creds()
-    assert resp.status_code == 500, "Expected 500 permissions error"
+    assert resp.status_code == 500
 
 
 # TODO: https://github.com/grapl-security/issue-tracker/issues/686

@@ -1,14 +1,5 @@
 version: "3.8"
 
-# environment variable PWD is assumed to be grapl root directory
-
-x-common-variables:
-  read-only-pulumi-mnt: &read-only-pulumi-mnt
-    type: volume
-    source: pulumi_outputs
-    target: /mnt/pulumi-outputs
-    read_only: true
-
 services:
   e2e-tests:
     image: grapl/e2e-tests:${TAG:-latest}
@@ -16,10 +7,3 @@ services:
       context: .
       dockerfile: ./src/python/lambdas.Dockerfile
       target: e2e-tests
-
-volumes:
-  dynamodb_dump:
-  pulumi_outputs:
-networks:
-  default:
-    name: grapl-network
