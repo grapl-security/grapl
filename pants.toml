@@ -3,8 +3,6 @@ pants_version = "2.7.0rc2"
 backend_packages = [
   "pants.backend.awslambda.python",
   "pants.backend.codegen.protobuf.python",
-  "pants.backend.experimental.docker",
-  "pants.backend.experimental.docker.lint.hadolint",
   "pants.backend.python",
   "pants.backend.python.lint.flake8",
   "pants.backend.python.lint.isort",
