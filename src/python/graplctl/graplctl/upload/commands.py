@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from os import PathLike
 from pathlib import Path
-from time import sleep
 
 import click
 from grapl_tests_common.upload_logs import upload_osquery_logs, upload_sysmon_logs
@@ -19,31 +18,12 @@ def upload(
     ctx: click.Context,
 ) -> None:
     """commands like "upload analyzer" or "upload sysmon logs" """
+    # TODO: Disallow any uploads until we've confirmed we've provisioned
+    # https://github.com/grapl-security/issue-tracker/issues/340
     assert idempotency_checks.is_grapl_provisioned(
         dynamodb=graplctl_state.dynamodb,
         schema_table=graplctl_state.schema_table,
     ), "You can't upload anything to grapl until it's provisioned."
-
-
-@click.command()
-@pass_graplctl_state
-def await_provision(
-    graplctl_state: State,
-) -> None:
-    """
-    For some tests, liek e2e, we'd like to ensure grapl is provisioned before
-    continuing with other commands.
-    """
-    num_attempts = 30
-    for i in range(num_attempts):
-        click.echo(f"[{i+1}/{num_attempts}] Checking if Grapl is provisioned")
-        if idempotency_checks.is_grapl_provisioned(
-            dynamodb=graplctl_state.dynamodb,
-            schema_table=graplctl_state.schema_table,
-        ):
-            return
-        sleep(secs=1)
-    raise Exception("Grapl is seemingly not provisioned.")
 
 
 @upload.command()

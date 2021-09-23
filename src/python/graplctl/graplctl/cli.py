@@ -20,7 +20,7 @@ from graplctl.aws.commands import aws
 from graplctl.common import State
 from graplctl.dgraph.commands import dgraph
 from graplctl.swarm.commands import swarm
-from graplctl.upload.commands import await_provision, upload
+from graplctl.upload.commands import upload
 
 Tag = common.Tag
 Ec2Instance = common.Ec2Instance
@@ -112,4 +112,3 @@ main.add_command(aws)
 main.add_command(dgraph)
 main.add_command(swarm)
 main.add_command(upload)
-main.add_command(await_provision)
