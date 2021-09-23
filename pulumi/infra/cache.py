@@ -50,6 +50,7 @@ class Cache(pulumi.ComponentResource):
                     cidr_blocks=["0.0.0.0/0"],
                 )
             ],
+            tags={"Name":f"{name}"},
             opts=pulumi.ResourceOptions(parent=self),
         )
 
