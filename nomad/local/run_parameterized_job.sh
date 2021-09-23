@@ -21,7 +21,7 @@ echo "You can view job progress at $(url_to_nomad_job_in_ui "${job_id}")"
 dispatch_timed_out=0
 await_nomad_dispatch_finish \
     "${job_id}" \
-    $((5 * 60)) \
+    $((6 * 60)) \
     "${job_to_dispatch}" ||
     dispatch_timed_out=1
 
