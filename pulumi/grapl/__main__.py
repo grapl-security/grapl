@@ -270,14 +270,28 @@ def main() -> None:
                 # TODO: consider replacing with the previous per-service `configurable_envvars`
                 "rust_log": "DEBUG",
                 # Build Tags. We use per service tags so we can update services independently
-                "analyzer_dispatcher_tag": pulumi_config.require_object("artifacts")["analyzer-dispatcher"],
-                "analyzer_executor_tag": pulumi_config.require_object("artifacts")["analyzer-executor"],
+                "analyzer_dispatcher_tag": pulumi_config.require_object("artifacts")[
+                    "analyzer-dispatcher"
+                ],
+                "analyzer_executor_tag": pulumi_config.require_object("artifacts")[
+                    "analyzer-executor"
+                ],
                 "dgraph_tag": "latest",
-                "graph_merger_tag": pulumi_config.require_object("artifacts")["graph-merger"],
-                "graphql_endpoint_tag": pulumi_config.require_object("artifacts")["graphql-endpoint"],
-                "provisioner_tag": pulumi_config.require_object("artifacts")["provisioner"],
-                "node_identifier_tag": pulumi_config.require_object("artifacts")["node-identifier"],
-                "sysmon_generator_tag": pulumi_config.require_object("artifacts")["sysmon-generator"],
+                "graph_merger_tag": pulumi_config.require_object("artifacts")[
+                    "graph-merger"
+                ],
+                "graphql_endpoint_tag": pulumi_config.require_object("artifacts")[
+                    "graphql-endpoint"
+                ],
+                "provisioner_tag": pulumi_config.require_object("artifacts")[
+                    "provisioner"
+                ],
+                "node_identifier_tag": pulumi_config.require_object("artifacts")[
+                    "node-identifier"
+                ],
+                "sysmon_generator_tag": pulumi_config.require_object("artifacts")[
+                    "sysmon-generator"
+                ],
                 **inputs,
             }
         )
@@ -291,38 +305,6 @@ def main() -> None:
     OpsAlarms(name="ops-alarms")
 
     PipelineDashboard(services=services)
-
-    ########################################################################
-
-    # TODO: create everything inside of Api class
-
-    # api = Api(
-    #     network=network,
-    #     secret=jwt_secret,
-    #     ux_bucket=ux_bucket,
-    #     db=dynamodb_tables,
-    #     plugins_bucket=model_plugins_bucket,
-    #     forwarder=forwarder,
-    #     dgraph_cluster=dgraph_cluster,
-    # )
-
-
-#     if not config.LOCAL_GRAPL:
-#
-#         Provisioner(
-#             network=network,
-#             test_user_password=test_user_password,
-#             db=dynamodb_tables,
-#             dgraph_cluster=dgraph_cluster,
-#         )
-
-# E2eTestRunner(
-#     network=network,
-#     dgraph_cluster=dgraph_cluster,
-#     api=api,
-#     jwt_secret=jwt_secret,
-#     test_user_password=test_user_password,
-# )
 
 
 if __name__ == "__main__":
