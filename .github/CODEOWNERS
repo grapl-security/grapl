@@ -49,7 +49,6 @@ BUILD @christophermaier
 /src/python/grapl-common/ @wimax-grapl
 /src/python/graplctl/ @jgrillo-grapl
 /src/python/grapl-dgraph-ttl/ @grapl-security/wg-data-infra
-/src/python/graplinc-grapl-api/ @grapl-security/wg-data-infra
 /src/python/grapl-model-plugin-deployer/ @colin-grapl
 /src/python/grapl-notebook/ @wimax-grapl
 /src/python/grapl-template-generator/ @wimax-grapl @colin-grapl
@@ -57,7 +56,7 @@ BUILD @christophermaier
 /src/python/grapl-ux-router/ @colin-grapl
 /src/python/mypy.ini @christophermaier @wimax-grapl
 /src/python/provisioner/ @jgrillo-grapl
-/src/python/python_test_deps/ @christophermaier
+/src/python/python-proto/ @grapl-security/wg-data-infra
 /src/rust/analyzer-dispatcher/ @grapl-security/wg-data-infra
 /src/rust/bin/ @christophermaier
 /src/rust/.cargo @christophermaier
@@ -66,7 +65,6 @@ BUILD @christophermaier
 /src/rust/derive-dynamic-node/ @colin-grapl
 /src/rust/endpoint-plugin/ @inickles-grapl
 /src/rust/generators/ @inickles-grapl
-/src/rust/graph-descriptions/ @grapl-security/wg-data-infra
 /src/rust/graph-merger/ @grapl-security/wg-data-infra
 /src/rust/grapl-config/ @inickles-grapl @wimax-grapl
 /src/rust/grapl-graphql-codegen/ @colin-grapl
@@ -77,6 +75,7 @@ BUILD @christophermaier
 /src/rust/kafka-metrics-exporter/ @jgrillo-grapl
 /src/rust/metric-forwarder/ @wimax-grapl
 /src/rust/node-identifier/ @grapl-security/wg-data-infra
+/src/rust/rust-proto/ @grapl-security/wg-data-infra
 /src/rust/rust-toolchain @inickles-grapl
 /src/rust/sqs-executor/ @inickles-grapl @grapl-security/wg-data-infra
 /src/rust/sysmon/ @inickles-grapl

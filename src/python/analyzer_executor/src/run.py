@@ -49,4 +49,9 @@ async def main() -> None:
             LOGGER.error("SQS Timeout Manager exception", exc_info=True)
 
 
-asyncio.run(main())
+def run() -> None:
+    asyncio.run(main())
+
+
+if __name__ == "__main__":
+    run()

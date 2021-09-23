@@ -1,6 +1,11 @@
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut config = prost_build::Config::new();
+    println!("cargo:rerun-if-changed=Cargo.toml");
+    println!("cargo:rerun-if-changed=Cargo.lock");
+    println!("cargo:rerun-if-changed=build.rs");
 
+    change_on_dir("../../proto/")?;
+    change_on_dir("src/")?;
     config.type_attribute(
         ".",
         "#[derive(Eq, serde_derive::Serialize, serde_derive::Deserialize)]",
@@ -457,8 +462,25 @@ fn main() {
 
     config
         .compile_protos(
-            &["../../proto/graplinc/grapl/api/graph/v1beta1/types.proto"],
+            &[
+                "../../proto/graplinc/grapl/api/graph/v1beta1/types.proto",
+                "../../proto/graplinc/grapl/pipeline/v1beta1/types.proto",
+            ],
             &["../../proto/"],
         )
         .unwrap_or_else(|e| panic!("protobuf compilation failed: {}", e));
+    Ok(())
+}
+
+fn change_on_dir(root_dir: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let current_dir = std::env::current_dir()?;
+    for entry in std::fs::read_dir(current_dir.join(root_dir))? {
+        let entry = entry?;
+        if !entry.metadata()?.is_file() {
+            continue;
+        }
+        let path = entry.path();
+        println!("cargo:rerun-if-changed={}", path.display());
+    }
+    Ok(())
 }

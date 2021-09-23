@@ -1,5 +1,5 @@
 [package]
-name = "grapl-graph-descriptions"
+name = "rust-proto"
 version = "0.2.10"
 authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2018"
@@ -15,6 +15,7 @@ rand = "0.8"
 serde = "1"
 serde_derive = "1"
 tracing = "0.1.22"
+uuid = { version = "0.8.2", features = ["v4"] }
 
 [build-dependencies]
 prost-build = "0.7"

@@ -24,7 +24,6 @@ export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 	--file ./test/docker-compose.unit-tests-js.yml \
 	--file ./test/docker-compose.integration-tests.yml \
 	--file ./test/docker-compose.e2e-tests.yml \
-	--file ./test/docker-compose.typecheck-tests.yml
 
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
 
@@ -128,6 +127,10 @@ help: ## Print this help
 
 ##@ Build 🔨
 
+.PHONY: build-analyzer-executor
+build-analyzer-executor:
+	./pants package ./src/python/analyzer_executor/src
+
 .PHONY: build-test-unit
 build-test-unit:
 	$(DOCKER_BUILDX_BAKE) \
@@ -143,11 +146,6 @@ build-test-unit-rust:
 build-test-unit-js:
 	$(DOCKER_BUILDX_BAKE) \
 		--file ./test/docker-compose.unit-tests-js.yml
-
-.PHONY: build-test-typecheck
-build-test-typecheck: build-python-wheels
-	$(DOCKER_BUILDX_BAKE) \
-		--file ./test/docker-compose.typecheck-tests.yml
 
 .PHONY: build-test-integration
 build-test-integration: build
@@ -191,21 +189,11 @@ build-lambda-zips-js: ## Build JS lambda zips
 		graphql-endpoint-zip
 
 .PHONY: build-lambda-zips-python
-build-lambda-zips-python: build-python-wheels ## Build Python lambda zips
+build-lambda-zips-python: ## Build Python lambda zips
 	./pants filter --target-type=python_awslambda :: | xargs ./pants package
 
-.PHONY: build-python-wheels
-build-python-wheels:  ## Build all Python wheels
-	./pants filter --target-type=python_distribution :: | xargs ./pants package
-
-.PHONY: build-docker-images-local
-build-docker-images-local:
-	$(WITH_LOCAL_GRAPL_ENV) \
-	$(MAKE) build-docker-images
-	$(MAKE) push-local
-
 .PHONY: build-docker-images
-build-docker-images: graplctl
+build-docker-images: build-analyzer-executor graplctl
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
 
 .PHONY: build
@@ -281,18 +269,9 @@ test-unit-js: export COMPOSE_FILE := ./test/docker-compose.unit-tests-js.yml
 test-unit-js: build-test-unit-js ## Build and run unit tests - JavaScript only
 	test/docker-compose-with-error.sh
 
-.PHONY: test-typecheck-docker
-test-typecheck-docker: export COMPOSE_PROJECT_NAME := grapl-typecheck_tests
-test-typecheck-docker: export COMPOSE_FILE := ./test/docker-compose.typecheck-tests.yml
-test-typecheck-docker: build-test-typecheck ## Build and run typecheck tests (non-Pants)
-	test/docker-compose-with-error.sh
-
-.PHONY: test-typecheck-pants
-test-typecheck-pants: ## Typecheck Python code with Pants
-	./pants typecheck ::
-
 .PHONY: test-typecheck
-test-typecheck: test-typecheck-docker test-typecheck-pants ## Typecheck all Python Code
+test-typecheck: ## Typecheck Python Code
+	./pants typecheck ::
 
 .PHONY: test-integration
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
