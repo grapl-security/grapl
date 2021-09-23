@@ -902,15 +902,18 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/engagement-creator:${var.engagement_creator_tag}"
+        image = "${var.container_registry}grapl/${var.container_repo}engagement-creator:${var.engagement_creator_tag}"
+      }
+
+      template {
+        data        = local.local_vars
+        destination = "analyzer-executor.env"
+        env         = true
       }
 
       env {
         # AWS vars
-        AWS_REGION                  = var.aws_region
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
+        AWS_REGION = var.aws_region
         # python vars
         GRAPL_LOG_LEVEL = var.rust_log
         # dgraph vars
