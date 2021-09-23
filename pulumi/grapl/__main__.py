@@ -231,6 +231,7 @@ def main() -> None:
     else:
         # No Fargate or Elasticache in Local Grapl
         cache = Cache("main-cache", network=network)
+        pulumi_config = pulumi.Config()
 
         grapl_core_job_aws_vars = pulumi.Output.all(
             analyzer_bucket=analyzers_bucket.bucket,
@@ -269,14 +270,14 @@ def main() -> None:
                 # TODO: consider replacing with the previous per-service `configurable_envvars`
                 "rust_log": "DEBUG",
                 # Build Tags. We use per service tags so we can update services independently
-                "analyzer_dispatcher_tag": "20210920154305-c6d7c551",
-                "analyzer_executor_tag": "20210920154305-c6d7c551",
-                "graph_merger_tag": "20210920154305-c6d7c551",
-                "graphql_endpoint_tag": "latest",
-                "provisioner_tag": "latest",
-                "node_identifier_tag": "20210920154305-c6d7c551",
-                "sysmon_generator_tag": "20210920154305-c6d7c551",
+                "analyzer_dispatcher_tag": pulumi_config.require_object("artifacts")["analyzer-dispatcher"],
+                "analyzer_executor_tag": pulumi_config.require_object("artifacts")["analyzer-executor"],
                 "dgraph_tag": "latest",
+                "graph_merger_tag": pulumi_config.require_object("artifacts")["graph-merger"],
+                "graphql_endpoint_tag": pulumi_config.require_object("artifacts")["graphql-endpoint"],
+                "provisioner_tag": pulumi_config.require_object("artifacts")["provisioner"],
+                "node_identifier_tag": pulumi_config.require_object("artifacts")["node-identifier"],
+                "sysmon_generator_tag": pulumi_config.require_object("artifacts")["sysmon-generator"],
                 **inputs,
             }
         )
