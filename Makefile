@@ -192,6 +192,13 @@ build-lambda-zips-js: ## Build JS lambda zips
 build-lambda-zips-python: ## Build Python lambda zips
 	./pants filter --target-type=python_awslambda :: | xargs ./pants package
 
+.PHONY: build-docker-images
+build-docker-images: build-analyzer-executor graplctl
+	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
+
+.PHONY: build
+build: build-lambda-zips build-docker-images ## Build Grapl services
+
 .PHONY: build-formatter
 build-formatter:
 	$(DOCKER_BUILDX_BAKE) \
