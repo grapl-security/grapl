@@ -446,7 +446,7 @@ down: ## docker-compose down - both stops and removes the containers
 	# about. This must be the network that is used in Localstack's
 	# LAMBDA_DOCKER_NETWORK environment variable.
 	$(MAKE) stop-nomad-detach
-	-docker kill $(shell docker ps --quiet --filter=network=grapl-network)
+	-docker kill $(shell docker ps --quiet --filter=network=grapl-network) || true
 	docker-compose $(EVERY_COMPOSE_FILE) down --timeout=0
 	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
 	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
