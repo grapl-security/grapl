@@ -671,6 +671,7 @@ job "grapl-core" {
       }
 
       lifecycle {
+        # Since there's no other tasks in this group, it just runs at the end.
         hook = "poststart"
         # Ephemeral, not long-lived
         sidecar = false
