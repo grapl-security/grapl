@@ -305,14 +305,14 @@ def main() -> None:
     #     dgraph_cluster=dgraph_cluster,
     # )
 
-    if not config.LOCAL_GRAPL:
-
-        Provisioner(
-            network=network,
-            test_user_password=test_user_password,
-            db=dynamodb_tables,
-            dgraph_cluster=dgraph_cluster,
-        )
+#     if not config.LOCAL_GRAPL:
+#
+#         Provisioner(
+#             network=network,
+#             test_user_password=test_user_password,
+#             db=dynamodb_tables,
+#             dgraph_cluster=dgraph_cluster,
+#         )
 
         # E2eTestRunner(
         #     network=network,
