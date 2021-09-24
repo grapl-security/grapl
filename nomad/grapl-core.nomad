@@ -641,8 +641,7 @@ job "grapl-core" {
       }
 
       env {
-        AWS_DEFAULT_REGION = var.aws_region # boto3 prefers this one
-        AWS_REGION         = var.aws_region
+        AWS_DEFAULT_REGION = var.aws_region
         RUST_LOG           = var.rust_log
         RUST_BACKTRACE     = local.rust_backtrace
         REDIS_ENDPOINT     = local.redis_endpoint
@@ -697,8 +696,7 @@ job "grapl-core" {
       }
 
       env {
-        AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
-        AWS_REGION                  = var.aws_region
+        AWS_DEFAULT_REGION          = var.aws_region
         RUST_LOG                    = var.rust_log
         RUST_BACKTRACE              = local.rust_backtrace
         REDIS_ENDPOINT              = local.redis_endpoint
@@ -738,8 +736,7 @@ job "grapl-core" {
       }
 
       env {
-        AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
-        AWS_REGION                  = var.aws_region
+        AWS_DEFAULT_REGION          = var.aws_region
         RUST_LOG                    = var.rust_log
         RUST_BACKTRACE              = local.rust_backtrace
         REDIS_ENDPOINT              = local.redis_endpoint
@@ -775,7 +772,7 @@ job "grapl-core" {
 
       env {
         # AWS vars
-        AWS_REGION = var.aws_region
+        AWS_DEFAULT_REGION = var.aws_region
         # rust vars
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = local.rust_backtrace
@@ -814,7 +811,7 @@ job "grapl-core" {
 
       env {
         # AWS vars
-        AWS_REGION = var.aws_region
+        AWS_DEFAULT_REGION = var.aws_region
         # python vars
         GRAPL_LOG_LEVEL = "INFO"
         # dgraph vars
@@ -873,7 +870,7 @@ job "grapl-core" {
 
       env {
         # AWS vars
-        AWS_REGION = var.aws_region
+        AWS_DEFAULT_REGION = var.aws_region
         # python vars
         GRAPL_LOG_LEVEL = var.rust_log
         # dgraph vars
@@ -1038,8 +1035,7 @@ job "grapl-core" {
         DEST_BUCKET_NAME      = var.unid_subgraphs_generated_bucket
         DEAD_LETTER_QUEUE_URL = var.sysmon_generator_dead_letter_queue
         SOURCE_QUEUE_URL      = var.sysmon_generator_queue
-        AWS_DEFAULT_REGION    = var.aws_region # boto3 prefers this one
-        AWS_REGION            = var.aws_region
+        AWS_DEFAULT_REGION    = var.aws_region
         REDIS_ENDPOINT        = local.redis_endpoint
         GRAPL_LOG_LEVEL       = var.rust_log
         RUST_LOG              = var.rust_log
@@ -1070,8 +1066,7 @@ job "grapl-core" {
         DEST_BUCKET_NAME      = var.unid_subgraphs_generated_bucket
         DEAD_LETTER_QUEUE_URL = var.osquery_generator_dead_letter_queue
         SOURCE_QUEUE_URL      = var.osquery_generator_queue
-        AWS_DEFAULT_REGION    = var.aws_region # boto3 prefers this one
-        AWS_REGION            = var.aws_region
+        AWS_DEFAULT_REGION    = var.aws_region
         REDIS_ENDPOINT        = local.redis_endpoint
         GRAPL_LOG_LEVEL       = var.rust_log
         RUST_LOG              = var.rust_log

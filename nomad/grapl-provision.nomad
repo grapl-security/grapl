@@ -134,8 +134,7 @@ job "grapl-provision" {
         MG_ALPHAS = "localhost:9080"
 
         DEPLOYMENT_NAME               = var.deployment_name
-        AWS_DEFAULT_REGION            = var.aws_region # boto3 prefers this one
-        AWS_REGION                    = var.aws_region
+        AWS_DEFAULT_REGION            = var.aws_region
         GRAPL_SCHEMA_TABLE            = var.schema_table_name
         GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name
         GRAPL_USER_AUTH_TABLE         = var.user_auth_table
