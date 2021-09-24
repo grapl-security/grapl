@@ -33,6 +33,12 @@ FROM grapl-python-runner-base AS e2e-tests
 
 COPY --chown=grapl ./dist/e2e-test-runner-lambda.zip lambda.zip
 
+# in Docker-Compose world, we mounted `etc`; now we just copy it in.
+RUN mkdir -p /home/grapl/etc
+COPY --chown=grapl ./etc/local_grapl etc/local_grapl
+RUN mkdir -p /home/grapl/etc/sample_data
+COPY --chown=grapl ./etc/sample_data/eventlog.xml etc/sample_data/eventlog.xml
+
 RUN unzip lambda.zip
 
 

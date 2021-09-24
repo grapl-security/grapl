@@ -18,7 +18,7 @@ GqlLensDict = Dict[str, Any]
 TIMEOUT_SECS = int(os.getenv("TIMEOUT_SECS", "300"))
 
 
-def test_expected_data_in_dgraph(jwt: str) -> None:
+def test_expected_data_in_dgraph(actix_session: str) -> None:
     # There is some unidentified, nondeterministic failure with e2e.
     # We fall into one of three buckets:
     # - No lens
@@ -48,7 +48,7 @@ def test_expected_data_in_dgraph(jwt: str) -> None:
     # TODO: Consider using `pytest-order` to make this a separate test that
     # depends on the above test having been run.
 
-    gql_client = GraphqlEndpointClient(actix_session=jwt)
+    gql_client = GraphqlEndpointClient(actix_session=actix_session)
     wait_for_one(
         WaitForNoException(
             lambda: ensure_graphql_lens_scope_no_errors(gql_client, LENS_NAME)

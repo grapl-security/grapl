@@ -155,47 +155,43 @@ def main() -> None:
         kafka_endpoint = "LOCAL_GRAPL_REPLACE_IP:19092"  # intentionally not 29092
         redis_endpoint = "redis://LOCAL_GRAPL_REPLACE_IP:6379"
 
-        grapl_core_job_vars = pulumi.Output.all(
+        grapl_core_job_vars_inputs = dict(
             analyzer_bucket=analyzers_bucket.bucket,
             analyzer_dispatched_bucket=dispatched_analyzer_emitter.bucket.bucket,
+            analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url,
             analyzer_dispatcher_queue=analyzer_dispatcher_queue.main_queue_url,
             analyzer_executor_queue=analyzer_executor_queue.main_queue_url,
             analyzer_matched_subgraphs_bucket=analyzer_matched_emitter.bucket.bucket,
-            analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url,
             aws_access_key_id=aws.config.access_key,
             aws_access_key_secret=aws.config.secret_key,
+            # This is a special directive to our HCL file that tells it to use Localstack
+            _aws_endpoint=aws_endpoint,
+            aws_region=aws.get_region().name,
+            deployment_name=config.DEPLOYMENT_NAME,
             engagement_creator_queue=engagement_creator_queue.main_queue_url,
             graph_merger_queue=graph_merger_queue.main_queue_url,
             graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
-            session_table_name=dynamodb_tables.dynamic_session_table.name,
+            model_plugins_bucket=model_plugins_bucket.bucket,
+            node_identifier_dead_letter_queue=node_identifier_queue.dead_letter_queue_url,
+            node_identifier_queue=node_identifier_queue.main_queue_url,
+            node_identifier_retry_queue=node_identifier_queue.retry_queue_url,
+            osquery_generator_dead_letter_queue=osquery_generator_queue.dead_letter_queue_url,
+            osquery_generator_queue=osquery_generator_queue.main_queue_url,
+            _redis_endpoint=redis_endpoint,
+            rust_log="DEBUG",
             schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
             schema_table_name=dynamodb_tables.schema_table.name,
-            model_plugins_bucket=model_plugins_bucket.bucket,
-            node_identifier_queue=node_identifier_queue.main_queue_url,
-            node_identifier_dead_letter_queue=node_identifier_queue.dead_letter_queue_url,
-            node_identifier_retry_queue=node_identifier_queue.retry_queue_url,
-            osquery_generator_queue=osquery_generator_queue.main_queue_url,
-            osquery_generator_dead_letter_queue=osquery_generator_queue.dead_letter_queue_url,
-            subgraphs_merged_bucket=subgraphs_merged_emitter.bucket,
-            subgraphs_generated_bucket=subgraphs_generated_emitter.bucket,
-            sysmon_generator_queue=sysmon_generator_queue.main_queue_url,
+            session_table_name=dynamodb_tables.dynamic_session_table.name,
+            subgraphs_generated_bucket=subgraphs_generated_emitter.bucket.bucket,
+            subgraphs_merged_bucket=subgraphs_merged_emitter.bucket.bucket,
             sysmon_generator_dead_letter_queue=sysmon_generator_queue.dead_letter_queue_url,
+            sysmon_generator_queue=sysmon_generator_queue.main_queue_url,
+            test_user_name=config.GRAPL_TEST_USER_NAME,
             unid_subgraphs_generated_bucket=unid_subgraphs_generated_emitter.bucket,
             user_auth_table=dynamodb_tables.user_auth_table.name,
             user_session_table=dynamodb_tables.user_session_table.name,
-        ).apply(
-            lambda inputs: {
-                # This is a special directive to our HCL file that tells it to use Localstack
-                "_aws_endpoint": aws_endpoint,
-                "deployment_name": config.DEPLOYMENT_NAME,
-                "grapl_test_user_name": config.GRAPL_TEST_USER_NAME,
-                "aws_region": aws.get_region().name,
-                "_redis_endpoint": redis_endpoint,
-                # TODO: consider replacing with the previous per-service `configurable_envvars`
-                "rust_log": "DEBUG",
-                **inputs,
-            }
         )
+        grapl_core_job_vars = pulumi.Output.all(**grapl_core_job_vars_inputs)
 
         nomad_grapl_core = NomadJob(
             "grapl-core",
@@ -203,40 +199,96 @@ def main() -> None:
             vars=grapl_core_job_vars,
         )
 
+        nomad_grapl_provision = NomadJob(
+            "grapl-provision",
+            jobspec=Path("../../nomad/grapl-provision.nomad").resolve(),
+            vars=pulumi.Output.all(
+                # A hack to declare "this depends on the previous one having completed first"
+                _unused_output_from_grapl_core=nomad_grapl_core.job.deployment_id,
+                **grapl_core_job_vars_inputs,
+            ).apply(
+                lambda inputs: {
+                    k: inputs[k]
+                    for k in {
+                        "aws_access_key_id",
+                        "aws_access_key_secret",
+                        "_aws_endpoint",
+                        "aws_region",
+                        "deployment_name",
+                        "schema_table_name",
+                        "schema_properties_table_name",
+                        "user_auth_table",
+                        "test_user_name",
+                        "rust_log",
+                    }
+                }
+            ),
+        )
+
         if config.SHOULD_DEPLOY_INTEGRATION_TESTS:
 
             def _get_integration_test_job_vars(
                 inputs: Mapping[str, Any]
             ) -> Mapping[str, Any]:
-                # Filter out which vars we need
-                subset_keys = {
-                    "aws_access_key_id",
-                    "aws_access_key_secret",
-                    "_aws_endpoint",
-                    "aws_region",
-                    "deployment_name",
-                    "schema_properties_table_name",
-                    "grapl_test_user_name",
-                    "_redis_endpoint",
+                return {
+                    k: inputs[k]
+                    for k in {
+                        "aws_access_key_id",
+                        "aws_access_key_secret",
+                        "_aws_endpoint",
+                        "aws_region",
+                        "deployment_name",
+                        "schema_properties_table_name",
+                        "test_user_name",
+                        "_redis_endpoint",
+                        # integration-test only, specified below
+                        "_kafka_endpoint",
+                        "grapl_root",
+                        "non_root_uid",
+                    }
                 }
 
-                subset = {k: inputs[k] for k in subset_keys}
+            integration_test_job_vars = pulumi.Output.all(
+                _kafka_endpoint=kafka_endpoint,
+                grapl_root=os.environ["GRAPL_ROOT"],
+                non_root_uid=os.environ["UID"],
+                **grapl_core_job_vars_inputs,
+            ).apply(_get_integration_test_job_vars)
 
-                integration_test_only_job_vars = {
-                    "_kafka_endpoint": kafka_endpoint,
-                    "grapl_root": os.environ["GRAPL_ROOT"],
-                    "non_root_uid": os.environ["UID"],
-                }
-                return {**subset, **integration_test_only_job_vars}
-
-            integration_test_job_vars = grapl_core_job_vars.apply(
-                _get_integration_test_job_vars
-            )
-
-            nomad_integration_tests = NomadJob(
+            integration_tests = NomadJob(
                 "integration-tests",
                 jobspec=Path("../../nomad/local/integration-tests.nomad").resolve(),
                 vars=integration_test_job_vars,
+            )
+
+        if config.SHOULD_DEPLOY_E2E_TESTS:
+
+            def _get_e2e_test_job_vars(inputs: Mapping[str, Any]) -> Mapping[str, Any]:
+                return {
+                    k: inputs[k]
+                    for k in {
+                        "analyzer_bucket",
+                        "aws_access_key_id",
+                        "aws_access_key_secret",
+                        "_aws_endpoint",
+                        "aws_region",
+                        "deployment_name",
+                        "test_user_name",
+                        "schema_properties_table_name",
+                        "schema_table_name",
+                        "sysmon_generator_queue",
+                        "sysmon_log_bucket",
+                    }
+                }
+
+            e2e_test_job_vars = pulumi.Output.all(
+                sysmon_log_bucket=sysmon_log_emitter.bucket.bucket,
+                **grapl_core_job_vars_inputs,
+            ).apply(_get_e2e_test_job_vars)
+            e2e_tests = NomadJob(
+                "e2e-tests",
+                jobspec=Path("../../nomad/local/e2e-tests.nomad").resolve(),
+                vars=e2e_test_job_vars,
             )
 
     else:
