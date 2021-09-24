@@ -279,39 +279,33 @@ def main() -> None:
         cache = Cache("main-cache", network=network)
         pulumi_config = pulumi.Config()
 
-        grapl_core_job_aws_vars = pulumi.Output.all(**nomad_inputs,).apply(
-            lambda inputs: {
-                "container_registry": "docker.cloudsmith.io/",
-                "container_repo": "raw/",
-                "grapl_test_user_name": config.GRAPL_TEST_USER_NAME,
-                "_redis_endpoint": cache.endpoint,
-                # TODO: consider replacing with the previous per-service `configurable_envvars`
-                "rust_log": "DEBUG",
-                # Build Tags. We use per service tags so we can update services independently
-                "analyzer_dispatcher_tag": pulumi_config.require_object("artifacts")[
-                    "analyzer-dispatcher"
-                ],
-                "analyzer_executor_tag": pulumi_config.require_object("artifacts")[
-                    "analyzer-executor"
-                ],
-                "dgraph_tag": "latest",
-                "graph_merger_tag": pulumi_config.require_object("artifacts")[
-                    "graph-merger"
-                ],
-                "graphql_endpoint_tag": pulumi_config.require_object("artifacts")[
-                    "graphql-endpoint"
-                ],
-                "provisioner_tag": pulumi_config.require_object("artifacts")[
-                    "provisioner"
-                ],
-                "node_identifier_tag": pulumi_config.require_object("artifacts")[
-                    "node-identifier"
-                ],
-                "sysmon_generator_tag": pulumi_config.require_object("artifacts")[
-                    "sysmon-generator"
-                ],
-                **inputs,
-            }
+        grapl_core_job_aws_vars = pulumi.Output.all(
+            container_registry="docker.cloudsmith.io/",
+            container_repo="raw/",
+            grapl_test_user_name=config.GRAPL_TEST_USER_NAME,
+            _redis_endpoint=cache.endpoint,
+            # TODO: consider replacing with the previous per-service `configurable_envvars`
+            rust_log="DEBUG",
+            # Build Tags. We use per service tags so we can update services independently
+            analyzer_dispatcher_tag=pulumi_config.require_object("artifacts")[
+                "analyzer-dispatcher"
+            ],
+            analyzer_executor_tag=pulumi_config.require_object("artifacts")[
+                "analyzer-executor"
+            ],
+            dgraph_tag="latest",
+            graph_merger_tag=pulumi_config.require_object("artifacts")["graph-merger"],
+            graphql_endpoint_tag=pulumi_config.require_object("artifacts")[
+                "graphql-endpoint"
+            ],
+            provisioner_tag=pulumi_config.require_object("artifacts")["provisioner"],
+            node_identifier_tag=pulumi_config.require_object("artifacts")[
+                "node-identifier"
+            ],
+            sysmon_generator_tag=pulumi_config.require_object("artifacts")[
+                "sysmon-generator"
+            ],
+            **nomad_inputs,
         )
 
         nomad_grapl_core = NomadJob(
