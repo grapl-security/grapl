@@ -49,7 +49,7 @@ class Network(pulumi.ComponentResource):
             cidr_block=str(cidr_block),
             enable_dns_hostnames=True,
             enable_dns_support=True,
-            tags={"Name": f"{name}"},
+            tags={"Name": f"{name}-{DEPLOYMENT_NAME}"},
             opts=pulumi.ResourceOptions(parent=self),
         )
 
