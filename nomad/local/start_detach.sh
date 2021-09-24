@@ -34,13 +34,13 @@ ensure_valid_env() {
 write_mount_grapl_root_volume_config() {
     # Every time we do a `nomad-agent &`, write a new file to
     # "per-invoke-nomad-conf.nomad"
-    # that defines a Nomad host volume pointing at ${PWD} (aka, grapl root).
+    # that defines a Nomad host volume pointing at ${GRAPL_ROOT}
     # This is required for `python-integration-tests` to run Pants in an `exec` task.
     cat << EOF > "${VOLUME_CONFIG_FILE}"
 # Written dynamically by 'write_mount_grapl_root_volume_config'
 client {
   host_volume "grapl-root-volume" {
-    path = "${PWD}"
+    path = "${GRAPL_ROOT}"
     read_only = false
   }
 }

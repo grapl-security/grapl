@@ -243,15 +243,13 @@ def main() -> None:
                         "_redis_endpoint",
                         # integration-test only, specified below
                         "_kafka_endpoint",
-                        "grapl_root",
-                        "non_root_uid",
+                        "non_root_user",
                     }
                 }
 
             integration_test_job_vars = pulumi.Output.all(
                 _kafka_endpoint=kafka_endpoint,
-                grapl_root=os.environ["GRAPL_ROOT"],
-                non_root_uid=os.environ["UID"],
+                non_root_user=os.environ["NON_ROOT_USER"],
                 **grapl_core_job_vars_inputs,
             ).apply(_get_integration_test_job_vars)
 
