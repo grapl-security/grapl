@@ -178,7 +178,6 @@ job "integration-tests" {
       read_only = false
     }
 
-    # This is hacky as hell.
     task "python-integration-tests" {
       driver = "exec"
       user   = var.non_root_user
