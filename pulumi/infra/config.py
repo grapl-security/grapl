@@ -32,10 +32,11 @@ def to_bool(input: Optional[Union[str, bool]]) -> Optional[bool]:
         raise ValueError(f"Invalid bool value: {repr(input)}")
 
 
-# If true, optionally deploy integration tests to Nomad (without running them).
+# If true, optionally deploy integration/e2e tests to Nomad (without running them).
 SHOULD_DEPLOY_INTEGRATION_TESTS = to_bool(
     os.getenv("SHOULD_DEPLOY_INTEGRATION_TESTS", False)
 )
+SHOULD_DEPLOY_E2E_TESTS = to_bool(os.getenv("SHOULD_DEPLOY_E2E_TESTS", False))
 
 
 def repository_path(relative_path: str) -> Path:
