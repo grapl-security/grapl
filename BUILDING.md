@@ -252,24 +252,9 @@ echo '_/bridge.ko' | sudo tee -a /lib/modules/$(uname -r)/modules.builtin
 
 ### Running Nomad locally
 
-1. Set up local registry, build and push containers to local registry
 ```bash
-make build-docker-images-local
+make up-detach
 ```
-
-2. Start local Nomad environment
-```bash
-# NOTE: Requires sudo privileges.
-make start-nomad-dev
-```
-
-3. Start Kafka
-```bash
-set -o allexport; . ./local-grapl.env; set +o allexport;
-docker-compose -f docker-compose.yml up kafka-broker
-```
-4. Run pulumi locally
-make local-pulumi
 
 ## The CI system
 
