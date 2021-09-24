@@ -47,7 +47,7 @@ variable "schema_properties_table_name" {
   description = "What is the name of the schema properties table?"
 }
 
-variable "grapl_test_user_name" {
+variable "test_user_name" {
   type        = string
   description = "The name of the test user"
 }

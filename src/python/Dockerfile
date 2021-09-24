@@ -22,6 +22,13 @@ FROM grapl-python-base AS analyzer-executor
 COPY ./dist/analyzer-executor.pex /home/grapl/analyzer-executor.pex
 CMD ["./analyzer-executor.pex"]
 
+# engagement-creator
+################################################################################
+FROM grapl-python-base AS engagement-creator
+COPY ./dist/engagement-creator.pex /home/grapl/engagement-creator.pex
+CMD ["./engagement-creator.pex"]
+
+
 # grapl-notebook
 ################################################################################
 FROM grapl-python-base AS grapl-notebook

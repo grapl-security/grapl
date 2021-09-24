@@ -164,6 +164,8 @@ services:
       PULUMI_CONFIG_PASSPHRASE: local-grapl-passphrase
       # This gets exported to True by `make test-integration`
       SHOULD_DEPLOY_INTEGRATION_TESTS: "${SHOULD_DEPLOY_INTEGRATION_TESTS:-False}"
+      # This gets exported to True by `make test-e2e`
+      SHOULD_DEPLOY_E2E_TESTS: "${SHOULD_DEPLOY_E2E_TESTS:-False}"
       # Other environment variables like MG_ALPHAS are passed in via
       # Pulumi.local-grapl.yaml
       GRAPL_ROOT: "${PWD}"

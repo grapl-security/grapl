@@ -23,7 +23,7 @@ export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 	--file ./test/docker-compose.unit-tests-rust.yml \
 	--file ./test/docker-compose.unit-tests-js.yml \
 	--file ./test/docker-compose.integration-tests.build.yml \
-	--file ./test/docker-compose.e2e-tests.yml \
+	--file ./test/docker-compose.e2e-tests.build.yml \
 
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
 
@@ -160,7 +160,7 @@ build-test-integration: build-local
 .PHONY: build-test-e2e
 build-test-e2e: build
 	$(WITH_LOCAL_GRAPL_ENV) \
-	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.yml
+	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.build.yml
 
 .PHONY: build-lambda-zips
 build-lambda-zips: build-lambda-zips-rust build-lambda-zips-js build-lambda-zips-python build-analyzer-executor ## Generate all lambda zip files
@@ -290,7 +290,7 @@ test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_T
 test-integration: build-test-integration ## Build and run integration tests
 	$(WITH_LOCAL_GRAPL_ENV)
 	export SHOULD_DEPLOY_INTEGRATION_TESTS=True  # This gets read in by `docker-compose.yml`'s pulumi
-	$(MAKE) test-with-env EXEC_TEST_COMMAND=nomad/local/run_integration_tests.sh
+	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/local/run_parameterized_job.sh integration-tests"
 
 .PHONY: test-grapl-template-generator
 test-grapl-template-generator:  # Test that the Grapl Template Generator spits out something compilable.
@@ -298,9 +298,10 @@ test-grapl-template-generator:  # Test that the Grapl Template Generator spits o
 
 .PHONY: test-e2e
 test-e2e: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_E2E_TESTS)
-test-e2e: export export COMPOSE_FILE := ./test/docker-compose.e2e-tests.yml
 test-e2e: build-test-e2e ## Build and run e2e tests
-	$(MAKE) test-with-env-docker
+	$(WITH_LOCAL_GRAPL_ENV)
+	export SHOULD_DEPLOY_E2E_TESTS=True  # This gets read in by `docker-compose.yml`'s pulumi
+	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/local/run_parameterized_job.sh e2e-tests"
 
 # This target is not intended to be used directly from the command line, it's
 # intended for tests in docker-compose files that need the Grapl environment.
@@ -439,7 +440,7 @@ down: ## docker-compose down - both stops and removes the containers
 	# about. This must be the network that is used in Localstack's
 	# LAMBDA_DOCKER_NETWORK environment variable.
 	$(MAKE) stop-nomad-detach
-	-docker kill $(shell docker ps --quiet --filter=network=grapl-network)
+	-docker kill $(shell docker ps --quiet --filter=network=grapl-network) || true
 	docker-compose $(EVERY_COMPOSE_FILE) down --timeout=0
 	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
 	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
