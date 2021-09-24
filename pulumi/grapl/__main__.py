@@ -171,14 +171,12 @@ def main() -> None:
         kafka_endpoint = "LOCAL_GRAPL_REPLACE_IP:19092"  # intentionally not 29092
         redis_endpoint = "redis://LOCAL_GRAPL_REPLACE_IP:6379"
 
-        grapl_core_job_vars = pulumi.Output.all(
-            aws_access_key_id=aws.config.access_key,
-            aws_access_key_secret=aws.config.secret_key,
-            **nomad_inputs,
-        ).apply(
+        grapl_core_job_vars = pulumi.Output.all(**nomad_inputs,).apply(
             lambda inputs: {
                 # This is a special directive to our HCL file that tells it to use Localstack
                 "_aws_endpoint": aws_endpoint,
+                "aws_access_key_id": aws.config.access_key,
+                "aws_access_key_secret": aws.config.secret_key,
                 "grapl_test_user_name": config.GRAPL_TEST_USER_NAME,
                 "_redis_endpoint": redis_endpoint,
                 # TODO: consider replacing with the previous per-service `configurable_envvars`
