@@ -181,7 +181,7 @@ job "integration-tests" {
     # This is hacky as hell.
     task "python-integration-tests" {
       driver = "exec"
-      user = var.non_root_user
+      user   = var.non_root_user
 
       volume_mount {
         volume      = "grapl-root-volume"
