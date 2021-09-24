@@ -132,6 +132,36 @@ def main() -> None:
     )
     pulumi.export("ux-bucket", ux_bucket.bucket)
 
+    nomad_inputs = {
+        "analyzer_bucket":analyzers_bucket.bucket,
+        "analyzer_dispatched_bucket":dispatched_analyzer_emitter.bucket.bucket,
+        "analyzer_dispatcher_queue":analyzer_dispatcher_queue.main_queue_url,
+        "analyzer_executor_queue":analyzer_executor_queue.main_queue_url,
+        "analyzer_matched_subgraphs_bucket":analyzer_matched_emitter.bucket.bucket,
+        "analyzer_dispatcher_dead_letter_queue":analyzer_dispatcher_queue.dead_letter_queue_url,
+        "aws_region": aws.get_region().name,
+        "deployment_name": config.DEPLOYMENT_NAME,
+        "engagement_creator_queue":engagement_creator_queue.main_queue_url,
+        "graph_merger_queue":graph_merger_queue.main_queue_url,
+        "graph_merger_dead_letter_queue":graph_merger_queue.dead_letter_queue_url,
+        "model_plugins_bucket":model_plugins_bucket.bucket,
+        "node_identifier_queue":node_identifier_queue.main_queue_url,
+        "node_identifier_dead_letter_queue":node_identifier_queue.dead_letter_queue_url,
+        "node_identifier_retry_queue":node_identifier_queue.retry_queue_url,
+        "osquery_generator_queue":osquery_generator_queue.main_queue_url,
+        "osquery_generator_dead_letter_queue":osquery_generator_queue.dead_letter_queue_url,
+        "schema_properties_table_name":dynamodb_tables.schema_properties_table.name,
+        "schema_table_name":dynamodb_tables.schema_table.name,
+        "session_table_name":dynamodb_tables.dynamic_session_table.name,
+        "subgraphs_merged_bucket":subgraphs_merged_emitter.bucket,
+        "subgraphs_generated_bucket":subgraphs_generated_emitter.bucket,
+        "sysmon_generator_queue":sysmon_generator_queue.main_queue_url,
+        "sysmon_generator_dead_letter_queue":sysmon_generator_queue.dead_letter_queue_url,
+        "unid_subgraphs_generated_bucket":unid_subgraphs_generated_emitter.bucket,
+        "user_auth_table":dynamodb_tables.user_auth_table.name,
+        "user_session_table":dynamodb_tables.user_session_table.name,
+    }
+
     if config.LOCAL_GRAPL:
         kafka = Kafka("kafka")
 
@@ -142,40 +172,14 @@ def main() -> None:
         redis_endpoint = "redis://LOCAL_GRAPL_REPLACE_IP:6379"
 
         grapl_core_job_vars = pulumi.Output.all(
-            analyzer_bucket=analyzers_bucket.bucket,
-            analyzer_dispatched_bucket=dispatched_analyzer_emitter.bucket.bucket,
-            analyzer_dispatcher_queue=analyzer_dispatcher_queue.main_queue_url,
-            analyzer_executor_queue=analyzer_executor_queue.main_queue_url,
-            analyzer_matched_subgraphs_bucket=analyzer_matched_emitter.bucket.bucket,
-            analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url,
             aws_access_key_id=aws.config.access_key,
             aws_access_key_secret=aws.config.secret_key,
-            engagement_creator_queue=engagement_creator_queue.main_queue_url,
-            graph_merger_queue=graph_merger_queue.main_queue_url,
-            graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
-            model_plugins_bucket=model_plugins_bucket.bucket,
-            node_identifier_queue=node_identifier_queue.main_queue_url,
-            node_identifier_dead_letter_queue=node_identifier_queue.dead_letter_queue_url,
-            node_identifier_retry_queue=node_identifier_queue.retry_queue_url,
-            osquery_generator_queue=osquery_generator_queue.main_queue_url,
-            osquery_generator_dead_letter_queue=osquery_generator_queue.dead_letter_queue_url,
-            schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
-            schema_table_name=dynamodb_tables.schema_table.name,
-            session_table_name=dynamodb_tables.dynamic_session_table.name,
-            subgraphs_merged_bucket=subgraphs_merged_emitter.bucket,
-            subgraphs_generated_bucket=subgraphs_generated_emitter.bucket,
-            sysmon_generator_queue=sysmon_generator_queue.main_queue_url,
-            sysmon_generator_dead_letter_queue=sysmon_generator_queue.dead_letter_queue_url,
-            unid_subgraphs_generated_bucket=unid_subgraphs_generated_emitter.bucket,
-            user_auth_table=dynamodb_tables.user_auth_table.name,
-            user_session_table=dynamodb_tables.user_session_table.name,
+            **nomad_inputs,
         ).apply(
             lambda inputs: {
                 # This is a special directive to our HCL file that tells it to use Localstack
                 "_aws_endpoint": aws_endpoint,
-                "deployment_name": config.DEPLOYMENT_NAME,
                 "grapl_test_user_name": config.GRAPL_TEST_USER_NAME,
-                "aws_region": aws.get_region().name,
                 "_redis_endpoint": redis_endpoint,
                 # TODO: consider replacing with the previous per-service `configurable_envvars`
                 "rust_log": "DEBUG",
@@ -228,37 +232,11 @@ def main() -> None:
         pulumi_config = pulumi.Config()
 
         grapl_core_job_aws_vars = pulumi.Output.all(
-            analyzer_bucket=analyzers_bucket.bucket,
-            analyzer_dispatched_bucket=dispatched_analyzer_emitter.bucket.bucket,
-            analyzer_dispatcher_queue=analyzer_dispatcher_queue.main_queue_url,
-            analyzer_executor_queue=analyzer_executor_queue.main_queue_url,
-            analyzer_matched_subgraphs_bucket=analyzer_matched_emitter.bucket.bucket,
-            analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url,
-            engagement_creator_queue=engagement_creator_queue.main_queue_url,
-            graph_merger_queue=graph_merger_queue.main_queue_url,
-            graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
-            model_plugins_bucket=model_plugins_bucket.bucket,
-            node_identifier_queue=node_identifier_queue.main_queue_url,
-            node_identifier_dead_letter_queue=node_identifier_queue.dead_letter_queue_url,
-            node_identifier_retry_queue=node_identifier_queue.retry_queue_url,
-            osquery_generator_queue=osquery_generator_queue.main_queue_url,
-            osquery_generator_dead_letter_queue=osquery_generator_queue.dead_letter_queue_url,
-            schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
-            schema_table_name=dynamodb_tables.schema_table.name,
-            session_table_name=dynamodb_tables.dynamic_session_table.name,
-            subgraphs_merged_bucket=subgraphs_merged_emitter.bucket,
-            subgraphs_generated_bucket=subgraphs_generated_emitter.bucket,
-            sysmon_generator_queue=sysmon_generator_queue.main_queue_url,
-            sysmon_generator_dead_letter_queue=sysmon_generator_queue.dead_letter_queue_url,
-            unid_subgraphs_generated_bucket=unid_subgraphs_generated_emitter.bucket,
-            user_auth_table=dynamodb_tables.user_auth_table.name,
-            user_session_table=dynamodb_tables.user_session_table.name,
+            **nomad_inputs,
         ).apply(
             lambda inputs: {
-                "aws_region": aws.get_region().name,
                 "container_registry": "docker.cloudsmith.io/",
                 "container_repo": "raw/",
-                "deployment_name": config.DEPLOYMENT_NAME,
                 "grapl_test_user_name": config.GRAPL_TEST_USER_NAME,
                 "_redis_endpoint": cache.endpoint,
                 # TODO: consider replacing with the previous per-service `configurable_envvars`
