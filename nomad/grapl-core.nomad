@@ -984,7 +984,7 @@ job "grapl-core" {
 
       env {
         # For the DynamoDB client
-        AWS_REGION = var.aws_region
+        AWS_DEFAULT_REGION = var.aws_region
 
         GRAPL_USER_AUTH_TABLE    = var.user_auth_table
         GRAPL_USER_SESSION_TABLE = var.user_session_table
