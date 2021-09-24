@@ -317,7 +317,7 @@ GRAPL_AWS_ACCESS_KEY_SECRET = ${var.aws_access_key_secret}
 EOH
   # We need to submit an env var otherwise you can end up with a weird nomad state parse error
   aws_only_env_vars = "IN_AWS=TRUE"
-  conditional_env_vars = (var._aws_endpoint != "http://LOCAL_GRAPL_REPLACE_IP:4566") ? local.aws_only_env_vars : local.local_only_env_vars
+  conditionally_defined_env_vars = (var._aws_endpoint != "http://LOCAL_GRAPL_REPLACE_IP:4566") ? local.aws_only_env_vars : local.local_only_env_vars
 }
 
 job "grapl-core" {
@@ -634,7 +634,7 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditional_env_vars
+        data        = local.conditionally_defined_env_vars
         destination = "graph-merger.env"
         env         = true
       }
@@ -690,7 +690,7 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditional_env_vars
+        data        = local.conditionally_defined_env_vars
         destination = "node-identifier.env"
         env         = true
       }
@@ -731,7 +731,7 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditional_env_vars
+        data        = local.conditionally_defined_env_vars
         destination = "node-identifier-retry.env"
         env         = true
       }
@@ -767,7 +767,7 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditional_env_vars
+        data        = local.conditionally_defined_env_vars
         destination = "analyzer-dispatcher.env"
         env         = true
       }
@@ -806,7 +806,7 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditional_env_vars
+        data        = local.conditionally_defined_env_vars
         destination = "analyzer-executor.env"
         env         = true
       }
@@ -865,7 +865,7 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditional_env_vars
+        data        = local.conditionally_defined_env_vars
         destination = "analyzer-executor.env"
         env         = true
       }
@@ -920,7 +920,7 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditional_env_vars
+        data        = local.conditionally_defined_env_vars
         destination = "graphql-endpoint.env"
         env         = true
       }
@@ -979,7 +979,7 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditional_env_vars
+        data        = local.conditionally_defined_env_vars
         destination = "web-ui.env"
         env         = true
       }
@@ -1028,7 +1028,7 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditional_env_vars
+        data        = local.conditionally_defined_env_vars
         destination = "sysmon.env"
         env         = true
       }
@@ -1060,7 +1060,7 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditional_env_vars
+        data        = local.conditionally_defined_env_vars
         destination = "osquery.env"
         env         = true
       }
