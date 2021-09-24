@@ -93,7 +93,7 @@ GRAPL_AWS_ACCESS_KEY_ID     = ${var.aws_access_key_id}
 GRAPL_AWS_ACCESS_KEY_SECRET = ${var.aws_access_key_secret}
 EOH
   # We need to submit an env var otherwise you can end up with a weird nomad state parse error
-  aws_only_env_vars = "DUMMY_VAR=TRUE"
+  aws_only_env_vars              = "DUMMY_VAR=TRUE"
   conditionally_defined_env_vars = (var._aws_endpoint != "http://LOCAL_GRAPL_REPLACE_IP:4566") ? local.aws_only_env_vars : local.local_only_env_vars
 }
 
