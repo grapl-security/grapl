@@ -633,6 +633,7 @@ job "grapl-core" {
         image = "${var.container_registry}grapl/${var.container_repo}graph-merger:${var.graph_merger_tag}"
       }
 
+      # This writes an env files that gets read by nomad automatically
       template {
         data        = local.conditionally_defined_env_vars
         destination = "graph-merger.env"

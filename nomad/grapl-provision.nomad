@@ -121,7 +121,7 @@ job "grapl-provision" {
         sidecar = false
       }
 
-      # This
+      # This writes an env files that gets read by nomad automatically
       template {
         data        = local.conditionally_defined_env_vars
         destination = "provisioner.env"
