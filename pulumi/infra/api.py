@@ -9,7 +9,6 @@ from infra.engagement_notebook import EngagementNotebook
 from infra.graphql import GraphQL
 from infra.lambda_ import Lambda
 from infra.metric_forwarder import MetricForwarder
-from infra.model_plugin_deployer import ModelPluginDeployer
 from infra.network import Network
 from infra.secret import JWTSecret
 
