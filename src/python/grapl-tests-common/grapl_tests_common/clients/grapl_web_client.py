@@ -43,9 +43,7 @@ class GraplWebClient:
                 "username": username,
                 "password": password,
             },
-            headers={
-                **_JSON_CONTENT_TYPE_HEADERS,
-            },
+            headers=_JSON_CONTENT_TYPE_HEADERS,
         )
         if resp.status_code != HTTPStatus.OK:
             raise GraplWebClientException(f"{resp.status_code}: {resp.text}")
@@ -56,16 +54,26 @@ class GraplWebClient:
             )
         return cookie
 
-    def invalid_creds(self) -> requests.Response:
+    def real_user_fake_password(self) -> requests.Response:
+        username = os.environ["GRAPL_TEST_USER_NAME"]
+        resp = requests.post(
+            f"{self.endpoint}/auth/login",
+            json={
+                "username": username,
+                "password": "fakepassword",
+            },
+            headers=_JSON_CONTENT_TYPE_HEADERS,
+        )
+        return resp
+
+    def nonexistent_user(self) -> requests.Response:
         resp = requests.post(
             f"{self.endpoint}/auth/login",
             json={
                 "username": "fakeuser",
                 "password": "fakepassword",
             },
-            headers={
-                **_JSON_CONTENT_TYPE_HEADERS,
-            },
+            headers=_JSON_CONTENT_TYPE_HEADERS,
         )
         return resp
 
@@ -76,8 +84,23 @@ class GraplWebClient:
                 "username": "",
                 "password": "",
             },
-            headers={
-                **_JSON_CONTENT_TYPE_HEADERS,
+            headers=_JSON_CONTENT_TYPE_HEADERS,
+        )
+        return resp
+
+    def no_content_type(self) -> requests.Response:
+        username = os.environ["GRAPL_TEST_USER_NAME"]
+        password = _get_test_user_password(
+            deployment_name=os.environ["DEPLOYMENT_NAME"]
+        )
+
+        resp = requests.post(
+            f"{self.endpoint}/auth/login",
+            json={
+                "username": username,
+                "password": password,
             },
+            # Explicitly no _JSON_CONTENT_TYPE_HEADERS
+            headers={},
         )
         return resp

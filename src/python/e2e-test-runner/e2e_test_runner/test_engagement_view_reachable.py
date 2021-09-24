@@ -12,7 +12,7 @@ from grapl_tests_common.clients.common import endpoint_url
 
 class EngagementViewScraper:
     def __init__(self) -> None:
-        self.endpoint = endpoint_url("/index.html")
+        self.endpoint = endpoint_url("/")
 
     def get_index(self) -> requests.Response:
         resp = requests.get(url=self.endpoint)
