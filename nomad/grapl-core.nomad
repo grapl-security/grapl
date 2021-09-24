@@ -17,19 +17,19 @@ variable "container_repo" {
 
 variable "aws_access_key_id" {
   type        = string
-  default     = "DEFAULT_NOMAD_AWS_ACCESS_KEY_ID"
+  default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_ID"
   description = "The aws access key id used to interact with AWS."
 }
 
 variable "aws_access_key_secret" {
   type        = string
-  default     = "DEFAULT_NOMAD_AWS_ACCESS_KEY_SECRET"
+  default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_SECRET"
   description = "The aws access key secret used to interact with AWS."
 }
 
 variable "_aws_endpoint" {
   type        = string
-  default     = "DEFAULT_NOMAD_AWS_ENDPOINT"
+  default     = "DUMMY_LOCAL_AWS_ENDPOINT"
   description = <<EOF
   The endpoint in which we can expect to find and interact with AWS.
   It accepts a special sentinel value domain, LOCAL_GRAPL_REPLACE_IP:xxxx, if the
@@ -315,8 +315,8 @@ GRAPL_AWS_ENDPOINT          = ${local.aws_endpoint}
 GRAPL_AWS_ACCESS_KEY_ID     = ${var.aws_access_key_id}
 GRAPL_AWS_ACCESS_KEY_SECRET = ${var.aws_access_key_secret}
 EOH
-  # We need to submit an env var otherwise you can end up with a weird nomad state parse error
-  aws_only_env_vars = "IN_AWS=TRUE"
+  # We need to submit an env var otherwise you can end up with a weird nomad state parse error.
+  aws_only_env_vars = "DUMMY_VAR=TRUE"
   conditionally_defined_env_vars = (var._aws_endpoint != "http://LOCAL_GRAPL_REPLACE_IP:4566") ? local.aws_only_env_vars : local.local_only_env_vars
 }
 
