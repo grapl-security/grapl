@@ -142,8 +142,8 @@ job "integration-tests" {
 
   group "python-integration-tests" {
     restart {
-      # Make this a one-shot job
-      attempts = 0
+      # I guess I can let it try 2x
+      attempts = 1
     }
 
     network {
