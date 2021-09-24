@@ -474,11 +474,6 @@ clean-mount-cache: ## Prune all docker mount cache (used by sccache)
 clean-artifacts: ## Remove all dumped artifacts from test runs (see dump_artifacts.py)
 	rm -Rf test_artifacts
 
-.PHONY: start-nomad-dev
-start-nomad-dev:  ## Start the Nomad development environment
-	$(WITH_LOCAL_GRAPL_ENV)
-	nomad/local/start_development_environment_tmux.sh
-
 .PHONY: local-pulumi
 local-pulumi: export COMPOSE_PROJECT_NAME="grapl"
 local-pulumi:  ## launch pulumi via docker-compose up
