@@ -11,6 +11,7 @@ use serde::{
 use tracing::Instrument;
 
 use crate::authn::{
+    AuthDynamoClientError,
     AuthenticatedUser,
     Password,
 };
@@ -81,9 +82,10 @@ async fn post_compat(
         |e| {
             match e {
                 // incorrect password
-                crate::authn::AuthDynamoClientError::PasswordVerification(
+                AuthDynamoClientError::PasswordVerification(
                     argon2::password_hash::Error::Password,
-                ) => {
+                )
+                | AuthDynamoClientError::UserRecordNotFound(_) => {
                     tracing::info!( message = %e );
                     HttpResponse::Unauthorized().body(format!("{}", e))
                 }

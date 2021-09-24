@@ -171,19 +171,17 @@ def main() -> None:
         kafka_endpoint = "LOCAL_GRAPL_REPLACE_IP:19092"  # intentionally not 29092
         redis_endpoint = "redis://LOCAL_GRAPL_REPLACE_IP:6379"
 
-        grapl_core_job_vars = pulumi.Output.all(**nomad_inputs,).apply(
-            lambda inputs: {
-                # This is a special directive to our HCL file that tells it to use Localstack
-                "_aws_endpoint": aws_endpoint,
-                "aws_access_key_id": aws.config.access_key,
-                "aws_access_key_secret": aws.config.secret_key,
-                "grapl_test_user_name": config.GRAPL_TEST_USER_NAME,
-                "_redis_endpoint": redis_endpoint,
-                # TODO: consider replacing with the previous per-service `configurable_envvars`
-                "rust_log": "DEBUG",
-                **inputs,
-            }
+        grapl_core_job_vars_inputs = dict(
+            aws_access_key_id=aws.config.access_key,
+            aws_access_key_secret=aws.config.secret_key,
+            # This is a special directive to our HCL file that tells it to use Localstack
+            _aws_endpoint=aws_endpoint,
+            _redis_endpoint=redis_endpoint,
+            rust_log="DEBUG",
+            test_user_name=config.GRAPL_TEST_USER_NAME,
+            **nomad_inputs,
         )
+        grapl_core_job_vars = pulumi.Output.all(**grapl_core_job_vars_inputs)
 
         nomad_grapl_core = NomadJob(
             "grapl-core",
@@ -191,38 +189,90 @@ def main() -> None:
             vars=grapl_core_job_vars,
         )
 
+        nomad_grapl_provision = NomadJob(
+            "grapl-provision",
+            jobspec=Path("../../nomad/grapl-provision.nomad").resolve(),
+            vars=pulumi.Output.all(
+                # A hack to declare "this depends on the previous one having completed first"
+                _unused_output_from_grapl_core=nomad_grapl_core.job.deployment_id,
+                **grapl_core_job_vars_inputs,
+            ).apply(
+                lambda inputs: {
+                    k: inputs[k]
+                    for k in {
+                        "aws_access_key_id",
+                        "aws_access_key_secret",
+                        "_aws_endpoint",
+                        "aws_region",
+                        "deployment_name",
+                        "schema_table_name",
+                        "schema_properties_table_name",
+                        "user_auth_table",
+                        "test_user_name",
+                        "rust_log",
+                    }
+                }
+            ),
+        )
+
         if config.SHOULD_DEPLOY_INTEGRATION_TESTS:
 
             def _get_integration_test_job_vars(
                 inputs: Mapping[str, Any]
             ) -> Mapping[str, Any]:
-                # Filter out which vars we need
-                subset_keys = {
-                    "aws_access_key_id",
-                    "aws_access_key_secret",
-                    "_aws_endpoint",
-                    "aws_region",
-                    "deployment_name",
-                    "schema_properties_table_name",
-                    "grapl_test_user_name",
-                    "_redis_endpoint",
+                return {
+                    k: inputs[k]
+                    for k in {
+                        "aws_access_key_id",
+                        "aws_access_key_secret",
+                        "_aws_endpoint",
+                        "aws_region",
+                        "deployment_name",
+                        "schema_properties_table_name",
+                        "test_user_name",
+                        "_redis_endpoint",
+                        "_kafka_endpoint",
+                    }
                 }
 
-                subset = {k: inputs[k] for k in subset_keys}
+            integration_test_job_vars = pulumi.Output.all(
+                _kafka_endpoint=kafka_endpoint, **grapl_core_job_vars_inputs
+            ).apply(_get_integration_test_job_vars)
 
-                integration_test_only_job_vars = {
-                    "_kafka_endpoint": kafka_endpoint,
-                }
-                return {**subset, **integration_test_only_job_vars}
-
-            integration_test_job_vars = grapl_core_job_vars.apply(
-                _get_integration_test_job_vars
-            )
-
-            nomad_integration_tests = NomadJob(
+            integration_tests = NomadJob(
                 "integration-tests",
                 jobspec=Path("../../nomad/local/integration-tests.nomad").resolve(),
                 vars=integration_test_job_vars,
+            )
+
+        if config.SHOULD_DEPLOY_E2E_TESTS:
+
+            def _get_e2e_test_job_vars(inputs: Mapping[str, Any]) -> Mapping[str, Any]:
+                return {
+                    k: inputs[k]
+                    for k in {
+                        "analyzer_bucket",
+                        "aws_access_key_id",
+                        "aws_access_key_secret",
+                        "_aws_endpoint",
+                        "aws_region",
+                        "deployment_name",
+                        "test_user_name",
+                        "schema_properties_table_name",
+                        "schema_table_name",
+                        "sysmon_generator_queue",
+                        "sysmon_log_bucket",
+                    }
+                }
+
+            e2e_test_job_vars = pulumi.Output.all(
+                sysmon_log_bucket=sysmon_log_emitter.bucket.bucket,
+                **grapl_core_job_vars_inputs,
+            ).apply(_get_e2e_test_job_vars)
+            e2e_tests = NomadJob(
+                "e2e-tests",
+                jobspec=Path("../../nomad/local/e2e-tests.nomad").resolve(),
+                vars=e2e_test_job_vars,
             )
 
     else:
