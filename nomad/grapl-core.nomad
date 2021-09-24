@@ -6,13 +6,13 @@ variable "rust_log" {
 variable "container_registry" {
   type        = string
   default     = ""
-  description = "The container registry in which we can find Grapl services. Requires a trailing /"
+  description = "The container registry in which we can find Grapl services. Requires a trailing / if not empty string"
 }
 
 variable "container_repo" {
   type        = string
   default     = ""
-  description = "The container repo inside the registry in which we can find Grapl services. Requires a trailing /"
+  description = "The container repo inside the registry in which we can find Grapl services. Requires a trailing / if not empty string"
 }
 
 variable "aws_access_key_id" {
@@ -309,13 +309,15 @@ locals {
   # enabled
   rust_backtrace = 1
 
-  heredoc = <<EOH
+  # This is used to conditionally submit env variables via template stanzas.
+  local_only_env_vars = <<EOH
 GRAPL_AWS_ENDPOINT          = ${local.aws_endpoint}
 GRAPL_AWS_ACCESS_KEY_ID     = ${var.aws_access_key_id}
 GRAPL_AWS_ACCESS_KEY_SECRET = ${var.aws_access_key_secret}
 EOH
-
-  local_vars = (var._aws_endpoint != "http://LOCAL_GRAPL_REPLACE_IP:4566") ? "IN_AWS=TRUE" : local.heredoc
+  # We need to submit an env var otherwise you can end up with a weird nomad state parse error
+  aws_only_env_vars = "IN_AWS=TRUE"
+  conditional_env_vars = (var._aws_endpoint != "http://LOCAL_GRAPL_REPLACE_IP:4566") ? local.aws_only_env_vars : local.local_only_env_vars
 }
 
 job "grapl-core" {
@@ -632,7 +634,7 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.local_vars
+        data        = local.conditional_env_vars
         destination = "graph-merger.env"
         env         = true
       }
@@ -688,7 +690,7 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.local_vars
+        data        = local.conditional_env_vars
         destination = "node-identifier.env"
         env         = true
       }
@@ -729,7 +731,7 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.local_vars
+        data        = local.conditional_env_vars
         destination = "node-identifier-retry.env"
         env         = true
       }
@@ -765,7 +767,7 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.local_vars
+        data        = local.conditional_env_vars
         destination = "analyzer-dispatcher.env"
         env         = true
       }
@@ -804,7 +806,7 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.local_vars
+        data        = local.conditional_env_vars
         destination = "analyzer-executor.env"
         env         = true
       }
@@ -863,7 +865,7 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.local_vars
+        data        = local.conditional_env_vars
         destination = "analyzer-executor.env"
         env         = true
       }
@@ -918,7 +920,7 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.local_vars
+        data        = local.conditional_env_vars
         destination = "graphql-endpoint.env"
         env         = true
       }
@@ -977,7 +979,7 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.local_vars
+        data        = local.conditional_env_vars
         destination = "web-ui.env"
         env         = true
       }
@@ -1026,7 +1028,7 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.local_vars
+        data        = local.conditional_env_vars
         destination = "sysmon.env"
         env         = true
       }
@@ -1058,7 +1060,7 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.local_vars
+        data        = local.conditional_env_vars
         destination = "osquery.env"
         env         = true
       }
