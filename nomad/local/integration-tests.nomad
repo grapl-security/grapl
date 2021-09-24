@@ -52,14 +52,9 @@ variable "test_user_name" {
   description = "The name of the test user"
 }
 
-variable "grapl_root" {
+variable "non_root_user" {
   type        = string
-  description = "The root of the Grapl repo on the Host OS."
-}
-
-variable "non_root_uid" {
-  type        = string
-  description = "The uid of the person who launched the 'sudo nomad agent'"
+  description = "The username of the person who launched the `make test-integration`"
 }
 
 locals {
@@ -175,9 +170,24 @@ job "integration-tests" {
       }
     }
 
+    volume "grapl-root-volume" {
+      # The definition of this `grapl-root-volume` is written as a Nomad agent
+      # config in `start_detach.sh`
+      type      = "host"
+      source    = "grapl-root-volume"
+      read_only = false
+    }
+
     # This is hacky as hell.
     task "python-integration-tests" {
-      driver = "raw_exec" # Potentially dangerous if ever deployed to prod!
+      driver = "exec"
+      user = var.non_root_user
+
+      volume_mount {
+        volume      = "grapl-root-volume"
+        destination = "/mnt/grapl-root"
+        read_only   = false
+      }
 
       config {
         command = "/bin/bash"
@@ -199,7 +209,7 @@ export GRAPL_MODEL_PLUGINS_BUCKET="NOT_ACTUALLY_EXERCISED_IN_TESTS"
 
 export GRAPL_API_HOST="localhost"
 export GRAPL_HTTP_FRONTEND_PORT="${NOMAD_UPSTREAM_PORT_web-ui}"
-export GRAPL_TEST_USER_NAME="${var.grapl_test_user_name}"
+export GRAPL_TEST_USER_NAME="${var.test_user_name}"
 export GRAPL_SCHEMA_PROPERTIES_TABLE="${var.schema_properties_table_name}"
 
 export HITCACHE_ADDR="${local.redis_host}"
@@ -213,35 +223,16 @@ export DEPLOYMENT_NAME="${var.deployment_name}"
 export GRAPL_LOG_LEVEL="${local.log_level}"
 export MG_ALPHAS="localhost:9080"
 
-cd ${var.grapl_root}
-# Executing pants as root above creates permissions problems in root/.pids, so
-# we pass down the UID from Makefile.
-# -E = preserve environment; -u = user
-sudo -E -u \#${var.non_root_uid} ./pants filter --filter-target-type="python_tests" :: \
-  | xargs sudo -E -u \#${var.non_root_uid} ./pants --tag="-needs_work" test --pytest-args="-m \"integration_test\""
+cd /mnt/grapl-root
+./pants filter --filter-target-type="python_tests" :: \
+  | xargs ./pants --tag="-needs_work" test --pytest-args="-m \"integration_test\""
 EOF
           )
         ]
       }
-    }
 
-    task "clean-up-pants" {
-      driver = "raw_exec"
-
-      lifecycle {
-        # Do it after other task stops - regardless of success
-        hook = "poststop"
-        # Ephemeral, not long-lived
-        sidecar = false
-      }
-
-      config {
-        command = "/bin/bash"
-        args = [
-          "-o", "errexit", "-o", "nounset", "-c",
-          "ls"
-          #"cd ${var.grapl_root} && rm -rf .pids"
-        ]
+      resources {
+        memory = 1024
       }
     }
   }
