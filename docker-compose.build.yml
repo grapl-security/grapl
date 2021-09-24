@@ -91,7 +91,7 @@ services:
     build:
       context: .
       dockerfile: ./src/python/Dockerfile
-      target: engagement-creator-deploy
+      target: engagement-creator
 
   ########################################################################
   # Web Services

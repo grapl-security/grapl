@@ -127,9 +127,10 @@ help: ## Print this help
 
 ##@ Build 🔨
 
-.PHONY: build-analyzer-executor
-build-analyzer-executor:
+.PHONY: build-service-pexs
+build-service-pexs:
 	./pants package ./src/python/analyzer_executor/src
+	./pants package ./src/python/engagement-creator/engagement_creator:pex
 
 .PHONY: build-test-unit
 build-test-unit:
@@ -163,7 +164,7 @@ build-test-e2e: build
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.build.yml
 
 .PHONY: build-lambda-zips
-build-lambda-zips: build-lambda-zips-rust build-lambda-zips-js build-lambda-zips-python build-analyzer-executor ## Generate all lambda zip files
+build-lambda-zips: build-lambda-zips-rust build-lambda-zips-js build-lambda-zips-python build-service-pexs ## Generate all lambda zip files
 
 .PHONY: build-lambda-zips-rust
 build-lambda-zips-rust: ## Build Rust lambda zips
