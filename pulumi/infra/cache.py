@@ -50,6 +50,8 @@ class Cache(pulumi.ComponentResource):
                     cidr_blocks=["0.0.0.0/0"],
                 )
             ],
+            # Tags are necessary for the moment so we can look up the resource from a different pulumi stack.
+            # Once this is refactored we can remove the tags
             tags={"Name": f"{name}"},
             opts=pulumi.ResourceOptions(parent=self),
         )

@@ -173,11 +173,12 @@ def main() -> None:
         redis_endpoint = "redis://LOCAL_GRAPL_REPLACE_IP:6379"
 
         grapl_core_job_vars_inputs = dict(
-            aws_access_key_id=aws.config.access_key,
-            aws_access_key_secret=aws.config.secret_key,
-            # This is a special directive to our HCL file that tells it to use Localstack
+            # The vars with a leading underscore indicate that the hcl local version of the variable should be used
+            # instead of the var version.
             _aws_endpoint=aws_endpoint,
             _redis_endpoint=redis_endpoint,
+            aws_access_key_id=aws.config.access_key,
+            aws_access_key_secret=aws.config.secret_key,
             rust_log="DEBUG",
             **nomad_inputs,
         )
@@ -200,16 +201,16 @@ def main() -> None:
                 lambda inputs: {
                     k: inputs[k]
                     for k in {
+                        "_aws_endpoint",
                         "aws_access_key_id",
                         "aws_access_key_secret",
-                        "_aws_endpoint",
                         "aws_region",
                         "deployment_name",
+                        "rust_log",
                         "schema_table_name",
                         "schema_properties_table_name",
-                        "user_auth_table",
                         "test_user_name",
-                        "rust_log",
+                        "user_auth_table",
                     }
                 }
             ),
@@ -223,15 +224,15 @@ def main() -> None:
                 return {
                     k: inputs[k]
                     for k in {
+                        "_aws_endpoint",
+                        "_kafka_endpoint",
+                        "_redis_endpoint",
                         "aws_access_key_id",
                         "aws_access_key_secret",
-                        "_aws_endpoint",
                         "aws_region",
                         "deployment_name",
                         "schema_properties_table_name",
                         "test_user_name",
-                        "_redis_endpoint",
-                        "_kafka_endpoint",
                     }
                 }
 
@@ -251,17 +252,17 @@ def main() -> None:
                 return {
                     k: inputs[k]
                     for k in {
+                        "_aws_endpoint",
                         "analyzer_bucket",
                         "aws_access_key_id",
                         "aws_access_key_secret",
-                        "_aws_endpoint",
                         "aws_region",
                         "deployment_name",
-                        "test_user_name",
                         "schema_properties_table_name",
                         "schema_table_name",
                         "sysmon_generator_queue",
                         "sysmon_log_bucket",
+                        "test_user_name",
                     }
                 }
 
@@ -281,9 +282,11 @@ def main() -> None:
         artifacts = artifacts
 
         grapl_core_job_aws_vars = pulumi.Output.all(
+            # The vars with a leading underscore indicate that the hcl local version of the variable should be used
+            # instead of the var version.
+            _redis_endpoint=cache.endpoint,
             container_registry="docker.cloudsmith.io/",
             container_repo="raw/",
-            _redis_endpoint=cache.endpoint,
             # TODO: consider replacing with the previous per-service `configurable_envvars`
             rust_log="DEBUG",
             # Build Tags. We use per service tags so we can update services independently
@@ -315,18 +318,18 @@ def main() -> None:
                 lambda inputs: {
                     k: inputs[k]
                     for k in {
+                        "_aws_endpoint",
                         "aws_access_key_id",
                         "aws_access_key_secret",
-                        "_aws_endpoint",
                         "aws_region",
                         "container_registry",
                         "container_repo",
                         "deployment_name",
+                        "rust_log",
                         "schema_table_name",
                         "schema_properties_table_name",
-                        "user_auth_table",
                         "test_user_name",
-                        "rust_log",
+                        "user_auth_table",
                     }
                 }
             ),

@@ -31,3 +31,8 @@ class NomadJob(pulumi.ComponentResource):
             jobspec = f.read()
             f.close()
             return jobspec
+
+    @staticmethod
+    def image_name(container_name: str,registry: str = "", org: str = "", repo: str = "", tag: str) -> str:
+        return f"{registry}{org}/{repo}{container_name}:{tag}"
+
