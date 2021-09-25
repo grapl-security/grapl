@@ -3,7 +3,7 @@ set -euo pipefail
 
 GRAPL_ROOT="$(git rev-parse --show-toplevel)"
 
-echo "Deploying local infrastructure."
+echo "\n--- Deploying Nomad local infrastructure."
 
 # Wait a short period of time before attempting to deploy infrastructure
 # shellcheck disable=SC2016
