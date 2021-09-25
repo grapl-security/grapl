@@ -3,7 +3,7 @@ set -euo pipefail
 
 GRAPL_ROOT="$(git rev-parse --show-toplevel)"
 
-echo "\n--- Deploying Nomad local infrastructure."
+echo "--- Deploying Nomad local infrastructure."
 
 # Wait a short period of time before attempting to deploy infrastructure
 # shellcheck disable=SC2016
@@ -22,4 +22,4 @@ nomad job run \
     -var "FAKE_AWS_SECRET_ACCESS_KEY=${FAKE_AWS_SECRET_ACCESS_KEY}" \
     "${GRAPL_ROOT}"/nomad/local/grapl-local-infra.nomad
 
-echo -e "\n--- Nomad local-infra deployed!"
+echo "--- Nomad local-infra deployed!"
