@@ -336,6 +336,7 @@ test-with-env: # (Do not include help text - not to be used directly)
 	# Bring up the Grapl environment and detach
 	$(MAKE) up-detach
 	# Run tests and check exit codes from each test container
+	echo "--- Executing test with environment"
 	$${EXEC_TEST_COMMAND}
 
 ##@ Lint 🧹
@@ -427,13 +428,13 @@ up-detach: build-local ## Bring up local Grapl and detach to return control to t
 
 	# TODO: This could potentially be replaced with a docker-compose run, but
 	#  it doesn't have all these useful flags
-	echo -e "\n--- Starting Pulumi"
+	echo "--- Starting Pulumi"
 	docker-compose \
 		--file docker-compose.yml \
 		up --force-recreate --always-recreate-deps --renew-anon-volumes \
 		--exit-code-from pulumi \
 		pulumi
-	echo -e "\nPulumi complete"
+	echo "Pulumi complete"
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
