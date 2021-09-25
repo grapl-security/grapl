@@ -193,11 +193,7 @@ def main() -> None:
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
             jobspec=Path("../../nomad/grapl-provision.nomad").resolve(),
-            vars=pulumi.Output.all(
-                # A hack to declare "this depends on the previous one having completed first"
-                _unused_output_from_grapl_core=nomad_grapl_core.job.deployment_id,
-                **grapl_core_job_vars_inputs,
-            ).apply(
+            vars=pulumi.Output.all(**grapl_core_job_vars_inputs,).apply(
                 lambda inputs: {
                     k: inputs[k]
                     for k in {
@@ -214,7 +210,7 @@ def main() -> None:
                     }
                 }
             ),
-            opts=pulumi.ResourceOptions(depends_on=[nomad_grapl_core])
+            opts=pulumi.ResourceOptions(depends_on=[nomad_grapl_core]),
         )
 
         if config.SHOULD_DEPLOY_INTEGRATION_TESTS:
@@ -324,8 +320,6 @@ def main() -> None:
             }
 
         grapl_provision_job_vars = pulumi.Output.all(
-            # A hack to declare "this depends on the previous one having completed first"
-            #_unused_output_from_grapl_core=nomad_grapl_core.job.deployment_id,
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
             container_registry="docker.cloudsmith.io/",
@@ -341,7 +335,7 @@ def main() -> None:
             "grapl-provision",
             jobspec=Path("../../nomad/grapl-provision.nomad").resolve(),
             vars=grapl_provision_job_vars,
-            opts=pulumi.ResourceOptions(depends_on=[nomad_grapl_core])
+            opts=pulumi.ResourceOptions(depends_on=[nomad_grapl_core]),
         )
 
     OpsAlarms(name="ops-alarms")
