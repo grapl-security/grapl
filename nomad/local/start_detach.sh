@@ -40,7 +40,7 @@ write_mount_grapl_root_volume_config() {
 # Written dynamically by 'write_mount_grapl_root_volume_config'
 client {
   host_volume "grapl-root-volume" {
-    path = "${GRAPL_ROOT}"
+    path      = "${GRAPL_ROOT}"
     read_only = false
   }
 }
