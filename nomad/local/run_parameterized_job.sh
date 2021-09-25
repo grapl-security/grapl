@@ -14,7 +14,7 @@ readonly mins_to_wait="${2}"
 
 # Now we have to actually dispatch a job; Pulumi simply uploaded
 # the jobspec, since it's a Parameterized Batch Job.
-echo "--- Dispatching ${job_to_dispatch}"
+echo -e "\n+++ Dispatching Nomad job: ${job_to_dispatch}"
 
 job_id=$(nomad_dispatch "${job_to_dispatch}")
 echo "You can view job progress at $(url_to_nomad_job_in_ui "${job_id}")"

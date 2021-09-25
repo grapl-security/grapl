@@ -427,12 +427,13 @@ up-detach: build-local ## Bring up local Grapl and detach to return control to t
 
 	# TODO: This could potentially be replaced with a docker-compose run, but
 	#  it doesn't have all these useful flags
+	echo -e "\n--- Starting Pulumi"
 	docker-compose \
 		--file docker-compose.yml \
 		up --force-recreate --always-recreate-deps --renew-anon-volumes \
 		--exit-code-from pulumi \
 		pulumi
-	echo "--- up-detach complete"
+	echo -e "\nPulumi complete"
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
