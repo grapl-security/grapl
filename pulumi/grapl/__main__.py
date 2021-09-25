@@ -214,6 +214,7 @@ def main() -> None:
                     }
                 }
             ),
+            opts=pulumi.ResourceOptions(depends_on=[nomad_grapl_core])
         )
 
         if config.SHOULD_DEPLOY_INTEGRATION_TESTS:
@@ -279,7 +280,7 @@ def main() -> None:
     else:
         cache = Cache("main-cache", network=network)
         pulumi_config = pulumi.Config()
-        artifacts = artifacts
+        artifacts = pulumi_config.require_object("artifacts")
 
         grapl_core_job_aws_vars = pulumi.Output.all(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
@@ -295,7 +296,6 @@ def main() -> None:
             dgraph_tag="latest",
             graph_merger_tag=artifacts["graph-merger"],
             graphql_endpoint_tag=artifacts["graphql-endpoint"],
-            provisioner_tag=artifacts["provisioner"],
             node_identifier_tag=artifacts["node-identifier"],
             sysmon_generator_tag=artifacts["sysmon-generator"],
             **nomad_inputs,
@@ -307,32 +307,41 @@ def main() -> None:
             vars=grapl_core_job_aws_vars,
         )
 
+        def _get_provisioner_job_vars(inputs: Mapping[str, Any]) -> Mapping[str, Any]:
+            return {
+                k: inputs[k]
+                for k in {
+                    "aws_region",
+                    "container_registry",
+                    "container_repo",
+                    "deployment_name",
+                    "rust_log",
+                    "schema_table_name",
+                    "schema_properties_table_name",
+                    "test_user_name",
+                    "user_auth_table",
+                }
+            }
+
+        grapl_provision_job_vars = pulumi.Output.all(
+            # A hack to declare "this depends on the previous one having completed first"
+            #_unused_output_from_grapl_core=nomad_grapl_core.job.deployment_id,
+            # The vars with a leading underscore indicate that the hcl local version of the variable should be used
+            # instead of the var version.
+            container_registry="docker.cloudsmith.io/",
+            container_repo="raw/",
+            # TODO: consider replacing with the previous per-service `configurable_envvars`
+            rust_log="DEBUG",
+            provisioner_tag=artifacts["provisioner"],
+            **nomad_inputs,
+        ).apply(_get_provisioner_job_vars)
+        pulumi.export("provisioner_inputs", grapl_provision_job_vars)
+
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
             jobspec=Path("../../nomad/grapl-provision.nomad").resolve(),
-            vars=pulumi.Output.all(
-                # A hack to declare "this depends on the previous one having completed first"
-                _unused_output_from_grapl_core=nomad_grapl_core.job.deployment_id,
-                **grapl_core_job_aws_vars,
-            ).apply(
-                lambda inputs: {
-                    k: inputs[k]
-                    for k in {
-                        "_aws_endpoint",
-                        "aws_access_key_id",
-                        "aws_access_key_secret",
-                        "aws_region",
-                        "container_registry",
-                        "container_repo",
-                        "deployment_name",
-                        "rust_log",
-                        "schema_table_name",
-                        "schema_properties_table_name",
-                        "test_user_name",
-                        "user_auth_table",
-                    }
-                }
-            ),
+            vars=grapl_provision_job_vars,
+            opts=pulumi.ResourceOptions(depends_on=[nomad_grapl_core])
         )
 
     OpsAlarms(name="ops-alarms")
