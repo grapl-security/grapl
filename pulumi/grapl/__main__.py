@@ -132,37 +132,36 @@ def main() -> None:
     )
     pulumi.export("ux-bucket", ux_bucket.bucket)
 
-    nomad_inputs = {
-        "analyzer_bucket": analyzers_bucket.bucket,
-        "analyzer_dispatched_bucket": dispatched_analyzer_emitter.bucket.bucket,
-        "analyzer_dispatcher_queue": analyzer_dispatcher_queue.main_queue_url,
-        "analyzer_executor_queue": analyzer_executor_queue.main_queue_url,
-        "analyzer_matched_subgraphs_bucket": analyzer_matched_emitter.bucket.bucket,
-        "analyzer_dispatcher_dead_letter_queue": analyzer_dispatcher_queue.dead_letter_queue_url,
-        "aws_region": aws.get_region().name,
-        "deployment_name": config.DEPLOYMENT_NAME,
-        "engagement_creator_queue": engagement_creator_queue.main_queue_url,
-        "graph_merger_queue": graph_merger_queue.main_queue_url,
-        "graph_merger_dead_letter_queue": graph_merger_queue.dead_letter_queue_url,
-        "model_plugins_bucket": model_plugins_bucket.bucket,
-        "node_identifier_queue": node_identifier_queue.main_queue_url,
-        "node_identifier_dead_letter_queue": node_identifier_queue.dead_letter_queue_url,
-        "node_identifier_retry_queue": node_identifier_queue.retry_queue_url,
-        "osquery_generator_queue": osquery_generator_queue.main_queue_url,
-        "osquery_generator_dead_letter_queue": osquery_generator_queue.dead_letter_queue_url,
-        "schema_properties_table_name": dynamodb_tables.schema_properties_table.name,
-        "schema_table_name": dynamodb_tables.schema_table.name,
-        "session_table_name": dynamodb_tables.dynamic_session_table.name,
-        "subgraphs_merged_bucket": subgraphs_merged_emitter.bucket,
-        "subgraphs_generated_bucket": subgraphs_generated_emitter.bucket,
-        "sysmon_generator_queue": sysmon_generator_queue.main_queue_url,
-        "sysmon_generator_dead_letter_queue": sysmon_generator_queue.dead_letter_queue_url,
-        "test_user_name": config.GRAPL_TEST_USER_NAME,
-        "unid_subgraphs_generated_bucket": unid_subgraphs_generated_emitter.bucket,
-        "user_auth_table": dynamodb_tables.user_auth_table.name,
-        "user_session_table": dynamodb_tables.user_session_table.name,
-    }
-    pulumi.export("nomad-inputs", nomad_inputs)
+    nomad_inputs = dict(
+        analyzer_bucket=analyzers_bucket.bucket,
+        analyzer_dispatched_bucket=dispatched_analyzer_emitter.bucket.bucket,
+        analyzer_dispatcher_queue=analyzer_dispatcher_queue.main_queue_url,
+        analyzer_executor_queue=analyzer_executor_queue.main_queue_url,
+        analyzer_matched_subgraphs_bucket=analyzer_matched_emitter.bucket.bucket,
+        analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url,
+        aws_region=aws.get_region().name,
+        deployment_name=config.DEPLOYMENT_NAME,
+        engagement_creator_queue=engagement_creator_queue.main_queue_url,
+        graph_merger_queue=graph_merger_queue.main_queue_url,
+        graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
+        model_plugins_bucket=model_plugins_bucket.bucket,
+        node_identifier_queue=node_identifier_queue.main_queue_url,
+        node_identifier_dead_letter_queue=node_identifier_queue.dead_letter_queue_url,
+        node_identifier_retry_queue=node_identifier_queue.retry_queue_url,
+        osquery_generator_queue=osquery_generator_queue.main_queue_url,
+        osquery_generator_dead_letter_queue=osquery_generator_queue.dead_letter_queue_url,
+        schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
+        schema_table_name=dynamodb_tables.schema_table.name,
+        session_table_name=dynamodb_tables.dynamic_session_table.name,
+        subgraphs_merged_bucket=subgraphs_merged_emitter.bucket,
+        subgraphs_generated_bucket=subgraphs_generated_emitter.bucket,
+        sysmon_generator_queue=sysmon_generator_queue.main_queue_url,
+        sysmon_generator_dead_letter_queue=sysmon_generator_queue.dead_letter_queue_url,
+        test_user_name=config.GRAPL_TEST_USER_NAME,
+        unid_subgraphs_generated_bucket=unid_subgraphs_generated_emitter.bucket,
+        user_auth_table=dynamodb_tables.user_auth_table.name,
+        user_session_table=dynamodb_tables.user_session_table.name,
+    )
 
     if config.LOCAL_GRAPL:
         kafka = Kafka("kafka")
@@ -181,9 +180,11 @@ def main() -> None:
             aws_access_key_id=aws.config.access_key,
             aws_access_key_secret=aws.config.secret_key,
             rust_log="DEBUG",
+        )
+        grapl_core_job_vars = pulumi.Output.all(
+            **grapl_core_job_vars_inputs,
             **nomad_inputs,
         )
-        grapl_core_job_vars = pulumi.Output.all(**grapl_core_job_vars_inputs)
 
         nomad_grapl_core = NomadJob(
             "grapl-core",
@@ -194,7 +195,7 @@ def main() -> None:
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
             jobspec=Path("../../nomad/grapl-provision.nomad").resolve(),
-            vars=pulumi.Output.all(**grapl_core_job_vars_inputs,).apply(
+            vars=pulumi.Output.all(**grapl_core_job_vars_inputs, **nomad_inputs,).apply(
                 lambda inputs: {
                     k: inputs[k]
                     for k in {
@@ -235,7 +236,9 @@ def main() -> None:
                 }
 
             integration_test_job_vars = pulumi.Output.all(
-                _kafka_endpoint=kafka_endpoint, **grapl_core_job_vars_inputs
+                _kafka_endpoint=kafka_endpoint,
+                **grapl_core_job_vars_inputs,
+                **nomad_inputs,
             ).apply(_get_integration_test_job_vars)
 
             integration_tests = NomadJob(
@@ -267,6 +270,7 @@ def main() -> None:
             e2e_test_job_vars = pulumi.Output.all(
                 sysmon_log_bucket=sysmon_log_emitter.bucket.bucket,
                 **grapl_core_job_vars_inputs,
+                **nomad_inputs,
             ).apply(_get_e2e_test_job_vars)
             e2e_tests = NomadJob(
                 "e2e-tests",
@@ -295,14 +299,15 @@ def main() -> None:
             graphql_endpoint_tag=artifacts["graphql-endpoint"],
             node_identifier_tag=artifacts["node-identifier"],
             sysmon_generator_tag=artifacts["sysmon-generator"],
-            **nomad_inputs,
         )
-        pulumi.export("grapl-core-inputs", grapl_core_job_aws_vars)
 
         nomad_grapl_core = NomadJob(
             "grapl-core",
             jobspec=Path("../../nomad/grapl-core.nomad").resolve(),
-            vars=pulumi.Output.all(**grapl_core_job_aws_vars),
+            vars=pulumi.Output.all(
+                **grapl_core_job_aws_vars,
+                **nomad_inputs,
+            ),
         )
 
         def _get_provisioner_job_vars(inputs: Mapping[str, Any]) -> Mapping[str, Any]:
