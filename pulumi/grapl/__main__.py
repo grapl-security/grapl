@@ -162,6 +162,7 @@ def main() -> None:
         "user_auth_table": dynamodb_tables.user_auth_table.name,
         "user_session_table": dynamodb_tables.user_session_table.name,
     }
+    pulumi.export("nomad-inputs", nomad_inputs)
 
     if config.LOCAL_GRAPL:
         kafka = Kafka("kafka")
@@ -296,6 +297,7 @@ def main() -> None:
             sysmon_generator_tag=artifacts["sysmon-generator"],
             **nomad_inputs,
         )
+        pulumi.export("grapl-core-inputs", grapl_core_job_aws_vars)
 
         nomad_grapl_core = NomadJob(
             "grapl-core",
