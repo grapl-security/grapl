@@ -28,9 +28,11 @@ echo -e "--- :pulumi: Log in"
 pulumi login
 
 # get nomad address from nomad stack
-nomad_address=$(pulumi stack output "address" --stack "${nomad_stack}")
+nomad_address=$(pulumi stack output "address" --stack "${nomad_stack}" --cwd "$(project_directory "${project_stack}")")
 # set nomad address so we know where to deploy jobs to
-pulumi config set nomad:address "${nomad_address}"
+pulumi config set nomad:address "${nomad_address}" \
+    --cwd="$(project_directory "${project_stack}")" \
+    --stack="$(fully_qualified_stack_name "${project_stack}")"
 
 
 echo -e "--- :pulumi: Previewing changes to ${project_stack} infrastructure"
