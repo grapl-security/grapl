@@ -295,13 +295,14 @@ def main() -> None:
             graphql_endpoint_tag=artifacts["graphql-endpoint"],
             node_identifier_tag=artifacts["node-identifier"],
             sysmon_generator_tag=artifacts["sysmon-generator"],
-        ).update(nomad_inputs)
+        )
+        grapl_core_job_aws_vars = grapl_core_job_aws_vars.update(nomad_inputs)
         pulumi.export("grapl-core-inputs", grapl_core_job_aws_vars)
 
         nomad_grapl_core = NomadJob(
             "grapl-core",
             jobspec=Path("../../nomad/grapl-core.nomad").resolve(),
-            vars=pulumi.Output.all(**grapl_core_job_aws_vars,)
+            vars=pulumi.Output.all(**grapl_core_job_aws_vars)
         )
 
         def _get_provisioner_job_vars(inputs: Mapping[str, Any]) -> Mapping[str, Any]:
