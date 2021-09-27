@@ -295,7 +295,7 @@ def main() -> None:
             graphql_endpoint_tag=artifacts["graphql-endpoint"],
             node_identifier_tag=artifacts["node-identifier"],
             sysmon_generator_tag=artifacts["sysmon-generator"],
-            **nomad_inputs,
+            #**nomad_inputs,
         )
         pulumi.export("grapl-core-inputs", grapl_core_job_aws_vars)
 
