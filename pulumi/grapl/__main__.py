@@ -282,7 +282,7 @@ def main() -> None:
         grapl_core_job_aws_vars = pulumi.Output.all(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
-            _redis_endpoint=cache.endpoint,
+            #_redis_endpoint=cache.endpoint,
             container_registry="docker.cloudsmith.io/",
             container_repo="raw/",
             # TODO: consider replacing with the previous per-service `configurable_envvars`
