@@ -296,7 +296,8 @@ def main() -> None:
             node_identifier_tag=artifacts["node-identifier"],
             sysmon_generator_tag=artifacts["sysmon-generator"],
         )
-        grapl_core_job_aws_vars = grapl_core_job_aws_vars.update(nomad_inputs)
+        # Union nomad_inputs since ** doesn't work as expected on buildkite
+        grapl_core_job_aws_vars.update(nomad_inputs)
         pulumi.export("grapl-core-inputs", grapl_core_job_aws_vars)
 
         nomad_grapl_core = NomadJob(
