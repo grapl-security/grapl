@@ -1038,7 +1038,6 @@ job "grapl-core" {
         SOURCE_QUEUE_URL      = var.sysmon_generator_queue
         AWS_DEFAULT_REGION    = var.aws_region
         REDIS_ENDPOINT        = local.redis_endpoint
-        GRAPL_LOG_LEVEL       = var.rust_log
         RUST_LOG              = var.rust_log
         RUST_BACKTRACE        = local.rust_backtrace
       }
@@ -1069,7 +1068,6 @@ job "grapl-core" {
         SOURCE_QUEUE_URL      = var.osquery_generator_queue
         AWS_DEFAULT_REGION    = var.aws_region
         REDIS_ENDPOINT        = local.redis_endpoint
-        GRAPL_LOG_LEVEL       = var.rust_log
         RUST_LOG              = var.rust_log
         RUST_BACKTRACE        = local.rust_backtrace
       }
