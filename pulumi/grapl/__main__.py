@@ -295,15 +295,14 @@ def main() -> None:
             graphql_endpoint_tag=artifacts["graphql-endpoint"],
             node_identifier_tag=artifacts["node-identifier"],
             sysmon_generator_tag=artifacts["sysmon-generator"],
+            **nomad_inputs,
         )
-        # Union nomad_inputs since ** doesn't work as expected on buildkite
-        core_inputs = {**grapl_core_job_aws_vars, **nomad_inputs}
-        pulumi.export("grapl-core-inputs", core_inputs)
+        pulumi.export("grapl-core-inputs", grapl_core_job_aws_vars)
 
         nomad_grapl_core = NomadJob(
             "grapl-core",
             jobspec=Path("../../nomad/grapl-core.nomad").resolve(),
-            vars=pulumi.Output.all(**grapl_core_job_aws_vars)
+            vars=pulumi.Output.all(**grapl_core_job_aws_vars),
         )
 
         def _get_provisioner_job_vars(inputs: Mapping[str, Any]) -> Mapping[str, Any]:
