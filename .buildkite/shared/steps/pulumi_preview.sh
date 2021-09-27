@@ -34,7 +34,6 @@ pulumi config set nomad:address "${nomad_address}" \
     --cwd="$(project_directory "${project_stack}")" \
     --stack="$(fully_qualified_stack_name "${project_stack}")"
 
-
 echo -e "--- :pulumi: Previewing changes to ${project_stack} infrastructure"
 pulumi preview \
     --cwd="$(project_directory "${project_stack}")" \

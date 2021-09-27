@@ -924,8 +924,9 @@ job "grapl-core" {
       }
 
       env {
-        DEPLOYMENT_NAME               = var.deployment_name
-        RUST_LOG                      = var.rust_log
+        DEPLOYMENT_NAME = var.deployment_name
+        RUST_LOG        = var.rust_log
+        # JS SDK only recognized AWS_REGION whereas rust and python SDKs use DEFAULT_AWS_REGION
         AWS_REGION                    = var.aws_region
         MG_ALPHAS                     = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE            = var.schema_table_name
