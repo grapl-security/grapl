@@ -301,13 +301,15 @@ def main() -> None:
             sysmon_generator_tag=artifacts["sysmon-generator"],
         )
 
+        grapl_core_job_vars = pulumi.Output.all(
+            **grapl_core_job_aws_vars,
+            **nomad_inputs,
+        )
+
         nomad_grapl_core = NomadJob(
             "grapl-core",
             jobspec=Path("../../nomad/grapl-core.nomad").resolve(),
-            vars=pulumi.Output.all(
-                **grapl_core_job_aws_vars,
-                **nomad_inputs,
-            ),
+            vars=grapl_core_job_vars,
         )
 
         def _get_provisioner_job_vars(inputs: Mapping[str, Any]) -> Mapping[str, Any]:
