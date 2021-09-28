@@ -283,7 +283,7 @@ def main() -> None:
         pulumi_config = pulumi.Config()
         artifacts = pulumi_config.require_object("artifacts")
 
-        grapl_core_job_aws_vars = dict(
+        grapl_core_job_vars_inputs = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
             _redis_endpoint=cache.endpoint,
@@ -300,13 +300,11 @@ def main() -> None:
             node_identifier_tag=artifacts["node-identifier"],
             sysmon_generator_tag=artifacts["sysmon-generator"],
         )
-        grapl_core_combined = {**grapl_core_job_aws_vars,**nomad_inputs,}
-        pulumi.export("combined", grapl_core_combined)
 
         grapl_core_job_vars = pulumi.Output.all(
-            **grapl_core_combined,
+            **grapl_core_job_vars_inputs,
+            **nomad_inputs,
         )
-        pulumi.export("core-outputs", grapl_core_job_vars)
 
         nomad_grapl_core = NomadJob(
             "grapl-core",
@@ -340,7 +338,6 @@ def main() -> None:
             provisioner_tag=artifacts["provisioner"],
             **nomad_inputs,
         ).apply(_get_provisioner_job_vars)
-        pulumi.export("provisioner_inputs", grapl_provision_job_vars)
 
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
