@@ -642,7 +642,7 @@ job "grapl-core" {
       }
 
       env {
-        AWS_DEFAULT_REGION = var.aws_region
+        AWS_REGION         = var.aws_region
         RUST_LOG           = var.rust_log
         RUST_BACKTRACE     = local.rust_backtrace
         REDIS_ENDPOINT     = local.redis_endpoint
@@ -697,7 +697,7 @@ job "grapl-core" {
       }
 
       env {
-        AWS_DEFAULT_REGION          = var.aws_region
+        AWS_REGION                  = var.aws_region
         RUST_LOG                    = var.rust_log
         RUST_BACKTRACE              = local.rust_backtrace
         REDIS_ENDPOINT              = local.redis_endpoint
@@ -737,7 +737,7 @@ job "grapl-core" {
       }
 
       env {
-        AWS_DEFAULT_REGION          = var.aws_region
+        AWS_REGION                  = var.aws_region
         RUST_LOG                    = var.rust_log
         RUST_BACKTRACE              = local.rust_backtrace
         REDIS_ENDPOINT              = local.redis_endpoint
@@ -773,7 +773,7 @@ job "grapl-core" {
 
       env {
         # AWS vars
-        AWS_DEFAULT_REGION = var.aws_region
+        AWS_REGION = var.aws_region
         # rust vars
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = local.rust_backtrace
@@ -986,7 +986,7 @@ job "grapl-core" {
 
       env {
         # For the DynamoDB client
-        AWS_DEFAULT_REGION = var.aws_region
+        AWS_REGION = var.aws_region
 
         GRAPL_USER_AUTH_TABLE    = var.user_auth_table
         GRAPL_USER_SESSION_TABLE = var.user_session_table
@@ -1037,7 +1037,7 @@ job "grapl-core" {
         DEST_BUCKET_NAME      = var.unid_subgraphs_generated_bucket
         DEAD_LETTER_QUEUE_URL = var.sysmon_generator_dead_letter_queue
         SOURCE_QUEUE_URL      = var.sysmon_generator_queue
-        AWS_DEFAULT_REGION    = var.aws_region
+        AWS_REGION            = var.aws_region
         REDIS_ENDPOINT        = local.redis_endpoint
         RUST_LOG              = var.rust_log
         RUST_BACKTRACE        = local.rust_backtrace
@@ -1067,7 +1067,7 @@ job "grapl-core" {
         DEST_BUCKET_NAME      = var.unid_subgraphs_generated_bucket
         DEAD_LETTER_QUEUE_URL = var.osquery_generator_dead_letter_queue
         SOURCE_QUEUE_URL      = var.osquery_generator_queue
-        AWS_DEFAULT_REGION    = var.aws_region
+        AWS_REGION            = var.aws_region
         REDIS_ENDPOINT        = local.redis_endpoint
         RUST_LOG              = var.rust_log
         RUST_BACKTRACE        = local.rust_backtrace

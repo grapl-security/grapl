@@ -209,7 +209,12 @@ def main() -> None:
                 }
             }
 
-        provision_vars = _get_provisioner_job_vars(dict(**grapl_core_job_vars_inputs, **nomad_inputs,))
+        provision_vars = _get_provisioner_job_vars(
+            dict(
+                **grapl_core_job_vars_inputs,
+                **nomad_inputs,
+            )
+        )
 
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
@@ -238,11 +243,13 @@ def main() -> None:
                     }
                 }
 
-            integration_test_job_vars = _get_integration_test_job_vars(dict(
-                _kafka_endpoint=kafka_endpoint,
-                **grapl_core_job_vars_inputs,
-                **nomad_inputs,
-            ))
+            integration_test_job_vars = _get_integration_test_job_vars(
+                dict(
+                    _kafka_endpoint=kafka_endpoint,
+                    **grapl_core_job_vars_inputs,
+                    **nomad_inputs,
+                )
+            )
 
             integration_tests = NomadJob(
                 "integration-tests",
@@ -270,11 +277,13 @@ def main() -> None:
                     }
                 }
 
-            e2e_test_job_vars = _get_e2e_test_job_vars(dict(
-                sysmon_log_bucket=sysmon_log_emitter.bucket.bucket,
-                **grapl_core_job_vars_inputs,
-                **nomad_inputs,
-            ))
+            e2e_test_job_vars = _get_e2e_test_job_vars(
+                dict(
+                    sysmon_log_bucket=sysmon_log_emitter.bucket.bucket,
+                    **grapl_core_job_vars_inputs,
+                    **nomad_inputs,
+                )
+            )
             e2e_tests = NomadJob(
                 "e2e-tests",
                 jobspec=Path("../../nomad/local/e2e-tests.nomad").resolve(),
@@ -286,7 +295,10 @@ def main() -> None:
         pulumi_config = pulumi.Config()
         artifacts = pulumi_config.require_object("artifacts")
 
-        grapl_core_job_vars_inputs = dict(
+        grapl_core_job_vars = dict(
+            # The vars with a leading underscore indicate that the hcl local version of the variable should be used
+            # instead of the var version.
+            _redis_endpoint=cache.endpoint,
             container_registry="docker.cloudsmith.io/",
             container_repo="raw/",
             # TODO: consider replacing with the previous per-service `configurable_envvars`
@@ -295,21 +307,15 @@ def main() -> None:
             analyzer_dispatcher_tag=artifacts["analyzer-dispatcher"],
             analyzer_executor_tag=artifacts["analyzer-executor"],
             dgraph_tag="latest",
+            engagement_creator_tag=artifacts["engagement-creator"],
             graph_merger_tag=artifacts["graph-merger"],
-            graphql_endpoint_tag=artifacts["graphql-endpoint"],
+            # graphql_endpoint_tag=artifacts["graphql-endpoint"], # enable this once this is in the rc branch
             node_identifier_tag=artifacts["node-identifier"],
+            osquery_generator_tag=artifacts["osquery-generator"],
             sysmon_generator_tag=artifacts["sysmon-generator"],
-        )
-
-        grapl_core_job_vars = dict(
-            # The vars with a leading underscore indicate that the hcl local version of the variable should be used
-            # instead of the var version.
-            _redis_endpoint=cache.endpoint,
-            **grapl_core_job_vars_inputs,
+            # web_ui_tag=artifacts["web-ui"], # enable this once this is in the rc branch
             **nomad_inputs,
         )
-
-        pulumi.export("core", grapl_core_job_vars)
 
         nomad_grapl_core = NomadJob(
             "grapl-core",
@@ -333,17 +339,18 @@ def main() -> None:
                 }
             }
 
-        grapl_provision_job_vars = _get_provisioner_job_vars(dict(
-            # The vars with a leading underscore indicate that the hcl local version of the variable should be used
-            # instead of the var version.
-            container_registry="docker.cloudsmith.io/",
-            container_repo="raw/",
-            # TODO: consider replacing with the previous per-service `configurable_envvars`
-            rust_log="DEBUG",
-            provisioner_tag=artifacts["provisioner"],
-            **nomad_inputs,
-        ))
-        pulumi.export("provisioner_inputs", grapl_provision_job_vars)
+        grapl_provision_job_vars = _get_provisioner_job_vars(
+            dict(
+                # The vars with a leading underscore indicate that the hcl local version of the variable should be used
+                # instead of the var version.
+                container_registry="docker.cloudsmith.io/",
+                container_repo="raw/",
+                # TODO: consider replacing with the previous per-service `configurable_envvars`
+                rust_log="DEBUG",
+                provisioner_tag=artifacts["provisioner"],
+                **nomad_inputs,
+            )
+        )
 
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
