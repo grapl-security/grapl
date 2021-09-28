@@ -298,7 +298,7 @@ def main() -> None:
             sysmon_generator_tag=artifacts["sysmon-generator"],
         )
 
-        grapl_core_job_vars = pulumi.Output.all(
+        grapl_core_job_vars = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
             _redis_endpoint=cache.endpoint,
@@ -306,7 +306,6 @@ def main() -> None:
             **nomad_inputs,
         )
 
-        pulumi.export("cache-endpoint", cache.endpoint)
         pulumi.export("core", grapl_core_job_vars)
 
         nomad_grapl_core = NomadJob(
