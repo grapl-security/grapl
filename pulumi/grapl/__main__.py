@@ -189,7 +189,7 @@ def main() -> None:
         nomad_grapl_core = NomadJob(
             "grapl-core",
             jobspec=Path("../../nomad/grapl-core.nomad").resolve(),
-            vars=grapl_core_job_vars,
+            vars=**grapl_core_job_vars,
         )
 
         def _get_provisioner_job_vars(inputs: Mapping[str, Any]) -> Mapping[str, Any]:
@@ -209,10 +209,12 @@ def main() -> None:
                 }
             }
 
+        provision_vars = _get_provisioner_job_vars(dict(**grapl_core_job_vars_inputs, **nomad_inputs,))
+
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
             jobspec=Path("../../nomad/grapl-provision.nomad").resolve(),
-            vars=_get_provisioner_job_vars(dict(**grapl_core_job_vars_inputs, **nomad_inputs,)),
+            vars=**provision_vars,
             opts=pulumi.ResourceOptions(depends_on=[nomad_grapl_core]),
         )
 
@@ -245,7 +247,7 @@ def main() -> None:
             integration_tests = NomadJob(
                 "integration-tests",
                 jobspec=Path("../../nomad/local/integration-tests.nomad").resolve(),
-                vars=integration_test_job_vars,
+                vars=**integration_test_job_vars,
             )
 
         if config.SHOULD_DEPLOY_E2E_TESTS:
@@ -276,7 +278,7 @@ def main() -> None:
             e2e_tests = NomadJob(
                 "e2e-tests",
                 jobspec=Path("../../nomad/local/e2e-tests.nomad").resolve(),
-                vars=e2e_test_job_vars,
+                vars=**e2e_test_job_vars,
             )
 
     else:
@@ -312,7 +314,7 @@ def main() -> None:
         nomad_grapl_core = NomadJob(
             "grapl-core",
             jobspec=Path("../../nomad/grapl-core.nomad").resolve(),
-            vars=grapl_core_job_vars,
+            vars=**grapl_core_job_vars,
         )
 
         def _get_provisioner_job_vars(inputs: Mapping[str, Any]) -> Mapping[str, Any]:
@@ -346,7 +348,7 @@ def main() -> None:
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
             jobspec=Path("../../nomad/grapl-provision.nomad").resolve(),
-            vars=grapl_provision_job_vars,
+            vars=**grapl_provision_job_vars,
             opts=pulumi.ResourceOptions(depends_on=[nomad_grapl_core]),
         )
 
