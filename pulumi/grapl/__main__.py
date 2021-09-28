@@ -301,7 +301,7 @@ def main() -> None:
         grapl_core_job_vars = pulumi.Output.all(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
-            _redis_endpoint=cache.endpoint,
+            _redis_endpoint="test",
             **grapl_core_job_vars_inputs,
             **nomad_inputs,
         )
