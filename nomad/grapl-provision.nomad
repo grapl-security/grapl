@@ -84,7 +84,8 @@ variable "provisioner_tag" {
 
 locals {
   # Prefer these over their `var` equivalents.
-  aws_endpoint = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  # The aws endpoint is in template env format
+  aws_endpoint = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
 
   # This is used to conditionally submit env variables via template stanzas.
   local_only_env_vars = <<EOH
