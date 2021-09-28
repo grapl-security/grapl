@@ -301,10 +301,13 @@ def main() -> None:
         grapl_core_job_vars = pulumi.Output.all(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
-            _redis_endpoint="test",
+            _redis_endpoint=cache.endpoint,
             **grapl_core_job_vars_inputs,
             **nomad_inputs,
         )
+
+        pulumi.export("cache-endpoint", cache.endpoint)
+        pulumi.export("core", grapl_core_job_vars)
 
         nomad_grapl_core = NomadJob(
             "grapl-core",
@@ -338,6 +341,7 @@ def main() -> None:
             provisioner_tag=artifacts["provisioner"],
             **nomad_inputs,
         ).apply(_get_provisioner_job_vars)
+        pulumi.export("provisioner_inputs", grapl_provision_job_vars)
 
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
