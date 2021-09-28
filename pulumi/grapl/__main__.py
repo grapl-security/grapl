@@ -300,10 +300,12 @@ def main() -> None:
             node_identifier_tag=artifacts["node-identifier"],
             sysmon_generator_tag=artifacts["sysmon-generator"],
         )
+        grapl_core_combined = {**grapl_core_job_aws_vars,**nomad_inputs,}
+        pulumi.export("grapl-core", grapl_core_job_aws_vars)
+        pulumi.export("combined", grapl_core_combined)
 
         grapl_core_job_vars = pulumi.Output.all(
-            **grapl_core_job_aws_vars,
-            **nomad_inputs,
+            **grapl_core_combined,
         )
 
         nomad_grapl_core = NomadJob(
