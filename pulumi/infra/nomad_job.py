@@ -56,10 +56,10 @@ class NomadJob(pulumi.ComponentResource):
                     if not value.is_known():
                         pulumi.log.info("Is unknown")
 
-                        value = pulumi_preview_replacement_string
-                        # special rule since we split the redis endpoint
-                        if key == "_redis_endpoint":
-                            value = _redis_endpoint
+                    value = pulumi_preview_replacement_string
+                    # special rule since we split the redis endpoint
+                    if key == "_redis_endpoint":
+                        value = _redis_endpoint
 
                 nomad_vars[key] = value
             #pulumi.log.info(nomad_vars)
