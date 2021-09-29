@@ -37,7 +37,7 @@ pulumi config set nomad:address "${nomad_address}" \
     --stack="$(fully_qualified_stack_name "${project_stack}")"
 
 echo -e "--- :pulumi: Previewing changes to ${project_stack} infrastructure"
-pulumi preview --logtostderr -v=9 \
+pulumi preview \
     --cwd="$(project_directory "${project_stack}")" \
     --stack="$(fully_qualified_stack_name "${project_stack}")" \
     --show-replacement-steps \
