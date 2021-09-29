@@ -1,6 +1,7 @@
 from typing import Optional
 
 import pulumi_aws as aws
+from infra.config import DEPLOYMENT_NAME
 from infra.network import Network
 
 import pulumi
@@ -50,6 +51,9 @@ class Cache(pulumi.ComponentResource):
                     cidr_blocks=["0.0.0.0/0"],
                 )
             ],
+            # Tags are necessary for the moment so we can look up the resource from a different pulumi stack.
+            # Once this is refactored we can remove the tags
+            tags={"Name": f"{name}-{DEPLOYMENT_NAME}"},
             opts=pulumi.ResourceOptions(parent=self),
         )
 
