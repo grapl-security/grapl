@@ -6,23 +6,32 @@ variable "rust_log" {
 variable "container_registry" {
   type        = string
   default     = ""
-  description = "The container registry in which we can find Grapl services. Requires a trailing /"
+  description = "The container registry in which we can find Grapl services. Requires a trailing / if not empty string"
+}
+
+variable "container_repo" {
+  type        = string
+  default     = ""
+  description = "The container repo inside the registry in which we can find Grapl services. Requires a trailing / if not empty string"
 }
 
 variable "aws_access_key_id" {
   type        = string
+  default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_ID"
   description = "The aws access key id used to interact with AWS."
 }
 
 variable "aws_access_key_secret" {
   type        = string
+  default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_SECRET"
   description = "The aws access key secret used to interact with AWS."
 }
 
 variable "_aws_endpoint" {
   type        = string
+  default     = "DUMMY_LOCAL_AWS_ENDPOINT"
   description = <<EOF
-  The endpoint in which we can expect to find and interact with AWS. 
+  The endpoint in which we can expect to find and interact with AWS.
   It accepts a special sentinel value domain, LOCAL_GRAPL_REPLACE_IP:xxxx, if the
   user wishes to contact Localstack.
 
@@ -285,7 +294,8 @@ locals {
   alpha_grpc_connect_str = join(",", [for alpha in local.dgraph_alphas : "localhost:${alpha.grpc_public_port}"])
 
   # Prefer these over their `var` equivalents.
-  aws_endpoint   = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  # The aws endpoint is in template env format
+  aws_endpoint   = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
   redis_endpoint = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
 
   _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
@@ -299,6 +309,16 @@ locals {
 
   # enabled
   rust_backtrace = 1
+
+  # This is used to conditionally submit env variables via template stanzas.
+  local_only_env_vars = <<EOH
+GRAPL_AWS_ENDPOINT          = ${local.aws_endpoint}
+GRAPL_AWS_ACCESS_KEY_ID     = ${var.aws_access_key_id}
+GRAPL_AWS_ACCESS_KEY_SECRET = ${var.aws_access_key_secret}
+EOH
+  # We need to submit an env var otherwise you can end up with a weird nomad state parse error.
+  aws_only_env_vars              = "DUMMY_VAR=TRUE"
+  conditionally_defined_env_vars = (var._aws_endpoint == "http://LOCAL_GRAPL_REPLACE_IP:4566") ? local.local_only_env_vars : local.aws_only_env_vars
 }
 
 job "grapl-core" {
@@ -611,20 +631,23 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/graph-merger:${var.graph_merger_tag}"
+        image = "${var.container_registry}grapl/${var.container_repo}graph-merger:${var.graph_merger_tag}"
+      }
+
+      # This writes an env files that gets read by nomad automatically
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "graph-merger.env"
+        env         = true
       }
 
       env {
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-        AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
-        AWS_REGION                  = var.aws_region
-        RUST_LOG                    = var.rust_log
-        RUST_BACKTRACE              = local.rust_backtrace
-        REDIS_ENDPOINT              = local.redis_endpoint
-        MG_ALPHAS                   = local.alpha_grpc_connect_str
-        GRAPL_SCHEMA_TABLE          = var.schema_table_name
+        AWS_REGION         = var.aws_region
+        RUST_LOG           = var.rust_log
+        RUST_BACKTRACE     = local.rust_backtrace
+        REDIS_ENDPOINT     = local.redis_endpoint
+        MG_ALPHAS          = local.alpha_grpc_connect_str
+        GRAPL_SCHEMA_TABLE = var.schema_table_name
         # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L165
         DEST_BUCKET_NAME      = var.subgraphs_merged_bucket
         SOURCE_QUEUE_URL      = var.graph_merger_queue
@@ -634,6 +657,7 @@ job "grapl-core" {
 
     service {
       name = "graph-merger"
+
       connect {
         sidecar_service {
           proxy {
@@ -663,14 +687,16 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/node-identifier:${var.node_identifier_tag}"
+        image = "${var.container_registry}grapl/${var.container_repo}node-identifier:${var.node_identifier_tag}"
+      }
+
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "node-identifier.env"
+        env         = true
       }
 
       env {
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-        AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
         AWS_REGION                  = var.aws_region
         RUST_LOG                    = var.rust_log
         RUST_BACKTRACE              = local.rust_backtrace
@@ -701,14 +727,16 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/node-identifier-retry:${var.node_identifier_tag}"
+        image = "${var.container_registry}grapl/${var.container_repo}node-identifier-retry:${var.node_identifier_tag}"
+      }
+
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "node-identifier-retry.env"
+        env         = true
       }
 
       env {
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-        AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
         AWS_REGION                  = var.aws_region
         RUST_LOG                    = var.rust_log
         RUST_BACKTRACE              = local.rust_backtrace
@@ -734,15 +762,18 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/analyzer-dispatcher:${var.analyzer_dispatcher_tag}"
+        image = "${var.container_registry}grapl/${var.container_repo}analyzer-dispatcher:${var.analyzer_dispatcher_tag}"
+      }
+
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "analyzer-dispatcher.env"
+        env         = true
       }
 
       env {
         # AWS vars
-        AWS_REGION                  = var.aws_region
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
+        AWS_REGION = var.aws_region
         # rust vars
         RUST_LOG       = var.rust_log
         RUST_BACKTRACE = local.rust_backtrace
@@ -770,15 +801,18 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/analyzer-executor:${var.analyzer_executor_tag}"
+        image = "${var.container_registry}grapl/${var.container_repo}analyzer-executor:${var.analyzer_executor_tag}"
+      }
+
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "analyzer-executor.env"
+        env         = true
       }
 
       env {
         # AWS vars
-        AWS_REGION                  = var.aws_region
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
+        AWS_DEFAULT_REGION = var.aws_region
         # python vars
         GRAPL_LOG_LEVEL = "INFO"
         # dgraph vars
@@ -826,15 +860,18 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/engagement-creator:${var.engagement_creator_tag}"
+        image = "${var.container_registry}grapl/${var.container_repo}engagement-creator:${var.engagement_creator_tag}"
+      }
+
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "analyzer-executor.env"
+        env         = true
       }
 
       env {
         # AWS vars
-        AWS_REGION                  = var.aws_region
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
+        AWS_DEFAULT_REGION = var.aws_region
         # python vars
         GRAPL_LOG_LEVEL = var.rust_log
         # dgraph vars
@@ -877,20 +914,24 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/graphql-endpoint:${var.graphql_endpoint_tag}"
+        image = "${var.container_registry}grapl/${var.container_repo}graphql-endpoint:${var.graphql_endpoint_tag}"
         ports = ["graphql-endpoint-port"]
       }
 
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "graphql-endpoint.env"
+        env         = true
+      }
+
       env {
-        DEPLOYMENT_NAME               = var.deployment_name
-        RUST_LOG                      = var.rust_log
+        DEPLOYMENT_NAME = var.deployment_name
+        RUST_LOG        = var.rust_log
+        # JS SDK only recognized AWS_REGION whereas rust and python SDKs use DEFAULT_AWS_REGION
         AWS_REGION                    = var.aws_region
         MG_ALPHAS                     = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE            = var.schema_table_name
         GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name
-        GRAPL_AWS_ACCESS_KEY_ID       = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET   = var.aws_access_key_secret
-        GRAPL_AWS_ENDPOINT            = local.aws_endpoint
         IS_LOCAL                      = "True"
         JWT_SECRET_ID                 = "JWT_SECRET_ID"
         PORT                          = local.graphql_endpoint_port
@@ -937,12 +978,15 @@ job "grapl-core" {
         ports = ["web-ui-port"]
       }
 
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "web-ui.env"
+        env         = true
+      }
+
       env {
         # For the DynamoDB client
-        AWS_REGION                  = var.aws_region
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
+        AWS_REGION = var.aws_region
 
         GRAPL_USER_AUTH_TABLE    = var.user_auth_table
         GRAPL_USER_SESSION_TABLE = var.user_session_table
@@ -980,22 +1024,23 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/sysmon-generator:${var.sysmon_generator_tag}"
+        image = "${var.container_registry}grapl/${var.container_repo}sysmon-generator:${var.sysmon_generator_tag}"
+      }
+
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "sysmon.env"
+        env         = true
       }
 
       env {
-        DEST_BUCKET_NAME            = var.unid_subgraphs_generated_bucket
-        DEAD_LETTER_QUEUE_URL       = var.sysmon_generator_dead_letter_queue
-        SOURCE_QUEUE_URL            = var.sysmon_generator_queue
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-        AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
-        AWS_REGION                  = var.aws_region
-        REDIS_ENDPOINT              = local.redis_endpoint
-        GRAPL_LOG_LEVEL             = var.rust_log
-        RUST_LOG                    = var.rust_log
-        RUST_BACKTRACE              = local.rust_backtrace
+        DEST_BUCKET_NAME      = var.unid_subgraphs_generated_bucket
+        DEAD_LETTER_QUEUE_URL = var.sysmon_generator_dead_letter_queue
+        SOURCE_QUEUE_URL      = var.sysmon_generator_queue
+        AWS_REGION            = var.aws_region
+        REDIS_ENDPOINT        = local.redis_endpoint
+        RUST_LOG              = var.rust_log
+        RUST_BACKTRACE        = local.rust_backtrace
       }
     }
   }
@@ -1012,20 +1057,20 @@ job "grapl-core" {
         image = "${var.container_registry}grapl/osquery-generator:${var.sysmon_generator_tag}"
       }
 
-      env {
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "osquery.env"
+        env         = true
+      }
 
-        DEST_BUCKET_NAME            = var.unid_subgraphs_generated_bucket
-        DEAD_LETTER_QUEUE_URL       = var.osquery_generator_dead_letter_queue
-        SOURCE_QUEUE_URL            = var.osquery_generator_queue
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-        AWS_DEFAULT_REGION          = var.aws_region # boto3 prefers this one
-        AWS_REGION                  = var.aws_region
-        REDIS_ENDPOINT              = local.redis_endpoint
-        GRAPL_LOG_LEVEL             = var.rust_log
-        RUST_LOG                    = var.rust_log
-        RUST_BACKTRACE              = local.rust_backtrace
+      env {
+        DEST_BUCKET_NAME      = var.unid_subgraphs_generated_bucket
+        DEAD_LETTER_QUEUE_URL = var.osquery_generator_dead_letter_queue
+        SOURCE_QUEUE_URL      = var.osquery_generator_queue
+        AWS_REGION            = var.aws_region
+        REDIS_ENDPOINT        = local.redis_endpoint
+        RUST_LOG              = var.rust_log
+        RUST_BACKTRACE        = local.rust_backtrace
       }
     }
   }
