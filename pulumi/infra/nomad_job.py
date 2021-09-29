@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping, Optional, Awaitable
 
 import pulumi_nomad as nomad
 from infra.config import DEPLOYMENT_NAME
@@ -47,6 +47,12 @@ class NomadJob(pulumi.ComponentResource):
                 pulumi.log.info(key)
                 if isinstance(value, pulumi.Output):
                     pulumi.log.info("Is output")
+                    if value is None:
+                        pulumi.log.info("value is non")
+                    if pulumi.contains_unknowns(value):
+                        pulumi.log.info("value contains_unknowns")
+                    if isinstance(value, Awaitable):
+                        pulumi.log.info("value is Awaitable")
                     if not value.is_known():
                         pulumi.log.info("Is unknown")
 
