@@ -232,7 +232,7 @@ def main() -> None:
                     k: inputs[k]
                     for k in {
                         "_aws_endpoint",
-                        "_kafka_endpoint", # integration-test only
+                        "_kafka_endpoint",  # integration-test only
                         "_redis_endpoint",
                         "aws_access_key_id",
                         "aws_access_key_secret",
