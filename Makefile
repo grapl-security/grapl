@@ -149,11 +149,6 @@ build-test-unit-js:
 	$(DOCKER_BUILDX_BAKE) \
 		--file ./test/docker-compose.unit-tests-js.yml
 
-.PHONY: build-test-typecheck
-build-test-typecheck: build-python-wheels
-	$(DOCKER_BUILDX_BAKE) \
-		--file ./test/docker-compose.typecheck-tests.yml
-
 .PHONY: build-test-integration
 build-test-integration: build-local
 	$(WITH_LOCAL_GRAPL_ENV) \
@@ -196,12 +191,8 @@ build-lambda-zips-js: ## Build JS lambda zips
 		graphql-endpoint-zip
 
 .PHONY: build-lambda-zips-python
-build-lambda-zips-python: build-python-wheels ## Build Python lambda zips
+build-lambda-zips-python: ## Build Python lambda zips
 	./pants filter --target-type=python_awslambda :: | xargs ./pants package
-
-.PHONY: build-python-wheels
-build-python-wheels:  ## Build all Python wheels
-	./pants filter --target-type=python_distribution :: | xargs ./pants package
 
 .PHONY: build-docker-images-local
 build-docker-images-local:
