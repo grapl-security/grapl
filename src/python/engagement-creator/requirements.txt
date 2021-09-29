@@ -1,5 +1,0 @@
-pydgraph==20.7.*
-boto3
-boto3-stubs[essential]
-grapl-analyzerlib
-grapl-common

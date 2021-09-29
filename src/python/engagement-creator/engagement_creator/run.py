@@ -14,7 +14,7 @@ from grapl_common.sqs.sqs_timeout_manager import (
 LOGGER = get_module_grapl_logger()
 
 
-async def main() -> None:
+async def _main() -> None:
     """
     Some TODOs to bring this inline with sqs-executor in Rust:
     - add the shortcut-to-DEAD_LETTER_QUEUE_URL case
@@ -42,4 +42,9 @@ async def main() -> None:
             LOGGER.error("SQS Timeout Manager exception", exc_info=True)
 
 
-asyncio.run(main())
+def run() -> None:
+    asyncio.run(_main())
+
+
+if __name__ == "__main__":
+    run()

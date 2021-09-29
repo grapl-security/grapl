@@ -1,6 +1,0 @@
-# Sometimes we need to manually retrigger an AMI build.
-# So, as a hack, just change this file to trigger that build.
-# (It is read in `pipeline.merge.yml`'s diff)
-
-# add to this int i guess? leave a funny comment?
-0
