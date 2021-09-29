@@ -189,6 +189,7 @@ job "integration-tests" {
       }
 
       config {
+        allow_caps = ["all"]
         command = "/bin/bash"
         args = [
           "-o", "errexit", "-o", "nounset", "-c",
