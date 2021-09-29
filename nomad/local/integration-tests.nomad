@@ -190,6 +190,7 @@ job "integration-tests" {
 
       config {
         allow_caps = ["all"]
+        pid_mode = "host" # should be private but lets test this shit
         command = "/bin/bash"
         args = [
           "-o", "errexit", "-o", "nounset", "-c",
