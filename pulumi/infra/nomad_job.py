@@ -1,6 +1,5 @@
-import json
 from pathlib import Path
-from typing import Any, Awaitable, Mapping, Optional
+from typing import Any, Mapping, Optional
 
 import pulumi_nomad as nomad
 from infra.config import DEPLOYMENT_NAME
@@ -44,9 +43,8 @@ class NomadJob(pulumi.ComponentResource):
 
             nomad_vars = {}
             for key, value in vars.items():
-                pulumi.log.info(key)
                 if isinstance(value, pulumi.Output):
-                    # TODO figure out a better way to filter down to output<string>
+                    # TODO figure out a better way to filter down to output<string> and not just all outputs
 
                     value = pulumi_preview_replacement_string
                     # special rule since we split the redis endpoint
