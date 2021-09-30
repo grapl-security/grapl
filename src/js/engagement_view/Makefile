@@ -22,7 +22,6 @@ node_modules: package.json yarn.lock
 	$(DOCKER_RUN) yarn install
 
 build: node_modules $(ASSET_DIRS) $(ASSET_FILES)
-	echo "--- Building Engagement View"
 	$(DOCKER_RUN) yarn build
 
 .PHONY: test

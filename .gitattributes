@@ -1,2 +1,2 @@
 # Hide generated files during diff
-3rdparty/python/*.lockfile linguist-generated=true
+src/js/grapl-cdk/edge_ux_pre_replace/**/* linguist-generated=true

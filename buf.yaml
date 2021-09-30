@@ -7,8 +7,6 @@ lint:
   use:
     - DEFAULT
     - COMMENTS
-    - UNARY_RPC
-    - OTHER
   ignore:
     # We have vendored some of the Google protobuf definitions; we
     # don't need to lint them, and will be able to remove them soon.
