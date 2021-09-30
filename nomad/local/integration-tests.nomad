@@ -189,7 +189,7 @@ job "integration-tests" {
       }
 
       config {
-        cap_add = ["all"]
+        #cap_add = ["all"]
         pid_mode = "host" # should be private but lets test this shit
         command = "/bin/bash"
         args = [
