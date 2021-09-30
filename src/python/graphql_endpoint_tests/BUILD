@@ -1,22 +1,6 @@
 python_library()
 
 python_tests(
-    name="graphql-endpoint-tests",
-    sources=["**/*.py"],
-    extra_env_vars=[
-        "AWS_REGION",
-        "DEBUG_SERVICES",
-        "DEPLOYMENT_NAME",
-        "GRAPL_API_HOST",
-        "GRAPL_AWS_ACCESS_KEY_ID",
-        "GRAPL_AWS_ACCESS_KEY_SECRET",
-        "GRAPL_AWS_ENDPOINT",
-        "GRAPL_HTTP_FRONTEND_PORT",
-        "GRAPL_LOG_LEVEL",
-        "GRAPL_SCHEMA_PROPERTIES_TABLE",
-        "GRAPL_TEST_USER_NAME",
-        "IS_LOCAL",
-        "MG_ALPHAS",
-        "VSC_DEBUGGER_PORT",
-    ]
+  name="tests",
+  sources=["**/*.py"]
 )

@@ -82,7 +82,7 @@ pulumi login --local
 pulumi stack init "${STACK_NAME}"
 pulumi config set aws:region us-east-1
 
-# Copy some required artifacts version pins from `origin/rc`
+# Copy some required artifacts - namely AMIs - from `origin/rc`
 ../bin/copy_artifacts_from_rc.sh "${STACK_NAME}"
 
 # You likely want to remove non-required artifacts from your stackfile now

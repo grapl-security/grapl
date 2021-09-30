@@ -11,7 +11,7 @@ name = "graph-merger"
 name = "graph_merger_lib"
 
 [dependencies]
-rust-proto = { path = "../rust-proto" }
+grapl-graph-descriptions = { path = "../graph-descriptions" }
 grapl-config = { path = "../grapl-config", version = "*" }
 grapl-observe = { path = "../grapl-observe", version = "*" }
 grapl-service = { path = "../grapl-service" }

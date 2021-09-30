@@ -1,0 +1,8 @@
+{
+  "server": true,
+  "retry_join_ec2": {
+    "tag_key": "ConsulAgent",
+    "tag_value": "Server"
+  },
+  "log_level": "INFO"
+}

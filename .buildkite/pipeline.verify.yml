@@ -68,7 +68,12 @@ steps:
 
   - label: ":python::jeans: Typechecking"
     command:
-      - make test-typecheck
+      - make test-typecheck-pants
+
+  # TODO: Consider beefy queue
+  - label: ":python::docker: Typechecking (:no_entry_sign::jeans:)"
+    command:
+      - make test-typecheck-docker
 
   # TODO: Consider beefy queue
   - label: ":typescript::docker: Unit Tests"
@@ -117,13 +122,30 @@ steps:
       queue: "beefy"
     artifact_paths:
       - "test_artifacts/**/*"
-    retry:
-      automatic:
-        limit: 5
 
-  - label: ":lint-roller::nomad: Lint HCL files"
+  - label: ":lint-roller::packer::nomad: Lint HCL files"
     command:
       - make lint-hcl
+
+  - label: ":thinking_face: AMI Test?"
+    # Don't want to run this again in the merge pipeline, since
+    # building the image does exactly the same thing. We don't want to
+    # waste time.
+    if: build.env("BUILDKITE_PIPELINE_NAME") == "grapl/verify"
+    plugins:
+      - chronotc/monorepo-diff#v2.0.4:
+          diff: .buildkite/shared/scripts/diff.sh
+          log_level: "debug"
+          watch:
+            - path:
+                - ".buildkite/scripts/test_packer.sh"
+                - "packer/"
+                - ".buildkite/scripts/build_packer_ci.sh"
+                - ".buildkite/scripts/lib/packer.sh"
+                - ".buildkite/scripts/lib/packer_constants.sh"
+              config:
+                label: ":pipeline: Upload AMI Test"
+                command: "buildkite-agent pipeline upload .buildkite/pipeline.verify.ami-test.yml"
 
   - label: ":thinking_face::rust: Cargo Audit?"
     plugins:

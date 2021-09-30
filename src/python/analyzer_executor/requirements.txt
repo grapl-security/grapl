@@ -1,0 +1,9 @@
+pydgraph==20.7.0
+boto3
+grapl-analyzerlib
+redis
+grpcio
+protobuf
+typing_extensions
+hypothesis
+grapl-common

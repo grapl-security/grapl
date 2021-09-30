@@ -2,7 +2,7 @@ use derive_dynamic_node::{
     GraplSessionId,
     NodeDescription,
 };
-use rust_proto::graph_descriptions::*;
+use grapl_graph_descriptions::graph_description::*;
 
 #[derive(NodeDescription, GraplSessionId)]
 pub struct Process {

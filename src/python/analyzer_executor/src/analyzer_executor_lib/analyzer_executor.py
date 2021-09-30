@@ -26,7 +26,6 @@ from typing import (
 )
 
 import boto3
-import grapl_analyzerlib.counters  # noqa: F401
 from analyzer_executor_lib.redis_cache import EitherCache, construct_redis_client
 from grapl_analyzerlib.analyzer import Analyzer
 from grapl_analyzerlib.execution import ExecutionComplete, ExecutionFailed, ExecutionHit
@@ -39,7 +38,6 @@ from grapl_common.env_helpers import S3ResourceFactory
 from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
 from grapl_common.sqs.sqs_types import S3PutRecordDict, SQSMessageBody
-from python_proto.pipeline import Envelope, Metadata
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
@@ -190,10 +188,7 @@ class AnalyzerExecutor:
         for event in events["Records"]:
             data = parse_s3_event(s3, event)
 
-            envelope = Envelope.deserialize(data)
-            # Keep in mind that, today, we don't communicate this message via protobuf but instead
-            # we use JSON. It would be worth changing this in another issue.
-            message = json.loads(envelope.inner_message)
+            message = json.loads(data)
 
             LOGGER.info(f'Executing Analyzer: {message["key"]}')
 
@@ -204,13 +199,13 @@ class AnalyzerExecutor:
                     s3,
                     self.analyzers_bucket,
                     message["key"],
-                ).decode("utf8")
+                )
             analyzer_name = message["key"].split("/")[-2]
 
             subgraph = SubgraphView.from_proto(client, bytes(message["subgraph"]))
 
             # TODO: Validate signature of S3 file
-            LOGGER.info(f"event {event} {envelope.metadata}")
+            LOGGER.info(f"event {event}")
             rx: Connection
             tx: Connection
             rx, tx = Pipe(duplex=False)
@@ -226,12 +221,7 @@ class AnalyzerExecutor:
                     "analyzer-executor.emit_event.ms",
                     (TagPair("analyzer_name", exec_hit.analyzer_name),),
                 ):
-                    emit_event(
-                        self.analyzer_matched_subgraphs_bucket,
-                        s3,
-                        exec_hit,
-                        envelope.metadata,
-                    )
+                    emit_event(self.analyzer_matched_subgraphs_bucket, s3, exec_hit)
                 self.update_msg_cache(analyzer, exec_hit.root_node_key, message["key"])
                 self.update_hit_cache(analyzer_name, exec_hit.root_node_key)
 
@@ -380,7 +370,7 @@ class AnalyzerExecutor:
             raise
 
 
-def parse_s3_event(s3: S3ServiceResource, event: S3PutRecordDict) -> bytes:
+def parse_s3_event(s3: S3ServiceResource, event: S3PutRecordDict) -> str:
     try:
         bucket = event["s3"]["bucket"]["name"]
         key = event["s3"]["object"]["key"]
@@ -390,9 +380,9 @@ def parse_s3_event(s3: S3ServiceResource, event: S3PutRecordDict) -> bytes:
     return download_s3_file(s3, bucket, key)
 
 
-def download_s3_file(s3: S3ServiceResource, bucket: str, key: str) -> bytes:
+def download_s3_file(s3: S3ServiceResource, bucket: str, key: str) -> str:
     obj = s3.Object(bucket, key)
-    return cast(bytes, obj.get()["Body"].read())
+    return cast(bytes, obj.get()["Body"].read()).decode("utf-8")
 
 
 def is_analyzer(analyzer_name: str, analyzer_cls: type) -> bool:
@@ -419,16 +409,9 @@ def chunker(seq: List[BaseView], size: int) -> List[List[BaseView]]:
 
 
 def emit_event(
-    analyzer_matched_subgraphs_bucket: str,
-    s3: S3ServiceResource,
-    event: ExecutionHit,
-    metadata: Metadata,
+    analyzer_matched_subgraphs_bucket: str, s3: S3ServiceResource, event: ExecutionHit
 ) -> None:
     LOGGER.info(f"emitting event for: {event.analyzer_name, event.nodes}")
-
-    meta_dict = {
-        "trace_id": str(metadata.trace_id),
-    }
 
     event_s = json.dumps(
         {
@@ -438,7 +421,6 @@ def emit_event(
             "risk_score": event.risk_score,
             "lenses": event.lenses,
             "risky_node_keys": event.risky_node_keys,
-            "metadata": meta_dict,
         }
     )
     event_hash = hashlib.sha256(event_s.encode())
