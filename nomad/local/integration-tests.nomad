@@ -226,7 +226,7 @@ export MG_ALPHAS="localhost:9080"
 
 export PANTS_PEX_EXECUTABLE_SEARCH_PATHS='["<PATH>", "/usr/libexec/gcc/x86_64-redhat-linux/7"]'
 export GCC_EXEC_PREFIX=/usr/libexec/gcc/x86_64-gnu-linux/7/
-
+export LIBRARY_PATH=/usr/libexec/gcc/x86_64-gnu-linux/7/
 
 ls -lR /usr/libexec/gcc
 
