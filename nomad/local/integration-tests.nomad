@@ -224,6 +224,8 @@ export DEPLOYMENT_NAME="${var.deployment_name}"
 export GRAPL_LOG_LEVEL="${local.log_level}"
 export MG_ALPHAS="localhost:9080"
 
+ln -s /usr/bin/gcc /usr/bin/cc || echo "soft linking failed, cc should already exist"
+
 cd /mnt/grapl-root
 ./pants filter --filter-target-type="python_tests" :: \
   | xargs ./pants --tag="-needs_work" test --pytest-args="-m \"integration_test\""
