@@ -81,6 +81,23 @@ steps:
     artifact_paths:
       - "*.grapl-artifacts.json"
 
+  - label: ":thinking_face: AMI Build?"
+    plugins:
+      - chronotc/monorepo-diff#v2.0.4:
+          diff: .buildkite/shared/scripts/diff.sh
+          log_level: "debug"
+          watch:
+            - path:
+                - "packer/"
+                - ".buildkite/scripts/build_packer_ci.sh"
+                - ".buildkite/scripts/record_artifacts.sh"
+                - ".buildkite/scripts/lib/packer.sh"
+                - ".buildkite/scripts/lib/packer_constants.sh"
+                - ".buildkite/pipeline.merge.ami-build.yml"
+              config:
+                label: ":pipeline: Upload AMI Build"
+                command: "buildkite-agent pipeline upload .buildkite/pipeline.merge.ami-build.yml"
+
   - label: ":thinking_face: UX Build?"
     plugins:
       - chronotc/monorepo-diff#v2.0.4:

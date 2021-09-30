@@ -55,10 +55,7 @@ impl PayloadDecoder<Vec<Event>> for SysmonDecoder {
             .filter_map(|event_str| {
                 let parsed_event = Event::from_str(&event_str);
                 match parsed_event {
-                    Ok(event) => {
-                        tracing::debug!(message = "Deserialized sysmon event");
-                        Some(event)
-                    }
+                    Ok(event) => Some(event),
                     Err(error) => {
                         tracing::error!(
                             message = "Unable to deserialize Sysmon event",

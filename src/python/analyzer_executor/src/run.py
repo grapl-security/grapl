@@ -17,7 +17,7 @@ wait_for_vsc_debugger(service="analyzer_executor")
 LOGGER = get_module_grapl_logger()
 
 
-async def _main() -> None:
+async def main() -> None:
     """
     Some TODOs to bring this inline with sqs-executor in Rust:
     - add the shortcut-to-DEAD_LETTER_QUEUE_URL case
@@ -47,9 +47,4 @@ async def _main() -> None:
             LOGGER.error("SQS Timeout Manager exception", exc_info=True)
 
 
-def run() -> None:
-    asyncio.run(_main())
-
-
-if __name__ == "__main__":
-    run()
+asyncio.run(main())

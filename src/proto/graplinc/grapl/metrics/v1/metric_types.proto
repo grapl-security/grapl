@@ -31,7 +31,7 @@ message Gauge {
         // Protobuf makes me specify a 0 value, it's invalid
         GAUGE_TYPE_UNSPECIFIED = 0;
         // Sets the value of the gauge to this value.
-        GAUGE_TYPE_ABSOLUTE = 1;
+        GAUGE_TYPE_ABSOLUTE =1;
         // Increments the value of the gauge by this much.
         GAUGE_TYPE_INCREMENT = 2;
         // Decrements the value of the gauge by this much.

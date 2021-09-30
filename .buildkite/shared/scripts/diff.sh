@@ -25,6 +25,12 @@ case "${pipeline}" in
         # If the last run of the merge pipeline failed, we still want
         # to perform the expensive operations we're using this script
         # to be selective about.
+        #
+        # For instance, the failing run may have been building Packer
+        # AMI images, but failed due to an unrelated issue in the
+        # build scripts, or something totally unrelated to the Packer
+        # source files. The fix would then not touch those source
+        # files, and we would never rebuild the image.
         git diff --name-only "$(tag_for_pipeline "${pipeline}")"
         ;;
     verify)

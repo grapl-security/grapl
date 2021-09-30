@@ -3,6 +3,7 @@ use std::{
     io::Stdout,
 };
 
+use grapl_graph_descriptions::Edge;
 use grapl_observe::metric_reporter::MetricReporter;
 use grapl_utils::{
     future_ext::GraplFutureExt,
@@ -15,7 +16,6 @@ use rusoto_dynamodb::{
     DynamoDbClient,
     KeysAndAttributes,
 };
-use rust_proto::graph_descriptions::Edge;
 use serde::{
     Deserialize,
     Serialize,
