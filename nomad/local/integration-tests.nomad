@@ -230,6 +230,11 @@ export LIBRARY_PATH=/usr/libexec/gcc/x86_64-gnu-linux/7/
 
 ls -lR /usr/libexec/gcc
 
+g++ -print-libgcc-file-name
+ls -l $(dirname $(g++ -print-libgcc-file-name))
+
+yum groupinstall --assumeyes "Development Tools"
+
 cd /mnt/grapl-root
 ./pants filter --filter-target-type="python_tests" :: \
   | xargs ./pants --tag="-needs_work" test --pytest-args="-m \"integration_test\""
