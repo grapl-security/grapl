@@ -227,10 +227,8 @@ export MG_ALPHAS="localhost:9080"
 export PANTS_PEX_EXECUTABLE_SEARCH_PATHS='["<PATH>", "/usr/libexec/gcc/x86_64-redhat-linux/7"]'
 export GCC_EXEC_PREFIX=/usr/libexec/gcc/x86_64-gnu-linux/7/
 
-ls -l /usr/bin
-ls -l /usr/libexec/gcc
 
-ln -s /usr/bin/gcc /usr/bin/cc || echo "soft linking failed, cc should already exist"
+ls -lR /usr/libexec/gcc
 
 cd /mnt/grapl-root
 ./pants filter --filter-target-type="python_tests" :: \
