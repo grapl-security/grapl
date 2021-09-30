@@ -123,15 +123,6 @@ def main() -> None:
 
     services: List[ServiceLike] = []
 
-    # TODO: Potentially just removable
-    ux_bucket = Bucket(
-        "engagement-ux-bucket",
-        website_args=aws.s3.BucketWebsiteArgs(
-            index_document="index.html",
-        ),
-    )
-    pulumi.export("ux-bucket", ux_bucket.bucket)
-
     nomad_inputs = dict(
         analyzer_bucket=analyzers_bucket.bucket,
         analyzer_dispatched_bucket=dispatched_analyzer_emitter.bucket.bucket,
