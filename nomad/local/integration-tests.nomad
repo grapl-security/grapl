@@ -189,9 +189,9 @@ job "integration-tests" {
       }
 
       config {
-        #cap_add = ["all"]
+        # cap_add = ["all"] # used to add specific capabilities, but all actually fails :/
         pid_mode = "host" # should be private but lets test this shit
-        command = "/bin/bash"
+        command  = "/bin/bash"
         args = [
           "-o", "errexit", "-o", "nounset", "-c",
           trimspace(<<EOF
