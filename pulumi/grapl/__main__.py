@@ -232,14 +232,12 @@ def main() -> None:
                     k: inputs[k]
                     for k in {
                         "_aws_endpoint",
-                        "_kafka_endpoint",  # integration-test only
+                        "_kafka_endpoint",
                         "_redis_endpoint",
                         "aws_access_key_id",
                         "aws_access_key_secret",
                         "aws_region",
                         "deployment_name",
-                        # integration-test only
-                        "non_root_user",  # integration-test only
                         "schema_properties_table_name",
                         "test_user_name",
                     }
@@ -248,7 +246,6 @@ def main() -> None:
             integration_test_job_vars = _get_integration_test_job_vars(
                 dict(
                     _kafka_endpoint=kafka_endpoint,
-                    non_root_user=os.environ["NON_ROOT_USER"],
                     **grapl_core_job_vars_inputs,
                     **nomad_inputs,
                 )

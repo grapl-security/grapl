@@ -2,7 +2,7 @@ use derive_dynamic_node::{
     GraplStaticId,
     NodeDescription,
 };
-use rust_proto::graph_descriptions::*;
+use grapl_graph_descriptions::graph_description::*;
 
 #[derive(NodeDescription, GraplStaticId)]
 pub struct IpPort {

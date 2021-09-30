@@ -1,5 +1,5 @@
 [GLOBAL]
-pants_version = "2.7.0rc2"
+pants_version = "2.6.0rc1"
 backend_packages = [
   "pants.backend.awslambda.python",
   "pants.backend.codegen.protobuf.python",
@@ -26,7 +26,7 @@ pants_ignore = [
 ]
 
 plugins = [
-  "toolchain.pants.plugin==0.14.0"
+  "toolchain.pants.plugin==0.13.1"
 ]
 
 remote_cache_read = true
@@ -72,11 +72,11 @@ root_patterns = [
   "/src/python/graplctl",
   "/src/python/grapl-dgraph-ttl",
   "/src/python/grapl_e2e_tests",
+  "/src/python/graplinc",
   "/src/python/grapl-model-plugin-deployer",
   "/src/python/grapl-template-generator",
   "/src/python/grapl-tests-common",
   "/src/python/provisioner",
-  "/src/python/python-proto",
   "/src/python/repl",
 ]
 
@@ -96,12 +96,10 @@ runtime_dependencies = ["3rdparty/python:protobuf"]
 mypy_plugin = true
 
 [black]
-lockfile = "3rdparty/python/black.lockfile"
 config = "pyproject.toml"
 version = "black==20.8b1"
 
 [isort]
-lockfile = "3rdparty/python/isort.lockfile"
 config = "pyproject.toml"
 # This option is required to ensure the `skip_globs` configuration is
 # honored for how Pants calls isort. If we ever get to the point where
@@ -111,8 +109,7 @@ args = [ "--filter-files" ]
 version = "isort==5.6.4"
 
 [pytest]
-lockfile = "3rdparty/python/pytest.lockfile"
-extra_requirements = [
+pytest_plugins = [
   "pytest-custom_exit_code",
   "pytest-cov"
 ]
@@ -128,16 +125,9 @@ extra_requirements = [
 args = [ "--suppress-no-test-exit-code" ]
 
 [mypy]
-lockfile = "3rdparty/python/mypy.lockfile"
 version = "mypy==0.812"
 config = "src/python/mypy.ini"
-# read this section of the mypy docs:
-#
-# https://mypy.readthedocs.io/en/stable/command_line.html#cmdoption-mypy-namespace-packages
-#
-# for the raison d'être for "--namespace-packages". Tl;dr: it makes mypy work
-# with our protobuf stubs.
-args = [ "--show-error-codes", "--namespace-packages" ] #, "--verbose" ]
+args = [ "--show-error-codes" ] #, "--verbose" ]
 
 [ipython]
 version = "ipython==7.20.0"
@@ -173,6 +163,6 @@ global_report = "true"
 # configuration values.
 version = "v0.7.2"
 known_versions = [
-  "v0.7.2|macos_x86_64|969bd7ef668e8167cfbba569fb9f4a0b2fc1c4021f87032b6a0b0e525fb77369|3988092",
-  "v0.7.2|linux_x86_64|70423609f27b504d6c0c47e340f33652aea975e45f312324f2dbf91c95a3b188|1382204"
+  "v0.7.2|darwin|969bd7ef668e8167cfbba569fb9f4a0b2fc1c4021f87032b6a0b0e525fb77369|3988092",
+  "v0.7.2|linux|70423609f27b504d6c0c47e340f33652aea975e45f312324f2dbf91c95a3b188|1382204"
 ]

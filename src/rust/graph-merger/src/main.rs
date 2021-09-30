@@ -39,6 +39,14 @@ use grapl_config::{
     },
     event_caches,
 };
+use grapl_graph_descriptions::graph_description::{
+    Edge,
+    EdgeList,
+    IdentifiedGraph,
+    IdentifiedNode,
+    MergedGraph,
+    MergedNode,
+};
 use grapl_observe::{
     dgraph_reporter::DgraphMetricReporter,
     metric_reporter::{
@@ -65,14 +73,6 @@ use rusoto_dynamodb::{
 };
 use rusoto_s3::S3Client;
 use rusoto_sqs::SqsClient;
-use rust_proto::graph_descriptions::{
-    Edge,
-    EdgeList,
-    IdentifiedGraph,
-    IdentifiedNode,
-    MergedGraph,
-    MergedNode,
-};
 use serde::{
     Deserialize,
     Serialize,

@@ -7,7 +7,6 @@
 -include .env
 TAG ?= dev
 RUST_BUILD ?= debug
-USERNAME = $(shell id -u -n)
 UID = $(shell id -u)
 GID = $(shell id -g)
 PWD = $(shell pwd)
@@ -25,6 +24,7 @@ export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 	--file ./test/docker-compose.unit-tests-js.yml \
 	--file ./test/docker-compose.integration-tests.build.yml \
 	--file ./test/docker-compose.e2e-tests.build.yml \
+	--file ./test/docker-compose.typecheck-tests.yml
 
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
 
@@ -128,11 +128,6 @@ help: ## Print this help
 
 ##@ Build 🔨
 
-.PHONY: build-service-pexs
-build-service-pexs:
-	./pants package ./src/python/analyzer_executor/src
-	./pants package ./src/python/engagement-creator/engagement_creator:pex
-
 .PHONY: build-test-unit
 build-test-unit:
 	$(DOCKER_BUILDX_BAKE) \
@@ -165,7 +160,7 @@ build-test-e2e: build
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.build.yml
 
 .PHONY: build-lambda-zips
-build-lambda-zips: build-lambda-zips-rust build-lambda-zips-js build-lambda-zips-python build-service-pexs ## Generate all lambda zip files
+build-lambda-zips: build-lambda-zips-rust build-lambda-zips-js build-lambda-zips-python ## Generate all lambda zip files
 
 .PHONY: build-lambda-zips-rust
 build-lambda-zips-rust: ## Build Rust lambda zips
@@ -204,7 +199,7 @@ build-python-wheels:  ## Build all Python wheels
 	./pants filter --target-type=python_distribution :: | xargs ./pants package
 
 .PHONY: build-docker-images-local
-build-docker-images-local:
+build-docker-images-local: 
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(MAKE) build-docker-images
 
@@ -283,16 +278,25 @@ test-unit-js: build-test-unit-js ## Build and run unit tests - JavaScript only
 	test/docker-compose-with-error.sh
 	$(MAKE) -C src/js/engagement_view test
 
-.PHONY: test-typecheck
-test-typecheck: ## Typecheck Python Code
+.PHONY: test-typecheck-docker
+test-typecheck-docker: export COMPOSE_PROJECT_NAME := grapl-typecheck_tests
+test-typecheck-docker: export COMPOSE_FILE := ./test/docker-compose.typecheck-tests.yml
+test-typecheck-docker: build-test-typecheck ## Build and run typecheck tests (non-Pants)
+	test/docker-compose-with-error.sh
+
+.PHONY: test-typecheck-pants
+test-typecheck-pants: ## Typecheck Python code with Pants
 	./pants typecheck ::
+
+.PHONY: test-typecheck
+test-typecheck: test-typecheck-docker test-typecheck-pants ## Typecheck all Python Code
 
 .PHONY: test-integration
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
 test-integration: build-test-integration ## Build and run integration tests
 	$(WITH_LOCAL_GRAPL_ENV)
 	export SHOULD_DEPLOY_INTEGRATION_TESTS=True  # This gets read in by `docker-compose.yml`'s pulumi
-	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/local/run_parameterized_job.sh integration-tests 8"
+	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/local/run_parameterized_job.sh integration-tests"
 
 .PHONY: test-grapl-template-generator
 test-grapl-template-generator:  # Test that the Grapl Template Generator spits out something compilable.
@@ -303,7 +307,7 @@ test-e2e: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_E2E_TESTS)
 test-e2e: build-test-e2e ## Build and run e2e tests
 	$(WITH_LOCAL_GRAPL_ENV)
 	export SHOULD_DEPLOY_E2E_TESTS=True  # This gets read in by `docker-compose.yml`'s pulumi
-	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/local/run_parameterized_job.sh e2e-tests 6"
+	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/local/run_parameterized_job.sh e2e-tests"
 
 # This target is not intended to be used directly from the command line, it's
 # intended for tests in docker-compose files that need the Grapl environment.
@@ -336,7 +340,6 @@ test-with-env: # (Do not include help text - not to be used directly)
 	# Bring up the Grapl environment and detach
 	$(MAKE) up-detach
 	# Run tests and check exit codes from each test container
-	echo "--- Executing test with environment"
 	$${EXEC_TEST_COMMAND}
 
 ##@ Lint 🧹
@@ -363,7 +366,7 @@ lint-prettier: build-formatter ## Run ts/js/yaml lint checks
 		run --rm lint-prettier
 
 .PHONY: lint-hcl
-lint-hcl: ## Check to see if HCL files are formatted properly
+lint-hcl: ## Check to see if Packer templates are formatted properly
 	${NONROOT_DOCKER_COMPOSE_CHECK} hcl-lint
 
 .PHONY: lint-proto
@@ -428,13 +431,12 @@ up-detach: build-local ## Bring up local Grapl and detach to return control to t
 
 	# TODO: This could potentially be replaced with a docker-compose run, but
 	#  it doesn't have all these useful flags
-	echo "--- Starting Pulumi"
 	docker-compose \
 		--file docker-compose.yml \
 		up --force-recreate --always-recreate-deps --renew-anon-volumes \
 		--exit-code-from pulumi \
 		pulumi
-	echo "Pulumi complete"
+	echo "--- up-detach complete"
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
@@ -481,7 +483,7 @@ local-pulumi:  ## launch pulumi via docker-compose up
 .PHONY: start-nomad-detach
 start-nomad-detach:  ## Start the Nomad environment, detached
 	$(WITH_LOCAL_GRAPL_ENV)
-	GRAPL_ROOT="${PWD}" nomad/local/start_detach.sh
+	nomad/local/start_detach.sh
 
 .PHONY: stop-nomad-detach
 stop-nomad-detach:  ## Stop Nomad CI environment

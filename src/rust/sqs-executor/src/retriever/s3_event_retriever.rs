@@ -25,7 +25,6 @@ use rusoto_s3::{
     S3,
 };
 use rusoto_sqs::Message as SqsMessage;
-use rust_proto::pipeline::Metadata;
 use tokio::{
     io::AsyncReadExt,
     time::error::Elapsed,
@@ -119,8 +118,6 @@ where
     S3Error(#[from] RusotoError<GetObjectError>),
     #[error("Decode error")]
     DecodeError(#[from] DecoderErrorT),
-    #[error("EnvelopeDecode error")]
-    EnvelopeDecode(#[from] prost::DecodeError),
     #[error("IO")]
     Io(#[from] std::io::Error),
     #[error("JSON")]
@@ -137,7 +134,6 @@ where
         match self {
             Self::S3Error(_) => Recoverable::Transient,
             Self::DecodeError(_) => Recoverable::Persistent,
-            Self::EnvelopeDecode(_) => Recoverable::Persistent,
             Self::Io(_) => Recoverable::Transient,
             Self::Json(_) => Recoverable::Persistent,
             Self::Timeout(_) => Recoverable::Transient,
@@ -159,10 +155,7 @@ where
     type Error = S3PayloadRetrieverError<DecoderErrorT>;
 
     #[tracing::instrument(skip(self, msg))]
-    async fn retrieve_event(
-        &mut self,
-        msg: &Self::Message,
-    ) -> Result<Option<(Metadata, E)>, Self::Error> {
+    async fn retrieve_event(&mut self, msg: &Self::Message) -> Result<Option<E>, Self::Error> {
         let body = msg.body.as_ref().unwrap();
         debug!("Got body from message: {}", body);
         let event: serde_json::Value = serde_json::from_str(body)?;
@@ -248,12 +241,6 @@ where
 
         debug!("Read s3 payload body");
 
-        let envelope: rust_proto::pipeline::Envelope = prost::Message::decode(&body[..])?;
-        let meta = envelope
-            .metadata
-            .expect("Metadata must be set at the front of the pipeline");
-        let body = envelope.inner_message;
-
         let (decoded, ms) = time_it(|| self.decoder.decode(body));
 
         self.metric_reporter
@@ -267,6 +254,6 @@ where
                 |e| error!(message="failed to report s3_retriever.decoded.micros", error=?e),
             );
 
-        Ok(Some((meta, decoded?)))
+        Ok(Some(decoded?))
     }
 }
