@@ -239,7 +239,7 @@ def main() -> None:
                         "aws_region",
                         "deployment_name",
                         # integration-test only
-                        "non_root_user",  # integration-test only
+                        #"non_root_user",  # integration-test only
                         "schema_properties_table_name",
                         "test_user_name",
                     }
@@ -248,7 +248,7 @@ def main() -> None:
             integration_test_job_vars = _get_integration_test_job_vars(
                 dict(
                     _kafka_endpoint=kafka_endpoint,
-                    non_root_user=os.environ["NON_ROOT_USER"],
+                    #non_root_user=os.environ["NON_ROOT_USER"],
                     **grapl_core_job_vars_inputs,
                     **nomad_inputs,
                 )
