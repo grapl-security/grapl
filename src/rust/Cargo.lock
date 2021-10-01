@@ -404,7 +404,6 @@ dependencies = [
  "failure",
  "futures 0.3.17",
  "grapl-config",
- "grapl-graph-descriptions",
  "grapl-observe",
  "grapl-service",
  "log",
@@ -413,6 +412,7 @@ dependencies = [
  "rusoto_credential",
  "rusoto_s3",
  "rusoto_sqs",
+ "rust-proto",
  "serde",
  "serde_json",
  "sqs-executor",
@@ -1220,10 +1220,10 @@ dependencies = [
 name = "derive-dynamic-node"
 version = "1.0.1"
 dependencies = [
- "grapl-graph-descriptions",
  "log",
  "proc-macro2 1.0.29",
  "quote 1.0.9",
+ "rust-proto",
  "serde",
  "serde_derive",
  "serde_json",
@@ -1381,7 +1381,7 @@ name = "endpoint-plugin"
 version = "0.1.0"
 dependencies = [
  "derive-dynamic-node",
- "grapl-graph-descriptions",
+ "rust-proto",
  "thiserror",
  "uuid",
 ]
@@ -1640,7 +1640,6 @@ dependencies = [
  "eyre",
  "futures 0.3.17",
  "grapl-config",
- "grapl-graph-descriptions",
  "grapl-observe",
  "grapl-service",
  "lazy_static",
@@ -1650,6 +1649,7 @@ dependencies = [
  "rusoto_core",
  "rusoto_s3",
  "rusoto_sqs",
+ "rust-proto",
  "serde",
  "serde_json",
  "sqs-executor",
@@ -1707,7 +1707,6 @@ dependencies = [
  "base64 0.13.0",
  "chrono",
  "grapl-config",
- "grapl-graph-descriptions",
  "grapl-observe",
  "grapl-service",
  "log",
@@ -1716,6 +1715,7 @@ dependencies = [
  "rusoto_credential",
  "rusoto_s3",
  "rusoto_sqs",
+ "rust-proto",
  "serde",
  "serde_json",
  "sha2",
@@ -1739,7 +1739,6 @@ dependencies = [
  "futures 0.3.17",
  "futures-retry",
  "grapl-config",
- "grapl-graph-descriptions",
  "grapl-observe",
  "grapl-service",
  "grapl-utils",
@@ -1753,6 +1752,7 @@ dependencies = [
  "rusoto_dynamodb",
  "rusoto_s3",
  "rusoto_sqs",
+ "rust-proto",
  "serde",
  "serde_derive",
  "serde_json",
@@ -1784,7 +1784,7 @@ dependencies = [
  "derive-dynamic-node",
  "graph-generator-lib",
  "grapl-config",
- "grapl-graph-descriptions",
+ "rust-proto",
 ]
 
 [[package]]
@@ -1807,24 +1807,6 @@ dependencies = [
  "tracing",
  "tracing-appender",
  "tracing-futures",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "grapl-graph-descriptions"
-version = "0.2.10"
-dependencies = [
- "log",
- "prost",
- "prost-build",
- "prost-derive",
- "prost-types",
- "quickcheck",
- "quickcheck_macros",
- "rand 0.8.4",
- "serde",
- "serde_derive",
- "tracing",
  "tracing-subscriber",
 ]
 
@@ -1860,10 +1842,10 @@ version = "0.1.0"
 dependencies = [
  "bytes 1.1.0",
  "grapl-config",
- "grapl-graph-descriptions",
  "itertools 0.10.1",
  "libflate",
  "prost",
+ "rust-proto",
  "serde",
  "serde_json",
  "sqs-executor",
@@ -2720,13 +2702,13 @@ dependencies = [
  "failure",
  "futures 0.3.17",
  "grapl-config",
- "grapl-graph-descriptions",
  "grapl-observe",
  "grapl-service",
  "grapl-utils",
  "hex",
  "hmap",
  "prost",
+ "prost-build",
  "quickcheck",
  "quickcheck_macros",
  "rusoto_core",
@@ -2734,6 +2716,7 @@ dependencies = [
  "rusoto_dynamodb",
  "rusoto_s3",
  "rusoto_sqs",
+ "rust-proto",
  "serde",
  "serde_derive",
  "serde_dynamodb 0.7.0",
@@ -2869,9 +2852,9 @@ dependencies = [
  "endpoint-plugin",
  "graph-generator-lib",
  "grapl-config",
- "grapl-graph-descriptions",
  "grapl-observe",
  "grapl-service",
+ "rust-proto",
  "serde",
  "serde_json",
  "sqs-executor",
@@ -3645,6 +3628,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "rust-proto"
+version = "0.2.10"
+dependencies = [
+ "log",
+ "prost",
+ "prost-build",
+ "prost-derive",
+ "prost-types",
+ "quickcheck",
+ "quickcheck_macros",
+ "rand 0.8.4",
+ "serde",
+ "serde_derive",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
 name = "rustc-demangle"
 version = "0.1.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4028,6 +4030,7 @@ dependencies = [
  "rusoto_core",
  "rusoto_s3",
  "rusoto_sqs",
+ "rust-proto",
  "serde",
  "serde_json",
  "tap",
@@ -4242,9 +4245,9 @@ dependencies = [
  "endpoint-plugin",
  "graph-generator-lib",
  "grapl-config",
- "grapl-graph-descriptions",
  "grapl-observe",
  "grapl-service",
+ "rust-proto",
  "serde",
  "serde_json",
  "sqs-executor",

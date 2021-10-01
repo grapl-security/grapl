@@ -1,6 +1,6 @@
 python_tests(
     dependencies=[
-        "//etc/sample_data",
+        "etc/sample_data",
     ]
 )
 
