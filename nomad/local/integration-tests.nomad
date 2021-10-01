@@ -224,19 +224,11 @@ export DEPLOYMENT_NAME="${var.deployment_name}"
 export GRAPL_LOG_LEVEL="${local.log_level}"
 export MG_ALPHAS="localhost:9080"
 
-
-ls -lR /usr/libexec/gcc
-
-g++ -print-libgcc-file-name
-ls -l $(dirname $(g++ -print-libgcc-file-name))
-
-# Fix dynamic linking by creating a spec file. The only difference is that we're automatically adding a rpath so that dynamic linking will find the right libraries
-g++ -dumpspecs | awk '/^\*link:/ { print; getline; print "-rpath= $(dirname $(g++ -print-libgcc-file-name))", $0; next } { print }' > $(dirname $(g++ -print-libgcc-file-name))/specs
-
-
+# Fix gcc path finding
 export PANTS_PEX_EXECUTABLE_SEARCH_PATHS='["<PATH>", "/usr/libexec/gcc/x86_64-redhat-linux/7"]'
 export GCC_EXEC_PREFIX=/usr/libexec/gcc/x86_64-gnu-linux/7/
 export LIBRARY_PATH=/usr/libexec/gcc/x86_64-gnu-linux/7/
+export LD_LIBRARY_PATH=/usr/libexec/gcc/x86_64-gnu-linux/7/
 
 
 
