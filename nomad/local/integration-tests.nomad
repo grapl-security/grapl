@@ -52,10 +52,10 @@ variable "test_user_name" {
   description = "The name of the test user"
 }
 
-variable "non_root_user" {
-  type        = string
-  description = "The username of the person who launched the `make test-integration`"
-}
+#variable "non_root_user" {
+#  type        = string
+#  description = "The username of the person who launched the `make test-integration`"
+#}
 
 locals {
   log_level = "DEBUG"
@@ -215,8 +215,6 @@ EOF
          GRAPL_AWS_ENDPOINT="${local.aws_endpoint}"
          GRAPL_AWS_ACCESS_KEY_ID="${var.aws_access_key_id}"
          GRAPL_AWS_ACCESS_KEY_SECRET="${var.aws_access_key_secret}"
-
-         GRAPL_LOG_LEVEL="${local.log_level}"
 
         # These environment vars need to exist but the values aren't actually exercised
          GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET="NOT_ACTUALLY_EXERCISED_IN_TESTS"
