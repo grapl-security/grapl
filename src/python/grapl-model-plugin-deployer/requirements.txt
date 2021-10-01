@@ -1,7 +1,0 @@
-pydgraph==20.7.0
-boto3
-pyjwt
-grapl_analyzerlib
-chalice==1.22.4
-pygithub
-grapl-common

@@ -52,6 +52,11 @@ variable "test_user_name" {
   description = "The name of the test user"
 }
 
+variable "non_root_user" {
+  type        = string
+  description = "The username of the person who launched the `make test-integration`"
+}
+
 locals {
   log_level = "DEBUG"
 
@@ -127,61 +132,18 @@ job "integration-tests" {
         REDIS_ENDPOINT = local.redis_endpoint
         KAFKA_ENDPOINT = local.kafka_endpoint
       }
-    }
-  }
-  group "analyzerlib-integration-tests" {
-    restart {
-      # Make this a one-shot job
-      attempts = 0
-    }
 
-    network {
-      mode = "bridge"
-    }
-
-    # Enable service discovery
-    service {
-      name = "analyzerlib-integration-tests"
-      connect {
-        sidecar_service {
-          proxy {
-            upstreams {
-              # This is a hack, because IDK how to share locals across files
-              destination_name = "dgraph-alpha-0-grpc-public"
-              local_bind_port  = 9080
-            }
-          }
-        }
-      }
-    }
-
-    task "analyzerlib-integration-tests" {
-      driver = "docker"
-
-      config {
-        image      = "${var.container_registry}grapl/analyzerlib-test:dev"
-        entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
-        command    = "cd grapl_analyzerlib && py.test -v -n auto -m 'integration_test'"
-      }
-
-      env {
-        DEPLOYMENT_NAME = var.deployment_name
-        GRAPL_LOG_LEVEL = local.log_level
-        MG_ALPHAS       = "localhost:9080"
-      }
-
+      # Because Cargo does some... compiling... for some reason.... maybe.....
       resources {
-        cpu    = 500
-        memory = 1024
+        memory = 8192
       }
-
     }
   }
 
-  group "analyzer-executor-integration-tests" {
+  group "python-integration-tests" {
     restart {
-      # Make this a one-shot job
-      attempts = 0
+      # I guess I can let it try 2x
+      attempts = 1
     }
 
     network {
@@ -190,70 +152,7 @@ job "integration-tests" {
 
     # Enable service discovery
     service {
-      name = "analyzer-executor-integration-tests"
-      connect {
-        sidecar_service {
-          proxy {
-            upstreams {
-              # This is a hack, because IDK how to share locals across files
-              destination_name = "dgraph-alpha-0-grpc-public"
-              local_bind_port  = 9080
-            }
-          }
-        }
-      }
-    }
-    task "analyzer-executor-integration-tests" {
-      driver = "docker"
-
-      config {
-        image      = "${var.container_registry}grapl/analyzer-executor-test:dev"
-        entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
-        command    = "cd analyzer_executor && export PYTHONPATH=\"$(pwd)/src\"; py.test -n auto -m 'integration_test'"
-      }
-
-      env {
-        # aws vars
-        AWS_REGION                  = var.aws_region
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-
-        GRAPL_LOG_LEVEL = local.log_level
-
-        # These environment vars need to exist but the values aren't actually exercised
-        GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
-        GRAPL_ANALYZERS_BUCKET                  = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
-        GRAPL_MODEL_PLUGINS_BUCKET              = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
-
-        HITCACHE_ADDR     = local.redis_host
-        HITCACHE_PORT     = local.redis_port
-        MESSAGECACHE_ADDR = local.redis_host
-        MESSAGECACHE_PORT = local.redis_port
-        IS_RETRY          = false
-      }
-
-      resources {
-        cpu    = 500
-        memory = 1024
-      }
-
-    }
-  }
-
-  group "graphql-endpoint-tests" {
-    restart {
-      # Make this a one-shot job
-      attempts = 0
-    }
-
-    network {
-      mode = "bridge"
-    }
-
-    # Enable service discovery
-    service {
-      name = "graphql-endpoint-tests"
+      name = "python-integration-tests"
       connect {
         sidecar_service {
           proxy {
@@ -270,40 +169,72 @@ job "integration-tests" {
         }
       }
     }
-    task "graphql-endpoint-tests" {
-      driver = "docker"
 
-      config {
-        image      = "${var.container_registry}grapl/graphql-endpoint-tests:dev"
-        entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
-        command    = "cd graphql_endpoint_tests; py.test --capture=no -n 1 -m 'integration_test'"
-      }
-
-      env {
-        # aws vars
-        AWS_REGION                  = var.aws_region
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-
-        DEPLOYMENT_NAME = var.deployment_name
-        GRAPL_LOG_LEVEL = local.log_level
-
-        GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name
-
-        # These are placeholders since Ian is replacing the nginx service shortly
-        GRAPL_API_HOST           = "localhost"
-        GRAPL_HTTP_FRONTEND_PORT = "${NOMAD_UPSTREAM_PORT_web-ui}"
-        GRAPL_TEST_USER_NAME     = var.test_user_name
-
-        IS_LOCAL  = true
-        MG_ALPHAS = "localhost:9080"
-      }
+    volume "grapl-root-volume" {
+      # The definition of this `grapl-root-volume` is written as a Nomad agent
+      # config in `start_detach.sh`
+      type      = "host"
+      source    = "grapl-root-volume"
+      read_only = false
     }
 
+    task "python-integration-tests" {
+      driver = "exec"
+      user   = var.non_root_user
 
+      volume_mount {
+        volume      = "grapl-root-volume"
+        destination = "/mnt/grapl-root"
+        read_only   = false
+      }
+
+      config {
+        command = "/bin/bash"
+        args = [
+          "-o", "errexit", "-o", "nounset", "-c",
+          trimspace(<<EOF
+# aws vars
+export AWS_REGION="${var.aws_region}"
+export GRAPL_AWS_ENDPOINT="${local.aws_endpoint}"
+export GRAPL_AWS_ACCESS_KEY_ID="${var.aws_access_key_id}"
+export GRAPL_AWS_ACCESS_KEY_SECRET="${var.aws_access_key_secret}"
+
+export GRAPL_LOG_LEVEL="${local.log_level}"
+
+# These environment vars need to exist but the values aren't actually exercised
+export GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET="NOT_ACTUALLY_EXERCISED_IN_TESTS"
+export GRAPL_ANALYZERS_BUCKET="NOT_ACTUALLY_EXERCISED_IN_TESTS"
+export GRAPL_MODEL_PLUGINS_BUCKET="NOT_ACTUALLY_EXERCISED_IN_TESTS"
+
+export GRAPL_API_HOST="localhost"
+export GRAPL_HTTP_FRONTEND_PORT="${NOMAD_UPSTREAM_PORT_web-ui}"
+export GRAPL_TEST_USER_NAME="${var.test_user_name}"
+export GRAPL_SCHEMA_PROPERTIES_TABLE="${var.schema_properties_table_name}"
+
+export HITCACHE_ADDR="${local.redis_host}"
+export HITCACHE_PORT="${local.redis_port}"
+export MESSAGECACHE_ADDR="${local.redis_host}"
+export MESSAGECACHE_PORT="${local.redis_port}"
+export IS_RETRY="False"
+export IS_LOCAL="True"
+
+export DEPLOYMENT_NAME="${var.deployment_name}"
+export GRAPL_LOG_LEVEL="${local.log_level}"
+export MG_ALPHAS="localhost:9080"
+
+cd /mnt/grapl-root
+./pants filter --filter-target-type="python_tests" :: \
+  | xargs ./pants --tag="-needs_work" test --pytest-args="-m \"integration_test\""
+EOF
+          )
+        ]
+      }
+
+      resources {
+        memory = 1024
+      }
+    }
   }
 
-  # TODO: `web-ui-integration-tests`
 }
 
