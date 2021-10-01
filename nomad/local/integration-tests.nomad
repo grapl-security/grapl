@@ -191,10 +191,11 @@ job "integration-tests" {
 
 
       config {
+        image = "${var.container_registry}grapl/python-integration-tests:dev"
         mount {
           type = "volume"
           target = "/mnt/grapl-root"
-          read_only   = false
+          readonly   = false
           source = "grapl-root-volume"
         }
 
