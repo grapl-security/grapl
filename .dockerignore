@@ -7,5 +7,4 @@
 .pids
 .yarn
 build-support/grapl-venv
-src/rust/target/**
 test_artifacts/**

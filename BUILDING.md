@@ -61,13 +61,6 @@ Make `zip` target.
   roughly translate to the [Cargo
 profiles](https://doc.rust-lang.org/cargo/reference/profiles.html) to be used
 for Rust builds.
-- `GRAPL_RUST_ENV_FILE` - File path to a shell script in to be sources for the
-  Rust builds. This can be used to set and override environment variables,
-which can be useful for things like settings for
-[sccache](https://github.com/mozilla/sccache), which is used to for caching. It
-is passed as a [Docker build
-secret](https://docs.docker.com/develop/develop-images/build_enhancements/#new-docker-build-secret-information)
-so it should be suitable secrets like S3 credentials for use with sccache. 
 - `DOCKER_BUILDX_BAKE_OPTS` - Docker images are built using [docker
   buildx](https://github.com/docker/buildx). You can pass additional arguments
 to the `docker buildx build` commands by setting this option (ex: `--progress

@@ -2,14 +2,6 @@ version: "3.8"
 # environment variable PWD is assumed to be grapl root directory
 
 services:
-  rust-integration-tests:
-    image: ${DOCKER_REGISTRY:-docker.io}/grapl/rust-integration-tests:${TAG:-latest}
-    build:
-      context: ${PWD}/src
-      dockerfile: rust/Dockerfile
-      target: build-test
-      args:
-        - RUST_BUILD=test-integration
 
   analyzerlib-integration-tests:
     image: ${DOCKER_REGISTRY:-docker.io}/grapl/analyzerlib-test:${TAG:-latest}

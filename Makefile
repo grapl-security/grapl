@@ -12,15 +12,11 @@ GID = $(shell id -g)
 PWD = $(shell pwd)
 COMPOSE_USER=${UID}:${GID}
 DOCKER_BUILDX_BAKE_OPTS ?=
-ifneq ($(GRAPL_RUST_ENV_FILE),)
-DOCKER_BUILDX_BAKE_OPTS += --set *.secrets=id=rust_env,src="$(GRAPL_RUST_ENV_FILE)"
-endif
 COMPOSE_IGNORE_ORPHANS=1
 COMPOSE_PROJECT_NAME ?= grapl
 export
 
 export EVERY_COMPOSE_FILE=--file docker-compose.yml \
-	--file ./test/docker-compose.unit-tests-rust.yml \
 	--file ./test/docker-compose.unit-tests-js.yml \
 	--file ./test/docker-compose.integration-tests.build.yml \
 	--file ./test/docker-compose.e2e-tests.build.yml \
@@ -128,16 +124,22 @@ help: ## Print this help
 
 ##@ Build 🔨
 
+.PHONY: build-ux
+build-ux: ## Build website assets
+	$(MAKE) -C src/js/engagement_view build
+	cp -r \
+		"${PWD}/src/js/engagement_view/build/." \
+		"${PWD}/src/rust/grapl-web-ui/frontend/"
+
+.PHONY: build-rust
+build-rust: build-ux ## Bust Rust
+	$(MAKE) -C src/rust build
+
+
 .PHONY: build-test-unit
 build-test-unit:
 	$(DOCKER_BUILDX_BAKE) \
-		--file ./test/docker-compose.unit-tests-rust.yml \
 		--file ./test/docker-compose.unit-tests-js.yml
-
-.PHONY: build-test-unit-rust
-build-test-unit-rust:
-	$(DOCKER_BUILDX_BAKE) \
-		--file ./test/docker-compose.unit-tests-rust.yml
 
 .PHONY: build-test-unit-js
 build-test-unit-js:
@@ -148,6 +150,10 @@ build-test-unit-js:
 build-test-typecheck: build-python-wheels
 	$(DOCKER_BUILDX_BAKE) \
 		--file ./test/docker-compose.typecheck-tests.yml
+
+.PHONY: build-test-integration-rust
+build-test-integration-rust:
+	$(MAKE) -C src/rust build-integration-test-image
 
 .PHONY: build-test-integration
 build-test-integration: build-local
@@ -160,21 +166,7 @@ build-test-e2e: build
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.build.yml
 
 .PHONY: build-lambda-zips
-build-lambda-zips: build-lambda-zips-rust build-lambda-zips-js build-lambda-zips-python ## Generate all lambda zip files
-
-.PHONY: build-lambda-zips-rust
-build-lambda-zips-rust: ## Build Rust lambda zips
-	$(DOCKER_BUILDX_BAKE) \
-		--file docker-compose.lambda-zips.rust.yml
-	# Extract the zip from the Docker image.
-	# Rely on the default CMD for copying artifact to /dist mount point.
-	docker-compose \
-		--file docker-compose.lambda-zips.rust.yml \
-		run \
-		--rm \
-		--user "${UID}:${GID}" \
-		--volume="${PWD}/dist":/dist \
-		metric-forwarder-zip
+build-lambda-zips: build-lambda-zips-js build-lambda-zips-python ## Generate all lambda zip files
 
 .PHONY: build-lambda-zips-js
 build-lambda-zips-js: ## Build JS lambda zips
@@ -204,14 +196,14 @@ build-docker-images-local:
 	$(MAKE) build-docker-images
 
 .PHONY: build-docker-images
-build-docker-images: graplctl build-ux
+build-docker-images: graplctl
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
 
 .PHONY: build
-build: build-lambda-zips build-docker-images ## Build Grapl services
+build: build-lambda-zips build-docker-images build-rust ## Build Grapl services
 
 .PHONY: build-local
-build-local: build-lambda-zips build-docker-images-local ## Build Grapl services
+build-local: build-lambda-zips build-docker-images-local build-rust ## Build Grapl services
 
 .PHONY: build-formatter
 build-formatter:
@@ -236,25 +228,16 @@ grapl-template-generator: ## Build the Grapl Template Generator and install it t
 dump-artifacts:  # Run the script that dumps Nomad/Docker logs after test runs
 	./pants run ./etc/ci_scripts/dump_artifacts --run-args="--compose-project=${COMPOSE_PROJECT_NAME}"
 
-.PHONY: build-ux
-build-ux: ## Build website assets
-	$(MAKE) -C src/js/engagement_view build
-	cp -r \
-		"${PWD}/src/js/engagement_view/build/." \
-		"${PWD}/src/rust/grapl-web-ui/frontend/"
-
 ##@ Test 🧪
+
+.PHONY: test-unit-rust
+test-unit-rust:
+	$(MAKE) -C src/rust test
 
 .PHONY: test-unit
 test-unit: export COMPOSE_PROJECT_NAME := grapl-test-unit
-test-unit: export COMPOSE_FILE := ./test/docker-compose.unit-tests-rust.yml:./test/docker-compose.unit-tests-js.yml
-test-unit: build-test-unit test-unit-python test-unit-shell ## Build and run unit tests
-	test/docker-compose-with-error.sh
-
-.PHONY: test-unit-rust
-test-unit-rust: export COMPOSE_PROJECT_NAME := grapl-test-unit-rust
-test-unit-rust: export COMPOSE_FILE := ./test/docker-compose.unit-tests-rust.yml
-test-unit-rust: build-test-unit-rust ## Build and run unit tests - Rust only
+test-unit: export COMPOSE_FILE := ./test/docker-compose.unit-tests-js.yml
+test-unit: build-test-unit test-unit-python test-unit-shell test-unit-rust ## Build and run unit tests
 	test/docker-compose-with-error.sh
 
 .PHONY: test-unit-python
@@ -341,6 +324,14 @@ test-with-env: # (Do not include help text - not to be used directly)
 	$(MAKE) up-detach
 	# Run tests and check exit codes from each test container
 	$${EXEC_TEST_COMMAND}
+
+# .PHONY: codecov-rust
+# codecov-rust: ## Generate code coverage report
+# 	$(MAKE) -C src/rust codecov
+
+# .PHONY: codecov
+# codecov: codecov-rust ## Generate code coverage report
+
 
 ##@ Lint 🧹
 
