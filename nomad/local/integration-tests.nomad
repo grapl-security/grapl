@@ -52,6 +52,10 @@ variable "test_user_name" {
   description = "The name of the test user"
 }
 
+variable "docker_user" {
+  type = string
+  default = "1000:1000"
+}
 #variable "non_root_user" {
 #  type        = string
 #  description = "The username of the person who launched the `make test-integration`"
@@ -180,15 +184,7 @@ job "integration-tests" {
 
     task "python-integration-tests" {
       driver = "docker"
-      #user   = var.non_root_user
-
-#      volume_mount {
-#        volume      = "grapl-root-volume"
-#        destination = "/mnt/grapl-root"
-#        read_only   = false
-#      }
-
-
+      user = var.docker_user
 
       config {
         image = "${var.container_registry}grapl/python-integration-tests:dev"
