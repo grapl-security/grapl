@@ -10,6 +10,13 @@ services:
       target: build-test
       args:
         - RUST_BUILD=test-integration
+  
+  python-integration-tests:
+    image: ${DOCKER_REGISTRY:-docker.io}/grapl/python-integration-tests:${TAG:-latest}
+    build:
+      context: ${PWD}
+      dockerfile: src/python/Dockerfile
+      target: python-integration-tests
 
   # No Docker image for python integration tests - we run them against the Host OS!
 
