@@ -94,7 +94,6 @@ steps:
               config:
                 label: ":pipeline: Upload UX Build"
                 command: "buildkite-agent pipeline upload .buildkite/pipeline.merge.ux-build.yml"
-
   - wait
 
   # Downloads and operates on all the *.grapl-artifacts.json files
