@@ -85,73 +85,10 @@ services:
   ########################################################################
   # Python Services
   ########################################################################
-  model-plugin-deployer:
-    image: grapl/model-plugin-deployer:${TAG:-latest}
-    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
-    command:
-      - |
-        export GRAPL_MODEL_PLUGINS_BUCKET=$$(cat /mnt/pulumi-outputs/model-plugins-bucket)
-        export GRAPL_SCHEMA_TABLE=$$(cat /mnt/pulumi-outputs/schema-table)
-        export GRAPL_SCHEMA_PROPERTIES_TABLE=$$(cat /mnt/pulumi-outputs/schema-properties-table)
-
-        . venv/bin/activate
-        cd /home/grapl/app
-        chalice local \
-          --no-autoreload \
-          --host=0.0.0.0 \
-          --port=${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}
-
-    environment:
-      <<: *aws-env
-      <<: *dgraph-env
-      IS_LOCAL: "True"
-      <<: *log-level
-    tty: true
-    depends_on:
-      pulumi:
-        # We must wait until Pulumi has created the buckets to know what their names are
-        condition: service_completed_successfully
-    volumes:
-      - *read-only-pulumi-mnt
-    ports:
-      - 127.0.0.1:${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}:${GRAPL_MODEL_PLUGIN_DEPLOYER_PORT}
-    networks:
-      default:
-        aliases:
-          - ${GRAPL_MODEL_PLUGIN_DEPLOYER_HOST}
 
   ########################################################################
   # Web Services
   ########################################################################
-
-  graphql-endpoint:
-    image: grapl/graphql-endpoint:${TAG:-latest}
-    entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
-    command:
-      - |
-        export GRAPL_SCHEMA_PROPERTIES_TABLE=$$(cat /mnt/pulumi-outputs/schema-properties-table)
-        export GRAPL_SCHEMA_TABLE=$$(cat /mnt/pulumi-outputs/schema-table)
-        ./start_potentially_with_debugger.sh
-    environment:
-      <<: *aws-env
-      <<: *dgraph-env
-      IS_LOCAL: "True"
-      JWT_SECRET_ID: "JWT_SECRET_ID"
-      PORT: ${GRAPL_GRAPHQL_PORT}
-      DEBUG_SERVICES: "${DEBUG_SERVICES:-}"
-      VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT: "${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}"
-    depends_on:
-      pulumi:
-        condition: service_completed_successfully
-    ports:
-      - 127.0.0.1:${GRAPL_GRAPHQL_PORT}:${GRAPL_GRAPHQL_PORT}
-      - 127.0.0.1:${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}:${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}
-    networks:
-      default:
-        aliases:
-          - ${GRAPL_GRAPHQL_HOST}
-    volumes:
-      - *read-only-pulumi-mnt
 
   grapl-notebook:
     image: grapl/notebook:${TAG:-latest}
@@ -229,6 +166,8 @@ services:
       SHOULD_DEPLOY_INTEGRATION_TESTS: "${SHOULD_DEPLOY_INTEGRATION_TESTS:-False}"
       # This gets exported to True by `make test-e2e`
       SHOULD_DEPLOY_E2E_TESTS: "${SHOULD_DEPLOY_E2E_TESTS:-False}"
+      DOCKER_USER: "${UID}:${GID}"
+      GRAPL_ROOT: "${GRAPL_ROOT}"
       # Other environment variables like MG_ALPHAS are passed in via
       # Pulumi.local-grapl.yaml
     extra_hosts:
