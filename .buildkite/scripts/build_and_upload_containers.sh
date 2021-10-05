@@ -42,7 +42,7 @@ cloudsmith_tag() {
     echo "${CLOUDSMITH_DOCKER_REGISTRY}/${service}:${tag}"
 }
 echo "--- :python: Building analyzer-executor pex binary"
-make build-analyzer-executor
+make build-service-pexs
 
 for service in "${services[@]}"; do
     # Build a single service
