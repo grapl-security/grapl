@@ -10,7 +10,7 @@ services:
       target: build-test
       args:
         - RUST_BUILD=test-integration
-  
+
   python-integration-tests:
     image: ${DOCKER_REGISTRY:-docker.io}/grapl/python-integration-tests:${TAG:-latest}
     build:

@@ -7,7 +7,6 @@
 -include .env
 TAG ?= dev
 RUST_BUILD ?= debug
-USERNAME = $(shell id -u -n)
 UID = $(shell id -u)
 GID = $(shell id -g)
 PWD = $(shell pwd)
@@ -465,7 +464,7 @@ local-pulumi:  ## launch pulumi via docker-compose up
 .PHONY: start-nomad-detach
 start-nomad-detach:  ## Start the Nomad environment, detached
 	$(WITH_LOCAL_GRAPL_ENV)
-	GRAPL_ROOT="${PWD}" nomad/local/start_detach.sh
+	nomad/local/start_detach.sh
 
 .PHONY: stop-nomad-detach
 stop-nomad-detach:  ## Stop Nomad CI environment
