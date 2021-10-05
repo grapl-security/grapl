@@ -53,13 +53,14 @@ variable "test_user_name" {
 }
 
 variable "docker_user" {
-  type = string
-  default = "1000:1000"
+  type        = string
+  description = "The UID:GID pair to run as inside the Docker container"
 }
-#variable "non_root_user" {
-#  type        = string
-#  description = "The username of the person who launched the `make test-integration`"
-#}
+
+variable "grapl_root" {
+  type        = string
+  description = "Where to find the Grapl repo on the host OS (where Nomad runs)."
+}
 
 locals {
   log_level = "DEBUG"
@@ -174,70 +175,58 @@ job "integration-tests" {
       }
     }
 
-#    volume "grapl-root-volume" {
-#      # The definition of this `grapl-root-volume` is written as a Nomad agent
-#      # config in `start_detach.sh`
-#      type      = "host"
-#      source    = "grapl-root-volume"
-#      read_only = false
-#    }
-
     task "python-integration-tests" {
       driver = "docker"
-      user = var.docker_user
+      user   = var.docker_user
 
       config {
         image = "${var.container_registry}grapl/python-integration-tests:dev"
-        mount {
-          type = "volume"
-          target = "/mnt/grapl-root"
-          readonly   = false
-          source = "grapl-root-volume"
-        }
+        # Pants caches requirements per-user. So when we run a Docker container
+        # with the host's userns, this lets us reuse the pants cache.
+        # (This descreases runtime on my personal laptop from 390s to 190s)
+        userns_mode = "host"
 
-        command = "/bin/bash"
-        args = [
-          "-o", "errexit", "-o", "nounset", "-c",
-          trimspace(<<EOF
-cd /mnt/grapl-root
-./pants filter --filter-target-type="python_tests" :: \
-  | xargs ./pants --tag="-needs_work" test --pytest-args="-m \"integration_test\""
-EOF
-          )
-        ]
+        mount {
+          # Just to clarify, this is all Docker-verbiage mounts and binds.
+          # Nothing Nomad-y about it.
+          type     = "bind"
+          source   = var.grapl_root
+          target   = "/mnt/grapl-root"
+          readonly = false
+        }
       }
 
       env {
-         AWS_REGION="${var.aws_region}"
-         GRAPL_AWS_ENDPOINT="${local.aws_endpoint}"
-         GRAPL_AWS_ACCESS_KEY_ID="${var.aws_access_key_id}"
-         GRAPL_AWS_ACCESS_KEY_SECRET="${var.aws_access_key_secret}"
+        AWS_REGION                  = "${var.aws_region}"
+        GRAPL_AWS_ENDPOINT          = "${local.aws_endpoint}"
+        GRAPL_AWS_ACCESS_KEY_ID     = "${var.aws_access_key_id}"
+        GRAPL_AWS_ACCESS_KEY_SECRET = "${var.aws_access_key_secret}"
 
         # These environment vars need to exist but the values aren't actually exercised
-         GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET="NOT_ACTUALLY_EXERCISED_IN_TESTS"
-         GRAPL_ANALYZERS_BUCKET="NOT_ACTUALLY_EXERCISED_IN_TESTS"
-         GRAPL_MODEL_PLUGINS_BUCKET="NOT_ACTUALLY_EXERCISED_IN_TESTS"
+        GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
+        GRAPL_ANALYZERS_BUCKET                  = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
+        GRAPL_MODEL_PLUGINS_BUCKET              = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
 
-         GRAPL_API_HOST="localhost"
-         GRAPL_HTTP_FRONTEND_PORT="${NOMAD_UPSTREAM_PORT_web-ui}"
-         GRAPL_TEST_USER_NAME="${var.test_user_name}"
-         GRAPL_SCHEMA_PROPERTIES_TABLE="${var.schema_properties_table_name}"
+        GRAPL_API_HOST                = "localhost"
+        GRAPL_HTTP_FRONTEND_PORT      = "${NOMAD_UPSTREAM_PORT_web-ui}"
+        GRAPL_TEST_USER_NAME          = "${var.test_user_name}"
+        GRAPL_SCHEMA_PROPERTIES_TABLE = "${var.schema_properties_table_name}"
 
-         HITCACHE_ADDR="${local.redis_host}"
-         HITCACHE_PORT="${local.redis_port}"
-         MESSAGECACHE_ADDR="${local.redis_host}"
-         MESSAGECACHE_PORT="${local.redis_port}"
-         IS_RETRY="False"
-         IS_LOCAL="True"
+        HITCACHE_ADDR     = "${local.redis_host}"
+        HITCACHE_PORT     = "${local.redis_port}"
+        MESSAGECACHE_ADDR = "${local.redis_host}"
+        MESSAGECACHE_PORT = "${local.redis_port}"
+        IS_RETRY          = "False"
+        IS_LOCAL          = "True"
 
-         DEPLOYMENT_NAME="${var.deployment_name}"
-         GRAPL_LOG_LEVEL="${local.log_level}"
-         MG_ALPHAS="localhost:9080"
+        DEPLOYMENT_NAME = "${var.deployment_name}"
+        GRAPL_LOG_LEVEL = "${local.log_level}"
+        MG_ALPHAS       = "localhost:9080"
 
       }
 
       resources {
-        memory = 1024
+        memory = 2048
       }
     }
   }
