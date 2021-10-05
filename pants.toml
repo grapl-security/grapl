@@ -23,6 +23,10 @@ build_file_prelude_globs = [
 ]
 
 pants_ignore = [
+  # Unless we block this, it causes a Pants exception on the file-watcher like:
+  # "Exception: Failed to watch filesystem for `<somepath>/.npm/_cacache/content-v2/sha512/87/d2`: 
+  #   Error { kind: Io(Os { code: 28, kind: Other, message: "No space left on device" }), paths: [] }
+  "src/js/engagement_view/.npm"
 ]
 
 plugins = [
