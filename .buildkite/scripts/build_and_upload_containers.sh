@@ -41,8 +41,10 @@ cloudsmith_tag() {
     local -r tag="${2}"
     echo "${CLOUDSMITH_DOCKER_REGISTRY}/${service}:${tag}"
 }
-echo "--- :python: Building required Python wheels"
-make build-python-wheels
+
+# These are then consumed by src/python/Dockerfile
+echo "--- :python: Building pex binaries"
+make build-service-pexs
 
 for service in "${services[@]}"; do
     # Build a single service

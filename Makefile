@@ -149,13 +149,8 @@ build-test-unit-js:
 	$(DOCKER_BUILDX_BAKE) \
 		--file ./test/docker-compose.unit-tests-js.yml
 
-.PHONY: build-test-typecheck
-build-test-typecheck: build-python-wheels
-	$(DOCKER_BUILDX_BAKE) \
-		--file ./test/docker-compose.typecheck-tests.yml
-
 .PHONY: build-test-integration
-build-test-integration: build-local
+build-test-integration: build
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.integration-tests.build.yml
 
@@ -196,17 +191,8 @@ build-lambda-zips-js: ## Build JS lambda zips
 		graphql-endpoint-zip
 
 .PHONY: build-lambda-zips-python
-build-lambda-zips-python: build-python-wheels ## Build Python lambda zips
+build-lambda-zips-python: ## Build Python lambda zips
 	./pants filter --target-type=python_awslambda :: | xargs ./pants package
-
-.PHONY: build-python-wheels
-build-python-wheels:  ## Build all Python wheels
-	./pants filter --target-type=python_distribution :: | xargs ./pants package
-
-.PHONY: build-docker-images-local
-build-docker-images-local:
-	$(WITH_LOCAL_GRAPL_ENV) \
-	$(MAKE) build-docker-images
 
 .PHONY: build-docker-images
 build-docker-images: graplctl build-ux
@@ -214,9 +200,6 @@ build-docker-images: graplctl build-ux
 
 .PHONY: build
 build: build-lambda-zips build-docker-images ## Build Grapl services
-
-.PHONY: build-local
-build-local: build-lambda-zips build-docker-images-local ## Build Grapl services
 
 .PHONY: build-formatter
 build-formatter:
@@ -414,7 +397,7 @@ up: build ## Build Grapl services and launch docker-compose up
 	docker-compose -f docker-compose.yml up
 
 .PHONY: up-detach
-up-detach: build-local ## Bring up local Grapl and detach to return control to tty
+up-detach: build ## Bring up local Grapl and detach to return control to tty
 	# Primarily used for bringing up an environment for integration testing.
 	# For use with a project name consider setting COMPOSE_PROJECT_NAME env var
 	# Usage: `make up-detach`
