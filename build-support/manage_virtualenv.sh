@@ -99,18 +99,24 @@ EOF
 
 }
 
-case "${1:-help}" in
-    populate)
-        populate
-        ;;
-    regenerate-constraints)
-        regenerate_constraints
-        ;;
-    help)
-        usage
-        ;;
-    *)
-        usage
-        exit 1
-        ;;
-esac
+REPOSITORY_ROOT=$(git rev-parse --show-toplevel)
+readonly REPOSITORY_ROOT
+
+(
+    cd "${REPOSITORY_ROOT}"
+    case "${1:-help}" in
+        populate)
+            populate
+            ;;
+        regenerate-constraints)
+            regenerate_constraints
+            ;;
+        help)
+            usage
+            ;;
+        *)
+            usage
+            exit 1
+            ;;
+    esac
+)
