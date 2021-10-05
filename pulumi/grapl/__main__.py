@@ -239,7 +239,6 @@ def main() -> None:
                         "aws_region",
                         "deployment_name",
                         # integration-test only
-                        # "non_root_user",  # integration-test only
                         "schema_properties_table_name",
                         "test_user_name",
                         "grapl_root",
@@ -252,7 +251,6 @@ def main() -> None:
                     _kafka_endpoint=kafka_endpoint,
                     grapl_root=os.environ["GRAPL_ROOT"],
                     docker_user=os.environ["DOCKER_USER"],
-                    # non_root_user=os.environ["NON_ROOT_USER"],
                     **grapl_core_job_vars_inputs,
                     **nomad_inputs,
                 )
