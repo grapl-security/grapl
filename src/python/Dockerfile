@@ -66,3 +66,6 @@ RUN mkdir -p /tmp/pants/setup && chmod -R 777 /tmp/pants/setup
 ENV PANTS_NAMED_CACHES_DIR=/tmp/pants/named_caches
 ENV PANTS_LOCAL_STORE_DIR=/tmp/pants/lmdb_store
 ENV PANTS_SETUP_CACHE=/tmp/pants/setup
+
+# grapl-root is mounted by Nomad.
+ENTRYPOINT ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c", "cd /mnt/grapl-root && ./pants filter --filter-target-type='python_tests' :: | xargs ./pants --tag='-needs_work' test --pytest-args='-m integration_test'"]
