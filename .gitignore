@@ -35,6 +35,8 @@ src/js/engagement_view/.yarn/*
 !src/js/engagement_view/.yarn/versions
 src/js/engagement_view/coverage
 
+# Web UI frontend artifacts
+src/rust/grapl-web-ui/frontend/*
 
 # Distribution / packaging
 build/
