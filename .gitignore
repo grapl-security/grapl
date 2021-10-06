@@ -26,6 +26,14 @@ node_modules/
 
 # Yarn packages
 src/js/engagement_view/.yarn/install-state.gz
+src/js/engagement_view/.npm/*
+src/js/engagement_view/.yarn/*
+!src/js/engagement_view/.yarn/cache
+!src/js/engagement_view/.yarn/releases
+!src/js/engagement_view/.yarn/plugins
+!src/js/engagement_view/.yarn/sdks
+!src/js/engagement_view/.yarn/versions
+src/js/engagement_view/coverage
 
 
 # Distribution / packaging
