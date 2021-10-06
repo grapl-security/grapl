@@ -6,20 +6,36 @@ use crate::org_management::organization_manager_server::{OrganizationManager, Or
 use crate::org_management;
 
 use org_management::{
-    CreateOrgReply,
+    EmptyResp,
     CreateOrgRequest,
     CreateUserRequest,
-    CreateUserReply,
     ChangePasswordRequest,
-    ChangePasswordReply
 };
 
 use sqlx::{Pool};
 use sqlx::postgres::{PgPoolOptions, Postgres};
 
+
 #[derive(Debug)]
 pub struct OrganizationManagerRpc {
     pool: Pool<Postgres>,
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum OrganizationManagerError {
+    #[error("sql")]
+    Sql(#[from]sqlx::Error)
+}
+
+
+impl From<OrganizationManagerError> for Status {
+    fn from(e: OrganizationManagerError) -> Self {
+        match e {
+            OrganizationManagerError::Sql(e) => {
+                Status::internal(e.to_string())
+            }
+        }
+    }
 }
 
 #[tonic::async_trait]
@@ -27,12 +43,11 @@ impl OrganizationManager for OrganizationManagerRpc {
     async fn create_org(
         &self,
         request: Request<CreateOrgRequest>,
-    ) -> Result<Response<CreateOrgReply>, Status> {
-        println!("Org request data: {:?}", &request); // don't actually print this
+    ) -> Result<Response<EmptyResp>, Status> {
+        println!("Org request data: {:?}", &request);
 
-
-        let org_id = Uuid::new_v4();
-        let admin_id = Uuid::new_v4();
+        let org_id = Uuid::new_v4().to_string();
+        let user_id = Uuid::new_v4().to_string();
 
         let CreateOrgRequest {
             org_display_name,
@@ -42,98 +57,102 @@ impl OrganizationManager for OrganizationManagerRpc {
             should_reset_password,
         } = &request.into_inner();
 
-        // let conn = create_db_connection();
 
-
-        // store data in sql with new org id
-
-        // let reply = CreateOrgReply {
-        //     organization_id: format!("Org Id {} Created", org_id).into(),
-        //     admin_user_id: format!("Org Id {} Created", admin_id).into(),
-        // };
-
-        // let row: (i64, ) = sqlx::query_as(
-        // "insert into organization (name) values ($1) returning id"
-        // )
-        //     .bind("new organization")
-        //     .fetch_one(self.pool)
-        //     .await?;
-        //
-
-        let number_of_rows_effected = sqlx::query_as(
-            "INSERT INTO organization ( org_display_name, admin_username, admin_email, admin_password, should_reset_password) VALUES ($1, $2, $3, $4, $5)",
+        let row = sqlx::query!(r
+            "INSERT INTO organization (
+                org_id,
+                user_id,
+                org_display_name,
+                admin_username,
+                admin_email,
+                admin_password,
+                should_reset_password
+           )
+                VALUES ( $1, $2, $3, $4, $5, $6, $7 )
+           ",
+                &org_id,
+                &user_id,
+                &org_display_name,
+                &admin_username,
+                &admin_email,
+                &admin_password,
+                &should_reset_password,
         )
-            .bind("new organization")
+            // .bind("new organization")
+            // .execute(&self.pool)
             .fetch_one(&self.pool)
-            .await?;
+            .await
+            .map_err(OrganizationManagerError::from)?;
 
+        if row.rows_affected() == 0 {
+            return Err(Status::internal("Organization was not created successfully"));
+        }
 
-        // let number_of_rows_affected = &conn.execute(
-        //     "INSERT INTO organization ( org_display_name, admin_username, admin_email, admin_password, should_reset_password) VALUES ($1, $2, $3, $4, $5)",
-        //     &[
-        //         &org_display_name,
-        //         &admin_username,
-        //         &admin_email,
-        //         &admin_password,
-        //         &should_reset_password,
-        //     ]
-        // )
-        //     .unwrap();
-
-        let reply = if number_of_rows_effected == &(0 as u64) {
-            CreateOrgReply {
-                message: format!(
-                    "Fail to create org with id {}.",
-                    &org_id
-                ),
-            }
-        } else {
-            CreateOrgReply {
-                message: format!(
-                    "Create {} org with id {}.",
-                    &number_of_rows_effected, &org_id
-                ),
-            }
-        };
-
-        Ok(Response::new(reply))
+        Ok(Response::new(EmptyResp {}))
     }
 
     async fn create_user(
         &self,
         request: Request<CreateUserRequest>,
-    ) -> Result<Response<CreateUserReply>, Status>{
+    ) -> Result<Response<EmptyResp>, Status> {
         println!("Org request data: {:?}", &request); // don't actually print this
 
-        let org_id = Uuid::new_v4();
-        let user_id = Uuid::new_v4();
+        let user_id = Uuid::new_v4().to_string();
 
-        let user_reply = CreateUserReply{
-            organization_id: format!("Org ID {} Created", org_id).into(),
-            user_id: format!("Org Id {} Created", user_id).into()
-        };
+        let CreateUserRequest {
+            organization_id,
+            name,
+            email,
+            password
+        } = &request.into_inner();
 
-        Ok(Response::new(user_reply))
+        let row = sqlx::query!(
+            "INSERT INTO user ( org_id, name, email, password) \
+                VALUES ($1, $2, $3, $4)",
+                &organization_id,
+                &name,
+                &email,
+                &password
+        )
+            .bind("new user")
+            .execute(&self.pool)
+            .await
+            .map_err(OrganizationManagerError::from)?;
+
+        if row.rows_affected() == 0 {
+            return Err(Status::internal("Organization was not created successfully"));
+        }
+
+        Ok(Response::new(EmptyResp {}))
     }
 
     async fn change_password(
         &self,
         request: Request<ChangePasswordRequest>,
-    ) -> Result<Response<ChangePasswordReply>, Status>{
+    ) -> Result<Response<EmptyResp>, Status> {
         println!("Changed password for user x: {:?}", request); // don't actually print this
 
-        // alter sql
-        let temp_pass = "true";
+        // check to see if old password matches what we have in db
+        // if it passes, update with new password
+        let row = sqlx::query!(
+            "UPDATE users SET password = $2 WHERE user_id = $1",
+                 &user_id,
+                &organization_id,
+                &old_password,
+                &new_password
+        )
+            .bind("new user")
+            .execute(&self.pool)
+            .await
+            .map_err(OrganizationManagerError::from)?;
 
-        let password_reply = ChangePasswordReply{
-            changed_password: format!("Org Id {} Created", temp_pass)
-        };
+        if row.rows_affected() == 0 {
+            return Err(Status::internal("Organization was not created successfully"));
+        }
 
-        Ok(Response::new(password_reply))
+        Ok(Response::new(EmptyResp {}))
     }
 }
-
-
 
 
 #[tracing::instrument(err)]
@@ -142,9 +161,11 @@ pub async fn start_server() -> Result<(), Box<dyn std::error::Error>> {
     let pool =
         create_db_connection()
             .await?;
+
     let org = OrganizationManagerRpc { pool };
 
     tracing::info!(message="Listening on address", addr=?addr);
+
     Server::builder()
         .add_service(OrganizationManagerServer::new(org))
         .serve(addr)
@@ -155,8 +176,10 @@ pub async fn start_server() -> Result<(), Box<dyn std::error::Error>> {
 
 #[tracing::instrument(err)]
 async fn create_db_connection() -> Result<Pool<Postgres>, sqlx::Error> {
-    let url = std::env::var("POSTGRES_URL")
-        .expect("POSTGRES_URL");
+    let url = std::env::var("DATABASE_URL")
+        .expect("DATABASE_URL");
+
+    println!("databse url {}", url);
 
     tracing::info!(message="connecting to postgres", url=%url);
     // Create Connection Pool

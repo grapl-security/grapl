@@ -371,12 +371,12 @@ services:
     image: grapl/org-management-postgres-db:${TAG:-latest}
     restart: always
     tty: false
-#    ports:
-#      - 127.0.0.1:5432:5432
+    ports:
+      - 127.0.0.1:5432:5432
     environment:
-      POSTGRES_USER:
-      POSTGRES_PASSWORD:
-      POSTGRES_DB:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     healthcheck:
       test: ["CMD", "pg_isready", "-q", "-d", "postgres", "-U", "postgres"]
       retries: 5
@@ -394,7 +394,7 @@ services:
     command:
       - /org-management
     environment:
-      POSTGRES_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@orgdb.grapl.test:5432/${POSTGRES_DB}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@orgdb.grapl.test:5432/${POSTGRES_DB}
       <<: *aws-env
       <<: *log-level
       <<: *rust-backtrace

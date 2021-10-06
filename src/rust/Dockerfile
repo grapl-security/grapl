@@ -179,7 +179,7 @@ COPY --from=build /outputs/org-management /
 ENTRYPOINT ["/org-management"]
 
 # pull official base image
-FROM postgres:13-alpine AS org-management-postgres-deploy
+FROM postgres:13-alpine AS org-management-postgres-db-deploy
 
 # run init.sql
 COPY rust/init.sql /docker-entrypoint-initdb.d/
