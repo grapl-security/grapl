@@ -40,14 +40,3 @@ RUN mkdir -p /home/grapl/etc/sample_data
 COPY --chown=grapl ./etc/sample_data/eventlog.xml etc/sample_data/eventlog.xml
 
 RUN unzip lambda.zip
-
-
-# provisioner
-################################################################################
-FROM grapl-python-runner-base AS provisioner
-
-COPY --chown=grapl ./dist/provisioner-lambda.zip lambda.zip
-
-RUN unzip lambda.zip
-
-CMD ["python3", "-c", "import lambdex_handler; lambdex_handler.handler(None, None)"]

@@ -134,5 +134,5 @@ services:
     image: grapl/provisioner:${TAG:-latest}
     build:
       context: .
-      dockerfile: ./src/python/lambdas.Dockerfile
+      dockerfile: ./src/python/Dockerfile
       target: provisioner

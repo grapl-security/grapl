@@ -132,6 +132,7 @@ help: ## Print this help
 build-service-pexs:
 	./pants package ./src/python/analyzer_executor/src
 	./pants package ./src/python/engagement-creator/engagement_creator:pex
+	./pants package ./src/python/provisioner/provisioner:pex
 
 .PHONY: build-test-unit
 build-test-unit:
@@ -196,6 +197,7 @@ build-lambda-zips-python: ## Build Python lambda zips
 
 .PHONY: build-docker-images
 build-docker-images: graplctl build-ux
+	echo "--- Building Docker images"
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
 
 .PHONY: build

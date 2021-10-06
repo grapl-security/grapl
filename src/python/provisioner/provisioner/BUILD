@@ -2,9 +2,9 @@ python_library(
     sources=["*.py"]
 )
 
-python_awslambda(
-    name="lambda",
-    output_path="provisioner-lambda.zip",
-    runtime="python3.7",
-    handler="./app.py:provision",
+pex_binary(
+    name="pex",
+    output_path="provisioner.pex",
+    entry_point="./app.py:provision",
+    execution_mode="venv",
 )
