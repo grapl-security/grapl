@@ -1,7 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
+THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
 GRAPL_ROOT="$(git rev-parse --show-toplevel)"
+
+# shellcheck source-path=SCRIPTDIR
+source "${THIS_DIR}/nomad_cli_tools.sh"
 
 echo "--- Deploying Nomad local infrastructure."
 
@@ -21,5 +25,7 @@ nomad job run \
     -var "FAKE_AWS_ACCESS_KEY_ID=${FAKE_AWS_ACCESS_KEY_ID}" \
     -var "FAKE_AWS_SECRET_ACCESS_KEY=${FAKE_AWS_SECRET_ACCESS_KEY}" \
     "${GRAPL_ROOT}"/nomad/local/grapl-local-infra.nomad
+
+check_for_task_failures_in_job "grapl-local-infra"
 
 echo "--- Nomad local-infra deployed!"
