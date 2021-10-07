@@ -1,0 +1,14 @@
+# As recommended by https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored
+.yarn/*
+.npm/*
+!.yarn/patches
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+
+# We use this with Docker volumes for storing build state and cache
+!.yarn/state/.gitignore
+
+/coverage
+
