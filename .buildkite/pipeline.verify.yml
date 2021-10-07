@@ -27,14 +27,11 @@ steps:
 
   - label: ":rust: rustfmt"
     command:
-      - cd src/rust
-      - rustup set profile default
-      - bin/format --check
+      - make format-rust
 
   - label: ":rust: Linting"
     command:
-      - cd src/rust
-      - bin/lint
+      - make lint-rust
     agents:
       queue: "beefy"
 

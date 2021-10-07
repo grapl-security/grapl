@@ -315,7 +315,7 @@ test-with-env: # (Do not include help text - not to be used directly)
 
 .PHONY: lint-rust
 lint-rust: ## Run Rust lint checks
-	cd src/rust; bin/format --check; bin/lint
+	$(MAKE) -C src/rust lint
 
 .PHONY: lint-python
 lint-python: ## Run Python lint checks
@@ -353,7 +353,7 @@ lint: lint-python lint-prettier lint-rust lint-shell lint-hcl lint-proto lint-pr
 
 .PHONY: format-rust
 format-rust: ## Reformat all Rust code
-	cd src/rust; bin/format --update
+	$(MAKE) -C src/rust format
 
 .PHONY: format-python
 format-python: ## Reformat all Python code
