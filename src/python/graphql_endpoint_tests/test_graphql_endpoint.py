@@ -42,7 +42,7 @@ class TestGraphqlEndpoint(TestCase):
     @hypothesis.given(
         asset_props=asset_props_strategy(),
     )
-    @hypothesis.settings(deadline=None)
+    @hypothesis.settings(deadline=None, max_examples=25)
     def test_create_lens_shows_up_in_graphql(
         self,
         asset_props: AssetProps,

@@ -147,8 +147,8 @@ job "integration-tests" {
 
   group "python-integration-tests" {
     restart {
-      # I guess I can let it try 2x
-      attempts = 1
+      # Make this a one-shot job. Absolute worst case, Buildkite reruns it for us.
+      attempts = 0
     }
 
     network {
@@ -193,6 +193,18 @@ job "integration-tests" {
           source   = var.grapl_root
           target   = "/mnt/grapl-root"
           readonly = false
+        }
+
+        mount {
+          type = "volume"
+          target = "/mnt/pants-cache"
+          source = "pants-cache-volume"
+          readonly = false
+          volume_options {
+            # Upon initial creation of this volume, *do* copy in the current
+            # contents in the Docker image.
+            no_copy = false
+          }
         }
       }
 
