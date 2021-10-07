@@ -43,7 +43,6 @@ def _container_names_by_prefix(prefix: str) -> List[str]:
             " got a cancellation signal between bringing up Nomad and"
             " deploying Pulumi."
         )
-        raise ValueError()
     return containers
 
 
