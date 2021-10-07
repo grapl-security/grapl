@@ -6,5 +6,5 @@ if [[ "$DEBUG_SERVICES" == *"$SUBSTRING"* ]]; then
     node --inspect="0.0.0.0:${VSC_DEBUGGER_PORT_FOR_GRAPHQL_ENDPOINT}" server.js
 else
     echo "Starting sans debugger"
-    yarn start
+    node server.js
 fi

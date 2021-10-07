@@ -71,9 +71,15 @@ steps:
       - make test-typecheck
 
   # TODO: Consider beefy queue
-  - label: ":typescript::docker: Unit Tests"
+  - label: ":typescript::docker: GraphQL Endpoint Unit Tests"
     command:
-      - make test-unit-js
+      - make test-unit-graphql-endpoint
+    plugins:
+      - grapl-security/codecov#v0.1.0
+
+  - label: ":typescript::docker: Engagement View Unit Tests"
+    command:
+      - make test-unit-engagement-view
     plugins:
       - grapl-security/codecov#v0.1.0
 

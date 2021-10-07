@@ -97,13 +97,6 @@ services:
   # Web Services
   ########################################################################
 
-  graphql-endpoint:
-    image: grapl/graphql-endpoint:${TAG:-latest}
-    build:
-      context: src/js/graphql_endpoint
-      dockerfile: Dockerfile
-      target: graphql-endpoint-deploy
-
   notebook:
     image: grapl/notebook:${TAG:-latest}
     build:
