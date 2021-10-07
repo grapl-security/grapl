@@ -12,6 +12,10 @@ source "${THIS_DIR}/nomad_cli_tools.sh"
 readonly job_to_dispatch="${1}"
 readonly mins_to_wait="${2}"
 
+# We have to make sure grapl-provision completes before we execute any
+# further jobs
+await_nomad_job_finish "grapl-provision" 60 "Grapl Provision"
+
 # Now we have to actually dispatch a job; Pulumi simply uploaded
 # the jobspec, since it's a Parameterized Batch Job.
 echo -e "\n+++ Dispatching Nomad job: ${job_to_dispatch}"
@@ -20,7 +24,7 @@ job_id=$(nomad_dispatch "${job_to_dispatch}")
 echo "You can view job progress at $(url_to_nomad_job_in_ui "${job_id}")"
 
 dispatch_timed_out=0
-await_nomad_dispatch_finish \
+await_nomad_job_finish \
     "${job_id}" \
     $((mins_to_wait * 60)) \
     "${job_to_dispatch}" ||

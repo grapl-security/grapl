@@ -51,7 +51,7 @@ EOF
     echo "${job_summary}"
 }
 
-nomad_dispatch_status() {
+nomad_job_status() {
     # returns one of "pending", "running", "dead".
     # useful for knowing if your Dispatch is still running.
     local -r job_id="${1}"
@@ -59,7 +59,7 @@ nomad_dispatch_status() {
     echo "${curl_result}" | jq -r ".Status"
 }
 
-await_nomad_dispatch_finish() {
+await_nomad_job_finish() {
     # Just keep trying until the Dispatch has run to completion (or timeout)
     local -r job_id=$1
     local -r attempts=$2 # in sleep-seconds
@@ -68,7 +68,7 @@ await_nomad_dispatch_finish() {
     local status
     # The below could be replaced with blocking queries on Nomad.
     for i in $(seq 1 "${attempts}"); do
-        status=$(nomad_dispatch_status "${job_id}")
+        status=$(nomad_job_status "${job_id}")
         if [ "${status}" = "dead" ]; then
             echo >&2 -ne "\n${label} complete\n"
             return 0
