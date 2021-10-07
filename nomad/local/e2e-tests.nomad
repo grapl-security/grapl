@@ -159,8 +159,6 @@ EOF
 
       config {
         image      = "${var.container_registry}grapl/e2e-tests:dev"
-        entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
-        command    = "python3 -c 'import lambdex_handler; lambdex_handler.handler(None, None)'"
       }
 
       env {

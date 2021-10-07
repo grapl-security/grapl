@@ -5,5 +5,5 @@ services:
     image: grapl/e2e-tests:${TAG:-latest}
     build:
       context: .
-      dockerfile: ./src/python/lambdas.Dockerfile
+      dockerfile: ./src/python/Dockerfile
       target: e2e-tests

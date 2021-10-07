@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import sys
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import boto3
 from argon2 import PasswordHasher
@@ -96,7 +96,7 @@ def _retrieve_test_user_password(
     )["SecretString"]
 
 
-def provision(event: Any = None, context: Any = None) -> None:
+def provision() -> None:
     LOGGER.info("provisioning grapl")
 
     graph_client = GraphClient()

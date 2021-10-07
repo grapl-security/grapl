@@ -34,6 +34,20 @@ FROM grapl-python-base AS provisioner
 COPY ./dist/provisioner.pex /home/grapl/
 CMD ["./provisioner.pex"]
 
+# e2e tests
+################################################################################
+FROM grapl-python-base AS e2e-tests
+COPY ./dist/e2e-tests.pex /home/grapl/
+CMD ["./e2e-tests.pex"]
+# Copy in the contents of `etc` in order to upload them during e2e tests
+RUN mkdir -p /home/grapl/etc
+COPY --chown=grapl ./etc/local_grapl etc/local_grapl
+RUN mkdir -p /home/grapl/etc/sample_data
+COPY --chown=grapl ./etc/sample_data/eventlog.xml etc/sample_data/eventlog.xml
+# Copy in `graplctl`, which does the actual uploading during e2e
+RUN mkdir -p /home/grapl/bin
+COPY --chown=grapl ./bin/graplctl /home/grapl/bin/graplctl
+ENV PATH=/home/grapl/bin:$PATH
 
 # grapl-notebook
 ################################################################################
