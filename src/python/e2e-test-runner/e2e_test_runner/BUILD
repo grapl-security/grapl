@@ -7,7 +7,7 @@ pex_binary(
     name="pex",
     output_path="e2e-tests.pex",
     entry_point="./main.py:main",
-    #execution_mode="venv",
+    execution_mode="venv",
     
     # Explicit `dependencies` needed, because `pytest` picks up tests
     # dynamically, not by explicit imports

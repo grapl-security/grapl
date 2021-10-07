@@ -158,7 +158,7 @@ EOF
       driver = "docker"
 
       config {
-        image      = "${var.container_registry}grapl/e2e-tests:dev"
+        image = "${var.container_registry}grapl/e2e-tests:dev"
       }
 
       env {
