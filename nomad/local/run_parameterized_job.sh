@@ -12,7 +12,7 @@ source "${THIS_DIR}/nomad_cli_tools.sh"
 readonly job_to_dispatch="${1}"
 readonly mins_to_wait="${2}"
 
-# We have to make sure grapl-provision completes before we execute any 
+# We have to make sure grapl-provision completes before we execute any
 # further jobs
 await_nomad_job_finish "grapl-provision" 60 "Grapl Provision"
 
