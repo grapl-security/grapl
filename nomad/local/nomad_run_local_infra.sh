@@ -13,7 +13,7 @@ echo "--- Deploying Nomad local infrastructure."
 # shellcheck disable=SC2016
 timeout 120 bash -c -- 'while [[ -z $(nomad status 2>&1 | grep running) ]]; do printf "Waiting for nomad-agent\n";sleep 1;done'
 
-nomad job run \
+nomad job run -verbose \
     -var "KAFKA_JMX_PORT=${KAFKA_JMX_PORT}" \
     -var "KAFKA_BROKER_PORT=${KAFKA_BROKER_PORT}" \
     -var "KAFKA_BROKER_PORT_FOR_HOST_OS=${KAFKA_BROKER_PORT_FOR_HOST_OS}" \
@@ -22,6 +22,8 @@ nomad job run \
     -var "FAKE_AWS_ACCESS_KEY_ID=${FAKE_AWS_ACCESS_KEY_ID}" \
     -var "FAKE_AWS_SECRET_ACCESS_KEY=${FAKE_AWS_SECRET_ACCESS_KEY}" \
     "${GRAPL_ROOT}"/nomad/local/grapl-local-infra.nomad
+
+echo "Nomad Job Run complete, checking for task failures"
 
 check_for_task_failures_in_job "grapl-local-infra"
 
