@@ -510,13 +510,3 @@ update-buildkite-shared: ## Pull in changes from grapl-security/buildkite-common
 .PHONY: build-docs
 build-docs: ## Build the Sphinx docs
 	./docs/build_docs.sh
-
-.PHONY: local-graplctl-setup
-local-graplctl-setup: ## Upload analyzers and data to a running Local Grapl (make sure to have done `make up` first)
-	COMPOSE_PROJECT_NAME=grapl \
-	COMPOSE_DOCKER_CLI_BUILD=1 \
-	DOCKER_BUILDKIT=1 \
-	docker-compose --env-file=local-grapl.env \
-	--file=docker-compose.yml \
-	--file=docker-compose.local-dev.yml \
-	run local-graplctl

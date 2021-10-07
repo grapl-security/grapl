@@ -6,102 +6,8 @@
 version: "3.8"
 volumes:
   dgraph_export:
-  pulumi_outputs:
-    # This volume will be used to output Pulumi stack outputs that may
-    # need to be accessible in test containers.
-
-x-common-variables:
-  read-only-pulumi-mnt: &read-only-pulumi-mnt
-    type: volume
-    source: pulumi_outputs
-    target: /mnt/pulumi-outputs
-    read_only: true
-  aws-env: &aws-env
-    GRAPL_AWS_ENDPOINT: ${GRAPL_AWS_ENDPOINT}
-    GRAPL_AWS_ACCESS_KEY_ID: ${GRAPL_AWS_ACCESS_KEY_ID}
-    GRAPL_AWS_ACCESS_KEY_SECRET: ${GRAPL_AWS_ACCESS_KEY_SECRET}
-    AWS_DEFAULT_REGION: ${AWS_REGION} # boto3 prefers this one
-    AWS_REGION: ${AWS_REGION}
-  dgraph-env: &dgraph-env
-    MG_ALPHAS: ${MG_ALPHAS}
-  log-level: &log-level
-    GRAPL_LOG_LEVEL: "${GRAPL_LOG_LEVEL:-ERROR}"
-    RUST_LOG: "${RUST_LOG:-ERROR}"
-  rust-backtrace: &rust-backtrace
-    RUST_BACKTRACE: ${RUST_BACKTRACE}
 
 services:
-  ########################################################################
-  # Rust Services
-  ########################################################################
-
-  sysmon-generator:
-    image: grapl/sysmon-generator:${TAG:-latest}
-    tty: false
-    entrypoint: ["/busybox/sh", "-o", "errexit", "-o", "nounset", "-c"]
-    command:
-      - |
-        # TODO: Rename this variable to be in line with our others?
-        export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/unid-subgraphs-generated-bucket)
-        export DEAD_LETTER_QUEUE_URL=$$(cat /mnt/pulumi-outputs/sysmon-generator-retry-queue)
-        export SOURCE_QUEUE_URL=$$(cat /mnt/pulumi-outputs/sysmon-generator-queue)
-        /sysmon-generator
-    environment:
-      <<: *aws-env
-      REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
-      <<: *log-level
-      <<: *rust-backtrace
-    depends_on:
-      pulumi:
-        # We must wait until Pulumi has created the buckets to know what their names are
-        condition: service_completed_successfully
-    volumes:
-      - *read-only-pulumi-mnt
-
-  osquery-generator:
-    image: grapl/osquery-generator:${TAG:-latest}
-    tty: false
-    entrypoint: ["/busybox/sh", "-o", "errexit", "-o", "nounset", "-c"]
-    command:
-      - |
-        # TODO: Rename this variable to be in line with our others?
-        export DEST_BUCKET_NAME=$$(cat /mnt/pulumi-outputs/unid-subgraphs-generated-bucket)
-        export DEAD_LETTER_QUEUE_URL=$$(cat /mnt/pulumi-outputs/osquery-generator-retry-queue)
-        export SOURCE_QUEUE_URL=$$(cat /mnt/pulumi-outputs/osquery-generator-queue)
-        /osquery-generator
-    environment:
-      <<: *aws-env
-      DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}
-      REDIS_ENDPOINT: "${REDIS_ENDPOINT}"
-      <<: *log-level
-      <<: *rust-backtrace
-    depends_on:
-      pulumi:
-        # We must wait until Pulumi has created the buckets to know what their names are
-        condition: service_completed_successfully
-    volumes:
-      - *read-only-pulumi-mnt
-
-  ########################################################################
-  # Python Services
-  ########################################################################
-
-  ########################################################################
-  # Web Services
-  ########################################################################
-
-  grapl-notebook:
-    image: grapl/notebook:${TAG:-latest}
-    user: grapl
-    environment:
-      <<: *dgraph-env
-    ports:
-      - 127.0.0.1:${GRAPL_NOTEBOOK_PORT}:${GRAPL_NOTEBOOK_PORT}
-
-  ########################################################################
-  # Utility Services
-  ########################################################################
-
   pulumi:
     image: grapl/local-pulumi:${TAG:-latest}
     entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
@@ -112,53 +18,11 @@ services:
         pulumi stack init local-grapl --non-interactive
         pulumi up --yes --skip-preview --stack=local-grapl
 
-        # Write the necessary outputs to the shared volume, for access by other containers
-        outputs=(
-          analyzer-dispatcher-dead-letter-queue
-          analyzer-dispatcher-queue
-          analyzer-dispatcher-retry-queue
-          analyzer-executor-queue
-          analyzer-executor-retry-queue
-          analyzer-matched-subgraphs-bucket
-          analyzers-bucket
-          dispatched-analyzer-bucket
-          dynamic-session-table
-          graph-merger-dead-letter-queue
-          graph-merger-queue
-          graph-merger-retry-queue
-          model-plugins-bucket
-          node-identifier-dead-letter-queue
-          node-identifier-queue
-          node-identifier-retry-queue
-          osquery-generator-dead-letter-queue
-          osquery-generator-queue
-          osquery-generator-retry-queue
-          osquery-log-bucket
-          schema-properties-table
-          schema-table
-          static-mapping-table
-          subgraphs-generated-bucket
-          subgraphs-merged-bucket
-          sysmon-generator-dead-letter-queue
-          sysmon-generator-queue
-          sysmon-generator-retry-queue
-          sysmon-log-bucket
-          unid-subgraphs-generated-bucket
-          user-auth-table
-        )
-        for output in "$${outputs[@]}"; do
-          pulumi stack output "$${output}" > "/home/grapl/pulumi-outputs/$${output}"
-        done
-
     volumes:
       - type: bind
         source: ./dist
         target: /home/grapl/dist
         read_only: true
-      - type: volume
-        source: pulumi_outputs
-        target: /home/grapl/pulumi-outputs
-        read_only: false # MUST be able to write
     environment:
       TAG:
       PULUMI_CONFIG_PASSPHRASE: local-grapl-passphrase
