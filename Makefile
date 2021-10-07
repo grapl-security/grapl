@@ -22,7 +22,6 @@ export
 
 export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 	--file ./test/docker-compose.unit-tests-rust.yml \
-	--file ./test/docker-compose.unit-tests-js.yml \
 	--file ./test/docker-compose.integration-tests.build.yml \
 	--file ./test/docker-compose.e2e-tests.build.yml \
 
@@ -136,18 +135,12 @@ build-service-pexs:
 .PHONY: build-test-unit
 build-test-unit:
 	$(DOCKER_BUILDX_BAKE) \
-		--file ./test/docker-compose.unit-tests-rust.yml \
-		--file ./test/docker-compose.unit-tests-js.yml
+		--file ./test/docker-compose.unit-tests-rust.yml
 
 .PHONY: build-test-unit-rust
 build-test-unit-rust:
 	$(DOCKER_BUILDX_BAKE) \
 		--file ./test/docker-compose.unit-tests-rust.yml
-
-.PHONY: build-test-unit-js
-build-test-unit-js:
-	$(DOCKER_BUILDX_BAKE) \
-		--file ./test/docker-compose.unit-tests-js.yml
 
 .PHONY: build-test-integration
 build-test-integration: build
@@ -160,7 +153,7 @@ build-test-e2e: build
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.build.yml
 
 .PHONY: build-lambda-zips
-build-lambda-zips: build-lambda-zips-rust build-lambda-zips-js build-lambda-zips-python build-service-pexs ## Generate all lambda zip files
+build-lambda-zips: build-lambda-zips-rust build-lambda-zips-python build-service-pexs ## Generate all lambda zip files
 
 .PHONY: build-lambda-zips-rust
 build-lambda-zips-rust: ## Build Rust lambda zips
@@ -176,20 +169,6 @@ build-lambda-zips-rust: ## Build Rust lambda zips
 		--volume="${PWD}/dist":/dist \
 		metric-forwarder-zip
 
-.PHONY: build-lambda-zips-js
-build-lambda-zips-js: ## Build JS lambda zips
-	$(DOCKER_BUILDX_BAKE) \
-		--file docker-compose.lambda-zips.js.yml
-	# Extract the zip from the Docker image.
-	# Rely on the default CMD for copying artifact to /dist mount point.
-	docker-compose \
-		--file docker-compose.lambda-zips.js.yml \
-		run \
-		--rm \
-		--user "${UID}:${GID}" \
-		--volume="${PWD}/dist":/dist \
-		graphql-endpoint-zip
-
 .PHONY: build-lambda-zips-python
 build-lambda-zips-python: ## Build Python lambda zips
 	./pants filter --target-type=python_awslambda :: | xargs ./pants package
@@ -199,7 +178,7 @@ build-docker-images: graplctl build-ux
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
 
 .PHONY: build
-build: build-lambda-zips build-docker-images ## Build Grapl services
+build: build-lambda-zips build-docker-images build-graphql-endpoint ## Build Grapl services
 
 .PHONY: build-formatter
 build-formatter:
@@ -231,12 +210,16 @@ build-ux: ## Build website assets
 		"${PWD}/src/js/engagement_view/build/." \
 		"${PWD}/src/rust/grapl-web-ui/frontend/"
 
+.PHONY: build-graphql-endpoint
+build-graphql-endpoint: ## Build GraphQL Endpoint
+	$(MAKE) -C src/js/graphql_endpoint build
+
 ##@ Test 🧪
 
 .PHONY: test-unit
 test-unit: export COMPOSE_PROJECT_NAME := grapl-test-unit
-test-unit: export COMPOSE_FILE := ./test/docker-compose.unit-tests-rust.yml:./test/docker-compose.unit-tests-js.yml
-test-unit: build-test-unit test-unit-python test-unit-shell ## Build and run unit tests
+test-unit: export COMPOSE_FILE := ./test/docker-compose.unit-tests-rust.yml
+test-unit: build-test-unit test-unit-python test-unit-shell test-unit-graphql-endpoint test-unit-engagement-view ## Build and run unit tests
 	test/docker-compose-with-error.sh
 
 .PHONY: test-unit-rust
@@ -259,15 +242,13 @@ test-unit-shell: ## Run shunit2 tests under Pants
 	./pants filter --filter-target-type="shunit2_tests" :: \
 	| xargs ./pants test
 
+.PHONY: test-unit-graphql-endpoint
+test-unit-graphql-endpoint: ## Test GraphQL Endpoint
+	$(MAKE) -C src/js/graphql_endpoint test
+
 .PHONY: test-unit-engagement-view
 test-unit-engagement-view: ## Test Engagement View
 	$(MAKE) -C src/js/engagement_view test
-
-.PHONY: test-unit-js
-test-unit-js: export COMPOSE_PROJECT_NAME := grapl-test-unit-js
-test-unit-js: export COMPOSE_FILE := ./test/docker-compose.unit-tests-js.yml
-test-unit-js: build-test-unit-js test-unit-engagement-view ## Build and run unit tests - JavaScript only
-	test/docker-compose-with-error.sh
 
 .PHONY: test-typecheck
 test-typecheck: ## Typecheck Python Code
@@ -450,6 +431,7 @@ clean: ## Prune all docker build cache and remove Grapl containers and images
 	docker rmi --force $$(docker images --filter reference="grapl/*" --quiet) 2>/dev/null || true
 	# Clean Engagement View
 	$(MAKE) -C src/js/engagement_view clean
+	$(MAKE) -C src/js/graphql_endpoint clean
 
 .PHONY: clean-mount-cache
 clean-mount-cache: ## Prune all docker mount cache (used by sccache)

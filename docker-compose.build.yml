@@ -97,16 +97,6 @@ services:
   # Web Services
   ########################################################################
 
-  # This container build exists only for Local Grapl; if we are able
-  # to deploy graphql-endpoint as an actual Lambda there, we can get
-  # rid of this.
-  graphql-endpoint:
-    image: grapl/graphql-endpoint:${TAG:-latest}
-    build:
-      context: src/js/graphql_endpoint
-      dockerfile: Dockerfile
-      target: graphql-endpoint-deploy
-
   notebook:
     image: grapl/notebook:${TAG:-latest}
     build:
