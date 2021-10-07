@@ -3,7 +3,6 @@ from infra.cache import Cache
 from infra.config import configurable_envvars, repository_path
 from infra.emitter import EventEmitter
 from infra.fargate_service import FargateService, GraplDockerBuild
-from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 
 
@@ -15,7 +14,6 @@ class AnalyzerDispatcher(FargateService):
         analyzers_bucket: Bucket,
         network: Network,
         cache: Cache,
-        forwarder: MetricForwarder,
     ) -> None:
 
         super().__init__(
@@ -34,7 +32,6 @@ class AnalyzerDispatcher(FargateService):
             },
             input_emitter=input_emitter,
             output_emitter=output_emitter,
-            forwarder=forwarder,
             network=network,
         )
 

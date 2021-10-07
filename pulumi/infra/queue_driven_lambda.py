@@ -3,7 +3,6 @@ from typing import Optional
 import pulumi_aws as aws
 from infra import queue_policy
 from infra.lambda_ import Lambda, LambdaArgs
-from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 
 import pulumi
@@ -18,7 +17,6 @@ class QueueDrivenLambda(pulumi.ComponentResource):
         queue: aws.sqs.Queue,
         args: LambdaArgs,
         network: Network,
-        forwarder: MetricForwarder,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
 
@@ -30,8 +28,6 @@ class QueueDrivenLambda(pulumi.ComponentResource):
             network=network,
             opts=pulumi.ResourceOptions(parent=self),
         )
-
-        forwarder.subscribe_to_log_group(name, self.function.log_group)
 
         queue_policy.consumption_policy(queue, args.execution_role)
 

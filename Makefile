@@ -132,7 +132,7 @@ build-ux: ## Build website assets
 
 .PHONY: build-graphql-endpoint
 build-graphql-endpoint: ## Build GraphQL Endpoint
-	$(MAKE) -C src/js/engagement_view build
+	$(MAKE) -C src/js/graphql_endpoint build
 
 .PHONY: build-rust
 build-rust: build-ux ## Bust Rust

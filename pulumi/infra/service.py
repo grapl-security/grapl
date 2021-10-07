@@ -3,7 +3,6 @@ from typing import Mapping, Optional, Sequence, Union
 
 from infra.ec2 import Ec2Port
 from infra.lambda_ import LambdaExecutionRole, PythonLambdaArgs
-from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.queue_driven_lambda import QueueDrivenLambda
 from infra.service_queue import ServiceQueue
@@ -24,7 +23,6 @@ class Service(pulumi.ComponentResource):
     def __init__(
         self,
         name: str,
-        forwarder: MetricForwarder,
         lambda_handler_fn: str,
         lambda_code: pulumi.Archive,
         network: Network,
@@ -61,7 +59,6 @@ class Service(pulumi.ComponentResource):
             f"{name}-Handler",
             self.queue.queue,
             args=args,
-            forwarder=forwarder,
             network=network,
             opts=pulumi.ResourceOptions(parent=self),
         )
@@ -81,7 +78,6 @@ class Service(pulumi.ComponentResource):
                     "IS_RETRY": "True",
                 },
             ),
-            forwarder=forwarder,
             network=network,
             opts=pulumi.ResourceOptions(parent=self),
         )

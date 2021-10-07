@@ -6,9 +6,7 @@ from infra.config import LOCAL_GRAPL
 from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
 from infra.engagement_notebook import EngagementNotebook
-from infra.graphql import GraphQL
 from infra.lambda_ import Lambda
-from infra.metric_forwarder import MetricForwarder
 from infra.model_plugin_deployer import ModelPluginDeployer
 from infra.network import Network
 from infra.secret import JWTSecret
@@ -137,7 +135,6 @@ class Api(pulumi.ComponentResource):
         plugins_bucket: Bucket,
         db: DynamoDB,
         dgraph_cluster: DgraphCluster,
-        forwarder: MetricForwarder,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         name = "api-gateway"
@@ -220,16 +217,6 @@ class Api(pulumi.ComponentResource):
                 secret=secret,
                 plugins_bucket=plugins_bucket,
                 dgraph_cluster=dgraph_cluster,
-                forwarder=forwarder,
-            )
-
-            self.graphql_endpoint = GraphQL(
-                network=network,
-                secret=secret,
-                ux_bucket=ux_bucket,
-                db=db,
-                dgraph_cluster=dgraph_cluster,
-                forwarder=forwarder,
             )
 
         self.proxies = []

@@ -12,7 +12,6 @@ from infra.config import (
 )
 from infra.ec2 import Ec2Port
 from infra.emitter import EventEmitter
-from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.policies import ECR_TOKEN_POLICY, attach_policy
 from infra.repository import Repository, registry_credentials
@@ -100,7 +99,6 @@ class _AWSFargateService(pulumi.ComponentResource):
         network: Network,
         image: pulumi.Output[str],
         env: Mapping[str, Union[str, pulumi.Output[str]]],
-        forwarder: MetricForwarder,
         entrypoint: Optional[List[str]] = None,
         command: Optional[List[str]] = None,
         opts: Optional[pulumi.ResourceOptions] = None,
@@ -165,8 +163,6 @@ class _AWSFargateService(pulumi.ComponentResource):
         # TODO: This feels hacky; consider other ways to model this.
         if not REAL_DEPLOYMENT:
             attach_policy(ECR_TOKEN_POLICY, self.execution_role)
-
-        forwarder.subscribe_to_log_group(name, self.log_group)
 
         self.task = aws.ecs.TaskDefinition(  # type: ignore[call-overload]
             f"{name}-task",
@@ -257,7 +253,6 @@ class FargateService(pulumi.ComponentResource):
         network: Network,
         image: docker.DockerBuild,
         env: Mapping[str, Union[str, pulumi.Output[str]]],
-        forwarder: MetricForwarder,
         entrypoint: Optional[List[str]] = None,
         command: Optional[List[str]] = None,
         retry_image: Optional[docker.DockerBuild] = None,
@@ -291,7 +286,6 @@ class FargateService(pulumi.ComponentResource):
             entrypoint=entrypoint,
             command=command,
             env=env,
-            forwarder=forwarder,
             opts=pulumi.ResourceOptions(parent=self),
         )
         if repository:
@@ -318,7 +312,6 @@ class FargateService(pulumi.ComponentResource):
             entrypoint=retry_entrypoint or entrypoint,
             command=retry_command or command,
             env=env,
-            forwarder=forwarder,
             opts=pulumi.ResourceOptions(parent=self),
         )
         if retry_repository:

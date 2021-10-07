@@ -23,7 +23,6 @@ from infra.dgraph_ttl import DGraphTTL
 # web UI.
 # from infra.e2e_test_runner import E2eTestRunner
 from infra.kafka import Kafka
-from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.nomad_job import NomadJob
 from infra.pipeline_dashboard import PipelineDashboard
@@ -78,8 +77,6 @@ def main() -> None:
     test_user_password = TestUserPassword()
 
     dynamodb_tables = dynamodb.DynamoDB()
-
-    forwarder = MetricForwarder(network=network)
 
     # TODO: Create these emitters inside the service abstraction if nothing
     # else uses them (or perhaps even if something else *does* use them)

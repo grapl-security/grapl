@@ -4,7 +4,6 @@ from infra.config import configurable_envvars, repository_path
 from infra.dgraph_cluster import DgraphCluster
 from infra.emitter import EventEmitter
 from infra.fargate_service import FargateService, GraplDockerBuild
-from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 
 
@@ -18,7 +17,6 @@ class AnalyzerExecutor(FargateService):
         model_plugins_bucket: Bucket,
         network: Network,
         cache: Cache,
-        forwarder: MetricForwarder,
     ) -> None:
 
         super().__init__(
@@ -47,7 +45,6 @@ class AnalyzerExecutor(FargateService):
             },
             input_emitter=input_emitter,
             output_emitter=output_emitter,
-            forwarder=forwarder,
             network=network,
         )
 
