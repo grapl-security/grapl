@@ -259,12 +259,15 @@ test-unit-shell: ## Run shunit2 tests under Pants
 	./pants filter --filter-target-type="shunit2_tests" :: \
 	| xargs ./pants test
 
+.PHONY: test-unit-engagement-view
+test-unit-engagement-view: ## Test Engagement View
+	$(MAKE) -C src/js/engagement_view test
+
 .PHONY: test-unit-js
 test-unit-js: export COMPOSE_PROJECT_NAME := grapl-test-unit-js
 test-unit-js: export COMPOSE_FILE := ./test/docker-compose.unit-tests-js.yml
-test-unit-js: build-test-unit-js ## Build and run unit tests - JavaScript only
+test-unit-js: build-test-unit-js test-unit-engagement-view ## Build and run unit tests - JavaScript only
 	test/docker-compose-with-error.sh
-	$(MAKE) -C src/js/engagement_view test
 
 .PHONY: test-typecheck
 test-typecheck: ## Typecheck Python Code
@@ -445,6 +448,8 @@ clean: ## Prune all docker build cache and remove Grapl containers and images
 	docker rm --volumes --force $$(docker ps --filter "name=grapl*" --all --quiet) 2>/dev/null || true
 	# Remove all Grapl images = continue on error (no images found)
 	docker rmi --force $$(docker images --filter reference="grapl/*" --quiet) 2>/dev/null || true
+	# Clean Engagement View
+	$(MAKE) -C src/js/engagement_view clean
 
 .PHONY: clean-mount-cache
 clean-mount-cache: ## Prune all docker mount cache (used by sccache)
