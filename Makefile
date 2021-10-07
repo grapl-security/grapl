@@ -17,7 +17,6 @@ COMPOSE_PROJECT_NAME ?= grapl
 export
 
 export EVERY_COMPOSE_FILE=--file docker-compose.yml \
-	--file ./test/docker-compose.unit-tests-js.yml \
 	--file ./test/docker-compose.integration-tests.build.yml \
 	--file ./test/docker-compose.e2e-tests.build.yml \
 	--file ./test/docker-compose.typecheck-tests.yml
@@ -131,29 +130,22 @@ build-ux: ## Build website assets
 		"${PWD}/src/js/engagement_view/build/." \
 		"${PWD}/src/rust/grapl-web-ui/frontend/"
 
+.PHONY: build-graphql-endpoint
+build-graphql-endpoint: ## Build GraphQL Endpoint
+	$(MAKE) -C src/js/engagement_view build
+
 .PHONY: build-rust
 build-rust: build-ux ## Bust Rust
 	$(MAKE) -C src/rust build
 
-
-.PHONY: build-test-unit
-build-test-unit:
-	$(DOCKER_BUILDX_BAKE) \
-		--file ./test/docker-compose.unit-tests-js.yml
-
-.PHONY: build-test-unit-js
-build-test-unit-js:
-	$(DOCKER_BUILDX_BAKE) \
-		--file ./test/docker-compose.unit-tests-js.yml
+.PHONY: build-test-integration-rust
+build-test-integration-rust:
+	$(MAKE) -C src/rust build-integration-test-image
 
 .PHONY: build-test-typecheck
 build-test-typecheck: build-python-wheels
 	$(DOCKER_BUILDX_BAKE) \
 		--file ./test/docker-compose.typecheck-tests.yml
-
-.PHONY: build-test-integration-rust
-build-test-integration-rust:
-	$(MAKE) -C src/rust build-integration-test-image
 
 .PHONY: build-test-integration
 build-test-integration: build-local
@@ -166,21 +158,7 @@ build-test-e2e: build
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.build.yml
 
 .PHONY: build-lambda-zips
-build-lambda-zips: build-lambda-zips-js build-lambda-zips-python ## Generate all lambda zip files
-
-.PHONY: build-lambda-zips-js
-build-lambda-zips-js: ## Build JS lambda zips
-	$(DOCKER_BUILDX_BAKE) \
-		--file docker-compose.lambda-zips.js.yml
-	# Extract the zip from the Docker image.
-	# Rely on the default CMD for copying artifact to /dist mount point.
-	docker-compose \
-		--file docker-compose.lambda-zips.js.yml \
-		run \
-		--rm \
-		--user "${UID}:${GID}" \
-		--volume="${PWD}/dist":/dist \
-		graphql-endpoint-zip
+build-lambda-zips: build-lambda-zips-python ## Generate all lambda zip files
 
 .PHONY: build-lambda-zips-python
 build-lambda-zips-python: build-python-wheels ## Build Python lambda zips
@@ -200,10 +178,10 @@ build-docker-images: graplctl
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
 
 .PHONY: build
-build: build-lambda-zips build-docker-images build-rust ## Build Grapl services
+build: build-lambda-zips build-docker-images build-rust build-graphql-endpoint ## Build Grapl services
 
 .PHONY: build-local
-build-local: build-lambda-zips build-docker-images-local build-rust ## Build Grapl services
+build-local: build-lambda-zips build-docker-images-local build-rust build-graphql-endpoint ## Build Grapl services
 
 .PHONY: build-formatter
 build-formatter:
@@ -234,12 +212,6 @@ dump-artifacts:  # Run the script that dumps Nomad/Docker logs after test runs
 test-unit-rust:
 	$(MAKE) -C src/rust test
 
-.PHONY: test-unit
-test-unit: export COMPOSE_PROJECT_NAME := grapl-test-unit
-test-unit: export COMPOSE_FILE := ./test/docker-compose.unit-tests-js.yml
-test-unit: build-test-unit test-unit-python test-unit-shell test-unit-rust ## Build and run unit tests
-	test/docker-compose-with-error.sh
-
 .PHONY: test-unit-python
 # Long term, it would be nice to organize the tests with Pants
 # tags, rather than pytest tags
@@ -248,18 +220,24 @@ test-unit-python: ## Run Python unit tests under Pants
 	./pants filter --filter-target-type="python_tests" :: \
 	| xargs ./pants --tag="-needs_work" test --pytest-args="-m \"not integration_test\""
 
-
 .PHONY: test-unit-shell
 test-unit-shell: ## Run shunit2 tests under Pants
 	./pants filter --filter-target-type="shunit2_tests" :: \
 	| xargs ./pants test
 
-.PHONY: test-unit-js
-test-unit-js: export COMPOSE_PROJECT_NAME := grapl-test-unit-js
-test-unit-js: export COMPOSE_FILE := ./test/docker-compose.unit-tests-js.yml
-test-unit-js: build-test-unit-js ## Build and run unit tests - JavaScript only
-	test/docker-compose-with-error.sh
+.PHONY: test-unit-graphql-endpoint
+test-unit-graphql-endpoint: ## Test GraphQL Endpoint
+	$(MAKE) -C src/js/graphql_endpoint test
+
+.PHONY: test-unit-engagement-view
+test-unit-engagement-view: ## Test Engagement View
 	$(MAKE) -C src/js/engagement_view test
+
+.PHONY: test-unit-js
+test-unit-js: test-unit-graphql-endpoint test-unit-engagement-view ## Build and run unit tests - JavaScript only
+
+.PHONY: test-unit
+test-unit: test-unit-python test-unit-shell test-unit-rust test-unit-js ## Build and run unit tests
 
 .PHONY: test-typecheck-docker
 test-typecheck-docker: export COMPOSE_PROJECT_NAME := grapl-typecheck_tests
