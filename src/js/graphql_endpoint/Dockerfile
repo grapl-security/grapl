@@ -41,20 +41,7 @@ RUN cp -r ./node_modules ./ts_compiled/node_modules
 WORKDIR /home/grapl
 
 
-# zip
-################################################################################
-FROM graphql-endpoint-build AS graphql-endpoint-zip
-
-RUN test -d lambda/ts_compiled/node_modules && echo "Okay, found node_modules"
-RUN cd lambda/ts_compiled && \
-    zip -q9r /home/grapl/graphql-endpoint-lambda.zip ./
-
-# This defines a default command for extracting the metric-forwarder zip to a
-# container mount point at /dist
-CMD [ "cp", "/home/grapl/graphql-endpoint-lambda.zip", "/dist/" ]
-
-
-# deploy... this is only used in Local Grapl at the moment
+# Deploy image
 ################################################################################
 FROM node:14.16-buster-slim AS graphql-endpoint-deploy
 

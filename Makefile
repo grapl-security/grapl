@@ -130,9 +130,10 @@ help: ## Print this help
 
 .PHONY: build-service-pexs
 build-service-pexs:
-	./pants package ./src/python/analyzer_executor/src
-	./pants package ./src/python/engagement-creator/engagement_creator:pex
-	./pants package ./src/python/provisioner/provisioner:pex
+	./pants package \
+		./src/python/analyzer_executor/src \
+		./src/python/engagement-creator/engagement_creator:pex \
+		./src/python/provisioner/provisioner:pex
 
 .PHONY: build-test-unit
 build-test-unit:
@@ -161,9 +162,10 @@ build-test-e2e: build
 	$(WITH_LOCAL_GRAPL_ENV) \
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.build.yml
 
-.PHONY: build-lambda-zips
-build-lambda-zips: build-lambda-zips-rust build-lambda-zips-js build-lambda-zips-python build-service-pexs ## Generate all lambda zip files
+.PHONY: build-dist-artifacts
+build-dist-artifacts: build-lambda-zips-rust build-service-pexs ## Generate all artifacts for dist/
 
+# TODO: This is about to get nuked in a PR - wimax@ Oct 8 2021
 .PHONY: build-lambda-zips-rust
 build-lambda-zips-rust: ## Build Rust lambda zips
 	$(DOCKER_BUILDX_BAKE) \
@@ -178,31 +180,13 @@ build-lambda-zips-rust: ## Build Rust lambda zips
 		--volume="${PWD}/dist":/dist \
 		metric-forwarder-zip
 
-.PHONY: build-lambda-zips-js
-build-lambda-zips-js: ## Build JS lambda zips
-	$(DOCKER_BUILDX_BAKE) \
-		--file docker-compose.lambda-zips.js.yml
-	# Extract the zip from the Docker image.
-	# Rely on the default CMD for copying artifact to /dist mount point.
-	docker-compose \
-		--file docker-compose.lambda-zips.js.yml \
-		run \
-		--rm \
-		--user "${UID}:${GID}" \
-		--volume="${PWD}/dist":/dist \
-		graphql-endpoint-zip
-
-.PHONY: build-lambda-zips-python
-build-lambda-zips-python: ## Build Python lambda zips
-	./pants filter --target-type=python_awslambda :: | xargs ./pants package
-
 .PHONY: build-docker-images
 build-docker-images: graplctl build-ux
 	echo "--- Building Docker images"
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
 
 .PHONY: build
-build: build-lambda-zips build-docker-images ## Build Grapl services
+build: build-dist-artifacts build-docker-images ## Build Grapl services
 
 .PHONY: build-formatter
 build-formatter:
@@ -293,12 +277,6 @@ test-e2e: build-test-e2e ## Build and run e2e tests
 	$(WITH_LOCAL_GRAPL_ENV)
 	export SHOULD_DEPLOY_E2E_TESTS=True  # This gets read in by `docker-compose.yml`'s pulumi
 	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/local/run_parameterized_job.sh e2e-tests 6"
-
-# This target is not intended to be used directly from the command line, it's
-# intended for tests in docker-compose files that need the Grapl environment.
-.PHONY: test-with-env-docker
-test-with-env-docker: # (Do not include help text - not to be used directly)
-	$(MAKE) test-with-env EXEC_TEST_COMMAND=test/docker-compose-with-error.sh
 
 # This target is not intended to be used directly from the command line.
 # Think of it as a Context Manager that:
@@ -501,7 +479,7 @@ repl: ## Run an interactive ipython repl that can import from grapl-common etc
 	./pants --no-pantsd repl --shell=ipython src/python/repl
 
 .PHONY: pulumi-prep
-pulumi-prep: graplctl build-lambda-zips ux-tarball ## Prepare some artifacts in advance of running a Pulumi update (does not run Pulumi!)
+pulumi-prep: graplctl build-dist-artifacts ux-tarball ## Prepare some artifacts in advance of running a Pulumi update (does not run Pulumi!)
 
 .PHONY: update-buildkite-shared
 update-buildkite-shared: ## Pull in changes from grapl-security/buildkite-common

@@ -17,7 +17,6 @@ from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
 from infra.dgraph_cluster import DgraphCluster, LocalStandInDgraphCluster
-from infra.dgraph_ttl import DGraphTTL
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
@@ -68,8 +67,6 @@ def main() -> None:
     network = Network("grapl-network")
 
     dgraph_cluster: DgraphCluster = _create_dgraph_cluster(network=network)
-
-    DGraphTTL(network=network, dgraph_cluster=dgraph_cluster)
 
     # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
     # web UI.
