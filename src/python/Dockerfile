@@ -78,14 +78,18 @@ RUN adduser \
         --shell /bin/bash \
         --uid 2000 \
         pants_ci
-RUN mkdir -p /tmp/pants && chmod -R 777 /tmp/pants
-USER grapl
-RUN mkdir -p /tmp/pants/named_caches && chmod -R 777 /tmp/pants/named_caches
-RUN mkdir -p /tmp/pants/lmdb_store && chmod -R 777 /tmp/pants/lmdb_store
-RUN mkdir -p /tmp/pants/setup && chmod -R 777 /tmp/pants/setup
-ENV PANTS_NAMED_CACHES_DIR=/tmp/pants/named_caches
-ENV PANTS_LOCAL_STORE_DIR=/tmp/pants/lmdb_store
-ENV PANTS_SETUP_CACHE=/tmp/pants/setup
 
-# grapl-root is mounted by Nomad.
-ENTRYPOINT ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c", "cd /mnt/grapl-root && ./pants filter --filter-target-type='python_tests' :: | xargs ./pants --tag='-needs_work' test --pytest-args='-m integration_test'"]
+# /mnt/pants-cache is mounted by `integration-tests.nomad` at runtime.
+# It will copy the existing directory structure in.
+RUN mkdir -p /mnt/pants-cache && chmod -R 777 /mnt/pants-cache
+USER grapl
+RUN mkdir -p /mnt/pants-cache/named_caches && chmod -R 777 /mnt/pants-cache/named_caches
+RUN mkdir -p /mnt/pants-cache/lmdb_store && chmod -R 777 /mnt/pants-cache/lmdb_store
+RUN mkdir -p /mnt/pants-cache/setup && chmod -R 777 /mnt/pants-cache/setup
+ENV PANTS_NAMED_CACHES_DIR=/mnt/pants-cache/named_caches
+ENV PANTS_LOCAL_STORE_DIR=/mnt/pants-cache/lmdb_store
+ENV PANTS_SETUP_CACHE=/mnt/pants-cache/setup
+
+# /mnt/grapl-root is mounted by `integration-tests.nomad` at runtime.
+WORKDIR /mnt/grapl-root
+CMD ["./test/run/integration-tests-from-docker-container.sh"]

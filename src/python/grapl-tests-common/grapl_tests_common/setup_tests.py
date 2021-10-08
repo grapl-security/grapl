@@ -42,12 +42,15 @@ def exec_pytest() -> int:
 
     result = pytest.main(
         [
+            # Disables stdout capture. Different from `-rA` in that you can see
+            # the output streaming in real time, as opposed to just reported
+            # after the fact. This is convenient for the timeout-heavy e2e test
             "--capture=no",
             f"--log-level={GRAPL_LOG_LEVEL}",
             f"--log-cli-level={GRAPL_LOG_LEVEL}",
             *pytest_args,
         ]
-    )  # disable stdout capture
+    )
     _after_tests()
 
     return result
