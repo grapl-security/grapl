@@ -1,6 +1,7 @@
 FROM rust:1-slim-buster AS base
 
 ARG RUST_BUILD=debug
+ENV SQLX_OFFLINE=true
 
 SHELL ["/bin/bash", "-c"]
 
@@ -179,8 +180,11 @@ COPY --from=build /outputs/org-management /
 ENTRYPOINT ["/org-management"]
 
 # pull official base image
-FROM postgres:13-alpine AS org-management-postgres-db-deploy
+#FROM postgres:13-alpine AS org-management-postgres-db-deploy
+#
+## run init.sql
+#COPY rust/init.sql /docker-entrypoint-initdb.d/init.sql
 
-# run init.sql
-COPY rust/init.sql /docker-entrypoint-initdb.d/
-
+FROM postgres as org-management-postgres-db-deploy
+COPY rust/init-sql.sh /docker-entrypoint-initdb.d/init-sql.sh
+#COPY init-queue-db.sh /docker-entrypoint-initdb.d/init-queue-db.sh

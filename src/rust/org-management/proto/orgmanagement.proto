@@ -7,7 +7,7 @@ message CreateOrgRequest {
   string admin_username = 2;
   string admin_email = 3;
   string admin_password = 4;
-  string should_reset_password = 5;
+  bool should_reset_password = 5;
 }
 
 message EmptyResp {}

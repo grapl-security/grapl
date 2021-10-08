@@ -79,7 +79,7 @@ services:
     build:
       context: src
       dockerfile: rust/Dockerfile
-      target: org-management-postgres-deploy
+      target: org-management-postgres-db-deploy
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
