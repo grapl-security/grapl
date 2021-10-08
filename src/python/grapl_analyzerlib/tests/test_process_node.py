@@ -66,9 +66,12 @@ def get_or_create_process_node_deprecated(
     )
 
 
+common_hypo_settings = hypothesis.settings(deadline=None, max_examples=25)
+
+
 @pytest.mark.integration_test
 class TestProcessQuery(unittest.TestCase):
-    @hypothesis.settings(deadline=None)
+    @hypothesis.settings(parent=common_hypo_settings)
     @given(process_props=process_props_strategy())
     def test_single_process_contains_key(self, process_props: ProcessProps) -> None:
         graph_client = GraphClient()
@@ -94,7 +97,7 @@ class TestProcessQuery(unittest.TestCase):
 
         assert not queried_proc.get_asset()
 
-    @hypothesis.settings(deadline=None)
+    @hypothesis.settings(parent=common_hypo_settings)
     @given(
         asset_props=asset_props_strategy(),
         process_props=process_props_strategy(),
@@ -131,7 +134,7 @@ class TestProcessQuery(unittest.TestCase):
 
     # Given that the code that generates timestamps only uses unsized types we can make some
     # assumptions about the data
-    @hypothesis.settings(deadline=None)
+    @hypothesis.settings(parent=common_hypo_settings)
     @given(process_props=process_props_strategy())
     def test_process_query_view_parity(self, process_props: ProcessProps):
         graph_client = GraphClient()
@@ -162,7 +165,7 @@ class TestProcessQuery(unittest.TestCase):
         assert process_props["image_name"] == queried_proc.get_image_name()
         assert process_props["process_name"] == queried_proc.get_process_name()
 
-    @hypothesis.settings(deadline=None)
+    @hypothesis.settings(parent=common_hypo_settings)
     @given(
         node_key=st.uuids(),
         process_id=st.integers(min_value=1, max_value=2 ** 32),
@@ -217,7 +220,7 @@ class TestProcessQuery(unittest.TestCase):
         assert image_name == queried_proc.get_image_name()
         assert process_name == queried_proc.get_process_name()
 
-    @hypothesis.settings(deadline=None)
+    @hypothesis.settings(parent=common_hypo_settings)
     @given(process_props=process_props_strategy())
     def test_process_query_view_miss(self, process_props: ProcessProps) -> None:
         graph_client = GraphClient()
@@ -249,7 +252,7 @@ class TestProcessQuery(unittest.TestCase):
     # Given that the code that generates timestamps only uses unsized types we can make some
     # assumptions about the data
 
-    @hypothesis.settings(deadline=None)
+    @hypothesis.settings(parent=common_hypo_settings)
     @given(
         node_key=st.uuids(),
         process_id=st.integers(min_value=1, max_value=2 ** 32),

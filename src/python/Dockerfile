@@ -91,4 +91,5 @@ ENV PANTS_LOCAL_STORE_DIR=/mnt/pants-cache/lmdb_store
 ENV PANTS_SETUP_CACHE=/mnt/pants-cache/setup
 
 # /mnt/grapl-root is mounted by `integration-tests.nomad` at runtime.
-ENTRYPOINT ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c", "cd /mnt/grapl-root && ./pants filter --filter-target-type='python_tests' :: | xargs ./pants --tag='-needs_work' test --pytest-args='-m integration_test'"]
+# -rA reports stdout/stderr for all tests, not just failed ones.
+ENTRYPOINT ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c", "cd /mnt/grapl-root && ./pants filter --filter-target-type='python_tests' :: | xargs ./pants --tag='-needs_work' test --pytest-args='-m integration_test -rA'"]

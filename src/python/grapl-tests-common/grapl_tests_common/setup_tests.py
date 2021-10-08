@@ -42,12 +42,12 @@ def exec_pytest() -> int:
 
     result = pytest.main(
         [
-            "--capture=no",
+            "--capture=no",  # disable stdout capture
             f"--log-level={GRAPL_LOG_LEVEL}",
             f"--log-cli-level={GRAPL_LOG_LEVEL}",
             *pytest_args,
         ]
-    )  # disable stdout capture
+    )
     _after_tests()
 
     return result

@@ -196,9 +196,9 @@ job "integration-tests" {
         }
 
         mount {
-          type = "volume"
-          target = "/mnt/pants-cache"
-          source = "pants-cache-volume"
+          type     = "volume"
+          target   = "/mnt/pants-cache"
+          source   = "pants-cache-volume"
           readonly = false
           volume_options {
             # Upon initial creation of this volume, *do* copy in the current
