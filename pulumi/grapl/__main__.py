@@ -4,7 +4,7 @@ from pathlib import Path
 sys.path.insert(0, "..")
 
 import os
-from typing import Any, List, Mapping
+from typing import Any, Mapping
 
 import pulumi_aws as aws
 from infra import config, dynamodb, emitter
@@ -20,19 +20,15 @@ from infra.dgraph_cluster import DgraphCluster, LocalStandInDgraphCluster
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
-# from infra.e2e_test_runner import E2eTestRunner
 from infra.kafka import Kafka
-from infra.metric_forwarder import MetricForwarder
 from infra.network import Network
 from infra.nomad_job import NomadJob
-from infra.pipeline_dashboard import PipelineDashboard
 from infra.quiet_docker_build_output import quiet_docker_output
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
 # from infra.secret import JWTSecret, TestUserPassword
 from infra.secret import TestUserPassword
-from infra.service import ServiceLike
 from infra.service_queue import ServiceQueue
 
 import pulumi
@@ -76,8 +72,6 @@ def main() -> None:
 
     dynamodb_tables = dynamodb.DynamoDB()
 
-    forwarder = MetricForwarder(network=network)
-
     # TODO: Create these emitters inside the service abstraction if nothing
     # else uses them (or perhaps even if something else *does* use them)
     sysmon_log_emitter = emitter.EventEmitter("sysmon-log")
@@ -117,8 +111,6 @@ def main() -> None:
     pulumi.export("analyzers-bucket", analyzers_bucket.bucket)
     model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)
     pulumi.export("model-plugins-bucket", model_plugins_bucket.bucket)
-
-    services: List[ServiceLike] = []
 
     nomad_inputs = dict(
         analyzer_bucket=analyzers_bucket.bucket,
@@ -353,8 +345,6 @@ def main() -> None:
         )
 
     OpsAlarms(name="ops-alarms")
-
-    PipelineDashboard(services=services)
 
 
 if __name__ == "__main__":
