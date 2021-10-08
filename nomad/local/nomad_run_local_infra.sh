@@ -14,6 +14,9 @@ echo "--- Deploying Nomad local infrastructure."
 # shellcheck disable=SC2016
 timeout 60 bash -c -- 'while [[ -z $(nomad node status 2>&1 | grep ready) ]]; do printf "Waiting for nomad-agent\n";sleep 1;done'
 
+# Add an extra 5s in here to try and avoid the dreaded "failed to place all allocations".
+# Better alternative would be to do a `nomad job plan` ahead of `nomad job run`.
+
 nomad job run -verbose \
     -var "KAFKA_JMX_PORT=${KAFKA_JMX_PORT}" \
     -var "KAFKA_BROKER_PORT=${KAFKA_BROKER_PORT}" \

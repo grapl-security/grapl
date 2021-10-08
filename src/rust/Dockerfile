@@ -94,28 +94,6 @@ RUN cp -ar /tmp/target/. /grapl/rust/target/ && \
 
 CMD [ "bash", "-c", "cargo test --features \"${RUST_INTEGRATION_TEST_FEATURES}\" --test \"*\" -- --nocapture" ]
 
-# metric-forwarder-zip
-################################################################################
-FROM build AS metric-forwarder-zip
-
-RUN --mount=type=cache,target=/var/lib/apt/lists \
-    apt-get update && apt-get install -y --no-install-recommends \
-        zip
-
-RUN mkdir -p /grapl/zips; \
-    grapl-zip() { \
-      TMPDIR="$(mktemp -d)"; \
-      cd "$TMPDIR"; \
-      cp "/outputs/${1}" bootstrap && \
-      zip --quiet -9 "/grapl/zips/${1}-lambda.zip" bootstrap; \
-    }; \
-    grapl-zip metric-forwarder
-
-# This defines a default command for extracting the metric-forwarder zip to a
-# container mount point at /dist
-CMD [ "cp", "/grapl/zips/metric-forwarder-lambda.zip", "/dist" ]
-
-
 # images for running services
 ################################################################################
 # More information about the base image used here can be found at: 

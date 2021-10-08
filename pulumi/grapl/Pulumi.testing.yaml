@@ -12,9 +12,6 @@ config:
     graph-merger:
       RUST_BACKTRACE: "1"
       RUST_LOG: DEBUG
-    metric-forwarder:
-      RUST_BACKTRACE: "1"
-      RUST_LOG: DEBUG
     model-plugin-deployer:
       GRAPL_LOG_LEVEL: DEBUG
     node-identifier:
