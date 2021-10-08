@@ -84,6 +84,7 @@ BUILD @christophermaier
 /test/Dockerfile.cypress @inickles-grapl @andrea-grapl
 /test/package.json @inickles-grapl @andrea-grapl
 /test/yarn.lock @inickles-grapl @andrea-grapl
+/test/run @wimax-grapl
 
 # This needs to be kept at the end??
 .gitkeep @christophermaier
