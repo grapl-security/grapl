@@ -85,18 +85,6 @@ steps:
     command:
       - make build-docs
 
-  - label: ":aws-lambda::package: Create Lambda Zips"
-    command:
-      - make build-lambda-zips
-    agents:
-      queue: "beefy"
-    # There are some issues with the docker nature of this step at the
-    # moment that can cause this to spuriously fail; we'll just
-    # automatically retry it for the time being.
-    retry:
-      automatic:
-        limit: 2
-
   - label: ":hammer: Integration Tests"
     command:
       - make test-integration
