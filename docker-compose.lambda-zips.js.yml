@@ -1,9 +1,0 @@
-version: "3.8"
-
-services:
-  graphql-endpoint-zip:
-    image: grapl/graphql-endpoint-zip:${TAG:-latest}
-    build:
-      context: src/js/graphql_endpoint
-      dockerfile: Dockerfile
-      target: graphql-endpoint-zip

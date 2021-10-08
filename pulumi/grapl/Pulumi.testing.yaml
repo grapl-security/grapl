@@ -7,8 +7,6 @@ config:
       RUST_LOG: DEBUG
     analyzer-executor:
       GRAPL_LOG_LEVEL: DEBUG
-    dgraph-ttl:
-      GRAPL_LOG_LEVEL: DEBUG
     engagement-creator:
       GRAPL_LOG_LEVEL: DEBUG
     graph-merger:
