@@ -163,22 +163,7 @@ build-test-e2e: build
 	$(DOCKER_BUILDX_BAKE) --file ./test/docker-compose.e2e-tests.build.yml
 
 .PHONY: build-dist-artifacts
-build-dist-artifacts: build-lambda-zips-rust build-service-pexs ## Generate all artifacts for dist/
-
-# TODO: This is about to get nuked in a PR - wimax@ Oct 8 2021
-.PHONY: build-lambda-zips-rust
-build-lambda-zips-rust: ## Build Rust lambda zips
-	$(DOCKER_BUILDX_BAKE) \
-		--file docker-compose.lambda-zips.rust.yml
-	# Extract the zip from the Docker image.
-	# Rely on the default CMD for copying artifact to /dist mount point.
-	docker-compose \
-		--file docker-compose.lambda-zips.rust.yml \
-		run \
-		--rm \
-		--user "${UID}:${GID}" \
-		--volume="${PWD}/dist":/dist \
-		metric-forwarder-zip
+build-dist-artifacts: build-service-pexs ## Generate all artifacts for dist/
 
 .PHONY: build-docker-images
 build-docker-images: graplctl build-ux

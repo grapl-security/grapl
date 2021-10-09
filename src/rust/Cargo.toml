@@ -16,7 +16,6 @@ members = [
   "./grapl-web-ui",
   "./grapl-utils",
   "./kafka-metrics-exporter",
-  "./metric-forwarder",
   "./node-identifier",
   "./rust-proto",
   "./sqs-executor",
