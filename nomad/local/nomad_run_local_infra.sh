@@ -27,8 +27,7 @@ timeout 60 bash -c -- 'while [[ -z $(nomad node status 2>&1 | grep ready) ]]; do
 # Okay, now the Nomad agent is up, but it might not be ready to accept jobs.
 # Just loop on `nomad job plan` until it can.
 attemptPlan() {
-    # shellcheck disable=SC2068
-    nomad job plan ${NOMAD_VARS[@]} "${NOMAD_FILE}" > /dev/null 2>&1
+    nomad job plan "${NOMAD_VARS[@]}" "${NOMAD_FILE}" > /dev/null 2>&1
     echo "$?"
 }
 
@@ -38,10 +37,7 @@ while [[ $(attemptPlan) -ne 1 ]]; do
     sleep 1
 done
 
-# shellcheck disable=SC2068
-nomad job run -verbose \
-    ${NOMAD_VARS[@]} \
-    "${NOMAD_FILE}"
+nomad job run -verbose "${NOMAD_VARS[@]}" "${NOMAD_FILE}"
 
 echo "Nomad Job Run complete, checking for task failures"
 
