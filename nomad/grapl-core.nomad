@@ -1054,7 +1054,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/${var.container_repo}osquery-generator:${var.sysmon_generator_tag}"
+        image = "${var.container_registry}grapl/${var.container_repo}osquery-generator:${var.osquery_generator_tag}"
       }
 
       template {
