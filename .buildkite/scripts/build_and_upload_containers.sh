@@ -49,6 +49,8 @@ cloudsmith_tag() {
 # These are then consumed by src/python/Dockerfile
 echo "--- :python: Building pex binaries"
 make build-service-pexs
+echo "--- :typescript: Building front-end"
+make build-ux
 
 for service in "${services[@]}"; do
     # Build a single service
