@@ -8,6 +8,12 @@ variable "container_registry" {
   description = "The container registry in which we can find Grapl services. Requires a trailing /"
 }
 
+variable "container_repo" {
+  type        = string
+  default     = ""
+  description = "The container repo inside the registry in which we can find Grapl services. Requires a trailing / if not empty string"
+}
+
 variable "aws_region" {
   type = string
 }
@@ -119,7 +125,7 @@ job "integration-tests" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/rust-integration-tests:dev"
+        image = "${var.container_registry}grapl/${var.container_repo}rust-integration-tests:dev"
       }
 
       env {
@@ -180,7 +186,7 @@ job "integration-tests" {
       user   = var.docker_user
 
       config {
-        image = "${var.container_registry}grapl/python-integration-tests:dev"
+        image = "${var.container_registry}grapl/${var.container_repo}python-integration-tests:dev"
         # Pants caches requirements per-user. So when we run a Docker container
         # with the host's userns, this lets us reuse the pants cache.
         # (This descreases runtime on my personal laptop from 390s to 190s)

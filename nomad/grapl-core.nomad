@@ -974,7 +974,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/grapl-web-ui:${var.web_ui_tag}"
+        image = "${var.container_registry}grapl/${var.container_repo}grapl-web-ui:${var.web_ui_tag}"
         ports = ["web-ui-port"]
       }
 
@@ -1054,7 +1054,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/osquery-generator:${var.sysmon_generator_tag}"
+        image = "${var.container_registry}grapl/${var.container_repo}osquery-generator:${var.osquery_generator_tag}"
       }
 
       template {
