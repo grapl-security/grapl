@@ -1,18 +1,88 @@
 variable "rust_log" {
   type        = string
-  default     = "INFO"
   description = "Controls the logging behavior of Rust-based services."
 }
 
 variable "container_registry" {
   type        = string
-  default     = "localhost:5000"
-  description = "The container registry in which we can find Grapl services."
+  default     = ""
+  description = "The container registry in which we can find Grapl services. Requires a trailing / if not empty string"
+}
+
+variable "container_repo" {
+  type        = string
+  default     = ""
+  description = "The container repo inside the registry in which we can find Grapl services. Requires a trailing / if not empty string"
+}
+
+variable "aws_access_key_id" {
+  type        = string
+  default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_ID"
+  description = "The aws access key id used to interact with AWS."
+}
+
+variable "aws_access_key_secret" {
+  type        = string
+  default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_SECRET"
+  description = "The aws access key secret used to interact with AWS."
+}
+
+variable "_aws_endpoint" {
+  type        = string
+  default     = "DUMMY_LOCAL_AWS_ENDPOINT"
+  description = <<EOF
+  The endpoint in which we can expect to find and interact with AWS.
+  It accepts a special sentinel value domain, LOCAL_GRAPL_REPLACE_IP:xxxx, if the
+  user wishes to contact Localstack.
+
+  Prefer using `local.aws_endpoint`.
+EOF
 }
 
 variable "aws_region" {
-  type    = string
-  default = "us-west-2"
+  type = string
+}
+
+variable "analyzer_bucket" {
+  type        = string
+  description = "The s3 bucket which the analyzer stores items to analyze"
+}
+
+variable "analyzer_dispatched_bucket" {
+  type        = string
+  description = "The s3 bucket which the analyzer stores items that have been processed"
+}
+
+variable "analyzer_dispatcher_queue" {
+  type        = string
+  description = "Main queue for the dispatcher"
+}
+
+variable "analyzer_dispatcher_dead_letter_queue" {
+  type        = string
+  description = "Dead letter queue for the analyzer services"
+}
+
+variable "analyzer_dispatcher_tag" {
+  type        = string
+  default     = "dev"
+  description = "The tagged version of the analyzer-dispatcher we should deploy."
+}
+
+variable "analyzer_matched_subgraphs_bucket" {
+  type        = string
+  description = "The s3 bucket used for storing matches"
+}
+
+variable "analyzer_executor_queue" {
+  type        = string
+  description = "Main queue for the executor"
+}
+
+variable "analyzer_executor_tag" {
+  type        = string
+  default     = "dev"
+  description = "The tagged version of the analyzer-executor we should deploy."
 }
 
 variable "dgraph_tag" {
@@ -31,9 +101,24 @@ variable "dgraph_shards" {
   default = 1
 }
 
-variable "redis_endpoint" {
+variable "engagement_creator_queue" {
+  type = string
+}
+
+variable "engagement_creator_tag" {
   type        = string
-  description = "Where can services find redis?"
+  default     = "dev"
+  description = "The tagged version of the engagement-creator we should deploy."
+}
+
+variable "_redis_endpoint" {
+  type        = string
+  description = <<EOF
+  Where can services find Redis?
+
+  It accepts a special sentinel value domain, redis://LOCAL_GRAPL_REPLACE_IP:xxxx, if the
+  user wishes to contact Localstack.
+EOF
 }
 
 variable "schema_table_name" {
@@ -47,9 +132,9 @@ variable "schema_properties_table_name" {
 }
 
 # https://github.com/grapl-security/grapl/blob/af6f2c197d52e9941047aab813c30d2cbfd54523/pulumi/infra/dynamodb.py#L118
-variable "session_table" {
-  type    = string
-  default = "dynamic_session_table"
+variable "session_table_name" {
+  type        = string
+  description = "What is the name of the session table?"
 }
 
 variable "num_graph_mergers" {
@@ -60,18 +145,26 @@ variable "num_graph_mergers" {
 
 variable "graph_merger_tag" {
   type        = string
-  default     = "latest"
+  default     = "dev"
   description = "The tagged version of the graph_merger we should deploy."
 }
 
 variable "graph_merger_queue" {
-  type    = string
-  default = "http://localhost:9324/000000000000/graph-merger-queue"
+  type = string
 }
 
 variable "graph_merger_dead_letter_queue" {
-  type    = string
-  default = "http://localhost:9324/000000000000/graph-merger-dead-letter-queue"
+  type = string
+}
+
+variable "test_user_name" {
+  type        = string
+  description = "The name of the test user"
+}
+
+variable "model_plugins_bucket" {
+  type        = string
+  description = "The s3 bucket used for storing plugins"
 }
 
 variable "num_node_identifiers" {
@@ -88,62 +181,47 @@ variable "num_node_identifier_retries" {
 
 variable "node_identifier_tag" {
   type        = string
-  default     = "latest"
+  default     = "dev"
   description = "The tagged version of the node_identifier and the node_identifier_retry we should deploy."
 }
 
 variable "node_identifier_queue" {
-  type    = string
-  default = "http://localhost:9324/000000000000/node-identifier-queue"
+  type = string
 }
 
 variable "node_identifier_dead_letter_queue" {
-  type    = string
-  default = "http://localhost:9324/000000000000/node-identifier-dead-letter-queue"
+  type = string
+}
+
+variable "node_identifier_retry_queue" {
+  type = string
+}
+
+variable "unid_subgraphs_generated_bucket" {
+  type        = string
+  description = "The destination bucket for unidentified subgraphs. Used by generators."
 }
 
 variable "subgraphs_merged_bucket" {
   type        = string
-  default     = "subgraphs-merged-bucket"
   description = "The destination bucket for merged subgraphs. Used by Graph Merger."
 }
 
 variable "subgraphs_generated_bucket" {
   type        = string
-  default     = "subgraphs-generated-bucket"
   description = "The destination bucket for generated subgraphs. Used by Node identifier."
-}
-
-variable "engagement_view_tag" {
-  type        = string
-  default     = "latest"
-  description = "The image tag for the engagement view."
-}
-
-variable "ux_bucket" {
-  type        = string
-  description = "The grapl UX bucket for the engagement view."
 }
 
 variable "graphql_endpoint_tag" {
   type        = string
-  default     = "latest"
+  default     = "dev"
   description = "The image tag for the graphql endpoint docker image."
 }
 
-variable "aws_access_key_id" {
+variable "web_ui_tag" {
   type        = string
-  description = "The aws access key id used to interact with AWS."
-}
-
-variable "aws_access_key_secret" {
-  type        = string
-  description = "The aws access key secret used to interact with AWS."
-}
-
-variable "aws_endpoint" {
-  type        = string
-  description = "The endpoint in which we can expect to find and interact with AWS."
+  default     = "dev"
+  description = "The image tag for the Grapl web UI docker image."
 }
 
 variable "deployment_name" {
@@ -151,6 +229,43 @@ variable "deployment_name" {
   description = "The deployment name"
 }
 
+variable "user_auth_table" {
+  type        = string
+  description = "What is the name of the DynamoDB user auth table?"
+}
+
+variable "user_session_table" {
+  type        = string
+  description = "What is the name of the DynamoDB user session table?"
+}
+
+variable "sysmon_generator_tag" {
+  type        = string
+  default     = "dev"
+  description = "The image tag for the sysmon generator docker image."
+}
+
+variable "sysmon_generator_queue" {
+  type = string
+}
+
+variable "sysmon_generator_dead_letter_queue" {
+  type = string
+}
+
+variable "osquery_generator_tag" {
+  type        = string
+  default     = "dev"
+  description = "The image tag for the osquery generator docker image."
+}
+
+variable "osquery_generator_queue" {
+  type = string
+}
+
+variable "osquery_generator_dead_letter_queue" {
+  type = string
+}
 
 locals {
   dgraph_zero_grpc_private_port_base  = 5080
@@ -178,6 +293,32 @@ locals {
   # String that contains all of the running Alphas for clients connecting to Dgraph (so they can do loadbalancing)
   alpha_grpc_connect_str = join(",", [for alpha in local.dgraph_alphas : "localhost:${alpha.grpc_public_port}"])
 
+  # Prefer these over their `var` equivalents.
+  # The aws endpoint is in template env format
+  aws_endpoint   = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
+  redis_endpoint = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+
+  _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
+  _redis         = split(":", local._redis_trimmed)
+  redis_host     = local._redis[0]
+  redis_port     = local._redis[1]
+
+  # Grapl services
+  web_ui_port           = 1234
+  graphql_endpoint_port = 5000
+
+  # enabled
+  rust_backtrace = 1
+
+  # This is used to conditionally submit env variables via template stanzas.
+  local_only_env_vars = <<EOH
+GRAPL_AWS_ENDPOINT          = ${local.aws_endpoint}
+GRAPL_AWS_ACCESS_KEY_ID     = ${var.aws_access_key_id}
+GRAPL_AWS_ACCESS_KEY_SECRET = ${var.aws_access_key_secret}
+EOH
+  # We need to submit an env var otherwise you can end up with a weird nomad state parse error.
+  aws_only_env_vars              = "DUMMY_VAR=TRUE"
+  conditionally_defined_env_vars = (var._aws_endpoint == "http://LOCAL_GRAPL_REPLACE_IP:4566") ? local.local_only_env_vars : local.aws_only_env_vars
 }
 
 job "grapl-core" {
@@ -264,6 +405,9 @@ job "grapl-core" {
     content {
       network {
         mode = "bridge"
+        port "healthcheck" {
+          to = -1
+        }
       }
 
       task "dgraph-zero" {
@@ -317,7 +461,34 @@ job "grapl-core" {
                   local_bind_port  = alpha.value.grpc_private_port
                 }
               }
+
+              # We need to expose the health check for consul to be able to reach it
+              expose {
+                path {
+                  path            = "/health"
+                  protocol        = "http"
+                  local_path_port = 6080
+                  listener_port   = "healthcheck"
+                }
+              }
+
             }
+          }
+        }
+
+        check {
+          type     = "http"
+          name     = "dgraph-zero-http-healthcheck"
+          path     = "/health"
+          port     = "healthcheck"
+          method   = "GET"
+          interval = "30s"
+          timeout  = "5s"
+
+          check_restart {
+            limit           = 3
+            grace           = "30s"
+            ignore_warnings = false
           }
         }
       }
@@ -333,6 +504,14 @@ job "grapl-core" {
     content {
       network {
         mode = "bridge"
+        port "healthcheck" {
+          to = -1
+        }
+        port "dgraph-alpha-port" {
+          # Primarily here to let us use ratel.
+          # Could be potentially replaced with a gateway stanza or something.
+          to = alpha.value.http_port
+        }
       }
 
       task "dgraph-alpha" {
@@ -347,6 +526,7 @@ job "grapl-core" {
             "--port_offset", "${alpha.value.id}",
             "--zero", "${local.zero_alpha_connect_str}"
           ]
+          ports = ["dgraph-alpha-port"]
         }
       }
 
@@ -406,13 +586,41 @@ job "grapl-core" {
         tags = ["dgraph", "alpha", "http"]
 
         connect {
-          sidecar_service {}
+          sidecar_service {
+            proxy {
+              # We need to expose the health check for consul to be able to reach it
+              expose {
+                path {
+                  path            = "/health"
+                  protocol        = "http"
+                  local_path_port = 8080
+                  listener_port   = "healthcheck"
+                }
+              }
+            }
+          }
+        }
+
+        check {
+          type     = "http"
+          name     = "dgraph-alpha-http-healthcheck"
+          path     = "/health"
+          port     = "healthcheck"
+          method   = "GET"
+          interval = "30s"
+          timeout  = "5s"
+
+          check_restart {
+            limit           = 3
+            grace           = "30s"
+            ignore_warnings = false
+          }
         }
       }
     }
   }
 
-  group "grapl-graph-merger" {
+  group "graph-merger" {
     count = var.num_graph_mergers
 
     network {
@@ -423,23 +631,33 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}/grapl/graph-merger:${var.graph_merger_tag}"
+        image = "${var.container_registry}grapl/${var.container_repo}graph-merger:${var.graph_merger_tag}"
+      }
+
+      # This writes an env files that gets read by nomad automatically
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "graph-merger.env"
+        env         = true
       }
 
       env {
-        RUST_LOG           = "${var.rust_log}"
-        REDIS_ENDPOINT     = "${var.redis_endpoint}"
-        MG_ALPHAS          = "${local.alpha_grpc_connect_str}"
-        GRAPL_SCHEMA_TABLE = "${var.schema_table_name}"
-        AWS_REGION         = "${var.aws_region}"
+        AWS_REGION         = var.aws_region
+        RUST_LOG           = var.rust_log
+        RUST_BACKTRACE     = local.rust_backtrace
+        REDIS_ENDPOINT     = local.redis_endpoint
+        MG_ALPHAS          = local.alpha_grpc_connect_str
+        GRAPL_SCHEMA_TABLE = var.schema_table_name
         # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L165
-        DEST_BUCKET_NAME      = "${var.subgraphs_merged_bucket}"
-        SOURCE_QUEUE_URL      = "${var.graph_merger_queue}"
-        DEAD_LETTER_QUEUE_URL = "${var.graph_merger_dead_letter_queue}"
+        DEST_BUCKET_NAME      = var.subgraphs_merged_bucket
+        SOURCE_QUEUE_URL      = var.graph_merger_queue
+        DEAD_LETTER_QUEUE_URL = var.graph_merger_dead_letter_queue
       }
     }
 
     service {
+      name = "graph-merger"
+
       connect {
         sidecar_service {
           proxy {
@@ -458,7 +676,7 @@ job "grapl-core" {
     }
   }
 
-  group "grapl-node-identifier" {
+  group "node-identifier" {
     count = var.num_node_identifiers
 
     network {
@@ -469,25 +687,36 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}/grapl/node-identifier:${var.node_identifier_tag}"
+        image = "${var.container_registry}grapl/${var.container_repo}node-identifier:${var.node_identifier_tag}"
+      }
+
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "node-identifier.env"
+        env         = true
       }
 
       env {
-        RUST_LOG                    = "${var.rust_log}"
-        REDIS_ENDPOINT              = "${var.redis_endpoint}"
-        MG_ALPHAS                   = "${local.alpha_grpc_connect_str}"
-        GRAPL_SCHEMA_TABLE          = "${var.schema_table_name}"
-        AWS_REGION                  = "${var.aws_region}"
-        GRAPL_DYNAMIC_SESSION_TABLE = "${var.session_table}"
+        AWS_REGION                  = var.aws_region
+        RUST_LOG                    = var.rust_log
+        RUST_BACKTRACE              = local.rust_backtrace
+        REDIS_ENDPOINT              = local.redis_endpoint
+        MG_ALPHAS                   = local.alpha_grpc_connect_str # alpha_grpc_connect_str won't work if network mode = grapl network
+        GRAPL_SCHEMA_TABLE          = var.schema_table_name
+        GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
         # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L156
-        DEST_BUCKET_NAME      = "${var.subgraphs_generated_bucket}"
-        SOURCE_QUEUE_URL      = "${var.node_identifier_queue}"
-        DEAD_LETTER_QUEUE_URL = "${var.node_identifier_dead_letter_queue}"
+        DEST_BUCKET_NAME      = var.subgraphs_generated_bucket
+        SOURCE_QUEUE_URL      = var.node_identifier_queue
+        DEAD_LETTER_QUEUE_URL = var.node_identifier_retry_queue
+      }
+
+      service {
+        name = "node-identifier"
       }
     }
   }
 
-  group "grapl-node-identifier-retry" {
+  group "node-identifier-retry" {
     count = var.num_node_identifier_retries
 
     network {
@@ -498,55 +727,177 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}/grapl/node-identifier-retry:${var.node_identifier_tag}"
+        image = "${var.container_registry}grapl/${var.container_repo}node-identifier-retry:${var.node_identifier_tag}"
+      }
+
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "node-identifier-retry.env"
+        env         = true
       }
 
       env {
-        RUST_LOG                    = "${var.rust_log}"
-        REDIS_ENDPOINT              = "${var.redis_endpoint}"
-        MG_ALPHAS                   = "${local.alpha_grpc_connect_str}"
-        GRAPL_SCHEMA_TABLE          = "${var.schema_table_name}"
-        AWS_REGION                  = "${var.aws_region}"
-        GRAPL_DYNAMIC_SESSION_TABLE = "${var.session_table}"
-        DEST_BUCKET_NAME            = "${var.subgraphs_generated_bucket}"
-        SOURCE_QUEUE_URL            = "${var.node_identifier_queue}"
-        DEAD_LETTER_QUEUE_URL       = "${var.node_identifier_dead_letter_queue}"
+        AWS_REGION                  = var.aws_region
+        RUST_LOG                    = var.rust_log
+        RUST_BACKTRACE              = local.rust_backtrace
+        REDIS_ENDPOINT              = local.redis_endpoint
+        MG_ALPHAS                   = local.alpha_grpc_connect_str
+        GRAPL_SCHEMA_TABLE          = var.schema_table_name
+        GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
+        DEST_BUCKET_NAME            = var.subgraphs_generated_bucket
+        SOURCE_QUEUE_URL            = var.node_identifier_retry_queue
+        DEAD_LETTER_QUEUE_URL       = var.node_identifier_dead_letter_queue
       }
+
+      service {
+        name = "node-identifier-retry"
+      }
+
     }
   }
 
-  group "engagement-view" {
-    network {
-      mode = "bridge"
+  group "analyzer-dispatcher" {
 
-      port "engagement-view" {
-        to = 1234
-      }
-    }
-
-    task "engagement-view" {
+    task "analyzer-dispatcher" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}/grapl/engagement-view:${var.engagement_view_tag}"
+        image = "${var.container_registry}grapl/${var.container_repo}analyzer-dispatcher:${var.analyzer_dispatcher_tag}"
+      }
+
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "analyzer-dispatcher.env"
+        env         = true
       }
 
       env {
-        RUST_LOG                    = "${var.rust_log}"
-        GRAPL_UX_BUCKET             = "${var.ux_bucket}"
-        AWS_REGION                  = "${var.aws_region}"
-        GRAPL_AWS_ACCESS_KEY_ID     = "${var.aws_access_key_id}"
-        GRAPL_AWS_ACCESS_KEY_SECRET = "${var.aws_access_key_secret}"
-        GRAPL_AWS_ENDPOINT          = "${var.aws_endpoint}"
+        # AWS vars
+        AWS_REGION = var.aws_region
+        # rust vars
+        RUST_LOG       = var.rust_log
+        RUST_BACKTRACE = local.rust_backtrace
+        # service vars
+        GRAPL_ANALYZERS_BUCKET = var.analyzer_bucket
+        DEST_BUCKET_NAME       = var.analyzer_dispatched_bucket
+        SOURCE_QUEUE_URL       = var.analyzer_dispatcher_queue
+        DEAD_LETTER_QUEUE_URL  = var.analyzer_dispatcher_dead_letter_queue
+      }
+
+      service {
+        name = "analyzer-dispatcher"
+      }
+
+    }
+
+  }
+
+  group "analyzer-executor" {
+    network {
+      mode = "bridge"
+    }
+
+    task "analyzer-executor" {
+      driver = "docker"
+
+      config {
+        image = "${var.container_registry}grapl/${var.container_repo}analyzer-executor:${var.analyzer_executor_tag}"
+      }
+
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "analyzer-executor.env"
+        env         = true
+      }
+
+      env {
+        # AWS vars
+        AWS_DEFAULT_REGION = var.aws_region
+        # python vars
+        GRAPL_LOG_LEVEL = "INFO"
+        # dgraph vars
+        MG_ALPHAS = local.alpha_grpc_connect_str
+        # service vars
+        GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET = var.analyzer_matched_subgraphs_bucket
+        GRAPL_ANALYZERS_BUCKET                  = var.analyzer_bucket
+        GRAPL_MODEL_PLUGINS_BUCKET              = var.model_plugins_bucket
+        SOURCE_QUEUE_URL                        = var.analyzer_executor_queue
+        GRPC_ENABLE_FORK_SUPPORT                = 1
+        HITCACHE_ADDR                           = local.redis_host
+        HITCACHE_PORT                           = local.redis_port
+        IS_RETRY                                = "False"
+        MESSAGECACHE_ADDR                       = local.redis_host
+        MESSAGECACHE_PORT                       = local.redis_port
       }
     }
 
     service {
-      name = "engagement-view"
-      port = "engagement-view"
-
+      name = "analyzer-executor"
       connect {
-        sidecar_service {}
+        sidecar_service {
+          proxy {
+            dynamic "upstreams" {
+              iterator = alpha
+              for_each = local.dgraph_alphas
+
+              content {
+                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
+                local_bind_port  = alpha.value.grpc_public_port
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  group "engagement-creator" {
+    network {
+      mode = "bridge"
+    }
+
+    task "engagement-creator" {
+      driver = "docker"
+
+      config {
+        image = "${var.container_registry}grapl/${var.container_repo}engagement-creator:${var.engagement_creator_tag}"
+      }
+
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "analyzer-executor.env"
+        env         = true
+      }
+
+      env {
+        # AWS vars
+        AWS_DEFAULT_REGION = var.aws_region
+        # python vars
+        GRAPL_LOG_LEVEL = var.rust_log
+        # dgraph vars
+        MG_ALPHAS = local.alpha_grpc_connect_str
+
+        # service vars
+        SOURCE_QUEUE_URL = var.engagement_creator_queue
+      }
+    }
+
+    service {
+      name = "engagement-creator"
+      connect {
+        sidecar_service {
+          proxy {
+            dynamic "upstreams" {
+              iterator = alpha
+              for_each = local.dgraph_alphas
+
+              content {
+                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
+                local_bind_port  = alpha.value.grpc_public_port
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -554,9 +905,8 @@ job "grapl-core" {
   group "graphql-endpoint" {
     network {
       mode = "bridge"
-
-      port "graphql-endpoint" {
-        to = 5000
+      port "graphql-endpoint-port" {
+        static = local.graphql_endpoint_port
       }
     }
 
@@ -564,29 +914,163 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}/grapl/graphql-endpoint:${var.graphql_endpoint_tag}"
+        image = "${var.container_registry}grapl/${var.container_repo}graphql-endpoint:${var.graphql_endpoint_tag}"
+        ports = ["graphql-endpoint-port"]
+      }
+
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "graphql-endpoint.env"
+        env         = true
       }
 
       env {
-        DEPLOYMENT_NAME               = "${var.deployment_name}"
-        RUST_LOG                      = "${var.rust_log}"
-        GRAPL_UX_BUCKET               = "${var.ux_bucket}"
-        AWS_REGION                    = "${var.aws_region}"
-        MG_ALPHAS                     = "${local.alpha_grpc_connect_str}"
-        GRAPL_SCHEMA_TABLE            = "${var.schema_table_name}"
-        GRAPL_SCHEMA_PROPERTIES_TABLE = "${var.schema_properties_table_name}"
-        GRAPL_AWS_ACCESS_KEY_ID       = "${var.aws_access_key_id}"
-        GRAPL_AWS_ACCESS_KEY_SECRET   = "${var.aws_access_key_secret}"
-        GRAPL_AWS_ENDPOINT            = "${var.aws_endpoint}"
+        DEPLOYMENT_NAME = var.deployment_name
+        RUST_LOG        = var.rust_log
+        # JS SDK only recognized AWS_REGION whereas rust and python SDKs use DEFAULT_AWS_REGION
+        AWS_REGION                    = var.aws_region
+        MG_ALPHAS                     = local.alpha_grpc_connect_str
+        GRAPL_SCHEMA_TABLE            = var.schema_table_name
+        GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name
+        IS_LOCAL                      = "True"
+        JWT_SECRET_ID                 = "JWT_SECRET_ID"
+        PORT                          = local.graphql_endpoint_port
       }
     }
 
     service {
       name = "graphql-endpoint"
-      port = "graphql-endpoint"
+      port = "graphql-endpoint-port"
 
       connect {
-        sidecar_service {}
+        sidecar_service {
+          proxy {
+            dynamic "upstreams" {
+              iterator = alpha
+              for_each = local.dgraph_alphas
+
+              content {
+                destination_name = "dgraph-alpha-${alpha.value.id}-grpc-public"
+                local_bind_port  = alpha.value.grpc_public_port
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  group "web-ui" {
+    network {
+      mode = "bridge"
+
+      port "web-ui-port" {
+        static = local.web_ui_port
+        to     = local.web_ui_port
+      }
+    }
+
+    task "web-ui" {
+      driver = "docker"
+
+      config {
+        image = "${var.container_registry}grapl/grapl-web-ui:${var.web_ui_tag}"
+        ports = ["web-ui-port"]
+      }
+
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "web-ui.env"
+        env         = true
+      }
+
+      env {
+        # For the DynamoDB client
+        AWS_REGION = var.aws_region
+
+        GRAPL_USER_AUTH_TABLE    = var.user_auth_table
+        GRAPL_USER_SESSION_TABLE = var.user_session_table
+
+        GRAPL_WEB_UI_BIND_ADDRESS            = "0.0.0.0:${local.web_ui_port}"
+        GRAPL_GRAPHQL_ENDPOINT               = "http://localhost:${local.graphql_endpoint_port}"
+        GRAPL_MODEL_PLUGIN_DEPLOYER_ENDPOINT = "http://TODO:1111" # Note - MPD is being replaced by a Rust service.
+        RUST_LOG                             = var.rust_log
+        RUST_BACKTRACE                       = 1
+      }
+    }
+
+    service {
+      name = "web-ui"
+      port = "web-ui-port"
+      connect {
+        sidecar_service {
+          proxy {
+            upstreams {
+              destination_name = "graphql-endpoint"
+              local_bind_port  = local.graphql_endpoint_port
+            }
+          }
+        }
+      }
+    }
+  }
+
+  group "sysmon-generator" {
+    network {
+      mode = "bridge"
+    }
+
+    task "sysmon-generator" {
+      driver = "docker"
+
+      config {
+        image = "${var.container_registry}grapl/${var.container_repo}sysmon-generator:${var.sysmon_generator_tag}"
+      }
+
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "sysmon.env"
+        env         = true
+      }
+
+      env {
+        DEST_BUCKET_NAME      = var.unid_subgraphs_generated_bucket
+        DEAD_LETTER_QUEUE_URL = var.sysmon_generator_dead_letter_queue
+        SOURCE_QUEUE_URL      = var.sysmon_generator_queue
+        AWS_REGION            = var.aws_region
+        REDIS_ENDPOINT        = local.redis_endpoint
+        RUST_LOG              = var.rust_log
+        RUST_BACKTRACE        = local.rust_backtrace
+      }
+    }
+  }
+
+  group "osquery-generator" {
+    network {
+      mode = "bridge"
+    }
+
+    task "osquery-generator" {
+      driver = "docker"
+
+      config {
+        image = "${var.container_registry}grapl/osquery-generator:${var.sysmon_generator_tag}"
+      }
+
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "osquery.env"
+        env         = true
+      }
+
+      env {
+        DEST_BUCKET_NAME      = var.unid_subgraphs_generated_bucket
+        DEAD_LETTER_QUEUE_URL = var.osquery_generator_dead_letter_queue
+        SOURCE_QUEUE_URL      = var.osquery_generator_queue
+        AWS_REGION            = var.aws_region
+        REDIS_ENDPOINT        = local.redis_endpoint
+        RUST_LOG              = var.rust_log
+        RUST_BACKTRACE        = local.rust_backtrace
       }
     }
   }

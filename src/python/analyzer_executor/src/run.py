@@ -3,26 +3,24 @@ import os
 
 import boto3
 from analyzer_executor_lib.analyzer_executor import AnalyzerExecutor
-from analyzer_executor_lib.event_retriever import EventRetriever
-from analyzer_executor_lib.sqs_timeout_manager import (
-    SqsTimeoutManager,
-    SqsTimeoutManagerException,
-)
 from grapl_common.debugger.vsc_debugger import wait_for_vsc_debugger
 from grapl_common.env_helpers import SQSClientFactory
 from grapl_common.grapl_logger import get_module_grapl_logger
+from grapl_common.sqs.event_retriever import EventRetriever
+from grapl_common.sqs.sqs_timeout_manager import (
+    SqsTimeoutManager,
+    SqsTimeoutManagerException,
+)
 
 wait_for_vsc_debugger(service="analyzer_executor")
 
 LOGGER = get_module_grapl_logger()
 
 
-async def main() -> None:
+async def _main() -> None:
     """
-    Some TODOs:
-    - add
-      DEAD_LETTER_QUEUE_URL
-      DEST_QUEUE_URL
+    Some TODOs to bring this inline with sqs-executor in Rust:
+    - add the shortcut-to-DEAD_LETTER_QUEUE_URL case
     - pull the manual eventing out of `handle_events` and into an EventEmitter (maybe?)
     """
     queue_url = os.environ["SOURCE_QUEUE_URL"]
@@ -49,9 +47,4 @@ async def main() -> None:
             LOGGER.error("SQS Timeout Manager exception", exc_info=True)
 
 
-def run() -> None:
-    asyncio.run(main())
-
-
-if __name__ == "__main__":
-    run()
+asyncio.run(_main())

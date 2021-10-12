@@ -9,12 +9,16 @@ Just use by name.
 import logging
 
 import pytest
-from grapl_tests_common.clients.engagement_edge_client import EngagementEdgeClient
+from grapl_tests_common.clients.grapl_web_client import GraplWebClient
 
 
-@pytest.fixture
-def jwt() -> str:
-    return EngagementEdgeClient().get_jwt()
+@pytest.fixture(
+    # Reuse the same actix session for the entire test run session.
+    # (yes, two unrelated uses of 'session')
+    scope="session"
+)
+def actix_session() -> str:
+    return GraplWebClient().get_actix_session()
 
 
 # Applies it to every test function automatically.

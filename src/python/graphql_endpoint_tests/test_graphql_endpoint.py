@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Any, Dict, List, cast
 from unittest import TestCase
 
@@ -9,13 +10,27 @@ from grapl_analyzerlib.test_utils.strategies.asset_view_strategy import (
 )
 from grapl_common.debugger.vsc_debugger import wait_for_vsc_debugger
 from grapl_common.grapl_logger import get_module_grapl_logger
-from grapl_tests_common.clients.engagement_edge_client import EngagementEdgeClient
 from grapl_tests_common.clients.graphql_endpoint_client import GraphqlEndpointClient
+from grapl_tests_common.clients.grapl_web_client import GraplWebClient
 from grapl_tests_common.scenarios.create_lens_with_nodes_in_scope import *
 
 LOGGER = get_module_grapl_logger()
 
 GqlLensDict = Dict[str, Any]
+
+
+@lru_cache(maxsize=1)
+def hacky_memoized_actix_session() -> str:
+    """
+    Doesn't work as a Hypothesis given because we try to evaluate those, even
+    for unit tests - despite not having the right env vars for it at unit test
+    time.
+
+    We memoize it because `get_actix_session` is CPU-bounded, lots of Argon
+    number crunching.
+    That doesn't mix well with Hypothesis's whole "let's run 100 tests" shtick.
+    """
+    return GraplWebClient().get_actix_session()
 
 
 @pytest.mark.integration_test
@@ -27,13 +42,14 @@ class TestGraphqlEndpoint(TestCase):
     @hypothesis.given(
         asset_props=asset_props_strategy(),
     )
-    @hypothesis.settings(deadline=None)
+    @hypothesis.settings(deadline=None, max_examples=25)
     def test_create_lens_shows_up_in_graphql(
         self,
         asset_props: AssetProps,
     ) -> None:
         graph_client = GraphClient()
-        graphql_client = GraphqlEndpointClient(jwt=EngagementEdgeClient().get_jwt())
+        actix_session = hacky_memoized_actix_session()
+        graphql_client = GraphqlEndpointClient(actix_session=actix_session)
 
         lens = create_lens_with_nodes_in_scope(self, graph_client, asset_props)
         lens_name = lens.get_lens_name()
@@ -61,7 +77,8 @@ class TestGraphqlEndpoint(TestCase):
     def test_describe_asset_type(
         self,
     ) -> None:
-        graphql_client = GraphqlEndpointClient(jwt=EngagementEdgeClient().get_jwt())
+        actix_session = hacky_memoized_actix_session()
+        graphql_client = GraphqlEndpointClient(actix_session=actix_session)
 
         result = graphql_client.query_type("Asset")
         assert result["name"] == "Asset"

@@ -1,6 +1,7 @@
 # Any Python dependencies used by our code should be declared here.
 # !!!!! Don't forget to regenerate the constraints from this! (see readme.md)
 
+argon2-cffi
 boto3
 botocore
 chalice==1.22.4
@@ -26,14 +27,16 @@ pulumi>=3.0.0,<4.0.0
 pulumi-aws>=4.0.0,<5.0.0,==4.6.0
 pulumi_docker
 pulumi_kafka
+pulumi_nomad
 pulumi_policy
 pulumi_random
 pydantic==1.8.2
 pydgraph
 pyjwt
 pytest
-requests
+python-nomad==1.4.1
 redis
+requests
 setuptools
 toml==0.10.2
 typer==0.3.2

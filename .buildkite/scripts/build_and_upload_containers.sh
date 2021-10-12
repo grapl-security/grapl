@@ -41,8 +41,10 @@ cloudsmith_tag() {
     local -r tag="${2}"
     echo "${CLOUDSMITH_DOCKER_REGISTRY}/${service}:${tag}"
 }
-echo "--- :python: Building analyzer-executor pex binary"
-make build-analyzer-executor
+
+# These are then consumed by src/python/Dockerfile
+echo "--- :python: Building pex binaries"
+make build-service-pexs
 
 for service in "${services[@]}"; do
     # Build a single service

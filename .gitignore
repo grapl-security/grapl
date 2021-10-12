@@ -3,7 +3,7 @@
 
 # Test outputs
 test/integration-outputs
-# Artifacts dumped from dump_artifacts.py script
+# Artifacts dumped from `make dump-artifacts` script
 /test_artifacts/
 
 # Environments
@@ -26,7 +26,17 @@ node_modules/
 
 # Yarn packages
 src/js/engagement_view/.yarn/install-state.gz
+src/js/engagement_view/.npm/*
+src/js/engagement_view/.yarn/*
+!src/js/engagement_view/.yarn/cache
+!src/js/engagement_view/.yarn/releases
+!src/js/engagement_view/.yarn/plugins
+!src/js/engagement_view/.yarn/sdks
+!src/js/engagement_view/.yarn/versions
+src/js/engagement_view/coverage
 
+# Web UI frontend artifacts
+src/rust/grapl-web-ui/frontend/*
 
 # Distribution / packaging
 build/

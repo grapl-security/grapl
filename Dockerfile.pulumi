@@ -58,13 +58,15 @@ ENV VIRTUAL_ENV=/home/grapl/venv
 RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
+# Grab some dependencies before we COPY in pulumi, to save some time.
+RUN pip install --upgrade pip wheel typing_extensions setuptools
+
 COPY --chown=grapl pulumi pulumi
 
 # We need to parse the following command with `bash`, not `sh`
 SHELL ["/bin/bash", "-c"]
 
-RUN pip install --upgrade pip wheel && \
-    pip install -r <(./pants dependencies --type=3rdparty pulumi::)
+RUN pip install -r <(./pants dependencies --type=3rdparty pulumi::)
 
 # Create a directory *as the grapl user*, at which we will mount an
 # external volume to share Pulumi run outputs with other
@@ -72,4 +74,7 @@ RUN pip install --upgrade pip wheel && \
 # and with the correct permissions, in order for us to be able to
 # write to it.
 RUN mkdir /home/grapl/pulumi-outputs
+
+# Make nomad files available to Pulumi
+COPY --chown=grapl nomad nomad
 WORKDIR /home/grapl/pulumi

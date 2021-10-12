@@ -85,25 +85,6 @@ steps:
     command:
       - make build-docs
 
-  - label: ":yarn: Build UX"
-    command: make build-ux
-    plugins:
-      - docker#v3.8.0:
-          # This container actually contains `make`, too!
-          image: "node:16.5.0"
-
-  - label: ":aws-lambda::package: Create Lambda Zips"
-    command:
-      - make build-lambda-zips
-    agents:
-      queue: "beefy"
-    # There are some issues with the docker nature of this step at the
-    # moment that can cause this to spuriously fail; we'll just
-    # automatically retry it for the time being.
-    retry:
-      automatic:
-        limit: 2
-
   - label: ":hammer: Integration Tests"
     command:
       - make test-integration
@@ -153,8 +134,7 @@ steps:
       # This is slightly hacky, but means we don't need to build packages locally first
       - git fetch origin rc
       - git show origin/rc:pulumi/grapl/Pulumi.testing.yaml > pulumi/grapl/Pulumi.testing.yaml
-      - pulumi/bin/prepare_grapl_ux_dependency.sh grapl/testing
-      - .buildkite/shared/steps/pulumi_preview.sh grapl/testing
+      - .buildkite/shared/steps/pulumi_preview.sh grapl/testing nomad/testing
     plugins:
       - seek-oss/aws-sm#v2.3.1:
           env:

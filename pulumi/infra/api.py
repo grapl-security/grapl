@@ -1,19 +1,14 @@
-from typing import Optional
+from typing import List, Optional
 
 import pulumi_aws as aws
 from infra.bucket import Bucket
 from infra.config import LOCAL_GRAPL
 from infra.dgraph_cluster import DgraphCluster
 from infra.dynamodb import DynamoDB
-from infra.engagement_edge import EngagementEdge
 from infra.engagement_notebook import EngagementNotebook
-from infra.graphql import GraphQL
 from infra.lambda_ import Lambda
-from infra.metric_forwarder import MetricForwarder
-from infra.model_plugin_deployer import ModelPluginDeployer
 from infra.network import Network
 from infra.secret import JWTSecret
-from infra.ux_router import UxRouter
 
 import pulumi
 
@@ -139,7 +134,6 @@ class Api(pulumi.ComponentResource):
         plugins_bucket: Bucket,
         db: DynamoDB,
         dgraph_cluster: DgraphCluster,
-        forwarder: MetricForwarder,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         name = "api-gateway"
@@ -199,13 +193,7 @@ class Api(pulumi.ComponentResource):
         # each of those lambda integrations. The most straightforward
         # way to do that would seem to be making this API own
         # instances of each of them.
-
-        self.ux_router = UxRouter(
-            network=network,
-            secret=secret,
-            ux_bucket=ux_bucket,
-            forwarder=forwarder,
-        )
+        # TODO: update this comment with the new architecture
 
         # Sagemaker isn't currently supported in Localstack :/
         self.notebook = (
@@ -220,56 +208,7 @@ class Api(pulumi.ComponentResource):
             else None
         )
 
-        self.engagement_edge = EngagementEdge(
-            network=network,
-            secret=secret,
-            db=db,
-            notebook=self.notebook,
-            forwarder=forwarder,
-            dgraph_cluster=dgraph_cluster,
-            opts=pulumi.ResourceOptions(parent=self),
-        )
-
-        self.model_plugin_deployer = ModelPluginDeployer(
-            network=network,
-            db=db,
-            secret=secret,
-            plugins_bucket=plugins_bucket,
-            dgraph_cluster=dgraph_cluster,
-            forwarder=forwarder,
-        )
-
-        # These don't work in LocalStack for some reason
-        if not LOCAL_GRAPL:
-            self.graphql_endpoint = GraphQL(
-                network=network,
-                secret=secret,
-                ux_bucket=ux_bucket,
-                db=db,
-                dgraph_cluster=dgraph_cluster,
-                forwarder=forwarder,
-            )
-
-        self.proxies = [
-            self._add_proxy_resource_integration(self.ux_router.function),
-            self._add_proxy_resource_integration(
-                self.engagement_edge.function, path_part="auth"
-            ),
-            self._add_proxy_resource_integration(
-                self.model_plugin_deployer.function,
-                path_part="modelPluginDeployer",
-            ),
-        ]
-
-        # These don't work in LocalStack for some reason
-        if not LOCAL_GRAPL:
-            self.proxies.extend(
-                [
-                    self._add_proxy_resource_integration(
-                        self.graphql_endpoint.function, path_part="graphQlEndpoint"
-                    ),
-                ]
-            )
+        self.proxies: List[ProxyApiResource] = []
 
         # This MUST be called after all integrations are registered in
         # self.proxies!

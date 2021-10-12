@@ -54,9 +54,7 @@ The following environment variables can affect the build and test environments:
   images. For local builds `latest` is fine. Production builds should have a
 specific version e.g. `v1.2.3`. Users may want to use a tag that includes
 version and/or branch information for tracking purposes (ex:
-`v1.2.3-my_feature`). This value corresponds to the `graplVersion` parameter in
-the CDK project for deploying to AWS, and is used to name the zip files in the
-Make `zip` target.
+`v1.2.3-my_feature`).
 - `CARGO_PROFILE` (default: `debug`) - Can either be `debug` or `release`. These
   roughly translate to the [Cargo
 profiles](https://doc.rust-lang.org/cargo/reference/profiles.html) to be used
@@ -72,13 +70,6 @@ so it should be suitable secrets like S3 credentials for use with sccache.
   buildx](https://github.com/docker/buildx). You can pass additional arguments
 to the `docker buildx build` commands by setting this option (ex: `--progress
 plain`).
-
-#### CDK deployment parameters
-
-Arguments to the CDK deployment parameters can be supplied via environment
-variables documented in [docs/setup/aws.md](./docs/setup/aws.md#configure). By
-using `make deploy` to execute a CDK deploy, the environment variables can be
-read from a `.env` in the root of the Grapl respository.
 
 ### sccache
 
@@ -252,33 +243,9 @@ echo '_/bridge.ko' | sudo tee -a /lib/modules/$(uname -r)/modules.builtin
 
 ### Running Nomad locally
 
-1. Set up local registry, build and push containers to local registry
 ```bash
-make build-docker-images-local
+make up-detach
 ```
-
-2. Start local Nomad environment
-```bash
-# NOTE: Requires sudo privileges.
-make start-nomad-dev
-```
-
-3. Create dynamodb tables
-This will involve running pulumi locally to generate dynamodb tables. Currently the commands are TBD
-
-4. Deploy Grapl Core
-```bash
-# Get redis endpoint in IP:PORT format automatically
-export LOCAL_REDIS_ENDPOINT=`docker ps | grep "redis" | awk '{print $10}' | awk '{split($0,a,"-"); print a[1]}'`
-nomad job run \
-    -var "container_registry=localhost:5000" \
-    -var "dgraph_replicas=1" \
-    -var "dgraph_shards=1" \
-    -var "redis_endpoint=redis://$LOCAL_REDIS_ENDPOINT" \
-    -var "schema_table_name=$GRAPL_SCHEMA_TABLE" \
-    nomad/grapl-core.nomad
-```
-
 
 ## The CI system
 

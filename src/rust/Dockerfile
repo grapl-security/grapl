@@ -92,29 +92,7 @@ RUN cp -ar /tmp/target/. /grapl/rust/target/ && \
     cp -ar /tmp/registry/. /usr/local/cargo/registry/ && \
     rm -rf /tmp/{target,registry}
 
-CMD [ "bash", "-c", "cargo test --features \"${RUST_INTEGRATION_TEST_FEATURES}\" --test \"*\"" ]
-
-# metric-forwarder-zip
-################################################################################
-FROM build AS metric-forwarder-zip
-
-RUN --mount=type=cache,target=/var/lib/apt/lists \
-    apt-get update && apt-get install -y --no-install-recommends \
-        zip
-
-RUN mkdir -p /grapl/zips; \
-    grapl-zip() { \
-      TMPDIR="$(mktemp -d)"; \
-      cd "$TMPDIR"; \
-      cp "/outputs/${1}" bootstrap && \
-      zip --quiet -9 "/grapl/zips/${1}-lambda.zip" bootstrap; \
-    }; \
-    grapl-zip metric-forwarder
-
-# This defines a default command for extracting the metric-forwarder zip to a
-# container mount point at /dist
-CMD [ "cp", "/grapl/zips/metric-forwarder-lambda.zip", "/dist" ]
-
+CMD [ "bash", "-c", "cargo test --features \"${RUST_INTEGRATION_TEST_FEATURES}\" --test \"*\" -- --nocapture" ]
 
 # images for running services
 ################################################################################
@@ -170,3 +148,10 @@ FROM rust-dist AS osquery-generator-deploy
 
 COPY --from=build /outputs/osquery-generator /
 ENTRYPOINT ["/osquery-generator"]
+
+# web-ui
+FROM rust-dist AS grapl-web-ui
+
+COPY --from=build /outputs/grapl-web-ui /
+COPY rust/grapl-web-ui/frontend /frontend
+ENTRYPOINT ["/grapl-web-ui"]

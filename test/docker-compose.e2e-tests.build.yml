@@ -1,0 +1,9 @@
+version: "3.8"
+
+services:
+  e2e-tests:
+    image: grapl/e2e-tests:${TAG:-latest}
+    build:
+      context: .
+      dockerfile: ./src/python/Dockerfile
+      target: e2e-tests

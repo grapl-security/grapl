@@ -105,10 +105,6 @@ pub fn _init_grapl_log() -> tracing_appender::non_blocking::WorkerGuard {
     guard
 }
 
-pub fn ux_bucket() -> String {
-    std::env::var("UX_BUCKET").expect("UX_BUCKET")
-}
-
 pub fn source_queue_url() -> String {
     std::env::var("SOURCE_QUEUE_URL").expect("SOURCE_QUEUE_URL")
 }

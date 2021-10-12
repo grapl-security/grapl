@@ -1,0 +1,6 @@
+# This exists to keep the existence of the node_modules directory in git.
+# Doing this is useful for preserving file permissions when building with
+# Docker.
+*
+!.gitignore
+

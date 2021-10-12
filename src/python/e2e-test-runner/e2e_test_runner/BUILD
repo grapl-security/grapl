@@ -1,11 +1,15 @@
 python_library(
+    name="test_files",
     sources=["*.py"]
 )
 
-python_awslambda(
-    name="lambda",
-    output_path="e2e-test-runner-lambda.zip",
-    runtime="python3.7",
-    handler="./main.py:lambda_handler",
-    dependencies=[":e2e_test_runner"]
+pex_binary(
+    name="pex",
+    output_path="e2e-tests.pex",
+    entry_point="./main.py:main",
+    execution_mode="venv",
+    
+    # Explicit `dependencies` needed, because `pytest` picks up tests
+    # dynamically, not by explicit imports
+    dependencies = [":test_files"]
 )

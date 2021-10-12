@@ -43,17 +43,13 @@ BUILD @christophermaier
 /src/python/analyzer_executor/ @wimax-grapl @grapl-security/wg-data-infra
 /src/python/e2e-test-runner/ @jgrillo-grapl
 /src/python/engagement-creator/ @wimax-grapl @grapl-security/wg-data-infra
-/src/python/engagement_edge/ @colin-grapl
 /src/python/graphql_endpoint_tests/ @wimax-grapl
 /src/python/grapl_analyzerlib/ @colin-grapl
 /src/python/grapl-common/ @wimax-grapl
 /src/python/graplctl/ @jgrillo-grapl
-/src/python/grapl-dgraph-ttl/ @grapl-security/wg-data-infra
-/src/python/grapl-model-plugin-deployer/ @colin-grapl
 /src/python/grapl-notebook/ @wimax-grapl
 /src/python/grapl-template-generator/ @wimax-grapl @colin-grapl
 /src/python/grapl-tests-common/ @wimax-grapl
-/src/python/grapl-ux-router/ @colin-grapl
 /src/python/mypy.ini @christophermaier @wimax-grapl
 /src/python/provisioner/ @jgrillo-grapl
 /src/python/python-proto/ @grapl-security/wg-data-infra
@@ -72,8 +68,8 @@ BUILD @christophermaier
 /src/rust/grapl-observe/ @wimax-grapl
 /src/rust/grapl-service/ @inickles-grapl
 /src/rust/grapl-utils/ @inickles-grapl
+/src/rust/grapl-web-ui/ @inickles-grapl
 /src/rust/kafka-metrics-exporter/ @jgrillo-grapl
-/src/rust/metric-forwarder/ @wimax-grapl
 /src/rust/node-identifier/ @grapl-security/wg-data-infra
 /src/rust/rust-proto/ @grapl-security/wg-data-infra
 /src/rust/rust-toolchain @inickles-grapl
@@ -85,6 +81,7 @@ BUILD @christophermaier
 /test/Dockerfile.cypress @inickles-grapl @andrea-grapl
 /test/package.json @inickles-grapl @andrea-grapl
 /test/yarn.lock @inickles-grapl @andrea-grapl
+/test/run @wimax-grapl
 
 # This needs to be kept at the end??
 .gitkeep @christophermaier
