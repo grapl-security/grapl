@@ -36,6 +36,8 @@ install_docker() {
 install_rust_and_utilities() {
     echo "Installing rust toolchain"
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    # Shellcheck can't follow $HOME or other vars like $USER so we disable the check here
+    # shellcheck disable=SC1091
     source "$HOME/.cargo/env"
 
     echo "Installing rust utilities (ripgrep, fd-find, dua and bat)"
@@ -58,6 +60,8 @@ install_pyenv() {
 install_nvm() {
     echo "Installing nvm"
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
+    # Shellcheck can't follow $HOME or other vars like $USER so we disable the check here
+    # shellcheck disable=SC1091
     source "$HOME/.profile"
     nvm install node
 }
