@@ -29,10 +29,14 @@ readonly CLOUDSMITH_DOCKER_REGISTRY="docker.cloudsmith.io/grapl/raw"
 services=(
     analyzer-dispatcher
     analyzer-executor
+    engagement-creator
     graph-merger
+    graphql-endpoint
+    grapl-web-ui
     node-identifier
     node-identifier-retry
     osquery-generator
+    provisioner
     sysmon-generator
 )
 
