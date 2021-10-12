@@ -1,5 +1,3 @@
-shell_library()
-
 docker_image(
     name="docker",
 )

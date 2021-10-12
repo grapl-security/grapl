@@ -326,8 +326,12 @@ lint-proto: ## Lint all protobuf definitions
 lint-proto-breaking: ## Check protobuf definitions for breaking changes
 	${DOCKER_COMPOSE_CHECK} buf-breaking-change
 
+.PHONY: lint-docker
+lint-docker: ## Lint all dockerfiles using hadolint
+	./pants filter --target-type=docker_image :: | xargs ./pants lint
+
 .PHONY: lint
-lint: lint-python lint-prettier lint-rust lint-shell lint-hcl lint-proto lint-proto-breaking ## Run all lint checks
+lint: lint-python lint-prettier lint-rust lint-shell lint-hcl lint-proto lint-proto-breaking lint-docker ## Run all lint checks
 
 ##@ Formatting 💅
 
