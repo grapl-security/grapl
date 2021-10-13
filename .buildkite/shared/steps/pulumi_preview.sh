@@ -29,17 +29,17 @@ pulumi login
 
 # get nomad address from nomad stack
 nomad_address=$(pulumi stack output "address" \
-    --stack="$(fully_qualified_stack_name "${nomad_stack}")" \
+    --stack="${nomad_stack}" \
     --cwd="$(project_directory "${project_stack}")")
 # set nomad address so we know where to deploy jobs to
 pulumi config set nomad:address "${nomad_address}" \
     --cwd="$(project_directory "${project_stack}")" \
-    --stack="$(fully_qualified_stack_name "${project_stack}")"
+    --stack="${project_stack}"
 
 echo -e "--- :pulumi: Previewing changes to ${project_stack} infrastructure"
 pulumi preview \
     --cwd="$(project_directory "${project_stack}")" \
-    --stack="$(fully_qualified_stack_name "${project_stack}")" \
+    --stack="${project_stack}" \
     --show-replacement-steps \
     --non-interactive \
     --diff \
