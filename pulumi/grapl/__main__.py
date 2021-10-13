@@ -294,11 +294,11 @@ def main() -> None:
             dgraph_tag="latest",
             engagement_creator_tag=artifacts["engagement-creator"],
             graph_merger_tag=artifacts["graph-merger"],
-            # graphql_endpoint_tag=artifacts["graphql-endpoint"], # enable this once this is in the rc branch
+            graphql_endpoint_tag=artifacts["graphql-endpoint"],
             node_identifier_tag=artifacts["node-identifier"],
             osquery_generator_tag=artifacts["osquery-generator"],
             sysmon_generator_tag=artifacts["sysmon-generator"],
-            # web_ui_tag=artifacts["web-ui"], # enable this once this is in the rc branch
+            web_ui_tag=artifacts["grapl-web-ui"],
             **nomad_inputs,
         )
 
