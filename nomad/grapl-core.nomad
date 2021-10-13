@@ -358,7 +358,7 @@ job "grapl-core" {
 
     service {
       name = "ingress-service"
-      port = "8080"
+      port = "${local.web_ui_port}"
 
       connect {
         gateway {
@@ -1035,7 +1035,8 @@ job "grapl-core" {
 
     service {
       name = "web-ui"
-      port = "web-ui-port"
+      port = "${local.web_ui_port}"
+
       connect {
         sidecar_service {
           proxy {
