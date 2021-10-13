@@ -341,6 +341,44 @@ job "grapl-core" {
     min_healthy_time = "15s"
   }
 
+  group "ingress-group" {
+    # Based off example at
+    # https://www.hashicorp.com/blog/introducing-hashicorp-nomad-v0-12-s-new-consul-ingress-gateway-capability
+
+    network {
+      mode = "host"
+
+      # enable tcp traffic to access the grapl-web-ui-service by going through
+      # the ingress gateway on port 8080.
+      port "exposed-port" {
+        static = local.web_ui_port
+        to     = local.web_ui_port
+      }
+    }
+
+    service {
+      name = "ingress-service"
+      port = "8080"
+
+      connect {
+        gateway {
+          # Consul Ingress Gateway Configuration Entry.
+          ingress {
+            # https://www.nomadproject.io/docs/job-specification/gateway#ingress-parameters
+            listener {
+              port     = local.web_ui_port
+              protocol = "tcp"
+              service {
+                # the upstream
+                name = "grapl-web-ui"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   group "dgraph-zero-0" {
     network {
       mode = "bridge"
@@ -963,11 +1001,7 @@ job "grapl-core" {
   group "web-ui" {
     network {
       mode = "bridge"
-
-      port "web-ui-port" {
-        static = local.web_ui_port
-        to     = local.web_ui_port
-      }
+      port "web-ui-port" {}
     }
 
     task "web-ui" {
