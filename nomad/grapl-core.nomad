@@ -351,7 +351,6 @@ job "grapl-core" {
       # enable tcp traffic to access the grapl-web-ui-service by going through
       # the ingress gateway on port 8080.
       port "exposed-port" {
-        static = local.web_ui_port
         to     = local.web_ui_port
       }
     }
@@ -1001,7 +1000,11 @@ job "grapl-core" {
   group "web-ui" {
     network {
       mode = "bridge"
-      port "web-ui-port" {}
+
+      port "web-ui-port" {
+        static = local.web_ui_port
+        to     = local.web_ui_port
+      }
     }
 
     task "web-ui" {
@@ -1035,8 +1038,7 @@ job "grapl-core" {
 
     service {
       name = "web-ui"
-      port = "${local.web_ui_port}"
-
+      port = "web-ui-port"
       connect {
         sidecar_service {
           proxy {
