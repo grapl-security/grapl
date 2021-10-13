@@ -22,7 +22,7 @@ else
     soft_fail="true"
 fi
 
-cat <<EOF
+cat << EOF
 ---
 steps:
   - label: ":rust: cargo audit"
