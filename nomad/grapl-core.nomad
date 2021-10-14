@@ -341,6 +341,7 @@ job "grapl-core" {
     min_healthy_time = "15s"
   }
 
+  # TODO: May need to become a "system" job, not service job
   group "ingress-group" {
     # Expose grapl-web-ui, which is on the bridge network, to host's localhost.
 
@@ -935,7 +936,6 @@ job "grapl-core" {
     network {
       mode = "bridge"
       port "graphql-endpoint-port" {
-        static = local.graphql_endpoint_port
       }
     }
 
@@ -963,7 +963,7 @@ job "grapl-core" {
         GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name
         IS_LOCAL                      = "True"
         JWT_SECRET_ID                 = "JWT_SECRET_ID"
-        PORT                          = local.graphql_endpoint_port
+        PORT                          = "${NOMAD_PORT_graphql-endpoint-port}"
       }
     }
 
@@ -1020,8 +1020,8 @@ job "grapl-core" {
         GRAPL_USER_AUTH_TABLE    = var.user_auth_table
         GRAPL_USER_SESSION_TABLE = var.user_session_table
 
-        GRAPL_WEB_UI_BIND_ADDRESS            = "0.0.0.0:${local.web_ui_port}"
-        GRAPL_GRAPHQL_ENDPOINT               = "http://localhost:${local.graphql_endpoint_port}"
+        GRAPL_WEB_UI_BIND_ADDRESS            = "0.0.0.0:${NOMAD_PORT_web-ui-port}"
+        GRAPL_GRAPHQL_ENDPOINT               = "http://${NOMAD_UPSTREAM_ADDR_graphql-endpoint}"
         GRAPL_MODEL_PLUGIN_DEPLOYER_ENDPOINT = "http://TODO:1111" # Note - MPD is being replaced by a Rust service.
         RUST_LOG                             = var.rust_log
         RUST_BACKTRACE                       = 1
