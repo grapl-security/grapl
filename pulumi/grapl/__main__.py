@@ -4,7 +4,7 @@ from pathlib import Path
 sys.path.insert(0, "..")
 
 import os
-from typing import Any, Mapping
+from typing import Any, Mapping, cast
 
 import pulumi_aws as aws
 from infra import config, dynamodb, emitter
@@ -143,9 +143,17 @@ def main() -> None:
         user_session_table=dynamodb_tables.user_session_table.name,
     )
 
-    if config.LOCAL_GRAPL:
-        kafka = Kafka("kafka")
+    confluent = cast(
+        Mapping[str, Any],
+        pulumi.StackReference(
+            "confluent-cloud-infrastructure-stack-reference",
+            stack_name=f"grapl/confluent-cloud-infrastructure/ccloud-bootstrap",
+        ).get_output("confluent"),
+    )
 
+    kafka = Kafka("kafka", confluent=confluent[pulumi.get_stack()])
+
+    if config.LOCAL_GRAPL:
         # These are created in `grapl-local-infra.nomad` and not applicable to prod.
         # Nomad will replace the LOCAL_GRAPL_REPLACE_IP sentinel value with the correct IP.
         aws_endpoint = "http://LOCAL_GRAPL_REPLACE_IP:4566"
