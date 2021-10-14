@@ -342,33 +342,25 @@ job "grapl-core" {
   }
 
   group "ingress-group" {
-    # Based off example at
-    # https://www.hashicorp.com/blog/introducing-hashicorp-nomad-v0-12-s-new-consul-ingress-gateway-capability
+    # Expose grapl-web-ui, which is on the bridge network, to host's localhost.
 
     network {
       mode = "host"
-
-      # enable tcp traffic to access the grapl-web-ui-service by going through
-      # the ingress gateway on port 8080.
-      port "exposed-port" {
-        to     = local.web_ui_port
-      }
     }
 
     service {
       name = "ingress-service"
-      port = "${local.web_ui_port}"
+      port = local.web_ui_port
 
       connect {
         gateway {
           # Consul Ingress Gateway Configuration Entry.
           ingress {
-            # https://www.nomadproject.io/docs/job-specification/gateway#ingress-parameters
             listener {
               port     = local.web_ui_port
               protocol = "tcp"
               service {
-                # the upstream
+                # the upstream service
                 name = "grapl-web-ui"
               }
             }
