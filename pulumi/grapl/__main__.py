@@ -283,13 +283,16 @@ def main() -> None:
 
         # Set the nomad address. This can be either set as nomad:address in the config to support ssm port forwarding or
         # will be taken from the nomad stack
-        nomad_server_stack = pulumi.StackReference(config.require("nomad-server-stack"))
+        nomad_server_stack = pulumi.StackReference(
+            pulumi_config.require("nomad-server-stack")
+        )
         nomad_config = pulumi.Config("nomad")
         nomad_override_address = nomad_config.get("address")
         # We prefer nomad:address to support overriding in the case of ssm port forwarding
-        nomad_address = nomad_override_address or nomad_server_stack.require_output("address")
+        nomad_address = nomad_override_address or nomad_server_stack.require_output(
+            "address"
+        )
         nomad_provider = nomad.Provider("nomad-aws", address=nomad_address)
-
 
         grapl_core_job_vars = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
@@ -317,7 +320,7 @@ def main() -> None:
             "grapl-core",
             jobspec=Path("../../nomad/grapl-core.nomad").resolve(),
             vars=grapl_core_job_vars,
-            opts=pulumi.ResourceOptions(provider=nomad_provider)
+            opts=pulumi.ResourceOptions(provider=nomad_provider),
         )
 
         def _get_provisioner_job_vars(inputs: Mapping[str, Any]) -> Mapping[str, Any]:
@@ -353,7 +356,9 @@ def main() -> None:
             "grapl-provision",
             jobspec=Path("../../nomad/grapl-provision.nomad").resolve(),
             vars=grapl_provision_job_vars,
-            opts=pulumi.ResourceOptions(depends_on=[nomad_grapl_core], provider=nomad_provider),
+            opts=pulumi.ResourceOptions(
+                depends_on=[nomad_grapl_core], provider=nomad_provider
+            ),
         )
 
     OpsAlarms(name="ops-alarms")
