@@ -18,8 +18,8 @@ ensure_cros_bridge_networking_workaround() {
         module_filepath="/lib/modules/$(uname -r)/modules.builtin"
         if ! grep -q "_/bridge.ko" "$module_filepath"; then
             echo "It looks like you're on ChromeOS, but haven't installed the Nomad bridge networking workaround."
-            echo "Please see Grapl's BUILDING.md 'Nomad local development setup' for instructions."
-            exit 1
+            source etc/chromeos/lib/installs.sh
+            install_nomad_chromeos_workaround
         fi
     fi
 }
