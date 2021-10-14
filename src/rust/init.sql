@@ -19,7 +19,7 @@ CREATE TABLE users
 );
 
 
-INSERT INTO organization(org_id, org_display_name, admin_email, admin_password, admin_username, should_reset_password) VALUES
-(1, 'A'),
-(2, 'B'),
-(3, 'C');
+-- INSERT INTO organization(org_id, org_display_name, admin_email, admin_password, admin_username, should_reset_password) VALUES
+-- (1, 'A'),
+-- (2, 'B'),
+-- (3, 'C');
