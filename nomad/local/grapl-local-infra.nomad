@@ -47,13 +47,30 @@ variable "ZOOKEEPER_PORT" {
   description = "Port for zookeeper"
 }
 
+variable "POSTGRES_USER" {
+  type        = string
+}
+
+variable "POSTGRES_PASSWORD" {
+  type        = string
+}
+
+variable "POSTGRES_DB" {
+  type        = string
+}
+
+variable "postgres_db_tag" {
+  type        = string
+  default     = "dev"
+  description = "The tagged version of postgresdb we should deploy."
+}
+
 locals {
   # This is the equivalent of `localhost` within a bridge network.
   # Useful for, for instance, talking to Zookeeper from Kafka without Consul Connect
   localhost_within_bridge = attr.unique.network.ip-address
   zookeeper_endpoint      = "${local.localhost_within_bridge}:${var.ZOOKEEPER_PORT}"
 }
-
 
 ####################
 # Jobspecs
@@ -232,7 +249,7 @@ job "grapl-local-infra" {
 
         # Some clients (like Pulumi) will need `host.docker.internal`
         # Some clients (like grapl-core services) will need localhost_within_bridge
-        # We differentiate between which client it is based on which port we receive on. 
+        # We differentiate between which client it is based on which port we receive on.
         # So a receive on 29092 means HOST_OS
         KAFKA_ADVERTISED_LISTENERS = join(",", [
           "WITHIN_TASK://localhost:9092",
@@ -274,6 +291,29 @@ job "grapl-local-infra" {
         }
       }
 
+    }
+  }
+
+  group "org-management-postgres-db" {
+    network {
+      port "postgres-port" {
+        static = 5432
+      }
+    }
+
+    task "org-management-postgres-db" {
+      driver = "docker"
+
+      config {
+        image = "${var.container_registry}grapl/org-management-postgres-db:${var.postgres_db_tag}"
+        ports = ["postgres-port"]
+      }
+
+      env {
+        POSTGRES_USER = var.POSTGRES_USER
+        POSTGRES_PASSWORD = var.POSTGRES_PASSWORD
+        POSTGRES_DB = var.POSTGRES_DB
+      }
     }
   }
 
