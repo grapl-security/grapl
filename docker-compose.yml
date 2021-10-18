@@ -383,7 +383,7 @@ services:
       interval: 5s
       timeout: 30s
       start_period: 15s
-    networks:
+    networks:  # NO
       default:
         aliases:
           - "orgdb.grapl.test"
