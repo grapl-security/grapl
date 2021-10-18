@@ -3,3 +3,4 @@ pub mod org_management {
 }
 
 pub mod server;
+pub mod client;

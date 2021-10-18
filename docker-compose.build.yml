@@ -66,7 +66,7 @@ services:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
   org-management:
-    image: ${DOCKER_REGISTRY:-docker.io}/grapl/org-management:${TAG:-latest}
+    image: grapl/org-management:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -75,7 +75,7 @@ services:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
   org-management-postgres-db:
-    image: ${DOCKER_REGISTRY:-docker.io}/grapl/org-management-postgres-db:${TAG:-latest}
+    image: grapl/org-management-postgres-db:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile

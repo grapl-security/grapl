@@ -92,38 +92,38 @@ impl OrganizationManager for OrganizationManagerRpc {
     ) -> Result<Response<EmptyResp>, Status> {
         println!("Org request data: {:?}", &request); // don't actually print this
 
-        // let user_id = Uuid::new_v4().to_string();
-        //
-        // let CreateUserRequest {
-        //     organization_id, // we need to do a lookup here
-        //     name,
-        //     email,
-        //     password
-        // } = &request.into_inner();
-        //
-        // let row = sqlx::query!(r"
-        //     INSERT INTO users (
-        //         user_id,
-        //         org_id,
-        //         name,
-        //         email,
-        //         password
-        //     )
-        //      VALUES ( $1, $2, $3, $4, $5 )
-        // ",
-        //         user_id,
-        //         organization_id,
-        //         name,
-        //         email,
-        //         password
-        // )
-        //     .execute(&self.pool)
-        //     .await
-        //     .map_err(OrganizationManagerError::from)?;
-        //
-        // if row.rows_affected() == 0 {
-        //     return Err(Status::internal("User was not created successfully"));
-        // }
+        let user_id = Uuid::new_v4().to_string();
+
+        let CreateUserRequest {
+            organization_id, // we need to do a lookup here
+            name,
+            email,
+            password
+        } = &request.into_inner();
+
+        let row = sqlx::query!(r"
+            INSERT INTO users (
+                user_id,
+                org_id,
+                name,
+                email,
+                password
+            )
+             VALUES ( $1, $2, $3, $4, $5 )
+        ",
+                user_id,
+                organization_id,
+                name,
+                email,
+                password
+        )
+            .execute(&self.pool)
+            .await
+            .map_err(OrganizationManagerError::from)?;
+
+        if row.rows_affected() == 0 {
+            return Err(Status::internal("User was not created successfully"));
+        }
 
         Ok(Response::new(EmptyResp {}))
     }
@@ -132,25 +132,25 @@ impl OrganizationManager for OrganizationManagerRpc {
         &self,
         _request: Request<ChangePasswordRequest>,
     ) -> Result<Response<EmptyResp>, Status> {
-        // println!("Changed password for user x: {:?}", request); // don't actually print this
-        //
-        // // check to see if old password matches what we have in db
-        // // if it passes, update with new password
-        // let row = sqlx::query!(
-        //     "UPDATE users SET password = $2 WHERE user_id = $1",
-        //          &user_id,
-        //         &organization_id,
-        //         &old_password,
-        //         &new_password
-        // )
-        //     .bind("new user")
-        //     .execute(&self.pool)
-        //     .await
-        //     .map_err(OrganizationManagerError::from)?;
-        //
-        // if row.rows_affected() == 0 {
-        //     return Err(Status::internal("Organization was not created successfully"));
-        // }
+        println!("Changed password for user x: {:?}", request); // don't actually print this
+
+        // check to see if old password matches what we have in db
+        // if it passes, update with new password
+        let row = sqlx::query!(
+            "UPDATE users SET password = $2 WHERE user_id = $1",
+                 &user_id,
+                &organization_id,
+                &old_password,
+                &new_password
+        )
+            .bind("new user")
+            .execute(&self.pool)
+            .await
+            .map_err(OrganizationManagerError::from)?;
+
+        if row.rows_affected() == 0 {
+            return Err(Status::internal("Organization was not created successfully"));
+        }
 
         Ok(Response::new(EmptyResp {}))
     }
@@ -178,10 +178,11 @@ pub async fn start_server() -> Result<(), Box<dyn std::error::Error>> {
 
 #[tracing::instrument(err)]
 async fn create_db_connection() -> Result<Pool<Postgres>, sqlx::Error> {
-    let url = std::env::var("DATABASE_URL")
-        .expect("DATABASE_URL");
+    // let url = std::env::var("DATABASE_URL")
+    //     .expect("DATABASE_URL");
+    let url = "postgres://postgres@localhost?db_name=postgres&user=postgres&password=postgres";
 
-    println!("databse url {}", url);
+        println!("databse url {}", url);
 
     tracing::info!(message="connecting to postgres", url=%url);
     // Create Connection Pool
