@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package orgmanagement;
+
+message CreateOrgRequest {
+  string org_display_name = 1;
+  string admin_username = 2;
+  string admin_email = 3;
+  string admin_password = 4;
+  bool should_reset_password = 5;
+}
+
+message EmptyResp {}
+
+message UserRequest {
+  string id = 1;
+}
+
+message CreateUserRequest {
+  string organization_id = 1; // this needs to be a UUID, but we don't know how to handle that rn, see unresolved ?s
+  string name = 2;
+  string email = 3;
+  string password = 4;
+}
+
+message UserReply {
+  string organization_id = 1;
+  string user_id = 2;
+  string name = 3;
+}
+
+message ChangePasswordRequest {
+  string organization_id = 1;
+  string user_id = 2;
+  string old_password = 3;
+  string new_password = 4;
+}
+
+message ChangePasswordReply {
+  string changed_password = 1; //needs to be a bool
+}
+
+message Users {
+  repeated UserReply users = 1;
+}
+
+service OrganizationManager {
+//  rpc GetUser(CreateUserRequest) returns (UserReply);
+//  rpc ListUsers(EmptyResp) returns (Users);
+//  rpc DeleteUser(UserRequest) returns (DeleteUserReply);
+//  rpc DeleteUsers(EmptyResp) returns (DeleteUserReply);
+  rpc CreateOrg (CreateOrgRequest) returns (EmptyResp);
+  rpc CreateUser(CreateUserRequest) returns (EmptyResp);
+  rpc ChangePassword(ChangePasswordRequest) returns (EmptyResp);
+}
+

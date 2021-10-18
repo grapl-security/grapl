@@ -2,6 +2,8 @@ FROM rust:1-slim-buster AS base
 
 ARG RUST_BUILD=debug
 
+ENV SQLX_OFFLINE=true
+
 SHELL ["/bin/bash", "-c"]
 
 # Necessary for rdkafka; pkg-config & libssl-dev for cargo-tarpaulin build
@@ -155,3 +157,12 @@ FROM rust-dist AS grapl-web-ui
 COPY --from=build /outputs/grapl-web-ui /
 COPY rust/grapl-web-ui/frontend /frontend
 ENTRYPOINT ["/grapl-web-ui"]
+
+# org-management
+FROM rust-dist AS org-management-deploy
+
+COPY --from=build /outputs/org-management /
+ENTRYPOINT ["/org-management"]
+
+FROM postgres as org-management-postgres-db-deploy
+COPY rust/init.sql /docker-entrypoint-initdb.d/init.sql

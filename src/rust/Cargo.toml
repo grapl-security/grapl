@@ -17,6 +17,7 @@ members = [
   "./grapl-utils",
   "./kafka-metrics-exporter",
   "./node-identifier",
+  "./org-management",
   "./rust-proto",
   "./sqs-executor",
   "./sysmon",

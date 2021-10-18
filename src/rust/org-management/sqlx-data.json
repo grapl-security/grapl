@@ -1,0 +1,20 @@
+{
+  "db": "PostgreSQL",
+  "5d59f44649ecc965ddaab07ee4da1c31a3016499d9102b0f42549642f4ff6a88": {
+    "query": "\n            INSERT INTO organization (\n                org_id,\n                org_display_name,\n                admin_username,\n                admin_email,\n                admin_password,\n                should_reset_password\n            )\n             VALUES ( $1, $2, $3, $4, $5, $6 )\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Bpchar",
+          "Bpchar",
+          "Bpchar",
+          "Bpchar",
+          "Bool"
+        ]
+      },
+      "nullable": []
+    }
+  }
+}
