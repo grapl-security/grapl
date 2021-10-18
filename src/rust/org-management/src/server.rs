@@ -132,25 +132,25 @@ impl OrganizationManager for OrganizationManagerRpc {
         &self,
         _request: Request<ChangePasswordRequest>,
     ) -> Result<Response<EmptyResp>, Status> {
-        println!("Changed password for user x: {:?}", request); // don't actually print this
+        // println!("Changed password for user x: {:?}", request); // don't actually print this
 
         // check to see if old password matches what we have in db
         // if it passes, update with new password
-        let row = sqlx::query!(
-            "UPDATE users SET password = $2 WHERE user_id = $1",
-                 &user_id,
-                &organization_id,
-                &old_password,
-                &new_password
-        )
-            .bind("new user")
-            .execute(&self.pool)
-            .await
-            .map_err(OrganizationManagerError::from)?;
-
-        if row.rows_affected() == 0 {
-            return Err(Status::internal("Organization was not created successfully"));
-        }
+        // let row = sqlx::query!(
+        //     "UPDATE users SET password = $2 WHERE user_id = $1",
+        //          &user_id,
+        //         &organization_id,
+        //         &old_password,
+        //         &new_password
+        // )
+        //     .bind("new user")
+        //     .execute(&self.pool)
+        //     .await
+        //     .map_err(OrganizationManagerError::from)?;
+        //
+        // if row.rows_affected() == 0 {
+        //     return Err(Status::internal("Organization was not created successfully"));
+        // }
 
         Ok(Response::new(EmptyResp {}))
     }
