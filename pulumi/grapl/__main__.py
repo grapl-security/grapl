@@ -172,6 +172,12 @@ def main() -> None:
             vars=grapl_core_job_vars,
         )
 
+        nomad_grapl_ingress = NomadJob(
+            "grapl-ingress",
+            jobspec=Path("../../nomad/grapl-ingress.nomad").resolve(),
+            vars={},
+        )
+
         def _get_provisioner_job_vars(inputs: Mapping[str, Any]) -> Mapping[str, Any]:
             return {
                 k: inputs[k]
@@ -306,6 +312,12 @@ def main() -> None:
             "grapl-core",
             jobspec=Path("../../nomad/grapl-core.nomad").resolve(),
             vars=grapl_core_job_vars,
+        )
+
+        nomad_grapl_ingress = NomadJob(
+            "grapl-ingress",
+            jobspec=Path("../../nomad/grapl-ingress.nomad").resolve(),
+            vars={},
         )
 
         def _get_provisioner_job_vars(inputs: Mapping[str, Any]) -> Mapping[str, Any]:

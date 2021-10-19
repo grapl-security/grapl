@@ -341,36 +341,6 @@ job "grapl-core" {
     min_healthy_time = "15s"
   }
 
-  # TODO: May need to become a "system" job, not service job
-  group "ingress-group" {
-    # Expose grapl-web-ui, which is on the bridge network, to host's localhost.
-
-    network {
-      mode = "host"
-    }
-
-    service {
-      name = "ingress-service"
-      port = local.web_ui_port
-
-      connect {
-        gateway {
-          # Consul Ingress Gateway Configuration Entry.
-          ingress {
-            listener {
-              port     = local.web_ui_port
-              protocol = "tcp"
-              service {
-                # the upstream service
-                name = "grapl-web-ui"
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
   group "dgraph-zero-0" {
     network {
       mode = "bridge"
