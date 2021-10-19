@@ -60,9 +60,10 @@ def main() -> None:
     # objects.
     register_auto_tags({"grapl deployment": config.DEPLOYMENT_NAME})
 
-    network = Network("grapl-network")
+    if config.LOCAL_GRAPL:
+        network = Network("grapl-network")
 
-    dgraph_cluster: DgraphCluster = _create_dgraph_cluster(network=network)
+    #dgraph_cluster: DgraphCluster = _create_dgraph_cluster(network=network)
 
     # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
     # web UI.
@@ -276,8 +277,14 @@ def main() -> None:
             )
 
     else:
-        cache = Cache("main-cache", network=network)
         pulumi_config = pulumi.Config()
+        networking_server_stack = pulumi.StackReference(
+            pulumi_config.require("networking-server-stack")
+        )
+        vpc_id = networking_server_stack.require_output("grapl-vpc")
+        subnet_ids = networking_server_stack.require_output("grapl-subnet-ids")
+
+        cache = Cache("main-cache", subnet_ids=subnet_ids, vpc_id=vpc_id)
         artifacts = pulumi_config.require_object("artifacts")
 
         grapl_core_job_vars = dict(
