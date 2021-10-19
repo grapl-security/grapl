@@ -48,15 +48,15 @@ variable "ZOOKEEPER_PORT" {
 }
 
 variable "POSTGRES_USER" {
-  type        = string
+  type = string
 }
 
 variable "POSTGRES_PASSWORD" {
-  type        = string
+  type = string
 }
 
 variable "POSTGRES_DB" {
-  type        = string
+  type = string
 }
 
 variable "postgres_db_tag" {
@@ -310,9 +310,9 @@ job "grapl-local-infra" {
       }
 
       env {
-        POSTGRES_USER = var.POSTGRES_USER
+        POSTGRES_USER     = var.POSTGRES_USER
         POSTGRES_PASSWORD = var.POSTGRES_PASSWORD
-        POSTGRES_DB = var.POSTGRES_DB
+        POSTGRES_DB       = var.POSTGRES_DB
       }
     }
   }

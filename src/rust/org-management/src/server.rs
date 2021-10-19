@@ -1,20 +1,31 @@
-use tonic::{transport::Server, Request, Response, Status};
-use uuid::Uuid;
-
-use crate::org_management::organization_manager_server::{OrganizationManager, OrganizationManagerServer};
-
-use crate::org_management;
-
 use org_management::{
-    EmptyResp,
+    ChangePasswordRequest,
     CreateOrgRequest,
     CreateUserRequest,
-    ChangePasswordRequest,
+    EmptyResp,
 };
+use sqlx::{
+    postgres::{
+        PgPoolOptions,
+        Postgres,
+    },
+    Pool,
+};
+use tonic::{
+    transport::Server,
+    Request,
+    Response,
+    Status,
+};
+use uuid::Uuid;
 
-use sqlx::{Pool};
-use sqlx::postgres::{PgPoolOptions, Postgres};
-
+use crate::{
+    org_management,
+    org_management::organization_manager_server::{
+        OrganizationManager,
+        OrganizationManagerServer,
+    },
+};
 
 #[derive(Debug)]
 pub struct OrganizationManagerRpc {
@@ -24,16 +35,13 @@ pub struct OrganizationManagerRpc {
 #[derive(thiserror::Error, Debug)]
 pub enum OrganizationManagerError {
     #[error("sql")]
-    Sql(#[from]sqlx::Error)
+    Sql(#[from] sqlx::Error),
 }
-
 
 impl From<OrganizationManagerError> for Status {
     fn from(e: OrganizationManagerError) -> Self {
         match e {
-            OrganizationManagerError::Sql(e) => {
-                Status::internal(e.to_string())
-            }
+            OrganizationManagerError::Sql(e) => Status::internal(e.to_string()),
         }
     }
 }
@@ -57,7 +65,8 @@ impl OrganizationManager for OrganizationManagerRpc {
             should_reset_password,
         } = &request.into_inner();
 
-        let row = sqlx::query(r"
+        let row = sqlx::query(
+            r"
             INSERT INTO organization (
                 org_id,
                 org_display_name,
@@ -67,19 +76,22 @@ impl OrganizationManager for OrganizationManagerRpc {
                 should_reset_password
             )
              VALUES ( $1, $2, $3, $4, $5, $6 )
-        ")
-            .bind(org_id)
-            .bind(org_display_name)
-            .bind(admin_username)
-            .bind(admin_email)
-            .bind(admin_password)
-            .bind(should_reset_password)
-            .execute(&self.pool)
-            .await
-            .map_err(OrganizationManagerError::from)?;
+        ",
+        )
+        .bind(org_id)
+        .bind(org_display_name)
+        .bind(admin_username)
+        .bind(admin_email)
+        .bind(admin_password)
+        .bind(should_reset_password)
+        .execute(&self.pool)
+        .await
+        .map_err(OrganizationManagerError::from)?;
 
         if row.rows_affected() == 0 {
-            return Err(Status::internal("Organization was not created successfully"));
+            return Err(Status::internal(
+                "Organization was not created successfully",
+            ));
         }
 
         Ok(Response::new(EmptyResp {}))
@@ -97,10 +109,11 @@ impl OrganizationManager for OrganizationManagerRpc {
             organization_id, // we need to do a lookup here
             name,
             email,
-            password
+            password,
         } = &request.into_inner();
 
-        let row = sqlx::query(r"
+        let row = sqlx::query(
+            r"
             INSERT INTO users (
                 user_id,
                 org_id,
@@ -109,15 +122,16 @@ impl OrganizationManager for OrganizationManagerRpc {
                 password
             )
              VALUES ( $1, $2, $3, $4, $5 )
-        ")
-            .bind(user_id)
-            .bind(organization_id)
-            .bind(name)
-            .bind(email)
-            .bind(password)
-            .execute(&self.pool)
-            .await
-            .map_err(OrganizationManagerError::from)?;
+        ",
+        )
+        .bind(user_id)
+        .bind(organization_id)
+        .bind(name)
+        .bind(email)
+        .bind(password)
+        .execute(&self.pool)
+        .await
+        .map_err(OrganizationManagerError::from)?;
 
         if row.rows_affected() == 0 {
             return Err(Status::internal("User was not created successfully"));
@@ -154,13 +168,11 @@ impl OrganizationManager for OrganizationManagerRpc {
     }
 }
 
-
 #[tracing::instrument(err)]
 pub async fn start_server() -> Result<(), Box<dyn std::error::Error>> {
-    let addr = "0.0.0.0:5502".parse()?;
-    let pool =
-        create_db_connection()
-            .await?;
+    let port = std::env::var("ORG_MANAGEMENT_PORT").expect("ORG_MANAGEMENT_PORT");
+    let addr = format!("0.0.0.0:{}", port).parse()?;
+    let pool = create_db_connection().await?;
 
     let org = OrganizationManagerRpc { pool };
 
@@ -176,11 +188,9 @@ pub async fn start_server() -> Result<(), Box<dyn std::error::Error>> {
 
 #[tracing::instrument(err)]
 async fn create_db_connection() -> Result<Pool<Postgres>, sqlx::Error> {
-    // let url = std::env::var("DATABASE_URL")
-    //     .expect("DATABASE_URL");
-    let url = "postgres://postgres@localhost?db_name=postgres&user=postgres&password=postgres";
+    let url = std::env::var("DATABASE_URL").expect("DATABASE_URL");
 
-        println!("databse url {}", url);
+    println!("databse url {}", url);
 
     tracing::info!(message="connecting to postgres", url=%url);
     // Create Connection Pool
@@ -191,4 +201,3 @@ async fn create_db_connection() -> Result<Pool<Postgres>, sqlx::Error> {
     // Insert Org Info
     Ok(pool)
 }
-

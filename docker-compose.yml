@@ -32,6 +32,9 @@ services:
       SHOULD_DEPLOY_E2E_TESTS: "${SHOULD_DEPLOY_E2E_TESTS:-False}"
       DOCKER_USER: "${UID}:${GID}"
       GRAPL_ROOT: "${GRAPL_ROOT}"
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_DB: "${POSTGRES_DB}"
       # Other environment variables like MG_ALPHAS are passed in via
       # Pulumi.local-grapl.yaml
     extra_hosts:

@@ -121,6 +121,16 @@ variable "_redis_endpoint" {
 EOF
 }
 
+variable "_postgres_endpoint" {
+  type        = string
+  description = <<EOF
+  Where can services find Postgres?
+
+  It accepts a special sentinel value domain, postgress://LOCAL_GRAPL_REPLACE_IP:xxxx, if the
+  user wishes to contact the local Postgres instead of an AWS postgres.
+EOF
+}
+
 variable "schema_table_name" {
   type        = string
   description = "What is the name of the schema table?"
@@ -195,6 +205,12 @@ variable "node_identifier_dead_letter_queue" {
 
 variable "node_identifier_retry_queue" {
   type = string
+}
+
+variable "org_management_tag" {
+  type        = string
+  default     = "dev"
+  description = "The tagged version of org_management we should deploy."
 }
 
 variable "unid_subgraphs_generated_bucket" {
@@ -295,8 +311,9 @@ locals {
 
   # Prefer these over their `var` equivalents.
   # The aws endpoint is in template env format
-  aws_endpoint   = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
-  redis_endpoint = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  aws_endpoint      = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
+  redis_endpoint    = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  postgres_endpoint = replace(var._postgres_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
 
   _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
   _redis         = split(":", local._redis_trimmed)
@@ -319,6 +336,8 @@ EOH
   # We need to submit an env var otherwise you can end up with a weird nomad state parse error.
   aws_only_env_vars              = "DUMMY_VAR=TRUE"
   conditionally_defined_env_vars = (var._aws_endpoint == "http://LOCAL_GRAPL_REPLACE_IP:4566") ? local.local_only_env_vars : local.aws_only_env_vars
+
+
 }
 
 job "grapl-core" {
@@ -1071,6 +1090,29 @@ job "grapl-core" {
         REDIS_ENDPOINT        = local.redis_endpoint
         RUST_LOG              = var.rust_log
         RUST_BACKTRACE        = local.rust_backtrace
+      }
+    }
+  }
+
+  group "org-management" {
+    network {
+      mode = "bridge"
+      port "org-management" {}
+    }
+
+    task "org-management" {
+      driver = "docker"
+
+      config {
+        image = "${var.container_registry}grapl/${var.container_repo}org-management:${var.org_management_tag}"
+        ports = ["org-management"]
+      }
+
+      env {
+        DATABASE_URL        = local.postgres_endpoint
+        ORG_MANAGEMENT_PORT = "${NOMAD_PORT_org-management}"
+        RUST_LOG            = var.rust_log
+        RUST_BACKTRACE      = local.rust_backtrace
       }
     }
   }

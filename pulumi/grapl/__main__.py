@@ -23,6 +23,7 @@ from infra.dgraph_cluster import DgraphCluster, LocalStandInDgraphCluster
 from infra.kafka import Kafka
 from infra.network import Network
 from infra.nomad_job import NomadJob
+from infra.postgres import get_local_postgres_url
 from infra.quiet_docker_build_output import quiet_docker_output
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
@@ -150,12 +151,14 @@ def main() -> None:
         # Nomad will replace the LOCAL_GRAPL_REPLACE_IP sentinel value with the correct IP.
         aws_endpoint = "http://LOCAL_GRAPL_REPLACE_IP:4566"
         kafka_endpoint = "LOCAL_GRAPL_REPLACE_IP:19092"  # intentionally not 29092
+        postgres_endpoint = get_local_postgres_url()
         redis_endpoint = "redis://LOCAL_GRAPL_REPLACE_IP:6379"
 
         grapl_core_job_vars_inputs = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
             _aws_endpoint=aws_endpoint,
+            _postgres_endpoint=postgres_endpoint,
             _redis_endpoint=redis_endpoint,
             aws_access_key_id=aws.config.access_key,
             aws_access_key_secret=aws.config.secret_key,
