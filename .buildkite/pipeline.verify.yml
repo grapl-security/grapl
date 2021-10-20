@@ -135,7 +135,7 @@ steps:
       - git fetch origin rc
       - git show origin/rc:pulumi/grapl/Pulumi.testing.yaml > pulumi/grapl/Pulumi.testing.yaml
       # Temporarily set required input here until this is merged into rc
-      - pulumi config set --cwd pulumi/grapl/ grapl:nomad-server-stack grapl/nomad/testing
+      - pulumi config set --cwd pulumi/grapl/ --stack grapl/grapl/testing grapl:nomad-server-stack grapl/nomad/testing
       - .buildkite/shared/steps/pulumi_preview.sh grapl/grapl/testing grapl/nomad/testing
     plugins:
       - seek-oss/aws-sm#v2.3.1:
