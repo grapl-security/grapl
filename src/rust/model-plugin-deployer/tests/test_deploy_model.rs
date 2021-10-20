@@ -6,6 +6,10 @@ use model_plugin_deployer::client::{
     ModelPluginDeployerRpcClient,
 };
 
+use tonic::{
+    Code,
+};
+
 #[tokio::test]
 async fn test_deploy_model() -> Result<(), Box<dyn std::error::Error>> {
     let mut client = ModelPluginDeployerRpcClient::from_env().await?;
@@ -13,8 +17,7 @@ async fn test_deploy_model() -> Result<(), Box<dyn std::error::Error>> {
         schema_type: 1,
         schema: b"Hello".to_vec(),
     });
-    let response = client.deploy_model(request).await;
-    println!("RESPONSE = {:?}", response);
+    client.deploy_model(request).await?;
     Ok(())
 }
 
@@ -25,7 +28,13 @@ async fn test_unsupported_schema_type() -> Result<(), Box<dyn std::error::Error>
         schema_type: 0,
         schema: b"Hello".to_vec(),
     });
-    let response = client.deploy_model(request).await;
-    println!("RESPONSE = {:?}", response);
-    Ok(())
+    let result = client.deploy_model(request).await;
+    match result {
+        Ok(_) => Err("Unexpected OK".into()),
+        Err(status) => {
+            assert_eq!(status.code(), Code::InvalidArgument);
+            assert_eq!(status.message(), "Unhandled schema type");
+            Ok(())
+        }
+    }
 }

@@ -981,8 +981,8 @@ job "grapl-core" {
       }
 
       env {
-        RUST_LOG       = var.rust_log
-        RUST_BACKTRACE = local.rust_backtrace
+        RUST_LOG                            = var.rust_log
+        RUST_BACKTRACE                      = local.rust_backtrace
         GRAPL_MODEL_PLUGIN_DEPLOYER_V2_PORT = "${NOMAD_PORT_model-plugin-deployer}"
       }
     }
@@ -990,6 +990,9 @@ job "grapl-core" {
     service {
       name = "model-plugin-deployer"
       port = "model-plugin-deployer"
+      connect {
+        sidecar_service {}
+      }
     }
   }
 
