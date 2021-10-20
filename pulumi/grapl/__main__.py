@@ -16,7 +16,6 @@ from infra.alarms import OpsAlarms
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
-from infra.dgraph_cluster import DgraphCluster, LocalStandInDgraphCluster
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
@@ -32,16 +31,6 @@ from infra.secret import TestUserPassword
 from infra.service_queue import ServiceQueue
 
 import pulumi
-
-
-def _create_dgraph_cluster(network: Network) -> DgraphCluster:
-    if config.LOCAL_GRAPL:
-        return LocalStandInDgraphCluster()
-    else:
-        return DgraphCluster(
-            name=f"{config.DEPLOYMENT_NAME}-dgraph",
-            vpc=network.vpc,
-        )
 
 
 def main() -> None:
@@ -62,8 +51,6 @@ def main() -> None:
 
     if config.LOCAL_GRAPL:
         network = Network("grapl-network")
-
-    #dgraph_cluster: DgraphCluster = _create_dgraph_cluster(network=network)
 
     # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
     # web UI.
