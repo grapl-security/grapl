@@ -17,10 +17,14 @@ USe this file to add higher-level client abstractions to ModelPluginDeployerRpcC
 
 impl ModelPluginDeployerRpcClient<Channel> {
     #![allow(dead_code)]
-    pub async fn from_env() -> Result<ModelPluginDeployerRpcClient<Channel>, Box<dyn std::error::Error>> {
-        let host = std::env::var("GRAPL_MODEL_PLUGIN_DEPLOYER_V2_HOST").expect("GRAPL_MODEL_PLUGIN_DEPLOYER_V2_HOST");
-        let port = std::env::var("GRAPL_MODEL_PLUGIN_DEPLOYER_V2_PORT").expect("GRAPL_MODEL_PLUGIN_DEPLOYER_V2_PORT");
+    pub async fn from_env(
+    ) -> Result<ModelPluginDeployerRpcClient<Channel>, Box<dyn std::error::Error>> {
+        let host = std::env::var("GRAPL_MODEL_PLUGIN_DEPLOYER_V2_HOST")
+            .expect("GRAPL_MODEL_PLUGIN_DEPLOYER_V2_HOST");
+        let port = std::env::var("GRAPL_MODEL_PLUGIN_DEPLOYER_V2_PORT")
+            .expect("GRAPL_MODEL_PLUGIN_DEPLOYER_V2_PORT");
         let endpoint_str = format!("http://{}:{}", host, port);
+        println!("ENDPOINT = {:?}", &endpoint_str);
         let endpoint = Endpoint::from_shared(endpoint_str)?
             .timeout(Duration::from_secs(5))
             .concurrency_limit(30);

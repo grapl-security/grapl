@@ -116,6 +116,11 @@ job "integration-tests" {
               destination_name = "dgraph-alpha-0-grpc-public"
               local_bind_port  = 9080
             }
+
+            upstreams {
+              destination_name = "model-plugin-deployer"
+              local_bind_port  = 1000  # doesn't really matter
+            }
           }
         }
       }
@@ -142,6 +147,9 @@ job "integration-tests" {
         RUST_LOG       = local.log_level
         REDIS_ENDPOINT = local.redis_endpoint
         KAFKA_ENDPOINT = local.kafka_endpoint
+
+        GRAPL_MODEL_PLUGIN_DEPLOYER_V2_HOST = "localhost"
+        GRAPL_MODEL_PLUGIN_DEPLOYER_V2_PORT = "1000"
       }
 
       # Because Cargo does some... compiling... for some reason.... maybe.....

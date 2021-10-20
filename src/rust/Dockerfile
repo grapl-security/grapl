@@ -155,3 +155,8 @@ FROM rust-dist AS grapl-web-ui
 COPY --from=build /outputs/grapl-web-ui /
 COPY rust/grapl-web-ui/frontend /frontend
 ENTRYPOINT ["/grapl-web-ui"]
+
+# model plugin deployer
+FROM rust-dist AS model-plugin-deployer
+COPY --from=build /outputs/model-plugin-deployer /
+ENTRYPOINT ["/model-plugin-deployer"]
