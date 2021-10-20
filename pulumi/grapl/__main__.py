@@ -49,6 +49,7 @@ def main() -> None:
     # objects.
     register_auto_tags({"grapl deployment": config.DEPLOYMENT_NAME})
 
+    # We only set up networking in local since this is handled in a closed project for AWS for our commercial offering
     if config.LOCAL_GRAPL:
         network = Network("grapl-network")
 
