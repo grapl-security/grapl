@@ -7,7 +7,6 @@ fn main() {
         .compile(
             &[
                 "../../proto/graplinc/grapl/api/model_plugin_deployer/v1/model_plugin_deployer.proto",
-                "../../proto/graplinc/grapl/api/model_plugin_deployer/v1/health.proto",
             ],
             &["../../proto/"],
         )

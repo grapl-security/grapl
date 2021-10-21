@@ -27,7 +27,10 @@ impl RpcClient<Channel> {
         RpcClient::from_endpoint(host, port).await
     }
 
-    pub async fn from_endpoint(host: String, port: String) -> Result<RpcClient<Channel>, Box<dyn std::error::Error>> {
+    pub async fn from_endpoint(
+        host: String,
+        port: String,
+    ) -> Result<RpcClient<Channel>, Box<dyn std::error::Error>> {
         let endpoint_str = format!("http://{}:{}", host, port);
 
         // TODO: It might make sense to make these values configurable.
