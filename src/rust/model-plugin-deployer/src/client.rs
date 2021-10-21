@@ -6,29 +6,30 @@ pub use tower::timeout::Timeout;
 
 // Re-export for public consumption
 pub use crate::model_plugin_deployer::{
-    model_plugin_deployer_rpc_client::ModelPluginDeployerRpcClient,
+    model_plugin_deployer_rpc_client::RpcClient,
     DeployModelRequest,
     DeployModelResponse,
 };
 
 /*
-USe this file to add higher-level client abstractions to ModelPluginDeployerRpcClient.
+USe this file to add higher-level client abstractions to RpcClient.
 */
 
-impl ModelPluginDeployerRpcClient<Channel> {
+impl RpcClient<Channel> {
+    const PORT_ENV_VAR: &'static str = "GRAPL_MODEL_PLUGIN_DEPLOYER_PORT";
+    const HOST_ENV_VAR: &'static str = "GRAPL_MODEL_PLUGIN_DEPLOYER_HOST";
+
     #![allow(dead_code)]
-    pub async fn from_env(
-    ) -> Result<ModelPluginDeployerRpcClient<Channel>, Box<dyn std::error::Error>> {
-        let host = std::env::var("GRAPL_MODEL_PLUGIN_DEPLOYER_V2_HOST")
-            .expect("GRAPL_MODEL_PLUGIN_DEPLOYER_V2_HOST");
-        let port = std::env::var("GRAPL_MODEL_PLUGIN_DEPLOYER_V2_PORT")
-            .expect("GRAPL_MODEL_PLUGIN_DEPLOYER_V2_PORT");
+    pub async fn from_env() -> Result<RpcClient<Channel>, Box<dyn std::error::Error>> {
+        let port = std::env::var(PORT_ENV_VAR).expect(PORT_ENV_VAR);
+        let host = std::env::var(HOST_ENV_VAR).expect(HOST_ENV_VAR);
         let endpoint_str = format!("http://{}:{}", host, port);
-        println!("ENDPOINT = {:?}", &endpoint_str);
+
+        // TODO: It might make sense to make these values configurable.
         let endpoint = Endpoint::from_shared(endpoint_str)?
             .timeout(Duration::from_secs(5))
             .concurrency_limit(30);
         let channel = endpoint.connect().await?;
-        Ok(ModelPluginDeployerRpcClient::new(channel.clone()))
+        Ok(RpcClient::new(channel.clone()))
     }
 }

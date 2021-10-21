@@ -983,7 +983,7 @@ job "grapl-core" {
       env {
         RUST_LOG                            = var.rust_log
         RUST_BACKTRACE                      = local.rust_backtrace
-        GRAPL_MODEL_PLUGIN_DEPLOYER_V2_PORT = "${NOMAD_PORT_model-plugin-deployer}"
+        GRAPL_MODEL_PLUGIN_DEPLOYER_PORT = "${NOMAD_PORT_model-plugin-deployer}"
       }
     }
 

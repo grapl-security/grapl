@@ -148,8 +148,8 @@ job "integration-tests" {
         REDIS_ENDPOINT = local.redis_endpoint
         KAFKA_ENDPOINT = local.kafka_endpoint
 
-        GRAPL_MODEL_PLUGIN_DEPLOYER_V2_HOST = "0.0.0.0"
-        GRAPL_MODEL_PLUGIN_DEPLOYER_V2_PORT = "${NOMAD_UPSTREAM_PORT_model-plugin-deployer}"
+        GRAPL_MODEL_PLUGIN_DEPLOYER_HOST = "0.0.0.0"
+        GRAPL_MODEL_PLUGIN_DEPLOYER_PORT = "${NOMAD_UPSTREAM_PORT_model-plugin-deployer}"
       }
 
       # Because Cargo does some... compiling... for some reason.... maybe.....

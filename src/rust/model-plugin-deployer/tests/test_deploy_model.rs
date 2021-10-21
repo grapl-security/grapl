@@ -3,16 +3,13 @@
 
 use model_plugin_deployer::client::{
     DeployModelRequest,
-    ModelPluginDeployerRpcClient,
+    RpcClient,
 };
-
-use tonic::{
-    Code,
-};
+use tonic::Code;
 
 #[tokio::test]
 async fn test_deploy_model() -> Result<(), Box<dyn std::error::Error>> {
-    let mut client = ModelPluginDeployerRpcClient::from_env().await?;
+    let mut client = RpcClient::from_env().await?;
     let request = tonic::Request::new(DeployModelRequest {
         schema_type: 1,
         schema: b"Hello".to_vec(),
@@ -23,7 +20,7 @@ async fn test_deploy_model() -> Result<(), Box<dyn std::error::Error>> {
 
 #[tokio::test]
 async fn test_unsupported_schema_type() -> Result<(), Box<dyn std::error::Error>> {
-    let mut client = ModelPluginDeployerRpcClient::from_env().await?;
+    let mut client = RpcClient::from_env().await?;
     let request = tonic::Request::new(DeployModelRequest {
         schema_type: 0,
         schema: b"Hello".to_vec(),

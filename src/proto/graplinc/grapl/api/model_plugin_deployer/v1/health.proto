@@ -2,13 +2,7 @@
 
 syntax = "proto3";
 
-package grpc.health.v1;
-
-option csharp_namespace = "Grpc.Health.V1";
-option go_package = "google.golang.org/grpc/health/grpc_health_v1";
-option java_multiple_files = true;
-option java_outer_classname = "HealthProto";
-option java_package = "io.grpc.health.v1";
+package graplinc.grapl.api.model_plugin_deployer.v1.health;
 
 message HealthCheckRequest {
   string service = 1;
