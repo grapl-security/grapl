@@ -9,6 +9,7 @@ pub use crate::model_plugin_deployer::{
     model_plugin_deployer_rpc_client::ModelPluginDeployerRpcClient as RpcClient,
     DeployModelRequest,
     DeployModelResponse,
+    SchemaType,
 };
 
 /*

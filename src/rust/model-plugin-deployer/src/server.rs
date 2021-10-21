@@ -20,12 +20,13 @@ use crate::model_plugin_deployer::{
     SchemaType,
 };
 
-/// Right now this struct just exists so we can attach behaviors to it.
-/// If you need state later, you can add it.
-#[derive(Default)]
 pub struct ModelPluginDeployer {}
 
 impl ModelPluginDeployer {
+    fn new() -> ModelPluginDeployer {
+        ModelPluginDeployer {}
+    }
+
     /// The actual business logic for `deploy_model`
     fn handle_deploy_model(
         &self,
@@ -65,12 +66,12 @@ impl ModelPluginDeployerRpc for ModelPluginDeployer {
 }
 
 pub async fn exec_service(socket_addr: SocketAddr) -> Result<(), Box<dyn std::error::Error>> {
-    let (mut health_reporter, _health_service) = tonic_health::server::health_reporter();
+    let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
     health_reporter
         .set_serving::<ModelPluginDeployerRpcServer<ModelPluginDeployer>>()
         .await;
 
-    let model_plugin_deployer_instance = ModelPluginDeployer::default();
+    let model_plugin_deployer_instance = ModelPluginDeployer::new();
 
     metrics::register_counter!("request_count", "count of requests made to endpoint");
     metrics::register_histogram!("request_ns", "nanoseconds for request execution");
@@ -81,7 +82,7 @@ pub async fn exec_service(socket_addr: SocketAddr) -> Result<(), Box<dyn std::er
     );
 
     Server::builder()
-        //.add_service(health_service)
+        .add_service(health_service)
         .add_service(ModelPluginDeployerRpcServer::new(
             model_plugin_deployer_instance,
         ))
@@ -96,8 +97,8 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_handle_deploy_model_validation() -> Result<(), String> {
-        let service_instance = ModelPluginDeployer::default();
+    async fn test_error_if_schema_type_not_defined() -> Result<(), String> {
+        let service_instance = ModelPluginDeployer::new();
         let inner_request = DeployModelRequest::default();
         let response = service_instance.handle_deploy_model(inner_request);
         match response {

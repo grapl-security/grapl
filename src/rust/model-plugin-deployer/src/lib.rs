@@ -15,7 +15,6 @@ pub mod model_plugin_deployer {
 
     pub fn get_socket_addr() -> Result<std::net::SocketAddr, std::net::AddrParseError> {
         let port = std::env::var(PORT_ENV_VAR).expect(PORT_ENV_VAR);
-        // [::] means ipv6 version of 0.0.0.0
         return format!("0.0.0.0:{}", port).parse();
     }
 }
