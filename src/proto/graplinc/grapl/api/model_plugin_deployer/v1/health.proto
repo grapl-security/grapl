@@ -2,7 +2,7 @@
 
 syntax = "proto3";
 
-package graplinc.grapl.api.model_plugin_deployer.v1.health;
+package graplinc.grapl.api.model_plugin_deployer.v1;
 
 message HealthCheckRequest {
   string service = 1;
