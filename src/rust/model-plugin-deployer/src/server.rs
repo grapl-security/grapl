@@ -9,9 +9,9 @@ use tonic::{
 };
 
 pub use crate::model_plugin_deployer::{
-    model_plugin_deployer_rpc_server::{
-        ModelPluginDeployerRpc,
-        ModelPluginDeployerRpcServer,
+    model_plugin_deployer_rpc_service_server::{
+        ModelPluginDeployerRpcService,
+        ModelPluginDeployerRpcServiceServer,
     },
     DeployModelResponse,
 };
@@ -43,7 +43,7 @@ impl ModelPluginDeployer {
 }
 
 #[tonic::async_trait]
-impl ModelPluginDeployerRpc for ModelPluginDeployer {
+impl ModelPluginDeployerRpcService for ModelPluginDeployer {
     /// Bind `handle_deploy_model` to the grpc service
     #[tracing::instrument(
         source_addr = request.remote_addr(),
@@ -68,7 +68,7 @@ impl ModelPluginDeployerRpc for ModelPluginDeployer {
 pub async fn exec_service(socket_addr: SocketAddr) -> Result<(), Box<dyn std::error::Error>> {
     let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
     health_reporter
-        .set_serving::<ModelPluginDeployerRpcServer<ModelPluginDeployer>>()
+        .set_serving::<ModelPluginDeployerRpcServiceServer<ModelPluginDeployer>>()
         .await;
 
     let model_plugin_deployer_instance = ModelPluginDeployer::new();
@@ -83,7 +83,7 @@ pub async fn exec_service(socket_addr: SocketAddr) -> Result<(), Box<dyn std::er
 
     Server::builder()
         .add_service(health_service)
-        .add_service(ModelPluginDeployerRpcServer::new(
+        .add_service(ModelPluginDeployerRpcServiceServer::new(
             model_plugin_deployer_instance,
         ))
         .serve(socket_addr)

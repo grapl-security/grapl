@@ -5,9 +5,9 @@ package graplinc.grapl.api.model_plugin_deployer.v1;
 // Which format of schema are we sending to Model Plugin Deployer?
 enum SchemaType {
     // Undefined
-    UNKNOWN = 0;
+    SCHEMA_TYPE_UNSPECIFIED = 0;
     // The only currently-supported schema type is GraphQL schemas.
-    GRAPHQL = 1;
+    SCHEMA_TYPE_GRAPHQL = 1;
 }
 
 // Input to DeployModel
@@ -26,7 +26,7 @@ message DeployModelResponse {
 
 
 // The main service for Model Plugin Deployer.
-service ModelPluginDeployerRpc {
+service ModelPluginDeployerRpcService {
     // Deploy a new model to Grapl.
     rpc DeployModel (DeployModelRequest) returns (DeployModelResponse) {}
 }
