@@ -6,7 +6,7 @@ pub use tower::timeout::Timeout;
 
 // Re-export for public consumption
 pub use crate::model_plugin_deployer::{
-    model_plugin_deployer_rpc_client::RpcClient,
+    model_plugin_deployer_rpc_client::ModelPluginDeployerRpcClient as RpcClient,
     DeployModelRequest,
     DeployModelResponse,
 };
@@ -15,10 +15,10 @@ pub use crate::model_plugin_deployer::{
 USe this file to add higher-level client abstractions to RpcClient.
 */
 
-impl RpcClient<Channel> {
-    const PORT_ENV_VAR: &'static str = "GRAPL_MODEL_PLUGIN_DEPLOYER_PORT";
-    const HOST_ENV_VAR: &'static str = "GRAPL_MODEL_PLUGIN_DEPLOYER_HOST";
+const PORT_ENV_VAR: &'static str = "GRAPL_MODEL_PLUGIN_DEPLOYER_PORT";
+const HOST_ENV_VAR: &'static str = "GRAPL_MODEL_PLUGIN_DEPLOYER_HOST";
 
+impl RpcClient<Channel> {
     #![allow(dead_code)]
     pub async fn from_env() -> Result<RpcClient<Channel>, Box<dyn std::error::Error>> {
         let port = std::env::var(PORT_ENV_VAR).expect(PORT_ENV_VAR);
