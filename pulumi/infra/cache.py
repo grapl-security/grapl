@@ -15,7 +15,7 @@ class Cache(pulumi.ComponentResource):
         self,
         name: str,
         subnet_ids: pulumi.Output[List[str]],
-        vpc_id: aws.ec2.Vpc,
+        vpc_id: pulumi.Output[str],
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         super().__init__("grapl:Cache", name, None, opts)
