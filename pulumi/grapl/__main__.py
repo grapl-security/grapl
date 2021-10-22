@@ -273,11 +273,11 @@ def main() -> None:
 
     else:
         pulumi_config = pulumi.Config()
-        networking_server_stack = pulumi.StackReference(
-            pulumi_config.require("networking-server-stack")
+        networking_stack = pulumi.StackReference(
+            pulumi_config.require("networking-stack")
         )
-        vpc_id = networking_server_stack.require_output("grapl-vpc")
-        subnet_ids = networking_server_stack.require_output("grapl-private-subnet-ids")
+        vpc_id = networking_stack.require_output("grapl-vpc")
+        subnet_ids = networking_stack.require_output("grapl-private-subnet-ids")
 
         cache = Cache("main-cache", subnet_ids=subnet_ids, vpc_id=vpc_id)
         artifacts = pulumi_config.require_object("artifacts")
