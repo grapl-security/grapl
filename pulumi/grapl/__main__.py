@@ -17,7 +17,6 @@ from infra.alarms import OpsAlarms
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
-from infra.dgraph_cluster import DgraphCluster, LocalStandInDgraphCluster
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
@@ -33,16 +32,6 @@ from infra.secret import TestUserPassword
 from infra.service_queue import ServiceQueue
 
 import pulumi
-
-
-def _create_dgraph_cluster(network: Network) -> DgraphCluster:
-    if config.LOCAL_GRAPL:
-        return LocalStandInDgraphCluster()
-    else:
-        return DgraphCluster(
-            name=f"{config.DEPLOYMENT_NAME}-dgraph",
-            vpc=network.vpc,
-        )
 
 
 def main() -> None:
@@ -61,9 +50,9 @@ def main() -> None:
     # objects.
     register_auto_tags({"grapl deployment": config.DEPLOYMENT_NAME})
 
-    network = Network("grapl-network")
-
-    dgraph_cluster: DgraphCluster = _create_dgraph_cluster(network=network)
+    # We only set up networking in local since this is handled in a closed project for AWS for our commercial offering
+    if config.LOCAL_GRAPL:
+        network = Network("grapl-network")
 
     # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
     # web UI.
@@ -283,8 +272,14 @@ def main() -> None:
             )
 
     else:
-        cache = Cache("main-cache", network=network)
         pulumi_config = pulumi.Config()
+        networking_stack = pulumi.StackReference(
+            pulumi_config.require("networking-stack")
+        )
+        vpc_id = networking_stack.require_output("grapl-vpc")
+        subnet_ids = networking_stack.require_output("grapl-private-subnet-ids")
+
+        cache = Cache("main-cache", subnet_ids=subnet_ids, vpc_id=vpc_id)
         artifacts = pulumi_config.require_object("artifacts")
 
         # Set the nomad address. This can be either set as nomad:address in the config to support ssm port forwarding or

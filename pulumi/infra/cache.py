@@ -1,8 +1,7 @@
-from typing import Optional
+from typing import List, Optional
 
 import pulumi_aws as aws
 from infra.config import DEPLOYMENT_NAME
-from infra.network import Network
 
 import pulumi
 
@@ -15,7 +14,8 @@ class Cache(pulumi.ComponentResource):
     def __init__(
         self,
         name: str,
-        network: Network,
+        subnet_ids: pulumi.Output[List[str]],
+        vpc_id: pulumi.Output[str],
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         super().__init__("grapl:Cache", name, None, opts)
@@ -24,13 +24,13 @@ class Cache(pulumi.ComponentResource):
 
         self.subnet_group = aws.elasticache.SubnetGroup(
             f"{name}-cache-subnet-group",
-            subnet_ids=[net.id for net in network.private_subnets],
+            subnet_ids=subnet_ids,
             opts=pulumi.ResourceOptions(parent=self),
         )
 
         self.security_group = aws.ec2.SecurityGroup(
             f"{name}-cache-security-group",
-            vpc_id=network.vpc.id,
+            vpc_id=vpc_id,
             # Defining ingress/egress rules inline here... this isn't
             # compatible right now with specifying standalone rules --
             # gotta pick one or the other.
@@ -39,6 +39,7 @@ class Cache(pulumi.ComponentResource):
             # NOTE: CDK code also had another ingress run allowing any
             # TCP connection from any source... leaving that off for
             # the time being.
+            # TODO split this into rules so that we can add nomad connection as well
             ingress=[
                 aws.ec2.SecurityGroupIngressArgs(
                     description="Allow Redis connections from anywhere",
