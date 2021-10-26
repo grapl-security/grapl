@@ -48,7 +48,37 @@ class Cache(pulumi.ComponentResource):
             # TODO: This just replicates what we're doing in
             # CDK. Consider tightening this by using
             # `security_groups` instead of `cidr_blocks`.
-            destination_cidr=["0.0.0.0/0"],
+            cidr_blocks=["0.0.0.0/0"],
+            opts=pulumi.ResourceOptions(parent=self.security_group),
+        )
+
+        # Allow communication between nomad-agents and redis
+        # These are in different VPCs with the peering done in the networking module
+        pulumi_config = pulumi.Config()
+        nomad_agents_server_stack = pulumi.StackReference(
+            pulumi_config.require("nomad-agents-server-stack")
+        )
+        nomad_agent_sg_id = nomad_agents_server_stack.require_output("security-group")
+
+        aws.ec2.SecurityGroupRule(
+            "nomad-agents-egress-to-redis",
+            type="egress",
+            security_group_id=nomad_agent_sg_id,
+            from_port=redis_port,
+            to_port=redis_port,
+            protocol="tcp",
+            source_security_group_id=self.security_group.id,
+            opts=pulumi.ResourceOptions(parent=self.security_group),
+        )
+
+        aws.ec2.SecurityGroupRule(
+            "redis-ingress-to-nomad-agents",
+            type="ingress",
+            security_group_id=self.security_group.id,
+            from_port=redis_port,
+            to_port=redis_port,
+            protocol="tcp",
+            source_security_group_id=nomad_agent_sg_id,
             opts=pulumi.ResourceOptions(parent=self.security_group),
         )
 

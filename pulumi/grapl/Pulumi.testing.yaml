@@ -24,4 +24,5 @@ config:
       RUST_BACKTRACE: "1"
       RUST_LOG: DEBUG
   grapl:networking-stack: grapl/networking/testing
+  grapl:nomad-agents-server-stack: grapl/nomad_agents/testing
   grapl:nomad-server-stack: grapl/nomad/testing
