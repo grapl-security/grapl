@@ -328,6 +328,7 @@ def main() -> None:
             "grapl-ingress",
             jobspec=Path("../../nomad/grapl-ingress.nomad").resolve(),
             vars={},
+            opts=pulumi.ResourceOptions(provider=nomad_provider),
         )
 
         def _get_provisioner_job_vars(inputs: Mapping[str, Any]) -> Mapping[str, Any]:
