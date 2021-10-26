@@ -37,21 +37,6 @@ class Cache(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        aws.ec2.SecurityGroupRule(
-            f"{self.security_group._name}-ingress-{redis_port}",
-            type="ingress",
-            description="Allow Redis connections from anywhere",
-            security_group_id=self.security_group.id,
-            from_port=redis_port,
-            to_port=redis_port,
-            protocol="tcp",
-            # TODO: This just replicates what we're doing in
-            # CDK. Consider tightening this by using
-            # `security_groups` instead of `cidr_blocks`.
-            cidr_blocks=["0.0.0.0/0"],
-            opts=pulumi.ResourceOptions(parent=self.security_group),
-        )
-
         # Allow communication between nomad-agents and redis
         # These are in different VPCs with the peering done in the networking module
         pulumi_config = pulumi.Config()
@@ -72,7 +57,7 @@ class Cache(pulumi.ComponentResource):
         )
 
         aws.ec2.SecurityGroupRule(
-            "redis-ingress-to-nomad-agents",
+            "redis-ingress-from-nomad-agents",
             type="ingress",
             security_group_id=self.security_group.id,
             from_port=redis_port,
