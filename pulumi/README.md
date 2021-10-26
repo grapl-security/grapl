@@ -76,6 +76,7 @@ Note that developer "sandboxes" like this are **not** currently managed by our
 Pulumi SaaS account.
 
 ```sh
+set -u
 export STACK_NAME=<NAME>
 cd $GRAPL_ROOT/pulumi/grapl
 pulumi login --local
@@ -87,10 +88,25 @@ pulumi config set aws:region us-east-1
 
 # You likely want to remove non-required artifacts from your stackfile now
 vim "Pulumi.${STACK_NAME}.yaml"
+
+# Fill in some stack values from Pulumi stacks you set up in `platform-infrastructure`
+pulumi config set grapl:nomad-server-stack "grapl/nomad/$NOMAD_STACK_NAME"
+pulumi config set grapl:networking-stack "grapl/networking/$NETWORKING_STACK_NAME"
 ```
 
 Then, you should set your `AWS_PROFILE` in your environment, and then run
 `aws sso login`.
+
+Finally, set up an SSM tunnel to one of your Nomad servers so you can deploy
+Nomad jobs.
+
+```
+# the 4846 is an arbitrary choice that is indentifiably related to nomad's 4646
+pulumi config set nomad:address http://localhost:4846
+
+# Do this in a separate tab, as it's not detached.
+./bin/aws/ssm_nomad_server.py
+```
 
 Now, when you run `pulumi up`, you will be provisioning infrastructure in your
 AWS account.
