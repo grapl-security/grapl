@@ -1,11 +1,11 @@
-## Analyzers
+# Analyzers
 
 Analyzers are the attack signatures that power Grapl's realtime detection logic.
 
 Though implementing analyzers is simple, we can build extremely powerful and
 efficient logic to catch all sorts of attacker behaviors.
 
-### The Analyzer Base Class
+## The Analyzer Base Class
 
 To implement an Analyzer we must inherit from the Analyzer
 [abstract base class](https://docs.python.org/3/library/abc.html).
@@ -30,7 +30,7 @@ class Analyzer(abc.ABC):
         pass
 ```
 
-###### Analyzer.build
+### Analyzer.build
 
 Returns an instance of your analyzer. This allows you to move dependency
 management out of your `__init__`.
@@ -44,7 +44,7 @@ def build(cls: Type[A], graph_client: GraphClient) -> A:
     return cls(dgraph_client)
 ```
 
-###### Analyzer.get_queries
+### Analyzer.get_queries
 
 `get_queries` is where you define any of your graph signatures, either one or
 multiple.
@@ -59,7 +59,7 @@ def get_queries(self) -> OneOrMany[Queryable]:
     pass
 ```
 
-###### Analyzer.on_response
+### Analyzer.on_response
 
 `on_response` is called if any of the sigantures from `get_queries` matched a
 graph.
@@ -79,7 +79,7 @@ def on_response(self, response: Viewable, output: Any):
     pass
 ```
 
-#### SuspiciousSvchost Example
+## SuspiciousSvchost Example
 
 Heres an example - we're going to write some logic to look for suspicious
 executions of `svchost`.
@@ -159,7 +159,7 @@ Our query is therefor read as: Any Process, with a process_name that exactly
 matches `invalid_parents`, with any child process, where the child process_name
 that exactly matches `svchost.exe`.
 
-#### Adding Context
+## Adding Context
 
 We may want to add some optional context to our query, without requiring that
 context for our Analyzer to match. We can do this easily in our `on_response`

@@ -1,3 +1,5 @@
+# Deploying Analyzers
+
 Once you've written your Analyzers you'll want to deploy them to Grapl.
 
 Analyzers live in the `<DEPLOYMENT_NAME>-grapl-analyzers`, so all we need to do
@@ -34,7 +36,7 @@ As an example,
 [insanitybit/grapl-analyzers](https://github.com/insanitybit/grapl-analyzers) is
 set up to use this webhook.
 
-#### Deploy
+### Deploy
 
 To get started you'll need to install [npm](https://www.npmjs.com/),
 [typescript](https://www.typescriptlang.org/index.html#download-links), and the

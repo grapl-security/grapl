@@ -44,8 +44,7 @@ author = "Grapl Security"
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
-    # TODO: Upgrade to Myst parser; recommonmark is EOL
-    "recommonmark",
+    "myst_parser",
     "sphinx_rtd_theme",
 ]
 
@@ -82,17 +81,4 @@ autodoc_default_options = {
 
 
 def setup(app):
-    app.add_config_value(
-        "recommonmark_config",
-        {
-            "enable_auto_toc_tree": True,
-            #'auto_toc_tree_section': 'Contents',
-            #'enable_math': False,
-            #'enable_inline_math': False,
-            "enable_eval_rst": True,
-        },
-        True,
-    )
-    from recommonmark.transform import AutoStructify
-
-    app.add_transform(AutoStructify)
+    pass
