@@ -13,7 +13,7 @@ set -euo pipefail
 # shellcheck source-path=SCRIPTDIR
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/pulumi.sh"
 
-# Given as "project/stack"
+# Given as "org/project/stack"
 readonly project_stack="${1}"
 # Given as "org/project/stack"
 readonly nomad_stack="${2}"
