@@ -1,4 +1,4 @@
-## Queryables
+# Queryables
 
 Grapl provides powerful primitives for building graph based queries.
 
@@ -25,7 +25,7 @@ one_process = ProcessQuery().query_first(gclient)
 count = ProcessQuery().get_count(gclient)
 ```
 
-###### Queryable.query
+## Queryable.query
 
 Query the graph for all nodes that match.
 
@@ -46,7 +46,7 @@ Query the graph for all nodes that match.
         pass
 ```
 
-###### Queryable.query_first
+## Queryable.query_first
 
 Query the graph for the first node that matches.
 
@@ -64,7 +64,7 @@ Query the graph for the first node that matches.
         pass
 ```
 
-###### Queryable.get_count
+## Queryable.get_count
 
 Query the graph, counting all matches.
 
@@ -108,9 +108,9 @@ query.query_first(mclient, contains_node_key="node-key-to-query")
 In this case, if our signature matches such that any of the nodes A, B, C, have
 the node_key "node-key-to-query", we have a match - otherwise, no match.
 
-### And, Or, Not
+## Boolean Logic
 
-##### And
+### And
 
 For a single predicate constraint (with\_\* method) all constraints are
 considered And'd.
@@ -122,7 +122,7 @@ ProcessQuery()
 .with_process_name(contains=["foo", "bar"])
 ```
 
-##### Or
+### Or
 
 Multiple predicate constraints are considered Or'd.
 
@@ -134,7 +134,7 @@ ProcessQuery()
 .with_process_name(contains="bar")
 ```
 
-##### Not
+### Not
 
 Any constraint can be wrapped in a Not to negate the constraint.
 
@@ -145,7 +145,7 @@ ProcessQuery()
 .with_process_name(contains=Not("foo"))
 ```
 
-##### All Together
+### All Together
 
 This query matches a process with a process*name that either is \_not* 'foo' but
 ends with '.exe', _or_ it will match a process with a process containing "bar"
@@ -156,6 +156,8 @@ ProcessQuery()
 .with_process_name(contains=Not("foo"), ends_eith=".exe")
 .with_process_name(contains=["bar", baz])
 ```
+
+## Filters and functions
 
 ### with\_\* methods
 
@@ -181,7 +183,7 @@ def with_process_name(
 The `process_name` field is indexed such that we can constrain our query
 through:
 
-###### eq
+### eq
 
 Matches a node's `process_name` if it exactly matches `eq`
 
@@ -189,7 +191,7 @@ Matches a node's `process_name` if it exactly matches `eq`
 ProcessQuery().with_process_name(eq="svchost.exe")
 ```
 
-###### contains
+### contains
 
 Matches a node's `process_name` if it contains `contains`
 
@@ -197,7 +199,7 @@ Matches a node's `process_name` if it contains `contains`
 ProcessQuery().with_process_name(contains="svc")
 ```
 
-###### ends_with
+### ends_with
 
 Matches a node's `process_name` if it ends with `ends_with`
 
@@ -205,7 +207,7 @@ Matches a node's `process_name` if it ends with `ends_with`
 ProcessQuery().with_process_name(ends_with=".exe")
 ```
 
-###### starts_with
+### starts_with
 
 Matches a node's `process_name` if it starts with `starts_with`
 
@@ -213,7 +215,7 @@ Matches a node's `process_name` if it starts with `starts_with`
 ProcessQuery().with_process_name(starts_with="svchost")
 ```
 
-###### regexp
+### regexp
 
 Matches a node's `process_name` if it matches the regexp pattern `regexp`
 
@@ -221,7 +223,7 @@ Matches a node's `process_name` if it matches the regexp pattern `regexp`
 ProcessQuery().with_process_name(regexp="svc.*exe")
 ```
 
-###### distance
+### distance
 
 Matches a node's `process_name` if it has a string distance of less than the
 provided threshold
@@ -230,7 +232,7 @@ provided threshold
 ProcessQuery().with_process_name(distance=("svchost", 2))
 ```
 
-#### Example
+### Example
 
 Here's an example where we look for processes with a `process_name` that is
 _not_ equal to `svchost.exe`, but that has a very close string distance to it.
