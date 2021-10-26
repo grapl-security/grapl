@@ -41,6 +41,7 @@ pulumi preview \
     --cwd="$(project_directory "${project_stack}")" \
     --stack="${project_stack}" \
     --show-replacement-steps \
+    --refresh \
     --non-interactive \
     --diff \
     --message="Previewing from ${BUILDKITE_BUILD_URL}"
