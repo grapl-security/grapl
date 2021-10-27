@@ -2,7 +2,16 @@
 
 set -euo pipefail
 
-# the 4946 is an arbitrary choice that is indentifiably related to nomad's 4646
+PORT_TO_FORWARD="${1:-1234}"
+
+SSM_PARAMETERS=$(
+cat << EOF
+{
+  "portNumber": ["${PORT_TO_FORWARD}"],
+  "localPortNumber": ["${PORT_TO_FORWARD}"]
+}
+EOF
+)
 
 AGENTS=$(aws ec2 describe-instances --filter Name="tag:Name",Values="Nomad Agent")
 NOMAD_AGENT_INSTANCE_ID=$(echo "${AGENTS}" | jq -r .Reservations[0].Instances[0].InstanceId)
@@ -10,4 +19,4 @@ NOMAD_AGENT_INSTANCE_ID=$(echo "${AGENTS}" | jq -r .Reservations[0].Instances[0]
 aws ssm start-session \
     --target "${NOMAD_AGENT_INSTANCE_ID}" \
     --document-name AWS-StartPortForwardingSession \
-    --parameters '{"portNumber":["1234"], "localPortNumber": ["4946"]}'
+    --parameters "${SSM_PARAMETERS}"
