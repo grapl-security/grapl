@@ -74,7 +74,7 @@ def main() -> None:
 
     analyzer_matched_emitter = emitter.EventEmitter("analyzer-matched-subgraphs")
     pulumi.export(
-        "analyzer-matched-subgraphs-bucket", analyzer_matched_emitter.bucket.bucket
+        "analyzer-matched-subgraphs-bucket", analyzer_matched_emitter.bucket_name
     )
 
     sysmon_generator_queue = ServiceQueue("sysmon-generator")
@@ -105,10 +105,10 @@ def main() -> None:
 
     nomad_inputs: Final[NomadVars] = dict(
         analyzer_bucket=analyzers_bucket.bucket,
-        analyzer_dispatched_bucket=dispatched_analyzer_emitter.bucket.bucket,
+        analyzer_dispatched_bucket=dispatched_analyzer_emitter.bucket_name,
         analyzer_dispatcher_queue=analyzer_dispatcher_queue.main_queue_url,
         analyzer_executor_queue=analyzer_executor_queue.main_queue_url,
-        analyzer_matched_subgraphs_bucket=analyzer_matched_emitter.bucket.bucket,
+        analyzer_matched_subgraphs_bucket=analyzer_matched_emitter.bucket_name,
         analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url,
         aws_region=aws.get_region().name,
         deployment_name=config.DEPLOYMENT_NAME,
@@ -124,12 +124,12 @@ def main() -> None:
         schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
         schema_table_name=dynamodb_tables.schema_table.name,
         session_table_name=dynamodb_tables.dynamic_session_table.name,
-        subgraphs_merged_bucket=subgraphs_merged_emitter.bucket.bucket,
-        subgraphs_generated_bucket=subgraphs_generated_emitter.bucket.bucket,
+        subgraphs_merged_bucket=subgraphs_merged_emitter.bucket_name,
+        subgraphs_generated_bucket=subgraphs_generated_emitter.bucket_name,
         sysmon_generator_queue=sysmon_generator_queue.main_queue_url,
         sysmon_generator_dead_letter_queue=sysmon_generator_queue.dead_letter_queue_url,
         test_user_name=config.GRAPL_TEST_USER_NAME,
-        unid_subgraphs_generated_bucket=unid_subgraphs_generated_emitter.bucket.bucket,
+        unid_subgraphs_generated_bucket=unid_subgraphs_generated_emitter.bucket_name,
         user_auth_table=dynamodb_tables.user_auth_table.name,
         user_session_table=dynamodb_tables.user_session_table.name,
     )
@@ -263,7 +263,7 @@ def main() -> None:
 
             e2e_test_job_vars = _get_e2e_test_job_vars(
                 dict(
-                    sysmon_log_bucket=sysmon_log_emitter.bucket.bucket,
+                    sysmon_log_bucket=sysmon_log_emitter.bucket_name,
                     **grapl_core_job_vars_inputs,
                     **nomad_inputs,
                 )

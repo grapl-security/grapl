@@ -86,3 +86,7 @@ class EventEmitter(pulumi.ComponentResource):
 
     def grant_read_to(self, role: aws.iam.Role) -> None:
         self.bucket.grant_read_permission_to(role)
+
+    @property
+    def bucket_name(self) -> pulumi.Output[str]:
+        return self.bucket.bucket
