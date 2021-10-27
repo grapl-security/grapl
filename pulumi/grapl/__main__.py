@@ -272,10 +272,13 @@ def main() -> None:
             )
 
     else:
+
+        # We use stack outputs from internally developed projects
+        # We assume that the stack names will match the grapl stack name
+        networking_stack = f"grapl/networking/{pulumi.get_stack()}"
+        nomad_server_stack = f"grapl/nomad/{pulumi.get_stack()}"
+
         pulumi_config = pulumi.Config()
-        networking_stack = pulumi.StackReference(
-            pulumi_config.require("networking-stack")
-        )
         vpc_id = networking_stack.require_output("grapl-vpc")
         subnet_ids = networking_stack.require_output("grapl-private-subnet-ids")
 
@@ -283,10 +286,7 @@ def main() -> None:
         artifacts = pulumi_config.require_object("artifacts")
 
         # Set the nomad address. This can be either set as nomad:address in the config to support ssm port forwarding or
-        # will be taken from the nomad stack
-        nomad_server_stack = pulumi.StackReference(
-            pulumi_config.require("nomad-server-stack")
-        )
+        # taken from the nomad stack
         nomad_config = pulumi.Config("nomad")
         nomad_override_address = nomad_config.get("address")
         # We prefer nomad:address to support overriding in the case of ssm port forwarding

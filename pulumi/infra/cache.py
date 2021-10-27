@@ -39,10 +39,8 @@ class Cache(pulumi.ComponentResource):
 
         # Allow communication between nomad-agents and redis
         # These are in different VPCs with the peering done in the networking module
-        pulumi_config = pulumi.Config()
-        nomad_agents_server_stack = pulumi.StackReference(
-            pulumi_config.require("nomad-agents-server-stack")
-        )
+        # We assume that the stack name for nomad-agents is the same as grapl's stack name
+        nomad_agents_server_stack = f"grapl/nomad-agents/{pulumi.get_stack()}"
         nomad_agent_sg_id = nomad_agents_server_stack.require_output("security-group")
 
         aws.ec2.SecurityGroupRule(
