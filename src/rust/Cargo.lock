@@ -2725,7 +2725,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "28988d872ab76095a6e6ac88d99b54fd267702734fd7ffe610ca27f533ddb95a"
 
 [[package]]
-name = "org-management"
+name = "orgmanagement"
 version = "0.1.0"
 dependencies = [
  "grapl-config",

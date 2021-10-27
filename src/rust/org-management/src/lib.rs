@@ -1,6 +1,7 @@
-pub mod org_management {
-    tonic::include_proto!("orgmanagement");
+pub mod orgmanagementlib {
+    tonic::include_proto!("orgmanagementproto");
 }
 
-pub mod client;
 pub mod server;
+
+// pub mod client;

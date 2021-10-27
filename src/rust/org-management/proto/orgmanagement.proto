@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package orgmanagement;
+package orgmanagementproto;
 
 message CreateOrgRequest {
   string org_display_name = 1;

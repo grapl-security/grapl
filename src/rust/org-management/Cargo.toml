@@ -1,13 +1,17 @@
 [package]
-name = "org-management"
+name = "orgmanagement"
 version = "0.1.0"
 edition = "2018"
 
 [lib]
 
 [[bin]] # Bin to run org management gRPC server
-name = "org-management"
+name = "server"
 path = "src/main.rs"
+
+#[[bin]] # Bin to run org management gRPC client
+#name = "client"
+#path = "src/client.rs"
 
 [dependencies]
 tonic = "0.5"

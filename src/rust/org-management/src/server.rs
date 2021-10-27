@@ -1,9 +1,10 @@
-use org_management::{
+use orgmanagementlib::{
     ChangePasswordRequest,
     CreateOrgRequest,
     CreateUserRequest,
     EmptyResp,
 };
+
 use sqlx::{
     postgres::{
         PgPoolOptions,
@@ -20,8 +21,8 @@ use tonic::{
 use uuid::Uuid;
 
 use crate::{
-    org_management,
-    org_management::organization_manager_server::{
+    orgmanagementlib,
+    orgmanagementlib::organization_manager_server::{
         OrganizationManager,
         OrganizationManagerServer,
     },
@@ -55,7 +56,6 @@ impl OrganizationManager for OrganizationManagerRpc {
         println!("Org request data: {:?}", &request);
 
         let org_id = sqlx::types::Uuid::from_u128(Uuid::new_v4().as_u128());
-        // let user_id = sqlx::types::Uuid::from_u128(Uuid::new_v4().as_u128());
 
         let CreateOrgRequest {
             org_display_name,
@@ -64,6 +64,29 @@ impl OrganizationManager for OrganizationManagerRpc {
             admin_password,
             should_reset_password,
         } = &request.into_inner();
+
+        // let row = sqlx::query!(
+        //     r"
+        //     INSERT INTO organization (
+        //         org_id,
+        //         org_display_name,
+        //         admin_username,
+        //         admin_email,
+        //         admin_password,
+        //         should_reset_password
+        //     )
+        //      VALUES ( $1, $2, $3, $4, $5, $6 )
+        // ",
+        // org_id,
+        // org_display_name,
+        // admin_username,
+        // admin_email,
+        // admin_password,
+        // should_reset_password
+        // ).execute(&self.pool)
+        // .await
+        // .map_err(OrganizationManagerError::from)?;
+
 
         let row = sqlx::query(
             r"
