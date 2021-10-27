@@ -31,31 +31,40 @@ class Cache(pulumi.ComponentResource):
         self.security_group = aws.ec2.SecurityGroup(
             f"{name}-cache-security-group",
             vpc_id=vpc_id,
-            # Defining ingress/egress rules inline here... this isn't
-            # compatible right now with specifying standalone rules --
-            # gotta pick one or the other.
-            # (see
-            # https://www.pulumi.com/docs/reference/pkg/aws/ec2/securitygrouprule)
-            # NOTE: CDK code also had another ingress run allowing any
-            # TCP connection from any source... leaving that off for
-            # the time being.
-            # TODO split this into rules so that we can add nomad connection as well
-            ingress=[
-                aws.ec2.SecurityGroupIngressArgs(
-                    description="Allow Redis connections from anywhere",
-                    protocol="tcp",
-                    from_port=redis_port,
-                    to_port=redis_port,
-                    # TODO: This just replicates what we're doing in
-                    # CDK. Consider tightening this by using
-                    # `security_groups` instead of `cidr_blocks`.
-                    cidr_blocks=["0.0.0.0/0"],
-                )
-            ],
             # Tags are necessary for the moment so we can look up the resource from a different pulumi stack.
             # Once this is refactored we can remove the tags
             tags={"Name": f"{name}-{DEPLOYMENT_NAME}"},
             opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        # Allow communication between nomad-agents and redis
+        # These are in different VPCs with the peering done in the networking module
+        pulumi_config = pulumi.Config()
+        nomad_agents_server_stack = pulumi.StackReference(
+            pulumi_config.require("nomad-agents-server-stack")
+        )
+        nomad_agent_sg_id = nomad_agents_server_stack.require_output("security-group")
+
+        aws.ec2.SecurityGroupRule(
+            "nomad-agents-egress-to-redis",
+            type="egress",
+            security_group_id=nomad_agent_sg_id,
+            from_port=redis_port,
+            to_port=redis_port,
+            protocol="tcp",
+            source_security_group_id=self.security_group.id,
+            opts=pulumi.ResourceOptions(parent=self.security_group),
+        )
+
+        aws.ec2.SecurityGroupRule(
+            "redis-ingress-from-nomad-agents",
+            type="ingress",
+            security_group_id=self.security_group.id,
+            from_port=redis_port,
+            to_port=redis_port,
+            protocol="tcp",
+            source_security_group_id=nomad_agent_sg_id,
+            opts=pulumi.ResourceOptions(parent=self.security_group),
         )
 
         # Note that this is a single-node Redis "cluster"
