@@ -15,8 +15,6 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/pulumi.sh"
 
 # Given as "org/project/stack"
 readonly project_stack="${1}"
-# Given as "org/project/stack"
-readonly nomad_stack="${2}"
 
 echo -e "--- :python: Installing dependencies"
 build-support/manage_virtualenv.sh populate
