@@ -1,10 +1,11 @@
 import sys
 from pathlib import Path
 
+from typing_extensions import Final
+
 sys.path.insert(0, "..")
 
 import os
-from typing import Any, Mapping
 
 import pulumi_aws as aws
 import pulumi_nomad as nomad
@@ -22,7 +23,7 @@ from infra.cache import Cache
 # web UI.
 from infra.kafka import Kafka
 from infra.network import Network
-from infra.nomad_job import NomadJob
+from infra.nomad_job import NomadJob, NomadVars
 from infra.quiet_docker_build_output import quiet_docker_output
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
@@ -102,7 +103,7 @@ def main() -> None:
     model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)
     pulumi.export("model-plugins-bucket", model_plugins_bucket.bucket)
 
-    nomad_inputs = dict(
+    nomad_inputs: Final[NomadVars] = dict(
         analyzer_bucket=analyzers_bucket.bucket,
         analyzer_dispatched_bucket=dispatched_analyzer_emitter.bucket.bucket,
         analyzer_dispatcher_queue=analyzer_dispatcher_queue.main_queue_url,
@@ -123,17 +124,20 @@ def main() -> None:
         schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
         schema_table_name=dynamodb_tables.schema_table.name,
         session_table_name=dynamodb_tables.dynamic_session_table.name,
-        subgraphs_merged_bucket=subgraphs_merged_emitter.bucket,
-        subgraphs_generated_bucket=subgraphs_generated_emitter.bucket,
+        subgraphs_merged_bucket=subgraphs_merged_emitter.bucket.bucket,
+        subgraphs_generated_bucket=subgraphs_generated_emitter.bucket.bucket,
         sysmon_generator_queue=sysmon_generator_queue.main_queue_url,
         sysmon_generator_dead_letter_queue=sysmon_generator_queue.dead_letter_queue_url,
         test_user_name=config.GRAPL_TEST_USER_NAME,
-        unid_subgraphs_generated_bucket=unid_subgraphs_generated_emitter.bucket,
+        unid_subgraphs_generated_bucket=unid_subgraphs_generated_emitter.bucket.bucket,
         user_auth_table=dynamodb_tables.user_auth_table.name,
         user_session_table=dynamodb_tables.user_session_table.name,
     )
 
     if config.LOCAL_GRAPL:
+        ###################################
+        # Local Grapl
+        ###################################
         kafka = Kafka("kafka")
 
         # These are created in `grapl-local-infra.nomad` and not applicable to prod.
@@ -142,7 +146,9 @@ def main() -> None:
         kafka_endpoint = "LOCAL_GRAPL_REPLACE_IP:19092"  # intentionally not 29092
         redis_endpoint = "redis://LOCAL_GRAPL_REPLACE_IP:6379"
 
-        grapl_core_job_vars_inputs = dict(
+        assert aws.config.access_key
+        assert aws.config.secret_key
+        grapl_core_job_vars_inputs: Final[NomadVars] = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
             _aws_endpoint=aws_endpoint,
@@ -151,15 +157,14 @@ def main() -> None:
             aws_access_key_secret=aws.config.secret_key,
             rust_log="DEBUG",
         )
-        grapl_core_job_vars = dict(
-            **grapl_core_job_vars_inputs,
-            **nomad_inputs,
-        )
 
         nomad_grapl_core = NomadJob(
             "grapl-core",
             jobspec=Path("../../nomad/grapl-core.nomad").resolve(),
-            vars=grapl_core_job_vars,
+            vars=dict(
+                **grapl_core_job_vars_inputs,
+                **nomad_inputs,
+            ),
         )
 
         nomad_grapl_ingress = NomadJob(
@@ -168,7 +173,7 @@ def main() -> None:
             vars={},
         )
 
-        def _get_provisioner_job_vars(inputs: Mapping[str, Any]) -> Mapping[str, Any]:
+        def _get_provisioner_job_vars(inputs: NomadVars) -> NomadVars:
             return {
                 k: inputs[k]
                 for k in {
@@ -201,9 +206,7 @@ def main() -> None:
 
         if config.SHOULD_DEPLOY_INTEGRATION_TESTS:
 
-            def _get_integration_test_job_vars(
-                inputs: Mapping[str, Any]
-            ) -> Mapping[str, Any]:
+            def _get_integration_test_job_vars(inputs: NomadVars) -> NomadVars:
                 return {
                     k: inputs[k]
                     for k in {
@@ -240,7 +243,7 @@ def main() -> None:
 
         if config.SHOULD_DEPLOY_E2E_TESTS:
 
-            def _get_e2e_test_job_vars(inputs: Mapping[str, Any]) -> Mapping[str, Any]:
+            def _get_e2e_test_job_vars(inputs: NomadVars) -> NomadVars:
                 return {
                     k: inputs[k]
                     for k in {
@@ -270,8 +273,10 @@ def main() -> None:
                 jobspec=Path("../../nomad/local/e2e-tests.nomad").resolve(),
                 vars=e2e_test_job_vars,
             )
-
     else:
+        ###################################
+        # AWS Grapl
+        ###################################
         pulumi_config = pulumi.Config()
         networking_stack = pulumi.StackReference(
             pulumi_config.require("networking-stack")
@@ -295,7 +300,7 @@ def main() -> None:
         )
         nomad_provider = nomad.Provider("nomad-aws", address=nomad_address)
 
-        grapl_core_job_vars = dict(
+        grapl_core_job_vars: Final[NomadVars] = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
             _redis_endpoint=cache.endpoint,
@@ -330,7 +335,7 @@ def main() -> None:
             vars={},
         )
 
-        def _get_provisioner_job_vars(inputs: Mapping[str, Any]) -> Mapping[str, Any]:
+        def _get_provisioner_job_vars(inputs: NomadVars) -> NomadVars:
             return {
                 k: inputs[k]
                 for k in {

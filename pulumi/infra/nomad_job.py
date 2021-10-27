@@ -1,10 +1,13 @@
 from pathlib import Path
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping, Optional, Union
 
 import pulumi_nomad as nomad
 from infra.config import DEPLOYMENT_NAME
 
 import pulumi
+
+_ValidNomadVarTypes = pulumi.Input[Union[str, bool, int]]
+NomadVars = Mapping[str, _ValidNomadVarTypes]
 
 
 class NomadJob(pulumi.ComponentResource):
@@ -12,7 +15,7 @@ class NomadJob(pulumi.ComponentResource):
         self,
         name: str,
         jobspec: Path,
-        vars: Mapping[str, Any],
+        vars: NomadVars,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         super().__init__("grapl:NomadJob", name, None, opts)
