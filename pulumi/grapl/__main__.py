@@ -280,8 +280,8 @@ def main() -> None:
         pulumi_config = pulumi.Config()
         # We use stack outputs from internally developed projects
         # We assume that the stack names will match the grapl stack name
-        networking_stack = f"grapl/networking/{pulumi.get_stack()}"
-        nomad_server_stack = f"grapl/nomad/{pulumi.get_stack()}"
+        networking_stack = pulumi.StackReference(f"grapl/networking/{pulumi.get_stack()}")
+        nomad_server_stack = pulumi.StackReference(f"grapl/nomad/{pulumi.get_stack()}")
 
         vpc_id = networking_stack.require_output("grapl-vpc")
         subnet_ids = networking_stack.require_output("grapl-private-subnet-ids")
