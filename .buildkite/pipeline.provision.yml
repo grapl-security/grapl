@@ -1,13 +1,15 @@
 ---
 env:
   PANTS_CONFIG_FILES: "['pants.toml', 'pants.ci.toml']"
+  BUILDKITE_PLUGIN_VAULT_ENV_SECRET_PREFIX: "secret/data/buildkite/env"
 
 steps:
   - label: ":pulumi: Preview grapl/testing environment changes in Staging account"
     plugins:
-      - seek-oss/aws-sm#v2.3.1:
-          env:
-            PULUMI_ACCESS_TOKEN: "pulumi-token"
+      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-env#v0.1.0:
+          secrets:
+            - PULUMI_ACCESS_TOKEN
       - "grapl-security/pulumi#v0.1.0":
           command: preview
           project_dir: pulumi/grapl
@@ -19,9 +21,10 @@ steps:
 
   - label: ":pulumi: Update grapl/testing environment in Staging account"
     plugins:
-      - seek-oss/aws-sm#v2.3.1:
-          env:
-            PULUMI_ACCESS_TOKEN: "pulumi-token"
+      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-env#v0.1.0:
+          secrets:
+            - PULUMI_ACCESS_TOKEN
       - "grapl-security/pulumi#v0.1.0":
           command: update
           project_dir: pulumi/grapl
