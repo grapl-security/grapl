@@ -65,30 +65,7 @@ impl OrganizationManager for OrganizationManagerRpc {
             should_reset_password,
         } = &request.into_inner();
 
-        // let row = sqlx::query!(
-        //     r"
-        //     INSERT INTO organization (
-        //         org_id,
-        //         org_display_name,
-        //         admin_username,
-        //         admin_email,
-        //         admin_password,
-        //         should_reset_password
-        //     )
-        //      VALUES ( $1, $2, $3, $4, $5, $6 )
-        // ",
-        // org_id,
-        // org_display_name,
-        // admin_username,
-        // admin_email,
-        // admin_password,
-        // should_reset_password
-        // ).execute(&self.pool)
-        // .await
-        // .map_err(OrganizationManagerError::from)?;
-
-
-        let row = sqlx::query(
+        let row = sqlx::query!(
             r"
             INSERT INTO organization (
                 org_id,
@@ -100,16 +77,39 @@ impl OrganizationManager for OrganizationManagerRpc {
             )
              VALUES ( $1, $2, $3, $4, $5, $6 )
         ",
-        )
-        .bind(org_id)
-        .bind(org_display_name)
-        .bind(admin_username)
-        .bind(admin_email)
-        .bind(admin_password)
-        .bind(should_reset_password)
-        .execute(&self.pool)
+        org_id,
+        org_display_name,
+        admin_username,
+        admin_email,
+        admin_password,
+        should_reset_password
+        ).execute(&self.pool)
         .await
         .map_err(OrganizationManagerError::from)?;
+
+        //
+        // let row = sqlx::query(
+        //     r"
+        //     INSERT INTO organization (
+        //         org_id,
+        //         org_display_name,
+        //         admin_username,
+        //         admin_email,
+        //         admin_password,
+        //         should_reset_password
+        //     )
+        //      VALUES ( $1, $2, $3, $4, $5, $6 )
+        // ",
+        // )
+        // .bind(org_id)
+        // .bind(org_display_name)
+        // .bind(admin_username)
+        // .bind(admin_email)
+        // .bind(admin_password)
+        // .bind(should_reset_password)
+        // .execute(&self.pool)
+        // .await
+        // .map_err(OrganizationManagerError::from)?;
 
         if row.rows_affected() == 0 {
             return Err(Status::internal(
