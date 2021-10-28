@@ -101,11 +101,10 @@ Finally, set up an SSM tunnel to one of your Nomad servers so you can deploy
 Nomad jobs.
 
 ```
-# the 4846 is an arbitrary choice that is indentifiably related to nomad's 4646
-pulumi config set nomad:address http://localhost:4846
+pulumi config set nomad:address http://localhost:4646
 
 # Do this in a separate tab, as it's not detached.
-./bin/aws/ssm_nomad_server.py
+./bin/aws/ssm_nomad_server.sh
 ```
 
 Now, when you run `pulumi up`, you will be provisioning infrastructure in your
