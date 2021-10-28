@@ -4,24 +4,28 @@ env:
 
 steps:
   - label: ":pulumi: Preview grapl/testing environment changes in Staging account"
-    command:
-      - .buildkite/shared/steps/pulumi_preview.sh grapl/grapl/testing grapl/nomad/testing
     plugins:
       - seek-oss/aws-sm#v2.3.1:
           env:
             PULUMI_ACCESS_TOKEN: "pulumi-token"
+      - "grapl-security/pulumi#v0.1.0":
+          command: preview
+          project_dir: pulumi/grapl
+          stack: grapl/testing
     agents:
       queue: "pulumi-staging"
 
   - wait
 
   - label: ":pulumi: Update grapl/testing environment in Staging account"
-    command:
-      - .buildkite/shared/steps/pulumi_up.sh grapl/testing
     plugins:
       - seek-oss/aws-sm#v2.3.1:
           env:
             PULUMI_ACCESS_TOKEN: "pulumi-token"
+      - "grapl-security/pulumi#v0.1.0":
+          command: update
+          project_dir: pulumi/grapl
+          stack: grapl/testing
     agents:
       queue: "pulumi-staging"
 
