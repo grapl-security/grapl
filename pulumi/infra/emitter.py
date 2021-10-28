@@ -19,11 +19,12 @@ class EventEmitter(pulumi.ComponentResource):
 
         super().__init__("grapl:EventEmitter", event_name, None, opts)
 
-        bucket_name = f"{event_name}-bucket"
+        bucket_name_no_mangling = f"{event_name}-bucket"
         self.bucket = Bucket(
-            bucket_name, sse=True, opts=pulumi.ResourceOptions(parent=self)
+            bucket_name_no_mangling, sse=True, opts=pulumi.ResourceOptions(parent=self)
         )
-        pulumi.export(bucket_name, self.bucket.bucket)
+        self.bucket_name: pulumi.Output[str] = self.bucket.bucket
+        pulumi.export(bucket_name_no_mangling, self.bucket.bucket)
 
         physical_topic_name = f"{DEPLOYMENT_NAME}-{event_name}-topic"
         self.topic = aws.sns.Topic(
