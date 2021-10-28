@@ -16,7 +16,7 @@ USER grapl
 ENV USER=grapl
 WORKDIR /home/grapl
 
-RUN curl -O https://get.pulumi.com/releases/sdk/pulumi-v3.12.0-linux-x64.tar.gz && \
+RUN curl -O https://get.pulumi.com/releases/sdk/pulumi-v3.16.0-linux-x64.tar.gz && \
     tar -xzvf pulumi-*.tar.gz && \
     mv pulumi pulumi-bin
 ENV PATH=/home/grapl/pulumi-bin:${PATH}
