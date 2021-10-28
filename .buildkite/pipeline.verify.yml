@@ -134,11 +134,7 @@ steps:
       # This is slightly hacky, but means we don't need to build packages locally first
       - git fetch origin rc
       - git show origin/rc:pulumi/grapl/Pulumi.testing.yaml > pulumi/grapl/Pulumi.testing.yaml
-      # Temporarily set required input here until this is merged into rc
-      - pulumi config set --cwd pulumi/grapl/ --stack grapl/grapl/testing grapl:nomad-server-stack grapl/nomad/testing
-      - pulumi config set --cwd pulumi/grapl/ --stack grapl/grapl/testing grapl:nomad-agents-server-stack grapl/nomad-agents/testing
-      - pulumi config set --cwd pulumi/grapl/ --stack grapl/grapl/testing grapl:networking-stack grapl/networking/testing
-      - .buildkite/shared/steps/pulumi_preview.sh grapl/grapl/testing grapl/nomad/testing
+      - .buildkite/shared/steps/pulumi_preview.sh grapl/grapl/testing
     plugins:
       - seek-oss/aws-sm#v2.3.1:
           env:

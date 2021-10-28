@@ -13,7 +13,7 @@ set -euo pipefail
 # shellcheck source-path=SCRIPTDIR
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/pulumi.sh"
 
-# Given as "project/stack"
+# Given as "org/project/stack"
 readonly project_stack="${1}"
 
 echo -e "--- :python: Installing dependencies"
@@ -28,7 +28,7 @@ pulumi login
 echo -e "--- :pulumi: Update ${project_stack} infrastructure"
 pulumi up \
     --cwd="$(project_directory "${project_stack}")" \
-    --stack="$(fully_qualified_stack_name "${project_stack}")" \
+    --stack="${project_stack}" \
     --show-replacement-steps \
     --non-interactive \
     --yes \

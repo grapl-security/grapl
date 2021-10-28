@@ -2,14 +2,14 @@ config:
   aws:region: us-east-1
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: operational-alarms@graplsecurity.com
   grapl:artifacts:
-    analyzer-dispatcher: 20211028182246-c76b087b
-    analyzer-executor: 20211028182246-c76b087b
+    analyzer-dispatcher: 20211028192806-d94b0cf9
+    analyzer-executor: 20211028192806-d94b0cf9
     dgraph-ttl: 20210923181707-96db1d59
     e2e-test-runner: 20210923181707-96db1d59
-    engagement-creator: 20211028182246-c76b087b
+    engagement-creator: 20211028192806-d94b0cf9
     engagement-edge: 20210920154305-c6d7c551
-    graph-merger: 20211028182246-c76b087b
-    graphql-endpoint: 20211028182246-c76b087b
+    graph-merger: 20211028192806-d94b0cf9
+    graphql-endpoint: 20211028192806-d94b0cf9
     grapl-nomad-consul-client:
       us-east-1: ami-0bc207803b7202acd
       us-east-2: ami-0d2c737f1b938e0ce
@@ -21,15 +21,15 @@ config:
       us-west-1: ami-013553b759c5d0a94
       us-west-2: ami-019b4c6d43e6e9d6b
     grapl-ux: 20210817165740-7e067a8d
-    grapl-web-ui: 20211028182246-c76b087b
+    grapl-web-ui: 20211028192806-d94b0cf9
     metric-forwarder: 20210706192702-6001e5a3
     model-plugin-deployer: 20210923181707-96db1d59
-    node-identifier: 20211028182246-c76b087b
-    node-identifier-retry: 20211028182246-c76b087b
+    node-identifier: 20211028192806-d94b0cf9
+    node-identifier-retry: 20211028192806-d94b0cf9
     node-identifier-retry-handler: 20210706190216-95cec5cb
-    osquery-generator: 20211028182246-c76b087b
-    provisioner: 20211028182246-c76b087b
-    sysmon-generator: 20211028182246-c76b087b
+    osquery-generator: 20211028192806-d94b0cf9
+    provisioner: 20211028192806-d94b0cf9
+    sysmon-generator: 20211028192806-d94b0cf9
     ux-router: 20210920154305-c6d7c551
   grapl:env_vars:
     analyzer-dispatcher:
@@ -53,6 +53,3 @@ config:
     sysmon-generator:
       RUST_BACKTRACE: "1"
       RUST_LOG: DEBUG
-  grapl:networking-stack: grapl/networking/testing
-  grapl:nomad-agents-server-stack: grapl/nomad_agents/testing
-  grapl:nomad-server-stack: grapl/nomad/testing
