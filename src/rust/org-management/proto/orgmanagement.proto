@@ -12,25 +12,33 @@ message CreateOrgRequest {
 
 message EmptyResp {}
 
+message Uuid {
+  // Least significant bytes
+  fixed64 lsb = 1;
+
+  // Most significant bytes
+  fixed64 msb = 2;
+}
+
 message UserRequest {
   string id = 1;
 }
 
 message CreateUserRequest {
-  string organization_id = 1; // this needs to be a UUID, but we don't know how to handle that rn, see unresolved ?s
-  string name = 2;
-  string email = 3;
-  string password = 4;
+//  Uuid org_id = 1; // this needs to be a UUID, but we don't know how to handle that rn, see unresolved ?s
+  string name = 1;
+  string email = 2;
+  string password = 3;
 }
 
 message UserReply {
-  string organization_id = 1;
+  Uuid org_id = 1;
   string user_id = 2;
   string name = 3;
 }
 
 message ChangePasswordRequest {
-  string organization_id = 1;
+  Uuid org_id = 1;
   string user_id = 2;
   string old_password = 3;
   string new_password = 4;

@@ -16,5 +16,21 @@
       },
       "nullable": []
     }
+  },
+  "fb31068f2f0cb5b6b57b138beb2b2576108604a763e8b3128ee00e1b11786eb3": {
+    "query": "\n            INSERT INTO users (\n                user_id,\n                org_id,\n                name,\n                email,\n                password\n            )\n             VALUES ( $1, $2, $3, $4, $5 )\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Uuid",
+          "Bpchar",
+          "Bpchar",
+          "Bpchar"
+        ]
+      },
+      "nullable": []
+    }
   }
 }

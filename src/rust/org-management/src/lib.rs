@@ -3,5 +3,7 @@ pub mod orgmanagementlib {
 }
 
 pub mod server;
+pub mod create_db_conn;
+pub mod organization_manager;
 
 // pub mod client;
