@@ -62,7 +62,7 @@ RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
 ################################################################################
 FROM base AS build-test
 
-ENV RUST_INTEGRATION_TEST_FEATURES="node-identifier/integration,sqs-executor/integration,kafka-metrics-exporter/integration"
+ENV RUST_INTEGRATION_TEST_FEATURES="node-identifier/integration,sqs-executor/integration,kafka-metrics-exporter/integration,model-plugin-deployer/integration"
 
 # For test coverage reports
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
@@ -155,3 +155,8 @@ FROM rust-dist AS grapl-web-ui
 COPY --from=build /outputs/grapl-web-ui /
 COPY rust/grapl-web-ui/frontend /frontend
 ENTRYPOINT ["/grapl-web-ui"]
+
+# model plugin deployer
+FROM rust-dist AS model-plugin-deployer
+COPY --from=build /outputs/model-plugin-deployer /
+ENTRYPOINT ["/model-plugin-deployer"]
