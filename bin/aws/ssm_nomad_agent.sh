@@ -16,6 +16,8 @@ EOF
 AGENTS=$(aws ec2 describe-instances --filter Name=tag:Name,Values="Nomad Agent")
 NOMAD_AGENT_INSTANCE_ID=$(echo "${AGENTS}" | jq -r .Reservations[0].Instances[0].InstanceId)
 
+echo "--- Instance: ${NOMAD_AGENT_INSTANCE_ID}"
+
 aws ssm start-session \
     --target "${NOMAD_AGENT_INSTANCE_ID}" \
     --document-name AWS-StartPortForwardingSession \
