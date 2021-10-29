@@ -345,6 +345,7 @@ def main() -> None:
                     "container_registry",
                     "container_repo",
                     "deployment_name",
+                    "provisioner_tag",
                     "rust_log",
                     "schema_table_name",
                     "schema_properties_table_name",
@@ -354,6 +355,7 @@ def main() -> None:
             }
 
         grapl_provision_job_vars = _get_provisioner_job_vars(
+            # IMPORTANT: Any new var added in the dict below also needs to be added to _get_provisioner_job_vars
             dict(
                 # The vars with a leading underscore indicate that the hcl local version of the variable should be used
                 # instead of the var version.
