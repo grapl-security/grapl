@@ -30,6 +30,7 @@ impl From<OrganizationManagerError> for Status {
 
 #[tonic::async_trait]
 impl OrganizationManager for OrganizationManagerRpc {
+
     async fn create_org(
         &self,
         request: Request<CreateOrgRequest>,
@@ -120,30 +121,49 @@ impl OrganizationManager for OrganizationManagerRpc {
         Ok(Response::new(EmptyResp {}))
     }
 
+
+
     async fn change_password(
         &self,
-        _request: Request<ChangePasswordRequest>,
+        request: Request<ChangePasswordRequest>,
     ) -> Result<Response<EmptyResp>, Status> {
-        // println!("Changed password for user x: {:?}", request); // don't actually print this
 
-        // check to see if old password matches what we have in db
-        // if it passes, update with new password
-        // let row = sqlx::query!(
-        //     "UPDATE users SET password = $2 WHERE user_id = $1",
-        //          &user_id,
-        //         &organization_id,
-        //         &old_password,
-        //         &new_password
-        // )
-        //     .bind("new user")
-        //     .execute(&self.pool)
+        println!("changing password for user x: {:?}", request); // don't actually print this
+        //
+        // let ChangePasswordRequest {
+        //     org_id,
+        //     user_id,
+        //     old_password,
+        //     new_password,
+        // } = &request.into_inner();
+        // // check to see if old password matches what we have in db
+        // //
+        // let get_password = sqlx::query!(
+        //     r#"SELECT password FROM users WHERE user_id = $1"#,
+        //     user_id
+        // ).execute(&self.pool)
         //     .await
         //     .map_err(OrganizationManagerError::from)?;
         //
-        // if row.rows_affected() == 0 {
-        //     return Err(Status::internal("Organization was not created successfully"));
+        // if get_password.rows_affected() == 0 {
+        //     return Err(Status::internal("Passwords do not match"));
         // }
-
+        //
+        // if get_password
+        //     // == request.message.old_password request is private, and that makes sense - how do we borrow safely
+        // {
+        //     let row = sqlx::query!(
+        //         "UPDATE users SET password = $2 WHERE user_id = $1",
+        //              &user_id,
+        //             &organization_id,
+        //             &old_password,
+        //             &new_password
+        //     )
+        //         .execute(&self.pool)
+        //         .await
+        //         .map_err(OrganizationManagerError::from)?;
+        // }
+        //
         Ok(Response::new(EmptyResp {}))
     }
 }

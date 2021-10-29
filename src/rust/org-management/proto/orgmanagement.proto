@@ -39,7 +39,7 @@ message UserReply {
 
 message ChangePasswordRequest {
   Uuid org_id = 1;
-  string user_id = 2;
+  Uuid user_id = 2;
   string old_password = 3;
   string new_password = 4;
 }
@@ -56,7 +56,6 @@ service OrganizationManager {
 //  rpc GetUser(CreateUserRequest) returns (UserReply);
 //  rpc ListUsers(EmptyResp) returns (Users);
 //  rpc DeleteUser(UserRequest) returns (DeleteUserReply);
-//  rpc DeleteUsers(EmptyResp) returns (DeleteUserReply);
   rpc CreateOrg (CreateOrgRequest) returns (EmptyResp);
   rpc CreateUser(CreateUserRequest) returns (EmptyResp);
   rpc ChangePassword(ChangePasswordRequest) returns (EmptyResp);

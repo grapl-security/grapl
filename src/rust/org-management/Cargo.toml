@@ -9,9 +9,9 @@ edition = "2018"
 name = "server"
 path = "src/main.rs"
 
-#[[bin]] # Bin to run org management gRPC client
-#name = "client"
-#path = "src/client.rs"
+[[bin]] # Bin to run org management gRPC client
+name = "client"
+path = "src/client.rs"
 
 [dependencies]
 tonic = "0.5"

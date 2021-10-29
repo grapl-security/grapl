@@ -31,9 +31,14 @@ export DATABASE_URL=postgres://${USER}:${POSTGRES_PASSWORD}@localhost/${DBNAME}
 echo "Creating PostGresDB"
 sqlx database create
 
+
 echo "Running migrations"
 sqlx migrate run
 
 echo "Saving metadata to sqlx.json for offline mode"
 cargo sqlx prepare -- --bin=server
 
+echo "Running client and making requests"
+cargo sqlx prepare -- --bin=client
+
+cargo build
