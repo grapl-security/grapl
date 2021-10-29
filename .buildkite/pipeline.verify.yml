@@ -2,6 +2,7 @@
 env:
   PANTS_CONFIG_FILES: "['pants.toml', 'pants.ci.toml']"
   TAG: ci-pipeline
+  BUILDKITE_PLUGIN_VAULT_ENV_SECRET_PREFIX: "secret/data/buildkite/env"
 
 # TODO: Cache for JS, Rust deps
 
@@ -16,6 +17,9 @@ steps:
       - docker#v3.8.0:
           image: "node"
           entrypoint: "bash"
+
+  - label: ":codecov: Validate codecov.yml"
+    command: curl --data-binary @codecov.yml https://codecov.io/validate
 
   - label: ":large_blue_square::lint-roller: Lint Protobuf"
     command:
@@ -55,26 +59,51 @@ steps:
   - label: ":python::jeans: Linting"
     command:
       - make lint-python
+    plugins:
+      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-env#v0.1.0:
+          secrets:
+            - grapl/TOOLCHAIN_AUTH_TOKEN
 
   - label: ":bash::jeans: Linting"
     command:
       - make lint-shell
+    plugins:
+      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-env#v0.1.0:
+          secrets:
+            - grapl/TOOLCHAIN_AUTH_TOKEN
 
   - label: ":python::jeans: Unit Tests"
     command:
       - make test-unit-python
     plugins:
+      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-env#v0.1.0:
+          secrets:
+            - grapl/TOOLCHAIN_AUTH_TOKEN
+            - CODECOV_TOKEN
       - grapl-security/codecov#v0.1.0
 
   - label: ":python::jeans: Typechecking"
     command:
       - make test-typecheck
+    plugins:
+      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-env#v0.1.0:
+          secrets:
+            - grapl/TOOLCHAIN_AUTH_TOKEN
+            - CODECOV_TOKEN
 
   # TODO: Consider beefy queue
   - label: ":typescript::docker: Unit Tests"
     command:
       - make test-unit-js
     plugins:
+      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-env#v0.1.0:
+          secrets:
+            - CODECOV_TOKEN
       - grapl-security/codecov#v0.1.0
 
   - label: ":typescript::yaml::lint-roller: Lint using Prettier"
@@ -136,8 +165,9 @@ steps:
       - git show origin/rc:pulumi/grapl/Pulumi.testing.yaml > pulumi/grapl/Pulumi.testing.yaml
       - .buildkite/shared/steps/pulumi_preview.sh grapl/grapl/testing
     plugins:
-      - seek-oss/aws-sm#v2.3.1:
-          env:
-            PULUMI_ACCESS_TOKEN: "pulumi-token"
+      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-env#v0.1.0:
+          secrets:
+            - PULUMI_ACCESS_TOKEN
     agents:
       queue: "pulumi-staging"

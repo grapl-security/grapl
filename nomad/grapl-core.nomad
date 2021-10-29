@@ -167,6 +167,12 @@ variable "model_plugins_bucket" {
   description = "The s3 bucket used for storing plugins"
 }
 
+variable "model_plugin_deployer_tag" {
+  type        = string
+  default     = "dev"
+  description = "The tagged version of the model plugin deployer to deploy."
+}
+
 variable "num_node_identifiers" {
   type        = number
   default     = 1
@@ -959,6 +965,37 @@ job "grapl-core" {
     }
   }
 
+  group "model-plugin-deployer" {
+    network {
+      mode = "bridge"
+      port "model-plugin-deployer" {
+      }
+    }
+
+    task "model-plugin-deployer" {
+      driver = "docker"
+
+      config {
+        image = "${var.container_registry}grapl/${var.container_repo}model-plugin-deployer:${var.model_plugin_deployer_tag}"
+        ports = ["model-plugin-deployer"]
+      }
+
+      env {
+        RUST_LOG                         = var.rust_log
+        RUST_BACKTRACE                   = local.rust_backtrace
+        GRAPL_MODEL_PLUGIN_DEPLOYER_PORT = "${NOMAD_PORT_model-plugin-deployer}"
+      }
+    }
+
+    service {
+      name = "model-plugin-deployer"
+      port = "model-plugin-deployer"
+      connect {
+        sidecar_service {}
+      }
+    }
+  }
+
   group "web-ui" {
     network {
       mode = "bridge"
@@ -994,7 +1031,7 @@ job "grapl-core" {
         GRAPL_GRAPHQL_ENDPOINT               = "http://${NOMAD_UPSTREAM_ADDR_graphql-endpoint}"
         GRAPL_MODEL_PLUGIN_DEPLOYER_ENDPOINT = "http://TODO:1111" # Note - MPD is being replaced by a Rust service.
         RUST_LOG                             = var.rust_log
-        RUST_BACKTRACE                       = 1
+        RUST_BACKTRACE                       = local.rust_backtrace
       }
     }
 

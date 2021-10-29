@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package graplinc.grapl.api.model_plugin_deployer.v1;
+
+// Which format of schema are we sending to Model Plugin Deployer?
+enum SchemaType {
+    // Undefined
+    SCHEMA_TYPE_UNSPECIFIED = 0;
+    // The only currently-supported schema type is GraphQL schemas.
+    SCHEMA_TYPE_GRAPHQL = 1;
+}
+
+// Input to DeployModel
+message DeployModelRequest {
+    // The actual schema, in whichever format specified by schema_type
+    bytes schema = 1;
+    // Supported types, for now: graphql
+    SchemaType schema_type = 2;
+}
+
+
+// Output for DeployModel
+message DeployModelResponse {
+    // In the future, we'll want to return any errors here.
+}
+
+
+// The main service for Model Plugin Deployer.
+service ModelPluginDeployerRpcService {
+    // Deploy a new model to Grapl.
+    rpc DeployModel (DeployModelRequest) returns (DeployModelResponse) {}
+}
+

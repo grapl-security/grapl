@@ -65,6 +65,15 @@ services:
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
+  model-plugin-deployer:
+    image: ${DOCKER_REGISTRY:-docker.io}/grapl/model-plugin-deployer:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: rust/Dockerfile
+      target: model-plugin-deployer
+      args:
+        - RUST_BUILD=${RUST_BUILD:-debug}
+
   grapl-web-ui:
     image: grapl/grapl-web-ui:${TAG:-latest}
     build:
