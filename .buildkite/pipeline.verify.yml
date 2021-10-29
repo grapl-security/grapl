@@ -17,6 +17,9 @@ steps:
           image: "node"
           entrypoint: "bash"
 
+  - label: ":codecov: Validate codecov.yml"
+    command: curl --data-binary @codecov.yml https://codecov.io/validate
+
   - label: ":large_blue_square::lint-roller: Lint Protobuf"
     command:
       - make lint-proto
