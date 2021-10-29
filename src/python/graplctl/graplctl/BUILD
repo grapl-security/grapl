@@ -7,5 +7,4 @@ python_library(
 
 pex_binary(
     entry_point="cli.py:main",
-    zip_safe=False,
 )

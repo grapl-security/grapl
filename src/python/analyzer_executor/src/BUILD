@@ -9,5 +9,4 @@ python_library(
 pex_binary(
     output_path="analyzer-executor.pex",
     entry_point="./run.py:run",
-    execution_mode="venv",
 )

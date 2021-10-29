@@ -5,5 +5,4 @@ python_library(
 pex_binary(
     name="dump_artifacts",
     entry_point="cli.py:main",
-    zip_safe=False,
 )
