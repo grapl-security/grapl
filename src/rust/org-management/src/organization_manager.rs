@@ -7,6 +7,7 @@ use crate::orgmanagementlib::{
     CreateOrgRequest,
     CreateUserRequest,
     EmptyResp,
+    UserRequest,
 };
 
 #[derive(Debug)]
@@ -165,5 +166,33 @@ impl OrganizationManager for OrganizationManagerRpc {
         // }
         //
         Ok(Response::new(EmptyResp {}))
+    }
+
+    async fn delete_user(
+        &self,
+        request: Request<UserRequest>,
+    ) ->  Result<Response<EmptyResp>, Status> {
+
+        let UserRequest {
+            user_id
+        } = request.into_inner();
+
+        let row = sqlx::query!(
+            r"
+                DELETE FROM users WHERE user_id = $1
+            ",
+            user_id
+        ).execute(&self.pool)
+            .await
+            .map_err(OrganizationManagerError::from)?;
+
+        if row.rows_affected() == 0 {
+            return Err(Status::internal(
+                "Organization was not created successfully",
+            ));
+        }
+
+        Ok(Response::new(EmptyResp {}))
+
     }
 }

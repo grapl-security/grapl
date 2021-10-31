@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+DBNAME=org-management
+USER=postgres
+POSTGRES_PASSWORD=foobarmonkeys
+CONTAINER_NAME=postgres-db
+
+docker run
+	--detach \
+	--publish 5432:5432 \
+	--rm \
+	--name postgres-db \
+	--env POSTGRES_PASSWORD \
+	C
+
+export DATABASE_URL=postgres://${USER}:${POSTGRES_PASSWORD}@localhost/${DBNAME}
+
+sqlx database create
+
+sqlx migrate run
+
+cargo sqlx prepare -- --bin=server
+
+docker kill postgres
+
+
+

@@ -2,7 +2,7 @@ pub mod server;
 pub mod client;
 
 pub mod orgmanagementlib {
-    tonic::include_proto!("orgmanagementproto");
+    tonic::include_proto!("orgmanagement");
 }
 
 pub mod create_db_conn;

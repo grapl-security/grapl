@@ -7,9 +7,6 @@ USER=postgres
 export POSTGRES_PASSWORD=foobarmonkeys
 CONTAINER_NAME=postgres-org-management-compile
 
-cleanup() {
-    docker kill ${CONTAINER_NAME}
-}
 
 echo "Creating docker container:"
 
@@ -22,7 +19,6 @@ docker run \
     postgres
 
 trap cleanup EXIT INT
-
 echo ""
 sleep 5
 
@@ -34,14 +30,6 @@ sqlx database create
 echo "Running migrations"
 sqlx migrate run
 
-cargo build
-
 echo "Saving metadata to sqlx.json for offline mode"
 cargo sqlx prepare -- --bin=server
-
-echo "Running server"
-cargo run --bin server
-
-echo "Running client and making requests"
-cargo run --bin client
 

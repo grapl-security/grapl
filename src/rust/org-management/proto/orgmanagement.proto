@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package orgmanagementproto;
+package orgmanagement;
 
 message CreateOrgRequest {
   string org_display_name = 1;
@@ -21,7 +21,7 @@ message Uuid {
 }
 
 message UserRequest {
-  string id = 1;
+  Uuid user_id = 1;
 }
 
 message CreateUserRequest {
@@ -55,7 +55,7 @@ message Users {
 service OrganizationManager {
 //  rpc GetUser(CreateUserRequest) returns (UserReply);
 //  rpc ListUsers(EmptyResp) returns (Users);
-//  rpc DeleteUser(UserRequest) returns (DeleteUserReply);
+  rpc DeleteUser(UserRequest) returns (EmptyResp);
   rpc CreateOrg (CreateOrgRequest) returns (EmptyResp);
   rpc CreateUser(CreateUserRequest) returns (EmptyResp);
   rpc ChangePassword(ChangePasswordRequest) returns (EmptyResp);
