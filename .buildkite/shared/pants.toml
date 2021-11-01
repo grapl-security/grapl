@@ -1,12 +1,12 @@
 [GLOBAL]
-pants_version = "2.6.0rc1"
+pants_version = "2.7.1"
 backend_packages = [
   "pants.backend.shell",
   "pants.backend.shell.lint.shellcheck",
   "pants.backend.shell.lint.shfmt"
 ]
 pants_ignore = ["!.buildkite/"]
-plugins = ["toolchain.pants.plugin==0.13.1"]
+plugins = ["toolchain.pants.plugin==0.14.0"]
 remote_cache_read = true
 remote_cache_write = true
 remote_store_address = "grpcs://cache.toolchain.com:443"
@@ -45,5 +45,5 @@ output = "all"
 # can remove these configuration values.
 version = "v0.7.2"
 known_versions = [
-  "v0.7.2|linux|70423609f27b504d6c0c47e340f33652aea975e45f312324f2dbf91c95a3b188|1382204"
+  "v0.7.2|linux_x86_64|70423609f27b504d6c0c47e340f33652aea975e45f312324f2dbf91c95a3b188|1382204"
 ]
