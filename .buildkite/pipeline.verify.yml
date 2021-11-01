@@ -159,15 +159,19 @@ steps:
     # than actually trying to do a meaningful preview. If we can do a
     # successful preview, our code at least "compiles".
   - label: ":pulumi: Pulumi Preview grapl/testing environment"
-    command:
-      # This is slightly hacky, but means we don't need to build packages locally first
-      - git fetch origin rc
-      - git show origin/rc:pulumi/grapl/Pulumi.testing.yaml > pulumi/grapl/Pulumi.testing.yaml
-      - .buildkite/shared/steps/pulumi_preview.sh grapl/grapl/testing
     plugins:
       - grapl-security/vault-login#v0.1.0
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - PULUMI_ACCESS_TOKEN
+      - improbable-eng/metahook#v0.4.1:
+          pre-command: |
+            # This is slightly hacky, but means we don't need to build packages locally first
+            git fetch origin rc
+            git show origin/rc:pulumi/grapl/Pulumi.testing.yaml > pulumi/grapl/Pulumi.testing.yaml
+      - grapl-security/pulumi#v0.1.0:
+          command: preview
+          project_dir: pulumi/grapl
+          stack: grapl/testing
     agents:
       queue: "pulumi-staging"
