@@ -10,7 +10,7 @@ steps:
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - PULUMI_ACCESS_TOKEN
-      - "grapl-security/pulumi#v0.1.0":
+      - grapl-security/pulumi#v0.1.1:
           command: preview
           project_dir: pulumi/grapl
           stack: grapl/testing
@@ -25,7 +25,7 @@ steps:
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - PULUMI_ACCESS_TOKEN
-      - "grapl-security/pulumi#v0.1.0":
+      - grapl-security/pulumi#v0.1.1:
           command: update
           project_dir: pulumi/grapl
           stack: grapl/testing
