@@ -16,6 +16,7 @@ class Cache(pulumi.ComponentResource):
         name: str,
         subnet_ids: pulumi.Output[List[str]],
         vpc_id: pulumi.Output[str],
+        nomad_agent_security_group_id: str,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         super().__init__("grapl:Cache", name, None, opts)
@@ -40,15 +41,10 @@ class Cache(pulumi.ComponentResource):
         # Allow communication between nomad-agents and redis
         # These are in different VPCs with the peering done in the networking module
         # We assume that the stack name for nomad-agents is the same as grapl's stack name
-        nomad_agents_server_stack = pulumi.StackReference(
-            f"grapl/nomad-agents/{pulumi.get_stack()}"
-        )
-        nomad_agent_sg_id = nomad_agents_server_stack.require_output("security-group")
-
         aws.ec2.SecurityGroupRule(
             "nomad-agents-egress-to-redis",
             type="egress",
-            security_group_id=nomad_agent_sg_id,
+            security_group_id=nomad_agent_security_group_id,
             from_port=redis_port,
             to_port=redis_port,
             protocol="tcp",
@@ -63,7 +59,7 @@ class Cache(pulumi.ComponentResource):
             from_port=redis_port,
             to_port=redis_port,
             protocol="tcp",
-            source_security_group_id=nomad_agent_sg_id,
+            source_security_group_id=nomad_agent_security_group_id,
             opts=pulumi.ResourceOptions(parent=self.security_group),
         )
 

@@ -15,6 +15,7 @@ from infra.alarms import OpsAlarms
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
 # from infra.api import Api
+from infra.api_gateway import ApiGateway
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
@@ -284,11 +285,29 @@ def main() -> None:
             f"grapl/networking/{pulumi.get_stack()}"
         )
         nomad_server_stack = pulumi.StackReference(f"grapl/nomad/{pulumi.get_stack()}")
+        nomad_agents_stack = pulumi.StackReference(
+            f"grapl/nomad-agents/{pulumi.get_stack()}"
+        )
 
         vpc_id = networking_stack.require_output("grapl-vpc")
         subnet_ids = networking_stack.require_output("grapl-private-subnet-ids")
+        nomad_agent_security_group_id = nomad_agents_stack.require_output("security-group")
+        nomad_agent_alb_security_group_id = nomad_agents_stack.require_output(
+            "alb-security-group"
+        )
+        nomad_agent_alb_listener_arn = nomad_agents_stack.require_output(
+            "alb-listener-arn"
+        )
+        nomad_agent_subnet_ids = networking_stack.require_output(
+            "nomad-agents-private-subnet-ids"
+        )
 
-        cache = Cache("main-cache", subnet_ids=subnet_ids, vpc_id=vpc_id)
+        cache = Cache(
+            "main-cache",
+            subnet_ids=subnet_ids,
+            vpc_id=vpc_id,
+            nomad_agent_security_group_id=nomad_agent_security_group_id
+        )
         artifacts = pulumi_config.require_object("artifacts")
 
         # Set the nomad address. This can be either set as nomad:address in the config to support ssm port forwarding or
@@ -376,6 +395,17 @@ def main() -> None:
                 depends_on=[nomad_grapl_core], provider=nomad_provider
             ),
         )
+
+        api_gateway = ApiGateway(
+            "grapl-api-gateway",
+            nomad_agents_alb_security_group=nomad_agent_alb_security_group_id,
+            nomad_agents_alb_listener_arn=nomad_agent_alb_listener_arn,
+            private_subnet_ids=nomad_agent_subnet_ids,
+            opts=pulumi.ResourceOptions(
+                depends_on=[nomad_grapl_ingress],
+            ),
+        )
+        pulumi.export("stage-url", api_gateway.stage.invoke_url)
 
     OpsAlarms(name="ops-alarms")
 
