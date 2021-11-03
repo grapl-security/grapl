@@ -4,7 +4,6 @@ import click
 import graplctl.aws.lib as aws_lib
 from graplctl import idempotency_checks
 from graplctl.common import State, pass_graplctl_state
-from graplctl.dgraph import commands as dgraph_commands
 
 #
 # aws deployment & provisioning commands
@@ -45,7 +44,7 @@ def provision(graplctl_state: State) -> None:
     prompt=f"this will wipe your grapl state. realistically, only for devs. that okay?"
 )
 @click.confirmation_option(
-    prompt=f"really wanna make sure, this will wipe your dgraph and dynamodb"
+    prompt=f"really wanna make sure, this will wipe your dynamodb"
 )
 @pass_graplctl_state
 @click.pass_context
@@ -63,8 +62,6 @@ def wipe_state(ctx: click.Context, graplctl_state: State) -> None:
         dynamic_session_table_name=graplctl_state.dynamic_session_table,
     )
     click.echo("Wiped dynamodb")
-    # Also destroy dgraph
-    ctx.forward(dgraph_commands.destroy)
 
 
 @aws.command()
