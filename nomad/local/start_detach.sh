@@ -20,6 +20,7 @@ ensure_cros_bridge_networking_workaround() {
             echo "It looks like you're on ChromeOS, but haven't installed the Nomad bridge networking workaround."
             source etc/chromeos/lib/installs.sh
             install_nomad_chromeos_workaround
+            echo "ChromeOS Nomad bridge networking workaround should now be installed. Continuing..."
         fi
     fi
 }
