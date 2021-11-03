@@ -19,7 +19,7 @@ SSM_PARAMETERS=$(
 EOF
 )
 
-echo "Connecting to a nomad server in AWS PROFILE: ${AWS_PROFILE} on port 4646 and forwarding to ${LOCAL_PORT_TO_FORWARD_TO}"
+echo "Connecting to a nomad server in AWS PROFILE: ${AWS_PROFILE:-"No AWS Profile is set, please run export AWS_PROFILE=foo"} on port 4646 and forwarding to ${LOCAL_PORT_TO_FORWARD_TO}"
 echo "To connect to a nomad server in a different AWS Account change your AWS_PROFILE environment variable"
 
 NOMAD_SERVER_INSTANCE_ID=$(
