@@ -8,6 +8,11 @@
 
 set -euo pipefail
 
+if [ -z "${AWS_PROFILE}" ]; then
+  echo "AWS Profile is not set. Please run 'export AWS_PROFILE=foo' and rerun this script"
+  exit 1
+fi
+
 PORT_TO_FORWARD="${1:-1234}"
 
 SSM_PARAMETERS=$(
@@ -19,7 +24,7 @@ SSM_PARAMETERS=$(
 EOF
 )
 
-echo "Connecting to a nomad agent server in AWS PROFILE: ${AWS_PROFILE:-"No AWS Profile is set, please run export AWS_PROFILE=foo"} on port ${PORT_TO_FORWARD} and forwarding to ${PORT_TO_FORWARD}"
+echo "Connecting to a nomad agent server in AWS PROFILE: ${AWS_PROFILE} on port ${PORT_TO_FORWARD} and forwarding to ${PORT_TO_FORWARD}"
 echo "To connect to a nomad agent server in a different AWS Account change your AWS_PROFILE environment variable"
 
 NOMAD_AGENT_INSTANCE_ID=$(
