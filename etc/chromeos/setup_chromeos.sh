@@ -10,7 +10,6 @@ fix_shell_completion
 install_build_tooling
 install_docker
 install_rust_and_utilities
-nuke_home_venv
 install_pyenv
 install_nvm
 install_awsv2
