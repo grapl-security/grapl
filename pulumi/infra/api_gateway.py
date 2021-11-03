@@ -74,11 +74,6 @@ class ApiGateway(pulumi.ComponentResource):
             integration_method="ANY",
             integration_type="HTTP_PROXY",
             integration_uri=nomad_agents_alb_listener_arn,
-            request_parameters={
-                # AWS calls this "Parameter Mapping."
-                # This one strips the `/stage-xyz` from incoming requests.
-                "overwrite:path": "$request.path",
-            },
             opts=pulumi.ResourceOptions(parent=api),
         )
 
@@ -99,6 +94,12 @@ class ApiGateway(pulumi.ComponentResource):
 
         self.stage = aws.apigatewayv2.Stage(
             "stage",
+            # Naming it $default means that the stage is served from
+            # https://api-id.execute-api.us-east-1.amazonaws.com/
+            # instead of something like
+            # https://api-id.execute-api.us-east-1.amazonaws.com/stage-1a2b3c4
+            # this makes it much easier to reference stuff in e.g. `<domain>/static/`
+            name="$default",
             api_id=api.id,
             auto_deploy=True,
             access_log_settings=aws.apigatewayv2.StageAccessLogSettingsArgs(
