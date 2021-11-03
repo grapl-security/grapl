@@ -9,8 +9,8 @@
 set -euo pipefail
 
 if [ -z "${AWS_PROFILE}" ]; then
-  echo "AWS Profile is not set. Please run 'export AWS_PROFILE=foo' and rerun this script"
-  exit 1
+    echo "AWS Profile is not set. Please run 'export AWS_PROFILE=foo' and rerun this script"
+    exit 1
 fi
 
 PORT_TO_FORWARD="${1:-1234}"
