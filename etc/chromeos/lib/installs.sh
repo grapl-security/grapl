@@ -21,7 +21,7 @@ fix_shell_completion() {
 
 install_build_tooling() {
     echo "Install build tooling"
-    sudo apt install -y build-essential libclang1
+    sudo apt install -y apt-utils build-essential libclang1
 }
 
 # potentially replace with podman in the future?
@@ -105,4 +105,15 @@ install_nomad_chromeos_workaround() {
     echo "See https://github.com/hashicorp/nomad/issues/10902 for more context"
     sudo mkdir -p "/lib/modules/$(uname -r)/"
     echo '_/bridge.ko' | sudo tee -a "/lib/modules/$(uname -r)/modules.builtin"
+}
+
+nuke_home_venv() {
+    # Apparently if you have ~/.venv that breaks the pyenv install, so we nuke it.
+
+    # shellcheck disable=SC1091
+    home_venv_dir="$HOME/.venv"
+    if [ -d "home_venv_dir" ]; then
+        echo "Nuking virtual environment in "
+        rm -rf "$home_venv_dir"
+    fi
 }
