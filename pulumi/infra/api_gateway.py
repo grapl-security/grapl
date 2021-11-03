@@ -35,6 +35,21 @@ class ApiGateway(pulumi.ComponentResource):
         private_subnet_ids: pulumi.Input[List[str]],
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
+        """
+        Quick diatribe on how this is all hooked up:
+        Incoming request
+        --> API Gateway Route (snapshotted as a Stage)
+        --> API Gateway "integration"
+        --> VPCLink
+          (everything beyond here is defined in `platform-infrastructure`)
+        --> Nomad Agents ALB Listener (listen on :80, forward to ALB)
+        --> Nomad Agents ALB
+        --> ALB Target Group's :1234
+        --> a real Nomad Agent instance :1234
+          (everything beyond here is defined in Nomad job files)
+        --> Nomad ingress gateway (`grapl-ingress.nomad`)
+        --> `web-ui` service
+        """
         super().__init__("grapl:ApiGateway", name, None, opts)
 
         api = aws.apigatewayv2.Api(

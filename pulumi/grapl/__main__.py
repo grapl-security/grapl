@@ -291,7 +291,9 @@ def main() -> None:
 
         vpc_id = networking_stack.require_output("grapl-vpc")
         subnet_ids = networking_stack.require_output("grapl-private-subnet-ids")
-        nomad_agent_security_group_id = nomad_agents_stack.require_output("security-group")
+        nomad_agent_security_group_id = nomad_agents_stack.require_output(
+            "security-group"
+        )
         nomad_agent_alb_security_group_id = nomad_agents_stack.require_output(
             "alb-security-group"
         )
@@ -306,7 +308,7 @@ def main() -> None:
             "main-cache",
             subnet_ids=subnet_ids,
             vpc_id=vpc_id,
-            nomad_agent_security_group_id=nomad_agent_security_group_id
+            nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
         artifacts = pulumi_config.require_object("artifacts")
 
