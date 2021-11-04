@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Set versions
+PYENV_PYTHON_VERSION="3.7.10"
+
 ## helper functions
 get_latest_release() {
     curl --silent "https://api.github.com/repos/$1/releases/latest" | # Get latest release from GitHub api
@@ -21,7 +24,7 @@ fix_shell_completion() {
 
 install_build_tooling() {
     echo "Install build tooling"
-    sudo apt install -y build-essential libclang1
+    sudo apt install -y apt-utils build-essential libclang1
 }
 
 # potentially replace with podman in the future?
@@ -46,13 +49,23 @@ install_rust_and_utilities() {
 }
 
 install_pyenv() {
-    echo "Install pyenv and set python version to 3.7.10"
+    echo "Install pyenv and set python version to ${PYENV_PYTHON_VERSION}"
     sudo apt-get install -y make libssl-dev zlib1g-dev libbz2-dev \
         libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
         xz-utils tk-dev libffi-dev liblzma-dev
+
+    # Check if pyenv directory exists and delete it so we can have a clean.
+
+    # shellcheck disable=SC1091
+    home_pyenv_dir="$HOME/.pyenv"
+    if [ -d "${home_pyenv_dir}" ]; then
+        echo ".pyenv already exists. Nuking it so that the pyenv is properly installed and configured"
+        rm -rf "${home_pyenv_dir}"
+    fi
+
     curl -L https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash
-    pyenv install 3.7.10
-    pyenv global 3.7.10
+    pyenv install "${PYENV_PYTHON_VERSION}"
+    pyenv global "${PYENV_PYTHON_VERSION}"
 }
 
 install_nvm() {
