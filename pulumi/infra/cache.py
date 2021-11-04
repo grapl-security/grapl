@@ -14,9 +14,9 @@ class Cache(pulumi.ComponentResource):
     def __init__(
         self,
         name: str,
-        subnet_ids: pulumi.Output[List[str]],
-        vpc_id: pulumi.Output[str],
-        nomad_agent_security_group_id: str,
+        subnet_ids: pulumi.Input[List[str]],
+        vpc_id: pulumi.Input[str],
+        nomad_agent_security_group_id: pulumi.Input[str],
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         super().__init__("grapl:Cache", name, None, opts)
