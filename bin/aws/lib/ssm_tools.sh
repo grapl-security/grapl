@@ -26,6 +26,7 @@ EOF
     echo "Connecting to a ${SERVER_TYPE} in AWS PROFILE: ${AWS_PROFILE} on port ${REMOTE_PORT} and forwarding to ${LOCAL_PORT}"
     echo "To connect to a ${SERVER_TYPE} in a different AWS Account change your AWS_PROFILE environment variable"
 
+    # shellcheck disable=SC2140
     SERVER_INSTANCE_ID=$(
         aws ec2 describe-instances \
             --filter Name=tag:Name,Values="${SERVER_TYPE}" \

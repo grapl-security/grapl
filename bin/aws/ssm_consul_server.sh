@@ -8,6 +8,7 @@
 
 set -euo pipefail
 
+# shellcheck source=bin/aws/lib/ssm_tools.sh
 source lib/ssm_tools.sh
 
 LOCAL_PORT_TO_FORWARD_TO="${1:-8500}"
