@@ -3,7 +3,7 @@ version: "3.8"
 
 services:
   rust-integration-tests:
-    image: ${DOCKER_REGISTRY:-docker.io}/grapl/rust-integration-tests:${TAG:-latest}
+    image: grapl/rust-integration-tests:${TAG:-latest}
     build:
       context: ${PWD}/src
       dockerfile: rust/Dockerfile
@@ -12,7 +12,7 @@ services:
         - RUST_BUILD=test-integration
 
   python-integration-tests:
-    image: ${DOCKER_REGISTRY:-docker.io}/grapl/python-integration-tests:${TAG:-latest}
+    image: grapl/python-integration-tests:${TAG:-latest}
     build:
       context: ${PWD}
       dockerfile: src/python/Dockerfile
