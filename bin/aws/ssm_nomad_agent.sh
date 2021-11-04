@@ -8,36 +8,8 @@
 
 set -euo pipefail
 
-if [ -z "${AWS_PROFILE}" ]; then
-    echo "AWS Profile is not set. Please run 'export AWS_PROFILE=foo' and rerun this script"
-    exit 1
-fi
+source lib/ssm_tools.sh
 
 PORT_TO_FORWARD="${1:-1234}"
 
-SSM_PARAMETERS=$(
-    cat << EOF
-{
-  "portNumber": ["${PORT_TO_FORWARD}"],
-  "localPortNumber": ["${PORT_TO_FORWARD}"]
-}
-EOF
-)
-
-echo "Connecting to a nomad agent server in AWS PROFILE: ${AWS_PROFILE} on port ${PORT_TO_FORWARD} and forwarding to ${PORT_TO_FORWARD}"
-echo "To connect to a nomad agent server in a different AWS Account change your AWS_PROFILE environment variable"
-
-NOMAD_AGENT_INSTANCE_ID=$(
-    aws ec2 describe-instances \
-        --filter Name=tag:Name,Values="Nomad Agent" \
-        --query="Reservations[0].Instances[0].InstanceId" \
-        --output=text
-)
-
-echo "--- Instance: ${NOMAD_AGENT_INSTANCE_ID}"
-echo "To connect to the UI go to http://localhost:${LOCAL_PORT_TO_FORWARD_TO} in your browser"
-
-aws ssm start-session \
-    --target "${NOMAD_AGENT_INSTANCE_ID}" \
-    --document-name AWS-StartPortForwardingSession \
-    --parameters "${SSM_PARAMETERS}"
+ssm_port_forward "Nomad Agent" "${PORT_TO_FORWARD}" "${PORT_TO_FORWARD}"
