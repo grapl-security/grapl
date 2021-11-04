@@ -1,46 +1,7 @@
-import base64
-from typing import cast
-
-from botocore.response import StreamingBody
 from grapl_common.grapl_logger import get_module_grapl_logger
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
-from mypy_boto3_lambda import LambdaClient
-from mypy_boto3_lambda.type_defs import InvocationResponseTypeDef
 
 LOGGER = get_module_grapl_logger(log_to_stdout=True)
-
-
-def _extract_invocation_response_error_payload(
-    result: InvocationResponseTypeDef,
-) -> str:
-    """extract the payload of a lambda invocation error response in
-    a format amenable to logging"""
-    return "\\n".join(
-        l.decode("utf-8") for l in cast(StreamingBody, result["Payload"]).iter_lines()
-    )
-
-
-def _invoke_lambda(lambda_: LambdaClient, function_name: str) -> None:
-    LOGGER.info(f"invoking lambda {function_name}")
-    result = lambda_.invoke(
-        FunctionName=function_name,
-        InvocationType="RequestResponse",
-        LogType="Tail",
-    )
-
-    status = result["StatusCode"]
-    logs = base64.b64decode(bytes(result["LogResult"], "utf-8")).decode("utf-8")
-    for line in logs.splitlines():
-        LOGGER.info(line)
-    if status == 200 and result.get("FunctionError") is None:
-        LOGGER.info(f"lambda invocation succeeded for {function_name}")
-    else:
-        LOGGER.error(
-            f"lambda invocation for {function_name} returned error response {_extract_invocation_response_error_payload(result)}"
-        )
-        raise Exception(
-            f"lambda invocation for {function_name} failed with status {status}: {result['FunctionError']}"
-        )
 
 
 def _wipe_dynamodb_table(table: Table) -> None:
@@ -73,14 +34,6 @@ def _wipe_dynamodb_table(table: Table) -> None:
     with table.batch_writer() as batch:
         for each in data:
             batch.delete_item(Key={key: each[key] for key in table_key_names})
-
-
-def provision_grapl(lambda_: LambdaClient, deployment_name: str) -> None:
-    _invoke_lambda(lambda_=lambda_, function_name=f"{deployment_name}-provisioner")
-
-
-def run_e2e_tests(lambda_: LambdaClient, deployment_name: str) -> None:
-    _invoke_lambda(lambda_=lambda_, function_name=f"{deployment_name}-e2e-test-runner")
 
 
 def wipe_dynamodb(
