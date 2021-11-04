@@ -31,8 +31,7 @@ EOF
     # shellcheck disable=SC2140
     SERVER_INSTANCE_ID=$(
         aws ec2 describe-instances \
-            --filter Name=tag:Name,Values="${SERVER_TYPE}" \
-            --filter Name="instance-state-name",Values="running" \
+            --filters Name=tag:Name,Values="${SERVER_TYPE}"  Name="instance-state-name",Values="running" \
             --query="Reservations[0].Instances[0].InstanceId" \
             --output=text
     )
