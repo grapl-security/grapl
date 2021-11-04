@@ -9,6 +9,8 @@ ssm_port_forward() {
     readonly REMOTE_PORT=$2
     readonly LOCAL_PORT=$3
 
+    declare -A UI_TYPE_ARRAY=( ["Consul Server"]="Consul Server" ["Nomad Agent"]="Grapl Web" ["Nomad Server"]="Nomad Server" )
+
     if [ -z "${AWS_PROFILE}" ]; then
         echo "AWS Profile is not set. Please run 'export AWS_PROFILE=foo' and rerun this script"
         exit 1
@@ -37,7 +39,7 @@ EOF
 
     echo "--- Instance: ${SERVER_INSTANCE_ID}"
 
-    echo "To connect to the ${SERVER_TYPE} UI go to http://localhost:${LOCAL_PORT} in your browser"
+    echo "To connect to the ${UI_TYPE_ARRAY[${SERVER_TYPE}]} UI go to http://localhost:${LOCAL_PORT} in your browser"
 
     aws ssm start-session \
         --target "${SERVER_INSTANCE_ID}" \
