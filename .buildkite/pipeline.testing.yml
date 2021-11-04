@@ -9,4 +9,4 @@ env:
 steps:
   - label: ":aws: E2E tests in AWS"
     command:
-      - echo "TODO: make this work again"
+      - "echo 'TODO: make this work again'"
