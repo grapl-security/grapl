@@ -28,7 +28,7 @@ job "grapl-ingress" {
               protocol = "tcp"
               service {
                 # the upstream service
-                name = "grapl-web-ui"
+                name = "web-ui"
               }
             }
           }
