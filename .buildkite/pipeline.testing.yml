@@ -7,9 +7,6 @@ env:
 # from our grapl/testing stack.
 
 steps:
-  # This step relies on Pulumi stack outputs to target the correct
-  # deployment, so we need access to the token, and have to run in the
-  # correct AWS account.
   - label: ":aws: E2E tests in AWS"
     command:
       - echo "TODO: make this work again"
