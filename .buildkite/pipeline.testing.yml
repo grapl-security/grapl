@@ -1,0 +1,28 @@
+---
+env:
+  PANTS_CONFIG_FILES: "['pants.toml', 'pants.ci.toml']"
+  BUILDKITE_PLUGIN_VAULT_ENV_SECRET_PREFIX: "secret/data/buildkite/env"
+
+# This pipeline is for running tests against deployed infrastructure
+# from our grapl/testing stack.
+
+steps:
+  # This step relies on Pulumi stack outputs to target the correct
+  # deployment, so we need access to the token, and have to run in the
+  # correct AWS account.
+  - label: ":aws: E2E tests in AWS"
+    command:
+      - echo "TODO: make this work again"
+    plugins:
+      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-env#v0.1.0:
+          secrets:
+            - PULUMI_ACCESS_TOKEN
+    agents:
+      queue: "pulumi-staging"
+    # This test is notoriously flaky, in that it can take widely
+    # varying amounts of time to complete, which can run afoul of the
+    # (very) generous timeouts we have given it.
+    retry:
+      automatic:
+        limit: 2
