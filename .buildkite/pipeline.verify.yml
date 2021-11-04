@@ -169,7 +169,7 @@ steps:
             # This is slightly hacky, but means we don't need to build packages locally first
             git fetch origin rc
             git show origin/rc:pulumi/grapl/Pulumi.testing.yaml > pulumi/grapl/Pulumi.testing.yaml
-      - grapl-security/pulumi#v0.1.1:
+      - grapl-security/pulumi#v0.1.2:
           command: preview
           project_dir: pulumi/grapl
           stack: grapl/testing
