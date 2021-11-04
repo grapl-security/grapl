@@ -402,7 +402,7 @@ def main() -> None:
             "grapl-api-gateway",
             nomad_agents_alb_security_group=nomad_agent_alb_security_group_id,
             nomad_agents_alb_listener_arn=nomad_agent_alb_listener_arn,
-            private_subnet_ids=nomad_agent_subnet_ids,
+            nomad_agents_private_subnet_ids=nomad_agent_subnet_ids,
             opts=pulumi.ResourceOptions(
                 depends_on=[nomad_grapl_ingress],
             ),
