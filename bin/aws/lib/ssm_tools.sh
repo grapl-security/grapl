@@ -9,7 +9,7 @@ ssm_port_forward() {
     readonly REMOTE_PORT=$2
     readonly LOCAL_PORT=$3
 
-    declare -A UI_TYPE_ARRAY=( ["Consul Server"]="Consul Server" ["Nomad Agent"]="Grapl Web" ["Nomad Server"]="Nomad Server" )
+    declare -A UI_TYPE_ARRAY=(["Consul Server"]="Consul Server" ["Nomad Agent"]="Grapl Web" ["Nomad Server"]="Nomad Server")
 
     if [ -z "${AWS_PROFILE}" ]; then
         echo "AWS Profile is not set. Please run 'export AWS_PROFILE=foo' and rerun this script"
@@ -31,7 +31,7 @@ EOF
     # shellcheck disable=SC2140
     SERVER_INSTANCE_ID=$(
         aws ec2 describe-instances \
-            --filters Name=tag:Name,Values="${SERVER_TYPE}"  Name="instance-state-name",Values="running" \
+            --filters Name=tag:Name,Values="${SERVER_TYPE}" Name="instance-state-name",Values="running" \
             --query="Reservations[0].Instances[0].InstanceId" \
             --output=text
     )
