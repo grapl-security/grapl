@@ -8,8 +8,8 @@
 
 set -euo pipefail
 
-# shellcheck source=bin/aws/lib/ssm_tools.sh
-source lib/ssm_tools.sh
+# shellcheck source-path=SCRIPTDIR
+source "$(dirname "${BASH_SOURCE[0]}")/lib/ssm_tools.sh"
 
 LOCAL_PORT_TO_FORWARD_TO="${1:-4646}"
 REMOTE_PORT=4646
