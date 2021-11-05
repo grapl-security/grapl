@@ -16,6 +16,7 @@ class Cache(pulumi.ComponentResource):
         name: str,
         subnet_ids: pulumi.Input[List[str]],
         vpc_id: pulumi.Input[str],
+        # We grab this security group from the Nomad Agents stack.
         nomad_agent_security_group_id: pulumi.Input[str],
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
@@ -40,7 +41,6 @@ class Cache(pulumi.ComponentResource):
 
         # Allow communication between nomad-agents and redis
         # These are in different VPCs with the peering done in the networking module
-        # We assume that the stack name for nomad-agents is the same as grapl's stack name
         aws.ec2.SecurityGroupRule(
             "nomad-agents-egress-to-redis",
             type="egress",
