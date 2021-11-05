@@ -316,6 +316,7 @@ def main() -> None:
             engagement_creator_tag=artifacts["engagement-creator"],
             graph_merger_tag=artifacts["graph-merger"],
             graphql_endpoint_tag=artifacts["graphql-endpoint"],
+            model_plugin_deployer_tag=artifacts["model-plugin-deployer"],
             node_identifier_tag=artifacts["node-identifier"],
             osquery_generator_tag=artifacts["osquery-generator"],
             sysmon_generator_tag=artifacts["sysmon-generator"],
