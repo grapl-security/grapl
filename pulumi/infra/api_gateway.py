@@ -84,14 +84,14 @@ class ApiGateway(pulumi.ComponentResource):
 
         # Use apigwv2's VpcLink for http integrations.
         vpc_link = aws.apigatewayv2.VpcLink(
-            "vpc-link-to-nomad-ingress",
+            "{name}-vpc-link-to-nomad-ingress",
             security_group_ids=[nomad_agents_alb_security_group],
             subnet_ids=nomad_agents_private_subnet_ids,
             opts=pulumi.ResourceOptions(parent=api),
         )
 
         integration = aws.apigatewayv2.Integration(
-            "vpc-link-integration",
+            f"{name}-vpc-link-integration",
             api_id=api.id,
             connection_id=vpc_link.id,
             connection_type="VPC_LINK",
@@ -103,7 +103,7 @@ class ApiGateway(pulumi.ComponentResource):
         )
 
         route = aws.apigatewayv2.Route(
-            "vpc-link-route",
+            f"{name}-vpc-link-route",
             api_id=api.id,
             route_key=_API_GATEWAY_DEFAULT_ROUTE_KEY,
             # For info on this weird transformation, see
@@ -120,7 +120,7 @@ class ApiGateway(pulumi.ComponentResource):
         )
 
         self.stage = aws.apigatewayv2.Stage(
-            "vpc-link-stage",
+            f"{name}-vpc-link-stage",
             name=_API_GATEWAY_DEFAULT_STAGE_NAME,
             api_id=api.id,
             auto_deploy=True,
