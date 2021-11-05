@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 
+# This script sets up port forwarding between an arbitrary consul server and your local computer.
+# This is a temporary workaround until we set up a VPN
+# This will allow you to view the consul UI and interact with consul in the cli
+#
+# Input (optional): Local port to forward to. Defaults to port 8500
+
 set -euo pipefail
 
-SERVERS=$(aws ec2 describe-instances --filter Name=tag:Name,Values="Consul Server")
-CONSUL_SERVER_INSTANCE_ID=$(echo "${SERVERS}" | jq -r .Reservations[0].Instances[0].InstanceId)
+# shellcheck source-path=SCRIPTDIR
+source "$(dirname "${BASH_SOURCE[0]}")/lib/ssm_tools.sh"
 
-echo "--- Instance: ${CONSUL_SERVER_INSTANCE_ID}"
+LOCAL_PORT_TO_FORWARD_TO="${1:-8500}"
+REMOTE_PORT=8500
 
-aws ssm start-session \
-    --target "${CONSUL_SERVER_INSTANCE_ID}" \
-    --document-name AWS-StartPortForwardingSession \
-    --parameters '{"portNumber":["8500"], "localPortNumber": ["8500"]}'
+ssm_port_forward "Consul Server" "${LOCAL_PORT_TO_FORWARD_TO}" "${REMOTE_PORT}"
