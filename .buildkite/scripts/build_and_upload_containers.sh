@@ -33,6 +33,7 @@ services=(
     graph-merger
     graphql-endpoint
     grapl-web-ui
+    model-plugin-deployer
     node-identifier
     node-identifier-retry
     osquery-generator

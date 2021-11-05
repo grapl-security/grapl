@@ -39,7 +39,7 @@ services:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
   node-identifier-retry:
-    image: ${DOCKER_REGISTRY:-docker.io}/grapl/node-identifier-retry:${TAG:-latest}
+    image: grapl/node-identifier-retry:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -66,7 +66,7 @@ services:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
   model-plugin-deployer:
-    image: ${DOCKER_REGISTRY:-docker.io}/grapl/model-plugin-deployer:${TAG:-latest}
+    image: grapl/model-plugin-deployer:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile

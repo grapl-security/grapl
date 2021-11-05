@@ -310,7 +310,6 @@ locals {
   redis_port     = local._redis[1]
 
   # Grapl services
-  web_ui_port           = 1234
   graphql_endpoint_port = 5000
 
   # enabled
@@ -1001,8 +1000,6 @@ job "grapl-core" {
       mode = "bridge"
 
       port "web-ui-port" {
-        static = local.web_ui_port
-        to     = local.web_ui_port
       }
     }
 
