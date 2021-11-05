@@ -84,7 +84,7 @@ class ApiGateway(pulumi.ComponentResource):
 
         # Use apigwv2's VpcLink for http integrations.
         vpc_link = aws.apigatewayv2.VpcLink(
-            "{name}-vpc-link-to-nomad-ingress",
+            f"{name}-vpc-link-to-nomad-ingress",
             security_group_ids=[nomad_agents_alb_security_group],
             subnet_ids=nomad_agents_private_subnet_ids,
             opts=pulumi.ResourceOptions(parent=api),
