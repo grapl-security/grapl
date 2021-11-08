@@ -27,6 +27,8 @@ class NomadJob(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
             # Wait for all services to become healthy
             detach=False,
+            # Purge job from Nomad servers after a `pulumi destroy`
+            purge_on_destroy=True,
         )
 
     def _file_contents(self, nomad_file: str) -> str:
