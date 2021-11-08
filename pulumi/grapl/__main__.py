@@ -323,7 +323,9 @@ def main() -> None:
 
         # Support overriding the remote address via the config for both consul and nomad
         consul_override_address = pulumi.Config("consul").get("address")
-        consul_address = consul_override_address or consul_stack
+        consul_address = consul_override_address or consul_stack.require_output(
+            "address"
+        )
         consul_provider = nomad.Provider("consul-aws", address=consul_address)
 
         nomad_override_address = pulumi.Config("nomad").get("address")
