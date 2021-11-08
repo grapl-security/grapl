@@ -1,8 +1,9 @@
 # Consul Intentions
 
 Consul Intentions are essentially a service to service firewall. It supports
-both L4 routing (all or nothing traffic beween services) and more fine-grained
-L7 routing (allow only traffic with the right path and REST verb)
+both L4 routing (all or nothing traffic between services) and more fine-grained
+L7 routing (allow only traffic with the right path and REST verb). Intentions
+will be required when we add a deny-by-default acl.
 
 We write these config files in JSON format. These are currently deployed
 dynamically with pulumi, but can also be deployed as files to a consul agent's
