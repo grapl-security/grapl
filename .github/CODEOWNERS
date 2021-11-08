@@ -57,6 +57,7 @@ BUILD @christophermaier
 /src/rust/analyzer-dispatcher/ @grapl-security/wg-data-infra
 /src/rust/bin/ @christophermaier
 /src/rust/.cargo @christophermaier
+/src/rust/.cargo/audit.toml @colin-grapl @inickles-grapl
 /src/rust/Cargo.lock @christophermaier
 /src/rust/Cargo.toml @christophermaier
 /src/rust/derive-dynamic-node/ @colin-grapl

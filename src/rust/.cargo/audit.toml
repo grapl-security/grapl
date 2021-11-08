@@ -1,0 +1,65 @@
+[advisories]
+ignore = [
+  # Vulnerabilities
+  ########################################################################
+  # time 0.1.43
+  # Potential segfualt in the time crate
+  # https://rustsec.org/advisories/RUSTSEC-2020-0071
+  # NOTE: This is the same problem as RUSTSEC-2020-0159 below
+  "RUSTSEC-2020-0071",
+  # chrono 0.4.19
+  # Potential segfault in localtime_r invocations
+  # https://rustsec.org/advisories/RUSTSEC-2020-0159
+  #
+  # This is the most recent version of chrono; there is nothing
+  # available to upgrade to.
+  "RUSTSEC-2020-0159",
+  # prost-types 0.7.0
+  # Conversion from `prost_types::Timestamp` to `SystemTime` can cause an overflow and panic
+  # https://rustsec.org/advisories/RUSTSEC-2021-0073
+  #
+  # We should fix this:
+  # https://github.com/grapl-security/issue-tracker/issues/777
+  "RUSTSEC-2021-0073",
+  # Warnings
+  ########################################################################
+  # net2 0.2.37
+  # unmaintained / deprecated; use socket2 instead
+  # https://rustsec.org/advisories/RUSTSEC-2020-0016
+  #
+  # This appears to come from older mio and tokio releases, which
+  # are brought in by actix crates.
+  "RUSTSEC-2020-0016",
+  # failure 0.1.8
+  # unmaintained / deprecated
+  # https://rustsec.org/advisories/RUSTSEC-2020-0036
+  #
+  # We should fix this:
+  # https://github.com/grapl-security/issue-tracker/issues/778
+  "RUSTSEC-2020-0036",
+  # stdweb 0.4.20
+  # unmaintained
+  # https://rustsec.org/advisories/RUSTSEC-2020-0056
+  #
+  # This comes in via time 0.2.27, which in turn comes in (mainly) through actix crates
+  "RUSTSEC-2020-0056",
+  ########################################################################
+  # These warnings appear to all stem from the use of:
+  # actix-session 0.4.1 => actix-web 3.3.2 => actix-http 2.2.1
+  #
+  # These are the latest stable available versions of these crates.
+  # aesni 0.10.0
+  # unmaintained; aesni has been merged into the aes crate
+  # https://rustsec.org/advisories/RUSTSEC-2021-0059
+  "RUSTSEC-2021-0059",
+  # aes-soft 0.6.4
+  # unmaintained; aes-soft has been merged into the aes crate
+  # https://rustsec.org/advisories/RUSTSEC-2021-0060
+  "RUSTSEC-2021-0060",
+  # cpuid-bool 0.2.0
+  # unmaintained; cpuid-bool has been renamed to cpufeatures
+  # https://rustsec.org/advisories/RUSTSEC-2021-0064
+  "RUSTSEC-2021-0064",
+  ########################################################################
+
+]
