@@ -19,6 +19,7 @@ from infra.api_gateway import ApiGateway
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
+from infra.consul_intention import ConsulIntention
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
@@ -133,6 +134,11 @@ def main() -> None:
         unid_subgraphs_generated_bucket=unid_subgraphs_generated_emitter.bucket_name,
         user_auth_table=dynamodb_tables.user_auth_table.name,
         user_session_table=dynamodb_tables.user_session_table.name,
+    )
+
+    ConsulIntention(
+        "grapl-core",
+        intention_directory=Path("../../nomad/intentions").resolve(),
     )
 
     if config.LOCAL_GRAPL:
