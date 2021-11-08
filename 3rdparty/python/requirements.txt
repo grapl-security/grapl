@@ -35,7 +35,6 @@ pydantic==1.8.2
 pydgraph
 pyjwt
 pytest
-python-hcl2
 python-nomad==1.4.1
 redis
 requests
