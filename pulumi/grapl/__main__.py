@@ -205,75 +205,68 @@ def main() -> None:
             opts=pulumi.ResourceOptions(depends_on=[nomad_grapl_core]),
         )
 
-        if config.SHOULD_DEPLOY_INTEGRATION_TESTS:
-
-            def _get_integration_test_job_vars(inputs: NomadVars) -> NomadVars:
-                return {
-                    k: inputs[k]
-                    for k in {
-                        "_aws_endpoint",
-                        "_kafka_endpoint",  # integration-test only
-                        "_redis_endpoint",
-                        "aws_access_key_id",
-                        "aws_access_key_secret",
-                        "aws_region",
-                        "deployment_name",
-                        # integration-test only
-                        "schema_properties_table_name",
-                        "test_user_name",
-                        "grapl_root",
-                        "docker_user",
-                    }
+        def _get_integration_test_job_vars(inputs: NomadVars) -> NomadVars:
+            return {
+                k: inputs[k]
+                for k in {
+                    "_aws_endpoint",
+                    "_kafka_endpoint",  # integration-test only
+                    "_redis_endpoint",
+                    "aws_access_key_id",
+                    "aws_access_key_secret",
+                    "aws_region",
+                    "deployment_name",
+                    # integration-test only
+                    "schema_properties_table_name",
+                    "test_user_name",
+                    "grapl_root",
+                    "docker_user",
                 }
+            }
 
-            integration_test_job_vars = _get_integration_test_job_vars(
-                dict(
-                    _kafka_endpoint=kafka_endpoint,
-                    grapl_root=os.environ["GRAPL_ROOT"],
-                    docker_user=os.environ["DOCKER_USER"],
-                    **grapl_core_job_vars_inputs,
-                    **nomad_inputs,
-                )
+        integration_test_job_vars = _get_integration_test_job_vars(
+            dict(
+                _kafka_endpoint=kafka_endpoint,
+                grapl_root=os.environ["GRAPL_ROOT"],
+                docker_user=os.environ["DOCKER_USER"],
+                **grapl_core_job_vars_inputs,
+                **nomad_inputs,
             )
+        )
 
-            integration_tests = NomadJob(
-                "integration-tests",
-                jobspec=Path("../../nomad/local/integration-tests.nomad").resolve(),
-                vars=integration_test_job_vars,
-            )
+        # Instead of deploying integration tests here, we export its vars
+        # to `grapl/integration-tests/$STACK_NAME`
+        pulumi.export("integration-test-job-vars", integration_test_job_vars)
 
-        if config.SHOULD_DEPLOY_E2E_TESTS:
-
-            def _get_e2e_test_job_vars(inputs: NomadVars) -> NomadVars:
-                return {
-                    k: inputs[k]
-                    for k in {
-                        "_aws_endpoint",
-                        "analyzer_bucket",
-                        "aws_access_key_id",
-                        "aws_access_key_secret",
-                        "aws_region",
-                        "deployment_name",
-                        "schema_properties_table_name",
-                        "schema_table_name",
-                        "sysmon_generator_queue",
-                        "sysmon_log_bucket",
-                        "test_user_name",
-                    }
+        def _get_e2e_test_job_vars(inputs: NomadVars) -> NomadVars:
+            return {
+                k: inputs[k]
+                for k in {
+                    "_aws_endpoint",
+                    "analyzer_bucket",
+                    "aws_access_key_id",
+                    "aws_access_key_secret",
+                    "aws_region",
+                    "deployment_name",
+                    "schema_properties_table_name",
+                    "schema_table_name",
+                    "sysmon_generator_queue",
+                    "sysmon_log_bucket",
+                    "test_user_name",
                 }
+            }
 
-            e2e_test_job_vars = _get_e2e_test_job_vars(
-                dict(
-                    sysmon_log_bucket=sysmon_log_emitter.bucket_name,
-                    **grapl_core_job_vars_inputs,
-                    **nomad_inputs,
-                )
+        e2e_test_job_vars = _get_e2e_test_job_vars(
+            dict(
+                sysmon_log_bucket=sysmon_log_emitter.bucket_name,
+                **grapl_core_job_vars_inputs,
+                **nomad_inputs,
             )
-            e2e_tests = NomadJob(
-                "e2e-tests",
-                jobspec=Path("../../nomad/local/e2e-tests.nomad").resolve(),
-                vars=e2e_test_job_vars,
-            )
+        )
+        # Instead of deploying e2e tests here, we export its vars
+        # to `grapl/integration-tests/$STACK_NAME`
+        pulumi.export("e2e-test-job-vars", e2e_test_job_vars)
+        
     else:
         ###################################
         # AWS Grapl
