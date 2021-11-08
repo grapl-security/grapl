@@ -1,0 +1,10 @@
+{
+  "Kind": "service-intentions",
+  "Name": "web-ui",
+  "Sources": [
+    {
+      "Name": "ingress-service",
+      "Action": "allow"
+    }
+  ]
+}
