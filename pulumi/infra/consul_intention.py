@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 from typing import Optional
 
-import hcl2
 import pulumi_consul as consul
 
 import pulumi
@@ -10,10 +9,7 @@ import pulumi
 
 class ConsulIntention(pulumi.ComponentResource):
     """
-    This class takes in a directory of hcl intention config files, parses them into json format and uses that to create intentions.
-    Alternatives:
-    Switch the intention files into json format (we'd lose comments but :shrug:)
-    Only define intentions in pulumi
+    This class takes in a directory of json intention config files, parses them and uses them to create intentions dynamically.
     """
 
     def __init__(

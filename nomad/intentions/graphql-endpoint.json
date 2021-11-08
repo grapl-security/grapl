@@ -4,7 +4,9 @@
   "Sources": [
     {
       "Name": "web-ui",
-      "Action": "allow"
+      "Action": "allow",
+      "Precedence": 9,
+      "Type": "consul"
     }
   ]
 }

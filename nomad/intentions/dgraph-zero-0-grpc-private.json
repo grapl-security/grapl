@@ -4,7 +4,9 @@
   "Sources": [
     {
       "Name": "dgraph-alpha-0-grpc-private",
-      "Action": "allow"
+      "Action": "allow",
+      "Precedence": 9,
+      "Type": "consul"
     }
   ]
 }
