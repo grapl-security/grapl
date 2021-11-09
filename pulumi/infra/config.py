@@ -62,7 +62,7 @@ _validate_deployment_name()
 
 # Use this to modify behavior or configuration for provisioning in
 # Local Grapl (as opposed to any other real deployment)
-LOCAL_GRAPL = DEPLOYMENT_NAME == "local-grapl"
+LOCAL_GRAPL = DEPLOYMENT_NAME.startswith("local-grapl")
 
 # A "real" deployment is one that will be deployed in our CI/CD
 # environment, not a developer sandbox environment.

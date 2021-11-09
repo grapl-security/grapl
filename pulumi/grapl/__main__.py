@@ -1,3 +1,4 @@
+import json
 import sys
 from pathlib import Path
 
@@ -265,8 +266,11 @@ def main() -> None:
         )
         # Instead of deploying e2e tests here, we export its vars
         # to `grapl/integration-tests/$STACK_NAME`
-        pulumi.export("e2e-test-job-vars", e2e_test_job_vars)
-        
+        pulumi.export(
+            "e2e-test-job-vars",
+            pulumi.Output.all(**e2e_test_job_vars).apply(json.dumps),
+        )
+
     else:
         ###################################
         # AWS Grapl

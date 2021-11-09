@@ -44,7 +44,9 @@ services:
         cd -
         if [[ $SHOULD_DEPLOY_INTEGRATION_TESTS ]]; then
           cd integration_tests
-          pulumi stack init local-grapl --non-interactive
-          pulumi up --yes --skip-preview --stack=local-grapl
+          # Ideally this would be scoped by organizations, but login --local 
+          # doesn't support organizations
+          pulumi stack init local-grapl-integration-tests --non-interactive
+          pulumi up --yes --skip-preview --stack=local-grapl-integration-tests
           cd -
         fi

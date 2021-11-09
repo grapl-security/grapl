@@ -1,3 +1,4 @@
+import json
 import sys
 from pathlib import Path
 
@@ -5,23 +6,35 @@ sys.path.insert(0, "..")
 
 import pulumi_nomad as nomad
 from infra import config
-
 from infra.autotag import register_auto_tags
-
 from infra.nomad_job import NomadJob, NomadVars
 from infra.quiet_docker_build_output import quiet_docker_output
 
 import pulumi
 
+
 def stackname_sans_prefix() -> str:
     real_stackname = pulumi.get_stack()
+    # If local-grapl, no orgs in play
     if config.LOCAL_GRAPL:
         return real_stackname
 
-    prefix = "grapl/networking"
+    prefix = "grapl/grapl"
     split = real_stackname.split(prefix)
-    assert len(split) == 2, f"Expected a stack prefix of {prefix}, found {real_stackname}"
+    assert (
+        len(split) == 2
+    ), f"Expected a stack prefix of {prefix}, found {real_stackname}"
     return split[1]
+
+
+class GraplStack:
+    def __init__(self, stack_name: str) -> None:
+        ref_name = "local-grapl" if config.LOCAL_GRAPL else f"grapl/grapl/{stack_name}"
+        self.ref = pulumi.StackReference(ref_name)
+        self.e2e_test_job_vars: pulumi.Output[NomadVars] = self.ref.require_output(
+            "e2e-test-job-vars"
+        ).apply(json.loads)
+
 
 def main() -> None:
     ##### Preamble
@@ -48,17 +61,14 @@ def main() -> None:
 
     ##### Actual Logic
 
-    grapl_stack = pulumi.StackReference(
-        f"grapl/grapl/{stack_name}",
-    )
-
-    e2e_test_job_vars: pulumi.Output[NomadVars] = grapl_stack.require_output("e2e-test-job-vars")
+    grapl_stack = GraplStack(stack_name)
 
     e2e_tests = NomadJob(
         "e2e-tests",
         jobspec=Path("../../nomad/local/e2e-tests.nomad").resolve(),
-        vars=e2e_test_job_vars,
+        vars=grapl_stack.e2e_test_job_vars,
     )
+
 
 if __name__ == "__main__":
     main()

@@ -1,8 +1,7 @@
-from infra.config import get_grapl_ops_alarms_email
 from typing import Optional
 
 import pulumi_aws as aws
-from infra.config import DEPLOYMENT_NAME
+from infra.config import DEPLOYMENT_NAME, get_grapl_ops_alarms_email
 
 import pulumi
 
