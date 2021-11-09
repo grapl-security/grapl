@@ -18,7 +18,7 @@ ensure_cros_bridge_networking_workaround() {
         module_filepath="/lib/modules/$(uname -r)/modules.builtin"
         if ! grep -q "_/bridge.ko" "$module_filepath"; then
             echo "It looks like you're on ChromeOS, but haven't installed the Nomad bridge networking workaround."
-            source etc/chromeos/lib/installs.sh
+            source ../../etc/chromeos/lib/installs.sh
             install_nomad_chromeos_workaround
             echo "ChromeOS Nomad bridge networking workaround should now be installed. Continuing..."
         fi
@@ -56,7 +56,8 @@ start_nomad_detach() {
     sudo nomad agent \
         -config="nomad-agent-conf.nomad" \
         -dev-connect > "${NOMAD_LOGS_DEST}" &
-    consul agent -dev > "${CONSUL_LOGS_DEST}" &
+    # The client is set to 0.0.0.0 here so that it can be reached via pulumi in docker.
+    consul agent -dev -client 0.0.0.0 > "${CONSUL_LOGS_DEST}" &
 
     ./nomad_run_local_infra.sh
     echo "Deployment complete"
