@@ -21,6 +21,7 @@ config:
   aws:secretKey: test
   aws:skipCredentialsValidation: "true"
   aws:skipRequestingAccountId: "true"
+  consul:address: http://host.docker.internal:8500
   grapl:GRAPL_API_HOST: api.grapl.test
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: fake-ops-email@fake.domain
   grapl:MG_ALPHAS: "eventually-delete-this"
