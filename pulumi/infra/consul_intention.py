@@ -25,9 +25,9 @@ class ConsulIntention(pulumi.ComponentResource):
             with open(file, "r") as f:
                 intention = json.load(f)
                 if intention["Kind"] != "service-intentions":
-                    raise f"file {file} is not a consul intention config per its 'Kind' value."
+                    raise Exception(f"file {file} is not a consul intention config per its 'Kind' value.")
                 elif "Sources" not in intention:
-                    raise f"{file} is missing Sources stanza"
+                    raise Exception(f"{file} is missing Sources stanza")
                 else:
                     consul.ConfigEntry(
                         resource_name=f"{name}-{intention['Name']}-intention",

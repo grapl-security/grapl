@@ -8,6 +8,7 @@ sys.path.insert(0, "..")
 import os
 
 import pulumi_aws as aws
+import pulumi_consul as consul
 import pulumi_nomad as nomad
 from infra import config, dynamodb, emitter
 from infra.alarms import OpsAlarms
@@ -20,6 +21,7 @@ from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
 from infra.consul_intention import ConsulIntention
+from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
@@ -162,7 +164,7 @@ def main() -> None:
 
         ConsulIntention(
             "grapl-core",
-            intention_directory=Path("../../nomad/intentions").resolve(),
+            intention_directory=Path("../../nomad/consul-intentions").resolve(),
         )
 
         nomad_grapl_core = NomadJob(
@@ -324,7 +326,7 @@ def main() -> None:
         consul_address = consul_override_address or consul_stack.require_output(
             "address"
         )
-        consul_provider = nomad.Provider("consul-aws", address=consul_address)
+        consul_provider = consul.Provider("consul-aws", address=consul_address)
 
         nomad_override_address = pulumi.Config("nomad").get("address")
         nomad_address = nomad_override_address or nomad_server_stack.require_output(
@@ -334,7 +336,7 @@ def main() -> None:
 
         ConsulIntention(
             "grapl-core",
-            intention_directory=Path("../../nomad/intentions").resolve(),
+            intention_directory=Path("../../nomad/consul-intentions").resolve(),
             opts=pulumi.ResourceOptions(provider=consul_provider),
         )
 
