@@ -20,7 +20,7 @@ from infra.api_gateway import ApiGateway
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
-from infra.consul_intention import ConsulIntention
+from infra.consul_intentions import ConsulIntentions
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
@@ -162,7 +162,8 @@ def main() -> None:
             rust_log="DEBUG",
         )
 
-        ConsulIntention(
+        # This does not use a custom Provider since it will use either a consul:address set in the config or default to http://localhost:8500. This also applies to the NomadJobs in local
+        ConsulIntentions(
             "grapl-core",
             intention_directory=Path("../../nomad/consul-intentions").resolve(),
         )
@@ -325,7 +326,7 @@ def main() -> None:
         consul_provider = get_hashicorp_provider_address(consul, "consul", consul_stack)
         nomad_provider = get_hashicorp_provider_address(nomad, "nomad", nomad_server_stack)
 
-        ConsulIntention(
+        ConsulIntentions(
             "grapl-core",
             intention_directory=Path("../../nomad/consul-intentions").resolve(),
             opts=pulumi.ResourceOptions(provider=consul_provider),

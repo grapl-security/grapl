@@ -7,7 +7,7 @@ import pulumi_consul as consul
 import pulumi
 
 
-class ConsulIntention(pulumi.ComponentResource):
+class ConsulIntentions(pulumi.ComponentResource):
     """
     This class takes in a directory of json intention config files, parses them and uses them to create intentions dynamically.
     """
@@ -18,7 +18,7 @@ class ConsulIntention(pulumi.ComponentResource):
         intention_directory: Path,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
-        super().__init__("grapl:ConsulIntention", name, None, opts)
+        super().__init__("grapl:ConsulIntentions", name, None, opts)
         files = list(Path(intention_directory).glob("*.json"))
 
         for file in files:
