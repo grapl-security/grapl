@@ -62,7 +62,10 @@ _validate_deployment_name()
 
 # Use this to modify behavior or configuration for provisioning in
 # Local Grapl (as opposed to any other real deployment)
-LOCAL_GRAPL = DEPLOYMENT_NAME.startswith("local-grapl")
+
+LOCAL_GRAPL = DEPLOYMENT_NAME in ("local-grapl", "local-grapl-integration-tests")
+# (We have a different one for integration tests because `pulumi login --local`
+#  doesn't allow for stack name conflicts, even across projects.)
 
 # A "real" deployment is one that will be deployed in our CI/CD
 # environment, not a developer sandbox environment.

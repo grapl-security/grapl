@@ -11,6 +11,7 @@ from infra.nomad_job import NomadJob, NomadVars
 from infra.quiet_docker_build_output import quiet_docker_output
 
 import pulumi
+import pulumi_aws as aws
 
 
 def stackname_sans_prefix() -> str:
@@ -30,10 +31,25 @@ def stackname_sans_prefix() -> str:
 class GraplStack:
     def __init__(self, stack_name: str) -> None:
         ref_name = "local-grapl" if config.LOCAL_GRAPL else f"grapl/grapl/{stack_name}"
-        self.ref = pulumi.StackReference(ref_name)
-        self.e2e_test_job_vars: pulumi.Output[NomadVars] = self.ref.require_output(
-            "e2e-test-job-vars"
-        ).apply(json.loads)
+        ref = pulumi.StackReference(ref_name)
+        output = ref.require_output  # just an alias
+
+        assert aws.config.access_key, "Appease typechecker"
+        assert aws.config.secret_key, "Appease typechecker"
+
+        self.e2e_test_job_vars: NomadVars = {
+            "analyzer_bucket": output("analyzers-bucket"),
+            "aws_access_key_id": aws.config.access_key,
+            "aws_access_key_secret": aws.config.secret_key,
+            "_aws_endpoint": output("aws-endpoint"),
+            "aws_region": aws.get_region().name,
+            "deployment_name": output("deployment-name"),
+            "schema_properties_table_name": output("schema-properties-table"),
+            "sysmon_log_bucket": output("sysmon-log-bucket"),
+            "schema_table_name": output("schema-table"),
+            "sysmon_generator_queue": output("sysmon-generator-queue"),
+            "test_user_name": output("test-user-name"),
+        }
 
 
 def main() -> None:

@@ -1,9 +1,9 @@
 import json
 import sys
 from pathlib import Path
+from typing import Set
 
 from typing_extensions import Final
-from typing import Set
 
 sys.path.insert(0, "..")
 
@@ -37,11 +37,10 @@ from infra.service_queue import ServiceQueue
 
 import pulumi
 
+
 def _get_subset(inputs: NomadVars, subset: Set[str]) -> NomadVars:
-    return {
-        k: inputs[k]
-        for k in subset
-    }
+    return {k: inputs[k] for k in subset}
+
 
 def main() -> None:
 
@@ -58,6 +57,9 @@ def main() -> None:
     # These tags will be added to all provisioned infrastructure
     # objects.
     register_auto_tags({"grapl deployment": config.DEPLOYMENT_NAME})
+
+    pulumi.export("deployment-name", config.DEPLOYMENT_NAME)
+    pulumi.export("test-user-name", config.GRAPL_TEST_USER_NAME)
 
     # We only set up networking in local since this is handled in a closed project for AWS for our commercial offering
     if config.LOCAL_GRAPL:
@@ -154,6 +156,8 @@ def main() -> None:
         kafka_endpoint = "LOCAL_GRAPL_REPLACE_IP:19092"  # intentionally not 29092
         redis_endpoint = "redis://LOCAL_GRAPL_REPLACE_IP:6379"
 
+        pulumi.export("aws-endpoint", aws_endpoint)
+
         assert aws.config.access_key
         assert aws.config.secret_key
         grapl_core_job_vars_inputs: Final[NomadVars] = dict(
@@ -197,7 +201,7 @@ def main() -> None:
                 "schema_properties_table_name",
                 "test_user_name",
                 "user_auth_table",
-            }
+            },
         )
 
         nomad_grapl_provision = NomadJob(
@@ -214,7 +218,7 @@ def main() -> None:
                 docker_user=os.environ["DOCKER_USER"],
                 **grapl_core_job_vars_inputs,
                 **nomad_inputs,
-            ), 
+            ),
             {
                 "_aws_endpoint",
                 "_kafka_endpoint",  # integration-test only
@@ -228,39 +232,12 @@ def main() -> None:
                 "test_user_name",
                 "grapl_root",
                 "docker_user",
-            }
+            },
         )
 
         # Instead of deploying integration tests here, we export its vars
         # to `grapl/integration-tests/$STACK_NAME`
         pulumi.export("integration-test-job-vars", integration_test_job_vars)
-
-        e2e_test_job_vars = _get_subset(
-            dict(
-                sysmon_log_bucket=sysmon_log_emitter.bucket_name,
-                **grapl_core_job_vars_inputs,
-                **nomad_inputs,
-            ),
-            {
-                "_aws_endpoint",
-                "analyzer_bucket",
-                "aws_access_key_id",
-                "aws_access_key_secret",
-                "aws_region",
-                "deployment_name",
-                "schema_properties_table_name",
-                "schema_table_name",
-                "sysmon_generator_queue",
-                "sysmon_log_bucket",
-                "test_user_name",
-            }
-        )
-        # Instead of deploying e2e tests here, we export its vars
-        # to `grapl/integration-tests/$STACK_NAME`
-        pulumi.export(
-            "e2e-test-job-vars",
-            pulumi.Output.all(**e2e_test_job_vars).apply(json.dumps),
-        )
 
     else:
         ###################################
@@ -370,7 +347,7 @@ def main() -> None:
                 "schema_properties_table_name",
                 "test_user_name",
                 "user_auth_table",
-            }
+            },
         )
 
         nomad_grapl_provision = NomadJob(

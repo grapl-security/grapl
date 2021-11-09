@@ -1,0 +1,2 @@
+# Grapl Integration Tests pulumi project
+Despite the name of this project, it contains both the e2e and the integration tests. This is because the two concepts will be merged into one in the semi-near future.
