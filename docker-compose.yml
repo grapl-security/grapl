@@ -44,7 +44,7 @@ services:
         # Theoretically, we could skip uploading these job definitions for
         # every local `up-detach`; but it's a 2s Pulumi operation and they
         # don't auto-execute since they're Parameterized Batch Jobs.
-        
+
         cd integration_tests
         # Ideally this would be scoped by organizations, but login --local 
         # doesn't support organizations

@@ -1,10 +1,10 @@
-import json
 import os
 import sys
 from pathlib import Path
 
 sys.path.insert(0, "..")
 
+import pulumi_aws as aws
 import pulumi_nomad as nomad
 from infra import config
 from infra.autotag import register_auto_tags
@@ -12,7 +12,6 @@ from infra.nomad_job import NomadJob, NomadVars
 from infra.quiet_docker_build_output import quiet_docker_output
 
 import pulumi
-import pulumi_aws as aws
 
 
 def stackname_sans_prefix() -> str:
@@ -65,7 +64,6 @@ class GraplStack:
             "grapl_root": os.environ["GRAPL_ROOT"],
             "docker_user": os.environ["DOCKER_USER"],
         }
-
 
 
 def main() -> None:
