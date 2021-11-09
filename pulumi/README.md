@@ -97,7 +97,7 @@ pulumi config set grapl:networking-stack "grapl/networking/$NETWORKING_STACK_NAM
 Then, you should set your `AWS_PROFILE` in your environment, and then run
 `aws sso login`.
 
-Finally, set up an SSM tunnels to one of your Consul servers and one of your
+Finally, set up SSM tunnels to one of your Consul servers and one of your
 Nomad servers so you can deploy Consul configs and Nomad jobs.
 
 ```
