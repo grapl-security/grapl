@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 from typing_extensions import Final
+from typing import Set
 
 sys.path.insert(0, "..")
 
@@ -36,6 +37,11 @@ from infra.service_queue import ServiceQueue
 
 import pulumi
 
+def _get_subset(inputs: NomadVars, subset: Set[str]) -> NomadVars:
+    return {
+        k: inputs[k]
+        for k in subset
+    }
 
 def main() -> None:
 
@@ -175,28 +181,23 @@ def main() -> None:
             vars={},
         )
 
-        def _get_provisioner_job_vars(inputs: NomadVars) -> NomadVars:
-            return {
-                k: inputs[k]
-                for k in {
-                    "_aws_endpoint",
-                    "aws_access_key_id",
-                    "aws_access_key_secret",
-                    "aws_region",
-                    "deployment_name",
-                    "rust_log",
-                    "schema_table_name",
-                    "schema_properties_table_name",
-                    "test_user_name",
-                    "user_auth_table",
-                }
-            }
-
-        provision_vars = _get_provisioner_job_vars(
+        provision_vars = _get_subset(
             dict(
                 **grapl_core_job_vars_inputs,
                 **nomad_inputs,
-            )
+            ),
+            {
+                "_aws_endpoint",
+                "aws_access_key_id",
+                "aws_access_key_secret",
+                "aws_region",
+                "deployment_name",
+                "rust_log",
+                "schema_table_name",
+                "schema_properties_table_name",
+                "test_user_name",
+                "user_auth_table",
+            }
         )
 
         nomad_grapl_provision = NomadJob(
@@ -206,63 +207,53 @@ def main() -> None:
             opts=pulumi.ResourceOptions(depends_on=[nomad_grapl_core]),
         )
 
-        def _get_integration_test_job_vars(inputs: NomadVars) -> NomadVars:
-            return {
-                k: inputs[k]
-                for k in {
-                    "_aws_endpoint",
-                    "_kafka_endpoint",  # integration-test only
-                    "_redis_endpoint",
-                    "aws_access_key_id",
-                    "aws_access_key_secret",
-                    "aws_region",
-                    "deployment_name",
-                    # integration-test only
-                    "schema_properties_table_name",
-                    "test_user_name",
-                    "grapl_root",
-                    "docker_user",
-                }
-            }
-
-        integration_test_job_vars = _get_integration_test_job_vars(
+        integration_test_job_vars = _get_subset(
             dict(
                 _kafka_endpoint=kafka_endpoint,
                 grapl_root=os.environ["GRAPL_ROOT"],
                 docker_user=os.environ["DOCKER_USER"],
                 **grapl_core_job_vars_inputs,
                 **nomad_inputs,
-            )
+            ), 
+            {
+                "_aws_endpoint",
+                "_kafka_endpoint",  # integration-test only
+                "_redis_endpoint",
+                "aws_access_key_id",
+                "aws_access_key_secret",
+                "aws_region",
+                "deployment_name",
+                # integration-test only
+                "schema_properties_table_name",
+                "test_user_name",
+                "grapl_root",
+                "docker_user",
+            }
         )
 
         # Instead of deploying integration tests here, we export its vars
         # to `grapl/integration-tests/$STACK_NAME`
         pulumi.export("integration-test-job-vars", integration_test_job_vars)
 
-        def _get_e2e_test_job_vars(inputs: NomadVars) -> NomadVars:
-            return {
-                k: inputs[k]
-                for k in {
-                    "_aws_endpoint",
-                    "analyzer_bucket",
-                    "aws_access_key_id",
-                    "aws_access_key_secret",
-                    "aws_region",
-                    "deployment_name",
-                    "schema_properties_table_name",
-                    "schema_table_name",
-                    "sysmon_generator_queue",
-                    "sysmon_log_bucket",
-                    "test_user_name",
-                }
-            }
-
-        e2e_test_job_vars = _get_e2e_test_job_vars(
+        e2e_test_job_vars = _get_subset(
             dict(
                 sysmon_log_bucket=sysmon_log_emitter.bucket_name,
                 **grapl_core_job_vars_inputs,
                 **nomad_inputs,
-            )
+            ),
+            {
+                "_aws_endpoint",
+                "analyzer_bucket",
+                "aws_access_key_id",
+                "aws_access_key_secret",
+                "aws_region",
+                "deployment_name",
+                "schema_properties_table_name",
+                "schema_table_name",
+                "sysmon_generator_queue",
+                "sysmon_log_bucket",
+                "test_user_name",
+            }
         )
         # Instead of deploying e2e tests here, we export its vars
         # to `grapl/integration-tests/$STACK_NAME`
@@ -356,24 +347,7 @@ def main() -> None:
             opts=pulumi.ResourceOptions(provider=nomad_provider),
         )
 
-        def _get_provisioner_job_vars(inputs: NomadVars) -> NomadVars:
-            return {
-                k: inputs[k]
-                for k in {
-                    "aws_region",
-                    "container_registry",
-                    "container_repo",
-                    "deployment_name",
-                    "provisioner_tag",
-                    "rust_log",
-                    "schema_table_name",
-                    "schema_properties_table_name",
-                    "test_user_name",
-                    "user_auth_table",
-                }
-            }
-
-        grapl_provision_job_vars = _get_provisioner_job_vars(
+        grapl_provision_job_vars = _get_subset(
             # IMPORTANT: Any new var added in the dict below also needs to be added to _get_provisioner_job_vars
             dict(
                 # The vars with a leading underscore indicate that the hcl local version of the variable should be used
@@ -384,7 +358,19 @@ def main() -> None:
                 rust_log="DEBUG",
                 provisioner_tag=artifacts["provisioner"],
                 **nomad_inputs,
-            )
+            ),
+            {
+                "aws_region",
+                "container_registry",
+                "container_repo",
+                "deployment_name",
+                "provisioner_tag",
+                "rust_log",
+                "schema_table_name",
+                "schema_properties_table_name",
+                "test_user_name",
+                "user_auth_table",
+            }
         )
 
         nomad_grapl_provision = NomadJob(
