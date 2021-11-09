@@ -157,6 +157,8 @@ def main() -> None:
         redis_endpoint = "redis://LOCAL_GRAPL_REPLACE_IP:6379"
 
         pulumi.export("aws-endpoint", aws_endpoint)
+        pulumi.export("kafka-endpoint", kafka_endpoint)
+        pulumi.export("redis-endpoint", redis_endpoint)
 
         assert aws.config.access_key
         assert aws.config.secret_key
@@ -210,34 +212,6 @@ def main() -> None:
             vars=provision_vars,
             opts=pulumi.ResourceOptions(depends_on=[nomad_grapl_core]),
         )
-
-        integration_test_job_vars = _get_subset(
-            dict(
-                _kafka_endpoint=kafka_endpoint,
-                grapl_root=os.environ["GRAPL_ROOT"],
-                docker_user=os.environ["DOCKER_USER"],
-                **grapl_core_job_vars_inputs,
-                **nomad_inputs,
-            ),
-            {
-                "_aws_endpoint",
-                "_kafka_endpoint",  # integration-test only
-                "_redis_endpoint",
-                "aws_access_key_id",
-                "aws_access_key_secret",
-                "aws_region",
-                "deployment_name",
-                # integration-test only
-                "schema_properties_table_name",
-                "test_user_name",
-                "grapl_root",
-                "docker_user",
-            },
-        )
-
-        # Instead of deploying integration tests here, we export its vars
-        # to `grapl/integration-tests/$STACK_NAME`
-        pulumi.export("integration-test-job-vars", integration_test_job_vars)
 
     else:
         ###################################

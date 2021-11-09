@@ -249,7 +249,6 @@ test-typecheck: ## Typecheck Python Code
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
 test-integration: build-test-integration ## Build and run integration tests
 	$(WITH_LOCAL_GRAPL_ENV)
-	export SHOULD_DEPLOY_INTEGRATION_TESTS=True  # This gets read in by `docker-compose.yml`'s pulumi
 	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/local/run_parameterized_job.sh integration-tests 9"
 
 .PHONY: test-grapl-template-generator
@@ -260,7 +259,6 @@ test-grapl-template-generator:  # Test that the Grapl Template Generator spits o
 test-e2e: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_E2E_TESTS)
 test-e2e: build-test-e2e ## Build and run e2e tests
 	$(WITH_LOCAL_GRAPL_ENV)
-	export SHOULD_DEPLOY_INTEGRATION_TESTS=True  # This gets read in by `docker-compose.yml`'s pulumi
 	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/local/run_parameterized_job.sh e2e-tests 6"
 
 # This target is not intended to be used directly from the command line.

@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -51,6 +52,21 @@ class GraplStack:
             "test_user_name": output("test-user-name"),
         }
 
+        self.integration_test_job_vars: NomadVars = {
+            "_aws_endpoint": output("aws-endpoint"),
+            "_kafka_endpoint": output("kafka-endpoint"),
+            "_redis_endpoint": output("redis-endpoint"),
+            "aws_access_key_id": aws.config.access_key,
+            "aws_access_key_secret": aws.config.secret_key,
+            "aws_region": aws.get_region().name,
+            "deployment_name": output("deployment-name"),
+            "schema_properties_table_name": output("schema-properties-table"),
+            "test_user_name": output("test-user-name"),
+            "grapl_root": os.environ["GRAPL_ROOT"],
+            "docker_user": os.environ["DOCKER_USER"],
+        }
+
+
 
 def main() -> None:
     ##### Preamble
@@ -83,6 +99,12 @@ def main() -> None:
         "e2e-tests",
         jobspec=Path("../../nomad/local/e2e-tests.nomad").resolve(),
         vars=grapl_stack.e2e_test_job_vars,
+    )
+
+    integration_tests = NomadJob(
+        "integration-tests",
+        jobspec=Path("../../nomad/local/integration-tests.nomad").resolve(),
+        vars=grapl_stack.integration_test_job_vars,
     )
 
 
