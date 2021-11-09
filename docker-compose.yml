@@ -7,10 +7,29 @@ version: "3.8"
 volumes:
   dgraph_export:
 
-x-common-variables:
-  pulumi-common: &pulumi-common
+services:
+  pulumi:
     image: grapl/local-pulumi:${TAG:-latest}
     entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
+    command:
+      - |
+        pulumi login --local
+
+        cd grapl
+        pulumi stack init local-grapl --non-interactive
+        pulumi up --yes --skip-preview --stack=local-grapl
+        cd -
+
+        # Theoretically, we could skip uploading these job definitions for
+        # every local `up-detach`; but it's a 2s Pulumi operation and they
+        # don't auto-execute since they're Parameterized Batch Jobs.
+
+        cd integration_tests
+        # Ideally this would be scoped by organizations, but login --local 
+        # doesn't support organizations
+        pulumi stack init local-grapl-integration-tests --non-interactive
+        pulumi up --yes --skip-preview --stack=local-grapl-integration-tests
+        cd -
 
     volumes:
       - type: bind
@@ -28,10 +47,6 @@ x-common-variables:
       # Expose the host Linux machine, despite being on the Grapl network.
       # This lets Pulumi talk to the host's Nomad
       - "host.docker.internal:host-gateway"
-
-services:
-  pulumi:
-    <<: *pulumi-common
     command:
       - |
         pulumi login --local
