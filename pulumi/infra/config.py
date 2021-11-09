@@ -120,7 +120,8 @@ def _require_env_var(key: str) -> str:
     return value
 
 
-OPERATIONAL_ALARMS_EMAIL = _require_env_var("GRAPL_OPERATIONAL_ALARMS_EMAIL")
+def get_grapl_ops_alarms_email() -> str:
+    return _require_env_var("GRAPL_OPERATIONAL_ALARMS_EMAIL")
 
 
 def configurable_envvar(service_name: str, var: str) -> str:

@@ -15,6 +15,9 @@ import pulumi
 
 def stackname_sans_prefix() -> str:
     real_stackname = pulumi.get_stack()
+    if config.LOCAL_GRAPL:
+        return real_stackname
+
     prefix = "grapl/networking"
     split = real_stackname.split(prefix)
     assert len(split) == 2, f"Expected a stack prefix of {prefix}, found {real_stackname}"
@@ -23,7 +26,7 @@ def stackname_sans_prefix() -> str:
 def main() -> None:
     ##### Preamble
 
-    stack_name = stackname_sans_prefix(pulumi.get_stack())
+    stack_name = stackname_sans_prefix()
 
     quiet_docker_output()
 
@@ -31,21 +34,22 @@ def main() -> None:
     # objects.
     register_auto_tags({"grapl deployment": config.DEPLOYMENT_NAME})
 
-    # Set the nomad address. This can be either set as nomad:address in the config to support ssm port forwarding or
-    # taken from the nomad stack
-    nomad_config = pulumi.Config("nomad")
-    nomad_override_address = nomad_config.get("address")
-    # We prefer nomad:address to support overriding in the case of ssm port forwarding
-    nomad_server_stack = pulumi.StackReference(f"grapl/nomad/{stack_name}")
-    nomad_address = nomad_override_address or nomad_server_stack.require_output(
-        "address"
-    )
-    nomad_provider = nomad.Provider("nomad-aws", address=nomad_address)
+    if not config.LOCAL_GRAPL:
+        # Set the nomad address. This can be either set as nomad:address in the config to support ssm port forwarding or
+        # taken from the nomad stack
+        nomad_config = pulumi.Config("nomad")
+        nomad_override_address = nomad_config.get("address")
+        # We prefer nomad:address to support overriding in the case of ssm port forwarding
+        nomad_server_stack = pulumi.StackReference(f"grapl/nomad/{stack_name}")
+        nomad_address = nomad_override_address or nomad_server_stack.require_output(
+            "address"
+        )
+        nomad_provider = nomad.Provider("nomad-aws", address=nomad_address)
 
     ##### Actual Logic
 
     grapl_stack = pulumi.StackReference(
-        f"grapl/{stack_name}",
+        f"grapl/grapl/{stack_name}",
     )
 
     e2e_test_job_vars: pulumi.Output[NomadVars] = grapl_stack.require_output("e2e-test-job-vars")
