@@ -321,18 +321,9 @@ def main() -> None:
         )
         artifacts = pulumi_config.require_object("artifacts")
 
-        # Support overriding the remote address via the config for both consul and nomad
-        consul_override_address = pulumi.Config("consul").get("address")
-        consul_address = consul_override_address or consul_stack.require_output(
-            "address"
-        )
-        consul_provider = consul.Provider("consul-aws", address=consul_address)
-
-        nomad_override_address = pulumi.Config("nomad").get("address")
-        nomad_address = nomad_override_address or nomad_server_stack.require_output(
-            "address"
-        )
-        nomad_provider = nomad.Provider("nomad-aws", address=nomad_address)
+        # Set custom provider with the address set
+        consul_provider = get_hashicorp_provider_address(consul, "consul", consul_stack)
+        nomad_provider = get_hashicorp_provider_address(nomad, "nomad", nomad_server_stack)
 
         ConsulIntention(
             "grapl-core",
