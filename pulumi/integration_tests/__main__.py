@@ -14,39 +14,6 @@ from infra.quiet_docker_build_output import quiet_docker_output
 import pulumi
 
 
-def stackname_sans_prefix() -> str:
-    real_stackname = pulumi.get_stack()
-    # If local-grapl, no orgs in play
-    if config.LOCAL_GRAPL:
-        return real_stackname
-
-    prefix = "grapl/grapl"
-    split = real_stackname.split(prefix)
-    assert (
-        len(split) == 2
-    ), f"Expected a stack prefix of {prefix}, found {real_stackname}"
-    return split[1]
-
-
-class GraplStack:
-    def __init__(self, stack_name: str) -> None:
-        ref_name = "local-grapl" if config.LOCAL_GRAPL else f"grapl/grapl/{stack_name}"
-        ref = pulumi.StackReference(ref_name)
-        output = ref.require_output  # just an alias
-
-        self.analyzer_bucket = output("analyzers-bucket")
-        self.aws_endpoint = output("aws-endpoint")
-        self.deployment_name = output("deployment-name")
-
-        self.kafka_endpoint = output("kafka-endpoint")
-        self.redis_endpoint = output("redis-endpoint")
-        self.schema_properties_table_name = output("schema-properties-table")
-        self.schema_table_name = output("schema-table")
-        self.sysmon_generator_queue = output("sysmon-generator-queue")
-        self.sysmon_log_bucket = output("sysmon-log-bucket")
-        self.test_user_name = output("test-user-name")
-
-
 def main() -> None:
     ##### Preamble
 
@@ -116,6 +83,38 @@ def main() -> None:
         jobspec=Path("../../nomad/local/integration-tests.nomad").resolve(),
         vars=integration_test_job_vars,
     )
+
+
+def stackname_sans_prefix() -> str:
+    real_stackname = pulumi.get_stack()
+    # If local-grapl, no orgs in play
+    if config.LOCAL_GRAPL:
+        return real_stackname
+
+    prefix = "grapl/grapl"
+    split = real_stackname.split(prefix)
+    assert (
+        len(split) == 2
+    ), f"Expected a stack prefix of {prefix}, found {real_stackname}"
+    return split[1]
+
+
+class GraplStack:
+    def __init__(self, stack_name: str) -> None:
+        ref_name = "local-grapl" if config.LOCAL_GRAPL else f"grapl/grapl/{stack_name}"
+        ref = pulumi.StackReference(ref_name)
+        output = ref.require_output  # just an alias
+
+        self.analyzer_bucket = output("analyzers-bucket")
+        self.aws_endpoint = output("aws-endpoint")
+        self.deployment_name = output("deployment-name")
+        self.kafka_endpoint = output("kafka-endpoint")
+        self.redis_endpoint = output("redis-endpoint")
+        self.schema_properties_table_name = output("schema-properties-table")
+        self.schema_table_name = output("schema-table")
+        self.sysmon_generator_queue = output("sysmon-generator-queue")
+        self.sysmon_log_bucket = output("sysmon-log-bucket")
+        self.test_user_name = output("test-user-name")
 
 
 if __name__ == "__main__":
