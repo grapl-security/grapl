@@ -162,9 +162,12 @@ def main() -> None:
             rust_log="DEBUG",
         )
 
-        # This does not use a custom Provider since it will use either a consul:address set in the config or default to http://localhost:8500. This also applies to the NomadJobs in local
+        # This does not use a custom Provider since it will use either a consul:address set in the config or default to
+        # http://localhost:8500. This also applies to the NomadJobs defined for LOCAL_GRAPL.
         ConsulIntentions(
             "grapl-core",
+            # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
+            # when they update nomad configs
             intention_directory=Path("../../nomad/consul-intentions").resolve(),
         )
 
@@ -324,10 +327,14 @@ def main() -> None:
 
         # Set custom provider with the address set
         consul_provider = get_hashicorp_provider_address(consul, "consul", consul_stack)
-        nomad_provider = get_hashicorp_provider_address(nomad, "nomad", nomad_server_stack)
+        nomad_provider = get_hashicorp_provider_address(
+            nomad, "nomad", nomad_server_stack
+        )
 
         ConsulIntentions(
             "grapl-core",
+            # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
+            # when they update nomad configs
             intention_directory=Path("../../nomad/consul-intentions").resolve(),
             opts=pulumi.ResourceOptions(provider=consul_provider),
         )
