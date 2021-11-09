@@ -34,36 +34,17 @@ class GraplStack:
         ref = pulumi.StackReference(ref_name)
         output = ref.require_output  # just an alias
 
-        assert aws.config.access_key, "Appease typechecker"
-        assert aws.config.secret_key, "Appease typechecker"
+        self.analyzer_bucket = output("analyzers-bucket")
+        self.aws_endpoint = output("aws-endpoint")
+        self.deployment_name = output("deployment-name")
 
-        self.e2e_test_job_vars: NomadVars = {
-            "analyzer_bucket": output("analyzers-bucket"),
-            "aws_access_key_id": aws.config.access_key,
-            "aws_access_key_secret": aws.config.secret_key,
-            "_aws_endpoint": output("aws-endpoint"),
-            "aws_region": aws.get_region().name,
-            "deployment_name": output("deployment-name"),
-            "schema_properties_table_name": output("schema-properties-table"),
-            "sysmon_log_bucket": output("sysmon-log-bucket"),
-            "schema_table_name": output("schema-table"),
-            "sysmon_generator_queue": output("sysmon-generator-queue"),
-            "test_user_name": output("test-user-name"),
-        }
-
-        self.integration_test_job_vars: NomadVars = {
-            "_aws_endpoint": output("aws-endpoint"),
-            "_kafka_endpoint": output("kafka-endpoint"),
-            "_redis_endpoint": output("redis-endpoint"),
-            "aws_access_key_id": aws.config.access_key,
-            "aws_access_key_secret": aws.config.secret_key,
-            "aws_region": aws.get_region().name,
-            "deployment_name": output("deployment-name"),
-            "schema_properties_table_name": output("schema-properties-table"),
-            "test_user_name": output("test-user-name"),
-            "grapl_root": os.environ["GRAPL_ROOT"],
-            "docker_user": os.environ["DOCKER_USER"],
-        }
+        self.kafka_endpoint = output("kafka-endpoint")
+        self.redis_endpoint = output("redis-endpoint")
+        self.schema_properties_table_name = output("schema-properties-table")
+        self.schema_table_name = output("schema-table")
+        self.sysmon_generator_queue = output("sysmon-generator-queue")
+        self.sysmon_log_bucket = output("sysmon-log-bucket")
+        self.test_user_name = output("test-user-name")
 
 
 def main() -> None:
@@ -75,7 +56,7 @@ def main() -> None:
 
     # These tags will be added to all provisioned infrastructure
     # objects.
-    register_auto_tags({"grapl deployment": config.DEPLOYMENT_NAME})
+    register_auto_tags({"grapl deployment": stack_name})
 
     if not config.LOCAL_GRAPL:
         # Set the nomad address. This can be either set as nomad:address in the config to support ssm port forwarding or
@@ -93,16 +74,47 @@ def main() -> None:
 
     grapl_stack = GraplStack(stack_name)
 
+    assert aws.config.access_key, "Appease typechecker"
+    assert aws.config.secret_key, "Appease typechecker"
+
+    e2e_test_job_vars: NomadVars = {
+        "analyzer_bucket": grapl_stack.analyzer_bucket,
+        "aws_access_key_id": aws.config.access_key,
+        "aws_access_key_secret": aws.config.secret_key,
+        "_aws_endpoint": grapl_stack.aws_endpoint,
+        "aws_region": aws.get_region().name,
+        "deployment_name": grapl_stack.deployment_name,
+        "schema_properties_table_name": grapl_stack.schema_properties_table_name,
+        "sysmon_log_bucket": grapl_stack.sysmon_log_bucket,
+        "schema_table_name": grapl_stack.schema_table_name,
+        "sysmon_generator_queue": grapl_stack.sysmon_generator_queue,
+        "test_user_name": grapl_stack.test_user_name,
+    }
+
     e2e_tests = NomadJob(
         "e2e-tests",
         jobspec=Path("../../nomad/local/e2e-tests.nomad").resolve(),
-        vars=grapl_stack.e2e_test_job_vars,
+        vars=e2e_test_job_vars,
     )
+
+    integration_test_job_vars: NomadVars = {
+        "aws_access_key_id": aws.config.access_key,
+        "aws_access_key_secret": aws.config.secret_key,
+        "_aws_endpoint": grapl_stack.aws_endpoint,
+        "aws_region": aws.get_region().name,
+        "deployment_name": grapl_stack.deployment_name,
+        "docker_user": os.environ["DOCKER_USER"],
+        "grapl_root": os.environ["GRAPL_ROOT"],
+        "_kafka_endpoint": grapl_stack.kafka_endpoint,
+        "_redis_endpoint": grapl_stack.redis_endpoint,
+        "schema_properties_table_name": grapl_stack.schema_properties_table_name,
+        "test_user_name": grapl_stack.test_user_name,
+    }
 
     integration_tests = NomadJob(
         "integration-tests",
         jobspec=Path("../../nomad/local/integration-tests.nomad").resolve(),
-        vars=grapl_stack.integration_test_job_vars,
+        vars=integration_test_job_vars,
     )
 
 
