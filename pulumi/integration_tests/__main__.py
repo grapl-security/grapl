@@ -20,6 +20,10 @@ def main() -> None:
     ##### Preamble
     stack_name = pulumi.get_stack()
 
+    pulumi_config = pulumi.Config()
+    artifacts = pulumi_config.get_object("artifacts")
+    e2e_tag = artifacts and artifacts.get("e2e-tests")
+
     quiet_docker_output()
 
     # These tags will be added to all provisioned infrastructure
@@ -54,6 +58,7 @@ def main() -> None:
         "_aws_endpoint": grapl_stack.aws_endpoint,
         "aws_region": aws.get_region().name,
         "deployment_name": grapl_stack.deployment_name,
+        "e2e_tests_tag": e2e_tag,
         "schema_properties_table_name": grapl_stack.schema_properties_table_name,
         "sysmon_log_bucket": grapl_stack.sysmon_log_bucket,
         "schema_table_name": grapl_stack.schema_table_name,
@@ -98,7 +103,7 @@ class GraplStack:
         ref_name = "local-grapl" if config.LOCAL_GRAPL else f"grapl/grapl/{stack_name}"
         ref = pulumi.StackReference(ref_name)
 
-        def req_str(key: str) -> str:
+        def require_str(key: str) -> str:
             return cast(str, ref.require_output(key))
 
         # Only specified if LOCAL_GRAPL
