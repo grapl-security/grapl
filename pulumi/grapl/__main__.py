@@ -8,6 +8,7 @@ sys.path.insert(0, "..")
 import os
 
 import pulumi_aws as aws
+import pulumi_consul as consul
 import pulumi_nomad as nomad
 from infra import config, dynamodb, emitter
 from infra.alarms import OpsAlarms
@@ -19,6 +20,8 @@ from infra.api_gateway import ApiGateway
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
+from infra.consul_intentions import ConsulIntentions
+from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
@@ -159,6 +162,15 @@ def main() -> None:
             rust_log="DEBUG",
         )
 
+        # This does not use a custom Provider since it will use either a consul:address set in the config or default to
+        # http://localhost:8500. This also applies to the NomadJobs defined for LOCAL_GRAPL.
+        ConsulIntentions(
+            "grapl-core",
+            # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
+            # when they update nomad configs
+            intention_directory=Path("../../nomad/consul-intentions").resolve(),
+        )
+
         nomad_grapl_core = NomadJob(
             "grapl-core",
             jobspec=Path("../../nomad/grapl-core.nomad").resolve(),
@@ -281,6 +293,7 @@ def main() -> None:
         pulumi_config = pulumi.Config()
         # We use stack outputs from internally developed projects
         # We assume that the stack names will match the grapl stack name
+        consul_stack = pulumi.StackReference(f"grapl/consul/{pulumi.get_stack()}")
         networking_stack = pulumi.StackReference(
             f"grapl/networking/{pulumi.get_stack()}"
         )
@@ -312,15 +325,19 @@ def main() -> None:
         )
         artifacts = pulumi_config.require_object("artifacts")
 
-        # Set the nomad address. This can be either set as nomad:address in the config to support ssm port forwarding or
-        # taken from the nomad stack
-        nomad_config = pulumi.Config("nomad")
-        nomad_override_address = nomad_config.get("address")
-        # We prefer nomad:address to support overriding in the case of ssm port forwarding
-        nomad_address = nomad_override_address or nomad_server_stack.require_output(
-            "address"
+        # Set custom provider with the address set
+        consul_provider = get_hashicorp_provider_address(consul, "consul", consul_stack)
+        nomad_provider = get_hashicorp_provider_address(
+            nomad, "nomad", nomad_server_stack
         )
-        nomad_provider = nomad.Provider("nomad-aws", address=nomad_address)
+
+        ConsulIntentions(
+            "grapl-core",
+            # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
+            # when they update nomad configs
+            intention_directory=Path("../../nomad/consul-intentions").resolve(),
+            opts=pulumi.ResourceOptions(provider=consul_provider),
+        )
 
         grapl_core_job_vars: Final[NomadVars] = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used

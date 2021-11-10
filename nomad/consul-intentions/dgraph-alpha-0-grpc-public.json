@@ -1,0 +1,30 @@
+{
+  "Kind": "service-intentions",
+  "Name": "dgraph-alpha-0-grpc-public",
+  "Sources": [
+    {
+      "Name": "analyzer-executor",
+      "Action": "allow",
+      "Precedence": 9,
+      "Type": "consul"
+    },
+    {
+      "Name": "engagement-creator",
+      "Action": "allow",
+      "Precedence": 9,
+      "Type": "consul"
+    },
+    {
+      "Name": "graph-merger",
+      "Action": "allow",
+      "Precedence": 9,
+      "Type": "consul"
+    },
+    {
+      "Name": "graphql-endpoint",
+      "Action": "allow",
+      "Precedence": 9,
+      "Type": "consul"
+    }
+  ]
+}
