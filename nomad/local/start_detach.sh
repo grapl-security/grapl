@@ -58,7 +58,7 @@ start_nomad_detach() {
         -config="nomad-agent-conf.nomad" \
         -dev-connect > "${NOMAD_LOGS_DEST}" &
     # The client is set to 0.0.0.0 here so that it can be reached via pulumi in docker.
-    consul agent -dev -client 0.0.0.0 > "${CONSUL_LOGS_DEST}" &
+    consul agent -dev -client 0.0.0.0 -config-file consul-agent-conf.hcl > "${CONSUL_LOGS_DEST}" &
 
     ./nomad_run_local_infra.sh
     echo "Deployment complete"
