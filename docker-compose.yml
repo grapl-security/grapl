@@ -13,10 +13,26 @@ services:
     entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
     command:
       - |
-        cd grapl
         pulumi login --local
-        pulumi stack init local-grapl --non-interactive
-        pulumi up --yes --skip-preview --stack=local-grapl
+
+        (
+          cd grapl
+          pulumi stack init local-grapl --non-interactive
+          pulumi up --yes --skip-preview --stack=local-grapl
+        )
+
+        # Theoretically, we could skip uploading these job definitions for
+        # every local `up-detach`; but it's a 2s Pulumi operation and they
+        # don't auto-execute since they're Parameterized Batch Jobs.
+        # Basically: It's mostly harmless.
+
+        (
+          cd integration_tests
+          # Ideally this stack name would be scoped by organization, but
+          # login --local doesn't support organizations
+          pulumi stack init local-grapl-integration-tests --non-interactive
+          pulumi up --yes --skip-preview --stack=local-grapl-integration-tests
+        )
 
     volumes:
       - type: bind
@@ -26,10 +42,6 @@ services:
     environment:
       TAG:
       PULUMI_CONFIG_PASSPHRASE: local-grapl-passphrase
-      # This gets exported to True by `make test-integration`
-      SHOULD_DEPLOY_INTEGRATION_TESTS: "${SHOULD_DEPLOY_INTEGRATION_TESTS:-False}"
-      # This gets exported to True by `make test-e2e`
-      SHOULD_DEPLOY_E2E_TESTS: "${SHOULD_DEPLOY_E2E_TESTS:-False}"
       DOCKER_USER: "${UID}:${GID}"
       GRAPL_ROOT: "${GRAPL_ROOT}"
       # Other environment variables like MG_ALPHAS are passed in via
