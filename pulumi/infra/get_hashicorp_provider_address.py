@@ -18,4 +18,4 @@ def get_hashicorp_provider_address(
     """
     override_address = pulumi.Config(provider_type).get("address")
     address = override_address or stack.require_output("address")
-    return pulumi_class.Provider(f"{provider_type}-aws", address=address)
+    return pulumi_class.Provider(provider_type, address=address)
