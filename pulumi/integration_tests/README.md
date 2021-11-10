@@ -5,6 +5,7 @@ tests. This is because the two concepts will be merged into one in the semi-near
 future.
 
 # Initialization
+
 Do the following to set up an Integration Tests stack against a real AWS
 sandbox.
 

@@ -180,7 +180,7 @@ EOF
       driver = "docker"
 
       config {
-        image      = "${var.container_registry}grapl/e2e-tests:${var.e2e_tests_tag}"
+        image = "${var.container_registry}grapl/e2e-tests:${var.e2e_tests_tag}"
       }
 
       # This writes an env file that gets read by the task automatically
