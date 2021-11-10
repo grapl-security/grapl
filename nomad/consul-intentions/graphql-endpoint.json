@@ -1,0 +1,12 @@
+{
+  "Kind": "service-intentions",
+  "Name": "graphql-endpoint",
+  "Sources": [
+    {
+      "Name": "web-ui",
+      "Action": "allow",
+      "Precedence": 9,
+      "Type": "consul"
+    }
+  ]
+}

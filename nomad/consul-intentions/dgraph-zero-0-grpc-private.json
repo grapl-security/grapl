@@ -1,0 +1,12 @@
+{
+  "Kind": "service-intentions",
+  "Name": "dgraph-zero-0-grpc-private",
+  "Sources": [
+    {
+      "Name": "dgraph-alpha-0-grpc-private",
+      "Action": "allow",
+      "Precedence": 9,
+      "Type": "consul"
+    }
+  ]
+}
