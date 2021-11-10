@@ -17,7 +17,7 @@ import pulumi
 def main() -> None:
     ##### Preamble
 
-    stack_name = stackname_sans_prefix()
+    stack_name = pulumi.get_stack()
 
     quiet_docker_output()
 
@@ -26,6 +26,8 @@ def main() -> None:
     register_auto_tags({"grapl deployment": stack_name})
 
     if not config.LOCAL_GRAPL:
+        # TODO twunderlich: DRY this up
+
         # Set the nomad address. This can be either set as nomad:address in the config to support ssm port forwarding or
         # taken from the nomad stack
         nomad_config = pulumi.Config("nomad")
@@ -37,10 +39,11 @@ def main() -> None:
         )
         nomad_provider = nomad.Provider("nomad-aws", address=nomad_address)
 
-    ##### Actual Logic
+    ##### Business Logic
 
     grapl_stack = GraplStack(stack_name)
 
+    # TODO Wimax Nov 2021: This logic will change this week, doesn't work against prod
     assert aws.config.access_key, "Appease typechecker"
     assert aws.config.secret_key, "Appease typechecker"
 
@@ -83,20 +86,6 @@ def main() -> None:
         jobspec=Path("../../nomad/local/integration-tests.nomad").resolve(),
         vars=integration_test_job_vars,
     )
-
-
-def stackname_sans_prefix() -> str:
-    real_stackname = pulumi.get_stack()
-    # If local-grapl, no orgs in play
-    if config.LOCAL_GRAPL:
-        return real_stackname
-
-    prefix = "grapl/grapl"
-    split = real_stackname.split(prefix)
-    assert (
-        len(split) == 2
-    ), f"Expected a stack prefix of {prefix}, found {real_stackname}"
-    return split[1]
 
 
 class GraplStack:

@@ -15,22 +15,24 @@ services:
       - |
         pulumi login --local
 
-        cd grapl
-        pulumi stack init local-grapl --non-interactive
-        pulumi up --yes --skip-preview --stack=local-grapl
-        cd -
+        (
+          cd grapl
+          pulumi stack init local-grapl --non-interactive
+          pulumi up --yes --skip-preview --stack=local-grapl
+        )
 
         # Theoretically, we could skip uploading these job definitions for
         # every local `up-detach`; but it's a 2s Pulumi operation and they
         # don't auto-execute since they're Parameterized Batch Jobs.
         # Basically: It's mostly harmless.
 
-        cd integration_tests
-        # Ideally this would be scoped by organizations, but login --local 
-        # doesn't support organizations
-        pulumi stack init local-grapl-integration-tests --non-interactive
-        pulumi up --yes --skip-preview --stack=local-grapl-integration-tests
-        cd -
+        (
+          cd integration_tests
+          # Ideally this stack name would be scoped by organization, but
+          # login --local doesn't support organizations
+          pulumi stack init local-grapl-integration-tests --non-interactive
+          pulumi up --yes --skip-preview --stack=local-grapl-integration-tests
+        )
 
     volumes:
       - type: bind

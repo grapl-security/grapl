@@ -298,7 +298,6 @@ def main() -> None:
         )
 
         grapl_provision_job_vars = _get_subset(
-            # IMPORTANT: Any new var added in the dict below also needs to be added to _get_provisioner_job_vars
             dict(
                 # The vars with a leading underscore indicate that the hcl local version of the variable should be used
                 # instead of the var version.
