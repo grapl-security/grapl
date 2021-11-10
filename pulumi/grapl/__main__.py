@@ -261,6 +261,10 @@ def main() -> None:
             vpc_id=vpc_id,
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
+
+        pulumi.export("kafka-endpoint", "dummy_value_while_we_wait_for_kafka")
+        pulumi.export("redis-endpoint", cache.endpoint)
+
         artifacts = pulumi_config.require_object("artifacts")
 
         # Set custom provider with the address set

@@ -45,16 +45,19 @@ variable "schema_properties_table_name" {
 variable "aws_access_key_id" {
   type        = string
   description = "The aws access key id used to interact with AWS."
+  default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_ID"
 }
 
 variable "aws_access_key_secret" {
   type        = string
   description = "The aws access key secret used to interact with AWS."
+  default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_SECRET"
 }
 
 variable "_aws_endpoint" {
   type        = string
   description = "The endpoint in which we can expect to find and interact with AWS."
+  default     = "DUMMY_LOCAL_AWS_ENDPOINT"
 }
 
 variable "test_user_name" {
@@ -66,7 +69,17 @@ locals {
   log_level = "DEBUG"
 
   # Prefer these over their `var` equivalents
-  aws_endpoint = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  aws_endpoint = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
+
+  # This is used to conditionally submit env variables via template stanzas.
+  local_only_env_vars = <<EOH
+GRAPL_AWS_ENDPOINT          = ${local.aws_endpoint}
+GRAPL_AWS_ACCESS_KEY_ID     = ${var.aws_access_key_id}
+GRAPL_AWS_ACCESS_KEY_SECRET = ${var.aws_access_key_secret}
+EOH
+  # We need to submit an env var otherwise you can end up with a weird nomad state parse error.
+  aws_only_env_vars              = "DUMMY_VAR=TRUE"
+  conditionally_defined_env_vars = (var._aws_endpoint == "http://LOCAL_GRAPL_REPLACE_IP:4566") ? local.local_only_env_vars : local.aws_only_env_vars
 }
 
 job "e2e-tests" {
@@ -127,13 +140,16 @@ EOF
         )
       }
 
+      # This writes an env file that gets read by the task automatically
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "e2e-tests-setup.env"
+        env         = true
+      }
+
       env {
         GRAPL_REGION    = var.aws_region
         DEPLOYMENT_NAME = var.deployment_name
-
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
 
         GRAPL_ANALYZERS_BUCKET       = var.analyzer_bucket
         GRAPL_SYSMON_GENERATOR_QUEUE = var.sysmon_generator_queue
@@ -161,6 +177,13 @@ EOF
         image = "${var.container_registry}grapl/e2e-tests:dev"
       }
 
+      # This writes an env file that gets read by the task automatically
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "e2e-tests.env"
+        env         = true
+      }
+
       env {
         AWS_REGION = var.aws_region
         # TODO: Reintroduce DEBUG_SERVICES= at some point
@@ -169,11 +192,8 @@ EOF
         GRAPL_API_HOST           = "${NOMAD_UPSTREAM_IP_web-ui}"
         GRAPL_HTTP_FRONTEND_PORT = "${NOMAD_UPSTREAM_PORT_web-ui}"
 
-        DEPLOYMENT_NAME             = var.deployment_name
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-        GRAPL_LOG_LEVEL             = local.log_level
+        DEPLOYMENT_NAME = var.deployment_name
+        GRAPL_LOG_LEVEL = local.log_level
 
         GRAPL_TEST_USER_NAME = var.test_user_name # Needed for EngagementEdgeClient
         IS_LOCAL             = true               # Revisit for in-prod E2E
