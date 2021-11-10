@@ -32,13 +32,6 @@ def to_bool(input: Optional[Union[str, bool]]) -> Optional[bool]:
         raise ValueError(f"Invalid bool value: {repr(input)}")
 
 
-# If true, optionally deploy integration/e2e tests to Nomad (without running them).
-SHOULD_DEPLOY_INTEGRATION_TESTS = to_bool(
-    os.getenv("SHOULD_DEPLOY_INTEGRATION_TESTS", False)
-)
-SHOULD_DEPLOY_E2E_TESTS = to_bool(os.getenv("SHOULD_DEPLOY_E2E_TESTS", False))
-
-
 def repository_path(relative_path: str) -> Path:
     """
     Resolve `relative_path` relative to the root of the repository.
@@ -62,7 +55,10 @@ _validate_deployment_name()
 
 # Use this to modify behavior or configuration for provisioning in
 # Local Grapl (as opposed to any other real deployment)
-LOCAL_GRAPL = DEPLOYMENT_NAME == "local-grapl"
+
+LOCAL_GRAPL = DEPLOYMENT_NAME in ("local-grapl", "local-grapl-integration-tests")
+# (We have a different one for integration tests because `pulumi login --local`
+#  doesn't allow for stack name conflicts, even across projects.)
 
 # A "real" deployment is one that will be deployed in our CI/CD
 # environment, not a developer sandbox environment.
@@ -120,7 +116,8 @@ def _require_env_var(key: str) -> str:
     return value
 
 
-OPERATIONAL_ALARMS_EMAIL = _require_env_var("GRAPL_OPERATIONAL_ALARMS_EMAIL")
+def get_grapl_ops_alarms_email() -> str:
+    return _require_env_var("GRAPL_OPERATIONAL_ALARMS_EMAIL")
 
 
 def configurable_envvar(service_name: str, var: str) -> str:

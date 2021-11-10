@@ -1,7 +1,7 @@
 from typing import Optional
 
 import pulumi_aws as aws
-from infra.config import DEPLOYMENT_NAME, OPERATIONAL_ALARMS_EMAIL
+from infra.config import DEPLOYMENT_NAME, get_grapl_ops_alarms_email
 
 import pulumi
 
@@ -56,7 +56,7 @@ class OpsAlarms(pulumi.ComponentResource):
         self.alarm_sink = AlarmSink(
             "alarm-sink",
             topic_name_suffix="operational-alarms-sink",
-            email=OPERATIONAL_ALARMS_EMAIL,
+            email=get_grapl_ops_alarms_email(),
             opts=child_opts,
         )
         # Usually, we'd define metrics that would send a Cloudwatch Action
