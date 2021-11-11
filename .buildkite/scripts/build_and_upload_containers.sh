@@ -48,19 +48,8 @@ cloudsmith_tag() {
     echo "${CLOUDSMITH_DOCKER_REGISTRY}/${service}:${tag}"
 }
 
-# These are then consumed by src/python/Dockerfile
-echo "--- :python: Building pex binaries"
-make build-service-pexs
-echo "--- :typescript: Building front-end"
-make build-ux
-echo "--- Building graplctl"
-make graplctl
-
-echo "--- :docker: Building all ${TAG} images"
-docker buildx bake \
-    --file=docker-compose.build.yml \
-    --file=test/docker-compose.integration-tests.build.yml \
-    "${services[@]}"
+echo "--- Building all ${TAG} images"
+make build build-test-e2e
 
 for service in "${services[@]}"; do
     # Re-tag the container we just built so we can upload it to
