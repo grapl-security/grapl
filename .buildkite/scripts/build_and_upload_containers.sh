@@ -53,6 +53,8 @@ echo "--- :python: Building pex binaries"
 make build-service-pexs
 echo "--- :typescript: Building front-end"
 make build-ux
+echo "--- Building graplctl"
+make graplctl
 
 echo "--- :docker: Building all ${TAG} images"
 docker buildx bake \
