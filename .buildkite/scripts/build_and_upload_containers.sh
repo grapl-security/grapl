@@ -54,14 +54,13 @@ make build-service-pexs
 echo "--- :typescript: Building front-end"
 make build-ux
 
-for service in "${services[@]}"; do
-    # Build a single service
-    echo "--- :docker: Building ${service}:${TAG} container"
-    docker buildx bake \
-        --file=docker-compose.build.yml \
-        --file=test/docker-compose.integration-tests.build.yml \
-        "${service}"
+echo "--- :docker: Building all ${TAG} images"
+docker buildx bake \
+    --file=docker-compose.build.yml \
+    --file=test/docker-compose.integration-tests.build.yml \
+    "${services[@]}"
 
+for service in "${services[@]}"; do
     # Re-tag the container we just built so we can upload it to
     # Cloudsmith.
     #
@@ -76,7 +75,6 @@ for service in "${services[@]}"; do
 
     echo "--- :docker: Push ${new_tag}"
     docker push "${new_tag}"
-
 done
 
 # TODO: Do we want to put the complete container image name in for
