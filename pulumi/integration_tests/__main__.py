@@ -4,6 +4,8 @@ from pathlib import Path
 
 sys.path.insert(0, "..")
 
+from typing import Optional, cast
+
 import pulumi_aws as aws
 import pulumi_nomad as nomad
 from infra import config
@@ -16,8 +18,11 @@ import pulumi
 
 def main() -> None:
     ##### Preamble
-
     stack_name = pulumi.get_stack()
+
+    pulumi_config = pulumi.Config()
+    artifacts = pulumi_config.get_object("artifacts")
+    e2e_tag = artifacts and artifacts.get("e2e-tests")
 
     quiet_docker_output()
 
@@ -43,17 +48,17 @@ def main() -> None:
 
     grapl_stack = GraplStack(stack_name)
 
-    # TODO Wimax Nov 2021: This logic will change this week, doesn't work against prod
-    assert aws.config.access_key, "Appease typechecker"
-    assert aws.config.secret_key, "Appease typechecker"
+    access_key = aws.config.access_key
+    secret_key = aws.config.secret_key
 
     e2e_test_job_vars: NomadVars = {
         "analyzer_bucket": grapl_stack.analyzer_bucket,
-        "aws_access_key_id": aws.config.access_key,
-        "aws_access_key_secret": aws.config.secret_key,
+        "aws_access_key_id": access_key,
+        "aws_access_key_secret": secret_key,
         "_aws_endpoint": grapl_stack.aws_endpoint,
         "aws_region": aws.get_region().name,
         "deployment_name": grapl_stack.deployment_name,
+        "e2e_tests_tag": e2e_tag,
         "schema_properties_table_name": grapl_stack.schema_properties_table_name,
         "sysmon_log_bucket": grapl_stack.sysmon_log_bucket,
         "schema_table_name": grapl_stack.schema_table_name,
@@ -67,43 +72,52 @@ def main() -> None:
         vars=e2e_test_job_vars,
     )
 
-    integration_test_job_vars: NomadVars = {
-        "aws_access_key_id": aws.config.access_key,
-        "aws_access_key_secret": aws.config.secret_key,
-        "_aws_endpoint": grapl_stack.aws_endpoint,
-        "aws_region": aws.get_region().name,
-        "deployment_name": grapl_stack.deployment_name,
-        "docker_user": os.environ["DOCKER_USER"],
-        "grapl_root": os.environ["GRAPL_ROOT"],
-        "_kafka_endpoint": grapl_stack.kafka_endpoint,
-        "_redis_endpoint": grapl_stack.redis_endpoint,
-        "schema_properties_table_name": grapl_stack.schema_properties_table_name,
-        "test_user_name": grapl_stack.test_user_name,
-    }
+    if config.LOCAL_GRAPL:
+        # We don't do integration tests in AWS yet, mostly because the current
+        # Python Pants integration test setup is funky and requires an on-disk
+        # Grapl repo.
 
-    integration_tests = NomadJob(
-        "integration-tests",
-        jobspec=Path("../../nomad/local/integration-tests.nomad").resolve(),
-        vars=integration_test_job_vars,
-    )
+        integration_test_job_vars: NomadVars = {
+            "aws_access_key_id": access_key,
+            "aws_access_key_secret": secret_key,
+            "_aws_endpoint": grapl_stack.aws_endpoint,
+            "aws_region": aws.get_region().name,
+            "deployment_name": grapl_stack.deployment_name,
+            "docker_user": os.environ["DOCKER_USER"],
+            "grapl_root": os.environ["GRAPL_ROOT"],
+            "_kafka_endpoint": grapl_stack.kafka_endpoint,
+            "_redis_endpoint": grapl_stack.redis_endpoint,
+            "schema_properties_table_name": grapl_stack.schema_properties_table_name,
+            "test_user_name": grapl_stack.test_user_name,
+        }
+
+        integration_tests = NomadJob(
+            "integration-tests",
+            jobspec=Path("../../nomad/local/integration-tests.nomad").resolve(),
+            vars=integration_test_job_vars,
+        )
 
 
 class GraplStack:
     def __init__(self, stack_name: str) -> None:
         ref_name = "local-grapl" if config.LOCAL_GRAPL else f"grapl/grapl/{stack_name}"
         ref = pulumi.StackReference(ref_name)
-        output = ref.require_output  # just an alias
 
-        self.analyzer_bucket = output("analyzers-bucket")
-        self.aws_endpoint = output("aws-endpoint")
-        self.deployment_name = output("deployment-name")
-        self.kafka_endpoint = output("kafka-endpoint")
-        self.redis_endpoint = output("redis-endpoint")
-        self.schema_properties_table_name = output("schema-properties-table")
-        self.schema_table_name = output("schema-table")
-        self.sysmon_generator_queue = output("sysmon-generator-queue")
-        self.sysmon_log_bucket = output("sysmon-log-bucket")
-        self.test_user_name = output("test-user-name")
+        def require_str(key: str) -> str:
+            return cast(str, ref.require_output(key))
+
+        # Only specified if LOCAL_GRAPL
+        self.aws_endpoint = cast(Optional[str], ref.get_output("aws-endpoint"))
+
+        self.analyzer_bucket = require_str("analyzers-bucket")
+        self.deployment_name = require_str("deployment-name")
+        self.kafka_endpoint = require_str("kafka-endpoint")
+        self.redis_endpoint = require_str("redis-endpoint")
+        self.schema_properties_table_name = require_str("schema-properties-table")
+        self.schema_table_name = require_str("schema-table")
+        self.sysmon_generator_queue = require_str("sysmon-generator-queue")
+        self.sysmon_log_bucket = require_str("sysmon-log-bucket")
+        self.test_user_name = require_str("test-user-name")
 
 
 if __name__ == "__main__":

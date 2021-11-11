@@ -7,7 +7,7 @@ from infra.config import DEPLOYMENT_NAME
 import pulumi
 
 _ValidNomadVarTypes = pulumi.Input[Union[str, bool, int]]
-NomadVars = Mapping[str, _ValidNomadVarTypes]
+NomadVars = Mapping[str, Optional[_ValidNomadVarTypes]]
 
 
 class NomadJob(pulumi.ComponentResource):
