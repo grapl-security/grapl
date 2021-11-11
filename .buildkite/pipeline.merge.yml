@@ -4,51 +4,6 @@ env:
   BUILDKITE_PLUGIN_VAULT_ENV_SECRET_PREFIX: "secret/data/buildkite/env"
 
 steps:
-  - label: ":aws-lambda::rust: Build Rust Lambdas"
-    key: "rust-lambdas"
-    plugins:
-      - chronotc/monorepo-diff#v2.0.4:
-          diff: .buildkite/shared/scripts/diff.sh
-          log_level: "debug"
-          watch:
-            - path:
-                - "src/rust/" # This is not minimal, obviously
-                - "docker-compose.lambda-zips.rust.yml"
-              config:
-                command:
-                  - "make build-lambda-zips-rust"
-                artifact_paths:
-                  - "dist/*-lambda.zip"
-                agents:
-                  queue: "docker"
-
-  - label: ":aws-lambda::typescript: Build Typescript Lambdas"
-    key: "js-lambdas"
-    plugins:
-      - chronotc/monorepo-diff#v2.0.4:
-          diff: .buildkite/shared/scripts/diff.sh
-          log_level: "debug"
-          watch:
-            - path:
-                - "src/js/" # This is not minimal, obviously
-                - "docker-compose.lambda-zips.js.yml"
-              config:
-                command:
-                  - "make build-lambda-zips-js"
-                artifact_paths:
-                  - "dist/*-lambda.zip"
-                agents:
-                  queue: "docker"
-
-  - label: ":aws-lambda::python: Build Python Lambdas"
-    key: "python-lambdas"
-    command:
-      # Strictly speaking, this would also build Python wheels, but
-      # those aren't named *-lambda.zip
-      - "./pants --changed-since=internal/last-successful-merge --changed-dependees=transitive package"
-    artifact_paths:
-      - "dist/*-lambda.zip"
-
   - label: ":docker: Build Docker Containers"
     command:
       - ".buildkite/scripts/build_and_upload_containers.sh"
@@ -64,23 +19,6 @@ steps:
           server: docker.cloudsmith.io
     agents:
       queue: "docker"
-    artifact_paths:
-      - "*.grapl-artifacts.json"
-
-  - label: ":aws-lambda::cloudsmith: Upload Lambda ZIPs"
-    command:
-      - ".buildkite/scripts/upload_lambda_artifacts.sh"
-    depends_on:
-      - "rust-lambdas"
-      - "js-lambdas"
-      - "python-lambdas"
-    plugins:
-      - grapl-security/vault-login#v0.1.0
-      - grapl-security/vault-env#v0.1.0:
-          secrets:
-            - CLOUDSMITH_API_KEY
-    agents:
-      queue: "artifact-uploaders"
     artifact_paths:
       - "*.grapl-artifacts.json"
 
