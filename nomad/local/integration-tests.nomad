@@ -26,16 +26,19 @@ variable "deployment_name" {
 variable "aws_access_key_id" {
   type        = string
   description = "The aws access key id used to interact with AWS."
+  default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_ID"
 }
 
 variable "aws_access_key_secret" {
   type        = string
   description = "The aws access key secret used to interact with AWS."
+  default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_SECRET"
 }
 
 variable "_aws_endpoint" {
   type        = string
   description = "The endpoint in which we can expect to find and interact with AWS."
+  default     = "DUMMY_LOCAL_AWS_ENDPOINT"
 }
 
 variable "_redis_endpoint" {
@@ -71,8 +74,20 @@ variable "grapl_root" {
 locals {
   log_level = "DEBUG"
 
+  aws_endpoint = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
+
+  # This is used to conditionally submit env variables via template stanzas.
+  local_only_env_vars = <<EOH
+GRAPL_AWS_ENDPOINT          = ${local.aws_endpoint}
+GRAPL_AWS_ACCESS_KEY_ID     = ${var.aws_access_key_id}
+GRAPL_AWS_ACCESS_KEY_SECRET = ${var.aws_access_key_secret}
+EOH
+  # We need to submit an env var otherwise you can end up with a weird nomad state parse error.
+  aws_only_env_vars              = "DUMMY_VAR=TRUE"
+  conditionally_defined_env_vars = (var._aws_endpoint == "http://LOCAL_GRAPL_REPLACE_IP:4566") ? local.local_only_env_vars : local.aws_only_env_vars
+
+
   # Prefer these over their `var` equivalents
-  aws_endpoint   = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
   redis_endpoint = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
   kafka_endpoint = replace(var._kafka_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
 
@@ -133,13 +148,17 @@ job "integration-tests" {
         image = "${var.container_registry}grapl/${var.container_repo}rust-integration-tests:dev"
       }
 
+      # This writes an env file that gets read by the task automatically
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "rust-integration-tests.env"
+        env         = true
+      }
+
       env {
-        AWS_REGION                  = var.aws_region
-        DEPLOYMENT_NAME             = var.deployment_name
-        GRAPL_AWS_ENDPOINT          = local.aws_endpoint
-        GRAPL_AWS_ACCESS_KEY_ID     = var.aws_access_key_id
-        GRAPL_AWS_ACCESS_KEY_SECRET = var.aws_access_key_secret
-        GRAPL_LOG_LEVEL             = local.log_level
+        AWS_REGION      = var.aws_region
+        DEPLOYMENT_NAME = var.deployment_name
+        GRAPL_LOG_LEVEL = local.log_level
         # This is a hack, because IDK how to share locals across files
         #MG_ALPHAS                   = local.alpha_grpc_connect_str # TODO: Figure out how to do this
         MG_ALPHAS      = "localhost:9080"
@@ -222,11 +241,15 @@ job "integration-tests" {
         }
       }
 
+      # This writes an env file that gets read by the task automatically
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "python-integration-tests.env"
+        env         = true
+      }
+
       env {
-        AWS_REGION                  = "${var.aws_region}"
-        GRAPL_AWS_ENDPOINT          = "${local.aws_endpoint}"
-        GRAPL_AWS_ACCESS_KEY_ID     = "${var.aws_access_key_id}"
-        GRAPL_AWS_ACCESS_KEY_SECRET = "${var.aws_access_key_secret}"
+        AWS_REGION = "${var.aws_region}"
 
         # These environment vars need to exist but the values aren't actually exercised
         GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET = "NOT_ACTUALLY_EXERCISED_IN_TESTS"

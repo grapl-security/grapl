@@ -29,6 +29,7 @@ readonly CLOUDSMITH_DOCKER_REGISTRY="docker.cloudsmith.io/grapl/raw"
 services=(
     analyzer-dispatcher
     analyzer-executor
+    e2e-tests
     engagement-creator
     graph-merger
     graphql-endpoint
@@ -58,6 +59,7 @@ for service in "${services[@]}"; do
     echo "--- :docker: Building ${service}:${TAG} container"
     docker buildx bake \
         --file=docker-compose.build.yml \
+        --file=test/docker-compose.integration-tests.build.yml \
         "${service}"
 
     # Re-tag the container we just built so we can upload it to
