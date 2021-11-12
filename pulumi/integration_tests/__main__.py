@@ -24,7 +24,7 @@ def main() -> None:
     pulumi_config = pulumi.Config()
     artifacts = pulumi_config.get_object("artifacts") or {}
     version_tag_alias = lambda key: version_tag(
-        key, artifacts, require_output=config.LOCAL_GRAPL
+        key, artifacts, require_artifact=(not config.LOCAL_GRAPL)
     )
 
     quiet_docker_output()
@@ -90,12 +90,10 @@ def main() -> None:
             "grapl_root": os.environ["GRAPL_ROOT"],
             "_kafka_endpoint": grapl_stack.kafka_endpoint,
             "python_integration_tests_tag": version_tag_alias(
-                "python-integration-tests", artifacts
+                "python-integration-tests"
             ),
             "_redis_endpoint": grapl_stack.redis_endpoint,
-            "rust_integration_tests_tag": version_tag_alias(
-                "rust-integration-tests", artifacts
-            ),
+            "rust_integration_tests_tag": version_tag_alias("rust-integration-tests"),
             "schema_properties_table_name": grapl_stack.schema_properties_table_name,
             "test_user_name": grapl_stack.test_user_name,
         }

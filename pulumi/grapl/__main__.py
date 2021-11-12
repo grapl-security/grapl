@@ -223,18 +223,20 @@ def main() -> None:
 
         provision_vars = _get_subset(
             dict(
+                provisioner_tag=version_tag("provisioner", {}, require_artifact=False),
                 **grapl_core_job_vars_inputs,
                 **nomad_inputs,
             ),
             {
-                "_aws_endpoint",
                 "aws_access_key_id",
                 "aws_access_key_secret",
+                "_aws_endpoint",
                 "aws_region",
                 "deployment_name",
+                "provisioner_tag",
                 "rust_log",
-                "schema_table_name",
                 "schema_properties_table_name",
+                "schema_table_name",
                 "test_user_name",
                 "user_auth_table",
             },
@@ -339,7 +341,9 @@ def main() -> None:
                 container_repo="raw/",
                 # TODO: consider replacing with the previous per-service `configurable_envvars`
                 rust_log="DEBUG",
-                provisioner_tag=version_tag("provisioner", artifacts),
+                provisioner_tag=version_tag(
+                    "provisioner", artifacts, require_artifact=True
+                ),
                 **nomad_inputs,
             ),
             {
