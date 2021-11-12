@@ -152,7 +152,6 @@ build-test-unit-js:
 
 .PHONY: build-test-integration
 build-test-integration: build
-	$(WITH_LOCAL_GRAPL_ENV)
 	$(DOCKER_BUILDX_BAKE) \
 		--file ./test/docker-compose.integration-tests.build.yml \
 		python-integration-tests rust-integration-tests
@@ -160,7 +159,6 @@ build-test-integration: build
 .PHONY: build-test-e2e
 build-test-e2e: build
 	./pants package ./src/python/e2e-test-runner/e2e_test_runner:pex
-	$(WITH_LOCAL_GRAPL_ENV)
 	$(DOCKER_BUILDX_BAKE) \
 		--file ./test/docker-compose.integration-tests.build.yml \
 		e2e-tests
