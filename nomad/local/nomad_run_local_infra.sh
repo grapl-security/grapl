@@ -13,6 +13,7 @@ declare -a NOMAD_VARS=(
     -var "ZOOKEEPER_PORT=${ZOOKEEPER_PORT}"
     -var "FAKE_AWS_ACCESS_KEY_ID=${FAKE_AWS_ACCESS_KEY_ID}"
     -var "FAKE_AWS_SECRET_ACCESS_KEY=${FAKE_AWS_SECRET_ACCESS_KEY}"
+    -var "localstack_tag=${TAG}"
 )
 
 # shellcheck source-path=SCRIPTDIR
