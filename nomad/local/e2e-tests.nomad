@@ -10,7 +10,6 @@ variable "container_registry" {
 
 variable "e2e_tests_tag" {
   type        = string
-  default     = "dev"
   description = "The tagged version of the e2e tests we should deploy."
 }
 
