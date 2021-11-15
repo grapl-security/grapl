@@ -22,21 +22,21 @@ class GraplConsulAcls(pulumi.ComponentResource):
             f"{name}-ui-ro",
             name="ui-read-only",
             description="Allow users to use the consul UI with read-only permissions",
-            policies=[policies["ui-read-only"].name],
+            policies=[policies["ui-read-only"].id],
         )
 
         ui_rw_role = consul.AclRole(
             f"{name}-ui-rw",
             name="ui-read-write",
             description="Allow users to use the consul UI with write permissions",
-            policies=[policies["ui-read-write"].name],
+            policies=[policies["ui-read-write"].id],
         )
 
         role_consul_agent = consul.AclRole(
             f"{name}-consul-agent",
             name="consul-agent",
             description="Role for consul agents, focused on nomad agents",
-            policies=[policies["consul-agent"].name],
+            policies=[policies["consul-agent"].id],
         )
 
         # TODO decide on expiration_times
