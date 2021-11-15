@@ -10,7 +10,7 @@ node "" {
 # anti-entropy to reconcile difference between the agents knowledge of registered
 # services and checks in comparison with what is known in the Catalog.
 service_prefix "" {
-  policy = "read"
+  policy = "write"
 }
 
 # only necessary if using dns prepared queries

@@ -148,13 +148,6 @@ def main() -> None:
         user_session_table=dynamodb_tables.user_session_table.name,
     )
 
-    # # Get dict of all policies
-    # consul_acl_policies = {}
-    # files = list(Path("../consul-acl-policies").resolve().glob("*.hcl"))
-    # for file in files:
-    #     hcl_txt = Path(file).read_text()
-    #     consul_acl_policies[file.stem] = hcl_txt
-
     if config.LOCAL_GRAPL:
         ###################################
         # Local Grapl
@@ -185,13 +178,6 @@ def main() -> None:
 
         # This does not use a custom Provider since it will use either a consul:address set in the config or default to
         # http://localhost:8500. This also applies to the NomadJobs defined for LOCAL_GRAPL.
-        ConsulIntentions(
-            "grapl-core",
-            # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
-            # when they update nomad configs
-            intention_directory=Path("../../nomad/consul-intentions").resolve(),
-        )
-
         consul_acl_policies = ConsulAclPolicies(
             "grapl", acl_directory=Path("../consul-acl-policies").resolve()
         )
@@ -201,6 +187,14 @@ def main() -> None:
         pulumi.export("ui_read_write_token", grapl_acls.ui_read_write_token.id)
         pulumi.export(
             "default_consul_agent_token", grapl_acls.default_consul_agent_token.id
+        )
+
+        ConsulIntentions(
+            "grapl-core",
+            # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
+            # when they update nomad configs
+            intention_directory=Path("../../nomad/consul-intentions").resolve(),
+            opts=pulumi.ResourceOptions(depends_on=grapl_acls)
         )
 
         nomad_grapl_core = NomadJob(
@@ -288,17 +282,14 @@ def main() -> None:
         artifacts = pulumi_config.require_object("artifacts")
 
         # Set custom provider with the address set
-        consul_provider = get_hashicorp_provider_address(consul, "consul", consul_stack)
+        #consul_provider = get_hashicorp_provider_address(consul, "consul", consul_stack)
         nomad_provider = get_hashicorp_provider_address(
             nomad, "nomad", nomad_server_stack
         )
-
-        ConsulIntentions(
-            "grapl-core",
-            # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
-            # when they update nomad configs
-            intention_directory=Path("../../nomad/consul-intentions").resolve(),
-            opts=pulumi.ResourceOptions(provider=consul_provider),
+        consul_provider = consul.Provider(
+            "consul",
+            address=pulumi.Config("consul").get("address"),
+            token=pulumi.Config("consul").get("token")
         )
 
         consul_acl_policies = ConsulAclPolicies(
@@ -316,6 +307,14 @@ def main() -> None:
         pulumi.export("ui_read_write_token", grapl_acls.ui_read_write_token.id)
         pulumi.export(
             "default_consul_agent_token", grapl_acls.default_consul_agent_token.id
+        )
+
+        ConsulIntentions(
+            "grapl-core",
+            # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
+            # when they update nomad configs
+            intention_directory=Path("../../nomad/consul-intentions").resolve(),
+            opts=pulumi.ResourceOptions(provider=consul_provider, depends_on=[grapl_acls]),
         )
 
         grapl_core_job_vars: Final[NomadVars] = dict(

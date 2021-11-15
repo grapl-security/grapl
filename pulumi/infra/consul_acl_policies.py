@@ -22,7 +22,7 @@ class ConsulAclPolicies(pulumi.ComponentResource):
             hcl_txt = Path(file).read_text()
             self.policies[file.stem] = consul.AclPolicy(
                 f"{name}-{file.stem}",
-                name=file.stem,
+                name=f"{name}-{file.stem}",
                 rules=hcl_txt,
                 opts=pulumi.ResourceOptions(parent=self),
             )
