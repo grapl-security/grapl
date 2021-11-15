@@ -361,10 +361,7 @@ format: format-python format-shell format-prettier format-rust format-hcl ## Ref
 ##@ Local Grapl 💻
 
 .PHONY: up
-up: export COMPOSE_PROJECT_NAME="grapl"
-up: build ## Build Grapl services and launch docker-compose up
-	$(WITH_LOCAL_GRAPL_ENV)
-	docker-compose -f docker-compose.yml up
+up: up-detach ## Alias for up-detach since we've moved to Nomad
 
 .PHONY: up-detach
 up-detach: build ## Bring up local Grapl and detach to return control to tty
@@ -439,6 +436,7 @@ start-nomad-detach:  ## Start the Nomad environment, detached
 
 .PHONY: stop-nomad-detach
 stop-nomad-detach:  ## Stop Nomad CI environment
+	$(WITH_LOCAL_GRAPL_ENV)
 	nomad/local/stop_detach.sh
 
 .PHONY: push

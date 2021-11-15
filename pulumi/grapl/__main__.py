@@ -21,8 +21,10 @@ from infra.api_gateway import ApiGateway
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
+from infra.consul_acl_policies import ConsulAclPolicies
 from infra.consul_intentions import ConsulIntentions
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
+from infra.grapl_consul_acls import GraplConsulAcls
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
@@ -146,6 +148,13 @@ def main() -> None:
         user_session_table=dynamodb_tables.user_session_table.name,
     )
 
+    # # Get dict of all policies
+    # consul_acl_policies = {}
+    # files = list(Path("../consul-acl-policies").resolve().glob("*.hcl"))
+    # for file in files:
+    #     hcl_txt = Path(file).read_text()
+    #     consul_acl_policies[file.stem] = hcl_txt
+
     if config.LOCAL_GRAPL:
         ###################################
         # Local Grapl
@@ -182,6 +191,12 @@ def main() -> None:
             # when they update nomad configs
             intention_directory=Path("../../nomad/consul-intentions").resolve(),
         )
+
+        consul_acl_policies = ConsulAclPolicies(
+            "grapl", acl_directory=Path("../consul-acl-policies").resolve()
+        )
+
+        acls = GraplConsulAcls("grapl", policies=consul_acl_policies)
 
         nomad_grapl_core = NomadJob(
             "grapl-core",
@@ -279,6 +294,23 @@ def main() -> None:
             # when they update nomad configs
             intention_directory=Path("../../nomad/consul-intentions").resolve(),
             opts=pulumi.ResourceOptions(provider=consul_provider),
+        )
+
+        consul_acl_policies = ConsulAclPolicies(
+            "grapl",
+            acl_directory=Path("../consul-acl-policies").resolve(),
+            opts=pulumi.ResourceOptions(provider=consul_provider),
+        )
+
+        grapl_acls = GraplConsulAcls(
+            "grapl",
+            policies=consul_acl_policies,
+            opts=pulumi.ResourceOptions(provider=consul_provider),
+        )
+        pulumi.export("ui_read_only_token", grapl_acls.ui_read_only_token.id)
+        pulumi.export("ui_read_write_token", grapl_acls.ui_read_write_token.id)
+        pulumi.export(
+            "default_consul_agent_token", grapl_acls.default_consul_agent_token.id
         )
 
         grapl_core_job_vars: Final[NomadVars] = dict(
