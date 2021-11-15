@@ -196,7 +196,12 @@ def main() -> None:
             "grapl", acl_directory=Path("../consul-acl-policies").resolve()
         )
 
-        acls = GraplConsulAcls("grapl", policies=consul_acl_policies)
+        grapl_acls = GraplConsulAcls("grapl", policies=consul_acl_policies.policies)
+        pulumi.export("ui_read_only_token", grapl_acls.ui_read_only_token.id)
+        pulumi.export("ui_read_write_token", grapl_acls.ui_read_write_token.id)
+        pulumi.export(
+            "default_consul_agent_token", grapl_acls.default_consul_agent_token.id
+        )
 
         nomad_grapl_core = NomadJob(
             "grapl-core",
@@ -304,7 +309,7 @@ def main() -> None:
 
         grapl_acls = GraplConsulAcls(
             "grapl",
-            policies=consul_acl_policies,
+            policies=consul_acl_policies.policies,
             opts=pulumi.ResourceOptions(provider=consul_provider),
         )
         pulumi.export("ui_read_only_token", grapl_acls.ui_read_only_token.id)

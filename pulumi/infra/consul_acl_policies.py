@@ -26,3 +26,5 @@ class ConsulAclPolicies(pulumi.ComponentResource):
                 rules=hcl_txt,
                 opts=pulumi.ResourceOptions(parent=self),
             )
+
+        self.register_outputs({})
