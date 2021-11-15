@@ -65,7 +65,6 @@ variable "analyzer_dispatcher_dead_letter_queue" {
 
 variable "analyzer_dispatcher_tag" {
   type        = string
-  default     = "dev"
   description = "The tagged version of the analyzer-dispatcher we should deploy."
 }
 
@@ -81,7 +80,6 @@ variable "analyzer_executor_queue" {
 
 variable "analyzer_executor_tag" {
   type        = string
-  default     = "dev"
   description = "The tagged version of the analyzer-executor we should deploy."
 }
 
@@ -107,7 +105,6 @@ variable "engagement_creator_queue" {
 
 variable "engagement_creator_tag" {
   type        = string
-  default     = "dev"
   description = "The tagged version of the engagement-creator we should deploy."
 }
 
@@ -145,7 +142,6 @@ variable "num_graph_mergers" {
 
 variable "graph_merger_tag" {
   type        = string
-  default     = "dev"
   description = "The tagged version of the graph_merger we should deploy."
 }
 
@@ -169,7 +165,6 @@ variable "model_plugins_bucket" {
 
 variable "model_plugin_deployer_tag" {
   type        = string
-  default     = "dev"
   description = "The tagged version of the model plugin deployer to deploy."
 }
 
@@ -187,7 +182,6 @@ variable "num_node_identifier_retries" {
 
 variable "node_identifier_tag" {
   type        = string
-  default     = "dev"
   description = "The tagged version of the node_identifier and the node_identifier_retry we should deploy."
 }
 
@@ -220,13 +214,11 @@ variable "subgraphs_generated_bucket" {
 
 variable "graphql_endpoint_tag" {
   type        = string
-  default     = "dev"
   description = "The image tag for the graphql endpoint docker image."
 }
 
 variable "web_ui_tag" {
   type        = string
-  default     = "dev"
   description = "The image tag for the Grapl web UI docker image."
 }
 
@@ -247,7 +239,6 @@ variable "user_session_table" {
 
 variable "sysmon_generator_tag" {
   type        = string
-  default     = "dev"
   description = "The image tag for the sysmon generator docker image."
 }
 
@@ -261,7 +252,6 @@ variable "sysmon_generator_dead_letter_queue" {
 
 variable "osquery_generator_tag" {
   type        = string
-  default     = "dev"
   description = "The image tag for the osquery generator docker image."
 }
 

@@ -77,7 +77,6 @@ variable "rust_log" {
 
 variable "provisioner_tag" {
   type        = string
-  default     = "dev"
   description = "The tagged version of the provisioner we should deploy."
 }
 

@@ -10,6 +10,7 @@ import pulumi_aws as aws
 import pulumi_nomad as nomad
 from infra import config
 from infra.autotag import register_auto_tags
+from infra.docker_image_tag import version_tag
 from infra.nomad_job import NomadJob, NomadVars
 from infra.quiet_docker_build_output import quiet_docker_output
 
@@ -21,8 +22,10 @@ def main() -> None:
     stack_name = pulumi.get_stack()
 
     pulumi_config = pulumi.Config()
-    artifacts = pulumi_config.get_object("artifacts")
-    e2e_tag = artifacts and artifacts.get("e2e-tests")
+    artifacts = pulumi_config.get_object("artifacts") or {}
+    version_tag_alias = lambda key: version_tag(
+        key, artifacts, require_artifact=(not config.LOCAL_GRAPL)
+    )
 
     quiet_docker_output()
 
@@ -58,7 +61,7 @@ def main() -> None:
         "_aws_endpoint": grapl_stack.aws_endpoint,
         "aws_region": aws.get_region().name,
         "deployment_name": grapl_stack.deployment_name,
-        "e2e_tests_tag": e2e_tag,
+        "e2e_tests_tag": version_tag_alias("e2e-tests"),
         "schema_properties_table_name": grapl_stack.schema_properties_table_name,
         "sysmon_log_bucket": grapl_stack.sysmon_log_bucket,
         "schema_table_name": grapl_stack.schema_table_name,
@@ -86,7 +89,11 @@ def main() -> None:
             "docker_user": os.environ["DOCKER_USER"],
             "grapl_root": os.environ["GRAPL_ROOT"],
             "_kafka_endpoint": grapl_stack.kafka_endpoint,
+            "python_integration_tests_tag": version_tag_alias(
+                "python-integration-tests"
+            ),
             "_redis_endpoint": grapl_stack.redis_endpoint,
+            "rust_integration_tests_tag": version_tag_alias("rust-integration-tests"),
             "schema_properties_table_name": grapl_stack.schema_properties_table_name,
             "test_user_name": grapl_stack.test_user_name,
         }

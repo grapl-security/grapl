@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from typing import Set
+from typing import Mapping, Set
 
 from typing_extensions import Final
 
@@ -23,6 +23,7 @@ from infra.bucket import Bucket
 from infra.cache import Cache
 from infra.consul_acl_policies import ConsulAclPolicies
 from infra.consul_intentions import ConsulIntentions
+from infra.docker_image_tag import version_tag
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
 from infra.grapl_consul_acls import GraplConsulAcls
 
@@ -44,6 +45,27 @@ import pulumi
 
 def _get_subset(inputs: NomadVars, subset: Set[str]) -> NomadVars:
     return {k: inputs[k] for k in subset}
+
+
+def grapl_core_docker_image_tags(
+    artifacts: Mapping[str, str], require_artifact: bool = False
+) -> NomadVars:
+    # partial apply some repeated args
+    version_tag_alias = lambda key: version_tag(key, artifacts, require_artifact)
+
+    return dict(
+        analyzer_dispatcher_tag=version_tag_alias("analyzer-dispatcher"),
+        analyzer_executor_tag=version_tag_alias("analyzer-executor"),
+        dgraph_tag="latest",
+        engagement_creator_tag=version_tag_alias("engagement-creator"),
+        graph_merger_tag=version_tag_alias("graph-merger"),
+        graphql_endpoint_tag=version_tag_alias("graphql-endpoint"),
+        model_plugin_deployer_tag=version_tag_alias("model-plugin-deployer"),
+        node_identifier_tag=version_tag_alias("node-identifier"),
+        osquery_generator_tag=version_tag_alias("osquery-generator"),
+        sysmon_generator_tag=version_tag_alias("sysmon-generator"),
+        web_ui_tag=version_tag_alias("grapl-web-ui"),
+    )
 
 
 def main() -> None:
@@ -203,6 +225,7 @@ def main() -> None:
             vars=dict(
                 **grapl_core_job_vars_inputs,
                 **nomad_inputs,
+                **grapl_core_docker_image_tags({}),
             ),
         )
 
@@ -214,18 +237,20 @@ def main() -> None:
 
         provision_vars = _get_subset(
             dict(
+                provisioner_tag=version_tag("provisioner", {}, require_artifact=False),
                 **grapl_core_job_vars_inputs,
                 **nomad_inputs,
             ),
             {
-                "_aws_endpoint",
                 "aws_access_key_id",
                 "aws_access_key_secret",
+                "_aws_endpoint",
                 "aws_region",
                 "deployment_name",
+                "provisioner_tag",
                 "rust_log",
-                "schema_table_name",
                 "schema_properties_table_name",
+                "schema_table_name",
                 "test_user_name",
                 "user_auth_table",
             },
@@ -325,19 +350,9 @@ def main() -> None:
             container_repo="raw/",
             # TODO: consider replacing with the previous per-service `configurable_envvars`
             rust_log="DEBUG",
-            # Build Tags. We use per service tags so we can update services independently
-            analyzer_dispatcher_tag=artifacts["analyzer-dispatcher"],
-            analyzer_executor_tag=artifacts["analyzer-executor"],
-            dgraph_tag="latest",
-            engagement_creator_tag=artifacts["engagement-creator"],
-            graph_merger_tag=artifacts["graph-merger"],
-            graphql_endpoint_tag=artifacts["graphql-endpoint"],
-            model_plugin_deployer_tag=artifacts["model-plugin-deployer"],
-            node_identifier_tag=artifacts["node-identifier"],
-            osquery_generator_tag=artifacts["osquery-generator"],
-            sysmon_generator_tag=artifacts["sysmon-generator"],
-            web_ui_tag=artifacts["grapl-web-ui"],
             **nomad_inputs,
+            # Build Tags. We use per service tags so we can update services independently
+            **grapl_core_docker_image_tags(artifacts, require_artifact=True),
         )
 
         nomad_grapl_core = NomadJob(
@@ -362,7 +377,9 @@ def main() -> None:
                 container_repo="raw/",
                 # TODO: consider replacing with the previous per-service `configurable_envvars`
                 rust_log="DEBUG",
-                provisioner_tag=artifacts["provisioner"],
+                provisioner_tag=version_tag(
+                    "provisioner", artifacts, require_artifact=True
+                ),
                 **nomad_inputs,
             ),
             {

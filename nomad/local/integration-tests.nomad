@@ -71,6 +71,16 @@ variable "grapl_root" {
   description = "Where to find the Grapl repo on the host OS (where Nomad runs)."
 }
 
+variable "python_integration_tests_tag" {
+  type        = string
+  description = "The tagged version of the python-integration-tests we should deploy."
+}
+
+variable "rust_integration_tests_tag" {
+  type        = string
+  description = "The tagged version of the rust-integration-tests we should deploy."
+}
+
 locals {
   log_level = "DEBUG"
 
@@ -145,7 +155,7 @@ job "integration-tests" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/${var.container_repo}rust-integration-tests:dev"
+        image = "${var.container_registry}grapl/${var.container_repo}rust-integration-tests:${var.rust_integration_tests_tag}"
       }
 
       # This writes an env file that gets read by the task automatically
@@ -213,7 +223,7 @@ job "integration-tests" {
       user   = var.docker_user
 
       config {
-        image = "${var.container_registry}grapl/${var.container_repo}python-integration-tests:dev"
+        image = "${var.container_registry}grapl/${var.container_repo}python-integration-tests:${var.python_integration_tests_tag}"
         # Pants caches requirements per-user. So when we run a Docker container
         # with the host's userns, this lets us reuse the pants cache.
         # (This descreases runtime on my personal laptop from 390s to 190s)
