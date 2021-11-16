@@ -2,16 +2,10 @@
 # https://discuss.hashicorp.com/t/best-practices-for-testing-against-services-in-nomad-consul-connect/29022
 # We'll submit integration tests to Nomad as 
 # 
-variable "container_registry" {
+variable "container_repository" {
   type        = string
   default     = ""
-  description = "The container registry in which we can find Grapl services. Requires a trailing /"
-}
-
-variable "container_repo" {
-  type        = string
-  default     = ""
-  description = "The container repo inside the registry in which we can find Grapl services. Requires a trailing / if not empty string"
+  description = "The container repository in which we can find Grapl services. Requires a trailing /"
 }
 
 variable "aws_region" {
@@ -155,7 +149,7 @@ job "integration-tests" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/${var.container_repo}rust-integration-tests:${var.rust_integration_tests_tag}"
+        image = "${var.container_repository}rust-integration-tests:${var.rust_integration_tests_tag}"
       }
 
       # This writes an env file that gets read by the task automatically
@@ -223,7 +217,7 @@ job "integration-tests" {
       user   = var.docker_user
 
       config {
-        image = "${var.container_registry}grapl/${var.container_repo}python-integration-tests:${var.python_integration_tests_tag}"
+        image = "${var.container_repository}python-integration-tests:${var.python_integration_tests_tag}"
         # Pants caches requirements per-user. So when we run a Docker container
         # with the host's userns, this lets us reuse the pants cache.
         # (This descreases runtime on my personal laptop from 390s to 190s)

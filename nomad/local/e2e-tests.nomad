@@ -2,10 +2,10 @@
 # https://discuss.hashicorp.com/t/best-practices-for-testing-against-services-in-nomad-consul-connect/29022
 # We'll submit integration tests to Nomad as 
 # 
-variable "container_registry" {
+variable "container_repository" {
   type        = string
   default     = ""
-  description = "The container registry in which we can find Grapl services. Requires a trailing /"
+  description = "The container repository in which we can find Grapl services. Requires a trailing /"
 }
 
 variable "e2e_tests_tag" {
@@ -135,7 +135,7 @@ job "e2e-tests" {
       driver = "docker"
 
       config {
-        image      = "${var.container_registry}grapl/e2e-tests:${var.e2e_tests_tag}"
+        image      = "${var.container_repository}e2e-tests:${var.e2e_tests_tag}"
         entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
         command = trimspace(<<EOF
 graplctl upload analyzer --analyzer_main_py ./etc/local_grapl/suspicious_svchost/main.py
@@ -179,7 +179,7 @@ EOF
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/e2e-tests:${var.e2e_tests_tag}"
+        image = "${var.container_repository}e2e-tests:${var.e2e_tests_tag}"
       }
 
       # This writes an env file that gets read by the task automatically

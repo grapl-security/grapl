@@ -3,16 +3,10 @@ variable "rust_log" {
   description = "Controls the logging behavior of Rust-based services."
 }
 
-variable "container_registry" {
+variable "container_repository" {
   type        = string
   default     = ""
   description = "The container registry in which we can find Grapl services. Requires a trailing / if not empty string"
-}
-
-variable "container_repo" {
-  type        = string
-  default     = ""
-  description = "The container repo inside the registry in which we can find Grapl services. Requires a trailing / if not empty string"
 }
 
 variable "aws_access_key_id" {
@@ -626,7 +620,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/${var.container_repo}graph-merger:${var.graph_merger_tag}"
+        image = "${var.container_repository}graph-merger:${var.graph_merger_tag}"
       }
 
       # This writes an env files that gets read by nomad automatically
@@ -682,7 +676,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/${var.container_repo}node-identifier:${var.node_identifier_tag}"
+        image = "${var.container_repository}node-identifier:${var.node_identifier_tag}"
       }
 
       template {
@@ -722,7 +716,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/${var.container_repo}node-identifier-retry:${var.node_identifier_tag}"
+        image = "${var.container_repository}node-identifier-retry:${var.node_identifier_tag}"
       }
 
       template {
@@ -757,7 +751,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/${var.container_repo}analyzer-dispatcher:${var.analyzer_dispatcher_tag}"
+        image = "${var.container_repository}analyzer-dispatcher:${var.analyzer_dispatcher_tag}"
       }
 
       template {
@@ -796,7 +790,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/${var.container_repo}analyzer-executor:${var.analyzer_executor_tag}"
+        image = "${var.container_repository}analyzer-executor:${var.analyzer_executor_tag}"
       }
 
       template {
@@ -855,7 +849,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/${var.container_repo}engagement-creator:${var.engagement_creator_tag}"
+        image = "${var.container_repository}engagement-creator:${var.engagement_creator_tag}"
       }
 
       template {
@@ -908,7 +902,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/${var.container_repo}graphql-endpoint:${var.graphql_endpoint_tag}"
+        image = "${var.container_repository}graphql-endpoint:${var.graphql_endpoint_tag}"
         ports = ["graphql-endpoint-port"]
       }
 
@@ -965,7 +959,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/${var.container_repo}model-plugin-deployer:${var.model_plugin_deployer_tag}"
+        image = "${var.container_repository}model-plugin-deployer:${var.model_plugin_deployer_tag}"
         ports = ["model-plugin-deployer"]
       }
 
@@ -997,7 +991,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/${var.container_repo}grapl-web-ui:${var.web_ui_tag}"
+        image = "${var.container_repository}grapl-web-ui:${var.web_ui_tag}"
         ports = ["web-ui-port"]
       }
 
@@ -1047,7 +1041,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/${var.container_repo}sysmon-generator:${var.sysmon_generator_tag}"
+        image = "${var.container_repository}sysmon-generator:${var.sysmon_generator_tag}"
       }
 
       template {
@@ -1077,7 +1071,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/${var.container_repo}osquery-generator:${var.osquery_generator_tag}"
+        image = "${var.container_repository}osquery-generator:${var.osquery_generator_tag}"
       }
 
       template {
