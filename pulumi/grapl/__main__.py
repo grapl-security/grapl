@@ -13,10 +13,6 @@ import pulumi_consul as consul
 import pulumi_nomad as nomad
 from infra import config, dynamodb, emitter
 from infra.alarms import OpsAlarms
-
-# TODO: temporarily disabled until we can reconnect the ApiGateway to the new
-# web UI.
-# from infra.api import Api
 from infra.api_gateway import ApiGateway
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
