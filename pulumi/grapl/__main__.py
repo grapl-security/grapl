@@ -1,6 +1,7 @@
 import sys
+from copy import deepcopy
 from pathlib import Path
-from typing import Mapping, Set
+from typing import Any, Mapping, MutableMapping, Optional, Set, cast
 
 from typing_extensions import Final
 
@@ -11,6 +12,7 @@ import os
 import pulumi_aws as aws
 import pulumi_consul as consul
 import pulumi_nomad as nomad
+import requests
 from infra import config, dynamodb, emitter
 from infra.alarms import OpsAlarms
 
@@ -39,6 +41,13 @@ from infra.quiet_docker_build_output import quiet_docker_output
 # from infra.secret import JWTSecret, TestUserPassword
 from infra.secret import TestUserPassword
 from infra.service_queue import ServiceQueue
+from pulumi.dynamic import (
+    CreateResult,
+    DiffResult,
+    Resource,
+    ResourceProvider,
+    UpdateResult,
+)
 
 import pulumi
 
@@ -66,6 +75,88 @@ def grapl_core_docker_image_tags(
         sysmon_generator_tag=version_tag_alias("sysmon-generator"),
         web_ui_tag=version_tag_alias("grapl-web-ui"),
     )
+
+
+# Dynamic Resource Provider Notes
+########################################################################
+# Dynamic resource providers in Python apparently *must* be defined in
+# the __main__.py file due to problems in serializing the
+# implementations.
+#
+# Additionally, despite the documented suggestion to define resource
+# inputs using Python classes, this does not appear to work (again,
+# due to serialization issues). Instead, we can use plain Python
+# dictionaries. Not ideal, but it has the benefit of actually working.
+class ConsulAclBootstrap(Resource):
+    def __init__(
+        self,
+        name: str,
+        opts: Optional[pulumi.ResourceOptions] = None,
+    ):
+        consul_config = pulumi.Config("consul")
+        super().__init__(
+            ConsulAclBootstrapProvider(),
+            name,
+            {
+                "consul_address": consul_config.require("address"),
+            },
+            opts,
+        )
+
+
+class ConsulAclBootstrapProvider(ResourceProvider):
+    def create(self, inputs: Mapping[str, Any]) -> CreateResult:
+
+        response = requests.put(f"{inputs['consul_address']}/v1/acl/bootstrap")
+        if response.status_code == requests.codes.ok:
+            accessor_id = response.json()["AccessorID"]
+            secret_id = response.json()["SecretID"]
+        else:
+            response.raise_for_status()
+
+        # As is customary in Pulumi, all inputs are available as
+        # outputs (this must include our injected Vault address and
+        # namespace values, which will be required when we try to
+        # delete the resource).
+        #
+        outs = cast(MutableMapping[str, Any], deepcopy(inputs))
+        # ... plus the accessor id and secret token
+        outs["id"] = secret_id
+        outs["accessor_id"] = accessor_id
+        outs["secret_token"] = secret_id
+        # For some reason accessor_id and secret_token aren't showing up when exported.
+        # TODO mark secret_token as a secret
+        return CreateResult(id_=secret_id, outs=outs)
+
+    def delete(self, id: str, props: Mapping[str, Any]) -> None:
+        pass
+
+    # The function that determines if an existing resource whose inputs were
+    # modified needs to be updated or entirely replaced
+    def diff(self, id, old_inputs, new_inputs):
+        replaces = []
+        if old_inputs["accessor_id"] != new_inputs["accessor_id"]:
+            replaces.append("accessor_id")
+
+        return DiffResult(
+            # If the old and new inputs don't match, the resource needs to be updated/replaced
+            changes=old_inputs != new_inputs,
+            # If the replaces[] list is empty, nothing important was changed, and we do not have to
+            # replace the resource
+            replaces=replaces,
+            # An optional list of inputs that are always constant
+            stables=None,
+            # The existing resource is deleted before the new one is created
+            delete_before_replace=True,
+        )
+
+    def update(
+        self, _id: str, olds: Mapping[str, Any], _news: Mapping[str, Any]
+    ) -> UpdateResult:
+        """
+        This is a no-op, but required to get around https://github.com/pulumi/pulumi/issues/7809.
+        """
+        return UpdateResult(outs=olds)
 
 
 def main() -> None:
@@ -200,11 +291,27 @@ def main() -> None:
 
         # This does not use a custom Provider since it will use either a consul:address set in the config or default to
         # http://localhost:8500. This also applies to the NomadJobs defined for LOCAL_GRAPL.
-        consul_acl_policies = ConsulAclPolicies(
-            "grapl", acl_directory=Path("../consul-acl-policies").resolve()
+        bootstrap = ConsulAclBootstrap("consul-acl-bootstrap")
+        pulumi.export("bootstrap", bootstrap)
+        pulumi.export("bootstrap_token", bootstrap.id)
+
+        consul_provider = consul.Provider(
+            "consul",
+            address=pulumi.Config("consul").get("address"),
+            token=bootstrap.id,
         )
 
-        grapl_acls = GraplConsulAcls("grapl", policies=consul_acl_policies.policies)
+        consul_acl_policies = ConsulAclPolicies(
+            "grapl",
+            acl_directory=Path("../consul-acl-policies").resolve(),
+            opts=pulumi.ResourceOptions(provider=consul_provider),
+        )
+
+        grapl_acls = GraplConsulAcls(
+            "grapl",
+            policies=consul_acl_policies.policies,
+            opts=pulumi.ResourceOptions(provider=consul_provider),
+        )
         pulumi.export("ui_read_only_token", grapl_acls.ui_read_only_token.id)
         pulumi.export("ui_read_write_token", grapl_acls.ui_read_write_token.id)
         pulumi.export(
@@ -216,7 +323,9 @@ def main() -> None:
             # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
             # when they update nomad configs
             intention_directory=Path("../../nomad/consul-intentions").resolve(),
-            opts=pulumi.ResourceOptions(depends_on=grapl_acls),
+            opts=pulumi.ResourceOptions(
+                depends_on=grapl_acls, provider=consul_provider
+            ),
         )
 
         nomad_grapl_core = NomadJob(

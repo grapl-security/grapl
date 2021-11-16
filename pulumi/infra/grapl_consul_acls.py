@@ -23,6 +23,7 @@ class GraplConsulAcls(pulumi.ComponentResource):
             name="ui-read-only",
             description="Allow users to use the consul UI with read-only permissions",
             policies=[policies["ui-read-only"].id],
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
         ui_rw_role = consul.AclRole(
@@ -30,6 +31,7 @@ class GraplConsulAcls(pulumi.ComponentResource):
             name="ui-read-write",
             description="Allow users to use the consul UI with write permissions",
             policies=[policies["ui-read-write"].id],
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
         role_consul_agent = consul.AclRole(
@@ -37,6 +39,7 @@ class GraplConsulAcls(pulumi.ComponentResource):
             name="consul-agent",
             description="Role for consul agents, focused on nomad agents",
             policies=[policies["consul-agent"].id],
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
         # TODO decide on expiration_times
@@ -44,18 +47,21 @@ class GraplConsulAcls(pulumi.ComponentResource):
             f"{name}-ui-read-only",
             description="Token for full read access to the UI",
             roles=[ui_ro_role.name],
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
         self.ui_read_write_token = consul.AclToken(
             f"{name}-ui-read-write",
             description="Token for write access to the UI",
             roles=[ui_rw_role.name],
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
         self.default_consul_agent_token = consul.AclToken(
             f"{name}-default-consul-agent",
             description="Default token for consul agents",
             roles=[role_consul_agent.name],
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
         # Attach ACL UI RO to the anonymous token for convenience
@@ -63,6 +69,7 @@ class GraplConsulAcls(pulumi.ComponentResource):
             f"{name}-attach-to-anon-token",
             role=ui_ro_role.name,
             token_id=self.ANONYMOUS_TOKEN_ID,
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
         self.register_outputs({})
