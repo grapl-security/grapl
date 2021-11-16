@@ -216,7 +216,7 @@ def main() -> None:
             # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
             # when they update nomad configs
             intention_directory=Path("../../nomad/consul-intentions").resolve(),
-            opts=pulumi.ResourceOptions(depends_on=grapl_acls)
+            opts=pulumi.ResourceOptions(depends_on=grapl_acls),
         )
 
         nomad_grapl_core = NomadJob(
@@ -307,14 +307,14 @@ def main() -> None:
         artifacts = pulumi_config.require_object("artifacts")
 
         # Set custom provider with the address set
-        #consul_provider = get_hashicorp_provider_address(consul, "consul", consul_stack)
+        # consul_provider = get_hashicorp_provider_address(consul, "consul", consul_stack)
         nomad_provider = get_hashicorp_provider_address(
             nomad, "nomad", nomad_server_stack
         )
         consul_provider = consul.Provider(
             "consul",
             address=pulumi.Config("consul").get("address"),
-            token=pulumi.Config("consul").get("token")
+            token=pulumi.Config("consul").get("token"),
         )
 
         consul_acl_policies = ConsulAclPolicies(
@@ -339,7 +339,9 @@ def main() -> None:
             # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
             # when they update nomad configs
             intention_directory=Path("../../nomad/consul-intentions").resolve(),
-            opts=pulumi.ResourceOptions(provider=consul_provider, depends_on=[grapl_acls]),
+            opts=pulumi.ResourceOptions(
+                provider=consul_provider, depends_on=[grapl_acls]
+            ),
         )
 
         grapl_core_job_vars: Final[NomadVars] = dict(
