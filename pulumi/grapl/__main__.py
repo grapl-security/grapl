@@ -417,14 +417,14 @@ def main() -> None:
         artifacts = pulumi_config.require_object("artifacts")
 
         # Set custom provider with the address set
-        # consul_provider = get_hashicorp_provider_address(consul, "consul", consul_stack)
+        consul_provider = get_hashicorp_provider_address(
+            consul,
+            "consul",
+            consul_stack,
+            {"token": pulumi.Config("consul").get("token")},
+        )
         nomad_provider = get_hashicorp_provider_address(
             nomad, "nomad", nomad_server_stack
-        )
-        consul_provider = consul.Provider(
-            "consul",
-            address=pulumi.Config("consul").get("address"),
-            token=pulumi.Config("consul").get("token"),
         )
 
         consul_acl_policies = ConsulAclPolicies(
