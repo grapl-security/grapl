@@ -135,7 +135,7 @@ class ConsulAclBootstrapProvider(ResourceProvider):
     # modified needs to be updated or entirely replaced
     def diff(
         self, id: str, old_inputs: Mapping[str, Any], new_inputs: Mapping[str, Any]
-    ):
+    ) -> DiffResult:
         replaces = []
         if old_inputs["accessor_id"] != new_inputs["accessor_id"]:
             replaces.append("accessor_id")
@@ -295,7 +295,6 @@ def main() -> None:
         # http://localhost:8500. This also applies to the NomadJobs defined for LOCAL_GRAPL.
         bootstrap = ConsulAclBootstrap("consul-acl-bootstrap")
         pulumi.export("bootstrap", bootstrap)
-        pulumi.export("bootstrap_token", bootstrap.id)
 
         consul_provider = consul.Provider(
             "consul",
