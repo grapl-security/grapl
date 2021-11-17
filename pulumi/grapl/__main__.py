@@ -93,6 +93,7 @@ class ConsulAclBootstrap(Resource):
         name: str,
         opts: Optional[pulumi.ResourceOptions] = None,
     ):
+
         consul_config = pulumi.Config("consul")
         super().__init__(
             ConsulAclBootstrapProvider(),
@@ -106,17 +107,23 @@ class ConsulAclBootstrap(Resource):
 
 
 class ConsulAclBootstrapProvider(ResourceProvider):
+    # The consul acl bootstrapping can only be run once, after that it returns a 403.
+    # If this is running on a previously bootstrapped cluster, we require a token be configured and create a fake id
     def create(self, inputs: Mapping[str, Any]) -> CreateResult:
-
         response = requests.put(f"{inputs['consul_address']}/v1/acl/bootstrap")
         if response.status_code == requests.codes.ok:
+            bootstrap_id = response.json()["AccessorID"]
             secret_id = response.json()["SecretID"]
         elif response.status_code == requests.codes.forbidden:
             # We've already run the bootstrap process so instead let's grab the token from the config
-            if inputs['secret_token'] is not None:
-                secret_id = inputs['secret_token']
+            if inputs["secret_token"] is not None:
+                secret_id = inputs["secret_token"]
             else:
-                raise Exception("If Consul ACL Bootstrapping is complete you must set consul:token with the token")
+                raise Exception(
+                    "If Consul ACL Bootstrapping is complete you must set consul:token with the token"
+                )
+            # Create a fake static id since we don't have the accessor_id available
+            bootstrap_id = "fake-id-since-previously-bootstrapped"
         else:
             response.raise_for_status()
 
@@ -127,10 +134,9 @@ class ConsulAclBootstrapProvider(ResourceProvider):
         #
         outs = cast(MutableMapping[str, Any], deepcopy(inputs))
         # ... plus the secret token
-        outs["id"] = secret_id
+        outs["id"] = bootstrap_id
         outs["secret_token"] = secret_id
-        # TODO mark secret_token as a secret
-        return CreateResult(id_=secret_id, outs=outs)
+        return CreateResult(id_=bootstrap_id, outs=outs)
 
     def delete(self, id: str, props: Mapping[str, Any]) -> None:
         pass
@@ -140,9 +146,9 @@ class ConsulAclBootstrapProvider(ResourceProvider):
     def diff(
         self, id: str, old_inputs: Mapping[str, Any], new_inputs: Mapping[str, Any]
     ) -> DiffResult:
-        '''
+        """
         This is a no-op since consul acl bootstrapping can only be run once
-        '''
+        """
         return DiffResult(
             # If the old and new inputs don't match, the resource needs to be updated/replaced
             changes=old_inputs != new_inputs,
@@ -296,12 +302,17 @@ def main() -> None:
 
         # This does not use a custom Provider since it will use either a consul:address set in the config or default to
         # http://localhost:8500. This also applies to the NomadJobs defined for LOCAL_GRAPL.
-        bootstrap = ConsulAclBootstrap("consul-acl-bootstrap")
+        bootstrap = ConsulAclBootstrap(
+            name="consul-acl-bootstrap",
+            opts=pulumi.ResourceOptions(additional_secret_outputs=["secret_token"]),
+        )
+        pulumi.export("bootstrap", bootstrap)
+        pulumi.export("bootstrapid", bootstrap.id)
 
         consul_provider = consul.Provider(
             "consul",
             address=pulumi.Config("consul").get("address"),
-            token=bootstrap.id,
+            token=bootstrap.secret_token,
         )
 
         consul_acl_policies = ConsulAclPolicies(
@@ -423,12 +434,13 @@ def main() -> None:
             nomad, "nomad", nomad_server_stack
         )
 
-        bootstrap = ConsulAclBootstrap("consul-acl-bootstrap",)
+        bootstrap = ConsulAclBootstrap(
+            "consul-acl-bootstrap",
+            pulumi.ResourceOptions(additional_secret_outputs=["secret_token"]),
+        )
+
         consul_provider_with_token = get_hashicorp_provider_address(
-            consul,
-            "consul",
-            consul_stack,
-            {"token": bootstrap.id}
+            consul, "consul", consul_stack, {"token": bootstrap.secret_token}
         )
 
         consul_acl_policies = ConsulAclPolicies(
