@@ -34,7 +34,7 @@ class GraplConsulAcls(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        role_consul_agent = consul.AclRole(
+        consul_agent_role = consul.AclRole(
             f"{name}-consul-agent",
             name="consul-agent",
             description="Role for consul agents, focused on nomad agents",
@@ -60,14 +60,23 @@ class GraplConsulAcls(pulumi.ComponentResource):
         self.default_consul_agent_token = consul.AclToken(
             f"{name}-default-consul-agent",
             description="Default token for consul agents",
-            roles=[role_consul_agent.name],
+            roles=[consul_agent_role.name],
             opts=pulumi.ResourceOptions(parent=self),
         )
 
         # Attach ACL UI RO to the anonymous token for convenience
         consul.AclTokenRoleAttachment(
-            f"{name}-attach-to-anon-token",
+            f"{name}-attach-ui-ro-to-anon-token",
             role=ui_ro_role.name,
+            token_id=self.ANONYMOUS_TOKEN_ID,
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        # Ugly Hack Warning: Since there's no api to assign a token to a consul agent, we assign to the anonymous token
+        # for the moment
+        consul.AclTokenRoleAttachment(
+            f"{name}-attach-consul-agent-to-anon-token",
+            role=consul_agent_role.name,
             token_id=self.ANONYMOUS_TOKEN_ID,
             opts=pulumi.ResourceOptions(parent=self),
         )

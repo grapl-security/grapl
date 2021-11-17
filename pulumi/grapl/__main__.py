@@ -133,7 +133,9 @@ class ConsulAclBootstrapProvider(ResourceProvider):
 
     # The function that determines if an existing resource whose inputs were
     # modified needs to be updated or entirely replaced
-    def diff(self, id, old_inputs, new_inputs):
+    def diff(
+        self, id: str, old_inputs: Mapping[str, Any], new_inputs: Mapping[str, Any]
+    ):
         replaces = []
         if old_inputs["accessor_id"] != new_inputs["accessor_id"]:
             replaces.append("accessor_id")
