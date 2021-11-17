@@ -99,6 +99,7 @@ class ConsulAclBootstrap(Resource):
             name,
             {
                 "consul_address": consul_config.require("address"),
+                "secret_token": consul_config.get("token"),
             },
             opts,
         )
@@ -109,8 +110,13 @@ class ConsulAclBootstrapProvider(ResourceProvider):
 
         response = requests.put(f"{inputs['consul_address']}/v1/acl/bootstrap")
         if response.status_code == requests.codes.ok:
-            accessor_id = response.json()["AccessorID"]
             secret_id = response.json()["SecretID"]
+        elif response.status_code == requests.codes.forbidden:
+            # We've already run the bootstrap process so instead let's grab the token from the config
+            if inputs['secret_token'] is not None:
+                secret_id = inputs['secret_token']
+            else:
+                raise Exception("If Consul ACL Bootstrapping is complete you must set consul:token with the token")
         else:
             response.raise_for_status()
 
@@ -120,11 +126,9 @@ class ConsulAclBootstrapProvider(ResourceProvider):
         # delete the resource).
         #
         outs = cast(MutableMapping[str, Any], deepcopy(inputs))
-        # ... plus the accessor id and secret token
+        # ... plus the secret token
         outs["id"] = secret_id
-        outs["accessor_id"] = accessor_id
         outs["secret_token"] = secret_id
-        # For some reason accessor_id and secret_token aren't showing up when exported.
         # TODO mark secret_token as a secret
         return CreateResult(id_=secret_id, outs=outs)
 
@@ -136,16 +140,15 @@ class ConsulAclBootstrapProvider(ResourceProvider):
     def diff(
         self, id: str, old_inputs: Mapping[str, Any], new_inputs: Mapping[str, Any]
     ) -> DiffResult:
-        replaces = []
-        if old_inputs["accessor_id"] != new_inputs["accessor_id"]:
-            replaces.append("accessor_id")
-
+        '''
+        This is a no-op since consul acl bootstrapping can only be run once
+        '''
         return DiffResult(
             # If the old and new inputs don't match, the resource needs to be updated/replaced
             changes=old_inputs != new_inputs,
             # If the replaces[] list is empty, nothing important was changed, and we do not have to
-            # replace the resource
-            replaces=replaces,
+            # replace the resource.
+            replaces=[],
             # An optional list of inputs that are always constant
             stables=None,
             # The existing resource is deleted before the new one is created
@@ -294,7 +297,6 @@ def main() -> None:
         # This does not use a custom Provider since it will use either a consul:address set in the config or default to
         # http://localhost:8500. This also applies to the NomadJobs defined for LOCAL_GRAPL.
         bootstrap = ConsulAclBootstrap("consul-acl-bootstrap")
-        pulumi.export("bootstrap", bootstrap)
 
         consul_provider = consul.Provider(
             "consul",
@@ -417,26 +419,28 @@ def main() -> None:
         artifacts = pulumi_config.require_object("artifacts")
 
         # Set custom provider with the address set
-        consul_provider = get_hashicorp_provider_address(
+        nomad_provider = get_hashicorp_provider_address(
+            nomad, "nomad", nomad_server_stack
+        )
+
+        bootstrap = ConsulAclBootstrap("consul-acl-bootstrap",)
+        consul_provider_with_token = get_hashicorp_provider_address(
             consul,
             "consul",
             consul_stack,
-            {"token": pulumi.Config("consul").get("token")},
-        )
-        nomad_provider = get_hashicorp_provider_address(
-            nomad, "nomad", nomad_server_stack
+            {"token": bootstrap.id}
         )
 
         consul_acl_policies = ConsulAclPolicies(
             "grapl",
             acl_directory=Path("../consul-acl-policies").resolve(),
-            opts=pulumi.ResourceOptions(provider=consul_provider),
+            opts=pulumi.ResourceOptions(provider=consul_provider_with_token),
         )
 
         grapl_acls = GraplConsulAcls(
             "grapl",
             policies=consul_acl_policies.policies,
-            opts=pulumi.ResourceOptions(provider=consul_provider),
+            opts=pulumi.ResourceOptions(provider=consul_provider_with_token),
         )
         pulumi.export("ui_read_only_token", grapl_acls.ui_read_only_token.id)
         pulumi.export("ui_read_write_token", grapl_acls.ui_read_write_token.id)
@@ -450,7 +454,7 @@ def main() -> None:
             # when they update nomad configs
             intention_directory=Path("../../nomad/consul-intentions").resolve(),
             opts=pulumi.ResourceOptions(
-                provider=consul_provider, depends_on=[grapl_acls]
+                provider=consul_provider_with_token, depends_on=[grapl_acls]
             ),
         )
 

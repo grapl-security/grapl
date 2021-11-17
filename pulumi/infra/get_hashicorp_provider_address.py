@@ -9,7 +9,7 @@ def get_hashicorp_provider_address(
     pulumi_class: Any,
     provider_type: str,
     stack: pulumi.StackReference,
-    additional_arguments: Optional[dict] = None,
+    additional_arguments: Optional[dict] = dict(),
 ) -> Any:
     """
     This supports getting a Provider object with an explicit address set.
