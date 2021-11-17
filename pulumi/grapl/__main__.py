@@ -88,6 +88,10 @@ def grapl_core_docker_image_tags(
 # due to serialization issues). Instead, we can use plain Python
 # dictionaries. Not ideal, but it has the benefit of actually working.
 class ConsulAclBootstrap(Resource):
+    id: pulumi.Output[str]
+    consul_address: pulumi.Output[str]
+    secret_token: pulumi.Output[str]
+
     def __init__(
         self,
         name: str,
