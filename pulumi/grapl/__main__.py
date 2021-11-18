@@ -95,16 +95,17 @@ class ConsulAclBootstrap(Resource):
     def __init__(
         self,
         name: str,
+        consul_address: str,
+        secret_token: Optional[str] = None,
         opts: Optional[pulumi.ResourceOptions] = None,
     ):
 
-        consul_config = pulumi.Config("consul")
         super().__init__(
             ConsulAclBootstrapProvider(),
             name,
             {
-                "consul_address": consul_config.require("address"),
-                "secret_token": consul_config.get("token"),
+                "consul_address": consul_address,
+                "secret_token": secret_token,
             },
             opts,
         )
@@ -308,6 +309,9 @@ def main() -> None:
         # http://localhost:8500. This also applies to the NomadJobs defined for LOCAL_GRAPL.
         bootstrap = ConsulAclBootstrap(
             name="consul-acl-bootstrap",
+            consul_address=pulumi.Config("consul").get("address")
+            or "http://localhost:8500",
+            secret_token=pulumi.Config("consul").get("token"),
             opts=pulumi.ResourceOptions(additional_secret_outputs=["secret_token"]),
         )
         pulumi.export("bootstrap", bootstrap)
@@ -435,16 +439,28 @@ def main() -> None:
 
         # Set custom provider with the address set
         nomad_provider = get_hashicorp_provider_address(
-            nomad, "nomad", nomad_server_stack
+            "nomad", nomad, "nomad", nomad_server_stack
+        )
+        consul_provider = get_hashicorp_provider_address(
+            "consul",
+            consul,
+            "consul",
+            consul_stack,
         )
 
         bootstrap = ConsulAclBootstrap(
-            "consul-acl-bootstrap",
-            pulumi.ResourceOptions(additional_secret_outputs=["secret_token"]),
+            name="consul-acl-bootstrap",
+            consul_address=consul_provider.address,
+            secret_token=pulumi.Config("consul").get("token"),
+            opts=pulumi.ResourceOptions(additional_secret_outputs=["secret_token"]),
         )
 
         consul_provider_with_token = get_hashicorp_provider_address(
-            consul, "consul", consul_stack, {"token": bootstrap.secret_token}
+            "consul-with-token",
+            consul,
+            "consul",
+            consul_stack,
+            {"token": bootstrap.secret_token},
         )
 
         consul_acl_policies = ConsulAclPolicies(
