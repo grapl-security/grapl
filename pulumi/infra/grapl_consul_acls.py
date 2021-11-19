@@ -7,6 +7,8 @@ import pulumi
 
 class GraplConsulAcls(pulumi.ComponentResource):
 
+    # The anonymous token is used by anything not logged in with an explicit token (nodes, services, meat users, etc)
+    # See https://www.consul.io/docs/security/acl/acl-system#builtin-tokens
     ANONYMOUS_TOKEN_ID = "00000000-0000-0000-0000-000000000002"
 
     def __init__(

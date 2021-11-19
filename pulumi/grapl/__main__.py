@@ -112,7 +112,9 @@ class ConsulAclBootstrap(Resource):
 
 
 class ConsulAclBootstrapProvider(ResourceProvider):
-    # The consul acl bootstrapping can only be run once, after that it returns a 403.
+    # Consul ACL bootstrapping is required to enable ACL enforcement. When run it generates a "Master Token", which has
+    # full ACL access. See https://www.consul.io/docs/security/acl/acl-system#builtin-tokens
+    # To prevent updates to the master token, bootstrapping can only be run once, after which the api returns a 403.
     # If this is running on a previously bootstrapped cluster, we require a token be configured and create a fake id
     def create(self, inputs: Mapping[str, Any]) -> CreateResult:
         response = requests.put(f"{inputs['consul_address']}/v1/acl/bootstrap")
@@ -133,10 +135,7 @@ class ConsulAclBootstrapProvider(ResourceProvider):
             response.raise_for_status()
 
         # As is customary in Pulumi, all inputs are available as
-        # outputs (this must include our injected Vault address and
-        # namespace values, which will be required when we try to
-        # delete the resource).
-        #
+        # outputs
         outs = cast(MutableMapping[str, Any], deepcopy(inputs))
         # ... plus the secret token
         outs["id"] = bootstrap_id
@@ -145,26 +144,6 @@ class ConsulAclBootstrapProvider(ResourceProvider):
 
     def delete(self, id: str, props: Mapping[str, Any]) -> None:
         pass
-
-    # The function that determines if an existing resource whose inputs were
-    # modified needs to be updated or entirely replaced
-    def diff(
-        self, id: str, old_inputs: Mapping[str, Any], new_inputs: Mapping[str, Any]
-    ) -> DiffResult:
-        """
-        This is a no-op since consul acl bootstrapping can only be run once
-        """
-        return DiffResult(
-            # If the old and new inputs don't match, the resource needs to be updated/replaced
-            changes=old_inputs != new_inputs,
-            # If the replaces[] list is empty, nothing important was changed, and we do not have to
-            # replace the resource.
-            replaces=[],
-            # An optional list of inputs that are always constant
-            stables=None,
-            # The existing resource is deleted before the new one is created
-            delete_before_replace=True,
-        )
 
     def update(
         self, _id: str, olds: Mapping[str, Any], _news: Mapping[str, Any]
