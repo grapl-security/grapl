@@ -50,9 +50,10 @@ steps:
           # NOTE: this assumes that all artifacts mentioned in this
           # file are stored in Cloudsmith!
           download: all_artifacts.json
-      - grapl-security/cloudsmith#v0.1.0:
+      - grapl-security/cloudsmith#v0.1.1:
           promote:
             org: grapl
+            action: move
             from: raw
             to: testing
             packages_file: all_artifacts.json
