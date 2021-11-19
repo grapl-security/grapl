@@ -2,6 +2,7 @@
 
 # Allow the agent to register its own node in the Catalog and update its network coordinates, update node health checks
 # and have write access to its own agent config files.
+# Currently we use a wildcard match via "".
 node "" {
   policy = "write"
 }

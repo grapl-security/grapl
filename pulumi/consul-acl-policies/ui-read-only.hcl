@@ -1,4 +1,6 @@
 # ACL permissions for read-only access to the UI
+
+# "" is a wildcard match.
 service_prefix "" {
   policy = "read"
 }
