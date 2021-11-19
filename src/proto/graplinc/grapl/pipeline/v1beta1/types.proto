@@ -2,23 +2,15 @@ syntax = "proto3";
 
 package graplinc.grapl.pipeline.v1beta1;
 
-// An RFC 4122 UUID, encoded by splitting the 128 bit representation into two 64
-// bit values
-message Uuid {
-  // Least significant bytes
-  fixed64 lsb = 1;
-
-  // Most significant bytes
-  fixed64 msb = 2;
-}
+import "graplinc/common/v1beta1/types.proto";
 
 // Metadata about a specific message, or its context
 message Metadata {
   // A tenant (e.g. a customer) in Grapl
-  Uuid tenant_id = 1;
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
 
   // An operation (e.g. a request) across Grapl services
-  Uuid trace_id = 2;
+  graplinc.common.v1beta1.Uuid trace_id = 2;
 
   // Number of times this message has been retried
   uint32 retry_count = 3;
