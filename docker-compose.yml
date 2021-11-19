@@ -9,7 +9,7 @@ volumes:
 
 services:
   pulumi:
-    image: grapl/local-pulumi:${TAG:-latest}
+    image: local-pulumi:${TAG:-latest}
     entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
     command:
       - |

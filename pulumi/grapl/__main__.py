@@ -306,8 +306,7 @@ def main() -> None:
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
             _redis_endpoint=cache.endpoint,
-            container_registry="docker.cloudsmith.io/",
-            container_repo="raw/",
+            container_repository=f"{config.container_repository()}/",
             # TODO: consider replacing with the previous per-service `configurable_envvars`
             rust_log="DEBUG",
             **nomad_inputs,
@@ -333,8 +332,7 @@ def main() -> None:
             dict(
                 # The vars with a leading underscore indicate that the hcl local version of the variable should be used
                 # instead of the var version.
-                container_registry="docker.cloudsmith.io/",
-                container_repo="raw/",
+                container_repository=f"{config.container_repository()}/",
                 # TODO: consider replacing with the previous per-service `configurable_envvars`
                 rust_log="DEBUG",
                 provisioner_tag=version_tag(
@@ -344,8 +342,7 @@ def main() -> None:
             ),
             {
                 "aws_region",
-                "container_registry",
-                "container_repo",
+                "container_repository",
                 "deployment_name",
                 "provisioner_tag",
                 "rust_log",
