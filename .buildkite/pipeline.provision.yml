@@ -80,7 +80,7 @@ steps:
             - CLOUDSMITH_API_KEY
       - artifacts#v1.4.0:
           download: current_artifacts.json
-      - grapl-security/cloudsmith#v0.1.1:
+      - grapl-security/cloudsmith#v0.1.2:
           promote:
             org: grapl
             action: copy
