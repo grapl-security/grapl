@@ -53,21 +53,12 @@ steps:
   # PULUMI_ACCESS_TOKEN and CLOUDSMITH_API_KEY secrets.
   - label: ":pulumi: Extract current artifacts from stack"
     command:
-      - "pulumi login"
-      - "pulumi config get artifacts --cwd=pulumi/grapl --stack=grapl/testing --json | jq '.objectValue' > current_artifacts.json"
-      # We have to unset the AWS credentials injected by the
-      # asume-role plugin if we're going to subsequently upload the
-      # file to our bucket :(
-      - "unset AWS_ACCESS_KEY_ID"
-      - "unset AWS_SECRET_ACCESS_KEY"
-      - "unset AWS_SESSION_TOKEN"
+      - .buildkite/scripts/extract_artifacts.sh grapl/testing
     plugins:
       - grapl-security/vault-login#v0.1.0
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - PULUMI_ACCESS_TOKEN
-    artifact_paths:
-      - "current_artifacts.json"
     agents:
       queue: "pulumi-staging"
 
