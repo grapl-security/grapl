@@ -211,3 +211,20 @@ def require_artifact(artifact_name: str) -> Any:
             "\nDon't forget to remove artifacts you don't need after running it!"
         )
     return artifact
+
+
+def container_repository() -> Optional[str]:
+    """The repository from which to pull container images from.
+
+    This will be different for different stacks; we promote packages
+    through a series of different registries that mirrors the progress
+    of code through our pipelines.
+
+    The value will be something like
+    `docker.cloudsmith.io/grapl/testing`; to target a specific image
+    in client code, you would append the image name and tag to the
+    return value of this function.
+
+    Not specifying a repository will result in local images being used.
+    """
+    return pulumi.Config().get("container_repository")

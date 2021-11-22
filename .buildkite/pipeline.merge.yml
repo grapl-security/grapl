@@ -6,6 +6,9 @@ env:
 steps:
   - label: ":docker: Build Docker Containers"
     command:
+      # Note: all these containers are uploaded to the `raw`
+      # repository. If they all get built successfully, then we'll
+      # promote them as a group later.
       - ".buildkite/scripts/build_and_upload_containers.sh"
     key: "docker-containers"
     plugins:
@@ -29,6 +32,33 @@ steps:
   - label: "Merge artifacts files"
     command:
       - .buildkite/scripts/merge_artifact_files.sh
+
+  - wait
+
+  # Promote all the artifacts
+  #
+  # We do this before the RC creation because that
+  # triggers a run of the provision pipeline, and we want to make sure
+  # all the artifacts are in place first.
+  - label: ":cloudsmith: Promote artifacts"
+    plugins:
+      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-env#v0.1.0:
+          secrets:
+            - CLOUDSMITH_API_KEY
+      - artifacts#v1.4.0:
+          # NOTE: this assumes that all artifacts mentioned in this
+          # file are stored in Cloudsmith!
+          download: all_artifacts.json
+      - grapl-security/cloudsmith#v0.1.3:
+          promote:
+            org: grapl
+            action: move
+            from: raw
+            to: testing
+            packages_file: all_artifacts.json
+    agents:
+      queue: "artifact-uploaders"
 
   - wait
 

@@ -1,7 +1,7 @@
-variable "container_registry" {
+variable "container_repository" {
   type        = string
   default     = ""
-  description = "The container registry in which we can find Grapl services. Requires a trailing /"
+  description = "The container repository in which we can find Grapl services. Requires a trailing /"
 }
 
 variable "localstack_tag" {
@@ -127,7 +127,7 @@ job "grapl-local-infra" {
 
       config {
         # Once we move to Kafka, we can go back to the non-fork.
-        image = "${var.container_registry}grapl/localstack:${var.localstack_tag}"
+        image = "localstack-grapl-fork:${var.localstack_tag}"
         # Was running into this: https://github.com/localstack/localstack/issues/1349
         memory_hard_limit = 2048
         ports             = ["localstack"]

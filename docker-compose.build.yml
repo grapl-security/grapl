@@ -12,7 +12,7 @@ services:
   ########################################################################
 
   sysmon-generator:
-    image: grapl/sysmon-generator:${TAG:-latest}
+    image: sysmon-generator:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -21,7 +21,7 @@ services:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
   osquery-generator:
-    image: grapl/osquery-generator:${TAG:-latest}
+    image: osquery-generator:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -30,7 +30,7 @@ services:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
   node-identifier:
-    image: grapl/node-identifier:${TAG:-latest}
+    image: node-identifier:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -39,7 +39,7 @@ services:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
   node-identifier-retry:
-    image: grapl/node-identifier-retry:${TAG:-latest}
+    image: node-identifier-retry:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -48,7 +48,7 @@ services:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
   graph-merger:
-    image: grapl/graph-merger:${TAG:-latest}
+    image: graph-merger:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -57,7 +57,7 @@ services:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
   analyzer-dispatcher:
-    image: grapl/analyzer-dispatcher:${TAG:-latest}
+    image: analyzer-dispatcher:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -66,7 +66,7 @@ services:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
   model-plugin-deployer:
-    image: grapl/model-plugin-deployer:${TAG:-latest}
+    image: model-plugin-deployer:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -75,7 +75,7 @@ services:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
   grapl-web-ui:
-    image: grapl/grapl-web-ui:${TAG:-latest}
+    image: grapl-web-ui:${TAG:-latest}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -89,14 +89,14 @@ services:
 
   # should match `pulumi/infra/analyzer_executor.py`'s GraplDockerBuild
   analyzer-executor:
-    image: grapl/analyzer-executor:${TAG:-latest}
+    image: analyzer-executor:${TAG:-latest}
     build:
       context: .
       dockerfile: ./src/python/Dockerfile
       target: analyzer-executor
 
   engagement-creator:
-    image: grapl/engagement-creator:${TAG:-latest}
+    image: engagement-creator:${TAG:-latest}
     build:
       context: .
       dockerfile: ./src/python/Dockerfile
@@ -107,14 +107,14 @@ services:
   ########################################################################
 
   graphql-endpoint:
-    image: grapl/graphql-endpoint:${TAG:-latest}
+    image: graphql-endpoint:${TAG:-latest}
     build:
       context: src/js/graphql_endpoint
       dockerfile: Dockerfile
       target: graphql-endpoint-deploy
 
   notebook:
-    image: grapl/notebook:${TAG:-latest}
+    image: notebook:${TAG:-latest}
     build:
       context: .
       dockerfile: ./src/python/Dockerfile
@@ -125,19 +125,19 @@ services:
   ########################################################################
 
   pulumi:
-    image: grapl/local-pulumi:${TAG:-latest}
+    image: local-pulumi:${TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile.pulumi
 
   localstack:
-    image: grapl/localstack:${TAG:-latest}
+    image: localstack-grapl-fork:${TAG:-latest}
     build:
       context: localstack
       dockerfile: Dockerfile
 
   provisioner:
-    image: grapl/provisioner:${TAG:-latest}
+    image: provisioner:${TAG:-latest}
     build:
       context: .
       dockerfile: ./src/python/Dockerfile

@@ -2,11 +2,6 @@
 
 set -euo pipefail
 
-# TODO:
-# - Build Containers for Fargate services
-# - Upload them to Cloudsmith
-# - Record them as artifacts for subsequent processing
-
 # ISSUES:
 # - How to do this selectively? I only really want to do this if we've
 #   got real changes to build
@@ -20,7 +15,6 @@ source .buildkite/scripts/lib/version.sh
 TAG="$(timestamp_and_sha_version)"
 export TAG
 
-# TODO: This name may change
 readonly CLOUDSMITH_DOCKER_REGISTRY="docker.cloudsmith.io/grapl/raw"
 
 # These are defined in docker-compose.build.yml. There are other
@@ -61,14 +55,11 @@ for service in "${services[@]}"; do
     new_tag="$(cloudsmith_tag "${service}" "${TAG}")"
     echo "--- :docker: Retagging ${service} container to ${new_tag}"
     docker tag \
-        "grapl/${service}:${TAG}" \
+        "${service}:${TAG}" \
         "${new_tag}"
 
     echo "--- :docker: Push ${new_tag}"
     docker push "${new_tag}"
 done
 
-# TODO: Do we want to put the complete container image name in for
-# each service? Perhaps not, particularly if we're going to be
-# promoting containers across repositories
 artifact_json "${TAG}" "${services[@]}" > "$(artifacts_file_for containers)"

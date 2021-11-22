@@ -22,16 +22,10 @@ variable "_aws_endpoint" {
 EOF
 }
 
-variable "container_registry" {
+variable "container_repository" {
   type        = string
   default     = ""
-  description = "The container registry in which we can find Grapl services. Requires a trailing / if not empty string"
-}
-
-variable "container_repo" {
-  type        = string
-  default     = ""
-  description = "The container repo inside the registry in which we can find Grapl services. Requires a trailing / if not empty string"
+  description = "The container repository in which we can find Grapl services. Requires a trailing / if not empty string"
 }
 
 variable "aws_access_key_id" {
@@ -112,7 +106,7 @@ job "grapl-provision" {
       driver = "docker"
 
       config {
-        image = "${var.container_registry}grapl/${var.container_repo}provisioner:${var.provisioner_tag}"
+        image = "${var.container_repository}provisioner:${var.provisioner_tag}"
       }
 
       lifecycle {
