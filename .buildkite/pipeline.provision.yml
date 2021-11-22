@@ -55,6 +55,12 @@ steps:
     command:
       - "pulumi login"
       - "pulumi config get artifacts --cwd=pulumi/grapl --stack=grapl/testing --json | jq '.objectValue' > current_artifacts.json"
+      # We have to unset the AWS credentials injected by the
+      # asume-role plugin if we're going to subsequently upload the
+      # file to our bucket :(
+      - "unset AWS_ACCESS_KEY_ID"
+      - "unset AWS_SECRET_ACCESS_KEY"
+      - "unset AWS_SESSION_TOKEN"
     plugins:
       - grapl-security/vault-login#v0.1.0
       - grapl-security/vault-env#v0.1.0:
