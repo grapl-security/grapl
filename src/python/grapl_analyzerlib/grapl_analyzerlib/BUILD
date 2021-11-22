@@ -1,3 +1,3 @@
-python_library()
+python_sources()
 
 py_typed()

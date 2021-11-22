@@ -1,3 +1,1 @@
-shell_library(
-    sources=["format", "lint"]
-)
+shell_sources(sources=["format", "lint"])

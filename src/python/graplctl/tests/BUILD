@@ -4,6 +4,4 @@ python_tests(
     ]
 )
 
-python_library(
-    name="tests_lib"
-)
+python_sources(name="tests_lib")

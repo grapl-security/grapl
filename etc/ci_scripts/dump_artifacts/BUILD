@@ -1,4 +1,4 @@
-python_library(
+python_sources(
     name="dump_artifacts_lib",
 )
 

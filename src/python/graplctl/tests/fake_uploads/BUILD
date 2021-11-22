@@ -1,3 +1,1 @@
-python_library(
-    sources=[]
-)
+python_sources(sources=[])

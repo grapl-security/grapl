@@ -1,6 +1,4 @@
-python_library(
-    sources=["*.py"]
-)
+python_sources(sources=["*.py"])
 
 pex_binary(
     name="pex",

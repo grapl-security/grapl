@@ -1,5 +1,1 @@
-python_library(
-    dependencies=[
-        "src/proto:graplinc"
-    ]
-)
+python_sources(dependencies=["src/proto:graplinc"])

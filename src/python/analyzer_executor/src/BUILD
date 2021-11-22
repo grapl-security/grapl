@@ -1,9 +1,9 @@
-python_library(
+python_sources(
     name="analyzer_executor",
     dependencies=[
         "./analyzer_executor_lib",
         "./plugins",
-    ]
+    ],
 )
 
 pex_binary(

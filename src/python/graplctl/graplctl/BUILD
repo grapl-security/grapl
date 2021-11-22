@@ -1,7 +1,7 @@
-python_library(
+python_sources(
     name="graplctl_lib",
     dependencies=[
-        'src/python/grapl-common:grapl-common',
+        "src/python/grapl-common:grapl-common",
     ],
 )
 

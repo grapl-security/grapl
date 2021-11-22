@@ -1,4 +1,4 @@
-python_library()
+python_sources()
 
 python_tests(
     name="graphql-endpoint-tests",
@@ -18,5 +18,5 @@ python_tests(
         "IS_LOCAL",
         "MG_ALPHAS",
         "VSC_DEBUGGER_PORT",
-    ]
+    ],
 )
