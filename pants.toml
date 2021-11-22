@@ -1,5 +1,5 @@
 [GLOBAL]
-pants_version = "2.7.1"
+pants_version = "2.8.0"
 backend_packages = [
   "pants.backend.awslambda.python",
   "pants.backend.codegen.protobuf.python",
@@ -22,7 +22,8 @@ build_file_prelude_globs = [
   "pants-plugins/macros.py",
 ]
 
-pants_ignore = [
+pants_ignore=[
+    "!.buildkite"
 ]
 
 plugins = [
@@ -78,7 +79,7 @@ root_patterns = [
   "/src/python/repl",
 ]
 
-[python-setup]
+[python]
 # Use this as a lockfile; speeds up installation of dependencies
 # To update it, see build-support/manage_virtualenv.sh
 requirement_constraints = "3rdparty/python/constraints.txt"
