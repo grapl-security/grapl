@@ -50,7 +50,7 @@ steps:
           # NOTE: this assumes that all artifacts mentioned in this
           # file are stored in Cloudsmith!
           download: all_artifacts.json
-      - grapl-security/cloudsmith#v0.1.1:
+      - grapl-security/cloudsmith#v0.1.2:
           promote:
             org: grapl
             action: move
