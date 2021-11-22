@@ -3,9 +3,9 @@ from __future__ import annotations
 import dataclasses
 import uuid
 
+from graplinc.common.v1beta1.types_pb2 import Uuid as _Uuid
 from graplinc.grapl.pipeline.v1beta1.types_pb2 import Envelope as _Envelope
 from graplinc.grapl.pipeline.v1beta1.types_pb2 import Metadata as _Metadata
-from graplinc.grapl.pipeline.v1beta1.types_pb2 import Uuid as _Uuid
 from python_proto import SerDe
 
 

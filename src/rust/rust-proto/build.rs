@@ -1,3 +1,5 @@
+use std::ffi::OsStr;
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut config = prost_build::Config::new();
     println!("cargo:rerun-if-changed=Cargo.toml");
@@ -8,8 +10,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     change_on_dir("src/")?;
     config.type_attribute(
         ".",
-        "#[derive(Eq, serde_derive::Serialize, serde_derive::Deserialize)]",
+        "#[derive(serde_derive::Serialize, serde_derive::Deserialize)]",
     );
+
+    config.type_attribute(".graplinc.grapl.api.graph.v1beta1", "#[derive(Eq)]");
 
     config.type_attribute(
         ".graplinc.grapl.api.graph.v1beta1.IncrementOnlyIntProp",
@@ -460,15 +464,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "#[builder(default)]",
     );
 
+    let mut paths = Vec::new();
+    get_proto_files("../../proto/graplinc", &mut paths)?;
+
     config
-        .compile_protos(
-            &[
-                "../../proto/graplinc/grapl/api/graph/v1beta1/types.proto",
-                "../../proto/graplinc/grapl/pipeline/v1beta1/types.proto",
-            ],
-            &["../../proto/"],
-        )
+        .compile_protos(&paths[..], &["../../proto/".to_string()])
         .unwrap_or_else(|e| panic!("protobuf compilation failed: {}", e));
+    Ok(())
+}
+
+fn get_proto_files(path: &str, paths: &mut Vec<String>) -> Result<(), Box<dyn std::error::Error>> {
+    for entry in std::fs::read_dir(path)? {
+        let entry = entry?;
+        if entry.metadata()?.is_file() {
+            if let Some("proto") = entry.path().extension().and_then(OsStr::to_str) {
+                paths.push(entry.path().display().to_string());
+            }
+        } else {
+            let path = entry.path().display().to_string();
+            get_proto_files(&path, paths)?;
+        }
+    }
     Ok(())
 }
 

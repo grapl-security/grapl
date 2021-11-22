@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package graplinc.grapl.api.plugin_work_queue.v1beta1;
+
+import "graplinc/common/v1beta1/types.proto";
+
+
+// A job for a given plugin, for a given tenant, to be executed against `data`
+message ExecutionJob {
+  // The tenant that this request is tied to
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
+  // The plugin to be executed
+  graplinc.common.v1beta1.Uuid plugin_id = 2;
+  // The data that the plugin will be executed against
+  bytes data = 3;
+}
+
+// A request to create a new ExecutionJob for a Generator
+message PutExecuteGeneratorRequest {
+  // The job to be executed
+  ExecutionJob execution_job = 1;
+}
+
+// The response to a PutExecuteGeneratorRequest, indicating success
+message PutExecuteGeneratorResponse {}
+
+// A request to create a new ExecutionJob for an Analyzer
+message PutExecuteAnalyzerRequest {
+  // The job to be executed
+  ExecutionJob execution_job = 1;
+}
+
+// The response to a PutExecuteAnalyzerRequest, indicating success
+message PutExecuteAnalyzerResponse {}
+
+// A request to retrieve a new ExecutionJob for a Generator
+message GetExecuteGeneratorRequest {}
+
+// A request to retrieve a new ExecutionJob for an Analyzer
+message GetExecuteAnalyzerRequest {}
+
+// A response containing the next ExecutionJob to execute against a Generator
+message GetExecuteGeneratorResponse {
+  // The execution_job to be executed
+  ExecutionJob execution_job = 1;
+  // A request_id, to be used in Acknowledgement
+  graplinc.common.v1beta1.Uuid request_id = 2;
+}
+
+// A response containing the next ExecutionJob to execute against an Analyzer
+message GetExecuteAnalyzerResponse {
+  // The execution_job to be executed
+  ExecutionJob execution_job = 1;
+  // A request_id, to be used in Acknowledgement
+  graplinc.common.v1beta1.Uuid request_id = 2;
+}
+
+// A request to acknowledge that a job has been completed.
+message AcknowledgeRequest {
+  // The request_id of the job that has been completed
+  graplinc.common.v1beta1.Uuid request_id = 1;
+}
+
+// A response to an AcknowledgeRequest
+message AcknowledgeResponse {
+
+}
+
+// The PluginExecutionService manages ExecutionJobs for Generator and Analyzer plugins
+service PluginExecutionService {
+  // Adds a new execution job for a generator
+  rpc PutExecuteGenerator(PutExecuteGeneratorRequest) returns (PutExecuteGeneratorResponse);
+  // Adds a new execution job for an analyzer
+  rpc PutExecuteAnalyzer(PutExecuteAnalyzerRequest) returns (PutExecuteAnalyzerResponse);
+  // Retrieves a new execution job for a generator
+  rpc GetExecuteGenerator(GetExecuteGeneratorRequest) returns (GetExecuteGeneratorResponse);
+  // Retrieves a new execution job for an analyzer
+  rpc GetExecuteAnalyzer(GetExecuteAnalyzerRequest) returns (GetExecuteAnalyzerResponse);
+  // Acknowledges the completion of a job
+  rpc Acknowledge(AcknowledgeRequest) returns (AcknowledgeResponse);
+}
