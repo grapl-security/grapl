@@ -1,5 +1,3 @@
-python_library()
+python_sources()
 
-shell_library(
-    name="shell"
-)
+shell_sources(name="shell")

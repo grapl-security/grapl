@@ -1,1 +1,1 @@
-shell_library()
+shell_sources()

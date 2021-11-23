@@ -1,5 +1,3 @@
-shell_library()
+shell_sources()
 
-shunit2_tests(
-    name="tests"
-)
+shunit2_tests(name="tests")

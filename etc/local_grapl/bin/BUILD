@@ -1,3 +1,1 @@
-python_library(
-    skip_mypy=True
-)
+python_sources(skip_mypy=True)

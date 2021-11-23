@@ -1,4 +1,4 @@
-python_library()
+python_sources()
 
 pex_binary(
     name="pex",

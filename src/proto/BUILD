@@ -1,4 +1,4 @@
-protobuf_library(
+protobuf_sources(
     name="graplinc",
     # Since we distribute generated code for Python at this level, it
     # makes sense to also collect the sources for all subdirectories

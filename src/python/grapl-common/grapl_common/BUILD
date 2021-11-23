@@ -1,5 +1,3 @@
-python_library(
-    sources=["**/*.py"]
-)
+python_sources(sources=["**/*.py"])
 
 py_typed()
