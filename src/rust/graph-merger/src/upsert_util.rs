@@ -1,9 +1,12 @@
 use std::collections::HashMap;
 
 use node_property::Property::{
-    DecrementOnlyInt as ProtoDecrementOnlyIntProp, DecrementOnlyUint as ProtoDecrementOnlyUintProp,
-    ImmutableInt as ProtoImmutableIntProp, ImmutableStr as ProtoImmutableStrProp,
-    ImmutableUint as ProtoImmutableUintProp, IncrementOnlyInt as ProtoIncrementOnlyIntProp,
+    DecrementOnlyInt as ProtoDecrementOnlyIntProp,
+    DecrementOnlyUint as ProtoDecrementOnlyUintProp,
+    ImmutableInt as ProtoImmutableIntProp,
+    ImmutableStr as ProtoImmutableStrProp,
+    ImmutableUint as ProtoImmutableUintProp,
+    IncrementOnlyInt as ProtoIncrementOnlyIntProp,
     IncrementOnlyUint as ProtoIncrementOnlyUintProp,
 };
 use rust_proto::graph_descriptions::*;

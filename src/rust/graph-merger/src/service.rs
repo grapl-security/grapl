@@ -1,9 +1,7 @@
 use std::{
     fmt::Debug,
     io::Stdout,
-    sync::{
-        Arc,
-    },
+    sync::Arc,
     time::{
         SystemTime,
         UNIX_EPOCH,
@@ -11,27 +9,14 @@ use std::{
 };
 
 use async_trait::async_trait;
-use dgraph_tonic::{
-    Client as DgraphClient,
+use dgraph_tonic::Client as DgraphClient;
+use grapl_observe::metric_reporter::MetricReporter;
+use rust_proto::graph_descriptions::{
+    IdentifiedGraph,
+    MergedGraph,
 };
-
-use tracing::{
-    error,
-    info,
-    warn,
-};
-
-use grapl_observe::{
-    metric_reporter::{
-        MetricReporter,
-    },
-};
-
-
 use sqs_executor::{
-    cache::{
-        Cache,
-    },
+    cache::Cache,
     errors::{
         CheckedError,
         Recoverable,
@@ -39,14 +24,16 @@ use sqs_executor::{
     event_handler::{
         CompletedEvents,
         EventHandler,
-    }
+    },
 };
-use rust_proto::graph_descriptions::{IdentifiedGraph, MergedGraph};
+use tracing::{
+    error,
+    info,
+    warn,
+};
 
 use crate::{
-    reverse_resolver::{
-        ReverseEdgeResolver,
-    },
+    reverse_resolver::ReverseEdgeResolver,
     upserter,
 };
 

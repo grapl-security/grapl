@@ -1,18 +1,29 @@
-use rusoto_sqs::SqsClient;
-use tracing::info;
-
 use grapl_config::{
-    env_helpers::{s3_event_emitters_from_env, FromEnv},
+    env_helpers::{
+        s3_event_emitters_from_env,
+        FromEnv,
+    },
     event_caches,
 };
 use grapl_observe::metric_reporter::MetricReporter;
-use grapl_service::{decoder::ProtoDecoder, serialization::MergedGraphSerializer};
-use sqs_executor::{make_ten, s3_event_retriever::S3PayloadRetriever};
-
+use grapl_service::{
+    decoder::ProtoDecoder,
+    serialization::MergedGraphSerializer,
+};
 use rusoto_dynamodb::DynamoDbClient;
+use rusoto_sqs::SqsClient;
+use sqs_executor::{
+    make_ten,
+    s3_event_retriever::S3PayloadRetriever,
+};
+use tracing::info;
+
 use crate::{
     reverse_resolver::ReverseEdgeResolver,
-    service::{time_based_key_fn, GraphMerger},
+    service::{
+        time_based_key_fn,
+        GraphMerger,
+    },
 };
 
 pub mod reverse_resolver;
