@@ -2,7 +2,7 @@
 name = "node-identifier"
 version = "1.0.0"
 authors = ["Insanitybit <insanitybit@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [[bin]]
 name = "node-identifier"

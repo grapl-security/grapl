@@ -2,7 +2,7 @@
 name = "grapl"
 version = "0.3.1" # The next-to-be-released tag
 authors = ["Max Wittek <wimax@graplsecurity.com>"]
-edition = "2018"
+edition = "2021"
 description = "One crate for all your Grapl needs"
 license = "Apache-2.0"
 

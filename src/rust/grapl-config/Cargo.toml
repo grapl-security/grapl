@@ -2,7 +2,7 @@
 name = "grapl-config"
 version = "0.0.2"
 authors = ["Insanitybit <insanitybit@gmail.com>"]
-edition = "2018"
+edition = "2021"
 description = "Config and utility library for Grapl services"
 license = "Apache-2.0"
 

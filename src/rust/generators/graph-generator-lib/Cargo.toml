@@ -2,7 +2,7 @@
 name = "graph-generator-lib"
 version = "0.1.9"
 authors = ["Insanitybit <insanitybit@gmail.com>"]
-edition = "2018"
+edition = "2021"
 description = "Library for writing Grapl generator services"
 license = "Apache-2.0"
 

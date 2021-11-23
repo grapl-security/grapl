@@ -84,7 +84,7 @@ where
         let subgraphs: Vec<_> = events
             .into_iter()
             .filter_map(|event| {
-                let result = GraphDescription::try_from(event.clone());
+                let result: Result<GraphDescription, _> = SysmonTryFrom::try_from(event.clone());
                 self.metrics.report_subgraph_generation(&result);
                 match result {
                     Ok(graph) => {

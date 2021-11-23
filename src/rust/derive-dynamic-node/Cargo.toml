@@ -2,7 +2,7 @@
 name = "derive-dynamic-node"
 version = "1.0.1"
 authors = ["Insanitybit <insanitybit@gmail.com>"]
-edition = "2018"
+edition = "2021"
 description = "Derive macro work creating Grapl plugins"
 license = "MIT"
 

@@ -2,7 +2,7 @@
 name = "grapl-observe"
 version = "0.0.1"
 authors = ["Max Wittek <wimax@graplsecurity.com>"]
-edition = "2018"
+edition = "2021"
 description = "Metrics and logging tooling for Grapl"
 license = "Apache-2.0"
 

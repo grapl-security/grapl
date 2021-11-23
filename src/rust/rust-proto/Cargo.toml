@@ -2,7 +2,7 @@
 name = "rust-proto"
 version = "0.2.10"
 authors = ["Insanitybit <insanitybit@gmail.com>"]
-edition = "2018"
+edition = "2021"
 description = "A library for interacting with Grapl graphs"
 license = "MIT"
 
