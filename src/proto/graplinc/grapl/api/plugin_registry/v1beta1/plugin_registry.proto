@@ -1,0 +1,119 @@
+syntax = "proto3";
+
+package graplinc.grapl.api.plugin_registry.v1beta1;
+
+import "graplinc/common/v1beta1/types.proto";
+
+// A basic representation of a plugin
+message Plugin {
+  // unique identifier for this plugin
+  graplinc.common.v1beta1.Uuid plugin_id = 1;
+
+  // Represents plugin types
+  enum PluginType {
+    // An unknown plugin type
+    PLUGIN_TYPE_UNSPECIFIED = 0;
+    // Represents a generator plugin
+    PLUGIN_TYPE_GENERATOR = 1;
+    // Represents an analyzer plugin
+    PLUGIN_TYPE_ANALYZER = 2;
+  }
+
+  // The type of the plugin
+  PluginType plugin_type = 2;
+}
+
+// A request to create a plugin entry
+message CreatePluginRequest {
+  // the actual plugin code
+  bytes plugin_artifact = 1;
+
+  // Tenant that is deploying this plugin
+  graplinc.common.v1beta1.Uuid tenant_id = 2;
+
+  // The string value to display to a user, non-empty
+  string display_name = 3;
+}
+
+// A Response to a plugin entry being created
+message CreatePluginResponse {
+  // The identity of the plugin that was created
+  graplinc.common.v1beta1.Uuid plugin_id = 1;
+}
+
+// A request for a given plugin's information, by plugin_id
+message GetPluginRequest {
+  // The identity of the plugin
+  graplinc.common.v1beta1.Uuid plugin_id = 1;
+}
+
+// A response containing the request plugin
+message GetPluginResponse {
+  // The requested plugin
+  Plugin plugin = 1;
+}
+
+// A request to deploy an existing plugin
+message DeployPluginRequest {
+  // The id of the plugin to be deployed
+  graplinc.common.v1beta1.Uuid plugin_id = 1;
+}
+
+// A response indicating that a plugin has been deployed
+message DeployPluginResponse {
+}
+
+// A request to disable a deployed plugin
+message TearDownPluginRequest {
+  // The identity of the plugin to be disabled
+  graplinc.common.v1beta1.Uuid plugin_id = 1;
+}
+
+// A response indicating that a plugin has been disabled
+message TearDownPluginResponse {
+}
+
+// A request to return all generators that can ahndle a specific event source
+message GetGeneratorForEventSourceRequest {
+  // The event source id
+  graplinc.common.v1beta1.Uuid event_source_id = 1;
+}
+
+// A response containing the generator plugin ids that correspond to an event source
+message GetGeneratorForEventSourceResponse {
+  // The plugin ids for the generator plugins for a given event source
+  repeated graplinc.common.v1beta1.Uuid plugin_id = 1;
+}
+
+// A request for all Analyzers for a given tenant
+message GetAnalyzersForTenantRequest {
+  // The tenant id for the tenant whose analyzers we wish to fetch
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
+}
+
+// A response containing a list of plugin ids for the analyzers belonging to a tenant
+message GetAnalyzersForTenantResponse {
+  // The plugin ids for the analyzers belonging to a tenant
+  repeated graplinc.common.v1beta1.Uuid plugin_ids = 1;
+}
+
+// A service that manages the state of plugins
+service PluginControllerService {
+  // create a new plugin
+  rpc CreatePlugin(CreatePluginRequest) returns (CreatePluginResponse);
+
+  // retrieve the plugin corresponding to the given plugin_id
+  rpc GetPlugin(GetPluginRequest) returns (GetPluginResponse);
+
+  // turn on a particular plugin's code
+  rpc DeployPlugin(DeployPluginRequest) returns (DeployPluginResponse);
+
+  // turn off a particular plugin's code
+  rpc TearDownPlugin(TearDownPluginRequest) returns (TearDownPluginResponse);
+
+  // Given information about an event source, return all generators that handle that event source
+  rpc GetGeneratorForEventSource(GetGeneratorForEventSourceRequest) returns (GetGeneratorForEventSourceResponse);
+
+  // Given information about a tenant, return all analyzers for that tenant
+  rpc GetAnalyzersForTenant(GetAnalyzersForTenantRequest) returns (GetAnalyzersForTenantResponse);
+}

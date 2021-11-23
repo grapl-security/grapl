@@ -1,6 +1,9 @@
 # Mac OS
 .DS_Store
 
+# No swap files pls
+*.swp
+
 # Test outputs
 test/integration-outputs
 # Artifacts dumped from `make dump-artifacts` script
