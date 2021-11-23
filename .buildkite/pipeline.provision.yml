@@ -91,4 +91,6 @@ steps:
 
   - label: ":writing_hand: Record successful build"
     command:
-      - .buildkite/shared/steps/record_successful_pipeline_run.sh
+      - record_successful_pipeline_run.sh
+    plugins:
+      - grapl-security/grapl-release#v0.1.0
