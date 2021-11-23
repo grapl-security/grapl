@@ -4,7 +4,6 @@ config:
   grapl:artifacts:
     analyzer-dispatcher: 20211123004320-24e16e1b
     analyzer-executor: 20211123004320-24e16e1b
-    e2e-test-runner: 20210923181707-96db1d59
     e2e-tests: 20211123004320-24e16e1b
     engagement-creator: 20211123004320-24e16e1b
     graph-merger: 20211123004320-24e16e1b
