@@ -4,5 +4,5 @@ python_tests(
         "GRAPL_LOG_LEVEL",
         "DEPLOYMENT_NAME",
         "MG_ALPHAS",
-    ]
+    ],
 )

@@ -1,3 +1,3 @@
 files(
-  sources=["*.xml", "*.log"],
+    sources=["*.xml", "*.log"],
 )

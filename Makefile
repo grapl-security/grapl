@@ -244,7 +244,7 @@ test-unit-js: build-test-unit-js test-unit-engagement-view ## Build and run unit
 
 .PHONY: test-typecheck
 test-typecheck: ## Typecheck Python Code
-	./pants typecheck ::
+	./pants check ::
 
 .PHONY: test-integration
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)

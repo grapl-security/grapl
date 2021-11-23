@@ -12,8 +12,8 @@
 
 set -eou pipefail
 
-# NOTE: To use an unreleased version of Pants from the pantsbuild/pants master branch,
-#  locate the master branch SHA, set PANTS_SHA=<SHA> in the environment, and run this script as usual.
+# NOTE: To use an unreleased version of Pants from the pantsbuild/pants main branch,
+#  locate the main branch SHA, set PANTS_SHA=<SHA> in the environment, and run this script as usual.
 #
 # E.g., PANTS_SHA=725fdaf504237190f6787dda3d72c39010a4c574 ./pants --version
 
@@ -34,13 +34,28 @@ fi
 
 PANTS_BOOTSTRAP="${PANTS_SETUP_CACHE}/bootstrap-$(uname -s)-$(uname -m)"
 
-VENV_VERSION=${VENV_VERSION:-16.4.3}
+_PEX_VERSION=2.1.42
+_PEX_URL="https://github.com/pantsbuild/pex/releases/download/v${_PEX_VERSION}/pex"
+_PEX_EXPECTED_SHA256="69d6b1b1009b00dd14a3a9f19b72cff818a713ca44b3186c9b12074b2a31e51f"
 
-VENV_PACKAGE=virtualenv-${VENV_VERSION}
-VENV_TARBALL=${VENV_PACKAGE}.tar.gz
+VIRTUALENV_VERSION=20.4.7
+VIRTUALENV_REQUIREMENTS=$(
+cat << EOF
+virtualenv==${VIRTUALENV_VERSION} --hash sha256:2b0126166ea7c9c3661f5b8e06773d28f83322de7a3ff7d06f0aed18c9de6a76
+filelock==3.0.12 --hash sha256:929b7d63ec5b7d6b71b0fa5ac14e030b3f70b75747cef1b10da9b879fef15836
+six==1.16.0 --hash sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254
+distlib==0.3.2 --hash sha256:23e223426b28491b1ced97dc3bbe183027419dfc7982b4fa2f05d5f3ff10711c
+appdirs==1.4.4 --hash sha256:a841dacd6b99318a741b166adb07e19ee71a274450e68237b4650ca1055ab128
+importlib-resources==5.1.4; python_version < "3.7" --hash sha256:e962bff7440364183203d179d7ae9ad90cb1f2b74dcb84300e88ecc42dca3351
+importlib-metadata==4.5.0; python_version < "3.8" --hash sha256:833b26fb89d5de469b24a390e9df088d4e52e4ba33b01dc5e0e4f41b81a16c00
+zipp==3.4.1; python_version < "3.10" --hash sha256:51cb66cc54621609dd593d1787f286ee42a5c0adbb4b29abea5a63edc3e03098
+typing-extensions==3.10.0.0; python_version < "3.8" --hash sha256:779383f6086d90c99ae41cf0ff39aac8a7937a9283ce0a414e5dd782f4c94a84
+EOF
+)
 
 COLOR_RED="\x1b[31m"
 COLOR_GREEN="\x1b[32m"
+COLOR_YELLOW="\x1b[33m"
 COLOR_RESET="\x1b[0m"
 
 function log() {
@@ -56,7 +71,12 @@ function green() {
   (($# > 0)) && log "${COLOR_GREEN}$*${COLOR_RESET}"
 }
 
+function warn() {
+  (($# > 0)) && log "${COLOR_YELLOW}$*${COLOR_RESET}"
+}
+
 function tempdir {
+  mkdir -p "$1"
   mktemp -d "$1"/pants.XXXXXX
 }
 
@@ -107,9 +127,9 @@ function determine_pants_version {
 
   pants_version="$(get_pants_config_value 'pants_version')"
   if [[ -z "${pants_version}" ]]; then
-    die "Please explicitly specify the \`pants_version\` in your \`pants.toml\` under the
-\`[GLOBAL]\` scope. See https://pypi.org/project/pantsbuild.pants/#history for all released
-versions and https://www.pantsbuild.org/docs/installation for more instructions."
+    die "Please explicitly specify the \`pants_version\` in your \`pants.toml\` under the \`[GLOBAL]\` scope.
+See https://pypi.org/project/pantsbuild.pants/#history for all released versions
+and https://www.pantsbuild.org/docs/installation for more instructions."
   fi
   pants_major_version="$(echo "${pants_version}" | cut -d '.' -f1)"
   pants_minor_version="$(echo "${pants_version}" | cut -d '.' -f2)"
@@ -140,15 +160,32 @@ function set_supported_python_versions {
     supported_python_versions_decimal=('3.7' '3.8' '3.6')
     supported_python_versions_int=('37' '38' '36')
     supported_message='3.7, 3.8, or 3.6 (deprecated)'
-  else
-    supported_python_versions_decimal=('3.7' '3.8')
-    supported_python_versions_int=('37' '38')
+  elif [[ "${pants_major_version}" -eq 2 && "${pants_minor_version}" -lt 5 ]]; then
+    supported_python_versions_decimal=('3.8' '3.7')
+    supported_python_versions_int=('38' '37')
     supported_message='3.7 or 3.8'
+  else
+    # We put 3.9 first because Apple Silicon only works properly with Python 3.9, even though it's possible to have
+    # older Pythons installed. This makes it more likely that Pants will work out-of-the-box.
+    supported_python_versions_decimal=('3.9' '3.8' '3.7')
+    supported_python_versions_int=('39' '38' '37')
+    supported_message='3.7, 3.8, or 3.9'
   fi
 }
 
+function check_python_exe_compatible_version {
+  local python_exe="$1"
+  local major_minor_version
+  major_minor_version="$(get_python_major_minor_version "${python_exe}")"
+  for valid_version in "${supported_python_versions_int[@]}"; do
+    if [[ "${major_minor_version}" == "${valid_version}" ]]; then
+      echo "${python_exe}" && return 0
+    fi
+  done
+}
+
 function determine_default_python_exe {
-  for version in "${supported_python_versions_decimal[@]}"; do
+  for version in "${supported_python_versions_decimal[@]}" "3" ""; do
     local interpreter_path
     interpreter_path="$(command -v "python${version}")"
     if [[ -z "${interpreter_path}" ]]; then
@@ -158,7 +195,9 @@ function determine_default_python_exe {
     if [[ "$("${interpreter_path}" --version 2>&1 > /dev/null)" == "pyenv: python${version}"* ]]; then
       continue
     fi
-    echo "${interpreter_path}" && return 0
+    if [[ -n "$(check_python_exe_compatible_version "${interpreter_path}")" ]]; then
+      echo "${interpreter_path}" && return 0
+    fi
   done
 }
 
@@ -167,44 +206,94 @@ function determine_python_exe {
   set_supported_python_versions "${pants_version}"
   local requirement_str="For \`pants_version = \"${pants_version}\"\`, Pants requires Python ${supported_message} to run."
 
-  local python_bin_name
+  local python_exe
   if [[ "${PYTHON_BIN_NAME}" != 'unspecified' ]]; then
-    python_bin_name="${PYTHON_BIN_NAME}"
+    python_exe="$(get_exe_path_or_die "${PYTHON_BIN_NAME}")" || exit 1
+    if [[ -z "$(check_python_exe_compatible_version "${python_exe}")" ]]; then
+      die "Invalid Python interpreter version for ${python_exe}. ${requirement_str}"
+    fi
   else
-    python_bin_name="$(determine_default_python_exe)"
-    if [[ -z "${python_bin_name}" ]]; then
+    python_exe="$(determine_default_python_exe)"
+    if [[ -z "${python_exe}" ]]; then
       die "No valid Python interpreter found. ${requirement_str} Please check that a valid interpreter is installed and on your \$PATH."
     fi
   fi
-  local python_exe
-  python_exe="$(get_exe_path_or_die "${python_bin_name}")"
-  local major_minor_version
-  major_minor_version="$(get_python_major_minor_version "${python_exe}")"
-  for valid_version in "${supported_python_versions_int[@]}"; do
-    if [[ "${major_minor_version}" == "${valid_version}" ]]; then
-      echo "${python_exe}" && return 0
-    fi
-  done
-  die "Invalid Python interpreter version for ${python_exe}. ${requirement_str}"
+  echo "${python_exe}"
+}
+
+function compute_sha256 {
+  local python="$1"
+  local path="$2"
+
+  "$python" <<EOF
+import hashlib
+
+hasher = hashlib.sha256()
+with open('${path}', 'rb') as fp:
+    buf = fp.read()
+    hasher.update(buf)
+print(hasher.hexdigest())
+EOF
 }
 
 # TODO(John Sirois): GC race loser tmp dirs leftover from bootstrap_XXX
 # functions.  Any tmp dir w/o a symlink pointing to it can go.
 
-function bootstrap_venv {
-  if [[ ! -d "${PANTS_BOOTSTRAP}/${VENV_PACKAGE}" ]]; then
+function bootstrap_pex {
+  local python="$1"
+  local bootstrapped="${PANTS_BOOTSTRAP}/pex-${_PEX_VERSION}/pex"
+  if [[ ! -f "${bootstrapped}" ]]; then
     (
+      green "Downloading the Pex PEX."
       mkdir -p "${PANTS_BOOTSTRAP}"
       local staging_dir
       staging_dir=$(tempdir "${PANTS_BOOTSTRAP}")
       cd "${staging_dir}"
-      curl -LO "https://pypi.io/packages/source/v/virtualenv/${VENV_TARBALL}"
-      tar -xzf "${VENV_TARBALL}"
-      ln -s "${staging_dir}/${VENV_PACKAGE}" "${staging_dir}/latest"
-      mv "${staging_dir}/latest" "${PANTS_BOOTSTRAP}/${VENV_PACKAGE}"
-    ) 1>&2
+      curl -LO "${_PEX_URL}"
+      fingerprint="$(compute_sha256 "${python}" "pex")"
+      if [[ "${_PEX_EXPECTED_SHA256}" != "${fingerprint}" ]]; then
+        die "SHA256 of ${_PEX_URL} is not as expected. Aborting."
+      fi
+      green "SHA256 fingerprint of ${_PEX_URL} verified."
+      mkdir -p "$(dirname "${bootstrapped}")"
+      mv -f "${staging_dir}/pex" "${bootstrapped}"
+      rmdir "${staging_dir}"
+    ) 1>&2 || exit 1
   fi
-  echo "${PANTS_BOOTSTRAP}/${VENV_PACKAGE}"
+  echo "${bootstrapped}"
+}
+
+function scrub_PEX_env_vars {
+  # Ensure the virtualenv PEX runs as shrink-wrapped.
+  # See: https://github.com/pantsbuild/setup/issues/105
+  if [[ -n "${!PEX_@}" ]]; then
+    warn "Scrubbing ${!PEX_@}"
+    unset "${!PEX_@}"
+  fi
+}
+
+function bootstrap_virtualenv {
+  local python="$1"
+  local bootstrapped="${PANTS_BOOTSTRAP}/virtualenv-${VIRTUALENV_VERSION}/virtualenv.pex"
+  if [[ ! -f "${bootstrapped}" ]]; then
+    (
+      green "Creating the virtualenv PEX."
+      pex_path="$(bootstrap_pex "${python}")" || exit 1
+      mkdir -p "${PANTS_BOOTSTRAP}"
+      local staging_dir
+      staging_dir=$(tempdir "${PANTS_BOOTSTRAP}")
+      cd "${staging_dir}"
+      echo "${VIRTUALENV_REQUIREMENTS}" > requirements.txt
+      (
+        scrub_PEX_env_vars
+        "${python}" "${pex_path}" -r requirements.txt -c virtualenv -o virtualenv.pex
+      )
+      mkdir -p "$(dirname "${bootstrapped}")"
+      mv -f "${staging_dir}/virtualenv.pex" "${bootstrapped}"
+      rm -rf "${staging_dir}"
+    ) 1>&2 || exit 1
+  fi
+  echo "${bootstrapped}"
 }
 
 function find_links_url {
@@ -239,32 +328,38 @@ function bootstrap_pants {
    fi
   local python_major_minor_version
   python_major_minor_version="$(get_python_major_minor_version "${python}")"
-  local target_folder_name
-  target_folder_name="${pants_version}_py${python_major_minor_version}"
+  local target_folder_name="${pants_version}_py${python_major_minor_version}"
+  local bootstrapped="${PANTS_BOOTSTRAP}/${target_folder_name}"
 
-  if [[ ! -d "${PANTS_BOOTSTRAP}/${target_folder_name}" ]]; then
+  if [[ ! -d "${bootstrapped}" ]]; then
     (
-      local venv_path
-      venv_path="$(bootstrap_venv)"
+      green "Bootstrapping Pants using ${python}"
       local staging_dir
       staging_dir=$(tempdir "${PANTS_BOOTSTRAP}")
-      # shellcheck disable=SC2086
-      "${python}" "${venv_path}/virtualenv.py" --no-download "${staging_dir}/install" && \
-      "${staging_dir}/install/bin/pip" install -U pip && \
-      "${staging_dir}/install/bin/pip" install ${maybe_find_links} --progress-bar off "${pants_requirement}" && \
+      local virtualenv_path
+      virtualenv_path="$(bootstrap_virtualenv "${python}")" || exit 1
+      green "Installing ${pants_requirement} into a virtual environment at ${bootstrapped}"
+      (
+        scrub_PEX_env_vars
+        # shellcheck disable=SC2086
+        "${python}" "${virtualenv_path}" --no-download "${staging_dir}/install" && \
+        "${staging_dir}/install/bin/pip" install -U pip && \
+        "${staging_dir}/install/bin/pip" install ${maybe_find_links} --progress-bar off "${pants_requirement}"
+      ) && \
       ln -s "${staging_dir}/install" "${staging_dir}/${target_folder_name}" && \
-      mv "${staging_dir}/${target_folder_name}" "${PANTS_BOOTSTRAP}/${target_folder_name}" && \
-      green "New virtual environment successfully created at ${PANTS_BOOTSTRAP}/${target_folder_name}."
-    ) 1>&2
+      mv "${staging_dir}/${target_folder_name}" "${bootstrapped}" && \
+      green "New virtual environment successfully created at ${bootstrapped}."
+    ) 1>&2 || exit 1
   fi
-  echo "${PANTS_BOOTSTRAP}/${target_folder_name}"
+  echo "${bootstrapped}"
 }
 
 # Ensure we operate from the context of the ./pants buildroot.
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 pants_version="$(determine_pants_version)"
 python="$(determine_python_exe "${pants_version}")"
-pants_dir="$(bootstrap_pants "${pants_version}" "${python}" "${PANTS_SHA:-}")"
+pants_dir="$(bootstrap_pants "${pants_version}" "${python}" "${PANTS_SHA:-}")" || exit 1
+
 pants_python="${pants_dir}/bin/python"
 pants_binary="${pants_dir}/bin/pants"
 pants_extra_args=""
