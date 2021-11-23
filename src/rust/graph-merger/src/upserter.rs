@@ -9,7 +9,6 @@ use dgraph_query_lib::{
         ConditionValue,
     },
     mutation::{
-        Mutation,
         MutationBuilder,
         MutationPredicateValue,
         MutationUID,
@@ -25,17 +24,11 @@ use dgraph_query_lib::{
         QueryBlockBuilder,
         QueryBlockType,
     },
-    upsert::{
-        Upsert,
-        UpsertBlock,
-    },
     ToQueryString,
 };
 use dgraph_tonic::{
     Client as DgraphClient,
     Mutate,
-    Mutation as DgraphMutation,
-    MutationResponse,
     Query,
 };
 use futures::StreamExt;
@@ -55,7 +48,6 @@ pub use rust_proto::node_property::Property::{
 };
 use rust_proto::{
     graph_descriptions::*,
-    node_property::Property,
 };
 
 use crate::upsert_util;
@@ -126,7 +118,7 @@ impl GraphMergeHelper {
 
             let dgraph_client = dgraph_client.clone();
             Self::enforce_transaction(move || {
-                let mut txn = dgraph_client.new_mutated_txn();
+                let txn = dgraph_client.new_mutated_txn();
                 txn.upsert_and_commit_now(combined_query.clone(), all_mutations.clone())
             })
         })
@@ -211,7 +203,7 @@ impl GraphMergeHelper {
             .collect();
 
         let mut unresolved = vec![];
-        for (from_node_key, to_node_key, edge_name) in all_edges.iter() {
+        for (from_node_key, to_node_key, _edge_name) in all_edges.iter() {
             if !node_key_to_uid.contains_key(from_node_key) {
                 unresolved.push(from_node_key);
             }
@@ -272,7 +264,7 @@ impl GraphMergeHelper {
                         |e| tracing::error!(message="Failed to set json for mutation", error=?e),
                     );
 
-                    let mut txn = dgraph_client.new_mutated_txn();
+                    let txn = dgraph_client.new_mutated_txn();
                     txn.mutate_and_commit_now(dgraph_mutation.clone())
                 })
             })

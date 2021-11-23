@@ -1,115 +1,24 @@
-#![allow(unused)]
-#![allow(dead_code)]
+use rusoto_sqs::SqsClient;
+use tracing::info;
+
+use grapl_config::{
+    env_helpers::{s3_event_emitters_from_env, FromEnv},
+    event_caches,
+};
+use grapl_observe::metric_reporter::MetricReporter;
+use grapl_service::{decoder::ProtoDecoder, serialization::MergedGraphSerializer};
+use sqs_executor::{make_ten, s3_event_retriever::S3PayloadRetriever};
+
+use rusoto_dynamodb::DynamoDbClient;
+use crate::{
+    reverse_resolver::ReverseEdgeResolver,
+    service::{time_based_key_fn, GraphMerger},
+};
 
 pub mod reverse_resolver;
 pub mod service;
 pub mod upsert_util;
 pub mod upserter;
-
-use std::{
-    collections::HashMap,
-    fmt::Debug,
-    io::Stdout,
-    sync::{
-        Arc,
-        Mutex,
-    },
-    time::{
-        Duration,
-        SystemTime,
-        UNIX_EPOCH,
-    },
-};
-
-use async_trait::async_trait;
-use dgraph_tonic::{
-    Client as DgraphClient,
-    Mutate,
-    Query,
-};
-use failure::{
-    bail,
-    Error,
-};
-use graph_merger_lib;
-use grapl_config::{
-    env_helpers::{
-        s3_event_emitters_from_env,
-        FromEnv,
-    },
-    event_caches,
-};
-use grapl_observe::{
-    dgraph_reporter::DgraphMetricReporter,
-    metric_reporter::{
-        tag,
-        MetricReporter,
-    },
-};
-use grapl_service::{
-    decoder::ProtoDecoder,
-    serialization::MergedGraphSerializer,
-};
-use grapl_utils::{
-    future_ext::GraplFutureExt,
-    rusoto_ext::dynamodb::GraplDynamoDbClientExt,
-};
-use lazy_static::lazy_static;
-use rusoto_dynamodb::{
-    AttributeValue,
-    BatchGetItemInput,
-    DynamoDb,
-    DynamoDbClient,
-    GetItemInput,
-    KeysAndAttributes,
-};
-use rusoto_s3::S3Client;
-use rusoto_sqs::SqsClient;
-use rust_proto::graph_descriptions::{
-    Edge,
-    EdgeList,
-    IdentifiedGraph,
-    IdentifiedNode,
-    MergedGraph,
-    MergedNode,
-};
-use serde::{
-    Deserialize,
-    Serialize,
-};
-use serde_json::Value;
-use sqs_executor::{
-    cache::{
-        Cache,
-        Cacheable,
-    },
-    errors::{
-        CheckedError,
-        Recoverable,
-    },
-    event_handler::{
-        CompletedEvents,
-        EventHandler,
-    },
-    make_ten,
-    s3_event_retriever::S3PayloadRetriever,
-};
-use tracing::{
-    error,
-    info,
-    warn,
-};
-
-use crate::{
-    reverse_resolver::{
-        get_r_edges_from_dynamodb,
-        ReverseEdgeResolver,
-    },
-    service::{
-        time_based_key_fn,
-        GraphMerger,
-    },
-};
 
 #[tracing::instrument]
 async fn handler() -> Result<(), Box<dyn std::error::Error>> {
