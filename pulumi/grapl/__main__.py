@@ -1,8 +1,10 @@
 import sys
 from pathlib import Path
-from typing import List, Mapping, Set, cast
+from typing import Any, List, Mapping, Set, cast
 
 from pulumi.resource import CustomTimeouts, ResourceOptions
+from pulumi.stack_reference import StackReference
+
 from typing_extensions import Final
 
 sys.path.insert(0, "..")
@@ -20,10 +22,10 @@ from infra.config import AWS_ACCOUNT_ID
 from infra.consul_intentions import ConsulIntentions
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
-from infra.kafka import Kafka
+from infra.kafka import ConfluentOutput, Kafka
 from infra.local.postgres import LocalPostgresInstance
+
 from infra.nomad_job import NomadJob, NomadVars
-from infra.postgres import Postgres
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
@@ -77,6 +79,17 @@ def subnets_to_single_az(ids: List[str]) -> pulumi.Output[str]:
 
 
 def main() -> None:
+    pulumi_config = pulumi.Config()
+    if not (config.LOCAL_GRAPL or config.REAL_DEPLOYMENT):
+        # Fargate services build their own images and need this
+        # variable currently. We don't want this to be checked in
+        # Local Grapl, or "real" deployments, though; only developer
+        # sandboxes.
+        if not os.getenv("DOCKER_BUILDKIT"):
+            raise KeyError("Please re-run with 'DOCKER_BUILDKIT=1'")
+
+    quiet_docker_output()
+
     # These tags will be added to all provisioned infrastructure
     # objects.
     register_auto_tags({"grapl deployment": config.DEPLOYMENT_NAME})
@@ -200,11 +213,22 @@ def main() -> None:
 
     nomad_grapl_core_timeout = "5m"
 
+    kafka = Kafka(
+        "kafka",
+        confluent=ConfluentOutput.from_json(
+            cast(
+                pulumi.Output[Mapping[str, Any]],
+                StackReference("grapl/ccloud-bootstrap/ccloud-bootstrap").get_output("confluent"),
+            )
+        ),
+        confluent_environment_name=pulumi_config.require("confluent-environment-name"),
+    )
+
+
     if config.LOCAL_GRAPL:
         ###################################
         # Local Grapl
         ###################################
-        kafka = Kafka("kafka")
 
         plugin_registry_db = LocalPostgresInstance(
             name="plugin-registry-db",
@@ -295,7 +319,6 @@ def main() -> None:
         ###################################
         # AWS Grapl
         ###################################
-        pulumi_config = pulumi.Config()
         # We use stack outputs from internally developed projects
         # We assume that the stack names will match the grapl stack name
         consul_stack = pulumi.StackReference(f"grapl/consul/{pulumi.get_stack()}")
