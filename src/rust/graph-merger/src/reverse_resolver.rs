@@ -105,13 +105,13 @@ impl ReverseEdgeResolver {
         }
         drop(cache);
 
-        self.metric_reporter.clone().counter(
+        let _ = self.metric_reporter.clone().counter(
             "reverse_resolver.cache.hit.count",
             cache_hit as f64,
             0.10,
             &[],
         );
-        self.metric_reporter.clone().counter(
+        let _ = self.metric_reporter.clone().counter(
             "reverse_resolver.cache.miss.count",
             cache_miss as f64,
             0.10,
