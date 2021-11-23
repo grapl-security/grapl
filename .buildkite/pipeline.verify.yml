@@ -144,8 +144,9 @@ steps:
 
   - label: ":thinking_face::rust: Cargo Audit?"
     plugins:
+      - grapl-security/grapl-release#v0.1.0
       - chronotc/monorepo-diff#v2.0.4:
-          diff: .buildkite/shared/scripts/diff.sh
+          diff: grapl_diff.sh
           log_level: "debug"
           watch:
             - path:
