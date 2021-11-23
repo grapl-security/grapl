@@ -21,6 +21,13 @@ ignore = [
   # We should fix this:
   # https://github.com/grapl-security/issue-tracker/issues/777
   "RUSTSEC-2021-0073",
+  # tokio 0.2.25 / 1.12.0
+  # Data race when sending and receiving after closing a `oneshot` channel
+  # https://rustsec.org/advisories/RUSTSEC-2021-0124
+  #
+  # Based on our current usage, we don't feel that this is a problem
+  # for us.
+  "RUSTSEC-2021-0124",
   # Warnings
   ########################################################################
   # net2 0.2.37
