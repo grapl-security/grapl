@@ -1,7 +1,8 @@
 import sys
 from pathlib import Path
-from typing import Mapping, Set
+from typing import Any, Mapping, Set, cast
 
+from pulumi.stack_reference import StackReference
 from typing_extensions import Final
 
 sys.path.insert(0, "..")
@@ -23,7 +24,7 @@ from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
-from infra.kafka import Kafka
+from infra.kafka import ConfluentOutput, Kafka
 from infra.network import Network
 from infra.nomad_job import NomadJob, NomadVars
 from infra.quiet_docker_build_output import quiet_docker_output
@@ -71,7 +72,7 @@ def _container_images(
 
 
 def main() -> None:
-
+    pulumi_config = pulumi.Config()
     if not (config.LOCAL_GRAPL or config.REAL_DEPLOYMENT):
         # Fargate services build their own images and need this
         # variable currently. We don't want this to be checked in
@@ -188,11 +189,21 @@ def main() -> None:
         user_session_table=dynamodb_tables.user_session_table.name,
     )
 
+    kafka = Kafka(
+        "kafka",
+        confluent=ConfluentOutput.from_json(
+            cast(
+                pulumi.Output[Mapping[str, Any]],
+                StackReference("grapl/ccloud-bootstrap/ccloud-bootstrap").get_output("confluent"),
+            )
+        ),
+        confluent_environment_name=pulumi_config.require("confluent-environment-name"),
+    )
+
     if config.LOCAL_GRAPL:
         ###################################
         # Local Grapl
         ###################################
-        kafka = Kafka("kafka")
 
         # These are created in `grapl-local-infra.nomad` and not applicable to prod.
         # Nomad will replace the LOCAL_GRAPL_REPLACE_IP sentinel value with the correct IP.
@@ -268,7 +279,6 @@ def main() -> None:
         ###################################
         # AWS Grapl
         ###################################
-        pulumi_config = pulumi.Config()
         # We use stack outputs from internally developed projects
         # We assume that the stack names will match the grapl stack name
         consul_stack = pulumi.StackReference(f"grapl/consul/{pulumi.get_stack()}")
