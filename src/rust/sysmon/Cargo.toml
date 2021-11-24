@@ -5,7 +5,7 @@ authors = ["colin <colin@graplsecurity.com>"]
 description = "Type definitions and (de)serialization support for Sysmon events"
 license = "MIT OR Apache-2.0"
 keywords = ["sysinternals", "sysmon"]
-edition = "2018"
+edition = "2021"
 repository = "https://github.com/grapl-security/grapl/tree/main/src/rust/sysmon"
 readme = "README.md"
 

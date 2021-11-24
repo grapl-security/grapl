@@ -75,7 +75,7 @@ BUILD @christophermaier
 /src/rust/model-plugin-deployer/ @wimax-grapl
 /src/rust/node-identifier/ @grapl-security/wg-data-infra
 /src/rust/rust-proto/ @grapl-security/wg-data-infra
-/src/rust/rust-toolchain @inickles-grapl
+/src/rust/rust-toolchain.toml @inickles-grapl
 /src/rust/sqs-executor/ @inickles-grapl @grapl-security/wg-data-infra
 /src/rust/sysmon/ @inickles-grapl
 /test/cypress/ @inickles-grapl @andrea-grapl

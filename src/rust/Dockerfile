@@ -16,9 +16,9 @@ RUN --mount=type=cache,target=/var/lib/apt/lists \
 # Install rust toolchain before copying sources to avoid unecessarily
 # resinstalling on source file changes.
 WORKDIR /grapl
-COPY rust/rust-toolchain rust/rust-toolchain
+COPY rust/rust-toolchain.toml rust/rust-toolchain.toml
 WORKDIR /grapl/rust
-# 'rustup show' will install components in the rust-toolchain file
+# 'rustup show' will install components in the rust-toolchain.toml file
 RUN rustup show
 
 # copy sources

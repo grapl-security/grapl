@@ -2,7 +2,7 @@
 name = "{{cookiecutter.snake_project_name}}"
 version = "0.1.0"
 authors = ["engineering@graplsecurity.com"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [[bin]]

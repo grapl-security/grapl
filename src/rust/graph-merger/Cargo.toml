@@ -2,7 +2,7 @@
 name = "graph-merger"
 version = "1.0.0"
 authors = ["Insanitybit <insanitybit@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [[bin]]
 name = "graph-merger"
