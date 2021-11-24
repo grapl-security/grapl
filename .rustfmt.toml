@@ -1,7 +1,7 @@
 unstable_features = true
 
 # Stable formatting directives
-edition = "2018"
+edition = "2021"
 reorder_imports = true
 reorder_modules = true
 

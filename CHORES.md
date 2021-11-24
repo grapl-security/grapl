@@ -17,7 +17,7 @@ all the improvements to the language, we should plan to update the version of
 Rust we are using periodically.
 
 To do this, you must update the `channel` entry in [our toolchain
-file](./src/rust/rust-toolchain) to the appropriate version identifier.
+file](./src/rust/rust-toolchain.toml) to the appropriate version identifier.
 
 Note that there may be new compiler warnings to address after updating the
 version of Rust we use; please be sure to take care of these at this time.
