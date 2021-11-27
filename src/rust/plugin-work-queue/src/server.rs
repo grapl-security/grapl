@@ -1,8 +1,18 @@
-use tonic::{Request, Response, Status};
-use tonic::transport::Server;
-use rust_proto::plugin_work_queue::plugin_work_queue_service_server::{PluginWorkQueueService, PluginWorkQueueServiceServer};
-use rust_proto::plugin_work_queue::{AcknowledgeRequest, AcknowledgeResponse, GetExecuteAnalyzerRequest, GetExecuteAnalyzerResponse, GetExecuteGeneratorRequest, GetExecuteGeneratorResponse, PutExecuteAnalyzerRequest, PutExecuteAnalyzerResponse, PutExecuteGeneratorRequest, PutExecuteGeneratorResponse};
 use rust_proto::plugin_work_queue::{
+    plugin_work_queue_service_server::{
+        PluginWorkQueueService,
+        PluginWorkQueueServiceServer,
+    },
+    AcknowledgeRequest,
+    AcknowledgeResponse,
+    GetExecuteAnalyzerRequest,
+    GetExecuteAnalyzerResponse,
+    GetExecuteGeneratorRequest,
+    GetExecuteGeneratorResponse,
+    PutExecuteAnalyzerRequest,
+    PutExecuteAnalyzerResponse,
+    PutExecuteGeneratorRequest,
+    PutExecuteGeneratorResponse,
     _AcknowledgeRequest,
     _AcknowledgeResponse,
     _GetExecuteAnalyzerRequest,
@@ -14,62 +24,94 @@ use rust_proto::plugin_work_queue::{
     _PutExecuteGeneratorRequest,
     _PutExecuteGeneratorResponse,
 };
+use tonic::{
+    transport::Server,
+    Request,
+    Response,
+    Status,
+};
 
 #[derive(Debug, thiserror::Error)]
-pub enum PluginWorkQueueError {
-
-}
+pub enum PluginWorkQueueError {}
 
 pub struct PluginWorkQueue {}
 
 impl PluginWorkQueue {
-    async fn _put_execute_generator(&self, _request: PutExecuteGeneratorRequest) -> Result<PutExecuteGeneratorResponse, PluginWorkQueueError> {
+    async fn _put_execute_generator(
+        &self,
+        _request: PutExecuteGeneratorRequest,
+    ) -> Result<PutExecuteGeneratorResponse, PluginWorkQueueError> {
         todo!()
     }
 
-    async fn _put_execute_analyzer(&self, _request: PutExecuteAnalyzerRequest) -> Result<PutExecuteAnalyzerResponse, PluginWorkQueueError> {
+    async fn _put_execute_analyzer(
+        &self,
+        _request: PutExecuteAnalyzerRequest,
+    ) -> Result<PutExecuteAnalyzerResponse, PluginWorkQueueError> {
         todo!()
     }
 
-    async fn _get_execute_generator(&self, _request: GetExecuteGeneratorRequest) -> Result<GetExecuteGeneratorResponse, PluginWorkQueueError> {
+    async fn _get_execute_generator(
+        &self,
+        _request: GetExecuteGeneratorRequest,
+    ) -> Result<GetExecuteGeneratorResponse, PluginWorkQueueError> {
         todo!()
     }
 
-    async fn _get_execute_analyzer(&self, _request: GetExecuteAnalyzerRequest) -> Result<GetExecuteAnalyzerResponse, PluginWorkQueueError> {
+    async fn _get_execute_analyzer(
+        &self,
+        _request: GetExecuteAnalyzerRequest,
+    ) -> Result<GetExecuteAnalyzerResponse, PluginWorkQueueError> {
         todo!()
     }
 
-    async fn _acknowledge(&self, _request: AcknowledgeRequest) -> Result<AcknowledgeResponse, PluginWorkQueueError> {
+    async fn _acknowledge(
+        &self,
+        _request: AcknowledgeRequest,
+    ) -> Result<AcknowledgeResponse, PluginWorkQueueError> {
         todo!()
     }
 }
 
 #[tonic::async_trait]
 impl PluginWorkQueueService for PluginWorkQueue {
-    async fn put_execute_generator(&self, _request: Request<_PutExecuteGeneratorRequest>) -> Result<Response<_PutExecuteGeneratorResponse>, Status> {
+    async fn put_execute_generator(
+        &self,
+        _request: Request<_PutExecuteGeneratorRequest>,
+    ) -> Result<Response<_PutExecuteGeneratorResponse>, Status> {
         todo!()
     }
 
-    async fn put_execute_analyzer(&self, _request: Request<_PutExecuteAnalyzerRequest>) -> Result<Response<_PutExecuteAnalyzerResponse>, Status> {
+    async fn put_execute_analyzer(
+        &self,
+        _request: Request<_PutExecuteAnalyzerRequest>,
+    ) -> Result<Response<_PutExecuteAnalyzerResponse>, Status> {
         todo!()
     }
 
-    async fn get_execute_generator(&self, _request: Request<_GetExecuteGeneratorRequest>) -> Result<Response<_GetExecuteGeneratorResponse>, Status> {
+    async fn get_execute_generator(
+        &self,
+        _request: Request<_GetExecuteGeneratorRequest>,
+    ) -> Result<Response<_GetExecuteGeneratorResponse>, Status> {
         todo!()
     }
 
-    async fn get_execute_analyzer(&self, _request: Request<_GetExecuteAnalyzerRequest>) -> Result<Response<_GetExecuteAnalyzerResponse>, Status> {
+    async fn get_execute_analyzer(
+        &self,
+        _request: Request<_GetExecuteAnalyzerRequest>,
+    ) -> Result<Response<_GetExecuteAnalyzerResponse>, Status> {
         todo!()
     }
 
-    async fn acknowledge(&self, _request: Request<_AcknowledgeRequest>) -> Result<Response<_AcknowledgeResponse>, Status> {
+    async fn acknowledge(
+        &self,
+        _request: Request<_AcknowledgeRequest>,
+    ) -> Result<Response<_AcknowledgeResponse>, Status> {
         todo!()
     }
 }
 
-
-
-pub async fn exec_service()  -> Result<(), Box<dyn std::error::Error>> {
+pub async fn exec_service() -> Result<(), Box<dyn std::error::Error>> {
     let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
     health_reporter
         .set_serving::<PluginWorkQueueServiceServer<PluginWorkQueue>>()

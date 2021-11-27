@@ -47,5 +47,5 @@ pub mod graph_descriptions;
 pub use graph_descriptions::node_property;
 
 pub mod pipeline;
-pub mod types;
 pub mod plugin_work_queue;
+pub mod types;
