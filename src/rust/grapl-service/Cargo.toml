@@ -11,7 +11,7 @@ rust-proto = { path = "../rust-proto" }
 grapl-config = { path = "../grapl-config" }
 zstd = "0.7"
 libflate = "1"
-prost = "0.7"
+prost = "0.9"
 tracing = "0.1"
 thiserror = "1.0"
 serde = "1.0"
