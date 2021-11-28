@@ -11,4 +11,7 @@ path = "src/main.rs"
 name = "plugin_registry"
 
 [dependencies]
+async-trait = "0.1.51"
 rust-proto = { path = "../rust-proto" }
+thiserror = "1.0.30"
+tonic = "0.6.1"

@@ -131,6 +131,13 @@ FROM rust-dist AS plugin-work-queue-deploy
 COPY --from=build /outputs/plugin-work-queue /
 ENTRYPOINT ["/plugin-work-queue"]
 
+
+# plugin-registry
+FROM rust-dist AS plugin-registry-deploy
+
+COPY --from=build /outputs/plugin-registry /
+ENTRYPOINT ["/plugin-registry"]
+
 # node-identifier
 FROM rust-dist AS node-identifier-deploy
 

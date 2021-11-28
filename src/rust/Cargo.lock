@@ -2897,7 +2897,10 @@ dependencies = [
 name = "plugin-registry"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "rust-proto",
+ "thiserror",
+ "tonic 0.6.1",
 ]
 
 [[package]]
