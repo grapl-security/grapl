@@ -47,6 +47,15 @@ impl TryFrom<_PluginType> for PluginType {
     }
 }
 
+impl From<PluginType> for _PluginType {
+    fn from(value: PluginType) -> Self {
+        match value {
+            PluginType::Generator => _PluginType::Generator,
+            PluginType::Analyzer => _PluginType::Analyzer,
+        }
+    }
+}
+
 pub struct Plugin {
     /// unique identifier for this plugin
     pub plugin_id: uuid::Uuid,
@@ -70,6 +79,16 @@ impl TryFrom<_Plugin> for Plugin {
             plugin_id,
             plugin_type,
         })
+    }
+}
+
+impl From<Plugin> for _Plugin {
+    fn from(value: Plugin) -> Self {
+        let plugin_type: _PluginType = value.plugin_type.into();
+        Self {
+            plugin_id: Some(value.plugin_id.into()),
+            plugin_type: plugin_type as i32,
+        }
     }
 }
 
@@ -115,6 +134,16 @@ impl TryFrom<_CreatePluginRequest> for CreatePluginRequest {
     }
 }
 
+impl From<CreatePluginRequest> for _CreatePluginRequest {
+    fn from(value: CreatePluginRequest) -> Self {
+        Self {
+            plugin_artifact: value.plugin_artifact,
+            tenant_id: Some(value.tenant_id.into()),
+            display_name: value.display_name
+        }
+    }
+}
+
 pub struct CreatePluginResponse {
     /// The identity of the plugin that was created
     pub plugin_id: uuid::Uuid,
@@ -132,6 +161,14 @@ impl TryFrom<_CreatePluginResponse> for CreatePluginResponse {
             .into();
 
         Ok(Self { plugin_id })
+    }
+}
+
+impl From<CreatePluginResponse> for _CreatePluginResponse {
+    fn from(value: CreatePluginResponse) -> Self {
+        Self {
+            plugin_id: Some(value.plugin_id.into())
+        }
     }
 }
 
@@ -154,6 +191,14 @@ impl TryFrom<_DeployPluginRequest> for DeployPluginRequest {
     }
 }
 
+impl From<DeployPluginRequest> for _DeployPluginRequest {
+    fn from(value: DeployPluginRequest) -> Self {
+        Self {
+            plugin_id: Some(value.plugin_id.into())
+        }
+    }
+}
+
 pub struct DeployPluginResponse {}
 
 impl TryFrom<_DeployPluginResponse> for DeployPluginResponse {
@@ -161,6 +206,12 @@ impl TryFrom<_DeployPluginResponse> for DeployPluginResponse {
 
     fn try_from(_value: _DeployPluginResponse) -> Result<Self, Self::Error> {
         Ok(Self {})
+    }
+}
+
+impl From<DeployPluginResponse> for _DeployPluginResponse {
+    fn from(_value: DeployPluginResponse) -> Self {
+        Self {}
     }
 }
 
@@ -184,6 +235,14 @@ impl TryFrom<_GetAnalyzersForTenantRequest> for GetAnalyzersForTenantRequest {
     }
 }
 
+impl From<GetAnalyzersForTenantRequest> for _GetAnalyzersForTenantRequest {
+    fn from(value: GetAnalyzersForTenantRequest) -> Self {
+        Self {
+            tenant_id: Some(value.tenant_id.into())
+        }
+    }
+}
+
 pub struct GetAnalyzersForTenantResponse {
     /// The plugin ids for the analyzers belonging to a tenant
     pub plugin_ids: Vec<uuid::Uuid>,
@@ -203,6 +262,15 @@ impl TryFrom<_GetAnalyzersForTenantResponse> for GetAnalyzersForTenantResponse {
         Ok(Self { plugin_ids })
     }
 }
+
+impl From<GetAnalyzersForTenantResponse> for _GetAnalyzersForTenantResponse {
+    fn from(value: GetAnalyzersForTenantResponse) -> Self {
+        Self {
+            plugin_ids: value.plugin_ids.into_iter().map(uuid::Uuid::into).collect(),
+        }
+    }
+}
+
 
 pub struct GetGeneratorForEventSourceRequest {
     /// The event source id
@@ -224,6 +292,14 @@ impl TryFrom<_GetGeneratorForEventSourceRequest> for GetGeneratorForEventSourceR
     }
 }
 
+impl From<GetGeneratorForEventSourceRequest> for _GetGeneratorForEventSourceRequest {
+    fn from(value: GetGeneratorForEventSourceRequest) -> Self {
+        Self {
+            event_source_id: Some(value.event_source_id.into())
+        }
+    }
+}
+
 pub struct GetGeneratorForEventSourceResponse {
     pub plugin_ids: Vec<uuid::Uuid>,
 }
@@ -240,6 +316,14 @@ impl TryFrom<_GetGeneratorForEventSourceResponse> for GetGeneratorForEventSource
         let plugin_ids = value.plugin_ids.into_iter().map(uuid::Uuid::from).collect();
 
         Ok(Self { plugin_ids })
+    }
+}
+
+impl From<GetGeneratorForEventSourceResponse> for _GetGeneratorForEventSourceResponse {
+    fn from(value: GetGeneratorForEventSourceResponse) -> Self {
+        Self {
+            plugin_ids: value.plugin_ids.into_iter().map(uuid::Uuid::into).collect()
+        }
     }
 }
 
@@ -263,6 +347,14 @@ impl TryFrom<_GetPluginRequest> for GetPluginRequest {
     }
 }
 
+impl From<GetPluginRequest> for _GetPluginRequest{
+    fn from(value: GetPluginRequest) -> Self {
+        Self {
+            plugin_id: Some(value.plugin_id.into())
+        }
+    }
+}
+
 pub struct GetPluginResponse {
     pub plugin: Plugin,
 }
@@ -279,6 +371,14 @@ impl TryFrom<_GetPluginResponse> for GetPluginResponse {
             .try_into()?;
 
         Ok(Self { plugin })
+    }
+}
+
+impl From<GetPluginResponse> for _GetPluginResponse {
+    fn from(value: GetPluginResponse) -> Self {
+        Self {
+            plugin: Some(value.plugin.into())
+        }
     }
 }
 
@@ -301,6 +401,14 @@ impl TryFrom<_TearDownPluginRequest> for TearDownPluginRequest {
     }
 }
 
+impl From<TearDownPluginRequest> for _TearDownPluginRequest {
+    fn from(value: TearDownPluginRequest) -> Self {
+        Self {
+            plugin_id: Some(value.plugin_id.into()),
+        }
+    }
+}
+
 pub struct TearDownPluginResponse {}
 
 impl TryFrom<_TearDownPluginResponse> for TearDownPluginResponse {
@@ -308,5 +416,11 @@ impl TryFrom<_TearDownPluginResponse> for TearDownPluginResponse {
 
     fn try_from(_value: _TearDownPluginResponse) -> Result<Self, Self::Error> {
         Ok(Self {})
+    }
+}
+
+impl From<TearDownPluginResponse> for _TearDownPluginResponse {
+    fn from(_: TearDownPluginResponse) -> Self {
+        Self {}
     }
 }
