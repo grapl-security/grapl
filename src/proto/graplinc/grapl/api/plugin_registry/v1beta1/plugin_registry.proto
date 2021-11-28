@@ -82,7 +82,7 @@ message GetGeneratorForEventSourceRequest {
 // A response containing the generator plugin ids that correspond to an event source
 message GetGeneratorForEventSourceResponse {
   // The plugin ids for the generator plugins for a given event source
-  repeated graplinc.common.v1beta1.Uuid plugin_id = 1;
+  repeated graplinc.common.v1beta1.Uuid plugin_ids = 1;
 }
 
 // A request for all Analyzers for a given tenant
@@ -98,7 +98,7 @@ message GetAnalyzersForTenantResponse {
 }
 
 // A service that manages the state of plugins
-service PluginControllerService {
+service PluginRegistryService {
   // create a new plugin
   rpc CreatePlugin(CreatePluginRequest) returns (CreatePluginResponse);
 

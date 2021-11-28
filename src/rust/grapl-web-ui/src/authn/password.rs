@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use argon2::{
     Argon2,
     Algorithm,
@@ -31,6 +32,12 @@ impl From<String> for Password {
 
 impl std::fmt::Debug for Password {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("<password value hidden>").finish()
+    }
+}
+
+impl Display for Password {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_tuple("<password value hidden>").finish()
     }
 }
