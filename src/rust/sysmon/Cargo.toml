@@ -10,10 +10,10 @@ repository = "https://github.com/grapl-security/grapl/tree/main/src/rust/sysmon"
 readme = "README.md"
 
 [dependencies]
-failure = "0.1"
-serde-xml-rs = "0.4"
-serde = { version = "1.0", features = ["derive"] }
-derive_is_enum_variant = "0.1"
-anyhow = "1"
-chrono = "0.4"
-uuid = { version = "0.8", features = ["serde", "v4"] }
+failure = "0.1.8"
+serde-xml-rs = "0.5.1"
+serde = { version = "1.0.130", features = ["derive"] }
+derive_is_enum_variant = "0.1.1"
+anyhow = "1.0.49"
+chrono = "0.4.19"
+uuid = { version = "0.8.2", features = ["serde", "v4"] }

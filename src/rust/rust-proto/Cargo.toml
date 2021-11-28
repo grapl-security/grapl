@@ -7,24 +7,24 @@ description = "A library for interacting with Grapl graphs"
 license = "MIT"
 
 [dependencies]
-log = "0.4"
+log = "0.4.14"
 prost = "0.9.0"
 prost-types = "0.9.0"
-rand = "0.8"
-serde = "1"
-serde_derive = "1"
+rand = "0.8.4"
+serde = "1.0.130"
+serde_derive = "1.0.130"
 thiserror = "1.0.30"
 tonic = "0.6.1"
-tracing = "0.1.22"
+tracing = "0.1.29"
 uuid = { version = "0.8.2", features = ["v4"] }
 
 [build-dependencies]
 tonic-build = { version = "0.6.0", features = ["prost"] }
 
 [dev-dependencies]
-quickcheck = "1.0"
-quickcheck_macros = { version = "1" }
-tracing-subscriber = "0.2"
+quickcheck = "1.0.3"
+quickcheck_macros = "1.0.0"
+tracing-subscriber = "0.3.2"
 
 [features]
 default = []
