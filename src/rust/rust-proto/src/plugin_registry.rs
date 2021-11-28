@@ -139,7 +139,7 @@ impl From<CreatePluginRequest> for _CreatePluginRequest {
         Self {
             plugin_artifact: value.plugin_artifact,
             tenant_id: Some(value.tenant_id.into()),
-            display_name: value.display_name
+            display_name: value.display_name,
         }
     }
 }
@@ -167,7 +167,7 @@ impl TryFrom<_CreatePluginResponse> for CreatePluginResponse {
 impl From<CreatePluginResponse> for _CreatePluginResponse {
     fn from(value: CreatePluginResponse) -> Self {
         Self {
-            plugin_id: Some(value.plugin_id.into())
+            plugin_id: Some(value.plugin_id.into()),
         }
     }
 }
@@ -194,7 +194,7 @@ impl TryFrom<_DeployPluginRequest> for DeployPluginRequest {
 impl From<DeployPluginRequest> for _DeployPluginRequest {
     fn from(value: DeployPluginRequest) -> Self {
         Self {
-            plugin_id: Some(value.plugin_id.into())
+            plugin_id: Some(value.plugin_id.into()),
         }
     }
 }
@@ -238,7 +238,7 @@ impl TryFrom<_GetAnalyzersForTenantRequest> for GetAnalyzersForTenantRequest {
 impl From<GetAnalyzersForTenantRequest> for _GetAnalyzersForTenantRequest {
     fn from(value: GetAnalyzersForTenantRequest) -> Self {
         Self {
-            tenant_id: Some(value.tenant_id.into())
+            tenant_id: Some(value.tenant_id.into()),
         }
     }
 }
@@ -271,7 +271,6 @@ impl From<GetAnalyzersForTenantResponse> for _GetAnalyzersForTenantResponse {
     }
 }
 
-
 pub struct GetGeneratorForEventSourceRequest {
     /// The event source id
     pub event_source_id: uuid::Uuid,
@@ -295,7 +294,7 @@ impl TryFrom<_GetGeneratorForEventSourceRequest> for GetGeneratorForEventSourceR
 impl From<GetGeneratorForEventSourceRequest> for _GetGeneratorForEventSourceRequest {
     fn from(value: GetGeneratorForEventSourceRequest) -> Self {
         Self {
-            event_source_id: Some(value.event_source_id.into())
+            event_source_id: Some(value.event_source_id.into()),
         }
     }
 }
@@ -322,7 +321,7 @@ impl TryFrom<_GetGeneratorForEventSourceResponse> for GetGeneratorForEventSource
 impl From<GetGeneratorForEventSourceResponse> for _GetGeneratorForEventSourceResponse {
     fn from(value: GetGeneratorForEventSourceResponse) -> Self {
         Self {
-            plugin_ids: value.plugin_ids.into_iter().map(uuid::Uuid::into).collect()
+            plugin_ids: value.plugin_ids.into_iter().map(uuid::Uuid::into).collect(),
         }
     }
 }
@@ -347,10 +346,10 @@ impl TryFrom<_GetPluginRequest> for GetPluginRequest {
     }
 }
 
-impl From<GetPluginRequest> for _GetPluginRequest{
+impl From<GetPluginRequest> for _GetPluginRequest {
     fn from(value: GetPluginRequest) -> Self {
         Self {
-            plugin_id: Some(value.plugin_id.into())
+            plugin_id: Some(value.plugin_id.into()),
         }
     }
 }
@@ -377,7 +376,7 @@ impl TryFrom<_GetPluginResponse> for GetPluginResponse {
 impl From<GetPluginResponse> for _GetPluginResponse {
     fn from(value: GetPluginResponse) -> Self {
         Self {
-            plugin: Some(value.plugin.into())
+            plugin: Some(value.plugin.into()),
         }
     }
 }
