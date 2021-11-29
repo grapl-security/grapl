@@ -1,0 +1,22 @@
+[package]
+name = "plugin-work-queue"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[[bin]]
+name = "plugin-work-queue"
+path = "src/main.rs"
+
+[lib]
+name = "plugin_work_queue"
+
+[dependencies]
+grapl-config = { path = "../grapl-config" }
+rust-proto = { path = "../rust-proto" }
+thiserror = "1.0.30"
+tokio = { version = "1.14.0", features = ["full"] }
+tonic = "0.6.1"
+tonic-health = "0.5.0"
+tracing = "0.1.29"
+uuid = { version = "0.8.2", features = ["v4"] }

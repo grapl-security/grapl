@@ -22,6 +22,7 @@ breaking:
     # break backward compatibility by definition.
     - graplinc/grapl/api/graph/v1beta1
     - graplinc/grapl/pipeline/v1beta1
+    - graplinc/grapl/api/plugin_work_queue/v1beta1
     - graplinc/common/v1beta1
     # Again, we don't care about vendored definitions
     - google

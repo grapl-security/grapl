@@ -14,7 +14,7 @@ base64 = "0.13"
 bytes = "1"
 failure = "0.1"
 log = "0.4"
-prost = "0.7"
+prost = "0.9"
 rusoto_s3 = { version = "0.46", default_features = false, features = [
   "rustls"
 ] }

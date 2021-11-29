@@ -67,7 +67,7 @@ message AcknowledgeResponse {
 }
 
 // The PluginExecutionService manages ExecutionJobs for Generator and Analyzer plugins
-service PluginExecutionService {
+service PluginWorkQueueService {
   // Adds a new execution job for a generator
   rpc PutExecuteGenerator(PutExecuteGeneratorRequest) returns (PutExecuteGeneratorResponse);
   // Adds a new execution job for an analyzer
