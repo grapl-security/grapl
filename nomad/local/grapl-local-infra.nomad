@@ -1,9 +1,3 @@
-variable "container_repository" {
-  type        = string
-  default     = ""
-  description = "The container repository in which we can find Grapl services. Requires a trailing /"
-}
-
 variable "localstack_tag" {
   type        = string
   description = "The tagged version of localstack we should deploy."

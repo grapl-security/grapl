@@ -112,6 +112,16 @@ def main() -> None:
         "analyzer-matched-subgraphs-bucket", analyzer_matched_emitter.bucket_name
     )
 
+    all_emitters = [
+        sysmon_log_emitter,
+        osquery_log_emitter,
+        unid_subgraphs_generated_emitter,
+        subgraphs_generated_emitter,
+        subgraphs_merged_emitter,
+        dispatched_analyzer_emitter,
+        analyzer_matched_emitter,
+    ]
+
     sysmon_generator_queue = ServiceQueue("sysmon-generator")
     sysmon_generator_queue.subscribe_to_emitter(sysmon_log_emitter)
 
@@ -137,6 +147,11 @@ def main() -> None:
     pulumi.export("analyzers-bucket", analyzers_bucket.bucket)
     model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)
     pulumi.export("model-plugins-bucket", model_plugins_bucket.bucket)
+
+    plugin_buckets = [
+        analyzers_bucket,
+        model_plugins_bucket,
+    ]
 
     # These are shared across both local and prod deployments.
     nomad_inputs: Final[NomadVars] = dict(
@@ -254,7 +269,7 @@ def main() -> None:
             "grapl-provision",
             jobspec=Path("../../nomad/grapl-provision.nomad").resolve(),
             vars=provision_vars,
-            opts=pulumi.ResourceOptions(depends_on=[nomad_grapl_core]),
+            opts=pulumi.ResourceOptions(depends_on=[nomad_grapl_core.job]),
         )
 
     else:
@@ -287,6 +302,20 @@ def main() -> None:
         nomad_agent_subnet_ids = networking_stack.require_output(
             "nomad-agents-private-subnet-ids"
         )
+        nomad_agent_role = aws.iam.Role.get(
+            "nomad-agent-role",
+            id=nomad_agents_stack.require_output("iam-role"),
+            opts=pulumi.ResourceOptions(parent=nomad_agents_stack),
+        )
+
+        for _bucket in plugin_buckets:
+            _bucket.grant_put_permission_to(nomad_agent_role)
+            # Analyzer Dispatcher needs to be able to ListObjects on Analyzers
+            # Analyzer Executor needs to be able to ListObjects on Model Plugins
+            _bucket.grant_get_and_list_to(nomad_agent_role)
+        for _emitter in all_emitters:
+            _emitter.grant_write_to(nomad_agent_role)
+            _emitter.grant_read_to(nomad_agent_role)
 
         cache = Cache(
             "main-cache",
@@ -357,7 +386,7 @@ def main() -> None:
             jobspec=Path("../../nomad/grapl-provision.nomad").resolve(),
             vars=grapl_provision_job_vars,
             opts=pulumi.ResourceOptions(
-                depends_on=[nomad_grapl_core], provider=nomad_provider
+                depends_on=[nomad_grapl_core.job], provider=nomad_provider
             ),
         )
 
@@ -367,7 +396,7 @@ def main() -> None:
             nomad_agents_alb_listener_arn=nomad_agent_alb_listener_arn,
             nomad_agents_private_subnet_ids=nomad_agent_subnet_ids,
             opts=pulumi.ResourceOptions(
-                depends_on=[nomad_grapl_ingress],
+                depends_on=[nomad_grapl_ingress.job],
             ),
         )
         pulumi.export("stage-url", api_gateway.stage.invoke_url)

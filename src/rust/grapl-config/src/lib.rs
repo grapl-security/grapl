@@ -10,7 +10,6 @@ use rusoto_core::{
     Region,
     RusotoError,
 };
-use rusoto_s3::S3;
 use rusoto_sqs::{
     ListQueuesRequest,
     Sqs,
@@ -124,21 +123,6 @@ pub fn mg_alphas() -> Vec<String> {
             format!("http://{}", mg)
         })
         .collect();
-}
-
-pub async fn wait_for_s3(s3_client: impl S3) -> color_eyre::Result<()> {
-    wait_loop(150, || async {
-        match s3_client.list_buckets().await {
-            Err(RusotoError::HttpDispatch(e)) => {
-                debug!("Waiting for S3 to become available: {:?}", e);
-                Err(e)
-            }
-            _ => Ok(()),
-        }
-    })
-    .await?;
-
-    Ok(())
 }
 
 pub async fn wait_for_sqs(
