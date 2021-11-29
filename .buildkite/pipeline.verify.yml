@@ -154,6 +154,20 @@ steps:
                     label: ":pipeline: Upload Yarn Audit"
                     command: ".buildkite/pipeline.yarn-audit.sh | buildkite-agent pipeline upload"
 
+      - label: ":thinking_face::rust: Cargo Udeps?"
+        plugins:
+          - grapl-security/grapl-release#v0.1.1
+          - chronotc/monorepo-diff#v2.0.4:
+              diff: grapl_diff.sh
+              log_level: "debug"
+              watch:
+                - path:
+                    - "**/Cargo.toml"
+                    - "**/Cargo.lock"
+                  config:
+                    label: ":pipeline: Upload Cargo Udeps"
+                    command: ".buildkite/pipeline.cargo-udeps.sh | buildkite-agent pipeline upload"
+
   - group: "Unit Tests"
     key: unit-tests
     steps:
