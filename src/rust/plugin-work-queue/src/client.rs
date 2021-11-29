@@ -1,5 +1,3 @@
-#![allow(warnings)]
-
 use rust_proto::plugin_work_queue::{
     plugin_work_queue_service_client::PluginWorkQueueServiceClient as _PluginWorkQueueServiceClient,
     AcknowledgeRequest,
@@ -12,16 +10,11 @@ use rust_proto::plugin_work_queue::{
     PutExecuteAnalyzerResponse,
     PutExecuteGeneratorRequest,
     PutExecuteGeneratorResponse,
-    _AcknowledgeRequest,
-    _AcknowledgeResponse,
-    _GetExecuteAnalyzerRequest,
-    _GetExecuteAnalyzerResponse,
-    _GetExecuteGeneratorRequest,
-    _GetExecuteGeneratorResponse,
-    _PutExecuteAnalyzerRequest,
-    _PutExecuteAnalyzerResponse,
-    _PutExecuteGeneratorRequest,
-    _PutExecuteGeneratorResponse,
+    AcknowledgeRequestProto,
+    GetExecuteAnalyzerRequestProto,
+    GetExecuteGeneratorRequestProto,
+    PutExecuteAnalyzerRequestProto,
+    PutExecuteGeneratorRequestProto,
 };
 use tonic::codegen::{
     Body,
@@ -29,7 +22,7 @@ use tonic::codegen::{
 };
 
 #[derive(Debug, thiserror::Error)]
-enum PluginWorkQueueServiceClientError {}
+pub enum PluginWorkQueueServiceClientError {}
 
 pub struct PluginWorkQueueServiceClient<T> {
     inner: _PluginWorkQueueServiceClient<T>,
@@ -52,7 +45,7 @@ where
         request: PutExecuteGeneratorRequest,
     ) -> Result<PutExecuteGeneratorResponse, PluginWorkQueueServiceClientError> {
         self.inner
-            .put_execute_generator(_PutExecuteGeneratorRequest::from(request))
+            .put_execute_generator(PutExecuteGeneratorRequestProto::from(request))
             .await
             .expect("todo");
         todo!()
@@ -64,7 +57,7 @@ where
         request: PutExecuteAnalyzerRequest,
     ) -> Result<PutExecuteAnalyzerResponse, PluginWorkQueueServiceClientError> {
         self.inner
-            .put_execute_analyzer(_PutExecuteAnalyzerRequest::from(request))
+            .put_execute_analyzer(PutExecuteAnalyzerRequestProto::from(request))
             .await
             .expect("todo");
         todo!()
@@ -76,7 +69,7 @@ where
         request: GetExecuteGeneratorRequest,
     ) -> Result<GetExecuteGeneratorResponse, PluginWorkQueueServiceClientError> {
         self.inner
-            .get_execute_generator(_GetExecuteGeneratorRequest::from(request))
+            .get_execute_generator(GetExecuteGeneratorRequestProto::from(request))
             .await
             .expect("todo");
         todo!()
@@ -88,7 +81,7 @@ where
         request: GetExecuteAnalyzerRequest,
     ) -> Result<GetExecuteAnalyzerResponse, PluginWorkQueueServiceClientError> {
         self.inner
-            .get_execute_analyzer(_GetExecuteAnalyzerRequest::from(request))
+            .get_execute_analyzer(GetExecuteAnalyzerRequestProto::from(request))
             .await
             .expect("todo");
         todo!()
@@ -100,7 +93,7 @@ where
         request: AcknowledgeRequest,
     ) -> Result<AcknowledgeResponse, PluginWorkQueueServiceClientError> {
         self.inner
-            .acknowledge(_AcknowledgeRequest::from(request))
+            .acknowledge(AcknowledgeRequestProto::from(request))
             .await
             .expect("todo");
         todo!()
