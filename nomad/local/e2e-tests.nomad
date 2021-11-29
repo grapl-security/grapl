@@ -198,7 +198,6 @@ EOF
         GRAPL_LOG_LEVEL = local.log_level
 
         GRAPL_TEST_USER_NAME = var.test_user_name # Needed for EngagementEdgeClient
-        IS_LOCAL             = true               # Revisit for in-prod E2E
 
         MG_ALPHAS      = "localhost:9080"
         RUST_BACKTRACE = 1
