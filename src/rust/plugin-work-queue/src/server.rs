@@ -13,16 +13,16 @@ use rust_proto::plugin_work_queue::{
     PutExecuteAnalyzerResponse,
     PutExecuteGeneratorRequest,
     PutExecuteGeneratorResponse,
-    _AcknowledgeRequest,
-    _AcknowledgeResponse,
-    _GetExecuteAnalyzerRequest,
-    _GetExecuteAnalyzerResponse,
-    _GetExecuteGeneratorRequest,
-    _GetExecuteGeneratorResponse,
-    _PutExecuteAnalyzerRequest,
-    _PutExecuteAnalyzerResponse,
-    _PutExecuteGeneratorRequest,
-    _PutExecuteGeneratorResponse,
+    AcknowledgeRequestProto,
+    AcknowledgeResponseProto,
+    GetExecuteAnalyzerRequestProto,
+    GetExecuteAnalyzerResponseProto,
+    GetExecuteGeneratorRequestProto,
+    GetExecuteGeneratorResponseProto,
+    PutExecuteAnalyzerRequestProto,
+    PutExecuteAnalyzerResponseProto,
+    PutExecuteGeneratorRequestProto,
+    PutExecuteGeneratorResponseProto,
 };
 use tonic::{
     transport::Server,
@@ -37,35 +37,40 @@ pub enum PluginWorkQueueError {}
 pub struct PluginWorkQueue {}
 
 impl PluginWorkQueue {
-    async fn _put_execute_generator(
+    #[allow(dead_code)]
+    async fn put_execute_generator(
         &self,
         _request: PutExecuteGeneratorRequest,
     ) -> Result<PutExecuteGeneratorResponse, PluginWorkQueueError> {
         todo!()
     }
 
-    async fn _put_execute_analyzer(
+    #[allow(dead_code)]
+    async fn put_execute_analyzer(
         &self,
         _request: PutExecuteAnalyzerRequest,
     ) -> Result<PutExecuteAnalyzerResponse, PluginWorkQueueError> {
         todo!()
     }
 
-    async fn _get_execute_generator(
+    #[allow(dead_code)]
+    async fn get_execute_generator(
         &self,
         _request: GetExecuteGeneratorRequest,
     ) -> Result<GetExecuteGeneratorResponse, PluginWorkQueueError> {
         todo!()
     }
 
-    async fn _get_execute_analyzer(
+    #[allow(dead_code)]
+    async fn get_execute_analyzer(
         &self,
         _request: GetExecuteAnalyzerRequest,
     ) -> Result<GetExecuteAnalyzerResponse, PluginWorkQueueError> {
         todo!()
     }
 
-    async fn _acknowledge(
+    #[allow(dead_code)]
+    async fn acknowledge(
         &self,
         _request: AcknowledgeRequest,
     ) -> Result<AcknowledgeResponse, PluginWorkQueueError> {
@@ -77,36 +82,36 @@ impl PluginWorkQueue {
 impl PluginWorkQueueService for PluginWorkQueue {
     async fn put_execute_generator(
         &self,
-        _request: Request<_PutExecuteGeneratorRequest>,
-    ) -> Result<Response<_PutExecuteGeneratorResponse>, Status> {
+        _request: Request<PutExecuteGeneratorRequestProto>,
+    ) -> Result<Response<PutExecuteGeneratorResponseProto>, Status> {
         todo!()
     }
 
     async fn put_execute_analyzer(
         &self,
-        _request: Request<_PutExecuteAnalyzerRequest>,
-    ) -> Result<Response<_PutExecuteAnalyzerResponse>, Status> {
+        _request: Request<PutExecuteAnalyzerRequestProto>,
+    ) -> Result<Response<PutExecuteAnalyzerResponseProto>, Status> {
         todo!()
     }
 
     async fn get_execute_generator(
         &self,
-        _request: Request<_GetExecuteGeneratorRequest>,
-    ) -> Result<Response<_GetExecuteGeneratorResponse>, Status> {
+        _request: Request<GetExecuteGeneratorRequestProto>,
+    ) -> Result<Response<GetExecuteGeneratorResponseProto>, Status> {
         todo!()
     }
 
     async fn get_execute_analyzer(
         &self,
-        _request: Request<_GetExecuteAnalyzerRequest>,
-    ) -> Result<Response<_GetExecuteAnalyzerResponse>, Status> {
+        _request: Request<GetExecuteAnalyzerRequestProto>,
+    ) -> Result<Response<GetExecuteAnalyzerResponseProto>, Status> {
         todo!()
     }
 
     async fn acknowledge(
         &self,
-        _request: Request<_AcknowledgeRequest>,
-    ) -> Result<Response<_AcknowledgeResponse>, Status> {
+        _request: Request<AcknowledgeRequestProto>,
+    ) -> Result<Response<AcknowledgeResponseProto>, Status> {
         todo!()
     }
 }
