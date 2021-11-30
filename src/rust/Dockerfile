@@ -125,6 +125,12 @@ FROM rust-dist AS graph-merger-deploy
 COPY --from=build /outputs/graph-merger /
 ENTRYPOINT ["/graph-merger"]
 
+# plugin-work-queue
+FROM rust-dist AS plugin-work-queue-deploy
+
+COPY --from=build /outputs/plugin-work-queue /
+ENTRYPOINT ["/plugin-work-queue"]
+
 # node-identifier
 FROM rust-dist AS node-identifier-deploy
 
