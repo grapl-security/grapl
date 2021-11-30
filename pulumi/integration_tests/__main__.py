@@ -10,11 +10,39 @@ import pulumi_aws as aws
 import pulumi_nomad as nomad
 from infra import config
 from infra.autotag import register_auto_tags
-from infra.docker_images import version_tag
+from infra.docker_images import CloudsmithImageUrl, version_tag
 from infra.nomad_job import NomadJob, NomadVars
 from infra.quiet_docker_build_output import quiet_docker_output
 
 import pulumi
+
+
+def _container_images(
+    artifacts: Mapping[str, str], require_artifact: bool = False
+) -> str:
+    """
+    Build a map of "task name -> docker image URL".
+    See `grapl-core.nomad` container_images for examples.
+    """
+    cs_urls = CloudsmithImageUrl(config.container_repository())
+
+    def build_image_url_with_version_tag(image_name: str) -> str:
+        # A shortcut to grab the version tag from the artifacts map and build a
+        # Cloudsmith docker image url out of it.
+        tag = version_tag(image_name, artifacts, require_artifact)
+        return cs_urls.build(image_name=image_name, tag=tag)
+
+    return json.dumps(
+        {
+            "e2e-tests": build_image_url_with_version_tag("e2e-tests"),
+            "python-integration-tests": build_image_url_with_version_tag(
+                "python-integration-tests"
+            ),
+            "rust-integration-tests": build_image_url_with_version_tag(
+                "rust-integration-tests"
+            ),
+        }
+    )
 
 
 def main() -> None:
@@ -23,8 +51,8 @@ def main() -> None:
 
     pulumi_config = pulumi.Config()
     artifacts = pulumi_config.get_object("artifacts") or {}
-    version_tag_alias = lambda key: version_tag(
-        key, artifacts, require_artifact=(not config.LOCAL_GRAPL)
+    container_images = _container_images(
+        artifacts, require_artifact=(not config.LOCAL_GRAPL)
     )
 
     quiet_docker_output()
@@ -60,8 +88,8 @@ def main() -> None:
         "aws_access_key_secret": secret_key,
         "_aws_endpoint": grapl_stack.aws_endpoint,
         "aws_region": aws.get_region().name,
+        "container_images": container_images,
         "deployment_name": grapl_stack.deployment_name,
-        "e2e_tests_tag": version_tag_alias("e2e-tests"),
         "schema_properties_table_name": grapl_stack.schema_properties_table_name,
         "sysmon_log_bucket": grapl_stack.sysmon_log_bucket,
         "schema_table_name": grapl_stack.schema_table_name,
@@ -85,15 +113,12 @@ def main() -> None:
             "aws_access_key_secret": secret_key,
             "_aws_endpoint": grapl_stack.aws_endpoint,
             "aws_region": aws.get_region().name,
+            "container_images": container_images,
             "deployment_name": grapl_stack.deployment_name,
             "docker_user": os.environ["DOCKER_USER"],
             "grapl_root": os.environ["GRAPL_ROOT"],
             "_kafka_endpoint": grapl_stack.kafka_endpoint,
-            "python_integration_tests_tag": version_tag_alias(
-                "python-integration-tests"
-            ),
             "_redis_endpoint": grapl_stack.redis_endpoint,
-            "rust_integration_tests_tag": version_tag_alias("rust-integration-tests"),
             "schema_properties_table_name": grapl_stack.schema_properties_table_name,
             "test_user_name": grapl_stack.test_user_name,
         }

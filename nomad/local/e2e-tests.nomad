@@ -2,15 +2,19 @@
 # https://discuss.hashicorp.com/t/best-practices-for-testing-against-services-in-nomad-consul-connect/29022
 # We'll submit integration tests to Nomad as 
 # 
-variable "container_repository" {
-  type        = string
-  default     = ""
-  description = "The container repository in which we can find Grapl services. Requires a trailing /"
-}
+variable "container_images" {
+  type        = map(string)
+  description = <<EOF
+  A map of $NAME_OF_TASK to the URL for that task's docker image.
 
-variable "e2e_tests_tag" {
-  type        = string
-  description = "The tagged version of the e2e tests we should deploy."
+  The values can look like, for instance:
+    - a hardcoded value pulled from Dockerhub
+        "dgraph/dgraph:v21.0.3"
+    - an image pulled from the host's Docker daemon (no `:latest`!)
+        "model-plugin-deployer:dev"
+    - an image pulled from Cloudsmith
+        "docker.cloudsmith.io/grapl/raw/graph-merger:20211105192234-a86a8ad2"
+EOF
 }
 
 variable "aws_region" {
@@ -179,7 +183,7 @@ EOF
       driver = "docker"
 
       config {
-        image = "${var.container_repository}e2e-tests:${var.e2e_tests_tag}"
+        image = var.container_images["e2e-integration-tests"]
       }
 
       # This writes an env file that gets read by the task automatically

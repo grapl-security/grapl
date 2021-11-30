@@ -42,7 +42,7 @@ def _get_subset(inputs: NomadVars, subset: Set[str]) -> NomadVars:
     return {k: inputs[k] for k in subset}
 
 
-def container_images(
+def _container_images(
     artifacts: Mapping[str, str], require_artifact: bool = False
 ) -> str:
     """
@@ -77,6 +77,7 @@ def container_images(
                 "node-identifier-retry"
             ),
             "osquery-generator": build_image_url_with_version_tag("osquery-generator"),
+            "provisioner": build_image_url_with_version_tag("provisioner"),
             "sysmon-generator": build_image_url_with_version_tag("sysmon-generator"),
             "web-ui": build_image_url_with_version_tag("grapl-web-ui"),
         }
@@ -210,6 +211,7 @@ def main() -> None:
             _redis_endpoint=redis_endpoint,
             aws_access_key_id=aws.config.access_key,
             aws_access_key_secret=aws.config.secret_key,
+            container_images=_container_images({}),
             rust_log="DEBUG",
         )
 
@@ -226,7 +228,6 @@ def main() -> None:
             "grapl-core",
             jobspec=Path("../../nomad/grapl-core.nomad").resolve(),
             vars=dict(
-                container_images=container_images({}),
                 **grapl_core_job_vars_inputs,
                 **nomad_inputs,
             ),
@@ -240,7 +241,6 @@ def main() -> None:
 
         provision_vars = _get_subset(
             dict(
-                provisioner_tag=version_tag("provisioner", {}, require_artifact=False),
                 **grapl_core_job_vars_inputs,
                 **nomad_inputs,
             ),
@@ -249,8 +249,8 @@ def main() -> None:
                 "aws_access_key_secret",
                 "_aws_endpoint",
                 "aws_region",
+                "container_images",
                 "deployment_name",
-                "provisioner_tag",
                 "rust_log",
                 "schema_properties_table_name",
                 "schema_table_name",
@@ -327,10 +327,9 @@ def main() -> None:
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
             _redis_endpoint=cache.endpoint,
-            container_repository=f"{config.container_repository()}/",
             # TODO: consider replacing with the previous per-service `configurable_envvars`
             rust_log="DEBUG",
-            container_images=container_images(artifacts, require_artifact=True),
+            container_images=_container_images(artifacts, require_artifact=True),
             **nomad_inputs,
             # Build Tags. We use per service tags so we can update services independently
         )
@@ -351,21 +350,13 @@ def main() -> None:
 
         grapl_provision_job_vars = _get_subset(
             dict(
-                # The vars with a leading underscore indicate that the hcl local version of the variable should be used
-                # instead of the var version.
-                container_repository=f"{config.container_repository()}/",
-                # TODO: consider replacing with the previous per-service `configurable_envvars`
-                rust_log="DEBUG",
-                provisioner_tag=version_tag(
-                    "provisioner", artifacts, require_artifact=True
-                ),
+                **grapl_core_job_vars_inputs,
                 **nomad_inputs,
             ),
             {
                 "aws_region",
-                "container_repository",
+                "container_images",
                 "deployment_name",
-                "provisioner_tag",
                 "rust_log",
                 "schema_table_name",
                 "schema_properties_table_name",

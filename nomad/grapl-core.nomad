@@ -18,14 +18,6 @@ variable "container_images" {
 EOF
 }
 
-# TODO delete
-variable "container_repository" {
-  type        = string
-  default     = ""
-  description = "The container registry in which we can find Grapl services. Requires a trailing / if not empty string"
-}
-
-
 variable "aws_access_key_id" {
   type        = string
   default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_ID"
@@ -300,7 +292,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_images["dgraph"]}"
+        image = var.container_images["dgraph"]
         args = [
           "dgraph",
           "zero",
@@ -364,7 +356,7 @@ job "grapl-core" {
         driver = "docker"
 
         config {
-          image = "${var.container_images["dgraph"]}"
+          image = var.container_images["dgraph"]
           args = [
             "dgraph",
             "zero",
@@ -468,7 +460,7 @@ job "grapl-core" {
         driver = "docker"
 
         config {
-          image = "${var.container_images["dgraph"]}"
+          image = var.container_images["dgraph"]
           args = [
             "dgraph",
             "alpha",
@@ -581,7 +573,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_images["graph-merger"]}"
+        image = var.container_images["graph-merger"]
       }
 
       # This writes an env files that gets read by nomad automatically
@@ -637,7 +629,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_images["node-identifier"]}"
+        image = var.container_images["node-identifier"]
       }
 
       template {
@@ -677,7 +669,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_images["node-identifier-retry"]}"
+        image = var.container_images["node-identifier-retry"]
       }
 
       template {
@@ -712,7 +704,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_images["analyzer-dispatcher"]}"
+        image = var.container_images["analyzer-dispatcher"]
       }
 
       template {
@@ -751,7 +743,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_images["analyzer-executor"]}"
+        image = var.container_images["analyzer-executor"]
       }
 
       template {
@@ -810,7 +802,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_images["engagement-creator"]}"
+        image = var.container_images["engagement-creator"]
       }
 
       template {
@@ -863,7 +855,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_images["graphql-endpoint"]}"
+        image = var.container_images["graphql-endpoint"]
         ports = ["graphql-endpoint-port"]
       }
 
@@ -920,7 +912,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_images["model-plugin-deployer"]}"
+        image = var.container_images["model-plugin-deployer"]
         ports = ["model-plugin-deployer"]
       }
 
@@ -952,7 +944,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_images["web-ui"]}"
+        image = var.container_images["web-ui"]
         ports = ["web-ui-port"]
       }
 
@@ -1002,7 +994,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_images["sysmon-generator"]}"
+        image = var.container_images["sysmon-generator"]
       }
 
       template {
@@ -1032,7 +1024,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_images["osquery-generator"]}"
+        image = var.container_images["osquery-generator"]
       }
 
       template {
