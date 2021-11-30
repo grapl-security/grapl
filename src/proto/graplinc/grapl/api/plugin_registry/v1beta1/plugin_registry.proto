@@ -74,13 +74,13 @@ message TearDownPluginResponse {
 }
 
 // A request to return all generators that can ahndle a specific event source
-message GetGeneratorForEventSourceRequest {
+message GetGeneratorsForEventSourceRequest {
   // The event source id
   graplinc.common.v1beta1.Uuid event_source_id = 1;
 }
 
 // A response containing the generator plugin ids that correspond to an event source
-message GetGeneratorForEventSourceResponse {
+message GetGeneratorsForEventSourceResponse {
   // The plugin ids for the generator plugins for a given event source
   repeated graplinc.common.v1beta1.Uuid plugin_ids = 1;
 }
@@ -112,7 +112,7 @@ service PluginRegistryService {
   rpc TearDownPlugin(TearDownPluginRequest) returns (TearDownPluginResponse);
 
   // Given information about an event source, return all generators that handle that event source
-  rpc GetGeneratorForEventSource(GetGeneratorForEventSourceRequest) returns (GetGeneratorForEventSourceResponse);
+  rpc GetGeneratorForEventSource(GetGeneratorsForEventSourceRequest) returns (GetGeneratorsForEventSourceResponse);
 
   // Given information about a tenant, return all analyzers for that tenant
   rpc GetAnalyzersForTenant(GetAnalyzersForTenantRequest) returns (GetAnalyzersForTenantResponse);

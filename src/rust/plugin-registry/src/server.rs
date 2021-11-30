@@ -1,16 +1,16 @@
 use rust_proto::plugin_registry::{
-    _CreatePluginRequest,
-    _CreatePluginResponse,
-    _DeployPluginRequest,
-    _DeployPluginResponse,
-    _GetAnalyzersForTenantRequest,
-    _GetAnalyzersForTenantResponse,
-    _GetGeneratorForEventSourceRequest,
-    _GetGeneratorForEventSourceResponse,
-    _GetPluginRequest,
-    _GetPluginResponse,
-    _TearDownPluginRequest,
-    _TearDownPluginResponse,
+    CreatePluginRequestProto,
+    CreatePluginResponseProto,
+    DeployPluginRequestProto,
+    DeployPluginResponseProto,
+    GetAnalyzersForTenantRequestProto,
+    GetAnalyzersForTenantResponseProto,
+    GetGeneratorsForEventSourceRequestProto,
+    GetGeneratorsForEventSourceResponseProto,
+    GetPluginRequestProto,
+    GetPluginResponseProto,
+    TearDownPluginRequestProto,
+    TearDownPluginResponseProto,
     plugin_registry_service_server::PluginRegistryService,
     CreatePluginRequest,
     CreatePluginResponse,
@@ -18,8 +18,8 @@ use rust_proto::plugin_registry::{
     DeployPluginResponse,
     GetAnalyzersForTenantRequest,
     GetAnalyzersForTenantResponse,
-    GetGeneratorForEventSourceRequest,
-    GetGeneratorForEventSourceResponse,
+    GetGeneratorsForEventSourceRequest,
+    GetGeneratorsForEventSourceResponse,
     GetPluginRequest,
     GetPluginResponse,
     TearDownPluginRequest,
@@ -37,42 +37,48 @@ pub enum PluginRegistryServiceError {}
 pub struct PluginRegistry {}
 
 impl PluginRegistry {
-    async fn _create_plugin(
+    #[allow(dead_code)]
+    async fn create_plugin(
         &self,
         _request: CreatePluginRequest,
     ) -> Result<CreatePluginResponse, PluginRegistryServiceError> {
         todo!()
     }
 
-    async fn _get_plugin(
+    #[allow(dead_code)]
+    async fn get_plugin(
         &self,
         _request: GetPluginRequest,
     ) -> Result<GetPluginResponse, PluginRegistryServiceError> {
         todo!()
     }
 
-    async fn _deploy_plugin(
+    #[allow(dead_code)]
+    async fn deploy_plugin(
         &self,
         _request: DeployPluginRequest,
     ) -> Result<DeployPluginResponse, PluginRegistryServiceError> {
         todo!()
     }
 
-    async fn _tear_down_plugin(
+    #[allow(dead_code)]
+    async fn tear_down_plugin(
         &self,
         _request: TearDownPluginRequest,
     ) -> Result<TearDownPluginResponse, PluginRegistryServiceError> {
         todo!()
     }
 
-    async fn _get_generator_for_event_source(
+    #[allow(dead_code)]
+    async fn get_generator_for_event_source(
         &self,
-        _request: GetGeneratorForEventSourceRequest,
-    ) -> Result<GetGeneratorForEventSourceResponse, PluginRegistryServiceError> {
+        _request: GetGeneratorsForEventSourceRequest,
+    ) -> Result<GetGeneratorsForEventSourceResponse, PluginRegistryServiceError> {
         todo!()
     }
 
-    async fn _get_analyzers_for_tenant(
+    #[allow(dead_code)]
+    async fn get_analyzers_for_tenant(
         &self,
         _request: GetAnalyzersForTenantRequest,
     ) -> Result<GetAnalyzersForTenantResponse, PluginRegistryServiceError> {
@@ -84,43 +90,43 @@ impl PluginRegistry {
 impl PluginRegistryService for PluginRegistry {
     async fn create_plugin(
         &self,
-        _request: Request<_CreatePluginRequest>,
-    ) -> Result<Response<_CreatePluginResponse>, Status> {
+        _request: Request<CreatePluginRequestProto>,
+    ) -> Result<Response<CreatePluginResponseProto>, Status> {
         todo!()
     }
 
     async fn get_plugin(
         &self,
-        _request: Request<_GetPluginRequest>,
-    ) -> Result<Response<_GetPluginResponse>, Status> {
+        _request: Request<GetPluginRequestProto>,
+    ) -> Result<Response<GetPluginResponseProto>, Status> {
         todo!()
     }
 
     async fn deploy_plugin(
         &self,
-        _request: Request<_DeployPluginRequest>,
-    ) -> Result<Response<_DeployPluginResponse>, Status> {
+        _request: Request<DeployPluginRequestProto>,
+    ) -> Result<Response<DeployPluginResponseProto>, Status> {
         todo!()
     }
 
     async fn tear_down_plugin(
         &self,
-        _request: Request<_TearDownPluginRequest>,
-    ) -> Result<Response<_TearDownPluginResponse>, Status> {
+        _request: Request<TearDownPluginRequestProto>,
+    ) -> Result<Response<TearDownPluginResponseProto>, Status> {
         todo!()
     }
 
     async fn get_generator_for_event_source(
         &self,
-        _request: Request<_GetGeneratorForEventSourceRequest>,
-    ) -> Result<Response<_GetGeneratorForEventSourceResponse>, Status> {
+        _request: Request<GetGeneratorsForEventSourceRequestProto>,
+    ) -> Result<Response<GetGeneratorsForEventSourceResponseProto>, Status> {
         todo!()
     }
 
     async fn get_analyzers_for_tenant(
         &self,
-        _request: Request<_GetAnalyzersForTenantRequest>,
-    ) -> Result<Response<_GetAnalyzersForTenantResponse>, Status> {
+        _request: Request<GetAnalyzersForTenantRequestProto>,
+    ) -> Result<Response<GetAnalyzersForTenantResponseProto>, Status> {
         todo!()
     }
 }

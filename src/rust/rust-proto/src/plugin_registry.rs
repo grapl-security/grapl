@@ -2,19 +2,19 @@ pub use crate::graplinc::grapl::api::plugin_registry::v1beta1::{
     plugin::PluginType as _PluginType,
     plugin_registry_service_client,
     plugin_registry_service_server,
-    CreatePluginRequest as _CreatePluginRequest,
-    CreatePluginResponse as _CreatePluginResponse,
-    DeployPluginRequest as _DeployPluginRequest,
-    DeployPluginResponse as _DeployPluginResponse,
-    GetAnalyzersForTenantRequest as _GetAnalyzersForTenantRequest,
-    GetAnalyzersForTenantResponse as _GetAnalyzersForTenantResponse,
-    GetGeneratorForEventSourceRequest as _GetGeneratorForEventSourceRequest,
-    GetGeneratorForEventSourceResponse as _GetGeneratorForEventSourceResponse,
-    GetPluginRequest as _GetPluginRequest,
-    GetPluginResponse as _GetPluginResponse,
+    CreatePluginRequest as CreatePluginRequestProto,
+    CreatePluginResponse as CreatePluginResponseProto,
+    DeployPluginRequest as DeployPluginRequestProto,
+    DeployPluginResponse as DeployPluginResponseProto,
+    GetAnalyzersForTenantRequest as GetAnalyzersForTenantRequestProto,
+    GetAnalyzersForTenantResponse as GetAnalyzersForTenantResponseProto,
+    GetGeneratorsForEventSourceRequest as GetGeneratorsForEventSourceRequestProto,
+    GetGeneratorsForEventSourceResponse as GetGeneratorsForEventSourceResponseProto,
+    GetPluginRequest as GetPluginRequestProto,
+    GetPluginResponse as GetPluginResponseProto,
     Plugin as _Plugin,
-    TearDownPluginRequest as _TearDownPluginRequest,
-    TearDownPluginResponse as _TearDownPluginResponse,
+    TearDownPluginRequest as TearDownPluginRequestProto,
+    TearDownPluginResponse as TearDownPluginResponseProto,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -101,10 +101,10 @@ pub struct CreatePluginRequest {
     pub display_name: String,
 }
 
-impl TryFrom<_CreatePluginRequest> for CreatePluginRequest {
+impl TryFrom<CreatePluginRequestProto> for CreatePluginRequest {
     type Error = PluginRegistryDeserializationError;
 
-    fn try_from(value: _CreatePluginRequest) -> Result<Self, Self::Error> {
+    fn try_from(value: CreatePluginRequestProto) -> Result<Self, Self::Error> {
         let tenant_id = value
             .tenant_id
             .ok_or(PluginRegistryDeserializationError::MissingRequiredField(
@@ -134,7 +134,7 @@ impl TryFrom<_CreatePluginRequest> for CreatePluginRequest {
     }
 }
 
-impl From<CreatePluginRequest> for _CreatePluginRequest {
+impl From<CreatePluginRequest> for CreatePluginRequestProto {
     fn from(value: CreatePluginRequest) -> Self {
         Self {
             plugin_artifact: value.plugin_artifact,
@@ -149,10 +149,10 @@ pub struct CreatePluginResponse {
     pub plugin_id: uuid::Uuid,
 }
 
-impl TryFrom<_CreatePluginResponse> for CreatePluginResponse {
+impl TryFrom<CreatePluginResponseProto> for CreatePluginResponse {
     type Error = PluginRegistryDeserializationError;
 
-    fn try_from(value: _CreatePluginResponse) -> Result<Self, Self::Error> {
+    fn try_from(value: CreatePluginResponseProto) -> Result<Self, Self::Error> {
         let plugin_id = value
             .plugin_id
             .ok_or(PluginRegistryDeserializationError::MissingRequiredField(
@@ -164,7 +164,7 @@ impl TryFrom<_CreatePluginResponse> for CreatePluginResponse {
     }
 }
 
-impl From<CreatePluginResponse> for _CreatePluginResponse {
+impl From<CreatePluginResponse> for CreatePluginResponseProto {
     fn from(value: CreatePluginResponse) -> Self {
         Self {
             plugin_id: Some(value.plugin_id.into()),
@@ -176,10 +176,10 @@ pub struct DeployPluginRequest {
     pub plugin_id: uuid::Uuid,
 }
 
-impl TryFrom<_DeployPluginRequest> for DeployPluginRequest {
+impl TryFrom<DeployPluginRequestProto> for DeployPluginRequest {
     type Error = PluginRegistryDeserializationError;
 
-    fn try_from(value: _DeployPluginRequest) -> Result<Self, Self::Error> {
+    fn try_from(value: DeployPluginRequestProto) -> Result<Self, Self::Error> {
         let plugin_id = value
             .plugin_id
             .ok_or(PluginRegistryDeserializationError::MissingRequiredField(
@@ -191,7 +191,7 @@ impl TryFrom<_DeployPluginRequest> for DeployPluginRequest {
     }
 }
 
-impl From<DeployPluginRequest> for _DeployPluginRequest {
+impl From<DeployPluginRequest> for DeployPluginRequestProto {
     fn from(value: DeployPluginRequest) -> Self {
         Self {
             plugin_id: Some(value.plugin_id.into()),
@@ -201,15 +201,15 @@ impl From<DeployPluginRequest> for _DeployPluginRequest {
 
 pub struct DeployPluginResponse {}
 
-impl TryFrom<_DeployPluginResponse> for DeployPluginResponse {
+impl TryFrom<DeployPluginResponseProto> for DeployPluginResponse {
     type Error = PluginRegistryDeserializationError;
 
-    fn try_from(_value: _DeployPluginResponse) -> Result<Self, Self::Error> {
+    fn try_from(_value: DeployPluginResponseProto) -> Result<Self, Self::Error> {
         Ok(Self {})
     }
 }
 
-impl From<DeployPluginResponse> for _DeployPluginResponse {
+impl From<DeployPluginResponse> for DeployPluginResponseProto {
     fn from(_value: DeployPluginResponse) -> Self {
         Self {}
     }
@@ -220,10 +220,10 @@ pub struct GetAnalyzersForTenantRequest {
     pub tenant_id: uuid::Uuid,
 }
 
-impl TryFrom<_GetAnalyzersForTenantRequest> for GetAnalyzersForTenantRequest {
+impl TryFrom<GetAnalyzersForTenantRequestProto> for GetAnalyzersForTenantRequest {
     type Error = PluginRegistryDeserializationError;
 
-    fn try_from(value: _GetAnalyzersForTenantRequest) -> Result<Self, Self::Error> {
+    fn try_from(value: GetAnalyzersForTenantRequestProto) -> Result<Self, Self::Error> {
         let tenant_id = value
             .tenant_id
             .ok_or(PluginRegistryDeserializationError::MissingRequiredField(
@@ -235,7 +235,7 @@ impl TryFrom<_GetAnalyzersForTenantRequest> for GetAnalyzersForTenantRequest {
     }
 }
 
-impl From<GetAnalyzersForTenantRequest> for _GetAnalyzersForTenantRequest {
+impl From<GetAnalyzersForTenantRequest> for GetAnalyzersForTenantRequestProto {
     fn from(value: GetAnalyzersForTenantRequest) -> Self {
         Self {
             tenant_id: Some(value.tenant_id.into()),
@@ -248,10 +248,10 @@ pub struct GetAnalyzersForTenantResponse {
     pub plugin_ids: Vec<uuid::Uuid>,
 }
 
-impl TryFrom<_GetAnalyzersForTenantResponse> for GetAnalyzersForTenantResponse {
+impl TryFrom<GetAnalyzersForTenantResponseProto> for GetAnalyzersForTenantResponse {
     type Error = PluginRegistryDeserializationError;
 
-    fn try_from(value: _GetAnalyzersForTenantResponse) -> Result<Self, Self::Error> {
+    fn try_from(value: GetAnalyzersForTenantResponseProto) -> Result<Self, Self::Error> {
         if value.plugin_ids.is_empty() {
             return Err(PluginRegistryDeserializationError::EmptyField(
                 "GetAnalyzersForTenantResponse.plugin_ids",
@@ -263,7 +263,7 @@ impl TryFrom<_GetAnalyzersForTenantResponse> for GetAnalyzersForTenantResponse {
     }
 }
 
-impl From<GetAnalyzersForTenantResponse> for _GetAnalyzersForTenantResponse {
+impl From<GetAnalyzersForTenantResponse> for GetAnalyzersForTenantResponseProto {
     fn from(value: GetAnalyzersForTenantResponse) -> Self {
         Self {
             plugin_ids: value.plugin_ids.into_iter().map(uuid::Uuid::into).collect(),
@@ -271,19 +271,19 @@ impl From<GetAnalyzersForTenantResponse> for _GetAnalyzersForTenantResponse {
     }
 }
 
-pub struct GetGeneratorForEventSourceRequest {
+pub struct GetGeneratorsForEventSourceRequest {
     /// The event source id
     pub event_source_id: uuid::Uuid,
 }
 
-impl TryFrom<_GetGeneratorForEventSourceRequest> for GetGeneratorForEventSourceRequest {
+impl TryFrom<GetGeneratorsForEventSourceRequestProto> for GetGeneratorsForEventSourceRequest {
     type Error = PluginRegistryDeserializationError;
 
-    fn try_from(value: _GetGeneratorForEventSourceRequest) -> Result<Self, Self::Error> {
+    fn try_from(value: GetGeneratorsForEventSourceRequestProto) -> Result<Self, Self::Error> {
         let event_source_id = value
             .event_source_id
             .ok_or(PluginRegistryDeserializationError::MissingRequiredField(
-                "GetGeneratorForEventSourceRequest.event_source_id",
+                "GetGeneratorsForEventSourceRequest.event_source_id",
             ))?
             .into();
 
@@ -291,25 +291,25 @@ impl TryFrom<_GetGeneratorForEventSourceRequest> for GetGeneratorForEventSourceR
     }
 }
 
-impl From<GetGeneratorForEventSourceRequest> for _GetGeneratorForEventSourceRequest {
-    fn from(value: GetGeneratorForEventSourceRequest) -> Self {
+impl From<GetGeneratorsForEventSourceRequest> for GetGeneratorsForEventSourceRequestProto {
+    fn from(value: GetGeneratorsForEventSourceRequest) -> Self {
         Self {
             event_source_id: Some(value.event_source_id.into()),
         }
     }
 }
 
-pub struct GetGeneratorForEventSourceResponse {
+pub struct GetGeneratorsForEventSourceResponse {
     pub plugin_ids: Vec<uuid::Uuid>,
 }
 
-impl TryFrom<_GetGeneratorForEventSourceResponse> for GetGeneratorForEventSourceResponse {
+impl TryFrom<GetGeneratorsForEventSourceResponseProto> for GetGeneratorsForEventSourceResponse {
     type Error = PluginRegistryDeserializationError;
 
-    fn try_from(value: _GetGeneratorForEventSourceResponse) -> Result<Self, Self::Error> {
+    fn try_from(value: GetGeneratorsForEventSourceResponseProto) -> Result<Self, Self::Error> {
         if value.plugin_ids.is_empty() {
             return Err(PluginRegistryDeserializationError::EmptyField(
-                "GetGeneratorForEventSourceResponse.plugin_ids",
+                "GetGeneratorsForEventSourceResponse.plugin_ids",
             ));
         }
         let plugin_ids = value.plugin_ids.into_iter().map(uuid::Uuid::from).collect();
@@ -318,8 +318,8 @@ impl TryFrom<_GetGeneratorForEventSourceResponse> for GetGeneratorForEventSource
     }
 }
 
-impl From<GetGeneratorForEventSourceResponse> for _GetGeneratorForEventSourceResponse {
-    fn from(value: GetGeneratorForEventSourceResponse) -> Self {
+impl From<GetGeneratorsForEventSourceResponse> for GetGeneratorsForEventSourceResponseProto {
+    fn from(value: GetGeneratorsForEventSourceResponse) -> Self {
         Self {
             plugin_ids: value.plugin_ids.into_iter().map(uuid::Uuid::into).collect(),
         }
@@ -331,10 +331,10 @@ pub struct GetPluginRequest {
     pub plugin_id: uuid::Uuid,
 }
 
-impl TryFrom<_GetPluginRequest> for GetPluginRequest {
+impl TryFrom<GetPluginRequestProto> for GetPluginRequest {
     type Error = PluginRegistryDeserializationError;
 
-    fn try_from(value: _GetPluginRequest) -> Result<Self, Self::Error> {
+    fn try_from(value: GetPluginRequestProto) -> Result<Self, Self::Error> {
         let plugin_id = value
             .plugin_id
             .ok_or(PluginRegistryDeserializationError::MissingRequiredField(
@@ -346,7 +346,7 @@ impl TryFrom<_GetPluginRequest> for GetPluginRequest {
     }
 }
 
-impl From<GetPluginRequest> for _GetPluginRequest {
+impl From<GetPluginRequest> for GetPluginRequestProto {
     fn from(value: GetPluginRequest) -> Self {
         Self {
             plugin_id: Some(value.plugin_id.into()),
@@ -358,10 +358,10 @@ pub struct GetPluginResponse {
     pub plugin: Plugin,
 }
 
-impl TryFrom<_GetPluginResponse> for GetPluginResponse {
+impl TryFrom<GetPluginResponseProto> for GetPluginResponse {
     type Error = PluginRegistryDeserializationError;
 
-    fn try_from(value: _GetPluginResponse) -> Result<Self, Self::Error> {
+    fn try_from(value: GetPluginResponseProto) -> Result<Self, Self::Error> {
         let plugin = value
             .plugin
             .ok_or(PluginRegistryDeserializationError::MissingRequiredField(
@@ -373,7 +373,7 @@ impl TryFrom<_GetPluginResponse> for GetPluginResponse {
     }
 }
 
-impl From<GetPluginResponse> for _GetPluginResponse {
+impl From<GetPluginResponse> for GetPluginResponseProto {
     fn from(value: GetPluginResponse) -> Self {
         Self {
             plugin: Some(value.plugin.into()),
@@ -385,10 +385,10 @@ pub struct TearDownPluginRequest {
     pub plugin_id: uuid::Uuid,
 }
 
-impl TryFrom<_TearDownPluginRequest> for TearDownPluginRequest {
+impl TryFrom<TearDownPluginRequestProto> for TearDownPluginRequest {
     type Error = PluginRegistryDeserializationError;
 
-    fn try_from(value: _TearDownPluginRequest) -> Result<Self, Self::Error> {
+    fn try_from(value: TearDownPluginRequestProto) -> Result<Self, Self::Error> {
         let plugin_id = value
             .plugin_id
             .ok_or(PluginRegistryDeserializationError::MissingRequiredField(
@@ -400,7 +400,7 @@ impl TryFrom<_TearDownPluginRequest> for TearDownPluginRequest {
     }
 }
 
-impl From<TearDownPluginRequest> for _TearDownPluginRequest {
+impl From<TearDownPluginRequest> for TearDownPluginRequestProto {
     fn from(value: TearDownPluginRequest) -> Self {
         Self {
             plugin_id: Some(value.plugin_id.into()),
@@ -410,15 +410,15 @@ impl From<TearDownPluginRequest> for _TearDownPluginRequest {
 
 pub struct TearDownPluginResponse {}
 
-impl TryFrom<_TearDownPluginResponse> for TearDownPluginResponse {
+impl TryFrom<TearDownPluginResponseProto> for TearDownPluginResponse {
     type Error = PluginRegistryDeserializationError;
 
-    fn try_from(_value: _TearDownPluginResponse) -> Result<Self, Self::Error> {
+    fn try_from(_value: TearDownPluginResponseProto) -> Result<Self, Self::Error> {
         Ok(Self {})
     }
 }
 
-impl From<TearDownPluginResponse> for _TearDownPluginResponse {
+impl From<TearDownPluginResponse> for TearDownPluginResponseProto {
     fn from(_: TearDownPluginResponse) -> Self {
         Self {}
     }
