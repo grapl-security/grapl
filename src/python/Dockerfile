@@ -70,7 +70,6 @@ RUN apt-get update && apt-get -y install --no-install-recommends \
         curl \
         unzip \
     && rm -rf /var/lib/apt/lists/*
-RUN apt-get update && apt-get -y install --no-install-recommends curl unzip
 RUN adduser \
         --disabled-password \
         --gecos '' \
