@@ -292,6 +292,10 @@ test-with-env: # (Do not include help text - not to be used directly)
 
 ##@ Lint 🧹
 
+.PHONY: lint-docker
+lint-docker: ## Lint Dockerfiles with Hadolint
+	./pants filter --target-type=docker_image :: | xargs ./pants lint
+
 .PHONY: lint-rust
 lint-rust: ## Run Rust lint checks
 	cd src/rust; bin/format --check; bin/lint
@@ -326,7 +330,7 @@ lint-proto-breaking: ## Check protobuf definitions for breaking changes
 	${DOCKER_COMPOSE_CHECK} buf-breaking-change
 
 .PHONY: lint
-lint: lint-python lint-prettier lint-rust lint-shell lint-hcl lint-proto lint-proto-breaking ## Run all lint checks
+lint: lint-docker lint-python lint-prettier lint-rust lint-shell lint-hcl lint-proto lint-proto-breaking ## Run all lint checks
 
 ##@ Formatting 💅
 

@@ -74,6 +74,15 @@ steps:
           secrets:
             - grapl/TOOLCHAIN_AUTH_TOKEN
 
+  - label: ":docker::jeans: Linting"
+    command:
+      - make lint-docker
+    plugins:
+      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-env#v0.1.0:
+          secrets:
+            - grapl/TOOLCHAIN_AUTH_TOKEN
+
   - label: ":python::jeans: Unit Tests"
     command:
       - make test-unit-python
