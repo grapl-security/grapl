@@ -1,3 +1,4 @@
+import json
 import sys
 from pathlib import Path
 from typing import Mapping, Set
@@ -18,7 +19,7 @@ from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
 from infra.consul_intentions import ConsulIntentions
-from infra.docker_image_tag import version_tag
+from infra.docker_images import CloudsmithImageUrl, version_tag
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
@@ -41,24 +42,44 @@ def _get_subset(inputs: NomadVars, subset: Set[str]) -> NomadVars:
     return {k: inputs[k] for k in subset}
 
 
-def grapl_core_docker_image_tags(
+def container_images(
     artifacts: Mapping[str, str], require_artifact: bool = False
-) -> NomadVars:
-    # partial apply some repeated args
-    version_tag_alias = lambda key: version_tag(key, artifacts, require_artifact)
+) -> str:
+    """
+    Build a map of "task name -> docker image URL".
+    See `grapl-core.nomad` container_images for examples.
+    """
+    cs_urls = CloudsmithImageUrl(config.container_repository())
 
-    return dict(
-        analyzer_dispatcher_tag=version_tag_alias("analyzer-dispatcher"),
-        analyzer_executor_tag=version_tag_alias("analyzer-executor"),
-        dgraph_tag="latest",
-        engagement_creator_tag=version_tag_alias("engagement-creator"),
-        graph_merger_tag=version_tag_alias("graph-merger"),
-        graphql_endpoint_tag=version_tag_alias("graphql-endpoint"),
-        model_plugin_deployer_tag=version_tag_alias("model-plugin-deployer"),
-        node_identifier_tag=version_tag_alias("node-identifier"),
-        osquery_generator_tag=version_tag_alias("osquery-generator"),
-        sysmon_generator_tag=version_tag_alias("sysmon-generator"),
-        web_ui_tag=version_tag_alias("grapl-web-ui"),
+    def build_image_url_with_version_tag(image_name: str) -> str:
+        # A shortcut to grab the version tag from the artifacts map and build a
+        # Cloudsmith docker image url out of it.
+        tag = version_tag(image_name, artifacts, require_artifact)
+        return cs_urls.build(image_name=image_name, tag=tag)
+
+    return json.dumps(
+        {
+            "analyzer-dispatcher": build_image_url_with_version_tag(
+                "analyzer-dispatcher"
+            ),
+            "analyzer-executor": build_image_url_with_version_tag("analyzer-executor"),
+            "dgraph": "dgraph/dgraph:v21.03.1",
+            "engagement-creator": build_image_url_with_version_tag(
+                "engagement-creator"
+            ),
+            "graph-merger": build_image_url_with_version_tag("graph-merger"),
+            "graphql-endpoint": build_image_url_with_version_tag("graphql-endpoint"),
+            "model-plugin-deployer": build_image_url_with_version_tag(
+                "model-plugin-deployer"
+            ),
+            "node-identifier": build_image_url_with_version_tag("node-identifier"),
+            "node-identifier-retry": build_image_url_with_version_tag(
+                "node-identifier-retry"
+            ),
+            "osquery-generator": build_image_url_with_version_tag("osquery-generator"),
+            "sysmon-generator": build_image_url_with_version_tag("sysmon-generator"),
+            "web-ui": build_image_url_with_version_tag("grapl-web-ui"),
+        }
     )
 
 
@@ -205,9 +226,9 @@ def main() -> None:
             "grapl-core",
             jobspec=Path("../../nomad/grapl-core.nomad").resolve(),
             vars=dict(
+                container_images=container_images({}),
                 **grapl_core_job_vars_inputs,
                 **nomad_inputs,
-                **grapl_core_docker_image_tags({}),
             ),
         )
 
@@ -309,9 +330,9 @@ def main() -> None:
             container_repository=f"{config.container_repository()}/",
             # TODO: consider replacing with the previous per-service `configurable_envvars`
             rust_log="DEBUG",
+            container_images=container_images(artifacts, require_artifact=True),
             **nomad_inputs,
             # Build Tags. We use per service tags so we can update services independently
-            **grapl_core_docker_image_tags(artifacts, require_artifact=True),
         )
 
         nomad_grapl_core = NomadJob(
