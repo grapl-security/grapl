@@ -1,11 +1,20 @@
 # This setup is inspired by the following forum discussion:
 # https://discuss.hashicorp.com/t/best-practices-for-testing-against-services-in-nomad-consul-connect/29022
-# We'll submit integration tests to Nomad as 
-# 
-variable "container_repository" {
-  type        = string
-  default     = ""
-  description = "The container repository in which we can find Grapl services. Requires a trailing /"
+# We'll submit integration tests to Nomad as Nomad jobs.
+
+variable "container_images" {
+  type        = map(string)
+  description = <<EOF
+  A map of $NAME_OF_TASK to the URL for that task's docker image.
+
+  The values can look like, for instance:
+    - a hardcoded value pulled from Dockerhub
+        "dgraph/dgraph:v21.0.3"
+    - an image pulled from the host's Docker daemon (no `:latest`!)
+        "model-plugin-deployer:dev"
+    - an image pulled from Cloudsmith
+        "docker.cloudsmith.io/grapl/raw/graph-merger:20211105192234-a86a8ad2"
+EOF
 }
 
 variable "aws_region" {
@@ -149,7 +158,7 @@ job "integration-tests" {
       driver = "docker"
 
       config {
-        image = "${var.container_repository}rust-integration-tests:${var.rust_integration_tests_tag}"
+        image = var.container_images["rust-integration-tests"]
       }
 
       # This writes an env file that gets read by the task automatically
@@ -217,7 +226,7 @@ job "integration-tests" {
       user   = var.docker_user
 
       config {
-        image = "${var.container_repository}python-integration-tests:${var.python_integration_tests_tag}"
+        image = var.container_images["python-integration-tests"]
         # Pants caches requirements per-user. So when we run a Docker container
         # with the host's userns, this lets us reuse the pants cache.
         # (This descreases runtime on my personal laptop from 390s to 190s)
