@@ -2,11 +2,12 @@
 ################################################################################
 FROM python:3.7-slim-buster AS grapl-python-base
 SHELL ["/bin/bash", "-c"]
-RUN apt-get update && apt-get -y install --no-install-recommends \
-        bash \
-        libstdc++6 \
-    && rm -rf /var/lib/apt/lists/*
-RUN adduser \
+RUN apt-get update \
+    && apt-get -y install --no-install-recommends \
+        bash=5.0-4 \
+        libstdc++6=8.3.0-6 \
+    && rm -rf /var/lib/apt/lists/* \
+    && adduser \
         --disabled-password \
         --gecos '' \
         --home /home/grapl \
@@ -53,8 +54,8 @@ ENV PATH=/home/grapl/bin:$PATH
 ################################################################################
 FROM grapl-python-base AS grapl-notebook
 EXPOSE 8888
-RUN pip install jupyter
-RUN mkdir -p grapl-notebook/model_plugins
+RUN pip install --no-cache-dir jupyter==1.0.0 \
+    && mkdir -p grapl-notebook/model_plugins
 COPY --chown=grapl src/python/grapl-notebook/jupyter_notebook_config.py /home/grapl/.jupyter/
 COPY --chown=grapl src/python/grapl-notebook/Demo_Engagement.ipynb /home/grapl/grapl-notebook/
 WORKDIR /home/grapl/grapl-notebook
@@ -64,13 +65,14 @@ CMD ["jupyter", "notebook", "--ip", "0.0.0.0"]
 ################################################################################
 FROM grapl-python-base AS python-integration-tests
 USER root
-RUN apt-get update && apt-get -y install --no-install-recommends \
-        build-essential \
-        protobuf-compiler \
-        curl \
-        unzip \
-    && rm -rf /var/lib/apt/lists/*
-RUN adduser \
+RUN apt-get update \
+    && apt-get -y install --no-install-recommends \
+        build-essential=12.6 \
+        curl=7.64.0-4+deb10u2 \
+        protobuf-compiler=3.6.1.3-2 \
+        unzip=6.0-23+deb10u2 \
+    && rm -rf /var/lib/apt/lists/* \
+    && adduser \
         --disabled-password \
         --gecos '' \
         --home /home/grapl \
@@ -82,9 +84,9 @@ RUN adduser \
 # It will copy the existing directory structure in.
 RUN mkdir -p /mnt/pants-cache && chmod -R 777 /mnt/pants-cache
 USER grapl
-RUN mkdir -p /mnt/pants-cache/named_caches && chmod -R 777 /mnt/pants-cache/named_caches
-RUN mkdir -p /mnt/pants-cache/lmdb_store && chmod -R 777 /mnt/pants-cache/lmdb_store
-RUN mkdir -p /mnt/pants-cache/setup && chmod -R 777 /mnt/pants-cache/setup
+RUN mkdir -p /mnt/pants-cache/named_caches && chmod -R 777 /mnt/pants-cache/named_caches \
+    && mkdir -p /mnt/pants-cache/lmdb_store && chmod -R 777 /mnt/pants-cache/lmdb_store \
+    && mkdir -p /mnt/pants-cache/setup && chmod -R 777 /mnt/pants-cache/setup
 ENV PANTS_NAMED_CACHES_DIR=/mnt/pants-cache/named_caches
 ENV PANTS_LOCAL_STORE_DIR=/mnt/pants-cache/lmdb_store
 ENV PANTS_SETUP_CACHE=/mnt/pants-cache/setup
