@@ -3,11 +3,28 @@ variable "rust_log" {
   description = "Controls the logging behavior of Rust-based services."
 }
 
+variable "container_images" {
+  type        = map(string)
+  description = <<EOF
+  A map of $NAME_OF_TASK to the URL for that task's docker image.
+
+  The values can look like, for instance:
+    - a hardcoded value pulled from Dockerhub
+        "dgraph/dgraph:v21.0.3"
+    - an image pulled from the host's Docker daemon (no `:latest`!)
+        "model-plugin-deployer:dev"
+    - an image pulled from Cloudsmith
+        "docker.cloudsmith.io/grapl/raw/graph-merger:20211105192234-a86a8ad2"
+EOF
+}
+
+# TODO delete
 variable "container_repository" {
   type        = string
   default     = ""
   description = "The container registry in which we can find Grapl services. Requires a trailing / if not empty string"
 }
+
 
 variable "aws_access_key_id" {
   type        = string
@@ -57,11 +74,6 @@ variable "analyzer_dispatcher_dead_letter_queue" {
   description = "Dead letter queue for the analyzer services"
 }
 
-variable "analyzer_dispatcher_tag" {
-  type        = string
-  description = "The tagged version of the analyzer-dispatcher we should deploy."
-}
-
 variable "analyzer_matched_subgraphs_bucket" {
   type        = string
   description = "The s3 bucket used for storing matches"
@@ -70,17 +82,6 @@ variable "analyzer_matched_subgraphs_bucket" {
 variable "analyzer_executor_queue" {
   type        = string
   description = "Main queue for the executor"
-}
-
-variable "analyzer_executor_tag" {
-  type        = string
-  description = "The tagged version of the analyzer-executor we should deploy."
-}
-
-variable "dgraph_tag" {
-  type        = string
-  default     = "v21.03.1"
-  description = "The tag we should use when pulling dgraph."
 }
 
 variable "dgraph_replicas" {
@@ -95,11 +96,6 @@ variable "dgraph_shards" {
 
 variable "engagement_creator_queue" {
   type = string
-}
-
-variable "engagement_creator_tag" {
-  type        = string
-  description = "The tagged version of the engagement-creator we should deploy."
 }
 
 variable "_redis_endpoint" {
@@ -134,11 +130,6 @@ variable "num_graph_mergers" {
   description = "The number of graph merger instances to run."
 }
 
-variable "graph_merger_tag" {
-  type        = string
-  description = "The tagged version of the graph_merger we should deploy."
-}
-
 variable "graph_merger_queue" {
   type = string
 }
@@ -157,11 +148,6 @@ variable "model_plugins_bucket" {
   description = "The s3 bucket used for storing plugins"
 }
 
-variable "model_plugin_deployer_tag" {
-  type        = string
-  description = "The tagged version of the model plugin deployer to deploy."
-}
-
 variable "num_node_identifiers" {
   type        = number
   default     = 1
@@ -172,11 +158,6 @@ variable "num_node_identifier_retries" {
   type        = number
   default     = 1
   description = "The number of node identifier retries to run."
-}
-
-variable "node_identifier_tag" {
-  type        = string
-  description = "The tagged version of the node_identifier and the node_identifier_retry we should deploy."
 }
 
 variable "node_identifier_queue" {
@@ -206,16 +187,6 @@ variable "subgraphs_generated_bucket" {
   description = "The destination bucket for generated subgraphs. Used by Node identifier."
 }
 
-variable "graphql_endpoint_tag" {
-  type        = string
-  description = "The image tag for the graphql endpoint docker image."
-}
-
-variable "web_ui_tag" {
-  type        = string
-  description = "The image tag for the Grapl web UI docker image."
-}
-
 variable "deployment_name" {
   type        = string
   description = "The deployment name"
@@ -231,22 +202,12 @@ variable "user_session_table" {
   description = "What is the name of the DynamoDB user session table?"
 }
 
-variable "sysmon_generator_tag" {
-  type        = string
-  description = "The image tag for the sysmon generator docker image."
-}
-
 variable "sysmon_generator_queue" {
   type = string
 }
 
 variable "sysmon_generator_dead_letter_queue" {
   type = string
-}
-
-variable "osquery_generator_tag" {
-  type        = string
-  description = "The image tag for the osquery generator docker image."
 }
 
 variable "osquery_generator_queue" {
@@ -339,7 +300,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "dgraph/dgraph:${var.dgraph_tag}"
+        image = "${var.container_images["dgraph"]}"
         args = [
           "dgraph",
           "zero",
@@ -403,7 +364,7 @@ job "grapl-core" {
         driver = "docker"
 
         config {
-          image = "dgraph/dgraph:${var.dgraph_tag}"
+          image = "${var.container_images["dgraph"]}"
           args = [
             "dgraph",
             "zero",
@@ -507,7 +468,7 @@ job "grapl-core" {
         driver = "docker"
 
         config {
-          image = "dgraph/dgraph:${var.dgraph_tag}"
+          image = "${var.container_images["dgraph"]}"
           args = [
             "dgraph",
             "alpha",
@@ -620,7 +581,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_repository}graph-merger:${var.graph_merger_tag}"
+        image = "${var.container_images["graph-merger"]}"
       }
 
       # This writes an env files that gets read by nomad automatically
@@ -676,7 +637,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_repository}node-identifier:${var.node_identifier_tag}"
+        image = "${var.container_images["node-identifier"]}"
       }
 
       template {
@@ -716,7 +677,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_repository}node-identifier-retry:${var.node_identifier_tag}"
+        image = "${var.container_images["node-identifier-retry"]}"
       }
 
       template {
@@ -751,7 +712,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_repository}analyzer-dispatcher:${var.analyzer_dispatcher_tag}"
+        image = "${var.container_images["analyzer-dispatcher"]}"
       }
 
       template {
@@ -790,7 +751,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_repository}analyzer-executor:${var.analyzer_executor_tag}"
+        image = "${var.container_images["analyzer-executor"]}"
       }
 
       template {
@@ -849,7 +810,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_repository}engagement-creator:${var.engagement_creator_tag}"
+        image = "${var.container_images["engagement-creator"]}"
       }
 
       template {
@@ -902,7 +863,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_repository}graphql-endpoint:${var.graphql_endpoint_tag}"
+        image = "${var.container_images["graphql-endpoint"]}"
         ports = ["graphql-endpoint-port"]
       }
 
@@ -959,7 +920,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_repository}model-plugin-deployer:${var.model_plugin_deployer_tag}"
+        image = "${var.container_images["model-plugin-deployer"]}"
         ports = ["model-plugin-deployer"]
       }
 
@@ -991,7 +952,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_repository}grapl-web-ui:${var.web_ui_tag}"
+        image = "${var.container_images["web-ui"]}"
         ports = ["web-ui-port"]
       }
 
@@ -1041,7 +1002,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_repository}sysmon-generator:${var.sysmon_generator_tag}"
+        image = "${var.container_images["sysmon-generator"]}"
       }
 
       template {
@@ -1071,7 +1032,7 @@ job "grapl-core" {
       driver = "docker"
 
       config {
-        image = "${var.container_repository}osquery-generator:${var.osquery_generator_tag}"
+        image = "${var.container_images["osquery-generator"]}"
       }
 
       template {

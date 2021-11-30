@@ -10,7 +10,7 @@ import pulumi_aws as aws
 import pulumi_nomad as nomad
 from infra import config
 from infra.autotag import register_auto_tags
-from infra.docker_image_tag import version_tag
+from infra.docker_images import version_tag
 from infra.nomad_job import NomadJob, NomadVars
 from infra.quiet_docker_build_output import quiet_docker_output
 
