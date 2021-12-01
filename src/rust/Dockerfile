@@ -5,13 +5,16 @@ ARG RUST_BUILD=debug
 SHELL ["/bin/bash", "-c"]
 
 # Necessary for rdkafka; pkg-config & libssl-dev for cargo-tarpaulin build
+#
+# Ignore this lint about deleteing the apt-get lists (we're caching!)
+# hadolint ignore=DL3009
 RUN --mount=type=cache,target=/var/lib/apt/lists \
-    apt-get update && apt-get install -y --no-install-recommends \
-        zlib1g-dev \
-        build-essential \
-        pkg-config \
-        libssl-dev
-
+    apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential=12.6 \
+        libssl-dev=1.1.1d-0+deb10u7 \
+        pkg-config=0.29-6 \
+        zlib1g-dev=1:1.2.11.dfsg-1
 
 # Install rust toolchain before copying sources to avoid unecessarily
 # resinstalling on source file changes.
@@ -33,6 +36,8 @@ WORKDIR /grapl/rust
 ################################################################################
 FROM base AS build
 
+# Hadolint appears to be confused about some of these mount targets
+# hadolint ignore=SC1091
 RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=secret,id=rust_env,dst=/grapl/env \
@@ -69,7 +74,10 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     cargo install cargo-tarpaulin
 
 # At the end of the test run, save the mount cache to the Docker image, as
-# these files are needed for running the integration tests in containers. 
+# these files are needed for running the integration tests in containers.
+#
+# Hadolint appears to be confused about some of these mount targets
+# hadolint ignore=SC1091
 RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=secret,id=rust_env,dst=/grapl/env \
@@ -88,6 +96,8 @@ RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
 
 # Move the files back to where they belong.
 # The mv command is apparently very slow here, cp and rm is much faster
+# Ignore brace expansion warning; we're using bash as our shell, not sh
+# hadolint ignore=SC3009
 RUN cp -ar /tmp/target/. /grapl/rust/target/ && \
     cp -ar /tmp/registry/. /usr/local/cargo/registry/ && \
     rm -rf /tmp/{target,registry}

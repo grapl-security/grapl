@@ -1,11 +1,12 @@
 FROM python:3.7-slim-buster as grapl-local-pulumi
 
-RUN apt-get update && apt-get install --yes \
-    build-essential \
-    curl \
-    unzip
-
-RUN adduser \
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends \
+       build-essential=12.6 \
+       curl=7.64.0-4+deb10u2 \
+       unzip=6.0-23+deb10u2 \
+    && rm -rf /var/lib/apt/lists/* \
+    && adduser \
         --disabled-password \
         --gecos '' \
         --home /home/grapl \
@@ -59,14 +60,14 @@ RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # Grab some dependencies before we COPY in pulumi, to save some time.
-RUN pip install --upgrade pip wheel typing_extensions setuptools
+RUN pip install --no-cache-dir --upgrade pip==21.3.1 wheel==0.37.0 typing_extensions==4.0.0 setuptools==59.4.0
 
 COPY --chown=grapl pulumi pulumi
 
 # We need to parse the following command with `bash`, not `sh`
 SHELL ["/bin/bash", "-c"]
 
-RUN pip install -r <(PANTS_IGNORE='[".pex",".cache","venv"]' ./pants dependencies --type=3rdparty pulumi::)
+RUN pip install --no-cache-dir -r <(PANTS_IGNORE='[".pex",".cache","venv"]' ./pants dependencies --type=3rdparty pulumi::)
 
 # Create a directory *as the grapl user*, at which we will mount an
 # external volume to share Pulumi run outputs with other
