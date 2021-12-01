@@ -74,7 +74,7 @@ impl PluginRegistry {
     }
 
     #[allow(dead_code)]
-    async fn get_generator_for_event_source(
+    async fn get_generators_for_event_source(
         &self,
         _request: GetGeneratorsForEventSourceRequest,
     ) -> Result<GetGeneratorsForEventSourceResponse, PluginRegistryServiceError> {
@@ -120,7 +120,7 @@ impl PluginRegistryService for PluginRegistry {
         todo!()
     }
 
-    async fn get_generator_for_event_source(
+    async fn get_generators_for_event_source(
         &self,
         _request: Request<GetGeneratorsForEventSourceRequestProto>,
     ) -> Result<Response<GetGeneratorsForEventSourceResponseProto>, Status> {

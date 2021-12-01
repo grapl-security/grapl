@@ -112,7 +112,7 @@ service PluginRegistryService {
   rpc TearDownPlugin(TearDownPluginRequest) returns (TearDownPluginResponse);
 
   // Given information about an event source, return all generators that handle that event source
-  rpc GetGeneratorForEventSource(GetGeneratorsForEventSourceRequest) returns (GetGeneratorsForEventSourceResponse);
+  rpc GetGeneratorsForEventSource(GetGeneratorsForEventSourceRequest) returns (GetGeneratorsForEventSourceResponse);
 
   // Given information about a tenant, return all analyzers for that tenant
   rpc GetAnalyzersForTenant(GetAnalyzersForTenantRequest) returns (GetAnalyzersForTenantResponse);

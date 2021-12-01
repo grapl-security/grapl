@@ -89,12 +89,12 @@ where
         todo!()
     }
     /// Given information about an event source, return all generators that handle that event source
-    pub async fn get_generator_for_event_source(
+    pub async fn get_generators_for_event_source(
         &mut self,
         request: GetGeneratorsForEventSourceRequest,
     ) -> Result<GetGeneratorsForEventSourceResponse, PluginRegistryServiceError> {
         self.inner
-            .get_generator_for_event_source(GetGeneratorsForEventSourceRequestProto::from(request))
+            .get_generators_for_event_source(GetGeneratorsForEventSourceRequestProto::from(request))
             .await
             .expect("todo");
         todo!()
