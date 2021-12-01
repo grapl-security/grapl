@@ -1,31 +1,35 @@
 use rust_proto::plugin_registry::{
-    CreatePluginRequestProto,
-    CreatePluginResponseProto,
-    DeployPluginRequestProto,
-    DeployPluginResponseProto,
-    GetAnalyzersForTenantRequestProto,
-    GetAnalyzersForTenantResponseProto,
-    GetGeneratorsForEventSourceRequestProto,
-    GetGeneratorsForEventSourceResponseProto,
-    GetPluginRequestProto,
-    GetPluginResponseProto,
-    TearDownPluginRequestProto,
-    TearDownPluginResponseProto,
-    plugin_registry_service_server::PluginRegistryService,
+    plugin_registry_service_server::{
+        PluginRegistryService,
+        PluginRegistryServiceServer,
+    },
     CreatePluginRequest,
+    CreatePluginRequestProto,
     CreatePluginResponse,
+    CreatePluginResponseProto,
     DeployPluginRequest,
+    DeployPluginRequestProto,
     DeployPluginResponse,
+    DeployPluginResponseProto,
     GetAnalyzersForTenantRequest,
+    GetAnalyzersForTenantRequestProto,
     GetAnalyzersForTenantResponse,
+    GetAnalyzersForTenantResponseProto,
     GetGeneratorsForEventSourceRequest,
+    GetGeneratorsForEventSourceRequestProto,
     GetGeneratorsForEventSourceResponse,
+    GetGeneratorsForEventSourceResponseProto,
     GetPluginRequest,
+    GetPluginRequestProto,
     GetPluginResponse,
+    GetPluginResponseProto,
     TearDownPluginRequest,
+    TearDownPluginRequestProto,
     TearDownPluginResponse,
+    TearDownPluginResponseProto,
 };
 use tonic::{
+    transport::Server,
     Request,
     Response,
     Status,
@@ -129,4 +133,36 @@ impl PluginRegistryService for PluginRegistry {
     ) -> Result<Response<GetAnalyzersForTenantResponseProto>, Status> {
         todo!()
     }
+}
+
+pub async fn exec_service() -> Result<(), Box<dyn std::error::Error>> {
+    let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
+    health_reporter
+        .set_serving::<PluginRegistryServiceServer<PluginRegistry>>()
+        .await;
+
+    let addr = "[::1]:50051".parse().unwrap();
+    let plugin_work_queue = PluginRegistry {};
+
+    tracing::info!(
+        message="HealthServer + PluginRegistry listening",
+        addr=?addr,
+    );
+
+    Server::builder()
+        .trace_fn(|request| {
+            tracing::info_span!(
+                "PluginRegistry",
+                headers = ?request.headers(),
+                method = ?request.method(),
+                uri = %request.uri(),
+                extensions = ?request.extensions(),
+            )
+        })
+        .add_service(health_service)
+        .add_service(PluginRegistryServiceServer::new(plugin_work_queue))
+        .serve(addr)
+        .await?;
+
+    Ok(())
 }

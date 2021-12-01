@@ -2901,6 +2901,8 @@ dependencies = [
  "rust-proto",
  "thiserror",
  "tonic 0.6.1",
+ "tonic-health",
+ "tracing",
 ]
 
 [[package]]

@@ -15,3 +15,5 @@ async-trait = "0.1.51"
 rust-proto = { path = "../rust-proto" }
 thiserror = "1.0.30"
 tonic = "0.6.1"
+tonic-health = "0.5.0"
+tracing = "0.1.29"
