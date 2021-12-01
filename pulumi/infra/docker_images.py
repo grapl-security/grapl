@@ -1,5 +1,5 @@
 import os
-from typing import Mapping, Optional
+from typing import Mapping, NewType, Optional
 
 from typing_extensions import Final
 
@@ -7,6 +7,21 @@ from typing_extensions import Final
 # from the local machine (it takes it as a directive to go to Dockerhub)
 # Originates at the `TAG ?= dev` at the top of the Makefile.
 _DEFAULT_TAG: Final[str] = "dev"
+
+
+"""
+A Docker image identifier is something that can be consumed by the
+Nomad Docker plugin `image` field.
+https://www.nomadproject.io/docs/drivers/docker#image
+The values can look like, for instance:
+- a hardcoded value pulled from Dockerhub
+    "dgraph/dgraph:v21.0.3"
+- an image pulled from the host's Docker daemon (no `:latest`!)
+    "model-plugin-deployer:dev"
+- an image pulled from Cloudsmith
+    "docker.cloudsmith.io/grapl/raw/graph-merger:20211105192234-a86a8ad2"
+"""
+DockerImageId = NewType("DockerImageId", str)
 
 
 def version_tag(
@@ -39,15 +54,9 @@ def version_tag(
 
 class DockerImageIdBuilder:
     def __init__(self, container_repository: Optional[str]) -> None:
-        if container_repository is not None:
-            self.container_repository: str = f"{container_repository}/"
-        else:
-            self.container_repository = ""
+        self.container_repository = (
+            f"{container_repository}/" if container_repository else ""
+        )
 
-    def build(self, image_name: str, tag: str) -> str:
-        """
-        Returns a Docker image identifier that can be consumed by the
-        Nomad Docker plugin `image` field.
-        https://www.nomadproject.io/docs/drivers/docker#image
-        """
-        return f"{self.container_repository}{image_name}:{tag}"
+    def build(self, image_name: str, tag: str) -> DockerImageId:
+        return DockerImageId(f"{self.container_repository}{image_name}:{tag}")

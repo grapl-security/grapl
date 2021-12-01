@@ -19,7 +19,7 @@ ensure_cros_bridge_networking_workaround() {
         if ! grep -q "_/bridge.ko" "$module_filepath"; then
             echo "It looks like you're on ChromeOS, but haven't installed the Nomad bridge networking workaround."
             # shellcheck source-path=SCRIPTDIR
-            source "../../etc/chromeos/lib/installs.sh"
+            source "$(dirname "${BASH_SOURCE[0]}")/../../etc/chromeos/lib/installs.sh"
             install_nomad_chromeos_workaround
             echo "ChromeOS Nomad bridge networking workaround should now be installed. Continuing..."
         fi

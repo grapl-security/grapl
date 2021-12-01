@@ -1,4 +1,3 @@
-import json
 import os
 import sys
 from pathlib import Path
@@ -11,7 +10,7 @@ import pulumi_aws as aws
 import pulumi_nomad as nomad
 from infra import config
 from infra.autotag import register_auto_tags
-from infra.docker_images import DockerImageIdBuilder, version_tag
+from infra.docker_images import DockerImageId, DockerImageIdBuilder, version_tag
 from infra.nomad_job import NomadJob, NomadVars
 from infra.quiet_docker_build_output import quiet_docker_output
 
@@ -20,28 +19,25 @@ import pulumi
 
 def _container_images(
     artifacts: Mapping[str, str], require_artifact: bool = False
-) -> str:
+) -> Mapping[str, DockerImageId]:
     """
-    Build a map of "task name -> docker image URL".
-    See the .nomad file's var `container_images` for further documentation.
+    Build a map of {task name -> docker image identifier}.
     """
     img_id_builder = DockerImageIdBuilder(config.container_repository())
 
-    def build_img_id_with_tag(image_name: str) -> str:
-        # A shortcut to grab the version tag from the artifacts map and build a
-        # Cloudsmith docker image url out of it.
+    def build_img_id_with_tag(image_name: str) -> DockerImageId:
+        """
+        A shortcut to grab the version tag from the artifacts map and build a
+        DockerImageId out of it
+        """
         tag = version_tag(image_name, artifacts, require_artifact)
         return img_id_builder.build(image_name=image_name, tag=tag)
 
-    return json.dumps(
-        {
-            "e2e-tests": build_img_id_with_tag("e2e-tests"),
-            "python-integration-tests": build_img_id_with_tag(
-                "python-integration-tests"
-            ),
-            "rust-integration-tests": build_img_id_with_tag("rust-integration-tests"),
-        }
-    )
+    return {
+        "e2e-tests": build_img_id_with_tag("e2e-tests"),
+        "python-integration-tests": build_img_id_with_tag("python-integration-tests"),
+        "rust-integration-tests": build_img_id_with_tag("rust-integration-tests"),
+    }
 
 
 def main() -> None:

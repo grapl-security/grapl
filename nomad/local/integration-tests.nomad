@@ -5,15 +5,8 @@
 variable "container_images" {
   type        = map(string)
   description = <<EOF
-  A map of $NAME_OF_TASK to the URL for that task's docker image.
-
-  The values can look like, for instance:
-    - a hardcoded value pulled from Dockerhub
-        "dgraph/dgraph:v21.0.3"
-    - an image pulled from the host's Docker daemon (no `:latest`!)
-        "model-plugin-deployer:dev"
-    - an image pulled from Cloudsmith
-        "docker.cloudsmith.io/grapl/raw/graph-merger:20211105192234-a86a8ad2"
+  A map of $NAME_OF_TASK to the URL for that task's docker image ID.
+  (See DockerImageId in Pulumi for further documentation.)
 EOF
 }
 

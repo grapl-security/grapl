@@ -1,4 +1,3 @@
-import json
 import sys
 from pathlib import Path
 from typing import Mapping, Set
@@ -19,7 +18,7 @@ from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
 from infra.consul_intentions import ConsulIntentions
-from infra.docker_images import DockerImageIdBuilder, version_tag
+from infra.docker_images import DockerImageId, DockerImageIdBuilder, version_tag
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
@@ -44,36 +43,35 @@ def _get_subset(inputs: NomadVars, subset: Set[str]) -> NomadVars:
 
 def _container_images(
     artifacts: Mapping[str, str], require_artifact: bool = False
-) -> str:
+) -> Mapping[str, DockerImageId]:
     """
-    Build a map of "task name -> docker image URL".
-    See the .nomad file's var `container_images` for further documentation.
+    Build a map of {task name -> docker image identifier}.
     """
     img_id_builder = DockerImageIdBuilder(config.container_repository())
 
-    def build_img_id_with_tag(image_name: str) -> str:
-        # A shortcut to grab the version tag from the artifacts map and build a
-        # Cloudsmith docker image url out of it.
+    def build_img_id_with_tag(image_name: str) -> DockerImageId:
+        """
+        A shortcut to grab the version tag from the artifacts map and build a
+        DockerImageId out of it
+        """
         tag = version_tag(image_name, artifacts, require_artifact)
         return img_id_builder.build(image_name=image_name, tag=tag)
 
-    return json.dumps(
-        {
-            "analyzer-dispatcher": build_img_id_with_tag("analyzer-dispatcher"),
-            "analyzer-executor": build_img_id_with_tag("analyzer-executor"),
-            "dgraph": "dgraph/dgraph:v21.03.1",
-            "engagement-creator": build_img_id_with_tag("engagement-creator"),
-            "graph-merger": build_img_id_with_tag("graph-merger"),
-            "graphql-endpoint": build_img_id_with_tag("graphql-endpoint"),
-            "model-plugin-deployer": build_img_id_with_tag("model-plugin-deployer"),
-            "node-identifier": build_img_id_with_tag("node-identifier"),
-            "node-identifier-retry": build_img_id_with_tag("node-identifier-retry"),
-            "osquery-generator": build_img_id_with_tag("osquery-generator"),
-            "provisioner": build_img_id_with_tag("provisioner"),
-            "sysmon-generator": build_img_id_with_tag("sysmon-generator"),
-            "web-ui": build_img_id_with_tag("grapl-web-ui"),
-        }
-    )
+    return {
+        "analyzer-dispatcher": build_img_id_with_tag("analyzer-dispatcher"),
+        "analyzer-executor": build_img_id_with_tag("analyzer-executor"),
+        "dgraph": DockerImageId("dgraph/dgraph:v21.03.1"),
+        "engagement-creator": build_img_id_with_tag("engagement-creator"),
+        "graph-merger": build_img_id_with_tag("graph-merger"),
+        "graphql-endpoint": build_img_id_with_tag("graphql-endpoint"),
+        "model-plugin-deployer": build_img_id_with_tag("model-plugin-deployer"),
+        "node-identifier": build_img_id_with_tag("node-identifier"),
+        "node-identifier-retry": build_img_id_with_tag("node-identifier-retry"),
+        "osquery-generator": build_img_id_with_tag("osquery-generator"),
+        "provisioner": build_img_id_with_tag("provisioner"),
+        "sysmon-generator": build_img_id_with_tag("sysmon-generator"),
+        "web-ui": build_img_id_with_tag("grapl-web-ui"),
+    }
 
 
 def main() -> None:
