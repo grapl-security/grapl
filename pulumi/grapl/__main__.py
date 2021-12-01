@@ -19,7 +19,7 @@ from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
 from infra.consul_intentions import ConsulIntentions
-from infra.docker_images import CloudsmithImageUrl, version_tag
+from infra.docker_images import DockerImageIdBuilder, version_tag
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
@@ -49,37 +49,29 @@ def _container_images(
     Build a map of "task name -> docker image URL".
     See the .nomad file's var `container_images` for further documentation.
     """
-    cs_urls = CloudsmithImageUrl(config.container_repository())
+    img_id_builder = DockerImageIdBuilder(config.container_repository())
 
-    def build_image_url_with_version_tag(image_name: str) -> str:
+    def build_img_id_with_tag(image_name: str) -> str:
         # A shortcut to grab the version tag from the artifacts map and build a
         # Cloudsmith docker image url out of it.
         tag = version_tag(image_name, artifacts, require_artifact)
-        return cs_urls.build(image_name=image_name, tag=tag)
+        return img_id_builder.build(image_name=image_name, tag=tag)
 
     return json.dumps(
         {
-            "analyzer-dispatcher": build_image_url_with_version_tag(
-                "analyzer-dispatcher"
-            ),
-            "analyzer-executor": build_image_url_with_version_tag("analyzer-executor"),
+            "analyzer-dispatcher": build_img_id_with_tag("analyzer-dispatcher"),
+            "analyzer-executor": build_img_id_with_tag("analyzer-executor"),
             "dgraph": "dgraph/dgraph:v21.03.1",
-            "engagement-creator": build_image_url_with_version_tag(
-                "engagement-creator"
-            ),
-            "graph-merger": build_image_url_with_version_tag("graph-merger"),
-            "graphql-endpoint": build_image_url_with_version_tag("graphql-endpoint"),
-            "model-plugin-deployer": build_image_url_with_version_tag(
-                "model-plugin-deployer"
-            ),
-            "node-identifier": build_image_url_with_version_tag("node-identifier"),
-            "node-identifier-retry": build_image_url_with_version_tag(
-                "node-identifier-retry"
-            ),
-            "osquery-generator": build_image_url_with_version_tag("osquery-generator"),
-            "provisioner": build_image_url_with_version_tag("provisioner"),
-            "sysmon-generator": build_image_url_with_version_tag("sysmon-generator"),
-            "web-ui": build_image_url_with_version_tag("grapl-web-ui"),
+            "engagement-creator": build_img_id_with_tag("engagement-creator"),
+            "graph-merger": build_img_id_with_tag("graph-merger"),
+            "graphql-endpoint": build_img_id_with_tag("graphql-endpoint"),
+            "model-plugin-deployer": build_img_id_with_tag("model-plugin-deployer"),
+            "node-identifier": build_img_id_with_tag("node-identifier"),
+            "node-identifier-retry": build_img_id_with_tag("node-identifier-retry"),
+            "osquery-generator": build_img_id_with_tag("osquery-generator"),
+            "provisioner": build_img_id_with_tag("provisioner"),
+            "sysmon-generator": build_img_id_with_tag("sysmon-generator"),
+            "web-ui": build_img_id_with_tag("grapl-web-ui"),
         }
     )
 
@@ -155,6 +147,7 @@ def main() -> None:
     model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)
     pulumi.export("model-plugins-bucket", model_plugins_bucket.bucket)
 
+    # These are shared across both local and prod deployments.
     nomad_inputs: Final[NomadVars] = dict(
         analyzer_bucket=analyzers_bucket.bucket,
         analyzer_dispatched_bucket=dispatched_analyzer_emitter.bucket_name,
@@ -204,7 +197,7 @@ def main() -> None:
 
         assert aws.config.access_key
         assert aws.config.secret_key
-        grapl_core_job_vars_inputs: Final[NomadVars] = dict(
+        local_grapl_core_job_vars: Final[NomadVars] = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
             _aws_endpoint=aws_endpoint,
@@ -212,7 +205,9 @@ def main() -> None:
             aws_access_key_id=aws.config.access_key,
             aws_access_key_secret=aws.config.secret_key,
             container_images=_container_images({}),
+            # TODO: consider replacing rust_log= with the previous per-service `configurable_envvars`
             rust_log="DEBUG",
+            **nomad_inputs,
         )
 
         # This does not use a custom Provider since it will use either a consul:address set in the config or default to
@@ -227,10 +222,7 @@ def main() -> None:
         nomad_grapl_core = NomadJob(
             "grapl-core",
             jobspec=Path("../../nomad/grapl-core.nomad").resolve(),
-            vars=dict(
-                **grapl_core_job_vars_inputs,
-                **nomad_inputs,
-            ),
+            vars=local_grapl_core_job_vars,
         )
 
         nomad_grapl_ingress = NomadJob(
@@ -240,10 +232,7 @@ def main() -> None:
         )
 
         provision_vars = _get_subset(
-            dict(
-                **grapl_core_job_vars_inputs,
-                **nomad_inputs,
-            ),
+            local_grapl_core_job_vars,
             {
                 "aws_access_key_id",
                 "aws_access_key_secret",
@@ -323,21 +312,20 @@ def main() -> None:
             opts=pulumi.ResourceOptions(provider=consul_provider),
         )
 
-        grapl_core_job_vars: Final[NomadVars] = dict(
+        prod_grapl_core_job_vars: Final[NomadVars] = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
             _redis_endpoint=cache.endpoint,
-            # TODO: consider replacing with the previous per-service `configurable_envvars`
+            # TODO: consider replacing rust_log= with the previous per-service `configurable_envvars`
             rust_log="DEBUG",
             container_images=_container_images(artifacts, require_artifact=True),
             **nomad_inputs,
-            # Build Tags. We use per service tags so we can update services independently
         )
 
         nomad_grapl_core = NomadJob(
             "grapl-core",
             jobspec=Path("../../nomad/grapl-core.nomad").resolve(),
-            vars=grapl_core_job_vars,
+            vars=prod_grapl_core_job_vars,
             opts=pulumi.ResourceOptions(provider=nomad_provider),
         )
 
@@ -349,10 +337,7 @@ def main() -> None:
         )
 
         grapl_provision_job_vars = _get_subset(
-            dict(
-                **grapl_core_job_vars_inputs,
-                **nomad_inputs,
-            ),
+            prod_grapl_core_job_vars,
             {
                 "aws_region",
                 "container_images",

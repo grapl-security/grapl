@@ -37,7 +37,7 @@ def version_tag(
     return _DEFAULT_TAG
 
 
-class CloudsmithImageUrl:
+class DockerImageIdBuilder:
     def __init__(self, container_repository: Optional[str]) -> None:
         if container_repository is not None:
             self.container_repository: str = f"{container_repository}/"
@@ -45,4 +45,9 @@ class CloudsmithImageUrl:
             self.container_repository = ""
 
     def build(self, image_name: str, tag: str) -> str:
+        """
+        Returns a Docker image identifier that can be consumed by the
+        Nomad Docker plugin `image` field.
+        https://www.nomadproject.io/docs/drivers/docker#image
+        """
         return f"{self.container_repository}{image_name}:{tag}"
