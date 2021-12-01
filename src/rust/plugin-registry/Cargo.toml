@@ -12,8 +12,10 @@ name = "plugin_registry"
 
 [dependencies]
 async-trait = "0.1.51"
+grapl-config = { path = "../grapl-config" }
 rust-proto = { path = "../rust-proto" }
 thiserror = "1.0.30"
+tokio = { version = "1.14.0", features = ["full"] }
 tonic = "0.6.1"
 tonic-health = "0.5.0"
 tracing = "0.1.29"
