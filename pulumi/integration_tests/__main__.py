@@ -10,7 +10,7 @@ import pulumi_aws as aws
 import pulumi_nomad as nomad
 from infra import config
 from infra.autotag import register_auto_tags
-from infra.docker_images import DockerImageId, DockerImageIdBuilder, version_tag
+from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.nomad_job import NomadJob, NomadVars
 from infra.quiet_docker_build_output import quiet_docker_output
 
@@ -23,20 +23,16 @@ def _container_images(
     """
     Build a map of {task name -> docker image identifier}.
     """
-    img_id_builder = DockerImageIdBuilder(config.container_repository())
-
-    def build_img_id_with_tag(image_name: str) -> DockerImageId:
-        """
-        A shortcut to grab the version tag from the artifacts map and build a
-        DockerImageId out of it
-        """
-        tag = version_tag(image_name, artifacts, require_artifact)
-        return img_id_builder.build(image_name=image_name, tag=tag)
+    builder = DockerImageIdBuilder(
+        container_repository=config.container_repository(),
+        artifacts=artifacts,
+        require_artifact=require_artifact,
+    )
 
     return {
-        "e2e-tests": build_img_id_with_tag("e2e-tests"),
-        "python-integration-tests": build_img_id_with_tag("python-integration-tests"),
-        "rust-integration-tests": build_img_id_with_tag("rust-integration-tests"),
+        "e2e-tests": builder.build_with_tag("e2e-tests"),
+        "python-integration-tests": builder.build_with_tag("python-integration-tests"),
+        "rust-integration-tests": builder.build_with_tag("rust-integration-tests"),
     }
 
 
