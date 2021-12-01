@@ -11,7 +11,7 @@ import pulumi_aws as aws
 import pulumi_nomad as nomad
 from infra import config
 from infra.autotag import register_auto_tags
-from infra.docker_images import CloudsmithImageUrl, version_tag
+from infra.docker_images import DockerImageIdBuilder, version_tag
 from infra.nomad_job import NomadJob, NomadVars
 from infra.quiet_docker_build_output import quiet_docker_output
 
@@ -25,23 +25,21 @@ def _container_images(
     Build a map of "task name -> docker image URL".
     See the .nomad file's var `container_images` for further documentation.
     """
-    cs_urls = CloudsmithImageUrl(config.container_repository())
+    img_id_builder = DockerImageIdBuilder(config.container_repository())
 
-    def build_image_url_with_version_tag(image_name: str) -> str:
+    def build_img_id_with_tag(image_name: str) -> str:
         # A shortcut to grab the version tag from the artifacts map and build a
         # Cloudsmith docker image url out of it.
         tag = version_tag(image_name, artifacts, require_artifact)
-        return cs_urls.build(image_name=image_name, tag=tag)
+        return img_id_builder.build(image_name=image_name, tag=tag)
 
     return json.dumps(
         {
-            "e2e-tests": build_image_url_with_version_tag("e2e-tests"),
-            "python-integration-tests": build_image_url_with_version_tag(
+            "e2e-tests": build_img_id_with_tag("e2e-tests"),
+            "python-integration-tests": build_img_id_with_tag(
                 "python-integration-tests"
             ),
-            "rust-integration-tests": build_image_url_with_version_tag(
-                "rust-integration-tests"
-            ),
+            "rust-integration-tests": build_img_id_with_tag("rust-integration-tests"),
         }
     )
 
