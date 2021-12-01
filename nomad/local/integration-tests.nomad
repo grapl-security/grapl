@@ -74,16 +74,6 @@ variable "grapl_root" {
   description = "Where to find the Grapl repo on the host OS (where Nomad runs)."
 }
 
-variable "python_integration_tests_tag" {
-  type        = string
-  description = "The tagged version of the python-integration-tests we should deploy."
-}
-
-variable "rust_integration_tests_tag" {
-  type        = string
-  description = "The tagged version of the rust-integration-tests we should deploy."
-}
-
 locals {
   log_level = "DEBUG"
 

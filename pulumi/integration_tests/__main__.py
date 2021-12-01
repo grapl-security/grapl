@@ -23,7 +23,7 @@ def _container_images(
 ) -> str:
     """
     Build a map of "task name -> docker image URL".
-    See `grapl-core.nomad` container_images for examples.
+    See the .nomad file's var `container_images` for further documentation.
     """
     cs_urls = CloudsmithImageUrl(config.container_repository())
 
