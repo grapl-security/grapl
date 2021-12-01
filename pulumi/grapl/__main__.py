@@ -1,3 +1,4 @@
+import asyncio
 import sys
 from pathlib import Path
 from typing import Any, List, Mapping, Set, cast
@@ -213,17 +214,25 @@ def main() -> None:
 
     nomad_grapl_core_timeout = "5m"
 
-    kafka = Kafka(
-        "kafka",
-        confluent=ConfluentOutput.from_json(
-            cast(
-                pulumi.Output[Mapping[str, Any]],
-                StackReference("grapl/ccloud-bootstrap/ccloud-bootstrap").get_output("confluent"),
+    confluent_stack_output: ConfluentOutput = (
+        asyncio.get_running_loop().run_until_complete(
+            ConfluentOutput.from_json(
+                cast(
+                    pulumi.Output[Mapping[str, Any]],
+                    StackReference(
+                        "grapl/ccloud-bootstrap/ccloud-bootstrap"
+                    ).get_output("confluent"),
+                )
             )
-        ),
-        confluent_environment_name=pulumi_config.require("confluent-environment-name"),
+        )
     )
 
+    Kafka(
+        "kafka",
+        confluent_environment=confluent_stack_output.get_environment(
+            pulumi_config.require("confluent-environment-name")
+        ),
+    )
 
     if config.LOCAL_GRAPL:
         ###################################

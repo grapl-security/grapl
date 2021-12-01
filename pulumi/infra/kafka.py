@@ -17,11 +17,11 @@ class CredentialOutput:
     api_secret: str
 
     @staticmethod
-    async def from_json(json_: Mapping[str, str]) -> CredentialOutput:
+    def from_json(json_: Mapping[str, str]) -> CredentialOutput:
         return CredentialOutput(
             service_account_id=json_["service_account_id"],
             api_key=json_["api_key"],
-            api_secret=pulumi.Output.unsecret(json_["api_secret"]),
+            api_secret=json_["api_secret"],
         )
 
 
@@ -33,7 +33,7 @@ class EnvironmentOutput:
     service_credentials: Mapping[str, CredentialOutput]
 
     @staticmethod
-    def from_json(json_: pulumi.Output[Mapping[str, Any]]) -> EnvironmentOutput:
+    def from_json(json_: Mapping[str, Any]) -> EnvironmentOutput:
         return EnvironmentOutput(
             environment_id=json_["environment_id"],
             bootstrap_servers=json_["bootstrap_servers"],
@@ -58,10 +58,12 @@ class ConfluentOutput:
             raise KeyError(f"{environment_name} does not exist")
 
     @staticmethod
-    def from_json(json_: pulumi.Output[Mapping[str, Any]]) -> ConfluentOutput:
+    async def from_json(json_: pulumi.Output[Mapping[str, Any]]) -> ConfluentOutput:
+        reified_json = await json_.future()
+        assert reified_json is not None
         return ConfluentOutput(
             environments={
-                k: EnvironmentOutput.from_json(v) for k, v in json_["environemnts"]
+                k: EnvironmentOutput.from_json(v) for k, v in reified_json.items()
             }
         )
 
@@ -70,13 +72,10 @@ class Kafka(pulumi.ComponentResource):
     def __init__(
         self,
         name: str,
-        confluent_environment_name: str,
-        confluent: ConfluentOutput,
+        confluent_environment: EnvironmentOutput,
         opts: Optional[pulumi.ResourceOptions] = None,
     ):
         super().__init__("grapl:Kafka", name=name, props=None, opts=opts)
-
-        confluent_environment = confluent.get_environment(confluent_environment_name)
 
         if LOCAL_GRAPL:
             provider = kafka.Provider(
