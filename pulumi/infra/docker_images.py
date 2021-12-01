@@ -24,7 +24,7 @@ The values can look like, for instance:
 DockerImageId = NewType("DockerImageId", str)
 
 
-def version_tag(
+def _version_tag(
     key: str,
     artifacts: Mapping[str, str],
     require_artifact: bool = False,
@@ -53,10 +53,24 @@ def version_tag(
 
 
 class DockerImageIdBuilder:
-    def __init__(self, container_repository: Optional[str]) -> None:
+    def __init__(
+        self, 
+        container_repository: Optional[str],
+        artifacts: Mapping[str, str], 
+        require_artifact: bool = False
+    ) -> None:
         self.container_repository = (
             f"{container_repository}/" if container_repository else ""
         )
+        self.artifacts = artifacts
+        self.require_artifact = require_artifact
 
     def build(self, image_name: str, tag: str) -> DockerImageId:
         return DockerImageId(f"{self.container_repository}{image_name}:{tag}")
+
+    def build_with_tag(self, image_name: str) -> DockerImageId:
+        """
+        Automatically grabs the version tag from config's artifacts.
+        """
+        tag = _version_tag(image_name, artifacts=self.artifacts, require_artifact=self.require_artifact)
+        return self.build(image_name, tag)
