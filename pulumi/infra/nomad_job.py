@@ -1,12 +1,13 @@
+import json
 from pathlib import Path
-from typing import Any, Mapping, Optional, Union
+from typing import Mapping, Optional, Union
 
 import pulumi_nomad as nomad
 from infra.config import DEPLOYMENT_NAME
 
 import pulumi
 
-_ValidNomadVarTypes = pulumi.Input[Union[str, bool, int]]
+_ValidNomadVarTypes = pulumi.Input[Union[str, bool, int, Mapping[str, str]]]
 NomadVars = Mapping[str, Optional[_ValidNomadVarTypes]]
 
 
@@ -19,6 +20,9 @@ class NomadJob(pulumi.ComponentResource):
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         super().__init__("grapl:NomadJob", name, None, opts)
+
+        vars = self._fix_pulumi_preview(vars)
+        vars = self._json_dump_complex_types(vars)
 
         self.job = nomad.Job(
             resource_name=f"{DEPLOYMENT_NAME}-{name}-job",
@@ -37,7 +41,17 @@ class NomadJob(pulumi.ComponentResource):
             f.close()
             return jobspec
 
-    def _fix_pulumi_preview(self, vars: Mapping[str, Any]) -> Mapping[str, Any]:
+    def _json_dump_complex_types(self, vars: NomadVars) -> NomadVars:
+        """
+        Nomad accepts input of lists and maps, but the Nomad/Pulumi plugin doesn't
+        convert them correctly.
+        """
+        return {
+            k: json.dumps(v) if isinstance(v, (dict, list)) else v
+            for (k, v) in vars.items()
+        }
+
+    def _fix_pulumi_preview(self, vars: NomadVars) -> NomadVars:
         """
         This is an ugly hack to deal with pulumi preview never resolving Outputs into a real string.
         Without this, the vars gets unset if there's a single key with an unresolved output

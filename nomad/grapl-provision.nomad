@@ -22,10 +22,12 @@ variable "_aws_endpoint" {
 EOF
 }
 
-variable "container_repository" {
-  type        = string
-  default     = ""
-  description = "The container repository in which we can find Grapl services. Requires a trailing / if not empty string"
+variable "container_images" {
+  type        = map(string)
+  description = <<EOF
+  A map of $NAME_OF_TASK to the URL for that task's docker image ID.
+  (See DockerImageId in Pulumi for further documentation.)
+EOF
 }
 
 variable "aws_access_key_id" {
@@ -69,12 +71,6 @@ variable "rust_log" {
   description = "Controls the logging behavior of Rust-based services."
 }
 
-variable "provisioner_tag" {
-  type        = string
-  description = "The tagged version of the provisioner we should deploy."
-}
-
-
 locals {
   # Prefer these over their `var` equivalents.
   # The aws endpoint is in template env format
@@ -106,7 +102,7 @@ job "grapl-provision" {
       driver = "docker"
 
       config {
-        image = "${var.container_repository}provisioner:${var.provisioner_tag}"
+        image = var.container_images["provisioner"]
       }
 
       lifecycle {
