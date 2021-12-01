@@ -1,10 +1,11 @@
+import json
 import os
 import sys
 from pathlib import Path
 
 sys.path.insert(0, "..")
 
-from typing import Optional, cast
+from typing import Mapping, Optional, cast
 
 import pulumi_aws as aws
 import pulumi_nomad as nomad
