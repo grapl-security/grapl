@@ -28,7 +28,7 @@ rusoto_cloudwatch = { version = "0.47.0", default_features = false, features = [
 ] }
 rusoto_credential = { version = "0.47.0", default_features = false }
 tracing = "0.1.29"
-tracing-subscriber = { version = "0.3.2", features = ["json"] }
+tracing-subscriber = { version = "0.3.2", features = ["env-filter", "json"] }
 tracing-futures = "0.2.5"
 tokio = { version = "1.14.0", features = [
   "sync",
