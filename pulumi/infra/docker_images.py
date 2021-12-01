@@ -54,10 +54,10 @@ def _version_tag(
 
 class DockerImageIdBuilder:
     def __init__(
-        self, 
+        self,
         container_repository: Optional[str],
-        artifacts: Mapping[str, str], 
-        require_artifact: bool = False
+        artifacts: Mapping[str, str],
+        require_artifact: bool = False,
     ) -> None:
         self.container_repository = (
             f"{container_repository}/" if container_repository else ""
@@ -72,5 +72,7 @@ class DockerImageIdBuilder:
         """
         Automatically grabs the version tag from config's artifacts.
         """
-        tag = _version_tag(image_name, artifacts=self.artifacts, require_artifact=self.require_artifact)
+        tag = _version_tag(
+            image_name, artifacts=self.artifacts, require_artifact=self.require_artifact
+        )
         return self.build(image_name, tag)
