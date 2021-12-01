@@ -139,7 +139,7 @@ job "e2e-tests" {
       driver = "docker"
 
       config {
-        image      = "${var.container_repository}e2e-tests:${var.e2e_tests_tag}"
+        image      = var.container_images["e2e-tests"]
         entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
         command = trimspace(<<EOF
 graplctl upload analyzer --analyzer_main_py ./etc/local_grapl/suspicious_svchost/main.py
@@ -183,7 +183,7 @@ EOF
       driver = "docker"
 
       config {
-        image = var.container_images["e2e-integration-tests"]
+        image = var.container_images["e2e-tests"]
       }
 
       # This writes an env file that gets read by the task automatically
