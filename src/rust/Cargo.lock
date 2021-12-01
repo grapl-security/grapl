@@ -2898,8 +2898,10 @@ name = "plugin-registry"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "grapl-config",
  "rust-proto",
  "thiserror",
+ "tokio 1.14.0",
  "tonic 0.6.1",
  "tonic-health",
  "tracing",
