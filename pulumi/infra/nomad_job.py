@@ -46,13 +46,10 @@ class NomadJob(pulumi.ComponentResource):
         Nomad accepts input of lists and maps, but the Nomad/Pulumi plugin doesn't
         convert them correctly.
         """
-        complex_types_dumped = {
-            k: json.dumps(v) for (k, v) in vars.items() if isinstance(v, (dict, list))
+        return {
+            k: json.dumps(v) if isinstance(v, (dict, list)) else v
+            for (k, v) in vars.items()
         }
-        return dict(
-            **vars,
-            **complex_types_dumped,
-        )
 
     def _fix_pulumi_preview(self, vars: NomadVars) -> NomadVars:
         """
