@@ -1,8 +1,6 @@
 import os
 from typing import Optional
 
-from grapl_common.utils.primitive_convertors import to_bool
-
 
 def endpoint_url(suffix: Optional[str]) -> str:
     """
