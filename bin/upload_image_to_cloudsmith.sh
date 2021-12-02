@@ -3,7 +3,7 @@
 ########################################################################
 # Example Usage
 #
-# bin/upload_to_cloudsmith.sh e2e-tests:dev
+# bin/upload_image_to_cloudsmith.sh e2e-tests:dev
 ########################################################################
 
 set -euo pipefail
