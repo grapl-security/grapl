@@ -12,6 +12,7 @@ source .buildkite/shared/lib/rc.sh
 # repository.
 readonly -a STACKS=(
     grapl/testing
+    grapl/integration-tests/testing
 )
 
 # TODO: Add this to environment file
