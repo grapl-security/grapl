@@ -14,8 +14,17 @@ name = "plugin_registry"
 async-trait = "0.1.51"
 grapl-config = { path = "../grapl-config" }
 rust-proto = { path = "../rust-proto" }
+sqlx = { version = "0.5.9", features = [
+  "postgres",
+  "runtime-tokio-rustls",
+  "uuid"
+] }
 thiserror = "1.0.30"
 tokio = { version = "1.14.0", features = ["full"] }
 tonic = "0.6.1"
 tonic-health = "0.5.0"
 tracing = "0.1.29"
+rusoto_s3 = { version = "0.47.0", default_features = false, features = [
+  "rustls"
+] }
+blake3 = "1.2.0"
