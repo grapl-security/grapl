@@ -14,6 +14,10 @@ steps:
           command: preview
           project_dir: pulumi/grapl
           stack: grapl/testing
+      - grapl-security/pulumi#v0.1.2:
+          command: preview
+          project_dir: pulumi/integration_tests
+          stack: grapl/integration-tests/testing
     agents:
       queue: "pulumi-staging"
 
@@ -29,6 +33,10 @@ steps:
           command: update
           project_dir: pulumi/grapl
           stack: grapl/testing
+      - grapl-security/pulumi#v0.1.2:
+          command: update
+          project_dir: pulumi/integration_tests
+          stack: grapl/integration-tests/testing
     agents:
       queue: "pulumi-staging"
 
