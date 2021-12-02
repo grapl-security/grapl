@@ -10,8 +10,8 @@ actix-files = "0.5.0"
 actix-session = "0.4.1"
 thiserror = "1.0.30"
 argon2 = { version = "0.3.1", features = ["std"] }
-futures = "0.3.18"
-futures-util = "0.3.18"
+futures = "0.3"
+futures-util = "0.3"
 rusoto_core = { version = "0.47.0", default_features = false, features = [
   "rustls"
 ] }

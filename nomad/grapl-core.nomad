@@ -115,8 +115,8 @@ variable "plugin_registry_table_hostname" {
 }
 
 variable "plugin_registry_table_port" {
-  type        = number
-  default     = 5432
+  type        = string
+  default     = "5432"
   description = "What is the port for the plugin registry table?"
 }
 
