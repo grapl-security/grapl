@@ -9,5 +9,5 @@ env:
 steps:
   - label: ":aws: E2E tests in AWS"
     command:
-      - nomad/local/run_parameterized_job.sh e2e-tests 6
+      - nomad/bin/run_parameterized_job.sh e2e-tests 6
     soft_fail: true
