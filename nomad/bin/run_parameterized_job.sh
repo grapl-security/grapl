@@ -4,7 +4,7 @@ set -euo pipefail
 THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
 
 # shellcheck source-path=SCRIPTDIR
-source "${THIS_DIR}/nomad_cli_tools.sh"
+source "${THIS_DIR}/../lib/nomad_cli_tools.sh"
 
 # The Nomad test _definition_ is uploaded as part of
 # Pulumi __main__.py's `NomadJob(...)` calls.
