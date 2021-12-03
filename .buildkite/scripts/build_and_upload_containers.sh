@@ -33,6 +33,9 @@ services=(
     node-identifier-retry
     osquery-generator
     provisioner
+    # Heads up: Adding `rust-integration-tests` here? Reconsider!
+    # It's 9GB and Cloudsmith space is pricy!
+    # https://github.com/grapl-security/grapl/pull/1296
     sysmon-generator
 )
 
