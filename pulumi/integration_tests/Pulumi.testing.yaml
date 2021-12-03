@@ -1,0 +1,4 @@
+config:
+  aws:region: us-east-1
+  # TODO wimax: ensure integration-tests:artifacts: gets filled out
+  integration-tests:container_repository: "docker.cloudsmith.io/grapl/testing"
