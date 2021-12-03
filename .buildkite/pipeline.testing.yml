@@ -9,4 +9,9 @@ env:
 steps:
   - label: ":aws: E2E tests in AWS"
     command:
-      - "echo 'TODO: make this work again'"
+      - nomad/bin/run_parameterized_job.sh e2e-tests 6
+    # We don't believe the test is currently repeatable until we execute on
+    # https://github.com/grapl-security/issue-tracker/issues/793
+    # But we also don't want these failures blocking the pipeline.
+    # Remove this once 793 is complete.
+    soft_fail: true

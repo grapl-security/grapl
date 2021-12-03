@@ -6,7 +6,6 @@ readonly NOMAD_LOGS_DEST=/tmp/nomad-agent.log
 readonly CONSUL_LOGS_DEST=/tmp/consul-agent.log
 THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
 readonly THIS_DIR
-cd "${THIS_DIR}"
 
 ensure_cros_bridge_networking_workaround() {
     # Suggest the Noamd bridge networking hack in building.md if module is not found
@@ -19,7 +18,7 @@ ensure_cros_bridge_networking_workaround() {
         if ! grep -q "_/bridge.ko" "$module_filepath"; then
             echo "It looks like you're on ChromeOS, but haven't installed the Nomad bridge networking workaround."
             # shellcheck source-path=SCRIPTDIR
-            source "$(dirname "${BASH_SOURCE[0]}")/../../etc/chromeos/lib/installs.sh"
+            source "${THIS_DIR}/../../etc/chromeos/lib/installs.sh"
             install_nomad_chromeos_workaround
             echo "ChromeOS Nomad bridge networking workaround should now be installed. Continuing..."
         fi
@@ -55,12 +54,14 @@ start_nomad_detach() {
     # These will run forever until `make stop-nomad-ci` is invoked."
     # shellcheck disable=SC2024
     sudo nomad agent \
-        -config="nomad-agent-conf.nomad" \
+        -config="${THIS_DIR}/nomad-agent-conf.nomad" \
         -dev-connect > "${NOMAD_LOGS_DEST}" &
     # The client is set to 0.0.0.0 here so that it can be reached via pulumi in docker.
-    consul agent -dev -client 0.0.0.0 -config-file consul-agent-conf.hcl > "${CONSUL_LOGS_DEST}" &
+    consul agent \
+        -client 0.0.0.0 -config-file "${THIS_DIR}/consul-agent-conf.hcl" \
+        -dev > "${CONSUL_LOGS_DEST}" &
 
-    ./nomad_run_local_infra.sh
+    "${THIS_DIR}/nomad_run_local_infra.sh"
     echo "Deployment complete"
 }
 

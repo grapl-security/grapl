@@ -17,7 +17,7 @@ declare -a NOMAD_VARS=(
 )
 
 # shellcheck source-path=SCRIPTDIR
-source "${THIS_DIR}/nomad_cli_tools.sh"
+source "${THIS_DIR}/../lib/nomad_cli_tools.sh"
 
 echo "--- Deploying Nomad local infrastructure."
 
