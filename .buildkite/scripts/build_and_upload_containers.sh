@@ -33,8 +33,6 @@ services=(
     node-identifier-retry
     osquery-generator
     provisioner
-    python-integration-tests
-    rust-integration-tests
     sysmon-generator
 )
 
@@ -45,7 +43,7 @@ cloudsmith_tag() {
 }
 
 echo "--- Building all ${TAG} images"
-make build build-test-e2e build-test-integration
+make build build-test-e2e
 
 for service in "${services[@]}"; do
     # Re-tag the container we just built so we can upload it to
