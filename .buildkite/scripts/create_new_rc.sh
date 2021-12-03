@@ -12,6 +12,8 @@ source .buildkite/shared/lib/rc.sh
 # repository.
 readonly -a STACKS=(
     grapl/testing
+    # FYI: this will reference the `grapl/integration-tests/testing` stack
+    integration-tests/testing
 )
 
 # TODO: Add this to environment file

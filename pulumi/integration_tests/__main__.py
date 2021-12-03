@@ -90,7 +90,7 @@ def main() -> None:
 
     e2e_tests = NomadJob(
         "e2e-tests",
-        jobspec=Path("../../nomad/local/e2e-tests.nomad").resolve(),
+        jobspec=Path("../../nomad/e2e-tests.nomad").resolve(),
         vars=e2e_test_job_vars,
     )
 

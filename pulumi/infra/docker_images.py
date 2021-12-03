@@ -42,7 +42,7 @@ def _version_tag(
         return artifact_version
     if not artifact_version and require_artifact:
         raise KeyError(
-            "Expected to find an artifacts entry for {key} in Pulumi config file"
+            f"Expected to find an artifacts entry for {key} in Pulumi config file"
         )
 
     tag = os.getenv("TAG")
