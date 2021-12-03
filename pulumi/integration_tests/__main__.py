@@ -17,7 +17,7 @@ from infra.quiet_docker_build_output import quiet_docker_output
 import pulumi
 
 
-def _container_images(
+def _e2e_container_images(
     artifacts: Mapping[str, str], require_artifact: bool = False
 ) -> Mapping[str, DockerImageId]:
     """
@@ -31,6 +31,22 @@ def _container_images(
 
     return {
         "e2e-tests": builder.build_with_tag("e2e-tests"),
+    }
+
+
+def _integration_container_images(
+    artifacts: Mapping[str, str], require_artifact: bool = False
+) -> Mapping[str, DockerImageId]:
+    """
+    Build a map of {task name -> docker image identifier}.
+    """
+    builder = DockerImageIdBuilder(
+        container_repository=config.container_repository(),
+        artifacts=artifacts,
+        require_artifact=require_artifact,
+    )
+
+    return {
         "python-integration-tests": builder.build_with_tag("python-integration-tests"),
         "rust-integration-tests": builder.build_with_tag("rust-integration-tests"),
     }
@@ -42,9 +58,6 @@ def main() -> None:
 
     pulumi_config = pulumi.Config()
     artifacts = pulumi_config.get_object("artifacts") or {}
-    container_images = _container_images(
-        artifacts, require_artifact=(not config.LOCAL_GRAPL)
-    )
 
     quiet_docker_output()
 
@@ -79,7 +92,9 @@ def main() -> None:
         "aws_access_key_secret": secret_key,
         "_aws_endpoint": grapl_stack.aws_endpoint,
         "aws_region": aws.get_region().name,
-        "container_images": container_images,
+        "container_images": _e2e_container_images(
+            artifacts, require_artifact=(not config.LOCAL_GRAPL)
+        ),
         "deployment_name": grapl_stack.deployment_name,
         "schema_properties_table_name": grapl_stack.schema_properties_table_name,
         "sysmon_log_bucket": grapl_stack.sysmon_log_bucket,
@@ -104,7 +119,9 @@ def main() -> None:
             "aws_access_key_secret": secret_key,
             "_aws_endpoint": grapl_stack.aws_endpoint,
             "aws_region": aws.get_region().name,
-            "container_images": container_images,
+            "container_images": _integration_container_images(
+                artifacts, require_artifact=(not config.LOCAL_GRAPL)
+            ),
             "deployment_name": grapl_stack.deployment_name,
             "docker_user": os.environ["DOCKER_USER"],
             "grapl_root": os.environ["GRAPL_ROOT"],
