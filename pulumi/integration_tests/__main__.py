@@ -11,6 +11,7 @@ import pulumi_nomad as nomad
 from infra import config
 from infra.autotag import register_auto_tags
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
+from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
 from infra.nomad_job import NomadJob, NomadVars
 from infra.quiet_docker_build_output import quiet_docker_output
 
@@ -65,19 +66,12 @@ def main() -> None:
     # objects.
     register_auto_tags({"grapl deployment": stack_name})
 
+    nomad_provider: Optional[pulumi.ProviderResource] = None
     if not config.LOCAL_GRAPL:
-        # TODO twunderlich: DRY this up
-
-        # Set the nomad address. This can be either set as nomad:address in the config to support ssm port forwarding or
-        # taken from the nomad stack
-        nomad_config = pulumi.Config("nomad")
-        nomad_override_address = nomad_config.get("address")
-        # We prefer nomad:address to support overriding in the case of ssm port forwarding
         nomad_server_stack = pulumi.StackReference(f"grapl/nomad/{stack_name}")
-        nomad_address = nomad_override_address or nomad_server_stack.require_output(
-            "address"
+        nomad_provider = get_hashicorp_provider_address(
+            nomad, "nomad", nomad_server_stack
         )
-        nomad_provider = nomad.Provider("nomad-aws", address=nomad_address)
 
     ##### Business Logic
 
@@ -107,6 +101,7 @@ def main() -> None:
         "e2e-tests",
         jobspec=Path("../../nomad/e2e-tests.nomad").resolve(),
         vars=e2e_test_job_vars,
+        opts=pulumi.ResourceOptions(provider=nomad_provider),
     )
 
     if config.LOCAL_GRAPL:
@@ -135,6 +130,7 @@ def main() -> None:
             "integration-tests",
             jobspec=Path("../../nomad/local/integration-tests.nomad").resolve(),
             vars=integration_test_job_vars,
+            opts=pulumi.ResourceOptions(provider=nomad_provider),
         )
 
 
