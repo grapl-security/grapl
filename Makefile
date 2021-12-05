@@ -357,8 +357,12 @@ format-prettier: build-formatter ## Reformat js/ts/yaml
 format-hcl: ## Reformat all HCLs
 	${NONROOT_DOCKER_COMPOSE_CHECK} hcl-format
 
-.PHONY: format
-format: format-python format-shell format-prettier format-rust format-hcl ## Reformat all code
+.PHONY: format-build
+format-build: ## Reformat BUILD files
+	./pants update-build-files
+
+.PHONY: format ## Reformat all code
+format: format-python format-shell format-prettier format-rust format-hcl format-build
 
 ##@ Local Grapl 💻
 
