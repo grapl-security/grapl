@@ -24,14 +24,22 @@ nomad_agent_log_path = Path("/tmp/nomad-agent.log").resolve()
 consul_agent_log_path = Path("/tmp/consul-agent.log").resolve()
 
 
-def dump_all(artifacts_dir: Path) -> None:
+def _get_nomad_client() -> Nomad:
+    address = os.getenv("NOMAD_ADDRESS") or "http://localhost:4646"
+    assert address.startswith("http"), f"Your nomad address needs a protocol: {address}"
+    nomad_client = Nomad(address=address, timeout=10)
+    return nomad_client
+
+
+def dump_all(artifacts_dir: Path, dump_agent_logs: bool) -> None:
     nomad_artifacts_dir = artifacts_dir / "nomad"
     os.makedirs(nomad_artifacts_dir, exist_ok=True)
 
-    nomad_client = Nomad(host="localhost", timeout=10)
+    nomad_client = _get_nomad_client()
     allocations = _get_allocations(nomad_client)
 
-    _dump_nomad_consul_agent_logs(nomad_artifacts_dir)
+    if dump_agent_logs:
+        _dump_nomad_consul_agent_logs(nomad_artifacts_dir)
     _get_nomad_logs_for_each_service(nomad_artifacts_dir, nomad_client, allocations)
 
 
