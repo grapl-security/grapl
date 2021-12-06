@@ -54,7 +54,7 @@ def main() -> None:
     artifacts_dir = Path(f"{cwd}/test_artifacts/{compose_project}_{timestamp}")
     os.makedirs(artifacts_dir, exist_ok=False)
 
-    if compose_project is not None:
+    if compose_project:
         docker_artifacts.dump_all_docker_logs(
             compose_project=compose_project, artifacts_dir=artifacts_dir
         )
