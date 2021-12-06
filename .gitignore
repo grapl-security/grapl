@@ -6,7 +6,7 @@
 
 # Test outputs
 test/integration-outputs
-# Artifacts dumped from `make dump-artifacts` script
+# Artifacts dumped from `make dump-artifacts-local` script
 /test_artifacts/
 
 # Environments

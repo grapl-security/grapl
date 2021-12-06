@@ -8,8 +8,7 @@
 ##########
 set -euo pipefail
 
-STACK="grapl/nomad/testing"
-readonly STACK
+readonly STACK="grapl/nomad/testing"
 
 REPOSITORY_ROOT=$(git rev-parse --show-toplevel)
 readonly REPOSITORY_ROOT
@@ -21,8 +20,10 @@ readonly _NOMAD_ADDRESS
 # the test, not the stop command.
 dump_artifacts() {
     (
-        cd "${REPOSITORY_ROOT}" &&
-            NOMAD_ADDRESS="${_NOMAD_ADDRESS}" make dump-artifacts
+        cd "${REPOSITORY_ROOT}"
+        NOMAD_ADDRESS="${_NOMAD_ADDRESS}" ./pants run \
+            ./etc/ci_scripts/dump_artifacts \
+            --run-args="--dump-agent-logs=False"
     )
 }
 trap dump_artifacts EXIT
