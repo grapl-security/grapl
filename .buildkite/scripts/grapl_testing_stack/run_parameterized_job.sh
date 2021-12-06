@@ -11,9 +11,6 @@ set -euo pipefail
 # shellcheck source-path=SCRIPTDIR
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-NOMAD_ADDRESS="$(get_nomad_address)"
-readonly NOMAD_ADDRESS
-
 # Ensure we call dumpArtifacts even after test failure, and return exit code from
 # the test, not the stop command.
 dump_artifacts() {
