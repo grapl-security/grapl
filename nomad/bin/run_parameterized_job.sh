@@ -1,4 +1,14 @@
 #!/bin/bash
+
+##########
+# Run a Nomad Parameterized Batch job with {a given name} for {N minutes}.
+# Works on localhost:4646 by default, but that can be overridden with NOMAD_ADDRESS=
+#
+# Example usage:
+#  nomad/bin/run_parameterized_job.sh e2e-tests 6
+#  NOMAD_ADDRESS=http://cool.domain:4646 nomad/bin/run_parameterized_job.sh integration-tests 7
+##########
+
 set -euo pipefail
 
 THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
@@ -14,6 +24,7 @@ readonly mins_to_wait="${2}"
 
 # We have to make sure grapl-provision completes before we execute any
 # further jobs
+echo -e "Awaiting grapl-provision..."
 await_nomad_job_finish "grapl-provision" 60 "Grapl Provision"
 
 # Now we have to actually dispatch a job; Pulumi simply uploaded

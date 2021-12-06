@@ -96,7 +96,7 @@ steps:
 
   - label: ":python::jeans: Typechecking"
     command:
-      - make test-typecheck
+      - make typecheck
     plugins:
       - grapl-security/vault-login#v0.1.0
       - grapl-security/vault-env#v0.1.0:

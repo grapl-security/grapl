@@ -1,7 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
-NOMAD_ENDPOINT="http://localhost:4646"
+NOMAD_ADDRESS="${NOMAD_ADDRESS:-http://localhost:4646}"
+
 curl_quiet() {
     # shellcheck disable=SC2068
     curl --location --silent --show-error $@
@@ -11,7 +12,7 @@ nomad_dispatch() {
     # Grab the new Job ID from the Dispatch command
 
     local -r parameterized_batch_job="${1}"
-    local -r dispatch_output=$(curl_quiet --request POST --data "{}" "${NOMAD_ENDPOINT}/v1/job/${parameterized_batch_job}/dispatch")
+    local -r dispatch_output=$(curl_quiet --request POST --data "{}" "${NOMAD_ADDRESS}/v1/job/${parameterized_batch_job}/dispatch")
     local -r job_id=$(echo "${dispatch_output}" | jq -r ".DispatchedJobID")
     echo "${job_id}"
 }
@@ -20,12 +21,12 @@ url_to_nomad_job_in_ui() {
     local -r job_id="${1}"
     # urlencode
     local -r urlencode_job_id=$(jq -rn --arg input "${job_id}" '$input|@uri')
-    echo "http://localhost:4646/ui/jobs/${urlencode_job_id}"
+    echo "${NOMAD_ADDRESS}/ui/jobs/${urlencode_job_id}"
 }
 
 nomad_stop_job() {
     local -r job_id="${1}"
-    local -r dispatch_output=$(curl_quiet --request DELETE --data "{}" "${NOMAD_ENDPOINT}/v1/job/${job_id}")
+    local -r dispatch_output=$(curl_quiet --request DELETE --data "{}" "${NOMAD_ADDRESS}/v1/job/${job_id}")
 }
 
 nomad_get_per_task_results() {
@@ -85,7 +86,7 @@ await_nomad_job_finish() {
 nomad_get_job() {
     # Assumes there's a single job matching job_id
     local -r job_id="${1}"
-    curl_quiet --request GET "${NOMAD_ENDPOINT}/v1/jobs?prefix=${job_id}" | jq -r ".[0]"
+    curl_quiet --request GET "${NOMAD_ADDRESS}/v1/jobs?prefix=${job_id}" | jq -r ".[0]"
 }
 
 check_for_task_failures_in_job() {
