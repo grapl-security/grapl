@@ -106,7 +106,7 @@ help: ## Print this help
 	@printf -- '             (≡)      /____/             /_/            \n'
 	@printf -- '\n'
 	@printf -- '${FMT_BOLD}Useful environment variables (with examples):${FMT_END}\n'
-	@printf -- '  ${FMT_PURPLE}TARGETS${FMT_END}="typecheck-analyzer-executor typecheck-grapl-common" make test-typecheck\n'
+	@printf -- '  ${FMT_PURPLE}TARGETS${FMT_END}="typecheck-analyzer-executor typecheck-grapl-common" make typecheck\n'
 	@printf -- '    to only run a subset of test targets.\n'
 	@printf -- '\n'
 	@printf -- '  ${FMT_PURPLE}KEEP_TEST_ENV=1${FMT_END} make test-integration\n'
@@ -244,8 +244,8 @@ test-unit-js: export COMPOSE_FILE := ./test/docker-compose.unit-tests-js.yml
 test-unit-js: build-test-unit-js test-unit-engagement-view ## Build and run unit tests - JavaScript only
 	test/docker-compose-with-error.sh
 
-.PHONY: test-typecheck
-test-typecheck: ## Typecheck Python Code
+.PHONY: typecheck
+typecheck: ## Typecheck Python Code
 	./pants check ::
 
 .PHONY: test-integration
