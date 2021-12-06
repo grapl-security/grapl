@@ -24,14 +24,26 @@ nomad_agent_log_path = Path("/tmp/nomad-agent.log").resolve()
 consul_agent_log_path = Path("/tmp/consul-agent.log").resolve()
 
 
+def _get_nomad_client() -> Nomad:
+    address = os.getenv("NOMAD_ADDRESS") or "http://localhost:4646"
+    assert address.startswith("http"), f"Your nomad address needs a protocol: {address}"
+    nomad_client = Nomad(address=address, timeout=10)
+
+
 def dump_all(artifacts_dir: Path) -> None:
     nomad_artifacts_dir = artifacts_dir / "nomad"
     os.makedirs(nomad_artifacts_dir, exist_ok=True)
 
-    nomad_client = Nomad(host="localhost", timeout=10)
+    nomad_client = _get_nomad_client()
     allocations = _get_allocations(nomad_client)
 
-    _dump_nomad_consul_agent_logs(nomad_artifacts_dir)
+    try:
+        _dump_nomad_consul_agent_logs(nomad_artifacts_dir)
+    except Exception as e:
+        LOGGER.info(
+            "Couldn't get Nomad/Consul agent logs."
+            " (This is expected for non-local consul/nomad deploys.)"
+        )
     _get_nomad_logs_for_each_service(nomad_artifacts_dir, nomad_client, allocations)
 
 
