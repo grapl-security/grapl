@@ -33,8 +33,9 @@ services=(
     node-identifier-retry
     osquery-generator
     provisioner
-    python-integration-tests
-    rust-integration-tests
+    # Heads up: Adding `rust-integration-tests` here? Reconsider!
+    # It's 9GB and Cloudsmith space is pricy!
+    # https://github.com/grapl-security/grapl/pull/1296
     sysmon-generator
 )
 
@@ -45,7 +46,7 @@ cloudsmith_tag() {
 }
 
 echo "--- Building all ${TAG} images"
-make build build-test-e2e build-test-integration
+make build build-test-e2e
 
 for service in "${services[@]}"; do
     # Re-tag the container we just built so we can upload it to
