@@ -35,17 +35,12 @@ class Args:
             default=None,
             help="Docker Compose project. Do not specify if Docker-Compose is not involved (e.g. running against prod)",
         )
-        parser.add_argument(
-            "--dump-agent-logs",
-            dest="dump_agent_logs",
-            required=False,
-            default=False,
-            help="Dump the logs for Nomad/Consul agents (e.g. running locally). [True / False]",
-        )
+        parser.add_argument('--dump-agent-logs', dest='dump_agent_logs', action='store_true', help="Dump the logs for Nomad/Consul agents (useful if running locally)")
+        parser.add_argument('--no-dump-agent-logs', dest='dump_agent_logs', action='store_false')
+        parser.set_defaults(dump_agent_logs=False)
         args = parser.parse_args()
         self.compose_project: Optional[str] = args.compose_project
-        # coerce from str -> Optional[bool] -> bool
-        self.dump_agent_logs = bool(to_bool(args.dump_agent_logs))
+        self.dump_agent_logs: bool = args.dump_agent_logs
 
 
 def main() -> None:
