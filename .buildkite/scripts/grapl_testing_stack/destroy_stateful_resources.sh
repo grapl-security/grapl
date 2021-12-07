@@ -2,7 +2,7 @@
 
 ################################################################################
 # https://github.com/grapl-security/issue-tracker/issues/793
-# This script is a stop-grap measure while we await organization IDs.
+# This script is a stop-gap measure while we await organization IDs.
 # It will destroy dgraph and dynamodb state in an AWS Grapl sandbox.
 # (You'll likely want to `pulumi update` immediately afterwards!)
 ################################################################################
@@ -43,7 +43,7 @@ pulumi config set \
     --cwd="${project_dir}" \
     --stack="${stack}"
 
-# turn '["a", "b"]' into '--target=a --target=b'
+# turn '["a", "b"]' into bash-array (--target=a --target=b)
 urns=$(pulumi stack output stateful-resource-urns --stack="${stack}")
 target_args=($(echo "${urns}" | jq -r '. | map("--target=" + .) | .[]'))
 
