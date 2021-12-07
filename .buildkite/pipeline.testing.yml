@@ -8,6 +8,13 @@ env:
 
 steps:
   - label: ":aws: E2E tests in AWS"
+    agents:
+      queue: "pulumi-staging"
+    plugins:
+      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-env#v0.1.0:
+          secrets:
+            - PULUMI_ACCESS_TOKEN
     command:
       - .buildkite/scripts/grapl_testing_stack/run_parameterized_job.sh e2e-tests 6
     # We don't believe the test is currently repeatable until we execute on
