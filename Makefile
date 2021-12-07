@@ -361,7 +361,7 @@ format-hcl: ## Reformat all HCLs
 
 .PHONY: format-build
 format-build: ## Reformat BUILD files
-	./pants update-build-files
+	./pants update-build-files --no-update-build-files-fix-safe-deprecations
 
 .PHONY: format ## Reformat all code
 format: format-python format-shell format-prettier format-rust format-hcl format-build
