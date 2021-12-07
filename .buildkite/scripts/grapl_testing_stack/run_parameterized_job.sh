@@ -23,7 +23,7 @@ dump_artifacts() {
         cd "${REPOSITORY_ROOT}"
         NOMAD_ADDRESS="${_NOMAD_ADDRESS}" ./pants run \
             ./etc/ci_scripts/dump_artifacts -- \
-            --dump-agent-logs=False
+            --no-dump-agent-logs
     )
 }
 trap dump_artifacts EXIT

@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
+import argparse
 import logging
 import os
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 # Odd path is due to the `/etc` root pattern in pants.toml, fyi
 from ci_scripts.dump_artifacts import docker_artifacts, nomad_artifacts
@@ -21,33 +22,36 @@ LOGGER.setLevel(logging.INFO)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
-def parse_args() -> Any:
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description="Dump all Docker logs for a given docker-compose project"
-    )
-    parser.add_argument(
-        "--compose-project",
-        dest="compose_project",
-        required=False,
-        default=None,
-        help="Docker Compose project. Do not specify if Docker-Compose is not involved (e.g. running against prod)",
-    )
-    parser.add_argument(
-        "--dump-agent-logs",
-        dest="dump_agent_logs",
-        required=False,
-        default=False,
-        help="Dump the logs for Nomad/Consul agents (e.g. running locally)",
-    )
-    return parser.parse_args()
+class Args:
+    def __init__(self) -> None:
+        parser = argparse.ArgumentParser(
+            description="Dump all Docker logs for a given docker-compose project"
+        )
+        parser.add_argument(
+            "--compose-project",
+            dest="compose_project",
+            required=False,
+            default=None,
+            help="Docker Compose project. Do not specify if Docker-Compose is not involved (e.g. running against prod)",
+        )
+        parser.add_argument(
+            "--dump-agent-logs",
+            dest="dump_agent_logs",
+            action="store_true",
+            help="Dump the logs for Nomad/Consul agents (useful if running locally)",
+        )
+        parser.add_argument(
+            "--no-dump-agent-logs", dest="dump_agent_logs", action="store_false"
+        )
+        parser.set_defaults(dump_agent_logs=False)
+        args = parser.parse_args()
+        self.compose_project: Optional[str] = args.compose_project
+        self.dump_agent_logs: bool = args.dump_agent_logs
 
 
 def main() -> None:
-    args = parse_args()
-    compose_project: Optional[str] = args.compose_project
-    dump_agent_logs: bool = args.dump_agent_logs
+    args = Args()
+    compose_project = args.compose_project
 
     cwd = os.getcwd()
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -69,7 +73,7 @@ def main() -> None:
         compose_project=None, volume_name="dynamodb_dump", artifacts_dir=artifacts_dir
     )
 
-    nomad_artifacts.dump_all(artifacts_dir, dump_agent_logs=dump_agent_logs)
+    nomad_artifacts.dump_all(artifacts_dir, dump_agent_logs=args.dump_agent_logs)
     LOGGER.info(f"Dumped to {artifacts_dir}")
 
 

@@ -197,7 +197,7 @@ grapl-template-generator: ## Build the Grapl Template Generator and install it t
 dump-artifacts-local:  # Run the script that dumps Nomad/Docker logs after test runs
 	./pants run ./etc/ci_scripts/dump_artifacts -- \
 		--compose-project="${COMPOSE_PROJECT_NAME}" \
-		--dump-agent-logs=True
+		--dump-agent-logs
 
 .PHONY: build-ux
 build-ux: ## Build website assets
