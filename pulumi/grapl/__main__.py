@@ -386,7 +386,11 @@ def main() -> None:
             jobspec=Path("../../nomad/grapl-provision.nomad").resolve(),
             vars=grapl_provision_job_vars,
             opts=pulumi.ResourceOptions(
-                depends_on=[nomad_grapl_core.job], provider=nomad_provider
+                depends_on=[
+                    nomad_grapl_core.job,
+                    dynamodb_tables,
+                ],
+                provider=nomad_provider,
             ),
         )
 
@@ -400,6 +404,19 @@ def main() -> None:
             ),
         )
         pulumi.export("stage-url", api_gateway.stage.invoke_url)
+
+        # Describes resources that should be destroyed/updated between
+        # E2E-in-AWS runs.
+        pulumi.export(
+            "stateful-resource-urns",
+            [
+                # grapl-core contains our dgraph instances
+                nomad_grapl_core.urn,
+                # We need to re-provision after we start a new dgraph
+                nomad_grapl_provision.urn,
+                dynamodb_tables.urn,
+            ],
+        )
 
     OpsAlarms(name="ops-alarms")
 
