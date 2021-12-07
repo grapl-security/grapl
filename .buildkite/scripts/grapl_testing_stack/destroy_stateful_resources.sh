@@ -45,7 +45,7 @@ pulumi config set \
 
 # turn '["a", "b"]' into bash-array (--target=a --target=b)
 urns=$(pulumi stack output stateful-resource-urns --stack="${stack}")
-target_args=($(echo "${urns}" | jq -r '. | map("--target=" + .) | .[]'))
+mapfile -t target_args < <(echo "${urns}" | jq -r '. | map("--target=" + .) | .[]')
 
 echo -e "--- :pulumi: Destroying stateful resources for ${stack}"
 pulumi destroy \
