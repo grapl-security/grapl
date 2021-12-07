@@ -8,6 +8,8 @@ env:
 
 steps:
   - label: ":aws: E2E tests in AWS"
+    agents:
+      queue: "pulumi-staging"
     plugins:
       - grapl-security/vault-login#v0.1.0
       - grapl-security/vault-env#v0.1.0:
