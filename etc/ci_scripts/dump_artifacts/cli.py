@@ -10,7 +10,6 @@ from typing import Optional
 
 # Odd path is due to the `/etc` root pattern in pants.toml, fyi
 from ci_scripts.dump_artifacts import docker_artifacts, nomad_artifacts
-from grapl_common.utils.primitive_convertors import to_bool
 
 # need minimum 3.7 for capture_output=True
 assert sys.version_info >= (
@@ -35,8 +34,15 @@ class Args:
             default=None,
             help="Docker Compose project. Do not specify if Docker-Compose is not involved (e.g. running against prod)",
         )
-        parser.add_argument('--dump-agent-logs', dest='dump_agent_logs', action='store_true', help="Dump the logs for Nomad/Consul agents (useful if running locally)")
-        parser.add_argument('--no-dump-agent-logs', dest='dump_agent_logs', action='store_false')
+        parser.add_argument(
+            "--dump-agent-logs",
+            dest="dump_agent_logs",
+            action="store_true",
+            help="Dump the logs for Nomad/Consul agents (useful if running locally)",
+        )
+        parser.add_argument(
+            "--no-dump-agent-logs", dest="dump_agent_logs", action="store_false"
+        )
         parser.set_defaults(dump_agent_logs=False)
         args = parser.parse_args()
         self.compose_project: Optional[str] = args.compose_project
