@@ -55,6 +55,7 @@ pulumi destroy \
     --non-interactive \
     --diff \
     --yes \
+    --refresh \
     --message="Destroying stateful resources" \
     --target-dependents \
     "${target_args[@]}"
