@@ -197,7 +197,7 @@ grapl-template-generator: ## Build the Grapl Template Generator and install it t
 dump-artifacts-local:  # Run the script that dumps Nomad/Docker logs after test runs
 	./pants run ./etc/ci_scripts/dump_artifacts -- \
 		--compose-project="${COMPOSE_PROJECT_NAME}" \
-		--dump-agent-logs=True
+		--dump-agent-logs
 
 .PHONY: build-ux
 build-ux: ## Build website assets
@@ -361,7 +361,7 @@ format-hcl: ## Reformat all HCLs
 
 .PHONY: format-build
 format-build: ## Reformat BUILD files
-	./pants update-build-files
+	./pants update-build-files --no-update-build-files-fix-safe-deprecations
 
 .PHONY: format ## Reformat all code
 format: format-python format-shell format-prettier format-rust format-hcl format-build
