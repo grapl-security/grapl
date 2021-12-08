@@ -11,11 +11,6 @@ pulumi config get artifacts \
     --json |
     jq '.objectValue' > current_artifacts.json
 
-# We have to unset the AWS credentials injected by the
-# asume-role plugin if we're going to subsequently upload the
-# file to our bucket :(
-unset AWS_ACCESS_KEY_ID
-unset AWS_SECRET_ACCESS_KEY
-unset AWS_SESSION_TOKEN
+.buildkite/scripts/unset_aws_creds_for_artifact_upload.sh
 
 buildkite-agent artifact upload current_artifacts.json
