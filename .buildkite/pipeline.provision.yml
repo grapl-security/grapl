@@ -34,19 +34,16 @@ steps:
 
   - wait
 
-  # https://github.com/grapl-security/issue-tracker/issues/793
-  # Uncomment once a successful `provision` created a pulumi output
-  # called 'stateful-resource-urns'
-  # - label: ":pulumi: Destroy stateful resources in Staging account"
-  #   plugins:
-  #     - grapl-security/vault-login#v0.1.0
-  #     - grapl-security/vault-env#v0.1.0:
-  #         secrets:
-  #           - PULUMI_ACCESS_TOKEN
-  #   command:
-  #     - .buildkite/scripts/grapl_testing_stack/destroy_stateful_resources.sh grapl/grapl/testing
-  #   agents:
-  #     queue: "pulumi-staging"
+  - label: ":pulumi: Destroy stateful resources in Staging account"
+    plugins:
+      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-env#v0.1.0:
+          secrets:
+            - PULUMI_ACCESS_TOKEN
+    command:
+      - .buildkite/scripts/grapl_testing_stack/destroy_stateful_resources.sh grapl/grapl/testing
+    agents:
+      queue: "pulumi-staging"
 
   - wait
 
