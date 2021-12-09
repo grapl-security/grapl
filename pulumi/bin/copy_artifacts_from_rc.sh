@@ -11,7 +11,7 @@ ensureRightDir() {
 ensureRightDir
 
 # Read from $1 or default to what `pulumi stack` says
-CURRENT_STACK="${1:-$(pulumi stack --show-name)}"
+CURRENT_STACK="${1:-grapl/$(pulumi stack --show-name)}"
 GRAPL_ROOT="$(git rev-parse --show-toplevel)"
 RC_CONFIG_FILE="/tmp/rc_pulumi_testing.yaml"
 readonly CURRENT_STACK
