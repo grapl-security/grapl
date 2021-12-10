@@ -2,12 +2,25 @@ from __future__ import annotations
 
 import dataclasses
 import os
-from typing import Any, Iterable, Mapping, Optional, Tuple
+from typing import Any, Iterable, Mapping, Optional, Tuple, cast
 
 import pulumi_kafka as kafka
 from infra.config import LOCAL_GRAPL
 
 import pulumi
+from pulumi.stack_reference import StackReference
+
+# this list of service names must match those in the
+# confluent-cloud-infrastructure project:
+# TODO: link
+KAFKA_SERVICES = [
+    "pipeline-ingress",
+    "graph-generator",
+    "node-identifier",
+    "graph-merger",
+    "analyzer-executor",
+    "engagement-creator",
+]
 
 
 @dataclasses.dataclass
@@ -31,6 +44,12 @@ class EnvironmentOutput:
     bootstrap_servers: str
     environment_credentials: CredentialOutput
     service_credentials: Mapping[str, CredentialOutput]
+
+    def get_service_credentials(self, service_name: str) -> CredentialOutput:
+        if service_name in self.service_credentials:
+            return self.service_credentials[service_name]
+        else:
+            raise KeyError(f"{service_name} does not exist")
 
     @staticmethod
     def from_json(json_: Mapping[str, Any]) -> EnvironmentOutput:
@@ -58,13 +77,13 @@ class ConfluentOutput:
             raise KeyError(f"{environment_name} does not exist")
 
     @staticmethod
-    async def from_json(json_: pulumi.Output[Mapping[str, Any]]) -> ConfluentOutput:
-        reified_json = await json_.future()
-        assert reified_json is not None
-        return ConfluentOutput(
-            environments={
-                k: EnvironmentOutput.from_json(v) for k, v in reified_json.items()
-            }
+    def from_json(json_: pulumi.Output[Mapping[str, Any]]) -> pulumi.Output[ConfluentOutput]:
+        return json_.apply(
+            lambda j: ConfluentOutput(
+                environments={
+                    k: EnvironmentOutput.from_json(v) for k, v in j.items()
+                }
+            )
         )
 
 
@@ -72,10 +91,20 @@ class Kafka(pulumi.ComponentResource):
     def __init__(
         self,
         name: str,
-        confluent_environment: EnvironmentOutput,
+        confluent_environment_name: str,
         opts: Optional[pulumi.ResourceOptions] = None,
     ):
         super().__init__("grapl:Kafka", name=name, props=None, opts=opts)
+
+        confluent_stack_output = StackReference(
+            "grapl/ccloud-bootstrap/ccloud-bootstrap"
+        ).get_output("confluent")
+
+        assert confluent_stack_output is not None
+
+        confluent_environment = ConfluentOutput.from_json(
+            cast(pulumi.Output[Mapping[str, Any]], confluent_stack_output)
+        ).apply(lambda o: o.get_environment(confluent_environment_name))
 
         if LOCAL_GRAPL:
             provider = kafka.Provider(
@@ -87,11 +116,17 @@ class Kafka(pulumi.ComponentResource):
         else:
             provider = kafka.Provider(
                 "kafka-provider",
-                bootstrap_servers=[confluent_environment.bootstrap_servers],
+                bootstrap_servers=confluent_environment.apply(
+                    lambda e: [e.bootstrap_servers]
+                ),
                 opts=opts,
                 sasl_mechanism="plain",
-                sasl_username=confluent_environment.environment_credentials.service_account_id,
-                sasl_password=confluent_environment.environment_credentials.api_secret,
+                sasl_username=confluent_environment.apply(
+                    lambda e: e.environment_credentials.service_account_id
+                ),
+                sasl_password=confluent_environment.apply(
+                    lambda e: e.environment_credentials.api_secret
+                ),
                 tls_enabled=True,
                 timeout=60,
             )
@@ -109,17 +144,19 @@ class Kafka(pulumi.ComponentResource):
         )
 
         if not LOCAL_GRAPL:
-            for (
-                service,
-                credentials,
-            ) in confluent_environment.service_credentials.items():
+            for service_name in KAFKA_SERVICES:
+                service_credentials = confluent_environment.apply(
+                    lambda e: e.get_service_credentials(service_name)
+                )
                 # give every service write access to the metrics topic
                 kafka.Acl(
-                    f"{service}-metrics-topic-acl",
+                    f"{service_name}-metrics-topic-acl",
                     opts=pulumi.ResourceOptions(provider=provider),
                     acl_resource_name="metrics",
                     acl_resource_type="Topic",
-                    acl_principal=f"User:{credentials.service_account_id}",
+                    acl_principal=service_credentials.apply(
+                        lambda c: f"User:{c.service_account_id}"
+                    ),
                     acl_host="*",
                     acl_operation="Write",
                     acl_permission_type="Allow",
@@ -138,17 +175,19 @@ class Kafka(pulumi.ComponentResource):
         )
 
         if not LOCAL_GRAPL:
-            for (
-                service,
-                credentials,
-            ) in confluent_environment.service_credentials.items():
+            for service_name in KAFKA_SERVICES:
+                service_credentials = confluent_environment.apply(
+                    lambda e: e.get_service_credentials(service_name)
+                )
                 # give every service write access to the logs topic
                 kafka.Acl(
-                    f"{service}-logs-topic-acl",
+                    f"{service_name}-logs-topic-acl",
                     opts=pulumi.ResourceOptions(provider=provider),
                     acl_resource_name="logs",
                     acl_resource_type="Topic",
-                    acl_principal=f"User:{credentials.service_account_id}",
+                    acl_principal=service_credentials.apply(
+                        lambda c: f"User:{c.service_account_id}"
+                    ),
                     acl_host="*",
                     acl_operation="Write",
                     acl_permission_type="Allow",
@@ -160,6 +199,8 @@ class Kafka(pulumi.ComponentResource):
 
         # pipeline-ingress
 
+        assert "pipeline-ingress" in KAFKA_SERVICES
+
         pipeline_ingress_topic = kafka.Topic(
             "pipeline-ingress-topic",
             opts=pulumi.ResourceOptions(provider=provider),
@@ -169,12 +210,13 @@ class Kafka(pulumi.ComponentResource):
             partitions=1,
         )
 
-        pipeline_ingress_credentials = confluent_environment.service_credentials[
-            "pipeline-ingress"
-        ]
+        pipeline_ingress_credentials = confluent_environment.apply(
+            lambda e: e.get_service_credentials("pipeline-ingress")
+        )
 
         self._create_acls(
-            service_account_id=pipeline_ingress_credentials.service_account_id,
+            service_name="pipeline-ingress",
+            service_credentials=pipeline_ingress_credentials,
             topics=(pipeline_ingress_topic,),
             write=True,
             provider=provider,
@@ -182,12 +224,15 @@ class Kafka(pulumi.ComponentResource):
 
         # graph-generator
 
-        graph_generator_credentials = confluent_environment.service_credentials[
-            "graph-generator"
-        ]
+        assert "graph-generator" in KAFKA_SERVICES
+
+        graph_generator_credentials = confluent_environment.apply(
+            lambda e: e.get_service_credentials("graph-generator")
+        )
 
         self._create_acls(
-            service_account_id=graph_generator_credentials.service_account_id,
+            service_name="graph-generator",
+            service_credentials=graph_generator_credentials,
             topics=(pipeline_ingress_topic,),
             write=False,
             provider=provider,
@@ -212,7 +257,8 @@ class Kafka(pulumi.ComponentResource):
         )
 
         self._create_acls(
-            service_account_id=graph_generator_credentials.service_account_id,
+            service_name="graph-generator",
+            service_credentials=graph_generator_credentials,
             topics=(
                 graph_generator_topic,
                 graph_generator_retry_topic,
@@ -224,12 +270,15 @@ class Kafka(pulumi.ComponentResource):
 
         # node-identifier
 
-        node_identifier_credentials = confluent_environment.service_credentials[
-            "node-identifier"
-        ]
+        assert "node-identifier" in KAFKA_SERVICES
+
+        node_identifier_credentials = confluent_environment.apply(
+            lambda e: e.get_service_credentials("node-identifier")
+        )
 
         self._create_acls(
-            service_account_id=node_identifier_credentials.service_account_id,
+            service_name="node-identifier",
+            service_credentials=node_identifier_credentials,
             topics=(graph_generator_topic,),
             write=False,
             provider=provider,
@@ -254,7 +303,8 @@ class Kafka(pulumi.ComponentResource):
         )
 
         self._create_acls(
-            service_account_id=node_identifier_credentials.service_account_id,
+            service_name="node-identifier",
+            service_credentials=node_identifier_credentials,
             topics=(
                 node_identifier_topic,
                 node_identifier_retry_topic,
@@ -266,12 +316,15 @@ class Kafka(pulumi.ComponentResource):
 
         # graph-merger
 
-        graph_merger_credentials = confluent_environment.service_credentials[
-            "graph-merger"
-        ]
+        assert "graph-merger" in KAFKA_SERVICES
+
+        graph_merger_credentials = confluent_environment.apply(
+            lambda e: e.get_service_credentials("graph-merger")
+        )
 
         self._create_acls(
-            service_account_id=graph_merger_credentials.service_account_id,
+            service_name="graph-merger",
+            service_credentials=graph_merger_credentials,
             topics=(node_identifier_topic,),
             write=False,
             provider=provider,
@@ -296,7 +349,8 @@ class Kafka(pulumi.ComponentResource):
         )
 
         self._create_acls(
-            service_account_id=graph_merger_credentials.service_account_id,
+            service_name="graph-merger",
+            service_credentials=graph_merger_credentials,
             topics=(
                 graph_merger_topic,
                 graph_merger_retry_topic,
@@ -308,12 +362,15 @@ class Kafka(pulumi.ComponentResource):
 
         # analyzer-executor
 
-        analyzer_executor_credentials = confluent_environment.service_credentials[
-            "analyzer-executor"
-        ]
+        assert "analyzer-executor" in KAFKA_SERVICES
+
+        analyzer_executor_credentials = confluent_environment.apply(
+            lambda e: e.get_service_credentials("analyzer-executor")
+        )
 
         self._create_acls(
-            service_account_id=analyzer_executor_credentials.service_account_id,
+            service_name="analyzer-executor",
+            service_credentials=analyzer_executor_credentials,
             topics=(node_identifier_topic,),
             write=False,
             provider=provider,
@@ -338,7 +395,8 @@ class Kafka(pulumi.ComponentResource):
         )
 
         self._create_acls(
-            service_account_id=analyzer_executor_credentials.service_account_id,
+            service_name="analyzer-executor",
+            service_credentials=analyzer_executor_credentials,
             topics=(
                 analyzer_executor_topic,
                 analyzer_executor_retry_topic,
@@ -350,12 +408,15 @@ class Kafka(pulumi.ComponentResource):
 
         # engagement-creator
 
-        engagement_creator_credentials = confluent_environment.service_credentials[
-            "engagement-creator"
-        ]
+        assert "engagement-creator" in KAFKA_SERVICES
+
+        engagement_creator_credentials = confluent_environment.apply(
+            lambda e: e.get_service_credentials("engagement-creator")
+        )
 
         self._create_acls(
-            service_account_id=engagement_creator_credentials.service_account_id,
+            service_name="engagement-creator",
+            service_credentials=engagement_creator_credentials,
             topics=(analyzer_executor_topic,),
             write=False,
             provider=provider,
@@ -380,7 +441,8 @@ class Kafka(pulumi.ComponentResource):
         )
 
         self._create_acls(
-            service_account_id=engagement_creator_credentials.service_account_id,
+            service_name="engagement-creator",
+            service_credentials=engagement_creator_credentials,
             topics=(
                 engagement_creator_topic,
                 engagement_creator_retry_topic,
@@ -433,17 +495,20 @@ class Kafka(pulumi.ComponentResource):
     @staticmethod
     def _create_acls(
         provider: kafka.Provider,
-        service_account_id: str,
+        service_name: str,
+        service_credentials: pulumi.Output[CredentialOutput],
         topics: Iterable[kafka.Topic],
         write: bool = False,
     ) -> None:
         for topic in topics:
             kafka.Acl(
-                f"{topic.name}-{service_account_id}-{'write' if write else 'read'}-acl",
+                f"{topic.name}-{service_name}-{'write' if write else 'read'}-acl",
                 opts=pulumi.ResourceOptions(provider=provider),
                 acl_resource_name=topic.name,
                 acl_resource_type="Topic",
-                acl_principal=f"User:{service_account_id}",
+                acl_principal=service_credentials.apply(
+                    lambda c: f"User:{c.service_account_id}"
+                ),
                 acl_host="*",  # FIXME: restrict this?
                 acl_operation="Write" if write else "Read",
                 acl_permission_type="Allow",

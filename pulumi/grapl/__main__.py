@@ -1,9 +1,7 @@
-import asyncio
 import sys
 from pathlib import Path
-from typing import Any, Mapping, Set, cast
+from typing import Mapping, Set
 
-from pulumi.stack_reference import StackReference
 from typing_extensions import Final
 
 sys.path.insert(0, "..")
@@ -190,24 +188,9 @@ def main() -> None:
         user_session_table=dynamodb_tables.user_session_table.name,
     )
 
-    confluent_stack_output: ConfluentOutput = (
-        asyncio.get_running_loop().run_until_complete(
-            ConfluentOutput.from_json(
-                cast(
-                    pulumi.Output[Mapping[str, Any]],
-                    StackReference(
-                        "grapl/ccloud-bootstrap/ccloud-bootstrap"
-                    ).get_output("confluent"),
-                )
-            )
-        )
-    )
-
     Kafka(
         "kafka",
-        confluent_environment=confluent_stack_output.get_environment(
-            pulumi_config.require("confluent-environment-name")
-        ),
+        confluent_environment_name=pulumi_config.require("confluent-environment-name"),
     )
 
     if config.LOCAL_GRAPL:
