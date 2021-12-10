@@ -11,7 +11,4 @@ pulumi config get artifacts \
     --json |
     jq '.objectValue' > current_artifacts.json
 
-# shellcheck source-path=SCRIPTDIR
-source "$(dirname "${BASH_SOURCE[0]}")/unset_aws_creds_for_artifact_upload.sh"
-
 buildkite-agent artifact upload current_artifacts.json
