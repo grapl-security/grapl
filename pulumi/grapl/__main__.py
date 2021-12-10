@@ -1,10 +1,8 @@
-import asyncio
 import sys
 from pathlib import Path
-from typing import Any, List, Mapping, Set, cast
+from typing import List, Mapping, Set, cast
 
 from pulumi.resource import CustomTimeouts, ResourceOptions
-from pulumi.stack_reference import StackReference
 
 from typing_extensions import Final
 
@@ -23,10 +21,10 @@ from infra.config import AWS_ACCOUNT_ID
 from infra.consul_intentions import ConsulIntentions
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
-from infra.kafka import ConfluentOutput, Kafka
+from infra.kafka import Kafka
 from infra.local.postgres import LocalPostgresInstance
-
 from infra.nomad_job import NomadJob, NomadVars
+from infra.postgres import Postgres
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
@@ -88,8 +86,6 @@ def main() -> None:
         # sandboxes.
         if not os.getenv("DOCKER_BUILDKIT"):
             raise KeyError("Please re-run with 'DOCKER_BUILDKIT=1'")
-
-    quiet_docker_output()
 
     # These tags will be added to all provisioned infrastructure
     # objects.
@@ -214,24 +210,9 @@ def main() -> None:
 
     nomad_grapl_core_timeout = "5m"
 
-    confluent_stack_output: ConfluentOutput = (
-        asyncio.get_running_loop().run_until_complete(
-            ConfluentOutput.from_json(
-                cast(
-                    pulumi.Output[Mapping[str, Any]],
-                    StackReference(
-                        "grapl/ccloud-bootstrap/ccloud-bootstrap"
-                    ).get_output("confluent"),
-                )
-            )
-        )
-    )
-
     Kafka(
         "kafka",
-        confluent_environment=confluent_stack_output.get_environment(
-            pulumi_config.require("confluent-environment-name")
-        ),
+        confluent_environment_name=pulumi_config.require("confluent-environment-name"),
     )
 
     if config.LOCAL_GRAPL:
