@@ -163,16 +163,13 @@ build-test-e2e: build
 		--file ./test/docker-compose.integration-tests.build.yml \
 		e2e-tests
 
-.PHONY: build-dist-artifacts
-build-dist-artifacts: build-service-pexs ## Generate all artifacts for dist/
-
 .PHONY: build-docker-images
 build-docker-images: graplctl build-ux
 	echo "--- Building Docker images"
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
 
 .PHONY: build
-build: build-dist-artifacts build-docker-images ## Build Grapl services
+build: build-service-pexs build-docker-images ## Build Grapl services
 
 .PHONY: build-formatter
 build-formatter:
@@ -471,9 +468,6 @@ populate-venv: ## Set up a Python virtualenv (you'll have to activate manually!)
 .PHONY: repl
 repl: ## Run an interactive ipython repl that can import from grapl-common etc
 	./pants --no-pantsd repl --shell=ipython src/python/repl
-
-.PHONY: pulumi-prep
-pulumi-prep: graplctl build-dist-artifacts ux-tarball ## Prepare some artifacts in advance of running a Pulumi update (does not run Pulumi!)
 
 .PHONY: update-buildkite-shared
 update-buildkite-shared: ## Pull in changes from grapl-security/buildkite-common
