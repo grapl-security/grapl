@@ -369,13 +369,7 @@ format: format-python format-shell format-prettier format-rust format-hcl format
 ##@ Local Grapl 💻
 
 .PHONY: up
-up: export COMPOSE_PROJECT_NAME="grapl"
-up: build ## Build Grapl services and launch docker-compose up
-	$(WITH_LOCAL_GRAPL_ENV)
-	docker-compose -f docker-compose.yml up
-
-.PHONY: up-detach
-up-detach: build ## Bring up local Grapl and detach to return control to tty
+up: build ## Bring up local Grapl and detach to return control to tty
 	# Primarily used for bringing up an environment for integration testing.
 	# For use with a project name consider setting COMPOSE_PROJECT_NAME env var
 	# Usage: `make up-detach`
@@ -396,6 +390,9 @@ up-detach: build ## Bring up local Grapl and detach to return control to tty
 		--exit-code-from pulumi \
 		pulumi
 	echo "Pulumi complete"
+
+.PHONY: up-detach
+up-detach: up ## Bring up local Grapl and detach to return control to tty
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
