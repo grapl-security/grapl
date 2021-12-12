@@ -163,6 +163,3 @@ FROM rust-dist AS org-management-deploy
 
 COPY --from=build /outputs/org-management /
 ENTRYPOINT ["/org-management"]
-
-FROM postgres as org-management-postgres-db-deploy
-COPY rust/org-management/init.sql /docker-entrypoint-initdb.d/init.sql
