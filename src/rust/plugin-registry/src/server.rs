@@ -1,3 +1,5 @@
+use std::net::SocketAddr;
+
 use rust_proto::plugin_registry::{
     plugin_registry_service_server::{
         PluginRegistryService,
@@ -135,18 +137,17 @@ impl PluginRegistryService for PluginRegistry {
     }
 }
 
-pub async fn exec_service() -> Result<(), Box<dyn std::error::Error>> {
+pub async fn exec_service(socket_addr: SocketAddr) -> Result<(), Box<dyn std::error::Error>> {
     let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
     health_reporter
         .set_serving::<PluginRegistryServiceServer<PluginRegistry>>()
         .await;
 
-    let addr = "[::1]:50051".parse().unwrap();
     let plugin_work_queue = PluginRegistry {};
 
     tracing::info!(
         message="HealthServer + PluginRegistry listening",
-        addr=?addr,
+        addr=?socket_addr,
     );
 
     Server::builder()
@@ -161,7 +162,7 @@ pub async fn exec_service() -> Result<(), Box<dyn std::error::Error>> {
         })
         .add_service(health_service)
         .add_service(PluginRegistryServiceServer::new(plugin_work_queue))
-        .serve(addr)
+        .serve(socket_addr)
         .await?;
 
     Ok(())
