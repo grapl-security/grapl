@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use rust_proto::plugin_registry::{
     plugin_registry_service_client::PluginRegistryServiceClient as _PluginRegistryServiceClient,
     CreatePluginRequest,
@@ -19,9 +21,13 @@ use rust_proto::plugin_registry::{
     TearDownPluginRequestProto,
     TearDownPluginResponse,
 };
-use tonic::codegen::{
-    Body,
-    StdError,
+pub use tonic::transport::Channel;
+use tonic::{
+    codegen::{
+        Body,
+        StdError,
+    },
+    transport::Endpoint,
 };
 
 use crate::server::PluginRegistryServiceError;
@@ -31,6 +37,33 @@ pub enum PluginRegistryServiceClientError {}
 
 pub struct PluginRegistryServiceClient<T> {
     inner: _PluginRegistryServiceClient<T>,
+}
+
+const HOST_ENV_VAR: &'static str = "GRAPL_PLUGIN_REGISTRY_HOST";
+const PORT_ENV_VAR: &'static str = "GRAPL_PLUGIN_REGISTRY_PORT";
+
+impl PluginRegistryServiceClient<Channel> {
+    pub async fn from_env() -> Result<Self, Box<dyn std::error::Error>> {
+        let host = std::env::var(HOST_ENV_VAR).expect(HOST_ENV_VAR);
+        let port = std::env::var(PORT_ENV_VAR).expect(PORT_ENV_VAR);
+        Self::from_endpoint(host, port).await
+    }
+
+    pub async fn from_endpoint(
+        host: String,
+        port: String,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
+        let endpoint_str = format!("http://{}:{}", host, port);
+
+        // TODO: It might make sense to make these values configurable.
+        let endpoint = Endpoint::from_shared(endpoint_str)?
+            .timeout(Duration::from_secs(5))
+            .concurrency_limit(30);
+        let channel = endpoint.connect().await?;
+        Ok(Self::new(_PluginRegistryServiceClient::new(
+            channel.clone(),
+        )))
+    }
 }
 
 impl<T> PluginRegistryServiceClient<T>

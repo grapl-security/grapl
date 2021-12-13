@@ -925,6 +925,37 @@ job "grapl-core" {
     }
   }
 
+
+  group "plugin-registry" {
+    network {
+      mode = "bridge"
+      port "plugin-registry" {
+      }
+    }
+
+    task "plugin-registry" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["plugin-registry"]
+        ports = ["plugin-registry"]
+      }
+
+      env {
+        RUST_LOG       = var.rust_log
+        RUST_BACKTRACE = local.rust_backtrace
+      }
+    }
+
+    service {
+      name = "plugin-registry"
+      port = "plugin-registry"
+      connect {
+        sidecar_service {}
+      }
+    }
+  }
+
   group "web-ui" {
     network {
       mode = "bridge"
