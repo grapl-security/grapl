@@ -36,7 +36,7 @@ BASE_PYRIGHTCONFIG: PyrightConfig = {
     "pythonVersion": "3.7",
     "pythonPlatform": "Linux",
     "venvPath": "build-support",
-    "venv": "grapl-venv",
+    "venv": "venv",
     "verboseOutput": True,
     "reportMissingImports": True,
     "exclude": [
