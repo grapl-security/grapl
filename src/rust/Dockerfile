@@ -1,7 +1,6 @@
 FROM rust:1-slim-buster AS base
 
 ARG RUST_BUILD=debug
-
 SHELL ["/bin/bash", "-c"]
 
 # Necessary for rdkafka; pkg-config & libssl-dev for cargo-tarpaulin build

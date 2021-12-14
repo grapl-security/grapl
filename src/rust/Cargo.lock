@@ -3014,6 +3014,7 @@ dependencies = [
  "rusoto_s3",
  "rust-proto",
  "sqlx",
+ "structopt",
  "thiserror",
  "tokio 1.14.0",
  "tonic 0.6.1",

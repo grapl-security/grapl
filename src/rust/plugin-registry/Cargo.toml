@@ -28,3 +28,4 @@ rusoto_s3 = { version = "0.47.0", default_features = false, features = [
   "rustls"
 ] }
 blake3 = "1.2.0"
+structopt = "0.3.25"

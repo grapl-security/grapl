@@ -41,6 +41,7 @@ use tonic::{
     Response,
     Status,
 };
+use crate::PluginRegistryServiceConfig;
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginRegistryServiceError {}
@@ -185,13 +186,15 @@ impl PluginRegistryService for PluginRegistry {
     }
 }
 
-pub async fn exec_service() -> Result<(), Box<dyn std::error::Error>> {
+pub async fn exec_service(
+    service_config: PluginRegistryServiceConfig,
+) -> Result<(), Box<dyn std::error::Error>> {
     let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
     health_reporter
         .set_serving::<PluginRegistryServiceServer<PluginRegistry>>()
         .await;
 
-    let addr = "[::1]:50051".parse().unwrap();
+    let addr = service_config.grpc_address;
     let plugin_work_queue: PluginRegistry = todo!();
 
     tracing::info!(

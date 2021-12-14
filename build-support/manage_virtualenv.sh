@@ -69,9 +69,8 @@ function exit_message() {
     log "source ${virtualenv}/bin/activate"
     log
     log "Alternatively, if using 'direnv', add the following 2 lines to an '.envrc' file in the repository root:"
-    log
-    log "export VIRTUAL_ENV=${virtualenv}"
-    log "PATH_add \${VIRTUAL_ENV}/bin"
+    echo "export VIRTUAL_ENV=${virtualenv}"
+    echo "export PATH=$PATH:/${VIRTUAL_ENV}/bin"
 }
 
 function usage() {

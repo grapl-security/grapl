@@ -109,6 +109,27 @@ variable "session_table_name" {
   description = "What is the name of the session table?"
 }
 
+variable "plugin_registry_table_hostname" {
+  type        = string
+  description = "What is the host for the plugin registry table?"
+}
+
+variable "plugin_registry_table_port" {
+  type        = number
+  default     = 5432
+  description = "What is the port for the plugin registry table?"
+}
+
+variable "plugin_registry_table_username" {
+  type        = string
+  description = "What is the username for the plugin registry table?"
+}
+
+variable "plugin_registry_table_password" {
+  type        = string
+  description = "What is the password for the plugin registry table?"
+}
+
 variable "num_graph_mergers" {
   type        = number
   default     = 1
@@ -233,6 +254,7 @@ locals {
   # The aws endpoint is in template env format
   aws_endpoint   = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
   redis_endpoint = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+#  plugin_registry_table_host = replace(var._plugin_registry_table_host, "plugin_registry_table_host", attr.unique.network.ip-address)
 
   _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
   _redis         = split(":", local._redis_trimmed)
@@ -1037,4 +1059,37 @@ job "grapl-core" {
       }
     }
   }
-}
+
+  group "plugin-registry" {
+    network {
+      mode = "bridge"
+
+      port "plugin-registry-port" {
+      }
+    }
+
+    task "plugin-registry" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["plugin-registry"]
+        ports = ["plugin-registry-port"]
+      }
+
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "plugin-registry.env"
+        env         = true
+      }
+
+      env {
+        PLUGIN_REGISTRY_BIND_ADDRESS            = "0.0.0.0:${NOMAD_PORT_plugin-registry-port}"
+        PLUGIN_REGISTRY_TABLE_HOSTNAME          = local.plugin_registry_table_hostname
+        PLUGIN_REGISTRY_TABLE_PORT              = local.plugin_registry_table_port
+        PLUGIN_REGISTRY_TABLE_USERNAME          = local.plugin_registry_table_username
+        PLUGIN_REGISTRY_TABLE_PASSWORD          = local.plugin_registry_table_password
+        RUST_LOG                                = var.rust_log
+        RUST_BACKTRACE                          = local.rust_backtrace
+      }
+    }
+  }

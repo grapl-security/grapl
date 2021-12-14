@@ -20,6 +20,7 @@ from infra.cache import Cache
 from infra.consul_intentions import ConsulIntentions
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
+from infra.local.postgres import PostgresInstance
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
@@ -42,7 +43,7 @@ def _get_subset(inputs: NomadVars, subset: Set[str]) -> NomadVars:
 
 
 def _container_images(
-    artifacts: Mapping[str, str], require_artifact: bool = False
+        artifacts: Mapping[str, str], require_artifact: bool = False
 ) -> Mapping[str, DockerImageId]:
     """
     Build a map of {task name -> docker image identifier}.
@@ -59,6 +60,7 @@ def _container_images(
         "dgraph": DockerImageId("dgraph/dgraph:v21.03.1"),
         "engagement-creator": builder.build_with_tag("engagement-creator"),
         "graph-merger": builder.build_with_tag("graph-merger"),
+        "plugin-registry": builder.build_with_tag("plugin-registry"),
         "graphql-endpoint": builder.build_with_tag("graphql-endpoint"),
         "model-plugin-deployer": builder.build_with_tag("model-plugin-deployer"),
         "node-identifier": builder.build_with_tag("node-identifier"),
@@ -71,7 +73,6 @@ def _container_images(
 
 
 def main() -> None:
-
     if not (config.LOCAL_GRAPL or config.REAL_DEPLOYMENT):
         # Fargate services build their own images and need this
         # variable currently. We don't want this to be checked in
@@ -88,10 +89,6 @@ def main() -> None:
 
     pulumi.export("deployment-name", config.DEPLOYMENT_NAME)
     pulumi.export("test-user-name", config.GRAPL_TEST_USER_NAME)
-
-    # We only set up networking in local since this is handled in a closed project for AWS for our commercial offering
-    if config.LOCAL_GRAPL:
-        network = Network("grapl-network")
 
     # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
     # web UI.
@@ -179,6 +176,13 @@ def main() -> None:
         ###################################
         kafka = Kafka("kafka")
 
+        network = Network("grapl-network")
+        vpc_id = network.vpc.id
+        # private_subnets = network.private_subnets
+        plugin_registry_table = PostgresInstance(
+            name="plugin-registry-table",
+        )
+
         # These are created in `grapl-local-infra.nomad` and not applicable to prod.
         # Nomad will replace the LOCAL_GRAPL_REPLACE_IP sentinel value with the correct IP.
         aws_endpoint = "http://LOCAL_GRAPL_REPLACE_IP:4566"
@@ -201,6 +205,10 @@ def main() -> None:
             container_images=_container_images({}),
             # TODO: consider replacing rust_log= with the previous per-service `configurable_envvars`
             rust_log="DEBUG",
+            plugin_registry_table_hostname="LOCAL_GRAPL_REPLACE_IP",
+            plugin_registry_table_port=plugin_registry_table.port,
+            plugin_registry_table_username=plugin_registry_table.username,
+            plugin_registry_table_password=plugin_registry_table.password,
             **nomad_inputs,
         )
 
