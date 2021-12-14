@@ -244,7 +244,7 @@ echo '_/bridge.ko' | sudo tee -a /lib/modules/$(uname -r)/modules.builtin
 ### Running Nomad locally
 
 ```bash
-make up-detach
+make up
 ```
 
 ## The CI system
