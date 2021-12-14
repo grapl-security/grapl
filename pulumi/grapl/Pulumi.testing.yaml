@@ -2,19 +2,19 @@ config:
   aws:region: us-east-1
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: operational-alarms@graplsecurity.com
   grapl:artifacts:
-    analyzer-dispatcher: 20211214215813-64ac5287
-    analyzer-executor: 20211214215813-64ac5287
-    e2e-tests: 20211214215813-64ac5287
-    engagement-creator: 20211214215813-64ac5287
-    graph-merger: 20211214215813-64ac5287
-    graphql-endpoint: 20211214215813-64ac5287
-    grapl-web-ui: 20211214215813-64ac5287
-    model-plugin-deployer: 20211214215813-64ac5287
-    node-identifier: 20211214215813-64ac5287
-    node-identifier-retry: 20211214215813-64ac5287
-    osquery-generator: 20211214215813-64ac5287
-    provisioner: 20211214215813-64ac5287
-    sysmon-generator: 20211214215813-64ac5287
+    analyzer-dispatcher: 20211214230530-8e6bc13c
+    analyzer-executor: 20211214230530-8e6bc13c
+    e2e-tests: 20211214230530-8e6bc13c
+    engagement-creator: 20211214230530-8e6bc13c
+    graph-merger: 20211214230530-8e6bc13c
+    graphql-endpoint: 20211214230530-8e6bc13c
+    grapl-web-ui: 20211214230530-8e6bc13c
+    model-plugin-deployer: 20211214230530-8e6bc13c
+    node-identifier: 20211214230530-8e6bc13c
+    node-identifier-retry: 20211214230530-8e6bc13c
+    osquery-generator: 20211214230530-8e6bc13c
+    provisioner: 20211214230530-8e6bc13c
+    sysmon-generator: 20211214230530-8e6bc13c
   grapl:container_repository: docker.cloudsmith.io/grapl/testing
   grapl:env_vars:
     analyzer-dispatcher:

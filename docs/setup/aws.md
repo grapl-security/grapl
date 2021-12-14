@@ -56,25 +56,16 @@ The remaining steps assume your working directory is the Grapl repository.
 
 ### Build deployment artifacts
 
-Deployment artifacts are build via `make lambdas`.
-
-If environmental variable `TAG` is set, it will be a custom name for the build.
-If it is unset, it will default to "latest".
-
-```bash
-# build with 'latest' TAG:
-make pulumi-prep
-
-# build with a one-off custom TAG:
-$ TAG=my_grapl_test make pulumi-prep
-
-# or set a fixed custom TAG in .env:
-$ cat .env
-TAG="my_grapl_test"
-$ make pulumi-prep
-```
+Previously we supported uploading deployment artifacts (Docker images) directly
+from your dev machine, but the current state of Grapl requires that the Docker
+images be downloaded from Dockerhub or Cloudsmith. If you truly wish to upload
+an image to Cloudsmith, try `bin/upload_image_to_cloudsmith.sh`
 
 ## Spin up infrastructure with Pulumi
+
+(This section is actively under development, and as of Dec 2021 requires
+infrastructure defined in the private repository
+https://github.com/grapl-security/platform-infrastructure )
 
 See
 [pulumi/README.md](https://github.com/grapl-security/grapl/blob/main/pulumi/README.md)
@@ -121,36 +112,6 @@ and then use the `./bin/graplctl-pulumi.sh` wrapper _instead_ of invoking
 
 For further details, please read the documentation in that script.
 
-### How to spin up DGraph
-
-_Warning: these commands spin up infrastructure in your AWS account. Running
-these commands will incur charges._
-
-To spin up DGraph with `graplctl`, execute the following from the Grapl root:
-
-```bash
-./bin/graplctl dgraph create --instance-type i3.large
-```
-
-Note that we've selected `i3.large` instances for our DGraph database. If you'd
-like to choose a different instance class, you may see the available options by
-running:
-
-```bash
-bin/graplctl aws deploy --help
-```
-
-### Provision Grapl
-
-After we deploy to AWS successfully, we need to provision Grapl by executing the
-following from the root of the Grapl repository checkout:
-
-```bash
-./bin/graplctl aws provision
-```
-
-which will invoke the provisioner lambda.
-
 ## Testing
 
 Follow the instructions in this section to deploy analyzers, upload test data,
@@ -183,13 +144,11 @@ kick off the Grapl data pipeline.
 
 ### Execute the end-to-end tests
 
-To execute the end-to-end tests, run the following `graplctl` command:
+To deploy end-to-end tests to a Nomad cluster running on AWS, see
+[pulumi/integration_tests/README.md].
 
-```bash
-./bin/graplctl aws test
-```
-
-This will execute the `e2e-test-runner` lambda in AWS.
+Then, using the Nomad UI at `localhost:4646` (courtesy of SSM Port Forwarding),
+kick off the `e2e-tests` parameterized batch job.
 
 ### Logging in to the Grapl UI with the test user
 
