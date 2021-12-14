@@ -129,8 +129,8 @@ where
         self.inner
             .get_generators_for_event_source(GetGeneratorsForEventSourceRequestProto::from(request))
             .await
-            .expect("todo");
-        todo!()
+            .map(|resp| resp.into_inner().try_into().expect("proto to rs"))
+            .map_err(|_status| PluginRegistryServiceError::TodoImplementThisEnumError())
     }
     /// Given information about a tenant, return all analyzers for that tenant
     pub async fn get_analyzers_for_tenant(

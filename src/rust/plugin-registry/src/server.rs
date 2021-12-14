@@ -38,7 +38,10 @@ use tonic::{
 };
 
 #[derive(Debug, thiserror::Error)]
-pub enum PluginRegistryServiceError {}
+pub enum PluginRegistryServiceError {
+    #[error("TODO implement this enum with real error types")]
+    TodoImplementThisEnumError(),
+}
 
 pub struct PluginRegistry {}
 
@@ -126,7 +129,12 @@ impl PluginRegistryService for PluginRegistry {
         &self,
         _request: Request<GetGeneratorsForEventSourceRequestProto>,
     ) -> Result<Response<GetGeneratorsForEventSourceResponseProto>, Status> {
-        todo!()
+        // Stub implementation, for integration test smoke-test purposes.
+        // Replace with a real implementation soon!
+        let message = _request.into_inner();
+        Ok(Response::new(GetGeneratorsForEventSourceResponseProto {
+            plugin_ids: [message.event_source_id].into_iter().flatten().collect(),
+        }))
     }
 
     async fn get_analyzers_for_tenant(
