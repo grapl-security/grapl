@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [[bin]]
-name = "plugin-registry-service"
+name = "plugin-registry"
 path = "src/main.rs"
 
 [lib]
@@ -29,3 +29,7 @@ rusoto_s3 = { version = "0.47.0", default_features = false, features = [
 ] }
 blake3 = "1.2.0"
 structopt = "0.3.25"
+uuid = { version = "0.8.2", features = ["v4"] }
+
+[features]
+integration = []
