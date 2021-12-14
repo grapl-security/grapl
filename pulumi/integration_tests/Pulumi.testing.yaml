@@ -1,19 +1,19 @@
 config:
   aws:region: us-east-1
   integration-tests:artifacts:
-    analyzer-dispatcher: 20211210125954-04f6869f
-    analyzer-executor: 20211210125954-04f6869f
-    e2e-tests: 20211210125954-04f6869f
-    engagement-creator: 20211210125954-04f6869f
-    graph-merger: 20211210125954-04f6869f
-    graphql-endpoint: 20211210125954-04f6869f
-    grapl-web-ui: 20211210125954-04f6869f
-    model-plugin-deployer: 20211210125954-04f6869f
-    node-identifier: 20211210125954-04f6869f
-    node-identifier-retry: 20211210125954-04f6869f
-    osquery-generator: 20211210125954-04f6869f
-    provisioner: 20211210125954-04f6869f
+    analyzer-dispatcher: 20211214204024-d035d157
+    analyzer-executor: 20211214204024-d035d157
+    e2e-tests: 20211214204024-d035d157
+    engagement-creator: 20211214204024-d035d157
+    graph-merger: 20211214204024-d035d157
+    graphql-endpoint: 20211214204024-d035d157
+    grapl-web-ui: 20211214204024-d035d157
+    model-plugin-deployer: 20211214204024-d035d157
+    node-identifier: 20211214204024-d035d157
+    node-identifier-retry: 20211214204024-d035d157
+    osquery-generator: 20211214204024-d035d157
+    provisioner: 20211214204024-d035d157
     python-integration-tests: 20211203221111-6cab2487
     rust-integration-tests: 20211203221111-6cab2487
-    sysmon-generator: 20211210125954-04f6869f
+    sysmon-generator: 20211214204024-d035d157
   integration-tests:container_repository: docker.cloudsmith.io/grapl/testing
