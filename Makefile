@@ -266,7 +266,7 @@ test-e2e: build-test-e2e ## Build and run e2e tests
 
 # This target is not intended to be used directly from the command line.
 # Think of it as a Context Manager that:
-# - Before test-time, brings up a `make up-detach`
+# - Before test-time, brings up a `make up`
 # - After test-time, tears it all down and dumps artifacts.
 .PHONY: test-with-env
 test-with-env: # (Do not include help text - not to be used directly)
@@ -287,7 +287,7 @@ test-with-env: # (Do not include help text - not to be used directly)
 	trap stopGrapl EXIT
 	$(WITH_LOCAL_GRAPL_ENV)
 	# Bring up the Grapl environment and detach
-	$(MAKE) up-detach
+	$(MAKE) up
 	# Run tests and check exit codes from each test container
 	echo "--- Executing test with environment"
 	$${EXEC_TEST_COMMAND}
@@ -372,7 +372,7 @@ format: format-python format-shell format-prettier format-rust format-hcl format
 up: build ## Bring up local Grapl and detach to return control to tty
 	# Primarily used for bringing up an environment for integration testing.
 	# For use with a project name consider setting COMPOSE_PROJECT_NAME env var
-	# Usage: `make up-detach`
+	# Usage: `make up`
 	$(WITH_LOCAL_GRAPL_ENV)
 	# Start the Nomad agent
 	$(MAKE) stop-nomad-detach; $(MAKE) start-nomad-detach
