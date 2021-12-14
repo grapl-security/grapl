@@ -391,9 +391,6 @@ up: build ## Bring up local Grapl and detach to return control to tty
 		pulumi
 	echo "Pulumi complete"
 
-.PHONY: up-detach
-up-detach: up ## Bring up local Grapl and detach to return control to tty
-
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
 	$(WITH_LOCAL_GRAPL_ENV)
