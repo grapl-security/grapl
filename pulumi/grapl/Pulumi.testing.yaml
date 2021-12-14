@@ -14,8 +14,6 @@ config:
     node-identifier-retry: 20211214215813-64ac5287
     osquery-generator: 20211214215813-64ac5287
     provisioner: 20211214215813-64ac5287
-    python-integration-tests: 20211203221111-6cab2487
-    rust-integration-tests: 20211203221111-6cab2487
     sysmon-generator: 20211214215813-64ac5287
   grapl:container_repository: docker.cloudsmith.io/grapl/testing
   grapl:env_vars:
