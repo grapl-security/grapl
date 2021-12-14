@@ -83,6 +83,15 @@ services:
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
+  plugin-registry:
+    image: plugin-registry:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: rust/Dockerfile
+      target: plugin-registry-deploy
+      args:
+        - RUST_BUILD=${RUST_BUILD:-debug}
+
   ########################################################################
   # Python Services
   ########################################################################
