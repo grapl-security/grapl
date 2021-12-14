@@ -22,7 +22,7 @@ services:
         )
 
         # Theoretically, we could skip uploading these job definitions for
-        # every local `up-detach`; but it's a 2s Pulumi operation and they
+        # every local `up`; but it's a 2s Pulumi operation and they
         # don't auto-execute since they're Parameterized Batch Jobs.
         # Basically: It's mostly harmless.
 
