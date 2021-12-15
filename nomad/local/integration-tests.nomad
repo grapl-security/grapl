@@ -132,6 +132,11 @@ job "integration-tests" {
               destination_name = "model-plugin-deployer"
               local_bind_port  = 1000 # doesn't really matter
             }
+
+            upstreams {
+              destination_name = "plugin-registry"
+              local_bind_port  = 1001 # doesn't really matter
+            }
           }
         }
       }
@@ -165,11 +170,14 @@ job "integration-tests" {
 
         GRAPL_MODEL_PLUGIN_DEPLOYER_HOST = "0.0.0.0"
         GRAPL_MODEL_PLUGIN_DEPLOYER_PORT = "${NOMAD_UPSTREAM_PORT_model-plugin-deployer}"
+
+        GRAPL_PLUGIN_REGISTRY_HOST = "0.0.0.0"
+        GRAPL_PLUGIN_REGISTRY_PORT = "${NOMAD_UPSTREAM_PORT_plugin-registry}"
       }
 
       # Because Cargo does some... compiling... for some reason.... maybe.....
       resources {
-        memory = 8192
+        memory = 6000
       }
     }
   }
@@ -270,7 +278,7 @@ job "integration-tests" {
       }
 
       resources {
-        memory = 2048
+        memory = 1024
       }
     }
   }

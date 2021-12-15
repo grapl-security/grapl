@@ -1,3 +1,5 @@
+use std::net::SocketAddr;
+
 use rust_proto::plugin_registry::{
     plugin_registry_service_server::{
         PluginRegistryService,
@@ -36,7 +38,10 @@ use tonic::{
 };
 
 #[derive(Debug, thiserror::Error)]
-pub enum PluginRegistryServiceError {}
+pub enum PluginRegistryServiceError {
+    #[error("TODO implement this enum with real error types")]
+    TodoImplementThisEnumError(),
+}
 
 pub struct PluginRegistry {}
 
@@ -124,7 +129,12 @@ impl PluginRegistryService for PluginRegistry {
         &self,
         _request: Request<GetGeneratorsForEventSourceRequestProto>,
     ) -> Result<Response<GetGeneratorsForEventSourceResponseProto>, Status> {
-        todo!()
+        // Stub implementation, for integration test smoke-test purposes.
+        // Replace with a real implementation soon!
+        let message = _request.into_inner();
+        Ok(Response::new(GetGeneratorsForEventSourceResponseProto {
+            plugin_ids: [message.event_source_id].into_iter().flatten().collect(),
+        }))
     }
 
     async fn get_analyzers_for_tenant(
@@ -135,18 +145,17 @@ impl PluginRegistryService for PluginRegistry {
     }
 }
 
-pub async fn exec_service() -> Result<(), Box<dyn std::error::Error>> {
+pub async fn exec_service(socket_addr: SocketAddr) -> Result<(), Box<dyn std::error::Error>> {
     let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
     health_reporter
         .set_serving::<PluginRegistryServiceServer<PluginRegistry>>()
         .await;
 
-    let addr = "[::1]:50051".parse().unwrap();
     let plugin_work_queue = PluginRegistry {};
 
     tracing::info!(
         message="HealthServer + PluginRegistry listening",
-        addr=?addr,
+        addr=?socket_addr,
     );
 
     Server::builder()
@@ -161,7 +170,7 @@ pub async fn exec_service() -> Result<(), Box<dyn std::error::Error>> {
         })
         .add_service(health_service)
         .add_service(PluginRegistryServiceServer::new(plugin_work_queue))
-        .serve(addr)
+        .serve(socket_addr)
         .await?;
 
     Ok(())
