@@ -221,7 +221,7 @@ def main() -> None:
             # TODO: consider replacing rust_log= with the previous per-service `configurable_envvars`
             rust_log="DEBUG",
             plugin_registry_table_hostname="LOCAL_GRAPL_REPLACE_IP",
-            plugin_registry_table_port=plugin_registry_table.port,
+            plugin_registry_table_port=str(plugin_registry_table.port),
             plugin_registry_table_username=plugin_registry_table.username,
             plugin_registry_table_password=plugin_registry_table.password,
             **nomad_inputs,

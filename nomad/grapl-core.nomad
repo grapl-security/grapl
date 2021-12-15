@@ -288,12 +288,12 @@ job "grapl-core" {
 
   update {
     # Automatically promotes to canaries if all canaries are healthy during an update / deployment 
-    auto_promote = true
+    auto_promote     = true
     # Auto reverts to the last stable job variant if the update fails 
-    auto_revert = true
+    auto_revert      = true
     # Spins up a "canary" instance of potentially destructive updates, validates that they are healthy, then promotes the instance to update
-    canary       = 1
-    max_parallel = 1
+    canary           = 1
+    max_parallel     = 1
     # The min amount of reported "healthy" time before a instance is considered healthy and an allocation is opened up for further updates
     min_healthy_time = "15s"
   }
@@ -308,7 +308,7 @@ job "grapl-core" {
 
       config {
         image = var.container_images["dgraph"]
-        args = [
+        args  = [
           "dgraph",
           "zero",
           "--my", "localhost:${local.dgraph_zero_grpc_private_port_base}",
@@ -372,7 +372,7 @@ job "grapl-core" {
 
         config {
           image = var.container_images["dgraph"]
-          args = [
+          args  = [
             "dgraph",
             "zero",
             "--my", "localhost:${zero.value.grpc_private_port}",
@@ -476,7 +476,7 @@ job "grapl-core" {
 
         config {
           image = var.container_images["dgraph"]
-          args = [
+          args  = [
             "dgraph",
             "alpha",
             "--my", "localhost:${alpha.value.grpc_private_port}",
@@ -599,12 +599,12 @@ job "grapl-core" {
       }
 
       env {
-        AWS_REGION         = var.aws_region
-        RUST_LOG           = var.rust_log
-        RUST_BACKTRACE     = local.rust_backtrace
-        REDIS_ENDPOINT     = local.redis_endpoint
-        MG_ALPHAS          = local.alpha_grpc_connect_str
-        GRAPL_SCHEMA_TABLE = var.schema_table_name
+        AWS_REGION            = var.aws_region
+        RUST_LOG              = var.rust_log
+        RUST_BACKTRACE        = local.rust_backtrace
+        REDIS_ENDPOINT        = local.redis_endpoint
+        MG_ALPHAS             = local.alpha_grpc_connect_str
+        GRAPL_SCHEMA_TABLE    = var.schema_table_name
         # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L165
         DEST_BUCKET_NAME      = var.subgraphs_merged_bucket
         SOURCE_QUEUE_URL      = var.graph_merger_queue
@@ -658,13 +658,14 @@ job "grapl-core" {
         RUST_LOG                    = var.rust_log
         RUST_BACKTRACE              = local.rust_backtrace
         REDIS_ENDPOINT              = local.redis_endpoint
-        MG_ALPHAS                   = local.alpha_grpc_connect_str # alpha_grpc_connect_str won't work if network mode = grapl network
+        MG_ALPHAS                   = local.alpha_grpc_connect_str
+        # alpha_grpc_connect_str won't work if network mode = grapl network
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
         GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
         # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L156
-        DEST_BUCKET_NAME      = var.subgraphs_generated_bucket
-        SOURCE_QUEUE_URL      = var.node_identifier_queue
-        DEAD_LETTER_QUEUE_URL = var.node_identifier_retry_queue
+        DEST_BUCKET_NAME            = var.subgraphs_generated_bucket
+        SOURCE_QUEUE_URL            = var.node_identifier_queue
+        DEAD_LETTER_QUEUE_URL       = var.node_identifier_retry_queue
       }
 
       service {
@@ -730,10 +731,10 @@ job "grapl-core" {
 
       env {
         # AWS vars
-        AWS_REGION = var.aws_region
+        AWS_REGION             = var.aws_region
         # rust vars
-        RUST_LOG       = var.rust_log
-        RUST_BACKTRACE = local.rust_backtrace
+        RUST_LOG               = var.rust_log
+        RUST_BACKTRACE         = local.rust_backtrace
         # service vars
         GRAPL_ANALYZERS_BUCKET = var.analyzer_bucket
         DEST_BUCKET_NAME       = var.analyzer_dispatched_bucket
@@ -769,11 +770,11 @@ job "grapl-core" {
 
       env {
         # AWS vars
-        AWS_DEFAULT_REGION = var.aws_region
+        AWS_DEFAULT_REGION                      = var.aws_region
         # python vars
-        GRAPL_LOG_LEVEL = "INFO"
+        GRAPL_LOG_LEVEL                         = "INFO"
         # dgraph vars
-        MG_ALPHAS = local.alpha_grpc_connect_str
+        MG_ALPHAS                               = local.alpha_grpc_connect_str
         # service vars
         GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET = var.analyzer_matched_subgraphs_bucket
         GRAPL_ANALYZERS_BUCKET                  = var.analyzer_bucket
@@ -830,9 +831,9 @@ job "grapl-core" {
         # AWS vars
         AWS_DEFAULT_REGION = var.aws_region
         # python vars
-        GRAPL_LOG_LEVEL = var.rust_log
+        GRAPL_LOG_LEVEL    = var.rust_log
         # dgraph vars
-        MG_ALPHAS = local.alpha_grpc_connect_str
+        MG_ALPHAS          = local.alpha_grpc_connect_str
 
         # service vars
         SOURCE_QUEUE_URL = var.engagement_creator_queue
@@ -881,8 +882,8 @@ job "grapl-core" {
       }
 
       env {
-        DEPLOYMENT_NAME = var.deployment_name
-        RUST_LOG        = var.rust_log
+        DEPLOYMENT_NAME               = var.deployment_name
+        RUST_LOG                      = var.rust_log
         # JS SDK only recognized AWS_REGION whereas rust and python SDKs use DEFAULT_AWS_REGION
         AWS_REGION                    = var.aws_region
         MG_ALPHAS                     = local.alpha_grpc_connect_str
@@ -1083,13 +1084,14 @@ job "grapl-core" {
       }
 
       env {
-        PLUGIN_REGISTRY_BIND_ADDRESS            = "0.0.0.0:${NOMAD_PORT_plugin-registry-port}"
-        PLUGIN_REGISTRY_TABLE_HOSTNAME          = local.plugin_registry_table_hostname
-        PLUGIN_REGISTRY_TABLE_PORT              = local.plugin_registry_table_port
-        PLUGIN_REGISTRY_TABLE_USERNAME          = local.plugin_registry_table_username
-        PLUGIN_REGISTRY_TABLE_PASSWORD          = local.plugin_registry_table_password
-        RUST_LOG                                = var.rust_log
-        RUST_BACKTRACE                          = local.rust_backtrace
+        PLUGIN_REGISTRY_BIND_ADDRESS   = "0.0.0.0:${NOMAD_PORT_plugin-registry-port}"
+        PLUGIN_REGISTRY_TABLE_HOSTNAME = var.plugin_registry_table_hostname
+        PLUGIN_REGISTRY_TABLE_PORT     = var.plugin_registry_table_port
+        PLUGIN_REGISTRY_TABLE_USERNAME = var.plugin_registry_table_username
+        PLUGIN_REGISTRY_TABLE_PASSWORD = var.plugin_registry_table_password
+        RUST_LOG                       = var.rust_log
+        RUST_BACKTRACE                 = local.rust_backtrace
       }
     }
   }
+}

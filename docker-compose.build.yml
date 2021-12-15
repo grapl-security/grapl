@@ -56,6 +56,15 @@ services:
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
+  plugin-registry:
+    image: plugin-registry:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: rust/Dockerfile
+      target: plugin-registry-deploy
+      args:
+        - RUST_BUILD=${RUST_BUILD:-debug}
+
   analyzer-dispatcher:
     image: analyzer-dispatcher:${TAG:-latest}
     build:
