@@ -66,7 +66,7 @@ RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
 ################################################################################
 FROM base AS build-test
 
-ENV RUST_INTEGRATION_TEST_FEATURES="node-identifier/integration,sqs-executor/integration,kafka-metrics-exporter/integration,model-plugin-deployer/integration"
+ENV RUST_INTEGRATION_TEST_FEATURES="node-identifier/integration,sqs-executor/integration,kafka-metrics-exporter/integration,model-plugin-deployer/integration,plugin-registry/integration"
 
 # For test coverage reports
 RUN --mount=type=cache,target=/usr/local/cargo/registry \

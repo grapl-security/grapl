@@ -47,6 +47,14 @@ use crate::PluginRegistryServiceConfig;
 #[derive(Debug, thiserror::Error)]
 pub enum PluginRegistryServiceError {}
 
+impl From<PluginRegistryServiceError> for Status {
+    fn from(err: PluginRegistryServiceError) -> Self {
+        match err {
+            _ => Status::unimplemented("Service is not implemented")
+        }
+    }
+}
+
 pub struct PluginRegistry {
     pool: sqlx::PgPool,
     s3: S3Client,
@@ -128,9 +136,13 @@ impl PluginRegistry {
     #[allow(dead_code)]
     async fn get_generators_for_event_source(
         &self,
-        _request: GetGeneratorsForEventSourceRequest,
+        request: GetGeneratorsForEventSourceRequest,
     ) -> Result<GetGeneratorsForEventSourceResponse, PluginRegistryServiceError> {
-        todo!()
+        // Stub implementation, for integration test smoke-test purposes.
+        // Replace with a real implementation soon!
+        Ok(GetGeneratorsForEventSourceResponse {
+            plugin_ids: vec![request.event_source_id]
+        })
     }
 
     #[allow(dead_code)]
@@ -174,9 +186,17 @@ impl PluginRegistryService for PluginRegistry {
 
     async fn get_generators_for_event_source(
         &self,
-        _request: Request<GetGeneratorsForEventSourceRequestProto>,
+        request: Request<GetGeneratorsForEventSourceRequestProto>,
     ) -> Result<Response<GetGeneratorsForEventSourceResponseProto>, Status> {
-        todo!()
+        let request = request.into_inner();
+        let request = GetGeneratorsForEventSourceRequest::try_from(request).expect("Invalid message");
+
+        match self.get_generators_for_event_source(request).await {
+            Ok(response) => Ok(
+                Response::new(GetGeneratorsForEventSourceResponseProto::from(response))
+            ),
+            Err(e) => Err(Status::from(e))
+        }
     }
 
     async fn get_analyzers_for_tenant(

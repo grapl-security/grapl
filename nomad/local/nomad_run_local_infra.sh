@@ -25,6 +25,7 @@ echo "--- Deploying Nomad local infrastructure."
 # shellcheck disable=SC2016
 timeout 60 bash -c -- 'while [[ -z $(nomad node status 2>&1 | grep ready) ]]; do printf "Waiting for nomad-agent\n";sleep 1;done'
 
+# Do a Validate before a Plan. Helps end-users catch errors.
 nomad job validate "${NOMAD_VARS[@]}" "${NOMAD_FILE}"
 
 # Okay, now the Nomad agent is up, but it might not be ready to accept jobs.
