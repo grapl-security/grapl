@@ -184,6 +184,7 @@ impl PluginRegistryService for PluginRegistry {
         todo!()
     }
 
+    #[tracing::instrument(skip(self, request), err)]
     async fn get_generators_for_event_source(
         &self,
         request: Request<GetGeneratorsForEventSourceRequestProto>,
@@ -192,10 +193,22 @@ impl PluginRegistryService for PluginRegistry {
         let request = GetGeneratorsForEventSourceRequest::try_from(request).expect("Invalid message");
 
         match self.get_generators_for_event_source(request).await {
-            Ok(response) => Ok(
-                Response::new(GetGeneratorsForEventSourceResponseProto::from(response))
-            ),
-            Err(e) => Err(Status::from(e))
+            Ok(response) => {
+                tracing::debug!(
+                    message="Successfully retrieved generators for event source",
+                    plugin_ids=?response.plugin_ids,
+                );
+                Ok(
+                    Response::new(GetGeneratorsForEventSourceResponseProto::from(response))
+                )
+            },
+            Err(e) => {
+                tracing::warn!(
+                    message="Failed to get get_generators_for_event_source",
+                    error=?e,
+                );
+                Err(Status::from(e))
+            }
         }
     }
 

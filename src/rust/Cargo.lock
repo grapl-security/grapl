@@ -3054,11 +3054,13 @@ dependencies = [
  "rust-proto",
  "sqlx",
  "structopt",
+ "test-log",
  "thiserror",
  "tokio 1.14.0",
  "tonic 0.6.2",
  "tonic-health",
  "tracing",
+ "tracing-subscriber 0.3.3",
  "uuid",
 ]
 
@@ -4412,6 +4414,17 @@ version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f5c0709159d0fc65bd87254492efb5f53b84424321c4b4d316fe8508628fa5e"
 dependencies = [
+ "quote 1.0.10",
+ "syn 1.0.82",
+]
+
+[[package]]
+name = "test-log"
+version = "0.2.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eb78caec569a40f42c078c798c0e35b922d9054ec28e166f0d6ac447563d91a4"
+dependencies = [
+ "proc-macro2",
  "quote 1.0.10",
  "syn 1.0.82",
 ]

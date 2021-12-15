@@ -42,6 +42,7 @@ pub struct PluginRegistryServiceClient<T> {
 impl PluginRegistryServiceClient<tonic::transport::Channel> {
 
     /// Create a client from environment
+    #[tracing::instrument(err)]
     pub async fn from_env() -> Result<Self, Box<dyn std::error::Error>> {
         let host = std::env::var(HOST_ENV_VAR).expect(HOST_ENV_VAR);
         let port = std::env::var(PORT_ENV_VAR).expect(PORT_ENV_VAR);
@@ -49,11 +50,14 @@ impl PluginRegistryServiceClient<tonic::transport::Channel> {
     }
 
     /// Create a client from a specific endpoint
+    #[tracing::instrument(err)]
     pub async fn from_endpoint(
         host: String,
         port: String,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let endpoint_str = format!("http://{}:{}", host, port);
+
+        tracing::debug!(message="Connecting to endpoint");
 
         // TODO: It might make sense to make these values configurable.
         let endpoint = Endpoint::from_shared(endpoint_str)?
@@ -122,6 +126,7 @@ impl<T> PluginRegistryServiceClient<T>
         todo!()
     }
     /// Given information about an event source, return all generators that handle that event source
+    #[tracing::instrument(skip(self, request), err)]
     pub async fn get_generators_for_event_source(
         &mut self,
         request: GetGeneratorsForEventSourceRequest,
@@ -130,7 +135,13 @@ impl<T> PluginRegistryServiceClient<T>
             .get_generators_for_event_source(GetGeneratorsForEventSourceRequestProto::from(request))
             .await
             .map(|resp| resp.into_inner().try_into().expect("proto to rs"))
-            .map_err(|_status| PluginRegistryServiceClientError::Unknown)
+            .map_err(|status| {
+                tracing::warn!(
+                    message="Failed to get_generators_for_event_source",
+                    error=?status
+                );
+                PluginRegistryServiceClientError::Unknown
+            })
     }
     /// Given information about a tenant, return all analyzers for that tenant
     pub async fn get_analyzers_for_tenant(

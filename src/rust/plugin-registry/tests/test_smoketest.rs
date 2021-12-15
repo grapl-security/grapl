@@ -6,7 +6,7 @@ use grapl_utils::future_ext::GraplFutureExt;
 
 /// For now, this is just a smoke test. This test can and should evolve as
 /// the service matures.
-#[tokio::test]
+#[test_log::test(tokio::test)]
 async fn test_smoke_test_create_client() -> Result<(), Box<dyn std::error::Error>> {
     let mut client = PluginRegistryServiceClient::from_env().await?;
     let request = GetGeneratorsForEventSourceRequest {
