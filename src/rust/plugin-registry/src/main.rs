@@ -6,7 +6,7 @@ use structopt::StructOpt;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (_env, _guard) = grapl_config::init_grapl_env!();
     let opt = PluginRegistryServiceConfig::from_args();
-
+    tracing::info!("Starting Plugin Registry Service");
     exec_service(opt).await?;
     Ok(())
 }

@@ -41,6 +41,7 @@ use tonic::{
     Response,
     Status,
 };
+use grapl_config::env_helpers::FromEnv;
 use crate::PluginRegistryServiceConfig;
 
 #[derive(Debug, thiserror::Error)]
@@ -90,12 +91,12 @@ impl PluginRegistry {
             ON CONFLICT DO NOTHING;
             ",
         )
-        .bind(artifact_id.as_str())
-        .bind(0)
-        .bind(s3_key)
-        .fetch_one(&self.pool)
-        .await
-        .expect("todo");
+            .bind(artifact_id.as_str())
+            .bind(0)
+            .bind(s3_key)
+            .fetch_one(&self.pool)
+            .await
+            .expect("todo");
 
         todo!()
     }
@@ -194,8 +195,26 @@ pub async fn exec_service(
         .set_serving::<PluginRegistryServiceServer<PluginRegistry>>()
         .await;
 
-    let addr = service_config.grpc_address;
-    let plugin_work_queue: PluginRegistry = todo!();
+    let addr = service_config.plugin_registry_bind_address;
+    tracing::info!(
+        message="Connecting to plugin registry table",
+        plugin_registry_table_username=%service_config.plugin_registry_table_username,
+        plugin_registry_table_hostname=%service_config.plugin_registry_table_hostname,
+        plugin_registry_table_port=%service_config.plugin_registry_table_port,
+    );
+    let postgres_address = format!(
+        "postgresql://{}:{}@{}:{}",
+        service_config.plugin_registry_table_username,
+        service_config.plugin_registry_table_password,
+        service_config.plugin_registry_table_hostname,
+        service_config.plugin_registry_table_port,
+    );
+
+
+    let plugin_work_queue: PluginRegistry = PluginRegistry {
+        pool: sqlx::PgPool::connect(&postgres_address).await?,
+        s3: S3Client::from_env(),
+    };
 
     tracing::info!(
         message="HealthServer + PluginRegistry listening",

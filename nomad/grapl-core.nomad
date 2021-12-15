@@ -130,6 +130,16 @@ variable "plugin_registry_table_password" {
   description = "What is the password for the plugin registry table?"
 }
 
+variable "plugin_s3_bucket_aws_account_id" {
+  type        = string
+  description = "The account id that owns the bucket where plugins are stored"
+}
+
+variable "plugin_s3_bucket_name" {
+  type        = string
+  description = "The name of the bucket where plugins are stored"
+}
+
 variable "num_graph_mergers" {
   type        = number
   default     = 1
@@ -231,18 +241,22 @@ locals {
   dgraph_alpha_grpc_public_port_base  = 9080
 
   # DGraph Alphas (shards * replicas)
-  dgraph_alphas = [for alpha_id in range(0, var.dgraph_replicas * var.dgraph_shards) : {
+  dgraph_alphas = [
+  for alpha_id in range(0, var.dgraph_replicas * var.dgraph_shards) : {
     id : alpha_id,
     grpc_private_port : local.dgraph_alpha_grpc_private_port_base + alpha_id,
     grpc_public_port : local.dgraph_alpha_grpc_public_port_base + alpha_id,
     http_port : local.dgraph_alpha_http_private_port_base + alpha_id
-  }]
+  }
+  ]
 
   # DGraph Zeros (replicas)
-  dgraph_zeros = [for zero_id in range(1, var.dgraph_replicas) : {
+  dgraph_zeros = [
+  for zero_id in range(1, var.dgraph_replicas) : {
     id : zero_id,
     grpc_private_port : local.dgraph_zero_grpc_private_port_base + zero_id,
-  }]
+  }
+  ]
 
   # String that contains all of the Zeros for the Alphas to talk to and ensure they don't go down when one dies
   zero_alpha_connect_str = join(",", [for zero_id in range(0, var.dgraph_replicas) : "localhost:${local.dgraph_zero_grpc_private_port_base + zero_id}"])
@@ -254,7 +268,7 @@ locals {
   # The aws endpoint is in template env format
   aws_endpoint   = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
   redis_endpoint = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
-#  plugin_registry_table_host = replace(var._plugin_registry_table_host, "plugin_registry_table_host", attr.unique.network.ip-address)
+  plugin_registry_table_hostname = replace(var.plugin_registry_table_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
 
   _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
   _redis         = split(":", local._redis_trimmed)
@@ -268,7 +282,7 @@ locals {
   rust_backtrace = 1
 
   # This is used to conditionally submit env variables via template stanzas.
-  local_only_env_vars = <<EOH
+  local_only_env_vars            = <<EOH
 GRAPL_AWS_ENDPOINT          = ${local.aws_endpoint}
 GRAPL_AWS_ACCESS_KEY_ID     = ${var.aws_access_key_id}
 GRAPL_AWS_ACCESS_KEY_SECRET = ${var.aws_access_key_secret}
@@ -283,13 +297,13 @@ job "grapl-core" {
 
   type = "service"
 
-  # Specifies that this job is the most high priority job we have; nothing else should take precedence 
+  # Specifies that this job is the most high priority job we have; nothing else should take precedence
   priority = 100
 
   update {
-    # Automatically promotes to canaries if all canaries are healthy during an update / deployment 
+    # Automatically promotes to canaries if all canaries are healthy during an update / deployment
     auto_promote     = true
-    # Auto reverts to the last stable job variant if the update fails 
+    # Auto reverts to the last stable job variant if the update fails
     auto_revert      = true
     # Spins up a "canary" instance of potentially destructive updates, validates that they are healthy, then promotes the instance to update
     canary           = 1
@@ -1084,13 +1098,15 @@ job "grapl-core" {
       }
 
       env {
-        PLUGIN_REGISTRY_BIND_ADDRESS   = "0.0.0.0:${NOMAD_PORT_plugin-registry-port}"
-        PLUGIN_REGISTRY_TABLE_HOSTNAME = var.plugin_registry_table_hostname
-        PLUGIN_REGISTRY_TABLE_PORT     = var.plugin_registry_table_port
-        PLUGIN_REGISTRY_TABLE_USERNAME = var.plugin_registry_table_username
-        PLUGIN_REGISTRY_TABLE_PASSWORD = var.plugin_registry_table_password
-        RUST_LOG                       = var.rust_log
-        RUST_BACKTRACE                 = local.rust_backtrace
+        PLUGIN_REGISTRY_BIND_ADDRESS    = "0.0.0.0:${NOMAD_PORT_plugin-registry-port}"
+        PLUGIN_REGISTRY_TABLE_HOSTNAME  = local.plugin_registry_table_hostname
+        PLUGIN_REGISTRY_TABLE_PASSWORD  = var.plugin_registry_table_password
+        PLUGIN_REGISTRY_TABLE_PORT      = var.plugin_registry_table_port
+        PLUGIN_REGISTRY_TABLE_USERNAME  = var.plugin_registry_table_username
+        PLUGIN_S3_BUCKET_AWS_ACCOUNT_ID = var.plugin_s3_bucket_aws_account_id
+        PLUGIN_S3_BUCKET_NAME           = var.plugin_s3_bucket_aws_account_id
+        RUST_BACKTRACE                  = local.rust_backtrace
+        RUST_LOG                        = var.rust_log
       }
     }
   }

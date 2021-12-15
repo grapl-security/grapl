@@ -4,6 +4,7 @@ from typing import Mapping, Set
 
 from typing_extensions import Final
 
+
 sys.path.insert(0, "..")
 
 import os
@@ -17,6 +18,7 @@ from infra.api_gateway import ApiGateway
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
+from infra.config import AWS_ACCOUNT_ID
 from infra.consul_intentions import ConsulIntentions
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
@@ -148,6 +150,9 @@ def main() -> None:
     model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)
     pulumi.export("model-plugins-bucket", model_plugins_bucket.bucket)
 
+    plugins_bucket = Bucket("plugins-bucket", sse=True)
+    pulumi.export("plugins-bucket", plugins_bucket.bucket)
+
     plugin_buckets = [
         analyzers_bucket,
         model_plugins_bucket,
@@ -183,6 +188,8 @@ def main() -> None:
         unid_subgraphs_generated_bucket=unid_subgraphs_generated_emitter.bucket_name,
         user_auth_table=dynamodb_tables.user_auth_table.name,
         user_session_table=dynamodb_tables.user_session_table.name,
+        plugin_s3_bucket_aws_account_id=AWS_ACCOUNT_ID,
+        plugin_s3_bucket_name=plugins_bucket.bucket,
     )
 
     if config.LOCAL_GRAPL:
