@@ -463,10 +463,6 @@ populate-venv: ## Set up a Python virtualenv (you'll have to activate manually!)
 repl: ## Run an interactive ipython repl that can import from grapl-common etc
 	./pants --no-pantsd repl --shell=ipython src/python/repl
 
-.PHONY: update-buildkite-shared
-update-buildkite-shared: ## Pull in changes from grapl-security/buildkite-common
-	git subtree pull --prefix .buildkite/shared git@github.com:grapl-security/buildkite-common.git main --squash
-
 .PHONY: build-docs
 build-docs: ## Build the Sphinx docs
 	./docs/build_docs.sh

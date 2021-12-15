@@ -63,17 +63,23 @@ steps:
   - wait
 
   - label: ":medal: Create new release candidate"
-    command:
-      - .buildkite/scripts/create_new_rc.sh
     plugins:
       - grapl-security/vault-login#v0.1.0
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - PULUMI_ACCESS_TOKEN
+      - grapl-security/grapl-rc#v0.1.1:
+          artifact_file: all_artifacts.json
+          stacks:
+            - grapl/grapl/testing
+            - grapl/integration-tests/testing
     env:
       # We're going to be doing some git manipulation, so it's best if
       # we have a clean slate.
       BUILDKITE_CLEAN_CHECKOUT: true
+      # TODO: set these more centrally
+      GIT_AUTHOR_NAME: "Grapl CI/CD"
+      GIT_AUTHOR_EMAIL: "grapl-cicd@graplsecurity.com"
     agents:
       queue: "rc"
 
