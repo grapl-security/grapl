@@ -12,10 +12,8 @@ ensureRightDir
 
 # Read from $1 or default to what `pulumi stack` says
 CURRENT_STACK="${1:-grapl/$(pulumi stack --show-name)}"
-GRAPL_ROOT="$(git rev-parse --show-toplevel)"
 RC_CONFIG_FILE="/tmp/rc_pulumi_testing.yaml"
 readonly CURRENT_STACK
-readonly GRAPL_ROOT
 readonly RC_CONFIG_FILE
 
 confirmModify() {
@@ -27,17 +25,10 @@ confirmModify() {
 }
 
 add_artifacts() {
-    # Slightly tweaked version of what we have in
-    # .buildkite/shared/lib/rc.sh"
-    # removes the --cwd, --stack stuff
     local -r stack="${1}"
     local -r input_json="${2}"
 
-    # shellcheck source=/dev/null
-    source "${GRAPL_ROOT}/.buildkite/shared/lib/json_tools.sh"
-    flattened_input_json=$(flatten_json "${input_json}")
-
-    jq -r 'to_entries | .[] | [.key, .value] | @tsv' <<< "${flattened_input_json}" |
+    jq -r 'to_entries | .[] | [.key, .value] | @tsv' <<< "${input_json}" |
         while IFS=$'\t' read -r key value; do
             pulumi config set \
                 --path "artifacts.${key}" \
