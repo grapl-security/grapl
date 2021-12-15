@@ -1,0 +1,81 @@
+FROM debian:11-slim AS base
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV ACCEPT_EULA=Y
+
+WORKDIR /grapl
+
+RUN --mount=type=cache,target=/var/lib/apt/lists \
+    apt update --yes && \
+    apt install --yes \
+    software-properties-common \
+    apt-utils \
+    apt-transport-https \
+    awscli \
+    build-essential \
+    ca-certificates \
+    curl \
+    git \
+    gnupg2 \
+    jq \
+    locales \
+    pkg-config \
+    shellcheck \
+    sudo \
+    wget \
+    build-essential \
+    libssl-dev \
+    pkg-config \
+    zlib1g-dev \
+    build-essential \
+    protobuf-compiler \
+    unzip \
+    zlib1g-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    llvm \
+    libclang1 \
+    libncurses5-dev \
+    libncursesw5-dev \
+    xz-utils \
+    tk-dev \
+    libffi-dev \
+    liblzma-dev \
+    dnsutils
+
+# Let's get Consul and Nomad installed
+RUN curl -s https://apt.releases.hashicorp.com/gpg | \
+    gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/hashicorp-apt.gpg --import && \
+    chmod 644 /etc/apt/trusted.gpg.d/hashicorp-apt.gpg
+
+# Install rust
+RUN curl --proto '=https' --tlsv1.3 -sSf https://sh.rustup.rs | \
+    sh -s -- --default-toolchain stable -y
+
+# Install some rust tools we use
+RUN --mount=type=cache,target=~/.cargo \
+    --mount=type=cache,target=/usr/local/cargo \
+    export PATH="$HOME/.cargo/bin:$PATH" && \
+    cargo install \
+    cargo-audit \
+    cargo-tarpaulin \
+    cargo-udeps
+
+# Install nvm and node
+RUN curl  --proto '=https' --tlsv1.3 -sSf -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
+RUN nvm install node
+
+# Install pulumi
+RUN curl --proto '=https' --tlsv1.3 -fsSL https://get.pulumi.com | sh
+
+# Install pyenv
+RUN export PYENV_PYTHON_VERSION="3.7.10" && \
+    curl --proto '=https' --tlsv1.3 -fsSL https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash && \
+    pyenv install "${PYENV_PYTHON_VERSION}" && \
+    pyenv global "${PYENV_PYTHON_VERSION}"
+
+# Set up virtual environment
+COPY ./build-support/manage_virtualenv.sh ./build-support/manage_virtualenv.sh
+RUN ./build-support/manage_virtualenv.sh
+
