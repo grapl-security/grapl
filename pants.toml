@@ -166,9 +166,7 @@ global_report = "true"
 [shellcheck]
 # Currently, Pants only knows about v0.7.1, but v0.7.2 has some nice
 # relative sourcing features we'd like to take advantage of, namely,
-# `script-path=SOURCEDIR`. In particular, this is required to "play
-# nicely" with the `git subtree`-imported code from
-# grapl-security/buildkite-common.
+# `script-path=SOURCEDIR`.
 #
 # Once Pants knows about v0.7.2 natively, we can remove these
 # configuration values.
