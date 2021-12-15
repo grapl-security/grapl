@@ -42,6 +42,7 @@ use tonic::{
     Status,
 };
 use grapl_config::env_helpers::FromEnv;
+use grapl_utils::future_ext::GraplFutureExt;
 use crate::PluginRegistryServiceConfig;
 
 #[derive(Debug, thiserror::Error)]
@@ -133,7 +134,7 @@ impl PluginRegistry {
         todo!()
     }
 
-    #[allow(dead_code)]
+    #[tracing::instrument(skip(self, request), err)]
     async fn get_generators_for_event_source(
         &self,
         request: GetGeneratorsForEventSourceRequest,
@@ -245,7 +246,7 @@ pub async fn exec_service(
 
 
     let plugin_work_queue: PluginRegistry = PluginRegistry {
-        pool: sqlx::PgPool::connect(&postgres_address).await?,
+        pool: sqlx::PgPool::connect(&postgres_address).timeout(std::time::Duration::from_secs(5)).await??,
         s3: S3Client::from_env(),
     };
 

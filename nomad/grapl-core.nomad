@@ -1104,9 +1104,17 @@ job "grapl-core" {
         PLUGIN_REGISTRY_TABLE_PORT      = var.plugin_registry_table_port
         PLUGIN_REGISTRY_TABLE_USERNAME  = var.plugin_registry_table_username
         PLUGIN_S3_BUCKET_AWS_ACCOUNT_ID = var.plugin_s3_bucket_aws_account_id
-        PLUGIN_S3_BUCKET_NAME           = var.plugin_s3_bucket_aws_account_id
+        PLUGIN_S3_BUCKET_NAME           = var.plugin_s3_bucket_name
         RUST_BACKTRACE                  = local.rust_backtrace
         RUST_LOG                        = var.rust_log
+      }
+    }
+
+    service {
+      name = "plugin-registry"
+      port = "plugin-registry-port"
+      connect {
+        sidecar_service {}
       }
     }
   }

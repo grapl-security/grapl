@@ -8,6 +8,10 @@ use grapl_utils::future_ext::GraplFutureExt;
 /// the service matures.
 #[test_log::test(tokio::test)]
 async fn test_smoke_test_create_client() -> Result<(), Box<dyn std::error::Error>> {
+    tracing::debug!(
+        message="test_smoke_test_create_client",
+        env=?std::env::args(),
+    );
     let mut client = PluginRegistryServiceClient::from_env().await?;
     let request = GetGeneratorsForEventSourceRequest {
         event_source_id: uuid::Uuid::new_v4(),
