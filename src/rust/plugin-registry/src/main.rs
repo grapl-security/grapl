@@ -1,5 +1,7 @@
-use plugin_registry::server::exec_service;
-use plugin_registry::PluginRegistryServiceConfig;
+use plugin_registry::{
+    server::exec_service,
+    PluginRegistryServiceConfig,
+};
 use structopt::StructOpt;
 
 #[tokio::main]

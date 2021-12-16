@@ -1,5 +1,7 @@
 #![allow(warnings)]
 
+use grapl_config::env_helpers::FromEnv;
+use grapl_utils::future_ext::GraplFutureExt;
 use rusoto_s3::{
     PutObjectRequest,
     S3Client,
@@ -41,8 +43,7 @@ use tonic::{
     Response,
     Status,
 };
-use grapl_config::env_helpers::FromEnv;
-use grapl_utils::future_ext::GraplFutureExt;
+
 use crate::PluginRegistryServiceConfig;
 
 #[derive(Debug, thiserror::Error)]
@@ -51,7 +52,7 @@ pub enum PluginRegistryServiceError {}
 impl From<PluginRegistryServiceError> for Status {
     fn from(err: PluginRegistryServiceError) -> Self {
         match err {
-            _ => Status::unimplemented("Service is not implemented")
+            _ => Status::unimplemented("Service is not implemented"),
         }
     }
 }
@@ -100,12 +101,12 @@ impl PluginRegistry {
             ON CONFLICT DO NOTHING;
             ",
         )
-            .bind(artifact_id.as_str())
-            .bind(0)
-            .bind(s3_key)
-            .fetch_one(&self.pool)
-            .await
-            .expect("todo");
+        .bind(artifact_id.as_str())
+        .bind(0)
+        .bind(s3_key)
+        .fetch_one(&self.pool)
+        .await
+        .expect("todo");
 
         todo!()
     }
@@ -142,7 +143,7 @@ impl PluginRegistry {
         // Stub implementation, for integration test smoke-test purposes.
         // Replace with a real implementation soon!
         Ok(GetGeneratorsForEventSourceResponse {
-            plugin_ids: vec![request.event_source_id]
+            plugin_ids: vec![request.event_source_id],
         })
     }
 
@@ -191,7 +192,8 @@ impl PluginRegistryService for PluginRegistry {
         request: Request<GetGeneratorsForEventSourceRequestProto>,
     ) -> Result<Response<GetGeneratorsForEventSourceResponseProto>, Status> {
         let request = request.into_inner();
-        let request = GetGeneratorsForEventSourceRequest::try_from(request).expect("Invalid message");
+        let request =
+            GetGeneratorsForEventSourceRequest::try_from(request).expect("Invalid message");
 
         match self.get_generators_for_event_source(request).await {
             Ok(response) => {
@@ -199,10 +201,10 @@ impl PluginRegistryService for PluginRegistry {
                     message="Successfully retrieved generators for event source",
                     plugin_ids=?response.plugin_ids,
                 );
-                Ok(
-                    Response::new(GetGeneratorsForEventSourceResponseProto::from(response))
-                )
-            },
+                Ok(Response::new(
+                    GetGeneratorsForEventSourceResponseProto::from(response),
+                ))
+            }
             Err(e) => {
                 tracing::warn!(
                     message="Failed to get get_generators_for_event_source",
@@ -244,9 +246,10 @@ pub async fn exec_service(
         service_config.plugin_registry_table_port,
     );
 
-
     let plugin_work_queue: PluginRegistry = PluginRegistry {
-        pool: sqlx::PgPool::connect(&postgres_address).timeout(std::time::Duration::from_secs(5)).await??,
+        pool: sqlx::PgPool::connect(&postgres_address)
+            .timeout(std::time::Duration::from_secs(5))
+            .await??,
         s3: S3Client::from_env(),
     };
 

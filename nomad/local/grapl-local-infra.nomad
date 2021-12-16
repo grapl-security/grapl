@@ -337,7 +337,7 @@ job "grapl-local-infra" {
       }
 
       env {
-        POSTGRES_USER = "postgres"
+        POSTGRES_USER     = "postgres"
         POSTGRES_PASSWORD = "postgres"
       }
 

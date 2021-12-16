@@ -4,7 +4,6 @@ from typing import Mapping, Set
 
 from typing_extensions import Final
 
-
 sys.path.insert(0, "..")
 
 import os
@@ -22,11 +21,11 @@ from infra.config import AWS_ACCOUNT_ID
 from infra.consul_intentions import ConsulIntentions
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
-from infra.local.postgres import PostgresInstance
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
 from infra.kafka import Kafka
+from infra.local.postgres import PostgresInstance
 from infra.network import Network
 from infra.nomad_job import NomadJob, NomadVars
 from infra.quiet_docker_build_output import quiet_docker_output
@@ -45,7 +44,7 @@ def _get_subset(inputs: NomadVars, subset: Set[str]) -> NomadVars:
 
 
 def _container_images(
-        artifacts: Mapping[str, str], require_artifact: bool = False
+    artifacts: Mapping[str, str], require_artifact: bool = False
 ) -> Mapping[str, DockerImageId]:
     """
     Build a map of {task name -> docker image identifier}.
