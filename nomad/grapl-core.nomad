@@ -883,7 +883,7 @@ job "grapl-core" {
         image = var.container_images["graphql-endpoint"]
         ports = ["graphql-endpoint-port"]
       }
-
+      plugin_s3_bucket_aws_account_id
       template {
         data        = local.conditionally_defined_env_vars
         destination = "graphql-endpoint.env"
