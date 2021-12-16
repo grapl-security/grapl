@@ -4,6 +4,7 @@ from typing import Mapping, Set
 
 from typing_extensions import Final
 
+
 sys.path.insert(0, "..")
 
 import os
@@ -17,9 +18,11 @@ from infra.api_gateway import ApiGateway
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
+from infra.config import AWS_ACCOUNT_ID
 from infra.consul_intentions import ConsulIntentions
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
+from infra.local.postgres import PostgresInstance
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
@@ -42,7 +45,7 @@ def _get_subset(inputs: NomadVars, subset: Set[str]) -> NomadVars:
 
 
 def _container_images(
-    artifacts: Mapping[str, str], require_artifact: bool = False
+        artifacts: Mapping[str, str], require_artifact: bool = False
 ) -> Mapping[str, DockerImageId]:
     """
     Build a map of {task name -> docker image identifier}.
@@ -59,12 +62,12 @@ def _container_images(
         "dgraph": DockerImageId("dgraph/dgraph:v21.03.1"),
         "engagement-creator": builder.build_with_tag("engagement-creator"),
         "graph-merger": builder.build_with_tag("graph-merger"),
+        "plugin-registry": builder.build_with_tag("plugin-registry"),
         "graphql-endpoint": builder.build_with_tag("graphql-endpoint"),
         "model-plugin-deployer": builder.build_with_tag("model-plugin-deployer"),
         "node-identifier": builder.build_with_tag("node-identifier"),
         "node-identifier-retry": builder.build_with_tag("node-identifier-retry"),
         "osquery-generator": builder.build_with_tag("osquery-generator"),
-        "plugin-registry": builder.build_with_tag("plugin-registry"),
         "provisioner": builder.build_with_tag("provisioner"),
         "sysmon-generator": builder.build_with_tag("sysmon-generator"),
         "web-ui": builder.build_with_tag("grapl-web-ui"),
@@ -72,7 +75,6 @@ def _container_images(
 
 
 def main() -> None:
-
     if not (config.LOCAL_GRAPL or config.REAL_DEPLOYMENT):
         # Fargate services build their own images and need this
         # variable currently. We don't want this to be checked in
@@ -89,10 +91,6 @@ def main() -> None:
 
     pulumi.export("deployment-name", config.DEPLOYMENT_NAME)
     pulumi.export("test-user-name", config.GRAPL_TEST_USER_NAME)
-
-    # We only set up networking in local since this is handled in a closed project for AWS for our commercial offering
-    if config.LOCAL_GRAPL:
-        network = Network("grapl-network")
 
     # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
     # web UI.
@@ -152,6 +150,9 @@ def main() -> None:
     model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)
     pulumi.export("model-plugins-bucket", model_plugins_bucket.bucket)
 
+    plugins_bucket = Bucket("plugins-bucket", sse=True)
+    pulumi.export("plugins-bucket", plugins_bucket.bucket)
+
     plugin_buckets = [
         analyzers_bucket,
         model_plugins_bucket,
@@ -187,6 +188,8 @@ def main() -> None:
         unid_subgraphs_generated_bucket=unid_subgraphs_generated_emitter.bucket_name,
         user_auth_table=dynamodb_tables.user_auth_table.name,
         user_session_table=dynamodb_tables.user_session_table.name,
+        plugin_s3_bucket_aws_account_id=AWS_ACCOUNT_ID,
+        plugin_s3_bucket_name=plugins_bucket.bucket,
     )
 
     if config.LOCAL_GRAPL:
@@ -194,6 +197,13 @@ def main() -> None:
         # Local Grapl
         ###################################
         kafka = Kafka("kafka")
+
+        network = Network("grapl-network")
+        vpc_id = network.vpc.id
+        # private_subnets = network.private_subnets
+        plugin_registry_table = PostgresInstance(
+            name="plugin-registry-table",
+        )
 
         # These are created in `grapl-local-infra.nomad` and not applicable to prod.
         # Nomad will replace the LOCAL_GRAPL_REPLACE_IP sentinel value with the correct IP.
@@ -217,6 +227,10 @@ def main() -> None:
             container_images=_container_images({}),
             # TODO: consider replacing rust_log= with the previous per-service `configurable_envvars`
             rust_log="DEBUG",
+            plugin_registry_table_hostname="LOCAL_GRAPL_REPLACE_IP",
+            plugin_registry_table_port=str(plugin_registry_table.port),
+            plugin_registry_table_username=plugin_registry_table.username,
+            plugin_registry_table_password=plugin_registry_table.password,
             **nomad_inputs,
         )
 

@@ -1,5 +1,4 @@
 pub use crate::graplinc::grapl::api::plugin_registry::v1beta1::{
-    plugin::PluginType as _PluginType,
     plugin_registry_service_client,
     plugin_registry_service_server,
     CreatePluginRequest as CreatePluginRequestProto,
@@ -13,6 +12,7 @@ pub use crate::graplinc::grapl::api::plugin_registry::v1beta1::{
     GetPluginRequest as GetPluginRequestProto,
     GetPluginResponse as GetPluginResponseProto,
     Plugin as _Plugin,
+    PluginType as _PluginType,
     TearDownPluginRequest as TearDownPluginRequestProto,
     TearDownPluginResponse as TearDownPluginResponseProto,
 };
@@ -30,6 +30,15 @@ pub enum PluginRegistryDeserializationError {
 pub enum PluginType {
     Generator,
     Analyzer,
+}
+
+impl PluginType {
+    pub fn type_name(&self) -> &'static str {
+        match self {
+            PluginType::Generator => "generator",
+            PluginType::Analyzer => "analyzer",
+        }
+    }
 }
 
 impl TryFrom<_PluginType> for PluginType {
@@ -99,12 +108,16 @@ pub struct CreatePluginRequest {
     pub tenant_id: uuid::Uuid,
     /// The string value to display to a user, non-empty
     pub display_name: String,
+    /// The type of the plugin
+    pub plugin_type: PluginType,
 }
 
 impl TryFrom<CreatePluginRequestProto> for CreatePluginRequest {
     type Error = PluginRegistryDeserializationError;
 
     fn try_from(value: CreatePluginRequestProto) -> Result<Self, Self::Error> {
+        let plugin_type = value.plugin_type().try_into()?;
+
         let tenant_id = value
             .tenant_id
             .ok_or(PluginRegistryDeserializationError::MissingRequiredField(
@@ -130,16 +143,19 @@ impl TryFrom<CreatePluginRequestProto> for CreatePluginRequest {
             plugin_artifact,
             tenant_id,
             display_name,
+            plugin_type,
         })
     }
 }
 
 impl From<CreatePluginRequest> for CreatePluginRequestProto {
     fn from(value: CreatePluginRequest) -> Self {
+        let plugin_type: _PluginType = value.plugin_type.into();
         Self {
             plugin_artifact: value.plugin_artifact,
             tenant_id: Some(value.tenant_id.into()),
             display_name: value.display_name,
+            plugin_type: plugin_type as i32,
         }
     }
 }

@@ -317,4 +317,54 @@ job "grapl-local-infra" {
 
     }
   }
+
+  group "postgres" {
+    # Postgres will be available to Nomad Jobs (sans Consul Connect)
+    # and the Host OS at localhost:5432
+    network {
+      mode = "bridge"
+      port "postgres" {
+        static = 5432
+      }
+    }
+
+    task "postgres" {
+      driver = "docker"
+
+      config {
+        image = "postgres"
+        ports = ["postgres"]
+      }
+
+      env {
+        POSTGRES_USER = "postgres"
+        POSTGRES_PASSWORD = "postgres"
+      }
+
+      service {
+        name = "postgres"
+
+        check {
+          type    = "script"
+          name    = "check_postgres"
+          command = "/bin/bash"
+          # Interpolated by bash, not nomad
+          args = [
+            "-o", "errexit", "-o", "nounset",
+            "-c",
+            "pg_isready -U postgres || exit 1",
+          ]
+          interval = "20s"
+          timeout  = "10s"
+
+          check_restart {
+            limit           = 2
+            grace           = "30s"
+            ignore_warnings = false
+          }
+        }
+      }
+    }
+  }
+
 }
