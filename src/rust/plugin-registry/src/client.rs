@@ -1,4 +1,5 @@
 use std::time::Duration;
+
 use rust_proto::plugin_registry::{
     plugin_registry_service_client::PluginRegistryServiceClient as _PluginRegistryServiceClient,
     CreatePluginRequest,
@@ -20,11 +21,13 @@ use rust_proto::plugin_registry::{
     TearDownPluginRequestProto,
     TearDownPluginResponse,
 };
-use tonic::codegen::{
-    Body,
-    StdError,
+use tonic::{
+    codegen::{
+        Body,
+        StdError,
+    },
+    transport::Endpoint,
 };
-use tonic::transport::Endpoint;
 
 const HOST_ENV_VAR: &'static str = "GRAPL_PLUGIN_REGISTRY_HOST";
 const PORT_ENV_VAR: &'static str = "GRAPL_PLUGIN_REGISTRY_PORT";
@@ -32,7 +35,7 @@ const PORT_ENV_VAR: &'static str = "GRAPL_PLUGIN_REGISTRY_PORT";
 #[derive(Debug, thiserror::Error)]
 pub enum PluginRegistryServiceClientError {
     #[error("Unknown Error")]
-    Unknown
+    Unknown,
 }
 
 pub struct PluginRegistryServiceClient<T> {
@@ -40,7 +43,6 @@ pub struct PluginRegistryServiceClient<T> {
 }
 
 impl PluginRegistryServiceClient<tonic::transport::Channel> {
-
     /// Create a client from environment
     #[tracing::instrument(err)]
     pub async fn from_env() -> Result<Self, Box<dyn std::error::Error>> {
@@ -57,7 +59,7 @@ impl PluginRegistryServiceClient<tonic::transport::Channel> {
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let endpoint_str = format!("http://{}:{}", host, port);
 
-        tracing::debug!(message="Connecting to endpoint");
+        tracing::debug!(message = "Connecting to endpoint");
 
         // TODO: It might make sense to make these values configurable.
         let endpoint = Endpoint::from_shared(endpoint_str)?
@@ -71,11 +73,11 @@ impl PluginRegistryServiceClient<tonic::transport::Channel> {
 }
 
 impl<T> PluginRegistryServiceClient<T>
-    where
-        T: tonic::client::GrpcService<tonic::body::BoxBody>,
-        T::ResponseBody: Body + Send + 'static,
-        T::Error: Into<StdError>,
-        <T::ResponseBody as Body>::Error: Into<StdError> + Send,
+where
+    T: tonic::client::GrpcService<tonic::body::BoxBody>,
+    T::ResponseBody: Body + Send + 'static,
+    T::Error: Into<StdError>,
+    <T::ResponseBody as Body>::Error: Into<StdError> + Send,
 {
     pub fn new(inner: _PluginRegistryServiceClient<T>) -> Self {
         Self { inner }

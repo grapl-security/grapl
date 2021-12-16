@@ -33,7 +33,7 @@ structopt = "0.3"
 uuid = { version = "0.8.2", features = ["v4"] }
 
 [dev-dependencies]
-test-log = { version = "0.2", default-features=false, features = ["trace"] }
+test-log = { version = "0.2", default-features = false, features = ["trace"] }
 tracing-subscriber = "0.3"
 
 [features]
