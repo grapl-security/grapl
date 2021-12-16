@@ -1,5 +1,3 @@
-#![allow(warnings)]
-
 use grapl_config::env_helpers::FromEnv;
 use grapl_utils::future_ext::GraplFutureExt;
 use rusoto_s3::{
@@ -52,7 +50,6 @@ pub enum PluginRegistryServiceError {}
 impl From<PluginRegistryServiceError> for Status {
     fn from(err: PluginRegistryServiceError) -> Self {
         match err {
-            _ => Status::unimplemented("Service is not implemented"),
         }
     }
 }
@@ -60,6 +57,8 @@ impl From<PluginRegistryServiceError> for Status {
 pub struct PluginRegistry {
     pool: sqlx::PgPool,
     s3: S3Client,
+    plugin_bucket_name: String,
+    plugin_bucket_owner_id: String,
 }
 
 impl PluginRegistry {
@@ -83,12 +82,12 @@ impl PluginRegistry {
         self.s3.put_object(PutObjectRequest {
             content_length: Some(_request.plugin_artifact.len() as i64),
             body: Some(_request.plugin_artifact.into()),
-            bucket: "todo!".to_string(),
+            bucket: self.plugin_bucket_name.clone(),
             key: s3_key.clone(),
-            expected_bucket_owner: Some("todo!".to_string()),
+            expected_bucket_owner: Some(self.plugin_bucket_owner_id.clone()),
             metadata: None,
             ..Default::default()
-        });
+        }).await.expect("Failed to put_object");
 
         sqlx::query(
             r"
@@ -102,7 +101,7 @@ impl PluginRegistry {
             ",
         )
         .bind(artifact_id.as_str())
-        .bind(0)
+        .bind(0)  // todo: Artifact versioning
         .bind(s3_key)
         .fetch_one(&self.pool)
         .await
@@ -251,6 +250,8 @@ pub async fn exec_service(
             .timeout(std::time::Duration::from_secs(5))
             .await??,
         s3: S3Client::from_env(),
+        plugin_bucket_name: service_config.plugin_s3_bucket_name,
+        plugin_bucket_owner_id: service_config.plugin_s3_bucket_aws_account_id
     };
 
     tracing::info!(
