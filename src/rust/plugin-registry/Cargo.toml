@@ -16,6 +16,7 @@ grapl-config = { path = "../grapl-config" }
 grapl-utils = { path = "../grapl-utils" }
 rust-proto = { path = "../rust-proto" }
 sqlx = { version = "0.5.9", features = [
+  "migrate",
   "postgres",
   "runtime-tokio-rustls",
   "uuid"

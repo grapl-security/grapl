@@ -64,24 +64,24 @@ impl PluginRegistry {
     #[allow(dead_code)]
     async fn create_plugin(
         &self,
-        _request: CreatePluginRequest,
+        request: CreatePluginRequest,
     ) -> Result<CreatePluginResponse, PluginRegistryServiceError> {
         let mut hasher = blake3::Hasher::new();
-        hasher.update(_request.tenant_id.as_bytes());
-        hasher.update(_request.plugin_artifact.as_slice());
+        hasher.update(request.tenant_id.as_bytes());
+        hasher.update(request.plugin_artifact.as_slice());
         let artifact_id = hasher.finalize().to_hex();
 
         let s3_key = format!(
             "bucketname/{}/{}-plugins/{}.bin",
-            _request.tenant_id,
-            _request.plugin_type.type_name(),
+            request.tenant_id,
+            request.plugin_type.type_name(),
             &artifact_id,
         );
 
         self.s3
             .put_object(PutObjectRequest {
-                content_length: Some(_request.plugin_artifact.len() as i64),
-                body: Some(_request.plugin_artifact.into()),
+                content_length: Some(request.plugin_artifact.len() as i64),
+                body: Some(request.plugin_artifact.into()),
                 bucket: self.plugin_bucket_name.clone(),
                 key: s3_key.clone(),
                 expected_bucket_owner: Some(self.plugin_bucket_owner_id.clone()),
@@ -247,7 +247,7 @@ pub async fn exec_service(
         service_config.plugin_registry_table_port,
     );
 
-    let plugin_work_queue: PluginRegistry = PluginRegistry {
+    let plugin_registry: PluginRegistry = PluginRegistry {
         pool: sqlx::PgPool::connect(&postgres_address)
             .timeout(std::time::Duration::from_secs(5))
             .await??,
@@ -255,6 +255,10 @@ pub async fn exec_service(
         plugin_bucket_name: service_config.plugin_s3_bucket_name,
         plugin_bucket_owner_id: service_config.plugin_s3_bucket_aws_account_id,
     };
+
+    sqlx::migrate!()
+        .run(&plugin_registry.pool)
+        .await?;
 
     tracing::info!(
         message="HealthServer + PluginRegistry listening",
@@ -272,7 +276,7 @@ pub async fn exec_service(
             )
         })
         .add_service(health_service)
-        .add_service(PluginRegistryServiceServer::new(plugin_work_queue))
+        .add_service(PluginRegistryServiceServer::new(plugin_registry))
         .serve(addr)
         .await?;
 

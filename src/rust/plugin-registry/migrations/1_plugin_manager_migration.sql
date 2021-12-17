@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS plugin_artifacts
 (
     artifact_id         uuid          PRIMARY KEY,
     artifact_version    integer       NOT NULL,
-    artifact_s3_key     varchar(1024) NOT NULL,
+    artifact_s3_key     varchar(1024) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS plugins
