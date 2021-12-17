@@ -7,14 +7,19 @@ CREATE TABLE IF NOT EXISTS plugin_artifacts
 
 CREATE TABLE IF NOT EXISTS plugins
 (
-    plugin_key       serial PRIMARY KEY,
-    plugin_id        uuid UNIQUE  NOT NULL,
+    plugin_id        uuid PRIMARY KEY,
+    display_name     varchar(128) NOT NULL,
     tenant_id        uuid         NOT NULL,
-    configuration_id uuid         NOT NULL,
     artifact_id      uuid         NOT NULL,
     plugin_type      varchar(255) NOT NULL,
+    UNIQUE(
+              display_name,
+              tenant_id,
+              artifact_id,
+              plugin_type
+          ),
     CONSTRAINT fk_plugin_artifact
         FOREIGN KEY (artifact_id)
-            REFERENCES plugin_artifacts (artifact_id)
-            ON DELETE CASCADE
+        REFERENCES plugin_artifacts (artifact_id)
+    ON DELETE CASCADE
 );

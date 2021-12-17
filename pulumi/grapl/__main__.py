@@ -198,10 +198,8 @@ def main() -> None:
         kafka = Kafka("kafka")
 
         network = Network("grapl-network")
-        vpc_id = network.vpc.id
-        # private_subnets = network.private_subnets
-        plugin_registry_table = PostgresInstance(
-            name="plugin-registry-table",
+        plugin_registry_db = PostgresInstance(
+            name="plugin-registry-db",
         )
 
         # These are created in `grapl-local-infra.nomad` and not applicable to prod.
@@ -226,10 +224,10 @@ def main() -> None:
             container_images=_container_images({}),
             # TODO: consider replacing rust_log= with the previous per-service `configurable_envvars`
             rust_log="DEBUG",
-            plugin_registry_table_hostname="LOCAL_GRAPL_REPLACE_IP",
-            plugin_registry_table_port=str(plugin_registry_table.port),
-            plugin_registry_table_username=plugin_registry_table.username,
-            plugin_registry_table_password=plugin_registry_table.password,
+            plugin_registry_db_hostname="LOCAL_GRAPL_REPLACE_IP",
+            plugin_registry_db_port=str(plugin_registry_db.port),
+            plugin_registry_db_username=plugin_registry_db.username,
+            plugin_registry_db_password=plugin_registry_db.password,
             **nomad_inputs,
         )
 
