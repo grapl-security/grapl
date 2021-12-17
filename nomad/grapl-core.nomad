@@ -109,23 +109,23 @@ variable "session_table_name" {
   description = "What is the name of the session table?"
 }
 
-variable "plugin_registry_table_hostname" {
+variable "plugin_registry_db_hostname" {
   type        = string
   description = "What is the host for the plugin registry table?"
 }
 
-variable "plugin_registry_table_port" {
+variable "plugin_registry_db_port" {
   type        = string
   default     = "5432"
   description = "What is the port for the plugin registry table?"
 }
 
-variable "plugin_registry_table_username" {
+variable "plugin_registry_db_username" {
   type        = string
   description = "What is the username for the plugin registry table?"
 }
 
-variable "plugin_registry_table_password" {
+variable "plugin_registry_db_password" {
   type        = string
   description = "What is the password for the plugin registry table?"
 }
@@ -264,7 +264,7 @@ locals {
   # The aws endpoint is in template env format
   aws_endpoint                   = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
   redis_endpoint                 = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
-  plugin_registry_table_hostname = replace(var.plugin_registry_table_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  plugin_registry_db_hostname = replace(var.plugin_registry_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
 
   _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
   _redis         = split(":", local._redis_trimmed)
@@ -1095,10 +1095,10 @@ job "grapl-core" {
 
       env {
         PLUGIN_REGISTRY_BIND_ADDRESS    = "0.0.0.0:${NOMAD_PORT_plugin-registry-port}"
-        PLUGIN_REGISTRY_TABLE_HOSTNAME  = local.plugin_registry_table_hostname
-        PLUGIN_REGISTRY_TABLE_PASSWORD  = var.plugin_registry_table_password
-        PLUGIN_REGISTRY_TABLE_PORT      = var.plugin_registry_table_port
-        PLUGIN_REGISTRY_TABLE_USERNAME  = var.plugin_registry_table_username
+        plugin_registry_db_HOSTNAME  = local.plugin_registry_db_hostname
+        plugin_registry_db_PASSWORD  = var.plugin_registry_db_password
+        plugin_registry_db_PORT      = var.plugin_registry_db_port
+        plugin_registry_db_USERNAME  = var.plugin_registry_db_username
         PLUGIN_S3_BUCKET_AWS_ACCOUNT_ID = var.plugin_s3_bucket_aws_account_id
         PLUGIN_S3_BUCKET_NAME           = var.plugin_s3_bucket_name
         RUST_BACKTRACE                  = local.rust_backtrace

@@ -14,11 +14,11 @@ pub struct PluginRegistryServiceConfig {
     #[structopt(env)]
     plugin_registry_bind_address: SocketAddr,
     #[structopt(env)]
-    plugin_registry_table_hostname: String,
+    plugin_registry_db_hostname: String,
     #[structopt(env)]
-    plugin_registry_table_port: u16,
+    plugin_registry_db_port: u16,
     #[structopt(env)]
-    plugin_registry_table_username: String,
+    plugin_registry_db_username: String,
     #[structopt(env)]
-    plugin_registry_table_password: String,
+    plugin_registry_db_password: String,
 }

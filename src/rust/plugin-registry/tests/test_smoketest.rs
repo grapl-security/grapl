@@ -9,7 +9,6 @@ use rust_proto::plugin_registry::{CreatePluginRequest, GetPluginRequest, GetPlug
 #[test_log::test(tokio::test)]
 async fn test_smoke_test_create_client() -> Result<(), Box<dyn std::error::Error>> {
     tracing::debug!(
-        message="test_smoke_test_create_client",
         env=?std::env::args(),
     );
     let mut client = PluginRegistryServiceClient::from_env().await?;

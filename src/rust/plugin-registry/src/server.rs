@@ -272,16 +272,16 @@ pub async fn exec_service(
     let addr = service_config.plugin_registry_bind_address;
     tracing::info!(
         message="Connecting to plugin registry table",
-        plugin_registry_table_username=%service_config.plugin_registry_table_username,
-        plugin_registry_table_hostname=%service_config.plugin_registry_table_hostname,
-        plugin_registry_table_port=%service_config.plugin_registry_table_port,
+        plugin_registry_db_username=%service_config.plugin_registry_db_username,
+        plugin_registry_db_hostname=%service_config.plugin_registry_db_hostname,
+        plugin_registry_db_port=%service_config.plugin_registry_db_port,
     );
     let postgres_address = format!(
         "postgresql://{}:{}@{}:{}",
-        service_config.plugin_registry_table_username,
-        service_config.plugin_registry_table_password,
-        service_config.plugin_registry_table_hostname,
-        service_config.plugin_registry_table_port,
+        service_config.plugin_registry_db_username,
+        service_config.plugin_registry_db_password,
+        service_config.plugin_registry_db_hostname,
+        service_config.plugin_registry_db_port,
     );
 
     let plugin_registry: PluginRegistry = PluginRegistry {
