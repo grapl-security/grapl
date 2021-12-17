@@ -324,7 +324,7 @@ job "grapl-local-infra" {
     network {
       mode = "bridge"
       port "postgres" {
-        static = 5432
+        static = 5432  # postgres default
       }
     }
 

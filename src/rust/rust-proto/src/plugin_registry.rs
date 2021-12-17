@@ -24,13 +24,15 @@ pub enum PluginRegistryDeserializationError {
     #[error("Empty field")]
     EmptyField(&'static str),
     #[error("Unknown variant")]
-    UnknownVariant(&'static str),
+    UnknownVariant(std::borrow::Cow<'static, str>),
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum PluginType {
     Generator,
     Analyzer,
 }
+
 
 impl PluginType {
     pub fn type_name(&self) -> &'static str {
@@ -41,13 +43,42 @@ impl PluginType {
     }
 }
 
+
+impl TryFrom<&str> for PluginType {
+    type Error = PluginRegistryDeserializationError;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
+            "generator" => Ok(Self::Generator),
+            "analyzer" => Ok(Self::Analyzer),
+            unknown => Err(PluginRegistryDeserializationError::UnknownVariant(
+                std::borrow::Cow::Owned(unknown.to_owned())
+            ))
+        }
+    }
+}
+
+impl TryFrom<String> for PluginType {
+    type Error = PluginRegistryDeserializationError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        match value.as_str() {
+            "generator" => Ok(Self::Generator),
+            "analyzer" => Ok(Self::Analyzer),
+            _ => Err(PluginRegistryDeserializationError::UnknownVariant(
+                std::borrow::Cow::Owned(value)
+            ))
+        }
+    }
+}
+
 impl TryFrom<_PluginType> for PluginType {
     type Error = PluginRegistryDeserializationError;
 
     fn try_from(value: _PluginType) -> Result<Self, Self::Error> {
         match value {
             _PluginType::Unspecified => Err(PluginRegistryDeserializationError::UnknownVariant(
-                "PluginType",
+                std::borrow::Cow::Borrowed("PluginType"),
             )),
             _PluginType::Generator => Ok(PluginType::Generator),
             _PluginType::Analyzer => Ok(PluginType::Analyzer),
@@ -68,6 +99,8 @@ impl From<PluginType> for _PluginType {
 pub struct Plugin {
     /// unique identifier for this plugin
     pub plugin_id: uuid::Uuid,
+    /// The string value to display to a user, non-empty
+    pub display_name: String,
     /// The type of the plugin
     pub plugin_type: PluginType,
 }
@@ -77,6 +110,7 @@ impl TryFrom<_Plugin> for Plugin {
 
     fn try_from(value: _Plugin) -> Result<Self, Self::Error> {
         let plugin_type = value.plugin_type().try_into()?;
+        let display_name = value.display_name;
         let plugin_id = value
             .plugin_id
             .ok_or(PluginRegistryDeserializationError::MissingRequiredField(
@@ -86,6 +120,7 @@ impl TryFrom<_Plugin> for Plugin {
 
         Ok(Self {
             plugin_id,
+            display_name,
             plugin_type,
         })
     }
@@ -96,6 +131,7 @@ impl From<Plugin> for _Plugin {
         let plugin_type: _PluginType = value.plugin_type.into();
         Self {
             plugin_id: Some(value.plugin_id.into()),
+            display_name: value.display_name,
             plugin_type: plugin_type as i32,
         }
     }
@@ -345,6 +381,8 @@ impl From<GetGeneratorsForEventSourceResponse> for GetGeneratorsForEventSourceRe
 pub struct GetPluginRequest {
     /// The identity of the plugin
     pub plugin_id: uuid::Uuid,
+    /// The tenant for which the plugin belongs to
+    pub tenant_id: uuid::Uuid,
 }
 
 impl TryFrom<GetPluginRequestProto> for GetPluginRequest {
@@ -358,7 +396,14 @@ impl TryFrom<GetPluginRequestProto> for GetPluginRequest {
             ))?
             .into();
 
-        Ok(Self { plugin_id })
+        let tenant_id = value
+            .tenant_id
+            .ok_or(PluginRegistryDeserializationError::MissingRequiredField(
+                "GetAnalyzersForTenantRequest.tenant_id",
+            ))?
+            .into();
+
+        Ok(Self { plugin_id, tenant_id })
     }
 }
 
@@ -366,6 +411,7 @@ impl From<GetPluginRequest> for GetPluginRequestProto {
     fn from(value: GetPluginRequest) -> Self {
         Self {
             plugin_id: Some(value.plugin_id.into()),
+            tenant_id: Some(value.tenant_id.into()),
         }
     }
 }

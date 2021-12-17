@@ -19,8 +19,11 @@ message Plugin {
   // unique identifier for this plugin
   graplinc.common.v1beta1.Uuid plugin_id = 1;
 
+  // The string value to display to a user, non-empty
+  string display_name = 2;
+
   // The type of the plugin
-  PluginType plugin_type = 2;
+  PluginType plugin_type = 3;
 }
 
 // A request to create a plugin entry
@@ -48,6 +51,8 @@ message CreatePluginResponse {
 message GetPluginRequest {
   // The identity of the plugin
   graplinc.common.v1beta1.Uuid plugin_id = 1;
+  // The tenant for which the plugin belongs to
+  graplinc.common.v1beta1.Uuid tenant_id = 2;
 }
 
 // A response containing the request plugin
