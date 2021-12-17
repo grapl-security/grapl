@@ -332,7 +332,7 @@ job "grapl-local-infra" {
       driver = "docker"
 
       config {
-        image = "postgres:latest"
+        image = "postgres:13.4-bullseye"
         ports = ["postgres"]
       }
 
