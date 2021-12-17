@@ -49,8 +49,7 @@ pub enum PluginRegistryServiceError {}
 
 impl From<PluginRegistryServiceError> for Status {
     fn from(err: PluginRegistryServiceError) -> Self {
-        match err {
-        }
+        match err {}
     }
 }
 
@@ -79,15 +78,18 @@ impl PluginRegistry {
             &artifact_id,
         );
 
-        self.s3.put_object(PutObjectRequest {
-            content_length: Some(_request.plugin_artifact.len() as i64),
-            body: Some(_request.plugin_artifact.into()),
-            bucket: self.plugin_bucket_name.clone(),
-            key: s3_key.clone(),
-            expected_bucket_owner: Some(self.plugin_bucket_owner_id.clone()),
-            metadata: None,
-            ..Default::default()
-        }).await.expect("Failed to put_object");
+        self.s3
+            .put_object(PutObjectRequest {
+                content_length: Some(_request.plugin_artifact.len() as i64),
+                body: Some(_request.plugin_artifact.into()),
+                bucket: self.plugin_bucket_name.clone(),
+                key: s3_key.clone(),
+                expected_bucket_owner: Some(self.plugin_bucket_owner_id.clone()),
+                metadata: None,
+                ..Default::default()
+            })
+            .await
+            .expect("Failed to put_object");
 
         sqlx::query(
             r"
@@ -101,7 +103,7 @@ impl PluginRegistry {
             ",
         )
         .bind(artifact_id.as_str())
-        .bind(0)  // todo: Artifact versioning
+        .bind(0) // todo: Artifact versioning
         .bind(s3_key)
         .fetch_one(&self.pool)
         .await
@@ -251,7 +253,7 @@ pub async fn exec_service(
             .await??,
         s3: S3Client::from_env(),
         plugin_bucket_name: service_config.plugin_s3_bucket_name,
-        plugin_bucket_owner_id: service_config.plugin_s3_bucket_aws_account_id
+        plugin_bucket_owner_id: service_config.plugin_s3_bucket_aws_account_id,
     };
 
     tracing::info!(
