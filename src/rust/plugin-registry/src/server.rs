@@ -91,7 +91,6 @@ impl PluginRegistry {
                 bucket: self.plugin_bucket_name.clone(),
                 key: s3_key.clone(),
                 expected_bucket_owner: Some(self.plugin_bucket_owner_id.clone()),
-                metadata: None,
                 ..Default::default()
             })
             .await?;
@@ -287,7 +286,6 @@ pub async fn exec_service(
         .set_serving::<PluginRegistryServiceServer<PluginRegistry>>()
         .await;
 
-    let addr = service_config.plugin_registry_bind_address;
     tracing::info!(
         message="Connecting to plugin registry table",
         plugin_registry_db_username=%service_config.plugin_registry_db_username,
@@ -313,6 +311,7 @@ pub async fn exec_service(
 
     sqlx::migrate!().run(&plugin_registry.pool).await?;
 
+    let addr = service_config.plugin_registry_bind_address;
     tracing::info!(
         message="Starting PluginRegistry",
         addr=?addr,
