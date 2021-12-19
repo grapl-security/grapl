@@ -1,11 +1,43 @@
 use grapl_config::env_helpers::FromEnv;
 use grapl_utils::future_ext::GraplFutureExt;
-use rusoto_s3::{PutObjectRequest, S3Client, S3, GetObjectRequest};
-
-use rust_proto::plugin_registry::{plugin_registry_service_server::{
-    PluginRegistryService,
-    PluginRegistryServiceServer,
-}, CreatePluginRequest, CreatePluginRequestProto, CreatePluginResponse, CreatePluginResponseProto, DeployPluginRequest, DeployPluginRequestProto, DeployPluginResponse, DeployPluginResponseProto, GetAnalyzersForTenantRequest, GetAnalyzersForTenantRequestProto, GetAnalyzersForTenantResponse, GetAnalyzersForTenantResponseProto, GetGeneratorsForEventSourceRequest, GetGeneratorsForEventSourceRequestProto, GetGeneratorsForEventSourceResponse, GetGeneratorsForEventSourceResponseProto, GetPluginRequest, GetPluginRequestProto, GetPluginResponse, GetPluginResponseProto, TearDownPluginRequest, TearDownPluginRequestProto, TearDownPluginResponse, TearDownPluginResponseProto, PluginType, Plugin};
+use rusoto_s3::{
+    GetObjectRequest,
+    PutObjectRequest,
+    S3Client,
+    S3,
+};
+use rust_proto::plugin_registry::{
+    plugin_registry_service_server::{
+        PluginRegistryService,
+        PluginRegistryServiceServer,
+    },
+    CreatePluginRequest,
+    CreatePluginRequestProto,
+    CreatePluginResponse,
+    CreatePluginResponseProto,
+    DeployPluginRequest,
+    DeployPluginRequestProto,
+    DeployPluginResponse,
+    DeployPluginResponseProto,
+    GetAnalyzersForTenantRequest,
+    GetAnalyzersForTenantRequestProto,
+    GetAnalyzersForTenantResponse,
+    GetAnalyzersForTenantResponseProto,
+    GetGeneratorsForEventSourceRequest,
+    GetGeneratorsForEventSourceRequestProto,
+    GetGeneratorsForEventSourceResponse,
+    GetGeneratorsForEventSourceResponseProto,
+    GetPluginRequest,
+    GetPluginRequestProto,
+    GetPluginResponse,
+    GetPluginResponseProto,
+    Plugin,
+    PluginType,
+    TearDownPluginRequest,
+    TearDownPluginRequestProto,
+    TearDownPluginResponse,
+    TearDownPluginResponseProto,
+};
 use tonic::{
     transport::Server,
     Request,
@@ -21,7 +53,7 @@ struct GetPluginRow {
     artifact_s3_key: String,
 }
 
-use tokio::io::{AsyncReadExt};
+use tokio::io::AsyncReadExt;
 
 use crate::PluginRegistryServiceConfig;
 
@@ -46,16 +78,9 @@ impl PluginRegistry {
         &self,
         request: CreatePluginRequest,
     ) -> Result<CreatePluginResponse, PluginRegistryServiceError> {
-        let plugin_id = generate_plugin_id(
-            &request.tenant_id,
-            request.plugin_artifact.as_slice(),
-        );
+        let plugin_id = generate_plugin_id(&request.tenant_id, request.plugin_artifact.as_slice());
 
-        let s3_key = generateo_artifact_s3_key(
-            request.plugin_type,
-            &request.tenant_id,
-            &plugin_id,
-        );
+        let s3_key = generateo_artifact_s3_key(request.plugin_type, &request.tenant_id, &plugin_id);
 
         self.s3
             .put_object(PutObjectRequest {
@@ -84,19 +109,16 @@ impl PluginRegistry {
             ON CONFLICT DO NOTHING;
             ",
         )
-            .bind(plugin_id)
-            .bind(request.plugin_type.type_name())
-            .bind(request.display_name)
-            .bind(request.tenant_id)
-            .bind(s3_key)
-            .execute(&self.pool)
-            .await
-            .expect("todo: insert failed");
+        .bind(plugin_id)
+        .bind(request.plugin_type.type_name())
+        .bind(request.display_name)
+        .bind(request.tenant_id)
+        .bind(s3_key)
+        .execute(&self.pool)
+        .await
+        .expect("todo: insert failed");
 
-
-        let response = CreatePluginResponse {
-            plugin_id,
-        };
+        let response = CreatePluginResponse { plugin_id };
         Ok(response)
     }
 
@@ -116,16 +138,22 @@ impl PluginRegistry {
         WHERE plugin_id = $1
             ",
         )
-            .bind(request.plugin_id)
-            .fetch_one(&self.pool)
-            .await
-            .expect("todo");
+        .bind(request.plugin_id)
+        .fetch_one(&self.pool)
+        .await
+        .expect("todo");
 
-        let GetPluginRow { plugin_id, display_name, plugin_type, artifact_s3_key } = row;
+        let GetPluginRow {
+            plugin_id,
+            display_name,
+            plugin_type,
+            artifact_s3_key,
+        } = row;
         let s3_key: String = artifact_s3_key;
         let plugin_type: PluginType = PluginType::try_from(plugin_type).expect("todo");
 
-        let get_object_output = self.s3
+        let get_object_output = self
+            .s3
             .get_object(GetObjectRequest {
                 bucket: self.plugin_bucket_name.clone(),
                 key: s3_key.clone(),
@@ -140,7 +168,10 @@ impl PluginRegistry {
         let mut plugin_binary = Vec::new();
 
         // read the whole file
-        stream.into_async_read().read_to_end(&mut plugin_binary).await
+        stream
+            .into_async_read()
+            .read_to_end(&mut plugin_binary)
+            .await
             .expect("todo");
 
         let response = GetPluginResponse {
@@ -149,7 +180,7 @@ impl PluginRegistry {
                 display_name,
                 plugin_type,
                 plugin_binary,
-            }
+            },
         };
 
         Ok(response)
@@ -195,8 +226,7 @@ impl PluginRegistryService for PluginRegistry {
         request: Request<CreatePluginRequestProto>,
     ) -> Result<Response<CreatePluginResponseProto>, Status> {
         let request: CreatePluginRequestProto = request.into_inner();
-        let request: CreatePluginRequest = CreatePluginRequest::try_from(request)
-            .expect("todo");
+        let request: CreatePluginRequest = CreatePluginRequest::try_from(request).expect("todo");
 
         let response = self.create_plugin(request).await.expect("todo");
         let response: CreatePluginResponseProto = response.into();
@@ -208,8 +238,7 @@ impl PluginRegistryService for PluginRegistry {
         request: Request<GetPluginRequestProto>,
     ) -> Result<Response<GetPluginResponseProto>, Status> {
         let request: GetPluginRequestProto = request.into_inner();
-        let request = GetPluginRequest::try_from(request)
-            .expect("todo");
+        let request = GetPluginRequest::try_from(request).expect("todo");
 
         let response = self.get_plugin(request).await.expect("todo");
         let response: GetPluginResponseProto = response.into();
@@ -299,9 +328,7 @@ pub async fn exec_service(
         plugin_bucket_owner_id: service_config.plugin_s3_bucket_aws_account_id,
     };
 
-    sqlx::migrate!()
-        .run(&plugin_registry.pool)
-        .await?;
+    sqlx::migrate!().run(&plugin_registry.pool).await?;
 
     tracing::info!(
         message="HealthServer + PluginRegistry listening",
@@ -339,10 +366,7 @@ fn generateo_artifact_s3_key(
     )
 }
 
-fn generate_plugin_id(
-    tenant_id: &uuid::Uuid,
-    plugin_artifact: &[u8],
-) -> uuid::Uuid {
+fn generate_plugin_id(tenant_id: &uuid::Uuid, plugin_artifact: &[u8]) -> uuid::Uuid {
     let mut hasher = blake3::Hasher::new();
     hasher.update(&b"PLUGIN_ID_NAMESPACE"[..]);
     hasher.update(tenant_id.as_bytes());

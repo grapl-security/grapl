@@ -88,7 +88,8 @@ where
         &mut self,
         request: CreatePluginRequest,
     ) -> Result<CreatePluginResponse, PluginRegistryServiceClientError> {
-        let response = self.inner
+        let response = self
+            .inner
             .create_plugin(CreatePluginRequestProto::from(request))
             .await
             .expect("todo");
@@ -101,7 +102,8 @@ where
         &mut self,
         request: GetPluginRequest,
     ) -> Result<GetPluginResponse, PluginRegistryServiceClientError> {
-        let response = self.inner
+        let response = self
+            .inner
             .get_plugin(GetPluginRequestProto::from(request))
             .await
             .expect("todo");

@@ -33,7 +33,6 @@ pub enum PluginType {
     Analyzer,
 }
 
-
 impl PluginType {
     pub fn type_name(&self) -> &'static str {
         match self {
@@ -43,7 +42,6 @@ impl PluginType {
     }
 }
 
-
 impl TryFrom<&str> for PluginType {
     type Error = PluginRegistryDeserializationError;
 
@@ -52,8 +50,8 @@ impl TryFrom<&str> for PluginType {
             "generator" => Ok(Self::Generator),
             "analyzer" => Ok(Self::Analyzer),
             unknown => Err(PluginRegistryDeserializationError::UnknownVariant(
-                std::borrow::Cow::Owned(unknown.to_owned())
-            ))
+                std::borrow::Cow::Owned(unknown.to_owned()),
+            )),
         }
     }
 }
@@ -66,8 +64,8 @@ impl TryFrom<String> for PluginType {
             "generator" => Ok(Self::Generator),
             "analyzer" => Ok(Self::Analyzer),
             _ => Err(PluginRegistryDeserializationError::UnknownVariant(
-                std::borrow::Cow::Owned(value)
-            ))
+                std::borrow::Cow::Owned(value),
+            )),
         }
     }
 }
@@ -408,7 +406,10 @@ impl TryFrom<GetPluginRequestProto> for GetPluginRequest {
             ))?
             .into();
 
-        Ok(Self { plugin_id, tenant_id })
+        Ok(Self {
+            plugin_id,
+            tenant_id,
+        })
     }
 }
 
