@@ -103,6 +103,8 @@ pub struct Plugin {
     pub display_name: String,
     /// The type of the plugin
     pub plugin_type: PluginType,
+    /// The byte representation of the plugin executable
+    pub plugin_binary: Vec<u8>,
 }
 
 impl TryFrom<_Plugin> for Plugin {
@@ -111,6 +113,7 @@ impl TryFrom<_Plugin> for Plugin {
     fn try_from(value: _Plugin) -> Result<Self, Self::Error> {
         let plugin_type = value.plugin_type().try_into()?;
         let display_name = value.display_name;
+        let plugin_binary = value.plugin_binary;
         let plugin_id = value
             .plugin_id
             .ok_or(PluginRegistryDeserializationError::MissingRequiredField(
@@ -122,6 +125,7 @@ impl TryFrom<_Plugin> for Plugin {
             plugin_id,
             display_name,
             plugin_type,
+            plugin_binary,
         })
     }
 }
@@ -133,6 +137,7 @@ impl From<Plugin> for _Plugin {
             plugin_id: Some(value.plugin_id.into()),
             display_name: value.display_name,
             plugin_type: plugin_type as i32,
+            plugin_binary: value.plugin_binary,
         }
     }
 }
