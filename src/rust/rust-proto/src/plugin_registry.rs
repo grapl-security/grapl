@@ -11,8 +11,8 @@ pub use crate::graplinc::grapl::api::plugin_registry::v1beta1::{
     GetGeneratorsForEventSourceResponse as GetGeneratorsForEventSourceResponseProto,
     GetPluginRequest as GetPluginRequestProto,
     GetPluginResponse as GetPluginResponseProto,
-    Plugin as _Plugin,
-    PluginType as _PluginType,
+    Plugin as PluginProto,
+    PluginType as PluginTypeProto,
     TearDownPluginRequest as TearDownPluginRequestProto,
     TearDownPluginResponse as TearDownPluginResponseProto,
 };
@@ -70,26 +70,26 @@ impl TryFrom<String> for PluginType {
     }
 }
 
-impl TryFrom<_PluginType> for PluginType {
+impl TryFrom<PluginTypeProto> for PluginType {
     type Error = PluginRegistryDeserializationError;
 
-    fn try_from(value: _PluginType) -> Result<Self, Self::Error> {
+    fn try_from(value: PluginTypeProto) -> Result<Self, Self::Error> {
         match value {
-            _PluginType::Unspecified => Err(PluginRegistryDeserializationError::UnknownVariant(
+            PluginTypeProto::Unspecified => Err(PluginRegistryDeserializationError::UnknownVariant(
                 std::borrow::Cow::Borrowed("PluginType"),
             )),
-            _PluginType::Generator => Ok(PluginType::Generator),
-            _PluginType::Analyzer => Ok(PluginType::Analyzer),
+            PluginTypeProto::Generator => Ok(PluginType::Generator),
+            PluginTypeProto::Analyzer => Ok(PluginType::Analyzer),
         }
         // todo!()
     }
 }
 
-impl From<PluginType> for _PluginType {
+impl From<PluginType> for PluginTypeProto {
     fn from(value: PluginType) -> Self {
         match value {
-            PluginType::Generator => _PluginType::Generator,
-            PluginType::Analyzer => _PluginType::Analyzer,
+            PluginType::Generator => PluginTypeProto::Generator,
+            PluginType::Analyzer => PluginTypeProto::Analyzer,
         }
     }
 }
@@ -105,10 +105,10 @@ pub struct Plugin {
     pub plugin_binary: Vec<u8>,
 }
 
-impl TryFrom<_Plugin> for Plugin {
+impl TryFrom<PluginProto> for Plugin {
     type Error = PluginRegistryDeserializationError;
 
-    fn try_from(value: _Plugin) -> Result<Self, Self::Error> {
+    fn try_from(value: PluginProto) -> Result<Self, Self::Error> {
         let plugin_type = value.plugin_type().try_into()?;
         let display_name = value.display_name;
         let plugin_binary = value.plugin_binary;
@@ -128,9 +128,9 @@ impl TryFrom<_Plugin> for Plugin {
     }
 }
 
-impl From<Plugin> for _Plugin {
+impl From<Plugin> for PluginProto {
     fn from(value: Plugin) -> Self {
-        let plugin_type: _PluginType = value.plugin_type.into();
+        let plugin_type: PluginTypeProto = value.plugin_type.into();
         Self {
             plugin_id: Some(value.plugin_id.into()),
             display_name: value.display_name,
@@ -189,7 +189,7 @@ impl TryFrom<CreatePluginRequestProto> for CreatePluginRequest {
 
 impl From<CreatePluginRequest> for CreatePluginRequestProto {
     fn from(value: CreatePluginRequest) -> Self {
-        let plugin_type: _PluginType = value.plugin_type.into();
+        let plugin_type: PluginTypeProto = value.plugin_type.into();
         Self {
             plugin_artifact: value.plugin_artifact,
             tenant_id: Some(value.tenant_id.into()),
