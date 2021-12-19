@@ -19,11 +19,11 @@ pub struct Encrypter {
 }
 
 impl Encrypter {
-    pub fn encrypt(&mut self, msg: Vec<u8>) -> Result<PubEncryptedData, AsymmetricError> {
+    pub fn encrypt(&mut self, msg: Vec<u8>, aad: &[u8]) -> Result<PubEncryptedData, AsymmetricError> {
         let (ephemeral_public_key, shared_secret) = self.new_ephemeral_keypair();
         let encrypted = self.aead_enc.encrypt(
             msg,
-            &[],
+            aad,
             shared_secret.as_bytes(),
         )?;
         Ok(PubEncryptedData {
@@ -85,7 +85,7 @@ mod tests {
     }
 
     #[quickcheck]
-    fn encrypt_decrypt(msg: Vec<u8>) {
+    fn encrypt_decrypt(msg: Vec<u8>, aad: Vec<u8>) {
         let aead = ChaChaBlake3::new();
         if msg.is_empty() { return; }
 
@@ -102,7 +102,7 @@ mod tests {
             aead_enc: aead.clone(),
         };
 
-        let encrypted = encrypter.encrypt(msg.clone()).expect("encrypt failed");
+        let encrypted = encrypter.encrypt(msg.clone(), aad).expect("encrypt failed");
         let decrypted = decrypter.decrypt(encrypted).expect("encrypt failed");
         assert_eq!(msg, decrypted);
     }
