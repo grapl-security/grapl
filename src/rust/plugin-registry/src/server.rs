@@ -331,7 +331,7 @@ pub async fn exec_service(
     sqlx::migrate!().run(&plugin_registry.pool).await?;
 
     tracing::info!(
-        message="HealthServer + PluginRegistry listening",
+        message="Starting PluginRegistry",
         addr=?addr,
     );
 
