@@ -324,7 +324,7 @@ job "grapl-local-infra" {
     network {
       mode = "bridge"
       port "postgres" {
-        static = 5432  # postgres default
+        static = 5432 # postgres default
       }
     }
 
@@ -345,10 +345,10 @@ job "grapl-local-infra" {
         name = "postgres"
 
         check {
-          type    = "script"
-          name    = "check_postgres"
-          command = "pg_isready"
-          args = ["-U", "postgres"]
+          type     = "script"
+          name     = "check_postgres"
+          command  = "pg_isready"
+          args     = ["-U", "postgres"]
           interval = "20s"
           timeout  = "10s"
 
