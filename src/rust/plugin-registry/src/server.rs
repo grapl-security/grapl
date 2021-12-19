@@ -1,7 +1,7 @@
 use grapl_config::env_helpers::FromEnv;
 use grapl_utils::future_ext::GraplFutureExt;
 use rusoto_s3::{PutObjectRequest, S3Client, S3, GetObjectRequest};
-use sqlx::Row;
+
 use rust_proto::plugin_registry::{plugin_registry_service_server::{
     PluginRegistryService,
     PluginRegistryServiceServer,
@@ -12,6 +12,14 @@ use tonic::{
     Response,
     Status,
 };
+
+#[derive(sqlx::FromRow)]
+struct GetPluginRow {
+    plugin_id: uuid::Uuid,
+    display_name: String,
+    plugin_type: String,
+    artifact_s3_key: String,
+}
 
 use tokio::io::{AsyncReadExt};
 
@@ -34,21 +42,19 @@ pub struct PluginRegistry {
 }
 
 impl PluginRegistry {
-    #[allow(dead_code)]
     async fn create_plugin(
         &self,
         request: CreatePluginRequest,
     ) -> Result<CreatePluginResponse, PluginRegistryServiceError> {
-        let mut hasher = blake3::Hasher::new();
-        hasher.update(request.tenant_id.as_bytes());
-        hasher.update(request.plugin_artifact.as_slice());
-        let artifact_id = hasher.finalize().to_hex();
+        let plugin_id = generate_plugin_id(
+            &request.tenant_id,
+            request.plugin_artifact.as_slice(),
+        );
 
-        let s3_key = format!(
-            "bucketname/{}/{}-plugins/{}.bin",
-            request.tenant_id,
-            request.plugin_type.type_name(),
-            &artifact_id,
+        let s3_key = generateo_artifact_s3_key(
+            request.plugin_type,
+            &request.tenant_id,
+            &plugin_id,
         );
 
         self.s3
@@ -64,30 +70,29 @@ impl PluginRegistry {
             .await
             .expect("Failed to put_object");
 
-        let response = sqlx::query(
+        dbg!(&plugin_id);
+        sqlx::query(
             r"
-            INSERT INTO plugin_artifacts (
-                artifact_id,
-                artifact_version,
-                artifact_s3_key,
+            INSERT INTO plugins (
+                plugin_id,
                 plugin_type,
+                display_name,
                 tenant_id,
+                artifact_s3_key
             )
-            VALUES ($1, $2, $3, $4, $5)
-            SELECT (plugin_id)
+            VALUES ($1::uuid, $2, $3, $4::uuid, $5)
             ON CONFLICT DO NOTHING;
             ",
         )
-        .bind(artifact_id.as_str())
-        .bind(0) // todo: Artifact versioning
-        .bind(s3_key)
-        .bind(request.plugin_type.type_name())
-        .bind(request.tenant_id)
-        .fetch_one(&self.pool)
-        .await
-        .expect("todo");
+            .bind(plugin_id)
+            .bind(request.plugin_type.type_name())
+            .bind(request.display_name)
+            .bind(request.tenant_id)
+            .bind(s3_key)
+            .execute(&self.pool)
+            .await
+            .expect("todo: insert failed");
 
-        let plugin_id: uuid::Uuid = response.try_get("plugin_id").expect("todo");
 
         let response = CreatePluginResponse {
             plugin_id,
@@ -95,16 +100,20 @@ impl PluginRegistry {
         Ok(response)
     }
 
-    #[allow(dead_code)]
+    #[tracing::instrument(skip(self, request), err)]
     async fn get_plugin(
         &self,
         request: GetPluginRequest,
     ) -> Result<GetPluginResponse, PluginRegistryServiceError> {
-
-        let row = sqlx::query(
+        let row: GetPluginRow = sqlx::query_as(
             r"
-            SELECT plugin_id, display_name, artifact_id, plugin_type FROM plugin_artifacts
-            WHERE plugin_id = ?;
+        SELECT
+        plugin_id,
+        display_name,
+        plugin_type,
+        artifact_s3_key
+        FROM plugins
+        WHERE plugin_id = $1
             ",
         )
             .bind(request.plugin_id)
@@ -112,19 +121,9 @@ impl PluginRegistry {
             .await
             .expect("todo");
 
-        let plugin_id: uuid::Uuid = row.try_get("plugin_id").expect("todo");
-        // todo: Validate that the request plugin_id matches the response plugin_id
-        let display_name: String = row.try_get("display_name").expect("todo");
-        let artifact_id: String = row.try_get("artifact_id").expect("todo");
-        let plugin_type: String = row.try_get("plugin_type").expect("todo");
+        let GetPluginRow { plugin_id, display_name, plugin_type, artifact_s3_key } = row;
+        let s3_key: String = artifact_s3_key;
         let plugin_type: PluginType = PluginType::try_from(plugin_type).expect("todo");
-
-        let s3_key = format!(
-            "bucketname/{}/{}-plugins/{}.bin",
-            request.tenant_id,
-            plugin_type.type_name(),
-            &artifact_id,
-        );
 
         let get_object_output = self.s3
             .get_object(GetObjectRequest {
@@ -148,7 +147,7 @@ impl PluginRegistry {
             plugin: Plugin {
                 plugin_id,
                 display_name,
-                plugin_type
+                plugin_type,
             }
         };
 
@@ -205,9 +204,15 @@ impl PluginRegistryService for PluginRegistry {
 
     async fn get_plugin(
         &self,
-        _request: Request<GetPluginRequestProto>,
+        request: Request<GetPluginRequestProto>,
     ) -> Result<Response<GetPluginResponseProto>, Status> {
-        todo!()
+        let request: GetPluginRequestProto = request.into_inner();
+        let request = GetPluginRequest::try_from(request)
+            .expect("todo");
+
+        let response = self.get_plugin(request).await.expect("todo");
+        let response: GetPluginResponseProto = response.into();
+        Ok(Response::new(response))
     }
 
     async fn deploy_plugin(
@@ -318,4 +323,31 @@ pub async fn exec_service(
         .await?;
 
     Ok(())
+}
+
+fn generateo_artifact_s3_key(
+    plugin_type: PluginType,
+    tenant_id: &uuid::Uuid,
+    plugin_id: &uuid::Uuid,
+) -> String {
+    format!(
+        "plugins/tenant_id_{}/plugin_type-{}/{}.bin",
+        tenant_id.to_hyphenated(),
+        plugin_type.type_name(),
+        plugin_id.to_hyphenated(),
+    )
+}
+
+fn generate_plugin_id(
+    tenant_id: &uuid::Uuid,
+    plugin_artifact: &[u8],
+) -> uuid::Uuid {
+    let mut hasher = blake3::Hasher::new();
+    hasher.update(&b"PLUGIN_ID_NAMESPACE"[..]);
+    hasher.update(tenant_id.as_bytes());
+    hasher.update(plugin_artifact);
+    let mut output = [0; 16];
+    hasher.finalize_xof().fill(&mut output);
+
+    uuid::Uuid::from_bytes(output)
 }
