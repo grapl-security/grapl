@@ -1095,10 +1095,10 @@ job "grapl-core" {
 
       env {
         PLUGIN_REGISTRY_BIND_ADDRESS    = "0.0.0.0:${NOMAD_PORT_plugin-registry-port}"
-        plugin_registry_db_HOSTNAME  = local.plugin_registry_db_hostname
-        plugin_registry_db_PASSWORD  = var.plugin_registry_db_password
-        plugin_registry_db_PORT      = var.plugin_registry_db_port
-        plugin_registry_db_USERNAME  = var.plugin_registry_db_username
+        PLUGIN_REGISTRY_DB_HOSTNAME     = local.plugin_registry_db_hostname
+        PLUGIN_REGISTRY_DB_PASSWORD     = var.plugin_registry_db_password
+        PLUGIN_REGISTRY_DB_PORT         = var.plugin_registry_db_port
+        PLUGIN_REGISTRY_DB_USERNAME     = var.plugin_registry_db_username
         PLUGIN_S3_BUCKET_AWS_ACCOUNT_ID = var.plugin_s3_bucket_aws_account_id
         PLUGIN_S3_BUCKET_NAME           = var.plugin_s3_bucket_name
         RUST_BACKTRACE                  = local.rust_backtrace

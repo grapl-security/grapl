@@ -38,4 +38,4 @@ config:
   postgresql:host: host.docker.internal
   postgresql:sslmode: "disable"
   postgresql:password: "postgres"
-  postgresql:user: "postgres"
+  postgresql:username: "postgres"

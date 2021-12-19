@@ -88,22 +88,26 @@ where
         &mut self,
         request: CreatePluginRequest,
     ) -> Result<CreatePluginResponse, PluginRegistryServiceClientError> {
-        self.inner
+        let response = self.inner
             .create_plugin(CreatePluginRequestProto::from(request))
             .await
             .expect("todo");
-        todo!()
+        let response = response.into_inner();
+        let response = CreatePluginResponse::try_from(response).expect("todo");
+        Ok(response)
     }
     /// retrieve the plugin corresponding to the given plugin_id
     pub async fn get_plugin(
         &mut self,
         request: GetPluginRequest,
     ) -> Result<GetPluginResponse, PluginRegistryServiceClientError> {
-        self.inner
+        let response = self.inner
             .get_plugin(GetPluginRequestProto::from(request))
             .await
             .expect("todo");
-        todo!()
+        let response = response.into_inner();
+        let response = GetPluginResponse::try_from(response).expect("todo");
+        Ok(response)
     }
     /// turn on a particular plugin's code
     pub async fn deploy_plugin(

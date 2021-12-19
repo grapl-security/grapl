@@ -347,13 +347,8 @@ job "grapl-local-infra" {
         check {
           type    = "script"
           name    = "check_postgres"
-          command = "/bin/bash"
-          # Interpolated by bash, not nomad
-          args = [
-            "-o", "errexit", "-o", "nounset",
-            "-c",
-            "pg_isready -U postgres || exit 1",
-          ]
+          command = "pg_isready"
+          args = ["-U", "postgres"]
           interval = "20s"
           timeout  = "10s"
 
