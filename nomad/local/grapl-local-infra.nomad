@@ -40,6 +40,18 @@ variable "ZOOKEEPER_PORT" {
   description = "Port for zookeeper"
 }
 
+variable "PLUGIN_REGISTRY_DB_USERNAME" {
+  type = string
+  description = "The username for the plugin registry db"
+  default = "postgres"
+}
+
+variable "PLUGIN_REGISTRY_DB_PASSWORD" {
+  type = string
+  description = "The password fort he plugin registry db"
+  default = "postgres"
+}
+
 locals {
   # This is the equivalent of `localhost` within a bridge network.
   # Useful for, for instance, talking to Zookeeper from Kafka without Consul Connect
@@ -224,7 +236,7 @@ job "grapl-local-infra" {
 
         # Some clients (like Pulumi) will need `host.docker.internal`
         # Some clients (like grapl-core services) will need localhost_within_bridge
-        # We differentiate between which client it is based on which port we receive on. 
+        # We differentiate between which client it is based on which port we receive on.
         # So a receive on 29092 means HOST_OS
         KAFKA_ADVERTISED_LISTENERS = join(",", [
           "WITHIN_TASK://localhost:9092",
@@ -337,8 +349,8 @@ job "grapl-local-infra" {
       }
 
       env {
-        POSTGRES_USER     = "postgres"
-        POSTGRES_PASSWORD = "postgres"
+        POSTGRES_USER     = var.PLUGIN_REGISTRY_DB_USERNAME
+        POSTGRES_PASSWORD = var.PLUGIN_REGISTRY_DB_PASSWORD
       }
 
       service {

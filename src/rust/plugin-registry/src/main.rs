@@ -7,9 +7,9 @@ use structopt::StructOpt;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (_env, _guard) = grapl_config::init_grapl_env!();
-    let opt = PluginRegistryServiceConfig::from_args();
-    tracing::info!("Starting Plugin Registry Service");
+    let config = PluginRegistryServiceConfig::from_args();
+    tracing::info!(message="Starting Plugin Registry Service", config=?config);
 
-    exec_service(opt).await?;
+    exec_service(config).await?;
     Ok(())
 }
