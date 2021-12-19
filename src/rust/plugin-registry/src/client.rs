@@ -1,26 +1,6 @@
 use std::time::Duration;
 
-use rust_proto::plugin_registry::{
-    plugin_registry_service_client::PluginRegistryServiceClient as _PluginRegistryServiceClient,
-    CreatePluginRequest,
-    CreatePluginRequestProto,
-    CreatePluginResponse,
-    DeployPluginRequest,
-    DeployPluginRequestProto,
-    DeployPluginResponse,
-    GetAnalyzersForTenantRequest,
-    GetAnalyzersForTenantRequestProto,
-    GetAnalyzersForTenantResponse,
-    GetGeneratorsForEventSourceRequest,
-    GetGeneratorsForEventSourceRequestProto,
-    GetGeneratorsForEventSourceResponse,
-    GetPluginRequest,
-    GetPluginRequestProto,
-    GetPluginResponse,
-    TearDownPluginRequest,
-    TearDownPluginRequestProto,
-    TearDownPluginResponse,
-};
+use rust_proto::plugin_registry::{plugin_registry_service_client::PluginRegistryServiceClient as _PluginRegistryServiceClient, CreatePluginRequest, CreatePluginRequestProto, CreatePluginResponse, DeployPluginRequest, DeployPluginRequestProto, DeployPluginResponse, GetAnalyzersForTenantRequest, GetAnalyzersForTenantRequestProto, GetAnalyzersForTenantResponse, GetGeneratorsForEventSourceRequest, GetGeneratorsForEventSourceResponse, GetPluginRequest, GetPluginRequestProto, GetPluginResponse, TearDownPluginRequest, TearDownPluginRequestProto, TearDownPluginResponse, PluginRegistryDeserializationError, GetGeneratorsForEventSourceRequestProto};
 use tonic::{
     codegen::{
         Body,
@@ -33,8 +13,10 @@ const ADDRESS_ENV_VAR: &'static str = "GRAPL_PLUGIN_REGISTRY_ADDRESS";
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginRegistryServiceClientError {
-    #[error("Unknown Error")]
-    Unknown,
+    #[error("ErrorStatus")]
+    ErrorStatus(#[from] tonic::Status),
+    #[error("PluginRegistryDeserializationError")]
+    PluginRegistryDeserializationError(#[from] PluginRegistryDeserializationError)
 }
 
 pub struct PluginRegistryServiceClient<T> {
@@ -86,10 +68,9 @@ where
         let response = self
             .inner
             .create_plugin(CreatePluginRequestProto::from(request))
-            .await
-            .expect("todo");
+            .await?;
         let response = response.into_inner();
-        let response = CreatePluginResponse::try_from(response).expect("todo");
+        let response = CreatePluginResponse::try_from(response)?;
         Ok(response)
     }
     /// retrieve the plugin corresponding to the given plugin_id
@@ -100,10 +81,9 @@ where
         let response = self
             .inner
             .get_plugin(GetPluginRequestProto::from(request))
-            .await
-            .expect("todo");
+            .await?;
         let response = response.into_inner();
-        let response = GetPluginResponse::try_from(response).expect("todo");
+        let response = GetPluginResponse::try_from(response)?;
         Ok(response)
     }
     /// turn on a particular plugin's code
@@ -113,8 +93,7 @@ where
     ) -> Result<DeployPluginResponse, PluginRegistryServiceClientError> {
         self.inner
             .deploy_plugin(DeployPluginRequestProto::from(request))
-            .await
-            .expect("todo");
+            .await?;
         todo!()
     }
     /// turn off a particular plugin's code
@@ -124,8 +103,7 @@ where
     ) -> Result<TearDownPluginResponse, PluginRegistryServiceClientError> {
         self.inner
             .tear_down_plugin(TearDownPluginRequestProto::from(request))
-            .await
-            .expect("todo");
+            .await?;
         todo!()
     }
     /// Given information about an event source, return all generators that handle that event source
@@ -136,15 +114,8 @@ where
     ) -> Result<GetGeneratorsForEventSourceResponse, PluginRegistryServiceClientError> {
         self.inner
             .get_generators_for_event_source(GetGeneratorsForEventSourceRequestProto::from(request))
-            .await
-            .map(|resp| resp.into_inner().try_into().expect("proto to rs"))
-            .map_err(|status| {
-                tracing::warn!(
-                    message="Failed to get_generators_for_event_source",
-                    error=?status
-                );
-                PluginRegistryServiceClientError::Unknown
-            })
+            .await?;
+        todo!()
     }
     /// Given information about a tenant, return all analyzers for that tenant
     pub async fn get_analyzers_for_tenant(
@@ -153,8 +124,7 @@ where
     ) -> Result<GetAnalyzersForTenantResponse, PluginRegistryServiceClientError> {
         self.inner
             .get_analyzers_for_tenant(GetAnalyzersForTenantRequestProto::from(request))
-            .await
-            .expect("todo");
+            .await?;
         todo!()
     }
 }
