@@ -24,6 +24,9 @@ message Plugin {
 
   // The type of the plugin
   PluginType plugin_type = 3;
+
+  // The executable binary for this plugin
+  bytes plugin_binary = 4;
 }
 
 // A request to create a plugin entry

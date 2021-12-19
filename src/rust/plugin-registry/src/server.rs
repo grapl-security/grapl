@@ -137,10 +137,10 @@ impl PluginRegistry {
 
         let stream = get_object_output.body.expect("todo");
 
-        let mut buffer = Vec::new();
+        let mut plugin_binary = Vec::new();
 
         // read the whole file
-        stream.into_async_read().read_to_end(&mut buffer).await
+        stream.into_async_read().read_to_end(&mut plugin_binary).await
             .expect("todo");
 
         let response = GetPluginResponse {
@@ -148,6 +148,7 @@ impl PluginRegistry {
                 plugin_id,
                 display_name,
                 plugin_type,
+                plugin_binary,
             }
         };
 
