@@ -1,43 +1,10 @@
 use grapl_config::env_helpers::FromEnv;
 use grapl_utils::future_ext::GraplFutureExt;
-use rusoto_s3::{
-    GetObjectRequest,
-    PutObjectRequest,
-    S3Client,
-    S3,
-};
-use rust_proto::plugin_registry::{
-    plugin_registry_service_server::{
-        PluginRegistryService,
-        PluginRegistryServiceServer,
-    },
-    CreatePluginRequest,
-    CreatePluginRequestProto,
-    CreatePluginResponse,
-    CreatePluginResponseProto,
-    DeployPluginRequest,
-    DeployPluginRequestProto,
-    DeployPluginResponse,
-    DeployPluginResponseProto,
-    GetAnalyzersForTenantRequest,
-    GetAnalyzersForTenantRequestProto,
-    GetAnalyzersForTenantResponse,
-    GetAnalyzersForTenantResponseProto,
-    GetGeneratorsForEventSourceRequest,
-    GetGeneratorsForEventSourceRequestProto,
-    GetGeneratorsForEventSourceResponse,
-    GetGeneratorsForEventSourceResponseProto,
-    GetPluginRequest,
-    GetPluginRequestProto,
-    GetPluginResponse,
-    GetPluginResponseProto,
-    Plugin,
-    PluginType,
-    TearDownPluginRequest,
-    TearDownPluginRequestProto,
-    TearDownPluginResponse,
-    TearDownPluginResponseProto,
-};
+use rusoto_s3::{GetObjectRequest, PutObjectRequest, S3Client, S3, PutObjectError, GetObjectError};
+use rust_proto::plugin_registry::{plugin_registry_service_server::{
+    PluginRegistryService,
+    PluginRegistryServiceServer,
+}, CreatePluginRequest, CreatePluginRequestProto, CreatePluginResponse, CreatePluginResponseProto, DeployPluginRequest, DeployPluginRequestProto, DeployPluginResponse, DeployPluginResponseProto, GetAnalyzersForTenantRequest, GetAnalyzersForTenantRequestProto, GetAnalyzersForTenantResponse, GetAnalyzersForTenantResponseProto, GetGeneratorsForEventSourceRequest, GetGeneratorsForEventSourceRequestProto, GetGeneratorsForEventSourceResponse, GetGeneratorsForEventSourceResponseProto, GetPluginRequest, GetPluginRequestProto, GetPluginResponse, GetPluginResponseProto, Plugin, PluginType, TearDownPluginRequest, TearDownPluginRequestProto, TearDownPluginResponse, TearDownPluginResponseProto, PluginRegistryDeserializationError};
 use tonic::{
     transport::Server,
     Request,
@@ -58,11 +25,46 @@ use tokio::io::AsyncReadExt;
 use crate::PluginRegistryServiceConfig;
 
 #[derive(Debug, thiserror::Error)]
-pub enum PluginRegistryServiceError {}
+pub enum PluginRegistryServiceError {
+    #[error("SqlxError")]
+    SqlxError(#[from] sqlx::Error),
+    #[error("S3PutObjectError")]
+    PutObjectError(#[from] rusoto_core::RusotoError<PutObjectError>),
+    #[error("S3GetObjectError")]
+    GetObjectError(#[from] rusoto_core::RusotoError<GetObjectError>),
+    #[error("EmptyObject")]
+    EmptyObject,
+    #[error("IoError")]
+    IoError(#[from] std::io::Error),
+    #[error("PluginRegistryDeserializationError")]
+    PluginRegistryDeserializationError(#[from] PluginRegistryDeserializationError)
+}
 
 impl From<PluginRegistryServiceError> for Status {
     fn from(err: PluginRegistryServiceError) -> Self {
-        match err {}
+        match err {
+            PluginRegistryServiceError::SqlxError(sqlx::Error::Configuration(_)) => {
+                Status::internal("Invalid SQL configuration")
+            }
+            PluginRegistryServiceError::SqlxError(_) => {
+                Status::internal("Failed to operate on postgres")
+            }
+            PluginRegistryServiceError::PutObjectError(_) => {
+                Status::internal("Failed to put s3 object")
+            }
+            PluginRegistryServiceError::GetObjectError(_) => {
+                Status::internal("Failed to get s3 object")
+            }
+            PluginRegistryServiceError::EmptyObject => {
+                Status::internal("S3 Object was unexpectedly empty")
+            }
+            PluginRegistryServiceError::IoError(_) => {
+                Status::internal("IoError")
+            }
+            PluginRegistryServiceError::PluginRegistryDeserializationError(_) => {
+                Status::invalid_argument("Unable to deserialize message")
+            }
+        }
     }
 }
 
@@ -92,10 +94,8 @@ impl PluginRegistry {
                 metadata: None,
                 ..Default::default()
             })
-            .await
-            .expect("Failed to put_object");
+            .await?;
 
-        dbg!(&plugin_id);
         sqlx::query(
             r"
             INSERT INTO plugins (
@@ -115,8 +115,7 @@ impl PluginRegistry {
         .bind(request.tenant_id)
         .bind(s3_key)
         .execute(&self.pool)
-        .await
-        .expect("todo: insert failed");
+        .await?;
 
         let response = CreatePluginResponse { plugin_id };
         Ok(response)
@@ -140,8 +139,7 @@ impl PluginRegistry {
         )
         .bind(request.plugin_id)
         .fetch_one(&self.pool)
-        .await
-        .expect("todo");
+        .await?;
 
         let GetPluginRow {
             plugin_id,
@@ -150,7 +148,7 @@ impl PluginRegistry {
             artifact_s3_key,
         } = row;
         let s3_key: String = artifact_s3_key;
-        let plugin_type: PluginType = PluginType::try_from(plugin_type).expect("todo");
+        let plugin_type: PluginType = PluginType::try_from(plugin_type)?;
 
         let get_object_output = self
             .s3
@@ -160,10 +158,11 @@ impl PluginRegistry {
                 expected_bucket_owner: Some(self.plugin_bucket_owner_id.clone()),
                 ..Default::default()
             })
-            .await
-            .expect("Failed to put_object");
+            .await?;
 
-        let stream = get_object_output.body.expect("todo");
+        let stream = get_object_output.body.ok_or(
+            PluginRegistryServiceError::EmptyObject,
+        )?;
 
         let mut plugin_binary = Vec::new();
 
@@ -171,8 +170,7 @@ impl PluginRegistry {
         stream
             .into_async_read()
             .read_to_end(&mut plugin_binary)
-            .await
-            .expect("todo");
+            .await?;
 
         let response = GetPluginResponse {
             plugin: Plugin {
@@ -226,9 +224,10 @@ impl PluginRegistryService for PluginRegistry {
         request: Request<CreatePluginRequestProto>,
     ) -> Result<Response<CreatePluginResponseProto>, Status> {
         let request: CreatePluginRequestProto = request.into_inner();
-        let request: CreatePluginRequest = CreatePluginRequest::try_from(request).expect("todo");
+        let request: CreatePluginRequest = CreatePluginRequest::try_from(request)
+            .map_err(PluginRegistryServiceError::from)?;
 
-        let response = self.create_plugin(request).await.expect("todo");
+        let response = self.create_plugin(request).await?;
         let response: CreatePluginResponseProto = response.into();
         Ok(Response::new(response))
     }
@@ -238,9 +237,10 @@ impl PluginRegistryService for PluginRegistry {
         request: Request<GetPluginRequestProto>,
     ) -> Result<Response<GetPluginResponseProto>, Status> {
         let request: GetPluginRequestProto = request.into_inner();
-        let request = GetPluginRequest::try_from(request).expect("todo");
+        let request = GetPluginRequest::try_from(request)
+            .map_err(PluginRegistryServiceError::from)?;
 
-        let response = self.get_plugin(request).await.expect("todo");
+        let response = self.get_plugin(request).await?;
         let response: GetPluginResponseProto = response.into();
         Ok(Response::new(response))
     }
@@ -265,27 +265,10 @@ impl PluginRegistryService for PluginRegistry {
         request: Request<GetGeneratorsForEventSourceRequestProto>,
     ) -> Result<Response<GetGeneratorsForEventSourceResponseProto>, Status> {
         let request = request.into_inner();
-        let request =
-            GetGeneratorsForEventSourceRequest::try_from(request).expect("Invalid message");
-
-        match self.get_generators_for_event_source(request).await {
-            Ok(response) => {
-                tracing::debug!(
-                    message="Successfully retrieved generators for event source",
-                    plugin_ids=?response.plugin_ids,
-                );
-                Ok(Response::new(
-                    GetGeneratorsForEventSourceResponseProto::from(response),
-                ))
-            }
-            Err(e) => {
-                tracing::warn!(
-                    message="Failed to get get_generators_for_event_source",
-                    error=?e,
-                );
-                Err(Status::from(e))
-            }
-        }
+        let _request =
+            GetGeneratorsForEventSourceRequest::try_from(request)
+                .map_err(PluginRegistryServiceError::from)?;
+        todo!()
     }
 
     async fn get_analyzers_for_tenant(

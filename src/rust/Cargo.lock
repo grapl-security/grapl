@@ -3031,6 +3031,7 @@ dependencies = [
  "futures",
  "grapl-config",
  "grapl-utils",
+ "rusoto_core",
  "rusoto_s3",
  "rust-proto",
  "sqlx",
