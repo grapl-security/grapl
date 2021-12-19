@@ -29,8 +29,7 @@ use tonic::{
     transport::Endpoint,
 };
 
-const HOST_ENV_VAR: &'static str = "GRAPL_PLUGIN_REGISTRY_HOST";
-const PORT_ENV_VAR: &'static str = "GRAPL_PLUGIN_REGISTRY_PORT";
+const ADDRESS_ENV_VAR: &'static str = "GRAPL_PLUGIN_REGISTRY_ADDRESS";
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginRegistryServiceClientError {
@@ -46,23 +45,19 @@ impl PluginRegistryServiceClient<tonic::transport::Channel> {
     /// Create a client from environment
     #[tracing::instrument(err)]
     pub async fn from_env() -> Result<Self, Box<dyn std::error::Error>> {
-        let host = std::env::var(HOST_ENV_VAR).expect(HOST_ENV_VAR);
-        let port = std::env::var(PORT_ENV_VAR).expect(PORT_ENV_VAR);
-        Self::from_endpoint(host, port).await
+        let address = std::env::var(ADDRESS_ENV_VAR).expect(ADDRESS_ENV_VAR);
+        Self::from_endpoint(address).await
     }
 
     /// Create a client from a specific endpoint
     #[tracing::instrument(err)]
     pub async fn from_endpoint(
-        host: String,
-        port: String,
+        address: String,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        let endpoint_str = format!("http://{}:{}", host, port);
-
         tracing::debug!(message = "Connecting to endpoint");
 
         // TODO: It might make sense to make these values configurable.
-        let endpoint = Endpoint::from_shared(endpoint_str)?
+        let endpoint = Endpoint::from_shared(address)?
             .timeout(Duration::from_secs(5))
             .concurrency_limit(30);
         let channel = endpoint.connect().await?;
