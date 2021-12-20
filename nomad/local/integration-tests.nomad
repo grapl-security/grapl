@@ -176,7 +176,7 @@ job "integration-tests" {
 
       # Because Cargo does some... compiling... for some reason.... maybe.....
       resources {
-        memory = 6000
+        memory = 6500
       }
     }
   }

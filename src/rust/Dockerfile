@@ -79,7 +79,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 # Hadolint appears to be confused about some of these mount targets
 # hadolint ignore=SC1091
 RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
-    --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo \
     --mount=type=secret,id=rust_env,dst=/grapl/env \
     if [ -f /grapl/env ]; then source /grapl/env; fi && \
     case "${RUST_BUILD}" in \
