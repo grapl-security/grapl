@@ -266,6 +266,10 @@ def main() -> None:
                 "schema_table_name",
                 "test_user_name",
                 "user_auth_table",
+                "plugin_registry_db_hostname",
+                "plugin_registry_db_port",
+                "plugin_registry_db_username",
+                "plugin_registry_db_password",
             },
         )
 
