@@ -41,15 +41,15 @@ variable "ZOOKEEPER_PORT" {
 }
 
 variable "PLUGIN_REGISTRY_DB_USERNAME" {
-  type = string
+  type        = string
   description = "The username for the plugin registry db"
-  default = "postgres"
+  default     = "postgres"
 }
 
 variable "PLUGIN_REGISTRY_DB_PASSWORD" {
-  type = string
+  type        = string
   description = "The password fort he plugin registry db"
-  default = "postgres"
+  default     = "postgres"
 }
 
 locals {

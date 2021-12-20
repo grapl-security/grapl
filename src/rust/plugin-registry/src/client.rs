@@ -1,6 +1,27 @@
 use std::time::Duration;
 
-use rust_proto::plugin_registry::{plugin_registry_service_client::PluginRegistryServiceClient as _PluginRegistryServiceClient, CreatePluginRequest, CreatePluginRequestProto, CreatePluginResponse, DeployPluginRequest, DeployPluginRequestProto, DeployPluginResponse, GetAnalyzersForTenantRequest, GetAnalyzersForTenantRequestProto, GetAnalyzersForTenantResponse, GetGeneratorsForEventSourceRequest, GetGeneratorsForEventSourceResponse, GetPluginRequest, GetPluginRequestProto, GetPluginResponse, TearDownPluginRequest, TearDownPluginRequestProto, TearDownPluginResponse, PluginRegistryDeserializationError, GetGeneratorsForEventSourceRequestProto};
+use rust_proto::plugin_registry::{
+    plugin_registry_service_client::PluginRegistryServiceClient as _PluginRegistryServiceClient,
+    CreatePluginRequest,
+    CreatePluginRequestProto,
+    CreatePluginResponse,
+    DeployPluginRequest,
+    DeployPluginRequestProto,
+    DeployPluginResponse,
+    GetAnalyzersForTenantRequest,
+    GetAnalyzersForTenantRequestProto,
+    GetAnalyzersForTenantResponse,
+    GetGeneratorsForEventSourceRequest,
+    GetGeneratorsForEventSourceRequestProto,
+    GetGeneratorsForEventSourceResponse,
+    GetPluginRequest,
+    GetPluginRequestProto,
+    GetPluginResponse,
+    PluginRegistryDeserializationError,
+    TearDownPluginRequest,
+    TearDownPluginRequestProto,
+    TearDownPluginResponse,
+};
 use tonic::{
     codegen::{
         Body,
@@ -16,7 +37,7 @@ pub enum PluginRegistryServiceClientError {
     #[error("ErrorStatus")]
     ErrorStatus(#[from] tonic::Status),
     #[error("PluginRegistryDeserializationError")]
-    PluginRegistryDeserializationError(#[from] PluginRegistryDeserializationError)
+    PluginRegistryDeserializationError(#[from] PluginRegistryDeserializationError),
 }
 
 pub struct PluginRegistryServiceClient<T> {
@@ -33,9 +54,7 @@ impl PluginRegistryServiceClient<tonic::transport::Channel> {
 
     /// Create a client from a specific endpoint
     #[tracing::instrument(err)]
-    pub async fn from_endpoint(
-        address: String,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
+    pub async fn from_endpoint(address: String) -> Result<Self, Box<dyn std::error::Error>> {
         tracing::debug!(message = "Connecting to endpoint");
 
         // TODO: It might make sense to make these values configurable.

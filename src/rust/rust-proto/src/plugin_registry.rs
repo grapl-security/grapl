@@ -75,9 +75,11 @@ impl TryFrom<PluginTypeProto> for PluginType {
 
     fn try_from(value: PluginTypeProto) -> Result<Self, Self::Error> {
         match value {
-            PluginTypeProto::Unspecified => Err(PluginRegistryDeserializationError::UnknownVariant(
-                std::borrow::Cow::Borrowed("PluginType"),
-            )),
+            PluginTypeProto::Unspecified => {
+                Err(PluginRegistryDeserializationError::UnknownVariant(
+                    std::borrow::Cow::Borrowed("PluginType"),
+                ))
+            }
             PluginTypeProto::Generator => Ok(PluginType::Generator),
             PluginTypeProto::Analyzer => Ok(PluginType::Analyzer),
         }

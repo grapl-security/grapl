@@ -1,10 +1,46 @@
 use grapl_config::env_helpers::FromEnv;
 use grapl_utils::future_ext::GraplFutureExt;
-use rusoto_s3::{GetObjectRequest, PutObjectRequest, S3Client, S3, PutObjectError, GetObjectError};
-use rust_proto::plugin_registry::{plugin_registry_service_server::{
-    PluginRegistryService,
-    PluginRegistryServiceServer,
-}, CreatePluginRequest, CreatePluginRequestProto, CreatePluginResponse, CreatePluginResponseProto, DeployPluginRequest, DeployPluginRequestProto, DeployPluginResponse, DeployPluginResponseProto, GetAnalyzersForTenantRequest, GetAnalyzersForTenantRequestProto, GetAnalyzersForTenantResponse, GetAnalyzersForTenantResponseProto, GetGeneratorsForEventSourceRequest, GetGeneratorsForEventSourceRequestProto, GetGeneratorsForEventSourceResponse, GetGeneratorsForEventSourceResponseProto, GetPluginRequest, GetPluginRequestProto, GetPluginResponse, GetPluginResponseProto, Plugin, PluginType, TearDownPluginRequest, TearDownPluginRequestProto, TearDownPluginResponse, TearDownPluginResponseProto, PluginRegistryDeserializationError};
+use rusoto_s3::{
+    GetObjectError,
+    GetObjectRequest,
+    PutObjectError,
+    PutObjectRequest,
+    S3Client,
+    S3,
+};
+use rust_proto::plugin_registry::{
+    plugin_registry_service_server::{
+        PluginRegistryService,
+        PluginRegistryServiceServer,
+    },
+    CreatePluginRequest,
+    CreatePluginRequestProto,
+    CreatePluginResponse,
+    CreatePluginResponseProto,
+    DeployPluginRequest,
+    DeployPluginRequestProto,
+    DeployPluginResponse,
+    DeployPluginResponseProto,
+    GetAnalyzersForTenantRequest,
+    GetAnalyzersForTenantRequestProto,
+    GetAnalyzersForTenantResponse,
+    GetAnalyzersForTenantResponseProto,
+    GetGeneratorsForEventSourceRequest,
+    GetGeneratorsForEventSourceRequestProto,
+    GetGeneratorsForEventSourceResponse,
+    GetGeneratorsForEventSourceResponseProto,
+    GetPluginRequest,
+    GetPluginRequestProto,
+    GetPluginResponse,
+    GetPluginResponseProto,
+    Plugin,
+    PluginRegistryDeserializationError,
+    PluginType,
+    TearDownPluginRequest,
+    TearDownPluginRequestProto,
+    TearDownPluginResponse,
+    TearDownPluginResponseProto,
+};
 use tonic::{
     transport::Server,
     Request,
@@ -37,7 +73,7 @@ pub enum PluginRegistryServiceError {
     #[error("IoError")]
     IoError(#[from] std::io::Error),
     #[error("PluginRegistryDeserializationError")]
-    PluginRegistryDeserializationError(#[from] PluginRegistryDeserializationError)
+    PluginRegistryDeserializationError(#[from] PluginRegistryDeserializationError),
 }
 
 impl From<PluginRegistryServiceError> for Status {
@@ -58,9 +94,7 @@ impl From<PluginRegistryServiceError> for Status {
             PluginRegistryServiceError::EmptyObject => {
                 Status::internal("S3 Object was unexpectedly empty")
             }
-            PluginRegistryServiceError::IoError(_) => {
-                Status::internal("IoError")
-            }
+            PluginRegistryServiceError::IoError(_) => Status::internal("IoError"),
             PluginRegistryServiceError::PluginRegistryDeserializationError(_) => {
                 Status::invalid_argument("Unable to deserialize message")
             }
@@ -159,9 +193,9 @@ impl PluginRegistry {
             })
             .await?;
 
-        let stream = get_object_output.body.ok_or(
-            PluginRegistryServiceError::EmptyObject,
-        )?;
+        let stream = get_object_output
+            .body
+            .ok_or(PluginRegistryServiceError::EmptyObject)?;
 
         let mut plugin_binary = Vec::new();
 
@@ -223,8 +257,8 @@ impl PluginRegistryService for PluginRegistry {
         request: Request<CreatePluginRequestProto>,
     ) -> Result<Response<CreatePluginResponseProto>, Status> {
         let request: CreatePluginRequestProto = request.into_inner();
-        let request: CreatePluginRequest = CreatePluginRequest::try_from(request)
-            .map_err(PluginRegistryServiceError::from)?;
+        let request: CreatePluginRequest =
+            CreatePluginRequest::try_from(request).map_err(PluginRegistryServiceError::from)?;
 
         let response = self.create_plugin(request).await?;
         let response: CreatePluginResponseProto = response.into();
@@ -236,8 +270,8 @@ impl PluginRegistryService for PluginRegistry {
         request: Request<GetPluginRequestProto>,
     ) -> Result<Response<GetPluginResponseProto>, Status> {
         let request: GetPluginRequestProto = request.into_inner();
-        let request = GetPluginRequest::try_from(request)
-            .map_err(PluginRegistryServiceError::from)?;
+        let request =
+            GetPluginRequest::try_from(request).map_err(PluginRegistryServiceError::from)?;
 
         let response = self.get_plugin(request).await?;
         let response: GetPluginResponseProto = response.into();
@@ -264,9 +298,8 @@ impl PluginRegistryService for PluginRegistry {
         request: Request<GetGeneratorsForEventSourceRequestProto>,
     ) -> Result<Response<GetGeneratorsForEventSourceResponseProto>, Status> {
         let request = request.into_inner();
-        let _request =
-            GetGeneratorsForEventSourceRequest::try_from(request)
-                .map_err(PluginRegistryServiceError::from)?;
+        let _request = GetGeneratorsForEventSourceRequest::try_from(request)
+            .map_err(PluginRegistryServiceError::from)?;
         todo!()
     }
 
