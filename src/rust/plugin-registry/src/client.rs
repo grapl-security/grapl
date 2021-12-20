@@ -17,11 +17,11 @@ use rust_proto::plugin_registry::{
     GetPluginRequest,
     GetPluginRequestProto,
     GetPluginResponse,
+    PluginRegistryDeserializationError,
     TearDownPluginRequest,
     TearDownPluginRequestProto,
     TearDownPluginResponse,
 };
-pub use tonic::transport::Channel;
 use tonic::{
     codegen::{
         Body,
@@ -30,33 +30,35 @@ use tonic::{
     transport::Endpoint,
 };
 
-use crate::server::PluginRegistryServiceError;
+const ADDRESS_ENV_VAR: &'static str = "GRAPL_PLUGIN_REGISTRY_ADDRESS";
 
 #[derive(Debug, thiserror::Error)]
-pub enum PluginRegistryServiceClientError {}
+pub enum PluginRegistryServiceClientError {
+    #[error("ErrorStatus")]
+    ErrorStatus(#[from] tonic::Status),
+    #[error("PluginRegistryDeserializationError")]
+    PluginRegistryDeserializationError(#[from] PluginRegistryDeserializationError),
+}
 
 pub struct PluginRegistryServiceClient<T> {
     inner: _PluginRegistryServiceClient<T>,
 }
 
-const HOST_ENV_VAR: &'static str = "GRAPL_PLUGIN_REGISTRY_HOST";
-const PORT_ENV_VAR: &'static str = "GRAPL_PLUGIN_REGISTRY_PORT";
-
-impl PluginRegistryServiceClient<Channel> {
+impl PluginRegistryServiceClient<tonic::transport::Channel> {
+    /// Create a client from environment
+    #[tracing::instrument(err)]
     pub async fn from_env() -> Result<Self, Box<dyn std::error::Error>> {
-        let host = std::env::var(HOST_ENV_VAR).expect(HOST_ENV_VAR);
-        let port = std::env::var(PORT_ENV_VAR).expect(PORT_ENV_VAR);
-        Self::from_endpoint(host, port).await
+        let address = std::env::var(ADDRESS_ENV_VAR).expect(ADDRESS_ENV_VAR);
+        Self::from_endpoint(address).await
     }
 
-    pub async fn from_endpoint(
-        host: String,
-        port: String,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
-        let endpoint_str = format!("http://{}:{}", host, port);
+    /// Create a client from a specific endpoint
+    #[tracing::instrument(err)]
+    pub async fn from_endpoint(address: String) -> Result<Self, Box<dyn std::error::Error>> {
+        tracing::debug!(message = "Connecting to endpoint");
 
         // TODO: It might make sense to make these values configurable.
-        let endpoint = Endpoint::from_shared(endpoint_str)?
+        let endpoint = Endpoint::from_shared(address)?
             .timeout(Duration::from_secs(5))
             .concurrency_limit(30);
         let channel = endpoint.connect().await?;
@@ -81,66 +83,67 @@ where
     pub async fn create_plugin(
         &mut self,
         request: CreatePluginRequest,
-    ) -> Result<CreatePluginResponse, PluginRegistryServiceError> {
-        self.inner
+    ) -> Result<CreatePluginResponse, PluginRegistryServiceClientError> {
+        let response = self
+            .inner
             .create_plugin(CreatePluginRequestProto::from(request))
-            .await
-            .expect("todo");
-        todo!()
+            .await?;
+        let response = response.into_inner();
+        let response = CreatePluginResponse::try_from(response)?;
+        Ok(response)
     }
     /// retrieve the plugin corresponding to the given plugin_id
     pub async fn get_plugin(
         &mut self,
         request: GetPluginRequest,
-    ) -> Result<GetPluginResponse, PluginRegistryServiceError> {
-        self.inner
+    ) -> Result<GetPluginResponse, PluginRegistryServiceClientError> {
+        let response = self
+            .inner
             .get_plugin(GetPluginRequestProto::from(request))
-            .await
-            .expect("todo");
-        todo!()
+            .await?;
+        let response = response.into_inner();
+        let response = GetPluginResponse::try_from(response)?;
+        Ok(response)
     }
     /// turn on a particular plugin's code
     pub async fn deploy_plugin(
         &mut self,
         request: DeployPluginRequest,
-    ) -> Result<DeployPluginResponse, PluginRegistryServiceError> {
+    ) -> Result<DeployPluginResponse, PluginRegistryServiceClientError> {
         self.inner
             .deploy_plugin(DeployPluginRequestProto::from(request))
-            .await
-            .expect("todo");
+            .await?;
         todo!()
     }
     /// turn off a particular plugin's code
     pub async fn tear_down_plugin(
         &mut self,
         request: TearDownPluginRequest,
-    ) -> Result<TearDownPluginResponse, PluginRegistryServiceError> {
+    ) -> Result<TearDownPluginResponse, PluginRegistryServiceClientError> {
         self.inner
             .tear_down_plugin(TearDownPluginRequestProto::from(request))
-            .await
-            .expect("todo");
+            .await?;
         todo!()
     }
     /// Given information about an event source, return all generators that handle that event source
+    #[tracing::instrument(skip(self, request), err)]
     pub async fn get_generators_for_event_source(
         &mut self,
         request: GetGeneratorsForEventSourceRequest,
-    ) -> Result<GetGeneratorsForEventSourceResponse, PluginRegistryServiceError> {
+    ) -> Result<GetGeneratorsForEventSourceResponse, PluginRegistryServiceClientError> {
         self.inner
             .get_generators_for_event_source(GetGeneratorsForEventSourceRequestProto::from(request))
-            .await
-            .map(|resp| resp.into_inner().try_into().expect("proto to rs"))
-            .map_err(|_status| PluginRegistryServiceError::TodoImplementThisEnumError())
+            .await?;
+        todo!()
     }
     /// Given information about a tenant, return all analyzers for that tenant
     pub async fn get_analyzers_for_tenant(
         &mut self,
         request: GetAnalyzersForTenantRequest,
-    ) -> Result<GetAnalyzersForTenantResponse, PluginRegistryServiceError> {
+    ) -> Result<GetAnalyzersForTenantResponse, PluginRegistryServiceClientError> {
         self.inner
             .get_analyzers_for_tenant(GetAnalyzersForTenantRequestProto::from(request))
-            .await
-            .expect("todo");
+            .await?;
         todo!()
     }
 }
