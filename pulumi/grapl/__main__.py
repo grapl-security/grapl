@@ -17,6 +17,7 @@ from infra.api_gateway import ApiGateway
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
+from infra.config import AWS_ACCOUNT_ID
 from infra.consul_intentions import ConsulIntentions
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
@@ -24,6 +25,7 @@ from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
 from infra.kafka import Kafka
+from infra.local.postgres import PostgresInstance
 from infra.network import Network
 from infra.nomad_job import NomadJob, NomadVars
 from infra.quiet_docker_build_output import quiet_docker_output
@@ -72,7 +74,6 @@ def _container_images(
 
 
 def main() -> None:
-
     if not (config.LOCAL_GRAPL or config.REAL_DEPLOYMENT):
         # Fargate services build their own images and need this
         # variable currently. We don't want this to be checked in
@@ -89,10 +90,6 @@ def main() -> None:
 
     pulumi.export("deployment-name", config.DEPLOYMENT_NAME)
     pulumi.export("test-user-name", config.GRAPL_TEST_USER_NAME)
-
-    # We only set up networking in local since this is handled in a closed project for AWS for our commercial offering
-    if config.LOCAL_GRAPL:
-        network = Network("grapl-network")
 
     # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
     # web UI.
@@ -152,6 +149,9 @@ def main() -> None:
     model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)
     pulumi.export("model-plugins-bucket", model_plugins_bucket.bucket)
 
+    plugins_bucket = Bucket("plugins-bucket", sse=True)
+    pulumi.export("plugins-bucket", plugins_bucket.bucket)
+
     plugin_buckets = [
         analyzers_bucket,
         model_plugins_bucket,
@@ -187,6 +187,8 @@ def main() -> None:
         unid_subgraphs_generated_bucket=unid_subgraphs_generated_emitter.bucket_name,
         user_auth_table=dynamodb_tables.user_auth_table.name,
         user_session_table=dynamodb_tables.user_session_table.name,
+        plugin_s3_bucket_aws_account_id=AWS_ACCOUNT_ID,
+        plugin_s3_bucket_name=plugins_bucket.bucket,
     )
 
     if config.LOCAL_GRAPL:
@@ -194,6 +196,11 @@ def main() -> None:
         # Local Grapl
         ###################################
         kafka = Kafka("kafka")
+
+        network = Network("grapl-network")
+        plugin_registry_db = PostgresInstance(
+            name="plugin-registry-db",
+        )
 
         # These are created in `grapl-local-infra.nomad` and not applicable to prod.
         # Nomad will replace the LOCAL_GRAPL_REPLACE_IP sentinel value with the correct IP.
@@ -217,6 +224,10 @@ def main() -> None:
             container_images=_container_images({}),
             # TODO: consider replacing rust_log= with the previous per-service `configurable_envvars`
             rust_log="DEBUG",
+            plugin_registry_db_hostname="LOCAL_GRAPL_REPLACE_IP",
+            plugin_registry_db_port=str(plugin_registry_db.port),
+            plugin_registry_db_username=plugin_registry_db.username,
+            plugin_registry_db_password=plugin_registry_db.password,
             **nomad_inputs,
         )
 
@@ -343,6 +354,11 @@ def main() -> None:
             # TODO: consider replacing rust_log= with the previous per-service `configurable_envvars`
             rust_log="DEBUG",
             container_images=_container_images(artifacts, require_artifact=True),
+            # TODO When we get RDS set up replace these values
+            plugin_registry_db_hostname="TODO",
+            plugin_registry_db_port=str(5432),
+            plugin_registry_db_username="postgres",
+            plugin_registry_db_password="postgres",
             **nomad_inputs,
         )
 

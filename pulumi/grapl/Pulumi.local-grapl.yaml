@@ -35,3 +35,7 @@ config:
   kafka:tlsEnabled: "false"
   # Host OS's Nomad instance
   nomad:address: http://host.docker.internal:4646
+  postgresql:host: host.docker.internal
+  postgresql:sslmode: "disable"
+  postgresql:password: "postgres"
+  postgresql:username: "postgres"

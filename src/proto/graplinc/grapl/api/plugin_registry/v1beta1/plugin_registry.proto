@@ -4,23 +4,29 @@ package graplinc.grapl.api.plugin_registry.v1beta1;
 
 import "graplinc/common/v1beta1/types.proto";
 
+// Represents plugin types
+enum PluginType {
+  // An unknown plugin type
+  PLUGIN_TYPE_UNSPECIFIED = 0;
+  // Represents a generator plugin
+  PLUGIN_TYPE_GENERATOR = 1;
+  // Represents an analyzer plugin
+  PLUGIN_TYPE_ANALYZER = 2;
+}
+
 // A basic representation of a plugin
 message Plugin {
   // unique identifier for this plugin
   graplinc.common.v1beta1.Uuid plugin_id = 1;
 
-  // Represents plugin types
-  enum PluginType {
-    // An unknown plugin type
-    PLUGIN_TYPE_UNSPECIFIED = 0;
-    // Represents a generator plugin
-    PLUGIN_TYPE_GENERATOR = 1;
-    // Represents an analyzer plugin
-    PLUGIN_TYPE_ANALYZER = 2;
-  }
+  // The string value to display to a user, non-empty
+  string display_name = 2;
 
   // The type of the plugin
-  PluginType plugin_type = 2;
+  PluginType plugin_type = 3;
+
+  // The executable binary for this plugin
+  bytes plugin_binary = 4;
 }
 
 // A request to create a plugin entry
@@ -33,6 +39,9 @@ message CreatePluginRequest {
 
   // The string value to display to a user, non-empty
   string display_name = 3;
+ 
+  // The type of the plugin
+  PluginType plugin_type = 4;
 }
 
 // A Response to a plugin entry being created
@@ -45,6 +54,8 @@ message CreatePluginResponse {
 message GetPluginRequest {
   // The identity of the plugin
   graplinc.common.v1beta1.Uuid plugin_id = 1;
+  // The tenant for which the plugin belongs to
+  graplinc.common.v1beta1.Uuid tenant_id = 2;
 }
 
 // A response containing the request plugin
