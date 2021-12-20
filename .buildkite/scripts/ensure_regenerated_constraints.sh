@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail 
+set -euo pipefail
 ################################################################################
 # Ensure that, if `requirements.txt` has changed, `constraints.txt` has
 # changed as well.
