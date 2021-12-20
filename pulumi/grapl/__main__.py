@@ -354,6 +354,11 @@ def main() -> None:
             # TODO: consider replacing rust_log= with the previous per-service `configurable_envvars`
             rust_log="DEBUG",
             container_images=_container_images(artifacts, require_artifact=True),
+            # TODO When we get RDS set up replace these values
+            plugin_registry_db_hostname="TODO",
+            plugin_registry_db_port=str(5432),
+            plugin_registry_db_username="postgres",
+            plugin_registry_db_password="postgres",
             **nomad_inputs,
         )
 
