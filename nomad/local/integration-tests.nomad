@@ -171,8 +171,7 @@ job "integration-tests" {
         GRAPL_MODEL_PLUGIN_DEPLOYER_HOST = "0.0.0.0"
         GRAPL_MODEL_PLUGIN_DEPLOYER_PORT = "${NOMAD_UPSTREAM_PORT_model-plugin-deployer}"
 
-        GRAPL_PLUGIN_REGISTRY_HOST = "0.0.0.0"
-        GRAPL_PLUGIN_REGISTRY_PORT = "${NOMAD_UPSTREAM_PORT_plugin-registry}"
+        GRAPL_PLUGIN_REGISTRY_ADDRESS = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-registry}"
       }
 
       # Because Cargo does some... compiling... for some reason.... maybe.....
