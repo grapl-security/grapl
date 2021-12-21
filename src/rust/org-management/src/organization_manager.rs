@@ -153,3 +153,21 @@ impl OrganizationManager for OrganizationManagerRpc {
     //
     // }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn first_test() -> Result<(), Box<dyn std::error::Error>> {
+        // Given a table that does not have a specific organization,
+        let org_mgr = OrganizationManagerRpc();
+        // When we create an organization
+        println!("org_mg val", org_mgr);
+
+        // Then we expect to have a user that will be an administrator
+
+        Ok(())
+    }
+
+}

@@ -25,6 +25,7 @@ echo ""
 sleep 5
 
 export DATABASE_URL=postgres://${USER}:${POSTGRES_PASSWORD}@localhost/${DBNAME}
+export ORG_MANAGEMENT_PORT=5432
 
 echo "Creating PostGresDB"
 sqlx database create

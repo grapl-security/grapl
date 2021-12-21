@@ -6,6 +6,7 @@ DBNAME=org-management
 USER=postgres
 export POSTGRES_PASSWORD=foobarmonkeys
 CONTAINER_NAME=postgres-org-management-compile
+export ORG_MANAGEMENT_PORT=5432
 
 
 echo "Creating docker container:"
@@ -32,4 +33,5 @@ sqlx migrate run
 
 echo "Saving metadata to sqlx.json for offline mode"
 cargo sqlx prepare -- --bin=server
+
 
