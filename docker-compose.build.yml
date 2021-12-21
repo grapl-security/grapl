@@ -154,6 +154,12 @@ services:
       context: localstack
       dockerfile: Dockerfile
 
+  postgres:
+    image: postgres-ext:${TAG:-latest}
+    build:
+      context: postgres
+      dockerfile: Dockerfile
+
   provisioner:
     image: provisioner:${TAG:-latest}
     build:
