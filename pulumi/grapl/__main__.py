@@ -62,6 +62,7 @@ def _container_images(
         "node-identifier-retry": builder.build_with_tag("node-identifier-retry"),
         "osquery-generator": builder.build_with_tag("osquery-generator"),
         "plugin-registry": builder.build_with_tag("plugin-registry"),
+        "postgres-ext": builder.build_With_tag("postgres-ext"),
         "provisioner": builder.build_with_tag("provisioner"),
         "sysmon-generator": builder.build_with_tag("sysmon-generator"),
         "web-ui": builder.build_with_tag("grapl-web-ui"),

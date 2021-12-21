@@ -1,3 +1,4 @@
+use sqlx::{Pool, Postgres};
 use rust_proto::plugin_work_queue::{
     plugin_work_queue_service_server::{
         PluginWorkQueueService,
@@ -30,11 +31,28 @@ use tonic::{
     Response,
     Status,
 };
+use grapl_utils::future_ext::GraplFutureExt;
+use crate::PluginWorkQueueServiceConfig;
+use crate::psql_queue::PsqlQueue;
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginWorkQueueError {}
 
-pub struct PluginWorkQueue {}
+pub struct PluginWorkQueue {
+    pub(crate) pool: PsqlQueue,
+}
+
+impl From<PsqlQueue> for PluginWorkQueue {
+    fn from(pool: PsqlQueue) -> Self {
+        Self { pool }
+    }
+}
+
+impl From<Pool<Postgres>> for PluginWorkQueue {
+    fn from(pool: Pool<Postgres>) -> Self {
+        Self { pool: PsqlQueue::new(pool) }
+    }
+}
 
 impl PluginWorkQueue {
     #[allow(dead_code)]
@@ -42,6 +60,10 @@ impl PluginWorkQueue {
         &self,
         _request: PutExecuteGeneratorRequest,
     ) -> Result<PutExecuteGeneratorResponse, PluginWorkQueueError> {
+        // sqlx::query!(
+        //     "SELECT execution_key from plugin_executions LIMIT 1;"
+        // )
+        //     .fetch_one(&self.pool);
         todo!()
     }
 
@@ -116,19 +138,33 @@ impl PluginWorkQueueService for PluginWorkQueue {
     }
 }
 
-pub async fn exec_service() -> Result<(), Box<dyn std::error::Error>> {
+pub async fn exec_service(
+    service_config: PluginWorkQueueServiceConfig,
+) -> Result<(), Box<dyn std::error::Error>> {
     let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
     health_reporter
         .set_serving::<PluginWorkQueueServiceServer<PluginWorkQueue>>()
         .await;
 
-    let addr = "[::1]:50051".parse().unwrap();
-    let plugin_work_queue = PluginWorkQueue {};
-
     tracing::info!(
-        message="HealthServer + PluginWorkQueue listening",
-        addr=?addr,
+        message="Connecting to plugin registry table",
+        service_config=?service_config,
     );
+    let postgres_address = format!(
+        "postgresql://{}:{}@{}:{}",
+        service_config.plugin_work_queue_db_username,
+        service_config.plugin_work_queue_db_password,
+        service_config.plugin_work_queue_db_hostname,
+        service_config.plugin_work_queue_db_port,
+    );
+
+    let plugin_work_queue: PluginWorkQueue = PluginWorkQueue::from(
+        sqlx::PgPool::connect(&postgres_address)
+            .timeout(std::time::Duration::from_secs(5))
+            .await??
+    );
+
+    sqlx::migrate!().run(&plugin_work_queue.pool.pool).await?;
 
     Server::builder()
         .trace_fn(|request| {
@@ -142,8 +178,27 @@ pub async fn exec_service() -> Result<(), Box<dyn std::error::Error>> {
         })
         .add_service(health_service)
         .add_service(PluginWorkQueueServiceServer::new(plugin_work_queue))
-        .serve(addr)
+        .serve(service_config.plugin_work_queue_bind_address)
         .await?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn migrate_for_tests() -> Result<(), Box<dyn std::error::Error>> {
+        let postgres_address = "postgresql://postgres:postgres@localhost:5432";
+
+        let plugin_work_queue: PluginWorkQueue = PluginWorkQueue::from(
+            sqlx::PgPool::connect(&postgres_address)
+                .timeout(std::time::Duration::from_secs(5))
+                .await??
+        );
+
+        sqlx::migrate!().run(&plugin_work_queue.pool.pool).await?;
+        Ok(())
+    }
 }
