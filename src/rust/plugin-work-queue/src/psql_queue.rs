@@ -1,10 +1,17 @@
-use sqlx::{Pool, Postgres};
-use uuid::Uuid;
+use sqlx::{
+    Pool,
+    Postgres,
+};
 use tracing::instrument;
+use uuid::Uuid;
 
 #[derive(sqlx::Type, Debug, Clone, PartialEq, Eq)]
 #[sqlx(type_name = "status_t", rename_all = "lowercase")]
-pub enum Status { Enqueued, Failed, Processed }
+pub enum Status {
+    Enqueued,
+    Failed,
+    Processed,
+}
 
 #[derive(Copy, Clone, Debug, sqlx::Type)]
 #[sqlx(transparent)]
@@ -21,7 +28,7 @@ pub struct NextExecutionRequest {
 #[derive(thiserror::Error, Debug)]
 pub enum PsqlQueueError {
     #[error("SqlX")]
-    SqlX(#[from] sqlx::Error)
+    SqlX(#[from] sqlx::Error),
 }
 
 #[derive(Clone, Debug)]
@@ -36,9 +43,7 @@ pub struct PsqlQueue {
 
 impl PsqlQueue {
     pub fn new(pool: Pool<Postgres>) -> Self {
-        Self {
-            pool,
-        }
+        Self { pool }
     }
 
     #[instrument(skip(pipeline_message), err)]
@@ -50,7 +55,8 @@ impl PsqlQueue {
         trace_id: Uuid,
     ) -> Result<(), PsqlQueueError> {
         let now = chrono::Utc::now();
-        sqlx::query!(r"
+        sqlx::query!(
+            r"
             INSERT INTO plugin_work_queue.plugin_executions (
                 plugin_id,
                 pipeline_message,
@@ -69,8 +75,9 @@ impl PsqlQueue {
             trace_id,
             &now,
             now,
-        ).execute(&self.pool)
-            .await?;
+        )
+        .execute(&self.pool)
+        .await?;
         Ok(())
     }
 
@@ -119,7 +126,11 @@ impl PsqlQueue {
     }
 
     #[instrument(skip(output), err)]
-    pub async fn ack_success(&self, execution_key: ExecutionId, output: Vec<u8>) -> Result<(), PsqlQueueError> {
+    pub async fn ack_success(
+        &self,
+        execution_key: ExecutionId,
+        output: Vec<u8>,
+    ) -> Result<(), PsqlQueueError> {
         sqlx::query!(
             r#"
                 UPDATE plugin_work_queue.plugin_executions
@@ -135,8 +146,8 @@ impl PsqlQueue {
             execution_key.0,
             output,
         )
-            .execute(&self.pool)
-            .await?;
+        .execute(&self.pool)
+        .await?;
         Ok(())
     }
 
@@ -155,14 +166,17 @@ impl PsqlQueue {
             "#,
             execution_key.0,
         )
-            .execute(&self.pool)
-            .await?;
+        .execute(&self.pool)
+        .await?;
         Ok(())
     }
 }
 
 // Pub for testing - otherwise sqlx can't see the query
-pub async fn get_status(pool: &sqlx::Pool<Postgres>, execution_key: &ExecutionId) -> Result<Status, sqlx::Error> {
+pub async fn get_status(
+    pool: &sqlx::Pool<Postgres>,
+    execution_key: &ExecutionId,
+) -> Result<Status, sqlx::Error> {
     // The request should be marked as failed
     let row = sqlx::query!(
             r#"SELECT status as "status: Status" FROM plugin_work_queue.plugin_executions WHERE execution_key = $1"#,

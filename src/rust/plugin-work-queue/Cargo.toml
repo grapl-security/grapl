@@ -22,7 +22,6 @@ tonic = "0.6.1"
 tonic-health = "0.5.0"
 tracing = "0.1.29"
 uuid = { version = "0.8.2", features = ["v4"] }
-
 sqlx = { version = "0.5.9", features = [
   "chrono",
   "migrate",
