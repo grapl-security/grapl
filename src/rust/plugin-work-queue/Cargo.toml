@@ -37,3 +37,6 @@ futures = "0.3.17"
 [dev-dependencies]
 test-log = { version = "0.2", default-features = false, features = ["trace"] }
 tracing-subscriber = "0.3"
+
+[features]
+integration = []
