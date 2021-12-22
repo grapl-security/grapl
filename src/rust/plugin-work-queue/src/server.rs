@@ -201,7 +201,7 @@ mod tests {
         let postgres_address = "postgresql://postgres:postgres@localhost:5432";
 
         let plugin_work_queue: PluginWorkQueue = PluginWorkQueue::from(
-            sqlx::PgPool::connect(&postgres_address)
+            sqlx::PgPool::connect(postgres_address)
                 .timeout(std::time::Duration::from_secs(5))
                 .await??,
         );
