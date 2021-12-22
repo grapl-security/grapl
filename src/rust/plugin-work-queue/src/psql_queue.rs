@@ -76,6 +76,23 @@ impl PsqlQueue {
 
     #[instrument(err)]
     pub async fn get_message(&self) -> Result<Option<Message>, PsqlQueueError> {
+        // `get_message` does a few things
+        // 1. It attempts to get a message from the queue
+        //      -> Where that message isn't over a day old
+        //      -> Where that message is "visible"
+        //      -> Where that message isn't currently being evaluated by another transaction
+        //      -> Where that message is in the 'enqueued' state
+        // 2. Updates the `try_count`
+        // 3. Updates the `visible_after`
+
+        // Note that:
+        // * messages are invisible for 10 seconds
+        // * messages 'expire' after one day
+        // * messages currently do not have a maximum retry limit
+        // * The one day expiration matches our 1 day partitioning strategy
+
+        // In the future we can leverage a maximum retry limit as well as a batch version of this query
+        // A more dynamic visibility strategy would also be reasonable
         let request: Option<NextExecutionRequest> = sqlx::query_as!(
             NextExecutionRequest, r#"
             UPDATE plugin_work_queue.plugin_executions
