@@ -1,4 +1,4 @@
-use sqlx::{Pool, Postgres};
+use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::plugin_work_queue::{
     plugin_work_queue_service_server::{
         PluginWorkQueueService,
@@ -25,15 +25,21 @@ use rust_proto::plugin_work_queue::{
     PutExecuteGeneratorResponse,
     PutExecuteGeneratorResponseProto,
 };
+use sqlx::{
+    Pool,
+    Postgres,
+};
 use tonic::{
     transport::Server,
     Request,
     Response,
     Status,
 };
-use grapl_utils::future_ext::GraplFutureExt;
-use crate::PluginWorkQueueServiceConfig;
-use crate::psql_queue::PsqlQueue;
+
+use crate::{
+    psql_queue::PsqlQueue,
+    PluginWorkQueueServiceConfig,
+};
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginWorkQueueError {}
@@ -50,7 +56,9 @@ impl From<PsqlQueue> for PluginWorkQueue {
 
 impl From<Pool<Postgres>> for PluginWorkQueue {
     fn from(pool: Pool<Postgres>) -> Self {
-        Self { pool: PsqlQueue::new(pool) }
+        Self {
+            pool: PsqlQueue::new(pool),
+        }
     }
 }
 
@@ -161,7 +169,7 @@ pub async fn exec_service(
     let plugin_work_queue: PluginWorkQueue = PluginWorkQueue::from(
         sqlx::PgPool::connect(&postgres_address)
             .timeout(std::time::Duration::from_secs(5))
-            .await??
+            .await??,
     );
 
     sqlx::migrate!().run(&plugin_work_queue.pool.pool).await?;
@@ -195,7 +203,7 @@ mod tests {
         let plugin_work_queue: PluginWorkQueue = PluginWorkQueue::from(
             sqlx::PgPool::connect(&postgres_address)
                 .timeout(std::time::Duration::from_secs(5))
-                .await??
+                .await??,
         );
 
         sqlx::migrate!().run(&plugin_work_queue.pool.pool).await?;

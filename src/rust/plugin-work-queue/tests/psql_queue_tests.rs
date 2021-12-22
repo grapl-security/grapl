@@ -3,9 +3,13 @@
 #[cfg(test)]
 mod tests {
     use chrono::prelude::*;
+    use plugin_work_queue::psql_queue::{
+        get_status,
+        ExecutionId,
+        PsqlQueue,
+        Status,
+    };
     use sqlx::postgres::PgPoolOptions;
-    use plugin_work_queue::psql_queue::{ExecutionId, get_status, PsqlQueue, Status};
-
 
     #[derive(Debug)]
     pub struct ExecutionRequest {
@@ -24,31 +28,34 @@ mod tests {
     async fn test_migrate() -> Result<(), Box<dyn std::error::Error>> {
         let pool = PgPoolOptions::new()
             .max_connections(1)
-            .connect("postgresql://postgres:password@localhost:5432/postgres").await?;
+            .connect("postgresql://postgres:password@localhost:5432/postgres")
+            .await?;
         sqlx::migrate!().run(&pool).await?;
         Ok(())
     }
 
     #[test_log::test(tokio::test)]
     async fn test_get_and_success() -> Result<(), Box<dyn std::error::Error>> {
-        tracing::info!(message="test_get_and_success");
+        tracing::info!(message = "test_get_and_success");
         let pool = PgPoolOptions::new()
             .max_connections(1)
-            .connect("postgresql://postgres:password@localhost:5432/postgres").await?;
+            .connect("postgresql://postgres:password@localhost:5432/postgres")
+            .await?;
         sqlx::migrate!().run(&pool).await?;
         let queue = PsqlQueue { pool };
 
         // Ensure one message is queued
-        queue.put_message(
-            uuid::Uuid::new_v4(),
-            b"some-message".to_vec(),
-            uuid::Uuid::new_v4(),
-            uuid::Uuid::new_v4(),
-        ).await?;
+        queue
+            .put_message(
+                uuid::Uuid::new_v4(),
+                b"some-message".to_vec(),
+                uuid::Uuid::new_v4(),
+                uuid::Uuid::new_v4(),
+            )
+            .await?;
 
         // Retrieve a message
-        let msg = queue.get_message().await?
-            .expect("No valid message");
+        let msg = queue.get_message().await?.expect("No valid message");
         let execution_key = msg.request.execution_key;
         tracing::info!(message="Received message", execution_key=?msg.request.execution_key);
         // Acknowledge the message
@@ -63,24 +70,26 @@ mod tests {
 
     #[test_log::test(tokio::test)]
     async fn test_get_and_failure() -> Result<(), Box<dyn std::error::Error>> {
-        tracing::info!(message="test_get_and_failure");
+        tracing::info!(message = "test_get_and_failure");
         let pool = PgPoolOptions::new()
             .max_connections(1)
-            .connect("postgresql://postgres:password@localhost:5432/postgres").await?;
+            .connect("postgresql://postgres:password@localhost:5432/postgres")
+            .await?;
 
         let queue = PsqlQueue { pool };
 
         // Ensure one message is queued
-        queue.put_message(
-            uuid::Uuid::new_v4(),
-            b"some-message".to_vec(),
-            uuid::Uuid::new_v4(),
-            uuid::Uuid::new_v4(),
-        ).await?;
+        queue
+            .put_message(
+                uuid::Uuid::new_v4(),
+                b"some-message".to_vec(),
+                uuid::Uuid::new_v4(),
+                uuid::Uuid::new_v4(),
+            )
+            .await?;
 
         // Retrieve a message
-        let msg = queue.get_message().await?
-            .expect("No valid message");
+        let msg = queue.get_message().await?.expect("No valid message");
         let execution_key = msg.request.execution_key;
         // Acknowledge the message
         tracing::info!(message="Received message", execution_key=?msg.request.execution_key);

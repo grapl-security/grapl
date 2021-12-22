@@ -1,6 +1,8 @@
+use plugin_work_queue::{
+    server::exec_service,
+    PluginWorkQueueServiceConfig,
+};
 use structopt::StructOpt;
-use plugin_work_queue::PluginWorkQueueServiceConfig;
-use plugin_work_queue::server::exec_service;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
