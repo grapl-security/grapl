@@ -191,22 +191,3 @@ pub async fn exec_service(
 
     Ok(())
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn migrate_for_tests() -> Result<(), Box<dyn std::error::Error>> {
-        let postgres_address = "postgresql://postgres:postgres@localhost:5432";
-
-        let plugin_work_queue: PluginWorkQueue = PluginWorkQueue::from(
-            sqlx::PgPool::connect(postgres_address)
-                .timeout(std::time::Duration::from_secs(5))
-                .await??,
-        );
-
-        sqlx::migrate!().run(&plugin_work_queue.pool.pool).await?;
-        Ok(())
-    }
-}
