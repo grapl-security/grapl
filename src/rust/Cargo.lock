@@ -1398,6 +1398,9 @@ name = "either"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "encoding_rs"
@@ -2805,9 +2808,9 @@ checksum = "28988d872ab76095a6e6ac88d99b54fd267702734fd7ffe610ca27f533ddb95a"
 
 [[package]]
 name = "ordered-float"
-version = "2.9.0"
+version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8aa3d135650b150c29f0c3e385896f9d3ceb42d2d87b02f0d7a8cbd0fc7e19a6"
+checksum = "7940cf2ca942593318d07fcf2596cdca60a85c9e7fab408a5e21a4f9dcd40d87"
 dependencies = [
  "num-traits",
 ]
@@ -3011,13 +3014,20 @@ dependencies = [
 name = "plugin-work-queue"
 version = "0.1.0"
 dependencies = [
+ "chrono",
+ "futures",
  "grapl-config",
+ "grapl-utils",
  "rust-proto",
+ "sqlx",
+ "structopt",
+ "test-log",
  "thiserror",
  "tokio 1.15.0",
  "tonic",
  "tonic-health",
  "tracing",
+ "tracing-subscriber 0.3.5",
  "uuid",
 ]
 
@@ -3891,6 +3901,7 @@ version = "1.0.74"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ee2bb9cd061c5865d345bb02ca49fcef1391741b672b54a0bf7b679badec3142"
 dependencies = [
+ "indexmap",
  "itoa 1.0.1",
  "ryu",
  "serde",
@@ -4042,6 +4053,7 @@ dependencies = [
  "bitflags",
  "byteorder",
  "bytes 1.1.0",
+ "chrono",
  "crc",
  "crossbeam-channel 0.5.1",
  "crossbeam-queue 0.3.2",
@@ -4092,9 +4104,12 @@ dependencies = [
  "dotenv",
  "either",
  "heck",
+ "hex",
  "once_cell",
  "proc-macro2",
  "quote 1.0.14",
+ "serde",
+ "serde_json",
  "sha2",
  "sqlx-core",
  "sqlx-rt",

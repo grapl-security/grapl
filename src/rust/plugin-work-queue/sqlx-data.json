@@ -77,5 +77,36 @@
         false
       ]
     }
+  },
+  "c4da7afd59823a73c5ba2592d6bcd09bfd30afdf380a78d9ecbdac733bc4031f": {
+    "query": "SELECT status as \"status: Status\" FROM plugin_work_queue.plugin_executions WHERE execution_key = $1",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "status: Status",
+          "type_info": {
+            "Custom": {
+              "name": "status_t",
+              "kind": {
+                "Enum": [
+                  "enqueued",
+                  "failed",
+                  "processed"
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      },
+      "nullable": [
+        false
+      ]
+    }
   }
 }
