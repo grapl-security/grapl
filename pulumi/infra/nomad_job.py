@@ -32,8 +32,8 @@ class NomadJob(pulumi.ComponentResource):
             detach=False,
             # Purge job from Nomad servers after a `pulumi destroy`
             purge_on_destroy=True,
-            opts=pulumi.ResourceOptions(
-                parent=self, custom_timeouts=opts.custom_timeouts if opts else None
+            opts=pulumi.ResourceOptions.merge(
+                opts, pulumi.ResourceOptions(parent=self)
             ),
         )
 
