@@ -13,7 +13,6 @@ if TYPE_CHECKING:
     from mypy_boto3_dynamodb import DynamoDBServiceResource
     from mypy_boto3_ec2 import EC2ServiceResource
     from mypy_boto3_ec2.type_defs import TagTypeDef
-    from mypy_boto3_lambda import LambdaClient
     from mypy_boto3_route53 import Route53Client
     from mypy_boto3_s3 import S3Client
     from mypy_boto3_sns import SNSClient
@@ -48,7 +47,6 @@ class State:
     cloudwatch: CloudWatchClient
     dynamodb: DynamoDBServiceResource
     ec2: EC2ServiceResource
-    lambda_: LambdaClient
     route53: Route53Client
     s3: S3Client
     sns: SNSClient

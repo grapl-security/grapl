@@ -11,7 +11,6 @@ if TYPE_CHECKING:
     from mypy_boto3_cloudwatch import CloudWatchClient
     from mypy_boto3_dynamodb import DynamoDBClient, DynamoDBServiceResource
     from mypy_boto3_ec2 import EC2ServiceResource
-    from mypy_boto3_lambda import LambdaClient
     from mypy_boto3_route53 import Route53Client
     from mypy_boto3_s3 import S3Client, S3ServiceResource
     from mypy_boto3_secretsmanager import SecretsManagerClient
@@ -225,22 +224,6 @@ class CloudWatchClientFactory(FromEnv["CloudWatchClient"]):
     def from_env(self, config: Optional[Config] = None) -> CloudWatchClient:
         client: CloudWatchClient = _client_get(
             self.client_create_fn, _CloudWatchParams, config=config
-        )
-        return client
-
-
-_LambdaParams = ClientGetParams(
-    boto3_client_name="lambda",
-)
-
-
-class LambdaClientFactory(FromEnv["LambdaClient"]):
-    def __init__(self, boto3_module: Any):
-        self.client_create_fn = boto3_module.client
-
-    def from_env(self, config: Optional[Config] = None) -> LambdaClient:
-        client: LambdaClient = _client_get(
-            self.client_create_fn, _LambdaParams, config=config
         )
         return client
 
