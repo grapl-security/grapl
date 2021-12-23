@@ -1,4 +1,5 @@
 #![allow(unused_variables)]
+use crate::graplinc::grapl::api::plugin_work_queue::v1beta1::NoAvailableJobs;
 pub use crate::graplinc::grapl::api::plugin_work_queue::v1beta1::{
     get_execute_analyzer_response,
     get_execute_generator_response,
@@ -18,7 +19,6 @@ pub use crate::graplinc::grapl::api::plugin_work_queue::v1beta1::{
     PutExecuteGeneratorRequest as PutExecuteGeneratorRequestProto,
     PutExecuteGeneratorResponse as PutExecuteGeneratorResponseProto,
 };
-use crate::graplinc::grapl::api::plugin_work_queue::v1beta1::NoAvailableJobs;
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginWorkQueueDeserializationError {
@@ -214,7 +214,7 @@ impl From<GetExecuteAnalyzerResponse> for GetExecuteAnalyzerResponseProto {
         let request_id = value.request_id;
         GetExecuteAnalyzerResponseProto {
             request_id,
-            maybe_job: Some(execution_job)
+            maybe_job: Some(execution_job),
         }
     }
 }
@@ -275,7 +275,7 @@ impl From<GetExecuteGeneratorResponse> for GetExecuteGeneratorResponseProto {
         let request_id = value.request_id;
         GetExecuteGeneratorResponseProto {
             request_id,
-            maybe_job: Some(execution_job)
+            maybe_job: Some(execution_job),
         }
     }
 }
