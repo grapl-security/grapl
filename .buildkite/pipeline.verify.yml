@@ -18,6 +18,10 @@ steps:
           image: "node"
           entrypoint: "bash"
 
+  - label: "Ensure regenerated constraints.txt"
+    command:
+      - .buildkite/scripts/ensure_regenerated_constraints.sh
+
   - label: ":codecov: Validate codecov.yml"
     command: curl --data-binary @codecov.yml https://codecov.io/validate
 
