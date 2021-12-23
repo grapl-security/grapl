@@ -53,21 +53,18 @@ echo -e "--- :pulumi: Destroying stateful resources for ${stack}"
 # This can be de-for-loop-ified after
 # https://github.com/pulumi/pulumi/issues/3304
 for target_arg in "${target_args[@]}"; do
-    (
-        # Allow errors; this is best-effort and should allow for failed
-        # destroys of targets that no longer exist.
-        set +e
-
-        pulumi destroy \
-            --cwd="${project_dir}" \
-            --stack="${stack}" \
-            --show-replacement-steps \
-            --non-interactive \
-            --diff \
-            --yes \
-            --refresh \
-            --message="Destroying stateful resources" \
-            --target-dependents \
-            "${target_arg}"
-    )
+    pulumi destroy \
+        --cwd="${project_dir}" \
+        --stack="${stack}" \
+        --show-replacement-steps \
+        --non-interactive \
+        --diff \
+        --yes \
+        --refresh \
+        --message="Destroying stateful resources" \
+        --target-dependents \
+        "${target_arg}" ||
+        true
+    # ^ Allow errors; each destroy is best-effort and should allow for
+    # failed destroys of targets that no longer exist.
 done
