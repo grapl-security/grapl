@@ -1,9 +1,14 @@
+#![allow(unused_variables)]
 pub use crate::graplinc::grapl::api::plugin_work_queue::v1beta1::{
     plugin_work_queue_service_client,
     plugin_work_queue_service_server,
-    AcknowledgeRequest as AcknowledgeRequestProto,
-    AcknowledgeResponse as AcknowledgeResponseProto,
+    AcknowledgeGeneratorRequest as AcknowledgeGeneratorRequestProto,
+    AcknowledgeGeneratorResponse as AcknowledgeGeneratorResponseProto,
+    AcknowledgeAnalyzerRequest as AcknowledgeAnalyzerRequestProto,
+    AcknowledgeAnalyzerResponse as AcknowledgeAnalyzerResponseProto,
     ExecutionJob as ExecutionJobProto,
+    get_execute_analyzer_response,
+    get_execute_generator_response,
     GetExecuteAnalyzerRequest as GetExecuteAnalyzerRequestProto,
     GetExecuteAnalyzerResponse as GetExecuteAnalyzerResponseProto,
     GetExecuteGeneratorRequest as GetExecuteGeneratorRequestProto,
@@ -23,9 +28,9 @@ pub enum PluginWorkQueueDeserializationError {
 }
 
 pub struct ExecutionJob {
-    tenant_id: uuid::Uuid,
-    plugin_id: uuid::Uuid,
-    data: Vec<u8>,
+    pub tenant_id: uuid::Uuid,
+    pub plugin_id: uuid::Uuid,
+    pub data: Vec<u8>,
 }
 
 impl TryFrom<ExecutionJobProto> for ExecutionJob {
@@ -65,47 +70,89 @@ impl From<ExecutionJob> for ExecutionJobProto {
     }
 }
 
-pub struct AcknowledgeRequest {
-    request_id: uuid::Uuid,
+pub struct AcknowledgeGeneratorRequest {
+    pub request_id: i64,
+    pub success: bool,
 }
 
-impl TryFrom<AcknowledgeRequestProto> for AcknowledgeRequest {
+impl TryFrom<AcknowledgeGeneratorRequestProto> for AcknowledgeGeneratorRequest {
     type Error = PluginWorkQueueDeserializationError;
 
-    fn try_from(value: AcknowledgeRequestProto) -> Result<Self, Self::Error> {
+    fn try_from(value: AcknowledgeGeneratorRequestProto) -> Result<Self, Self::Error> {
         let request_id = value
-            .request_id
-            .ok_or(Self::Error::MissingRequiredField(
-                "AcknowledgeRequest.request_id",
-            ))?
-            .into();
-        Ok(Self { request_id })
+            .request_id;
+        let success = value.success;
+        Ok(Self { request_id, success })
     }
 }
 
-impl From<AcknowledgeRequest> for AcknowledgeRequestProto {
-    fn from(value: AcknowledgeRequest) -> Self {
+impl From<AcknowledgeGeneratorRequest> for AcknowledgeGeneratorRequestProto {
+    fn from(value: AcknowledgeGeneratorRequest) -> Self {
         Self {
-            request_id: Some(value.request_id.into()),
+            request_id: value.request_id,
+            success: value.success
         }
     }
 }
 
-pub struct AcknowledgeResponse {}
+pub struct AcknowledgeGeneratorResponse {}
 
-impl TryFrom<AcknowledgeResponseProto> for AcknowledgeResponse {
+impl TryFrom<AcknowledgeGeneratorResponseProto> for AcknowledgeGeneratorResponse {
     type Error = PluginWorkQueueDeserializationError;
 
-    fn try_from(_value: AcknowledgeResponseProto) -> Result<Self, Self::Error> {
+    fn try_from(_value: AcknowledgeGeneratorResponseProto) -> Result<Self, Self::Error> {
         Ok(Self {})
     }
 }
 
-impl From<AcknowledgeResponse> for AcknowledgeResponseProto {
-    fn from(_value: AcknowledgeResponse) -> Self {
+impl From<AcknowledgeGeneratorResponse> for AcknowledgeGeneratorResponseProto {
+    fn from(_value: AcknowledgeGeneratorResponse) -> Self {
         Self {}
     }
 }
+
+pub struct AcknowledgeAnalyzerRequest {
+    pub request_id: i64,
+    pub success: bool,
+}
+
+impl TryFrom<AcknowledgeAnalyzerRequestProto> for AcknowledgeAnalyzerRequest {
+    type Error = PluginWorkQueueDeserializationError;
+
+    fn try_from(value: AcknowledgeAnalyzerRequestProto) -> Result<Self, Self::Error> {
+        let request_id = value
+            .request_id;
+
+        let success = value.success;
+        Ok(Self { request_id, success })
+    }
+}
+
+impl From<AcknowledgeAnalyzerRequest> for AcknowledgeAnalyzerRequestProto {
+    fn from(value: AcknowledgeAnalyzerRequest) -> Self {
+        Self {
+            request_id: value.request_id,
+            success: value.success,
+        }
+    }
+}
+
+pub struct AcknowledgeAnalyzerResponse {}
+
+impl TryFrom<AcknowledgeAnalyzerResponseProto> for AcknowledgeAnalyzerResponse {
+    type Error = PluginWorkQueueDeserializationError;
+
+    fn try_from(_value: AcknowledgeAnalyzerResponseProto) -> Result<Self, Self::Error> {
+        Ok(Self {})
+    }
+}
+
+impl From<AcknowledgeAnalyzerResponse> for AcknowledgeAnalyzerResponseProto {
+    fn from(_value: AcknowledgeAnalyzerResponse) -> Self {
+        Self {}
+    }
+}
+
 
 pub struct GetExecuteAnalyzerRequest {}
 
@@ -124,8 +171,8 @@ impl From<GetExecuteAnalyzerRequest> for GetExecuteAnalyzerRequestProto {
 }
 
 pub struct GetExecuteAnalyzerResponse {
-    execution_job: ExecutionJob,
-    request_id: uuid::Uuid,
+    pub execution_job: Option<ExecutionJob>,
+    pub request_id: i64,
 }
 
 impl TryFrom<GetExecuteAnalyzerResponseProto> for GetExecuteAnalyzerResponse {
@@ -133,30 +180,34 @@ impl TryFrom<GetExecuteAnalyzerResponseProto> for GetExecuteAnalyzerResponse {
 
     fn try_from(value: GetExecuteAnalyzerResponseProto) -> Result<Self, Self::Error> {
         let request_id = value
-            .request_id
-            .ok_or(Self::Error::MissingRequiredField(
-                "GetExecuteAnalyzerResponse.request_id",
-            ))?
-            .into();
-        let execution_job = value
-            .execution_job
-            .ok_or(Self::Error::MissingRequiredField(
+            .request_id;
+        let maybe_job = value.maybe_job.ok_or(Self::Error::MissingRequiredField(
                 "GetExecuteAnalyzerResponse.execution_job",
-            ))?
-            .try_into()?;
+            ))?;
+        let execution_job = match maybe_job {
+            get_execute_analyzer_response::MaybeJob::Job(job) => {Some(job)}
+            get_execute_analyzer_response::MaybeJob::NoJobs(_) => {None}
+        };
+
+        let execution_job = execution_job.ok_or(Self::Error::MissingRequiredField(
+            "GetExecuteAnalyzerResponse.execution_job",
+        ))?.try_into()?;
+
         Ok(Self {
             request_id,
-            execution_job,
+            execution_job: Some(execution_job),
         })
+
     }
 }
 
 impl From<GetExecuteAnalyzerResponse> for GetExecuteAnalyzerResponseProto {
     fn from(value: GetExecuteAnalyzerResponse) -> Self {
-        Self {
-            execution_job: Some(value.execution_job.into()),
-            request_id: Some(value.request_id.into()),
-        }
+        todo!()
+        // Self {
+        //     execution_job: Some(value.execution_job.into()),
+        //     request_id: value.request_id,
+        // }
     }
 }
 
@@ -177,8 +228,8 @@ impl From<GetExecuteGeneratorRequest> for GetExecuteGeneratorRequestProto {
 }
 
 pub struct GetExecuteGeneratorResponse {
-    execution_job: ExecutionJob,
-    request_id: uuid::Uuid,
+    pub execution_job: Option<ExecutionJob>,
+    pub request_id: i64,
 }
 
 impl TryFrom<GetExecuteGeneratorResponseProto> for GetExecuteGeneratorResponse {
@@ -186,35 +237,39 @@ impl TryFrom<GetExecuteGeneratorResponseProto> for GetExecuteGeneratorResponse {
 
     fn try_from(value: GetExecuteGeneratorResponseProto) -> Result<Self, Self::Error> {
         let request_id = value
-            .request_id
-            .ok_or(Self::Error::MissingRequiredField(
-                "GetExecuteGeneratorResponse.request_id",
-            ))?
-            .into();
-        let execution_job = value
-            .execution_job
-            .ok_or(Self::Error::MissingRequiredField(
-                "GetExecuteGeneratorResponse.execution_job",
-            ))?
-            .try_into()?;
+            .request_id;
+        let maybe_job = value.maybe_job.ok_or(Self::Error::MissingRequiredField(
+            "GetExecuteGeneratorResponseProto.maybe_job",
+        ))?;
+        let execution_job = match maybe_job {
+            get_execute_generator_response::MaybeJob::Job(job) => {Some(job)}
+            get_execute_generator_response::MaybeJob::NoJobs(_) => {None}
+        };
+
+        let execution_job = execution_job.ok_or(Self::Error::MissingRequiredField(
+            "GetExecuteGeneratorResponseProto.execution_job",
+        ))?.try_into()?;
+
         Ok(Self {
             request_id,
-            execution_job,
+            execution_job: Some(execution_job),
         })
     }
 }
 
 impl From<GetExecuteGeneratorResponse> for GetExecuteGeneratorResponseProto {
     fn from(value: GetExecuteGeneratorResponse) -> Self {
-        Self {
-            execution_job: Some(value.execution_job.into()),
-            request_id: Some(value.request_id.into()),
-        }
+        // Self {
+        //     execution_job: Some(value.execution_job.into()),
+        //     request_id: value.request_id,
+        // }
+        todo!()
     }
 }
 
 pub struct PutExecuteAnalyzerRequest {
-    execution_job: ExecutionJob,
+    pub execution_job: ExecutionJob,
+    pub trace_id: uuid::Uuid,
 }
 
 impl TryFrom<PutExecuteAnalyzerRequestProto> for PutExecuteAnalyzerRequest {
@@ -227,7 +282,14 @@ impl TryFrom<PutExecuteAnalyzerRequestProto> for PutExecuteAnalyzerRequest {
                 "PutExecuteAnalyzerRequest.execution_job",
             ))?
             .try_into()?;
-        Ok(Self { execution_job })
+
+        let trace_id = value
+            .trace_id
+            .ok_or(Self::Error::MissingRequiredField(
+                "PutExecuteAnalyzerRequest.trace_id",
+            ))?
+            .into();
+        Ok(Self { execution_job, trace_id })
     }
 }
 
@@ -235,6 +297,7 @@ impl From<PutExecuteAnalyzerRequest> for PutExecuteAnalyzerRequestProto {
     fn from(value: PutExecuteAnalyzerRequest) -> Self {
         Self {
             execution_job: Some(value.execution_job.into()),
+            trace_id: Some(value.trace_id.into()),
         }
     }
 }
@@ -256,7 +319,8 @@ impl From<PutExecuteAnalyzerResponse> for PutExecuteAnalyzerResponseProto {
 }
 
 pub struct PutExecuteGeneratorRequest {
-    execution_job: ExecutionJob,
+    pub execution_job: ExecutionJob,
+    pub trace_id: uuid::Uuid,
 }
 
 impl TryFrom<PutExecuteGeneratorRequestProto> for PutExecuteGeneratorRequest {
@@ -269,7 +333,15 @@ impl TryFrom<PutExecuteGeneratorRequestProto> for PutExecuteGeneratorRequest {
                 "PutExecuteGeneratorRequest.execution_job",
             ))?
             .try_into()?;
-        Ok(Self { execution_job })
+
+
+        let trace_id = value
+            .trace_id
+            .ok_or(Self::Error::MissingRequiredField(
+                "PutExecuteAnalyzerRequest.trace_id",
+            ))?
+            .into();
+        Ok(Self { execution_job, trace_id })
     }
 }
 
@@ -277,6 +349,7 @@ impl From<PutExecuteGeneratorRequest> for PutExecuteGeneratorRequestProto {
     fn from(value: PutExecuteGeneratorRequest) -> Self {
         Self {
             execution_job: Some(value.execution_job.into()),
+            trace_id: Some(value.trace_id.into()),
         }
     }
 }

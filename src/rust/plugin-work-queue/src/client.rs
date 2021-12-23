@@ -1,8 +1,11 @@
 use rust_proto::plugin_work_queue::{
     plugin_work_queue_service_client::PluginWorkQueueServiceClient as _PluginWorkQueueServiceClient,
-    AcknowledgeRequest,
-    AcknowledgeRequestProto,
-    AcknowledgeResponse,
+    AcknowledgeAnalyzerRequest,
+    AcknowledgeAnalyzerRequestProto,
+    AcknowledgeAnalyzerResponse,
+    AcknowledgeGeneratorRequest,
+    AcknowledgeGeneratorRequestProto,
+    AcknowledgeGeneratorResponse,
     GetExecuteAnalyzerRequest,
     GetExecuteAnalyzerRequestProto,
     GetExecuteAnalyzerResponse,
@@ -29,11 +32,11 @@ pub struct PluginWorkQueueServiceClient<T> {
 }
 
 impl<T> PluginWorkQueueServiceClient<T>
-where
-    T: tonic::client::GrpcService<tonic::body::BoxBody>,
-    T::ResponseBody: Body + Send + 'static,
-    T::Error: Into<StdError>,
-    <T::ResponseBody as Body>::Error: Into<StdError> + Send,
+    where
+        T: tonic::client::GrpcService<tonic::body::BoxBody>,
+        T::ResponseBody: Body + Send + 'static,
+        T::Error: Into<StdError>,
+        <T::ResponseBody as Body>::Error: Into<StdError> + Send,
 {
     pub fn new(inner: _PluginWorkQueueServiceClient<T>) -> Self {
         Self { inner }
@@ -87,13 +90,25 @@ where
         todo!()
     }
 
-    /// Acknowledges the completion of a job
-    pub async fn acknowledge(
+    /// Acknowledges the completion of a generator job
+    pub async fn acknowledge_generator(
         &mut self,
-        request: AcknowledgeRequest,
-    ) -> Result<AcknowledgeResponse, PluginWorkQueueServiceClientError> {
+        request: AcknowledgeGeneratorRequest,
+    ) -> Result<AcknowledgeGeneratorResponse, PluginWorkQueueServiceClientError> {
         self.inner
-            .acknowledge(AcknowledgeRequestProto::from(request))
+            .acknowledge_generator(AcknowledgeGeneratorRequestProto::from(request))
+            .await
+            .expect("todo");
+        todo!()
+    }
+
+    /// Acknowledges the completion of a job
+    pub async fn acknowledge_analyzer(
+        &mut self,
+        request: AcknowledgeAnalyzerRequest,
+    ) -> Result<AcknowledgeAnalyzerResponse, PluginWorkQueueServiceClientError> {
+        self.inner
+            .acknowledge_analyzer(AcknowledgeAnalyzerRequestProto::from(request))
             .await
             .expect("todo");
         todo!()
