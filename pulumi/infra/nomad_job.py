@@ -28,11 +28,13 @@ class NomadJob(pulumi.ComponentResource):
             resource_name=f"{DEPLOYMENT_NAME}-{name}-job",
             jobspec=self._file_contents(str(jobspec)),
             hcl2=nomad.JobHcl2Args(enabled=True, vars=self._fix_pulumi_preview(vars)),
-            opts=pulumi.ResourceOptions(parent=self),
             # Wait for all services to become healthy
             detach=False,
             # Purge job from Nomad servers after a `pulumi destroy`
             purge_on_destroy=True,
+            opts=pulumi.ResourceOptions.merge(
+                opts, pulumi.ResourceOptions(parent=self)
+            ),
         )
 
         self.register_outputs({})

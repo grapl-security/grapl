@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 from typing import Mapping, Set
 
+from pulumi.resource import CustomTimeouts, ResourceOptions
 from typing_extensions import Final
 
 sys.path.insert(0, "..")
@@ -240,10 +241,17 @@ def main() -> None:
             intention_directory=Path("../../nomad/consul-intentions").resolve(),
         )
 
+        # We've seen some potentially false failures from the default 5m timeout.
+        nomad_grapl_core_timeout = "8m"
         nomad_grapl_core = NomadJob(
             "grapl-core",
             jobspec=Path("../../nomad/grapl-core.nomad").resolve(),
             vars=local_grapl_core_job_vars,
+            opts=ResourceOptions(
+                custom_timeouts=CustomTimeouts(
+                    create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
+                )
+            ),
         )
 
         nomad_grapl_ingress = NomadJob(
