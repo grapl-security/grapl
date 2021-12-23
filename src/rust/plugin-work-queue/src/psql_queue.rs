@@ -89,8 +89,8 @@ impl PsqlQueue {
             &now,
             now,
         )
-            .execute(&self.pool)
-            .await?;
+        .execute(&self.pool)
+        .await?;
         Ok(())
     }
 
@@ -124,8 +124,8 @@ impl PsqlQueue {
             &now,
             now,
         )
-            .execute(&self.pool)
-            .await?;
+        .execute(&self.pool)
+        .await?;
         Ok(())
     }
 
@@ -238,8 +238,8 @@ impl PsqlQueue {
             execution_key.0,
             output,
         )
-            .execute(&self.pool)
-            .await?;
+        .execute(&self.pool)
+        .await?;
         Ok(())
     }
 
@@ -264,13 +264,16 @@ impl PsqlQueue {
             execution_key.0,
             output,
         )
-            .execute(&self.pool)
-            .await?;
+        .execute(&self.pool)
+        .await?;
         Ok(())
     }
 
     #[instrument(err)]
-    pub async fn ack_generator_failure(&self, execution_key: ExecutionId) -> Result<(), PsqlQueueError> {
+    pub async fn ack_generator_failure(
+        &self,
+        execution_key: ExecutionId,
+    ) -> Result<(), PsqlQueueError> {
         sqlx::query!(
             r#"
                 UPDATE plugin_work_queue.generator_plugin_executions
@@ -284,13 +287,16 @@ impl PsqlQueue {
             "#,
             execution_key.0,
         )
-            .execute(&self.pool)
-            .await?;
+        .execute(&self.pool)
+        .await?;
         Ok(())
     }
 
     #[instrument(err)]
-    pub async fn ack_analyzer_failure(&self, execution_key: ExecutionId) -> Result<(), PsqlQueueError> {
+    pub async fn ack_analyzer_failure(
+        &self,
+        execution_key: ExecutionId,
+    ) -> Result<(), PsqlQueueError> {
         sqlx::query!(
             r#"
                 UPDATE plugin_work_queue.analyzer_plugin_executions
