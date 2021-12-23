@@ -19,6 +19,8 @@ message ExecutionJob {
 message PutExecuteGeneratorRequest {
   // The job to be executed
   ExecutionJob execution_job = 1;
+  // The trace id for this request
+  graplinc.common.v1beta1.Uuid trace_id = 2;
 }
 
 // The response to a PutExecuteGeneratorRequest, indicating success
@@ -28,6 +30,8 @@ message PutExecuteGeneratorResponse {}
 message PutExecuteAnalyzerRequest {
   // The job to be executed
   ExecutionJob execution_job = 1;
+  // The trace id for this request
+  graplinc.common.v1beta1.Uuid trace_id = 2;  
 }
 
 // The response to a PutExecuteAnalyzerRequest, indicating success
@@ -39,32 +43,60 @@ message GetExecuteGeneratorRequest {}
 // A request to retrieve a new ExecutionJob for an Analyzer
 message GetExecuteAnalyzerRequest {}
 
+message NoAvailableJobs {}
+
 // A response containing the next ExecutionJob to execute against a Generator
 message GetExecuteGeneratorResponse {
   // The execution_job to be executed
-  ExecutionJob execution_job = 1;
+  oneof maybe_job {
+    // When a job is available
+    ExecutionJob job = 1;
+    // When a job is not available
+    NoAvailableJobs no_jobs = 2;
+  };
   // A request_id, to be used in Acknowledgement
-  graplinc.common.v1beta1.Uuid request_id = 2;
+  int64 request_id = 3;
 }
 
 // A response containing the next ExecutionJob to execute against an Analyzer
 message GetExecuteAnalyzerResponse {
   // The execution_job to be executed
-  ExecutionJob execution_job = 1;
+  oneof maybe_job {
+    // When a job is available
+    ExecutionJob job = 1;
+    // When a job is not available
+    NoAvailableJobs no_jobs = 2;
+  };
   // A request_id, to be used in Acknowledgement
-  graplinc.common.v1beta1.Uuid request_id = 2;
+  int64 request_id = 3;
 }
 
-// A request to acknowledge that a job has been completed.
-message AcknowledgeRequest {
+// A request to acknowledge that a generator job has been completed.
+message AcknowledgeGeneratorRequest {
   // The request_id of the job that has been completed
-  graplinc.common.v1beta1.Uuid request_id = 1;
+  int64 request_id = 1;
+  // 'true' if success, 'false' if failure
+  bool success = 2;
+}
+
+// A response to an AcknowledgeGeneratorResponse
+message AcknowledgeGeneratorResponse {
+
+}
+
+// A request to acknowledge that an analyzer job has been completed.
+message AcknowledgeAnalyzerRequest {
+  // The request_id of the job that has been completed
+  int64 request_id = 1;
+  // 'true' if success, 'false' if failure
+  bool success = 2;
 }
 
 // A response to an AcknowledgeRequest
-message AcknowledgeResponse {
+message AcknowledgeAnalyzerResponse {
 
 }
+
 
 // The PluginWorkQueueService manages ExecutionJobs for Generator and Analyzer plugins
 service PluginWorkQueueService {
@@ -76,6 +108,8 @@ service PluginWorkQueueService {
   rpc GetExecuteGenerator(GetExecuteGeneratorRequest) returns (GetExecuteGeneratorResponse);
   // Retrieves a new execution job for an analyzer
   rpc GetExecuteAnalyzer(GetExecuteAnalyzerRequest) returns (GetExecuteAnalyzerResponse);
-  // Acknowledges the completion of a job
-  rpc Acknowledge(AcknowledgeRequest) returns (AcknowledgeResponse);
+  // Acknowledges the completion of a generator job
+  rpc AcknowledgeGenerator(AcknowledgeGeneratorRequest) returns (AcknowledgeGeneratorResponse);
+  // Acknowledges the completion of an analyzer job
+  rpc AcknowledgeAnalyzer(AcknowledgeAnalyzerRequest) returns (AcknowledgeAnalyzerResponse);
 }
