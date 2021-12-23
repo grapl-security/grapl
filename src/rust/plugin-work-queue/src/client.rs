@@ -32,11 +32,11 @@ pub struct PluginWorkQueueServiceClient<T> {
 }
 
 impl<T> PluginWorkQueueServiceClient<T>
-    where
-        T: tonic::client::GrpcService<tonic::body::BoxBody>,
-        T::ResponseBody: Body + Send + 'static,
-        T::Error: Into<StdError>,
-        <T::ResponseBody as Body>::Error: Into<StdError> + Send,
+where
+    T: tonic::client::GrpcService<tonic::body::BoxBody>,
+    T::ResponseBody: Body + Send + 'static,
+    T::Error: Into<StdError>,
+    <T::ResponseBody as Body>::Error: Into<StdError> + Send,
 {
     pub fn new(inner: _PluginWorkQueueServiceClient<T>) -> Self {
         Self { inner }
