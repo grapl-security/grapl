@@ -18,6 +18,7 @@ pub use crate::graplinc::grapl::api::plugin_work_queue::v1beta1::{
     PutExecuteGeneratorRequest as PutExecuteGeneratorRequestProto,
     PutExecuteGeneratorResponse as PutExecuteGeneratorResponseProto,
 };
+use crate::graplinc::grapl::api::plugin_work_queue::v1beta1::NoAvailableJobs;
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginWorkQueueDeserializationError {
@@ -206,11 +207,15 @@ impl TryFrom<GetExecuteAnalyzerResponseProto> for GetExecuteAnalyzerResponse {
 
 impl From<GetExecuteAnalyzerResponse> for GetExecuteAnalyzerResponseProto {
     fn from(value: GetExecuteAnalyzerResponse) -> Self {
-        todo!()
-        // Self {
-        //     execution_job: Some(value.execution_job.into()),
-        //     request_id: value.request_id,
-        // }
+        let execution_job = match value.execution_job {
+            None => get_execute_analyzer_response::MaybeJob::NoJobs(NoAvailableJobs {}),
+            Some(job) => get_execute_analyzer_response::MaybeJob::Job(job.into()),
+        };
+        let request_id = value.request_id;
+        GetExecuteAnalyzerResponseProto {
+            request_id,
+            maybe_job: Some(execution_job)
+        }
     }
 }
 
@@ -263,11 +268,15 @@ impl TryFrom<GetExecuteGeneratorResponseProto> for GetExecuteGeneratorResponse {
 
 impl From<GetExecuteGeneratorResponse> for GetExecuteGeneratorResponseProto {
     fn from(value: GetExecuteGeneratorResponse) -> Self {
-        // Self {
-        //     execution_job: Some(value.execution_job.into()),
-        //     request_id: value.request_id,
-        // }
-        todo!()
+        let execution_job = match value.execution_job {
+            None => get_execute_generator_response::MaybeJob::NoJobs(NoAvailableJobs {}),
+            Some(job) => get_execute_generator_response::MaybeJob::Job(job.into()),
+        };
+        let request_id = value.request_id;
+        GetExecuteGeneratorResponseProto {
+            request_id,
+            maybe_job: Some(execution_job)
+        }
     }
 }
 
