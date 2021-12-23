@@ -71,5 +71,5 @@ echo -e "--- :pulumi: Destroying stateful resources for ${stack}"
             "${target_arg}"
     done
 
-    true  # don't exit the subshell with a nonzero code
+    true # don't exit the subshell with a nonzero code
 )
