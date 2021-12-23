@@ -301,11 +301,11 @@ lint-rust: ## Run Rust lint checks
 
 .PHONY: lint-python
 lint-python: ## Run Python lint checks
-	./pants filter --target-type=python_library,python_tests :: | xargs ./pants lint
+	./pants filter --target-type=python_sources,python_tests :: | xargs ./pants lint
 
 .PHONY: lint-shell
 lint-shell: ## Run Shell lint checks
-	./pants filter --target-type=shell_library,shunit2_tests :: | xargs ./pants lint
+	./pants filter --target-type=shell_sources,shunit2_tests :: | xargs ./pants lint
 
 .PHONY: lint-prettier
 lint-prettier: build-formatter ## Run ts/js/yaml lint checks
@@ -339,11 +339,11 @@ format-rust: ## Reformat all Rust code
 
 .PHONY: format-python
 format-python: ## Reformat all Python code
-	./pants filter --target-type=python_library,python_tests :: | xargs ./pants fmt
+	./pants filter --target-type=python_sources,python_tests :: | xargs ./pants fmt
 
 .PHONY: format-shell
-format-shell: ## Reformat all shell_libraries
-	./pants filter --target-type=shell_library,shunit2_tests :: | xargs ./pants fmt
+format-shell: ## Reformat all shell code
+	./pants filter --target-type=shell_sources,shunit2_tests :: | xargs ./pants fmt
 
 .PHONY: format-prettier
 format-prettier: build-formatter ## Reformat js/ts/yaml
