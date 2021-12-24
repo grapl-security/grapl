@@ -38,7 +38,7 @@ impl Encrypter {
         let mut bytes: [u8; 32] = [0; 32];
         OsRng.fill_bytes(&mut bytes);
         // Note: We can't use EphemeralKey due to a version mismatch with rand_core
-        // - StaticSecret is identitical except it doesn't prevent re-use
+        // - StaticSecret is identical except it doesn't prevent re-use
         //   so just be extra sure to only use it once!
         let ephemeral_secret_key = StaticSecret::from(bytes);
         let ephemeral_public_key = PublicKey::from(&ephemeral_secret_key);
@@ -67,6 +67,7 @@ impl Decrypter {
             encrypted_data.encrypted_data,
             shared_secret.as_bytes(),
         )?;
+
         Ok(decrypted)
     }
 }
@@ -102,7 +103,7 @@ mod tests {
             aead_enc: aead.clone(),
         };
 
-        let encrypted = encrypter.encrypt(msg.clone(), aad).expect("encrypt failed");
+        let encrypted = encrypter.encrypt(msg.clone(), &aad).expect("encrypt failed");
         let decrypted = decrypter.decrypt(encrypted).expect("encrypt failed");
         assert_eq!(msg, decrypted);
     }
