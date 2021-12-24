@@ -21,7 +21,6 @@ CREATE TABLE IF NOT EXISTS plugin_work_queue.generator_plugin_executions
     last_updated         timestamptz NOT NULL,
     visible_after        timestamptz,
     try_count            integer     NOT NULL,
-    trace_id             uuid        NOT NULL,
     CHECK (length(pipeline_message) < megabytes(256)),
     CHECK (length(execution_result) < megabytes(256)),
     CHECK (last_updated >= creation_time)
@@ -40,7 +39,6 @@ CREATE TABLE IF NOT EXISTS plugin_work_queue.analyzer_plugin_executions
     last_updated         timestamptz NOT NULL,
     visible_after        timestamptz,
     try_count            integer     NOT NULL,
-    trace_id             uuid        NOT NULL,
     CHECK (length(pipeline_message) < megabytes(256)),
     CHECK (length(execution_result) < megabytes(256)),
     CHECK (last_updated >= creation_time)

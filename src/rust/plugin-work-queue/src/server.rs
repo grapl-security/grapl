@@ -96,10 +96,9 @@ impl PluginWorkQueue {
         let tenant_id = request.execution_job.tenant_id;
         let plugin_id = request.execution_job.plugin_id;
         let data = request.execution_job.data;
-        let trace_id = request.trace_id;
 
         self.queue
-            .put_generator_message(plugin_id, data, tenant_id, trace_id)
+            .put_generator_message(plugin_id, data, tenant_id)
             .await?;
 
         Ok(PutExecuteGeneratorResponse {})
@@ -113,10 +112,9 @@ impl PluginWorkQueue {
         let tenant_id = request.execution_job.tenant_id;
         let plugin_id = request.execution_job.plugin_id;
         let data = request.execution_job.data;
-        let trace_id = request.trace_id;
 
         self.queue
-            .put_analyzer_message(plugin_id, data, tenant_id, trace_id)
+            .put_analyzer_message(plugin_id, data, tenant_id)
             .await?;
 
         Ok(PutExecuteAnalyzerResponse {})

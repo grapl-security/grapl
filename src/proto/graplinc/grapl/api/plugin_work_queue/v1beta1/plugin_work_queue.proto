@@ -19,8 +19,6 @@ message ExecutionJob {
 message PutExecuteGeneratorRequest {
   // The job to be executed
   ExecutionJob execution_job = 1;
-  // The trace id for this request
-  graplinc.common.v1beta1.Uuid trace_id = 2;
 }
 
 // The response to a PutExecuteGeneratorRequest, indicating success
@@ -30,8 +28,6 @@ message PutExecuteGeneratorResponse {}
 message PutExecuteAnalyzerRequest {
   // The job to be executed
   ExecutionJob execution_job = 1;
-  // The trace id for this request
-  graplinc.common.v1beta1.Uuid trace_id = 2;  
 }
 
 // The response to a PutExecuteAnalyzerRequest, indicating success

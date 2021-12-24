@@ -1,4 +1,6 @@
 #![allow(unused_variables)]
+
+use std::fmt::Formatter;
 use crate::graplinc::grapl::api::plugin_work_queue::v1beta1::NoAvailableJobs;
 pub use crate::graplinc::grapl::api::plugin_work_queue::v1beta1::{
     get_execute_analyzer_response,
@@ -32,6 +34,16 @@ pub struct ExecutionJob {
     pub tenant_id: uuid::Uuid,
     pub plugin_id: uuid::Uuid,
     pub data: Vec<u8>,
+}
+
+impl std::fmt::Debug for ExecutionJob {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ExecutionJob")
+            .field("tenant_id", &self.tenant_id)
+            .field("plugin_id", &self.plugin_id)
+            .field("data.len", &self.data.len())
+            .finish()
+    }
 }
 
 impl TryFrom<ExecutionJobProto> for ExecutionJob {
@@ -282,7 +294,6 @@ impl From<GetExecuteGeneratorResponse> for GetExecuteGeneratorResponseProto {
 
 pub struct PutExecuteAnalyzerRequest {
     pub execution_job: ExecutionJob,
-    pub trace_id: uuid::Uuid,
 }
 
 impl TryFrom<PutExecuteAnalyzerRequestProto> for PutExecuteAnalyzerRequest {
@@ -296,15 +307,8 @@ impl TryFrom<PutExecuteAnalyzerRequestProto> for PutExecuteAnalyzerRequest {
             ))?
             .try_into()?;
 
-        let trace_id = value
-            .trace_id
-            .ok_or(Self::Error::MissingRequiredField(
-                "PutExecuteAnalyzerRequest.trace_id",
-            ))?
-            .into();
         Ok(Self {
             execution_job,
-            trace_id,
         })
     }
 }
@@ -313,7 +317,6 @@ impl From<PutExecuteAnalyzerRequest> for PutExecuteAnalyzerRequestProto {
     fn from(value: PutExecuteAnalyzerRequest) -> Self {
         Self {
             execution_job: Some(value.execution_job.into()),
-            trace_id: Some(value.trace_id.into()),
         }
     }
 }
@@ -334,9 +337,9 @@ impl From<PutExecuteAnalyzerResponse> for PutExecuteAnalyzerResponseProto {
     }
 }
 
+#[derive(Debug)]
 pub struct PutExecuteGeneratorRequest {
     pub execution_job: ExecutionJob,
-    pub trace_id: uuid::Uuid,
 }
 
 impl TryFrom<PutExecuteGeneratorRequestProto> for PutExecuteGeneratorRequest {
@@ -350,15 +353,8 @@ impl TryFrom<PutExecuteGeneratorRequestProto> for PutExecuteGeneratorRequest {
             ))?
             .try_into()?;
 
-        let trace_id = value
-            .trace_id
-            .ok_or(Self::Error::MissingRequiredField(
-                "PutExecuteAnalyzerRequest.trace_id",
-            ))?
-            .into();
         Ok(Self {
             execution_job,
-            trace_id,
         })
     }
 }
@@ -367,7 +363,6 @@ impl From<PutExecuteGeneratorRequest> for PutExecuteGeneratorRequestProto {
     fn from(value: PutExecuteGeneratorRequest) -> Self {
         Self {
             execution_job: Some(value.execution_job.into()),
-            trace_id: Some(value.trace_id.into()),
         }
     }
 }

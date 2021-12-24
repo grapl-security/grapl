@@ -35,7 +35,6 @@ pub struct NextExecutionRequest {
     pub plugin_id: uuid::Uuid,
     pub tenant_id: uuid::Uuid,
     pub pipeline_message: Vec<u8>,
-    pub trace_id: uuid::Uuid,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -65,27 +64,24 @@ impl PsqlQueue {
         plugin_id: Uuid,
         pipeline_message: Vec<u8>,
         tenant_id: Uuid,
-        trace_id: Uuid,
     ) -> Result<(), PsqlQueueError> {
         let now = chrono::Utc::now();
         sqlx::query!(
             r"
-            INSERT INTO plugin_work_queue.generator_plugin_executions (
+            INSERT INTO plugin_work_queue.analyzer_plugin_executions (
                 plugin_id,
                 pipeline_message,
                 tenant_id,
-                trace_id,
                 status,
                 creation_time,
                 last_updated,
                 try_count
             )
-            VALUES( $1::UUID, $2, $3::UUID, $4::UUID, 'enqueued', $5, $6, -1 )
+            VALUES( $1::UUID, $2, $3::UUID, 'enqueued', $4, $5, -1 )
         ",
             plugin_id,
             pipeline_message,
             &tenant_id,
-            trace_id,
             &now,
             now,
         )
@@ -100,7 +96,6 @@ impl PsqlQueue {
         plugin_id: Uuid,
         pipeline_message: Vec<u8>,
         tenant_id: Uuid,
-        trace_id: Uuid,
     ) -> Result<(), PsqlQueueError> {
         let now = chrono::Utc::now();
         sqlx::query!(
@@ -109,18 +104,16 @@ impl PsqlQueue {
                 plugin_id,
                 pipeline_message,
                 tenant_id,
-                trace_id,
                 status,
                 creation_time,
                 last_updated,
                 try_count
             )
-            VALUES( $1::UUID, $2, $3::UUID, $4::UUID, 'enqueued', $5, $6, -1 )
+            VALUES( $1::UUID, $2, $3::UUID, 'enqueued', $4, $5, -1 )
         ",
             plugin_id,
             pipeline_message,
             &tenant_id,
-            trace_id,
             &now,
             now,
         )
@@ -156,7 +149,7 @@ impl PsqlQueue {
                 last_updated = CURRENT_TIMESTAMP,
                 visible_after  = CURRENT_TIMESTAMP + INTERVAL '10 seconds'
             FROM (
-                 SELECT execution_key, plugin_id, pipeline_message, status, creation_time, visible_after, trace_id, tenant_id
+                 SELECT execution_key, plugin_id, pipeline_message, status, creation_time, visible_after, tenant_id
                  FROM plugin_work_queue.generator_plugin_executions
                  WHERE status = 'enqueued'
                    AND creation_time >= (CURRENT_TIMESTAMP - INTERVAL '1 day')
@@ -166,7 +159,7 @@ impl PsqlQueue {
                  LIMIT 1
              ) AS next_execution
              WHERE plugin_work_queue.generator_plugin_executions.execution_key = next_execution.execution_key
-             RETURNING next_execution.execution_key as "execution_key!: ExecutionId", next_execution.plugin_id, next_execution.tenant_id, next_execution.pipeline_message, next_execution.trace_id
+             RETURNING next_execution.execution_key as "execution_key!: ExecutionId", next_execution.plugin_id, next_execution.tenant_id, next_execution.pipeline_message
         "#).fetch_optional(&self.pool)
             .await?;
 
@@ -200,7 +193,7 @@ impl PsqlQueue {
                 last_updated = CURRENT_TIMESTAMP,
                 visible_after  = CURRENT_TIMESTAMP + INTERVAL '10 seconds'
             FROM (
-                 SELECT execution_key, plugin_id, pipeline_message, status, creation_time, visible_after, trace_id, tenant_id
+                 SELECT execution_key, plugin_id, pipeline_message, status, creation_time, visible_after, tenant_id
                  FROM plugin_work_queue.analyzer_plugin_executions
                  WHERE status = 'enqueued'
                    AND creation_time >= (CURRENT_TIMESTAMP - INTERVAL '1 day')
@@ -210,7 +203,7 @@ impl PsqlQueue {
                  LIMIT 1
              ) AS next_execution
              WHERE plugin_work_queue.analyzer_plugin_executions.execution_key = next_execution.execution_key
-             RETURNING next_execution.execution_key as "execution_key!: ExecutionId", next_execution.plugin_id, next_execution.pipeline_message, next_execution.trace_id, next_execution.tenant_id
+             RETURNING next_execution.execution_key as "execution_key!: ExecutionId", next_execution.plugin_id, next_execution.pipeline_message, next_execution.tenant_id
         "#).fetch_optional(&self.pool)
             .await?;
 
