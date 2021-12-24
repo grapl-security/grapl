@@ -4157,7 +4157,7 @@ dependencies = [
  "hex",
  "hmac 0.11.0",
  "indexmap",
- "itoa",
+ "itoa 0.4.8",
  "libc",
  "log",
  "md-5",

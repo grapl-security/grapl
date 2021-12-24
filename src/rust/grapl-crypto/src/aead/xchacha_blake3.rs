@@ -1,8 +1,3 @@
-#![allow(warnings)]
-// #![feature(test)]
-
-use std::ops::{Deref, DerefMut};
-// use test::black_box;
 use blake3::Hash;
 use chacha20::{Key, XNonce, XChaCha12};
 use chacha20::cipher::{NewCipher, StreamCipher};
