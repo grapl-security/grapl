@@ -36,6 +36,7 @@ pub enum PluginWorkQueueServiceClientError {
     DeserializeError(#[from] PluginWorkQueueDeserializationError),
 }
 
+#[derive(Debug)]
 pub struct PluginWorkQueueServiceClient<T> {
     inner: _PluginWorkQueueServiceClient<T>,
 }
@@ -52,6 +53,7 @@ where
     }
 
     /// Adds a new execution job for a generator
+    #[tracing::instrument(skip(self, request), err)]
     pub async fn put_execute_generator(
         &mut self,
         request: PutExecuteGeneratorRequest,
