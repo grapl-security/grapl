@@ -1,26 +1,31 @@
+mod list;
 mod read;
 mod write;
-mod list;
-
-pub use read::*;
-pub use read::ReadS3;
-pub use write::*;
-pub use write::WriteS3;
-pub use list::*;
-pub use list::ListS3;
 
 use std::collections::HashMap;
-use crate::s3::client::{S3Client, S3Common};
 
+pub use list::{
+    ListS3,
+    *,
+};
+pub use read::{
+    ReadS3,
+    *,
+};
+pub use write::{
+    WriteS3,
+    *,
+};
+
+use crate::s3::client::{
+    S3Client,
+    S3Common,
+};
 
 #[derive(Clone)]
-pub struct Bucket<
-    S,
-    const READ_CAP: bool,
-    const WRITE_CAP: bool,
-    const LIST_CAP: bool,
->
-    where S: S3Common
+pub struct Bucket<S, const READ_CAP: bool, const WRITE_CAP: bool, const LIST_CAP: bool>
+where
+    S: S3Common,
 {
     #[cfg(test)]
     pub s3_client: S3Client<S>,
@@ -29,7 +34,6 @@ pub struct Bucket<
     pub(crate) bucket_name: String,
     pub(crate) bucket_account_id: String,
 }
-
 
 pub trait MetaData {
     fn merge_into(self, metadata: &mut HashMap<String, String>);
