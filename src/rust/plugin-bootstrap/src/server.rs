@@ -1,12 +1,9 @@
 use std::io::Read;
 use std::sync::atomic::Ordering;
 use tonic::{Status};
-use rust_proto::plugin_bootstrap::{
-    GetBootstrapInfoRequestProto,
-    GetBootstrapInfoResponse,
-    GetBootstrapInfoResponseProto,
-    PluginBootstrapService
-};
+use tonic::transport::Server;
+use rust_proto::plugin_bootstrap::{GetBootstrapInfoRequestProto, GetBootstrapInfoResponse, GetBootstrapInfoResponseProto, PluginBootstrapService, PluginBootstrapServiceServer};
+use crate::PluginBootstrapServiceConfig;
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginBootstrapperError {
@@ -24,7 +21,9 @@ pub struct PluginBootstrapper {
 impl PluginBootstrapper {
     pub fn new(certificate: Vec<u8>, plugin_binary: Vec<u8>) -> Self {
         Self {
-            certificate, plugin_binary, ctr: std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0)),
+            certificate,
+            plugin_binary,
+            ctr: std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0)),
         }
     }
 
@@ -59,6 +58,41 @@ impl PluginBootstrapper {
             certificate: self.certificate.clone(),
         }
     }
+
+    #[tracing::instrument(skip(self))]
+    pub async fn serve(
+        self,
+        service_config: PluginBootstrapServiceConfig,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
+        health_reporter
+            .set_serving::<PluginBootstrapServiceServer<PluginBootstrapper>>()
+            .await;
+
+        let addr = service_config.plugin_registry_bind_address;
+        tracing::info!(
+            message="Starting PluginBootstrap",
+            addr=?addr,
+        );
+
+        Server::builder()
+            .trace_fn(|request| {
+                tracing::info_span!(
+                "PluginBootstrap",
+                headers = ?request.headers(),
+                method = ?request.method(),
+                uri = %request.uri(),
+                extensions = ?request.extensions(),
+            )
+            })
+            .add_service(health_service)
+            .add_service(PluginBootstrapServiceServer::new(self))
+            .serve(addr)
+            .await?;
+
+        Ok(())
+    }
+
 }
 
 #[tonic::async_trait]
@@ -66,7 +100,7 @@ impl PluginBootstrapService for PluginBootstrapper {
     #[tracing::instrument(skip(self))]
     async fn get_bootstrap_info(
         &self,
-        _request: tonic::Request<GetBootstrapInfoRequestProto>
+        _request: tonic::Request<GetBootstrapInfoRequestProto>,
     ) -> Result<tonic::Response<GetBootstrapInfoResponseProto>, Status>
     {
         let response = self.get_bootstrap_info().await;

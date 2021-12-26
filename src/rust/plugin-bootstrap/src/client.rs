@@ -43,11 +43,10 @@ impl PluginBootstrapClient<tonic::transport::Channel> {
             .concurrency_limit(30);
         let channel = endpoint.connect().await?;
         Ok(Self::new(PluginBootstrapClientProto::new(
-            channel.clone(),
+            channel,
         )))
     }
 }
-
 
 impl<T> PluginBootstrapClient<T>
     where
