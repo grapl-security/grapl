@@ -35,17 +35,17 @@ where
     pub(crate) bucket_account_id: String,
 }
 
-pub trait MetaData {
+pub trait Metadata {
     fn merge_into(self, metadata: &mut HashMap<String, String>);
 }
 
-impl MetaData for (String, String) {
+impl Metadata for (String, String) {
     fn merge_into(self, metadata: &mut HashMap<String, String>) {
         metadata.insert(self.0, self.1);
     }
 }
 
-impl MetaData for HashMap<String, String> {
+impl Metadata for HashMap<String, String> {
     fn merge_into(self, metadata: &mut HashMap<String, String>) {
         metadata.extend(self.into_iter());
     }

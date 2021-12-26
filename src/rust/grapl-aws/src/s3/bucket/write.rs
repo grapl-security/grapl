@@ -1,3 +1,5 @@
+use crate::s3::bucket::Metadata;
+
 use std::collections::HashMap;
 
 use rusoto_s3::PutObjectRequest as InnerPutObjectRequest;
@@ -47,6 +49,13 @@ impl<S, const READ_CAP: bool, const LIST_CAP: bool> PutObjectRequest<S, READ_CAP
 where
     S: S3Common,
 {
+    pub fn with_metadata(mut self, metadata: impl Metadata) -> Self {
+        if let Some(meta) = self.metadata.as_mut() {
+            metadata.merge_into(meta);
+        }
+        self
+    }
+
     pub async fn send(self) -> Result<(), TmpError> {
         self.bucket
             .s3_client
