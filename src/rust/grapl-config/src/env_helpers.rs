@@ -202,10 +202,6 @@ impl FromEnv<S3Client> for S3Client {
 
         tracing::debug!("overriding s3_endpoint: {:?}", s3_endpoint);
         tracing::debug!("overriding s3_access_key_id: {:?}", s3_access_key_id);
-        tracing::debug!(
-            "overriding s3_access_key_secret: {:?}",
-            s3_access_key_secret
-        );
         tracing::debug!("overriding region_name: {:?}", region_name);
 
         match (s3_endpoint, s3_access_key_id, s3_access_key_secret) {

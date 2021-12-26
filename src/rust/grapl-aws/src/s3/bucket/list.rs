@@ -1,32 +1,46 @@
-#![allow(warnings)]
-
-use rusoto_s3::{ListObjectsV2Request as InnerListObjectsV2Request, ListObjectsV2Output, S3};
+use rusoto_s3::{ListObjectsV2Request as InnerListObjectsV2Request, ListObjectsV2Output};
 use async_stream::try_stream;
 use futures_core::stream::Stream;
 
-use tokio::io::AsyncReadExt;
 use crate::s3::bucket::Bucket;
 use crate::s3::client::S3Common;
 use crate::TmpError;
 use rusoto_s3::Object;
 
-#[async_trait::async_trait]
-pub trait ListS3<S: S3Common> {
-    async fn list_objects(&self) -> ListObjectRequest<S>;
+pub trait ListS3<S, const READ_CAP: bool, const WRITE_CAP: bool>
+    where S: S3Common
+{
+    fn list_objects(&self) -> ListObjectRequest<S, READ_CAP, WRITE_CAP,>;
+}
+
+impl<S, const READ_CAP: bool, const WRITE_CAP: bool> ListS3<S, READ_CAP, WRITE_CAP> for Bucket<S, READ_CAP, WRITE_CAP, true>
+    where S: S3Common
+{
+    fn list_objects(&self) -> ListObjectRequest<S, READ_CAP, WRITE_CAP> {
+        ListObjectRequest {
+            bucket: self.clone(),
+            prefix: None,
+        }
+    }
 }
 
 
 #[derive(Clone)]
-pub struct ListObjectRequest<S>
+pub struct ListObjectRequest<S, const READ_CAP: bool, const WRITE_CAP: bool>
     where S: S3Common
 {
-    bucket: Bucket<S>,
+    bucket: Bucket<S, READ_CAP, WRITE_CAP, true>,
     prefix: Option<String>,
 }
 
-impl<S> ListObjectRequest<S>
+impl<S, const READ_CAP: bool, const WRITE_CAP: bool> ListObjectRequest<S, READ_CAP, WRITE_CAP>
     where S: S3Common
 {
+    pub fn with_prefix(mut self, prefix: String) -> Self {
+        self.prefix = Some(prefix);
+        self
+    }
+
     pub async fn send(&self) -> impl Stream<Item=Result<Object, TmpError>> + '_ {
         try_stream! {
             let resolution = self.send_once(None).await?;
@@ -41,7 +55,6 @@ impl<S> ListObjectRequest<S>
 
             let mut continuation_token: Option<String> = resolution.continuation_token.clone();
             while let Some(token) = continuation_token {
-                tokio::task::yield_now().await;
                 let resolution = self.send_once(Some(token)).await?;
                 let contents = match resolution.contents {
                     Some(contents) => contents,

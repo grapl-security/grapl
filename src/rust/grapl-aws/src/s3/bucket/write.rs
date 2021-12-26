@@ -6,17 +6,16 @@ use crate::s3::bucket::Bucket;
 use crate::s3::client::S3Common;
 use crate::TmpError;
 
-#[async_trait::async_trait]
-pub trait WriteS3<S: S3Common>  {
-    async fn put_object(&self, key: String, object: Vec<u8>) -> PutObjectRequest<S>;
-}
-
-
-#[async_trait::async_trait]
-impl<S> WriteS3<S> for Bucket<S>
+pub trait WriteS3<S, const READ_CAP: bool, const LIST_CAP: bool>
     where S: S3Common
 {
-    async fn put_object(&self, key: String, object: Vec<u8>) -> PutObjectRequest<S> {
+    fn put_object(&self, key: String, object: Vec<u8>) -> PutObjectRequest<S, READ_CAP, LIST_CAP>;
+}
+
+impl<S, const READ_CAP: bool, const LIST_CAP: bool> WriteS3<S, READ_CAP, LIST_CAP> for Bucket<S, READ_CAP, true, LIST_CAP>
+    where S: S3Common
+{
+    fn put_object(&self, key: String, object: Vec<u8>) -> PutObjectRequest<S, READ_CAP, LIST_CAP> {
         PutObjectRequest {
             bucket: self.clone(),
             key,
@@ -27,19 +26,19 @@ impl<S> WriteS3<S> for Bucket<S>
 }
 
 #[derive(Clone)]
-pub struct PutObjectRequest<S>
+pub struct PutObjectRequest<S, const READ_CAP: bool, const LIST_CAP: bool>
     where S: S3Common
 {
-    bucket: Bucket<S>,
+    bucket: Bucket<S, READ_CAP, true, LIST_CAP>,
     key: String,
     object: Vec<u8>,
     metadata: Option<HashMap<String, String>>,
 }
 
-impl<S> PutObjectRequest<S>
+impl<S, const READ_CAP: bool, const LIST_CAP: bool> PutObjectRequest<S, READ_CAP, LIST_CAP>
     where S: S3Common
 {
-    pub async fn put_object(self) -> Result<(), TmpError> {
+    pub async fn send(self) -> Result<(), TmpError> {
         self.bucket.s3_client.s3_client
             .put_object(InnerPutObjectRequest {
                 content_length: Some(self.object.len() as i64),

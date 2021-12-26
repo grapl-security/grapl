@@ -3,15 +3,23 @@ mod write;
 mod list;
 
 pub use read::*;
+pub use read::ReadS3;
 pub use write::*;
+pub use write::WriteS3;
 pub use list::*;
+pub use list::ListS3;
 
 use std::collections::HashMap;
 use crate::s3::client::{S3Client, S3Common};
 
 
 #[derive(Clone)]
-pub struct Bucket<S>
+pub struct Bucket<
+    S,
+    const READ_CAP: bool,
+    const WRITE_CAP: bool,
+    const LIST_CAP: bool,
+>
     where S: S3Common
 {
     #[cfg(test)]
