@@ -3023,6 +3023,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "plugin-bootstrap"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "blake3",
+ "futures",
+ "grapl-config",
+ "grapl-utils",
+ "rusoto_core",
+ "rusoto_s3",
+ "rust-proto",
+ "structopt",
+ "test-log",
+ "thiserror",
+ "tokio 1.14.0",
+ "tonic 0.6.1",
+ "tonic-health",
+ "tracing",
+ "tracing-subscriber 0.3.2",
+ "uuid",
+]
+
+[[package]]
 name = "plugin-registry"
 version = "0.1.0"
 dependencies = [

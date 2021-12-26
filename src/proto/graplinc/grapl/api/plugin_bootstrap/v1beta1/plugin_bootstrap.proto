@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package graplinc.grapl.api.plugin_bootstrap.v1beta1;
+
+message GetBootstrapInfoRequest {
+}
+
+message GetBootstrapInfoResponse {
+  bytes plugin_binary = 1;
+  bytes certificate = 2;
+}
+
+service PluginBootstrapService {
+  rpc GetBootstrapInfo(GetBootstrapInfoRequest) returns (GetBootstrapInfoResponse);
+}

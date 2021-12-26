@@ -15,6 +15,14 @@ pub(crate) mod graplinc {
                     ));
                 }
             }
+            pub(crate) mod plugin_bootstrap {
+                pub(crate) mod v1beta1 {
+                    include!(concat!(
+                    env!("OUT_DIR"),
+                    "/graplinc.grapl.api.plugin_bootstrap.v1beta1.rs"
+                    ));
+                }
+            }
             pub(crate) mod plugin_registry {
                 pub(crate) mod v1beta1 {
                     include!(concat!(
@@ -50,3 +58,4 @@ pub mod pipeline;
 pub mod plugin_registry;
 pub mod plugin_work_queue;
 pub mod types;
+pub mod plugin_bootstrap;
