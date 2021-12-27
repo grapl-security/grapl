@@ -60,8 +60,12 @@ pyrightconfig.json
 # https://www.pantsbuild.org/docs/gitignore
 ########################################################################
 /.pants.d/
-/dist/
+
+# A note: You can't ignore /dist dir and then unignore on a single file.
+# instead you have to ignore /dist/*
+/dist/*
 !/dist/.gitkeep
+
 /.pids
 /.pants.workdir.file_lock*
 /.cache

@@ -40,10 +40,6 @@ COPY --chown=grapl .flake8 .flake8
 COPY --chown=grapl src/python/mypy.ini src/python/mypy.ini
 COPY --chown=grapl pants.toml pants.toml
 COPY --chown=grapl 3rdparty 3rdparty
-# Consumed as SWARM_INIT_DIR
-COPY --chown=grapl src/aws-provision/swarm src/aws-provision/swarm
-# Consumed as DGRAPH_CONFIG_DIR
-COPY --chown=grapl src/aws-provision/dgraph src/aws-provision/dgraph
 
 # To bootstrap Pants
 # We need to ignore both Pants' cache as well as our Pulumi venv in
