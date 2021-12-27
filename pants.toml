@@ -63,7 +63,6 @@ root_patterns = [
   "/etc",  # Some of our tests use sample data from here
   "/pants-plugins",
   "/pulumi",
-  "/src/aws-provision",
   "/src/proto",
   "/src/python/analyzer_executor/src",
   "/src/python/analyzer_executor/tests",

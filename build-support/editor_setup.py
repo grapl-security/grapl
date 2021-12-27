@@ -92,7 +92,6 @@ def src_python_execution_environment() -> Dict[str, Union[str, List[str]]]:
             "/build-support",
             "/pants-plugins",
             "/pulumi",
-            "/src/aws-provision",
             "/src/proto",
         )
     ]
