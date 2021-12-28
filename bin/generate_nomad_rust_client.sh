@@ -49,9 +49,20 @@ docker run \
     --additional-properties=packageName="${CRATE_NAME}" \
     --additional-properties=packageVersion="${CRATE_VERSION}"
 
+################################################################################
+# Modify the generated code a bit
+################################################################################
 # Add a note about how this was generated.
 echo "This folder was generated with 'make generate-nomad-rust-client'" \
 	> "${OUTPUT_DIR}/GENERATED.md"
+
+# Disable a warning about snake-case noncompliance.
+# The generator generates `pub ID: string` which is not snake-case.
+# Disable a warning about dead code.
+# This is a generated library and that's to be expected.
+readonly LIB_RS="${OUTPUT_DIR}/src/lib.rs"
+echo -e "#![allow(non_snake_case, dead_code)]\n$(cat "${LIB_RS}")" > "${LIB_RS}"
+
 
 
 ################################################################################
