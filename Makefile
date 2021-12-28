@@ -470,3 +470,4 @@ build-docs: ## Build the Sphinx docs
 .PHONY: generate-nomad-rust-client
 generate-nomad-rust-client:  # Generate the Nomad rust client from OpenAPI
 	./bin/generate_nomad_rust_client.sh
+	$(MAKE) format-rust

@@ -1,15 +1,30 @@
-use std::collections::HashMap;
-use std::pin::Pin;
+use std::{
+    collections::HashMap,
+    pin::Pin,
+};
 
-use futures;
-use futures::Future;
-use futures::future::*;
-use hyper;
-use hyper::header::{AUTHORIZATION, CONTENT_LENGTH, CONTENT_TYPE, HeaderValue, USER_AGENT};
+use futures::{
+    self,
+    future::*,
+    Future,
+};
+use hyper::{
+    self,
+    header::{
+        HeaderValue,
+        AUTHORIZATION,
+        CONTENT_LENGTH,
+        CONTENT_TYPE,
+        USER_AGENT,
+    },
+};
 use serde;
 use serde_json;
 
-use super::{configuration, Error};
+use super::{
+    configuration,
+    Error,
+};
 
 pub(crate) struct ApiKey {
     pub in_header: bool,
@@ -103,11 +118,11 @@ impl Request {
     pub fn execute<'a, C, U>(
         self,
         conf: &configuration::Configuration<C>,
-    ) -> Pin<Box<dyn Future<Output=Result<U, Error>> + 'a>>
-        where
-            C: hyper::client::connect::Connect + Clone + std::marker::Send + Sync,
-            U: Sized + std::marker::Send + 'a,
-            for<'de> U: serde::Deserialize<'de>,
+    ) -> Pin<Box<dyn Future<Output = Result<U, Error>> + 'a>>
+    where
+        C: hyper::client::connect::Connect + Clone + std::marker::Send + Sync,
+        U: Sized + std::marker::Send + 'a,
+        for<'de> U: serde::Deserialize<'de>,
     {
         let mut query_string = ::url::form_urlencoded::Serializer::new("".to_owned());
 
@@ -133,9 +148,7 @@ impl Request {
             Ok(u) => u,
         };
 
-        let mut req_builder = hyper::Request::builder()
-            .uri(uri)
-            .method(self.method);
+        let mut req_builder = hyper::Request::builder().uri(uri).method(self.method);
 
         // Detect the authorization type if it hasn't been set.
         let auth = self.auth.unwrap_or_else(||
@@ -182,10 +195,13 @@ impl Request {
         }
 
         if let Some(ref user_agent) = conf.user_agent {
-            req_builder = req_builder.header(USER_AGENT, match HeaderValue::from_str(user_agent) {
-                Ok(header_value) => header_value,
-                Err(e) => return Box::pin(futures::future::err(super::Error::Header(e)))
-            });
+            req_builder = req_builder.header(
+                USER_AGENT,
+                match HeaderValue::from_str(user_agent) {
+                    Ok(header_value) => header_value,
+                    Err(e) => return Box::pin(futures::future::err(super::Error::Header(e))),
+                },
+            );
         }
 
         for (k, v) in self.header_params {
@@ -194,7 +210,10 @@ impl Request {
 
         let req_headers = req_builder.headers_mut().unwrap();
         let request_result = if self.form_params.len() > 0 {
-            req_headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/ x-www-form-urlencoded"));
+            req_headers.insert(
+                CONTENT_TYPE,
+                HeaderValue::from_static("application/ x-www-form-urlencoded"),
+            );
             let mut enc = ::url::form_urlencoded::Serializer::new("".to_owned());
             for (k, v) in self.form_params {
                 enc.append_pair(&k, &v);
@@ -209,30 +228,40 @@ impl Request {
         };
         let request = match request_result {
             Ok(request) => request,
-            Err(e) => return Box::pin(futures::future::err(Error::from(e)))
+            Err(e) => return Box::pin(futures::future::err(Error::from(e))),
         };
 
         let no_return_type = self.no_return_type;
-        Box::pin(conf.client
-            .request(request)
-            .map_err(|e| Error::from(e))
-            .and_then(move |response| {
-                let status = response.status();
-                if !status.is_success() {
-                    futures::future::err::<U, Error>(Error::from((status, response.into_body()))).boxed()
-                } else if no_return_type {
-                    // This is a hack; if there's no_ret_type, U is (), but serde_json gives an
-                    // error when deserializing "" into (), so deserialize 'null' into it
-                    // instead.
-                    // An alternate option would be to require U: Default, and then return
-                    // U::default() here instead since () implements that, but then we'd
-                    // need to impl default for all models.
-                    futures::future::ok::<U, Error>(serde_json::from_str("null").expect("serde null value")).boxed()
-                } else {
-                    hyper::body::to_bytes(response.into_body())
-                        .map(|bytes| serde_json::from_slice(&bytes.unwrap()))
-                        .map_err(|e| Error::from(e)).boxed()
-                }
-            }))
+        Box::pin(
+            conf.client
+                .request(request)
+                .map_err(|e| Error::from(e))
+                .and_then(move |response| {
+                    let status = response.status();
+                    if !status.is_success() {
+                        futures::future::err::<U, Error>(Error::from((
+                            status,
+                            response.into_body(),
+                        )))
+                        .boxed()
+                    } else if no_return_type {
+                        // This is a hack; if there's no_ret_type, U is (), but serde_json gives an
+                        // error when deserializing "" into (), so deserialize 'null' into it
+                        // instead.
+                        // An alternate option would be to require U: Default, and then return
+                        // U::default() here instead since () implements that, but then we'd
+                        // need to impl default for all models.
+                        futures::future::ok::<U, Error>(
+                            serde_json::from_str("null").expect("serde null value"),
+                        )
+                        .boxed()
+                    } else {
+                        hyper::body::to_bytes(response.into_body())
+                            .map(|bytes| serde_json::from_slice(&bytes.unwrap()))
+                            .map_err(|e| Error::from(e))
+                            .boxed()
+                    }
+                }),
+        )
     }
 }

@@ -11,7 +11,9 @@
 use hyper;
 
 pub struct Configuration<C: hyper::client::connect::Connect>
-    where C: Clone + std::marker::Send + Sync + 'static {
+where
+    C: Clone + std::marker::Send + Sync + 'static,
+{
     pub base_path: String,
     pub user_agent: Option<String>,
     pub client: hyper::client::Client<C>,
@@ -29,7 +31,9 @@ pub struct ApiKey {
 }
 
 impl<C: hyper::client::connect::Connect> Configuration<C>
-    where C: Clone + std::marker::Send + Sync {
+where
+    C: Clone + std::marker::Send + Sync,
+{
     pub fn new(client: hyper::client::Client<C>) -> Configuration<C> {
         Configuration {
             base_path: "https://127.0.0.1:4646/v1".to_owned(),

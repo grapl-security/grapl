@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use hyper;
+
 use super::configuration::Configuration;
 
 pub struct APIClient {
@@ -23,7 +24,9 @@ pub struct APIClient {
 
 impl APIClient {
     pub fn new<C: hyper::client::connect::Connect>(configuration: Configuration<C>) -> APIClient
-        where C: Clone + std::marker::Send + Sync + 'static {
+    where
+        C: Clone + std::marker::Send + Sync + 'static,
+    {
         let rc = Rc::new(configuration);
 
         APIClient {
@@ -45,64 +48,63 @@ impl APIClient {
         }
     }
 
-    pub fn acl_api(&self) -> &dyn crate::apis::ACLApi{
+    pub fn acl_api(&self) -> &dyn crate::apis::ACLApi {
         self.acl_api.as_ref()
     }
 
-    pub fn allocations_api(&self) -> &dyn crate::apis::AllocationsApi{
+    pub fn allocations_api(&self) -> &dyn crate::apis::AllocationsApi {
         self.allocations_api.as_ref()
     }
 
-    pub fn deployments_api(&self) -> &dyn crate::apis::DeploymentsApi{
+    pub fn deployments_api(&self) -> &dyn crate::apis::DeploymentsApi {
         self.deployments_api.as_ref()
     }
 
-    pub fn enterprise_api(&self) -> &dyn crate::apis::EnterpriseApi{
+    pub fn enterprise_api(&self) -> &dyn crate::apis::EnterpriseApi {
         self.enterprise_api.as_ref()
     }
 
-    pub fn evaluations_api(&self) -> &dyn crate::apis::EvaluationsApi{
+    pub fn evaluations_api(&self) -> &dyn crate::apis::EvaluationsApi {
         self.evaluations_api.as_ref()
     }
 
-    pub fn jobs_api(&self) -> &dyn crate::apis::JobsApi{
+    pub fn jobs_api(&self) -> &dyn crate::apis::JobsApi {
         self.jobs_api.as_ref()
     }
 
-    pub fn metrics_api(&self) -> &dyn crate::apis::MetricsApi{
+    pub fn metrics_api(&self) -> &dyn crate::apis::MetricsApi {
         self.metrics_api.as_ref()
     }
 
-    pub fn namespaces_api(&self) -> &dyn crate::apis::NamespacesApi{
+    pub fn namespaces_api(&self) -> &dyn crate::apis::NamespacesApi {
         self.namespaces_api.as_ref()
     }
 
-    pub fn nodes_api(&self) -> &dyn crate::apis::NodesApi{
+    pub fn nodes_api(&self) -> &dyn crate::apis::NodesApi {
         self.nodes_api.as_ref()
     }
 
-    pub fn plugins_api(&self) -> &dyn crate::apis::PluginsApi{
+    pub fn plugins_api(&self) -> &dyn crate::apis::PluginsApi {
         self.plugins_api.as_ref()
     }
 
-    pub fn regions_api(&self) -> &dyn crate::apis::RegionsApi{
+    pub fn regions_api(&self) -> &dyn crate::apis::RegionsApi {
         self.regions_api.as_ref()
     }
 
-    pub fn scaling_api(&self) -> &dyn crate::apis::ScalingApi{
+    pub fn scaling_api(&self) -> &dyn crate::apis::ScalingApi {
         self.scaling_api.as_ref()
     }
 
-    pub fn search_api(&self) -> &dyn crate::apis::SearchApi{
+    pub fn search_api(&self) -> &dyn crate::apis::SearchApi {
         self.search_api.as_ref()
     }
 
-    pub fn system_api(&self) -> &dyn crate::apis::SystemApi{
+    pub fn system_api(&self) -> &dyn crate::apis::SystemApi {
         self.system_api.as_ref()
     }
 
-    pub fn volumes_api(&self) -> &dyn crate::apis::VolumesApi{
+    pub fn volumes_api(&self) -> &dyn crate::apis::VolumesApi {
         self.volumes_api.as_ref()
     }
-
 }

@@ -75,6 +75,7 @@ BUILD @christophermaier
 /src/rust/plugin-registry/ @colin-grapl
 /src/rust/plugin-work-queue/ @colin-grapl
 /src/rust/node-identifier/ @grapl-security/wg-data-infra
+/src/rust/nomad-client-gen/ @wimax-grapl
 /src/rust/rust-proto/ @grapl-security/wg-data-infra
 /src/rust/rust-toolchain.toml @inickles-grapl
 /src/rust/sqs-executor/ @inickles-grapl @grapl-security/wg-data-infra
