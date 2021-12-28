@@ -27,7 +27,6 @@ git checkout "${NOMAD_OPENAPI_SHA}"
 ################################################################################
 # Generate hyper library code into `/tmp/nomad-openapi-generated`
 ################################################################################
-SHORT_SHA="$(echo "${NOMAD_OPENAPI_SHA}" | cut -c -6)"
 CRATE_NAME="nomad-client-gen"
 CRATE_VERSION="1.0.0"  # You can't do any cute version names, just numeric
 
