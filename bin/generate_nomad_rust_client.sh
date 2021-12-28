@@ -28,7 +28,7 @@ git checkout "${NOMAD_OPENAPI_SHA}"
 # Generate hyper library code into `/tmp/nomad-openapi-generated`
 ################################################################################
 CRATE_NAME="nomad-client-gen"
-CRATE_VERSION="1.0.0"  # You can't do any cute version names, just numeric
+CRATE_VERSION="1.0.0" # You can't do any cute version names, just numeric
 
 # Learn about other `--additional-properties` at:
 # https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/rust.md
@@ -53,7 +53,7 @@ docker run \
 ################################################################################
 # Add a note about how this was generated.
 echo "This folder was generated with 'make generate-nomad-rust-client'" \
-	> "${OUTPUT_DIR}/GENERATED.md"
+    > "${OUTPUT_DIR}/GENERATED.md"
 
 # Disable a warning about snake-case noncompliance.
 # The generator generates `pub ID: string` which is not snake-case.
@@ -61,8 +61,6 @@ echo "This folder was generated with 'make generate-nomad-rust-client'" \
 # This is a generated library and that's to be expected.
 readonly LIB_RS="${OUTPUT_DIR}/src/lib.rs"
 echo -e "#![allow(non_snake_case, dead_code)]\n$(cat "${LIB_RS}")" > "${LIB_RS}"
-
-
 
 ################################################################################
 # Copy library into src/rust

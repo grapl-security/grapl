@@ -2,16 +2,13 @@
 
 All URIs are relative to *https://127.0.0.1:4646/v1*
 
-Method | HTTP request | Description
-------------- | ------------- | -------------
-[**get_regions**](RegionsApi.md#get_regions) | **Get** /regions | 
-
-
+| Method                                       | HTTP request     | Description |
+| -------------------------------------------- | ---------------- | ----------- |
+| [**get_regions**](RegionsApi.md#get_regions) | **Get** /regions |
 
 ## get_regions
 
 > Vec<String> get_regions()
-
 
 ### Parameters
 
@@ -30,5 +27,7 @@ This endpoint does not need any parameter.
 - **Content-Type**: Not defined
 - **Accept**: application/json
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
+[[Back to top]](#)
+[[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)

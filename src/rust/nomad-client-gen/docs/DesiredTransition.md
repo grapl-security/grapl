@@ -2,11 +2,11 @@
 
 ## Properties
 
-Name | Type | Description | Notes
------------- | ------------- | ------------- | -------------
-**migrate** | Option<**bool**> |  | [optional]
-**reschedule** | Option<**bool**> |  | [optional]
+| Name           | Type             | Description | Notes      |
+| -------------- | ---------------- | ----------- | ---------- |
+| **migrate**    | Option<**bool**> |             | [optional] |
+| **reschedule** | Option<**bool**> |             | [optional] |
 
-[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
-
-
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to README]](../README.md)
