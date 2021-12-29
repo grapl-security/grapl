@@ -62,9 +62,7 @@ echo "This folder was generated with 'make generate-nomad-rust-client'" \
 # This is a generated library and that's to be expected.
 readonly LIB_RS="${OUTPUT_DIR}/src/lib.rs"
 readonly ALLOWED_WARNINGS_ARRAY=(
-    "non_snake_case"
-    "dead_code"
-    "clippy::comparison_to_empty"
+    "warnings"
 )
 ALLOWED_WARNINGS=$(echo "${ALLOWED_WARNINGS_ARRAY[@]}" | sed "s/ /, /g") # .join(", ")
 echo -e "#![allow(${ALLOWED_WARNINGS})]\n$(cat "${LIB_RS}")" > "${LIB_RS}"
