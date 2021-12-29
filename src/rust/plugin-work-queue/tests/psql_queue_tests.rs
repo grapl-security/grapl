@@ -53,11 +53,16 @@ mod tests {
             .await?;
 
         // Retrieve a message
-        let msg = queue.get_generator_message().await?.expect("No valid message");
+        let msg = queue
+            .get_generator_message()
+            .await?
+            .expect("No valid message");
         let execution_key = msg.request.execution_key;
         tracing::info!(message="Received message", execution_key=?msg.request.execution_key);
         // Acknowledge the message
-        queue.ack_generator(execution_key, Status::Processed).await?;
+        queue
+            .ack_generator(execution_key, Status::Processed)
+            .await?;
 
         // The request should be marked as processed
         let status = get_generator_status(&queue.pool, &execution_key).await?;
@@ -86,7 +91,10 @@ mod tests {
             .await?;
 
         // Retrieve a message
-        let msg = queue.get_generator_message().await?.expect("No valid message");
+        let msg = queue
+            .get_generator_message()
+            .await?
+            .expect("No valid message");
         let execution_key = msg.request.execution_key;
         // Acknowledge the message
         tracing::info!(message="Received message", execution_key=?msg.request.execution_key);
