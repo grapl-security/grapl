@@ -29,7 +29,9 @@ pub enum AeadError {
     #[error("AuthenticationError")]
     AuthenticationError,
     #[error("LoopError")]
-    LoopError
+    LoopError,
+    #[error("InvalidAadFormat")]
+    InvalidAad(#[from] serde_json::Error)
 }
 
 impl From<chacha20::cipher::errors::LoopError> for AeadError {
@@ -59,6 +61,11 @@ impl Hasher {
     }
 }
 
+pub trait Aad: serde::Serialize + serde::de::DeserializeOwned {
+    fn recipient(&self) -> &str;
+    fn sender(&self) -> &str;
+}
+
 #[derive(Clone)]
 pub struct EncryptedData {
     ciphertext: Vec<u8>,
@@ -82,19 +89,21 @@ impl ChaChaBlake3 {
         }
     }
 
-    pub fn encrypt(
+    pub fn encrypt<A: Aad>(
         &mut self,
         msg: Vec<u8>,
-        aad: &[u8],
+        aad: A,
         key: &[u8; KEY_SIZE],
     ) -> Result<EncryptedData, AeadError> {
+        let aad = serde_json::to_vec(&aad)?;
+
         let mut nonce = [0; TOTAL_NONCE_SIZE];
         OsRng.fill_bytes(&mut nonce);
 
         let (ciphertext, mac) = self.encrypt_raw(
             msg,
             &nonce,
-            aad,
+            &aad,
             &key,
         )?;
 
@@ -208,32 +217,21 @@ mod tests {
     use rand_core::{OsRng, RngCore};
     use quickcheck_macros::quickcheck;
 
-    #[quickcheck]
-    fn encrypt_decrypt_raw(msg: Vec<u8>, aad: Vec<u8>) {
-        let mut aead = ChaChaBlake3::new();
-        if msg.is_empty() { return; }
-        let mut nonce = [0; TOTAL_NONCE_SIZE];
-        OsRng.fill_bytes(&mut nonce);
-        let mut key = [0; 32];
-        OsRng.fill_bytes(&mut key);
+    #[derive(serde::Serialize, serde::Deserialize)]
+    struct MyAad {
+        recipient: String,
+        sender: String,
+        other_data: Vec<u8>,
+    }
 
-        let (encrypted, mac) = aead.encrypt_raw(
-            msg.clone(),
-            &nonce,
-            &aad,
-            &key,
-        ).expect("encrypted failed");
-        let decrypted = aead.decrypt_raw(
-            encrypted.clone(),
-            &mac,
-            &nonce,
-            &aad,
-            &key,
-        ).expect("decrypted failed");
+    impl Aad for MyAad {
+        fn recipient(&self) -> &str {
+            &self.recipient
+        }
 
-        assert_ne!(encrypted, decrypted);
-        assert_ne!(msg, encrypted);
-        assert_eq!(msg, decrypted);
+        fn sender(&self) -> &str {
+            &self.sender
+        }
     }
 
     #[quickcheck]
@@ -244,9 +242,15 @@ mod tests {
         let mut key = [0; 32];
         OsRng.fill_bytes(&mut key);
 
+        let aad = MyAad {
+            recipient: "encrypt_decrypt_recipient".to_owned(),
+            sender: "encrypt_decrypt_sender".to_owned(),
+            other_data: aad,
+        };
+
         let encrypted = aead.encrypt(
             msg.clone(),
-            &aad,
+            aad,
             &key,
         ).expect("encrypted: failed");
 
@@ -268,9 +272,15 @@ mod tests {
         let mut key = [0; 32];
         OsRng.fill_bytes(&mut key);
 
+        let aad = MyAad {
+            recipient: "encrypt_decrypt_fail_aad_recipient".to_owned(),
+            sender: "encrypt_decrypt_fail_aad_sender".to_owned(),
+            other_data: aad,
+        };
+
         let mut encrypted = aead.encrypt(
             msg.clone(),
-            &aad,
+            aad,
             &key,
         ).expect("encrypted: failed");
 
@@ -296,9 +306,15 @@ mod tests {
         let mut key = [0; 32];
         OsRng.fill_bytes(&mut key);
 
+        let aad = MyAad {
+            recipient: "encrypt_decrypt_fail_cipher_recipient".to_owned(),
+            sender: "encrypt_decrypt_fail_cipher_sender".to_owned(),
+            other_data: aad,
+        };
+
         let mut encrypted = aead.encrypt(
             msg.clone(),
-            &aad,
+            aad,
             &key,
         ).expect("encrypted: failed");
 
