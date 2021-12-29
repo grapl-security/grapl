@@ -270,7 +270,7 @@ impl PsqlQueue {
 }
 
 // Pub for testing - otherwise sqlx can't see the query
-pub async fn get_status(
+pub async fn get_generator_status(
     pool: &sqlx::Pool<Postgres>,
     execution_key: &ExecutionId,
 ) -> Result<Status, sqlx::Error> {

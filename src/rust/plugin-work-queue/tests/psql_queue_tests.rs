@@ -4,7 +4,7 @@
 mod tests {
     use chrono::prelude::*;
     use plugin_work_queue::psql_queue::{
-        get_status,
+        get_generator_status,
         ExecutionId,
         PsqlQueue,
         Status,
@@ -16,7 +16,6 @@ mod tests {
         execution_key: ExecutionId,
         plugin_id: uuid::Uuid,
         pipeline_message: Vec<u8>,
-        execution_result: Option<Vec<u8>>,
         status: Status,
         creation_time: DateTime<Utc>,
         last_updated: DateTime<Utc>,
@@ -46,23 +45,22 @@ mod tests {
 
         // Ensure one message is queued
         queue
-            .put_message(
+            .put_generator_message(
                 uuid::Uuid::new_v4(),
                 b"some-message".to_vec(),
-                uuid::Uuid::new_v4(),
                 uuid::Uuid::new_v4(),
             )
             .await?;
 
         // Retrieve a message
-        let msg = queue.get_message().await?.expect("No valid message");
+        let msg = queue.get_generator_message().await?.expect("No valid message");
         let execution_key = msg.request.execution_key;
         tracing::info!(message="Received message", execution_key=?msg.request.execution_key);
         // Acknowledge the message
-        queue.ack_success(execution_key, b"output".to_vec()).await?;
+        queue.ack_generator(execution_key, Status::Processed).await?;
 
         // The request should be marked as processed
-        let status = get_status(&queue.pool, &execution_key).await?;
+        let status = get_generator_status(&queue.pool, &execution_key).await?;
         assert_eq!(status, Status::Processed);
 
         Ok(())
@@ -80,21 +78,20 @@ mod tests {
 
         // Ensure one message is queued
         queue
-            .put_message(
+            .put_generator_message(
                 uuid::Uuid::new_v4(),
                 b"some-message".to_vec(),
-                uuid::Uuid::new_v4(),
                 uuid::Uuid::new_v4(),
             )
             .await?;
 
         // Retrieve a message
-        let msg = queue.get_message().await?.expect("No valid message");
+        let msg = queue.get_generator_message().await?.expect("No valid message");
         let execution_key = msg.request.execution_key;
         // Acknowledge the message
         tracing::info!(message="Received message", execution_key=?msg.request.execution_key);
-        queue.ack_failure(execution_key).await?;
-        let status = get_status(&queue.pool, &execution_key).await?;
+        queue.ack_generator(execution_key, Status::Failed).await?;
+        let status = get_generator_status(&queue.pool, &execution_key).await?;
         assert_eq!(status, Status::Failed);
 
         Ok(())
