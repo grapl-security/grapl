@@ -1,6 +1,7 @@
 #![allow(unused_variables)]
 
 use std::fmt::Formatter;
+
 use crate::graplinc::grapl::api::plugin_work_queue::v1beta1::NoAvailableJobs;
 pub use crate::graplinc::grapl::api::plugin_work_queue::v1beta1::{
     get_execute_analyzer_response,
@@ -307,9 +308,7 @@ impl TryFrom<PutExecuteAnalyzerRequestProto> for PutExecuteAnalyzerRequest {
             ))?
             .try_into()?;
 
-        Ok(Self {
-            execution_job,
-        })
+        Ok(Self { execution_job })
     }
 }
 
@@ -353,9 +352,7 @@ impl TryFrom<PutExecuteGeneratorRequestProto> for PutExecuteGeneratorRequest {
             ))?
             .try_into()?;
 
-        Ok(Self {
-            execution_job,
-        })
+        Ok(Self { execution_job })
     }
 }
 

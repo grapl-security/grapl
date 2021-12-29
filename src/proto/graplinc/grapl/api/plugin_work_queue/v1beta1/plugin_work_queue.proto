@@ -39,6 +39,8 @@ message GetExecuteGeneratorRequest {}
 // A request to retrieve a new ExecutionJob for an Analyzer
 message GetExecuteAnalyzerRequest {}
 
+// When there are no jobs left in the queue. Primarily for transport as we
+// currently represent this as Option on the Rust side of things.
 message NoAvailableJobs {}
 
 // A response containing the next ExecutionJob to execute against a Generator

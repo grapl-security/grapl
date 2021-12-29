@@ -247,7 +247,7 @@ impl PsqlQueue {
     pub async fn ack_analyzer(
         &self,
         execution_key: ExecutionId,
-        status: Status
+        status: Status,
     ) -> Result<(), PsqlQueueError> {
         sqlx::query!(
             r#"
@@ -276,12 +276,12 @@ pub async fn get_status(
 ) -> Result<Status, sqlx::Error> {
     // The request should be marked as failed
     let row = sqlx::query!(
-            r#"SELECT status as "status: Status"
+        r#"SELECT status as "status: Status"
             FROM plugin_work_queue.generator_plugin_executions
             WHERE execution_key = $1"#,
-            execution_key.0
-        )
-        .fetch_one(pool)
-        .await?;
+        execution_key.0
+    )
+    .fetch_one(pool)
+    .await?;
     Ok(row.status)
 }

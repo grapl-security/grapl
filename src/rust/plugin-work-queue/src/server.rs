@@ -181,10 +181,9 @@ impl PluginWorkQueue {
             true => crate::psql_queue::Status::Processed,
             false => crate::psql_queue::Status::Failed,
         };
-        self.queue.ack_generator(
-            request.request_id.into(),
-            status,
-        ).await?;
+        self.queue
+            .ack_generator(request.request_id.into(), status)
+            .await?;
         Ok(AcknowledgeGeneratorResponse {})
     }
 
@@ -197,10 +196,9 @@ impl PluginWorkQueue {
             true => crate::psql_queue::Status::Processed,
             false => crate::psql_queue::Status::Failed,
         };
-        self.queue.ack_analyzer(
-            request.request_id.into(),
-            status,
-        ).await?;
+        self.queue
+            .ack_analyzer(request.request_id.into(), status)
+            .await?;
         Ok(AcknowledgeAnalyzerResponse {})
     }
 }
