@@ -125,7 +125,7 @@ impl PluginWorkQueue {
         &self,
         _request: GetExecuteGeneratorRequest,
     ) -> Result<GetExecuteGeneratorResponse, PluginWorkQueueError> {
-        let message = self.queue.get_analyzer_message().await?;
+        let message = self.queue.get_generator_message().await?;
         let message = match message {
             Some(message) => message,
             None => {
@@ -177,9 +177,14 @@ impl PluginWorkQueue {
         &self,
         request: AcknowledgeGeneratorRequest,
     ) -> Result<AcknowledgeGeneratorResponse, PluginWorkQueueError> {
-        self.queue
-            .ack_generator_failure(request.request_id.into())
-            .await?;
+        let status = match request.success {
+            true => crate::psql_queue::Status::Processed,
+            false => crate::psql_queue::Status::Failed,
+        };
+        self.queue.ack_generator(
+            request.request_id.into(),
+            status,
+        ).await?;
         Ok(AcknowledgeGeneratorResponse {})
     }
 
@@ -188,9 +193,14 @@ impl PluginWorkQueue {
         &self,
         request: AcknowledgeAnalyzerRequest,
     ) -> Result<AcknowledgeAnalyzerResponse, PluginWorkQueueError> {
-        self.queue
-            .ack_analyzer_failure(request.request_id.into())
-            .await?;
+        let status = match request.success {
+            true => crate::psql_queue::Status::Processed,
+            false => crate::psql_queue::Status::Failed,
+        };
+        self.queue.ack_analyzer(
+            request.request_id.into(),
+            status,
+        ).await?;
         Ok(AcknowledgeAnalyzerResponse {})
     }
 }

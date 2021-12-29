@@ -39,8 +39,8 @@ pub struct NextExecutionRequest {
 
 #[derive(thiserror::Error, Debug)]
 pub enum PsqlQueueError {
-    #[error("SqlX")]
-    SqlX(#[from] sqlx::Error),
+    #[error("Sqlx")]
+    Sqlx(#[from] sqlx::Error),
 }
 
 #[derive(Clone, Debug)]
@@ -68,7 +68,7 @@ impl PsqlQueue {
         let now = chrono::Utc::now();
         sqlx::query!(
             r"
-            INSERT INTO plugin_work_queue.analyzer_plugin_executions (
+            INSERT INTO plugin_work_queue.generator_plugin_executions (
                 plugin_id,
                 pipeline_message,
                 tenant_id,
@@ -159,7 +159,11 @@ impl PsqlQueue {
                  LIMIT 1
              ) AS next_execution
              WHERE plugin_work_queue.generator_plugin_executions.execution_key = next_execution.execution_key
-             RETURNING next_execution.execution_key as "execution_key!: ExecutionId", next_execution.plugin_id, next_execution.tenant_id, next_execution.pipeline_message
+             RETURNING
+                 next_execution.execution_key as "execution_key!: ExecutionId",
+                 next_execution.plugin_id,
+                 next_execution.pipeline_message,
+                 next_execution.tenant_id
         "#).fetch_optional(&self.pool)
             .await?;
 
@@ -203,74 +207,27 @@ impl PsqlQueue {
                  LIMIT 1
              ) AS next_execution
              WHERE plugin_work_queue.analyzer_plugin_executions.execution_key = next_execution.execution_key
-             RETURNING next_execution.execution_key as "execution_key!: ExecutionId", next_execution.plugin_id, next_execution.pipeline_message, next_execution.tenant_id
+             RETURNING
+                 next_execution.execution_key as "execution_key!: ExecutionId",
+                 next_execution.plugin_id,
+                 next_execution.pipeline_message,
+                 next_execution.tenant_id
         "#).fetch_optional(&self.pool)
             .await?;
 
         Ok(request.map(|request| Message { request }))
     }
 
-    #[instrument(skip(output), err)]
-    pub async fn ack_generator_success(
-        &self,
-        execution_key: ExecutionId,
-        output: Vec<u8>,
-    ) -> Result<(), PsqlQueueError> {
-        sqlx::query!(
-            r#"
-                UPDATE plugin_work_queue.generator_plugin_executions
-                SET status  = 'processed',
-                    execution_result = $2,
-                    last_updated = CASE
-                        WHEN status != 'processed'
-                            THEN CURRENT_TIMESTAMP
-                            ELSE last_updated
-                        END
-                WHERE execution_key = $1 AND execution_result IS NULL
-            "#,
-            execution_key.0,
-            output,
-        )
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
-    #[instrument(skip(output), err)]
-    pub async fn ack_analyzer_success(
-        &self,
-        execution_key: ExecutionId,
-        output: Vec<u8>,
-    ) -> Result<(), PsqlQueueError> {
-        sqlx::query!(
-            r#"
-                UPDATE plugin_work_queue.analyzer_plugin_executions
-                SET status  = 'processed',
-                    execution_result = $2,
-                    last_updated = CASE
-                        WHEN status != 'processed'
-                            THEN CURRENT_TIMESTAMP
-                            ELSE last_updated
-                        END
-                WHERE execution_key = $1 AND execution_result IS NULL
-            "#,
-            execution_key.0,
-            output,
-        )
-        .execute(&self.pool)
-        .await?;
-        Ok(())
-    }
-
     #[instrument(err)]
-    pub async fn ack_generator_failure(
+    pub async fn ack_generator(
         &self,
         execution_key: ExecutionId,
+        status: Status,
     ) -> Result<(), PsqlQueueError> {
         sqlx::query!(
             r#"
                 UPDATE plugin_work_queue.generator_plugin_executions
-                SET status  = 'failed',
+                SET status = $2,
                     last_updated = CASE
                         WHEN status != 'processed'
                             THEN CURRENT_TIMESTAMP
@@ -279,6 +236,7 @@ impl PsqlQueue {
                 WHERE execution_key = $1
             "#,
             execution_key.0,
+            status as _,
         )
         .execute(&self.pool)
         .await?;
@@ -286,14 +244,15 @@ impl PsqlQueue {
     }
 
     #[instrument(err)]
-    pub async fn ack_analyzer_failure(
+    pub async fn ack_analyzer(
         &self,
         execution_key: ExecutionId,
+        status: Status
     ) -> Result<(), PsqlQueueError> {
         sqlx::query!(
             r#"
                 UPDATE plugin_work_queue.analyzer_plugin_executions
-                SET status  = 'failed',
+                SET status = $2,
                     last_updated = CASE
                         WHEN status != 'processed'
                             THEN CURRENT_TIMESTAMP
@@ -302,6 +261,7 @@ impl PsqlQueue {
                 WHERE execution_key = $1
             "#,
             execution_key.0,
+            status as _,
         )
         .execute(&self.pool)
         .await?;
@@ -316,7 +276,9 @@ pub async fn get_status(
 ) -> Result<Status, sqlx::Error> {
     // The request should be marked as failed
     let row = sqlx::query!(
-            r#"SELECT status as "status: Status" FROM plugin_work_queue.generator_plugin_executions WHERE execution_key = $1"#,
+            r#"SELECT status as "status: Status"
+            FROM plugin_work_queue.generator_plugin_executions
+            WHERE execution_key = $1"#,
             execution_key.0
         )
         .fetch_one(pool)
