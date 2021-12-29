@@ -58,6 +58,14 @@ pub enum PluginWorkQueueError {
     DeserializationError(#[from] PluginWorkQueueDeserializationError),
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum PluginWorkQueueInitError {
+    #[error("Timeout")]
+    Timeout(#[from] tokio::time::error::Elapsed),
+    #[error("Sqlx")]
+    Sqlx(#[from] sqlx::Error),
+}
+
 impl From<PluginWorkQueueError> for Status {
     fn from(err: PluginWorkQueueError) -> Self {
         match err {
@@ -88,6 +96,26 @@ impl From<Pool<Postgres>> for PluginWorkQueue {
 }
 
 impl PluginWorkQueue {
+    pub async fn try_from(
+        service_config: &PluginWorkQueueServiceConfig,
+    ) -> Result<Self, PluginWorkQueueInitError> {
+        let postgres_address = format!(
+            "postgresql://{}:{}@{}:{}",
+            service_config.plugin_work_queue_db_username,
+            service_config.plugin_work_queue_db_password,
+            service_config.plugin_work_queue_db_hostname,
+            service_config.plugin_work_queue_db_port,
+        );
+
+        let plugin_work_queue: PluginWorkQueue = PluginWorkQueue::from(
+            sqlx::PgPool::connect(&postgres_address)
+                .timeout(std::time::Duration::from_secs(5))
+                .await??,
+        );
+
+        Ok(plugin_work_queue)
+    }
+
     #[allow(dead_code)]
     async fn put_execute_generator(
         &self,
@@ -284,19 +312,8 @@ pub async fn exec_service(
         message="Connecting to plugin registry table",
         service_config=?service_config,
     );
-    let postgres_address = format!(
-        "postgresql://{}:{}@{}:{}",
-        service_config.plugin_work_queue_db_username,
-        service_config.plugin_work_queue_db_password,
-        service_config.plugin_work_queue_db_hostname,
-        service_config.plugin_work_queue_db_port,
-    );
 
-    let plugin_work_queue: PluginWorkQueue = PluginWorkQueue::from(
-        sqlx::PgPool::connect(&postgres_address)
-            .timeout(std::time::Duration::from_secs(5))
-            .await??,
-    );
+    let plugin_work_queue = PluginWorkQueue::try_from(&service_config).await?;
 
     sqlx::migrate!().run(&plugin_work_queue.queue.pool).await?;
 

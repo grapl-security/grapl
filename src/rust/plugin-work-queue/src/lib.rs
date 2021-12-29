@@ -9,13 +9,13 @@ pub mod server;
 #[derive(StructOpt, Debug)]
 pub struct PluginWorkQueueServiceConfig {
     #[structopt(env)]
-    plugin_work_queue_bind_address: SocketAddr,
+    pub plugin_work_queue_bind_address: SocketAddr,
     #[structopt(env)]
-    plugin_work_queue_db_hostname: String,
+    pub plugin_work_queue_db_hostname: String,
     #[structopt(env)]
-    plugin_work_queue_db_port: u16,
+    pub plugin_work_queue_db_port: u16,
     #[structopt(env)]
-    plugin_work_queue_db_username: String,
+    pub plugin_work_queue_db_username: String,
     #[structopt(env)]
-    plugin_work_queue_db_password: String,
+    pub plugin_work_queue_db_password: String,
 }
