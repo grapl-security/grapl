@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ################################################################################
-# Get some constants
+# Some constants
 ################################################################################
 readonly OUTPUT_DIR="/tmp/nomad-openapi-generated"
 REPOSITORY_ROOT="$(git rev-parse --show-toplevel)"
@@ -61,7 +61,13 @@ echo "This folder was generated with 'make generate-nomad-rust-client'" \
 # Disable a warning about dead code.
 # This is a generated library and that's to be expected.
 readonly LIB_RS="${OUTPUT_DIR}/src/lib.rs"
-echo -e "#![allow(non_snake_case, dead_code)]\n$(cat "${LIB_RS}")" > "${LIB_RS}"
+readonly ALLOWED_WARNINGS_ARRAY=(
+    "non_snake_case"
+    "dead_code"
+    "clippy::comparison_to_empty"
+)
+ALLOWED_WARNINGS=$(echo "${ALLOWED_WARNINGS_ARRAY[@]}" | sed "s/ /, /g") # .join(", ")
+echo -e "#![allow(${ALLOWED_WARNINGS})]\n$(cat "${LIB_RS}")" > "${LIB_RS}"
 
 # Repalce `hyper-tls` with `hyper-rustls`
 readonly CARGO_TOML="${OUTPUT_DIR}/Cargo.toml"
