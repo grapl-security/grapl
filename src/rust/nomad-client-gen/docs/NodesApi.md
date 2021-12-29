@@ -4,12 +4,12 @@ All URIs are relative to *https://127.0.0.1:4646/v1*
 
 | Method                                                             | HTTP request                        | Description |
 | ------------------------------------------------------------------ | ----------------------------------- | ----------- |
-| [**get_node**](NodesApi.md#get_node)                               | **Get** /node/{nodeId}              |
-| [**get_node_allocations**](NodesApi.md#get_node_allocations)       | **Get** /node/{nodeId}/allocations  |
-| [**get_nodes**](NodesApi.md#get_nodes)                             | **Get** /nodes                      |
-| [**update_node_drain**](NodesApi.md#update_node_drain)             | **Post** /node/{nodeId}/drain       |
-| [**update_node_eligibility**](NodesApi.md#update_node_eligibility) | **Post** /node/{nodeId}/eligibility |
-| [**update_node_purge**](NodesApi.md#update_node_purge)             | **Post** /node/{nodeId}/purge       |
+| [**get_node**](NodesApi.md#get_node)                               | **GET** /node/{nodeId}              |
+| [**get_node_allocations**](NodesApi.md#get_node_allocations)       | **GET** /node/{nodeId}/allocations  |
+| [**get_nodes**](NodesApi.md#get_nodes)                             | **GET** /nodes                      |
+| [**update_node_drain**](NodesApi.md#update_node_drain)             | **POST** /node/{nodeId}/drain       |
+| [**update_node_eligibility**](NodesApi.md#update_node_eligibility) | **POST** /node/{nodeId}/eligibility |
+| [**update_node_purge**](NodesApi.md#update_node_purge)             | **POST** /node/{nodeId}/purge       |
 
 ## get_node
 

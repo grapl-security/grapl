@@ -14,7 +14,6 @@ readonly REPOSITORY_ROOT
 # Nomad OpenAPI isn't versioned, so.... next best thing
 NOMAD_OPENAPI_SHA="37d950c8b53d12000e65d82d24d19a2bee83ec9f" # Dec 6, 2021
 OPENAPI_GENERATOR_CLI_VERSION="v5.3.1"
-HYPER_RUSTLS_VERSION="0.23.0"
 
 ################################################################################
 # Get the OpenAPI template
@@ -45,7 +44,7 @@ docker run \
     --input-spec /local/v1/openapi.yaml \
     --output /output/ \
     --generator-name rust \
-    --library hyper \
+    --library reqwest \
     --additional-properties=packageName="${CRATE_NAME}" \
     --additional-properties=packageVersion="${CRATE_VERSION}"
 
@@ -59,10 +58,6 @@ echo "This folder was generated with 'make generate-nomad-rust-client'" \
 # Disable warnings since it's a generated library
 readonly LIB_RS="${OUTPUT_DIR}/src/lib.rs"
 echo -e "#![allow(warnings)]\n$(cat "${LIB_RS}")" > "${LIB_RS}"
-
-# Replace `hyper-tls` with `hyper-rustls`
-readonly CARGO_TOML="${OUTPUT_DIR}/Cargo.toml"
-sed -i "s/hyper-tls.*/hyper-rustls = \"${HYPER_RUSTLS_VERSION}\"/g" "${CARGO_TOML}"
 
 ################################################################################
 # Copy library into src/rust

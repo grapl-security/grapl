@@ -4,11 +4,11 @@ All URIs are relative to *https://127.0.0.1:4646/v1*
 
 | Method                                                      | HTTP request                 | Description |
 | ----------------------------------------------------------- | ---------------------------- | ----------- |
-| [**create_quota_spec**](EnterpriseApi.md#create_quota_spec) | **Post** /quota              |
-| [**delete_quota_spec**](EnterpriseApi.md#delete_quota_spec) | **Delete** /quota/{specName} |
-| [**get_quota_spec**](EnterpriseApi.md#get_quota_spec)       | **Get** /quota/{specName}    |
-| [**get_quotas**](EnterpriseApi.md#get_quotas)               | **Get** /quotas              |
-| [**post_quota_spec**](EnterpriseApi.md#post_quota_spec)     | **Post** /quota/{specName}   |
+| [**create_quota_spec**](EnterpriseApi.md#create_quota_spec) | **POST** /quota              |
+| [**delete_quota_spec**](EnterpriseApi.md#delete_quota_spec) | **DELETE** /quota/{specName} |
+| [**get_quota_spec**](EnterpriseApi.md#get_quota_spec)       | **GET** /quota/{specName}    |
+| [**get_quotas**](EnterpriseApi.md#get_quotas)               | **GET** /quotas              |
+| [**post_quota_spec**](EnterpriseApi.md#post_quota_spec)     | **POST** /quota/{specName}   |
 
 ## create_quota_spec
 

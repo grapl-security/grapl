@@ -4,14 +4,14 @@ All URIs are relative to *https://127.0.0.1:4646/v1*
 
 | Method                                                                                       | HTTP request                                          | Description |
 | -------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ----------- |
-| [**get_deployment**](DeploymentsApi.md#get_deployment)                                       | **Get** /deployment/{deploymentID}                    |
-| [**get_deployment_allocations**](DeploymentsApi.md#get_deployment_allocations)               | **Get** /deployment/allocations/{deploymentID}        |
-| [**get_deployments**](DeploymentsApi.md#get_deployments)                                     | **Get** /deployments                                  |
-| [**post_deployment_allocation_health**](DeploymentsApi.md#post_deployment_allocation_health) | **Post** /deployment/allocation-health/{deploymentID} |
-| [**post_deployment_fail**](DeploymentsApi.md#post_deployment_fail)                           | **Post** /deployment/fail/{deploymentID}              |
-| [**post_deployment_pause**](DeploymentsApi.md#post_deployment_pause)                         | **Post** /deployment/pause/{deploymentID}             |
-| [**post_deployment_promote**](DeploymentsApi.md#post_deployment_promote)                     | **Post** /deployment/promote/{deploymentID}           |
-| [**post_deployment_unblock**](DeploymentsApi.md#post_deployment_unblock)                     | **Post** /deployment/unblock/{deploymentID}           |
+| [**get_deployment**](DeploymentsApi.md#get_deployment)                                       | **GET** /deployment/{deploymentID}                    |
+| [**get_deployment_allocations**](DeploymentsApi.md#get_deployment_allocations)               | **GET** /deployment/allocations/{deploymentID}        |
+| [**get_deployments**](DeploymentsApi.md#get_deployments)                                     | **GET** /deployments                                  |
+| [**post_deployment_allocation_health**](DeploymentsApi.md#post_deployment_allocation_health) | **POST** /deployment/allocation-health/{deploymentID} |
+| [**post_deployment_fail**](DeploymentsApi.md#post_deployment_fail)                           | **POST** /deployment/fail/{deploymentID}              |
+| [**post_deployment_pause**](DeploymentsApi.md#post_deployment_pause)                         | **POST** /deployment/pause/{deploymentID}             |
+| [**post_deployment_promote**](DeploymentsApi.md#post_deployment_promote)                     | **POST** /deployment/promote/{deploymentID}           |
+| [**post_deployment_unblock**](DeploymentsApi.md#post_deployment_unblock)                     | **POST** /deployment/unblock/{deploymentID}           |
 
 ## get_deployment
 

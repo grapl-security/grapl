@@ -195,7 +195,6 @@ docs/VolumesApi.md
 git_push.sh
 src/apis/acl_api.rs
 src/apis/allocations_api.rs
-src/apis/client.rs
 src/apis/configuration.rs
 src/apis/deployments_api.rs
 src/apis/enterprise_api.rs
@@ -207,7 +206,6 @@ src/apis/namespaces_api.rs
 src/apis/nodes_api.rs
 src/apis/plugins_api.rs
 src/apis/regions_api.rs
-src/apis/request.rs
 src/apis/scaling_api.rs
 src/apis/search_api.rs
 src/apis/system_api.rs

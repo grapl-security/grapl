@@ -4,8 +4,8 @@ All URIs are relative to *https://127.0.0.1:4646/v1*
 
 | Method                                                | HTTP request           | Description |
 | ----------------------------------------------------- | ---------------------- | ----------- |
-| [**get_fuzzy_search**](SearchApi.md#get_fuzzy_search) | **Post** /search/fuzzy |
-| [**get_search**](SearchApi.md#get_search)             | **Post** /search       |
+| [**get_fuzzy_search**](SearchApi.md#get_fuzzy_search) | **POST** /search/fuzzy |
+| [**get_search**](SearchApi.md#get_search)             | **POST** /search       |
 
 ## get_fuzzy_search
 

@@ -4,8 +4,8 @@ All URIs are relative to *https://127.0.0.1:4646/v1*
 
 | Method                                                                            | HTTP request                        | Description |
 | --------------------------------------------------------------------------------- | ----------------------------------- | ----------- |
-| [**put_system_gc**](SystemApi.md#put_system_gc)                                   | **Put** /system/gc                  |
-| [**put_system_reconcile_summaries**](SystemApi.md#put_system_reconcile_summaries) | **Put** /system/reconcile/summaries |
+| [**put_system_gc**](SystemApi.md#put_system_gc)                                   | **PUT** /system/gc                  |
+| [**put_system_reconcile_summaries**](SystemApi.md#put_system_reconcile_summaries) | **PUT** /system/reconcile/summaries |
 
 ## put_system_gc
 

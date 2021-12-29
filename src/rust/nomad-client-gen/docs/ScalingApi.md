@@ -4,8 +4,8 @@ All URIs are relative to *https://127.0.0.1:4646/v1*
 
 | Method                                                         | HTTP request                       | Description |
 | -------------------------------------------------------------- | ---------------------------------- | ----------- |
-| [**get_scaling_policies**](ScalingApi.md#get_scaling_policies) | **Get** /scaling/policies          |
-| [**get_scaling_policy**](ScalingApi.md#get_scaling_policy)     | **Get** /scaling/policy/{policyID} |
+| [**get_scaling_policies**](ScalingApi.md#get_scaling_policies) | **GET** /scaling/policies          |
+| [**get_scaling_policy**](ScalingApi.md#get_scaling_policy)     | **GET** /scaling/policy/{policyID} |
 
 ## get_scaling_policies
 

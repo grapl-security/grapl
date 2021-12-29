@@ -4,7 +4,7 @@ All URIs are relative to *https://127.0.0.1:4646/v1*
 
 | Method                                       | HTTP request     | Description |
 | -------------------------------------------- | ---------------- | ----------- |
-| [**get_regions**](RegionsApi.md#get_regions) | **Get** /regions |
+| [**get_regions**](RegionsApi.md#get_regions) | **GET** /regions |
 
 ## get_regions
 

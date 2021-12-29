@@ -4,9 +4,9 @@ All URIs are relative to *https://127.0.0.1:4646/v1*
 
 | Method                                                                         | HTTP request                             | Description |
 | ------------------------------------------------------------------------------ | ---------------------------------------- | ----------- |
-| [**get_evaluation**](EvaluationsApi.md#get_evaluation)                         | **Get** /evaluation/{evalID}             |
-| [**get_evaluation_allocations**](EvaluationsApi.md#get_evaluation_allocations) | **Get** /evaluation/{evalID}/allocations |
-| [**get_evaluations**](EvaluationsApi.md#get_evaluations)                       | **Get** /evaluations                     |
+| [**get_evaluation**](EvaluationsApi.md#get_evaluation)                         | **GET** /evaluation/{evalID}             |
+| [**get_evaluation_allocations**](EvaluationsApi.md#get_evaluation_allocations) | **GET** /evaluation/{evalID}/allocations |
+| [**get_evaluations**](EvaluationsApi.md#get_evaluations)                       | **GET** /evaluations                     |
 
 ## get_evaluation
 

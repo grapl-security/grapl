@@ -4,7 +4,7 @@ All URIs are relative to *https://127.0.0.1:4646/v1*
 
 | Method                                                   | HTTP request         | Description |
 | -------------------------------------------------------- | -------------------- | ----------- |
-| [**get_allocations**](AllocationsApi.md#get_allocations) | **Get** /allocations |
+| [**get_allocations**](AllocationsApi.md#get_allocations) | **GET** /allocations |
 
 ## get_allocations
 

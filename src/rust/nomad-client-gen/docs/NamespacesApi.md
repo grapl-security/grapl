@@ -4,11 +4,11 @@ All URIs are relative to *https://127.0.0.1:4646/v1*
 
 | Method                                                    | HTTP request                          | Description |
 | --------------------------------------------------------- | ------------------------------------- | ----------- |
-| [**create_namespace**](NamespacesApi.md#create_namespace) | **Post** /namespace                   |
-| [**delete_namespace**](NamespacesApi.md#delete_namespace) | **Delete** /namespace/{namespaceName} |
-| [**get_namespace**](NamespacesApi.md#get_namespace)       | **Get** /namespace/{namespaceName}    |
-| [**get_namespaces**](NamespacesApi.md#get_namespaces)     | **Get** /namespaces                   |
-| [**post_namespace**](NamespacesApi.md#post_namespace)     | **Post** /namespace/{namespaceName}   |
+| [**create_namespace**](NamespacesApi.md#create_namespace) | **POST** /namespace                   |
+| [**delete_namespace**](NamespacesApi.md#delete_namespace) | **DELETE** /namespace/{namespaceName} |
+| [**get_namespace**](NamespacesApi.md#get_namespace)       | **GET** /namespace/{namespaceName}    |
+| [**get_namespaces**](NamespacesApi.md#get_namespaces)     | **GET** /namespaces                   |
+| [**post_namespace**](NamespacesApi.md#post_namespace)     | **POST** /namespace/{namespaceName}   |
 
 ## create_namespace
 

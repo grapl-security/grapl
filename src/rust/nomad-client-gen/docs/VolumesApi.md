@@ -4,17 +4,17 @@ All URIs are relative to *https://127.0.0.1:4646/v1*
 
 | Method                                                                     | HTTP request                               | Description |
 | -------------------------------------------------------------------------- | ------------------------------------------ | ----------- |
-| [**create_volume**](VolumesApi.md#create_volume)                           | **Post** /volume/csi/{volumeId}/{action}   |
-| [**delete_snapshot**](VolumesApi.md#delete_snapshot)                       | **Delete** /volumes/snapshot               |
-| [**delete_volume_registration**](VolumesApi.md#delete_volume_registration) | **Delete** /volume/csi/{volumeId}          |
-| [**detach_or_delete_volume**](VolumesApi.md#detach_or_delete_volume)       | **Delete** /volume/csi/{volumeId}/{action} |
-| [**get_external_volumes**](VolumesApi.md#get_external_volumes)             | **Get** /volumes/external                  |
-| [**get_snapshots**](VolumesApi.md#get_snapshots)                           | **Get** /volumes/snapshot                  |
-| [**get_volume**](VolumesApi.md#get_volume)                                 | **Get** /volume/csi/{volumeId}             |
-| [**get_volumes**](VolumesApi.md#get_volumes)                               | **Get** /volumes                           |
-| [**post_snapshot**](VolumesApi.md#post_snapshot)                           | **Post** /volumes/snapshot                 |
-| [**post_volume**](VolumesApi.md#post_volume)                               | **Post** /volumes                          |
-| [**post_volume_registration**](VolumesApi.md#post_volume_registration)     | **Post** /volume/csi/{volumeId}            |
+| [**create_volume**](VolumesApi.md#create_volume)                           | **POST** /volume/csi/{volumeId}/{action}   |
+| [**delete_snapshot**](VolumesApi.md#delete_snapshot)                       | **DELETE** /volumes/snapshot               |
+| [**delete_volume_registration**](VolumesApi.md#delete_volume_registration) | **DELETE** /volume/csi/{volumeId}          |
+| [**detach_or_delete_volume**](VolumesApi.md#detach_or_delete_volume)       | **DELETE** /volume/csi/{volumeId}/{action} |
+| [**get_external_volumes**](VolumesApi.md#get_external_volumes)             | **GET** /volumes/external                  |
+| [**get_snapshots**](VolumesApi.md#get_snapshots)                           | **GET** /volumes/snapshot                  |
+| [**get_volume**](VolumesApi.md#get_volume)                                 | **GET** /volume/csi/{volumeId}             |
+| [**get_volumes**](VolumesApi.md#get_volumes)                               | **GET** /volumes                           |
+| [**post_snapshot**](VolumesApi.md#post_snapshot)                           | **POST** /volumes/snapshot                 |
+| [**post_volume**](VolumesApi.md#post_volume)                               | **POST** /volumes                          |
+| [**post_volume_registration**](VolumesApi.md#post_volume_registration)     | **POST** /volume/csi/{volumeId}            |
 
 ## create_volume
 

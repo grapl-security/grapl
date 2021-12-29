@@ -4,27 +4,27 @@ All URIs are relative to *https://127.0.0.1:4646/v1*
 
 | Method                                                                | HTTP request                           | Description |
 | --------------------------------------------------------------------- | -------------------------------------- | ----------- |
-| [**delete_job**](JobsApi.md#delete_job)                               | **Delete** /job/{jobName}              |
-| [**get_job**](JobsApi.md#get_job)                                     | **Get** /job/{jobName}                 |
-| [**get_job_allocations**](JobsApi.md#get_job_allocations)             | **Get** /job/{jobName}/allocations     |
-| [**get_job_deployment**](JobsApi.md#get_job_deployment)               | **Get** /job/{jobName}/deployment      |
-| [**get_job_deployments**](JobsApi.md#get_job_deployments)             | **Get** /job/{jobName}/deployments     |
-| [**get_job_evaluations**](JobsApi.md#get_job_evaluations)             | **Get** /job/{jobName}/evaluations     |
-| [**get_job_scale_status**](JobsApi.md#get_job_scale_status)           | **Get** /job/{jobName}/scale           |
-| [**get_job_summary**](JobsApi.md#get_job_summary)                     | **Get** /job/{jobName}/summary         |
-| [**get_job_versions**](JobsApi.md#get_job_versions)                   | **Get** /job/{jobName}/versions        |
-| [**get_jobs**](JobsApi.md#get_jobs)                                   | **Get** /jobs                          |
-| [**post_job**](JobsApi.md#post_job)                                   | **Post** /job/{jobName}                |
-| [**post_job_dispatch**](JobsApi.md#post_job_dispatch)                 | **Post** /job/{jobName}/dispatch       |
-| [**post_job_evaluate**](JobsApi.md#post_job_evaluate)                 | **Post** /job/{jobName}/evaluate       |
-| [**post_job_parse**](JobsApi.md#post_job_parse)                       | **Post** /jobs/parse                   |
-| [**post_job_periodic_force**](JobsApi.md#post_job_periodic_force)     | **Post** /job/{jobName}/periodic/force |
-| [**post_job_plan**](JobsApi.md#post_job_plan)                         | **Post** /job/{jobName}/plan           |
-| [**post_job_revert**](JobsApi.md#post_job_revert)                     | **Post** /job/{jobName}/revert         |
-| [**post_job_scaling_request**](JobsApi.md#post_job_scaling_request)   | **Post** /job/{jobName}/scale          |
-| [**post_job_stability**](JobsApi.md#post_job_stability)               | **Post** /job/{jobName}/stable         |
-| [**post_job_validate_request**](JobsApi.md#post_job_validate_request) | **Post** /validate/job                 |
-| [**register_job**](JobsApi.md#register_job)                           | **Post** /jobs                         |
+| [**delete_job**](JobsApi.md#delete_job)                               | **DELETE** /job/{jobName}              |
+| [**get_job**](JobsApi.md#get_job)                                     | **GET** /job/{jobName}                 |
+| [**get_job_allocations**](JobsApi.md#get_job_allocations)             | **GET** /job/{jobName}/allocations     |
+| [**get_job_deployment**](JobsApi.md#get_job_deployment)               | **GET** /job/{jobName}/deployment      |
+| [**get_job_deployments**](JobsApi.md#get_job_deployments)             | **GET** /job/{jobName}/deployments     |
+| [**get_job_evaluations**](JobsApi.md#get_job_evaluations)             | **GET** /job/{jobName}/evaluations     |
+| [**get_job_scale_status**](JobsApi.md#get_job_scale_status)           | **GET** /job/{jobName}/scale           |
+| [**get_job_summary**](JobsApi.md#get_job_summary)                     | **GET** /job/{jobName}/summary         |
+| [**get_job_versions**](JobsApi.md#get_job_versions)                   | **GET** /job/{jobName}/versions        |
+| [**get_jobs**](JobsApi.md#get_jobs)                                   | **GET** /jobs                          |
+| [**post_job**](JobsApi.md#post_job)                                   | **POST** /job/{jobName}                |
+| [**post_job_dispatch**](JobsApi.md#post_job_dispatch)                 | **POST** /job/{jobName}/dispatch       |
+| [**post_job_evaluate**](JobsApi.md#post_job_evaluate)                 | **POST** /job/{jobName}/evaluate       |
+| [**post_job_parse**](JobsApi.md#post_job_parse)                       | **POST** /jobs/parse                   |
+| [**post_job_periodic_force**](JobsApi.md#post_job_periodic_force)     | **POST** /job/{jobName}/periodic/force |
+| [**post_job_plan**](JobsApi.md#post_job_plan)                         | **POST** /job/{jobName}/plan           |
+| [**post_job_revert**](JobsApi.md#post_job_revert)                     | **POST** /job/{jobName}/revert         |
+| [**post_job_scaling_request**](JobsApi.md#post_job_scaling_request)   | **POST** /job/{jobName}/scale          |
+| [**post_job_stability**](JobsApi.md#post_job_stability)               | **POST** /job/{jobName}/stable         |
+| [**post_job_validate_request**](JobsApi.md#post_job_validate_request) | **POST** /validate/job                 |
+| [**register_job**](JobsApi.md#register_job)                           | **POST** /jobs                         |
 
 ## delete_job
 

@@ -4,8 +4,8 @@ All URIs are relative to *https://127.0.0.1:4646/v1*
 
 | Method                                             | HTTP request                   | Description |
 | -------------------------------------------------- | ------------------------------ | ----------- |
-| [**get_plugin_csi**](PluginsApi.md#get_plugin_csi) | **Get** /plugin/csi/{pluginID} |
-| [**get_plugins**](PluginsApi.md#get_plugins)       | **Get** /plugins               |
+| [**get_plugin_csi**](PluginsApi.md#get_plugin_csi) | **GET** /plugin/csi/{pluginID} |
+| [**get_plugins**](PluginsApi.md#get_plugins)       | **GET** /plugins               |
 
 ## get_plugin_csi
 

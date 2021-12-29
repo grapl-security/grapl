@@ -4,18 +4,18 @@ All URIs are relative to *https://127.0.0.1:4646/v1*
 
 | Method                                                                           | HTTP request                          | Description |
 | -------------------------------------------------------------------------------- | ------------------------------------- | ----------- |
-| [**delete_acl_policy**](ACLApi.md#delete_acl_policy)                             | **Delete** /acl/policy/{policyName}   |
-| [**delete_acl_token**](ACLApi.md#delete_acl_token)                               | **Delete** /acl/token/{tokenAccessor} |
-| [**get_acl_policies**](ACLApi.md#get_acl_policies)                               | **Get** /acl/policies                 |
-| [**get_acl_policy**](ACLApi.md#get_acl_policy)                                   | **Get** /acl/policy/{policyName}      |
-| [**get_acl_token**](ACLApi.md#get_acl_token)                                     | **Get** /acl/token/{tokenAccessor}    |
-| [**get_acl_token_self**](ACLApi.md#get_acl_token_self)                           | **Get** /acl/token                    |
-| [**get_acl_tokens**](ACLApi.md#get_acl_tokens)                                   | **Get** /acl/tokens                   |
-| [**post_acl_bootstrap**](ACLApi.md#post_acl_bootstrap)                           | **Post** /acl/bootstrap               |
-| [**post_acl_policy**](ACLApi.md#post_acl_policy)                                 | **Post** /acl/policy/{policyName}     |
-| [**post_acl_token**](ACLApi.md#post_acl_token)                                   | **Post** /acl/token/{tokenAccessor}   |
-| [**post_acl_token_onetime**](ACLApi.md#post_acl_token_onetime)                   | **Post** /acl/token/onetime           |
-| [**post_acl_token_onetime_exchange**](ACLApi.md#post_acl_token_onetime_exchange) | **Post** /acl/token/onetime/exchange  |
+| [**delete_acl_policy**](ACLApi.md#delete_acl_policy)                             | **DELETE** /acl/policy/{policyName}   |
+| [**delete_acl_token**](ACLApi.md#delete_acl_token)                               | **DELETE** /acl/token/{tokenAccessor} |
+| [**get_acl_policies**](ACLApi.md#get_acl_policies)                               | **GET** /acl/policies                 |
+| [**get_acl_policy**](ACLApi.md#get_acl_policy)                                   | **GET** /acl/policy/{policyName}      |
+| [**get_acl_token**](ACLApi.md#get_acl_token)                                     | **GET** /acl/token/{tokenAccessor}    |
+| [**get_acl_token_self**](ACLApi.md#get_acl_token_self)                           | **GET** /acl/token                    |
+| [**get_acl_tokens**](ACLApi.md#get_acl_tokens)                                   | **GET** /acl/tokens                   |
+| [**post_acl_bootstrap**](ACLApi.md#post_acl_bootstrap)                           | **POST** /acl/bootstrap               |
+| [**post_acl_policy**](ACLApi.md#post_acl_policy)                                 | **POST** /acl/policy/{policyName}     |
+| [**post_acl_token**](ACLApi.md#post_acl_token)                                   | **POST** /acl/token/{tokenAccessor}   |
+| [**post_acl_token_onetime**](ACLApi.md#post_acl_token_onetime)                   | **POST** /acl/token/onetime           |
+| [**post_acl_token_onetime_exchange**](ACLApi.md#post_acl_token_onetime_exchange) | **POST** /acl/token/onetime/exchange  |
 
 ## delete_acl_policy
 
