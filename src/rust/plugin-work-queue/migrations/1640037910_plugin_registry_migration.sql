@@ -15,14 +15,12 @@ CREATE TABLE IF NOT EXISTS plugin_work_queue.generator_plugin_executions
     tenant_id            uuid        NOT NULL,
     plugin_id            uuid        NOT NULL,
     pipeline_message     bytea       NOT NULL,
-    execution_result     bytea,
     status               status_t    NOT NULL,
     creation_time        timestamptz NOT NULL,
     last_updated         timestamptz NOT NULL,
     visible_after        timestamptz,
     try_count            integer     NOT NULL,
     CHECK (length(pipeline_message) < megabytes(256)),
-    CHECK (length(execution_result) < megabytes(256)),
     CHECK (last_updated >= creation_time)
 )
     PARTITION BY RANGE (creation_time);
@@ -33,14 +31,12 @@ CREATE TABLE IF NOT EXISTS plugin_work_queue.analyzer_plugin_executions
     tenant_id            uuid        NOT NULL,
     plugin_id            uuid        NOT NULL,
     pipeline_message     bytea       NOT NULL,
-    execution_result     bytea,
     status               status_t    NOT NULL,
     creation_time        timestamptz NOT NULL,
     last_updated         timestamptz NOT NULL,
     visible_after        timestamptz,
     try_count            integer     NOT NULL,
     CHECK (length(pipeline_message) < megabytes(256)),
-    CHECK (length(execution_result) < megabytes(256)),
     CHECK (last_updated >= creation_time)
 )
     PARTITION BY RANGE (creation_time);

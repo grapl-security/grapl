@@ -1,12 +1,24 @@
 {
   "db": "PostgreSQL",
-  "0878d36ba723cc999555583260e3f4f310749033a231c0e3858e8d76b5d69b15": {
-    "query": "\n                UPDATE plugin_work_queue.generator_plugin_executions\n                SET status  = 'failed',\n                    last_updated = CASE\n                        WHEN status != 'processed'\n                            THEN CURRENT_TIMESTAMP\n                            ELSE last_updated\n                        END\n                WHERE execution_key = $1\n            ",
+  "20c11c14cd73a408f7365d85cca47b4b052c635bf09eda02a741b5e068711f7e": {
+    "query": "\n                UPDATE plugin_work_queue.analyzer_plugin_executions\n                SET status = $2,\n                    last_updated = CASE\n                        WHEN status != 'processed'\n                            THEN CURRENT_TIMESTAMP\n                            ELSE last_updated\n                        END\n                WHERE execution_key = $1\n            ",
     "describe": {
       "columns": [],
       "parameters": {
         "Left": [
-          "Int8"
+          "Int8",
+          {
+            "Custom": {
+              "name": "status_t",
+              "kind": {
+                "Enum": [
+                  "enqueued",
+                  "failed",
+                  "processed"
+                ]
+              }
+            }
+          }
         ]
       },
       "nullable": []
@@ -28,21 +40,8 @@
       "nullable": []
     }
   },
-  "3b012c297e5fc988be8adfed26593246c46102febbba5314516a0e6a49721dd5": {
-    "query": "\n                UPDATE plugin_work_queue.analyzer_plugin_executions\n                SET status  = 'processed',\n                    execution_result = $2,\n                    last_updated = CASE\n                        WHEN status != 'processed'\n                            THEN CURRENT_TIMESTAMP\n                            ELSE last_updated\n                        END\n                WHERE execution_key = $1 AND execution_result IS NULL\n            ",
-    "describe": {
-      "columns": [],
-      "parameters": {
-        "Left": [
-          "Int8",
-          "Bytea"
-        ]
-      },
-      "nullable": []
-    }
-  },
-  "4ab7c7931e33b6c467268161e7f5ad24959b37b63c9d126284ea940b87fcd14c": {
-    "query": "\n            UPDATE plugin_work_queue.analyzer_plugin_executions\n            SET\n                try_count  = plugin_work_queue.analyzer_plugin_executions.try_count + 1,\n                last_updated = CURRENT_TIMESTAMP,\n                visible_after  = CURRENT_TIMESTAMP + INTERVAL '10 seconds'\n            FROM (\n                 SELECT execution_key, plugin_id, pipeline_message, status, creation_time, visible_after, tenant_id\n                 FROM plugin_work_queue.analyzer_plugin_executions\n                 WHERE status = 'enqueued'\n                   AND creation_time >= (CURRENT_TIMESTAMP - INTERVAL '1 day')\n                   AND (visible_after IS NULL OR visible_after <= CURRENT_TIMESTAMP)\n                 ORDER BY creation_time ASC\n                 FOR UPDATE SKIP LOCKED\n                 LIMIT 1\n             ) AS next_execution\n             WHERE plugin_work_queue.analyzer_plugin_executions.execution_key = next_execution.execution_key\n             RETURNING next_execution.execution_key as \"execution_key!: ExecutionId\", next_execution.plugin_id, next_execution.pipeline_message, next_execution.tenant_id\n        ",
+  "5fefe762bf726e1b9ae92aec7b704c5713c4d0809959af545f8ab6cc743c5843": {
+    "query": "\n            UPDATE plugin_work_queue.analyzer_plugin_executions\n            SET\n                try_count  = plugin_work_queue.analyzer_plugin_executions.try_count + 1,\n                last_updated = CURRENT_TIMESTAMP,\n                visible_after  = CURRENT_TIMESTAMP + INTERVAL '10 seconds'\n            FROM (\n                 SELECT execution_key, plugin_id, pipeline_message, status, creation_time, visible_after, tenant_id\n                 FROM plugin_work_queue.analyzer_plugin_executions\n                 WHERE status = 'enqueued'\n                   AND creation_time >= (CURRENT_TIMESTAMP - INTERVAL '1 day')\n                   AND (visible_after IS NULL OR visible_after <= CURRENT_TIMESTAMP)\n                 ORDER BY creation_time ASC\n                 FOR UPDATE SKIP LOCKED\n                 LIMIT 1\n             ) AS next_execution\n             WHERE plugin_work_queue.analyzer_plugin_executions.execution_key = next_execution.execution_key\n             RETURNING\n                 next_execution.execution_key as \"execution_key!: ExecutionId\",\n                 next_execution.plugin_id,\n                 next_execution.pipeline_message,\n                 next_execution.tenant_id\n        ",
     "describe": {
       "columns": [
         {
@@ -77,21 +76,8 @@
       ]
     }
   },
-  "5efe1a617de9b7bb811ba1ef4262450e48bca6fab53aff7416a53259e16e9eb6": {
-    "query": "\n                UPDATE plugin_work_queue.generator_plugin_executions\n                SET status  = 'processed',\n                    execution_result = $2,\n                    last_updated = CASE\n                        WHEN status != 'processed'\n                            THEN CURRENT_TIMESTAMP\n                            ELSE last_updated\n                        END\n                WHERE execution_key = $1 AND execution_result IS NULL\n            ",
-    "describe": {
-      "columns": [],
-      "parameters": {
-        "Left": [
-          "Int8",
-          "Bytea"
-        ]
-      },
-      "nullable": []
-    }
-  },
-  "cefd4ab7c5dc8cb66f3f8ff9c0cd9d4352260055ffb25bf60ff6f1ff0e34e65f": {
-    "query": "\n            UPDATE plugin_work_queue.generator_plugin_executions\n            SET\n                try_count  = plugin_work_queue.generator_plugin_executions.try_count + 1,\n                last_updated = CURRENT_TIMESTAMP,\n                visible_after  = CURRENT_TIMESTAMP + INTERVAL '10 seconds'\n            FROM (\n                 SELECT execution_key, plugin_id, pipeline_message, status, creation_time, visible_after, tenant_id\n                 FROM plugin_work_queue.generator_plugin_executions\n                 WHERE status = 'enqueued'\n                   AND creation_time >= (CURRENT_TIMESTAMP - INTERVAL '1 day')\n                   AND (visible_after IS NULL OR visible_after <= CURRENT_TIMESTAMP)\n                 ORDER BY creation_time ASC\n                 FOR UPDATE SKIP LOCKED\n                 LIMIT 1\n             ) AS next_execution\n             WHERE plugin_work_queue.generator_plugin_executions.execution_key = next_execution.execution_key\n             RETURNING next_execution.execution_key as \"execution_key!: ExecutionId\", next_execution.plugin_id, next_execution.tenant_id, next_execution.pipeline_message\n        ",
+  "621eb8bbcca2f589d6c7ee5000178beddf24d7f2c02408a2f8e662a41680f6a5": {
+    "query": "\n            UPDATE plugin_work_queue.generator_plugin_executions\n            SET\n                try_count  = plugin_work_queue.generator_plugin_executions.try_count + 1,\n                last_updated = CURRENT_TIMESTAMP,\n                visible_after  = CURRENT_TIMESTAMP + INTERVAL '10 seconds'\n            FROM (\n                 SELECT execution_key, plugin_id, pipeline_message, status, creation_time, visible_after, tenant_id\n                 FROM plugin_work_queue.generator_plugin_executions\n                 WHERE status = 'enqueued'\n                   AND creation_time >= (CURRENT_TIMESTAMP - INTERVAL '1 day')\n                   AND (visible_after IS NULL OR visible_after <= CURRENT_TIMESTAMP)\n                 ORDER BY creation_time ASC\n                 FOR UPDATE SKIP LOCKED\n                 LIMIT 1\n             ) AS next_execution\n             WHERE plugin_work_queue.generator_plugin_executions.execution_key = next_execution.execution_key\n             RETURNING\n                 next_execution.execution_key as \"execution_key!: ExecutionId\",\n                 next_execution.plugin_id,\n                 next_execution.pipeline_message,\n                 next_execution.tenant_id\n        ",
     "describe": {
       "columns": [
         {
@@ -106,13 +92,13 @@
         },
         {
           "ordinal": 2,
-          "name": "tenant_id",
-          "type_info": "Uuid"
+          "name": "pipeline_message",
+          "type_info": "Bytea"
         },
         {
           "ordinal": 3,
-          "name": "pipeline_message",
-          "type_info": "Bytea"
+          "name": "tenant_id",
+          "type_info": "Uuid"
         }
       ],
       "parameters": {
@@ -126,8 +112,8 @@
       ]
     }
   },
-  "dc4d8d9bb231c5c0b7d28c718b612ad6adda7703cfc4e2598b0da7fb282d3a8a": {
-    "query": "SELECT status as \"status: Status\" FROM plugin_work_queue.generator_plugin_executions WHERE execution_key = $1",
+  "706b3cb66ef029e16d147ee1a5119775827146c42aa89247234ed5473934780f": {
+    "query": "SELECT status as \"status: Status\"\n            FROM plugin_work_queue.generator_plugin_executions\n            WHERE execution_key = $1",
     "describe": {
       "columns": [
         {
@@ -157,13 +143,41 @@
       ]
     }
   },
-  "e0b56f99d68edc9bc9f6ab19fe2ce0cf985317aae00d0c3af7a7a8f8f905ae93": {
-    "query": "\n                UPDATE plugin_work_queue.analyzer_plugin_executions\n                SET status  = 'failed',\n                    last_updated = CASE\n                        WHEN status != 'processed'\n                            THEN CURRENT_TIMESTAMP\n                            ELSE last_updated\n                        END\n                WHERE execution_key = $1\n            ",
+  "9004ce0d3264d6dbbd4b9fbaa59c5a83446ea0e0ef3ff23a098263ad86f5485f": {
+    "query": "\n                UPDATE plugin_work_queue.generator_plugin_executions\n                SET status = $2,\n                    last_updated = CASE\n                        WHEN status != 'processed'\n                            THEN CURRENT_TIMESTAMP\n                            ELSE last_updated\n                        END\n                WHERE execution_key = $1\n            ",
     "describe": {
       "columns": [],
       "parameters": {
         "Left": [
-          "Int8"
+          "Int8",
+          {
+            "Custom": {
+              "name": "status_t",
+              "kind": {
+                "Enum": [
+                  "enqueued",
+                  "failed",
+                  "processed"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "f2223994ac0c609949bfeab498a7349553b2d52fd547f54d661a344f9f7fc942": {
+    "query": "\n            INSERT INTO plugin_work_queue.generator_plugin_executions (\n                plugin_id,\n                pipeline_message,\n                tenant_id,\n                status,\n                creation_time,\n                last_updated,\n                try_count\n            )\n            VALUES( $1::UUID, $2, $3::UUID, 'enqueued', $4, $5, -1 )\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Bytea",
+          "Uuid",
+          "Timestamptz",
+          "Timestamptz"
         ]
       },
       "nullable": []
