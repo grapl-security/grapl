@@ -56,16 +56,9 @@ docker run \
 echo "This folder was generated with 'make generate-nomad-rust-client'" \
     > "${OUTPUT_DIR}/GENERATED.md"
 
-# Disable a warning about snake-case noncompliance.
-# The generator generates `pub ID: string` which is not snake-case.
-# Disable a warning about dead code.
-# This is a generated library and that's to be expected.
+# Disable warnings since it's a generated library
 readonly LIB_RS="${OUTPUT_DIR}/src/lib.rs"
-readonly ALLOWED_WARNINGS_ARRAY=(
-    "warnings"
-)
-ALLOWED_WARNINGS=$(echo "${ALLOWED_WARNINGS_ARRAY[@]}" | sed "s/ /, /g") # .join(", ")
-echo -e "#![allow(${ALLOWED_WARNINGS})]\n$(cat "${LIB_RS}")" > "${LIB_RS}"
+echo -e "#![allow(warnings)]\n$(cat "${LIB_RS}")" > "${LIB_RS}"
 
 # Repalce `hyper-tls` with `hyper-rustls`
 readonly CARGO_TOML="${OUTPUT_DIR}/Cargo.toml"
