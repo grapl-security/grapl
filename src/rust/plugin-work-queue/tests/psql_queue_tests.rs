@@ -3,13 +3,21 @@
 #[cfg(test)]
 mod tests {
     use chrono::prelude::*;
-    use plugin_work_queue::psql_queue::{
-        get_generator_status,
-        ExecutionId,
-        PsqlQueue,
-        Status,
+    use plugin_work_queue::{
+        psql_queue::{
+            get_generator_status,
+            ExecutionId,
+            PsqlQueue,
+            Status,
+        },
+        PluginWorkQueueServiceConfig,
     };
-    use sqlx::postgres::PgPoolOptions;
+    use sqlx::{
+        postgres::PgPoolOptions,
+        Pool,
+        Postgres,
+    };
+    use structopt::StructOpt;
 
     #[derive(Debug)]
     pub struct ExecutionRequest {
@@ -23,23 +31,26 @@ mod tests {
         try_count: i32,
     }
 
-    #[tokio::test]
-    async fn test_migrate() -> Result<(), Box<dyn std::error::Error>> {
-        let pool = PgPoolOptions::new()
-            .max_connections(1)
-            .connect("postgresql://postgres:password@localhost:5432/postgres")
-            .await?;
-        sqlx::migrate!().run(&pool).await?;
-        Ok(())
+    async fn make_pool(
+        service_config: PluginWorkQueueServiceConfig,
+    ) -> Result<Pool<Postgres>, Box<dyn std::error::Error>> {
+        let postgres_address = format!(
+            "postgresql://{}:{}@{}:{}",
+            service_config.plugin_work_queue_db_username,
+            service_config.plugin_work_queue_db_password,
+            service_config.plugin_work_queue_db_hostname,
+            service_config.plugin_work_queue_db_port,
+        );
+
+        let pool = PgPoolOptions::new().connect(&postgres_address).await?;
+        Ok(pool)
     }
 
     #[test_log::test(tokio::test)]
     async fn test_get_and_success() -> Result<(), Box<dyn std::error::Error>> {
+        let config = PluginWorkQueueServiceConfig::from_args();
         tracing::info!(message = "test_get_and_success");
-        let pool = PgPoolOptions::new()
-            .max_connections(1)
-            .connect("postgresql://postgres:password@localhost:5432/postgres")
-            .await?;
+        let pool = make_pool(config).await?;
         sqlx::migrate!().run(&pool).await?;
         let queue = PsqlQueue { pool };
 
@@ -73,11 +84,9 @@ mod tests {
 
     #[test_log::test(tokio::test)]
     async fn test_get_and_failure() -> Result<(), Box<dyn std::error::Error>> {
+        let config = PluginWorkQueueServiceConfig::from_args();
         tracing::info!(message = "test_get_and_failure");
-        let pool = PgPoolOptions::new()
-            .max_connections(1)
-            .connect("postgresql://postgres:password@localhost:5432/postgres")
-            .await?;
+        let pool = make_pool(config).await?;
 
         let queue = PsqlQueue { pool };
 

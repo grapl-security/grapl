@@ -73,7 +73,8 @@ SET infinite_time_partitions = true,
     retention                = '1 month',
     retention_keep_table= true
 WHERE (
-    parent_table = 'plugin_work_queue.generator_plugin_executions' OR
+    paren
+        t_table = 'plugin_work_queue.generator_plugin_executions' OR
     parent_table = 'plugin_work_queue.analyzer_plugin_executions'
 );
 
