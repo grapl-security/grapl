@@ -60,7 +60,7 @@ echo "This folder was generated with 'make generate-nomad-rust-client'" \
 readonly LIB_RS="${OUTPUT_DIR}/src/lib.rs"
 echo -e "#![allow(warnings)]\n$(cat "${LIB_RS}")" > "${LIB_RS}"
 
-# Repalce `hyper-tls` with `hyper-rustls`
+# Replace `hyper-tls` with `hyper-rustls`
 readonly CARGO_TOML="${OUTPUT_DIR}/Cargo.toml"
 sed -i "s/hyper-tls.*/hyper-rustls = \"${HYPER_RUSTLS_VERSION}\"/g" "${CARGO_TOML}"
 
