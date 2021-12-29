@@ -75,7 +75,6 @@ mod tests {
 
     use crate::s3::{
         bucket::{
-            Bucket,
             ReadS3,
             WriteS3,
         },
@@ -86,10 +85,10 @@ mod tests {
     async fn test_read_objects() -> Result<(), Box<dyn std::error::Error>> {
         let s3_client = S3Client::new(rusoto_s3::S3Client::from_env());
 
-        let bucket: Bucket<_, true, true, false> = s3_client.bucket(
+        let bucket = s3_client.bucket_builder(
             "local-test-read-objects-bucket".to_owned(),
             "000000000000".to_owned(),
-        );
+        ).with_read().with_write().build();
 
         bucket
             .put_object("key-0".to_owned(), vec![123])

@@ -1,6 +1,6 @@
 use rusoto_s3::S3;
 
-use crate::s3::bucket::Bucket;
+use crate::s3::bucket::{Bucket, BucketBuilder};
 
 #[derive(Clone)]
 pub struct S3Client<S>
@@ -57,6 +57,19 @@ where
         bucket_account_id: String,
     ) -> Bucket<S, READ_CAP, WRITE_CAP, LIST_CAP> {
         Bucket {
+            s3_client: self.clone(),
+            bucket_name,
+            bucket_account_id,
+        }
+    }
+
+
+    pub fn bucket_builder(
+        &self,
+        bucket_name: String,
+        bucket_account_id: String,
+    ) -> BucketBuilder<S, false, false, false> {
+        BucketBuilder {
             s3_client: self.clone(),
             bucket_name,
             bucket_account_id,
