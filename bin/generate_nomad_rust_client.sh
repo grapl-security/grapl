@@ -59,6 +59,17 @@ echo "This folder was generated with 'make generate-nomad-rust-client'" \
 readonly LIB_RS="${OUTPUT_DIR}/src/lib.rs"
 echo -e "#![allow(warnings)]\n$(cat "${LIB_RS}")" > "${LIB_RS}"
 
+# Use rustls, not native-tls
+readonly CARGO_TOML="${OUTPUT_DIR}/Cargo.toml"
+FEATURES_OVERRIDE=$(
+    cat << EOF
+features = ["json", "multipart", "rustls-tls"]\ndefault_features = false
+EOF
+)
+readonly FEATURES_OVERRIDE
+
+sed -i "s/features.*/${FEATURES_OVERRIDE}/g" "${CARGO_TOML}"
+
 ################################################################################
 # Copy library into src/rust
 ################################################################################
