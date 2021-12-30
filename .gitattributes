@@ -1,2 +1,3 @@
 # Hide generated files during diff
 3rdparty/python/*.lockfile linguist-generated=true
+src/rust/nomad-client-gen/** linguist-generated=true

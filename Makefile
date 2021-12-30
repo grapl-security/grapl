@@ -466,3 +466,8 @@ repl: ## Run an interactive ipython repl that can import from grapl-common etc
 .PHONY: build-docs
 build-docs: ## Build the Sphinx docs
 	./docs/build_docs.sh
+
+.PHONY: generate-nomad-rust-client
+generate-nomad-rust-client:  # Generate the Nomad rust client from OpenAPI
+	./bin/generate_nomad_rust_client.sh
+	$(MAKE) format
