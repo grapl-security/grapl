@@ -1572,19 +1572,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "flexbuffers"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "15d14128f06405808ce75bfebe11e9b0f9da18719ede6d7bdb1702d6bfe0f7e8"
-dependencies = [
- "bitflags",
- "byteorder",
- "num_enum",
- "serde",
- "serde_derive",
-]
-
-[[package]]
 name = "fnv"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1931,11 +1918,11 @@ version = "0.1.0"
 dependencies = [
  "blake3",
  "chacha20",
- "flexbuffers",
  "quickcheck",
  "quickcheck_macros",
  "rand_core 0.6.3",
  "serde",
+ "serde_json",
  "thiserror",
  "x25519-dalek",
 ]

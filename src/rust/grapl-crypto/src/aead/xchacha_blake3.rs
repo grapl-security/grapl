@@ -30,10 +30,8 @@ pub enum AeadError {
     AuthenticationError,
     #[error("LoopError")]
     LoopError,
-    #[error("AadSerializationError")]
-    AadSerializationError(#[from] flexbuffers::SerializationError),
-    #[error("AadDeserializationError")]
-    AadDeserializationError(#[from] flexbuffers::DeserializationError),
+    #[error("InvalidAadFormat")]
+    InvalidAad(#[from] serde_json::Error)
 }
 
 impl From<chacha20::cipher::errors::LoopError> for AeadError {
@@ -97,7 +95,7 @@ impl ChaChaBlake3 {
         aad: A,
         key: &[u8; KEY_SIZE],
     ) -> Result<EncryptedData, AeadError> {
-        let aad = flexbuffers::to_vec(&aad)?;
+        let aad = serde_json::to_vec(&aad)?;
 
         let mut nonce = [0; TOTAL_NONCE_SIZE];
         OsRng.fill_bytes(&mut nonce);

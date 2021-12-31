@@ -8,10 +8,8 @@ pub enum AsymmetricError {
     AeadError(#[from] AeadError),
     #[error("InvalidPubkey")]
     InvalidPubkey,
-    #[error("AadSerializationError")]
-    AadSerializationError(#[from] flexbuffers::SerializationError),
-    #[error("AadDeserializationError")]
-    AadDeserializationError(#[from] flexbuffers::DeserializationError),
+    #[error("InvalidAadFormat")]
+    InvalidAad(#[from] serde_json::Error)
 }
 
 pub struct PubEncryptedData {
@@ -84,7 +82,7 @@ impl Decrypter {
         &mut self,
         encrypted_data: PubEncryptedData,
     ) -> Result<(Vec<u8>, PubAad<A>), AsymmetricError> {
-        let aad: PubAad<A> = flexbuffers::from_slice(&encrypted_data.encrypted_data.aad)?;
+        let aad: PubAad<A> = serde_json::from_slice(&encrypted_data.encrypted_data.aad)?;
 
         // Checking early here lets us avoid cloning if the length is invalid
         if aad.public_key.len() != 32 {
