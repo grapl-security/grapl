@@ -2,7 +2,7 @@ use blake3::Hash;
 use chacha20::{Key, XNonce, XChaCha12};
 use chacha20::cipher::{NewCipher, StreamCipher};
 use chacha20::cipher::errors::LoopError;
-use rand_core::{OsRng, RngCore};
+use crate::hasher::Hasher;
 
 // These domains are used to derive two separate keys from the same origin key.
 // The values can be arbitrary, but must be distinct.
@@ -38,32 +38,13 @@ impl From<chacha20::cipher::errors::LoopError> for AeadError {
     }
 }
 
-#[derive(Clone)]
-struct Hasher {
-    hasher: blake3::Hasher,
-}
-
-impl Default for Hasher {
-    fn default() -> Self {
-        Hasher { hasher: blake3::Hasher::new() }
-    }
-}
-
-impl Hasher {
-    fn hash<F>(&mut self, f: F) -> Hash
-        where F: FnOnce(&mut blake3::Hasher)
-    {
-        self.hasher.reset();
-        f(&mut self.hasher);
-        self.hasher.finalize()
-    }
-}
-
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct EncryptedData {
     ciphertext: Vec<u8>,
     pub(crate) aad: Vec<u8>,
+    #[serde(with = "crate::arrays")]
     nonce: [u8; TOTAL_NONCE_SIZE],
+    #[serde(with = "crate::arrays")]
     mac: [u8; KEY_SIZE],
 }
 
@@ -72,6 +53,9 @@ pub struct EncryptedData {
 pub struct ChaChaBlake3 {
     cbuf: Vec<u8>,
     hasher: Hasher,
+    // The pepper used to derive the symmetric key
+    // This value should not be transmitted
+    pepper: Option<[u8; 32]>,
 }
 
 impl ChaChaBlake3 {
@@ -79,6 +63,7 @@ impl ChaChaBlake3 {
         Self {
             cbuf: Vec::with_capacity(64),
             hasher: Hasher::default(),
+            pepper: None,
         }
     }
 
@@ -88,8 +73,7 @@ impl ChaChaBlake3 {
         aad: &[u8],
         key: &[u8; KEY_SIZE],
     ) -> Result<EncryptedData, AeadError> {
-        let mut nonce = [0; TOTAL_NONCE_SIZE];
-        OsRng.fill_bytes(&mut nonce);
+        let nonce = crate::rand_bytes::rand_array::<{ TOTAL_NONCE_SIZE + 32 }, TOTAL_NONCE_SIZE>();
 
         let (ciphertext, mac) = self.encrypt_raw(
             msg,
