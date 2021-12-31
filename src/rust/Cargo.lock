@@ -1942,6 +1942,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
+ "uuid",
  "x25519-dalek",
 ]
 

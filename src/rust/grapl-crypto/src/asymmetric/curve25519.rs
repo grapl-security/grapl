@@ -3,7 +3,7 @@ use x25519_dalek::{PublicKey, StaticSecret, SharedSecret};
 use crate::aead::xchacha_blake3::{ChaChaBlake3, EncryptedData, AeadError};
 use crate::hasher::Hasher;
 
-const SYMKEY_ENCRYPT: &'static [u8] = b"Grapl-12211946";
+const SYMKEY_ENCRYPT: &'static [u8] = b"Grapl-24423892";
 
 #[derive(thiserror::Error, Debug)]
 pub enum AsymmetricError {
@@ -28,6 +28,17 @@ pub struct Encrypter {
 }
 
 impl Encrypter {
+    pub fn new(
+        their_public_key: PublicKey,
+        pepper: impl Into<Option<[u8; 16]>>,
+    ) -> Self {
+        Self {
+            their_public_key,
+            aead_enc: ChaChaBlake3::new(None), // We handle the pepper above the ChaCha level
+            hasher: Hasher::new(pepper),
+        }
+    }
+    
     pub fn encrypt(&mut self, msg: Vec<u8>, aad: &[u8]) -> Result<PubEncryptedData, AsymmetricError> {
         let (ephemeral_public_key, shared_secret) = self.new_ephemeral_keypair();
         let salt = crate::rand_bytes::rand_array::<32, 16>();
@@ -73,6 +84,17 @@ pub struct Decrypter {
 }
 
 impl Decrypter {
+    pub fn new(
+        our_secret: StaticSecret,
+        pepper: impl Into<Option<[u8; 16]>>,
+    ) -> Self {
+        Self {
+            our_secret,
+            aead_enc: ChaChaBlake3::new(None), // We handle the pepper above the ChaCha level
+            hasher: Hasher::new(pepper),
+        }
+    }
+
     pub fn decrypt(
         &mut self,
         encrypted_data: PubEncryptedData,
@@ -125,33 +147,23 @@ mod tests {
     use super::*;
     use quickcheck_macros::quickcheck;
 
-
-    fn rand_array<const N: usize>() -> [u8; N] {
-        let mut n = [0; N];
-        let mut rng = OsRng {};
-        rng.fill_bytes(&mut n);
-        n
-    }
-
     #[quickcheck]
     fn encrypt_decrypt(msg: Vec<u8>, aad: Vec<u8>) {
-        let aead = ChaChaBlake3::new();
         if msg.is_empty() { return; }
 
-        let receiver_secret = StaticSecret::from(rand_array());
+        let receiver_secret = StaticSecret::from(crate::rand_bytes::rand_array::<32, 32>());
         let receiver_public = PublicKey::from(&receiver_secret);
 
-        let mut encrypter = Encrypter {
-            their_public_key: receiver_public.clone(),
-            aead_enc: aead.clone(),
-            hasher: Default::default()
-        };
+        let pepper = uuid::Uuid::new_v4().as_bytes().clone();
+        let mut encrypter = Encrypter::new(
+            receiver_public.clone(),
+            pepper,
+        );
 
-        let mut decrypter = Decrypter {
-            our_secret: receiver_secret.clone(),
-            aead_enc: aead.clone(),
-            hasher: Default::default()
-        };
+        let mut decrypter = Decrypter::new(
+            receiver_secret.clone(),
+            pepper,
+        );
 
         let encrypted = encrypter.encrypt(msg.clone(), &aad).expect("encrypt failed");
         let decrypted = decrypter.decrypt(encrypted).expect("encrypt failed");

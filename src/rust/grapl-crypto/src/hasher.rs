@@ -3,11 +3,21 @@ use blake3::Hash;
 #[derive(Clone)]
 pub(crate) struct Hasher {
     hasher: blake3::Hasher,
+    pepper: Option<[u8; 16]>
+}
+
+impl Hasher {
+    pub(crate) fn new(pepper: impl Into<Option<[u8; 16]>>) -> Self {
+        Self {
+            hasher: blake3::Hasher::new(),
+            pepper: pepper.into(),
+        }
+    }
 }
 
 impl Default for Hasher {
     fn default() -> Self {
-        Hasher { hasher: blake3::Hasher::new() }
+        Hasher { hasher: blake3::Hasher::new(), pepper: None }
     }
 }
 
@@ -16,6 +26,9 @@ impl Hasher {
         where F: FnOnce(&mut blake3::Hasher)
     {
         self.hasher.reset();
+        if let Some(pepper) = self.pepper {
+            self.hasher.update(&pepper);
+        }
         f(&mut self.hasher);
         self.hasher.finalize()
     }

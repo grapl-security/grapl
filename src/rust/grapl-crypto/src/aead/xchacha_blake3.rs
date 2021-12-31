@@ -53,17 +53,13 @@ pub struct EncryptedData {
 pub struct ChaChaBlake3 {
     cbuf: Vec<u8>,
     hasher: Hasher,
-    // The pepper used to derive the symmetric key
-    // This value should not be transmitted
-    pepper: Option<[u8; 32]>,
 }
 
 impl ChaChaBlake3 {
-    pub fn new() -> Self {
+    pub fn new(pepper: impl Into<Option<[u8; 16]>>) -> Self {
         Self {
             cbuf: Vec::with_capacity(64),
-            hasher: Hasher::default(),
-            pepper: None,
+            hasher: Hasher::new(pepper),
         }
     }
 
@@ -189,17 +185,14 @@ impl ChaChaBlake3 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rand_core::{OsRng, RngCore};
     use quickcheck_macros::quickcheck;
 
     #[quickcheck]
     fn encrypt_decrypt_raw(msg: Vec<u8>, aad: Vec<u8>) {
-        let mut aead = ChaChaBlake3::new();
+        let mut aead = ChaChaBlake3::new(uuid::Uuid::new_v4().as_bytes().clone());
         if msg.is_empty() { return; }
-        let mut nonce = [0; TOTAL_NONCE_SIZE];
-        OsRng.fill_bytes(&mut nonce);
-        let mut key = [0; 32];
-        OsRng.fill_bytes(&mut key);
+        let nonce = crate::rand_bytes::rand_array::<TOTAL_NONCE_SIZE, TOTAL_NONCE_SIZE>();
+        let key = crate::rand_bytes::rand_array::<32, 32>();
 
         let (encrypted, mac) = aead.encrypt_raw(
             msg.clone(),
@@ -222,11 +215,10 @@ mod tests {
 
     #[quickcheck]
     fn encrypt_decrypt(msg: Vec<u8>, aad: Vec<u8>) {
-        let mut aead = ChaChaBlake3::new();
+        let mut aead = ChaChaBlake3::new(uuid::Uuid::new_v4().as_bytes().clone());
         if msg.is_empty() { return; }
 
-        let mut key = [0; 32];
-        OsRng.fill_bytes(&mut key);
+        let key = crate::rand_bytes::rand_array::<32, 32>();
 
         let encrypted = aead.encrypt(
             msg.clone(),
@@ -246,11 +238,10 @@ mod tests {
 
     #[quickcheck]
     fn encrypt_decrypt_fail_aad(msg: Vec<u8>, aad: Vec<u8>) {
-        let mut aead = ChaChaBlake3::new();
+        let mut aead = ChaChaBlake3::new(uuid::Uuid::new_v4().as_bytes().clone());
         if msg.is_empty() { return; }
 
-        let mut key = [0; 32];
-        OsRng.fill_bytes(&mut key);
+        let key = crate::rand_bytes::rand_array::<32, 32>();
 
         let mut encrypted = aead.encrypt(
             msg.clone(),
@@ -274,11 +265,10 @@ mod tests {
 
     #[quickcheck]
     fn encrypt_decrypt_fail_cipher(msg: Vec<u8>, aad: Vec<u8>) {
-        let mut aead = ChaChaBlake3::new();
+        let mut aead = ChaChaBlake3::new(uuid::Uuid::new_v4().as_bytes().clone());
         if msg.is_empty() { return; }
 
-        let mut key = [0; 32];
-        OsRng.fill_bytes(&mut key);
+        let key = crate::rand_bytes::rand_array::<32, 32>();
 
         let mut encrypted = aead.encrypt(
             msg.clone(),
@@ -286,7 +276,7 @@ mod tests {
             &key,
         ).expect("encrypted: failed");
 
-        // Adding a byte should break the aad
+        // Adding a byte should break the ciphertext
         encrypted.ciphertext.push(123);
 
         let decrypted = aead.decrypt(
