@@ -132,7 +132,7 @@ impl ChaChaBlake3 {
 
         let mac: Hash = self.hmac(&aad, &ciphertext[..], &auth_key);
 
-        // `mac` and `tag` are both `Hash`, which implements a cosntant time equality comparison
+        // `mac` and `tag` are both `Hash`, which implements a constant time equality comparison
         if &mac != tag {
             return Err(AeadError::AuthenticationError)
         }

@@ -26,6 +26,7 @@ impl Hasher {
         where F: FnOnce(&mut blake3::Hasher)
     {
         self.hasher.reset();
+        // If there's a pepper we seed it through every hash
         if let Some(pepper) = self.pepper {
             self.hasher.update(&pepper);
         }
