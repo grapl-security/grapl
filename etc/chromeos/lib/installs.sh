@@ -34,6 +34,9 @@ install_docker() {
     echo "Install docker"
     curl -sSL https://get.docker.com/ | sh
     sudo usermod -a -G docker "$USER"
+
+    echo "Install docker-compose"
+    pip3 install docker-compose
 }
 
 install_rust_and_utilities() {
@@ -67,7 +70,7 @@ install_pyenv() {
 
     curl -L https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash
 
-    # This function is stolen from the 
+    # This function is stolen from the
     # "If your ~/.profile sources ~/.bashrc (Debian, Ubuntu, Mint)"
     # section of https://github.com/pyenv/pyenv/blob/master/README.md
     setup_pyenv_on_path() {
@@ -80,7 +83,7 @@ install_pyenv() {
         a \
         ' -e ':a' -e '$!{n;ba};}' ~/.profile
         source ~/.profile
-        echo 'eval "$(pyenv init --path)"' >>~/.profile
+        echo 'eval "$(pyenv init --path)"' >> ~/.profile
         echo 'eval "$(pyenv init -)"' >> ~/.bashrc
     }
     setup_pyenv_on_path
@@ -97,8 +100,8 @@ install_nvm() {
 
     # Make nvm usable ASAP
     export NVM_DIR="$HOME/.config/nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"                   # This loads nvm
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" # This loads nvm bash_completion
 
     nvm install node
 }
@@ -126,7 +129,7 @@ install_utilities() {
 install_hashicorp_tools() {
     echo "Installing hashicorp tools: consul nomad packer"
     curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-    sudo apt-get install -y lsb-release software-properties-common  # for `lsb_release` and `apt-add-repository``
+    sudo apt-get install -y lsb-release software-properties-common # for `lsb_release` and `apt-add-repository``
     sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
     sudo apt-get update
     sudo apt-get install -y consul nomad packer
