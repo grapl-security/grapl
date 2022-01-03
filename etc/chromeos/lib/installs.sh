@@ -6,6 +6,12 @@ set -euo pipefail
 PYENV_PYTHON_VERSION="3.7.10"
 
 ## helper functions
+source_profile() {
+    # Shellcheck can't follow $HOME or other vars like $USER so we disable the check here
+    # shellcheck disable=SC1091
+    source "$HOME/.profile"
+}
+
 get_latest_release() {
     curl --silent "https://api.github.com/repos/$1/releases/latest" | # Get latest release from GitHub api
         grep '"tag_name":' |                                          # Get tag line
@@ -76,14 +82,18 @@ install_pyenv() {
     setup_pyenv_on_path() {
         # the sed invocation inserts the lines at the start of the file
         # after any initial comment lines
+        # shellcheck disable=0-9999
         sed -Ei -e '/^([^#]|$)/ {a \
         export PYENV_ROOT="$HOME/.pyenv"
         a \
         export PATH="$PYENV_ROOT/bin:$PATH"
         a \
         ' -e ':a' -e '$!{n;ba};}' ~/.profile
-        source ~/.profile
+
+        source_profile
+        # shellcheck disable=SC2016
         echo 'eval "$(pyenv init --path)"' >> ~/.profile
+        # shellcheck disable=SC2016
         echo 'eval "$(pyenv init -)"' >> ~/.bashrc
     }
     setup_pyenv_on_path
@@ -94,14 +104,14 @@ install_pyenv() {
 install_nvm() {
     echo "Installing nvm"
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
-    # Shellcheck can't follow $HOME or other vars like $USER so we disable the check here
-    # shellcheck disable=SC1091
-    source "$HOME/.profile"
+    source_profile
 
     # Make nvm usable ASAP
-    export NVM_DIR="$HOME/.config/nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"                   # This loads nvm
-    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" # This loads nvm bash_completion
+    export NVM_DIR="${HOME}/.config/nvm"
+    # shellcheck disable=SC1091
+    [ -s "${NVM_DIR}/nvm.sh" ] && \. "${NVM_DIR}/nvm.sh" # This loads nvm
+    # shellcheck disable=SC1091
+    [ -s "${NVM_DIR}/bash_completion" ] && \. "${NVM_DIR}/bash_completion" # This loads nvm bash_completion
 
     nvm install node
 }
