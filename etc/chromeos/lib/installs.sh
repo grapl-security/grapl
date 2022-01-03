@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
 # Set versions
 PYENV_PYTHON_VERSION="3.7.10"
 
@@ -64,6 +66,24 @@ install_pyenv() {
     fi
 
     curl -L https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash
+
+    # This function is stolen from the 
+    # "If your ~/.profile sources ~/.bashrc (Debian, Ubuntu, Mint)"
+    # section of https://github.com/pyenv/pyenv/blob/master/README.md
+    setup_pyenv_on_path() {
+        # the sed invocation inserts the lines at the start of the file
+        # after any initial comment lines
+        sed -Ei -e '/^([^#]|$)/ {a \
+        export PYENV_ROOT="$HOME/.pyenv"
+        a \
+        export PATH="$PYENV_ROOT/bin:$PATH"
+        a \
+        ' -e ':a' -e '$!{n;ba};}' ~/.profile
+        source ~/.profile
+        echo 'eval "$(pyenv init --path)"' >>~/.profile
+        echo 'eval "$(pyenv init -)"' >> ~/.bashrc
+    }
+    setup_pyenv_on_path
     pyenv install "${PYENV_PYTHON_VERSION}"
     pyenv global "${PYENV_PYTHON_VERSION}"
 }
@@ -74,15 +94,24 @@ install_nvm() {
     # Shellcheck can't follow $HOME or other vars like $USER so we disable the check here
     # shellcheck disable=SC1091
     source "$HOME/.profile"
+
+    # Make nvm usable ASAP
+    export NVM_DIR="$HOME/.config/nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
     nvm install node
 }
 
 install_awsv2() {
     echo "Installing awscliv2"
-    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-    unzip awscliv2.zip
-    sudo ./aws/install
-    sudo rm awscliv2.zip
+    (
+        cd /tmp
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        unzip awscliv2.zip
+        sudo ./aws/install --update
+        sudo rm awscliv2.zip
+    )
 }
 install_pulumi() {
     echo "Install pulumi"
@@ -97,6 +126,7 @@ install_utilities() {
 install_hashicorp_tools() {
     echo "Installing hashicorp tools: consul nomad packer"
     curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+    sudo apt-get install -y lsb-release software-properties-common  # for `lsb_release` and `apt-add-repository``
     sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
     sudo apt-get update
     sudo apt-get install -y consul nomad packer
