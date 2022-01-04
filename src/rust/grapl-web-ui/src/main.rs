@@ -31,7 +31,8 @@ async fn main() -> Result<(), GraplUiError> {
     HttpServer::new(move || {
         App::new()
             .wrap(actix_web::middleware::Logger::default())
-            .wrap(actix_web::middleware::Compress::default())
+            // grapl-security/issue-tracker#803
+            // .wrap(actix_web::middleware::Compress::default())  // todo: Reenable compression when brotli isn't vulnerable
             .wrap(
                 CookieSession::private(&config.session_key)
                     .path("/")
