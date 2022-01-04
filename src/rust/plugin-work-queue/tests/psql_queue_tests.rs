@@ -63,6 +63,9 @@ mod tests {
             )
             .await?;
 
+        let status = get_generator_status(&queue.pool, &execution_key).await?;
+        assert_eq!(status, Status::Enqueued);
+
         // Retrieve a message
         let msg = queue
             .get_generator_message()
@@ -98,6 +101,8 @@ mod tests {
                 uuid::Uuid::new_v4(),
             )
             .await?;
+        let status = get_generator_status(&queue.pool, &execution_key).await?;
+        assert_eq!(status, Status::Enqueued);
 
         // Retrieve a message
         let msg = queue
