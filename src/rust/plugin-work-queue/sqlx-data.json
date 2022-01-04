@@ -40,6 +40,37 @@
       "nullable": []
     }
   },
+  "444c9dd81e27dd37bebc11022ca5be780e74bdced403c18e6c4655e6c242bcaf": {
+    "query": "SELECT status as \"status: Status\"\n            FROM plugin_work_queue.generator_plugin_executions\n            WHERE plugin_id = $1\n            LIMIT 1;",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "status: Status",
+          "type_info": {
+            "Custom": {
+              "name": "status_t",
+              "kind": {
+                "Enum": [
+                  "enqueued",
+                  "failed",
+                  "processed"
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      },
+      "nullable": [
+        false
+      ]
+    }
+  },
   "5fefe762bf726e1b9ae92aec7b704c5713c4d0809959af545f8ab6cc743c5843": {
     "query": "\n            UPDATE plugin_work_queue.analyzer_plugin_executions\n            SET\n                try_count  = plugin_work_queue.analyzer_plugin_executions.try_count + 1,\n                last_updated = CURRENT_TIMESTAMP,\n                visible_after  = CURRENT_TIMESTAMP + INTERVAL '10 seconds'\n            FROM (\n                 SELECT execution_key, plugin_id, pipeline_message, status, creation_time, visible_after, tenant_id\n                 FROM plugin_work_queue.analyzer_plugin_executions\n                 WHERE status = 'enqueued'\n                   AND creation_time >= (CURRENT_TIMESTAMP - INTERVAL '1 day')\n                   AND (visible_after IS NULL OR visible_after <= CURRENT_TIMESTAMP)\n                 ORDER BY creation_time ASC\n                 FOR UPDATE SKIP LOCKED\n                 LIMIT 1\n             ) AS next_execution\n             WHERE plugin_work_queue.analyzer_plugin_executions.execution_key = next_execution.execution_key\n             RETURNING\n                 next_execution.execution_key as \"execution_key!: ExecutionId\",\n                 next_execution.plugin_id,\n                 next_execution.pipeline_message,\n                 next_execution.tenant_id\n        ",
     "describe": {

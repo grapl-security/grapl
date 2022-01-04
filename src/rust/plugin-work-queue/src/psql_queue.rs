@@ -281,7 +281,25 @@ pub async fn get_generator_status(
             WHERE execution_key = $1"#,
         execution_key.0
     )
-    .fetch_one(pool)
-    .await?;
+        .fetch_one(pool)
+        .await?;
+    Ok(row.status)
+}
+
+// Pub for testing - otherwise sqlx can't see the query
+pub async fn get_generator_status_by_plugin_id(
+    pool: &sqlx::Pool<Postgres>,
+    plugin_id: &uuid::Uuid,
+) -> Result<Status, sqlx::Error> {
+    // The request should be marked as failed
+    let row = sqlx::query!(
+        r#"SELECT status as "status: Status"
+            FROM plugin_work_queue.generator_plugin_executions
+            WHERE plugin_id = $1
+            LIMIT 1;"#,
+        plugin_id as _
+    )
+        .fetch_one(pool)
+        .await?;
     Ok(row.status)
 }

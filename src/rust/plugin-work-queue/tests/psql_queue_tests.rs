@@ -18,6 +18,7 @@ mod tests {
         Postgres,
     };
     use structopt::StructOpt;
+    use plugin_work_queue::psql_queue::get_generator_status_by_plugin_id;
 
     #[derive(Debug)]
     pub struct ExecutionRequest {
@@ -55,15 +56,16 @@ mod tests {
         let queue = PsqlQueue { pool };
 
         // Ensure one message is queued
+        let plugin_id = uuid::Uuid::new_v4();
         queue
             .put_generator_message(
-                uuid::Uuid::new_v4(),
+                plugin_id.clone(),
                 b"some-message".to_vec(),
                 uuid::Uuid::new_v4(),
             )
             .await?;
 
-        let status = get_generator_status(&queue.pool, &execution_key).await?;
+        let status = get_generator_status_by_plugin_id(&queue.pool, &plugin_id).await?;
         assert_eq!(status, Status::Enqueued);
 
         // Retrieve a message
@@ -94,14 +96,16 @@ mod tests {
         let queue = PsqlQueue { pool };
 
         // Ensure one message is queued
+        let plugin_id = uuid::Uuid::new_v4();
         queue
             .put_generator_message(
-                uuid::Uuid::new_v4(),
+                plugin_id.clone(),
                 b"some-message".to_vec(),
                 uuid::Uuid::new_v4(),
             )
             .await?;
-        let status = get_generator_status(&queue.pool, &execution_key).await?;
+
+        let status = get_generator_status_by_plugin_id(&queue.pool, &plugin_id).await?;
         assert_eq!(status, Status::Enqueued);
 
         // Retrieve a message
