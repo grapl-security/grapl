@@ -203,6 +203,7 @@ def main() -> None:
             "rustls=WARN",
         ]
     )
+    py_log_level = "DEBUG"
 
     if config.LOCAL_GRAPL:
         ###################################
@@ -240,6 +241,7 @@ def main() -> None:
             plugin_registry_db_port=str(plugin_registry_db.port),
             plugin_registry_db_username=plugin_registry_db.username,
             plugin_registry_db_password=plugin_registry_db.password,
+            py_log_level=py_log_level,
             **nomad_inputs,
         )
 
@@ -280,7 +282,7 @@ def main() -> None:
                 "aws_region",
                 "container_images",
                 "deployment_name",
-                "rust_log",
+                "py_log_level",
                 "schema_properties_table_name",
                 "schema_table_name",
                 "test_user_name",
@@ -370,13 +372,14 @@ def main() -> None:
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
             _redis_endpoint=cache.endpoint,
-            rust_log=rust_log_levels,
             container_images=_container_images(artifacts, require_artifact=True),
             # TODO When we get RDS set up replace these values
             plugin_registry_db_hostname="TODO",
             plugin_registry_db_port=str(5432),
             plugin_registry_db_username="postgres",
             plugin_registry_db_password="postgres",
+            py_log_level=py_log_level,
+            rust_log=rust_log_levels,
             **nomad_inputs,
         )
 
@@ -400,7 +403,7 @@ def main() -> None:
                 "aws_region",
                 "container_images",
                 "deployment_name",
-                "rust_log",
+                "py_log_level",
                 "schema_table_name",
                 "schema_properties_table_name",
                 "test_user_name",
