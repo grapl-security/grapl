@@ -192,13 +192,15 @@ def main() -> None:
         plugin_s3_bucket_name=plugins_bucket.bucket,
     )
 
+    # To learn more about this syntax, see
+    # https://docs.rs/env_logger/0.9.0/env_logger/#enabling-logging
     rust_log_levels = ",".join(
         [
             "DEBUG",
-            "serde_xml_rs::de=WARN",
-            "hyper::client=WARN",
-            "rusoto_core::request=WARN",
-            "rustls::anchors=WARN",
+            "serde_xml_rs=WARN",
+            "hyper=WARN",
+            "rusoto_core=WARN",
+            "rustls=WARN",
         ]
     )
 

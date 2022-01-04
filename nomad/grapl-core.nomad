@@ -277,6 +277,8 @@ locals {
   # enabled
   rust_backtrace = 1
 
+  py_grapl_log_level = "DEBUG"
+
   # This is used to conditionally submit env variables via template stanzas.
   local_only_env_vars = <<EOH
 GRAPL_AWS_ENDPOINT          = ${local.aws_endpoint}
@@ -781,7 +783,7 @@ job "grapl-core" {
         # AWS vars
         AWS_DEFAULT_REGION = var.aws_region
         # python vars
-        GRAPL_LOG_LEVEL = "INFO"
+        GRAPL_LOG_LEVEL = local.py_grapl_log_level
         # dgraph vars
         MG_ALPHAS = local.alpha_grpc_connect_str
         # service vars
@@ -840,7 +842,7 @@ job "grapl-core" {
         # AWS vars
         AWS_DEFAULT_REGION = var.aws_region
         # python vars
-        GRAPL_LOG_LEVEL = var.rust_log
+        GRAPL_LOG_LEVEL = local.py_grapl_log_level
         # dgraph vars
         MG_ALPHAS = local.alpha_grpc_connect_str
 
