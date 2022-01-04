@@ -192,6 +192,19 @@ def main() -> None:
         plugin_s3_bucket_name=plugins_bucket.bucket,
     )
 
+    # To learn more about this syntax, see
+    # https://docs.rs/env_logger/0.9.0/env_logger/#enabling-logging
+    rust_log_levels = ",".join(
+        [
+            "DEBUG",
+            "serde_xml_rs=WARN",
+            "hyper=WARN",
+            "rusoto_core=WARN",
+            "rustls=WARN",
+        ]
+    )
+    py_log_level = "DEBUG"
+
     if config.LOCAL_GRAPL:
         ###################################
         # Local Grapl
@@ -223,12 +236,12 @@ def main() -> None:
             aws_access_key_id=aws.config.access_key,
             aws_access_key_secret=aws.config.secret_key,
             container_images=_container_images({}),
-            # TODO: consider replacing rust_log= with the previous per-service `configurable_envvars`
-            rust_log="DEBUG",
+            rust_log=rust_log_levels,
             plugin_registry_db_hostname="LOCAL_GRAPL_REPLACE_IP",
             plugin_registry_db_port=str(plugin_registry_db.port),
             plugin_registry_db_username=plugin_registry_db.username,
             plugin_registry_db_password=plugin_registry_db.password,
+            py_log_level=py_log_level,
             **nomad_inputs,
         )
 
@@ -269,7 +282,7 @@ def main() -> None:
                 "aws_region",
                 "container_images",
                 "deployment_name",
-                "rust_log",
+                "py_log_level",
                 "schema_properties_table_name",
                 "schema_table_name",
                 "test_user_name",
@@ -359,14 +372,14 @@ def main() -> None:
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
             _redis_endpoint=cache.endpoint,
-            # TODO: consider replacing rust_log= with the previous per-service `configurable_envvars`
-            rust_log="DEBUG",
             container_images=_container_images(artifacts, require_artifact=True),
             # TODO When we get RDS set up replace these values
             plugin_registry_db_hostname="TODO",
             plugin_registry_db_port=str(5432),
             plugin_registry_db_username="postgres",
             plugin_registry_db_password="postgres",
+            py_log_level=py_log_level,
+            rust_log=rust_log_levels,
             **nomad_inputs,
         )
 
@@ -390,7 +403,7 @@ def main() -> None:
                 "aws_region",
                 "container_images",
                 "deployment_name",
-                "rust_log",
+                "py_log_level",
                 "schema_table_name",
                 "schema_properties_table_name",
                 "test_user_name",

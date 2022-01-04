@@ -3,6 +3,11 @@ variable "rust_log" {
   description = "Controls the logging behavior of Rust-based services."
 }
 
+variable "py_log_level" {
+  type        = string
+  description = "Controls the logging behavior of Python-based services."
+}
+
 variable "container_images" {
   type        = map(string)
   description = <<EOF
@@ -781,7 +786,7 @@ job "grapl-core" {
         # AWS vars
         AWS_DEFAULT_REGION = var.aws_region
         # python vars
-        GRAPL_LOG_LEVEL = "INFO"
+        GRAPL_LOG_LEVEL = var.py_log_level
         # dgraph vars
         MG_ALPHAS = local.alpha_grpc_connect_str
         # service vars
@@ -840,7 +845,7 @@ job "grapl-core" {
         # AWS vars
         AWS_DEFAULT_REGION = var.aws_region
         # python vars
-        GRAPL_LOG_LEVEL = var.rust_log
+        GRAPL_LOG_LEVEL = var.py_log_level
         # dgraph vars
         MG_ALPHAS = local.alpha_grpc_connect_str
 

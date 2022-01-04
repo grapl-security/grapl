@@ -271,7 +271,7 @@ job "integration-tests" {
         IS_RETRY          = "False"
 
         DEPLOYMENT_NAME = "${var.deployment_name}"
-        GRAPL_LOG_LEVEL = "${local.log_level}"
+        GRAPL_LOG_LEVEL = local.log_level
         MG_ALPHAS       = "localhost:9080"
 
       }
