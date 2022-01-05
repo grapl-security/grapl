@@ -281,8 +281,8 @@ pub async fn get_generator_status(
             WHERE execution_key = $1"#,
         execution_key.0
     )
-        .fetch_one(pool)
-        .await?;
+    .fetch_one(pool)
+    .await?;
     Ok(row.status)
 }
 
@@ -299,7 +299,7 @@ pub async fn get_generator_status_by_plugin_id(
             LIMIT 1;"#,
         plugin_id as _
     )
-        .fetch_one(pool)
-        .await?;
+    .fetch_one(pool)
+    .await?;
     Ok(row.status)
 }
