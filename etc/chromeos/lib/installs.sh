@@ -119,3 +119,9 @@ install_nomad_chromeos_workaround() {
     sudo mkdir -p "/lib/modules/$(uname -r)/"
     echo '_/bridge.ko' | sudo tee -a "/lib/modules/$(uname -r)/modules.builtin"
 }
+
+install_git_hooks() {
+    echo "Installing git hooks"
+    GIT_ROOT=$(git rev-parse --show-toplevel)
+    ln --symbolic --relative --force "$GIT_ROOT/etc/hooks/pre-commit.sh" "$GIT_ROOT/.git/hooks/pre-commit"
+}

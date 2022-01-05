@@ -28,6 +28,7 @@ pulumi_docker
 pulumi_kafka
 pulumi_nomad
 pulumi_policy
+pulumi_postgresql
 pulumi_random
 pydantic==1.8.2
 pydgraph
@@ -40,4 +41,4 @@ setuptools
 toml==0.10.2
 typer==0.3.2
 typing_extensions
-zstd==1.4.9.1
+zstd

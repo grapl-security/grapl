@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import List, Optional
 
 import pulumi_aws as aws
-from pulumi.resource import ResourceOptions
 
 import pulumi
 
@@ -160,7 +159,7 @@ class Bucket(aws.s3.Bucket):
             name,
             bucket=self.id,
             source=pulumi.FileAsset(file_path),
-            opts=ResourceOptions(parent=self)
+            opts=pulumi.ResourceOptions(parent=self)
             # Do we need to specify mimetype?
         )
 

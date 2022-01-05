@@ -18,9 +18,13 @@ members = [
   "./kafka-metrics-exporter",
   "./model-plugin-deployer",
   "./node-identifier",
+  "./nomad-client-gen",
   "./plugin-registry",
   "./plugin-work-queue",
   "./rust-proto",
   "./sqs-executor",
   "./sysmon",
 ]
+
+[profile.test]
+opt-level = 1

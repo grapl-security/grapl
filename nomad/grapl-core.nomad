@@ -3,6 +3,11 @@ variable "rust_log" {
   description = "Controls the logging behavior of Rust-based services."
 }
 
+variable "py_log_level" {
+  type        = string
+  description = "Controls the logging behavior of Python-based services."
+}
+
 variable "container_images" {
   type        = map(string)
   description = <<EOF
@@ -107,6 +112,37 @@ variable "schema_properties_table_name" {
 variable "session_table_name" {
   type        = string
   description = "What is the name of the session table?"
+}
+
+variable "plugin_registry_db_hostname" {
+  type        = string
+  description = "What is the host for the plugin registry table?"
+}
+
+variable "plugin_registry_db_port" {
+  type        = string
+  default     = "5432"
+  description = "What is the port for the plugin registry table?"
+}
+
+variable "plugin_registry_db_username" {
+  type        = string
+  description = "What is the username for the plugin registry table?"
+}
+
+variable "plugin_registry_db_password" {
+  type        = string
+  description = "What is the password for the plugin registry table?"
+}
+
+variable "plugin_s3_bucket_aws_account_id" {
+  type        = string
+  description = "The account id that owns the bucket where plugins are stored"
+}
+
+variable "plugin_s3_bucket_name" {
+  type        = string
+  description = "The name of the bucket where plugins are stored"
 }
 
 variable "num_graph_mergers" {
@@ -231,8 +267,9 @@ locals {
 
   # Prefer these over their `var` equivalents.
   # The aws endpoint is in template env format
-  aws_endpoint   = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
-  redis_endpoint = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  aws_endpoint                = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
+  redis_endpoint              = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  plugin_registry_db_hostname = replace(var.plugin_registry_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
 
   _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
   _redis         = split(":", local._redis_trimmed)
@@ -749,7 +786,7 @@ job "grapl-core" {
         # AWS vars
         AWS_DEFAULT_REGION = var.aws_region
         # python vars
-        GRAPL_LOG_LEVEL = "INFO"
+        GRAPL_LOG_LEVEL = var.py_log_level
         # dgraph vars
         MG_ALPHAS = local.alpha_grpc_connect_str
         # service vars
@@ -808,7 +845,7 @@ job "grapl-core" {
         # AWS vars
         AWS_DEFAULT_REGION = var.aws_region
         # python vars
-        GRAPL_LOG_LEVEL = var.rust_log
+        GRAPL_LOG_LEVEL = var.py_log_level
         # dgraph vars
         MG_ALPHAS = local.alpha_grpc_connect_str
 
@@ -926,37 +963,6 @@ job "grapl-core" {
   }
 
 
-  group "plugin-registry" {
-    network {
-      mode = "bridge"
-      port "plugin-registry" {
-      }
-    }
-
-    task "plugin-registry" {
-      driver = "docker"
-
-      config {
-        image = var.container_images["plugin-registry"]
-        ports = ["plugin-registry"]
-      }
-
-      env {
-        RUST_LOG                   = var.rust_log
-        RUST_BACKTRACE             = local.rust_backtrace
-        GRAPL_PLUGIN_REGISTRY_PORT = "${NOMAD_PORT_plugin-registry}"
-      }
-    }
-
-    service {
-      name = "plugin-registry"
-      port = "plugin-registry"
-      connect {
-        sidecar_service {}
-      }
-    }
-  }
-
   group "web-ui" {
     network {
       mode = "bridge"
@@ -1066,6 +1072,50 @@ job "grapl-core" {
         REDIS_ENDPOINT        = local.redis_endpoint
         RUST_LOG              = var.rust_log
         RUST_BACKTRACE        = local.rust_backtrace
+      }
+    }
+  }
+
+  group "plugin-registry" {
+    network {
+      mode = "bridge"
+
+      port "plugin-registry-port" {
+      }
+    }
+
+    task "plugin-registry" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["plugin-registry"]
+        ports = ["plugin-registry-port"]
+      }
+
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "plugin-registry.env"
+        env         = true
+      }
+
+      env {
+        PLUGIN_REGISTRY_BIND_ADDRESS    = "0.0.0.0:${NOMAD_PORT_plugin-registry-port}"
+        PLUGIN_REGISTRY_DB_HOSTNAME     = local.plugin_registry_db_hostname
+        PLUGIN_REGISTRY_DB_PASSWORD     = var.plugin_registry_db_password
+        PLUGIN_REGISTRY_DB_PORT         = var.plugin_registry_db_port
+        PLUGIN_REGISTRY_DB_USERNAME     = var.plugin_registry_db_username
+        PLUGIN_S3_BUCKET_AWS_ACCOUNT_ID = var.plugin_s3_bucket_aws_account_id
+        PLUGIN_S3_BUCKET_NAME           = var.plugin_s3_bucket_name
+        RUST_BACKTRACE                  = local.rust_backtrace
+        RUST_LOG                        = var.rust_log
+      }
+    }
+
+    service {
+      name = "plugin-registry"
+      port = "plugin-registry-port"
+      connect {
+        sidecar_service {}
       }
     }
   }

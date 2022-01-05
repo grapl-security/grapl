@@ -18,3 +18,4 @@ install_utilities
 install_hashicorp_tools
 install_cni_plugins
 install_nomad_chromeos_workaround
+install_git_hooks

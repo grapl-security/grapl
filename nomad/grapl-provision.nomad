@@ -66,9 +66,9 @@ variable "test_user_name" {
   description = "The name of the test user"
 }
 
-variable "rust_log" {
+variable "py_log_level" {
   type        = string
-  description = "Controls the logging behavior of Rust-based services."
+  description = "Controls the logging behavior of Python-based services."
 }
 
 locals {
@@ -129,7 +129,7 @@ job "grapl-provision" {
         GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name
         GRAPL_USER_AUTH_TABLE         = var.user_auth_table
         GRAPL_TEST_USER_NAME          = var.test_user_name
-        GRAPL_LOG_LEVEL               = var.rust_log # TODO: revisit
+        GRAPL_LOG_LEVEL               = var.py_log_level
       }
     }
 
