@@ -2,13 +2,11 @@ from __future__ import annotations
 
 import boto3
 import click
-import graplctl.swarm.lib as docker_swarm_ops
 from botocore.client import Config
 from grapl_common.env_helpers import (
     CloudWatchClientFactory,
     DynamoDBResourceFactory,
     EC2ResourceFactory,
-    LambdaClientFactory,
     Route53ClientFactory,
     S3ClientFactory,
     SNSClientFactory,
@@ -18,7 +16,6 @@ from grapl_common.env_helpers import (
 from graplctl import __version__, common
 from graplctl.aws.commands import aws
 from graplctl.common import State
-from graplctl.swarm.commands import swarm
 from graplctl.upload.commands import upload
 
 Tag = common.Tag
@@ -28,13 +25,24 @@ Ec2Instance = common.Ec2Instance
 # main entrypoint for grapctl
 #
 
+SUPPORTED_REGIONS = list(
+    {
+        # This list is meant to capture all possible regions to deploy Grapl to.
+        # TODO: In the future, replace with `aws ec2 describe-regions`
+        "us-east-1",  # Do yourelf a favor and consider a different one
+        "us-east-2",
+        "us-west-1",
+        "us-west-2",
+    }
+)
+
 
 @click.group()
 @click.version_option(version=__version__)
 @click.option(
     "-r",
     "--grapl-region",
-    type=click.Choice(list(docker_swarm_ops.REGION_TO_AMI_ID.keys())),
+    type=click.Choice(SUPPORTED_REGIONS),
     envvar="GRAPL_REGION",
     help="grapl region to target [$GRAPL_REGION]",
     required=True,
@@ -85,9 +93,6 @@ def main(
 ) -> None:
     session = boto3.session.Session()
     config = Config(region_name=grapl_region)
-    lambda_config = Config(
-        read_timeout=60 * 15 + 10  # 10s longer than e2e-test-runner and provisioner
-    ).merge(config)
     ctx.obj = State(
         grapl_region,
         grapl_deployment_name,
@@ -95,7 +100,6 @@ def main(
         cloudwatch=CloudWatchClientFactory(session).from_env(config=config),
         dynamodb=DynamoDBResourceFactory(session).from_env(config=config),
         ec2=EC2ResourceFactory(session).from_env(config=config),
-        lambda_=LambdaClientFactory(session).from_env(config=lambda_config),
         route53=Route53ClientFactory(session).from_env(config=config),
         s3=S3ClientFactory(session).from_env(config=config),
         sns=SNSClientFactory(session).from_env(config=config),
@@ -108,5 +112,4 @@ def main(
 
 
 main.add_command(aws)
-main.add_command(swarm)
 main.add_command(upload)
