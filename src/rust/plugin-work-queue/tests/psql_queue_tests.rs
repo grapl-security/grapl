@@ -6,6 +6,7 @@ mod tests {
     use plugin_work_queue::{
         psql_queue::{
             get_generator_status,
+            get_generator_status_by_plugin_id,
             ExecutionId,
             PsqlQueue,
             Status,
@@ -18,7 +19,6 @@ mod tests {
         Postgres,
     };
     use structopt::StructOpt;
-    use plugin_work_queue::psql_queue::get_generator_status_by_plugin_id;
 
     #[derive(Debug)]
     pub struct ExecutionRequest {
