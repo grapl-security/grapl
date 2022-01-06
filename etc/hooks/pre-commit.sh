@@ -5,7 +5,8 @@ FILES=$(git diff --cached --name-only --diff-filter=ACMR | sed 's| |\\ |g')
 [ -z "$FILES" ] && exit 0
 
 # Prettify all selected files
-echo "$FILES" | xargs ./pants fmt
+# (--owners-not-found-behavior=ignore will skip changed files that are not Pants-managed)
+echo "$FILES" | xargs ./pants --owners-not-found-behavior=ignore fmt
 
 # Add back the modified files to staging
 echo "$FILES" | xargs git add
