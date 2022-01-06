@@ -4,6 +4,7 @@ use structopt::StructOpt;
 
 pub mod client;
 pub mod server;
+pub mod nomad_client;
 
 #[derive(StructOpt, Debug)]
 pub struct PluginRegistryServiceConfig {
