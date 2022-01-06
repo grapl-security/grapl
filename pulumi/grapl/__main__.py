@@ -205,6 +205,9 @@ def main() -> None:
     )
     py_log_level = "DEBUG"
 
+    # We've seen some potentially false failures from the default 5m timeout.
+    nomad_grapl_core_timeout = "8m"
+
     if config.LOCAL_GRAPL:
         ###################################
         # Local Grapl
@@ -254,8 +257,6 @@ def main() -> None:
             intention_directory=Path("../../nomad/consul-intentions").resolve(),
         )
 
-        # We've seen some potentially false failures from the default 5m timeout.
-        nomad_grapl_core_timeout = "8m"
         nomad_grapl_core = NomadJob(
             "grapl-core",
             jobspec=Path("../../nomad/grapl-core.nomad").resolve(),
@@ -387,7 +388,12 @@ def main() -> None:
             "grapl-core",
             jobspec=Path("../../nomad/grapl-core.nomad").resolve(),
             vars=prod_grapl_core_job_vars,
-            opts=pulumi.ResourceOptions(provider=nomad_provider),
+            opts=pulumi.ResourceOptions(
+                provider=nomad_provider,
+                custom_timeouts=CustomTimeouts(
+                    create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
+                ),
+            ),
         )
 
         nomad_grapl_ingress = NomadJob(
