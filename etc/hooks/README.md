@@ -15,8 +15,9 @@ ln --symbolic --relative "$GIT_ROOT/etc/hooks/pre-commit.sh" "$GIT_ROOT/.git/hoo
 ```
 
 ## Creating new git hooks
-  
+
 When creating a new git hook:
 
 1. Make the file executable (and committed to git as executable)
-2. Update the chromeos installs script to add the new git hook inside the install_git_hooks function
+2. Update the chromeos installs script to add the new git hook inside the
+   install_git_hooks function
