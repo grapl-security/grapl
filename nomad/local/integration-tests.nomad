@@ -174,9 +174,8 @@ job "integration-tests" {
         GRAPL_PLUGIN_REGISTRY_ADDRESS = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-registry}"
       }
 
-      # Because Cargo does some... compiling... for some reason.... maybe.....
       resources {
-        memory = 6500
+        memory = 1024
       }
     }
   }
