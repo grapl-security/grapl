@@ -90,7 +90,7 @@ message AcknowledgeAnalyzerRequest {
   bool success = 2;
 }
 
-// A response to an AcknowledgeRequest
+// A response to an AcknowledgeAnalyzerRequest
 message AcknowledgeAnalyzerResponse {
 
 }
