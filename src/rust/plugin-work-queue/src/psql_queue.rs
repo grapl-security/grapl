@@ -160,7 +160,7 @@ impl PsqlQueue {
              ) AS next_execution
              WHERE plugin_work_queue.generator_plugin_executions.execution_key = next_execution.execution_key
              RETURNING
-                 next_execution.execution_key as "execution_key!: ExecutionId",
+                 next_execution.execution_key AS "execution_key!: ExecutionId",
                  next_execution.plugin_id,
                  next_execution.pipeline_message,
                  next_execution.tenant_id
@@ -208,7 +208,7 @@ impl PsqlQueue {
              ) AS next_execution
              WHERE plugin_work_queue.analyzer_plugin_executions.execution_key = next_execution.execution_key
              RETURNING
-                 next_execution.execution_key as "execution_key!: ExecutionId",
+                 next_execution.execution_key AS "execution_key!: ExecutionId",
                  next_execution.plugin_id,
                  next_execution.pipeline_message,
                  next_execution.tenant_id
@@ -276,7 +276,7 @@ pub async fn get_generator_status(
 ) -> Result<Status, sqlx::Error> {
     // The request should be marked as failed
     let row = sqlx::query!(
-        r#"SELECT status as "status: Status"
+        r#"SELECT status AS "status: Status"
             FROM plugin_work_queue.generator_plugin_executions
             WHERE execution_key = $1"#,
         execution_key.0
@@ -293,7 +293,7 @@ pub async fn get_generator_status_by_plugin_id(
 ) -> Result<Status, sqlx::Error> {
     // The request should be marked as failed
     let row = sqlx::query!(
-        r#"SELECT status as "status: Status"
+        r#"SELECT status AS "status: Status"
             FROM plugin_work_queue.generator_plugin_executions
             WHERE plugin_id = $1
             LIMIT 1;"#,
