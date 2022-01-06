@@ -1,4 +1,4 @@
-FROM rust:1-slim-buster AS base
+FROM rust:1-slim-bullseye AS base
 
 ARG RUST_BUILD=debug
 
@@ -11,10 +11,10 @@ SHELL ["/bin/bash", "-c"]
 RUN --mount=type=cache,target=/var/lib/apt/lists \
     apt-get update \
     && apt-get install -y --no-install-recommends \
-        build-essential=12.6 \
-        libssl-dev=1.1.1d-0+deb10u7 \
-        pkg-config=0.29-6 \
-        zlib1g-dev=1:1.2.11.dfsg-1
+        build-essential=12.9 \
+        libssl-dev=1.1.1k-1+deb11u1 \
+        pkg-config=0.29.2-1 \
+        zlib1g-dev=1:1.2.11.dfsg-2
 
 # Install rust toolchain before copying sources to avoid unecessarily
 # resinstalling on source file changes.
