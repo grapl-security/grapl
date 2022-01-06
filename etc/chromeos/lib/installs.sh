@@ -168,7 +168,7 @@ install_cni_plugins() {
     cd /opt/cni/bin || exit 2
     VERSION=$(get_latest_release containernetworking/plugins)
     TGZ_NAME="cni-plugins-linux-amd64-${VERSION}.tgz"
-    sudo wget "https://github.com/containernetworking/plugins/releases/download/$VERSION/${TGZ_NAME}"
+    sudo wget "https://github.com/containernetworking/plugins/releases/download/${VERSION}/${TGZ_NAME}"
     sudo tar -xf "${TGZ_NAME}"
     sudo rm "${TGZ_NAME}"
 }
