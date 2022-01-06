@@ -1,13 +1,13 @@
-FROM debian:buster-slim AS formatter
+FROM debian:bullseye-slim AS formatter
 
 # Ignore this lint about deleteing the apt-get lists (we're caching!)
 # hadolint ignore=DL3009
 RUN --mount=type=cache,target=/var/lib/apt/lists \
     apt-get update \
     && apt-get install --yes --no-install-recommends \
-        ca-certificates=20200601~deb10u2 \
-        curl=7.64.0-4+deb10u2 \
-        netbase=5.6
+        ca-certificates=20210119 \
+        curl=7.74.0-1.3+deb11u1 \
+        netbase=6.3
 
 # Because of the pipe below
 SHELL ["/bin/bash", "-c", "-o", "pipefail"]
