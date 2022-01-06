@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 
 # The sed here is to deal with any files with spaces in the names
-FILES=$(git diff --cached --name-only --diff-filter=ACMR | sed 's| |\\ |g')
+FILES=$(./pants list --changed-since=HEAD)
 [ -z "$FILES" ] && exit 0
 
 # Prettify all selected files
-# (--owners-not-found-behavior=ignore will skip changed files that are not Pants-managed)
-echo "$FILES" | xargs ./pants --owners-not-found-behavior=ignore fmt
+echo "$FILES" | xargs ./pants fmt
 
 # Add back the modified files to staging
 echo "$FILES" | xargs git add
