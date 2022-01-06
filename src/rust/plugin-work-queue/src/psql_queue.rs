@@ -134,7 +134,9 @@ impl PsqlQueue {
         // 3. Updates the `visible_after`
 
         // Note that:
-        // * messages are invisible for 10 seconds
+        // * messages are invisible for 10 seconds *after* each select
+        //      * The 10 second timeout is arbitrary but reasonable.
+        // * messages are immediately visible after their insert
         // * messages 'expire' after one day
         // * messages currently do not have a maximum retry limit
         // * The one day expiration matches our 1 day partitioning strategy
@@ -182,7 +184,9 @@ impl PsqlQueue {
         // 3. Updates the `visible_after`
 
         // Note that:
-        // * messages are invisible for 10 seconds
+        // * messages are invisible for 10 seconds *after* each select
+        //      * The 10 second timeout is arbitrary but reasonable.
+        // * messages are immediately visible after their insert
         // * messages 'expire' after one day
         // * messages currently do not have a maximum retry limit
         // * The one day expiration matches our 1 day partitioning strategy
