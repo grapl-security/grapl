@@ -50,6 +50,12 @@ RUN ./pants --version
 
 # Automatically ensures that our virtualenv is created and active on
 # all subsequent actions
+#
+# DL3059 info: Multiple consecutive `RUN` instructions. Consider consolidation.
+# Going to ignore this becuase the two RUNS seem somewhere different and it's
+# a minor info severity.
+#
+# hadolint ignore=DL3059
 RUN mkdir venv
 ENV VIRTUAL_ENV=/home/grapl/venv
 RUN python3 -m venv $VIRTUAL_ENV
