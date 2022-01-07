@@ -174,3 +174,13 @@ known_versions = [
   "v0.7.2|macos_x86_64|969bd7ef668e8167cfbba569fb9f4a0b2fc1c4021f87032b6a0b0e525fb77369|3988092",
   "v0.7.2|linux_x86_64|70423609f27b504d6c0c47e340f33652aea975e45f312324f2dbf91c95a3b188|1382204"
 ]
+
+[hadolint]
+version = "v2.8.0"
+known_versions = [
+  # The real Hadolint known versions can be seen here, for comparison:
+  # https://github.com/pantsbuild/pants/blob/39d0a77ec5c9a7b1e1864b70ba782d52dc33ebaa/src/python/pants/backend/docker/lint/hadolint/subsystem.py#L13
+  # This version line was generated via the rules documented here
+  # https://github.com/pantsbuild/pants/blob/1d828786c3c0f352e7811e29dd80f7877f5e170c/src/python/pants/core/util_rules/external_tool.py#L131
+  "v2.8.0|linux_x86_64|9dfc155139a1e1e9b3b28f3de9907736b9dfe7cead1c3a0ae7ff0158f3191674|5895708"
+]

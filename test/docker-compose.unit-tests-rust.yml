@@ -8,9 +8,7 @@ services:
     build:
       context: ${PWD}/src
       dockerfile: ./rust/Dockerfile
-      target: build-test
-      args:
-        - RUST_BUILD=test
+      target: tarpaulin
     security_opt:
       # Required for Tarpaulin to work in Docker
       - seccomp:unconfined
