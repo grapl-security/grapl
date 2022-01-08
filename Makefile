@@ -198,7 +198,7 @@ dump-artifacts-local:  # Run the script that dumps Nomad/Docker logs after test 
 
 .PHONY: build-engagement-view
 build-engagement-view: ## Build website assets
-	$(MAKE) -d -C src/js/engagement_view build
+	$(MAKE) -C src/js/engagement_view build
 	cp -r \
 		"${PWD}/src/js/engagement_view/build/." \
 		"${PWD}/src/rust/grapl-web-ui/frontend/"
