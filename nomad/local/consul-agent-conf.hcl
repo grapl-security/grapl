@@ -8,3 +8,10 @@ acl = {
   # denied
   down_policy = "extend-cache"
 }
+
+telemetry {
+  # Enable metrics for consul
+  # metrics path is /v1/agent/metrics?format=prometheus
+  disable_compat_1.9 = true
+  prometheus_retention_time = "30s"
+}
