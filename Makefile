@@ -164,7 +164,7 @@ build-test-e2e: build
 		e2e-tests
 
 .PHONY: build-docker-images
-build-docker-images: graplctl build-ux
+build-docker-images: graplctl build-engagement-view
 	echo "--- Building Docker images"
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
 
@@ -196,8 +196,8 @@ dump-artifacts-local:  # Run the script that dumps Nomad/Docker logs after test 
 		--compose-project="${COMPOSE_PROJECT_NAME}" \
 		--dump-agent-logs
 
-.PHONY: build-ux
-build-ux: ## Build website assets
+.PHONY: build-engagement-view
+build-engagement-view: ## Build website assets
 	$(MAKE) -C src/js/engagement_view build
 	cp -r \
 		"${PWD}/src/js/engagement_view/build/." \

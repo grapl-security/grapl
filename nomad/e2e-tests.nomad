@@ -197,7 +197,7 @@ EOF
         DEPLOYMENT_NAME = var.deployment_name
         GRAPL_LOG_LEVEL = local.log_level
 
-        GRAPL_TEST_USER_NAME = var.test_user_name # Needed for EngagementEdgeClient
+        GRAPL_TEST_USER_NAME = var.test_user_name # Needed for GraplWebClient
 
         MG_ALPHAS      = "localhost:9080"
         RUST_BACKTRACE = 1
