@@ -20,7 +20,7 @@ plugin "docker" {
 ####################
 telemetry {
   # enable metrics for nomad
-  # metrics path is /v1/metrics
+  # metrics path is /v1/metrics?format=prometheus
   collection_interval        = "1s"
   disable_hostname           = true
   prometheus_metrics         = true
