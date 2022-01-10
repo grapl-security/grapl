@@ -330,6 +330,52 @@ job "grapl-local-infra" {
     }
   }
 
+  group "debugger" {
+    # This container can help us, among other things, with debugging services
+    # within Nomad/Consul. 
+    # Sample use case: "Can I curl against <some-service>?"
+    #   1. Manually change the upstream in env{}
+    #   2. Manually change the upsteam in proxy{}
+    #   3. debugger/attach_to_nomad_container.sh
+    #   4. curl away to your heart's content
+    network {
+      mode = "bridge"
+    }
+
+    task "debugger" {
+      driver = "docker"
+
+      config {
+        image   = "debugger:dev"
+        command = "/bin/bash"
+        args = [
+          "-o", "errexit", "-o", "nounset",
+          "-c",
+          "while true; do sleep 600; done",
+        ]
+      }
+    }
+
+    env {
+      UPSTREAM_BEING_INVESTIGATED = "${NOMAD_UPSTREAM_ADDR_graphql-endpoint}"
+    }
+
+    service {
+      name = "debugger"
+
+      connect {
+        sidecar_service {
+          proxy {
+            upstreams {
+              destination_name = "graphql-endpoint"
+              local_bind_port  = 1000
+            }
+          }
+        }
+      }
+    }
+  }
+
   group "postgres" {
     # Postgres will be available to Nomad Jobs (sans Consul Connect)
     # and the Host OS at localhost:5432

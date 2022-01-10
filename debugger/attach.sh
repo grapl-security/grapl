@@ -15,4 +15,4 @@ docker run \
     --cap-add sys_ptrace \
     --volume="$(pwd):/from-host" \
     --workdir="/from-host" \
-    grapl/debugger
+    debugger:dev

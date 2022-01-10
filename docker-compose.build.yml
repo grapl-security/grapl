@@ -151,3 +151,9 @@ services:
       context: .
       dockerfile: ./src/python/Dockerfile
       target: provisioner
+
+  debugger:
+    image: debugger:${TAG:-debug}
+    build:
+      context: debugger
+      dockerfile: Dockerfile
