@@ -54,7 +54,7 @@ def main() -> None:
     compose_project = args.compose_project
 
     cwd = os.getcwd()
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    timestamp = datetime.now().isoformat(timespec="seconds")
     artifacts_dir = Path(f"{cwd}/test_artifacts/{compose_project}_{timestamp}")
     os.makedirs(artifacts_dir, exist_ok=False)
 
@@ -74,7 +74,7 @@ def main() -> None:
     )
 
     nomad_artifacts.dump_all(artifacts_dir, dump_agent_logs=args.dump_agent_logs)
-    LOGGER.info(f"Dumped to {artifacts_dir}")
+    LOGGER.info(f"--- Artifacts dumped to {artifacts_dir}")
 
 
 if __name__ == "__main__":

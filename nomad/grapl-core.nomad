@@ -1116,7 +1116,16 @@ job "grapl-core" {
       name = "plugin-registry"
       port = "plugin-registry-port"
       connect {
-        sidecar_service {}
+        sidecar_service {
+          proxy {
+            upstreams {
+              # Yes, Nomad itself is registered as a Consul Connect service!
+              destination_name = "nomad"
+              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
+              local_bind_port  = 1000
+            }
+          }
+        }
       }
     }
   }

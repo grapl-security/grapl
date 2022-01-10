@@ -7,6 +7,7 @@ use structopt::StructOpt;
 #[derive(StructOpt, Debug)]
 pub struct NomadClientConfig {
     #[structopt(env)]
+    /// "${NOMAD_UPSTREAM_ADDR_nomad}"
     nomad_service_address: String,
 }
 
@@ -24,15 +25,15 @@ impl NomadClient {
 
     pub fn from_client_config(nomad_client_config: NomadClientConfig) -> Self {
         let internal_config = InternalConfig {
-            base_path: format!("https://{}/v1", nomad_client_config.nomad_service_address),
+            base_path: format!("http://{}/v1", nomad_client_config.nomad_service_address),
             ..Default::default()
         };
 
         NomadClient { internal_config,}
     }
 
-    pub async fn create_namespace(&self) -> Result<(), Error<namespaces_api::CreateNamespaceError>> {
-        namespaces_api::create_namespace(&self.internal_config, None, Some("im a namespace"),
+    pub async fn create_namespace(&self, name: &str) -> Result<(), Error<namespaces_api::CreateNamespaceError>> {
+        namespaces_api::create_namespace(&self.internal_config, None, Some(name),
             None, None).await
     }
 }

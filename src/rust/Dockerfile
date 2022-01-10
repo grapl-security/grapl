@@ -152,8 +152,9 @@ EXIT_STATUS=0
 
 for test in $(find /tests -type f -executable -exec readlink -f {} \;)
 do
-    echo Executing "${test}"
-    "${test}"
+    echo "--- Executing ${test}"
+    # Redirect stderr so it's inline with stdout
+    "${test}" 2>&1
     exit_code=$?
     if [[ ${exit_code} -ne 0 ]]; then
         echo Test failed with exit code ${exit_code}
