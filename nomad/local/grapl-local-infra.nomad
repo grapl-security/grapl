@@ -221,7 +221,7 @@ job "grapl-local-infra" {
       driver = "docker"
 
       config {
-        image = "confluentinc/cp-kafka:6.2.2"
+        image = "confluentinc/cp-kafka:6.2.0"
         ports = ["kafka-for-other-nomad-tasks", "kafka-for-host-os"]
       }
 

@@ -12,6 +12,7 @@ acl = {
 telemetry {
   # Enable metrics for consul
   # metrics path is /v1/agent/metrics?format=prometheus
-  disable_compat_1.9 = true
+  # compat disabled because hcl formatting breaks on the '.'. However this is what is used in AWS
+  # disable_compat_1.9 = true
   prometheus_retention_time = "30s"
 }
