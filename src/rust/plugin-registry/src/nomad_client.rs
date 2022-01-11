@@ -7,7 +7,7 @@ use structopt::StructOpt;
 #[derive(StructOpt, Debug)]
 pub struct NomadClientConfig {
     #[structopt(env)]
-    /// "${NOMAD_UPSTREAM_ADDR_nomad}"
+    /// "${attr.unique.network.ip-address}:4646
     nomad_service_address: String,
 }
 
