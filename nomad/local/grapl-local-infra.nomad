@@ -334,9 +334,9 @@ job "grapl-local-infra" {
     # This container can help us, among other things, with debugging services
     # within Nomad/Consul. 
     # Sample use case: "Can I curl against <some-service>?"
-    #   1. Manually change the upstream in env{}
-    #   2. Manually change the upsteam in proxy{}
-    #   3. debugger/attach_to_nomad_container.sh
+    #   1. Manually change the upsteam in proxy{}
+    #   2. debugger/attach_to_nomad_container.sh
+    #   3. run `env | grep NOMAD_UPSTREAM` to see your upstreams
     #   4. curl away to your heart's content
     network {
       mode = "bridge"
@@ -354,10 +354,6 @@ job "grapl-local-infra" {
           "while true; do sleep 600; done",
         ]
       }
-    }
-
-    env {
-      UPSTREAM_BEING_INVESTIGATED = "${NOMAD_UPSTREAM_ADDR_graphql-endpoint}"
     }
 
     service {
