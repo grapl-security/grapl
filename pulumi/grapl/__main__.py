@@ -29,7 +29,6 @@ from infra.kafka import Kafka
 from infra.local.postgres import PostgresInstance
 from infra.network import Network
 from infra.nomad_job import NomadJob, NomadVars
-from infra.quiet_docker_build_output import quiet_docker_output
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
@@ -82,8 +81,6 @@ def main() -> None:
         # sandboxes.
         if not os.getenv("DOCKER_BUILDKIT"):
             raise KeyError("Please re-run with 'DOCKER_BUILDKIT=1'")
-
-    quiet_docker_output()
 
     # These tags will be added to all provisioned infrastructure
     # objects.
