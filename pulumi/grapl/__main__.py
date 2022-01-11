@@ -7,8 +7,6 @@ from typing_extensions import Final
 
 sys.path.insert(0, "..")
 
-import os
-
 import pulumi_aws as aws
 import pulumi_consul as consul
 import pulumi_nomad as nomad
@@ -22,14 +20,10 @@ from infra.config import AWS_ACCOUNT_ID
 from infra.consul_intentions import ConsulIntentions
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
-
-# TODO: temporarily disabled until we can reconnect the ApiGateway to the new
-# web UI.
 from infra.kafka import Kafka
 from infra.local.postgres import PostgresInstance
 from infra.network import Network
 from infra.nomad_job import NomadJob, NomadVars
-from infra.quiet_docker_build_output import quiet_docker_output
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
@@ -75,16 +69,6 @@ def _container_images(
 
 
 def main() -> None:
-    if not (config.LOCAL_GRAPL or config.REAL_DEPLOYMENT):
-        # Fargate services build their own images and need this
-        # variable currently. We don't want this to be checked in
-        # Local Grapl, or "real" deployments, though; only developer
-        # sandboxes.
-        if not os.getenv("DOCKER_BUILDKIT"):
-            raise KeyError("Please re-run with 'DOCKER_BUILDKIT=1'")
-
-    quiet_docker_output()
-
     # These tags will be added to all provisioned infrastructure
     # objects.
     register_auto_tags({"grapl deployment": config.DEPLOYMENT_NAME})

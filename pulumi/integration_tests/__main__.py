@@ -13,7 +13,6 @@ from infra.autotag import register_auto_tags
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
 from infra.nomad_job import NomadJob, NomadVars
-from infra.quiet_docker_build_output import quiet_docker_output
 
 import pulumi
 
@@ -59,8 +58,6 @@ def main() -> None:
 
     pulumi_config = pulumi.Config()
     artifacts = pulumi_config.get_object("artifacts") or {}
-
-    quiet_docker_output()
 
     # These tags will be added to all provisioned infrastructure
     # objects.
