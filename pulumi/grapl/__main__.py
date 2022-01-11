@@ -7,8 +7,6 @@ from typing_extensions import Final
 
 sys.path.insert(0, "..")
 
-import os
-
 import pulumi_aws as aws
 import pulumi_consul as consul
 import pulumi_nomad as nomad
@@ -74,14 +72,6 @@ def _container_images(
 
 
 def main() -> None:
-    if not (config.LOCAL_GRAPL or config.REAL_DEPLOYMENT):
-        # Fargate services build their own images and need this
-        # variable currently. We don't want this to be checked in
-        # Local Grapl, or "real" deployments, though; only developer
-        # sandboxes.
-        if not os.getenv("DOCKER_BUILDKIT"):
-            raise KeyError("Please re-run with 'DOCKER_BUILDKIT=1'")
-
     # These tags will be added to all provisioned infrastructure
     # objects.
     register_auto_tags({"grapl deployment": config.DEPLOYMENT_NAME})
