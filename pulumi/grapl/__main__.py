@@ -20,9 +20,6 @@ from infra.config import AWS_ACCOUNT_ID
 from infra.consul_intentions import ConsulIntentions
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
-
-# TODO: temporarily disabled until we can reconnect the ApiGateway to the new
-# web UI.
 from infra.kafka import Kafka
 from infra.local.postgres import PostgresInstance
 from infra.network import Network
