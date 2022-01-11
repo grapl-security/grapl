@@ -53,12 +53,17 @@ steps:
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - PULUMI_ACCESS_TOKEN
+      - improbable-eng/metahook#v0.4.1:
+          post-command: |
+            .buildkite/scripts/grapl_testing_stack/dump_artifacts.sh
       - grapl-security/pulumi#v0.1.2:
           command: update
           project_dir: pulumi/grapl
           stack: grapl/testing
     agents:
       queue: "pulumi-staging"
+    artifact_paths:
+      - "test_artifacts/**/*"
 
   - wait
 
