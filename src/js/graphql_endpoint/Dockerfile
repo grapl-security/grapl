@@ -1,14 +1,14 @@
 # Don't forget to update the other `FROM node:` in this file.
 # Use the latest Node version here: https://docs.aws.amazon.com/lambda/latest/dg/lambda-nodejs.html
-FROM node:14.16-buster-slim AS graphql-endpoint-build
+FROM node:17.3-bullseye-slim AS graphql-endpoint-build
 
 RUN apt-get update \
     && apt-get --yes install --no-install-recommends \
-        build-essential=12.6 \
-        libffi-dev=3.2.1-9 \
-        libssl-dev=1.1.1d-0+deb10u7 \
-        python3=3.7.3-1 \
-        zip=3.0-11+b1 \
+        build-essential=12.9 \
+        libffi-dev=3.3-6 \
+        libssl-dev=1.1.1k-1+deb11u1 \
+        python3=3.9.2-3 \
+        zip=3.0-12 \
     && rm -rf /var/lib/apt/lists/* \
     && adduser \
         --disabled-password \
@@ -44,7 +44,7 @@ WORKDIR /home/grapl
 
 # Deploy image
 ################################################################################
-FROM node:14.16-buster-slim AS graphql-endpoint-deploy
+FROM node:17.3-bullseye-slim AS graphql-endpoint-deploy
 
 RUN adduser \
         --disabled-password \

@@ -1,20 +1,26 @@
-FROM rust:1-slim-buster AS base
+# syntax=docker/dockerfile:1.3-labs
+# We use the above syntax for here documents:
+# https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/syntax.md#user-content-here-documents
+
+FROM rust:1-slim-bullseye AS base
 
 ARG RUST_BUILD=debug
 
-SHELL ["/bin/bash", "-c"]
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Necessary for rdkafka; pkg-config & libssl-dev for cargo-tarpaulin build
 #
 # Ignore this lint about deleteing the apt-get lists (we're caching!)
-# hadolint ignore=DL3009
+# hadolint ignore=DL3009,SC1089
 RUN --mount=type=cache,target=/var/lib/apt/lists \
     apt-get update \
     && apt-get install -y --no-install-recommends \
-        build-essential=12.6 \
-        libssl-dev=1.1.1d-0+deb10u7 \
-        pkg-config=0.29-6 \
-        zlib1g-dev=1:1.2.11.dfsg-1
+        build-essential=12.9 \
+        jq=1.6-2.1 \
+        libssl-dev=1.1.1k-1+deb11u1 \
+        pkg-config=0.29.2-1 \
+        zlib1g-dev=1:1.2.11.dfsg-2
+
 
 # Install rust toolchain before copying sources to avoid unecessarily
 # resinstalling on source file changes.
@@ -40,13 +46,14 @@ FROM base AS build
 # hadolint ignore=SC1091
 RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=secret,id=rust_env,dst=/grapl/env \
-    if [ -f /grapl/env ]; then source /grapl/env; fi && \
+    --mount=type=cache,target=/usr/local/rustup \
     case "${RUST_BUILD}" in \
       debug) \
         cargo build ;; \
       release) \
         cargo build --release ;; \
+      test) \
+        cargo test ;; \
       *) \
         echo "ERROR:  Unknown RUST_BUILD option: ${RUST_BUILD}"; \
         exit 1 ;; \
@@ -59,50 +66,107 @@ RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
     find "/grapl/rust/target/${RUST_BUILD}" -maxdepth 1 -type f -executable -exec cp {} /outputs \;
 
 
-# build-test
+# tarpaulin
 # This target is not merged with the `build` target because the actions to run
 # after cargo are different when building for tests and building the services, 
 # and we'd rather not save all of the Rust `target/` directory to Docker image
 # if we don't have to.
 ################################################################################
-FROM base AS build-test
-
-ENV RUST_INTEGRATION_TEST_FEATURES="node-identifier/integration,sqs-executor/integration,kafka-metrics-exporter/integration,model-plugin-deployer/integration,plugin-registry/integration"
+FROM base AS tarpaulin
 
 # For test coverage reports
+# Tarpaulin will recompile the sources from scratch and effectively taint build
+# outputs, such that subsequent cargo build runs will need to start from
+# scratch as well. For this reason we avoid mounting the cached target
+# directory.
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/rustup \
     cargo install cargo-tarpaulin
 
-# At the end of the test run, save the mount cache to the Docker image, as
-# these files are needed for running the integration tests in containers.
+
+# build-test-integration
+################################################################################
+FROM base AS build-test-integration
+
+# For running integration tests we're going to copy the test binaries to a new
+# container base and run the directly, as opposed to running them via `cargo
+# test`. Cargo will recompile tests if it thinks the test binaries in target/
+# are out of date. Because we're using a mount cache when building the sources
+# this directly won't be available in resulting container images. In the past
+# we've `cp -a` the target directory to preserve it, but this can make for an
+# increasingly large container image size, especially when the mount cache is
+# has not been cleaned in a while. To find the test binaries paths we parse
+# the manifest.json from the cargo build.
+# https://github.com/rust-lang/cargo/issues/1924
+# https://github.com/rust-lang/cargo/issues/3670
+
+ENV RUST_INTEGRATION_TEST_FEATURES="node-identifier/integration,sqs-executor/integration,kafka-metrics-exporter/integration,model-plugin-deployer/integration,plugin-registry/integration"
+ENV TEST_DIR=/grapl/tests
+
+RUN mkdir --parents "${TEST_DIR}"
+
+# This will build the integration test binaries and parse the manifest to find
+# their paths for copying later.
 #
-# Hadolint appears to be confused about some of these mount targets
-# hadolint ignore=SC1091
+# Hadolint is confused again, at the time of this writing, SHELL *does*
+# have -o pipefail set on line 9.
+# hadolint ignore=DL4006
 RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=secret,id=rust_env,dst=/grapl/env \
-    if [ -f /grapl/env ]; then source /grapl/env; fi && \
-    case "${RUST_BUILD}" in \
-      test) \
-        cargo test --no-run ;; \
-      test-integration) \
-        cargo test --features "${RUST_INTEGRATION_TEST_FEATURES}" --test "*" --no-run ;; \
-      *) \
-        echo "ERROR: Unknown RUST_BUILD option: ${RUST_BUILD}"; \
-        exit 1 ;; \
-    esac && \
-    cp -a /grapl/rust/target /tmp/target && \
-    cp -a /usr/local/cargo/registry /tmp/registry
+    --mount=type=cache,target=/usr/local/rustup \
+    cargo test \
+        --features "${RUST_INTEGRATION_TEST_FEATURES}" \
+        --no-run \
+        --message-format=json \
+        --test "*" | \
+        jq -r "select(.profile.test == true) | .filenames[]" | \
+        xargs \
+          --max-args=1 \
+          --replace="{}" \
+          cp "{}" "${TEST_DIR}/"
 
-# Move the files back to where they belong.
-# The mv command is apparently very slow here, cp and rm is much faster
-# Ignore brace expansion warning; we're using bash as our shell, not sh
-# hadolint ignore=SC3009
-RUN cp -ar /tmp/target/. /grapl/rust/target/ && \
-    cp -ar /tmp/registry/. /usr/local/cargo/registry/ && \
-    rm -rf /tmp/{target,registry}
 
-CMD [ "bash", "-c", "cargo test --features \"${RUST_INTEGRATION_TEST_FEATURES}\" --test \"*\" -- --nocapture" ]
+# integration tests distribution
+################################################################################
+# We're unable to use one of the 'distroless' container images as a base here
+# because our integration tests require zlib shared library, but we don't have
+# a way of including that in the base image. With a debian image we can apt
+# install as needed, but the debian image we're using has zlib already.
+FROM debian:bullseye-slim AS integration-tests
+
+RUN --mount=type=cache,target=/var/lib/apt/lists \
+    apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates=20210119
+
+COPY --from=build-test-integration /grapl/tests /tests
+
+COPY --chmod=777 <<-"EOF" /run-tests.sh
+#!/bin/bash
+
+# This script is intended to be used for running integration tests. The exit code of this script will be that of
+# that last test that had a non-zero exit code (test failure), otherwise it
+# will be zero.
+
+EXIT_STATUS=0
+
+for test in $(find /tests -type f -executable -exec readlink -f {} \;)
+do
+    echo Executing "${test}"
+    "${test}"
+    exit_code=$?
+    if [[ ${exit_code} -ne 0 ]]; then
+        echo Test failed with exit code ${exit_code}
+        EXIT_STATUS=${exit_code}
+    fi
+done
+
+exit ${EXIT_STATUS}
+
+EOF
+
+ENTRYPOINT [ "/run-tests.sh" ]
+
 
 # images for running services
 ################################################################################
@@ -120,66 +184,100 @@ USER nonroot
 # analyzer-dispatcher
 FROM rust-dist AS analyzer-dispatcher-deploy
 
+# Hadolint v2.8.0 appears to be mistaken, this is a false positive
+# https://github.com/hadolint/hadolint/wiki/DL3022
+# hadolint ignore=DL3022
 COPY --from=build /outputs/analyzer-dispatcher /
 ENTRYPOINT ["/analyzer-dispatcher"]
 
 # generic-subgraph-generator
 FROM rust-dist AS generic-subgraph-generator-deploy
 
+# Hadolint v2.8.0 appears to be mistaken, this is a false positive
+# https://github.com/hadolint/hadolint/wiki/DL3022
+# hadolint ignore=DL3022
 COPY --from=build /outputs/generic-subgraph-generator /
 ENTRYPOINT ["/generic-subgraph-generator"]
 
 # graph-merger
 FROM rust-dist AS graph-merger-deploy
 
+# Hadolint v2.8.0 appears to be mistaken, this is a false positive
+# https://github.com/hadolint/hadolint/wiki/DL3022
+# hadolint ignore=DL3022
 COPY --from=build /outputs/graph-merger /
 ENTRYPOINT ["/graph-merger"]
 
 # plugin-work-queue
 FROM rust-dist AS plugin-work-queue-deploy
 
+# Hadolint v2.8.0 appears to be mistaken, this is a false positive
+# https://github.com/hadolint/hadolint/wiki/DL3022
+# hadolint ignore=DL3022
 COPY --from=build /outputs/plugin-work-queue /
 ENTRYPOINT ["/plugin-work-queue"]
-
 
 # plugin-registry
 FROM rust-dist AS plugin-registry-deploy
 
+# Hadolint v2.8.0 appears to be mistaken, this is a false positive
+# https://github.com/hadolint/hadolint/wiki/DL3022
+# hadolint ignore=DL3022
 COPY --from=build /outputs/plugin-registry /
 ENTRYPOINT ["/plugin-registry"]
 
 # node-identifier
 FROM rust-dist AS node-identifier-deploy
 
+# Hadolint v2.8.0 appears to be mistaken, this is a false positive
+# https://github.com/hadolint/hadolint/wiki/DL3022
+# hadolint ignore=DL3022
 COPY --from=build /outputs/node-identifier /
 ENTRYPOINT ["/node-identifier"]
 
 # node-identifier-retry
 FROM rust-dist AS node-identifier-retry-deploy
 
+# Hadolint v2.8.0 appears to be mistaken, this is a false positive
+# https://github.com/hadolint/hadolint/wiki/DL3022
+# hadolint ignore=DL3022
 COPY --from=build /outputs/node-identifier-retry /
 ENTRYPOINT ["/node-identifier-retry"]
 
 # sysmon-generator
 FROM rust-dist AS sysmon-generator-deploy
 
+# Hadolint v2.8.0 appears to be mistaken, this is a false positive
+# https://github.com/hadolint/hadolint/wiki/DL3022
+# hadolint ignore=DL3022
 COPY --from=build /outputs/sysmon-generator /
 ENTRYPOINT ["/sysmon-generator"]
 
 # osquery-generator
 FROM rust-dist AS osquery-generator-deploy
 
+# Hadolint v2.8.0 appears to be mistaken, this is a false positive
+# https://github.com/hadolint/hadolint/wiki/DL3022
+# hadolint ignore=DL3022
 COPY --from=build /outputs/osquery-generator /
 ENTRYPOINT ["/osquery-generator"]
 
 # web-ui
 FROM rust-dist AS grapl-web-ui
 
+# Hadolint v2.8.0 appears to be mistaken, this is a false positive
+# https://github.com/hadolint/hadolint/wiki/DL3022
+# hadolint ignore=DL3022
 COPY --from=build /outputs/grapl-web-ui /
 COPY rust/grapl-web-ui/frontend /frontend
 ENTRYPOINT ["/grapl-web-ui"]
 
 # model plugin deployer
 FROM rust-dist AS model-plugin-deployer
+
+# Hadolint v2.8.0 appears to be mistaken, this is a false positive
+# https://github.com/hadolint/hadolint/wiki/DL3022
+# hadolint ignore=DL3022
 COPY --from=build /outputs/model-plugin-deployer /
 ENTRYPOINT ["/model-plugin-deployer"]
+

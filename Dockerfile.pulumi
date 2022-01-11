@@ -1,10 +1,10 @@
-FROM python:3.7-slim-buster as grapl-local-pulumi
+FROM python:3.7-slim-bullseye as grapl-local-pulumi
 
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends \
-       build-essential=12.6 \
-       curl=7.64.0-4+deb10u2 \
-       unzip=6.0-23+deb10u2 \
+       build-essential=12.9 \
+       curl=7.74.0-1.3+deb11u1 \
+       unzip=6.0-26 \
     && rm -rf /var/lib/apt/lists/* \
     && adduser \
         --disabled-password \
@@ -50,6 +50,12 @@ RUN ./pants --version
 
 # Automatically ensures that our virtualenv is created and active on
 # all subsequent actions
+#
+# DL3059 info: Multiple consecutive `RUN` instructions. Consider consolidation.
+# Going to ignore this becuase the two RUNS seem somewhere different and it's
+# a minor info severity.
+#
+# hadolint ignore=DL3059
 RUN mkdir venv
 ENV VIRTUAL_ENV=/home/grapl/venv
 RUN python3 -m venv $VIRTUAL_ENV

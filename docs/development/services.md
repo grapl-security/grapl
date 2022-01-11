@@ -74,23 +74,20 @@ serialized metrics - and forwards them to Cloudwatch as metrics.
 
 TODO
 
-### Dgraph TTL
+### Engagement View (aka UX)
 
-**Work:** Every minute, prunes old subgraphs from Dgraph. (At time of writing,
-'old' is defined as 365 days old.)
-
-### Engagement UX
-
-Provides the main customer interaction with Grapl. Mostly a view wrapper around
-Engagement Edge.
+Provides the main customer interaction with Grapl. This is not actually a
+standalone service, but hosted as static assets inside Grapl Web UI.
 
 ### Graphql Endpoint
 
-TODO
+Graphql interface into our Dgraph database.
 
-### Engagement Edge
+### Grapl Web UI
 
-Provides REST APIs - primarily consumed by Engagement UX - for things like:
+Provides authn/authz functions, and acts as a router to other services:
 
-- Authn/Authz
-- Common Dgraph queries (i.e. "List all lenses")
+- Graphql Endpoint (/graphqlEndpoint)
+- Model Plugin Deployer (current undergoing rewrite)
+
+Also, hosts static assets like Engagement View.

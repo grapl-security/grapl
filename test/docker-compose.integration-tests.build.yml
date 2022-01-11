@@ -7,9 +7,7 @@ services:
     build:
       context: ${PWD}/src
       dockerfile: rust/Dockerfile
-      target: build-test
-      args:
-        - RUST_BUILD=test-integration
+      target: integration-tests
 
   python-integration-tests:
     image: python-integration-tests:${TAG:-latest}

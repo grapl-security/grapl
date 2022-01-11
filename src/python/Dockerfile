@@ -1,11 +1,11 @@
 # grapl-python-base
 ################################################################################
-FROM python:3.7-slim-buster AS grapl-python-base
+FROM python:3.7-slim-bullseye AS grapl-python-base
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update \
     && apt-get -y install --no-install-recommends \
-        bash=5.0-4 \
-        libstdc++6=8.3.0-6 \
+        bash=5.1-2+b3 \
+        libstdc++6=10.2.1-6 \
     && rm -rf /var/lib/apt/lists/* \
     && adduser \
         --disabled-password \
@@ -67,10 +67,10 @@ FROM grapl-python-base AS python-integration-tests
 USER root
 RUN apt-get update \
     && apt-get -y install --no-install-recommends \
-        build-essential=12.6 \
-        curl=7.64.0-4+deb10u2 \
-        protobuf-compiler=3.6.1.3-2 \
-        unzip=6.0-23+deb10u2 \
+        build-essential=12.9 \
+        curl=7.74.0-1.3+deb11u1 \
+        protobuf-compiler=3.12.4-1 \
+        unzip=6.0-26 \
     && rm -rf /var/lib/apt/lists/* \
     && adduser \
         --disabled-password \
