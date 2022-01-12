@@ -5,7 +5,7 @@ use sqlx::{
 use tracing::instrument;
 use uuid::Uuid;
 
-#[derive(sqlx::Type, Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, Debug, Eq, PartialEq, sqlx::Type)]
 #[sqlx(type_name = "status", rename_all = "lowercase")]
 pub enum Status {
     Enqueued,
@@ -13,7 +13,7 @@ pub enum Status {
     Processed,
 }
 
-#[derive(Copy, Clone, Debug, sqlx::Type)]
+#[derive(Clone, Copy, Debug, sqlx::Type)]
 #[sqlx(transparent)]
 pub struct ExecutionId(i64);
 
@@ -37,7 +37,7 @@ pub struct NextExecutionRequest {
     pub pipeline_message: Vec<u8>,
 }
 
-#[derive(thiserror::Error, Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum PsqlQueueError {
     #[error("Sqlx {0}")]
     Sqlx(#[from] sqlx::Error),
