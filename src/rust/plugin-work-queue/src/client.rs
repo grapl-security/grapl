@@ -113,7 +113,7 @@ where
         Ok(response.into_inner().try_into()?)
     }
 
-    /// Acknowledges the completion of a job
+    /// Acknowledges the completion of an analyzer job
     pub async fn acknowledge_analyzer(
         &mut self,
         request: AcknowledgeAnalyzerRequest,
