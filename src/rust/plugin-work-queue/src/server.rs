@@ -78,6 +78,7 @@ impl From<PluginWorkQueueError> for Status {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct PluginWorkQueue {
     queue: PsqlQueue,
 }
@@ -117,6 +118,7 @@ impl PluginWorkQueue {
         Ok(plugin_work_queue)
     }
 
+    #[tracing::instrument(skip(self, request), err)]
     async fn put_execute_generator(
         &self,
         request: PutExecuteGeneratorRequest,
@@ -132,6 +134,7 @@ impl PluginWorkQueue {
         Ok(PutExecuteGeneratorResponse {})
     }
 
+    #[tracing::instrument(skip(self, request), err)]
     async fn put_execute_analyzer(
         &self,
         request: PutExecuteAnalyzerRequest,
@@ -147,6 +150,7 @@ impl PluginWorkQueue {
         Ok(PutExecuteAnalyzerResponse {})
     }
 
+    #[tracing::instrument(skip(self, _request), err)]
     async fn get_execute_generator(
         &self,
         _request: GetExecuteGeneratorRequest,
@@ -172,6 +176,7 @@ impl PluginWorkQueue {
         })
     }
 
+    #[tracing::instrument(skip(self, _request), err)]
     async fn get_execute_analyzer(
         &self,
         _request: GetExecuteAnalyzerRequest,
@@ -197,6 +202,7 @@ impl PluginWorkQueue {
         })
     }
 
+    #[tracing::instrument(skip(self, request), err)]
     async fn acknowledge_generator(
         &self,
         request: AcknowledgeGeneratorRequest,
@@ -211,6 +217,7 @@ impl PluginWorkQueue {
         Ok(AcknowledgeGeneratorResponse {})
     }
 
+    #[tracing::instrument(skip(self, request), err)]
     async fn acknowledge_analyzer(
         &self,
         request: AcknowledgeAnalyzerRequest,
@@ -228,6 +235,7 @@ impl PluginWorkQueue {
 
 #[tonic::async_trait]
 impl PluginWorkQueueService for PluginWorkQueue {
+    #[tracing::instrument(err)]
     async fn put_execute_generator(
         &self,
         request: Request<PutExecuteGeneratorRequestProto>,
@@ -239,6 +247,7 @@ impl PluginWorkQueueService for PluginWorkQueue {
         Ok(Response::new(response.into()))
     }
 
+    #[tracing::instrument(err)]
     async fn put_execute_analyzer(
         &self,
         request: Request<PutExecuteAnalyzerRequestProto>,
@@ -250,6 +259,7 @@ impl PluginWorkQueueService for PluginWorkQueue {
         Ok(Response::new(response.into()))
     }
 
+    #[tracing::instrument(err)]
     async fn get_execute_generator(
         &self,
         request: Request<GetExecuteGeneratorRequestProto>,
@@ -261,6 +271,7 @@ impl PluginWorkQueueService for PluginWorkQueue {
         Ok(Response::new(response.into()))
     }
 
+    #[tracing::instrument(err)]
     async fn get_execute_analyzer(
         &self,
         request: Request<GetExecuteAnalyzerRequestProto>,
@@ -272,6 +283,7 @@ impl PluginWorkQueueService for PluginWorkQueue {
         Ok(Response::new(response.into()))
     }
 
+    #[tracing::instrument(err)]
     async fn acknowledge_generator(
         &self,
         request: Request<AcknowledgeGeneratorRequestProto>,
@@ -283,6 +295,7 @@ impl PluginWorkQueueService for PluginWorkQueue {
         Ok(Response::new(response.into()))
     }
 
+    #[tracing::instrument(err)]
     async fn acknowledge_analyzer(
         &self,
         request: Request<AcknowledgeAnalyzerRequestProto>,
