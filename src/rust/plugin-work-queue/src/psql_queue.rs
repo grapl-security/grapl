@@ -65,7 +65,6 @@ impl PsqlQueue {
         pipeline_message: Vec<u8>,
         tenant_id: Uuid,
     ) -> Result<(), PsqlQueueError> {
-        let now = chrono::Utc::now();
         sqlx::query!(
             r"
             INSERT INTO plugin_work_queue.generator_plugin_executions (
@@ -77,13 +76,11 @@ impl PsqlQueue {
                 last_updated,
                 try_count
             )
-            VALUES( $1::UUID, $2, $3::UUID, 'enqueued', $4, $5, -1 )
+            VALUES( $1::UUID, $2, $3::UUID, 'enqueued', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, -1 )
         ",
             plugin_id,
             pipeline_message,
             &tenant_id,
-            &now,
-            now,
         )
         .execute(&self.pool)
         .await?;
@@ -97,7 +94,6 @@ impl PsqlQueue {
         pipeline_message: Vec<u8>,
         tenant_id: Uuid,
     ) -> Result<(), PsqlQueueError> {
-        let now = chrono::Utc::now();
         sqlx::query!(
             r"
             INSERT INTO plugin_work_queue.analyzer_plugin_executions (
@@ -109,13 +105,11 @@ impl PsqlQueue {
                 last_updated,
                 try_count
             )
-            VALUES( $1::UUID, $2, $3::UUID, 'enqueued', $4, $5, -1 )
+            VALUES( $1::UUID, $2, $3::UUID, 'enqueued', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, -1 )
         ",
             plugin_id,
             pipeline_message,
             &tenant_id,
-            &now,
-            now,
         )
         .execute(&self.pool)
         .await?;
@@ -124,7 +118,7 @@ impl PsqlQueue {
 
     #[instrument(err)]
     pub async fn get_generator_message(&self) -> Result<Option<Message>, PsqlQueueError> {
-        // `get_message` does a few things
+        // This function does a few things
         // 1. It attempts to get a message from the queue
         //      -> Where that message isn't over a day old
         //      -> Where that message is "visible"
@@ -147,7 +141,7 @@ impl PsqlQueue {
             NextExecutionRequest, r#"
             UPDATE plugin_work_queue.generator_plugin_executions
             SET
-                try_count  = plugin_work_queue.generator_plugin_executions.try_count + 1,
+                try_count  = try_count + 1,
                 last_updated = CURRENT_TIMESTAMP,
                 visible_after  = CURRENT_TIMESTAMP + INTERVAL '10 seconds'
             FROM (
