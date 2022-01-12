@@ -200,16 +200,12 @@ impl TryFrom<GetExecuteAnalyzerResponseProto> for GetExecuteAnalyzerResponse {
         let maybe_job = value.maybe_job.ok_or(Self::Error::MissingRequiredField(
             "GetExecuteAnalyzerResponse.execution_job",
         ))?;
-        let execution_job = match maybe_job {
-            get_execute_analyzer_response::MaybeJob::Job(job) => Some(job),
-            get_execute_analyzer_response::MaybeJob::NoJobs(_) => None,
-        };
+        let execution_job: Option<ExecutionJob> = maybe_job.try_into()?;
 
         let execution_job = execution_job
             .ok_or(Self::Error::MissingRequiredField(
                 "GetExecuteAnalyzerResponse.execution_job",
-            ))?
-            .try_into()?;
+            ))?;
 
         Ok(Self {
             request_id,
@@ -220,10 +216,7 @@ impl TryFrom<GetExecuteAnalyzerResponseProto> for GetExecuteAnalyzerResponse {
 
 impl From<GetExecuteAnalyzerResponse> for GetExecuteAnalyzerResponseProto {
     fn from(value: GetExecuteAnalyzerResponse) -> Self {
-        let execution_job = match value.execution_job {
-            None => get_execute_analyzer_response::MaybeJob::NoJobs(NoAvailableJobs {}),
-            Some(job) => get_execute_analyzer_response::MaybeJob::Job(job.into()),
-        };
+        let execution_job = value.execution_job.into();
         let request_id = value.request_id;
         GetExecuteAnalyzerResponseProto {
             request_id,
@@ -261,16 +254,12 @@ impl TryFrom<GetExecuteGeneratorResponseProto> for GetExecuteGeneratorResponse {
         let maybe_job = value.maybe_job.ok_or(Self::Error::MissingRequiredField(
             "GetExecuteGeneratorResponseProto.maybe_job",
         ))?;
-        let execution_job = match maybe_job {
-            get_execute_generator_response::MaybeJob::Job(job) => Some(job),
-            get_execute_generator_response::MaybeJob::NoJobs(_) => None,
-        };
+        let execution_job: Option<ExecutionJob> = maybe_job.try_into()?;
 
         let execution_job = execution_job
             .ok_or(Self::Error::MissingRequiredField(
                 "GetExecuteGeneratorResponseProto.execution_job",
-            ))?
-            .try_into()?;
+            ))?;
 
         Ok(Self {
             request_id,
@@ -281,10 +270,7 @@ impl TryFrom<GetExecuteGeneratorResponseProto> for GetExecuteGeneratorResponse {
 
 impl From<GetExecuteGeneratorResponse> for GetExecuteGeneratorResponseProto {
     fn from(value: GetExecuteGeneratorResponse) -> Self {
-        let execution_job = match value.execution_job {
-            None => get_execute_generator_response::MaybeJob::NoJobs(NoAvailableJobs {}),
-            Some(job) => get_execute_generator_response::MaybeJob::Job(job.into()),
-        };
+        let execution_job = value.execution_job.into();
         let request_id = value.request_id;
         GetExecuteGeneratorResponseProto {
             request_id,
@@ -377,5 +363,47 @@ impl TryFrom<PutExecuteGeneratorResponseProto> for PutExecuteGeneratorResponse {
 impl From<PutExecuteGeneratorResponse> for PutExecuteGeneratorResponseProto {
     fn from(_value: PutExecuteGeneratorResponse) -> Self {
         Self {}
+    }
+}
+
+impl From<Option<ExecutionJob>> for get_execute_generator_response::MaybeJob {
+    fn from(execution_job: Option<ExecutionJob>) -> Self {
+        match execution_job {
+            None => get_execute_generator_response::MaybeJob::NoJobs(NoAvailableJobs {}),
+            Some(job) => get_execute_generator_response::MaybeJob::Job(job.into()),
+        }
+    }
+}
+
+impl TryFrom<get_execute_analyzer_response::MaybeJob> for Option<ExecutionJob> {
+    type Error = PluginWorkQueueDeserializationError;
+
+    fn try_from(maybe_job: get_execute_analyzer_response::MaybeJob) -> Result<Self, Self::Error> {
+        let maybe_job = match maybe_job {
+            get_execute_analyzer_response::MaybeJob::Job(job) => Some(job.try_into()?),
+            get_execute_analyzer_response::MaybeJob::NoJobs(_) => None,
+        };
+        Ok(maybe_job)
+    }
+}
+
+impl From<Option<ExecutionJob>> for get_execute_analyzer_response::MaybeJob {
+    fn from(execution_job: Option<ExecutionJob>) -> Self {
+        match execution_job {
+            None => get_execute_analyzer_response::MaybeJob::NoJobs(NoAvailableJobs {}),
+            Some(job) => get_execute_analyzer_response::MaybeJob::Job(job.into()),
+        }
+    }
+}
+
+impl TryFrom<get_execute_generator_response::MaybeJob> for Option<ExecutionJob> {
+    type Error = PluginWorkQueueDeserializationError;
+
+    fn try_from(maybe_job: get_execute_generator_response::MaybeJob) -> Result<Self, Self::Error> {
+        let maybe_job = match maybe_job {
+            get_execute_generator_response::MaybeJob::Job(job) => Some(job.try_into()?),
+            get_execute_generator_response::MaybeJob::NoJobs(_) => None,
+        };
+        Ok(maybe_job)
     }
 }
