@@ -33,7 +33,8 @@ impl NomadClient {
     }
 
     pub async fn create_namespace(&self, name: &str) -> Result<(), Error<namespaces_api::CreateNamespaceError>> {
-        namespaces_api::create_namespace(&self.internal_config, None, Some(name),
+        // Shockingly, not `create_namespace()`
+        namespaces_api::post_namespace(&self.internal_config, None, Some(name),
             None, None).await
     }
 }
