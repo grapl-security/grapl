@@ -4,7 +4,7 @@ The plugin-work-queue provides a SQS-like queue abstraction over Postgresql.
 ```postgresql
 CREATE SCHEMA plugin_work_queue;
 
-CREATE TYPE plugin_work_queue.status_t AS ENUM ('enqueued', 'failed', 'processed');
+CREATE TYPE plugin_work_queue.status AS ENUM ('enqueued', 'failed', 'processed');
 
 CREATE FUNCTION plugin_work_queue.megabytes(bytes integer) RETURNS integer AS
 $$
@@ -19,10 +19,10 @@ CREATE TABLE IF NOT EXISTS plugin_work_queue.generator_plugin_executions
    tenant_id        uuid                       NOT NULL,
    plugin_id        uuid                       NOT NULL,
    pipeline_message bytea                      NOT NULL,
-   status           plugin_work_queue.status_t NOT NULL,
+   current_status           plugin_work_queue.status NOT NULL,
    creation_time    timestamptz                NOT NULL,
    last_updated     timestamptz                NOT NULL,
-   visible_after    timestamptz,
+   visible_after    timestamptz                NOT NULL DEFAULT CURRENT_TIMESTAMP,
    try_count        integer                    NOT NULL,
    CHECK (length(pipeline_message) < plugin_work_queue.megabytes(256)),
    CHECK (last_updated >= creation_time)
@@ -35,10 +35,10 @@ CREATE TABLE IF NOT EXISTS plugin_work_queue.analyzer_plugin_executions
    tenant_id        uuid                       NOT NULL,
    plugin_id        uuid                       NOT NULL,
    pipeline_message bytea                      NOT NULL,
-   status           plugin_work_queue.status_t NOT NULL,
+   current_status           plugin_work_queue.status NOT NULL,
    creation_time    timestamptz                NOT NULL,
    last_updated     timestamptz                NOT NULL,
-   visible_after    timestamptz,
+   visible_after    timestamptz                NOT NULL DEFAULT CURRENT_TIMESTAMP,
    try_count        integer                    NOT NULL,
    CHECK (length(pipeline_message) < plugin_work_queue.megabytes(256)),
    CHECK (last_updated >= creation_time)
@@ -59,7 +59,7 @@ CREATE INDEX IF NOT EXISTS creation_time_ix ON plugin_work_queue.analyzer_plugin
 `pipeline_message` is the raw bytes to be interpreted by the plugin. The message is limited to 256MB as an arbitrary but
 reasonable upper limit.
 
-`status` is an enum representing the state. 'enqueued' is the default, and a message will be set to either 'processed' or 'failed' based on its success.
+`current_status` is an enum representing the state. 'enqueued' is the default, and a message will be set to either 'processed' or 'failed' based on its success.
 
 `creation_time` is when the row was created.
 
