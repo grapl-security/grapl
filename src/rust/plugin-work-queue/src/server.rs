@@ -44,6 +44,7 @@ use tonic::{
 
 use crate::{
     psql_queue::{
+        self,
         PsqlQueue,
         PsqlQueueError,
     },
@@ -206,8 +207,8 @@ impl PluginWorkQueue {
         request: AcknowledgeGeneratorRequest,
     ) -> Result<AcknowledgeGeneratorResponse, PluginWorkQueueError> {
         let status = match request.success {
-            true => crate::psql_queue::Status::Processed,
-            false => crate::psql_queue::Status::Failed,
+            true => psql_queue::Status::Processed,
+            false => psql_queue::Status::Failed,
         };
         self.queue
             .ack_generator(request.request_id.into(), status)
@@ -221,8 +222,8 @@ impl PluginWorkQueue {
         request: AcknowledgeAnalyzerRequest,
     ) -> Result<AcknowledgeAnalyzerResponse, PluginWorkQueueError> {
         let status = match request.success {
-            true => crate::psql_queue::Status::Processed,
-            false => crate::psql_queue::Status::Failed,
+            true => psql_queue::Status::Processed,
+            false => psql_queue::Status::Failed,
         };
         self.queue
             .ack_analyzer(request.request_id.into(), status)
