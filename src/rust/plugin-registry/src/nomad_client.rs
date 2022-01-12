@@ -1,7 +1,11 @@
-use nomad_client_gen::apis::configuration::Configuration as InternalConfig;
-use nomad_client_gen::apis::namespaces_api;
-use nomad_client_gen::models::Namespace;
-use nomad_client_gen::apis::Error;
+use nomad_client_gen::{
+    apis::{
+        configuration::Configuration as InternalConfig,
+        namespaces_api,
+        Error,
+    },
+    models::Namespace,
+};
 use structopt::StructOpt;
 
 /// Represents the environment variables needed to construct a NomadClient
@@ -30,10 +34,13 @@ impl NomadClient {
             ..Default::default()
         };
 
-        NomadClient { internal_config,}
+        NomadClient { internal_config }
     }
 
-    pub async fn create_namespace(&self, name: &str) -> Result<(), Error<namespaces_api::PostNamespaceError>> {
+    pub async fn create_namespace(
+        &self,
+        name: &str,
+    ) -> Result<(), Error<namespaces_api::PostNamespaceError>> {
         // Shockingly, not `create_namespace()`
         let new_namespace = Namespace {
             name: Some(name.to_owned()),
@@ -41,13 +48,14 @@ impl NomadClient {
             ..Default::default()
         };
         namespaces_api::post_namespace(
-            &self.internal_config, 
-            namespaces_api::PostNamespaceParams { 
+            &self.internal_config,
+            namespaces_api::PostNamespaceParams {
                 // It's odd to me that I have to specify the name twice...
                 namespace_name: name.to_owned(),
-                namespace2: new_namespace, 
-                ..Default::default() 
-            }
-        ).await
+                namespace2: new_namespace,
+                ..Default::default()
+            },
+        )
+        .await
     }
 }
