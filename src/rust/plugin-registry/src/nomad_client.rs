@@ -41,13 +41,14 @@ impl NomadClient {
         &self,
         name: &str,
     ) -> Result<(), Error<namespaces_api::PostNamespaceError>> {
-        // Shockingly, not `create_namespace()`
         let new_namespace = Namespace {
             name: Some(name.to_owned()),
             description: Some("created by NomadClient::create_namespace".to_owned()),
             ..Default::default()
         };
+
         namespaces_api::post_namespace(
+            // Shockingly, not `create_namespace()`
             &self.internal_config,
             namespaces_api::PostNamespaceParams {
                 // It's odd to me that I have to specify the name twice...

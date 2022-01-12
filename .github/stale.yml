@@ -13,4 +13,4 @@ pulls:
     contribution if it is still applicable.
   staleLabel: Stale
   exemptLabels:
-    - dependencies  # We don't want to automatically close Dependabot PRs
+    - dependencies # We don't want to automatically close Dependabot PRs
