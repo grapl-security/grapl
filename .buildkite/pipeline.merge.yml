@@ -68,7 +68,7 @@ steps:
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - PULUMI_ACCESS_TOKEN
-      - grapl-security/grapl-rc#v0.1.3:
+      - grapl-security/grapl-rc#v0.1.5:
           artifact_file: all_artifacts.json
           stacks:
             - grapl/grapl/testing

@@ -248,7 +248,7 @@ typecheck: ## Typecheck Python Code
 .PHONY: test-integration
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
 test-integration: build-test-integration ## Build and run integration tests
-	$(WITH_LOCAL_GRAPL_ENV)
+	@$(WITH_LOCAL_GRAPL_ENV)
 	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh integration-tests 9"
 
 .PHONY: test-grapl-template-generator
@@ -258,7 +258,7 @@ test-grapl-template-generator:  # Test that the Grapl Template Generator spits o
 .PHONY: test-e2e
 test-e2e: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_E2E_TESTS)
 test-e2e: build-test-e2e ## Build and run e2e tests
-	$(WITH_LOCAL_GRAPL_ENV)
+	@$(WITH_LOCAL_GRAPL_ENV)
 	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh e2e-tests 6"
 
 # This target is not intended to be used directly from the command line.
@@ -282,7 +282,7 @@ test-with-env: # (Do not include help text - not to be used directly)
 	# Ensure we call stop even after test failure, and return exit code from
 	# the test, not the stop command.
 	trap stopGrapl EXIT
-	$(WITH_LOCAL_GRAPL_ENV)
+	@$(WITH_LOCAL_GRAPL_ENV)
 	# Bring up the Grapl environment and detach
 	$(MAKE) up
 	# Run tests and check exit codes from each test container
@@ -370,7 +370,7 @@ up: build ## Bring up local Grapl and detach to return control to tty
 	# Primarily used for bringing up an environment for integration testing.
 	# For use with a project name consider setting COMPOSE_PROJECT_NAME env var
 	# Usage: `make up`
-	$(WITH_LOCAL_GRAPL_ENV)
+	@$(WITH_LOCAL_GRAPL_ENV)
 	# Start the Nomad agent
 	$(MAKE) stop-nomad-detach; $(MAKE) start-nomad-detach
 	# We use this target with COMPOSE_FILE being set pointing to other files.
@@ -390,19 +390,19 @@ up: build ## Bring up local Grapl and detach to return control to tty
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
-	$(WITH_LOCAL_GRAPL_ENV)
+	@$(WITH_LOCAL_GRAPL_ENV)
 	# This is only for killing the lambda containers that Localstack
 	# spins up in our network, but that docker-compose doesn't know
 	# about. This must be the network that is used in Localstack's
 	# LAMBDA_DOCKER_NETWORK environment variable.
 	$(MAKE) stop-nomad-detach
 	docker-compose $(EVERY_COMPOSE_FILE) down --timeout=0
-	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
-	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
+	@docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
+	@docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
 
 .PHONY: stop
 stop: ## docker-compose stop - stops (but preserves) the containers
-	$(WITH_LOCAL_GRAPL_ENV)
+	@$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose $(EVERY_COMPOSE_FILE) stop
 
 ##@ Utility ⚙
@@ -428,12 +428,12 @@ clean-artifacts: ## Remove all dumped artifacts from test runs (see dump_artifac
 .PHONY: local-pulumi
 local-pulumi: export COMPOSE_PROJECT_NAME="grapl"
 local-pulumi:  ## launch pulumi via docker-compose up
-	$(WITH_LOCAL_GRAPL_ENV)
+	@$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose -f docker-compose.yml run pulumi
 
 .PHONY: start-nomad-detach
 start-nomad-detach:  ## Start the Nomad environment, detached
-	$(WITH_LOCAL_GRAPL_ENV)
+	@$(WITH_LOCAL_GRAPL_ENV)
 	nomad/local/start_detach.sh
 
 .PHONY: stop-nomad-detach
@@ -446,7 +446,7 @@ push: build-docker-images ## Push Grapl containers to supplied DOCKER_REGISTRY
 
 .PHONY: e2e-logs
 e2e-logs: ## All docker-compose logs
-	$(WITH_LOCAL_GRAPL_ENV)
+	@$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) logs -f
 
 .PHONY: docker-kill-all

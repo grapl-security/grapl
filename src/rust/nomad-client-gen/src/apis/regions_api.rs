@@ -32,6 +32,8 @@ pub async fn get_regions(
 ) -> Result<Vec<String>, Error<GetRegionsError>> {
     let local_var_configuration = configuration;
 
+    // unbox the parameters
+
     let local_var_client = &local_var_configuration.client;
 
     let local_var_uri_str = format!("{}/regions", local_var_configuration.base_path);
