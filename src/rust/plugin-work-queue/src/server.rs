@@ -52,17 +52,17 @@ use crate::{
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginWorkQueueError {
-    #[error("PsqlQueueError")]
+    #[error("PsqlQueueError {0}")]
     PsqlQueueError(#[from] PsqlQueueError),
-    #[error("From<PluginWorkQueueDeserializationError>")]
+    #[error("PluginWorkQueueDeserializationError {0}")]
     DeserializationError(#[from] PluginWorkQueueDeserializationError),
 }
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginWorkQueueInitError {
-    #[error("Timeout")]
+    #[error("Timeout {0}")]
     Timeout(#[from] tokio::time::error::Elapsed),
-    #[error("Sqlx")]
+    #[error("Sqlx {0}")]
     Sqlx(#[from] sqlx::Error),
 }
 

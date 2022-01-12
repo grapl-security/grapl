@@ -30,9 +30,9 @@ use tonic::{
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginWorkQueueServiceClientError {
-    #[error("GrpcStatus")]
+    #[error("GrpcStatus {0}")]
     GrpcStatus(#[from] Status),
-    #[error("DeserializeError")]
+    #[error("DeserializeError {0}")]
     DeserializeError(#[from] PluginWorkQueueDeserializationError),
 }
 
