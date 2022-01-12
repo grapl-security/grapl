@@ -1,5 +1,6 @@
 The plugin-work-queue provides a SQS-like queue abstraction over Postgresql.
 
+This queue provides at-least-once semantics, meaning that messages may be processed more than once.
 
 ## Algorithm
 
@@ -14,7 +15,7 @@ Its `current_status` can be:
 
 The `visible_after` is the time after which a job may be executed. When a job is acquired the `visible_after` is immediately
 updated to the CURRENT_TIMESTAMP + 10 seconds. This value is arbitrary and may change in the future. No other worker
-will acquire that job until `visible_after <= CURRENT_TIMESTAMP`.
+will acquire that job until `visible_after <= CURRENT_TIMESTAMP`, otherwise stated as "until it is visible".
 
 Jobs "age out" after 1 day, meaning that even if they are in the `enqueued` state and are "visible" they will not be
 acquired. Jobs that are aged out are removed after one month.
@@ -42,13 +43,6 @@ If the message is successfully processed or if it fails, update the row:
 
 Otherwise, if the message is not successfully processed but can be retried,
 do nothing. It will be picked up again later.
-
-### Visibility Timeout
-The visibility timeout is a duration in which a message will not be picked up again by another worker.
-
-Right now we use a static visibility timeout. It likely makes more sense to increment that timeout somehow,
-and to have the base timeout be based on a client provided value.
-
 
 ## Hardcoded Values and Next Steps
 Right now we have some hardcoded values that, in the future, we can and should make dynamic.
