@@ -1099,6 +1099,7 @@ job "grapl-core" {
       }
 
       env {
+        NOMAD_SERVICE_ADDRESS           = "${attr.unique.network.ip-address}:4646"
         PLUGIN_REGISTRY_BIND_ADDRESS    = "0.0.0.0:${NOMAD_PORT_plugin-registry-port}"
         PLUGIN_REGISTRY_DB_HOSTNAME     = local.plugin_registry_db_hostname
         PLUGIN_REGISTRY_DB_PASSWORD     = var.plugin_registry_db_password
@@ -1115,7 +1116,8 @@ job "grapl-core" {
       name = "plugin-registry"
       port = "plugin-registry-port"
       connect {
-        sidecar_service {}
+        sidecar_service {
+        }
       }
     }
   }

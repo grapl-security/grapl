@@ -3028,6 +3028,7 @@ dependencies = [
  "futures",
  "grapl-config",
  "grapl-utils",
+ "nomad-client-gen",
  "rusoto_core",
  "rusoto_s3",
  "rust-proto",

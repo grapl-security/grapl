@@ -16,6 +16,99 @@ use super::{
 };
 use crate::apis::ResponseContent;
 
+/// struct for passing parameters to the method [`create_quota_spec`]
+#[derive(Clone, Debug, Default)]
+pub struct CreateQuotaSpecParams {
+    pub quota_spec: crate::models::QuotaSpec,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`delete_quota_spec`]
+#[derive(Clone, Debug, Default)]
+pub struct DeleteQuotaSpecParams {
+    /// The quota spec identifier.
+    pub spec_name: String,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`get_quota_spec`]
+#[derive(Clone, Debug, Default)]
+pub struct GetQuotaSpecParams {
+    /// The quota spec identifier.
+    pub spec_name: String,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// If set, wait until query exceeds given index. Must be provided with WaitParam.
+    pub index: Option<i32>,
+    /// Provided with IndexParam to wait for change.
+    pub wait: Option<String>,
+    /// If present, results will include stale reads.
+    pub stale: Option<String>,
+    /// Constrains results to jobs that start with the defined prefix
+    pub prefix: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Maximum number of results to return.
+    pub per_page: Option<i32>,
+    /// Indicates where to start paging for queries that support pagination.
+    pub next_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`get_quotas`]
+#[derive(Clone, Debug, Default)]
+pub struct GetQuotasParams {
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// If set, wait until query exceeds given index. Must be provided with WaitParam.
+    pub index: Option<i32>,
+    /// Provided with IndexParam to wait for change.
+    pub wait: Option<String>,
+    /// If present, results will include stale reads.
+    pub stale: Option<String>,
+    /// Constrains results to jobs that start with the defined prefix
+    pub prefix: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Maximum number of results to return.
+    pub per_page: Option<i32>,
+    /// Indicates where to start paging for queries that support pagination.
+    pub next_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`post_quota_spec`]
+#[derive(Clone, Debug, Default)]
+pub struct PostQuotaSpecParams {
+    /// The quota spec identifier.
+    pub spec_name: String,
+    pub quota_spec: crate::models::QuotaSpec,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+}
+
 /// struct for typed errors of method [`create_quota_spec`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -73,13 +166,16 @@ pub enum PostQuotaSpecError {
 
 pub async fn create_quota_spec(
     configuration: &configuration::Configuration,
-    quota_spec: crate::models::QuotaSpec,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
+    params: CreateQuotaSpecParams,
 ) -> Result<(), Error<CreateQuotaSpecError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let quota_spec = params.quota_spec;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -139,13 +235,16 @@ pub async fn create_quota_spec(
 
 pub async fn delete_quota_spec(
     configuration: &configuration::Configuration,
-    spec_name: &str,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
+    params: DeleteQuotaSpecParams,
 ) -> Result<(), Error<DeleteQuotaSpecError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let spec_name = params.spec_name;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -208,18 +307,21 @@ pub async fn delete_quota_spec(
 
 pub async fn get_quota_spec(
     configuration: &configuration::Configuration,
-    spec_name: &str,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    index: Option<i32>,
-    wait: Option<&str>,
-    stale: Option<&str>,
-    prefix: Option<&str>,
-    x_nomad_token: Option<&str>,
-    per_page: Option<i32>,
-    next_token: Option<&str>,
+    params: GetQuotaSpecParams,
 ) -> Result<crate::models::QuotaSpec, Error<GetQuotaSpecError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let spec_name = params.spec_name;
+    let region = params.region;
+    let namespace = params.namespace;
+    let index = params.index;
+    let wait = params.wait;
+    let stale = params.stale;
+    let prefix = params.prefix;
+    let x_nomad_token = params.x_nomad_token;
+    let per_page = params.per_page;
+    let next_token = params.next_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -302,17 +404,20 @@ pub async fn get_quota_spec(
 
 pub async fn get_quotas(
     configuration: &configuration::Configuration,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    index: Option<i32>,
-    wait: Option<&str>,
-    stale: Option<&str>,
-    prefix: Option<&str>,
-    x_nomad_token: Option<&str>,
-    per_page: Option<i32>,
-    next_token: Option<&str>,
+    params: GetQuotasParams,
 ) -> Result<Vec<serde_json::Value>, Error<GetQuotasError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let region = params.region;
+    let namespace = params.namespace;
+    let index = params.index;
+    let wait = params.wait;
+    let stale = params.stale;
+    let prefix = params.prefix;
+    let x_nomad_token = params.x_nomad_token;
+    let per_page = params.per_page;
+    let next_token = params.next_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -391,14 +496,17 @@ pub async fn get_quotas(
 
 pub async fn post_quota_spec(
     configuration: &configuration::Configuration,
-    spec_name: &str,
-    quota_spec: crate::models::QuotaSpec,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
+    params: PostQuotaSpecParams,
 ) -> Result<(), Error<PostQuotaSpecError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let spec_name = params.spec_name;
+    let quota_spec = params.quota_spec;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
 
     let local_var_client = &local_var_configuration.client;
 

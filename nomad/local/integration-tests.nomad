@@ -130,12 +130,14 @@ job "integration-tests" {
 
             upstreams {
               destination_name = "model-plugin-deployer"
-              local_bind_port  = 1000 # doesn't really matter
+              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
+              local_bind_port = 1000
             }
 
             upstreams {
               destination_name = "plugin-registry"
-              local_bind_port  = 1001 # doesn't really matter
+              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
+              local_bind_port = 1001
             }
           }
         }
@@ -172,6 +174,8 @@ job "integration-tests" {
         GRAPL_MODEL_PLUGIN_DEPLOYER_PORT = "${NOMAD_UPSTREAM_PORT_model-plugin-deployer}"
 
         GRAPL_PLUGIN_REGISTRY_ADDRESS = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-registry}"
+
+        NOMAD_SERVICE_ADDRESS = "${attr.unique.network.ip-address}:4646"
       }
 
       resources {
