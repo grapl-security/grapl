@@ -62,9 +62,7 @@ where
             .inner
             .put_execute_generator(PutExecuteGeneratorRequestProto::from(request))
             .await?;
-        let response = response.into_inner();
-        let response = PutExecuteGeneratorResponse::try_from(response)?;
-        Ok(response)
+        Ok(response.into_inner().try_into()?)
     }
 
     /// Adds a new execution job for an analyzer
@@ -76,9 +74,7 @@ where
             .inner
             .put_execute_analyzer(PutExecuteAnalyzerRequestProto::from(request))
             .await?;
-        let response = response.into_inner();
-        let response = PutExecuteAnalyzerResponse::try_from(response)?;
-        Ok(response)
+        Ok(response.into_inner().try_into()?)
     }
 
     /// Retrieves a new execution job for a generator
@@ -90,9 +86,7 @@ where
             .inner
             .get_execute_generator(GetExecuteGeneratorRequestProto::from(request))
             .await?;
-        let response = response.into_inner();
-        let response = GetExecuteGeneratorResponse::try_from(response)?;
-        Ok(response)
+        Ok(response.into_inner().try_into()?)
     }
 
     /// Retrieves a new execution job for an analyzer
@@ -104,9 +98,7 @@ where
             .inner
             .get_execute_analyzer(GetExecuteAnalyzerRequestProto::from(request))
             .await?;
-        let response = response.into_inner();
-        let response = GetExecuteAnalyzerResponse::try_from(response)?;
-        Ok(response)
+        Ok(response.into_inner().try_into()?)
     }
 
     /// Acknowledges the completion of a generator job
@@ -118,9 +110,7 @@ where
             .inner
             .acknowledge_generator(AcknowledgeGeneratorRequestProto::from(request))
             .await?;
-        let response = response.into_inner();
-        let response = AcknowledgeGeneratorResponse::try_from(response)?;
-        Ok(response)
+        Ok(response.into_inner().try_into()?)
     }
 
     /// Acknowledges the completion of a job
@@ -132,8 +122,6 @@ where
             .inner
             .acknowledge_analyzer(AcknowledgeAnalyzerRequestProto::from(request))
             .await?;
-        let response = response.into_inner();
-        let response = AcknowledgeAnalyzerResponse::try_from(response)?;
-        Ok(response)
+        Ok(response.into_inner().try_into()?)
     }
 }
