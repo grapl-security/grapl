@@ -16,6 +16,225 @@ use super::{
 };
 use crate::apis::ResponseContent;
 
+/// struct for passing parameters to the method [`create_volume`]
+#[derive(Clone, Debug, Default)]
+pub struct CreateVolumeParams {
+    /// Volume unique identifier.
+    pub volume_id: String,
+    /// The action to perform on the Volume (create, detach, delete).
+    pub action: String,
+    pub csi_volume_create_request: crate::models::CsiVolumeCreateRequest,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`delete_snapshot`]
+#[derive(Clone, Debug, Default)]
+pub struct DeleteSnapshotParams {
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+    /// Filters volume lists by plugin ID.
+    pub plugin_id: Option<String>,
+    /// The ID of the snapshot to target.
+    pub snapshot_id: Option<String>,
+}
+
+/// struct for passing parameters to the method [`delete_volume_registration`]
+#[derive(Clone, Debug, Default)]
+pub struct DeleteVolumeRegistrationParams {
+    /// Volume unique identifier.
+    pub volume_id: String,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+    /// Used to force the de-registration of a volume.
+    pub force: Option<String>,
+}
+
+/// struct for passing parameters to the method [`detach_or_delete_volume`]
+#[derive(Clone, Debug, Default)]
+pub struct DetachOrDeleteVolumeParams {
+    /// Volume unique identifier.
+    pub volume_id: String,
+    /// The action to perform on the Volume (create, detach, delete).
+    pub action: String,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+    /// Specifies node to target volume operation for.
+    pub node: Option<String>,
+}
+
+/// struct for passing parameters to the method [`get_external_volumes`]
+#[derive(Clone, Debug, Default)]
+pub struct GetExternalVolumesParams {
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// If set, wait until query exceeds given index. Must be provided with WaitParam.
+    pub index: Option<i32>,
+    /// Provided with IndexParam to wait for change.
+    pub wait: Option<String>,
+    /// If present, results will include stale reads.
+    pub stale: Option<String>,
+    /// Constrains results to jobs that start with the defined prefix
+    pub prefix: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Maximum number of results to return.
+    pub per_page: Option<i32>,
+    /// Indicates where to start paging for queries that support pagination.
+    pub next_token: Option<String>,
+    /// Filters volume lists by plugin ID.
+    pub plugin_id: Option<String>,
+}
+
+/// struct for passing parameters to the method [`get_snapshots`]
+#[derive(Clone, Debug, Default)]
+pub struct GetSnapshotsParams {
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// If set, wait until query exceeds given index. Must be provided with WaitParam.
+    pub index: Option<i32>,
+    /// Provided with IndexParam to wait for change.
+    pub wait: Option<String>,
+    /// If present, results will include stale reads.
+    pub stale: Option<String>,
+    /// Constrains results to jobs that start with the defined prefix
+    pub prefix: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Maximum number of results to return.
+    pub per_page: Option<i32>,
+    /// Indicates where to start paging for queries that support pagination.
+    pub next_token: Option<String>,
+    /// Filters volume lists by plugin ID.
+    pub plugin_id: Option<String>,
+}
+
+/// struct for passing parameters to the method [`get_volume`]
+#[derive(Clone, Debug, Default)]
+pub struct GetVolumeParams {
+    /// Volume unique identifier.
+    pub volume_id: String,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// If set, wait until query exceeds given index. Must be provided with WaitParam.
+    pub index: Option<i32>,
+    /// Provided with IndexParam to wait for change.
+    pub wait: Option<String>,
+    /// If present, results will include stale reads.
+    pub stale: Option<String>,
+    /// Constrains results to jobs that start with the defined prefix
+    pub prefix: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Maximum number of results to return.
+    pub per_page: Option<i32>,
+    /// Indicates where to start paging for queries that support pagination.
+    pub next_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`get_volumes`]
+#[derive(Clone, Debug, Default)]
+pub struct GetVolumesParams {
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// If set, wait until query exceeds given index. Must be provided with WaitParam.
+    pub index: Option<i32>,
+    /// Provided with IndexParam to wait for change.
+    pub wait: Option<String>,
+    /// If present, results will include stale reads.
+    pub stale: Option<String>,
+    /// Constrains results to jobs that start with the defined prefix
+    pub prefix: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Maximum number of results to return.
+    pub per_page: Option<i32>,
+    /// Indicates where to start paging for queries that support pagination.
+    pub next_token: Option<String>,
+    /// Filters volume lists by node ID.
+    pub node_id: Option<String>,
+    /// Filters volume lists by plugin ID.
+    pub plugin_id: Option<String>,
+    /// Filters volume lists to a specific type.
+    pub _type: Option<String>,
+}
+
+/// struct for passing parameters to the method [`post_snapshot`]
+#[derive(Clone, Debug, Default)]
+pub struct PostSnapshotParams {
+    pub csi_snapshot_create_request: crate::models::CsiSnapshotCreateRequest,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`post_volume`]
+#[derive(Clone, Debug, Default)]
+pub struct PostVolumeParams {
+    pub csi_volume_register_request: crate::models::CsiVolumeRegisterRequest,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`post_volume_registration`]
+#[derive(Clone, Debug, Default)]
+pub struct PostVolumeRegistrationParams {
+    /// Volume unique identifier.
+    pub volume_id: String,
+    pub csi_volume_register_request: crate::models::CsiVolumeRegisterRequest,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+}
+
 /// struct for typed errors of method [`create_volume`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -139,15 +358,18 @@ pub enum PostVolumeRegistrationError {
 
 pub async fn create_volume(
     configuration: &configuration::Configuration,
-    volume_id: &str,
-    action: &str,
-    csi_volume_create_request: crate::models::CsiVolumeCreateRequest,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
+    params: CreateVolumeParams,
 ) -> Result<(), Error<CreateVolumeError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let volume_id = params.volume_id;
+    let action = params.action;
+    let csi_volume_create_request = params.csi_volume_create_request;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -212,14 +434,17 @@ pub async fn create_volume(
 
 pub async fn delete_snapshot(
     configuration: &configuration::Configuration,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
-    plugin_id: Option<&str>,
-    snapshot_id: Option<&str>,
+    params: DeleteSnapshotParams,
 ) -> Result<(), Error<DeleteSnapshotError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
+    let plugin_id = params.plugin_id;
+    let snapshot_id = params.snapshot_id;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -286,14 +511,17 @@ pub async fn delete_snapshot(
 
 pub async fn delete_volume_registration(
     configuration: &configuration::Configuration,
-    volume_id: &str,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
-    force: Option<&str>,
+    params: DeleteVolumeRegistrationParams,
 ) -> Result<(), Error<DeleteVolumeRegistrationError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let volume_id = params.volume_id;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
+    let force = params.force;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -360,15 +588,18 @@ pub async fn delete_volume_registration(
 
 pub async fn detach_or_delete_volume(
     configuration: &configuration::Configuration,
-    volume_id: &str,
-    action: &str,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
-    node: Option<&str>,
+    params: DetachOrDeleteVolumeParams,
 ) -> Result<(), Error<DetachOrDeleteVolumeError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let volume_id = params.volume_id;
+    let action = params.action;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
+    let node = params.node;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -436,18 +667,21 @@ pub async fn detach_or_delete_volume(
 
 pub async fn get_external_volumes(
     configuration: &configuration::Configuration,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    index: Option<i32>,
-    wait: Option<&str>,
-    stale: Option<&str>,
-    prefix: Option<&str>,
-    x_nomad_token: Option<&str>,
-    per_page: Option<i32>,
-    next_token: Option<&str>,
-    plugin_id: Option<&str>,
+    params: GetExternalVolumesParams,
 ) -> Result<crate::models::CsiVolumeListExternalResponse, Error<GetExternalVolumesError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let region = params.region;
+    let namespace = params.namespace;
+    let index = params.index;
+    let wait = params.wait;
+    let stale = params.stale;
+    let prefix = params.prefix;
+    let x_nomad_token = params.x_nomad_token;
+    let per_page = params.per_page;
+    let next_token = params.next_token;
+    let plugin_id = params.plugin_id;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -530,18 +764,21 @@ pub async fn get_external_volumes(
 
 pub async fn get_snapshots(
     configuration: &configuration::Configuration,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    index: Option<i32>,
-    wait: Option<&str>,
-    stale: Option<&str>,
-    prefix: Option<&str>,
-    x_nomad_token: Option<&str>,
-    per_page: Option<i32>,
-    next_token: Option<&str>,
-    plugin_id: Option<&str>,
+    params: GetSnapshotsParams,
 ) -> Result<crate::models::CsiSnapshotListResponse, Error<GetSnapshotsError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let region = params.region;
+    let namespace = params.namespace;
+    let index = params.index;
+    let wait = params.wait;
+    let stale = params.stale;
+    let prefix = params.prefix;
+    let x_nomad_token = params.x_nomad_token;
+    let per_page = params.per_page;
+    let next_token = params.next_token;
+    let plugin_id = params.plugin_id;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -624,18 +861,21 @@ pub async fn get_snapshots(
 
 pub async fn get_volume(
     configuration: &configuration::Configuration,
-    volume_id: &str,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    index: Option<i32>,
-    wait: Option<&str>,
-    stale: Option<&str>,
-    prefix: Option<&str>,
-    x_nomad_token: Option<&str>,
-    per_page: Option<i32>,
-    next_token: Option<&str>,
+    params: GetVolumeParams,
 ) -> Result<crate::models::CsiVolume, Error<GetVolumeError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let volume_id = params.volume_id;
+    let region = params.region;
+    let namespace = params.namespace;
+    let index = params.index;
+    let wait = params.wait;
+    let stale = params.stale;
+    let prefix = params.prefix;
+    let x_nomad_token = params.x_nomad_token;
+    let per_page = params.per_page;
+    let next_token = params.next_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -718,20 +958,23 @@ pub async fn get_volume(
 
 pub async fn get_volumes(
     configuration: &configuration::Configuration,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    index: Option<i32>,
-    wait: Option<&str>,
-    stale: Option<&str>,
-    prefix: Option<&str>,
-    x_nomad_token: Option<&str>,
-    per_page: Option<i32>,
-    next_token: Option<&str>,
-    node_id: Option<&str>,
-    plugin_id: Option<&str>,
-    _type: Option<&str>,
+    params: GetVolumesParams,
 ) -> Result<Vec<crate::models::CsiVolumeListStub>, Error<GetVolumesError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let region = params.region;
+    let namespace = params.namespace;
+    let index = params.index;
+    let wait = params.wait;
+    let stale = params.stale;
+    let prefix = params.prefix;
+    let x_nomad_token = params.x_nomad_token;
+    let per_page = params.per_page;
+    let next_token = params.next_token;
+    let node_id = params.node_id;
+    let plugin_id = params.plugin_id;
+    let _type = params._type;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -822,13 +1065,16 @@ pub async fn get_volumes(
 
 pub async fn post_snapshot(
     configuration: &configuration::Configuration,
-    csi_snapshot_create_request: crate::models::CsiSnapshotCreateRequest,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
+    params: PostSnapshotParams,
 ) -> Result<crate::models::CsiSnapshotCreateResponse, Error<PostSnapshotError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let csi_snapshot_create_request = params.csi_snapshot_create_request;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -888,13 +1134,16 @@ pub async fn post_snapshot(
 
 pub async fn post_volume(
     configuration: &configuration::Configuration,
-    csi_volume_register_request: crate::models::CsiVolumeRegisterRequest,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
+    params: PostVolumeParams,
 ) -> Result<(), Error<PostVolumeError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let csi_volume_register_request = params.csi_volume_register_request;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -954,14 +1203,17 @@ pub async fn post_volume(
 
 pub async fn post_volume_registration(
     configuration: &configuration::Configuration,
-    volume_id: &str,
-    csi_volume_register_request: crate::models::CsiVolumeRegisterRequest,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
+    params: PostVolumeRegistrationParams,
 ) -> Result<(), Error<PostVolumeRegistrationError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let volume_id = params.volume_id;
+    let csi_volume_register_request = params.csi_volume_register_request;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
 
     let local_var_client = &local_var_configuration.client;
 

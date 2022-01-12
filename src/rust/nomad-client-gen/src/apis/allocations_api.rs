@@ -16,6 +16,33 @@ use super::{
 };
 use crate::apis::ResponseContent;
 
+/// struct for passing parameters to the method [`get_allocations`]
+#[derive(Clone, Debug, Default)]
+pub struct GetAllocationsParams {
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// If set, wait until query exceeds given index. Must be provided with WaitParam.
+    pub index: Option<i32>,
+    /// Provided with IndexParam to wait for change.
+    pub wait: Option<String>,
+    /// If present, results will include stale reads.
+    pub stale: Option<String>,
+    /// Constrains results to jobs that start with the defined prefix
+    pub prefix: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Maximum number of results to return.
+    pub per_page: Option<i32>,
+    /// Indicates where to start paging for queries that support pagination.
+    pub next_token: Option<String>,
+    /// Flag indicating whether to include resources in response.
+    pub resources: Option<bool>,
+    /// Flag indicating whether to include task states in response.
+    pub task_states: Option<bool>,
+}
+
 /// struct for typed errors of method [`get_allocations`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -29,19 +56,22 @@ pub enum GetAllocationsError {
 
 pub async fn get_allocations(
     configuration: &configuration::Configuration,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    index: Option<i32>,
-    wait: Option<&str>,
-    stale: Option<&str>,
-    prefix: Option<&str>,
-    x_nomad_token: Option<&str>,
-    per_page: Option<i32>,
-    next_token: Option<&str>,
-    resources: Option<bool>,
-    task_states: Option<bool>,
+    params: GetAllocationsParams,
 ) -> Result<Vec<crate::models::AllocationListStub>, Error<GetAllocationsError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let region = params.region;
+    let namespace = params.namespace;
+    let index = params.index;
+    let wait = params.wait;
+    let stale = params.stale;
+    let prefix = params.prefix;
+    let x_nomad_token = params.x_nomad_token;
+    let per_page = params.per_page;
+    let next_token = params.next_token;
+    let resources = params.resources;
+    let task_states = params.task_states;
 
     let local_var_client = &local_var_configuration.client;
 

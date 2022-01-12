@@ -16,6 +16,415 @@ use super::{
 };
 use crate::apis::ResponseContent;
 
+/// struct for passing parameters to the method [`delete_job`]
+#[derive(Clone, Debug, Default)]
+pub struct DeleteJobParams {
+    /// The job identifier.
+    pub job_name: String,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+    /// Boolean flag indicating whether to purge allocations of the job after deleting.
+    pub purge: Option<bool>,
+    /// Boolean flag indicating whether the operation should apply to all instances of the job globally.
+    pub global: Option<bool>,
+}
+
+/// struct for passing parameters to the method [`get_job`]
+#[derive(Clone, Debug, Default)]
+pub struct GetJobParams {
+    /// The job identifier.
+    pub job_name: String,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// If set, wait until query exceeds given index. Must be provided with WaitParam.
+    pub index: Option<i32>,
+    /// Provided with IndexParam to wait for change.
+    pub wait: Option<String>,
+    /// If present, results will include stale reads.
+    pub stale: Option<String>,
+    /// Constrains results to jobs that start with the defined prefix
+    pub prefix: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Maximum number of results to return.
+    pub per_page: Option<i32>,
+    /// Indicates where to start paging for queries that support pagination.
+    pub next_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`get_job_allocations`]
+#[derive(Clone, Debug, Default)]
+pub struct GetJobAllocationsParams {
+    /// The job identifier.
+    pub job_name: String,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// If set, wait until query exceeds given index. Must be provided with WaitParam.
+    pub index: Option<i32>,
+    /// Provided with IndexParam to wait for change.
+    pub wait: Option<String>,
+    /// If present, results will include stale reads.
+    pub stale: Option<String>,
+    /// Constrains results to jobs that start with the defined prefix
+    pub prefix: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Maximum number of results to return.
+    pub per_page: Option<i32>,
+    /// Indicates where to start paging for queries that support pagination.
+    pub next_token: Option<String>,
+    /// Specifies whether the list of allocations should include allocations from a previously registered job with the same ID. This is possible if the job is deregistered and reregistered.
+    pub all: Option<bool>,
+}
+
+/// struct for passing parameters to the method [`get_job_deployment`]
+#[derive(Clone, Debug, Default)]
+pub struct GetJobDeploymentParams {
+    /// The job identifier.
+    pub job_name: String,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// If set, wait until query exceeds given index. Must be provided with WaitParam.
+    pub index: Option<i32>,
+    /// Provided with IndexParam to wait for change.
+    pub wait: Option<String>,
+    /// If present, results will include stale reads.
+    pub stale: Option<String>,
+    /// Constrains results to jobs that start with the defined prefix
+    pub prefix: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Maximum number of results to return.
+    pub per_page: Option<i32>,
+    /// Indicates where to start paging for queries that support pagination.
+    pub next_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`get_job_deployments`]
+#[derive(Clone, Debug, Default)]
+pub struct GetJobDeploymentsParams {
+    /// The job identifier.
+    pub job_name: String,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// If set, wait until query exceeds given index. Must be provided with WaitParam.
+    pub index: Option<i32>,
+    /// Provided with IndexParam to wait for change.
+    pub wait: Option<String>,
+    /// If present, results will include stale reads.
+    pub stale: Option<String>,
+    /// Constrains results to jobs that start with the defined prefix
+    pub prefix: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Maximum number of results to return.
+    pub per_page: Option<i32>,
+    /// Indicates where to start paging for queries that support pagination.
+    pub next_token: Option<String>,
+    /// Flag indicating whether to constrain by job creation index or not.
+    pub all: Option<i32>,
+}
+
+/// struct for passing parameters to the method [`get_job_evaluations`]
+#[derive(Clone, Debug, Default)]
+pub struct GetJobEvaluationsParams {
+    /// The job identifier.
+    pub job_name: String,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// If set, wait until query exceeds given index. Must be provided with WaitParam.
+    pub index: Option<i32>,
+    /// Provided with IndexParam to wait for change.
+    pub wait: Option<String>,
+    /// If present, results will include stale reads.
+    pub stale: Option<String>,
+    /// Constrains results to jobs that start with the defined prefix
+    pub prefix: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Maximum number of results to return.
+    pub per_page: Option<i32>,
+    /// Indicates where to start paging for queries that support pagination.
+    pub next_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`get_job_scale_status`]
+#[derive(Clone, Debug, Default)]
+pub struct GetJobScaleStatusParams {
+    /// The job identifier.
+    pub job_name: String,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// If set, wait until query exceeds given index. Must be provided with WaitParam.
+    pub index: Option<i32>,
+    /// Provided with IndexParam to wait for change.
+    pub wait: Option<String>,
+    /// If present, results will include stale reads.
+    pub stale: Option<String>,
+    /// Constrains results to jobs that start with the defined prefix
+    pub prefix: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Maximum number of results to return.
+    pub per_page: Option<i32>,
+    /// Indicates where to start paging for queries that support pagination.
+    pub next_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`get_job_summary`]
+#[derive(Clone, Debug, Default)]
+pub struct GetJobSummaryParams {
+    /// The job identifier.
+    pub job_name: String,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// If set, wait until query exceeds given index. Must be provided with WaitParam.
+    pub index: Option<i32>,
+    /// Provided with IndexParam to wait for change.
+    pub wait: Option<String>,
+    /// If present, results will include stale reads.
+    pub stale: Option<String>,
+    /// Constrains results to jobs that start with the defined prefix
+    pub prefix: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Maximum number of results to return.
+    pub per_page: Option<i32>,
+    /// Indicates where to start paging for queries that support pagination.
+    pub next_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`get_job_versions`]
+#[derive(Clone, Debug, Default)]
+pub struct GetJobVersionsParams {
+    /// The job identifier.
+    pub job_name: String,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// If set, wait until query exceeds given index. Must be provided with WaitParam.
+    pub index: Option<i32>,
+    /// Provided with IndexParam to wait for change.
+    pub wait: Option<String>,
+    /// If present, results will include stale reads.
+    pub stale: Option<String>,
+    /// Constrains results to jobs that start with the defined prefix
+    pub prefix: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Maximum number of results to return.
+    pub per_page: Option<i32>,
+    /// Indicates where to start paging for queries that support pagination.
+    pub next_token: Option<String>,
+    /// Boolean flag indicating whether to compute job diffs.
+    pub diffs: Option<bool>,
+}
+
+/// struct for passing parameters to the method [`get_jobs`]
+#[derive(Clone, Debug, Default)]
+pub struct GetJobsParams {
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// If set, wait until query exceeds given index. Must be provided with WaitParam.
+    pub index: Option<i32>,
+    /// Provided with IndexParam to wait for change.
+    pub wait: Option<String>,
+    /// If present, results will include stale reads.
+    pub stale: Option<String>,
+    /// Constrains results to jobs that start with the defined prefix
+    pub prefix: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Maximum number of results to return.
+    pub per_page: Option<i32>,
+    /// Indicates where to start paging for queries that support pagination.
+    pub next_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`post_job`]
+#[derive(Clone, Debug, Default)]
+pub struct PostJobParams {
+    /// The job identifier.
+    pub job_name: String,
+    pub job_register_request: crate::models::JobRegisterRequest,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`post_job_dispatch`]
+#[derive(Clone, Debug, Default)]
+pub struct PostJobDispatchParams {
+    /// The job identifier.
+    pub job_name: String,
+    pub job_dispatch_request: crate::models::JobDispatchRequest,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`post_job_evaluate`]
+#[derive(Clone, Debug, Default)]
+pub struct PostJobEvaluateParams {
+    /// The job identifier.
+    pub job_name: String,
+    pub job_evaluate_request: crate::models::JobEvaluateRequest,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`post_job_parse`]
+#[derive(Clone, Debug, Default)]
+pub struct PostJobParseParams {
+    pub jobs_parse_request: crate::models::JobsParseRequest,
+}
+
+/// struct for passing parameters to the method [`post_job_periodic_force`]
+#[derive(Clone, Debug, Default)]
+pub struct PostJobPeriodicForceParams {
+    /// The job identifier.
+    pub job_name: String,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`post_job_plan`]
+#[derive(Clone, Debug, Default)]
+pub struct PostJobPlanParams {
+    /// The job identifier.
+    pub job_name: String,
+    pub job_plan_request: crate::models::JobPlanRequest,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`post_job_revert`]
+#[derive(Clone, Debug, Default)]
+pub struct PostJobRevertParams {
+    /// The job identifier.
+    pub job_name: String,
+    pub job_revert_request: crate::models::JobRevertRequest,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`post_job_scaling_request`]
+#[derive(Clone, Debug, Default)]
+pub struct PostJobScalingRequestParams {
+    /// The job identifier.
+    pub job_name: String,
+    pub scaling_request: crate::models::ScalingRequest,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`post_job_stability`]
+#[derive(Clone, Debug, Default)]
+pub struct PostJobStabilityParams {
+    /// The job identifier.
+    pub job_name: String,
+    pub job_stability_request: crate::models::JobStabilityRequest,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`post_job_validate_request`]
+#[derive(Clone, Debug, Default)]
+pub struct PostJobValidateRequestParams {
+    pub job_validate_request: crate::models::JobValidateRequest,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`register_job`]
+#[derive(Clone, Debug, Default)]
+pub struct RegisterJobParams {
+    pub job_register_request: crate::models::JobRegisterRequest,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+}
+
 /// struct for typed errors of method [`delete_job`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -249,15 +658,18 @@ pub enum RegisterJobError {
 
 pub async fn delete_job(
     configuration: &configuration::Configuration,
-    job_name: &str,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
-    purge: Option<bool>,
-    global: Option<bool>,
+    params: DeleteJobParams,
 ) -> Result<crate::models::JobDeregisterResponse, Error<DeleteJobError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let job_name = params.job_name;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
+    let purge = params.purge;
+    let global = params.global;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -328,18 +740,21 @@ pub async fn delete_job(
 
 pub async fn get_job(
     configuration: &configuration::Configuration,
-    job_name: &str,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    index: Option<i32>,
-    wait: Option<&str>,
-    stale: Option<&str>,
-    prefix: Option<&str>,
-    x_nomad_token: Option<&str>,
-    per_page: Option<i32>,
-    next_token: Option<&str>,
+    params: GetJobParams,
 ) -> Result<crate::models::Job, Error<GetJobError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let job_name = params.job_name;
+    let region = params.region;
+    let namespace = params.namespace;
+    let index = params.index;
+    let wait = params.wait;
+    let stale = params.stale;
+    let prefix = params.prefix;
+    let x_nomad_token = params.x_nomad_token;
+    let per_page = params.per_page;
+    let next_token = params.next_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -421,19 +836,22 @@ pub async fn get_job(
 
 pub async fn get_job_allocations(
     configuration: &configuration::Configuration,
-    job_name: &str,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    index: Option<i32>,
-    wait: Option<&str>,
-    stale: Option<&str>,
-    prefix: Option<&str>,
-    x_nomad_token: Option<&str>,
-    per_page: Option<i32>,
-    next_token: Option<&str>,
-    all: Option<bool>,
+    params: GetJobAllocationsParams,
 ) -> Result<Vec<crate::models::AllocationListStub>, Error<GetJobAllocationsError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let job_name = params.job_name;
+    let region = params.region;
+    let namespace = params.namespace;
+    let index = params.index;
+    let wait = params.wait;
+    let stale = params.stale;
+    let prefix = params.prefix;
+    let x_nomad_token = params.x_nomad_token;
+    let per_page = params.per_page;
+    let next_token = params.next_token;
+    let all = params.all;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -519,18 +937,21 @@ pub async fn get_job_allocations(
 
 pub async fn get_job_deployment(
     configuration: &configuration::Configuration,
-    job_name: &str,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    index: Option<i32>,
-    wait: Option<&str>,
-    stale: Option<&str>,
-    prefix: Option<&str>,
-    x_nomad_token: Option<&str>,
-    per_page: Option<i32>,
-    next_token: Option<&str>,
+    params: GetJobDeploymentParams,
 ) -> Result<crate::models::Deployment, Error<GetJobDeploymentError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let job_name = params.job_name;
+    let region = params.region;
+    let namespace = params.namespace;
+    let index = params.index;
+    let wait = params.wait;
+    let stale = params.stale;
+    let prefix = params.prefix;
+    let x_nomad_token = params.x_nomad_token;
+    let per_page = params.per_page;
+    let next_token = params.next_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -613,19 +1034,22 @@ pub async fn get_job_deployment(
 
 pub async fn get_job_deployments(
     configuration: &configuration::Configuration,
-    job_name: &str,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    index: Option<i32>,
-    wait: Option<&str>,
-    stale: Option<&str>,
-    prefix: Option<&str>,
-    x_nomad_token: Option<&str>,
-    per_page: Option<i32>,
-    next_token: Option<&str>,
-    all: Option<i32>,
+    params: GetJobDeploymentsParams,
 ) -> Result<Vec<crate::models::Deployment>, Error<GetJobDeploymentsError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let job_name = params.job_name;
+    let region = params.region;
+    let namespace = params.namespace;
+    let index = params.index;
+    let wait = params.wait;
+    let stale = params.stale;
+    let prefix = params.prefix;
+    let x_nomad_token = params.x_nomad_token;
+    let per_page = params.per_page;
+    let next_token = params.next_token;
+    let all = params.all;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -711,18 +1135,21 @@ pub async fn get_job_deployments(
 
 pub async fn get_job_evaluations(
     configuration: &configuration::Configuration,
-    job_name: &str,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    index: Option<i32>,
-    wait: Option<&str>,
-    stale: Option<&str>,
-    prefix: Option<&str>,
-    x_nomad_token: Option<&str>,
-    per_page: Option<i32>,
-    next_token: Option<&str>,
+    params: GetJobEvaluationsParams,
 ) -> Result<Vec<crate::models::Evaluation>, Error<GetJobEvaluationsError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let job_name = params.job_name;
+    let region = params.region;
+    let namespace = params.namespace;
+    let index = params.index;
+    let wait = params.wait;
+    let stale = params.stale;
+    let prefix = params.prefix;
+    let x_nomad_token = params.x_nomad_token;
+    let per_page = params.per_page;
+    let next_token = params.next_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -805,18 +1232,21 @@ pub async fn get_job_evaluations(
 
 pub async fn get_job_scale_status(
     configuration: &configuration::Configuration,
-    job_name: &str,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    index: Option<i32>,
-    wait: Option<&str>,
-    stale: Option<&str>,
-    prefix: Option<&str>,
-    x_nomad_token: Option<&str>,
-    per_page: Option<i32>,
-    next_token: Option<&str>,
+    params: GetJobScaleStatusParams,
 ) -> Result<crate::models::JobScaleStatusResponse, Error<GetJobScaleStatusError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let job_name = params.job_name;
+    let region = params.region;
+    let namespace = params.namespace;
+    let index = params.index;
+    let wait = params.wait;
+    let stale = params.stale;
+    let prefix = params.prefix;
+    let x_nomad_token = params.x_nomad_token;
+    let per_page = params.per_page;
+    let next_token = params.next_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -899,18 +1329,21 @@ pub async fn get_job_scale_status(
 
 pub async fn get_job_summary(
     configuration: &configuration::Configuration,
-    job_name: &str,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    index: Option<i32>,
-    wait: Option<&str>,
-    stale: Option<&str>,
-    prefix: Option<&str>,
-    x_nomad_token: Option<&str>,
-    per_page: Option<i32>,
-    next_token: Option<&str>,
+    params: GetJobSummaryParams,
 ) -> Result<crate::models::JobSummary, Error<GetJobSummaryError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let job_name = params.job_name;
+    let region = params.region;
+    let namespace = params.namespace;
+    let index = params.index;
+    let wait = params.wait;
+    let stale = params.stale;
+    let prefix = params.prefix;
+    let x_nomad_token = params.x_nomad_token;
+    let per_page = params.per_page;
+    let next_token = params.next_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -993,19 +1426,22 @@ pub async fn get_job_summary(
 
 pub async fn get_job_versions(
     configuration: &configuration::Configuration,
-    job_name: &str,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    index: Option<i32>,
-    wait: Option<&str>,
-    stale: Option<&str>,
-    prefix: Option<&str>,
-    x_nomad_token: Option<&str>,
-    per_page: Option<i32>,
-    next_token: Option<&str>,
-    diffs: Option<bool>,
+    params: GetJobVersionsParams,
 ) -> Result<crate::models::JobVersionsResponse, Error<GetJobVersionsError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let job_name = params.job_name;
+    let region = params.region;
+    let namespace = params.namespace;
+    let index = params.index;
+    let wait = params.wait;
+    let stale = params.stale;
+    let prefix = params.prefix;
+    let x_nomad_token = params.x_nomad_token;
+    let per_page = params.per_page;
+    let next_token = params.next_token;
+    let diffs = params.diffs;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -1092,17 +1528,20 @@ pub async fn get_job_versions(
 
 pub async fn get_jobs(
     configuration: &configuration::Configuration,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    index: Option<i32>,
-    wait: Option<&str>,
-    stale: Option<&str>,
-    prefix: Option<&str>,
-    x_nomad_token: Option<&str>,
-    per_page: Option<i32>,
-    next_token: Option<&str>,
+    params: GetJobsParams,
 ) -> Result<Vec<crate::models::JobListStub>, Error<GetJobsError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let region = params.region;
+    let namespace = params.namespace;
+    let index = params.index;
+    let wait = params.wait;
+    let stale = params.stale;
+    let prefix = params.prefix;
+    let x_nomad_token = params.x_nomad_token;
+    let per_page = params.per_page;
+    let next_token = params.next_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -1180,14 +1619,17 @@ pub async fn get_jobs(
 
 pub async fn post_job(
     configuration: &configuration::Configuration,
-    job_name: &str,
-    job_register_request: crate::models::JobRegisterRequest,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
+    params: PostJobParams,
 ) -> Result<crate::models::JobRegisterResponse, Error<PostJobError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let job_name = params.job_name;
+    let job_register_request = params.job_register_request;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -1250,14 +1692,17 @@ pub async fn post_job(
 
 pub async fn post_job_dispatch(
     configuration: &configuration::Configuration,
-    job_name: &str,
-    job_dispatch_request: crate::models::JobDispatchRequest,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
+    params: PostJobDispatchParams,
 ) -> Result<crate::models::JobDispatchResponse, Error<PostJobDispatchError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let job_name = params.job_name;
+    let job_dispatch_request = params.job_dispatch_request;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -1321,14 +1766,17 @@ pub async fn post_job_dispatch(
 
 pub async fn post_job_evaluate(
     configuration: &configuration::Configuration,
-    job_name: &str,
-    job_evaluate_request: crate::models::JobEvaluateRequest,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
+    params: PostJobEvaluateParams,
 ) -> Result<crate::models::JobRegisterResponse, Error<PostJobEvaluateError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let job_name = params.job_name;
+    let job_evaluate_request = params.job_evaluate_request;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -1392,9 +1840,12 @@ pub async fn post_job_evaluate(
 
 pub async fn post_job_parse(
     configuration: &configuration::Configuration,
-    jobs_parse_request: crate::models::JobsParseRequest,
+    params: PostJobParseParams,
 ) -> Result<crate::models::Job, Error<PostJobParseError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let jobs_parse_request = params.jobs_parse_request;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -1438,13 +1889,16 @@ pub async fn post_job_parse(
 
 pub async fn post_job_periodic_force(
     configuration: &configuration::Configuration,
-    job_name: &str,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
+    params: PostJobPeriodicForceParams,
 ) -> Result<crate::models::PeriodicForceResponse, Error<PostJobPeriodicForceError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let job_name = params.job_name;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -1507,14 +1961,17 @@ pub async fn post_job_periodic_force(
 
 pub async fn post_job_plan(
     configuration: &configuration::Configuration,
-    job_name: &str,
-    job_plan_request: crate::models::JobPlanRequest,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
+    params: PostJobPlanParams,
 ) -> Result<crate::models::JobPlanResponse, Error<PostJobPlanError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let job_name = params.job_name;
+    let job_plan_request = params.job_plan_request;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -1578,14 +2035,17 @@ pub async fn post_job_plan(
 
 pub async fn post_job_revert(
     configuration: &configuration::Configuration,
-    job_name: &str,
-    job_revert_request: crate::models::JobRevertRequest,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
+    params: PostJobRevertParams,
 ) -> Result<crate::models::JobRegisterResponse, Error<PostJobRevertError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let job_name = params.job_name;
+    let job_revert_request = params.job_revert_request;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -1649,14 +2109,17 @@ pub async fn post_job_revert(
 
 pub async fn post_job_scaling_request(
     configuration: &configuration::Configuration,
-    job_name: &str,
-    scaling_request: crate::models::ScalingRequest,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
+    params: PostJobScalingRequestParams,
 ) -> Result<crate::models::JobRegisterResponse, Error<PostJobScalingRequestError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let job_name = params.job_name;
+    let scaling_request = params.scaling_request;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -1720,14 +2183,17 @@ pub async fn post_job_scaling_request(
 
 pub async fn post_job_stability(
     configuration: &configuration::Configuration,
-    job_name: &str,
-    job_stability_request: crate::models::JobStabilityRequest,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
+    params: PostJobStabilityParams,
 ) -> Result<crate::models::JobStabilityResponse, Error<PostJobStabilityError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let job_name = params.job_name;
+    let job_stability_request = params.job_stability_request;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -1791,13 +2257,16 @@ pub async fn post_job_stability(
 
 pub async fn post_job_validate_request(
     configuration: &configuration::Configuration,
-    job_validate_request: crate::models::JobValidateRequest,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
+    params: PostJobValidateRequestParams,
 ) -> Result<crate::models::JobValidateResponse, Error<PostJobValidateRequestError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let job_validate_request = params.job_validate_request;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -1857,13 +2326,16 @@ pub async fn post_job_validate_request(
 
 pub async fn register_job(
     configuration: &configuration::Configuration,
-    job_register_request: crate::models::JobRegisterRequest,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
+    params: RegisterJobParams,
 ) -> Result<crate::models::JobRegisterResponse, Error<RegisterJobError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let job_register_request = params.job_register_request;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
 
     let local_var_client = &local_var_configuration.client;
 

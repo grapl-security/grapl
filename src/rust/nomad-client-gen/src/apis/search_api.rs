@@ -16,6 +16,54 @@ use super::{
 };
 use crate::apis::ResponseContent;
 
+/// struct for passing parameters to the method [`get_fuzzy_search`]
+#[derive(Clone, Debug, Default)]
+pub struct GetFuzzySearchParams {
+    pub fuzzy_search_request: crate::models::FuzzySearchRequest,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// If set, wait until query exceeds given index. Must be provided with WaitParam.
+    pub index: Option<i32>,
+    /// Provided with IndexParam to wait for change.
+    pub wait: Option<String>,
+    /// If present, results will include stale reads.
+    pub stale: Option<String>,
+    /// Constrains results to jobs that start with the defined prefix
+    pub prefix: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Maximum number of results to return.
+    pub per_page: Option<i32>,
+    /// Indicates where to start paging for queries that support pagination.
+    pub next_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`get_search`]
+#[derive(Clone, Debug, Default)]
+pub struct GetSearchParams {
+    pub search_request: crate::models::SearchRequest,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// If set, wait until query exceeds given index. Must be provided with WaitParam.
+    pub index: Option<i32>,
+    /// Provided with IndexParam to wait for change.
+    pub wait: Option<String>,
+    /// If present, results will include stale reads.
+    pub stale: Option<String>,
+    /// Constrains results to jobs that start with the defined prefix
+    pub prefix: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Maximum number of results to return.
+    pub per_page: Option<i32>,
+    /// Indicates where to start paging for queries that support pagination.
+    pub next_token: Option<String>,
+}
+
 /// struct for typed errors of method [`get_fuzzy_search`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -40,18 +88,21 @@ pub enum GetSearchError {
 
 pub async fn get_fuzzy_search(
     configuration: &configuration::Configuration,
-    fuzzy_search_request: crate::models::FuzzySearchRequest,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    index: Option<i32>,
-    wait: Option<&str>,
-    stale: Option<&str>,
-    prefix: Option<&str>,
-    x_nomad_token: Option<&str>,
-    per_page: Option<i32>,
-    next_token: Option<&str>,
+    params: GetFuzzySearchParams,
 ) -> Result<crate::models::FuzzySearchResponse, Error<GetFuzzySearchError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let fuzzy_search_request = params.fuzzy_search_request;
+    let region = params.region;
+    let namespace = params.namespace;
+    let index = params.index;
+    let wait = params.wait;
+    let stale = params.stale;
+    let prefix = params.prefix;
+    let x_nomad_token = params.x_nomad_token;
+    let per_page = params.per_page;
+    let next_token = params.next_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -131,18 +182,21 @@ pub async fn get_fuzzy_search(
 
 pub async fn get_search(
     configuration: &configuration::Configuration,
-    search_request: crate::models::SearchRequest,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    index: Option<i32>,
-    wait: Option<&str>,
-    stale: Option<&str>,
-    prefix: Option<&str>,
-    x_nomad_token: Option<&str>,
-    per_page: Option<i32>,
-    next_token: Option<&str>,
+    params: GetSearchParams,
 ) -> Result<crate::models::SearchResponse, Error<GetSearchError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let search_request = params.search_request;
+    let region = params.region;
+    let namespace = params.namespace;
+    let index = params.index;
+    let wait = params.wait;
+    let stale = params.stale;
+    let prefix = params.prefix;
+    let x_nomad_token = params.x_nomad_token;
+    let per_page = params.per_page;
+    let next_token = params.next_token;
 
     let local_var_client = &local_var_configuration.client;
 

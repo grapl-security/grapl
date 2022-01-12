@@ -16,6 +16,13 @@ use super::{
 };
 use crate::apis::ResponseContent;
 
+/// struct for passing parameters to the method [`get_metrics_summary`]
+#[derive(Clone, Debug, Default)]
+pub struct GetMetricsSummaryParams {
+    /// The format the user requested for the metrics summary (e.g. prometheus)
+    pub format: Option<String>,
+}
+
 /// struct for typed errors of method [`get_metrics_summary`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -29,9 +36,12 @@ pub enum GetMetricsSummaryError {
 
 pub async fn get_metrics_summary(
     configuration: &configuration::Configuration,
-    format: Option<&str>,
+    params: GetMetricsSummaryParams,
 ) -> Result<crate::models::MetricsSummary, Error<GetMetricsSummaryError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let format = params.format;
 
     let local_var_client = &local_var_configuration.client;
 

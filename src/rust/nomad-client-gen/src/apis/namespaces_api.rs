@@ -16,6 +16,98 @@ use super::{
 };
 use crate::apis::ResponseContent;
 
+/// struct for passing parameters to the method [`create_namespace`]
+#[derive(Clone, Debug, Default)]
+pub struct CreateNamespaceParams {
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`delete_namespace`]
+#[derive(Clone, Debug, Default)]
+pub struct DeleteNamespaceParams {
+    /// The namespace identifier.
+    pub namespace_name: String,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`get_namespace`]
+#[derive(Clone, Debug, Default)]
+pub struct GetNamespaceParams {
+    /// The namespace identifier.
+    pub namespace_name: String,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// If set, wait until query exceeds given index. Must be provided with WaitParam.
+    pub index: Option<i32>,
+    /// Provided with IndexParam to wait for change.
+    pub wait: Option<String>,
+    /// If present, results will include stale reads.
+    pub stale: Option<String>,
+    /// Constrains results to jobs that start with the defined prefix
+    pub prefix: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Maximum number of results to return.
+    pub per_page: Option<i32>,
+    /// Indicates where to start paging for queries that support pagination.
+    pub next_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`get_namespaces`]
+#[derive(Clone, Debug, Default)]
+pub struct GetNamespacesParams {
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// If set, wait until query exceeds given index. Must be provided with WaitParam.
+    pub index: Option<i32>,
+    /// Provided with IndexParam to wait for change.
+    pub wait: Option<String>,
+    /// If present, results will include stale reads.
+    pub stale: Option<String>,
+    /// Constrains results to jobs that start with the defined prefix
+    pub prefix: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Maximum number of results to return.
+    pub per_page: Option<i32>,
+    /// Indicates where to start paging for queries that support pagination.
+    pub next_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`post_namespace`]
+#[derive(Clone, Debug, Default)]
+pub struct PostNamespaceParams {
+    /// The namespace identifier.
+    pub namespace_name: String,
+    pub namespace2: crate::models::Namespace,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+}
+
 /// struct for typed errors of method [`create_namespace`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -73,12 +165,15 @@ pub enum PostNamespaceError {
 
 pub async fn create_namespace(
     configuration: &configuration::Configuration,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
+    params: CreateNamespaceParams,
 ) -> Result<(), Error<CreateNamespaceError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -137,13 +232,16 @@ pub async fn create_namespace(
 
 pub async fn delete_namespace(
     configuration: &configuration::Configuration,
-    namespace_name: &str,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
+    params: DeleteNamespaceParams,
 ) -> Result<(), Error<DeleteNamespaceError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let namespace_name = params.namespace_name;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -206,18 +304,21 @@ pub async fn delete_namespace(
 
 pub async fn get_namespace(
     configuration: &configuration::Configuration,
-    namespace_name: &str,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    index: Option<i32>,
-    wait: Option<&str>,
-    stale: Option<&str>,
-    prefix: Option<&str>,
-    x_nomad_token: Option<&str>,
-    per_page: Option<i32>,
-    next_token: Option<&str>,
+    params: GetNamespaceParams,
 ) -> Result<crate::models::Namespace, Error<GetNamespaceError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let namespace_name = params.namespace_name;
+    let region = params.region;
+    let namespace = params.namespace;
+    let index = params.index;
+    let wait = params.wait;
+    let stale = params.stale;
+    let prefix = params.prefix;
+    let x_nomad_token = params.x_nomad_token;
+    let per_page = params.per_page;
+    let next_token = params.next_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -300,17 +401,20 @@ pub async fn get_namespace(
 
 pub async fn get_namespaces(
     configuration: &configuration::Configuration,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    index: Option<i32>,
-    wait: Option<&str>,
-    stale: Option<&str>,
-    prefix: Option<&str>,
-    x_nomad_token: Option<&str>,
-    per_page: Option<i32>,
-    next_token: Option<&str>,
+    params: GetNamespacesParams,
 ) -> Result<Vec<crate::models::Namespace>, Error<GetNamespacesError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let region = params.region;
+    let namespace = params.namespace;
+    let index = params.index;
+    let wait = params.wait;
+    let stale = params.stale;
+    let prefix = params.prefix;
+    let x_nomad_token = params.x_nomad_token;
+    let per_page = params.per_page;
+    let next_token = params.next_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -389,14 +493,17 @@ pub async fn get_namespaces(
 
 pub async fn post_namespace(
     configuration: &configuration::Configuration,
-    namespace_name: &str,
-    namespace2: crate::models::Namespace,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
+    params: PostNamespaceParams,
 ) -> Result<(), Error<PostNamespaceError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let namespace_name = params.namespace_name;
+    let namespace2 = params.namespace2;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
 
     let local_var_client = &local_var_configuration.client;
 

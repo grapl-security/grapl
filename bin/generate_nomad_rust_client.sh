@@ -46,7 +46,8 @@ docker run \
     --generator-name rust \
     --library reqwest \
     --additional-properties=packageName="${CRATE_NAME}" \
-    --additional-properties=packageVersion="${CRATE_VERSION}"
+    --additional-properties=packageVersion="${CRATE_VERSION}" \
+    --additional-properties=useSingleRequestParameter=true
 
 ################################################################################
 # Modify the generated code a bit

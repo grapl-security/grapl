@@ -16,6 +16,158 @@ use super::{
 };
 use crate::apis::ResponseContent;
 
+/// struct for passing parameters to the method [`get_deployment`]
+#[derive(Clone, Debug, Default)]
+pub struct GetDeploymentParams {
+    /// Deployment ID.
+    pub deployment_id: String,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// If set, wait until query exceeds given index. Must be provided with WaitParam.
+    pub index: Option<i32>,
+    /// Provided with IndexParam to wait for change.
+    pub wait: Option<String>,
+    /// If present, results will include stale reads.
+    pub stale: Option<String>,
+    /// Constrains results to jobs that start with the defined prefix
+    pub prefix: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Maximum number of results to return.
+    pub per_page: Option<i32>,
+    /// Indicates where to start paging for queries that support pagination.
+    pub next_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`get_deployment_allocations`]
+#[derive(Clone, Debug, Default)]
+pub struct GetDeploymentAllocationsParams {
+    /// Deployment ID.
+    pub deployment_id: String,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// If set, wait until query exceeds given index. Must be provided with WaitParam.
+    pub index: Option<i32>,
+    /// Provided with IndexParam to wait for change.
+    pub wait: Option<String>,
+    /// If present, results will include stale reads.
+    pub stale: Option<String>,
+    /// Constrains results to jobs that start with the defined prefix
+    pub prefix: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Maximum number of results to return.
+    pub per_page: Option<i32>,
+    /// Indicates where to start paging for queries that support pagination.
+    pub next_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`get_deployments`]
+#[derive(Clone, Debug, Default)]
+pub struct GetDeploymentsParams {
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// If set, wait until query exceeds given index. Must be provided with WaitParam.
+    pub index: Option<i32>,
+    /// Provided with IndexParam to wait for change.
+    pub wait: Option<String>,
+    /// If present, results will include stale reads.
+    pub stale: Option<String>,
+    /// Constrains results to jobs that start with the defined prefix
+    pub prefix: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Maximum number of results to return.
+    pub per_page: Option<i32>,
+    /// Indicates where to start paging for queries that support pagination.
+    pub next_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`post_deployment_allocation_health`]
+#[derive(Clone, Debug, Default)]
+pub struct PostDeploymentAllocationHealthParams {
+    /// Deployment ID.
+    pub deployment_id: String,
+    pub deployment_alloc_health_request: crate::models::DeploymentAllocHealthRequest,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`post_deployment_fail`]
+#[derive(Clone, Debug, Default)]
+pub struct PostDeploymentFailParams {
+    /// Deployment ID.
+    pub deployment_id: String,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`post_deployment_pause`]
+#[derive(Clone, Debug, Default)]
+pub struct PostDeploymentPauseParams {
+    /// Deployment ID.
+    pub deployment_id: String,
+    pub deployment_pause_request: crate::models::DeploymentPauseRequest,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`post_deployment_promote`]
+#[derive(Clone, Debug, Default)]
+pub struct PostDeploymentPromoteParams {
+    /// Deployment ID.
+    pub deployment_id: String,
+    pub deployment_promote_request: crate::models::DeploymentPromoteRequest,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+}
+
+/// struct for passing parameters to the method [`post_deployment_unblock`]
+#[derive(Clone, Debug, Default)]
+pub struct PostDeploymentUnblockParams {
+    /// Deployment ID.
+    pub deployment_id: String,
+    pub deployment_unblock_request: crate::models::DeploymentUnblockRequest,
+    /// Filters results based on the specified region.
+    pub region: Option<String>,
+    /// Filters results based on the specified namespace.
+    pub namespace: Option<String>,
+    /// A Nomad ACL token.
+    pub x_nomad_token: Option<String>,
+    /// Can be used to ensure operations are only run once.
+    pub idempotency_token: Option<String>,
+}
+
 /// struct for typed errors of method [`get_deployment`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -106,18 +258,21 @@ pub enum PostDeploymentUnblockError {
 
 pub async fn get_deployment(
     configuration: &configuration::Configuration,
-    deployment_id: &str,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    index: Option<i32>,
-    wait: Option<&str>,
-    stale: Option<&str>,
-    prefix: Option<&str>,
-    x_nomad_token: Option<&str>,
-    per_page: Option<i32>,
-    next_token: Option<&str>,
+    params: GetDeploymentParams,
 ) -> Result<crate::models::Deployment, Error<GetDeploymentError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let deployment_id = params.deployment_id;
+    let region = params.region;
+    let namespace = params.namespace;
+    let index = params.index;
+    let wait = params.wait;
+    let stale = params.stale;
+    let prefix = params.prefix;
+    let x_nomad_token = params.x_nomad_token;
+    let per_page = params.per_page;
+    let next_token = params.next_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -200,18 +355,21 @@ pub async fn get_deployment(
 
 pub async fn get_deployment_allocations(
     configuration: &configuration::Configuration,
-    deployment_id: &str,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    index: Option<i32>,
-    wait: Option<&str>,
-    stale: Option<&str>,
-    prefix: Option<&str>,
-    x_nomad_token: Option<&str>,
-    per_page: Option<i32>,
-    next_token: Option<&str>,
+    params: GetDeploymentAllocationsParams,
 ) -> Result<Vec<crate::models::AllocationListStub>, Error<GetDeploymentAllocationsError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let deployment_id = params.deployment_id;
+    let region = params.region;
+    let namespace = params.namespace;
+    let index = params.index;
+    let wait = params.wait;
+    let stale = params.stale;
+    let prefix = params.prefix;
+    let x_nomad_token = params.x_nomad_token;
+    let per_page = params.per_page;
+    let next_token = params.next_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -294,17 +452,20 @@ pub async fn get_deployment_allocations(
 
 pub async fn get_deployments(
     configuration: &configuration::Configuration,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    index: Option<i32>,
-    wait: Option<&str>,
-    stale: Option<&str>,
-    prefix: Option<&str>,
-    x_nomad_token: Option<&str>,
-    per_page: Option<i32>,
-    next_token: Option<&str>,
+    params: GetDeploymentsParams,
 ) -> Result<Vec<crate::models::Deployment>, Error<GetDeploymentsError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let region = params.region;
+    let namespace = params.namespace;
+    let index = params.index;
+    let wait = params.wait;
+    let stale = params.stale;
+    let prefix = params.prefix;
+    let x_nomad_token = params.x_nomad_token;
+    let per_page = params.per_page;
+    let next_token = params.next_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -383,14 +544,17 @@ pub async fn get_deployments(
 
 pub async fn post_deployment_allocation_health(
     configuration: &configuration::Configuration,
-    deployment_id: &str,
-    deployment_alloc_health_request: crate::models::DeploymentAllocHealthRequest,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
+    params: PostDeploymentAllocationHealthParams,
 ) -> Result<crate::models::DeploymentUpdateResponse, Error<PostDeploymentAllocationHealthError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let deployment_id = params.deployment_id;
+    let deployment_alloc_health_request = params.deployment_alloc_health_request;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -454,13 +618,16 @@ pub async fn post_deployment_allocation_health(
 
 pub async fn post_deployment_fail(
     configuration: &configuration::Configuration,
-    deployment_id: &str,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
+    params: PostDeploymentFailParams,
 ) -> Result<crate::models::DeploymentUpdateResponse, Error<PostDeploymentFailError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let deployment_id = params.deployment_id;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -523,14 +690,17 @@ pub async fn post_deployment_fail(
 
 pub async fn post_deployment_pause(
     configuration: &configuration::Configuration,
-    deployment_id: &str,
-    deployment_pause_request: crate::models::DeploymentPauseRequest,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
+    params: PostDeploymentPauseParams,
 ) -> Result<crate::models::DeploymentUpdateResponse, Error<PostDeploymentPauseError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let deployment_id = params.deployment_id;
+    let deployment_pause_request = params.deployment_pause_request;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -594,14 +764,17 @@ pub async fn post_deployment_pause(
 
 pub async fn post_deployment_promote(
     configuration: &configuration::Configuration,
-    deployment_id: &str,
-    deployment_promote_request: crate::models::DeploymentPromoteRequest,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
+    params: PostDeploymentPromoteParams,
 ) -> Result<crate::models::DeploymentUpdateResponse, Error<PostDeploymentPromoteError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let deployment_id = params.deployment_id;
+    let deployment_promote_request = params.deployment_promote_request;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
 
     let local_var_client = &local_var_configuration.client;
 
@@ -665,14 +838,17 @@ pub async fn post_deployment_promote(
 
 pub async fn post_deployment_unblock(
     configuration: &configuration::Configuration,
-    deployment_id: &str,
-    deployment_unblock_request: crate::models::DeploymentUnblockRequest,
-    region: Option<&str>,
-    namespace: Option<&str>,
-    x_nomad_token: Option<&str>,
-    idempotency_token: Option<&str>,
+    params: PostDeploymentUnblockParams,
 ) -> Result<crate::models::DeploymentUpdateResponse, Error<PostDeploymentUnblockError>> {
     let local_var_configuration = configuration;
+
+    // unbox the parameters
+    let deployment_id = params.deployment_id;
+    let deployment_unblock_request = params.deployment_unblock_request;
+    let region = params.region;
+    let namespace = params.namespace;
+    let x_nomad_token = params.x_nomad_token;
+    let idempotency_token = params.idempotency_token;
 
     let local_var_client = &local_var_configuration.client;
 
