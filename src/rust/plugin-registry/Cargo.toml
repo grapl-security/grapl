@@ -16,7 +16,6 @@ grapl-config = { path = "../grapl-config" }
 grapl-utils = { path = "../grapl-utils" }
 rust-proto = { path = "../rust-proto" }
 nomad-client-gen = { path = "../nomad-client-gen" }
-
 sqlx = { version = "0.5.9", features = [
   "migrate",
   "postgres",
