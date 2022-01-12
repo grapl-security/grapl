@@ -117,7 +117,6 @@ impl PluginWorkQueue {
         Ok(plugin_work_queue)
     }
 
-    #[allow(dead_code)]
     async fn put_execute_generator(
         &self,
         request: PutExecuteGeneratorRequest,
@@ -133,7 +132,6 @@ impl PluginWorkQueue {
         Ok(PutExecuteGeneratorResponse {})
     }
 
-    #[allow(dead_code)]
     async fn put_execute_analyzer(
         &self,
         request: PutExecuteAnalyzerRequest,
@@ -149,7 +147,6 @@ impl PluginWorkQueue {
         Ok(PutExecuteAnalyzerResponse {})
     }
 
-    #[allow(dead_code)]
     async fn get_execute_generator(
         &self,
         _request: GetExecuteGeneratorRequest,
@@ -175,7 +172,6 @@ impl PluginWorkQueue {
         })
     }
 
-    #[allow(dead_code)]
     async fn get_execute_analyzer(
         &self,
         _request: GetExecuteAnalyzerRequest,
@@ -201,7 +197,6 @@ impl PluginWorkQueue {
         })
     }
 
-    #[allow(dead_code)]
     async fn acknowledge_generator(
         &self,
         request: AcknowledgeGeneratorRequest,
@@ -216,7 +211,6 @@ impl PluginWorkQueue {
         Ok(AcknowledgeGeneratorResponse {})
     }
 
-    #[allow(dead_code)]
     async fn acknowledge_analyzer(
         &self,
         request: AcknowledgeAnalyzerRequest,
