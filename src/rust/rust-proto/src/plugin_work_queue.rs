@@ -84,6 +84,7 @@ impl From<ExecutionJob> for ExecutionJobProto {
     }
 }
 
+#[derive(Debug)]
 pub struct AcknowledgeGeneratorRequest {
     pub request_id: i64,
     pub success: bool,
@@ -111,6 +112,7 @@ impl From<AcknowledgeGeneratorRequest> for AcknowledgeGeneratorRequestProto {
     }
 }
 
+#[derive(Debug)]
 pub struct AcknowledgeGeneratorResponse {}
 
 impl TryFrom<AcknowledgeGeneratorResponseProto> for AcknowledgeGeneratorResponse {
@@ -127,6 +129,7 @@ impl From<AcknowledgeGeneratorResponse> for AcknowledgeGeneratorResponseProto {
     }
 }
 
+#[derive(Debug)]
 pub struct AcknowledgeAnalyzerRequest {
     pub request_id: i64,
     pub success: bool,
@@ -155,6 +158,7 @@ impl From<AcknowledgeAnalyzerRequest> for AcknowledgeAnalyzerRequestProto {
     }
 }
 
+#[derive(Debug)]
 pub struct AcknowledgeAnalyzerResponse {}
 
 impl TryFrom<AcknowledgeAnalyzerResponseProto> for AcknowledgeAnalyzerResponse {
@@ -171,6 +175,7 @@ impl From<AcknowledgeAnalyzerResponse> for AcknowledgeAnalyzerResponseProto {
     }
 }
 
+#[derive(Debug)]
 pub struct GetExecuteAnalyzerRequest {}
 
 impl TryFrom<GetExecuteAnalyzerRequestProto> for GetExecuteAnalyzerRequest {
@@ -187,6 +192,7 @@ impl From<GetExecuteAnalyzerRequest> for GetExecuteAnalyzerRequestProto {
     }
 }
 
+#[derive(Debug)]
 pub struct GetExecuteAnalyzerResponse {
     pub execution_job: Option<ExecutionJob>,
     pub request_id: i64,
@@ -202,10 +208,9 @@ impl TryFrom<GetExecuteAnalyzerResponseProto> for GetExecuteAnalyzerResponse {
         ))?;
         let execution_job: Option<ExecutionJob> = maybe_job.try_into()?;
 
-        let execution_job = execution_job
-            .ok_or(Self::Error::MissingRequiredField(
-                "GetExecuteAnalyzerResponse.execution_job",
-            ))?;
+        let execution_job = execution_job.ok_or(Self::Error::MissingRequiredField(
+            "GetExecuteAnalyzerResponse.execution_job",
+        ))?;
 
         Ok(Self {
             request_id,
@@ -225,6 +230,7 @@ impl From<GetExecuteAnalyzerResponse> for GetExecuteAnalyzerResponseProto {
     }
 }
 
+#[derive(Debug)]
 pub struct GetExecuteGeneratorRequest {}
 
 impl TryFrom<GetExecuteGeneratorRequestProto> for GetExecuteGeneratorRequest {
@@ -241,6 +247,7 @@ impl From<GetExecuteGeneratorRequest> for GetExecuteGeneratorRequestProto {
     }
 }
 
+#[derive(Debug)]
 pub struct GetExecuteGeneratorResponse {
     pub execution_job: Option<ExecutionJob>,
     pub request_id: i64,
@@ -256,10 +263,9 @@ impl TryFrom<GetExecuteGeneratorResponseProto> for GetExecuteGeneratorResponse {
         ))?;
         let execution_job: Option<ExecutionJob> = maybe_job.try_into()?;
 
-        let execution_job = execution_job
-            .ok_or(Self::Error::MissingRequiredField(
-                "GetExecuteGeneratorResponseProto.execution_job",
-            ))?;
+        let execution_job = execution_job.ok_or(Self::Error::MissingRequiredField(
+            "GetExecuteGeneratorResponseProto.execution_job",
+        ))?;
 
         Ok(Self {
             request_id,
@@ -279,6 +285,7 @@ impl From<GetExecuteGeneratorResponse> for GetExecuteGeneratorResponseProto {
     }
 }
 
+#[derive(Debug)]
 pub struct PutExecuteAnalyzerRequest {
     pub execution_job: ExecutionJob,
 }
@@ -306,6 +313,7 @@ impl From<PutExecuteAnalyzerRequest> for PutExecuteAnalyzerRequestProto {
     }
 }
 
+#[derive(Debug)]
 pub struct PutExecuteAnalyzerResponse {}
 
 impl TryFrom<PutExecuteAnalyzerResponseProto> for PutExecuteAnalyzerResponse {
@@ -350,6 +358,7 @@ impl From<PutExecuteGeneratorRequest> for PutExecuteGeneratorRequestProto {
     }
 }
 
+#[derive(Debug)]
 pub struct PutExecuteGeneratorResponse {}
 
 impl TryFrom<PutExecuteGeneratorResponseProto> for PutExecuteGeneratorResponse {
