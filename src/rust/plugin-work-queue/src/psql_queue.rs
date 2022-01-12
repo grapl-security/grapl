@@ -31,15 +31,15 @@ impl From<ExecutionId> for i64 {
 
 #[derive(Clone, Debug)]
 pub struct NextExecutionRequest {
-    pub execution_key: ExecutionId,
-    pub plugin_id: uuid::Uuid,
-    pub tenant_id: uuid::Uuid,
-    pub pipeline_message: Vec<u8>,
+    pub(crate) execution_key: ExecutionId,
+    pub(crate) plugin_id: uuid::Uuid,
+    pub(crate) tenant_id: uuid::Uuid,
+    pub(crate) pipeline_message: Vec<u8>,
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum PsqlQueueError {
-    #[error("Sqlx")]
+    #[error("Sqlx {0}")]
     Sqlx(#[from] sqlx::Error),
 }
 
