@@ -78,7 +78,7 @@ impl From<PluginWorkQueueError> for Status {
 }
 
 pub struct PluginWorkQueue {
-    pub(crate) queue: PsqlQueue,
+    queue: PsqlQueue,
 }
 
 impl From<PsqlQueue> for PluginWorkQueue {
