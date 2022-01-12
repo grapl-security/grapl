@@ -50,6 +50,10 @@ steps:
     command:
       - make test-unit-rust
     plugins:
+      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-env#v0.1.0:
+          secrets:
+            - CODECOV_TOKEN
       - grapl-security/codecov#v0.1.0
     agents:
       queue: "beefy"
@@ -106,7 +110,6 @@ steps:
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - grapl/TOOLCHAIN_AUTH_TOKEN
-            - CODECOV_TOKEN
 
   # TODO: Consider beefy queue
   - label: ":typescript::docker: Unit Tests"
