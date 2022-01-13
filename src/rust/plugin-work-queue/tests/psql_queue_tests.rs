@@ -92,6 +92,7 @@ mod tests {
         let config = PluginWorkQueueServiceConfig::from_args();
         tracing::info!(message = "test_get_and_failure");
         let pool = make_pool(config).await?;
+        sqlx::migrate!().run(&pool).await?;
 
         let queue = PsqlQueue { pool };
 
