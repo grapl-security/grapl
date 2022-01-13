@@ -37,7 +37,7 @@ tokio = { version = "1.14.0", features = [
   "time",
   "rt-multi-thread"
 ] }
-color-eyre = "0.5.11"
+color-eyre = "0.6.0"
 eyre = "0.6.5"
 async-trait = "0.1.51"
 tracing-appender = "0.2.0"
