@@ -191,8 +191,7 @@ def main() -> None:
     )
     py_log_level = "DEBUG"
 
-    # We've seen some potentially false failures from the default 5m timeout.
-    nomad_grapl_core_timeout = "2m"
+    nomad_grapl_core_timeout = "5m"
 
     if config.LOCAL_GRAPL:
         ###################################
