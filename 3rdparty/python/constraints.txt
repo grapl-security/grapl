@@ -13,7 +13,7 @@ certifi==2021.10.8
 cffi==1.15.0
 chardet==4.0.0
 charset-normalizer==2.0.9
-click==7.1.2
+click==8.0.3
 cookiecutter==1.7.3
 Deprecated==1.2.13
 dill==0.3.4
