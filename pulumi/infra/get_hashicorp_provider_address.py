@@ -6,7 +6,10 @@ import pulumi
 # We're using the Any typehint here since mypy doesn't YET support modules being subtypes of protocols per
 # https://github.com/python/mypy/issues/5018 :(
 def get_hashicorp_provider_address(
-    pulumi_class: Any, provider_type: str, stack: pulumi.StackReference
+    pulumi_class: Any,
+    provider_type: str,
+    stack: pulumi.StackReference,
+    additional_configs: dict = {},
 ) -> Any:
     """
     This supports getting a Provider object with an explicit address set.
@@ -18,4 +21,4 @@ def get_hashicorp_provider_address(
     """
     override_address = pulumi.Config(provider_type).get("address")
     address = override_address or stack.require_output("address")
-    return pulumi_class.Provider(provider_type, address=address)
+    return pulumi_class.Provider(provider_type, address=address, **additional_configs)

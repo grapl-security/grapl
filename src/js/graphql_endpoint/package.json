@@ -23,7 +23,7 @@
     "graphql": "^15.0.0",
     "graphql-type-json": "^0.3.1",
     "jsonwebtoken": "^8.5.1",
-    "protobufjs": "^6.9.0",
+    "protobufjs": "^6.11.2",
     "regex-escape": "^3.4.10"
   },
   "devDependencies": {

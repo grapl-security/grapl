@@ -31,7 +31,7 @@ jmespath==0.10.0
 MarkupSafe==2.0.1
 mypy-boto3-cloudwatch==1.20.9
 mypy-boto3-dynamodb==1.20.18
-mypy-boto3-ec2==1.20.23
+mypy-boto3-ec2==1.20.34
 mypy-boto3-lambda==1.20.13
 mypy-boto3-route53==1.20.21
 mypy-boto3-s3==1.20.17
@@ -70,7 +70,7 @@ python-nomad==1.4.1
 python-slugify==5.0.2
 PyYAML==6.0
 redis==4.0.2
-requests==2.27.0
+requests==2.27.1
 s3transfer==0.5.0
 semver==2.13.0
 setproctitle==1.2.2
