@@ -29,7 +29,7 @@ tokio = { version = "1.14.0", features = [
   "time",
   "rt-multi-thread"
 ] }
-redis = { version = "0.21.4", features = ["tokio-comp", "connection-manager"] }
+redis = { version = "0.21.5", features = ["tokio-comp", "connection-manager"] }
 serde = "1.0.130"
 serde_json = "1.0.72"
 prost = "0.9.0"
