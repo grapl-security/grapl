@@ -5,6 +5,7 @@ backend_packages = [
   "pants.backend.codegen.protobuf.python",
   "pants.backend.experimental.docker",
   "pants.backend.experimental.docker.lint.hadolint",
+  "pants.backend.plugin_development",
   "pants.backend.python",
   "pants.backend.python.lint.black",
   "pants.backend.python.lint.flake8",
