@@ -41,7 +41,7 @@ mypy-boto3-sns==1.20.8
 mypy-boto3-sqs==1.20.12
 mypy-boto3-ssm==1.20.16
 packaging==21.0
-pantsbuild.pants==2.8.0
+pantsbuild.pants==2.9.0
 parver==0.3.1
 pex==2.1.54
 pip==21.3.1
