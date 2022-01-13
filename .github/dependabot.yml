@@ -1,4 +1,4 @@
-# Config file for dependabot security alerts and updates. For config options see
+# Config file for dependabot. This primarily is for auto-updating dependencies (even ones without vulns). For config options see
 # https://docs.github.com/en/code-security/supply-chain-security/keeping-your-dependencies-updated-automatically/configuration-options-for-dependency-updates
 version: 2
 updates:
@@ -7,22 +7,26 @@ updates:
   - package-ecosystem: "cargo"
     directory: "/src/rust/"
     schedule:
-      interval: "daily"
+      interval: "monthly"
+    open-pull-requests-limit: 5
 
   # Maintain dependencies for js in graphql_endpoint.
   # When new js/ts projects are added, you'll need a new section since globs aren't supported
   - package-ecosystem: "npm"
     directory: "/src/js/graphql_endpoint"
     schedule:
-      interval: "daily"
+      interval: "monthly"
+    open-pull-requests-limit: 3
 
   - package-ecosystem: "npm"
     directory: "/src/js/engagement_view"
     schedule:
-      interval: "daily"
+      interval: "monthly"
+    open-pull-requests-limit: 3
 
   # Maintain dependencies for python
   - package-ecosystem: "pip"
     directory: "/3rdparty/python"
     schedule:
-      interval: "daily"
+      interval: "monthly"
+    open-pull-requests-limit: 5
