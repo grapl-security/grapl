@@ -300,6 +300,10 @@ def main() -> None:
 
         vpc_id = networking_stack.require_output("grapl-vpc")
         subnet_ids = networking_stack.require_output("grapl-private-subnet-ids")
+        # Using get_output instead of require_output so that preview passes.
+        consul_master_token_secret_id = consul_stack.get_output(
+            "consul-master-token-secret-id"
+        )
         nomad_agent_security_group_id = nomad_agents_stack.require_output(
             "security-group"
         )
@@ -340,7 +344,9 @@ def main() -> None:
         artifacts = pulumi_config.require_object("artifacts")
 
         # Set custom provider with the address set
-        consul_provider = get_hashicorp_provider_address(consul, "consul", consul_stack)
+        consul_provider = get_hashicorp_provider_address(
+            consul, "consul", consul_stack, {"token": consul_master_token_secret_id}
+        )
         nomad_provider = get_hashicorp_provider_address(
             nomad, "nomad", nomad_server_stack
         )
