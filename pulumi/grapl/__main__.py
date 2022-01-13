@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import List, Mapping, Set, cast
 
 from pulumi.resource import CustomTimeouts, ResourceOptions
+
 from typing_extensions import Final
 
 sys.path.insert(0, "..")
@@ -23,7 +24,6 @@ from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
 from infra.kafka import Kafka
 from infra.local.postgres import LocalPostgresInstance
-from infra.network import Network
 from infra.nomad_job import NomadJob, NomadVars
 from infra.postgres import Postgres
 
@@ -79,13 +79,6 @@ def subnets_to_single_az(ids: List[str]) -> pulumi.Output[str]:
 
 def main() -> None:
     pulumi_config = pulumi.Config()
-    if not (config.LOCAL_GRAPL or config.REAL_DEPLOYMENT):
-        # Fargate services build their own images and need this
-        # variable currently. We don't want this to be checked in
-        # Local Grapl, or "real" deployments, though; only developer
-        # sandboxes.
-        if not os.getenv("DOCKER_BUILDKIT"):
-            raise KeyError("Please re-run with 'DOCKER_BUILDKIT=1'")
 
     # These tags will be added to all provisioned infrastructure
     # objects.
