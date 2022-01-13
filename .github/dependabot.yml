@@ -16,6 +16,11 @@ updates:
     schedule:
       interval: "daily"
 
+  - package-ecosystem: "npm"
+    directory: "/src/js/engagement_view"
+    schedule:
+      interval: "daily"
+
   # Maintain dependencies for python
   - package-ecosystem: "pip"
     directory: "/3rdparty/python"
