@@ -67,9 +67,13 @@ RUN pip install --no-cache-dir --upgrade pip==21.3.1 wheel==0.37.0 typing_extens
 COPY --chown=grapl pulumi pulumi
 
 # We need to parse the following command with `bash`, not `sh`
-SHELL ["/bin/bash", "-c"]
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-RUN pip install --no-cache-dir -r <(PANTS_IGNORE='[".pex",".cache","venv"]' ./pants dependencies --type=3rdparty pulumi::)
+RUN pip install \
+    --no-cache-dir \
+    --requirement <(PANTS_IGNORE='[".pex",".cache","venv"]' ./pants dependencies :: \
+    | xargs ./pants filter --target-type=python_requirement \
+    | xargs ./pants peek | jq -r '.[]["requirements"][]')
 
 # Create a directory *as the grapl user*, at which we will mount an
 # external volume to share Pulumi run outputs with other
