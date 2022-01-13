@@ -70,7 +70,7 @@ python-nomad==1.4.1
 python-slugify==5.0.2
 PyYAML==6.0
 redis==4.0.2
-requests==2.27.0
+requests==2.27.1
 s3transfer==0.5.0
 semver==2.13.0
 setproctitle==1.2.2
