@@ -5,9 +5,9 @@ import os
 from typing import Any, Iterable, Mapping, Optional, Sequence, Tuple, cast
 
 from infra.config import LOCAL_GRAPL
+from pulumi.stack_reference import StackReference
 
 import pulumi
-from pulumi.stack_reference import StackReference
 
 # this list of service names must match those in the
 # confluent-cloud-infrastructure project:
@@ -61,7 +61,7 @@ class ServiceOutput:
         return ServiceOutput(
             ingress_topics=json_["ingress_topics"],
             egress_topics=json_["egress_topics"],
-            service_account=CredentialOutput.from_json(json_["service_account"])
+            service_account=CredentialOutput.from_json(json_["service_account"]),
         )
 
 
@@ -88,13 +88,9 @@ class EnvironmentOutput:
                 json_["environment_credentials"]
             ),
             services={
-                k: ServiceOutput.from_json(v)
-                for k, v in json_["services"].items()
+                k: ServiceOutput.from_json(v) for k, v in json_["services"].items()
             },
-            topics={
-                k: TopicOutput.from_json(v)
-                for k, v in json_["topics"].items()
-            }
+            topics={k: TopicOutput.from_json(v) for k, v in json_["topics"].items()},
         )
 
 
@@ -109,12 +105,12 @@ class ConfluentOutput:
             raise KeyError(f"{environment_name} does not exist")
 
     @staticmethod
-    def from_json(json_: pulumi.Output[Mapping[str, Any]]) -> pulumi.Output[ConfluentOutput]:
+    def from_json(
+        json_: pulumi.Output[Mapping[str, Any]]
+    ) -> pulumi.Output[ConfluentOutput]:
         return json_.apply(
             lambda j: ConfluentOutput(
-                environments={
-                    k: EnvironmentOutput.from_json(v) for k, v in j.items()
-                }
+                environments={k: EnvironmentOutput.from_json(v) for k, v in j.items()}
             )
         )
 

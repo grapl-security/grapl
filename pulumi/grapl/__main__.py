@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import List, Mapping, Set, cast
 
 from pulumi.resource import CustomTimeouts, ResourceOptions
-
 from typing_extensions import Final
 
 sys.path.insert(0, "..")
@@ -24,6 +23,7 @@ from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
 from infra.kafka import Kafka
 from infra.local.postgres import LocalPostgresInstance
+from infra.network import Network
 from infra.nomad_job import NomadJob, NomadVars
 from infra.postgres import Postgres
 
