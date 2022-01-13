@@ -216,6 +216,11 @@ def main() -> None:
             name="plugin-registry-db",
         )
 
+        pulumi.export("postgres-hostname", "LOCAL_GRAPL_REPLACE_IP")
+        pulumi.export("postgres-port", str(plugin_registry_db.port))
+        pulumi.export("postgres-username", plugin_registry_db.username)
+        pulumi.export("postgres-password", plugin_registry_db.password)
+
         # These are created in `grapl-local-infra.nomad` and not applicable to prod.
         # Nomad will replace the LOCAL_GRAPL_REPLACE_IP sentinel value with the correct IP.
         aws_endpoint = "http://LOCAL_GRAPL_REPLACE_IP:4566"

@@ -67,6 +67,28 @@ variable "grapl_root" {
   description = "Where to find the Grapl repo on the host OS (where Nomad runs)."
 }
 
+variable "_postgres_db_hostname" {
+  type        = string
+  description = "What is the host for the local postgres?"
+}
+
+variable "postgres_db_port" {
+  type        = string
+  default     = "5432"
+  description = "What is the port for the local postgres?"
+}
+
+variable "postgres_db_username" {
+  type        = string
+  description = "What is the username for the local postgres?"
+}
+
+variable "postgres_db_password" {
+  type        = string
+  description = "What is the password for the local postgres?"
+}
+
+
 locals {
   log_level = "DEBUG"
 
@@ -86,6 +108,7 @@ EOH
   # Prefer these over their `var` equivalents
   redis_endpoint = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
   kafka_endpoint = replace(var._kafka_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  postgres_db_hostname = replace(var._postgres_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
 
   _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
   _redis         = split(":", local._redis_trimmed)
@@ -139,6 +162,12 @@ job "integration-tests" {
               # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
               local_bind_port = 1001
             }
+
+            upstreams {
+              destination_name = "plugin-work-queue"
+              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
+              local_bind_port = 1002
+            }
           }
         }
       }
@@ -174,6 +203,12 @@ job "integration-tests" {
         GRAPL_MODEL_PLUGIN_DEPLOYER_PORT = "${NOMAD_UPSTREAM_PORT_model-plugin-deployer}"
 
         GRAPL_PLUGIN_REGISTRY_ADDRESS = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-registry}"
+        PLUGIN_WORK_QUEUE_BIND_ADDRESS = "0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-work-queue}"
+
+        PLUGIN_WORK_QUEUE_DB_HOSTNAME = "${local.postgres_db_hostname}"
+        PLUGIN_WORK_QUEUE_DB_PORT = "${var.postgres_db_port}"
+        PLUGIN_WORK_QUEUE_DB_USERNAME = "${var.postgres_db_username}"
+        PLUGIN_WORK_QUEUE_DB_PASSWORD = "${var.postgres_db_password}"
 
         NOMAD_SERVICE_ADDRESS = "${attr.unique.network.ip-address}:4646"
       }
