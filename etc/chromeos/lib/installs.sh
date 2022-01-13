@@ -141,6 +141,14 @@ install_awsv2() {
         sudo rm ./awscliv2.zip
         sudo rm -rf ./aws
     )
+    echo_banner "Installing SSM extension"
+    (
+        cd /tmp
+        curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" \
+            -o "session-manager-plugin.deb"
+        sudo dpkg -i session-manager-plugin.deb
+        rm ./session-manager-plugin.deb
+    )
 }
 install_pulumi() {
     echo_banner "Install pulumi"
