@@ -21,9 +21,10 @@ from infra.consul_intentions import ConsulIntentions
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
 from infra.kafka import Kafka
-from infra.local.postgres import PostgresInstance
+from infra.local.postgres import LocalPostgresInstance
 from infra.network import Network
 from infra.nomad_job import NomadJob, NomadVars
+from infra.postgres import Postgres
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
@@ -181,16 +182,17 @@ def main() -> None:
     rust_log_levels = ",".join(
         [
             "DEBUG",
-            "serde_xml_rs=WARN",
+            "h2::codec=WARN",
             "hyper=WARN",
             "rusoto_core=WARN",
             "rustls=WARN",
+            "serde_xml_rs=WARN",
         ]
     )
     py_log_level = "DEBUG"
 
     # We've seen some potentially false failures from the default 5m timeout.
-    nomad_grapl_core_timeout = "8m"
+    nomad_grapl_core_timeout = "2m"
 
     if config.LOCAL_GRAPL:
         ###################################
@@ -199,7 +201,7 @@ def main() -> None:
         kafka = Kafka("kafka")
 
         network = Network("grapl-network")
-        plugin_registry_db = PostgresInstance(
+        plugin_registry_db = LocalPostgresInstance(
             name="plugin-registry-db",
         )
 
@@ -338,6 +340,13 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
+        postgres = Postgres(
+            name="postgres",
+            subnet_ids=subnet_ids,
+            vpc_id=vpc_id,
+            nomad_agent_security_group_id=nomad_agent_security_group_id,
+        )
+
         pulumi.export("kafka-endpoint", "dummy_value_while_we_wait_for_kafka")
         pulumi.export("redis-endpoint", cache.endpoint)
 
@@ -365,10 +374,10 @@ def main() -> None:
             _redis_endpoint=cache.endpoint,
             container_images=_container_images(artifacts, require_artifact=True),
             # TODO When we get RDS set up replace these values
-            plugin_registry_db_hostname="TODO",
-            plugin_registry_db_port=str(5432),
-            plugin_registry_db_username="postgres",
-            plugin_registry_db_password="postgres",
+            plugin_registry_db_hostname=postgres.instance.address,
+            plugin_registry_db_port=postgres.instance.port.apply(str),
+            plugin_registry_db_username=postgres.username,
+            plugin_registry_db_password=postgres.password,
             py_log_level=py_log_level,
             rust_log=rust_log_levels,
             **nomad_inputs,

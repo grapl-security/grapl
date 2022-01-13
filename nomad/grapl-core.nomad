@@ -121,7 +121,6 @@ variable "plugin_registry_db_hostname" {
 
 variable "plugin_registry_db_port" {
   type        = string
-  default     = "5432"
   description = "What is the port for the plugin registry table?"
 }
 
@@ -1099,6 +1098,7 @@ job "grapl-core" {
       }
 
       env {
+        AWS_REGION                      = var.aws_region
         NOMAD_SERVICE_ADDRESS           = "${attr.unique.network.ip-address}:4646"
         PLUGIN_REGISTRY_BIND_ADDRESS    = "0.0.0.0:${NOMAD_PORT_plugin-registry-port}"
         PLUGIN_REGISTRY_DB_HOSTNAME     = local.plugin_registry_db_hostname
