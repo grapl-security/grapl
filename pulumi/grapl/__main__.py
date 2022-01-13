@@ -30,7 +30,6 @@ from infra.postgres import Postgres
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
 # from infra.secret import JWTSecret, TestUserPassword
-from infra.secret import TestUserPassword
 from infra.service_queue import ServiceQueue
 
 import pulumi
@@ -98,8 +97,7 @@ def main() -> None:
     # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
     # web UI.
     # jwt_secret = JWTSecret()
-
-    test_user_password = TestUserPassword()
+    # test_user_password = TestUserPassword()
 
     dynamodb_tables = dynamodb.DynamoDB()
 
@@ -209,7 +207,8 @@ def main() -> None:
     )
     py_log_level = "DEBUG"
 
-    nomad_grapl_core_timeout = "5m"
+    # We've seen some potentially false failures from the default 5m timeout.
+    nomad_grapl_core_timeout = "8m"
 
     Kafka(
         "kafka",
