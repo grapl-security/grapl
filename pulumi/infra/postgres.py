@@ -5,6 +5,7 @@ from typing import List, Optional
 
 import pulumi_aws as aws
 import pulumi_random as random
+from packaging.version import parse as version_parse
 
 import pulumi
 
@@ -13,6 +14,12 @@ import pulumi
 class PostgresConfigValues:
     instance_type: str
     postgres_version: str
+
+    def __post_init__(self) -> None:
+        # postgres uses 2-part semver
+        assert version_parse(self.postgres_version) >= version_parse(
+            "13.4"
+        ), "Version must be >= 13.4"
 
     @staticmethod
     def from_config() -> PostgresConfigValues:
