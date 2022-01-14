@@ -186,6 +186,7 @@ steps:
             # This is slightly hacky, but means we don't need to build
             # packages locally first. The `set-branches` and
             # `--depth=1` are to account for us using shallow clones
+            set -o xtrace
             git remote set-branches --add origin rc
             git fetch --depth=1 origin rc
             # Copy over just the artifacts
