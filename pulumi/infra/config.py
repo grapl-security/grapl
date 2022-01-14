@@ -213,6 +213,10 @@ def require_artifact(artifact_name: str) -> Any:
     return artifact
 
 
+def get_postgres_instance_class() -> str:
+    return pulumi.Config().require("postgres-instance-type")
+
+
 def container_repository() -> Optional[str]:
     """The repository from which to pull container images from.
 
@@ -227,4 +231,4 @@ def container_repository() -> Optional[str]:
 
     Not specifying a repository will result in local images being used.
     """
-    return pulumi.Config().get("container_repository")
+    return pulumi.Config().get("container-repository")

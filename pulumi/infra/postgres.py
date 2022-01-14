@@ -2,6 +2,7 @@ from typing import List, Optional
 
 import pulumi_aws as aws
 import pulumi_random as random
+from infra.config import get_postgres_instance_class
 
 import pulumi
 
@@ -20,10 +21,6 @@ class Postgres(pulumi.ComponentResource):
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         super().__init__("grapl:Postgres", name, None, opts)
-
-        # Burstable, 2GB memory, Gravitron 2.
-        # With 5GB of storage and all-day usage, it comes out to about $24/mo
-        instance_class = "db.t4g.small"
 
         child_opts = pulumi.ResourceOptions(parent=self)
 
@@ -95,7 +92,7 @@ class Postgres(pulumi.ComponentResource):
             name=name,  # only alphanumeric
             engine="postgres",
             engine_version="13.4",
-            instance_class=instance_class,
+            instance_class=get_postgres_instance_class(),
             allocated_storage=10,
             max_allocated_storage=20,
             availability_zone=availability_zone,
