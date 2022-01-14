@@ -1,7 +1,7 @@
 config:
   aws:region: us-east-1
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: operational-alarms@graplsecurity.com
-  grapl:container_repository: docker.cloudsmith.io/grapl/testing
+  grapl:container-repository: docker.cloudsmith.io/grapl/testing
   grapl:env_vars:
     analyzer-dispatcher:
       RUST_BACKTRACE: "1"
@@ -24,3 +24,5 @@ config:
     sysmon-generator:
       RUST_BACKTRACE: "1"
       RUST_LOG: DEBUG
+  grapl:postgres-instance-type: db.t4g.small
+  grapl:postgres-version: "13.4"

@@ -227,4 +227,4 @@ def container_repository() -> Optional[str]:
 
     Not specifying a repository will result in local images being used.
     """
-    return pulumi.Config().get("container_repository")
+    return pulumi.Config().get("container-repository")

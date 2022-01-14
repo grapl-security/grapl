@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from typing import Mapping, Set, cast
+from typing import List, Mapping, Set, cast
 
 from pulumi.resource import CustomTimeouts, ResourceOptions
 from typing_extensions import Final
@@ -21,8 +21,9 @@ from infra.consul_intentions import ConsulIntentions
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
 from infra.kafka import Kafka
-from infra.local.postgres import PostgresInstance
+from infra.local.postgres import LocalPostgresInstance
 from infra.nomad_job import NomadJob, NomadVars
+from infra.postgres import Postgres
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
 # web UI.
@@ -65,6 +66,14 @@ def _container_images(
         "sysmon-generator": builder.build_with_tag("sysmon-generator"),
         "web-ui": builder.build_with_tag("grapl-web-ui"),
     }
+
+
+def subnets_to_single_az(ids: List[str]) -> pulumi.Output[str]:
+    subnet_id = ids[-1]
+    subnet = aws.ec2.Subnet.get("subnet", subnet_id)
+    # for some reason mypy gets hung up on the typing of this
+    az: pulumi.Output[str] = subnet.availability_zone
+    return az
 
 
 def main() -> None:
@@ -180,16 +189,16 @@ def main() -> None:
     rust_log_levels = ",".join(
         [
             "DEBUG",
-            "serde_xml_rs=WARN",
+            "h2::codec=WARN",
             "hyper=WARN",
             "rusoto_core=WARN",
             "rustls=WARN",
+            "serde_xml_rs=WARN",
         ]
     )
     py_log_level = "DEBUG"
 
-    # We've seen some potentially false failures from the default 5m timeout.
-    nomad_grapl_core_timeout = "8m"
+    nomad_grapl_core_timeout = "5m"
 
     if config.LOCAL_GRAPL:
         ###################################
@@ -197,7 +206,7 @@ def main() -> None:
         ###################################
         kafka = Kafka("kafka")
 
-        plugin_registry_db = PostgresInstance(
+        plugin_registry_db = LocalPostgresInstance(
             name="plugin-registry-db",
         )
 
@@ -322,6 +331,10 @@ def main() -> None:
             opts=pulumi.ResourceOptions(parent=nomad_agents_stack),
         )
 
+        availability_zone: pulumi.Output[str] = pulumi.Output.from_input(
+            subnet_ids
+        ).apply(subnets_to_single_az)
+
         for _bucket in plugin_buckets:
             _bucket.grant_put_permission_to(nomad_agent_role)
             # Analyzer Dispatcher needs to be able to ListObjects on Analyzers
@@ -335,6 +348,14 @@ def main() -> None:
             "main-cache",
             subnet_ids=subnet_ids,
             vpc_id=vpc_id,
+            nomad_agent_security_group_id=nomad_agent_security_group_id,
+        )
+
+        plugin_registry_postgres = Postgres(
+            name="plugin-registry",
+            subnet_ids=subnet_ids,
+            vpc_id=vpc_id,
+            availability_zone=availability_zone,
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
@@ -364,11 +385,10 @@ def main() -> None:
             # instead of the var version.
             _redis_endpoint=cache.endpoint,
             container_images=_container_images(artifacts, require_artifact=True),
-            # TODO When we get RDS set up replace these values
-            plugin_registry_db_hostname="TODO",
-            plugin_registry_db_port=str(5432),
-            plugin_registry_db_username="postgres",
-            plugin_registry_db_password="postgres",
+            plugin_registry_db_hostname=plugin_registry_postgres.instance.address,
+            plugin_registry_db_port=plugin_registry_postgres.instance.port.apply(str),
+            plugin_registry_db_username=plugin_registry_postgres.instance.username,
+            plugin_registry_db_password=plugin_registry_postgres.instance.password,
             py_log_level=py_log_level,
             rust_log=rust_log_levels,
             **nomad_inputs,
