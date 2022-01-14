@@ -40,11 +40,11 @@ class Postgres(pulumi.ComponentResource):
 
         child_opts = pulumi.ResourceOptions(parent=self)
 
-        self.username = "postgres"
+        username = "postgres"
 
         # FYI we ran into some weird pulumi bugs around RandomPassword.
         # https://grapl-internal.slack.com/archives/C0174A8QV2S/p1642183461098100
-        self.password = random.RandomPassword(
+        password = random.RandomPassword(
             f"{name}-password",
             length=32,
             # Disable special characters, ":" can lead to unexpected
@@ -115,8 +115,8 @@ class Postgres(pulumi.ComponentResource):
             skip_final_snapshot=True,
             # Eventually this would be managed by Vault.
             # In the mean time, security is basically only enforced by VPC
-            username=self.username,
-            password=self.password.result,
+            username=username,
+            password=password.result,
             port=postgres_port,
             opts=child_opts,
         )
