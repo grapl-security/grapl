@@ -41,14 +41,17 @@ class Postgres(pulumi.ComponentResource):
         child_opts = pulumi.ResourceOptions(parent=self)
 
         self.username = "postgres"
+
+        # FYI we ran into some weird pulumi bugs around RandomPassword.
+        # https://grapl-internal.slack.com/archives/C0174A8QV2S/p1642183461098100
         self.password = random.RandomPassword(
             f"{name}-password",
             length=32,
             # Disable special characters, ":" can lead to unexpected
             # sqlx errors: https://github.com/launchbadge/sqlx/issues/1624
             special=False,
-            opts=child_opts,
-        ).result
+            opts=pulumi.ResourceOptions(parent=self),
+        )
 
         subnet_group_name = f"{name}-postgres-subnet-group"
         rds_subnet_group = aws.rds.SubnetGroup(
@@ -113,7 +116,7 @@ class Postgres(pulumi.ComponentResource):
             # Eventually this would be managed by Vault.
             # In the mean time, security is basically only enforced by VPC
             username=self.username,
-            password=self.password,
+            password=self.password.result,
             port=postgres_port,
             opts=child_opts,
         )

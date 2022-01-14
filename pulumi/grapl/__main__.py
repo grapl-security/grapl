@@ -351,8 +351,8 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
-        postgres = Postgres(
-            name="postgres",
+        plugin_registry_postgres = Postgres(
+            name="plugin-registry",
             subnet_ids=subnet_ids,
             vpc_id=vpc_id,
             availability_zone=availability_zone,
@@ -385,11 +385,10 @@ def main() -> None:
             # instead of the var version.
             _redis_endpoint=cache.endpoint,
             container_images=_container_images(artifacts, require_artifact=True),
-            # TODO When we get RDS set up replace these values
-            plugin_registry_db_hostname=postgres.instance.address,
-            plugin_registry_db_port=postgres.instance.port.apply(str),
-            plugin_registry_db_username=postgres.username,
-            plugin_registry_db_password=postgres.password,
+            plugin_registry_db_hostname=plugin_registry_postgres.instance.address,
+            plugin_registry_db_port=plugin_registry_postgres.instance.port.apply(str),
+            plugin_registry_db_username=plugin_registry_postgres.username,
+            plugin_registry_db_password=plugin_registry_postgres.password,
             py_log_level=py_log_level,
             rust_log=rust_log_levels,
             **nomad_inputs,
