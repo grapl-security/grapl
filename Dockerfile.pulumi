@@ -22,31 +22,7 @@ RUN curl -O https://get.pulumi.com/releases/sdk/pulumi-v3.22.1-linux-x64.tar.gz 
     mv pulumi pulumi-bin
 ENV PATH=/home/grapl/pulumi-bin:${PATH}
 
-# Use Pants to grab our dependencies
-#
-# NOTE: This works as long as our Pulumi code only has dependencies on
-# non-Grapl Python libraries (i.e., other code in this repository). If
-# that ever changes, this will also need to be revisited.
-#
-# These are the current bare minimum of files that we need to copy
-# over in order to have pants compute our dependencies. At this stage,
-# it looks kind of horrible, but it means we don't have to keep a
-# requirements.txt file around for the Pulumi code. As things mature,
-# this will get simplified.
-COPY --chown=grapl pants pants
-COPY --chown=grapl pants-plugins pants-plugins
-COPY --chown=grapl pyproject.toml pyproject.toml
-COPY --chown=grapl .flake8 .flake8
-COPY --chown=grapl src/python/mypy.ini src/python/mypy.ini
-COPY --chown=grapl pants.toml pants.toml
-COPY --chown=grapl 3rdparty 3rdparty
-
-# To bootstrap Pants
-# We need to ignore both Pants' cache as well as our Pulumi venv in
-# this particular case since we're operating out of the same directory
-# on everything.
-ENV PANTS_IGNORE="['.cache', 'venv']"
-RUN ./pants --version
+COPY --chown=grapl 3rdparty/python/constraints.txt constraints.txt
 
 # Automatically ensures that our virtualenv is created and active on
 # all subsequent actions
@@ -61,19 +37,9 @@ ENV VIRTUAL_ENV=/home/grapl/venv
 RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# Grab some dependencies before we COPY in pulumi, to save some time.
-RUN pip install --no-cache-dir --upgrade pip==21.3.1 wheel==0.37.0 typing_extensions==4.0.0 setuptools==59.4.0
+RUN pip install --no-cache-dir --requirement constraints.txt
 
 COPY --chown=grapl pulumi pulumi
-
-# We need to parse the following command with `bash`, not `sh`
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
-RUN pip install \
-    --no-cache-dir \
-    --requirement <(PANTS_IGNORE='[".pex",".cache","venv"]' ./pants dependencies :: \
-    | xargs ./pants filter --target-type=python_requirement \
-    | xargs ./pants peek | jq -r '.[]["requirements"][]')
 
 # Create a directory *as the grapl user*, at which we will mount an
 # external volume to share Pulumi run outputs with other
