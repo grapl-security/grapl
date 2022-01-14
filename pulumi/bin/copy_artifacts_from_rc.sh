@@ -17,6 +17,12 @@ readonly CURRENT_STACK
 readonly RC_CONFIG_FILE
 
 confirmModify() {
+    # Skip this check if FORCE_MODIFY=1
+    # (this could be a getopts, but, meh)
+    if [[ -n "${FORCE_MODIFY:-}" ]]; then
+        return 0
+    fi
+
     read -r -p "This will modify your ${CURRENT_STACK} config. Continue (y/n)?" choice
     case "${choice}" in
         y | Y) echo "Okay!" ;;
