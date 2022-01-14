@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from typing import Mapping, Set
+from typing import Mapping, Set, cast
 
 from pulumi.resource import CustomTimeouts, ResourceOptions
 from typing_extensions import Final
@@ -22,7 +22,6 @@ from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
 from infra.kafka import Kafka
 from infra.local.postgres import PostgresInstance
-from infra.network import Network
 from infra.nomad_job import NomadJob, NomadVars
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
@@ -198,7 +197,6 @@ def main() -> None:
         ###################################
         kafka = Kafka("kafka")
 
-        network = Network("grapl-network")
         plugin_registry_db = PostgresInstance(
             name="plugin-registry-db",
         )
@@ -213,15 +211,17 @@ def main() -> None:
         pulumi.export("kafka-endpoint", kafka_endpoint)
         pulumi.export("redis-endpoint", redis_endpoint)
 
-        assert aws.config.access_key
-        assert aws.config.secret_key
+        aws_config = cast(aws.config.vars._ExportableConfig, aws.config)
+        assert aws_config.access_key
+        assert aws_config.secret_key
+
         local_grapl_core_job_vars: Final[NomadVars] = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
             _aws_endpoint=aws_endpoint,
             _redis_endpoint=redis_endpoint,
-            aws_access_key_id=aws.config.access_key,
-            aws_access_key_secret=aws.config.secret_key,
+            aws_access_key_id=aws_config.access_key,
+            aws_access_key_secret=aws_config.secret_key,
             container_images=_container_images({}),
             rust_log=rust_log_levels,
             plugin_registry_db_hostname="LOCAL_GRAPL_REPLACE_IP",
