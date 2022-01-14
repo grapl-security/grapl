@@ -44,6 +44,16 @@ according to your anticipated workload.
 pulumi config set postgres-instance-type db.t4g.small
 ```
 
+### `postgres-version`
+
+Not required for local-grapl.
+
+Which version of Postgres to use. Must be >= 13.4.
+
+```sh
+pulumi config set postgres-version 13.4
+```
+
 ### `networking-server-stack`
 
 The fully-qualified name of the Pulumi stack that set up the networking that
