@@ -77,9 +77,18 @@ class Postgres(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self.security_group),
         )
 
-        availability_zone = aws.ec2.Subnet.get(
-            "first_subnet", subnet_ids[0]
-        ).availability_zone
+        # There's some funkiness where, if not specified, you may end up with
+        # RDS trying to stand up an instance in an AZ not included in `subnets`.
+        def to_az(ids: List[str]) -> pulumi.Output[str]:
+            subnet_id = ids[0]
+            subnet = aws.ec2.Subnet.get("subnet", subnet_id)
+            # for some reason mypy gets hung up on the typing of this
+            az: pulumi.Output[str] = subnet.availability_zone
+            return az
+
+        availability_zone: pulumi.Output[str] = pulumi.Output.from_input(
+            subnet_ids
+        ).apply(to_az)
 
         self.instance = aws.rds.Instance(
             "instance",
