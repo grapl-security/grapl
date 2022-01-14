@@ -236,7 +236,7 @@ def main() -> None:
             plugin_registry_db_hostname="LOCAL_GRAPL_REPLACE_IP",
             plugin_registry_db_port=str(plugin_registry_db.port),
             plugin_registry_db_username=plugin_registry_db.username,
-            plugin_registry_db_password=plugin_registry_db.password,
+            plugin_registry_db_password=plugin_registry_db.password.result,
             py_log_level=py_log_level,
             **nomad_inputs,
         )
