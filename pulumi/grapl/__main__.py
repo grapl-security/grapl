@@ -22,7 +22,6 @@ from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
 from infra.kafka import Kafka
 from infra.local.postgres import PostgresInstance
-from infra.network import Network
 from infra.nomad_job import NomadJob, NomadVars
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
@@ -198,7 +197,6 @@ def main() -> None:
         ###################################
         kafka = Kafka("kafka")
 
-        network = Network("grapl-network")
         plugin_registry_db = PostgresInstance(
             name="plugin-registry-db",
         )
