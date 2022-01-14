@@ -74,8 +74,9 @@ def main() -> None:
 
     grapl_stack = GraplStack(stack_name)
 
-    access_key = aws.config.access_key
-    secret_key = aws.config.secret_key
+    aws_config = cast(aws.config.vars._ExportableConfig, aws.config)
+    access_key = aws_config.access_key
+    secret_key = aws_config.secret_key
 
     e2e_test_job_vars: NomadVars = {
         "analyzer_bucket": grapl_stack.analyzer_bucket,
