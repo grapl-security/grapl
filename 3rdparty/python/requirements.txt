@@ -20,9 +20,7 @@ mypy_boto3_sqs
 mypy_boto3_ssm
 protobuf>=3.12.1
 pulumi>=3.0.0,<4.0.0
-# 4.7.0 to 4.9.0 are broken typecheck-wise: https://github.com/pulumi/pulumi-aws/issues/1519
-# 4.10.0 to 4.13.0 causes sigsegv: https://github.com/pulumi/pulumi-aws/issues/1575
-pulumi-aws>=4.0.0,<5.0.0,==4.6.0
+pulumi-aws>=4.0.0,<5.0.0
 pulumi_consul
 pulumi_docker
 pulumi_kafka
