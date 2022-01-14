@@ -16,7 +16,7 @@
     "aws-sdk": "^2.1056.0",
     "aws-serverless-express": "^3.3.8",
     "cors": "^2.8.5",
-    "dgraph-js": "^20.3.1",
+    "dgraph-js": "^21.3.1",
     "dgraph-js-http": "^20.7.3",
     "express": "^4.17.2",
     "express-graphql": "^0.9.0",
