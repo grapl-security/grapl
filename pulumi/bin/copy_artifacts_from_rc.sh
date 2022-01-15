@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # This will grab a subset of keys from `origin/rc`'s Pulumi.testing.yaml.
 set -euo pipefail
+set -o xtrace
 
 THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
 readonly THIS_DIR
@@ -17,6 +18,12 @@ readonly CURRENT_STACK
 readonly RC_CONFIG_FILE
 
 confirmModify() {
+    # Skip this check if FORCE_MODIFY=1
+    # (this could be a getopts, but, meh)
+    if [[ -n "${FORCE_MODIFY:-}" ]]; then
+        return 0
+    fi
+
     read -r -p "This will modify your ${CURRENT_STACK} config. Continue (y/n)?" choice
     case "${choice}" in
         y | Y) echo "Okay!" ;;
@@ -43,15 +50,15 @@ main() {
     echo "--- Grab artifacts from origin/rc config file"
     git fetch origin
     git show origin/rc:pulumi/grapl/Pulumi.testing.yaml > ${RC_CONFIG_FILE}
-    local -r artifacts=$(pulumi config --config-file="${RC_CONFIG_FILE}" get artifacts)
+    local -r artifacts=$(pulumi config --config-file="${RC_CONFIG_FILE}" --stack="${CURRENT_STACK}" get artifacts)
 
     echo "--- Modify the current stack"
     add_artifacts "${CURRENT_STACK}" "${artifacts}"
 
     pulumi config --stack "${CURRENT_STACK}"
 
-    echo "--- !!! VERY IMPORTANT !!!"
-    echo "Any artifacts defined in here *WILL* override anything you built locally, "
+    echo "!!! VERY IMPORTANT !!!"
+    echo "Any artifacts defined in here *WILL* override any local images."
     echo " so selectively remove whatever you happen to be working on at a given time."
 
 }

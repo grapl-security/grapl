@@ -188,7 +188,8 @@ steps:
             # `--depth=1` are to account for us using shallow clones
             git remote set-branches --add origin rc
             git fetch --depth=1 origin rc
-            git show origin/rc:pulumi/grapl/Pulumi.testing.yaml > pulumi/grapl/Pulumi.testing.yaml
+            # Copy over just the artifacts
+            FORCE_MODIFY=1 ./pulumi/bin/copy_artifacts_from_rc.sh grapl/testing
       - grapl-security/pulumi#v0.1.2:
           command: preview
           project_dir: pulumi/grapl

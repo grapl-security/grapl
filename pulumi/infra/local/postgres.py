@@ -5,7 +5,7 @@ import pulumi_postgresql as postgresql
 import pulumi
 
 
-class PostgresInstance(pulumi.ComponentResource):
+class LocalPostgresInstance(pulumi.ComponentResource):
     def __init__(
         self,
         name: str,
