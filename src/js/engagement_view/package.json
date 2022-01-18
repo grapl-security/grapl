@@ -12,7 +12,7 @@
     "@testing-library/react": "^11.2.5",
     "@testing-library/user-event": "^7.1.2",
     "@trendmicro/react-sidenav": "^0.5.0",
-    "@types/jest": "^24",
+    "@types/jest": "^27",
     "@types/node": "^12.12.34",
     "@types/react-dom": "^16.9.8",
     "@types/react-router": "^5.1.8",
