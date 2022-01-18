@@ -125,7 +125,7 @@ class Postgres(pulumi.ComponentResource):
         self.instance = aws.rds.Instance(
             instance_name,
             identifier=instance_name,
-            name=database_name,  # This is the name of the default database.
+            name=database_name,  # See above diatribe
             engine="postgres",
             engine_version=postgres_config.postgres_version,
             instance_class=postgres_config.instance_type,
