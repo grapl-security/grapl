@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -104,9 +105,27 @@ class Postgres(pulumi.ComponentResource):
 
         postgres_config = PostgresConfigValues.from_config()
 
+        # Quick diatribe:
+        # "The database name is the name of a database hosted in your DB instance.
+        #  A database name is not required when creating a DB instance.
+        #  Databases hosted by the same DB instance must have a unique name within
+        #  that instance."
+        # Since we're using 1 database per instance right now, I'm going to
+        # hardcode it to the default value of `postgres` (like the postgres
+        # docker image does).
+        #
+        # As for giving the instance a name we can see on the console, that's
+        # the `identifier=`.
+        database_name = "postgres"
+        assert re.match(
+            "^[a-zA-Z][a-zA-Z0-9]+$", database_name
+        ), "Database name must be alpha+alphanumeric"
+
+        instance_name = f"{name}-instance"
         self.instance = aws.rds.Instance(
-            f"{name}-instance",
-            name=name,  # only alphanumeric
+            instance_name,
+            identifier=instance_name,
+            name=database_name,  # See above diatribe
             engine="postgres",
             engine_version=postgres_config.postgres_version,
             instance_class=postgres_config.instance_type,
