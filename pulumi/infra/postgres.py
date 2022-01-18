@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import List, Optional
 
 import pulumi_aws as aws
 import pulumi_random as random
-from importlib_metadata import re
 from packaging.version import parse as version_parse
 
 import pulumi
