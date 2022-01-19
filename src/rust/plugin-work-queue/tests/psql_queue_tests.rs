@@ -50,7 +50,7 @@ mod tests {
     #[test_log::test(tokio::test)]
     async fn test_get_and_success() -> Result<(), Box<dyn std::error::Error>> {
         let config = PluginWorkQueueServiceConfig::from_args();
-        tracing::info!(message = "test_get_and_success");
+        tracing::info!(message = "test_get_and_success", config=?config);
         let pool = make_pool(config).await?;
         sqlx::migrate!().run(&pool).await?;
         let queue = PsqlQueue { pool };
@@ -90,7 +90,7 @@ mod tests {
     #[test_log::test(tokio::test)]
     async fn test_get_and_failure() -> Result<(), Box<dyn std::error::Error>> {
         let config = PluginWorkQueueServiceConfig::from_args();
-        tracing::info!(message = "test_get_and_failure");
+        tracing::info!(message = "test_get_and_failure", config=?config);
         let pool = make_pool(config).await?;
         sqlx::migrate!().run(&pool).await?;
 

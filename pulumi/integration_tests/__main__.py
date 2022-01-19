@@ -122,10 +122,10 @@ def main() -> None:
             "_redis_endpoint": grapl_stack.redis_endpoint,
             "schema_properties_table_name": grapl_stack.schema_properties_table_name,
             "test_user_name": grapl_stack.test_user_name,
-            "_postgres_db_hostname": grapl_stack.postgres_hostname,
-            "postgres_db_port": grapl_stack.postgres_port,
-            "postgres_db_username": grapl_stack.postgres_username,
-            "postgres_db_password": grapl_stack.postgres_password,
+            "_plugin_work_queue_db_hostname": grapl_stack.plugin_work_queue_db_hostname,
+            "plugin_work_queue_db_port": grapl_stack.plugin_work_queue_db_port,
+            "plugin_work_queue_db_username": grapl_stack.plugin_work_queue_db_username,
+            "plugin_work_queue_db_password": grapl_stack.plugin_work_queue_db_password,
         }
 
         integration_tests = NomadJob(
@@ -157,10 +157,10 @@ class GraplStack:
         self.sysmon_log_bucket = require_str("sysmon-log-bucket")
         self.test_user_name = require_str("test-user-name")
 
-        self.postgres_hostname = require_str("postgres-hostname")
-        self.postgres_port = require_str("postgres-port")
-        self.postgres_username = require_str("postgres-username")
-        self.postgres_password = require_str("postgres-password")
+        self.plugin_work_queue_db_hostname = require_str("plugin-work-queue-db-hostname")
+        self.plugin_work_queue_db_port = require_str("plugin-work-queue-db-port")
+        self.plugin_work_queue_db_username = require_str("plugin-work-queue-db-username")
+        self.plugin_work_queue_db_password = require_str("plugin-work-queue-db-password")
 
 
 if __name__ == "__main__":

@@ -62,6 +62,7 @@ def _container_images(
         "node-identifier-retry": builder.build_with_tag("node-identifier-retry"),
         "osquery-generator": builder.build_with_tag("osquery-generator"),
         "plugin-registry": builder.build_with_tag("plugin-registry"),
+        "plugin-work-queue": builder.build_with_tag("plugin-work-queue"),
         "provisioner": builder.build_with_tag("provisioner"),
         "sysmon-generator": builder.build_with_tag("sysmon-generator"),
         "web-ui": builder.build_with_tag("grapl-web-ui"),
@@ -214,12 +215,18 @@ def main() -> None:
 
         plugin_registry_db = LocalPostgresInstance(
             name="plugin-registry-db",
+            port=5432,
         )
 
-        pulumi.export("postgres-hostname", "LOCAL_GRAPL_REPLACE_IP")
-        pulumi.export("postgres-port", str(plugin_registry_db.port))
-        pulumi.export("postgres-username", plugin_registry_db.username)
-        pulumi.export("postgres-password", plugin_registry_db.password)
+        plugin_work_queue_db = PostgresInstance(
+            name="plugin-work-queue-db",
+            port=5532,
+        )
+
+        pulumi.export("plugin-work-queue-db-hostname", "LOCAL_GRAPL_REPLACE_IP")
+        pulumi.export("plugin-work-queue-db-port", str(plugin_work_queue_db.port))
+        pulumi.export("plugin-work-queue-db-username", plugin_work_queue_db.username)
+        pulumi.export("plugin-work-queue-db-password", plugin_work_queue_db.password)
 
         # These are created in `grapl-local-infra.nomad` and not applicable to prod.
         # Nomad will replace the LOCAL_GRAPL_REPLACE_IP sentinel value with the correct IP.
@@ -247,6 +254,10 @@ def main() -> None:
             plugin_registry_db_port=str(plugin_registry_db.port),
             plugin_registry_db_username=plugin_registry_db.username,
             plugin_registry_db_password=plugin_registry_db.password,
+            plugin_work_queue_db_hostname="LOCAL_GRAPL_REPLACE_IP",
+            plugin_work_queue_db_port=str(plugin_work_queue_db.port),
+            plugin_work_queue_db_username=plugin_work_queue_db.username,
+            plugin_work_queue_db_password=plugin_work_queue_db.password,
             py_log_level=py_log_level,
             **nomad_inputs,
         )
@@ -394,10 +405,10 @@ def main() -> None:
             # instead of the var version.
             _redis_endpoint=cache.endpoint,
             container_images=_container_images(artifacts, require_artifact=True),
-            plugin_registry_db_hostname=plugin_registry_postgres.instance.address,
-            plugin_registry_db_port=plugin_registry_postgres.instance.port.apply(str),
-            plugin_registry_db_username=plugin_registry_postgres.instance.username,
-            plugin_registry_db_password=plugin_registry_postgres.instance.password,
+            plugin_work_queue_db_hostname="TODO",
+            plugin_work_queue_db_port=str(5532),
+            plugin_work_queue_db_username="postgres",
+            plugin_work_queue_db_password="postgres",
             py_log_level=py_log_level,
             rust_log=rust_log_levels,
             **nomad_inputs,

@@ -67,25 +67,25 @@ variable "grapl_root" {
   description = "Where to find the Grapl repo on the host OS (where Nomad runs)."
 }
 
-variable "_postgres_db_hostname" {
+variable "_plugin_work_queue_db_hostname" {
   type        = string
-  description = "What is the host for the local postgres?"
+  description = "The host for the local plugin work queue db"
 }
 
-variable "postgres_db_port" {
+variable "plugin_work_queue_db_port" {
   type        = string
   default     = "5432"
-  description = "What is the port for the local postgres?"
+  description = "The port for the local plugin_work_queue postgres"
 }
 
-variable "postgres_db_username" {
+variable "plugin_work_queue_db_username" {
   type        = string
-  description = "What is the username for the local postgres?"
+  description = "The username for the local plugin_work_queue postgres"
 }
 
-variable "postgres_db_password" {
+variable "plugin_work_queue_db_password" {
   type        = string
-  description = "What is the password for the local postgres?"
+  description = "The password for the local plugin_work_queue postgres"
 }
 
 
@@ -108,7 +108,7 @@ EOH
   # Prefer these over their `var` equivalents
   redis_endpoint = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
   kafka_endpoint = replace(var._kafka_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
-  postgres_db_hostname = replace(var._postgres_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  plugin_work_queue_db_hostname = replace(var._plugin_work_queue_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
 
   _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
   _redis         = split(":", local._redis_trimmed)
@@ -205,10 +205,10 @@ job "integration-tests" {
         GRAPL_PLUGIN_REGISTRY_ADDRESS = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-registry}"
         PLUGIN_WORK_QUEUE_BIND_ADDRESS = "0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-work-queue}"
 
-        PLUGIN_WORK_QUEUE_DB_HOSTNAME = "${local.postgres_db_hostname}"
-        PLUGIN_WORK_QUEUE_DB_PORT = "${var.postgres_db_port}"
-        PLUGIN_WORK_QUEUE_DB_USERNAME = "${var.postgres_db_username}"
-        PLUGIN_WORK_QUEUE_DB_PASSWORD = "${var.postgres_db_password}"
+        PLUGIN_WORK_QUEUE_DB_HOSTNAME = "${local.plugin_work_queue_db_hostname}"
+        PLUGIN_WORK_QUEUE_DB_PORT = "${var.plugin_work_queue_db_port}"
+        PLUGIN_WORK_QUEUE_DB_USERNAME = "${var.plugin_work_queue_db_username}"
+        PLUGIN_WORK_QUEUE_DB_PASSWORD = "${var.plugin_work_queue_db_password}"
 
         NOMAD_SERVICE_ADDRESS = "${attr.unique.network.ip-address}:4646"
       }
