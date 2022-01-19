@@ -287,9 +287,9 @@ locals {
 
   # Prefer these over their `var` equivalents.
   # The aws endpoint is in template env format
-  aws_endpoint                = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
-  redis_endpoint              = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
-  plugin_registry_db_hostname = replace(var.plugin_registry_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  aws_endpoint                  = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
+  redis_endpoint                = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  plugin_registry_db_hostname   = replace(var.plugin_registry_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
   plugin_work_queue_db_hostname = replace(var.plugin_work_queue_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
 
   _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
@@ -1211,11 +1211,11 @@ job "grapl-core" {
 
       env {
         NOMAD_SERVICE_ADDRESS           = "${attr.unique.network.ip-address}:4646"
-        PLUGIN_WORK_QUEUE_BIND_ADDRESS    = "0.0.0.0:${NOMAD_PORT_plugin-work-queue-port}"
-        PLUGIN_WORK_QUEUE_DB_HOSTNAME     = local.plugin_work_queue_db_hostname
-        PLUGIN_WORK_QUEUE_DB_PASSWORD     = var.plugin_work_queue_db_password
-        PLUGIN_WORK_QUEUE_DB_PORT         = var.plugin_work_queue_db_port
-        PLUGIN_WORK_QUEUE_DB_USERNAME     = var.plugin_work_queue_db_username
+        PLUGIN_WORK_QUEUE_BIND_ADDRESS  = "0.0.0.0:${NOMAD_PORT_plugin-work-queue-port}"
+        PLUGIN_WORK_QUEUE_DB_HOSTNAME   = local.plugin_work_queue_db_hostname
+        PLUGIN_WORK_QUEUE_DB_PASSWORD   = var.plugin_work_queue_db_password
+        PLUGIN_WORK_QUEUE_DB_PORT       = var.plugin_work_queue_db_port
+        PLUGIN_WORK_QUEUE_DB_USERNAME   = var.plugin_work_queue_db_username
         PLUGIN_S3_BUCKET_AWS_ACCOUNT_ID = var.plugin_s3_bucket_aws_account_id
         PLUGIN_S3_BUCKET_NAME           = var.plugin_s3_bucket_name
         RUST_BACKTRACE                  = local.rust_backtrace

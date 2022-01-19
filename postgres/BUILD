@@ -1,3 +1,1 @@
-docker_image(
-    name="postgres"
-)
+docker_image(name="postgres")
