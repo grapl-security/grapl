@@ -1,6 +1,10 @@
 CREATE SCHEMA IF NOT EXISTS plugin_work_queue;
 
-CREATE TYPE plugin_work_queue.status AS ENUM ('enqueued', 'failed', 'processed');
+DO $$ BEGIN
+    IF to_regtype('plugin_work_queue.status') IS NULL THEN
+        CREATE TYPE plugin_work_queue.status AS ENUM ('enqueued', 'failed', 'processed');
+    END IF;
+END $$;
 
 CREATE OR REPLACE FUNCTION plugin_work_queue.megabytes(bytes integer) RETURNS integer AS
 $$
@@ -28,7 +32,7 @@ CREATE TABLE IF NOT EXISTS plugin_work_queue.generator_plugin_executions
     -- `last_updated` is set with each update to the row
     last_updated     timestamptz              NOT NULL,
     -- `visible_after` is essentially a visibility timeout. A `visible_after` of NULL means a message is available, which is the default state. Every time a message is SELECT'd we update `visible_after`. See the `Visibility Timeout` section below.
-    visible_after    timestamptz,
+    visible_after    timestamptz              NOT NULL DEFAULT CURRENT_TIMESTAMP,
     -- `try_count` on every receive we increment `try_count` to indicate another attempt to process this message
     try_count        integer                  NOT NULL,
     -- We limit the message to 256MB, which is arbitrary but reasonable as an upper limit
@@ -54,7 +58,7 @@ CREATE TABLE IF NOT EXISTS plugin_work_queue.analyzer_plugin_executions
     -- `last_updated` is set with each update to the row
     last_updated     timestamptz              NOT NULL,
     -- `visible_after` is essentially a visibility timeout. A `visible_after` of NULL means a message is available, which is the default state. Every time a message is SELECT'd we update `visible_after`. See the `Visibility Timeout` section below.
-    visible_after    timestamptz,
+    visible_after    timestamptz              NOT NULL DEFAULT CURRENT_TIMESTAMP,
     -- `try_count` on every receive we increment `try_count` to indicate another attempt to process this message
     try_count        integer                  NOT NULL,
     -- We limit the message to 256MB, which is arbitrary but reasonable as an upper limit
