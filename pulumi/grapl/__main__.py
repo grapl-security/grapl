@@ -218,7 +218,7 @@ def main() -> None:
             port=5432,
         )
 
-        plugin_work_queue_db = PostgresInstance(
+        plugin_work_queue_db = LocalPostgresInstance(
             name="plugin-work-queue-db",
             port=5532,
         )
