@@ -323,16 +323,11 @@ pub async fn exec_service(
 
     let plugin_work_queue = PluginWorkQueue::try_from(&service_config).await?;
 
-    tracing::info!(
-        message="Performing migration",
-    );
+    tracing::info!(message = "Performing migration",);
 
     sqlx::migrate!().run(&plugin_work_queue.queue.pool).await?;
 
-
-    tracing::info!(
-        message="Binding service",
-    );
+    tracing::info!(message = "Binding service",);
 
     Server::builder()
         .trace_fn(|request| {

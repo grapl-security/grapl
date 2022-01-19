@@ -157,10 +157,16 @@ class GraplStack:
         self.sysmon_log_bucket = require_str("sysmon-log-bucket")
         self.test_user_name = require_str("test-user-name")
 
-        self.plugin_work_queue_db_hostname = require_str("plugin-work-queue-db-hostname")
+        self.plugin_work_queue_db_hostname = require_str(
+            "plugin-work-queue-db-hostname"
+        )
         self.plugin_work_queue_db_port = require_str("plugin-work-queue-db-port")
-        self.plugin_work_queue_db_username = require_str("plugin-work-queue-db-username")
-        self.plugin_work_queue_db_password = require_str("plugin-work-queue-db-password")
+        self.plugin_work_queue_db_username = require_str(
+            "plugin-work-queue-db-username"
+        )
+        self.plugin_work_queue_db_password = require_str(
+            "plugin-work-queue-db-password"
+        )
 
 
 if __name__ == "__main__":

@@ -360,7 +360,7 @@ job "grapl-local-infra" {
       mode = "bridge"
       port "postgres" {
         static = var.PLUGIN_REGISTRY_DB_PORT
-        to = 5432 # postgres default
+        to     = 5432 # postgres default
       }
     }
 
@@ -403,7 +403,7 @@ job "grapl-local-infra" {
       mode = "bridge"
       port "postgres" {
         static = var.PLUGIN_WORK_QUEUE_DB_PORT
-        to = 5432
+        to     = 5432
       }
     }
 
