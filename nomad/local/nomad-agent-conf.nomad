@@ -1,3 +1,5 @@
+plugin_dir = "/opt/nomad/plugins"
+
 ####################
 # Plugin configs
 ####################
@@ -11,6 +13,19 @@ plugin "docker" {
       # Required for the bind mount for docker.sock
       enabled = true
     }
+  }
+}
+
+plugin "firecracker-task-driver" {}
+
+
+####################
+# Client config
+####################
+client {
+  meta = {
+    # See constraint{} in plugin.nomad
+    "is_grapl_plugin_host" = true
   }
 }
 

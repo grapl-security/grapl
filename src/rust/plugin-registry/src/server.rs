@@ -58,7 +58,11 @@ struct GetPluginRow {
 
 use tokio::io::AsyncReadExt;
 
-use crate::PluginRegistryServiceConfig;
+use crate::{
+    deploy_plugin,
+    nomad_client,
+    PluginRegistryServiceConfig,
+};
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginRegistryServiceError {
@@ -74,6 +78,8 @@ pub enum PluginRegistryServiceError {
     IoError(#[from] std::io::Error),
     #[error("PluginRegistryDeserializationError")]
     PluginRegistryDeserializationError(#[from] PluginRegistryDeserializationError),
+    #[error("NomadError")]
+    NomadError(#[from] nomad_client::NomadClientError),
 }
 
 impl From<PluginRegistryServiceError> for Status {
@@ -98,6 +104,9 @@ impl From<PluginRegistryServiceError> for Status {
             PluginRegistryServiceError::PluginRegistryDeserializationError(_) => {
                 Status::invalid_argument("Unable to deserialize message")
             }
+            PluginRegistryServiceError::NomadError(_) => {
+                Status::internal("Failed talking to Nomad")
+            }
         }
     }
 }
@@ -110,6 +119,7 @@ pub struct PluginRegistry {
 }
 
 impl PluginRegistry {
+    #[tracing::instrument(skip(self, request), err)]
     async fn create_plugin(
         &self,
         request: CreatePluginRequest,
@@ -217,15 +227,23 @@ impl PluginRegistry {
         Ok(response)
     }
 
-    #[allow(dead_code)]
+    #[tracing::instrument(skip(self, request), err)]
     async fn deploy_plugin(
         &self,
-        _request: DeployPluginRequest,
+        request: DeployPluginRequest,
     ) -> Result<DeployPluginResponse, PluginRegistryServiceError> {
-        todo!()
+        let nomad_client = nomad_client::NomadClient::from_env();
+        let plugin_id = request.plugin_id;
+
+        deploy_plugin::deploy_plugin(nomad_client, plugin_id)
+            .await
+            .map_err(PluginRegistryServiceError::from)?;
+
+        Ok(DeployPluginResponse {})
     }
 
     #[allow(dead_code)]
+    #[tracing::instrument(skip(self, _request), err)]
     async fn tear_down_plugin(
         &self,
         _request: TearDownPluginRequest,
@@ -242,6 +260,7 @@ impl PluginRegistry {
     }
 
     #[allow(dead_code)]
+    #[tracing::instrument(skip(self, _request), err)]
     async fn get_analyzers_for_tenant(
         &self,
         _request: GetAnalyzersForTenantRequest,
@@ -280,9 +299,14 @@ impl PluginRegistryService for PluginRegistry {
 
     async fn deploy_plugin(
         &self,
-        _request: Request<DeployPluginRequestProto>,
+        request: Request<DeployPluginRequestProto>,
     ) -> Result<Response<DeployPluginResponseProto>, Status> {
-        todo!()
+        let request: DeployPluginRequestProto = request.into_inner();
+        let request =
+            DeployPluginRequest::try_from(request).map_err(PluginRegistryServiceError::from)?;
+
+        let response = self.deploy_plugin(request).await?;
+        Ok(Response::new(response.into()))
     }
 
     async fn tear_down_plugin(

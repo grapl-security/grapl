@@ -19,8 +19,19 @@ RUN --mount=type=cache,target=/var/lib/apt/lists \
         jq=1.6-2.1 \
         libssl-dev=1.1.1k-1+deb11u1 \
         pkg-config=0.29.2-1 \
-        zlib1g-dev=1:1.2.11.dfsg-2
+        zlib1g-dev=1:1.2.11.dfsg-2 \
+        curl=7.74.0-1.3+deb11u1 \
+        unzip=6.0-26
 
+# Grab a Nomad binary, which we use in plugin-registry for parsing 
+# HCL2-with-variables into JSON.
+WORKDIR /nomad
+RUN <<EOF
+set -euo pipefail
+curl -O https://releases.hashicorp.com/nomad/1.2.4/nomad_1.2.4_linux_amd64.zip
+unzip *.zip
+rm *.zip
+EOF
 
 # Install rust toolchain before copying sources to avoid unecessarily
 # resinstalling on source file changes.
@@ -46,18 +57,19 @@ FROM base AS build
 # hadolint ignore=SC1091
 RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/usr/local/rustup \
-    case "${RUST_BUILD}" in \
-      debug) \
-        cargo build ;; \
-      release) \
-        cargo build --release ;; \
-      test) \
-        cargo test ;; \
-      *) \
-        echo "ERROR:  Unknown RUST_BUILD option: ${RUST_BUILD}"; \
-        exit 1 ;; \
+    --mount=type=cache,target=/usr/local/rustup <<EOF
+    case "${RUST_BUILD}" in 
+      debug)
+        cargo build ;;
+      release)
+        cargo build --release ;;
+      test)
+        cargo test ;;
+      *)
+        echo "ERROR:  Unknown RUST_BUILD option: ${RUST_BUILD}";
+        exit 1 ;;
     esac
+EOF
 
 # Copy the build outputs to location that's not a cache mount.
 # TODO: switch to using --out-dir when stable: https://github.com/rust-lang/cargo/issues/6790
@@ -232,6 +244,8 @@ FROM rust-dist AS plugin-registry-deploy
 # https://github.com/hadolint/hadolint/wiki/DL3022
 # hadolint ignore=DL3022
 COPY --from=build /outputs/plugin-registry /
+# hadolint ignore=DL3022
+COPY --from=build /nomad/nomad /bin
 ENTRYPOINT ["/plugin-registry"]
 
 # node-identifier
