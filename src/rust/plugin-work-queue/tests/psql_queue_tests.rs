@@ -68,6 +68,8 @@ mod tests {
         let status = get_generator_status_by_plugin_id(&queue.pool, &plugin_id).await?;
         assert_eq!(status, Status::Enqueued);
 
+        // std::thread::sleep(std::time::Duration::from_secs(11));
+
         // Retrieve a message
         let msg = queue
             .get_generator_message()

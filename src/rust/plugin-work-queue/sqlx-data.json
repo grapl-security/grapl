@@ -36,8 +36,8 @@
       ]
     }
   },
-  "061cd6f2f7bdd36f644751497b61763d6ab6f8b0daa4fc7031d67c89bf88a145": {
-    "query": "\n            INSERT INTO plugin_work_queue.generator_plugin_executions (\n                plugin_id,\n                pipeline_message,\n                tenant_id,\n                current_status,\n                creation_time,\n                last_updated,\n                try_count\n            )\n            VALUES( $1::UUID, $2, $3::UUID, 'enqueued', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, -1 )\n        ",
+  "1ec0c84f3f890741c183d7ede697e7e7cf7c7ed8d92bb5e8a46f01cbfe44ab73": {
+    "query": "\n            INSERT INTO plugin_work_queue.analyzer_plugin_executions (\n                plugin_id,\n                pipeline_message,\n                tenant_id,\n                current_status,\n                try_count\n            )\n            VALUES( $1::UUID, $2, $3::UUID, 'enqueued', -1 )\n        ",
     "describe": {
       "columns": [],
       "parameters": {
@@ -105,8 +105,8 @@
       ]
     }
   },
-  "6aa9663a7e4bb28f455f1f8fd57e4fb8de29171ce4c3aac0848abf2411d865bb": {
-    "query": "\n            INSERT INTO plugin_work_queue.analyzer_plugin_executions (\n                plugin_id,\n                pipeline_message,\n                tenant_id,\n                current_status,\n                creation_time,\n                last_updated,\n                try_count\n            )\n            VALUES( $1::UUID, $2, $3::UUID, 'enqueued', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, -1 )\n        ",
+  "c061b6bffb5339055486d7c40a5aa87353e30bf328521b6061e2cab1296c8bf1": {
+    "query": "\n            INSERT INTO plugin_work_queue.generator_plugin_executions (\n                plugin_id,\n                pipeline_message,\n                tenant_id,\n                current_status,\n                try_count\n            )\n            VALUES( $1::UUID, $2, $3::UUID, 'enqueued', -1 )\n        ",
     "describe": {
       "columns": [],
       "parameters": {

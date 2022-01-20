@@ -28,10 +28,10 @@ CREATE TABLE IF NOT EXISTS plugin_work_queue.generator_plugin_executions
     -- `current_status` is an enum representing the state. 'enqueued' is the default, and a message will be set to either 'processed' or 'failed' based on its success.
     current_status   plugin_work_queue.status NOT NULL,
     -- `creation_time` is when the row was created.
-    creation_time    timestamptz              NOT NULL,
+    creation_time    timestamptz              NOT NULL DEFAULT CURRENT_TIMESTAMP,
     -- `last_updated` is set with each update to the row
-    last_updated     timestamptz              NOT NULL,
-    -- `visible_after` is essentially a visibility timeout. A `visible_after` of NULL means a message is available, which is the default state. Every time a message is SELECT'd we update `visible_after`. See the `Visibility Timeout` section below.
+    last_updated     timestamptz              NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- `visible_after` is essentially a visibility timeout. See the `Visibility Timeout` section below.
     visible_after    timestamptz              NOT NULL DEFAULT CURRENT_TIMESTAMP,
     -- `try_count` on every receive we increment `try_count` to indicate another attempt to process this message
     try_count        integer                  NOT NULL,
@@ -54,10 +54,10 @@ CREATE TABLE IF NOT EXISTS plugin_work_queue.analyzer_plugin_executions
     -- `current_status` is an enum representing the state. 'enqueued' is the default, and a message will be set to either 'processed' or 'failed' based on its success.
     current_status   plugin_work_queue.status NOT NULL,
     -- `creation_time` is when the row was created.
-    creation_time    timestamptz              NOT NULL,
+    creation_time    timestamptz              NOT NULL DEFAULT CURRENT_TIMESTAMP,
     -- `last_updated` is set with each update to the row
-    last_updated     timestamptz              NOT NULL,
-    -- `visible_after` is essentially a visibility timeout. A `visible_after` of NULL means a message is available, which is the default state. Every time a message is SELECT'd we update `visible_after`. See the `Visibility Timeout` section below.
+    last_updated     timestamptz              NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- `visible_after` is essentially a visibility timeout. See the `Visibility Timeout` section below.
     visible_after    timestamptz              NOT NULL DEFAULT CURRENT_TIMESTAMP,
     -- `try_count` on every receive we increment `try_count` to indicate another attempt to process this message
     try_count        integer                  NOT NULL,

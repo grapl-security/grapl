@@ -72,11 +72,9 @@ impl PsqlQueue {
                 pipeline_message,
                 tenant_id,
                 current_status,
-                creation_time,
-                last_updated,
                 try_count
             )
-            VALUES( $1::UUID, $2, $3::UUID, 'enqueued', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, -1 )
+            VALUES( $1::UUID, $2, $3::UUID, 'enqueued', -1 )
         ",
             plugin_id,
             pipeline_message,
@@ -101,11 +99,9 @@ impl PsqlQueue {
                 pipeline_message,
                 tenant_id,
                 current_status,
-                creation_time,
-                last_updated,
                 try_count
             )
-            VALUES( $1::UUID, $2, $3::UUID, 'enqueued', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, -1 )
+            VALUES( $1::UUID, $2, $3::UUID, 'enqueued', -1 )
         ",
             plugin_id,
             pipeline_message,
