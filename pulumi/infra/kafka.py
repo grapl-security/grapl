@@ -38,13 +38,13 @@ class Credential:
 
 
 @dataclasses.dataclass
-class TopicOutput:
+class Topic:
     partitions: int
     config: Mapping[str, Any]
 
     @staticmethod
-    def from_json(json_: Mapping[str, Any]) -> TopicOutput:
-        return TopicOutput(
+    def from_json(json_: Mapping[str, Any]) -> Topic:
+        return Topic(
             partitions=json_["partitions"],
             config=json_["config"],
         )
@@ -71,7 +71,7 @@ class EnvironmentOutput:
     bootstrap_servers: str
     environment_credentials: Credential
     services: Mapping[str, Service]
-    topics: Mapping[str, TopicOutput]
+    topics: Mapping[str, Topic]
 
     def get_service_credentials(self, service_name: str) -> Credential:
         if service_name in self.services:
@@ -90,7 +90,7 @@ class EnvironmentOutput:
             services={
                 k: Service.from_json(v) for k, v in json_["services"].items()
             },
-            topics={k: TopicOutput.from_json(v) for k, v in json_["topics"].items()},
+            topics={k: Topic.from_json(v) for k, v in json_["topics"].items()},
         )
 
 
