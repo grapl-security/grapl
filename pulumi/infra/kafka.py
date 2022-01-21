@@ -95,7 +95,7 @@ class Environment:
 
 
 @dataclasses.dataclass
-class ConfluentOutput:
+class Confluent:
     environments: Mapping[str, Environment]
 
     def get_environment(self, environment_name: str) -> Environment:
@@ -107,9 +107,9 @@ class ConfluentOutput:
     @staticmethod
     def from_json(
         json_: pulumi.Output[Mapping[str, Any]]
-    ) -> pulumi.Output[ConfluentOutput]:
+    ) -> pulumi.Output[Confluent]:
         return json_.apply(
-            lambda j: ConfluentOutput(
+            lambda j: Confluent(
                 environments={k: Environment.from_json(v) for k, v in j.items()}
             )
         )
@@ -130,6 +130,6 @@ class Kafka(pulumi.ComponentResource):
             "grapl/ccloud-bootstrap/ccloud-bootstrap"
         ).require_output("confluent")
 
-        self.confluent_environment = ConfluentOutput.from_json(
+        self.confluent_environment = Confluent.from_json(
             cast(pulumi.Output[Mapping[str, Any]], confluent_stack_output)
         ).apply(lambda o: o.get_environment(confluent_environment_name))
