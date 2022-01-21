@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import dataclasses
-import os
-from typing import Any, Iterable, Mapping, Optional, Sequence, Tuple, cast
+from typing import Any, Mapping, Optional, Sequence, cast
 
-from infra.config import LOCAL_GRAPL
 from pulumi.stack_reference import StackReference
 
 import pulumi
