@@ -29,11 +29,11 @@ class Credential:
     api_secret: str
 
     @staticmethod
-    def from_json(json_: Mapping[str, str]) -> Credential:
+    def from_json(data: Mapping[str, str]) -> Credential:
         return Credential(
-            service_account_id=json_["service_account_id"],
-            api_key=json_["api_key"],
-            api_secret=json_["api_secret"],
+            service_account_id=data["service_account_id"],
+            api_key=data["api_key"],
+            api_secret=data["api_secret"],
         )
 
 
@@ -43,10 +43,10 @@ class Topic:
     config: Mapping[str, Any]
 
     @staticmethod
-    def from_json(json_: Mapping[str, Any]) -> Topic:
+    def from_json(data: Mapping[str, Any]) -> Topic:
         return Topic(
-            partitions=json_["partitions"],
-            config=json_["config"],
+            partitions=data["partitions"],
+            config=data["config"],
         )
 
 
@@ -57,11 +57,11 @@ class Service:
     service_account: Credential
 
     @staticmethod
-    def from_json(json_: Mapping[str, Any]) -> Service:
+    def from_json(data: Mapping[str, Any]) -> Service:
         return Service(
-            ingress_topics=json_["ingress_topics"],
-            egress_topics=json_["egress_topics"],
-            service_account=Credential.from_json(json_["service_account"]),
+            ingress_topics=data["ingress_topics"],
+            egress_topics=data["egress_topics"],
+            service_account=Credential.from_json(data["service_account"]),
         )
 
 
@@ -80,17 +80,17 @@ class Environment:
             raise KeyError(f"{service_name} does not exist")
 
     @staticmethod
-    def from_json(json_: Mapping[str, Any]) -> Environment:
+    def from_json(data: Mapping[str, Any]) -> Environment:
         return Environment(
-            environment_id=json_["environment_id"],
-            bootstrap_servers=json_["bootstrap_servers"],
+            environment_id=data["environment_id"],
+            bootstrap_servers=data["bootstrap_servers"],
             environment_credentials=Credential.from_json(
-                json_["environment_credentials"]
+                data["environment_credentials"]
             ),
             services={
-                k: Service.from_json(v) for k, v in json_["services"].items()
+                k: Service.from_json(v) for k, v in data["services"].items()
             },
-            topics={k: Topic.from_json(v) for k, v in json_["topics"].items()},
+            topics={k: Topic.from_json(v) for k, v in data["topics"].items()},
         )
 
 
@@ -106,9 +106,9 @@ class Confluent:
 
     @staticmethod
     def from_json(
-        json_: pulumi.Output[Mapping[str, Any]]
+        data: pulumi.Output[Mapping[str, Any]]
     ) -> pulumi.Output[Confluent]:
-        return json_.apply(
+        return data.apply(
             lambda j: Confluent(
                 environments={k: Environment.from_json(v) for k, v in j.items()}
             )
