@@ -7,18 +7,6 @@ from pulumi.stack_reference import StackReference
 
 import pulumi
 
-# this list of service names must match those in the
-# confluent-cloud-infrastructure project:
-# TODO: link
-KAFKA_SERVICES = [
-    "pipeline-ingress",
-    "graph-generator",
-    "node-identifier",
-    "graph-merger",
-    "analyzer-executor",
-    "engagement-creator",
-]
-
 
 @dataclasses.dataclass
 class Credential:
