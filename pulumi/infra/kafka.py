@@ -85,9 +85,7 @@ class Environment:
             environment_credentials=Credential.from_json(
                 data["environment_credentials"]
             ),
-            services={
-                k: Service.from_json(v) for k, v in data["services"].items()
-            },
+            services={k: Service.from_json(v) for k, v in data["services"].items()},
             topics={k: Topic.from_json(v) for k, v in data["topics"].items()},
         )
 
@@ -103,9 +101,7 @@ class Confluent:
             raise KeyError(f"{environment_name} does not exist")
 
     @staticmethod
-    def from_json(
-        data: pulumi.Output[Mapping[str, Any]]
-    ) -> pulumi.Output[Confluent]:
+    def from_json(data: pulumi.Output[Mapping[str, Any]]) -> pulumi.Output[Confluent]:
         return data.apply(
             lambda j: Confluent(
                 environments={k: Environment.from_json(v) for k, v in j.items()}

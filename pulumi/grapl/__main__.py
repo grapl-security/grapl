@@ -1,10 +1,8 @@
-import os
 import sys
 from pathlib import Path
 from typing import List, Mapping, Set, cast
 
 from pulumi.resource import CustomTimeouts, ResourceOptions
-
 from typing_extensions import Final
 
 sys.path.insert(0, "..")
