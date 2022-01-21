@@ -23,14 +23,14 @@ KAFKA_SERVICES = [
 
 
 @dataclasses.dataclass
-class CredentialOutput:
+class Credential:
     service_account_id: str
     api_key: str
     api_secret: str
 
     @staticmethod
-    def from_json(json_: Mapping[str, str]) -> CredentialOutput:
-        return CredentialOutput(
+    def from_json(json_: Mapping[str, str]) -> Credential:
+        return Credential(
             service_account_id=json_["service_account_id"],
             api_key=json_["api_key"],
             api_secret=json_["api_secret"],
@@ -54,14 +54,14 @@ class TopicOutput:
 class ServiceOutput:
     ingress_topics: Sequence[str]
     egress_topics: Sequence[str]
-    service_account: CredentialOutput
+    service_account: Credential
 
     @staticmethod
     def from_json(json_: Mapping[str, Any]) -> ServiceOutput:
         return ServiceOutput(
             ingress_topics=json_["ingress_topics"],
             egress_topics=json_["egress_topics"],
-            service_account=CredentialOutput.from_json(json_["service_account"]),
+            service_account=Credential.from_json(json_["service_account"]),
         )
 
 
@@ -69,11 +69,11 @@ class ServiceOutput:
 class EnvironmentOutput:
     environment_id: str
     bootstrap_servers: str
-    environment_credentials: CredentialOutput
+    environment_credentials: Credential
     services: Mapping[str, ServiceOutput]
     topics: Mapping[str, TopicOutput]
 
-    def get_service_credentials(self, service_name: str) -> CredentialOutput:
+    def get_service_credentials(self, service_name: str) -> Credential:
         if service_name in self.services:
             return self.services[service_name].service_account
         else:
@@ -84,7 +84,7 @@ class EnvironmentOutput:
         return EnvironmentOutput(
             environment_id=json_["environment_id"],
             bootstrap_servers=json_["bootstrap_servers"],
-            environment_credentials=CredentialOutput.from_json(
+            environment_credentials=Credential.from_json(
                 json_["environment_credentials"]
             ),
             services={
@@ -128,9 +128,7 @@ class Kafka(pulumi.ComponentResource):
 
         confluent_stack_output = StackReference(
             "grapl/ccloud-bootstrap/ccloud-bootstrap"
-        ).get_output("confluent")
-
-        assert confluent_stack_output is not None
+        ).require_output("confluent")
 
         self.confluent_environment = ConfluentOutput.from_json(
             cast(pulumi.Output[Mapping[str, Any]], confluent_stack_output)
