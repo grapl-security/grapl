@@ -66,7 +66,7 @@ class Service:
 
 
 @dataclasses.dataclass
-class EnvironmentOutput:
+class Environment:
     environment_id: str
     bootstrap_servers: str
     environment_credentials: Credential
@@ -80,8 +80,8 @@ class EnvironmentOutput:
             raise KeyError(f"{service_name} does not exist")
 
     @staticmethod
-    def from_json(json_: Mapping[str, Any]) -> EnvironmentOutput:
-        return EnvironmentOutput(
+    def from_json(json_: Mapping[str, Any]) -> Environment:
+        return Environment(
             environment_id=json_["environment_id"],
             bootstrap_servers=json_["bootstrap_servers"],
             environment_credentials=Credential.from_json(
@@ -96,9 +96,9 @@ class EnvironmentOutput:
 
 @dataclasses.dataclass
 class ConfluentOutput:
-    environments: Mapping[str, EnvironmentOutput]
+    environments: Mapping[str, Environment]
 
-    def get_environment(self, environment_name: str) -> EnvironmentOutput:
+    def get_environment(self, environment_name: str) -> Environment:
         if environment_name in self.environments:
             return self.environments[environment_name]
         else:
@@ -110,13 +110,13 @@ class ConfluentOutput:
     ) -> pulumi.Output[ConfluentOutput]:
         return json_.apply(
             lambda j: ConfluentOutput(
-                environments={k: EnvironmentOutput.from_json(v) for k, v in j.items()}
+                environments={k: Environment.from_json(v) for k, v in j.items()}
             )
         )
 
 
 class Kafka(pulumi.ComponentResource):
-    confluent_environment: pulumi.Output[EnvironmentOutput]
+    confluent_environment: pulumi.Output[Environment]
 
     def __init__(
         self,
