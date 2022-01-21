@@ -51,14 +51,14 @@ class TopicOutput:
 
 
 @dataclasses.dataclass
-class ServiceOutput:
+class Service:
     ingress_topics: Sequence[str]
     egress_topics: Sequence[str]
     service_account: Credential
 
     @staticmethod
-    def from_json(json_: Mapping[str, Any]) -> ServiceOutput:
-        return ServiceOutput(
+    def from_json(json_: Mapping[str, Any]) -> Service:
+        return Service(
             ingress_topics=json_["ingress_topics"],
             egress_topics=json_["egress_topics"],
             service_account=Credential.from_json(json_["service_account"]),
@@ -70,7 +70,7 @@ class EnvironmentOutput:
     environment_id: str
     bootstrap_servers: str
     environment_credentials: Credential
-    services: Mapping[str, ServiceOutput]
+    services: Mapping[str, Service]
     topics: Mapping[str, TopicOutput]
 
     def get_service_credentials(self, service_name: str) -> Credential:
@@ -88,7 +88,7 @@ class EnvironmentOutput:
                 json_["environment_credentials"]
             ),
             services={
-                k: ServiceOutput.from_json(v) for k, v in json_["services"].items()
+                k: Service.from_json(v) for k, v in json_["services"].items()
             },
             topics={k: TopicOutput.from_json(v) for k, v in json_["topics"].items()},
         )
