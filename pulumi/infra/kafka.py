@@ -98,7 +98,7 @@ class Confluent:
 
 
 class Kafka(pulumi.ComponentResource):
-    confluent_environment: pulumi.Output[Environment]
+    confluent_environment: Optional[pulumi.Output[Environment]]
 
     def __init__(
         self,
@@ -108,10 +108,18 @@ class Kafka(pulumi.ComponentResource):
     ):
         super().__init__("grapl:Kafka", name=name, props=None, opts=opts)
 
-        confluent_stack_output = StackReference(
-            "grapl/ccloud-bootstrap/ccloud-bootstrap"
-        ).require_output("confluent")
+        if confluent_environment_name == "local-grapl":
+            self.confluent_environment = None
+        else:
+            confluent_stack_output = StackReference(
+                "grapl/ccloud-bootstrap/ccloud-bootstrap"
+            ).require_output("confluent")
+            self.confluent_environment = Confluent.from_json(
+                cast(pulumi.Output[Mapping[str, Any]], confluent_stack_output)
+            ).apply(lambda o: o.get_environment(confluent_environment_name))
 
-        self.confluent_environment = Confluent.from_json(
-            cast(pulumi.Output[Mapping[str, Any]], confluent_stack_output)
-        ).apply(lambda o: o.get_environment(confluent_environment_name))
+    def bootstrap_servers(self) -> pulumi.Output[str]:
+        if self.confluent_environment is None: # local-grapl
+            return pulumi.Output.from_input("LOCAL_GRAPL_REPLACE_IP:19092")
+        else:
+            return self.confluent_environment.apply(lambda e: e.bootstrap_servers)
