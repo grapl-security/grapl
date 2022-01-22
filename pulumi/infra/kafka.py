@@ -90,6 +90,12 @@ class Confluent:
 
     @staticmethod
     def from_json(data: pulumi.Output[Mapping[str, Any]]) -> pulumi.Output[Confluent]:
+        # Note this method takes a pulumi.Output[Mapping[str, Any]] whereas the
+        # other from_json implementations in this file take just a bare
+        # Mapping[str, Any]. The reason for this is that this class represents
+        # the outermost layer of a nested object which is the stack output of
+        # the "ccloud-bootstrap" stack. All the other from_json methods are
+        # called recursively in the apply(..) call below.
         return data.apply(
             lambda j: Confluent(
                 environments={k: Environment.from_json(v) for k, v in j.items()}
