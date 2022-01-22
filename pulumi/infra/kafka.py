@@ -119,7 +119,7 @@ class Kafka(pulumi.ComponentResource):
             ).apply(lambda o: o.get_environment(confluent_environment_name))
 
     def bootstrap_servers(self) -> pulumi.Output[str]:
-        if self.confluent_environment is None: # local-grapl
+        if self.confluent_environment is None:  # local-grapl
             return pulumi.Output.from_input("LOCAL_GRAPL_REPLACE_IP:19092")
         else:
             return self.confluent_environment.apply(lambda e: e.bootstrap_servers)
