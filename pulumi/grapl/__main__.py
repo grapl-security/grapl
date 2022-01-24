@@ -380,6 +380,14 @@ def main() -> None:
         )
 
         pulumi.export("kafka-endpoint", kafka.bootstrap_servers())
+        plugin_work_queue_postgres = Postgres(
+            name="plugin-work-queue",
+            subnet_ids=subnet_ids,
+            vpc_id=vpc_id,
+            availability_zone=availability_zone,
+            nomad_agent_security_group_id=nomad_agent_security_group_id,
+        )
+
         pulumi.export("redis-endpoint", cache.endpoint)
 
         artifacts = pulumi_config.require_object("artifacts")
@@ -409,10 +417,10 @@ def main() -> None:
             plugin_registry_db_port=plugin_registry_postgres.instance.port.apply(str),
             plugin_registry_db_username=plugin_registry_postgres.instance.username,
             plugin_registry_db_password=plugin_registry_postgres.instance.password,
-            plugin_work_queue_db_hostname=plugin_work_queue_db.instance.address,
-            plugin_work_queue_db_port=plugin_work_queue_db.instance.port.apply(str),
-            plugin_work_queue_db_username=plugin_work_queue_db.username,
-            plugin_work_queue_db_password=plugin_work_queue_db.password,
+            plugin_work_queue_db_hostname=plugin_work_queue_postgres.instance.address,
+            plugin_work_queue_db_port=plugin_work_queue_postgres.instance.port.apply(str),
+            plugin_work_queue_db_username=plugin_work_queue_postgres.instance.username,
+            plugin_work_queue_db_password=plugin_work_queue_postgres.instance.password,
             py_log_level=py_log_level,
             rust_log=rust_log_levels,
             **nomad_inputs,
