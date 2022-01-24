@@ -77,6 +77,8 @@ def subnets_to_single_az(ids: List[str]) -> pulumi.Output[str]:
 
 
 def main() -> None:
+    pulumi_config = pulumi.Config()
+
     # These tags will be added to all provisioned infrastructure
     # objects.
     register_auto_tags({"grapl deployment": config.DEPLOYMENT_NAME})
@@ -200,11 +202,15 @@ def main() -> None:
 
     nomad_grapl_core_timeout = "5m"
 
+    kafka = Kafka(
+        "kafka",
+        confluent_environment_name=pulumi_config.require("confluent-environment-name"),
+    )
+
     if config.LOCAL_GRAPL:
         ###################################
         # Local Grapl
         ###################################
-        kafka = Kafka("kafka")
 
         plugin_registry_db = LocalPostgresInstance(
             name="plugin-registry-db",
@@ -213,11 +219,10 @@ def main() -> None:
         # These are created in `grapl-local-infra.nomad` and not applicable to prod.
         # Nomad will replace the LOCAL_GRAPL_REPLACE_IP sentinel value with the correct IP.
         aws_endpoint = "http://LOCAL_GRAPL_REPLACE_IP:4566"
-        kafka_endpoint = "LOCAL_GRAPL_REPLACE_IP:19092"  # intentionally not 29092
         redis_endpoint = "redis://LOCAL_GRAPL_REPLACE_IP:6379"
 
         pulumi.export("aws-endpoint", aws_endpoint)
-        pulumi.export("kafka-endpoint", kafka_endpoint)
+        pulumi.export("kafka-endpoint", kafka.bootstrap_servers())
         pulumi.export("redis-endpoint", redis_endpoint)
 
         aws_config = cast(aws.config.vars._ExportableConfig, aws.config)
@@ -295,7 +300,6 @@ def main() -> None:
         ###################################
         # AWS Grapl
         ###################################
-        pulumi_config = pulumi.Config()
         # We use stack outputs from internally developed projects
         # We assume that the stack names will match the grapl stack name
         consul_stack = pulumi.StackReference(f"grapl/consul/{pulumi.get_stack()}")
@@ -359,7 +363,7 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
-        pulumi.export("kafka-endpoint", "dummy_value_while_we_wait_for_kafka")
+        pulumi.export("kafka-endpoint", kafka.bootstrap_servers())
         pulumi.export("redis-endpoint", cache.endpoint)
 
         artifacts = pulumi_config.require_object("artifacts")

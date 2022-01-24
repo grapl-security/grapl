@@ -33,6 +33,7 @@ config:
     # `host.docker.internal` that occurs in grapl-local-infra.nomad::kafka
     - "host.docker.internal:29092"
   kafka:tlsEnabled: "false"
+  grapl:confluent-environment-name: "local-grapl"
   # Host OS's Nomad instance
   nomad:address: http://host.docker.internal:4646
   postgresql:host: host.docker.internal
