@@ -410,7 +410,7 @@ def main() -> None:
             plugin_registry_db_username=plugin_registry_postgres.instance.username,
             plugin_registry_db_password=plugin_registry_postgres.instance.password,
             plugin_work_queue_db_hostname=plugin_work_queue_db.instance.address,
-            plugin_work_queue_db_port=plugin_work_queue_db.port.apply(str),
+            plugin_work_queue_db_port=plugin_work_queue_db.instance.port.apply(str),
             plugin_work_queue_db_username=plugin_work_queue_db.username,
             plugin_work_queue_db_password=plugin_work_queue_db.password,
             py_log_level=py_log_level,
