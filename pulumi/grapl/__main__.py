@@ -418,7 +418,9 @@ def main() -> None:
             plugin_registry_db_username=plugin_registry_postgres.instance.username,
             plugin_registry_db_password=plugin_registry_postgres.instance.password,
             plugin_work_queue_db_hostname=plugin_work_queue_postgres.instance.address,
-            plugin_work_queue_db_port=plugin_work_queue_postgres.instance.port.apply(str),
+            plugin_work_queue_db_port=plugin_work_queue_postgres.instance.port.apply(
+                str
+            ),
             plugin_work_queue_db_username=plugin_work_queue_postgres.instance.username,
             plugin_work_queue_db_password=plugin_work_queue_postgres.instance.password,
             py_log_level=py_log_level,
