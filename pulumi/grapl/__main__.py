@@ -200,8 +200,7 @@ def main() -> None:
     )
     py_log_level = "DEBUG"
 
-    # We've seen some potentially false failures from the default 5m timeout.
-    nomad_grapl_core_timeout = "8m"
+    nomad_grapl_core_timeout = "5m"
 
     kafka = Kafka(
         "kafka",
