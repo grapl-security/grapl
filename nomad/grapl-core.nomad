@@ -141,7 +141,6 @@ variable "plugin_work_queue_db_hostname" {
 
 variable "plugin_work_queue_db_port" {
   type        = string
-  default     = "5432"
   description = "What is the port for the plugin work queue table?"
 }
 
@@ -1210,7 +1209,6 @@ job "grapl-core" {
       }
 
       env {
-        NOMAD_SERVICE_ADDRESS           = "${attr.unique.network.ip-address}:4646"
         PLUGIN_WORK_QUEUE_BIND_ADDRESS  = "0.0.0.0:${NOMAD_PORT_plugin-work-queue-port}"
         PLUGIN_WORK_QUEUE_DB_HOSTNAME   = local.plugin_work_queue_db_hostname
         PLUGIN_WORK_QUEUE_DB_PASSWORD   = var.plugin_work_queue_db_password
