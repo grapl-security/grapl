@@ -26,5 +26,5 @@ members = [
   "./sysmon",
 ]
 
-[profile.test]
+[profile.dev]
 opt-level = 1
