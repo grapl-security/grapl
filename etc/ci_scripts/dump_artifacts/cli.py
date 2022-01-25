@@ -56,7 +56,7 @@ def main() -> None:
     cwd = os.getcwd()
     timestamp = datetime.now().isoformat(timespec="seconds")
     timestamp = timestamp.replace(":", "-")  # colons in paths are bad
-    artifacts_dir = Path(f"{cwd}/test_artifacts/{compose_project}_{timestamp}")
+    artifacts_dir = Path(f"{cwd}/test_artifacts/{timestamp}")
     os.makedirs(artifacts_dir, exist_ok=False)
 
     if compose_project:
