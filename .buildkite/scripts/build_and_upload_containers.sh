@@ -33,6 +33,7 @@ services=(
     node-identifier-retry
     osquery-generator
     plugin-registry
+    plugin-work-queue
     provisioner
     # Heads up: Adding `rust-integration-tests` here? Reconsider!
     # It's 9GB and Cloudsmith space is pricy!
