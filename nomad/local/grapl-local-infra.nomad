@@ -40,6 +40,7 @@ variable "ZOOKEEPER_PORT" {
   description = "Port for zookeeper"
 }
 
+
 variable "PLUGIN_REGISTRY_DB_USERNAME" {
   type        = string
   description = "The username for the plugin registry db"
@@ -51,6 +52,26 @@ variable "PLUGIN_REGISTRY_DB_PASSWORD" {
   description = "The password fort he plugin registry db"
   default     = "postgres"
 }
+
+variable "ORG_MANAGEMENT_POSTGRES_USER" {
+  type = string
+}
+
+variable "ORG_MANAGEMENT_POSTGRES_PASSWORD" {
+  type = string
+}
+
+variable "ORG_MANAGEMENT_POSTGRES_DB" {
+  type = string
+}
+
+variable "org_management_postgres_db_tag" {
+  type        = string
+  default     = "dev"
+  description = "The tagged version of postgresdb we should deploy."
+}
+
+
 
 locals {
   # This is the equivalent of `localhost` within a bridge network.
@@ -370,6 +391,29 @@ job "grapl-local-infra" {
             ignore_warnings = false
           }
         }
+      }
+    }
+  }
+
+  group "org-management-postgres-db" {
+    network {
+      port "postgres-port" {
+        static = 5432
+      }
+    }
+
+    task "org-management-postgres-db" {
+      driver = "docker"
+
+      config {
+        image = "${var.container_registry}grapl/org-management-postgres-db:${var.postgres_db_tag}"
+        ports = ["postgres-port"]
+      }
+
+      env {
+        POSTGRES_USER     = var.ORG_MANAGEMENT_POSTGRES_USER
+        POSTGRES_PASSWORD = var.ORG_MANAGEMENT_POSTGRES_PASSWORD
+        POSTGRES_DB       = var.ORG_MANAGEMENT_POSTGRES_DB
       }
     }
   }

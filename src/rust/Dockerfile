@@ -289,3 +289,8 @@ FROM rust-dist AS model-plugin-deployer
 COPY --from=build /outputs/model-plugin-deployer /
 ENTRYPOINT ["/model-plugin-deployer"]
 
+# org-management
+FROM rust-dist AS org-management-deploy
+
+COPY --from=build /outputs/org-management /
+ENTRYPOINT ["/org-management"]

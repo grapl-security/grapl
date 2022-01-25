@@ -92,6 +92,24 @@ services:
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
+  org-management:
+    image: grapl/org-management:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: rust/Dockerfile
+      target: org-management-deploy
+      args:
+        - RUST_BUILD=${RUST_BUILD:-debug}
+
+  org-management-postgres-db:
+    image: grapl/org-management-postgres-db:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: rust/Dockerfile
+      target: org-management-postgres-db-deploy
+      args:
+        - RUST_BUILD=${RUST_BUILD:-debug}
+
   ########################################################################
   # Python Services
   ########################################################################

@@ -192,6 +192,12 @@ variable "node_identifier_retry_queue" {
   type = string
 }
 
+variable "org_management_tag" {
+  type        = string
+  default     = "dev"
+  description = "The tagged version of org_management we should deploy."
+}
+
 variable "unid_subgraphs_generated_bucket" {
   type        = string
   description = "The destination bucket for unidentified subgraphs. Used by generators."
@@ -1120,5 +1126,27 @@ job "grapl-core" {
         }
       }
     }
+
+
+    group "org-management" {
+      network {
+        mode = "bridge"
+        port "org-management" {}
+      }
+      task "org-management" {
+        driver = "docker"
+        config {
+          image = "${var.container_registry}grapl/${var.container_repo}org-management:${var.org_management_tag}"
+          ports = ["org-management"]
+        }
+        env {
+          DATABASE_URL        = local.postgres_endpoint
+          ORG_MANAGEMENT_PORT = "${NOMAD_PORT_org-management}"
+          RUST_LOG            = var.rust_log
+          RUST_BACKTRACE      = local.rust_backtrace
+        }
+      }
+    }
+
   }
 }
