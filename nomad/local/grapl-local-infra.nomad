@@ -368,7 +368,7 @@ job "grapl-local-infra" {
       driver = "docker"
 
       config {
-        image = "postgres-ext:dev"
+        image = "postgres-ext:localstack_tag"
         ports = ["postgres"]
       }
 
@@ -411,7 +411,7 @@ job "grapl-local-infra" {
       driver = "docker"
 
       config {
-        image = "postgres-ext:dev"
+        image = "postgres-ext:localstack_tag"
         ports = ["postgres"]
       }
 
