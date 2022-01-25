@@ -379,7 +379,6 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
-        pulumi.export("kafka-endpoint", kafka.bootstrap_servers())
         plugin_work_queue_postgres = Postgres(
             name="plugin-work-queue",
             subnet_ids=subnet_ids,
@@ -388,6 +387,7 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
+        pulumi.export("kafka-endpoint", kafka.bootstrap_servers())
         pulumi.export("redis-endpoint", cache.endpoint)
 
         artifacts = pulumi_config.require_object("artifacts")
