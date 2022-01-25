@@ -167,7 +167,7 @@ install_hashicorp_tools() {
         sudo chmod 644 /etc/apt/trusted.gpg.d/hashicorp-apt.gpg
     sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
     sudo apt-get update
-    sudo apt-get install -y consul nomad packer
+    sudo apt-get install -y consul nomad packer vault
 }
 
 install_cni_plugins() {
