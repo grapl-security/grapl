@@ -42,9 +42,9 @@ variable "_redis_endpoint" {
   description = "On which port can services find redis?"
 }
 
-variable "_kafka_endpoint" {
+variable "_kafka_bootstrap_servers" {
   type        = string
-  description = "On which port can services find Kafka?"
+  description = "Comma separated host:port pairs specifying which brokers clients should connect to initially."
 }
 
 variable "schema_properties_table_name" {
@@ -106,9 +106,9 @@ EOH
 
 
   # Prefer these over their `var` equivalents
-  redis_endpoint                = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
-  kafka_endpoint                = replace(var._kafka_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
   plugin_work_queue_db_hostname = replace(var._plugin_work_queue_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  redis_endpoint = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  kafka_bootstrap_servers = replace(var._kafka_bootstrap_servers, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
 
   _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
   _redis         = split(":", local._redis_trimmed)
@@ -126,7 +126,7 @@ job "integration-tests" {
     attempts = 0
   }
 
-  # Specifies that this job is the most high priority job we have; nothing else should take precedence 
+  # Specifies that this job is the most high priority job we have; nothing else should take precedence
   priority = 100
 
   group "rust-integration-tests" {
@@ -197,7 +197,7 @@ job "integration-tests" {
         RUST_BACKTRACE = 1
         RUST_LOG       = local.log_level
         REDIS_ENDPOINT = local.redis_endpoint
-        KAFKA_ENDPOINT = local.kafka_endpoint
+        KAFKA_BOOTSTRAP_SERVERS = local.kafka_bootstrap_servers
 
         GRAPL_MODEL_PLUGIN_DEPLOYER_HOST = "0.0.0.0"
         GRAPL_MODEL_PLUGIN_DEPLOYER_PORT = "${NOMAD_UPSTREAM_PORT_model-plugin-deployer}"
@@ -321,4 +321,3 @@ job "integration-tests" {
   }
 
 }
-

@@ -1,39 +1,14 @@
 use std::time::Duration;
 
-use metric_message::{
-    Counter,
-    Gauge,
-    Histogram,
-    MetricWrapper,
-};
-use metrics::{
-    GaugeValue,
-    Key,
-    Recorder,
-    SetRecorderError,
-    Unit,
-};
+use metric_message::{Counter, Gauge, Histogram, MetricWrapper};
+use metrics::{GaugeValue, Key, Recorder, SetRecorderError, Unit};
 use prost::Message;
 use rdkafka::{
-    client::{
-        ClientContext,
-        DefaultClientContext,
-    },
-    producer::{
-        FutureProducer,
-        FutureRecord as Record,
-        Producer,
-    },
-    util::{
-        AsyncRuntime,
-        DefaultRuntime,
-    },
+    client::{ClientContext, DefaultClientContext},
+    producer::{FutureProducer, FutureRecord as Record, Producer},
+    util::{AsyncRuntime, DefaultRuntime},
 };
-use tokio::sync::mpsc::{
-    error::SendError,
-    UnboundedReceiver,
-    UnboundedSender,
-};
+use tokio::sync::mpsc::{error::SendError, UnboundedReceiver, UnboundedSender};
 use tracing::Instrument;
 
 pub mod counter;
@@ -265,5 +240,5 @@ impl Recorder for KafkaRecorder {
 }
 
 pub fn kafka_bootstrap_servers() -> String {
-    std::env::var("KAFKA_ENDPOINT").expect("KAFKA_ENDPOINT")
+    std::env::var("KAFKA_BOOTSTRAP_SERVERS").expect("KAFKA_BOOTSTRAP_SERVERS")
 }

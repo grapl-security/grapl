@@ -118,7 +118,7 @@ def main() -> None:
             "deployment_name": grapl_stack.deployment_name,
             "docker_user": os.environ["DOCKER_USER"],
             "grapl_root": os.environ["GRAPL_ROOT"],
-            "_kafka_endpoint": grapl_stack.kafka_endpoint,
+            "_kafka_bootstrap_servers": grapl_stack.kafka_bootstrap_servers,
             "_redis_endpoint": grapl_stack.redis_endpoint,
             "schema_properties_table_name": grapl_stack.schema_properties_table_name,
             "test_user_name": grapl_stack.test_user_name,
@@ -149,7 +149,7 @@ class GraplStack:
 
         self.analyzer_bucket = require_str("analyzers-bucket")
         self.deployment_name = require_str("deployment-name")
-        self.kafka_endpoint = require_str("kafka-endpoint")
+        self.kafka_bootstrap_servers = require_str("kafka-bootstrap-servers")
         self.redis_endpoint = require_str("redis-endpoint")
         self.schema_properties_table_name = require_str("schema-properties-table")
         self.schema_table_name = require_str("schema-table")
