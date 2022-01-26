@@ -5,6 +5,7 @@ argon2-cffi
 boto3
 botocore
 click
+confluent-kafka
 cookiecutter==1.7.3
 hypothesis
 protobuf>=3.12.1
