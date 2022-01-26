@@ -174,11 +174,34 @@ install_cni_plugins() {
     echo_banner "Installing CNI plugins required for Nomad bridge networks"
     sudo mkdir -p /opt/cni/bin
     cd /opt/cni/bin || exit 2
-    VERSION=$(get_latest_release containernetworking/plugins)
+    REPO="containernetworking/plugins"
+    VERSION=$(get_latest_release "${REPO}")
     TGZ_NAME="cni-plugins-linux-amd64-${VERSION}.tgz"
-    sudo wget "https://github.com/containernetworking/plugins/releases/download/${VERSION}/${TGZ_NAME}"
+    sudo wget "https://github.com/${REPO}/releases/download/${VERSION}/${TGZ_NAME}"
     sudo tar -xf "${TGZ_NAME}"
     sudo rm "${TGZ_NAME}"
+}
+
+install_nomad_firecracker() {
+    echo_banner "Installing Firecracker nomad plugins"
+    sudo mkdir -p /opt/nomad/plugins
+    cd /opt/nomad/plugins || exit 2
+
+    REPO="cneira/firecracker-task-driver"
+    VERSION=$(get_latest_release "${REPO}")
+    DRIVER_TGZ_NAME="firecracker-task-driver-${VERSION}.tar.gz"
+    sudo wget "https://github.com/${REPO}/releases/download/${VERSION}/${DRIVER_TGZ_NAME}"
+    sudo tar -xf "${DRIVER_TGZ_NAME}"
+    sudo rm "${DRIVER_TGZ_NAME}"
+
+    echo_banner "Installing Firecracker nomad CNI plugins"
+    sudo mkdir -p /opt/cni/bin
+    cd /opt/cni/bin || exit 2
+
+    CNI_TGZ_NAME="firecracker-task-driver-cni-plugins-${VERSION}.tar.gz"
+    sudo wget "https://github.com/${REPO}/releases/download/${VERSION}/${CNI_TGZ_NAME}"
+    sudo tar -xf "${CNI_TGZ_NAME}"
+    sudo rm "${CNI_TGZ_NAME}"
 }
 
 install_nomad_chromeos_workaround() {
