@@ -1,0 +1,32 @@
+# Contents of /etc/systemd/system/init.service
+[Unit]
+Description=Plugin Init
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/init-grapl-plugin
+User=root
+Group=root
+
+# Some sandboxing - less than the plugin itself. We can be permissive here.
+
+DevicePolicy=closed
+LockPersonality=yes
+NoNewPrivileges=yes
+PrivateDevices=yes
+PrivateMounts=yes
+PrivateTmp=yes
+PrivateUsers=yes
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectHostname=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectProc=invisible
+RemoveIPC=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+ProtectHostname=yes

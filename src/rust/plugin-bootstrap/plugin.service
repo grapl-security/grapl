@@ -1,4 +1,4 @@
-# Contents of /etc/systemd/system/grapl-plugin.service
+# Contents of /etc/systemd/system/plugin.service
 [Unit]
 Description=Plugin
 After=network.target
@@ -6,7 +6,7 @@ After=network.target
 [Service]
 Type=simple
 Restart=always
-ExecStartPre=/usr/local/bin/init
+After=init.service
 ExecStart=/usr/local/bin/grapl-plugin
 
 # All plugins should listen on port 5555 internally
