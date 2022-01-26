@@ -21,7 +21,6 @@ ensure_cros_bridge_networking_workaround() {
             source "${THIS_DIR}/../../etc/chromeos/lib/installs.sh"
             (
                 install_nomad_chromeos_workaround
-                install_cni_plugins
             )
             echo "ChromeOS Nomad bridge networking workaround should now be installed. Continuing..."
         fi
