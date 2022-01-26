@@ -1,5 +1,10 @@
-use rust_proto::plugin_bootstrap::{GetBootstrapInfoRequest, GetBootstrapInfoRequestProto, GetBootstrapInfoResponse, PluginBootstrapServiceClient as PluginBootstrapClientProto, PluginBootstrapDeserializationError};
-
+use rust_proto::plugin_bootstrap::{
+    GetBootstrapInfoRequest,
+    GetBootstrapInfoRequestProto,
+    GetBootstrapInfoResponse,
+    PluginBootstrapDeserializationError,
+    PluginBootstrapServiceClient as PluginBootstrapClientProto,
+};
 use tonic::{
     codegen::{
         Body,
@@ -16,7 +21,6 @@ pub enum PluginBootstrapClientError {
     Status(#[from] tonic::Status),
     #[error("PluginBootstrapDeserializationError")]
     PluginBootstrapDeserializationError(#[from] PluginBootstrapDeserializationError),
-
 }
 
 #[derive(Debug, Clone)]
@@ -42,32 +46,30 @@ impl PluginBootstrapClient<tonic::transport::Channel> {
             .timeout(std::time::Duration::from_secs(5))
             .concurrency_limit(30);
         let channel = endpoint.connect().await?;
-        Ok(Self::new(PluginBootstrapClientProto::new(
-            channel,
-        )))
+        Ok(Self::new(PluginBootstrapClientProto::new(channel)))
     }
 }
 
 impl<T> PluginBootstrapClient<T>
-    where
-        T: tonic::client::GrpcService<tonic::body::BoxBody>,
-        T::ResponseBody: Body + Send + 'static,
-        T::Error: Into<StdError>,
-        <T::ResponseBody as Body>::Error: Into<StdError> + Send,
+where
+    T: tonic::client::GrpcService<tonic::body::BoxBody>,
+    T::ResponseBody: Body + Send + 'static,
+    T::Error: Into<StdError>,
+    <T::ResponseBody as Body>::Error: Into<StdError> + Send,
 {
     pub fn new(inner: PluginBootstrapClientProto<T>) -> Self {
         Self { inner }
     }
 
     #[tracing::instrument(skip(self))]
-    async fn get_bootstrap_info(
+    pub async fn get_bootstrap_info(
         &mut self,
         _request: GetBootstrapInfoRequest,
-    ) -> Result<GetBootstrapInfoResponse, PluginBootstrapClientError>
-    {
-        let response = self.inner.get_bootstrap_info(
-            GetBootstrapInfoRequestProto {}
-        ).await?;
+    ) -> Result<GetBootstrapInfoResponse, PluginBootstrapClientError> {
+        let response = self
+            .inner
+            .get_bootstrap_info(GetBootstrapInfoRequestProto {})
+            .await?;
         let response = response.into_inner();
         Ok(response.try_into()?)
     }

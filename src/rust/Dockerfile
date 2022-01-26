@@ -234,6 +234,14 @@ FROM rust-dist AS plugin-registry-deploy
 COPY --from=build /outputs/plugin-registry /
 ENTRYPOINT ["/plugin-registry"]
 
+# plugin-bootstrap
+FROM rust-dist AS plugin-bootstrap-deploy
+
+# hadolint ignore=DL3022
+COPY --from=build /outputs/plugin-bootstrap /
+ENTRYPOINT ["/plugin-bootstrap"]
+
+
 # node-identifier
 FROM rust-dist AS node-identifier-deploy
 

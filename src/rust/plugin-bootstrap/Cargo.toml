@@ -7,6 +7,10 @@ edition = "2021"
 name = "plugin-bootstrap"
 path = "src/main.rs"
 
+[[bin]]
+name = "plugin-bootstrap-init"
+path = "src/init.rs"
+
 [lib]
 name = "plugin_bootstrap"
 

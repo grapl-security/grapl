@@ -1,33 +1,50 @@
-use std::io::Read;
-use std::sync::atomic::Ordering;
-use tonic::{Status};
-use tonic::transport::Server;
-use rust_proto::plugin_bootstrap::{GetBootstrapInfoRequestProto, GetBootstrapInfoResponse, GetBootstrapInfoResponseProto, PluginBootstrapService, PluginBootstrapServiceServer};
+use std::{
+    io::Read,
+    sync::atomic::Ordering,
+};
+
+use rust_proto::plugin_bootstrap::{
+    CertificateEncoding,
+    ClientCertificate,
+    GetBootstrapInfoRequestProto,
+    GetBootstrapInfoResponse,
+    GetBootstrapInfoResponseProto,
+    PluginBootstrapService,
+    PluginBootstrapServiceServer,
+    PluginPayload,
+};
+use tonic::{
+    transport::Server,
+    Status,
+};
+
 use crate::PluginBootstrapServiceConfig;
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginBootstrapperError {
     #[error("IoError")]
-    IoError(#[from] std::io::Error)
+    IoError(#[from] std::io::Error),
 }
 
 pub struct PluginBootstrapper {
-    // todo: https://docs.rs/rustls/latest/rustls/struct.Certificate.html
-    pub certificate: Vec<u8>,
-    pub plugin_binary: Vec<u8>,
-    pub ctr: std::sync::Arc<std::sync::atomic::AtomicUsize>,
+    pub client_certificate: ClientCertificate,
+    pub plugin_payload: PluginPayload,
+    pub counter: std::sync::Arc<std::sync::atomic::AtomicUsize>,
 }
 
 impl PluginBootstrapper {
-    pub fn new(certificate: Vec<u8>, plugin_binary: Vec<u8>) -> Self {
+    pub fn new(client_certificate: ClientCertificate, plugin_payload: PluginPayload) -> Self {
         Self {
-            certificate,
-            plugin_binary,
-            ctr: std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0)),
+            client_certificate,
+            plugin_payload,
+            counter: std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0)),
         }
     }
 
-    pub fn load(certificate_path: &std::path::Path, plugin_binary_path: &std::path::Path) -> Result<Self, PluginBootstrapperError> {
+    pub fn load(
+        certificate_path: &std::path::Path,
+        plugin_binary_path: &std::path::Path,
+    ) -> Result<Self, PluginBootstrapperError> {
         let certificate_file = std::fs::File::open(certificate_path)?;
         let plugin_binary_file = std::fs::File::open(plugin_binary_path)?;
 
@@ -39,23 +56,26 @@ impl PluginBootstrapper {
         let mut reader = std::io::BufReader::new(plugin_binary_file);
         reader.read_to_end(&mut plugin_binary)?;
 
-        Ok(PluginBootstrapper::new(certificate, plugin_binary))
+        let plugin_payload = PluginPayload { plugin_binary };
+        let client_certificate = ClientCertificate {
+            client_certificate: certificate,
+            // todo: I'm just asserting this for now - but how would we know?
+            certificate_encoding: CertificateEncoding::Pem,
+        };
+        Ok(PluginBootstrapper::new(client_certificate, plugin_payload))
     }
 
-    async fn get_bootstrap_info(
-        &self,
-    ) -> GetBootstrapInfoResponse
-    {
-        let ctr = self.ctr.fetch_add(1, Ordering::SeqCst);
-        if ctr != 0 {
+    async fn get_bootstrap_info(&self) -> GetBootstrapInfoResponse {
+        let counter = self.counter.fetch_add(1, Ordering::SeqCst);
+        if counter != 0 {
             tracing::warn!(
                 message="Bootstrap information has been requested more than once.",
-                count=%ctr,
+                count=%counter,
             );
         }
         GetBootstrapInfoResponse {
-            plugin_binary: self.plugin_binary.clone(),
-            certificate: self.certificate.clone(),
+            plugin_payload: self.plugin_payload.clone(),
+            client_certificate: self.client_certificate.clone(),
         }
     }
 
@@ -78,12 +98,12 @@ impl PluginBootstrapper {
         Server::builder()
             .trace_fn(|request| {
                 tracing::info_span!(
-                "PluginBootstrap",
-                headers = ?request.headers(),
-                method = ?request.method(),
-                uri = %request.uri(),
-                extensions = ?request.extensions(),
-            )
+                    "PluginBootstrap",
+                    headers = ?request.headers(),
+                    method = ?request.method(),
+                    uri = %request.uri(),
+                    extensions = ?request.extensions(),
+                )
             })
             .add_service(health_service)
             .add_service(PluginBootstrapServiceServer::new(self))
@@ -92,7 +112,6 @@ impl PluginBootstrapper {
 
         Ok(())
     }
-
 }
 
 #[tonic::async_trait]
@@ -101,11 +120,8 @@ impl PluginBootstrapService for PluginBootstrapper {
     async fn get_bootstrap_info(
         &self,
         _request: tonic::Request<GetBootstrapInfoRequestProto>,
-    ) -> Result<tonic::Response<GetBootstrapInfoResponseProto>, Status>
-    {
+    ) -> Result<tonic::Response<GetBootstrapInfoResponseProto>, Status> {
         let response = self.get_bootstrap_info().await;
-        Ok(tonic::Response::new(
-            response.into()
-        ))
+        Ok(tonic::Response::new(response.into()))
     }
 }

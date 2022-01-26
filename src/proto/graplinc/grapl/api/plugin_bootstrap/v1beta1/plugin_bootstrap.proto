@@ -2,12 +2,27 @@ syntax = "proto3";
 
 package graplinc.grapl.api.plugin_bootstrap.v1beta1;
 
+message PluginPayload {
+  bytes plugin_binary = 1;
+}
+
+enum CertificateEncoding {
+  UNKNOWN = 0;
+  PEM = 1;
+}
+
+message ClientCertificate {
+  bytes client_certificate = 1;
+  CertificateEncoding certificate_encoding = 2;
+}
+
 message GetBootstrapInfoRequest {
+
 }
 
 message GetBootstrapInfoResponse {
-  bytes plugin_binary = 1;
-  bytes certificate = 2;
+  PluginPayload plugin_payload = 1;
+  ClientCertificate client_certificate = 2;
 }
 
 service PluginBootstrapService {

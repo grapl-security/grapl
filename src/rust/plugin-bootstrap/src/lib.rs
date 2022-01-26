@@ -14,6 +14,3 @@ pub struct PluginBootstrapServiceConfig {
     #[structopt(env)]
     pub plugin_certificate_path: std::path::PathBuf,
 }
-
-
-
