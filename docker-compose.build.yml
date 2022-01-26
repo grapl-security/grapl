@@ -92,6 +92,15 @@ services:
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
+  plugin-work-queue:
+    image: plugin-work-queue:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: rust/Dockerfile
+      target: plugin-work-queue-deploy
+      args:
+        - RUST_BUILD=${RUST_BUILD:-debug}
+
   ########################################################################
   # Python Services
   ########################################################################
