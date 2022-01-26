@@ -27,7 +27,7 @@ ensure_cros_bridge_networking_workaround() {
     fi
 }
 
-ensure_firecracker_cni() {
+ensure_firecracker_driver_installed() {
     expected_cni_path="/opt/nomad/plugins/firecracker-task-driver"
     if [[ ! -f "${expected_cni_path}" ]]; then
         echo "It looks like you don't have the Firecracker nomad stuff set up yet."
@@ -40,6 +40,7 @@ ensure_firecracker_cni() {
 
 ensure_valid_env() {
     ensure_cros_bridge_networking_workaround
+    ensure_firecracker_driver_installed
 
     # Ensure script is being run with `local-grapl.env` variables
     # via `make start-nomad-ci`
