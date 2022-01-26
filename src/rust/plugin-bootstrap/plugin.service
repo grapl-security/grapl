@@ -6,6 +6,7 @@ After=network.target
 [Service]
 Type=simple
 Restart=always
+ExecStartPre=/usr/local/bin/init
 ExecStart=/usr/local/bin/grapl-plugin
 
 # All plugins should listen on port 5555 internally
