@@ -64,11 +64,11 @@ where
     #[tracing::instrument(skip(self))]
     pub async fn get_bootstrap_info(
         &mut self,
-        _request: GetBootstrapInfoRequest,
+        request: GetBootstrapInfoRequest,
     ) -> Result<GetBootstrapInfoResponse, PluginBootstrapClientError> {
         let response = self
             .inner
-            .get_bootstrap_info(GetBootstrapInfoRequestProto {})
+            .get_bootstrap_info(GetBootstrapInfoRequestProto::from(request))
             .await?;
         let response = response.into_inner();
         Ok(response.try_into()?)

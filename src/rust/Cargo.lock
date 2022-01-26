@@ -2990,7 +2990,6 @@ dependencies = [
  "futures",
  "grapl-config",
  "grapl-utils",
- "lazy_static",
  "rust-proto",
  "structopt",
  "thiserror",
