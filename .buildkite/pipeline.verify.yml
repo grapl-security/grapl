@@ -168,28 +168,3 @@ steps:
               config:
                 label: ":pipeline: Upload Cargo Audit"
                 command: ".buildkite/pipeline.cargo-audit.sh | buildkite-agent pipeline upload"
-
-    # The preview mainly functions as a kind of smoke test here more
-    # than actually trying to do a meaningful preview. If we can do a
-    # successful preview, our code at least "compiles".
-  - label: ":pulumi: Pulumi Preview grapl/testing environment"
-    plugins:
-      - grapl-security/vault-login#v0.1.0
-      - grapl-security/vault-env#v0.1.0:
-          secrets:
-            - PULUMI_ACCESS_TOKEN
-      - improbable-eng/metahook#v0.4.1:
-          pre-command: |
-            # This is slightly hacky, but means we don't need to build
-            # packages locally first. The `set-branches` and
-            # `--depth=1` are to account for us using shallow clones
-            git remote set-branches --add origin rc
-            git fetch --depth=1 origin rc
-            # Copy over just the artifacts
-            FORCE_MODIFY=1 ./pulumi/bin/copy_artifacts_from_rc.sh grapl/testing
-      - grapl-security/pulumi#v0.1.2:
-          command: preview
-          project_dir: pulumi/grapl
-          stack: grapl/testing
-    agents:
-      queue: "pulumi-staging"

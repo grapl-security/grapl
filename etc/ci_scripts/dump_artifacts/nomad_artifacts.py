@@ -7,7 +7,7 @@ import os
 import shutil
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, cast
 
 from nomad import Nomad
 from nomad.api.exceptions import URLNotFoundNomadException
@@ -17,7 +17,7 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
-OutOrErr = Union[Literal["stdout", "stderr"]]
+OutOrErr = Literal["stdout", "stderr"]
 OUTPUT_TYPES: List[OutOrErr] = ["stdout", "stderr"]
 
 nomad_agent_log_path = Path("/tmp/nomad-agent.log").resolve()
@@ -32,15 +32,12 @@ def _get_nomad_client() -> Nomad:
 
 
 def dump_all(artifacts_dir: Path, dump_agent_logs: bool) -> None:
-    nomad_artifacts_dir = artifacts_dir / "nomad"
-    os.makedirs(nomad_artifacts_dir, exist_ok=True)
-
     nomad_client = _get_nomad_client()
     allocations = _get_allocations(nomad_client)
 
     if dump_agent_logs:
-        _dump_nomad_consul_agent_logs(nomad_artifacts_dir)
-    _get_nomad_logs_for_each_service(nomad_artifacts_dir, nomad_client, allocations)
+        _dump_nomad_consul_agent_logs(artifacts_dir)
+    _get_nomad_logs_for_each_service(artifacts_dir, nomad_client, allocations)
 
 
 def _dump_nomad_consul_agent_logs(artifacts_dir: Path) -> None:
