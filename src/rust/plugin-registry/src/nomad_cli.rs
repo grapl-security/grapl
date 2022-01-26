@@ -45,10 +45,7 @@ fn parse_hcl2_to_json(hcl2: &str, vars: HashMap<String, String>) -> Result<Strin
 #[tracing::instrument(skip(hcl2, vars), err)]
 pub fn parse_hcl2(hcl2: &str, vars: HashMap<String, String>) -> Result<models::Job, ParseHclError> {
     let job_json: String = parse_hcl2_to_json(hcl2, vars).map_err(ParseHclError::from)?;
-    tracing::debug!(
-        message = "The json is",
-        json=?job_json,
-    );
+
     // so we get back json that's like { "Job": {...} }
     // and ultimately, we want to deserialize that inner, {...} part
     // so I found an arbitrarily-chosen model that fits this structure
@@ -56,5 +53,10 @@ pub fn parse_hcl2(hcl2: &str, vars: HashMap<String, String>) -> Result<models::J
     let job_parent: models::JobValidateRequest =
         serde_json::from_str(&job_json).map_err(ParseHclError::from)?;
     let job_box = job_parent.job.expect("Expected a Job here");
-    Ok(*job_box)
+    let job = *job_box;
+    // Quick sanity check that deserialization worked
+    job.name
+        .as_ref()
+        .expect("Expected the job to have a Name field");
+    Ok(job)
 }
