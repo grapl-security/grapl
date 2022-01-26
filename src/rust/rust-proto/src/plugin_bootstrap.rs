@@ -6,7 +6,6 @@ pub use crate::graplinc::grapl::api::plugin_bootstrap::v1beta1::{
         PluginBootstrapService,
         PluginBootstrapServiceServer,
     },
-    CertificateEncoding as CertificateEncodingProto,
     ClientCertificate as ClientCertificateProto,
     GetBootstrapInfoRequest as GetBootstrapInfoRequestProto,
     GetBootstrapInfoResponse as GetBootstrapInfoResponseProto,
@@ -76,45 +75,15 @@ impl From<PluginPayload> for PluginPayloadProto {
     }
 }
 
-#[derive(Clone, Debug)]
-pub enum CertificateEncoding {
-    Pem,
-}
-
-impl TryFrom<CertificateEncodingProto> for CertificateEncoding {
-    type Error = PluginBootstrapDeserializationError;
-
-    fn try_from(value: CertificateEncodingProto) -> Result<Self, Self::Error> {
-        match value {
-            CertificateEncodingProto::Unknown => {
-                Err(PluginBootstrapDeserializationError::UnknownVariant(
-                    "CertificateEncodingProto".into(),
-                ))
-            }
-            CertificateEncodingProto::Pem => Ok(CertificateEncoding::Pem),
-        }
-    }
-}
-
-impl From<CertificateEncoding> for CertificateEncodingProto {
-    fn from(value: CertificateEncoding) -> Self {
-        match value {
-            CertificateEncoding::Pem => CertificateEncodingProto::Pem,
-        }
-    }
-}
-
 #[derive(Clone)]
 pub struct ClientCertificate {
     pub client_certificate: Vec<u8>,
-    pub certificate_encoding: CertificateEncoding,
 }
 
 impl std::fmt::Debug for ClientCertificate {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ClientCertificate")
             .field("client_certificate.len", &self.client_certificate)
-            .field("certificate_encoding", &self.certificate_encoding)
             .finish()
     }
 }
@@ -129,21 +98,16 @@ impl TryFrom<ClientCertificateProto> for ClientCertificate {
             ));
         }
 
-        let certificate_encoding = CertificateEncoding::try_from(value.certificate_encoding())?;
-
         Ok(Self {
             client_certificate: value.client_certificate,
-            certificate_encoding,
         })
     }
 }
 
 impl From<ClientCertificate> for ClientCertificateProto {
     fn from(value: ClientCertificate) -> Self {
-        let certificate_encoding: CertificateEncodingProto = value.certificate_encoding.into();
         Self {
             client_certificate: value.client_certificate,
-            certificate_encoding: certificate_encoding as i32,
         }
     }
 }

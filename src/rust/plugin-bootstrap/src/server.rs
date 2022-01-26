@@ -4,7 +4,6 @@ use std::{
 };
 
 use rust_proto::plugin_bootstrap::{
-    CertificateEncoding,
     ClientCertificate,
     GetBootstrapInfoRequestProto,
     GetBootstrapInfoResponse,
@@ -59,8 +58,6 @@ impl PluginBootstrapper {
         let plugin_payload = PluginPayload { plugin_binary };
         let client_certificate = ClientCertificate {
             client_certificate: certificate,
-            // todo: I'm just asserting this for now - but how would we know?
-            certificate_encoding: CertificateEncoding::Pem,
         };
         Ok(PluginBootstrapper::new(client_certificate, plugin_payload))
     }
