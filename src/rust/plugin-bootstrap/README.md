@@ -1,13 +1,12 @@
 ## Plugin Bootstrapping
 
-Plugins execute as systemd services. In order to attain the certificates as well
-as the binary for the plugin itself we have a precommit hook in systemd to
-execute our init binary.
+Plugin execution is broken up into two systemd services 'init' and 'plugin'.
 
-The init binary itself will just reach out to the plugin bootstrap server to
-attain the binary and cert, write those to disk, and then exit.
+'init' executes once. It reaches out to the plugin-bootstrap service and retrieves
+the plugin binary and client certificate artifacts.
 
-At that point systemd will launch the plugin itself.
+It writes them off to the disk and then exits.
 
-When a certificate or binary updates nomad should handle the re-execution of the
-whole plugin group.
+The 'plugin' service depends on the 'init' service and won't execute until 'init' has completed.
+
+The plugin service manages the execution of the plugin itself.
