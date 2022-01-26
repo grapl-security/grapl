@@ -52,6 +52,31 @@ variable "PLUGIN_REGISTRY_DB_PASSWORD" {
   default     = "postgres"
 }
 
+
+variable "PLUGIN_WORK_QUEUE_DB_USERNAME" {
+  type        = string
+  description = "The username for the plugin work queue db"
+  default     = "postgres"
+}
+
+variable "PLUGIN_WORK_QUEUE_DB_PASSWORD" {
+  type        = string
+  description = "The password fort he plugin work queue db"
+  default     = "postgres"
+}
+
+
+variable "PLUGIN_REGISTRY_DB_PORT" {
+  type        = string
+  description = "The port for the plugin registry db"
+}
+
+
+variable "PLUGIN_WORK_QUEUE_DB_PORT" {
+  type        = string
+  description = "The port for the plugin work queue db"
+}
+
 locals {
   # This is the equivalent of `localhost` within a bridge network.
   # Useful for, for instance, talking to Zookeeper from Kafka without Consul Connect
@@ -330,21 +355,20 @@ job "grapl-local-infra" {
     }
   }
 
-  group "postgres" {
-    # Postgres will be available to Nomad Jobs (sans Consul Connect)
-    # and the Host OS at localhost:5432
+  group "plugin-registry-db" {
     network {
       mode = "bridge"
       port "postgres" {
-        static = 5432 # postgres default
+        static = var.PLUGIN_REGISTRY_DB_PORT
+        to     = 5432 # postgres default
       }
     }
 
-    task "postgres" {
+    task "plugin-registry-db" {
       driver = "docker"
 
       config {
-        image = "postgres:13.4-bullseye"
+        image = "postgres-ext:${var.localstack_tag}"
         ports = ["postgres"]
       }
 
@@ -354,7 +378,50 @@ job "grapl-local-infra" {
       }
 
       service {
-        name = "postgres"
+        name = "plugin-registry-db"
+
+        check {
+          type     = "script"
+          name     = "check_postgres"
+          command  = "pg_isready"
+          args     = ["-U", "postgres"]
+          interval = "20s"
+          timeout  = "10s"
+
+          check_restart {
+            limit           = 2
+            grace           = "30s"
+            ignore_warnings = false
+          }
+        }
+      }
+    }
+  }
+
+  group "plugin-work-queue-db" {
+    network {
+      mode = "bridge"
+      port "postgres" {
+        static = var.PLUGIN_WORK_QUEUE_DB_PORT
+        to     = 5432
+      }
+    }
+
+    task "plugin-work-queue-db" {
+      driver = "docker"
+
+      config {
+        image = "postgres-ext:${var.localstack_tag}"
+        ports = ["postgres"]
+      }
+
+      env {
+        POSTGRES_USER     = var.PLUGIN_WORK_QUEUE_DB_USERNAME
+        POSTGRES_PASSWORD = var.PLUGIN_WORK_QUEUE_DB_PASSWORD
+      }
+
+      service {
+        name = "plugin-work-queue-db"
 
         check {
           type     = "script"

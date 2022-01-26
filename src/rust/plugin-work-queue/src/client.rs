@@ -1,14 +1,18 @@
 use rust_proto::plugin_work_queue::{
     plugin_work_queue_service_client::PluginWorkQueueServiceClient as _PluginWorkQueueServiceClient,
-    AcknowledgeRequest,
-    AcknowledgeRequestProto,
-    AcknowledgeResponse,
+    AcknowledgeAnalyzerRequest,
+    AcknowledgeAnalyzerRequestProto,
+    AcknowledgeAnalyzerResponse,
+    AcknowledgeGeneratorRequest,
+    AcknowledgeGeneratorRequestProto,
+    AcknowledgeGeneratorResponse,
     GetExecuteAnalyzerRequest,
     GetExecuteAnalyzerRequestProto,
     GetExecuteAnalyzerResponse,
     GetExecuteGeneratorRequest,
     GetExecuteGeneratorRequestProto,
     GetExecuteGeneratorResponse,
+    PluginWorkQueueDeserializationError,
     PutExecuteAnalyzerRequest,
     PutExecuteAnalyzerRequestProto,
     PutExecuteAnalyzerResponse,
@@ -16,14 +20,23 @@ use rust_proto::plugin_work_queue::{
     PutExecuteGeneratorRequestProto,
     PutExecuteGeneratorResponse,
 };
-use tonic::codegen::{
-    Body,
-    StdError,
+use tonic::{
+    codegen::{
+        Body,
+        StdError,
+    },
+    Status,
 };
 
 #[derive(Debug, thiserror::Error)]
-pub enum PluginWorkQueueServiceClientError {}
+pub enum PluginWorkQueueServiceClientError {
+    #[error("GrpcStatus {0}")]
+    GrpcStatus(#[from] Status),
+    #[error("DeserializeError {0}")]
+    DeserializeError(#[from] PluginWorkQueueDeserializationError),
+}
 
+#[derive(Debug)]
 pub struct PluginWorkQueueServiceClient<T> {
     inner: _PluginWorkQueueServiceClient<T>,
 }
@@ -40,15 +53,16 @@ where
     }
 
     /// Adds a new execution job for a generator
+    #[tracing::instrument(skip(self, request), err)]
     pub async fn put_execute_generator(
         &mut self,
         request: PutExecuteGeneratorRequest,
     ) -> Result<PutExecuteGeneratorResponse, PluginWorkQueueServiceClientError> {
-        self.inner
+        let response = self
+            .inner
             .put_execute_generator(PutExecuteGeneratorRequestProto::from(request))
-            .await
-            .expect("todo");
-        todo!()
+            .await?;
+        Ok(response.into_inner().try_into()?)
     }
 
     /// Adds a new execution job for an analyzer
@@ -56,11 +70,11 @@ where
         &mut self,
         request: PutExecuteAnalyzerRequest,
     ) -> Result<PutExecuteAnalyzerResponse, PluginWorkQueueServiceClientError> {
-        self.inner
+        let response = self
+            .inner
             .put_execute_analyzer(PutExecuteAnalyzerRequestProto::from(request))
-            .await
-            .expect("todo");
-        todo!()
+            .await?;
+        Ok(response.into_inner().try_into()?)
     }
 
     /// Retrieves a new execution job for a generator
@@ -68,11 +82,11 @@ where
         &mut self,
         request: GetExecuteGeneratorRequest,
     ) -> Result<GetExecuteGeneratorResponse, PluginWorkQueueServiceClientError> {
-        self.inner
+        let response = self
+            .inner
             .get_execute_generator(GetExecuteGeneratorRequestProto::from(request))
-            .await
-            .expect("todo");
-        todo!()
+            .await?;
+        Ok(response.into_inner().try_into()?)
     }
 
     /// Retrieves a new execution job for an analyzer
@@ -80,22 +94,34 @@ where
         &mut self,
         request: GetExecuteAnalyzerRequest,
     ) -> Result<GetExecuteAnalyzerResponse, PluginWorkQueueServiceClientError> {
-        self.inner
+        let response = self
+            .inner
             .get_execute_analyzer(GetExecuteAnalyzerRequestProto::from(request))
-            .await
-            .expect("todo");
-        todo!()
+            .await?;
+        Ok(response.into_inner().try_into()?)
     }
 
-    /// Acknowledges the completion of a job
-    pub async fn acknowledge(
+    /// Acknowledges the completion of a generator job
+    pub async fn acknowledge_generator(
         &mut self,
-        request: AcknowledgeRequest,
-    ) -> Result<AcknowledgeResponse, PluginWorkQueueServiceClientError> {
-        self.inner
-            .acknowledge(AcknowledgeRequestProto::from(request))
-            .await
-            .expect("todo");
-        todo!()
+        request: AcknowledgeGeneratorRequest,
+    ) -> Result<AcknowledgeGeneratorResponse, PluginWorkQueueServiceClientError> {
+        let response = self
+            .inner
+            .acknowledge_generator(AcknowledgeGeneratorRequestProto::from(request))
+            .await?;
+        Ok(response.into_inner().try_into()?)
+    }
+
+    /// Acknowledges the completion of an analyzer job
+    pub async fn acknowledge_analyzer(
+        &mut self,
+        request: AcknowledgeAnalyzerRequest,
+    ) -> Result<AcknowledgeAnalyzerResponse, PluginWorkQueueServiceClientError> {
+        let response = self
+            .inner
+            .acknowledge_analyzer(AcknowledgeAnalyzerRequestProto::from(request))
+            .await?;
+        Ok(response.into_inner().try_into()?)
     }
 }

@@ -1,0 +1,213 @@
+{
+  "db": "PostgreSQL",
+  "0089d32b4d7af35f29f3b496c63735fcc8a7290efe7f996db4595735eafdae7f": {
+    "query": "\n            UPDATE plugin_work_queue.analyzer_plugin_executions\n            SET\n                try_count  = plugin_work_queue.analyzer_plugin_executions.try_count + 1,\n                last_updated = CURRENT_TIMESTAMP,\n                visible_after  = CURRENT_TIMESTAMP + INTERVAL '10 seconds'\n            FROM (\n                 SELECT execution_key, plugin_id, pipeline_message, current_status, creation_time, visible_after, tenant_id\n                 FROM plugin_work_queue.analyzer_plugin_executions\n                 WHERE current_status = 'enqueued'\n                   AND creation_time >= (CURRENT_TIMESTAMP - INTERVAL '1 day')\n                   AND visible_after <= CURRENT_TIMESTAMP\n                 ORDER BY creation_time ASC\n                 FOR UPDATE SKIP LOCKED\n                 LIMIT 1\n             ) AS next_execution\n             WHERE plugin_work_queue.analyzer_plugin_executions.execution_key = next_execution.execution_key\n             RETURNING\n                 next_execution.execution_key AS \"execution_key!: ExecutionId\",\n                 next_execution.plugin_id,\n                 next_execution.pipeline_message,\n                 next_execution.tenant_id\n        ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "execution_key!: ExecutionId",
+          "type_info": "Int8"
+        },
+        {
+          "ordinal": 1,
+          "name": "plugin_id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 2,
+          "name": "pipeline_message",
+          "type_info": "Bytea"
+        },
+        {
+          "ordinal": 3,
+          "name": "tenant_id",
+          "type_info": "Uuid"
+        }
+      ],
+      "parameters": {
+        "Left": []
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ]
+    }
+  },
+  "1ec0c84f3f890741c183d7ede697e7e7cf7c7ed8d92bb5e8a46f01cbfe44ab73": {
+    "query": "\n            INSERT INTO plugin_work_queue.analyzer_plugin_executions (\n                plugin_id,\n                pipeline_message,\n                tenant_id,\n                current_status,\n                try_count\n            )\n            VALUES( $1::UUID, $2, $3::UUID, 'enqueued', -1 )\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Bytea",
+          "Uuid"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "34822afa8bef4e4faf115130b855398f9e7396d74bd4a0ed476c6dd5c9128f9b": {
+    "query": "\n                UPDATE plugin_work_queue.generator_plugin_executions\n                SET current_status = $2,\n                    last_updated = CASE\n                        WHEN current_status != 'processed'\n                            THEN CURRENT_TIMESTAMP\n                            ELSE last_updated\n                        END\n                WHERE execution_key = $1\n            ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Int8",
+          {
+            "Custom": {
+              "name": "status",
+              "kind": {
+                "Enum": [
+                  "enqueued",
+                  "failed",
+                  "processed"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "4eb941c37568614ac5423f5f86bb214b0cdc08c8099db32b07437c036cd4f231": {
+    "query": "SELECT current_status AS \"current_status: Status\"\n            FROM plugin_work_queue.generator_plugin_executions\n            WHERE plugin_id = $1\n            LIMIT 1;",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "current_status: Status",
+          "type_info": {
+            "Custom": {
+              "name": "status",
+              "kind": {
+                "Enum": [
+                  "enqueued",
+                  "failed",
+                  "processed"
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      },
+      "nullable": [
+        false
+      ]
+    }
+  },
+  "c061b6bffb5339055486d7c40a5aa87353e30bf328521b6061e2cab1296c8bf1": {
+    "query": "\n            INSERT INTO plugin_work_queue.generator_plugin_executions (\n                plugin_id,\n                pipeline_message,\n                tenant_id,\n                current_status,\n                try_count\n            )\n            VALUES( $1::UUID, $2, $3::UUID, 'enqueued', -1 )\n        ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Bytea",
+          "Uuid"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "cf69be06c1e04833cd7b84256bdd7ebe396558b5720082b78882b1abc6be6195": {
+    "query": "\n            UPDATE plugin_work_queue.generator_plugin_executions\n            SET\n                try_count  = try_count + 1,\n                last_updated = CURRENT_TIMESTAMP,\n                visible_after  = CURRENT_TIMESTAMP + INTERVAL '10 seconds'\n            FROM (\n                 SELECT execution_key, plugin_id, pipeline_message, current_status, creation_time, visible_after, tenant_id\n                 FROM plugin_work_queue.generator_plugin_executions\n                 WHERE current_status = 'enqueued'\n                   AND creation_time >= (CURRENT_TIMESTAMP - INTERVAL '1 day')\n                   AND visible_after <= CURRENT_TIMESTAMP\n                 ORDER BY creation_time ASC\n                 FOR UPDATE SKIP LOCKED\n                 LIMIT 1\n             ) AS next_execution\n             WHERE plugin_work_queue.generator_plugin_executions.execution_key = next_execution.execution_key\n             RETURNING\n                 next_execution.execution_key AS \"execution_key!: ExecutionId\",\n                 next_execution.plugin_id,\n                 next_execution.pipeline_message,\n                 next_execution.tenant_id\n        ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "execution_key!: ExecutionId",
+          "type_info": "Int8"
+        },
+        {
+          "ordinal": 1,
+          "name": "plugin_id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 2,
+          "name": "pipeline_message",
+          "type_info": "Bytea"
+        },
+        {
+          "ordinal": 3,
+          "name": "tenant_id",
+          "type_info": "Uuid"
+        }
+      ],
+      "parameters": {
+        "Left": []
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ]
+    }
+  },
+  "ecc678ab358f2bd49afed2c2d5880aa61bcf73066ab0bdfdcb123d10ffac4827": {
+    "query": "SELECT current_status AS \"current_status: Status\"\n            FROM plugin_work_queue.generator_plugin_executions\n            WHERE execution_key = $1",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "current_status: Status",
+          "type_info": {
+            "Custom": {
+              "name": "status",
+              "kind": {
+                "Enum": [
+                  "enqueued",
+                  "failed",
+                  "processed"
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      },
+      "nullable": [
+        false
+      ]
+    }
+  },
+  "f71b00154ecb7c5ac2d507c4dcae96e35bcc7a3a246af12cf02d077211ee155d": {
+    "query": "\n                UPDATE plugin_work_queue.analyzer_plugin_executions\n                SET current_status = $2,\n                    last_updated = CASE\n                        WHEN current_status != 'processed'\n                            THEN CURRENT_TIMESTAMP\n                            ELSE last_updated\n                        END\n                WHERE execution_key = $1\n            ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Int8",
+          {
+            "Custom": {
+              "name": "status",
+              "kind": {
+                "Enum": [
+                  "enqueued",
+                  "failed",
+                  "processed"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "nullable": []
+    }
+  }
+}

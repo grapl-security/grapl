@@ -122,6 +122,10 @@ def main() -> None:
             "_redis_endpoint": grapl_stack.redis_endpoint,
             "schema_properties_table_name": grapl_stack.schema_properties_table_name,
             "test_user_name": grapl_stack.test_user_name,
+            "_plugin_work_queue_db_hostname": grapl_stack.plugin_work_queue_db_hostname,
+            "plugin_work_queue_db_port": grapl_stack.plugin_work_queue_db_port,
+            "plugin_work_queue_db_username": grapl_stack.plugin_work_queue_db_username,
+            "plugin_work_queue_db_password": grapl_stack.plugin_work_queue_db_password,
         }
 
         integration_tests = NomadJob(
@@ -152,6 +156,17 @@ class GraplStack:
         self.sysmon_generator_queue = require_str("sysmon-generator-queue")
         self.sysmon_log_bucket = require_str("sysmon-log-bucket")
         self.test_user_name = require_str("test-user-name")
+
+        self.plugin_work_queue_db_hostname = require_str(
+            "plugin-work-queue-db-hostname"
+        )
+        self.plugin_work_queue_db_port = require_str("plugin-work-queue-db-port")
+        self.plugin_work_queue_db_username = require_str(
+            "plugin-work-queue-db-username"
+        )
+        self.plugin_work_queue_db_password = require_str(
+            "plugin-work-queue-db-password"
+        )
 
 
 if __name__ == "__main__":
