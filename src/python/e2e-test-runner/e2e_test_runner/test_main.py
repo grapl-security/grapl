@@ -33,7 +33,7 @@ def test_expected_data_in_dgraph(actix_session: str) -> None:
     def scope_has_N_items() -> bool:
         length = len(lens.get_scope())
         logging.info(f"Expected 3+ nodes in scope, currently is {length}")
-        # This number can change and, rather than trying to hammer it down, we're going 
+        # This number can change and, rather than trying to hammer it down, we're going
         # with a lower bound
         return length >= 3
 
