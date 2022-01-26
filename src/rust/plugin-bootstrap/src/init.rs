@@ -1,7 +1,4 @@
-use std::{
-    os::unix::fs::PermissionsExt,
-    process::Command,
-};
+use std::os::unix::fs::PermissionsExt;
 
 use plugin_bootstrap::client::PluginBootstrapClient;
 use rust_proto::plugin_bootstrap::{
@@ -30,16 +27,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     std::fs::set_permissions(PLUGIN_BINARY_PATH, std::fs::Permissions::from_mode(0o755))?;
     std::fs::set_permissions(PLUGIN_BINARY_PATH, std::fs::Permissions::from_mode(0o400))?;
-
-    let output = Command::new("systemctl")
-        .arg("start")
-        .arg("grapl-plugin")
-        .output()?;
-
-    tracing::info!(
-        message="Started grapl-plugin",
-        output=?output.stdout.as_slice(),
-    );
 
     Ok(())
 }
