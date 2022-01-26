@@ -2990,15 +2990,14 @@ dependencies = [
  "futures",
  "grapl-config",
  "grapl-utils",
+ "lazy_static",
  "rust-proto",
  "structopt",
- "test-log",
  "thiserror",
  "tokio 1.15.0",
  "tonic",
  "tonic-health",
  "tracing",
- "tracing-subscriber",
  "uuid",
 ]
 

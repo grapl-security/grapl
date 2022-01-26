@@ -1,13 +1,14 @@
 # Contents of /etc/systemd/system/plugin.service
 [Unit]
 Description=Plugin
-After=network.target
+After=plugin-bootstrap-init.service
 
 [Service]
 Type=simple
 Restart=always
-After=plugin-bootstrap-init.service
 ExecStart=/usr/local/bin/grapl-plugin
+
+EnvironmentFile=/etc/systemd/system/plugin.service.d/override.conf
 
 # All plugins should listen on port 5555 internally
 SocketBindAllow=tcp:5555
