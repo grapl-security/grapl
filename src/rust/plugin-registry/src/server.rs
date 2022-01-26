@@ -1,9 +1,7 @@
 use grapl_config::env_helpers::FromEnv;
 use grapl_utils::future_ext::GraplFutureExt;
 use rusoto_s3::{
-    GetObjectError,
     GetObjectRequest,
-    PutObjectError,
     PutObjectRequest,
     S3Client,
     S3,
@@ -34,7 +32,6 @@ use rust_proto::plugin_registry::{
     GetPluginResponse,
     GetPluginResponseProto,
     Plugin,
-    PluginRegistryDeserializationError,
     PluginType,
     TearDownPluginRequest,
     TearDownPluginRequestProto,
@@ -60,27 +57,10 @@ use tokio::io::AsyncReadExt;
 
 use crate::{
     deploy_plugin,
+    error::PluginRegistryServiceError,
     nomad_client,
     PluginRegistryServiceConfig,
 };
-
-#[derive(Debug, thiserror::Error)]
-pub enum PluginRegistryServiceError {
-    #[error("SqlxError")]
-    SqlxError(#[from] sqlx::Error),
-    #[error("S3PutObjectError")]
-    PutObjectError(#[from] rusoto_core::RusotoError<PutObjectError>),
-    #[error("S3GetObjectError")]
-    GetObjectError(#[from] rusoto_core::RusotoError<GetObjectError>),
-    #[error("EmptyObject")]
-    EmptyObject,
-    #[error("IoError")]
-    IoError(#[from] std::io::Error),
-    #[error("PluginRegistryDeserializationError")]
-    PluginRegistryDeserializationError(#[from] PluginRegistryDeserializationError),
-    #[error("NomadError")]
-    NomadError(#[from] nomad_client::NomadClientError),
-}
 
 impl From<PluginRegistryServiceError> for Status {
     fn from(err: PluginRegistryServiceError) -> Self {

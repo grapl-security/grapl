@@ -38,7 +38,7 @@ pub async fn deploy_plugin(
 
     // If success, mark plugin as being deployed in `plugins` table
 
-    // TODO next CR. Right now all the plugins table interop is in the main 
+    // TODO next CR. Right now all the plugins table interop is in the main
     //      server controller, gross!
     Ok(())
 }
