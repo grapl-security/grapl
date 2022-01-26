@@ -24,13 +24,6 @@ tokio = { version = "1.14.0", features = ["full"] }
 tonic = "0.6.1"
 tonic-health = "0.5.0"
 tracing = "0.1.29"
-rusoto_core = { version = "0.47.0", default_features = false, features = [
-  "rustls"
-] }
-rusoto_s3 = { version = "0.47.0", default_features = false, features = [
-  "rustls"
-] }
-blake3 = "1.2.0"
 structopt = "0.3"
 uuid = { version = "0.8.2", features = ["v4"] }
 futures = "0.3.17"

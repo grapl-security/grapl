@@ -1,4 +1,4 @@
-# Contents of /etc/systemd/system/init.service
+# Contents of /etc/systemd/system/plugin-bootstrap-init.service
 [Unit]
 Description=Plugin Init
 After=network.target
@@ -8,6 +8,14 @@ Type=oneshot
 ExecStart=/usr/local/bin/init-grapl-plugin
 User=root
 Group=root
+
+# Until we have the firecracker VM work bootstrapped it's not totally clear
+# what to put here - for example, should this point at localhost or not?
+ENVIRONMENT="GRAPL_PLUGIN_BOOTSTRAP_ADDRESS=TODO"
+
+
+[Install]
+WantedBy=multi-user.target
 
 # Some sandboxing - less than the plugin itself. We can be permissive here.
 
