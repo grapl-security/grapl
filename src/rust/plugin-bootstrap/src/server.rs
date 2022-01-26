@@ -21,7 +21,7 @@ use crate::PluginBootstrapServiceConfig;
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginBootstrapperError {
-    #[error("IoError")]
+    #[error("IoError {0}")]
     IoError(#[from] std::io::Error),
 }
 

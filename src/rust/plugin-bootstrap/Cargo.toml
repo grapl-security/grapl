@@ -4,12 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [[bin]]
-name = "plugin-bootstrap"
-path = "src/main.rs"
+name = "plugin-bootstrap-service"
+path = "src/plugin_bootstrap_service.rs"
 
 [[bin]]
 name = "plugin-bootstrap-init"
-path = "src/init.rs"
+path = "src/plugin_bootstrap_init.rs"
 
 [lib]
 name = "plugin_bootstrap"

@@ -17,9 +17,9 @@ const ADDRESS_ENV_VAR: &str = "GRAPL_PLUGIN_BOOTSTRAP_ADDRESS";
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginBootstrapClientError {
-    #[error("GrpcStatus")]
+    #[error("GrpcStatus {0}")]
     Status(#[from] tonic::Status),
-    #[error("PluginBootstrapDeserializationError")]
+    #[error("PluginBootstrapDeserializationError {0}")]
     PluginBootstrapDeserializationError(#[from] PluginBootstrapDeserializationError),
 }
 
