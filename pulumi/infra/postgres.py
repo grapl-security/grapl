@@ -140,9 +140,14 @@ class Postgres(pulumi.ComponentResource):
             # Makes teardown easier. This can be revisited.
             skip_final_snapshot=True,
             # Eventually this would be managed by Vault.
-            # In the mean time, security is basically only enforced by VPC
+            # In the meantime, security is basically only enforced by VPC
             username=username,
             password=password.result,
             port=postgres_port,
+            # Because we're not specifying a kms key, this will use the default aws/rds key
+            storage_encrypted=True,
+            # Enable performance insights for 7 days, which is free
+            performance_insights_enabled=True,
+            performance_insights_retention_period=7,
             opts=child_opts,
         )
