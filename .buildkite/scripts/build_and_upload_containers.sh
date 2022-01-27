@@ -31,6 +31,7 @@ services=(
     model-plugin-deployer
     node-identifier
     node-identifier-retry
+    org-management
     osquery-generator
     plugin-bootstrap
     plugin-registry
