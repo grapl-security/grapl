@@ -110,10 +110,12 @@ where
         &mut self,
         request: DeployPluginRequest,
     ) -> Result<DeployPluginResponse, PluginRegistryServiceClientError> {
-        self.inner
+        let response = self
+            .inner
             .deploy_plugin(DeployPluginRequestProto::from(request))
             .await?;
-        todo!()
+        let response = DeployPluginResponse::try_from(response.into_inner())?;
+        Ok(response)
     }
     /// turn off a particular plugin's code
     pub async fn tear_down_plugin(

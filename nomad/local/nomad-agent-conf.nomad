@@ -1,9 +1,11 @@
+
 # This is not specified by default for nomad agent -dev
 plugin_dir = "/opt/nomad/plugins"
 
 ####################
 # Plugin configs
 ####################
+
 plugin "docker" {
   # https://www.nomadproject.io/docs/drivers/docker#plugin-options
   config {
@@ -15,9 +17,24 @@ plugin "docker" {
     }
   }
 }
+
+plugin "firecracker-task-driver" {}
+
+####################
+# Client config
+####################
+
+client {
+  meta = {
+    # See constraint{} in plugin.nomad
+    "is_grapl_plugin_host" = true
+  }
+}
+
 ####################
 # Telemetry configs
 ####################
+
 telemetry {
   # enable metrics for nomad
   # metrics path is /v1/metrics?format=prometheus

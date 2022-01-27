@@ -3,8 +3,12 @@ use std::net::SocketAddr;
 use structopt::StructOpt;
 
 pub mod client;
+mod deploy_plugin;
+pub mod error;
+pub mod nomad_cli;
 pub mod nomad_client;
 pub mod server;
+pub mod static_files;
 
 #[derive(StructOpt, Debug)]
 pub struct PluginRegistryServiceConfig {
