@@ -1,3 +1,5 @@
+use std::net::SocketAddr;
+
 use nomad_client_gen::{
     apis::{
         configuration::Configuration as InternalConfig,
@@ -16,7 +18,7 @@ use crate::nomad_cli;
 pub struct NomadClientConfig {
     #[structopt(env)]
     /// "${attr.unique.network.ip-address}:4646
-    nomad_service_address: String,
+    nomad_service_address: SocketAddr,
 }
 
 /// A thin wrapper around the nomad_client_gen with usability improvements.

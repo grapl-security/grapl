@@ -18,7 +18,7 @@ pub enum ParseHclError {
 pub type NomadVars = HashMap<String, String>;
 
 /// Convert HCL2 + variables into JSON
-fn parse_hcl2_to_json(hcl2: &str, vars: HashMap<String, String>) -> Result<String, std::io::Error> {
+fn parse_hcl2_to_json(hcl2: &str, vars: NomadVars) -> Result<String, std::io::Error> {
     // Write our static file to a temporary file
     let mut file = NamedTempFile::new()?;
     file.write_all(hcl2.as_bytes())?;
@@ -27,10 +27,10 @@ fn parse_hcl2_to_json(hcl2: &str, vars: HashMap<String, String>) -> Result<Strin
     // Feed it to the Nomad binary.
     // Assume nomad is available on $PATH
     let mut command = Command::new("nomad");
-    command.arg("job").arg("run").arg("-output");
+    command.args(["job", "run", "-output"]);
 
     for (key, value) in &vars {
-        command.arg("-var").arg(format!("{}={}", key, value));
+        command.args(["-var", format!("{}={}", key, value).as_ref()]);
     }
 
     // Specify filename
@@ -38,12 +38,12 @@ fn parse_hcl2_to_json(hcl2: &str, vars: HashMap<String, String>) -> Result<Strin
 
     let result = command.output()?;
 
-    Ok(String::from_utf8(result.stdout).expect("Invalid UTF8"))
+    Ok(String::from_utf8_lossy(&result.stdout).to_string())
 }
 
 /// Convert HCL2 + variables into a Job
 #[tracing::instrument(skip(hcl2, vars), err)]
-pub fn parse_hcl2(hcl2: &str, vars: HashMap<String, String>) -> Result<models::Job, ParseHclError> {
+pub fn parse_hcl2(hcl2: &str, vars: NomadVars) -> Result<models::Job, ParseHclError> {
     let job_json: String = parse_hcl2_to_json(hcl2, vars).map_err(ParseHclError::from)?;
 
     // so we get back json that's like { "Job": {...} }

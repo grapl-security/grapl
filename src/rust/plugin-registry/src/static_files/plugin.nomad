@@ -30,9 +30,11 @@ variable "aws_account_id" {
   description = "The account ID of the aws account that holds onto the plugin binaries."
 }
 
-locals {
-  shared_key = "grapl_secret-${uuidv4()}"
-}
+# Temporarily dropping the shared_key stuff and picking it up later, per
+# https://github.com/grapl-security/grapl/pull/1403
+# locals {
+#   shared_key = "grapl_secret-${uuidv4()}"
+# }
 
 job "grapl-plugin" {
   datacenters = ["dc1"]
@@ -77,9 +79,10 @@ job "grapl-plugin" {
       }
 
       env {
-        TENANT_ID     = "${var.tenant_id}"
-        PLUGIN_ID     = "${var.plugin_id}"
-        BOOTSTRAP_KEY = "${local.shared_key}"
+        TENANT_ID = "${var.tenant_id}"
+        PLUGIN_ID = "${var.plugin_id}"
+        # Temporarily dropping shared_key stuff
+        # BOOTSTRAP_KEY = "${local.shared_key}"
       }
     }
 
@@ -107,9 +110,10 @@ job "grapl-plugin" {
       }
 
       env {
-        TENANT_ID     = "${var.tenant_id}"
-        PLUGIN_ID     = "${var.plugin_id}"
-        BOOTSTRAP_KEY = "${local.shared_key}"
+        TENANT_ID = "${var.tenant_id}"
+        PLUGIN_ID = "${var.plugin_id}"
+        # Temporarily dropping shared_key stuff
+        # BOOTSTRAP_KEY = "${local.shared_key}"
       }
     }
 

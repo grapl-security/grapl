@@ -28,7 +28,8 @@ RUN --mount=type=cache,target=/var/lib/apt/lists \
 WORKDIR /nomad
 RUN <<EOF
 set -euo pipefail
-curl -O https://releases.hashicorp.com/nomad/1.2.4/nomad_1.2.4_linux_amd64.zip
+curl --remote-name --proto '=https' --tlsv1.3 -sSf \
+  https://releases.hashicorp.com/nomad/1.2.4/nomad_1.2.4_linux_amd64.zip
 unzip *.zip
 rm *.zip
 EOF

@@ -15,7 +15,7 @@ pub async fn deploy_plugin(
     // Convert HCL to JSON Job model
     let job_file_hcl = static_files::PLUGIN_JOB;
     let job_file_vars: nomad_cli::NomadVars = HashMap::from([
-        ("plugin_id".to_owned(), format!("{}", plugin_id)),
+        ("plugin_id".to_owned(), plugin_id.to_string()),
         ("tenant_id".to_owned(), "TODO".to_owned()),
         ("plugin_artifact_url".to_owned(), "TODO".to_owned()),
         ("aws_account_id".to_owned(), "TODO".to_owned()),
