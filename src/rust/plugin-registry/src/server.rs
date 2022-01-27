@@ -58,6 +58,7 @@ use tokio::io::AsyncReadExt;
 use crate::{
     deploy_plugin,
     error::PluginRegistryServiceError,
+    nomad_cli,
     nomad_client,
     PluginRegistryServiceConfig,
 };
@@ -213,9 +214,10 @@ impl PluginRegistry {
         request: DeployPluginRequest,
     ) -> Result<DeployPluginResponse, PluginRegistryServiceError> {
         let nomad_client = nomad_client::NomadClient::from_env();
+        let nomad_cli = nomad_cli::NomadCli {};
         let plugin_id = request.plugin_id;
 
-        deploy_plugin::deploy_plugin(nomad_client, plugin_id)
+        deploy_plugin::deploy_plugin(nomad_client, nomad_cli, plugin_id)
             .await
             .map_err(PluginRegistryServiceError::from)?;
 

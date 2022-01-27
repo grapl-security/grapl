@@ -11,8 +11,6 @@ use nomad_client_gen::{
 };
 use structopt::StructOpt;
 
-use crate::nomad_cli;
-
 /// Represents the environment variables needed to construct a NomadClient
 #[derive(StructOpt, Debug)]
 pub struct NomadClientConfig {
@@ -29,8 +27,6 @@ pub struct NomadClient {
 #[derive(Debug, thiserror::Error)]
 pub enum NomadClientError {
     // Quick note: the error enums in the generated client *are not* std::error::Error
-    #[error("ParseHclError {0:?}")]
-    ParseHclError(#[from] nomad_cli::ParseHclError),
     #[error("CreateNamespaceError {0:?}")]
     CreateNamespaceErrror(#[from] Error<namespaces_api::PostNamespaceError>),
     #[error("CreateJobError {0:?}")]
