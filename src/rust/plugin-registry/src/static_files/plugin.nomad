@@ -62,7 +62,7 @@ job "grapl-plugin" {
       template {
         data        = <<EOH
       {{ $plugin_id := env "PLUGIN_ID" }}
-      {{ with secret "pki/issue/plugin_service_ca" (printf "common_name=%s.plugins.grapl.com" $plugin_id) "format=pem" }}
+      {{ with secret "pki/issue/plugin_execution_ca" (printf "common_name=%s.plugins.grapl.com" $plugin_id) "format=pem" }}
         {{ .Data.certificate }}
         {{ .Data.issuing_ca }}
         {{ .Data.private_key }}
@@ -93,7 +93,7 @@ job "grapl-plugin" {
       template {
         data        = <<EOH
       {{ $plugin_id := env "PLUGIN_ID" }}
-      {{ with secret "pki/issue/plugin_service_ca" (printf "common_name=%s.plugins.grapl.com" $plugin_id) "format=pem" }}
+      {{ with secret "pki/issue/plugin_bootstrap_ca" (printf "common_name=%s.plugins.grapl.com" $plugin_id) "format=pem" }}
         {{ .Data.certificate }}
         {{ .Data.issuing_ca }}
         {{ .Data.private_key }}
