@@ -1,10 +1,11 @@
 [GLOBAL]
-pants_version = "2.8.0"
+pants_version = "2.9.0"
 backend_packages = [
   "grapl_setup_py",
   "pants.backend.codegen.protobuf.python",
   "pants.backend.experimental.docker",
   "pants.backend.experimental.docker.lint.hadolint",
+  "pants.backend.plugin_development",
   "pants.backend.python",
   "pants.backend.python.lint.black",
   "pants.backend.python.lint.flake8",
