@@ -30,7 +30,7 @@ pub async fn deploy_plugin(
     // TODO: "nomad job plan" to make sure we have enough memory/cpu for the task
 
     // --- Deploy namespace
-    let namespace_name = "todo-fill-this-in-with-real-plugin-name";
+    let namespace_name = &plugin.display_name; // TODO: Do we need to regex enforce display names?
     client.create_namespace(namespace_name).await?;
     // TODO: What if the namespace already exists?
 

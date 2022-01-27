@@ -135,6 +135,7 @@ impl PluginRegistry {
             plugin_type,
             plugin_id,
             display_name,
+            tenant_id: _
         } = self.db_client.get_plugin(&request.plugin_id).await?;
 
         let s3_key: String = artifact_s3_key;
