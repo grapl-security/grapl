@@ -7,8 +7,8 @@ pub use crate::graplinc::grapl::api::plugin_bootstrap::v1beta1::{
         PluginBootstrapServiceServer,
     },
     ClientCertificate as ClientCertificateProto,
-    GetBootstrapInfoRequest as GetBootstrapInfoRequestProto,
-    GetBootstrapInfoResponse as GetBootstrapInfoResponseProto,
+    GetBootstrapRequest as GetBootstrapRequestProto,
+    GetBootstrapResponse as GetBootstrapResponseProto,
     PluginPayload as PluginPayloadProto,
 };
 
@@ -23,19 +23,19 @@ pub enum PluginBootstrapDeserializationError {
 }
 
 #[derive(Clone, Debug)]
-pub struct GetBootstrapInfoRequest {}
+pub struct GetBootstrapRequest {}
 
-impl TryFrom<GetBootstrapInfoRequestProto> for GetBootstrapInfoRequest {
+impl TryFrom<GetBootstrapRequestProto> for GetBootstrapRequest {
     type Error = PluginBootstrapDeserializationError;
 
-    fn try_from(_: GetBootstrapInfoRequestProto) -> Result<Self, Self::Error> {
-        Ok(GetBootstrapInfoRequest {})
+    fn try_from(_: GetBootstrapRequestProto) -> Result<Self, Self::Error> {
+        Ok(GetBootstrapRequest {})
     }
 }
 
-impl From<GetBootstrapInfoRequest> for GetBootstrapInfoRequestProto {
-    fn from(_: GetBootstrapInfoRequest) -> Self {
-        GetBootstrapInfoRequestProto {}
+impl From<GetBootstrapRequest> for GetBootstrapRequestProto {
+    fn from(_: GetBootstrapRequest) -> Self {
+        GetBootstrapRequestProto {}
     }
 }
 
@@ -113,36 +113,36 @@ impl From<ClientCertificate> for ClientCertificateProto {
 }
 
 #[derive(Clone, Debug)]
-pub struct GetBootstrapInfoResponse {
+pub struct GetBootstrapResponse {
     pub plugin_payload: PluginPayload,
     pub client_certificate: ClientCertificate,
 }
 
-impl TryFrom<GetBootstrapInfoResponseProto> for GetBootstrapInfoResponse {
+impl TryFrom<GetBootstrapResponseProto> for GetBootstrapResponse {
     type Error = PluginBootstrapDeserializationError;
 
-    fn try_from(value: GetBootstrapInfoResponseProto) -> Result<Self, Self::Error> {
+    fn try_from(value: GetBootstrapResponseProto) -> Result<Self, Self::Error> {
         let plugin_payload = value
             .plugin_payload
             .ok_or(PluginBootstrapDeserializationError::MissingRequiredField(
-                "GetBootstrapInfoResponseProto.plugin_payload",
+                "GetBootstrapResponseProto.plugin_payload",
             ))?
             .try_into()?;
         let client_certificate = value
             .client_certificate
             .ok_or(PluginBootstrapDeserializationError::MissingRequiredField(
-                "GetBootstrapInfoResponseProto.client_certificate",
+                "GetBootstrapResponseProto.client_certificate",
             ))?
             .try_into()?;
-        Ok(GetBootstrapInfoResponse {
+        Ok(GetBootstrapResponse {
             plugin_payload,
             client_certificate,
         })
     }
 }
 
-impl From<GetBootstrapInfoResponse> for GetBootstrapInfoResponseProto {
-    fn from(value: GetBootstrapInfoResponse) -> Self {
+impl From<GetBootstrapResponse> for GetBootstrapResponseProto {
+    fn from(value: GetBootstrapResponse) -> Self {
         Self {
             plugin_payload: Some(value.plugin_payload.into()),
             client_certificate: Some(value.client_certificate.into()),

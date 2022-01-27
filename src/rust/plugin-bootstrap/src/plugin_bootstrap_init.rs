@@ -2,8 +2,8 @@ use std::os::unix::fs::PermissionsExt;
 
 use plugin_bootstrap::client::PluginBootstrapClient;
 use rust_proto::plugin_bootstrap::{
-    GetBootstrapInfoRequest,
-    GetBootstrapInfoResponse,
+    GetBootstrapRequest,
+    GetBootstrapResponse,
 };
 
 static PLUGIN_BINARY_PATH: &str = "/usr/local/bin/grapl-plugin";
@@ -15,11 +15,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (_env, _guard) = grapl_config::init_grapl_env!();
 
     let mut bootstrap_client = PluginBootstrapClient::from_env().await?;
-    let GetBootstrapInfoResponse {
+    let GetBootstrapResponse {
         plugin_payload,
         client_certificate,
     } = bootstrap_client
-        .get_bootstrap_info(GetBootstrapInfoRequest {})
+        .get_bootstrap(GetBootstrapRequest {})
         .await?;
 
     std::fs::write(PLUGIN_BINARY_PATH, plugin_payload.plugin_binary)?;
@@ -35,7 +35,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     let config_file = std::fs::File::create(PLUGIN_CONFIG_PATH)?;
-    config_file.set_permissions(std::fs::Permissions::from_mode(0o755))?;
+    config_file.set_permissions(std::fs::Permissions::from_mode(0o655))?;
 
     Ok(())
 }

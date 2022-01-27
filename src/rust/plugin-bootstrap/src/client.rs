@@ -1,7 +1,7 @@
 use rust_proto::plugin_bootstrap::{
-    GetBootstrapInfoRequest,
-    GetBootstrapInfoRequestProto,
-    GetBootstrapInfoResponse,
+    GetBootstrapRequest,
+    GetBootstrapRequestProto,
+    GetBootstrapResponse,
     PluginBootstrapDeserializationError,
     PluginBootstrapServiceClient as PluginBootstrapClientProto,
 };
@@ -62,13 +62,13 @@ where
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn get_bootstrap_info(
+    pub async fn get_bootstrap(
         &mut self,
-        request: GetBootstrapInfoRequest,
-    ) -> Result<GetBootstrapInfoResponse, PluginBootstrapClientError> {
+        request: GetBootstrapRequest,
+    ) -> Result<GetBootstrapResponse, PluginBootstrapClientError> {
         let response = self
             .inner
-            .get_bootstrap_info(GetBootstrapInfoRequestProto::from(request))
+            .get_bootstrap(GetBootstrapRequestProto::from(request))
             .await?;
         let response = response.into_inner();
         Ok(response.try_into()?)

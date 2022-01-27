@@ -16,12 +16,12 @@ message ClientCertificate {
 }
 
 // The request for bootstrap artifacts
-message GetBootstrapInfoRequest {
+message GetBootstrapRequest {
 
 }
 
 // The response containing bootstrap artifacts
-message GetBootstrapInfoResponse {
+message GetBootstrapResponse {
   // The payload for the plugin
   PluginPayload plugin_payload = 1;
   // The client certificate for the plugin
@@ -30,6 +30,6 @@ message GetBootstrapInfoResponse {
 
 // PluginBootstrapService hosts artifacts for plugin execution, to be retrieved by an init process
 service PluginBootstrapService {
-  // GetBootstrapInfo allows clients to perform the bootstrap process using the returned artifacts
-  rpc GetBootstrapInfo(GetBootstrapInfoRequest) returns (GetBootstrapInfoResponse);
+  // GetBootstrap allows clients to perform the bootstrap process using the returned artifacts
+  rpc GetBootstrap(GetBootstrapRequest) returns (GetBootstrapResponse);
 }

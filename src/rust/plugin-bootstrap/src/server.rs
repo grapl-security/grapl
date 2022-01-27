@@ -5,9 +5,9 @@ use std::{
 
 use rust_proto::plugin_bootstrap::{
     ClientCertificate,
-    GetBootstrapInfoRequestProto,
-    GetBootstrapInfoResponse,
-    GetBootstrapInfoResponseProto,
+    GetBootstrapRequestProto,
+    GetBootstrapResponse,
+    GetBootstrapResponseProto,
     PluginBootstrapService,
     PluginBootstrapServiceServer,
     PluginPayload,
@@ -62,7 +62,7 @@ impl PluginBootstrapper {
         Ok(PluginBootstrapper::new(client_certificate, plugin_payload))
     }
 
-    async fn get_bootstrap_info(&self) -> GetBootstrapInfoResponse {
+    async fn get_bootstrap(&self) -> GetBootstrapResponse {
         let counter = self.counter.fetch_add(1, Ordering::SeqCst);
         if counter != 0 {
             tracing::warn!(
@@ -70,7 +70,7 @@ impl PluginBootstrapper {
                 count=%counter,
             );
         }
-        GetBootstrapInfoResponse {
+        GetBootstrapResponse {
             plugin_payload: self.plugin_payload.clone(),
             client_certificate: self.client_certificate.clone(),
         }
@@ -114,11 +114,11 @@ impl PluginBootstrapper {
 #[tonic::async_trait]
 impl PluginBootstrapService for PluginBootstrapper {
     #[tracing::instrument(skip(self))]
-    async fn get_bootstrap_info(
+    async fn get_bootstrap(
         &self,
-        _request: tonic::Request<GetBootstrapInfoRequestProto>,
-    ) -> Result<tonic::Response<GetBootstrapInfoResponseProto>, Status> {
-        let response = self.get_bootstrap_info().await;
+        _request: tonic::Request<GetBootstrapRequestProto>,
+    ) -> Result<tonic::Response<GetBootstrapResponseProto>, Status> {
+        let response = self.get_bootstrap().await;
         Ok(tonic::Response::new(response.into()))
     }
 }
