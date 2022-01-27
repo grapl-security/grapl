@@ -85,8 +85,11 @@ impl From<PluginRegistryServiceError> for Status {
             PluginRegistryServiceError::PluginRegistryDeserializationError(_) => {
                 Status::invalid_argument("Unable to deserialize message")
             }
-            PluginRegistryServiceError::NomadError(_) => {
-                Status::internal("Failed talking to Nomad")
+            PluginRegistryServiceError::NomadClientError(_) => {
+                Status::internal("Failed RPC with Nomad")
+            }
+            PluginRegistryServiceError::NomadCliError(_) => {
+                Status::internal("Failed using Nomad CLI")
             }
         }
     }
