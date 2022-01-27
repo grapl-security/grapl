@@ -2,7 +2,11 @@
 
 use grapl_utils::future_ext::GraplFutureExt;
 use plugin_registry::client::PluginRegistryServiceClient;
-use rust_proto::plugin_registry::DeployPluginRequest;
+use rust_proto::plugin_registry::{
+    CreatePluginRequest,
+    DeployPluginRequest,
+    PluginType,
+};
 
 #[test_log::test(tokio::test)]
 async fn test_deploy_plugin() -> Result<(), Box<dyn std::error::Error>> {

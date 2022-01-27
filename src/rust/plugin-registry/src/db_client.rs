@@ -64,7 +64,7 @@ impl PluginRegistryDbClient {
 
     pub async fn new(postgres_address: &str) -> Result<Self, Box<dyn std::error::Error>> {
         let client = Self {
-            pool: sqlx::PgPool::connect(&postgres_address)
+            pool: sqlx::PgPool::connect(postgres_address)
                 .timeout(std::time::Duration::from_secs(5))
                 .await??,
         };
