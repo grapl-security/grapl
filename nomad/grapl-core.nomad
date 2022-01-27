@@ -1075,6 +1075,49 @@ job "grapl-core" {
     }
   }
 
+
+  group "org-manager" {
+    network {
+      mode = "bridge"
+
+      port "org-manager-port" {
+      }
+    }
+
+    task "org-manager" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["org-manager"]
+        ports = ["org-manager-port"]
+      }
+
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "org-manager.env"
+        env         = true
+      }
+
+      env {
+        AWS_REGION                      = var.aws_region
+        NOMAD_SERVICE_ADDRESS           = "${attr.unique.network.ip-address}:4646"
+        PLUGIN_REGISTRY_BIND_ADDRESS    = "0.0.0.0:${NOMAD_PORT_org-manager-port}"
+        RUST_BACKTRACE                  = local.rust_backtrace
+        RUST_LOG                        = var.rust_log
+      }
+    }
+
+    service {
+      name = "org-manager"
+      port = "org-manager-port"
+      connect {
+        sidecar_service {
+        }
+      }
+    }
+  }
+
+
   group "plugin-registry" {
     network {
       mode = "bridge"

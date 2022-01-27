@@ -83,6 +83,17 @@ services:
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
+
+  org-management:
+    image: org-management:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: rust/Dockerfile
+      target: org-management-deploy
+      args:
+        - RUST_BUILD=${RUST_BUILD:-debug}
+
+
   plugin-bootstrap:
     image: plugin-bootstrap:${TAG:-latest}
     build:
