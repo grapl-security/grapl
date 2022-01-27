@@ -20,25 +20,25 @@ ENTRYPOINT ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
 # analyzer-executor
 ################################################################################
 FROM grapl-python-base AS analyzer-executor
-COPY ./dist/analyzer-executor.pex /home/grapl/
+COPY --chown=grapl ./dist/analyzer-executor.pex .
 CMD ["./analyzer-executor.pex"]
 
 # engagement-creator
 ################################################################################
 FROM grapl-python-base AS engagement-creator
-COPY ./dist/engagement-creator.pex /home/grapl/
+COPY --chown=grapl ./dist/engagement-creator.pex .
 CMD ["./engagement-creator.pex"]
 
 # Provisioner
 ################################################################################
 FROM grapl-python-base AS provisioner
-COPY ./dist/provisioner.pex /home/grapl/
+COPY --chown=grapl ./dist/provisioner.pex .
 CMD ["./provisioner.pex"]
 
 # e2e tests
 ################################################################################
 FROM grapl-python-base AS e2e-tests
-COPY ./dist/e2e-tests.pex /home/grapl/
+COPY --chown=grapl ./dist/e2e-tests.pex .
 CMD ["./e2e-tests.pex"]
 # Copy in the contents of `etc` in order to upload them during e2e tests
 RUN mkdir -p /home/grapl/etc

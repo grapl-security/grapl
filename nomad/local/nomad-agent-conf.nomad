@@ -1,3 +1,5 @@
+
+# This is not specified by default for nomad agent -dev
 plugin_dir = "/opt/nomad/plugins"
 
 ####################
@@ -18,10 +20,10 @@ plugin "docker" {
 
 plugin "firecracker-task-driver" {}
 
-
 ####################
 # Client config
 ####################
+
 client {
   meta = {
     # See constraint{} in plugin.nomad
@@ -29,10 +31,10 @@ client {
   }
 }
 
-
 ####################
 # Telemetry configs
 ####################
+
 telemetry {
   # enable metrics for nomad
   # metrics path is /v1/metrics?format=prometheus
