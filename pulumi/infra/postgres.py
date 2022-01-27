@@ -149,5 +149,7 @@ class Postgres(pulumi.ComponentResource):
             # Enable performance insights for 7 days, which is free
             performance_insights_enabled=True,
             performance_insights_retention_period=7,
-            opts=child_opts,
+            # We need delete before replace in order to encrypt instances. Once prod is up and running we may want to
+            # remove this option to avoid accidental downtime.
+            opts=pulumi.ResourceOptions(parent=self, delete_before_replace=True),
         )
