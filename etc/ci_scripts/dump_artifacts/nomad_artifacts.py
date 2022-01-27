@@ -24,20 +24,33 @@ nomad_agent_log_path = Path("/tmp/nomad-agent.log").resolve()
 consul_agent_log_path = Path("/tmp/consul-agent.log").resolve()
 
 
-def _get_nomad_client() -> Nomad:
+def _get_nomad_client(namespace: Optional[str] = None) -> Nomad:
     address = os.getenv("NOMAD_ADDRESS") or "http://localhost:4646"
     assert address.startswith("http"), f"Your nomad address needs a protocol: {address}"
-    nomad_client = Nomad(address=address, timeout=10)
+    nomad_client = Nomad(address=address, timeout=10, namespace=namespace)
     return nomad_client
 
 
 def dump_all(artifacts_dir: Path, dump_agent_logs: bool) -> None:
-    nomad_client = _get_nomad_client()
-    allocations = _get_allocations(nomad_client)
-
     if dump_agent_logs:
         _dump_nomad_consul_agent_logs(artifacts_dir)
-    _get_nomad_logs_for_each_service(artifacts_dir, nomad_client, allocations)
+
+    # Get every namespace.
+    nomad_client = _get_nomad_client()
+    namespaces: List[NomadNamespace] = [
+        NomadNamespace(ns) for ns in nomad_client.namespaces
+    ]
+
+    # Dump every namespace.
+    # The "default" namespace is special-cased to get dumped in the main directory.
+    for namespace in namespaces:
+        ns = namespace.name
+        ns_nomad_client = _get_nomad_client(namespace=ns)
+        ns_dir = artifacts_dir if ns == "default" else artifacts_dir / "namespaces" / ns
+
+        allocations = _get_allocations(ns_nomad_client, parent=namespace)
+
+        _get_nomad_logs_for_each_service(ns_dir, ns_nomad_client, allocations)
 
 
 def _dump_nomad_consul_agent_logs(artifacts_dir: Path) -> None:
@@ -46,13 +59,23 @@ def _dump_nomad_consul_agent_logs(artifacts_dir: Path) -> None:
 
 
 @dataclasses.dataclass
+class NomadNamespace:
+    name: str
+
+    def __init__(self, input: Dict[str, Any]) -> None:
+        self.name = input["Name"]
+
+
+@dataclasses.dataclass
 class NomadAllocation:
+    parent: NomadNamespace
     allocation_id: str
     allocation_name: str
     status: str
     tasks: List[NomadTask]
 
-    def __init__(self, input: Dict[str, Any]) -> None:
+    def __init__(self, input: Dict[str, Any], parent: NomadNamespace) -> None:
+        self.parent = parent
         self.allocation_id = input["ID"]
         self.allocation_name = input["Name"]
         self.status = input["ClientStatus"]
@@ -80,8 +103,8 @@ class NomadAllocation:
 
 @dataclasses.dataclass
 class NomadTask:
-    name: str
     parent: NomadAllocation = dataclasses.field(repr=False)
+    name: str
     events: List[dict]
     state: str
     restarts: int
@@ -95,7 +118,9 @@ class NomadTask:
                 ),
             )
         except URLNotFoundNomadException as e:
-            LOGGER.info(f"Couldn't get logs for {self.name}")
+            LOGGER.warn(
+                f"No logs for task '{self.name}' in namespace '{self.parent.parent.name}'"
+            )
             return None
 
     def get_events(self) -> str:
@@ -108,11 +133,12 @@ class NomadTask:
 JobToAllocDict = Dict[str, List[NomadAllocation]]
 
 
-def _get_allocations(nomad_client: Nomad) -> JobToAllocDict:
+def _get_allocations(nomad_client: Nomad, parent: NomadNamespace) -> JobToAllocDict:
     job_names = _get_nomad_job_names(nomad_client)
     job_to_allocs: JobToAllocDict = {
         job_name: [
-            NomadAllocation(a) for a in nomad_client.job.get_allocations(job_name)
+            NomadAllocation(a, parent=parent)
+            for a in nomad_client.job.get_allocations(job_name)
         ]
         for job_name in job_names
     }
