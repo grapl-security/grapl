@@ -133,7 +133,7 @@ steps:
             to: validated
             packages_file: current_artifacts.json
     agents:
-      queue: "artifact-uploaders"
+      queue: "docker"
 
   - wait
 

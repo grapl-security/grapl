@@ -58,7 +58,7 @@ steps:
             to: testing
             packages_file: all_artifacts.json
     agents:
-      queue: "artifact-uploaders"
+      queue: "docker"
 
   - wait
 
