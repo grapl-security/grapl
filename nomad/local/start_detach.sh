@@ -8,7 +8,7 @@ THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
 readonly THIS_DIR
 
 ensure_cros_bridge_networking_workaround() {
-    # Suggest the Noamd bridge networking hack in building.md if module is not found
+    # Suggest the Nomad bridge networking hack in building.md if module is not found
     # Due to https://github.com/hashicorp/nomad/issues/10902
 
     # "is this crOS?" per
@@ -19,14 +19,28 @@ ensure_cros_bridge_networking_workaround() {
             echo "It looks like you're on ChromeOS, but haven't installed the Nomad bridge networking workaround."
             # shellcheck source-path=SCRIPTDIR
             source "${THIS_DIR}/../../etc/chromeos/lib/installs.sh"
-            install_nomad_chromeos_workaround
+            (
+                install_nomad_chromeos_workaround
+            )
             echo "ChromeOS Nomad bridge networking workaround should now be installed. Continuing..."
         fi
     fi
 }
 
+ensure_firecracker_driver_installed() {
+    expected_cni_path="/opt/nomad/plugins/firecracker-task-driver"
+    if [[ ! -f "${expected_cni_path}" ]]; then
+        echo "It looks like you don't have the Firecracker nomad stuff set up yet."
+        # shellcheck source-path=SCRIPTDIR
+        source "${THIS_DIR}/../../etc/chromeos/lib/installs.sh"
+        (install_nomad_firecracker)
+        echo "Continuing..."
+    fi
+}
+
 ensure_valid_env() {
     ensure_cros_bridge_networking_workaround
+    ensure_firecracker_driver_installed
 
     # Ensure script is being run with `local-grapl.env` variables
     # via `make start-nomad-ci`

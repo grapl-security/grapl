@@ -1,7 +1,9 @@
+# This is not specified by default for nomad agent -dev
+plugin_dir = "/opt/nomad/plugins"
+
 ####################
 # Plugin configs
 ####################
-
 plugin "docker" {
   # https://www.nomadproject.io/docs/drivers/docker#plugin-options
   config {
@@ -13,8 +15,6 @@ plugin "docker" {
     }
   }
 }
-
-
 ####################
 # Telemetry configs
 ####################
