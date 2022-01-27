@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [[bin]]
-name = "plugin-bootstrap-service"
+name = "plugin-bootstrap"
 path = "src/plugin_bootstrap_service.rs"
 
 [[bin]]
