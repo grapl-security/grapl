@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
 use crate::{
+    db_client::GetPluginRow,
     error::PluginRegistryServiceError,
     nomad_cli,
     nomad_client,
-    static_files, db_client::GetPluginRow,
+    static_files,
 };
 
 /// https://github.com/grapl-security/grapl-rfcs/blob/main/text/0000-plugins.md#deployplugin-details
@@ -22,7 +23,10 @@ pub async fn deploy_plugin(
             ("plugin_id".to_owned(), plugin.plugin_id.to_string()),
             ("tenant_id".to_owned(), plugin.tenant_id.to_string()),
             ("plugin_artifact_url".to_owned(), plugin.artifact_s3_key),
-            ("aws_account_id".to_owned(), plugin_bucket_owner_id.to_string()),
+            (
+                "aws_account_id".to_owned(),
+                plugin_bucket_owner_id.to_string(),
+            ),
         ]);
         cli.parse_hcl2(job_file_hcl, job_file_vars)?
     };
