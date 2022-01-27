@@ -182,8 +182,9 @@ impl PluginRegistry {
         let nomad_client = nomad_client::NomadClient::from_env();
         let nomad_cli = nomad_cli::NomadCli {};
         let plugin_id = request.plugin_id;
+        let plugin_row = self.db_client.get_plugin(&plugin_id).await?;
 
-        deploy_plugin::deploy_plugin(nomad_client, nomad_cli, plugin_id)
+        deploy_plugin::deploy_plugin(nomad_client, nomad_cli, plugin_row, &self.plugin_bucket_owner_id)
             .await
             .map_err(PluginRegistryServiceError::from)?;
 

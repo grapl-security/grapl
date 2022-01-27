@@ -4,14 +4,10 @@ use rust_proto::plugin_registry::CreatePluginRequest;
 #[derive(sqlx::FromRow)]
 pub struct GetPluginRow {
     pub plugin_id: uuid::Uuid,
+    pub tenant_id: uuid::Uuid,
     pub display_name: String,
     pub plugin_type: String,
     pub artifact_s3_key: String,
-}
-
-pub struct CreatePluginResponse {
-    /// The identity of the plugin that was created
-    pub plugin_id: uuid::Uuid,
 }
 
 pub struct PluginRegistryDbClient {
@@ -24,9 +20,10 @@ impl PluginRegistryDbClient {
             r"
         SELECT
         plugin_id,
+        tenant_id,
         display_name,
         plugin_type,
-        artifact_s2_key
+        artifact_s3_key
         FROM plugins
         WHERE plugin_id = $0
             ",
@@ -61,8 +58,8 @@ impl PluginRegistryDbClient {
         .bind(&request.tenant_id)
         .bind(s3_key)
         .execute(&self.pool)
-        .await;
-        Ok(())
+        .await
+        .map(|_| ())
     }
 
     pub async fn new(postgres_address: &str) -> Result<Self, Box<dyn std::error::Error>> {
