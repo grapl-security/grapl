@@ -1,9 +1,7 @@
 use grapl_config::env_helpers::FromEnv;
 use grapl_utils::future_ext::GraplFutureExt;
 use rusoto_s3::{
-    GetObjectError,
     GetObjectRequest,
-    PutObjectError,
     PutObjectRequest,
     S3Client,
     S3,
@@ -34,7 +32,6 @@ use rust_proto::plugin_registry::{
     GetPluginResponse,
     GetPluginResponseProto,
     Plugin,
-    PluginRegistryDeserializationError,
     PluginType,
     TearDownPluginRequest,
     TearDownPluginRequestProto,
@@ -58,23 +55,13 @@ struct GetPluginRow {
 
 use tokio::io::AsyncReadExt;
 
-use crate::PluginRegistryServiceConfig;
-
-#[derive(Debug, thiserror::Error)]
-pub enum PluginRegistryServiceError {
-    #[error("SqlxError")]
-    SqlxError(#[from] sqlx::Error),
-    #[error("S3PutObjectError")]
-    PutObjectError(#[from] rusoto_core::RusotoError<PutObjectError>),
-    #[error("S3GetObjectError")]
-    GetObjectError(#[from] rusoto_core::RusotoError<GetObjectError>),
-    #[error("EmptyObject")]
-    EmptyObject,
-    #[error("IoError")]
-    IoError(#[from] std::io::Error),
-    #[error("PluginRegistryDeserializationError")]
-    PluginRegistryDeserializationError(#[from] PluginRegistryDeserializationError),
-}
+use crate::{
+    deploy_plugin,
+    error::PluginRegistryServiceError,
+    nomad_cli,
+    nomad_client,
+    PluginRegistryServiceConfig,
+};
 
 impl From<PluginRegistryServiceError> for Status {
     fn from(err: PluginRegistryServiceError) -> Self {
@@ -98,6 +85,12 @@ impl From<PluginRegistryServiceError> for Status {
             PluginRegistryServiceError::PluginRegistryDeserializationError(_) => {
                 Status::invalid_argument("Unable to deserialize message")
             }
+            PluginRegistryServiceError::NomadClientError(_) => {
+                Status::internal("Failed RPC with Nomad")
+            }
+            PluginRegistryServiceError::NomadCliError(_) => {
+                Status::internal("Failed using Nomad CLI")
+            }
         }
     }
 }
@@ -110,6 +103,7 @@ pub struct PluginRegistry {
 }
 
 impl PluginRegistry {
+    #[tracing::instrument(skip(self, request), err)]
     async fn create_plugin(
         &self,
         request: CreatePluginRequest,
@@ -217,15 +211,24 @@ impl PluginRegistry {
         Ok(response)
     }
 
-    #[allow(dead_code)]
+    #[tracing::instrument(skip(self, request), err)]
     async fn deploy_plugin(
         &self,
-        _request: DeployPluginRequest,
+        request: DeployPluginRequest,
     ) -> Result<DeployPluginResponse, PluginRegistryServiceError> {
-        todo!()
+        let nomad_client = nomad_client::NomadClient::from_env();
+        let nomad_cli = nomad_cli::NomadCli {};
+        let plugin_id = request.plugin_id;
+
+        deploy_plugin::deploy_plugin(nomad_client, nomad_cli, plugin_id)
+            .await
+            .map_err(PluginRegistryServiceError::from)?;
+
+        Ok(DeployPluginResponse {})
     }
 
     #[allow(dead_code)]
+    #[tracing::instrument(skip(self, _request), err)]
     async fn tear_down_plugin(
         &self,
         _request: TearDownPluginRequest,
@@ -242,6 +245,7 @@ impl PluginRegistry {
     }
 
     #[allow(dead_code)]
+    #[tracing::instrument(skip(self, _request), err)]
     async fn get_analyzers_for_tenant(
         &self,
         _request: GetAnalyzersForTenantRequest,
@@ -280,9 +284,14 @@ impl PluginRegistryService for PluginRegistry {
 
     async fn deploy_plugin(
         &self,
-        _request: Request<DeployPluginRequestProto>,
+        request: Request<DeployPluginRequestProto>,
     ) -> Result<Response<DeployPluginResponseProto>, Status> {
-        todo!()
+        let request: DeployPluginRequestProto = request.into_inner();
+        let request =
+            DeployPluginRequest::try_from(request).map_err(PluginRegistryServiceError::from)?;
+
+        let response = self.deploy_plugin(request).await?;
+        Ok(Response::new(response.into()))
     }
 
     async fn tear_down_plugin(
