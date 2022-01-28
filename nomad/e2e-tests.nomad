@@ -137,7 +137,7 @@ job "e2e-tests" {
         command = trimspace(<<EOF
 graplctl upload analyzer --analyzer_main_py ./etc/local_grapl/suspicious_svchost/main.py
 graplctl upload analyzer --analyzer_main_py ./etc/local_grapl/unique_cmd_parent/main.py
-graplctl upload sysmon --logfile ./etc/sample_data/eventlog.xml
+graplctl upload sysmon --logfile ./etc/sample_data/36_eventlog.xml
 EOF
         )
       }
