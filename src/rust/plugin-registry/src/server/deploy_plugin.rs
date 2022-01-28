@@ -36,16 +36,16 @@ pub async fn deploy_plugin(
         cli.parse_hcl2(job_file_hcl, job_file_vars)?
     };
 
-    // TODO: "nomad job plan" to make sure we have enough memory/cpu for the task
-
     // --- Deploy namespace
-    let namespace_name = &plugin.display_name; // TODO: Do we need to regex enforce display names?
-    client.create_namespace(namespace_name).await?;
+    let namespace_name = (&plugin.display_name).to_owned(); // TODO: Do we need to regex enforce display names?
+    client.create_namespace(&namespace_name).await?;
     // TODO: What if the namespace already exists?
+
+    let _plan_result = client.plan_job(&job, Some(namespace_name.clone()));
 
     // --- Start the job
     let _job = client
-        .create_job(job, Some(namespace_name.to_owned()))
+        .create_job(&job, Some(namespace_name.clone()))
         .await?;
     // There's no guarantee that the job is *healthy*, just that it's been deployed.
 
