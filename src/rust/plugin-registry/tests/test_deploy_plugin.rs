@@ -1,7 +1,10 @@
 #![cfg(feature = "integration")]
 
 use grapl_utils::future_ext::GraplFutureExt;
-use plugin_registry::client::PluginRegistryServiceClient;
+use plugin_registry::client::{
+    PluginRegistryServiceClient,
+    PluginRegistryServiceClientError,
+};
 use rust_proto::plugin_registry::{
     CreatePluginRequest,
     DeployPluginRequest,
@@ -37,5 +40,32 @@ async fn test_deploy_plugin() -> Result<(), Box<dyn std::error::Error>> {
         .deploy_plugin(request)
         .timeout(std::time::Duration::from_secs(5))
         .await??;
+    Ok(())
+}
+
+#[test_log::test(tokio::test)]
+/// So we *expect* this call to fail since it's an arbitrary PluginID that
+/// hasn't been created yet
+async fn test_deploy_plugin_but_random_plugin_id() -> Result<(), Box<dyn std::error::Error>> {
+    let mut client = PluginRegistryServiceClient::from_env().await?;
+
+    let randomly_selected_plugin_id = uuid::Uuid::new_v4();
+
+    let request = DeployPluginRequest {
+        plugin_id: randomly_selected_plugin_id,
+    };
+
+    let response = client
+        .deploy_plugin(request)
+        .timeout(std::time::Duration::from_secs(5))
+        .await?;
+
+    match response {
+        Err(PluginRegistryServiceClientError::ErrorStatus(s)) => {
+            // TODO: We should consider a dedicated "PluginIDDoesntExist" exception
+            assert!(s.message().contains("Failed to operate on postgres"));
+        }
+        _ => panic!("Expected an error"),
+    };
     Ok(())
 }
