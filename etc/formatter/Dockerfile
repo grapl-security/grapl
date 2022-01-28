@@ -2,7 +2,7 @@ FROM debian:bullseye-slim AS formatter
 
 # Ignore this lint about deleteing the apt-get lists (we're caching!)
 # hadolint ignore=DL3009
-RUN --mount=type=cache,target=/var/lib/apt/lists \
+RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=formatter-apt \
     apt-get update \
     && apt-get install --yes --no-install-recommends \
         ca-certificates=20210119 \
@@ -18,7 +18,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
 # Ignore DL3009 lint about deleteing the apt-get lists (we're caching!)
 # Ignore DL3008 lint about pinning NodeJS; it's complex: https://github.com/nodesource/distributions/issues/33
 # hadolint ignore=DL3009,DL3008
-RUN --mount=type=cache,target=/var/lib/apt/lists \
+RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=formatter-apt \
     apt-get update && \
     apt-get install --yes --no-install-recommends nodejs \
     && npm install -g prettier@2.2.1 \
