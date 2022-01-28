@@ -12,7 +12,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 #
 # Ignore this lint about deleteing the apt-get lists (we're caching!)
 # hadolint ignore=DL3009,SC1089
-RUN --mount=type=cache,target=/var/lib/apt/lists \
+RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
     apt-get update \
     && apt-get install -y --no-install-recommends \
         build-essential=12.9 \
@@ -57,8 +57,8 @@ FROM base AS build
 # Hadolint appears to be confused about some of these mount targets
 # hadolint ignore=SC1091
 RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
-    --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/usr/local/rustup <<EOF
+    --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,target=/usr/local/rustup,sharing=locked <<EOF
     case "${RUST_BUILD}" in 
       debug)
         cargo build ;;
@@ -92,8 +92,8 @@ FROM base AS tarpaulin
 # outputs, such that subsequent cargo build runs will need to start from
 # scratch as well. For this reason we avoid mounting the cached target
 # directory.
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/usr/local/rustup \
+RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,target=/usr/local/rustup,sharing=locked \
     cargo install cargo-tarpaulin
 
 
@@ -125,8 +125,8 @@ RUN mkdir --parents "${TEST_DIR}"
 # have -o pipefail set on line 9.
 # hadolint ignore=DL4006
 RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
-    --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/usr/local/rustup \
+    --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,target=/usr/local/rustup,sharing=locked \
     cargo test \
         --features "${RUST_INTEGRATION_TEST_FEATURES}" \
         --no-run \
@@ -147,7 +147,7 @@ RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
 # install as needed, but the debian image we're using has zlib already.
 FROM debian:bullseye-slim AS integration-tests
 
-RUN --mount=type=cache,target=/var/lib/apt/lists \
+RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
     apt-get update \
     && apt-get install -y --no-install-recommends \
         ca-certificates=20210119
