@@ -5,7 +5,7 @@ edition = "2021"
 
 [[bin]]
 name = "plugin-registry"
-path = "src/server/main.rs"
+path = "src/main.rs"
 
 [lib]
 name = "plugin_registry"

@@ -1,7 +1,6 @@
 pub mod client;
-pub mod error;
-
 mod db;
+pub mod error;
 pub mod nomad;
-mod server;
+pub mod server;
 mod static_files;

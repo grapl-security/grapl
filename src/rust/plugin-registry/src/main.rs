@@ -1,9 +1,8 @@
-use structopt::StructOpt;
-
-use crate::server::server::{
+use plugin_registry::server::service::{
     exec_service,
     PluginRegistryServiceConfig,
 };
+use structopt::StructOpt;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
