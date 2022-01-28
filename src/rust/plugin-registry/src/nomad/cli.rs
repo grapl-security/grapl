@@ -17,6 +17,7 @@ pub enum NomadCliError {
 
 pub type NomadVars = HashMap<String, String>;
 
+#[derive(Default)]
 pub struct NomadCli {}
 
 impl NomadCli {

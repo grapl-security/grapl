@@ -1,25 +1,30 @@
 use std::collections::HashMap;
 
 use crate::{
-    db_client::GetPluginRow,
+    db::client::GetPluginRow,
     error::PluginRegistryServiceError,
-    nomad_cli,
-    nomad_client,
+    nomad::{
+        cli::{
+            NomadCli,
+            NomadVars,
+        },
+        client::NomadClient,
+    },
     static_files,
 };
 
 /// https://github.com/grapl-security/grapl-rfcs/blob/main/text/0000-plugins.md#deployplugin-details
 #[tracing::instrument(skip(client, cli, plugin), err)]
 pub async fn deploy_plugin(
-    client: nomad_client::NomadClient,
-    cli: nomad_cli::NomadCli,
+    client: &NomadClient,
+    cli: &NomadCli,
     plugin: GetPluginRow,
     plugin_bucket_owner_id: &str,
 ) -> Result<(), PluginRegistryServiceError> {
     // --- Convert HCL to JSON Job model
     let job = {
         let job_file_hcl = static_files::PLUGIN_JOB;
-        let job_file_vars: nomad_cli::NomadVars = HashMap::from([
+        let job_file_vars: NomadVars = HashMap::from([
             ("plugin_id".to_owned(), plugin.plugin_id.to_string()),
             ("tenant_id".to_owned(), plugin.tenant_id.to_string()),
             ("plugin_artifact_url".to_owned(), plugin.artifact_s3_key),

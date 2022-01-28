@@ -46,15 +46,16 @@ use tonic::{
 };
 
 use crate::{
-    db_client::{
+    db::client::{
         GetPluginRow,
         PluginRegistryDbClient,
     },
-    deploy_plugin,
     error::PluginRegistryServiceError,
-    nomad_cli,
-    nomad_client,
-    PluginRegistryServiceConfig,
+    nomad::{
+        cli::NomadCli,
+        client::NomadClient,
+    },
+    server::deploy_plugin,
 };
 
 impl From<PluginRegistryServiceError> for Status {
@@ -89,8 +90,32 @@ impl From<PluginRegistryServiceError> for Status {
     }
 }
 
+use std::net::SocketAddr;
+
+use structopt::StructOpt;
+
+#[derive(StructOpt, Debug)]
+pub struct PluginRegistryServiceConfig {
+    #[structopt(env)]
+    plugin_s3_bucket_aws_account_id: String,
+    #[structopt(env)]
+    plugin_s3_bucket_name: String,
+    #[structopt(env)]
+    plugin_registry_bind_address: SocketAddr,
+    #[structopt(env)]
+    plugin_registry_db_hostname: String,
+    #[structopt(env)]
+    plugin_registry_db_port: u16,
+    #[structopt(env)]
+    plugin_registry_db_username: String,
+    #[structopt(env)]
+    plugin_registry_db_password: String,
+}
+
 pub struct PluginRegistry {
     db_client: PluginRegistryDbClient,
+    nomad_client: NomadClient,
+    nomad_cli: NomadCli,
     s3: S3Client,
     plugin_bucket_name: String,
     plugin_bucket_owner_id: String,
@@ -180,14 +205,12 @@ impl PluginRegistry {
         &self,
         request: DeployPluginRequest,
     ) -> Result<DeployPluginResponse, PluginRegistryServiceError> {
-        let nomad_client = nomad_client::NomadClient::from_env();
-        let nomad_cli = nomad_cli::NomadCli {};
         let plugin_id = request.plugin_id;
         let plugin_row = self.db_client.get_plugin(&plugin_id).await?;
 
         deploy_plugin::deploy_plugin(
-            nomad_client,
-            nomad_cli,
+            &self.nomad_client,
+            &self.nomad_cli,
             plugin_row,
             &self.plugin_bucket_owner_id,
         )
@@ -314,6 +337,8 @@ pub async fn exec_service(
 
     let plugin_registry: PluginRegistry = PluginRegistry {
         db_client: PluginRegistryDbClient::new(&postgres_address).await?,
+        nomad_client: NomadClient::from_env(),
+        nomad_cli: NomadCli::default(),
         s3: S3Client::from_env(),
         plugin_bucket_name: service_config.plugin_s3_bucket_name,
         plugin_bucket_owner_id: service_config.plugin_s3_bucket_aws_account_id,
