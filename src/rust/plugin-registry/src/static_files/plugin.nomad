@@ -54,6 +54,10 @@ job "grapl-plugin" {
       port "plugin_grpc_receiver" {}
     }
 
+    restart {
+      attempts = 1
+    }
+
     count = var.plugin_count
 
     task "tenant-plugin-execution-sidecar" {

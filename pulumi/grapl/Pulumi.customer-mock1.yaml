@@ -1,22 +1,6 @@
 config:
   aws:region: us-east-1
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: operational-alarms@graplsecurity.com
-  grapl:artifacts:
-    analyzer-dispatcher: 20220128180936-a2b0ffc
-    analyzer-executor: 20220128180936-a2b0ffc
-    e2e-tests: 20220128180936-a2b0ffc
-    engagement-creator: 20220128180936-a2b0ffc
-    graph-merger: 20220128180936-a2b0ffc
-    graphql-endpoint: 20220128180936-a2b0ffc
-    grapl-web-ui: 20220128180936-a2b0ffc
-    model-plugin-deployer: 20220128180936-a2b0ffc
-    node-identifier: 20220128180936-a2b0ffc
-    node-identifier-retry: 20220128180936-a2b0ffc
-    osquery-generator: 20220128180936-a2b0ffc
-    plugin-registry: 20220128180936-a2b0ffc
-    plugin-work-queue: 20220128180936-a2b0ffc
-    provisioner: 20220128180936-a2b0ffc
-    sysmon-generator: 20220128180936-a2b0ffc
   grapl:confluent-environment-name: testing
   grapl:container-repository: docker.cloudsmith.io/grapl/testing
   grapl:env_vars:

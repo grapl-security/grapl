@@ -3,6 +3,7 @@ use std::net::SocketAddr;
 use structopt::StructOpt;
 
 pub mod client;
+mod db_client;
 mod deploy_plugin;
 pub mod error;
 pub mod nomad_cli;
