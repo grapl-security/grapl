@@ -10,12 +10,13 @@ class LocalPostgresInstance(pulumi.ComponentResource):
         self,
         name: str,
         port: int,
+        address: Optional[str] = "LOCAL_GRAPL_REPLACE_IP",
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         super().__init__("grapl:PostgresInstance", name, None, opts)
 
-        self.username = "postgres"
-        self.password = "postgres"
-        self.port = port
-
         self.instance = postgresql.Database(name)
+        self.instance.address = address
+        self.instance.username = "postgres"
+        self.instance.password = "postgres"
+        self.instance.port = port

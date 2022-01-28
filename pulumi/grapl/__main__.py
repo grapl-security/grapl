@@ -223,10 +223,7 @@ def main() -> None:
             port=5532,
         )
 
-        pulumi.export("plugin-work-queue-db-hostname", "LOCAL_GRAPL_REPLACE_IP")
-        pulumi.export("plugin-work-queue-db-port", str(plugin_work_queue_db.port))
-        pulumi.export("plugin-work-queue-db-username", plugin_work_queue_db.username)
-        pulumi.export("plugin-work-queue-db-password", plugin_work_queue_db.password)
+        pulumi.export("plugin-work-queue-db", plugin_work_queue_db.instance)
 
         # These are created in `grapl-local-infra.nomad` and not applicable to prod.
         # Nomad will replace the LOCAL_GRAPL_REPLACE_IP sentinel value with the correct IP.
@@ -250,14 +247,14 @@ def main() -> None:
             aws_access_key_secret=aws_config.secret_key,
             container_images=_container_images({}),
             rust_log=rust_log_levels,
-            plugin_registry_db_hostname="LOCAL_GRAPL_REPLACE_IP",
-            plugin_registry_db_port=str(plugin_registry_db.port),
-            plugin_registry_db_username=plugin_registry_db.username,
-            plugin_registry_db_password=plugin_registry_db.password,
-            plugin_work_queue_db_hostname="LOCAL_GRAPL_REPLACE_IP",
-            plugin_work_queue_db_port=str(plugin_work_queue_db.port),
-            plugin_work_queue_db_username=plugin_work_queue_db.username,
-            plugin_work_queue_db_password=plugin_work_queue_db.password,
+            plugin_registry_db_hostname=plugin_registry_db.instance.address,
+            plugin_registry_db_port=str(plugin_registry_db.instance.port),
+            plugin_registry_db_username=plugin_registry_db.instance.username,
+            plugin_registry_db_password=plugin_registry_db.instance.password,
+            plugin_work_queue_db_hostname=plugin_work_queue_db.instance.address,
+            plugin_work_queue_db_port=str(plugin_work_queue_db.instance.port),
+            plugin_work_queue_db_username=plugin_work_queue_db.instance.username,
+            plugin_work_queue_db_password=plugin_work_queue_db.instance.password,
             py_log_level=py_log_level,
             **nomad_inputs,
         )
@@ -387,33 +384,9 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
-        pulumi.export(
-            "plugin-registry-db-hostname", plugin_registry_postgres.instance.address
-        )
-        pulumi.export(
-            "plugin-registry-db-port", str(plugin_registry_postgres.instance.port)
-        )
-        pulumi.export(
-            "plugin-registry-db-username", plugin_registry_postgres.instance.username
-        )
-        pulumi.export(
-            "plugin-registry-db-password", plugin_registry_postgres.instance.password
-        )
+        pulumi.export("plugin-registry-db", plugin_registry_postgres.instance)
 
-        pulumi.export(
-            "plugin-work-queue-db-hostname", plugin_work_queue_postgres.instance.address
-        )
-        pulumi.export(
-            "plugin-work-queue-db-port", str(plugin_work_queue_postgres.instance.port)
-        )
-        pulumi.export(
-            "plugin-work-queue-db-username",
-            plugin_work_queue_postgres.instance.username,
-        )
-        pulumi.export(
-            "plugin-work-queue-db-password",
-            plugin_work_queue_postgres.instance.password,
-        )
+        pulumi.export("plugin-work-queue-db", plugin_work_queue_postgres.instance)
 
         pulumi.export("kafka-endpoint", kafka.bootstrap_servers())
         pulumi.export("redis-endpoint", cache.endpoint)
