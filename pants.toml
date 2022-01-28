@@ -130,7 +130,7 @@ args = [ "--suppress-no-test-exit-code" ]
 
 [mypy]
 lockfile = "3rdparty/python/mypy.lockfile"
-version = "mypy==0.812"
+version = "mypy==0.910"
 config = "src/python/mypy.ini"
 # read this section of the mypy docs:
 #
@@ -139,6 +139,14 @@ config = "src/python/mypy.ini"
 # for the raison d'être for "--namespace-packages". Tl;dr: it makes mypy work
 # with our protobuf stubs.
 args = [ "--show-error-codes", "--namespace-packages" ] #, "--verbose" ]
+
+extra_type_stubs = [
+  "types-click==7.1.8",
+  "types-protobuf==3.19.6",
+  "types-redis==4.1.11",
+  "types-requests==2.27.7",
+  "types-toml==0.10.3",
+]
 
 [ipython]
 version = "ipython==7.20.0"
