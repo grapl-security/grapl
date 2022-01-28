@@ -387,6 +387,34 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
+        pulumi.export(
+            "plugin-registry-db-hostname", plugin_registry_postgres.instance.address
+        )
+        pulumi.export(
+            "plugin-registry-db-port", str(plugin_registry_postgres.instance.port)
+        )
+        pulumi.export(
+            "plugin-registry-db-username", plugin_registry_postgres.instance.username
+        )
+        pulumi.export(
+            "plugin-registry-db-password", plugin_registry_postgres.instance.password
+        )
+
+        pulumi.export(
+            "plugin-work-queue-db-hostname", plugin_work_queue_postgres.instance.address
+        )
+        pulumi.export(
+            "plugin-work-queue-db-port", str(plugin_work_queue_postgres.instance.port)
+        )
+        pulumi.export(
+            "plugin-work-queue-db-username",
+            plugin_work_queue_postgres.instance.username,
+        )
+        pulumi.export(
+            "plugin-work-queue-db-password",
+            plugin_work_queue_postgres.instance.password,
+        )
+
         pulumi.export("kafka-endpoint", kafka.bootstrap_servers())
         pulumi.export("redis-endpoint", cache.endpoint)
 
