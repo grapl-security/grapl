@@ -4,10 +4,7 @@ use rusoto_s3::{
 };
 use rust_proto::plugin_registry::PluginRegistryDeserializationError;
 
-use crate::{
-    nomad_cli,
-    nomad_client,
-};
+use crate::nomad;
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginRegistryServiceError {
@@ -24,7 +21,7 @@ pub enum PluginRegistryServiceError {
     #[error("PluginRegistryDeserializationError")]
     PluginRegistryDeserializationError(#[from] PluginRegistryDeserializationError),
     #[error("NomadClientError")]
-    NomadClientError(#[from] nomad_client::NomadClientError),
+    NomadClientError(#[from] nomad::client::NomadClientError),
     #[error("NomadCliError")]
-    NomadCliError(#[from] nomad_cli::NomadCliError),
+    NomadCliError(#[from] nomad::cli::NomadCliError),
 }
