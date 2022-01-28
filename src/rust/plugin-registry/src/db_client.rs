@@ -15,6 +15,7 @@ pub struct PluginRegistryDbClient {
 }
 
 impl PluginRegistryDbClient {
+    #[tracing::instrument(skip(self), err)]
     pub async fn get_plugin(&self, plugin_id: &uuid::Uuid) -> Result<GetPluginRow, sqlx::Error> {
         sqlx::query_as(
             r"
@@ -25,14 +26,15 @@ impl PluginRegistryDbClient {
         plugin_type,
         artifact_s3_key
         FROM plugins
-        WHERE plugin_id = $0
+        WHERE plugin_id = $1
             ",
         )
-        .bind(&plugin_id)
+        .bind(plugin_id)
         .fetch_one(&self.pool)
         .await
     }
 
+    #[tracing::instrument(skip(self, request, s3_key), err)]
     pub async fn create_plugin(
         &self,
         plugin_id: &uuid::Uuid,
@@ -59,7 +61,7 @@ impl PluginRegistryDbClient {
         .bind(s3_key)
         .execute(&self.pool)
         .await
-        .map(|_| ())
+        .map(|_| ()) // Toss result
     }
 
     pub async fn new(postgres_address: &str) -> Result<Self, Box<dyn std::error::Error>> {
