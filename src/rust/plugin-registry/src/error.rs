@@ -24,4 +24,6 @@ pub enum PluginRegistryServiceError {
     NomadClientError(#[from] nomad::client::NomadClientError),
     #[error("NomadCliError")]
     NomadCliError(#[from] nomad::cli::NomadCliError),
+    #[error("NomadJobAllocationError")]
+    NomadJobAllocationError,
 }

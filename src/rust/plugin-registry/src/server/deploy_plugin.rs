@@ -48,7 +48,6 @@ pub async fn deploy_plugin(
     client.create_namespace(&namespace_name).await?;
     // TODO: What if the namespace already exists?
 
-
     // --- Start the job
     let _job = client
         .create_job(&job, Some(namespace_name.clone()))

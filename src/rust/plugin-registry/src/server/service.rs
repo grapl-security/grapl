@@ -86,6 +86,9 @@ impl From<PluginRegistryServiceError> for Status {
             PluginRegistryServiceError::NomadCliError(_) => {
                 Status::internal("Failed using Nomad CLI")
             }
+            PluginRegistryServiceError::NomadJobAllocationError => {
+                Status::internal("Unable to allocate Nomad job - it may be out of resources.")
+            }
         }
     }
 }
