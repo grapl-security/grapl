@@ -139,6 +139,19 @@ config = "src/python/mypy.ini"
 args = [ "--show-error-codes", "--namespace-packages" ] #, "--verbose" ]
 
 extra_type_stubs = [
+  # These could technically get specific versions, but, eh
+  "mypy_boto3_cloudwatch",
+  "mypy_boto3_dynamodb",
+  "mypy_boto3_ec2",
+  "mypy_boto3_lambda",
+  "mypy_boto3_route53",
+  "mypy_boto3_s3",
+  "mypy_boto3_sagemaker",
+  "mypy_boto3_secretsmanager",
+  "mypy_boto3_sns",
+  "mypy_boto3_sqs",
+  "mypy_boto3_ssm",
+
   "types-click==7.1.8",
   "types-protobuf==3.19.6",
   "types-redis==4.1.11",
