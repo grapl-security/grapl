@@ -12,7 +12,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 #
 # Ignore this lint about deleteing the apt-get lists (we're caching!)
 # hadolint ignore=DL3009,SC1089
-RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-base-apt \
     apt-get update \
     && apt-get install -y --no-install-recommends \
         build-essential=12.9 \
@@ -147,7 +147,7 @@ RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
 # install as needed, but the debian image we're using has zlib already.
 FROM debian:bullseye-slim AS integration-tests
 
-RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tests-apt \
     apt-get update \
     && apt-get install -y --no-install-recommends \
         ca-certificates=20210119
