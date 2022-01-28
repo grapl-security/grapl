@@ -97,15 +97,12 @@ impl NomadClient {
     pub async fn plan_job(
         &self,
         job: &models::Job,
-        namespace: Option<String>,
     ) -> Result<models::JobPlanResponse, NomadClientError> {
         jobs_api::post_job_plan(
             &self.internal_config,
             jobs_api::PostJobPlanParams {
-                namespace: namespace.clone(),
                 job_name: "grapl-plugin".to_owned(),
                 job_plan_request: models::JobPlanRequest {
-                    //namespace: namespace.clone(),
                     job: Some(job.clone().into()),
                     ..Default::default()
                 },
