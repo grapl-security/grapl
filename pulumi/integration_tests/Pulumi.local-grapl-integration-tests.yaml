@@ -7,3 +7,4 @@ config:
   aws:skipRequestingAccountId: "true"
   # Host OS's Nomad instance
   nomad:address: http://host.docker.internal:4646
+  integration-tests:confluent-environment-name: "local-grapl"

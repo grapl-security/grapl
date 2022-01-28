@@ -47,6 +47,16 @@ variable "_kafka_bootstrap_servers" {
   description = "Comma separated host:port pairs specifying which brokers clients should connect to initially."
 }
 
+variable "kafka_sasl_username" {
+  type        = string
+  description = "The Confluent Cloud API key to configure producers and consumers with."
+}
+
+variable "kafka_sasl_password" {
+  type        = string
+  description = "The Confluent Cloud API secret to configure producers and consumers with."
+}
+
 variable "schema_properties_table_name" {
   type        = string
   description = "What is the name of the schema properties table?"
@@ -198,6 +208,8 @@ job "integration-tests" {
         RUST_LOG       = local.log_level
         REDIS_ENDPOINT = local.redis_endpoint
         KAFKA_BOOTSTRAP_SERVERS = local.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME = var.kafka_sasl_username
+        KAFKA_SASL_PASSWORD = var.kafka_sasl_password
 
         GRAPL_MODEL_PLUGIN_DEPLOYER_HOST = "0.0.0.0"
         GRAPL_MODEL_PLUGIN_DEPLOYER_PORT = "${NOMAD_UPSTREAM_PORT_model-plugin-deployer}"
@@ -307,6 +319,10 @@ job "integration-tests" {
         MESSAGECACHE_ADDR = "${local.redis_host}"
         MESSAGECACHE_PORT = "${local.redis_port}"
         IS_RETRY          = "False"
+
+        KAFKA_BOOTSTRAP_SERVERS = local.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME = var.kafka_sasl_username
+        KAFKA_SASL_PASSWORD = var.kafka_sasl_password
 
         DEPLOYMENT_NAME = "${var.deployment_name}"
         GRAPL_LOG_LEVEL = local.log_level

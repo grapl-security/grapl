@@ -129,3 +129,17 @@ class Kafka(pulumi.ComponentResource):
             return pulumi.Output.from_input("LOCAL_GRAPL_REPLACE_IP:19092")
         else:
             return self.confluent_environment.apply(lambda e: e.bootstrap_servers)
+
+    def service_credentials(self, service_name: str) -> pulumi.Output[Credential]:
+        if self.confluent_environment is None:
+            return pulumi.Output.from_input(
+                Credential(
+                    service_account_id="dummy_confluent_service_account_id",
+                    api_key="dummy_confluent_api_key",
+                    api_secret="dummy_confluent_api_secret",
+                )
+            )
+        else:
+            return self.confluent_environment.apply(
+                lambda e: e.services[service_name].service_account
+            )
