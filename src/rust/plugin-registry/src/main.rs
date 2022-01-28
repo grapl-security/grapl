@@ -1,5 +1,5 @@
-use plugin_registry::{
-    server::exec_service,
+use plugin_registry::server::service::{
+    exec_service,
     PluginRegistryServiceConfig,
 };
 use structopt::StructOpt;
