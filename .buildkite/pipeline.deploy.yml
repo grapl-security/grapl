@@ -10,17 +10,12 @@ steps:
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - PULUMI_ACCESS_TOKEN
-      - improbable-eng/metahook#v0.4.1:
-          post-command: |
-            .buildkite/scripts/grapl_testing_stack/dump_artifacts.sh
       - grapl-security/pulumi#v0.1.2:
           command: update
           project_dir: pulumi/grapl
           stack: grapl/customer-mock1
     agents:
       queue: "pulumi-customer-mock1"
-    artifact_paths:
-      - "test_artifacts/**/*"
 
   - label: ":pulumi: Update grapl/customer-mock2 environment in customer-mock2 account"
     plugins:
@@ -28,17 +23,12 @@ steps:
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - PULUMI_ACCESS_TOKEN
-      - improbable-eng/metahook#v0.4.1:
-          post-command: |
-            .buildkite/scripts/grapl_testing_stack/dump_artifacts.sh
       - grapl-security/pulumi#v0.1.2:
           command: update
           project_dir: pulumi/grapl
-          stack: grapl/customer-mock1
+          stack: grapl/customer-mock2
     agents:
       queue: "pulumi-customer-mock2"
-    artifact_paths:
-      - "test_artifacts/**/*"
 
   - wait
 
