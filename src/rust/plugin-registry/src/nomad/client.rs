@@ -86,7 +86,6 @@ impl NomadClient {
                 namespace: namespace.clone(),
                 job_name: job_name.to_owned(),
                 job_register_request: models::JobRegisterRequest {
-                    //namespace: namespace.clone(),
                     job: Some(job.clone().into()),
                     ..Default::default()
                 },
