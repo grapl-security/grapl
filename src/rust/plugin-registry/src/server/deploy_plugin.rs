@@ -8,7 +8,10 @@ use crate::{
             NomadCli,
             NomadVars,
         },
-        client::NomadClient,
+        client::{
+            CanEnsureAllocation,
+            NomadClient,
+        },
     },
     static_files,
 };
@@ -46,12 +49,9 @@ pub async fn deploy_plugin(
     let plan_result = client
         .plan_job(&job, job_name, Some(namespace_name.clone()))
         .await?;
-    if let Some(failed_allocs) = plan_result.failed_tg_allocs {
-        if !failed_allocs.is_empty() {
-            tracing::warn!(message="Job failed to allocate", failed_allocs=?failed_allocs);
-            return Err(PluginRegistryServiceError::NomadJobAllocationError);
-        }
-    }
+    plan_result
+        .ensure_allocation()
+        .map_err(|_| PluginRegistryServiceError::NomadJobAllocationError)?;
 
     // --- Start the job
     let _job = client

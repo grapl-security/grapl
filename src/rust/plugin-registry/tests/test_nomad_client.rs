@@ -4,7 +4,11 @@ use std::collections::HashMap;
 
 use plugin_registry::nomad::{
     cli::NomadCli,
-    client::NomadClient,
+    client::{
+        CanEnsureAllocation,
+        NomadClient,
+        NomadClientError,
+    },
 };
 
 pub static TOO_MUCH_MEMORY_NOMAD_JOB: &'static str = include_str!("too_much_memory.nomad");
@@ -25,9 +29,8 @@ async fn test_nomad_client_plan_job_with_too_much_memory() -> Result<(), Box<dyn
     let job_hcl = TOO_MUCH_MEMORY_NOMAD_JOB;
     let job = NomadCli::default().parse_hcl2(job_hcl, HashMap::default())?;
     let plan_result = client.plan_job(&job, "too-much-memory-job", None).await?;
-    if let Some(_) = plan_result.failed_tg_allocs {
-        Ok(())
-    } else {
-        Err("Expected failed tg_allocs".into())
+    match plan_result.ensure_allocation() {
+        Err(NomadClientError::PlanJobAllocationFail) => Ok(()),
+        _ => Err("Expected failed allocation".into()),
     }
 }
