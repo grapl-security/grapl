@@ -22,7 +22,8 @@ pub struct NomadCli {}
 
 impl NomadCli {
     /// Convert HCL2 + variables into JSON
-    fn parse_hcl2_to_json(&self, hcl2: &str, vars: NomadVars) -> Result<String, std::io::Error> {
+    #[tracing::instrument(skip(self, hcl2, vars), err)]
+    fn parse_hcl2_to_json(&self, hcl2: &str, vars: NomadVars) -> Result<String, NomadCliError> {
         // Write our static file to a temporary file
         let mut file = NamedTempFile::new()?;
         file.write_all(hcl2.as_bytes())?;
@@ -40,7 +41,12 @@ impl NomadCli {
         // Specify filename
         command.arg(&path);
 
-        let result = command.output()?;
+        let result = command.output().map_err(|ioe| {
+            if let std::io::ErrorKind::NotFound = ioe.kind() {
+                panic!("No Nomad binary on path - make sure it's COPY'd in")
+            }
+            ioe
+        })?;
 
         Ok(String::from_utf8_lossy(&result.stdout).to_string())
     }

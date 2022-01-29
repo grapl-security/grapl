@@ -75,13 +75,14 @@ impl NomadClient {
     pub async fn create_job(
         &self,
         job: &models::Job,
+        job_name: &str,
         namespace: Option<String>,
     ) -> Result<models::JobRegisterResponse, NomadClientError> {
         jobs_api::post_job(
             &self.internal_config,
             jobs_api::PostJobParams {
                 namespace: namespace.clone(),
-                job_name: "grapl-plugin".to_owned(),
+                job_name: job_name.to_owned(),
                 job_register_request: models::JobRegisterRequest {
                     //namespace: namespace.clone(),
                     job: Some(job.clone().into()),
@@ -97,13 +98,14 @@ impl NomadClient {
     pub async fn plan_job(
         &self,
         job: &models::Job,
-        namespace: Option<String>
+        job_name: &str,
+        namespace: Option<String>,
     ) -> Result<models::JobPlanResponse, NomadClientError> {
         jobs_api::post_job_plan(
             &self.internal_config,
             jobs_api::PostJobPlanParams {
                 namespace: namespace.clone(),
-                job_name: "grapl-plugin".to_owned(),
+                job_name: job_name.to_owned(),
                 job_plan_request: models::JobPlanRequest {
                     job: Some(job.clone().into()),
                     ..Default::default()

@@ -22,6 +22,7 @@ pub async fn deploy_plugin(
     plugin_bucket_owner_id: &str,
 ) -> Result<(), PluginRegistryServiceError> {
     // --- Convert HCL to JSON Job model
+    let job_name = "grapl-plugin"; // Matches what's in `plugin.nomad`
     let job = {
         let job_file_hcl = static_files::PLUGIN_JOB;
         let job_file_vars: NomadVars = HashMap::from([
@@ -42,7 +43,9 @@ pub async fn deploy_plugin(
     // TODO: What if the namespace already exists?
 
     // --- Make sure that the Nomad agents can accept the job
-    let plan_result = client.plan_job(&job, Some(namespace_name.clone())).await?;
+    let plan_result = client
+        .plan_job(&job, job_name, Some(namespace_name.clone()))
+        .await?;
     if let Some(failed_allocs) = plan_result.failed_tg_allocs {
         if !failed_allocs.is_empty() {
             tracing::warn!(message="Job failed to allocate", failed_allocs=?failed_allocs);
@@ -52,7 +55,7 @@ pub async fn deploy_plugin(
 
     // --- Start the job
     let _job = client
-        .create_job(&job, Some(namespace_name.clone()))
+        .create_job(&job, job_name, Some(namespace_name.clone()))
         .await?;
     // There's no guarantee that the job is *healthy*, just that it's been deployed.
 
