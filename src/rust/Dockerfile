@@ -152,6 +152,10 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tests-ap
     && apt-get install -y --no-install-recommends \
         ca-certificates=20210119
 
+# Make the Nomad binary available to integration test consumers of NomadCli
+# hadolint ignore=DL3022
+COPY --from=build /nomad/nomad /bin
+
 COPY --from=build-test-integration /grapl/tests /tests
 
 COPY --chmod=777 <<-"EOF" /run-tests.sh
