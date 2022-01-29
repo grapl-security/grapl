@@ -94,11 +94,6 @@ job "grapl-plugin" {
     task "tenant-plugin-bootstrap-sidecar" {
       driver = "docker"
 
-      resources {
-        cpu    = 100
-        memory = 32000
-      }
-
       template {
         data        = <<EOH
       {{ $plugin_id := env "PLUGIN_ID" }}

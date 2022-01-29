@@ -36,17 +36,19 @@ pub async fn deploy_plugin(
         cli.parse_hcl2(job_file_hcl, job_file_vars)?
     };
 
-    // --- Make sure that the Nomad agents can accept the job
-    let plan_result = client.plan_job(&job).await?;
-    if let Some(failed_allocs) = plan_result.failed_tg_allocs {
-        tracing::warn!(message="Job failed to allocate", plan=?failed_allocs);
-        return Err(PluginRegistryServiceError::NomadJobAllocationError);
-    }
-
     // --- Deploy namespace
     let namespace_name = (&plugin.display_name).to_owned(); // TODO: Do we need to regex enforce display names?
     client.create_namespace(&namespace_name).await?;
     // TODO: What if the namespace already exists?
+
+    // --- Make sure that the Nomad agents can accept the job
+    let plan_result = client.plan_job(&job, Some(namespace_name.clone())).await?;
+    if let Some(failed_allocs) = plan_result.failed_tg_allocs {
+        if !failed_allocs.is_empty() {
+            tracing::warn!(message="Job failed to allocate", failed_allocs=?failed_allocs);
+            return Err(PluginRegistryServiceError::NomadJobAllocationError);
+        }
+    }
 
     // --- Start the job
     let _job = client
