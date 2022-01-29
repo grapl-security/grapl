@@ -11,8 +11,8 @@ job "too-much-memory-job" {
       }
 
       resources {
-        # Seems unlikely we'd be running this test on a machinge with 1TB RAM any time soon
-        memory = 1000 * 1000
+        # Seems unlikely we'd be running this test on a machine with 1TB RAM any time soon
+        memory = 1024 * 1024
       }
     }
   }
