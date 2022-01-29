@@ -1,4 +1,4 @@
-from unittest.mock import ANY, Mock, call
+from unittest.mock import ANY, MagicMock, call
 
 import pytest
 from tests.fake_uploads.fake_analyzer import main as fake_analyzer_main_py
@@ -137,10 +137,14 @@ def test_upload_osquery__calls_s3() -> None:
 def _mock_grapl_is_provisioned(
     mock_session: BotoSessionMock, is_provisioned: bool
 ) -> None:
-    table_instance = Mock("Mock DynamoDB table")
-    table_instance.scan.return_value = {
-        "Items": (
-            ["fool graplctl into thinking we're provisioned"] if is_provisioned else []
-        )
-    }
+    table_instance = MagicMock("Mock DynamoDB table")
+    table_instance.scan = MagicMock(
+        return_value={
+            "Items": (
+                ["fool graplctl into thinking we're provisioned"]
+                if is_provisioned
+                else []
+            )
+        }
+    )
     mock_session.resource("dynamodb").Table.return_value = table_instance
