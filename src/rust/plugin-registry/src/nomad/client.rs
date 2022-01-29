@@ -31,6 +31,10 @@ pub enum NomadClientError {
     CreateNamespaceErrror(#[from] Error<namespaces_api::PostNamespaceError>),
     #[error("CreateJobError {0:?}")]
     CreateJobError(#[from] Error<jobs_api::PostJobError>),
+    #[error("PlanJobError {0:?}")]
+    PlanJobError(#[from] Error<jobs_api::PostJobPlanError>),
+    #[error("PlanJobAllocationFail")]
+    PlanJobAllocationFail,
 }
 
 #[allow(dead_code)]
@@ -72,17 +76,17 @@ impl NomadClient {
 
     pub async fn create_job(
         &self,
-        job: models::Job,
+        job: &models::Job,
+        job_name: &str,
         namespace: Option<String>,
     ) -> Result<models::JobRegisterResponse, NomadClientError> {
         jobs_api::post_job(
             &self.internal_config,
             jobs_api::PostJobParams {
                 namespace: namespace.clone(),
-                job_name: "grapl-plugin".to_owned(),
+                job_name: job_name.to_owned(),
                 job_register_request: models::JobRegisterRequest {
-                    namespace: namespace.clone(),
-                    job: Some(job.into()),
+                    job: Some(job.clone().into()),
                     ..Default::default()
                 },
                 ..Default::default()
@@ -90,5 +94,43 @@ impl NomadClient {
         )
         .await
         .map_err(NomadClientError::from)
+    }
+
+    pub async fn plan_job(
+        &self,
+        job: &models::Job,
+        job_name: &str,
+        namespace: Option<String>,
+    ) -> Result<models::JobPlanResponse, NomadClientError> {
+        jobs_api::post_job_plan(
+            &self.internal_config,
+            jobs_api::PostJobPlanParams {
+                namespace: namespace.clone(),
+                job_name: job_name.to_owned(),
+                job_plan_request: models::JobPlanRequest {
+                    job: Some(job.clone().into()),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        )
+        .await
+        .map_err(NomadClientError::from)
+    }
+}
+
+pub trait CanEnsureAllocation {
+    fn ensure_allocation(&self) -> Result<(), NomadClientError>;
+}
+
+impl CanEnsureAllocation for models::JobPlanResponse {
+    fn ensure_allocation(&self) -> Result<(), NomadClientError> {
+        if let Some(failed_allocs) = &self.failed_tg_allocs {
+            if !failed_allocs.is_empty() {
+                tracing::warn!(message="Job failed to allocate", failed_allocs=?failed_allocs);
+                return Err(NomadClientError::PlanJobAllocationFail);
+            }
+        }
+        Ok(())
     }
 }
