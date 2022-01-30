@@ -185,8 +185,8 @@ impl GeneratorClient {
             });
         }
         srvs.sort_unstable_by_key(|srv| srv.priority());
-        let lowest_priority = srvs.last().unwrap();
-        Ok((*lowest_priority).clone()) // already checked - not empty
+        let lowest_priority = srvs.last().unwrap(); // already checked - not empty
+        Ok((*lowest_priority).clone())
     }
 }
 
