@@ -61,10 +61,14 @@ pub enum GeneratorClientError {
 
 type ClientCache = Cache<String, GeneratorServiceClient<Channel>>;
 
+/// The GeneratorClient manages connections to arbitrary generators across arbitrary tenants
 #[derive(Clone)]
 pub struct GeneratorClient {
+    /// A bounded cache mapping a plugin ID to a client connected to that plugin
     clients: ClientCache,
+    /// A public certificate to validate a plugin's domain
     certificate: tonic::transport::Certificate,
+    /// An in-process DNS resolver used for plugin service discovery
     resolver: TokioAsyncResolver,
 }
 
@@ -81,8 +85,8 @@ impl GeneratorClient {
         }
     }
 
-    // `run_generator` takes a `plugin_id` and `data`. It resolves the `plugin_id` to an address
-    // and calls the grpc `run_generator` on that address, supplying the data to it.
+    /// `run_generator` accepts arbitrary data and a plugin's identifier.
+    /// We acquire a plugin connection and issue a grpc request to it.
     #[tracing::instrument(
         fields(data_len = data.len()),
         skip(self, data),
@@ -94,9 +98,7 @@ impl GeneratorClient {
         plugin_id: String,
     ) -> Result<RunGeneratorResponse, GeneratorClientError> {
         let mut client = self.get_client(&plugin_id).await?;
-        tracing::info!(
-            message = "Running generator",
-        );
+        tracing::info!(message = "Running generator",);
         let response = client
             .run_generator(tonic::Request::new(RunGeneratorRequest { data }.into()))
             .await;
@@ -114,8 +116,8 @@ impl GeneratorClient {
         }
     }
 
-    // `get_client` attempts to grab an existing connection to a given plugin
-    // and, failing that, creates a new plugin connection
+    /// `get_client` attempts to grab an existing connection to a given plugin
+    /// and, failing that, creates a new plugin connection
     #[tracing::instrument(skip(self))]
     async fn get_client(
         &self,
@@ -133,6 +135,14 @@ impl GeneratorClient {
         }
     }
 
+    /// `new_client_for_plugin` creates a new gRPC client to the desired plugin.
+    /// This function assumes that service discovery is against Consul and that
+    /// the service's information can be queried via SRV to .service.consul.
+    ///
+    /// Given multiple SRV records we always choose the one with the lowest priority.
+    ///
+    /// We also ensure that we only connect to the plugin if it presents a valid certificate
+    /// for its domain
     #[tracing::instrument(skip(self))]
     async fn new_client_for_plugin(
         &self,
@@ -160,9 +170,9 @@ impl GeneratorClient {
             lowest_pri.target(),
             lowest_pri.port(),
         ))?
-            .tls_config(tls)?
-            .connect()
-            .await;
+        .tls_config(tls)?
+        .connect()
+        .await;
 
         match channel {
             Ok(channel) => Ok(GeneratorServiceClient::new(channel)),
@@ -174,19 +184,18 @@ impl GeneratorClient {
         }
     }
 
+    /// Performs the SRV record lookup, returning the record with the lowest priority
     async fn resolve_lowest_pri(&self, name: Name) -> Result<SRV, GeneratorClientError> {
         let srvs = self.resolver.srv_lookup(name.clone()).await?;
 
-        let mut srvs: Vec<_> = srvs.iter().collect();
+        let lowest_priority = srvs.iter().min_by_key(|srv| srv.priority());
 
-        if srvs.is_empty() {
-            return Err(GeneratorClientError::EmptyResolution {
+        match lowest_priority {
+            None => Err(GeneratorClientError::EmptyResolution {
                 name: name.to_string(),
-            });
+            }),
+            Some(lowest_priority) => Ok((*lowest_priority).clone()),
         }
-        srvs.sort_unstable_by_key(|srv| srv.priority());
-        let lowest_priority = srvs.last().unwrap(); // already checked - not empty
-        Ok((*lowest_priority).clone())
     }
 }
 
@@ -197,14 +206,14 @@ impl GeneratorClient {
 // 2. If the service is unavailable. This code is raised when the server disconnects or is
 //    shutting down
 fn should_evict(status: &tonic::Status) -> bool {
-    match status.code() {
-        Code::PermissionDenied | Code::Unauthenticated | Code::Unavailable => true,
-        _ => false,
-    }
+    matches!(
+        status.code(),
+        Code::PermissionDenied | Code::Unauthenticated | Code::Unavailable
+    )
 }
 
 impl From<ClientCacheConfig>
-for CacheBuilder<String, GeneratorServiceClient<Channel>, ClientCache>
+    for CacheBuilder<String, GeneratorServiceClient<Channel>, ClientCache>
 {
     fn from(cache_config: ClientCacheConfig) -> Self {
         Cache::builder()

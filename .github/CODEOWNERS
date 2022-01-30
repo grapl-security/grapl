@@ -74,6 +74,7 @@ BUILD @christophermaier
 /src/rust/model-plugin-deployer/ @wimax-grapl
 /src/rust/plugin-bootstrap/ @colin-grapl
 /src/rust/plugin-registry/ @colin-grapl
+/src/rust/plugin-sdk/ @colin-grapl
 /src/rust/plugin-work-queue/ @colin-grapl
 /src/rust/node-identifier/ @grapl-security/wg-data-infra
 /src/rust/nomad-client-gen/ @wimax-grapl
