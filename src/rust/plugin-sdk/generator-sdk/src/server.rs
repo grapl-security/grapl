@@ -68,7 +68,8 @@ where
         .set_serving::<GeneratorServiceServer<GraphGeneratorImpl<T>>>()
         .await;
 
-    // todo: Systemd has a way to pass things like this
+    // todo: When bootstrapping and this service are more mature we should determine
+    // the right way to get these configuration values passed around
     let cert = tokio::fs::read("/etc/ssl/private/plugin-client-cert.pem").await?;
     let key = tokio::fs::read("/etc/ssl/private/plugin-client-cert.key").await?;
 

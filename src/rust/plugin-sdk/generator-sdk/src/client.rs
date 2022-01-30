@@ -23,11 +23,13 @@ use trust_dns_resolver::{
         ResolverOpts,
     },
     error::ResolveError,
+    proto::{
+        error::ProtoError as ProtocolError,
+        rr::rdata::SRV,
+    },
     Name,
     TokioAsyncResolver,
 };
-use trust_dns_resolver::proto::rr::rdata::SRV;
-use trust_dns_resolver::proto::error::ProtoError as ProtocolError;
 
 #[derive(thiserror::Error, Debug)]
 pub enum GeneratorClientError {
@@ -112,10 +114,7 @@ impl GeneratorClient {
     }
 
     async fn resolve_lowest_pri(&self, name: Name) -> Result<SRV, GeneratorClientError> {
-        let srvs = self
-            .resolver
-            .srv_lookup(name.clone())
-            .await?;
+        let srvs = self.resolver.srv_lookup(name.clone()).await?;
 
         let mut srvs: Vec<_> = srvs.iter().collect();
 

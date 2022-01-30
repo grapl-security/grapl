@@ -1658,13 +1658,9 @@ dependencies = [
 name = "generator-sdk"
 version = "0.1.0"
 dependencies = [
- "futures",
- "grapl-config",
- "grapl-utils",
  "rust-proto",
  "serde",
  "serde_json",
- "structopt",
  "thiserror",
  "tokio 1.16.1",
  "tonic",
