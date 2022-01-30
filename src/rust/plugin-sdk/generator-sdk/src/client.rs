@@ -1,7 +1,9 @@
 use std::{
-    collections::HashMap,
     str::FromStr,
 };
+use std::time::Duration;
+use moka::future::Cache;
+use moka::future::CacheBuilder;
 
 use rust_proto::plugin_sdk::generators::{
     generator_service_client::GeneratorServiceClient,
@@ -9,13 +11,10 @@ use rust_proto::plugin_sdk::generators::{
     RunGeneratorRequest,
     RunGeneratorResponse,
 };
-use tonic::{
-    codegen::http::uri::InvalidUri,
-    transport::{
-        Channel,
-        ClientTlsConfig,
-    },
-};
+use tonic::{Code, codegen::http::uri::InvalidUri, transport::{
+    Channel,
+    ClientTlsConfig,
+}};
 use trust_dns_resolver::{
     config::{
         NameServerConfigGroup,
@@ -30,6 +29,7 @@ use trust_dns_resolver::{
     Name,
     TokioAsyncResolver,
 };
+use crate::{ClientCacheConfig, ClientDnsConfig};
 
 #[derive(thiserror::Error, Debug)]
 pub enum GeneratorClientError {
@@ -49,42 +49,48 @@ pub enum GeneratorClientError {
     ProtoError(#[from] GeneratorsDeserializationError),
 }
 
+type ClientCache = Cache<String, GeneratorServiceClient<Channel>>;
+
 #[derive(Clone)]
 pub struct GeneratorClient {
-    clients: HashMap<String, GeneratorServiceClient<Channel>>,
+    clients: ClientCache,
     certificate: tonic::transport::Certificate,
     resolver: TokioAsyncResolver,
 }
 
 impl GeneratorClient {
-    // `run_generator` takes a `plugin_name` and `data`. It resolves the `plugin_name` to an address
+    // `run_generator` takes a `plugin_id` and `data`. It resolves the `plugin_id` to an address
     // and calls the grpc `run_generator` on that address, supplying the data to it.
     pub async fn run_generator(
         &mut self,
         data: Vec<u8>,
-        plugin_name: String,
+        plugin_id: String,
     ) -> Result<RunGeneratorResponse, GeneratorClientError> {
-        let mut client = self.get_client(plugin_name).await?;
+        let mut client = self.get_client(&plugin_id).await?;
         let response = client
             .run_generator(tonic::Request::new(RunGeneratorRequest { data }.into()))
-            .await?;
-        Ok(response.into_inner().try_into()?)
+            .await;
+        match response {
+            Ok(response) => Ok(response.into_inner().try_into()?),
+            Err(status) if should_evict(&status) => {
+                self.clients.invalidate(&plugin_id).await;
+                Err(status.into())
+            }
+            Err(e) => Err(e.into()),
+        }
     }
 
     // `get_client` attempts to grab an existing connection to a given plugin
     // and, failing that, creates a new plugin connection
     async fn get_client(
-        &mut self,
-        plugin_name: String,
+        &self,
+        plugin_id: &String,
     ) -> Result<GeneratorServiceClient<Channel>, GeneratorClientError> {
-        match self.clients.get(&plugin_name).clone() {
-            Some(client) => {
-                let client = client.clone();
-                Ok(client)
-            }
+        match self.clients.get(plugin_id) {
+            Some(client) => Ok(client),
             None => {
-                let client = self.new_client_for_plugin(&plugin_name).await?;
-                self.clients.insert(plugin_name.to_string(), client.clone());
+                let client = self.new_client_for_plugin(&plugin_id).await?;
+                self.clients.insert(plugin_id.to_string(), client.clone()).await;
                 Ok(client)
             }
         }
@@ -92,9 +98,9 @@ impl GeneratorClient {
 
     async fn new_client_for_plugin(
         &self,
-        plugin_name: &str,
+        plugin_id: &String,
     ) -> Result<GeneratorServiceClient<Channel>, GeneratorClientError> {
-        let domain = format!("{}.service.consul.", plugin_name);
+        let domain = format!("{}.service.consul.", plugin_id);
         let lowest_pri = self.resolve_lowest_pri(Name::from_str(&domain)?).await?;
         let tls = ClientTlsConfig::new()
             // Sets the CA Certificate against which to verify the server’s TLS certificate.
@@ -104,13 +110,20 @@ impl GeneratorClient {
         let channel = Channel::from_shared(format!(
             "https://{}:{}",
             lowest_pri.target(),
-            lowest_pri.port()
+            lowest_pri.port(),
         ))?
         .tls_config(tls)?
         .connect()
-        .await?;
+        .await;
 
-        Ok(GeneratorServiceClient::new(channel))
+        match channel {
+            Ok(channel) => Ok(GeneratorServiceClient::new(channel)),
+            Err(e) => {
+                // If we failed to connect we should invalidate the client from our cache
+                self.clients.invalidate(plugin_id).await;
+                Err(e.into())
+            }
+        }
     }
 
     async fn resolve_lowest_pri(&self, name: Name) -> Result<SRV, GeneratorClientError> {
@@ -129,11 +142,44 @@ impl GeneratorClient {
     }
 }
 
-pub fn make_resolver(ip_address: &[std::net::IpAddr], port: u16) -> TokioAsyncResolver {
+// https://github.com/grpc/grpc/blob/master/doc/statuscodes.md#status-codes-and-their-use-in-grpc
+// There are three cases where we should evict the client.
+// 1. If permission is denied or the service thinks we're unauthenticated this implies
+//    that we have somehow connected to the wrong service (shouldn't ever happen)
+// 2. If the service is unavailable. This code is raised when the server disconnects or is
+//    shutting down
+fn should_evict(status: &tonic::Status) -> bool {
+    match status.code() {
+        Code::PermissionDenied | Code::Unauthenticated | Code::Unavailable => true,
+        _ => false
+    }
+}
+
+pub fn cache_builder(
+    cache_config: ClientCacheConfig,
+) -> CacheBuilder<String, GeneratorServiceClient<Channel>, ClientCache> {
+    Cache::builder()
+        .time_to_live(Duration::from_secs(cache_config.time_to_live))
+        .max_capacity(cache_config.max_capacity)
+}
+
+pub fn make_resolver(
+    dns_config: ClientDnsConfig,
+) -> TokioAsyncResolver {
     let consul = ResolverConfig::from_parts(
         None,
         vec![],
-        NameServerConfigGroup::from_ips_clear(ip_address, port, true),
+        NameServerConfigGroup::from_ips_clear(
+            &dns_config.dns_resolver_ips,
+            dns_config.dns_resolver_port,
+            true
+        ),
     );
-    TokioAsyncResolver::tokio(consul, ResolverOpts::default()).unwrap()
+    let opts = ResolverOpts{
+        cache_size: dns_config.dns_cache_size,
+        positive_min_ttl: Some(Duration::from_secs(dns_config.positive_min_ttl)),
+        ..ResolverOpts::default()
+    };
+
+    TokioAsyncResolver::tokio(consul, opts).unwrap()
 }
