@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package graplinc.grapl.api.plugin_sdk.generators.v1beta1;
+
+import "graplinc/grapl/api/graph/v1beta1/types.proto";
+
+// The output of a plugin is a GeneratedGraph describing the entities and
+// relationships extracted from the underlying data
+message GeneratedGraph {
+  graplinc.grapl.api.graph.v1beta1.GraphDescription graph_description = 1;
+}
+
+// RunGeneratorRequest delivers raw bytes to a Generator Plugin
+// so that it can parse and process them.
+message RunGeneratorRequest {
+  // The raw bytes to be processed - potentially one or multiple logs, events, or other
+  // data
+  bytes data = 1;
+}
+
+// RunGeneratorResponse contains the parsed and processed results from the generator
+message RunGeneratorResponse {
+  // The extracted graph
+  GeneratedGraph generated_graph = 1;
+}
+
+// GeneratorService is the gRPC interface implemented by Generator Plugins
+service GeneratorService {
+  // RunGenerator converts raw bytes to a generated graph
+  rpc RunGenerator(RunGeneratorRequest) returns (RunGeneratorResponse);
+}
