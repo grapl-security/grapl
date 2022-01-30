@@ -103,6 +103,21 @@ class Postgres(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self.security_group),
         )
 
+        # Parameter Groups are what we use to preload pg libraries
+        parameter_group = aws.rds.ParameterGroup(
+            name,
+            description=f"{name} managed by Pulumi",
+            # TODO autoparse the family
+            family="postgres13",
+            parameters=[
+                {
+                    "name": "shared_preload_libraries",
+                    "value": "pg_cron,pg_stat_statements",
+                    "apply_method": "pending-reboot",
+                }
+            ],
+        )
+
         postgres_config = PostgresConfigValues.from_config()
 
         # Quick diatribe:
@@ -129,6 +144,7 @@ class Postgres(pulumi.ComponentResource):
             engine="postgres",
             engine_version=postgres_config.postgres_version,
             instance_class=postgres_config.instance_type,
+            parameter_group_name=parameter_group.name,
             # These storage parameters should be more thoroughly thought out.
             allocated_storage=10,
             max_allocated_storage=20,
