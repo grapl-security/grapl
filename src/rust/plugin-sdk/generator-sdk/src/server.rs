@@ -1,7 +1,13 @@
-use rust_proto::plugin_sdk::generators::{generator_service_server::{
-    GeneratorService,
-    GeneratorServiceServer,
-}, GeneratedGraphProto, RunGeneratorRequestProto, RunGeneratorResponseProto, GeneratorsDeserializationError};
+use rust_proto::plugin_sdk::generators::{
+    generator_service_server::{
+        GeneratorService,
+        GeneratorServiceServer,
+    },
+    GeneratedGraphProto,
+    GeneratorsDeserializationError,
+    RunGeneratorRequestProto,
+    RunGeneratorResponseProto,
+};
 pub use rust_proto::{
     graph_descriptions::GraphDescription,
     plugin_sdk::generators::RunGeneratorRequest,
@@ -46,13 +52,17 @@ where
         request: tonic::Request<RunGeneratorRequestProto>,
     ) -> Result<tonic::Response<RunGeneratorResponseProto>, tonic::Status> {
         let request = request.into_inner();
-        let request: RunGeneratorRequest = request.try_into()
-            .map_err(|e: GeneratorsDeserializationError| {
-                tracing::error!(message="Invalid RunGeneratorRequest", e=?e);
-                tonic::Status::invalid_argument(e.to_string())
-            })?;
+        let request: RunGeneratorRequest =
+            request
+                .try_into()
+                .map_err(|e: GeneratorsDeserializationError| {
+                    tracing::error!(message="Invalid RunGeneratorRequest", e=?e);
+                    tonic::Status::invalid_argument(e.to_string())
+                })?;
 
-        let graph_description = self.0.run_generator(request)
+        let graph_description = self
+            .0
+            .run_generator(request)
             // In the future we can ask implementations to give more information about their error
             .map_err(|e| {
                 tracing::error!(message="Generator failed", e=?e);

@@ -97,7 +97,7 @@ impl GeneratorClient {
         data: Vec<u8>,
         plugin_id: String,
     ) -> Result<RunGeneratorResponse, GeneratorClientError> {
-        let mut client = self.get_client(&plugin_id).await?;
+        let mut client = self.get_client(plugin_id.clone()).await?;
         tracing::info!(message = "Running generator",);
         let response = client
             .run_generator(tonic::Request::new(RunGeneratorRequest { data }.into()))
@@ -121,14 +121,14 @@ impl GeneratorClient {
     #[tracing::instrument(skip(self))]
     async fn get_client(
         &self,
-        plugin_id: &String,
+        plugin_id: String,
     ) -> Result<GeneratorServiceClient<Channel>, GeneratorClientError> {
-        match self.clients.get(plugin_id) {
+        match self.clients.get(&plugin_id) {
             Some(client) => Ok(client),
             None => {
-                let client = self.new_client_for_plugin(&plugin_id).await?;
+                let client = self.new_client_for_plugin(plugin_id.clone()).await?;
                 self.clients
-                    .insert(plugin_id.to_string(), client.clone())
+                    .insert(plugin_id, client.clone())
                     .await;
                 Ok(client)
             }
@@ -146,9 +146,9 @@ impl GeneratorClient {
     #[tracing::instrument(skip(self))]
     async fn new_client_for_plugin(
         &self,
-        plugin_id: &String,
+        plugin_id: String,
     ) -> Result<GeneratorServiceClient<Channel>, GeneratorClientError> {
-        let domain = format!("{}.service.consul.", plugin_id);
+        let domain = format!("{}.service.consul.", &plugin_id);
         tracing::info!(
             message = "Resolving domain",
             domain = %domain,
@@ -178,7 +178,7 @@ impl GeneratorClient {
             Ok(channel) => Ok(GeneratorServiceClient::new(channel)),
             Err(e) => {
                 // If we failed to connect we should invalidate the client from our cache
-                self.clients.invalidate(plugin_id).await;
+                self.clients.invalidate(&plugin_id).await;
                 Err(e.into())
             }
         }
