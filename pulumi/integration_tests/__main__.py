@@ -88,9 +88,7 @@ def main() -> None:
         service_name="e2e-test-runner"
     )
     kafka_sasl_username = kafka_service_credentials.apply(lambda c: c.api_key)
-    kafka_sasl_password = pulumi.Output.unsecret(
-        kafka_service_credentials.apply(lambda c: c.api_secret)
-    )
+    kafka_sasl_password = kafka_service_credentials.apply(lambda c: c.api_secret)
 
     e2e_test_job_vars: NomadVars = {
         "analyzer_bucket": grapl_stack.analyzer_bucket,

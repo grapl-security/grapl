@@ -67,6 +67,16 @@ variable "_kafka_bootstrap_servers" {
   description = "Comma separated host:port pairs specifying which brokers clients should connect to initially."
 }
 
+variable "kafka_sasl_username" {
+  type        = string
+  description = "The Confluent Cloud API key to configure producers and consumers with."
+}
+
+variable "kafka_sasl_password" {
+  type        = string
+  description = "The Confluent Cloud API secret to configure producers and consumers with."
+}
+
 variable "test_user_name" {
   type        = string
   description = "The name of the test user"
@@ -177,6 +187,10 @@ EOF
         hook    = "prestart"
         sidecar = false
       }
+
+      resources {
+        memory = 1024
+      }
     }
 
     task "e2e-tests" {
@@ -210,6 +224,13 @@ EOF
         RUST_BACKTRACE = 1
         RUST_LOG       = local.log_level
 
+        KAFKA_BOOTSTRAP_SERVERS = local.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME = var.kafka_sasl_username
+        KAFKA_SASL_PASSWORD = var.kafka_sasl_password
+      }
+
+      resources {
+        memory = 1024
       }
     }
   }

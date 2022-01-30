@@ -268,7 +268,6 @@ job "grapl-local-infra" {
           "HOST_OS://host.docker.internal:${var.KAFKA_BROKER_PORT_FOR_HOST_OS}",
           "OTHER_NOMADS://${local.localhost_within_bridge}:${var.KAFKA_BROKER_PORT}"
         ])
-        KAFKA_AUTO_CREATE_TOPICS_ENABLE = "true"
         KAFKA_LISTENER_SECURITY_PROTOCOL_MAP = "WITHIN_TASK:PLAINTEXT,HOST_OS:PLAINTEXT,OTHER_NOMADS:PLAINTEXT"
         KAFKA_INTER_BROKER_LISTENER_NAME     = "WITHIN_TASK"
 

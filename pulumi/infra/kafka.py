@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import dataclasses
+import os
 from typing import Any, Mapping, Optional, Sequence, cast
 
 from pulumi.stack_reference import StackReference
 
 import pulumi
+from pulumi_kafka import Provider, Topic as KafkaTopic
 
 
 @dataclasses.dataclass
@@ -116,6 +118,45 @@ class Kafka(pulumi.ComponentResource):
 
         if confluent_environment_name == "local-grapl":
             self.confluent_environment = None
+            # This list must match the set of all topics specified in
+            # confluent-cloud-infrastructure/pulumi/ccloud_bootstrap/index.ts
+            topics = [
+                "logs",
+                "metrics",
+                "raw-logs",
+                "generated-graphs",
+                "generated-graphs-retry",
+                "generated-graphs-failed",
+                "identified-graphs",
+                "identified-graphs-retry",
+                "identified-graphs-failed",
+                "merged-graphs",
+                "merged-graphs-retry",
+                "merged-graphs-failed",
+                "analyzer-executions",
+                "analyzer-executions-retry",
+                "analyzer-executions-failed",
+                "engagements",
+                "engagements-retry",
+                "engagements-failed",
+            ]
+            provider = Provider(
+                "grapl:kafka:Provider",
+                bootstrap_servers=[
+                    "host.docker.internal:29092"
+                ]
+            )
+            for topic in topics:
+                KafkaTopic(
+                    f"grapl:kafka:Topic:{topic}",
+                    name=topic,
+                    partitions=1,
+                    replication_factor=1,
+                    config={
+                        "compression.type": "zstd"
+                    },
+                    opts=pulumi.ResourceOptions(provider=provider)
+                )
         else:
             confluent_stack_output = StackReference(
                 "grapl/ccloud-bootstrap/ccloud-bootstrap"
