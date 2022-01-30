@@ -122,11 +122,11 @@ impl GeneratorClient {
     }
 }
 
-pub fn default_resolver() -> TokioAsyncResolver {
+pub fn make_resolver(ip_address: &[std::net::IpAddr], port: u16) -> TokioAsyncResolver {
     let consul = ResolverConfig::from_parts(
         None,
         vec![],
-        NameServerConfigGroup::from_ips_clear(&["127.0.0.1".parse().unwrap()], 8500, true),
+        NameServerConfigGroup::from_ips_clear(ip_address, port, true),
     );
     TokioAsyncResolver::tokio(consul, ResolverOpts::default()).unwrap()
 }
