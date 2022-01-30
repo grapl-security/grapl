@@ -127,9 +127,7 @@ impl GeneratorClient {
             Some(client) => Ok(client),
             None => {
                 let client = self.new_client_for_plugin(plugin_id.clone()).await?;
-                self.clients
-                    .insert(plugin_id, client.clone())
-                    .await;
+                self.clients.insert(plugin_id, client.clone()).await;
                 Ok(client)
             }
         }
