@@ -6,8 +6,6 @@ pub mod server;
 #[cfg(feature = "client")]
 pub mod client;
 
-
-
 #[cfg(feature = "client")]
 /// Configuration for the cache that holds onto plugin client connections
 #[derive(StructOpt, Debug)]
@@ -21,7 +19,6 @@ pub struct ClientCacheConfig {
     #[structopt(env, default_value = "120")]
     pub time_to_live: u64,
 }
-
 
 #[cfg(feature = "client")]
 /// Configuration for the DNS resolver used for plugin service discovery

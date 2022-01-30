@@ -1,20 +1,26 @@
 use std::{
     str::FromStr,
+    time::Duration,
 };
-use std::time::Duration;
-use moka::future::Cache;
-use moka::future::CacheBuilder;
 
+use moka::future::{
+    Cache,
+    CacheBuilder,
+};
 use rust_proto::plugin_sdk::generators::{
     generator_service_client::GeneratorServiceClient,
     GeneratorsDeserializationError,
     RunGeneratorRequest,
     RunGeneratorResponse,
 };
-use tonic::{Code, codegen::http::uri::InvalidUri, transport::{
-    Channel,
-    ClientTlsConfig,
-}};
+use tonic::{
+    codegen::http::uri::InvalidUri,
+    transport::{
+        Channel,
+        ClientTlsConfig,
+    },
+    Code,
+};
 use trust_dns_resolver::{
     config::{
         NameServerConfigGroup,
@@ -29,7 +35,11 @@ use trust_dns_resolver::{
     Name,
     TokioAsyncResolver,
 };
-use crate::{ClientCacheConfig, ClientDnsConfig};
+
+use crate::{
+    ClientCacheConfig,
+    ClientDnsConfig,
+};
 
 #[derive(thiserror::Error, Debug)]
 pub enum GeneratorClientError {
@@ -59,6 +69,18 @@ pub struct GeneratorClient {
 }
 
 impl GeneratorClient {
+    pub fn new(
+        clients: ClientCache,
+        certificate: tonic::transport::Certificate,
+        resolver: TokioAsyncResolver,
+    ) -> Self {
+        Self {
+            clients,
+            certificate,
+            resolver,
+        }
+    }
+
     // `run_generator` takes a `plugin_id` and `data`. It resolves the `plugin_id` to an address
     // and calls the grpc `run_generator` on that address, supplying the data to it.
     pub async fn run_generator(
@@ -90,7 +112,9 @@ impl GeneratorClient {
             Some(client) => Ok(client),
             None => {
                 let client = self.new_client_for_plugin(&plugin_id).await?;
-                self.clients.insert(plugin_id.to_string(), client.clone()).await;
+                self.clients
+                    .insert(plugin_id.to_string(), client.clone())
+                    .await;
                 Ok(client)
             }
         }
@@ -151,35 +175,32 @@ impl GeneratorClient {
 fn should_evict(status: &tonic::Status) -> bool {
     match status.code() {
         Code::PermissionDenied | Code::Unauthenticated | Code::Unavailable => true,
-        _ => false
+        _ => false,
     }
 }
 
-impl From<ClientCacheConfig> for CacheBuilder<String, GeneratorServiceClient<Channel>, ClientCache> {
-    fn from(
-        cache_config: ClientCacheConfig,
-    ) -> Self {
+impl From<ClientCacheConfig>
+    for CacheBuilder<String, GeneratorServiceClient<Channel>, ClientCache>
+{
+    fn from(cache_config: ClientCacheConfig) -> Self {
         Cache::builder()
             .time_to_live(Duration::from_secs(cache_config.time_to_live))
             .max_capacity(cache_config.max_capacity)
     }
 }
 
-
 impl From<ClientDnsConfig> for TokioAsyncResolver {
-    fn from(
-        dns_config: ClientDnsConfig,
-    ) -> TokioAsyncResolver {
+    fn from(dns_config: ClientDnsConfig) -> TokioAsyncResolver {
         let consul = ResolverConfig::from_parts(
             None,
             vec![],
             NameServerConfigGroup::from_ips_clear(
                 &dns_config.dns_resolver_ips,
                 dns_config.dns_resolver_port,
-                true
+                true,
             ),
         );
-        let opts = ResolverOpts{
+        let opts = ResolverOpts {
             cache_size: dns_config.dns_cache_size,
             positive_min_ttl: Some(Duration::from_secs(dns_config.positive_min_ttl)),
             ..ResolverOpts::default()
@@ -187,5 +208,4 @@ impl From<ClientDnsConfig> for TokioAsyncResolver {
 
         TokioAsyncResolver::tokio(consul, opts).unwrap()
     }
-
 }
