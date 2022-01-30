@@ -155,31 +155,37 @@ fn should_evict(status: &tonic::Status) -> bool {
     }
 }
 
-pub fn cache_builder(
-    cache_config: ClientCacheConfig,
-) -> CacheBuilder<String, GeneratorServiceClient<Channel>, ClientCache> {
-    Cache::builder()
-        .time_to_live(Duration::from_secs(cache_config.time_to_live))
-        .max_capacity(cache_config.max_capacity)
+impl From<ClientCacheConfig> for CacheBuilder<String, GeneratorServiceClient<Channel>, ClientCache> {
+    fn from(
+        cache_config: ClientCacheConfig,
+    ) -> Self {
+        Cache::builder()
+            .time_to_live(Duration::from_secs(cache_config.time_to_live))
+            .max_capacity(cache_config.max_capacity)
+    }
 }
 
-pub fn make_resolver(
-    dns_config: ClientDnsConfig,
-) -> TokioAsyncResolver {
-    let consul = ResolverConfig::from_parts(
-        None,
-        vec![],
-        NameServerConfigGroup::from_ips_clear(
-            &dns_config.dns_resolver_ips,
-            dns_config.dns_resolver_port,
-            true
-        ),
-    );
-    let opts = ResolverOpts{
-        cache_size: dns_config.dns_cache_size,
-        positive_min_ttl: Some(Duration::from_secs(dns_config.positive_min_ttl)),
-        ..ResolverOpts::default()
-    };
 
-    TokioAsyncResolver::tokio(consul, opts).unwrap()
+impl From<ClientDnsConfig> for TokioAsyncResolver {
+    fn from(
+        dns_config: ClientDnsConfig,
+    ) -> TokioAsyncResolver {
+        let consul = ResolverConfig::from_parts(
+            None,
+            vec![],
+            NameServerConfigGroup::from_ips_clear(
+                &dns_config.dns_resolver_ips,
+                dns_config.dns_resolver_port,
+                true
+            ),
+        );
+        let opts = ResolverOpts{
+            cache_size: dns_config.dns_cache_size,
+            positive_min_ttl: Some(Duration::from_secs(dns_config.positive_min_ttl)),
+            ..ResolverOpts::default()
+        };
+
+        TokioAsyncResolver::tokio(consul, opts).unwrap()
+    }
+
 }
