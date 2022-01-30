@@ -26,19 +26,23 @@ use trust_dns_resolver::{
     Name,
     TokioAsyncResolver,
 };
+use trust_dns_resolver::proto::rr::rdata::SRV;
+use trust_dns_resolver::proto::error::ProtoError as ProtocolError;
 
 #[derive(thiserror::Error, Debug)]
 pub enum GeneratorClientError {
     #[error("Failed to connect to Generator {0}")]
     ConnectError(#[from] tonic::transport::Error),
-    #[error("Failed to resolve generator {plugin_name}")]
-    EmptyResolution { plugin_name: String },
+    #[error("Failed to resolve name {name}")]
+    EmptyResolution { name: String },
     #[error("Failed to resolve plugin {0}")]
     ResolveError(#[from] ResolveError),
     #[error("Plugin domain is invalid URI")]
     InvalidUri(#[from] InvalidUri),
     #[error(transparent)]
     Status(#[from] tonic::Status),
+    #[error(transparent)]
+    ProtocolError(#[from] ProtocolError),
     #[error(transparent)]
     ProtoError(#[from] GeneratorsDeserializationError),
 }
@@ -89,21 +93,7 @@ impl GeneratorClient {
         plugin_name: &str,
     ) -> Result<GeneratorServiceClient<Channel>, GeneratorClientError> {
         let domain = format!("{}.service.consul.", plugin_name);
-        let srvs = self
-            .resolver
-            .srv_lookup(Name::from_str(&domain).unwrap())
-            .await?;
-
-        let mut srvs: Vec<_> = srvs.iter().collect();
-
-        if srvs.is_empty() {
-            return Err(GeneratorClientError::EmptyResolution {
-                plugin_name: plugin_name.to_string(),
-            });
-        }
-        srvs.sort_unstable_by_key(|srv| srv.priority());
-        let lowest_pri = srvs.last().unwrap(); // already checked - not empty
-
+        let lowest_pri = self.resolve_lowest_pri(Name::from_str(&domain)?).await?;
         let tls = ClientTlsConfig::new()
             // Sets the CA Certificate against which to verify the server’s TLS certificate.
             .ca_certificate(self.certificate.clone())
@@ -119,6 +109,24 @@ impl GeneratorClient {
         .await?;
 
         Ok(GeneratorServiceClient::new(channel))
+    }
+
+    async fn resolve_lowest_pri(&self, name: Name) -> Result<SRV, GeneratorClientError> {
+        let srvs = self
+            .resolver
+            .srv_lookup(name.clone())
+            .await?;
+
+        let mut srvs: Vec<_> = srvs.iter().collect();
+
+        if srvs.is_empty() {
+            return Err(GeneratorClientError::EmptyResolution {
+                name: name.to_string(),
+            });
+        }
+        srvs.sort_unstable_by_key(|srv| srv.priority());
+        let lowest_priority = srvs.last().unwrap();
+        Ok((*lowest_priority).clone()) // already checked - not empty
     }
 }
 
