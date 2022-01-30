@@ -83,18 +83,30 @@ impl GeneratorClient {
 
     // `run_generator` takes a `plugin_id` and `data`. It resolves the `plugin_id` to an address
     // and calls the grpc `run_generator` on that address, supplying the data to it.
+    #[tracing::instrument(
+        fields(data_len = data.len()),
+        skip(self, data),
+        err
+    )]
     pub async fn run_generator(
         &mut self,
         data: Vec<u8>,
         plugin_id: String,
     ) -> Result<RunGeneratorResponse, GeneratorClientError> {
         let mut client = self.get_client(&plugin_id).await?;
+        tracing::info!(
+            message = "Running generator",
+        );
         let response = client
             .run_generator(tonic::Request::new(RunGeneratorRequest { data }.into()))
             .await;
         match response {
             Ok(response) => Ok(response.into_inner().try_into()?),
             Err(status) if should_evict(&status) => {
+                tracing::info!(
+                    message = "Manually evicting plugin connection",
+                    status = ?status,
+                );
                 self.clients.invalidate(&plugin_id).await;
                 Err(status.into())
             }
@@ -104,6 +116,7 @@ impl GeneratorClient {
 
     // `get_client` attempts to grab an existing connection to a given plugin
     // and, failing that, creates a new plugin connection
+    #[tracing::instrument(skip(self))]
     async fn get_client(
         &self,
         plugin_id: &String,
@@ -120,25 +133,36 @@ impl GeneratorClient {
         }
     }
 
+    #[tracing::instrument(skip(self))]
     async fn new_client_for_plugin(
         &self,
         plugin_id: &String,
     ) -> Result<GeneratorServiceClient<Channel>, GeneratorClientError> {
         let domain = format!("{}.service.consul.", plugin_id);
+        tracing::info!(
+            message = "Resolving domain",
+            domain = %domain,
+        );
         let lowest_pri = self.resolve_lowest_pri(Name::from_str(&domain)?).await?;
         let tls = ClientTlsConfig::new()
             // Sets the CA Certificate against which to verify the server’s TLS certificate.
             .ca_certificate(self.certificate.clone())
             .domain_name(&domain);
 
+        tracing::info!(
+            message = "Connecting to plugin",
+            target = %lowest_pri.target(),
+            port = %lowest_pri.port(),
+        );
+
         let channel = Channel::from_shared(format!(
             "https://{}:{}",
             lowest_pri.target(),
             lowest_pri.port(),
         ))?
-        .tls_config(tls)?
-        .connect()
-        .await;
+            .tls_config(tls)?
+            .connect()
+            .await;
 
         match channel {
             Ok(channel) => Ok(GeneratorServiceClient::new(channel)),
@@ -180,7 +204,7 @@ fn should_evict(status: &tonic::Status) -> bool {
 }
 
 impl From<ClientCacheConfig>
-    for CacheBuilder<String, GeneratorServiceClient<Channel>, ClientCache>
+for CacheBuilder<String, GeneratorServiceClient<Channel>, ClientCache>
 {
     fn from(cache_config: ClientCacheConfig) -> Self {
         Cache::builder()
