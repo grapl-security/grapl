@@ -67,7 +67,7 @@ class Tag:
         return {"Key": self.key, "Value": self.value}
 
     @classmethod
-    def from_boto_tag_specification(cls, tag_specification: Dict[str, str]) -> Tag:
+    def from_boto_tag_specification(cls, tag_specification: TagTypeDef) -> Tag:
         return cls(key=tag_specification["Key"], value=tag_specification["Value"])
 
 
