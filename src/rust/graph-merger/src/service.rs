@@ -1,6 +1,5 @@
 use std::{
     fmt::Debug,
-    io::Stdout,
     sync::Arc,
     time::{
         SystemTime,
@@ -10,13 +9,11 @@ use std::{
 
 use async_trait::async_trait;
 use dgraph_tonic::Client as DgraphClient;
-use grapl_observe::metric_reporter::MetricReporter;
 use rust_proto::graph_descriptions::{
     IdentifiedGraph,
     MergedGraph,
 };
 use sqs_executor::{
-    cache::Cache,
     errors::{
         CheckedError,
         Recoverable,
@@ -38,27 +35,18 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct GraphMerger<CacheT: Cache> {
+pub struct GraphMerger {
     mg_client: Arc<DgraphClient>,
     reverse_edge_resolver: ReverseEdgeResolver,
-    metric_reporter: MetricReporter<Stdout>,
-    cache: CacheT,
 }
 
-impl<CacheT: Cache> GraphMerger<CacheT> {
-    pub fn new(
-        mg_alphas: Vec<String>,
-        reverse_edge_resolver: ReverseEdgeResolver,
-        metric_reporter: MetricReporter<Stdout>,
-        cache: CacheT,
-    ) -> Self {
+impl GraphMerger {
+    pub fn new(mg_alphas: Vec<String>, reverse_edge_resolver: ReverseEdgeResolver) -> Self {
         let mg_client = DgraphClient::new(mg_alphas).expect("Failed to create dgraph client.");
 
         Self {
             mg_client: Arc::new(mg_client),
             reverse_edge_resolver,
-            metric_reporter,
-            cache,
         }
     }
 }
@@ -76,7 +64,7 @@ impl CheckedError for GraphMergerError {
 }
 
 #[async_trait]
-impl<CacheT: Cache> EventHandler for GraphMerger<CacheT> {
+impl EventHandler for GraphMerger {
     type InputEvent = IdentifiedGraph;
     type OutputEvent = MergedGraph;
     type Error = GraphMergerError;

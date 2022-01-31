@@ -60,9 +60,7 @@ pub enum DispatchEventEncoderError {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct AnalyzerDispatchSerializer {
-    proto: Vec<u8>,
-}
+pub struct AnalyzerDispatchSerializer {}
 
 impl CompletionEventSerializer for AnalyzerDispatchSerializer {
     type CompletedEvent = AnalyzerDispatchEvents;

@@ -42,7 +42,6 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
 
     let mg_alphas = grapl_config::mg_alphas();
 
-    // todo: the intitializer should give a cache to each service
     let graph_merger = &mut make_ten(async {
         let mg_alphas_copy = mg_alphas.clone();
         tracing::debug!(
@@ -52,12 +51,7 @@ async fn handler() -> Result<(), Box<dyn std::error::Error>> {
         let dynamo = DynamoDbClient::from_env();
         let reverse_edge_resolver =
             ReverseEdgeResolver::new(dynamo, MetricReporter::new(&env.service_name), 1000);
-        GraphMerger::new(
-            mg_alphas_copy,
-            reverse_edge_resolver,
-            MetricReporter::new(&env.service_name),
-            cache[0].clone(),
-        )
+        GraphMerger::new(mg_alphas_copy, reverse_edge_resolver)
     })
     .await;
 
