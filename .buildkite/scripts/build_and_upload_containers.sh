@@ -32,6 +32,7 @@ services=(
     node-identifier
     node-identifier-retry
     osquery-generator
+    plugin-bootstrap
     plugin-registry
     plugin-work-queue
     provisioner

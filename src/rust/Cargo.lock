@@ -2995,6 +2995,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "plugin-bootstrap"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "futures",
+ "grapl-config",
+ "grapl-utils",
+ "rust-proto",
+ "structopt",
+ "thiserror",
+ "tokio 1.15.0",
+ "tonic",
+ "tonic-health",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "plugin-registry"
 version = "0.1.0"
 dependencies = [

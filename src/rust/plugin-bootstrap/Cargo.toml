@@ -1,0 +1,32 @@
+[package]
+name = "plugin-bootstrap"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "plugin-bootstrap"
+path = "src/plugin_bootstrap_service.rs"
+
+[[bin]]
+name = "plugin-bootstrap-init"
+path = "src/plugin_bootstrap_init.rs"
+
+[lib]
+name = "plugin_bootstrap"
+
+[dependencies]
+async-trait = "0.1.51"
+grapl-config = { path = "../grapl-config" }
+grapl-utils = { path = "../grapl-utils" }
+rust-proto = { path = "../rust-proto" }
+thiserror = "1.0.30"
+tokio = { version = "1.14.0", features = ["full"] }
+tonic = "0.6.1"
+tonic-health = "0.5.0"
+tracing = "0.1.29"
+structopt = "0.3"
+uuid = { version = "0.8.2", features = ["v4"] }
+futures = "0.3.17"
+
+[features]
+integration = []
