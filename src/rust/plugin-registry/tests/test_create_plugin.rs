@@ -12,7 +12,7 @@ use rust_proto::plugin_registry::{
 /// For now, this is just a smoke test. This test can and should evolve as
 /// the service matures.
 #[test_log::test(tokio::test)]
-async fn test_smoke_test_create_client() -> Result<(), Box<dyn std::error::Error>> {
+async fn test_create_plugin() -> Result<(), Box<dyn std::error::Error>> {
     tracing::debug!(
         env=?std::env::args(),
     );

@@ -19,21 +19,6 @@ steps:
 
   - wait
 
-  - label: ":pulumi: Preview grapl/integration-tests/testing environment changes in Staging account"
-    plugins:
-      - grapl-security/vault-login#v0.1.0
-      - grapl-security/vault-env#v0.1.0:
-          secrets:
-            - PULUMI_ACCESS_TOKEN
-      - grapl-security/pulumi#v0.1.2:
-          command: preview
-          project_dir: pulumi/integration_tests
-          stack: grapl/testing
-    agents:
-      queue: "pulumi-staging"
-
-  - wait
-
   - label: ":pulumi: Destroy stateful resources in Staging account"
     plugins:
       - grapl-security/vault-login#v0.1.0
@@ -64,6 +49,21 @@ steps:
       queue: "pulumi-staging"
     artifact_paths:
       - "test_artifacts/**/*"
+
+  - wait
+
+  - label: ":pulumi: Preview grapl/integration-tests/testing environment changes in Staging account"
+    plugins:
+      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-env#v0.1.0:
+          secrets:
+            - PULUMI_ACCESS_TOKEN
+      - grapl-security/pulumi#v0.1.2:
+          command: preview
+          project_dir: pulumi/integration_tests
+          stack: grapl/testing
+    agents:
+      queue: "pulumi-staging"
 
   - wait
 

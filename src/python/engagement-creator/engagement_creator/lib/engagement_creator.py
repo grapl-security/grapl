@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import json
 import logging
 import os
 import sys
 from collections import defaultdict
 from typing import (
+    TYPE_CHECKING,
     Any,
     ContextManager,
     Dict,
@@ -24,8 +27,10 @@ from grapl_analyzerlib.viewable import Viewable
 from grapl_common.env_helpers import S3ResourceFactory
 from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
 from grapl_common.sqs.sqs_types import S3PutRecordDict, SQSMessageBody
-from mypy_boto3_s3 import S3ServiceResource
 from typing_extensions import Final, Literal
+
+if TYPE_CHECKING:
+    from mypy_boto3_s3 import S3ServiceResource
 
 GRAPL_LOG_LEVEL = os.getenv("GRAPL_LOG_LEVEL")
 LEVEL = "ERROR" if GRAPL_LOG_LEVEL is None else GRAPL_LOG_LEVEL

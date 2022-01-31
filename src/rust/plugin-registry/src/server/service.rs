@@ -1,9 +1,6 @@
 use grapl_config::env_helpers::FromEnv;
-use grapl_utils::future_ext::GraplFutureExt;
 use rusoto_s3::{
-    GetObjectError,
     GetObjectRequest,
-    PutObjectError,
     PutObjectRequest,
     S3Client,
     S3,
@@ -34,13 +31,13 @@ use rust_proto::plugin_registry::{
     GetPluginResponse,
     GetPluginResponseProto,
     Plugin,
-    PluginRegistryDeserializationError,
     PluginType,
     TearDownPluginRequest,
     TearDownPluginRequestProto,
     TearDownPluginResponse,
     TearDownPluginResponseProto,
 };
+use tokio::io::AsyncReadExt;
 use tonic::{
     transport::Server,
     Request,
@@ -48,33 +45,18 @@ use tonic::{
     Status,
 };
 
-#[derive(sqlx::FromRow)]
-struct GetPluginRow {
-    plugin_id: uuid::Uuid,
-    display_name: String,
-    plugin_type: String,
-    artifact_s3_key: String,
-}
-
-use tokio::io::AsyncReadExt;
-
-use crate::PluginRegistryServiceConfig;
-
-#[derive(Debug, thiserror::Error)]
-pub enum PluginRegistryServiceError {
-    #[error("SqlxError")]
-    SqlxError(#[from] sqlx::Error),
-    #[error("S3PutObjectError")]
-    PutObjectError(#[from] rusoto_core::RusotoError<PutObjectError>),
-    #[error("S3GetObjectError")]
-    GetObjectError(#[from] rusoto_core::RusotoError<GetObjectError>),
-    #[error("EmptyObject")]
-    EmptyObject,
-    #[error("IoError")]
-    IoError(#[from] std::io::Error),
-    #[error("PluginRegistryDeserializationError")]
-    PluginRegistryDeserializationError(#[from] PluginRegistryDeserializationError),
-}
+use crate::{
+    db::client::{
+        GetPluginRow,
+        PluginRegistryDbClient,
+    },
+    error::PluginRegistryServiceError,
+    nomad::{
+        cli::NomadCli,
+        client::NomadClient,
+    },
+    server::deploy_plugin,
+};
 
 impl From<PluginRegistryServiceError> for Status {
     fn from(err: PluginRegistryServiceError) -> Self {
@@ -98,30 +80,64 @@ impl From<PluginRegistryServiceError> for Status {
             PluginRegistryServiceError::PluginRegistryDeserializationError(_) => {
                 Status::invalid_argument("Unable to deserialize message")
             }
+            PluginRegistryServiceError::NomadClientError(_) => {
+                Status::internal("Failed RPC with Nomad")
+            }
+            PluginRegistryServiceError::NomadCliError(_) => {
+                Status::internal("Failed using Nomad CLI")
+            }
+            PluginRegistryServiceError::NomadJobAllocationError => {
+                Status::internal("Unable to allocate Nomad job - it may be out of resources.")
+            }
         }
     }
 }
 
+use std::net::SocketAddr;
+
+use structopt::StructOpt;
+
+#[derive(StructOpt, Debug)]
+pub struct PluginRegistryServiceConfig {
+    #[structopt(env)]
+    plugin_s3_bucket_aws_account_id: String,
+    #[structopt(env)]
+    plugin_s3_bucket_name: String,
+    #[structopt(env)]
+    plugin_registry_bind_address: SocketAddr,
+    #[structopt(env)]
+    plugin_registry_db_hostname: String,
+    #[structopt(env)]
+    plugin_registry_db_port: u16,
+    #[structopt(env)]
+    plugin_registry_db_username: String,
+    #[structopt(env)]
+    plugin_registry_db_password: String,
+}
+
 pub struct PluginRegistry {
-    pool: sqlx::PgPool,
+    db_client: PluginRegistryDbClient,
+    nomad_client: NomadClient,
+    nomad_cli: NomadCli,
     s3: S3Client,
     plugin_bucket_name: String,
     plugin_bucket_owner_id: String,
 }
 
 impl PluginRegistry {
+    #[tracing::instrument(skip(self, request), err)]
     async fn create_plugin(
         &self,
         request: CreatePluginRequest,
     ) -> Result<CreatePluginResponse, PluginRegistryServiceError> {
         let plugin_id = generate_plugin_id(&request.tenant_id, request.plugin_artifact.as_slice());
 
-        let s3_key = generateo_artifact_s3_key(request.plugin_type, &request.tenant_id, &plugin_id);
+        let s3_key = generate_artifact_s3_key(request.plugin_type, &request.tenant_id, &plugin_id);
 
         self.s3
             .put_object(PutObjectRequest {
                 content_length: Some(request.plugin_artifact.len() as i64),
-                body: Some(request.plugin_artifact.into()),
+                body: Some(request.plugin_artifact.clone().into()),
                 bucket: self.plugin_bucket_name.clone(),
                 key: s3_key.clone(),
                 expected_bucket_owner: Some(self.plugin_bucket_owner_id.clone()),
@@ -129,26 +145,9 @@ impl PluginRegistry {
             })
             .await?;
 
-        sqlx::query(
-            r"
-            INSERT INTO plugins (
-                plugin_id,
-                plugin_type,
-                display_name,
-                tenant_id,
-                artifact_s3_key
-            )
-            VALUES ($1::uuid, $2, $3, $4::uuid, $5)
-            ON CONFLICT DO NOTHING;
-            ",
-        )
-        .bind(plugin_id)
-        .bind(request.plugin_type.type_name())
-        .bind(request.display_name)
-        .bind(request.tenant_id)
-        .bind(s3_key)
-        .execute(&self.pool)
-        .await?;
+        self.db_client
+            .create_plugin(&plugin_id, &request, &s3_key)
+            .await?;
 
         let response = CreatePluginResponse { plugin_id };
         Ok(response)
@@ -159,27 +158,14 @@ impl PluginRegistry {
         &self,
         request: GetPluginRequest,
     ) -> Result<GetPluginResponse, PluginRegistryServiceError> {
-        let row: GetPluginRow = sqlx::query_as(
-            r"
-        SELECT
-        plugin_id,
-        display_name,
-        plugin_type,
-        artifact_s3_key
-        FROM plugins
-        WHERE plugin_id = $1
-            ",
-        )
-        .bind(request.plugin_id)
-        .fetch_one(&self.pool)
-        .await?;
-
         let GetPluginRow {
+            artifact_s3_key,
+            plugin_type,
             plugin_id,
             display_name,
-            plugin_type,
-            artifact_s3_key,
-        } = row;
+            tenant_id: _,
+        } = self.db_client.get_plugin(&request.plugin_id).await?;
+
         let s3_key: String = artifact_s3_key;
         let plugin_type: PluginType = PluginType::try_from(plugin_type)?;
 
@@ -217,15 +203,28 @@ impl PluginRegistry {
         Ok(response)
     }
 
-    #[allow(dead_code)]
+    #[tracing::instrument(skip(self, request), err)]
     async fn deploy_plugin(
         &self,
-        _request: DeployPluginRequest,
+        request: DeployPluginRequest,
     ) -> Result<DeployPluginResponse, PluginRegistryServiceError> {
-        todo!()
+        let plugin_id = request.plugin_id;
+        let plugin_row = self.db_client.get_plugin(&plugin_id).await?;
+
+        deploy_plugin::deploy_plugin(
+            &self.nomad_client,
+            &self.nomad_cli,
+            plugin_row,
+            &self.plugin_bucket_owner_id,
+        )
+        .await
+        .map_err(PluginRegistryServiceError::from)?;
+
+        Ok(DeployPluginResponse {})
     }
 
     #[allow(dead_code)]
+    #[tracing::instrument(skip(self, _request), err)]
     async fn tear_down_plugin(
         &self,
         _request: TearDownPluginRequest,
@@ -242,6 +241,7 @@ impl PluginRegistry {
     }
 
     #[allow(dead_code)]
+    #[tracing::instrument(skip(self, _request), err)]
     async fn get_analyzers_for_tenant(
         &self,
         _request: GetAnalyzersForTenantRequest,
@@ -280,9 +280,14 @@ impl PluginRegistryService for PluginRegistry {
 
     async fn deploy_plugin(
         &self,
-        _request: Request<DeployPluginRequestProto>,
+        request: Request<DeployPluginRequestProto>,
     ) -> Result<Response<DeployPluginResponseProto>, Status> {
-        todo!()
+        let request: DeployPluginRequestProto = request.into_inner();
+        let request =
+            DeployPluginRequest::try_from(request).map_err(PluginRegistryServiceError::from)?;
+
+        let response = self.deploy_plugin(request).await?;
+        Ok(Response::new(response.into()))
     }
 
     async fn tear_down_plugin(
@@ -334,15 +339,13 @@ pub async fn exec_service(
     );
 
     let plugin_registry: PluginRegistry = PluginRegistry {
-        pool: sqlx::PgPool::connect(&postgres_address)
-            .timeout(std::time::Duration::from_secs(5))
-            .await??,
+        db_client: PluginRegistryDbClient::new(&postgres_address).await?,
+        nomad_client: NomadClient::from_env(),
+        nomad_cli: NomadCli::default(),
         s3: S3Client::from_env(),
         plugin_bucket_name: service_config.plugin_s3_bucket_name,
         plugin_bucket_owner_id: service_config.plugin_s3_bucket_aws_account_id,
     };
-
-    sqlx::migrate!().run(&plugin_registry.pool).await?;
 
     let addr = service_config.plugin_registry_bind_address;
     tracing::info!(
@@ -368,7 +371,7 @@ pub async fn exec_service(
     Ok(())
 }
 
-fn generateo_artifact_s3_key(
+fn generate_artifact_s3_key(
     plugin_type: PluginType,
     tenant_id: &uuid::Uuid,
     plugin_id: &uuid::Uuid,
