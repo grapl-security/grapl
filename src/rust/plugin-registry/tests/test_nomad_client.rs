@@ -2,6 +2,7 @@
 
 use std::collections::HashMap;
 
+use nomad_client_gen::models;
 use plugin_registry::nomad::{
     cli::NomadCli,
     client::{
@@ -17,7 +18,11 @@ pub static TOO_MUCH_MEMORY_NOMAD_JOB: &'static str = include_str!("too_much_memo
 async fn test_nomad_client_create_namespace() -> Result<(), Box<dyn std::error::Error>> {
     let client = NomadClient::from_env();
     client
-        .create_namespace("test-nomad-client-create-namespace")
+        .create_namespace(models::Namespace{
+            name: "test-nomad-client-create-namespace",
+            description: "im a namespace",
+            ..Default::default()
+        })
         .await?;
     Ok(())
 }
