@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import time
-from typing import TYPE_CHECKING, Dict, Iterator, List, Tuple
+from typing import TYPE_CHECKING, Iterator, List, Tuple
 
 import click
 from grapl_common.grapl_logger import get_module_grapl_logger
