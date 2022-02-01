@@ -43,13 +43,15 @@ pub async fn deploy_plugin(
     };
 
     // --- Deploy namespace
-    let namespace_name = format!("plugin-{id}", id=plugin.plugin_id);
-    let namespace_description = format!("Plugin for {name}", name=plugin.display_name);
-    client.create_namespace(models::Namespace{
+    let namespace_name = format!("plugin-{id}", id = plugin.plugin_id);
+    let namespace_description = format!("Plugin for {name}", name = plugin.display_name);
+    client
+        .create_update_namespace(models::Namespace {
             name: namespace_name.clone().into(),
             description: namespace_description.into(),
             ..Default::default()
-        }).await?;
+        })
+        .await?;
 
     // --- Make sure that the Nomad agents can accept the job
     let plan_result = client

@@ -54,11 +54,15 @@ impl NomadClient {
     }
 
     /// Create or update a namespace (primary key'd on `name`)
-    pub async fn create_update_namespace(&self, new_namespace: models::Namespace) -> Result<(), NomadClientError> {
+    pub async fn create_update_namespace(
+        &self,
+        new_namespace: models::Namespace,
+    ) -> Result<(), NomadClientError> {
         namespaces_api::post_namespace(
             // Shockingly, not `create_namespace()`
             &self.internal_config,
             namespaces_api::PostNamespaceParams {
+                namespace_name: new_namespace.name.clone().unwrap(),
                 namespace2: new_namespace,
                 ..Default::default()
             },
