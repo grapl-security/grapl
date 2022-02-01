@@ -1,9 +1,10 @@
 import copy
 import os
+from typing import Any
 import uuid
 
 import pytest
-from confluent_kafka import Consumer, Producer
+from confluent_kafka import Consumer, Producer  # type: ignore
 
 IS_LOCAL = not os.environ["KAFKA_BOOTSTRAP_SERVERS"].startswith("SASL_SSL")
 KAFKA_CLIENT_CONFIG = {
@@ -58,7 +59,7 @@ def metrics_consumer() -> Consumer:
     consumer.close()
 
 
-def _producer_callback(err, _) -> None:
+def _producer_callback(err: Any, _: Any) -> None:
     assert err is None
 
 
