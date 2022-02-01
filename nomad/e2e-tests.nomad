@@ -225,8 +225,8 @@ EOF
         RUST_LOG       = local.log_level
 
         KAFKA_BOOTSTRAP_SERVERS = local.kafka_bootstrap_servers
-        KAFKA_SASL_USERNAME = var.kafka_sasl_username
-        KAFKA_SASL_PASSWORD = var.kafka_sasl_password
+        KAFKA_SASL_USERNAME     = var.kafka_sasl_username
+        KAFKA_SASL_PASSWORD     = var.kafka_sasl_password
       }
 
       resources {

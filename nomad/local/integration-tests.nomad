@@ -117,8 +117,8 @@ EOH
 
   # Prefer these over their `var` equivalents
   plugin_work_queue_db_hostname = replace(var._plugin_work_queue_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
-  redis_endpoint = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
-  kafka_bootstrap_servers = replace(var._kafka_bootstrap_servers, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  redis_endpoint                = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  kafka_bootstrap_servers       = replace(var._kafka_bootstrap_servers, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
 
   _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
   _redis         = split(":", local._redis_trimmed)
@@ -203,13 +203,13 @@ job "integration-tests" {
         GRAPL_LOG_LEVEL = local.log_level
         # This is a hack, because IDK how to share locals across files
         #MG_ALPHAS                   = local.alpha_grpc_connect_str # TODO: Figure out how to do this
-        MG_ALPHAS      = "localhost:9080"
-        RUST_BACKTRACE = 1
-        RUST_LOG       = local.log_level
-        REDIS_ENDPOINT = local.redis_endpoint
+        MG_ALPHAS               = "localhost:9080"
+        RUST_BACKTRACE          = 1
+        RUST_LOG                = local.log_level
+        REDIS_ENDPOINT          = local.redis_endpoint
         KAFKA_BOOTSTRAP_SERVERS = local.kafka_bootstrap_servers
-        KAFKA_SASL_USERNAME = var.kafka_sasl_username
-        KAFKA_SASL_PASSWORD = var.kafka_sasl_password
+        KAFKA_SASL_USERNAME     = var.kafka_sasl_username
+        KAFKA_SASL_PASSWORD     = var.kafka_sasl_password
 
         GRAPL_MODEL_PLUGIN_DEPLOYER_HOST = "0.0.0.0"
         GRAPL_MODEL_PLUGIN_DEPLOYER_PORT = "${NOMAD_UPSTREAM_PORT_model-plugin-deployer}"
@@ -321,8 +321,8 @@ job "integration-tests" {
         IS_RETRY          = "False"
 
         KAFKA_BOOTSTRAP_SERVERS = local.kafka_bootstrap_servers
-        KAFKA_SASL_USERNAME = var.kafka_sasl_username
-        KAFKA_SASL_PASSWORD = var.kafka_sasl_password
+        KAFKA_SASL_USERNAME     = var.kafka_sasl_username
+        KAFKA_SASL_PASSWORD     = var.kafka_sasl_password
 
         DEPLOYMENT_NAME = "${var.deployment_name}"
         GRAPL_LOG_LEVEL = local.log_level
