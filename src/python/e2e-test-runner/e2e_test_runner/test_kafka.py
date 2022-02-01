@@ -1,7 +1,7 @@
 import copy
 import os
-from typing import Any
 import uuid
+from typing import Any
 
 import pytest
 from confluent_kafka import Consumer, Producer  # type: ignore
