@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use nomad_client_gen::models;
+
 use crate::{
     db::client::GetPluginRow,
     error::PluginRegistryServiceError,
@@ -41,13 +43,19 @@ pub async fn deploy_plugin(
     };
 
     // --- Deploy namespace
-    let namespace_name = (&plugin.display_name).to_owned(); // TODO: Do we need to regex enforce display names?
-    client.create_namespace(&namespace_name).await?;
-    // TODO: What if the namespace already exists?
+    let namespace_name = format!("plugin-{id}", id = plugin.plugin_id);
+    let namespace_description = format!("Plugin for {name}", name = plugin.display_name);
+    client
+        .create_update_namespace(models::Namespace {
+            name: namespace_name.clone().into(),
+            description: namespace_description.into(),
+            ..Default::default()
+        })
+        .await?;
 
     // --- Make sure that the Nomad agents can accept the job
     let plan_result = client
-        .plan_job(&job, job_name, Some(namespace_name.clone()))
+        .plan_job(&job, job_name, namespace_name.clone().into())
         .await?;
     plan_result
         .ensure_allocation()
