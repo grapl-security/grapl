@@ -246,7 +246,7 @@ job "grapl-local-infra" {
       driver = "docker"
 
       config {
-        image = "confluentinc/cp-kafka:6.2.0"
+        image = "confluentinc/cp-kafka:7.0.1"
         ports = ["kafka-for-other-nomad-tasks", "kafka-for-host-os"]
       }
 
@@ -268,6 +268,7 @@ job "grapl-local-infra" {
           "HOST_OS://host.docker.internal:${var.KAFKA_BROKER_PORT_FOR_HOST_OS}",
           "OTHER_NOMADS://${local.localhost_within_bridge}:${var.KAFKA_BROKER_PORT}"
         ])
+        KAFKA_AUTO_CREATE_TOPICS_ENABLE      = "false"
         KAFKA_LISTENER_SECURITY_PROTOCOL_MAP = "WITHIN_TASK:PLAINTEXT,HOST_OS:PLAINTEXT,OTHER_NOMADS:PLAINTEXT"
         KAFKA_INTER_BROKER_LISTENER_NAME     = "WITHIN_TASK"
 
@@ -319,8 +320,8 @@ job "grapl-local-infra" {
       driver = "docker"
 
       config {
-        image = "confluentinc/cp-zookeeper:6.2.0"
-        ports = ["zookeeper"] # may not be necesary
+        image = "confluentinc/cp-zookeeper:7.0.1"
+        ports = ["zookeeper"] # may not be necessary
       }
 
       env {

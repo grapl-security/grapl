@@ -23,7 +23,7 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-base-apt
         curl=7.74.0-1.3+deb11u1 \
         unzip=6.0-26
 
-# Grab a Nomad binary, which we use in plugin-registry for parsing 
+# Grab a Nomad binary, which we use in plugin-registry for parsing
 # HCL2-with-variables into JSON.
 WORKDIR /nomad
 RUN <<EOF
@@ -59,7 +59,7 @@ FROM base AS build
 RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
     --mount=type=cache,target=/usr/local/rustup,sharing=locked <<EOF
-    case "${RUST_BUILD}" in 
+    case "${RUST_BUILD}" in
       debug)
         cargo build ;;
       release)
@@ -81,7 +81,7 @@ RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
 
 # tarpaulin
 # This target is not merged with the `build` target because the actions to run
-# after cargo are different when building for tests and building the services, 
+# after cargo are different when building for tests and building the services,
 # and we'd rather not save all of the Rust `target/` directory to Docker image
 # if we don't have to.
 ################################################################################
@@ -113,7 +113,7 @@ FROM base AS build-test-integration
 # https://github.com/rust-lang/cargo/issues/1924
 # https://github.com/rust-lang/cargo/issues/3670
 
-ENV RUST_INTEGRATION_TEST_FEATURES="node-identifier/integration,sqs-executor/integration,kafka-metrics-exporter/integration,model-plugin-deployer/integration,plugin-registry/integration,plugin-work-queue/integration"
+ENV RUST_INTEGRATION_TEST_FEATURES="node-identifier/integration,sqs-executor/integration,model-plugin-deployer/integration,plugin-registry/integration,plugin-work-queue/integration"
 ENV TEST_DIR=/grapl/tests
 
 RUN mkdir --parents "${TEST_DIR}"
@@ -195,7 +195,7 @@ ENTRYPOINT [ "/run-tests.sh" ]
 
 # images for running services
 ################################################################################
-# More information about the base image used here can be found at: 
+# More information about the base image used here can be found at:
 # https://github.com/GoogleContainerTools/distroless/blob/main/cc/README.md.
 # For debugging see: https://github.com/GoogleContainerTools/distroless#debug-images
 
@@ -315,4 +315,3 @@ FROM rust-dist AS model-plugin-deployer
 # hadolint ignore=DL3022
 COPY --from=build /outputs/model-plugin-deployer /
 ENTRYPOINT ["/model-plugin-deployer"]
-
