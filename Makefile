@@ -471,3 +471,7 @@ build-docs: ## Build the Sphinx docs
 generate-nomad-rust-client:  # Generate the Nomad rust client from OpenAPI
 	./bin/generate_nomad_rust_client.sh
 	$(MAKE) format
+
+.PHONY: regenerate-sqlx-data
+regenerate-sqlx-data:  # Generate the Nomad rust client from OpenAPI
+	./bin/regenerate_sqlx_data.sh
