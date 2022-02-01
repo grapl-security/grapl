@@ -246,7 +246,7 @@ job "grapl-local-infra" {
       driver = "docker"
 
       config {
-        image = "confluentinc/cp-kafka:6.2.0"
+        image = "confluentinc/cp-kafka:7.0.1"
         ports = ["kafka-for-other-nomad-tasks", "kafka-for-host-os"]
       }
 
@@ -320,8 +320,8 @@ job "grapl-local-infra" {
       driver = "docker"
 
       config {
-        image = "confluentinc/cp-zookeeper:6.2.0"
-        ports = ["zookeeper"] # may not be necesary
+        image = "confluentinc/cp-zookeeper:7.0.1"
+        ports = ["zookeeper"] # may not be necessary
       }
 
       env {

@@ -207,6 +207,15 @@ def main() -> None:
         "kafka",
         confluent_environment_name=pulumi_config.require("confluent-environment-name"),
     )
+    e2e_service_credentials = kafka.service_credentials(service_name="e2e-test-runner")
+
+    pulumi.export("kafka-bootstrap-servers", kafka.bootstrap_servers())
+    pulumi.export(
+        "kafka-e2e-sasl-username", e2e_service_credentials.apply(lambda c: c.api_key)
+    )
+    pulumi.export(
+        "kafka-e2e-sasl-password", e2e_service_credentials.apply(lambda c: c.api_secret)
+    )
 
     if config.LOCAL_GRAPL:
         ###################################

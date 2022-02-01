@@ -12,7 +12,6 @@ from infra import config
 from infra.autotag import register_auto_tags
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
-from infra.kafka import Kafka
 from infra.nomad_job import NomadJob, NomadVars
 
 import pulumi
@@ -71,24 +70,12 @@ def main() -> None:
             nomad, "nomad", nomad_server_stack
         )
 
-    kafka = Kafka(
-        "e2e-tests:kafka",
-        confluent_environment_name=pulumi_config.require("confluent-environment-name"),
-    )
-
     ##### Business Logic
-
     grapl_stack = GraplStack(stack_name)
 
     aws_config = cast(aws.config.vars._ExportableConfig, aws.config)
     access_key = aws_config.access_key
     secret_key = aws_config.secret_key
-
-    kafka_service_credentials = kafka.service_credentials(
-        service_name="e2e-test-runner"
-    )
-    kafka_sasl_username = kafka_service_credentials.apply(lambda c: c.api_key)
-    kafka_sasl_password = kafka_service_credentials.apply(lambda c: c.api_secret)
 
     e2e_test_job_vars: NomadVars = {
         "analyzer_bucket": grapl_stack.analyzer_bucket,
@@ -100,9 +87,9 @@ def main() -> None:
             artifacts, require_artifact=(not config.LOCAL_GRAPL)
         ),
         "deployment_name": grapl_stack.deployment_name,
-        "_kafka_bootstrap_servers": kafka.bootstrap_servers(),
-        "kafka_sasl_username": kafka_sasl_username,
-        "kafka_sasl_password": kafka_sasl_password,
+        "_kafka_bootstrap_servers": grapl_stack.kafka_bootstrap_servers,
+        "kafka_sasl_username": grapl_stack.kafka_e2e_sasl_username,
+        "kafka_sasl_password": grapl_stack.kafka_e2e_sasl_password,
         "schema_properties_table_name": grapl_stack.schema_properties_table_name,
         "sysmon_log_bucket": grapl_stack.sysmon_log_bucket,
         "schema_table_name": grapl_stack.schema_table_name,
@@ -133,9 +120,9 @@ def main() -> None:
             "deployment_name": grapl_stack.deployment_name,
             "docker_user": os.environ["DOCKER_USER"],
             "grapl_root": os.environ["GRAPL_ROOT"],
-            "_kafka_bootstrap_servers": kafka.bootstrap_servers(),
-            "kafka_sasl_username": kafka_sasl_username,
-            "kafka_sasl_password": kafka_sasl_password,
+            "_kafka_bootstrap_servers": grapl_stack.kafka_bootstrap_servers,
+            "kafka_sasl_username": grapl_stack.kafka_e2e_sasl_username,
+            "kafka_sasl_password": grapl_stack.kafka_e2e_sasl_password,
             "_redis_endpoint": grapl_stack.redis_endpoint,
             "schema_properties_table_name": grapl_stack.schema_properties_table_name,
             "test_user_name": grapl_stack.test_user_name,
@@ -183,6 +170,10 @@ class GraplStack:
         self.plugin_work_queue_db_password = require_str(
             "plugin-work-queue-db-password"
         )
+
+        self.kafka_bootstrap_servers = require_str("kafka-bootstrap-servers")
+        self.kafka_e2e_sasl_username = require_str("kafka-e2e-sasl-username")
+        self.kafka_e2e_sasl_password = require_str("kafka-e2e-sasl-password")
 
 
 if __name__ == "__main__":

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import dataclasses
-import os
 from typing import Any, Mapping, Optional, Sequence, cast
 
 from pulumi.stack_reference import StackReference
+from pulumi_kafka import Provider
+from pulumi_kafka import Topic as KafkaTopic
 
 import pulumi
-from pulumi_kafka import Provider, Topic as KafkaTopic
 
 
 @dataclasses.dataclass
@@ -142,9 +142,8 @@ class Kafka(pulumi.ComponentResource):
             ]
             provider = Provider(
                 "grapl:kafka:Provider",
-                bootstrap_servers=[
-                    "host.docker.internal:29092"
-                ]
+                bootstrap_servers=["host.docker.internal:29092"],
+                tls_enabled=False,
             )
             for topic in topics:
                 KafkaTopic(
@@ -152,10 +151,8 @@ class Kafka(pulumi.ComponentResource):
                     name=topic,
                     partitions=1,
                     replication_factor=1,
-                    config={
-                        "compression.type": "zstd"
-                    },
-                    opts=pulumi.ResourceOptions(provider=provider)
+                    config={"compression.type": "zstd"},
+                    opts=pulumi.ResourceOptions(provider=provider),
                 )
         else:
             confluent_stack_output = StackReference(
