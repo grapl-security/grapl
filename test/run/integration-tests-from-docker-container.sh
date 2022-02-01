@@ -13,4 +13,5 @@ run_pants_python_tests() {
 
 # -rA means "report stdout/stderr for all tests, not just failing tests"
 # -m integration_test limits it to integration tests.
-run_pants_python_tests "-m integration_test -rA"
+# --no-cov disables coverage (since it's integration tests, makes sense!)
+run_pants_python_tests "-m integration_test -rA --no-cov"
