@@ -134,6 +134,27 @@ variable "plugin_registry_db_password" {
   description = "What is the password for the plugin registry table?"
 }
 
+variable "org_management_db_hostname" {
+  type        = string
+  description = "What is the host for the org management table?"
+}
+
+variable "org_management_db_port" {
+  type        = string
+  description = "What is the port for the org management table?"
+}
+
+variable "org_management_db_username" {
+  type        = string
+  description = "What is the username for the org management table?"
+}
+
+variable "org_management_db_password" {
+  type        = string
+  description = "What is the password for the org management table?"
+}
+
+
 variable "plugin_work_queue_db_hostname" {
   type        = string
   description = "What is the host for the plugin work queue table?"
@@ -290,6 +311,7 @@ locals {
   redis_endpoint                = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
   plugin_registry_db_hostname   = replace(var.plugin_registry_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
   plugin_work_queue_db_hostname = replace(var.plugin_work_queue_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  org_management_db_hostname   = replace(var.org_management_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
 
   _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
   _redis         = split(":", local._redis_trimmed)
@@ -1097,40 +1119,44 @@ job "grapl-core" {
   }
 
 
-  group "org-manager" {
+  group "org-management" {
     network {
       mode = "bridge"
 
-      port "org-manager-port" {
+      port "org-management-port" {
       }
     }
 
-    task "org-manager" {
+    task "org-management" {
       driver = "docker"
 
       config {
-        image = var.container_images["org-manager"]
-        ports = ["org-manager-port"]
+        image = var.container_images["org-management"]
+        ports = ["org-management-port"]
       }
 
       template {
         data        = local.conditionally_defined_env_vars
-        destination = "org-manager.env"
+        destination = "org-management.env"
         env         = true
       }
 
       env {
         AWS_REGION                      = var.aws_region
         NOMAD_SERVICE_ADDRESS           = "${attr.unique.network.ip-address}:4646"
-        PLUGIN_REGISTRY_BIND_ADDRESS    = "0.0.0.0:${NOMAD_PORT_org-manager-port}"
+        PLUGIN_REGISTRY_BIND_ADDRESS    = "0.0.0.0:${NOMAD_PORT_org-management-port}"
         RUST_BACKTRACE                  = local.rust_backtrace
         RUST_LOG                        = var.rust_log
+        ORG_MANAGEMENT_DB_HOSTNAME     = local.org_management_db_hostname
+        ORG_MANAGEMENT_DB_PASSWORD     = var.org_management_db_password
+        ORG_MANAGEMENT_DB_PORT         = var.org_management_db_port
+        ORG_MANAGEMENT_DB_USERNAME     = var.org_management_db_username
       }
     }
 
     service {
-      name = "org-manager"
-      port = "org-manager-port"
+      name = "org-management"
+      port = "org-management-port"
       connect {
         sidecar_service {
         }

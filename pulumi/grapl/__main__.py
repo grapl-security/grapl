@@ -60,6 +60,7 @@ def _container_images(
         "model-plugin-deployer": builder.build_with_tag("model-plugin-deployer"),
         "node-identifier": builder.build_with_tag("node-identifier"),
         "node-identifier-retry": builder.build_with_tag("node-identifier-retry"),
+        "org-management-retry": builder.build_with_tag("org-management-retry"),
         "osquery-generator": builder.build_with_tag("osquery-generator"),
         "plugin-registry": builder.build_with_tag("plugin-registry"),
         "plugin-work-queue": builder.build_with_tag("plugin-work-queue"),
@@ -213,6 +214,11 @@ def main() -> None:
         # Local Grapl
         ###################################
 
+        org_management_db = LocalPostgresInstance(
+            name="plugin-registry-db",
+            port=5431,
+        )
+
         plugin_registry_db = LocalPostgresInstance(
             name="plugin-registry-db",
             port=5432,
@@ -250,6 +256,10 @@ def main() -> None:
             aws_access_key_secret=aws_config.secret_key,
             container_images=_container_images({}),
             rust_log=rust_log_levels,
+            org_management_db_hostname="LOCAL_GRAPL_REPLACE_IP",
+            org_management_db_port=str(org_management_db.port),
+            org_management_db_username=org_management_db.username,
+            org_management_db_password=org_management_db.password,
             plugin_registry_db_hostname="LOCAL_GRAPL_REPLACE_IP",
             plugin_registry_db_port=str(plugin_registry_db.port),
             plugin_registry_db_username=plugin_registry_db.username,
@@ -371,6 +381,14 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
+        org_management_postgres = Postgres(
+            name="org_management",
+            subnet_ids=subnet_ids,
+            vpc_id=vpc_id,
+            availability_zone=availability_zone,
+            nomad_agent_security_group_id=nomad_agent_security_group_id,
+        )
+
         plugin_registry_postgres = Postgres(
             name="plugin-registry",
             subnet_ids=subnet_ids,
@@ -386,6 +404,20 @@ def main() -> None:
             availability_zone=availability_zone,
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
+
+        pulumi.export(
+            "org_management-db-hostname", org_management_postgres.instance.address
+        )
+        pulumi.export(
+            "org_management-db-port", str(org_management_postgres.instance.port)
+        )
+        pulumi.export(
+            "org_management-db-username", org_management_postgres.instance.username
+        )
+        pulumi.export(
+            "org_management-db-password", org_management_postgres.instance.password
+        )
+
 
         pulumi.export(
             "plugin-registry-db-hostname", plugin_registry_postgres.instance.address
@@ -441,6 +473,10 @@ def main() -> None:
             # instead of the var version.
             _redis_endpoint=cache.endpoint,
             container_images=_container_images(artifacts, require_artifact=True),
+            org_management_db_hostname=org_management_postgres.instance.address,
+            org_management_db_port=org_management_postgres.instance.port.apply(str),
+            org_management_db_username=org_management_postgres.instance.username,
+            org_management_db_password=org_management_postgres.instance.password,
             plugin_registry_db_hostname=plugin_registry_postgres.instance.address,
             plugin_registry_db_port=plugin_registry_postgres.instance.port.apply(str),
             plugin_registry_db_username=plugin_registry_postgres.instance.username,
