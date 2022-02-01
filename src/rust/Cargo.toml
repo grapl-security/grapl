@@ -21,6 +21,7 @@ members = [
   "./nomad-client-gen",
   "./plugin-bootstrap",
   "./plugin-registry",
+  "./plugin-sdk/generator-sdk/",
   "./plugin-work-queue",
   "./rust-proto",
   "./sqs-executor",
