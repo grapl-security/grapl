@@ -187,10 +187,6 @@ EOF
         hook    = "prestart"
         sidecar = false
       }
-
-      resources {
-        memory = 1024
-      }
     }
 
     task "e2e-tests" {
@@ -227,10 +223,6 @@ EOF
         KAFKA_BOOTSTRAP_SERVERS = local.kafka_bootstrap_servers
         KAFKA_SASL_USERNAME     = var.kafka_sasl_username
         KAFKA_SASL_PASSWORD     = var.kafka_sasl_password
-      }
-
-      resources {
-        memory = 1024
       }
     }
   }
