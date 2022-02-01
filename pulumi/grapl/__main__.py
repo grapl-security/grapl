@@ -243,7 +243,6 @@ def main() -> None:
         redis_endpoint = "redis://LOCAL_GRAPL_REPLACE_IP:6379"
 
         pulumi.export("aws-endpoint", aws_endpoint)
-        pulumi.export("kafka-bootstrap-servers", kafka.bootstrap_servers())
         pulumi.export("redis-endpoint", redis_endpoint)
 
         aws_config = cast(aws.config.vars._ExportableConfig, aws.config)
