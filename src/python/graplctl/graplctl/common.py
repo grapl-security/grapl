@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import time
-from typing import TYPE_CHECKING, Dict, Iterator, List, Tuple
+from typing import TYPE_CHECKING, Iterator, List, Tuple
 
 import click
 from grapl_common.grapl_logger import get_module_grapl_logger
@@ -67,7 +67,7 @@ class Tag:
         return {"Key": self.key, "Value": self.value}
 
     @classmethod
-    def from_boto_tag_specification(cls, tag_specification: Dict[str, str]) -> Tag:
+    def from_boto_tag_specification(cls, tag_specification: TagTypeDef) -> Tag:
         return cls(key=tag_specification["Key"], value=tag_specification["Value"])
 
 

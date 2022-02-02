@@ -1,7 +1,7 @@
 # This setup is inspired by the following forum discussion:
 # https://discuss.hashicorp.com/t/best-practices-for-testing-against-services-in-nomad-consul-connect/29022
-# We'll submit integration tests to Nomad as 
-# 
+# We'll submit integration tests to Nomad as
+#
 variable "container_images" {
   type        = map(string)
   description = <<EOF
@@ -62,6 +62,21 @@ variable "_aws_endpoint" {
   default     = "DUMMY_LOCAL_AWS_ENDPOINT"
 }
 
+variable "_kafka_bootstrap_servers" {
+  type        = string
+  description = "Comma separated host:port pairs specifying which brokers clients should connect to initially."
+}
+
+variable "kafka_sasl_username" {
+  type        = string
+  description = "The Confluent Cloud API key to configure producers and consumers with."
+}
+
+variable "kafka_sasl_password" {
+  type        = string
+  description = "The Confluent Cloud API secret to configure producers and consumers with."
+}
+
 variable "test_user_name" {
   type        = string
   description = "The name of the test user"
@@ -72,6 +87,8 @@ locals {
 
   # Prefer these over their `var` equivalents
   aws_endpoint = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
+
+  kafka_bootstrap_servers = replace(var._kafka_bootstrap_servers, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
 
   # This is used to conditionally submit env variables via template stanzas.
   local_only_env_vars = <<EOH
@@ -94,7 +111,7 @@ job "e2e-tests" {
     attempts = 0
   }
 
-  # Specifies that this job is the most high priority job we have; nothing else should take precedence 
+  # Specifies that this job is the most high priority job we have; nothing else should take precedence
   priority = 100
 
   group "e2e-tests" {
@@ -203,6 +220,9 @@ EOF
         RUST_BACKTRACE = 1
         RUST_LOG       = local.log_level
 
+        KAFKA_BOOTSTRAP_SERVERS = local.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME     = var.kafka_sasl_username
+        KAFKA_SASL_PASSWORD     = var.kafka_sasl_password
       }
     }
   }

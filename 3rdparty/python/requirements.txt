@@ -5,6 +5,7 @@ argon2-cffi
 boto3
 botocore
 click
+confluent-kafka
 cookiecutter==1.7.3
 hypothesis
 protobuf>=3.12.1
@@ -12,6 +13,7 @@ pulumi>=3.0.0,<4.0.0
 pulumi-aws>=4.0.0,<5.0.0
 pulumi_consul
 pulumi_docker
+pulumi-kafka
 pulumi_nomad
 pulumi_policy
 pulumi_postgresql

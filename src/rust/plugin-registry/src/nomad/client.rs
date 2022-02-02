@@ -53,19 +53,16 @@ impl NomadClient {
         NomadClient { internal_config }
     }
 
-    pub async fn create_namespace(&self, name: &str) -> Result<(), NomadClientError> {
-        let new_namespace = models::Namespace {
-            name: Some(name.to_owned()),
-            description: Some("created by NomadClient::create_namespace".to_owned()),
-            ..Default::default()
-        };
-
+    /// Create or update a namespace (primary key'd on `name`)
+    pub async fn create_update_namespace(
+        &self,
+        new_namespace: models::Namespace,
+    ) -> Result<(), NomadClientError> {
         namespaces_api::post_namespace(
             // Shockingly, not `create_namespace()`
             &self.internal_config,
             namespaces_api::PostNamespaceParams {
-                // It's odd to me that I have to specify the name twice...
-                namespace_name: name.to_owned(),
+                namespace_name: new_namespace.name.clone().unwrap(),
                 namespace2: new_namespace,
                 ..Default::default()
             },
