@@ -216,3 +216,8 @@ install_git_hooks() {
     GIT_ROOT=$(git rev-parse --show-toplevel)
     ln --symbolic --relative --force "$GIT_ROOT/etc/hooks/pre-commit.sh" "$GIT_ROOT/.git/hooks/pre-commit"
 }
+
+install_sqlx_prepare_deps() {
+    cargo install sqlx-cli --no-default-features --features postgres,rustls
+    sudo apt install --yes netcat # used for `nc`
+}

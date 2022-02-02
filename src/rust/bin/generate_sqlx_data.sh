@@ -11,11 +11,6 @@ set -euo pipefail
 ################################################################################
 REPOSITORY_ROOT="$(git rev-parse --show-toplevel)"
 readonly REPOSITORY_ROOT
-cd REPOSITORY_ROOT
-
-cargo install sqlx-cli --no-default-features --features postgres,rustls
-sudo apt install --yes netcat # used for `nc` wait-for-it below
-
 readonly PORT=5432
 readonly DB_URL="postgres://postgres@localhost:${PORT}"
 readonly CONTAINER_NAME="postgres-for-sqlx-prepare"
@@ -61,8 +56,8 @@ sqlx_prepare() {
 # Stop the container if any failures occur.
 trap stop_postgres EXIT
 
-sqlx_prepare src/rust/plugin-work-queue
-sqlx_prepare src/rust/plugin-registry
+sqlx_prepare "${REPOSITORY_ROOT}/src/rust/plugin-work-queue"
+sqlx_prepare "${REPOSITORY_ROOT}/src/rust/plugin-registry"
 
 # Undo the above trap
 trap - EXIT
