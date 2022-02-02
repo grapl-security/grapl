@@ -1143,7 +1143,7 @@ job "grapl-core" {
       env {
         AWS_REGION                      = var.aws_region
         NOMAD_SERVICE_ADDRESS           = "${attr.unique.network.ip-address}:4646"
-        PLUGIN_REGISTRY_BIND_ADDRESS    = "0.0.0.0:${NOMAD_PORT_org-management-port}"
+        ORG_MANAGEMENT_BIND_ADDRESS    = "0.0.0.0:${NOMAD_PORT_org-management-port}"
         RUST_BACKTRACE                  = local.rust_backtrace
         RUST_LOG                        = var.rust_log
         ORG_MANAGEMENT_DB_HOSTNAME     = local.org_management_db_hostname

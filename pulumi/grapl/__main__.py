@@ -60,7 +60,7 @@ def _container_images(
         "model-plugin-deployer": builder.build_with_tag("model-plugin-deployer"),
         "node-identifier": builder.build_with_tag("node-identifier"),
         "node-identifier-retry": builder.build_with_tag("node-identifier-retry"),
-        "org-management-retry": builder.build_with_tag("org-management-retry"),
+        "org-management": builder.build_with_tag("org-management"),
         "osquery-generator": builder.build_with_tag("osquery-generator"),
         "plugin-registry": builder.build_with_tag("plugin-registry"),
         "plugin-work-queue": builder.build_with_tag("plugin-work-queue"),
@@ -216,7 +216,7 @@ def main() -> None:
 
         org_management_db = LocalPostgresInstance(
             name="org_management_db",
-            port=5431,
+            port=5632,
         )
 
         plugin_registry_db = LocalPostgresInstance(
