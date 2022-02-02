@@ -7,8 +7,11 @@ set -euo pipefail
 # migrated SQL database and storing that validity in sqlx-data.json.
 #
 # Long story short: Changing Rust sql queries? You probably want to run this
-# script with `make regenerate-sqlx-data`.
+# script with `make generate-sqlx-data`.
 ################################################################################
+REPOSITORY_ROOT="$(git rev-parse --show-toplevel)"
+readonly REPOSITORY_ROOT
+cd REPOSITORY_ROOT
 
 cargo install sqlx-cli --no-default-features --features postgres,rustls
 sudo apt install --yes netcat # used for `nc` wait-for-it below
