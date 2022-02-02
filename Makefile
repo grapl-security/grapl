@@ -473,5 +473,5 @@ generate-nomad-rust-client:  # Generate the Nomad rust client from OpenAPI
 	$(MAKE) format
 
 .PHONY: regenerate-sqlx-data
-regenerate-sqlx-data:  # Generate the Nomad rust client from OpenAPI
+regenerate-sqlx-data:  # Regenerate sqlx-data.json based on queries made in Rust code
 	./bin/regenerate_sqlx_data.sh
