@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use nomad_client_gen::models;
 
 use crate::{
-    db::client::GetPluginRow,
+    db::client::PluginRow,
     error::PluginRegistryServiceError,
     nomad::{
         cli::{
@@ -23,7 +23,7 @@ use crate::{
 pub async fn deploy_plugin(
     client: &NomadClient,
     cli: &NomadCli,
-    plugin: GetPluginRow,
+    plugin: PluginRow,
     plugin_bucket_owner_id: &str,
 ) -> Result<(), PluginRegistryServiceError> {
     // --- Convert HCL to JSON Job model

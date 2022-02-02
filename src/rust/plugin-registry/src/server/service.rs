@@ -47,7 +47,7 @@ use tonic::{
 
 use crate::{
     db::client::{
-        GetPluginRow,
+        PluginRow,
         PluginRegistryDbClient,
     },
     error::PluginRegistryServiceError,
@@ -158,7 +158,7 @@ impl PluginRegistry {
         &self,
         request: GetPluginRequest,
     ) -> Result<GetPluginResponse, PluginRegistryServiceError> {
-        let GetPluginRow {
+        let PluginRow {
             artifact_s3_key,
             plugin_type,
             plugin_id,

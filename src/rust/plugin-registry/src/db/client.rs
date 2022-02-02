@@ -2,7 +2,7 @@ use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::plugin_registry::CreatePluginRequest;
 
 #[derive(sqlx::FromRow)]
-pub struct GetPluginRow {
+pub struct PluginRow {
     pub plugin_id: uuid::Uuid,
     pub tenant_id: uuid::Uuid,
     pub display_name: String,
@@ -16,9 +16,9 @@ pub struct PluginRegistryDbClient {
 
 impl PluginRegistryDbClient {
     #[tracing::instrument(skip(self), err)]
-    pub async fn get_plugin(&self, plugin_id: &uuid::Uuid) -> Result<GetPluginRow, sqlx::Error> {
+    pub async fn get_plugin(&self, plugin_id: &uuid::Uuid) -> Result<PluginRow, sqlx::Error> {
         sqlx::query_as!(
-            GetPluginRow,
+            PluginRow,
             r"
             SELECT
             plugin_id,
