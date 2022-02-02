@@ -3,7 +3,11 @@ set -euo pipefail
 
 ################################################################################
 # Our Rust code uses a library called `sqlx` to interface with Postgres.
-# It *statically* checks
+# It *statically* checks the validity of queries by running them against a real,
+# migrated SQL database and storing that validity in sqlx-data.json.
+#
+# Long story short: Changing Rust sql queries? You probably want to run this
+# script with `make regenerate-sqlx-data`.
 ################################################################################
 
 cargo install sqlx-cli --no-default-features --features postgres,rustls
