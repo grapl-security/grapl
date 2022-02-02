@@ -17,19 +17,20 @@ pub struct PluginRegistryDbClient {
 impl PluginRegistryDbClient {
     #[tracing::instrument(skip(self), err)]
     pub async fn get_plugin(&self, plugin_id: &uuid::Uuid) -> Result<GetPluginRow, sqlx::Error> {
-        sqlx::query_as(
+        sqlx::query_as!(
+            GetPluginRow,
             r"
-        SELECT
-        plugin_id,
-        tenant_id,
-        display_name,
-        plugin_type,
-        artifact_s3_key
-        FROM plugins
-        WHERE plugin_id = $1
+            SELECT
+            plugin_id,
+            tenant_id,
+            display_name,
+            plugin_type,
+            artifact_s3_key
+            FROM plugins
+            WHERE plugin_id = $1
             ",
+            plugin_id
         )
-        .bind(plugin_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -41,7 +42,7 @@ impl PluginRegistryDbClient {
         request: &CreatePluginRequest,
         s3_key: &str,
     ) -> Result<(), sqlx::Error> {
-        sqlx::query(
+        sqlx::query!(
             r"
             INSERT INTO plugins (
                 plugin_id,
@@ -53,12 +54,12 @@ impl PluginRegistryDbClient {
             VALUES ($1::uuid, $2, $3, $4::uuid, $5)
             ON CONFLICT DO NOTHING;
             ",
+            plugin_id,
+            &request.plugin_type.type_name(),
+            &request.display_name,
+            &request.tenant_id,
+            s3_key,
         )
-        .bind(plugin_id)
-        .bind(&request.plugin_type.type_name())
-        .bind(&request.display_name)
-        .bind(&request.tenant_id)
-        .bind(s3_key)
         .execute(&self.pool)
         .await
         .map(|_| ()) // Toss result
