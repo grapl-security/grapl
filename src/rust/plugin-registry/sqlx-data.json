@@ -1,0 +1,63 @@
+{
+  "db": "PostgreSQL",
+  "c57567e93fa4914365fffaf15b1a6937f28b5ee1e8ed28d569ee66035926cd0e": {
+    "query": "\n            INSERT INTO plugins (\n                plugin_id,\n                plugin_type,\n                display_name,\n                tenant_id,\n                artifact_s3_key\n            )\n            VALUES ($1::uuid, $2, $3, $4::uuid, $5)\n            ON CONFLICT DO NOTHING;\n            ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Varchar",
+          "Varchar",
+          "Uuid",
+          "Varchar"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "d31a831ff688cfe70f5ba3fc527acac049d9312d8a58888dddca697db188a4cc": {
+    "query": "\n            SELECT\n            plugin_id,\n            tenant_id,\n            display_name,\n            plugin_type,\n            artifact_s3_key\n            FROM plugins\n            WHERE plugin_id = $1\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "plugin_id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "tenant_id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 2,
+          "name": "display_name",
+          "type_info": "Varchar"
+        },
+        {
+          "ordinal": 3,
+          "name": "plugin_type",
+          "type_info": "Varchar"
+        },
+        {
+          "ordinal": 4,
+          "name": "artifact_s3_key",
+          "type_info": "Varchar"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    }
+  }
+}
