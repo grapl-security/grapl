@@ -215,7 +215,7 @@ def main() -> None:
         ###################################
 
         org_management_db = LocalPostgresInstance(
-            name="plugin-registry-db",
+            name="org_management_db",
             port=5431,
         )
 

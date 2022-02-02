@@ -14,8 +14,8 @@ def _wipe_dynamodb_table(table: Table) -> None:
     """
     Based off https://stackoverflow.com/a/61641725
     """
-    # get the table keys
-    table_key_names = [key.get("AttributeName") for key in table.key_schema]
+    # get the table keys - assume AttributeName exists
+    table_key_names = [str(key["AttributeName"]) for key in table.key_schema]
 
     """
     NOTE: there are reserved attributes for key names, please see https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/ReservedWords.html

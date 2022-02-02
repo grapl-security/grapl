@@ -20,6 +20,7 @@ members = [
   "./node-identifier",
   "./nomad-client-gen",
   "./org-management",
+  "./plugin-bootstrap",
   "./plugin-registry",
   "./plugin-work-queue",
   "./rust-proto",

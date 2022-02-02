@@ -1122,7 +1122,6 @@ job "grapl-core" {
   group "org-management" {
     network {
       mode = "bridge"
-
       port "org-management-port" {
       }
     }
