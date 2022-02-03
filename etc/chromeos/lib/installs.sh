@@ -210,26 +210,46 @@ install_hashicorp_tools() {
 # Assumptions:
 # - URL is HTTPS
 # - URL is for a tar.gz file
-# - Target directory must be created / written to with root permissions
+# - Target directory must be created / written to with root
+#   permissions
+# - The tarball has all its contents at the root of the
+#   archive. Everything in the archive will be moved as-is into the
+#   destination directory.
 download_and_install_tarball() {
     local -r url="${1}"
     local -r target_dir="${2}"
 
-    sudo mkdir --parents "${target_dir}"
-
     file_name="$(basename "${url}")"
 
+    # Retrive the archive
     curl --proto "=https" \
         --tlsv1.2 \
         --location \
         --remote-name \
         "${url}"
 
-    sudo tar --extract \
-        --directory="${target_dir}" \
+    # Create a dedicated temporary directory to store the extracted
+    # contents of the tarball, prior to moving it.
+    temp_dir="$(mktemp --directory)"
+
+    # Extract the archive into the temporary directory
+    tar --extract \
+        --verbose \
+        --directory="${temp_dir}" \
         --file="${file_name}"
 
+    # Create the destination and move everything to it.
+    #
+    # These are the only commands that need sudo privileges.
+    sudo mkdir --parents "${target_dir}"
+    sudo mv "${temp_dir}"/* "${target_dir}"
+
+    # Show the contents of the target_dir for visibility and debugging
+    tree "${target_dir}"
+
+    # Clean up after ourselves
     rm "${file_name}"
+    rm -Rf "${temp_dir}"
 }
 
 install_cni_plugins() {
@@ -244,7 +264,7 @@ install_cni_plugins() {
 }
 
 install_nomad_firecracker() {
-    echo_banner "Installing Firecracker nomad plugins"
+    echo_banner "Installing Firecracker Nomad driver"
 
     repo="cneira/firecracker-task-driver"
     version=$(get_latest_release "${repo}")
@@ -254,11 +274,6 @@ install_nomad_firecracker() {
     download_and_install_tarball \
         "${url_prefix}/firecracker-task-driver-${version}.tar.gz" \
         /opt/nomad/plugins
-
-    echo_banner "Installing Firecracker nomad CNI plugins"
-    download_and_install_tarball \
-        "${url_prefix}/firecracker-task-driver-cni-plugins-${version}.tar.gz" \
-        /opt/cni/bin
 }
 
 install_nomad_chromeos_workaround() {
