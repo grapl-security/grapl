@@ -213,7 +213,11 @@ install_cni_plugins() {
     REPO="containernetworking/plugins"
     VERSION=$(get_latest_release "${REPO}")
     TGZ_NAME="cni-plugins-linux-amd64-${VERSION}.tgz"
-    sudo wget "https://github.com/${REPO}/releases/download/${VERSION}/${TGZ_NAME}"
+    sudo curl --proto "=https" \
+         --tlsv1.2 \
+         --location \
+         --remote-name \
+         "https://github.com/${REPO}/releases/download/${VERSION}/${TGZ_NAME}"
     sudo tar -xf "${TGZ_NAME}"
     sudo rm "${TGZ_NAME}"
 }
@@ -226,7 +230,11 @@ install_nomad_firecracker() {
     REPO="cneira/firecracker-task-driver"
     VERSION=$(get_latest_release "${REPO}")
     DRIVER_TGZ_NAME="firecracker-task-driver-${VERSION}.tar.gz"
-    sudo wget "https://github.com/${REPO}/releases/download/${VERSION}/${DRIVER_TGZ_NAME}"
+    sudo curl --proto "=https" \
+         --tlsv1.2 \
+         --location \
+         --remote-name \
+         "https://github.com/${REPO}/releases/download/${VERSION}/${DRIVER_TGZ_NAME}"
     sudo tar -xf "${DRIVER_TGZ_NAME}"
     sudo rm "${DRIVER_TGZ_NAME}"
 
@@ -235,7 +243,11 @@ install_nomad_firecracker() {
     cd /opt/cni/bin || exit 2
 
     CNI_TGZ_NAME="firecracker-task-driver-cni-plugins-${VERSION}.tar.gz"
-    sudo wget "https://github.com/${REPO}/releases/download/${VERSION}/${CNI_TGZ_NAME}"
+    sudo curl --proto "=https" \
+         --tlsv1.2 \
+         --location \
+         --remote-name \
+         "https://github.com/${REPO}/releases/download/${VERSION}/${CNI_TGZ_NAME}"
     sudo tar -xf "${CNI_TGZ_NAME}"
     sudo rm "${CNI_TGZ_NAME}"
 }
