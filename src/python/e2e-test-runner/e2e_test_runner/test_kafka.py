@@ -63,6 +63,7 @@ def _producer_callback(err: Any, _: Any) -> None:
     assert err is None
 
 
+@pytest.mark.skip(reason="This is currently broken due to Confluent Cloud ACLs")
 def test_kafka_can_write_metrics(
     kafka_producer: Producer, metrics_consumer: Consumer
 ) -> None:
@@ -84,6 +85,7 @@ def test_kafka_can_write_metrics(
     assert msg.value().decode("utf-8") == "test"
 
 
+@pytest.mark.skip(reason="This is currently broken due to Confluent Cloud ACLs")
 def test_kafka_can_write_logs(
     kafka_producer: Producer, logs_consumer: Consumer
 ) -> None:
