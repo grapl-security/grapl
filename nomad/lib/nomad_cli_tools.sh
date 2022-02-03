@@ -4,8 +4,13 @@ set -euo pipefail
 NOMAD_ADDRESS="${NOMAD_ADDRESS:-http://localhost:4646}"
 
 curl_quiet() {
-    # shellcheck disable=SC2068
-    curl --location --silent --show-error $@
+    if [[ ${NOMAD_ADDRESS} =~ ^https://.*$ ]]; then
+        # shellcheck disable=SC2068
+        curl --proto "=https" --tlsv1.2 --location --silent --show-error $@
+    else
+        # shellcheck disable=SC2068
+        curl --location --silent --show-error $@
+    fi
 }
 
 nomad_dispatch() {

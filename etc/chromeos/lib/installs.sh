@@ -19,9 +19,12 @@ echo_banner() {
 }
 
 get_latest_release() {
-    curl --silent "https://api.github.com/repos/$1/releases/latest" | # Get latest release from GitHub api
-        grep '"tag_name":' |                                          # Get tag line
-        sed -E 's/.*"([^"]+)".*/\1/'                                  # Pluck JSON value
+    curl --proto "=https" \
+        --tlsv1.2 \
+        --silent \
+        "https://api.github.com/repos/$1/releases/latest" | # Get latest release from GitHub api
+        grep '"tag_name":' |                                # Get tag line
+        sed -E 's/.*"([^"]+)".*/\1/'                        # Pluck JSON value
 }
 ## end helper functions
 
@@ -51,18 +54,30 @@ install_build_tooling() {
 # potentially replace with podman in the future?
 install_docker() {
     echo_banner "Install docker"
-    curl -sSL https://get.docker.com/ | sh
+    curl --proto "=https" \
+        --tlsv1.2 \
+        --silent \
+        --show-error \
+        --location \
+        https://get.docker.com/ | sh
     sudo usermod -a -G docker "$USER"
 
     echo_banner "Install docker-compose"
-    sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" \
-        -o /usr/local/bin/docker-compose
+    sudo curl --proto "=https" \
+        --tlsv1.2 \
+        --location \
+        --output /usr/local/bin/docker-compose \
+        "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)"
     sudo chmod +x /usr/local/bin/docker-compose
 }
 
 install_rust_and_utilities() {
     echo_banner "Installing rust toolchain"
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    curl --proto "=https" \
+        --tlsv1.2 \
+        --silent \
+        --show-error \
+        --fail https://sh.rustup.rs | sh
     # Shellcheck can't follow $HOME or other vars like $USER so we disable the check here
     # shellcheck disable=SC1091
     source "$HOME/.cargo/env"
@@ -89,7 +104,10 @@ install_pyenv() {
         rm -rf "${home_pyenv_dir}"
     fi
 
-    curl -L https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash
+    curl --proto "=https" \
+        --tlsv1.2 \
+        --location \
+        https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash
 
     # This function is stolen from the
     # "If your ~/.profile sources ~/.bashrc (Debian, Ubuntu, Mint)"
@@ -118,7 +136,9 @@ install_pyenv() {
 
 install_nvm() {
     echo_banner "Installing nvm"
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
+    curl --proto "=https" \
+        --tlsv1.2 \
+        https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
     source_profile
 
     # Make nvm usable ASAP
@@ -135,7 +155,10 @@ install_awsv2() {
     echo_banner "Installing awscliv2"
     (
         cd /tmp
-        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        curl --proto "=https" \
+            --tlsv1.2 \
+            --output "awscliv2.zip" \
+            "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
         unzip awscliv2.zip
         sudo ./aws/install --update
         sudo rm ./awscliv2.zip
@@ -144,15 +167,23 @@ install_awsv2() {
     echo_banner "Installing SSM extension"
     (
         cd /tmp
-        curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" \
-            -o "session-manager-plugin.deb"
+        curl --proto "=https" \
+            --tlsv1.2 \
+            --remote-name \
+            "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb"
         sudo dpkg -i session-manager-plugin.deb
         rm ./session-manager-plugin.deb
     )
 }
 install_pulumi() {
     echo_banner "Install pulumi"
-    curl -fsSL https://get.pulumi.com | sh
+    curl --proto "=https" \
+        --tlsv1.2 \
+        --fail \
+        --silent \
+        --show-error \
+        --location \
+        https://get.pulumi.com | sh
 }
 
 install_utilities() {
@@ -162,7 +193,12 @@ install_utilities() {
 
 install_hashicorp_tools() {
     echo_banner "Installing hashicorp tools: consul nomad packer"
-    curl --proto '=https' --tlsv1.3 -sSf https://apt.releases.hashicorp.com/gpg |
+    curl --proto '=https' \
+        --tlsv1.2 \
+        --silent \
+        --show-error \
+        --fail \
+        https://apt.releases.hashicorp.com/gpg |
         sudo gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/hashicorp-apt.gpg --import &&
         sudo chmod 644 /etc/apt/trusted.gpg.d/hashicorp-apt.gpg
     sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
