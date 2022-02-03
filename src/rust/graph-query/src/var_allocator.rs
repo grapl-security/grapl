@@ -19,7 +19,7 @@ impl Default for VarAllocator {
 impl VarAllocator {
     pub(crate) fn variable_string(&self) -> String {
         let mut variables =
-            String::with_capacity(2 * self.variables.len() + 9 * self.variables.len());
+            String::with_capacity((2 * self.variables.len()) + (9 * self.variables.len()));
         for variable_name in self.variables.values() {
             variables.push_str(variable_name);
             variables.push_str(":String!,");
@@ -37,7 +37,11 @@ impl VarAllocator {
                 *self.variable.last_mut().unwrap() = self.last_var;
             }
 
-            String::from_utf8(self.variable.clone()).unwrap()
+            // It's guaranteed ascii, which is guaranteed utf8
+            unsafe {
+                debug_assert!(String::from_utf8(self.variable.clone()).is_ok());
+                String::from_utf8_unchecked(self.variable.clone())
+            }
         })
     }
 }
@@ -59,5 +63,7 @@ mod tests {
         }
         let var = allocator.alloc("abcd".into());
         assert_eq!(var, "$z");
+        let var = allocator.alloc("efgh".into());
+        assert_eq!(var, "$za");
     }
 }

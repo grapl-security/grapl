@@ -4,7 +4,7 @@ use fnv::FnvHashMap as HashMap;
 use crate::var_allocator::VarAllocator;
 
 pub trait PropertyFilter {
-    fn to_filter(&self, var_allocator: &mut VarAllocator) -> String;
+    fn to_filter(&self, filter_string: &mut String, var_allocator: &mut VarAllocator);
     fn boxed(self) -> Box<dyn PropertyFilter>
     where
         Self: Sized + 'static,
@@ -14,7 +14,7 @@ pub trait PropertyFilter {
 }
 
 pub trait NodeFilter {
-    fn to_filter(&self, var_allocator: &mut VarAllocator) -> String;
+    fn to_filter(&self, filter_string: &mut String, var_allocator: &mut VarAllocator);
 }
 
 #[derive(Clone)]
@@ -30,17 +30,15 @@ impl IntEq {
 }
 
 impl PropertyFilter for IntEq {
-    fn to_filter(&self, _var_allocator: &mut VarAllocator) -> String {
-        let inner = format!(
-            "{{
-            eq: {},
-        }}",
-            self.to
-        );
+    fn to_filter(&self, filter_string: &mut String, _var_allocator: &mut VarAllocator) {
         if self.negated {
-            format!("{{not: {}}}", inner)
-        } else {
-            inner
+            filter_string.push_str("{not: ");
+        }
+        filter_string.push_str("{ eq: ");
+        filter_string.push_str(&self.to.to_string());
+        filter_string.push_str(",}");
+        if self.negated {
+            filter_string.push('}');
         }
     }
 }
@@ -58,17 +56,15 @@ impl IntLt {
 }
 
 impl PropertyFilter for IntLt {
-    fn to_filter(&self, _var_allocator: &mut VarAllocator) -> String {
-        let inner = format!(
-            "{{
-            lt: {},
-        }}",
-            self.to
-        );
+    fn to_filter(&self, filter_string: &mut String, _var_allocator: &mut VarAllocator) {
         if self.negated {
-            format!("{{not: {}}}", inner)
-        } else {
-            inner
+            filter_string.push_str("{not: ");
+        }
+        filter_string.push_str("{lt: ");
+        filter_string.push_str(&self.to.to_string());
+        filter_string.push('}');
+        if self.negated {
+            filter_string.push('}');
         }
     }
 }
@@ -86,17 +82,15 @@ impl IntGt {
 }
 
 impl PropertyFilter for IntGt {
-    fn to_filter(&self, _var_allocator: &mut VarAllocator) -> String {
-        let inner = format!(
-            "{{
-            gt: {},
-        }}",
-            self.to
-        );
+    fn to_filter(&self, filter_string: &mut String, _var_allocator: &mut VarAllocator) {
         if self.negated {
-            format!("{{not: {}}}", inner)
-        } else {
-            inner
+            filter_string.push_str("{not: ");
+        }
+        filter_string.push_str("{gt: ");
+        filter_string.push_str(&self.to.to_string());
+        filter_string.push('}');
+        if self.negated {
+            filter_string.push('}');
         }
     }
 }
@@ -131,17 +125,16 @@ impl StrEq {
 }
 
 impl PropertyFilter for StrEq {
-    fn to_filter(&self, var_allocator: &mut VarAllocator) -> String {
+    fn to_filter(&self, filter_string: &mut String, var_allocator: &mut VarAllocator) {
         let to = var_allocator.alloc(self.to.to_string());
-        let inner = format!(
-            "{{
-            eq: {to},
-        }}"
-        );
         if self.negated {
-            format!("{{not: {}}}", inner)
-        } else {
-            inner
+            filter_string.push_str("{not: ");
+        }
+        filter_string.push_str("{eq: ");
+        filter_string.push_str(to);
+        filter_string.push('}');
+        if self.negated {
+            filter_string.push('}');
         }
     }
 }
@@ -162,52 +155,49 @@ impl StrRegex {
 }
 
 impl PropertyFilter for StrRegex {
-    fn to_filter(&self, var_allocator: &mut VarAllocator) -> String {
+    fn to_filter(&self, filter_string: &mut String, var_allocator: &mut VarAllocator) {
         let to = var_allocator.alloc(self.to.to_string());
-        let inner = format!(
-            "{{
-            regexp: {to},
-        }}"
-        );
         if self.negated {
-            format!("{{not: {}}}", inner)
-        } else {
-            inner
+            filter_string.push_str("{not: ");
+        }
+        filter_string.push_str("{regexp: ");
+        filter_string.push_str(to);
+        filter_string.push('}');
+        if self.negated {
+            filter_string.push('}');
         }
     }
 }
 
 impl PropertyFilter for Vec<Box<dyn PropertyFilter>> {
-    fn to_filter(&self, var_allocator: &mut VarAllocator) -> String {
+    fn to_filter(&self, filter_string: &mut String, var_allocator: &mut VarAllocator) {
         match self.as_slice() {
-            [] => "has".to_string(),
-            [filter] => filter.to_filter(var_allocator),
+            [] => filter_string.push_str("has"),
+            [filter] => filter.to_filter(filter_string, var_allocator),
             filters => {
-                let ands = filters
-                    .iter()
-                    .map(|filter| filter.to_filter(var_allocator))
-                    .collect::<Vec<_>>()
-                    .join(",");
-
-                format!("{{and: [{}]}}", ands)
+                filter_string.push_str("{and: [");
+                for filter in filters {
+                    filter.to_filter(filter_string, var_allocator);
+                    filter_string.push_str(", ");
+                }
+                filter_string.push_str("]}");
             }
         }
     }
 }
 
 impl PropertyFilter for Vec<Vec<Box<dyn PropertyFilter>>> {
-    fn to_filter(&self, var_allocator: &mut VarAllocator) -> String {
+    fn to_filter(&self, filter_string: &mut String, var_allocator: &mut VarAllocator) {
         match self.as_slice() {
-            [] => "has".to_string(),
-            [filter] => filter.to_filter(var_allocator),
+            [] => filter_string.push_str("has"),
+            [filter] => filter.to_filter(filter_string, var_allocator),
             filters => {
-                let ors = filters
-                    .iter()
-                    .map(|filter| filter.to_filter(var_allocator))
-                    .collect::<Vec<_>>()
-                    .join(",");
-
-                format!("{{or: [{}]}}", ors)
+                filter_string.push_str("{or: [");
+                for filter in filters {
+                    filter.to_filter(filter_string, var_allocator);
+                    filter_string.push_str(", ");
+                }
+                filter_string.push_str("]}");
             }
         }
     }
@@ -248,13 +238,13 @@ impl NodeQuery {
 
     fn to_query(&self, var_allocator: &mut VarAllocator, query_string: &mut String) {
         query_string.push_str("(filter: ");
-        query_string.push_str(&self.to_filter(var_allocator));
+        self.to_filter(query_string, var_allocator);
         query_string.push(')');
 
         query_string.push('{');
         for property_name in self.property_filters.keys() {
-            query_string.push_str(property_name);
             query_string.push('\n');
+            query_string.push_str(property_name);
         }
         for (edge_name, edges) in self.edge_filters.iter() {
             for edge in edges {
@@ -284,17 +274,20 @@ impl NodeQuery {
 }
 
 impl NodeFilter for NodeQuery {
-    fn to_filter(&self, var_allocator: &mut VarAllocator) -> String {
-        let mut all_filters = Vec::with_capacity(self.property_filters.len());
+    fn to_filter(&self, filter_string: &mut String, var_allocator: &mut VarAllocator) {
+        if self.property_filters.len() > 1 {
+            filter_string.push('[');
+        }
         for (property_name, property_filters) in self.property_filters.iter() {
-            let filters = property_filters.to_filter(var_allocator);
-            all_filters.push(format!("{{{}: {}}}", property_name, filters));
+            filter_string.push('{');
+            filter_string.push_str(property_name);
+            filter_string.push(':');
+            property_filters.to_filter(filter_string, var_allocator);
+            filter_string.push_str("},");
         }
 
-        if all_filters.len() == 1 {
-            all_filters.into_iter().next().unwrap()
-        } else {
-            format!("[{}]", all_filters.join(", "))
+        if self.property_filters.len() > 1 {
+            filter_string.push(']');
         }
     }
 }
@@ -311,7 +304,11 @@ mod tests {
     #[test]
     fn test_filter() -> Result<(), Box<dyn std::error::Error>> {
         let q = NodeQuery::default()
-            .with_property_filters("propname", vec![StrEq::eq("foo").boxed()])
+            .with_property_filters(
+                "propname",
+                vec![StrEq::eq("foo").boxed(), StrEq::neq("bar").boxed()],
+            )
+            .with_property_filters("propname", vec![StrEq::eq("baz").boxed()])
             .with_edge_filters(
                 "edgename".to_string(),
                 vec![NodeQuery::default()
