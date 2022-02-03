@@ -20,6 +20,5 @@ install_hashicorp_tools
 install_cni_plugins
 install_nomad_chromeos_workaround
 install_nomad_firecracker
-install_git_hooks
 install_sqlx_prepare_deps
 install_docker # Do this last since it's not idempotent
