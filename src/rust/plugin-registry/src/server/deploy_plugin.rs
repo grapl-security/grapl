@@ -3,7 +3,11 @@ use std::collections::HashMap;
 use nomad_client_gen::models;
 
 use crate::{
-    db::client::PluginRow,
+    db::client::{
+        PluginDeploymentStatus,
+        PluginRegistryDbClient,
+        PluginRow,
+    },
     error::PluginRegistryServiceError,
     nomad::{
         cli::{
@@ -19,10 +23,11 @@ use crate::{
 };
 
 /// https://github.com/grapl-security/grapl-rfcs/blob/main/text/0000-plugins.md#deployplugin-details
-#[tracing::instrument(skip(client, cli, plugin), err)]
+#[tracing::instrument(skip(client, cli, db_client, plugin), err)]
 pub async fn deploy_plugin(
     client: &NomadClient,
     cli: &NomadCli,
+    db_client: &PluginRegistryDbClient,
     plugin: PluginRow,
     plugin_bucket_owner_id: &str,
 ) -> Result<(), PluginRegistryServiceError> {
@@ -62,12 +67,18 @@ pub async fn deploy_plugin(
         .map_err(|_| PluginRegistryServiceError::NomadJobAllocationError)?;
 
     // --- Start the job
-    let _job = client
+    let job_result = client
         .create_job(&job, job_name, Some(namespace_name.clone()))
-        .await?;
+        .await;
     // There's no guarantee that the job is *healthy*, just that it's been deployed.
 
     // --- If success, mark plugin as being deployed in `plugins` table
+    let status = PluginDeploymentStatus::from(&job_result);
+    db_client
+        .create_plugin_deployment(&plugin.plugin_id, status)
+        .await?;
+
+    job_result?;
 
     // TODO next CR. Right now all the plugins table interop is in the main
     //      server controller, gross!

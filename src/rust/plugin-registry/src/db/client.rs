@@ -1,5 +1,9 @@
 use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::plugin_registry::CreatePluginRequest;
+use sqlx::types::chrono::{
+    DateTime,
+    Utc,
+};
 
 #[derive(sqlx::FromRow)]
 pub struct PluginRow {
@@ -8,6 +12,30 @@ pub struct PluginRow {
     pub display_name: String,
     pub plugin_type: String,
     pub artifact_s3_key: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, sqlx::Type)]
+#[sqlx(type_name = "plugin_deployment_status", rename_all = "lowercase")]
+pub enum PluginDeploymentStatus {
+    Fail,
+    Success,
+}
+
+impl<T, E> From<&Result<T, E>> for PluginDeploymentStatus {
+    fn from(res: &Result<T, E>) -> Self {
+        match res.as_ref() {
+            Ok(_) => PluginDeploymentStatus::Success,
+            Err(_) => PluginDeploymentStatus::Fail,
+        }
+    }
+}
+
+#[derive(sqlx::FromRow)]
+pub struct PluginDeployment {
+    pub id: i32,
+    pub plugin_id: uuid::Uuid,
+    pub deploy_time: DateTime<Utc>,
+    pub status: PluginDeploymentStatus,
 }
 
 pub struct PluginRegistryDbClient {
@@ -59,6 +87,28 @@ impl PluginRegistryDbClient {
             &request.display_name,
             &request.tenant_id,
             s3_key,
+        )
+        .execute(&self.pool)
+        .await
+        .map(|_| ()) // Toss result
+    }
+
+    #[tracing::instrument(skip(self), err)]
+    pub async fn create_plugin_deployment(
+        &self,
+        plugin_id: &uuid::Uuid,
+        status: PluginDeploymentStatus,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query!(
+            r"
+            INSERT INTO plugin_deployment (
+                plugin_id,
+                status
+            )
+            VALUES ($1::uuid, $2);
+            ",
+            plugin_id,
+            status as _,
         )
         .execute(&self.pool)
         .await

@@ -47,8 +47,8 @@ use tonic::{
 
 use crate::{
     db::client::{
-        PluginRow,
         PluginRegistryDbClient,
+        PluginRow,
     },
     error::PluginRegistryServiceError,
     nomad::{
@@ -214,6 +214,7 @@ impl PluginRegistry {
         deploy_plugin::deploy_plugin(
             &self.nomad_client,
             &self.nomad_cli,
+            &self.db_client,
             plugin_row,
             &self.plugin_bucket_owner_id,
         )

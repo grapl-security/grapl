@@ -1,5 +1,28 @@
 {
   "db": "PostgreSQL",
+  "59991d338dfedafd140ece1f94cec67df8734490a5ccca581ae9c1d0507f003d": {
+    "query": "\n            INSERT INTO plugin_deployment (\n                plugin_id,\n                status\n            )\n            VALUES ($1::uuid, $2);\n            ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          {
+            "Custom": {
+              "name": "plugin_deployment_status",
+              "kind": {
+                "Enum": [
+                  "fail",
+                  "success"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "nullable": []
+    }
+  },
   "c57567e93fa4914365fffaf15b1a6937f28b5ee1e8ed28d569ee66035926cd0e": {
     "query": "\n            INSERT INTO plugins (\n                plugin_id,\n                plugin_type,\n                display_name,\n                tenant_id,\n                artifact_s3_key\n            )\n            VALUES ($1::uuid, $2, $3, $4::uuid, $5)\n            ON CONFLICT DO NOTHING;\n            ",
     "describe": {
