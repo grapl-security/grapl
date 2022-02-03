@@ -206,50 +206,60 @@ install_hashicorp_tools() {
     sudo apt-get install -y consul nomad packer vault
 }
 
+# Download and install a tarball.
+#
+# Assumptions:
+# - URL is HTTPS
+# - URL is for a tar.gz file
+# - Target directory must be created / written to with root permissions
+download_and_install_tarball() {
+    local -r url="${1}"
+    local -r target_dir="${2}"
+
+    sudo mkdir --parents "${target_dir}"
+
+    file_name="$(basename "${url}")"
+
+    curl --proto "=https" \
+        --tlsv1.2 \
+        --location \
+        --remote-name \
+        "${url}"
+
+    sudo tar --extract \
+        --directory="${target_dir}" \
+        --file="${file_name}"
+
+    rm "${file_name}"
+}
+
 install_cni_plugins() {
     echo_banner "Installing CNI plugins required for Nomad bridge networks"
-    sudo mkdir -p /opt/cni/bin
-    cd /opt/cni/bin || exit 2
-    REPO="containernetworking/plugins"
-    VERSION=$(get_latest_release "${REPO}")
-    TGZ_NAME="cni-plugins-linux-amd64-${VERSION}.tgz"
-    sudo curl --proto "=https" \
-         --tlsv1.2 \
-         --location \
-         --remote-name \
-         "https://github.com/${REPO}/releases/download/${VERSION}/${TGZ_NAME}"
-    sudo tar -xf "${TGZ_NAME}"
-    sudo rm "${TGZ_NAME}"
+
+    repo="containernetworking/plugins"
+    version="$(get_latest_release "${repo}")"
+
+    download_and_install_tarball \
+        "https://github.com/${repo}/releases/download/${version}/cni-plugins-linux-amd64-${version}.tgz" \
+        /opt/cni/bin
 }
 
 install_nomad_firecracker() {
     echo_banner "Installing Firecracker nomad plugins"
-    sudo mkdir -p /opt/nomad/plugins
-    cd /opt/nomad/plugins || exit 2
 
-    REPO="cneira/firecracker-task-driver"
-    VERSION=$(get_latest_release "${REPO}")
-    DRIVER_TGZ_NAME="firecracker-task-driver-${VERSION}.tar.gz"
-    sudo curl --proto "=https" \
-         --tlsv1.2 \
-         --location \
-         --remote-name \
-         "https://github.com/${REPO}/releases/download/${VERSION}/${DRIVER_TGZ_NAME}"
-    sudo tar -xf "${DRIVER_TGZ_NAME}"
-    sudo rm "${DRIVER_TGZ_NAME}"
+    repo="cneira/firecracker-task-driver"
+    version=$(get_latest_release "${repo}")
+
+    url_prefix="https://github.com/${repo}/releases/download/${version}"
+
+    download_and_install_tarball \
+        "${url_prefix}/firecracker-task-driver-${version}.tar.gz" \
+        /opt/nomad/plugins
 
     echo_banner "Installing Firecracker nomad CNI plugins"
-    sudo mkdir -p /opt/cni/bin
-    cd /opt/cni/bin || exit 2
-
-    CNI_TGZ_NAME="firecracker-task-driver-cni-plugins-${VERSION}.tar.gz"
-    sudo curl --proto "=https" \
-         --tlsv1.2 \
-         --location \
-         --remote-name \
-         "https://github.com/${REPO}/releases/download/${VERSION}/${CNI_TGZ_NAME}"
-    sudo tar -xf "${CNI_TGZ_NAME}"
-    sudo rm "${CNI_TGZ_NAME}"
+    download_and_install_tarball \
+        "${url_prefix}/firecracker-task-driver-cni-plugins-${version}.tar.gz" \
+        /opt/cni/bin
 }
 
 install_nomad_chromeos_workaround() {
