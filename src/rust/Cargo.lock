@@ -1870,6 +1870,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "graph-query"
+version = "0.1.0"
+dependencies = [
+ "dgraph-tonic",
+ "fnv",
+ "graphql-parser",
+ "serde",
+ "serde_json",
+ "tokio 1.16.1",
+ "uuid",
+]
+
+[[package]]
 name = "graphql-parser"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
