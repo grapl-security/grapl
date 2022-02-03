@@ -13,9 +13,6 @@ pub trait PropertyFilter {
     }
 }
 
-pub trait NodeFilter {
-    fn to_filter(&self, filter_string: &mut String, var_allocator: &mut VarAllocator);
-}
 
 #[derive(Clone)]
 pub struct IntEq {
@@ -236,6 +233,23 @@ impl NodeQuery {
         self
     }
 
+    fn to_filter(&self, filter_string: &mut String, var_allocator: &mut VarAllocator) {
+        if self.property_filters.len() > 1 {
+            filter_string.push('[');
+        }
+        for (property_name, property_filters) in self.property_filters.iter() {
+            filter_string.push('{');
+            filter_string.push_str(property_name);
+            filter_string.push(':');
+            property_filters.to_filter(filter_string, var_allocator);
+            filter_string.push_str("},");
+        }
+
+        if self.property_filters.len() > 1 {
+            filter_string.push(']');
+        }
+    }
+
     fn to_query(&self, var_allocator: &mut VarAllocator, query_string: &mut String) {
         query_string.push_str("(filter: ");
         self.to_filter(query_string, var_allocator);
@@ -273,25 +287,6 @@ impl NodeQuery {
     }
 }
 
-impl NodeFilter for NodeQuery {
-    fn to_filter(&self, filter_string: &mut String, var_allocator: &mut VarAllocator) {
-        if self.property_filters.len() > 1 {
-            filter_string.push('[');
-        }
-        for (property_name, property_filters) in self.property_filters.iter() {
-            filter_string.push('{');
-            filter_string.push_str(property_name);
-            filter_string.push(':');
-            property_filters.to_filter(filter_string, var_allocator);
-            filter_string.push_str("},");
-        }
-
-        if self.property_filters.len() > 1 {
-            filter_string.push(']');
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use graphql_parser::query::{
@@ -316,7 +311,6 @@ mod tests {
             );
 
         let query = q.to_root_query();
-        println!("{}", query);
 
         let _query: Document<&str> = parse_query(&query)?;
         Ok(())
