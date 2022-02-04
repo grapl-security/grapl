@@ -137,7 +137,7 @@ class Postgres(pulumi.ComponentResource):
         ), "Database name must be alpha+alphanumeric"
 
         instance_name = f"{name}-instance"
-        self.instance = aws.rds.Instance(
+        self._instance = aws.rds.Instance(
             instance_name,
             identifier=instance_name,
             name=database_name,  # See above diatribe
@@ -162,3 +162,16 @@ class Postgres(pulumi.ComponentResource):
             port=postgres_port,
             opts=child_opts,
         )
+
+    def host(self) -> pulumi.Output[str]:
+        return self._instance.address
+
+    def port(self) -> pulumi.Output[int]:
+        return self._instance.port
+
+    def username(self) -> pulumi.Output[str]:
+        return self._instance.username
+
+    def password(self) -> pulumi.Output[str]:
+        # just to be safe...
+        return pulumi.Output.secret(self._instance.password)

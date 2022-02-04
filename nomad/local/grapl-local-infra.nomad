@@ -67,13 +67,13 @@ variable "PLUGIN_WORK_QUEUE_DB_PASSWORD" {
 
 
 variable "PLUGIN_REGISTRY_DB_PORT" {
-  type        = string
+  type        = int
   description = "The port for the plugin registry db"
 }
 
 
 variable "PLUGIN_WORK_QUEUE_DB_PORT" {
-  type        = string
+  type        = int
   description = "The port for the plugin work queue db"
 }
 

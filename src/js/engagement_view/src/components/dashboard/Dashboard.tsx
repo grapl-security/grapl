@@ -57,9 +57,7 @@ export default function Dashboard() {
                         {" "}
                         Upload Plugin{" "}
                     </Link>
-                    <Button
-                        className={classes.sagemaker}
-                    >
+                    <Button className={classes.sagemaker}>
                         {" "}
                         Engagement Notebook{" "}
                     </Button>

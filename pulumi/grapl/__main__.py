@@ -233,7 +233,7 @@ def main() -> None:
         )
 
         pulumi.export("plugin-work-queue-db-hostname", "LOCAL_GRAPL_REPLACE_IP")
-        pulumi.export("plugin-work-queue-db-port", str(plugin_work_queue_db.port))
+        pulumi.export("plugin-work-queue-db-port", plugin_work_queue_db.port)
         pulumi.export("plugin-work-queue-db-username", plugin_work_queue_db.username)
         pulumi.export("plugin-work-queue-db-password", plugin_work_queue_db.password)
 
@@ -259,11 +259,11 @@ def main() -> None:
             container_images=_container_images({}),
             rust_log=rust_log_levels,
             plugin_registry_db_hostname="LOCAL_GRAPL_REPLACE_IP",
-            plugin_registry_db_port=str(plugin_registry_db.port),
+            plugin_registry_db_port=plugin_registry_db.port,
             plugin_registry_db_username=plugin_registry_db.username,
             plugin_registry_db_password=plugin_registry_db.password,
             plugin_work_queue_db_hostname="LOCAL_GRAPL_REPLACE_IP",
-            plugin_work_queue_db_port=str(plugin_work_queue_db.port),
+            plugin_work_queue_db_port=plugin_work_queue_db.port,
             plugin_work_queue_db_username=plugin_work_queue_db.username,
             plugin_work_queue_db_password=plugin_work_queue_db.password,
             py_log_level=py_log_level,
@@ -395,32 +395,26 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
+        pulumi.export("plugin-registry-db-hostname", plugin_registry_postgres.host())
+        pulumi.export("plugin-registry-db-port", plugin_registry_postgres.port())
         pulumi.export(
-            "plugin-registry-db-hostname", plugin_registry_postgres.instance.address
+            "plugin-registry-db-username", plugin_registry_postgres.username()
         )
         pulumi.export(
-            "plugin-registry-db-port", str(plugin_registry_postgres.instance.port)
-        )
-        pulumi.export(
-            "plugin-registry-db-username", plugin_registry_postgres.instance.username
-        )
-        pulumi.export(
-            "plugin-registry-db-password", plugin_registry_postgres.instance.password
+            "plugin-registry-db-password", plugin_registry_postgres.password()
         )
 
         pulumi.export(
-            "plugin-work-queue-db-hostname", plugin_work_queue_postgres.instance.address
+            "plugin-work-queue-db-hostname", plugin_work_queue_postgres.host()
         )
-        pulumi.export(
-            "plugin-work-queue-db-port", str(plugin_work_queue_postgres.instance.port)
-        )
+        pulumi.export("plugin-work-queue-db-port", plugin_work_queue_postgres.port())
         pulumi.export(
             "plugin-work-queue-db-username",
-            plugin_work_queue_postgres.instance.username,
+            plugin_work_queue_postgres.username(),
         )
         pulumi.export(
             "plugin-work-queue-db-password",
-            plugin_work_queue_postgres.instance.password,
+            plugin_work_queue_postgres.password(),
         )
 
         pulumi.export("kafka-bootstrap-servers", kafka.bootstrap_servers())
@@ -449,16 +443,14 @@ def main() -> None:
             # instead of the var version.
             _redis_endpoint=cache.endpoint,
             container_images=_container_images(artifacts, require_artifact=True),
-            plugin_registry_db_hostname=plugin_registry_postgres.instance.address,
-            plugin_registry_db_port=plugin_registry_postgres.instance.port.apply(str),
-            plugin_registry_db_username=plugin_registry_postgres.instance.username,
-            plugin_registry_db_password=plugin_registry_postgres.instance.password,
-            plugin_work_queue_db_hostname=plugin_work_queue_postgres.instance.address,
-            plugin_work_queue_db_port=plugin_work_queue_postgres.instance.port.apply(
-                str
-            ),
-            plugin_work_queue_db_username=plugin_work_queue_postgres.instance.username,
-            plugin_work_queue_db_password=plugin_work_queue_postgres.instance.password,
+            plugin_registry_db_hostname=plugin_registry_postgres.host(),
+            plugin_registry_db_port=plugin_registry_postgres.port().apply(str),
+            plugin_registry_db_username=plugin_registry_postgres.username(),
+            plugin_registry_db_password=plugin_registry_postgres.password(),
+            plugin_work_queue_db_hostname=plugin_work_queue_postgres.host(),
+            plugin_work_queue_db_port=plugin_work_queue_postgres.port().apply(str),
+            plugin_work_queue_db_username=plugin_work_queue_postgres.username(),
+            plugin_work_queue_db_password=plugin_work_queue_postgres.password(),
             py_log_level=py_log_level,
             rust_log=rust_log_levels,
             **nomad_inputs,
