@@ -175,7 +175,9 @@ class GraplStack:
         self.kafka_bootstrap_servers = require_str("kafka-bootstrap-servers")
         self.kafka_e2e_sasl_username = require_str("kafka-e2e-sasl-username")
         self.kafka_e2e_sasl_password = require_str("kafka-e2e-sasl-password")
-        self.kafka_e2e_consumer_group_name = require_str("kafka-e2e-consumer-group-name")
+        self.kafka_e2e_consumer_group_name = require_str(
+            "kafka-e2e-consumer-group-name"
+        )
 
 
 if __name__ == "__main__":

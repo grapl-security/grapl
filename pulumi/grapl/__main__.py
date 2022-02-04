@@ -216,7 +216,9 @@ def main() -> None:
     pulumi.export(
         "kafka-e2e-sasl-password", e2e_service_credentials.apply(lambda c: c.api_secret)
     )
-    pulumi.export("kafka-e2e-consumer-group-name", kafka.consumer_group("e2e-test-runner"))
+    pulumi.export(
+        "kafka-e2e-consumer-group-name", kafka.consumer_group("e2e-test-runner")
+    )
 
     if config.LOCAL_GRAPL:
         ###################################

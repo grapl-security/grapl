@@ -72,7 +72,7 @@ def test_can_write_metrics(kafka_producer: Producer) -> None:
             topic="metrics",
             key=f"e2e-test|{msg_id}",  # TODO: write valid metrics instead
             value=f"e2e-test|{msg_id}",
-            on_delivery=_producer_callback
+            on_delivery=_producer_callback,
         )
 
     kafka_producer.flush()
@@ -93,7 +93,7 @@ def test_can_write_logs(kafka_producer: Producer) -> None:
             topic="logs",
             key=f"e2e-test|{msg_id}",
             value=f"e2e-test|{msg_id}",
-            on_delivery=_producer_callback
+            on_delivery=_producer_callback,
         )
 
     kafka_producer.flush()
