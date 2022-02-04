@@ -112,9 +112,6 @@ src
                 - Check to see if user is logged in for each route
         |____loginService.tsx
                 - Request to validate credentials
-    |____sagemakerNotebook
-        |____notebookService.tsx
-                - Retrieves URL to open SageMaker Jupyter Notebook
     |____uploadPlugin
         |____deletePlugin.tsx 
                 - Request to delete a plugin
