@@ -31,7 +31,7 @@ impl<T, E> From<&Result<T, E>> for PluginDeploymentStatus {
 }
 
 #[derive(sqlx::FromRow)]
-pub struct PluginDeployment {
+pub struct PluginDeploymentRow {
     pub id: i32,
     pub plugin_id: uuid::Uuid,
     pub deploy_time: DateTime<Utc>,
@@ -57,6 +57,29 @@ impl PluginRegistryDbClient {
             FROM plugins
             WHERE plugin_id = $1
             ",
+            plugin_id
+        )
+        .fetch_one(&self.pool)
+        .await
+    }
+
+    #[tracing::instrument(skip(self), err)]
+    pub async fn get_plugin_deployment(
+        &self,
+        plugin_id: &uuid::Uuid,
+    ) -> Result<PluginDeploymentRow, sqlx::Error> {
+        sqlx::query_as!(
+            PluginDeploymentRow,
+            r#"
+            SELECT
+                id,
+                plugin_id,
+                deploy_time,
+                status AS "status: PluginDeploymentStatus"
+            FROM plugin_deployment
+            WHERE plugin_id = $1
+            ORDER BY id desc limit 1;
+            "#,
             plugin_id
         )
         .fetch_one(&self.pool)

@@ -23,6 +23,54 @@
       "nullable": []
     }
   },
+  "5a1b633a47279ec559e797b2d76abb94d85ebf1853cb7b7e9fa4d3b6f633d5f8": {
+    "query": "\n            SELECT\n                id,\n                plugin_id,\n                deploy_time,\n                status AS \"status: PluginDeploymentStatus\"\n            FROM plugin_deployment\n            WHERE plugin_id = $1\n            ORDER BY id desc limit 1;\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 1,
+          "name": "plugin_id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 2,
+          "name": "deploy_time",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 3,
+          "name": "status: PluginDeploymentStatus",
+          "type_info": {
+            "Custom": {
+              "name": "plugin_deployment_status",
+              "kind": {
+                "Enum": [
+                  "fail",
+                  "success"
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ]
+    }
+  },
   "c57567e93fa4914365fffaf15b1a6937f28b5ee1e8ed28d569ee66035926cd0e": {
     "query": "\n            INSERT INTO plugins (\n                plugin_id,\n                plugin_type,\n                display_name,\n                tenant_id,\n                artifact_s3_key\n            )\n            VALUES ($1::uuid, $2, $3, $4::uuid, $5)\n            ON CONFLICT DO NOTHING;\n            ",
     "describe": {
