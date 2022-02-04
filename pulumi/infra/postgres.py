@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, cast
 
 import pulumi_aws as aws
 import pulumi_random as random
@@ -164,13 +164,16 @@ class Postgres(pulumi.ComponentResource):
         )
 
     def host(self) -> pulumi.Output[str]:
-        return self._instance.address
+        # Cast needed due to https://github.com/pulumi/pulumi/issues/7679
+        return cast(pulumi.Output[str], self._instance.address)
 
     def port(self) -> pulumi.Output[int]:
-        return self._instance.port
+        # Cast needed due to https://github.com/pulumi/pulumi/issues/7679
+        return cast(pulumi.Output[int], self._instance.port)
 
     def username(self) -> pulumi.Output[str]:
-        return self._instance.username
+        # Cast needed due to https://github.com/pulumi/pulumi/issues/7679
+        return cast(pulumi.Output[str], self._instance.username)
 
     def password(self) -> pulumi.Output[str]:
         # just to be safe...
