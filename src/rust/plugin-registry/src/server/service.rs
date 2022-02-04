@@ -46,9 +46,9 @@ use tonic::{
 };
 
 use crate::{
-    db::client::{
-        PluginRegistryDbClient,
-        PluginRow,
+    db::{
+        client::PluginRegistryDbClient,
+        models::PluginRow,
     },
     error::PluginRegistryServiceError,
     nomad::{

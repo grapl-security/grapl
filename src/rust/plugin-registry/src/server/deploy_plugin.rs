@@ -3,10 +3,12 @@ use std::collections::HashMap;
 use nomad_client_gen::models;
 
 use crate::{
-    db::client::{
-        PluginDeploymentStatus,
-        PluginRegistryDbClient,
-        PluginRow,
+    db::{
+        client::PluginRegistryDbClient,
+        models::{
+            PluginDeploymentStatus,
+            PluginRow,
+        },
     },
     error::PluginRegistryServiceError,
     nomad::{
