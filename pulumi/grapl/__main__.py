@@ -233,7 +233,7 @@ def main() -> None:
         )
 
         pulumi.export("plugin-work-queue-db-hostname", "LOCAL_GRAPL_REPLACE_IP")
-        pulumi.export("plugin-work-queue-db-port", plugin_work_queue_db.port)
+        pulumi.export("plugin-work-queue-db-port", str(plugin_work_queue_db.port))
         pulumi.export("plugin-work-queue-db-username", plugin_work_queue_db.username)
         pulumi.export("plugin-work-queue-db-password", plugin_work_queue_db.password)
 
@@ -259,11 +259,11 @@ def main() -> None:
             container_images=_container_images({}),
             rust_log=rust_log_levels,
             plugin_registry_db_hostname="LOCAL_GRAPL_REPLACE_IP",
-            plugin_registry_db_port=plugin_registry_db.port,
+            plugin_registry_db_port=str(plugin_registry_db.port),
             plugin_registry_db_username=plugin_registry_db.username,
             plugin_registry_db_password=plugin_registry_db.password,
             plugin_work_queue_db_hostname="LOCAL_GRAPL_REPLACE_IP",
-            plugin_work_queue_db_port=plugin_work_queue_db.port,
+            plugin_work_queue_db_port=str(plugin_work_queue_db.port),
             plugin_work_queue_db_username=plugin_work_queue_db.username,
             plugin_work_queue_db_password=plugin_work_queue_db.password,
             py_log_level=py_log_level,
@@ -396,7 +396,9 @@ def main() -> None:
         )
 
         pulumi.export("plugin-registry-db-hostname", plugin_registry_postgres.host())
-        pulumi.export("plugin-registry-db-port", plugin_registry_postgres.port())
+        pulumi.export(
+            "plugin-registry-db-port", plugin_registry_postgres.port().apply(str)
+        )
         pulumi.export(
             "plugin-registry-db-username", plugin_registry_postgres.username()
         )
@@ -407,7 +409,9 @@ def main() -> None:
         pulumi.export(
             "plugin-work-queue-db-hostname", plugin_work_queue_postgres.host()
         )
-        pulumi.export("plugin-work-queue-db-port", plugin_work_queue_postgres.port())
+        pulumi.export(
+            "plugin-work-queue-db-port", plugin_work_queue_postgres.port().apply(str)
+        )
         pulumi.export(
             "plugin-work-queue-db-username",
             plugin_work_queue_postgres.username(),
