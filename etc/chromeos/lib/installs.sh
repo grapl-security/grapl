@@ -215,6 +215,8 @@ install_hashicorp_tools() {
 # - The tarball has all its contents at the root of the
 #   archive. Everything in the archive will be moved as-is into the
 #   destination directory.
+# - All the things in the tarball will be given 755 permissions, and
+#   will be owned by root:root
 download_and_install_tarball() {
     local -r url="${1}"
     local -r target_dir="${2}"
@@ -238,10 +240,16 @@ download_and_install_tarball() {
         --directory="${temp_dir}" \
         --file="${file_name}"
 
+    # The permissions for the firecracker-task-driver currently come
+    # as 775, rather than 755; all the CNI plugins are already
+    # 755. This just takes care of all of them at once
+    chmod --recursive --verbose 0755 "${temp_dir}"/*
+
     # Create the destination and move everything to it.
     #
     # These are the only commands that need sudo privileges.
     sudo mkdir --parents "${target_dir}"
+    sudo chown root:root "${temp_dir}"/*
     sudo mv "${temp_dir}"/* "${target_dir}"
 
     # Show the contents of the target_dir for visibility and debugging
