@@ -140,13 +140,6 @@ services:
       dockerfile: Dockerfile
       target: graphql-endpoint-deploy
 
-  notebook:
-    image: notebook:${TAG:-latest}
-    build:
-      context: .
-      dockerfile: ./src/python/Dockerfile
-      target: grapl-notebook
-
   ########################################################################
   # Utility Services
   ########################################################################

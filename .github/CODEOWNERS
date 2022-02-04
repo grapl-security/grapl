@@ -47,7 +47,6 @@ BUILD @christophermaier
 /src/python/grapl_analyzerlib/ @colin-grapl
 /src/python/grapl-common/ @wimax-grapl
 /src/python/graplctl/ @jgrillo-grapl
-/src/python/grapl-notebook/ @wimax-grapl
 /src/python/grapl-template-generator/ @wimax-grapl @colin-grapl
 /src/python/grapl-tests-common/ @wimax-grapl
 /src/python/mypy.ini @christophermaier @wimax-grapl

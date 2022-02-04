@@ -53,17 +53,6 @@ CMD ["./e2e-tests.pex"]
 
 ENV PATH=/home/grapl/bin:$PATH
 
-# grapl-notebook
-################################################################################
-FROM grapl-python-base AS grapl-notebook
-EXPOSE 8888
-RUN pip install --no-cache-dir jupyter==1.0.0 \
-    && mkdir -p grapl-notebook/model_plugins
-COPY --chown=grapl src/python/grapl-notebook/jupyter_notebook_config.py /home/grapl/.jupyter/
-COPY --chown=grapl src/python/grapl-notebook/Demo_Engagement.ipynb /home/grapl/grapl-notebook/
-WORKDIR /home/grapl/grapl-notebook
-CMD ["jupyter", "notebook", "--ip", "0.0.0.0"]
-
 # python-integration-tests
 ################################################################################
 FROM grapl-python-base AS python-integration-tests
