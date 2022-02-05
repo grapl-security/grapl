@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, cast
 
 import pulumi_aws as aws
 import pulumi_random as random
@@ -137,7 +137,7 @@ class Postgres(pulumi.ComponentResource):
         ), "Database name must be alpha+alphanumeric"
 
         instance_name = f"{name}-instance"
-        self.instance = aws.rds.Instance(
+        self._instance = aws.rds.Instance(
             instance_name,
             identifier=instance_name,
             name=database_name,  # See above diatribe
@@ -162,3 +162,19 @@ class Postgres(pulumi.ComponentResource):
             port=postgres_port,
             opts=child_opts,
         )
+
+    def host(self) -> pulumi.Output[str]:
+        # Cast needed due to https://github.com/pulumi/pulumi/issues/7679
+        return cast(pulumi.Output[str], self._instance.address)
+
+    def port(self) -> pulumi.Output[int]:
+        # Cast needed due to https://github.com/pulumi/pulumi/issues/7679
+        return cast(pulumi.Output[int], self._instance.port)
+
+    def username(self) -> pulumi.Output[str]:
+        # Cast needed due to https://github.com/pulumi/pulumi/issues/7679
+        return cast(pulumi.Output[str], self._instance.username)
+
+    def password(self) -> pulumi.Output[str]:
+        # just to be safe...
+        return pulumi.Output.secret(self._instance.password)
