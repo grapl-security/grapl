@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Any, Mapping, Optional, Sequence, cast
+from typing import Any, Mapping, Optional, Sequence, TypeVar, cast
 
 from pulumi.stack_reference import StackReference
 from pulumi_kafka import Provider
@@ -43,6 +43,7 @@ class Service:
     ingress_topics: Sequence[str]
     egress_topics: Sequence[str]
     service_account: Credential
+    consumer_group_name: Optional[str] = None
 
     @staticmethod
     def from_json(data: Mapping[str, Any]) -> Service:
@@ -50,6 +51,7 @@ class Service:
             ingress_topics=data["ingress_topics"],
             egress_topics=data["egress_topics"],
             service_account=Credential.from_json(data["service_account"]),
+            consumer_group_name=data.get("consumer_group_name"),
         )
 
 
@@ -181,3 +183,21 @@ class Kafka(pulumi.ComponentResource):
             return self.confluent_environment.apply(
                 lambda e: e.services[service_name].service_account
             )
+
+    def consumer_group(self, service_name: str) -> pulumi.Output[str]:
+        if self.confluent_environment is None:
+            return pulumi.Output.from_input("e2e-test-runner")
+        else:
+            return self.confluent_environment.apply(
+                lambda e: _expect(e.services[service_name].consumer_group_name)
+            )
+
+
+T = TypeVar("T")
+
+
+def _expect(val: Optional[T]) -> T:
+    if val is None:
+        raise Exception("expected value to be present")
+    else:
+        return val

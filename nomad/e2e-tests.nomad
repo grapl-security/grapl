@@ -77,6 +77,11 @@ variable "kafka_sasl_password" {
   description = "The Confluent Cloud API secret to configure producers and consumers with."
 }
 
+variable "kafka_consumer_group_name" {
+  type        = string
+  description = "The name of the consumer group the e2e test consumers will join."
+}
+
 variable "test_user_name" {
   type        = string
   description = "The name of the test user"
@@ -220,9 +225,10 @@ EOF
         RUST_BACKTRACE = 1
         RUST_LOG       = local.log_level
 
-        KAFKA_BOOTSTRAP_SERVERS = local.kafka_bootstrap_servers
-        KAFKA_SASL_USERNAME     = var.kafka_sasl_username
-        KAFKA_SASL_PASSWORD     = var.kafka_sasl_password
+        KAFKA_BOOTSTRAP_SERVERS   = local.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME       = var.kafka_sasl_username
+        KAFKA_SASL_PASSWORD       = var.kafka_sasl_password
+        KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_group_name
       }
     }
   }
