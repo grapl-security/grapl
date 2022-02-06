@@ -493,7 +493,7 @@ impl NodeCell {
         let inner_self = self.0.clone();
         let inner_self: &RefCell<NodeQuery> = inner_self.borrow();
         let inner_self = inner_self.borrow();
-        // Always prefer uid - seriously, it is *incorrect* not to
+        // When `with_uid` is called this is guaranteed to be populated
         if let Some(uids) = inner_self.property_filters.get("uid") {
             uids[0][0].to_filter("uid", query_string, var_allocator);
         }
