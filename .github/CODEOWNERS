@@ -62,6 +62,7 @@ BUILD @christophermaier
 /src/rust/endpoint-plugin/ @inickles-grapl
 /src/rust/generators/ @inickles-grapl
 /src/rust/graph-merger/ @grapl-security/wg-data-infra
+/src/rust/graph-query/ @colin-grapl
 /src/rust/grapl-config/ @inickles-grapl @wimax-grapl
 /src/rust/grapl-graphql-codegen/ @colin-grapl
 /src/rust/grapl/ @inickles-grapl
