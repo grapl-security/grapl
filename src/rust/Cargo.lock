@@ -1875,7 +1875,6 @@ version = "0.1.0"
 dependencies = [
  "dgraph-tonic",
  "fnv",
- "graphql-parser",
  "serde",
  "serde_json",
  "tokio 1.16.1",

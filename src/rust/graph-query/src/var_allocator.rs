@@ -1,5 +1,6 @@
 use fnv::FnvHashMap as HashMap;
 
+#[derive(Clone)]
 pub struct VarAllocator {
     variables: HashMap<String, String>,
     variable: Vec<u8>,
@@ -19,12 +20,23 @@ impl Default for VarAllocator {
 impl VarAllocator {
     pub(crate) fn variable_string(&self) -> String {
         let mut variables =
-            String::with_capacity((2 * self.variables.len()) + (9 * self.variables.len()));
-        for variable_name in self.variables.values() {
+            String::with_capacity((2 * self.variables.len()) + (8 * self.variables.len()));
+        for (i, variable_name) in self.variables.values().enumerate() {
             variables.push_str(variable_name);
-            variables.push_str(":String!,");
+            variables.push_str(":string");
+            if i < self.variables.len() - 1 {
+                variables.push(',');
+            }
         }
         variables
+    }
+
+    pub fn variable_map(self) -> std::collections::HashMap<String, String> {
+        let mut map = std::collections::HashMap::with_capacity(self.variables.len());
+        for (k, v) in self.variables.into_iter() {
+            map.insert(v, k);
+        }
+        map
     }
 
     pub fn alloc(&mut self, value: String) -> &str {

@@ -13,4 +13,8 @@ tokio = { version = "1.16.1", features = ["full"] }
 uuid = { version = "0.8.2", features = ["v4"] }
 
 [dev-dependencies]
-graphql-parser = "0.4.0"
+dgraph-tonic = "0.10.0"
+
+
+[features]
+integration = []
