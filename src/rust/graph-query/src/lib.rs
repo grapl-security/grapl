@@ -62,7 +62,7 @@ impl PropertyFilter for IntEq {
             filter_string.push_str("NOT(");
         }
         filter_string.push_str("eq(");
-        filter_string.push_str(&property_name);
+        filter_string.push_str(property_name);
         filter_string.push(',');
         filter_string.push_str(&self.to.to_string());
         filter_string.push(')');
@@ -100,7 +100,6 @@ impl PropertyFilter for UidEq {
     }
 }
 
-
 #[derive(Clone)]
 pub struct IntLt {
     to: u64,
@@ -124,7 +123,7 @@ impl PropertyFilter for IntLt {
             filter_string.push_str("NOT(");
         }
         filter_string.push_str("lt(");
-        filter_string.push_str(&property_name);
+        filter_string.push_str(property_name);
         filter_string.push(',');
         filter_string.push_str(&self.to.to_string());
         filter_string.push(')');
@@ -157,7 +156,7 @@ impl PropertyFilter for IntGt {
             filter_string.push_str("NOT(");
         }
         filter_string.push_str("gt(");
-        filter_string.push_str(&property_name);
+        filter_string.push_str(property_name);
         filter_string.push(',');
         filter_string.push_str(&self.to.to_string());
         filter_string.push(')');
@@ -208,7 +207,7 @@ impl PropertyFilter for StrEq {
             filter_string.push_str("NOT(");
         }
         filter_string.push_str("eq(");
-        filter_string.push_str(&property_name);
+        filter_string.push_str(property_name);
         filter_string.push(',');
         filter_string.push_str(to);
         filter_string.push(')');
@@ -246,7 +245,7 @@ impl PropertyFilter for StrRegex {
             filter_string.push_str("NOT(");
         }
         filter_string.push_str("regexp(");
-        filter_string.push_str(&property_name);
+        filter_string.push_str(property_name);
         filter_string.push(',');
         filter_string.push_str(to);
         filter_string.push(')');
@@ -267,14 +266,14 @@ impl PropertyFilter for Vec<Box<dyn PropertyFilter>> {
             [] => (),
             [filter] => filter.to_filter(property_name, filter_string, var_allocator),
             filters => {
-                filter_string.push_str("(");
+                filter_string.push('(');
                 for (i, filter) in filters.iter().enumerate() {
                     filter.to_filter(property_name, filter_string, var_allocator);
                     if i < filters.len() - 1 {
                         filter_string.push_str(" AND ");
                     }
                 }
-                filter_string.push_str(")");
+                filter_string.push(')');
             }
         }
     }
@@ -291,14 +290,14 @@ impl PropertyFilter for Vec<Vec<Box<dyn PropertyFilter>>> {
             [] => (),
             [filter] => filter.to_filter(property_name, filter_string, var_allocator),
             filters => {
-                filter_string.push_str("(");
+                filter_string.push(')');
                 for (i, filter) in filters.iter().enumerate() {
                     filter.to_filter(property_name, filter_string, var_allocator);
                     if i < filters.len() - 1 {
                         filter_string.push_str(" OR ");
                     }
                 }
-                filter_string.push_str(")");
+                filter_string.push(')');
             }
         }
     }
@@ -575,7 +574,7 @@ impl NodeQuery {
                 let inner_edge: &RefCell<NodeQuery> = inner_edge.borrow();
                 let inner_edge = inner_edge.borrow();
 
-                if self.already_visited(&edge_name, edge.get_id(), visited) {
+                if self.already_visited(edge_name, edge.get_id(), visited) {
                     continue;
                 }
 

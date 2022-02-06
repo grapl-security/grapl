@@ -1,14 +1,19 @@
 #![cfg(feature = "integration")]
 
-
 #[cfg(test)]
 mod tests {
-    use graph_query::{NodeCell, PropertyFilter, StrEq};
-    use dgraph_tonic::Client as DgraphClient;
-    use dgraph_tonic::Query;
+    use dgraph_tonic::{
+        Client as DgraphClient,
+        Query,
+    };
+    use graph_query::{
+        NodeCell,
+        PropertyFilter,
+        StrEq,
+    };
 
     #[tokio::test]
-    async fn integration_test() -> Result<(), Box<dyn std::error::Error>>{
+    async fn integration_test() -> Result<(), Box<dyn std::error::Error>> {
         let client = DgraphClient::new("http://localhost:9080")?;
         let mut txn = client.new_read_only_txn();
 
@@ -27,7 +32,9 @@ mod tests {
         let (query_string, vars) = query.with_uid(1234);
 
         // We're only querying DGraph in order to validate the query's syntax
-        let _response = txn.query_with_vars(query_string, vars.variable_map()).await?;
+        let _response = txn
+            .query_with_vars(query_string, vars.variable_map())
+            .await?;
 
         Ok(())
     }

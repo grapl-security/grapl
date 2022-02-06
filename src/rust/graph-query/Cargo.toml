@@ -15,6 +15,5 @@ uuid = { version = "0.8.2", features = ["v4"] }
 [dev-dependencies]
 dgraph-tonic = "0.10.0"
 
-
 [features]
 integration = []
