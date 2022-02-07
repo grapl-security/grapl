@@ -29,7 +29,7 @@ artifact_json() {
     shift
     local -ra artifacts=("${@}")
 
-    for artifact in "${artifacts[@]}"; do
+    for artifact in "${artifacts[@]+"${artifacts[@]}"}"; do
         jq --null-input \
             --arg key "${artifact}" \
             --arg value "${version}" \
