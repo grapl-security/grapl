@@ -1,15 +1,10 @@
-use std::{
-    future::Future,
-    net::SocketAddr,
-    pin::Pin,
-};
+
 
 use async_stream::stream;
 use futures_util::pin_mut;
 use generator_sdk::{
     client::{
         CacheBuilder,
-        ClientCache,
         GeneratorClient,
         GeneratorClientError,
         TokioAsyncResolver,
@@ -19,10 +14,8 @@ use generator_sdk::{
 use grapl_utils::future_ext::GraplFutureExt;
 use plugin_work_queue::client::{
     PluginWorkQueueServiceClient,
-    PluginWorkQueueServiceClientError,
 };
 use rust_proto::{
-    plugin_sdk::generators::RunGeneratorResponse,
     plugin_work_queue::{
         AcknowledgeGeneratorRequest,
         ExecutionJob,
@@ -123,7 +116,7 @@ pub async fn process_message_loop(
 
     while let Some((job, request_id)) = jobs.next().await {
         let ExecutionJob {
-            tenant_id,
+            tenant_id: _,
             plugin_id,
             data,
         } = job;
