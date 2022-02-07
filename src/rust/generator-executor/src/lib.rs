@@ -1,5 +1,3 @@
-
-
 use async_stream::stream;
 use futures_util::pin_mut;
 use generator_sdk::{
@@ -12,16 +10,12 @@ use generator_sdk::{
     ClientConfig as GeneratorClientConfig,
 };
 use grapl_utils::future_ext::GraplFutureExt;
-use plugin_work_queue::client::{
-    PluginWorkQueueServiceClient,
-};
-use rust_proto::{
-    plugin_work_queue::{
-        AcknowledgeGeneratorRequest,
-        ExecutionJob,
-        GetExecuteGeneratorRequest,
-        GetExecuteGeneratorResponse,
-    },
+use plugin_work_queue::client::PluginWorkQueueServiceClient;
+use rust_proto::plugin_work_queue::{
+    AcknowledgeGeneratorRequest,
+    ExecutionJob,
+    GetExecuteGeneratorRequest,
+    GetExecuteGeneratorResponse,
 };
 use structopt::StructOpt;
 use tokio::time::{
