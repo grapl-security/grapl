@@ -61,6 +61,7 @@ BUILD @christophermaier
 /src/rust/derive-dynamic-node/ @colin-grapl
 /src/rust/endpoint-plugin/ @inickles-grapl
 /src/rust/generators/ @inickles-grapl
+/src/rust/generator-executor/ @colin-grapl
 /src/rust/graph-merger/ @grapl-security/wg-data-infra
 /src/rust/grapl-config/ @inickles-grapl @wimax-grapl
 /src/rust/grapl-graphql-codegen/ @colin-grapl
