@@ -25,6 +25,7 @@ use tonic::{
         Body,
         StdError,
     },
+    transport::Channel,
     Status,
 };
 
@@ -36,9 +37,17 @@ pub enum PluginWorkQueueServiceClientError {
     DeserializeError(#[from] PluginWorkQueueDeserializationError),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PluginWorkQueueServiceClient<T> {
     inner: _PluginWorkQueueServiceClient<T>,
+}
+
+impl PluginWorkQueueServiceClient<Channel> {
+    pub async fn connect(value: String) -> Result<Self, tonic::transport::Error> {
+        Ok(PluginWorkQueueServiceClient::new(
+            _PluginWorkQueueServiceClient::connect(value).await?,
+        ))
+    }
 }
 
 impl<T> PluginWorkQueueServiceClient<T>

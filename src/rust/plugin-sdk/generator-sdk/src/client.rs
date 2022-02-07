@@ -3,7 +3,7 @@ use std::{
     time::Duration,
 };
 
-use moka::future::{
+pub use moka::future::{
     Cache,
     CacheBuilder,
 };
@@ -21,6 +21,7 @@ use tonic::{
     },
     Code,
 };
+pub use trust_dns_resolver::TokioAsyncResolver;
 use trust_dns_resolver::{
     config::{
         NameServerConfigGroup,
@@ -33,7 +34,6 @@ use trust_dns_resolver::{
         rr::rdata::SRV,
     },
     Name,
-    TokioAsyncResolver,
 };
 
 use crate::{
@@ -59,7 +59,7 @@ pub enum GeneratorClientError {
     ProtoError(#[from] GeneratorsDeserializationError),
 }
 
-type ClientCache = Cache<String, GeneratorServiceClient<Channel>>;
+pub type ClientCache = Cache<String, GeneratorServiceClient<Channel>>;
 
 /// The GeneratorClient manages connections to arbitrary generators across arbitrary tenants
 #[derive(Clone)]
