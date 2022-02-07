@@ -35,30 +35,15 @@ steps:
 
   - wait
 
-  # Promote all the artifacts
-  #
-  # We do this before the RC creation because that
-  # triggers a run of the provision pipeline, and we want to make sure
-  # all the artifacts are in place first.
-  - label: ":cloudsmith: Promote artifacts"
+  # If we have some artifacts to promote in Cloudsmith, then upload
+  # the promotion step. If we have nothing, then the promotion step
+  # will fail.
+  - label: ":thinking_face: Anything to promote?"
     plugins:
-      - grapl-security/vault-login#v0.1.0
-      - grapl-security/vault-env#v0.1.0:
-          secrets:
-            - CLOUDSMITH_API_KEY
       - artifacts#v1.4.0:
-          # NOTE: this assumes that all artifacts mentioned in this
-          # file are stored in Cloudsmith!
           download: all_artifacts.json
-      - grapl-security/cloudsmith#v0.1.4:
-          promote:
-            org: grapl
-            action: move
-            from: raw
-            to: testing
-            packages_file: all_artifacts.json
-    agents:
-      queue: "docker"
+    command:
+      - .buildkite/scripts/upload_promotion_step_if_needed.sh
 
   - wait
 
