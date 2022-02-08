@@ -67,7 +67,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn smoke_test_alloc() {
+    fn test_alloc_wraparound() {
         const A: u8 = b'a';
         const Z: u8 = b'z';
 
