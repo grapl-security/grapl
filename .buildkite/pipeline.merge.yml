@@ -16,6 +16,7 @@ steps:
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - CLOUDSMITH_API_KEY
+            - grapl/TOOLCHAIN_AUTH_TOKEN
       - docker-login#v2.0.1:
           username: grapl-cicd
           password-env: CLOUDSMITH_API_KEY
