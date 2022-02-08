@@ -1,4 +1,7 @@
-use fnv::FnvHashMap as HashMap;
+use std::collections::HashMap;
+// Assumption is that strings used in dgraph queries are very short
+// and that there aren't many of them
+use fnv::FnvHashMap;
 
 /// VarAllocator allocates graphql variables, one for each value to be interpolated
 /// The values will be sequentially defined from $a to $z, wrapping to $za
@@ -6,7 +9,7 @@ use fnv::FnvHashMap as HashMap;
 /// sent as json, separate from the query itself.
 #[derive(Clone)]
 pub struct VarAllocator {
-    variables: HashMap<String, String>,
+    variables: FnvHashMap<String, String>,
     variable: Vec<u8>,
     last_var: u8,
 }
@@ -14,7 +17,7 @@ pub struct VarAllocator {
 impl Default for VarAllocator {
     fn default() -> Self {
         Self {
-            variables: HashMap::default(),
+            variables: FnvHashMap::default(),
             variable: b"$".to_vec(),
             last_var: b'z',
         }
@@ -24,7 +27,7 @@ impl Default for VarAllocator {
 impl VarAllocator {
     pub(crate) fn variable_string(&self) -> String {
         let mut variables =
-            String::with_capacity((2 * self.variables.len()) + (8 * self.variables.len()));
+            String::with_capacity(":string,".len() * self.variables.len());
         for (i, variable_name) in self.variables.values().enumerate() {
             variables.push_str(variable_name);
             variables.push_str(":string");
@@ -35,12 +38,9 @@ impl VarAllocator {
         variables
     }
 
-    pub fn variable_map(self) -> std::collections::HashMap<String, String> {
-        let mut map = std::collections::HashMap::with_capacity(self.variables.len());
-        for (k, v) in self.variables.into_iter() {
-            map.insert(v, k);
-        }
-        map
+    pub fn variable_map(self) -> HashMap<String, String> {
+        // The dgraph-tonic client expects a std HashMap, so we can't use our fnv map
+        HashMap::from_iter(self.variables.into_iter().map(|(k, v)| (v, k)))
     }
 
     pub fn alloc(&mut self, value: String) -> &str {
