@@ -1,5 +1,7 @@
 use fnv::FnvHashMap as HashMap;
 
+// VarAllocator allocates graphql variables, one for each value to be interpolated
+// The values will be sequentially defined from $a to $z, wrapping to $za
 #[derive(Clone)]
 pub struct VarAllocator {
     variables: HashMap<String, String>,

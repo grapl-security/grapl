@@ -14,7 +14,11 @@ mod tests {
 
     #[tokio::test]
     async fn integration_test() -> Result<(), Box<dyn std::error::Error>> {
-        let client = DgraphClient::new("http://localhost:9080")?;
+        let mg_alpha = grapl_config::mg_alphas()
+            .pop()
+            .expect("Dgraph Alpha not specified.");
+
+        let client = DgraphClient::new(mg_alpha)?;
         let mut txn = client.new_read_only_txn();
 
         let query = NodeCell::root()
