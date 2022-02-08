@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use fnv::FnvHashMap;
 
 /// VarAllocator allocates graphql variables, one for each value to be interpolated
-/// The values will be sequentially defined from $a to $z, wrapping to $za
+/// The values will be sequentially defined from $a to $z, wrapping to $za, $zb, etc.
 /// GraphQL variables prevent injection vulnerabilities since the variables are
 /// sent as json, separate from the query itself.
 #[derive(Clone)]
@@ -81,5 +81,7 @@ mod tests {
         assert_eq!(var, "$z");
         let var = allocator.alloc("efgh".into());
         assert_eq!(var, "$za");
+        let var = allocator.alloc("ijk".into());
+        assert_eq!(var, "$zb");
     }
 }
