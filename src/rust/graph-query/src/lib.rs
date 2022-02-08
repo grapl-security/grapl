@@ -376,7 +376,7 @@ impl NodeCell {
         inner_self
             .reverse_edge_names
             .insert(edge_name.clone(), reverse_edge_name.clone());
-        // inner.reverse_edge_names.insert(reverse_edge_name, edge_name.clone());
+
         // Add an edge to all neighbors
         let queries = inner_self
             .edge_filters
