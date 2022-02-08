@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+
 // Assumption is that strings used in dgraph queries are very short
 // and that there aren't many of them
 use fnv::FnvHashMap;
@@ -26,8 +27,7 @@ impl Default for VarAllocator {
 
 impl VarAllocator {
     pub(crate) fn variable_string(&self) -> String {
-        let mut variables =
-            String::with_capacity(":string,".len() * self.variables.len());
+        let mut variables = String::with_capacity(":string,".len() * self.variables.len());
         for (i, variable_name) in self.variables.values().enumerate() {
             variables.push_str(variable_name);
             variables.push_str(":string");

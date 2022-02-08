@@ -289,7 +289,6 @@ pub struct NodeQuery {
     reverse_edge_names: HashMap<String, String>,
 }
 
-
 impl Default for NodeQuery {
     fn default() -> Self {
         Self {

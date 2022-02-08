@@ -24,7 +24,10 @@ mod tests {
         let query = NodeCell::root()
             .with_property_filters(
                 "propname",
-                vec![StrEq::new("foo", true).boxed(), StrEq::new("bar", false).boxed()],
+                vec![
+                    StrEq::new("foo", true).boxed(),
+                    StrEq::new("bar", false).boxed(),
+                ],
             )
             .with_property_filters("propname", vec![StrEq::new("baz", true).boxed()])
             .with_edge_filters(
