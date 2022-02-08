@@ -5,7 +5,7 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-dgraph-tonic = { version = "0.10.0", features = ["dgraph-1-1"] }
+grapl-config = { path = "../grapl-config", version = "*" }
 fnv = "1.0.7"
 serde = "1.0.136"
 serde_json = "1.0.78"

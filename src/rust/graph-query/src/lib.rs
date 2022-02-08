@@ -80,10 +80,6 @@ pub struct UidEq {
 }
 
 impl UidEq {
-    pub fn new(to: u64) -> Self {
-        Self { to }
-    }
-
     pub fn eq(to: u64) -> Self {
         Self { to }
     }
@@ -111,6 +107,14 @@ pub struct IntLt {
 impl IntLt {
     pub fn new(to: u64, negated: bool) -> Self {
         Self { to, negated }
+    }
+
+    pub fn eq(to: u64) -> Self {
+        Self::new(to, false)
+    }
+
+    pub fn neq(to: u64) -> Self {
+        Self::new(to, true)
     }
 }
 
@@ -144,6 +148,14 @@ pub struct IntGt {
 impl IntGt {
     pub fn new(to: u64, negated: bool) -> Self {
         Self { to, negated }
+    }
+
+    pub fn eq(to: u64) -> Self {
+        Self::new(to, false)
+    }
+
+    pub fn neq(to: u64) -> Self {
+        Self::new(to, true)
     }
 }
 
@@ -183,17 +195,11 @@ impl StrEq {
     }
 
     pub fn eq(to: impl Into<String>) -> Self {
-        Self {
-            to: to.into(),
-            negated: false,
-        }
+        Self::new(to, false)
     }
 
     pub fn neq(to: impl Into<String>) -> Self {
-        Self {
-            to: to.into(),
-            negated: true,
-        }
+        Self::new(to, true)
     }
 }
 
@@ -231,6 +237,14 @@ impl StrRegex {
             to: to.into(),
             negated,
         }
+    }
+
+    pub fn eq(to: impl Into<String>) -> Self {
+        Self::new(to, false)
+    }
+
+    pub fn neq(to: impl Into<String>) -> Self {
+        Self::new(to, true)
     }
 }
 
