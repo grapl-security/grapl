@@ -139,7 +139,4 @@ done
 
 # Now that we've filtered out things that already exist upstream, we
 # only need to care about the new stuff.
-#
-# NOTE: The awkward array handling is because we currently have Bash
-# 4.2 on our CI/CD machines... once we upgrade, we can ditch this.
-artifact_json "${TAG}" "${new_services[@]+${new_services[@]}}" > "$(artifacts_file_for containers)"
+artifact_json "${TAG}" "${new_services[@]}" > "$(artifacts_file_for containers)"

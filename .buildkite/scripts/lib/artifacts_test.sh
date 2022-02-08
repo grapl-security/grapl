@@ -4,6 +4,17 @@ oneTimeSetUp() {
     source .buildkite/scripts/lib/artifacts.sh
 }
 
+test_artifact_json_no_artifacts() {
+    actual="$(artifact_json "1.0.0")"
+    assertEquals "{}" "${actual}"
+}
+
+test_artifact_json_empty_array() {
+    services=()
+    actual="$(artifact_json "1.0.0" "${services[@]}")"
+    assertEquals "{}" "${actual}"
+}
+
 test_artifact_json_small() {
     actual="$(artifact_json "1.0.0" "artifact_one")"
     expected=$(
