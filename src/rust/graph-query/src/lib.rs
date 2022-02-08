@@ -17,6 +17,8 @@ use crate::{
 };
 
 pub trait PropertyFilter {
+    // For a given property, pushes a dgraph filter into `filter_string`,
+    // generating a GraphQL variable via `var_allocator` if necessary
     fn to_filter(
         &self,
         property_name: &str,
@@ -304,11 +306,125 @@ impl PropertyFilter for Vec<Vec<Box<dyn PropertyFilter>>> {
 }
 
 pub struct NodeQuery {
+    // In order to properly generate queries we need every node to have a unique id
+    // A node is the "root" node when its `id` is 0
     id: u128,
     property_filters: HashMap<String, Vec<Vec<Box<dyn PropertyFilter>>>>,
     edge_filters: HashMap<String, Vec<NodeCell>>,
     // Maps forward edge to reverse edge name
     reverse_edge_names: HashMap<String, String>,
+}
+
+
+impl Default for NodeQuery {
+    fn default() -> Self {
+        Self {
+            id: uuid::Uuid::new_v4().as_u128(),
+            property_filters: Default::default(),
+            edge_filters: Default::default(),
+            reverse_edge_names: Default::default(),
+        }
+    }
+}
+
+impl NodeQuery {
+    fn root() -> Self {
+        Self {
+            id: 0,
+            ..Default::default()
+        }
+    }
+
+    fn to_filter(&self, filter_string: &mut String, var_allocator: &mut VarAllocator) {
+        if self.property_filters.len() >= 1 {
+            filter_string.push_str("@filter(");
+        }
+        for (i, (property_name, property_filters)) in self.property_filters.iter().enumerate() {
+            // filter_string.push('(');
+            property_filters.to_filter(property_name, filter_string, var_allocator);
+            // filter_string.push(')');
+            if i < self.property_filters.len() - 1 {
+                filter_string.push_str(" AND ");
+            }
+        }
+
+        if self.property_filters.len() >= 1 {
+            filter_string.push(')');
+        }
+    }
+
+    fn to_query(
+        &self,
+        binding: u8,
+        var_allocator: &mut VarAllocator,
+        query_string: &mut String,
+        visited: &mut HashSet<(u128, String, u128)>,
+        should_filter: bool,
+    ) {
+        if should_filter {
+            self.to_filter(query_string, var_allocator);
+        }
+
+        query_string.push('{');
+        for property_name in self.property_filters.keys() {
+            query_string.push('\n');
+            query_string.push_str(property_name);
+        }
+        for (edge_name, edges) in self.edge_filters.iter() {
+            for edge in edges {
+                let inner_edge = edge.0.clone();
+                let inner_edge: &RefCell<NodeQuery> = inner_edge.borrow();
+                let inner_edge = inner_edge.borrow();
+
+                if self.already_visited(edge_name, edge.get_id(), visited) {
+                    continue;
+                }
+
+                query_string.push('\n');
+                if edge.is_root() {
+                    query_string.push_str("binding_");
+                    query_string.push_str(&binding.to_string());
+                    query_string.push_str(" as ");
+                }
+                query_string.push_str(edge_name);
+                inner_edge.to_query(binding, var_allocator, query_string, visited, should_filter);
+            }
+        }
+        query_string.push('}');
+    }
+
+    // When building our query we need to understand if we've visited a node either through a forward
+    // or a reverse edge
+    // We can't just check if we have visited the destination node because multiple nodes may reference
+    // another node, or a single node may reference another node with different edge names
+    // For example, a Process may both Read and Write to a File
+    fn already_visited(
+        &self,
+        edge_name: &str,
+        edge_id: u128,
+        visited: &mut HashSet<(u128, String, u128)>,
+    ) -> bool {
+        // Rust's hashmap is kinda annoying about borrowing keys that have nested owned values. Feel free
+        // to remove this unnecessary allocation if you're willing to put the work in (I am not).
+        // https://users.rust-lang.org/t/hashmap-with-tuple-keys/12711
+        let f_key = (self.id, edge_name.to_owned(), edge_id);
+        if visited.contains(&f_key) {
+            return true;
+        }
+        visited.insert(f_key);
+
+        let r_key = (
+            edge_id,
+            self.reverse_edge_names[edge_name].to_owned(),
+            self.id,
+        );
+        if visited.contains(&r_key) {
+            return true;
+        }
+        visited.insert(r_key);
+
+        false
+    }
 }
 
 #[derive(Clone, Default)]
@@ -511,116 +627,5 @@ impl NodeCell {
 
     pub(crate) fn is_root(&self) -> bool {
         self.get_id() == 0
-    }
-}
-
-impl Default for NodeQuery {
-    fn default() -> Self {
-        Self {
-            id: uuid::Uuid::new_v4().as_u128(),
-            property_filters: Default::default(),
-            edge_filters: Default::default(),
-            reverse_edge_names: Default::default(),
-        }
-    }
-}
-
-impl NodeQuery {
-    fn root() -> Self {
-        Self {
-            id: 0,
-            ..Default::default()
-        }
-    }
-
-    fn to_filter(&self, filter_string: &mut String, var_allocator: &mut VarAllocator) {
-        if self.property_filters.len() >= 1 {
-            filter_string.push_str("@filter(");
-        }
-        for (i, (property_name, property_filters)) in self.property_filters.iter().enumerate() {
-            // filter_string.push('(');
-            property_filters.to_filter(property_name, filter_string, var_allocator);
-            // filter_string.push(')');
-            if i < self.property_filters.len() - 1 {
-                filter_string.push_str(" AND ");
-            }
-        }
-
-        if self.property_filters.len() >= 1 {
-            filter_string.push(')');
-        }
-    }
-
-    fn to_query(
-        &self,
-        binding: u8,
-        var_allocator: &mut VarAllocator,
-        query_string: &mut String,
-        visited: &mut HashSet<(u128, String, u128)>,
-        should_filter: bool,
-    ) {
-        if should_filter {
-            self.to_filter(query_string, var_allocator);
-        }
-
-        query_string.push('{');
-        for property_name in self.property_filters.keys() {
-            query_string.push('\n');
-            query_string.push_str(property_name);
-        }
-        for (edge_name, edges) in self.edge_filters.iter() {
-            for edge in edges {
-                let inner_edge = edge.0.clone();
-                let inner_edge: &RefCell<NodeQuery> = inner_edge.borrow();
-                let inner_edge = inner_edge.borrow();
-
-                if self.already_visited(edge_name, edge.get_id(), visited) {
-                    continue;
-                }
-
-                query_string.push('\n');
-                if edge.is_root() {
-                    query_string.push_str("binding_");
-                    query_string.push_str(&binding.to_string());
-                    query_string.push_str(" as ");
-                }
-                query_string.push_str(edge_name);
-                inner_edge.to_query(binding, var_allocator, query_string, visited, should_filter);
-            }
-        }
-        query_string.push('}');
-    }
-
-    // When building our query we need to understand if we've visited a node either through a forward
-    // or a reverse edge
-    // We can't just check if we have visited the destination node because multiple nodes may reference
-    // another node, or a single node may reference another node with different edge names
-    // For example, a Process may both Read and Write to a File
-    fn already_visited(
-        &self,
-        edge_name: &str,
-        edge_id: u128,
-        visited: &mut HashSet<(u128, String, u128)>,
-    ) -> bool {
-        // Rust's hashmap is kinda annoying about borrowing keys that have nested owned values. Feel free
-        // to remove this unnecessary allocation if you're willing to put the work in (I am not).
-        // https://users.rust-lang.org/t/hashmap-with-tuple-keys/12711
-        let f_key = (self.id, edge_name.to_owned(), edge_id);
-        if visited.contains(&f_key) {
-            return true;
-        }
-        visited.insert(f_key);
-
-        let r_key = (
-            edge_id,
-            self.reverse_edge_names[edge_name].to_owned(),
-            self.id,
-        );
-        if visited.contains(&r_key) {
-            return true;
-        }
-        visited.insert(r_key);
-
-        false
     }
 }
