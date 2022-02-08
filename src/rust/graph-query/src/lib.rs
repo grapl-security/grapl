@@ -19,7 +19,7 @@ use crate::{
 pub trait PropertyFilter {
     // For a given property, pushes a dgraph filter into `filter_string`,
     // generating a GraphQL variable via `var_allocator` if necessary
-    fn to_filter(
+    fn extend_filter_string(
         &self,
         property_name: &str,
         filter_string: &mut String,
@@ -43,18 +43,10 @@ impl IntEq {
     pub fn new(to: u64, negated: bool) -> Self {
         Self { to, negated }
     }
-
-    pub fn eq(to: u64) -> Self {
-        Self { to, negated: false }
-    }
-
-    pub fn neq(to: u64) -> Self {
-        Self { to, negated: true }
-    }
 }
 
 impl PropertyFilter for IntEq {
-    fn to_filter(
+    fn extend_filter_string(
         &self,
         property_name: &str,
         filter_string: &mut String,
@@ -86,7 +78,7 @@ impl UidEq {
 }
 
 impl PropertyFilter for UidEq {
-    fn to_filter(
+    fn extend_filter_string(
         &self,
         _property_name: &str,
         filter_string: &mut String,
@@ -108,18 +100,10 @@ impl IntLt {
     pub fn new(to: u64, negated: bool) -> Self {
         Self { to, negated }
     }
-
-    pub fn eq(to: u64) -> Self {
-        Self::new(to, false)
-    }
-
-    pub fn neq(to: u64) -> Self {
-        Self::new(to, true)
-    }
 }
 
 impl PropertyFilter for IntLt {
-    fn to_filter(
+    fn extend_filter_string(
         &self,
         property_name: &str,
         filter_string: &mut String,
@@ -149,18 +133,10 @@ impl IntGt {
     pub fn new(to: u64, negated: bool) -> Self {
         Self { to, negated }
     }
-
-    pub fn eq(to: u64) -> Self {
-        Self::new(to, false)
-    }
-
-    pub fn neq(to: u64) -> Self {
-        Self::new(to, true)
-    }
 }
 
 impl PropertyFilter for IntGt {
-    fn to_filter(
+    fn extend_filter_string(
         &self,
         property_name: &str,
         filter_string: &mut String,
@@ -193,18 +169,10 @@ impl StrEq {
             negated,
         }
     }
-
-    pub fn eq(to: impl Into<String>) -> Self {
-        Self::new(to, false)
-    }
-
-    pub fn neq(to: impl Into<String>) -> Self {
-        Self::new(to, true)
-    }
 }
 
 impl PropertyFilter for StrEq {
-    fn to_filter(
+    fn extend_filter_string(
         &self,
         property_name: &str,
         filter_string: &mut String,
@@ -238,18 +206,10 @@ impl StrRegex {
             negated,
         }
     }
-
-    pub fn eq(to: impl Into<String>) -> Self {
-        Self::new(to, false)
-    }
-
-    pub fn neq(to: impl Into<String>) -> Self {
-        Self::new(to, true)
-    }
 }
 
 impl PropertyFilter for StrRegex {
-    fn to_filter(
+    fn extend_filter_string(
         &self,
         property_name: &str,
         filter_string: &mut String,
@@ -272,7 +232,7 @@ impl PropertyFilter for StrRegex {
 }
 
 impl PropertyFilter for Vec<Box<dyn PropertyFilter>> {
-    fn to_filter(
+    fn extend_filter_string(
         &self,
         property_name: &str,
         filter_string: &mut String,
@@ -280,11 +240,11 @@ impl PropertyFilter for Vec<Box<dyn PropertyFilter>> {
     ) {
         match self.as_slice() {
             [] => (),
-            [filter] => filter.to_filter(property_name, filter_string, var_allocator),
+            [filter] => filter.extend_filter_string(property_name, filter_string, var_allocator),
             filters => {
                 filter_string.push('(');
                 for (i, filter) in filters.iter().enumerate() {
-                    filter.to_filter(property_name, filter_string, var_allocator);
+                    filter.extend_filter_string(property_name, filter_string, var_allocator);
                     if i < filters.len() - 1 {
                         filter_string.push_str(" AND ");
                     }
@@ -296,7 +256,7 @@ impl PropertyFilter for Vec<Box<dyn PropertyFilter>> {
 }
 
 impl PropertyFilter for Vec<Vec<Box<dyn PropertyFilter>>> {
-    fn to_filter(
+    fn extend_filter_string(
         &self,
         property_name: &str,
         filter_string: &mut String,
@@ -304,11 +264,11 @@ impl PropertyFilter for Vec<Vec<Box<dyn PropertyFilter>>> {
     ) {
         match self.as_slice() {
             [] => (),
-            [filter] => filter.to_filter(property_name, filter_string, var_allocator),
+            [filter] => filter.extend_filter_string(property_name, filter_string, var_allocator),
             filters => {
                 filter_string.push(')');
                 for (i, filter) in filters.iter().enumerate() {
-                    filter.to_filter(property_name, filter_string, var_allocator);
+                    filter.extend_filter_string(property_name, filter_string, var_allocator);
                     if i < filters.len() - 1 {
                         filter_string.push_str(" OR ");
                     }
@@ -349,13 +309,13 @@ impl NodeQuery {
         }
     }
 
-    fn to_filter(&self, filter_string: &mut String, var_allocator: &mut VarAllocator) {
+    fn extend_filter_string(&self, filter_string: &mut String, var_allocator: &mut VarAllocator) {
         if self.property_filters.len() >= 1 {
             filter_string.push_str("@filter(");
         }
         for (i, (property_name, property_filters)) in self.property_filters.iter().enumerate() {
             // filter_string.push('(');
-            property_filters.to_filter(property_name, filter_string, var_allocator);
+            property_filters.extend_filter_string(property_name, filter_string, var_allocator);
             // filter_string.push(')');
             if i < self.property_filters.len() - 1 {
                 filter_string.push_str(" AND ");
@@ -376,7 +336,7 @@ impl NodeQuery {
         should_filter: bool,
     ) {
         if should_filter {
-            self.to_filter(query_string, var_allocator);
+            self.extend_filter_string(query_string, var_allocator);
         }
 
         query_string.push('{');
@@ -624,7 +584,7 @@ impl NodeCell {
         let inner_self = inner_self.borrow();
         // When `with_uid` is called this is guaranteed to be populated
         if let Some(uids) = inner_self.property_filters.get("uid") {
-            uids[0][0].to_filter("uid", query_string, var_allocator);
+            uids[0][0].extend_filter_string("uid", query_string, var_allocator);
         }
     }
 

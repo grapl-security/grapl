@@ -24,14 +24,14 @@ mod tests {
         let query = NodeCell::root()
             .with_property_filters(
                 "propname",
-                vec![StrEq::eq("foo").boxed(), StrEq::neq("bar").boxed()],
+                vec![StrEq::new("foo", true).boxed(), StrEq::new("bar", false).boxed()],
             )
-            .with_property_filters("propname", vec![StrEq::eq("baz").boxed()])
+            .with_property_filters("propname", vec![StrEq::new("baz", true).boxed()])
             .with_edge_filters(
                 "edgename",
                 "reverse_edge_name",
                 vec![NodeCell::default()
-                    .with_property_filters("otherprop", vec![StrEq::neq("baz").boxed()])],
+                    .with_property_filters("otherprop", vec![StrEq::new("baz", false).boxed()])],
             );
         let (query_string, vars) = query.with_uid(1234);
 

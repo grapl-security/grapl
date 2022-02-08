@@ -38,6 +38,7 @@ impl VarAllocator {
         variables
     }
 
+    // variable_map returns a mapping of variable names to variable values
     pub fn variable_map(self) -> HashMap<String, String> {
         // The dgraph-tonic client expects a std HashMap, so we can't use our fnv map
         HashMap::from_iter(self.variables.into_iter().map(|(k, v)| (v, k)))
