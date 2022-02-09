@@ -1119,17 +1119,18 @@ job "grapl-core" {
       }
 
       env {
-        AWS_REGION                      = var.aws_region
-        NOMAD_SERVICE_ADDRESS           = "${attr.unique.network.ip-address}:4646"
-        PLUGIN_REGISTRY_BIND_ADDRESS    = "0.0.0.0:${NOMAD_PORT_plugin-registry-port}"
-        PLUGIN_REGISTRY_DB_HOSTNAME     = local.plugin_registry_db_hostname
-        PLUGIN_REGISTRY_DB_PASSWORD     = var.plugin_registry_db_password
-        PLUGIN_REGISTRY_DB_PORT         = var.plugin_registry_db_port
-        PLUGIN_REGISTRY_DB_USERNAME     = var.plugin_registry_db_username
-        PLUGIN_S3_BUCKET_AWS_ACCOUNT_ID = var.plugin_s3_bucket_aws_account_id
-        PLUGIN_S3_BUCKET_NAME           = var.plugin_s3_bucket_name
-        RUST_BACKTRACE                  = local.rust_backtrace
-        RUST_LOG                        = var.rust_log
+        AWS_REGION                       = var.aws_region
+        NOMAD_SERVICE_ADDRESS            = "${attr.unique.network.ip-address}:4646"
+        PLUGIN_REGISTRY_BIND_ADDRESS     = "0.0.0.0:${NOMAD_PORT_plugin-registry-port}"
+        PLUGIN_REGISTRY_DB_HOSTNAME      = local.plugin_registry_db_hostname
+        PLUGIN_REGISTRY_DB_PASSWORD      = var.plugin_registry_db_password
+        PLUGIN_REGISTRY_DB_PORT          = var.plugin_registry_db_port
+        PLUGIN_REGISTRY_DB_USERNAME      = var.plugin_registry_db_username
+        PLUGIN_BOOTSTRAP_CONTAINER_IMAGE = var.container_images["plugin-bootstrap"]
+        PLUGIN_S3_BUCKET_AWS_ACCOUNT_ID  = var.plugin_s3_bucket_aws_account_id
+        PLUGIN_S3_BUCKET_NAME            = var.plugin_s3_bucket_name
+        RUST_BACKTRACE                   = local.rust_backtrace
+        RUST_LOG                         = var.rust_log
       }
     }
 

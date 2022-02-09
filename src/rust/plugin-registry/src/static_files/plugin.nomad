@@ -1,9 +1,3 @@
-variable "container_registry" {
-  type        = string
-  default     = "localhost:5000"
-  description = "The container registry in which we can find Grapl services."
-}
-
 variable "plugin_id" {
   type        = string
   description = "The ID for this plugin."
@@ -28,6 +22,11 @@ variable "plugin_count" {
 variable "aws_account_id" {
   type        = string
   description = "The account ID of the aws account that holds onto the plugin binaries."
+}
+
+variable "plugin_bootstrap_container_image" {
+  type        = string
+  description = "The plugin-bootstrap task's DockerImageId."
 }
 
 # Temporarily dropping the shared_key stuff and picking it up later, per
@@ -108,7 +107,7 @@ job "grapl-plugin" {
       }
 
       config {
-        image = "grapl/plugin-bootstrap-sidecar"
+        image = var.plugin_bootstrap_container_image
         ports = [
         "plugin_bootstrap_grpc_receiver"]
       }

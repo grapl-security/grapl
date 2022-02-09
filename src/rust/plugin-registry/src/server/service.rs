@@ -113,6 +113,8 @@ pub struct PluginRegistryServiceConfig {
     plugin_registry_db_username: String,
     #[structopt(env)]
     plugin_registry_db_password: String,
+    #[structopt(env)]
+    plugin_bootstrap_container_image: String,
 }
 
 pub struct PluginRegistry {
@@ -122,6 +124,7 @@ pub struct PluginRegistry {
     s3: S3Client,
     plugin_bucket_name: String,
     plugin_bucket_owner_id: String,
+    plugin_bootstrap_container_image: String,
 }
 
 impl PluginRegistry {
@@ -217,6 +220,7 @@ impl PluginRegistry {
             &self.db_client,
             plugin_row,
             &self.plugin_bucket_owner_id,
+            &self.plugin_bootstrap_container_image,
         )
         .await
         .map_err(PluginRegistryServiceError::from)?;
@@ -346,6 +350,7 @@ pub async fn exec_service(
         s3: S3Client::from_env(),
         plugin_bucket_name: service_config.plugin_s3_bucket_name,
         plugin_bucket_owner_id: service_config.plugin_s3_bucket_aws_account_id,
+        plugin_bootstrap_container_image: service_config.plugin_bootstrap_container_image,
     };
 
     let addr = service_config.plugin_registry_bind_address;

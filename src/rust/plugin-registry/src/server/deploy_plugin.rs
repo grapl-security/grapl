@@ -32,6 +32,7 @@ pub async fn deploy_plugin(
     db_client: &PluginRegistryDbClient,
     plugin: PluginRow,
     plugin_bucket_owner_id: &str,
+    plugin_bootstrap_container_image: &str,
 ) -> Result<(), PluginRegistryServiceError> {
     // --- Convert HCL to JSON Job model
     let job_name = "grapl-plugin"; // Matches what's in `plugin.nomad`
