@@ -15,7 +15,7 @@ pub enum NomadCliError {
     DeserializeJsonError(#[from] serde_json::Error),
 }
 
-pub type NomadVars = HashMap<String, String>;
+pub type NomadVars = HashMap<&'static str, String>;
 
 #[derive(Default)]
 pub struct NomadCli {}

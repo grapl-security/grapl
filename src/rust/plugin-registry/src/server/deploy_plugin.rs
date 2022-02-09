@@ -44,18 +44,15 @@ pub async fn deploy_plugin(
             plugin_bucket_name
         );
         let job_file_vars: NomadVars = HashMap::from([
+            ("aws_account_id", plugin_bucket_owner_id.to_string()),
+            ("kernel_artifact_url", kernel_artifact_url),
             (
-                "aws_account_id".to_owned(),
-                plugin_bucket_owner_id.to_string(),
-            ),
-            ("kernel_artifact_url".to_owned(), kernel_artifact_url),
-            (
-                "plugin_bootstrap_container_image".to_owned(),
+                "plugin_bootstrap_container_image",
                 plugin_bootstrap_container_image.to_owned(),
             ),
-            ("plugin_artifact_url".to_owned(), plugin.artifact_s3_key),
-            ("plugin_id".to_owned(), plugin.plugin_id.to_string()),
-            ("tenant_id".to_owned(), plugin.tenant_id.to_string()),
+            ("plugin_artifact_url", plugin.artifact_s3_key),
+            ("plugin_id", plugin.plugin_id.to_string()),
+            ("tenant_id", plugin.tenant_id.to_string()),
         ]);
         cli.parse_hcl2(job_file_hcl, job_file_vars)?
     };
