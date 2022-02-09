@@ -72,7 +72,7 @@ async fn test_plan_job_with_too_much_memory() -> Result<(), Box<dyn std::error::
 }
 
 #[async_trait]
-trait TestFunctions {
+trait NomadClientTestFunctions {
     async fn get_namespace(
         &self,
         namespace_name: &str,
@@ -80,7 +80,7 @@ trait TestFunctions {
 }
 
 #[async_trait]
-impl TestFunctions for NomadClient {
+impl NomadClientTestFunctions for NomadClient {
     async fn get_namespace(
         &self,
         namespace_name: &str,

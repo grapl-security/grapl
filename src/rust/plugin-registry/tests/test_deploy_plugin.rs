@@ -40,6 +40,7 @@ async fn test_deploy_plugin() -> Result<(), Box<dyn std::error::Error>> {
         .deploy_plugin(request)
         .timeout(std::time::Duration::from_secs(5))
         .await??;
+
     Ok(())
 }
 
