@@ -187,7 +187,7 @@ install_pulumi() {
 
 install_utilities() {
     echo_banner "Install useful utilities"
-    sudo apt-get install -y jq dnsutils
+    sudo apt-get install -y jq dnsutils tree
 }
 
 install_hashicorp_tools() {
