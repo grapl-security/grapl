@@ -14,7 +14,7 @@ config:
     node-identifier-retry: 20220209170419-aa3a06a
     osquery-generator: 20220209170419-aa3a06a
     plugin-bootstrap: 20220209170419-aa3a06a
-    plugin-registry: 20220209170419-aa3a06a
+    plugin-registry: 20220209173850-04cb20a
     plugin-work-queue: 20220209170419-aa3a06a
     provisioner: 20220209170419-aa3a06a
     sysmon-generator: 20220209170419-aa3a06a
