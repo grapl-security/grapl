@@ -36,4 +36,4 @@ steps:
     command:
       - record_successful_pipeline_run.sh
     plugins:
-      - grapl-security/grapl-release#v0.1.0
+      - grapl-security/grapl-release#v0.1.1
