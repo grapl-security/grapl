@@ -46,9 +46,9 @@ use tonic::{
 };
 
 use crate::{
-    db::client::{
-        GetPluginRow,
-        PluginRegistryDbClient,
+    db::{
+        client::PluginRegistryDbClient,
+        models::PluginRow,
     },
     error::PluginRegistryServiceError,
     nomad::{
@@ -158,7 +158,7 @@ impl PluginRegistry {
         &self,
         request: GetPluginRequest,
     ) -> Result<GetPluginResponse, PluginRegistryServiceError> {
-        let GetPluginRow {
+        let PluginRow {
             artifact_s3_key,
             plugin_type,
             plugin_id,
@@ -214,6 +214,7 @@ impl PluginRegistry {
         deploy_plugin::deploy_plugin(
             &self.nomad_client,
             &self.nomad_cli,
+            &self.db_client,
             plugin_row,
             &self.plugin_bucket_owner_id,
         )

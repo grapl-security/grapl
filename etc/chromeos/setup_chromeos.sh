@@ -10,12 +10,12 @@ echo "Starting ChromeOS automated setup"
 update_linux
 fix_shell_completion
 install_build_tooling
+install_utilities
 install_rust_and_utilities
 install_pyenv
 install_nvm
 install_awsv2
 install_pulumi
-install_utilities
 install_hashicorp_tools
 install_cni_plugins
 install_nomad_chromeos_workaround
