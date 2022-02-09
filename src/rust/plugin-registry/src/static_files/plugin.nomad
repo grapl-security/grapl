@@ -15,7 +15,12 @@ variable "plugin_artifact_url" {
 
 variable "kernel_artifact_url" {
   type        = string
-  description = "The url that specifies where to find the kernel in S3."
+  description = "URL specifying the kernel in S3."
+}
+
+variable "rootfs_artifact_url" {
+  type        = string
+  description = "URL specifying the RootFS in S3."
 }
 
 variable "plugin_count" {
@@ -31,7 +36,12 @@ variable "aws_account_id" {
 
 variable "plugin_bootstrap_container_image" {
   type        = string
-  description = "The plugin-bootstrap task's DockerImageId."
+  description = "The tenant-plugin-bootstrap-sidecar task's DockerImageId."
+}
+
+variable "plugin_execution_container_image" {
+  type        = string
+  description = "The tenant-plugin-execution-sidecar task's DockerImageId."
 }
 
 # Temporarily dropping the shared_key stuff and picking it up later, per
@@ -81,7 +91,7 @@ job "grapl-plugin" {
       }
 
       config {
-        image = "grapl/plugin-execution-sidecar"
+        image = var.plugin_execution_container_image
         ports = [
         "plugin_sidecar_grpc_receiver"]
       }

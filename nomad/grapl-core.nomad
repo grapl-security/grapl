@@ -1127,6 +1127,7 @@ job "grapl-core" {
         PLUGIN_REGISTRY_DB_PORT          = var.plugin_registry_db_port
         PLUGIN_REGISTRY_DB_USERNAME      = var.plugin_registry_db_username
         PLUGIN_BOOTSTRAP_CONTAINER_IMAGE = var.container_images["plugin-bootstrap"]
+        PLUGIN_EXECUTION_CONTAINER_IMAGE = "grapl/plugin-execution-sidecar-TODO" 
         PLUGIN_S3_BUCKET_AWS_ACCOUNT_ID  = var.plugin_s3_bucket_aws_account_id
         PLUGIN_S3_BUCKET_NAME            = var.plugin_s3_bucket_name
         RUST_BACKTRACE                   = local.rust_backtrace

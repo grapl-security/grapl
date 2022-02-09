@@ -115,6 +115,8 @@ pub struct PluginRegistryServiceConfig {
     plugin_registry_db_password: String,
     #[structopt(env)]
     plugin_bootstrap_container_image: String,
+    #[structopt(env)]
+    plugin_execution_container_image: String,
 }
 
 pub struct PluginRegistry {
