@@ -8,9 +8,11 @@ DO $$ BEGIN
 END $$;
 
 
+-- This table is append-only - so you'll see multiple entries for `plugin_id`
+-- and the latest state will be the last entry.
 CREATE TABLE IF NOT EXISTS plugin_deployment
 (
-    id               SERIAL                    PRIMARY KEY,
+    id               BIGSERIAL                 PRIMARY KEY,
     plugin_id        uuid                      NOT NULL,
     deploy_time      timestamptz               NOT NULL DEFAULT CURRENT_TIMESTAMP,
     status           plugin_deployment_status  NOT NULL
