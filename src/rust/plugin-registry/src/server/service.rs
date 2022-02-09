@@ -220,6 +220,7 @@ impl PluginRegistry {
             &self.db_client,
             plugin_row,
             &self.plugin_bucket_owner_id,
+            &self.plugin_bucket_name,
             &self.plugin_bootstrap_container_image,
         )
         .await

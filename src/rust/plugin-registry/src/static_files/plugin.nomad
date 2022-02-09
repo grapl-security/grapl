@@ -13,6 +13,11 @@ variable "plugin_artifact_url" {
   description = "The url that specifies which binary to run as the plugin."
 }
 
+variable "kernel_artifact_url" {
+  type        = string
+  description = "The url that specifies where to find the kernel in S3."
+}
+
 variable "plugin_count" {
   type        = number
   default     = 1
@@ -135,7 +140,7 @@ job "grapl-plugin" {
       }
 
       artifact {
-        source      = "https://grapl-firecracker.s3.amazonaws.com/kernel/v0.tar.gz"
+        source      = var.kernel_artifact_url
         destination = "local/vmlinux"
         headers {
           x-amz-expected-bucket-owner = var.aws_account_id
