@@ -34,6 +34,7 @@ pub async fn deploy_plugin(
     plugin_bucket_owner_id: &str,
     plugin_bucket_name: &str,
     plugin_bootstrap_container_image: &str,
+    plugin_execution_container_image: &str,
 ) -> Result<(), PluginRegistryServiceError> {
     // --- Convert HCL to JSON Job model
     let job_name = "grapl-plugin"; // Matches what's in `plugin.nomad`
@@ -52,11 +53,15 @@ pub async fn deploy_plugin(
         let job_file_vars: NomadVars = HashMap::from([
             ("aws_account_id", plugin_bucket_owner_id.to_string()),
             ("kernel_artifact_url", kernel_artifact_url),
+            ("plugin_artifact_url", plugin.artifact_s3_key),
             (
                 "plugin_bootstrap_container_image",
                 plugin_bootstrap_container_image.to_owned(),
             ),
-            ("plugin_artifact_url", plugin.artifact_s3_key),
+            (
+                "plugin_execution_container_image",
+                plugin_execution_container_image.to_owned(),
+            ),
             ("plugin_id", plugin.plugin_id.to_string()),
             ("rootfs_artifact_url", rootfs_artifact_url),
             ("tenant_id", plugin.tenant_id.to_string()),
