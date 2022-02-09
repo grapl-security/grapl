@@ -40,8 +40,14 @@ pub async fn deploy_plugin(
     let job = {
         let job_file_hcl = static_files::PLUGIN_JOB;
         let kernel_artifact_url = format!(
-            "https://{}.s3.amazonaws.com/kernel/v0.tar.gz",
-            plugin_bucket_name
+            "https://{bucket}.s3.amazonaws.com/{key}",
+            bucket = plugin_bucket_name,
+            key = "kernel/v0.tar.gz",
+        );
+        let rootfs_artifact_url = format!(
+            "https://{bucket}.s3.amazonaws.com/{key}",
+            bucket = plugin_bucket_name,
+            key = "rootfs/v0.rootfs.tar.gz",
         );
         let job_file_vars: NomadVars = HashMap::from([
             ("aws_account_id", plugin_bucket_owner_id.to_string()),
@@ -52,6 +58,7 @@ pub async fn deploy_plugin(
             ),
             ("plugin_artifact_url", plugin.artifact_s3_key),
             ("plugin_id", plugin.plugin_id.to_string()),
+            ("rootfs_artifact_url", rootfs_artifact_url),
             ("tenant_id", plugin.tenant_id.to_string()),
         ]);
         cli.parse_hcl2(job_file_hcl, job_file_vars)?

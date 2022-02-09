@@ -149,7 +149,7 @@ job "grapl-plugin" {
       }
 
       artifact {
-        source      = "https://grapl-firecracker.s3.amazonaws.com/rootfs/v0.rootfs.tar.gz"
+        source      = var.rootfs_artifact_url
         destination = "local/rootfs.ext4"
         headers {
           x-amz-expected-bucket-owner = var.aws_account_id
