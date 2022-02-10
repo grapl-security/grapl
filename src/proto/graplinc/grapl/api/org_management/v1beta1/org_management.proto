@@ -38,7 +38,7 @@ message ChangePasswordResponse {
 
 }
 
-service OrganizationManagerService {
+service OrganizationManagementService {
   rpc CreateOrg (CreateOrgRequest) returns (CreateOrgResponse);
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
   rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);

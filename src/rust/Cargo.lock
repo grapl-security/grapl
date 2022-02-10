@@ -2849,6 +2849,7 @@ dependencies = [
  "prost-types 0.9.0",
  "rust-proto",
  "sqlx",
+ "structopt",
  "thiserror",
  "tokio 1.15.0",
  "tonic",

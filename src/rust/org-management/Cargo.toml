@@ -24,6 +24,7 @@ grapl-config = { path = "../grapl-config", version = "*" }
 rust-proto = { path = "../rust-proto", version = "*" }
 thiserror = "1.0.26"
 argon2 = { version = "0.3.2", features = ["std"] }
+structopt = "0.3.25"
 
 [build-dependencies]
 tonic-build = "0.5"

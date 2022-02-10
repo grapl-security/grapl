@@ -1,6 +1,6 @@
-pub use crate::graplinc::grapl::api::org_management::v1beta1::{
-    organization_manager_service_client,
-    organization_manager_service_server,
+    pub use crate::graplinc::grapl::api::org_management::v1beta1::{
+    // organization_manager_service_client,
+    // organization_manager_service_server,
     CreateOrgRequest as CreateOrgRequestProto,
     CreateUserRequest as CreateUserRequestProto,
     ChangePasswordRequest as ChangePasswordRequestProto,

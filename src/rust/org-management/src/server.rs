@@ -1,5 +1,5 @@
 use std::convert::TryFrom;
-use argon2::{Error, PasswordHasher, PasswordVerifier};
+use argon2::{PasswordHasher, PasswordVerifier};
 use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::SaltString;
 use tonic::{
@@ -11,16 +11,38 @@ use tonic::{
 
 use uuid::Uuid;
 
-use rust_proto::org_management::organization_manager_service_server::{OrganizationManagerService, OrganizationManagerServiceServer};
-
-use rust_proto::org_management::{CreateOrgRequest, CreateOrgRequestProto, CreateUserRequest, CreateUserRequestProto, ChangePasswordRequest, ChangePasswordRequestProto, CreateOrgResponse, CreateOrgResponseProto, CreateUserResponse, CreateUserResponseProto, ChangePasswordResponse, ChangePasswordResponseProto, OrgManagementDeserializationError};
+use rust_proto::org_management::{
+    CreateOrgRequest,
+    CreateOrgRequestProto,
+    CreateUserRequest,
+    CreateUserRequestProto,
+    ChangePasswordRequest,
+    ChangePasswordRequestProto,
+    CreateOrgResponse,
+    CreateOrgResponseProto,
+    CreateUserResponse,
+    CreateUserResponseProto,
+    ChangePasswordResponse,
+    ChangePasswordResponseProto,
+    OrgManagementDeserializationError
+};
 
 use sqlx::{Pool};
 use sqlx::postgres::{PgPoolOptions, Postgres};
 
+use crate::{
+    // psql_queue::{
+    //     self,
+    //     PsqlQueue,
+    //     PsqlQueueError,
+    // },
+    OrgManagementServiceConfig,
+};
+
+
 
 #[derive(thiserror::Error, Debug)]
-pub enum OrganizationManagerServiceError {
+pub enum OrganizationManagementServiceError {
     #[error("Sql {0}")]
     Sql(#[from] sqlx::Error),
     #[error("OrgManagementDeserializationError {0}")]
@@ -29,13 +51,13 @@ pub enum OrganizationManagerServiceError {
     HashError(String),
 }
 
-impl From<argon2::Error> for OrganizationManagerServiceError {
+impl From<argon2::Error> for OrganizationManagementServiceError {
     fn from(err: argon2::Error) -> Self {
         Self::HashError(err.to_string())
     }
 }
 
-impl From<argon2::password_hash::Error> for OrganizationManagerServiceError {
+impl From<argon2::password_hash::Error> for OrganizationManagementServiceError {
     fn from(err: argon2::password_hash::Error) -> Self {
         Self::HashError(err.to_string())
     }
@@ -43,13 +65,13 @@ impl From<argon2::password_hash::Error> for OrganizationManagerServiceError {
 
 
 
-impl From<OrganizationManagerServiceError> for Status {
-    fn from(e: OrganizationManagerServiceError) -> Self {
+impl From<OrganizationManagementServiceError> for Status {
+    fn from(e: OrganizationManagementServiceError) -> Self {
         match e {
-            OrganizationManagerServiceError::Sql(e) => {
+            OrganizationManagementServiceError::Sql(e) => {
                 Status::internal(e.to_string())
             }
-            OrganizationManagerServiceError::OrgManagementDeserializationError(e) => {
+            OrganizationManagementServiceError::OrgManagementDeserializationError(e) => {
                 Status::invalid_argument(e.to_string())
             }
             _ => todo!()
@@ -62,15 +84,15 @@ struct Password {
 }
 
 #[derive(Debug)]
-pub struct OrganizationManager {
+pub struct OrganizationManagement {
     pool: Pool<Postgres>,
 }
 
-impl OrganizationManager {
+impl OrganizationManagement {
     async fn create_org(
         &self,
         request: CreateOrgRequest,
-    ) -> Result<CreateOrgResponse, OrganizationManagerServiceError> {
+    ) -> Result<CreateOrgResponse, OrganizationManagementServiceError> {
         let org_id = sqlx::types::Uuid::from_u128(Uuid::new_v4().as_u128());
 
         let CreateOrgRequest {
@@ -94,7 +116,7 @@ impl OrganizationManager {
         )
             .execute(&mut transaction)
             .await
-            .map_err(OrganizationManagerServiceError::from)?;
+            .map_err(OrganizationManagementServiceError::from)?;
 
         let password_hasher = argon2::Argon2::new(
             argon2::Algorithm::Argon2i,
@@ -125,7 +147,7 @@ impl OrganizationManager {
         )
             .execute(&mut transaction)
             .await
-            .map_err(OrganizationManagerServiceError::from)?;
+            .map_err(OrganizationManagementServiceError::from)?;
 
         transaction.commit().await?;
 
@@ -135,7 +157,7 @@ impl OrganizationManager {
     async fn create_user(
         &self,
         request: CreateUserRequest,
-    ) -> Result<CreateUserResponse, OrganizationManagerServiceError> {
+    ) -> Result<CreateUserResponse, OrganizationManagementServiceError> {
         let user_id = sqlx::types::Uuid::from_u128(Uuid::new_v4().as_u128());
 
         let CreateUserRequest {
@@ -175,7 +197,7 @@ impl OrganizationManager {
         )
             .execute(&self.pool)
             .await
-            .map_err(OrganizationManagerServiceError::from)?;
+            .map_err(OrganizationManagementServiceError::from)?;
         //
         // if row.rows_affected() == 0 {
         //     return Err(Status::internal("User was not created successfully"));
@@ -187,7 +209,7 @@ impl OrganizationManager {
     async fn change_password(
         &self,
         request: ChangePasswordRequest,
-    ) -> Result<ChangePasswordResponse, OrganizationManagerServiceError> {
+    ) -> Result<ChangePasswordResponse, OrganizationManagementServiceError> {
         let ChangePasswordRequest {
             organization_id,
             user_id,
@@ -206,7 +228,7 @@ impl OrganizationManager {
         )
             .fetch_one(&self.pool)
             .await
-            .map_err(OrganizationManagerServiceError::from)?
+            .map_err(OrganizationManagementServiceError::from)?
             .password;
 
         let password_hasher = argon2::Argon2::new(
@@ -232,21 +254,21 @@ impl OrganizationManager {
         )
             .execute(&self.pool)
             .await
-            .map_err(OrganizationManagerServiceError::from)?;
+            .map_err(OrganizationManagementServiceError::from)?;
 
         Ok(ChangePasswordResponse {})
     }
 }
 
 #[tonic::async_trait]
-impl OrganizationManagerService for OrganizationManager {
+impl OrganizationManagementService for OrganizationManagement {
     async fn create_org(
         &self,
         request: Request<CreateOrgRequestProto>,
     ) -> Result<Response<CreateOrgResponseProto>, Status> {
         let request: CreateOrgRequestProto = request.into_inner();
         let request =
-            CreateOrgRequest::try_from(request).map_err(OrganizationManagerServiceError::from)?;
+            CreateOrgRequest::try_from(request).map_err(OrganizationManagementServiceError::from)?;
 
         let response = self.create_org(request).await?;
         let response: CreateOrgResponseProto = response.into();
@@ -259,7 +281,7 @@ impl OrganizationManagerService for OrganizationManager {
     ) -> Result<Response<CreateUserResponseProto>, Status> {
         let request: CreateUserRequestProto = request.into_inner();
         let request =
-            CreateUserRequest::try_from(request).map_err(OrganizationManagerServiceError::from)?;
+            CreateUserRequest::try_from(request).map_err(OrganizationManagementServiceError::from)?;
 
         let response = self.create_user(request).await?;
         let response: CreateUserResponseProto = response.into();
@@ -272,7 +294,7 @@ impl OrganizationManagerService for OrganizationManager {
     ) -> Result<Response<ChangePasswordResponseProto>, Status> {
         let request: ChangePasswordRequestProto = request.into_inner();
         let request =
-            ChangePasswordRequest::try_from(request).map_err(OrganizationManagerServiceError::from)?;
+            ChangePasswordRequest::try_from(request).map_err(OrganizationManagementServiceError::from)?;
 
         let response = self.change_password(request).await?;
         let response: ChangePasswordResponseProto = response.into();
@@ -288,12 +310,12 @@ impl OrganizationManagerService for OrganizationManager {
 //         create_db_connection()
 //             .await?;
 //
-//     let org = OrganizationManager { pool };
+//     let org = OrganizationManagement { pool };
 //
 //     tracing::info!(message="Listening on address", addr=?addr);
 //
 //     Server::builder()
-//         .add_service(OrganizationManagerServiceServer::new(org))
+//         .add_service(OrganizationManagmentServiceServer::new(org))
 //         .serve(addr)
 //         .await?;
 //
@@ -318,3 +340,41 @@ async fn create_db_connection() -> Result<Pool<Postgres>, sqlx::Error> {
     Ok(pool)
 }
 
+pub async fn exec_service(
+    service_config: OrgManagementServiceConfig,
+) -> Result<(), Box<dyn std::error::Error>> {
+    // let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
+    // health_reporter
+    //     .set_serving::<OrgManagementServiceServer<OrgManagement>>()
+    //     .await;
+    //
+    // tracing::info!(
+    //     message="Connecting to org_management table",
+    //     service_config=?service_config,
+    // );
+
+    let org_management = OrgManagement::try_from(&service_config).await?;
+
+    tracing::info!(message = "Performing migration",);
+
+    sqlx::migrate!().run(&org_management.queue.pool).await?;
+
+    tracing::info!(message = "Binding service",);
+
+    Server::builder()
+        .trace_fn(|request| {
+            tracing::info_span!(
+                "OrgManagement",
+                headers = ?request.headers(),
+                method = ?request.method(),
+                uri = %request.uri(),
+                extensions = ?request.extensions(),
+            )
+        })
+        .add_service(health_service)
+        .add_service(OrgManagementServiceServer::new(org_management))
+        .serve(service_config.org_management_bind_address)
+        .await?;
+
+    Ok(())
+}
