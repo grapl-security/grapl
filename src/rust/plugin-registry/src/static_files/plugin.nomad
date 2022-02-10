@@ -15,12 +15,12 @@ variable "plugin_artifact_url" {
 
 variable "kernel_artifact_url" {
   type        = string
-  description = "URL specifying the kernel in S3."
+  description = "S3 URL specifying the kernel for the Firecracker VM."
 }
 
 variable "rootfs_artifact_url" {
   type        = string
-  description = "URL specifying the RootFS in S3."
+  description = "S3 URL specifying the RootFS for the Firecracker VM."
 }
 
 variable "plugin_count" {
