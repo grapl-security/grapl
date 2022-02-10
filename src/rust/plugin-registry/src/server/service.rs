@@ -113,6 +113,10 @@ pub struct PluginRegistryServiceConfig {
     plugin_registry_db_username: String,
     #[structopt(env)]
     plugin_registry_db_password: String,
+    #[structopt(env)]
+    plugin_bootstrap_container_image: String,
+    #[structopt(env)]
+    plugin_execution_container_image: String,
 }
 
 pub struct PluginRegistry {
@@ -122,6 +126,8 @@ pub struct PluginRegistry {
     s3: S3Client,
     plugin_bucket_name: String,
     plugin_bucket_owner_id: String,
+    plugin_bootstrap_container_image: String,
+    plugin_execution_container_image: String,
 }
 
 impl PluginRegistry {
@@ -211,12 +217,17 @@ impl PluginRegistry {
         let plugin_id = request.plugin_id;
         let plugin_row = self.db_client.get_plugin(&plugin_id).await?;
 
+        // TODO: Given how many fields I'm forwarding here, it may just
+        // make sense to pass `deploy_plugin` &self verbatim...
         deploy_plugin::deploy_plugin(
             &self.nomad_client,
             &self.nomad_cli,
             &self.db_client,
             plugin_row,
             &self.plugin_bucket_owner_id,
+            &self.plugin_bucket_name,
+            &self.plugin_bootstrap_container_image,
+            &self.plugin_execution_container_image,
         )
         .await
         .map_err(PluginRegistryServiceError::from)?;
@@ -346,6 +357,8 @@ pub async fn exec_service(
         s3: S3Client::from_env(),
         plugin_bucket_name: service_config.plugin_s3_bucket_name,
         plugin_bucket_owner_id: service_config.plugin_s3_bucket_aws_account_id,
+        plugin_bootstrap_container_image: service_config.plugin_bootstrap_container_image,
+        plugin_execution_container_image: service_config.plugin_execution_container_image,
     };
 
     let addr = service_config.plugin_registry_bind_address;

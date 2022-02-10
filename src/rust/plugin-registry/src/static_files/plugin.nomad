@@ -1,9 +1,3 @@
-variable "container_registry" {
-  type        = string
-  default     = "localhost:5000"
-  description = "The container registry in which we can find Grapl services."
-}
-
 variable "plugin_id" {
   type        = string
   description = "The ID for this plugin."
@@ -19,6 +13,16 @@ variable "plugin_artifact_url" {
   description = "The url that specifies which binary to run as the plugin."
 }
 
+variable "kernel_artifact_url" {
+  type        = string
+  description = "S3 URL specifying the kernel for the Firecracker VM."
+}
+
+variable "rootfs_artifact_url" {
+  type        = string
+  description = "S3 URL specifying the RootFS for the Firecracker VM."
+}
+
 variable "plugin_count" {
   type        = number
   default     = 1
@@ -28,6 +32,16 @@ variable "plugin_count" {
 variable "aws_account_id" {
   type        = string
   description = "The account ID of the aws account that holds onto the plugin binaries."
+}
+
+variable "plugin_bootstrap_container_image" {
+  type        = string
+  description = "The tenant-plugin-bootstrap-sidecar task's DockerImageId."
+}
+
+variable "plugin_execution_container_image" {
+  type        = string
+  description = "The tenant-plugin-execution-sidecar task's DockerImageId."
 }
 
 # Temporarily dropping the shared_key stuff and picking it up later, per
@@ -77,7 +91,7 @@ job "grapl-plugin" {
       }
 
       config {
-        image = "grapl/plugin-execution-sidecar"
+        image = var.plugin_execution_container_image
         ports = [
         "plugin_sidecar_grpc_receiver"]
       }
@@ -108,7 +122,7 @@ job "grapl-plugin" {
       }
 
       config {
-        image = "grapl/plugin-bootstrap-sidecar"
+        image = var.plugin_bootstrap_container_image
         ports = [
         "plugin_bootstrap_grpc_receiver"]
       }
@@ -136,7 +150,7 @@ job "grapl-plugin" {
       }
 
       artifact {
-        source      = "https://grapl-firecracker.s3.amazonaws.com/kernel/v0.tar.gz"
+        source      = var.kernel_artifact_url
         destination = "local/vmlinux"
         headers {
           x-amz-expected-bucket-owner = var.aws_account_id
@@ -145,7 +159,7 @@ job "grapl-plugin" {
       }
 
       artifact {
-        source      = "https://grapl-firecracker.s3.amazonaws.com/rootfs/v0.rootfs.tar.gz"
+        source      = var.rootfs_artifact_url
         destination = "local/rootfs.ext4"
         headers {
           x-amz-expected-bucket-owner = var.aws_account_id
