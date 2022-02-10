@@ -353,7 +353,7 @@ pub async fn exec_service(
     //     service_config=?service_config,
     // );
 
-    let org_management = OrgManagement::try_from(&service_config).await?;
+    let org_management = OrganizationManagement::try_from(&service_config).await?;
 
     tracing::info!(message = "Performing migration",);
 
@@ -371,8 +371,8 @@ pub async fn exec_service(
                 extensions = ?request.extensions(),
             )
         })
-        .add_service(health_service)
-        .add_service(OrgManagementServiceServer::new(org_management))
+        // .add_service(health_service)
+        .add_service(OrganizationManagementServiceServer::new(org_management))
         .serve(service_config.org_management_bind_address)
         .await?;
 
