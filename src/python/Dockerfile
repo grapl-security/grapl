@@ -53,9 +53,9 @@ CMD ["./e2e-tests.pex"]
 
 ENV PATH=/home/grapl/bin:$PATH
 
-# python-integration-tests
+# integration-tests
 ################################################################################
-FROM grapl-python-base AS python-integration-tests
+FROM grapl-python-base AS integration-tests
 USER root
 RUN apt-get update \
     && apt-get -y install --no-install-recommends \

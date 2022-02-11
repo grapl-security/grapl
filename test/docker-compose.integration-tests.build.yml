@@ -14,7 +14,7 @@ services:
     build:
       context: ${PWD}
       dockerfile: src/python/Dockerfile
-      target: python-integration-tests
+      target: integration-tests
 
   e2e-tests:
     image: e2e-tests:${TAG}
