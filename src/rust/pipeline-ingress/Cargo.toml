@@ -1,0 +1,33 @@
+[package]
+name = "pipeline-ingress"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "pipeline-ingress-api"
+path = "src/main.rs"
+
+[lib]
+name = "pipeline_ingress_api"
+
+[dependencies]
+grapl-config = { path = "../grapl-config" }
+grapl-utils = { path = "../grapl-utils" }
+rust-proto = { path = "../rust-proto" }
+thiserror = "1.0.30"
+tokio = { version = "1.14.0", features = ["full"] }
+tonic = "0.6.1"
+tonic-health = "0.5.0"
+tracing = "0.1.29"
+uuid = { version = "0.8.2", features = ["v4"] }
+chrono = "0.4.19"
+futures = "0.3.17"
+
+[dev-dependencies]
+test-log = { version = "0.2", default-features = false, features = ["trace"] }
+tracing-subscriber = "0.3"
+
+[features]
+integration = []

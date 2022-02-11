@@ -18,6 +18,7 @@ members = [
   "./model-plugin-deployer",
   "./node-identifier",
   "./nomad-client-gen",
+  "./pipeline-ingress",
   "./plugin-bootstrap",
   "./plugin-registry",
   "./plugin-sdk/generator-sdk/",
