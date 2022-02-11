@@ -120,7 +120,7 @@ services:
     build:
       context: .
       dockerfile: ./src/python/Dockerfile
-      target: analyzer-executor
+      target: analyzer-executor-deploy
 
   engagement-creator:
     image: engagement-creator:${TAG}

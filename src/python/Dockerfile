@@ -19,7 +19,7 @@ ENTRYPOINT ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
 
 # analyzer-executor
 ################################################################################
-FROM grapl-python-base AS analyzer-executor
+FROM grapl-python-base AS analyzer-executor-deploy
 COPY --chown=grapl ./dist/analyzer-executor.pex .
 CMD ["./analyzer-executor.pex"]
 
