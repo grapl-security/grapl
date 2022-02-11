@@ -32,19 +32,39 @@ pub async fn deploy_plugin(
     db_client: &PluginRegistryDbClient,
     plugin: PluginRow,
     plugin_bucket_owner_id: &str,
+    plugin_bucket_name: &str,
+    plugin_bootstrap_container_image: &str,
+    plugin_execution_container_image: &str,
 ) -> Result<(), PluginRegistryServiceError> {
     // --- Convert HCL to JSON Job model
     let job_name = "grapl-plugin"; // Matches what's in `plugin.nomad`
     let job = {
         let job_file_hcl = static_files::PLUGIN_JOB;
+        let kernel_artifact_url = format!(
+            "https://{bucket}.s3.amazonaws.com/{key}",
+            bucket = plugin_bucket_name,
+            key = "kernel/v0.tar.gz",
+        );
+        let rootfs_artifact_url = format!(
+            "https://{bucket}.s3.amazonaws.com/{key}",
+            bucket = plugin_bucket_name,
+            key = "rootfs/v0.rootfs.tar.gz",
+        );
         let job_file_vars: NomadVars = HashMap::from([
-            ("plugin_id".to_owned(), plugin.plugin_id.to_string()),
-            ("tenant_id".to_owned(), plugin.tenant_id.to_string()),
-            ("plugin_artifact_url".to_owned(), plugin.artifact_s3_key),
+            ("aws_account_id", plugin_bucket_owner_id.to_string()),
+            ("kernel_artifact_url", kernel_artifact_url),
+            ("plugin_artifact_url", plugin.artifact_s3_key),
             (
-                "aws_account_id".to_owned(),
-                plugin_bucket_owner_id.to_string(),
+                "plugin_bootstrap_container_image",
+                plugin_bootstrap_container_image.to_owned(),
             ),
+            (
+                "plugin_execution_container_image",
+                plugin_execution_container_image.to_owned(),
+            ),
+            ("plugin_id", plugin.plugin_id.to_string()),
+            ("rootfs_artifact_url", rootfs_artifact_url),
+            ("tenant_id", plugin.tenant_id.to_string()),
         ]);
         cli.parse_hcl2(job_file_hcl, job_file_vars)?
     };
