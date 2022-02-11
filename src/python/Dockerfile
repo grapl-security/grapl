@@ -25,7 +25,7 @@ CMD ["./analyzer-executor.pex"]
 
 # engagement-creator
 ################################################################################
-FROM grapl-python-base AS engagement-creator
+FROM grapl-python-base AS engagement-creator-deploy
 COPY --chown=grapl ./dist/engagement-creator.pex .
 CMD ["./engagement-creator.pex"]
 
