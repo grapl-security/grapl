@@ -297,7 +297,7 @@ COPY --from=build /outputs/osquery-generator /
 ENTRYPOINT ["/osquery-generator"]
 
 # web-ui
-FROM rust-dist AS grapl-web-ui
+FROM rust-dist AS grapl-web-ui-deploy
 
 # Hadolint v2.8.0 appears to be mistaken, this is a false positive
 # https://github.com/hadolint/hadolint/wiki/DL3022

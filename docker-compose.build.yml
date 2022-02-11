@@ -79,7 +79,7 @@ services:
     build:
       context: src
       dockerfile: rust/Dockerfile
-      target: grapl-web-ui
+      target: grapl-web-ui-deploy
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
