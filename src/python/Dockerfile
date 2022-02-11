@@ -31,7 +31,7 @@ CMD ["./engagement-creator.pex"]
 
 # Provisioner
 ################################################################################
-FROM grapl-python-base AS provisioner
+FROM grapl-python-base AS provisioner-deploy
 COPY --chown=grapl ./dist/provisioner.pex .
 CMD ["./provisioner.pex"]
 

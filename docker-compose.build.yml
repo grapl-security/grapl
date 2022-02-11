@@ -167,4 +167,4 @@ services:
     build:
       context: .
       dockerfile: ./src/python/Dockerfile
-      target: provisioner
+      target: provisioner-deploy
