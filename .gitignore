@@ -77,5 +77,8 @@ pyrightconfig.json
 *.profdata
 *.profraw
 
+# Generated when running `generate_firecracker_kernel.sh`
+/firecracker/firecracker
+
 ### PERSONAL SCRIPTS
 upload_localhost.sh
