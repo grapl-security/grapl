@@ -10,7 +10,6 @@ steps:
       # repository. If they all get built successfully, then we'll
       # promote them as a group later.
       - ".buildkite/scripts/build_and_upload_containers.sh"
-    key: "docker-containers"
     plugins:
       - grapl-security/vault-login#v0.1.0
       - grapl-security/vault-env#v0.1.0:
@@ -21,6 +20,20 @@ steps:
           username: grapl-cicd
           password-env: CLOUDSMITH_API_KEY
           server: docker.cloudsmith.io
+    agents:
+      queue: "docker"
+    artifact_paths:
+      - "*.grapl-artifacts.json"
+
+  - label: ":linux: Build non-Docker packages"
+    command:
+      - ".buildkite/scripts/build_and_upload_packages.sh"
+    plugins:
+      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-env#v0.1.0:
+          secrets:
+            - CLOUDSMITH_API_KEY
+            - grapl/TOOLCHAIN_AUTH_TOKEN
     agents:
       queue: "docker"
     artifact_paths:
