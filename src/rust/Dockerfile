@@ -14,7 +14,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # hadolint ignore=DL3009,SC1089
 RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-base-apt \
     apt-get update \
-    && apt-get install -y --no-install-recommends \
+    && apt-get install --yes --no-install-recommends \
         build-essential=12.9 \
         jq=1.6-2.1 \
         libssl-dev=1.1.1k-1+deb11u1 \
@@ -148,7 +148,7 @@ FROM debian:bullseye-slim AS integration-tests
 
 RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tests-apt \
     apt-get update \
-    && apt-get install -y --no-install-recommends \
+    && apt-get install --yes --no-install-recommends \
         ca-certificates=20210119
 
 # Make the Nomad binary available to integration test consumers of NomadCli
