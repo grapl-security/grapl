@@ -128,11 +128,8 @@ help: ## Print this help
 ##@ Build 🔨
 
 .PHONY: build-service-pexs
-build-service-pexs:
-	./pants package \
-		./src/python/analyzer_executor/src \
-		./src/python/engagement-creator/engagement_creator:pex \
-		./src/python/provisioner/provisioner:pex
+build-service-pexs: ## Build all PEX files that are used by our service processes
+	./pants --tag="service-pex" package ::
 
 .PHONY: build-test-unit
 build-test-unit:
@@ -439,10 +436,6 @@ start-nomad-detach:  ## Start the Nomad environment, detached
 .PHONY: stop-nomad-detach
 stop-nomad-detach:  ## Stop Nomad CI environment
 	nomad/local/stop_detach.sh
-
-.PHONY: push
-push: build-docker-images ## Push Grapl containers to supplied DOCKER_REGISTRY
-	docker-compose --file=docker-compose.build.yml push
 
 .PHONY: e2e-logs
 e2e-logs: ## All docker-compose logs

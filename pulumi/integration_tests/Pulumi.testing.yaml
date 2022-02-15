@@ -1,21 +1,21 @@
 config:
   aws:region: us-east-1
   integration-tests:artifacts:
-    analyzer-dispatcher: 20220211201845-d01b44e
-    analyzer-executor: 20220211201845-d01b44e
-    e2e-tests: 20220211201845-d01b44e
-    engagement-creator: 20220211201845-d01b44e
-    graph-merger: 20220211201845-d01b44e
-    graphql-endpoint: 20220211201845-d01b44e
-    grapl-web-ui: 20220211201845-d01b44e
-    model-plugin-deployer: 20220211201845-d01b44e
-    node-identifier: 20220211201845-d01b44e
-    node-identifier-retry: 20220211201845-d01b44e
-    osquery-generator: 20220211201845-d01b44e
-    plugin-bootstrap: 20220211201845-d01b44e
-    plugin-registry: 20220211201845-d01b44e
-    plugin-work-queue: 20220211201845-d01b44e
-    provisioner: 20220211201845-d01b44e
-    sysmon-generator: 20220211201845-d01b44e
+    analyzer-dispatcher: 20220215215511-dff396b
+    analyzer-executor: 20220215215511-dff396b
+    e2e-tests: 20220215215511-dff396b
+    engagement-creator: 20220215215511-dff396b
+    graph-merger: 20220215215511-dff396b
+    graphql-endpoint: 20220215215511-dff396b
+    grapl-web-ui: 20220215215511-dff396b
+    model-plugin-deployer: 20220215215511-dff396b
+    node-identifier: 20220215215511-dff396b
+    node-identifier-retry: 20220215215511-dff396b
+    osquery-generator: 20220215215511-dff396b
+    plugin-bootstrap: 20220215215511-dff396b
+    plugin-registry: 20220215215511-dff396b
+    plugin-work-queue: 20220215215511-dff396b
+    provisioner: 20220215215511-dff396b
+    sysmon-generator: 20220215215511-dff396b
   integration-tests:confluent-environment-name: testing
   integration-tests:container-repository: docker.cloudsmith.io/grapl/testing
