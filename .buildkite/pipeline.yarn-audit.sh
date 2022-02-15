@@ -28,7 +28,7 @@ steps:
   - label: ":nodejs: yarn audit"
     command:
       - cd src/js/engagement_view
-      - yarn audit
+      - yarn audit --level high
     plugins:
       - docker#v3.8.0:
           image: "node:17-alpine"
