@@ -40,28 +40,20 @@ sha256_of_file() {
 
 # Get the json query result of a named package.
 # Usage:
-#  query_package firecracker_kernel.tar.gz
-#  CHECKSUM=a1b2c3 query_package firecracker_kernel.tar.gz
+#  query_package --query="name:^firecracker_kernel.tar.gz$""
 cloudsmith_query_package() {
-    queries=(
-        --query "name:${1}"
-    )
-    if [ -n "${CHECKSUM}" ]; then
-        queries+=(
-            --query "checksum:${CHECKSUM}"
-        )
-    fi
+    queries="${1}"
     cloudsmith ls packages \
         "${UPSTREAM_REGISTRY}" \
-        "${queries[@]}" \
+        "${queries}" \
         --output-format=pretty_json |
         jq ".data"
 }
 
 # Returns 0 if it is present; 1 if not.
 present_upstream() {
-    CHECKSUM="${2}" cloudsmith_query_package "${1}" |
-        jq -e ". | length != 0"
+    cloudsmith_query_package --query="name:^${1}$ AND checksum:^${2}$" |
+        jq --exit-status ". | length != 0"
 }
 
 echo "--- :cloudsmith::sleuth_or_spy: Checking upstream repository to determine what to promote"
@@ -91,4 +83,4 @@ done
 
 # Now that we've filtered out things that already exist upstream, we
 # only need to care about the new stuff.
-artifact_json "${TAG}" "${new_packages[@]}" > "$(artifacts_file_for containers)"
+artifact_json "${TAG}" "${new_packages[@]}" > "$(artifacts_file_for firecracker)"

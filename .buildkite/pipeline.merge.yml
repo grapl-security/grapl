@@ -25,12 +25,12 @@ steps:
     artifact_paths:
       - "*.grapl-artifacts.json"
 
-  - label: ":linux: Build non-Docker packages"
+  - label: ":firecracker: Build Firecracker packages"
     command:
       # Note: these packages are uploaded to the `raw`
       # repository. If they all get built successfully, then we'll
       # promote them as a group later.
-      - ".buildkite/scripts/build_and_upload_packages.sh"
+      - ".buildkite/scripts/build_and_upload_firecracker_packages.sh"
     plugins:
       - grapl-security/vault-login#v0.1.0
       - grapl-security/vault-env#v0.1.0:
@@ -38,6 +38,11 @@ steps:
             - CLOUDSMITH_API_KEY
             - grapl/TOOLCHAIN_AUTH_TOKEN
     agents:
+      # We're building the Firecracker VM image, which uses docker, and we'd
+      # like to take advantage of the docker queue's local cache whenever
+      # possible.
+      # We need access to the CLOUDSMITH_API_KEY so we can upload
+      # to Cloudsmith.
       queue: "docker"
     artifact_paths:
       - "*.grapl-artifacts.json"
