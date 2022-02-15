@@ -27,6 +27,9 @@ steps:
 
   - label: ":linux: Build non-Docker packages"
     command:
+      # Note: these packages are uploaded to the `raw`
+      # repository. If they all get built successfully, then we'll
+      # promote them as a group later.
       - ".buildkite/scripts/build_and_upload_packages.sh"
     plugins:
       - grapl-security/vault-login#v0.1.0

@@ -30,7 +30,7 @@ git checkout tags/"${FIRECRACKER_RELEASE}"
 # Based on https://github.com/firecracker-microvm/firecracker/blob/main/docs/rootfs-and-kernel-setup.md
 ########################################
 rm -rf build/kernel
-./tools/devtool build_kernel -c "${KERNEL_CONFIG}" -n 8
+./tools/devtool build_kernel --config "${KERNEL_CONFIG}" --numproc 8
 
 ########################################
 # Copy kernel into dist.
