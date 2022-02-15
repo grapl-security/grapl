@@ -5,6 +5,8 @@ from typing import List, Mapping, Set, cast
 from pulumi.resource import CustomTimeouts, ResourceOptions
 from typing_extensions import Final
 
+from infra.path import path_from_root
+
 sys.path.insert(0, "..")
 
 import pulumi_aws as aws
@@ -293,12 +295,12 @@ def main() -> None:
             "grapl-core",
             # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
             # when they update nomad configs
-            intention_directory=Path("../../nomad/consul-intentions").resolve(),
+            intention_directory=path_from_root("nomad/consul-intentions").resolve(),
         )
 
         nomad_grapl_core = NomadJob(
             "grapl-core",
-            jobspec=Path("../../nomad/grapl-core.nomad").resolve(),
+            jobspec=path_from_root("nomad/grapl-core.nomad").resolve(),
             vars=local_grapl_core_job_vars,
             opts=ResourceOptions(
                 custom_timeouts=CustomTimeouts(
@@ -309,7 +311,7 @@ def main() -> None:
 
         nomad_grapl_ingress = NomadJob(
             "grapl-ingress",
-            jobspec=Path("../../nomad/grapl-ingress.nomad").resolve(),
+            jobspec=path_from_root("nomad/grapl-ingress.nomad").resolve(),
             vars={},
         )
 
@@ -330,7 +332,7 @@ def main() -> None:
 
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
-            jobspec=Path("../../nomad/grapl-provision.nomad").resolve(),
+            jobspec=path_from_root("nomad/grapl-provision.nomad").resolve(),
             vars=provision_vars,
             opts=pulumi.ResourceOptions(depends_on=[nomad_grapl_core.job]),
         )
@@ -453,7 +455,7 @@ def main() -> None:
             "grapl-core",
             # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
             # when they update nomad configs
-            intention_directory=Path("../../nomad/consul-intentions").resolve(),
+            intention_directory=path_from_root("nomad/consul-intentions").resolve(),
             opts=pulumi.ResourceOptions(provider=consul_provider),
         )
 
@@ -477,7 +479,7 @@ def main() -> None:
 
         nomad_grapl_core = NomadJob(
             "grapl-core",
-            jobspec=Path("../../nomad/grapl-core.nomad").resolve(),
+            jobspec=path_from_root("nomad/grapl-core.nomad").resolve(),
             vars=prod_grapl_core_job_vars,
             opts=pulumi.ResourceOptions(
                 provider=nomad_provider,
@@ -489,7 +491,7 @@ def main() -> None:
 
         nomad_grapl_ingress = NomadJob(
             "grapl-ingress",
-            jobspec=Path("../../nomad/grapl-ingress.nomad").resolve(),
+            jobspec=path_from_root("nomad/grapl-ingress.nomad").resolve(),
             vars={},
             opts=pulumi.ResourceOptions(provider=nomad_provider),
         )
@@ -510,7 +512,7 @@ def main() -> None:
 
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
-            jobspec=Path("../../nomad/grapl-provision.nomad").resolve(),
+            jobspec=path_from_root("nomad/grapl-provision.nomad").resolve(),
             vars=grapl_provision_job_vars,
             opts=pulumi.ResourceOptions(
                 depends_on=[

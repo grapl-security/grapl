@@ -10,6 +10,7 @@ import pulumi_aws as aws
 import pulumi_nomad as nomad
 from infra import config
 from infra.autotag import register_auto_tags
+from infra.path import path_from_root
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
 from infra.nomad_job import NomadJob, NomadVars
@@ -94,7 +95,7 @@ def main() -> None:
 
     e2e_tests = NomadJob(
         "e2e-tests",
-        jobspec=Path("../../nomad/e2e-tests.nomad").resolve(),
+        jobspec=path_from_root("nomad/e2e-tests.nomad").resolve(),
         vars=e2e_test_job_vars,
         opts=pulumi.ResourceOptions(provider=nomad_provider),
     )
@@ -127,7 +128,7 @@ def main() -> None:
 
         integration_tests = NomadJob(
             "integration-tests",
-            jobspec=Path("../../nomad/local/integration-tests.nomad").resolve(),
+            jobspec=path_from_root("nomad/local/integration-tests.nomad").resolve(),
             vars=integration_test_job_vars,
             opts=pulumi.ResourceOptions(provider=nomad_provider),
         )
