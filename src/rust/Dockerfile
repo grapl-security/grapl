@@ -50,13 +50,15 @@ COPY rust rust
 WORKDIR /grapl/rust
 
 
+ENV CARGO_TARGET_DIR="/grapl/rust/target"
+
 # build
 ################################################################################
 FROM base AS build
 
 # Hadolint appears to be confused about some of these mount targets
 # hadolint ignore=SC1091
-RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
+RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
     --mount=type=cache,target=/usr/local/rustup,sharing=locked <<EOF
     case "${RUST_BUILD}" in
@@ -74,9 +76,9 @@ EOF
 
 # Copy the build outputs to location that's not a cache mount.
 # TODO: switch to using --out-dir when stable: https://github.com/rust-lang/cargo/issues/6790
-RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
+RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
     mkdir -p /outputs && \
-    find "/grapl/rust/target/${RUST_BUILD}" -maxdepth 1 -type f -executable -exec cp {} /outputs \;
+    find "${CARGO_TARGET_DIR}/${RUST_BUILD}" -maxdepth 1 -type f -executable -exec cp {} /outputs \;
 
 
 # tarpaulin
@@ -124,7 +126,7 @@ RUN mkdir --parents "${TEST_DIR}"
 # Hadolint is confused again, at the time of this writing, SHELL *does*
 # have -o pipefail set on line 9.
 # hadolint ignore=DL4006
-RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
+RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
     --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
     --mount=type=cache,target=/usr/local/rustup,sharing=locked \
     cargo test \
