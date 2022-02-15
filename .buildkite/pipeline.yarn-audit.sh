@@ -16,7 +16,7 @@
 
 set -euo pipefail
 
-if [ "${BUILDKITE_PIPELINE_NAME}" == "grapl/yarn-npm-audit" ]; then
+if [ "${BUILDKITE_PIPELINE_NAME}" == "grapl/yarn-audit" ]; then
     soft_fail="false"
 else
     soft_fail="true"
@@ -25,10 +25,10 @@ fi
 cat << EOF
 ---
 steps:
-  - label: ":nodejs: yarn npm audit"
+  - label: ":nodejs: yarn audit"
     command:
       - cd src/js/engagement_view
-      - yarn npm audit
+      - yarn audit
     plugins:
       - docker#v3.8.0:
           image: "node:17-alpine"
