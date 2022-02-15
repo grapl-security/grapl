@@ -440,10 +440,6 @@ start-nomad-detach:  ## Start the Nomad environment, detached
 stop-nomad-detach:  ## Stop Nomad CI environment
 	nomad/local/stop_detach.sh
 
-.PHONY: push
-push: build-docker-images ## Push Grapl containers to supplied DOCKER_REGISTRY
-	docker-compose --file=docker-compose.build.yml push
-
 .PHONY: e2e-logs
 e2e-logs: ## All docker-compose logs
 	@$(WITH_LOCAL_GRAPL_ENV)
