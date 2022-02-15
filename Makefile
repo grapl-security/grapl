@@ -23,9 +23,16 @@ export
 export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 	--file ./test/docker-compose.unit-tests-rust.yml \
 	--file ./test/docker-compose.unit-tests-js.yml \
-	--file ./test/docker-compose.integration-tests.build.yml
 
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
+
+# While we have Docker Compose files present, we have to explicitly
+# declare we're using an HCL file (compose YAML files are used
+# preferentially, in the absence of explicit overrides).
+#
+# The name of this variable is our own; there doesn't appear to be an
+# official one to specify such a file.
+BUILDX_BAKE_HCL_FILE := docker-bake.hcl
 
 COMPOSE_PROJECT_INTEGRATION_TESTS := grapl-integration_tests
 COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
@@ -146,10 +153,7 @@ build-test-unit-js:
 .PHONY: build-test-integration
 build-test-integration:
 	@echo "--- Building integration test images"
-	$(DOCKER_BUILDX_BAKE) \
-		--file ./test/docker-compose.integration-tests.build.yml \
-		python-integration-tests \
-		rust-integration-tests
+	$(DOCKER_BUILDX_BAKE) --file "${BUILDX_BAKE_HCL_FILE}" integration-tests
 
 .PHONY: build-test-e2e
 build-test-e2e:
@@ -158,9 +162,7 @@ build-test-e2e:
 # seems like the most straightforward way of capturing these
 # dependencies at the moment.
 	./pants --tag="e2e-test-pex" package ::
-	$(DOCKER_BUILDX_BAKE) \
-		--file ./test/docker-compose.integration-tests.build.yml \
-		e2e-tests
+	$(DOCKER_BUILDX_BAKE) --file "${BUILDX_BAKE_HCL_FILE}" e2e-tests
 
 .PHONY: build-engagement-view
 build-engagement-view: ## Build website assets
