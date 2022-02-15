@@ -134,7 +134,6 @@ RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
         --test "*" | \
         jq -r "select(.profile.test == true) | .filenames[]" | \
         xargs \
-          --max-args=1 \
           --replace="{}" \
           cp "{}" "${TEST_DIR}/"
 
