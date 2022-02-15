@@ -9,4 +9,5 @@ python_sources(
 pex_binary(
     output_path="analyzer-executor.pex",
     entry_point="./run.py:run",
+    tags=["service-pex"],
 )
