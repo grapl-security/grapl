@@ -20,6 +20,7 @@ BUILD @christophermaier
 /etc/ci_scripts/ @wimax-grapl
 /etc/formatter/ @wimax-grapl
 /etc/sample_data/ @jgrillo-grapl
+/firecracker @wimax-grapl
 /.flake8 @christophermaier
 .gitattributes @christophermaier
 /.github/ @christophermaier
