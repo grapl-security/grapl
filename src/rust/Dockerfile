@@ -55,8 +55,8 @@ ENV CARGO_TARGET_DIR="/grapl/rust/target"
 # These variables are just to DRY up some repeated cache target
 # locations. They are of our own creation, and do not hold any special
 # meaning to `cargo`, `rustup`, or anything else.
-ENV REGISTRY_CACHE_TARGET="/usr/local/cargo/registry"
-ENV RUSTUP_CACHE_TARGET="/usr/local/rustup"
+ENV REGISTRY_CACHE_TARGET="${CARGO_HOME}/registry"
+ENV RUSTUP_CACHE_TARGET="${RUSTUP_HOME}"
 
 # build
 ################################################################################
