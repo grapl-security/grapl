@@ -6,7 +6,7 @@ FROM rust:1-slim-bullseye AS base
 
 ARG RUST_BUILD=debug
 
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+SHELL ["/bin/bash", "-o", "errexit", "-o", "nounset", "-o", "pipefail", "-c"]
 
 # Necessary for rdkafka; pkg-config & libssl-dev for cargo-tarpaulin build
 #
