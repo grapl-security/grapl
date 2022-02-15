@@ -1,11 +1,9 @@
 import sys
-from pathlib import Path
 from typing import List, Mapping, Set, cast
 
+from infra.path import path_from_root
 from pulumi.resource import CustomTimeouts, ResourceOptions
 from typing_extensions import Final
-
-from infra.path import path_from_root
 
 sys.path.insert(0, "..")
 
@@ -15,6 +13,7 @@ import pulumi_nomad as nomad
 from infra import config, dynamodb, emitter
 from infra.alarms import OpsAlarms
 from infra.api_gateway import ApiGateway
+from infra.artifacts import ArtifactGetter
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
@@ -40,16 +39,13 @@ def _get_subset(inputs: NomadVars, subset: Set[str]) -> NomadVars:
     return {k: inputs[k] for k in subset}
 
 
-def _container_images(
-    artifacts: Mapping[str, str], require_artifact: bool = False
-) -> Mapping[str, DockerImageId]:
+def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
     """
     Build a map of {task name -> docker image identifier}.
     """
     builder = DockerImageIdBuilder(
         container_repository=config.container_repository(),
         artifacts=artifacts,
-        require_artifact=require_artifact,
     )
 
     return {
@@ -270,12 +266,11 @@ def main() -> None:
 
         pulumi.export("redis-endpoint", redis_endpoint)
 
+        artifacts = ArtifactGetter({}, require_artifact=False)
         local_grapl_core_job_vars: Final[NomadVars] = dict(
-            # The vars with a leading underscore indicate that the hcl local version of the variable should be used
-            # instead of the var version.
             aws_env_vars_for_local=aws_env_vars_for_local,
             redis_endpoint=redis_endpoint,
-            container_images=_container_images({}),
+            container_images=_container_images(artifacts),
             rust_log=rust_log_levels,
             plugin_registry_db_hostname=plugin_registry_db.hostname,
             plugin_registry_db_port=str(plugin_registry_db.port),
@@ -441,7 +436,9 @@ def main() -> None:
         pulumi.export("kafka-bootstrap-servers", kafka.bootstrap_servers())
         pulumi.export("redis-endpoint", cache.endpoint)
 
-        artifacts = pulumi_config.require_object("artifacts")
+        artifacts = ArtifactGetter(
+            pulumi_config.require_object("artifacts"), require_artifact=True
+        )
 
         # Set custom provider with the address set
         consul_provider = get_hashicorp_provider_address(
@@ -462,8 +459,13 @@ def main() -> None:
         prod_grapl_core_job_vars: Final[NomadVars] = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
+<<<<<<< HEAD
             redis_endpoint=cache.endpoint,
             container_images=_container_images(artifacts, require_artifact=True),
+=======
+            _redis_endpoint=cache.endpoint,
+            container_images=_container_images(artifacts),
+>>>>>>> e52eb381 (About to run typecheck)
             plugin_registry_db_hostname=plugin_registry_postgres.host(),
             plugin_registry_db_port=plugin_registry_postgres.port().apply(str),
             plugin_registry_db_username=plugin_registry_postgres.username(),

@@ -1,5 +1,13 @@
 import os
-from typing import Mapping, NewType, Optional
+from typing import NewType, Optional
+from infra.artifacts import ArtifactGetter
+from typing_extensions import Final
+
+# This default is chosen because Nomad cannot pull images called "latest"
+# from the local machine (it takes it as a directive to go to Dockerhub)
+# Originates at the `TAG ?= dev` at the top of the Makefile.
+_DEFAULT_TAG: Final[str] = "dev"
+
 
 DockerImageId = NewType("DockerImageId", str)
 """
@@ -18,8 +26,7 @@ The values can look like, for instance:
 
 def _version_tag(
     key: str,
-    artifacts: Mapping[str, str],
-    require_artifact: bool = False,
+    artifacts: ArtifactGetter,
 ) -> str:
     """
     First, try and get the value from artifacts;
@@ -31,10 +38,6 @@ def _version_tag(
     artifact_version = artifacts.get(key)
     if artifact_version:
         return artifact_version
-    if not artifact_version and require_artifact:
-        raise KeyError(
-            f"Expected to find an artifacts entry for {key} in Pulumi config file"
-        )
 
     tag = os.environ["TAG"]
     assert (
@@ -45,16 +48,12 @@ def _version_tag(
 
 class DockerImageIdBuilder:
     def __init__(
-        self,
-        container_repository: Optional[str],
-        artifacts: Mapping[str, str],
-        require_artifact: bool = False,
+        self, container_repository: Optional[str], artifacts: ArtifactGetter
     ) -> None:
         self.container_repository = (
             f"{container_repository}/" if container_repository else ""
         )
         self.artifacts = artifacts
-        self.require_artifact = require_artifact
 
     def build(self, image_name: str, tag: str) -> DockerImageId:
         return DockerImageId(f"{self.container_repository}{image_name}:{tag}")
@@ -63,7 +62,5 @@ class DockerImageIdBuilder:
         """
         Automatically grabs the version tag from config's artifacts.
         """
-        tag = _version_tag(
-            image_name, artifacts=self.artifacts, require_artifact=self.require_artifact
-        )
+        tag = _version_tag(image_name, artifacts=self.artifacts)
         return self.build(image_name, tag)

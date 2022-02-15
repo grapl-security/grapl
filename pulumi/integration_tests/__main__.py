@@ -1,6 +1,5 @@
 import os
 import sys
-from pathlib import Path
 
 sys.path.insert(0, "..")
 
@@ -9,17 +8,18 @@ from typing import Mapping, Optional, cast
 import pulumi_aws as aws
 import pulumi_nomad as nomad
 from infra import config
+from infra.artifacts import ArtifactGetter
 from infra.autotag import register_auto_tags
-from infra.path import path_from_root
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
 from infra.nomad_job import NomadJob, NomadVars
+from infra.path import path_from_root
 
 import pulumi
 
 
 def _e2e_container_images(
-    artifacts: Mapping[str, str], require_artifact: bool = False
+    artifacts: ArtifactGetter,
 ) -> Mapping[str, DockerImageId]:
     """
     Build a map of {task name -> docker image identifier}.
@@ -27,7 +27,6 @@ def _e2e_container_images(
     builder = DockerImageIdBuilder(
         container_repository=config.container_repository(),
         artifacts=artifacts,
-        require_artifact=require_artifact,
     )
 
     return {
@@ -36,7 +35,7 @@ def _e2e_container_images(
 
 
 def _integration_container_images(
-    artifacts: Mapping[str, str], require_artifact: bool = False
+    artifacts: ArtifactGetter,
 ) -> Mapping[str, DockerImageId]:
     """
     Build a map of {task name -> docker image identifier}.
@@ -44,7 +43,6 @@ def _integration_container_images(
     builder = DockerImageIdBuilder(
         container_repository=config.container_repository(),
         artifacts=artifacts,
-        require_artifact=require_artifact,
     )
 
     return {
@@ -58,7 +56,10 @@ def main() -> None:
     stack_name = pulumi.get_stack()
 
     pulumi_config = pulumi.Config()
-    artifacts = pulumi_config.get_object("artifacts") or {}
+    artifacts = ArtifactsGetter(
+        pulumi_config.get_object("artifacts") or {},
+        require_artifact=(not config.LOCAL_GRAPL),
+    )
 
     # These tags will be added to all provisioned infrastructure
     # objects.
@@ -78,9 +79,7 @@ def main() -> None:
         "analyzer_bucket": grapl_stack.analyzer_bucket,
         "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
         "aws_region": aws.get_region().name,
-        "container_images": _e2e_container_images(
-            artifacts, require_artifact=(not config.LOCAL_GRAPL)
-        ),
+        "container_images": _e2e_container_images(artifacts),
         "deployment_name": grapl_stack.deployment_name,
         "kafka_bootstrap_servers": grapl_stack.kafka_bootstrap_servers,
         "kafka_sasl_username": grapl_stack.kafka_e2e_sasl_username,
@@ -108,9 +107,7 @@ def main() -> None:
         integration_test_job_vars: NomadVars = {
             "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
             "aws_region": aws.get_region().name,
-            "container_images": _integration_container_images(
-                artifacts, require_artifact=(not config.LOCAL_GRAPL)
-            ),
+            "container_images": _integration_container_images(artifacts),
             "deployment_name": grapl_stack.deployment_name,
             "docker_user": os.environ["DOCKER_USER"],
             "grapl_root": os.environ["GRAPL_ROOT"],

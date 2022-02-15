@@ -1,5 +1,6 @@
 from pathlib import Path
 
+
 def path_from_root(from_root: str) -> Path:
     """
     To access something in the Grapl repo root, we have to reference two dirs
