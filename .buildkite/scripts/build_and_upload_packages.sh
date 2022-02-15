@@ -28,6 +28,7 @@ readonly PACKAGES=(
 # registry we'll need to query to see if file with the same contents
 # already exists.
 readonly UPSTREAM_REGISTRY="${UPSTREAM_REGISTRY:-grapl/testing}"
+readonly UPLOAD_TO_REGISTRY="${UPLOAD_TO_REGISTRY:-grapl/raw}"
 
 # This is the list of packages that actually have different shas
 new_packages=()
@@ -82,7 +83,7 @@ done
 echo "--- :cloudsmith::up: Uploading new packages to Cloudsmith"
 for artifact_path in "${new_packages[@]}"; do
     artifact_name=$(basename "${artifact_path}")
-    cloudsmith upload raw "${UPSTREAM_REGISTRY}" \
+    cloudsmith upload raw "${UPLOAD_TO_REGISTRY}" \
         "${artifact_path}" \
         --name "${artifact_name}" \
         --version "${TAG}"
