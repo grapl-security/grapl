@@ -52,6 +52,12 @@ WORKDIR /grapl/rust
 
 ENV CARGO_TARGET_DIR="/grapl/rust/target"
 
+# These variables are just to DRY up some repeated cache target
+# locations. They are of our own creation, and do not hold any special
+# meaning to `cargo`, `rustup`, or anything else.
+ENV REGISTRY_CACHE_TARGET="/usr/local/cargo/registry"
+ENV RUSTUP_CACHE_TARGET="/usr/local/rustup"
+
 # build
 ################################################################################
 FROM base AS build
@@ -59,8 +65,8 @@ FROM base AS build
 # Hadolint appears to be confused about some of these mount targets
 # hadolint ignore=SC1091
 RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
-    --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
-    --mount=type=cache,target=/usr/local/rustup,sharing=locked <<EOF
+    --mount=type=cache,target="${REGISTRY_CACHE_TARGET}",sharing=locked \
+    --mount=type=cache,target="${RUSTUP_CACHE_TARGET}",sharing=locked <<EOF
     case "${RUST_BUILD}" in
       debug)
         cargo build ;;
@@ -94,8 +100,8 @@ FROM base AS tarpaulin
 # outputs, such that subsequent cargo build runs will need to start from
 # scratch as well. For this reason we avoid mounting the cached target
 # directory.
-RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
-    --mount=type=cache,target=/usr/local/rustup,sharing=locked \
+RUN --mount=type=cache,target="${REGISTRY_CACHE_TARGET}",sharing=locked \
+    --mount=type=cache,target="${RUSTUP_CACHE_TARGET}",sharing=locked \
     cargo install cargo-tarpaulin
 
 
@@ -127,8 +133,8 @@ RUN mkdir --parents "${TEST_DIR}"
 # have -o pipefail set on line 9.
 # hadolint ignore=DL4006
 RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
-    --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
-    --mount=type=cache,target=/usr/local/rustup,sharing=locked \
+    --mount=type=cache,target="${REGISTRY_CACHE_TARGET}",sharing=locked \
+    --mount=type=cache,target="${RUSTUP_CACHE_TARGET}",sharing=locked \
     cargo test \
         --features "${RUST_INTEGRATION_TEST_FEATURES}" \
         --no-run \
