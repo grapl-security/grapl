@@ -176,7 +176,7 @@ build-engagement-view: ## Build website assets
 build-ui: ## Build the web UI
 build-ui: build-engagement-view
 	@echo "--- Building the Web UI"
-	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml \
+	$(DOCKER_BUILDX_BAKE) --file "${BUILDX_BAKE_HCL_FILE}" \
 		grapl-web-ui
 
 .PHONY: build-grapl-services
@@ -186,28 +186,13 @@ build-grapl-services: build-ui
 # Our Python images need their PEX files built first
 	./pants --tag="service-pex" package ::
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml \
-		analyzer-dispatcher \
-		analyzer-executor \
-		engagement-creator \
-		graph-merger \
-		graphql-endpoint \
-		model-plugin-deployer \
-		node-identifier \
-		node-identifier-retry \
-		osquery-generator \
-		plugin-bootstrap \
-		plugin-registry \
-		plugin-work-queue \
-		provisioner \
-		sysmon-generator
+		grapl-services
 
 .PHONY: build-local-services
 build-local-services: ## Build images used only in a local testing context
 	@echo "--- Building local-only services"
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml \
-		localstack \
-		postgres \
-		pulumi
+		local-only-services
 
 .PHONY: build-for-push
 build-for-push: ## Build only the images we push to our registry
