@@ -25,8 +25,9 @@ class FirecrackerAssets(pulumi.ComponentResource):
 
         self.firecracker_kernel_asset = local_or_remote_asset(
             local_path=path_from_root("dist/firecracker_kernel.tar.gz"),
-            remote_artifact_key="firecraker_kernel.tar.gz",
             artifacts=artifacts,
+            artifact_key="firecraker_kernel.tar.gz",
+            repository=repository,
             opts=child_opts,
         )
 
@@ -44,15 +45,15 @@ def cloudsmith_cdn_uri(
 
 def local_or_remote_asset(
     local_path: Path,
-    artifact_key: str,
     artifacts: ArtifactGetter,
+    artifact_key: str,
     repository: str,
     opts: pulumi.ResourceOptions,
 ) -> pulumi.asset.Asset:
     # First, allow a local asset if it's local-grapl
     if config.LOCAL_GRAPL:
         if local_path.resolve().exists():
-            return pulumi.asset.FileAsset(local_path, opts=opts)
+            return pulumi.asset.FileAsset(local_path)
 
     # Or fall back to a remote path
     version = artifacts.get(artifact_key)

@@ -56,7 +56,7 @@ def main() -> None:
     stack_name = pulumi.get_stack()
 
     pulumi_config = pulumi.Config()
-    artifacts = ArtifactsGetter(
+    artifacts = ArtifactGetter(
         pulumi_config.get_object("artifacts") or {},
         require_artifact=(not config.LOCAL_GRAPL),
     )
