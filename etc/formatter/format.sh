@@ -1,5 +1,6 @@
 #!/bin/bash
-set -u
+
+set -euo pipefail
 shopt -s globstar # ** now actually works
 
 mode=""
