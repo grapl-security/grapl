@@ -1,6 +1,6 @@
-    pub use crate::graplinc::grapl::api::org_management::v1beta1::{
+pub use crate::graplinc::grapl::api::org_management::v1beta1::{
     // organization_manager_service_client,
-    // organization_manager_service_server,
+    org_management_service_server,
     CreateOrgRequest as CreateOrgRequestProto,
     CreateUserRequest as CreateUserRequestProto,
     ChangePasswordRequest as ChangePasswordRequestProto,
@@ -164,7 +164,6 @@ impl From<CreateUserResponse> for CreateUserResponseProto {
 
 #[derive(Clone)]
 pub struct ChangePasswordRequest {
-    pub organization_id: uuid::Uuid,
     pub user_id: uuid::Uuid,
     pub old_password: Vec<u8>,
     pub new_password: Vec<u8>,
@@ -174,11 +173,6 @@ impl TryFrom<ChangePasswordRequestProto> for ChangePasswordRequest {
     type Error = OrgManagementDeserializationError;
 
     fn try_from(value: ChangePasswordRequestProto) -> Result<Self, Self::Error> {
-        let organization_id = value.organization_id
-            .ok_or(Self::Error::MissingRequiredField(
-                "ChangePasswordRequest.organization_id",
-            ))?
-            .into();
         let user_id = value.user_id
             .ok_or(Self::Error::MissingRequiredField(
                 "ChangePasswordRequest.user_id",
@@ -189,7 +183,6 @@ impl TryFrom<ChangePasswordRequestProto> for ChangePasswordRequest {
 
         Ok(
             Self {
-                organization_id,
                 user_id,
                 old_password: value.old_password,
                 new_password: value.new_password,
@@ -201,7 +194,6 @@ impl TryFrom<ChangePasswordRequestProto> for ChangePasswordRequest {
 impl From<ChangePasswordRequest> for ChangePasswordRequestProto {
     fn from(value: ChangePasswordRequest) -> Self {
         Self {
-            organization_id: Some(value.organization_id.into()),
             user_id: Some(value.user_id.into()),
             old_password: value.old_password,
             new_password: value.new_password,
@@ -227,3 +219,6 @@ impl From<ChangePasswordResponse> for ChangePasswordResponseProto {
         Self {}
     }
 }
+
+
+

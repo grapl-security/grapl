@@ -1690,7 +1690,7 @@ dependencies = [
  "tokio 1.15.0",
  "tracing",
  "tracing-futures",
- "tracing-subscriber 0.3.6",
+ "tracing-subscriber",
  "uuid",
  "zstd",
 ]
@@ -1795,7 +1795,7 @@ dependencies = [
  "tokio 1.15.0",
  "tracing",
  "tracing-futures",
- "tracing-subscriber 0.3.6",
+ "tracing-subscriber",
  "uuid",
  "zstd",
 ]
@@ -1840,7 +1840,7 @@ dependencies = [
  "tracing",
  "tracing-appender",
  "tracing-futures",
- "tracing-subscriber 0.3.6",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -1853,7 +1853,7 @@ dependencies = [
  "structopt",
  "thiserror",
  "tracing",
- "tracing-subscriber 0.3.6",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -1919,7 +1919,7 @@ dependencies = [
  "thiserror",
  "tokio 1.15.0",
  "tracing",
- "tracing-subscriber 0.3.6",
+ "tracing-subscriber",
  "url",
 ]
 
@@ -2286,7 +2286,7 @@ dependencies = [
  "tokio 1.15.0",
  "tokio-stream",
  "tracing",
- "tracing-subscriber 0.3.6",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -2405,15 +2405,6 @@ name = "match_cfg"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ffbee8634e0d45d258acb448e7eaab3fce7a0a467395d4d9f228e3c1f01fb2e4"
-
-[[package]]
-name = "matchers"
-version = "0.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f099785f7595cc4b4553a174ce30dd7589ef93391ff414dbb67f62392b9e0ce1"
-dependencies = [
- "regex-automata",
-]
 
 [[package]]
 name = "matchers"
@@ -2637,7 +2628,7 @@ dependencies = [
  "tower",
  "tracing",
  "tracing-futures",
- "tracing-subscriber 0.3.6",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -2845,18 +2836,20 @@ version = "0.1.0"
 dependencies = [
  "argon2",
  "grapl-config",
+ "grapl-utils",
  "prost 0.9.0",
  "prost-types 0.9.0",
  "rust-proto",
  "sqlx",
  "structopt",
+ "test-log",
  "thiserror",
  "tokio 1.15.0",
  "tonic",
  "tonic-build 0.5.2",
  "tracing",
  "tracing-futures",
- "tracing-subscriber 0.2.25",
+ "tracing-subscriber",
  "uuid",
 ]
 
@@ -3081,7 +3074,7 @@ dependencies = [
  "tonic",
  "tonic-health",
  "tracing",
- "tracing-subscriber 0.3.6",
+ "tracing-subscriber",
  "uuid",
 ]
 
@@ -3102,7 +3095,7 @@ dependencies = [
  "tonic",
  "tonic-health",
  "tracing",
- "tracing-subscriber 0.3.6",
+ "tracing-subscriber",
  "uuid",
 ]
 
@@ -3799,7 +3792,7 @@ dependencies = [
  "tonic",
  "tonic-build 0.6.2",
  "tracing",
- "tracing-subscriber 0.3.6",
+ "tracing-subscriber",
  "uuid",
 ]
 
@@ -4921,7 +4914,7 @@ checksum = "94571df2eae3ed4353815ea5a90974a594a1792d8782ff2cbcc9392d1101f366"
 dependencies = [
  "crossbeam-channel 0.5.2",
  "time 0.3.5",
- "tracing-subscriber 0.3.6",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -4951,7 +4944,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d686ec1c0f384b1277f097b2f279a2ecc11afe8c133c1aabf036a27cb4cd206e"
 dependencies = [
  "tracing",
- "tracing-subscriber 0.3.6",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -4987,35 +4980,13 @@ dependencies = [
 
 [[package]]
 name = "tracing-subscriber"
-version = "0.2.25"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e0d2eaa99c3c2e41547cfa109e910a68ea03823cccad4a0525dcbc9b01e8c71"
-dependencies = [
- "ansi_term",
- "chrono",
- "lazy_static",
- "matchers 0.0.1",
- "regex",
- "serde",
- "serde_json",
- "sharded-slab",
- "smallvec",
- "thread_local",
- "tracing",
- "tracing-core",
- "tracing-log",
- "tracing-serde",
-]
-
-[[package]]
-name = "tracing-subscriber"
 version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77be66445c4eeebb934a7340f227bfe7b338173d3f8c00a60a5a58005c9faecf"
 dependencies = [
  "ansi_term",
  "lazy_static",
- "matchers 0.1.0",
+ "matchers",
  "regex",
  "serde",
  "serde_json",

@@ -13,34 +13,31 @@ message CreateOrgRequest {
 }
 
 message CreateOrgResponse {
-
 }
 
 message CreateUserRequest {
-  graplinc.common.v1beta1.Uuid organization_id = 1; // this needs to be a UUID, but we don't know how to handle that rn, see unresolved ?s
+  graplinc.common.v1beta1.Uuid organization_id = 1;
   string name = 2;
   string email = 3;
   bytes password = 4;
 }
 
 message CreateUserResponse {
-
 }
 
 message ChangePasswordRequest {
-  graplinc.common.v1beta1.Uuid organization_id = 1;
-  graplinc.common.v1beta1.Uuid user_id = 2;
-  bytes old_password = 3;
-  bytes new_password = 4;
+  graplinc.common.v1beta1.Uuid user_id = 1;
+  bytes old_password = 2;
+  bytes new_password = 3;
 }
 
 message ChangePasswordResponse {
-
 }
 
-service OrganizationManagementService {
-  rpc CreateOrg (CreateOrgRequest) returns (CreateOrgResponse);
+service OrgManagementService {
+  rpc CreateOrg(CreateOrgRequest) returns (CreateOrgResponse);
+
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+
   rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
 }
-
