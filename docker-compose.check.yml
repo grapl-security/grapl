@@ -12,6 +12,11 @@ x-common-variables:
     target: /workdir
     read_only: false
 
+  formatter-image: &formatter-image
+    image: grapl/format
+    build:
+      context: ./etc/formatter
+
 services:
   buf-lint:
     image: bufbuild/buf:0.51.0
@@ -42,5 +47,21 @@ services:
   hcl-format:
     image: docker.cloudsmith.io/grapl/releases/hcl-formatter:1.7.4
     command: format
+    volumes:
+      - *read-write-workdir
+
+  prettier-lint:
+    <<: *formatter-image
+    # MUST be called from this directory
+    working_dir: /workdir/etc/formatter
+    command: ./format.sh --check
+    volumes:
+      - *read-only-workdir
+
+  prettier-format:
+    <<: *formatter-image
+    # MUST be called from this directory
+    working_dir: /workdir/etc/formatter
+    command: ./format.sh --update
     volumes:
       - *read-write-workdir
