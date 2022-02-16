@@ -12,12 +12,20 @@ x-common-variables:
     target: /workdir
     read_only: false
 
-  formatter-image: &formatter-image
+services:
+  prettier:
     image: grapl/format
     build:
       context: ./etc/formatter
+    working_dir: /workdir/etc/formatter
+    entrypoint:
+      ["/bin/bash", "-o", "errexit", "-o", "nounset", "-o", "pipefail"]
+    command:
+      - "-c"
+      - |
+        echo "Do not run this service directly; it serves only as a source of common configuration!"
+        exit 42
 
-services:
   buf-lint:
     image: bufbuild/buf:0.51.0
     command: ["lint", "--verbose"]
@@ -51,17 +59,15 @@ services:
       - *read-write-workdir
 
   prettier-lint:
-    <<: *formatter-image
-    # MUST be called from this directory
-    working_dir: /workdir/etc/formatter
+    extends:
+      service: prettier
     command: ./format.sh --check
     volumes:
       - *read-only-workdir
 
   prettier-format:
-    <<: *formatter-image
-    # MUST be called from this directory
-    working_dir: /workdir/etc/formatter
+    extends:
+      service: prettier
     command: ./format.sh --update
     volumes:
       - *read-write-workdir

@@ -170,9 +170,7 @@ build: build-service-pexs build-docker-images ## Build Grapl services
 
 .PHONY: build-prettier-image
 build-prettier-image:
-# NOTE: Multiple services in the compose file use our Prettier image;
-# we pick this service arbitrarily to build the image.
-	$(DOCKER_BUILDX_BAKE) --file ./docker-compose.check.yml prettier-lint
+	$(DOCKER_BUILDX_BAKE) --file ./docker-compose.check.yml prettier
 
 .PHONY: graplctl
 graplctl: ## Build graplctl and install it to ./bin
