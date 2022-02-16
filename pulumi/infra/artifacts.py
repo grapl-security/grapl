@@ -1,4 +1,10 @@
+from __future__ import annotations
+
 from typing import Mapping, Optional
+
+from infra import config
+
+import pulumi
 
 
 class ArtifactGetter:
@@ -28,6 +34,26 @@ class ArtifactGetter:
             return artifact_version
         if self.require_artifact:
             raise KeyError(
-                f"Expected to find an artifacts entry for {key} in Pulumi config file"
+                f"Expected to find an artifacts entry for {key} in Pulumi.stackname.yaml"
             )
         return None
+
+    @staticmethod
+    def from_config(pulumi_config: pulumi.Config) -> ArtifactGetter:
+        """
+        If local-grapl:
+            - We don't require an `artifacts:` field
+            - `.get()` can be None
+        Else:
+            - We require an `artifacts:` field
+            - `.get()` must resolve a value for that key or raise KeyError
+        """
+        artifact_dict = (
+            pulumi_config.get_object("artifacts") or {}
+            if config.LOCAL_GRAPL
+            else pulumi_config.require_object("artifacts")
+        )
+        return ArtifactGetter(
+            artifacts=artifact_dict,
+            require_artifact=(not config.LOCAL_GRAPL),
+        )

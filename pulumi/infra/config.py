@@ -198,6 +198,9 @@ def require_artifact(artifact_name: str) -> Any:
         )
     return artifact
 
+def cloudsmith_repository_name() -> Optional[str]:
+    # Do we need to deprecate container_repository?! 
+    return pulumi.Config().get("cloudsmith-repository-name")
 
 def container_repository() -> Optional[str]:
     """The repository from which to pull container images from.

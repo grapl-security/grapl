@@ -56,10 +56,7 @@ def main() -> None:
     stack_name = pulumi.get_stack()
 
     pulumi_config = pulumi.Config()
-    artifacts = ArtifactGetter(
-        pulumi_config.get_object("artifacts") or {},
-        require_artifact=(not config.LOCAL_GRAPL),
-    )
+    artifacts = ArtifactGetter.from_config(pulumi_config)
 
     # These tags will be added to all provisioned infrastructure
     # objects.

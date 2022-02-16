@@ -17,9 +17,9 @@ from infra.artifacts import ArtifactGetter
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
-from infra.config import AWS_ACCOUNT_ID
 from infra.consul_intentions import ConsulIntentions
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
+from infra.firecracker_assets import FirecrackerAssets
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
 from infra.kafka import Kafka
 from infra.local.postgres import LocalPostgresInstance
@@ -98,6 +98,8 @@ def subnets_to_single_az(ids: List[str]) -> pulumi.Output[str]:
 def main() -> None:
     pulumi_config = pulumi.Config()
 
+    artifacts = ArtifactGetter.from_config(pulumi_config)
+
     # These tags will be added to all provisioned infrastructure
     # objects.
     register_auto_tags({"grapl deployment": config.DEPLOYMENT_NAME})
@@ -171,6 +173,8 @@ def main() -> None:
         model_plugins_bucket,
     ]
 
+    FirecrackerAssets("firecracker-assets", )
+
     # These are shared across both local and prod deployments.
     nomad_inputs: Final[NomadVars] = dict(
         analyzer_bucket=analyzers_bucket.bucket,
@@ -201,7 +205,7 @@ def main() -> None:
         unid_subgraphs_generated_bucket=unid_subgraphs_generated_emitter.bucket_name,
         user_auth_table=dynamodb_tables.user_auth_table.name,
         user_session_table=dynamodb_tables.user_session_table.name,
-        plugin_s3_bucket_aws_account_id=AWS_ACCOUNT_ID,
+        plugin_s3_bucket_aws_account_id=config.AWS_ACCOUNT_ID,
         plugin_s3_bucket_name=plugins_bucket.bucket,
     )
 
@@ -436,10 +440,6 @@ def main() -> None:
         pulumi.export("kafka-bootstrap-servers", kafka.bootstrap_servers())
         pulumi.export("redis-endpoint", cache.endpoint)
 
-        artifacts = ArtifactGetter(
-            pulumi_config.require_object("artifacts"), require_artifact=True
-        )
-
         # Set custom provider with the address set
         consul_provider = get_hashicorp_provider_address(
             consul, "consul", consul_stack, {"token": consul_master_token_secret_id}
@@ -459,13 +459,8 @@ def main() -> None:
         prod_grapl_core_job_vars: Final[NomadVars] = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
-<<<<<<< HEAD
             redis_endpoint=cache.endpoint,
-            container_images=_container_images(artifacts, require_artifact=True),
-=======
-            _redis_endpoint=cache.endpoint,
             container_images=_container_images(artifacts),
->>>>>>> e52eb381 (About to run typecheck)
             plugin_registry_db_hostname=plugin_registry_postgres.host(),
             plugin_registry_db_port=plugin_registry_postgres.port().apply(str),
             plugin_registry_db_username=plugin_registry_postgres.username(),
