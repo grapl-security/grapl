@@ -1,8 +1,8 @@
-import os
 import sys
 
 sys.path.insert(0, "..")
 
+import os
 from typing import Mapping, Optional, cast
 
 import pulumi_aws as aws

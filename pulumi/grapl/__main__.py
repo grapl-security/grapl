@@ -1,13 +1,8 @@
 import sys
-from typing import List, Mapping, Set, cast
-
-from infra.path import path_from_root
-from pulumi.resource import CustomTimeouts, ResourceOptions
-from typing_extensions import Final
-
-from pulumi.infra import firecracker_assets
 
 sys.path.insert(0, "..")
+
+from typing import List, Mapping, Set, cast
 
 import pulumi_aws as aws
 import pulumi_consul as consul
@@ -21,11 +16,12 @@ from infra.bucket import Bucket
 from infra.cache import Cache
 from infra.consul_intentions import ConsulIntentions
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
-from infra.firecracker_assets import FirecrackerAssets
+from infra.firecracker_assets import FirecrackerAssets, FirecrackerS3BucketObjects
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
 from infra.kafka import Kafka
 from infra.local.postgres import LocalPostgresInstance
 from infra.nomad_job import NomadJob, NomadVars
+from infra.path import path_from_root
 from infra.postgres import Postgres
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
@@ -33,6 +29,8 @@ from infra.postgres import Postgres
 # from infra.secret import JWTSecret, TestUserPassword
 from infra.secret import TestUserPassword
 from infra.service_queue import ServiceQueue
+from pulumi.resource import CustomTimeouts, ResourceOptions
+from typing_extensions import Final
 
 import pulumi
 
@@ -175,16 +173,14 @@ def main() -> None:
         model_plugins_bucket,
     ]
 
-    FirecrackerAssets(
-        "firecracker-assets",
-        repository_name=config.cloudsmith_repository_name,
-        artifacts=artifacts,
-    )
-
-    FirecrackerS3BucketObjects(
+    firecracker_s3objs = FirecrackerS3BucketObjects(
         "firecracker-s3-bucket-objects",
         plugins_bucket=plugins_bucket,
-        firecracker_assets=firecracker_assets,
+        firecracker_assets=FirecrackerAssets(
+            "firecracker-assets",
+            repository_name=config.cloudsmith_repository_name(),
+            artifacts=artifacts,
+        ),
     )
 
     # These are shared across both local and prod deployments.
@@ -217,6 +213,7 @@ def main() -> None:
         unid_subgraphs_generated_bucket=unid_subgraphs_generated_emitter.bucket_name,
         user_auth_table=dynamodb_tables.user_auth_table.name,
         user_session_table=dynamodb_tables.user_session_table.name,
+        plugin_registry_kernel_artifact_url=firecracker_s3objs.kernel_s3obj_url,
         plugin_s3_bucket_aws_account_id=config.AWS_ACCOUNT_ID,
         plugin_s3_bucket_name=plugins_bucket.bucket,
     )
