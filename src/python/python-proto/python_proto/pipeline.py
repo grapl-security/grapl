@@ -91,7 +91,7 @@ class Envelope(SerDeWithInner[_Envelope, I], Generic[I]):
 
 
 @dataclasses.dataclass(frozen=True)
-class RawLog(SerDe[_RawLog]):  # FIXME: test
+class RawLog(SerDe[_RawLog]):
     log_event: bytes
     proto_cls: Type[_RawLog] = _RawLog
 
