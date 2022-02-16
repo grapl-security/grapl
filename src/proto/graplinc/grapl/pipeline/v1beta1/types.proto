@@ -40,5 +40,6 @@ message Envelope {
 
 // This is the inner_message for an Envelope published to the raw-logs topic.
 message RawLog {
+  // A raw log event (to be parsed by a generator plugin)
   bytes log_event = 1;
 }
