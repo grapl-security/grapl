@@ -10,7 +10,6 @@ from google.protobuf.timestamp_pb2 import Timestamp as _Timestamp
 from graplinc.common.v1beta1.types_pb2 import Uuid as _Uuid
 from python_proto import SerDe
 
-
 SECONDS_PER_DAY = 60 * 60 * 24
 EPOCH = datetime.datetime.fromisoformat("1970-01-01T00:00:00.000")
 
@@ -73,8 +72,7 @@ class Timestamp(SerDe[_Timestamp]):
 
     def into_datetime(self) -> datetime.datetime:
         return EPOCH + datetime.timedelta(
-            seconds=self.seconds,
-            microseconds=self.nanos // 1000
+            seconds=self.seconds, microseconds=self.nanos // 1000
         )
 
     @staticmethod
@@ -104,7 +102,7 @@ class Duration(SerDe[_Duration]):
     def from_timedelta(timedelta: datetime.timedelta) -> Duration:
         return Duration(
             seconds=timedelta.days * SECONDS_PER_DAY + timedelta.seconds,
-            nanos=timedelta.microseconds * 1000
+            nanos=timedelta.microseconds * 1000,
         )
 
     def into_timedelta(self) -> datetime.timedelta:
