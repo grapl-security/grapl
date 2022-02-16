@@ -39,7 +39,7 @@ from grapl_common.env_helpers import S3ResourceFactory
 from grapl_common.grapl_logger import get_module_grapl_logger
 from grapl_common.metrics.metric_reporter import MetricReporter, TagPair
 from grapl_common.sqs.sqs_types import S3PutRecordDict, SQSMessageBody
-from python_proto.pipeline import Envelope, Metadata
+from python_proto.pipeline import Envelope, Metadata, RawLog
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3ServiceResource
@@ -190,10 +190,8 @@ class AnalyzerExecutor:
         for event in events["Records"]:
             data = parse_s3_event(s3, event)
 
-            envelope = Envelope.deserialize(data)
-            # Keep in mind that, today, we don't communicate this message via protobuf but instead
-            # we use JSON. It would be worth changing this in another issue.
-            message = json.loads(envelope.inner_message)
+            envelope = Envelope.deserialize(data, inner_cls=RawLog)
+            message = json.loads(envelope.inner_message.log_event)
 
             LOGGER.info(f'Executing Analyzer: {message["key"]}')
 

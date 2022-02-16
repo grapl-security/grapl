@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Type, Union, cast
 
 import hypothesis.strategies as st
 from hypothesis import given
@@ -13,12 +13,13 @@ def check_encode_decode_invariant(
         serde_value: Union[SerDe[P], SerDeWithInner[P, I]]
     ) -> None:
         if isinstance(serde_value, SerDeWithInner):
-            transformed = serde_value.__class__.deserialize(
+            transformed_with_inner = cast(SerDeWithInner[P, I], serde_value.__class__.deserialize(
                 serde_value.serialize(),
-                inner_cls=serde_value.inner_message.__class__,
-            )
+                inner_cls=cast(Type, serde_value.inner_message.__class__),  # lol what
+            ))
+            assert transformed_with_inner == serde_value
         else:
-            transformed = serde_value.__class__.deserialize(serde_value.serialize())
-        assert transformed == serde_value
+            transformed = cast(SerDe[P], serde_value.__class__.deserialize(serde_value.serialize()))
+            assert transformed == serde_value
 
     _check_encode_decode_invariant()

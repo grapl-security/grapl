@@ -43,7 +43,7 @@ class SerDe(Generic[P], metaclass=ABCMeta):
         raise NotImplementedError
 
 
-I = TypeVar("I", bound=SerDe[_Message])
+I = TypeVar("I", bound=SerDe)
 
 
 class SerDeWithInner(Generic[P, I]):
@@ -75,7 +75,7 @@ class SerDeWithInner(Generic[P, I]):
 
     @staticmethod
     @abstractstaticmethod
-    def from_proto(proto: P, iner_cls: Type[I]) -> SerDeWithInner[P, I]:
+    def from_proto(proto: P, inner_cls: Type[I]) -> SerDeWithInner[P, I]:
         raise NotImplementedError
 
     @abstractmethod

@@ -3,7 +3,7 @@ from __future__ import annotations
 import dataclasses
 import datetime
 import uuid
-from typing import Generic, Type
+from typing import Generic, Type, cast
 
 from google.protobuf.any_pb2 import Any as _Any
 from graplinc.grapl.pipeline.v1beta1.types_pb2 import Envelope as _Envelope
@@ -72,11 +72,12 @@ class Envelope(SerDeWithInner[_Envelope, I], Generic[I]):
 
     @staticmethod
     def from_proto(proto_envelope: _Envelope, inner_cls: Type[I]) -> Envelope[I]:
-        inner_message = inner_cls.proto_cls()
-        proto_envelope.inner_message.Unpack(inner_message)
+        inner_message_proto = inner_cls.proto_cls()
+        proto_envelope.inner_message.Unpack(inner_message_proto)
+        inner_message = cast(I, inner_cls.from_proto(inner_message_proto))  # fuck it
         return Envelope(
             metadata=Metadata.from_proto(proto_envelope.metadata),
-            inner_message=inner_cls.from_proto(inner_message),
+            inner_message=inner_message,
         )
 
     def into_proto(self) -> _Envelope:
