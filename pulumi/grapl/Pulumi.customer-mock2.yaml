@@ -2,7 +2,7 @@ config:
   aws:region: us-east-1
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: operational-alarms@graplsecurity.com
   grapl:confluent-environment-name: testing
-  grapl:container-repository: docker.cloudsmith.io/grapl/testing
+  grapl:cloudsmith-repository-name: grapl/testing
   grapl:env_vars:
     analyzer-dispatcher:
       RUST_BACKTRACE: "1"

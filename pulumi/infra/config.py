@@ -198,22 +198,27 @@ def require_artifact(artifact_name: str) -> Any:
         )
     return artifact
 
-def cloudsmith_repository_name() -> Optional[str]:
-    # Do we need to deprecate container_repository?! 
-    return pulumi.Config().get("cloudsmith-repository-name")
 
-def container_repository() -> Optional[str]:
-    """The repository from which to pull container images from.
+def cloudsmith_repository_name() -> Optional[str]:
+    """The repository from which to pull container images and Firecracker
+    packages from.
 
     This will be different for different stacks; we promote packages
     through a series of different registries that mirrors the progress
     of code through our pipelines.
 
-    The value will be something like
-    `docker.cloudsmith.io/grapl/testing`; to target a specific image
-    in client code, you would append the image name and tag to the
-    return value of this function.
+    The value will be something like `grapl/testing`.
+    """
+    return pulumi.Config().get("cloudsmith-repository-name")
+
+
+def container_repository() -> Optional[str]:
+    """The repository from which to pull container images from.
 
     Not specifying a repository will result in local images being used.
     """
-    return pulumi.Config().get("container-repository")
+
+    repo_name = cloudsmith_repository_name()
+    if repo_name:
+        return f"docker.cloudsmith.io/{repo_name}"
+    return None

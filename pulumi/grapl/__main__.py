@@ -5,6 +5,8 @@ from infra.path import path_from_root
 from pulumi.resource import CustomTimeouts, ResourceOptions
 from typing_extensions import Final
 
+from pulumi.infra import firecracker_assets
+
 sys.path.insert(0, "..")
 
 import pulumi_aws as aws
@@ -173,7 +175,17 @@ def main() -> None:
         model_plugins_bucket,
     ]
 
-    FirecrackerAssets("firecracker-assets", )
+    FirecrackerAssets(
+        "firecracker-assets",
+        repository_name=config.cloudsmith_repository_name,
+        artifacts=artifacts,
+    )
+
+    FirecrackerS3BucketObjects(
+        "firecracker-s3-bucket-objects",
+        plugins_bucket=plugins_bucket,
+        firecracker_assets=firecracker_assets,
+    )
 
     # These are shared across both local and prod deployments.
     nomad_inputs: Final[NomadVars] = dict(
