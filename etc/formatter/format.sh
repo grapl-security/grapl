@@ -1,5 +1,6 @@
 #!/bin/bash
-set -u
+
+set -euo pipefail
 shopt -s globstar # ** now actually works
 
 mode=""
@@ -54,7 +55,7 @@ else
 fi
 
 # As specified in `docker-compose.formatter.yml`
-readonly repo_root="/mnt/grapl_repo_rw"
+readonly repo_root="/workdir"
 
 echo "--- Prettier Typescript"
 prettier \
