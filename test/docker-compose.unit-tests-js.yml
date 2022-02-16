@@ -11,7 +11,7 @@ x-common-variables:
 
 services:
   graphql-endpoint-test:
-    image: grapl/graphql-endpoint:${TAG:-latest}
+    image: grapl/graphql-endpoint:${TAG}
     build:
       context: ${PWD}/src/js/graphql_endpoint
       dockerfile: Dockerfile
