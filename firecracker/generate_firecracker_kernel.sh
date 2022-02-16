@@ -5,10 +5,8 @@ set -euo pipefail
 # Usage: Call this script from the Makefile, which prevents unnecessarily
 #   recompiling the kernel (takes 4-5m on our Chromebooks).
 ################################################################################
-readonly FIRECRACKER_RELEASE="v1.0.0"
-readonly KERNEL_VERSION="5.10.0"  # make sure in-sync with below
-readonly KERNEL="x86_64-5.10"     # make sure in-sync with above
-readonly KERNEL_CONFIG="resources/guest_configs/microvm-kernel-${KERNEL}.config"
+# shellcheck source-path=SCRIPTDIR
+source "$(dirname "${BASH_SOURCE[0]}")/constants.sh"
 
 REPOSITORY_ROOT=$(git rev-parse --show-toplevel)
 readonly REPOSITORY_ROOT
@@ -37,16 +35,3 @@ cd firecracker
 readonly KERNEL_BIN_FILE="build/kernel/linux-${KERNEL_VERSION}/vmlinux-${KERNEL_VERSION}-x86_64.bin"
 readonly DISTRIBUTION="${REPOSITORY_ROOT}/dist/firecracker_kernel.tar.gz"
 tar --create --gzip --file="${DISTRIBUTION}" "${KERNEL_BIN_FILE}"
-
-########################################
-# Copy kernel into dist.
-########################################
-results=$(cat <<EOF
-{
-    "firecracker_release": "${FIRECRACKER_RELEASE}",
-    "kernel_version": "${KERNEL_VERSION}",
-    "distribution": "${DISTRIBUTION}"
-}
-EOF
-)
-echo "${results}" | jq .

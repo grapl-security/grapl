@@ -11,8 +11,20 @@ set -euo pipefail
 
 source .buildkite/scripts/lib/artifacts.sh
 source .buildkite/scripts/lib/version.sh
+source firecracker/constants.sh
 
-TAG="$(timestamp_and_sha_version)"
+DEFAULT_VERSION="$(timestamp_and_sha_version)"
+
+get_version() {
+    # Special case for Firecracker kernel - we just label it with the
+    # Firecracker release/kernel vm built
+
+    if [[ "${1}" == "firecracker_kernel.tar.gz" ]]; then
+        echo "firecracker-${FIRECRACKER_RELEASE}-kernel-${KERNEL_VERSION}"
+        return 0
+    fi
+    echo "${DEFAULT_VERSION}"
+}
 
 (
     echo "--- Building packages"
@@ -75,12 +87,15 @@ done
 echo "--- :cloudsmith::up: Uploading new packages to Cloudsmith"
 for artifact_path in "${new_packages[@]}"; do
     artifact_name=$(basename "${artifact_path}")
+    version="$(get_version "${artifact_name}")"
     cloudsmith upload raw "${UPLOAD_TO_REGISTRY}" \
         "${artifact_path}" \
         --name "${artifact_name}" \
-        --version "${TAG}"
-done
+        --version "${version}"
 
-# Now that we've filtered out things that already exist upstream, we
-# only need to care about the new stuff.
-artifact_json "${TAG}" "${new_packages[@]}" > "$(artifacts_file_for firecracker)"
+    # This generates an artifact_json file for each artifact, since we have differing versions
+    # between each.
+    artifact_file="$(artifacts_file_for "${artifact_name}")"
+    artifact_json "${version}" "${artifact_name}" > "${artifact_file}"
+    echo "Wrote results to ${artifact_file}"
+done
