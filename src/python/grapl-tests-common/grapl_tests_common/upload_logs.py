@@ -12,7 +12,7 @@ from sys import maxsize
 from typing import TYPE_CHECKING, Iterator, List, Optional, cast
 
 from grapl_common.env_helpers import S3ClientFactory, SQSClientFactory
-from python_proto.pipeline import Envelope, Metadata
+from python_proto.pipeline import Envelope, Metadata, RawLog
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
@@ -150,9 +150,11 @@ def upload_logs(
             metadata=Metadata(
                 tenant_id=uuid.uuid4(),  # FIXME: be smarter here.
                 trace_id=uuid.uuid4(),  # FIXME: and here.
+                event_source_id=uuid.uuid4(),  # FIXME: and here.
+                created_time=datetime.utcnow(),
+                last_updated_time=datetime.utcnow(),
             ),
-            inner_message=chunk_body,
-            inner_type="RawEvents",
+            inner_message=RawLog(log_event=chunk_body),
         )
 
         s3.put_object(Body=envelope.serialize(), Bucket=bucket, Key=key)
