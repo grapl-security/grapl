@@ -4,52 +4,31 @@ use std::{
     future::Future,
     io::Stdout,
     panic::AssertUnwindSafe,
-    time::{
-        Duration,
-        SystemTime,
-        UNIX_EPOCH,
-    },
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
 use event_emitter::EventEmitter;
 use event_handler::EventHandler;
 use futures_util::FutureExt;
 use grapl_observe::{
-    metric_reporter::{
-        tag,
-        MetricReporter,
-    },
+    metric_reporter::{tag, MetricReporter},
     timers::TimedFutureExt,
 };
 use prost::Message;
-pub use retriever::{
-    event_retriever,
-    s3_event_retriever,
-};
+use prost_types;
+pub use retriever::{event_retriever, s3_event_retriever};
 use rusoto_core::RusotoError;
 use rusoto_s3::S3;
-use rusoto_sqs::{
-    ListQueuesError,
-    ListQueuesRequest,
-    Message as SqsMessage,
-    Sqs,
-};
+use rusoto_sqs::{ListQueuesError, ListQueuesRequest, Message as SqsMessage, Sqs};
 use rust_proto::pipeline::ServiceMessage;
 use s3_event_emitter::S3EventEmitter;
 use s3_event_retriever::S3PayloadRetriever;
-use tracing::{
-    debug,
-    error,
-    info,
-};
+use tracing::{debug, error, info};
 
 use crate::{
     cache::Cache,
     completion_event_serializer::CompletionEventSerializer,
-    errors::{
-        CheckedError,
-        Recoverable,
-    },
+    errors::{CheckedError, Recoverable},
     event_decoder::PayloadDecoder,
     event_handler::CompletedEvents,
     event_retriever::PayloadRetriever,
@@ -292,10 +271,13 @@ async fn process_message<
 
             let mut envelopes = vec![];
             for event in events {
+                let wrapped_event = prost_types::Any {
+                    type_url: "wat".to_owned(), // FIXME
+                    value: event,
+                };
                 let envelope = rust_proto::pipeline::Envelope {
                     metadata: Some(meta.clone()),
-                    inner_type: OutputEventT::TYPE_NAME.to_string(),
-                    inner_message: event,
+                    inner_message: Some(wrapped_event),
                 };
                 let mut encoded = vec![];
                 if let Err(e) = envelope.encode(&mut encoded) {
@@ -347,10 +329,13 @@ async fn process_message<
 
             let mut envelopes = vec![];
             for event in events {
+                let wrapped_event = prost_types::Any {
+                    type_url: "wat".to_owned(), // FIXME
+                    value: event,
+                };
                 let envelope = rust_proto::pipeline::Envelope {
                     metadata: Some(meta.clone()),
-                    inner_type: OutputEventT::TYPE_NAME.to_string(),
-                    inner_message: event,
+                    inner_message: Some(wrapped_event),
                 };
                 let mut encoded = vec![];
                 if let Err(e) = envelope.encode(&mut encoded) {

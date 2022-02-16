@@ -4258,6 +4258,7 @@ dependencies = [
  "lru",
  "num_cpus",
  "prost",
+ "prost-types",
  "redis",
  "rusoto_core",
  "rusoto_s3",

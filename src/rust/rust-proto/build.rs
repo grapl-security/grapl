@@ -9,7 +9,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     change_on_dir("../../proto/")?;
     change_on_dir("src/")?;
     config = config.type_attribute(
-        ".",
+        ".graplinc.grapl.api.graph", // TODO: all these derives should go away
         "#[derive(serde_derive::Serialize, serde_derive::Deserialize)]",
     );
 
@@ -465,7 +465,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let mut paths = Vec::new();
-    get_proto_files("../../proto/graplinc", &mut paths)?;
+    get_proto_files("../../proto", &mut paths)?;
 
     config
         .compile(&paths[..], &["../../proto/".to_string()])
