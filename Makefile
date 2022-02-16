@@ -468,3 +468,7 @@ generate-nomad-rust-client:  # Generate the Nomad rust client from OpenAPI
 .PHONY: generate-sqlx-data
 generate-sqlx-data:  # Regenerate sqlx-data.json based on queries made in Rust code
 	./src/rust/bin/generate_sqlx_data.sh
+
+# Intentionally not phony, as this generates a real file
+dist/firecracker_kernel.tar.gz: firecracker/generate_firecracker_kernel.sh
+	./firecracker/generate_firecracker_kernel.sh
