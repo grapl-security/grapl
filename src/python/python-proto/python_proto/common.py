@@ -71,6 +71,7 @@ class Timestamp(SerDe[_Timestamp]):
         )
 
     def into_datetime(self) -> datetime.datetime:
+        """Note that python's datetime only offers microsecond precision"""
         return EPOCH + datetime.timedelta(
             seconds=self.seconds, microseconds=self.nanos // 1000
         )
@@ -106,6 +107,7 @@ class Duration(SerDe[_Duration]):
         )
 
     def into_timedelta(self) -> datetime.timedelta:
+        """Note that python's timedelta only offers microsecond precision"""
         return datetime.timedelta(seconds=self.seconds, microseconds=self.nanos // 1000)
 
     @staticmethod
