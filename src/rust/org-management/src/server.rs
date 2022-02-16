@@ -1,34 +1,35 @@
 use std::convert::TryFrom;
+
 use argon2::{PasswordHasher, PasswordVerifier};
 use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::SaltString;
+use sqlx::Pool;
+use sqlx::postgres::{PgPoolOptions, Postgres};
 use tonic::{
-    transport::Server,
     Request,
     Response,
     Status,
+    transport::Server,
 };
-
 use uuid::Uuid;
 
+use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::org_management::{
-    CreateOrgRequest,
-    CreateOrgRequestProto,
-    CreateUserRequest,
-    CreateUserRequestProto,
     ChangePasswordRequest,
     ChangePasswordRequestProto,
-    CreateOrgResponse,
-    CreateOrgResponseProto,
-    CreateUserResponse,
-    CreateUserResponseProto,
     ChangePasswordResponse,
     ChangePasswordResponseProto,
-    OrgManagementDeserializationError
+    CreateOrgRequest,
+    CreateOrgRequestProto,
+    CreateOrgResponse,
+    CreateOrgResponseProto,
+    CreateUserRequest,
+    CreateUserRequestProto,
+    CreateUserResponse,
+    CreateUserResponseProto,
+    org_management_service_server::{OrgManagementService, OrgManagementServiceServer},
+    OrgManagementDeserializationError,
 };
-
-use sqlx::{Pool};
-use sqlx::postgres::{PgPoolOptions, Postgres};
 
 use crate::{
     // psql_queue::{
@@ -38,8 +39,6 @@ use crate::{
     // },
     OrgManagementServiceConfig,
 };
-
-
 
 #[derive(thiserror::Error, Debug)]
 pub enum OrganizationManagementServiceError {
@@ -62,7 +61,6 @@ impl From<argon2::password_hash::Error> for OrganizationManagementServiceError {
         Self::HashError(err.to_string())
     }
 }
-
 
 
 impl From<OrganizationManagementServiceError> for Status {
@@ -89,6 +87,21 @@ pub struct OrganizationManagement {
 }
 
 impl OrganizationManagement {
+    async fn try_from(service_config: &OrgManagementServiceConfig) -> Result<Self, Box<dyn std::error::Error>> {
+        let postgres_address = format!(
+            "postgresql://{}:{}@{}:{}",
+            service_config.org_management_db_username,
+            service_config.org_management_db_password,
+            service_config.org_management_db_hostname,
+            service_config.org_management_db_port,
+        );
+
+        Ok(Self {
+            pool: sqlx::PgPool::connect(&postgres_address)
+                .timeout(std::time::Duration::from_secs(5))
+                .await??,
+        })
+    }
     async fn create_org(
         &self,
         request: CreateOrgRequest,
@@ -104,7 +117,8 @@ impl OrganizationManagement {
         } = request;
 
         let mut transaction = self.pool.begin().await?;
-        let row = sqlx::query!(r"
+
+        sqlx::query!(r"
             INSERT INTO organization (
                 org_id,
                 display_name
@@ -179,7 +193,7 @@ impl OrganizationManagement {
         )?.serialize();
 
 
-        let row = sqlx::query!(r"
+        sqlx::query!(r"
             INSERT INTO users (
                 user_id,
                 org_id,
@@ -198,11 +212,7 @@ impl OrganizationManagement {
             .execute(&self.pool)
             .await
             .map_err(OrganizationManagementServiceError::from)?;
-        //
-        // if row.rows_affected() == 0 {
-        //     return Err(Status::internal("User was not created successfully"));
-        // }
-        //
+
         Ok(CreateUserResponse {})
     }
 
@@ -211,7 +221,6 @@ impl OrganizationManagement {
         request: ChangePasswordRequest,
     ) -> Result<ChangePasswordResponse, OrganizationManagementServiceError> {
         let ChangePasswordRequest {
-            organization_id,
             user_id,
             old_password,
             new_password,
@@ -247,7 +256,7 @@ impl OrganizationManagement {
             &SaltString::generate(OsRng),
         )?.serialize();
 
-        let row = sqlx::query!(
+        sqlx::query!(
             "UPDATE users SET password = $2 WHERE user_id = $1",
                 &user_id,
                 &password.as_str()
@@ -261,7 +270,7 @@ impl OrganizationManagement {
 }
 
 #[tonic::async_trait]
-impl OrganizationManagementService for OrganizationManagement {
+impl OrgManagementService for OrganizationManagement {
     async fn create_org(
         &self,
         request: Request<CreateOrgRequestProto>,
@@ -357,7 +366,7 @@ pub async fn exec_service(
 
     tracing::info!(message = "Performing migration",);
 
-    sqlx::migrate!().run(&org_management.queue.pool).await?;
+    sqlx::migrate!().run(&org_management.pool).await?;
 
     tracing::info!(message = "Binding service",);
 
@@ -372,7 +381,7 @@ pub async fn exec_service(
             )
         })
         // .add_service(health_service)
-        .add_service(OrganizationManagementServiceServer::new(org_management))
+        .add_service(OrgManagementServiceServer::new(org_management))
         .serve(service_config.org_management_bind_address)
         .await?;
 
