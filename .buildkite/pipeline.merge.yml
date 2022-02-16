@@ -35,14 +35,14 @@ steps:
       - grapl-security/vault-login#v0.1.0
       - grapl-security/vault-env#v0.1.0:
           secrets:
+            # We need access to the CLOUDSMITH_API_KEY so we can upload
+            # to Cloudsmith.
             - CLOUDSMITH_API_KEY
             - grapl/TOOLCHAIN_AUTH_TOKEN
     agents:
       # We're building the Firecracker VM image, which uses docker, and we'd
       # like to take advantage of the docker queue's local cache whenever
       # possible.
-      # We need access to the CLOUDSMITH_API_KEY so we can upload
-      # to Cloudsmith.
       queue: "docker"
     artifact_paths:
       - "*.grapl-artifacts.json"
