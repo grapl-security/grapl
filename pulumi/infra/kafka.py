@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Any, Mapping, Optional, Sequence, cast
+from typing import Any, Mapping, Optional, Sequence, TypeVar, cast
 
 from pulumi.stack_reference import StackReference
+from pulumi_kafka import Provider
+from pulumi_kafka import Topic as KafkaTopic
 
 import pulumi
 
@@ -41,6 +43,7 @@ class Service:
     ingress_topics: Sequence[str]
     egress_topics: Sequence[str]
     service_account: Credential
+    consumer_group_name: Optional[str] = None
 
     @staticmethod
     def from_json(data: Mapping[str, Any]) -> Service:
@@ -48,6 +51,7 @@ class Service:
             ingress_topics=data["ingress_topics"],
             egress_topics=data["egress_topics"],
             service_account=Credential.from_json(data["service_account"]),
+            consumer_group_name=data.get("consumer_group_name"),
         )
 
 
@@ -116,6 +120,42 @@ class Kafka(pulumi.ComponentResource):
 
         if confluent_environment_name == "local-grapl":
             self.confluent_environment = None
+            # This list must match the set of all topics specified in
+            # confluent-cloud-infrastructure/pulumi/ccloud_bootstrap/index.ts
+            topics = [
+                "logs",
+                "metrics",
+                "raw-logs",
+                "generated-graphs",
+                "generated-graphs-retry",
+                "generated-graphs-failed",
+                "identified-graphs",
+                "identified-graphs-retry",
+                "identified-graphs-failed",
+                "merged-graphs",
+                "merged-graphs-retry",
+                "merged-graphs-failed",
+                "analyzer-executions",
+                "analyzer-executions-retry",
+                "analyzer-executions-failed",
+                "engagements",
+                "engagements-retry",
+                "engagements-failed",
+            ]
+            provider = Provider(
+                "grapl:kafka:Provider",
+                bootstrap_servers=["host.docker.internal:29092"],
+                tls_enabled=False,
+            )
+            for topic in topics:
+                KafkaTopic(
+                    f"grapl:kafka:Topic:{topic}",
+                    name=topic,
+                    partitions=1,
+                    replication_factor=1,
+                    config={"compression.type": "zstd"},
+                    opts=pulumi.ResourceOptions(provider=provider),
+                )
         else:
             confluent_stack_output = StackReference(
                 "grapl/ccloud-bootstrap/ccloud-bootstrap"
@@ -129,3 +169,35 @@ class Kafka(pulumi.ComponentResource):
             return pulumi.Output.from_input("LOCAL_GRAPL_REPLACE_IP:19092")
         else:
             return self.confluent_environment.apply(lambda e: e.bootstrap_servers)
+
+    def service_credentials(self, service_name: str) -> pulumi.Output[Credential]:
+        if self.confluent_environment is None:
+            return pulumi.Output.from_input(
+                Credential(
+                    service_account_id="dummy_confluent_service_account_id",
+                    api_key="dummy_confluent_api_key",
+                    api_secret="dummy_confluent_api_secret",
+                )
+            )
+        else:
+            return self.confluent_environment.apply(
+                lambda e: e.services[service_name].service_account
+            )
+
+    def consumer_group(self, service_name: str) -> pulumi.Output[str]:
+        if self.confluent_environment is None:
+            return pulumi.Output.from_input("e2e-test-runner")
+        else:
+            return self.confluent_environment.apply(
+                lambda e: _expect(e.services[service_name].consumer_group_name)
+            )
+
+
+T = TypeVar("T")
+
+
+def _expect(val: Optional[T]) -> T:
+    if val is None:
+        raise Exception("expected value to be present")
+    else:
+        return val

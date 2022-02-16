@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, cast
 
 import pulumi_aws as aws
 import pulumi_random as random
@@ -103,6 +103,21 @@ class Postgres(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self.security_group),
         )
 
+        # Parameter Groups are what we use to preload pg libraries
+        parameter_group = aws.rds.ParameterGroup(
+            name,
+            description=f"{name} managed by Pulumi",
+            # TODO autoparse the family
+            family="postgres13",
+            parameters=[
+                {
+                    "name": "shared_preload_libraries",
+                    "value": "pg_cron,pg_stat_statements",
+                    "apply_method": "pending-reboot",
+                }
+            ],
+        )
+
         postgres_config = PostgresConfigValues.from_config()
 
         # Quick diatribe:
@@ -122,13 +137,14 @@ class Postgres(pulumi.ComponentResource):
         ), "Database name must be alpha+alphanumeric"
 
         instance_name = f"{name}-instance"
-        self.instance = aws.rds.Instance(
+        self._instance = aws.rds.Instance(
             instance_name,
             identifier=instance_name,
             name=database_name,  # See above diatribe
             engine="postgres",
             engine_version=postgres_config.postgres_version,
             instance_class=postgres_config.instance_type,
+            parameter_group_name=parameter_group.name,
             # These storage parameters should be more thoroughly thought out.
             allocated_storage=10,
             max_allocated_storage=20,
@@ -153,3 +169,19 @@ class Postgres(pulumi.ComponentResource):
             # remove this option to avoid accidental downtime.
             opts=pulumi.ResourceOptions(parent=self, delete_before_replace=True),
         )
+
+    def host(self) -> pulumi.Output[str]:
+        # Cast needed due to https://github.com/pulumi/pulumi/issues/7679
+        return cast(pulumi.Output[str], self._instance.address)
+
+    def port(self) -> pulumi.Output[int]:
+        # Cast needed due to https://github.com/pulumi/pulumi/issues/7679
+        return cast(pulumi.Output[int], self._instance.port)
+
+    def username(self) -> pulumi.Output[str]:
+        # Cast needed due to https://github.com/pulumi/pulumi/issues/7679
+        return cast(pulumi.Output[str], self._instance.username)
+
+    def password(self) -> pulumi.Output[str]:
+        # just to be safe...
+        return pulumi.Output.secret(self._instance.password)

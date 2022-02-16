@@ -12,15 +12,27 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 #
 # Ignore this lint about deleteing the apt-get lists (we're caching!)
 # hadolint ignore=DL3009,SC1089
-RUN --mount=type=cache,target=/var/lib/apt/lists \
+RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-base-apt \
     apt-get update \
     && apt-get install -y --no-install-recommends \
         build-essential=12.9 \
         jq=1.6-2.1 \
         libssl-dev=1.1.1k-1+deb11u1 \
         pkg-config=0.29.2-1 \
-        zlib1g-dev=1:1.2.11.dfsg-2
+        zlib1g-dev=1:1.2.11.dfsg-2 \
+        curl=7.74.0-1.3+deb11u1 \
+        unzip=6.0-26
 
+# Grab a Nomad binary, which we use in plugin-registry for parsing
+# HCL2-with-variables into JSON.
+WORKDIR /nomad
+RUN <<EOF
+set -euo pipefail
+curl --remote-name --proto '=https' --tlsv1.2 -sSf \
+  https://releases.hashicorp.com/nomad/1.2.4/nomad_1.2.4_linux_amd64.zip
+unzip *.zip
+rm *.zip
+EOF
 
 # Install rust toolchain before copying sources to avoid unecessarily
 # resinstalling on source file changes.
@@ -45,19 +57,20 @@ FROM base AS build
 # Hadolint appears to be confused about some of these mount targets
 # hadolint ignore=SC1091
 RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
-    --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/usr/local/rustup \
-    case "${RUST_BUILD}" in \
-      debug) \
-        cargo build ;; \
-      release) \
-        cargo build --release ;; \
-      test) \
-        cargo test ;; \
-      *) \
-        echo "ERROR:  Unknown RUST_BUILD option: ${RUST_BUILD}"; \
-        exit 1 ;; \
+    --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,target=/usr/local/rustup,sharing=locked <<EOF
+    case "${RUST_BUILD}" in
+      debug)
+        cargo build ;;
+      release)
+        cargo build --release ;;
+      test)
+        cargo test ;;
+      *)
+        echo "ERROR:  Unknown RUST_BUILD option: ${RUST_BUILD}";
+        exit 1 ;;
     esac
+EOF
 
 # Copy the build outputs to location that's not a cache mount.
 # TODO: switch to using --out-dir when stable: https://github.com/rust-lang/cargo/issues/6790
@@ -68,7 +81,7 @@ RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
 
 # tarpaulin
 # This target is not merged with the `build` target because the actions to run
-# after cargo are different when building for tests and building the services, 
+# after cargo are different when building for tests and building the services,
 # and we'd rather not save all of the Rust `target/` directory to Docker image
 # if we don't have to.
 ################################################################################
@@ -79,8 +92,8 @@ FROM base AS tarpaulin
 # outputs, such that subsequent cargo build runs will need to start from
 # scratch as well. For this reason we avoid mounting the cached target
 # directory.
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/usr/local/rustup \
+RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,target=/usr/local/rustup,sharing=locked \
     cargo install cargo-tarpaulin
 
 
@@ -100,7 +113,7 @@ FROM base AS build-test-integration
 # https://github.com/rust-lang/cargo/issues/1924
 # https://github.com/rust-lang/cargo/issues/3670
 
-ENV RUST_INTEGRATION_TEST_FEATURES="node-identifier/integration,sqs-executor/integration,kafka-metrics-exporter/integration,model-plugin-deployer/integration,plugin-registry/integration,plugin-work-queue/integration"
+ENV RUST_INTEGRATION_TEST_FEATURES="node-identifier/integration,sqs-executor/integration,model-plugin-deployer/integration,plugin-registry/integration,plugin-work-queue/integration"
 ENV TEST_DIR=/grapl/tests
 
 RUN mkdir --parents "${TEST_DIR}"
@@ -112,8 +125,8 @@ RUN mkdir --parents "${TEST_DIR}"
 # have -o pipefail set on line 9.
 # hadolint ignore=DL4006
 RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
-    --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/usr/local/rustup \
+    --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    --mount=type=cache,target=/usr/local/rustup,sharing=locked \
     cargo test \
         --features "${RUST_INTEGRATION_TEST_FEATURES}" \
         --no-run \
@@ -134,10 +147,14 @@ RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
 # install as needed, but the debian image we're using has zlib already.
 FROM debian:bullseye-slim AS integration-tests
 
-RUN --mount=type=cache,target=/var/lib/apt/lists \
+RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tests-apt \
     apt-get update \
     && apt-get install -y --no-install-recommends \
         ca-certificates=20210119
+
+# Make the Nomad binary available to integration test consumers of NomadCli
+# hadolint ignore=DL3022
+COPY --from=build /nomad/nomad /bin
 
 COPY --from=build-test-integration /grapl/tests /tests
 
@@ -178,7 +195,7 @@ ENTRYPOINT [ "/run-tests.sh" ]
 
 # images for running services
 ################################################################################
-# More information about the base image used here can be found at: 
+# More information about the base image used here can be found at:
 # https://github.com/GoogleContainerTools/distroless/blob/main/cc/README.md.
 # For debugging see: https://github.com/GoogleContainerTools/distroless#debug-images
 
@@ -232,7 +249,17 @@ FROM rust-dist AS plugin-registry-deploy
 # https://github.com/hadolint/hadolint/wiki/DL3022
 # hadolint ignore=DL3022
 COPY --from=build /outputs/plugin-registry /
+# hadolint ignore=DL3022
+COPY --from=build /nomad/nomad /bin
 ENTRYPOINT ["/plugin-registry"]
+
+# plugin-bootstrap
+FROM rust-dist AS plugin-bootstrap-deploy
+
+# hadolint ignore=DL3022
+COPY --from=build /outputs/plugin-bootstrap /
+ENTRYPOINT ["/plugin-bootstrap"]
+
 
 # node-identifier
 FROM rust-dist AS node-identifier-deploy
@@ -288,4 +315,3 @@ FROM rust-dist AS model-plugin-deployer
 # hadolint ignore=DL3022
 COPY --from=build /outputs/model-plugin-deployer /
 ENTRYPOINT ["/model-plugin-deployer"]
-

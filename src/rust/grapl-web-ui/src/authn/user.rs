@@ -50,9 +50,10 @@ impl AuthenticatedUser {
         &self.identity
     }
 
-    // pub fn get_role(&self) -> &GraplRole {
-    //     &self.role
-    // }
+    #[allow(dead_code)]
+    pub fn get_role(&self) -> &GraplRole {
+        &self.role
+    }
 }
 
 impl AuthenticatedUser {

@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package graplinc.grapl.api.plugin_bootstrap.v1beta1;
+
+// PluginPayload wraps the raw bytes of the plugin executable
+message PluginPayload {
+  // The raw bytes of the plugin executable
+  bytes plugin_binary = 1;
+}
+
+// ClientCertificate wraps the raw bytes of the client cert
+message ClientCertificate {
+  // The bytes of the PEM format client certificate, which has a common name
+  // identifying the plugin
+  bytes client_certificate = 1;
+}
+
+// The request for bootstrap artifacts
+message GetBootstrapRequest {
+
+}
+
+// The response containing bootstrap artifacts
+message GetBootstrapResponse {
+  // The payload for the plugin
+  PluginPayload plugin_payload = 1;
+  // The client certificate for the plugin
+  ClientCertificate client_certificate = 2;
+}
+
+// PluginBootstrapService hosts artifacts for plugin execution, to be retrieved by an init process
+service PluginBootstrapService {
+  // GetBootstrap allows clients to perform the bootstrap process using the returned artifacts
+  rpc GetBootstrap(GetBootstrapRequest) returns (GetBootstrapResponse);
+}

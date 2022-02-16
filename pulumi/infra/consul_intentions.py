@@ -36,5 +36,7 @@ class ConsulIntentions(pulumi.ComponentResource):
                         kind=intention["Kind"],
                         name=intention["Name"],
                         config_json=json.dumps({"Sources": intention["Sources"]}),
-                        opts=pulumi.ResourceOptions(parent=self),
+                        opts=pulumi.ResourceOptions.merge(
+                            opts, pulumi.ResourceOptions(parent=self)
+                        ),
                     )

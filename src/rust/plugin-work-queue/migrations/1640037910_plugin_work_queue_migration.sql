@@ -12,8 +12,7 @@ BEGIN
     RETURN bytes * 1000 * 1000;
 END;
 $$ LANGUAGE plpgsql
-    IMMUTABLE
-    LEAKPROOF;
+    IMMUTABLE;
 
 CREATE TABLE IF NOT EXISTS plugin_work_queue.generator_plugin_executions
 (

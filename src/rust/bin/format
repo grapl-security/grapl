@@ -14,7 +14,7 @@ set -euo pipefail
 # Note that you will need your Rustup profile set to something higher
 # than "minimal" (e.g., "default"), since `rustup` isn't included in
 # "minimal".
-export RUSTUP_TOOLCHAIN="nightly-2021-11-23"
+export RUSTUP_TOOLCHAIN="nightly-2022-01-30"
 
 # Default to checking formatting in the absence of any options.
 mode="check"

@@ -1,10 +1,7 @@
 use std::collections::HashMap;
 
 use async_trait::async_trait;
-use dynamic_sessiondb::{
-    DynamicMappingDb,
-    NodeDescriptionIdentifier,
-};
+use dynamic_sessiondb::NodeDescriptionIdentifier;
 use failure::Error;
 use grapl_config::{
     env_helpers::{
@@ -29,7 +26,6 @@ use rust_proto::graph_descriptions::{
 };
 use sessiondb::SessionDb;
 use sqs_executor::{
-    cache::Cache,
     event_handler::{
         CompletedEvents,
         EventHandler,
@@ -61,34 +57,19 @@ pub mod sessions;
     * [Static](`rust_proto::graph_descriptions::Static`) - strategy used for nodes with canonical and unique identifiers (e.g. aws events)
 */
 #[derive(Clone)]
-pub struct NodeIdentifier<D, CacheT>
+pub struct NodeIdentifier<D>
 where
     D: GraplDynamoDbClientExt,
-    CacheT: Cache,
 {
     dynamic_identifier: NodeDescriptionIdentifier<D>,
-    node_id_db: D,
-    should_default: bool,
-    cache: CacheT,
 }
 
-impl<D, CacheT> NodeIdentifier<D, CacheT>
+impl<D> NodeIdentifier<D>
 where
     D: GraplDynamoDbClientExt,
-    CacheT: Cache,
 {
-    pub fn new(
-        dynamic_identifier: NodeDescriptionIdentifier<D>,
-        node_id_db: D,
-        should_default: bool,
-        cache: CacheT,
-    ) -> Self {
-        Self {
-            dynamic_identifier,
-            node_id_db,
-            should_default,
-            cache,
-        }
+    pub fn new(dynamic_identifier: NodeDescriptionIdentifier<D>) -> Self {
+        Self { dynamic_identifier }
     }
 
     // todo: We should be yielding IdentifiedNode's here
@@ -196,10 +177,9 @@ where
 }
 
 #[async_trait]
-impl<D, CacheT> EventHandler for NodeIdentifier<D, CacheT>
+impl<D> EventHandler for NodeIdentifier<D>
 where
     D: GraplDynamoDbClientExt,
-    CacheT: Cache,
 {
     type InputEvent = GraphDescription;
     type OutputEvent = IdentifiedGraph;
@@ -321,20 +301,10 @@ pub async fn handler(should_default: bool) -> Result<(), Box<dyn std::error::Err
 
     let dynamo = DynamoDbClient::from_env();
     let dyn_session_db = SessionDb::new(dynamo.clone(), grapl_config::dynamic_session_table_name());
-    let dyn_mapping_db = DynamicMappingDb::new(dynamo.clone());
 
-    let dyn_node_identifier =
-        NodeDescriptionIdentifier::new(dyn_session_db, dyn_mapping_db, should_default);
+    let dyn_node_identifier = NodeDescriptionIdentifier::new(dyn_session_db, should_default);
 
-    let node_identifier = &mut make_ten(async {
-        NodeIdentifier::new(
-            dyn_node_identifier,
-            dynamo,
-            should_default,
-            cache[0].to_owned(),
-        )
-    })
-    .await;
+    let node_identifier = &mut make_ten(async { NodeIdentifier::new(dyn_node_identifier) }).await;
 
     info!("Starting process_loop");
     sqs_executor::process_loop(

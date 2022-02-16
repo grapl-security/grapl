@@ -1,10 +1,11 @@
 [GLOBAL]
-pants_version = "2.8.0"
+pants_version = "2.9.0"
 backend_packages = [
   "grapl_setup_py",
   "pants.backend.codegen.protobuf.python",
   "pants.backend.experimental.docker",
   "pants.backend.experimental.docker.lint.hadolint",
+  "pants.backend.plugin_development",
   "pants.backend.python",
   "pants.backend.python.lint.black",
   "pants.backend.python.lint.flake8",
@@ -128,8 +129,6 @@ extra_requirements = [
 args = [ "--suppress-no-test-exit-code" ]
 
 [mypy]
-lockfile = "3rdparty/python/mypy.lockfile"
-version = "mypy==0.812"
 config = "src/python/mypy.ini"
 # read this section of the mypy docs:
 #
@@ -138,6 +137,26 @@ config = "src/python/mypy.ini"
 # for the raison d'être for "--namespace-packages". Tl;dr: it makes mypy work
 # with our protobuf stubs.
 args = [ "--show-error-codes", "--namespace-packages" ] #, "--verbose" ]
+
+extra_type_stubs = [
+  "mypy_boto3_cloudwatch==1.20.35.post1",
+  "mypy_boto3_dynamodb==1.20.35.post1",
+  "mypy_boto3_ec2==1.20.35.post1",
+  "mypy_boto3_lambda==1.20.35.post1",
+  "mypy_boto3_route53==1.20.35.post1",
+  "mypy_boto3_s3==1.20.35.post1",
+  "mypy_boto3_sagemaker==1.20.35.post1",
+  "mypy_boto3_secretsmanager==1.20.35.post1",
+  "mypy_boto3_sns==1.20.35.post1",
+  "mypy_boto3_sqs==1.20.35.post1",
+  "mypy_boto3_ssm==1.20.35.post1",
+
+  "types-click==7.1.8",
+  "types-protobuf==3.19.6",
+  "types-redis==4.1.11",
+  "types-requests==2.27.7",
+  "types-toml==0.10.3",
+]
 
 [ipython]
 version = "ipython==7.20.0"

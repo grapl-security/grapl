@@ -1,6 +1,6 @@
 FROM postgres:13.4-bullseye
 
-RUN --mount=type=cache,target=/var/lib/apt/lists \
+RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=postgreg-apt \
     apt-get update && \
     apt-get -y install --no-install-recommends \
     postgresql-13-partman=4.5.1-1 \

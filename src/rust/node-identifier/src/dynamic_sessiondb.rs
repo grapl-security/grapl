@@ -7,12 +7,7 @@ use failure::{
     bail,
     Error,
 };
-use rusoto_dynamodb::{
-    AttributeValue,
-    DynamoDb,
-    GetItemInput,
-    PutItemInput,
-};
+use rusoto_dynamodb::DynamoDb;
 use rust_proto::graph_descriptions::{
     id_strategy,
     Session as SessionStrategy,
@@ -37,14 +32,6 @@ use crate::{
     sessions::UnidSession,
 };
 
-#[derive(Debug, Clone)]
-pub struct DynamicMappingDb<D>
-where
-    D: DynamoDb,
-{
-    dyn_mapping_db: D,
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResolvedMapping {
     pub mapping: String,
@@ -56,70 +43,12 @@ pub struct DirectMapping {
     pub mapping: String,
 }
 
-impl<D> DynamicMappingDb<D>
-where
-    D: DynamoDb,
-{
-    pub fn new(dyn_mapping_db: D) -> Self {
-        Self { dyn_mapping_db }
-    }
-
-    #[tracing::instrument(skip(self))]
-    pub async fn direct_map(&self, input: &str) -> Result<Option<String>, Error> {
-        let mut key: HashMap<String, AttributeValue> = HashMap::new();
-
-        key.insert(
-            "pseudo_key".to_owned(),
-            AttributeValue {
-                s: Some(input.to_owned()),
-                ..Default::default()
-            },
-        );
-
-        let query = GetItemInput {
-            consistent_read: Some(true),
-            table_name: grapl_config::static_mapping_table_name(),
-            key,
-            ..Default::default()
-        };
-
-        let item = self.dyn_mapping_db.get_item(query).await?.item;
-
-        match item {
-            Some(item) => {
-                let mapping: ResolvedMapping = serde_dynamodb::from_hashmap(item.clone())?;
-                Ok(Some(mapping.mapping))
-            }
-            None => Ok(None),
-        }
-    }
-
-    #[tracing::instrument(skip(self), err)]
-    pub async fn create_mapping(&self, input: String, maps_to: String) -> Result<(), Error> {
-        let mapping = DirectMapping {
-            pseudo_key: input,
-            mapping: maps_to,
-        };
-
-        let put_req = PutItemInput {
-            item: serde_dynamodb::to_hashmap(&mapping).unwrap(),
-            table_name: grapl_config::static_mapping_table_name(),
-            ..Default::default()
-        };
-
-        let _put_item_response = self.dyn_mapping_db.put_item(put_req).await?;
-
-        Ok(())
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct NodeDescriptionIdentifier<D>
 where
     D: DynamoDb,
 {
     dyn_session_db: SessionDb<D>,
-    dyn_mapping_db: DynamicMappingDb<D>,
     should_guess: bool,
 }
 
@@ -127,14 +56,9 @@ impl<D> NodeDescriptionIdentifier<D>
 where
     D: DynamoDb,
 {
-    pub fn new(
-        dyn_session_db: SessionDb<D>,
-        dyn_mapping_db: DynamicMappingDb<D>,
-        should_guess: bool,
-    ) -> Self {
+    pub fn new(dyn_session_db: SessionDb<D>, should_guess: bool) -> Self {
         Self {
             dyn_session_db,
-            dyn_mapping_db,
             should_guess,
         }
     }

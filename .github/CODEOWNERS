@@ -20,6 +20,7 @@ BUILD @christophermaier
 /etc/ci_scripts/ @wimax-grapl
 /etc/formatter/ @wimax-grapl
 /etc/sample_data/ @jgrillo-grapl
+/firecracker @wimax-grapl
 /.flake8 @christophermaier
 .gitattributes @christophermaier
 /.github/ @christophermaier
@@ -47,7 +48,6 @@ BUILD @christophermaier
 /src/python/grapl_analyzerlib/ @colin-grapl
 /src/python/grapl-common/ @wimax-grapl
 /src/python/graplctl/ @jgrillo-grapl
-/src/python/grapl-notebook/ @wimax-grapl
 /src/python/grapl-template-generator/ @wimax-grapl @colin-grapl
 /src/python/grapl-tests-common/ @wimax-grapl
 /src/python/mypy.ini @christophermaier @wimax-grapl
@@ -70,9 +70,10 @@ BUILD @christophermaier
 /src/rust/grapl-service/ @inickles-grapl
 /src/rust/grapl-utils/ @inickles-grapl
 /src/rust/grapl-web-ui/ @inickles-grapl
-/src/rust/kafka-metrics-exporter/ @jgrillo-grapl
 /src/rust/model-plugin-deployer/ @wimax-grapl
+/src/rust/plugin-bootstrap/ @colin-grapl
 /src/rust/plugin-registry/ @colin-grapl
+/src/rust/plugin-sdk/ @colin-grapl
 /src/rust/plugin-work-queue/ @colin-grapl
 /src/rust/node-identifier/ @grapl-security/wg-data-infra
 /src/rust/nomad-client-gen/ @wimax-grapl

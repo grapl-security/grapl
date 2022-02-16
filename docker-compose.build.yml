@@ -83,6 +83,15 @@ services:
       args:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
+  plugin-bootstrap:
+    image: plugin-bootstrap:${TAG:-latest}
+    build:
+      context: src
+      dockerfile: rust/Dockerfile
+      target: plugin-bootstrap-deploy
+      args:
+        - RUST_BUILD=${RUST_BUILD:-debug}
+
   plugin-registry:
     image: plugin-registry:${TAG:-latest}
     build:
@@ -130,13 +139,6 @@ services:
       context: src/js/graphql_endpoint
       dockerfile: Dockerfile
       target: graphql-endpoint-deploy
-
-  notebook:
-    image: notebook:${TAG:-latest}
-    build:
-      context: .
-      dockerfile: ./src/python/Dockerfile
-      target: grapl-notebook
 
   ########################################################################
   # Utility Services

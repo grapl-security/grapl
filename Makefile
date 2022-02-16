@@ -128,11 +128,8 @@ help: ## Print this help
 ##@ Build 🔨
 
 .PHONY: build-service-pexs
-build-service-pexs:
-	./pants package \
-		./src/python/analyzer_executor/src \
-		./src/python/engagement-creator/engagement_creator:pex \
-		./src/python/provisioner/provisioner:pex
+build-service-pexs: ## Build all PEX files that are used by our service processes
+	./pants --tag="service-pex" package ::
 
 .PHONY: build-test-unit
 build-test-unit:
@@ -440,10 +437,6 @@ start-nomad-detach:  ## Start the Nomad environment, detached
 stop-nomad-detach:  ## Stop Nomad CI environment
 	nomad/local/stop_detach.sh
 
-.PHONY: push
-push: build-docker-images ## Push Grapl containers to supplied DOCKER_REGISTRY
-	docker-compose --file=docker-compose.build.yml push
-
 .PHONY: e2e-logs
 e2e-logs: ## All docker-compose logs
 	@$(WITH_LOCAL_GRAPL_ENV)
@@ -469,5 +462,13 @@ build-docs: ## Build the Sphinx docs
 
 .PHONY: generate-nomad-rust-client
 generate-nomad-rust-client:  # Generate the Nomad rust client from OpenAPI
-	./bin/generate_nomad_rust_client.sh
+	./src/rust/bin/generate_nomad_rust_client.sh
 	$(MAKE) format
+
+.PHONY: generate-sqlx-data
+generate-sqlx-data:  # Regenerate sqlx-data.json based on queries made in Rust code
+	./src/rust/bin/generate_sqlx_data.sh
+
+# Intentionally not phony, as this generates a real file
+dist/firecracker_kernel.tar.gz: firecracker/generate_firecracker_kernel.sh
+	./firecracker/generate_firecracker_kernel.sh

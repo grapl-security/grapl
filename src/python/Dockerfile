@@ -20,46 +20,38 @@ ENTRYPOINT ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
 # analyzer-executor
 ################################################################################
 FROM grapl-python-base AS analyzer-executor
-COPY ./dist/analyzer-executor.pex /home/grapl/
+COPY --chown=grapl ./dist/analyzer-executor.pex .
 CMD ["./analyzer-executor.pex"]
 
 # engagement-creator
 ################################################################################
 FROM grapl-python-base AS engagement-creator
-COPY ./dist/engagement-creator.pex /home/grapl/
+COPY --chown=grapl ./dist/engagement-creator.pex .
 CMD ["./engagement-creator.pex"]
 
 # Provisioner
 ################################################################################
 FROM grapl-python-base AS provisioner
-COPY ./dist/provisioner.pex /home/grapl/
+COPY --chown=grapl ./dist/provisioner.pex .
 CMD ["./provisioner.pex"]
 
 # e2e tests
 ################################################################################
 FROM grapl-python-base AS e2e-tests
-COPY ./dist/e2e-tests.pex /home/grapl/
-CMD ["./e2e-tests.pex"]
+
 # Copy in the contents of `etc` in order to upload them during e2e tests
 RUN mkdir -p /home/grapl/etc
 COPY --chown=grapl ./etc/local_grapl etc/local_grapl
-RUN mkdir -p /home/grapl/etc/sample_data
-COPY --chown=grapl ./etc/sample_data/eventlog.xml etc/sample_data/eventlog.xml
+COPY --chown=grapl ./etc/sample_data/ etc/sample_data
+
 # Copy in `graplctl`, which does the actual uploading during e2e
 RUN mkdir -p /home/grapl/bin
 COPY --chown=grapl ./bin/graplctl /home/grapl/bin/graplctl
-ENV PATH=/home/grapl/bin:$PATH
 
-# grapl-notebook
-################################################################################
-FROM grapl-python-base AS grapl-notebook
-EXPOSE 8888
-RUN pip install --no-cache-dir jupyter==1.0.0 \
-    && mkdir -p grapl-notebook/model_plugins
-COPY --chown=grapl src/python/grapl-notebook/jupyter_notebook_config.py /home/grapl/.jupyter/
-COPY --chown=grapl src/python/grapl-notebook/Demo_Engagement.ipynb /home/grapl/grapl-notebook/
-WORKDIR /home/grapl/grapl-notebook
-CMD ["jupyter", "notebook", "--ip", "0.0.0.0"]
+COPY --chown=grapl ./dist/e2e-tests.pex .
+CMD ["./e2e-tests.pex"]
+
+ENV PATH=/home/grapl/bin:$PATH
 
 # python-integration-tests
 ################################################################################

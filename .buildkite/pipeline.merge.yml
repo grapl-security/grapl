@@ -10,17 +10,39 @@ steps:
       # repository. If they all get built successfully, then we'll
       # promote them as a group later.
       - ".buildkite/scripts/build_and_upload_containers.sh"
-    key: "docker-containers"
     plugins:
       - grapl-security/vault-login#v0.1.0
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - CLOUDSMITH_API_KEY
+            - grapl/TOOLCHAIN_AUTH_TOKEN
       - docker-login#v2.0.1:
           username: grapl-cicd
           password-env: CLOUDSMITH_API_KEY
           server: docker.cloudsmith.io
     agents:
+      queue: "docker"
+    artifact_paths:
+      - "*.grapl-artifacts.json"
+
+  - label: ":firecracker: Build Firecracker packages"
+    command:
+      # Note: these packages are uploaded to the `raw`
+      # repository. If they all get built successfully, then we'll
+      # promote them as a group later.
+      - ".buildkite/scripts/build_and_upload_firecracker_packages.sh"
+    plugins:
+      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-env#v0.1.0:
+          secrets:
+            # We need access to the CLOUDSMITH_API_KEY so we can upload
+            # to Cloudsmith.
+            - CLOUDSMITH_API_KEY
+            - grapl/TOOLCHAIN_AUTH_TOKEN
+    agents:
+      # We're building the Firecracker VM image, which uses docker, and we'd
+      # like to take advantage of the docker queue's local cache whenever
+      # possible.
       queue: "docker"
     artifact_paths:
       - "*.grapl-artifacts.json"
@@ -35,30 +57,15 @@ steps:
 
   - wait
 
-  # Promote all the artifacts
-  #
-  # We do this before the RC creation because that
-  # triggers a run of the provision pipeline, and we want to make sure
-  # all the artifacts are in place first.
-  - label: ":cloudsmith: Promote artifacts"
+  # If we have some artifacts to promote in Cloudsmith, then upload
+  # the promotion step. If we have nothing, then the promotion step
+  # will fail.
+  - label: ":thinking_face: Anything to promote?"
     plugins:
-      - grapl-security/vault-login#v0.1.0
-      - grapl-security/vault-env#v0.1.0:
-          secrets:
-            - CLOUDSMITH_API_KEY
       - artifacts#v1.4.0:
-          # NOTE: this assumes that all artifacts mentioned in this
-          # file are stored in Cloudsmith!
           download: all_artifacts.json
-      - grapl-security/cloudsmith#v0.1.3:
-          promote:
-            org: grapl
-            action: move
-            from: raw
-            to: testing
-            packages_file: all_artifacts.json
-    agents:
-      queue: "artifact-uploaders"
+    command:
+      - .buildkite/scripts/upload_promotion_step_if_needed.sh
 
   - wait
 
@@ -72,6 +79,8 @@ steps:
           artifact_file: all_artifacts.json
           stacks:
             - grapl/grapl/testing
+            - grapl/grapl/customer-mock1
+            - grapl/grapl/customer-mock2
             - grapl/integration-tests/testing
     env:
       # We're going to be doing some git manipulation, so it's best if
@@ -89,4 +98,4 @@ steps:
     command:
       - record_successful_pipeline_run.sh
     plugins:
-      - grapl-security/grapl-release#v0.1.0
+      - grapl-security/grapl-release#v0.1.1

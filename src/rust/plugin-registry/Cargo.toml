@@ -16,12 +16,16 @@ grapl-config = { path = "../grapl-config" }
 grapl-utils = { path = "../grapl-utils" }
 rust-proto = { path = "../rust-proto" }
 nomad-client-gen = { path = "../nomad-client-gen" }
+serde_json = "1.0.72"
 sqlx = { version = "0.5.9", features = [
+  "chrono",
   "migrate",
+  "offline",
   "postgres",
   "runtime-tokio-rustls",
-  "uuid"
+  "uuid",
 ] }
+tempfile = "3.3.0"
 thiserror = "1.0.30"
 tokio = { version = "1.14.0", features = ["full"] }
 tonic = "0.6.1"

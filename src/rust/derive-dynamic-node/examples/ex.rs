@@ -1,3 +1,4 @@
+#![allow(dead_code)] // This is necessary due to how the derive macros work
 use derive_dynamic_node::{
     GraplSessionId,
     GraplStaticId,
