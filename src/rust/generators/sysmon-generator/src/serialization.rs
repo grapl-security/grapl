@@ -2,21 +2,18 @@ use std::str::FromStr;
 
 use grapl_service::decoder::decompress::PayloadDecompressionError;
 use sqs_executor::{
-    errors::{
-        CheckedError,
-        Recoverable,
-    },
+    errors::{CheckedError, Recoverable},
     event_decoder::PayloadDecoder,
 };
 use sysmon::Event;
 
 #[derive(thiserror::Error, Clone, Debug)]
 pub enum SysmonDecoderError {
-    #[error("DeserializeError")]
+    #[error("DeserializeError {0}")]
     DeserializeError(String),
-    #[error("DecompressionError")]
+    #[error("DecompressionError {0}")]
     DecompressionError(#[from] PayloadDecompressionError),
-    #[error("TimeError")]
+    #[error("TimeError {0}")]
     TimeError(#[from] chrono::ParseError),
 }
 

@@ -4435,6 +4435,8 @@ dependencies = [
  "chrono",
  "derive_is_enum_variant",
  "failure",
+ "prost",
+ "rust-proto",
  "serde",
  "serde-xml-rs",
  "uuid",

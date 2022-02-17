@@ -1,45 +1,20 @@
-use std::{
-    collections::HashMap,
-    io::Stdout,
-    marker::PhantomData,
-    time::Duration,
-};
+use std::{collections::HashMap, io::Stdout, marker::PhantomData, time::Duration};
 
 use async_trait::async_trait;
 use futures::FutureExt;
 use grapl_observe::{
-    metric_reporter::{
-        tag,
-        HistogramUnit,
-        MetricReporter,
-    },
-    timers::{
-        time_it,
-        TimedFutureExt,
-    },
+    metric_reporter::{tag, HistogramUnit, MetricReporter},
+    timers::{time_it, TimedFutureExt},
 };
 use rusoto_core::RusotoError;
-use rusoto_s3::{
-    GetObjectError,
-    GetObjectRequest,
-    S3,
-};
+use rusoto_s3::{GetObjectError, GetObjectRequest, S3};
 use rusoto_sqs::Message as SqsMessage;
 use rust_proto::pipeline::Metadata;
-use tokio::{
-    io::AsyncReadExt,
-    time::error::Elapsed,
-};
-use tracing::{
-    debug,
-    error,
-};
+use tokio::{io::AsyncReadExt, time::error::Elapsed};
+use tracing::{debug, error};
 
 use crate::{
-    errors::{
-        CheckedError,
-        Recoverable,
-    },
+    errors::{CheckedError, Recoverable},
     event_decoder::PayloadDecoder,
     PayloadRetriever,
 };
@@ -117,15 +92,15 @@ where
 {
     #[error("S3Error: {0}")]
     S3Error(#[from] RusotoError<GetObjectError>),
-    #[error("Decode error")]
+    #[error("Decode error {0}")]
     DecodeError(#[from] DecoderErrorT),
-    #[error("EnvelopeDecode error")]
+    #[error("EnvelopeDecode error {0}")]
     EnvelopeDecode(#[from] prost::DecodeError),
-    #[error("IO")]
+    #[error("IO {0}")]
     Io(#[from] std::io::Error),
-    #[error("JSON")]
+    #[error("JSON {0}")]
     Json(#[from] serde_json::Error),
-    #[error("Timeout")]
+    #[error("Timeout {0}")]
     Timeout(#[from] Elapsed),
 }
 

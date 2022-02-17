@@ -18,6 +18,8 @@ use anyhow::{
 };
 use chrono::prelude::*;
 use failure::_core::ops::Deref;
+use prost;
+use rust_proto;
 use serde::{
     de::Error as SerdeError,
     Deserialize,
@@ -51,7 +53,10 @@ pub enum Event {
 impl FromStr for Event {
     type Err = anyhow::Error;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(raw: &str) -> Result<Self, Self::Err> {
+        let envelope: rust_proto::pipeline::Envelope = prost::Message::decode(raw.as_bytes())?;
+        let bytes = envelope.inner_message.expect("wat").value;
+        let s = std::str::from_utf8(&bytes).expect("wat");
         serde_xml_rs::from_str::<ProcessCreateEvent>(s)
             .map(|p| Event::ProcessCreate(p))
             .or_else(|_| serde_xml_rs::from_str::<FileCreateEvent>(s).map(|f| Event::FileCreate(f)))

@@ -1,12 +1,6 @@
-use prost::{
-    DecodeError,
-    Message,
-};
+use prost::{DecodeError, Message};
 use sqs_executor::{
-    errors::{
-        CheckedError,
-        Recoverable,
-    },
+    errors::{CheckedError, Recoverable},
     event_decoder::PayloadDecoder,
 };
 
@@ -14,9 +8,9 @@ use crate::decoder::decompress::PayloadDecompressionError;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ProtoDecoderError {
-    #[error("DecompressionError")]
+    #[error("DecompressionError {0}")]
     DecompressionError(#[from] PayloadDecompressionError),
-    #[error("ProtoError")]
+    #[error("ProtoError {0}")]
     ProtoError(#[from] DecodeError),
 }
 
