@@ -168,10 +168,9 @@ build-docker-images: graplctl build-engagement-view
 .PHONY: build
 build: build-service-pexs build-docker-images ## Build Grapl services
 
-.PHONY: build-formatter
-build-formatter:
-	$(DOCKER_BUILDX_BAKE) \
-		--file ./docker-compose.formatter.yml
+.PHONY: build-prettier-image
+build-prettier-image:
+	$(DOCKER_BUILDX_BAKE) --file ./docker-compose.check.yml prettier
 
 .PHONY: graplctl
 graplctl: ## Build graplctl and install it to ./bin
@@ -305,13 +304,8 @@ lint-shell: ## Run Shell lint checks
 	./pants filter --target-type=shell_sources,shunit2_tests :: | xargs ./pants lint
 
 .PHONY: lint-prettier
-lint-prettier: build-formatter ## Run ts/js/yaml lint checks
-	# `docker-compose run` will also propagate the correct exit code.
-	# We could explore tossing `docker-compose` and switching to `docker run`,
-	# like `grapl/grapl-rfcs`.
-	docker-compose \
-		--file docker-compose.formatter.yml \
-		run --rm lint-prettier
+lint-prettier: build-prettier-image ## Run ts/js/yaml lint checks
+	${NONROOT_DOCKER_COMPOSE_CHECK} prettier-lint
 
 .PHONY: lint-hcl
 lint-hcl: ## Check to see if HCL files are formatted properly
@@ -343,11 +337,8 @@ format-shell: ## Reformat all shell code
 	./pants filter --target-type=shell_sources,shunit2_tests :: | xargs ./pants fmt
 
 .PHONY: format-prettier
-format-prettier: build-formatter ## Reformat js/ts/yaml
-	# `docker-compose run` will also propagate the correct exit code.
-	docker-compose \
-		--file docker-compose.formatter.yml \
-		run --rm format-prettier
+format-prettier: build-prettier-image ## Reformat js/ts/yaml
+	${NONROOT_DOCKER_COMPOSE_CHECK} prettier-format
 
 .PHONY: format-hcl
 format-hcl: ## Reformat all HCLs
@@ -468,3 +459,7 @@ generate-nomad-rust-client:  # Generate the Nomad rust client from OpenAPI
 .PHONY: generate-sqlx-data
 generate-sqlx-data:  # Regenerate sqlx-data.json based on queries made in Rust code
 	./src/rust/bin/generate_sqlx_data.sh
+
+# Intentionally not phony, as this generates a real file
+dist/firecracker_kernel.tar.gz: firecracker/generate_firecracker_kernel.sh
+	./firecracker/generate_firecracker_kernel.sh

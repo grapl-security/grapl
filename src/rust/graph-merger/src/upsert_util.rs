@@ -74,7 +74,7 @@ pub(crate) fn build_upserts(
 
     let (creation_var_name, creation_query, creation_quad) =
         node_creation_quads(query_param, &node_key, node_type);
-    key_query_map.insert(_node_key.clone(), creation_var_name.clone());
+    key_query_map.insert(_node_key, creation_var_name.clone());
 
     mutations.push(creation_quad);
     inner_queries.push_str(&creation_query);

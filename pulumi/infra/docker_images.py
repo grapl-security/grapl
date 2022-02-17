@@ -1,14 +1,7 @@
 import os
 from typing import Mapping, NewType, Optional
 
-from typing_extensions import Final
-
-# This default is chosen because Nomad cannot pull images called "latest"
-# from the local machine (it takes it as a directive to go to Dockerhub)
-# Originates at the `TAG ?= dev` at the top of the Makefile.
-_DEFAULT_TAG: Final[str] = "dev"
-
-
+DockerImageId = NewType("DockerImageId", str)
 """
 A Docker image identifier is something that can be consumed by the
 Nomad Docker plugin `image` field.
@@ -21,7 +14,6 @@ The values can look like, for instance:
 - an image pulled from Cloudsmith
     "docker.cloudsmith.io/grapl/raw/graph-merger:20211105192234-a86a8ad2"
 """
-DockerImageId = NewType("DockerImageId", str)
 
 
 def _version_tag(
@@ -32,8 +24,7 @@ def _version_tag(
     """
     First, try and get the value from artifacts;
         if no artifact and require_artifact, throw error
-    then fall back to $TAG;
-    then fall back to "dev"
+    then fall back to $TAG, and fail if it isn't set.
 
     We generally set `require_artifact=True` for production deployments.
     """
@@ -45,11 +36,11 @@ def _version_tag(
             f"Expected to find an artifacts entry for {key} in Pulumi config file"
         )
 
-    tag = os.getenv("TAG")
-    if tag:
-        return tag
-
-    return _DEFAULT_TAG
+    tag = os.environ["TAG"]
+    assert (
+        tag != "latest"
+    ), "Never try to deploy from a 'latest' tag! Plus, Nomad can't access these from the local host, making local development problematic"
+    return tag
 
 
 class DockerImageIdBuilder:

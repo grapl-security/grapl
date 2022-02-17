@@ -9,7 +9,7 @@ volumes:
 
 services:
   pulumi:
-    image: local-pulumi:${TAG:-latest}
+    image: local-pulumi:${TAG}
     entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
     command:
       - |

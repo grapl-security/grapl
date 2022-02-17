@@ -10,7 +10,6 @@ steps:
       # repository. If they all get built successfully, then we'll
       # promote them as a group later.
       - ".buildkite/scripts/build_and_upload_containers.sh"
-    key: "docker-containers"
     plugins:
       - grapl-security/vault-login#v0.1.0
       - grapl-security/vault-env#v0.1.0:
@@ -22,6 +21,28 @@ steps:
           password-env: CLOUDSMITH_API_KEY
           server: docker.cloudsmith.io
     agents:
+      queue: "docker"
+    artifact_paths:
+      - "*.grapl-artifacts.json"
+
+  - label: ":firecracker: Build Firecracker packages"
+    command:
+      # Note: these packages are uploaded to the `raw`
+      # repository. If they all get built successfully, then we'll
+      # promote them as a group later.
+      - ".buildkite/scripts/build_and_upload_firecracker_packages.sh"
+    plugins:
+      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-env#v0.1.0:
+          secrets:
+            # We need access to the CLOUDSMITH_API_KEY so we can upload
+            # to Cloudsmith.
+            - CLOUDSMITH_API_KEY
+            - grapl/TOOLCHAIN_AUTH_TOKEN
+    agents:
+      # We're building the Firecracker VM image, which uses docker, and we'd
+      # like to take advantage of the docker queue's local cache whenever
+      # possible.
       queue: "docker"
     artifact_paths:
       - "*.grapl-artifacts.json"
