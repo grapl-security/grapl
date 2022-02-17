@@ -34,7 +34,8 @@ class ArtifactGetter:
             return artifact_version
         if self.require_artifact:
             raise KeyError(
-                f"Expected to find an artifacts entry for {key} in Pulumi.stackname.yaml"
+                f"Expected to find an artifacts entry for {key} in "
+                f"{config.STACK_CONFIG_FILENAME}"
             )
         return None
 

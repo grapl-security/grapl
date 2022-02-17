@@ -95,6 +95,6 @@ def local_or_remote_asset(
             return pulumi.asset.FileAsset(local_path)
 
     raise ValueError(
-        f"Couldn't find an asset at {local_path}"
-        f" or an artifact with key {artifact_key}"
+        f"Couldn't find an asset at {local_path} or an artifact with "
+        f"key {artifact_key} in `{config.STACK_CONFIG_FILENAME}`."
     )

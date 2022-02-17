@@ -9,14 +9,18 @@ from typing_extensions import Final
 import pulumi
 
 # This will be incorporated into various infrastructure object names.
-DEPLOYMENT_NAME = pulumi.get_stack()
+DEPLOYMENT_NAME: Final[str] = pulumi.get_stack()
+
+# Only use this value for helpful error messages;
+# Pulumi is responsible for actually accessing and parsing this file.
+STACK_CONFIG_FILENAME: Final[str] = f"Pulumi.{DEPLOYMENT_NAME}.yaml"
 
 # This must be the same as the value defined in local-grapl.env
-GRAPL_TEST_USER_NAME = f"{DEPLOYMENT_NAME}-grapl-test-user"
+GRAPL_TEST_USER_NAME: Final[str] = f"{DEPLOYMENT_NAME}-grapl-test-user"
 
 # Sometimes we need to refer to other code or artifacts relative to
 # the repository root.
-REPOSITORY_ROOT = os.path.join(os.path.dirname(__file__), "../..")
+REPOSITORY_ROOT: Final[str] = os.path.join(os.path.dirname(__file__), "../..")
 
 
 def to_bool(input: Optional[Union[str, bool]]) -> Optional[bool]:
@@ -56,7 +60,10 @@ _validate_deployment_name()
 # Use this to modify behavior or configuration for provisioning in
 # Local Grapl (as opposed to any other real deployment)
 
-LOCAL_GRAPL = DEPLOYMENT_NAME in ("local-grapl", "local-grapl-integration-tests")
+LOCAL_GRAPL: Final[bool] = DEPLOYMENT_NAME in (
+    "local-grapl",
+    "local-grapl-integration-tests",
+)
 # (We have a different one for integration tests because `pulumi login --local`
 #  doesn't allow for stack name conflicts, even across projects.)
 
@@ -67,18 +74,19 @@ LOCAL_GRAPL = DEPLOYMENT_NAME in ("local-grapl", "local-grapl-integration-tests"
 # other deployments in the future. Another option would be to declare
 # a convention for developer sandbox environments and have logic pivot
 # on that, instead.)
-REAL_DEPLOYMENT = DEPLOYMENT_NAME in ("testing")
+REAL_DEPLOYMENT: Final[bool] = DEPLOYMENT_NAME in ("testing")
 
 # For importing some objects, we have to construct a URL, ARN, etc
 # that includes the AWS account ID.
-AWS_ACCOUNT_ID = "000000000000" if LOCAL_GRAPL else aws.get_caller_identity().account_id
-
+AWS_ACCOUNT_ID: Final[str] = (
+    "000000000000" if LOCAL_GRAPL else aws.get_caller_identity().account_id
+)
 
 SERVICE_LOG_RETENTION_DAYS: Final[int] = 30
 
 DGRAPH_LOG_RETENTION_DAYS: Final[int] = 7
 
-DEFAULT_ENVVARS = {
+DEFAULT_ENVVARS: Final[Mapping[str, str]] = {
     "GRAPL_LOG_LEVEL": "DEBUG",
     "RUST_LOG": "DEBUG",
     "RUST_BACKTRACE": "0",
@@ -97,7 +105,7 @@ def _require_env_var(key: str) -> str:
     if not value:
         raise KeyError(
             f"Missing environment variable '{key}'. "
-            f"Add it to env variables or `Pulumi.{DEPLOYMENT_NAME}.yaml`."
+            f"Add it to env variables or `{STACK_CONFIG_FILENAME}`."
         )
     return value
 
@@ -125,7 +133,7 @@ def configurable_envvar(service_name: str, var: str) -> str:
         You have tried to retrieve a value for the '{var}' environment variable for the
         '{service_name}' service, but we have no record of this variable!
 
-        Please edit your Pulumi.{DEPLOYMENT_NAME}.yaml file and add the following:
+        Please edit your `{STACK_CONFIG_FILENAME}` file and add the following:
 
         config:
           {pulumi.get_project()}:{config_key}:
