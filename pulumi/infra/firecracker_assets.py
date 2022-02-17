@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional
+from typing import Mapping, Optional
 
 import pulumi_aws as aws
 from infra import config
@@ -57,9 +57,14 @@ class FirecrackerS3BucketObjects(pulumi.ComponentResource):
 
 
 def get_s3url(obj: aws.s3.BucketObject) -> pulumi.Output[str]:
-    return pulumi.Output.all(bucket=obj.bucket, key=obj.key).apply(
-        lambda inputs: f"https://{inputs['bucket']}.s3.amazonaws.com/{inputs['key']}"
-    )
+    def _inner(inputs: Mapping[str, str]) -> str:
+        if config.LOCAL_GRAPL:
+            # We have to do some REPLACE_LOCAL_GRAPL stuff here - gross.
+            # May be time to start figuring out how to hook up external
+            # services as Consul Connect services.
+            return f"http://localhost-todo-doesnt-work:4566/{inputs['bucket']}/{inputs['key']}"
+        return f"https://{inputs['bucket']}.s3.amazonaws.com/{inputs['key']}"
+    return pulumi.Output.all(bucket=obj.bucket, key=obj.key).apply(_inner)
 
 
 def cloudsmith_cdn_url(
