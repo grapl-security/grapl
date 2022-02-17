@@ -90,7 +90,6 @@ if ! cargo clippy \
     --allow clippy::op_ref \
     --allow clippy::option_as_ref_deref \
     --allow clippy::or_fun_call \
-    --allow clippy::redundant_clone \
     --allow clippy::redundant_closure \
     --allow clippy::redundant_field_names \
     --allow clippy::redundant_pattern_matching \

@@ -62,9 +62,7 @@ impl PluginRegistryServiceClient<tonic::transport::Channel> {
             .timeout(Duration::from_secs(5))
             .concurrency_limit(30);
         let channel = endpoint.connect().await?;
-        Ok(Self::new(_PluginRegistryServiceClient::new(
-            channel.clone(),
-        )))
+        Ok(Self::new(_PluginRegistryServiceClient::new(channel)))
     }
 }
 

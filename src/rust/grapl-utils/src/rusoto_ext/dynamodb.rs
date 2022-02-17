@@ -16,17 +16,17 @@ const DYNAMODB_MAX_BATCH_GET_ITEM_SIZE: usize = 100;
 #[async_trait]
 pub trait GraplDynamoDbClientExt: DynamoDb + Send + Sync {
     /**
-        The original `batch_get_item` method imposes some restrictions on querying. Namely:
-        * You must request 100 or fewer items otherwise an error is returned
-        * If the response would be over 16MB, only up-to 16MB of requested data is returned. A list of unprocessed items is also returned
+    The original `batch_get_item` method imposes some restrictions on querying. Namely:
+    * You must request 100 or fewer items otherwise an error is returned
+    * If the response would be over 16MB, only up-to 16MB of requested data is returned. A list of unprocessed items is also returned
 
-        This method attempts to solve this problem relatively generally.
+    This method attempts to solve this problem relatively generally.
 
-        You may pass a BatchGetItemInput with *more than* 100 items requested and `batch_get_item_reliably`
-        guarantees that all of the items will be requested within DynamoDb's rules on number of items requested and
-        size of response. This works across table_names as well, therefore 75 items from one table and 50 from another
-        will still be requested within DynamoDb's rules and remain compliant.
-    */
+    You may pass a BatchGetItemInput with *more than* 100 items requested and `batch_get_item_reliably`
+    guarantees that all of the items will be requested within DynamoDb's rules on number of items requested and
+    size of response. This works across table_names as well, therefore 75 items from one table and 50 from another
+    will still be requested within DynamoDb's rules and remain compliant.
+     */
     async fn batch_get_item_reliably(
         &self,
         batch_get_items_input: BatchGetItemInput,
@@ -61,7 +61,7 @@ pub trait GraplDynamoDbClientExt: DynamoDb + Send + Sync {
                         .map(|row_properties| (table.clone(), row_properties))
                         .collect::<Vec<(String, HashMap<String, AttributeValue>)>>();
 
-                    key_and_attribute_shells.insert(table.clone(), keys_and_attributes);
+                    key_and_attribute_shells.insert(table, keys_and_attributes);
 
                     request_items
                 })
@@ -85,7 +85,7 @@ pub trait GraplDynamoDbClientExt: DynamoDb + Send + Sync {
                 .drain(0..std::cmp::min(pending_items.len(), DYNAMODB_MAX_BATCH_GET_ITEM_SIZE))
                 .for_each(|(table_name, row_keys)| {
                     let entry = requested_items_for_table
-                        .entry(table_name.clone())
+                        .entry(table_name)
                         .or_insert(Vec::new());
 
                     entry.push(row_keys);
@@ -134,9 +134,7 @@ pub trait GraplDynamoDbClientExt: DynamoDb + Send + Sync {
                 Some(response_map) => {
                     // for each table in response, record the rows for that table
                     response_map.into_iter().for_each(|(table_name, rows)| {
-                        let table_rows = total_responses
-                            .entry(table_name.clone())
-                            .or_insert(Vec::new());
+                        let table_rows = total_responses.entry(table_name).or_insert(Vec::new());
 
                         table_rows.extend(rows);
                     });
