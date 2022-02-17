@@ -4436,6 +4436,7 @@ dependencies = [
  "derive_is_enum_variant",
  "failure",
  "prost",
+ "prost-types",
  "rust-proto",
  "serde",
  "serde-xml-rs",

@@ -6,25 +6,14 @@ extern crate serde;
 extern crate serde_xml_rs;
 extern crate uuid;
 
-use std::{
-    collections::HashMap,
-    convert::TryFrom,
-    str::FromStr,
-};
+use std::{collections::HashMap, convert::TryFrom, str::FromStr};
 
-use anyhow::{
-    anyhow,
-    Result,
-};
+use anyhow::{anyhow, Result};
 use chrono::prelude::*;
 use failure::_core::ops::Deref;
 use prost;
 use rust_proto;
-use serde::{
-    de::Error as SerdeError,
-    Deserialize,
-    Deserializer,
-};
+use serde::{de::Error as SerdeError, Deserialize, Deserializer};
 
 macro_rules! get_or_err {
     ($map:ident, $field_name:expr) => {
@@ -55,8 +44,9 @@ impl FromStr for Event {
 
     fn from_str(raw: &str) -> Result<Self, Self::Err> {
         let envelope: rust_proto::pipeline::Envelope = prost::Message::decode(raw.as_bytes())?;
-        let bytes = envelope.inner_message.expect("wat").value;
-        let s = std::str::from_utf8(&bytes).expect("wat");
+        let inner_bytes = envelope.inner_message.expect("wat").value;
+        let raw_log: rust_proto::pipeline::RawLog = prost::Message::decode(inner_bytes.as_slice())?;
+        let s = std::str::from_utf8(&raw_log.log_event).expect("wat");
         serde_xml_rs::from_str::<ProcessCreateEvent>(s)
             .map(|p| Event::ProcessCreate(p))
             .or_else(|_| serde_xml_rs::from_str::<FileCreateEvent>(s).map(|f| Event::FileCreate(f)))
@@ -625,6 +615,8 @@ pub struct IntermediaryEventData {
 
 #[cfg(test)]
 mod tests {
+    use uuid::Uuid;
+
     use super::*;
 
     const NETWORK_EVENT: &str = r#"
@@ -774,12 +766,63 @@ mod tests {
         serde_xml_rs::from_str::<NetworkEvent>(NETWORK_EVENT).unwrap();
     }
 
+    fn serialize_raw_log(raw_log_event: &str) -> Vec<u8> {
+        let raw_log = rust_proto::pipeline::RawLog {
+            log_event: raw_log_event.as_bytes().to_vec(),
+        };
+        let mut buf = Vec::new();
+        prost::Message::encode(&raw_log, &mut buf).expect("wat");
+        buf
+    }
+
+    fn serialize_raw_log_envelope(raw_log_event: &str) -> Vec<u8> {
+        let now = std::time::SystemTime::now();
+        let uuid = Uuid::new_v4();
+        let metadata = rust_proto::pipeline::Metadata {
+            tenant_id: Some(uuid.into()),
+            trace_id: Some(uuid.into()),
+            retry_count: 0,
+            created_time: Some(now.into()),
+            last_updated_time: Some(now.into()),
+            event_source_id: Some(uuid.into()),
+        };
+        let any = prost_types::Any {
+            type_url: "graplinc.grapl.pipeline.RawLog".to_string(),
+            value: serialize_raw_log(raw_log_event),
+        };
+        let envelope = rust_proto::pipeline::Envelope {
+            metadata: Some(metadata),
+            inner_message: Some(any),
+        };
+        let mut buf = Vec::new();
+        prost::Message::encode(&envelope, &mut buf).expect("wat");
+        buf
+    }
+
     #[test]
     fn event_type() {
-        assert!(Event::from_str(NETWORK_EVENT)
-            .unwrap()
-            .is_outbound_network());
-        assert!(Event::from_str(FILE_CREATE).unwrap().is_file_create());
-        assert!(Event::from_str(PROCESS_CREATE).unwrap().is_process_create());
+        unsafe {
+            assert!(
+                Event::from_str(std::str::from_utf8_unchecked(&serialize_raw_log_envelope(
+                    NETWORK_EVENT
+                )))
+                .unwrap()
+                .is_outbound_network()
+            );
+            assert!(
+                Event::from_str(std::str::from_utf8_unchecked(&serialize_raw_log_envelope(
+                    FILE_CREATE
+                )))
+                .unwrap()
+                .is_file_create()
+            );
+            assert!(
+                Event::from_str(std::str::from_utf8_unchecked(&serialize_raw_log_envelope(
+                    PROCESS_CREATE
+                )))
+                .unwrap()
+                .is_process_create()
+            );
+        }
     }
 }
