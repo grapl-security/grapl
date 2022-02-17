@@ -1,6 +1,12 @@
-use prost::{DecodeError, Message};
+use prost::{
+    DecodeError,
+    Message,
+};
 use sqs_executor::{
-    errors::{CheckedError, Recoverable},
+    errors::{
+        CheckedError,
+        Recoverable,
+    },
     event_decoder::PayloadDecoder,
 };
 

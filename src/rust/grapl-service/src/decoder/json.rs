@@ -1,6 +1,9 @@
 use serde::Deserialize;
 use sqs_executor::{
-    errors::{CheckedError, Recoverable},
+    errors::{
+        CheckedError,
+        Recoverable,
+    },
     event_decoder::PayloadDecoder,
 };
 

@@ -2,7 +2,10 @@ use std::str::FromStr;
 
 use grapl_service::decoder::decompress::PayloadDecompressionError;
 use sqs_executor::{
-    errors::{CheckedError, Recoverable},
+    errors::{
+        CheckedError,
+        Recoverable,
+    },
     event_decoder::PayloadDecoder,
 };
 use sysmon::Event;
