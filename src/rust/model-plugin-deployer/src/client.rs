@@ -38,6 +38,6 @@ impl RpcClient<Channel> {
             .timeout(Duration::from_secs(5))
             .concurrency_limit(30);
         let channel = endpoint.connect().await?;
-        Ok(RpcClient::new(channel.clone()))
+        Ok(RpcClient::new(channel))
     }
 }

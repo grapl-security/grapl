@@ -148,8 +148,7 @@ impl<'a> TryFrom<(String, &Field<'a, &'a str>)> for Edge {
         let reverse_edge_name = field
             .directives
             .iter()
-            .map(|directive| &directive.arguments)
-            .flatten()
+            .flat_map(|directive| &directive.arguments)
             .find_map(|(argument_name, argument)| {
                 if *argument_name == "reverse" {
                     if let graphql_parser::schema::Value::String(argument) = argument {
