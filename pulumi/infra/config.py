@@ -223,7 +223,8 @@ def cloudsmith_repository_name() -> Optional[str]:
 def container_repository() -> Optional[str]:
     """The repository from which to pull container images from.
 
-    Not specifying a repository will result in local images being used.
+    Not specifying a repository will result in local images being used,
+    but only for local-grapl stacks.
     """
 
     repo_name = cloudsmith_repository_name()
