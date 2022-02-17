@@ -12,7 +12,7 @@ services:
   ########################################################################
 
   sysmon-generator:
-    image: sysmon-generator:${TAG:-latest}
+    image: sysmon-generator:${TAG}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -21,7 +21,7 @@ services:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
   osquery-generator:
-    image: osquery-generator:${TAG:-latest}
+    image: osquery-generator:${TAG}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -30,7 +30,7 @@ services:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
   node-identifier:
-    image: node-identifier:${TAG:-latest}
+    image: node-identifier:${TAG}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -39,7 +39,7 @@ services:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
   node-identifier-retry:
-    image: node-identifier-retry:${TAG:-latest}
+    image: node-identifier-retry:${TAG}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -48,7 +48,7 @@ services:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
   graph-merger:
-    image: graph-merger:${TAG:-latest}
+    image: graph-merger:${TAG}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -57,7 +57,7 @@ services:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
   analyzer-dispatcher:
-    image: analyzer-dispatcher:${TAG:-latest}
+    image: analyzer-dispatcher:${TAG}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -66,7 +66,7 @@ services:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
   model-plugin-deployer:
-    image: model-plugin-deployer:${TAG:-latest}
+    image: model-plugin-deployer:${TAG}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -75,7 +75,7 @@ services:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
   grapl-web-ui:
-    image: grapl-web-ui:${TAG:-latest}
+    image: grapl-web-ui:${TAG}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -84,7 +84,7 @@ services:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
   plugin-bootstrap:
-    image: plugin-bootstrap:${TAG:-latest}
+    image: plugin-bootstrap:${TAG}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -93,7 +93,7 @@ services:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
   plugin-registry:
-    image: plugin-registry:${TAG:-latest}
+    image: plugin-registry:${TAG}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -102,7 +102,7 @@ services:
         - RUST_BUILD=${RUST_BUILD:-debug}
 
   plugin-work-queue:
-    image: plugin-work-queue:${TAG:-latest}
+    image: plugin-work-queue:${TAG}
     build:
       context: src
       dockerfile: rust/Dockerfile
@@ -116,14 +116,14 @@ services:
 
   # should match `pulumi/infra/analyzer_executor.py`'s GraplDockerBuild
   analyzer-executor:
-    image: analyzer-executor:${TAG:-latest}
+    image: analyzer-executor:${TAG}
     build:
       context: .
       dockerfile: ./src/python/Dockerfile
       target: analyzer-executor
 
   engagement-creator:
-    image: engagement-creator:${TAG:-latest}
+    image: engagement-creator:${TAG}
     build:
       context: .
       dockerfile: ./src/python/Dockerfile
@@ -134,7 +134,7 @@ services:
   ########################################################################
 
   graphql-endpoint:
-    image: graphql-endpoint:${TAG:-latest}
+    image: graphql-endpoint:${TAG}
     build:
       context: src/js/graphql_endpoint
       dockerfile: Dockerfile
@@ -145,25 +145,25 @@ services:
   ########################################################################
 
   pulumi:
-    image: local-pulumi:${TAG:-latest}
+    image: local-pulumi:${TAG}
     build:
       context: .
       dockerfile: Dockerfile.pulumi
 
   localstack:
-    image: localstack-grapl-fork:${TAG:-latest}
+    image: localstack-grapl-fork:${TAG}
     build:
       context: localstack
       dockerfile: Dockerfile
 
   postgres:
-    image: postgres-ext:${TAG:-latest}
+    image: postgres-ext:${TAG}
     build:
       context: postgres
       dockerfile: Dockerfile
 
   provisioner:
-    image: provisioner:${TAG:-latest}
+    image: provisioner:${TAG}
     build:
       context: .
       dockerfile: ./src/python/Dockerfile
