@@ -44,7 +44,8 @@ ensure_valid_env() {
 
     # Ensure script is being run with `local-grapl.env` variables
     # via `make start-nomad-ci`
-    if [[ ! -v DOCKER_REGISTRY ]]; then
+    # This variable will only be set in that scenario.
+    if [[ ! -v FAKE_AWS_ACCESS_KEY_ID ]]; then
         echo "!!! Run this with 'make start-nomad-ci'"
         exit 1
     fi
