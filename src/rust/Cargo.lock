@@ -4455,6 +4455,8 @@ dependencies = [
  "grapl-config",
  "grapl-observe",
  "grapl-service",
+ "prost",
+ "prost-types",
  "rust-proto",
  "serde",
  "serde_json",
