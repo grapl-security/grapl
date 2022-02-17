@@ -1,13 +1,7 @@
 import os
 from typing import NewType, Optional
+
 from infra.artifacts import ArtifactGetter
-from typing_extensions import Final
-
-# This default is chosen because Nomad cannot pull images called "latest"
-# from the local machine (it takes it as a directive to go to Dockerhub)
-# Originates at the `TAG ?= dev` at the top of the Makefile.
-_DEFAULT_TAG: Final[str] = "dev"
-
 
 DockerImageId = NewType("DockerImageId", str)
 """
