@@ -150,53 +150,70 @@ build-test-unit-js:
 	$(DOCKER_BUILDX_BAKE) \
 		--file ./test/docker-compose.unit-tests-js.yml
 
-.PHONY: build-test-integration
-build-test-integration:
-	@echo "--- Building integration test images"
-	$(DOCKER_BUILDX_BAKE) --file "${BUILDX_BAKE_HCL_FILE}" integration-tests
+# Build Service Images and their Prerequisites
+########################################################################
+#
+# Building of the various images we use for core Grapl SaaS services,
+# our local-only images (e.g., pulumi, postgres), and any
+# prerequisites they need (e.g., due to COPY directives in
+# Dockerfiles) are defined here. The image builds are defined in
+# ${BUILDX_BAKE_HCL_FILE} using groups. Similarly, the prerequisites
+# that Pants knows how to build are defined using tags. The
+# grapl-web-ui needs the compiled engagement-view assets in order for
+# it to build.
 
-.PHONY: build-test-e2e
-build-test-e2e:
-	@echo "--- Building e2e testing image"
+.PHONY: build-service-pex-files
+build-service-pex-files: ## Build all PEX files needed by Grapl SaaS services
+	./pants --tag="service-pex" package ::
+
+.PHONY: build-e2e-pex-files
+build-e2e-pex-files:
 # Any PEX tagged with `e2e-test-pex` is required for our image. This
 # seems like the most straightforward way of capturing these
 # dependencies at the moment.
+	@echo "--- Building e2e pex files"
 	./pants --tag="e2e-test-pex" package ::
-	$(DOCKER_BUILDX_BAKE) --file "${BUILDX_BAKE_HCL_FILE}" e2e-tests
 
 .PHONY: build-engagement-view
-build-engagement-view: ## Build website assets
+build-engagement-view: ## Build website assets to include in grapl-web-ui
 	@echo "--- Building the engagement view"
 	$(MAKE) -C src/js/engagement_view build
 	cp -r \
 		"${PWD}/src/js/engagement_view/build/." \
 		"${PWD}/src/rust/grapl-web-ui/frontend/"
 
-.PHONY: build-ui
-build-ui: ## Build the web UI
-build-ui: build-engagement-view
-	@echo "--- Building the Web UI"
+.PHONY: build-grapl-service-prerequisites
+# The Python services need the PEX files
+build-grapl-service-prerequisites: build-service-pex-files
+# The grapl-web-ui service needs website assets
+build-grapl-service-prerequisites: build-engagement-view
+
+# This is used in our CI pipeline; see build_and_upload_containers.sh
+#
+# Also see the `push-to-cloudsmith` group in docker-bake.hcl; any
+# prerequisites of images in that group should be built by this
+# target!
+.PHONY: build-image-prerequisites
+build-image-prerequisites: ## Build all dependencies that must be copied into our images that we push to our registry
+build-image-prerequisites: build-grapl-service-prerequisites build-e2e-pex-files
+
+.PHONY: build-test-e2e
+build-test-e2e: build-e2e-pex-files
+	@echo "--- Building e2e testing image"
+	$(DOCKER_BUILDX_BAKE) --file "${BUILDX_BAKE_HCL_FILE}" e2e-tests
+
+.PHONY: build-test-integration
+build-test-integration:
+	@echo "--- Building integration test images"
+	$(DOCKER_BUILDX_BAKE) --file "${BUILDX_BAKE_HCL_FILE}" integration-tests
+
+.PHONY: build-local-infrastructure
+build-local-infrastructure: build-grapl-service-prerequisites
+	@echo "--- Building the Grapl SaaS service images and local-only images"
 	$(DOCKER_BUILDX_BAKE) --file "${BUILDX_BAKE_HCL_FILE}" \
-		grapl-web-ui
+		local-infrastructure
 
-.PHONY: build-grapl-services
-build-grapl-services: ## Build all the services for the Grapl SaaS
-build-grapl-services: build-ui
-	@echo "--- Building the rest of the Grapl services"
-# Our Python images need their PEX files built first
-	./pants --tag="service-pex" package ::
-	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml \
-		grapl-services
-
-.PHONY: build-local-services
-build-local-services: ## Build images used only in a local testing context
-	@echo "--- Building local-only services"
-	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml \
-		local-only-services
-
-.PHONY: build-for-push
-build-for-push: ## Build only the images we push to our registry
-build-for-push: build-grapl-services build-test-e2e
+########################################################################
 
 .PHONY: build-prettier-image
 build-prettier-image:
@@ -267,7 +284,7 @@ typecheck: ## Typecheck Python Code
 .PHONY: test-integration
 test-integration: ## Build and run integration tests
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
-test-integration: build-grapl-services build-local-services build-test-integration
+test-integration: build-local-infrastructure build-test-integration
 	@$(WITH_LOCAL_GRAPL_ENV)
 	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh integration-tests 9"
 
@@ -278,7 +295,7 @@ test-grapl-template-generator:  # Test that the Grapl Template Generator spits o
 .PHONY: test-e2e
 test-e2e: ## Build and run e2e tests
 test-e2e: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_E2E_TESTS)
-test-e2e: build-grapl-services build-local-services build-test-e2e
+test-e2e: build-local-infrastructure build-test-e2e
 	@$(WITH_LOCAL_GRAPL_ENV)
 	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh e2e-tests 6"
 

@@ -11,62 +11,32 @@ set -euo pipefail
 source .buildkite/scripts/lib/artifacts.sh
 source .buildkite/scripts/lib/version.sh
 
-# This variable is used in the docker-compose.build.yml file
+# While we have Docker Compose files present, we have to explicitly
+# declare we're using an HCL file (compose YAML files are used
+# preferentially, in the absence of explicit overrides).
+#
+# The name of this variable is our own; there doesn't appear to be an
+# official one to specify such a file.
+readonly BUILDX_BAKE_FILE="docker-bake.hcl"
+
+# The target in our ${BAKE_HCL_FILE} file that defines all the images
+# for us to build and push to Cloudsmith. If you want to add a new
+# image, make sure it's part of this target.
+readonly BUILDX_TARGET="cloudsmith-images"
+
+# This triggers release builds to be made; see ${BAKE_HCL_FILE} for more
 TAG="$(timestamp_and_sha_version)"
 export TAG
 
-readonly CLOUDSMITH_DOCKER_REGISTRY="docker.cloudsmith.io/grapl/raw"
-
-# These are defined in docker-compose.build.yml. There are other
-# services defined in that file for other reasons; we do not need to
-# build them all.
-services=(
-    analyzer-dispatcher
-    analyzer-executor
-    e2e-tests
-    engagement-creator
-    graph-merger
-    graphql-endpoint
-    grapl-web-ui
-    model-plugin-deployer
-    node-identifier
-    node-identifier-retry
-    osquery-generator
-    plugin-bootstrap
-    plugin-registry
-    plugin-work-queue
-    provisioner
-    # Heads up: Adding `rust-integration-tests` here? Reconsider!
-    # It's 9GB and Cloudsmith space is pricy!
-    # https://github.com/grapl-security/grapl/pull/1296
-    sysmon-generator
-)
-
-cloudsmith_tag() {
-    local -r service="${1}"
-    local -r tag="${2}"
-    echo "${CLOUDSMITH_DOCKER_REGISTRY}/${service}:${tag}"
-}
-
 echo "--- Building all ${TAG} images"
-make build-for-push
 
-for service in "${services[@]}"; do
-    # Re-tag the container we just built so we can upload it to
-    # Cloudsmith.
-    #
-    # The other alternative is to embed this directly into the
-    # docker-compose.build.yml file, but that is probably a bit
-    # premature.
-    new_tag="$(cloudsmith_tag "${service}" "${TAG}")"
-    echo "--- :docker: Retagging ${service} container to ${new_tag}"
-    docker tag \
-        "${service}:${TAG}" \
-        "${new_tag}"
-
-    echo "--- :docker: Push ${new_tag}"
-    docker push "${new_tag}"
-done
+# NOTE: We could theoretically collapse these two commands into a
+# single Makefile target, but I have opted to structure them like this
+# while we have to do the "check if the image is new" logic to keep
+# all the buildx file introspection (and thus build-target awareness)
+# localised here.
+make build-image-prerequisites
+docker buildx bake --file="${BUILDX_BAKE_FILE}" --push "${BUILDX_TARGET}"
 
 ########################################################################
 # Determine whether or not this image is "new"
@@ -120,12 +90,16 @@ image_present_upstream() {
 }
 
 echo "--- :cloudsmith::sleuth_or_spy: Checking upstream repository to determine what to promote"
-
-for service in "${services[@]}"; do
+# Generate a TSV of "${SERVICE}\t${TAG}" for each image we're
+# pushing to Cloudsmith
+#
+# NOTE: This assumes that we have at least one tag for each image
+# (which should be true!) and that this tag is for our Cloudsmith
+# "raw" repository (which should also be true!)
+while IFS=$'\t' read -r service tag; do
     echo "--- :cloudsmith: Checking '${service}:${TAG}' in 'grapl/testing'"
-    raw_repository_tag="$(cloudsmith_tag "${service}" "${TAG}")"
-    sha256="$(sha256_of_image "${raw_repository_tag}")"
-    echo "${raw_repository_tag} has identifier '${sha256}'"
+    sha256="$(sha256_of_image "${tag}")"
+    echo "${tag} has identifier '${sha256}'"
     upstream_sha256_identifier="${UPSTREAM_REGISTRY}/${service}@${sha256}"
 
     echo "Checking the existence of '${upstream_sha256_identifier}'"
@@ -135,7 +109,8 @@ for service in "${services[@]}"; do
     else
         echo "Image already found upstream; nothing else to be done"
     fi
-done
+done < <(docker buildx bake --file="${BUILDX_BAKE_FILE}" "${BUILDX_TARGET}" --print |
+    jq --raw-output '.target | to_entries[] | [.key, .value.tags[0]] | @tsv')
 
 # Now that we've filtered out things that already exist upstream, we
 # only need to care about the new stuff.
