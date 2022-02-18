@@ -44,7 +44,7 @@ job "grapl-ingress" {
     }
 
     service {
-      name = "aws-gateway"
+      name = "s3-gateway"
 
       connect {
         gateway {

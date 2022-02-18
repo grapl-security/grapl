@@ -43,7 +43,7 @@ while [[ $(attemptPlan) -ne 1 ]]; do
     sleep 1
 done
 
-nomad job run -verbose "${NOMAD_VARS[@]}" "${NOMAD_FILE}"
+nomad job run "${NOMAD_VARS[@]}" "${NOMAD_FILE}"
 
 echo "Nomad Job Run complete, checking for task failures"
 

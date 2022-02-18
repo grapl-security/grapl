@@ -879,6 +879,11 @@ job "grapl-core" {
       connect {
         sidecar_service {
           proxy {
+            upstreams {
+              destination_name = "s3-gateway"
+              local_bind_port  = 1000 # doesnt matter
+            }
+
             dynamic "upstreams" {
               iterator = alpha
               for_each = local.dgraph_alphas

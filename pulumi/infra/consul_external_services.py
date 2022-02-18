@@ -18,7 +18,8 @@ class ConsulExternalServices(pulumi.ComponentResource):
             # TODO if-else
             # when Consul runs locally, it accesses Localstack over the host
             # network - so no host.docker.internal or attr.network.unique shenanigans
-            "localhost"
+            # "localhost"
+            "127.0.0.1"
         )
         aws_node = consul.Node(
             f"{name}-aws-node", address=address, name="aws-node", opts=child_opts

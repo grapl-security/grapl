@@ -5,7 +5,6 @@ from typing import List, Mapping, Set, cast
 from pulumi.resource import CustomTimeouts, ResourceOptions
 from typing_extensions import Final
 
-
 sys.path.insert(0, "..")
 
 import pulumi_aws as aws
