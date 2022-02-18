@@ -244,6 +244,7 @@ def main() -> None:
         # These are created in `grapl-local-infra.nomad` and not applicable to prod.
         # Nomad will replace the LOCAL_GRAPL_REPLACE_IP sentinel value with the correct IP.
         aws_endpoint = "http://LOCAL_GRAPL_REPLACE_IP:4566"
+        # note: this ${} is interpolated inside Nomad
         redis_endpoint = "redis://${attr.unique.network.ip-address}:6379"
 
         pulumi.export("aws-endpoint", aws_endpoint)

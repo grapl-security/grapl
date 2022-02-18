@@ -77,7 +77,7 @@ variable "grapl_root" {
   description = "Where to find the Grapl repo on the host OS (where Nomad runs)."
 }
 
-variable "_plugin_work_queue_db_hostname" {
+variable "plugin_work_queue_db_hostname" {
   type        = string
   description = "The host for the local plugin work queue db"
 }
