@@ -58,7 +58,7 @@ steps:
     command:
       - make test-unit-rust
     plugins:
-      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - CODECOV_TOKEN
@@ -76,7 +76,7 @@ steps:
     command:
       - make lint-python
     plugins:
-      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - grapl/TOOLCHAIN_AUTH_TOKEN
@@ -85,7 +85,7 @@ steps:
     command:
       - make lint-shell
     plugins:
-      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - grapl/TOOLCHAIN_AUTH_TOKEN
@@ -94,7 +94,7 @@ steps:
     command:
       - make lint-docker
     plugins:
-      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - grapl/TOOLCHAIN_AUTH_TOKEN
@@ -103,7 +103,7 @@ steps:
     command:
       - make test-unit-python
     plugins:
-      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - grapl/TOOLCHAIN_AUTH_TOKEN
@@ -114,7 +114,7 @@ steps:
     command:
       - make typecheck
     plugins:
-      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - grapl/TOOLCHAIN_AUTH_TOKEN
@@ -124,7 +124,7 @@ steps:
     command:
       - make test-unit-js
     plugins:
-      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - CODECOV_TOKEN

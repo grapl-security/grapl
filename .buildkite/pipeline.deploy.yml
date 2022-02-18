@@ -6,7 +6,7 @@ env:
 steps:
   - label: ":pulumi: Update grapl/customer-mock1 environment in customer-mock1 account"
     plugins:
-      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - PULUMI_ACCESS_TOKEN
@@ -19,7 +19,7 @@ steps:
 
   - label: ":pulumi: Update grapl/customer-mock2 environment in customer-mock2 account"
     plugins:
-      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - PULUMI_ACCESS_TOKEN
