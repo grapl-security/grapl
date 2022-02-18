@@ -62,7 +62,8 @@ class NomadJob(pulumi.ComponentResource):
         """
         if pulumi.runtime.is_dry_run():
             pulumi_preview_replacement_string = "PULUMI_PREVIEW_STRING"
-            _redis_endpoint = "redis://LOCAL_GRAPL_REPLACE_IP:6379"
+            # special rule since we string-split the redis endpoint
+            redis_endpoint = "redis://some-fake-host-for-preview-only:1111"
 
             nomad_vars = {}
             for key, value in vars.items():
@@ -70,9 +71,8 @@ class NomadJob(pulumi.ComponentResource):
                     # TODO figure out a better way to filter down to output<string> and not just all outputs
 
                     value = pulumi_preview_replacement_string
-                    # special rule since we split the redis endpoint
-                    if key == "_redis_endpoint":
-                        value = _redis_endpoint
+                    if key == "redis_endpoint":
+                        value = redis_endpoint
 
                 nomad_vars[key] = value
             return nomad_vars
