@@ -9,7 +9,7 @@ config:
     firecracker_kernel:
       tar:
         gz: firecracker-v1.0.0-kernel-4.14.174
-    graph-merger: 20220218161411-46a91af
+    graph-merger: 20220218195232-9bc5c74
     graphql-endpoint: 20220218161411-46a91af
     grapl-web-ui: 20220218161411-46a91af
     model-plugin-deployer: 20220218161411-46a91af
