@@ -580,6 +580,10 @@ job "grapl-core" {
         connect {
           sidecar_service {
             proxy {
+              config {
+                protocol = "http"
+              }
+
               # We need to expose the health check for consul to be able to reach it
               expose {
                 path {
@@ -1026,6 +1030,11 @@ job "grapl-core" {
       connect {
         sidecar_service {
           proxy {
+            config {
+              # TODO change to http. This requires setting a hosts section within the ingress gateway definition.
+              # Using http will give us better tracing and metrics
+              protocol = "tcp"
+            }
             upstreams {
               destination_name = "graphql-endpoint"
               local_bind_port  = local.graphql_endpoint_port
