@@ -11,7 +11,7 @@ steps:
       # promote them as a group later.
       - ".buildkite/scripts/build_and_upload_containers.sh"
     plugins:
-      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - CLOUDSMITH_API_KEY
@@ -32,7 +32,7 @@ steps:
       # promote them as a group later.
       - ".buildkite/scripts/build_and_upload_firecracker_packages.sh"
     plugins:
-      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:
           secrets:
             # We need access to the CLOUDSMITH_API_KEY so we can upload
@@ -71,7 +71,7 @@ steps:
 
   - label: ":medal: Create new release candidate"
     plugins:
-      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - PULUMI_ACCESS_TOKEN
