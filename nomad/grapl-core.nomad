@@ -92,9 +92,7 @@ variable "_redis_endpoint" {
   type        = string
   description = <<EOF
   Where can services find Redis?
-
-  It accepts a special sentinel value domain, redis://LOCAL_GRAPL_REPLACE_IP:xxxx, if the
-  user wishes to contact Localstack.
+  Prefer using local.redis_endpoint
 EOF
 }
 
@@ -287,11 +285,9 @@ locals {
   # Prefer these over their `var` equivalents.
   # The aws endpoint is in template env format
   aws_endpoint                  = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
-  redis_endpoint                = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
-  plugin_registry_db_hostname   = replace(var.plugin_registry_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
-  plugin_work_queue_db_hostname = replace(var.plugin_work_queue_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
 
-  _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
+  redis_endpoint = var._redis_endpoint
+  _redis_trimmed = trimprefix(var._redis_endpoint, "redis://")
   _redis         = split(":", local._redis_trimmed)
   redis_host     = local._redis[0]
   redis_port     = local._redis[1]
@@ -1122,7 +1118,7 @@ job "grapl-core" {
         AWS_REGION                       = var.aws_region
         NOMAD_SERVICE_ADDRESS            = "${attr.unique.network.ip-address}:4646"
         PLUGIN_REGISTRY_BIND_ADDRESS     = "0.0.0.0:${NOMAD_PORT_plugin-registry-port}"
-        PLUGIN_REGISTRY_DB_HOSTNAME      = local.plugin_registry_db_hostname
+        PLUGIN_REGISTRY_DB_HOSTNAME      = var.plugin_registry_db_hostname
         PLUGIN_REGISTRY_DB_PASSWORD      = var.plugin_registry_db_password
         PLUGIN_REGISTRY_DB_PORT          = var.plugin_registry_db_port
         PLUGIN_REGISTRY_DB_USERNAME      = var.plugin_registry_db_username
@@ -1170,7 +1166,7 @@ job "grapl-core" {
 
       env {
         PLUGIN_WORK_QUEUE_BIND_ADDRESS  = "0.0.0.0:${NOMAD_PORT_plugin-work-queue-port}"
-        PLUGIN_WORK_QUEUE_DB_HOSTNAME   = local.plugin_work_queue_db_hostname
+        PLUGIN_WORK_QUEUE_DB_HOSTNAME   = var.plugin_work_queue_db_hostname
         PLUGIN_WORK_QUEUE_DB_PASSWORD   = var.plugin_work_queue_db_password
         PLUGIN_WORK_QUEUE_DB_PORT       = var.plugin_work_queue_db_port
         PLUGIN_WORK_QUEUE_DB_USERNAME   = var.plugin_work_queue_db_username

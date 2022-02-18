@@ -244,7 +244,7 @@ def main() -> None:
         # These are created in `grapl-local-infra.nomad` and not applicable to prod.
         # Nomad will replace the LOCAL_GRAPL_REPLACE_IP sentinel value with the correct IP.
         aws_endpoint = "http://LOCAL_GRAPL_REPLACE_IP:4566"
-        redis_endpoint = "redis://LOCAL_GRAPL_REPLACE_IP:6379"
+        redis_endpoint = "redis://${attr.unique.network.ip-address}:6379"
 
         pulumi.export("aws-endpoint", aws_endpoint)
         pulumi.export("redis-endpoint", redis_endpoint)
@@ -262,11 +262,11 @@ def main() -> None:
             aws_access_key_secret=aws_config.secret_key,
             container_images=_container_images({}),
             rust_log=rust_log_levels,
-            plugin_registry_db_hostname="LOCAL_GRAPL_REPLACE_IP",
+            plugin_registry_db_hostname="${attr.unique.network.ip-address}",
             plugin_registry_db_port=str(plugin_registry_db.port),
             plugin_registry_db_username=plugin_registry_db.username,
             plugin_registry_db_password=plugin_registry_db.password,
-            plugin_work_queue_db_hostname="LOCAL_GRAPL_REPLACE_IP",
+            plugin_work_queue_db_hostname="${attr.unique.network.ip-address}",
             plugin_work_queue_db_port=str(plugin_work_queue_db.port),
             plugin_work_queue_db_username=plugin_work_queue_db.username,
             plugin_work_queue_db_password=plugin_work_queue_db.password,
