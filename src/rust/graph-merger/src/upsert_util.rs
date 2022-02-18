@@ -80,10 +80,10 @@ pub(crate) fn build_upserts(
     inner_queries.push_str(&creation_query);
     inner_queries.push('\n');
     for (prop_name, prop) in properties.iter() {
-        if &prop_name == &"node_key" {
+        if prop_name == "node_key" {
             continue;
         }
-        if &prop_name == &"dgraph.type" {
+        if prop_name == "dgraph.type" {
             continue;
         }
         tracing::debug!(

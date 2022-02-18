@@ -110,7 +110,7 @@ mod tests {
     ) -> Option<&'a NodeDescription> {
         graph.nodes.values().find(|n| {
             n.properties.iter().any(|(p_name, p_value)| {
-                &p_name.as_str() == &o_p_name && p_value.property.clone().unwrap() == o_p_value
+                p_name.as_str() == o_p_name && p_value.property.clone().unwrap() == o_p_value
             })
         })
     }

@@ -63,7 +63,7 @@ pub mod test {
         let m: HashMap<String, Vec<HashMap<String, String>>> =
             serde_json::from_slice(&response.json).expect("response failed to parse");
         let m = m.into_iter().next().unwrap().1;
-        debug_assert!((m.len() == 1) || (m.len() == 0));
+        debug_assert!((m.len() == 1) || (m.is_empty()));
 
         let uid = &m[0]["uid"][2..];
         let uid = u64::from_str_radix(uid, 16).expect("uid is not valid hex");
