@@ -10,7 +10,7 @@ variable "deployment_name" {
   description = "The deployment name"
 }
 
-variable "aws_env_vars_for_locaaws_env_vars_for_locall" {
+variable "aws_env_vars_for_local" {
   type        = string
   description = <<EOF
 With local-grapl, we have to inject:
