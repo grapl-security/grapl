@@ -62,7 +62,7 @@ variable "_aws_endpoint" {
   default     = "DUMMY_LOCAL_AWS_ENDPOINT"
 }
 
-variable "_kafka_bootstrap_servers" {
+variable "kafka_bootstrap_servers" {
   type        = string
   description = "Comma separated host:port pairs specifying which brokers clients should connect to initially."
 }
@@ -92,8 +92,6 @@ locals {
 
   # Prefer these over their `var` equivalents
   aws_endpoint = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
-
-  kafka_bootstrap_servers = replace(var._kafka_bootstrap_servers, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
 
   # This is used to conditionally submit env variables via template stanzas.
   local_only_env_vars = <<EOH
@@ -225,7 +223,7 @@ EOF
         RUST_BACKTRACE = 1
         RUST_LOG       = local.log_level
 
-        KAFKA_BOOTSTRAP_SERVERS   = local.kafka_bootstrap_servers
+        KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
         KAFKA_SASL_USERNAME       = var.kafka_sasl_username
         KAFKA_SASL_PASSWORD       = var.kafka_sasl_password
         KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_group_name

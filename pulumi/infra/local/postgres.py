@@ -17,5 +17,7 @@ class LocalPostgresInstance(pulumi.ComponentResource):
         self.username = "postgres"
         self.password = "postgres"
         self.port = port
+        # note: this ${} is interpolated inside Nomad
+        self.hostname = "${attr.unique.network.ip-address}"
 
         self.instance = postgresql.Database(name)
