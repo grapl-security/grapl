@@ -41,6 +41,10 @@ src/js/engagement_view/coverage
 # Web UI frontend artifacts
 src/rust/grapl-web-ui/frontend/*
 
+# Nomad artifacts
+# This is a generated config file for local grapl
+nomad/local/mount-grapl-root-as-volume.nomad
+
 # Distribution / packaging
 build/
 *.zip
