@@ -5,6 +5,7 @@ from typing import List, Mapping, Set, cast
 from pulumi.resource import CustomTimeouts, ResourceOptions
 from typing_extensions import Final
 
+
 sys.path.insert(0, "..")
 
 import pulumi_aws as aws
@@ -17,6 +18,7 @@ from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
 from infra.config import AWS_ACCOUNT_ID
+from infra.consul_external_services import ConsulExternalServices
 from infra.consul_intentions import ConsulIntentions
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
@@ -219,6 +221,10 @@ def main() -> None:
     )
     pulumi.export(
         "kafka-e2e-consumer-group-name", kafka.consumer_group("e2e-test-runner")
+    )
+
+    ConsulExternalServices(
+        "consul-external-services",
     )
 
     if config.LOCAL_GRAPL:

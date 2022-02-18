@@ -36,4 +36,26 @@ job "grapl-ingress" {
       }
     }
   }
+
+  group "terminating-group" {
+    # Expose AWS, be it real AWS or Localstack, as a Consul Connect service
+    network {
+      mode = "bridge"
+    }
+
+    service {
+      name = "aws-gateway"
+
+      connect {
+        gateway {
+          proxy {}
+          terminating {
+            service {
+              name = "s3"
+            }
+          }
+        }
+      }
+    }
+  }
 }
