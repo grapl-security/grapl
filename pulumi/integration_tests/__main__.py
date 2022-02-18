@@ -73,15 +73,9 @@ def main() -> None:
     ##### Business Logic
     grapl_stack = GraplStack(stack_name)
 
-    aws_config = cast(aws.config.vars._ExportableConfig, aws.config)
-    access_key = aws_config.access_key
-    secret_key = aws_config.secret_key
-
     e2e_test_job_vars: NomadVars = {
         "analyzer_bucket": grapl_stack.analyzer_bucket,
-        "aws_access_key_id": access_key,
-        "aws_access_key_secret": secret_key,
-        "_aws_endpoint": grapl_stack.aws_endpoint,
+        "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
         "aws_region": aws.get_region().name,
         "container_images": _e2e_container_images(
             artifacts, require_artifact=(not config.LOCAL_GRAPL)
@@ -111,9 +105,7 @@ def main() -> None:
         # Grapl repo.
 
         integration_test_job_vars: NomadVars = {
-            "aws_access_key_id": access_key,
-            "aws_access_key_secret": secret_key,
-            "_aws_endpoint": grapl_stack.aws_endpoint,
+            "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
             "aws_region": aws.get_region().name,
             "container_images": _integration_container_images(
                 artifacts, require_artifact=(not config.LOCAL_GRAPL)
@@ -149,9 +141,7 @@ class GraplStack:
         def require_str(key: str) -> str:
             return cast(str, ref.require_output(key))
 
-        # Only specified if LOCAL_GRAPL
-        self.aws_endpoint = cast(Optional[str], ref.get_output("aws-endpoint"))
-
+        self.aws_env_vars_for_local = require_str("aws-env-vars-for-local")
         self.analyzer_bucket = require_str("analyzers-bucket")
         self.deployment_name = require_str("deployment-name")
         self.redis_endpoint = require_str("redis-endpoint")

@@ -70,6 +70,25 @@ def _container_images(
     }
 
 
+def _get_aws_env_vars_for_local() -> str:
+    if not config.LOCAL_GRAPL:
+        return "DUMMY_VAR_FOR_PROD = TRUE"
+
+    aws_config = cast(aws.config.vars._ExportableConfig, aws.config)
+    assert aws_config.access_key
+    assert aws_config.secret_key
+
+    # This uses the weird Mustache {{}} tags because this interpolation eventually
+    # gets passed in to a template{} stanza.
+    aws_endpoint = 'http://{{ env "attr.unique.network-ip-address" }}:4566'
+
+    return f"""
+        GRAPL_AWS_ENDPOINT          = {aws_endpoint}
+        GRAPL_AWS_ACCESS_KEY_ID     = {aws_config.access_key}
+        GRAPL_AWS_ACCESS_KEY_SECRET = {aws_config.secret_key}
+    """
+
+
 def subnets_to_single_az(ids: List[str]) -> pulumi.Output[str]:
     subnet_id = ids[-1]
     subnet = aws.ec2.Subnet.get("subnet", subnet_id)
@@ -221,6 +240,9 @@ def main() -> None:
         "kafka-e2e-consumer-group-name", kafka.consumer_group("e2e-test-runner")
     )
 
+    aws_env_vars_for_local = _get_aws_env_vars_for_local()
+    pulumi.export("aws-env-vars-for-local", aws_env_vars_for_local)
+
     if config.LOCAL_GRAPL:
         ###################################
         # Local Grapl
@@ -241,26 +263,16 @@ def main() -> None:
         pulumi.export("plugin-work-queue-db-username", plugin_work_queue_db.username)
         pulumi.export("plugin-work-queue-db-password", plugin_work_queue_db.password)
 
-        # These are created in `grapl-local-infra.nomad` and not applicable to prod.
-        # Nomad will replace the LOCAL_GRAPL_REPLACE_IP sentinel value with the correct IP.
-        aws_endpoint = "http://LOCAL_GRAPL_REPLACE_IP:4566"
         # note: this ${} is interpolated inside Nomad
         redis_endpoint = "redis://${attr.unique.network.ip-address}:6379"
 
-        pulumi.export("aws-endpoint", aws_endpoint)
         pulumi.export("redis-endpoint", redis_endpoint)
-
-        aws_config = cast(aws.config.vars._ExportableConfig, aws.config)
-        assert aws_config.access_key
-        assert aws_config.secret_key
 
         local_grapl_core_job_vars: Final[NomadVars] = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
-            _aws_endpoint=aws_endpoint,
+            aws_env_vars_for_local=aws_env_vars_for_local,
             redis_endpoint=redis_endpoint,
-            aws_access_key_id=aws_config.access_key,
-            aws_access_key_secret=aws_config.secret_key,
             container_images=_container_images({}),
             rust_log=rust_log_levels,
             plugin_registry_db_hostname=plugin_registry_db.hostname,
@@ -304,9 +316,7 @@ def main() -> None:
         provision_vars = _get_subset(
             local_grapl_core_job_vars,
             {
-                "aws_access_key_id",
-                "aws_access_key_secret",
-                "_aws_endpoint",
+                "local_only_aws_env_vars",
                 "aws_region",
                 "container_images",
                 "deployment_name",

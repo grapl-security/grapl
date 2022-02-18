@@ -19,22 +19,17 @@ variable "deployment_name" {
   description = "The deployment name"
 }
 
-variable "aws_access_key_id" {
+variable "aws_env_vars_for_local" {
   type        = string
-  description = "The aws access key id used to interact with AWS."
-  default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_ID"
-}
-
-variable "aws_access_key_secret" {
-  type        = string
-  description = "The aws access key secret used to interact with AWS."
-  default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_SECRET"
-}
-
-variable "_aws_endpoint" {
-  type        = string
-  description = "The endpoint in which we can expect to find and interact with AWS."
-  default     = "DUMMY_LOCAL_AWS_ENDPOINT"
+  description = <<EOF
+With local-grapl, we have to inject:
+- an endpoint
+- an access key
+- a secret key
+With prod, these are all taken from the EC2 Instance Metadata in prod.
+We have to provide a default value in prod; otherwise you can end up with a 
+weird nomad state parse error.
+EOF
 }
 
 variable "redis_endpoint" {
@@ -101,18 +96,6 @@ variable "plugin_work_queue_db_password" {
 
 locals {
   log_level = "DEBUG"
-
-  aws_endpoint = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
-
-  # This is used to conditionally submit env variables via template stanzas.
-  local_only_env_vars = <<EOH
-GRAPL_AWS_ENDPOINT          = ${local.aws_endpoint}
-GRAPL_AWS_ACCESS_KEY_ID     = ${var.aws_access_key_id}
-GRAPL_AWS_ACCESS_KEY_SECRET = ${var.aws_access_key_secret}
-EOH
-  # We need to submit an env var otherwise you can end up with a weird nomad state parse error.
-  aws_only_env_vars              = "DUMMY_VAR=TRUE"
-  conditionally_defined_env_vars = (var._aws_endpoint == "http://LOCAL_GRAPL_REPLACE_IP:4566") ? local.local_only_env_vars : local.aws_only_env_vars
 
   _redis_trimmed = trimprefix(var.redis_endpoint, "redis://")
   _redis         = split(":", local._redis_trimmed)
@@ -186,8 +169,8 @@ job "integration-tests" {
 
       # This writes an env file that gets read by the task automatically
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "rust-integration-tests.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
@@ -290,8 +273,8 @@ job "integration-tests" {
 
       # This writes an env file that gets read by the task automatically
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "python-integration-tests.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 

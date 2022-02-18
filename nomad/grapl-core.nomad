@@ -16,27 +16,16 @@ variable "container_images" {
 EOF
 }
 
-variable "aws_access_key_id" {
+variable "aws_env_vars_for_local" {
   type        = string
-  default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_ID"
-  description = "The aws access key id used to interact with AWS."
-}
-
-variable "aws_access_key_secret" {
-  type        = string
-  default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_SECRET"
-  description = "The aws access key secret used to interact with AWS."
-}
-
-variable "_aws_endpoint" {
-  type        = string
-  default     = "DUMMY_LOCAL_AWS_ENDPOINT"
   description = <<EOF
-  The endpoint in which we can expect to find and interact with AWS.
-  It accepts a special sentinel value domain, LOCAL_GRAPL_REPLACE_IP:xxxx, if the
-  user wishes to contact Localstack.
-
-  Prefer using `local.aws_endpoint`.
+With local-grapl, we have to inject:
+- an endpoint
+- an access key
+- a secret key
+With prod, these are all taken from the EC2 Instance Metadata in prod.
+We have to provide a default value in prod; otherwise you can end up with a 
+weird nomad state parse error.
 EOF
 }
 
@@ -279,10 +268,6 @@ locals {
   # String that contains all of the running Alphas for clients connecting to Dgraph (so they can do loadbalancing)
   alpha_grpc_connect_str = join(",", [for alpha in local.dgraph_alphas : "localhost:${alpha.grpc_public_port}"])
 
-  # Prefer these over their `var` equivalents.
-  # The aws endpoint is in template env format
-  aws_endpoint = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
-
   _redis_trimmed = trimprefix(var.redis_endpoint, "redis://")
   _redis         = split(":", local._redis_trimmed)
   redis_host     = local._redis[0]
@@ -293,16 +278,6 @@ locals {
 
   # enabled
   rust_backtrace = 1
-
-  # This is used to conditionally submit env variables via template stanzas.
-  local_only_env_vars = <<EOH
-GRAPL_AWS_ENDPOINT          = ${local.aws_endpoint}
-GRAPL_AWS_ACCESS_KEY_ID     = ${var.aws_access_key_id}
-GRAPL_AWS_ACCESS_KEY_SECRET = ${var.aws_access_key_secret}
-EOH
-  # We need to submit an env var otherwise you can end up with a weird nomad state parse error.
-  aws_only_env_vars              = "DUMMY_VAR=TRUE"
-  conditionally_defined_env_vars = (var._aws_endpoint == "http://LOCAL_GRAPL_REPLACE_IP:4566") ? local.local_only_env_vars : local.aws_only_env_vars
 }
 
 job "grapl-core" {
@@ -620,8 +595,8 @@ job "grapl-core" {
 
       # This writes an env files that gets read by nomad automatically
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "graph-merger.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
@@ -675,8 +650,8 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "node-identifier.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
@@ -715,8 +690,8 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "node-identifier-retry.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
@@ -750,8 +725,8 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "analyzer-dispatcher.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
@@ -789,8 +764,8 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "analyzer-executor.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
@@ -848,8 +823,8 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "analyzer-executor.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
@@ -902,8 +877,8 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "graphql-endpoint.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
@@ -992,8 +967,8 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "web-ui.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
@@ -1041,8 +1016,8 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "sysmon.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
@@ -1071,8 +1046,8 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "osquery.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
@@ -1105,8 +1080,8 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "plugin-registry.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
@@ -1155,8 +1130,8 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "plugin-work-queue.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 

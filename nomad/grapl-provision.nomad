@@ -10,15 +10,16 @@ variable "deployment_name" {
   description = "The deployment name"
 }
 
-variable "_aws_endpoint" {
+variable "aws_env_vars_for_locaaws_env_vars_for_locall" {
   type        = string
-  default     = "DUMMY_LOCAL_AWS_ENDPOINT"
   description = <<EOF
-  The endpoint in which we can expect to find and interact with AWS. 
-  It accepts a special sentinel value domain, LOCAL_GRAPL_REPLACE_IP:xxxx, if the
-  user wishes to contact Localstack.
-
-  Prefer using `local.aws_endpoint`.
+With local-grapl, we have to inject:
+- an endpoint
+- an access key
+- a secret key
+With prod, these are all taken from the EC2 Instance Metadata in prod.
+We have to provide a default value in prod; otherwise you can end up with a 
+weird nomad state parse error.
 EOF
 }
 
@@ -28,18 +29,6 @@ variable "container_images" {
   A map of $NAME_OF_TASK to the URL for that task's docker image ID.
   (See DockerImageId in Pulumi for further documentation.)
 EOF
-}
-
-variable "aws_access_key_id" {
-  type        = string
-  default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_ID"
-  description = "The aws access key id used to interact with AWS."
-}
-
-variable "aws_access_key_secret" {
-  type        = string
-  default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_SECRET"
-  description = "The aws access key secret used to interact with AWS."
 }
 
 variable "aws_region" {
@@ -71,22 +60,6 @@ variable "py_log_level" {
   description = "Controls the logging behavior of Python-based services."
 }
 
-locals {
-  # Prefer these over their `var` equivalents.
-  # The aws endpoint is in template env format
-  aws_endpoint = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
-
-  # This is used to conditionally submit env variables via template stanzas.
-  local_only_env_vars = <<EOH
-GRAPL_AWS_ENDPOINT          = ${local.aws_endpoint}
-GRAPL_AWS_ACCESS_KEY_ID     = ${var.aws_access_key_id}
-GRAPL_AWS_ACCESS_KEY_SECRET = ${var.aws_access_key_secret}
-EOH
-  # We need to submit an env var otherwise you can end up with a weird nomad state parse error
-  aws_only_env_vars              = "DUMMY_VAR=TRUE"
-  conditionally_defined_env_vars = (var._aws_endpoint == "http://LOCAL_GRAPL_REPLACE_IP:4566") ? local.local_only_env_vars : local.aws_only_env_vars
-}
-
 job "grapl-provision" {
   datacenters = ["dc1"]
 
@@ -113,8 +86,8 @@ job "grapl-provision" {
 
       # This writes an env files that gets read by nomad automatically
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "provisioner.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
