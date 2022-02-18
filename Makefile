@@ -393,6 +393,16 @@ stop: ## docker-compose stop - stops (but preserves) the containers
 	@$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose $(EVERY_COMPOSE_FILE) stop
 
+##@ Venv Management
+########################################################################
+.PHONY: generate-constraints
+generate-constraints: ## Generates a constraints file from the requirements.txt file
+	build-support/manage_virtualenv.sh regenerate-constraints
+
+.PHONY: populate-venv
+populate-venv: ## Set up a Python virtualenv from constraints file (you'll have to activate manually!)
+	build-support/manage_virtualenv.sh populate
+
 ##@ Utility ⚙
 
 .PHONY: clean
@@ -428,20 +438,11 @@ start-nomad-detach:  ## Start the Nomad environment, detached
 stop-nomad-detach:  ## Stop Nomad CI environment
 	nomad/local/stop_detach.sh
 
-.PHONY: e2e-logs
-e2e-logs: ## All docker-compose logs
-	@$(WITH_LOCAL_GRAPL_ENV)
-	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) logs -f
-
 .PHONY: docker-kill-all
 docker-kill-all:  # Kill all currently running Docker containers except registry
 	# https://stackoverflow.com/a/46208493
 	TO_KILL=$$(docker ps --all --quiet | grep -v -E $$(docker ps -aq --filter='name=grapl_local_registry' | paste -sd "|" -))
 	docker kill $${TO_KILL}
-
-.PHONY: populate-venv
-populate-venv: ## Set up a Python virtualenv (you'll have to activate manually!)
-	build-support/manage_virtualenv.sh populate
 
 .PHONY: repl
 repl: ## Run an interactive ipython repl that can import from grapl-common etc
