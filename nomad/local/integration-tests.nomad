@@ -37,12 +37,12 @@ variable "_aws_endpoint" {
   default     = "DUMMY_LOCAL_AWS_ENDPOINT"
 }
 
-variable "_redis_endpoint" {
+variable "redis_endpoint" {
   type        = string
-  description = "On which port can services find redis?"
+  description = "Where can services find Redis?"
 }
 
-variable "_kafka_bootstrap_servers" {
+variable "kafka_bootstrap_servers" {
   type        = string
   description = "Comma separated host:port pairs specifying which brokers clients should connect to initially."
 }
@@ -114,13 +114,7 @@ EOH
   aws_only_env_vars              = "DUMMY_VAR=TRUE"
   conditionally_defined_env_vars = (var._aws_endpoint == "http://LOCAL_GRAPL_REPLACE_IP:4566") ? local.local_only_env_vars : local.aws_only_env_vars
 
-
-  # Prefer these over their `var` equivalents
-  plugin_work_queue_db_hostname = replace(var._plugin_work_queue_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
-  redis_endpoint                = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
-  kafka_bootstrap_servers       = replace(var._kafka_bootstrap_servers, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
-
-  _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
+  _redis_trimmed = trimprefix(var.redis_endpoint, "redis://")
   _redis         = split(":", local._redis_trimmed)
   redis_host     = local._redis[0]
   redis_port     = local._redis[1]
@@ -206,8 +200,8 @@ job "integration-tests" {
         MG_ALPHAS               = "localhost:9080"
         RUST_BACKTRACE          = 1
         RUST_LOG                = local.log_level
-        REDIS_ENDPOINT          = local.redis_endpoint
-        KAFKA_BOOTSTRAP_SERVERS = local.kafka_bootstrap_servers
+        REDIS_ENDPOINT          = var.redis_endpoint
+        KAFKA_BOOTSTRAP_SERVERS = var.kafka_bootstrap_servers
         KAFKA_SASL_USERNAME     = var.kafka_sasl_username
         KAFKA_SASL_PASSWORD     = var.kafka_sasl_password
 
@@ -217,7 +211,7 @@ job "integration-tests" {
         GRAPL_PLUGIN_REGISTRY_ADDRESS  = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-registry}"
         PLUGIN_WORK_QUEUE_BIND_ADDRESS = "0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-work-queue}"
 
-        PLUGIN_WORK_QUEUE_DB_HOSTNAME = "${local.plugin_work_queue_db_hostname}"
+        PLUGIN_WORK_QUEUE_DB_HOSTNAME = "${var.plugin_work_queue_db_hostname}"
         PLUGIN_WORK_QUEUE_DB_PORT     = "${var.plugin_work_queue_db_port}"
         PLUGIN_WORK_QUEUE_DB_USERNAME = "${var.plugin_work_queue_db_username}"
         PLUGIN_WORK_QUEUE_DB_PASSWORD = "${var.plugin_work_queue_db_password}"
@@ -320,7 +314,7 @@ job "integration-tests" {
         MESSAGECACHE_PORT = "${local.redis_port}"
         IS_RETRY          = "False"
 
-        KAFKA_BOOTSTRAP_SERVERS = local.kafka_bootstrap_servers
+        KAFKA_BOOTSTRAP_SERVERS = var.kafka_bootstrap_servers
         KAFKA_SASL_USERNAME     = var.kafka_sasl_username
         KAFKA_SASL_PASSWORD     = var.kafka_sasl_password
 

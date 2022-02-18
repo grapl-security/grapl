@@ -88,12 +88,9 @@ variable "engagement_creator_queue" {
   type = string
 }
 
-variable "_redis_endpoint" {
+variable "redis_endpoint" {
   type        = string
-  description = <<EOF
-  Where can services find Redis?
-  Prefer using local.redis_endpoint
-EOF
+  description = "Where can services find Redis?"
 }
 
 variable "schema_table_name" {
@@ -284,10 +281,9 @@ locals {
 
   # Prefer these over their `var` equivalents.
   # The aws endpoint is in template env format
-  aws_endpoint                  = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
+  aws_endpoint = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
 
-  redis_endpoint = var._redis_endpoint
-  _redis_trimmed = trimprefix(var._redis_endpoint, "redis://")
+  _redis_trimmed = trimprefix(var.redis_endpoint, "redis://")
   _redis         = split(":", local._redis_trimmed)
   redis_host     = local._redis[0]
   redis_port     = local._redis[1]
@@ -633,7 +629,7 @@ job "grapl-core" {
         AWS_REGION         = var.aws_region
         RUST_LOG           = var.rust_log
         RUST_BACKTRACE     = local.rust_backtrace
-        REDIS_ENDPOINT     = local.redis_endpoint
+        REDIS_ENDPOINT     = var.redis_endpoint
         MG_ALPHAS          = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE = var.schema_table_name
         # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L165
@@ -688,7 +684,7 @@ job "grapl-core" {
         AWS_REGION                  = var.aws_region
         RUST_LOG                    = var.rust_log
         RUST_BACKTRACE              = local.rust_backtrace
-        REDIS_ENDPOINT              = local.redis_endpoint
+        REDIS_ENDPOINT              = var.redis_endpoint
         MG_ALPHAS                   = local.alpha_grpc_connect_str # alpha_grpc_connect_str won't work if network mode = grapl network
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
         GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
@@ -728,7 +724,7 @@ job "grapl-core" {
         AWS_REGION                  = var.aws_region
         RUST_LOG                    = var.rust_log
         RUST_BACKTRACE              = local.rust_backtrace
-        REDIS_ENDPOINT              = local.redis_endpoint
+        REDIS_ENDPOINT              = var.redis_endpoint
         MG_ALPHAS                   = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
         GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
@@ -1055,7 +1051,7 @@ job "grapl-core" {
         DEAD_LETTER_QUEUE_URL = var.sysmon_generator_dead_letter_queue
         SOURCE_QUEUE_URL      = var.sysmon_generator_queue
         AWS_REGION            = var.aws_region
-        REDIS_ENDPOINT        = local.redis_endpoint
+        REDIS_ENDPOINT        = var.redis_endpoint
         RUST_LOG              = var.rust_log
         RUST_BACKTRACE        = local.rust_backtrace
       }
@@ -1085,7 +1081,7 @@ job "grapl-core" {
         DEAD_LETTER_QUEUE_URL = var.osquery_generator_dead_letter_queue
         SOURCE_QUEUE_URL      = var.osquery_generator_queue
         AWS_REGION            = var.aws_region
-        REDIS_ENDPOINT        = local.redis_endpoint
+        REDIS_ENDPOINT        = var.redis_endpoint
         RUST_LOG              = var.rust_log
         RUST_BACKTRACE        = local.rust_backtrace
       }
