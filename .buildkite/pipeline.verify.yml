@@ -61,7 +61,7 @@ steps:
       - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:
           secrets:
-            - CODECOV_TOKEN
+            - grapl/CODECOV_TOKEN
       - grapl-security/codecov#v0.1.2
     agents:
       queue: "beefy"
@@ -107,7 +107,7 @@ steps:
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - grapl/TOOLCHAIN_AUTH_TOKEN
-            - CODECOV_TOKEN
+            - grapl/CODECOV_TOKEN
       - grapl-security/codecov#v0.1.2
 
   - label: ":python::jeans: Typechecking"
@@ -127,7 +127,7 @@ steps:
       - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:
           secrets:
-            - CODECOV_TOKEN
+            - grapl/CODECOV_TOKEN
       - grapl-security/codecov#v0.1.2
 
   - label: ":typescript::yaml::lint-roller: Lint using Prettier"
