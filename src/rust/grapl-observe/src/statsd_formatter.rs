@@ -132,7 +132,7 @@ mod tests {
 
     fn make_empty_tags() -> [TagPair<'static>; 0] {
         let empty_slice: [TagPair<'static>; 0] = [];
-        return empty_slice;
+        empty_slice
     }
 
     #[test]
