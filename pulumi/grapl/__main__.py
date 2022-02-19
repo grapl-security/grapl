@@ -279,7 +279,6 @@ def main() -> None:
 
         pulumi.export("redis-endpoint", redis_endpoint)
 
-        artifacts = ArtifactGetter({}, require_artifact=False)
         local_grapl_core_job_vars: Final[NomadVars] = dict(
             aws_env_vars_for_local=aws_env_vars_for_local,
             redis_endpoint=redis_endpoint,
