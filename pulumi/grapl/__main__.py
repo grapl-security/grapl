@@ -316,7 +316,7 @@ def main() -> None:
         provision_vars = _get_subset(
             local_grapl_core_job_vars,
             {
-                "local_only_aws_env_vars",
+                "aws_env_vars_for_local",
                 "aws_region",
                 "container_images",
                 "deployment_name",
