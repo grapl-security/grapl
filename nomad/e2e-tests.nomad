@@ -44,22 +44,17 @@ variable "schema_properties_table_name" {
   description = "What is the name of the schema properties table?"
 }
 
-variable "aws_access_key_id" {
+variable "aws_env_vars_for_local" {
   type        = string
-  description = "The aws access key id used to interact with AWS."
-  default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_ID"
-}
-
-variable "aws_access_key_secret" {
-  type        = string
-  description = "The aws access key secret used to interact with AWS."
-  default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_SECRET"
-}
-
-variable "_aws_endpoint" {
-  type        = string
-  description = "The endpoint in which we can expect to find and interact with AWS."
-  default     = "DUMMY_LOCAL_AWS_ENDPOINT"
+  description = <<EOF
+With local-grapl, we have to inject:
+- an endpoint
+- an access key
+- a secret key
+With prod, these are all taken from the EC2 Instance Metadata in prod.
+We have to provide a default value in prod; otherwise you can end up with a 
+weird nomad state parse error.
+EOF
 }
 
 variable "kafka_bootstrap_servers" {
@@ -89,19 +84,6 @@ variable "test_user_name" {
 
 locals {
   log_level = "DEBUG"
-
-  # Prefer these over their `var` equivalents
-  aws_endpoint = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
-
-  # This is used to conditionally submit env variables via template stanzas.
-  local_only_env_vars = <<EOH
-GRAPL_AWS_ENDPOINT          = ${local.aws_endpoint}
-GRAPL_AWS_ACCESS_KEY_ID     = ${var.aws_access_key_id}
-GRAPL_AWS_ACCESS_KEY_SECRET = ${var.aws_access_key_secret}
-EOH
-  # We need to submit an env var otherwise you can end up with a weird nomad state parse error.
-  aws_only_env_vars              = "DUMMY_VAR=TRUE"
-  conditionally_defined_env_vars = (var._aws_endpoint == "http://LOCAL_GRAPL_REPLACE_IP:4566") ? local.local_only_env_vars : local.aws_only_env_vars
 }
 
 job "e2e-tests" {
@@ -164,8 +146,8 @@ EOF
 
       # This writes an env file that gets read by the task automatically
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "e2e-tests-setup.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
@@ -201,8 +183,8 @@ EOF
 
       # This writes an env file that gets read by the task automatically
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "e2e-tests.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
