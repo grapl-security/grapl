@@ -123,43 +123,32 @@ pub trait GraplDynamoDbClientExt: DynamoDb + Send + Sync {
             let response = self.batch_get_item(batch_request).await?;
 
             // record consumed capacity, if enabled
-            match response.consumed_capacity {
-                Some(capacity) => {
-                    total_consumed_capacity.extend(capacity);
-                }
-                _ => {}
+            if let Some(capacity) = response.consumed_capacity {
+                total_consumed_capacity.extend(capacity);
             }
 
-            match response.responses {
-                Some(response_map) => {
-                    // for each table in response, record the rows for that table
-                    response_map.into_iter().for_each(|(table_name, rows)| {
-                        let table_rows = total_responses.entry(table_name).or_insert(Vec::new());
-
-                        table_rows.extend(rows);
-                    });
-                }
-                _ => {}
+            if let Some(response_map) = response.responses {
+                // for each table in response, record the rows for that table
+                response_map.into_iter().for_each(|(table_name, rows)| {
+                    let table_rows = total_responses.entry(table_name).or_insert(Vec::new());
+                    table_rows.extend(rows);
+                })
             }
 
             // if a response was too large, we may have unprocessed keys.
             // we can just directly insert these back into pending items for processing
-            match response.unprocessed_keys {
-                Some(unprocessed_keys) => {
-                    let unprocessed_keys: Vec<_> = unprocessed_keys
-                        .into_iter()
-                        .flat_map(|(table_name, keys_and_attributes)| {
-                            keys_and_attributes
-                                .keys
-                                .into_iter()
-                                .map(|row_keys| (table_name.clone(), row_keys))
-                                .collect::<Vec<_>>()
-                        })
-                        .collect();
-
-                    pending_items.extend(unprocessed_keys);
-                }
-                _ => {}
+            if let Some(unprocessed_keys) = response.unprocessed_keys {
+                let unprocessed_keys: Vec<_> = unprocessed_keys
+                    .into_iter()
+                    .flat_map(|(table_name, keys_and_attributes)| {
+                        keys_and_attributes
+                            .keys
+                            .into_iter()
+                            .map(|row_keys| (table_name.clone(), row_keys))
+                            .collect::<Vec<_>>()
+                    })
+                    .collect();
+                pending_items.extend(unprocessed_keys);
             }
         }
 
