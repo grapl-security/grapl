@@ -80,7 +80,7 @@ def _get_aws_env_vars_for_local() -> str:
 
     # This uses the weird Mustache {{}} tags because this interpolation eventually
     # gets passed in to a template{} stanza.
-    aws_endpoint = 'http://{{ env "attr.unique.network-ip-address" }}:4566'
+    aws_endpoint = 'http://{{ env "attr.unique.network.ip-address" }}:4566'
 
     return f"""
         GRAPL_AWS_ENDPOINT          = {aws_endpoint}
