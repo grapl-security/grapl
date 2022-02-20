@@ -460,6 +460,7 @@ def main() -> None:
         prod_grapl_core_job_vars: Final[NomadVars] = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
+            aws_env_vars_for_local=aws_env_vars_for_local,
             redis_endpoint=cache.endpoint,
             container_images=_container_images(artifacts, require_artifact=True),
             plugin_registry_db_hostname=plugin_registry_postgres.host(),
@@ -497,6 +498,7 @@ def main() -> None:
         grapl_provision_job_vars = _get_subset(
             prod_grapl_core_job_vars,
             {
+                "aws_env_vars_for_local",
                 "aws_region",
                 "container_images",
                 "deployment_name",
