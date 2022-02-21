@@ -2,7 +2,7 @@ use org_management::OrgManagementServiceConfig;
 use org_management::server::{
     exec_service,
 };
-
+use structopt::StructOpt;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
