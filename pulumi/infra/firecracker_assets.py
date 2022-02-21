@@ -70,6 +70,9 @@ def cloudsmith_cdn_url(
     package_name: str,
     version: str,
 ) -> str:
+    # NOTE: the `raw` in here is a Cloudsmith package type
+    # (to be contrasted with 'python package' or 'docker image')
+    # nothing to do with the `grapl/raw` repository.
     return (
         f"https://dl.cloudsmith.io/public/{repository_name}"
         f"/raw/versions/{version}/{package_name}"
