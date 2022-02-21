@@ -22,6 +22,9 @@ GRAPL_TEST_USER_NAME: Final[str] = f"{DEPLOYMENT_NAME}-grapl-test-user"
 # the repository root.
 REPOSITORY_ROOT: Final[str] = os.path.join(os.path.dirname(__file__), "../..")
 
+# note: this ${} is interpolated inside Nomad
+HOST_IP_IN_NOMAD: Final[str] = "${attr.unique.network.ip-address}"
+
 
 def to_bool(input: Optional[Union[str, bool]]) -> Optional[bool]:
     if isinstance(input, bool):

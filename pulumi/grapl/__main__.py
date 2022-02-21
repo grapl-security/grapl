@@ -274,8 +274,7 @@ def main() -> None:
         pulumi.export("plugin-work-queue-db-username", plugin_work_queue_db.username)
         pulumi.export("plugin-work-queue-db-password", plugin_work_queue_db.password)
 
-        # note: this ${} is interpolated inside Nomad
-        redis_endpoint = "redis://${attr.unique.network.ip-address}:6379"
+        redis_endpoint = f"redis://{config.HOST_IP_IN_NOMAD}:6379"
 
         pulumi.export("redis-endpoint", redis_endpoint)
 
