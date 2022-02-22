@@ -39,7 +39,6 @@ def ticker(n: int) -> Iterator[None]:
 class State:
     grapl_region: str
     grapl_deployment_name: str
-    grapl_version: str
     schema_table: str
     schema_properties_table: str
     dynamic_session_table: str

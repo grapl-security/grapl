@@ -162,9 +162,6 @@ EOF
         # These are needed due to graplctl's idempotency checks
         GRAPL_SCHEMA_TABLE            = var.schema_table_name
         GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name
-
-        # TODO: I'm not sure why we need GRAPL_VERSION=
-        GRAPL_VERSION = var.deployment_name
       }
 
       # Run `e2e-tests-setup` before `e2e-tests`

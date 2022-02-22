@@ -56,14 +56,6 @@ SUPPORTED_REGIONS = list(
     required=True,
 )
 @click.option(
-    "-g",
-    "--grapl-version",
-    type=click.STRING,
-    envvar="GRAPL_VERSION",
-    help="grapl version [$GRAPL_VERSION]",
-    required=True,
-)
-@click.option(
     "--schema-table",
     type=click.STRING,
     envvar="GRAPL_SCHEMA_TABLE",
