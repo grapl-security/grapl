@@ -16,6 +16,9 @@ class FirecrackerAssets(pulumi.ComponentResource):
     """
     Uploads Firecracker assets from disk-or-Cloudsmith into
     S3 bucket.
+
+    TODO: In prod, should we serve the assets from S3 or Cloudsmith?
+    https://github.com/grapl-security/issue-tracker/issues/857
     """
 
     def __init__(
@@ -44,14 +47,22 @@ class FirecrackerS3BucketObjects(pulumi.ComponentResource):
         opts: pulumi.ResourceOptions = None,
     ) -> None:
         super().__init__("grapl:FirecrackerS3BucketObjects", name, None, opts)
-        child_opts = pulumi.ResourceOptions(parent=self)
-
         kernel_s3obj = aws.s3.BucketObject(
             "firecracker_kernel",
             key=FIRECRACKER_KERNEL_FILENAME,
             bucket=plugins_bucket.bucket,
             source=firecracker_assets.kernel_asset,
-            opts=child_opts,
+            opts=pulumi.ResourceOptions(
+                # If we had delete_before_replace=False, then this happens:
+                # - Upload new file to BUCKET/KEY
+                # - Delete file at BUCKET/KEY
+                # - Now we have no kernel
+                # It's still not perfect because there is still a period
+                # where there is no kernel available; anything that spins
+                # up in those few seconds is going to have a bad time.
+                delete_before_replace=True,
+                parent=self,
+            ),
         )
         self.kernel_s3obj_url = get_s3url(kernel_s3obj)
 
