@@ -107,7 +107,7 @@ def main() -> None:
             "container_images": _integration_container_images(artifacts),
             "docker_user": os.environ["DOCKER_USER"],
             "grapl_root": os.environ["GRAPL_ROOT"],
-            "stack_name": stack_name,
+            "stack_name": grapl_stack.upstream_stack_name,
             "kafka_bootstrap_servers": grapl_stack.kafka_bootstrap_servers,
             "kafka_sasl_username": grapl_stack.kafka_e2e_sasl_username,
             "kafka_sasl_password": grapl_stack.kafka_e2e_sasl_password,
