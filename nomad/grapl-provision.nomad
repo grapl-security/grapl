@@ -96,7 +96,7 @@ job "grapl-provision" {
         # It's fine if `provision` only hits one alpha.
         MG_ALPHAS = "localhost:9080"
 
-        DEPLOYMENT_NAME               = var.stack_name
+        STACK_NAME                    = var.stack_name
         AWS_DEFAULT_REGION            = var.aws_region
         GRAPL_SCHEMA_TABLE            = var.schema_table_name
         GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name

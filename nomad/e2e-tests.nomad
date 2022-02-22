@@ -193,7 +193,7 @@ EOF
         GRAPL_API_HOST           = "${NOMAD_UPSTREAM_IP_web-ui}"
         GRAPL_HTTP_FRONTEND_PORT = "${NOMAD_UPSTREAM_PORT_web-ui}"
 
-        DEPLOYMENT_NAME = var.stack_name
+        STACK_NAME      = var.stack_name
         GRAPL_LOG_LEVEL = local.log_level
 
         GRAPL_TEST_USER_NAME = var.test_user_name # Needed for GraplWebClient

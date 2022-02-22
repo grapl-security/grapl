@@ -12,11 +12,14 @@ _JSON_CONTENT_TYPE_HEADERS = {"Content-type": "application/json"}
 
 LOGGER = get_module_grapl_logger(default_log_level="DEBUG")
 
+STACK_NAME = os.environ["STACK_NAME"]
+
 
 class GraplWebClientException(Exception):
     pass
 
 
+# TODO: Replace with passing in the password ID verbatim
 def _get_test_user_password(deployment_name: str) -> str:
     secretsmanager = SecretsManagerClientFactory(boto3).from_env()
     LOGGER.debug(f"retrieving {deployment_name}-TestUserPassword")
@@ -34,7 +37,7 @@ class GraplWebClient:
         LOGGER.debug("retrieving actix cookie")
         username = os.environ["GRAPL_TEST_USER_NAME"]
         password = _get_test_user_password(
-            deployment_name=os.environ["DEPLOYMENT_NAME"]
+            deployment_name=STACK_NAME,
         )
 
         resp = requests.post(
@@ -91,7 +94,7 @@ class GraplWebClient:
     def no_content_type(self) -> requests.Response:
         username = os.environ["GRAPL_TEST_USER_NAME"]
         password = _get_test_user_password(
-            deployment_name=os.environ["DEPLOYMENT_NAME"]
+            deployment_name=STACK_NAME,
         )
 
         resp = requests.post(
