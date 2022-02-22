@@ -1,11 +1,8 @@
 import sys
-from pathlib import Path
-from typing import List, Mapping, Set, cast
-
-from pulumi.resource import CustomTimeouts, ResourceOptions
-from typing_extensions import Final
 
 sys.path.insert(0, "..")
+
+from typing import List, Mapping, Set, cast
 
 import pulumi_aws as aws
 import pulumi_consul as consul
@@ -13,16 +10,18 @@ import pulumi_nomad as nomad
 from infra import config, dynamodb, emitter
 from infra.alarms import OpsAlarms
 from infra.api_gateway import ApiGateway
+from infra.artifacts import ArtifactGetter
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
-from infra.config import AWS_ACCOUNT_ID
 from infra.consul_intentions import ConsulIntentions
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
+from infra.firecracker_assets import FirecrackerAssets, FirecrackerS3BucketObjects
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
 from infra.kafka import Kafka
 from infra.local.postgres import LocalPostgresInstance
 from infra.nomad_job import NomadJob, NomadVars
+from infra.path import path_from_root
 from infra.postgres import Postgres
 
 # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
@@ -30,6 +29,8 @@ from infra.postgres import Postgres
 # from infra.secret import JWTSecret, TestUserPassword
 from infra.secret import TestUserPassword
 from infra.service_queue import ServiceQueue
+from pulumi.resource import CustomTimeouts, ResourceOptions
+from typing_extensions import Final
 
 import pulumi
 
@@ -38,16 +39,13 @@ def _get_subset(inputs: NomadVars, subset: Set[str]) -> NomadVars:
     return {k: inputs[k] for k in subset}
 
 
-def _container_images(
-    artifacts: Mapping[str, str], require_artifact: bool = False
-) -> Mapping[str, DockerImageId]:
+def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
     """
     Build a map of {task name -> docker image identifier}.
     """
     builder = DockerImageIdBuilder(
         container_repository=config.container_repository(),
         artifacts=artifacts,
-        require_artifact=require_artifact,
     )
 
     return {
@@ -99,6 +97,8 @@ def subnets_to_single_az(ids: List[str]) -> pulumi.Output[str]:
 
 def main() -> None:
     pulumi_config = pulumi.Config()
+
+    artifacts = ArtifactGetter.from_config(pulumi_config)
 
     # These tags will be added to all provisioned infrastructure
     # objects.
@@ -173,6 +173,16 @@ def main() -> None:
         model_plugins_bucket,
     ]
 
+    firecracker_s3objs = FirecrackerS3BucketObjects(
+        "firecracker-s3-bucket-objects",
+        plugins_bucket=plugins_bucket,
+        firecracker_assets=FirecrackerAssets(
+            "firecracker-assets",
+            repository_name=config.cloudsmith_repository_name(),
+            artifacts=artifacts,
+        ),
+    )
+
     # These are shared across both local and prod deployments.
     nomad_inputs: Final[NomadVars] = dict(
         analyzer_bucket=analyzers_bucket.bucket,
@@ -203,7 +213,8 @@ def main() -> None:
         unid_subgraphs_generated_bucket=unid_subgraphs_generated_emitter.bucket_name,
         user_auth_table=dynamodb_tables.user_auth_table.name,
         user_session_table=dynamodb_tables.user_session_table.name,
-        plugin_s3_bucket_aws_account_id=AWS_ACCOUNT_ID,
+        plugin_registry_kernel_artifact_url=firecracker_s3objs.kernel_s3obj_url,
+        plugin_s3_bucket_aws_account_id=config.AWS_ACCOUNT_ID,
         plugin_s3_bucket_name=plugins_bucket.bucket,
     )
 
@@ -263,17 +274,14 @@ def main() -> None:
         pulumi.export("plugin-work-queue-db-username", plugin_work_queue_db.username)
         pulumi.export("plugin-work-queue-db-password", plugin_work_queue_db.password)
 
-        # note: this ${} is interpolated inside Nomad
-        redis_endpoint = "redis://${attr.unique.network.ip-address}:6379"
+        redis_endpoint = f"redis://{config.HOST_IP_IN_NOMAD}:6379"
 
         pulumi.export("redis-endpoint", redis_endpoint)
 
         local_grapl_core_job_vars: Final[NomadVars] = dict(
-            # The vars with a leading underscore indicate that the hcl local version of the variable should be used
-            # instead of the var version.
             aws_env_vars_for_local=aws_env_vars_for_local,
             redis_endpoint=redis_endpoint,
-            container_images=_container_images({}),
+            container_images=_container_images(artifacts),
             rust_log=rust_log_levels,
             plugin_registry_db_hostname=plugin_registry_db.hostname,
             plugin_registry_db_port=str(plugin_registry_db.port),
@@ -293,12 +301,12 @@ def main() -> None:
             "grapl-core",
             # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
             # when they update nomad configs
-            intention_directory=Path("../../nomad/consul-intentions").resolve(),
+            intention_directory=path_from_root("nomad/consul-intentions").resolve(),
         )
 
         nomad_grapl_core = NomadJob(
             "grapl-core",
-            jobspec=Path("../../nomad/grapl-core.nomad").resolve(),
+            jobspec=path_from_root("nomad/grapl-core.nomad").resolve(),
             vars=local_grapl_core_job_vars,
             opts=ResourceOptions(
                 custom_timeouts=CustomTimeouts(
@@ -309,7 +317,7 @@ def main() -> None:
 
         nomad_grapl_ingress = NomadJob(
             "grapl-ingress",
-            jobspec=Path("../../nomad/grapl-ingress.nomad").resolve(),
+            jobspec=path_from_root("nomad/grapl-ingress.nomad").resolve(),
             vars={},
         )
 
@@ -330,7 +338,7 @@ def main() -> None:
 
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
-            jobspec=Path("../../nomad/grapl-provision.nomad").resolve(),
+            jobspec=path_from_root("nomad/grapl-provision.nomad").resolve(),
             vars=provision_vars,
             opts=pulumi.ResourceOptions(depends_on=[nomad_grapl_core.job]),
         )
@@ -439,8 +447,6 @@ def main() -> None:
         pulumi.export("kafka-bootstrap-servers", kafka.bootstrap_servers())
         pulumi.export("redis-endpoint", cache.endpoint)
 
-        artifacts = pulumi_config.require_object("artifacts")
-
         # Set custom provider with the address set
         consul_provider = get_hashicorp_provider_address(
             consul, "consul", consul_stack, {"token": consul_master_token_secret_id}
@@ -453,7 +459,7 @@ def main() -> None:
             "grapl-core",
             # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
             # when they update nomad configs
-            intention_directory=Path("../../nomad/consul-intentions").resolve(),
+            intention_directory=path_from_root("nomad/consul-intentions").resolve(),
             opts=pulumi.ResourceOptions(provider=consul_provider),
         )
 
@@ -462,7 +468,7 @@ def main() -> None:
             # instead of the var version.
             aws_env_vars_for_local=aws_env_vars_for_local,
             redis_endpoint=cache.endpoint,
-            container_images=_container_images(artifacts, require_artifact=True),
+            container_images=_container_images(artifacts),
             plugin_registry_db_hostname=plugin_registry_postgres.host(),
             plugin_registry_db_port=plugin_registry_postgres.port().apply(str),
             plugin_registry_db_username=plugin_registry_postgres.username(),
@@ -478,7 +484,7 @@ def main() -> None:
 
         nomad_grapl_core = NomadJob(
             "grapl-core",
-            jobspec=Path("../../nomad/grapl-core.nomad").resolve(),
+            jobspec=path_from_root("nomad/grapl-core.nomad").resolve(),
             vars=prod_grapl_core_job_vars,
             opts=pulumi.ResourceOptions(
                 provider=nomad_provider,
@@ -490,7 +496,7 @@ def main() -> None:
 
         nomad_grapl_ingress = NomadJob(
             "grapl-ingress",
-            jobspec=Path("../../nomad/grapl-ingress.nomad").resolve(),
+            jobspec=path_from_root("nomad/grapl-ingress.nomad").resolve(),
             vars={},
             opts=pulumi.ResourceOptions(provider=nomad_provider),
         )
@@ -512,7 +518,7 @@ def main() -> None:
 
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
-            jobspec=Path("../../nomad/grapl-provision.nomad").resolve(),
+            jobspec=path_from_root("nomad/grapl-provision.nomad").resolve(),
             vars=grapl_provision_job_vars,
             opts=pulumi.ResourceOptions(
                 depends_on=[

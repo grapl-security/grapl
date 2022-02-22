@@ -140,16 +140,6 @@ job "grapl-plugin" {
       driver = "firecracker-task-driver"
 
       artifact {
-        source      = var.plugin_artifact_url
-        destination = "local/plugin"
-        mode        = "file"
-        headers {
-          x-amz-expected-bucket-owner = var.aws_account_id
-          x-amz-meta-client-id        = "nomad-deployer"
-        }
-      }
-
-      artifact {
         source      = var.kernel_artifact_url
         destination = "local/vmlinux"
         headers {
@@ -161,6 +151,16 @@ job "grapl-plugin" {
       artifact {
         source      = var.rootfs_artifact_url
         destination = "local/rootfs.ext4"
+        headers {
+          x-amz-expected-bucket-owner = var.aws_account_id
+          x-amz-meta-client-id        = "nomad-deployer"
+        }
+      }
+
+      artifact {
+        source      = var.plugin_artifact_url
+        destination = "local/plugin"
+        mode        = "file"
         headers {
           x-amz-expected-bucket-owner = var.aws_account_id
           x-amz-meta-client-id        = "nomad-deployer"

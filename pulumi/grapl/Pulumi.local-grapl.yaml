@@ -24,10 +24,11 @@ config:
   consul:address: http://host.docker.internal:8500
   grapl:GRAPL_API_HOST: api.grapl.test
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: fake-ops-email@fake.domain
-  grapl:MG_ALPHAS: "eventually-delete-this"
-
   # Brought up in grapl-local-infra.nomad
   grapl:REDIS_ENDPOINT: redis://host.docker.internal:6379
+  grapl:cloudsmith-repository-name: grapl/testing
+  grapl:artifacts:
+    "firecracker_kernel.tar.gz": "firecracker-v1.0.0-kernel-4.14.174"
   kafka:bootstrapServers:
     # If this ever changes - i.e. to localhost - you'll need to change the
     # `host.docker.internal` that occurs in grapl-local-infra.nomad::kafka

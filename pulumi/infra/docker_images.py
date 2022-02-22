@@ -1,5 +1,7 @@
 import os
-from typing import Mapping, NewType, Optional
+from typing import NewType, Optional
+
+from infra.artifacts import ArtifactGetter
 
 DockerImageId = NewType("DockerImageId", str)
 """
@@ -16,26 +18,11 @@ The values can look like, for instance:
 """
 
 
-def _version_tag(
-    key: str,
-    artifacts: Mapping[str, str],
-    require_artifact: bool = False,
-) -> str:
+def _docker_version_tag_from_env() -> str:
     """
-    First, try and get the value from artifacts;
-        if no artifact and require_artifact, throw error
-    then fall back to $TAG, and fail if it isn't set.
-
-    We generally set `require_artifact=True` for production deployments.
+    If a tag isn't specified in `artifacts:`, fall back to os.environ["TAG"].
+    Only applicable to local-grapl.
     """
-    artifact_version = artifacts.get(key)
-    if artifact_version:
-        return artifact_version
-    if not artifact_version and require_artifact:
-        raise KeyError(
-            f"Expected to find an artifacts entry for {key} in Pulumi config file"
-        )
-
     tag = os.environ["TAG"]
     assert (
         tag != "latest"
@@ -45,25 +32,36 @@ def _version_tag(
 
 class DockerImageIdBuilder:
     def __init__(
-        self,
-        container_repository: Optional[str],
-        artifacts: Mapping[str, str],
-        require_artifact: bool = False,
+        self, container_repository: Optional[str], artifacts: ArtifactGetter
     ) -> None:
         self.container_repository = (
             f"{container_repository}/" if container_repository else ""
         )
         self.artifacts = artifacts
-        self.require_artifact = require_artifact
 
-    def build(self, image_name: str, tag: str) -> DockerImageId:
-        return DockerImageId(f"{self.container_repository}{image_name}:{tag}")
+    def build(
+        self, container_repository: str, image_name: str, tag: str
+    ) -> DockerImageId:
+        return DockerImageId(f"{container_repository}{image_name}:{tag}")
 
     def build_with_tag(self, image_name: str) -> DockerImageId:
         """
         Automatically grabs the version tag from config's artifacts.
         """
-        tag = _version_tag(
-            image_name, artifacts=self.artifacts, require_artifact=self.require_artifact
-        )
-        return self.build(image_name, tag)
+        artifact_version = self.artifacts.get(image_name)
+        if artifact_version:
+            return self.build(
+                container_repository=self.container_repository,
+                image_name=image_name,
+                tag=artifact_version,
+            )
+        else:
+            # This is only possible on Local Grapl, in which case we assume
+            # we're using a local image - even if the container repository
+            # is specified.
+            tag = _docker_version_tag_from_env()
+            return self.build(
+                container_repository="",  # local Docker registry
+                image_name=image_name,
+                tag=tag,
+            )

@@ -1,6 +1,7 @@
 from typing import Optional
 
 import pulumi_postgresql as postgresql
+from infra import config
 
 import pulumi
 
@@ -17,7 +18,6 @@ class LocalPostgresInstance(pulumi.ComponentResource):
         self.username = "postgres"
         self.password = "postgres"
         self.port = port
-        # note: this ${} is interpolated inside Nomad
-        self.hostname = "${attr.unique.network.ip-address}"
+        self.hostname = config.HOST_IP_IN_NOMAD
 
         self.instance = postgresql.Database(name)

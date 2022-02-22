@@ -10,7 +10,7 @@ Not required for local-grapl.
 A mapping specifying the tagged Docker image to use for each service. See
 `Pulumi.testing.yaml` in `origin/rc` for an example.
 
-### `container-repository`
+### `cloudsmith-repository-name`
 
 Not required for local-grapl.
 
@@ -20,14 +20,12 @@ This will be different for different stacks; we promote packages through a
 series of different registries that mirrors the progress of code through our
 pipelines.
 
-The value will be something like `docker.cloudsmith.io/grapl/testing`; to target
-a specific image in client code, you would append the image name and tag to the
-return value of this function.
+The value will be something like `grapl/testing`.
 
 Not specifying a repository will result in local images being used.
 
 ```sh
-pulumi config set container-repository docker.cloudsmith.io/grapl/testing
+pulumi config set cloudsmith-repository-name grapl/testing
 ```
 
 ### `postgres-instance-type`
