@@ -152,8 +152,8 @@ EOF
       }
 
       env {
-        GRAPL_REGION    = var.aws_region
-        DEPLOYMENT_NAME = var.stack_name
+        GRAPL_REGION = var.aws_region
+        STACK_NAME   = var.stack_name
 
         GRAPL_ANALYZERS_BUCKET       = var.analyzer_bucket
         GRAPL_SYSMON_GENERATOR_QUEUE = var.sysmon_generator_queue
