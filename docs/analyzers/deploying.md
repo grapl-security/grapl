@@ -2,7 +2,7 @@
 
 Once you've written your Analyzers you'll want to deploy them to Grapl.
 
-To upload the analyzer file to the bucket where it lives, use the 
+To upload the analyzer file to the bucket where it lives, use the
 `graplctl upload analyzer` tool, which works both locally and with AWS.
 
 ## Deploying from Github

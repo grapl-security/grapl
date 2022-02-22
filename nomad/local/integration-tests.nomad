@@ -14,9 +14,9 @@ variable "aws_region" {
   type = string
 }
 
-variable "deployment_name" {
+variable "stack_name" {
   type        = string
-  description = "The deployment name"
+  description = "The Pulumi stack name."
 }
 
 variable "aws_env_vars_for_local" {
@@ -176,7 +176,7 @@ job "integration-tests" {
 
       env {
         AWS_REGION      = var.aws_region
-        DEPLOYMENT_NAME = var.deployment_name
+        DEPLOYMENT_NAME = var.stack_name
         GRAPL_LOG_LEVEL = local.log_level
         # This is a hack, because IDK how to share locals across files
         #MG_ALPHAS                   = local.alpha_grpc_connect_str # TODO: Figure out how to do this
@@ -301,7 +301,7 @@ job "integration-tests" {
         KAFKA_SASL_USERNAME     = var.kafka_sasl_username
         KAFKA_SASL_PASSWORD     = var.kafka_sasl_password
 
-        DEPLOYMENT_NAME = "${var.deployment_name}"
+        DEPLOYMENT_NAME = var.stack_name
         GRAPL_LOG_LEVEL = local.log_level
         MG_ALPHAS       = "localhost:9080"
 

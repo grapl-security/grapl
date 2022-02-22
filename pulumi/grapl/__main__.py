@@ -102,9 +102,8 @@ def main() -> None:
 
     # These tags will be added to all provisioned infrastructure
     # objects.
-    register_auto_tags({"grapl deployment": config.STACK_NAME})
+    register_auto_tags({"grapl_stack_name": config.STACK_NAME})
 
-    pulumi.export("deployment-name", config.STACK_NAME)
     pulumi.export("test-user-name", config.GRAPL_TEST_USER_NAME)
 
     # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
@@ -192,7 +191,6 @@ def main() -> None:
         analyzer_matched_subgraphs_bucket=analyzer_matched_emitter.bucket_name,
         analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url,
         aws_region=aws.get_region().name,
-        deployment_name=config.STACK_NAME,
         engagement_creator_queue=engagement_creator_queue.main_queue_url,
         graph_merger_queue=graph_merger_queue.main_queue_url,
         graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
@@ -205,6 +203,7 @@ def main() -> None:
         schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
         schema_table_name=dynamodb_tables.schema_table.name,
         session_table_name=dynamodb_tables.dynamic_session_table.name,
+        stack_name=config.STACK_NAME,
         subgraphs_merged_bucket=subgraphs_merged_emitter.bucket_name,
         subgraphs_generated_bucket=subgraphs_generated_emitter.bucket_name,
         sysmon_generator_queue=sysmon_generator_queue.main_queue_url,
@@ -327,7 +326,7 @@ def main() -> None:
                 "aws_env_vars_for_local",
                 "aws_region",
                 "container_images",
-                "deployment_name",
+                "stack_name",
                 "py_log_level",
                 "schema_properties_table_name",
                 "schema_table_name",
@@ -349,13 +348,13 @@ def main() -> None:
         ###################################
         # We use stack outputs from internally developed projects
         # We assume that the stack names will match the grapl stack name
-        consul_stack = pulumi.StackReference(f"grapl/consul/{pulumi.get_stack()}")
+        consul_stack = pulumi.StackReference(f"grapl/consul/{config.STACK_NAME}")
         networking_stack = pulumi.StackReference(
-            f"grapl/networking/{pulumi.get_stack()}"
+            f"grapl/networking/{config.STACK_NAME}"
         )
-        nomad_server_stack = pulumi.StackReference(f"grapl/nomad/{pulumi.get_stack()}")
+        nomad_server_stack = pulumi.StackReference(f"grapl/nomad/{config.STACK_NAME}")
         nomad_agents_stack = pulumi.StackReference(
-            f"grapl/nomad-agents/{pulumi.get_stack()}"
+            f"grapl/nomad-agents/{config.STACK_NAME}"
         )
 
         vpc_id = networking_stack.require_output("grapl-vpc")
@@ -507,7 +506,7 @@ def main() -> None:
                 "aws_env_vars_for_local",
                 "aws_region",
                 "container_images",
-                "deployment_name",
+                "stack_name",
                 "py_log_level",
                 "schema_table_name",
                 "schema_properties_table_name",

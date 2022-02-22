@@ -216,9 +216,9 @@ variable "subgraphs_generated_bucket" {
   description = "The destination bucket for generated subgraphs. Used by Node identifier."
 }
 
-variable "deployment_name" {
+variable "stack_name" {
   type        = string
-  description = "The deployment name"
+  description = "The Pulumi stack name."
 }
 
 variable "user_auth_table" {
@@ -888,7 +888,7 @@ job "grapl-core" {
       }
 
       env {
-        DEPLOYMENT_NAME = var.deployment_name
+        DEPLOYMENT_NAME = var.stack_name
         RUST_LOG        = var.rust_log
         # JS SDK only recognized AWS_REGION whereas rust and python SDKs use DEFAULT_AWS_REGION
         AWS_REGION                    = var.aws_region

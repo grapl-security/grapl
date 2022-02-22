@@ -1,9 +1,9 @@
 import json
 from typing import Dict
-from infra import config
 
 import pulumi_aws as aws
 from argon2 import PasswordHasher
+from infra import config
 
 import pulumi
 

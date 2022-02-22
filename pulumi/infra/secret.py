@@ -3,7 +3,7 @@ from typing import Optional
 
 import pulumi_aws as aws
 import pulumi_random as random
-from infra.config import STACK_NAME, LOCAL_GRAPL
+from infra.config import LOCAL_GRAPL, STACK_NAME
 
 import pulumi
 

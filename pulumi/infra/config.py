@@ -182,7 +182,7 @@ def configured_version_for(artifact_name: str) -> Optional[str]:
     if (not version) and REAL_DEPLOYMENT:
         raise Exception(
             f"""
-        Tried to deploy the {pulumi.get_stack()} stack, but no version for {artifact_name} was found!
+        Tried to deploy the {STACK_NAME} stack, but no version for {artifact_name} was found!
 
         This stack must have a version configured for ALL artifacts that it uses.
         """
