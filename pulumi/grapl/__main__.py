@@ -233,7 +233,6 @@ def main() -> None:
         plugin_s3_bucket_name=plugins_bucket.bucket,
     )
 
-
     nomad_grapl_core_timeout = "5m"
 
     kafka = Kafka(

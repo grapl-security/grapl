@@ -130,7 +130,9 @@ def main() -> None:
 
 class GraplStack:
     def __init__(self, stack_name: str) -> None:
-        self.upstream_stack_name = "local-grapl" if config.LOCAL_GRAPL else f"grapl/grapl/{stack_name}"
+        self.upstream_stack_name = (
+            "local-grapl" if config.LOCAL_GRAPL else f"grapl/grapl/{stack_name}"
+        )
         ref = pulumi.StackReference(self.upstream_stack_name)
 
         def require_str(key: str) -> str:
