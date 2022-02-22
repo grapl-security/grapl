@@ -77,7 +77,7 @@ def main() -> None:
         "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
         "aws_region": aws.get_region().name,
         "container_images": _e2e_container_images(artifacts),
-        "stack_name": stack_name,
+        "stack_name": grapl_stack.upstream_stack_name,
         "kafka_bootstrap_servers": grapl_stack.kafka_bootstrap_servers,
         "kafka_sasl_username": grapl_stack.kafka_e2e_sasl_username,
         "kafka_sasl_password": grapl_stack.kafka_e2e_sasl_password,
@@ -130,8 +130,8 @@ def main() -> None:
 
 class GraplStack:
     def __init__(self, stack_name: str) -> None:
-        ref_name = "local-grapl" if config.LOCAL_GRAPL else f"grapl/grapl/{stack_name}"
-        ref = pulumi.StackReference(ref_name)
+        self.upstream_stack_name = "local-grapl" if config.LOCAL_GRAPL else f"grapl/grapl/{stack_name}"
+        ref = pulumi.StackReference(self.upstream_stack_name)
 
         def require_str(key: str) -> str:
             return cast(str, ref.require_output(key))
