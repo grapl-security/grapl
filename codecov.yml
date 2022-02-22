@@ -1,7 +1,7 @@
 ---
 coverage:
   status:
-    patch: "off"
+    patch: false
     project:
       default:
         target: auto
