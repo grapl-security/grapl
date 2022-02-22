@@ -25,7 +25,7 @@ steps:
       - .buildkite/scripts/ensure_regenerated_constraints.sh
 
   - label: ":codecov: Validate codecov.yml"
-    command: curl --proto "=https" --tlsv1.2 --verbose --data-binary @codecov.yml https://codecov.io/validate
+    command: curl --proto "=https" --tlsv1.2 --fail-with-body --verbose --data-binary @codecov.yml https://codecov.io/validate
 
   - label: ":large_blue_square::lint-roller: Lint Protobuf"
     command:
