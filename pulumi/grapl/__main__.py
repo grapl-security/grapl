@@ -277,7 +277,7 @@ def main() -> None:
 
         pulumi.export("redis-endpoint", redis_endpoint)
 
-        local_grapl_core_job_vars: Final[NomadVars] = dict(
+        local_grapl_core_vars: Final[NomadVars] = dict(
             aws_env_vars_for_local=aws_env_vars_for_local,
             redis_endpoint=redis_endpoint,
             container_images=_container_images(artifacts),
@@ -306,7 +306,7 @@ def main() -> None:
         nomad_grapl_core = NomadJob(
             "grapl-core",
             jobspec=path_from_root("nomad/grapl-core.nomad").resolve(),
-            vars=local_grapl_core_job_vars,
+            vars=local_grapl_core_vars,
             opts=ResourceOptions(
                 custom_timeouts=CustomTimeouts(
                     create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
@@ -320,25 +320,28 @@ def main() -> None:
             vars={},
         )
 
-        provision_vars = _get_subset(
-            local_grapl_core_job_vars,
-            {
-                "aws_env_vars_for_local",
-                "aws_region",
-                "container_images",
-                "stack_name",
-                "py_log_level",
-                "schema_properties_table_name",
-                "schema_table_name",
-                "test_user_name",
-                "user_auth_table",
-            },
-        )
+        local_provision_vars: Final[NomadVars] = {
+            "stack_name": config.STACK_NAME,
+            **_get_subset(
+                local_grapl_core_vars,
+                {
+                    "aws_env_vars_for_local",
+                    "aws_region",
+                    "container_images",
+                    "stack_name",
+                    "py_log_level",
+                    "schema_properties_table_name",
+                    "schema_table_name",
+                    "test_user_name",
+                    "user_auth_table",
+                },
+            ),
+        }
 
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
             jobspec=path_from_root("nomad/grapl-provision.nomad").resolve(),
-            vars=provision_vars,
+            vars=local_provision_vars,
             opts=pulumi.ResourceOptions(depends_on=[nomad_grapl_core.job]),
         )
 
@@ -462,7 +465,7 @@ def main() -> None:
             opts=pulumi.ResourceOptions(provider=consul_provider),
         )
 
-        prod_grapl_core_job_vars: Final[NomadVars] = dict(
+        prod_grapl_core_vars: Final[NomadVars] = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
             aws_env_vars_for_local=aws_env_vars_for_local,
@@ -484,7 +487,7 @@ def main() -> None:
         nomad_grapl_core = NomadJob(
             "grapl-core",
             jobspec=path_from_root("nomad/grapl-core.nomad").resolve(),
-            vars=prod_grapl_core_job_vars,
+            vars=prod_grapl_core_vars,
             opts=pulumi.ResourceOptions(
                 provider=nomad_provider,
                 custom_timeouts=CustomTimeouts(
@@ -500,25 +503,28 @@ def main() -> None:
             opts=pulumi.ResourceOptions(provider=nomad_provider),
         )
 
-        grapl_provision_job_vars = _get_subset(
-            prod_grapl_core_job_vars,
-            {
-                "aws_env_vars_for_local",
-                "aws_region",
-                "container_images",
-                "stack_name",
-                "py_log_level",
-                "schema_table_name",
-                "schema_properties_table_name",
-                "test_user_name",
-                "user_auth_table",
-            },
-        )
+        prod_provision_vars: Final[NomadVars] = {
+            "stack_name": config.STACK_NAME,
+            **_get_subset(
+                prod_grapl_core_vars,
+                {
+                    "aws_env_vars_for_local",
+                    "aws_region",
+                    "container_images",
+                    "stack_name",
+                    "py_log_level",
+                    "schema_table_name",
+                    "schema_properties_table_name",
+                    "test_user_name",
+                    "user_auth_table",
+                },
+            ),
+        }
 
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
             jobspec=path_from_root("nomad/grapl-provision.nomad").resolve(),
-            vars=grapl_provision_job_vars,
+            vars=prod_provision_vars,
             opts=pulumi.ResourceOptions(
                 depends_on=[
                     nomad_grapl_core.job,

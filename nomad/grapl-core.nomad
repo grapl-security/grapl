@@ -216,11 +216,6 @@ variable "subgraphs_generated_bucket" {
   description = "The destination bucket for generated subgraphs. Used by Node identifier."
 }
 
-variable "stack_name" {
-  type        = string
-  description = "The Pulumi stack name."
-}
-
 variable "user_auth_table" {
   type        = string
   description = "What is the name of the DynamoDB user auth table?"
@@ -888,8 +883,7 @@ job "grapl-core" {
       }
 
       env {
-        DEPLOYMENT_NAME = var.stack_name
-        RUST_LOG        = var.rust_log
+        RUST_LOG = var.rust_log
         # JS SDK only recognized AWS_REGION whereas rust and python SDKs use DEFAULT_AWS_REGION
         AWS_REGION                    = var.aws_region
         MG_ALPHAS                     = local.alpha_grpc_connect_str
