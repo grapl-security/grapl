@@ -1,5 +1,6 @@
 import json
 from typing import Dict
+from infra import config
 
 import pulumi_aws as aws
 from argon2 import PasswordHasher
@@ -24,10 +25,8 @@ def local_user_item(username: str, cleartext: str) -> Dict[str, Dict[str, str]]:
 def local_grapl_user(table: aws.dynamodb.Table, username: str, cleartext: str) -> None:
     """Create a user only for local development uses; NEVER REAL AWS"""
 
-    deployment_name = pulumi.get_stack()
-
     user = aws.dynamodb.TableItem(
-        f"{deployment_name}-user-{username}",
+        f"{config.STACK_NAME}-user-{username}",
         table_name=table.name,
         hash_key=table.hash_key,
         item=json.dumps(local_user_item(username, cleartext)),

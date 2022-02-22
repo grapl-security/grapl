@@ -102,9 +102,9 @@ def main() -> None:
 
     # These tags will be added to all provisioned infrastructure
     # objects.
-    register_auto_tags({"grapl deployment": config.DEPLOYMENT_NAME})
+    register_auto_tags({"grapl deployment": config.STACK_NAME})
 
-    pulumi.export("deployment-name", config.DEPLOYMENT_NAME)
+    pulumi.export("deployment-name", config.STACK_NAME)
     pulumi.export("test-user-name", config.GRAPL_TEST_USER_NAME)
 
     # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
@@ -192,7 +192,7 @@ def main() -> None:
         analyzer_matched_subgraphs_bucket=analyzer_matched_emitter.bucket_name,
         analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url,
         aws_region=aws.get_region().name,
-        deployment_name=config.DEPLOYMENT_NAME,
+        deployment_name=config.STACK_NAME,
         engagement_creator_queue=engagement_creator_queue.main_queue_url,
         graph_merger_queue=graph_merger_queue.main_queue_url,
         graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
