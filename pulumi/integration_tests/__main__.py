@@ -10,7 +10,7 @@ from infra import config
 from infra.artifacts import ArtifactGetter
 from infra.autotag import register_auto_tags
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
-from infra.get_hashicorp_provider_address import get_nomad_provider_address
+from infra.hashicorp_provider import get_nomad_provider_address
 from infra.nomad_job import NomadJob, NomadVars
 from infra.path import path_from_root
 
