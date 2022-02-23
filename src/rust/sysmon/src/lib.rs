@@ -6,12 +6,23 @@ extern crate serde;
 extern crate serde_xml_rs;
 extern crate uuid;
 
-use std::{collections::HashMap, convert::TryFrom, str::FromStr};
+use std::{
+    collections::HashMap,
+    convert::TryFrom,
+    str::FromStr,
+};
 
-use anyhow::{anyhow, Result};
+use anyhow::{
+    anyhow,
+    Result,
+};
 use chrono::prelude::*;
 use failure::_core::ops::Deref;
-use serde::{de::Error as SerdeError, Deserialize, Deserializer};
+use serde::{
+    de::Error as SerdeError,
+    Deserialize,
+    Deserializer,
+};
 
 macro_rules! get_or_err {
     ($map:ident, $field_name:expr) => {

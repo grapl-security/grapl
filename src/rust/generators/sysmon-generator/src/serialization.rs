@@ -2,9 +2,11 @@ use std::str::FromStr;
 
 use grapl_service::decoder::decompress::PayloadDecompressionError;
 use prost;
-use prost_types;
 use sqs_executor::{
-    errors::{CheckedError, Recoverable},
+    errors::{
+        CheckedError,
+        Recoverable,
+    },
     event_decoder::PayloadDecoder,
 };
 use sysmon::Event;
@@ -43,11 +45,7 @@ impl PayloadDecoder<Vec<Event>> for SysmonDecoder {
 
     #[tracing::instrument(skip(self), err)]
     fn decode(&mut self, body: Vec<u8>) -> Result<Vec<Event>, Self::DecoderError> {
-        let any: prost_types::Any = prost::Message::decode(body.as_slice())?;
-        let raw_log: rust_proto::pipeline::RawLog =
-            prost::Message::decode(any.value.as_slice())?;
-        let decompressed =
-            grapl_service::decoder::decompress::maybe_decompress(&raw_log.log_event)?;
+        let decompressed = grapl_service::decoder::decompress::maybe_decompress(body.as_slice())?;
 
         let mut first_deserialization_error: Option<SysmonDecoderError> = None;
 

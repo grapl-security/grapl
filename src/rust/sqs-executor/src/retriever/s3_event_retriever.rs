@@ -1,20 +1,45 @@
-use std::{collections::HashMap, io::Stdout, marker::PhantomData, time::Duration};
+use std::{
+    collections::HashMap,
+    io::Stdout,
+    marker::PhantomData,
+    time::Duration,
+};
 
 use async_trait::async_trait;
 use futures::FutureExt;
 use grapl_observe::{
-    metric_reporter::{tag, HistogramUnit, MetricReporter},
-    timers::{time_it, TimedFutureExt},
+    metric_reporter::{
+        tag,
+        HistogramUnit,
+        MetricReporter,
+    },
+    timers::{
+        time_it,
+        TimedFutureExt,
+    },
 };
 use rusoto_core::RusotoError;
-use rusoto_s3::{GetObjectError, GetObjectRequest, S3};
+use rusoto_s3::{
+    GetObjectError,
+    GetObjectRequest,
+    S3,
+};
 use rusoto_sqs::Message as SqsMessage;
 use rust_proto::pipeline::Metadata;
-use tokio::{io::AsyncReadExt, time::error::Elapsed};
-use tracing::{debug, error};
+use tokio::{
+    io::AsyncReadExt,
+    time::error::Elapsed,
+};
+use tracing::{
+    debug,
+    error,
+};
 
 use crate::{
-    errors::{CheckedError, Recoverable},
+    errors::{
+        CheckedError,
+        Recoverable,
+    },
     event_decoder::PayloadDecoder,
     PayloadRetriever,
 };
@@ -229,11 +254,7 @@ where
             .expect("Metadata must be set at the front of the pipeline");
         let body = envelope.inner_message;
 
-        let (decoded, ms) = time_it(|| self.decoder.decode(
-            body
-                .expect("An Envelope must have an innner_message")
-                .value
-        ));
+        let (decoded, ms) = time_it(|| self.decoder.decode(body));
 
         self.metric_reporter
             .histogram_with_units(

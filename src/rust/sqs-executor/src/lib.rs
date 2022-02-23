@@ -22,7 +22,6 @@ use grapl_observe::{
     timers::TimedFutureExt,
 };
 use prost::Message;
-use prost_types;
 pub use retriever::{
     event_retriever,
     s3_event_retriever,
@@ -293,13 +292,10 @@ async fn process_message<
 
             let mut envelopes = vec![];
             for event in events {
-                let wrapped_event = prost_types::Any {
-                    type_url: "wat".to_string(), // FIXME
-                    value: event,
-                };
                 let envelope = rust_proto::pipeline::Envelope {
                     metadata: Some(meta.clone()),
-                    inner_message: Some(wrapped_event),
+                    inner_type: OutputEventT::TYPE_NAME.to_string(),
+                    inner_message: event,
                 };
                 let mut encoded = vec![];
                 if let Err(e) = envelope.encode(&mut encoded) {
@@ -351,13 +347,10 @@ async fn process_message<
 
             let mut envelopes = vec![];
             for event in events {
-                let wrapped_event = prost_types::Any {
-                    type_url: "wat".to_owned(), // FIXME
-                    value: event,
-                };
                 let envelope = rust_proto::pipeline::Envelope {
                     metadata: Some(meta.clone()),
-                    inner_message: Some(wrapped_event),
+                    inner_type: OutputEventT::TYPE_NAME.to_string(),
+                    inner_message: event,
                 };
                 let mut encoded = vec![];
                 if let Err(e) = envelope.encode(&mut encoded) {
