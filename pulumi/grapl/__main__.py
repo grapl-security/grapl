@@ -2,7 +2,7 @@ import sys
 
 sys.path.insert(0, "..")
 
-from typing import List, Mapping, Set, cast
+from typing import List, Mapping, Optional, Set, cast
 
 import pulumi_aws as aws
 from infra import config, dynamodb, emitter
@@ -98,7 +98,6 @@ def subnets_to_single_az(ids: List[str]) -> pulumi.Output[str]:
 
 def main() -> None:
     pulumi_config = pulumi.Config()
-
     artifacts = ArtifactGetter.from_config(pulumi_config)
 
     # These tags will be added to all provisioned infrastructure
@@ -106,6 +105,11 @@ def main() -> None:
     register_auto_tags(
         {"pulumi:project": pulumi.get_project(), "pulumi:stack": config.STACK_NAME}
     )
+
+    nomad_provider: Optional[pulumi.ProviderResource] = None
+    if not config.LOCAL_GRAPL:
+        nomad_server_stack = pulumi.StackReference(f"grapl/nomad/{config.STACK_NAME}")
+        nomad_provider = get_nomad_provider_address(nomad_server_stack)
 
     pulumi.export("test-user-name", config.GRAPL_TEST_USER_NAME)
 
@@ -276,6 +280,14 @@ def main() -> None:
         "kafka-e2e-consumer-group-name", kafka.consumer_group("e2e-test-runner")
     )
 
+    nomad_grapl_ingress = NomadJob(
+        "grapl-ingress",
+        jobspec=path_from_root("nomad/grapl-ingress.nomad").resolve(),
+        vars={},
+        opts=pulumi.ResourceOptions(provider=nomad_provider),
+    )
+
+
     if config.LOCAL_GRAPL:
         ###################################
         # Local Grapl
@@ -333,12 +345,6 @@ def main() -> None:
             ),
         )
 
-        nomad_grapl_ingress = NomadJob(
-            "grapl-ingress",
-            jobspec=path_from_root("nomad/grapl-ingress.nomad").resolve(),
-            vars={},
-        )
-
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
             jobspec=path_from_root("nomad/grapl-provision.nomad").resolve(),
@@ -356,7 +362,6 @@ def main() -> None:
         networking_stack = pulumi.StackReference(
             f"grapl/networking/{config.STACK_NAME}"
         )
-        nomad_server_stack = pulumi.StackReference(f"grapl/nomad/{config.STACK_NAME}")
         nomad_agents_stack = pulumi.StackReference(
             f"grapl/nomad-agents/{config.STACK_NAME}"
         )
@@ -454,7 +459,6 @@ def main() -> None:
         consul_provider = get_consul_provider_address(
             consul_stack, {"token": consul_master_token_secret_id}
         )
-        nomad_provider = get_nomad_provider_address(nomad_server_stack)
 
         ConsulIntentions(
             "grapl-core",
@@ -489,13 +493,6 @@ def main() -> None:
                     create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
                 ),
             ),
-        )
-
-        nomad_grapl_ingress = NomadJob(
-            "grapl-ingress",
-            jobspec=path_from_root("nomad/grapl-ingress.nomad").resolve(),
-            vars={},
-            opts=pulumi.ResourceOptions(provider=nomad_provider),
         )
 
         nomad_grapl_provision = NomadJob(
