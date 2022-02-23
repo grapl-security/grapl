@@ -184,6 +184,20 @@ def main() -> None:
         ),
     )
 
+    # To learn more about this syntax, see
+    # https://docs.rs/env_logger/0.9.0/env_logger/#enabling-logging
+    rust_log_levels = ",".join(
+        [
+            "DEBUG",
+            "h2::codec=WARN",
+            "hyper=WARN",
+            "rusoto_core=WARN",
+            "rustls=WARN",
+            "serde_xml_rs=WARN",
+        ]
+    )
+    py_log_level = "DEBUG"
+
     # These are shared across both local and prod deployments.
     nomad_inputs: Final[NomadVars] = dict(
         analyzer_bucket=analyzers_bucket.bucket,
@@ -193,6 +207,7 @@ def main() -> None:
         analyzer_matched_subgraphs_bucket=analyzer_matched_emitter.bucket_name,
         analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url,
         aws_region=aws.get_region().name,
+        container_images=_container_images(artifacts),
         engagement_creator_queue=engagement_creator_queue.main_queue_url,
         graph_merger_queue=graph_merger_queue.main_queue_url,
         graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
@@ -202,6 +217,8 @@ def main() -> None:
         node_identifier_retry_queue=node_identifier_queue.retry_queue_url,
         osquery_generator_queue=osquery_generator_queue.main_queue_url,
         osquery_generator_dead_letter_queue=osquery_generator_queue.dead_letter_queue_url,
+        py_log_level=py_log_level,
+        rust_log=rust_log_levels,
         schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
         schema_table_name=dynamodb_tables.schema_table.name,
         session_table_name=dynamodb_tables.dynamic_session_table.name,
@@ -217,20 +234,6 @@ def main() -> None:
         plugin_s3_bucket_aws_account_id=config.AWS_ACCOUNT_ID,
         plugin_s3_bucket_name=plugins_bucket.bucket,
     )
-
-    # To learn more about this syntax, see
-    # https://docs.rs/env_logger/0.9.0/env_logger/#enabling-logging
-    rust_log_levels = ",".join(
-        [
-            "DEBUG",
-            "h2::codec=WARN",
-            "hyper=WARN",
-            "rusoto_core=WARN",
-            "rustls=WARN",
-            "serde_xml_rs=WARN",
-        ]
-    )
-    py_log_level = "DEBUG"
 
     nomad_grapl_core_timeout = "5m"
 
@@ -280,18 +283,15 @@ def main() -> None:
 
         local_grapl_core_vars: Final[NomadVars] = dict(
             aws_env_vars_for_local=aws_env_vars_for_local,
-            container_images=_container_images(artifacts),
+            redis_endpoint=redis_endpoint,
             plugin_registry_db_hostname=plugin_registry_db.hostname,
-            plugin_registry_db_password=plugin_registry_db.password,
             plugin_registry_db_port=str(plugin_registry_db.port),
             plugin_registry_db_username=plugin_registry_db.username,
+            plugin_registry_db_password=plugin_registry_db.password,
             plugin_work_queue_db_hostname=plugin_work_queue_db.hostname,
-            plugin_work_queue_db_password=plugin_work_queue_db.password,
             plugin_work_queue_db_port=str(plugin_work_queue_db.port),
             plugin_work_queue_db_username=plugin_work_queue_db.username,
-            py_log_level=py_log_level,
-            redis_endpoint=redis_endpoint,
-            rust_log=rust_log_levels,
+            plugin_work_queue_db_password=plugin_work_queue_db.password,
             **nomad_inputs,
         )
 
@@ -469,7 +469,7 @@ def main() -> None:
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
             aws_env_vars_for_local=aws_env_vars_for_local,
-            container_images=_container_images(artifacts),
+            redis_endpoint=cache.endpoint,
             plugin_registry_db_hostname=plugin_registry_postgres.host(),
             plugin_registry_db_port=plugin_registry_postgres.port().apply(str),
             plugin_registry_db_username=plugin_registry_postgres.username(),
@@ -478,9 +478,6 @@ def main() -> None:
             plugin_work_queue_db_port=plugin_work_queue_postgres.port().apply(str),
             plugin_work_queue_db_username=plugin_work_queue_postgres.username(),
             plugin_work_queue_db_password=plugin_work_queue_postgres.password(),
-            py_log_level=py_log_level,
-            redis_endpoint=cache.endpoint,
-            rust_log=rust_log_levels,
             **nomad_inputs,
         )
 
