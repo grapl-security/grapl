@@ -114,6 +114,10 @@ def main() -> None:
     if not config.LOCAL_GRAPL:
         upstream_stacks = UpstreamStacks()
         nomad_provider = get_nomad_provider_address(upstream_stacks.nomad_server)
+        # Using get_output instead of require_output so that preview passes.
+        consul_master_token_secret_id = upstream_stacks.consul.get_output(
+            "consul-master-token-secret-id"
+        )
         consul_provider = get_consul_provider_address(
             upstream_stacks.consul, {"token": consul_master_token_secret_id}
         )
@@ -368,10 +372,6 @@ def main() -> None:
         vpc_id = upstream_stacks.networking.require_output("grapl-vpc")
         subnet_ids = upstream_stacks.networking.require_output(
             "grapl-private-subnet-ids"
-        )
-        # Using get_output instead of require_output so that preview passes.
-        consul_master_token_secret_id = upstream_stacks.consul.get_output(
-            "consul-master-token-secret-id"
         )
         nomad_agent_security_group_id = upstream_stacks.nomad_agents.require_output(
             "security-group"
