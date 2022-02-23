@@ -1,5 +1,5 @@
 pub use crate::graplinc::grapl::api::org_management::v1beta1::{
-    // organization_manager_service_client,
+    org_management_service_client,
     org_management_service_server,
     CreateOrgRequest as CreateOrgRequestProto,
     CreateUserRequest as CreateUserRequestProto,

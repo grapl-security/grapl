@@ -4,6 +4,7 @@ package graplinc.grapl.api.org_management.v1beta1;
 
 import "graplinc/common/v1beta1/types.proto";
 
+
 message CreateOrgRequest {
   string org_display_name = 1;
   string admin_username = 2;
