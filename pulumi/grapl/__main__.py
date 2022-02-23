@@ -1,7 +1,5 @@
 import sys
 
-from infra.upstream_stacks import UpstreamStacks
-
 sys.path.insert(0, "..")
 
 from typing import List, Mapping, Optional, Set, cast
@@ -32,6 +30,7 @@ from infra.postgres import Postgres
 # from infra.secret import JWTSecret, TestUserPassword
 from infra.secret import TestUserPassword
 from infra.service_queue import ServiceQueue
+from infra.upstream_stacks import UpstreamStacks
 from pulumi.resource import CustomTimeouts, ResourceOptions
 from typing_extensions import Final
 
