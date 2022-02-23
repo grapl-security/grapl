@@ -114,6 +114,7 @@ def main() -> None:
         upstream_stacks = UpstreamStacks()
         nomad_provider = get_nomad_provider_address(upstream_stacks.nomad_server)
         # Using get_output instead of require_output so that preview passes.
+        # NOTE wimax Feb 2022: Not sure the above is still the case
         consul_master_token_secret_id = upstream_stacks.consul.get_output(
             "consul-master-token-secret-id"
         )
@@ -387,6 +388,7 @@ def main() -> None:
         nomad_agent_role = aws.iam.Role.get(
             "nomad-agent-role",
             id=upstream_stacks.nomad_agents.require_output("iam-role"),
+            # NOTE: It's somewhat odd to set a StackReference as a parent
             opts=pulumi.ResourceOptions(parent=upstream_stacks.nomad_agents),
         )
 
