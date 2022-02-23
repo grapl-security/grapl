@@ -2,7 +2,7 @@ import json
 from typing import Dict, List, Optional, Sequence
 
 import pulumi_aws as aws
-from infra.config import DEPLOYMENT_NAME
+from infra.config import STACK_NAME
 
 import pulumi
 
@@ -53,10 +53,10 @@ class DynamoDB(pulumi.ComponentResource):
     """
 
     def __init__(self, opts: Optional[pulumi.ResourceOptions] = None) -> None:
-        super().__init__("grapl:DynamoDB", DEPLOYMENT_NAME, None, opts)
+        super().__init__("grapl:DynamoDB", STACK_NAME, None, opts)
 
         self.schema_properties_table = DynamoDBTable(
-            f"{DEPLOYMENT_NAME}-grapl_schema_properties_table",
+            f"{STACK_NAME}-grapl_schema_properties_table",
             attrs=[
                 {"name": "node_type", "type": "S"},
                 # We dynamically create a "type_definition" M (map) type.
@@ -67,7 +67,7 @@ class DynamoDB(pulumi.ComponentResource):
         pulumi.export("schema-properties-table", self.schema_properties_table.name)
 
         self.schema_table = DynamoDBTable(
-            f"{DEPLOYMENT_NAME}-grapl_schema_table",
+            f"{STACK_NAME}-grapl_schema_table",
             attrs=[{"name": "f_edge", "type": "S"}],
             hash_key="f_edge",
             opts=pulumi.ResourceOptions(parent=self),
@@ -75,7 +75,7 @@ class DynamoDB(pulumi.ComponentResource):
         pulumi.export("schema-table", self.schema_table.name)
 
         self.static_mapping_table = DynamoDBTable(
-            f"{DEPLOYMENT_NAME}-static_mapping_table",
+            f"{STACK_NAME}-static_mapping_table",
             attrs=[{"name": "pseudo_key", "type": "S"}],
             hash_key="pseudo_key",
             opts=pulumi.ResourceOptions(parent=self),
@@ -83,7 +83,7 @@ class DynamoDB(pulumi.ComponentResource):
         pulumi.export("static-mapping-table", self.static_mapping_table.name)
 
         self.user_auth_table = DynamoDBTable(
-            f"{DEPLOYMENT_NAME}-user_auth_table",
+            f"{STACK_NAME}-user_auth_table",
             attrs=[{"name": "username", "type": "S"}],
             hash_key="username",
             opts=pulumi.ResourceOptions(parent=self),
@@ -91,13 +91,13 @@ class DynamoDB(pulumi.ComponentResource):
         pulumi.export("user-auth-table", self.user_auth_table.name)
 
         self.user_session_table = DynamoDBTable(
-            f"{DEPLOYMENT_NAME}-user_session_table",
+            f"{STACK_NAME}-user_session_table",
             attrs=[{"name": "session_token", "type": "S"}],
             hash_key="session_token",
             opts=pulumi.ResourceOptions(parent=self),
         )
         self.dynamic_session_table = DynamoDBTable(
-            f"{DEPLOYMENT_NAME}-dynamic_session_table",
+            f"{STACK_NAME}-dynamic_session_table",
             attrs=[
                 {"name": "pseudo_key", "type": "S"},
                 {"name": "create_time", "type": "N"},

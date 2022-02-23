@@ -310,7 +310,3 @@ class SecretsManagerClientFactory(FromEnv["SecretsManagerClient"]):
             self.client_create_fn, _SecretsManagerParams, config=config
         )
         return client
-
-
-def get_deployment_name() -> str:
-    return os.environ["DEPLOYMENT_NAME"]

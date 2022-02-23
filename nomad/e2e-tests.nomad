@@ -14,9 +14,9 @@ variable "aws_region" {
   type = string
 }
 
-variable "deployment_name" {
+variable "stack_name" {
   type        = string
-  description = "The deployment name"
+  description = "The Pulumi stack name."
 }
 
 variable "analyzer_bucket" {
@@ -152,8 +152,8 @@ EOF
       }
 
       env {
-        GRAPL_REGION    = var.aws_region
-        DEPLOYMENT_NAME = var.deployment_name
+        GRAPL_REGION = var.aws_region
+        STACK_NAME   = var.stack_name
 
         GRAPL_ANALYZERS_BUCKET       = var.analyzer_bucket
         GRAPL_SYSMON_GENERATOR_QUEUE = var.sysmon_generator_queue
@@ -162,9 +162,6 @@ EOF
         # These are needed due to graplctl's idempotency checks
         GRAPL_SCHEMA_TABLE            = var.schema_table_name
         GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name
-
-        # TODO: I'm not sure why we need GRAPL_VERSION=
-        GRAPL_VERSION = var.deployment_name
       }
 
       # Run `e2e-tests-setup` before `e2e-tests`
@@ -196,7 +193,7 @@ EOF
         GRAPL_API_HOST           = "${NOMAD_UPSTREAM_IP_web-ui}"
         GRAPL_HTTP_FRONTEND_PORT = "${NOMAD_UPSTREAM_PORT_web-ui}"
 
-        DEPLOYMENT_NAME = var.deployment_name
+        STACK_NAME      = var.stack_name
         GRAPL_LOG_LEVEL = local.log_level
 
         GRAPL_TEST_USER_NAME = var.test_user_name # Needed for GraplWebClient

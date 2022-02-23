@@ -35,7 +35,7 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
-DEPLOYMENT_NAME = os.environ["DEPLOYMENT_NAME"]
+STACK_NAME = os.environ["STACK_NAME"]
 GRAPL_TEST_USER_NAME = os.environ["GRAPL_TEST_USER_NAME"]
 GRAPL_SCHEMA_TABLE = os.environ["GRAPL_SCHEMA_TABLE"]
 GRAPL_SCHEMA_PROPERTIES_TABLE = os.environ["GRAPL_SCHEMA_PROPERTIES_TABLE"]
@@ -88,6 +88,7 @@ def _create_user(
     )
 
 
+# TODO: Replace with passing in the password ID verbatim
 def _retrieve_test_user_password(
     secretsmanager: SecretsmanagerClient, deployment_name: str
 ) -> str:
@@ -108,7 +109,7 @@ def provision() -> None:
     LOGGER.info("provisioned graph")
 
     LOGGER.info("retrieving test user password")
-    password = _retrieve_test_user_password(secretsmanager, DEPLOYMENT_NAME)
+    password = _retrieve_test_user_password(secretsmanager, STACK_NAME)
     LOGGER.info("retrieved test user password")
 
     LOGGER.info("creating test user")

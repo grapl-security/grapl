@@ -102,9 +102,10 @@ def main() -> None:
 
     # These tags will be added to all provisioned infrastructure
     # objects.
-    register_auto_tags({"grapl deployment": config.DEPLOYMENT_NAME})
+    register_auto_tags(
+        {"pulumi:project": pulumi.get_project(), "pulumi:stack": config.STACK_NAME}
+    )
 
-    pulumi.export("deployment-name", config.DEPLOYMENT_NAME)
     pulumi.export("test-user-name", config.GRAPL_TEST_USER_NAME)
 
     # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
@@ -192,7 +193,6 @@ def main() -> None:
         analyzer_matched_subgraphs_bucket=analyzer_matched_emitter.bucket_name,
         analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url,
         aws_region=aws.get_region().name,
-        deployment_name=config.DEPLOYMENT_NAME,
         engagement_creator_queue=engagement_creator_queue.main_queue_url,
         graph_merger_queue=graph_merger_queue.main_queue_url,
         graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
@@ -278,20 +278,20 @@ def main() -> None:
 
         pulumi.export("redis-endpoint", redis_endpoint)
 
-        local_grapl_core_job_vars: Final[NomadVars] = dict(
+        local_grapl_core_vars: Final[NomadVars] = dict(
             aws_env_vars_for_local=aws_env_vars_for_local,
-            redis_endpoint=redis_endpoint,
             container_images=_container_images(artifacts),
-            rust_log=rust_log_levels,
             plugin_registry_db_hostname=plugin_registry_db.hostname,
+            plugin_registry_db_password=plugin_registry_db.password,
             plugin_registry_db_port=str(plugin_registry_db.port),
             plugin_registry_db_username=plugin_registry_db.username,
-            plugin_registry_db_password=plugin_registry_db.password,
             plugin_work_queue_db_hostname=plugin_work_queue_db.hostname,
+            plugin_work_queue_db_password=plugin_work_queue_db.password,
             plugin_work_queue_db_port=str(plugin_work_queue_db.port),
             plugin_work_queue_db_username=plugin_work_queue_db.username,
-            plugin_work_queue_db_password=plugin_work_queue_db.password,
             py_log_level=py_log_level,
+            redis_endpoint=redis_endpoint,
+            rust_log=rust_log_levels,
             **nomad_inputs,
         )
 
@@ -307,7 +307,7 @@ def main() -> None:
         nomad_grapl_core = NomadJob(
             "grapl-core",
             jobspec=path_from_root("nomad/grapl-core.nomad").resolve(),
-            vars=local_grapl_core_job_vars,
+            vars=local_grapl_core_vars,
             opts=ResourceOptions(
                 custom_timeouts=CustomTimeouts(
                     create=nomad_grapl_core_timeout, update=nomad_grapl_core_timeout
@@ -321,25 +321,27 @@ def main() -> None:
             vars={},
         )
 
-        provision_vars = _get_subset(
-            local_grapl_core_job_vars,
-            {
-                "aws_env_vars_for_local",
-                "aws_region",
-                "container_images",
-                "deployment_name",
-                "py_log_level",
-                "schema_properties_table_name",
-                "schema_table_name",
-                "test_user_name",
-                "user_auth_table",
-            },
-        )
+        local_provision_vars: Final[NomadVars] = {
+            "stack_name": config.STACK_NAME,
+            **_get_subset(
+                local_grapl_core_vars,
+                {
+                    "aws_env_vars_for_local",
+                    "aws_region",
+                    "container_images",
+                    "py_log_level",
+                    "schema_properties_table_name",
+                    "schema_table_name",
+                    "test_user_name",
+                    "user_auth_table",
+                },
+            ),
+        }
 
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
             jobspec=path_from_root("nomad/grapl-provision.nomad").resolve(),
-            vars=provision_vars,
+            vars=local_provision_vars,
             opts=pulumi.ResourceOptions(depends_on=[nomad_grapl_core.job]),
         )
 
@@ -349,13 +351,13 @@ def main() -> None:
         ###################################
         # We use stack outputs from internally developed projects
         # We assume that the stack names will match the grapl stack name
-        consul_stack = pulumi.StackReference(f"grapl/consul/{pulumi.get_stack()}")
+        consul_stack = pulumi.StackReference(f"grapl/consul/{config.STACK_NAME}")
         networking_stack = pulumi.StackReference(
-            f"grapl/networking/{pulumi.get_stack()}"
+            f"grapl/networking/{config.STACK_NAME}"
         )
-        nomad_server_stack = pulumi.StackReference(f"grapl/nomad/{pulumi.get_stack()}")
+        nomad_server_stack = pulumi.StackReference(f"grapl/nomad/{config.STACK_NAME}")
         nomad_agents_stack = pulumi.StackReference(
-            f"grapl/nomad-agents/{pulumi.get_stack()}"
+            f"grapl/nomad-agents/{config.STACK_NAME}"
         )
 
         vpc_id = networking_stack.require_output("grapl-vpc")
@@ -463,11 +465,10 @@ def main() -> None:
             opts=pulumi.ResourceOptions(provider=consul_provider),
         )
 
-        prod_grapl_core_job_vars: Final[NomadVars] = dict(
+        prod_grapl_core_vars: Final[NomadVars] = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
             aws_env_vars_for_local=aws_env_vars_for_local,
-            redis_endpoint=cache.endpoint,
             container_images=_container_images(artifacts),
             plugin_registry_db_hostname=plugin_registry_postgres.host(),
             plugin_registry_db_port=plugin_registry_postgres.port().apply(str),
@@ -478,6 +479,7 @@ def main() -> None:
             plugin_work_queue_db_username=plugin_work_queue_postgres.username(),
             plugin_work_queue_db_password=plugin_work_queue_postgres.password(),
             py_log_level=py_log_level,
+            redis_endpoint=cache.endpoint,
             rust_log=rust_log_levels,
             **nomad_inputs,
         )
@@ -485,7 +487,7 @@ def main() -> None:
         nomad_grapl_core = NomadJob(
             "grapl-core",
             jobspec=path_from_root("nomad/grapl-core.nomad").resolve(),
-            vars=prod_grapl_core_job_vars,
+            vars=prod_grapl_core_vars,
             opts=pulumi.ResourceOptions(
                 provider=nomad_provider,
                 custom_timeouts=CustomTimeouts(
@@ -501,25 +503,27 @@ def main() -> None:
             opts=pulumi.ResourceOptions(provider=nomad_provider),
         )
 
-        grapl_provision_job_vars = _get_subset(
-            prod_grapl_core_job_vars,
-            {
-                "aws_env_vars_for_local",
-                "aws_region",
-                "container_images",
-                "deployment_name",
-                "py_log_level",
-                "schema_table_name",
-                "schema_properties_table_name",
-                "test_user_name",
-                "user_auth_table",
-            },
-        )
+        prod_provision_vars: Final[NomadVars] = {
+            "stack_name": config.STACK_NAME,
+            **_get_subset(
+                prod_grapl_core_vars,
+                {
+                    "aws_env_vars_for_local",
+                    "aws_region",
+                    "container_images",
+                    "py_log_level",
+                    "schema_properties_table_name",
+                    "schema_table_name",
+                    "test_user_name",
+                    "user_auth_table",
+                },
+            ),
+        }
 
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
             jobspec=path_from_root("nomad/grapl-provision.nomad").resolve(),
-            vars=grapl_provision_job_vars,
+            vars=prod_provision_vars,
             opts=pulumi.ResourceOptions(
                 depends_on=[
                     nomad_grapl_core.job,
