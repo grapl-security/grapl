@@ -93,19 +93,19 @@ class Envelope(SerDeWithInner[_Envelope, I], Generic[I]):
 
 
 @dataclasses.dataclass(frozen=True)
-class OldEnvelope(SerDeWithInner[_OldEnvelope, I], Generic[I]):
+class OldEnvelope(SerDe[_OldEnvelope]):
     metadata: Metadata
     inner_type: str
     inner_message: bytes
 
     @staticmethod
-    def deserialize(bytes_: bytes) -> OldEnvelope[I]:
+    def deserialize(bytes_: bytes) -> OldEnvelope:
         proto_envelope = _OldEnvelope()
         proto_envelope.ParseFromString(bytes_)
         return OldEnvelope.from_proto(proto_envelope=proto_envelope)
 
     @staticmethod
-    def from_proto(proto_envelope: _OldEnvelope) -> OldEnvelope[I]:
+    def from_proto(proto_envelope: _OldEnvelope) -> OldEnvelope:
         return OldEnvelope(
             metadata=Metadata.from_proto(proto_envelope.metadata),
             inner_type="fixme",
