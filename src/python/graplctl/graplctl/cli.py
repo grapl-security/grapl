@@ -49,18 +49,10 @@ SUPPORTED_REGIONS = list(
 )
 @click.option(
     "-n",
-    "--grapl-deployment-name",
+    "--stack-name",
     type=click.STRING,
-    envvar="DEPLOYMENT_NAME",
-    help="grapl deployment name [$DEPLOYMENT_NAME]",
-    required=True,
-)
-@click.option(
-    "-g",
-    "--grapl-version",
-    type=click.STRING,
-    envvar="GRAPL_VERSION",
-    help="grapl version [$GRAPL_VERSION]",
+    envvar="STACK_NAME",
+    help="grapl stack name [$STACK_NAME]",
     required=True,
 )
 @click.option(
@@ -85,8 +77,7 @@ SUPPORTED_REGIONS = list(
 def main(
     ctx: click.Context,
     grapl_region: str,
-    grapl_deployment_name: str,
-    grapl_version: str,
+    stack_name: str,
     schema_table: str,
     schema_properties_table: str,
     dynamic_session_table: str,
@@ -94,9 +85,8 @@ def main(
     session = boto3.session.Session()
     config = Config(region_name=grapl_region)
     ctx.obj = State(
-        grapl_region,
-        grapl_deployment_name,
-        grapl_version,
+        grapl_region=grapl_region,
+        stack_name=stack_name,
         cloudwatch=CloudWatchClientFactory(session).from_env(config=config),
         dynamodb=DynamoDBResourceFactory(session).from_env(config=config),
         ec2=EC2ResourceFactory(session).from_env(config=config),

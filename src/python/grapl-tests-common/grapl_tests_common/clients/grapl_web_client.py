@@ -17,6 +17,7 @@ class GraplWebClientException(Exception):
     pass
 
 
+# TODO: Replace with passing in the password ID verbatim
 def _get_test_user_password(deployment_name: str) -> str:
     secretsmanager = SecretsManagerClientFactory(boto3).from_env()
     LOGGER.debug(f"retrieving {deployment_name}-TestUserPassword")
@@ -33,9 +34,7 @@ class GraplWebClient:
     def get_actix_session(self) -> str:
         LOGGER.debug("retrieving actix cookie")
         username = os.environ["GRAPL_TEST_USER_NAME"]
-        password = _get_test_user_password(
-            deployment_name=os.environ["DEPLOYMENT_NAME"]
-        )
+        password = _get_test_user_password(os.environ["STACK_NAME"])
 
         resp = requests.post(
             f"{self.endpoint}/auth/login",
@@ -90,9 +89,7 @@ class GraplWebClient:
 
     def no_content_type(self) -> requests.Response:
         username = os.environ["GRAPL_TEST_USER_NAME"]
-        password = _get_test_user_password(
-            deployment_name=os.environ["DEPLOYMENT_NAME"]
-        )
+        password = _get_test_user_password(os.environ["STACK_NAME"])
 
         resp = requests.post(
             f"{self.endpoint}/auth/login",

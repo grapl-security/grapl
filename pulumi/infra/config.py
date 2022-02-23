@@ -9,14 +9,14 @@ from typing_extensions import Final
 import pulumi
 
 # This will be incorporated into various infrastructure object names.
-DEPLOYMENT_NAME: Final[str] = pulumi.get_stack()
+STACK_NAME: Final[str] = pulumi.get_stack()
 
 # Only use this value for helpful error messages;
 # Pulumi is responsible for actually accessing and parsing this file.
-STACK_CONFIG_FILENAME: Final[str] = f"Pulumi.{DEPLOYMENT_NAME}.yaml"
+STACK_CONFIG_FILENAME: Final[str] = f"Pulumi.{STACK_NAME}.yaml"
 
 # This must be the same as the value defined in local-grapl.env
-GRAPL_TEST_USER_NAME: Final[str] = f"{DEPLOYMENT_NAME}-grapl-test-user"
+GRAPL_TEST_USER_NAME: Final[str] = f"{STACK_NAME}-grapl-test-user"
 
 # Sometimes we need to refer to other code or artifacts relative to
 # the repository root.
@@ -46,24 +46,24 @@ def repository_path(relative_path: str) -> Path:
     return Path(os.path.join(REPOSITORY_ROOT), relative_path).resolve()
 
 
-def _validate_deployment_name() -> None:
+def _validate_stack_name() -> None:
     # ^ and $ capture the whole string: start and end
     # Must start with an alpha
     # Must end with an alpha or number
     # In the middle, - and _ are fine
     regex = re.compile("^[a-z]([a-z0-9_-]?[a-z0-9]+)*$")
-    if regex.match(DEPLOYMENT_NAME) is None:
+    if regex.match(STACK_NAME) is None:
         raise ValueError(
-            f"Deployment name {DEPLOYMENT_NAME} is invalid - should match regex {regex}."
+            f"Deployment name {STACK_NAME} is invalid - should match regex {regex}."
         )
 
 
-_validate_deployment_name()
+_validate_stack_name()
 
 # Use this to modify behavior or configuration for provisioning in
 # Local Grapl (as opposed to any other real deployment)
 
-LOCAL_GRAPL: Final[bool] = DEPLOYMENT_NAME in (
+LOCAL_GRAPL: Final[bool] = STACK_NAME in (
     "local-grapl",
     "local-grapl-integration-tests",
 )
@@ -77,7 +77,7 @@ LOCAL_GRAPL: Final[bool] = DEPLOYMENT_NAME in (
 # other deployments in the future. Another option would be to declare
 # a convention for developer sandbox environments and have logic pivot
 # on that, instead.)
-REAL_DEPLOYMENT: Final[bool] = DEPLOYMENT_NAME in ("testing")
+REAL_DEPLOYMENT: Final[bool] = STACK_NAME in ("testing")
 
 # For importing some objects, we have to construct a URL, ARN, etc
 # that includes the AWS account ID.
@@ -182,7 +182,7 @@ def configured_version_for(artifact_name: str) -> Optional[str]:
     if (not version) and REAL_DEPLOYMENT:
         raise Exception(
             f"""
-        Tried to deploy the {pulumi.get_stack()} stack, but no version for {artifact_name} was found!
+        Tried to deploy the {STACK_NAME} stack, but no version for {artifact_name} was found!
 
         This stack must have a version configured for ALL artifacts that it uses.
         """

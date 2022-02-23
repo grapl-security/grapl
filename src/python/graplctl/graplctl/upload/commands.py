@@ -81,7 +81,7 @@ def sysmon(
     upload_sysmon_logs(
         s3_client=graplctl_state.s3,
         sqs_client=graplctl_state.sqs,
-        deployment_name=graplctl_state.grapl_deployment_name,
+        deployment_name=graplctl_state.stack_name,
         log_bucket=log_bucket,
         queue_url=queue_url,
         logfile=Path(logfile).resolve(),
@@ -117,7 +117,7 @@ def osquery(
     upload_osquery_logs(
         s3_client=graplctl_state.s3,
         sqs_client=graplctl_state.sqs,
-        deployment_name=graplctl_state.grapl_deployment_name,
+        deployment_name=graplctl_state.stack_name,
         log_bucket=log_bucket,
         queue_url=queue_url,
         logfile=Path(logfile).resolve(),

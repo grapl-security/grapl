@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Mapping, Optional, Union
 
 import pulumi_nomad as nomad
-from infra.config import DEPLOYMENT_NAME
+from infra.config import STACK_NAME
 
 import pulumi
 
@@ -25,7 +25,7 @@ class NomadJob(pulumi.ComponentResource):
         vars = self._json_dump_complex_types(vars)
 
         self.job = nomad.Job(
-            resource_name=f"{DEPLOYMENT_NAME}-{name}-job",
+            resource_name=f"{STACK_NAME}-{name}-job",
             jobspec=self._file_contents(str(jobspec)),
             hcl2=nomad.JobHcl2Args(enabled=True, vars=self._fix_pulumi_preview(vars)),
             # Wait for all services to become healthy

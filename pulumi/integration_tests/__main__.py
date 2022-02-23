@@ -53,14 +53,16 @@ def _integration_container_images(
 
 def main() -> None:
     ##### Preamble
-    stack_name = pulumi.get_stack()
+    stack_name = config.STACK_NAME
 
     pulumi_config = pulumi.Config()
     artifacts = ArtifactGetter.from_config(pulumi_config)
 
     # These tags will be added to all provisioned infrastructure
     # objects.
-    register_auto_tags({"grapl deployment": stack_name})
+    register_auto_tags(
+        {"pulumi:project": pulumi.get_project(), "pulumi:stack": stack_name}
+    )
 
     nomad_provider: Optional[pulumi.ProviderResource] = None
     if not config.LOCAL_GRAPL:
@@ -77,7 +79,7 @@ def main() -> None:
         "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
         "aws_region": aws.get_region().name,
         "container_images": _e2e_container_images(artifacts),
-        "deployment_name": grapl_stack.deployment_name,
+        "stack_name": grapl_stack.upstream_stack_name,
         "kafka_bootstrap_servers": grapl_stack.kafka_bootstrap_servers,
         "kafka_sasl_username": grapl_stack.kafka_e2e_sasl_username,
         "kafka_sasl_password": grapl_stack.kafka_e2e_sasl_password,
@@ -105,9 +107,9 @@ def main() -> None:
             "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
             "aws_region": aws.get_region().name,
             "container_images": _integration_container_images(artifacts),
-            "deployment_name": grapl_stack.deployment_name,
             "docker_user": os.environ["DOCKER_USER"],
             "grapl_root": os.environ["GRAPL_ROOT"],
+            "stack_name": grapl_stack.upstream_stack_name,
             "kafka_bootstrap_servers": grapl_stack.kafka_bootstrap_servers,
             "kafka_sasl_username": grapl_stack.kafka_e2e_sasl_username,
             "kafka_sasl_password": grapl_stack.kafka_e2e_sasl_password,
@@ -130,15 +132,16 @@ def main() -> None:
 
 class GraplStack:
     def __init__(self, stack_name: str) -> None:
-        ref_name = "local-grapl" if config.LOCAL_GRAPL else f"grapl/grapl/{stack_name}"
-        ref = pulumi.StackReference(ref_name)
+        self.upstream_stack_name = (
+            "local-grapl" if config.LOCAL_GRAPL else f"grapl/grapl/{stack_name}"
+        )
+        ref = pulumi.StackReference(self.upstream_stack_name)
 
         def require_str(key: str) -> str:
             return cast(str, ref.require_output(key))
 
         self.aws_env_vars_for_local = require_str("aws-env-vars-for-local")
         self.analyzer_bucket = require_str("analyzers-bucket")
-        self.deployment_name = require_str("deployment-name")
         self.redis_endpoint = require_str("redis-endpoint")
         self.schema_properties_table_name = require_str("schema-properties-table")
         self.schema_table_name = require_str("schema-table")
