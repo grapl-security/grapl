@@ -6,12 +6,11 @@ import os
 from typing import Mapping, Optional, cast
 
 import pulumi_aws as aws
-import pulumi_nomad as nomad
 from infra import config
 from infra.artifacts import ArtifactGetter
 from infra.autotag import register_auto_tags
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
-from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
+from infra.hashicorp_provider import get_nomad_provider_address
 from infra.nomad_job import NomadJob, NomadVars
 from infra.path import path_from_root
 
@@ -67,9 +66,7 @@ def main() -> None:
     nomad_provider: Optional[pulumi.ProviderResource] = None
     if not config.LOCAL_GRAPL:
         nomad_server_stack = pulumi.StackReference(f"grapl/nomad/{stack_name}")
-        nomad_provider = get_hashicorp_provider_address(
-            nomad, "nomad", nomad_server_stack
-        )
+        nomad_provider = get_nomad_provider_address(nomad_server_stack)
 
     ##### Business Logic
     grapl_stack = GraplStack(stack_name)

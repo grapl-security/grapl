@@ -2,11 +2,9 @@ import sys
 
 sys.path.insert(0, "..")
 
-from typing import List, Mapping, Set, cast
+from typing import List, Mapping, Optional, Set, cast
 
 import pulumi_aws as aws
-import pulumi_consul as consul
-import pulumi_nomad as nomad
 from infra import config, dynamodb, emitter
 from infra.alarms import OpsAlarms
 from infra.api_gateway import ApiGateway
@@ -17,7 +15,10 @@ from infra.cache import Cache
 from infra.consul_intentions import ConsulIntentions
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.firecracker_assets import FirecrackerAssets, FirecrackerS3BucketObjects
-from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
+from infra.hashicorp_provider import (
+    get_consul_provider_address,
+    get_nomad_provider_address,
+)
 from infra.kafka import Kafka
 from infra.local.postgres import LocalPostgresInstance
 from infra.nomad_job import NomadJob, NomadVars
@@ -29,6 +30,7 @@ from infra.postgres import Postgres
 # from infra.secret import JWTSecret, TestUserPassword
 from infra.secret import TestUserPassword
 from infra.service_queue import ServiceQueue
+from infra.upstream_stacks import UpstreamStacks
 from pulumi.resource import CustomTimeouts, ResourceOptions
 from typing_extensions import Final
 
@@ -97,7 +99,6 @@ def subnets_to_single_az(ids: List[str]) -> pulumi.Output[str]:
 
 def main() -> None:
     pulumi_config = pulumi.Config()
-
     artifacts = ArtifactGetter.from_config(pulumi_config)
 
     # These tags will be added to all provisioned infrastructure
@@ -105,6 +106,21 @@ def main() -> None:
     register_auto_tags(
         {"pulumi:project": pulumi.get_project(), "pulumi:stack": config.STACK_NAME}
     )
+
+    upstream_stacks: Optional[UpstreamStacks] = None
+    nomad_provider: Optional[pulumi.ProviderResource] = None
+    consul_provider: Optional[pulumi.ProviderResource] = None
+    if not config.LOCAL_GRAPL:
+        upstream_stacks = UpstreamStacks()
+        nomad_provider = get_nomad_provider_address(upstream_stacks.nomad_server)
+        # Using get_output instead of require_output so that preview passes.
+        # NOTE wimax Feb 2022: Not sure the above is still the case
+        consul_master_token_secret_id = upstream_stacks.consul.get_output(
+            "consul-master-token-secret-id"
+        )
+        consul_provider = get_consul_provider_address(
+            upstream_stacks.consul, {"token": consul_master_token_secret_id}
+        )
 
     pulumi.export("test-user-name", config.GRAPL_TEST_USER_NAME)
 
@@ -184,6 +200,23 @@ def main() -> None:
         ),
     )
 
+    # To learn more about this syntax, see
+    # https://docs.rs/env_logger/0.9.0/env_logger/#enabling-logging
+    rust_log_levels = ",".join(
+        [
+            "DEBUG",
+            "h2::codec=WARN",
+            "hyper=WARN",
+            "rusoto_core=WARN",
+            "rustls=WARN",
+            "serde_xml_rs=WARN",
+        ]
+    )
+    py_log_level = "DEBUG"
+
+    aws_env_vars_for_local = _get_aws_env_vars_for_local()
+    pulumi.export("aws-env-vars-for-local", aws_env_vars_for_local)
+
     # These are shared across both local and prod deployments.
     nomad_inputs: Final[NomadVars] = dict(
         analyzer_bucket=analyzers_bucket.bucket,
@@ -192,7 +225,9 @@ def main() -> None:
         analyzer_executor_queue=analyzer_executor_queue.main_queue_url,
         analyzer_matched_subgraphs_bucket=analyzer_matched_emitter.bucket_name,
         analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url,
+        aws_env_vars_for_local=aws_env_vars_for_local,
         aws_region=aws.get_region().name,
+        container_images=_container_images(artifacts),
         engagement_creator_queue=engagement_creator_queue.main_queue_url,
         graph_merger_queue=graph_merger_queue.main_queue_url,
         graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
@@ -202,6 +237,8 @@ def main() -> None:
         node_identifier_retry_queue=node_identifier_queue.retry_queue_url,
         osquery_generator_queue=osquery_generator_queue.main_queue_url,
         osquery_generator_dead_letter_queue=osquery_generator_queue.dead_letter_queue_url,
+        py_log_level=py_log_level,
+        rust_log=rust_log_levels,
         schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
         schema_table_name=dynamodb_tables.schema_table.name,
         session_table_name=dynamodb_tables.dynamic_session_table.name,
@@ -218,19 +255,22 @@ def main() -> None:
         plugin_s3_bucket_name=plugins_bucket.bucket,
     )
 
-    # To learn more about this syntax, see
-    # https://docs.rs/env_logger/0.9.0/env_logger/#enabling-logging
-    rust_log_levels = ",".join(
-        [
-            "DEBUG",
-            "h2::codec=WARN",
-            "hyper=WARN",
-            "rusoto_core=WARN",
-            "rustls=WARN",
-            "serde_xml_rs=WARN",
-        ]
-    )
-    py_log_level = "DEBUG"
+    provision_vars: Final[NomadVars] = {
+        "stack_name": config.STACK_NAME,
+        **_get_subset(
+            nomad_inputs,
+            {
+                "aws_env_vars_for_local",
+                "aws_region",
+                "container_images",
+                "py_log_level",
+                "schema_properties_table_name",
+                "schema_table_name",
+                "test_user_name",
+                "user_auth_table",
+            },
+        ),
+    }
 
     nomad_grapl_core_timeout = "5m"
 
@@ -251,8 +291,20 @@ def main() -> None:
         "kafka-e2e-consumer-group-name", kafka.consumer_group("e2e-test-runner")
     )
 
-    aws_env_vars_for_local = _get_aws_env_vars_for_local()
-    pulumi.export("aws-env-vars-for-local", aws_env_vars_for_local)
+    nomad_grapl_ingress = NomadJob(
+        "grapl-ingress",
+        jobspec=path_from_root("nomad/grapl-ingress.nomad").resolve(),
+        vars={},
+        opts=pulumi.ResourceOptions(provider=nomad_provider),
+    )
+
+    ConsulIntentions(
+        "consul-intentions",
+        # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
+        # when they update nomad configs
+        intention_directory=path_from_root("nomad/consul-intentions").resolve(),
+        opts=pulumi.ResourceOptions(provider=consul_provider),
+    )
 
     if config.LOCAL_GRAPL:
         ###################################
@@ -279,29 +331,16 @@ def main() -> None:
         pulumi.export("redis-endpoint", redis_endpoint)
 
         local_grapl_core_vars: Final[NomadVars] = dict(
-            aws_env_vars_for_local=aws_env_vars_for_local,
-            container_images=_container_images(artifacts),
             plugin_registry_db_hostname=plugin_registry_db.hostname,
-            plugin_registry_db_password=plugin_registry_db.password,
             plugin_registry_db_port=str(plugin_registry_db.port),
             plugin_registry_db_username=plugin_registry_db.username,
+            plugin_registry_db_password=plugin_registry_db.password,
             plugin_work_queue_db_hostname=plugin_work_queue_db.hostname,
-            plugin_work_queue_db_password=plugin_work_queue_db.password,
             plugin_work_queue_db_port=str(plugin_work_queue_db.port),
             plugin_work_queue_db_username=plugin_work_queue_db.username,
-            py_log_level=py_log_level,
+            plugin_work_queue_db_password=plugin_work_queue_db.password,
             redis_endpoint=redis_endpoint,
-            rust_log=rust_log_levels,
             **nomad_inputs,
-        )
-
-        # This does not use a custom Provider since it will use either a consul:address set in the config or default to
-        # http://localhost:8500. This also applies to the NomadJobs defined for LOCAL_GRAPL.
-        ConsulIntentions(
-            "grapl-core",
-            # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
-            # when they update nomad configs
-            intention_directory=path_from_root("nomad/consul-intentions").resolve(),
         )
 
         nomad_grapl_core = NomadJob(
@@ -315,33 +354,10 @@ def main() -> None:
             ),
         )
 
-        nomad_grapl_ingress = NomadJob(
-            "grapl-ingress",
-            jobspec=path_from_root("nomad/grapl-ingress.nomad").resolve(),
-            vars={},
-        )
-
-        local_provision_vars: Final[NomadVars] = {
-            "stack_name": config.STACK_NAME,
-            **_get_subset(
-                local_grapl_core_vars,
-                {
-                    "aws_env_vars_for_local",
-                    "aws_region",
-                    "container_images",
-                    "py_log_level",
-                    "schema_properties_table_name",
-                    "schema_table_name",
-                    "test_user_name",
-                    "user_auth_table",
-                },
-            ),
-        }
-
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
             jobspec=path_from_root("nomad/grapl-provision.nomad").resolve(),
-            vars=local_provision_vars,
+            vars=provision_vars,
             opts=pulumi.ResourceOptions(depends_on=[nomad_grapl_core.job]),
         )
 
@@ -351,37 +367,29 @@ def main() -> None:
         ###################################
         # We use stack outputs from internally developed projects
         # We assume that the stack names will match the grapl stack name
-        consul_stack = pulumi.StackReference(f"grapl/consul/{config.STACK_NAME}")
-        networking_stack = pulumi.StackReference(
-            f"grapl/networking/{config.STACK_NAME}"
-        )
-        nomad_server_stack = pulumi.StackReference(f"grapl/nomad/{config.STACK_NAME}")
-        nomad_agents_stack = pulumi.StackReference(
-            f"grapl/nomad-agents/{config.STACK_NAME}"
-        )
+        assert upstream_stacks, "Upstream stacks previously initialized"
 
-        vpc_id = networking_stack.require_output("grapl-vpc")
-        subnet_ids = networking_stack.require_output("grapl-private-subnet-ids")
-        # Using get_output instead of require_output so that preview passes.
-        consul_master_token_secret_id = consul_stack.get_output(
-            "consul-master-token-secret-id"
+        vpc_id = upstream_stacks.networking.require_output("grapl-vpc")
+        subnet_ids = upstream_stacks.networking.require_output(
+            "grapl-private-subnet-ids"
         )
-        nomad_agent_security_group_id = nomad_agents_stack.require_output(
+        nomad_agent_security_group_id = upstream_stacks.nomad_agents.require_output(
             "security-group"
         )
-        nomad_agent_alb_security_group_id = nomad_agents_stack.require_output(
+        nomad_agent_alb_security_group_id = upstream_stacks.nomad_agents.require_output(
             "alb-security-group"
         )
-        nomad_agent_alb_listener_arn = nomad_agents_stack.require_output(
+        nomad_agent_alb_listener_arn = upstream_stacks.nomad_agents.require_output(
             "alb-listener-arn"
         )
-        nomad_agent_subnet_ids = networking_stack.require_output(
+        nomad_agent_subnet_ids = upstream_stacks.networking.require_output(
             "nomad-agents-private-subnet-ids"
         )
         nomad_agent_role = aws.iam.Role.get(
             "nomad-agent-role",
-            id=nomad_agents_stack.require_output("iam-role"),
-            opts=pulumi.ResourceOptions(parent=nomad_agents_stack),
+            id=upstream_stacks.nomad_agents.require_output("iam-role"),
+            # NOTE: It's somewhat odd to set a StackReference as a parent
+            opts=pulumi.ResourceOptions(parent=upstream_stacks.nomad_agents),
         )
 
         availability_zone: pulumi.Output[str] = pulumi.Output.from_input(
@@ -420,17 +428,6 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
-        pulumi.export("plugin-registry-db-hostname", plugin_registry_postgres.host())
-        pulumi.export(
-            "plugin-registry-db-port", plugin_registry_postgres.port().apply(str)
-        )
-        pulumi.export(
-            "plugin-registry-db-username", plugin_registry_postgres.username()
-        )
-        pulumi.export(
-            "plugin-registry-db-password", plugin_registry_postgres.password()
-        )
-
         pulumi.export(
             "plugin-work-queue-db-hostname", plugin_work_queue_postgres.host()
         )
@@ -449,27 +446,9 @@ def main() -> None:
         pulumi.export("kafka-bootstrap-servers", kafka.bootstrap_servers())
         pulumi.export("redis-endpoint", cache.endpoint)
 
-        # Set custom provider with the address set
-        consul_provider = get_hashicorp_provider_address(
-            consul, "consul", consul_stack, {"token": consul_master_token_secret_id}
-        )
-        nomad_provider = get_hashicorp_provider_address(
-            nomad, "nomad", nomad_server_stack
-        )
-
-        ConsulIntentions(
-            "grapl-core",
-            # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
-            # when they update nomad configs
-            intention_directory=path_from_root("nomad/consul-intentions").resolve(),
-            opts=pulumi.ResourceOptions(provider=consul_provider),
-        )
-
         prod_grapl_core_vars: Final[NomadVars] = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
-            aws_env_vars_for_local=aws_env_vars_for_local,
-            container_images=_container_images(artifacts),
             plugin_registry_db_hostname=plugin_registry_postgres.host(),
             plugin_registry_db_port=plugin_registry_postgres.port().apply(str),
             plugin_registry_db_username=plugin_registry_postgres.username(),
@@ -478,9 +457,7 @@ def main() -> None:
             plugin_work_queue_db_port=plugin_work_queue_postgres.port().apply(str),
             plugin_work_queue_db_username=plugin_work_queue_postgres.username(),
             plugin_work_queue_db_password=plugin_work_queue_postgres.password(),
-            py_log_level=py_log_level,
             redis_endpoint=cache.endpoint,
-            rust_log=rust_log_levels,
             **nomad_inputs,
         )
 
@@ -496,38 +473,13 @@ def main() -> None:
             ),
         )
 
-        nomad_grapl_ingress = NomadJob(
-            "grapl-ingress",
-            jobspec=path_from_root("nomad/grapl-ingress.nomad").resolve(),
-            vars={},
-            opts=pulumi.ResourceOptions(provider=nomad_provider),
-        )
-
-        prod_provision_vars: Final[NomadVars] = {
-            "stack_name": config.STACK_NAME,
-            **_get_subset(
-                prod_grapl_core_vars,
-                {
-                    "aws_env_vars_for_local",
-                    "aws_region",
-                    "container_images",
-                    "py_log_level",
-                    "schema_properties_table_name",
-                    "schema_table_name",
-                    "test_user_name",
-                    "user_auth_table",
-                },
-            ),
-        }
-
         nomad_grapl_provision = NomadJob(
             "grapl-provision",
             jobspec=path_from_root("nomad/grapl-provision.nomad").resolve(),
-            vars=prod_provision_vars,
+            vars=provision_vars,
             opts=pulumi.ResourceOptions(
                 depends_on=[
                     nomad_grapl_core.job,
-                    dynamodb_tables,
                 ],
                 provider=nomad_provider,
             ),
