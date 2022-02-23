@@ -79,8 +79,6 @@ steps:
           artifact_file: all_artifacts.json
           stacks:
             - grapl/grapl/testing
-            - grapl/grapl/customer-mock1
-            - grapl/grapl/customer-mock2
             - grapl/integration-tests/testing
     env:
       # We're going to be doing some git manipulation, so it's best if
