@@ -176,3 +176,31 @@ steps:
               config:
                 label: ":pipeline: Upload Cargo Audit"
                 command: ".buildkite/pipeline.cargo-audit.sh | buildkite-agent pipeline upload"
+
+  - label: ":thinking_face::nodejs: NPM Audit?"
+    plugins:
+      - grapl-security/grapl-release#v0.1.1
+      - chronotc/monorepo-diff#v2.0.4:
+          diff: grapl_diff.sh
+          log_level: "debug"
+          watch:
+            - path:
+                - "**/package.json"
+                - "**/package-lock.json"
+              config:
+                label: ":pipeline: Upload NPM Audit"
+                command: ".buildkite/pipeline.npm-audit.sh | buildkite-agent pipeline upload"
+
+  - label: ":thinking_face::nodejs: Yarn Audit?"
+    plugins:
+      - grapl-security/grapl-release#v0.1.1
+      - chronotc/monorepo-diff#v2.0.4:
+          diff: grapl_diff.sh
+          log_level: "debug"
+          watch:
+            - path:
+                - "**/package.json"
+                - "**/yarn.lock"
+              config:
+                label: ":pipeline: Upload Yarn Audit"
+                command: ".buildkite/pipeline.yarn-audit.sh | buildkite-agent pipeline upload"
