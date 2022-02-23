@@ -5,7 +5,14 @@
 .DEFAULT_GOAL := help
 
 -include .env
-TAG ?= dev
+
+# This variable is used in a few places, most notably
+# docker-bake.hcl. You can read more about it there, but the TL;DR is
+# that you'll need to set this to a proper version (not "", "latest",
+# or "dev") in order to generate release builds of our services to use
+# in a production deployment. Defaulting to `dev` is fine for
+# day-to-day development and local testing, though.
+IMAGE_TAG ?= dev
 RUST_BUILD ?= debug
 UID = $(shell id -u)
 GID = $(shell id -g)

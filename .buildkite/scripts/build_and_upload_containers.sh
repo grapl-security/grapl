@@ -25,10 +25,10 @@ readonly BUILDX_BAKE_FILE="docker-bake.hcl"
 readonly BUILDX_TARGET="cloudsmith-images"
 
 # This triggers release builds to be made; see ${BAKE_HCL_FILE} for more
-TAG="$(timestamp_and_sha_version)"
-export TAG
+IMAGE_TAG="$(timestamp_and_sha_version)"
+export IMAGE_TAG
 
-echo "--- Building all ${TAG} images"
+echo "--- Building all ${IMAGE_TAG} images"
 
 # NOTE: We could theoretically collapse these two commands into a
 # single Makefile target, but I have opted to structure them like this
@@ -97,7 +97,7 @@ echo "--- :cloudsmith::sleuth_or_spy: Checking upstream repository to determine 
 # (which should be true!) and that this tag is for our Cloudsmith
 # "raw" repository (which should also be true!)
 while IFS=$'\t' read -r service tag; do
-    echo "--- :cloudsmith: Checking '${service}:${TAG}' in 'grapl/testing'"
+    echo "--- :cloudsmith: Checking '${service}:${IMAGE_TAG}' in 'grapl/testing'"
     sha256="$(sha256_of_image "${tag}")"
     echo "${tag} has identifier '${sha256}'"
     upstream_sha256_identifier="${UPSTREAM_REGISTRY}/${service}@${sha256}"
@@ -114,4 +114,4 @@ done < <(docker buildx bake --file="${BUILDX_BAKE_FILE}" "${BUILDX_TARGET}" --pr
 
 # Now that we've filtered out things that already exist upstream, we
 # only need to care about the new stuff.
-artifact_json "${TAG}" "${new_services[@]}" > "$(artifacts_file_for containers)"
+artifact_json "${IMAGE_TAG}" "${new_services[@]}" > "$(artifacts_file_for containers)"

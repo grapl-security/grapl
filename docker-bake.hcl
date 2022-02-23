@@ -15,7 +15,7 @@
 # Variables in this section are intended to be set by users to
 # influence the build.
 
-# VERSION is the "master variable"; if it is set to something other
+# IMAGE_TAG is the "master variable"; if it is set to something other
 # than "latest", we will build images suitable for production
 # usage. If it is unset, or "latest", we'll be creating images for
 # local usage only.
@@ -29,13 +29,13 @@
 #
 # See the `upstream_aware_tag` function below for additional
 # information.
-variable "VERSION" {
-  default = "dev"
+variable "IMAGE_TAG" {
+  default = ""
 }
 
 # TODO: Document pushing to a sandbox repository, or rework the
 # variables and functions to accommodate that.
-# VERSION=XXX RUST_BUILD=debug CONTAINER_REGISTRY=XXX/my-repo
+# IMAGE_TAG=XXX RUST_BUILD=debug CONTAINER_REGISTRY=XXX/my-repo
 
 # Variables below are generally not intended to be set by users. You
 # can if you know what you're doing, but they're really meant to
@@ -43,7 +43,7 @@ variable "VERSION" {
 # own risk!
 # ----------------------------------------------------------------------
 
-# If VERSION is either unset or "latest", or "dev", we are *not* doing builds
+# If IMAGE_TAG is either unset or "latest", or "dev", we are *not* doing builds
 # for production usage. Production usage implies three things:
 #
 # - We're pushing our images to our Cloudsmith repository
@@ -57,7 +57,7 @@ variable "VERSION" {
 # plays well for local developers.
 #
 variable "RELEASE_BUILD" {
-  default = not(contains(["", "latest", "dev"], "${VERSION}"))
+  default = not(contains(["", "latest", "dev"], "${IMAGE_TAG}"))
 }
 
 # If this is a release build, we want to use the release profile for
@@ -91,7 +91,7 @@ variable "CONTAINER_REGISTRY" {
 # don't want.)
 function "upstream_aware_tag" {
   params = [image_name]
-  result = RELEASE_BUILD ? "${CONTAINER_REGISTRY}/${image_name}:${VERSION}" : local_only_tag("${image_name}")
+  result = RELEASE_BUILD ? "${CONTAINER_REGISTRY}/${image_name}:${IMAGE_TAG}" : local_only_tag("${image_name}")
 }
 
 # Images that are only intended for local usage should be tagged using
@@ -101,7 +101,7 @@ function "upstream_aware_tag" {
 # registry as part of its tags, after all.
 function "local_only_tag" {
   params = [image_name]
-  result = "${image_name}:${VERSION}"
+  result = "${image_name}:${IMAGE_TAG}"
 }
 
 # Groups
