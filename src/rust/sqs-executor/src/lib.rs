@@ -294,7 +294,7 @@ async fn process_message<
             let mut envelopes = vec![];
             for event in events {
                 let wrapped_event = prost_types::Any {
-                    type_url: "wat".to_owned(), // FIXME
+                    type_url: "wat".to_string(), // FIXME
                     value: event,
                 };
                 let envelope = rust_proto::pipeline::Envelope {

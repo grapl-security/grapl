@@ -29,6 +29,12 @@ impl CheckedError for SysmonDecoderError {
     }
 }
 
+impl From<prost::DecodeError> for SysmonDecoderError {
+    fn from(err: prost::DecodeError) -> Self {
+        SysmonDecoderError::DeserializeError(err.to_string())
+    }
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct SysmonDecoder;
 
@@ -37,9 +43,9 @@ impl PayloadDecoder<Vec<Event>> for SysmonDecoder {
 
     #[tracing::instrument(skip(self), err)]
     fn decode(&mut self, body: Vec<u8>) -> Result<Vec<Event>, Self::DecoderError> {
-        let any: prost_types::Any = prost::Message::decode(body.as_slice()).expect("wat");
+        let any: prost_types::Any = prost::Message::decode(body.as_slice())?;
         let raw_log: rust_proto::pipeline::RawLog =
-            prost::Message::decode(any.value.as_slice()).expect("wat");
+            prost::Message::decode(any.value.as_slice())?;
         let decompressed =
             grapl_service::decoder::decompress::maybe_decompress(&raw_log.log_event)?;
 

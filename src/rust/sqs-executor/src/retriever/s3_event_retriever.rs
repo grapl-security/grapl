@@ -229,7 +229,11 @@ where
             .expect("Metadata must be set at the front of the pipeline");
         let body = envelope.inner_message;
 
-        let (decoded, ms) = time_it(|| self.decoder.decode(body.expect("wat").value));
+        let (decoded, ms) = time_it(|| self.decoder.decode(
+            body
+                .expect("An Envelope must have an innner_message")
+                .value
+        ));
 
         self.metric_reporter
             .histogram_with_units(
