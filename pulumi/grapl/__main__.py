@@ -1,6 +1,6 @@
 import sys
 
-from pulumi.infra.upstream_stacks import UpstreamStacks
+from infra.upstream_stacks import UpstreamStacks
 
 sys.path.insert(0, "..")
 
@@ -110,9 +110,14 @@ def main() -> None:
 
     upstream_stacks: Optional[UpstreamStacks] = None
     nomad_provider: Optional[pulumi.ProviderResource] = None
+    consul_provider: Optional[pulumi.ProviderResource] = None
     if not config.LOCAL_GRAPL:
         upstream_stacks = UpstreamStacks()
-        nomad_provider = get_nomad_provider_address(upstream_stacks.nomad_server_stack)
+        nomad_provider = get_nomad_provider_address(upstream_stacks.nomad_server)
+        consul_provider = get_consul_provider_address(
+            upstream_stacks.consul, {"token": consul_master_token_secret_id}
+        )
+
 
     pulumi.export("test-user-name", config.GRAPL_TEST_USER_NAME)
 
@@ -290,6 +295,13 @@ def main() -> None:
         opts=pulumi.ResourceOptions(provider=nomad_provider),
     )
 
+    ConsulIntentions(
+        "grapl-core",
+        # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
+        # when they update nomad configs
+        intention_directory=path_from_root("nomad/consul-intentions").resolve(),
+        opts=pulumi.ResourceOptions(provider=consul_provider),
+    )
 
     if config.LOCAL_GRAPL:
         ###################################
@@ -328,15 +340,6 @@ def main() -> None:
             **nomad_inputs,
         )
 
-        # This does not use a custom Provider since it will use either a consul:address set in the config or default to
-        # http://localhost:8500. This also applies to the NomadJobs defined for LOCAL_GRAPL.
-        ConsulIntentions(
-            "grapl-core",
-            # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
-            # when they update nomad configs
-            intention_directory=path_from_root("nomad/consul-intentions").resolve(),
-        )
-
         nomad_grapl_core = NomadJob(
             "grapl-core",
             jobspec=path_from_root("nomad/grapl-core.nomad").resolve(),
@@ -361,30 +364,30 @@ def main() -> None:
         ###################################
         # We use stack outputs from internally developed projects
         # We assume that the stack names will match the grapl stack name
-
-
-        vpc_id = networking_stack.require_output("grapl-vpc")
-        subnet_ids = networking_stack.require_output("grapl-private-subnet-ids")
+        assert upstream_stacks, "Upstream stacks previously initialized"
+        
+        vpc_id = upstream_stacks.networking.require_output("grapl-vpc")
+        subnet_ids = upstream_stacks.networking.require_output("grapl-private-subnet-ids")
         # Using get_output instead of require_output so that preview passes.
-        consul_master_token_secret_id = consul_stack.get_output(
+        consul_master_token_secret_id = upstream_stacks.consul.get_output(
             "consul-master-token-secret-id"
         )
-        nomad_agent_security_group_id = nomad_agents_stack.require_output(
+        nomad_agent_security_group_id = upstream_stacks.nomad_agents.require_output(
             "security-group"
         )
-        nomad_agent_alb_security_group_id = nomad_agents_stack.require_output(
+        nomad_agent_alb_security_group_id = upstream_stacks.nomad_agents.require_output(
             "alb-security-group"
         )
-        nomad_agent_alb_listener_arn = nomad_agents_stack.require_output(
+        nomad_agent_alb_listener_arn = upstream_stacks.nomad_agents.require_output(
             "alb-listener-arn"
         )
-        nomad_agent_subnet_ids = networking_stack.require_output(
+        nomad_agent_subnet_ids = upstream_stacks.networking.require_output(
             "nomad-agents-private-subnet-ids"
         )
         nomad_agent_role = aws.iam.Role.get(
             "nomad-agent-role",
-            id=nomad_agents_stack.require_output("iam-role"),
-            opts=pulumi.ResourceOptions(parent=nomad_agents_stack),
+            id=upstream_stacks.nomad_agents.require_output("iam-role"),
+            opts=pulumi.ResourceOptions(parent=upstream_stacks.nomad_agents),
         )
 
         availability_zone: pulumi.Output[str] = pulumi.Output.from_input(
@@ -440,19 +443,6 @@ def main() -> None:
 
         pulumi.export("kafka-bootstrap-servers", kafka.bootstrap_servers())
         pulumi.export("redis-endpoint", cache.endpoint)
-
-        # Set custom provider with the address set
-        consul_provider = get_consul_provider_address(
-            consul_stack, {"token": consul_master_token_secret_id}
-        )
-
-        ConsulIntentions(
-            "grapl-core",
-            # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
-            # when they update nomad configs
-            intention_directory=path_from_root("nomad/consul-intentions").resolve(),
-            opts=pulumi.ResourceOptions(provider=consul_provider),
-        )
 
         prod_grapl_core_vars: Final[NomadVars] = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
