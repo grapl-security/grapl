@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping
 
 import pulumi_consul as consul
 import pulumi_nomad as nomad

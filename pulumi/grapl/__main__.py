@@ -118,7 +118,6 @@ def main() -> None:
             upstream_stacks.consul, {"token": consul_master_token_secret_id}
         )
 
-
     pulumi.export("test-user-name", config.GRAPL_TEST_USER_NAME)
 
     # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
@@ -365,9 +364,11 @@ def main() -> None:
         # We use stack outputs from internally developed projects
         # We assume that the stack names will match the grapl stack name
         assert upstream_stacks, "Upstream stacks previously initialized"
-        
+
         vpc_id = upstream_stacks.networking.require_output("grapl-vpc")
-        subnet_ids = upstream_stacks.networking.require_output("grapl-private-subnet-ids")
+        subnet_ids = upstream_stacks.networking.require_output(
+            "grapl-private-subnet-ids"
+        )
         # Using get_output instead of require_output so that preview passes.
         consul_master_token_secret_id = upstream_stacks.consul.get_output(
             "consul-master-token-secret-id"
