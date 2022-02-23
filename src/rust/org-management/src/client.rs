@@ -9,6 +9,7 @@ use rust_proto::org_management::{
     CreateUserResponse,
     CreateOrgRequestProto,
     CreateUserRequestProto,
+    OrgManagementDeserializationError
 };
 
 
@@ -20,17 +21,13 @@ use tonic::{
     Status,
 };
 
-#[derive(Debug, thiserror::Error)]
-pub enum OrgManagementDeserializationError {
-    #[error("Missing a required field")]
-    MissingRequiredField(&'static str),
-    #[error("Empty field")]
-    EmptyField(&'static str),
-}
+use std::convert::{
+    TryInto,
+};
 
 
 #[derive(Debug, thiserror::Error)]
-pub enum OrgManagementClientError {
+pub enum OrgManagementServiceClientError {
     #[error("GrpcStatus {0}")]
     GrpcStatus(#[from] Status),
     #[error("DeserializeError {0}")]
@@ -50,30 +47,34 @@ where
     T::Error: Into<StdError>,
     <T::ResponseBody as Body>::Error: Into<StdError> + Send,
 {
+    pub fn new(inner: _OrgManagementServiceClient<T>) -> Self {
+        Self { inner }
+    }
+
+    /// Create a new organization
     pub async fn create_org(
         &mut self,
         request: CreateOrgRequest,
-    ) -> Result<CreateOrgResponse, OrgManagementClientError> {
+    ) -> Result<CreateOrgResponse, OrgManagementServiceClientError> {
         let response = self
             .inner
             .create_org(CreateOrgRequestProto::from(request))
             .await?;
-        Ok(response.into_inner().try_into()?)
+        Ok(response.into_inner().try_into()?);
 
     }
 
+    /// Creates a new user
     pub async fn create_user(
         &mut self,
         request: CreateUserRequest,
-    ) -> Result<CreateUserResponse, OrgManagementClientError> {
+    ) -> Result<CreateUserResponse, OrgManagementServiceClientError> {
         let response = self
             .inner
             .create_user(CreateUserRequestProto::from(request))
             .await?;
-        Ok(response.into_inner().try_into()?)
+        Ok(response.into_inner().try_into()?);
     }
-
-
 }
 
 
