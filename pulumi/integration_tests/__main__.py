@@ -60,7 +60,9 @@ def main() -> None:
 
     # These tags will be added to all provisioned infrastructure
     # objects.
-    register_auto_tags({"grapl_stack_name": stack_name})
+    register_auto_tags(
+        {"pulumi:project": pulumi.get_project(), "pulumi:stack": stack_name}
+    )
 
     nomad_provider: Optional[pulumi.ProviderResource] = None
     if not config.LOCAL_GRAPL:

@@ -102,7 +102,9 @@ def main() -> None:
 
     # These tags will be added to all provisioned infrastructure
     # objects.
-    register_auto_tags({"grapl_stack_name": config.STACK_NAME})
+    register_auto_tags(
+        {"pulumi:project": pulumi.get_project(), "pulumi:stack": config.STACK_NAME}
+    )
 
     pulumi.export("test-user-name", config.GRAPL_TEST_USER_NAME)
 
