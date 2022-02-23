@@ -426,17 +426,6 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
-        pulumi.export("plugin-registry-db-hostname", plugin_registry_postgres.host())
-        pulumi.export(
-            "plugin-registry-db-port", plugin_registry_postgres.port().apply(str)
-        )
-        pulumi.export(
-            "plugin-registry-db-username", plugin_registry_postgres.username()
-        )
-        pulumi.export(
-            "plugin-registry-db-password", plugin_registry_postgres.password()
-        )
-
         pulumi.export(
             "plugin-work-queue-db-hostname", plugin_work_queue_postgres.host()
         )
