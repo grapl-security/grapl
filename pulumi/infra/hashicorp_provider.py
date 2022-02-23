@@ -1,4 +1,4 @@
-from typing import Any, Mapping
+from typing import Any, Mapping, cast
 
 import pulumi_consul as consul
 import pulumi_nomad as nomad
@@ -31,21 +31,27 @@ def get_nomad_provider_address(
     stack: pulumi.StackReference,
     additional_configs: Mapping[str, Any] = {},
 ) -> nomad.Provider:
-    return get_hashicorp_provider_address(
-        pulumi_class=nomad,
-        provider_type="nomad",
-        stack=stack,
-        additional_configs=additional_configs,
+    return cast(
+        nomad.Provider,
+        get_hashicorp_provider_address(
+            pulumi_class=nomad,
+            provider_type="nomad",
+            stack=stack,
+            additional_configs=additional_configs,
+        ),
     )
 
 
 def get_consul_provider_address(
     stack: pulumi.StackReference,
     additional_configs: Mapping[str, Any] = {},
-) -> nomad.Provider:
-    return get_hashicorp_provider_address(
-        pulumi_class=consul,
-        provider_type="consul",
-        stack=stack,
-        additional_configs=additional_configs,
+) -> consul.Provider:
+    return cast(
+        consul.Provider,
+        get_hashicorp_provider_address(
+            pulumi_class=consul,
+            provider_type="consul",
+            stack=stack,
+            additional_configs=additional_configs,
+        ),
     )
