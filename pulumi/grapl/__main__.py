@@ -295,7 +295,7 @@ def main() -> None:
     )
 
     ConsulIntentions(
-        "grapl-core",
+        "consul-intentions",
         # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
         # when they update nomad configs
         intention_directory=path_from_root("nomad/consul-intentions").resolve(),
