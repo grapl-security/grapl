@@ -1,5 +1,7 @@
 import sys
 
+from pulumi.infra.upstream_stacks import UpstreamStacks
+
 sys.path.insert(0, "..")
 
 from typing import List, Mapping, Optional, Set, cast
@@ -106,10 +108,11 @@ def main() -> None:
         {"pulumi:project": pulumi.get_project(), "pulumi:stack": config.STACK_NAME}
     )
 
+    upstream_stacks: Optional[UpstreamStacks] = None
     nomad_provider: Optional[pulumi.ProviderResource] = None
     if not config.LOCAL_GRAPL:
-        nomad_server_stack = pulumi.StackReference(f"grapl/nomad/{config.STACK_NAME}")
-        nomad_provider = get_nomad_provider_address(nomad_server_stack)
+        upstream_stacks = UpstreamStacks()
+        nomad_provider = get_nomad_provider_address(upstream_stacks.nomad_server_stack)
 
     pulumi.export("test-user-name", config.GRAPL_TEST_USER_NAME)
 
@@ -358,13 +361,7 @@ def main() -> None:
         ###################################
         # We use stack outputs from internally developed projects
         # We assume that the stack names will match the grapl stack name
-        consul_stack = pulumi.StackReference(f"grapl/consul/{config.STACK_NAME}")
-        networking_stack = pulumi.StackReference(
-            f"grapl/networking/{config.STACK_NAME}"
-        )
-        nomad_agents_stack = pulumi.StackReference(
-            f"grapl/nomad-agents/{config.STACK_NAME}"
-        )
+
 
         vpc_id = networking_stack.require_output("grapl-vpc")
         subnet_ids = networking_stack.require_output("grapl-private-subnet-ids")
