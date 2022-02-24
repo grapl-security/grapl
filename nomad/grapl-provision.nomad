@@ -5,11 +5,6 @@
 # `grapl-provisioner` back  into the `grapl-core` fold, but
 # this will get the job done for the time being.
 
-variable "stack_name" {
-  type        = string
-  description = "The Pulumi stack name."
-}
-
 variable "aws_env_vars_for_local" {
   type        = string
   description = <<EOF
@@ -101,7 +96,6 @@ job "grapl-provision" {
         # It's fine if `provision` only hits one alpha.
         MG_ALPHAS = "localhost:9080"
 
-        STACK_NAME                         = var.stack_name
         AWS_DEFAULT_REGION                 = var.aws_region
         GRAPL_SCHEMA_TABLE                 = var.schema_table_name
         GRAPL_SCHEMA_PROPERTIES_TABLE      = var.schema_properties_table_name
