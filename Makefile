@@ -156,7 +156,10 @@ build-test-integration: build
 
 .PHONY: build-test-e2e
 build-test-e2e: build
-	./pants package ./src/python/e2e-test-runner/e2e_test_runner:pex
+# Any PEX tagged with `e2e-test-pex` is required for our image. This
+# seems like the most straightforward way of capturing these
+# dependencies at the moment.
+	./pants --tag="e2e-test-pex" package ::
 	$(DOCKER_BUILDX_BAKE) \
 		--file ./test/docker-compose.integration-tests.build.yml \
 		e2e-tests

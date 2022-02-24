@@ -46,7 +46,7 @@ COPY --chown=grapl ./etc/sample_data/ etc/sample_data
 
 # Copy in `graplctl`, which does the actual uploading during e2e
 RUN mkdir -p /home/grapl/bin
-COPY --chown=grapl ./bin/graplctl /home/grapl/bin/graplctl
+COPY --chown=grapl dist/src.python.graplctl.graplctl/graplctl.pex /home/grapl/bin/graplctl
 
 COPY --chown=grapl ./dist/e2e-tests.pex .
 CMD ["./e2e-tests.pex"]
