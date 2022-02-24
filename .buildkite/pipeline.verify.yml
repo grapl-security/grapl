@@ -141,6 +141,11 @@ steps:
   - label: ":hammer: Integration Tests"
     command:
       - make test-integration
+    plugins:
+      - grapl-security/vault-login#v0.1.2
+      - grapl-security/vault-env#v0.1.0:
+          secrets:
+            - grapl/TOOLCHAIN_AUTH_TOKEN
     env:
       GRAPL_LOG_LEVEL: "DEBUG"
     agents:
@@ -151,6 +156,11 @@ steps:
   - label: ":hammer: E2E Tests"
     command:
       - make test-e2e
+    plugins:
+      - grapl-security/vault-login#v0.1.2
+      - grapl-security/vault-env#v0.1.0:
+          secrets:
+            - grapl/TOOLCHAIN_AUTH_TOKEN
     env:
       GRAPL_LOG_LEVEL: "DEBUG"
       DUMP_ARTIFACTS: "True"

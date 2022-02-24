@@ -4,7 +4,7 @@ config:
   grapl:artifacts:
     analyzer-dispatcher: 20220224203823-6c5bd14
     analyzer-executor: 20220224203823-6c5bd14
-    e2e-tests: 20220224203823-6c5bd14
+    e2e-tests: 20220224220159-a79c0c6
     engagement-creator: 20220224183014-f71bb58
     firecracker_kernel:
       tar:
