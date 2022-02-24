@@ -151,7 +151,8 @@ build-test-unit-js:
 build-test-integration: build
 	$(DOCKER_BUILDX_BAKE) \
 		--file ./test/docker-compose.integration-tests.build.yml \
-		python-integration-tests rust-integration-tests
+		python-integration-tests \
+		rust-integration-tests
 
 .PHONY: build-test-e2e
 build-test-e2e: build
