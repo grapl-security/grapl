@@ -39,7 +39,6 @@ pub struct OrgManagementServiceClient<T>{
     inner: _OrgManagementServiceClient<T>,
 }
 
-
 impl<T> OrgManagementServiceClient<T>
 where
     T: tonic::client::GrpcService<tonic::body::BoxBody>,
@@ -60,7 +59,7 @@ where
             .inner
             .create_org(CreateOrgRequestProto::from(request))
             .await?;
-        Ok(response.into_inner().try_into()?);
+        Ok(response.into_inner().try_into()?)
 
     }
 
@@ -73,7 +72,7 @@ where
             .inner
             .create_user(CreateUserRequestProto::from(request))
             .await?;
-        Ok(response.into_inner().try_into()?);
+        Ok(response.into_inner().try_into()?)
     }
 }
 
