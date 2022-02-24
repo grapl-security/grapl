@@ -49,7 +49,7 @@ cloudsmith_tag() {
 }
 
 echo "--- Building all ${TAG} images"
-make build-test-e2e
+make build-for-push
 
 for service in "${services[@]}"; do
     # Re-tag the container we just built so we can upload it to

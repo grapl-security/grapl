@@ -7,4 +7,5 @@ pex_binary(
     # Explicit `dependencies` needed, because `pytest` picks up tests
     # dynamically, not by explicit imports
     dependencies=[":test_files"],
+    tags=["e2e-test-pex"],
 )

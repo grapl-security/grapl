@@ -21,7 +21,7 @@ declare -a NOMAD_VARS=(
 # shellcheck source-path=SCRIPTDIR
 source "${THIS_DIR}/../lib/nomad_cli_tools.sh"
 
-echo "--- Deploying Nomad local infrastructure."
+echo "Deploying Nomad local infrastructure"
 
 # Wait a short period of time before attempting to deploy infrastructure
 # shellcheck disable=SC2016
@@ -49,4 +49,4 @@ echo "Nomad Job Run complete, checking for task failures"
 
 check_for_task_failures_in_job "grapl-local-infra"
 
-echo "--- Nomad local-infra deployed!"
+echo "Nomad local-infra deployed!"
