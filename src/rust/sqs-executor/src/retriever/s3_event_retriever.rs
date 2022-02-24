@@ -117,15 +117,15 @@ where
 {
     #[error("S3Error: {0}")]
     S3Error(#[from] RusotoError<GetObjectError>),
-    #[error("Decode error")]
+    #[error("Decode error {0}")]
     DecodeError(#[from] DecoderErrorT),
-    #[error("EnvelopeDecode error")]
+    #[error("EnvelopeDecode error {0}")]
     EnvelopeDecode(#[from] prost::DecodeError),
-    #[error("IO")]
+    #[error("IO {0}")]
     Io(#[from] std::io::Error),
-    #[error("JSON")]
+    #[error("JSON {0}")]
     Json(#[from] serde_json::Error),
-    #[error("Timeout")]
+    #[error("Timeout {0}")]
     Timeout(#[from] Elapsed),
 }
 

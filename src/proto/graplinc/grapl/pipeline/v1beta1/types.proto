@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package graplinc.grapl.pipeline.v1beta1;
 
+import "google/protobuf/timestamp.proto";
 import "graplinc/common/v1beta1/types.proto";
 
 // Metadata about a specific message, or its context
@@ -14,6 +15,15 @@ message Metadata {
 
   // Number of times this message has been retried
   uint32 retry_count = 3;
+
+  // When the message was first written
+  google.protobuf.Timestamp created_time = 4;
+
+  // When these metadata were last updated
+  google.protobuf.Timestamp last_updated_time = 5;
+
+  // Event source from which this message originated
+  graplinc.common.v1beta1.Uuid event_source_id = 6;
 }
 
 // A wrapper message for pipeline data. Includes useful metadata to help
@@ -22,10 +32,15 @@ message Envelope {
   // Metadata about this message
   Metadata metadata = 1;
 
-  // Fully-qualified name of the protobuf type used to serialize inner_message
-  //   ex: "graplinc.grapl.api.graph.v1beta1.GraphDescription"
+  // Fully-qualified name of the protobuf used to serialize the inner_message
   string inner_type = 2;
 
   // The serialized bytes of the inner message
   bytes inner_message = 3;
+}
+
+// This is the inner_message for an Envelope published to the raw-logs topic.
+message RawLog {
+  // A raw log event (to be parsed by a generator plugin)
+  bytes log_event = 1;
 }
