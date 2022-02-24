@@ -145,6 +145,7 @@ build-test-unit-js:
 
 .PHONY: build-test-integration
 build-test-integration:
+	@echo "--- Building integration test images"
 	$(DOCKER_BUILDX_BAKE) \
 		--file ./test/docker-compose.integration-tests.build.yml \
 		python-integration-tests \
@@ -152,6 +153,7 @@ build-test-integration:
 
 .PHONY: build-test-e2e
 build-test-e2e:
+	@echo "--- Building e2e testing image"
 # Any PEX tagged with `e2e-test-pex` is required for our image. This
 # seems like the most straightforward way of capturing these
 # dependencies at the moment.
@@ -162,6 +164,7 @@ build-test-e2e:
 
 .PHONY: build-engagement-view
 build-engagement-view: ## Build website assets
+	@echo "--- Building the engagement view"
 	$(MAKE) -C src/js/engagement_view build
 	cp -r \
 		"${PWD}/src/js/engagement_view/build/." \
@@ -170,12 +173,14 @@ build-engagement-view: ## Build website assets
 .PHONY: build-ui
 build-ui: ## Build the web UI
 build-ui: build-engagement-view
+	@echo "--- Building the Web UI"
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml \
 		grapl-web-ui
 
 .PHONY: build-grapl-services
 build-grapl-services: ## Build all the services for the Grapl SaaS
 build-grapl-services: build-ui
+	@echo "--- Building the rest of the Grapl services"
 # Our Python images need their PEX files built first
 	./pants --tag="service-pex" package ::
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml \
@@ -196,6 +201,7 @@ build-grapl-services: build-ui
 
 .PHONY: build-local-services
 build-local-services: ## Build images used only in a local testing context
+	@echo "--- Building local-only services"
 	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml \
 		localstack \
 		postgres \
@@ -298,9 +304,9 @@ test-with-env: # (Do not include help text - not to be used directly)
 	stopGrapl() {
 		# skip if KEEP_TEST_ENV is set
 		if [[ -z "${KEEP_TEST_ENV}" ]]; then
-			echo "Tearing down test environment"
+			@echo "Tearing down test environment"
 		else
-			echo "Keeping test environment" && return 0
+			@echo "Keeping test environment" && return 0
 		fi
 		# Unset COMPOSE_FILE to help ensure it will be ignored with use of --file
 		unset COMPOSE_FILE
@@ -314,7 +320,7 @@ test-with-env: # (Do not include help text - not to be used directly)
 	# Bring up the Grapl environment and detach
 	$(MAKE) _up
 	# Run tests and check exit codes from each test container
-	echo "--- Executing test with environment"
+	@echo "--- Executing test with environment"
 	$${EXEC_TEST_COMMAND}
 
 ##@ Lint 🧹
@@ -395,6 +401,7 @@ up: build-grapl-services build-local-services _up
 _up:
 	# Primarily used for bringing up an environment for integration testing.
 	# For use with a project name consider setting COMPOSE_PROJECT_NAME env var
+	@echo "--- Deploying Nomad Infrastructure"
 	@$(WITH_LOCAL_GRAPL_ENV)
 	# Start the Nomad agent
 	$(MAKE) stop-nomad-detach; $(MAKE) start-nomad-detach
@@ -405,13 +412,12 @@ _up:
 
 	# TODO: This could potentially be replaced with a docker-compose run, but
 	#  it doesn't have all these useful flags
-	echo "--- Starting Pulumi"
+	@echo "--- Running Pulumi"
 	docker-compose \
 		--file docker-compose.yml \
 		up --force-recreate --always-recreate-deps --renew-anon-volumes \
 		--exit-code-from pulumi \
 		pulumi
-	echo "Pulumi complete"
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
