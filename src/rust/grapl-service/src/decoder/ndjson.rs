@@ -14,9 +14,9 @@ pub struct NdjsonDecoder;
 
 #[derive(thiserror::Error, Debug)]
 pub enum NdjsonDecoderError {
-    #[error("DecompressionError")]
+    #[error("DecompressionError {0}")]
     Decompression(#[from] PayloadDecompressionError),
-    #[error("DeserializeError")]
+    #[error("DeserializeError {0}")]
     Deserialization(#[from] serde_json::Error),
 }
 

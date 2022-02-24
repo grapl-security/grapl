@@ -1,7 +1,9 @@
+import datetime
 import uuid
 from typing import Mapping, Sequence, Union
 
 import hypothesis.strategies as st
+from python_proto import SerDe
 from python_proto.api import (
     DecrementOnlyIntProp,
     DecrementOnlyUintProp,
@@ -25,6 +27,7 @@ from python_proto.api import (
     Session,
     Static,
 )
+from python_proto.common import Duration, Timestamp, Uuid
 from python_proto.metrics import (
     Counter,
     Gauge,
@@ -33,16 +36,49 @@ from python_proto.metrics import (
     Label,
     MetricWrapper,
 )
-from python_proto.pipeline import Envelope, Metadata, Uuid
+from python_proto.pipeline import Envelope, Metadata, RawLog
+
+#
+# constants
+#
+# These values are used to parametrize the strategies defined below. Some of
+# them ensure the generated data actually makes sense. Others are used to
+# ensure strategies perform well. Please don't change these without a Very Good
+# Reason(TM).
+
 
 UINT64_MIN = 0
 UINT64_MAX = 2 ** 64 - 1
-INT64_MIN = -(2 ** 63) - 1
+
+INT64_MIN = -(2 ** 63) + 1
 INT64_MAX = 2 ** 63 - 1
+
+INT32_MIN = -(2 ** 31) + 1
+INT32_MAX = 2 ** 31 - 1
+
+# see https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#google.protobuf.Duration
+DURATION_SECONDS_MIN = -315_576_000_000
+DURATION_SECONDS_MAX = 315_576_000_000
+DURATION_NANOS_MIN = -(10 ** 9) + 1
+DURATION_NANOS_MAX = 10 ** 9 - 1
+
+# see https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#google.protobuf.Timestamp
+_EPOCH = datetime.datetime.fromisoformat("1970-01-01T00:00:00")
+_MIN_DT = datetime.datetime.fromisoformat("0001-01-01T00:00:00")
+_MAX_DT = datetime.datetime.fromisoformat("9999-12-31T23:59:59")
+TIMESTAMP_SECONDS_MIN = int((_EPOCH - _MIN_DT).total_seconds())
+TIMESTAMP_SECONDS_MAX = int((_MAX_DT - _EPOCH).total_seconds()) + 1
+TIMESTAMP_NANOS_MIN = 0
+TIMESTAMP_NANOS_MAX = 10 ** 9 - 1
+
 MAX_LIST_SIZE = 5
 
+MIN_LOG_EVENT_SIZE = 0
+MAX_LOG_EVENT_SIZE = 1024
+
+
 #
-# pipeline
+# common
 #
 
 
@@ -57,23 +93,71 @@ def uuids(
     return st.builds(Uuid, lsb=lsbs, msb=msbs)
 
 
+def timestamps(
+    seconds: st.SearchStrategy[int] = st.integers(
+        min_value=TIMESTAMP_SECONDS_MIN, max_value=TIMESTAMP_SECONDS_MAX
+    ),
+    nanos: st.SearchStrategy[int] = st.integers(
+        min_value=TIMESTAMP_NANOS_MIN,
+        max_value=TIMESTAMP_NANOS_MAX,
+    ),
+) -> st.SearchStrategy[Timestamp]:
+    return st.builds(Timestamp, seconds=seconds, nanos=nanos)
+
+
+def durations(
+    seconds: st.SearchStrategy[int] = st.integers(
+        min_value=DURATION_SECONDS_MIN, max_value=DURATION_SECONDS_MAX
+    ),
+    nanos: st.SearchStrategy[int] = st.integers(
+        min_value=DURATION_NANOS_MIN,
+        max_value=DURATION_NANOS_MAX,
+    ),
+) -> st.SearchStrategy[Duration]:
+    return st.builds(Duration, seconds=seconds, nanos=nanos)
+
+
+#
+# pipeline
+#
+
+
 def metadatas(
     trace_ids: st.SearchStrategy[uuid.UUID] = st.uuids(),
     tenant_ids: st.SearchStrategy[uuid.UUID] = st.uuids(),
+    event_source_ids: st.SearchStrategy[uuid.UUID] = st.uuids(),
+    created_times: st.SearchStrategy[datetime.datetime] = st.datetimes(),
+    last_updated_times: st.SearchStrategy[datetime.datetime] = st.datetimes(),
 ) -> st.SearchStrategy[Metadata]:
-    return st.builds(Metadata, trace_id=trace_ids, tenant_id=tenant_ids)
+    return st.builds(
+        Metadata,
+        trace_id=trace_ids,
+        tenant_id=tenant_ids,
+        event_source_id=event_source_ids,
+        created_time=created_times,
+        last_updated_time=last_updated_times,
+    )
+
+
+def raw_logs(
+    log_events: st.SearchStrategy[bytes] = st.binary(
+        min_size=MIN_LOG_EVENT_SIZE, max_size=MAX_LOG_EVENT_SIZE
+    )
+) -> st.SearchStrategy[RawLog]:
+    return st.builds(RawLog, log_event=log_events)
 
 
 def envelopes(
     metadatas: st.SearchStrategy[Metadata] = metadatas(),
-    inner_messages: st.SearchStrategy[bytes] = st.binary(),
-    inner_types: st.SearchStrategy[str] = st.text(),
+    inner_messages: st.SearchStrategy[SerDe] = uuids()
+    | timestamps()
+    | durations()
+    | raw_logs(),
 ) -> st.SearchStrategy[Envelope]:
     return st.builds(
         Envelope,
         metadata=metadatas,
         inner_message=inner_messages,
-        inner_type=inner_types,
     )
 
 
