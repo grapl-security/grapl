@@ -76,7 +76,8 @@ def main() -> None:
         "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
         "aws_region": aws.get_region().name,
         "container_images": _e2e_container_images(artifacts),
-        "stack_name": grapl_stack.upstream_stack_name,
+        # Used by graplctl to determine if it should manual-event or not
+        "stack_name": grapl_stack.upstream_stack_name,  
         "kafka_bootstrap_servers": grapl_stack.kafka_bootstrap_servers,
         "kafka_sasl_username": grapl_stack.kafka_e2e_sasl_username,
         "kafka_sasl_password": grapl_stack.kafka_e2e_sasl_password,
@@ -114,6 +115,7 @@ def main() -> None:
             "redis_endpoint": grapl_stack.redis_endpoint,
             "schema_properties_table_name": grapl_stack.schema_properties_table_name,
             "test_user_name": grapl_stack.test_user_name,
+            "test_user_password_secret_id": grapl_stack.test_user_password_secret_id,
             "plugin_work_queue_db_hostname": grapl_stack.plugin_work_queue_db_hostname,
             "plugin_work_queue_db_port": grapl_stack.plugin_work_queue_db_port,
             "plugin_work_queue_db_username": grapl_stack.plugin_work_queue_db_username,

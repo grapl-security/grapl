@@ -62,6 +62,11 @@ variable "test_user_name" {
   description = "The name of the test user"
 }
 
+variable "test_user_password_secret_id" {
+  type        = string
+  description = "The SecretsManager SecretID for the test user's password"
+}
+
 variable "docker_user" {
   type        = string
   description = "The UID:GID pair to run as inside the Docker container"
@@ -288,8 +293,9 @@ job "integration-tests" {
 
         GRAPL_API_HOST                = "${NOMAD_UPSTREAM_IP_web-ui}"
         GRAPL_HTTP_FRONTEND_PORT      = "${NOMAD_UPSTREAM_PORT_web-ui}"
-        GRAPL_TEST_USER_NAME          = "${var.test_user_name}"
-        GRAPL_SCHEMA_PROPERTIES_TABLE = "${var.schema_properties_table_name}"
+        GRAPL_TEST_USER_NAME          = var.test_user_name
+        GRAPL_TEST_USER_PASSWORD_SECRET_ID = var.test_user_password_secret_id
+        GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name
 
         HITCACHE_ADDR     = "${local.redis_host}"
         HITCACHE_PORT     = "${local.redis_port}"
