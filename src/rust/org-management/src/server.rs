@@ -32,11 +32,6 @@ use rust_proto::org_management::{
 };
 
 use crate::{
-    // psql_queue::{
-    //     self,
-    //     PsqlQueue,
-    //     PsqlQueueError,
-    // },
     OrgManagementServiceConfig,
 };
 
@@ -310,41 +305,21 @@ impl OrgManagementService for OrganizationManagement {
         Ok(Response::new(response))
     }
 }
-//
-//
-// #[tracing::instrument(err)]
-// pub async fn start_server() -> Result<(), Box<dyn std::error::Error>> {
-//     let addr = "0.0.0.0:5502".parse()?;
-//     let pool =
-//         create_db_connection()
-//             .await?;
-//
-//     let org = OrganizationManagement { pool };
-//
-//     tracing::info!(message="Listening on address", addr=?addr);
-//
-//     Server::builder()
-//         .add_service(OrganizationManagmentServiceServer::new(org))
-//         .serve(addr)
-//         .await?;
-//
-//     Ok(())
-// }
 
 #[tracing::instrument(err)]
 async fn create_db_connection() -> Result<Pool<Postgres>, sqlx::Error> {
-    // let url = std::env::var("DATABASE_URL")
-    //     .expect("DATABASE_URL");
     let url = "postgres://postgres@localhost?db_name=postgres&user=postgres&password=postgres";
 
     println!("databse url {}", url);
 
     tracing::info!(message="connecting to postgres", url=%url);
+
     // Create Connection Pool
     let pool = PgPoolOptions::new()
         .max_connections(5)
         .connect(&url)
         .await?;
+
     // Insert Org Info
     Ok(pool)
 }
@@ -352,16 +327,6 @@ async fn create_db_connection() -> Result<Pool<Postgres>, sqlx::Error> {
 pub async fn exec_service(
     service_config: OrgManagementServiceConfig,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    // let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
-    // health_reporter
-    //     .set_serving::<OrgManagementServiceServer<OrgManagement>>()
-    //     .await;
-    //
-    // tracing::info!(
-    //     message="Connecting to org_management table",
-    //     service_config=?service_config,
-    // );
-
     let org_management = OrganizationManagement::try_from(&service_config).await?;
 
     tracing::info!(message = "Performing migration",);
@@ -380,7 +345,6 @@ pub async fn exec_service(
                 extensions = ?request.extensions(),
             )
         })
-        // .add_service(health_service)
         .add_service(OrgManagementServiceServer::new(org_management))
         .serve(service_config.org_management_bind_address)
         .await?;

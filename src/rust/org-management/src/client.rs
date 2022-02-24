@@ -1,6 +1,3 @@
-// use org_management::orgmanagement_client::OrgClient;
-// use org_management::OrgRequest;
-
 use rust_proto::org_management::{
     org_management_service_client::OrgManagementServiceClient as _OrgManagementServiceClient,
     CreateOrgRequest,
@@ -11,7 +8,6 @@ use rust_proto::org_management::{
     CreateUserRequestProto,
     OrgManagementDeserializationError
 };
-
 
 use tonic::{
     codegen::{
@@ -75,19 +71,3 @@ where
         Ok(response.into_inner().try_into()?)
     }
 }
-
-
-
-// async fn grpc_client() -> Result<(), Box<dyn std::error::Error>> {
-//     let mut client = OrgClient::connect("http://[::1]:50051").await?;
-//
-//     let request = tonic::Request::new(OrgRequest {
-//         name: "Tonic".into(),
-//     });
-//
-//     let response = client.create_org(request).await?;
-//
-//     println!("RESPONSE={:?}", response);
-//
-//     Ok(())
-// }

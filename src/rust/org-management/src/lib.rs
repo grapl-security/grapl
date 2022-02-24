@@ -1,4 +1,3 @@
-// #![allow(warnings)]
 use std::net::SocketAddr;
 
 use structopt::StructOpt;
