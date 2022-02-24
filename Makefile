@@ -127,10 +127,6 @@ help: ## Print this help
 
 ##@ Build 🔨
 
-.PHONY: build-service-pexs
-build-service-pexs: ## Build all PEX files that are used by our service processes
-	./pants --tag="service-pex" package ::
-
 .PHONY: build-test-unit
 build-test-unit:
 	$(DOCKER_BUILDX_BAKE) \
@@ -148,14 +144,14 @@ build-test-unit-js:
 		--file ./test/docker-compose.unit-tests-js.yml
 
 .PHONY: build-test-integration
-build-test-integration: build
+build-test-integration:
 	$(DOCKER_BUILDX_BAKE) \
 		--file ./test/docker-compose.integration-tests.build.yml \
 		python-integration-tests \
 		rust-integration-tests
 
 .PHONY: build-test-e2e
-build-test-e2e: build
+build-test-e2e:
 # Any PEX tagged with `e2e-test-pex` is required for our image. This
 # seems like the most straightforward way of capturing these
 # dependencies at the moment.
@@ -164,13 +160,50 @@ build-test-e2e: build
 		--file ./test/docker-compose.integration-tests.build.yml \
 		e2e-tests
 
-.PHONY: build-docker-images
-build-docker-images: graplctl build-engagement-view
-	echo "--- Building Docker images"
-	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
+.PHONY: build-engagement-view
+build-engagement-view: ## Build website assets
+	$(MAKE) -C src/js/engagement_view build
+	cp -r \
+		"${PWD}/src/js/engagement_view/build/." \
+		"${PWD}/src/rust/grapl-web-ui/frontend/"
 
-.PHONY: build
-build: build-service-pexs build-docker-images ## Build Grapl services
+.PHONY: build-ui
+build-ui: ## Build the web UI
+build-ui: build-engagement-view
+	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml \
+		grapl-web-ui
+
+.PHONY: build-grapl-services
+build-grapl-services: ## Build all the services for the Grapl SaaS
+build-grapl-services: build-ui
+# Our Python images need their PEX files built first
+	./pants --tag="service-pex" package ::
+	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml \
+		analyzer-dispatcher \
+		analyzer-executor \
+		engagement-creator \
+		graph-merger \
+		graphql-endpoint \
+		model-plugin-deployer \
+		node-identifier \
+		node-identifier-retry \
+		osquery-generator \
+		plugin-bootstrap \
+		plugin-registry \
+		plugin-work-queue \
+		provisioner \
+		sysmon-generator
+
+.PHONY: build-local-services
+build-local-services: ## Build images used only in a local testing context
+	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml \
+		localstack \
+		postgres \
+		pulumi
+
+.PHONY: build-for-push
+build-for-push: ## Build only the images we push to our registry
+build-for-push: build-grapl-services build-test-e2e
 
 .PHONY: build-prettier-image
 build-prettier-image:
@@ -195,13 +228,6 @@ dump-artifacts-local:  # Run the script that dumps Nomad/Docker logs after test 
 	./pants run ./etc/ci_scripts/dump_artifacts -- \
 		--compose-project="${COMPOSE_PROJECT_NAME}" \
 		--dump-agent-logs
-
-.PHONY: build-engagement-view
-build-engagement-view: ## Build website assets
-	$(MAKE) -C src/js/engagement_view build
-	cp -r \
-		"${PWD}/src/js/engagement_view/build/." \
-		"${PWD}/src/rust/grapl-web-ui/frontend/"
 
 ##@ Test 🧪
 
@@ -246,8 +272,9 @@ typecheck: ## Typecheck Python Code
 	./pants check ::
 
 .PHONY: test-integration
+test-integration: ## Build and run integration tests
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
-test-integration: build-test-integration ## Build and run integration tests
+test-integration: build-grapl-services build-local-services build-test-integration
 	@$(WITH_LOCAL_GRAPL_ENV)
 	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh integration-tests 9"
 
@@ -256,8 +283,9 @@ test-grapl-template-generator:  # Test that the Grapl Template Generator spits o
 	./src/python/grapl-template-generator/grapl_template_generator_tests/integration_test.sh
 
 .PHONY: test-e2e
+test-e2e: ## Build and run e2e tests
 test-e2e: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_E2E_TESTS)
-test-e2e: build-test-e2e ## Build and run e2e tests
+test-e2e: build-grapl-services build-local-services build-test-e2e
 	@$(WITH_LOCAL_GRAPL_ENV)
 	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh e2e-tests 6"
 
@@ -284,7 +312,7 @@ test-with-env: # (Do not include help text - not to be used directly)
 	trap stopGrapl EXIT
 	@$(WITH_LOCAL_GRAPL_ENV)
 	# Bring up the Grapl environment and detach
-	$(MAKE) up
+	$(MAKE) _up
 	# Run tests and check exit codes from each test container
 	echo "--- Executing test with environment"
 	$${EXEC_TEST_COMMAND}
@@ -358,10 +386,15 @@ format: format-python format-shell format-prettier format-rust format-hcl format
 ##@ Local Grapl 💻
 
 .PHONY: up
-up: build ## Bring up local Grapl and detach to return control to tty
+up: ## Bring up local Grapl and detach to return control to tty
+up: build-grapl-services build-local-services _up
+
+# NOTE: Internal target to decouple the building of images from the
+# running of them. Do not invoke this directly.
+.PHONY: _up
+_up:
 	# Primarily used for bringing up an environment for integration testing.
 	# For use with a project name consider setting COMPOSE_PROJECT_NAME env var
-	# Usage: `make up`
 	@$(WITH_LOCAL_GRAPL_ENV)
 	# Start the Nomad agent
 	$(MAKE) stop-nomad-detach; $(MAKE) start-nomad-detach
