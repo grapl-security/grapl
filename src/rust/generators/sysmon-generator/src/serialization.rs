@@ -1,7 +1,6 @@
 use std::str::FromStr;
 
 use grapl_service::decoder::decompress::PayloadDecompressionError;
-use prost;
 use sqs_executor::{
     errors::{
         CheckedError,
@@ -28,12 +27,6 @@ impl CheckedError for SysmonDecoderError {
             Self::DecompressionError(_) => Recoverable::Persistent,
             Self::TimeError(_) => Recoverable::Persistent,
         }
-    }
-}
-
-impl From<prost::DecodeError> for SysmonDecoderError {
-    fn from(err: prost::DecodeError) -> Self {
-        SysmonDecoderError::DeserializeError(err.to_string())
     }
 }
 

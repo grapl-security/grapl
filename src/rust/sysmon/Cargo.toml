@@ -11,9 +11,6 @@ readme = "README.md"
 
 [dependencies]
 failure = "0.1.8"
-prost = "0.9.0"
-prost-types = "0.9.0"
-rust-proto = { path = "../rust-proto/" }
 serde-xml-rs = "0.5.1"
 serde = { version = "1.0.130", features = ["derive"] }
 derive_is_enum_variant = "0.1.1"
