@@ -55,6 +55,11 @@ variable "test_user_name" {
   description = "The name of the test user"
 }
 
+variable "test_user_password_secret_id" {
+  type        = string
+  description = "The SecretsManager SecretID for the test user's password"
+}
+
 variable "py_log_level" {
   type        = string
   description = "Controls the logging behavior of Python-based services."
@@ -96,13 +101,14 @@ job "grapl-provision" {
         # It's fine if `provision` only hits one alpha.
         MG_ALPHAS = "localhost:9080"
 
-        STACK_NAME                    = var.stack_name
-        AWS_DEFAULT_REGION            = var.aws_region
-        GRAPL_SCHEMA_TABLE            = var.schema_table_name
-        GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name
-        GRAPL_USER_AUTH_TABLE         = var.user_auth_table
-        GRAPL_TEST_USER_NAME          = var.test_user_name
-        GRAPL_LOG_LEVEL               = var.py_log_level
+        STACK_NAME                         = var.stack_name
+        AWS_DEFAULT_REGION                 = var.aws_region
+        GRAPL_SCHEMA_TABLE                 = var.schema_table_name
+        GRAPL_SCHEMA_PROPERTIES_TABLE      = var.schema_properties_table_name
+        GRAPL_USER_AUTH_TABLE              = var.user_auth_table
+        GRAPL_TEST_USER_NAME               = var.test_user_name
+        GRAPL_TEST_USER_PASSWORD_SECRET_ID = var.test_user_password_secret_id
+        GRAPL_LOG_LEVEL                    = var.py_log_level
       }
     }
 

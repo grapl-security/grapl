@@ -82,6 +82,11 @@ variable "test_user_name" {
   description = "The name of the test user"
 }
 
+variable "test_user_password_secret_id" {
+  type        = string
+  description = "The SecretsManager SecretID for the test user's password"
+}
+
 locals {
   log_level = "DEBUG"
 }
@@ -196,7 +201,9 @@ EOF
         STACK_NAME      = var.stack_name
         GRAPL_LOG_LEVEL = local.log_level
 
-        GRAPL_TEST_USER_NAME = var.test_user_name # Needed for GraplWebClient
+        # Needed for GraplWebClient
+        GRAPL_TEST_USER_NAME               = var.test_user_name
+        GRAPL_TEST_USER_PASSWORD_SECRET_ID = var.test_user_password_secret_id
 
         MG_ALPHAS      = "localhost:9080"
         RUST_BACKTRACE = 1

@@ -86,6 +86,7 @@ def main() -> None:
         "schema_table_name": grapl_stack.schema_table_name,
         "sysmon_generator_queue": grapl_stack.sysmon_generator_queue,
         "test_user_name": grapl_stack.test_user_name,
+        "test_user_password_secret_id": grapl_stack.test_user_password_secret_id,
     }
 
     e2e_tests = NomadJob(
@@ -162,6 +163,9 @@ class GraplStack:
         self.kafka_e2e_sasl_password = require_str("kafka-e2e-sasl-password")
         self.kafka_e2e_consumer_group_name = require_str(
             "kafka-e2e-consumer-group-name"
+        )
+        self.test_user_password_secret_id = require_str(
+            "test-user-password-secret-id"
         )
 
 
