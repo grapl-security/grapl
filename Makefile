@@ -206,6 +206,12 @@ build-grapl-service-prerequisites: build-engagement-view
 build-image-prerequisites: ## Build all dependencies that must be copied into our images that we push to our registry
 build-image-prerequisites: build-grapl-service-prerequisites build-e2e-pex-files
 
+.PHONY: build-local-infrastructure
+build-local-infrastructure: build-grapl-service-prerequisites
+	@echo "--- Building the Grapl SaaS service images and local-only images"
+	$(DOCKER_BUILDX_BAKE) --file "${BUILDX_BAKE_HCL_FILE}" \
+		local-infrastructure
+
 .PHONY: build-test-e2e
 build-test-e2e: build-e2e-pex-files
 	@echo "--- Building e2e testing image"
@@ -215,12 +221,6 @@ build-test-e2e: build-e2e-pex-files
 build-test-integration:
 	@echo "--- Building integration test images"
 	$(DOCKER_BUILDX_BAKE) --file "${BUILDX_BAKE_HCL_FILE}" integration-tests
-
-.PHONY: build-local-infrastructure
-build-local-infrastructure: build-grapl-service-prerequisites
-	@echo "--- Building the Grapl SaaS service images and local-only images"
-	$(DOCKER_BUILDX_BAKE) --file "${BUILDX_BAKE_HCL_FILE}" \
-		local-infrastructure
 
 ########################################################################
 
