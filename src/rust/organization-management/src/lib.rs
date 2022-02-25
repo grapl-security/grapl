@@ -2,8 +2,8 @@ use std::net::SocketAddr;
 
 use structopt::StructOpt;
 
-pub mod server;
 pub mod client;
+pub mod server;
 
 #[derive(StructOpt, Debug)]
 pub struct OrganizationManagementServiceConfig {

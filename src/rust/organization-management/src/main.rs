@@ -1,6 +1,6 @@
-use organization_management::OrganizationManagementServiceConfig;
-use organization_management::server::{
-    exec_service,
+use organization_management::{
+    server::exec_service,
+    OrganizationManagementServiceConfig,
 };
 use structopt::StructOpt;
 
@@ -12,5 +12,4 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     exec_service(config).await?;
     Ok(())
-
 }

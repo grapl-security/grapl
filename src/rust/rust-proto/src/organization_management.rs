@@ -1,14 +1,13 @@
 pub use crate::graplinc::grapl::api::organization_management::v1beta1::{
     organization_management_service_client,
     organization_management_service_server,
-    CreateOrganizationRequest as CreateOrganizationRequestProto,
-    CreateUserRequest as CreateUserRequestProto,
     ChangePasswordRequest as ChangePasswordRequestProto,
-    CreateOrganizationResponse as CreateOrganizationResponseProto,
-    CreateUserResponse as CreateUserResponseProto,
     ChangePasswordResponse as ChangePasswordResponseProto,
+    CreateOrganizationRequest as CreateOrganizationRequestProto,
+    CreateOrganizationResponse as CreateOrganizationResponseProto,
+    CreateUserRequest as CreateUserRequestProto,
+    CreateUserResponse as CreateUserResponseProto,
 };
-
 
 #[derive(Debug, thiserror::Error)]
 pub enum OrganizationManagementDeserializationError {
@@ -18,22 +17,31 @@ pub enum OrganizationManagementDeserializationError {
     EmptyField(&'static str),
 }
 
-fn validate_string(s: &str, field_name: &'static str) -> Result<(), OrganizationManagementDeserializationError> {
+fn validate_string(
+    s: &str,
+    field_name: &'static str,
+) -> Result<(), OrganizationManagementDeserializationError> {
     if s.is_empty() {
-        Err(OrganizationManagementDeserializationError::EmptyField(field_name))
+        Err(OrganizationManagementDeserializationError::EmptyField(
+            field_name,
+        ))
     } else {
         Ok(())
     }
 }
 
-fn validate_bytes(s: &[u8], field_name: &'static str) -> Result<(), OrganizationManagementDeserializationError> {
+fn validate_bytes(
+    s: &[u8],
+    field_name: &'static str,
+) -> Result<(), OrganizationManagementDeserializationError> {
     if s.is_empty() {
-        Err(OrganizationManagementDeserializationError::EmptyField(field_name))
+        Err(OrganizationManagementDeserializationError::EmptyField(
+            field_name,
+        ))
     } else {
         Ok(())
     }
 }
-
 
 #[derive(Clone, Debug)]
 pub struct CreateOrganizationRequest {
@@ -48,20 +56,30 @@ impl TryFrom<CreateOrganizationRequestProto> for CreateOrganizationRequest {
     type Error = OrganizationManagementDeserializationError;
 
     fn try_from(value: CreateOrganizationRequestProto) -> Result<Self, Self::Error> {
-        validate_string(&value.organization_display_name, "CreateOrganizationRequestProto.organization_display_name")?;
-        validate_string(&value.admin_username, "CreateOrganizationRequestProto.admin_username")?;
-        validate_string(&value.admin_email, "CreateOrganizationRequestProto.admin_email")?;
-        validate_bytes(&value.admin_password, "CreateOrganizationRequestProto.admin_password")?;
+        validate_string(
+            &value.organization_display_name,
+            "CreateOrganizationRequestProto.organization_display_name",
+        )?;
+        validate_string(
+            &value.admin_username,
+            "CreateOrganizationRequestProto.admin_username",
+        )?;
+        validate_string(
+            &value.admin_email,
+            "CreateOrganizationRequestProto.admin_email",
+        )?;
+        validate_bytes(
+            &value.admin_password,
+            "CreateOrganizationRequestProto.admin_password",
+        )?;
 
-        Ok(
-            Self {
-                organization_display_name: value.organization_display_name,
-                admin_username: value.admin_username,
-                admin_email: value.admin_email,
-                admin_password: value.admin_password,
-                should_reset_password: value.should_reset_password,
-            }
-        )
+        Ok(Self {
+            organization_display_name: value.organization_display_name,
+            admin_username: value.admin_username,
+            admin_email: value.admin_email,
+            admin_password: value.admin_password,
+            should_reset_password: value.should_reset_password,
+        })
     }
 }
 
@@ -84,9 +102,7 @@ impl TryFrom<CreateOrganizationResponseProto> for CreateOrganizationResponse {
     type Error = OrganizationManagementDeserializationError;
 
     fn try_from(_value: CreateOrganizationResponseProto) -> Result<Self, Self::Error> {
-        Ok(
-            Self {}
-        )
+        Ok(Self {})
     }
 }
 
@@ -96,7 +112,6 @@ impl From<CreateOrganizationResponse> for CreateOrganizationResponseProto {
     }
 }
 
-
 #[derive(Clone)]
 pub struct CreateUserRequest {
     pub organization_id: uuid::Uuid,
@@ -105,12 +120,12 @@ pub struct CreateUserRequest {
     pub password: Vec<u8>,
 }
 
-
 impl TryFrom<CreateUserRequestProto> for CreateUserRequest {
     type Error = OrganizationManagementDeserializationError;
 
     fn try_from(value: CreateUserRequestProto) -> Result<Self, Self::Error> {
-        let organization_id = value.organization_id
+        let organization_id = value
+            .organization_id
             .ok_or(Self::Error::MissingRequiredField(
                 "CreateUserRequest.organization_id",
             ))?
@@ -119,14 +134,12 @@ impl TryFrom<CreateUserRequestProto> for CreateUserRequest {
         validate_string(&value.email, "CreateUserRequest.email")?;
         validate_bytes(&value.password, "CreateUserRequest.password")?;
 
-        Ok(
-            Self {
-                organization_id,
-                name: value.name,
-                email: value.email,
-                password: value.password,
-            }
-        )
+        Ok(Self {
+            organization_id,
+            name: value.name,
+            email: value.email,
+            password: value.password,
+        })
     }
 }
 
@@ -144,14 +157,11 @@ impl From<CreateUserRequest> for CreateUserRequestProto {
 #[derive(Clone)]
 pub struct CreateUserResponse {}
 
-
 impl TryFrom<CreateUserResponseProto> for CreateUserResponse {
     type Error = OrganizationManagementDeserializationError;
 
     fn try_from(_value: CreateUserResponseProto) -> Result<Self, Self::Error> {
-        Ok(
-            Self {}
-        )
+        Ok(Self {})
     }
 }
 
@@ -160,7 +170,6 @@ impl From<CreateUserResponse> for CreateUserResponseProto {
         Self {}
     }
 }
-
 
 #[derive(Clone)]
 pub struct ChangePasswordRequest {
@@ -173,7 +182,8 @@ impl TryFrom<ChangePasswordRequestProto> for ChangePasswordRequest {
     type Error = OrganizationManagementDeserializationError;
 
     fn try_from(value: ChangePasswordRequestProto) -> Result<Self, Self::Error> {
-        let user_id = value.user_id
+        let user_id = value
+            .user_id
             .ok_or(Self::Error::MissingRequiredField(
                 "ChangePasswordRequest.user_id",
             ))?
@@ -181,13 +191,11 @@ impl TryFrom<ChangePasswordRequestProto> for ChangePasswordRequest {
         validate_bytes(&value.old_password, "ChangePasswordRequest.old_password")?;
         validate_bytes(&value.new_password, "ChangePasswordRequest.new_password")?;
 
-        Ok(
-            Self {
-                user_id,
-                old_password: value.old_password,
-                new_password: value.new_password,
-            }
-        )
+        Ok(Self {
+            user_id,
+            old_password: value.old_password,
+            new_password: value.new_password,
+        })
     }
 }
 
@@ -208,9 +216,7 @@ impl TryFrom<ChangePasswordResponseProto> for ChangePasswordResponse {
     type Error = OrganizationManagementDeserializationError;
 
     fn try_from(_value: ChangePasswordResponseProto) -> Result<Self, Self::Error> {
-        Ok(
-            Self {}
-        )
+        Ok(Self {})
     }
 }
 
@@ -219,6 +225,3 @@ impl From<ChangePasswordResponse> for ChangePasswordResponseProto {
         Self {}
     }
 }
-
-
-

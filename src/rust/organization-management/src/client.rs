@@ -1,14 +1,15 @@
+use std::convert::TryInto;
+
 use rust_proto::organization_management::{
     organization_management_service_client::OrganizationManagementServiceClient as _OrganizationManagementServiceClient,
     CreateOrganizationRequest,
+    CreateOrganizationRequestProto,
     CreateOrganizationResponse,
     CreateUserRequest,
-    CreateUserResponse,
-    CreateOrganizationRequestProto,
     CreateUserRequestProto,
-    OrganizationManagementDeserializationError
+    CreateUserResponse,
+    OrganizationManagementDeserializationError,
 };
-
 use tonic::{
     codegen::{
         Body,
@@ -16,11 +17,6 @@ use tonic::{
     },
     Status,
 };
-
-use std::convert::{
-    TryInto,
-};
-
 
 #[derive(Debug, thiserror::Error)]
 pub enum OrganizationManagementServiceClientError {
@@ -31,7 +27,7 @@ pub enum OrganizationManagementServiceClientError {
 }
 
 #[derive(Debug)]
-pub struct OrganizationManagementServiceClient<T>{
+pub struct OrganizationManagementServiceClient<T> {
     inner: _OrganizationManagementServiceClient<T>,
 }
 
@@ -56,7 +52,6 @@ where
             .create_organization(CreateOrganizationRequestProto::from(request))
             .await?;
         Ok(response.into_inner().try_into()?)
-
     }
 
     /// Creates a new user

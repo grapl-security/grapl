@@ -337,24 +337,6 @@ def main() -> None:
 
         local_grapl_core_vars: Final[NomadVars] = dict(
             plugin_registry_db_hostname=plugin_registry_db.hostname,
-            aws_config = cast(aws.config.vars._ExportableConfig, aws.config)
-        assert aws_config.access_key
-        assert aws_config.secret_key
-
-        local_grapl_core_job_vars: Final[NomadVars] = dict(
-            # The vars with a leading underscore indicate that the hcl local version of the variable should be used
-            # instead of the var version.
-            _aws_endpoint=aws_endpoint,
-            _redis_endpoint=redis_endpoint,
-            aws_access_key_id=aws_config.access_key,
-            aws_access_key_secret=aws_config.secret_key,
-            container_images=_container_images({}),
-            rust_log=rust_log_levels,
-            organization_management_db_hostname="LOCAL_GRAPL_REPLACE_IP",
-            organization_management_db_port=str(organization_management_db.port),
-            organization_management_db_username=organization_management_db.username,
-            organization_management_db_password=organization_management_db.password,
-            plugin_registry_db_hostname="LOCAL_GRAPL_REPLACE_IP",
             plugin_registry_db_port=str(plugin_registry_db.port),
             plugin_registry_db_username=plugin_registry_db.username,
             plugin_registry_db_password=plugin_registry_db.password,
@@ -363,8 +345,37 @@ def main() -> None:
             plugin_work_queue_db_username=plugin_work_queue_db.username,
             plugin_work_queue_db_password=plugin_work_queue_db.password,
             redis_endpoint=redis_endpoint,
+            organization_management_db_hostname="LOCAL_GRAPL_REPLACE_IP",
+            organization_management_db_port=str(organization_management_db.port),
+            organization_management_db_username=organization_management_db.username,
+            organization_management_db_password=organization_management_db.password,
             **nomad_inputs,
         )
+
+        # local_grapl_core_job_vars: Final[NomadVars] = dict(
+        #     # The vars with a leading underscore indicate that the hcl local version of the variable should be used
+        #     # instead of the var version.
+        #     _aws_endpoint=aws_endpoint,
+        #     _redis_endpoint=redis_endpoint,
+        #     aws_access_key_id=aws_config.access_key,
+        #     aws_access_key_secret=aws_config.secret_key,
+        #     container_images=_container_images({}),
+        #     rust_log=rust_log_levels,
+        #     organization_management_db_hostname="LOCAL_GRAPL_REPLACE_IP",
+        #     organization_management_db_port=str(organization_management_db.port),
+        #     organization_management_db_username=organization_management_db.username,
+        #     organization_management_db_password=organization_management_db.password,
+        #     plugin_registry_db_hostname="LOCAL_GRAPL_REPLACE_IP",
+        #     plugin_registry_db_port=str(plugin_registry_db.port),
+        #     plugin_registry_db_username=plugin_registry_db.username,
+        #     plugin_registry_db_password=plugin_registry_db.password,
+        #     plugin_work_queue_db_hostname=plugin_work_queue_db.hostname,
+        #     plugin_work_queue_db_port=str(plugin_work_queue_db.port),
+        #     plugin_work_queue_db_username=plugin_work_queue_db.username,
+        #     plugin_work_queue_db_password=plugin_work_queue_db.password,
+        #     redis_endpoint=redis_endpoint,
+        #     **nomad_inputs,
+        # )
 
         nomad_grapl_core = NomadJob(
             "grapl-core",
