@@ -17,7 +17,7 @@
 
 # IMAGE_TAG is the "master variable"; if it is set to something other
 # than "latest", we will build images suitable for production
-# usage. If it is unset, or "latest", we'll be creating images for
+# usage. If it is unset, "dev", or "latest", we'll be creating images for
 # local usage only.
 #
 # In general, you'll only set this (via an environment variable when
