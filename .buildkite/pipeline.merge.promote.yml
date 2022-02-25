@@ -11,7 +11,7 @@ steps:
   # all the artifacts are in place first.
   - label: ":cloudsmith: Promote artifacts"
     plugins:
-      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - CLOUDSMITH_API_KEY

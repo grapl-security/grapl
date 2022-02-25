@@ -1,24 +1,24 @@
-import os
 import sys
-from pathlib import Path
 
 sys.path.insert(0, "..")
 
+import os
 from typing import Mapping, Optional, cast
 
 import pulumi_aws as aws
-import pulumi_nomad as nomad
 from infra import config
+from infra.artifacts import ArtifactGetter
 from infra.autotag import register_auto_tags
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
-from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
+from infra.hashicorp_provider import get_nomad_provider_address
 from infra.nomad_job import NomadJob, NomadVars
+from infra.path import path_from_root
 
 import pulumi
 
 
 def _e2e_container_images(
-    artifacts: Mapping[str, str], require_artifact: bool = False
+    artifacts: ArtifactGetter,
 ) -> Mapping[str, DockerImageId]:
     """
     Build a map of {task name -> docker image identifier}.
@@ -26,7 +26,6 @@ def _e2e_container_images(
     builder = DockerImageIdBuilder(
         container_repository=config.container_repository(),
         artifacts=artifacts,
-        require_artifact=require_artifact,
     )
 
     return {
@@ -35,7 +34,7 @@ def _e2e_container_images(
 
 
 def _integration_container_images(
-    artifacts: Mapping[str, str], require_artifact: bool = False
+    artifacts: ArtifactGetter,
 ) -> Mapping[str, DockerImageId]:
     """
     Build a map of {task name -> docker image identifier}.
@@ -43,7 +42,6 @@ def _integration_container_images(
     builder = DockerImageIdBuilder(
         container_repository=config.container_repository(),
         artifacts=artifacts,
-        require_artifact=require_artifact,
     )
 
     return {
@@ -54,40 +52,33 @@ def _integration_container_images(
 
 def main() -> None:
     ##### Preamble
-    stack_name = pulumi.get_stack()
+    stack_name = config.STACK_NAME
 
     pulumi_config = pulumi.Config()
-    artifacts = pulumi_config.get_object("artifacts") or {}
+    artifacts = ArtifactGetter.from_config(pulumi_config)
 
     # These tags will be added to all provisioned infrastructure
     # objects.
-    register_auto_tags({"grapl deployment": stack_name})
+    register_auto_tags(
+        {"pulumi:project": pulumi.get_project(), "pulumi:stack": stack_name}
+    )
 
     nomad_provider: Optional[pulumi.ProviderResource] = None
     if not config.LOCAL_GRAPL:
         nomad_server_stack = pulumi.StackReference(f"grapl/nomad/{stack_name}")
-        nomad_provider = get_hashicorp_provider_address(
-            nomad, "nomad", nomad_server_stack
-        )
+        nomad_provider = get_nomad_provider_address(nomad_server_stack)
 
     ##### Business Logic
     grapl_stack = GraplStack(stack_name)
 
-    aws_config = cast(aws.config.vars._ExportableConfig, aws.config)
-    access_key = aws_config.access_key
-    secret_key = aws_config.secret_key
-
     e2e_test_job_vars: NomadVars = {
         "analyzer_bucket": grapl_stack.analyzer_bucket,
-        "aws_access_key_id": access_key,
-        "aws_access_key_secret": secret_key,
-        "_aws_endpoint": grapl_stack.aws_endpoint,
+        "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
         "aws_region": aws.get_region().name,
-        "container_images": _e2e_container_images(
-            artifacts, require_artifact=(not config.LOCAL_GRAPL)
-        ),
-        "deployment_name": grapl_stack.deployment_name,
-        "_kafka_bootstrap_servers": grapl_stack.kafka_bootstrap_servers,
+        "container_images": _e2e_container_images(artifacts),
+        # Used by graplctl to determine if it should manual-event or not
+        "stack_name": grapl_stack.upstream_stack_name,
+        "kafka_bootstrap_servers": grapl_stack.kafka_bootstrap_servers,
         "kafka_sasl_username": grapl_stack.kafka_e2e_sasl_username,
         "kafka_sasl_password": grapl_stack.kafka_e2e_sasl_password,
         "kafka_consumer_group_name": grapl_stack.kafka_e2e_consumer_group_name,
@@ -96,11 +87,12 @@ def main() -> None:
         "schema_table_name": grapl_stack.schema_table_name,
         "sysmon_generator_queue": grapl_stack.sysmon_generator_queue,
         "test_user_name": grapl_stack.test_user_name,
+        "test_user_password_secret_id": grapl_stack.test_user_password_secret_id,
     }
 
     e2e_tests = NomadJob(
         "e2e-tests",
-        jobspec=Path("../../nomad/e2e-tests.nomad").resolve(),
+        jobspec=path_from_root("nomad/e2e-tests.nomad").resolve(),
         vars=e2e_test_job_vars,
         opts=pulumi.ResourceOptions(provider=nomad_provider),
     )
@@ -111,23 +103,19 @@ def main() -> None:
         # Grapl repo.
 
         integration_test_job_vars: NomadVars = {
-            "aws_access_key_id": access_key,
-            "aws_access_key_secret": secret_key,
-            "_aws_endpoint": grapl_stack.aws_endpoint,
+            "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
             "aws_region": aws.get_region().name,
-            "container_images": _integration_container_images(
-                artifacts, require_artifact=(not config.LOCAL_GRAPL)
-            ),
-            "deployment_name": grapl_stack.deployment_name,
+            "container_images": _integration_container_images(artifacts),
             "docker_user": os.environ["DOCKER_USER"],
             "grapl_root": os.environ["GRAPL_ROOT"],
-            "_kafka_bootstrap_servers": grapl_stack.kafka_bootstrap_servers,
+            "kafka_bootstrap_servers": grapl_stack.kafka_bootstrap_servers,
             "kafka_sasl_username": grapl_stack.kafka_e2e_sasl_username,
             "kafka_sasl_password": grapl_stack.kafka_e2e_sasl_password,
-            "_redis_endpoint": grapl_stack.redis_endpoint,
+            "redis_endpoint": grapl_stack.redis_endpoint,
             "schema_properties_table_name": grapl_stack.schema_properties_table_name,
             "test_user_name": grapl_stack.test_user_name,
-            "_plugin_work_queue_db_hostname": grapl_stack.plugin_work_queue_db_hostname,
+            "test_user_password_secret_id": grapl_stack.test_user_password_secret_id,
+            "plugin_work_queue_db_hostname": grapl_stack.plugin_work_queue_db_hostname,
             "plugin_work_queue_db_port": grapl_stack.plugin_work_queue_db_port,
             "plugin_work_queue_db_username": grapl_stack.plugin_work_queue_db_username,
             "plugin_work_queue_db_password": grapl_stack.plugin_work_queue_db_password,
@@ -135,7 +123,7 @@ def main() -> None:
 
         integration_tests = NomadJob(
             "integration-tests",
-            jobspec=Path("../../nomad/local/integration-tests.nomad").resolve(),
+            jobspec=path_from_root("nomad/local/integration-tests.nomad").resolve(),
             vars=integration_test_job_vars,
             opts=pulumi.ResourceOptions(provider=nomad_provider),
         )
@@ -143,17 +131,16 @@ def main() -> None:
 
 class GraplStack:
     def __init__(self, stack_name: str) -> None:
-        ref_name = "local-grapl" if config.LOCAL_GRAPL else f"grapl/grapl/{stack_name}"
-        ref = pulumi.StackReference(ref_name)
+        self.upstream_stack_name = (
+            "local-grapl" if config.LOCAL_GRAPL else f"grapl/grapl/{stack_name}"
+        )
+        ref = pulumi.StackReference(self.upstream_stack_name)
 
         def require_str(key: str) -> str:
             return cast(str, ref.require_output(key))
 
-        # Only specified if LOCAL_GRAPL
-        self.aws_endpoint = cast(Optional[str], ref.get_output("aws-endpoint"))
-
+        self.aws_env_vars_for_local = require_str("aws-env-vars-for-local")
         self.analyzer_bucket = require_str("analyzers-bucket")
-        self.deployment_name = require_str("deployment-name")
         self.redis_endpoint = require_str("redis-endpoint")
         self.schema_properties_table_name = require_str("schema-properties-table")
         self.schema_table_name = require_str("schema-table")
@@ -178,6 +165,7 @@ class GraplStack:
         self.kafka_e2e_consumer_group_name = require_str(
             "kafka-e2e-consumer-group-name"
         )
+        self.test_user_password_secret_id = require_str("test-user-password-secret-id")
 
 
 if __name__ == "__main__":

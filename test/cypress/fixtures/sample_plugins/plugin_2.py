@@ -1,1 +1,0 @@
-print('plugin_2 test upload file')

@@ -3,45 +3,22 @@ version: "3.8"
 
 services:
   rust-integration-tests:
-    image: rust-integration-tests:${TAG:-latest}
+    image: rust-integration-tests:${TAG}
     build:
       context: ${PWD}/src
       dockerfile: rust/Dockerfile
       target: integration-tests
 
   python-integration-tests:
-    image: python-integration-tests:${TAG:-latest}
+    image: python-integration-tests:${TAG}
     build:
       context: ${PWD}
       dockerfile: src/python/Dockerfile
       target: python-integration-tests
 
   e2e-tests:
-    image: e2e-tests:${TAG:-latest}
+    image: e2e-tests:${TAG}
     build:
       context: .
       dockerfile: ./src/python/Dockerfile
       target: e2e-tests
-
-  # No Docker image for python integration tests - we run them against the Host OS!
-
-  # TODO: Re-enable these tests after the following issues are resolved:
-  # - https://github.com/grapl-security/issue-tracker/issues/385
-  # - https://github.com/grapl-security/issue-tracker/issues/386
-  # - https://github.com/grapl-security/issue-tracker/issues/387
-  # cypress-integration-tests:
-  #   image: grapl/grapl-cypress:${TAG:-latest}
-  #   build:
-  #     context: ${PWD}/test
-  #     dockerfile: ./Dockerfile.cypress
-  #     target: grapl-cypress
-  #   user: ${UID}:${GID}
-  #   volumes:
-  #     - "./integration-outputs/screenshots:/test/cypress/screenshots"
-  #     - "./integration-outputs/videos:/test/cypress/videos"
-  #   command: |
-  #     /bin/bash -c "
-  #       CYPRESS_BASE_URL=http://${GRAPL_API_HOST}:${GRAPL_HTTP_FRONTEND_PORT} cypress run --browser chrome --headless
-  #     "
-  #   environment:
-  #     - GRAPL_API_HOST

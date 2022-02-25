@@ -14,9 +14,9 @@ variable "aws_region" {
   type = string
 }
 
-variable "deployment_name" {
+variable "stack_name" {
   type        = string
-  description = "The deployment name"
+  description = "The Pulumi stack name."
 }
 
 variable "analyzer_bucket" {
@@ -44,25 +44,20 @@ variable "schema_properties_table_name" {
   description = "What is the name of the schema properties table?"
 }
 
-variable "aws_access_key_id" {
+variable "aws_env_vars_for_local" {
   type        = string
-  description = "The aws access key id used to interact with AWS."
-  default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_ID"
+  description = <<EOF
+With local-grapl, we have to inject:
+- an endpoint
+- an access key
+- a secret key
+With prod, these are all taken from the EC2 Instance Metadata in prod.
+We have to provide a default value in prod; otherwise you can end up with a 
+weird nomad state parse error.
+EOF
 }
 
-variable "aws_access_key_secret" {
-  type        = string
-  description = "The aws access key secret used to interact with AWS."
-  default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_SECRET"
-}
-
-variable "_aws_endpoint" {
-  type        = string
-  description = "The endpoint in which we can expect to find and interact with AWS."
-  default     = "DUMMY_LOCAL_AWS_ENDPOINT"
-}
-
-variable "_kafka_bootstrap_servers" {
+variable "kafka_bootstrap_servers" {
   type        = string
   description = "Comma separated host:port pairs specifying which brokers clients should connect to initially."
 }
@@ -87,23 +82,13 @@ variable "test_user_name" {
   description = "The name of the test user"
 }
 
+variable "test_user_password_secret_id" {
+  type        = string
+  description = "The SecretsManager SecretID for the test user's password"
+}
+
 locals {
   log_level = "DEBUG"
-
-  # Prefer these over their `var` equivalents
-  aws_endpoint = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
-
-  kafka_bootstrap_servers = replace(var._kafka_bootstrap_servers, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
-
-  # This is used to conditionally submit env variables via template stanzas.
-  local_only_env_vars = <<EOH
-GRAPL_AWS_ENDPOINT          = ${local.aws_endpoint}
-GRAPL_AWS_ACCESS_KEY_ID     = ${var.aws_access_key_id}
-GRAPL_AWS_ACCESS_KEY_SECRET = ${var.aws_access_key_secret}
-EOH
-  # We need to submit an env var otherwise you can end up with a weird nomad state parse error.
-  aws_only_env_vars              = "DUMMY_VAR=TRUE"
-  conditionally_defined_env_vars = (var._aws_endpoint == "http://LOCAL_GRAPL_REPLACE_IP:4566") ? local.local_only_env_vars : local.aws_only_env_vars
 }
 
 job "e2e-tests" {
@@ -166,14 +151,14 @@ EOF
 
       # This writes an env file that gets read by the task automatically
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "e2e-tests-setup.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
       env {
-        GRAPL_REGION    = var.aws_region
-        DEPLOYMENT_NAME = var.deployment_name
+        GRAPL_REGION = var.aws_region
+        STACK_NAME   = var.stack_name
 
         GRAPL_ANALYZERS_BUCKET       = var.analyzer_bucket
         GRAPL_SYSMON_GENERATOR_QUEUE = var.sysmon_generator_queue
@@ -182,9 +167,6 @@ EOF
         # These are needed due to graplctl's idempotency checks
         GRAPL_SCHEMA_TABLE            = var.schema_table_name
         GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name
-
-        # TODO: I'm not sure why we need GRAPL_VERSION=
-        GRAPL_VERSION = var.deployment_name
       }
 
       # Run `e2e-tests-setup` before `e2e-tests`
@@ -203,8 +185,8 @@ EOF
 
       # This writes an env file that gets read by the task automatically
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "e2e-tests.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
@@ -216,16 +198,18 @@ EOF
         GRAPL_API_HOST           = "${NOMAD_UPSTREAM_IP_web-ui}"
         GRAPL_HTTP_FRONTEND_PORT = "${NOMAD_UPSTREAM_PORT_web-ui}"
 
-        DEPLOYMENT_NAME = var.deployment_name
+        STACK_NAME      = var.stack_name
         GRAPL_LOG_LEVEL = local.log_level
 
-        GRAPL_TEST_USER_NAME = var.test_user_name # Needed for GraplWebClient
+        # Needed for GraplWebClient
+        GRAPL_TEST_USER_NAME               = var.test_user_name
+        GRAPL_TEST_USER_PASSWORD_SECRET_ID = var.test_user_password_secret_id
 
         MG_ALPHAS      = "localhost:9080"
         RUST_BACKTRACE = 1
         RUST_LOG       = local.log_level
 
-        KAFKA_BOOTSTRAP_SERVERS   = local.kafka_bootstrap_servers
+        KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
         KAFKA_SASL_USERNAME       = var.kafka_sasl_username
         KAFKA_SASL_PASSWORD       = var.kafka_sasl_password
         KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_group_name

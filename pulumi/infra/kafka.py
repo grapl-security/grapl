@@ -3,6 +3,7 @@ from __future__ import annotations
 import dataclasses
 from typing import Any, Mapping, Optional, Sequence, TypeVar, cast
 
+from infra import config
 from pulumi.stack_reference import StackReference
 from pulumi_kafka import Provider
 from pulumi_kafka import Topic as KafkaTopic
@@ -166,7 +167,7 @@ class Kafka(pulumi.ComponentResource):
 
     def bootstrap_servers(self) -> pulumi.Output[str]:
         if self.confluent_environment is None:  # local-grapl
-            return pulumi.Output.from_input("LOCAL_GRAPL_REPLACE_IP:19092")
+            return pulumi.Output.from_input(f"{config.HOST_IP_IN_NOMAD}:19092")
         else:
             return self.confluent_environment.apply(lambda e: e.bootstrap_servers)
 

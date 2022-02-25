@@ -14,35 +14,25 @@ variable "aws_region" {
   type = string
 }
 
-variable "deployment_name" {
+variable "aws_env_vars_for_local" {
   type        = string
-  description = "The deployment name"
+  description = <<EOF
+With local-grapl, we have to inject:
+- an endpoint
+- an access key
+- a secret key
+With prod, these are all taken from the EC2 Instance Metadata in prod.
+We have to provide a default value in prod; otherwise you can end up with a 
+weird nomad state parse error.
+EOF
 }
 
-variable "aws_access_key_id" {
+variable "redis_endpoint" {
   type        = string
-  description = "The aws access key id used to interact with AWS."
-  default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_ID"
+  description = "Where can services find Redis?"
 }
 
-variable "aws_access_key_secret" {
-  type        = string
-  description = "The aws access key secret used to interact with AWS."
-  default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_SECRET"
-}
-
-variable "_aws_endpoint" {
-  type        = string
-  description = "The endpoint in which we can expect to find and interact with AWS."
-  default     = "DUMMY_LOCAL_AWS_ENDPOINT"
-}
-
-variable "_redis_endpoint" {
-  type        = string
-  description = "On which port can services find redis?"
-}
-
-variable "_kafka_bootstrap_servers" {
+variable "kafka_bootstrap_servers" {
   type        = string
   description = "Comma separated host:port pairs specifying which brokers clients should connect to initially."
 }
@@ -67,6 +57,11 @@ variable "test_user_name" {
   description = "The name of the test user"
 }
 
+variable "test_user_password_secret_id" {
+  type        = string
+  description = "The SecretsManager SecretID for the test user's password"
+}
+
 variable "docker_user" {
   type        = string
   description = "The UID:GID pair to run as inside the Docker container"
@@ -77,7 +72,7 @@ variable "grapl_root" {
   description = "Where to find the Grapl repo on the host OS (where Nomad runs)."
 }
 
-variable "_plugin_work_queue_db_hostname" {
+variable "plugin_work_queue_db_hostname" {
   type        = string
   description = "The host for the local plugin work queue db"
 }
@@ -102,25 +97,7 @@ variable "plugin_work_queue_db_password" {
 locals {
   log_level = "DEBUG"
 
-  aws_endpoint = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
-
-  # This is used to conditionally submit env variables via template stanzas.
-  local_only_env_vars = <<EOH
-GRAPL_AWS_ENDPOINT          = ${local.aws_endpoint}
-GRAPL_AWS_ACCESS_KEY_ID     = ${var.aws_access_key_id}
-GRAPL_AWS_ACCESS_KEY_SECRET = ${var.aws_access_key_secret}
-EOH
-  # We need to submit an env var otherwise you can end up with a weird nomad state parse error.
-  aws_only_env_vars              = "DUMMY_VAR=TRUE"
-  conditionally_defined_env_vars = (var._aws_endpoint == "http://LOCAL_GRAPL_REPLACE_IP:4566") ? local.local_only_env_vars : local.aws_only_env_vars
-
-
-  # Prefer these over their `var` equivalents
-  plugin_work_queue_db_hostname = replace(var._plugin_work_queue_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
-  redis_endpoint                = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
-  kafka_bootstrap_servers       = replace(var._kafka_bootstrap_servers, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
-
-  _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
+  _redis_trimmed = trimprefix(var.redis_endpoint, "redis://")
   _redis         = split(":", local._redis_trimmed)
   redis_host     = local._redis[0]
   redis_port     = local._redis[1]
@@ -192,22 +169,21 @@ job "integration-tests" {
 
       # This writes an env file that gets read by the task automatically
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "rust-integration-tests.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
       env {
         AWS_REGION      = var.aws_region
-        DEPLOYMENT_NAME = var.deployment_name
         GRAPL_LOG_LEVEL = local.log_level
         # This is a hack, because IDK how to share locals across files
         #MG_ALPHAS                   = local.alpha_grpc_connect_str # TODO: Figure out how to do this
         MG_ALPHAS               = "localhost:9080"
         RUST_BACKTRACE          = 1
         RUST_LOG                = local.log_level
-        REDIS_ENDPOINT          = local.redis_endpoint
-        KAFKA_BOOTSTRAP_SERVERS = local.kafka_bootstrap_servers
+        REDIS_ENDPOINT          = var.redis_endpoint
+        KAFKA_BOOTSTRAP_SERVERS = var.kafka_bootstrap_servers
         KAFKA_SASL_USERNAME     = var.kafka_sasl_username
         KAFKA_SASL_PASSWORD     = var.kafka_sasl_password
 
@@ -217,7 +193,7 @@ job "integration-tests" {
         GRAPL_PLUGIN_REGISTRY_ADDRESS  = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-registry}"
         PLUGIN_WORK_QUEUE_BIND_ADDRESS = "0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-work-queue}"
 
-        PLUGIN_WORK_QUEUE_DB_HOSTNAME = "${local.plugin_work_queue_db_hostname}"
+        PLUGIN_WORK_QUEUE_DB_HOSTNAME = "${var.plugin_work_queue_db_hostname}"
         PLUGIN_WORK_QUEUE_DB_PORT     = "${var.plugin_work_queue_db_port}"
         PLUGIN_WORK_QUEUE_DB_USERNAME = "${var.plugin_work_queue_db_username}"
         PLUGIN_WORK_QUEUE_DB_PASSWORD = "${var.plugin_work_queue_db_password}"
@@ -296,8 +272,8 @@ job "integration-tests" {
 
       # This writes an env file that gets read by the task automatically
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "python-integration-tests.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
@@ -309,10 +285,11 @@ job "integration-tests" {
         GRAPL_ANALYZERS_BUCKET                  = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
         GRAPL_MODEL_PLUGINS_BUCKET              = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
 
-        GRAPL_API_HOST                = "${NOMAD_UPSTREAM_IP_web-ui}"
-        GRAPL_HTTP_FRONTEND_PORT      = "${NOMAD_UPSTREAM_PORT_web-ui}"
-        GRAPL_TEST_USER_NAME          = "${var.test_user_name}"
-        GRAPL_SCHEMA_PROPERTIES_TABLE = "${var.schema_properties_table_name}"
+        GRAPL_API_HOST                     = "${NOMAD_UPSTREAM_IP_web-ui}"
+        GRAPL_HTTP_FRONTEND_PORT           = "${NOMAD_UPSTREAM_PORT_web-ui}"
+        GRAPL_TEST_USER_NAME               = var.test_user_name
+        GRAPL_TEST_USER_PASSWORD_SECRET_ID = var.test_user_password_secret_id
+        GRAPL_SCHEMA_PROPERTIES_TABLE      = var.schema_properties_table_name
 
         HITCACHE_ADDR     = "${local.redis_host}"
         HITCACHE_PORT     = "${local.redis_port}"
@@ -320,11 +297,10 @@ job "integration-tests" {
         MESSAGECACHE_PORT = "${local.redis_port}"
         IS_RETRY          = "False"
 
-        KAFKA_BOOTSTRAP_SERVERS = local.kafka_bootstrap_servers
+        KAFKA_BOOTSTRAP_SERVERS = var.kafka_bootstrap_servers
         KAFKA_SASL_USERNAME     = var.kafka_sasl_username
         KAFKA_SASL_PASSWORD     = var.kafka_sasl_password
 
-        DEPLOYMENT_NAME = "${var.deployment_name}"
         GRAPL_LOG_LEVEL = local.log_level
         MG_ALPHAS       = "localhost:9080"
 

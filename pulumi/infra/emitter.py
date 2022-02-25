@@ -2,8 +2,8 @@ import json
 from typing import Optional
 
 import pulumi_aws as aws
+from infra import config
 from infra.bucket import Bucket
-from infra.config import DEPLOYMENT_NAME
 
 import pulumi
 
@@ -26,7 +26,7 @@ class EventEmitter(pulumi.ComponentResource):
         self.bucket_name: pulumi.Output[str] = self.bucket.bucket
         pulumi.export(bucket_name_no_mangling, self.bucket.bucket)
 
-        physical_topic_name = f"{DEPLOYMENT_NAME}-{event_name}-topic"
+        physical_topic_name = f"{config.STACK_NAME}-{event_name}-topic"
         self.topic = aws.sns.Topic(
             f"{event_name}-topic",
             name=physical_topic_name,

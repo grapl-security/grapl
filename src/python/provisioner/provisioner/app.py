@@ -26,6 +26,7 @@ from grapl_common.env_helpers import (
     DynamoDBResourceFactory,
     SecretsManagerClientFactory,
 )
+from grapl_common.test_user_creds import get_test_user_creds
 
 if TYPE_CHECKING:
     from mypy_boto3_dynamodb import DynamoDBServiceResource
@@ -35,8 +36,6 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(os.getenv("GRAPL_LOG_LEVEL", "INFO"))
 LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
-DEPLOYMENT_NAME = os.environ["DEPLOYMENT_NAME"]
-GRAPL_TEST_USER_NAME = os.environ["GRAPL_TEST_USER_NAME"]
 GRAPL_SCHEMA_TABLE = os.environ["GRAPL_SCHEMA_TABLE"]
 GRAPL_SCHEMA_PROPERTIES_TABLE = os.environ["GRAPL_SCHEMA_PROPERTIES_TABLE"]
 
@@ -88,6 +87,7 @@ def _create_user(
     )
 
 
+# TODO: Replace with passing in the password ID verbatim
 def _retrieve_test_user_password(
     secretsmanager: SecretsmanagerClient, deployment_name: str
 ) -> str:
@@ -107,14 +107,12 @@ def provision() -> None:
     _provision_graph(graph_client=graph_client, dynamodb=dynamodb)
     LOGGER.info("provisioned graph")
 
-    LOGGER.info("retrieving test user password")
-    password = _retrieve_test_user_password(secretsmanager, DEPLOYMENT_NAME)
-    LOGGER.info("retrieved test user password")
+    username, password = get_test_user_creds()
 
     LOGGER.info("creating test user")
     _create_user(
         dynamodb=dynamodb,
-        username=GRAPL_TEST_USER_NAME,
+        username=username,
         cleartext=password,
         role="owner",
     )

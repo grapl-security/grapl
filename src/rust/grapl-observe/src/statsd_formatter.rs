@@ -71,16 +71,12 @@ pub fn statsd_format(
         metric_type = metric_type.statsd_type()
     )?;
 
-    match (metric_type, sample_rate.into()) {
-        (MetricType::Counter, Some(rate)) => {
-            // a rate of 1.0 we'll just ignore
-            if rate >= 0.0 && rate < 1.0 {
-                write!(buf, "|@{sample_rate}", sample_rate = rate)?;
-            } else {
-                return Err(InvalidSampleRate());
-            }
+    if let (MetricType::Counter, Some(rate)) = (metric_type, sample_rate.into()) {
+        if rate >= 0.0 && rate < 1.0 {
+            write!(buf, "|@{sample_rate}", sample_rate = rate)?;
+        } else {
+            return Err(InvalidSampleRate());
         }
-        _ => {}
     }
 
     let mut first_tag: bool = true;
@@ -132,7 +128,7 @@ mod tests {
 
     fn make_empty_tags() -> [TagPair<'static>; 0] {
         let empty_slice: [TagPair<'static>; 0] = [];
-        return empty_slice;
+        empty_slice
     }
 
     #[test]

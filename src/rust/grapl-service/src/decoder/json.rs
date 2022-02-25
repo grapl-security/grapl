@@ -11,9 +11,9 @@ use crate::decoder::decompress::PayloadDecompressionError;
 
 #[derive(thiserror::Error, Debug)]
 pub enum JsonDecoderError {
-    #[error("DecompressionError")]
+    #[error("DecompressionError {0}")]
     DecompressionError(#[from] PayloadDecompressionError),
-    #[error("JsonError")]
+    #[error("JsonError {0}")]
     JsonError(#[from] serde_json::Error),
 }
 

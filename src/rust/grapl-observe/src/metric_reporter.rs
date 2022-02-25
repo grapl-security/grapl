@@ -89,9 +89,9 @@ where
             tags,
         )?;
         let time = self.format_time_for_cloudwatch((self.utc_now)());
-        write!(
+        writeln!(
             self.out.as_mut(),
-            "MONITORING|{}|{}|{}\n",
+            "MONITORING|{}|{}|{}",
             self.service_name,
             time,
             self.buffer

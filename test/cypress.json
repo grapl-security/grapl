@@ -1,5 +1,0 @@
-{
-    "baseUrl": "http://localhost:1234",
-    "pageLoadTimeout": 180000,
-    "chromeWebSecurity": false
-}

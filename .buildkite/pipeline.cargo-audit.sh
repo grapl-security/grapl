@@ -16,6 +16,13 @@
 
 set -euo pipefail
 
+# Hacky way to extract a value from a TOML file T_T
+#
+# This at least automatically keeps things in sync with with our Rust
+# toolchain.
+rust_version="$(grep channel src/rust/rust-toolchain.toml | sed -E 's/channel = "(.*)"/\1/g')"
+readonly rust_version
+
 if [ "${BUILDKITE_PIPELINE_NAME}" == "grapl/cargo-audit" ]; then
     soft_fail="false"
 else
@@ -32,7 +39,7 @@ steps:
       - cargo audit
     plugins:
       - docker#v3.8.0:
-          image: "rust:1.51.0"
+          image: "rust:${rust_version}"
     soft_fail: ${soft_fail}
     agents:
       queue: beefy

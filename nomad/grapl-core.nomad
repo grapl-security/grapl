@@ -16,27 +16,16 @@ variable "container_images" {
 EOF
 }
 
-variable "aws_access_key_id" {
+variable "aws_env_vars_for_local" {
   type        = string
-  default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_ID"
-  description = "The aws access key id used to interact with AWS."
-}
-
-variable "aws_access_key_secret" {
-  type        = string
-  default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_SECRET"
-  description = "The aws access key secret used to interact with AWS."
-}
-
-variable "_aws_endpoint" {
-  type        = string
-  default     = "DUMMY_LOCAL_AWS_ENDPOINT"
   description = <<EOF
-  The endpoint in which we can expect to find and interact with AWS.
-  It accepts a special sentinel value domain, LOCAL_GRAPL_REPLACE_IP:xxxx, if the
-  user wishes to contact Localstack.
-
-  Prefer using `local.aws_endpoint`.
+With local-grapl, we have to inject:
+- an endpoint
+- an access key
+- a secret key
+With prod, these are all taken from the EC2 Instance Metadata in prod.
+We have to provide a default value in prod; otherwise you can end up with a 
+weird nomad state parse error.
 EOF
 }
 
@@ -88,14 +77,9 @@ variable "engagement_creator_queue" {
   type = string
 }
 
-variable "_redis_endpoint" {
+variable "redis_endpoint" {
   type        = string
-  description = <<EOF
-  Where can services find Redis?
-
-  It accepts a special sentinel value domain, redis://LOCAL_GRAPL_REPLACE_IP:xxxx, if the
-  user wishes to contact Localstack.
-EOF
+  description = "Where can services find Redis?"
 }
 
 variable "schema_table_name" {
@@ -132,6 +116,11 @@ variable "plugin_registry_db_username" {
 variable "plugin_registry_db_password" {
   type        = string
   description = "What is the password for the plugin registry table?"
+}
+
+variable "plugin_registry_kernel_artifact_url" {
+  type        = string
+  description = "S3 URL specifying the kernel for the Firecracker VM"
 }
 
 variable "plugin_work_queue_db_hostname" {
@@ -227,11 +216,6 @@ variable "subgraphs_generated_bucket" {
   description = "The destination bucket for generated subgraphs. Used by Node identifier."
 }
 
-variable "deployment_name" {
-  type        = string
-  description = "The deployment name"
-}
-
 variable "user_auth_table" {
   type        = string
   description = "What is the name of the DynamoDB user auth table?"
@@ -284,14 +268,7 @@ locals {
   # String that contains all of the running Alphas for clients connecting to Dgraph (so they can do loadbalancing)
   alpha_grpc_connect_str = join(",", [for alpha in local.dgraph_alphas : "localhost:${alpha.grpc_public_port}"])
 
-  # Prefer these over their `var` equivalents.
-  # The aws endpoint is in template env format
-  aws_endpoint                  = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
-  redis_endpoint                = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
-  plugin_registry_db_hostname   = replace(var.plugin_registry_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
-  plugin_work_queue_db_hostname = replace(var.plugin_work_queue_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
-
-  _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
+  _redis_trimmed = trimprefix(var.redis_endpoint, "redis://")
   _redis         = split(":", local._redis_trimmed)
   redis_host     = local._redis[0]
   redis_port     = local._redis[1]
@@ -301,16 +278,6 @@ locals {
 
   # enabled
   rust_backtrace = 1
-
-  # This is used to conditionally submit env variables via template stanzas.
-  local_only_env_vars = <<EOH
-GRAPL_AWS_ENDPOINT          = ${local.aws_endpoint}
-GRAPL_AWS_ACCESS_KEY_ID     = ${var.aws_access_key_id}
-GRAPL_AWS_ACCESS_KEY_SECRET = ${var.aws_access_key_secret}
-EOH
-  # We need to submit an env var otherwise you can end up with a weird nomad state parse error.
-  aws_only_env_vars              = "DUMMY_VAR=TRUE"
-  conditionally_defined_env_vars = (var._aws_endpoint == "http://LOCAL_GRAPL_REPLACE_IP:4566") ? local.local_only_env_vars : local.aws_only_env_vars
 }
 
 job "grapl-core" {
@@ -632,8 +599,8 @@ job "grapl-core" {
 
       # This writes an env files that gets read by nomad automatically
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "graph-merger.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
@@ -641,7 +608,7 @@ job "grapl-core" {
         AWS_REGION         = var.aws_region
         RUST_LOG           = var.rust_log
         RUST_BACKTRACE     = local.rust_backtrace
-        REDIS_ENDPOINT     = local.redis_endpoint
+        REDIS_ENDPOINT     = var.redis_endpoint
         MG_ALPHAS          = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE = var.schema_table_name
         # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L165
@@ -687,8 +654,8 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "node-identifier.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
@@ -696,7 +663,7 @@ job "grapl-core" {
         AWS_REGION                  = var.aws_region
         RUST_LOG                    = var.rust_log
         RUST_BACKTRACE              = local.rust_backtrace
-        REDIS_ENDPOINT              = local.redis_endpoint
+        REDIS_ENDPOINT              = var.redis_endpoint
         MG_ALPHAS                   = local.alpha_grpc_connect_str # alpha_grpc_connect_str won't work if network mode = grapl network
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
         GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
@@ -727,8 +694,8 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "node-identifier-retry.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
@@ -736,7 +703,7 @@ job "grapl-core" {
         AWS_REGION                  = var.aws_region
         RUST_LOG                    = var.rust_log
         RUST_BACKTRACE              = local.rust_backtrace
-        REDIS_ENDPOINT              = local.redis_endpoint
+        REDIS_ENDPOINT              = var.redis_endpoint
         MG_ALPHAS                   = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
         GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
@@ -762,8 +729,8 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "analyzer-dispatcher.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
@@ -801,8 +768,8 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "analyzer-executor.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
@@ -860,8 +827,8 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "analyzer-executor.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
@@ -914,14 +881,13 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "graphql-endpoint.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
       env {
-        DEPLOYMENT_NAME = var.deployment_name
-        RUST_LOG        = var.rust_log
+        RUST_LOG = var.rust_log
         # JS SDK only recognized AWS_REGION whereas rust and python SDKs use DEFAULT_AWS_REGION
         AWS_REGION                    = var.aws_region
         MG_ALPHAS                     = local.alpha_grpc_connect_str
@@ -1004,8 +970,8 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "web-ui.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
@@ -1058,8 +1024,8 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "sysmon.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
@@ -1068,7 +1034,7 @@ job "grapl-core" {
         DEAD_LETTER_QUEUE_URL = var.sysmon_generator_dead_letter_queue
         SOURCE_QUEUE_URL      = var.sysmon_generator_queue
         AWS_REGION            = var.aws_region
-        REDIS_ENDPOINT        = local.redis_endpoint
+        REDIS_ENDPOINT        = var.redis_endpoint
         RUST_LOG              = var.rust_log
         RUST_BACKTRACE        = local.rust_backtrace
       }
@@ -1088,8 +1054,8 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "osquery.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
@@ -1098,7 +1064,7 @@ job "grapl-core" {
         DEAD_LETTER_QUEUE_URL = var.osquery_generator_dead_letter_queue
         SOURCE_QUEUE_URL      = var.osquery_generator_queue
         AWS_REGION            = var.aws_region
-        REDIS_ENDPOINT        = local.redis_endpoint
+        REDIS_ENDPOINT        = var.redis_endpoint
         RUST_LOG              = var.rust_log
         RUST_BACKTRACE        = local.rust_backtrace
       }
@@ -1122,8 +1088,8 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "plugin-registry.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
@@ -1131,11 +1097,12 @@ job "grapl-core" {
         AWS_REGION                       = var.aws_region
         NOMAD_SERVICE_ADDRESS            = "${attr.unique.network.ip-address}:4646"
         PLUGIN_REGISTRY_BIND_ADDRESS     = "0.0.0.0:${NOMAD_PORT_plugin-registry-port}"
-        PLUGIN_REGISTRY_DB_HOSTNAME      = local.plugin_registry_db_hostname
+        PLUGIN_REGISTRY_DB_HOSTNAME      = var.plugin_registry_db_hostname
         PLUGIN_REGISTRY_DB_PASSWORD      = var.plugin_registry_db_password
         PLUGIN_REGISTRY_DB_PORT          = var.plugin_registry_db_port
         PLUGIN_REGISTRY_DB_USERNAME      = var.plugin_registry_db_username
         PLUGIN_BOOTSTRAP_CONTAINER_IMAGE = var.container_images["plugin-bootstrap"]
+        KERNEL_ARTIFACT_URL              = var.plugin_registry_kernel_artifact_url
         # Plugin Execution code/image doesn't exist yet; change this once it does!
         PLUGIN_EXECUTION_CONTAINER_IMAGE = "grapl/plugin-execution-sidecar-TODO"
         PLUGIN_S3_BUCKET_AWS_ACCOUNT_ID  = var.plugin_s3_bucket_aws_account_id
@@ -1172,14 +1139,14 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "plugin-work-queue.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
       env {
         PLUGIN_WORK_QUEUE_BIND_ADDRESS  = "0.0.0.0:${NOMAD_PORT_plugin-work-queue-port}"
-        PLUGIN_WORK_QUEUE_DB_HOSTNAME   = local.plugin_work_queue_db_hostname
+        PLUGIN_WORK_QUEUE_DB_HOSTNAME   = var.plugin_work_queue_db_hostname
         PLUGIN_WORK_QUEUE_DB_PASSWORD   = var.plugin_work_queue_db_password
         PLUGIN_WORK_QUEUE_DB_PORT       = var.plugin_work_queue_db_port
         PLUGIN_WORK_QUEUE_DB_USERNAME   = var.plugin_work_queue_db_username

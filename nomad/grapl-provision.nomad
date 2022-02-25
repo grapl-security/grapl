@@ -5,20 +5,16 @@
 # `grapl-provisioner` back  into the `grapl-core` fold, but
 # this will get the job done for the time being.
 
-variable "deployment_name" {
+variable "aws_env_vars_for_local" {
   type        = string
-  description = "The deployment name"
-}
-
-variable "_aws_endpoint" {
-  type        = string
-  default     = "DUMMY_LOCAL_AWS_ENDPOINT"
   description = <<EOF
-  The endpoint in which we can expect to find and interact with AWS. 
-  It accepts a special sentinel value domain, LOCAL_GRAPL_REPLACE_IP:xxxx, if the
-  user wishes to contact Localstack.
-
-  Prefer using `local.aws_endpoint`.
+With local-grapl, we have to inject:
+- an endpoint
+- an access key
+- a secret key
+With prod, these are all taken from the EC2 Instance Metadata in prod.
+We have to provide a default value in prod; otherwise you can end up with a 
+weird nomad state parse error.
 EOF
 }
 
@@ -28,18 +24,6 @@ variable "container_images" {
   A map of $NAME_OF_TASK to the URL for that task's docker image ID.
   (See DockerImageId in Pulumi for further documentation.)
 EOF
-}
-
-variable "aws_access_key_id" {
-  type        = string
-  default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_ID"
-  description = "The aws access key id used to interact with AWS."
-}
-
-variable "aws_access_key_secret" {
-  type        = string
-  default     = "DUMMY_LOCAL_AWS_ACCESS_KEY_SECRET"
-  description = "The aws access key secret used to interact with AWS."
 }
 
 variable "aws_region" {
@@ -66,25 +50,14 @@ variable "test_user_name" {
   description = "The name of the test user"
 }
 
+variable "test_user_password_secret_id" {
+  type        = string
+  description = "The SecretsManager SecretID for the test user's password"
+}
+
 variable "py_log_level" {
   type        = string
   description = "Controls the logging behavior of Python-based services."
-}
-
-locals {
-  # Prefer these over their `var` equivalents.
-  # The aws endpoint is in template env format
-  aws_endpoint = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
-
-  # This is used to conditionally submit env variables via template stanzas.
-  local_only_env_vars = <<EOH
-GRAPL_AWS_ENDPOINT          = ${local.aws_endpoint}
-GRAPL_AWS_ACCESS_KEY_ID     = ${var.aws_access_key_id}
-GRAPL_AWS_ACCESS_KEY_SECRET = ${var.aws_access_key_secret}
-EOH
-  # We need to submit an env var otherwise you can end up with a weird nomad state parse error
-  aws_only_env_vars              = "DUMMY_VAR=TRUE"
-  conditionally_defined_env_vars = (var._aws_endpoint == "http://LOCAL_GRAPL_REPLACE_IP:4566") ? local.local_only_env_vars : local.aws_only_env_vars
 }
 
 job "grapl-provision" {
@@ -113,8 +86,8 @@ job "grapl-provision" {
 
       # This writes an env files that gets read by nomad automatically
       template {
-        data        = local.conditionally_defined_env_vars
-        destination = "provisioner.env"
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
         env         = true
       }
 
@@ -123,13 +96,13 @@ job "grapl-provision" {
         # It's fine if `provision` only hits one alpha.
         MG_ALPHAS = "localhost:9080"
 
-        DEPLOYMENT_NAME               = var.deployment_name
-        AWS_DEFAULT_REGION            = var.aws_region
-        GRAPL_SCHEMA_TABLE            = var.schema_table_name
-        GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name
-        GRAPL_USER_AUTH_TABLE         = var.user_auth_table
-        GRAPL_TEST_USER_NAME          = var.test_user_name
-        GRAPL_LOG_LEVEL               = var.py_log_level
+        AWS_DEFAULT_REGION                 = var.aws_region
+        GRAPL_SCHEMA_TABLE                 = var.schema_table_name
+        GRAPL_SCHEMA_PROPERTIES_TABLE      = var.schema_properties_table_name
+        GRAPL_USER_AUTH_TABLE              = var.user_auth_table
+        GRAPL_TEST_USER_NAME               = var.test_user_name
+        GRAPL_TEST_USER_PASSWORD_SECRET_ID = var.test_user_password_secret_id
+        GRAPL_LOG_LEVEL                    = var.py_log_level
       }
     }
 

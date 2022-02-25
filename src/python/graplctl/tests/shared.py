@@ -8,10 +8,8 @@ from graplctl import cli
 DEFAULT_ARGS = [
     "--grapl-region",
     "us-west-2",
-    "--grapl-deployment-name",
+    "--stack-name",
     "fake-deployment",
-    "--grapl-version",
-    "fake-version",
 ]
 
 

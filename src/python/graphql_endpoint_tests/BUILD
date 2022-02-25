@@ -6,7 +6,6 @@ python_tests(
     extra_env_vars=[
         "AWS_REGION",
         "DEBUG_SERVICES",
-        "DEPLOYMENT_NAME",
         "GRAPL_API_HOST",
         "GRAPL_AWS_ACCESS_KEY_ID",
         "GRAPL_AWS_ACCESS_KEY_SECRET",
@@ -15,6 +14,7 @@ python_tests(
         "GRAPL_LOG_LEVEL",
         "GRAPL_SCHEMA_PROPERTIES_TABLE",
         "GRAPL_TEST_USER_NAME",
+        "GRAPL_TEST_USER_PASSWORD_SECRET_ID",
         "IS_LOCAL",
         "MG_ALPHAS",
         "VSC_DEBUGGER_PORT",

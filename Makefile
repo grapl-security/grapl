@@ -127,10 +127,6 @@ help: ## Print this help
 
 ##@ Build 🔨
 
-.PHONY: build-service-pexs
-build-service-pexs: ## Build all PEX files that are used by our service processes
-	./pants --tag="service-pex" package ::
-
 .PHONY: build-test-unit
 build-test-unit:
 	$(DOCKER_BUILDX_BAKE) \
@@ -148,30 +144,76 @@ build-test-unit-js:
 		--file ./test/docker-compose.unit-tests-js.yml
 
 .PHONY: build-test-integration
-build-test-integration: build
+build-test-integration:
+	@echo "--- Building integration test images"
 	$(DOCKER_BUILDX_BAKE) \
 		--file ./test/docker-compose.integration-tests.build.yml \
-		python-integration-tests rust-integration-tests
+		python-integration-tests \
+		rust-integration-tests
 
 .PHONY: build-test-e2e
-build-test-e2e: build
-	./pants package ./src/python/e2e-test-runner/e2e_test_runner:pex
+build-test-e2e:
+	@echo "--- Building e2e testing image"
+# Any PEX tagged with `e2e-test-pex` is required for our image. This
+# seems like the most straightforward way of capturing these
+# dependencies at the moment.
+	./pants --tag="e2e-test-pex" package ::
 	$(DOCKER_BUILDX_BAKE) \
 		--file ./test/docker-compose.integration-tests.build.yml \
 		e2e-tests
 
-.PHONY: build-docker-images
-build-docker-images: graplctl build-engagement-view
-	echo "--- Building Docker images"
-	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml
+.PHONY: build-engagement-view
+build-engagement-view: ## Build website assets
+	@echo "--- Building the engagement view"
+	$(MAKE) -C src/js/engagement_view build
+	cp -r \
+		"${PWD}/src/js/engagement_view/build/." \
+		"${PWD}/src/rust/grapl-web-ui/frontend/"
 
-.PHONY: build
-build: build-service-pexs build-docker-images ## Build Grapl services
+.PHONY: build-ui
+build-ui: ## Build the web UI
+build-ui: build-engagement-view
+	@echo "--- Building the Web UI"
+	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml \
+		grapl-web-ui
 
-.PHONY: build-formatter
-build-formatter:
-	$(DOCKER_BUILDX_BAKE) \
-		--file ./docker-compose.formatter.yml
+.PHONY: build-grapl-services
+build-grapl-services: ## Build all the services for the Grapl SaaS
+build-grapl-services: build-ui
+	@echo "--- Building the rest of the Grapl services"
+# Our Python images need their PEX files built first
+	./pants --tag="service-pex" package ::
+	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml \
+		analyzer-dispatcher \
+		analyzer-executor \
+		engagement-creator \
+		graph-merger \
+		graphql-endpoint \
+		model-plugin-deployer \
+		node-identifier \
+		node-identifier-retry \
+		osquery-generator \
+		plugin-bootstrap \
+		plugin-registry \
+		plugin-work-queue \
+		provisioner \
+		sysmon-generator
+
+.PHONY: build-local-services
+build-local-services: ## Build images used only in a local testing context
+	@echo "--- Building local-only services"
+	$(DOCKER_BUILDX_BAKE) --file docker-compose.build.yml \
+		localstack \
+		postgres \
+		pulumi
+
+.PHONY: build-for-push
+build-for-push: ## Build only the images we push to our registry
+build-for-push: build-grapl-services build-test-e2e
+
+.PHONY: build-prettier-image
+build-prettier-image:
+	$(DOCKER_BUILDX_BAKE) --file ./docker-compose.check.yml prettier
 
 .PHONY: graplctl
 graplctl: ## Build graplctl and install it to ./bin
@@ -192,13 +234,6 @@ dump-artifacts-local:  # Run the script that dumps Nomad/Docker logs after test 
 	./pants run ./etc/ci_scripts/dump_artifacts -- \
 		--compose-project="${COMPOSE_PROJECT_NAME}" \
 		--dump-agent-logs
-
-.PHONY: build-engagement-view
-build-engagement-view: ## Build website assets
-	$(MAKE) -C src/js/engagement_view build
-	cp -r \
-		"${PWD}/src/js/engagement_view/build/." \
-		"${PWD}/src/rust/grapl-web-ui/frontend/"
 
 ##@ Test 🧪
 
@@ -243,8 +278,9 @@ typecheck: ## Typecheck Python Code
 	./pants check ::
 
 .PHONY: test-integration
+test-integration: ## Build and run integration tests
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
-test-integration: build-test-integration ## Build and run integration tests
+test-integration: build-grapl-services build-local-services build-test-integration
 	@$(WITH_LOCAL_GRAPL_ENV)
 	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh integration-tests 9"
 
@@ -253,8 +289,9 @@ test-grapl-template-generator:  # Test that the Grapl Template Generator spits o
 	./src/python/grapl-template-generator/grapl_template_generator_tests/integration_test.sh
 
 .PHONY: test-e2e
+test-e2e: ## Build and run e2e tests
 test-e2e: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_E2E_TESTS)
-test-e2e: build-test-e2e ## Build and run e2e tests
+test-e2e: build-grapl-services build-local-services build-test-e2e
 	@$(WITH_LOCAL_GRAPL_ENV)
 	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh e2e-tests 6"
 
@@ -267,9 +304,9 @@ test-with-env: # (Do not include help text - not to be used directly)
 	stopGrapl() {
 		# skip if KEEP_TEST_ENV is set
 		if [[ -z "${KEEP_TEST_ENV}" ]]; then
-			echo "Tearing down test environment"
+			@echo "Tearing down test environment"
 		else
-			echo "Keeping test environment" && return 0
+			@echo "Keeping test environment" && return 0
 		fi
 		# Unset COMPOSE_FILE to help ensure it will be ignored with use of --file
 		unset COMPOSE_FILE
@@ -281,9 +318,9 @@ test-with-env: # (Do not include help text - not to be used directly)
 	trap stopGrapl EXIT
 	@$(WITH_LOCAL_GRAPL_ENV)
 	# Bring up the Grapl environment and detach
-	$(MAKE) up
+	$(MAKE) _up
 	# Run tests and check exit codes from each test container
-	echo "--- Executing test with environment"
+	@echo "--- Executing test with environment"
 	$${EXEC_TEST_COMMAND}
 
 ##@ Lint 🧹
@@ -305,13 +342,8 @@ lint-shell: ## Run Shell lint checks
 	./pants filter --target-type=shell_sources,shunit2_tests :: | xargs ./pants lint
 
 .PHONY: lint-prettier
-lint-prettier: build-formatter ## Run ts/js/yaml lint checks
-	# `docker-compose run` will also propagate the correct exit code.
-	# We could explore tossing `docker-compose` and switching to `docker run`,
-	# like `grapl/grapl-rfcs`.
-	docker-compose \
-		--file docker-compose.formatter.yml \
-		run --rm lint-prettier
+lint-prettier: build-prettier-image ## Run ts/js/yaml lint checks
+	${NONROOT_DOCKER_COMPOSE_CHECK} prettier-lint
 
 .PHONY: lint-hcl
 lint-hcl: ## Check to see if HCL files are formatted properly
@@ -343,11 +375,8 @@ format-shell: ## Reformat all shell code
 	./pants filter --target-type=shell_sources,shunit2_tests :: | xargs ./pants fmt
 
 .PHONY: format-prettier
-format-prettier: build-formatter ## Reformat js/ts/yaml
-	# `docker-compose run` will also propagate the correct exit code.
-	docker-compose \
-		--file docker-compose.formatter.yml \
-		run --rm format-prettier
+format-prettier: build-prettier-image ## Reformat js/ts/yaml
+	${NONROOT_DOCKER_COMPOSE_CHECK} prettier-format
 
 .PHONY: format-hcl
 format-hcl: ## Reformat all HCLs
@@ -363,10 +392,16 @@ format: format-python format-shell format-prettier format-rust format-hcl format
 ##@ Local Grapl 💻
 
 .PHONY: up
-up: build ## Bring up local Grapl and detach to return control to tty
+up: ## Bring up local Grapl and detach to return control to tty
+up: build-grapl-services build-local-services _up
+
+# NOTE: Internal target to decouple the building of images from the
+# running of them. Do not invoke this directly.
+.PHONY: _up
+_up:
 	# Primarily used for bringing up an environment for integration testing.
 	# For use with a project name consider setting COMPOSE_PROJECT_NAME env var
-	# Usage: `make up`
+	@echo "--- Deploying Nomad Infrastructure"
 	@$(WITH_LOCAL_GRAPL_ENV)
 	# Start the Nomad agent
 	$(MAKE) stop-nomad-detach; $(MAKE) start-nomad-detach
@@ -377,13 +412,12 @@ up: build ## Bring up local Grapl and detach to return control to tty
 
 	# TODO: This could potentially be replaced with a docker-compose run, but
 	#  it doesn't have all these useful flags
-	echo "--- Starting Pulumi"
+	@echo "--- Running Pulumi"
 	docker-compose \
 		--file docker-compose.yml \
 		up --force-recreate --always-recreate-deps --renew-anon-volumes \
 		--exit-code-from pulumi \
 		pulumi
-	echo "Pulumi complete"
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
@@ -401,6 +435,16 @@ down: ## docker-compose down - both stops and removes the containers
 stop: ## docker-compose stop - stops (but preserves) the containers
 	@$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose $(EVERY_COMPOSE_FILE) stop
+
+##@ Venv Management
+########################################################################
+.PHONY: generate-constraints
+generate-constraints: ## Generates a constraints file from the requirements.txt file
+	build-support/manage_virtualenv.sh regenerate-constraints
+
+.PHONY: populate-venv
+populate-venv: ## Set up a Python virtualenv from constraints file (you'll have to activate manually!)
+	build-support/manage_virtualenv.sh populate
 
 ##@ Utility ⚙
 
@@ -437,20 +481,11 @@ start-nomad-detach:  ## Start the Nomad environment, detached
 stop-nomad-detach:  ## Stop Nomad CI environment
 	nomad/local/stop_detach.sh
 
-.PHONY: e2e-logs
-e2e-logs: ## All docker-compose logs
-	@$(WITH_LOCAL_GRAPL_ENV)
-	docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) logs -f
-
 .PHONY: docker-kill-all
 docker-kill-all:  # Kill all currently running Docker containers except registry
 	# https://stackoverflow.com/a/46208493
 	TO_KILL=$$(docker ps --all --quiet | grep -v -E $$(docker ps -aq --filter='name=grapl_local_registry' | paste -sd "|" -))
 	docker kill $${TO_KILL}
-
-.PHONY: populate-venv
-populate-venv: ## Set up a Python virtualenv (you'll have to activate manually!)
-	build-support/manage_virtualenv.sh populate
 
 .PHONY: repl
 repl: ## Run an interactive ipython repl that can import from grapl-common etc

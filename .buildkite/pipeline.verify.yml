@@ -1,11 +1,10 @@
 ---
 env:
   PANTS_CONFIG_FILES: "['pants.toml', 'pants.ci.toml']"
-  TAG: ci-pipeline
   BUILDKITE_PLUGIN_VAULT_ENV_SECRET_PREFIX: "secret/data/buildkite/env"
   # TODO: Figure out a way for this to be sourced from our
   # rust-toolchain file
-  RUST_VERSION: 1.58.1
+  RUST_VERSION: 1.59.0
 
 # TODO: Cache for JS, Rust deps
 
@@ -26,7 +25,7 @@ steps:
       - .buildkite/scripts/ensure_regenerated_constraints.sh
 
   - label: ":codecov: Validate codecov.yml"
-    command: curl --data-binary @codecov.yml https://codecov.io/validate
+    command: curl --proto "=https" --tlsv1.2 --fail-with-body --verbose --data-binary @codecov.yml https://codecov.io/validate
 
   - label: ":large_blue_square::lint-roller: Lint Protobuf"
     command:
@@ -59,11 +58,11 @@ steps:
     command:
       - make test-unit-rust
     plugins:
-      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:
           secrets:
-            - CODECOV_TOKEN
-      - grapl-security/codecov#v0.1.1
+            - grapl/CODECOV_TOKEN
+      - grapl-security/codecov#v0.1.3
     agents:
       queue: "beefy"
 
@@ -77,7 +76,7 @@ steps:
     command:
       - make lint-python
     plugins:
-      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - grapl/TOOLCHAIN_AUTH_TOKEN
@@ -86,7 +85,7 @@ steps:
     command:
       - make lint-shell
     plugins:
-      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - grapl/TOOLCHAIN_AUTH_TOKEN
@@ -95,7 +94,7 @@ steps:
     command:
       - make lint-docker
     plugins:
-      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - grapl/TOOLCHAIN_AUTH_TOKEN
@@ -104,18 +103,18 @@ steps:
     command:
       - make test-unit-python
     plugins:
-      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - grapl/TOOLCHAIN_AUTH_TOKEN
-            - CODECOV_TOKEN
-      - grapl-security/codecov#v0.1.1
+            - grapl/CODECOV_TOKEN
+      - grapl-security/codecov#v0.1.3
 
   - label: ":python::jeans: Typechecking"
     command:
       - make typecheck
     plugins:
-      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - grapl/TOOLCHAIN_AUTH_TOKEN
@@ -125,11 +124,11 @@ steps:
     command:
       - make test-unit-js
     plugins:
-      - grapl-security/vault-login#v0.1.0
+      - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:
           secrets:
-            - CODECOV_TOKEN
-      - grapl-security/codecov#v0.1.1
+            - grapl/CODECOV_TOKEN
+      - grapl-security/codecov#v0.1.3
 
   - label: ":typescript::yaml::lint-roller: Lint using Prettier"
     command:
@@ -142,6 +141,11 @@ steps:
   - label: ":hammer: Integration Tests"
     command:
       - make test-integration
+    plugins:
+      - grapl-security/vault-login#v0.1.2
+      - grapl-security/vault-env#v0.1.0:
+          secrets:
+            - grapl/TOOLCHAIN_AUTH_TOKEN
     env:
       GRAPL_LOG_LEVEL: "DEBUG"
     agents:
@@ -152,6 +156,11 @@ steps:
   - label: ":hammer: E2E Tests"
     command:
       - make test-e2e
+    plugins:
+      - grapl-security/vault-login#v0.1.2
+      - grapl-security/vault-env#v0.1.0:
+          secrets:
+            - grapl/TOOLCHAIN_AUTH_TOKEN
     env:
       GRAPL_LOG_LEVEL: "DEBUG"
       DUMP_ARTIFACTS: "True"
@@ -177,3 +186,31 @@ steps:
               config:
                 label: ":pipeline: Upload Cargo Audit"
                 command: ".buildkite/pipeline.cargo-audit.sh | buildkite-agent pipeline upload"
+
+  - label: ":thinking_face::nodejs: NPM Audit?"
+    plugins:
+      - grapl-security/grapl-release#v0.1.1
+      - chronotc/monorepo-diff#v2.0.4:
+          diff: grapl_diff.sh
+          log_level: "debug"
+          watch:
+            - path:
+                - "**/package.json"
+                - "**/package-lock.json"
+              config:
+                label: ":pipeline: Upload NPM Audit"
+                command: ".buildkite/pipeline.npm-audit.sh | buildkite-agent pipeline upload"
+
+  - label: ":thinking_face::nodejs: Yarn Audit?"
+    plugins:
+      - grapl-security/grapl-release#v0.1.1
+      - chronotc/monorepo-diff#v2.0.4:
+          diff: grapl_diff.sh
+          log_level: "debug"
+          watch:
+            - path:
+                - "**/package.json"
+                - "**/yarn.lock"
+              config:
+                label: ":pipeline: Upload Yarn Audit"
+                command: ".buildkite/pipeline.yarn-audit.sh | buildkite-agent pipeline upload"

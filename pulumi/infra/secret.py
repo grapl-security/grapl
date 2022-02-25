@@ -3,7 +3,7 @@ from typing import Optional
 
 import pulumi_aws as aws
 import pulumi_random as random
-from infra.config import DEPLOYMENT_NAME, LOCAL_GRAPL
+from infra.config import LOCAL_GRAPL, STACK_NAME
 
 import pulumi
 
@@ -90,7 +90,7 @@ class TestUserPassword(pulumi.ComponentResource):
 
         self.secret = aws.secretsmanager.Secret(
             "test-user-password",
-            name=f"{DEPLOYMENT_NAME}-TestUserPassword",
+            name=f"{STACK_NAME}-TestUserPassword",
             description="The Grapl test user's password",
             recovery_window_in_days=0,  # delete immediately
             opts=pulumi.ResourceOptions(parent=self),
@@ -112,6 +112,8 @@ class TestUserPassword(pulumi.ComponentResource):
         )
 
         self.register_outputs({})
+
+        self.secret_id = self.secret.id
 
     def grant_read_permissions_to(self, role: aws.iam.Role) -> None:
         """

@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Mapping, Optional, Union
 
 import pulumi_nomad as nomad
-from infra.config import DEPLOYMENT_NAME
+from infra.config import STACK_NAME
 
 import pulumi
 
@@ -25,7 +25,7 @@ class NomadJob(pulumi.ComponentResource):
         vars = self._json_dump_complex_types(vars)
 
         self.job = nomad.Job(
-            resource_name=f"{DEPLOYMENT_NAME}-{name}-job",
+            resource_name=f"{STACK_NAME}-{name}-job",
             jobspec=self._file_contents(str(jobspec)),
             hcl2=nomad.JobHcl2Args(enabled=True, vars=self._fix_pulumi_preview(vars)),
             # Wait for all services to become healthy
@@ -62,7 +62,8 @@ class NomadJob(pulumi.ComponentResource):
         """
         if pulumi.runtime.is_dry_run():
             pulumi_preview_replacement_string = "PULUMI_PREVIEW_STRING"
-            _redis_endpoint = "redis://LOCAL_GRAPL_REPLACE_IP:6379"
+            # special rule since we string-split the redis endpoint
+            redis_endpoint = "redis://some-fake-host-for-preview-only:1111"
 
             nomad_vars = {}
             for key, value in vars.items():
@@ -70,9 +71,8 @@ class NomadJob(pulumi.ComponentResource):
                     # TODO figure out a better way to filter down to output<string> and not just all outputs
 
                     value = pulumi_preview_replacement_string
-                    # special rule since we split the redis endpoint
-                    if key == "_redis_endpoint":
-                        value = _redis_endpoint
+                    if key == "redis_endpoint":
+                        value = redis_endpoint
 
                 nomad_vars[key] = value
             return nomad_vars

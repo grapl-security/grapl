@@ -40,6 +40,8 @@ pub async fn deploy_plugin(
     let job_name = "grapl-plugin"; // Matches what's in `plugin.nomad`
     let job = {
         let job_file_hcl = static_files::PLUGIN_JOB;
+        // TODO: Deprecate this in next PR and replace with passed-in env variable
+        // ~ wimax Feb 2022
         let kernel_artifact_url = format!(
             "https://{bucket}.s3.amazonaws.com/{key}",
             bucket = plugin_bucket_name,

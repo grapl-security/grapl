@@ -1,11 +1,9 @@
-import os
 from http import HTTPStatus
 from typing import Optional
 
-import boto3
 import requests
-from grapl_common.env_helpers import SecretsManagerClientFactory
 from grapl_common.grapl_logger import get_module_grapl_logger
+from grapl_common.test_user_creds import get_test_user_creds
 from grapl_tests_common.clients.common import endpoint_url
 
 _JSON_CONTENT_TYPE_HEADERS = {"Content-type": "application/json"}
@@ -17,14 +15,6 @@ class GraplWebClientException(Exception):
     pass
 
 
-def _get_test_user_password(deployment_name: str) -> str:
-    secretsmanager = SecretsManagerClientFactory(boto3).from_env()
-    LOGGER.debug(f"retrieving {deployment_name}-TestUserPassword")
-    return secretsmanager.get_secret_value(
-        SecretId=f"{deployment_name}-TestUserPassword"
-    )["SecretString"]
-
-
 class GraplWebClient:
     def __init__(self) -> None:
         self.endpoint = endpoint_url(suffix="")
@@ -32,10 +22,7 @@ class GraplWebClient:
 
     def get_actix_session(self) -> str:
         LOGGER.debug("retrieving actix cookie")
-        username = os.environ["GRAPL_TEST_USER_NAME"]
-        password = _get_test_user_password(
-            deployment_name=os.environ["DEPLOYMENT_NAME"]
-        )
+        username, password = get_test_user_creds()
 
         resp = requests.post(
             f"{self.endpoint}/auth/login",
@@ -55,7 +42,7 @@ class GraplWebClient:
         return cookie
 
     def real_user_fake_password(self) -> requests.Response:
-        username = os.environ["GRAPL_TEST_USER_NAME"]
+        username, _ = get_test_user_creds()
         resp = requests.post(
             f"{self.endpoint}/auth/login",
             json={
@@ -89,10 +76,7 @@ class GraplWebClient:
         return resp
 
     def no_content_type(self) -> requests.Response:
-        username = os.environ["GRAPL_TEST_USER_NAME"]
-        password = _get_test_user_password(
-            deployment_name=os.environ["DEPLOYMENT_NAME"]
-        )
+        username, password = get_test_user_creds()
 
         resp = requests.post(
             f"{self.endpoint}/auth/login",

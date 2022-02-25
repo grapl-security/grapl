@@ -9,14 +9,21 @@ from typing_extensions import Final
 import pulumi
 
 # This will be incorporated into various infrastructure object names.
-DEPLOYMENT_NAME = pulumi.get_stack()
+STACK_NAME: Final[str] = pulumi.get_stack()
+
+# Only use this value for helpful error messages;
+# Pulumi is responsible for actually accessing and parsing this file.
+STACK_CONFIG_FILENAME: Final[str] = f"Pulumi.{STACK_NAME}.yaml"
 
 # This must be the same as the value defined in local-grapl.env
-GRAPL_TEST_USER_NAME = f"{DEPLOYMENT_NAME}-grapl-test-user"
+GRAPL_TEST_USER_NAME: Final[str] = f"{STACK_NAME}-grapl-test-user"
 
 # Sometimes we need to refer to other code or artifacts relative to
 # the repository root.
-REPOSITORY_ROOT = os.path.join(os.path.dirname(__file__), "../..")
+REPOSITORY_ROOT: Final[str] = os.path.join(os.path.dirname(__file__), "../..")
+
+# note: this ${} is interpolated inside Nomad
+HOST_IP_IN_NOMAD: Final[str] = "${attr.unique.network.ip-address}"
 
 
 def to_bool(input: Optional[Union[str, bool]]) -> Optional[bool]:
@@ -39,24 +46,27 @@ def repository_path(relative_path: str) -> Path:
     return Path(os.path.join(REPOSITORY_ROOT), relative_path).resolve()
 
 
-def _validate_deployment_name() -> None:
+def _validate_stack_name() -> None:
     # ^ and $ capture the whole string: start and end
     # Must start with an alpha
     # Must end with an alpha or number
     # In the middle, - and _ are fine
     regex = re.compile("^[a-z]([a-z0-9_-]?[a-z0-9]+)*$")
-    if regex.match(DEPLOYMENT_NAME) is None:
+    if regex.match(STACK_NAME) is None:
         raise ValueError(
-            f"Deployment name {DEPLOYMENT_NAME} is invalid - should match regex {regex}."
+            f"Deployment name {STACK_NAME} is invalid - should match regex {regex}."
         )
 
 
-_validate_deployment_name()
+_validate_stack_name()
 
 # Use this to modify behavior or configuration for provisioning in
 # Local Grapl (as opposed to any other real deployment)
 
-LOCAL_GRAPL = DEPLOYMENT_NAME in ("local-grapl", "local-grapl-integration-tests")
+LOCAL_GRAPL: Final[bool] = STACK_NAME in (
+    "local-grapl",
+    "local-grapl-integration-tests",
+)
 # (We have a different one for integration tests because `pulumi login --local`
 #  doesn't allow for stack name conflicts, even across projects.)
 
@@ -67,32 +77,19 @@ LOCAL_GRAPL = DEPLOYMENT_NAME in ("local-grapl", "local-grapl-integration-tests"
 # other deployments in the future. Another option would be to declare
 # a convention for developer sandbox environments and have logic pivot
 # on that, instead.)
-REAL_DEPLOYMENT = DEPLOYMENT_NAME in ("testing")
+REAL_DEPLOYMENT: Final[bool] = STACK_NAME in ("testing")
 
 # For importing some objects, we have to construct a URL, ARN, etc
 # that includes the AWS account ID.
-AWS_ACCOUNT_ID = "000000000000" if LOCAL_GRAPL else aws.get_caller_identity().account_id
-
-GLOBAL_LAMBDA_ZIP_TAG = os.getenv("TAG", "latest")
-"""Filename tag for all lambda function ZIP files.
-
-All our lambda function ZIP files currently have a name like:
-
-    <LAMBDA_NAME>-<TAG>.zip
-
-Since all the lambdas share the same tag, we can specify this globally.
-
-Use the environment variable `TAG` to specify a tag, or
-leave it unset to use the default value of `latest`.
-
-"""
-
+AWS_ACCOUNT_ID: Final[str] = (
+    "000000000000" if LOCAL_GRAPL else aws.get_caller_identity().account_id
+)
 
 SERVICE_LOG_RETENTION_DAYS: Final[int] = 30
 
 DGRAPH_LOG_RETENTION_DAYS: Final[int] = 7
 
-DEFAULT_ENVVARS = {
+DEFAULT_ENVVARS: Final[Mapping[str, str]] = {
     "GRAPL_LOG_LEVEL": "DEBUG",
     "RUST_LOG": "DEBUG",
     "RUST_BACKTRACE": "0",
@@ -111,7 +108,7 @@ def _require_env_var(key: str) -> str:
     if not value:
         raise KeyError(
             f"Missing environment variable '{key}'. "
-            f"Add it to env variables or `Pulumi.{DEPLOYMENT_NAME}.yaml`."
+            f"Add it to env variables or `{STACK_CONFIG_FILENAME}`."
         )
     return value
 
@@ -139,7 +136,7 @@ def configurable_envvar(service_name: str, var: str) -> str:
         You have tried to retrieve a value for the '{var}' environment variable for the
         '{service_name}' service, but we have no record of this variable!
 
-        Please edit your Pulumi.{DEPLOYMENT_NAME}.yaml file and add the following:
+        Please edit your `{STACK_CONFIG_FILENAME}` file and add the following:
 
         config:
           {pulumi.get_project()}:{config_key}:
@@ -185,7 +182,7 @@ def configured_version_for(artifact_name: str) -> Optional[str]:
     if (not version) and REAL_DEPLOYMENT:
         raise Exception(
             f"""
-        Tried to deploy the {pulumi.get_stack()} stack, but no version for {artifact_name} was found!
+        Tried to deploy the {STACK_NAME} stack, but no version for {artifact_name} was found!
 
         This stack must have a version configured for ALL artifacts that it uses.
         """
@@ -213,18 +210,27 @@ def require_artifact(artifact_name: str) -> Any:
     return artifact
 
 
-def container_repository() -> Optional[str]:
-    """The repository from which to pull container images from.
+def cloudsmith_repository_name() -> Optional[str]:
+    """The repository from which to pull container images and Firecracker
+    packages from.
 
     This will be different for different stacks; we promote packages
     through a series of different registries that mirrors the progress
     of code through our pipelines.
 
-    The value will be something like
-    `docker.cloudsmith.io/grapl/testing`; to target a specific image
-    in client code, you would append the image name and tag to the
-    return value of this function.
-
-    Not specifying a repository will result in local images being used.
+    The value will be something like `grapl/testing`.
     """
-    return pulumi.Config().get("container-repository")
+    return pulumi.Config().get("cloudsmith-repository-name")
+
+
+def container_repository() -> Optional[str]:
+    """The repository from which to pull container images from.
+
+    Not specifying a repository will result in local images being used,
+    but only for local-grapl stacks.
+    """
+
+    repo_name = cloudsmith_repository_name()
+    if repo_name:
+        return f"docker.cloudsmith.io/{repo_name}"
+    return None

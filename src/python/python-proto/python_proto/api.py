@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Mapping, Sequence, Union, cast
+from typing import Mapping, Sequence, Type, Union, cast
 
 from graplinc.grapl.api.graph.v1beta1.types_pb2 import (
     DecrementOnlyIntProp as _DecrementOnlyIntProp,
@@ -48,12 +48,13 @@ from python_proto import SerDe
 
 
 @dataclasses.dataclass(frozen=True)
-class Session(SerDe):
+class Session(SerDe[_Session]):
     primary_key_properties: Sequence[str]
     primary_key_requires_asset_id: bool
     create_time: int
     last_seen_time: int
     terminate_time: int
+    proto_cls: Type[_Session] = _Session
 
     @staticmethod
     def deserialize(bytes_: bytes) -> Session:
@@ -83,9 +84,10 @@ class Session(SerDe):
 
 
 @dataclasses.dataclass(frozen=True)
-class Static(SerDe):
+class Static(SerDe[_Static]):
     primary_key_properties: Sequence[str]
     primary_key_requires_asset_id: bool
+    proto_cls: Type[_Static] = _Static
 
     @staticmethod
     def deserialize(bytes_: bytes) -> Static:
@@ -109,8 +111,9 @@ class Static(SerDe):
 
 
 @dataclasses.dataclass(frozen=True)
-class IdStrategy(SerDe):
+class IdStrategy(SerDe[_IdStrategy]):
     strategy: Union[Session, Static]
+    proto_cls: Type[_IdStrategy] = _IdStrategy
 
     @staticmethod
     def deserialize(bytes_: bytes) -> IdStrategy:
@@ -141,8 +144,9 @@ class IdStrategy(SerDe):
 
 
 @dataclasses.dataclass(frozen=True)
-class IncrementOnlyUintProp(SerDe):
+class IncrementOnlyUintProp(SerDe[_IncrementOnlyUintProp]):
     prop: int
+    proto_cls: Type[_IncrementOnlyUintProp] = _IncrementOnlyUintProp
 
     @staticmethod
     def deserialize(bytes_: bytes) -> IncrementOnlyUintProp:
@@ -165,8 +169,9 @@ class IncrementOnlyUintProp(SerDe):
 
 
 @dataclasses.dataclass(frozen=True)
-class ImmutableUintProp(SerDe):
+class ImmutableUintProp(SerDe[_ImmutableUintProp]):
     prop: int
+    proto_cls: Type[_ImmutableUintProp] = _ImmutableUintProp
 
     @staticmethod
     def deserialize(bytes_: bytes) -> ImmutableUintProp:
@@ -187,8 +192,9 @@ class ImmutableUintProp(SerDe):
 
 
 @dataclasses.dataclass(frozen=True)
-class DecrementOnlyUintProp(SerDe):
+class DecrementOnlyUintProp(SerDe[_DecrementOnlyUintProp]):
     prop: int
+    proto_cls: Type[_DecrementOnlyUintProp] = _DecrementOnlyUintProp
 
     @staticmethod
     def deserialize(bytes_: bytes) -> DecrementOnlyUintProp:
@@ -211,8 +217,9 @@ class DecrementOnlyUintProp(SerDe):
 
 
 @dataclasses.dataclass(frozen=True)
-class IncrementOnlyIntProp(SerDe):
+class IncrementOnlyIntProp(SerDe[_IncrementOnlyIntProp]):
     prop: int
+    proto_cls: Type[_IncrementOnlyIntProp] = _IncrementOnlyIntProp
 
     @staticmethod
     def deserialize(bytes_: bytes) -> IncrementOnlyIntProp:
@@ -235,8 +242,9 @@ class IncrementOnlyIntProp(SerDe):
 
 
 @dataclasses.dataclass(frozen=True)
-class DecrementOnlyIntProp(SerDe):
+class DecrementOnlyIntProp(SerDe[_DecrementOnlyIntProp]):
     prop: int
+    proto_cls: Type[_DecrementOnlyIntProp] = _DecrementOnlyIntProp
 
     @staticmethod
     def deserialize(bytes_: bytes) -> DecrementOnlyIntProp:
@@ -259,8 +267,9 @@ class DecrementOnlyIntProp(SerDe):
 
 
 @dataclasses.dataclass(frozen=True)
-class ImmutableIntProp(SerDe):
+class ImmutableIntProp(SerDe[_ImmutableIntProp]):
     prop: int
+    proto_cls: Type[_ImmutableIntProp] = _ImmutableIntProp
 
     @staticmethod
     def deserialize(bytes_: bytes) -> ImmutableIntProp:
@@ -281,8 +290,9 @@ class ImmutableIntProp(SerDe):
 
 
 @dataclasses.dataclass(frozen=True)
-class ImmutableStrProp(SerDe):
+class ImmutableStrProp(SerDe[_ImmutableStrProp]):
     prop: str
+    proto_cls: Type[_ImmutableStrProp] = _ImmutableStrProp
 
     @staticmethod
     def deserialize(bytes_: bytes) -> ImmutableStrProp:
@@ -303,7 +313,7 @@ class ImmutableStrProp(SerDe):
 
 
 @dataclasses.dataclass(frozen=True)
-class NodeProperty(SerDe):
+class NodeProperty(SerDe[_NodeProperty]):
     property_: Union[
         IncrementOnlyUintProp,
         DecrementOnlyUintProp,
@@ -313,6 +323,7 @@ class NodeProperty(SerDe):
         ImmutableIntProp,
         ImmutableStrProp,
     ]
+    proto_cls: Type[_NodeProperty] = _NodeProperty
 
     @staticmethod
     def deserialize(bytes_: bytes) -> NodeProperty:
@@ -399,11 +410,12 @@ class NodeProperty(SerDe):
 
 
 @dataclasses.dataclass(frozen=True)
-class NodeDescription(SerDe):
+class NodeDescription(SerDe[_NodeDescription]):
     properties: Mapping[str, NodeProperty]
     node_key: str
     node_type: str
     id_strategy: Sequence[IdStrategy]
+    proto_cls: Type[_NodeDescription] = _NodeDescription
 
     @staticmethod
     def deserialize(bytes_: bytes) -> NodeDescription:
@@ -437,10 +449,11 @@ class NodeDescription(SerDe):
 
 
 @dataclasses.dataclass(frozen=True)
-class IdentifiedNode(SerDe):
+class IdentifiedNode(SerDe[_IdentifiedNode]):
     properties: Mapping[str, NodeProperty]
     node_key: str
     node_type: str
+    proto_cls: Type[_IdentifiedNode] = _IdentifiedNode
 
     @staticmethod
     def deserialize(bytes_: bytes) -> IdentifiedNode:
@@ -469,11 +482,12 @@ class IdentifiedNode(SerDe):
 
 
 @dataclasses.dataclass(frozen=True)
-class MergedNode(SerDe):
+class MergedNode(SerDe[_MergedNode]):
     properties: Mapping[str, NodeProperty]
     uid: int
     node_key: str
     node_type: str
+    proto_cls: Type[_MergedNode] = _MergedNode
 
     @staticmethod
     def deserialize(bytes_: bytes) -> MergedNode:
@@ -504,10 +518,11 @@ class MergedNode(SerDe):
 
 
 @dataclasses.dataclass(frozen=True)
-class Edge(SerDe):
+class Edge(SerDe[_Edge]):
     from_node_key: str
     to_node_key: str
     edge_name: str
+    proto_cls: Type[_Edge] = _Edge
 
     @staticmethod
     def deserialize(bytes_: bytes) -> Edge:
@@ -532,8 +547,9 @@ class Edge(SerDe):
 
 
 @dataclasses.dataclass(frozen=True)
-class EdgeList(SerDe):
+class EdgeList(SerDe[_EdgeList]):
     edges: Sequence[Edge]
+    proto_cls: Type[_EdgeList] = _EdgeList
 
     @staticmethod
     def deserialize(bytes_: bytes) -> EdgeList:
@@ -553,12 +569,13 @@ class EdgeList(SerDe):
 
 
 @dataclasses.dataclass(frozen=True)
-class MergedEdge(SerDe):
+class MergedEdge(SerDe[_MergedEdge]):
     from_uid: str
     from_node_key: str
     to_uid: str
     to_node_key: str
     edge_name: str
+    proto_cls: Type[_MergedEdge] = _MergedEdge
 
     @staticmethod
     def deserialize(bytes_: bytes) -> MergedEdge:
@@ -587,11 +604,12 @@ class MergedEdge(SerDe):
 
 
 @dataclasses.dataclass(frozen=True)
-class MergedEdgeList(SerDe):
+class MergedEdgeList(SerDe[_MergedEdgeList]):
     # TODO: seed to places where this is used:
     # /src/python/grapl_analyzerlib/grapl_analyzerlib/view_from_proto.py
     # /src/python/grapl_analyzerlib/grapl_analyzerlib/subgraph_view.py
     edges: Sequence[MergedEdge]
+    proto_cls: Type[_MergedEdgeList] = _MergedEdgeList
 
     @staticmethod
     def deserialize(bytes_: bytes) -> MergedEdgeList:
@@ -613,9 +631,10 @@ class MergedEdgeList(SerDe):
 
 
 @dataclasses.dataclass(frozen=True)
-class GraphDescription(SerDe):
+class GraphDescription(SerDe[_GraphDescription]):
     nodes: Mapping[str, NodeDescription]
     edges: Mapping[str, EdgeList]
+    proto_cls: Type[_GraphDescription] = _GraphDescription
 
     @staticmethod
     def deserialize(bytes_: bytes) -> GraphDescription:
@@ -648,9 +667,10 @@ class GraphDescription(SerDe):
 
 
 @dataclasses.dataclass(frozen=True)
-class IdentifiedGraph(SerDe):
+class IdentifiedGraph(SerDe[_IdentifiedGraph]):
     nodes: Mapping[str, IdentifiedNode]
     edges: Mapping[str, EdgeList]
+    proto_cls: Type[_IdentifiedGraph] = _IdentifiedGraph
 
     @staticmethod
     def deserialize(bytes_: bytes) -> IdentifiedGraph:
@@ -681,9 +701,10 @@ class IdentifiedGraph(SerDe):
 
 
 @dataclasses.dataclass(frozen=True)
-class MergedGraph(SerDe):
+class MergedGraph(SerDe[_MergedGraph]):
     nodes: Mapping[str, MergedNode]
     edges: Mapping[str, MergedEdgeList]
+    proto_cls: Type[_MergedGraph] = _MergedGraph
 
     @staticmethod
     def deserialize(bytes_: bytes) -> MergedGraph:

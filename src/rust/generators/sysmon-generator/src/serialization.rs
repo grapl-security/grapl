@@ -12,11 +12,11 @@ use sysmon::Event;
 
 #[derive(thiserror::Error, Clone, Debug)]
 pub enum SysmonDecoderError {
-    #[error("DeserializeError")]
+    #[error("DeserializeError {0}")]
     DeserializeError(String),
-    #[error("DecompressionError")]
+    #[error("DecompressionError {0}")]
     DecompressionError(#[from] PayloadDecompressionError),
-    #[error("TimeError")]
+    #[error("TimeError {0}")]
     TimeError(#[from] chrono::ParseError),
 }
 
@@ -36,6 +36,7 @@ pub struct SysmonDecoder;
 impl PayloadDecoder<Vec<Event>> for SysmonDecoder {
     type DecoderError = SysmonDecoderError;
 
+    #[tracing::instrument(skip(self), err)]
     fn decode(&mut self, body: Vec<u8>) -> Result<Vec<Event>, Self::DecoderError> {
         let decompressed = grapl_service::decoder::decompress::maybe_decompress(body.as_slice())?;
 

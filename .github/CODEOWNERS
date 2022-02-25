@@ -81,12 +81,7 @@ BUILD @christophermaier
 /src/rust/rust-toolchain.toml @inickles-grapl
 /src/rust/sqs-executor/ @inickles-grapl @grapl-security/wg-data-infra
 /src/rust/sysmon/ @inickles-grapl
-/test/cypress/ @inickles-grapl @andrea-grapl
-/test/cypress.json @inickles-grapl @andrea-grapl
 /test/docker-compose* @inickles-grapl @christophermaier
-/test/Dockerfile.cypress @inickles-grapl @andrea-grapl
-/test/package.json @inickles-grapl @andrea-grapl
-/test/yarn.lock @inickles-grapl @andrea-grapl
 /test/run @wimax-grapl
 
 # This needs to be kept at the end??

@@ -1,7 +1,7 @@
 from typing import Optional
 
 import pulumi_aws as aws
-from infra.config import DEPLOYMENT_NAME, get_grapl_ops_alarms_email
+from infra.config import STACK_NAME, get_grapl_ops_alarms_email
 
 import pulumi
 
@@ -22,7 +22,7 @@ class AlarmSink(pulumi.ComponentResource):
         super().__init__("grapl:AlarmSink", name=name, props=None, opts=opts)
         child_opts = pulumi.ResourceOptions(parent=self)
 
-        topic_name = f"{DEPLOYMENT_NAME}-{topic_name_suffix}"
+        topic_name = f"{STACK_NAME}-{topic_name_suffix}"
         self.topic = aws.sns.Topic(
             f"topic-{name}",
             name=topic_name,

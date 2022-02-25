@@ -1,4 +1,7 @@
-from typing import Any
+from typing import Any, Mapping, cast
+
+import pulumi_consul as consul
+import pulumi_nomad as nomad
 
 import pulumi
 
@@ -9,7 +12,7 @@ def get_hashicorp_provider_address(
     pulumi_class: Any,
     provider_type: str,
     stack: pulumi.StackReference,
-    additional_configs: dict = {},
+    additional_configs: Mapping[str, Any] = {},
 ) -> Any:
     """
     This supports getting a Provider object with an explicit address set.
@@ -22,3 +25,33 @@ def get_hashicorp_provider_address(
     override_address = pulumi.Config(provider_type).get("address")
     address = override_address or stack.require_output("address")
     return pulumi_class.Provider(provider_type, address=address, **additional_configs)
+
+
+def get_nomad_provider_address(
+    stack: pulumi.StackReference,
+    additional_configs: Mapping[str, Any] = {},
+) -> nomad.Provider:
+    return cast(
+        nomad.Provider,
+        get_hashicorp_provider_address(
+            pulumi_class=nomad,
+            provider_type="nomad",
+            stack=stack,
+            additional_configs=additional_configs,
+        ),
+    )
+
+
+def get_consul_provider_address(
+    stack: pulumi.StackReference,
+    additional_configs: Mapping[str, Any] = {},
+) -> consul.Provider:
+    return cast(
+        consul.Provider,
+        get_hashicorp_provider_address(
+            pulumi_class=consul,
+            provider_type="consul",
+            stack=stack,
+            additional_configs=additional_configs,
+        ),
+    )
