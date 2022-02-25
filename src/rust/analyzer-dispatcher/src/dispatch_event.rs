@@ -71,11 +71,7 @@ impl CompletionEventSerializer for AnalyzerDispatchSerializer {
         &mut self,
         completed_events: &[Self::CompletedEvent],
     ) -> Result<Vec<Self::Output>, Self::Error> {
-        let unique_events: Vec<_> = completed_events
-            .iter()
-            .map(|e| &e.events)
-            .flatten()
-            .collect();
+        let unique_events: Vec<_> = completed_events.iter().flat_map(|e| &e.events).collect();
 
         let mut final_subgraph = MergedGraph::new();
 
