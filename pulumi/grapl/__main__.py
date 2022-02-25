@@ -311,8 +311,6 @@ def main() -> None:
         ###################################
         # Local Grapl
         ###################################
-
-
         organization_management_db = LocalPostgresInstance(
             name="organization_management_db",
             port=5632,
@@ -461,9 +459,7 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
-        pulumi.export(
-            "plugin-work-queue-db-hostname", plugin_work_queue_postgres.host()
-        )
+
         pulumi.export(
             "organization_management-db-hostname", organization_management_postgres.instance.address
         )
@@ -492,7 +488,7 @@ def main() -> None:
         )
 
         pulumi.export(
-            "plugin-work-queue-db-hostname", plugin_work_queue_postgres.instance.address
+            "plugin-work-queue-db-hostname", plugin_work_queue_postgres.host()
         )
         pulumi.export(
             "plugin-work-queue-db-port", plugin_work_queue_postgres.port().apply(str)

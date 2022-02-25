@@ -10,8 +10,16 @@ pub(crate) mod graplinc {
             pub(crate) mod graph {
                 pub(crate) mod v1beta1 {
                     include!(concat!(
-                        env!("OUT_DIR"),
-                        "/graplinc.grapl.api.graph.v1beta1.rs"
+                    env!("OUT_DIR"),
+                    "/graplinc.grapl.api.graph.v1beta1.rs"
+                    ));
+                }
+            }
+            pub(crate) mod organization_management {
+                pub(crate) mod v1beta1 {
+                    include!(concat!(
+                    env!("OUT_DIR"),
+                    "/graplinc.grapl.api.organization_management.v1beta1.rs"
                     ));
                 }
             }
@@ -26,16 +34,16 @@ pub(crate) mod graplinc {
             pub(crate) mod plugin_bootstrap {
                 pub(crate) mod v1beta1 {
                     include!(concat!(
-                        env!("OUT_DIR"),
-                        "/graplinc.grapl.api.plugin_bootstrap.v1beta1.rs"
+                    env!("OUT_DIR"),
+                    "/graplinc.grapl.api.plugin_bootstrap.v1beta1.rs"
                     ));
                 }
             }
             pub(crate) mod plugin_registry {
                 pub(crate) mod v1beta1 {
                     include!(concat!(
-                        env!("OUT_DIR"),
-                        "/graplinc.grapl.api.plugin_registry.v1beta1.rs"
+                    env!("OUT_DIR"),
+                    "/graplinc.grapl.api.plugin_registry.v1beta1.rs"
                     ));
                 }
             }
@@ -52,8 +60,8 @@ pub(crate) mod graplinc {
             pub(crate) mod plugin_work_queue {
                 pub(crate) mod v1beta1 {
                     include!(concat!(
-                        env!("OUT_DIR"),
-                        "/graplinc.grapl.api.plugin_work_queue.v1beta1.rs"
+                    env!("OUT_DIR"),
+                    "/graplinc.grapl.api.plugin_work_queue.v1beta1.rs"
                     ));
                 }
             }
@@ -61,8 +69,8 @@ pub(crate) mod graplinc {
         pub(crate) mod pipeline {
             pub mod v1beta1 {
                 include!(concat!(
-                    env!("OUT_DIR"),
-                    "/graplinc.grapl.pipeline.v1beta1.rs"
+                env!("OUT_DIR"),
+                "/graplinc.grapl.pipeline.v1beta1.rs"
                 ));
             }
         }

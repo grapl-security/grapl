@@ -144,8 +144,6 @@ variable "organization_management_db_password" {
   description = "What is the password for the organization management table?"
 }
 
-
->>>>>>> 6a132a28 (organization management in a working state, renamed org to organization, fixed script, updated libraries, can now run this service.)
 variable "plugin_work_queue_db_hostname" {
   type        = string
   description = "What is the host for the plugin work queue table?"
@@ -291,9 +289,8 @@ locals {
   # String that contains all of the running Alphas for clients connecting to Dgraph (so they can do loadbalancing)
   alpha_grpc_connect_str = join(",", [for alpha in local.dgraph_alphas : "localhost:${alpha.grpc_public_port}"])
 
-<<<<<<< HEAD
   _redis_trimmed = trimprefix(var.redis_endpoint, "redis://")
-=======
+
   # Prefer these over their `var` equivalents.
   # The aws endpoint is in template env format
   aws_endpoint                  = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
@@ -303,7 +300,6 @@ locals {
   organization_management_db_hostname   = replace(var.organization_management_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
 
   _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
->>>>>>> 6a132a28 (organization management in a working state, renamed org to organization, fixed script, updated libraries, can now run this service.)
   _redis         = split(":", local._redis_trimmed)
   redis_host     = local._redis[0]
   redis_port     = local._redis[1]
@@ -1097,9 +1093,6 @@ job "grapl-core" {
     }
   }
 
-<<<<<<< HEAD
-=======
-
   group "organization-management" {
     network {
       mode = "bridge"
@@ -1144,8 +1137,6 @@ job "grapl-core" {
     }
   }
 
-
->>>>>>> 6a132a28 (organization management in a working state, renamed org to organization, fixed script, updated libraries, can now run this service.)
   group "plugin-registry" {
     network {
       mode = "bridge"

@@ -2350,6 +2350,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "kafka-metrics-exporter"
+version = "0.1.0"
+dependencies = [
+ "metrics",
+ "prost 0.9.0",
+ "prost-build 0.9.0",
+ "quanta 0.7.2",
+ "rdkafka",
+ "tokio 1.15.0",
+ "tokio-stream",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "kernel32-sys"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3319,6 +3334,16 @@ dependencies = [
  "proc-macro2",
  "quote 1.0.15",
  "syn 1.0.86",
+]
+
+[[package]]
+name = "prost-types"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "603bbd6394701d13f3f25aada59c7de9d35a6a5887cfc156181234a44002771b"
+dependencies = [
+ "bytes 1.1.0",
+ "prost 0.8.0",
 ]
 
 [[package]]
