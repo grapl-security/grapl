@@ -12,6 +12,7 @@ variable "container_images" {
   type        = map(string)
   description = <<EOF
   A map of $NAME_OF_TASK to the URL for that task's docker image ID.
+  A map of $NAME_OF_TASK to the URL for that task's docker image ID.
   (See DockerImageId in Pulumi for further documentation.)
 EOF
 }
@@ -123,6 +124,28 @@ variable "plugin_registry_kernel_artifact_url" {
   description = "S3 URL specifying the kernel for the Firecracker VM"
 }
 
+variable "organization_management_db_hostname" {
+  type        = string
+  description = "What is the host for the organization management table?"
+}
+
+variable "organization_management_db_port" {
+  type        = string
+  description = "What is the port for the organization management table?"
+}
+
+variable "organization_management_db_username" {
+  type        = string
+  description = "What is the username for the organization management table?"
+}
+
+variable "organization_management_db_password" {
+  type        = string
+  description = "What is the password for the organization management table?"
+}
+
+
+>>>>>>> 6a132a28 (organization management in a working state, renamed org to organization, fixed script, updated libraries, can now run this service.)
 variable "plugin_work_queue_db_hostname" {
   type        = string
   description = "What is the host for the plugin work queue table?"
@@ -268,7 +291,19 @@ locals {
   # String that contains all of the running Alphas for clients connecting to Dgraph (so they can do loadbalancing)
   alpha_grpc_connect_str = join(",", [for alpha in local.dgraph_alphas : "localhost:${alpha.grpc_public_port}"])
 
+<<<<<<< HEAD
   _redis_trimmed = trimprefix(var.redis_endpoint, "redis://")
+=======
+  # Prefer these over their `var` equivalents.
+  # The aws endpoint is in template env format
+  aws_endpoint                  = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
+  redis_endpoint                = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  plugin_registry_db_hostname   = replace(var.plugin_registry_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  plugin_work_queue_db_hostname = replace(var.plugin_work_queue_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  organization_management_db_hostname   = replace(var.organization_management_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+
+  _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
+>>>>>>> 6a132a28 (organization management in a working state, renamed org to organization, fixed script, updated libraries, can now run this service.)
   _redis         = split(":", local._redis_trimmed)
   redis_host     = local._redis[0]
   redis_port     = local._redis[1]
@@ -1062,6 +1097,55 @@ job "grapl-core" {
     }
   }
 
+<<<<<<< HEAD
+=======
+
+  group "organization-management" {
+    network {
+      mode = "bridge"
+      port "organization-management-port" {
+      }
+    }
+
+    task "organization-management" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["organization-management"]
+        ports = ["organization-management-port"]
+      }
+
+      template {
+        data        = local.conditionally_defined_env_vars
+        destination = "organization-management.env"
+        env         = true
+      }
+
+      env {
+        AWS_REGION                      = var.aws_region
+        NOMAD_SERVICE_ADDRESS           = "${attr.unique.network.ip-address}:4646"
+        ORGANIZATION_MANAGEMENT_BIND_ADDRESS    = "0.0.0.0:${NOMAD_PORT_organization-management-port}"
+        RUST_BACKTRACE                  = local.rust_backtrace
+        RUST_LOG                        = var.rust_log
+        ORGANIZATION_MANAGEMENT_DB_HOSTNAME     = local.organization_management_db_hostname
+        ORGANIZATION_MANAGEMENT_DB_PASSWORD     = var.organization_management_db_password
+        ORGANIZATION_MANAGEMENT_DB_PORT         = var.organization_management_db_port
+        ORGANIZATION_MANAGEMENT_DB_USERNAME     = var.organization_management_db_username
+      }
+    }
+
+    service {
+      name = "organization-management"
+      port = "organization-management-port"
+      connect {
+        sidecar_service {
+        }
+      }
+    }
+  }
+
+
+>>>>>>> 6a132a28 (organization management in a working state, renamed org to organization, fixed script, updated libraries, can now run this service.)
   group "plugin-registry" {
     network {
       mode = "bridge"

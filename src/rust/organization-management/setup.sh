@@ -37,10 +37,7 @@ sqlx migrate run
 cargo build
 
 echo "Saving metadata to sqlx.json for offline mode"
-cargo sqlx prepare -- --bin=server
+cargo sqlx prepare -- --lib
 
-echo "Running server"
-cargo run --bin server
-
-echo "Running client and making requests"
-cargo run --bin client
+echo "Running org management"
+cargo run

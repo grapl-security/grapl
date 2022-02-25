@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package graplinc.grapl.api.organization_management.v1beta1;
+
+import "graplinc/common/v1beta1/types.proto";
+
+message CreateOrganizationRequest {
+  string organization_display_name = 1;
+  string admin_username = 2;
+  string admin_email = 3;
+  bytes admin_password = 4;
+  bool should_reset_password = 5;
+}
+
+message CreateOrganizationResponse {
+}
+
+message CreateUserRequest {
+  graplinc.common.v1beta1.Uuid organization_id = 1;
+  string name = 2;
+  string email = 3;
+  bytes password = 4;
+}
+
+message CreateUserResponse {
+}
+
+message ChangePasswordRequest {
+  graplinc.common.v1beta1.Uuid user_id = 1;
+  bytes old_password = 2;
+  bytes new_password = 3;
+}
+
+message ChangePasswordResponse {
+}
+
+service OrganizationManagementService {
+  rpc CreateOrganization(CreateOrganizationRequest) returns (CreateOrganizationResponse);
+
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
+}
