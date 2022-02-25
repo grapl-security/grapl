@@ -19,19 +19,19 @@ ENTRYPOINT ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
 
 # analyzer-executor
 ################################################################################
-FROM grapl-python-base AS analyzer-executor
+FROM grapl-python-base AS analyzer-executor-deploy
 COPY --chown=grapl ./dist/analyzer-executor.pex .
 CMD ["./analyzer-executor.pex"]
 
 # engagement-creator
 ################################################################################
-FROM grapl-python-base AS engagement-creator
+FROM grapl-python-base AS engagement-creator-deploy
 COPY --chown=grapl ./dist/engagement-creator.pex .
 CMD ["./engagement-creator.pex"]
 
 # Provisioner
 ################################################################################
-FROM grapl-python-base AS provisioner
+FROM grapl-python-base AS provisioner-deploy
 COPY --chown=grapl ./dist/provisioner.pex .
 CMD ["./provisioner.pex"]
 
@@ -53,9 +53,9 @@ CMD ["./e2e-tests.pex"]
 
 ENV PATH=/home/grapl/bin:$PATH
 
-# python-integration-tests
+# integration-tests
 ################################################################################
-FROM grapl-python-base AS python-integration-tests
+FROM grapl-python-base AS integration-tests
 USER root
 RUN apt-get update \
     && apt-get -y install --no-install-recommends \

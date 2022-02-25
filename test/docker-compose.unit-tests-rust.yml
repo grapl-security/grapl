@@ -4,7 +4,7 @@ version: "3.8"
 
 services:
   rust-test:
-    image: grapl/rust-test-unit:${TAG}
+    image: grapl/rust-test-unit:${IMAGE_TAG}
     build:
       context: ${PWD}/src
       dockerfile: ./rust/Dockerfile

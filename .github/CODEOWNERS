@@ -10,6 +10,7 @@ BUILD @christophermaier
 /codecov.yml @christophermaier
 /CONTRIBUTING.md @christophermaier
 /debugger/ @christophermaier
+/docker-bake.hcl @christophermaier
 /docker-compose*.yml @christophermaier
 *Dockerfile* @christophermaier @inickles-grapl
 /Dockerfile.pulumi @christophermaier
