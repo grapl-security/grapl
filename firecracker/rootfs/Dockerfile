@@ -5,8 +5,8 @@ FROM debian:bullseye-slim AS rootfs-build
 RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rootfs-apt <<EOF
     apt update
     apt install --yes \
-        fuse\
-        fuseext2
+        fuse=2.9.9-5 \
+        fuseext2=0.4-1.2+b1
 EOF
 
 COPY docker_runtime docker_runtime
