@@ -62,6 +62,7 @@ root_patterns = [
   "/3rdparty",
   "/build-support",
   "/etc",  # Some of our tests use sample data from here
+  "/firecracker",
   "/pants-plugins",
   "/pulumi",
   "/src/proto",

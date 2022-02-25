@@ -1,6 +1,6 @@
 target "rootfs-build" {
   context    = "."
-  dockerfile = "Dockerfile.rootfs"
+  dockerfile = "Dockerfile"
   tags = [
     "rootfs-build:dev"
   ]
