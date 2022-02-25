@@ -77,7 +77,7 @@ def main() -> None:
         "aws_region": aws.get_region().name,
         "container_images": _e2e_container_images(artifacts),
         # Used by graplctl to determine if it should manual-event or not
-        "stack_name": grapl_stack.upstream_stack_name,  
+        "stack_name": grapl_stack.upstream_stack_name,
         "kafka_bootstrap_servers": grapl_stack.kafka_bootstrap_servers,
         "kafka_sasl_username": grapl_stack.kafka_e2e_sasl_username,
         "kafka_sasl_password": grapl_stack.kafka_e2e_sasl_password,
@@ -165,9 +165,7 @@ class GraplStack:
         self.kafka_e2e_consumer_group_name = require_str(
             "kafka-e2e-consumer-group-name"
         )
-        self.test_user_password_secret_id = require_str(
-            "test-user-password-secret-id"
-        )
+        self.test_user_password_secret_id = require_str("test-user-password-secret-id")
 
 
 if __name__ == "__main__":

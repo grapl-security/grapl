@@ -285,11 +285,11 @@ job "integration-tests" {
         GRAPL_ANALYZERS_BUCKET                  = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
         GRAPL_MODEL_PLUGINS_BUCKET              = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
 
-        GRAPL_API_HOST                = "${NOMAD_UPSTREAM_IP_web-ui}"
-        GRAPL_HTTP_FRONTEND_PORT      = "${NOMAD_UPSTREAM_PORT_web-ui}"
-        GRAPL_TEST_USER_NAME          = var.test_user_name
+        GRAPL_API_HOST                     = "${NOMAD_UPSTREAM_IP_web-ui}"
+        GRAPL_HTTP_FRONTEND_PORT           = "${NOMAD_UPSTREAM_PORT_web-ui}"
+        GRAPL_TEST_USER_NAME               = var.test_user_name
         GRAPL_TEST_USER_PASSWORD_SECRET_ID = var.test_user_password_secret_id
-        GRAPL_SCHEMA_PROPERTIES_TABLE = var.schema_properties_table_name
+        GRAPL_SCHEMA_PROPERTIES_TABLE      = var.schema_properties_table_name
 
         HITCACHE_ADDR     = "${local.redis_host}"
         HITCACHE_PORT     = "${local.redis_port}"
