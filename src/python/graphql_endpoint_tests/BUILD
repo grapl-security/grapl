@@ -14,9 +14,9 @@ python_tests(
         "GRAPL_LOG_LEVEL",
         "GRAPL_SCHEMA_PROPERTIES_TABLE",
         "GRAPL_TEST_USER_NAME",
+        "GRAPL_TEST_USER_PASSWORD_SECRET_ID",
         "IS_LOCAL",
         "MG_ALPHAS",
-        "STACK_NAME",
         "VSC_DEBUGGER_PORT",
     ],
 )

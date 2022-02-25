@@ -14,11 +14,6 @@ variable "aws_region" {
   type = string
 }
 
-variable "stack_name" {
-  type        = string
-  description = "The Pulumi stack name."
-}
-
 variable "aws_env_vars_for_local" {
   type        = string
   description = <<EOF
@@ -60,6 +55,11 @@ variable "schema_properties_table_name" {
 variable "test_user_name" {
   type        = string
   description = "The name of the test user"
+}
+
+variable "test_user_password_secret_id" {
+  type        = string
+  description = "The SecretsManager SecretID for the test user's password"
 }
 
 variable "docker_user" {
@@ -176,7 +176,6 @@ job "integration-tests" {
 
       env {
         AWS_REGION      = var.aws_region
-        STACK_NAME      = var.stack_name
         GRAPL_LOG_LEVEL = local.log_level
         # This is a hack, because IDK how to share locals across files
         #MG_ALPHAS                   = local.alpha_grpc_connect_str # TODO: Figure out how to do this
@@ -286,10 +285,11 @@ job "integration-tests" {
         GRAPL_ANALYZERS_BUCKET                  = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
         GRAPL_MODEL_PLUGINS_BUCKET              = "NOT_ACTUALLY_EXERCISED_IN_TESTS"
 
-        GRAPL_API_HOST                = "${NOMAD_UPSTREAM_IP_web-ui}"
-        GRAPL_HTTP_FRONTEND_PORT      = "${NOMAD_UPSTREAM_PORT_web-ui}"
-        GRAPL_TEST_USER_NAME          = "${var.test_user_name}"
-        GRAPL_SCHEMA_PROPERTIES_TABLE = "${var.schema_properties_table_name}"
+        GRAPL_API_HOST                     = "${NOMAD_UPSTREAM_IP_web-ui}"
+        GRAPL_HTTP_FRONTEND_PORT           = "${NOMAD_UPSTREAM_PORT_web-ui}"
+        GRAPL_TEST_USER_NAME               = var.test_user_name
+        GRAPL_TEST_USER_PASSWORD_SECRET_ID = var.test_user_password_secret_id
+        GRAPL_SCHEMA_PROPERTIES_TABLE      = var.schema_properties_table_name
 
         HITCACHE_ADDR     = "${local.redis_host}"
         HITCACHE_PORT     = "${local.redis_port}"
@@ -301,7 +301,6 @@ job "integration-tests" {
         KAFKA_SASL_USERNAME     = var.kafka_sasl_username
         KAFKA_SASL_PASSWORD     = var.kafka_sasl_password
 
-        STACK_NAME      = var.stack_name
         GRAPL_LOG_LEVEL = local.log_level
         MG_ALPHAS       = "localhost:9080"
 
