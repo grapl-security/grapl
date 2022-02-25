@@ -60,7 +60,7 @@ def _container_images(
         "model-plugin-deployer": builder.build_with_tag("model-plugin-deployer"),
         "node-identifier": builder.build_with_tag("node-identifier"),
         "node-identifier-retry": builder.build_with_tag("node-identifier-retry"),
-        "org-management": builder.build_with_tag("org-management"),
+        "organization-management": builder.build_with_tag("organization-management"),
         "osquery-generator": builder.build_with_tag("osquery-generator"),
         "plugin-registry": builder.build_with_tag("plugin-registry"),
         "plugin-work-queue": builder.build_with_tag("plugin-work-queue"),
@@ -214,8 +214,8 @@ def main() -> None:
         # Local Grapl
         ###################################
 
-        org_management_db = LocalPostgresInstance(
-            name="org_management_db",
+        organization_management_db = LocalPostgresInstance(
+            name="organization_management_db",
             port=5632,
         )
 
@@ -256,10 +256,10 @@ def main() -> None:
             aws_access_key_secret=aws_config.secret_key,
             container_images=_container_images({}),
             rust_log=rust_log_levels,
-            org_management_db_hostname="LOCAL_GRAPL_REPLACE_IP",
-            org_management_db_port=str(org_management_db.port),
-            org_management_db_username=org_management_db.username,
-            org_management_db_password=org_management_db.password,
+            organization_management_db_hostname="LOCAL_GRAPL_REPLACE_IP",
+            organization_management_db_port=str(organization_management_db.port),
+            organization_management_db_username=organization_management_db.username,
+            organization_management_db_password=organization_management_db.password,
             plugin_registry_db_hostname="LOCAL_GRAPL_REPLACE_IP",
             plugin_registry_db_port=str(plugin_registry_db.port),
             plugin_registry_db_username=plugin_registry_db.username,
@@ -381,8 +381,8 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
-        org_management_postgres = Postgres(
-            name="org_management",
+        organization_management_postgres = Postgres(
+            name="organization_management",
             subnet_ids=subnet_ids,
             vpc_id=vpc_id,
             availability_zone=availability_zone,
@@ -406,16 +406,16 @@ def main() -> None:
         )
 
         pulumi.export(
-            "org_management-db-hostname", org_management_postgres.instance.address
+            "organization_management-db-hostname", organization_management_postgres.instance.address
         )
         pulumi.export(
-            "org_management-db-port", str(org_management_postgres.instance.port)
+            "organization_management-db-port", str(organization_management_postgres.instance.port)
         )
         pulumi.export(
-            "org_management-db-username", org_management_postgres.instance.username
+            "organization_management-db-username", organization_management_postgres.instance.username
         )
         pulumi.export(
-            "org_management-db-password", org_management_postgres.instance.password
+            "organization_management-db-password", organization_management_postgres.instance.password
         )
 
 
@@ -473,10 +473,10 @@ def main() -> None:
             # instead of the var version.
             _redis_endpoint=cache.endpoint,
             container_images=_container_images(artifacts, require_artifact=True),
-            org_management_db_hostname=org_management_postgres.instance.address,
-            org_management_db_port=org_management_postgres.instance.port.apply(str),
-            org_management_db_username=org_management_postgres.instance.username,
-            org_management_db_password=org_management_postgres.instance.password,
+            organization_management_db_hostname=organization_management_postgres.instance.address,
+            organization_management_db_port=organization_management_postgres.instance.port.apply(str),
+            organization_management_db_username=organization_management_postgres.instance.username,
+            organization_management_db_password=organization_management_postgres.instance.password,
             plugin_registry_db_hostname=plugin_registry_postgres.instance.address,
             plugin_registry_db_port=plugin_registry_postgres.instance.port.apply(str),
             plugin_registry_db_username=plugin_registry_postgres.instance.username,

@@ -12,6 +12,7 @@ variable "container_images" {
   type        = map(string)
   description = <<EOF
   A map of $NAME_OF_TASK to the URL for that task's docker image ID.
+  A map of $NAME_OF_TASK to the URL for that task's docker image ID.
   (See DockerImageId in Pulumi for further documentation.)
 EOF
 }
@@ -134,24 +135,24 @@ variable "plugin_registry_db_password" {
   description = "What is the password for the plugin registry table?"
 }
 
-variable "org_management_db_hostname" {
+variable "organization_management_db_hostname" {
   type        = string
-  description = "What is the host for the org management table?"
+  description = "What is the host for the organization management table?"
 }
 
-variable "org_management_db_port" {
+variable "organization_management_db_port" {
   type        = string
-  description = "What is the port for the org management table?"
+  description = "What is the port for the organization management table?"
 }
 
-variable "org_management_db_username" {
+variable "organization_management_db_username" {
   type        = string
-  description = "What is the username for the org management table?"
+  description = "What is the username for the organization management table?"
 }
 
-variable "org_management_db_password" {
+variable "organization_management_db_password" {
   type        = string
-  description = "What is the password for the org management table?"
+  description = "What is the password for the organization management table?"
 }
 
 
@@ -311,7 +312,7 @@ locals {
   redis_endpoint                = replace(var._redis_endpoint, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
   plugin_registry_db_hostname   = replace(var.plugin_registry_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
   plugin_work_queue_db_hostname = replace(var.plugin_work_queue_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
-  org_management_db_hostname   = replace(var.org_management_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
+  organization_management_db_hostname   = replace(var.organization_management_db_hostname, "LOCAL_GRAPL_REPLACE_IP", attr.unique.network.ip-address)
 
   _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
   _redis         = split(":", local._redis_trimmed)
@@ -1119,43 +1120,43 @@ job "grapl-core" {
   }
 
 
-  group "org-management" {
+  group "organization-management" {
     network {
       mode = "bridge"
-      port "org-management-port" {
+      port "organization-management-port" {
       }
     }
 
-    task "org-management" {
+    task "organization-management" {
       driver = "docker"
 
       config {
-        image = var.container_images["org-management"]
-        ports = ["org-management-port"]
+        image = var.container_images["organization-management"]
+        ports = ["organization-management-port"]
       }
 
       template {
         data        = local.conditionally_defined_env_vars
-        destination = "org-management.env"
+        destination = "organization-management.env"
         env         = true
       }
 
       env {
         AWS_REGION                      = var.aws_region
         NOMAD_SERVICE_ADDRESS           = "${attr.unique.network.ip-address}:4646"
-        ORG_MANAGEMENT_BIND_ADDRESS    = "0.0.0.0:${NOMAD_PORT_org-management-port}"
+        ORGANIZATION_MANAGEMENT_BIND_ADDRESS    = "0.0.0.0:${NOMAD_PORT_organization-management-port}"
         RUST_BACKTRACE                  = local.rust_backtrace
         RUST_LOG                        = var.rust_log
-        ORG_MANAGEMENT_DB_HOSTNAME     = local.org_management_db_hostname
-        ORG_MANAGEMENT_DB_PASSWORD     = var.org_management_db_password
-        ORG_MANAGEMENT_DB_PORT         = var.org_management_db_port
-        ORG_MANAGEMENT_DB_USERNAME     = var.org_management_db_username
+        ORGANIZATION_MANAGEMENT_DB_HOSTNAME     = local.organization_management_db_hostname
+        ORGANIZATION_MANAGEMENT_DB_PASSWORD     = var.organization_management_db_password
+        ORGANIZATION_MANAGEMENT_DB_PORT         = var.organization_management_db_port
+        ORGANIZATION_MANAGEMENT_DB_USERNAME     = var.organization_management_db_username
       }
     }
 
     service {
-      name = "org-management"
-      port = "org-management-port"
+      name = "organization-management"
+      port = "organization-management-port"
       connect {
         sidecar_service {
         }

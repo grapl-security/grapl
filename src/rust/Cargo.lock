@@ -2831,7 +2831,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "org-management"
+name = "organization-management"
 version = "0.1.0"
 dependencies = [
  "argon2",

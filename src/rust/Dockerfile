@@ -316,11 +316,11 @@ FROM rust-dist AS model-plugin-deployer
 COPY --from=build /outputs/model-plugin-deployer /
 ENTRYPOINT ["/model-plugin-deployer"]
 
-# org-management
-FROM rust-dist AS org-management-deploy
+# organization-management
+FROM rust-dist AS organization-management-deploy
 
 # Hadolint v2.8.0 appears to be mistaken, this is a false positive
 # https://github.com/hadolint/hadolint/wiki/DL3022
 # hadolint ignore=DL3022
-COPY --from=build /outputs/org-management /
-ENTRYPOINT ["/org-management"]
+COPY --from=build /outputs/organization-management /
+ENTRYPOINT ["/organization-management"]

@@ -19,7 +19,7 @@ members = [
   "./model-plugin-deployer",
   "./node-identifier",
   "./nomad-client-gen",
-  "./org-management",
+  "./organization-management",
   "./plugin-bootstrap",
   "./plugin-registry",
   "./plugin-work-queue",

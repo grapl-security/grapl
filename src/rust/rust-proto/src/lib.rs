@@ -15,11 +15,11 @@ pub(crate) mod graplinc {
                     ));
                 }
             }
-            pub(crate) mod org_management {
+            pub(crate) mod organization_management {
                 pub(crate) mod v1beta1 {
                     include!(concat!(
                     env!("OUT_DIR"),
-                    "/graplinc.grapl.api.org_management.v1beta1.rs"
+                    "/graplinc.grapl.api.organization_management.v1beta1.rs"
                     ));
                 }
             }
@@ -62,7 +62,7 @@ pub(crate) mod graplinc {
 pub mod graph_descriptions;
 pub use graph_descriptions::node_property;
 
-pub mod org_management;
+pub mod organization_management;
 pub mod pipeline;
 pub mod plugin_bootstrap;
 pub mod plugin_registry;
