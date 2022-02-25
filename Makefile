@@ -11,7 +11,9 @@
 # that you'll need to set this to a proper version (not "", "latest",
 # or "dev") in order to generate release builds of our services to use
 # in a production deployment. Defaulting to `dev` is fine for
-# day-to-day development and local testing, though.
+# day-to-day development and local testing, though (and in fact is
+# required for our local usage of Nomad, because Nomad won't resolve a
+# `latest` tag from the host machine.)
 IMAGE_TAG ?= dev
 RUST_BUILD ?= debug
 UID = $(shell id -u)
