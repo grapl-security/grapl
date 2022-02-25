@@ -123,12 +123,12 @@ def main() -> None:
         )
 
     pulumi.export("test-user-name", config.GRAPL_TEST_USER_NAME)
+    test_user_password = TestUserPassword()
+    pulumi.export("test-user-password-secret-id", test_user_password.secret_id)
 
     # TODO: temporarily disabled until we can reconnect the ApiGateway to the new
     # web UI.
     # jwt_secret = JWTSecret()
-
-    test_user_password = TestUserPassword()
 
     dynamodb_tables = dynamodb.DynamoDB()
 
@@ -256,7 +256,7 @@ def main() -> None:
     )
 
     provision_vars: Final[NomadVars] = {
-        "stack_name": config.STACK_NAME,
+        "test_user_password_secret_id": test_user_password.secret_id,
         **_get_subset(
             nomad_inputs,
             {

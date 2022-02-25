@@ -113,6 +113,8 @@ class TestUserPassword(pulumi.ComponentResource):
 
         self.register_outputs({})
 
+        self.secret_id = self.secret.id
+
     def grant_read_permissions_to(self, role: aws.iam.Role) -> None:
         """
         Grants permission to the given `Role` to read this secret.
