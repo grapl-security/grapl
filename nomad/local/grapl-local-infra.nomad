@@ -1,4 +1,4 @@
-variable "localstack_tag" {
+  variable "localstack_tag" {
   type        = string
   description = "The tagged version of localstack we should deploy."
 }

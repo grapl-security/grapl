@@ -289,8 +289,6 @@ locals {
   # String that contains all of the running Alphas for clients connecting to Dgraph (so they can do loadbalancing)
   alpha_grpc_connect_str = join(",", [for alpha in local.dgraph_alphas : "localhost:${alpha.grpc_public_port}"])
 
-  _redis_trimmed = trimprefix(var.redis_endpoint, "redis://")
-
   # Prefer these over their `var` equivalents.
   # The aws endpoint is in template env format
   aws_endpoint                  = replace(var._aws_endpoint, "LOCAL_GRAPL_REPLACE_IP", "{{ env \"attr.unique.network.ip-address\" }}")
