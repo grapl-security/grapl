@@ -17,7 +17,9 @@ from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
 from infra.config import AWS_ACCOUNT_ID
+from infra.consul_config import ConsulConfig
 from infra.consul_intentions import ConsulIntentions
+from infra.consul_service_default import ConsulServiceDefault
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.get_hashicorp_provider_address import get_hashicorp_provider_address
 from infra.kafka import Kafka
@@ -281,6 +283,14 @@ def main() -> None:
             # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
             # when they update nomad configs
             intention_directory=Path("../../nomad/consul-intentions").resolve(),
+        )
+
+        # Set the protocol explicitly
+        ConsulServiceDefault("grapl-core", service_name="web-ui", protocol="tcp")
+
+        ConsulConfig(
+            "grapl-core",
+            hcl_file=Path("../../nomad/local/proxy-defaults.hcl").resolve(),
         )
 
         nomad_grapl_core = NomadJob(
