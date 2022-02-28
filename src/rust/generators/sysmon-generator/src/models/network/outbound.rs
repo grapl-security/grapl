@@ -15,7 +15,10 @@ use endpoint_plugin::{
     ProcessOutboundConnectionNode,
 };
 use rust_proto::graph_descriptions::*;
-use sysmon::NetworkEvent;
+use sysmon_parser::{
+    event_data::NetworkConnectionEventData,
+    System,
+};
 
 use crate::{
     generator::SysmonGeneratorError,
@@ -31,71 +34,72 @@ use crate::{
 /// * Source and Destination IP Address and Port nodes
 /// * IP connection and Network connection nodes
 pub fn generate_outbound_connection_subgraph(
-    conn_log: &NetworkEvent,
+    system: &System,
+    event_data: &NetworkConnectionEventData<'_>,
 ) -> Result<GraphDescription, SysmonGeneratorError> {
-    let timestamp = utc_to_epoch(&conn_log.event_data.utc_time)?;
+    let timestamp = utc_to_epoch(&event_data.utc_time)?;
 
     let mut graph = GraphDescription::new();
 
     let mut asset = AssetNode::new(AssetNode::static_strategy());
     asset
-        .with_asset_id(conn_log.system.computer.computer.clone())
-        .with_hostname(conn_log.system.computer.computer.clone());
+        .with_asset_id(system.computer.as_ref())
+        .with_hostname(system.computer.as_ref());
 
     // A process creates an outbound connection to dst_port
     let mut process = ProcessNode::new(ProcessNode::session_strategy());
     process
-        .with_asset_id(conn_log.system.computer.computer.clone())
-        .with_process_id(conn_log.event_data.process_id)
+        .with_asset_id(system.computer.as_ref())
+        .with_process_id(event_data.process_id)
         .with_last_seen_timestamp(timestamp);
 
     let mut outbound =
         ProcessOutboundConnectionNode::new(ProcessOutboundConnectionNode::identity_strategy());
     outbound
-        .with_asset_id(conn_log.system.computer.computer.clone())
-        .with_hostname(conn_log.system.computer.computer.clone())
-        .with_ip_address(conn_log.event_data.source_ip.clone())
-        .with_protocol(conn_log.event_data.protocol.clone())
-        .with_port(conn_log.event_data.source_port)
+        .with_asset_id(system.computer.as_ref())
+        .with_hostname(system.computer.as_ref())
+        .with_ip_address(event_data.source_ip.to_string())
+        .with_protocol(event_data.protocol.as_ref())
+        .with_port(event_data.source_port)
         .with_created_timestamp(timestamp);
 
     let mut src_ip = IpAddressNode::new(IpAddressNode::identity_strategy());
     src_ip
-        .with_ip_address(conn_log.event_data.source_ip.clone())
+        .with_ip_address(event_data.source_ip.to_string())
         .with_last_seen_timestamp(timestamp);
 
     let mut dst_ip = IpAddressNode::new(IpAddressNode::identity_strategy());
     dst_ip
-        .with_ip_address(conn_log.event_data.destination_ip.clone())
+        .with_ip_address(event_data.destination_ip.to_string())
         .with_last_seen_timestamp(timestamp);
 
     let mut src_port = IpPortNode::new(IpPortNode::identity_strategy());
     src_port
-        .with_ip_address(conn_log.event_data.source_ip.clone())
-        .with_port(conn_log.event_data.source_port)
-        .with_protocol(conn_log.event_data.protocol.clone());
+        .with_ip_address(event_data.source_ip.to_string())
+        .with_port(event_data.source_port)
+        .with_protocol(event_data.protocol.as_ref());
 
     let mut dst_port = IpPortNode::new(IpPortNode::identity_strategy());
     dst_port
-        .with_ip_address(conn_log.event_data.destination_ip.clone())
-        .with_port(conn_log.event_data.destination_port)
-        .with_protocol(conn_log.event_data.protocol.clone());
+        .with_ip_address(event_data.destination_ip.to_string())
+        .with_port(event_data.destination_port)
+        .with_protocol(event_data.protocol.as_ref());
 
     let mut network_connection =
         NetworkConnectionNode::new(NetworkConnectionNode::identity_strategy());
     network_connection
-        .with_src_ip_address(conn_log.event_data.source_ip.clone())
-        .with_src_port(conn_log.event_data.source_port)
-        .with_dst_ip_address(conn_log.event_data.destination_ip.clone())
-        .with_dst_port(conn_log.event_data.destination_port)
-        .with_protocol(conn_log.event_data.protocol.clone())
+        .with_src_ip_address(event_data.source_ip.to_string())
+        .with_src_port(event_data.source_port)
+        .with_dst_ip_address(event_data.destination_ip.to_string())
+        .with_dst_port(event_data.destination_port)
+        .with_protocol(event_data.protocol.as_ref())
         .with_created_timestamp(timestamp);
 
     let mut ip_connection = IpConnectionNode::new(IpConnectionNode::identity_strategy());
     ip_connection
-        .with_src_ip_address(conn_log.event_data.source_ip.clone())
-        .with_dst_ip_address(conn_log.event_data.destination_ip.clone())
-        .with_protocol(conn_log.event_data.protocol.clone())
+        .with_src_ip_address(event_data.source_ip.to_string())
+        .with_dst_ip_address(event_data.destination_ip.to_string())
+        .with_protocol(event_data.protocol.as_ref())
         .with_created_timestamp(timestamp);
 
     // An asset is assigned an IP

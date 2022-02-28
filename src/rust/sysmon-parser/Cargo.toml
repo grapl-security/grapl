@@ -1,0 +1,33 @@
+[package]
+name = "sysmon-parser"
+version = "0.1.0-alpha.1"
+authors = ["Grapl Security"]
+description = "Type definitions and deserialization support for Sysmon events"
+license = "MIT OR Apache-2.0"
+keywords = ["sysinternals", "sysmon"]
+edition = "2021"
+
+[lib]
+bench = false
+
+[dependencies]
+chrono = { version = "0.4", features = [] }
+derive-into-owned = "0.2"
+memchr = "2"
+thiserror = "1.0"
+uuid = "0.8"
+xmlparser = "0.13"
+
+[dev-dependencies]
+criterion = "0.3"
+
+# The version on crates.io is not the latest used by Grapl. This gets the
+# latest version of this package at the time of this writing.
+[dev-dependencies.graplsysmon]
+package = "sysmon"
+git = "https://github.com/grapl-security/grapl.git"
+rev = "5e23ff957b14bb44f536e5bfbd70f61c8b8915f5"
+
+[[bench]]
+name = "benches"
+harness = false

@@ -7,7 +7,10 @@ use endpoint_plugin::{
     ProcessNode,
 };
 use rust_proto::graph_descriptions::*;
-use sysmon::FileCreateEvent;
+use sysmon_parser::{
+    event_data::FileCreateEventData,
+    System,
+};
 
 use crate::{
     generator::SysmonGeneratorError,
@@ -24,28 +27,27 @@ use crate::{
 /// * A creator `Process` node - denotes the process that created the file
 /// * A subject `File` node - the file that is created as part of this event
 pub fn generate_file_create_subgraph(
-    file_create: &FileCreateEvent,
+    system: &System,
+    event_data: &FileCreateEventData<'_>,
 ) -> Result<GraphDescription, SysmonGeneratorError> {
-    let timestamp = utc_to_epoch(&file_create.event_data.creation_utc_time)?;
+    let timestamp = utc_to_epoch(&event_data.creation_utc_time)?;
     let mut graph = GraphDescription::new();
 
     let mut asset = AssetNode::new(AssetNode::static_strategy());
     asset
-        .with_asset_id(file_create.system.computer.computer.clone())
-        .with_hostname(file_create.system.computer.computer.clone());
+        .with_asset_id(system.computer.as_ref())
+        .with_hostname(system.computer.as_ref());
 
     let mut creator = ProcessNode::new(ProcessNode::session_strategy());
     creator
-        .with_asset_id(file_create.system.computer.computer.clone())
-        .with_process_id(file_create.event_data.process_id)
-        .with_process_name(get_image_name(&file_create.event_data.image.clone()).unwrap())
+        .with_asset_id(system.computer.as_ref())
+        .with_process_id(event_data.process_id)
+        .with_process_name(get_image_name(event_data.image.as_ref()))
         .with_last_seen_timestamp(timestamp);
 
     let mut file = FileNode::new(FileNode::session_strategy());
-    file.with_asset_id(file_create.system.computer.computer.clone())
-        .with_file_path(strip_file_zone_identifier(
-            &file_create.event_data.target_filename,
-        ))
+    file.with_asset_id(system.computer.as_ref())
+        .with_file_path(strip_file_zone_identifier(&event_data.target_filename))
         .with_created_timestamp(timestamp);
 
     graph.add_edge(
