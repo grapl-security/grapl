@@ -6,7 +6,7 @@ FROM rust:1-slim-bullseye AS base
 
 ARG RUST_BUILD=debug
 
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+SHELL ["/bin/bash", "-o", "errexit", "-o", "nounset", "-o", "pipefail", "-c"]
 
 # Necessary for rdkafka; pkg-config & libssl-dev for cargo-tarpaulin build
 #
@@ -14,7 +14,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # hadolint ignore=DL3009,SC1089
 RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-base-apt \
     apt-get update \
-    && apt-get install -y --no-install-recommends \
+    && apt-get install --yes --no-install-recommends \
         build-essential=12.9 \
         jq=1.6-2.1 \
         libssl-dev=1.1.1k-1+deb11u1 \
@@ -50,15 +50,23 @@ COPY rust rust
 WORKDIR /grapl/rust
 
 
+ENV CARGO_TARGET_DIR="/grapl/rust/target"
+
+# These variables are just to DRY up some repeated cache target
+# locations. They are of our own creation, and do not hold any special
+# meaning to `cargo`, `rustup`, or anything else.
+ENV REGISTRY_CACHE_TARGET="${CARGO_HOME}/registry"
+ENV RUSTUP_CACHE_TARGET="${RUSTUP_HOME}"
+
 # build
 ################################################################################
 FROM base AS build
 
 # Hadolint appears to be confused about some of these mount targets
 # hadolint ignore=SC1091
-RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
-    --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
-    --mount=type=cache,target=/usr/local/rustup,sharing=locked <<EOF
+RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
+    --mount=type=cache,target="${REGISTRY_CACHE_TARGET}",sharing=locked \
+    --mount=type=cache,target="${RUSTUP_CACHE_TARGET}",sharing=locked <<EOF
     case "${RUST_BUILD}" in
       debug)
         cargo build ;;
@@ -74,9 +82,9 @@ EOF
 
 # Copy the build outputs to location that's not a cache mount.
 # TODO: switch to using --out-dir when stable: https://github.com/rust-lang/cargo/issues/6790
-RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
+RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
     mkdir -p /outputs && \
-    find "/grapl/rust/target/${RUST_BUILD}" -maxdepth 1 -type f -executable -exec cp {} /outputs \;
+    find "${CARGO_TARGET_DIR}/${RUST_BUILD}" -maxdepth 1 -type f -executable -exec cp {} /outputs \;
 
 
 # tarpaulin
@@ -92,8 +100,8 @@ FROM base AS tarpaulin
 # outputs, such that subsequent cargo build runs will need to start from
 # scratch as well. For this reason we avoid mounting the cached target
 # directory.
-RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
-    --mount=type=cache,target=/usr/local/rustup,sharing=locked \
+RUN --mount=type=cache,target="${REGISTRY_CACHE_TARGET}",sharing=locked \
+    --mount=type=cache,target="${RUSTUP_CACHE_TARGET}",sharing=locked \
     cargo install cargo-tarpaulin
 
 
@@ -124,9 +132,9 @@ RUN mkdir --parents "${TEST_DIR}"
 # Hadolint is confused again, at the time of this writing, SHELL *does*
 # have -o pipefail set on line 9.
 # hadolint ignore=DL4006
-RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
-    --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
-    --mount=type=cache,target=/usr/local/rustup,sharing=locked \
+RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
+    --mount=type=cache,target="${REGISTRY_CACHE_TARGET}",sharing=locked \
+    --mount=type=cache,target="${RUSTUP_CACHE_TARGET}",sharing=locked \
     cargo test \
         --features "${RUST_INTEGRATION_TEST_FEATURES}" \
         --no-run \
@@ -134,7 +142,6 @@ RUN --mount=type=cache,target=/grapl/rust/target,sharing=locked \
         --test "*" | \
         jq -r "select(.profile.test == true) | .filenames[]" | \
         xargs \
-          --max-args=1 \
           --replace="{}" \
           cp "{}" "${TEST_DIR}/"
 
@@ -149,7 +156,7 @@ FROM debian:bullseye-slim AS integration-tests
 
 RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tests-apt \
     apt-get update \
-    && apt-get install -y --no-install-recommends \
+    && apt-get install --yes --no-install-recommends \
         ca-certificates=20210119
 
 # Make the Nomad binary available to integration test consumers of NomadCli
@@ -298,7 +305,7 @@ COPY --from=build /outputs/osquery-generator /
 ENTRYPOINT ["/osquery-generator"]
 
 # web-ui
-FROM rust-dist AS grapl-web-ui
+FROM rust-dist AS grapl-web-ui-deploy
 
 # Hadolint v2.8.0 appears to be mistaken, this is a false positive
 # https://github.com/hadolint/hadolint/wiki/DL3022

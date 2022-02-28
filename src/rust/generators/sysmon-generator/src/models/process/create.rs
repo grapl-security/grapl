@@ -148,8 +148,7 @@ mod tests {
         let a_edges = graph.edges.get(process_a.get_node_key());
         let edge_to_b = a_edges
             .iter()
-            .map(|e| e.edges.iter())
-            .flatten()
+            .flat_map(|e| e.edges.iter())
             .find(|e| e.to_node_key == process_b.get_node_key());
         let edge_to_b = edge_to_b.expect("missing edge to b");
         assert_eq!(edge_to_b.edge_name, "children");

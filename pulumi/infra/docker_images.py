@@ -23,7 +23,7 @@ def _docker_version_tag_from_env() -> str:
     If a tag isn't specified in `artifacts:`, fall back to os.environ["TAG"].
     Only applicable to local-grapl.
     """
-    tag = os.environ["TAG"]
+    tag = os.environ["IMAGE_TAG"]
     assert (
         tag != "latest"
     ), "Never try to deploy from a 'latest' tag! Plus, Nomad can't access these from the local host, making local development problematic"
