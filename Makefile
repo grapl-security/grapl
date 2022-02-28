@@ -406,7 +406,7 @@ format: format-python format-shell format-prettier format-rust format-hcl format
 
 .PHONY: up
 up: ## Bring up local Grapl and detach to return control to tty
-up: build-grapl-services build-local-services _up
+up: build-local-infrastructure _up
 
 # NOTE: Internal target to decouple the building of images from the
 # running of them. Do not invoke this directly.
