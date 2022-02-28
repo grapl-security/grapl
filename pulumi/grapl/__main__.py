@@ -318,7 +318,7 @@ def main() -> None:
 
     ConsulConfig(
         "grapl-core",
-        hcl_file=path_from_root("../../nomad/local/proxy-defaults.hcl").resolve(),
+        hcl_file=path_from_root("nomad/local/proxy-defaults.hcl").resolve(),
         opts=pulumi.ResourceOptions(provider=consul_provider),
     )
 
