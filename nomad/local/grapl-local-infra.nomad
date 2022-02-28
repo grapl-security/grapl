@@ -40,6 +40,19 @@ variable "ZOOKEEPER_PORT" {
   description = "Port for zookeeper"
 }
 
+
+variable "ORGANIZATION_MANAGEMENT_DB_USERNAME" {
+  type        = string
+  description = "The username for the organization management db"
+  default     = "postgres"
+}
+
+variable "ORGANIZATION_MANAGEMENT_DB_PASSWORD" {
+  type        = string
+  description = "The password for the organization management db"
+  default     = "postgres"
+}
+
 variable "PLUGIN_REGISTRY_DB_USERNAME" {
   type        = string
   description = "The username for the plugin registry db"
@@ -48,7 +61,7 @@ variable "PLUGIN_REGISTRY_DB_USERNAME" {
 
 variable "PLUGIN_REGISTRY_DB_PASSWORD" {
   type        = string
-  description = "The password fort he plugin registry db"
+  description = "The password for the plugin registry db"
   default     = "postgres"
 }
 
@@ -63,6 +76,11 @@ variable "PLUGIN_WORK_QUEUE_DB_PASSWORD" {
   type        = string
   description = "The password fort he plugin work queue db"
   default     = "postgres"
+}
+
+variable "ORGANIZATION_MANAGEMENT_DB_PORT" {
+  type        = string
+  description = "The port for the organization management db"
 }
 
 
@@ -355,6 +373,50 @@ job "grapl-local-infra" {
 
     }
   }
+
+  group "organization-management-db" {
+    network {
+      mode = "bridge"
+      port "postgres" {
+        static = var.ORGANIZATION_MANAGEMENT_DB_PORT
+        to     = 5432 # postgres default
+      }
+    }
+
+    task "organization-management-db" {
+      driver = "docker"
+
+      config {
+        image = "postgres-ext:${var.localstack_tag}"
+        ports = ["postgres"]
+      }
+
+      env {
+        POSTGRES_USER     = var.ORGANIZATION_MANAGEMENT_DB_USERNAME
+        POSTGRES_PASSWORD = var.ORGANIZATION_MANAGEMENT_DB_PASSWORD
+      }
+
+      service {
+        name = "organization-management-db"
+
+        check {
+          type     = "script"
+          name     = "check_postgres"
+          command  = "pg_isready"
+          args     = ["-U", "postgres"]
+          interval = "20s"
+          timeout  = "10s"
+
+          check_restart {
+            limit           = 2
+            grace           = "30s"
+            ignore_warnings = false
+          }
+        }
+      }
+    }
+  }
+
 
   group "plugin-registry-db" {
     network {
