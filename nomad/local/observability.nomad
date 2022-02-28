@@ -7,11 +7,17 @@ job "observability" {
   # Jaeger
   group "jaeger" {
     network {
+      mode = "host"
       # We currently only want a web front-end and a zipkin endpoint exposed. However, Jaegar supports thrift and grpc
       # on other ports. We can expose them if/when we have a use for them..
       port "http-frontend" {
         to     = 16686
         static = 16686
+      }
+
+      port "grpc" {
+        to = 16685
+        static = 16685
       }
 
       # This supports zipkin compatible traces
@@ -45,13 +51,22 @@ job "observability" {
 #      }
     }
 
+    service {
+      name = "grpc"
+      port = "grpc"
+      tags = ["grpc"]
+      #      connect{
+      #        sidecar_service{}
+      #      }
+    }
 
     task "jaeger-all-in-one" {
       driver = "docker"
 
       config {
         image = "jaegertracing/all-in-one:latest"
-        ports = ["http-frontend", "zipkin"]
+        ports = ["http-frontend", "zipkin", "grpc"]
+        network_mode = "host"
       }
 
       env {
