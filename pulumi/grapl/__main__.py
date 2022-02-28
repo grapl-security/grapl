@@ -331,6 +331,13 @@ def main() -> None:
         pulumi.export("plugin-work-queue-db-username", plugin_work_queue_db.username)
         pulumi.export("plugin-work-queue-db-password", plugin_work_queue_db.password)
 
+        # TODO: ADD EXPORTS FOR PLUGIN-REGISTRY
+
+        pulumi.export("organization-management-db-hostname", plugin_work_queue_db.hostname)
+        pulumi.export("organization-management-db-port", str(plugin_work_queue_db.port))
+        pulumi.export("organization-management-db-username", plugin_work_queue_db.username)
+        pulumi.export("organization-management-db-password", plugin_work_queue_db.password)
+
         redis_endpoint = f"redis://{config.HOST_IP_IN_NOMAD}:6379"
 
         pulumi.export("redis-endpoint", redis_endpoint)

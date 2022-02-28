@@ -289,7 +289,7 @@ locals {
   # String that contains all of the running Alphas for clients connecting to Dgraph (so they can do loadbalancing)
   alpha_grpc_connect_str = join(",", [for alpha in local.dgraph_alphas : "localhost:${alpha.grpc_public_port}"])
 
-  _redis_trimmed = trimprefix(local.redis_endpoint, "redis://")
+  _redis_trimmed = trimprefix(var.redis_endpoint, "redis://")
   _redis         = split(":", local._redis_trimmed)
   redis_host     = local._redis[0]
   redis_port     = local._redis[1]
@@ -1099,7 +1099,7 @@ job "grapl-core" {
       }
 
       template {
-        data        = local.conditionally_defined_env_vars
+        data        = var.aws_env_vars_for_local
         destination = "organization-management.env"
         env         = true
       }
@@ -1110,7 +1110,7 @@ job "grapl-core" {
         ORGANIZATION_MANAGEMENT_BIND_ADDRESS    = "0.0.0.0:${NOMAD_PORT_organization-management-port}"
         RUST_BACKTRACE                  = local.rust_backtrace
         RUST_LOG                        = var.rust_log
-        ORGANIZATION_MANAGEMENT_DB_HOSTNAME     = local.organization_management_db_hostname
+        ORGANIZATION_MANAGEMENT_DB_HOSTNAME     = var.organization_management_db_hostname
         ORGANIZATION_MANAGEMENT_DB_PASSWORD     = var.organization_management_db_password
         ORGANIZATION_MANAGEMENT_DB_PORT         = var.organization_management_db_port
         ORGANIZATION_MANAGEMENT_DB_USERNAME     = var.organization_management_db_username
