@@ -336,6 +336,10 @@ def main() -> None:
         pulumi.export("redis-endpoint", redis_endpoint)
 
         local_grapl_core_vars: Final[NomadVars] = dict(
+            organization_management_db_hostname=organization_management_db.hostname,
+            organization_management_db_port=str(organization_management_db.port),
+            organization_management_db_username=organization_management_db.username,
+            organization_management_db_password=organization_management_db.password,
             plugin_registry_db_hostname=plugin_registry_db.hostname,
             plugin_registry_db_port=str(plugin_registry_db.port),
             plugin_registry_db_username=plugin_registry_db.username,
@@ -345,10 +349,6 @@ def main() -> None:
             plugin_work_queue_db_username=plugin_work_queue_db.username,
             plugin_work_queue_db_password=plugin_work_queue_db.password,
             redis_endpoint=redis_endpoint,
-            organization_management_db_hostname="LOCAL_GRAPL_REPLACE_IP",
-            organization_management_db_port=str(organization_management_db.port),
-            organization_management_db_username=organization_management_db.username,
-            organization_management_db_password=organization_management_db.password,
             **nomad_inputs,
         )
 
@@ -445,24 +445,6 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
-        # plugin work queue
-        pulumi.export(
-            "plugin-work-queue-db-hostname", plugin_work_queue_postgres.host()
-        )
-        pulumi.export(
-            "plugin-work-queue-db-port", plugin_work_queue_postgres.port().apply(str)
-        )
-        pulumi.export(
-            "plugin-work-queue-db-username",
-            plugin_work_queue_postgres.username(),
-        )
-        pulumi.export(
-            "plugin-work-queue-db-password",
-            plugin_work_queue_postgres.password(),
-        )
-
-
-        # organization management
         pulumi.export(
             "organization-management-db-hostname",
             organization_management_postgres.host()
@@ -480,13 +462,33 @@ def main() -> None:
             organization_management_postgres.password(),
         )
 
+        pulumi.export(
+            "plugin-work-queue-db-hostname", plugin_work_queue_postgres.host()
+        )
+        pulumi.export(
+            "plugin-work-queue-db-port", plugin_work_queue_postgres.port().apply(str)
+        )
+        pulumi.export(
+            "plugin-work-queue-db-username",
+            plugin_work_queue_postgres.username(),
+        )
+        pulumi.export(
+            "plugin-work-queue-db-password",
+            plugin_work_queue_postgres.password(),
+        )
+
+
         pulumi.export("kafka-bootstrap-servers", kafka.bootstrap_servers())
         pulumi.export("redis-endpoint", cache.endpoint)
-
 
         prod_grapl_core_vars: Final[NomadVars] = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
+
+            organization_management_db_hostname=organization_management_postgres.host(),
+            organization_management_db_port=organization_management_postgres.port().apply(str),
+            organization_management_db_username=organization_management_postgres.username(),
+            organization_management_db_password=organization_management_postgres.password(),
             plugin_registry_db_hostname=plugin_registry_postgres.host(),
             plugin_registry_db_port=plugin_registry_postgres.port().apply(str),
             plugin_registry_db_username=plugin_registry_postgres.username(),
@@ -495,11 +497,8 @@ def main() -> None:
             plugin_work_queue_db_port=plugin_work_queue_postgres.port().apply(str),
             plugin_work_queue_db_username=plugin_work_queue_postgres.username(),
             plugin_work_queue_db_password=plugin_work_queue_postgres.password(),
-            organization_management_db_hostname=organization_management_postgres.host(),
-            organization_management_db_port=organization_management_postgres.port().apply(str),
-            organization_management_db_username=organization_management_postgres.username(),
-            organization_management_db_password=organization_management_postgres.password(),
             redis_endpoint=cache.endpoint,
+            **nomad_inputs,
         )
 
         nomad_grapl_core = NomadJob(
