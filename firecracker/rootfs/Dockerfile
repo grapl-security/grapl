@@ -1,14 +1,14 @@
 # syntax=docker/dockerfile:1.3-labs
 
-FROM debian:bullseye-slim AS rootfs-build
+FROM ubuntu:20.04 AS rootfs-build
 
 WORKDIR /home/grapl
 
 RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rootfs-apt <<EOF
     apt-get update
     apt-get install --yes --no-install-recommends \
-        fuse=2.9.9-5 \
-        fuseext2=0.4-1.2+b1
+        fuse \
+        fuseext2
 EOF
 
 COPY docker_runtime docker_runtime
