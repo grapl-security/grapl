@@ -179,7 +179,7 @@ build-e2e-pex-files:
 # Any PEX tagged with `e2e-test-pex` is required for our image. This
 # seems like the most straightforward way of capturing these
 # dependencies at the moment.
-	@echo "--- Building e2e pex files"
+	@echo "--- Building e2e PEX files"
 	./pants --tag="e2e-test-pex" package ::
 
 .PHONY: build-engagement-view
