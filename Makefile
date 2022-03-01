@@ -171,6 +171,7 @@ build-test-unit-rust:
 
 .PHONY: build-service-pex-files
 build-service-pex-files: ## Build all PEX files needed by Grapl SaaS services
+	@echo "--- Building Grapl service PEX files"
 	./pants --tag="service-pex" package ::
 
 .PHONY: build-e2e-pex-files
