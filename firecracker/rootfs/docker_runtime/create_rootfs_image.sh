@@ -32,6 +32,9 @@ mount -t fuse-ext2 -o rw+ "${IMAGE}" "${MOUNT_POINT}"
 ########################################
 # Copy rootfs into dist.
 ########################################
-tar --create --gzip --file="${DIST_FILE}" "${IMAGE}"
+(
+    cd /tmp
+    tar --create --gzip --file "${DIST_FILE}" --directory "/tmp" "rootfs.ext4"
+)
 # -u is unmount; there is no -- version
 fusermount -u "${MOUNT_POINT}"
