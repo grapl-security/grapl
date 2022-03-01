@@ -251,17 +251,27 @@ dump-artifacts-local:  # Run the script that dumps Nomad/Docker logs after test 
 
 ##@ Test 🧪
 
+# Unit Tests
+########################################################################
+
 .PHONY: test-unit
-test-unit: export COMPOSE_PROJECT_NAME := grapl-test-unit
-test-unit: export COMPOSE_FILE := ./test/docker-compose.unit-tests-rust.yml:./test/docker-compose.unit-tests-js.yml
-test-unit: build-test-unit test-unit-python test-unit-shell ## Build and run unit tests
+test-unit: test-unit-js
+test-unit: test-unit-python
+test-unit: test-unit-rust
+test-unit: test-unit-shell
+test-unit: ## Build and run all unit tests
+
+.PHONY: test-unit-js
+test-unit-js: test-unit-engagement-view
+test-unit-js: build-test-unit-js
+test-unit-js: export COMPOSE_PROJECT_NAME := grapl-test-unit-js
+test-unit-js: export COMPOSE_FILE := ./test/docker-compose.unit-tests-js.yml
+test-unit-js: ## Build and run unit tests - JavaScript only
 	test/docker-compose-with-error.sh
 
-.PHONY: test-unit-rust
-test-unit-rust: export COMPOSE_PROJECT_NAME := grapl-test-unit-rust
-test-unit-rust: export COMPOSE_FILE := ./test/docker-compose.unit-tests-rust.yml
-test-unit-rust: build-test-unit-rust ## Build and run unit tests - Rust only
-	test/docker-compose-with-error.sh
+.PHONY: test-unit-engagement-view
+test-unit-engagement-view: ## Test Engagement View
+	$(MAKE) -C src/js/engagement_view test
 
 .PHONY: test-unit-python
 # Long term, it would be nice to organize the tests with Pants
@@ -271,21 +281,19 @@ test-unit-python: ## Run Python unit tests under Pants
 	./pants filter --filter-target-type="python_tests" :: \
 	| xargs ./pants --tag="-needs_work" test --pytest-args="-m \"not integration_test\""
 
+.PHONY: test-unit-rust
+test-unit-rust: build-test-unit-rust
+test-unit-rust: export COMPOSE_PROJECT_NAME := grapl-test-unit-rust
+test-unit-rust: export COMPOSE_FILE := ./test/docker-compose.unit-tests-rust.yml
+test-unit-rust: ## Build and run unit tests - Rust only
+	test/docker-compose-with-error.sh
 
 .PHONY: test-unit-shell
 test-unit-shell: ## Run shunit2 tests under Pants
 	./pants filter --filter-target-type="shunit2_tests" :: \
 	| xargs ./pants test
 
-.PHONY: test-unit-engagement-view
-test-unit-engagement-view: ## Test Engagement View
-	$(MAKE) -C src/js/engagement_view test
-
-.PHONY: test-unit-js
-test-unit-js: export COMPOSE_PROJECT_NAME := grapl-test-unit-js
-test-unit-js: export COMPOSE_FILE := ./test/docker-compose.unit-tests-js.yml
-test-unit-js: build-test-unit-js test-unit-engagement-view ## Build and run unit tests - JavaScript only
-	test/docker-compose-with-error.sh
+########################################################################
 
 .PHONY: typecheck
 typecheck: ## Typecheck Python Code
