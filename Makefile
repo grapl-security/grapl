@@ -147,15 +147,15 @@ help: ## Print this help
 build-test-unit: build-test-unit-js
 build-test-unit: build-test-unit-rust
 
-.PHONY: build-test-unit-rust
-build-test-unit-rust:
-	$(DOCKER_BUILDX_BAKE) \
-		--file ./test/docker-compose.unit-tests-rust.yml
-
 .PHONY: build-test-unit-js
 build-test-unit-js:
 	$(DOCKER_BUILDX_BAKE) \
 		--file ./test/docker-compose.unit-tests-js.yml
+
+.PHONY: build-test-unit-rust
+build-test-unit-rust:
+	$(DOCKER_BUILDX_BAKE) \
+		--file ./test/docker-compose.unit-tests-rust.yml
 
 # Build Service Images and their Prerequisites
 ########################################################################
