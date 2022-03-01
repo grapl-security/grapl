@@ -56,6 +56,11 @@ COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
 DOCKER_COMPOSE_CHECK := docker-compose --file=docker-compose.check.yml run --rm
 NONROOT_DOCKER_COMPOSE_CHECK := ${DOCKER_COMPOSE_CHECK} --user=${COMPOSE_USER}
 
+# Run a Pants goal across all Python files
+PANTS_PYTHON_FILTER := ./pants filter --target-type=python_sources,python_tests :: | xargs ./pants
+# Run a Pants goal across all shell files
+PANTS_SHELL_FILTER := ./pants filter --target-type=shell_sources,shunit2_tests :: | xargs ./pants
+
 # Use a single shell for each of our targets, which allows us to use the 'trap'
 # built-in in our targets. We set the 'errexit' shell option to preserve
 # execution behavior, where failure from one line in a target will result in
@@ -139,7 +144,6 @@ help: ## Print this help
 		 /^##@/ { printf "\n${FMT_BOLD}%s${FMT_END}\n", substr($$0, 5) } ' \
 		 $(MAKEFILE_LIST)
 	@printf '\n'
-
 
 ##@ Build 🔨
 
@@ -382,8 +386,7 @@ lint-proto-breaking: ## Check protobuf definitions for breaking changes
 
 .PHONY: lint-python
 lint-python: ## Run Python lint checks
-	./pants filter --target-type=python_sources,python_tests :: \
-		| xargs ./pants lint
+	$(PANTS_PYTHON_FILTER) lint
 
 .PHONY: lint-rust
 lint-rust: lint-rust-clippy
@@ -400,8 +403,7 @@ lint-rust-rustfmt: ## Check to see if Rust code is properly formatted
 
 .PHONY: lint-shell
 lint-shell: ## Run Shell lint checks
-	./pants filter --target-type=shell_sources,shunit2_tests :: \
-		| xargs ./pants lint
+	$(PANTS_SHELL_FILTER) lint
 
 ##@ Formatting 💅
 
@@ -429,8 +431,7 @@ format-prettier: ## Reformat js/ts/yaml
 
 .PHONY: format-python
 format-python: ## Reformat all Python code
-	./pants filter --target-type=python_sources,python_tests :: \
-		| xargs ./pants fmt
+	$(PANTS_PYTHON_FILTER) fmt
 
 .PHONY: format-rust
 format-rust: ## Reformat all Rust code
@@ -438,8 +439,7 @@ format-rust: ## Reformat all Rust code
 
 .PHONY: format-shell
 format-shell: ## Reformat all shell code
-	./pants filter --target-type=shell_sources,shunit2_tests :: \
-		| xargs ./pants fmt
+	$(PANTS_SHELL_FILTER) fmt
 
 ##@ Local Grapl 💻
 
