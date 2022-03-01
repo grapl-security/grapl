@@ -61,6 +61,9 @@ PANTS_PYTHON_FILTER := ./pants filter --target-type=python_sources,python_tests 
 # Run a Pants goal across all shell files
 PANTS_SHELL_FILTER := ./pants filter --target-type=shell_sources,shunit2_tests :: | xargs ./pants
 
+# Helper macro for invoking a target from src/js/engagement_view/Makefile
+ENGAGEMENT_VIEW_MAKE = $(MAKE) --directory=src/js/engagement_view
+
 # Use a single shell for each of our targets, which allows us to use the 'trap'
 # built-in in our targets. We set the 'errexit' shell option to preserve
 # execution behavior, where failure from one line in a target will result in
@@ -189,7 +192,7 @@ build-e2e-pex-files:
 .PHONY: build-engagement-view
 build-engagement-view: ## Build website assets to include in grapl-web-ui
 	@echo "--- Building the engagement view"
-	$(MAKE) -C src/js/engagement_view build
+	$(ENGAGEMENT_VIEW_MAKE) build
 	cp -r \
 		"${PWD}/src/js/engagement_view/build/." \
 		"${PWD}/src/rust/grapl-web-ui/frontend/"
@@ -275,7 +278,7 @@ test-unit-js: ## Build and run unit tests - JavaScript only
 
 .PHONY: test-unit-engagement-view
 test-unit-engagement-view: ## Test Engagement View
-	$(MAKE) -C src/js/engagement_view test
+	$(ENGAGEMENT_VIEW_MAKE) test
 
 .PHONY: test-unit-python
 # Long term, it would be nice to organize the tests with Pants
@@ -508,7 +511,7 @@ clean: ## Prune all docker build cache and remove Grapl containers and images
 	# Remove all Grapl images = continue on error (no images found)
 	docker rmi --force $$(docker images --filter reference="grapl/*" --quiet) 2>/dev/null || true
 	# Clean Engagement View
-	$(MAKE) -C src/js/engagement_view clean
+	$(ENGAGEMENT_VIEW_MAKE) clean
 
 .PHONY: clean-mount-cache
 clean-mount-cache: ## Prune all docker mount cache (used by sccache)
