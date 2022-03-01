@@ -9,7 +9,7 @@ readonly REPOSITORY_ROOT
 
 ########################################
 # Build the Docker image.
-# NOTE: We need to actually generate the rootfs at `docker run` time because 
+# NOTE: We need to actually generate the rootfs at `docker run` time because
 # we need to use FUSE.
 # You can't hook up capabilities or devices at `docker buildx bake` time.
 ########################################
