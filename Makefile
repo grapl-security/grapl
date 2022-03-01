@@ -191,6 +191,8 @@ build-engagement-view: ## Build website assets to include in grapl-web-ui
 		"${PWD}/src/rust/grapl-web-ui/frontend/"
 
 .PHONY: build-grapl-service-prerequisites
+
+build-grapl-service-prerequisites: ## Build all assets needed for the creation of Grapl SaaS service container images
 # The Python services need the PEX files
 build-grapl-service-prerequisites: build-service-pex-files
 # The grapl-web-ui service needs website assets
