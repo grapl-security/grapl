@@ -140,7 +140,7 @@ steps:
 
   - label: "Build Firecracker Rootfs"
     command:
-      - make dist/firecracker_rootfs.tar.gz
+      - make dist/firecracker_rootfs.ext4.tar.gz
 
   - label: ":hammer: Integration Tests"
     command:
