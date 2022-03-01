@@ -56,6 +56,12 @@ COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
 DOCKER_COMPOSE_CHECK := docker-compose --file=docker-compose.check.yml run --rm
 NONROOT_DOCKER_COMPOSE_CHECK := ${DOCKER_COMPOSE_CHECK} --user=${COMPOSE_USER}
 
+# Our images are labeled; we can use this to help filter various
+# Docker prune / rm / etc. commands to only touch our stuff.
+#
+# This is set in docker-bake.hcl
+DOCKER_FILTER_LABEL := org.opencontainers.image.vendor="Grapl, Inc."
+
 # Run a Pants goal across all Python files
 PANTS_PYTHON_FILTER := ./pants filter --target-type=python_sources,python_tests :: | xargs ./pants
 # Run a Pants goal across all shell files
@@ -500,22 +506,52 @@ populate-venv: ## Set up a Python virtualenv from constraints file (you'll have 
 ##@ Utility ⚙
 
 .PHONY: clean
-clean: ## Prune all docker build cache and remove Grapl containers and images
-	docker builder prune --all --force
-	# Remove all Grapl containers - continue on error (no containers found)
-	docker rm --volumes --force $$(docker ps --filter "name=grapl*" --all --quiet) 2>/dev/null || true
-	# Remove all Grapl images = continue on error (no images found)
-	docker rmi --force $$(docker images --filter reference="grapl/*" --quiet) 2>/dev/null || true
-	# Clean Engagement View
-	$(ENGAGEMENT_VIEW_MAKE) clean
+clean: clean-artifacts
+clean: clean-engagement-view
+clean: ## Clean all generated artifacts
 
-.PHONY: clean-mount-cache
-clean-mount-cache: ## Prune all docker mount cache (used by sccache)
-	docker builder prune --filter type=exec.cachemount
+.PHONY: clean-all
+clean-all: clean
+clean-all: clean-docker
+clean-all: ## Clean all generated artifacts AND Docker-related resources
+
+.PHONY: clean-docker
+clean-docker: clean-docker-cache
+clean-docker: clean-docker-containers
+clean-docker: clean-docker-images
+clean-docker: ## Clean all Docker-related resources
 
 .PHONY: clean-artifacts
 clean-artifacts: ## Remove all dumped artifacts from test runs (see dump_artifacts.py)
 	rm -Rf test_artifacts
+
+.PHONY: clean-docker-cache
+clean-docker-cache:
+	docker builder prune --all --force
+
+.PHONY: clean-docker-cache-mount
+clean-docker-cache-mount: ## Prune only the Buildkit cache mounts
+# The best documentation I can find for this is right now is
+# https://github.com/docker/cli/issues/2325#issuecomment-733975408
+	docker builder prune --filter type=exec.cachemount
+# TODO: worth adding any additional types for pruning?
+
+clean-docker-containers: ## Remove all running Grapl containers
+	docker ps \
+		--filter=label=$(DOCKER_FILTER_LABEL) \
+	| xargs --no-run-if-empty docker rm --volumes --force
+
+clean-docker-images: ## Remove all Grapl images
+	docker images \
+		--filter=label=$(DOCKER_FILTER_LABEL) \
+		--quiet \
+	| xargs --no-run-if-empty docker rmi --force
+
+.PHONY: clean-engagement-view
+clean-engagement-view:
+	$(ENGAGEMENT_VIEW_MAKE) clean
+
+########################################################################
 
 .PHONY: local-pulumi
 local-pulumi: export COMPOSE_PROJECT_NAME="grapl"
