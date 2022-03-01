@@ -405,32 +405,41 @@ lint-shell: ## Run Shell lint checks
 
 ##@ Formatting 💅
 
+.PHONY: format
+format: format-build
+format: format-hcl
+format: format-prettier
+format: format-python
+format: format-rust
+format: format-shell
+format: ## Reformat all code
+
+.PHONY: format-build
+format-build: ## Reformat all Pants BUILD files
+	./pants update-build-files --no-update-build-files-fix-safe-deprecations
+
+.PHONY: format-hcl
+format-hcl: ## Reformat all HCL files
+	${NONROOT_DOCKER_COMPOSE_CHECK} hcl-format
+
+.PHONY: format-prettier
+format-prettier: build-prettier-image
+format-prettier: ## Reformat js/ts/yaml
+	${NONROOT_DOCKER_COMPOSE_CHECK} prettier-format
+
+.PHONY: format-python
+format-python: ## Reformat all Python code
+	./pants filter --target-type=python_sources,python_tests :: \
+		| xargs ./pants fmt
+
 .PHONY: format-rust
 format-rust: ## Reformat all Rust code
 	cd src/rust; bin/format --update
 
-.PHONY: format-python
-format-python: ## Reformat all Python code
-	./pants filter --target-type=python_sources,python_tests :: | xargs ./pants fmt
-
 .PHONY: format-shell
 format-shell: ## Reformat all shell code
-	./pants filter --target-type=shell_sources,shunit2_tests :: | xargs ./pants fmt
-
-.PHONY: format-prettier
-format-prettier: build-prettier-image ## Reformat js/ts/yaml
-	${NONROOT_DOCKER_COMPOSE_CHECK} prettier-format
-
-.PHONY: format-hcl
-format-hcl: ## Reformat all HCLs
-	${NONROOT_DOCKER_COMPOSE_CHECK} hcl-format
-
-.PHONY: format-build
-format-build: ## Reformat BUILD files
-	./pants update-build-files --no-update-build-files-fix-safe-deprecations
-
-.PHONY: format ## Reformat all code
-format: format-python format-shell format-prettier format-rust format-hcl format-build
+	./pants filter --target-type=shell_sources,shunit2_tests :: \
+		| xargs ./pants fmt
 
 ##@ Local Grapl 💻
 
