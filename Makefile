@@ -347,29 +347,30 @@ test-with-env: # (Do not include help text - not to be used directly)
 
 ##@ Lint 🧹
 
+.PHONY: lint
+lint: lint-docker
+lint: lint-hcl
+lint: lint-prettier
+lint: lint-proto
+lint: lint-proto-breaking
+lint: lint-python
+lint: lint-rust
+lint: lint-shell
+lint: ## Run all lint checks
+
 .PHONY: lint-docker
 lint-docker: ## Lint Dockerfiles with Hadolint
-	./pants filter --target-type=docker_image :: | xargs ./pants lint
-
-.PHONY: lint-rust
-lint-rust: ## Run Rust lint checks
-	cd src/rust; bin/format --check; bin/lint
-
-.PHONY: lint-python
-lint-python: ## Run Python lint checks
-	./pants filter --target-type=python_sources,python_tests :: | xargs ./pants lint
-
-.PHONY: lint-shell
-lint-shell: ## Run Shell lint checks
-	./pants filter --target-type=shell_sources,shunit2_tests :: | xargs ./pants lint
-
-.PHONY: lint-prettier
-lint-prettier: build-prettier-image ## Run ts/js/yaml lint checks
-	${NONROOT_DOCKER_COMPOSE_CHECK} prettier-lint
+	./pants filter --target-type=docker_image :: \
+		| xargs ./pants lint
 
 .PHONY: lint-hcl
 lint-hcl: ## Check to see if HCL files are formatted properly
 	${NONROOT_DOCKER_COMPOSE_CHECK} hcl-lint
+
+.PHONY: lint-prettier
+lint-prettier: build-prettier-image
+lint-prettier: ## Run ts/js/yaml lint checks
+	${NONROOT_DOCKER_COMPOSE_CHECK} prettier-lint
 
 .PHONY: lint-proto
 lint-proto: ## Lint all protobuf definitions
@@ -379,8 +380,19 @@ lint-proto: ## Lint all protobuf definitions
 lint-proto-breaking: ## Check protobuf definitions for breaking changes
 	${DOCKER_COMPOSE_CHECK} buf-breaking-change
 
-.PHONY: lint
-lint: lint-docker lint-python lint-prettier lint-rust lint-shell lint-hcl lint-proto lint-proto-breaking ## Run all lint checks
+.PHONY: lint-python
+lint-python: ## Run Python lint checks
+	./pants filter --target-type=python_sources,python_tests :: \
+		| xargs ./pants lint
+
+.PHONY: lint-rust
+lint-rust: ## Run Rust lint checks
+	cd src/rust; bin/format --check; bin/lint
+
+.PHONY: lint-shell
+lint-shell: ## Run Shell lint checks
+	./pants filter --target-type=shell_sources,shunit2_tests :: \
+		| xargs ./pants lint
 
 ##@ Formatting 💅
 
