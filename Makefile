@@ -144,10 +144,8 @@ help: ## Print this help
 ##@ Build 🔨
 
 .PHONY: build-test-unit
-build-test-unit:
-	$(DOCKER_BUILDX_BAKE) \
-		--file ./test/docker-compose.unit-tests-rust.yml \
-		--file ./test/docker-compose.unit-tests-js.yml
+build-test-unit: build-test-unit-js
+build-test-unit: build-test-unit-rust
 
 .PHONY: build-test-unit-rust
 build-test-unit-rust:
