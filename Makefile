@@ -640,5 +640,5 @@ dist/firecracker_kernel.tar.gz: firecracker/generate_firecracker_kernel.sh | dis
 	./firecracker/generate_firecracker_kernel.sh
 
 FIRECRACKER_ROOTFS_DEPENDENCIES = $(shell find firecracker/rootfs)
-dist/firecracker_rootfs.tar.gz: $(FIRECRACKER_ROOTFS_DEPENDENCIES)
+dist/firecracker_rootfs.ext4.tar.gz: $(FIRECRACKER_ROOTFS_DEPENDENCIES)
 	./firecracker/rootfs/generate_firecracker_rootfs.sh
