@@ -3,5 +3,8 @@ python_requirements(
         "pyjwt": ["jwt"],
         "python-nomad": ["nomad"],
         "argon2-cffi": ["argon2"],
+        "opentelemetry-api": ["opentelemetry"],
+        "opentelemetry-exporter-zipkin-json": ["opentelemetry.exporter.zipkin.json"],
+        "opentelemetry-sdk": ["opentelemetry.sdk"]
     }
 )

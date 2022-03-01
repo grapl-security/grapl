@@ -1,6 +1,7 @@
 # Any Python dependencies used by our code should be declared here.
 # !!!!! Don't forget to regenerate the constraints from this! (see readme.md)
 
+# Please keep this alphabetical order
 argon2-cffi
 boto3
 botocore
@@ -8,6 +9,11 @@ click
 confluent-kafka
 cookiecutter==1.7.3
 hypothesis
+opentelemetry-api
+opentelemetry-exporter-zipkin-json
+opentelemetry-instrumentation-boto
+opentelemetry-instrumentation-botocore
+opentelemetry-sdk
 protobuf>=3.12.1
 pulumi>=3.0.0,<4.0.0
 pulumi-aws>=4.0.0,<5.0.0
