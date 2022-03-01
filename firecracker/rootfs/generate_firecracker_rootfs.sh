@@ -27,6 +27,7 @@ readonly REPOSITORY_ROOT
 docker run \
     --rm \
     --device /dev/fuse \
+    --device /dev/null \
     --cap-add SYS_ADMIN \
     --volume "${REPOSITORY_ROOT}/dist:/dist" \
     rootfs-build:dev

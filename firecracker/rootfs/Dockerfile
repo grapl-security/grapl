@@ -8,7 +8,8 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rootfs-apt <<
     apt-get update
     apt-get install --yes --no-install-recommends \
         fuse=2.9.9-5 \
-        fuseext2=0.4-1.2+b1
+        fuseext2=0.4-1.2+b1 \
+        debootstrap=1.0.123
 EOF
 
 COPY docker_runtime docker_runtime
