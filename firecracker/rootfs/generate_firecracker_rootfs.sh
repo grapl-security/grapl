@@ -14,7 +14,9 @@ readonly REPOSITORY_ROOT
 
 ########################################
 # Generate the rootfs.
-# We use Fuse to mount inside Docker.
+# NOTE: We use Fuse to mount inside Docker, because loop devices are
+# not supported on our developers' ChromeOS Crostini environments.
+# https://support.google.com/chromebook/thread/17786448?hl=en
 ########################################
 docker run \
     --rm \
