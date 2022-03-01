@@ -16,7 +16,7 @@ declare -a NOMAD_VARS=(
     -var "FAKE_AWS_SECRET_ACCESS_KEY=${FAKE_AWS_SECRET_ACCESS_KEY}"
     -var "PLUGIN_REGISTRY_DB_PORT=${PLUGIN_REGISTRY_DB_PORT}"
     -var "PLUGIN_WORK_QUEUE_DB_PORT=${PLUGIN_WORK_QUEUE_DB_PORT}"
-    -var "localstack_tag=${TAG}"
+    -var "localstack_tag=${IMAGE_TAG}"
 )
 
 # shellcheck source-path=SCRIPTDIR

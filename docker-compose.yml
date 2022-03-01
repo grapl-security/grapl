@@ -9,7 +9,7 @@ volumes:
 
 services:
   pulumi:
-    image: local-pulumi:${TAG}
+    image: local-pulumi:${IMAGE_TAG}
     entrypoint: ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
     command:
       - |
@@ -40,7 +40,7 @@ services:
         target: /home/grapl/dist
         read_only: true
     environment:
-      TAG:
+      IMAGE_TAG:
       PULUMI_CONFIG_PASSPHRASE: local-grapl-passphrase
       DOCKER_USER: "${UID}:${GID}"
       GRAPL_ROOT: "${GRAPL_ROOT}"
