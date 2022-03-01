@@ -4,7 +4,7 @@ set -o xtrace
 
 readonly IMAGE="/tmp/rootfs.ext4"
 readonly MOUNT_POINT="/tmp/rootfs-mount"
-readonly DIST_FILE="/dist/firecracker_rootfs.tar.gz"
+readonly DIST_FILE="/dist/firecracker_rootfs.ext4.tar.gz"
 
 ########################################
 # Create image and mount it.
