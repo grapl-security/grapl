@@ -7,6 +7,12 @@ readonly THIS_DIR
 REPOSITORY_ROOT=$(git rev-parse --show-toplevel)
 readonly REPOSITORY_ROOT
 
+########################################
+# Build the Docker image.
+# NOTE: We need to actually generate the rootfs at `docker run` time because 
+# we need to use FUSE.
+# You can't hook up capabilities or devices at `docker buildx bake` time.
+########################################
 (
     cd "${THIS_DIR}"
     docker buildx bake rootfs-build
