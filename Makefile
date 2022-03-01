@@ -16,8 +16,8 @@
 # `latest` tag from the host machine.)
 IMAGE_TAG ?= dev
 RUST_BUILD ?= debug
-UID = $(shell id -u)
-GID = $(shell id -g)
+UID = $(shell id --user)
+GID = $(shell id --group)
 PWD = $(shell pwd)
 GRAPL_ROOT = ${PWD}
 COMPOSE_USER=${UID}:${GID}
