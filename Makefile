@@ -150,10 +150,6 @@ help: ## Print this help
 
 ##@ Build 🔨
 
-.PHONY: build-test-unit
-build-test-unit: build-test-unit-js
-build-test-unit: build-test-unit-rust
-
 .PHONY: build-test-unit-js
 build-test-unit-js:
 	$(DOCKER_BUILDX_BAKE) \
