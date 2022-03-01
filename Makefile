@@ -386,8 +386,17 @@ lint-python: ## Run Python lint checks
 		| xargs ./pants lint
 
 .PHONY: lint-rust
+lint-rust: lint-rust-clippy
+lint-rust: lint-rust-rustfmt
 lint-rust: ## Run Rust lint checks
-	cd src/rust; bin/format --check; bin/lint
+
+.PHONY: lint-rust-clippy
+lint-rust-clippy: ## Run Clippy on Rust code
+	cd src/rust; bin/lint
+
+.PHONY: lint-rust-rustfmt
+lint-rust-rustfmt: ## Check to see if Rust code is properly formatted
+	cd src/rust; bin/format --check
 
 .PHONY: lint-shell
 lint-shell: ## Run Shell lint checks
