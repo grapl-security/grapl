@@ -9,7 +9,7 @@ readonly REPOSITORY_ROOT
 
 (
     cd "${THIS_DIR}"
-    docker buildx bake -f bake.hcl rootfs-build
+    docker buildx bake rootfs-build
 )
 
 ########################################
