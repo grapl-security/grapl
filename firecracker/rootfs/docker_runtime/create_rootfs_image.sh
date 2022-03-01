@@ -12,8 +12,8 @@ readonly DIST_FILE="/dist/firecracker_rootfs.ext4.tar.gz"
 ########################################
 # Create image and mount it.
 ########################################
-# make a 50mb empty file
-dd if=/dev/zero of="${IMAGE}" bs=1M count=100
+# make a 200MB empty file
+dd if=/dev/zero of="${IMAGE}" bs=1M count=200
 
 # format that filesystem
 /sbin/mkfs.ext4 "${IMAGE}"
@@ -25,6 +25,12 @@ mkdir "${MOUNT_POINT}"
 mount -t fuse-ext2 -o rw+ "${IMAGE}" "${MOUNT_POINT}"
 
 ########################################
+# Do some Firecracker-specific mutations that help it interact with tty
+########################################
+source "${THIS_DIR}/prepare_rootfs.sh" 
+prepare_fc_rootfs "${MOUNT_POINT}"
+
+########################################
 # Mutate image
 ########################################
 (
@@ -32,16 +38,12 @@ mount -t fuse-ext2 -o rw+ "${IMAGE}" "${MOUNT_POINT}"
 
     # This is basically what Firecracker's `devtool build_rootfs` does:
     # Copy requisite dirs from a very minimal Debian build.
+    apt-get clean
     readonly dirs_to_copy=(/bin /etc /home /lib /lib64 /opt /root /sbin /usr)
     cp -r ${dirs_to_copy[@]} "${MOUNT_POINT}/"
 
     echo "hello :)" > hello.txt
 )
-
-########################################
-# Do some Firecracker-specific mutations that help it interact with tty
-########################################
-"${THIS_DIR}/prepare_rootfs.sh" "${MOUNT_POINT}"
 
 ########################################
 # Copy rootfs into dist.
