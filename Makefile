@@ -4,8 +4,6 @@
 
 .DEFAULT_GOAL := help
 
--include .env
-
 # This variable is used in a few places, most notably
 # docker-bake.hcl. You can read more about it there, but the TL;DR is
 # that you'll need to set this to a proper version (not "", "latest",
@@ -21,10 +19,6 @@ GID = $(shell id --group)
 PWD = $(shell pwd)
 GRAPL_ROOT = ${PWD}
 COMPOSE_USER=${UID}:${GID}
-DOCKER_BUILDX_BAKE_OPTS ?=
-ifneq ($(GRAPL_RUST_ENV_FILE),)
-DOCKER_BUILDX_BAKE_OPTS += --set *.secrets=id=rust_env,src="$(GRAPL_RUST_ENV_FILE)"
-endif
 COMPOSE_IGNORE_ORPHANS=1
 COMPOSE_PROJECT_NAME ?= grapl
 export
@@ -33,7 +27,7 @@ export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 	--file ./test/docker-compose.unit-tests-rust.yml \
 	--file ./test/docker-compose.unit-tests-js.yml \
 
-DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
+DOCKER_BUILDX_BAKE := docker buildx bake
 
 # Helper macro to make using the HCL file for builds less
 # verbose. Once we get rid of docker-compose.yml, we can just use
