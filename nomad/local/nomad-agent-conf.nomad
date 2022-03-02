@@ -28,6 +28,9 @@ client {
   meta = {
     # See constraint{} in plugin.nomad
     "is_grapl_plugin_host" = true
+
+    # Turn on consul connect proxy debug logs. Consul connect sidecars now have access logs, etc.
+    connect.log_level = "debug"
   }
 }
 

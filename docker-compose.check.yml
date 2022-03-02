@@ -27,14 +27,14 @@ services:
         exit 42
 
   buf-lint:
-    image: bufbuild/buf:0.51.0
+    image: bufbuild/buf:1.1.0
     command: ["lint", "--verbose"]
     working_dir: /workdir
     volumes:
       - *read-only-workdir
 
   buf-breaking-change:
-    image: bufbuild/buf:0.51.0
+    image: bufbuild/buf:1.1.0
     command:
       [
         "breaking",
