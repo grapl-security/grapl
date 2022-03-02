@@ -35,18 +35,18 @@ pub fn generate_file_create_subgraph(
 
     let mut asset = AssetNode::new(AssetNode::static_strategy());
     asset
-        .with_asset_id(system.computer.as_ref())
-        .with_hostname(system.computer.as_ref());
+        .with_asset_id(&system.computer)
+        .with_hostname(&system.computer);
 
     let mut creator = ProcessNode::new(ProcessNode::session_strategy());
     creator
-        .with_asset_id(system.computer.as_ref())
+        .with_asset_id(&system.computer)
         .with_process_id(event_data.process_id)
-        .with_process_name(get_image_name(event_data.image.as_ref()))
+        .with_process_name(get_image_name(&event_data.image))
         .with_last_seen_timestamp(timestamp);
 
     let mut file = FileNode::new(FileNode::session_strategy());
-    file.with_asset_id(system.computer.as_ref())
+    file.with_asset_id(&system.computer)
         .with_file_path(strip_file_zone_identifier(&event_data.target_filename))
         .with_created_timestamp(timestamp);
 

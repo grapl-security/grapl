@@ -749,7 +749,14 @@ impl_from_for_unit!(
     &i16,
     &i8
 );
-impl_from_for_unit!(ImmutableStrProp, prop, String, &String, &str);
+impl_from_for_unit!(
+    ImmutableStrProp,
+    prop,
+    String,
+    &String,
+    &str,
+    &std::borrow::Cow<'_, str>
+);
 
 impl From<ImmutableUintProp> for Property {
     fn from(p: ImmutableUintProp) -> Self {

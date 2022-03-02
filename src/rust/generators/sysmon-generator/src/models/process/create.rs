@@ -37,30 +37,30 @@ pub fn generate_process_create_subgraph(
 
     let mut asset = AssetNode::new(AssetNode::static_strategy());
     asset
-        .with_asset_id(system.computer.as_ref())
-        .with_hostname(system.computer.as_ref());
+        .with_asset_id(&system.computer)
+        .with_hostname(&system.computer);
 
     let mut parent = ProcessNode::new(ProcessNode::session_strategy());
     parent
-        .with_asset_id(system.computer.as_ref())
+        .with_asset_id(&system.computer)
         .with_process_id(event_data.parent_process_id)
-        .with_process_name(get_image_name(event_data.parent_image.as_ref()))
-        .with_process_command_line(event_data.parent_command_line.as_ref())
+        .with_process_name(get_image_name(&event_data.parent_image))
+        .with_process_command_line(&event_data.parent_command_line)
         .with_last_seen_timestamp(timestamp);
 
     let mut child = ProcessNode::new(ProcessNode::session_strategy());
     child
-        .with_asset_id(system.computer.as_ref())
-        .with_process_name(get_image_name(event_data.image.as_ref()))
-        .with_process_command_line(event_data.command_line.as_ref())
+        .with_asset_id(&system.computer)
+        .with_process_name(get_image_name(&event_data.image))
+        .with_process_command_line(&event_data.command_line)
         .with_process_id(event_data.process_id)
         .with_created_timestamp(timestamp);
 
     let mut child_exe = FileNode::new(FileNode::session_strategy());
     child_exe
-        .with_asset_id(system.computer.as_ref())
+        .with_asset_id(&system.computer)
         .with_last_seen_timestamp(timestamp)
-        .with_file_path(strip_file_zone_identifier(event_data.image.as_ref()));
+        .with_file_path(strip_file_zone_identifier(&event_data.image));
 
     graph.add_edge(
         "process_asset",

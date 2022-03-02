@@ -43,23 +43,23 @@ pub fn generate_outbound_connection_subgraph(
 
     let mut asset = AssetNode::new(AssetNode::static_strategy());
     asset
-        .with_asset_id(system.computer.as_ref())
-        .with_hostname(system.computer.as_ref());
+        .with_asset_id(&system.computer)
+        .with_hostname(&system.computer);
 
     // A process creates an outbound connection to dst_port
     let mut process = ProcessNode::new(ProcessNode::session_strategy());
     process
-        .with_asset_id(system.computer.as_ref())
+        .with_asset_id(&system.computer)
         .with_process_id(event_data.process_id)
         .with_last_seen_timestamp(timestamp);
 
     let mut outbound =
         ProcessOutboundConnectionNode::new(ProcessOutboundConnectionNode::identity_strategy());
     outbound
-        .with_asset_id(system.computer.as_ref())
-        .with_hostname(system.computer.as_ref())
+        .with_asset_id(&system.computer)
+        .with_hostname(&system.computer)
         .with_ip_address(event_data.source_ip.to_string())
-        .with_protocol(event_data.protocol.as_ref())
+        .with_protocol(&event_data.protocol)
         .with_port(event_data.source_port)
         .with_created_timestamp(timestamp);
 
@@ -77,13 +77,13 @@ pub fn generate_outbound_connection_subgraph(
     src_port
         .with_ip_address(event_data.source_ip.to_string())
         .with_port(event_data.source_port)
-        .with_protocol(event_data.protocol.as_ref());
+        .with_protocol(&event_data.protocol);
 
     let mut dst_port = IpPortNode::new(IpPortNode::identity_strategy());
     dst_port
         .with_ip_address(event_data.destination_ip.to_string())
         .with_port(event_data.destination_port)
-        .with_protocol(event_data.protocol.as_ref());
+        .with_protocol(&event_data.protocol);
 
     let mut network_connection =
         NetworkConnectionNode::new(NetworkConnectionNode::identity_strategy());
@@ -92,14 +92,14 @@ pub fn generate_outbound_connection_subgraph(
         .with_src_port(event_data.source_port)
         .with_dst_ip_address(event_data.destination_ip.to_string())
         .with_dst_port(event_data.destination_port)
-        .with_protocol(event_data.protocol.as_ref())
+        .with_protocol(&event_data.protocol)
         .with_created_timestamp(timestamp);
 
     let mut ip_connection = IpConnectionNode::new(IpConnectionNode::identity_strategy());
     ip_connection
         .with_src_ip_address(event_data.source_ip.to_string())
         .with_dst_ip_address(event_data.destination_ip.to_string())
-        .with_protocol(event_data.protocol.as_ref())
+        .with_protocol(&event_data.protocol)
         .with_created_timestamp(timestamp);
 
     // An asset is assigned an IP
