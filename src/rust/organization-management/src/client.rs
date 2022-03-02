@@ -1,15 +1,6 @@
 use std::convert::TryInto;
 
-use rust_proto::organization_management::{
-    organization_management_service_client::OrganizationManagementServiceClient as _OrganizationManagementServiceClient,
-    CreateOrganizationRequest,
-    CreateOrganizationRequestProto,
-    CreateOrganizationResponse,
-    CreateUserRequest,
-    CreateUserRequestProto,
-    CreateUserResponse,
-    OrganizationManagementDeserializationError,
-};
+use rust_proto::organization_management::{organization_management_service_client::OrganizationManagementServiceClient as _OrganizationManagementServiceClient, CreateOrganizationRequest, CreateOrganizationRequestProto, CreateOrganizationResponse, CreateUserRequest, CreateUserRequestProto, CreateUserResponse, OrganizationManagementDeserializationError, ChangePasswordRequest, ChangePasswordResponse};
 use tonic::{
     codegen::{
         Body,
@@ -62,6 +53,18 @@ where
         let response = self
             .inner
             .create_user(CreateUserRequestProto::from(request))
+            .await?;
+        Ok(response.into_inner().try_into()?)
+    }
+
+    /// Change Password
+    pub async fn change_password(
+        &mut self,
+        request: ChangePasswordRequest,
+    ) -> Result<ChangePasswordResponse, OrganizationManagementServiceClientError> {
+        let response = self
+            .inner
+            .create_user(ChangePasswordRequestProto::from(request))
             .await?;
         Ok(response.into_inner().try_into()?)
     }
