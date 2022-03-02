@@ -260,10 +260,14 @@ test-unit: ## Build and run all unit tests
 
 .PHONY: test-unit-js
 test-unit-js: test-unit-engagement-view
-test-unit-js: build-test-unit-js
-test-unit-js: export COMPOSE_PROJECT_NAME := grapl-test-unit-js
-test-unit-js: export COMPOSE_FILE := ./test/docker-compose.unit-tests-js.yml
+test-unit-js: test-unit-graphql-endpoint
 test-unit-js: ## Build and run unit tests - JavaScript only
+
+.PHONY: test-unit-graphql-endpoint
+test-unit-graphql-endpoint: build-test-unit-js
+test-unit-graphql-endpoint: export COMPOSE_PROJECT_NAME := grapl-test-unit-js
+test-unit-graphql-endpoint: export COMPOSE_FILE := ./test/docker-compose.unit-tests-js.yml
+test-unit-graphql-endpoint: ## Test Graphql Endpoint
 	test/docker-compose-with-error.sh
 
 .PHONY: test-unit-engagement-view
