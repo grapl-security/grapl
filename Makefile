@@ -297,9 +297,10 @@ typecheck: ## Typecheck Python Code
 	./pants check ::
 
 .PHONY: test-integration
-test-integration: ## Build and run integration tests
+test-integration: build-local-infrastructure
+test-integration: build-test-integration
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
-test-integration: build-local-infrastructure build-test-integration
+test-integration: ## Build and run integration tests
 	@$(WITH_LOCAL_GRAPL_ENV)
 	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh integration-tests 9"
 
@@ -308,9 +309,10 @@ test-grapl-template-generator:  # Test that the Grapl Template Generator spits o
 	./src/python/grapl-template-generator/grapl_template_generator_tests/integration_test.sh
 
 .PHONY: test-e2e
-test-e2e: ## Build and run e2e tests
+test-e2e: build-local-infrastructure
+test-e2e: build-test-e2e
 test-e2e: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_E2E_TESTS)
-test-e2e: build-local-infrastructure build-test-e2e
+test-e2e: ## Build and run e2e tests
 	@$(WITH_LOCAL_GRAPL_ENV)
 	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh e2e-tests 6"
 
