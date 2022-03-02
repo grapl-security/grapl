@@ -35,13 +35,11 @@ export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 
 DOCKER_BUILDX_BAKE := docker buildx bake $(DOCKER_BUILDX_BAKE_OPTS)
 
-# While we have Docker Compose files present, we have to explicitly
-# declare we're using an HCL file (compose YAML files are used
-# preferentially, in the absence of explicit overrides).
-#
-# The name of this variable is our own; there doesn't appear to be an
-# official one to specify such a file.
-BUILDX_BAKE_HCL_FILE := docker-bake.hcl
+# Helper macro to make using the HCL file for builds less
+# verbose. Once we get rid of docker-compose.yml, we can just use
+# ${DOCKER_BUILDX_BAKE}, since it will pick up the HCL file
+# automatically.
+DOCKER_BUILDX_BAKE_HCL := ${DOCKER_BUILDX_BAKE} --file=docker-bake.hcl
 
 COMPOSE_PROJECT_INTEGRATION_TESTS := grapl-integration_tests
 COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
@@ -173,10 +171,9 @@ build-test-unit-rust:
 # our local-only images (e.g., pulumi, postgres), and any
 # prerequisites they need (e.g., due to COPY directives in
 # Dockerfiles) are defined here. The image builds are defined in
-# ${BUILDX_BAKE_HCL_FILE} using groups. Similarly, the prerequisites
-# that Pants knows how to build are defined using tags. The
-# grapl-web-ui needs the compiled engagement-view assets in order for
-# it to build.
+# docker-bake.hcl using groups. Similarly, the prerequisites that
+# Pants knows how to build are defined using tags. The grapl-web-ui
+# needs the compiled engagement-view assets in order for it to build.
 
 .PHONY: build-service-pex-files
 build-service-pex-files: ## Build all PEX files needed by Grapl SaaS services
@@ -219,18 +216,17 @@ build-image-prerequisites: build-grapl-service-prerequisites build-e2e-pex-files
 .PHONY: build-local-infrastructure
 build-local-infrastructure: build-grapl-service-prerequisites
 	@echo "--- Building the Grapl SaaS service images and local-only images"
-	$(DOCKER_BUILDX_BAKE) --file "${BUILDX_BAKE_HCL_FILE}" \
-		local-infrastructure
+	$(DOCKER_BUILDX_BAKE_HCL) local-infrastructure
 
 .PHONY: build-test-e2e
 build-test-e2e: build-e2e-pex-files
 	@echo "--- Building e2e testing image"
-	$(DOCKER_BUILDX_BAKE) --file "${BUILDX_BAKE_HCL_FILE}" e2e-tests
+	$(DOCKER_BUILDX_BAKE_HCL) e2e-tests
 
 .PHONY: build-test-integration
 build-test-integration:
 	@echo "--- Building integration test images"
-	$(DOCKER_BUILDX_BAKE) --file "${BUILDX_BAKE_HCL_FILE}" integration-tests
+	$(DOCKER_BUILDX_BAKE) integration-tests
 
 ########################################################################
 
