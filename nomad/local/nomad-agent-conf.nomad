@@ -28,6 +28,7 @@ client {
   meta = {
     # See constraint{} in plugin.nomad
     "is_grapl_plugin_host" = true
+    connect.log_level = "debug"
   }
 }
 
