@@ -27,13 +27,11 @@ export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 	--file ./test/docker-compose.unit-tests-rust.yml \
 	--file ./test/docker-compose.unit-tests-js.yml \
 
-DOCKER_BUILDX_BAKE := docker buildx bake
-
 # Helper macro to make using the HCL file for builds less
 # verbose. Once we get rid of docker-compose.yml, we can just use
-# ${DOCKER_BUILDX_BAKE}, since it will pick up the HCL file
+# `docker buildx bake`, since it will pick up the HCL file
 # automatically.
-DOCKER_BUILDX_BAKE_HCL := ${DOCKER_BUILDX_BAKE} --file=docker-bake.hcl
+DOCKER_BUILDX_BAKE_HCL := docker buildx bake --file=docker-bake.hcl
 
 COMPOSE_PROJECT_INTEGRATION_TESTS := grapl-integration_tests
 COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
@@ -150,12 +148,12 @@ help: ## Print this help
 
 .PHONY: build-test-unit-js
 build-test-unit-js:
-	$(DOCKER_BUILDX_BAKE) \
+	docker buildx bake \
 		--file ./test/docker-compose.unit-tests-js.yml
 
 .PHONY: build-test-unit-rust
 build-test-unit-rust:
-	$(DOCKER_BUILDX_BAKE) \
+	docker buildx bake \
 		--file ./test/docker-compose.unit-tests-rust.yml
 
 # Build Service Images and their Prerequisites
@@ -220,13 +218,13 @@ build-test-e2e: build-e2e-pex-files
 .PHONY: build-test-integration
 build-test-integration:
 	@echo "--- Building integration test images"
-	$(DOCKER_BUILDX_BAKE) integration-tests
+	docker buildx bake integration-tests
 
 ########################################################################
 
 .PHONY: build-prettier-image
 build-prettier-image:
-	$(DOCKER_BUILDX_BAKE) --file ./docker-compose.check.yml prettier
+	docker buildx bake --file ./docker-compose.check.yml prettier
 
 .PHONY: graplctl
 graplctl: ## Build graplctl and install it to ./bin
