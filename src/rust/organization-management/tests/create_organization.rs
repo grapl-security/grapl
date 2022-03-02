@@ -2,10 +2,7 @@
 
 use grapl_utils::future_ext::GraplFutureExt;
 use organization_management::client::OrganizationManagementServiceClient;
-use rust_proto::organization_management::{
-    CreateOrganizationRequest,
-};
-
+use rust_proto::organization_management::CreateOrganizationRequest;
 
 #[test_log::test(tokio::test)]
 async fn test_create_organization() -> Result<(), Box<dyn std::error::Error>> {
@@ -44,11 +41,17 @@ async fn test_create_organization() -> Result<(), Box<dyn std::error::Error>> {
         .timeout(std::time::Duration::from_secs(5))
         .await??;
 
-    assert_eq!(get_response.organization.organization_display_name, organization_display_name);
+    assert_eq!(
+        get_response.organization.organization_display_name,
+        organization_display_name
+    );
     assert_eq!(get_response.organization.admin_username, admin_usernam);
     assert_eq!(get_response.organization.admin_email, admin_email);
     assert_eq!(get_response.organization.admin_password, admin_password);
-    assert_eq!(get_response.organization.should_reset_password, should_reset_password);
+    assert_eq!(
+        get_response.organization.should_reset_password,
+        should_reset_password
+    );
 
     Ok(())
 }

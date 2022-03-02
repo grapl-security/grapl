@@ -2,10 +2,7 @@
 
 use grapl_utils::future_ext::GraplFutureExt;
 use organization_management::client::OrganizationManagementServiceClient;
-use rust_proto::organization_management::{
-    CreateUserRequest,
-};
-
+use rust_proto::organization_management::CreateUserRequest;
 
 #[test_log::test(tokio::test)]
 async fn test_create_user() -> Result<(), Box<dyn std::error::Error>> {

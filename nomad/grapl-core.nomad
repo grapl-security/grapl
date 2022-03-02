@@ -1105,15 +1105,15 @@ job "grapl-core" {
       }
 
       env {
-        AWS_REGION                      = var.aws_region
-        NOMAD_SERVICE_ADDRESS           = "${attr.unique.network.ip-address}:4646"
-        ORGANIZATION_MANAGEMENT_BIND_ADDRESS    = "0.0.0.0:${NOMAD_PORT_organization-management-port}"
-        RUST_BACKTRACE                  = local.rust_backtrace
-        RUST_LOG                        = var.rust_log
-        ORGANIZATION_MANAGEMENT_DB_HOSTNAME     = var.organization_management_db_hostname
-        ORGANIZATION_MANAGEMENT_DB_PASSWORD     = var.organization_management_db_password
-        ORGANIZATION_MANAGEMENT_DB_PORT         = var.organization_management_db_port
-        ORGANIZATION_MANAGEMENT_DB_USERNAME     = var.organization_management_db_username
+        AWS_REGION                           = var.aws_region
+        NOMAD_SERVICE_ADDRESS                = "${attr.unique.network.ip-address}:4646"
+        ORGANIZATION_MANAGEMENT_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_organization-management-port}"
+        RUST_BACKTRACE                       = local.rust_backtrace
+        RUST_LOG                             = var.rust_log
+        ORGANIZATION_MANAGEMENT_DB_HOSTNAME  = var.organization_management_db_hostname
+        ORGANIZATION_MANAGEMENT_DB_PASSWORD  = var.organization_management_db_password
+        ORGANIZATION_MANAGEMENT_DB_PORT      = var.organization_management_db_port
+        ORGANIZATION_MANAGEMENT_DB_USERNAME  = var.organization_management_db_username
       }
     }
 

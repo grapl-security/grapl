@@ -333,10 +333,16 @@ def main() -> None:
 
         # TODO: ADD EXPORTS FOR PLUGIN-REGISTRY
 
-        pulumi.export("organization-management-db-hostname", plugin_work_queue_db.hostname)
+        pulumi.export(
+            "organization-management-db-hostname", plugin_work_queue_db.hostname
+        )
         pulumi.export("organization-management-db-port", str(plugin_work_queue_db.port))
-        pulumi.export("organization-management-db-username", plugin_work_queue_db.username)
-        pulumi.export("organization-management-db-password", plugin_work_queue_db.password)
+        pulumi.export(
+            "organization-management-db-username", plugin_work_queue_db.username
+        )
+        pulumi.export(
+            "organization-management-db-password", plugin_work_queue_db.password
+        )
 
         redis_endpoint = f"redis://{config.HOST_IP_IN_NOMAD}:6379"
 
@@ -454,11 +460,11 @@ def main() -> None:
 
         pulumi.export(
             "organization-management-db-hostname",
-            organization_management_postgres.host()
+            organization_management_postgres.host(),
         )
         pulumi.export(
             "organization-management-db-port",
-            organization_management_postgres.port().apply(str)
+            organization_management_postgres.port().apply(str),
         )
         pulumi.export(
             "organization-management-db-username",
@@ -484,16 +490,16 @@ def main() -> None:
             plugin_work_queue_postgres.password(),
         )
 
-
         pulumi.export("kafka-bootstrap-servers", kafka.bootstrap_servers())
         pulumi.export("redis-endpoint", cache.endpoint)
 
         prod_grapl_core_vars: Final[NomadVars] = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
-
             organization_management_db_hostname=organization_management_postgres.host(),
-            organization_management_db_port=organization_management_postgres.port().apply(str),
+            organization_management_db_port=organization_management_postgres.port().apply(
+                str
+            ),
             organization_management_db_username=organization_management_postgres.username(),
             organization_management_db_password=organization_management_postgres.password(),
             plugin_registry_db_hostname=plugin_registry_postgres.host(),
