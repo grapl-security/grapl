@@ -8,8 +8,8 @@ job "observability" {
   group "jaeger" {
     network {
       mode = "host"
-      # We currently only want a web front-end and a zipkin endpoint exposed. However, Jaegar supports thrift and grpc
-      # on other ports. We can expose them if/when we have a use for them..
+      # We currently expose the web frontend and then several endpoints that accept traces. There are additional
+      # endpoints that support traces whose ports we can open up as necessary
       port "http-frontend" {
         to     = 16686
         static = 16686
