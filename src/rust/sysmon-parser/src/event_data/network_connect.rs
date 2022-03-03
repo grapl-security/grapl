@@ -5,7 +5,6 @@ use std::{
 
 use chrono::{
     DateTime,
-    TimeZone,
     Utc,
 };
 use derive_into_owned::IntoOwned;
@@ -119,32 +118,41 @@ impl<'a> NetworkConnectionEventData<'a> {
                 Token::ElementStart { local, .. } => match local.as_str() {
                     "Data" => {
                         let name = util::get_name_attribute!(tokenizer);
-                        let text = util::next_text_str!(tokenizer);
+                        let value = util::next_text_str_span!(tokenizer);
+
                         match name {
-                            "RuleName" => rule_name = Some(util::unescape_xml(text)?),
-                            "SequenceNumber" => sequence_number = Some(text.parse::<u64>()?),
+                            "RuleName" => rule_name = Some(util::unescape_xml(&value)?),
+                            "SequenceNumber" => {
+                                sequence_number = Some(util::parse_int::<u64>(&value)?)
+                            }
                             "UtcTime" => {
-                                utc_time = Some(Utc.datetime_from_str(text, UTC_TIME_FORMAT))
+                                utc_time = Some(util::parse_utc_from_str(&value, UTC_TIME_FORMAT)?)
                             }
-                            "ProcessGuid" => process_guid = Some(util::parse_win_guid_str(text)),
-                            "ProcessId" => process_id = Some(text.parse::<u32>()),
-                            "Image" => image = Some(util::unescape_xml(text)),
-                            "User" => user = Some(util::unescape_xml(text)?),
-                            "Protocol" => protocol = Some(util::unescape_xml(text)),
-                            "Initiated" => initiated = Some(text.parse::<bool>()),
-                            "SourceIsIpv6" => source_is_ipv6 = Some(text.parse::<bool>()),
-                            "SourceIp" => source_ip = Some(text.parse::<IpAddr>()),
-                            "SourceHostname" => source_hostname = Some(util::unescape_xml(text)?),
-                            "SourcePort" => source_port = Some(text.parse::<u16>()),
-                            "SourcePortName" => source_port_name = Some(util::unescape_xml(text)?),
-                            "DestinationIsIpv6" => destination_is_ipv6 = Some(text.parse::<bool>()),
-                            "DestinationIp" => destination_ip = Some(text.parse::<IpAddr>()),
+                            "ProcessGuid" => process_guid = Some(util::parse_win_guid_str(&value)?),
+                            "ProcessId" => process_id = Some(util::parse_int::<u32>(&value)?),
+                            "Image" => image = Some(util::unescape_xml(&value)?),
+                            "User" => user = Some(util::unescape_xml(&value)?),
+                            "Protocol" => protocol = Some(util::unescape_xml(&value)?),
+                            "Initiated" => initiated = Some(util::parse_bool(&value)?),
+                            "SourceIsIpv6" => source_is_ipv6 = Some(util::parse_bool(&value)?),
+                            "SourceIp" => source_ip = Some(util::parse_ip_addr(&value)?),
+                            "SourceHostname" => source_hostname = Some(util::unescape_xml(&value)?),
+                            "SourcePort" => source_port = Some(util::parse_int::<u16>(&value)?),
+                            "SourcePortName" => {
+                                source_port_name = Some(util::unescape_xml(&value)?)
+                            }
+                            "DestinationIsIpv6" => {
+                                destination_is_ipv6 = Some(util::parse_bool(&value)?);
+                            }
+                            "DestinationIp" => destination_ip = Some(util::parse_ip_addr(&value)?),
                             "DestinationHostname" => {
-                                destination_hostname = Some(util::unescape_xml(text)?)
+                                destination_hostname = Some(util::unescape_xml(&value)?)
                             }
-                            "DestinationPort" => destination_port = Some(text.parse::<u16>()),
+                            "DestinationPort" => {
+                                destination_port = Some(util::parse_int::<u16>(&value)?)
+                            }
                             "DestinationPortName" => {
-                                destination_port_name = Some(util::unescape_xml(text)?)
+                                destination_port_name = Some(util::unescape_xml(&value)?)
                             }
                             _ => {}
                         }
@@ -160,19 +168,19 @@ impl<'a> NetworkConnectionEventData<'a> {
         }
 
         // expected fields - present in all observed schema versions
-        let utc_time = utc_time.ok_or(Error::MissingField("UtcTime"))??;
-        let process_guid = process_guid.ok_or(Error::MissingField("ProcessGuid"))??;
-        let process_id = process_id.ok_or(Error::MissingField("ProcessId"))??;
-        let image = image.ok_or(Error::MissingField("Image"))??;
-        let protocol = protocol.ok_or(Error::MissingField("Protocol"))??;
-        let initiated = initiated.ok_or(Error::MissingField("Initiated"))??;
-        let source_is_ipv6 = source_is_ipv6.ok_or(Error::MissingField("SourceIsIpv6"))??;
-        let source_ip = source_ip.ok_or(Error::MissingField("SourceIp"))??;
-        let source_port = source_port.ok_or(Error::MissingField("SourcePort"))??;
+        let utc_time = utc_time.ok_or(Error::MissingField("UtcTime"))?;
+        let process_guid = process_guid.ok_or(Error::MissingField("ProcessGuid"))?;
+        let process_id = process_id.ok_or(Error::MissingField("ProcessId"))?;
+        let image = image.ok_or(Error::MissingField("Image"))?;
+        let protocol = protocol.ok_or(Error::MissingField("Protocol"))?;
+        let initiated = initiated.ok_or(Error::MissingField("Initiated"))?;
+        let source_is_ipv6 = source_is_ipv6.ok_or(Error::MissingField("SourceIsIpv6"))?;
+        let source_ip = source_ip.ok_or(Error::MissingField("SourceIp"))?;
+        let source_port = source_port.ok_or(Error::MissingField("SourcePort"))?;
         let destination_is_ipv6 =
-            destination_is_ipv6.ok_or(Error::MissingField("DestinationIsIpv6"))??;
-        let destination_ip = destination_ip.ok_or(Error::MissingField("DestinationIp"))??;
-        let destination_port = destination_port.ok_or(Error::MissingField("DestinationPort"))??;
+            destination_is_ipv6.ok_or(Error::MissingField("DestinationIsIpv6"))?;
+        let destination_ip = destination_ip.ok_or(Error::MissingField("DestinationIp"))?;
+        let destination_port = destination_port.ok_or(Error::MissingField("DestinationPort"))?;
 
         Ok(NetworkConnectionEventData {
             rule_name,
@@ -224,10 +232,13 @@ impl<'a, 'b: 'a> TryFrom<&'b EventData<'a>> for &NetworkConnectionEventData<'a> 
 mod tests {
     use std::str::FromStr;
 
+    use chrono::TimeZone;
+    use xmlparser::StrSpan;
+
     use super::*;
 
     #[test]
-    fn parse_network_connection_event() -> Result<()> {
+    fn parse_network_connection_event() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let xml = r#"
         <EventData>
             <Data Name='RuleName'></Data>
@@ -259,7 +270,9 @@ mod tests {
                 rule_name: None,
                 sequence_number: None,
                 utc_time: Utc.datetime_from_str("2018-12-08 20:39:24.541", UTC_TIME_FORMAT)?,
-                process_guid: util::parse_win_guid_str("331D737B-28FF-5C0B-0000-001081250F00")?,
+                process_guid: util::parse_win_guid_str(&StrSpan::from(
+                    "331D737B-28FF-5C0B-0000-001081250F00"
+                ))?,
                 process_id: 1772,
                 image: Cow::Borrowed(
                     r#"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"#

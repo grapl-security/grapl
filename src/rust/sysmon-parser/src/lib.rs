@@ -41,10 +41,6 @@
 //! the XML 1.0 spec. This includes control characters, which can show up in command line strings
 //! on Linux.
 //!
-//! 2. The error reporting needs improvement. For parsing errors, like parsing ints, the errors
-//! at the moment only report that there was a ParseIntError, but it doesn't include the other
-//! helpful information like the text that failed parsing, or where in the input it can be found.
-//! This will be improved in future versions.
 //!
 //! [Sysmon for Linux]: https://github.com/Sysinternals/SysmonForLinux
 //! [xmlparser]: https://github.com/RazrFalcon/xmlparser

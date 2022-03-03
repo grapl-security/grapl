@@ -2,7 +2,6 @@ use std::borrow::Cow;
 
 use chrono::{
     DateTime,
-    TimeZone,
     Utc,
 };
 use derive_into_owned::IntoOwned;
@@ -71,21 +70,22 @@ impl<'a> FileCreateEventData<'a> {
                 Token::ElementStart { local, .. } => match local.as_str() {
                     "Data" => {
                         let name = util::get_name_attribute!(tokenizer);
-                        let text = util::next_text_str!(tokenizer);
+                        let value = util::next_text_str_span!(tokenizer);
+
                         match name {
-                            "RuleName" => rule_name = Some(util::unescape_xml(text)?),
+                            "RuleName" => rule_name = Some(util::unescape_xml(&value)?),
                             "UtcTime" => {
-                                utc_time = Some(Utc.datetime_from_str(text, UTC_TIME_FORMAT))
+                                utc_time = Some(util::parse_utc_from_str(&value, UTC_TIME_FORMAT)?)
                             }
-                            "ProcessGuid" => process_guid = Some(util::parse_win_guid_str(text)),
-                            "ProcessId" => process_id = Some(text.parse::<u32>()),
-                            "Image" => image = Some(util::unescape_xml(text)),
-                            "TargetFilename" => target_filename = Some(util::unescape_xml(text)),
+                            "ProcessGuid" => process_guid = Some(util::parse_win_guid_str(&value)?),
+                            "ProcessId" => process_id = Some(util::parse_int::<u32>(&value)?),
+                            "Image" => image = Some(util::unescape_xml(&value)?),
+                            "TargetFilename" => target_filename = Some(util::unescape_xml(&value)?),
                             "CreationUtcTime" => {
                                 creation_utc_time =
-                                    Some(Utc.datetime_from_str(text, UTC_TIME_FORMAT))
+                                    Some(util::parse_utc_from_str(&value, UTC_TIME_FORMAT)?)
                             }
-                            "User" => user = Some(util::unescape_xml(text)?),
+                            "User" => user = Some(util::unescape_xml(&value)?),
                             _ => {}
                         }
                     }
@@ -100,13 +100,12 @@ impl<'a> FileCreateEventData<'a> {
         }
 
         // expected fields - present in all observed schema versions
-        let utc_time = utc_time.ok_or(Error::MissingField("UtcTime"))??;
-        let process_guid = process_guid.ok_or(Error::MissingField("ProcessGuid"))??;
-        let process_id = process_id.ok_or(Error::MissingField("ProcessId"))??;
-        let image = image.ok_or(Error::MissingField("Image"))??;
-        let target_filename = target_filename.ok_or(Error::MissingField("TargetFilename"))??;
-        let creation_utc_time =
-            creation_utc_time.ok_or(Error::MissingField("CreationUtcTime"))??;
+        let utc_time = utc_time.ok_or(Error::MissingField("UtcTime"))?;
+        let process_guid = process_guid.ok_or(Error::MissingField("ProcessGuid"))?;
+        let process_id = process_id.ok_or(Error::MissingField("ProcessId"))?;
+        let image = image.ok_or(Error::MissingField("Image"))?;
+        let target_filename = target_filename.ok_or(Error::MissingField("TargetFilename"))?;
+        let creation_utc_time = creation_utc_time.ok_or(Error::MissingField("CreationUtcTime"))?;
 
         Ok(FileCreateEventData {
             rule_name,
@@ -145,10 +144,13 @@ impl<'a, 'b: 'a> TryFrom<&'b EventData<'a>> for &FileCreateEventData<'a> {
 
 #[cfg(test)]
 mod tests {
+    use chrono::TimeZone;
+    use xmlparser::StrSpan;
+
     use super::*;
 
     #[test]
-    fn parse_file_creation_event() -> Result<()> {
+    fn parse_file_creation_event() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let xml = r#"<EventData>
         <Data Name='RuleName'>FileCreate-Downloads</Data>
         <Data Name='UtcTime'>2019-07-24 18:05:12.673</Data>
@@ -167,7 +169,9 @@ mod tests {
             FileCreateEventData {
                 rule_name: Some(Cow::Borrowed("FileCreate-Downloads")),
                 utc_time: Utc.datetime_from_str("2019-07-24 18:05:12.673", UTC_TIME_FORMAT)?,
-                process_guid: util::parse_win_guid_str("87E8D3BD-9DD7-5D38-0000-00107E781D00")?,
+                process_guid: util::parse_win_guid_str(&StrSpan::from(
+                    "87E8D3BD-9DD7-5D38-0000-00107E781D00"
+                ))?,
                 process_id: 4164,
                 image: Cow::Borrowed(r#"C:\Users\grapltest\Downloads\dropper.exe"#),
                 target_filename: Cow::Borrowed(r#"C:\Users\grapltest\Downloads\svchost.exe"#),

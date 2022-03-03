@@ -131,23 +131,6 @@ impl<'a> System<'a> {
         let mut computer = None;
         let mut security = None;
 
-        macro_rules! next_text_str {
-            () => {{
-                let mut result = None;
-                for token in tokenizer.by_ref() {
-                    match token? {
-                        Token::Text { text } => result = Some(text.as_str()),
-                        Token::ElementEnd {
-                            end: xmlparser::ElementEnd::Close(_, _),
-                            ..
-                        } => break,
-                        _ => {}
-                    }
-                }
-                result
-            }};
-        }
-
         while let Some(token) = tokenizer.next() {
             match token? {
                 Token::ElementStart { local, .. } => {
@@ -159,18 +142,14 @@ impl<'a> System<'a> {
 
                             for token in tokenizer.by_ref() {
                                 match token? {
-                                    Token::Attribute { local, value, .. } => {
-                                        let value = value.as_str();
-
-                                        match local.as_str() {
-                                            "Name" => name = Some(util::unescape_xml(value)?),
-                                            "Guid" => guid = Some(util::parse_win_guid_str(value)?),
-                                            "EventSourceName" => {
-                                                event_source_name = Some(util::unescape_xml(value)?)
-                                            }
-                                            _ => {}
+                                    Token::Attribute { local, value, .. } => match local.as_str() {
+                                        "Name" => name = Some(util::unescape_xml(&value)?),
+                                        "Guid" => guid = Some(util::parse_win_guid_str(&value)?),
+                                        "EventSourceName" => {
+                                            event_source_name = Some(util::unescape_xml(&value)?)
                                         }
-                                    }
+                                        _ => {}
+                                    },
                                     Token::ElementEnd { .. } => break,
                                     _ => {}
                                 }
@@ -183,38 +162,40 @@ impl<'a> System<'a> {
                             })
                         }
                         "EventID" => {
-                            event_id = next_text_str!().map(event_id::EventId::from_str);
+                            let value = util::next_text_str_span!(tokenizer);
+                            event_id = Some(event_id::EventId::from_str(value.as_str())?);
                         }
                         "Version" => {
-                            version = next_text_str!().map(|t| t.parse::<u8>());
+                            let value = util::next_text_str_span!(tokenizer);
+                            version = Some(util::parse_int::<u8>(&value)?);
                         }
                         "Level" => {
-                            level = next_text_str!().map(|t| t.parse::<u8>());
+                            let value = util::next_text_str_span!(tokenizer);
+                            level = Some(util::parse_int::<u8>(&value)?);
                         }
                         "Task" => {
-                            task = next_text_str!().map(|t| t.parse::<u16>());
+                            let value = util::next_text_str_span!(tokenizer);
+                            task = Some(util::parse_int::<u16>(&value)?);
                         }
                         "Opcode" => {
-                            opcode = next_text_str!().map(|t| t.parse::<u8>());
+                            let value = util::next_text_str_span!(tokenizer);
+                            opcode = Some(util::parse_int::<u8>(&value)?);
                         }
                         "Keywords" => {
-                            keywords = next_text_str!().map(util::from_zero_or_hex_str);
+                            let value = util::next_text_str_span!(tokenizer);
+                            keywords = Some(util::from_zero_or_hex_str(&value)?);
                         }
                         "TimeCreated" => {
                             let mut system_time: Option<DateTime<Utc>> = None;
 
                             for token in tokenizer.by_ref() {
                                 match token? {
-                                    Token::Attribute { local, value, .. } => {
-                                        let value = value.as_str();
-
-                                        match local.as_str() {
-                                            "SystemTime" => {
-                                                system_time = Some(value.parse::<DateTime<Utc>>()?)
-                                            }
-                                            _ => {}
+                                    Token::Attribute { local, value, .. } => match local.as_str() {
+                                        "SystemTime" => {
+                                            system_time = Some(util::parse_utc(&value)?)
                                         }
-                                    }
+                                        _ => {}
+                                    },
                                     Token::ElementEnd { .. } => break,
                                     _ => {}
                                 }
@@ -226,7 +207,9 @@ impl<'a> System<'a> {
                             time_created = Some(time_created::TimeCreated { system_time })
                         }
                         "EventRecordID" => {
-                            event_record_id = next_text_str!().map(|s| s.parse::<u64>());
+                            let value = util::next_text_str_span!(tokenizer);
+
+                            event_record_id = Some(util::parse_int::<u64>(&value)?);
                         }
                         "Correlation" => {
                             let mut activity_id: Option<uuid::Uuid> = None;
@@ -234,20 +217,16 @@ impl<'a> System<'a> {
 
                             for token in tokenizer.by_ref() {
                                 match token? {
-                                    Token::Attribute { local, value, .. } => {
-                                        let value = value.as_str();
-
-                                        match local.as_str() {
-                                            "ActivityID" => {
-                                                activity_id = Some(util::parse_win_guid_str(value)?)
-                                            }
-                                            "RelatedActivityID" => {
-                                                related_activity_id =
-                                                    Some(util::parse_win_guid_str(value)?)
-                                            }
-                                            _ => {}
+                                    Token::Attribute { local, value, .. } => match local.as_str() {
+                                        "ActivityID" => {
+                                            activity_id = Some(util::parse_win_guid_str(&value)?)
                                         }
-                                    }
+                                        "RelatedActivityID" => {
+                                            related_activity_id =
+                                                Some(util::parse_win_guid_str(&value)?)
+                                        }
+                                        _ => {}
+                                    },
                                     Token::ElementEnd { .. } => break,
                                     _ => {}
                                 }
@@ -271,26 +250,30 @@ impl<'a> System<'a> {
 
                             for token in tokenizer.by_ref() {
                                 match token? {
-                                    Token::Attribute { local, value, .. } => {
-                                        let value = value.as_str();
-
-                                        match local.as_str() {
-                                            "ProcessID" => process_id = Some(value.parse::<u32>()?),
-                                            "ThreadID" => thread_id = Some(value.parse::<u32>()?),
-                                            "ProcessorID" => {
-                                                processor_id = Some(value.parse::<u8>()?)
-                                            }
-                                            "SessionID" => session_id = Some(value.parse::<u32>()?),
-                                            "KernelTime" => {
-                                                kernel_time = Some(value.parse::<u32>()?)
-                                            }
-                                            "UserTime" => user_time = Some(value.parse::<u32>()?),
-                                            "ProcessorTime" => {
-                                                processor_time = Some(value.parse::<u32>()?)
-                                            }
-                                            _ => {}
+                                    Token::Attribute { local, value, .. } => match local.as_str() {
+                                        "ProcessID" => {
+                                            process_id = Some(util::parse_int::<u32>(&value)?);
                                         }
-                                    }
+                                        "ThreadID" => {
+                                            thread_id = Some(util::parse_int::<u32>(&value)?);
+                                        }
+                                        "ProcessorID" => {
+                                            processor_id = Some(util::parse_int::<u8>(&value)?);
+                                        }
+                                        "SessionID" => {
+                                            session_id = Some(util::parse_int::<u32>(&value)?);
+                                        }
+                                        "KernelTime" => {
+                                            kernel_time = Some(util::parse_int::<u32>(&value)?);
+                                        }
+                                        "UserTime" => {
+                                            user_time = Some(util::parse_int::<u32>(&value)?);
+                                        }
+                                        "ProcessorTime" => {
+                                            processor_time = Some(util::parse_int::<u32>(&value)?);
+                                        }
+                                        _ => {}
+                                    },
                                     Token::ElementEnd { .. } => break,
                                     _ => {}
                                 }
@@ -310,26 +293,24 @@ impl<'a> System<'a> {
                             })
                         }
                         "Channel" => {
-                            channel = next_text_str!().map(util::unescape_xml);
+                            let value = util::next_text_str_span!(tokenizer);
+                            channel = Some(util::unescape_xml(&value)?);
                         }
                         "Computer" => {
-                            computer = next_text_str!().map(util::unescape_xml);
+                            let value = util::next_text_str_span!(tokenizer);
+                            computer = Some(util::unescape_xml(&value)?);
                         }
                         "Security" => {
                             let mut user_id: Option<Cow<str>> = None;
 
                             for token in tokenizer.by_ref() {
                                 match token? {
-                                    Token::Attribute { local, value, .. } => {
-                                        let value = value.as_str();
-
-                                        match local.as_str() {
-                                            "UserId" => {
-                                                user_id = Some(util::unescape_xml(value)?);
-                                            }
-                                            _ => {}
+                                    Token::Attribute { local, value, .. } => match local.as_str() {
+                                        "UserId" => {
+                                            user_id = Some(util::unescape_xml(&value)?);
                                         }
-                                    }
+                                        _ => {}
+                                    },
                                     Token::ElementEnd { .. } => break,
                                     _ => {}
                                 }
@@ -350,18 +331,18 @@ impl<'a> System<'a> {
         }
 
         let provider = provider.ok_or(Error::MissingField("provider"))?;
-        let event_id = event_id.ok_or(Error::MissingField("event_id"))??;
-        let version = version.ok_or(Error::MissingField("version"))??;
-        let level = level.ok_or(Error::MissingField("level"))??;
-        let task = task.ok_or(Error::MissingField("task"))??;
-        let opcode = opcode.ok_or(Error::MissingField("opcode"))??;
-        let keywords = keywords.ok_or(Error::MissingField("keywords"))??;
+        let event_id = event_id.ok_or(Error::MissingField("event_id"))?;
+        let version = version.ok_or(Error::MissingField("version"))?;
+        let level = level.ok_or(Error::MissingField("level"))?;
+        let task = task.ok_or(Error::MissingField("task"))?;
+        let opcode = opcode.ok_or(Error::MissingField("opcode"))?;
+        let keywords = keywords.ok_or(Error::MissingField("keywords"))?;
         let time_created = time_created.ok_or(Error::MissingField("time_created"))?;
-        let event_record_id = event_record_id.ok_or(Error::MissingField("event_record_id"))??;
+        let event_record_id = event_record_id.ok_or(Error::MissingField("event_record_id"))?;
         let correlation = correlation.ok_or(Error::MissingField("correlation"))?;
         let execution = execution.ok_or(Error::MissingField("execution"))?;
-        let channel = channel.ok_or(Error::MissingField("channel"))??;
-        let computer = computer.ok_or(Error::MissingField("computer"))??;
+        let channel = channel.ok_or(Error::MissingField("channel"))?;
+        let computer = computer.ok_or(Error::MissingField("computer"))?;
         let security = security.ok_or(Error::MissingField("security"))?;
 
         Ok(System {
@@ -385,10 +366,12 @@ impl<'a> System<'a> {
 
 #[cfg(test)]
 mod tests {
+    use xmlparser::StrSpan;
+
     use super::*;
 
     #[test]
-    fn parse_event_system() -> Result<()> {
+    fn parse_event_system() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let xml = r#"
     <System>
         <Provider Name="Linux-Sysmon" Guid="{ff032593-a8d3-4f13-b0d6-01fc615a0f97}"/>
@@ -415,9 +398,9 @@ mod tests {
             System {
                 provider: provider::Provider {
                     name: Some(Cow::Borrowed("Linux-Sysmon")),
-                    guid: Some(util::parse_win_guid_str(
+                    guid: Some(util::parse_win_guid_str(&StrSpan::from(
                         "ff032593-a8d3-4f13-b0d6-01fc615a0f97"
-                    )?),
+                    ))?),
                     event_source_name: None
                 },
                 event_id: event_id::EventId::ProcessCreation,

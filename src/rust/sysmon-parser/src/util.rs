@@ -1,26 +1,110 @@
-use std::borrow::Cow;
+use std::{
+    borrow::Cow,
+    str::FromStr,
+};
 
-use crate::error::Error;
+use chrono::{
+    DateTime,
+    TimeZone,
+    Utc,
+};
+use xmlparser::StrSpan;
 
-pub(crate) fn from_zero_or_hex_str(hex_str: &str) -> Result<u64, std::num::ParseIntError> {
+use crate::error::{
+    Error,
+    Result,
+};
+
+pub(crate) fn from_zero_or_hex_str(span: &StrSpan) -> Result<u64> {
+    let hex_str = span.as_str();
+
     if hex_str == "0" {
         Ok(0_u64)
     } else {
         let hex_str = hex_str.trim_start_matches("0x");
-        u64::from_str_radix(hex_str, 16)
+        u64::from_str_radix(hex_str, 16).map_err(|source| Error::ParseInt {
+            value: hex_str.to_string(),
+            position: span.start(),
+            source,
+        })
     }
 }
 
-pub(crate) fn parse_win_guid_str(guid_str: &str) -> Result<uuid::Uuid, uuid::Error> {
-    let guid_str = guid_str
+pub(crate) fn parse_win_guid_str(span: &StrSpan) -> Result<uuid::Uuid> {
+    let guid_str = span
+        .as_str()
         .trim_start_matches(|c| c == '{')
         .trim_end_matches(|c| c == '}');
-    uuid::Uuid::parse_str(guid_str)
+    uuid::Uuid::parse_str(guid_str).map_err(|source| Error::ParseUuid {
+        value: guid_str.to_string(),
+        position: span.start(),
+        source,
+    })
 }
 
-pub(crate) fn unescape_xml(raw: &str) -> Result<Cow<'_, str>, Error> {
+pub(crate) fn parse_int<T>(span: &StrSpan) -> Result<T>
+where
+    T: FromStr<Err = std::num::ParseIntError>,
+{
+    let value = span.as_str();
+
+    value.parse::<T>().map_err(|source| Error::ParseInt {
+        value: value.to_string(),
+        position: span.start(),
+        source,
+    })
+}
+
+pub(crate) fn parse_bool(span: &StrSpan) -> Result<bool> {
+    let value = span.as_str();
+
+    value.parse().map_err(|source| Error::ParseBool {
+        value: value.to_string(),
+        position: span.start(),
+        source,
+    })
+}
+
+pub(crate) fn parse_utc(span: &StrSpan) -> Result<DateTime<Utc>> {
+    let value = span.as_str();
+    value
+        .parse::<DateTime<Utc>>()
+        .map_err(|source| Error::ParseDateTime {
+            value: value.to_string(),
+            position: span.start(),
+            format: None,
+            source,
+        })
+}
+
+pub(crate) fn parse_utc_from_str(span: &StrSpan, format: &str) -> Result<DateTime<Utc>> {
+    let value = span.as_str();
+
+    Utc.datetime_from_str(value, format)
+        .map_err(|source| Error::ParseDateTime {
+            value: value.to_string(),
+            position: span.start(),
+            format: Some(format.to_string()),
+            source,
+        })
+}
+
+pub(crate) fn parse_ip_addr(span: &StrSpan) -> Result<std::net::IpAddr> {
+    let value = span.as_str();
+
+    value
+        .parse::<std::net::IpAddr>()
+        .map_err(|source| Error::ParseIpAddress {
+            value: value.to_string(),
+            position: span.start(),
+            source,
+        })
+}
+
+pub(crate) fn unescape_xml<'a, 'b: 'a>(span: &'a StrSpan<'b>) -> Result<Cow<'b, str>> {
     let mut unescaped: Option<String> = None;
     let mut last_end = 0;
+    let raw = span.as_str();
     let raw_bytes = raw.as_bytes();
 
     fn named_entity(name: &str) -> Option<&str> {
@@ -35,20 +119,24 @@ pub(crate) fn unescape_xml(raw: &str) -> Result<Cow<'_, str>, Error> {
         Some(s)
     }
 
-    fn parse_number(num_str: &str) -> Result<char, Error> {
+    let parse_number = |num_str: &str| -> Result<char> {
         let (value, radix) = if let Some(stripped) = num_str.strip_prefix('x') {
             (stripped, 16)
         } else {
             (num_str, 10)
         };
 
-        let code = u32::from_str_radix(value, radix)?;
+        let code = u32::from_str_radix(value, radix).map_err(|source| Error::ParseInt {
+            value: value.to_string(),
+            position: span.start(),
+            source,
+        })?;
 
         match std::char::from_u32(code) {
             Some(c) => Ok(c),
             None => Err(Error::InvalidXmlCharacterReference(num_str.to_string())),
         }
-    }
+    };
 
     let mut iter = memchr::memchr2_iter(b'&', b';', raw_bytes);
     while let Some(start) = iter.by_ref().find(|p| raw_bytes[*p] == b'&') {
@@ -96,12 +184,12 @@ pub(crate) fn unescape_xml(raw: &str) -> Result<Cow<'_, str>, Error> {
     }
 }
 
-macro_rules! next_text_str {
+macro_rules! next_text_str_span {
     ($tokenizer:ident) => {{
         let mut result = None;
         while let Some(token) = $tokenizer.next() {
             match token? {
-                Token::Text { text } => result = Some(text.as_str()),
+                Token::Text { text } => result = Some(text),
                 Token::ElementEnd {
                     end: xmlparser::ElementEnd::Close(_, _),
                     ..
@@ -137,72 +225,83 @@ macro_rules! get_name_attribute {
 }
 
 pub(crate) use get_name_attribute;
-pub(crate) use next_text_str;
+pub(crate) use next_text_str_span;
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn escape_text() {
+    fn escape_text() -> Result<()> {
         assert_eq!(
             "<test>elemet body</test>",
-            unescape_xml("&lt;test&gt;elemet body&lt;/test&gt;").unwrap()
+            unescape_xml(&StrSpan::from("&lt;test&gt;elemet body&lt;/test&gt;"))?
         );
-        assert_eq!(";test>", unescape_xml(";test&gt;").unwrap());
+        assert_eq!(";test>", unescape_xml(&StrSpan::from(";test&gt;"))?);
 
         assert_eq!(
             Err(Error::InvalidXmlCharacterReference("&gt".to_string())),
-            unescape_xml("test&gt")
+            unescape_xml(&StrSpan::from("test&gt"))
         );
+
+        Ok(())
     }
 
     #[test]
-    fn escape_ownership() {
-        let borrowed = unescape_xml("nothing to escape").unwrap();
-        assert_eq!(Cow::Borrowed("nothing to escape"), borrowed);
-        let owned = unescape_xml("with test to escape &lt;").unwrap();
+    fn escape_ownership() -> Result<()> {
+        assert_eq!(
+            Cow::Borrowed("nothing to escape"),
+            unescape_xml(&StrSpan::from("nothing to escape"))?
+        );
         assert_eq!(
             Cow::Owned::<String>("with test to escape <".to_string()),
-            owned
+            unescape_xml(&StrSpan::from("with test to escape &lt;"))?
         );
+
+        Ok(())
     }
 
     #[test]
-    fn escape_xml_entity_ref() {
-        assert_eq!("&", unescape_xml("&amp;").unwrap());
-        assert_eq!("<", unescape_xml("&lt;").unwrap());
-        assert_eq!(">", unescape_xml("&gt;").unwrap());
-        assert_eq!("\"", unescape_xml("&quot;").unwrap());
-        assert_eq!("'", unescape_xml("&apos;").unwrap());
+    fn escape_xml_entity_ref() -> Result<()> {
+        assert_eq!("&", unescape_xml(&StrSpan::from("&amp;"))?);
+        assert_eq!("<", unescape_xml(&StrSpan::from("&lt;"))?);
+        assert_eq!(">", unescape_xml(&StrSpan::from("&gt;"))?);
+        assert_eq!("\"", unescape_xml(&StrSpan::from("&quot;"))?);
+        assert_eq!("'", unescape_xml(&StrSpan::from("&apos;"))?);
 
         assert_eq!(
             Err(Error::InvalidXmlCharacterReference("bogus".to_string())),
-            unescape_xml("&bogus;")
+            unescape_xml(&StrSpan::from("&bogus;"))
         );
+
+        Ok(())
     }
 
     #[test]
-    fn escape_xml_numeric_dec_ref() {
-        assert_eq!(" ", unescape_xml("&#32;").unwrap());
-        assert_eq!("☣", unescape_xml("&#9763;").unwrap());
-        assert_eq!("𓂀", unescape_xml("&#77952;").unwrap());
+    fn escape_xml_numeric_dec_ref() -> Result<()> {
+        assert_eq!(" ", unescape_xml(&StrSpan::from("&#32;"))?);
+        assert_eq!("☣", unescape_xml(&StrSpan::from("&#9763;"))?);
+        assert_eq!("𓂀", unescape_xml(&StrSpan::from("&#77952;"))?);
 
         assert_eq!(
             Err(Error::InvalidXmlCharacterReference("1114112".to_string())),
-            unescape_xml("&#1114112;")
+            unescape_xml(&StrSpan::from("&#1114112;"))
         );
+
+        Ok(())
     }
 
     #[test]
-    fn escape_xml_numeric_hex_ref() {
-        assert_eq!(" ", unescape_xml("&#x20;").unwrap());
-        assert_eq!("☣", unescape_xml("&#x2623;").unwrap());
-        assert_eq!("𓂀", unescape_xml("&#x13080;").unwrap());
+    fn escape_xml_numeric_hex_ref() -> Result<()> {
+        assert_eq!(" ", unescape_xml(&StrSpan::from("&#x20;"))?);
+        assert_eq!("☣", unescape_xml(&StrSpan::from("&#x2623;"))?);
+        assert_eq!("𓂀", unescape_xml(&StrSpan::from("&#x13080;"))?);
 
         assert_eq!(
             Err(Error::InvalidXmlCharacterReference("x110000".to_string())),
-            unescape_xml("&#x110000;")
+            unescape_xml(&StrSpan::from("&#x110000;"))
         );
+
+        Ok(())
     }
 }

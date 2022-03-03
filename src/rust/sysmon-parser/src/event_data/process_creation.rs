@@ -2,7 +2,6 @@ use std::borrow::Cow;
 
 use chrono::{
     DateTime,
-    TimeZone,
     Utc,
 };
 use derive_into_owned::IntoOwned;
@@ -136,42 +135,49 @@ impl<'a> ProcessCreateEventData<'a> {
                 Token::ElementStart { local, .. } => match local.as_str() {
                     "Data" => {
                         let name = util::get_name_attribute!(tokenizer);
-                        let text = util::next_text_str!(tokenizer);
+                        let value = util::next_text_str_span!(tokenizer);
+
                         match name {
-                            "RuleName" => rule_name = Some(util::unescape_xml(text)?),
-                            "SequenceNumber" => sequence_number = Some(text.parse::<u64>()?),
+                            "RuleName" => rule_name = Some(util::unescape_xml(&value)?),
+                            "SequenceNumber" => {
+                                sequence_number = Some(util::parse_int::<u64>(&value)?)
+                            }
                             "UtcTime" => {
-                                utc_time = Some(Utc.datetime_from_str(text, UTC_TIME_FORMAT))
+                                utc_time = Some(util::parse_utc_from_str(&value, UTC_TIME_FORMAT)?)
                             }
-                            "ProcessGuid" => process_guid = Some(util::parse_win_guid_str(text)),
-                            "ProcessId" => process_id = Some(text.parse::<u32>()),
-                            "Image" => image = Some(util::unescape_xml(text)),
-                            "FileVersion" => file_version = Some(util::unescape_xml(text)?),
-                            "Description" => description = Some(util::unescape_xml(text)?),
-                            "Product" => product = Some(util::unescape_xml(text)?),
-                            "Company" => company = Some(util::unescape_xml(text)?),
+                            "ProcessGuid" => process_guid = Some(util::parse_win_guid_str(&value)?),
+                            "ProcessId" => process_id = Some(util::parse_int::<u32>(&value)?),
+                            "Image" => image = Some(util::unescape_xml(&value)?),
+                            "FileVersion" => file_version = Some(util::unescape_xml(&value)?),
+                            "Description" => description = Some(util::unescape_xml(&value)?),
+                            "Product" => product = Some(util::unescape_xml(&value)?),
+                            "Company" => company = Some(util::unescape_xml(&value)?),
                             "OriginalFileName" => {
-                                original_file_name = Some(util::unescape_xml(text)?)
+                                original_file_name = Some(util::unescape_xml(&value)?)
                             }
-                            "CommandLine" => command_line = Some(util::unescape_xml(text)),
+                            "CommandLine" => command_line = Some(util::unescape_xml(&value)?),
                             "CurrentDirectory" => {
-                                current_directory = Some(util::unescape_xml(text))
+                                current_directory = Some(util::unescape_xml(&value)?)
                             }
-                            "User" => user = Some(util::unescape_xml(text)),
-                            "LogonGuid" => logon_guid = Some(util::parse_win_guid_str(text)),
-                            "LogonId" => logon_id = Some(util::from_zero_or_hex_str(text)),
-                            "TerminalSessionId" => terminal_session_id = Some(text.parse::<u32>()),
-                            "IntegrityLevel" => integrity_level = Some(util::unescape_xml(text)),
-                            "Hashes" => hashes = Some(util::unescape_xml(text)),
+                            "User" => user = Some(util::unescape_xml(&value)?),
+                            "LogonGuid" => logon_guid = Some(util::parse_win_guid_str(&value)?),
+                            "LogonId" => logon_id = Some(util::from_zero_or_hex_str(&value)?),
+                            "TerminalSessionId" => {
+                                terminal_session_id = Some(util::parse_int::<u32>(&value)?)
+                            }
+                            "IntegrityLevel" => integrity_level = Some(util::unescape_xml(&value)?),
+                            "Hashes" => hashes = Some(util::unescape_xml(&value)?),
                             "ParentProcessGuid" => {
-                                parent_process_guid = Some(util::parse_win_guid_str(text))
+                                parent_process_guid = Some(util::parse_win_guid_str(&value)?)
                             }
-                            "ParentProcessId" => parent_process_id = Some(text.parse::<u32>()),
-                            "ParentImage" => parent_image = Some(util::unescape_xml(text)),
+                            "ParentProcessId" => {
+                                parent_process_id = Some(util::parse_int::<u32>(&value)?)
+                            }
+                            "ParentImage" => parent_image = Some(util::unescape_xml(&value)?),
                             "ParentCommandLine" => {
-                                parent_command_line = Some(util::unescape_xml(text))
+                                parent_command_line = Some(util::unescape_xml(&value)?)
                             }
-                            "ParentUser" => parent_user = Some(util::unescape_xml(text)?),
+                            "ParentUser" => parent_user = Some(util::unescape_xml(&value)?),
                             _ => {}
                         }
                     }
@@ -186,27 +192,25 @@ impl<'a> ProcessCreateEventData<'a> {
         }
 
         // expected fields - present in all observed schema versions
-        let utc_time = utc_time.ok_or(Error::MissingField("UtcTime"))??;
-        let process_guid = process_guid.ok_or(Error::MissingField("ProcessGuid"))??;
-        let process_id = process_id.ok_or(Error::MissingField("ProcessId"))??;
-        let image = image.ok_or(Error::MissingField("Image"))??;
-        let command_line = command_line.ok_or(Error::MissingField("CommandLine"))??;
-        let current_directory =
-            current_directory.ok_or(Error::MissingField("CurrentDirectory"))??;
-        let user = user.ok_or(Error::MissingField("User"))??;
-        let logon_guid = logon_guid.ok_or(Error::MissingField("LogonGuid"))??;
-        let logon_id = logon_id.ok_or(Error::MissingField("LogonId"))??;
+        let utc_time = utc_time.ok_or(Error::MissingField("UtcTime"))?;
+        let process_guid = process_guid.ok_or(Error::MissingField("ProcessGuid"))?;
+        let process_id = process_id.ok_or(Error::MissingField("ProcessId"))?;
+        let image = image.ok_or(Error::MissingField("Image"))?;
+        let command_line = command_line.ok_or(Error::MissingField("CommandLine"))?;
+        let current_directory = current_directory.ok_or(Error::MissingField("CurrentDirectory"))?;
+        let user = user.ok_or(Error::MissingField("User"))?;
+        let logon_guid = logon_guid.ok_or(Error::MissingField("LogonGuid"))?;
+        let logon_id = logon_id.ok_or(Error::MissingField("LogonId"))?;
         let terminal_session_id =
-            terminal_session_id.ok_or(Error::MissingField("TerminalSessionId"))??;
-        let integrity_level = integrity_level.ok_or(Error::MissingField("IntegrityLevel"))??;
-        let hashes = hashes.ok_or(Error::MissingField("Hashes"))??;
+            terminal_session_id.ok_or(Error::MissingField("TerminalSessionId"))?;
+        let integrity_level = integrity_level.ok_or(Error::MissingField("IntegrityLevel"))?;
+        let hashes = hashes.ok_or(Error::MissingField("Hashes"))?;
         let parent_process_guid =
-            parent_process_guid.ok_or(Error::MissingField("ParentProcessGuid"))??;
-        let parent_process_id =
-            parent_process_id.ok_or(Error::MissingField("ParentProcessId"))??;
-        let parent_image = parent_image.ok_or(Error::MissingField("ParentImage"))??;
+            parent_process_guid.ok_or(Error::MissingField("ParentProcessGuid"))?;
+        let parent_process_id = parent_process_id.ok_or(Error::MissingField("ParentProcessId"))?;
+        let parent_image = parent_image.ok_or(Error::MissingField("ParentImage"))?;
         let parent_command_line =
-            parent_command_line.ok_or(Error::MissingField("ParentCommandLine"))??;
+            parent_command_line.ok_or(Error::MissingField("ParentCommandLine"))?;
 
         Ok(ProcessCreateEventData {
             rule_name,
@@ -261,10 +265,13 @@ impl<'a, 'b: 'a> TryFrom<&'b EventData<'a>> for &ProcessCreateEventData<'a> {
 
 #[cfg(test)]
 mod tests {
+    use chrono::TimeZone;
+    use xmlparser::StrSpan;
+
     use super::*;
 
     #[test]
-    fn parse_process_creation_event() -> Result<()> {
+    fn parse_process_creation_event() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let xml = r#"
         <EventData>
             <Data Name="RuleName">rule_name</Data>
@@ -300,7 +307,9 @@ mod tests {
             ProcessCreateEventData {
                 rule_name: Some(Cow::Borrowed("rule_name")),
                 utc_time: Utc.datetime_from_str("2022-01-04 19:54:15.661", UTC_TIME_FORMAT)?,
-                process_guid: util::parse_win_guid_str("49e2a5f6-a5e7-61d4-119e-dc77a5550000")?,
+                process_guid: util::parse_win_guid_str(&StrSpan::from(
+                    "49e2a5f6-a5e7-61d4-119e-dc77a5550000"
+                ))?,
                 process_id: 49570,
                 image: Cow::Borrowed("/usr/bin/tr"),
                 file_version: Some(Cow::Borrowed("-")),
@@ -311,14 +320,16 @@ mod tests {
                 command_line: Cow::Borrowed("tr [:upper:][:lower:]"),
                 current_directory: Cow::Borrowed("/root"),
                 user: Cow::Borrowed("root"),
-                logon_guid: util::parse_win_guid_str("49e2a5f6-0000-0000-0000-000000000000")?,
+                logon_guid: util::parse_win_guid_str(&StrSpan::from(
+                    "49e2a5f6-0000-0000-0000-000000000000"
+                ))?,
                 logon_id: 0,
                 terminal_session_id: 3,
                 integrity_level: Cow::Borrowed("no level"),
                 hashes: Cow::Borrowed("-"),
-                parent_process_guid: util::parse_win_guid_str(
+                parent_process_guid: util::parse_win_guid_str(&StrSpan::from(
                     "00000000-0000-0000-0000-000000000000"
-                )?,
+                ))?,
                 parent_process_id: 49568,
                 parent_image: Cow::Borrowed("-"),
                 parent_command_line: Cow::Borrowed("-"),

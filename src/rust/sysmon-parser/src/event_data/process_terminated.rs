@@ -2,7 +2,6 @@ use std::borrow::Cow;
 
 use chrono::{
     DateTime,
-    TimeZone,
     Utc,
 };
 use derive_into_owned::IntoOwned;
@@ -66,17 +65,20 @@ impl<'a> ProcessTerminatedEventData<'a> {
                 Token::ElementStart { local, .. } => match local.as_str() {
                     "Data" => {
                         let name = util::get_name_attribute!(tokenizer);
-                        let text = util::next_text_str!(tokenizer);
+                        let value = util::next_text_str_span!(tokenizer);
+
                         match name {
-                            "RuleName" => rule_name = Some(util::unescape_xml(text)?),
-                            "SequenceNumber" => sequence_number = Some(text.parse::<u64>()?),
-                            "UtcTime" => {
-                                utc_time = Some(Utc.datetime_from_str(text, UTC_TIME_FORMAT))
+                            "RuleName" => rule_name = Some(util::unescape_xml(&value)?),
+                            "SequenceNumber" => {
+                                sequence_number = Some(util::parse_int::<u64>(&value)?)
                             }
-                            "ProcessGuid" => process_guid = Some(util::parse_win_guid_str(text)),
-                            "ProcessId" => process_id = Some(text.parse::<u32>()),
-                            "Image" => image = Some(util::unescape_xml(text)),
-                            "User" => user = Some(util::unescape_xml(text)?),
+                            "UtcTime" => {
+                                utc_time = Some(util::parse_utc_from_str(&value, UTC_TIME_FORMAT)?)
+                            }
+                            "ProcessGuid" => process_guid = Some(util::parse_win_guid_str(&value)?),
+                            "ProcessId" => process_id = Some(util::parse_int::<u32>(&value)?),
+                            "Image" => image = Some(util::unescape_xml(&value)?),
+                            "User" => user = Some(util::unescape_xml(&value)?),
                             _ => {}
                         }
                     }
@@ -91,10 +93,10 @@ impl<'a> ProcessTerminatedEventData<'a> {
         }
 
         // expected fields - present in all observed schema versions
-        let utc_time = utc_time.ok_or(Error::MissingField("UtcTime"))??;
-        let process_guid = process_guid.ok_or(Error::MissingField("ProcessGuid"))??;
-        let process_id = process_id.ok_or(Error::MissingField("ProcessId"))??;
-        let image = image.ok_or(Error::MissingField("Image"))??;
+        let utc_time = utc_time.ok_or(Error::MissingField("UtcTime"))?;
+        let process_guid = process_guid.ok_or(Error::MissingField("ProcessGuid"))?;
+        let process_id = process_id.ok_or(Error::MissingField("ProcessId"))?;
+        let image = image.ok_or(Error::MissingField("Image"))?;
 
         Ok(ProcessTerminatedEventData {
             rule_name,
@@ -132,10 +134,13 @@ impl<'a, 'b: 'a> TryFrom<&'b EventData<'a>> for &ProcessTerminatedEventData<'a> 
 
 #[cfg(test)]
 mod tests {
+    use chrono::TimeZone;
+    use xmlparser::StrSpan;
+
     use super::*;
 
     #[test]
-    fn parseprocess_terminated_event() -> Result<()> {
+    fn parseprocess_terminated_event() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let xml = r#"
         <EventData>
             <Data Name="RuleName">rule_name</Data>
@@ -154,7 +159,9 @@ mod tests {
                 rule_name: Some(Cow::Borrowed("rule_name")),
                 sequence_number: None,
                 utc_time: Utc.datetime_from_str("2022-01-04 19:52:55.688", UTC_TIME_FORMAT)?,
-                process_guid: util::parse_win_guid_str("{49e2a5f6-a597-61d4-5d7a-861de5550000}")?,
+                process_guid: util::parse_win_guid_str(&StrSpan::from(
+                    "{49e2a5f6-a597-61d4-5d7a-861de5550000}"
+                ))?,
                 process_id: 49521,
                 image: Cow::Borrowed("/usr/bin/id"),
                 user: Some(Cow::Borrowed("user_name")),
