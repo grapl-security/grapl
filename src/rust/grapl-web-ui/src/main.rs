@@ -10,6 +10,10 @@ use actix_web::{
     App,
     HttpServer,
 };
+use actix_web_opentelemetry::RequestTracing;
+use opentelemetry::{global, trace::TraceError};
+use opentelemetry::sdk::trace::Config;
+use opentelemetry::sdk::Resource;
 use tap::TapFallible;
 
 #[derive(thiserror::Error, Debug)]
@@ -18,6 +22,8 @@ enum GraplUiError {
     Config(#[from] config::ConfigError),
     #[error("IO error")]
     Io(#[from] std::io::Error),
+    #[error("Trace Error")]
+    Trace(#[from] TraceError),
 }
 
 #[actix_web::main]
@@ -28,9 +34,23 @@ async fn main() -> Result<(), GraplUiError> {
 
     let bind_address = config.bind_address.clone();
 
+    // Start an otel jaegar trace pipeline
+    global::set_text_map_propagator(opentelemetry_jaeger::Propagator::new());
+    opentelemetry_jaeger::new_pipeline()
+        .with_service_name("grapl-web-ui")
+        .with_trace_config(Config::default().with_resource(Resource::new(vec![
+            opentelemetry::KeyValue::new("service.name", "web-ui"),
+            opentelemetry::KeyValue::new("exporter", "otlp-jaeger"),
+        ])))
+        .with_collector_endpoint("http://100.115.92.202:14268/api/traces")
+        .install_simple()?;
+        // TODO switch to batch once we upgrade to actix-web 4, which supports Tokio 1.x
+        //.install_batch(opentelemetry::runtime::Tokio)?;
+
     HttpServer::new(move || {
         App::new()
             .wrap(actix_web::middleware::Logger::default())
+            .wrap(RequestTracing::new())
             // grapl-security/issue-tracker#803
             // .wrap(actix_web::middleware::Compress::default())  // todo: Reenable compression when brotli isn't vulnerable
             .wrap(
@@ -56,6 +76,9 @@ async fn main() -> Result<(), GraplUiError> {
     .bind(bind_address)?
     .run()
     .await?;
+
+    // sending remaining spans. Do we need this?
+    global::shutdown_tracer_provider();
 
     Ok(())
 }
