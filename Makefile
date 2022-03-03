@@ -196,7 +196,7 @@ build-grapl-service-prerequisites: build-service-pex-files
 # The grapl-web-ui service needs website assets
 build-grapl-service-prerequisites: build-engagement-view
 
-# This is used in our CI pipeline; see build_and_upload_containers.sh
+# This is used in our CI pipeline; see build_and_upload_images.sh
 #
 # Also see the `push-to-cloudsmith` group in docker-bake.hcl; any
 # prerequisites of images in that group should be built by this
