@@ -38,6 +38,15 @@ echo "--- Building all ${IMAGE_TAG} images"
 make build-image-prerequisites
 docker buildx bake --file="${BUILDX_BAKE_FILE}" --push "${BUILDX_TARGET}"
 
+readonly sleep_seconds=30
+echo "--- :sleeping::sob: Sleeping for ${sleep_seconds} seconds to give CDNs time to update"
+# Lately, we've seen failures where images aren't showing up when we
+# run `docker manifest inspect` (see below), but rerunning the job
+# succeeds. For the time being, we'll add a sleep to account for that.
+#
+# Yes, I hate it, too.
+sleep "${sleep_seconds}"
+
 ########################################################################
 # Determine whether or not this image is "new"
 #

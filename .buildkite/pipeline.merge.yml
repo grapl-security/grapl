@@ -6,10 +6,10 @@ env:
 steps:
   - label: ":docker: Build Docker Containers"
     command:
-      # Note: all these containers are uploaded to the `raw`
+      # Note: all these images are uploaded to the `raw`
       # repository. If they all get built successfully, then we'll
       # promote them as a group later.
-      - ".buildkite/scripts/build_and_upload_containers.sh"
+      - ".buildkite/scripts/build_and_upload_images.sh"
     plugins:
       - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:
