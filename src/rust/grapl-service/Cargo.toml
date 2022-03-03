@@ -10,7 +10,7 @@ sqs-executor = { path = "../sqs-executor" }
 rust-proto = { path = "../rust-proto" }
 grapl-config = { path = "../grapl-config" }
 zstd = { version = "0.9.0", default_features = false, features = [
-  "pkg-config"
+  "pkg-config", "bindgen"
 ] }
 libflate = "1.1.1"
 prost = "0.9.0"
