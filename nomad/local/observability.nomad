@@ -1,5 +1,5 @@
 # This contains the observability jobs.
-# First up is Jaegar so that we can collect collect and see traces during local development.
+# First up is jaeger so that we can collect collect and see traces during local development.
 job "observability" {
   datacenters = ["dc1"]
   type        = "service"
@@ -16,18 +16,18 @@ job "observability" {
       }
 
       port "grpc" {
-        to = 16685
+        to     = 16685
         static = 16685
       }
 
-      port "jaegar-thrift" {
-        to = 14268
+      port "jaeger-thrift" {
+        to     = 14268
         static = 14268
       }
 
       # This supports zipkin compatible traces
       port "zipkin" {
-        to = 9411
+        to     = 9411
         static = 9411
       }
     }
@@ -55,7 +55,7 @@ job "observability" {
 
     service {
       name = "jaeger-thrift"
-      port = "jaegar-thrift"
+      port = "jaeger-thrift"
       tags = ["thrift"]
     }
 
@@ -69,13 +69,13 @@ job "observability" {
       driver = "docker"
 
       config {
-        image = "jaegertracing/all-in-one:latest"
-        ports = ["http-frontend", "zipkin", "grpc", "jaegar-thrift"]
+        image        = "jaegertracing/all-in-one:latest"
+        ports        = ["http-frontend", "zipkin", "grpc", "jaeger-thrift"]
         network_mode = "host"
       }
 
       env {
-        COLLECTOR_ZIPKIN_HOST_PORT=9411
+        COLLECTOR_ZIPKIN_HOST_PORT = 9411
       }
 
       resources {
