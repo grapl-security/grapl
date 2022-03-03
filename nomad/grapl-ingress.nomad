@@ -27,10 +27,11 @@ job "grapl-ingress" {
               port     = local.web_ui_port
               # TODO change to http. This requires setting a service.hosts
               # Using http protocol will give us better tracing and metrics
-              protocol = "tcp"
+              protocol = "http"
               service {
                 # the upstream service
                 name = "web-ui"
+                hosts = ["*"]
               }
             }
           }

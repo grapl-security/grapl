@@ -310,9 +310,16 @@ def main() -> None:
 
     # Set the protocol explicitly
     ConsulServiceDefault(
-        "grapl-core",
+        "web-ui",
         service_name="web-ui",
-        protocol="tcp",
+        protocol="http",
+        opts=pulumi.ResourceOptions(provider=consul_provider),
+    )
+
+    ConsulServiceDefault(
+        "graphql-endpoint",
+        service_name="graphql-endpoint",
+        protocol="http",
         opts=pulumi.ResourceOptions(provider=consul_provider),
     )
 

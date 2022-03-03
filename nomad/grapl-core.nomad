@@ -868,8 +868,7 @@ job "grapl-core" {
   group "graphql-endpoint" {
     network {
       mode = "bridge"
-      port "graphql-endpoint-port" {
-      }
+      port "graphql-endpoint-port" {}
     }
 
     task "graphql-endpoint" {
@@ -999,7 +998,7 @@ job "grapl-core" {
             config {
               # TODO change to http. This requires setting a hosts section within the ingress gateway definition.
               # Using http will give us better tracing and metrics
-              protocol = "tcp"
+              protocol = "http"
             }
             upstreams {
               destination_name = "graphql-endpoint"
