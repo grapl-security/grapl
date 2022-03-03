@@ -10,6 +10,10 @@ SHELL ["/bin/bash", "-o", "errexit", "-o", "nounset", "-o", "pipefail", "-c"]
 
 # Necessary for rdkafka; pkg-config & libssl-dev for cargo-tarpaulin build
 #
+# pkg-config and libzstd-dev are required for our zstd crate build (we
+# use a system library to compile against, rather than compiling it in
+# the course of our crate builds).
+#
 # Ignore this lint about deleteing the apt-get lists (we're caching!)
 # hadolint ignore=DL3009,SC1089
 RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-base-apt \
@@ -21,7 +25,8 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-base-apt
         pkg-config=0.29.2-1 \
         zlib1g-dev=1:1.2.11.dfsg-2 \
         curl=7.74.0-1.3+deb11u1 \
-        unzip=6.0-26
+        unzip=6.0-26 \
+        libzstd-dev=1.4.8+dfsg-2.1
 
 # Grab a Nomad binary, which we use in plugin-registry for parsing
 # HCL2-with-variables into JSON.

@@ -44,7 +44,9 @@ install_build_tooling() {
         apt-utils
         build-essential
         libclang1
+        libzstd-dev # for zstd crate builds
         lsb-release
+        pkg-config                 # for zstd crate builds (to find libzstd locally)
         software-properties-common # for `apt-add-repository``
     )
     sudo apt install -y "${tools[@]}"
