@@ -1247,6 +1247,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "derive-into-owned"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2c9d94d81e3819a7b06a8638f448bc6339371ca9b6076a99d4a43eece3c4c923"
+dependencies = [
+ "proc-macro2",
+ "quote 1.0.15",
+ "syn 1.0.86",
+]
+
+[[package]]
 name = "derive_builder"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4411,6 +4422,7 @@ dependencies = [
 [[package]]
 name = "sysmon"
 version = "0.2.6"
+source = "git+https://github.com/grapl-security/grapl.git?rev=5e23ff957b14bb44f536e5bfbd70f61c8b8915f5#5e23ff957b14bb44f536e5bfbd70f61c8b8915f5"
 dependencies = [
  "anyhow",
  "chrono",
@@ -4437,11 +4449,25 @@ dependencies = [
  "serde",
  "serde_json",
  "sqs-executor",
- "sysmon",
+ "sysmon-parser",
  "thiserror",
  "tokio 1.16.1",
  "tracing",
  "uuid",
+]
+
+[[package]]
+name = "sysmon-parser"
+version = "0.1.0-alpha.1"
+dependencies = [
+ "chrono",
+ "criterion",
+ "derive-into-owned",
+ "memchr",
+ "sysmon",
+ "thiserror",
+ "uuid",
+ "xmlparser",
 ]
 
 [[package]]
@@ -5465,6 +5491,12 @@ name = "xml-rs"
 version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2d7d3948613f75c98fd9328cfdcc45acc4d360655289d0a7d4ec931392200a3"
+
+[[package]]
+name = "xmlparser"
+version = "0.13.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "114ba2b24d2167ef6d67d7d04c8cc86522b87f490025f39f0303b7db5bf5e3d8"
 
 [[package]]
 name = "zeroize"
