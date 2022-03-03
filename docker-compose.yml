@@ -18,7 +18,7 @@ services:
         (
           cd grapl
           pulumi stack init local-grapl --non-interactive
-          pulumi up --yes --skip-preview --stack=local-grapl
+          pulumi up --yes --skip-preview --stack=local-grapl --tracing http://host.docker.internal:9411/api/v1/spans
         )
 
         # Theoretically, we could skip uploading these job definitions for
@@ -31,7 +31,7 @@ services:
           # Ideally this stack name would be scoped by organization, but
           # login --local doesn't support organizations
           pulumi stack init local-grapl-integration-tests --non-interactive
-          pulumi up --yes --skip-preview --stack=local-grapl-integration-tests
+          pulumi up --yes --skip-preview --stack=local-grapl-integration-tests --tracing http://host.docker.internal:9411/api/v1/spans
         )
 
     volumes:
