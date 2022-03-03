@@ -10,8 +10,9 @@ confluent-kafka
 cookiecutter==1.7.3
 hypothesis
 opentelemetry-api
+opentelemetry-distro
 opentelemetry-exporter-zipkin-json
-opentelemetry-instrumentation-boto
+opentelemetry-instrumentation
 opentelemetry-instrumentation-botocore
 opentelemetry-sdk
 protobuf>=3.12.1

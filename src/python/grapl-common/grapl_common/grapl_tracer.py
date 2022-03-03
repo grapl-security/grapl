@@ -1,5 +1,6 @@
 from opentelemetry import trace
 from opentelemetry.exporter.zipkin.json import ZipkinExporter
+from opentelemetry.instrumentation.botocore import BotocoreInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import Tracer, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -15,9 +16,8 @@ def get_tracer(service_name: str, module_name: str) -> Tracer:
     TRACER = get_tracer(service_name='provisioner', module_name=__name__)
     ...
     foo():
-
-
-
+        with TRACER.start_as_current_span("foo"):
+            ...
 
     :param service_name: App/Service name ie provisioner
     :param module_name: This should be __name__
@@ -46,4 +46,7 @@ def get_tracer(service_name: str, module_name: str) -> Tracer:
     processor = BatchSpanProcessor(zipkin_exporter)
     provider.add_span_processor(processor)
     trace.set_tracer_provider(provider)
+
+    BotocoreInstrumentor().instrument()
+
     return trace.get_tracer(module_name)
