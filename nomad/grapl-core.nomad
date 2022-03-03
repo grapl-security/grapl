@@ -996,8 +996,6 @@ job "grapl-core" {
         sidecar_service {
           proxy {
             config {
-              # TODO change to http. This requires setting a hosts section within the ingress gateway definition.
-              # Using http will give us better tracing and metrics
               protocol = "http"
             }
             upstreams {

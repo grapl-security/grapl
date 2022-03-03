@@ -25,8 +25,6 @@ job "grapl-ingress" {
           ingress {
             listener {
               port     = local.web_ui_port
-              # TODO change to http. This requires setting a service.hosts
-              # Using http protocol will give us better tracing and metrics
               protocol = "http"
               service {
                 # the upstream service
