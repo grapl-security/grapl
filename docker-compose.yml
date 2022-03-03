@@ -14,7 +14,7 @@ services:
     command:
       - |
         pulumi login --local
-        export TRACING_BACKEND_URL="http://host.docker.internal:9411/api/v1/spans"
+        TRACING_BACKEND_URL="http://host.docker.internal:9411/api/v1/spans"
 
         (
           cd grapl
