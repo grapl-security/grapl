@@ -293,13 +293,6 @@ def main() -> None:
         "kafka-e2e-consumer-group-name", kafka.consumer_group("e2e-test-runner")
     )
 
-    nomad_grapl_ingress = NomadJob(
-        "grapl-ingress",
-        jobspec=path_from_root("nomad/grapl-ingress.nomad").resolve(),
-        vars={},
-        opts=pulumi.ResourceOptions(provider=nomad_provider),
-    )
-
     ConsulIntentions(
         "consul-intentions",
         # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
@@ -309,7 +302,7 @@ def main() -> None:
     )
 
     # Set the protocol explicitly
-    ConsulServiceDefault(
+    consul_web_ui_defaults = ConsulServiceDefault(
         "web-ui",
         service_name="web-ui",
         protocol="http",
@@ -327,6 +320,18 @@ def main() -> None:
         "grapl-core",
         hcl_file=path_from_root("nomad/local/proxy-defaults.hcl").resolve(),
         opts=pulumi.ResourceOptions(provider=consul_provider),
+    )
+
+    nomad_grapl_ingress = NomadJob(
+        "grapl-ingress",
+        jobspec=path_from_root("nomad/grapl-ingress.nomad").resolve(),
+        vars={},
+        opts=pulumi.ResourceOptions(
+            provider=nomad_provider,
+            # This dependson ensures we've switched the web-ui protocol to http instead of tcp prior. Otherwise there's
+            # a protocol mismatch error
+            depends_on=[consul_web_ui_defaults],
+        ),
     )
 
     if config.LOCAL_GRAPL:
