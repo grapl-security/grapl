@@ -7,7 +7,8 @@ export const apiFetchReq = async (urlSlug: string, method = "GET") => {
         credentials: "include",
         headers: new Headers({
             "Content-Type": "application/json",
-            // Enable Consul Ingress Gateway tracing with custom header
+            // Enable Consul Ingress Gateway tracing with custom header per Consideration 2 of
+            // https://www.consul.io/docs/connect/distributed-tracing#considerations
             "x-client-trace-id": "1",
         }),
     }).catch((e) => {
@@ -24,7 +25,8 @@ export const apiPostRequestWithBody = async (urlSlug: string, body: string) => {
         credentials: "include",
         headers: new Headers({
             "Content-Type": "application/json",
-            // Enable Consul Ingress Gateway tracing with custom header
+            // Enable Consul Ingress Gateway tracing with custom header per Consideration 2 of
+            // https://www.consul.io/docs/connect/distributed-tracing#considerations
             "x-client-trace-id": "1",
         }),
         body: body,
