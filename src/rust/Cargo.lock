@@ -4172,7 +4172,6 @@ dependencies = [
  "rust-proto",
  "serde",
  "serde_json",
- "tap",
  "thiserror",
  "tokio 1.16.1",
  "tracing",
