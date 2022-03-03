@@ -20,6 +20,11 @@ job "observability" {
         static = 16685
       }
 
+      port "jaegar-thrift" {
+        to = 14268
+        static = 14268
+      }
+
       # This supports zipkin compatible traces
       port "zipkin" {
         to = 9411
@@ -46,18 +51,18 @@ job "observability" {
       name = "jaeger-zipkin-trace-endpoint"
       port = "zipkin"
       tags = ["zipkin"]
-#      connect{
-#        sidecar_service{}
-#      }
+    }
+
+    service {
+      name = "jaeger-thrift"
+      port = "jaegar-thrift"
+      tags = ["thrift"]
     }
 
     service {
       name = "grpc"
       port = "grpc"
       tags = ["grpc"]
-      #      connect{
-      #        sidecar_service{}
-      #      }
     }
 
     task "jaeger-all-in-one" {
@@ -65,7 +70,7 @@ job "observability" {
 
       config {
         image = "jaegertracing/all-in-one:latest"
-        ports = ["http-frontend", "zipkin", "grpc"]
+        ports = ["http-frontend", "zipkin", "grpc", "jaegar-thrift"]
         network_mode = "host"
       }
 
