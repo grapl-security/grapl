@@ -1,3 +1,4 @@
+import * as Tracing from "./tracing";
 import * as express from "express";
 import * as graphqlHTTP from "express-graphql";
 import { getRootQuerySchema } from "./modules/root_query.js";
@@ -19,7 +20,7 @@ app.use(
     "/graphQlEndpoint/graphql",
     [],
     graphqlHTTP(async (request, response, graphQLParams) => {
-        console.debug({
+        console.log({
             graphQLParams: graphQLParams,
         });
         let schema;
