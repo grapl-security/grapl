@@ -1848,7 +1848,6 @@ dependencies = [
  "chrono",
  "dgraph-tonic",
  "dgraph_query_lib",
- "failure",
  "futures",
  "futures-retry",
  "grapl-config",
