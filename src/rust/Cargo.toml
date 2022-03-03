@@ -24,7 +24,7 @@ members = [
   "./plugin-work-queue",
   "./rust-proto",
   "./sqs-executor",
-  "./sysmon",
+  "./sysmon-parser",
 ]
 
 [profile.dev]

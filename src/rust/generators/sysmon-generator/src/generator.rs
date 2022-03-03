@@ -61,7 +61,7 @@ impl<C> EventHandler for SysmonGenerator<C>
 where
     C: Cache + Clone + Send + Sync + 'static,
 {
-    type InputEvent = Vec<sysmon::Event>;
+    type InputEvent = Vec<sysmon_parser::SysmonEvent<'static>>;
     type OutputEvent = GraphDescription;
     type Error = SysmonGeneratorError;
 
@@ -84,7 +84,7 @@ where
         let subgraphs: Vec<_> = events
             .into_iter()
             .filter_map(|event| {
-                let result: Result<GraphDescription, _> = SysmonTryFrom::try_from(event.clone());
+                let result: Result<GraphDescription, _> = SysmonTryFrom::try_from(&event);
                 self.metrics.report_subgraph_generation(&result);
                 match result {
                     Ok(graph) => {
