@@ -6,7 +6,7 @@ from opentelemetry.sdk.trace import Tracer, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 
-def get_tracer(service_name: str, module_name: str) -> Tracer:
+def get_tracer(service_name: str, module_name: str) -> trace.Tracer:
     """
     This gets a tracer for instrumenting python apps manually with opentelemetry.
 
