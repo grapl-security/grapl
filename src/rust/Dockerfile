@@ -8,19 +8,15 @@ ARG RUST_BUILD=debug
 
 SHELL ["/bin/bash", "-o", "errexit", "-o", "nounset", "-o", "pipefail", "-c"]
 
-# Necessary for rdkafka; pkg-config & libssl-dev for cargo-tarpaulin build
+# curl, jq, and unzip are used by various commands in this Dockerfile.
 #
 # Ignore this lint about deleteing the apt-get lists (we're caching!)
 # hadolint ignore=DL3009,SC1089
 RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-base-apt \
     apt-get update \
     && apt-get install --yes --no-install-recommends \
-        build-essential=12.9 \
-        jq=1.6-2.1 \
-        libssl-dev=1.1.1k-1+deb11u1 \
-        pkg-config=0.29.2-1 \
-        zlib1g-dev=1:1.2.11.dfsg-2 \
         curl=7.74.0-1.3+deb11u1 \
+        jq=1.6-2.1 \
         unzip=6.0-26
 
 # Grab a Nomad binary, which we use in plugin-registry for parsing
@@ -94,6 +90,13 @@ RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
 # if we don't have to.
 ################################################################################
 FROM base AS tarpaulin
+
+# These packages are required to compile cargo-tarpaulin itself.
+RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tarpaulin-apt \
+    apt-get update \
+    && apt-get install --yes --no-install-recommends \
+        libssl-dev=1.1.1k-1+deb11u1 \
+        pkg-config=0.29.2-1
 
 # For test coverage reports
 # Tarpaulin will recompile the sources from scratch and effectively taint build
