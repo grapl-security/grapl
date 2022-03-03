@@ -1,0 +1,25 @@
+<EventData>
+    <Data Name="RuleName">-</Data>
+    <Data Name="UtcTime">2022-01-04 19:54:15.661</Data>
+    <Data Name="ProcessGuid">{49e2a5f6-a5e7-61d4-119e-dc77a5550000}</Data>
+    <Data Name="ProcessId">49570</Data>
+    <Data Name="Image">/usr/bin/tr</Data>
+    <Data Name="FileVersion">-</Data>
+    <Data Name="Description">-</Data>
+    <Data Name="Product">-</Data>
+    <Data Name="Company">-</Data>
+    <Data Name="OriginalFileName">-</Data>
+    <Data Name="CommandLine">tr [:upper:][:lower:]</Data>
+    <Data Name="CurrentDirectory">/root</Data>
+    <Data Name="User">root</Data>
+    <Data Name="LogonGuid">{49e2a5f6-0000-0000-0000-000000000000}</Data>
+    <Data Name="LogonId">0</Data>
+    <Data Name="TerminalSessionId">3</Data>
+    <Data Name="IntegrityLevel">no level</Data>
+    <Data Name="Hashes">-</Data>
+    <Data Name="ParentProcessGuid">{00000000-0000-0000-0000-000000000000}</Data>
+    <Data Name="ParentProcessId">49568</Data>
+    <Data Name="ParentImage">-</Data>
+    <Data Name="ParentCommandLine">-</Data>
+    <Data Name="ParentUser">-</Data>
+</EventData>
