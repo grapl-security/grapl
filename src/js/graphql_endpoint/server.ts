@@ -1,4 +1,4 @@
-import * as Tracing from './tracing';
+import * as Tracing from "./tracing";
 import * as express from "express";
 import * as graphqlHTTP from "express-graphql";
 import { getRootQuerySchema } from "./modules/root_query.js";
