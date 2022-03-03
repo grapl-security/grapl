@@ -8,7 +8,7 @@ ARG RUST_BUILD=debug
 
 SHELL ["/bin/bash", "-o", "errexit", "-o", "nounset", "-o", "pipefail", "-c"]
 
-# Necessary for rdkafka; pkg-config & libssl-dev for cargo-tarpaulin build
+# pkg-config & libssl-dev for cargo-tarpaulin build
 #
 # pkg-config and libzstd-dev are required for our zstd crate build (we
 # use a system library to compile against, rather than compiling it in
