@@ -6,7 +6,6 @@ use organization_management::OrganizationManagementServiceConfig;
 
 use rust_proto::organization_management::{
     CreateOrganizationRequest,
-    // CreateOrganizationResponse,
 };
 
 use structopt::StructOpt;
@@ -35,7 +34,7 @@ async fn test_create_organization() -> Result<(), Box<dyn std::error::Error>> {
 
     let organization_display_name = uuid::Uuid::new_v4().to_string();
     let admin_username = "test user".to_string();
-    let admin_email = "testemail@email.com";
+    let admin_email = "testemail@example.com";
     let admin_password = b"t3stp@s$w0rd".to_vec();
 
     let request = CreateOrganizationRequest {

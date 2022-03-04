@@ -198,26 +198,32 @@ impl OrganizationManagement {
 
         sqlx::query!(
             r"
-            INSERT INTO users (
+             INSERT INTO users (
                 user_id,
                 organization_id,
                 username,
                 email,
-                password
+                password,
+                is_admin,
+                should_reset_password
             )
-             VALUES ( $1, $2, $3, $4, $5 )
+             VALUES ( $1, $2, $3, $4, $5, $6, $7);
         ",
             user_id,
             organization_id,
             name,
             email,
-            password.as_str()
+            password.as_str(),
+            false,
+            true,
         )
         .execute(&self.pool)
         .await
         .map_err(OrganizationManagementServiceError::from)?;
 
-        Ok(CreateUserResponse {})
+        Ok(CreateUserResponse {
+            user_id
+        })
     }
 }
 

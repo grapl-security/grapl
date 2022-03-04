@@ -165,19 +165,32 @@ impl From<CreateUserRequest> for CreateUserRequestProto {
 }
 
 #[derive(Clone)]
-pub struct CreateUserResponse {}
+pub struct CreateUserResponse {
+    pub user_id: uuid::Uuid,
+}
 
 impl TryFrom<CreateUserResponseProto> for CreateUserResponse {
     type Error = OrganizationManagementDeserializationError;
 
-    fn try_from(_value: CreateUserResponseProto) -> Result<Self, Self::Error> {
-        Ok(Self {})
+    fn try_from(value: CreateUserResponseProto) -> Result<Self, Self::Error> {
+        let user_id = value
+            .user_id
+            .ok_or(Self::Error::MissingRequiredField(
+                "CreateUserResponse.user_id",
+            ))?
+            .into();
+
+        Ok(Self {
+            user_id
+        })
     }
 }
 
 impl From<CreateUserResponse> for CreateUserResponseProto {
-    fn from(_value: CreateUserResponse) -> Self {
-        Self {}
+    fn from(value: CreateUserResponse) -> Self {
+        Self {
+            user_id:Some(value.user_id.into())
+        }
     }
 }
 

@@ -25,6 +25,7 @@ message CreateUserRequest {
 }
 
 message CreateUserResponse {
+  graplinc.common.v1beta1.Uuid user_id = 1;
 }
 
 

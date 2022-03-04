@@ -13,7 +13,7 @@
     },
     "query": "\n            INSERT INTO organization (\n                organization_id,\n                display_name\n            )\n            VALUES ( $1, $2);\n        "
   },
-  "af5b2d751095778888164e39b1c908ea03fc558f21cdf1d2237b8c9d036f03c5": {
+  "5a9a968e0537953e5751cb22e7bb05d7eea9ef3b6b6a55300812549fdfe86e4e": {
     "describe": {
       "columns": [],
       "nullable": [],
@@ -23,11 +23,13 @@
           "Uuid",
           "Text",
           "Text",
-          "Text"
+          "Text",
+          "Bool",
+          "Bool"
         ]
       }
     },
-    "query": "\n            INSERT INTO users (\n                user_id,\n                organization_id,\n                username,\n                email,\n                password\n            )\n             VALUES ( $1, $2, $3, $4, $5 )\n        "
+    "query": "\n             INSERT INTO users (\n                user_id,\n                organization_id,\n                username,\n                email,\n                password,\n                is_admin,\n                should_reset_password\n            )\n             VALUES ( $1, $2, $3, $4, $5, $6, $7);\n        "
   },
   "c75c09eaf0132f7d4eed2d385b29b09eac8705d3c2a68996f7d3e522b1d3d90a": {
     "describe": {
