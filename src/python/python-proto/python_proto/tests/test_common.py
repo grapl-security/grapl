@@ -34,6 +34,6 @@ def test_duration_encode_decode() -> None:
     check_encode_decode_invariant(durations())
 
 
-@given(st.timedeltas())
+@given(st.timedeltas(min_value=datetime.timedelta(days=0)))
 def test_duration_from_into(timedelta: datetime.timedelta) -> None:
     assert Duration.from_timedelta(timedelta=timedelta).into_timedelta() == timedelta
