@@ -1692,7 +1692,6 @@ dependencies = [
  "moka",
  "rust-proto",
  "serde",
- "serde_json",
  "structopt",
  "thiserror",
  "tokio 1.16.1",
