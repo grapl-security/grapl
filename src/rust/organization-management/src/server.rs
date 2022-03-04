@@ -126,7 +126,7 @@ impl OrganizationManagement {
 
         sqlx::query!(
             r"
-            INSERT INTO organization (
+            INSERT INTO organizations (
                 organization_id,
                 display_name
             )

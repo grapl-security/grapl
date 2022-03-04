@@ -54,7 +54,7 @@ async fn test_create_organization() -> Result<(), Box<dyn std::error::Error>> {
 
     let (display_name, ): (String, ) = sqlx::query_as(
         r#"SELECT display_name
-        FROM organization
+        FROM organizations
         WHERE organization_id = $1
         "#,
     )

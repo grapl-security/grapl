@@ -1,18 +1,5 @@
 {
   "db": "PostgreSQL",
-  "137e2f67f405ec7a1e2566dcb00b90d688f7390897b1f0fe337d63c6b106647c": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Text"
-        ]
-      }
-    },
-    "query": "\n            INSERT INTO organization (\n                organization_id,\n                display_name\n            )\n            VALUES ( $1, $2);\n        "
-  },
   "5a9a968e0537953e5751cb22e7bb05d7eea9ef3b6b6a55300812549fdfe86e4e": {
     "describe": {
       "columns": [],
@@ -48,5 +35,18 @@
       }
     },
     "query": "\n            INSERT INTO users (\n                user_id,\n                organization_id,\n                username,\n                email,\n                password,\n                is_admin,\n                should_reset_password\n            )\n             VALUES ( $1, $2, $3, $4, $5, $6, $7);\n        "
+  },
+  "f2c3172f489003ed7ca7209fa8eb29659111b5e26955641fe35ffa2c83d016ef": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n            INSERT INTO organizations (\n                organization_id,\n                display_name\n            )\n            VALUES ( $1, $2);\n        "
   }
 }
