@@ -1,25 +1,25 @@
 config:
   aws:region: us-east-1
   integration-tests:artifacts:
-    analyzer-dispatcher: 20220304173948-67d4d2d
+    analyzer-dispatcher: 20220304174131-1de1986
     analyzer-executor: 20220304173948-67d4d2d
-    e2e-tests: 20220304173948-67d4d2d
+    e2e-tests: 20220304174131-1de1986
     engagement-creator: 20220304173948-67d4d2d
     firecracker_kernel:
       tar:
         gz: firecracker-v1.0.0-kernel-4.14.174
     firecracker_kernel.tar.gz: firecracker-v1.0.0-kernel-4.14.174
-    graph-merger: 20220304173948-67d4d2d
-    graphql-endpoint: 20220304173948-67d4d2d
-    grapl-web-ui: 20220304173948-67d4d2d
-    model-plugin-deployer: 20220304173948-67d4d2d
-    node-identifier: 20220304173948-67d4d2d
-    node-identifier-retry: 20220304173948-67d4d2d
-    osquery-generator: 20220304173948-67d4d2d
-    plugin-bootstrap: 20220304173948-67d4d2d
-    plugin-registry: 20220304173948-67d4d2d
-    plugin-work-queue: 20220304173948-67d4d2d
+    graph-merger: 20220304174131-1de1986
+    graphql-endpoint: 20220304174131-1de1986
+    grapl-web-ui: 20220304174131-1de1986
+    model-plugin-deployer: 20220304174131-1de1986
+    node-identifier: 20220304174131-1de1986
+    node-identifier-retry: 20220304174131-1de1986
+    osquery-generator: 20220304174131-1de1986
+    plugin-bootstrap: 20220304174131-1de1986
+    plugin-registry: 20220304174131-1de1986
+    plugin-work-queue: 20220304174131-1de1986
     provisioner: 20220304173948-67d4d2d
-    sysmon-generator: 20220304173948-67d4d2d
+    sysmon-generator: 20220304174131-1de1986
   integration-tests:cloudsmith-repository-name: grapl/testing
   integration-tests:confluent-environment-name: testing
