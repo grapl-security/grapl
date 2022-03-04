@@ -103,6 +103,7 @@ job "grapl-provision" {
         GRAPL_TEST_USER_NAME               = var.test_user_name
         GRAPL_TEST_USER_PASSWORD_SECRET_ID = var.test_user_password_secret_id
         GRAPL_LOG_LEVEL                    = var.py_log_level
+        OTEL_EXPORTER_ZIPKIN_ENDPOINT      = "http://100.115.92.202:9411/api/v2/spans"
       }
     }
 

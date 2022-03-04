@@ -242,6 +242,11 @@ variable "osquery_generator_dead_letter_queue" {
   type = string
 }
 
+variable "zipkin_endpoint" {
+  type    = string
+  default = ""
+}
+
 locals {
   dgraph_zero_grpc_private_port_base  = 5080
   dgraph_alpha_grpc_private_port_base = 7080
@@ -791,6 +796,7 @@ job "grapl-core" {
         IS_RETRY                                = "False"
         MESSAGECACHE_ADDR                       = local.redis_host
         MESSAGECACHE_PORT                       = local.redis_port
+        OTEL_EXPORTER_ZIPKIN_ENDPOINT           = "http://100.115.92.202:9411/api/v2/spans"
       }
     }
 
@@ -842,6 +848,8 @@ job "grapl-core" {
 
         # service vars
         SOURCE_QUEUE_URL = var.engagement_creator_queue
+        # Tracing endpoint
+        OTEL_EXPORTER_ZIPKIN_ENDPOINT = "http://100.115.92.202:9411/api/v2/spans"
       }
     }
 
@@ -895,6 +903,7 @@ job "grapl-core" {
         IS_LOCAL                      = "True"
         JWT_SECRET_ID                 = "JWT_SECRET_ID"
         PORT                          = "${NOMAD_PORT_graphql-endpoint-port}"
+        OTEL_EXPORTER_ZIPKIN_ENDPOINT = "http://100.115.92.202:9411/api/v2/spans"
       }
     }
 
