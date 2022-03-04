@@ -76,6 +76,29 @@ variable "CONTAINER_REGISTRY" {
   default = "docker.cloudsmith.io/grapl/raw"
 }
 
+# Define a set of standard OCI labels to attach to all images.
+#
+# See https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
+#
+# TODO: Ideally, I would like to define a `_grapl_base` target, set the
+# labels there, and then have all our other "base" targets inherit
+# from that. Unfortunately, there is a bug^[1] where multiple layers
+# of inheritance are not properly resolved. Fortunately, this will be fixed
+# when buildx v0.8.0 is released.
+#
+# [1]: https://github.com/docker/buildx/issues/912
+
+variable "oci_labels" {
+  default = {
+    "org.opencontainers.image.authors" = "https://graplsecurity.com"
+    "org.opencontainers.image.source"  = "https://github.com/grapl-security/grapl",
+    # In particular, this `vendor` label is used by various filters in
+    # our top-level Makefile; if you change this, make sure to update
+    # things over there, too.
+    "org.opencontainers.image.vendor" = "Grapl, Inc."
+  }
+}
+
 # Functions
 ########################################################################
 
@@ -241,6 +264,7 @@ target "_rust-base" {
   args = {
     RUST_BUILD = "${RUST_BUILD}"
   }
+  labels = oci_labels
 }
 
 target "analyzer-dispatcher" {
@@ -348,6 +372,7 @@ target "sysmon-generator" {
 target "_python-base" {
   context    = "."
   dockerfile = "src/python/Dockerfile"
+  labels     = oci_labels
 }
 
 target "analyzer-executor" {
@@ -384,6 +409,7 @@ target "graphql-endpoint" {
   tags = [
     upstream_aware_tag("graphql-endpoint")
   ]
+  labels = oci_labels
 }
 
 # Testing Images
@@ -425,6 +451,7 @@ target "pulumi" {
   tags = [
     local_only_tag("local-pulumi")
   ]
+  labels = oci_labels
 }
 
 target "localstack" {
@@ -433,6 +460,7 @@ target "localstack" {
   tags = [
     local_only_tag("localstack-grapl-fork")
   ]
+  labels = oci_labels
 }
 
 target "postgres" {
@@ -441,4 +469,5 @@ target "postgres" {
   tags = [
     local_only_tag("postgres-ext")
   ]
+  labels = oci_labels
 }

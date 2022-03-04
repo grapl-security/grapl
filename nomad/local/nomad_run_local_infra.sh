@@ -4,6 +4,7 @@ set -euo pipefail
 THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
 GRAPL_ROOT="$(git rev-parse --show-toplevel)"
 NOMAD_FILE="${GRAPL_ROOT}/nomad/local/grapl-local-infra.nomad"
+OBSERVABILITY_NOMAD_FILE="${GRAPL_ROOT}/nomad/local/observability.nomad"
 
 declare -a NOMAD_VARS=(
     -var "KAFKA_JMX_PORT=${KAFKA_JMX_PORT}"
@@ -51,3 +52,11 @@ echo "Nomad Job Run complete, checking for task failures"
 check_for_task_failures_in_job "grapl-local-infra"
 
 echo "Nomad local-infra deployed!"
+
+nomad job run "${OBSERVABILITY_NOMAD_FILE}"
+
+echo "Nomad Job Run complete, checking for task failures"
+
+check_for_task_failures_in_job "observability"
+
+echo "Nomad observability deployed!"

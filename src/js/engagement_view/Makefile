@@ -8,8 +8,6 @@
 
 DOCKER_RUN := docker run \
 		--rm \
-		--interactive \
-		--tty \
 		--user "$(shell id -u):$(shell id -g)" \
 		--workdir /engagement_view \
 		--env HOME=/engagement_view \
