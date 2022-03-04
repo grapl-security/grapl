@@ -20,7 +20,7 @@ app.use(
     "/graphQlEndpoint/graphql",
     [],
     graphqlHTTP(async (request, response, graphQLParams) => {
-        console.log({
+        console.debug({
             graphQLParams: graphQLParams,
         });
         let schema;
