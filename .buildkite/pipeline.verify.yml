@@ -67,8 +67,7 @@ steps:
 
       - label: ":rust::clippy: Linting"
         command:
-          - cd src/rust
-          - bin/lint
+          - make lint-rust-clippy
         plugins:
           - docker#v3.8.0:
               image: "rust:${RUST_VERSION}"
@@ -77,9 +76,8 @@ steps:
 
       - label: ":rust: Formatting"
         command:
-          - cd src/rust
           - rustup set profile default
-          - bin/format --check
+          - make lint-rust-rustfmt
         plugins:
           - docker#v3.8.0:
               image: "rust:${RUST_VERSION}"
@@ -184,7 +182,7 @@ steps:
 
       - label: ":rust: Unit Tests"
         command:
-          - make test-unit-rust
+          - make test-unit-rust-coverage
         plugins:
           - grapl-security/vault-login#v0.1.2
           - grapl-security/vault-env#v0.1.0:

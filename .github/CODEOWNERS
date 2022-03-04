@@ -86,6 +86,3 @@ BUILD @christophermaier
 /test/run @wimax-grapl
 
 **/Makefile @christophermaier
-
-# This needs to be kept at the end??
-.gitkeep @christophermaier
