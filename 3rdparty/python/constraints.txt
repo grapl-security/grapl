@@ -37,8 +37,8 @@ opentelemetry-instrumentation-botocore==0.28b1
 opentelemetry-sdk==1.9.1
 opentelemetry-semantic-conventions==0.28b1
 packaging==21.3
-pantsbuild.pants==2.9.1rc0
-pantsbuild.pants.testutil==2.9.1rc0
+pantsbuild.pants==2.9.0
+pantsbuild.pants.testutil==2.9.0
 parver==0.3.1
 pex==2.1.65
 pip==22.0.3
