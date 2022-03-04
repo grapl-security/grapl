@@ -13,6 +13,8 @@ message CreateOrganizationRequest {
 }
 
 message CreateOrganizationResponse {
+  graplinc.common.v1beta1.Uuid organization_id = 1;
+
 }
 
 message CreateUserRequest {
@@ -25,19 +27,9 @@ message CreateUserRequest {
 message CreateUserResponse {
 }
 
-message ChangePasswordRequest {
-  graplinc.common.v1beta1.Uuid user_id = 1;
-  bytes old_password = 2;
-  bytes new_password = 3;
-}
-
-message ChangePasswordResponse {
-}
 
 service OrganizationManagementService {
   rpc CreateOrganization(CreateOrganizationRequest) returns (CreateOrganizationResponse);
 
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
-
-  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
 }

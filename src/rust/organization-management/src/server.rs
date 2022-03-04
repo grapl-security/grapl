@@ -6,7 +6,6 @@ use argon2::{
         SaltString,
     },
     PasswordHasher,
-    PasswordVerifier,
 };
 use grapl_utils::future_ext::GraplFutureExt;
 use rust_proto::organization_management::{
@@ -14,10 +13,6 @@ use rust_proto::organization_management::{
         OrganizationManagementService,
         OrganizationManagementServiceServer,
     },
-    ChangePasswordRequest,
-    ChangePasswordRequestProto,
-    ChangePasswordResponse,
-    ChangePasswordResponseProto,
     CreateOrganizationRequest,
     CreateOrganizationRequestProto,
     CreateOrganizationResponse,
@@ -79,10 +74,6 @@ impl From<OrganizationManagementServiceError> for Status {
     }
 }
 
-struct Password {
-    password: String,
-}
-
 #[derive(Debug)]
 pub struct OrganizationManagement {
     pool: Pool<Postgres>,
@@ -111,6 +102,7 @@ impl OrganizationManagement {
         request: CreateOrganizationRequest,
     ) -> Result<CreateOrganizationResponse, OrganizationManagementServiceError> {
         let organization_id = sqlx::types::Uuid::from_u128(Uuid::new_v4().as_u128());
+        let user_id = sqlx::types::Uuid::from_u128(Uuid::new_v4().as_u128());
 
         let CreateOrganizationRequest {
             organization_display_name,
@@ -122,55 +114,63 @@ impl OrganizationManagement {
 
         let mut transaction = self.pool.begin().await?;
 
-        sqlx::query!(
-            r"
-            INSERT INTO organization (
-                organization_id,
-                display_name
-            )
-             VALUES ( $1, $2 );
-        ",
-            organization_id,
-            organization_display_name,
-        )
-        .execute(&mut transaction)
-        .await
-        .map_err(OrganizationManagementServiceError::from)?;
-
         let password_hasher = argon2::Argon2::new(
             argon2::Algorithm::Argon2i,
             argon2::Version::V0x13,
             argon2::Params::new(102400, 2, 8, None)?,
         );
 
-        let admin_password = password_hasher
+        let password = password_hasher
             .hash_password(&admin_password, &SaltString::generate(OsRng))?
             .serialize();
 
         sqlx::query!(
             r"
+            INSERT INTO organization (
+                organization_id,
+                display_name
+            )
+            VALUES ( $1, $2);
+        ",
+            organization_id,
+            organization_display_name
+        )
+            .execute(&mut transaction)
+            .await
+            .map_err(OrganizationManagementServiceError::from)?;
+
+        sqlx::query!(
+            r"
             INSERT INTO users (
+                user_id,
                 organization_id,
                 username,
                 email,
                 password,
+                is_admin,
                 should_reset_password
             )
-            VALUES ( $1, $2, $3, $4, $5 );
+             VALUES ( $1, $2, $3, $4, $5, $6, $7);
         ",
+            user_id,
             organization_id,
             admin_username,
             admin_email,
-            admin_password.as_str(),
-            should_reset_password,
+            password.as_str(),
+            true,
+            should_reset_password
         )
         .execute(&mut transaction)
         .await
         .map_err(OrganizationManagementServiceError::from)?;
 
+
+
         transaction.commit().await?;
 
-        Ok(CreateOrganizationResponse {})
+        Ok(CreateOrganizationResponse {
+            organization_id,
+        })
     }
 
     async fn create_user(
@@ -219,57 +219,6 @@ impl OrganizationManagement {
 
         Ok(CreateUserResponse {})
     }
-
-    async fn change_password(
-        &self,
-        request: ChangePasswordRequest,
-    ) -> Result<ChangePasswordResponse, OrganizationManagementServiceError> {
-        let ChangePasswordRequest {
-            user_id,
-            old_password,
-            new_password,
-        } = request;
-
-        let user_id = sqlx::types::Uuid::from_u128(user_id.as_u128());
-
-        let stored_password_hash = sqlx::query_as!(
-            Password,
-            r"SELECT password
-            FROM users
-            WHERE user_id = $1;",
-            &user_id,
-        )
-        .fetch_one(&self.pool)
-        .await
-        .map_err(OrganizationManagementServiceError::from)?
-        .password;
-
-        let password_hasher = argon2::Argon2::new(
-            argon2::Algorithm::Argon2i,
-            argon2::Version::V0x13,
-            argon2::Params::new(102400, 2, 8, None)?,
-        );
-
-        let hash = argon2::PasswordHash::new(&stored_password_hash)?;
-
-        // return early if mismatch
-        password_hasher.verify_password(&old_password, &hash)?;
-
-        let password = password_hasher
-            .hash_password(&new_password, &SaltString::generate(OsRng))?
-            .serialize();
-
-        sqlx::query!(
-            "UPDATE users SET password = $2 WHERE user_id = $1",
-            &user_id,
-            &password.as_str()
-        )
-        .execute(&self.pool)
-        .await
-        .map_err(OrganizationManagementServiceError::from)?;
-
-        Ok(ChangePasswordResponse {})
-    }
 }
 
 #[tonic::async_trait]
@@ -297,19 +246,6 @@ impl OrganizationManagementService for OrganizationManagement {
 
         let response = self.create_user(request).await?;
         let response: CreateUserResponseProto = response.into();
-        Ok(Response::new(response))
-    }
-
-    async fn change_password(
-        &self,
-        request: Request<ChangePasswordRequestProto>,
-    ) -> Result<Response<ChangePasswordResponseProto>, Status> {
-        let request: ChangePasswordRequestProto = request.into_inner();
-        let request = ChangePasswordRequest::try_from(request)
-            .map_err(OrganizationManagementServiceError::from)?;
-
-        let response = self.change_password(request).await?;
-        let response: ChangePasswordResponseProto = response.into();
         Ok(Response::new(response))
     }
 }

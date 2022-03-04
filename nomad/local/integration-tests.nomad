@@ -94,6 +94,28 @@ variable "plugin_work_queue_db_password" {
 }
 
 
+
+variable "organization_management_db_hostname" {
+  type        = string
+  description = "The host for the local organization management  db"
+}
+
+variable "organization_management_db_port" {
+  type        = string
+  default     = "5432"
+  description = "The port for the local organization management postgres"
+}
+
+variable "organization_management_db_username" {
+  type        = string
+  description = "The username for the local organization management postgres"
+}
+
+variable "organization_management_db_password" {
+  type        = string
+  description = "The password for the local organization management postgres"
+}
+
 locals {
   log_level = "DEBUG"
 
@@ -155,6 +177,12 @@ job "integration-tests" {
               # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
               local_bind_port = 1002
             }
+
+            upstreams {
+              destination_name = "organization-management"
+              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
+              local_bind_port = 1003
+            }
           }
         }
       }
@@ -197,6 +225,14 @@ job "integration-tests" {
         PLUGIN_WORK_QUEUE_DB_PORT     = "${var.plugin_work_queue_db_port}"
         PLUGIN_WORK_QUEUE_DB_USERNAME = "${var.plugin_work_queue_db_username}"
         PLUGIN_WORK_QUEUE_DB_PASSWORD = "${var.plugin_work_queue_db_password}"
+
+        ORGANIZATION_MANAGEMENT_ADDRESS  = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_organization_management}"
+        ORGANIZATION_MANAGEMENT_BIND_ADDRESS = "0.0.0.0:${NOMAD_UPSTREAM_PORT_organization_management}"
+
+        ORGANIZATION_MANAGEMENT_DB_HOSTNAME = "${var.organization_management_db_hostname}"
+        ORGANIZATION_MANAGEMENT_DB_PORT     = "${var.organization_management_db_port}"
+        ORGANIZATION_MANAGEMENT_DB_USERNAME = "${var.organization_management_db_username}"
+        ORGANIZATION_MANAGEMENT_DB_PASSWORD = "${var.organization_management_db_password}"
 
         NOMAD_SERVICE_ADDRESS = "${attr.unique.network.ip-address}:4646"
       }

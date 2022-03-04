@@ -1,6 +1,6 @@
 {
   "db": "PostgreSQL",
-  "3ac7a2c2bb7534808c37bbada23e361eddac5270b27678f81986fd5ebdcf7d41": {
+  "137e2f67f405ec7a1e2566dcb00b90d688f7390897b1f0fe337d63c6b106647c": {
     "describe": {
       "columns": [],
       "nullable": [],
@@ -11,43 +11,7 @@
         ]
       }
     },
-    "query": "UPDATE users SET password = $2 WHERE user_id = $1"
-  },
-  "4a0e6f8351708026f88be29b6d3de42cd826489aff3339d3ad99b77a2deac1a7": {
-    "describe": {
-      "columns": [
-        {
-          "name": "password",
-          "ordinal": 0,
-          "type_info": "Text"
-        }
-      ],
-      "nullable": [
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid"
-        ]
-      }
-    },
-    "query": "SELECT password\n            FROM users\n            WHERE user_id = $1;"
-  },
-  "9034e265c9379889a714f194edef3e93f14e67bc0168f34e04db52e6bfaf907e": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Text",
-          "Text",
-          "Text",
-          "Bool"
-        ]
-      }
-    },
-    "query": "\n            INSERT INTO users (\n                organization_id,\n                username,\n                email,\n                password,\n                should_reset_password\n            )\n            VALUES ( $1, $2, $3, $4, $5 );\n        "
+    "query": "\n            INSERT INTO organization (\n                organization_id,\n                display_name\n            )\n            VALUES ( $1, $2);\n        "
   },
   "af5b2d751095778888164e39b1c908ea03fc558f21cdf1d2237b8c9d036f03c5": {
     "describe": {
@@ -65,17 +29,22 @@
     },
     "query": "\n            INSERT INTO users (\n                user_id,\n                organization_id,\n                username,\n                email,\n                password\n            )\n             VALUES ( $1, $2, $3, $4, $5 )\n        "
   },
-  "fded95ae424b80b31793de0c4c015cd58b0165d98b82417bd8e6605846414d80": {
+  "c75c09eaf0132f7d4eed2d385b29b09eac8705d3c2a68996f7d3e522b1d3d90a": {
     "describe": {
       "columns": [],
       "nullable": [],
       "parameters": {
         "Left": [
           "Uuid",
-          "Text"
+          "Uuid",
+          "Text",
+          "Text",
+          "Text",
+          "Bool",
+          "Bool"
         ]
       }
     },
-    "query": "\n            INSERT INTO organization (\n                organization_id,\n                display_name\n            )\n             VALUES ( $1, $2 );\n        "
+    "query": "\n            INSERT INTO users (\n                user_id,\n                organization_id,\n                username,\n                email,\n                password,\n                is_admin,\n                should_reset_password\n            )\n             VALUES ( $1, $2, $3, $4, $5, $6, $7);\n        "
   }
 }
