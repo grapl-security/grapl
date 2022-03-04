@@ -15,7 +15,7 @@ uuid = { version = "0.8.2", features = ["v4"] }
 serde = { version = "1.0.136", features = ["derive"] }
 trust-dns-resolver = "0.20.3"
 moka = { version = "0.7", features = ["future"] }
-structopt = "0.3.26"
+structopt = { version = "0.3.26", default-features = false }
 
 [features]
 internal = ["client"]

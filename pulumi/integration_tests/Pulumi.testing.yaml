@@ -16,9 +16,9 @@ config:
     node-identifier: 20220304174131-1de1986
     node-identifier-retry: 20220304174131-1de1986
     osquery-generator: 20220304174131-1de1986
-    plugin-bootstrap: 20220304174131-1de1986
-    plugin-registry: 20220304174131-1de1986
-    plugin-work-queue: 20220304174131-1de1986
+    plugin-bootstrap: 20220304204546-260f3d5
+    plugin-registry: 20220304204546-260f3d5
+    plugin-work-queue: 20220304204546-260f3d5
     provisioner: 20220304173948-67d4d2d
     sysmon-generator: 20220304174131-1de1986
   integration-tests:cloudsmith-repository-name: grapl/testing
