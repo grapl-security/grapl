@@ -333,10 +333,18 @@ def main() -> None:
 
         # TODO: ADD EXPORTS FOR PLUGIN-REGISTRY
 
-        pulumi.export("organization-management-db-hostname", organization_management_db.hostname)
-        pulumi.export("organization-management-db-port", str(organization_management_db.port))
-        pulumi.export("organization-management-db-username", organization_management_db.username)
-        pulumi.export("organization-management-db-password", organization_management_db.password)
+        pulumi.export(
+            "organization-management-db-hostname", organization_management_db.hostname
+        )
+        pulumi.export(
+            "organization-management-db-port", str(organization_management_db.port)
+        )
+        pulumi.export(
+            "organization-management-db-username", organization_management_db.username
+        )
+        pulumi.export(
+            "organization-management-db-password", organization_management_db.password
+        )
 
         redis_endpoint = f"redis://{config.HOST_IP_IN_NOMAD}:6379"
 

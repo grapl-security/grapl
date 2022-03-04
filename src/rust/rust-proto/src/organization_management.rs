@@ -7,7 +7,6 @@ pub use crate::graplinc::grapl::api::organization_management::v1beta1::{
     CreateUserResponse as CreateUserResponseProto,
 };
 
-
 #[derive(Debug, thiserror::Error)]
 pub enum OrganizationManagementDeserializationError {
     #[error("Missing a required field: {0}")]
@@ -63,10 +62,7 @@ impl TryFrom<CreateOrganizationRequestProto> for CreateOrganizationRequest {
             &value.admin_username,
             "CreateOrganizationRequestProto.username",
         )?;
-        validate_string(
-            &value.admin_email,
-            "CreateOrganizationRequestProto.email",
-        )?;
+        validate_string(&value.admin_email, "CreateOrganizationRequestProto.email")?;
         validate_bytes(
             &value.admin_password,
             "CreateOrganizationRequestProto.password",
@@ -109,7 +105,7 @@ impl TryFrom<CreateOrganizationResponseProto> for CreateOrganizationResponse {
                 "CreateUserRequest.organization_id",
             ))?
             .into();
-        
+
         Ok(Self { organization_id })
     }
 }
@@ -117,7 +113,7 @@ impl TryFrom<CreateOrganizationResponseProto> for CreateOrganizationResponse {
 impl From<CreateOrganizationResponse> for CreateOrganizationResponseProto {
     fn from(value: CreateOrganizationResponse) -> Self {
         Self {
-            organization_id: Some(value.organization_id.into())
+            organization_id: Some(value.organization_id.into()),
         }
     }
 }
@@ -180,19 +176,14 @@ impl TryFrom<CreateUserResponseProto> for CreateUserResponse {
             ))?
             .into();
 
-        Ok(Self {
-            user_id
-        })
+        Ok(Self { user_id })
     }
 }
 
 impl From<CreateUserResponse> for CreateUserResponseProto {
     fn from(value: CreateUserResponse) -> Self {
         Self {
-            user_id:Some(value.user_id.into())
+            user_id: Some(value.user_id.into()),
         }
     }
 }
-
-
-

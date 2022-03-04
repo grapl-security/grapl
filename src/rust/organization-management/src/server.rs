@@ -135,9 +135,9 @@ impl OrganizationManagement {
             organization_id,
             organization_display_name
         )
-            .execute(&mut transaction)
-            .await
-            .map_err(OrganizationManagementServiceError::from)?;
+        .execute(&mut transaction)
+        .await
+        .map_err(OrganizationManagementServiceError::from)?;
 
         sqlx::query!(
             r"
@@ -164,13 +164,9 @@ impl OrganizationManagement {
         .await
         .map_err(OrganizationManagementServiceError::from)?;
 
-
-
         transaction.commit().await?;
 
-        Ok(CreateOrganizationResponse {
-            organization_id,
-        })
+        Ok(CreateOrganizationResponse { organization_id })
     }
 
     async fn create_user(
@@ -221,9 +217,7 @@ impl OrganizationManagement {
         .await
         .map_err(OrganizationManagementServiceError::from)?;
 
-        Ok(CreateUserResponse {
-            user_id
-        })
+        Ok(CreateUserResponse { user_id })
     }
 }
 

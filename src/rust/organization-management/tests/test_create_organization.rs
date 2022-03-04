@@ -1,13 +1,11 @@
 #![cfg(feature = "integration")]
 
 use grapl_utils::future_ext::GraplFutureExt;
-use organization_management::client::OrganizationManagementServiceClient;
-use organization_management::OrganizationManagementServiceConfig;
-
-use rust_proto::organization_management::{
-    CreateOrganizationRequest,
+use organization_management::{
+    client::OrganizationManagementServiceClient,
+    OrganizationManagementServiceConfig,
 };
-
+use rust_proto::organization_management::CreateOrganizationRequest;
 use structopt::StructOpt;
 
 #[test_log::test(tokio::test)]
@@ -52,17 +50,17 @@ async fn test_create_organization() -> Result<(), Box<dyn std::error::Error>> {
 
     let organization_id = response.organization_id;
 
-    let (display_name, ): (String, ) = sqlx::query_as(
+    let (display_name,): (String,) = sqlx::query_as(
         r#"SELECT display_name
         FROM organizations
         WHERE organization_id = $1
         "#,
     )
-        .bind(organization_id)
-        .fetch_one(&pool).await?;
+    .bind(organization_id)
+    .fetch_one(&pool)
+    .await?;
 
     assert_eq!(display_name, organization_display_name);
 
     Ok(())
 }
-

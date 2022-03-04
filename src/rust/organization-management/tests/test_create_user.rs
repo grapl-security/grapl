@@ -1,15 +1,15 @@
 #![cfg(feature = "integration")]
 
-use structopt::StructOpt;
-
 use grapl_utils::future_ext::GraplFutureExt;
-use organization_management::client::OrganizationManagementServiceClient;
-use organization_management::OrganizationManagementServiceConfig;
-use rust_proto::organization_management::{
-    CreateUserRequest,
-    CreateOrganizationRequest,
+use organization_management::{
+    client::OrganizationManagementServiceClient,
+    OrganizationManagementServiceConfig,
 };
-
+use rust_proto::organization_management::{
+    CreateOrganizationRequest,
+    CreateUserRequest,
+};
+use structopt::StructOpt;
 
 #[test_log::test(tokio::test)]
 async fn test_create_user() -> Result<(), Box<dyn std::error::Error>> {
@@ -78,15 +78,12 @@ async fn test_create_user() -> Result<(), Box<dyn std::error::Error>> {
         WHERE user_id = $1
         "#,
     )
-        .bind(user_id)
-        .fetch_one(&pool).await?;
+    .bind(user_id)
+    .fetch_one(&pool)
+    .await?;
 
     assert_eq!(name, "user test");
     assert_eq!(email, "testinguseremail@example.com");
 
     Ok(())
 }
-
-
-
-

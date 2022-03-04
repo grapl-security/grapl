@@ -226,7 +226,7 @@ job "integration-tests" {
         PLUGIN_WORK_QUEUE_DB_USERNAME = "${var.plugin_work_queue_db_username}"
         PLUGIN_WORK_QUEUE_DB_PASSWORD = "${var.plugin_work_queue_db_password}"
 
-        ORGANIZATION_MANAGEMENT_ADDRESS  = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_organization_management}"
+        ORGANIZATION_MANAGEMENT_ADDRESS      = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_organization_management}"
         ORGANIZATION_MANAGEMENT_BIND_ADDRESS = "0.0.0.0:${NOMAD_UPSTREAM_PORT_organization_management}"
 
         ORGANIZATION_MANAGEMENT_DB_HOSTNAME = "${var.organization_management_db_hostname}"

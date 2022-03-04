@@ -1,5 +1,7 @@
-use std::convert::TryInto;
-use std::time::Duration;
+use std::{
+    convert::TryInto,
+    time::Duration,
+};
 
 use rust_proto::organization_management::{
     organization_management_service_client::OrganizationManagementServiceClient as _OrganizationManagementServiceClient,
@@ -16,8 +18,8 @@ use tonic::{
         Body,
         StdError,
     },
-    Status,
     transport::Endpoint,
+    Status,
 };
 
 const ADDRESS_ENV_VAR: &'static str = "ORGANIZATION_MANAGEMENT_ADDRESS";
@@ -53,7 +55,9 @@ impl OrganizationManagementServiceClient<tonic::transport::Channel> {
             .timeout(Duration::from_secs(5))
             .concurrency_limit(30);
         let channel = endpoint.connect().await?;
-        Ok(Self::new(_OrganizationManagementServiceClient::new(channel)))
+        Ok(Self::new(_OrganizationManagementServiceClient::new(
+            channel,
+        )))
     }
 }
 
@@ -91,5 +95,4 @@ where
             .await?;
         Ok(response.into_inner().try_into()?)
     }
-
 }
