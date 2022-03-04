@@ -24,6 +24,7 @@ message CreateOrganizationResponse {
   graplinc.common.v1beta1.Uuid organization_id = 1;
 }
 
+// Request for creating a new user
 message CreateUserRequest {
   // organization id that user belongs to
   graplinc.common.v1beta1.Uuid organization_id = 1;
