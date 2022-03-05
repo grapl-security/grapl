@@ -48,7 +48,7 @@ variable "PLUGIN_REGISTRY_DB_USERNAME" {
 
 variable "PLUGIN_REGISTRY_DB_PASSWORD" {
   type        = string
-  description = "The password fort he plugin registry db"
+  description = "The password for the plugin registry db"
   default     = "postgres"
 }
 
@@ -73,7 +73,7 @@ variable "ORGANIZATION_MANAGEMENT_DB_USERNAME" {
 
 variable "ORGANIZATION_MANAGEMENT_DB_PASSWORD" {
   type        = string
-  description = "The password fort he organization management db"
+  description = "The password for the organization management db"
   default     = "postgres"
 }
 

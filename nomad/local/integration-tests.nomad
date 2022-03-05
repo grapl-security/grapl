@@ -102,7 +102,7 @@ variable "organization_management_db_hostname" {
 
 variable "organization_management_db_port" {
   type        = string
-  default     = "5432"
+#  default     = "5432"
   description = "The port for the local organization management postgres"
 }
 
