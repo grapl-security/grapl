@@ -34,10 +34,8 @@ sqlx database create
 echo "Running migrations"
 sqlx migrate run
 
-#cargo build
 
 echo "Saving metadata to sqlx.json for offline mode"
 cargo sqlx prepare -- --lib   
 
-#cargo run --bin organization-management
 

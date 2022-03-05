@@ -254,17 +254,11 @@ impl OrganizationManagementService for OrganizationManagement {
 async fn create_db_connection() -> Result<Pool<Postgres>, sqlx::Error> {
     let url = "postgres://postgres@localhost?db_name=postgres&user=postgres&password=postgres";
 
-    println!("databse url {}", url);
-
     tracing::info!(message="connecting to postgres", url=%url);
 
     // Create Connection Pool
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect(&url)
-        .await?;
+    let pool = PgPoolOptions::new().max_connections(5).connect(url).await?;
 
-    // Insert Org Info
     Ok(pool)
 }
 

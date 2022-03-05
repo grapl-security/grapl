@@ -126,22 +126,22 @@ variable "plugin_registry_kernel_artifact_url" {
 
 variable "organization_management_db_hostname" {
   type        = string
-  description = "What is the host for the organization management table?"
+  description = "What is the host for the organization management database?"
 }
 
 variable "organization_management_db_port" {
   type        = string
-  description = "What is the port for the organization management table?"
+  description = "What is the port for the organization management database?"
 }
 
 variable "organization_management_db_username" {
   type        = string
-  description = "What is the username for the organization management table?"
+  description = "What is the username for the organization management database?"
 }
 
 variable "organization_management_db_password" {
   type        = string
-  description = "What is the password for the organization management table?"
+  description = "What is the password for the organization management database?"
 }
 
 variable "plugin_work_queue_db_hostname" {
