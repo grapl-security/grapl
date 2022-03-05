@@ -34,6 +34,7 @@ RUN npm install \
 COPY --chown=grapl modules modules
 COPY --chown=grapl tests tests
 COPY --chown=grapl server.ts server.ts
+COPY --chown=grapl tracing.ts tracing.ts
 
 # This compiles the typescript and spits out the built js files to `lambda/ts_compiled'
 RUN npx tsc \

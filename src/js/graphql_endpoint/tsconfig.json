@@ -19,5 +19,5 @@
     // TODO: "strictNullChecks": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["server.ts", "server.js", "modules/**/*.js", "modules/**/*.ts"]
+  "include": ["server.ts", "server.js", "tracing.ts", "modules/**/*.js", "modules/**/*.ts"]
 }
