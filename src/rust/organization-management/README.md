@@ -10,24 +10,19 @@
 
 ### When making changes to the organization management service:
 
-- Table definitions for our Organization Management tables, `users` and `organizations` 
-can be found and altered in auto generated migration file in 
+- Table definitions for our Organization Management tables, `users` and
+  `organizations` can be found and altered in auto generated migration file in
   `/src/organization-management/migrations` folder.
 
 ### To generate a new migration, run:
+
 `sqlx migrate run`
 
 ### To generate a new sqlx.json file to popluate our PostgresDb in offline mode, run:
+
 `cargo sqlx prepare -- --lib`
 
-- We can apply table changes and generate the `sql-data.json` file by running our
-  rebuild script `./rebuild.sh` in the `organization-management` folder. This
-  script creates and populates a local database in a docker container by making migrations. 
-
-
-
-
-
-
-
-
+- We can apply table changes and generate the `sql-data.json` file by running
+  our rebuild script `./rebuild.sh` in the `organization-management` folder.
+  This script creates and populates a local database in a docker container by
+  making migrations.
