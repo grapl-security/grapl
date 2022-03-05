@@ -2,8 +2,7 @@
 
 ### The path to the proto files for our Organization Management Service:
 
-`../../proto/graplinc/grapl/api/organization_management/v1beta1/
-`
+`../../proto/graplinc/grapl/api/organization_management/v1beta1/ `
 
 ### Any changes made to the `.proto` file above should also be applied to:
 
