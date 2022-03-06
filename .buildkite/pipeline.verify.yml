@@ -31,6 +31,10 @@ steps:
     command:
       - make lint-proto
 
+  - label: ":jeans: All files are covered by Pants"
+    command:
+      - ./pants tailor --check
+
   - label: ":large_blue_square::face_with_symbols_on_mouth: Protobuf Breaking Changes"
     command:
       - make lint-proto-breaking
