@@ -1,1 +1,1 @@
-shell_sources(sources=["format", "lint"])
+shell_sources(sources=["format", "lint", "*.sh"])
