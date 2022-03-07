@@ -11,9 +11,10 @@ use actix_web::{
     HttpServer,
 };
 use actix_web_opentelemetry::RequestTracing;
-use opentelemetry::{global, trace::TraceError};
-use opentelemetry::sdk::trace::Config;
-use opentelemetry::sdk::Resource;
+use opentelemetry::{
+    global,
+    trace::TraceError,
+};
 use tap::TapFallible;
 
 #[derive(thiserror::Error, Debug)]
@@ -38,14 +39,9 @@ async fn main() -> Result<(), GraplUiError> {
     global::set_text_map_propagator(opentelemetry_jaeger::Propagator::new());
     opentelemetry_jaeger::new_pipeline()
         .with_service_name("grapl-web-ui")
-        .with_trace_config(Config::default().with_resource(Resource::new(vec![
-            opentelemetry::KeyValue::new("service.name", "web-ui"),
-            opentelemetry::KeyValue::new("exporter", "otlp-jaeger"),
-        ])))
-        .with_collector_endpoint("http://100.115.92.202:14268/api/traces")
         .install_simple()?;
-        // TODO switch to batch once we upgrade to actix-web 4, which supports Tokio 1.x
-        //.install_batch(opentelemetry::runtime::Tokio)?;
+    // TODO switch to batch once we upgrade to actix-web 4, which supports Tokio 1.x
+    //.install_batch(opentelemetry::runtime::Tokio)?;
 
     HttpServer::new(move || {
         App::new()

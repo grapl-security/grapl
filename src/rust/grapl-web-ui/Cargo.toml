@@ -14,7 +14,10 @@ argon2 = { version = "0.3.1", features = ["std"] }
 futures = "0.3.18"
 futures-util = "0.3.18"
 opentelemetry = { version = "0.17.0", features = ["rt-tokio"] }
-opentelemetry-jaeger = { version = "*", features = ["collector_client", "rt-tokio"] }
+opentelemetry-jaeger = { version = "0.16.0", features = [
+  "collector_client",
+  "rt-tokio"
+] }
 rusoto_core = { version = "0.47.0", default_features = false, features = [
   "rustls"
 ] }
