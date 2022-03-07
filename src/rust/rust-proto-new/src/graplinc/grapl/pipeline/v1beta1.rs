@@ -40,47 +40,33 @@ impl TryFrom<_Metadata> for Metadata {
     type Error = SerDeError;
 
     fn try_from(metadata_proto: _Metadata) -> Result<Self, Self::Error> {
-        let tenant_id = if let Some(tenant_id) = metadata_proto.tenant_id {
-            tenant_id
-        } else {
-            return Err(SerDeError::MissingField("tenant_id absent".to_string()));
-        };
+        let tenant_id = metadata_proto
+            .tenant_id
+            .ok_or(SerDeError::MissingField("tenant_id".to_string()));
 
-        let trace_id = if let Some(trace_id) = metadata_proto.trace_id {
-            trace_id
-        } else {
-            return Err(SerDeError::MissingField("trace_id absent".to_string()));
-        };
+        let trace_id = metadata_proto
+            .trace_id
+            .ok_or(SerDeError::MissingField("trace_id".to_string()));
 
-        let created_time = if let Some(created_time) = metadata_proto.created_time {
-            created_time
-        } else {
-            return Err(SerDeError::MissingField("created_time absent".to_string()));
-        };
+        let created_time = metadata_proto
+            .created_time
+            .ok_or(SerDeError::MissingField("created_time".to_string()));
 
-        let last_updated_time = if let Some(last_updated_time) = metadata_proto.last_updated_time {
-            last_updated_time
-        } else {
-            return Err(SerDeError::MissingField(
-                "last_updated_time absent".to_string(),
-            ));
-        };
+        let last_updated_time = metadata_proto
+            .last_updated_time
+            .ok_or(SerDeError::MissingField("last_updated_time".to_string()));
 
-        let event_source_id = if let Some(event_source_id) = metadata_proto.event_source_id {
-            event_source_id
-        } else {
-            return Err(SerDeError::MissingField(
-                "event_source_id absent".to_string(),
-            ));
-        };
+        let event_source_id = metadata_proto
+            .event_source_id
+            .ok_or(SerDeError::MissingField("event_source_id".to_string()));
 
         Ok(Metadata {
-            tenant_id: tenant_id.into(),
-            trace_id: trace_id.into(),
+            tenant_id: tenant_id?.into(),
+            trace_id: trace_id?.into(),
             retry_count: metadata_proto.retry_count,
-            created_time: created_time.try_into()?,
-            last_updated_time: last_updated_time.try_into()?,
-            event_source_id: event_source_id.into(),
+            created_time: created_time?.try_into()?,
+            last_updated_time: last_updated_time?.try_into()?,
+            event_source_id: event_source_id?.into(),
         })
     }
 }
@@ -138,14 +124,12 @@ impl TryFrom<_Envelope> for Envelope {
     type Error = SerDeError;
 
     fn try_from(envelope_proto: _Envelope) -> Result<Self, Self::Error> {
-        let metadata = if let Some(metadata) = envelope_proto.metadata {
-            metadata
-        } else {
-            return Err(SerDeError::MissingField("metadata absent".to_string()));
-        };
+        let metadata = envelope_proto
+            .metadata
+            .ok_or(SerDeError::MissingField("metadata".to_string()));
 
         Ok(Envelope {
-            metadata: metadata.try_into()?,
+            metadata: metadata?.try_into()?,
             inner_type: envelope_proto.inner_type,
             inner_message: Bytes::from(envelope_proto.inner_message),
         })

@@ -31,19 +31,17 @@ where
     type Error = SerDeError;
 
     fn try_from(envelope_proto: _NewEnvelope) -> Result<Self, Self::Error> {
-        let metadata = if let Some(metadata) = envelope_proto.metadata {
-            metadata
-        } else {
-            return Err(SerDeError::MissingField("metadata absent".to_string()));
-        };
+        let metadata = envelope_proto
+            .metadata
+            .ok_or(SerDeError::MissingField("metadata".to_string()));
 
         if let Some(any_proto) = envelope_proto.inner_message {
             Ok(Envelope {
-                metadata: metadata.try_into()?,
+                metadata: metadata?.try_into()?,
                 inner_message: SerDe::deserialize(Bytes::from(any_proto.value))?,
             })
         } else {
-            return Err(SerDeError::MissingField("inner_message absent".to_string()));
+            return Err(SerDeError::MissingField("inner_message".to_string()));
         }
     }
 }
