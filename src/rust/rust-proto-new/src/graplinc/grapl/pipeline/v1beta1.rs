@@ -105,7 +105,7 @@ impl SerDe for Metadata {
         Self: Sized,
     {
         let metadata_proto: _Metadata = Message::decode(buf)?;
-        Ok(metadata_proto.try_into()?)
+        metadata_proto.try_into()
     }
 }
 
@@ -167,7 +167,7 @@ impl SerDe for Envelope {
         Self: Sized,
     {
         let envelope_proto: _Envelope = Message::decode(buf)?;
-        Ok(envelope_proto.try_into()?)
+        envelope_proto.try_into()
     }
 }
 

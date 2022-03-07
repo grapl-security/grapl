@@ -192,6 +192,6 @@ impl SerDe for SystemTime {
         Self: Sized,
     {
         let timestamp_proto: _Timestamp = Message::decode(buf)?;
-        Ok(timestamp_proto.try_into()?)
+        timestamp_proto.try_into()
     }
 }

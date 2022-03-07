@@ -41,7 +41,7 @@ where
                 inner_message: SerDe::deserialize(Bytes::from(any_proto.value))?,
             })
         } else {
-            return Err(SerDeError::MissingField("inner_message".to_string()));
+            Err(SerDeError::MissingField("inner_message".to_string()))
         }
     }
 }
@@ -91,6 +91,6 @@ where
         Self: Sized,
     {
         let envelope_proto: _NewEnvelope = Message::decode(buf)?;
-        Ok(envelope_proto.try_into()?)
+        envelope_proto.try_into()
     }
 }
