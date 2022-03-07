@@ -26,14 +26,14 @@ use crate::{
 // Metadata
 //
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Metadata {
-    tenant_id: Uuid,
-    trace_id: Uuid,
-    retry_count: u32,
-    created_time: SystemTime,
-    last_updated_time: SystemTime,
-    event_source_id: Uuid,
+    pub tenant_id: Uuid,
+    pub trace_id: Uuid,
+    pub retry_count: u32,
+    pub created_time: SystemTime,
+    pub last_updated_time: SystemTime,
+    pub event_source_id: Uuid,
 }
 
 impl TryFrom<_Metadata> for Metadata {
@@ -127,11 +127,11 @@ impl SerDe for Metadata {
 // Envelope
 //
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Envelope {
-    metadata: Metadata,
-    inner_type: String,
-    inner_message: Bytes,
+    pub metadata: Metadata,
+    pub inner_type: String,
+    pub inner_message: Bytes,
 }
 
 impl TryFrom<_Envelope> for Envelope {
@@ -191,9 +191,9 @@ impl SerDe for Envelope {
 // RawLog
 //
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct RawLog {
-    log_event: Bytes,
+    pub log_event: Bytes,
 }
 
 impl From<_RawLog> for RawLog {

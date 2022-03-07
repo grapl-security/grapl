@@ -154,7 +154,7 @@ impl TryFrom<SystemTime> for _Timestamp {
             let duration_proto: _Duration = duration.into();
             Ok(_Timestamp {
                 duration: Some(
-                    crate::protobufs::graplinc::common::v1beta1::timestamp::Duration::BeforeEpoch(
+                    crate::protobufs::graplinc::common::v1beta1::timestamp::Duration::SinceEpoch(
                         duration_proto,
                     ),
                 ),
@@ -164,7 +164,7 @@ impl TryFrom<SystemTime> for _Timestamp {
             let duration_proto: _Duration = duration.into();
             Ok(_Timestamp {
                 duration: Some(
-                    crate::protobufs::graplinc::common::v1beta1::timestamp::Duration::SinceEpoch(
+                    crate::protobufs::graplinc::common::v1beta1::timestamp::Duration::BeforeEpoch(
                         duration_proto,
                     ),
                 ),

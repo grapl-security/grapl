@@ -15,13 +15,13 @@ use crate::{
     SerDeError,
 };
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Envelope<T>
 where
     T: SerDe,
 {
-    metadata: Metadata,
-    inner_message: T,
+    pub metadata: Metadata,
+    pub inner_message: T,
 }
 
 impl<T> TryFrom<_NewEnvelope> for Envelope<T>
