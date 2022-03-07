@@ -1,6 +1,9 @@
 use std::fmt::Debug;
 
-use bytes::{Bytes, BytesMut};
+use bytes::{
+    Bytes,
+    BytesMut,
+};
 use proptest::prelude::*;
 use rust_proto_new::{
     graplinc::{
@@ -125,7 +128,9 @@ where
 {
     let mut buf = BytesMut::new();
     let cloned = serializable.clone();
-    serializable.serialize(&mut buf).expect("serialization failed");
+    serializable
+        .serialize(&mut buf)
+        .expect("serialization failed");
     let deserialized = T::deserialize(buf).expect("deserialization failed");
     assert!(cloned == deserialized);
 }
