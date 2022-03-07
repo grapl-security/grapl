@@ -239,7 +239,3 @@ class TestFileQuery(unittest.TestCase):
         assert md5_hash == queried_file.get_md5_hash()
         assert sha1_hash == queried_file.get_sha1_hash()
         assert sha256_hash == queried_file.get_sha256_hash()
-
-
-if __name__ == "__main__":
-    unittest.main()

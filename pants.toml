@@ -203,3 +203,27 @@ known_versions = [
   # https://github.com/pantsbuild/pants/blob/1d828786c3c0f352e7811e29dd80f7877f5e170c/src/python/pants/core/util_rules/external_tool.py#L131
   "v2.8.0|linux_x86_64|9dfc155139a1e1e9b3b28f3de9907736b9dfe7cead1c3a0ae7ff0158f3191674|5895708"
 ]
+
+[tailor]
+ignore_paths = [
+  # TODO: We need to find a better way to manage our docs
+  # generation. For now, we don't need Pants to update this BUILD
+  # file.
+  "docs/BUILD",
+  # We don't need to update BUILD files that are part of a
+  # Cookiecutter template.
+  "src/python/grapl-template-generator/grapl_template_generator/grapl-templates/rust-grpc-service/{{cookiecutter.project_slug}}/**",
+  # TODO: I think we can just remove `git_push.sh` in this directory instead.
+  "src/rust/nomad-client-gen/BUILD"
+]
+ignore_adding_targets = [
+  # We don't currently run the `editor_setup.py` file through Pants,
+  # so we don't need to generate a `pex_binary` target for it.
+  "build-support:editor_setup",
+  # TODO: I suspect this can be deleted now.
+  "etc/build_scripts:check_pypi_version",
+  # We don't run Pulumi through Pants, so we don't need to create
+  # `pex_binary` targets for our `__main__.py` files.
+  "pulumi/grapl:__main__",
+  "pulumi/integration_tests:__main__"
+]
