@@ -220,7 +220,7 @@ mod tests {
             Some(
                 crate::protobufs::graplinc::common::v1beta1::timestamp::Duration::BeforeEpoch(_),
             ) => {
-                panic!("unix epoch must convert to a \"since_epoch\" timestamp (encountered \"from_epoch\")")
+                panic!("unix epoch must convert to a \"since_epoch\" timestamp (encountered \"before_epoch\")")
             }
             None => {
                 panic!("unix epoch must convert to a \"since_epoch\" timestamp (encountered None)")
