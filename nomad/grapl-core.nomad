@@ -12,7 +12,6 @@ variable "container_images" {
   type        = map(string)
   description = <<EOF
   A map of $NAME_OF_TASK to the URL for that task's docker image ID.
-  A map of $NAME_OF_TASK to the URL for that task's docker image ID.
   (See DockerImageId in Pulumi for further documentation.)
 EOF
 }

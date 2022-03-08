@@ -4,7 +4,7 @@ use std::{
 };
 
 use rust_proto::organization_management::{
-    organization_management_service_client::OrganizationManagementServiceClient as _OrganizationManagementServiceClient,
+    organization_management_service_client::OrganizationManagementServiceClient as OrganizationManagementServiceProto,
     CreateOrganizationRequest,
     CreateOrganizationRequestProto,
     CreateOrganizationResponse,
@@ -34,7 +34,7 @@ pub enum OrganizationManagementServiceClientError {
 
 #[derive(Debug)]
 pub struct OrganizationManagementServiceClient<T> {
-    inner: _OrganizationManagementServiceClient<T>,
+    inner: OrganizationManagementServiceProto<T>,
 }
 
 impl OrganizationManagementServiceClient<tonic::transport::Channel> {
@@ -55,7 +55,7 @@ impl OrganizationManagementServiceClient<tonic::transport::Channel> {
             .timeout(Duration::from_secs(5))
             .concurrency_limit(30);
         let channel = endpoint.connect().await?;
-        Ok(Self::new(_OrganizationManagementServiceClient::new(
+        Ok(Self::new(OrganizationManagementServiceProto::new(
             channel,
         )))
     }
@@ -68,7 +68,7 @@ where
     T::Error: Into<StdError>,
     <T::ResponseBody as Body>::Error: Into<StdError> + Send,
 {
-    pub fn new(inner: _OrganizationManagementServiceClient<T>) -> Self {
+    pub fn new(inner: OrganizationManagementServiceProto<T>) -> Self {
         Self { inner }
     }
 
