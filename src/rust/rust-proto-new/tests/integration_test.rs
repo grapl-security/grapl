@@ -109,10 +109,10 @@ where
     T: SerDe + Debug,
 {
     (metadatas(), inner_strategy).prop_map(|(metadata, inner_message)| -> Envelope<T> {
-        return Envelope {
+        Envelope {
             metadata,
             inner_message,
-        };
+        }
     })
 }
 
