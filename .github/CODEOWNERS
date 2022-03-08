@@ -29,7 +29,6 @@ BUILD @christophermaier
 /LICENSE @christophermaier
 /local-grapl.env @christophermaier
 /LOCAL_UI_WORKFLOW.md @christophermaier
-/Makefile @christophermaier
 /nomad @twunderlich-grapl
 /pants @christophermaier
 /pants.ci.toml @christophermaier
@@ -85,6 +84,8 @@ BUILD @christophermaier
 /src/rust/sysmon-parser/ @inickles-grapl
 /test/docker-compose* @inickles-grapl @christophermaier
 /test/run @wimax-grapl
+
+**/Makefile @christophermaier
 
 # This needs to be kept at the end??
 .gitkeep @christophermaier

@@ -6,137 +6,210 @@ env:
   # rust-toolchain file
   RUST_VERSION: 1.59.0
 
-# TODO: Cache for JS, Rust deps
-
-# TODO: Will want to use sccache for Rust, I think
-
-# TODO: possibly just us Docker for caching?
-
 steps:
-  - label: ":github: Validate CODEOWNERS"
-    command: ".buildkite/scripts/validate_codeowners.sh"
-    plugins:
-      - docker#v3.8.0:
-          image: "node"
-          entrypoint: "bash"
+  - group: ":white_check_mark: Validation"
+    # Validations are basic sanity checks, mostly around ensuring
+    # various configuration files are in proper working order.
+    key: validation
+    steps:
+      - label: ":github: Validate CODEOWNERS"
+        command: ".buildkite/scripts/validate_codeowners.sh"
+        plugins:
+          - docker#v3.8.0:
+              image: "node"
+              entrypoint: "bash"
 
-  - label: "Ensure regenerated constraints.txt"
-    command:
-      - .buildkite/scripts/ensure_regenerated_constraints.sh
+      - label: ":codecov: Validate codecov.yml"
+        command: curl --proto "=https" --tlsv1.2 --fail-with-body --verbose --data-binary @codecov.yml https://codecov.io/validate
 
-  - label: ":codecov: Validate codecov.yml"
-    command: curl --proto "=https" --tlsv1.2 --fail-with-body --verbose --data-binary @codecov.yml https://codecov.io/validate
+      - label: ":python: Ensure regenerated constraints.txt"
+        command:
+          - .buildkite/scripts/ensure_regenerated_constraints.sh
 
-  - label: ":large_blue_square::lint-roller: Lint Protobuf"
-    command:
-      - make lint-proto
+      - label: ":jeans: All files are covered by Pants"
+        command:
+          - ./pants tailor --check
 
-  - label: ":large_blue_square::face_with_symbols_on_mouth: Protobuf Breaking Changes"
-    command:
-      - make lint-proto-breaking
+  - group: ":lint-roller: Lints"
+    # Lints are various code quality checks; formatting, style guide
+    # enforcement, typechecking, etc.
+    key: lints
+    steps:
+      - label: ":nomad: HCL Linting"
+        command:
+          - make lint-hcl
 
-  - label: ":rust: rustfmt"
-    command:
-      - cd src/rust
-      - rustup set profile default
-      - bin/format --check
-    plugins:
-      - docker#v3.8.0:
-          image: "rust:${RUST_VERSION}"
+      - label: ":large_blue_square::lint-roller: Protobuf Linting"
+        command:
+          - make lint-proto
 
-  - label: ":rust: Linting"
-    command:
-      - cd src/rust
-      - bin/lint
-    plugins:
-      - docker#v3.8.0:
-          image: "rust:${RUST_VERSION}"
-    agents:
-      queue: "beefy"
+      - label: ":large_blue_square::face_with_symbols_on_mouth: Protobuf Breaking Changes"
+        command:
+          - make lint-proto-breaking
 
-  - label: ":rust: Unit Tests"
-    command:
-      - make test-unit-rust
-    plugins:
-      - grapl-security/vault-login#v0.1.2
-      - grapl-security/vault-env#v0.1.0:
-          secrets:
-            - grapl/CODECOV_TOKEN
-      - grapl-security/codecov#v0.1.3
-    agents:
-      queue: "beefy"
+      - label: ":python: Linting"
+        command:
+          - make lint-python
+        plugins:
+          - grapl-security/vault-login#v0.1.2
+          - grapl-security/vault-env#v0.1.0:
+              secrets:
+                - grapl/TOOLCHAIN_AUTH_TOKEN
 
-  - label: ":writing_hand: Test Grapl Template Generator"
-    command:
-      - make test-grapl-template-generator
-    agents:
-      queue: "beefy"
+      - label: ":python: Typechecking"
+        command:
+          - make typecheck
+        plugins:
+          - grapl-security/vault-login#v0.1.2
+          - grapl-security/vault-env#v0.1.0:
+              secrets:
+                - grapl/TOOLCHAIN_AUTH_TOKEN
 
-  - label: ":python::jeans: Linting"
-    command:
-      - make lint-python
-    plugins:
-      - grapl-security/vault-login#v0.1.2
-      - grapl-security/vault-env#v0.1.0:
-          secrets:
-            - grapl/TOOLCHAIN_AUTH_TOKEN
+      - label: ":rust::clippy: Linting"
+        command:
+          - cd src/rust
+          - bin/lint
+        plugins:
+          - docker#v3.8.0:
+              image: "rust:${RUST_VERSION}"
+        agents:
+          queue: "beefy"
 
-  - label: ":bash::jeans: Linting"
-    command:
-      - make lint-shell
-    plugins:
-      - grapl-security/vault-login#v0.1.2
-      - grapl-security/vault-env#v0.1.0:
-          secrets:
-            - grapl/TOOLCHAIN_AUTH_TOKEN
+      - label: ":rust: Formatting"
+        command:
+          - cd src/rust
+          - rustup set profile default
+          - bin/format --check
+        plugins:
+          - docker#v3.8.0:
+              image: "rust:${RUST_VERSION}"
 
-  - label: ":docker::jeans: Linting"
-    command:
-      - make lint-docker
-    plugins:
-      - grapl-security/vault-login#v0.1.2
-      - grapl-security/vault-env#v0.1.0:
-          secrets:
-            - grapl/TOOLCHAIN_AUTH_TOKEN
+      - label: ":bash: Linting"
+        command:
+          - make lint-shell
+        plugins:
+          - grapl-security/vault-login#v0.1.2
+          - grapl-security/vault-env#v0.1.0:
+              secrets:
+                - grapl/TOOLCHAIN_AUTH_TOKEN
 
-  - label: ":python::jeans: Unit Tests"
-    command:
-      - make test-unit-python
-    plugins:
-      - grapl-security/vault-login#v0.1.2
-      - grapl-security/vault-env#v0.1.0:
-          secrets:
-            - grapl/TOOLCHAIN_AUTH_TOKEN
-            - grapl/CODECOV_TOKEN
-      - grapl-security/codecov#v0.1.3
+      - label: ":docker: Linting"
+        command:
+          - make lint-docker
+        plugins:
+          - grapl-security/vault-login#v0.1.2
+          - grapl-security/vault-env#v0.1.0:
+              secrets:
+                - grapl/TOOLCHAIN_AUTH_TOKEN
 
-  - label: ":python::jeans: Typechecking"
-    command:
-      - make typecheck
-    plugins:
-      - grapl-security/vault-login#v0.1.2
-      - grapl-security/vault-env#v0.1.0:
-          secrets:
-            - grapl/TOOLCHAIN_AUTH_TOKEN
+      - label: ":typescript::yaml::markdown: Linting"
+        command:
+          - make lint-prettier
 
-  # TODO: Consider beefy queue
-  - label: ":typescript::docker: Unit Tests"
-    command:
-      - make test-unit-js
-    plugins:
-      - grapl-security/vault-login#v0.1.2
-      - grapl-security/vault-env#v0.1.0:
-          secrets:
-            - grapl/CODECOV_TOKEN
-      - grapl-security/codecov#v0.1.3
+  - group: ":lock_with_ink_pen: Dependency Audits"
+    # Audits are checks of dependencies: finding unused dependencies,
+    # finding dependencies with reported security vulnerabilities,
+    # etc.
+    key: audit
+    steps:
+      - label: ":thinking_face::rust: Cargo Audit?"
+        plugins:
+          - grapl-security/grapl-release#v0.1.1
+          - chronotc/monorepo-diff#v2.0.4:
+              diff: grapl_diff.sh
+              log_level: "debug"
+              watch:
+                - path:
+                    - "**/Cargo.toml"
+                    - "**/Cargo.lock"
+                  config:
+                    label: ":pipeline: Upload Cargo Audit"
+                    command: ".buildkite/pipeline.cargo-audit.sh | buildkite-agent pipeline upload"
 
-  - label: ":typescript::yaml::lint-roller: Lint using Prettier"
-    command:
-      - make lint-prettier
+      - label: ":thinking_face::nodejs: NPM Audit?"
+        plugins:
+          - grapl-security/grapl-release#v0.1.1
+          - chronotc/monorepo-diff#v2.0.4:
+              diff: grapl_diff.sh
+              log_level: "debug"
+              watch:
+                - path:
+                    - "**/package.json"
+                    - "**/package-lock.json"
+                  config:
+                    label: ":pipeline: Upload NPM Audit"
+                    command: ".buildkite/pipeline.npm-audit.sh | buildkite-agent pipeline upload"
 
-  - label: "Build docs :book:"
-    command:
-      - make build-docs
+      - label: ":thinking_face::nodejs: Yarn Audit?"
+        plugins:
+          - grapl-security/grapl-release#v0.1.1
+          - chronotc/monorepo-diff#v2.0.4:
+              diff: grapl_diff.sh
+              log_level: "debug"
+              watch:
+                - path:
+                    - "**/package.json"
+                    - "**/yarn.lock"
+                  config:
+                    label: ":pipeline: Upload Yarn Audit"
+                    command: ".buildkite/pipeline.yarn-audit.sh | buildkite-agent pipeline upload"
+
+      - label: ":thinking_face::rust: Cargo Udeps?"
+        plugins:
+          - grapl-security/grapl-release#v0.1.1
+          - chronotc/monorepo-diff#v2.0.4:
+              diff: grapl_diff.sh
+              log_level: "debug"
+              watch:
+                - path:
+                    - "**/Cargo.toml"
+                    - "**/Cargo.lock"
+                  config:
+                    label: ":pipeline: Upload Cargo Udeps"
+                    command: ".buildkite/pipeline.cargo-udeps.sh | buildkite-agent pipeline upload"
+
+  - group: "Unit Tests"
+    key: unit-tests
+    steps:
+      - label: ":python: Unit Tests"
+        command:
+          - make test-unit-python
+        plugins:
+          - grapl-security/vault-login#v0.1.2
+          - grapl-security/vault-env#v0.1.0:
+              secrets:
+                - grapl/TOOLCHAIN_AUTH_TOKEN
+                - grapl/CODECOV_TOKEN
+          - grapl-security/codecov#v0.1.3
+
+      - label: ":rust: Unit Tests"
+        command:
+          - make test-unit-rust
+        plugins:
+          - grapl-security/vault-login#v0.1.2
+          - grapl-security/vault-env#v0.1.0:
+              secrets:
+                - grapl/CODECOV_TOKEN
+          - grapl-security/codecov#v0.1.3
+        agents:
+          queue: "beefy"
+
+      # TODO: Consider beefy queue
+      - label: ":typescript: Unit Tests"
+        command:
+          - make test-unit-js
+        plugins:
+          - grapl-security/vault-login#v0.1.2
+          - grapl-security/vault-env#v0.1.0:
+              secrets:
+                - grapl/CODECOV_TOKEN
+          - grapl-security/codecov#v0.1.3
+
+      - label: ":writing_hand: Test Grapl Template Generator"
+        command:
+          - make test-grapl-template-generator
+        agents:
+          queue: "beefy"
 
   - label: ":hammer: Integration Tests"
     command:
@@ -169,48 +242,6 @@ steps:
     artifact_paths:
       - "test_artifacts/**/*"
 
-  - label: ":lint-roller::nomad: Lint HCL files"
+  - label: "Build docs :book:"
     command:
-      - make lint-hcl
-
-  - label: ":thinking_face::rust: Cargo Audit?"
-    plugins:
-      - grapl-security/grapl-release#v0.1.1
-      - chronotc/monorepo-diff#v2.0.4:
-          diff: grapl_diff.sh
-          log_level: "debug"
-          watch:
-            - path:
-                - "**/Cargo.toml"
-                - "**/Cargo.lock"
-              config:
-                label: ":pipeline: Upload Cargo Audit"
-                command: ".buildkite/pipeline.cargo-audit.sh | buildkite-agent pipeline upload"
-
-  - label: ":thinking_face::nodejs: NPM Audit?"
-    plugins:
-      - grapl-security/grapl-release#v0.1.1
-      - chronotc/monorepo-diff#v2.0.4:
-          diff: grapl_diff.sh
-          log_level: "debug"
-          watch:
-            - path:
-                - "**/package.json"
-                - "**/package-lock.json"
-              config:
-                label: ":pipeline: Upload NPM Audit"
-                command: ".buildkite/pipeline.npm-audit.sh | buildkite-agent pipeline upload"
-
-  - label: ":thinking_face::nodejs: Yarn Audit?"
-    plugins:
-      - grapl-security/grapl-release#v0.1.1
-      - chronotc/monorepo-diff#v2.0.4:
-          diff: grapl_diff.sh
-          log_level: "debug"
-          watch:
-            - path:
-                - "**/package.json"
-                - "**/yarn.lock"
-              config:
-                label: ":pipeline: Upload Yarn Audit"
-                command: ".buildkite/pipeline.yarn-audit.sh | buildkite-agent pipeline upload"
+      - make build-docs

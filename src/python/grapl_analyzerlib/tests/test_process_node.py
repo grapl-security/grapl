@@ -697,7 +697,3 @@ class TestProcessQuery(unittest.TestCase):
             == "test_with_wrote_files-2325c49a-95b4-423f-96d0-99539fe03833"
         )
         assert queried_process.wrote_files[0].file_path == "/folder/file.txt"
-
-
-if __name__ == "__main__":
-    unittest.main()
