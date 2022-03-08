@@ -123,6 +123,26 @@ variable "plugin_registry_kernel_artifact_url" {
   description = "S3 URL specifying the kernel for the Firecracker VM"
 }
 
+variable "organization_management_db_hostname" {
+  type        = string
+  description = "What is the host for the organization management database?"
+}
+
+variable "organization_management_db_port" {
+  type        = string
+  description = "What is the port for the organization management database?"
+}
+
+variable "organization_management_db_username" {
+  type        = string
+  description = "What is the username for the organization management database?"
+}
+
+variable "organization_management_db_password" {
+  type        = string
+  description = "What is the password for the organization management database?"
+}
+
 variable "plugin_work_queue_db_hostname" {
   type        = string
   description = "What is the host for the plugin work queue table?"
@@ -1058,6 +1078,50 @@ job "grapl-core" {
         REDIS_ENDPOINT        = var.redis_endpoint
         RUST_LOG              = var.rust_log
         RUST_BACKTRACE        = local.rust_backtrace
+      }
+    }
+  }
+
+  group "organization-management" {
+    network {
+      mode = "bridge"
+      port "organization-management-port" {
+      }
+    }
+
+    task "organization-management" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["organization-management"]
+        ports = ["organization-management-port"]
+      }
+
+      template {
+        data        = var.aws_env_vars_for_local
+        destination = "organization-management.env"
+        env         = true
+      }
+
+      env {
+        AWS_REGION                           = var.aws_region
+        NOMAD_SERVICE_ADDRESS                = "${attr.unique.network.ip-address}:4646"
+        ORGANIZATION_MANAGEMENT_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_organization-management-port}"
+        RUST_BACKTRACE                       = local.rust_backtrace
+        RUST_LOG                             = var.rust_log
+        ORGANIZATION_MANAGEMENT_DB_HOSTNAME  = var.organization_management_db_hostname
+        ORGANIZATION_MANAGEMENT_DB_PASSWORD  = var.organization_management_db_password
+        ORGANIZATION_MANAGEMENT_DB_PORT      = var.organization_management_db_port
+        ORGANIZATION_MANAGEMENT_DB_USERNAME  = var.organization_management_db_username
+      }
+    }
+
+    service {
+      name = "organization-management"
+      port = "organization-management-port"
+      connect {
+        sidecar_service {
+        }
       }
     }
   }

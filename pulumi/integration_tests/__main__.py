@@ -119,6 +119,10 @@ def main() -> None:
             "plugin_work_queue_db_port": grapl_stack.plugin_work_queue_db_port,
             "plugin_work_queue_db_username": grapl_stack.plugin_work_queue_db_username,
             "plugin_work_queue_db_password": grapl_stack.plugin_work_queue_db_password,
+            "organization_management_db_hostname": grapl_stack.organization_management_db_hostname,
+            "organization_management_db_port": grapl_stack.organization_management_db_port,
+            "organization_management_db_username": grapl_stack.organization_management_db_username,
+            "organization_management_db_password": grapl_stack.organization_management_db_password,
         }
 
         integration_tests = NomadJob(
@@ -157,6 +161,19 @@ class GraplStack:
         )
         self.plugin_work_queue_db_password = require_str(
             "plugin-work-queue-db-password"
+        )
+
+        self.organization_management_db_hostname = require_str(
+            "organization-management-db-hostname"
+        )
+        self.organization_management_db_port = require_str(
+            "organization-management-db-port"
+        )
+        self.organization_management_db_username = require_str(
+            "organization-management-db-username"
+        )
+        self.organization_management_db_password = require_str(
+            "organization-management-db-password"
         )
 
         self.kafka_bootstrap_servers = require_str("kafka-bootstrap-servers")
