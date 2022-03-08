@@ -124,7 +124,7 @@ FROM base AS build-test-integration
 # https://github.com/rust-lang/cargo/issues/1924
 # https://github.com/rust-lang/cargo/issues/3670
 
-ENV RUST_INTEGRATION_TEST_FEATURES="node-identifier/integration,sqs-executor/integration,model-plugin-deployer/integration,plugin-registry/integration,plugin-work-queue/integration"
+ENV RUST_INTEGRATION_TEST_FEATURES="node-identifier/integration,sqs-executor/integration,model-plugin-deployer/integration,plugin-registry/integration,plugin-work-queue/integration,organization-management/integration"
 ENV TEST_DIR=/grapl/tests
 
 RUN mkdir --parents "${TEST_DIR}"
@@ -325,3 +325,13 @@ FROM rust-dist AS model-plugin-deployer
 # hadolint ignore=DL3022
 COPY --from=build /outputs/model-plugin-deployer /
 ENTRYPOINT ["/model-plugin-deployer"]
+
+
+# organization-management
+FROM rust-dist AS organization-management-deploy
+
+# Hadolint v2.8.0 appears to be mistaken, this is a false positive
+# https://github.com/hadolint/hadolint/wiki/DL3022
+# hadolint ignore=DL3022
+COPY --from=build /outputs/organization-management /
+ENTRYPOINT ["/organization-management"]

@@ -21,6 +21,7 @@ async fn test_create_plugin() -> Result<(), Box<dyn std::error::Error>> {
     let tenant_id = uuid::Uuid::new_v4();
 
     let display_name = uuid::Uuid::new_v4().to_string();
+
     let request = CreatePluginRequest {
         plugin_artifact: b"dummy vec for now".to_vec(),
         tenant_id: tenant_id.clone(),
@@ -32,6 +33,7 @@ async fn test_create_plugin() -> Result<(), Box<dyn std::error::Error>> {
         .create_plugin(request)
         .timeout(std::time::Duration::from_secs(5))
         .await??;
+
     let plugin_id = response.plugin_id;
 
     let get_response: GetPluginResponse = client
