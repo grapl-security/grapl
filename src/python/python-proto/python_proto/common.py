@@ -142,14 +142,15 @@ class Timestamp(SerDe[_Timestamp]):
 
     @staticmethod
     def from_proto(proto_timestamp: _Timestamp) -> Timestamp:
-        assert proto_timestamp.WhichOneof("duration") is not None
-        if proto_timestamp.WhichOneof("duration") == "since_epoch":
+        field_name = proto_timestamp.WhichOneof("duration")
+        assert field_name is not None
+        if field_name == "since_epoch":
             proto_duration = proto_timestamp.since_epoch
             return Timestamp(
                 duration=Duration.from_proto(proto_duration),
                 before_epoch=False,
             )
-        elif proto_timestamp.WhichOneof("duration") == "before_epoch":
+        elif field_name == "before_epoch":
             proto_duration = proto_timestamp.before_epoch
             return Timestamp(
                 duration=Duration.from_proto(proto_duration), before_epoch=True
