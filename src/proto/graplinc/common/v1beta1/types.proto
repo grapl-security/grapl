@@ -22,14 +22,15 @@ message Duration {
   fixed32 nanos = 2;
 }
 
-// A specific point in time, expressed as a duration since or before unix epoch
+// A specific point in time, expressed as a duration before or since unix epoch
 // (1970-01-01T00:00:00.000000000Z), with (up to) nanosecond subsecond precision.
 message Timestamp {
   // A Timestamp contains a duration that specifies a particular instant in time
-  // either before or after unix epoch.
+  // either before or since unix epoch.
   oneof duration {
     // The interval of time between unix epoch and when this event took
-    // place. This variant indicates the event took place after unix epoch.
+    // place. This variant indicates the event took place since unix epoch
+    // (including exactly 0ns "since").
     Duration since_epoch = 1;
 
     // The interval of time between when this event took place and unix

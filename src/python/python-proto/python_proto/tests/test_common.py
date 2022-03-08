@@ -30,6 +30,20 @@ def test_timestamp_from_into(datetime_: datetime.datetime) -> None:
     assert Timestamp.from_datetime(datetime_=datetime_).into_datetime() == datetime_
 
 
+def test_epoch_timestamp_is_since_variant() -> None:
+    """Ensure that when a datetime is exactly
+    1970-01-01T00:00:00.000000000Z it is converted into a
+    "since_epoch" protobuf Timestamp. We might state this
+    circumstance in words "it has been 0ms since epoch".
+
+    """
+    epoch = datetime.datetime.utcfromtimestamp(0)
+    timestamp = Timestamp.from_datetime(epoch)
+    proto_timestamp = timestamp.into_proto()
+    assert proto_timestamp.WhichOneof("duration") is not None
+    assert proto_timestamp.WhichOneof("duration") == "since_epoch"
+
+
 def test_duration_encode_decode() -> None:
     check_encode_decode_invariant(durations())
 

@@ -149,7 +149,7 @@ impl TryFrom<SystemTime> for _Timestamp {
     type Error = SystemTimeError;
 
     fn try_from(timestamp: SystemTime) -> Result<Self, Self::Error> {
-        if timestamp > UNIX_EPOCH {
+        if timestamp >= UNIX_EPOCH {
             let duration = timestamp.duration_since(UNIX_EPOCH)?;
             let duration_proto: _Duration = duration.into();
             Ok(_Timestamp {
@@ -193,5 +193,31 @@ impl SerDe for SystemTime {
     {
         let timestamp_proto: _Timestamp = Message::decode(buf)?;
         timestamp_proto.try_into()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Duration, UNIX_EPOCH};
+    use crate::protobufs::graplinc::common::v1beta1::Timestamp as _Timestamp;
+
+    // Check that when a SystemTime is exactly 1970-01-01T00:00:00.000000000Z it
+    // is converted into a "since_epoch" protobuf Timestamp. We might state this
+    // circumstance in words "it has been 0ns since epoch".
+    #[test]
+    fn test_epoch_timestamp_is_since_variant() {
+        let epoch = UNIX_EPOCH + Duration::new(0, 0);
+        let timestamp = _Timestamp::try_from(epoch).expect("invalid timestamp");
+        match timestamp.duration {
+            Some(crate::protobufs::graplinc::common::v1beta1::timestamp::Duration::SinceEpoch(_)) => {
+                // 👍 great success 👍
+            },
+            Some(crate::protobufs::graplinc::common::v1beta1::timestamp::Duration::BeforeEpoch(_)) => {
+                panic!("unix epoch must convert to a \"since_epoch\" timestamp (encountered \"from_epoch\")")
+            },
+            None => {
+                panic!("unix epoch must convert to a \"since_epoch\" timestamp (encountered None)")
+            }
+        }
     }
 }
