@@ -55,9 +55,7 @@ impl OrganizationManagementServiceClient<tonic::transport::Channel> {
             .timeout(Duration::from_secs(5))
             .concurrency_limit(30);
         let channel = endpoint.connect().await?;
-        Ok(Self::new(OrganizationManagementServiceProto::new(
-            channel,
-        )))
+        Ok(Self::new(OrganizationManagementServiceProto::new(channel)))
     }
 }
 

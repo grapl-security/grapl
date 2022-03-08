@@ -35,6 +35,4 @@ echo "Running migrations"
 sqlx migrate run
 
 echo "Saving metadata to sqlx.json for offline mode"
-cargo sqlx prepare -- --lib   
-
-
+cargo sqlx prepare -- --lib

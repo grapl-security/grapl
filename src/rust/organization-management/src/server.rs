@@ -24,10 +24,7 @@ use rust_proto::organization_management::{
     OrganizationManagementDeserializationError,
 };
 use sqlx::{
-    postgres::{
-        PgPoolOptions,
-        Postgres,
-    },
+    postgres::Postgres,
     Pool,
 };
 use tonic::{
