@@ -250,18 +250,6 @@ impl OrganizationManagementService for OrganizationManagement {
     }
 }
 
-#[tracing::instrument(err)]
-async fn create_db_connection() -> Result<Pool<Postgres>, sqlx::Error> {
-    let url = "postgres://postgres@localhost?db_name=postgres&user=postgres&password=postgres";
-
-    tracing::info!(message="connecting to postgres", url=%url);
-
-    // Create Connection Pool
-    let pool = PgPoolOptions::new().max_connections(5).connect(url).await?;
-
-    Ok(pool)
-}
-
 pub async fn exec_service(
     service_config: OrganizationManagementServiceConfig,
 ) -> Result<(), Box<dyn std::error::Error>> {
