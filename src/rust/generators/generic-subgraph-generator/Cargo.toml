@@ -14,7 +14,7 @@ grapl-observe = { path = "../../grapl-observe/" }
 lazy_static = "1.4.0"
 log = "0.4.14"
 prost = "0.9.0"
-regex = "1.5.4"
+regex = "1.5.5"
 rusoto_core = { version = "0.47.0", default_features = false, features = [
   "rustls"
 ] }
