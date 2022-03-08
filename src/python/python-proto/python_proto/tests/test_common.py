@@ -32,7 +32,7 @@ def test_timestamp_from_into(datetime_: datetime.datetime) -> None:
 
 def test_epoch_timestamp_is_since_variant() -> None:
     """Ensure that when a datetime is exactly
-    1970-01-01T00:00:00.000000000Z it is converted into a
+    1970-01-01T00:00:00.000000Z it is converted into a
     "since_epoch" protobuf Timestamp. We might state this
     circumstance in words "it has been 0ms since epoch".
 
