@@ -12,6 +12,19 @@ message Uuid {
   fixed64 msb = 2;
 }
 
+//
+// Note: we've implemented some time primitives here instead of using
+// google.protobuf.{Duration, Timestamp} because Google's Duration is
+// _signed_. This leads to awkward, subtle complexities in time handling
+// code. Moreover, Google's Timestamp type is not implemented in terms of the
+// Duration type, which seems odd. We've chosen here to represent a Duration as
+// an unsigned measure of time (e.g. a length) and we've implemented Timestamp
+// in terms of Duration. We believe this maps more cleanly to physical reality,
+// and to how Rust std::time code works. We think this will make implementing
+// correct time handling code across languages (e.g. Rust, Python, etc.) easier,
+// leading to more robust systems.
+//
+
 // An interval of time measured in seconds, with (up to) nanosecond subsecond
 // precision.
 message Duration {
