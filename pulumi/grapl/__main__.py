@@ -312,7 +312,7 @@ def main() -> None:
         # Local Grapl
         ###################################
         organization_management_db = LocalPostgresInstance(
-            name="organization_management_db",
+            name="organization-management-db",
             port=5632,
         )
 
@@ -437,7 +437,7 @@ def main() -> None:
         )
 
         organization_management_postgres = Postgres(
-            name="organization_management",
+            name="organization-management",
             subnet_ids=subnet_ids,
             vpc_id=vpc_id,
             availability_zone=availability_zone,
