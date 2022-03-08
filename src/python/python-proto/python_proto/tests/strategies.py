@@ -137,7 +137,7 @@ def envelopes(
     inner_messages: st.SearchStrategy[SerDe] = uuids()
     | timestamps()
     | durations()
-    | raw_logs(),
+    | raw_logs(),  # TODO: add more here as they're implemented
 ) -> st.SearchStrategy[Envelope]:
     return st.builds(
         Envelope,

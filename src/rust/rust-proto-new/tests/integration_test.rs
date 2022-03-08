@@ -104,16 +104,16 @@ prop_compose! {
     }
 }
 
-prop_compose! {
-    fn envelopes()(
-        metadata in metadatas(),
-        inner_message in raw_logs()
-    ) -> Envelope<RawLog> {
-        Envelope {
+fn envelopes<T>(inner_strategy: impl Strategy<Value = T>) -> impl Strategy<Value = Envelope<T>>
+where
+    T: SerDe + Debug,
+{
+    (metadatas(), inner_strategy).prop_map(|(metadata, inner_message)| -> Envelope<T> {
+        return Envelope {
             metadata,
-            inner_message
-        }
-    }
+            inner_message,
+        };
+    })
 }
 
 //
@@ -171,7 +171,24 @@ proptest! {
     }
 
     #[test]
-    fn test_envelope_encode_decode(envelope in envelopes()) {
+    fn test_uuid_envelope_encode_decode(envelope in envelopes(uuids())) {
         check_encode_decode_invariant(envelope)
     }
+
+    #[test]
+    fn test_timestamp_envelope_encode_decode(envelope in envelopes(any::<SystemTime>())) {
+        check_encode_decode_invariant(envelope)
+    }
+
+    #[test]
+    fn test_duration_envelope_encode_decode(envelope in envelopes(any::<Duration>())) {
+        check_encode_decode_invariant(envelope)
+    }
+
+    #[test]
+    fn test_raw_log_envelope_encode_decode(envelope in envelopes(raw_logs())) {
+        check_encode_decode_invariant(envelope)
+    }
+
+    // TODO: add more here as they're implemented
 }
