@@ -623,5 +623,5 @@ generate-sqlx-data:  # Regenerate sqlx-data.json based on queries made in Rust c
 	./src/rust/bin/generate_sqlx_data.sh
 
 # Intentionally not phony, as this generates a real file
-dist/firecracker_kernel.tar.gz: firecracker/generate_firecracker_kernel.sh
+dist/firecracker_kernel.tar.gz: firecracker/generate_firecracker_kernel.sh | dist
 	./firecracker/generate_firecracker_kernel.sh
