@@ -3,6 +3,7 @@ import re
 from pathlib import Path
 from typing import Any, Mapping, Optional, Sequence, Union
 
+import netifaces
 import pulumi_aws as aws
 from typing_extensions import Final
 
@@ -234,3 +235,11 @@ def container_repository() -> Optional[str]:
     if repo_name:
         return f"docker.cloudsmith.io/{repo_name}"
     return None
+
+
+# This should be equivalent to what HOST_IP_IN_NOMAD resolves to. However, we need this for the consul proxy defaults,
+# so we can't use var interpolation. This should be temporary until we get consul dns working within containers
+def get_nomad_ip() -> str:
+    netifaces.ifaddresses("eth0")
+    ip = netifaces.ifaddresses("eth0")[netifaces.AF_INET][0]["addr"]
+    return ip

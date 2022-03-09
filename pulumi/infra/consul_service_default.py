@@ -26,7 +26,6 @@ class ConsulServiceDefault(pulumi.ComponentResource):
             resource_name=f"{name}-{service_name}-service-defaults",
             kind="service-defaults",
             name=service_name,
-            # TODO allow other things besides protocol in this config
             config_json=json.dumps({"protocol": protocol, **additional_config_options}),
             opts=pulumi.ResourceOptions.merge(
                 opts, pulumi.ResourceOptions(parent=self)
