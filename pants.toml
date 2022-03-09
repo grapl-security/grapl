@@ -212,9 +212,7 @@ ignore_paths = [
   "docs/BUILD",
   # We don't need to update BUILD files that are part of a
   # Cookiecutter template.
-  "src/python/grapl-template-generator/grapl_template_generator/grapl-templates/rust-grpc-service/{{cookiecutter.project_slug}}/**",
-  # TODO: I think we can just remove `git_push.sh` in this directory instead.
-  "src/rust/nomad-client-gen/BUILD"
+  "src/python/grapl-template-generator/grapl_template_generator/grapl-templates/rust-grpc-service/{{cookiecutter.project_slug}}/**"
 ]
 ignore_adding_targets = [
   # We don't currently run the `editor_setup.py` file through Pants,

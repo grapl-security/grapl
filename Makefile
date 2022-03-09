@@ -606,9 +606,12 @@ build-docs: ## Build the Sphinx docs
 	./docs/build_docs.sh
 
 .PHONY: generate-nomad-rust-client
-generate-nomad-rust-client:  # Generate the Nomad rust client from OpenAPI
+generate-nomad-rust-client: ## Generate the Nomad rust client from OpenAPI
 	./src/rust/bin/generate_nomad_rust_client.sh
-	$(MAKE) format
+	$(MAKE) format-rust
+# TODO: If we ever break out a targeted `format-markdown` target, we
+# should use that here.
+	$(MAKE) format-prettier
 
 .PHONY: generate-sqlx-data
 generate-sqlx-data:  # Regenerate sqlx-data.json based on queries made in Rust code
