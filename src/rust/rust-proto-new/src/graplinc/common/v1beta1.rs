@@ -198,10 +198,7 @@ impl SerDe for SystemTime {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        Duration,
-        UNIX_EPOCH,
-    };
+    use super::UNIX_EPOCH;
     use crate::protobufs::graplinc::common::v1beta1::Timestamp as _Timestamp;
 
     // Check that when a SystemTime is exactly 1970-01-01T00:00:00.000000000Z it
@@ -209,8 +206,7 @@ mod tests {
     // circumstance in words "it has been 0ns since epoch".
     #[test]
     fn test_epoch_timestamp_is_since_variant() {
-        let epoch = UNIX_EPOCH + Duration::new(0, 0);
-        let timestamp = _Timestamp::try_from(epoch).expect("invalid timestamp");
+        let timestamp = _Timestamp::try_from(UNIX_EPOCH).expect("invalid timestamp");
         match timestamp.duration {
             Some(crate::protobufs::graplinc::common::v1beta1::timestamp::Duration::SinceEpoch(
                 _,
