@@ -12,7 +12,7 @@ url = "^2.2"
 
 [dependencies.reqwest]
 version = "^0.11"
-features = ["json", "multipart", "rustls-tls"]
 default_features = false
+features = ["json", "multipart", "rustls-tls"]
 
 [dev-dependencies]
