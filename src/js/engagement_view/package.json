@@ -2,7 +2,6 @@
   "name": "grapl-fe",
   "version": "0.1.0",
   "private": true,
-  "proxy": "http://127.0.0.1:1234",
   "dependencies": {
     "@material-ui/core": "^4.9.9",
     "@material-ui/icons": "^4.9.1",
@@ -34,7 +33,7 @@
     "react-dom": "^16.13.1",
     "react-force-graph": "^1.32.1",
     "react-router-dom": "^5.2.0",
-    "react-scripts": "^4.0.3",
+    "react-scripts": "^5.0.0",
     "react-test-render": "^1.1.2",
     "semantic-ui-react": "^0.88.2",
     "three": "^0.125.2",
