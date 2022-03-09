@@ -1,0 +1,15 @@
+---
+image:
+  file: .gitpod/Dockerfile
+  context: .gitpod
+
+tasks:
+  - init: make
+
+vscode:
+  extensions:
+    - bungcip.better-toml
+    - eamodio.gitlens
+    - mads-hartmann.bash-ide-vscode
+    - mhutchie.git-graph
+    - ms-azuretools.vscode-docker
