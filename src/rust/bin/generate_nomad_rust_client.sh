@@ -33,7 +33,7 @@ CRATE_VERSION="1.0.0" # You can't do any cute version names, just numeric
 # Learn about other `--additional-properties` at:
 # https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/rust.md
 
-sudo rm -rf "${OUTPUT_DIR}"
+rm -rf "${OUTPUT_DIR}"
 mkdir -p "${OUTPUT_DIR}"
 docker run \
     --user "${UID}:${GID}" \
