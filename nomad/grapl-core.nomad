@@ -242,8 +242,10 @@ variable "osquery_generator_dead_letter_queue" {
   type = string
 }
 
-variable "zipkin_endpoint" {
+variable "tracing_endpoint" {
   type    = string
+  # if nothing is passed in we default to "${attr.unique.network.ip-address}" in locals.
+  # Using a variable isn't allowed here though :(
   default = ""
 }
 
@@ -277,6 +279,12 @@ locals {
   _redis         = split(":", local._redis_trimmed)
   redis_host     = local._redis[0]
   redis_port     = local._redis[1]
+
+  # Tracing endpoints
+  # We currently use both the zipkin v2 endpoint and the jaeger endpoint at the moment. These will be consolidated later
+  tracing_endpoint = (var.tracing_endpoint == "") ? "http://${attr.unique.network.ip-address}" : var.tracing_endpoint
+  tracing_jaeger_endpoint = "${local.tracing_endpoint}:14268/api/traces"
+  tracing_zipkin_endpoint = "${local.tracing_endpoint}:9411/api/v2/spans"
 
   # Grapl services
   graphql_endpoint_port = 5000
@@ -796,7 +804,7 @@ job "grapl-core" {
         IS_RETRY                                = "False"
         MESSAGECACHE_ADDR                       = local.redis_host
         MESSAGECACHE_PORT                       = local.redis_port
-        OTEL_EXPORTER_ZIPKIN_ENDPOINT           = "http://100.115.92.202:9411/api/v2/spans"
+        OTEL_EXPORTER_ZIPKIN_ENDPOINT           = local.tracing_zipkin_endpoint
       }
     }
 
@@ -849,7 +857,7 @@ job "grapl-core" {
         # service vars
         SOURCE_QUEUE_URL = var.engagement_creator_queue
         # Tracing endpoint
-        OTEL_EXPORTER_ZIPKIN_ENDPOINT = "http://100.115.92.202:9411/api/v2/spans"
+        OTEL_EXPORTER_ZIPKIN_ENDPOINT = local.tracing_zipkin_endpoint
       }
     }
 
@@ -903,7 +911,7 @@ job "grapl-core" {
         IS_LOCAL                      = "True"
         JWT_SECRET_ID                 = "JWT_SECRET_ID"
         PORT                          = "${NOMAD_PORT_graphql-endpoint-port}"
-        OTEL_EXPORTER_ZIPKIN_ENDPOINT = "http://100.115.92.202:9411/api/v2/spans"
+        OTEL_EXPORTER_ZIPKIN_ENDPOINT = local.tracing_zipkin_endpoint
       }
     }
 
@@ -995,6 +1003,7 @@ job "grapl-core" {
         GRAPL_MODEL_PLUGIN_DEPLOYER_ENDPOINT = "http://TODO:1111" # Note - MPD is being replaced by a Rust service.
         RUST_LOG                             = var.rust_log
         RUST_BACKTRACE                       = local.rust_backtrace
+        OTEL_EXPORTER_JAEGER_ENDPOINT        = local.tracing_jaeger_endpoint
       }
     }
 
