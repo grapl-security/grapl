@@ -86,4 +86,4 @@ rm -f "${OUTPUT_DIR}/.gitignore"
 # Copy library into src/rust
 ################################################################################
 rm -rf "${REPOSITORY_ROOT}/src/rust/${CRATE_NAME}"
-cp -r "${OUTPUT_DIR}" "${REPOSITORY_ROOT}/src/rust/${CRATE_NAME}"
+mv "${OUTPUT_DIR}" "${REPOSITORY_ROOT}/src/rust/${CRATE_NAME}"
