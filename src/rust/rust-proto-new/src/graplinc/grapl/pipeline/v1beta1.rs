@@ -13,9 +13,9 @@ use crate::{
         Uuid,
     },
     protobufs::graplinc::grapl::pipeline::v1beta1::{
-        Envelope as _Envelope,
-        Metadata as _Metadata,
-        RawLog as _RawLog,
+        Envelope as EnvelopeProto,
+        Metadata as MetadataProto,
+        RawLog as RawLogProto,
     },
     type_url,
     SerDe,
@@ -36,10 +36,10 @@ pub struct Metadata {
     pub event_source_id: Uuid,
 }
 
-impl TryFrom<_Metadata> for Metadata {
+impl TryFrom<MetadataProto> for Metadata {
     type Error = SerDeError;
 
-    fn try_from(metadata_proto: _Metadata) -> Result<Self, Self::Error> {
+    fn try_from(metadata_proto: MetadataProto) -> Result<Self, Self::Error> {
         let tenant_id = metadata_proto
             .tenant_id
             .ok_or(SerDeError::MissingField("tenant_id".to_string()));
@@ -71,11 +71,11 @@ impl TryFrom<_Metadata> for Metadata {
     }
 }
 
-impl TryFrom<Metadata> for _Metadata {
+impl TryFrom<Metadata> for MetadataProto {
     type Error = SystemTimeError;
 
     fn try_from(metadata: Metadata) -> Result<Self, Self::Error> {
-        Ok(_Metadata {
+        Ok(MetadataProto {
             tenant_id: Some(metadata.tenant_id.into()),
             trace_id: Some(metadata.trace_id.into()),
             retry_count: metadata.retry_count,
@@ -95,7 +95,7 @@ impl SerDe for Metadata {
     where
         B: BufMut,
     {
-        _Metadata::try_from(self)?.encode(buf)?;
+        MetadataProto::try_from(self)?.encode(buf)?;
         Ok(())
     }
 
@@ -104,7 +104,7 @@ impl SerDe for Metadata {
         B: Buf,
         Self: Sized,
     {
-        let metadata_proto: _Metadata = Message::decode(buf)?;
+        let metadata_proto: MetadataProto = Message::decode(buf)?;
         metadata_proto.try_into()
     }
 }
@@ -120,10 +120,10 @@ pub struct Envelope {
     pub inner_message: Bytes,
 }
 
-impl TryFrom<_Envelope> for Envelope {
+impl TryFrom<EnvelopeProto> for Envelope {
     type Error = SerDeError;
 
-    fn try_from(envelope_proto: _Envelope) -> Result<Self, Self::Error> {
+    fn try_from(envelope_proto: EnvelopeProto) -> Result<Self, Self::Error> {
         let metadata = envelope_proto
             .metadata
             .ok_or(SerDeError::MissingField("metadata".to_string()));
@@ -136,11 +136,11 @@ impl TryFrom<_Envelope> for Envelope {
     }
 }
 
-impl TryFrom<Envelope> for _Envelope {
+impl TryFrom<Envelope> for EnvelopeProto {
     type Error = SerDeError;
 
     fn try_from(envelope: Envelope) -> Result<Self, Self::Error> {
-        Ok(_Envelope {
+        Ok(EnvelopeProto {
             metadata: Some(envelope.metadata.try_into()?),
             inner_type: envelope.inner_type,
             inner_message: envelope.inner_message.to_vec(),
@@ -157,7 +157,7 @@ impl SerDe for Envelope {
     where
         B: BufMut,
     {
-        _Envelope::try_from(self)?.encode(buf)?;
+        EnvelopeProto::try_from(self)?.encode(buf)?;
         Ok(())
     }
 
@@ -166,7 +166,7 @@ impl SerDe for Envelope {
         B: Buf,
         Self: Sized,
     {
-        let envelope_proto: _Envelope = Message::decode(buf)?;
+        let envelope_proto: EnvelopeProto = Message::decode(buf)?;
         envelope_proto.try_into()
     }
 }
@@ -180,17 +180,17 @@ pub struct RawLog {
     pub log_event: Bytes,
 }
 
-impl From<_RawLog> for RawLog {
-    fn from(raw_log_proto: _RawLog) -> Self {
+impl From<RawLogProto> for RawLog {
+    fn from(raw_log_proto: RawLogProto) -> Self {
         RawLog {
             log_event: Bytes::from(raw_log_proto.log_event),
         }
     }
 }
 
-impl From<RawLog> for _RawLog {
+impl From<RawLog> for RawLogProto {
     fn from(raw_log: RawLog) -> Self {
-        _RawLog {
+        RawLogProto {
             log_event: raw_log.log_event.to_vec(),
         }
     }
@@ -205,7 +205,7 @@ impl SerDe for RawLog {
     where
         B: BufMut,
     {
-        _RawLog::from(self).encode(buf)?;
+        RawLogProto::from(self).encode(buf)?;
         Ok(())
     }
 
@@ -214,7 +214,7 @@ impl SerDe for RawLog {
         B: Buf,
         Self: Sized,
     {
-        let raw_log_proto: _RawLog = Message::decode(buf)?;
+        let raw_log_proto: RawLogProto = Message::decode(buf)?;
         Ok(raw_log_proto.into())
     }
 }

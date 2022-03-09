@@ -16,9 +16,9 @@ pub use uuid::Uuid;
 
 use crate::{
     protobufs::graplinc::common::v1beta1::{
-        Duration as _Duration,
-        Timestamp as _Timestamp,
-        Uuid as _Uuid,
+        Duration as DurationProto,
+        Timestamp as TimestampProto,
+        Uuid as UuidProto,
     },
     type_url,
     SerDe,
@@ -29,13 +29,13 @@ use crate::{
 // Uuid
 //
 
-impl From<_Uuid> for Uuid {
-    fn from(uuid_proto: _Uuid) -> Self {
+impl From<UuidProto> for Uuid {
+    fn from(uuid_proto: UuidProto) -> Self {
         Uuid::from_u128_le(u128::from(uuid_proto.lsb) + (u128::from(uuid_proto.msb) << 64))
     }
 }
 
-impl From<Uuid> for _Uuid {
+impl From<Uuid> for UuidProto {
     fn from(uuid: Uuid) -> Self {
         let bytes = uuid.as_bytes();
 
@@ -45,7 +45,7 @@ impl From<Uuid> for _Uuid {
         let mut upper: [u8; 8] = Default::default();
         upper.copy_from_slice(&bytes[8..]);
 
-        _Uuid {
+        UuidProto {
             lsb: u64::from_le_bytes(lower),
             msb: u64::from_le_bytes(upper),
         }
@@ -61,7 +61,7 @@ impl SerDe for Uuid {
     where
         B: BufMut,
     {
-        _Uuid::from(self).encode(buf)?;
+        UuidProto::from(self).encode(buf)?;
         Ok(())
     }
 
@@ -70,7 +70,7 @@ impl SerDe for Uuid {
         B: Buf,
         Self: Sized,
     {
-        let uuid_proto: _Uuid = Message::decode(buf)?;
+        let uuid_proto: UuidProto = Message::decode(buf)?;
         Ok(uuid_proto.into())
     }
 }
@@ -79,15 +79,15 @@ impl SerDe for Uuid {
 // Duration
 //
 
-impl From<_Duration> for Duration {
-    fn from(duration_proto: _Duration) -> Self {
+impl From<DurationProto> for Duration {
+    fn from(duration_proto: DurationProto) -> Self {
         Duration::new(duration_proto.seconds, duration_proto.nanos)
     }
 }
 
-impl From<Duration> for _Duration {
+impl From<Duration> for DurationProto {
     fn from(duration: Duration) -> Self {
-        _Duration {
+        DurationProto {
             seconds: duration.as_secs(),
             nanos: duration.subsec_nanos(),
         }
@@ -103,7 +103,7 @@ impl SerDe for Duration {
     where
         B: BufMut,
     {
-        _Duration::from(self).encode(buf)?;
+        DurationProto::from(self).encode(buf)?;
         Ok(())
     }
 
@@ -112,7 +112,7 @@ impl SerDe for Duration {
         B: Buf,
         Self: Sized,
     {
-        let duration_proto: _Duration = Message::decode(buf)?;
+        let duration_proto: DurationProto = Message::decode(buf)?;
         Ok(duration_proto.into())
     }
 }
@@ -121,10 +121,10 @@ impl SerDe for Duration {
 // SystemTime (a.k.a. Timestamp)
 //
 
-impl TryFrom<_Timestamp> for SystemTime {
+impl TryFrom<TimestampProto> for SystemTime {
     type Error = SerDeError;
 
-    fn try_from(timestamp_proto: _Timestamp) -> Result<Self, Self::Error> {
+    fn try_from(timestamp_proto: TimestampProto) -> Result<Self, Self::Error> {
         match timestamp_proto.duration {
             Some(
                 crate::protobufs::graplinc::common::v1beta1::timestamp::Duration::BeforeEpoch(
@@ -145,14 +145,14 @@ impl TryFrom<_Timestamp> for SystemTime {
     }
 }
 
-impl TryFrom<SystemTime> for _Timestamp {
+impl TryFrom<SystemTime> for TimestampProto {
     type Error = SystemTimeError;
 
     fn try_from(timestamp: SystemTime) -> Result<Self, Self::Error> {
         if timestamp >= UNIX_EPOCH {
             let duration = timestamp.duration_since(UNIX_EPOCH)?;
-            let duration_proto: _Duration = duration.into();
-            Ok(_Timestamp {
+            let duration_proto: DurationProto = duration.into();
+            Ok(TimestampProto {
                 duration: Some(
                     crate::protobufs::graplinc::common::v1beta1::timestamp::Duration::SinceEpoch(
                         duration_proto,
@@ -161,8 +161,8 @@ impl TryFrom<SystemTime> for _Timestamp {
             })
         } else {
             let duration = UNIX_EPOCH.duration_since(timestamp)?;
-            let duration_proto: _Duration = duration.into();
-            Ok(_Timestamp {
+            let duration_proto: DurationProto = duration.into();
+            Ok(TimestampProto {
                 duration: Some(
                     crate::protobufs::graplinc::common::v1beta1::timestamp::Duration::BeforeEpoch(
                         duration_proto,
@@ -182,7 +182,7 @@ impl SerDe for SystemTime {
     where
         B: BufMut,
     {
-        _Timestamp::try_from(self)?.encode(buf)?;
+        TimestampProto::try_from(self)?.encode(buf)?;
         Ok(())
     }
 
@@ -191,7 +191,7 @@ impl SerDe for SystemTime {
         B: Buf,
         Self: Sized,
     {
-        let timestamp_proto: _Timestamp = Message::decode(buf)?;
+        let timestamp_proto: TimestampProto = Message::decode(buf)?;
         timestamp_proto.try_into()
     }
 }
@@ -199,14 +199,14 @@ impl SerDe for SystemTime {
 #[cfg(test)]
 mod tests {
     use super::UNIX_EPOCH;
-    use crate::protobufs::graplinc::common::v1beta1::Timestamp as _Timestamp;
+    use crate::protobufs::graplinc::common::v1beta1::Timestamp as TimestampProto;
 
     // Check that when a SystemTime is exactly 1970-01-01T00:00:00.000000000Z it
     // is converted into a "since_epoch" protobuf Timestamp. We might state this
     // circumstance in words "it has been 0ns since epoch".
     #[test]
     fn test_epoch_timestamp_is_since_variant() {
-        let timestamp = _Timestamp::try_from(UNIX_EPOCH).expect("invalid timestamp");
+        let timestamp = TimestampProto::try_from(UNIX_EPOCH).expect("invalid timestamp");
         match timestamp.duration {
             Some(crate::protobufs::graplinc::common::v1beta1::timestamp::Duration::SinceEpoch(
                 _,

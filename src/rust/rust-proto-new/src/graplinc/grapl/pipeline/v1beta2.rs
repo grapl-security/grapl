@@ -5,11 +5,11 @@ use bytes::{
     BytesMut,
 };
 use prost::Message;
-use prost_types::Any as _Any;
+use prost_types::Any as AnyProto;
 
 use crate::{
     graplinc::grapl::pipeline::v1beta1::Metadata,
-    protobufs::graplinc::grapl::pipeline::v1beta2::NewEnvelope as _NewEnvelope,
+    protobufs::graplinc::grapl::pipeline::v1beta2::NewEnvelope as NewEnvelopeProto,
     type_url,
     SerDe,
     SerDeError,
@@ -24,13 +24,13 @@ where
     pub inner_message: T,
 }
 
-impl<T> TryFrom<_NewEnvelope> for Envelope<T>
+impl<T> TryFrom<NewEnvelopeProto> for Envelope<T>
 where
     T: SerDe,
 {
     type Error = SerDeError;
 
-    fn try_from(envelope_proto: _NewEnvelope) -> Result<Self, Self::Error> {
+    fn try_from(envelope_proto: NewEnvelopeProto) -> Result<Self, Self::Error> {
         let metadata = envelope_proto
             .metadata
             .ok_or(SerDeError::MissingField("metadata".to_string()));
@@ -46,7 +46,7 @@ where
     }
 }
 
-impl<T> TryFrom<Envelope<T>> for _NewEnvelope
+impl<T> TryFrom<Envelope<T>> for NewEnvelopeProto
 where
     T: SerDe,
 {
@@ -56,9 +56,9 @@ where
         let mut buf = BytesMut::new();
         envelope.inner_message.serialize(&mut buf)?;
 
-        Ok(_NewEnvelope {
+        Ok(NewEnvelopeProto {
             metadata: Some(envelope.metadata.try_into()?),
-            inner_message: Some(_Any {
+            inner_message: Some(AnyProto {
                 type_url: T::TYPE_URL.to_string(),
                 value: buf.to_vec(),
             }),
@@ -81,7 +81,7 @@ where
     where
         B: BufMut,
     {
-        _NewEnvelope::try_from(self)?.encode(buf)?;
+        NewEnvelopeProto::try_from(self)?.encode(buf)?;
         Ok(())
     }
 
@@ -90,7 +90,7 @@ where
         B: Buf,
         Self: Sized,
     {
-        let envelope_proto: _NewEnvelope = Message::decode(buf)?;
+        let envelope_proto: NewEnvelopeProto = Message::decode(buf)?;
         envelope_proto.try_into()
     }
 }
