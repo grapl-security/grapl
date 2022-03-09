@@ -365,6 +365,7 @@ test-with-env: # (Do not include help text - not to be used directly)
 ##@ Lint 🧹
 
 .PHONY: lint
+lint: lint-build
 lint: lint-docker
 lint: lint-hcl
 lint: lint-prettier
@@ -374,6 +375,10 @@ lint: lint-python
 lint: lint-rust
 lint: lint-shell
 lint: ## Run all lint checks
+
+.PHONY: lint-build
+lint-build: ## Lint Pants BUILD files
+	./pants update-build-files --check
 
 .PHONY: lint-docker
 lint-docker: ## Lint Dockerfiles with Hadolint

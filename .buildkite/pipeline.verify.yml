@@ -35,6 +35,10 @@ steps:
     # enforcement, typechecking, etc.
     key: lints
     steps:
+      - label: ":jeans: BUILD Linting"
+        command:
+          - make lint-build
+
       - label: ":nomad: HCL Linting"
         command:
           - make lint-hcl
