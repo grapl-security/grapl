@@ -71,6 +71,17 @@ readonly FEATURES_OVERRIDE
 
 sed -i "s/features.*/${FEATURES_OVERRIDE}/g" "${CARGO_TOML}"
 
+# We don't need any scripting to push anything to Github; that's
+# already taken care of, thank you very much.
+rm -f "${OUTPUT_DIR}/git_push.sh"
+
+# We don't use Travis CI
+rm -f "${OUTPUT_DIR}/.travis.yml"
+
+# We've already got a .gitignore file for our Rust code, and this
+# doesn't add anything.
+rm -f "${OUTPUT_DIR}/.gitignore"
+
 ################################################################################
 # Copy library into src/rust
 ################################################################################
