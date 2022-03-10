@@ -1,7 +1,7 @@
 import os
 import re
 from pathlib import Path
-from typing import Any, Mapping, Optional, Sequence, Union
+from typing import Any, Mapping, Optional, Sequence, Union, cast
 
 import netifaces
 import pulumi_aws as aws
@@ -242,4 +242,4 @@ def container_repository() -> Optional[str]:
 def get_nomad_ip() -> str:
     netifaces.ifaddresses("eth0")
     ip = netifaces.ifaddresses("eth0")[netifaces.AF_INET][0]["addr"]
-    return ip
+    return cast(str, ip)

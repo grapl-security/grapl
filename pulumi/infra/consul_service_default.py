@@ -1,5 +1,5 @@
 import json
-from typing import Optional
+from typing import Any, Mapping, Optional
 
 import pulumi_consul as consul
 
@@ -17,7 +17,7 @@ class ConsulServiceDefault(pulumi.ComponentResource):
         name: str,
         service_name: str,
         protocol: str,
-        additional_config_options: Optional[dict] = {},
+        additional_config_options: Mapping[Any, Any] = {},
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         super().__init__("grapl:ConsulServiceDefault", name, None, opts)
