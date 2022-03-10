@@ -21,6 +21,8 @@ RUN <<EOF
 curl --fail \
     --silent \
     --show-error \
+    --proto "=https" \
+    --tlsv1.2 \
     --location https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
 sudo apt-add-repository \
     "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release --codename --short) main"
@@ -36,6 +38,8 @@ sudo mkdir --parents /opt/grapl/bin
 curl --fail\
     --silent \
     --show-error \
+    --proto "=https" \
+    --tlsv1.2 \
     --location \
     --output pulumi.tar.gz \
     https://get.pulumi.com/releases/sdk/pulumi-v${PULUMI_VERSION}-linux-x64.tar.gz
