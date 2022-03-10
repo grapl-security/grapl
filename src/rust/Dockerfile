@@ -12,12 +12,13 @@ SHELL ["/bin/bash", "-o", "errexit", "-o", "nounset", "-o", "pipefail", "-c"]
 #
 # Ignore this lint about deleteing the apt-get lists (we're caching!)
 # hadolint ignore=DL3009,SC1089
-RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-base-apt \
-    apt-get update \
-    && apt-get install --yes --no-install-recommends \
-        curl=7.74.0-1.3+deb11u1 \
-        jq=1.6-2.1 \
-        unzip=6.0-26
+RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-base-apt <<EOF
+apt-get update
+apt-get install --yes --no-install-recommends \
+    curl=7.74.0-1.3+deb11u1 \
+    jq=1.6-2.1 \
+    unzip=6.0-26
+EOF
 
 # Grab a Nomad binary, which we use in plugin-registry for parsing
 # HCL2-with-variables into JSON.
@@ -26,8 +27,8 @@ RUN <<EOF
 set -euo pipefail
 curl --remote-name --proto '=https' --tlsv1.2 -sSf \
   https://releases.hashicorp.com/nomad/1.2.4/nomad_1.2.4_linux_amd64.zip
-unzip *.zip
-rm *.zip
+unzip ./*.zip
+rm ./*.zip
 EOF
 
 # Install rust toolchain before copying sources to avoid unecessarily

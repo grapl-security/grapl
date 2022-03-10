@@ -110,6 +110,14 @@ check_for_task_failures_in_job() {
     fi
 }
 
+nomad_get_alloc_id() {
+    # Inspired by
+    # https://github.com/hashicorp/nomad/issues/698#issuecomment-1031683060
+    local -r job_id="${1}"
+    local -r task_id="${2}"
+    nomad job status "${job_id}" | grep "${task_id}" | awk '/run(.*)running/{print $1}'
+}
+
 important_looking_banner() {
     local -r message="${1}"
     echo -e "\n\n--- \e[30;46m${message}\e[m ---\n"

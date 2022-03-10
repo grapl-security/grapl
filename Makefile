@@ -506,6 +506,17 @@ stop: ## docker-compose stop - stops (but preserves) the containers
 	@$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose $(EVERY_COMPOSE_FILE) stop
 
+# This is a convenience target for our frontend engineers, to make the dev loop
+# slightly less arduous for grapl-web-ui/engagement-view development.
+# It will *rebuild* the JS/Rust grapl-web-ui dependences, and then 
+# restart a currently-running `make up` web ui allocation, which will then
+# retrieve the latest, newly-rebuilt Docker container.
+.PHONY: restart-web-ui
+restart-web-ui: build-engagement-view  ## Rebuild web-ui image, and restart web-ui task in Nomad
+	$(DOCKER_BUILDX_BAKE_HCL) grapl-web-ui
+	source ./nomad/lib/nomad_cli_tools.sh
+	nomad alloc restart "$$(nomad_get_alloc_id grapl-core web-ui)"
+
 ##@ Venv Management
 ########################################################################
 .PHONY: generate-constraints
