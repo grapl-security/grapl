@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package graplinc.grapl.pipeline.v1beta1;
 
-import "google/protobuf/timestamp.proto";
 import "graplinc/common/v1beta1/types.proto";
 
 // Metadata about a specific message, or its context
@@ -17,10 +16,10 @@ message Metadata {
   uint32 retry_count = 3;
 
   // When the message was first written
-  google.protobuf.Timestamp created_time = 4;
+  graplinc.common.v1beta1.Timestamp created_time = 4;
 
   // When these metadata were last updated
-  google.protobuf.Timestamp last_updated_time = 5;
+  graplinc.common.v1beta1.Timestamp last_updated_time = 5;
 
   // Event source from which this message originated
   graplinc.common.v1beta1.Uuid event_source_id = 6;

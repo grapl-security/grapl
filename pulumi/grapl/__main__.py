@@ -60,6 +60,7 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "model-plugin-deployer": builder.build_with_tag("model-plugin-deployer"),
         "node-identifier": builder.build_with_tag("node-identifier"),
         "node-identifier-retry": builder.build_with_tag("node-identifier-retry"),
+        "organization-management": builder.build_with_tag("organization-management"),
         "osquery-generator": builder.build_with_tag("osquery-generator"),
         "plugin-bootstrap": builder.build_with_tag("plugin-bootstrap"),
         "plugin-registry": builder.build_with_tag("plugin-registry"),
@@ -310,6 +311,10 @@ def main() -> None:
         ###################################
         # Local Grapl
         ###################################
+        organization_management_db = LocalPostgresInstance(
+            name="organization-management-db",
+            port=5632,
+        )
 
         plugin_registry_db = LocalPostgresInstance(
             name="plugin-registry-db",
@@ -326,11 +331,30 @@ def main() -> None:
         pulumi.export("plugin-work-queue-db-username", plugin_work_queue_db.username)
         pulumi.export("plugin-work-queue-db-password", plugin_work_queue_db.password)
 
+        # TODO: ADD EXPORTS FOR PLUGIN-REGISTRY
+
+        pulumi.export(
+            "organization-management-db-hostname", organization_management_db.hostname
+        )
+        pulumi.export(
+            "organization-management-db-port", str(organization_management_db.port)
+        )
+        pulumi.export(
+            "organization-management-db-username", organization_management_db.username
+        )
+        pulumi.export(
+            "organization-management-db-password", organization_management_db.password
+        )
+
         redis_endpoint = f"redis://{config.HOST_IP_IN_NOMAD}:6379"
 
         pulumi.export("redis-endpoint", redis_endpoint)
 
         local_grapl_core_vars: Final[NomadVars] = dict(
+            organization_management_db_hostname=organization_management_db.hostname,
+            organization_management_db_port=str(organization_management_db.port),
+            organization_management_db_username=organization_management_db.username,
+            organization_management_db_password=organization_management_db.password,
             plugin_registry_db_hostname=plugin_registry_db.hostname,
             plugin_registry_db_port=str(plugin_registry_db.port),
             plugin_registry_db_username=plugin_registry_db.username,
@@ -412,6 +436,14 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
+        organization_management_postgres = Postgres(
+            name="organization-management",
+            subnet_ids=subnet_ids,
+            vpc_id=vpc_id,
+            availability_zone=availability_zone,
+            nomad_agent_security_group_id=nomad_agent_security_group_id,
+        )
+
         plugin_registry_postgres = Postgres(
             name="plugin-registry",
             subnet_ids=subnet_ids,
@@ -426,6 +458,23 @@ def main() -> None:
             vpc_id=vpc_id,
             availability_zone=availability_zone,
             nomad_agent_security_group_id=nomad_agent_security_group_id,
+        )
+
+        pulumi.export(
+            "organization-management-db-hostname",
+            organization_management_postgres.host(),
+        )
+        pulumi.export(
+            "organization-management-db-port",
+            organization_management_postgres.port().apply(str),
+        )
+        pulumi.export(
+            "organization-management-db-username",
+            organization_management_postgres.username(),
+        )
+        pulumi.export(
+            "organization-management-db-password",
+            organization_management_postgres.password(),
         )
 
         pulumi.export(
@@ -449,6 +498,12 @@ def main() -> None:
         prod_grapl_core_vars: Final[NomadVars] = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
+            organization_management_db_hostname=organization_management_postgres.host(),
+            organization_management_db_port=organization_management_postgres.port().apply(
+                str
+            ),
+            organization_management_db_username=organization_management_postgres.username(),
+            organization_management_db_password=organization_management_postgres.password(),
             plugin_registry_db_hostname=plugin_registry_postgres.host(),
             plugin_registry_db_port=plugin_registry_postgres.port().apply(str),
             plugin_registry_db_username=plugin_registry_postgres.username(),

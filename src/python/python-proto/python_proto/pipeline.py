@@ -86,7 +86,8 @@ class Envelope(SerDeWithInner[_Envelope, I], Generic[I]):
         proto_envelope.metadata.CopyFrom(self.metadata.into_proto())
         inner_message = _Any()
         inner_message.Pack(
-            self.inner_message.into_proto(), type_url_prefix="".encode("utf-8")
+            self.inner_message.into_proto(),
+            type_url_prefix=b"graplsecurity.com",
         )
         proto_envelope.inner_message.CopyFrom(inner_message)
         return proto_envelope

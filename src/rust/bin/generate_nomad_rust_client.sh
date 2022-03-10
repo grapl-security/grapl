@@ -33,7 +33,7 @@ CRATE_VERSION="1.0.0" # You can't do any cute version names, just numeric
 # Learn about other `--additional-properties` at:
 # https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/rust.md
 
-sudo rm -rf "${OUTPUT_DIR}"
+rm -rf "${OUTPUT_DIR}"
 mkdir -p "${OUTPUT_DIR}"
 docker run \
     --user "${UID}:${GID}" \
@@ -62,17 +62,26 @@ echo -e "#![allow(warnings)]\n$(cat "${LIB_RS}")" > "${LIB_RS}"
 
 # Use rustls, not native-tls
 readonly CARGO_TOML="${OUTPUT_DIR}/Cargo.toml"
-FEATURES_OVERRIDE=$(
-    cat << EOF
-features = ["json", "multipart", "rustls-tls"]\ndefault_features = false
-EOF
-)
-readonly FEATURES_OVERRIDE
 
-sed -i "s/features.*/${FEATURES_OVERRIDE}/g" "${CARGO_TOML}"
+# We have to define FEATURES_OVERRIDE like this (with the explicit
+# `\n`) in order to use it as a substitution in the subsequent `sed`
+# command. Trying to use a multiline heredoc doesn't work.
+readonly FEATURES_OVERRIDE='default_features = false\nfeatures = ["json", "multipart", "rustls-tls"]'
+sed --in-place "s/features.*/${FEATURES_OVERRIDE}/g" "${CARGO_TOML}"
+
+# We don't need any scripting to push anything to Github; that's
+# already taken care of, thank you very much.
+rm -f "${OUTPUT_DIR}/git_push.sh"
+
+# We don't use Travis CI
+rm -f "${OUTPUT_DIR}/.travis.yml"
+
+# We've already got a .gitignore file for our Rust code, and this
+# doesn't add anything.
+rm -f "${OUTPUT_DIR}/.gitignore"
 
 ################################################################################
 # Copy library into src/rust
 ################################################################################
 rm -rf "${REPOSITORY_ROOT}/src/rust/${CRATE_NAME}"
-cp -r "${OUTPUT_DIR}" "${REPOSITORY_ROOT}/src/rust/${CRATE_NAME}"
+mv "${OUTPUT_DIR}" "${REPOSITORY_ROOT}/src/rust/${CRATE_NAME}"

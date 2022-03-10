@@ -8,19 +8,15 @@ ARG RUST_BUILD=debug
 
 SHELL ["/bin/bash", "-o", "errexit", "-o", "nounset", "-o", "pipefail", "-c"]
 
-# Necessary for rdkafka; pkg-config & libssl-dev for cargo-tarpaulin build
+# curl, jq, and unzip are used by various commands in this Dockerfile.
 #
 # Ignore this lint about deleteing the apt-get lists (we're caching!)
 # hadolint ignore=DL3009,SC1089
 RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-base-apt \
     apt-get update \
     && apt-get install --yes --no-install-recommends \
-        build-essential=12.9 \
-        jq=1.6-2.1 \
-        libssl-dev=1.1.1k-1+deb11u1 \
-        pkg-config=0.29.2-1 \
-        zlib1g-dev=1:1.2.11.dfsg-2 \
         curl=7.74.0-1.3+deb11u1 \
+        jq=1.6-2.1 \
         unzip=6.0-26
 
 # Grab a Nomad binary, which we use in plugin-registry for parsing
@@ -95,6 +91,13 @@ RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
 ################################################################################
 FROM base AS tarpaulin
 
+# These packages are required to compile cargo-tarpaulin itself.
+RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tarpaulin-apt \
+    apt-get update \
+    && apt-get install --yes --no-install-recommends \
+        libssl-dev=1.1.1k-1+deb11u1 \
+        pkg-config=0.29.2-1
+
 # For test coverage reports
 # Tarpaulin will recompile the sources from scratch and effectively taint build
 # outputs, such that subsequent cargo build runs will need to start from
@@ -121,7 +124,7 @@ FROM base AS build-test-integration
 # https://github.com/rust-lang/cargo/issues/1924
 # https://github.com/rust-lang/cargo/issues/3670
 
-ENV RUST_INTEGRATION_TEST_FEATURES="node-identifier/integration,sqs-executor/integration,model-plugin-deployer/integration,plugin-registry/integration,plugin-work-queue/integration"
+ENV RUST_INTEGRATION_TEST_FEATURES="node-identifier/integration,sqs-executor/integration,model-plugin-deployer/integration,plugin-registry/integration,plugin-work-queue/integration,organization-management/integration"
 ENV TEST_DIR=/grapl/tests
 
 RUN mkdir --parents "${TEST_DIR}"
@@ -322,3 +325,13 @@ FROM rust-dist AS model-plugin-deployer
 # hadolint ignore=DL3022
 COPY --from=build /outputs/model-plugin-deployer /
 ENTRYPOINT ["/model-plugin-deployer"]
+
+
+# organization-management
+FROM rust-dist AS organization-management-deploy
+
+# Hadolint v2.8.0 appears to be mistaken, this is a false positive
+# https://github.com/hadolint/hadolint/wiki/DL3022
+# hadolint ignore=DL3022
+COPY --from=build /outputs/organization-management /
+ENTRYPOINT ["/organization-management"]

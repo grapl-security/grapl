@@ -12,7 +12,7 @@ set -euo pipefail
 # download the first time, but thereafter, it will be quick!
 #
 # Note that you will need your Rustup profile set to something higher
-# than "minimal" (e.g., "default"), since `rustup` isn't included in
+# than "minimal" (e.g., "default"), since `rustfmt` isn't included in
 # "minimal".
 export RUSTUP_TOOLCHAIN="nightly-2022-02-24"
 

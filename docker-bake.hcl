@@ -171,6 +171,7 @@ group "rust-services" {
     "model-plugin-deployer",
     "node-identifier",
     "node-identifier-retry",
+    "organization-management",
     "osquery-generator",
     "plugin-bootstrap",
     "plugin-registry",
@@ -311,6 +312,15 @@ target "node-identifier-retry" {
   target   = "node-identifier-retry-deploy"
   tags = [
     upstream_aware_tag("node-identifier-retry")
+  ]
+}
+
+
+target "organization-management" {
+  inherits = ["_rust-base"]
+  target   = "organization-management-deploy"
+  tags = [
+    upstream_aware_tag("organization-management")
   ]
 }
 

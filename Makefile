@@ -24,7 +24,6 @@ COMPOSE_PROJECT_NAME ?= grapl
 export
 
 export EVERY_COMPOSE_FILE=--file docker-compose.yml \
-	--file ./test/docker-compose.unit-tests-rust.yml \
 	--file ./test/docker-compose.unit-tests-js.yml \
 
 # Helper macro to make using the HCL file for builds less
@@ -56,6 +55,9 @@ DOCKER_FILTER_LABEL := org.opencontainers.image.vendor="Grapl, Inc."
 PANTS_PYTHON_FILTER := ./pants filter --target-type=python_sources,python_tests :: | xargs ./pants
 # Run a Pants goal across all shell files
 PANTS_SHELL_FILTER := ./pants filter --target-type=shell_sources,shunit2_tests :: | xargs ./pants
+
+# Helper macro for invoking a target from src/rust/Makefile
+RUST_MAKE = $(MAKE) --directory=src/rust
 
 # Helper macro for invoking a target from src/js/engagement_view/Makefile
 ENGAGEMENT_VIEW_MAKE = $(MAKE) --directory=src/js/engagement_view
@@ -150,11 +152,6 @@ help: ## Print this help
 build-test-unit-js:
 	docker buildx bake \
 		--file ./test/docker-compose.unit-tests-js.yml
-
-.PHONY: build-test-unit-rust
-build-test-unit-rust:
-	docker buildx bake \
-		--file ./test/docker-compose.unit-tests-rust.yml
 
 # Build Service Images and their Prerequisites
 ########################################################################
@@ -255,6 +252,7 @@ dump-artifacts-local:  # Run the script that dumps Nomad/Docker logs after test 
 test-unit: test-unit-js
 test-unit: test-unit-python
 test-unit: test-unit-rust
+# NOTE: Intentionally *NOT* adding `test-unit-rust-coverage`; see below
 test-unit: test-unit-shell
 test-unit: ## Build and run all unit tests
 
@@ -264,6 +262,7 @@ test-unit-js: test-unit-graphql-endpoint
 test-unit-js: ## Build and run unit tests - JavaScript only
 
 .PHONY: test-unit-graphql-endpoint
+test-unit-graphql-endpoint: | dist
 test-unit-graphql-endpoint: build-test-unit-js
 test-unit-graphql-endpoint: export COMPOSE_PROJECT_NAME := grapl-test-unit-js
 test-unit-graphql-endpoint: export COMPOSE_FILE := ./test/docker-compose.unit-tests-js.yml
@@ -283,16 +282,31 @@ test-unit-python: ## Run Python unit tests under Pants
 	| xargs ./pants --tag="-needs_work" test --pytest-args="-m \"not integration_test\""
 
 .PHONY: test-unit-rust
-test-unit-rust: build-test-unit-rust
-test-unit-rust: export COMPOSE_PROJECT_NAME := grapl-test-unit-rust
-test-unit-rust: export COMPOSE_FILE := ./test/docker-compose.unit-tests-rust.yml
-test-unit-rust: ## Build and run unit tests - Rust only
-	test/docker-compose-with-error.sh
+test-unit-rust: ## Build and run unit tests - Rust only (not for CI)
+# This does *NOT* gather coverage statistics; see
+# test-unit-rust-coverage for that
+	$(RUST_MAKE) test
 
 .PHONY: test-unit-shell
 test-unit-shell: ## Run shunit2 tests under Pants
 	./pants filter --filter-target-type="shunit2_tests" :: \
 	| xargs ./pants test
+
+########################################################################
+
+# NOTE: This is a separate target intended for use in CI only because
+# gathering coverage statistics with Tarpaulin takes a long time
+# (*everything* must be recompiled, even if nothing changed) making it
+# less-than-ideal for day-to-day developer usage.
+#
+# As such, it is intentionally *NOT* specified as a prerequisite for
+# the `test-unit` target.
+
+# Unfortunately, we must ensure that the `dist` directory is present
+# for this to work.
+test-unit-rust-coverage: | dist
+test-unit-rust-coverage: ## Run Rust unit tests and gather coverage statistics (CI only)
+	$(RUST_MAKE) coverage
 
 ########################################################################
 
@@ -351,6 +365,7 @@ test-with-env: # (Do not include help text - not to be used directly)
 ##@ Lint 🧹
 
 .PHONY: lint
+lint: lint-build
 lint: lint-docker
 lint: lint-hcl
 lint: lint-prettier
@@ -360,6 +375,10 @@ lint: lint-python
 lint: lint-rust
 lint: lint-shell
 lint: ## Run all lint checks
+
+.PHONY: lint-build
+lint-build: ## Lint Pants BUILD files
+	./pants update-build-files --check
 
 .PHONY: lint-docker
 lint-docker: ## Lint Dockerfiles with Hadolint
@@ -394,11 +413,11 @@ lint-rust: ## Run Rust lint checks
 
 .PHONY: lint-rust-clippy
 lint-rust-clippy: ## Run Clippy on Rust code
-	cd src/rust; bin/lint
+	$(RUST_MAKE) lint-clippy
 
 .PHONY: lint-rust-rustfmt
 lint-rust-rustfmt: ## Check to see if Rust code is properly formatted
-	cd src/rust; bin/format --check
+	$(RUST_MAKE) lint-rustfmt
 
 .PHONY: lint-shell
 lint-shell: ## Run Shell lint checks
@@ -434,7 +453,7 @@ format-python: ## Reformat all Python code
 
 .PHONY: format-rust
 format-rust: ## Reformat all Rust code
-	cd src/rust; bin/format --update
+	$(RUST_MAKE) format
 
 .PHONY: format-shell
 format-shell: ## Reformat all shell code
@@ -487,6 +506,19 @@ stop: ## docker-compose stop - stops (but preserves) the containers
 	@$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose $(EVERY_COMPOSE_FILE) stop
 
+# This is a convenience target for our frontend engineers, to make the dev loop
+# slightly less arduous for grapl-web-ui/engagement-view development.
+# It will *rebuild* the JS/Rust grapl-web-ui dependences, and then 
+# restart a currently-running `make up` web ui allocation, which will then
+# retrieve the latest, newly-rebuilt Docker container.
+#
+# Will only work as expected as long as tag is "dev".
+.PHONY: restart-web-ui
+restart-web-ui: build-engagement-view  ## Rebuild web-ui image, and restart web-ui task in Nomad
+	$(DOCKER_BUILDX_BAKE_HCL) grapl-web-ui
+	source ./nomad/lib/nomad_cli_tools.sh
+	nomad alloc restart "$$(nomad_get_alloc_id grapl-core web-ui)"
+
 ##@ Venv Management
 ########################################################################
 .PHONY: generate-constraints
@@ -499,7 +531,13 @@ populate-venv: ## Set up a Python virtualenv from constraints file (you'll have 
 
 ##@ Utility ⚙
 
+# Preliminaries
+
+dist:
+	mkdir dist
+
 .PHONY: clean
+clean: clean-dist
 clean: clean-artifacts
 clean: clean-engagement-view
 clean: ## Clean all generated artifacts
@@ -507,7 +545,12 @@ clean: ## Clean all generated artifacts
 .PHONY: clean-all
 clean-all: clean
 clean-all: clean-docker
+clean-all: clean-all-rust
 clean-all: ## Clean all generated artifacts AND Docker-related resources
+
+.PHONY: clean-dist
+clean-dist: ## Clean out the `dist` directory
+	rm -Rf dist
 
 .PHONY: clean-docker
 clean-docker: clean-docker-cache
@@ -516,7 +559,8 @@ clean-docker: clean-docker-images
 clean-docker: ## Clean all Docker-related resources
 
 .PHONY: clean-artifacts
-clean-artifacts: ## Remove all dumped artifacts from test runs (see dump_artifacts.py)
+clean-artifacts: ## Remove all dumped artifacts from test runs
+# See dump_artifacts.py
 	rm -Rf test_artifacts
 
 .PHONY: clean-docker-cache
@@ -544,6 +588,9 @@ clean-docker-images: ## Remove all Grapl images
 .PHONY: clean-engagement-view
 clean-engagement-view:
 	$(ENGAGEMENT_VIEW_MAKE) clean
+
+clean-all-rust:
+	$(RUST_MAKE) clean-all
 
 ########################################################################
 
@@ -577,14 +624,17 @@ build-docs: ## Build the Sphinx docs
 	./docs/build_docs.sh
 
 .PHONY: generate-nomad-rust-client
-generate-nomad-rust-client:  # Generate the Nomad rust client from OpenAPI
+generate-nomad-rust-client: ## Generate the Nomad rust client from OpenAPI
 	./src/rust/bin/generate_nomad_rust_client.sh
-	$(MAKE) format
+	$(MAKE) format-rust
+# TODO: If we ever break out a targeted `format-markdown` target, we
+# should use that here.
+	$(MAKE) format-prettier
 
 .PHONY: generate-sqlx-data
 generate-sqlx-data:  # Regenerate sqlx-data.json based on queries made in Rust code
 	./src/rust/bin/generate_sqlx_data.sh
 
 # Intentionally not phony, as this generates a real file
-dist/firecracker_kernel.tar.gz: firecracker/generate_firecracker_kernel.sh
+dist/firecracker_kernel.tar.gz: firecracker/generate_firecracker_kernel.sh | dist
 	./firecracker/generate_firecracker_kernel.sh
