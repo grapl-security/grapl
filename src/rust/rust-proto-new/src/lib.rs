@@ -32,6 +32,15 @@ pub(crate) mod protobufs {
                     }
                 }
 
+                pub(crate) mod pipeline_ingress {
+                    pub(crate) mod v1beta1 {
+                        include!(concat!(
+                            env!("OUT_DIR"),
+                            "/graplinc.grapl.api.pipeline_ingress.v1beta1.rs"
+                        ));
+                    }
+                }
+
                 pub(crate) mod plugin_bootstrap {
                     pub(crate) mod v1beta1 {
                         include!(concat!(
@@ -107,6 +116,10 @@ pub mod graplinc {
 
             pub mod model_plugin_deployer {
                 pub mod v1;
+            }
+
+            pub mod pipeline_ingress {
+                pub mod v1beta1;
             }
 
             pub mod plugin_bootstrap {

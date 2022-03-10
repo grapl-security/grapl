@@ -12,13 +12,19 @@ use rust_proto_new::{
             SystemTime,
             Uuid,
         },
-        grapl::pipeline::{
-            v1beta1::{
-                Envelope as EnvelopeV1,
-                Metadata,
-                RawLog,
+        grapl::{
+            api::pipeline_ingress::v1beta1::{
+                PublishRawLogsRequest,
+                PublishRawLogsResponse,
             },
-            v1beta2::Envelope,
+            pipeline::{
+                v1beta1::{
+                    Envelope as EnvelopeV1,
+                    Metadata,
+                    RawLog,
+                },
+                v1beta2::Envelope,
+            },
         },
     },
     SerDe,
@@ -117,6 +123,38 @@ where
 }
 
 //
+// PublishRawLogsRequest
+//
+
+prop_compose! {
+    fn publish_raw_logs_requests()(
+        event_source_id in uuids(),
+        tenant_id in uuids(),
+        log_event in bytes(256),
+    ) -> PublishRawLogsRequest {
+        PublishRawLogsRequest {
+            event_source_id,
+            tenant_id,
+            log_event
+        }
+    }
+}
+
+//
+// PublishRawLogsResponse
+//
+
+prop_compose! {
+    fn publish_raw_logs_responses()(
+        created_time in any::<SystemTime>(),
+    ) -> PublishRawLogsResponse {
+        PublishRawLogsResponse {
+            created_time,
+        }
+    }
+}
+
+//
 // ---------------- helpers ---------------------------------------------------
 //
 
@@ -140,6 +178,10 @@ where
 //
 
 proptest! {
+    //
+    // common
+    //
+
     #[test]
     fn test_duration_encode_decode(duration in any::<Duration>()) {
         check_encode_decode_invariant(duration)
@@ -154,6 +196,10 @@ proptest! {
     fn test_uuid_encode_decode(uuid in uuids()) {
         check_encode_decode_invariant(uuid)
     }
+
+    //
+    // pipeline
+    //
 
     #[test]
     fn test_metadata_encode_decode(metadata in metadatas()) {
@@ -188,6 +234,24 @@ proptest! {
     #[test]
     fn test_raw_log_envelope_encode_decode(envelope in envelopes(raw_logs())) {
         check_encode_decode_invariant(envelope)
+    }
+
+    //
+    // api.pipeline_ingress
+    //
+
+    #[test]
+    fn test_publish_raw_logs_request_encode_decode(
+        publish_raw_logs_request in publish_raw_logs_requests()
+    ) {
+        check_encode_decode_invariant(publish_raw_logs_request)
+    }
+
+    #[test]
+    fn test_publish_raw_logs_response_encode_decode(
+        publish_raw_logs_response in publish_raw_logs_responses()
+    ) {
+        check_encode_decode_invariant(publish_raw_logs_response)
     }
 
     // TODO: add more here as they're implemented
