@@ -48,7 +48,7 @@ job "observability" {
 
     # Service for accepting zipkin format traces
     service {
-      name = "jaeger-zipkin-trace-endpoint"
+      name = "jaeger-zipkin"
       port = "zipkin"
       tags = ["zipkin"]
     }
