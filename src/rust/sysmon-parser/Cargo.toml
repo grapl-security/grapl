@@ -21,13 +21,6 @@ xmlparser = "0.13"
 [dev-dependencies]
 criterion = "0.3"
 
-# The version on crates.io is not the latest used by Grapl. This gets the
-# latest version of this package at the time of this writing.
-[dev-dependencies.graplsysmon]
-package = "sysmon"
-git = "https://github.com/grapl-security/grapl.git"
-rev = "5e23ff957b14bb44f536e5bfbd70f61c8b8915f5"
-
 [[bench]]
 name = "benches"
 harness = false
