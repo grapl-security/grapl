@@ -12,7 +12,9 @@ from infra.artifacts import ArtifactGetter
 from infra.autotag import register_auto_tags
 from infra.bucket import Bucket
 from infra.cache import Cache
+from infra.consul_config import ConsulConfig
 from infra.consul_intentions import ConsulIntentions
+from infra.consul_service_default import ConsulServiceDefault
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.firecracker_assets import FirecrackerAssets, FirecrackerS3BucketObjects
 from infra.hashicorp_provider import (
@@ -292,19 +294,45 @@ def main() -> None:
         "kafka-e2e-consumer-group-name", kafka.consumer_group("e2e-test-runner")
     )
 
-    nomad_grapl_ingress = NomadJob(
-        "grapl-ingress",
-        jobspec=path_from_root("nomad/grapl-ingress.nomad").resolve(),
-        vars={},
-        opts=pulumi.ResourceOptions(provider=nomad_provider),
-    )
-
     ConsulIntentions(
         "consul-intentions",
         # consul-intentions are stored in the nomad directory so that engineers remember to create/update intentions
         # when they update nomad configs
         intention_directory=path_from_root("nomad/consul-intentions").resolve(),
         opts=pulumi.ResourceOptions(provider=consul_provider),
+    )
+
+    # Set the protocol explicitly
+    consul_web_ui_defaults = ConsulServiceDefault(
+        "web-ui",
+        service_name="web-ui",
+        protocol="http",
+        opts=pulumi.ResourceOptions(provider=consul_provider),
+    )
+
+    ConsulServiceDefault(
+        "graphql-endpoint",
+        service_name="graphql-endpoint",
+        protocol="http",
+        opts=pulumi.ResourceOptions(provider=consul_provider),
+    )
+
+    ConsulConfig(
+        "grapl-core",
+        tracing_endpoint=config.get_nomad_ip(),
+        opts=pulumi.ResourceOptions(provider=consul_provider),
+    )
+
+    nomad_grapl_ingress = NomadJob(
+        "grapl-ingress",
+        jobspec=path_from_root("nomad/grapl-ingress.nomad").resolve(),
+        vars={},
+        opts=pulumi.ResourceOptions(
+            provider=nomad_provider,
+            # This dependson ensures we've switched the web-ui protocol to http instead of tcp prior. Otherwise there's
+            # a protocol mismatch error
+            depends_on=[consul_web_ui_defaults],
+        ),
     )
 
     if config.LOCAL_GRAPL:
