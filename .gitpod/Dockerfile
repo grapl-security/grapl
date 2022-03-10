@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.3-labs
 FROM gitpod/workspace-full:commit-8fc141dbdd92030a435ead06617c6d37651d8312
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
