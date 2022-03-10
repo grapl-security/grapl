@@ -1,8 +1,8 @@
-import { createProxyMiddleware } = require('http-proxy-middleware');
+import { createProxyMiddleware } from "http-proxy-middleware";
 // TODO: THIS NEEDS TO BE REWORKED
-module.exports = function(app: any) {
+module.exports = function (app: any) {
     app.use(
-        '/api',
+        "/api",
         createProxyMiddleware({
             target: '"http://127.0.0.1:1234"',
             changeOrigin: true,

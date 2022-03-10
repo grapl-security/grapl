@@ -17,7 +17,7 @@ export const processNode = {
     process_id: 6132,
 };
 
-export const rawNode: any  = {
+export const rawNode: any = {
     analyzerNames: "Rare Parent of cmd.exe, Suspicious svchost",
     asset_ip: null,
     asset_processes: undefined,
