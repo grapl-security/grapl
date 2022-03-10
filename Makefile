@@ -511,6 +511,8 @@ stop: ## docker-compose stop - stops (but preserves) the containers
 # It will *rebuild* the JS/Rust grapl-web-ui dependences, and then 
 # restart a currently-running `make up` web ui allocation, which will then
 # retrieve the latest, newly-rebuilt Docker container.
+#
+# Will only work as expected as long as tag is "dev".
 .PHONY: restart-web-ui
 restart-web-ui: build-engagement-view  ## Rebuild web-ui image, and restart web-ui task in Nomad
 	$(DOCKER_BUILDX_BAKE_HCL) grapl-web-ui
