@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use criterion::{
     black_box,
     criterion_group,
@@ -29,22 +27,5 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     });
 }
 
-pub fn graplsysmon(c: &mut Criterion) {
-    // this is slow, increase the sample size
-    let mut group = c.benchmark_group("tooslow");
-    // Configure Criterion.rs to detect smaller differences and increase sample size to improve
-    // precision and counteract the resulting noise.
-    group.significance_level(0.1).sample_size(10);
-
-    let events6 = std::fs::read_to_string("tests/data/events6.xml").unwrap();
-
-    group.bench_function("bulk - events6 - grapl-sysmon", |b| {
-        b.iter(|| {
-            let _results: Vec<_> = events6.lines().map(graplsysmon::Event::from_str).collect();
-        })
-    });
-    group.finish()
-}
-
-criterion_group!(benches, bulk_bench, criterion_benchmark, graplsysmon);
+criterion_group!(benches, bulk_bench, criterion_benchmark);
 criterion_main!(benches);
