@@ -30,7 +30,7 @@ export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 # verbose. Once we get rid of docker-compose.yml, we can just use
 # `docker buildx bake`, since it will pick up the HCL file
 # automatically.
-DOCKER_BUILDX_BAKE_HCL := docker buildx bake --file=docker-bake.hcl
+DOCKER_BUILDX_BAKE_HCL := docker buildx bake --file=docker-bake.hcl --progress=plain
 
 COMPOSE_PROJECT_INTEGRATION_TESTS := grapl-integration_tests
 COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
@@ -515,7 +515,7 @@ stop: ## docker-compose stop - stops (but preserves) the containers
 # Will only work as expected as long as tag is "dev".
 .PHONY: restart-web-ui
 restart-web-ui: build-engagement-view  ## Rebuild web-ui image, and restart web-ui task in Nomad
-	$(DOCKER_BUILDX_BAKE_HCL) grapl-web-ui
+	CARGO_BUILD_PACKAGE_SPEC="" $(DOCKER_BUILDX_BAKE_HCL) grapl-web-ui
 	source ./nomad/lib/nomad_cli_tools.sh
 	nomad alloc restart "$$(nomad_get_alloc_id grapl-core web-ui)"
 

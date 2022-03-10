@@ -4,7 +4,8 @@
 
 FROM rust:1-slim-bullseye AS base
 
-ARG RUST_BUILD=debug
+ARG RUST_BUILD
+ARG CARGO_BUILD_PACKAGE_SPEC
 
 SHELL ["/bin/bash", "-o", "errexit", "-o", "nounset", "-o", "pipefail", "-c"]
 
@@ -63,11 +64,18 @@ FROM base AS build
 RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
     --mount=type=cache,target="${REGISTRY_CACHE_TARGET}",sharing=locked \
     --mount=type=cache,target="${RUSTUP_CACHE_TARGET}",sharing=locked <<EOF
+    set -o xtrace
+    CARGO_BUILD_ARGS=$(
+      [ -n "${CARGO_BUILD_PACKAGE_SPEC}" ] &&
+      echo "--package ${CARGO_BUILD_PACKAGE_SPEC}" ||
+      echo "--workspace"
+    )
+    echo "${CARGO_BUILD_ARGS}"
     case "${RUST_BUILD}" in
       debug)
-        cargo build ;;
+        cargo build ${CARGO_BUILD_ARGS[@]} ;;
       release)
-        cargo build --release ;;
+        cargo build --release ${CARGO_BUILD_ARGS[@]} ;;
       test)
         cargo test ;;
       *)
@@ -78,10 +86,10 @@ EOF
 
 # Copy the build outputs to location that's not a cache mount.
 # TODO: switch to using --out-dir when stable: https://github.com/rust-lang/cargo/issues/6790
-RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
-    mkdir -p /outputs && \
-    find "${CARGO_TARGET_DIR}/${RUST_BUILD}" -maxdepth 1 -type f -executable -exec cp {} /outputs \;
-
+RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked <<EOF
+  mkdir -p /outputs
+  find "${CARGO_TARGET_DIR}/${RUST_BUILD}" -maxdepth 1 -type f -executable -exec cp {} /outputs \;
+EOF
 
 # tarpaulin
 # This target is not merged with the `build` target because the actions to run

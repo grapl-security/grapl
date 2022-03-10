@@ -67,6 +67,13 @@ variable "RUST_BUILD" {
   default = RELEASE_BUILD ? "release" : "debug"
 }
 
+# Enable users to build a limited subset of packages instead of a full
+# workspace build. For spec format, See
+# https://doc.rust-lang.org/cargo/commands/cargo-pkgid.html
+variable "CARGO_BUILD_PACKAGE_SPEC" {
+  default = ""
+}
+
 # When performing a release build, we will tag our images with our
 # "raw" Cloudsmith repository Docker registry address. We have a
 # series of repositories that we promote containers through as they
@@ -98,6 +105,7 @@ variable "oci_labels" {
     "org.opencontainers.image.vendor" = "Grapl, Inc."
   }
 }
+
 
 # Functions
 ########################################################################
@@ -262,7 +270,8 @@ target "_rust-base" {
   context    = "src"
   dockerfile = "rust/Dockerfile"
   args = {
-    RUST_BUILD = "${RUST_BUILD}"
+    RUST_BUILD               = "${RUST_BUILD}"
+    CARGO_BUILD_PACKAGE_SPEC = "${CARGO_BUILD_PACKAGE_SPEC}"
   }
   labels = oci_labels
 }
