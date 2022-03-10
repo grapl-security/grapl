@@ -35,16 +35,7 @@ def get_tracer(service_name: str, module_name: str) -> trace.Tracer:
     )
     # we're using the zipkin compatible endpoint in Jaegar for now.
     # Long-term we'll switch to OTEL
-    zipkin_exporter = ZipkinExporter(
-        # version=Protocol.V2
-        # optional:
-        # endpoint="http://localhost:9411/api/v2/spans",
-        # local_node_ipv4="192.168.0.1",
-        # local_node_ipv6="2001:db8::c001",
-        # local_node_port=31313,
-        # max_tag_value_length=256
-        # timeout=5 (in seconds)
-    )
+    zipkin_exporter = ZipkinExporter()
     processor = BatchSpanProcessor(zipkin_exporter)
     provider.add_span_processor(processor)
     trace.set_tracer_provider(provider)
