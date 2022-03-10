@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package graplinc.grapl.api.organization_management.v1beta1;
+
+import "graplinc/common/v1beta1/types.proto";
+
+// Request to create a new organization
+message CreateOrganizationRequest {
+  // organizations display name
+  string organization_display_name = 1;
+  // organization admin username
+  string admin_username = 2;
+  // organization admin email
+  string admin_email = 3;
+  // organization admin password
+  bytes admin_password = 4;
+  // flag to reset password after organization creation
+  bool should_reset_password = 5;
+}
+
+// Response from creating an organization
+message CreateOrganizationResponse {
+  // unique id for organization
+  graplinc.common.v1beta1.Uuid organization_id = 1;
+}
+
+// Request for creating a new user
+message CreateUserRequest {
+  // organization id that user belongs to
+  graplinc.common.v1beta1.Uuid organization_id = 1;
+  // name of user
+  string name = 2;
+  // email of user
+  string email = 3;
+  // password of user
+  bytes password = 4;
+}
+
+// Response from creating user
+message CreateUserResponse {
+  // id for user created
+  graplinc.common.v1beta1.Uuid user_id = 1;
+}
+
+
+// Organization Management service holding RPCs to create a user and an organization
+service OrganizationManagementService {
+  // rpc to create organization
+  rpc CreateOrganization(CreateOrganizationRequest) returns (CreateOrganizationResponse);
+  // rpc to create user
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+}

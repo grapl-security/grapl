@@ -38,7 +38,7 @@ rusoto_s3 = { version = "0.47.0", default_features = false, features = [
   "rustls"
 ] }
 blake3 = "1.2.0"
-structopt = "0.3"
+structopt = { version = "0.3.26", default-features = false }
 uuid = { version = "0.8.2", features = ["v4"] }
 futures = "0.3.17"
 

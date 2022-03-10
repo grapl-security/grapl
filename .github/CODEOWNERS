@@ -29,7 +29,6 @@ BUILD @christophermaier
 /LICENSE @christophermaier
 /local-grapl.env @christophermaier
 /LOCAL_UI_WORKFLOW.md @christophermaier
-/Makefile @christophermaier
 /nomad @twunderlich-grapl
 /pants @christophermaier
 /pants.ci.toml @christophermaier
@@ -72,6 +71,7 @@ BUILD @christophermaier
 /src/rust/grapl-utils/ @inickles-grapl
 /src/rust/grapl-web-ui/ @inickles-grapl
 /src/rust/model-plugin-deployer/ @wimax-grapl
+/src/rust/organization-management/ @andrea-grapl
 /src/rust/plugin-bootstrap/ @colin-grapl
 /src/rust/plugin-registry/ @colin-grapl
 /src/rust/plugin-sdk/ @colin-grapl
@@ -79,11 +79,11 @@ BUILD @christophermaier
 /src/rust/node-identifier/ @grapl-security/wg-data-infra
 /src/rust/nomad-client-gen/ @wimax-grapl
 /src/rust/rust-proto/ @grapl-security/wg-data-infra
+src/rust/rust-proto-new/ @grapl-security/wg-data-infra
 /src/rust/rust-toolchain.toml @inickles-grapl
 /src/rust/sqs-executor/ @inickles-grapl @grapl-security/wg-data-infra
 /src/rust/sysmon-parser/ @inickles-grapl
 /test/docker-compose* @inickles-grapl @christophermaier
 /test/run @wimax-grapl
 
-# This needs to be kept at the end??
-.gitkeep @christophermaier
+**/Makefile @christophermaier

@@ -18,11 +18,13 @@ members = [
   "./model-plugin-deployer",
   "./node-identifier",
   "./nomad-client-gen",
+  "./organization-management",
   "./plugin-bootstrap",
   "./plugin-registry",
   "./plugin-sdk/generator-sdk/",
   "./plugin-work-queue",
   "./rust-proto",
+  "./rust-proto-new",
   "./sqs-executor",
   "./sysmon-parser",
 ]

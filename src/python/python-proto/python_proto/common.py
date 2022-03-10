@@ -5,8 +5,8 @@ import datetime
 import uuid
 from typing import Type
 
-from google.protobuf.duration_pb2 import Duration as _Duration
-from google.protobuf.timestamp_pb2 import Timestamp as _Timestamp
+from graplinc.common.v1beta1.types_pb2 import Duration as _Duration
+from graplinc.common.v1beta1.types_pb2 import Timestamp as _Timestamp
 from graplinc.common.v1beta1.types_pb2 import Uuid as _Uuid
 from python_proto import SerDe
 
@@ -51,47 +51,16 @@ class Uuid(SerDe[_Uuid]):
 
 
 @dataclasses.dataclass(frozen=True)
-class Timestamp(SerDe[_Timestamp]):
-    seconds: int
-    nanos: int
-    proto_cls: Type[_Timestamp] = _Timestamp
-
-    @staticmethod
-    def deserialize(bytes_: bytes) -> SerDe[_Timestamp]:
-        proto_timestamp = _Timestamp()
-        proto_timestamp.ParseFromString(bytes_)
-        return Timestamp.from_proto(proto_timestamp=proto_timestamp)
-
-    @staticmethod
-    def from_datetime(datetime_: datetime.datetime) -> Timestamp:
-        duration = datetime_ - EPOCH
-        return Timestamp(
-            seconds=duration.days * SECONDS_PER_DAY + duration.seconds,
-            nanos=duration.microseconds * 1000,
-        )
-
-    def into_datetime(self) -> datetime.datetime:
-        """Note that python's datetime only offers microsecond precision"""
-        return EPOCH + datetime.timedelta(
-            seconds=self.seconds, microseconds=self.nanos // 1000
-        )
-
-    @staticmethod
-    def from_proto(proto_timestamp: _Timestamp) -> Timestamp:
-        return Timestamp(seconds=proto_timestamp.seconds, nanos=proto_timestamp.nanos)
-
-    def into_proto(self) -> _Timestamp:
-        proto_timestamp = _Timestamp()
-        proto_timestamp.seconds = self.seconds
-        proto_timestamp.nanos = self.nanos
-        return proto_timestamp
-
-
-@dataclasses.dataclass(frozen=True)
 class Duration(SerDe[_Duration]):
     seconds: int
     nanos: int
     proto_cls: Type[_Duration] = _Duration
+
+    def __post_init__(self) -> None:
+        if self.seconds < 0 or self.nanos < 0:
+            raise TypeError(
+                f"Duration cannot be negative. Received seconds: {self.seconds} nanos: {self.nanos}"
+            )
 
     @staticmethod
     def deserialize(bytes_: bytes) -> SerDe[_Duration]:
@@ -101,6 +70,10 @@ class Duration(SerDe[_Duration]):
 
     @staticmethod
     def from_timedelta(timedelta: datetime.timedelta) -> Duration:
+        if timedelta.days < 0 or timedelta.seconds < 0 or timedelta.microseconds < 0:
+            raise ValueError(
+                f"Durations must be positive. Encountered days: {timedelta.days} seconds: {timedelta.seconds} microseconds: {timedelta.microseconds}"
+            )
         return Duration(
             seconds=timedelta.days * SECONDS_PER_DAY + timedelta.seconds,
             nanos=timedelta.microseconds * 1000,
@@ -111,7 +84,7 @@ class Duration(SerDe[_Duration]):
         return datetime.timedelta(seconds=self.seconds, microseconds=self.nanos // 1000)
 
     @staticmethod
-    def from_proto(proto_duration: _Duration) -> SerDe[_Duration]:
+    def from_proto(proto_duration: _Duration) -> Duration:
         return Duration(
             seconds=proto_duration.seconds,
             nanos=proto_duration.nanos,
@@ -122,3 +95,73 @@ class Duration(SerDe[_Duration]):
         proto_duration.seconds = self.seconds
         proto_duration.nanos = self.nanos
         return proto_duration
+
+
+@dataclasses.dataclass(frozen=True)
+class Timestamp(SerDe[_Timestamp]):
+    duration: Duration
+    before_epoch: bool
+    proto_cls: Type[_Timestamp] = _Timestamp
+
+    @staticmethod
+    def deserialize(bytes_: bytes) -> SerDe[_Timestamp]:
+        proto_timestamp = _Timestamp()
+        proto_timestamp.ParseFromString(bytes_)
+        return Timestamp.from_proto(proto_timestamp=proto_timestamp)
+
+    @staticmethod
+    def from_datetime(datetime_: datetime.datetime) -> Timestamp:
+        if datetime_ < EPOCH:
+            timedelta = EPOCH - datetime_
+            return Timestamp(
+                duration=Duration(
+                    seconds=timedelta.days * SECONDS_PER_DAY + timedelta.seconds,
+                    nanos=timedelta.microseconds * 1000,
+                ),
+                before_epoch=True,
+            )
+        else:
+            timedelta = datetime_ - EPOCH
+            return Timestamp(
+                duration=Duration(
+                    seconds=timedelta.days * SECONDS_PER_DAY + timedelta.seconds,
+                    nanos=timedelta.microseconds * 1000,
+                ),
+                before_epoch=False,
+            )
+
+    def into_datetime(self) -> datetime.datetime:
+        """Note that python's datetime only offers microsecond precision"""
+        duration = datetime.timedelta(
+            seconds=self.duration.seconds, microseconds=self.duration.nanos // 1000
+        )
+        if self.before_epoch:
+            return EPOCH - duration
+        else:
+            return EPOCH + duration
+
+    @staticmethod
+    def from_proto(proto_timestamp: _Timestamp) -> Timestamp:
+        field_name = proto_timestamp.WhichOneof("duration")
+        assert field_name is not None
+        if field_name == "since_epoch":
+            proto_duration = proto_timestamp.since_epoch
+            return Timestamp(
+                duration=Duration.from_proto(proto_duration),
+                before_epoch=False,
+            )
+        elif field_name == "before_epoch":
+            proto_duration = proto_timestamp.before_epoch
+            return Timestamp(
+                duration=Duration.from_proto(proto_duration), before_epoch=True
+            )
+        else:
+            raise ValueError("proto_timestamp contains invalid duration")
+
+    def into_proto(self) -> _Timestamp:
+        proto_timestamp = _Timestamp()
+        if self.before_epoch:
+            proto_timestamp.before_epoch.CopyFrom(self.duration.into_proto())
+        else:
+            proto_timestamp.since_epoch.CopyFrom(self.duration.into_proto())
+        return proto_timestamp

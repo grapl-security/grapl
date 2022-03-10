@@ -56,20 +56,10 @@ INT64_MAX = 2 ** 63 - 1
 INT32_MIN = -(2 ** 31) + 1
 INT32_MAX = 2 ** 31 - 1
 
-# see https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#google.protobuf.Duration
-DURATION_SECONDS_MIN = -315_576_000_000
-DURATION_SECONDS_MAX = 315_576_000_000
-DURATION_NANOS_MIN = -(10 ** 9) + 1
+DURATION_SECONDS_MIN = 0
+DURATION_SECONDS_MAX = UINT64_MAX
+DURATION_NANOS_MIN = 0
 DURATION_NANOS_MAX = 10 ** 9 - 1
-
-# see https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#google.protobuf.Timestamp
-_EPOCH = datetime.datetime.fromisoformat("1970-01-01T00:00:00")
-_MIN_DT = datetime.datetime.fromisoformat("0001-01-01T00:00:00")
-_MAX_DT = datetime.datetime.fromisoformat("9999-12-31T23:59:59")
-TIMESTAMP_SECONDS_MIN = int((_EPOCH - _MIN_DT).total_seconds())
-TIMESTAMP_SECONDS_MAX = int((_MAX_DT - _EPOCH).total_seconds()) + 1
-TIMESTAMP_NANOS_MIN = 0
-TIMESTAMP_NANOS_MAX = 10 ** 9 - 1
 
 MAX_LIST_SIZE = 5
 
@@ -93,18 +83,6 @@ def uuids(
     return st.builds(Uuid, lsb=lsbs, msb=msbs)
 
 
-def timestamps(
-    seconds: st.SearchStrategy[int] = st.integers(
-        min_value=TIMESTAMP_SECONDS_MIN, max_value=TIMESTAMP_SECONDS_MAX
-    ),
-    nanos: st.SearchStrategy[int] = st.integers(
-        min_value=TIMESTAMP_NANOS_MIN,
-        max_value=TIMESTAMP_NANOS_MAX,
-    ),
-) -> st.SearchStrategy[Timestamp]:
-    return st.builds(Timestamp, seconds=seconds, nanos=nanos)
-
-
 def durations(
     seconds: st.SearchStrategy[int] = st.integers(
         min_value=DURATION_SECONDS_MIN, max_value=DURATION_SECONDS_MAX
@@ -115,6 +93,13 @@ def durations(
     ),
 ) -> st.SearchStrategy[Duration]:
     return st.builds(Duration, seconds=seconds, nanos=nanos)
+
+
+def timestamps(
+    durations: st.SearchStrategy[Duration] = durations(),
+    before_epochs: st.SearchStrategy[bool] = st.booleans(),
+) -> st.SearchStrategy[Timestamp]:
+    return st.builds(Timestamp, duration=durations, before_epoch=before_epochs)
 
 
 #
@@ -152,7 +137,7 @@ def envelopes(
     inner_messages: st.SearchStrategy[SerDe] = uuids()
     | timestamps()
     | durations()
-    | raw_logs(),
+    | raw_logs(),  # TODO: add more here as they're implemented
 ) -> st.SearchStrategy[Envelope]:
     return st.builds(
         Envelope,
