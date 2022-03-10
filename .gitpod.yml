@@ -4,7 +4,7 @@ image:
   context: .gitpod
 
 tasks:
-  - init: make
+  - init: make build-local-infrastructure
 
 vscode:
   extensions:
