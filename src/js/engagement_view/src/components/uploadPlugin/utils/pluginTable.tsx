@@ -95,6 +95,7 @@ export const PluginTable = () => {
                                                         console.log(
                                                             "Plugin Deleted"
                                                         );
+                                                        console.log("testing");
                                                     });
                                                 }}
                                             >
@@ -121,7 +122,7 @@ export const PluginTable = () => {
                     count={state.rows.length}
                     rowsPerPage={rowsPerPage}
                     page={page}
-                    onChangePage={handleChangePage}
+                    onPageChange={handleChangePage}
                     onChangeRowsPerPage={handleChangeRowsPerPage}
                 />
             </TableContainer>

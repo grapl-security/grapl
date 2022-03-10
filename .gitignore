@@ -25,6 +25,7 @@ __pycache__/
 target/
 
 # Node packages
+# This exists to keep the existence of the node_modules directory in git.
 node_modules/
 
 # Yarn packages
