@@ -16,6 +16,9 @@ DOCKER_RUN := docker run \
 		--mount type=bind,source="$(shell pwd)",target=/engagement_view \
 		grapl/engagement-view-build-env
 
+# yarn version is apparently required for corepack to work for some reason
+YARN_INSTALL := yarn --version && yarn install
+
 # These are used to declare Makefile dependencies.
 # If an ASSET_DIRS/FILES has changed, rebuild! Otherwise we're likely up to date!
 ASSET_FILTER = -not -path "./node_modules/*" -not -path "./.yarn/*" -not -path "./build/*" -not -path "./build" -not -path "./.npm/*"
@@ -30,8 +33,7 @@ build-env-image:
 
 # This will run every time, because all PHONYs (e.g. build-env-image) run every time.
 node_modules: build-env-image package.json yarn.lock
-	# The yarn --version is REQUIRED in order for corepack to set up the right yarn version. Do NOT delete it.
-	$(DOCKER_RUN) yarn --version && yarn install
+	$(DOCKER_RUN) $(YARN_INSTALL)
 
 build: node_modules $(ASSET_DIRS) $(ASSET_FILES)
 	$(DOCKER_RUN) yarn build
