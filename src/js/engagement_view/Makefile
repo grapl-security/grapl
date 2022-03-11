@@ -30,7 +30,6 @@ build-env-image:
 
 # This will run every time, because all PHONYs (e.g. build-env-image) run every time.
 node_modules: build-env-image package.json yarn.lock
-	# The yarn --version is REQUIRED in order for corepack to set up the right yarn version. Do NOT delete it.
 	$(DOCKER_RUN) yarn install
 
 build: node_modules $(ASSET_DIRS) $(ASSET_FILES)
