@@ -317,12 +317,6 @@ def main() -> None:
         opts=pulumi.ResourceOptions(provider=consul_provider),
     )
 
-    ConsulConfig(
-        "grapl-core",
-        tracing_endpoint=config.get_nomad_ip(),
-        opts=pulumi.ResourceOptions(provider=consul_provider),
-    )
-
     nomad_grapl_ingress = NomadJob(
         "grapl-ingress",
         jobspec=path_from_root("nomad/grapl-ingress.nomad").resolve(),
@@ -377,6 +371,14 @@ def main() -> None:
         redis_endpoint = f"redis://{config.HOST_IP_IN_NOMAD}:6379"
 
         pulumi.export("redis-endpoint", redis_endpoint)
+
+        # Since we're using an IP for Jaeger, this should only be created for local grapl.
+        # Once we're using dns addresses we can create it for everything
+        ConsulConfig(
+            "grapl-core",
+            tracing_endpoint=config.get_nomad_ip(),
+            opts=pulumi.ResourceOptions(provider=consul_provider),
+        )
 
         local_grapl_core_vars: Final[NomadVars] = dict(
             organization_management_db_hostname=organization_management_db.hostname,
