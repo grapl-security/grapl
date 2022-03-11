@@ -130,7 +130,7 @@ src
     |____GraplHeaderTypes.tsx
 |____App.test.tsx
 |____App.tsx
-        - Calls <Routes>
+        - Calls <GraplRoutes>
 |____index.css 
         - Base background & font color 
 |____index.tsx
