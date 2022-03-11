@@ -30,7 +30,7 @@ build-env-image:
 
 # This will run every time, because all PHONYs (e.g. build-env-image) run every time.
 node_modules: build-env-image package.json yarn.lock
-	$(DOCKER_RUN) yarn --version && yarn tsc --noEmit && yarn install
+	$(DOCKER_RUN) yarn install
 
 build: node_modules $(ASSET_DIRS) $(ASSET_FILES)
 	$(DOCKER_RUN) yarn build
