@@ -21,6 +21,8 @@ GRAPL_ROOT = ${PWD}
 COMPOSE_USER=${UID}:${GID}
 COMPOSE_IGNORE_ORPHANS=1
 COMPOSE_PROJECT_NAME ?= grapl
+ETH0_ADDRESS := $(shell ip address show dev eth0 | grep "inet\b" | awk '{ print $$2 }' | awk -F/ '{ print $$1 }')
+
 export
 
 export EVERY_COMPOSE_FILE=--file docker-compose.yml \
