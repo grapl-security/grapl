@@ -23,7 +23,7 @@ mkdir "${MOUNT_POINT}"
 
 # Mount
 mount -t fuse-ext2 \
-    -o rw+ \
+    -o loop \
     "${IMAGE}" "${MOUNT_POINT}"
 
 ########################################
