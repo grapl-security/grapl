@@ -12,7 +12,7 @@ SHELL ["/bin/bash", "-c"]
 
 # TODO switch to corepack once
 #`typescript@patch:typescript@npm%3A4.6.2#~builtin<compat/typescript>::version=4.6.2&hash=493e53: Cannot apply hunk #11`
-# error is fixed. Apparently corepack applies a strict setting, which yarn set doesn't. 
+# error is fixed. Apparently corepack applies a strict setting, which yarn set doesn't.
 
 ########## Set docker mount points mode ###################
 # Manually create Docker volume mount points so we can set the mode
