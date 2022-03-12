@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "grapl graphql server",
   "main": "server.js",
+  "engines": {
+    "node": ">=0.17.1"
+  },
   "scripts": {
     "start": "node server.js",
     "test": "jest"
