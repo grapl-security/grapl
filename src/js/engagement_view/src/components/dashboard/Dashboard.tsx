@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import Button from "@material-ui/core/Button";
-import { useAsync } from "react-async-hook";
 import { checkLogin } from "services/login/checkLoginService";
 import { Link } from "react-router-dom";
 import { dasboardStyles } from "./styles";
