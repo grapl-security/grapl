@@ -28,8 +28,9 @@ def get_tracer(service_name: str, module_name: str) -> trace.Tracer:
     provider = TracerProvider(
         resource=Resource.create(
             {
+                # These should follow schema conventions as defined in https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/semantic_conventions/README.md
                 "service.name": service_name,
-                # TODO add things like instance_id, etc here
+                # TODO add things like instance_id, etc here, if not added by instrumentation.
             }
         )
     )
