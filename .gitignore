@@ -25,7 +25,10 @@ __pycache__/
 target/
 
 # Node packages
+# This exists to keep the existence of the node_modules directory in git.
 node_modules/
+# corepack installs the node version in .node. Kinda annoying but makes sense since its not yarn-specific
+.node/
 
 # Yarn packages
 src/js/engagement_view/.yarn/install-state.gz

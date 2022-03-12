@@ -158,7 +158,11 @@ install_nvm() {
     # shellcheck disable=SC1091
     [ -s "${NVM_DIR}/bash_completion" ] && \. "${NVM_DIR}/bash_completion" # This loads nvm bash_completion
 
-    nvm install node
+    # Install latest node 16.x. This matches up with engagement_view, although graphql_endpoint is on 17 :(
+    nvm install 16
+    # Opt in to corepack. With this on, we'll use the version of yarn set by the packageManager property in package.json
+    # Yes, with this on we'll have one source of truth for yarn versions!
+    corepack enable
 }
 
 install_awsv2() {

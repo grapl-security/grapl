@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+# Customizations to the Bash environment in our Gitpod container.
+#
+# Should be added to `/home/gitpod/.bashrc.d` to take effect.
+########################################################################
+
+# The `gitpod/workspace-full` image currently sets `PIP_USER=yes` in
+# the environment, which causes problems with Pants' bootstrapping
+# logic. The easy fix is to simply unset it.
+#
+# Some background can be found at
+# https://github.com/gitpod-io/gitpod/issues/4886
+unset PIP_USER
+
+# Configure Pants Caches
+########################################################################
+# Normally, Pants stores its caches in your home directory. However,
+# in Gitpod, this directory is not preserved between workspace
+# restarts. This means that each time you open a workspace and run
+# Pants, you have to bootstrap all over again. You also can't benefit
+# from anything that was cached previously (which won't be as big of
+# an issue once we have the remote caching set up in these pods, but
+# still).
+#
+# We can set a few environment variables to stash this data in
+# `/workspace`, which *is* preserved. We're also setting these
+# variables here to ensure they are in effect for all users, and at
+# all times (e.g., setting it in `.gitpod.yml` under `tasks[n].env`
+# doesn't quite do what we want because that only covers a single
+# terminal session).
+export PANTS_SETUP_CACHE=/workspace/pants-cache/setup
+export PANTS_LOCAL_STORE_DIR=/workspace/pants-cache/lmdb_store
+export PANTS_NAMED_CACHES_DIR=/workspace/pants-cache/named_caches
