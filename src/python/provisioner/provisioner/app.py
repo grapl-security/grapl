@@ -101,7 +101,7 @@ def _retrieve_test_user_password(
 
 def provision() -> None:
     LOGGER.info("provisioning grapl")
-    with TRACER.start_as_current_span("provision"):
+    with TRACER.start_as_current_span(__name__):
 
         graph_client = GraphClient()
         dynamodb = DynamoDBResourceFactory(boto3).from_env()

@@ -25,7 +25,7 @@ async def _main() -> None:
     - add the shortcut-to-DEAD_LETTER_QUEUE_URL case
     - pull the manual eventing out of `handle_events` and into an EventEmitter (maybe?)
     """
-    with TRACER.start_as_current_span("_main"):
+    with TRACER.start_as_current_span(__name__):
         queue_url = os.environ["SOURCE_QUEUE_URL"]
         retriever = EventRetriever(queue_url=queue_url)
         sqs_client = SQSClientFactory(boto3).from_env()
