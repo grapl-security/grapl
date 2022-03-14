@@ -1,46 +1,117 @@
-#
-# Makefile for building Engagement View
-#
+.DEFAULT_GOAL := build-code
 
-.DEFAULT_GOAL := build
-# Disable implicit rules, not needed for our use case
-.SUFFIXES:
+build_image_tag := grapl-engagement-view-build-env:latest
 
-DOCKER_RUN := docker run \
+# Additional arguments to pass to `docker run` before the image
+# name. This can be modified on a target-by-target basis as needed.
+extra_docker_run_args =
+
+# NOTE: This **must** be `=` and not `:=` because we want to reserve
+# the ability to inject additional Docker arguments on a
+# target-by-target basis
+DOCKER_RUN = docker run \
 		--rm \
-		--user "$(shell id -u):$(shell id -g)" \
-		--workdir /engagement_view \
-		--env HOME=/engagement_view \
-		--mount type=volume,source=grapl-yarn-state-engagement-view,target=/engagement_view/.yarn/state \
-		--mount type=volume,source=grapl-node-modules-engagement-view,target=/engagement_view/node_modules \
-		--mount type=bind,source="$(shell pwd)",target=/engagement_view \
-		grapl/engagement-view-build-env
+		--user="$(shell id --user):$(shell id --group)" \
+		--workdir=/engagement_view \
+		--env=HOME=/engagement_view \
+		--mount=type=bind,source="$(shell pwd)",target=/engagement_view \
+		--mount=type=volume,source=grapl-engagement-view-yarn,target=/engagement_view/.yarn/state \
+		--mount=type=volume,source=grapl-engagement-view-node-modules,target=/engagement_view/node_modules \
+		$(extra_docker_run_args) \
+		-- \
+		$(build_image_tag)
 
-# These are used to declare Makefile dependencies.
-# If an ASSET_DIRS/FILES has changed, rebuild! Otherwise we're likely up to date!
-ASSET_FILTER = -not -path "./node_modules/*" -not -path "./.yarn/*" -not -path "./build/*" -not -path "./build" -not -path "./.npm/*"
-ASSET_DIRS = $(shell find . -type d $(ASSET_FILTER))
-ASSET_FILES = $(shell find . -type f $(ASSET_FILTER))
+# Changes to any of these files will trigger a rebuild of the code
+FILES := $(shell find src -type f) $(shell find public -type f) componentMap/components.txt tsconfig.json
 
-.PHONY: build-env-image
-build-env-image:
+build-image: build-env.Dockerfile
+build-image: ## Build the build image if necessary
 	docker buildx build \
-		--tag grapl/engagement-view-build-env \
-		- < build-env.Dockerfile
+		--file=build-env.Dockerfile \
+		--tag=$(build_image_tag) \
+		.
+	touch $@
 
-# This will run every time, because all PHONYs (e.g. build-env-image) run every time.
-node_modules: build-env-image package.json yarn.lock
+# ----------------------------------------------------------------------
+
+# These directories are the ones we'll back with Docker volumes. They
+# must exist on the workstation already or else they'll end up being
+# created with root ownership, which complicates cleanup. These should
+# be included as order-only prerequisites for any targets that use the
+# $(DOCKER_RUN) macro.
+
+volume_dirs := .yarn/state node_modules
+
+$(volume_dirs):
+	mkdir -p $@
+
+# ----------------------------------------------------------------------
+
+install-dependencies: build-image package.json yarn.lock
+install-dependencies: | $(volume_dirs)
+install-dependencies: ## Install dependencies in the build container if necessary
 	$(DOCKER_RUN) yarn install
+	touch $@
 
-build: node_modules $(ASSET_DIRS) $(ASSET_FILES)
+# Not named `build` because a directory of that name gets generated
+# during the build process
+build-code: install-dependencies $(FILES)
+build-code: ## Build the code if any files have changed
 	$(DOCKER_RUN) yarn build
+	touch $@
 
-.PHONY: test
-test: node_modules
-	$(DOCKER_RUN) yarn test --coverage --watchAll=false --coverageDirectory=/engagement_view/coverage/
+# Note that `run-tests` is a phony target, so it will run each time it
+# is invoked, whether code has changed or not.
+.PHONY: run-tests
+run-tests: build-code
+run-tests: ## Run all unit tests and gather coverage statistics
+	$(DOCKER_RUN) yarn test \
+		--coverage \
+		--watchAll=false \
+		--coverageDirectory=/engagement_view/coverage/
+
+.PHONY: shell
+shell: extra_docker_run_args := --interactive --tty
+shell: build-image
+shell: ## Drop into a shell inside the build container
+	$(DOCKER_RUN) bash
+
+# Clean
+########################################################################
 
 .PHONY: clean
-clean:
-	docker volume rm \
-		grapl-node-modules-engagement-view \
-		grapl-yarn-state-engagement-view
+clean: clean-image
+clean: clean-volumes
+clean: clean-files
+clean: ## Remove all generated state and artifacts
+
+.PHONY: clean-image
+clean-image: ## Remove the build image
+	docker rmi --force "$(build_image_tag)" 2> /dev/null
+	rm -f build-image
+
+.PHONY: clean-volumes
+clean-volumes: ## Remove all Docker volumes
+
+define make-clean-volume-rule
+clean-volumes: clean-volume-$1
+
+.PHONY: clean-volume-$1
+clean-volume-$1: ## Remove the $1 volume
+	docker volume remove --force $1
+	rm -f install-dependencies
+	rm -f build-code
+endef
+volumes = grapl-engagement-view-node-modules grapl-engagement-view-yarn
+$(foreach volume,${volumes},$(eval $(call make-clean-volume-rule,$(volume))))
+
+.PHONY: clean-files
+clean-files: ## Remove all additional generated files and directories
+	rm -f .bash_history
+	rm -Rf build
+	rm -Rf .cache
+	rm -Rf coverage
+	rm -Rf .node
+	rm -Rf node_modules
+	rm -Rf .npm
+	rm -Rf .yarn
