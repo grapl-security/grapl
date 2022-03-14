@@ -1,14 +1,29 @@
+# For the time being, we'll keep the specific files-to-ignore here in
+# this directory-specific .gitignore file; it makes things a bit
+# easier to reason about.
+
 # As recommended by https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored
-.yarn/*
-.npm/*
+.yarn
 !.yarn/patches
-!.yarn/releases
 !.yarn/plugins
+!.yarn/releases
 !.yarn/sdks
 !.yarn/versions
 
-# We use this with Docker volumes for storing build state and cache
-!.yarn/state/.gitignore
+node_modules
 
-/coverage
+coverage/*
 
+# These are empty target files used by our Makefile; see
+# https://www.gnu.org/software/make/manual/html_node/Empty-Targets.html
+# for details.
+build-image
+install-dependencies
+build-code
+
+# While we set $HOME in our build container to our mounted directory,
+# we can generate additional files that should not be committed.
+.bash_history
+.cache/
+.node/
+.npm/
