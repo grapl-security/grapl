@@ -26,6 +26,7 @@ from grapl_common.env_helpers import (
     DynamoDBResourceFactory,
     SecretsManagerClientFactory,
 )
+from grapl_common.grapl_tracer import get_tracer
 from grapl_common.test_user_creds import get_test_user_creds
 
 if TYPE_CHECKING:
@@ -38,6 +39,8 @@ LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 GRAPL_SCHEMA_TABLE = os.environ["GRAPL_SCHEMA_TABLE"]
 GRAPL_SCHEMA_PROPERTIES_TABLE = os.environ["GRAPL_SCHEMA_PROPERTIES_TABLE"]
+
+TRACER = get_tracer(service_name="provisioner", module_name=__name__)
 
 
 def _provision_graph(
@@ -98,22 +101,23 @@ def _retrieve_test_user_password(
 
 def provision() -> None:
     LOGGER.info("provisioning grapl")
+    with TRACER.start_as_current_span(__name__):
 
-    graph_client = GraphClient()
-    dynamodb = DynamoDBResourceFactory(boto3).from_env()
-    secretsmanager = SecretsManagerClientFactory(boto3).from_env()
+        graph_client = GraphClient()
+        dynamodb = DynamoDBResourceFactory(boto3).from_env()
+        secretsmanager = SecretsManagerClientFactory(boto3).from_env()
 
-    LOGGER.info("provisioning graph")
-    _provision_graph(graph_client=graph_client, dynamodb=dynamodb)
-    LOGGER.info("provisioned graph")
+        LOGGER.info("provisioning graph")
+        _provision_graph(graph_client=graph_client, dynamodb=dynamodb)
+        LOGGER.info("provisioned graph")
 
-    username, password = get_test_user_creds()
+        username, password = get_test_user_creds()
 
-    LOGGER.info("creating test user")
-    _create_user(
-        dynamodb=dynamodb,
-        username=username,
-        cleartext=password,
-        role="owner",
-    )
-    LOGGER.info("created test user")
+        LOGGER.info("creating test user")
+        _create_user(
+            dynamodb=dynamodb,
+            username=username,
+            cleartext=password,
+            role="owner",
+        )
+        LOGGER.info("created test user")

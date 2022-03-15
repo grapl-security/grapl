@@ -60,6 +60,18 @@ variable "py_log_level" {
   description = "Controls the logging behavior of Python-based services."
 }
 
+variable "tracing_endpoint" {
+  type = string
+  # if nothing is passed in we default to "${attr.unique.network.ip-address}" in locals.
+  # Using a variable isn't allowed here though :(
+  default = ""
+}
+
+locals {
+  tracing_endpoint        = (var.tracing_endpoint == "") ? "http://${attr.unique.network.ip-address}" : var.tracing_endpoint
+  tracing_zipkin_endpoint = "${local.tracing_endpoint}:9411/api/v2/spans"
+}
+
 job "grapl-provision" {
   datacenters = ["dc1"]
 
@@ -103,6 +115,7 @@ job "grapl-provision" {
         GRAPL_TEST_USER_NAME               = var.test_user_name
         GRAPL_TEST_USER_PASSWORD_SECRET_ID = var.test_user_password_secret_id
         GRAPL_LOG_LEVEL                    = var.py_log_level
+        OTEL_EXPORTER_ZIPKIN_ENDPOINT      = local.tracing_zipkin_endpoint
       }
     }
 
