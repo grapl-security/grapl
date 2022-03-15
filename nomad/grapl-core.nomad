@@ -301,7 +301,9 @@ locals {
   redis_port     = local._redis[1]
 
   # Tracing endpoints
+  # We currently use both the zipkin v2 endpoint and the jaeger endpoint at the moment. These will be consolidated later
   tracing_endpoint        = (var.tracing_endpoint == "") ? "http://${attr.unique.network.ip-address}" : var.tracing_endpoint
+  tracing_jaeger_endpoint = "${local.tracing_endpoint}:14268/api/traces"
   tracing_zipkin_endpoint = "${local.tracing_endpoint}:9411/api/v2/spans"
 
   # Grapl services
@@ -578,6 +580,9 @@ job "grapl-core" {
         connect {
           sidecar_service {
             proxy {
+              config {
+                protocol = "http"
+              }
 
               # We need to expose the health check for consul to be able to reach it
               expose {
@@ -926,6 +931,7 @@ job "grapl-core" {
         IS_LOCAL                      = "True"
         JWT_SECRET_ID                 = "JWT_SECRET_ID"
         PORT                          = "${NOMAD_PORT_graphql-endpoint-port}"
+        OTEL_EXPORTER_ZIPKIN_ENDPOINT = local.tracing_zipkin_endpoint
       }
     }
 
@@ -1017,6 +1023,7 @@ job "grapl-core" {
         GRAPL_MODEL_PLUGIN_DEPLOYER_ENDPOINT = "http://TODO:1111" # Note - MPD is being replaced by a Rust service.
         RUST_LOG                             = var.rust_log
         RUST_BACKTRACE                       = local.rust_backtrace
+        OTEL_EXPORTER_JAEGER_ENDPOINT        = local.tracing_jaeger_endpoint
       }
     }
 
@@ -1026,6 +1033,9 @@ job "grapl-core" {
       connect {
         sidecar_service {
           proxy {
+            config {
+              protocol = "http"
+            }
             upstreams {
               destination_name = "graphql-endpoint"
               local_bind_port  = local.graphql_endpoint_port

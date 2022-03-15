@@ -25,10 +25,11 @@ job "grapl-ingress" {
           ingress {
             listener {
               port     = local.web_ui_port
-              protocol = "tcp"
+              protocol = "http"
               service {
                 # the upstream service
-                name = "web-ui"
+                name  = "web-ui"
+                hosts = ["*"]
               }
             }
           }
