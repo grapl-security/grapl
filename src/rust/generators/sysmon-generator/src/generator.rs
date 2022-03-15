@@ -2,10 +2,6 @@ use async_trait::async_trait;
 use rust_proto::graph_descriptions::*;
 use sqs_executor::{
     cache::Cache,
-    errors::{
-        CheckedError,
-        Recoverable,
-    },
     event_handler::{
         CompletedEvents,
         EventHandler,
@@ -16,27 +12,8 @@ use sqs_executor::{
 use crate::{
     metrics::SysmonGeneratorMetrics,
     models::SysmonTryFrom,
+    error::SysmonGeneratorError,
 };
-
-#[derive(thiserror::Error, Debug)]
-pub enum SysmonGeneratorError {
-    #[error("NegativeEventTime")]
-    NegativeEventTime(i64),
-    #[error("TimeError")]
-    TimeError(#[from] chrono::ParseError),
-    #[error("Unsupported event type")]
-    UnsupportedEventType(String),
-}
-
-impl CheckedError for SysmonGeneratorError {
-    fn error_type(&self) -> Recoverable {
-        match self {
-            Self::NegativeEventTime(_) => Recoverable::Persistent,
-            Self::TimeError(_) => Recoverable::Persistent,
-            Self::UnsupportedEventType(_) => Recoverable::Persistent,
-        }
-    }
-}
 
 #[derive(Clone)]
 pub struct SysmonGenerator<C>

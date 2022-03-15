@@ -5,7 +5,7 @@ use chrono::{
 use rust_proto::graph_descriptions::*;
 use sysmon_parser::SysmonEvent;
 
-use crate::generator::SysmonGeneratorError;
+use crate::error::SysmonGeneratorError;
 
 mod file;
 mod network;
