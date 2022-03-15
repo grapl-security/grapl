@@ -7,5 +7,9 @@
 .pids
 .yarn
 build-support/grapl-venv
-src/rust/target/**
+
+# match any directory named 'target', which can result from building creates
+# individually as one might do during local development.
+src/rust/**/target/**
+
 test_artifacts/**
