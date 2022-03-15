@@ -21,7 +21,7 @@ async def _main() -> None:
     Some TODOs to bring this inline with sqs-executor in Rust:
     - add the shortcut-to-DEAD_LETTER_QUEUE_URL case
     """
-    with TRACER.start_as_current_span("engagement_creator"):
+    with TRACER.start_as_current_span(__name__):
         queue_url = os.environ["SOURCE_QUEUE_URL"]
         retriever = EventRetriever(queue_url=queue_url)
         sqs_client = SQSClientFactory(boto3).from_env()
