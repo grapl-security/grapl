@@ -25,18 +25,10 @@ __pycache__/
 target/
 
 # Node packages
+# This exists to keep the existence of the node_modules directory in git.
 node_modules/
-
-# Yarn packages
-src/js/engagement_view/.yarn/install-state.gz
-src/js/engagement_view/.npm/*
-src/js/engagement_view/.yarn/*
-!src/js/engagement_view/.yarn/cache
-!src/js/engagement_view/.yarn/releases
-!src/js/engagement_view/.yarn/plugins
-!src/js/engagement_view/.yarn/sdks
-!src/js/engagement_view/.yarn/versions
-src/js/engagement_view/coverage
+# corepack installs the node version in .node. Kinda annoying but makes sense since its not yarn-specific
+.node/
 
 # Web UI frontend artifacts
 src/rust/grapl-web-ui/frontend/*
@@ -64,18 +56,11 @@ pyrightconfig.json
 # https://www.pantsbuild.org/docs/gitignore
 ########################################################################
 /.pants.d/
-
-# A note: You can't ignore /dist dir and then unignore on a single file.
-# instead you have to ignore /dist/*
-/dist/*
-!/dist/.gitkeep
-
 /.pids
 /.pants.workdir.file_lock*
-/.cache
+
 # See build-support/manage_virtualenv.sh
 /build-support/grapl-venv
-.yarn/
 
 # Generated when profiling rust code
 *.profdata

@@ -1,3 +1,3 @@
-import Routes from "./routes";
+import GraplRoutes from "./routes";
 
-export default Routes;
+export default GraplRoutes;

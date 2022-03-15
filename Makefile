@@ -182,7 +182,7 @@ build-e2e-pex-files:
 .PHONY: build-engagement-view
 build-engagement-view: ## Build website assets to include in grapl-web-ui
 	@echo "--- Building the engagement view"
-	$(ENGAGEMENT_VIEW_MAKE) build
+	$(ENGAGEMENT_VIEW_MAKE) build-code
 	cp -r \
 		"${PWD}/src/js/engagement_view/build/." \
 		"${PWD}/src/rust/grapl-web-ui/frontend/"
@@ -273,7 +273,7 @@ test-unit-graphql-endpoint: ## Test Graphql Endpoint
 
 .PHONY: test-unit-engagement-view
 test-unit-engagement-view: ## Test Engagement View
-	$(ENGAGEMENT_VIEW_MAKE) test
+	$(ENGAGEMENT_VIEW_MAKE) run-tests
 
 .PHONY: test-unit-python
 # Long term, it would be nice to organize the tests with Pants
