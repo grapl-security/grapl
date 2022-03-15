@@ -61,6 +61,7 @@ class ConsulConfig(pulumi.ComponentResource):
                                     "collector_endpoint_version": "HTTP_JSON",
                                     "collector_endpoint": "/api/v2/spans",
                                     "shared_span_context": False,
+                                    # This 128-bit MUST be set to True for Jaeger, otherwise tracing fails silently
                                     "trace_id_128bit": True,
                                 },
                             }
