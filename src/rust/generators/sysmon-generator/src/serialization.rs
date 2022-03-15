@@ -1,12 +1,9 @@
-use sqs_executor::{
-    event_decoder::PayloadDecoder,
-};
+use grapl_service::decoder::decompress::PayloadDecompressionError;
+use sqs_executor::event_decoder::PayloadDecoder;
 use sysmon_parser::{
     system::EventId,
     SysmonEvent,
 };
-
-use grapl_service::decoder::decompress::PayloadDecompressionError;
 
 #[derive(Debug, Clone, Default)]
 pub struct SysmonDecoder;

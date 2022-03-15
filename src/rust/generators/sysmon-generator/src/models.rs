@@ -3,26 +3,35 @@ use chrono::{
     Utc,
 };
 use rust_proto::graph_descriptions::*;
-use sysmon_parser::{SysmonEvent, EventData};
+use sysmon_parser::{
+    EventData,
+    SysmonEvent,
+};
 
-use crate::error::{SysmonGeneratorError, Result};
+use crate::error::{
+    Result,
+    SysmonGeneratorError,
+};
 
 mod file;
 mod network;
 mod process;
 
-pub(crate) fn generate_graph_from_event(sysmon_event: &SysmonEvent) -> Result<Option<GraphDescription>> {
+pub(crate) fn generate_graph_from_event(
+    sysmon_event: &SysmonEvent,
+) -> Result<Option<GraphDescription>> {
     let graph = match &sysmon_event.event_data {
         EventData::FileCreate(event_data) => {
             let graph = file::generate_file_create_subgraph(&sysmon_event.system, event_data)?;
 
             Some(graph)
-        },
+        }
         EventData::ProcessCreate(event_data) => {
-            let graph = process::generate_process_create_subgraph(&sysmon_event.system, event_data)?;
+            let graph =
+                process::generate_process_create_subgraph(&sysmon_event.system, event_data)?;
 
             Some(graph)
-        },
+        }
         EventData::NetworkConnect(event_data) => {
             if event_data.initiated {
                 let graph = network::generate_outbound_connection_subgraph(
@@ -30,7 +39,7 @@ pub(crate) fn generate_graph_from_event(sysmon_event: &SysmonEvent) -> Result<Op
                     event_data,
                 )?;
 
-            Some(graph)
+                Some(graph)
             } else {
                 // TODO(inickles): fix graph model for networking and support this
                 tracing::warn!("found inbound connection, which is not currenlty supported.");

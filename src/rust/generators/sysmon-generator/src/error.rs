@@ -1,8 +1,6 @@
-use sqs_executor::{
-    errors::{
-        CheckedError,
-        Recoverable,
-    },
+use sqs_executor::errors::{
+    CheckedError,
+    Recoverable,
 };
 
 /// Alias for a `Result` with the error type `SysmonGeneratorError`

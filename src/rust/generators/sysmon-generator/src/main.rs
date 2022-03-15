@@ -1,5 +1,4 @@
 use graph_generator_lib::run_graph_generator;
-
 use sysmon_generator_lib::{
     generator::SysmonGenerator,
     metrics::SysmonGeneratorMetrics,
