@@ -3,84 +3,46 @@ use chrono::{
     Utc,
 };
 use rust_proto::graph_descriptions::*;
-use sysmon_parser::SysmonEvent;
+use sysmon_parser::{SysmonEvent, EventData};
 
-use crate::error::SysmonGeneratorError;
+use crate::error::{SysmonGeneratorError, Result};
 
 mod file;
 mod network;
 mod process;
 
-/// Because this crate doesn't own sysmon::Event nor rust_proto::graph_descriptions::GraphDescription
-/// we need to create a new Trait to add a function to graph for Event.
-///
-/// Mimics TryFrom
-pub(crate) trait SysmonTryFrom<T>: Sized {
-    type Error;
+pub(crate) fn generate_graph_from_event(sysmon_event: &SysmonEvent) -> Result<Option<GraphDescription>> {
+    let graph = match &sysmon_event.event_data {
+        EventData::FileCreate(event_data) => {
+            let graph = file::generate_file_create_subgraph(&sysmon_event.system, event_data)?;
 
-    fn try_from(instance: T) -> Result<Self, Self::Error>;
-}
+            Some(graph)
+        },
+        EventData::ProcessCreate(event_data) => {
+            let graph = process::generate_process_create_subgraph(&sysmon_event.system, event_data)?;
 
-impl SysmonTryFrom<&SysmonEvent<'_>> for GraphDescription {
-    type Error = SysmonGeneratorError;
+            Some(graph)
+        },
+        EventData::NetworkConnect(event_data) => {
+            if event_data.initiated {
+                let graph = network::generate_outbound_connection_subgraph(
+                    &sysmon_event.system,
+                    event_data,
+                )?;
 
-    #[tracing::instrument]
-    fn try_from(sysmon_event: &SysmonEvent) -> Result<Self, Self::Error> {
-        tracing::info!(event =? sysmon_event.system.event_id);
+            Some(graph)
+            } else {
+                // TODO(inickles): fix graph model for networking and support this
+                tracing::warn!("found inbound connection, which is not currenlty supported.");
 
-        use sysmon_parser::EventData;
-
-        match &sysmon_event.event_data {
-            EventData::FileCreate(event_data) => {
-                let result = file::generate_file_create_subgraph(&sysmon_event.system, event_data);
-
-                if let Err(e) = &result {
-                    tracing::warn!(message="Failed to process event.", event_type =? sysmon_event.system.event_id, error=?e);
-                }
-
-                result
-            }
-            EventData::NetworkConnect(event_data) => {
-                if event_data.initiated {
-                    let result = network::generate_outbound_connection_subgraph(
-                        &sysmon_event.system,
-                        event_data,
-                    );
-
-                    if let Err(e) = &result {
-                        tracing::warn!(message="Failed to process event.", event_type =? sysmon_event.system.event_id, error=?e);
-                    }
-
-                    result
-                } else {
-                    Err(SysmonGeneratorError::UnsupportedEventType(
-                        "Inbound network events not supported, pending refactor.".to_string(),
-                    ))
-                }
-            }
-            EventData::ProcessCreate(event_data) => {
-                let result =
-                    process::generate_process_create_subgraph(&sysmon_event.system, event_data);
-
-                if let Err(e) = &result {
-                    tracing::warn!(message="Failed to process event.", event_type =? sysmon_event.system.event_id, error=?e);
-                }
-
-                result
-            }
-            _ => {
-                tracing::warn!(
-                    message = "Unsupported event_type",
-                    event_type =? sysmon_event.system.event_id
-                );
-
-                Err(SysmonGeneratorError::UnsupportedEventType(format!(
-                    "{:?}",
-                    sysmon_event.system.event_id
-                )))
+                None
             }
         }
-    }
+        // We do not expect to handle all Sysmon event types
+        _ => None,
+    };
+
+    Ok(graph)
 }
 
 /// Returns the provided file path with the Windows Zone Identifier removed if present.
@@ -102,6 +64,7 @@ fn strip_file_zone_identifier(path: &str) -> &str {
     }
 }
 
+// TODO(inickles): delete this, do not strip full path and update analyzers accordingly.
 /// Gets the name of the process given a path to the executable.
 fn get_image_name(image_path: &str) -> String {
     image_path
@@ -114,7 +77,7 @@ fn get_image_name(image_path: &str) -> String {
 /// Converts a Sysmon UTC string to UNIX Epoch time
 ///
 /// If the provided string is not parseable as a UTC timestamp, an error is returned.
-pub(crate) fn utc_to_epoch(utc: &DateTime<Utc>) -> Result<u64, SysmonGeneratorError> {
+pub(crate) fn utc_to_epoch(utc: &DateTime<Utc>) -> Result<u64> {
     let ts = utc.timestamp_millis();
 
     if ts < 0 {

@@ -11,7 +11,7 @@ use sqs_executor::{
 
 use crate::{
     metrics::SysmonGeneratorMetrics,
-    models::SysmonTryFrom,
+    models,
     error::SysmonGeneratorError,
 };
 
@@ -56,42 +56,45 @@ where
         // Skip events we've successfully processed and stored in the event cache.
         let events = self.cache.filter_cached(&events).await;
 
-        let mut last_error: Option<SysmonGeneratorError> = None;
+        let mut first_error: Option<SysmonGeneratorError> = None;
 
-        let subgraphs: Vec<_> = events
-            .into_iter()
+        let final_subgraph = events
+            .iter()
             .filter_map(|event| {
-                let result: Result<GraphDescription, _> = SysmonTryFrom::try_from(&event);
+                let result: Result<Option<GraphDescription>, _> = models::generate_graph_from_event(&event);
+
                 self.metrics.report_subgraph_generation(&result);
+
                 match result {
                     Ok(graph) => {
                         completed.add_identity(event, EventStatus::Success);
-                        Some(graph)
-                    }
+
+                        graph
+                    },
                     Err(error) => {
                         completed.add_identity(event, EventStatus::Failure);
-                        tracing::error!(message="GraphDescription::try_from failed with.", error=?error);
-                        last_error = Some(error);
+
+                        tracing::error!(message = "graph generation error", %error);
+
+                        if first_error.is_none() {
+                            first_error = Some(error);
+                        }
+
                         None
                     }
                 }
             })
-            .collect();
-
-        let final_subgraph =
-            subgraphs
-                .iter()
-                .fold(GraphDescription::new(), |mut current_graph, subgraph| {
-                    current_graph.merge(subgraph);
-                    current_graph
-                });
+            .fold(GraphDescription::new(), |mut current_graph, subgraph| {
+                current_graph.merge(&subgraph);
+                current_graph
+            });
 
         tracing::info!(
             message = "Completed mapping subgraphs.",
             num_graphs = completed.len()
         );
 
-        let final_result = match (last_error, subgraphs.is_empty()) {
+        let final_result = match (first_error, final_subgraph.is_empty()) {
             (None, _) => Ok(final_subgraph),
             (Some(error), false) => Err(Ok((final_subgraph, error))),
             (Some(error), true) => Err(Err(error)),

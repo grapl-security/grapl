@@ -23,7 +23,7 @@ impl<'a> PayloadDecoder<Vec<SysmonEvent<'static>>> for SysmonDecoder {
             .filter_map(|result| {
                 match &result {
                     Ok(_) => {
-                        tracing::debug!(message = "Deserialized sysmon event");
+                        tracing::trace!(message = "Deserialized sysmon event");
                     }
                     Err(error) => {
                         tracing::error!(
