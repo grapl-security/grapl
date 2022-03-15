@@ -262,6 +262,13 @@ variable "osquery_generator_dead_letter_queue" {
   type = string
 }
 
+variable "tracing_endpoint" {
+  type = string
+  # if nothing is passed in we default to "${attr.unique.network.ip-address}" in locals.
+  # Using a variable isn't allowed here though :(
+  default = ""
+}
+
 locals {
   dgraph_zero_grpc_private_port_base  = 5080
   dgraph_alpha_grpc_private_port_base = 7080
@@ -292,6 +299,10 @@ locals {
   _redis         = split(":", local._redis_trimmed)
   redis_host     = local._redis[0]
   redis_port     = local._redis[1]
+
+  # Tracing endpoints
+  tracing_endpoint        = (var.tracing_endpoint == "") ? "http://${attr.unique.network.ip-address}" : var.tracing_endpoint
+  tracing_zipkin_endpoint = "${local.tracing_endpoint}:9411/api/v2/spans"
 
   # Grapl services
   graphql_endpoint_port = 5000
@@ -567,6 +578,7 @@ job "grapl-core" {
         connect {
           sidecar_service {
             proxy {
+
               # We need to expose the health check for consul to be able to reach it
               expose {
                 path {
@@ -807,6 +819,7 @@ job "grapl-core" {
         IS_RETRY                                = "False"
         MESSAGECACHE_ADDR                       = local.redis_host
         MESSAGECACHE_PORT                       = local.redis_port
+        OTEL_EXPORTER_ZIPKIN_ENDPOINT           = local.tracing_zipkin_endpoint
       }
     }
 
@@ -858,6 +871,8 @@ job "grapl-core" {
 
         # service vars
         SOURCE_QUEUE_URL = var.engagement_creator_queue
+        # Tracing endpoint
+        OTEL_EXPORTER_ZIPKIN_ENDPOINT = local.tracing_zipkin_endpoint
       }
     }
 
@@ -884,8 +899,7 @@ job "grapl-core" {
   group "graphql-endpoint" {
     network {
       mode = "bridge"
-      port "graphql-endpoint-port" {
-      }
+      port "graphql-endpoint-port" {}
     }
 
     task "graphql-endpoint" {
