@@ -11,10 +11,9 @@ cookiecutter==1.7.3
 hypothesis
 opentelemetry-api
 opentelemetry-exporter-zipkin-json
+opentelemetry-instrumentation
 opentelemetry-instrumentation-botocore
 opentelemetry-sdk
-pantsbuild.pants==2.9.0
-pantsbuild.pants.testutil==2.9.0
 protobuf>=3.12.1
 pulumi>=3.0.0,<4.0.0
 pulumi-aws>=4.0.0,<5.0.0

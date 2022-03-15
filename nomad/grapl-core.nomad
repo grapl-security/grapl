@@ -263,7 +263,7 @@ variable "osquery_generator_dead_letter_queue" {
 }
 
 variable "tracing_endpoint" {
-  type    = string
+  type = string
   # if nothing is passed in we default to "${attr.unique.network.ip-address}" in locals.
   # Using a variable isn't allowed here though :(
   default = ""
@@ -301,7 +301,7 @@ locals {
   redis_port     = local._redis[1]
 
   # Tracing endpoints
-  tracing_endpoint = (var.tracing_endpoint == "") ? "http://${attr.unique.network.ip-address}" : var.tracing_endpoint
+  tracing_endpoint        = (var.tracing_endpoint == "") ? "http://${attr.unique.network.ip-address}" : var.tracing_endpoint
   tracing_zipkin_endpoint = "${local.tracing_endpoint}:9411/api/v2/spans"
 
   # Grapl services
