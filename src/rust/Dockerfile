@@ -216,7 +216,7 @@ FROM gcr.io/distroless/cc:debug AS rust-dist
 
 USER nonroot
 
-# analyzer-dispatcher
+##### analyzer-dispatcher
 FROM rust-dist AS analyzer-dispatcher-deploy
 
 # Hadolint v2.8.0 appears to be mistaken, this is a false positive
@@ -225,7 +225,7 @@ FROM rust-dist AS analyzer-dispatcher-deploy
 COPY --from=build /outputs/analyzer-dispatcher /
 ENTRYPOINT ["/analyzer-dispatcher"]
 
-# generic-subgraph-generator
+##### generic-subgraph-generator
 FROM rust-dist AS generic-subgraph-generator-deploy
 
 # Hadolint v2.8.0 appears to be mistaken, this is a false positive
@@ -234,7 +234,7 @@ FROM rust-dist AS generic-subgraph-generator-deploy
 COPY --from=build /outputs/generic-subgraph-generator /
 ENTRYPOINT ["/generic-subgraph-generator"]
 
-# graph-merger
+##### graph-merger
 FROM rust-dist AS graph-merger-deploy
 
 # Hadolint v2.8.0 appears to be mistaken, this is a false positive
@@ -243,7 +243,7 @@ FROM rust-dist AS graph-merger-deploy
 COPY --from=build /outputs/graph-merger /
 ENTRYPOINT ["/graph-merger"]
 
-# plugin-work-queue
+##### plugin-work-queue
 FROM rust-dist AS plugin-work-queue-deploy
 
 # Hadolint v2.8.0 appears to be mistaken, this is a false positive
@@ -252,7 +252,7 @@ FROM rust-dist AS plugin-work-queue-deploy
 COPY --from=build /outputs/plugin-work-queue /
 ENTRYPOINT ["/plugin-work-queue"]
 
-# plugin-registry
+##### plugin-registry
 FROM rust-dist AS plugin-registry-deploy
 
 # Hadolint v2.8.0 appears to be mistaken, this is a false positive
@@ -263,7 +263,7 @@ COPY --from=build /outputs/plugin-registry /
 COPY --from=build /nomad/nomad /bin
 ENTRYPOINT ["/plugin-registry"]
 
-# plugin-bootstrap
+##### plugin-bootstrap
 FROM rust-dist AS plugin-bootstrap-deploy
 
 # hadolint ignore=DL3022
@@ -271,7 +271,7 @@ COPY --from=build /outputs/plugin-bootstrap /
 ENTRYPOINT ["/plugin-bootstrap"]
 
 
-# node-identifier
+##### node-identifier
 FROM rust-dist AS node-identifier-deploy
 
 # Hadolint v2.8.0 appears to be mistaken, this is a false positive
@@ -280,7 +280,7 @@ FROM rust-dist AS node-identifier-deploy
 COPY --from=build /outputs/node-identifier /
 ENTRYPOINT ["/node-identifier"]
 
-# node-identifier-retry
+##### node-identifier-retry
 FROM rust-dist AS node-identifier-retry-deploy
 
 # Hadolint v2.8.0 appears to be mistaken, this is a false positive
@@ -289,7 +289,7 @@ FROM rust-dist AS node-identifier-retry-deploy
 COPY --from=build /outputs/node-identifier-retry /
 ENTRYPOINT ["/node-identifier-retry"]
 
-# sysmon-generator
+##### sysmon-generator
 FROM rust-dist AS sysmon-generator-deploy
 
 # Hadolint v2.8.0 appears to be mistaken, this is a false positive
@@ -298,7 +298,7 @@ FROM rust-dist AS sysmon-generator-deploy
 COPY --from=build /outputs/sysmon-generator /
 ENTRYPOINT ["/sysmon-generator"]
 
-# osquery-generator
+##### osquery-generator
 FROM rust-dist AS osquery-generator-deploy
 
 # Hadolint v2.8.0 appears to be mistaken, this is a false positive
@@ -307,7 +307,7 @@ FROM rust-dist AS osquery-generator-deploy
 COPY --from=build /outputs/osquery-generator /
 ENTRYPOINT ["/osquery-generator"]
 
-# web-ui
+##### web-ui
 FROM rust-dist AS grapl-web-ui-deploy
 
 # Hadolint v2.8.0 appears to be mistaken, this is a false positive
@@ -317,7 +317,7 @@ COPY --from=build /outputs/grapl-web-ui /
 COPY rust/grapl-web-ui/frontend /frontend
 ENTRYPOINT ["/grapl-web-ui"]
 
-# model plugin deployer
+##### model plugin deployer
 FROM rust-dist AS model-plugin-deployer
 
 # Hadolint v2.8.0 appears to be mistaken, this is a false positive
@@ -327,7 +327,7 @@ COPY --from=build /outputs/model-plugin-deployer /
 ENTRYPOINT ["/model-plugin-deployer"]
 
 
-# organization-management
+##### organization-management
 FROM rust-dist AS organization-management-deploy
 
 # Hadolint v2.8.0 appears to be mistaken, this is a false positive
