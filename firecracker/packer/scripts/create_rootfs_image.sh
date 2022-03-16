@@ -3,6 +3,11 @@
 set -euo pipefail
 set -o xtrace
 
+################################################################################
+# This script is not meant to be run on a local workstation; instead, it's meant
+# to be invoked by Packer on a remote EC2 machine.
+################################################################################
+
 readonly OUTPUT_DIR="${HOME}/output"
 mkdir -p "${OUTPUT_DIR}"
 
@@ -13,11 +18,12 @@ readonly IMAGE="${BUILD_DIR}/${IMAGE_NAME}.ext4"
 readonly MOUNT_POINT="${BUILD_DIR}/mount_point"
 mkdir -p "${MOUNT_POINT}"
 
+readonly SIZE_MB="${SIZE_MB}"
+
 ########################################
 # Create image and mount it.
 ########################################
 # make a $SIZE_MB empty file
-SIZE_MB="300"
 dd if=/dev/zero of="${IMAGE}" bs=1M count="${SIZE_MB}"
 
 # format that filesystem

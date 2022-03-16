@@ -105,6 +105,7 @@ build {
       "IMAGE_NAME=${var.image_name}",
       "IMAGE_ARCHIVE_NAME=${local.image_archive_filename}",
       "DEBIAN_VERSION=${var.debian_version}",
+      "SIZE_MB=300",
     ]
   }
 
