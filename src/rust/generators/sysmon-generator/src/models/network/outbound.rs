@@ -21,7 +21,7 @@ use sysmon_parser::{
 };
 
 use crate::{
-    generator::SysmonGeneratorError,
+    error::SysmonGeneratorError,
     models::utc_to_epoch,
 };
 

@@ -13,7 +13,7 @@ use sysmon_parser::{
 };
 
 use crate::{
-    generator::SysmonGeneratorError,
+    error::SysmonGeneratorError,
     models::{
         get_image_name,
         strip_file_zone_identifier,
