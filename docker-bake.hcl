@@ -348,7 +348,7 @@ target "plugin-bootstrap" {
 target "plugin-bootstrap-init" {
   inherits = ["_rust-base"]
   target   = "plugin-bootstrap-init-output"
-  output =[
+  output = [
     "type=local,dest=${DIST_FOLDER}"
   ]
 }
