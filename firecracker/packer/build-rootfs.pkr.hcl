@@ -1,7 +1,7 @@
 packer {
   required_plugins {
     amazon = {
-      version = ">= 1.0.6" # This is when `ami_org_arns` was added
+      version = ">= 1.0.6"
       source  = "github.com/hashicorp/amazon"
     }
   }
@@ -10,8 +10,7 @@ packer {
 variable "instance_type" {
   description = "The type of instance used to *build* the image"
   type        = string
-  # This is the value that Buildkite uses in their Packer template
-  default = "m5.xlarge"
+  default     = "m5.xlarge"
 }
 
 variable "region" {
@@ -50,16 +49,13 @@ locals {
   destination_in_dist    = "${var.dist_folder}/${local.image_archive_filename}"
 }
 
-# We could use any AL2 base AMI, but I'm sticking with the same Buildkite base
-# AMI we use for our pipeline-infra images.
 data "amazon-ami" "base-ami" {
   filters = {
-    # Corresponds to version 5.7.2 of the Buildkite elastic stack. See
-    # https://s3.amazonaws.com/buildkite-aws-stack/v5.7.2/aws-stack.yml
-    # under `AWSRegion2AMI/us-east-1/linuxamd64`
-    image-id = "ami-062eacba6cdd82725"
+    # official amd64 Ubuntu Focal (20.04 LTS) image on us-east-1
+    # per https://cloud-images.ubuntu.com/locator/ec2/
+    image-id = "ami-01896de1f162f0ab7"
   }
-  owners = ["172840064832"] # Buildkite
+  owners = ["099720109477"] # Canonical / Ubuntu
   region = "${var.region}"
 }
 
@@ -76,7 +72,7 @@ source "amazon-ebs" "grapl-build-rootfs" {
   instance_type   = "${var.instance_type}"
   region          = "${var.region}"
   source_ami      = "${data.amazon-ami.base-ami.id}"
-  ssh_username    = "ec2-user"
+  ssh_username    = "ubuntu"
   profile         = "${var.aws_profile}"
 
   metadata_options {
@@ -85,11 +81,6 @@ source "amazon-ebs" "grapl-build-rootfs" {
     http_put_response_hop_limit = 1
   }
 
-  launch_block_device_mappings {
-    device_name           = "/dev/xvda"
-    volume_type           = "gp2"
-    delete_on_termination = true
-  }
 }
 
 build {
@@ -98,7 +89,7 @@ build {
   provisioner "file" {
     direction   = "upload"
     source      = "${path.root}/scripts"
-    destination = "/home/ec2-user"
+    destination = "/home/ubuntu"
   }
 
   provisioner "shell" {
@@ -113,14 +104,14 @@ build {
       "IMAGE_NAME=${var.image_name}",
       "IMAGE_ARCHIVE_NAME=${local.image_archive_filename}",
       "DEBIAN_VERSION=${var.debian_version}",
-      "SIZE_MB=300",
+      "SIZE_MB=400",
     ]
   }
 
   # Grab the output from EC2 and copy it over into the Packer Host OS's `dist/`
   provisioner "file" {
     direction   = "download"
-    source      = "/home/ec2-user/output/${local.image_archive_filename}"
+    source      = "/home/ubuntu/output/${local.image_archive_filename}"
     destination = local.destination_in_dist
   }
 }
