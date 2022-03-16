@@ -250,7 +250,6 @@ steps:
 
   - label: ":firecracker: Firecracker RootFS"
     command:
-      - packer init -upgrade firecracker/packer/build-rootfs.pkr.hcl
       - make dist/firecracker_rootfs.tar.gz
     agents:
       queue: "packer"
