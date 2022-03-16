@@ -36,5 +36,5 @@ tokio = { version = "1.14.0", features = [
 ] }
 thiserror = "1.0.30"
 tracing = "0.1.29"
-chrono = "0.4.19"
+chrono = { version = "0.4", default-features = false }
 uuid = { version = "0.8.2", features = ["v4"] }

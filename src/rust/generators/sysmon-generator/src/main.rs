@@ -1,8 +1,4 @@
 use graph_generator_lib::run_graph_generator;
-pub use grapl_service::serialization::{
-    GraphDescriptionSerializer,
-    GraphDescriptionSerializerError,
-};
 use sysmon_generator_lib::{
     generator::SysmonGenerator,
     metrics::SysmonGeneratorMetrics,
