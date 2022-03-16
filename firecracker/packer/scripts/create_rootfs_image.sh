@@ -32,7 +32,7 @@ dd if=/dev/zero of="${IMAGE}" bs=1M count="${SIZE_MB}"
 # format that filesystem
 # `-F` is 'force'; needed to bypass prompt:
 # "<file> is not a block special device. Proceed anyway? (y,n))"
-sudo mkfs.ext4 -F "${IMAGE}"
+/sbin/mkfs.ext4 -F "${IMAGE}"
 
 # Mount the image at mountpoint
 sudo mount -t ext4 \
