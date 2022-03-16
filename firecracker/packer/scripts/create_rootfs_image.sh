@@ -17,7 +17,7 @@ mkdir -p "${MOUNT_POINT}"
 # Create image and mount it.
 ########################################
 # make a $SIZE_MB empty file
-SIZE_MB="400"
+SIZE_MB="300"
 dd if=/dev/zero of="${IMAGE}" bs=1M count="${SIZE_MB}"
 
 # format that filesystem
@@ -38,16 +38,15 @@ sudo chmod 777 "${MOUNT_POINT}"
 ########################################
 (
     # Bootstrap Ubuntu at the rootfs root
-    sudo debootstrap --include apt,nano focal \
-        "${MOUNT_POINT}" \
-        http://archive.ubuntu.com/ubuntu/
+    sudo debootstrap --include apt,nano "${DEBIAN_VERSION}" \
+        "${MOUNT_POINT}"
 
     # Do some Firecracker-specific mutations, primarily the agetty thing.
     # See https://github.com/firecracker-microvm/firecracker/blob/main/docs/rootfs-and-kernel-setup.md
     sudo chroot "${MOUNT_POINT}" /bin/bash -x << ENDCHROOT
         set -euo pipefail
 
-        echo 'grapl-plugin-focal' > /etc/hostname
+        echo "grapl-plugin" > /etc/hostname
         passwd -d root
 
         # Set up a login terminal on the serial console (ttyS0)
@@ -74,4 +73,4 @@ tar \
     --file="${OUTPUT_DIR}/${IMAGE_ARCHIVE_NAME}" \
     --create \
     --gzip \
-    "$(basename ${IMAGE})"
+    "$(basename "${IMAGE}")"

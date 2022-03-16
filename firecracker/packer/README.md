@@ -3,9 +3,9 @@
 Here we use Packer to build a Firecracker RootFS. The general flow is as
 follows:
 
-- Spin up an EC2 instance, jsut like a normal build-AMI Packer job would do.
+- Spin up an EC2 instance, just like a normal build-AMI Packer job would do.
 - Create an image file (`create_rootfs_image.sh`). It will be provisioned with
-  Ubuntu Focal, for now.
+  Debian Bullseye.
 - [NOT DONE YET] Copy the Grapl Plugin Bootstrap Client into the image and hook
   it up to systemd.
 - The final `provisioner "file"` stanza of build-rootfs.pkr.hcl will download

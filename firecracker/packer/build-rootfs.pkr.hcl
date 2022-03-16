@@ -37,6 +37,12 @@ variable "image_name" {
   default     = "firecracker_rootfs"
 }
 
+variable "debian_version" {
+  description = "Which version of Debian to use with debootstrap."
+  type        = string
+  default     = "bullseye"
+}
+
 ########################################################################
 
 locals {
@@ -100,6 +106,7 @@ build {
     environment_vars = [
       "IMAGE_NAME=${var.image_name}",
       "IMAGE_ARCHIVE_NAME=${local.image_archive_filename}",
+      "DEBIAN_VERSION=${var.debian_version}",
     ]
   }
 
