@@ -18,6 +18,7 @@ UID = $(shell id --user)
 GID = $(shell id --group)
 PWD = $(shell pwd)
 GRAPL_ROOT = ${PWD}
+DIST_FOLDER = $(GRAPL_ROOT)/dist
 COMPOSE_USER=${UID}:${GID}
 COMPOSE_IGNORE_ORPHANS=1
 COMPOSE_PROJECT_NAME ?= grapl
@@ -640,9 +641,13 @@ generate-sqlx-data:  # Regenerate sqlx-data.json based on queries made in Rust c
 dist/firecracker_kernel.tar.gz: firecracker/generate_firecracker_kernel.sh | dist
 	./firecracker/generate_firecracker_kernel.sh
 
+.PHONY: dist/plugin-bootstrap-init
+dist/plugin-bootstrap-init:  ## Build the Plugin Bootstrap Init (+ associated files) and copy it to dist/
+	$(DOCKER_BUILDX_BAKE_HCL) plugin-bootstrap-init
+
 # Changes to any of these files will trigger a rebuild of the rootfs
 FIRECRACKER_ROOTFS_FILES := $(shell find firecracker/packer -type f)
-dist/firecracker_rootfs.tar.gz: $(FIRECRACKER_ROOTFS_FILES) | dist
+dist/firecracker_rootfs.tar.gz: $(FIRECRACKER_ROOTFS_FILES) dist/plugin-bootstrap-init | dist
 	packer init -upgrade firecracker/packer/build-rootfs.pkr.hcl
 	packer build \
 	 	-var dist_folder="${GRAPL_ROOT}/dist" \
