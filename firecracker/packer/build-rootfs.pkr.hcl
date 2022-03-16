@@ -15,7 +15,7 @@ variable "instance_type" {
 }
 
 variable "region" {
-  description = "The AWS region in which the base AMI is found *and* where the new AMI will be created"
+  description = "In which region to build the rootfs. Must match the Base AMI's region."
   type        = string
   default     = "us-east-1"
 }
@@ -40,14 +40,12 @@ variable "image_name" {
 variable "debian_version" {
   description = "Which version of Debian to use with debootstrap."
   type        = string
-  default     = "bullseye"
+  default     = "bullseye"  # aka 11.0
 }
 
 ########################################################################
 
 locals {
-  # We append a timestamp to the AMI name to create unique names.
-  formatted_timestamp    = formatdate("YYYYMMDDhhmmss", timestamp())
   image_archive_filename = "${var.image_name}.tar.gz"
   destination_in_dist    = "${var.dist_folder}/${local.image_archive_filename}"
 }
