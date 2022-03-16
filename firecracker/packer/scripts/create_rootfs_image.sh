@@ -8,6 +8,9 @@ set -o xtrace
 # to be invoked by Packer on a remote EC2 machine.
 ################################################################################
 
+SCRIPTS_DIR=$(dirname "${BASH_SOURCE[0]}")
+readonly SCRIPTS_DIR
+
 readonly OUTPUT_DIR="${HOME}/output"
 mkdir -p "${OUTPUT_DIR}"
 
@@ -29,7 +32,7 @@ dd if=/dev/zero of="${IMAGE}" bs=1M count="${SIZE_MB}"
 # format that filesystem
 # `-F` is 'force'; needed to bypass prompt:
 # "<file> is not a block special device. Proceed anyway? (y,n))"
-/sbin/mkfs.ext4 -F "${IMAGE}"
+sudo mkfs.ext4 -F "${IMAGE}"
 
 # Mount the image at mountpoint
 sudo mount -t ext4 \
@@ -42,27 +45,19 @@ sudo chmod 777 "${MOUNT_POINT}"
 ########################################
 # Mutate image
 ########################################
+# Bootstrap Debian at the rootfs root
+sudo debootstrap --include apt,nano "${DEBIAN_VERSION}" \
+    "${MOUNT_POINT}"
+
 (
-    # Bootstrap Ubuntu at the rootfs root
-    sudo debootstrap --include apt,nano "${DEBIAN_VERSION}" \
-        "${MOUNT_POINT}"
+    # Make these scripts available inside the chroot
+    SCRIPTS_MOUNT_POINT="${MOUNT_POINT}/mnt/scripts"
+    sudo mkdir -p "${SCRIPTS_MOUNT_POINT}"
+    sudo mount --bind "${SCRIPTS_DIR}" "${SCRIPTS_MOUNT_POINT}"
+    # Run the provision_inside_chroot script
+    sudo chroot "${MOUNT_POINT}" "/mnt/scripts/provision_inside_chroot.sh"
 
-    # Do some Firecracker-specific mutations, primarily the agetty thing.
-    # See https://github.com/firecracker-microvm/firecracker/blob/main/docs/rootfs-and-kernel-setup.md
-    sudo chroot "${MOUNT_POINT}" /bin/bash -x << ENDCHROOT
-        set -euo pipefail
-
-        echo "grapl-plugin" > /etc/hostname
-        passwd -d root
-
-        # Set up a login terminal on the serial console (ttyS0)
-        mkdir /etc/systemd/system/serial-getty@ttyS0.service.d/
-        cat <<EOF > /etc/systemd/system/serial-getty@ttyS0.service.d/autologin.conf
-        [Service]
-        ExecStart=
-        ExecStart=-/sbin/agetty --autologin root -o '-p -- \\u' --keep-baud 115200,38400,9600 %I $TERM
-EOF
-ENDCHROOT
+    sudo umount "${SCRIPTS_MOUNT_POINT}"
 )
 
 ########################################

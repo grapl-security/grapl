@@ -32,7 +32,7 @@ variable "dist_folder" {
 }
 
 variable "image_name" {
-  description = "The name of the artifact that will end up in ${dist_folder}, excluding .tar.gz"
+  description = "The name of the artifact that will end up in var.dist_folder, excluding .tar.gz"
   type        = string
   default     = "firecracker_rootfs"
 }
@@ -40,7 +40,7 @@ variable "image_name" {
 variable "debian_version" {
   description = "Which version of Debian to use with debootstrap."
   type        = string
-  default     = "bullseye"  # aka 11.0
+  default     = "bullseye" # aka 11.0
 }
 
 ########################################################################
@@ -72,7 +72,7 @@ source "amazon-ebs" "grapl-build-rootfs" {
   # These fields aren't really that useful, given that we're not storing
   # the AMI itself
   ami_description = "Grapl Build Environment for RootFS"
-  ami_name        = "grapl-build-rootfs-linux-x86_64-${local.formatted_timestamp}"
+  ami_name        = "grapl-build-rootfs-linux-x86_64"
   instance_type   = "${var.instance_type}"
   region          = "${var.region}"
   source_ami      = "${data.amazon-ami.base-ami.id}"
@@ -95,12 +95,20 @@ source "amazon-ebs" "grapl-build-rootfs" {
 build {
   sources = ["source.amazon-ebs.grapl-build-rootfs"]
 
-  provisioner "shell" {
-    script = "${path.root}/scripts/install_dependencies.sh"
+  provisioner "file" {
+    direction   = "upload"
+    source      = "${path.root}/scripts"
+    destination = "/home/ec2-user"
   }
 
   provisioner "shell" {
-    script = "${path.root}/scripts/create_rootfs_image.sh"
+    inline = ["~/scripts/install_dependencies.sh"]
+  }
+
+  provisioner "shell" {
+    inline = [
+      "~/scripts/create_rootfs_image.sh",
+    ]
     environment_vars = [
       "IMAGE_NAME=${var.image_name}",
       "IMAGE_ARCHIVE_NAME=${local.image_archive_filename}",
