@@ -46,7 +46,8 @@ sudo chmod 777 "${MOUNT_POINT}"
     # See https://github.com/firecracker-microvm/firecracker/blob/main/docs/rootfs-and-kernel-setup.md
     sudo chroot "${MOUNT_POINT}" /bin/bash -x << ENDCHROOT
         set -euo pipefail
-        echo 'ubuntu-focal' > /etc/hostname
+
+        echo 'grapl-plugin-focal' > /etc/hostname
         passwd -d root
 
         # Set up a login terminal on the serial console (ttyS0)
