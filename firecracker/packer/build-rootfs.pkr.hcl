@@ -27,12 +27,12 @@ variable "aws_profile" {
 }
 
 variable "dist_folder" {
-  description = "Location of grapl_root/dist"
+  description = "This is the directory on the local workstation that the final image file will be deposited into"
   type        = string
 }
 
 variable "image_name" {
-  description = "The name of the artifact that will end up in dist/, excluding .tar.gz"
+  description = "The name of the artifact that will end up in ${dist_folder}, excluding .tar.gz"
   type        = string
   default     = "firecracker_rootfs"
 }
