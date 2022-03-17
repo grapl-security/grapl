@@ -253,3 +253,7 @@ steps:
       - make dist/firecracker_rootfs.tar.gz
     agents:
       queue: "packer"
+    # This verify step failures nondeterministically. As such, I'm temporarily
+    # allowing it to fail without blocking CI.
+    # https://github.com/grapl-security/issue-tracker/issues/880
+    soft_fail: true
