@@ -8,9 +8,5 @@ set -o xtrace
 ########################################
 sudo apt update
 
-# Print available versions for debugging purposes.
-# (You might say, "madison? what's madison?" Just a badly named apt command.)
-sudo apt-cache madison debootstrap
-
 sudo apt install --yes --no-install-recommends \
     debootstrap=1.0.118ubuntu1.6
