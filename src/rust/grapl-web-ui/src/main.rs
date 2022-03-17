@@ -35,14 +35,6 @@ async fn main() -> Result<(), GraplUiError> {
 
     let bind_address = config.bind_address.clone();
 
-    // Start an otel jaegar trace pipeline
-    global::set_text_map_propagator(opentelemetry_jaeger::Propagator::new());
-    opentelemetry_jaeger::new_pipeline()
-        .with_service_name("grapl-web-ui")
-        .install_simple()?;
-    // TODO switch to batch once we upgrade to actix-web 4, which supports Tokio 1.x
-    //.install_batch(opentelemetry::runtime::Tokio)?;
-
     HttpServer::new(move || {
         App::new()
             .wrap(actix_web::middleware::Logger::default())
@@ -73,7 +65,7 @@ async fn main() -> Result<(), GraplUiError> {
     .run()
     .await?;
 
-    // sending remaining spans. Do we need this?
+    // sending remaining trace spans.
     global::shutdown_tracer_provider();
 
     Ok(())

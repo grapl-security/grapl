@@ -23,8 +23,10 @@ use sqs_executor::{
     redis_cache::RedisCache,
 };
 use tracing::debug;
-use tracing_subscriber::{EnvFilter, prelude::*};
-
+use tracing_subscriber::{
+    prelude::*,
+    EnvFilter,
+};
 
 pub mod env_helpers;
 
@@ -49,7 +51,7 @@ pub fn _init_grapl_env(
     let env = ServiceEnv {
         service_name: service_name.to_string(),
     };
-    let tracing_guard = _init_grapl_log();
+    let tracing_guard = _init_grapl_log(&env.service_name);
     tracing::info!(env=?env, "initializing environment");
     (env, tracing_guard)
 }
@@ -98,7 +100,7 @@ pub fn region() -> Region {
     }
 }
 
-pub fn _init_grapl_log() -> tracing_appender::non_blocking::WorkerGuard {
+pub fn _init_grapl_log(service_name: &str) -> tracing_appender::non_blocking::WorkerGuard {
     let filter = EnvFilter::from_default_env();
 
     let (non_blocking, guard) = tracing_appender::non_blocking(std::io::stdout()); // exporter pipeline
@@ -107,32 +109,21 @@ pub fn _init_grapl_log() -> tracing_appender::non_blocking::WorkerGuard {
     let log_layer = tracing_subscriber::fmt::layer()
         .json()
         .with_writer(non_blocking);
-    // init tracing
+
+    // init tracing layer
     global::set_text_map_propagator(TraceContextPropagator::new());
-    let tracer = opentelemetry_jaeger::new_pipeline().install_simple().unwrap();
+    let tracer = opentelemetry_jaeger::new_pipeline()
+        .with_service_name(service_name)
+        .install_simple() // TODO switch to batch install.
+        .unwrap();
 
-
+    // register a subscriber with all the layers
     tracing_subscriber::registry()
         .with(filter)
         .with(log_layer)
         .with(tracing_opentelemetry::layer().with_tracer(tracer))
         .init();
     guard
-}
-
-pub fn _init_tracing(service_name: &str) -> Result<(), Box<dyn std::error::Error>> {
-    global::set_text_map_propagator(TraceContextPropagator::new());
-    let tracer = opentelemetry_jaeger::new_pipeline()
-        .with_service_name(service_name)
-        .install_simple()?;
-        //.install_batch(opentelemetry::runtime::Tokio)?;
-
-
-    tracing_subscriber::registry()
-        .with(tracing_subscriber::EnvFilter::new("INFO")) //env filter
-        .with(tracing_opentelemetry::layer().with_tracer(tracer)) //layers
-        .try_init()?;
-    Ok(())
 }
 
 pub fn source_queue_url() -> String {

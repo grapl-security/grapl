@@ -12,7 +12,10 @@ log = "0.4.14"
 sqs-executor = { path = "../sqs-executor/" }
 grapl-observe = { path = "../grapl-observe/" }
 opentelemetry = { version = "0.16.0", features = ["rt-tokio"] }
-opentelemetry-jaeger = { version = "0.15.0", features = ["rt-tokio"] }
+opentelemetry-jaeger = { version = "0.15.0", features = [
+  "collector_client",
+  "rt-tokio"
+] }
 rusoto_s3 = { version = "0.47.0", default_features = false, features = [
   "rustls"
 ] }
