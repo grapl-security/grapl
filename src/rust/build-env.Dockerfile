@@ -9,7 +9,7 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-build-en
     # `libssl-dev` and `pkg-config` are needed for the initial
     # compilation of the `cargo-tarpaulin` tool itself.
     apt-get install --yes --no-install-recommends \
-         libssl-dev=1.1.1k-1+deb11u1 \
+         libssl-dev=1.1.1k-1+deb11u2 \
          pkg-config=0.29.2-1
 EOF
 

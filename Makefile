@@ -637,6 +637,13 @@ generate-nomad-rust-client: ## Generate the Nomad rust client from OpenAPI
 generate-sqlx-data:  # Regenerate sqlx-data.json based on queries made in Rust code
 	./src/rust/bin/generate_sqlx_data.sh
 
-# Intentionally not phony, as this generates a real file
 dist/firecracker_kernel.tar.gz: firecracker/generate_firecracker_kernel.sh | dist
 	./firecracker/generate_firecracker_kernel.sh
+
+# Changes to any of these files will trigger a rebuild of the rootfs
+FIRECRACKER_ROOTFS_FILES := $(shell find firecracker/packer -type f)
+dist/firecracker_rootfs.tar.gz: $(FIRECRACKER_ROOTFS_FILES) | dist
+	packer init -upgrade firecracker/packer/build-rootfs.pkr.hcl
+	packer build \
+	 	-var dist_folder="${GRAPL_ROOT}/dist" \
+		firecracker/packer/build-rootfs.pkr.hcl

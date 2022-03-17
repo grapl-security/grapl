@@ -247,3 +247,9 @@ steps:
   - label: "Build docs :book:"
     command:
       - make build-docs
+
+  - label: ":firecracker: Firecracker RootFS"
+    command:
+      - make dist/firecracker_rootfs.tar.gz
+    agents:
+      queue: "packer"

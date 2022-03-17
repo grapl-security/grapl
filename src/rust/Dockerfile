@@ -95,7 +95,7 @@ FROM base AS tarpaulin
 RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tarpaulin-apt \
     apt-get update \
     && apt-get install --yes --no-install-recommends \
-        libssl-dev=1.1.1k-1+deb11u1 \
+        libssl-dev=1.1.1k-1+deb11u2 \
         pkg-config=0.29.2-1
 
 # For test coverage reports
