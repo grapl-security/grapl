@@ -189,13 +189,8 @@ job "grapl-local-infra" {
       env {
         DEBUG           = 1
         EDGE_PORT       = var.LOCALSTACK_PORT
-        LAMBDA_EXECUTOR = "docker-reuse"
-        SERVICES        = "apigateway,cloudwatch,dynamodb,ec2,events,iam,lambda,logs,s3,secretsmanager,sns,sqs"
+        SERVICES        = "dynamodb,ec2,iam,s3,secretsmanager,sns,sqs"
         SQS_PROVIDER    = "elasticmq"
-
-        # These two are only required for Lambda support.
-        # Container name is *not* configurable.
-        MAIN_CONTAINER_NAME = "${NOMAD_TASK_NAME}-${NOMAD_ALLOC_ID}"
 
         # These are not used by localstack, but are used by the health check.
         AWS_ACCESS_KEY_ID     = var.FAKE_AWS_ACCESS_KEY_ID
@@ -214,7 +209,7 @@ job "grapl-local-infra" {
             # This uses the stuff in env { } - not Nomad interpolation.
             "aws --endpoint-url=http://localhost:${EDGE_PORT} s3 ls",
           ]
-          interval = "20s"
+          interval = "10s"
           timeout  = "10s"
 
           check_restart {
