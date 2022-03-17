@@ -6,7 +6,7 @@ RUN apt-get update \
     && apt-get --yes install --no-install-recommends \
         build-essential=12.9 \
         libffi-dev=3.3-6 \
-        libssl-dev=1.1.1k-1+deb11u1 \
+        libssl-dev=1.1.1k-1+deb11u2 \
         python3=3.9.2-3 \
         zip=3.0-12 \
     && rm -rf /var/lib/apt/lists/* \
