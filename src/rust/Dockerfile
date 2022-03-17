@@ -275,10 +275,9 @@ ENTRYPOINT ["/plugin-bootstrap"]
 FROM scratch AS plugin-bootstrap-init-output
 
 # hadolint ignore=DL3022
-WORKDIR /plugin-bootstrap-init
-COPY --from=build /outputs/plugin-bootstrap-init .
-COPY rust/plugin-bootstrap/plugin-bootstrap-init.service .
-COPY rust/plugin-bootstrap/plugin.service .
+COPY --from=build /outputs/plugin-bootstrap-init /
+COPY rust/plugin-bootstrap/plugin-bootstrap-init.service /
+COPY rust/plugin-bootstrap/plugin.service /
 
 ##### node-identifier
 FROM rust-dist AS node-identifier-deploy
