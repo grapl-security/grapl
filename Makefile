@@ -633,6 +633,19 @@ generate-nomad-rust-client: ## Generate the Nomad rust client from OpenAPI
 # should use that here.
 	$(MAKE) format-prettier
 
+.PHONY: buildx-tracing
+buildx-tracing: ## Set tracing up for docker buildx, this assumes that Jaeger is already up
+	docker buildx create \
+      --name builder \
+      --driver docker-container \
+      --driver-opt network=host \
+      --driver-opt env.JAEGER_TRACE=localhost:6831 \
+      --use
+
+.PHONY: disable-buildx-tracing
+disable-buildx-tracing: ## Disable the buildx tracing
+	docker buildx use default
+
 .PHONY: generate-sqlx-data
 generate-sqlx-data:  # Regenerate sqlx-data.json based on queries made in Rust code
 	./src/rust/bin/generate_sqlx_data.sh
