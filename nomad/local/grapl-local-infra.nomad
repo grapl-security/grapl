@@ -17,7 +17,8 @@ variable "KAFKA_BROKER_PORT_FOR_HOST_OS" {
 
 variable "KAFKA_JMX_PORT" {
   type        = string
-  description = "Port for kafka JMX"
+  description = "Port for Kafka JMX"
+  default     = "9101"
 }
 
 variable "FAKE_AWS_ACCESS_KEY_ID" {
