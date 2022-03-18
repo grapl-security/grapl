@@ -32,6 +32,17 @@ cd firecracker
 ########################################
 # Copy kernel into dist.
 ########################################
-readonly KERNEL_BIN_FILE="build/kernel/linux-${KERNEL_VERSION}/vmlinux-${KERNEL_VERSION}-x86_64.bin"
+readonly KERNEL_BIN_DIR="${BUILD_DIR}/firecracker//build/kernel/linux-${KERNEL_VERSION}/"
+readonly KERNEL_BIN_FILE="vmlinux-${KERNEL_VERSION}-x86_64.bin"
 readonly DISTRIBUTION="${REPOSITORY_ROOT}/dist/firecracker_kernel.tar.gz"
 tar --create --gzip --file="${DISTRIBUTION}" "${KERNEL_BIN_FILE}"
+
+# NOTE about tar: If you specify the full path of the thing-to-be-tar'd,
+#   the tar will contain that full nested path of directories.
+#   Hence the --directory, and basename for KERNEL_BIN_FILE
+tar \
+    --directory "${KERNEL_BIN_DIR}" \
+    --file="${DISTRIBUTION}" \
+    --create \
+    --gzip \
+    "${KERNEL_BIN_FILE}"
