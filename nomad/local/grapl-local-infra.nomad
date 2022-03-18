@@ -187,10 +187,10 @@ job "grapl-local-infra" {
       }
 
       env {
-        DEBUG           = 1
-        EDGE_PORT       = var.LOCALSTACK_PORT
-        SERVICES        = "dynamodb,ec2,iam,s3,secretsmanager,sns,sqs"
-        SQS_PROVIDER    = "elasticmq"
+        DEBUG        = 1
+        EDGE_PORT    = var.LOCALSTACK_PORT
+        SERVICES     = "dynamodb,ec2,iam,s3,secretsmanager,sns,sqs"
+        SQS_PROVIDER = "elasticmq"
 
         # These are not used by localstack, but are used by the health check.
         AWS_ACCESS_KEY_ID     = var.FAKE_AWS_ACCESS_KEY_ID
