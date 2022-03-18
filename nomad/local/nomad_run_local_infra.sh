@@ -7,7 +7,6 @@ NOMAD_FILE="${GRAPL_ROOT}/nomad/local/grapl-local-infra.nomad"
 OBSERVABILITY_NOMAD_FILE="${GRAPL_ROOT}/nomad/local/observability.nomad"
 
 declare -a NOMAD_VARS=(
-    -var "KAFKA_BROKER_PORT_FOR_HOST_OS=${KAFKA_BROKER_PORT_FOR_HOST_OS}"
     -var "LOCALSTACK_PORT=${LOCALSTACK_PORT}"
     -var "ZOOKEEPER_PORT=${ZOOKEEPER_PORT}"
     -var "FAKE_AWS_ACCESS_KEY_ID=${FAKE_AWS_ACCESS_KEY_ID}"

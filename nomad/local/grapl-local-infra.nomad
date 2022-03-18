@@ -14,6 +14,7 @@ variable "KAFKA_BROKER_PORT" {
 variable "KAFKA_BROKER_PORT_FOR_HOST_OS" {
   type        = string
   description = "Kafka Broker's port to listen on, for things on the host OS (like Pulumi)"
+  default     = "29092"
 }
 
 variable "KAFKA_JMX_PORT" {
