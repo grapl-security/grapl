@@ -18,6 +18,7 @@ UID = $(shell id --user)
 GID = $(shell id --group)
 PWD = $(shell pwd)
 GRAPL_ROOT = ${PWD}
+DIST_FOLDER = $(GRAPL_ROOT)/dist
 COMPOSE_USER=${UID}:${GID}
 COMPOSE_IGNORE_ORPHANS=1
 COMPOSE_PROJECT_NAME ?= grapl
@@ -640,9 +641,18 @@ generate-sqlx-data:  # Regenerate sqlx-data.json based on queries made in Rust c
 dist/firecracker_kernel.tar.gz: firecracker/generate_firecracker_kernel.sh | dist
 	./firecracker/generate_firecracker_kernel.sh
 
-# Changes to any of these files will trigger a rebuild of the rootfs
-FIRECRACKER_ROOTFS_FILES := $(shell find firecracker/packer -type f)
-dist/firecracker_rootfs.tar.gz: $(FIRECRACKER_ROOTFS_FILES) | dist
+# TODO: Would be nice to be able to specify the input file prerequisites of
+# this target and make non-PHONY. It's currently PHONY because otherwise,
+# rebuilds would only occur if the dist/plugin-bootstrap-init dir were deleted.
+# NOTE: While this target is PHONY, it *does* represent a real directory in 
+# dist/
+.PHONY: dist/plugin-bootstrap-init
+dist/plugin-bootstrap-init: | dist  ## Build the Plugin Bootstrap Init (+ associated files) and copy it to dist/
+	$(DOCKER_BUILDX_BAKE_HCL) plugin-bootstrap-init
+
+# TODO: Would be nice to be able to specify the input file prerequisites of
+# this target, once `dist/plugin-bootstrap-init` is non-PHONY
+dist/firecracker_rootfs.tar.gz: dist/plugin-bootstrap-init | dist
 	packer init -upgrade firecracker/packer/build-rootfs.pkr.hcl
 	packer build \
 	 	-var dist_folder="${GRAPL_ROOT}/dist" \

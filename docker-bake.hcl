@@ -67,6 +67,10 @@ variable "RUST_BUILD" {
   default = RELEASE_BUILD ? "release" : "debug"
 }
 
+# This is the directory that certain artifacts will be deposited into
+variable "DIST_FOLDER" {
+}
+
 # When performing a release build, we will tag our images with our
 # "raw" Cloudsmith repository Docker registry address. We have a
 # series of repositories that we promote containers through as they
@@ -147,7 +151,7 @@ group "grapl-services" {
   targets = [
     "javascript-services",
     "python-services",
-    "rust-services"
+    "rust-services",
   ]
 }
 
@@ -238,7 +242,8 @@ group "all" {
   targets = [
     "all-tests",
     "local-only-services",
-    "grapl-services"
+    "grapl-services",
+    "plugin-bootstrap-init",
   ]
 }
 
@@ -337,6 +342,14 @@ target "plugin-bootstrap" {
   target   = "plugin-bootstrap-deploy"
   tags = [
     upstream_aware_tag("plugin-bootstrap")
+  ]
+}
+
+target "plugin-bootstrap-init" {
+  inherits = ["_rust-base"]
+  target   = "plugin-bootstrap-init-output"
+  output = [
+    "type=local,dest=${DIST_FOLDER}/plugin-bootstrap-init"
   ]
 }
 
