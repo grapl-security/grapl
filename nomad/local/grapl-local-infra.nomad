@@ -40,7 +40,8 @@ variable "LOCALSTACK_PORT" {
 
 variable "ZOOKEEPER_PORT" {
   type        = string
-  description = "Port for zookeeper"
+  description = "Port for Zookeeper"
+  default     = "2181"
 }
 
 variable "PLUGIN_REGISTRY_DB_USERNAME" {
