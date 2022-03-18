@@ -3,6 +3,11 @@
 /// <https://docs.microsoft.com/en-us/windows/win32/wes/eventschema-correlation-systempropertiestype-element>
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Hash)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde_crate::Serialize, serde_crate::Deserialize),
+    serde(crate = "serde_crate")
+)]
 pub struct Correlation {
     /// A globally unique identifier that identifies the current activity. The events that are
     /// published with this identifier are part of the same activity.

@@ -12,9 +12,14 @@ pub use process_terminated::ProcessTerminatedEventData;
 
 pub const UTC_TIME_FORMAT: &str = "%Y-%m-%d %H:%M:%S%.3f";
 
+/// Event-specific data for the Sysmon event. This inludes the data found in the `<EventData>` element.
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Hash, IntoOwned)]
-/// Event-specific data for the Sysmon event. This inludes the data found in the `<EventData>` element.
+#[cfg_attr(
+    feature = "serde",
+    derive(serde_crate::Serialize, serde_crate::Deserialize),
+    serde(crate = "serde_crate")
+)]
 pub enum EventData<'a> {
     /// Event ID 11: FileCreate
     ///

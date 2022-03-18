@@ -10,13 +10,30 @@ edition = "2021"
 [lib]
 bench = false
 
+[features]
+default = ["serde"]
+serde = ["serde_crate", "uuid/serde", "chrono/serde"]
+
 [dependencies]
-chrono = { version = "0.4", features = [] }
+chrono = { version = "0.4", features = ["std"] }
 derive-into-owned = "0.2"
 memchr = "2"
 thiserror = "1.0"
 uuid = "0.8"
 xmlparser = "0.13"
+
+# Because we're enabling feature flags in our dependencies for 'serde' we can't
+# have a feature named 'serde' and depend on it as well. A workaround is to
+# rename the serde crate internally, instead of exposing such naming
+# workarounds to our users. See:
+# https://github.com/rust-lang/api-guidelines/discussions/180
+# https://github.com/serde-rs/serde/issues/1938
+[dependencies.serde_crate]
+package = "serde"
+optional = true
+version = "1.0"
+default-features = false
+features = ["derive"]
 
 [dev-dependencies]
 criterion = "0.3"
