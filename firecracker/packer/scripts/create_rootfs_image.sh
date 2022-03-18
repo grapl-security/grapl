@@ -67,8 +67,8 @@ sudo debootstrap --include apt,nano "${DEBIAN_VERSION}" \
 sudo umount "${MOUNT_POINT}"
 
 # NOTE about tar: If you specify the full path of the image,
-# the tar will contain that full nested path of directories.
-# Hence the basename.
+#   the tar will contain that full nested path of directories.
+#   Hence the basename.
 tar \
     --directory "${BUILD_DIR}" \
     --file="${OUTPUT_DIR}/${IMAGE_ARCHIVE_NAME}" \
