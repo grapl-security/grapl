@@ -6,21 +6,21 @@ variable "localstack_tag" {
 # The following variables are all-caps to clue in users that they're
 # imported from `local-grapl.env`.
 variable "KAFKA_BROKER_PORT" {
-  type        = string
+  type        = number
   description = "Kafka Broker's port to listen on, for other Nomad clients"
-  default     = "19092"
+  default     = 19092
 }
 
 variable "KAFKA_BROKER_PORT_FOR_HOST_OS" {
-  type        = string
+  type        = number
   description = "Kafka Broker's port to listen on, for things on the host OS (like Pulumi)"
-  default     = "29092"
+  default     = 29092
 }
 
 variable "KAFKA_JMX_PORT" {
-  type        = string
+  type        = number
   description = "Port for Kafka JMX"
-  default     = "9101"
+  default     = 9101
 }
 
 variable "FAKE_AWS_ACCESS_KEY_ID" {
@@ -34,15 +34,15 @@ variable "FAKE_AWS_SECRET_ACCESS_KEY" {
 }
 
 variable "LOCALSTACK_PORT" {
-  type        = string
+  type        = number
   description = "Port for Localstack"
-  default     = "4566"
+  default     = 4566
 }
 
 variable "ZOOKEEPER_PORT" {
-  type        = string
+  type        = number
   description = "Port for Zookeeper"
-  default     = "2181"
+  default     = 2181
 }
 
 variable "PLUGIN_REGISTRY_DB_USERNAME" {
@@ -85,21 +85,21 @@ variable "ORGANIZATION_MANAGEMENT_DB_PASSWORD" {
 # These database ports must match what's in
 # `pulumi/grapl/__main__.py`; sorry for the duplication :(
 variable "PLUGIN_REGISTRY_DB_PORT" {
-  type        = string
+  type        = number
   description = "The port for the plugin registry db"
-  default     = "5432"
+  default     = 5432
 }
 
 variable "PLUGIN_WORK_QUEUE_DB_PORT" {
-  type        = string
+  type        = number
   description = "The port for the plugin work queue db"
-  default     = "5532"
+  default     = 5532
 }
 
 variable "ORGANIZATION_MANAGEMENT_DB_PORT" {
-  type        = string
+  type        = number
   description = "The port for the organization management db"
-  default     = "5632"
+  default     = 5632
 }
 
 locals {
