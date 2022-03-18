@@ -16,20 +16,20 @@ variable "instance_type" {
 variable "region" {
   description = "In which region to build the rootfs. Must match the Base AMI's region."
   type        = string
-  default     = "us-east-2"
+  default     = "us-east-1"
 }
 
 variable "ami_id" {
   description = <<EOF
 Ubuntu AMI ID to build with. Must match var.region. We grab this one with:
 
-AWS_REGION=us-east-2 aws ssm get-parameters --names \ 
+AWS_REGION=us-east-1 aws ssm get-parameters --names \
   /aws/service/canonical/ubuntu/server-minimal/20.04/stable/current/amd64/hvm/ebs-gp2/ami-id \
   | jq .Parameters[0].Value
 }
 EOF
   type        = string
-  default     = "ami-0941c2e6994d23a93"
+  default     = "ami-0623cccc9df636385"
 }
 
 variable "aws_profile" {
