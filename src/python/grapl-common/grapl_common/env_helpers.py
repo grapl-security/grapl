@@ -63,16 +63,7 @@ def _client_get(
             "Please set AWS_REGION, AWS_DEFAULT_REGION, or config.region_name"
         )
 
-    if _running_in_localstack():
-        localstack_config = Config(
-            read_timeout=120,
-        )
-        config = (config or Config()).merge(localstack_config)
-
-        return _localstack_client(
-            client_create_fn, params, region=region, config=config
-        )
-    elif all((endpoint_url, access_key_id, access_key_secret)):
+    if all((endpoint_url, access_key_id, access_key_secret)):
         # Local, all are passed in from docker-compose.yml
         logging.info(f"Creating a local client for {which_service}")
         return client_create_fn(
@@ -104,48 +95,6 @@ def _client_get(
         raise FromEnvException(
             f"You specified access key but not endpoint for {params.boto3_client_name}?"
         )
-
-
-def _running_in_localstack() -> bool:
-    """Detects whether or not code is running in Localstack.
-
-    When running lambda functions in Localstack, the
-    `LOCALSTACK_HOSTNAME` environment variable will be set, allowing
-    us to compose an appropriate endpoint at which the lambda can
-    interact with other Localstack-hosted AWS services.
-
-    Needless to say, this should not be present in the environment of
-    a lambda actually running in AWS.
-
-    """
-    return "LOCALSTACK_HOSTNAME" in os.environ
-
-
-def _localstack_client(
-    client_create_fn: Callable[..., Any],
-    params: ClientGetParams,
-    region: Optional[str],
-    config: Optional[Config],
-) -> Any:
-    """Create a boto3 client for interacting with AWS services running in
-    Localstack from a lambda function also running in Localstack.
-
-
-    Localstack provides LOCALSTACK_HOSTNAME and EDGE_PORT for creating
-    a proper endpoint value. In addition, appropriate values for
-    AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_REGION are also
-    provided.
-
-    See the _running_in_localstack function, as well.
-    """
-    service = params.boto3_client_name
-    logging.info("Creating a {service} client for Localstack!")
-    return client_create_fn(
-        service,
-        endpoint_url=f"http://{os.environ['LOCALSTACK_HOSTNAME']}:{os.environ['EDGE_PORT']}",
-        region_name=region,
-        config=config,
-    )
 
 
 _SQSParams = ClientGetParams(
