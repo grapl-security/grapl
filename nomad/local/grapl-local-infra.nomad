@@ -82,22 +82,24 @@ variable "ORGANIZATION_MANAGEMENT_DB_PASSWORD" {
   default     = "postgres"
 }
 
-
+# These database ports must match what's in
+# `pulumi/grapl/__main__.py`; sorry for the duplication :(
 variable "PLUGIN_REGISTRY_DB_PORT" {
   type        = string
   description = "The port for the plugin registry db"
+  default     = "5432"
 }
-
 
 variable "PLUGIN_WORK_QUEUE_DB_PORT" {
   type        = string
   description = "The port for the plugin work queue db"
+  default     = "5532"
 }
-
 
 variable "ORGANIZATION_MANAGEMENT_DB_PORT" {
   type        = string
   description = "The port for the organization management db"
+  default     = "5632"
 }
 
 locals {
