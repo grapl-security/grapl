@@ -36,6 +36,7 @@ variable "FAKE_AWS_SECRET_ACCESS_KEY" {
 variable "LOCALSTACK_PORT" {
   type        = string
   description = "Port for Localstack"
+  default     = "4566"
 }
 
 variable "ZOOKEEPER_PORT" {
