@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import random
 import string
 import time
@@ -127,6 +128,7 @@ def upload_logs(
     sqs = sqs_client or SQSClientFactory(boto3).from_env()
 
     with open(logfile, "r") as b:
+        original_filename = os.path.basename(b.name)
         body = b.readlines()
         body = [line for line in body]
 
@@ -142,11 +144,12 @@ def upload_logs(
         chunk_body = generator_options.encode_chunk(chunk)
         epoch = int(time.time())
 
+        chunk_filename = "{}.{}.zstd".format(original_filename, chunk_count)
+
         key = (
             str(epoch - (epoch % (24 * 60 * 60)))
             + f"/{generator_options.key_infix}/"
-            + str(epoch)
-            + rand_str(6)
+            + chunk_filename
         )
         envelope = OldEnvelope(
             metadata=Metadata(
