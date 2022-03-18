@@ -29,11 +29,16 @@ export
 export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 	--file ./test/docker-compose.unit-tests-js.yml \
 
+# This is used to send docker traces to Jaeger. This is primarily useful for debugging build time performance
+ifdef WITH_TRACING
+buildx_builder_args := --builder=builder --load
+endif
+
 # Helper macro to make using the HCL file for builds less
 # verbose. Once we get rid of docker-compose.yml, we can just use
 # `docker buildx bake`, since it will pick up the HCL file
 # automatically.
-DOCKER_BUILDX_BAKE_HCL := docker buildx bake --file=docker-bake.hcl
+DOCKER_BUILDX_BAKE_HCL := docker buildx bake --file=docker-bake.hcl $(buildx_builder_args)
 
 COMPOSE_PROJECT_INTEGRATION_TESTS := grapl-integration_tests
 COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
@@ -139,6 +144,9 @@ help: ## Print this help
 	@printf -- '\n'
 	@printf -- '  ${FMT_PURPLE}DEBUG_SERVICES${FMT_END}="graphql_endpoint grapl_e2e_tests" make test-e2e\n'
 	@printf -- '    to launch the VSCode Debugger (see ${VSC_DEBUGGER_DOCS_LINK}).\n'
+	@printf -- '\n'
+	@printf -- '  ${FMT_PURPLE}WITH_TRACING=1${FMT_END} make build-local-infrastructure \n'
+	@printf -- '    to send docker build traces to Jaeger.\n'
 	@printf -- '\n'
 	@printf -- '  ${FMT_BOLD}FUN FACT${FMT_END}: You can also specify these as postfix, like:\n'
 	@printf -- '    make test-something KEEP_TEST_ENV=1\n'
@@ -634,18 +642,14 @@ generate-nomad-rust-client: ## Generate the Nomad rust client from OpenAPI
 # should use that here.
 	$(MAKE) format-prettier
 
-.PHONY: buildx-tracing
-buildx-tracing: ## Set tracing up for docker buildx, this assumes that Jaeger is already up
+.PHONY: setup-docker-tracing
+buildx-tracing: ## This is a one-time setup for enabling docker buildx traces
 	docker buildx create \
       --name builder \
       --driver docker-container \
       --driver-opt network=host \
       --driver-opt env.JAEGER_TRACE=localhost:6831 \
       --use
-
-.PHONY: disable-buildx-tracing
-disable-buildx-tracing: ## Disable the buildx tracing
-	docker buildx use default
 
 .PHONY: generate-sqlx-data
 generate-sqlx-data:  # Regenerate sqlx-data.json based on queries made in Rust code
