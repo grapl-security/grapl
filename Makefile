@@ -644,6 +644,6 @@ dist/firecracker_kernel.tar.gz: firecracker/generate_firecracker_kernel.sh | dis
 FIRECRACKER_ROOTFS_FILES := $(shell find firecracker/packer -type f)
 dist/firecracker_rootfs.tar.gz: $(FIRECRACKER_ROOTFS_FILES) | dist
 	packer init -upgrade firecracker/packer/build-rootfs.pkr.hcl
-	packer build -on-error=ask \
+	packer build \
 	 	-var dist_folder="${GRAPL_ROOT}/dist" \
 		firecracker/packer/build-rootfs.pkr.hcl
