@@ -8,6 +8,7 @@ variable "localstack_tag" {
 variable "KAFKA_BROKER_PORT" {
   type        = string
   description = "Kafka Broker's port to listen on, for other Nomad clients"
+  default     = "19092"
 }
 
 variable "KAFKA_BROKER_PORT_FOR_HOST_OS" {
