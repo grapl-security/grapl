@@ -2,8 +2,8 @@ use std::time::SystemTimeError;
 
 use bytes::{
     Buf,
-    BufMut,
     Bytes,
+    BytesMut,
 };
 use prost::Message;
 
@@ -91,12 +91,10 @@ impl type_url::TypeUrl for Metadata {
 }
 
 impl SerDe for Metadata {
-    fn serialize<B>(self, buf: &mut B) -> Result<(), SerDeError>
-    where
-        B: BufMut,
-    {
-        MetadataProto::try_from(self)?.encode(buf)?;
-        Ok(())
+    fn serialize(self) -> Result<Bytes, SerDeError> {
+        let mut buf = BytesMut::new();
+        MetadataProto::try_from(self)?.encode(&mut buf)?;
+        Ok(buf.freeze())
     }
 
     fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
@@ -153,12 +151,10 @@ impl type_url::TypeUrl for Envelope {
 }
 
 impl SerDe for Envelope {
-    fn serialize<B>(self, buf: &mut B) -> Result<(), SerDeError>
-    where
-        B: BufMut,
-    {
-        EnvelopeProto::try_from(self)?.encode(buf)?;
-        Ok(())
+    fn serialize(self) -> Result<Bytes, SerDeError> {
+        let mut buf = BytesMut::new();
+        EnvelopeProto::try_from(self)?.encode(&mut buf)?;
+        Ok(buf.freeze())
     }
 
     fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
@@ -201,12 +197,10 @@ impl type_url::TypeUrl for RawLog {
 }
 
 impl SerDe for RawLog {
-    fn serialize<B>(self, buf: &mut B) -> Result<(), SerDeError>
-    where
-        B: BufMut,
-    {
-        RawLogProto::from(self).encode(buf)?;
-        Ok(())
+    fn serialize(self) -> Result<Bytes, SerDeError> {
+        let mut buf = BytesMut::new();
+        RawLogProto::from(self).encode(&mut buf)?;
+        Ok(buf.freeze())
     }
 
     fn deserialize<B>(buf: B) -> Result<Self, SerDeError>

@@ -1,8 +1,8 @@
 use std::time::SystemTimeError;
 
 use bytes::{
+    Bytes,
     Buf,
-    BufMut,
 };
 use prost::{
     DecodeError,
@@ -190,9 +190,7 @@ pub enum SerDeError {
 }
 
 pub trait SerDe: type_url::TypeUrl {
-    fn serialize<B>(self, buf: &mut B) -> Result<(), SerDeError>
-    where
-        B: BufMut;
+    fn serialize(self) -> Result<Bytes, SerDeError>;
 
     fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
     where

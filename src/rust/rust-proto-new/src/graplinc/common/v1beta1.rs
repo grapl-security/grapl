@@ -9,7 +9,8 @@ use std::time::{
 
 use bytes::{
     Buf,
-    BufMut,
+    BytesMut,
+    Bytes
 };
 use prost::Message;
 pub use uuid::Uuid;
@@ -57,12 +58,10 @@ impl type_url::TypeUrl for Uuid {
 }
 
 impl SerDe for Uuid {
-    fn serialize<B>(self, buf: &mut B) -> Result<(), SerDeError>
-    where
-        B: BufMut,
-    {
-        UuidProto::from(self).encode(buf)?;
-        Ok(())
+    fn serialize(self) -> Result<Bytes, SerDeError> {
+        let mut buf = BytesMut::new();
+        UuidProto::from(self).encode(&mut buf)?;
+        Ok(buf.freeze())
     }
 
     fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
@@ -99,12 +98,10 @@ impl type_url::TypeUrl for Duration {
 }
 
 impl SerDe for Duration {
-    fn serialize<B>(self, buf: &mut B) -> Result<(), SerDeError>
-    where
-        B: BufMut,
-    {
-        DurationProto::from(self).encode(buf)?;
-        Ok(())
+    fn serialize(self) -> Result<Bytes, SerDeError> {
+        let mut buf = BytesMut::new();
+        DurationProto::from(self).encode(&mut buf)?;
+        Ok(buf.freeze())
     }
 
     fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
@@ -178,12 +175,10 @@ impl type_url::TypeUrl for SystemTime {
 }
 
 impl SerDe for SystemTime {
-    fn serialize<B>(self, buf: &mut B) -> Result<(), SerDeError>
-    where
-        B: BufMut,
-    {
-        TimestampProto::try_from(self)?.encode(buf)?;
-        Ok(())
+    fn serialize(self) -> Result<Bytes, SerDeError> {
+        let mut buf = BytesMut::new();
+        TimestampProto::try_from(self)?.encode(&mut buf)?;
+        Ok(buf.freeze())
     }
 
     fn deserialize<B>(buf: B) -> Result<Self, SerDeError>

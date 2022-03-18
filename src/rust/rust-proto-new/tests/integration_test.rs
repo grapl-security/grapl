@@ -164,12 +164,12 @@ fn check_encode_decode_invariant<T>(serializable: T)
 where
     T: SerDe + PartialEq + Clone + Debug,
 {
-    let mut buf = BytesMut::new();
     let cloned = serializable.clone();
-    serializable
-        .serialize(&mut buf)
+    let serialized = serializable
+        .serialize()
         .expect("serialization failed");
-    let deserialized = T::deserialize(buf).expect("deserialization failed");
+    let deserialized = T::deserialize(serialized)
+        .expect("deserialization failed");
     assert!(cloned == deserialized);
 }
 

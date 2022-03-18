@@ -1,4 +1,4 @@
-use bytes::Bytes;
+use bytes::{Bytes, BytesMut};
 use prost::Message;
 
 use crate::{
@@ -64,12 +64,10 @@ impl type_url::TypeUrl for PublishRawLogsRequest {
 }
 
 impl SerDe for PublishRawLogsRequest {
-    fn serialize<B>(self, buf: &mut B) -> Result<(), SerDeError>
-    where
-        B: bytes::BufMut,
-    {
-        PublishRawLogsRequestProto::from(self).encode(buf)?;
-        Ok(())
+    fn serialize(self) -> Result<Bytes, SerDeError> {
+        let mut buf = BytesMut::new();
+        PublishRawLogsRequestProto::from(self).encode(&mut buf)?;
+        Ok(buf.freeze())
     }
 
     fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
@@ -123,12 +121,10 @@ impl type_url::TypeUrl for PublishRawLogsResponse {
 }
 
 impl SerDe for PublishRawLogsResponse {
-    fn serialize<B>(self, buf: &mut B) -> Result<(), SerDeError>
-    where
-        B: bytes::BufMut,
-    {
-        PublishRawLogsResponseProto::try_from(self)?.encode(buf)?;
-        Ok(())
+    fn serialize(self) -> Result<Bytes, SerDeError> {
+        let mut buf = BytesMut::new();
+        PublishRawLogsResponseProto::try_from(self)?.encode(&mut buf)?;
+        Ok(buf.freeze())
     }
 
     fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
