@@ -16,7 +16,20 @@ variable "instance_type" {
 variable "region" {
   description = "In which region to build the rootfs. Must match the Base AMI's region."
   type        = string
-  default     = "us-east-1"
+  default     = "us-east-2"
+}
+
+variable "ami-id" {
+  description = <<EOF
+Ubuntu AMI ID to build with. Must match var.region. We grab this one with:
+
+AWS_REGION=us-east-2 aws ssm get-parameters --names \ 
+  /aws/service/canonical/ubuntu/server-minimal/20.04/stable/current/amd64/hvm/ebs-gp2/ami-id \
+  | jq .Parameters[0].Value
+}
+EOF
+  type        = string
+  default     = "ami-0941c2e6994d23a93"
 }
 
 variable "aws_profile" {
@@ -51,12 +64,10 @@ locals {
 
 data "amazon-ami" "base-ami" {
   filters = {
-    # official amd64 Ubuntu Focal (20.04 LTS) image on us-east-1
-    # per https://cloud-images.ubuntu.com/locator/ec2/
-    image-id = "ami-01896de1f162f0ab7"
+    image-id = var.ami_id
   }
   owners = ["099720109477"] # Canonical / Ubuntu
-  region = "${var.region}"
+  region = var.region
 }
 
 source "amazon-ebs" "grapl-build-rootfs" {
@@ -70,7 +81,7 @@ source "amazon-ebs" "grapl-build-rootfs" {
   ami_description = "Grapl Build Environment for RootFS"
   ami_name        = "grapl-build-rootfs-linux-x86_64"
   instance_type   = "${var.instance_type}"
-  region          = "${var.region}"
+  region          = var.region
   source_ami      = "${data.amazon-ami.base-ami.id}"
   ssh_username    = "ubuntu"
   profile         = "${var.aws_profile}"
@@ -85,6 +96,12 @@ source "amazon-ebs" "grapl-build-rootfs" {
 
 build {
   sources = ["source.amazon-ebs.grapl-build-rootfs"]
+
+  # Prevents non-deterministic apt failures in install_dependencies.sh
+  # https://github.com/grapl-security/issue-tracker/issues/880
+  provisioner "shell" {
+    inline = ["cloud-init status --wait"]
+  }
 
   provisioner "file" {
     direction   = "upload"
