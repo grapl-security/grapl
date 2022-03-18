@@ -32,7 +32,7 @@ cd firecracker
 ########################################
 # Copy kernel into dist.
 ########################################
-readonly KERNEL_BIN_DIR="${BUILD_DIR}/firecracker//build/kernel/linux-${KERNEL_VERSION}/"
+readonly KERNEL_BIN_DIR="${BUILD_DIR}/firecracker/build/kernel/linux-${KERNEL_VERSION}/"
 readonly KERNEL_BIN_FILE="vmlinux-${KERNEL_VERSION}-x86_64.bin"
 readonly DISTRIBUTION="${REPOSITORY_ROOT}/dist/firecracker_kernel.tar.gz"
 
