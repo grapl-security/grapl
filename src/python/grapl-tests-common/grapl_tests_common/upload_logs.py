@@ -72,7 +72,7 @@ class GeneratorOptions:
     queue_url: str
     key_infix: str
 
-    def encode_chunk(self, input: List[bytes]) -> bytes:
+    def encode_chunk(self, input: List[str]) -> bytes:
         raise NotImplementedError()
 
 
@@ -84,9 +84,10 @@ class SysmonGeneratorOptions(GeneratorOptions):
             key_infix="sysmon",
         )
 
-    def encode_chunk(self, input: List[bytes]) -> bytes:
+    def encode_chunk(self, input: List[str]) -> bytes:
         # zstd encoded line delineated xml
-        return cast(bytes, zstd.compress(b"\n".join(input).replace(b"\n\n", b"\n"), 4))
+        data = "\n".join(input)
+        return cast(bytes, zstd.compress(data.encode("utf-8"), 4))
 
 
 class OSQueryGeneratorOptions(GeneratorOptions):
@@ -97,9 +98,10 @@ class OSQueryGeneratorOptions(GeneratorOptions):
             key_infix="osquery",
         )
 
-    def encode_chunk(self, input: List[bytes]) -> bytes:
+    def encode_chunk(self, input: List[str]) -> bytes:
         # zstd encoded line delineated xml
-        return cast(bytes, zstd.compress(b"\n".join(input).replace(b"\n\n", b"\n"), 4))
+        data = "\n".join(input)
+        return cast(bytes, zstd.compress(data.encode("utf-8"), 4))
 
 
 def upload_logs(
@@ -124,11 +126,11 @@ def upload_logs(
     s3 = s3_client or S3ClientFactory(boto3).from_env()
     sqs = sqs_client or SQSClientFactory(boto3).from_env()
 
-    with open(logfile, "rb") as b:
+    with open(logfile, "r") as b:
         body = b.readlines()
         body = [line for line in body]
 
-    def chunker(seq: List[bytes], size: int) -> Iterator[List[bytes]]:
+    def chunker(seq: List[str], size: int) -> Iterator[List[str]]:
         return (seq[pos : pos + size] for pos in range(0, len(seq), size))
 
     bucket = generator_options.bucket
