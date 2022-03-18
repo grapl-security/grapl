@@ -19,7 +19,7 @@ variable "region" {
   default     = "us-east-2"
 }
 
-variable "ami-id" {
+variable "ami_id" {
   description = <<EOF
 Ubuntu AMI ID to build with. Must match var.region. We grab this one with:
 
