@@ -208,7 +208,7 @@ def main() -> None:
     rust_log_levels = ",".join(
         [
             "DEBUG",
-            "h2::codec=WARN",
+            "h2=WARN",
             "hyper=WARN",
             "rusoto_core=WARN",
             "rustls=WARN",
