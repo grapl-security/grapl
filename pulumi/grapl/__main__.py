@@ -212,7 +212,6 @@ def main() -> None:
             "hyper=WARN",
             "rusoto_core=WARN",
             "rustls=WARN",
-            "serde_xml_rs=WARN",
         ]
     )
     py_log_level = "DEBUG"
