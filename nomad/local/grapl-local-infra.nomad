@@ -23,16 +23,6 @@ variable "KAFKA_JMX_PORT" {
   default     = 9101
 }
 
-variable "FAKE_AWS_ACCESS_KEY_ID" {
-  type        = string
-  description = "Fake AWS Access Key ID for Localstack and clients"
-}
-
-variable "FAKE_AWS_SECRET_ACCESS_KEY" {
-  type        = string
-  description = "Fake AWS Secret Access Key for Localstack and clients"
-}
-
 variable "LOCALSTACK_PORT" {
   type        = number
   description = "Port for Localstack"
@@ -199,9 +189,10 @@ job "grapl-local-infra" {
         SERVICES     = "dynamodb,ec2,iam,s3,secretsmanager,sns,sqs"
         SQS_PROVIDER = "elasticmq"
 
-        # These are not used by localstack, but are used by the health check.
-        AWS_ACCESS_KEY_ID     = var.FAKE_AWS_ACCESS_KEY_ID
-        AWS_SECRET_ACCESS_KEY = var.FAKE_AWS_SECRET_ACCESS_KEY
+        # These are used by the health check below; "test" is the
+        # default value for these credentials in Localstack.
+        AWS_ACCESS_KEY_ID     = "test"
+        AWS_SECRET_ACCESS_KEY = "test"
       }
 
       service {

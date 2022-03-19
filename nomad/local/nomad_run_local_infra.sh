@@ -7,8 +7,6 @@ NOMAD_FILE="${GRAPL_ROOT}/nomad/local/grapl-local-infra.nomad"
 OBSERVABILITY_NOMAD_FILE="${GRAPL_ROOT}/nomad/local/observability.nomad"
 
 declare -a NOMAD_VARS=(
-    -var "FAKE_AWS_ACCESS_KEY_ID=${FAKE_AWS_ACCESS_KEY_ID}"
-    -var "FAKE_AWS_SECRET_ACCESS_KEY=${FAKE_AWS_SECRET_ACCESS_KEY}"
     -var "localstack_tag=${IMAGE_TAG}"
 )
 
