@@ -376,7 +376,7 @@ job "grapl-local-infra" {
           type     = "script"
           name     = "check_postgres"
           command  = "pg_isready"
-          args     = ["-U", "postgres"]
+          args     = ["-U", "${var.plugin_registry_db.username}"]
           interval = "20s"
           timeout  = "10s"
 
@@ -419,7 +419,7 @@ job "grapl-local-infra" {
           type     = "script"
           name     = "check_postgres"
           command  = "pg_isready"
-          args     = ["-U", "postgres"]
+          args     = ["-U", "${var.plugin_work_queue_db.username}"]
           interval = "20s"
           timeout  = "10s"
 
@@ -463,7 +463,7 @@ job "grapl-local-infra" {
           type     = "script"
           name     = "check_postgres"
           command  = "pg_isready"
-          args     = ["-U", "postgres"]
+          args     = ["-U", "${var.organization_management_db.username}"]
           interval = "20s"
           timeout  = "10s"
 
