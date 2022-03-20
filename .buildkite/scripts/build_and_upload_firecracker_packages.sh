@@ -31,7 +31,7 @@ get_version() {
     make dist/firecracker_kernel.tar.gz
 )
 
-# These will be uploaded to Cludsmith with just their basename.
+# These will be uploaded to Cloudsmith with just their basename.
 readonly PACKAGES=(
     dist/firecracker_kernel.tar.gz
 )
