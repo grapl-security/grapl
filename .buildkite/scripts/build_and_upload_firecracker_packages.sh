@@ -11,7 +11,7 @@ set -euo pipefail
 
 source .buildkite/scripts/lib/artifacts.sh
 source .buildkite/scripts/lib/version.sh
-source firecracker/constants.sh
+source firecracker/kernel/constants.sh
 
 DEFAULT_VERSION="$(timestamp_and_sha_version)"
 

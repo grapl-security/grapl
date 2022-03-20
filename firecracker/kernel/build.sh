@@ -13,21 +13,23 @@ readonly REPOSITORY_ROOT
 
 BUILD_DIR="$(mktemp --directory)"
 readonly BUILD_DIR
-cd "${BUILD_DIR}"
 
 ########################################
 # Get the Firecracker source
 ########################################
-git clone git@github.com:firecracker-microvm/firecracker.git \
-    --depth=1 \
-    --branch="${FIRECRACKER_RELEASE}"
-cd firecracker
+(
+    cd "${BUILD_DIR}"
+    git clone git@github.com:firecracker-microvm/firecracker.git \
+        --depth=1 \
+        --branch="${FIRECRACKER_RELEASE}"
+    cd firecracker
 
-########################################
-# Generate the kernel.
-# Based on https://github.com/firecracker-microvm/firecracker/blob/main/docs/rootfs-and-kernel-setup.md
-########################################
-./tools/devtool build_kernel --config "${KERNEL_CONFIG}" --nproc 8
+    ########################################
+    # Generate the kernel.
+    # Based on https://github.com/firecracker-microvm/firecracker/blob/main/docs/rootfs-and-kernel-setup.md
+    ########################################
+    ./tools/devtool build_kernel --config "${KERNEL_CONFIG}" --nproc 8
+)
 
 ########################################
 # Copy kernel into dist.
