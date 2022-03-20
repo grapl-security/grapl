@@ -47,16 +47,18 @@ variable plugin_registry_db {
   }
 }
 
-variable "PLUGIN_WORK_QUEUE_DB_USERNAME" {
-  type        = string
-  description = "The username for the plugin work queue db"
-  default     = "postgres"
-}
-
-variable "PLUGIN_WORK_QUEUE_DB_PASSWORD" {
-  type        = string
-  description = "The password fort he plugin work queue db"
-  default     = "postgres"
+variable plugin_work_queue_db {
+  description = "Connection configuration for the Plugin Work Queue database"
+  type = object({
+    username = string
+    password = string
+    port     = number
+  })
+  default = {
+    username = "postgres"
+    password = "postgres"
+    port     = 5532
+  }
 }
 
 variable "ORGANIZATION_MANAGEMENT_DB_USERNAME" {
@@ -69,12 +71,6 @@ variable "ORGANIZATION_MANAGEMENT_DB_PASSWORD" {
   type        = string
   description = "The password for the organization management db"
   default     = "postgres"
-}
-
-variable "PLUGIN_WORK_QUEUE_DB_PORT" {
-  type        = number
-  description = "The port for the plugin work queue db"
-  default     = 5532
 }
 
 variable "ORGANIZATION_MANAGEMENT_DB_PORT" {
@@ -405,7 +401,7 @@ job "grapl-local-infra" {
     network {
       mode = "bridge"
       port "postgres" {
-        static = var.PLUGIN_WORK_QUEUE_DB_PORT
+        static = var.plugin_work_queue_db.port
         to     = 5432
       }
     }
@@ -419,8 +415,8 @@ job "grapl-local-infra" {
       }
 
       env {
-        POSTGRES_USER     = var.PLUGIN_WORK_QUEUE_DB_USERNAME
-        POSTGRES_PASSWORD = var.PLUGIN_WORK_QUEUE_DB_PASSWORD
+        POSTGRES_USER     = var.plugin_work_queue_db.username
+        POSTGRES_PASSWORD = var.plugin_work_queue_db.password
       }
 
       service {
