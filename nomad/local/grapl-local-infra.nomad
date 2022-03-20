@@ -121,15 +121,10 @@ job "grapl-local-infra" {
         name = "redis"
 
         check {
-          type    = "script"
-          name    = "check_redis"
-          command = "/bin/bash"
-          # Interpolated by bash, not nomad
-          args = [
-            "-o", "errexit", "-o", "nounset",
-            "-c",
-            "redis-cli ping || exit 1",
-          ]
+          type     = "script"
+          name     = "check_redis"
+          command  = "redis-cli"
+          args     = ["ping"]
           interval = "20s"
           timeout  = "10s"
 
