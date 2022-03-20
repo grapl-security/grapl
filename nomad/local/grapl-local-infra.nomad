@@ -163,9 +163,6 @@ job "grapl-local-infra" {
         memory_hard_limit = 2048
         ports             = ["localstack"]
         privileged        = true
-        volumes = [
-          "/var/run/docker.sock:/var/run/docker.sock"
-        ]
       }
 
       env {
