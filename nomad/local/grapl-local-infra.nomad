@@ -273,12 +273,12 @@ job "grapl-local-infra" {
         check {
           type    = "script"
           name    = "check_kafka"
-          command = "/bin/bash"
-          # Interpolated by bash, not nomad
+          command = "nc"
           args = [
-            "-o", "errexit", "-o", "nounset",
-            "-c",
-            "nc -vz localhost ${kafka_broker_port}",
+            "-v", # verbose
+            "-z", # "zero I/O mode" - used for scanning
+            "localhost",
+            "${var.kafka_broker_port}"
           ]
           interval = "20s"
           timeout  = "10s"
