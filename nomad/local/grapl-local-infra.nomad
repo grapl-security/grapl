@@ -1,6 +1,6 @@
-variable "localstack_tag" {
+variable "image_tag" {
   type        = string
-  description = "The tagged version of localstack we should deploy."
+  description = "The tag for all container images we should deploy. This is ultimately set in the top-level Makefile."
 }
 
 variable "kafka_broker_port" {
@@ -171,7 +171,7 @@ job "grapl-local-infra" {
 
       config {
         # Once we move to Kafka, we can go back to the non-fork.
-        image = "localstack-grapl-fork:${var.localstack_tag}"
+        image = "localstack-grapl-fork:${var.image_tag}"
         # Was running into this: https://github.com/localstack/localstack/issues/1349
         memory_hard_limit = 2048
         ports             = ["localstack"]
@@ -378,7 +378,7 @@ job "grapl-local-infra" {
       driver = "docker"
 
       config {
-        image = "postgres-ext:${var.localstack_tag}"
+        image = "postgres-ext:${var.image_tag}"
         ports = ["postgres"]
       }
 
@@ -421,7 +421,7 @@ job "grapl-local-infra" {
       driver = "docker"
 
       config {
-        image = "postgres-ext:${var.localstack_tag}"
+        image = "postgres-ext:${var.image_tag}"
         ports = ["postgres"]
       }
 
@@ -465,7 +465,7 @@ job "grapl-local-infra" {
       driver = "docker"
 
       config {
-        image = "postgres-ext:${var.localstack_tag}"
+        image = "postgres-ext:${var.image_tag}"
         ports = ["postgres"]
       }
 

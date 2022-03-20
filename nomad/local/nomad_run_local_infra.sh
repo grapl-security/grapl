@@ -7,7 +7,7 @@ NOMAD_FILE="${GRAPL_ROOT}/nomad/local/grapl-local-infra.nomad"
 OBSERVABILITY_NOMAD_FILE="${GRAPL_ROOT}/nomad/local/observability.nomad"
 
 declare -a NOMAD_VARS=(
-    -var "localstack_tag=${IMAGE_TAG}"
+    -var "image_tag=${IMAGE_TAG}"
 )
 
 # shellcheck source-path=SCRIPTDIR
