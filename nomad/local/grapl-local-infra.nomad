@@ -177,11 +177,11 @@ job "grapl-local-infra" {
         check {
           type    = "script"
           name    = "check_s3_ls"
-          command = "/bin/bash"
+          command = "aws"
           args = [
-            "-o", "errexit", "-o", "nounset",
-            "-c",
-            "aws --endpoint-url=http://localhost:${var.localstack_port} s3 ls",
+            "--endpoint-url=http://localhost:${var.localstack_port}",
+            "s3",
+            "ls"
           ]
           interval = "10s"
           timeout  = "10s"
