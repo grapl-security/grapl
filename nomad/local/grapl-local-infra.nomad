@@ -33,18 +33,19 @@ variable "zookeeper_port" {
   default     = 2181
 }
 
-variable "PLUGIN_REGISTRY_DB_USERNAME" {
-  type        = string
-  description = "The username for the plugin registry db"
-  default     = "postgres"
+variable plugin_registry_db {
+  description = "Connection configuration for the Plugin Registry database"
+  type = object({
+    username = string
+    password = string
+    port     = number
+  })
+  default = {
+    username = "postgres"
+    password = "postgres"
+    port     = 5432
+  }
 }
-
-variable "PLUGIN_REGISTRY_DB_PASSWORD" {
-  type        = string
-  description = "The password for the plugin registry db"
-  default     = "postgres"
-}
-
 
 variable "PLUGIN_WORK_QUEUE_DB_USERNAME" {
   type        = string
@@ -68,14 +69,6 @@ variable "ORGANIZATION_MANAGEMENT_DB_PASSWORD" {
   type        = string
   description = "The password for the organization management db"
   default     = "postgres"
-}
-
-# These database ports must match what's in
-# `pulumi/grapl/__main__.py`; sorry for the duplication :(
-variable "PLUGIN_REGISTRY_DB_PORT" {
-  type        = number
-  description = "The port for the plugin registry db"
-  default     = 5432
 }
 
 variable "PLUGIN_WORK_QUEUE_DB_PORT" {
@@ -369,7 +362,7 @@ job "grapl-local-infra" {
     network {
       mode = "bridge"
       port "postgres" {
-        static = var.PLUGIN_REGISTRY_DB_PORT
+        static = var.plugin_registry_db.port
         to     = 5432 # postgres default
       }
     }
@@ -383,8 +376,8 @@ job "grapl-local-infra" {
       }
 
       env {
-        POSTGRES_USER     = var.PLUGIN_REGISTRY_DB_USERNAME
-        POSTGRES_PASSWORD = var.PLUGIN_REGISTRY_DB_PASSWORD
+        POSTGRES_USER     = var.plugin_registry_db.username
+        POSTGRES_PASSWORD = var.plugin_registry_db.password
       }
 
       service {
