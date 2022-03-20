@@ -186,8 +186,7 @@ job "grapl-local-infra" {
           args = [
             "-o", "errexit", "-o", "nounset",
             "-c",
-            # This uses the stuff in env { } - not Nomad interpolation.
-            "aws --endpoint-url=http://localhost:${EDGE_PORT} s3 ls",
+            "aws --endpoint-url=http://localhost:${var.localstack_port} s3 ls",
           ]
           interval = "10s"
           timeout  = "10s"
