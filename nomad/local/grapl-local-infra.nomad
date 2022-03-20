@@ -328,11 +328,10 @@ job "grapl-local-infra" {
           type    = "script"
           name    = "check_zookeeper"
           command = "/bin/bash"
-          # Interpolated by bash, not nomad
           args = [
             "-o", "errexit", "-o", "nounset",
             "-c",
-            "echo ruok | nc -w 2  localhost ${ZOOKEEPER_CLIENT_PORT} | grep imok || exit 2",
+            "echo ruok | nc -w 2  localhost ${var.zookeeper_port} | grep imok || exit 2",
           ]
           interval = "20s"
           timeout  = "10s"
