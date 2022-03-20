@@ -3,33 +3,31 @@ variable "localstack_tag" {
   description = "The tagged version of localstack we should deploy."
 }
 
-# The following variables are all-caps to clue in users that they're
-# imported from `local-grapl.env`.
-variable "KAFKA_BROKER_PORT" {
+variable "kafka_broker_port" {
   type        = number
   description = "Kafka Broker's port to listen on, for other Nomad clients"
   default     = 19092
 }
 
-variable "KAFKA_BROKER_PORT_FOR_HOST_OS" {
+variable "kafka_broker_port_for_host_os" {
   type        = number
   description = "Kafka Broker's port to listen on, for things on the host OS (like Pulumi)"
   default     = 29092
 }
 
-variable "KAFKA_JMX_PORT" {
+variable "kafka_jmx_port" {
   type        = number
   description = "Port for Kafka JMX"
   default     = 9101
 }
 
-variable "LOCALSTACK_PORT" {
+variable "localstack_port" {
   type        = number
   description = "Port for Localstack"
   default     = 4566
 }
 
-variable "ZOOKEEPER_PORT" {
+variable "zookeeper_port" {
   type        = number
   description = "Port for Zookeeper"
   default     = 2181
@@ -96,7 +94,7 @@ locals {
   # This is the equivalent of `localhost` within a bridge network.
   # Useful for, for instance, talking to Zookeeper from Kafka without Consul Connect
   localhost_within_bridge = attr.unique.network.ip-address
-  zookeeper_endpoint      = "${local.localhost_within_bridge}:${var.ZOOKEEPER_PORT}"
+  zookeeper_endpoint      = "${local.localhost_within_bridge}:${var.zookeeper_port}"
 }
 
 
@@ -164,7 +162,7 @@ job "grapl-local-infra" {
     network {
       mode = "bridge"
       port "localstack" {
-        static = var.LOCALSTACK_PORT
+        static = var.localstack_port
       }
     }
 
@@ -185,7 +183,7 @@ job "grapl-local-infra" {
 
       env {
         DEBUG        = 1
-        EDGE_PORT    = var.LOCALSTACK_PORT
+        EDGE_PORT    = var.localstack_port
         SERVICES     = "dynamodb,ec2,iam,s3,secretsmanager,sns,sqs"
         SQS_PROVIDER = "elasticmq"
 
@@ -246,10 +244,10 @@ job "grapl-local-infra" {
     network {
       mode = "bridge"
       port "kafka-for-other-nomad-tasks" {
-        static = var.KAFKA_BROKER_PORT
+        static = var.kafka_broker_port
       }
       port "kafka-for-host-os" {
-        static = var.KAFKA_BROKER_PORT_FOR_HOST_OS
+        static = var.kafka_broker_port_for_host_os
       }
     }
 
@@ -266,7 +264,7 @@ job "grapl-local-infra" {
       }
 
       env {
-        KAFKA_BROKER_PORT       = 9092 # Only used by healthcheck
+        kafka_broker_port       = 9092 # Only used by healthcheck
         KAFKA_BROKER_ID         = 1
         KAFKA_ZOOKEEPER_CONNECT = local.zookeeper_endpoint
 
@@ -276,8 +274,8 @@ job "grapl-local-infra" {
         # So a receive on 29092 means HOST_OS
         KAFKA_ADVERTISED_LISTENERS = join(",", [
           "WITHIN_TASK://localhost:9092",
-          "HOST_OS://host.docker.internal:${var.KAFKA_BROKER_PORT_FOR_HOST_OS}",
-          "OTHER_NOMADS://${local.localhost_within_bridge}:${var.KAFKA_BROKER_PORT}"
+          "HOST_OS://host.docker.internal:${var.kafka_broker_port_for_host_os}",
+          "OTHER_NOMADS://${local.localhost_within_bridge}:${var.kafka_broker_port}"
         ])
         KAFKA_AUTO_CREATE_TOPICS_ENABLE      = "false"
         KAFKA_LISTENER_SECURITY_PROTOCOL_MAP = "WITHIN_TASK:PLAINTEXT,HOST_OS:PLAINTEXT,OTHER_NOMADS:PLAINTEXT"
@@ -287,7 +285,7 @@ job "grapl-local-infra" {
         KAFKA_TRANSACTION_STATE_LOG_MIN_ISR            = 1
         KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR = 1
         KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS         = 0
-        KAFKA_JMX_PORT                                 = var.KAFKA_JMX_PORT
+        KAFKA_JMX_PORT                                 = var.kafka_jmx_port
         KAFKA_JMX_HOSTNAME                             = "localhost"
         KAFKA_LOG4J_ROOT_LOGLEVEL                      = "INFO"
       }
@@ -302,7 +300,7 @@ job "grapl-local-infra" {
           args = [
             "-o", "errexit", "-o", "nounset",
             "-c",
-            "nc -vz localhost ${KAFKA_BROKER_PORT}",
+            "nc -vz localhost ${kafka_broker_port}",
           ]
           interval = "20s"
           timeout  = "10s"
@@ -322,8 +320,8 @@ job "grapl-local-infra" {
     network {
       mode = "bridge"
       port "zookeeper" {
-        static = var.ZOOKEEPER_PORT
-        to     = var.ZOOKEEPER_PORT
+        static = var.zookeeper_port
+        to     = var.zookeeper_port
       }
     }
 
@@ -336,7 +334,7 @@ job "grapl-local-infra" {
       }
 
       env {
-        ZOOKEEPER_CLIENT_PORT = var.ZOOKEEPER_PORT
+        ZOOKEEPER_CLIENT_PORT = var.zookeeper_port
         ZOOKEEPER_TICK_TIME   = 2000
         KAFKA_OPTS            = "-Dzookeeper.4lw.commands.whitelist=ruok,dump"
       }
