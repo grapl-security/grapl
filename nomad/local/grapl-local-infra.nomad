@@ -33,6 +33,8 @@ variable "zookeeper_port" {
   default     = 2181
 }
 
+# These Postgres connection data must match what's in
+# `pulumi/grapl/__main__.py`; sorry for the duplication :(
 variable plugin_registry_db {
   description = "Connection configuration for the Plugin Registry database"
   type = object({
