@@ -47,3 +47,15 @@ tar \
     --create \
     --gzip \
     "${KERNEL_BIN_FILE}"
+
+########################################
+# Write a manifest file containing the version.
+# The version should dedupe based on input file checksums.
+# (This may be replaced with Pants-based file diffs in the future.)
+########################################
+source build-support/create_manifest.sh
+INPUTS_SHA="$(sha256_of_dir firecracker/kernel)"
+readonly INPUTS_SHA_SHORT="${INPUTS_SHA:0:16}" # cloudsmith version field must be under 128 chars
+readonly MANIFEST_PATH="${DISTRIBUTION}.manifest"
+readonly VERSION="firecracker-${FIRECRACKER_RELEASE}-kernel-${KERNEL_VERSION}-input-sha256-${INPUTS_SHA_SHORT}"
+manifest_contents "${VERSION}" > "${MANIFEST_PATH}"

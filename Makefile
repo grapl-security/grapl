@@ -627,7 +627,4 @@ dist/plugin-bootstrap-init: | dist  ## Build the Plugin Bootstrap Init (+ associ
 # TODO: Would be nice to be able to specify the input file prerequisites of
 # this target, once `dist/plugin-bootstrap-init` is non-PHONY
 dist/firecracker_rootfs.tar.gz: dist/plugin-bootstrap-init | dist
-	packer init -upgrade firecracker/rootfs/build-rootfs.pkr.hcl
-	packer build \
-	 	-var dist_folder="${GRAPL_ROOT}/dist" \
-		firecracker/rootfs/build-rootfs.pkr.hcl
+	./firecracker/rootfs/build.sh
