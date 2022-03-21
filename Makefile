@@ -31,7 +31,7 @@ export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 
 # This is used to send docker traces to Jaeger. This is primarily useful for debugging build time performance
 ifdef WITH_TRACING
-buildx_builder_args := --builder=builder --load
+buildx_builder_args := --builder=builder
 endif
 
 # Helper macro to make using the HCL file for builds less
