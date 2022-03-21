@@ -42,23 +42,23 @@ impl TryFrom<MetadataProto> for Metadata {
     fn try_from(metadata_proto: MetadataProto) -> Result<Self, Self::Error> {
         let tenant_id = metadata_proto
             .tenant_id
-            .ok_or(SerDeError::MissingField("tenant_id".to_string()));
+            .ok_or_else(|| SerDeError::MissingField("tenant_id".to_string()));
 
         let trace_id = metadata_proto
             .trace_id
-            .ok_or(SerDeError::MissingField("trace_id".to_string()));
+            .ok_or_else(|| SerDeError::MissingField("trace_id".to_string()));
 
         let created_time = metadata_proto
             .created_time
-            .ok_or(SerDeError::MissingField("created_time".to_string()));
+            .ok_or_else(|| SerDeError::MissingField("created_time".to_string()));
 
         let last_updated_time = metadata_proto
             .last_updated_time
-            .ok_or(SerDeError::MissingField("last_updated_time".to_string()));
+            .ok_or_else(|| SerDeError::MissingField("last_updated_time".to_string()));
 
         let event_source_id = metadata_proto
             .event_source_id
-            .ok_or(SerDeError::MissingField("event_source_id".to_string()));
+            .ok_or_else(|| SerDeError::MissingField("event_source_id".to_string()));
 
         Ok(Metadata {
             tenant_id: tenant_id?.into(),
@@ -124,7 +124,7 @@ impl TryFrom<EnvelopeProto> for Envelope {
     fn try_from(envelope_proto: EnvelopeProto) -> Result<Self, Self::Error> {
         let metadata = envelope_proto
             .metadata
-            .ok_or(SerDeError::MissingField("metadata".to_string()));
+            .ok_or_else(|| SerDeError::MissingField("metadata".to_string()));
 
         Ok(Envelope {
             metadata: metadata?.try_into()?,
