@@ -31,7 +31,7 @@ export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 
 # This is used to send docker traces to Jaeger. This is primarily useful for debugging build time performance
 ifdef WITH_TRACING
-buildx_builder_args := --builder=builder
+buildx_builder_args := --builder=grapl-tracing-builder
 endif
 
 # Helper macro to make using the HCL file for builds less
@@ -645,7 +645,7 @@ generate-nomad-rust-client: ## Generate the Nomad rust client from OpenAPI
 .PHONY: setup-docker-tracing
 buildx-tracing: ## This is a one-time setup for enabling docker buildx traces
 	docker buildx create \
-      --name builder \
+      --name grapl-tracing-builder \
       --driver docker-container \
       --driver-opt network=host \
       --driver-opt env.JAEGER_TRACE=localhost:6831 \

@@ -57,4 +57,4 @@ To run tracing for the docker build:
 2. Run `WITH_TRACING=1 make build-local-infrastructure` or any other build
    command that uses bake such as `build-test-e2e`. Alternatively, you can run
    traces for individual services via
-   `docker buildx bake --file $FILE --builder=builder`
+   `docker buildx bake --file $FILE --builder=grapl-tracing-builder`
