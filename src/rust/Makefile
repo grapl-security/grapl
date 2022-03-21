@@ -55,11 +55,6 @@ lint-clippy: image
 lint-clippy: ## Run Clippy
 	$(docker_run) bin/lint
 
-.PHONY: cargo-udeps
-cargo-udeps: image
-cargo-udeps: # Run cargo-udeps
-	$(docker_run) bin/udeps
-
 ########################################################################
 
 image: build-env.Dockerfile
