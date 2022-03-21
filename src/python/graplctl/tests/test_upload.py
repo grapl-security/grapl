@@ -77,7 +77,6 @@ def test_upload_sysmon__calls_s3() -> None:
         )
 
     mock_s3_client = mock_session.client("s3")
-    # Should call to s3 six times
     mock_s3_client.put_object.assert_has_calls(
         [
             call(
@@ -86,15 +85,10 @@ def test_upload_sysmon__calls_s3() -> None:
                 Key=ANY,
             )
         ]
-        * 6
     )
 
     assert result.exit_code == 0
-    assert (
-        "Writing events to fake-deployment with 0 seconds between batches of 100"
-        in result.output
-    )
-    assert "Completed uploading 6 chunks" in result.output
+    assert "Completed uploading" in result.output
 
 
 def test_upload_osquery__calls_s3() -> None:
@@ -114,7 +108,6 @@ def test_upload_osquery__calls_s3() -> None:
         )
 
     mock_s3_client = mock_session.client("s3")
-    # Should call to s3 236 times
     mock_s3_client.put_object.assert_has_calls(
         [
             call(
@@ -123,15 +116,10 @@ def test_upload_osquery__calls_s3() -> None:
                 Key=ANY,
             )
         ]
-        * 236
     )
 
     assert result.exit_code == 0
-    assert (
-        "Writing events to fake-deployment with 0 seconds between batches of 100"
-        in result.output
-    )
-    assert "Completed uploading 236 chunks" in result.output
+    assert "Completed uploading" in result.output
 
 
 def _mock_grapl_is_provisioned(
