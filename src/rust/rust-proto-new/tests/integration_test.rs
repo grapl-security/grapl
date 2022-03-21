@@ -1,9 +1,6 @@
 use std::fmt::Debug;
 
-use bytes::{
-    Bytes,
-    BytesMut,
-};
+use bytes::Bytes;
 use proptest::prelude::*;
 use rust_proto_new::{
     graplinc::{
