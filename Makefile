@@ -29,11 +29,16 @@ export
 export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 	--file ./test/docker-compose.unit-tests-js.yml \
 
+# This is used to send docker traces to Jaeger. This is primarily useful for debugging build time performance
+ifdef WITH_TRACING
+buildx_builder_args := --builder=grapl-tracing-builder
+endif
+
 # Helper macro to make using the HCL file for builds less
 # verbose. Once we get rid of docker-compose.yml, we can just use
 # `docker buildx bake`, since it will pick up the HCL file
 # automatically.
-DOCKER_BUILDX_BAKE_HCL := docker buildx bake --file=docker-bake.hcl
+DOCKER_BUILDX_BAKE_HCL := docker buildx bake --file=docker-bake.hcl $(buildx_builder_args)
 
 COMPOSE_PROJECT_INTEGRATION_TESTS := grapl-integration_tests
 COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
@@ -105,6 +110,9 @@ help: ## Print this help
 	@printf -- '  ${FMT_PURPLE}DEBUG_SERVICES${FMT_END}="graphql_endpoint grapl_e2e_tests" make test-e2e\n'
 	@printf -- '    to launch the VSCode Debugger (see ${VSC_DEBUGGER_DOCS_LINK}).\n'
 	@printf -- '\n'
+	@printf -- '  ${FMT_PURPLE}WITH_TRACING=1${FMT_END} make build-local-infrastructure \n'
+	@printf -- '    to send docker build traces to Jaeger (see docs/development/debugging.md).\n'
+	@printf -- '\n'
 	@printf -- '  ${FMT_BOLD}FUN FACT${FMT_END}: You can also specify these as postfix, like:\n'
 	@printf -- '    make test-something KEEP_TEST_ENV=1\n'
 	@printf '\n'
@@ -119,7 +127,7 @@ help: ## Print this help
 .PHONY: build-test-unit-js
 build-test-unit-js:
 	docker buildx bake \
-		--file ./test/docker-compose.unit-tests-js.yml
+		--file ./test/docker-compose.unit-tests-js.yml $(buildx_builder_args)
 
 # Build Service Images and their Prerequisites
 ########################################################################
@@ -183,13 +191,13 @@ build-test-e2e: build-e2e-pex-files
 .PHONY: build-test-integration
 build-test-integration:
 	@echo "--- Building integration test images"
-	docker buildx bake integration-tests
+	docker buildx bake integration-tests $(buildx_builder_args)
 
 ########################################################################
 
 .PHONY: build-prettier-image
 build-prettier-image:
-	docker buildx bake --file ./docker-compose.check.yml prettier
+	docker buildx bake --file ./docker-compose.check.yml prettier $(buildx_builder_args)
 
 .PHONY: graplctl
 graplctl: ## Build graplctl and install it to ./bin
@@ -590,6 +598,15 @@ generate-nomad-rust-client: ## Generate the Nomad rust client from OpenAPI
 # TODO: If we ever break out a targeted `format-markdown` target, we
 # should use that here.
 	$(MAKE) format-prettier
+
+.PHONY: setup-docker-tracing
+buildx-tracing: ## This is a one-time setup for enabling docker buildx traces
+	docker buildx create \
+      --name grapl-tracing-builder \
+      --driver docker-container \
+      --driver-opt network=host \
+      --driver-opt env.JAEGER_TRACE=localhost:6831 \
+      --use
 
 .PHONY: generate-sqlx-data
 generate-sqlx-data:  # Regenerate sqlx-data.json based on queries made in Rust code
