@@ -45,7 +45,6 @@ install_build_tooling() {
         build-essential
         cmake
         libclang1
-        libsasl2-dev
         lsb-release
         software-properties-common # for `apt-add-repository``
     )
