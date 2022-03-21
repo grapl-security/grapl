@@ -9,7 +9,7 @@ edition = "2021"
 sqs-executor = { path = "../sqs-executor" }
 rust-proto = { path = "../rust-proto" }
 grapl-config = { path = "../grapl-config" }
-zstd = "0.9.0"
+zstd = "0.10.0"
 libflate = "1.1.1"
 prost = "0.9.0"
 tracing = "0.1.29"
