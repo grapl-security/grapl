@@ -1,8 +1,8 @@
 use std::time::SystemTimeError;
 
 use bytes::{
-    Bytes,
     Buf,
+    Bytes,
 };
 use prost::{
     DecodeError,

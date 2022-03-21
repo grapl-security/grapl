@@ -165,11 +165,8 @@ where
     T: SerDe + PartialEq + Clone + Debug,
 {
     let cloned = serializable.clone();
-    let serialized = serializable
-        .serialize()
-        .expect("serialization failed");
-    let deserialized = T::deserialize(serialized)
-        .expect("deserialization failed");
+    let serialized = serializable.serialize().expect("serialization failed");
+    let deserialized = T::deserialize(serialized).expect("deserialization failed");
     assert!(cloned == deserialized);
 }
 

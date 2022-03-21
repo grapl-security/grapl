@@ -9,8 +9,8 @@ use std::time::{
 
 use bytes::{
     Buf,
+    Bytes,
     BytesMut,
-    Bytes
 };
 use prost::Message;
 pub use uuid::Uuid;
