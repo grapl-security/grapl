@@ -1,4 +1,4 @@
-## Debugging Tooling
+# Debugging Tooling
 
 Grapl has several tools to aid in debugging issues.
 
