@@ -84,41 +84,6 @@ SHELL := bash
 -o pipefail \
 -c
 
-# Note: it doesn't seem to like a single-quote nested in a double-quote!
-
-# Our `docker-compose.yml` file declares the setup of a "local Grapl"
-# environment, which can be used to locally exercise a Grapl system,
-# either manually or through automated integration and end-to-end
-# ("e2e") tests. Because this environment requires a large amount of
-# configuration data, which must also be shared between several
-# different files (including, but not limited to, the aforementioned
-# testing environments), this information has been extracted into an
-# environment file for reuse.
-#
-# Currently, however, `docker buildx` recognizes `.env` files, but NOT
-# `--env-file` options, like `docker-compose` does. This means that it
-# is rather tricky to share environment variables across both tools in
-# a general and explicit way, while also preserving the ability for
-# users to use an `.env` file in the repo root for individual
-# customizations.
-#
-# To try and balance these concerns of compatibility, explicitness,
-# and flexibility, we'll use this snippet to establish an environment
-# for subsequent commands in a Makefile target to run in. Any `docker
-# buildx` or `docker-compose` calls that require this particular
-# environment should place this in front of it.
-#
-# e.g., $(WITH_LOCAL_GRAPL_ENV) docker-compose -f docker-compose.yml up
-#
-# Currently, any command that directly uses or depends on the
-# `docker-compose.yml` file should use this. (Recall that each line of
-# a recipe runs in its own subshell, to keep that in mind if you have
-# multiple commands that need this environment.)
-#
-# The user's original calling environment will not polluted in any
-# way.
-WITH_LOCAL_GRAPL_ENV := set -o allexport; . ./local-grapl.env; set +o allexport;
-
 FMT_BLUE = \033[36m
 FMT_PURPLE = \033[35m
 FMT_BOLD = \033[1m
@@ -330,7 +295,6 @@ test-integration: build-local-infrastructure
 test-integration: build-test-integration
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
 test-integration: ## Build and run integration tests
-	@$(WITH_LOCAL_GRAPL_ENV)
 	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh integration-tests 9"
 
 .PHONY: test-grapl-template-generator
@@ -342,7 +306,6 @@ test-e2e: build-local-infrastructure
 test-e2e: build-test-e2e
 test-e2e: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_E2E_TESTS)
 test-e2e: ## Build and run e2e tests
-	@$(WITH_LOCAL_GRAPL_ENV)
 	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh e2e-tests 6"
 
 # This target is not intended to be used directly from the command line.
@@ -366,7 +329,6 @@ test-with-env: # (Do not include help text - not to be used directly)
 	# Ensure we call stop even after test failure, and return exit code from
 	# the test, not the stop command.
 	trap stopGrapl EXIT
-	@$(WITH_LOCAL_GRAPL_ENV)
 	# Bring up the Grapl environment and detach
 	$(MAKE) _up
 	# Run tests and check exit codes from each test container
@@ -483,7 +445,6 @@ _up:
 	# Primarily used for bringing up an environment for integration testing.
 	# For use with a project name consider setting COMPOSE_PROJECT_NAME env var
 	@echo "--- Deploying Nomad Infrastructure"
-	@$(WITH_LOCAL_GRAPL_ENV)
 	# Start the Nomad agent
 	$(MAKE) stop-nomad-detach; $(MAKE) start-nomad-detach
 	# We use this target with COMPOSE_FILE being set pointing to other files.
@@ -502,7 +463,6 @@ _up:
 
 .PHONY: down
 down: ## docker-compose down - both stops and removes the containers
-	@$(WITH_LOCAL_GRAPL_ENV)
 	# This is only for killing the lambda containers that Localstack
 	# spins up in our network, but that docker-compose doesn't know
 	# about. This must be the network that is used in Localstack's
@@ -514,7 +474,6 @@ down: ## docker-compose down - both stops and removes the containers
 
 .PHONY: stop
 stop: ## docker-compose stop - stops (but preserves) the containers
-	@$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose $(EVERY_COMPOSE_FILE) stop
 
 # This is a convenience target for our frontend engineers, to make the dev loop
@@ -608,12 +567,10 @@ clean-all-rust:
 .PHONY: local-pulumi
 local-pulumi: export COMPOSE_PROJECT_NAME="grapl"
 local-pulumi:  ## launch pulumi via docker-compose up
-	@$(WITH_LOCAL_GRAPL_ENV)
 	docker-compose -f docker-compose.yml run pulumi
 
 .PHONY: start-nomad-detach
 start-nomad-detach:  ## Start the Nomad environment, detached
-	@$(WITH_LOCAL_GRAPL_ENV)
 	nomad/local/start_detach.sh
 
 .PHONY: stop-nomad-detach

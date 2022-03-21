@@ -9,7 +9,6 @@ use actix_web::{
     ResponseError,
 };
 use futures_util::future::Future;
-use tracing::Instrument;
 
 use crate::authn::{
     AuthDynamoClientError,
@@ -25,18 +24,16 @@ pub struct AuthenticatedUser {
 
 #[derive(thiserror::Error, Debug)]
 pub enum UserAuthenticationError {
-    #[error(transparent)]
-    Client(#[from] AuthDynamoClientError),
-    #[error(transparent)]
-    Cookie(#[from] actix_web::Error),
-    #[error("Session token not found in user cookie")]
-    NoSessionToken,
-    #[error("Unable to get database client from Actix app data")]
-    AddData,
-    // This Opaque variant is a hack around mixing tokio runtimes and
-    // ResponseError not implementing Send
-    #[error("Opaque error from DB client")]
-    Opaque,
+    #[error("unable to validate user session")]
+    SessionValidation(#[source] AuthDynamoClientError),
+    #[error("unable to get user data from validated session")]
+    UserNotFound(#[source] AuthDynamoClientError),
+    #[error("unable to access session storage")]
+    SessionStorage(#[source] actix_web::Error),
+    #[error("user is not authenticated")]
+    Unauthenticated,
+    #[error("unable to get database client from Actix app data")]
+    DynamoClientUnavailable,
 }
 
 impl ResponseError for UserAuthenticationError {
@@ -71,54 +68,41 @@ impl AuthenticatedUser {
 impl FromRequest for AuthenticatedUser {
     type Error = UserAuthenticationError;
     type Future = Pin<Box<dyn Future<Output = Result<Self, Self::Error>>>>;
-    type Config = ();
 
     #[tracing::instrument(skip(_payload))]
     fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
-        let current_span = tracing::Span::current();
         tracing::trace!(message = "Authenticating user request");
 
         let session_storage = req.get_session();
 
+        //TODO(inickles): stop hitting the database for each request
         let req = req.clone();
         Box::pin(async move {
             let dynamodb_client = req
                 .app_data::<actix_web::web::Data<crate::authn::AuthDynamoClient>>()
-                .ok_or(UserAuthenticationError::AddData)?
-                .clone();
+                .ok_or(UserAuthenticationError::DynamoClientUnavailable)?;
 
-            let token: String = session_storage
-                .get(crate::config::SESSION_TOKEN)?
-                .ok_or(UserAuthenticationError::NoSessionToken)?;
+            let token = session_storage
+                .get::<String>(crate::config::SESSION_TOKEN)
+                .map_err(|e| UserAuthenticationError::SessionStorage(e.into()))?
+                .ok_or(UserAuthenticationError::Unauthenticated)?;
 
-            // tokio 1
-            std::thread::spawn(move || {
-                use tokio::runtime::Runtime;
+            let session_row = dynamodb_client
+                .get_valid_session_row(token)
+                .await
+                .map_err(|e| UserAuthenticationError::SessionValidation(e.into()))?;
 
-                let rt = Runtime::new().unwrap();
+            let user_row = dynamodb_client
+                .get_user_row(&session_row.username)
+                .await
+                .map_err(|e| UserAuthenticationError::UserNotFound(e.into()))?;
 
-                rt.block_on(
-                    async move {
-                        let session_row =
-                            dynamodb_client.get_valid_session_row(token).await.ok()?;
-                        let user_row = dynamodb_client
-                            .get_user_row(&session_row.username)
-                            .await
-                            .ok()?;
+            let authenticated_user = AuthenticatedUser {
+                identity: session_row.username,
+                role: user_row.grapl_role,
+            };
 
-                        let authenticated_user = AuthenticatedUser {
-                            identity: session_row.username,
-                            role: user_row.grapl_role,
-                        };
-
-                        Some(authenticated_user)
-                    }
-                    .instrument(current_span),
-                )
-            })
-            .join()
-            .unwrap()
-            .ok_or(UserAuthenticationError::Opaque)
+            Ok(authenticated_user)
         })
     }
 }
