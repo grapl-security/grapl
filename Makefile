@@ -146,7 +146,7 @@ help: ## Print this help
 	@printf -- '    to launch the VSCode Debugger (see ${VSC_DEBUGGER_DOCS_LINK}).\n'
 	@printf -- '\n'
 	@printf -- '  ${FMT_PURPLE}WITH_TRACING=1${FMT_END} make build-local-infrastructure \n'
-	@printf -- '    to send docker build traces to Jaeger.\n'
+	@printf -- '    to send docker build traces to Jaeger (see docs/development/debugging.md).\n'
 	@printf -- '\n'
 	@printf -- '  ${FMT_BOLD}FUN FACT${FMT_END}: You can also specify these as postfix, like:\n'
 	@printf -- '    make test-something KEEP_TEST_ENV=1\n'
