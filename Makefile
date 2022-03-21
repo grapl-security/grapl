@@ -162,7 +162,7 @@ help: ## Print this help
 .PHONY: build-test-unit-js
 build-test-unit-js:
 	docker buildx bake \
-		--file ./test/docker-compose.unit-tests-js.yml
+		--file ./test/docker-compose.unit-tests-js.yml $(buildx_builder_args)
 
 # Build Service Images and their Prerequisites
 ########################################################################
@@ -226,13 +226,13 @@ build-test-e2e: build-e2e-pex-files
 .PHONY: build-test-integration
 build-test-integration:
 	@echo "--- Building integration test images"
-	docker buildx bake integration-tests
+	docker buildx bake integration-tests $(buildx_builder_args)
 
 ########################################################################
 
 .PHONY: build-prettier-image
 build-prettier-image:
-	docker buildx bake --file ./docker-compose.check.yml prettier
+	docker buildx bake --file ./docker-compose.check.yml prettier $(buildx_builder_args)
 
 .PHONY: graplctl
 graplctl: ## Build graplctl and install it to ./bin
