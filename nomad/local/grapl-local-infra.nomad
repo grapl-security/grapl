@@ -1,6 +1,6 @@
-variable "localstack_tag" {
+variable "image_tag" {
   type        = string
-  description = "The tagged version of localstack we should deploy."
+  description = "The tag for all container images we should deploy. This is ultimately set in the top-level Makefile."
 }
 
 variable "kafka_broker_port" {
@@ -33,61 +33,48 @@ variable "zookeeper_port" {
   default     = 2181
 }
 
-variable "PLUGIN_REGISTRY_DB_USERNAME" {
-  type        = string
-  description = "The username for the plugin registry db"
-  default     = "postgres"
-}
-
-variable "PLUGIN_REGISTRY_DB_PASSWORD" {
-  type        = string
-  description = "The password for the plugin registry db"
-  default     = "postgres"
-}
-
-
-variable "PLUGIN_WORK_QUEUE_DB_USERNAME" {
-  type        = string
-  description = "The username for the plugin work queue db"
-  default     = "postgres"
-}
-
-variable "PLUGIN_WORK_QUEUE_DB_PASSWORD" {
-  type        = string
-  description = "The password fort he plugin work queue db"
-  default     = "postgres"
-}
-
-variable "ORGANIZATION_MANAGEMENT_DB_USERNAME" {
-  type        = string
-  description = "The username for the organization management db"
-  default     = "postgres"
-}
-
-variable "ORGANIZATION_MANAGEMENT_DB_PASSWORD" {
-  type        = string
-  description = "The password for the organization management db"
-  default     = "postgres"
-}
-
-# These database ports must match what's in
+# These Postgres connection data must match what's in
 # `pulumi/grapl/__main__.py`; sorry for the duplication :(
-variable "PLUGIN_REGISTRY_DB_PORT" {
-  type        = number
-  description = "The port for the plugin registry db"
-  default     = 5432
+variable plugin_registry_db {
+  description = "Connection configuration for the Plugin Registry database"
+  type = object({
+    username = string
+    password = string
+    port     = number
+  })
+  default = {
+    username = "postgres"
+    password = "postgres"
+    port     = 5432
+  }
 }
 
-variable "PLUGIN_WORK_QUEUE_DB_PORT" {
-  type        = number
-  description = "The port for the plugin work queue db"
-  default     = 5532
+variable plugin_work_queue_db {
+  description = "Connection configuration for the Plugin Work Queue database"
+  type = object({
+    username = string
+    password = string
+    port     = number
+  })
+  default = {
+    username = "postgres"
+    password = "postgres"
+    port     = 5532
+  }
 }
 
-variable "ORGANIZATION_MANAGEMENT_DB_PORT" {
-  type        = number
-  description = "The port for the organization management db"
-  default     = 5632
+variable organization_management_db {
+  description = "Connection configuration for the Organization Management database"
+  type = object({
+    username = string
+    password = string
+    port     = number
+  })
+  default = {
+    username = "postgres"
+    password = "postgres"
+    port     = 5632
+  }
 }
 
 locals {
@@ -134,15 +121,10 @@ job "grapl-local-infra" {
         name = "redis"
 
         check {
-          type    = "script"
-          name    = "check_redis"
-          command = "/bin/bash"
-          # Interpolated by bash, not nomad
-          args = [
-            "-o", "errexit", "-o", "nounset",
-            "-c",
-            "redis-cli ping || exit 1",
-          ]
+          type     = "script"
+          name     = "check_redis"
+          command  = "redis-cli"
+          args     = ["ping"]
           interval = "20s"
           timeout  = "10s"
 
@@ -171,14 +153,11 @@ job "grapl-local-infra" {
 
       config {
         # Once we move to Kafka, we can go back to the non-fork.
-        image = "localstack-grapl-fork:${var.localstack_tag}"
+        image = "localstack-grapl-fork:${var.image_tag}"
         # Was running into this: https://github.com/localstack/localstack/issues/1349
         memory_hard_limit = 2048
         ports             = ["localstack"]
         privileged        = true
-        volumes = [
-          "/var/run/docker.sock:/var/run/docker.sock"
-        ]
       }
 
       env {
@@ -198,12 +177,11 @@ job "grapl-local-infra" {
         check {
           type    = "script"
           name    = "check_s3_ls"
-          command = "/bin/bash"
+          command = "aws"
           args = [
-            "-o", "errexit", "-o", "nounset",
-            "-c",
-            # This uses the stuff in env { } - not Nomad interpolation.
-            "aws --endpoint-url=http://localhost:${EDGE_PORT} s3 ls",
+            "--endpoint-url=http://localhost:${var.localstack_port}",
+            "s3",
+            "ls"
           ]
           interval = "10s"
           timeout  = "10s"
@@ -295,12 +273,12 @@ job "grapl-local-infra" {
         check {
           type    = "script"
           name    = "check_kafka"
-          command = "/bin/bash"
-          # Interpolated by bash, not nomad
+          command = "nc"
           args = [
-            "-o", "errexit", "-o", "nounset",
-            "-c",
-            "nc -vz localhost ${kafka_broker_port}",
+            "-v", # verbose
+            "-z", # "zero I/O mode" - used for scanning
+            "localhost",
+            "${var.kafka_broker_port}"
           ]
           interval = "20s"
           timeout  = "10s"
@@ -345,11 +323,10 @@ job "grapl-local-infra" {
           type    = "script"
           name    = "check_zookeeper"
           command = "/bin/bash"
-          # Interpolated by bash, not nomad
           args = [
-            "-o", "errexit", "-o", "nounset",
+            "-o", "errexit", "-o", "nounset", "-o", "pipefail",
             "-c",
-            "echo ruok | nc -w 2  localhost ${ZOOKEEPER_CLIENT_PORT} | grep imok || exit 2",
+            "echo ruok | nc -w 2 localhost ${var.zookeeper_port} | grep imok || exit 2",
           ]
           interval = "20s"
           timeout  = "10s"
@@ -369,7 +346,7 @@ job "grapl-local-infra" {
     network {
       mode = "bridge"
       port "postgres" {
-        static = var.PLUGIN_REGISTRY_DB_PORT
+        static = var.plugin_registry_db.port
         to     = 5432 # postgres default
       }
     }
@@ -378,13 +355,13 @@ job "grapl-local-infra" {
       driver = "docker"
 
       config {
-        image = "postgres-ext:${var.localstack_tag}"
+        image = "postgres-ext:${var.image_tag}"
         ports = ["postgres"]
       }
 
       env {
-        POSTGRES_USER     = var.PLUGIN_REGISTRY_DB_USERNAME
-        POSTGRES_PASSWORD = var.PLUGIN_REGISTRY_DB_PASSWORD
+        POSTGRES_USER     = var.plugin_registry_db.username
+        POSTGRES_PASSWORD = var.plugin_registry_db.password
       }
 
       service {
@@ -394,7 +371,7 @@ job "grapl-local-infra" {
           type     = "script"
           name     = "check_postgres"
           command  = "pg_isready"
-          args     = ["-U", "postgres"]
+          args     = ["--username", "${var.plugin_registry_db.username}"]
           interval = "20s"
           timeout  = "10s"
 
@@ -412,7 +389,7 @@ job "grapl-local-infra" {
     network {
       mode = "bridge"
       port "postgres" {
-        static = var.PLUGIN_WORK_QUEUE_DB_PORT
+        static = var.plugin_work_queue_db.port
         to     = 5432
       }
     }
@@ -421,13 +398,13 @@ job "grapl-local-infra" {
       driver = "docker"
 
       config {
-        image = "postgres-ext:${var.localstack_tag}"
+        image = "postgres-ext:${var.image_tag}"
         ports = ["postgres"]
       }
 
       env {
-        POSTGRES_USER     = var.PLUGIN_WORK_QUEUE_DB_USERNAME
-        POSTGRES_PASSWORD = var.PLUGIN_WORK_QUEUE_DB_PASSWORD
+        POSTGRES_USER     = var.plugin_work_queue_db.username
+        POSTGRES_PASSWORD = var.plugin_work_queue_db.password
       }
 
       service {
@@ -437,7 +414,7 @@ job "grapl-local-infra" {
           type     = "script"
           name     = "check_postgres"
           command  = "pg_isready"
-          args     = ["-U", "postgres"]
+          args     = ["--username", "${var.plugin_work_queue_db.username}"]
           interval = "20s"
           timeout  = "10s"
 
@@ -456,7 +433,7 @@ job "grapl-local-infra" {
     network {
       mode = "bridge"
       port "postgres" {
-        static = var.ORGANIZATION_MANAGEMENT_DB_PORT
+        static = var.organization_management_db.port
         to     = 5432
       }
     }
@@ -465,13 +442,13 @@ job "grapl-local-infra" {
       driver = "docker"
 
       config {
-        image = "postgres-ext:${var.localstack_tag}"
+        image = "postgres-ext:${var.image_tag}"
         ports = ["postgres"]
       }
 
       env {
-        POSTGRES_USER     = var.ORGANIZATION_MANAGEMENT_DB_USERNAME
-        POSTGRES_PASSWORD = var.ORGANIZATION_MANAGEMENT_DB_PASSWORD
+        POSTGRES_USER     = var.organization_management_db.username
+        POSTGRES_PASSWORD = var.organization_management_db.password
       }
 
       service {
@@ -481,7 +458,7 @@ job "grapl-local-infra" {
           type     = "script"
           name     = "check_postgres"
           command  = "pg_isready"
-          args     = ["-U", "postgres"]
+          args     = ["--username", "${var.organization_management_db.username}"]
           interval = "20s"
           timeout  = "10s"
 
