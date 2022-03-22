@@ -7,10 +7,10 @@ set -euo pipefail
 # Cloudsmith which version and tags to use.
 ################################################################################
 
-# Generates a SHA256 checksum of the sorted output of the SHA256 
+# Generates a SHA256 checksum of the sorted output of the SHA256
 # checksums of all the files in this directory (recursively).
 #
-# $ find . -type f | sort | xargs sha256sum 
+# $ find . -type f | sort | xargs sha256sum
 # 123veryLongSha  ./BUILD
 # 456veryLongSha  ./build_and_upload_firecracker_packages.sh
 # 789veryLongSha  ./build_and_upload_images.sh
@@ -18,7 +18,7 @@ set -euo pipefail
 # veryLongSha345  ./extract_artifacts.sh
 #
 #
-# Taking the SHA256 checksum of this output yields the final 
+# Taking the SHA256 checksum of this output yields the final
 # checksum:
 #
 # $ find . -type f | sort | xargs sha256sum | sha256sum
@@ -35,7 +35,13 @@ manifest_contents() {
         '{"version": $version}'
 }
 
+artifact_metadata_path() {
+    local -r artifact_path="${1}"
+    echo "${artifact_path}.artifact-metadata.json"
+}
+
 get_version_from_manifest() {
-    local -r manifest_path="${1}"
+    local -r artifact_path="${1}"
+    local -r manifest_path="$(path_for_artifact_metadata "${artifact_path}")"
     jq -r ".version" "${manifest_path}"
 }

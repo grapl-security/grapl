@@ -56,6 +56,7 @@ tar \
 source .buildkite/scripts/lib/manifest.sh
 INPUTS_SHA="$(sha256_of_dir firecracker/kernel)"
 readonly INPUTS_SHA_SHORT="${INPUTS_SHA:0:16}" # cloudsmith version field must be under 128 chars
-readonly MANIFEST_PATH="${DISTRIBUTION}.manifest"
+MANIFEST_PATH="$(artifact_metadata_path "${DISTRIBUTION}")"
+readonly MANIFEST_PATH
 readonly VERSION="firecracker-${FIRECRACKER_RELEASE}-kernel-${KERNEL_VERSION}-input-sha256-${INPUTS_SHA_SHORT}"
 manifest_contents "${VERSION}" > "${MANIFEST_PATH}"

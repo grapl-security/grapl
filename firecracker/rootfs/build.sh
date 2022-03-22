@@ -23,5 +23,7 @@ INPUTS_SHA="$(sha256_of_dir firecracker/rootfs)"
 readonly INPUTS_SHA_SHORT="${INPUTS_SHA:0:16}" # cloudsmith version field must be under 128 chars
 VERSION="$(timestamp_and_sha_version)-input-sha256-${INPUTS_SHA_SHORT}"
 readonly VERSION
-readonly MANIFEST_PATH="${GRAPL_ROOT}/dist/${IMAGE_NAME}.tar.gz.manifest"
+readonly ARTIFACT_PATH="${GRAPL_ROOT}/dist/${IMAGE_NAME}.tar.gz"
+MANIFEST_PATH="$(artifact_metadata_path "${ARTIFACT_PATH}")"
+readonly MANIFEST_PATH
 manifest_contents "${INPUTS_SHA}" "${VERSION}" > "${MANIFEST_PATH}"
