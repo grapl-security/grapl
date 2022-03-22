@@ -90,3 +90,8 @@ coverage: ## Run `cargo tarpaulin` to generate test coverage statistics.
 	$(docker_run) cargo tarpaulin \
 		--out=Xml \
 		--output-dir=/dist/coverage
+
+.PHONY: shell
+shell: image
+shell: ## Enter a shell in our build container to aid in debugging
+	$(docker_run) bash
