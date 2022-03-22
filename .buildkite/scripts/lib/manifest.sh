@@ -13,3 +13,8 @@ manifest_contents() {
         --arg version "${version}" \
         '{"version": $version}'
 }
+
+get_version_from_manifest() {
+    local -r manifest_path="${1}"
+    jq -r ".version" "${manifest_path}"
+}

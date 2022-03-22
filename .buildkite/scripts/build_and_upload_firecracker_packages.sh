@@ -20,10 +20,10 @@ source .buildkite/scripts/lib/artifacts.sh
 readonly UPSTREAM_REGISTRY="${UPSTREAM_REGISTRY:-grapl/testing}"
 readonly UPLOAD_TO_REGISTRY="${UPLOAD_TO_REGISTRY:-grapl/raw}"
 
-get_version_from_manifest() {
+get_version_for_artifact() {
     local -r artifact_path="${1}"
     local -r manifest_path="${artifact_path}.manifest"
-    jq -r ".version" "${manifest_path}"
+    get_version_from_manifest "${manifest_path}"
 }
 
 # Get the json query result of a named package.
@@ -63,7 +63,7 @@ echo "--- :cloudsmith::sleuth_or_spy: Checking upstream repository to determine 
 for artifact_path in "${PACKAGES[@]}"; do
     artifact_name=$(basename "${artifact_path}")
     echo "--- :cloudsmith: Should we update '${artifact_name}' in '${UPSTREAM_REGISTRY}'?"
-    version="$(get_version_from_manifest "${artifact_path}")"
+    version="$(get_version_for_artifact "${artifact_path}")"
 
     echo "Checking if a version ${version} exists upstream..."
     if ! present_upstream "${artifact_name}" "${version}"; then
@@ -77,7 +77,7 @@ done
 echo "--- :cloudsmith::up: Uploading new packages to Cloudsmith"
 for artifact_path in "${new_packages[@]}"; do
     artifact_name=$(basename "${artifact_path}")
-    version="$(get_version_from_manifest "${artifact_path}")"
+    version="$(get_version_for_artifact "${artifact_path}")"
     cloudsmith upload raw "${UPLOAD_TO_REGISTRY}" \
         "${artifact_path}" \
         --name "${artifact_name}" \
