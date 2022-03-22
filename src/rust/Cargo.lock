@@ -4257,6 +4257,7 @@ dependencies = [
  "criterion",
  "derive-into-owned",
  "memchr",
+ "serde",
  "thiserror",
  "uuid",
  "xmlparser",
