@@ -42,10 +42,7 @@ pub(self) async fn fwd_request_to_backend_service(
         .send_stream(payload)
         .await
         .map_err(|error| {
-            tracing::error!(
-                message = "Unable to forward request",
-                error = %error
-            );
+            tracing::error!(%error);
 
             error::ErrorInternalServerError(error)
         })?;

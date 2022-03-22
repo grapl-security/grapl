@@ -20,9 +20,9 @@ use opentelemetry::{
 enum GraplUiError {
     #[error(transparent)]
     Config(#[from] config::ConfigError),
-    #[error("IO error: {0}")]
+    #[error("IO error")]
     Io(#[from] std::io::Error),
-    #[error("Trace Error: {0}")]
+    #[error("Trace Error")]
     Trace(#[from] TraceError),
 }
 
