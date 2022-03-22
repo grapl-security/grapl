@@ -6,7 +6,7 @@ set -euo pipefail
 # This file is responsible for building and uploading non-Docker packages, like
 # the Firecracker microVM kernel and the Firecracker rootfs.
 #
-# It will not upload or promote anything if the manifest file for the artifact
+# It will not upload or promote anything if the artifact-metadata.json file
 # specifies the same version currently in ${UPSTREAM_REGISTRY}.
 # (As such, it is convenient to include a checksum of the input files or
 # resulting artifact in the version!)
@@ -57,7 +57,7 @@ echo "--- :cloudsmith::sleuth_or_spy: Checking upstream repository to determine 
 for artifact_path in "${PACKAGES[@]}"; do
     artifact_name=$(basename "${artifact_path}")
     echo "--- :cloudsmith: Should we update '${artifact_name}' in '${UPSTREAM_REGISTRY}'?"
-    version="$(get_version_from_manifest "${artifact_path}")"
+    version="$(get_version_from_artifact_metadata "${artifact_path}")"
 
     echo "Checking if a version ${version} exists upstream..."
     if ! present_upstream "${artifact_name}" "${version}"; then

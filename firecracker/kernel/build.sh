@@ -49,14 +49,12 @@ tar \
     "${KERNEL_BIN_FILE}"
 
 ########################################
-# Write a manifest file containing the version.
-# The version should dedupe based on input file checksums.
-# (This may be replaced with Pants-based file diffs in the future.)
+# Write a .artifact-metadata.json file
 ########################################
-source .buildkite/scripts/lib/manifest.sh
+source .buildkite/scripts/lib/artifact_metadata.sh
 INPUTS_SHA="$(sha256_of_dir firecracker/kernel)"
 readonly INPUTS_SHA_SHORT="${INPUTS_SHA:0:16}" # cloudsmith version field must be under 128 chars
-MANIFEST_PATH="$(artifact_metadata_path "${DISTRIBUTION}")"
-readonly MANIFEST_PATH
+ARTIFACT_METADATA_PATH="$(artifact_metadata_path "${DISTRIBUTION}")"
+readonly ARTIFACT_METADATA_PATH
 readonly VERSION="firecracker-${FIRECRACKER_RELEASE}-kernel-${KERNEL_VERSION}-input-sha256-${INPUTS_SHA_SHORT}"
-manifest_contents "${VERSION}" > "${MANIFEST_PATH}"
+artifact_metadata_contents "${VERSION}" > "${ARTIFACT_METADATA_PATH}"

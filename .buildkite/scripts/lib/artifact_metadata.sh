@@ -2,9 +2,11 @@
 set -euo pipefail
 
 ################################################################################
-# A Manifest represents metadata about a built artifact.
+# A Manifest represents metadata about a single, built artifact.
 # It is consumed by `build_and_upload_firecracker_packages.sh` to inform
 # Cloudsmith which version and tags to use.
+# It is *mostly unrelated* to grapl-artifacts.sh and artifacts.sh, which instead
+# are about propagating artifact tags into `origin/rc`
 ################################################################################
 
 # Generates a SHA256 checksum of the sorted output of the SHA256
@@ -28,7 +30,7 @@ sha256_of_dir() {
     find "${dir_path}" -type f | sort | xargs sha256sum | sha256sum | awk '{print $1;}'
 }
 
-manifest_contents() {
+artifact_metadata_contents() {
     local -r version="${1}"
     jq --null-input \
         --arg version "${version}" \
@@ -40,8 +42,8 @@ artifact_metadata_path() {
     echo "${artifact_path}.artifact-metadata.json"
 }
 
-get_version_from_manifest() {
+get_version_from_artifact_metadata() {
     local -r artifact_path="${1}"
-    local -r manifest_path="$(path_for_artifact_metadata "${artifact_path}")"
-    jq -r ".version" "${manifest_path}"
+    local -r artifact_metadata_path="$(path_for_artifact_metadata "${artifact_path}")"
+    jq -r ".version" "${artifact_metadata_path}"
 }
