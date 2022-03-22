@@ -16,7 +16,7 @@ set -euo pipefail
 source .buildkite/scripts/lib/artifacts.sh
 
 # This is where our images will ultimately be promoted to. It is the
-# registry we'll need to query to see if file with the same version
+# registry we'll need to query to see if a package with the same tag
 # already exists.
 readonly UPSTREAM_REGISTRY="${UPSTREAM_REGISTRY:-grapl/testing}"
 readonly UPLOAD_TO_REGISTRY="${UPLOAD_TO_REGISTRY:-grapl/raw}"
