@@ -28,7 +28,7 @@ enum GraplUiError {
 
 #[actix_web::main]
 async fn main() -> Result<(), GraplUiError> {
-    let (_env, _guard) = grapl_config::init_grapl_env!();
+    let (_env, _guard) = grapl_config::init_grapl_env!("web-ui");
 
     let config = config::Config::from_env()?;
 
