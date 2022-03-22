@@ -5,15 +5,17 @@ set -euo pipefail
 ################################################################################
 # This file is responsible for building and uploading non-Docker packages, like
 # the Firecracker microVM kernel and the Firecracker rootfs.
-# It will not upload anything if a file of that name, generated from the same
-# input files, exists upstream.
+#
+# It will not upload or promote anything if the manifest file for the artifact
+# specifies the same version currently in ${UPSTREAM_REGISTRY}.
+# (As such, it is convenient to include a checksum of the input files or
+# resulting artifact in the version!)
 ################################################################################
 
 source .buildkite/scripts/lib/artifacts.sh
-source firecracker/kernel/constants.sh
 
 # This is where our images will ultimately be promoted to. It is the
-# registry we'll need to query to see if file with the same contents
+# registry we'll need to query to see if file with the same version
 # already exists.
 readonly UPSTREAM_REGISTRY="${UPSTREAM_REGISTRY:-grapl/testing}"
 readonly UPLOAD_TO_REGISTRY="${UPLOAD_TO_REGISTRY:-grapl/raw}"
@@ -28,7 +30,7 @@ get_version_from_manifest() {
 # Usage:
 #  query_package --query="name:^firecracker_kernel.tar.gz$""
 cloudsmith_query_package() {
-    queries="${1}"
+    local -r queries="${1}"
     cloudsmith ls packages \
         "${UPSTREAM_REGISTRY}" \
         "${queries}" \
