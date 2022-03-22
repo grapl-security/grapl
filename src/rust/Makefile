@@ -53,6 +53,11 @@ lint-rustfmt: ## Check formatting
 lint-clippy: ## Run Clippy
 	bin/lint
 
+.PHONY: cargo-udeps
+cargo-udeps: image
+cargo-udeps: # Run cargo-udeps
+	$(docker_run) bin/udeps
+
 ########################################################################
 
 image: build-env.Dockerfile
