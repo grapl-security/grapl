@@ -50,8 +50,10 @@ format: ## Format all code
 lint-rustfmt: ## Check formatting
 	bin/format --check
 
+.PHONY: lint-clippy
+lint-clippy: image
 lint-clippy: ## Run Clippy
-	bin/lint
+	$(docker_run) bin/lint
 
 ########################################################################
 
