@@ -229,20 +229,20 @@ pub enum StreamProcessorError {
 // A stream processor consumes data from a topic, does things with the data, and
 // produces data to another topic. This stream processor deserializes the data
 // after consuming and serializes data before producing.
-pub struct StreamProcessor<T, U>
+pub struct StreamProcessor<C, P>
 where
-    T: SerDe,
-    U: SerDe,
+    C: SerDe,
+    P: SerDe,
 {
-    consumer: Consumer<T>,
-    producer: Producer<U>,
+    consumer: Consumer<C>,
+    producer: Producer<P>,
 }
 
-impl<T: SerDe, U: SerDe> StreamProcessor<T, U> {
+impl<C: SerDe, P: SerDe> StreamProcessor<C, P> {
     pub fn new(
         consumer_topic: &str,
         producer_topic: &str,
-    ) -> Result<StreamProcessor<T, U>, ConfigurationError> {
+    ) -> Result<StreamProcessor<C, P>, ConfigurationError> {
         Ok(StreamProcessor {
             consumer: Consumer::new(consumer_topic)?,
             producer: Producer::new(producer_topic)?,
@@ -254,7 +254,7 @@ impl<T: SerDe, U: SerDe> StreamProcessor<T, U> {
         event_handler: F,
     ) -> Result<impl Stream<Item = Result<(), StreamProcessorError>> + 'a, ConfigurationError>
     where
-        F: FnMut(Result<T, StreamProcessorError>) -> Result<U, E> + 'a,
+        F: FnMut(Result<C, StreamProcessorError>) -> Result<P, E> + 'a,
         E: Display,
     {
         Ok(self
