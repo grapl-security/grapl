@@ -49,12 +49,12 @@ artifact_metadata_path() {
 
 get_version_from_artifact_metadata() {
     local -r artifact_path="${1}"
-    local -r artifact_metadata_path="$(path_for_artifact_metadata "${artifact_path}")"
+    local -r artifact_metadata_path="$(artifact_metadata_path "${artifact_path}")"
     jq -r ".version" "${artifact_metadata_path}"
 }
 
 get_tag_from_artifact_metadata() {
     local -r artifact_path="${1}"
-    local -r artifact_metadata_path="$(path_for_artifact_metadata "${artifact_path}")"
+    local -r artifact_metadata_path="$(artifact_metadata_path "${artifact_path}")"
     jq -r ".tag" "${artifact_metadata_path}"
 }

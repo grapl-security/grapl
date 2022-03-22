@@ -14,6 +14,7 @@ set -euo pipefail
 ################################################################################
 
 source .buildkite/scripts/lib/artifacts.sh
+source .buildkite/scripts/lib/artifact_metadata.sh
 
 # This is where our images will ultimately be promoted to. It is the
 # registry we'll need to query to see if a package with the same tag
@@ -74,7 +75,7 @@ done
 echo "--- :cloudsmith::up: Uploading new packages to Cloudsmith"
 for artifact_path in "${new_packages[@]}"; do
     artifact_name=$(basename "${artifact_path}")
-    version="$(get_version_for_artifact "${artifact_path}")"
+    version="$(get_version_from_artifact_metadata "${artifact_path}")"
     tag="$(get_tag_from_artifact_metadata "${artifact_path}")"
     cloudsmith upload raw "${UPLOAD_TO_REGISTRY}" \
         "${artifact_path}" \
