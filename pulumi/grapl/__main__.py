@@ -208,11 +208,10 @@ def main() -> None:
     rust_log_levels = ",".join(
         [
             "DEBUG",
-            "h2::codec=WARN",
+            "h2=WARN",
             "hyper=WARN",
             "rusoto_core=WARN",
             "rustls=WARN",
-            "serde_xml_rs=WARN",
         ]
     )
     py_log_level = "DEBUG"
@@ -333,6 +332,15 @@ def main() -> None:
         ###################################
         # Local Grapl
         ###################################
+
+        # NOTE: The ports for these `LocalPostgresInstance` databases
+        # must match what's in `grapl-local-infra.nomad`. That Nomad
+        # job will be run _before_ this Pulumi project (because it
+        # brings up infrastructure this project depends on in the
+        # local case).
+        #
+        # There's not really a great way to deal with this duplication
+        # at the moment, sadly.
         organization_management_db = LocalPostgresInstance(
             name="organization-management-db",
             port=5632,

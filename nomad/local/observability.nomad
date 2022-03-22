@@ -30,6 +30,18 @@ job "observability" {
         to     = 9411
         static = 9411
       }
+
+      // Rust services use the jaeger agent udp thrift ports
+      port "agent-thrift-compact" {
+        to     = 6831
+        static = 6831
+      }
+
+      port "agent-thrift-binary" {
+        to     = 6832
+        static = 6832
+      }
+
     }
 
     service {
@@ -56,6 +68,18 @@ job "observability" {
     service {
       name = "jaeger-thrift"
       port = "jaeger-thrift"
+      tags = ["thrift"]
+    }
+
+    service {
+      name = "jaeger-agent-thrift-compact"
+      port = "agent-thrift-compact"
+      tags = ["thrift"]
+    }
+
+    service {
+      name = "jaeger-agent-thrift-binary"
+      port = "agent-thrift-compact"
       tags = ["thrift"]
     }
 

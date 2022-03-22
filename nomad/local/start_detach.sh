@@ -42,14 +42,6 @@ ensure_valid_env() {
     ensure_cros_bridge_networking_workaround
     ensure_firecracker_driver_installed
 
-    # Ensure script is being run with `local-grapl.env` variables
-    # via `make start-nomad-ci`
-    # This variable will only be set in that scenario.
-    if [[ ! -v FAKE_AWS_ACCESS_KEY_ID ]]; then
-        echo "!!! Run this with 'make start-nomad-ci'"
-        exit 1
-    fi
-
     # ensure that all dependencies are available
     if [[ -z $(command -v nomad) ]]; then
         echo "Nomad must be installed. Please follow the install instructions at https://www.nomadproject.io/downloads"

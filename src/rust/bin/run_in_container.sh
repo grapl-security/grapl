@@ -157,7 +157,7 @@ tarpaulin_args=(
 
 # Based on the command we've been given to run, set up the proper
 # `docker` invocation.
-if [ "${2}" = "tarpaulin" ]; then
+if [ "${2:-}" = "tarpaulin" ]; then
     # e.g., calling `cargo tarpaulin`
     log_and_run docker run \
         "${common_args[@]}" \

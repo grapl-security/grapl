@@ -5,12 +5,16 @@ mod services;
 
 use actix_session::CookieSession;
 use actix_web::{
-    client::Client,
     web,
+    web::Data,
     App,
     HttpServer,
 };
-use tap::TapFallible;
+use actix_web_opentelemetry::RequestTracing;
+use opentelemetry::{
+    global,
+    trace::TraceError,
+};
 
 #[derive(thiserror::Error, Debug)]
 enum GraplUiError {
@@ -18,34 +22,42 @@ enum GraplUiError {
     Config(#[from] config::ConfigError),
     #[error("IO error")]
     Io(#[from] std::io::Error),
+    #[error("Trace Error")]
+    Trace(#[from] TraceError),
 }
 
 #[actix_web::main]
 async fn main() -> Result<(), GraplUiError> {
-    let (_env, _guard) = grapl_config::init_grapl_env!();
+    let (_env, _guard) = grapl_config::init_grapl_env!("web-ui");
 
-    let config = config::Config::from_env().tap_err(|e| tracing::error!("{}", e))?;
+    let config = config::Config::from_env()?;
 
     let bind_address = config.bind_address.clone();
 
     HttpServer::new(move || {
+        let web_client = Data::new(awc::Client::new());
+        let auth_dynamodb_client = Data::new(authn::AuthDynamoClient {
+            client: config.dynamodb_client.clone(),
+            user_auth_table_name: config.user_auth_table_name.clone(),
+            user_session_table_name: config.user_session_table_name.clone(),
+        });
+        let graphql_endpoint = Data::new(config.graphql_endpoint.clone());
+        let model_plugin_deployer_endpoint =
+            Data::new(config.model_plugin_deployer_endpoint.clone());
+
         App::new()
             .wrap(actix_web::middleware::Logger::default())
-            // grapl-security/issue-tracker#803
-            // .wrap(actix_web::middleware::Compress::default())  // todo: Reenable compression when brotli isn't vulnerable
+            .wrap(RequestTracing::new())
+            .wrap(actix_web::middleware::Compress::default())
             .wrap(
                 CookieSession::private(&config.session_key)
                     .path("/")
                     .secure(true),
             )
-            .data(Client::new())
-            .data(config.graphql_endpoint.clone())
-            .data(config.model_plugin_deployer_endpoint.clone())
-            .data(authn::AuthDynamoClient {
-                client: config.dynamodb_client.clone(),
-                user_auth_table_name: config.user_auth_table_name.clone(),
-                user_session_table_name: config.user_session_table_name.clone(),
-            })
+            .app_data(web_client)
+            .app_data(graphql_endpoint)
+            .app_data(model_plugin_deployer_endpoint)
+            .app_data(auth_dynamodb_client)
             .configure(routes::config)
             .service(web::scope("/graphQlEndpoint").configure(services::graphql::config))
             .service(
@@ -56,6 +68,9 @@ async fn main() -> Result<(), GraplUiError> {
     .bind(bind_address)?
     .run()
     .await?;
+
+    // sending remaining trace spans.
+    global::shutdown_tracer_provider();
 
     Ok(())
 }

@@ -72,9 +72,6 @@ steps:
       - label: ":rust::clippy: Linting"
         command:
           - make lint-rust-clippy
-        plugins:
-          - docker#v3.8.0:
-              image: "rust:${RUST_VERSION}"
         agents:
           queue: "beefy"
 

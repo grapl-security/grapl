@@ -50,8 +50,15 @@ format: ## Format all code
 lint-rustfmt: ## Check formatting
 	bin/format --check
 
+.PHONY: lint-clippy
+lint-clippy: image
 lint-clippy: ## Run Clippy
-	bin/lint
+	$(docker_run) bin/lint
+
+.PHONY: cargo-udeps
+cargo-udeps: image
+cargo-udeps: # Run cargo-udeps
+	$(docker_run) bin/udeps
 
 ########################################################################
 
@@ -85,3 +92,8 @@ coverage: ## Run `cargo tarpaulin` to generate test coverage statistics.
 	$(docker_run) cargo tarpaulin \
 		--out=Xml \
 		--output-dir=/dist/coverage
+
+.PHONY: shell
+shell: image
+shell: ## Enter a shell in our build container to aid in debugging
+	$(docker_run) bash

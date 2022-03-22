@@ -36,11 +36,11 @@ pub(crate) struct Config {
 
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum ConfigError {
-    #[error("Required environment variable '{0}' error: {1}")]
+    #[error("required environment variable '{0}' error: {1}")]
     MissingEnvironmentVariable(&'static str, std::env::VarError),
-    #[error("Unable to parse URL")]
+    #[error("unable to parse URL: `{0}`")]
     UrlParse(#[from] url::ParseError),
-    #[error("Unable to parse AWS region")]
+    #[error("unable to parse AWS region: `{0}`")]
     AwsRegionParse(#[from] rusoto_core::region::ParseRegionError),
 }
 

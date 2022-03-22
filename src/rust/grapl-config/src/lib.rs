@@ -6,6 +6,10 @@ use std::{
 
 use color_eyre::Help;
 use grapl_observe::metric_reporter::MetricReporter;
+use opentelemetry::{
+    global,
+    sdk::propagation::TraceContextPropagator,
+};
 use rusoto_core::{
     Region,
     RusotoError,
@@ -19,7 +23,10 @@ use sqs_executor::{
     redis_cache::RedisCache,
 };
 use tracing::debug;
-use tracing_subscriber::EnvFilter;
+use tracing_subscriber::{
+    prelude::*,
+    EnvFilter,
+};
 
 pub mod env_helpers;
 
@@ -44,7 +51,7 @@ pub fn _init_grapl_env(
     let env = ServiceEnv {
         service_name: service_name.to_string(),
     };
-    let tracing_guard = _init_grapl_log();
+    let tracing_guard = _init_grapl_log(&env.service_name);
     tracing::info!(env=?env, "initializing environment");
     (env, tracing_guard)
 }
@@ -93,13 +100,28 @@ pub fn region() -> Region {
     }
 }
 
-pub fn _init_grapl_log() -> tracing_appender::non_blocking::WorkerGuard {
+pub fn _init_grapl_log(service_name: &str) -> tracing_appender::non_blocking::WorkerGuard {
     let filter = EnvFilter::from_default_env();
+
     let (non_blocking, guard) = tracing_appender::non_blocking(std::io::stdout());
-    tracing_subscriber::fmt()
+
+    // init json logging layer
+    let log_layer = tracing_subscriber::fmt::layer()
         .json()
-        .with_env_filter(filter)
-        .with_writer(non_blocking)
+        .with_writer(non_blocking);
+
+    // init tracing layer
+    global::set_text_map_propagator(TraceContextPropagator::new());
+    let tracer = opentelemetry_jaeger::new_pipeline()
+        .with_service_name(service_name)
+        .install_batch(opentelemetry::runtime::Tokio)
+        .unwrap();
+
+    // register a subscriber with all the layers
+    tracing_subscriber::registry()
+        .with(filter)
+        .with(log_layer)
+        .with(tracing_opentelemetry::layer().with_tracer(tracer))
         .init();
     guard
 }

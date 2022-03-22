@@ -2,27 +2,27 @@ config:
   aws:region: us-east-1
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: operational-alarms@graplsecurity.com
   grapl:artifacts:
-    analyzer-dispatcher: 20220316162152-7d9c512
-    analyzer-executor: 20220316162152-7d9c512
-    e2e-tests: 20220316162152-7d9c512
-    engagement-creator: 20220316162152-7d9c512
+    analyzer-dispatcher: 20220322213752-e0965ed
+    analyzer-executor: 20220322213752-e0965ed
+    e2e-tests: 20220322213752-e0965ed
+    engagement-creator: 20220322213752-e0965ed
     firecracker_kernel:
       tar:
         gz: firecracker-v1.0.0-kernel-4.14.174
-    firecracker_kernel.tar.gz: firecracker-v1.0.0-kernel-4.14.174
-    graph-merger: 20220316162152-7d9c512
-    graphql-endpoint: 20220316162152-7d9c512
-    grapl-web-ui: 20220316162152-7d9c512
-    model-plugin-deployer: 20220316162152-7d9c512
-    node-identifier: 20220316162152-7d9c512
-    node-identifier-retry: 20220316162152-7d9c512
-    organization-management: 20220316162152-7d9c512
-    osquery-generator: 20220316162152-7d9c512
-    plugin-bootstrap: 20220316162152-7d9c512
-    plugin-registry: 20220316162152-7d9c512
-    plugin-work-queue: 20220316162152-7d9c512
-    provisioner: 20220316162152-7d9c512
-    sysmon-generator: 20220316162152-7d9c512
+    firecracker_kernel.tar.gz: firecracker-v1.0.0-kernel-4.14.174-e0965ed
+    graph-merger: 20220322213752-e0965ed
+    graphql-endpoint: 20220322213752-e0965ed
+    grapl-web-ui: 20220322213752-e0965ed
+    model-plugin-deployer: 20220322213752-e0965ed
+    node-identifier: 20220322213752-e0965ed
+    node-identifier-retry: 20220322213752-e0965ed
+    organization-management: 20220322213752-e0965ed
+    osquery-generator: 20220322213752-e0965ed
+    plugin-bootstrap: 20220322213752-e0965ed
+    plugin-registry: 20220322213752-e0965ed
+    plugin-work-queue: 20220322213752-e0965ed
+    provisioner: 20220322213752-e0965ed
+    sysmon-generator: 20220322213752-e0965ed
   grapl:cloudsmith-repository-name: grapl/testing
   grapl:confluent-environment-name: testing
   grapl:env_vars:

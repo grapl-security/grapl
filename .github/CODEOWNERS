@@ -29,7 +29,6 @@ BUILD @christophermaier
 /.gitpod.yml @wimax-grapl
 .gitignore @christophermaier
 /LICENSE @christophermaier
-/local-grapl.env @christophermaier
 /LOCAL_UI_WORKFLOW.md @christophermaier
 /nomad @twunderlich-grapl
 /pants @christophermaier

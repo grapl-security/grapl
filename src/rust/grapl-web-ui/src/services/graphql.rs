@@ -1,13 +1,13 @@
 use std::ops::Deref;
 
 use actix_web::{
-    client::Client,
     post,
     web,
     HttpRequest,
     HttpResponse,
     Result,
 };
+use awc::Client;
 
 use crate::authn::AuthenticatedUser;
 
@@ -38,12 +38,12 @@ pub fn config(cfg: &mut web::ServiceConfig) {
 #[post("/{tail:.*}")]
 pub(crate) async fn handler(
     req: HttpRequest,
-    body: web::Bytes,
+    payload: web::Payload,
     backend_url: web::Data<GraphQlEndpointUrl>,
     client: web::Data<Client>,
     _user: AuthenticatedUser,
 ) -> Result<HttpResponse> {
     let url = backend_url.get_ref().deref().clone();
 
-    super::fwd_request_to_backend_service(req, body, url, client.get_ref().clone()).await
+    super::fwd_request_to_backend_service(req, payload, url, client.get_ref().clone()).await
 }
