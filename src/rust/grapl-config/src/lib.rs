@@ -103,7 +103,7 @@ pub fn region() -> Region {
 pub fn _init_grapl_log(service_name: &str) -> tracing_appender::non_blocking::WorkerGuard {
     let filter = EnvFilter::from_default_env();
 
-    let (non_blocking, guard) = tracing_appender::non_blocking(std::io::stdout()); // exporter pipeline
+    let (non_blocking, guard) = tracing_appender::non_blocking(std::io::stdout());
 
     // init json logging layer
     let log_layer = tracing_subscriber::fmt::layer()
@@ -114,7 +114,7 @@ pub fn _init_grapl_log(service_name: &str) -> tracing_appender::non_blocking::Wo
     global::set_text_map_propagator(TraceContextPropagator::new());
     let tracer = opentelemetry_jaeger::new_pipeline()
         .with_service_name(service_name)
-        .install_simple() // TODO switch to batch install.
+        .install_batch(opentelemetry::runtime::Tokio)
         .unwrap();
 
     // register a subscriber with all the layers
