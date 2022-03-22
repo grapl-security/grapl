@@ -40,6 +40,7 @@ nomad/local/mount-grapl-root-as-volume.nomad
 # Distribution / packaging
 build/
 *.zip
+/dist/
 
 # IDE files
 *.code-workspace
