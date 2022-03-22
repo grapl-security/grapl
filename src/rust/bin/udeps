@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+# Run `cargo udeps` on our Rust source code. Intended to run within
+# our build container, but can also be run directly on a workstation,
+# if you so choose.
+#
+# `cargo-udeps` must run under the nightly toolchain. We must take
+# care to install the nightly toolchain with the default profile to
+# ensure that we also download the `rustfmt` component for nightly as
+# well.
+#
+# We do this because `tonic_build` is currently compiled using the
+# `rustfmt` feature (enabled by default), which formats the generated
+# code and makes for better error messages.
+#
+# See
+# https://docs.rs/tonic-build/latest/tonic_build/index.html#features
+# for details.
+
+set -euo pipefail
+
+cargo install cargo-udeps --locked
+# --no-self-update is added here for the benefit of running in our
+# build container; rustup likes to update itself by default, but this
+# causes problems when we don't have it installed in CARGO_HOME, as is
+# the case in the container.
+rustup toolchain install nightly --profile=default --no-self-update
+cargo +nightly udeps --all-features --all-targets
