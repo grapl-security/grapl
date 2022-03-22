@@ -11,6 +11,11 @@ license = "Apache-2.0"
 log = "0.4.14"
 sqs-executor = { path = "../sqs-executor/" }
 grapl-observe = { path = "../grapl-observe/" }
+opentelemetry = { version = "0.16.0", features = ["rt-tokio"] }
+opentelemetry-jaeger = { version = "0.15.0", features = [
+  "collector_client",
+  "rt-tokio"
+] }
 rusoto_s3 = { version = "0.47.0", default_features = false, features = [
   "rustls"
 ] }
@@ -28,6 +33,7 @@ rusoto_cloudwatch = { version = "0.47.0", default_features = false, features = [
 ] }
 rusoto_credential = { version = "0.47.0", default_features = false }
 tracing = "0.1.29"
+tracing-opentelemetry = "0.16.0"
 tracing-subscriber = { version = "0.3.2", features = ["env-filter", "json"] }
 tracing-futures = "0.2.5"
 tokio = { version = "1.14.0", features = [
