@@ -55,7 +55,12 @@ source .buildkite/scripts/lib/artifact_metadata.sh
 ARTIFACT_METADATA_PATH="$(artifact_metadata_path "${ARTIFACT_PATH}")"
 readonly ARTIFACT_METADATA_PATH
 
+source .buildkite/scripts/lib/version.sh
+# Note: in Cloudsmith, versions must be len <=128, hence we use a short git sha.
+VERSION="firecracker-${FIRECRACKER_RELEASE}-kernel-${KERNEL_VERSION}-$(sha_version)"
+readonly VERSION
+
 TAG="inputsha-$(sha256_of_dir firecracker/kernel)"
 readonly TAG
-readonly VERSION="firecracker-${FIRECRACKER_RELEASE}-kernel-${KERNEL_VERSION}-TodoNextCommitGitSha"
+
 artifact_metadata_contents "${VERSION}" "${TAG}" > "${ARTIFACT_METADATA_PATH}"

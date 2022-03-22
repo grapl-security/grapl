@@ -21,8 +21,10 @@ ARTIFACT_METADATA_PATH="$(artifact_metadata_path "${ARTIFACT_PATH}")"
 readonly ARTIFACT_METADATA_PATH
 
 source .buildkite/scripts/lib/version.sh
-TAG="inputsha-$(sha256_of_dir firecracker/rootfs)"
-readonly TAG
 VERSION="$(timestamp_and_sha_version)"
 readonly VERSION
+
+TAG="inputsha-$(sha256_of_dir firecracker/rootfs)"
+readonly TAG
+
 artifact_metadata_contents "${VERSION}" "${TAG}" > "${ARTIFACT_METADATA_PATH}"
