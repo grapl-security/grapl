@@ -44,6 +44,11 @@ present_upstream() {
         jq --exit-status ". | length != 0"
 }
 
+input_sha_as_tag() {
+    local -r input_sha256="${1}"
+    echo "input-sha256-${input_sha256}"
+}
+
 ########################################
 # Main logic
 ########################################
@@ -65,9 +70,10 @@ for artifact_path in "${PACKAGES[@]}"; do
     echo "--- :cloudsmith: Should we update '${artifact_name}' in '${UPSTREAM_REGISTRY}'?"
     version="$(get_version_from_artifact_metadata "${artifact_path}")"
     input_sha256="$(get_input_sha256_from_artifact_metadata "${artifact_path}")"
+    tag="$(input_sha_as_tag "${input_sha256}")"
 
     echo "Checking if a package generated with the same inputs exists upstream. SHA: ${input_sha256}"
-    if ! present_upstream "${artifact_name}" "${input_sha256}"; then
+    if ! present_upstream "${artifact_name}" "${tag}"; then
         echo "Package not present upstream; will promote '${artifact_name}'"
         new_packages+=("${artifact_path}")
     else
@@ -80,11 +86,13 @@ for artifact_path in "${new_packages[@]}"; do
     artifact_name=$(basename "${artifact_path}")
     version="$(get_version_from_artifact_metadata "${artifact_path}")"
     input_sha256="$(get_input_sha256_from_artifact_metadata "${artifact_path}")"
+    tag="$(input_sha_as_tag "${input_sha256}")"
+
     cloudsmith upload raw "${UPLOAD_TO_REGISTRY}" \
         "${artifact_path}" \
         --name "${artifact_name}" \
         --version "${version}" \
-        --tags "${input_sha256}"
+        --tags "${tag}"
 
     # This generates an artifact_json file for each artifact, since we have differing versions
     # between each.
