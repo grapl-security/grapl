@@ -200,9 +200,9 @@ impl<T: SerDe> Consumer<T> {
                 .consumer
                 .stream()
                 .map(|res| -> Result<T, ConsumerError> {
-                    res.map_err(|e| e.into()).and_then(|msg| {
+                    res.map_err(ConsumerError::from).and_then(|msg| {
                         T::deserialize(msg.payload().ok_or(ConsumerError::PayloadAbsent)?)
-                            .map_err(|e| e.into())
+                            .map_err(ConsumerError::from)
                     })
                 })),
             Err(e) => Err(ConfigurationError::SubscriptionFailed(e)),
@@ -260,7 +260,7 @@ impl<T: SerDe, U: SerDe> StreamProcessor<T, U> {
         Ok(self
             .consumer
             .stream()?
-            .map_err(|e| -> StreamProcessorError { e.into() })
+            .map_err(StreamProcessorError::from)
             .map(event_handler)
             .map_err(|e| StreamProcessorError::EventHandlerError(e.to_string()))
             .and_then(move |msg| async move {
@@ -272,7 +272,7 @@ impl<T: SerDe, U: SerDe> StreamProcessor<T, U> {
                 self.producer
                     .clone()
                     .send(msg)
-                    .map_err(|e| -> StreamProcessorError { e.into() })
+                    .map_err(StreamProcessorError::from)
                     .await
             }))
     }
