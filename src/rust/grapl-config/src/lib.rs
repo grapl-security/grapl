@@ -115,7 +115,7 @@ pub fn _init_grapl_log(service_name: &str) -> tracing_appender::non_blocking::Wo
     let tracer = opentelemetry_jaeger::new_pipeline()
         .with_service_name(service_name)
         .install_batch(opentelemetry::runtime::Tokio)
-        .unwrap();
+        .expect("opentelemetry-jaeger tracer");
 
     // register a subscriber with all the layers
     tracing_subscriber::registry()
