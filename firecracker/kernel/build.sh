@@ -60,7 +60,7 @@ source .buildkite/scripts/lib/version.sh
 VERSION="firecracker-${FIRECRACKER_RELEASE}-kernel-${KERNEL_VERSION}-$(sha_version)"
 readonly VERSION
 
-TAG="inputsha-$(sha256_of_dir firecracker/kernel)"
-readonly TAG
+INPUT_SHA256="$(sha256_of_dir firecracker/kernel)"
+readonly INPUT_SHA256
 
-artifact_metadata_contents "${VERSION}" "${TAG}" > "${ARTIFACT_METADATA_PATH}"
+artifact_metadata_contents "${VERSION}" "${INPUT_SHA256}" > "${ARTIFACT_METADATA_PATH}"

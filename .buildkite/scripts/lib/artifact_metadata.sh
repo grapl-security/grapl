@@ -4,9 +4,11 @@ set -euo pipefail
 ################################################################################
 # A Manifest represents metadata about a single, built artifact.
 # It is consumed by `build_and_upload_firecracker_packages.sh` to inform
-# Cloudsmith which version and tags to use.
-# Notably, we use the tag to prevent duplicate uploads - it represents the
-# identity of an artifact (i.e. the checksum of an artifact's inputs).
+# Cloudsmith of:
+# * the artifact's version
+# * the SHA256sum of all files used to generate the artifact
+# The input_sha256 is used to prevent duplicate uploads - it represents the
+# identity of an artifact.
 #
 # NOTE: It is *mostly unrelated* to grapl-artifacts.sh and artifacts.sh, which
 # instead are about propagating artifact tags into `origin/rc`
@@ -35,11 +37,11 @@ sha256_of_dir() {
 
 artifact_metadata_contents() {
     local -r version="${1}"
-    local -r tag="${2}"
+    local -r input_sha256="${2}"
     jq --null-input \
         --arg version "${version}" \
-        --arg tag "${tag}" \
-        '{"version": $version, "tag": $tag}'
+        --arg input_sha256 "${input_sha256}" \
+        '{"version": $version, "input_sha256": $input_sha256}'
 }
 
 artifact_metadata_path() {
@@ -53,8 +55,8 @@ get_version_from_artifact_metadata() {
     jq -r ".version" "${artifact_metadata_path}"
 }
 
-get_tag_from_artifact_metadata() {
+get_input_sha256_from_artifact_metadata() {
     local -r artifact_path="${1}"
     local -r artifact_metadata_path="$(artifact_metadata_path "${artifact_path}")"
-    jq -r ".tag" "${artifact_metadata_path}"
+    jq -r ".input_sha256" "${artifact_metadata_path}"
 }
