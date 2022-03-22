@@ -16,12 +16,13 @@ packer build \
 # Write a .artifact-metadata.json file
 ########################################
 source .buildkite/scripts/lib/artifact_metadata.sh
-source .buildkite/scripts/lib/version.sh
-INPUTS_SHA="$(sha256_of_dir firecracker/rootfs)"
-readonly INPUTS_SHA_SHORT="${INPUTS_SHA:0:16}" # cloudsmith version field must be under 128 chars
-VERSION="$(timestamp_and_sha_version)-input-sha256-${INPUTS_SHA_SHORT}"
-readonly VERSION
 readonly ARTIFACT_PATH="${GRAPL_ROOT}/dist/${IMAGE_NAME}.tar.gz"
 ARTIFACT_METADATA_PATH="$(artifact_metadata_path "${ARTIFACT_PATH}")"
 readonly ARTIFACT_METADATA_PATH
-artifact_metadata_contents "${INPUTS_SHA}" "${VERSION}" > "${ARTIFACT_METADATA_PATH}"
+
+source .buildkite/scripts/lib/version.sh
+INPUT_SHA256="$(sha256_of_dir firecracker/rootfs)"
+readonly INPUT_SHA256
+VERSION="$(timestamp_and_sha_version)"
+readonly VERSION
+artifact_metadata_contents "${VERSION}" "${INPUT_SHA256}" > "${ARTIFACT_METADATA_PATH}"

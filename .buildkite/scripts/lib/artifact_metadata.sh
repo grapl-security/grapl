@@ -32,9 +32,11 @@ sha256_of_dir() {
 
 artifact_metadata_contents() {
     local -r version="${1}"
+    local -r input_sha256="${2}"
     jq --null-input \
         --arg version "${version}" \
-        '{"version": $version}'
+        --arg input_sha256 "${input_sha256}" \
+        '{"version": $version, "input_sha256": $input_sha256}'
 }
 
 artifact_metadata_path() {
@@ -46,4 +48,10 @@ get_version_from_artifact_metadata() {
     local -r artifact_path="${1}"
     local -r artifact_metadata_path="$(path_for_artifact_metadata "${artifact_path}")"
     jq -r ".version" "${artifact_metadata_path}"
+}
+
+get_input_sha_from_artifact_metadata() {
+    local -r artifact_path="${1}"
+    local -r artifact_metadata_path="$(path_for_artifact_metadata "${artifact_path}")"
+    jq -r ".input_sha256" "${artifact_metadata_path}"
 }

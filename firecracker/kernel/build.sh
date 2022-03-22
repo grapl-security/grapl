@@ -36,14 +36,14 @@ readonly BUILD_DIR
 ########################################
 readonly KERNEL_BIN_DIR="${BUILD_DIR}/firecracker/build/kernel/linux-${KERNEL_VERSION}/"
 readonly KERNEL_BIN_FILE="vmlinux-${KERNEL_VERSION}-x86_64.bin"
-readonly DISTRIBUTION="${REPOSITORY_ROOT}/dist/firecracker_kernel.tar.gz"
+readonly ARTIFACT_PATH="${REPOSITORY_ROOT}/dist/firecracker_kernel.tar.gz"
 
 # NOTE about tar: If you specify the full path of the thing-to-be-tar'd,
 #   the tar will contain that full nested path of directories.
 #   Hence the --directory, and basename for KERNEL_BIN_FILE
 tar \
     --directory "${KERNEL_BIN_DIR}" \
-    --file="${DISTRIBUTION}" \
+    --file="${ARTIFACT_PATH}" \
     --create \
     --gzip \
     "${KERNEL_BIN_FILE}"
@@ -52,9 +52,10 @@ tar \
 # Write a .artifact-metadata.json file
 ########################################
 source .buildkite/scripts/lib/artifact_metadata.sh
-INPUTS_SHA="$(sha256_of_dir firecracker/kernel)"
-readonly INPUTS_SHA_SHORT="${INPUTS_SHA:0:16}" # cloudsmith version field must be under 128 chars
-ARTIFACT_METADATA_PATH="$(artifact_metadata_path "${DISTRIBUTION}")"
+ARTIFACT_METADATA_PATH="$(artifact_metadata_path "${ARTIFACT_PATH}")"
 readonly ARTIFACT_METADATA_PATH
-readonly VERSION="firecracker-${FIRECRACKER_RELEASE}-kernel-${KERNEL_VERSION}-input-sha256-${INPUTS_SHA_SHORT}"
-artifact_metadata_contents "${VERSION}" > "${ARTIFACT_METADATA_PATH}"
+
+INPUT_SHA256="$(sha256_of_dir firecracker/kernel)"
+readonly INPUT_SHA256
+readonly VERSION="firecracker-${FIRECRACKER_RELEASE}-kernel-${KERNEL_VERSION}-TodoNextCommitGitSha"
+artifact_metadata_contents "${VERSION}" "${INPUT_SHA256}" > "${ARTIFACT_METADATA_PATH}"
