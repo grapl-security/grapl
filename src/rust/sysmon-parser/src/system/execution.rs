@@ -3,6 +3,11 @@
 /// <https://docs.microsoft.com/en-us/windows/win32/wes/eventschema-execution-systempropertiestype-element>
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Hash)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde_crate::Serialize, serde_crate::Deserialize),
+    serde(crate = "serde_crate")
+)]
 pub struct Execution {
     /// Identifies the process that generated the event.
     pub process_id: u32,
