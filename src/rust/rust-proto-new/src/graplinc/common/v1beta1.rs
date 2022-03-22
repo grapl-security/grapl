@@ -59,8 +59,9 @@ impl type_url::TypeUrl for Uuid {
 
 impl SerDe for Uuid {
     fn serialize(self) -> Result<Bytes, SerDeError> {
-        let mut buf = BytesMut::new();
-        UuidProto::from(self).encode(&mut buf)?;
+        let uuid_proto = UuidProto::from(self);
+        let mut buf = BytesMut::with_capacity(uuid_proto.encoded_len());
+        uuid_proto.encode(&mut buf)?;
         Ok(buf.freeze())
     }
 
@@ -99,8 +100,9 @@ impl type_url::TypeUrl for Duration {
 
 impl SerDe for Duration {
     fn serialize(self) -> Result<Bytes, SerDeError> {
-        let mut buf = BytesMut::new();
-        DurationProto::from(self).encode(&mut buf)?;
+        let duration_proto = DurationProto::from(self);
+        let mut buf = BytesMut::with_capacity(duration_proto.encoded_len());
+        duration_proto.encode(&mut buf)?;
         Ok(buf.freeze())
     }
 
@@ -176,8 +178,9 @@ impl type_url::TypeUrl for SystemTime {
 
 impl SerDe for SystemTime {
     fn serialize(self) -> Result<Bytes, SerDeError> {
-        let mut buf = BytesMut::new();
-        TimestampProto::try_from(self)?.encode(&mut buf)?;
+        let timestamp_proto = TimestampProto::try_from(self)?;
+        let mut buf = BytesMut::with_capacity(timestamp_proto.encoded_len());
+        timestamp_proto.encode(&mut buf)?;
         Ok(buf.freeze())
     }
 

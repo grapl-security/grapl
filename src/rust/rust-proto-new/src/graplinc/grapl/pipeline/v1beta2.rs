@@ -74,8 +74,9 @@ where
     T: SerDe,
 {
     fn serialize(self) -> Result<Bytes, SerDeError> {
-        let mut buf = BytesMut::new();
-        NewEnvelopeProto::try_from(self)?.encode(&mut buf)?;
+        let envelope_proto = NewEnvelopeProto::try_from(self)?;
+        let mut buf = BytesMut::with_capacity(envelope_proto.encoded_len());
+        envelope_proto.encode(&mut buf)?;
         Ok(buf.freeze())
     }
 

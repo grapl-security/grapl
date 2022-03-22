@@ -37,11 +37,11 @@ impl TryFrom<PublishRawLogsRequestProto> for PublishRawLogsRequest {
     ) -> Result<Self, Self::Error> {
         let event_source_id = publish_raw_logs_request_proto
             .event_source_id
-            .ok_or(SerDeError::MissingField("event_source_id".to_string()));
+            .ok_or_else(|| SerDeError::MissingField("event_source_id".to_string()));
 
         let tenant_id = publish_raw_logs_request_proto
             .tenant_id
-            .ok_or(SerDeError::MissingField("tenant_id".to_string()));
+            .ok_or_else(|| SerDeError::MissingField("tenant_id".to_string()));
 
         Ok(PublishRawLogsRequest {
             event_source_id: event_source_id?.into(),
@@ -68,8 +68,9 @@ impl type_url::TypeUrl for PublishRawLogsRequest {
 
 impl SerDe for PublishRawLogsRequest {
     fn serialize(self) -> Result<Bytes, SerDeError> {
-        let mut buf = BytesMut::new();
-        PublishRawLogsRequestProto::from(self).encode(&mut buf)?;
+        let publish_raw_logs_request_proto = PublishRawLogsRequestProto::from(self);
+        let mut buf = BytesMut::with_capacity(publish_raw_logs_request_proto.encoded_len());
+        publish_raw_logs_request_proto.encode(&mut buf)?;
         Ok(buf.freeze())
     }
 
@@ -100,7 +101,7 @@ impl TryFrom<PublishRawLogsResponseProto> for PublishRawLogsResponse {
     ) -> Result<Self, Self::Error> {
         let created_time = publish_raw_logs_response_proto
             .created_time
-            .ok_or(SerDeError::MissingField("created_time".to_string()));
+            .ok_or_else(|| SerDeError::MissingField("created_time".to_string()));
 
         Ok(PublishRawLogsResponse {
             created_time: created_time?.try_into()?,
@@ -125,8 +126,9 @@ impl type_url::TypeUrl for PublishRawLogsResponse {
 
 impl SerDe for PublishRawLogsResponse {
     fn serialize(self) -> Result<Bytes, SerDeError> {
-        let mut buf = BytesMut::new();
-        PublishRawLogsResponseProto::try_from(self)?.encode(&mut buf)?;
+        let publish_raw_logs_response_proto = PublishRawLogsResponseProto::try_from(self)?;
+        let mut buf = BytesMut::with_capacity(publish_raw_logs_response_proto.encoded_len());
+        publish_raw_logs_response_proto.encode(&mut buf)?;
         Ok(buf.freeze())
     }
 

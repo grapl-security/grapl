@@ -92,8 +92,9 @@ impl type_url::TypeUrl for Metadata {
 
 impl SerDe for Metadata {
     fn serialize(self) -> Result<Bytes, SerDeError> {
-        let mut buf = BytesMut::new();
-        MetadataProto::try_from(self)?.encode(&mut buf)?;
+        let metadata_proto = MetadataProto::try_from(self)?;
+        let mut buf = BytesMut::with_capacity(metadata_proto.encoded_len());
+        metadata_proto.encode(&mut buf)?;
         Ok(buf.freeze())
     }
 
@@ -152,8 +153,9 @@ impl type_url::TypeUrl for Envelope {
 
 impl SerDe for Envelope {
     fn serialize(self) -> Result<Bytes, SerDeError> {
-        let mut buf = BytesMut::new();
-        EnvelopeProto::try_from(self)?.encode(&mut buf)?;
+        let envelope_proto = EnvelopeProto::try_from(self)?;
+        let mut buf = BytesMut::with_capacity(envelope_proto.encoded_len());
+        envelope_proto.encode(&mut buf)?;
         Ok(buf.freeze())
     }
 
@@ -198,8 +200,9 @@ impl type_url::TypeUrl for RawLog {
 
 impl SerDe for RawLog {
     fn serialize(self) -> Result<Bytes, SerDeError> {
-        let mut buf = BytesMut::new();
-        RawLogProto::from(self).encode(&mut buf)?;
+        let raw_log_proto = RawLogProto::from(self);
+        let mut buf = BytesMut::with_capacity(raw_log_proto.encoded_len());
+        raw_log_proto.encode(&mut buf)?;
         Ok(buf.freeze())
     }
 
