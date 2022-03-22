@@ -46,7 +46,6 @@ variable "dist_folder" {
 variable "image_name" {
   description = "The name of the artifact that will end up in var.dist_folder, excluding .tar.gz"
   type        = string
-  default     = "firecracker_rootfs"
 }
 
 variable "debian_version" {

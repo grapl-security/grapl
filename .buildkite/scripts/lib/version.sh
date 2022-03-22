@@ -13,3 +13,11 @@ timestamp_and_sha_version() {
         --pretty="format:%ad-%h" \
         --date="format-local:%Y%m%d%H%M%S"
 }
+
+# Generate a version string consisting of short git SHA of the current
+# git commit.
+sha_version() {
+    git show \
+        --no-patch \
+        --pretty="format:%h"
+}
