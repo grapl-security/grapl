@@ -55,7 +55,7 @@ source .buildkite/scripts/lib/artifact_metadata.sh
 ARTIFACT_METADATA_PATH="$(artifact_metadata_path "${ARTIFACT_PATH}")"
 readonly ARTIFACT_METADATA_PATH
 
-INPUT_SHA256="$(sha256_of_dir firecracker/kernel)"
-readonly INPUT_SHA256
+TAG="inputsha-$(sha256_of_dir firecracker/kernel)"
+readonly TAG
 readonly VERSION="firecracker-${FIRECRACKER_RELEASE}-kernel-${KERNEL_VERSION}-TodoNextCommitGitSha"
-artifact_metadata_contents "${VERSION}" "${INPUT_SHA256}" > "${ARTIFACT_METADATA_PATH}"
+artifact_metadata_contents "${VERSION}" "${TAG}" > "${ARTIFACT_METADATA_PATH}"
