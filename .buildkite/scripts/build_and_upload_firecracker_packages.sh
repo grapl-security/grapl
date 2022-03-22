@@ -7,9 +7,10 @@ set -euo pipefail
 # the Firecracker microVM kernel and the Firecracker rootfs.
 #
 # It will not upload or promote anything if the artifact-metadata.json file
-# specifies the same version currently in ${UPSTREAM_REGISTRY}.
-# (As such, it is convenient to include a checksum of the input files or
-# resulting artifact in the version!)
+# specifies the same tag found in ${UPSTREAM_REGISTRY}.
+#
+# Every new uploaded package must have a different Version; as such it is
+# convenient to include a git SHA or timestamp_and_sha_version().
 ################################################################################
 
 source .buildkite/scripts/lib/artifacts.sh
@@ -32,9 +33,10 @@ cloudsmith_query_package() {
         jq ".data"
 }
 
+# Check if a package with this name and tag exists in ${UPSTREAM_REGISTRY}.
 # Returns 0 if it is present; 1 if not.
 present_upstream() {
-    cloudsmith_query_package --query="name:^${1}$ AND version:^${2}$" |
+    cloudsmith_query_package --query="name:^${1}$ AND tag:^${2}$" |
         jq --exit-status ". | length != 0"
 }
 
@@ -58,13 +60,14 @@ for artifact_path in "${PACKAGES[@]}"; do
     artifact_name=$(basename "${artifact_path}")
     echo "--- :cloudsmith: Should we update '${artifact_name}' in '${UPSTREAM_REGISTRY}'?"
     version="$(get_version_from_artifact_metadata "${artifact_path}")"
+    tag="$(get_tag_from_artifact_metadata "${artifact_path}")"
 
-    echo "Checking if a version ${version} exists upstream..."
-    if ! present_upstream "${artifact_name}" "${version}"; then
+    echo "Checking if a package with tag ${tag} exists upstream..."
+    if ! present_upstream "${artifact_name}" "${tag}"; then
         echo "Package not present upstream; will promote '${artifact_name}'"
         new_packages+=("${artifact_path}")
     else
-        echo "Package with this SHA exists upstream; no change needed"
+        echo "Package with this tag exists upstream; no change needed"
     fi
 done
 
@@ -72,10 +75,12 @@ echo "--- :cloudsmith::up: Uploading new packages to Cloudsmith"
 for artifact_path in "${new_packages[@]}"; do
     artifact_name=$(basename "${artifact_path}")
     version="$(get_version_for_artifact "${artifact_path}")"
+    tag="$(get_tag_from_artifact_metadata "${artifact_path}")"
     cloudsmith upload raw "${UPLOAD_TO_REGISTRY}" \
         "${artifact_path}" \
         --name "${artifact_name}" \
-        --version "${version}"
+        --version "${version}" \
+        --tags "${tag}"
 
     # This generates an artifact_json file for each artifact, since we have differing versions
     # between each.
