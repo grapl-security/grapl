@@ -17,7 +17,7 @@ packer build \
 # The version should dedupe based on input file checksums.
 # (This may be replaced with Pants-based file diffs in the future.)
 ########################################
-source build-support/create_manifest.sh
+source .buildkite/scripts/lib/manifest.sh
 source .buildkite/scripts/lib/version.sh
 INPUTS_SHA="$(sha256_of_dir firecracker/rootfs)"
 readonly INPUTS_SHA_SHORT="${INPUTS_SHA:0:16}" # cloudsmith version field must be under 128 chars
