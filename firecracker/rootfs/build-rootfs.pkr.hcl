@@ -38,13 +38,13 @@ variable "aws_profile" {
   default     = env("AWS_PROFILE")
 }
 
-variable "dist_folder" {
+variable "dist_dir" {
   description = "This is the directory on the local workstation that the final image file will be deposited into"
   type        = string
 }
 
 variable "image_name" {
-  description = "The name of the artifact that will end up in var.dist_folder, excluding .tar.gz"
+  description = "The name of the artifact that will end up in var.dist_dir, excluding .tar.gz"
   type        = string
 }
 
@@ -58,7 +58,7 @@ variable "debian_version" {
 
 locals {
   image_archive_filename = "${var.image_name}.tar.gz"
-  destination_in_dist    = "${var.dist_folder}/${local.image_archive_filename}"
+  destination_in_dist    = "${var.dist_dir}/${local.image_archive_filename}"
 }
 
 data "amazon-ami" "base-ami" {
