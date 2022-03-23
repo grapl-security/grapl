@@ -1,8 +1,8 @@
-import { createStyles, makeStyles, Theme } from "@material-ui/core/styles";
+import { createStyles, makeStyles } from "@material-ui/core/styles";
 
 const drawerWidth = 500;
 
-export const useStyles = makeStyles((theme: Theme) =>
+export const useStyles = makeStyles((theme) =>
     createStyles({
         root: {
             display: "flex",
@@ -31,19 +31,19 @@ export const useStyles = makeStyles((theme: Theme) =>
                 duration: theme.transitions.duration.enteringScreen,
             }),
         },
-        menuButton: {
-            marginRight: theme.spacing(2),
-            color: "#42C6FF",
+        expandLensAndNodeTableIcon: {
+            color: "#FFFFFF",
+            display: "flex",
+            justify: "flex-end",
+            fontSize: "6em",
         },
         hide: {
             display: "none",
         },
-        drawer: {
-            width: drawerWidth,
-            flexShrink: 0,
-        },
         drawerPaper: {
             width: drawerWidth,
+            flexShrink: 0,
+            backgroundColor: theme.palette.background.default,
         },
         drawerHeader: {
             display: "flex",
@@ -70,8 +70,9 @@ export const useStyles = makeStyles((theme: Theme) =>
             marginLeft: 0,
         },
         lensName: {
-            color: "#EAFDFF",
-            fontSize: "1.5rem",
+            margin: "1em",
+            color: theme.palette.primary.light,
+            fontWeight: "bold",
         },
         headerTitle: {
             fontSize: "35px",
@@ -87,6 +88,9 @@ export const useStyles = makeStyles((theme: Theme) =>
         link: {
             color: "#42C6FF",
             textDecoration: "none",
+        },
+        navIcons: {
+            display: "flex",
         },
     })
 );

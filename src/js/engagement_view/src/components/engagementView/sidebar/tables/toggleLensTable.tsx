@@ -14,6 +14,7 @@ import { getLenses } from "services/graphQLRequests/getLenses";
 import { ToggleLensTableProps, ToggleLensTableState } from "types/CustomTypes";
 
 import { useStyles } from "./lensTable/lensTableStyles";
+
 const defaultToggleLensTableState = (): ToggleLensTableState => {
     return {
         toggled: true,

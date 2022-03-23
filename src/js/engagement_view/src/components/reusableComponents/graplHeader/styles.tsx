@@ -15,7 +15,7 @@ export const graplHeaderStyles = makeStyles((theme: Theme) =>
             flexGrow: 1,
         },
         link: {
-            color: "#42C6FF",
+            color: theme.palette.background.default,
             textDecoration: "none",
         },
     })
