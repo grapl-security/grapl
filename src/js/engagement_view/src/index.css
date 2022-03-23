@@ -1,5 +1,10 @@
 @import url('https://fonts.googleapis.com/css?family=Roboto&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400&family=Source+Sans+Pro&display=swap');
+
+* {
+    border: none !important;
+    font-family: 'Roboto', sans-serif !important;
+}
+
 body {
     margin: 0;
     font-family: 'Roboto', sans-serif;
@@ -8,8 +13,38 @@ body {
     background-color:#2B3648;
 }
 
-code {
-    font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+.lastcolumnSeparator .MuiDataGrid-columnSeparator--sideRight {
+    display: none !important;
 }
 
+input {
+    background-color: #2B3648;
+    padding: .6em !important;
+    border-radius: 4px;
+}
+
+::-webkit-file-upload-button {
+    display: none;
+}
+
+::file-selector-button {
+    display: none;
+}
+
+a, a:active, a:link   {
+    textDecoration: "none";
+    color: #56657F;
+}
+
+a:hover {
+    color: #1976D2;
+}
+
+.MuiPaper-root{
+    background-color: #212936;
+}
+
+.btnClass.clicked {
+    background-color: #1976D2;
+    color: #FFFFFF;
+}

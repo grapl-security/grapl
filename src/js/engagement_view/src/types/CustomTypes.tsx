@@ -9,6 +9,10 @@ export type BaseNodeProperties = {
 
 export type NodeProperties = BaseNodeProperties & OtherNodeProperties;
 
+export type LensName = {
+    lens_name: string;
+};
+
 export type Node = {
     risks?: Risk[];
 } & NodeProperties &

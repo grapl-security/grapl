@@ -1,5 +1,5 @@
 import { SvgIcon } from "@material-ui/core";
-import { ReactComponent as Logo } from "./logo.svg";
+import { ReactComponent as Logo } from "../../../assets/grapl_logo.svg";
 
 import { createStyles, makeStyles, Theme } from "@material-ui/core/styles";
 
