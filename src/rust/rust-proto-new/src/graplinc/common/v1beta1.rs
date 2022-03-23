@@ -9,7 +9,8 @@ use std::time::{
 
 use bytes::{
     Buf,
-    BufMut,
+    Bytes,
+    BytesMut,
 };
 use prost::Message;
 pub use uuid::Uuid;
@@ -57,12 +58,11 @@ impl type_url::TypeUrl for Uuid {
 }
 
 impl SerDe for Uuid {
-    fn serialize<B>(self, buf: &mut B) -> Result<(), SerDeError>
-    where
-        B: BufMut,
-    {
-        UuidProto::from(self).encode(buf)?;
-        Ok(())
+    fn serialize(self) -> Result<Bytes, SerDeError> {
+        let uuid_proto = UuidProto::from(self);
+        let mut buf = BytesMut::with_capacity(uuid_proto.encoded_len());
+        uuid_proto.encode(&mut buf)?;
+        Ok(buf.freeze())
     }
 
     fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
@@ -99,12 +99,11 @@ impl type_url::TypeUrl for Duration {
 }
 
 impl SerDe for Duration {
-    fn serialize<B>(self, buf: &mut B) -> Result<(), SerDeError>
-    where
-        B: BufMut,
-    {
-        DurationProto::from(self).encode(buf)?;
-        Ok(())
+    fn serialize(self) -> Result<Bytes, SerDeError> {
+        let duration_proto = DurationProto::from(self);
+        let mut buf = BytesMut::with_capacity(duration_proto.encoded_len());
+        duration_proto.encode(&mut buf)?;
+        Ok(buf.freeze())
     }
 
     fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
@@ -140,7 +139,7 @@ impl TryFrom<TimestampProto> for SystemTime {
                 let duration: Duration = duration_proto.into();
                 Ok(UNIX_EPOCH + duration)
             }
-            None => Err(SerDeError::MissingField("duration".to_string())),
+            None => Err(SerDeError::MissingField("duration")),
         }
     }
 }
@@ -178,12 +177,11 @@ impl type_url::TypeUrl for SystemTime {
 }
 
 impl SerDe for SystemTime {
-    fn serialize<B>(self, buf: &mut B) -> Result<(), SerDeError>
-    where
-        B: BufMut,
-    {
-        TimestampProto::try_from(self)?.encode(buf)?;
-        Ok(())
+    fn serialize(self) -> Result<Bytes, SerDeError> {
+        let timestamp_proto = TimestampProto::try_from(self)?;
+        let mut buf = BytesMut::with_capacity(timestamp_proto.encoded_len());
+        timestamp_proto.encode(&mut buf)?;
+        Ok(buf.freeze())
     }
 
     fn deserialize<B>(buf: B) -> Result<Self, SerDeError>

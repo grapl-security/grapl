@@ -36,7 +36,11 @@ message Duration {
 }
 
 // A specific point in time, expressed as a duration before or since unix epoch
-// (1970-01-01T00:00:00.000000000Z), with (up to) nanosecond subsecond precision.
+// (1970-01-01T00:00:00.000000000Z), with (up to) nanosecond subsecond
+// precision.
+//
+// NOTE: timestamps are assumed to be UTC. Applications are responsible for
+// doing their own timezone conversion if necessary.
 message Timestamp {
   // A Timestamp contains a duration that specifies a particular instant in time
   // either before or since unix epoch.

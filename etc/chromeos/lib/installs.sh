@@ -43,6 +43,7 @@ install_build_tooling() {
     tools=(
         apt-utils
         build-essential
+        cmake # necessary for building rust-rdkafka
         libclang1
         lsb-release
         software-properties-common # for `apt-add-repository``

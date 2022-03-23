@@ -1,6 +1,5 @@
 use bytes::{
     Buf,
-    BufMut,
     Bytes,
     BytesMut,
 };
@@ -33,15 +32,15 @@ where
     fn try_from(envelope_proto: NewEnvelopeProto) -> Result<Self, Self::Error> {
         let metadata = envelope_proto
             .metadata
-            .ok_or(SerDeError::MissingField("metadata".to_string()));
+            .ok_or(SerDeError::MissingField("metadata"))?;
 
         if let Some(any_proto) = envelope_proto.inner_message {
             Ok(Envelope {
-                metadata: metadata?.try_into()?,
+                metadata: metadata.try_into()?,
                 inner_message: SerDe::deserialize(Bytes::from(any_proto.value))?,
             })
         } else {
-            Err(SerDeError::MissingField("inner_message".to_string()))
+            Err(SerDeError::MissingField("inner_message"))
         }
     }
 }
@@ -53,14 +52,11 @@ where
     type Error = SerDeError;
 
     fn try_from(envelope: Envelope<T>) -> Result<Self, Self::Error> {
-        let mut buf = BytesMut::new();
-        envelope.inner_message.serialize(&mut buf)?;
-
         Ok(NewEnvelopeProto {
             metadata: Some(envelope.metadata.try_into()?),
             inner_message: Some(AnyProto {
                 type_url: T::TYPE_URL.to_string(),
-                value: buf.to_vec(),
+                value: envelope.inner_message.serialize()?.to_vec(),
             }),
         })
     }
@@ -77,12 +73,11 @@ impl<T> SerDe for Envelope<T>
 where
     T: SerDe,
 {
-    fn serialize<B>(self, buf: &mut B) -> Result<(), SerDeError>
-    where
-        B: BufMut,
-    {
-        NewEnvelopeProto::try_from(self)?.encode(buf)?;
-        Ok(())
+    fn serialize(self) -> Result<Bytes, SerDeError> {
+        let envelope_proto = NewEnvelopeProto::try_from(self)?;
+        let mut buf = BytesMut::with_capacity(envelope_proto.encoded_len());
+        envelope_proto.encode(&mut buf)?;
+        Ok(buf.freeze())
     }
 
     fn deserialize<B>(buf: B) -> Result<Self, SerDeError>

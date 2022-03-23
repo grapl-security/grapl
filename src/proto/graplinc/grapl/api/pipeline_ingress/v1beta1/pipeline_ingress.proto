@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package graplinc.grapl.api.pipeline_ingress.v1beta1;
+
+import "graplinc/common/v1beta1/types.proto";
+
+// Publish a log event to the Grapl data pipeline
+message PublishRawLogsRequest {
+  // The event source from which this log event originated
+  graplinc.common.v1beta1.Uuid event_source_id = 1;
+
+  // The tenant to which the event source belongs
+  graplinc.common.v1beta1.Uuid tenant_id = 2;
+
+  // The raw log event
+  bytes log_event = 3;
+}
+
+// Response corresponding to a particular PublishRawLogsRequest
+message PublishRawLogsResponse {
+  // The wall clock time at which the event was persisted
+  graplinc.common.v1beta1.Timestamp created_time = 1;
+}
+
+// RPC service to publish raw logs to the Grapl data pipeline
+service PipelineIngressService {
+  // Publish raw logs to the Grapl data pipeline
+  // Returns one PublishRawLogsResponse for each PublishRawLogsRequest, in order
+  rpc PublishRawLogs(stream PublishRawLogsRequest) returns (stream PublishRawLogsResponse);
+}

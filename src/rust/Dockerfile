@@ -9,6 +9,8 @@ ARG RUST_BUILD=debug
 SHELL ["/bin/bash", "-o", "errexit", "-o", "nounset", "-o", "pipefail", "-c"]
 
 # curl, jq, and unzip are used by various commands in this Dockerfile.
+# build-essential, cmake, libssl-dev, perl, pkg-config, and tcl are needed
+# for building rust-rdkafka.
 #
 # Ignore this lint about deleteing the apt-get lists (we're caching!)
 # hadolint ignore=DL3009,SC1089
@@ -17,7 +19,14 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-base-apt
     && apt-get install --yes --no-install-recommends \
         curl=7.74.0-1.3+deb11u1 \
         jq=1.6-2.1 \
-        unzip=6.0-26
+        unzip=6.0-26 \
+    && apt-get install --yes --no-install-recommends \
+         build-essential=12.9 \
+         cmake=3.18.4-2+deb11u1 \
+         libssl-dev=1.1.1k-1+deb11u2 \
+         perl=5.32.1-4+deb11u2 \
+         pkg-config=0.29.2-1 \
+         tcl=8.6.11+1
 
 # Grab a Nomad binary, which we use in plugin-registry for parsing
 # HCL2-with-variables into JSON.
