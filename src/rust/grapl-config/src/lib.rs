@@ -8,8 +8,9 @@ use color_eyre::Help;
 use grapl_observe::metric_reporter::MetricReporter;
 use opentelemetry::{
     global,
-    sdk::propagation::TraceContextPropagator,
+    sdk::propagation::{TextMapCompositePropagator, TraceContextPropagator},
 };
+use opentelemetry_zipkin::Propagator;
 use rusoto_core::{
     Region,
     RusotoError,
@@ -111,7 +112,14 @@ pub fn _init_grapl_log(service_name: &str) -> tracing_appender::non_blocking::Wo
         .with_writer(non_blocking);
 
     // init tracing layer
-    global::set_text_map_propagator(TraceContextPropagator::new());
+    let otel_trace_context_propagator = TraceContextPropagator::new();
+    let zipkin_trace_context_propagater = Propagator::new();
+    let composite_propagator = TextMapCompositePropagator::new(vec![
+        Box::new(zipkin_trace_context_propagater),
+        Box::new(otel_trace_context_propagator),
+    ]);
+
+    global::set_text_map_propagator(composite_propagator);
     let tracer = opentelemetry_jaeger::new_pipeline()
         .with_service_name(service_name)
         .install_batch(opentelemetry::runtime::Tokio)
