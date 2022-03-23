@@ -174,6 +174,7 @@ pub(crate) mod type_url {
     }
 }
 
+#[non_exhaustive]
 #[derive(Error, Debug)]
 pub enum SerDeError {
     #[error("failed to serialize {0}")]
@@ -186,10 +187,10 @@ pub enum SerDeError {
     BadTimestamp(#[from] SystemTimeError),
 
     #[error("missing message field {0}")]
-    MissingField(String),
+    MissingField(&'static str),
 }
 
-pub trait SerDe: type_url::TypeUrl {
+pub trait SerDe: type_url::TypeUrl + Clone {
     fn serialize(self) -> Result<Bytes, SerDeError>;
 
     fn deserialize<B>(buf: B) -> Result<Self, SerDeError>

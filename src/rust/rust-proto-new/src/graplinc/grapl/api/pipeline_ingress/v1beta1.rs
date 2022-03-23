@@ -32,31 +32,29 @@ pub struct PublishRawLogsRequest {
 impl TryFrom<PublishRawLogsRequestProto> for PublishRawLogsRequest {
     type Error = SerDeError;
 
-    fn try_from(
-        publish_raw_logs_request_proto: PublishRawLogsRequestProto,
-    ) -> Result<Self, Self::Error> {
-        let event_source_id = publish_raw_logs_request_proto
+    fn try_from(request_proto: PublishRawLogsRequestProto) -> Result<Self, Self::Error> {
+        let event_source_id = request_proto
             .event_source_id
-            .ok_or_else(|| SerDeError::MissingField("event_source_id".to_string()));
+            .ok_or(SerDeError::MissingField("event_source_id"))?;
 
-        let tenant_id = publish_raw_logs_request_proto
+        let tenant_id = request_proto
             .tenant_id
-            .ok_or_else(|| SerDeError::MissingField("tenant_id".to_string()));
+            .ok_or(SerDeError::MissingField("tenant_id"))?;
 
         Ok(PublishRawLogsRequest {
-            event_source_id: event_source_id?.into(),
-            tenant_id: tenant_id?.into(),
-            log_event: Bytes::from(publish_raw_logs_request_proto.log_event),
+            event_source_id: event_source_id.into(),
+            tenant_id: tenant_id.into(),
+            log_event: Bytes::from(request_proto.log_event),
         })
     }
 }
 
 impl From<PublishRawLogsRequest> for PublishRawLogsRequestProto {
-    fn from(publish_raw_logs_request: PublishRawLogsRequest) -> Self {
+    fn from(request: PublishRawLogsRequest) -> Self {
         PublishRawLogsRequestProto {
-            event_source_id: Some(publish_raw_logs_request.event_source_id.into()),
-            tenant_id: Some(publish_raw_logs_request.tenant_id.into()),
-            log_event: publish_raw_logs_request.log_event.to_vec(),
+            event_source_id: Some(request.event_source_id.into()),
+            tenant_id: Some(request.tenant_id.into()),
+            log_event: request.log_event.to_vec(),
         }
     }
 }
@@ -68,9 +66,9 @@ impl type_url::TypeUrl for PublishRawLogsRequest {
 
 impl SerDe for PublishRawLogsRequest {
     fn serialize(self) -> Result<Bytes, SerDeError> {
-        let publish_raw_logs_request_proto = PublishRawLogsRequestProto::from(self);
-        let mut buf = BytesMut::with_capacity(publish_raw_logs_request_proto.encoded_len());
-        publish_raw_logs_request_proto.encode(&mut buf)?;
+        let request_proto = PublishRawLogsRequestProto::from(self);
+        let mut buf = BytesMut::with_capacity(request_proto.encoded_len());
+        request_proto.encode(&mut buf)?;
         Ok(buf.freeze())
     }
 
@@ -79,8 +77,8 @@ impl SerDe for PublishRawLogsRequest {
         B: bytes::Buf,
         Self: Sized,
     {
-        let publish_raw_logs_request_proto: PublishRawLogsRequestProto = Message::decode(buf)?;
-        publish_raw_logs_request_proto.try_into()
+        let request_proto: PublishRawLogsRequestProto = Message::decode(buf)?;
+        request_proto.try_into()
     }
 }
 
@@ -96,15 +94,13 @@ pub struct PublishRawLogsResponse {
 impl TryFrom<PublishRawLogsResponseProto> for PublishRawLogsResponse {
     type Error = SerDeError;
 
-    fn try_from(
-        publish_raw_logs_response_proto: PublishRawLogsResponseProto,
-    ) -> Result<Self, Self::Error> {
-        let created_time = publish_raw_logs_response_proto
+    fn try_from(response_proto: PublishRawLogsResponseProto) -> Result<Self, Self::Error> {
+        let created_time = response_proto
             .created_time
-            .ok_or_else(|| SerDeError::MissingField("created_time".to_string()));
+            .ok_or(SerDeError::MissingField("created_time"))?;
 
         Ok(PublishRawLogsResponse {
-            created_time: created_time?.try_into()?,
+            created_time: created_time.try_into()?,
         })
     }
 }
@@ -112,9 +108,9 @@ impl TryFrom<PublishRawLogsResponseProto> for PublishRawLogsResponse {
 impl TryFrom<PublishRawLogsResponse> for PublishRawLogsResponseProto {
     type Error = SerDeError;
 
-    fn try_from(publish_raw_logs_response: PublishRawLogsResponse) -> Result<Self, Self::Error> {
+    fn try_from(response: PublishRawLogsResponse) -> Result<Self, Self::Error> {
         Ok(PublishRawLogsResponseProto {
-            created_time: Some(publish_raw_logs_response.created_time.try_into()?),
+            created_time: Some(response.created_time.try_into()?),
         })
     }
 }
@@ -126,9 +122,9 @@ impl type_url::TypeUrl for PublishRawLogsResponse {
 
 impl SerDe for PublishRawLogsResponse {
     fn serialize(self) -> Result<Bytes, SerDeError> {
-        let publish_raw_logs_response_proto = PublishRawLogsResponseProto::try_from(self)?;
-        let mut buf = BytesMut::with_capacity(publish_raw_logs_response_proto.encoded_len());
-        publish_raw_logs_response_proto.encode(&mut buf)?;
+        let response_proto = PublishRawLogsResponseProto::try_from(self)?;
+        let mut buf = BytesMut::with_capacity(response_proto.encoded_len());
+        response_proto.encode(&mut buf)?;
         Ok(buf.freeze())
     }
 
@@ -137,7 +133,7 @@ impl SerDe for PublishRawLogsResponse {
         B: bytes::Buf,
         Self: Sized,
     {
-        let publish_raw_logs_response_proto: PublishRawLogsResponseProto = Message::decode(buf)?;
-        publish_raw_logs_response_proto.try_into()
+        let response_proto: PublishRawLogsResponseProto = Message::decode(buf)?;
+        response_proto.try_into()
     }
 }

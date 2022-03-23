@@ -139,7 +139,7 @@ impl TryFrom<TimestampProto> for SystemTime {
                 let duration: Duration = duration_proto.into();
                 Ok(UNIX_EPOCH + duration)
             }
-            None => Err(SerDeError::MissingField("duration".to_string())),
+            None => Err(SerDeError::MissingField("duration")),
         }
     }
 }

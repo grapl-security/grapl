@@ -32,15 +32,15 @@ where
     fn try_from(envelope_proto: NewEnvelopeProto) -> Result<Self, Self::Error> {
         let metadata = envelope_proto
             .metadata
-            .ok_or_else(|| SerDeError::MissingField("metadata".to_string()));
+            .ok_or(SerDeError::MissingField("metadata"))?;
 
         if let Some(any_proto) = envelope_proto.inner_message {
             Ok(Envelope {
-                metadata: metadata?.try_into()?,
+                metadata: metadata.try_into()?,
                 inner_message: SerDe::deserialize(Bytes::from(any_proto.value))?,
             })
         } else {
-            Err(SerDeError::MissingField("inner_message".to_string()))
+            Err(SerDeError::MissingField("inner_message"))
         }
     }
 }
