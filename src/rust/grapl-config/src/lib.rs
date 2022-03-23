@@ -10,7 +10,6 @@ use opentelemetry::{
     global,
     sdk::propagation::{TextMapCompositePropagator, TraceContextPropagator},
 };
-use opentelemetry_zipkin::Propagator;
 use rusoto_core::{
     Region,
     RusotoError,
@@ -113,7 +112,7 @@ pub fn _init_grapl_log(service_name: &str) -> tracing_appender::non_blocking::Wo
 
     // init tracing layer
     let otel_trace_context_propagator = TraceContextPropagator::new();
-    let zipkin_trace_context_propagater = Propagator::new();
+    let zipkin_trace_context_propagater = opentelemetry_zipkin::Propagator::new();
     let composite_propagator = TextMapCompositePropagator::new(vec![
         Box::new(zipkin_trace_context_propagater),
         Box::new(otel_trace_context_propagator),
