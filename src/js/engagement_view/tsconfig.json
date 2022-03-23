@@ -25,5 +25,5 @@
   },
   "include": [
     "src/**/*.ts"
-, "src/tests/graphDisplay.test.tsx", "src/setupProxy.tsx"  ]
+, "src/tests/graphDisplay.test.tsx" ]
 }
