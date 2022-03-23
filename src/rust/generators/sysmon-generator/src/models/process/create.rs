@@ -28,10 +28,13 @@ use crate::{
 /// * A parent `Process` node - indicating the process that created the subject process
 /// * A subject `Process` node - indicating the process created per the `ProcessCreateEvent`
 /// * A process `File` node - indicating the file executed in creating the new process
+#[tracing::instrument]
 pub fn generate_process_create_subgraph(
     system: &System,
     event_data: &ProcessCreateEventData<'_>,
 ) -> Result<GraphDescription, SysmonGeneratorError> {
+    tracing::trace!("generating graph from event");
+
     let timestamp = utc_to_epoch(&event_data.utc_time)?;
     let mut graph = GraphDescription::new();
 

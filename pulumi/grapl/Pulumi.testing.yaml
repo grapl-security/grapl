@@ -22,7 +22,7 @@ config:
     plugin-registry: 20220322213752-e0965ed
     plugin-work-queue: 20220322213752-e0965ed
     provisioner: 20220322213752-e0965ed
-    sysmon-generator: 20220322223514-8bf2551
+    sysmon-generator: 20220323001912-a488987
   grapl:cloudsmith-repository-name: grapl/testing
   grapl:confluent-environment-name: testing
   grapl:env_vars:

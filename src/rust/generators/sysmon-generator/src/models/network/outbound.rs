@@ -33,10 +33,13 @@ use crate::{
 /// * A subject `OutboundConnection` node - indicating the network connection triggered by the process
 /// * Source and Destination IP Address and Port nodes
 /// * IP connection and Network connection nodes
+#[tracing::instrument]
 pub fn generate_outbound_connection_subgraph(
     system: &System,
     event_data: &NetworkConnectionEventData<'_>,
 ) -> Result<GraphDescription, SysmonGeneratorError> {
+    tracing::trace!("generating graph from event");
+
     let timestamp = utc_to_epoch(&event_data.utc_time)?;
 
     let mut graph = GraphDescription::new();

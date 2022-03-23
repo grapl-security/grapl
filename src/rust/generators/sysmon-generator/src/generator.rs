@@ -75,8 +75,6 @@ where
                     Err(error) => {
                         completed.add_identity(event, EventStatus::Failure);
 
-                        tracing::error!(message = "graph generation error", %error);
-
                         if first_error.is_none() {
                             first_error = Some(error);
                         }

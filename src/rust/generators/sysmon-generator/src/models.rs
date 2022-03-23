@@ -17,6 +17,7 @@ mod file;
 mod network;
 mod process;
 
+#[tracing::instrument(err, skip(sysmon_event))]
 pub(crate) fn generate_graph_from_event(
     sysmon_event: &SysmonEvent,
 ) -> Result<Option<GraphDescription>> {
@@ -42,7 +43,7 @@ pub(crate) fn generate_graph_from_event(
                 Some(graph)
             } else {
                 // TODO(inickles): fix graph model for networking and support this
-                tracing::warn!("found inbound connection, which is not currenlty supported.");
+                tracing::warn!("found inbound connection, which is not currenlty supported");
 
                 None
             }
@@ -50,6 +51,12 @@ pub(crate) fn generate_graph_from_event(
         // We do not expect to handle all Sysmon event types
         _ => None,
     };
+
+    tracing::debug!(
+        message = "completed graph generation",
+        node_count = graph.as_ref().map(|graph| graph.nodes.len()),
+        edge_count = graph.as_ref().map(|graph| graph.edges.len()),
+    );
 
     Ok(graph)
 }
