@@ -1,4 +1,5 @@
 import { makeStyles } from "@material-ui/core/styles";
+import theme from "../../../../../theme";
 
 export const nodeTableStyles = makeStyles({
     root: {
@@ -9,11 +10,11 @@ export const nodeTableStyles = makeStyles({
     },
     tableHeader: {
         fontSize: ".85rem",
-        backgroundColor: "#363434",
+        backgroundColor: theme.palette.background.default,
     },
     nodeTableData: {
         fontSize: ".75rem",
-        backgroundColor: "#333333",
+        backgroundColor: theme.palette.background.default,
     },
     nodeTableContainer: {
         textAlign: "center",

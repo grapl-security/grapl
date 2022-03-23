@@ -1,11 +1,15 @@
 import React from "react";
 import * as Yup from "yup";
 import { Field, Form, Formik } from "formik";
-
-import "./LogIn.css";
-import { loginStyles } from "./styles";
-import { LoginProps } from "types/CustomTypes";
 import { loginService } from "services/login/loginService";
+
+import { LoginProps } from "types/CustomTypes";
+
+import Icon from "@material-ui/core/Icon";
+import Img from "../../assets/grapl_logo.svg";
+
+import { loginStyles } from "./loginStyles";
+import "./LogIn.css";
 
 export const LogIn = (_: LoginProps) => {
     const useStyles = loginStyles;
@@ -22,10 +26,16 @@ export const LogIn = (_: LoginProps) => {
     });
 
     return (
-        <div className="loginContainer">
-            <div className="grapl"> Grapl </div>
+        <div className={classes.loginContainer}>
+            <div className="grapl">
+                <div>
+                    <Icon>
+                        <img className={classes.logoImage} src={Img} />
+                    </Icon>
+                </div>
+            </div>
 
-            <div className="formContainer">
+            <div className={classes.formContainer}>
                 <Formik
                     initialValues={{ userName: "", password: "" }}
                     validationSchema={validationSchema}
@@ -49,11 +59,9 @@ export const LogIn = (_: LoginProps) => {
                 >
                     {({ errors, touched }) => (
                         <Form>
-                            <div className="welcomeBanner">Welcome</div>
-                            <div className="loginText">
-                                Log into your account
-                            </div>
+                            <h3 className={classes.loginText}> User Login </h3>
                             <Field
+                                className={classes.field}
                                 name="userName"
                                 type="text"
                                 placeholder="Username"
@@ -74,8 +82,8 @@ export const LogIn = (_: LoginProps) => {
                                     {errors.password}
                                 </div>
                             )}
-                            <button className="submitBtn" type="submit">
-                                Submit
+                            <button className={classes.submitBtn} type="submit">
+                                SUBMIT
                             </button>
                             {state.loginFailed && (
                                 <div className={classes.valErrorMsg}>

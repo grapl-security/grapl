@@ -3,21 +3,21 @@ import { Link } from "react-router-dom";
 import clsx from "clsx";
 
 import Drawer from "@material-ui/core/Drawer";
-import AppBar from "@material-ui/core/AppBar";
-import Toolbar from "@material-ui/core/Toolbar";
-import Typography from "@material-ui/core/Typography";
 import Divider from "@material-ui/core/Divider";
 import IconButton from "@material-ui/core/IconButton";
 import KeyboardArrowLeftIcon from "@material-ui/icons/KeyboardArrowLeft";
 import Button from "@material-ui/core/Button";
-import Home from "@material-ui/icons/Home";
+import ManageSearchIcon from "@mui/icons-material/ManageSearch";
 
-import { VizNode } from "types/CustomTypes";
+import { VizNode, LensName } from "types/CustomTypes";
+
 import GraphDisplay from "../graphDisplay/GraphDisplay";
 import LensAndNodeTableContainer from "./sidebar/LensAndNodeTableContainer";
 import { LoginNotification } from "../reusableComponents";
 import { checkLogin } from "../../services/login/checkLoginService";
+
 import { useStyles } from "../graphDisplay/GraphDisplayStyles";
+import CollapsibleNavDrawer from "../reusableComponents/collapsibleDrawer";
 
 type EngagementViewProps = {
     setLens: (lens: string) => void;
@@ -27,6 +27,13 @@ type EngagementViewProps = {
 
 const defaultEngagementState = (): EngagementUxState => {
     return { curLens: "", curNode: null, loggedIn: true, renderedOnce: false };
+};
+
+type EngagementUxState = {
+    curLens: string;
+    curNode: VizNode | null;
+    loggedIn: boolean;
+    renderedOnce: boolean;
 };
 
 export default function EngagementView({
@@ -48,42 +55,21 @@ export default function EngagementView({
 
     return (
         <div className={classes.root}>
-            <AppBar
-                position="fixed"
-                className={clsx(classes.appBar, {
-                    [classes.appBarShift]: open,
-                })}
+            <IconButton
+                aria-label="open drawer"
+                onClick={handleDrawerOpen}
+                edge="end"
+                className={clsx(
+                    classes.expandLensAndNodeTableIcon,
+                    open && classes.hide
+                )}
             >
-                <Toolbar>
-                    <IconButton
-                        color="inherit"
-                        aria-label="open drawer"
-                        onClick={handleDrawerOpen}
-                        edge="start"
-                        className={clsx(
-                            classes.menuButton,
-                            open && classes.hide
-                        )}
-                    >
-                        {/* // Menu Icon  */}
-                        &#9776;
-                    </IconButton>
-
-                    <div className={classes.headerContainer}>
-                        <Typography variant="h5" noWrap>
-                            <b className={classes.headerTitle}> GRAPL </b>
-                        </Typography>
-                        <Link to="/" className={classes.link}>
-                            <Home />
-                        </Link>
-                    </div>
-                </Toolbar>
-            </AppBar>
+                <ManageSearchIcon />
+            </IconButton>
 
             <Drawer
-                className={classes.drawer}
                 variant="persistent"
-                anchor="left"
+                anchor="right"
                 open={open}
                 classes={{
                     paper: classes.drawerPaper,
@@ -103,28 +89,10 @@ export default function EngagementView({
                 />
             </Drawer>
 
-            <main
-                className={clsx(classes.content, {
-                    [classes.contentShift]: open,
-                })}
-            >
-                <div className={classes.drawerHeader} />
-
-                {/* selected lens name */}
-                <h3 className={classes.lensName}> {curLens || ""} </h3>
-
-                <Typography paragraph></Typography>
-            </main>
+            <p className={classes.lensName}> {curLens || ""} </p>
         </div>
     );
 }
-
-type EngagementUxState = {
-    curLens: string;
-    curNode: VizNode | null;
-    loggedIn: boolean;
-    renderedOnce: boolean;
-};
 
 export const EngagementUx = () => {
     const classes = useStyles();
@@ -163,16 +131,19 @@ export const EngagementUx = () => {
 
     return (
         <>
-            <EngagementView
-                setLens={(lens: string) =>
-                    setEngagementState({
-                        ...engagementState,
-                        curLens: lens,
-                    })
-                }
-                curLens={engagementState.curLens}
-                curNode={engagementState.curNode}
-            />
+            <div className={classes.navIcons}>
+                <CollapsibleNavDrawer />
+                <EngagementView
+                    setLens={(lens: string) =>
+                        setEngagementState({
+                            ...engagementState,
+                            curLens: lens,
+                        })
+                    }
+                    curLens={engagementState.curLens}
+                    curNode={engagementState.curNode}
+                />
+            </div>
 
             <>
                 <div className={classes.loggedIn}>
