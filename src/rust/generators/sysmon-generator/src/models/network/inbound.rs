@@ -16,10 +16,13 @@ use crate::models::utc_to_epoch;
 // https://github.com/grapl-security/grapl/commit/e5e2c50d2ccb99b08e1d0c520f4f7a00cfc9e9a6,
 // pending further refactoring. It's not yet really "dead code", but it
 // currently technically is.
+#[tracing::instrument]
 #[allow(dead_code)]
 pub fn generate_inbound_connection_subgraph(
     conn_log: &NetworkEvent,
 ) -> Result<GraphDescription,failure::Error> {
+    tracing::trace!("generating graph from event");
+
     let timestamp = utc_to_epoch(&conn_log.event_data.utc_time)?;
 
     let mut graph = GraphDescription::new();

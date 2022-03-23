@@ -26,10 +26,13 @@ use crate::{
 /// The subgraph generation for a `FileCreateEvent` includes the following:
 /// * A creator `Process` node - denotes the process that created the file
 /// * A subject `File` node - the file that is created as part of this event
+#[tracing::instrument]
 pub fn generate_file_create_subgraph(
     system: &System,
     event_data: &FileCreateEventData<'_>,
 ) -> Result<GraphDescription, SysmonGeneratorError> {
+    tracing::trace!("generating graph from event");
+
     let timestamp = utc_to_epoch(&event_data.creation_utc_time)?;
     let mut graph = GraphDescription::new();
 
