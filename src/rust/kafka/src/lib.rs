@@ -33,6 +33,7 @@ use thiserror::Error;
 // Kafka configurations
 //
 
+#[non_exhaustive]
 #[derive(Error, Debug)]
 pub enum ConfigurationError {
     #[error("failed to retrieve value from environment variable {0}")]
@@ -52,7 +53,8 @@ fn configure() -> Result<ClientConfig, std::env::VarError> {
     let bootstrap_servers = std::env::var("KAFKA_BOOTSTRAP_SERVERS")?;
     if bootstrap_servers.starts_with("SASL_SSL") {
         // running in aws w/ ccloud
-        // https://docs.confluent.io/cloud/current/client-apps/config-client.html#librdkafka-based-c-clients
+        // these configuration values were recommended by confluent cloud:
+        // https://docs.confluent.io/cloud/current/client-apps/config-client.html
         Ok(ClientConfig::new()
             .set("bootstrap.servers", bootstrap_servers)
             .set("security.protocol", "SASL_SSL")
@@ -84,6 +86,7 @@ fn producer() -> Result<FutureProducer, ConfigurationError> {
         .map_err(|e| ConfigurationError::ProducerCreateFailed(e))
 }
 
+#[non_exhaustive]
 #[derive(Error, Debug)]
 pub enum ProducerError {
     #[error("failed to serialize message {0}")]
@@ -93,6 +96,7 @@ pub enum ProducerError {
     KafkaError(#[from] KafkaError),
 }
 
+#[derive(Clone)]
 pub struct Producer<T>
 where
     T: SerDe,
@@ -102,21 +106,8 @@ where
     _t: PhantomData<T>,
 }
 
-impl<T: SerDe> Clone for Producer<T> {
-    fn clone(&self) -> Self {
-        // this should be approximately just as cheap as
-        // FutureProducer::clone(), which is documented to be very inexpensive,
-        // so it's probably good enough?
-        Producer {
-            producer: self.producer.clone(),
-            topic: self.topic.clone(),
-            _t: PhantomData,
-        }
-    }
-}
-
-// A producer publishes data to a topic. This producer serializes the data it is
-// given before publishing.
+/// A producer publishes data to a topic. This producer serializes the data it
+/// is given before publishing.
 impl<T: SerDe> Producer<T> {
     pub fn new(topic: &str) -> Result<Producer<T>, ConfigurationError> {
         Ok(Producer {
@@ -126,6 +117,7 @@ impl<T: SerDe> Producer<T> {
         })
     }
 
+    // TODO #[instrument(err)]
     pub async fn send(&self, msg: T) -> Result<(), ProducerError> {
         let serialized = msg.serialize()?.to_vec();
         let record: FutureRecord<Vec<u8>, Vec<u8>> =
@@ -157,6 +149,7 @@ fn consumer() -> Result<StreamConsumer, ConfigurationError> {
         .map_err(|e| ConfigurationError::ConsumerCreateFailed(e))
 }
 
+#[non_exhaustive]
 #[derive(Error, Debug)]
 pub enum ConsumerError {
     #[error("failed to deserialize message {0}")]
@@ -169,9 +162,9 @@ pub enum ConsumerError {
     PayloadAbsent,
 }
 
-// A consumer consumes data from a topic. This consumer deserializes each
-// message after consuming it, and yields the deserialized message to the
-// caller.
+/// A consumer consumes data from a topic. This consumer deserializes each
+/// message after consuming it, and yields the deserialized message to the
+/// caller.
 pub struct Consumer<T>
 where
     T: SerDe,
@@ -190,6 +183,7 @@ impl<T: SerDe> Consumer<T> {
         })
     }
 
+    // TODO #[instrument(err)]
     pub fn stream(
         &self,
     ) -> Result<impl Stream<Item = Result<T, ConsumerError>> + '_, ConfigurationError> {
@@ -214,6 +208,7 @@ impl<T: SerDe> Consumer<T> {
 // StreamProcessor
 //
 
+#[non_exhaustive]
 #[derive(Error, Debug)]
 pub enum StreamProcessorError {
     #[error("encountered consumer error {0}")]
@@ -226,9 +221,9 @@ pub enum StreamProcessorError {
     EventHandlerError(String),
 }
 
-// A stream processor consumes data from a topic, does things with the data, and
-// produces data to another topic. This stream processor deserializes the data
-// after consuming and serializes data before producing.
+/// A stream processor consumes data from a topic, does things with the data,
+/// and produces data to another topic. This stream processor deserializes the
+/// data after consuming and serializes data before producing.
 pub struct StreamProcessor<C, P>
 where
     C: SerDe,
@@ -249,6 +244,7 @@ impl<C: SerDe, P: SerDe> StreamProcessor<C, P> {
         })
     }
 
+    // TODO #[instrument(err)]
     pub fn stream<'a, F, E>(
         &'a self,
         event_handler: F,
@@ -264,11 +260,8 @@ impl<C: SerDe, P: SerDe> StreamProcessor<C, P> {
             .map(event_handler)
             .map_err(|e| StreamProcessorError::EventHandlerError(e.to_string()))
             .and_then(move |msg| async move {
-                // The underlying FutureProducer::clone() call is allegedly
-                // inexpensive. It's documented that "It can be cheaply cloned to
-                // get a reference to the same underlying producer", and the
-                // examples in the rust-rdkafka repo show cloning upon receipt of
-                // every message, so I think it's acceptable here?
+                // The underlying FutureProducer::clone() call is inexpensive,
+                // so I think it's acceptable here.
                 self.producer
                     .clone()
                     .send(msg)
