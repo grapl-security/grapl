@@ -287,8 +287,8 @@ FROM scratch AS plugin-bootstrap-init-output
 COPY --from=build /outputs/plugin-bootstrap-init /
 # Just to clarify: we're copying these .service files from the repository,
 # through Docker, and then back out to the dist directory in the repository.
-COPY rust/plugin-bootstrap/plugin-bootstrap-init.service /
-COPY rust/plugin-bootstrap/plugin.service /
+COPY rust/plugin-bootstrap/grapl-plugin-bootstrap-init.service /
+COPY rust/plugin-bootstrap/grapl-plugin.service /
 
 ##### node-identifier
 FROM rust-dist AS node-identifier-deploy

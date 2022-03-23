@@ -9,6 +9,7 @@ readonly IMAGE_NAME="firecracker_rootfs"
 packer init -upgrade firecracker/rootfs/build-rootfs.pkr.hcl
 packer build \
     -var dist_dir="${DIST_DIR}" \
+    -var plugin_bootstrap_init_artifacts_dir="${DIST_DIR}/plugin-bootstrap-init" \
     -var image_name="${IMAGE_NAME}" \
     firecracker/rootfs/build-rootfs.pkr.hcl
 

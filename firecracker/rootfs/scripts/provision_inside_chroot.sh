@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+set -o xtrace
 
 THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
 
@@ -24,3 +25,6 @@ cp "${THIS_DIR}/ttyS0_autologin.conf" \
 rm -f /etc/systemd/system/multi-user.target.wants/systemd-resolved.service
 rm -f /etc/systemd/system/dbus-org.freedesktop.resolve1.service
 rm -f /etc/systemd/system/sysinit.target.wants/systemd-timesyncd.service
+
+# Finally: Clean up the apt cache a bit
+apt-get clean

@@ -1,7 +1,10 @@
-# Contents of /etc/systemd/system/plugin.service
+# Contents of /etc/systemd/system/grapl-plugin.service
 [Unit]
-Description=Plugin
-After=plugin-bootstrap-init.service
+Description=Grapl Plugin
+After=grapl-plugin-bootstrap-init.service
+
+[Install]
+WantedBy=multi-user.target
 
 [Service]
 Type=simple

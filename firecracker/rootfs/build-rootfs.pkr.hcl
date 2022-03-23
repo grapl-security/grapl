@@ -43,6 +43,15 @@ variable "dist_dir" {
   type        = string
 }
 
+variable "plugin_bootstrap_init_artifacts_dir" {
+  description = <<EOF
+A directory on the local workstation containing the built plugin-bootstrap-init
+artifact (and its accompanying two .service files).
+Basically: This is the dir created by `make dist/plugin-bootstrap-init`.
+EOF
+  type        = string
+}
+
 variable "image_name" {
   description = "The name of the artifact that will end up in var.dist_dir, excluding .tar.gz"
   type        = string
@@ -57,8 +66,15 @@ variable "debian_version" {
 ########################################################################
 
 locals {
-  image_archive_filename = "${var.image_name}.tar.gz"
-  destination_in_dist    = "${var.dist_dir}/${local.image_archive_filename}"
+  image_archive_filename    = "${var.image_name}.tar.gz"
+  destination_in_dist       = "${var.dist_dir}/${local.image_archive_filename}"
+  init_artifacts_dir_remote = "/home/ubuntu/${basename(var.plugin_bootstrap_init_artifacts_dir)}"
+
+  # The base Debootstrap install takes up 252MB
+  # The plugin-bootstrap-init built with RUST_BUILD=debug (e.g. locally) is
+  # 200MB
+  # Give it some buffer
+  image_size_mb = 550
 }
 
 data "amazon-ami" "base-ami" {
@@ -112,6 +128,13 @@ build {
     inline = ["~/scripts/install_dependencies.sh"]
   }
 
+  # Upload the bootstrap files so they can be embedded in the rootfs
+  provisioner "file" {
+    direction   = "upload"
+    source      = "${var.plugin_bootstrap_init_artifacts_dir}"
+    destination = "/home/ubuntu/"
+  }
+
   provisioner "shell" {
     inline = [
       "~/scripts/create_rootfs_image.sh",
@@ -120,7 +143,8 @@ build {
       "IMAGE_NAME=${var.image_name}",
       "IMAGE_ARCHIVE_NAME=${local.image_archive_filename}",
       "DEBIAN_VERSION=${var.debian_version}",
-      "SIZE_MB=400",
+      "PLUGIN_BOOTSTRAP_INIT_ARTIFACTS_DIR=${local.init_artifacts_dir_remote}",
+      "SIZE_MB=${local.image_size_mb}",
     ]
   }
 
@@ -129,5 +153,13 @@ build {
     direction   = "download"
     source      = "/home/ubuntu/output/${local.image_archive_filename}"
     destination = local.destination_in_dist
+  }
+
+
+  # A lot of the errors you may encounter during this build are due to the
+  # built image being too small (local.image_size_mb); this cleanup provisioner
+  # may help users debug that.
+  error-cleanup-provisioner "shell" {
+    inline = ["df --human"]
   }
 }
