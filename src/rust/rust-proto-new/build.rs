@@ -13,6 +13,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     get_proto_files("../../proto/graplinc", &mut paths)?;
 
     config
+        .build_client(true)
+        .build_server(true)
         .compile(&paths[..], &["../../proto/".to_string()])
         .unwrap_or_else(|e| panic!("protobuf compilation failed: {}", e));
     Ok(())

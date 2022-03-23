@@ -2,8 +2,8 @@ use std::time::SystemTimeError;
 
 use bytes::{
     Buf,
-    BufMut,
     Bytes,
+    BytesMut,
 };
 use prost::Message;
 
@@ -42,31 +42,31 @@ impl TryFrom<MetadataProto> for Metadata {
     fn try_from(metadata_proto: MetadataProto) -> Result<Self, Self::Error> {
         let tenant_id = metadata_proto
             .tenant_id
-            .ok_or(SerDeError::MissingField("tenant_id".to_string()));
+            .ok_or(SerDeError::MissingField("tenant_id"))?;
 
         let trace_id = metadata_proto
             .trace_id
-            .ok_or(SerDeError::MissingField("trace_id".to_string()));
+            .ok_or(SerDeError::MissingField("trace_id"))?;
 
         let created_time = metadata_proto
             .created_time
-            .ok_or(SerDeError::MissingField("created_time".to_string()));
+            .ok_or(SerDeError::MissingField("created_time"))?;
 
         let last_updated_time = metadata_proto
             .last_updated_time
-            .ok_or(SerDeError::MissingField("last_updated_time".to_string()));
+            .ok_or(SerDeError::MissingField("last_updated_time"))?;
 
         let event_source_id = metadata_proto
             .event_source_id
-            .ok_or(SerDeError::MissingField("event_source_id".to_string()));
+            .ok_or(SerDeError::MissingField("event_source_id"))?;
 
         Ok(Metadata {
-            tenant_id: tenant_id?.into(),
-            trace_id: trace_id?.into(),
+            tenant_id: tenant_id.into(),
+            trace_id: trace_id.into(),
             retry_count: metadata_proto.retry_count,
-            created_time: created_time?.try_into()?,
-            last_updated_time: last_updated_time?.try_into()?,
-            event_source_id: event_source_id?.into(),
+            created_time: created_time.try_into()?,
+            last_updated_time: last_updated_time.try_into()?,
+            event_source_id: event_source_id.into(),
         })
     }
 }
@@ -91,12 +91,11 @@ impl type_url::TypeUrl for Metadata {
 }
 
 impl SerDe for Metadata {
-    fn serialize<B>(self, buf: &mut B) -> Result<(), SerDeError>
-    where
-        B: BufMut,
-    {
-        MetadataProto::try_from(self)?.encode(buf)?;
-        Ok(())
+    fn serialize(self) -> Result<Bytes, SerDeError> {
+        let metadata_proto = MetadataProto::try_from(self)?;
+        let mut buf = BytesMut::with_capacity(metadata_proto.encoded_len());
+        metadata_proto.encode(&mut buf)?;
+        Ok(buf.freeze())
     }
 
     fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
@@ -126,10 +125,10 @@ impl TryFrom<EnvelopeProto> for Envelope {
     fn try_from(envelope_proto: EnvelopeProto) -> Result<Self, Self::Error> {
         let metadata = envelope_proto
             .metadata
-            .ok_or(SerDeError::MissingField("metadata".to_string()));
+            .ok_or(SerDeError::MissingField("metadata"))?;
 
         Ok(Envelope {
-            metadata: metadata?.try_into()?,
+            metadata: metadata.try_into()?,
             inner_type: envelope_proto.inner_type,
             inner_message: Bytes::from(envelope_proto.inner_message),
         })
@@ -153,12 +152,11 @@ impl type_url::TypeUrl for Envelope {
 }
 
 impl SerDe for Envelope {
-    fn serialize<B>(self, buf: &mut B) -> Result<(), SerDeError>
-    where
-        B: BufMut,
-    {
-        EnvelopeProto::try_from(self)?.encode(buf)?;
-        Ok(())
+    fn serialize(self) -> Result<Bytes, SerDeError> {
+        let envelope_proto = EnvelopeProto::try_from(self)?;
+        let mut buf = BytesMut::with_capacity(envelope_proto.encoded_len());
+        envelope_proto.encode(&mut buf)?;
+        Ok(buf.freeze())
     }
 
     fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
@@ -201,12 +199,11 @@ impl type_url::TypeUrl for RawLog {
 }
 
 impl SerDe for RawLog {
-    fn serialize<B>(self, buf: &mut B) -> Result<(), SerDeError>
-    where
-        B: BufMut,
-    {
-        RawLogProto::from(self).encode(buf)?;
-        Ok(())
+    fn serialize(self) -> Result<Bytes, SerDeError> {
+        let raw_log_proto = RawLogProto::from(self);
+        let mut buf = BytesMut::with_capacity(raw_log_proto.encoded_len());
+        raw_log_proto.encode(&mut buf)?;
+        Ok(buf.freeze())
     }
 
     fn deserialize<B>(buf: B) -> Result<Self, SerDeError>

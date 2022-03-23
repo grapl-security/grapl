@@ -2,7 +2,7 @@ use std::time::SystemTimeError;
 
 use bytes::{
     Buf,
-    BufMut,
+    Bytes,
 };
 use prost::{
     DecodeError,
@@ -28,6 +28,15 @@ pub(crate) mod protobufs {
                         include!(concat!(
                             env!("OUT_DIR"),
                             "/graplinc.grapl.api.graph.v1beta1.rs"
+                        ));
+                    }
+                }
+
+                pub(crate) mod pipeline_ingress {
+                    pub(crate) mod v1beta1 {
+                        include!(concat!(
+                            env!("OUT_DIR"),
+                            "/graplinc.grapl.api.pipeline_ingress.v1beta1.rs"
                         ));
                     }
                 }
@@ -109,6 +118,10 @@ pub mod graplinc {
                 pub mod v1;
             }
 
+            pub mod pipeline_ingress {
+                pub mod v1beta1;
+            }
+
             pub mod plugin_bootstrap {
                 pub mod v1beta1;
             }
@@ -161,6 +174,7 @@ pub(crate) mod type_url {
     }
 }
 
+#[non_exhaustive]
 #[derive(Error, Debug)]
 pub enum SerDeError {
     #[error("failed to serialize {0}")]
@@ -173,13 +187,11 @@ pub enum SerDeError {
     BadTimestamp(#[from] SystemTimeError),
 
     #[error("missing message field {0}")]
-    MissingField(String),
+    MissingField(&'static str),
 }
 
-pub trait SerDe: type_url::TypeUrl {
-    fn serialize<B>(self, buf: &mut B) -> Result<(), SerDeError>
-    where
-        B: BufMut;
+pub trait SerDe: type_url::TypeUrl + Clone {
+    fn serialize(self) -> Result<Bytes, SerDeError>;
 
     fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
     where

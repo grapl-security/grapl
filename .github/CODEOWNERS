@@ -71,6 +71,7 @@ BUILD @christophermaier
 /src/rust/grapl-service/ @inickles-grapl
 /src/rust/grapl-utils/ @inickles-grapl
 /src/rust/grapl-web-ui/ @inickles-grapl
+/src/rust/kafka/ @grapl-security/wg-data-infra
 /src/rust/model-plugin-deployer/ @wimax-grapl
 /src/rust/organization-management/ @andrea-grapl
 /src/rust/plugin-bootstrap/ @colin-grapl

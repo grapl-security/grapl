@@ -1,0 +1,24 @@
+[package]
+name = "kafka"
+version = "0.1.0"
+authors = ["Grapl, Inc. <sales@graplsecurity.com>"]
+edition = "2021"
+description = "Library for Grapl's Kafka services"
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+bytes = "1.1.0"
+futures = "0.3.0"
+rdkafka = { version = "0.28.0", features = [
+  "cmake-build",
+  "ssl-vendored",
+  "gssapi-vendored",
+  "tokio",
+  "zstd"
+] }
+rust-proto-new = { path = "../rust-proto-new", version = "*" }
+thiserror = "1.0.30"
+
+[dev-dependencies]
+proptest = "1.0.0"

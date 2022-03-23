@@ -8,12 +8,11 @@ license = "MIT"
 
 [dependencies]
 bytes = "1.1.0"
-log = "0.4.14"
+futures = "0.3.0"
 prost = "0.9.0"
 prost-types = "0.9.0"
 thiserror = "1.0.30"
 tonic = "0.6.1"
-tracing = "0.1.29"
 uuid = { version = "0.8.2", features = ["v4"] }
 
 [build-dependencies]
@@ -21,7 +20,3 @@ tonic-build = { version = "0.6.0", features = ["prost"] }
 
 [dev-dependencies]
 proptest = "1.0.0"
-
-[features]
-default = []
-extra_assertions = []
