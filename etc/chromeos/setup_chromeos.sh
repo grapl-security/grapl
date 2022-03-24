@@ -13,6 +13,7 @@ install_build_tooling
 install_utilities
 install_rust_and_utilities
 install_pyenv
+install_pipx
 install_nvm
 install_awsv2
 install_pulumi
