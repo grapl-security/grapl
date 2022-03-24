@@ -14,11 +14,6 @@ use serde::{
     Deserialize,
     Serialize,
 };
-use tap::TapFallible;
-use tracing::{
-    debug,
-    error,
-};
 
 use super::{
     GraplRole,
@@ -37,28 +32,27 @@ type Username = String;
 
 #[derive(thiserror::Error, Debug)]
 pub enum AuthDynamoClientError {
-    #[error("User not found: {0}")]
+    #[error("user not found: `{0}`")]
     UserRecordNotFound(Username),
-    #[error(transparent)]
+    #[error("unable to get item from DynamoDB: {0}")]
     GetItem(#[from] rusoto_core::RusotoError<rusoto_dynamodb::GetItemError>),
-    #[error(transparent)]
+    #[error("unable to put item in DynamoDB: {0}")]
     PutItem(#[from] rusoto_core::RusotoError<rusoto_dynamodb::PutItemError>),
-    #[error(transparent)]
+    #[error("unable to deserialize response from DynamoDB: {0}")]
     Parsing(#[from] serde_dynamodb::Error),
-    #[error("User session not found")]
-    SessionNotFound,
-    #[error("User session expired")]
-    SessionExpired,
-    #[error(transparent)]
-    PasswordVerification(#[from] argon2::password_hash::Error),
+    #[error("unable to verify password for user `{username}`: {source}")]
+    PasswordVerification {
+        username: String,
+        source: argon2::password_hash::Error,
+    },
 }
 
 impl AuthDynamoClient {
-    #[tracing::instrument(skip(self, token))]
+    #[tracing::instrument(err, skip(self, token))]
     pub(crate) async fn get_valid_session_row(
         &self,
         token: SessionToken,
-    ) -> Result<SessionRow, AuthDynamoClientError> {
+    ) -> Result<Option<SessionRow>, AuthDynamoClientError> {
         let session_instance = hmap! {
             "session_token".to_owned() => AttributeValue {
                 s: Some(token),
@@ -74,17 +68,19 @@ impl AuthDynamoClient {
         };
 
         // do not log session_query here
-        debug!(message = "Getting user session from DynamoDB.",);
+        tracing::debug!("Getting user session from DynamoDB.");
 
-        let session_row_hashmap = self
-            .client
-            .get_item(session_query)
-            .await
-            .tap_err(|e| debug!(error = %e))?
-            .item
-            .ok_or(AuthDynamoClientError::SessionNotFound)?;
+        let session_row_hashmap = self.client.get_item(session_query).await?.item;
+        let session_row_hashmap = match session_row_hashmap {
+            Some(session_row_hashmap) => session_row_hashmap,
+            None => {
+                tracing::debug!("Session not found in database");
 
-        debug!(message = "Got user session from DynamoDB database.");
+                return Ok(None);
+            }
+        };
+
+        tracing::debug!("Got user session from DynamoDB database.");
 
         let session_row = serde_dynamodb::from_hashmap::<SessionRow, _>(session_row_hashmap)?;
 
@@ -95,13 +91,15 @@ impl AuthDynamoClient {
             // and where a request for that session is never made again - the entry would never
             // be removed from the database. however, it also means session length is
             // not configurable here, but on the DB table itself.
-            Err(AuthDynamoClientError::SessionExpired)
+            tracing::debug!(message = "session expired", username = ?session_row.username, expiration = ?session_row.expiration);
+
+            Ok(None)
         } else {
-            Ok(session_row)
+            Ok(Some(session_row))
         }
     }
 
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(err, skip(self))]
     pub(crate) async fn get_user_row(
         &self,
         username: &str,
@@ -121,32 +119,25 @@ impl AuthDynamoClient {
             ..Default::default()
         };
 
-        debug!(
+        tracing::debug!(
             message = "Getting user record from DynamoDB.",
             query = ?user_query
         );
 
-        let user_row_hashmap = self
-            .client
-            .get_item(user_query)
-            .await
-            .tap_err(|e| debug!(error = %e))?
-            .item
-            .ok_or(AuthDynamoClientError::UserRecordNotFound(
-                username.to_string(),
-            ))
-            .tap_err(|e| debug!(error = %e))?;
+        let user_row_hashmap = self.client.get_item(user_query).await?.item.ok_or(
+            AuthDynamoClientError::UserRecordNotFound(username.to_string()),
+        )?;
 
         // do not log the database repsonse, it probably contains sensitive information like user
         // password hash.
-        debug!(message = "Got user record from DynamoDB database.");
+        tracing::debug!("Got user record from DynamoDB database.");
 
         Ok(serde_dynamodb::from_hashmap::<UserRow, _>(
             user_row_hashmap,
         )?)
     }
 
-    #[tracing::instrument(skip(self, password))]
+    #[tracing::instrument(err, skip(self, password))]
     pub(crate) async fn sign_in(
         &self,
         username: &str,
@@ -157,7 +148,10 @@ impl AuthDynamoClient {
         // Verify the supplied password against hash in the database
         password
             .verify_hash(&user.password_hash)
-            .tap_err(|e| debug!(error = %e))?;
+            .map_err(|source| AuthDynamoClientError::PasswordVerification {
+                username: username.to_string(),
+                source,
+            })?;
 
         let session = WebSession::new(username);
         self.store_session(&session).await?;
@@ -165,7 +159,7 @@ impl AuthDynamoClient {
         Ok(session)
     }
 
-    #[tracing::instrument(skip(self))]
+    #[tracing::instrument(err, skip(self))]
     async fn store_session(&self, session: &WebSession) -> Result<(), AuthDynamoClientError> {
         let session_entry = hmap! {
             "session_token".to_owned() => AttributeValue {
@@ -188,17 +182,14 @@ impl AuthDynamoClient {
             ..Default::default()
         };
 
-        debug!(
+        tracing::debug!(
             message = "Adding user session to DynamoDB",
             item =? new_session_input
         );
 
-        self.client
-            .put_item(new_session_input)
-            .await
-            .tap_err(|e| debug!(error = %e))?;
+        self.client.put_item(new_session_input).await?;
 
-        debug!(message = "User session successfully added.");
+        tracing::debug!("User session successfully added.");
 
         Ok(())
     }
