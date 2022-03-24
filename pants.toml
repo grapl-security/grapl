@@ -3,8 +3,8 @@ pants_version = "2.10.0"
 backend_packages = [
   "grapl_setup_py",
   "pants.backend.codegen.protobuf.python",
-  "pants.backend.experimental.docker",
-  "pants.backend.experimental.docker.lint.hadolint",
+  "pants.backend.docker",
+  "pants.backend.docker.lint.hadolint",
   "pants.backend.plugin_development",
   "pants.backend.python",
   "pants.backend.python.lint.black",
