@@ -20,6 +20,8 @@ pythonpath = [
   "%(buildroot)s/pants-plugins"
 ]
 
+use_deprecated_python_macros = false
+
 build_file_prelude_globs = [
   "pants-plugins/macros.py",
 ]
@@ -93,7 +95,6 @@ interpreter_constraints = ["CPython==3.7.*"]
 inits = true
 
 [python-protobuf]
-runtime_dependencies = ["3rdparty/python:protobuf"]
 mypy_plugin = true
 
 [black]
