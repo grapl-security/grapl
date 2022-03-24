@@ -1,10 +1,10 @@
 [GLOBAL]
-pants_version = "2.9.0"
+pants_version = "2.10.0"
 backend_packages = [
   "grapl_setup_py",
   "pants.backend.codegen.protobuf.python",
-  "pants.backend.experimental.docker",
-  "pants.backend.experimental.docker.lint.hadolint",
+  "pants.backend.docker",
+  "pants.backend.docker.lint.hadolint",
   "pants.backend.plugin_development",
   "pants.backend.python",
   "pants.backend.python.lint.black",
@@ -19,6 +19,8 @@ backend_packages = [
 pythonpath = [
   "%(buildroot)s/pants-plugins"
 ]
+
+use_deprecated_python_macros = false
 
 build_file_prelude_globs = [
   "pants-plugins/macros.py",
@@ -93,13 +95,11 @@ interpreter_constraints = ["CPython==3.7.*"]
 inits = true
 
 [python-protobuf]
-runtime_dependencies = ["3rdparty/python:protobuf"]
 mypy_plugin = true
 
 [black]
 lockfile = "3rdparty/python/black.lockfile"
 config = "pyproject.toml"
-version = "black==20.8b1"
 
 [isort]
 lockfile = "3rdparty/python/isort.lockfile"
@@ -180,19 +180,6 @@ report = ["xml"]
 # encounters, not on all the files in the repository; this counteracts
 # that.
 global_report = "true"
-
-[shellcheck]
-# Currently, Pants only knows about v0.7.1, but v0.7.2 has some nice
-# relative sourcing features we'd like to take advantage of, namely,
-# `script-path=SOURCEDIR`.
-#
-# Once Pants knows about v0.7.2 natively, we can remove these
-# configuration values.
-version = "v0.7.2"
-known_versions = [
-  "v0.7.2|macos_x86_64|969bd7ef668e8167cfbba569fb9f4a0b2fc1c4021f87032b6a0b0e525fb77369|3988092",
-  "v0.7.2|linux_x86_64|70423609f27b504d6c0c47e340f33652aea975e45f312324f2dbf91c95a3b188|1382204"
-]
 
 [hadolint]
 version = "v2.8.0"

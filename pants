@@ -34,9 +34,9 @@ fi
 
 PANTS_BOOTSTRAP="${PANTS_SETUP_CACHE}/bootstrap-$(uname -s)-$(uname -m)"
 
-_PEX_VERSION=2.1.42
+_PEX_VERSION=2.1.62
 _PEX_URL="https://github.com/pantsbuild/pex/releases/download/v${_PEX_VERSION}/pex"
-_PEX_EXPECTED_SHA256="69d6b1b1009b00dd14a3a9f19b72cff818a713ca44b3186c9b12074b2a31e51f"
+_PEX_EXPECTED_SHA256="56668b1ca147bd63141e586ffee97c7cc51ce8e6eac6c9b7a4bf1215b94396e5"
 
 VIRTUALENV_VERSION=20.4.7
 VIRTUALENV_REQUIREMENTS=$(
@@ -87,13 +87,18 @@ function get_exe_path_or_die {
   fi
 }
 
-function get_pants_config_value {
+function get_pants_config_string_value {
   local config_key="$1"
   local optional_space="[[:space:]]*"
   local prefix="^${config_key}${optional_space}=${optional_space}"
   local raw_value
-  raw_value="$(sed -ne "/${prefix}/ s#${prefix}##p" "${PANTS_TOML}")"
-  echo "${raw_value}"  | tr -d \"\' && return 0
+  raw_value="$(sed -ne "/${prefix}/ s|${prefix}||p" "${PANTS_TOML}")"
+  local optional_suffix="${optional_space}(#.*)?$"
+  echo "${raw_value}" \
+    | sed -E \
+      -e "s|^'([^']*)'${optional_suffix}|\1|" \
+      -e 's|^"([^"]*)"'"${optional_suffix}"'$|\1|' \
+    && return 0
   return 0
 }
 
@@ -125,7 +130,7 @@ function determine_pants_version {
     return
   fi
 
-  pants_version="$(get_pants_config_value 'pants_version')"
+  pants_version="$(get_pants_config_string_value 'pants_version')"
   if [[ -z "${pants_version}" ]]; then
     die "Please explicitly specify the \`pants_version\` in your \`pants.toml\` under the \`[GLOBAL]\` scope.
 See https://pypi.org/project/pantsbuild.pants/#history for all released versions
@@ -191,8 +196,8 @@ function determine_default_python_exe {
     if [[ -z "${interpreter_path}" ]]; then
       continue
     fi
-    # Check if the Python version is installed via Pyenv but not activated.
-    if [[ "$("${interpreter_path}" --version 2>&1 > /dev/null)" == "pyenv: python${version}"* ]]; then
+    # Check if a version is shimmed by pyenv or asdf but not configured.
+    if ! "${interpreter_path}" --version >/dev/null 2>&1; then
       continue
     fi
     if [[ -n "$(check_python_exe_compatible_version "${interpreter_path}")" ]]; then
@@ -249,7 +254,12 @@ function bootstrap_pex {
       local staging_dir
       staging_dir=$(tempdir "${PANTS_BOOTSTRAP}")
       cd "${staging_dir}"
-      curl -LO "${_PEX_URL}"
+      curl --proto "=https" \
+           --tlsv1.2 \
+           --silent \
+           --location \
+           --remote-name \
+           "${_PEX_URL}"
       fingerprint="$(compute_sha256 "${python}" "pex")"
       if [[ "${_PEX_EXPECTED_SHA256}" != "${fingerprint}" ]]; then
         die "SHA256 of ${_PEX_URL} is not as expected. Aborting."
@@ -307,7 +317,12 @@ function get_version_for_sha {
 
   # Retrieve the Pants version associated with this commit.
   local pants_version
-  pants_version="$(curl --fail -sL "https://raw.githubusercontent.com/pantsbuild/pants/${sha}/src/python/pants/VERSION")"
+  pants_version="$(curl --proto "=https" \
+                        --tlsv1.2 \
+                        --fail \
+                        --silent \
+                        --location \
+                        "https://raw.githubusercontent.com/pantsbuild/pants/${sha}/src/python/pants/VERSION")"
 
   # Construct the version as the release version from src/python/pants/VERSION, plus the string `+gitXXXXXXXX`,
   # where the XXXXXXXX is the first 8 characters of the SHA.
@@ -342,9 +357,11 @@ function bootstrap_pants {
       (
         scrub_PEX_env_vars
         # shellcheck disable=SC2086
-        "${python}" "${virtualenv_path}" --no-download "${staging_dir}/install" && \
-        "${staging_dir}/install/bin/pip" install -U pip && \
-        "${staging_dir}/install/bin/pip" install ${maybe_find_links} --progress-bar off "${pants_requirement}"
+        "${python}" "${virtualenv_path}" --quiet --no-download "${staging_dir}/install" && \
+        # Grab the latest pip, but don't advance setuptools past 58 which drops support for the
+        # `setup` kwarg `use_2to3` which Pants 1.x sdist dependencies (pystache) use.
+        "${staging_dir}/install/bin/pip" install --quiet -U pip "setuptools<58" && \
+        "${staging_dir}/install/bin/pip" install ${maybe_find_links} --quiet --progress-bar off "${pants_requirement}"
       ) && \
       ln -s "${staging_dir}/install" "${staging_dir}/${target_folder_name}" && \
       mv "${staging_dir}/${target_folder_name}" "${bootstrapped}" && \
