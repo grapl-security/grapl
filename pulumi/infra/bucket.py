@@ -39,7 +39,7 @@ class Bucket(aws.s3.Bucket):
         )
 
     def grant_read_permission_to(self, role: aws.iam.Role) -> None:
-        """ Adds the ability to read objects from this bucket to the provided `Role`. """
+        """Adds the ability to read objects from this bucket to the provided `Role`."""
         aws.iam.RolePolicy(
             f"{role._name}-reads-{self._name}",
             role=role.name,
@@ -61,7 +61,7 @@ class Bucket(aws.s3.Bucket):
         )
 
     def grant_put_permission_to(self, role: aws.iam.Role) -> None:
-        """ Adds the ability to put objects into this bucket to the provided `Role`. """
+        """Adds the ability to put objects into this bucket to the provided `Role`."""
         aws.iam.RolePolicy(
             f"{role._name}-writes-objects-to-{self._name}",
             role=role.name,
@@ -117,7 +117,7 @@ class Bucket(aws.s3.Bucket):
         )
 
     def grant_read_write_permissions_to(self, role: aws.iam.Role) -> None:
-        """ Gives the provided `Role` the ability to read from and write to this bucket. """
+        """Gives the provided `Role` the ability to read from and write to this bucket."""
         aws.iam.RolePolicy(
             f"{role._name}-reads-and-writes-{self._name}",
             role=role.name,
@@ -150,7 +150,7 @@ class Bucket(aws.s3.Bucket):
     def _upload_file_to_bucket(
         self, file_path: Path, root_path: Path
     ) -> aws.s3.BucketObject:
-        """ Compare with CDK's s3deploy.BucketDeployment """
+        """Compare with CDK's s3deploy.BucketDeployment"""
         assert (
             file_path.is_file()
         ), f"Use `upload_dir_to_bucket` for directory {file_path}"
@@ -199,7 +199,7 @@ class Bucket(aws.s3.Bucket):
 
 
 def sse_configuration() -> aws.s3.BucketServerSideEncryptionConfigurationArgs:
-    """ Applies SSE to a bucket using AWS KMS. """
+    """Applies SSE to a bucket using AWS KMS."""
     return aws.s3.BucketServerSideEncryptionConfigurationArgs(
         rule=aws.s3.BucketServerSideEncryptionConfigurationRuleArgs(
             apply_server_side_encryption_by_default=aws.s3.BucketServerSideEncryptionConfigurationRuleApplyServerSideEncryptionByDefaultArgs(

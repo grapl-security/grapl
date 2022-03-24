@@ -102,7 +102,7 @@ def src_python_execution_environment() -> Dict[str, Union[str, List[str]]]:
 
 
 def write_or_echo(output: str, path: str, write_file: bool) -> None:
-    """ Consolidate logic for whether to write `output` to the file at `path`, or to send it to standard output instead."""
+    """Consolidate logic for whether to write `output` to the file at `path`, or to send it to standard output instead."""
     if write_file:
         with click.open_file(path, "w") as f:
             f.write(output)
@@ -174,7 +174,7 @@ def update_pyrightconfig(write_file: bool) -> None:
 
 @click.group(name="pyright")
 def configure_pyright() -> None:
-    """ Set up Pyright for Python IDE integration. """
+    """Set up Pyright for Python IDE integration."""
 
 
 configure_pyright.add_command(generate_pyrightconfig)

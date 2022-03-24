@@ -48,18 +48,18 @@ from python_proto.pipeline import Envelope, Metadata, RawLog
 
 
 UINT64_MIN = 0
-UINT64_MAX = 2 ** 64 - 1
+UINT64_MAX = 2**64 - 1
 
-INT64_MIN = -(2 ** 63) + 1
-INT64_MAX = 2 ** 63 - 1
+INT64_MIN = -(2**63) + 1
+INT64_MAX = 2**63 - 1
 
-INT32_MIN = -(2 ** 31) + 1
-INT32_MAX = 2 ** 31 - 1
+INT32_MIN = -(2**31) + 1
+INT32_MAX = 2**31 - 1
 
 DURATION_SECONDS_MIN = 0
 DURATION_SECONDS_MAX = UINT64_MAX
 DURATION_NANOS_MIN = 0
-DURATION_NANOS_MAX = 10 ** 9 - 1
+DURATION_NANOS_MAX = 10**9 - 1
 
 MAX_LIST_SIZE = 5
 

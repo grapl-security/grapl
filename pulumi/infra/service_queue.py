@@ -32,12 +32,12 @@ class ServiceConfiguration(NamedTuple):
 
     @property
     def main_url(self) -> pulumi.Output[str]:
-        """ The URL of the main queue."""
+        """The URL of the main queue."""
         return self.main_queue.id
 
     @property
     def dead_letter_url(self) -> pulumi.Output[str]:
-        """ The URL of the dead-letter queue."""
+        """The URL of the dead-letter queue."""
         return self.dead_letter_queue.id
 
     def grant_queue_permissions_to(self, role: aws.iam.Role) -> None:
