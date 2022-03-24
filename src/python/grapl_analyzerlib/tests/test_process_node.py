@@ -34,7 +34,7 @@ def assert_equal_props(a: Viewable, b: Viewable) -> None:
 
 
 def assert_equal_identity(a: Viewable, b: Viewable) -> None:
-    """ Assert these nodes have the same type and uuid """
+    """Assert these nodes have the same type and uuid"""
     assert a.node_key == b.node_key
 
 
@@ -168,9 +168,9 @@ class TestProcessQuery(unittest.TestCase):
     @hypothesis.settings(parent=common_hypo_settings)
     @given(
         node_key=st.uuids(),
-        process_id=st.integers(min_value=1, max_value=2 ** 32),
-        created_timestamp=st.integers(min_value=0, max_value=2 ** 48),
-        terminate_time=st.integers(min_value=0, max_value=2 ** 48),
+        process_id=st.integers(min_value=1, max_value=2**32),
+        created_timestamp=st.integers(min_value=0, max_value=2**48),
+        terminate_time=st.integers(min_value=0, max_value=2**48),
         image_name=st.text(min_size=1, max_size=64),
         process_name=st.text(min_size=1, max_size=64),
         arguments=st.text(min_size=1, max_size=64),
@@ -255,9 +255,9 @@ class TestProcessQuery(unittest.TestCase):
     @hypothesis.settings(parent=common_hypo_settings)
     @given(
         node_key=st.uuids(),
-        process_id=st.integers(min_value=1, max_value=2 ** 32),
-        created_timestamp=st.integers(min_value=0, max_value=2 ** 48),
-        terminate_time=st.integers(min_value=0, max_value=2 ** 48),
+        process_id=st.integers(min_value=1, max_value=2**32),
+        created_timestamp=st.integers(min_value=0, max_value=2**48),
+        terminate_time=st.integers(min_value=0, max_value=2**48),
         image_name=text_dgraph_compat(),
         process_name=text_dgraph_compat(),
         arguments=text_dgraph_compat(),

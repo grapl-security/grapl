@@ -20,19 +20,19 @@ ENTRYPOINT ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
 # analyzer-executor
 ################################################################################
 FROM grapl-python-base AS analyzer-executor-deploy
-COPY --chown=grapl ./dist/analyzer-executor.pex .
+COPY ./dist/analyzer-executor.pex .
 CMD ["./analyzer-executor.pex"]
 
 # engagement-creator
 ################################################################################
 FROM grapl-python-base AS engagement-creator-deploy
-COPY --chown=grapl ./dist/engagement-creator.pex .
+COPY ./dist/engagement-creator.pex .
 CMD ["./engagement-creator.pex"]
 
 # Provisioner
 ################################################################################
 FROM grapl-python-base AS provisioner-deploy
-COPY --chown=grapl ./dist/provisioner.pex .
+COPY ./dist/provisioner.pex .
 CMD ["./provisioner.pex"]
 
 # e2e tests

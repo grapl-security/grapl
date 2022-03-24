@@ -18,9 +18,9 @@ def process_props_strategy() -> st.SearchStrategy[ProcessProps]:
         st.builds(
             dict,
             node_key=st.just("mutated in get_or_create_process"),
-            process_id=st.integers(min_value=1, max_value=2 ** 32),
-            created_timestamp=st.integers(min_value=0, max_value=2 ** 48),
-            terminate_time=st.integers(min_value=0, max_value=2 ** 48),
+            process_id=st.integers(min_value=1, max_value=2**32),
+            created_timestamp=st.integers(min_value=0, max_value=2**48),
+            terminate_time=st.integers(min_value=0, max_value=2**48),
             image_name=text_dgraph_compat(),
             process_name=text_dgraph_compat(),
             arguments=text_dgraph_compat(),
