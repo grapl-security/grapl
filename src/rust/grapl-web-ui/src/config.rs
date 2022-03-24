@@ -13,14 +13,15 @@ pub(crate) const SESSION_TOKEN: &'static str = "SESSION_TOKEN";
 pub(crate) const SESSION_TOKEN_LENGTH: usize = 32;
 pub(crate) const SESSION_EXPIRATION_TIMEOUT_DAYS: i64 = 1;
 
-// Try getting an environment variable and create ConfigError::MissingEnvironmentVariable if
-// unsuccessful. The benefit of this over just std::env::VarError is the environment variable will
-// be Display'd as well.
-macro_rules! env_var {
-    ($name:expr) => {
-        std::env::var($name)
-            .map_err(|var_err| ConfigError::MissingEnvironmentVariable($name, var_err))
-    };
+fn get_env_var(name: &'static str) -> Result<String, ConfigError> {
+    std::env::var(name).map_err(|source| ConfigError::MissingEnvironmentVariable {
+        variable_name: name,
+        source,
+    })
+}
+
+fn parse_url(url: String) -> Result<Url, ConfigError> {
+    Url::parse(url.as_str()).map_err(|source| ConfigError::UrlParse { url, source })
 }
 
 #[derive(Clone)]
@@ -36,20 +37,25 @@ pub(crate) struct Config {
 
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum ConfigError {
-    #[error("required environment variable '{0}' error: {1}")]
-    MissingEnvironmentVariable(&'static str, std::env::VarError),
-    #[error("unable to parse URL: `{0}`")]
-    UrlParse(#[from] url::ParseError),
-    #[error("unable to parse AWS region: `{0}`")]
-    AwsRegionParse(#[from] rusoto_core::region::ParseRegionError),
+    #[error("unable to get required environment variable `{variable_name}`: {source}")]
+    MissingEnvironmentVariable {
+        variable_name: &'static str,
+        source: std::env::VarError,
+    },
+    #[error("unable to parse URL `{url}`: {source}")]
+    UrlParse {
+        url: String,
+        source: url::ParseError,
+    },
 }
 
 impl Config {
+    #[tracing::instrument(err)]
     pub fn from_env() -> Result<Self, ConfigError> {
-        let bind_address = env_var!("GRAPL_WEB_UI_BIND_ADDRESS")?;
+        let bind_address = get_env_var("GRAPL_WEB_UI_BIND_ADDRESS")?;
 
-        let user_auth_table_name = env_var!("GRAPL_USER_AUTH_TABLE")?;
-        let user_session_table_name = env_var!("GRAPL_USER_SESSION_TABLE")?;
+        let user_auth_table_name = get_env_var("GRAPL_USER_AUTH_TABLE")?;
+        let user_session_table_name = get_env_var("GRAPL_USER_SESSION_TABLE")?;
 
         // generate a random key for encrypting user state.
         let mut rng = rand::thread_rng();
@@ -57,16 +63,14 @@ impl Config {
 
         let dynamodb_client = DynamoDbClient::from_env();
 
-        // GraphQL endpoint backend
-        let graphql_endpoint = env_var!("GRAPL_GRAPHQL_ENDPOINT")?;
-        let graphql_endpoint = Url::parse(graphql_endpoint.as_str())?;
-        let graphql_endpoint = GraphQlEndpointUrl::from(graphql_endpoint);
+        let graphql_endpoint = get_env_var("GRAPL_GRAPHQL_ENDPOINT")
+            .map(parse_url)?
+            .map(GraphQlEndpointUrl::from)?;
 
         // Model Plugin Deployer endpoint backend
-        let model_plugin_deployer_endpoint = env_var!("GRAPL_MODEL_PLUGIN_DEPLOYER_ENDPOINT")?;
-        let model_plugin_deployer_endpoint = Url::parse(model_plugin_deployer_endpoint.as_str())?;
-        let model_plugin_deployer_endpoint =
-            ModelPluginDeployerEndpoint::from(model_plugin_deployer_endpoint);
+        let model_plugin_deployer_endpoint = get_env_var("GRAPL_MODEL_PLUGIN_DEPLOYER_ENDPOINT")
+            .map(parse_url)?
+            .map(ModelPluginDeployerEndpoint::from)?;
 
         Ok(Config {
             dynamodb_client,
