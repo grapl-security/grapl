@@ -145,6 +145,11 @@ install_pyenv() {
     pyenv global "${PYENV_PYTHON_VERSION}"
 }
 
+install_pipx() {
+    python3 -m pip install --user pipx --upgrade
+    python3 -m pipx ensurepath
+}
+
 install_nvm() {
     echo_banner "Installing nvm"
     curl --proto "=https" \
@@ -239,7 +244,7 @@ download_and_install_tarball() {
 
     file_name="$(basename "${url}")"
 
-    # Retrive the archive
+    # Retrieve the archive
     curl --proto "=https" \
         --tlsv1.2 \
         --location \
