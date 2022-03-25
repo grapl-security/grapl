@@ -1,0 +1,57 @@
+# Contents of /etc/systemd/system/grapl-plugin.service
+[Unit]
+Description=Grapl Plugin
+After=grapl-plugin-bootstrap-init.service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=simple
+Restart=always
+ExecStart=/usr/local/bin/grapl-plugin
+
+EnvironmentFile=/etc/systemd/system/plugin.service.d/override.conf
+
+# All plugins should listen on port 5555 internally
+SocketBindAllow=tcp:5555
+SocketBindDeny=any
+
+RuntimeDirectory=plugin        # adds /var/run/plugin
+StateDirectory=plugin          # adds /var/lib/plugin
+CacheDirectory=plugin          # adds /var/cache/plugin
+LogsDirectory=plugin           # adds /var/log/plugin
+LoadCredential=CLIENT_CERTIFICATE:/etc/ssl/private/plugin-client-cert.pem
+
+# Some sandboxing
+# See: https://www.freedesktop.org/software/systemd/man/systemd.exec.html
+# Allocate a random user within the range: 61184–65519
+DynamicUser=yes
+CapabilityBoundingSet=
+DevicePolicy=closed
+InaccessiblePaths=-/usr/bin /usr/sbin /mnt /media /var/www
+LockPersonality=yes
+
+NoNewPrivileges=yes
+PrivateDevices=yes
+PrivateMounts=yes
+PrivateTmp=yes
+PrivateUsers=yes
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectHostname=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectProc=invisible
+ProtectSystem=strict
+RemoveIPC=yes
+RestrictAddressFamilies=AF_UNIX AF_NETLINK AF_INET AF_INET6
+RestrictNamespaces=yes
+RestrictRealtime=yes
+ProtectHostname=yes
+RestrictSUIDSGID=yes
+SystemCallArchitectures=native
+# Note that ~ inverts the filter, meaning that we default-allow syscalls *except* for those listed
+SystemCallFilter=~@chown @clock @cpu-emulation @debug @ipc @module @mount @obsolete @privileged @raw-io @reboot @resources @setuid @swap

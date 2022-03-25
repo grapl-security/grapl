@@ -68,7 +68,7 @@ variable "RUST_BUILD" {
 }
 
 # This is the directory that certain artifacts will be deposited into
-variable "DIST_FOLDER" {
+variable "DIST_DIR" {
 }
 
 # When performing a release build, we will tag our images with our
@@ -349,7 +349,7 @@ target "plugin-bootstrap-init" {
   inherits = ["_rust-base"]
   target   = "plugin-bootstrap-init-output"
   output = [
-    "type=local,dest=${DIST_FOLDER}/plugin-bootstrap-init"
+    "type=local,dest=${DIST_DIR}/plugin-bootstrap-init"
   ]
 }
 

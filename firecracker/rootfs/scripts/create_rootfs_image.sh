@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
-set -o xtrace
+set -eu -o pipefail -o xtrace
 
 ################################################################################
 # This script is not meant to be run on a local workstation; instead, it's meant
@@ -21,7 +20,9 @@ readonly IMAGE="${BUILD_DIR}/${IMAGE_NAME}.ext4"
 readonly MOUNT_POINT="${BUILD_DIR}/mount_point"
 mkdir -p "${MOUNT_POINT}"
 
-readonly SIZE_MB="${SIZE_MB}"
+# Declare that we need these env vars later
+readonly SIZE_MB
+readonly PLUGIN_BOOTSTRAP_INIT_ARTIFACTS_DIR
 
 ########################################
 # Create image and mount it.
@@ -49,6 +50,20 @@ sudo chmod 777 "${MOUNT_POINT}"
 sudo debootstrap --include apt,nano "${DEBIAN_VERSION}" \
     "${MOUNT_POINT}"
 
+# Copy in the Plugin Bootstrap binary and associated systemd services
+(
+    # Destination must match what's in grapl-plugin-bootstrap-init.service
+    sudo cp "${PLUGIN_BOOTSTRAP_INIT_ARTIFACTS_DIR}"/plugin-bootstrap-init \
+        "${MOUNT_POINT}/usr/local/bin/"
+    readonly PLUGIN_SERVICE_DIR="${MOUNT_POINT}/etc/systemd/system/"
+    sudo mkdir -p "${PLUGIN_SERVICE_DIR}"
+    sudo cp "${PLUGIN_BOOTSTRAP_INIT_ARTIFACTS_DIR}"/grapl-plugin.service \
+        "${PLUGIN_SERVICE_DIR}/grapl-plugin.service"
+    sudo cp "${PLUGIN_BOOTSTRAP_INIT_ARTIFACTS_DIR}"/grapl-plugin-bootstrap-init.service \
+        "${PLUGIN_SERVICE_DIR}/grapl-plugin-bootstrap-init.service"
+)
+
+# Run the Provision script
 (
     # Make these scripts available inside the chroot
     SCRIPTS_MOUNT_POINT="${MOUNT_POINT}/mnt/scripts"

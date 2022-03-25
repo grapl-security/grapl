@@ -1,0 +1,39 @@
+# Contents of /etc/systemd/system/grapl-plugin-bootstrap-init.service
+[Unit]
+Description=Grapl Plugin Bootstrap Init
+After=network.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/plugin-bootstrap-init
+User=root
+Group=root
+
+# Until we have the firecracker VM work bootstrapped it's not totally clear
+# what to put here - for example, should this point at localhost or not?
+ENVIRONMENT="GRAPL_PLUGIN_BOOTSTRAP_ADDRESS=TODO"
+
+# Some sandboxing - less than the plugin itself. We can be permissive here.
+
+DevicePolicy=closed
+LockPersonality=yes
+NoNewPrivileges=yes
+PrivateDevices=yes
+PrivateMounts=yes
+PrivateTmp=yes
+PrivateUsers=yes
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectHostname=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectProc=invisible
+RemoveIPC=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+ProtectHostname=yes

@@ -8,7 +8,8 @@ readonly IMAGE_NAME="firecracker_rootfs"
 
 packer init -upgrade firecracker/rootfs/build-rootfs.pkr.hcl
 packer build \
-    -var dist_folder="${GRAPL_ROOT}/dist" \
+    -var dist_dir="${DIST_DIR}" \
+    -var plugin_bootstrap_init_artifacts_dir="${DIST_DIR}/plugin-bootstrap-init" \
     -var image_name="${IMAGE_NAME}" \
     firecracker/rootfs/build-rootfs.pkr.hcl
 
@@ -16,7 +17,7 @@ packer build \
 # Write a .artifact-metadata.json file
 ########################################
 source .buildkite/scripts/lib/artifact_metadata.sh
-readonly ARTIFACT_PATH="${GRAPL_ROOT}/dist/${IMAGE_NAME}.tar.gz"
+readonly ARTIFACT_PATH="${DIST_DIR}/${IMAGE_NAME}.tar.gz"
 ARTIFACT_METADATA_PATH="$(artifact_metadata_path "${ARTIFACT_PATH}")"
 readonly ARTIFACT_METADATA_PATH
 
