@@ -10,25 +10,10 @@ use actix_web::{
     App,
     HttpServer,
 };
-use actix_web_opentelemetry::RequestTracing;
-use opentelemetry::{
-    global,
-    trace::TraceError,
-};
-
-#[derive(thiserror::Error, Debug)]
-enum GraplUiError {
-    #[error(transparent)]
-    Config(#[from] config::ConfigError),
-    #[error("IO error")]
-    Io(#[from] std::io::Error),
-    #[error("Trace Error")]
-    Trace(#[from] TraceError),
-}
 
 #[actix_web::main]
-async fn main() -> Result<(), GraplUiError> {
-    let (_env, _guard) = grapl_config::init_grapl_env!("web-ui");
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let (_env, _guard) = grapl_config::init_grapl_env!();
 
     let config = config::Config::from_env()?;
 
@@ -47,7 +32,7 @@ async fn main() -> Result<(), GraplUiError> {
 
         App::new()
             .wrap(actix_web::middleware::Logger::default())
-            .wrap(RequestTracing::new())
+            .wrap(actix_web_opentelemetry::RequestTracing::new())
             .wrap(actix_web::middleware::Compress::default())
             .wrap(
                 CookieSession::private(&config.session_key)
@@ -65,12 +50,12 @@ async fn main() -> Result<(), GraplUiError> {
                     .configure(services::model_plugin_deployer::config),
             )
     })
-    .bind(bind_address)?
+    .bind(&bind_address)?
     .run()
     .await?;
 
-    // sending remaining trace spans.
-    global::shutdown_tracer_provider();
+    // send remaining trace spans.
+    opentelemetry::global::shutdown_tracer_provider();
 
     Ok(())
 }

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
+
 ################################################################################
 # `create_rootfs_image.sh` creates a bootstrapped directory, and then executes
 # this file within a chroot on that bootstrapped directory;
@@ -13,12 +15,9 @@ echo "grapl-plugin" > /etc/hostname
 
 # Set up a login terminal on the serial console (ttyS0)
 # See https://github.com/firecracker-microvm/firecracker/blob/main/docs/rootfs-and-kernel-setup.md
-mkdir /etc/systemd/system/serial-getty@ttyS0.service.d/
-cat << EOF > /etc/systemd/system/serial-getty@ttyS0.service.d/autologin.conf
-[Service]
-ExecStart=
-ExecStart=-/sbin/agetty --autologin root -o '-p -- \\u' --keep-baud 115200,38400,9600 %I $TERM
-EOF
+mkdir -p /etc/systemd/system/serial-getty@ttyS0.service.d/
+cp "${THIS_DIR}/ttyS0_autologin.conf" \
+    /etc/systemd/system/serial-getty@ttyS0.service.d/autologin.conf
 
 # Disable resolved and ntpd
 # See https://github.com/firecracker-microvm/firecracker/blob/f2743bfd2e9f9740dd08e55cdb83ba7b94aabb69/resources/tests/setup_rootfs.sh#L46

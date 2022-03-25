@@ -68,9 +68,10 @@ async fn post(
         |error| {
             match error {
                 // incorrect password
-                AuthDynamoClientError::PasswordVerification(
-                    argon2::password_hash::Error::Password,
-                )
+                AuthDynamoClientError::PasswordVerification {
+                    source: argon2::password_hash::Error::Password,
+                    ..
+                }
                 | AuthDynamoClientError::UserRecordNotFound(_) => {
                     tracing::info!( %error );
                     HttpResponse::Unauthorized().finish()

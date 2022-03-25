@@ -39,7 +39,7 @@ message CreatePluginRequest {
 
   // The string value to display to a user, non-empty
   string display_name = 3;
- 
+
   // The type of the plugin
   PluginType plugin_type = 4;
 }
@@ -71,8 +71,7 @@ message DeployPluginRequest {
 }
 
 // A response indicating that a plugin has been deployed
-message DeployPluginResponse {
-}
+message DeployPluginResponse {}
 
 // A request to disable a deployed plugin
 message TearDownPluginRequest {
@@ -81,8 +80,7 @@ message TearDownPluginRequest {
 }
 
 // A response indicating that a plugin has been disabled
-message TearDownPluginResponse {
-}
+message TearDownPluginResponse {}
 
 // A request to return all generators that can ahndle a specific event source
 message GetGeneratorsForEventSourceRequest {

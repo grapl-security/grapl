@@ -24,11 +24,11 @@ pub struct AuthenticatedUser {
 
 #[derive(thiserror::Error, Debug)]
 pub enum UserAuthenticationError {
-    #[error("unable to validate user session")]
+    #[error("invalid user session")]
     SessionValidation(#[source] AuthDynamoClientError),
-    #[error("unable to get user data from validated session")]
+    #[error("session validated but user `{}` not found in user table", .0)]
     UserNotFound(#[source] AuthDynamoClientError),
-    #[error("unable to access session storage")]
+    #[error("unable to access session storage: {0}")]
     SessionStorage(#[source] actix_web::Error),
     #[error("user is not authenticated")]
     Unauthenticated,
@@ -38,7 +38,12 @@ pub enum UserAuthenticationError {
 
 impl ResponseError for UserAuthenticationError {
     fn status_code(&self) -> StatusCode {
-        StatusCode::UNAUTHORIZED
+        match self {
+            UserAuthenticationError::SessionStorage(_)
+            | UserAuthenticationError::DynamoClientUnavailable
+            | UserAuthenticationError::UserNotFound(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            _ => StatusCode::UNAUTHORIZED,
+        }
     }
 }
 
@@ -69,9 +74,12 @@ impl FromRequest for AuthenticatedUser {
     type Error = UserAuthenticationError;
     type Future = Pin<Box<dyn Future<Output = Result<Self, Self::Error>>>>;
 
+    // Do not instrument `err` here. Errors from the `auth` module will have already been logged
+    // and some error type variants shouldn't be logged with Level::ERROR, such as
+    // UserAuthenticationError::Unauthenticated, which we expect in normal operation.
     #[tracing::instrument(skip(_payload))]
     fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
-        tracing::trace!(message = "Authenticating user request");
+        tracing::trace!("Authenticating user request");
 
         let session_storage = req.get_session();
 
@@ -90,7 +98,8 @@ impl FromRequest for AuthenticatedUser {
             let session_row = dynamodb_client
                 .get_valid_session_row(token)
                 .await
-                .map_err(|e| UserAuthenticationError::SessionValidation(e.into()))?;
+                .map_err(|e| UserAuthenticationError::SessionValidation(e.into()))?
+                .ok_or(UserAuthenticationError::Unauthenticated)?;
 
             let user_row = dynamodb_client
                 .get_user_row(&session_row.username)
