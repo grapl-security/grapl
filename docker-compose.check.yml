@@ -62,13 +62,19 @@ services:
     image: bufbuild/buf:1.2.1
     command: ["format", "--verbose", "--write"]
     environment:
-      # buf tries to write to `~/.cache`, which turns out to be
-      # `/.cache` when running as a non-root user (as we need to do to
-      # write formatted files back out owned by the workstation
-      # user). We won't have permission to write to `/.cache`, so we
-      # need to change our `HOME` directory to somewhere we *do* have
-      # write permissions. This will result in a `.cache` directory in
-      # the repository root, but it will actually allow this to
+      # Since we will be writing files back to our workstation, they
+      # must be owned by our workstation user. This means we will run
+      # the container with `--user=$(id --user):$(id --group)`, which
+      # generally yields a user ID of 1000. Since there is no such
+      # user in the `bufbuild/buf` container, we are effectively
+      # anonymous. In such cases, `$HOME` in the container will be `/`.
+      #
+      # When formatting, `buf` needs to write to `${HOME}/.cache`.
+      # Since our anonymous user will not have permissions to write to
+      # `/.cache`, we must modify the value of `$HOME` to a location
+      # where we *do* have write permissions.  Using `/workdir` will
+      # result in a `.cache` directory being created in the repository
+      # root on our workstations, but it will actually allow this to
       # *work*, so it's a small price to pay.
       HOME: /workdir
     working_dir: /workdir
