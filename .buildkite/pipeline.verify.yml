@@ -47,6 +47,10 @@ steps:
         command:
           - make lint-proto
 
+      - label: ":large_blue_square::lint-roller: Protobuf Format Checking"
+        command:
+          - make lint-proto-format
+
       - label: ":large_blue_square::face_with_symbols_on_mouth: Protobuf Breaking Changes"
         command:
           - make lint-proto-breaking

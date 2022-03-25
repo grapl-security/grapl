@@ -42,7 +42,6 @@ message CreateUserResponse {
   graplinc.common.v1beta1.Uuid user_id = 1;
 }
 
-
 // Organization Management service holding RPCs to create a user and an organization
 service OrganizationManagementService {
   // rpc to create organization

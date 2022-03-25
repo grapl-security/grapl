@@ -344,6 +344,7 @@ lint: lint-hcl
 lint: lint-prettier
 lint: lint-proto
 lint: lint-proto-breaking
+lint: lint-proto-format
 lint: lint-python
 lint: lint-rust
 lint: lint-shell
@@ -375,6 +376,10 @@ lint-proto: ## Lint all protobuf definitions
 lint-proto-breaking: ## Check protobuf definitions for breaking changes
 	${DOCKER_COMPOSE_CHECK} buf-breaking-change
 
+.PHONY: lint-proto-format
+lint-proto-format: ## Check that all protobuf files are properly formatted
+	${DOCKER_COMPOSE_CHECK} buf-lint-format
+
 .PHONY: lint-python
 lint-python: ## Run Python lint checks
 	$(PANTS_PYTHON_FILTER) lint
@@ -402,6 +407,7 @@ lint-shell: ## Run Shell lint checks
 format: format-build
 format: format-hcl
 format: format-prettier
+format: format-proto
 format: format-python
 format: format-rust
 format: format-shell
@@ -419,6 +425,10 @@ format-hcl: ## Reformat all HCL files
 format-prettier: build-prettier-image
 format-prettier: ## Reformat js/ts/yaml
 	${NONROOT_DOCKER_COMPOSE_CHECK} prettier-format
+
+.PHONY: format-proto
+format-proto: ## Reformat all Protobuf definitions
+	$(NONROOT_DOCKER_COMPOSE_CHECK) buf-format
 
 .PHONY: format-python
 format-python: ## Reformat all Python code
