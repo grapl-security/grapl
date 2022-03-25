@@ -51,18 +51,6 @@ sudo chmod 777 "${MOUNT_POINT}"
 sudo debootstrap --include apt,nano "${DEBIAN_VERSION}" \
     "${MOUNT_POINT}"
 
-# Run the Provision script
-(
-    # Make these scripts available inside the chroot
-    SCRIPTS_MOUNT_POINT="${MOUNT_POINT}/mnt/scripts"
-    sudo mkdir -p "${SCRIPTS_MOUNT_POINT}"
-    sudo mount --bind "${SCRIPTS_DIR}" "${SCRIPTS_MOUNT_POINT}"
-    # Run the provision_inside_chroot script
-    sudo chroot "${MOUNT_POINT}" "/mnt/scripts/provision_inside_chroot.sh"
-
-    sudo umount "${SCRIPTS_MOUNT_POINT}"
-)
-
 # Copy in the Plugin Bootstrap binary and associated systemd services
 (
     ls /usr/local
@@ -75,6 +63,18 @@ sudo debootstrap --include apt,nano "${DEBIAN_VERSION}" \
         "${PLUGIN_SERVICE_DIR}/grapl-plugin.service"
     sudo cp "${PLUGIN_BOOTSTRAP_INIT_ARTIFACTS_DIR}"/grapl-plugin-bootstrap-init.service \
         "${PLUGIN_SERVICE_DIR}/grapl-plugin-bootstrap-init.service"
+)
+
+# Run the Provision script
+(
+    # Make these scripts available inside the chroot
+    SCRIPTS_MOUNT_POINT="${MOUNT_POINT}/mnt/scripts"
+    sudo mkdir -p "${SCRIPTS_MOUNT_POINT}"
+    sudo mount --bind "${SCRIPTS_DIR}" "${SCRIPTS_MOUNT_POINT}"
+    # Run the provision_inside_chroot script
+    sudo chroot "${MOUNT_POINT}" "/mnt/scripts/provision_inside_chroot.sh"
+
+    sudo umount "${SCRIPTS_MOUNT_POINT}"
 )
 
 ########################################

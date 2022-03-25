@@ -26,5 +26,9 @@ rm -f /etc/systemd/system/multi-user.target.wants/systemd-resolved.service
 rm -f /etc/systemd/system/dbus-org.freedesktop.resolve1.service
 rm -f /etc/systemd/system/sysinit.target.wants/systemd-timesyncd.service
 
+# Enable our new services
+systemctl enable grapl-plugin-bootstrap-init.service
+systemctl enable grapl-plugin.service
+
 # Finally: Clean up the apt cache a bit
 apt-get clean
