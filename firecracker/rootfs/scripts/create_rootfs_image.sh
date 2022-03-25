@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
-set -o xtrace
+set -eu -o pipefail -o xtrace
 
 ################################################################################
 # This script is not meant to be run on a local workstation; instead, it's meant

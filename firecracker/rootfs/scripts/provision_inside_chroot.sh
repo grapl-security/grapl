@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
-set -o xtrace
+set -eu -o pipefail -o xtrace
 
 THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
 
