@@ -53,7 +53,6 @@ sudo debootstrap --include apt,nano "${DEBIAN_VERSION}" \
 
 # Copy in the Plugin Bootstrap binary and associated systemd services
 (
-    ls /usr/local
     # Destination must match what's in grapl-plugin-bootstrap-init.service
     sudo cp "${PLUGIN_BOOTSTRAP_INIT_ARTIFACTS_DIR}"/plugin-bootstrap-init \
         "${MOUNT_POINT}/usr/local/bin/init-grapl-plugin"
