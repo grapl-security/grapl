@@ -46,6 +46,35 @@ services:
     volumes:
       - *read-only-workdir
 
+  # Use buf to check if our protobuf files are correctly formatted.
+  buf-lint-format:
+    image: bufbuild/buf:1.2.1
+    # buf doesn't currently use exit codes properly; see comments in
+    # this script for further details.
+    command: .buildkite/scripts/check_protobuf_formatting.sh
+    entrypoint: sh
+    working_dir: /workdir
+    volumes:
+      - *read-only-workdir
+
+  # Use buf to rewrite our protobuf files with the proper formatting.
+  buf-format:
+    image: bufbuild/buf:1.2.1
+    command: ["format", "--verbose", "--write"]
+    environment:
+      # buf tries to write to `~/.cache`, which turns out to be
+      # `/.cache` when running as a non-root user (as we need to do to
+      # write formatted files back out owned by the workstation
+      # user). We won't have permission to write to `/.cache`, so we
+      # need to change our `HOME` directory to somewhere we *do* have
+      # write permissions. This will result in a `.cache` directory in
+      # the repository root, but it will actually allow this to
+      # *work*, so it's a small price to pay.
+      HOME: /workdir
+    working_dir: /workdir
+    volumes:
+      - *read-write-workdir
+
   hcl-lint:
     image: docker.cloudsmith.io/grapl/releases/hcl-formatter:1.7.4
     command: lint

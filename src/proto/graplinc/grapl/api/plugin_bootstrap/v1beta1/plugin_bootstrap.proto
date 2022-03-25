@@ -16,9 +16,7 @@ message ClientCertificate {
 }
 
 // The request for bootstrap artifacts
-message GetBootstrapRequest {
-
-}
+message GetBootstrapRequest {}
 
 // The response containing bootstrap artifacts
 message GetBootstrapResponse {
