@@ -54,7 +54,7 @@ sudo debootstrap --include apt,nano "${DEBIAN_VERSION}" \
 (
     # Destination must match what's in grapl-plugin-bootstrap-init.service
     sudo cp "${PLUGIN_BOOTSTRAP_INIT_ARTIFACTS_DIR}"/plugin-bootstrap-init \
-        "${MOUNT_POINT}/usr/local/bin/init-grapl-plugin"
+        "${MOUNT_POINT}/usr/local/bin/"
     readonly PLUGIN_SERVICE_DIR="${MOUNT_POINT}/etc/systemd/system/"
     sudo mkdir -p "${PLUGIN_SERVICE_DIR}"
     sudo cp "${PLUGIN_BOOTSTRAP_INIT_ARTIFACTS_DIR}"/grapl-plugin.service \
