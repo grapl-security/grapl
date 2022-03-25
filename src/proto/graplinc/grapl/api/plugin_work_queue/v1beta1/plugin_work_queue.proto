@@ -4,7 +4,6 @@ package graplinc.grapl.api.plugin_work_queue.v1beta1;
 
 import "graplinc/common/v1beta1/types.proto";
 
-
 // A job for a given plugin, for a given tenant, to be executed against `data`
 message ExecutionJob {
   // The tenant that this request is tied to
@@ -51,7 +50,8 @@ message GetExecuteGeneratorResponse {
     ExecutionJob job = 1;
     // When a job is not available
     NoAvailableJobs no_jobs = 2;
-  };
+  }
+
   // A request_id, to be used in Acknowledgement
   int64 request_id = 3;
 }
@@ -64,7 +64,8 @@ message GetExecuteAnalyzerResponse {
     ExecutionJob job = 1;
     // When a job is not available
     NoAvailableJobs no_jobs = 2;
-  };
+  }
+
   // A request_id, to be used in Acknowledgement
   int64 request_id = 3;
 }
@@ -78,9 +79,7 @@ message AcknowledgeGeneratorRequest {
 }
 
 // A response to an AcknowledgeGeneratorResponse
-message AcknowledgeGeneratorResponse {
-
-}
+message AcknowledgeGeneratorResponse {}
 
 // A request to acknowledge that an analyzer job has been completed.
 message AcknowledgeAnalyzerRequest {
@@ -91,10 +90,7 @@ message AcknowledgeAnalyzerRequest {
 }
 
 // A response to an AcknowledgeAnalyzerRequest
-message AcknowledgeAnalyzerResponse {
-
-}
-
+message AcknowledgeAnalyzerResponse {}
 
 // The PluginWorkQueueService manages ExecutionJobs for Generator and Analyzer plugins
 service PluginWorkQueueService {
