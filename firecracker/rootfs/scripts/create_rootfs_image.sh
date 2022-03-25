@@ -22,8 +22,8 @@ readonly MOUNT_POINT="${BUILD_DIR}/mount_point"
 mkdir -p "${MOUNT_POINT}"
 
 # Declare that we need these env vars later
-readonly SIZE_MB="${SIZE_MB}"
-readonly PLUGIN_BOOTSTRAP_INIT_ARTIFACTS_DIR="${PLUGIN_BOOTSTRAP_INIT_ARTIFACTS_DIR}"
+readonly SIZE_MB
+readonly PLUGIN_BOOTSTRAP_INIT_ARTIFACTS_DIR
 
 ########################################
 # Create image and mount it.
