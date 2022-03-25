@@ -67,7 +67,7 @@ fn read_in_schema(input: &Option<PathBuf>) -> Result<String> {
 fn standin_imports() -> String {
     let mut code = String::new();
     code.push_str("from __future__ import annotations\n");
-    code.push_str("from typing import *\n");
+    code.push_str("from typing import Optional, Any, Set, List, Dict, Tuple\n");
     code.push_str("import grapl_analyzerlib\n");
     code.push_str("import grapl_analyzerlib.node_types\n");
     code.push_str("import grapl_analyzerlib.nodes.entity\n");
