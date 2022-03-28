@@ -20,6 +20,7 @@ members = [
   "./node-identifier",
   "./nomad-client-gen",
   "./organization-management",
+  "./pipeline-ingress",
   "./plugin-bootstrap",
   "./plugin-registry",
   "./plugin-sdk/generator-sdk/",

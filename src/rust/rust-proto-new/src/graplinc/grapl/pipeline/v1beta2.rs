@@ -23,6 +23,18 @@ where
     pub inner_message: T,
 }
 
+impl <T> Envelope<T>
+where
+    T: SerDe
+{
+    pub fn new(metadata: Metadata, inner_message: T) -> Self {
+        Envelope {
+            metadata,
+            inner_message
+        }
+    }
+}
+
 impl<T> TryFrom<NewEnvelopeProto> for Envelope<T>
 where
     T: SerDe,

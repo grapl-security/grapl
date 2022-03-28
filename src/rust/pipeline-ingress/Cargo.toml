@@ -1,0 +1,12 @@
+[package]
+name = "pipeline-ingress"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+kafka = { path = "../kafka", version = "*" }
+rust-proto-new = { path = "../rust-proto-new", version = "*" }
+thiserror = "1.0.30"
+async-trait = "0.1.53"

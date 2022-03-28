@@ -24,7 +24,7 @@ message PublishRawLogsResponse {
 
 // RPC service to publish raw logs to the Grapl data pipeline
 service PipelineIngressService {
-  // Publish raw logs to the Grapl data pipeline
-  // Returns one PublishRawLogsResponse for each PublishRawLogsRequest, in order
-  rpc PublishRawLogs(stream PublishRawLogsRequest) returns (stream PublishRawLogsResponse);
+  // Publish a raw log to the Grapl data pipeline
+  // Returns the PublishRawLogsResponse corresponding to the PublishRawLogsRequest
+  rpc PublishRawLogs(PublishRawLogsRequest) returns (PublishRawLogsResponse);
 }

@@ -36,6 +36,26 @@ pub struct Metadata {
     pub event_source_id: Uuid,
 }
 
+impl Metadata {
+    pub fn new(
+        tenant_id: Uuid,
+        trace_id: Uuid,
+        retry_count: u32,
+        created_time: SystemTime,
+        last_updated_time: SystemTime,
+        event_source_id: Uuid,
+    ) -> Self {
+        Metadata {
+            tenant_id,
+            trace_id,
+            retry_count,
+            created_time,
+            last_updated_time,
+            event_source_id,
+        }
+    }
+}
+
 impl TryFrom<MetadataProto> for Metadata {
     type Error = SerDeError;
 
