@@ -40,10 +40,11 @@ steps:
             - CLOUDSMITH_API_KEY
             - grapl/TOOLCHAIN_AUTH_TOKEN
     agents:
-      # We're building the Firecracker VM image, which uses docker, and we'd
-      # like to take advantage of the docker queue's local cache whenever
-      # possible.
-      queue: "docker"
+      # This builds both the kernel (in docker) and the rootfs (in packer).
+      # Of those two possible queues to use, 'packer' is the winner; the
+      # 'docker' queue is only important for 'docker login', which we aren't
+      # using.
+      queue: "packer"
     artifact_paths:
       - "*.grapl-artifacts.json"
 
