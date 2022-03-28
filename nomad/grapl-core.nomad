@@ -338,6 +338,9 @@ job "grapl-core" {
   group "dgraph-zero-0" {
     network {
       mode = "bridge"
+      dns {
+        searches = ["service.consul"]
+      }
     }
 
     task "dgraph-zero" {
@@ -399,6 +402,9 @@ job "grapl-core" {
     content {
       network {
         mode = "bridge"
+        dns {
+          searches = ["service.consul"]
+        }
         port "healthcheck" {
           to = -1
         }
@@ -498,6 +504,9 @@ job "grapl-core" {
     content {
       network {
         mode = "bridge"
+        dns {
+          searches = ["service.consul"]
+        }
         port "healthcheck" {
           to = -1
         }
@@ -623,6 +632,9 @@ job "grapl-core" {
 
     network {
       mode = "bridge"
+      dns {
+        searches = ["service.consul"]
+      }
     }
 
     task "graph-merger" {
@@ -681,6 +693,9 @@ job "grapl-core" {
 
     network {
       mode = "bridge"
+      dns {
+        searches = ["service.consul"]
+      }
     }
 
     task "node-identifier" {
@@ -723,6 +738,9 @@ job "grapl-core" {
 
     network {
       mode = "bridge"
+      dns {
+        searches = ["service.consul"]
+      }
     }
 
     task "node-identifier-retry" {
@@ -802,6 +820,9 @@ job "grapl-core" {
   group "analyzer-executor" {
     network {
       mode = "bridge"
+      dns {
+        searches = ["service.consul"]
+      }
     }
 
     task "analyzer-executor" {
@@ -862,6 +883,9 @@ job "grapl-core" {
   group "engagement-creator" {
     network {
       mode = "bridge"
+      dns {
+        searches = ["service.consul"]
+      }
     }
 
     task "engagement-creator" {
@@ -915,6 +939,9 @@ job "grapl-core" {
   group "graphql-endpoint" {
     network {
       mode = "bridge"
+      dns {
+        searches = ["service.consul"]
+      }
       port "graphql-endpoint-port" {}
     }
 
@@ -971,6 +998,9 @@ job "grapl-core" {
   group "model-plugin-deployer" {
     network {
       mode = "bridge"
+      dns {
+        searches = ["service.consul"]
+      }
       port "model-plugin-deployer" {
       }
     }
@@ -1003,6 +1033,9 @@ job "grapl-core" {
   group "web-ui" {
     network {
       mode = "bridge"
+      dns {
+        searches = ["service.consul"]
+      }
 
       port "web-ui-port" {
       }
@@ -1061,6 +1094,9 @@ job "grapl-core" {
   group "sysmon-generator" {
     network {
       mode = "bridge"
+      dns {
+        searches = ["service.consul"]
+      }
     }
 
     task "sysmon-generator" {
@@ -1093,6 +1129,9 @@ job "grapl-core" {
   group "osquery-generator" {
     network {
       mode = "bridge"
+      dns {
+        searches = ["service.consul"]
+      }
     }
 
     task "osquery-generator" {
@@ -1125,6 +1164,9 @@ job "grapl-core" {
   group "organization-management" {
     network {
       mode = "bridge"
+      dns {
+        searches = ["service.consul"]
+      }
       port "organization-management-port" {
       }
     }
@@ -1171,6 +1213,9 @@ job "grapl-core" {
   group "plugin-registry" {
     network {
       mode = "bridge"
+      dns {
+        searches = ["service.consul"]
+      }
 
       port "plugin-registry-port" {
       }
@@ -1224,6 +1269,9 @@ job "grapl-core" {
   group "plugin-work-queue" {
     network {
       mode = "bridge"
+      dns {
+        searches = ["service.consul"]
+      }
 
       port "plugin-work-queue-port" {
       }
