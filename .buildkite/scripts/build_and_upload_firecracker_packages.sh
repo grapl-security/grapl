@@ -55,13 +55,14 @@ input_sha_as_tag() {
 # These will be uploaded to Cloudsmith with just their basename.
 readonly PACKAGES=(
     dist/firecracker_kernel.tar.gz
+    dist/firecracker_rootfs.tar.gz
 )
 
 # This is the list of packages that actually have different shas
 new_packages=()
 
 echo "--- Building packages"
-make dist/firecracker_kernel.tar.gz
+make "${PACKAGES[@]}"
 
 echo "--- :cloudsmith::sleuth_or_spy: Checking upstream repository to determine what to promote"
 
