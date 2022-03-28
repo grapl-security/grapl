@@ -1200,6 +1200,7 @@ job "grapl-core" {
         PLUGIN_REGISTRY_DB_USERNAME      = var.plugin_registry_db_username
         PLUGIN_BOOTSTRAP_CONTAINER_IMAGE = var.container_images["plugin-bootstrap"]
         KERNEL_ARTIFACT_URL              = var.plugin_registry_kernel_artifact_url
+        ROOTFS_ARTIFACT_URL              = var.plugin_registry_rootfs_artifact_url
         # Plugin Execution code/image doesn't exist yet; change this once it does!
         PLUGIN_EXECUTION_CONTAINER_IMAGE = "grapl/plugin-execution-sidecar-TODO"
         PLUGIN_S3_BUCKET_AWS_ACCOUNT_ID  = var.plugin_s3_bucket_aws_account_id

@@ -10,6 +10,7 @@ from infra.path import path_from_root
 import pulumi
 
 FIRECRACKER_KERNEL_FILENAME = "firecracker_kernel.tar.gz"
+FIRECRACKER_ROOTFS_FILENAME = "firecracker_rootfs.tar.gz"
 
 
 class FirecrackerAssets(pulumi.ComponentResource):
@@ -37,6 +38,13 @@ class FirecrackerAssets(pulumi.ComponentResource):
             repository_name=repository_name,
         )
 
+        self.rootfs_asset = local_or_remote_asset(
+            local_path=path_from_root("dist/firecracker_rootfs.tar.gz"),
+            artifacts=artifacts,
+            artifact_key=FIRECRACKER_ROOTFS_FILENAME,
+            repository_name=repository_name,
+        )
+
 
 class FirecrackerS3BucketObjects(pulumi.ComponentResource):
     def __init__(
@@ -47,24 +55,39 @@ class FirecrackerS3BucketObjects(pulumi.ComponentResource):
         opts: pulumi.ResourceOptions = None,
     ) -> None:
         super().__init__("grapl:FirecrackerS3BucketObjects", name, None, opts)
+
+        # If we had delete_before_replace=False, then this happens:
+        # - Upload new file to BUCKET/KEY
+        # - Delete file at BUCKET/KEY
+        # - Now we have no kernel
+        # It's still not perfect because there is still a period
+        # where there is no kernel available; anything that spins
+        # up in those few seconds is going to have a bad time.
+        delete_before_replace = True
+
         kernel_s3obj = aws.s3.BucketObject(
             "firecracker_kernel",
             key=FIRECRACKER_KERNEL_FILENAME,
             bucket=plugins_bucket.bucket,
             source=firecracker_assets.kernel_asset,
             opts=pulumi.ResourceOptions(
-                # If we had delete_before_replace=False, then this happens:
-                # - Upload new file to BUCKET/KEY
-                # - Delete file at BUCKET/KEY
-                # - Now we have no kernel
-                # It's still not perfect because there is still a period
-                # where there is no kernel available; anything that spins
-                # up in those few seconds is going to have a bad time.
-                delete_before_replace=True,
+                delete_before_replace=delete_before_replace,
                 parent=self,
             ),
         )
         self.kernel_s3obj_url = get_s3url(kernel_s3obj)
+
+        rootfs_s3obj = aws.s3.BucketObject(
+            "firecracker_rootfs",
+            key=FIRECRACKER_ROOTFS_FILENAME,
+            bucket=plugins_bucket.bucket,
+            source=firecracker_assets.rootfs_asset,
+            opts=pulumi.ResourceOptions(
+                delete_before_replace=delete_before_replace,
+                parent=self,
+            ),
+        )
+        self.rootfs_s3obj_url = get_s3url(rootfs_s3obj)
 
 
 def get_s3url(obj: aws.s3.BucketObject) -> pulumi.Output[str]:
