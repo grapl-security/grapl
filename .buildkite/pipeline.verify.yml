@@ -183,7 +183,7 @@ steps:
               secrets:
                 - grapl/TOOLCHAIN_AUTH_TOKEN
                 - grapl/CODECOV_TOKEN
-          - grapl-security/codecov#v0.1.3
+          - grapl-security/codecov#v0.1.4
 
       - label: ":rust: Unit Tests"
         command:
@@ -193,7 +193,7 @@ steps:
           - grapl-security/vault-env#v0.1.0:
               secrets:
                 - grapl/CODECOV_TOKEN
-          - grapl-security/codecov#v0.1.3
+          - grapl-security/codecov#v0.1.4
         agents:
           queue: "beefy"
 
@@ -206,7 +206,7 @@ steps:
           - grapl-security/vault-env#v0.1.0:
               secrets:
                 - grapl/CODECOV_TOKEN
-          - grapl-security/codecov#v0.1.3
+          - grapl-security/codecov#v0.1.4
 
       - label: ":writing_hand: Test Grapl Template Generator"
         command:
