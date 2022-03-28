@@ -554,6 +554,13 @@ def main() -> None:
             **nomad_inputs,
         )
 
+        nomad_observability = NomadJob(
+            "observability",
+            jobspec=path_from_root("nomad/local/observability.nomad").resolve(),
+            vars=dict(),
+            opts=pulumi.ResourceOptions(provider=nomad_provider),
+        )
+
         nomad_grapl_core = NomadJob(
             "grapl-core",
             jobspec=path_from_root("nomad/grapl-core.nomad").resolve(),

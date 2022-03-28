@@ -1,10 +1,8 @@
-# This contains the observability jobs.
-# First up is jaeger so that we can collect collect and see traces during local development.
-job "observability" {
+# This sets up Jaeger
+job "jaeger" {
   datacenters = ["dc1"]
-  type        = "system"
+  type = "service"
 
-  # Jaeger
   group "jaeger" {
     network {
       mode = "host"
@@ -29,17 +27,6 @@ job "observability" {
       port "zipkin" {
         to     = 9411
         static = 9411
-      }
-
-      // Rust services use the jaeger agent udp thrift ports
-      port "agent-thrift-compact" {
-        to     = 6831
-        static = 6831
-      }
-
-      port "agent-thrift-binary" {
-        to     = 6832
-        static = 6832
       }
 
     }
@@ -68,18 +55,6 @@ job "observability" {
     service {
       name = "jaeger-thrift"
       port = "jaeger-thrift"
-      tags = ["thrift"]
-    }
-
-    service {
-      name = "jaeger-agent-thrift-compact"
-      port = "agent-thrift-compact"
-      tags = ["thrift"]
-    }
-
-    service {
-      name = "jaeger-agent-thrift-binary"
-      port = "agent-thrift-compact"
       tags = ["thrift"]
     }
 
