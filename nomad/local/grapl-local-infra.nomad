@@ -428,6 +428,57 @@ job "grapl-local-infra" {
     }
   }
 
+  group "dnsmasq" {
+    network {
+      mode = "bridge"
+      port "dns" {
+        static = 53
+        to     = 53
+      }
+    }
+
+
+    task "dnsmasq" {
+      driver = "docker"
+
+      config {
+        image      = "andyshinn/dnsmasq"
+        force_pull = true
+        ports      = ["dns"]
+        args = [
+          "-S", "/consul/${NOMAD_IP_dns}#8600"
+        ]
+        cap_add = [
+          "NET_ADMIN",
+        ]
+        logging {
+          type = "journald"
+          config {
+            tag = "DNSMASQ"
+          }
+        }
+      }
+
+      service {
+        name         = "dnsmasq"
+        port         = "dns"
+        address_mode = "driver"
+
+        check {
+          type     = "tcp"
+          port     = "dns"
+          interval = "10s"
+          timeout  = "2s"
+        }
+      }
+
+      resources {
+        cpu    = 50
+        memory = 100
+      }
+    }
+  }
+
 
   group "organization-management-db" {
     network {

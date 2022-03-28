@@ -15,6 +15,11 @@ plugin "docker" {
       # Required for the bind mount for docker.sock
       enabled = true
     }
+
+    # We need net_admin for dnsmasq to work. Everything else should be default
+    allow_caps = ["net_admin", "chown", "dac_override", "fsetid", "fowner", "mknod", "net_raw", "setgid", "setuid",
+      "setfcap", " setpcap", "net_bind_service", "sys_chroot", "kill", "audit_write"
+    ]
   }
 }
 
