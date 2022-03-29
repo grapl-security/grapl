@@ -98,13 +98,15 @@ use std::net::SocketAddr;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
-pub struct PluginRegistryServiceConfig {
-    #[structopt(env)]
-    plugin_s3_bucket_aws_account_id: String,
-    #[structopt(env)]
-    plugin_s3_bucket_name: String,
-    #[structopt(env)]
-    plugin_registry_bind_address: SocketAddr,
+pub struct PluginRegistryConfig {
+    #[structopt(flatten)]
+    db_config: PluginRegistryDbConfig,
+    #[structopt(flatten)]
+    service_config: PluginRegistryServiceConfig,
+}
+
+#[derive(StructOpt, Debug)]
+pub struct PluginRegistryDbConfig {
     #[structopt(env)]
     plugin_registry_db_hostname: String,
     #[structopt(env)]
@@ -113,10 +115,20 @@ pub struct PluginRegistryServiceConfig {
     plugin_registry_db_username: String,
     #[structopt(env)]
     plugin_registry_db_password: String,
+}
+
+#[derive(StructOpt, Debug)]
+pub struct PluginRegistryServiceConfig {
     #[structopt(env)]
-    plugin_bootstrap_container_image: String,
+    pub plugin_s3_bucket_aws_account_id: String,
     #[structopt(env)]
-    plugin_execution_container_image: String,
+    pub plugin_s3_bucket_name: String,
+    #[structopt(env)]
+    pub plugin_registry_bind_address: SocketAddr,
+    #[structopt(env)]
+    pub plugin_bootstrap_container_image: String,
+    #[structopt(env)]
+    pub plugin_execution_container_image: String,
     // TODO in my followup PR ~ wimax Feb 2022
     // Leaving this as a TODO because it requires a larger refactor
     // kernel_artifact_url: String,
@@ -127,10 +139,7 @@ pub struct PluginRegistry {
     nomad_client: NomadClient,
     nomad_cli: NomadCli,
     s3: S3Client,
-    plugin_bucket_name: String,
-    plugin_bucket_owner_id: String,
-    plugin_bootstrap_container_image: String,
-    plugin_execution_container_image: String,
+    config: PluginRegistryServiceConfig,
 }
 
 impl PluginRegistry {
@@ -147,9 +156,9 @@ impl PluginRegistry {
             .put_object(PutObjectRequest {
                 content_length: Some(request.plugin_artifact.len() as i64),
                 body: Some(request.plugin_artifact.clone().into()),
-                bucket: self.plugin_bucket_name.clone(),
+                bucket: self.config.plugin_s3_bucket_name.clone(),
                 key: s3_key.clone(),
-                expected_bucket_owner: Some(self.plugin_bucket_owner_id.clone()),
+                expected_bucket_owner: Some(self.config.plugin_s3_bucket_aws_account_id.clone()),
                 ..Default::default()
             })
             .await?;
@@ -181,9 +190,9 @@ impl PluginRegistry {
         let get_object_output = self
             .s3
             .get_object(GetObjectRequest {
-                bucket: self.plugin_bucket_name.clone(),
+                bucket: self.config.plugin_s3_bucket_name.clone(),
                 key: s3_key.clone(),
-                expected_bucket_owner: Some(self.plugin_bucket_owner_id.clone()),
+                expected_bucket_owner: Some(self.config.plugin_s3_bucket_aws_account_id.clone()),
                 ..Default::default()
             })
             .await?;
@@ -227,10 +236,7 @@ impl PluginRegistry {
             &self.nomad_cli,
             &self.db_client,
             plugin_row,
-            &self.plugin_bucket_owner_id,
-            &self.plugin_bucket_name,
-            &self.plugin_bootstrap_container_image,
-            &self.plugin_execution_container_image,
+            &self.config,
         )
         .await
         .map_err(PluginRegistryServiceError::from)?;
@@ -331,40 +337,38 @@ impl PluginRegistryService for PluginRegistry {
     }
 }
 
-pub async fn exec_service(
-    service_config: PluginRegistryServiceConfig,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn exec_service(config: PluginRegistryConfig) -> Result<(), Box<dyn std::error::Error>> {
     let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
     health_reporter
         .set_serving::<PluginRegistryServiceServer<PluginRegistry>>()
         .await;
 
+    let db_config = config.db_config;
+
     tracing::info!(
         message="Connecting to plugin registry table",
-        plugin_registry_db_username=%service_config.plugin_registry_db_username,
-        plugin_registry_db_hostname=%service_config.plugin_registry_db_hostname,
-        plugin_registry_db_port=%service_config.plugin_registry_db_port,
+        plugin_registry_db_username=%db_config.plugin_registry_db_username,
+        plugin_registry_db_hostname=%db_config.plugin_registry_db_hostname,
+        plugin_registry_db_port=%db_config.plugin_registry_db_port,
     );
     let postgres_address = format!(
         "postgresql://{}:{}@{}:{}",
-        service_config.plugin_registry_db_username,
-        service_config.plugin_registry_db_password,
-        service_config.plugin_registry_db_hostname,
-        service_config.plugin_registry_db_port,
+        db_config.plugin_registry_db_username,
+        db_config.plugin_registry_db_password,
+        db_config.plugin_registry_db_hostname,
+        db_config.plugin_registry_db_port,
     );
+
+    let addr = config.service_config.plugin_registry_bind_address;
 
     let plugin_registry: PluginRegistry = PluginRegistry {
         db_client: PluginRegistryDbClient::new(&postgres_address).await?,
         nomad_client: NomadClient::from_env(),
         nomad_cli: NomadCli::default(),
         s3: S3Client::from_env(),
-        plugin_bucket_name: service_config.plugin_s3_bucket_name,
-        plugin_bucket_owner_id: service_config.plugin_s3_bucket_aws_account_id,
-        plugin_bootstrap_container_image: service_config.plugin_bootstrap_container_image,
-        plugin_execution_container_image: service_config.plugin_execution_container_image,
+        config: config.service_config,
     };
 
-    let addr = service_config.plugin_registry_bind_address;
     tracing::info!(
         message="Starting PluginRegistry",
         addr=?addr,
