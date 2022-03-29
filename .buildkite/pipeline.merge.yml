@@ -63,7 +63,6 @@ steps:
                 # We need access to the CLOUDSMITH_API_KEY so we can upload
                 # to Cloudsmith.
                 - CLOUDSMITH_API_KEY
-                - grapl/TOOLCHAIN_AUTH_TOKEN # TODO: Is this needed? I don't think so
         agents:
           # the "docker" queue has access to the CLOUDSMITH_API_KEY
           queue: "docker"
