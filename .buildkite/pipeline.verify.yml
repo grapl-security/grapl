@@ -127,6 +127,7 @@ steps:
                     - "**/Cargo.lock"
                   config:
                     label: ":pipeline: Upload Cargo Audit"
+                    group: ":lock_with_ink_pen: Dependency Audits"
                     command: ".buildkite/pipeline.cargo-audit.sh | buildkite-agent pipeline upload"
 
       - label: ":thinking_face::nodejs: NPM Audit?"
@@ -141,6 +142,7 @@ steps:
                     - "**/package-lock.json"
                   config:
                     label: ":pipeline: Upload NPM Audit"
+                    group: ":lock_with_ink_pen: Dependency Audits"
                     command: ".buildkite/pipeline.npm-audit.sh | buildkite-agent pipeline upload"
 
       - label: ":thinking_face::nodejs: Yarn Audit?"
@@ -155,6 +157,7 @@ steps:
                     - "**/yarn.lock"
                   config:
                     label: ":pipeline: Upload Yarn Audit"
+                    group: ":lock_with_ink_pen: Dependency Audits"
                     command: ".buildkite/pipeline.yarn-audit.sh | buildkite-agent pipeline upload"
 
       - label: ":thinking_face::rust: Cargo Udeps?"
@@ -169,6 +172,7 @@ steps:
                     - "**/Cargo.lock"
                   config:
                     label: ":pipeline: Upload Cargo Udeps"
+                    group: ":lock_with_ink_pen: Dependency Audits"
                     command: ".buildkite/pipeline.cargo-udeps.sh | buildkite-agent pipeline upload"
 
   - group: "Unit Tests"
