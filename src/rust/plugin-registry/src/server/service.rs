@@ -129,9 +129,9 @@ pub struct PluginRegistryServiceConfig {
     pub plugin_bootstrap_container_image: String,
     #[structopt(env)]
     pub plugin_execution_container_image: String,
-    #[structopt(env)]
+    #[structopt(env = "PLUGIN_REGISTRY_KERNEL_ARTIFACT_URL")]
     pub kernel_artifact_url: String,
-    #[structopt(env)]
+    #[structopt(env = "PLUGIN_REGISTRY_ROOTFS_ARTIFACT_URL")]
     pub rootfs_artifact_url: String,
 }
 
