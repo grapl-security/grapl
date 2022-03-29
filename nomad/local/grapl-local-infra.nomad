@@ -443,8 +443,8 @@ job "grapl-local-infra" {
 
       config {
         #This is an alpine-based dnsmasq container
-        image      = "4km3/dnsmasq:2.85-r2"
-        ports      = ["dns"]
+        image = "4km3/dnsmasq:2.85-r2"
+        ports = ["dns"]
         args = [
           "-S", "/consul/${NOMAD_IP_dns}#8600", "--log-facility=-"
         ]
