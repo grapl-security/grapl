@@ -2,25 +2,25 @@ config:
   aws:region: us-east-1
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: operational-alarms@graplsecurity.com
   grapl:artifacts:
-    analyzer-dispatcher: 20220329205538-5ba93c6,
-    analyzer-executor: 20220329205538-5ba93c6,
-    e2e-tests: 20220329205538-5ba93c6,
-    engagement-creator: 20220329205538-5ba93c6,
+    analyzer-dispatcher: 20220329205538-5ba93c6
+    analyzer-executor: 20220329205538-5ba93c6
+    e2e-tests: 20220329205538-5ba93c6
+    engagement-creator: 20220329205538-5ba93c6
     firecracker_kernel.tar.gz: firecracker-v1.0.0-kernel-4.14.174-e0965ed
     firecracker_rootfs.tar.gz: 20220329205538-5ba93c6
-    graph-merger: 20220329205538-5ba93c6,
-    graphql-endpoint: 20220329205538-5ba93c6,
-    grapl-web-ui: 20220329205538-5ba93c6,
-    model-plugin-deployer: 20220329205538-5ba93c6,
-    node-identifier: 20220329205538-5ba93c6,
-    node-identifier-retry: 20220329205538-5ba93c6,
-    organization-management: 20220329205538-5ba93c6,
-    osquery-generator: 20220329205538-5ba93c6,
-    plugin-bootstrap: 20220329205538-5ba93c6,
-    plugin-registry: 20220329205538-5ba93c6,
-    plugin-work-queue: 20220329205538-5ba93c6,
-    provisioner: 20220329205538-5ba93c6,
-    sysmon-generator: 20220329205538-5ba93c6,
+    graph-merger: 20220329205538-5ba93c6
+    graphql-endpoint: 20220329205538-5ba93c6
+    grapl-web-ui: 20220329205538-5ba93c6
+    model-plugin-deployer: 20220329205538-5ba93c6
+    node-identifier: 20220329205538-5ba93c6
+    node-identifier-retry: 20220329205538-5ba93c6
+    organization-management: 20220329205538-5ba93c6
+    osquery-generator: 20220329205538-5ba93c6
+    plugin-bootstrap: 20220329205538-5ba93c6
+    plugin-registry: 20220329205538-5ba93c6
+    plugin-work-queue: 20220329205538-5ba93c6
+    provisioner: 20220329205538-5ba93c6
+    sysmon-generator: 20220329205538-5ba93c6
   grapl:cloudsmith-repository-name: grapl/testing
   grapl:confluent-environment-name: testing
   grapl:env_vars:
