@@ -446,7 +446,10 @@ job "grapl-local-infra" {
         image = "4km3/dnsmasq:2.85-r2"
         ports = ["dns"]
         args = [
-          "-S", "/consul/${NOMAD_IP_dns}#8600", "--log-facility=-"
+          # Send all queries for .consul to the NOMAD_IP
+          "--server", "/consul/${NOMAD_IP_dns}#8600",
+          # log to standard out
+          "--log-facility=-",
         ]
         cap_add = [
           "NET_ADMIN",
