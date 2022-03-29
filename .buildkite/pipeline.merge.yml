@@ -25,12 +25,12 @@ steps:
     artifact_paths:
       - "*.grapl-artifacts.json"
 
-  - label: ":firecracker: Build Firecracker packages"
+  - label: ":firecracker: Upload Firecracker packages"
     command:
       # Note: these packages are uploaded to the `raw`
       # repository. If they all get built successfully, then we'll
       # promote them as a group later.
-      - ".buildkite/scripts/build_and_upload_firecracker_packages.sh"
+      - ".buildkite/scripts/upload_firecracker_packages.sh"
     plugins:
       - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:

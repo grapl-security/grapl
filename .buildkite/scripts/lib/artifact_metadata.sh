@@ -3,7 +3,7 @@ set -euo pipefail
 
 ################################################################################
 # A Manifest represents metadata about a single, built artifact.
-# It is consumed by `build_and_upload_firecracker_packages.sh` to inform
+# It is consumed by `upload_firecracker_packages.sh` to inform
 # Cloudsmith of:
 # * the artifact's version
 # * the SHA256sum of all files used to generate the artifact
@@ -19,8 +19,8 @@ set -euo pipefail
 #
 # $ find . -type f | sort | xargs sha256sum
 # 123veryLongSha  ./BUILD
-# 456veryLongSha  ./build_and_upload_firecracker_packages.sh
-# 789veryLongSha  ./build_and_upload_images.sh
+# 456veryLongSha  ./upload_firecracker_packages.sh
+# 789veryLongSha  ./upload_images.sh
 # veryLongSha012  ./ensure_regenerated_constraints.sh
 # veryLongSha345  ./extract_artifacts.sh
 #
