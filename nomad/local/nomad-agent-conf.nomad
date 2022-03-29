@@ -16,9 +16,14 @@ plugin "docker" {
       enabled = true
     }
 
-    # We need net_admin for dnsmasq to work. Everything else should be default
-    allow_caps = ["net_admin", "chown", "dac_override", "fsetid", "fowner", "mknod", "net_raw", "setgid", "setuid",
-      "setfcap", " setpcap", "net_bind_service", "sys_chroot", "kill", "audit_write"
+    # We need net_admin for dnsmasq to work. Everything else should be default.
+    # The list of default permissions can be found in https://www.nomadproject.io/docs/drivers/docker#allow_caps
+    allow_caps = [
+      # non-default options start here
+      "net_admin",
+      # default options start here
+      "audit_write", "chown", "dac_override", "fowner", "fsetid", "kill", "mknod",
+      "net_bind_service", "setfcap", "setgid", "setpcap", "setuid", "sys_chroot"
     ]
   }
 }
