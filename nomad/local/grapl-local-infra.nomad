@@ -442,11 +442,11 @@ job "grapl-local-infra" {
       driver = "docker"
 
       config {
-        image      = "andyshinn/dnsmasq"
-        force_pull = true
+        #This is an alpine-based dnsmasq container
+        image      = "4km3/dnsmasq:2.85-r2"
         ports      = ["dns"]
         args = [
-          "-S", "/consul/${NOMAD_IP_dns}#8600"
+          "-S", "/consul/${NOMAD_IP_dns}#8600", "--log-facility=-"
         ]
         cap_add = [
           "NET_ADMIN",
@@ -463,6 +463,7 @@ job "grapl-local-infra" {
         name         = "dnsmasq"
         port         = "dns"
         address_mode = "driver"
+        tags         = ["dns"]
 
         check {
           type     = "tcp"
