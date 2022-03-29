@@ -31,9 +31,8 @@ steps:
       - label: ":firecracker: Build Kernel"
         command:
           - "make dist/firecracker_kernel.tar.gz"
-        artifact_paths: &build_firecracker_kernel_artifacts
-          - "dist/firecracker_kernel.tar.gz"
-          - "dist/firecracker_kernel.tar.gz.artifact-metadata.json"
+        artifact_paths:
+          - "dist/*"
         agents:
           queue: "beefy" # TODO: or "docker"? nothing else uses beefy in merge
 
@@ -41,9 +40,8 @@ steps:
       - label: ":firecracker: Build RootFS"
         command:
           - "make dist/firecracker_rootfs.tar.gz"
-        artifact_paths: &build_firecracker_rootfs_artifacts
-          - "dist/firecracker_rootfs.tar.gz"
-          - "dist/firecracker_rootfs.tar.gz.artifact-metadata.json"
+        artifact_paths:
+          - "dist/*"
         agents:
           queue: "packer"
 
@@ -58,8 +56,7 @@ steps:
         plugins:
           - artifacts#v1.4.0:
               download:
-                <<: *build_firecracker_kernel_artifacts
-                <<: *build_firecracker_rootfs_artifacts
+                - "dist/*"
           - grapl-security/vault-login#v0.1.2
           - grapl-security/vault-env#v0.1.0:
               secrets:
