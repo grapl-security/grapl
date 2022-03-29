@@ -25,26 +25,52 @@ steps:
     artifact_paths:
       - "*.grapl-artifacts.json"
 
+  # Artifacts consumed by "Upload Firecracker Packages"
+  - label: ":firecracker: Build Kernel"
+    key: "build_firecracker_kernel"
+    command:
+      - "make dist/firecracker_kernel.tar.gz"
+    artifact_paths: &build_firecracker_kernel_artifacts
+      - "dist/firecracker_kernel.tar.gz"
+      - "dist/firecracker_kernel.tar.gz.artifact-metadata.json"
+    agents:
+      queue: "beefy" # TODO: or "docker"?
+
+  # Artifacts consumed by "Upload Firecracker Packages"
+  - label: ":firecracker: Build RootFS"
+    key: "build_firecracker_rootfs"
+    command:
+      - "make dist/firecracker_rootfs.tar.gz"
+    artifact_paths: &build_firecracker_rootfs_artifacts
+      - "dist/firecracker_rootfs.tar.gz"
+      - "dist/firecracker_rootfs.tar.gz.artifact-metadata.json"
+    agents:
+      queue: "packer"
+
   - label: ":firecracker: Upload Firecracker packages"
+    depends_on:
+      - build_firecracker_kernel
+      - build_firecracker_rootfs
     command:
       # Note: these packages are uploaded to the `raw`
       # repository. If they all get built successfully, then we'll
       # promote them as a group later.
       - ".buildkite/scripts/upload_firecracker_packages.sh"
     plugins:
+      - artifacts#v1.4.0:
+          download:
+            <<: *build_firecracker_kernel_artifacts
+            <<: *build_firecracker_rootfs_artifacts
       - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:
           secrets:
             # We need access to the CLOUDSMITH_API_KEY so we can upload
             # to Cloudsmith.
             - CLOUDSMITH_API_KEY
-            - grapl/TOOLCHAIN_AUTH_TOKEN
+            - grapl/TOOLCHAIN_AUTH_TOKEN # TODO: Is this needed? I don't think so
     agents:
-      # This builds both the kernel (in docker) and the rootfs (in packer).
-      # Of those two possible queues to use, 'packer' is the winner; the
-      # 'docker' queue is only important for 'docker login', which we aren't
-      # using.
-      queue: "packer"
+      # the "docker" queue has access to the CLOUDSMITH_API_KEY
+      queue: "docker"
     artifact_paths:
       - "*.grapl-artifacts.json"
 
