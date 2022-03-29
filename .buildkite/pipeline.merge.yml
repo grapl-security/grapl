@@ -34,7 +34,7 @@ steps:
         artifact_paths:
           - "dist/*"
         agents:
-          queue: "beefy" # TODO: or "docker"? nothing else uses beefy in merge
+          queue: "beefy"
 
       # Artifacts consumed by "Upload Firecracker Packages"
       - label: ":firecracker: Build RootFS"
