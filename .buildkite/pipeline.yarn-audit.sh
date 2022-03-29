@@ -25,14 +25,16 @@ fi
 cat << EOF
 ---
 steps:
-  - label: ":nodejs: yarn audit"
-    command:
-      - cd src/js/engagement_view
-      - yarn audit --level high
-    plugins:
-      - docker#v3.8.0:
-          image: "node:17-alpine"
-    soft_fail: ${soft_fail}
-    agents:
-      queue: beefy
+  - group: ":lock_with_ink_pen: Dependency Audits"
+    steps:
+      - label: ":nodejs: yarn audit"
+        command:
+          - cd src/js/engagement_view
+          - yarn audit --level high
+        plugins:
+          - docker#v3.8.0:
+              image: "node:17-alpine"
+        soft_fail: ${soft_fail}
+        agents:
+          queue: beefy
 EOF

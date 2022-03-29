@@ -384,7 +384,7 @@ def main() -> None:
         # Once we're using dns addresses we can create it for everything
         ConsulConfig(
             "grapl-core",
-            tracing_endpoint=config.get_nomad_ip(),
+            tracing_endpoint="jaeger-zipkin.service.consul",
             opts=pulumi.ResourceOptions(provider=consul_provider),
         )
 

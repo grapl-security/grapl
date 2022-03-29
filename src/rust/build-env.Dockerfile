@@ -11,12 +11,12 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-build-en
     # build-essential, cmake, libssl-dev, perl, pkg-config, and tcl are needed
     # for building rust-rdkafka.
     apt-get install --yes --no-install-recommends \
-         build-essential=12.9 \
-         cmake=3.18.4-2+deb11u1 \
-         libssl-dev=1.1.1k-1+deb11u2 \
-         perl=5.32.1-4+deb11u2 \
-         pkg-config=0.29.2-1 \
-         tcl=8.6.11+1
+        build-essential=12.9 \
+        cmake=3.18.4-2+deb11u1 \
+        libssl-dev=1.1.1n-0+deb11u1 \
+        perl=5.32.1-4+deb11u2 \
+        pkg-config=0.29.2-1 \
+        tcl=8.6.11+1
 EOF
 
 # This is where tarpaulin gets installed; using a volume means we get
