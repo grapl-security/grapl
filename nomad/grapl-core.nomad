@@ -359,9 +359,9 @@ job "grapl-core" {
         ]
 
         mount {
-          type = "bind"
+          type = "volume"
           target = "/dgraph"
-          source = "/tmp/grapl-dgraph"
+          source = "grapl-dgraph"
           readonly = false
         }
       }
@@ -432,9 +432,9 @@ job "grapl-core" {
           ]
 
           mount {
-            type = "bind"
+            type = "volume"
             target = "/dgraph"
-            source = "/tmp/grapl-dgraph"
+            source = "grapl-dgraph"
             readonly = false
           }
         }
@@ -541,9 +541,9 @@ job "grapl-core" {
           ]
 
           mount {
-            type = "bind"
+            type = "volume"
             target = "/dgraph"
-            source = "/tmp/grapl-dgraph"
+            source = "grapl-dgraph"
             readonly = false
           }
 
