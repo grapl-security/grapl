@@ -234,10 +234,3 @@ def container_repository() -> Optional[str]:
     if repo_name:
         return f"docker.cloudsmith.io/{repo_name}"
     return None
-
-
-# This should be equivalent to what HOST_IP_IN_NOMAD resolves to. However, we need this for the consul proxy defaults,
-# so we can't use var interpolation. This should be temporary until we get consul dns working within containers
-def get_nomad_ip() -> str:
-    ip = os.environ["ETH0_ADDRESS"]
-    return cast(str, ip)
