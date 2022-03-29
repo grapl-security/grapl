@@ -32,15 +32,17 @@ fi
 cat << EOF
 ---
 steps:
-  - label: ":rust: cargo audit"
-    command:
-      - cd src/rust
-      - cargo install cargo-audit
-      - cargo audit
-    plugins:
-      - docker#v3.8.0:
-          image: "rust:${rust_version}"
-    soft_fail: ${soft_fail}
-    agents:
-      queue: beefy
+  - group: ":lock_with_ink_pen: Dependency Audits"
+    steps:
+      - label: ":rust: cargo audit"
+        command:
+          - cd src/rust
+          - cargo install cargo-audit
+          - cargo audit
+        plugins:
+          - docker#v3.8.0:
+              image: "rust:${rust_version}"
+        soft_fail: ${soft_fail}
+        agents:
+          queue: beefy
 EOF
