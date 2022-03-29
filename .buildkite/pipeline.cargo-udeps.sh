@@ -25,10 +25,12 @@ fi
 cat << EOF
 ---
 steps:
-  - label: ":rust: cargo udeps"
-    command:
-      - make -C src/rust cargo-udeps
-    soft_fail: ${soft_fail}
-    agents:
-      queue: beefy
+  - group: ":lock_with_ink_pen: Dependency Audits"
+    steps:
+      - label: ":rust: cargo udeps"
+        command:
+          - make -C src/rust cargo-udeps
+        soft_fail: ${soft_fail}
+        agents:
+          queue: beefy
 EOF

@@ -25,14 +25,16 @@ fi
 cat << EOF
 ---
 steps:
-  - label: ":nodejs: npm audit"
-    command:
-      - cd src/js/graphql_endpoint
-      - npm audit
-    plugins:
-      - docker#v3.8.0:
-          image: "node:17-alpine"
-    soft_fail: ${soft_fail}
-    agents:
-      queue: beefy
+  - group: ":lock_with_ink_pen: Dependency Audits"
+    steps:
+      - label: ":nodejs: npm audit"
+        command:
+          - cd src/js/graphql_endpoint
+          - npm audit
+        plugins:
+          - docker#v3.8.0:
+              image: "node:17-alpine"
+        soft_fail: ${soft_fail}
+        agents:
+          queue: beefy
 EOF
