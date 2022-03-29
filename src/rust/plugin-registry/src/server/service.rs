@@ -129,9 +129,10 @@ pub struct PluginRegistryServiceConfig {
     pub plugin_bootstrap_container_image: String,
     #[structopt(env)]
     pub plugin_execution_container_image: String,
-    // TODO in my followup PR ~ wimax Feb 2022
-    // Leaving this as a TODO because it requires a larger refactor
-    // kernel_artifact_url: String,
+    #[structopt(env)]
+    pub kernel_artifact_url: String,
+    #[structopt(env)]
+    pub rootfs_artifact_url: String,
 }
 
 pub struct PluginRegistry {

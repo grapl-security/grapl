@@ -120,7 +120,12 @@ variable "plugin_registry_db_password" {
 
 variable "plugin_registry_kernel_artifact_url" {
   type        = string
-  description = "S3 URL specifying the kernel for the Firecracker VM"
+  description = "URL specifying the kernel.tar.gz for the Firecracker VM"
+}
+
+variable "plugin_registry_rootfs_artifact_url" {
+  type        = string
+  description = "URL specifying the rootfs.tar.gz for the Firecracker VM"
 }
 
 variable "organization_management_db_hostname" {
