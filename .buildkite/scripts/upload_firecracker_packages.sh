@@ -61,9 +61,6 @@ readonly PACKAGES=(
 # This is the list of packages that actually have different shas
 new_packages=()
 
-echo "--- Building packages"
-make "${PACKAGES[@]}"
-
 echo "--- :cloudsmith::sleuth_or_spy: Checking upstream repository to determine what to promote"
 
 for artifact_path in "${PACKAGES[@]}"; do
