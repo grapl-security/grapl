@@ -141,7 +141,7 @@ job "grapl-plugin" {
 
       artifact {
         source      = var.kernel_artifact_url
-        destination = "local/vmlinux"
+        destination = "local/"
         headers {
           x-amz-expected-bucket-owner = var.aws_account_id
           x-amz-meta-client-id        = "nomad-deployer"
@@ -150,7 +150,7 @@ job "grapl-plugin" {
 
       artifact {
         source      = var.rootfs_artifact_url
-        destination = "local/rootfs.ext4"
+        destination = "local/"
         headers {
           x-amz-expected-bucket-owner = var.aws_account_id
           x-amz-meta-client-id        = "nomad-deployer"

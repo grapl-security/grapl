@@ -29,6 +29,7 @@ config:
   grapl:cloudsmith-repository-name: grapl/testing
   grapl:artifacts:
     "firecracker_kernel.tar.gz": "firecracker-v1.0.0-kernel-4.14.174"
+    "firecracker_rootfs.tar.gz": "20220329205538-5ba93c6"
   kafka:bootstrapServers:
     # If this ever changes - i.e. to localhost - you'll need to change the
     # `host.docker.internal` that occurs in grapl-local-infra.nomad::kafka
