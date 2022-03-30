@@ -117,7 +117,7 @@ steps:
     steps:
       - label: ":thinking_face::rust: Cargo Audit?"
         plugins:
-          - grapl-security/grapl-release#v0.1.1
+          - grapl-security/grapl-release#v0.1.2
           - chronotc/monorepo-diff#v2.2.0:
               diff: grapl_diff.sh
               log_level: "debug"
@@ -132,7 +132,7 @@ steps:
 
       - label: ":thinking_face::nodejs: NPM Audit?"
         plugins:
-          - grapl-security/grapl-release#v0.1.1
+          - grapl-security/grapl-release#v0.1.2
           - chronotc/monorepo-diff#v2.2.0:
               diff: grapl_diff.sh
               log_level: "debug"
@@ -147,7 +147,7 @@ steps:
 
       - label: ":thinking_face::nodejs: Yarn Audit?"
         plugins:
-          - grapl-security/grapl-release#v0.1.1
+          - grapl-security/grapl-release#v0.1.2
           - chronotc/monorepo-diff#v2.2.0:
               diff: grapl_diff.sh
               log_level: "debug"
@@ -162,7 +162,7 @@ steps:
 
       - label: ":thinking_face::rust: Cargo Udeps?"
         plugins:
-          - grapl-security/grapl-release#v0.1.1
+          - grapl-security/grapl-release#v0.1.2
           - chronotc/monorepo-diff#v2.2.0:
               diff: grapl_diff.sh
               log_level: "debug"
