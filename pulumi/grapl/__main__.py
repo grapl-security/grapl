@@ -253,6 +253,7 @@ def main() -> None:
         user_auth_table=dynamodb_tables.user_auth_table.name,
         user_session_table=dynamodb_tables.user_session_table.name,
         plugin_registry_kernel_artifact_url=firecracker_s3objs.kernel_s3obj_url,
+        plugin_registry_rootfs_artifact_url=firecracker_s3objs.rootfs_s3obj_url,
         plugin_s3_bucket_aws_account_id=config.AWS_ACCOUNT_ID,
         plugin_s3_bucket_name=plugins_bucket.bucket,
     )
