@@ -1,11 +1,11 @@
 from pathlib import Path
-from typing import Mapping, Optional
+from typing import Optional
 
 import pulumi_aws as aws
-from infra import config
 from infra.artifacts import ArtifactGetter
 from infra.bucket import Bucket
 from infra.path import path_from_root
+from infra.s3_url import get_s3_url
 
 import pulumi
 
@@ -75,7 +75,7 @@ class FirecrackerS3BucketObjects(pulumi.ComponentResource):
                 parent=self,
             ),
         )
-        self.kernel_s3obj_url = get_s3url(kernel_s3obj)
+        self.kernel_s3obj_url = get_s3_url(kernel_s3obj)
 
         rootfs_s3obj = aws.s3.BucketObject(
             "firecracker_rootfs",
@@ -87,16 +87,7 @@ class FirecrackerS3BucketObjects(pulumi.ComponentResource):
                 parent=self,
             ),
         )
-        self.rootfs_s3obj_url = get_s3url(rootfs_s3obj)
-
-
-def get_s3url(obj: aws.s3.BucketObject) -> pulumi.Output[str]:
-    def _inner(inputs: Mapping[str, str]) -> str:
-        if config.LOCAL_GRAPL:
-            return f"http://{config.HOST_IP_IN_NOMAD}:4566/{inputs['bucket']}/{inputs['key']}"
-        return f"https://{inputs['bucket']}.s3.amazonaws.com/{inputs['key']}"
-
-    return pulumi.Output.all(bucket=obj.bucket, key=obj.key).apply(_inner)
+        self.rootfs_s3obj_url = get_s3_url(rootfs_s3obj)
 
 
 def cloudsmith_cdn_url(
