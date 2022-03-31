@@ -129,7 +129,7 @@ job "grapl-plugin" {
 
       artifact {
         source      = var.plugin_artifact_url
-        destination = "local/plugin/"
+        destination = "local/plugin.bin"
         mode        = "file"
         headers {
           x-amz-expected-bucket-owner = var.aws_account_id
