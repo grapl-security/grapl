@@ -53,7 +53,7 @@ EOF
 }
 
 variable "image_name" {
-  description = "The name of the artifact that will end up in var.dist_dir, excluding .tar.gz"
+  description = "The name of the artifact that will end up in var.dist_dir, excluding .gz"
   type        = string
 }
 
@@ -66,7 +66,7 @@ variable "debian_version" {
 ########################################################################
 
 locals {
-  image_archive_filename    = "${var.image_name}.tar.gz"
+  image_archive_filename    = "${var.image_name}.gz"
   destination_in_dist       = "${var.dist_dir}/${local.image_archive_filename}"
   init_artifacts_dir_remote = "/home/ubuntu/${basename(var.plugin_bootstrap_init_artifacts_dir)}"
 
