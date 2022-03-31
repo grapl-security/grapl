@@ -255,6 +255,6 @@ steps:
 
   - label: ":firecracker: Firecracker RootFS"
     command:
-      - make dist/firecracker_rootfs.tar.gz
+      - make dist/firecracker_rootfs.gz
     agents:
       queue: "packer"

@@ -28,8 +28,11 @@ config:
   grapl:REDIS_ENDPOINT: redis://host.docker.internal:6379
   grapl:cloudsmith-repository-name: grapl/testing
   grapl:artifacts:
-    "firecracker_kernel.tar.gz": "firecracker-v1.0.0-kernel-4.14.174"
-    "firecracker_rootfs.tar.gz": "20220329205538-5ba93c6"
+    # TODO wimax Mar 30 2022: Fix up these entries once gz artifacts have
+    # been merged. Since we don't test the success of the deployed plugin,
+    # we can get away with this for now.
+    "firecracker_kernel.gz": "fake-stand-in-value"
+    "firecracker_rootfs.gz": "fake-stand-in-value"
   kafka:bootstrapServers:
     # If this ever changes - i.e. to localhost - you'll need to change the
     # `host.docker.internal` that occurs in grapl-local-infra.nomad::kafka

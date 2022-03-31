@@ -622,7 +622,7 @@ buildx-tracing: ## This is a one-time setup for enabling docker buildx traces
 generate-sqlx-data:  # Regenerate sqlx-data.json based on queries made in Rust code
 	./src/rust/bin/generate_sqlx_data.sh
 
-dist/firecracker_kernel.tar.gz: firecracker/kernel/build.sh | dist
+dist/firecracker_kernel.gz: firecracker/kernel/build.sh | dist
 	./firecracker/kernel/build.sh
 
 # TODO: Would be nice to be able to specify the input file prerequisites of
@@ -636,5 +636,5 @@ dist/plugin-bootstrap-init: | dist  ## Build the Plugin Bootstrap Init (+ associ
 
 # TODO: Would be nice to be able to specify the input file prerequisites of
 # this target, once `dist/plugin-bootstrap-init` is non-PHONY
-dist/firecracker_rootfs.tar.gz: dist/plugin-bootstrap-init | dist
+dist/firecracker_rootfs.gz: dist/plugin-bootstrap-init | dist
 	./firecracker/rootfs/build.sh

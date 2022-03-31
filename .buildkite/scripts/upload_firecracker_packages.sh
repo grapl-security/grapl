@@ -26,7 +26,7 @@ readonly UPLOAD_TO_REGISTRY="${UPLOAD_TO_REGISTRY:-grapl/raw}"
 
 # Get the json query result of a named package.
 # Usage:
-#  query_package --query="name:^firecracker_kernel.tar.gz$""
+#  query_package --query="name:^cool_package.tar.gz$""
 cloudsmith_query_package() {
     local -r queries="${1}"
     cloudsmith ls packages \
@@ -54,8 +54,8 @@ input_sha_as_tag() {
 ########################################
 # These will be uploaded to Cloudsmith with just their basename.
 readonly PACKAGES=(
-    dist/firecracker_kernel.tar.gz
-    dist/firecracker_rootfs.tar.gz
+    dist/firecracker_kernel.gz
+    dist/firecracker_rootfs.gz
 )
 
 # This is the list of packages that actually have different shas
