@@ -173,7 +173,7 @@ job "grapl-plugin" {
 
       config {
         KernelImage = "local/vmlinux"
-        BootDisk    = "local/rootfs.ext4"
+        BootDisk    = "local/firecracker_rootfs.ext4"
         //        Disks = [ "local/plugin" ]
         Firecracker = "/usr/bin/firecracker"
         Vcpus       = 1
