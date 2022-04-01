@@ -36,17 +36,18 @@ readonly BUILD_DIR
 ########################################
 readonly KERNEL_BIN_DIR="${BUILD_DIR}/firecracker/build/kernel/linux-${KERNEL_VERSION}/"
 readonly KERNEL_BIN_FILE="vmlinux-${KERNEL_VERSION}-x86_64.bin"
-readonly ARTIFACT_PATH="${REPOSITORY_ROOT}/dist/firecracker_kernel.tar.gz"
 
-# NOTE about tar: If you specify the full path of the thing-to-be-tar'd,
-#   the tar will contain that full nested path of directories.
-#   Hence the --directory, and basename for KERNEL_BIN_FILE
+# Move kernel to a stable name, so that Nomad knows which file in the
+# untarred archive to use as the kernel.
+readonly KERNEL_FILENAME="firecracker_kernel"
+readonly ARTIFACT_PATH="${REPOSITORY_ROOT}/dist/${KERNEL_FILENAME}.tar.gz"
+mv "${KERNEL_BIN_DIR}/${KERNEL_BIN_FILE}" "./${KERNEL_FILENAME}"
+
 tar \
-    --directory "${KERNEL_BIN_DIR}" \
     --file="${ARTIFACT_PATH}" \
     --create \
     --gzip \
-    "${KERNEL_BIN_FILE}"
+    "${KERNEL_FILENAME}"
 
 ########################################
 # Write a .artifact-metadata.json file

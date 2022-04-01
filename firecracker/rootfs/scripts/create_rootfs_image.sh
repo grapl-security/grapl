@@ -16,7 +16,7 @@ mkdir -p "${OUTPUT_DIR}"
 readonly BUILD_DIR="${HOME}/rootfs_build_dir"
 mkdir -p "${BUILD_DIR}"
 
-readonly IMAGE="${BUILD_DIR}/${IMAGE_NAME}.ext4"
+readonly IMAGE="${BUILD_DIR}/${IMAGE_NAME}"
 readonly MOUNT_POINT="${BUILD_DIR}/mount_point"
 mkdir -p "${MOUNT_POINT}"
 
