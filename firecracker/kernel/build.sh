@@ -32,15 +32,21 @@ readonly BUILD_DIR
 )
 
 ########################################
-# Compress kernel and copy it into dist
+# Copy kernel into dist.
 ########################################
 readonly KERNEL_BIN_DIR="${BUILD_DIR}/firecracker/build/kernel/linux-${KERNEL_VERSION}/"
 readonly KERNEL_BIN_FILE="vmlinux-${KERNEL_VERSION}-x86_64.bin"
-readonly ARTIFACT_PATH="${REPOSITORY_ROOT}/dist/firecracker_kernel.gz"
+readonly ARTIFACT_PATH="${REPOSITORY_ROOT}/dist/firecracker_kernel.tar.gz"
 
-gzip --no-name --stdout \
-    "${KERNEL_BIN_DIR}/${KERNEL_BIN_FILE}" \
-    > "${ARTIFACT_PATH}"
+# NOTE about tar: If you specify the full path of the thing-to-be-tar'd,
+#   the tar will contain that full nested path of directories.
+#   Hence the --directory, and basename for KERNEL_BIN_FILE
+tar \
+    --directory "${KERNEL_BIN_DIR}" \
+    --file="${ARTIFACT_PATH}" \
+    --create \
+    --gzip \
+    "${KERNEL_BIN_FILE}"
 
 ########################################
 # Write a .artifact-metadata.json file

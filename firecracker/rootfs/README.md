@@ -9,7 +9,7 @@ follows:
 - [NOT DONE YET] Copy the Grapl Plugin Bootstrap Client into the image and hook
   it up to systemd.
 - The final `provisioner "file"` stanza of build-rootfs.pkr.hcl will download
-  that .gz from the EC2 instance and dump it in `${GRAPL_ROOT}/dist/`.
+  that .tar.gz from the EC2 instance and dump it in `${GRAPL_ROOT}/dist/`.
 
 Notably, while we use the amazon-ebs builder, we don't actually create an AMI
 and we certainly don't _consume_ an AMI. Instead we simply use Packer as a handy

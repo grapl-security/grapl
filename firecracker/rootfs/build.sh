@@ -17,7 +17,7 @@ packer build \
 # Write a .artifact-metadata.json file
 ########################################
 source .buildkite/scripts/lib/artifact_metadata.sh
-readonly ARTIFACT_PATH="${DIST_DIR}/${IMAGE_NAME}.gz"
+readonly ARTIFACT_PATH="${DIST_DIR}/${IMAGE_NAME}.tar.gz"
 ARTIFACT_METADATA_PATH="$(artifact_metadata_path "${ARTIFACT_PATH}")"
 readonly ARTIFACT_METADATA_PATH
 
