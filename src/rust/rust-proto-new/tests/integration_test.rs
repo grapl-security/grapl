@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::{fmt::Debug, thread};
 
 use bytes::Bytes;
 use proptest::prelude::*;
@@ -11,8 +11,12 @@ use rust_proto_new::{
         },
         grapl::{
             api::pipeline_ingress::v1beta1::{
-                PublishRawLogsRequest,
-                PublishRawLogsResponse,
+                PublishRawLogRequest,
+                PublishRawLogResponse,
+                server::{
+                    PipelineIngressApi,
+                    PipelineIngressServer,
+                }, client::PipelineIngressClient,
             },
             pipeline::{
                 v1beta1::{
@@ -26,6 +30,7 @@ use rust_proto_new::{
     },
     SerDe,
 };
+use thiserror::Error;
 
 //
 // ---------------- strategies ------------------------------------------------
@@ -120,16 +125,16 @@ where
 }
 
 //
-// PublishRawLogsRequest
+// PublishRawLogRequest
 //
 
 prop_compose! {
-    fn publish_raw_logs_requests()(
+    fn publish_raw_log_requests()(
         event_source_id in uuids(),
         tenant_id in uuids(),
         log_event in bytes(256),
-    ) -> PublishRawLogsRequest {
-        PublishRawLogsRequest {
+    ) -> PublishRawLogRequest {
+        PublishRawLogRequest {
             event_source_id,
             tenant_id,
             log_event
@@ -138,14 +143,14 @@ prop_compose! {
 }
 
 //
-// PublishRawLogsResponse
+// PublishRawLogResponse
 //
 
 prop_compose! {
-    fn publish_raw_logs_responses()(
+    fn publish_raw_log_responses()(
         created_time in any::<SystemTime>(),
-    ) -> PublishRawLogsResponse {
-        PublishRawLogsResponse {
+    ) -> PublishRawLogResponse {
+        PublishRawLogResponse {
             created_time,
         }
     }
@@ -168,8 +173,12 @@ where
 }
 
 //
-// ---------------- tests -----------------------------------------------------
+// ---------------- protobuf tests ---------------------------------------------
 //
+// These tests check the encode-decode invariant (and possibly other invariants)
+// of the transport objects this crate provides. These tests should use the
+// proptest generators and helper functions (defined above) to establish these
+// invariants.
 
 proptest! {
     //
@@ -235,18 +244,113 @@ proptest! {
     //
 
     #[test]
-    fn test_publish_raw_logs_request_encode_decode(
-        publish_raw_logs_request in publish_raw_logs_requests()
+    fn test_publish_raw_log_request_encode_decode(
+        publish_raw_log_request in publish_raw_log_requests()
     ) {
-        check_encode_decode_invariant(publish_raw_logs_request)
+        check_encode_decode_invariant(publish_raw_log_request)
     }
 
     #[test]
-    fn test_publish_raw_logs_response_encode_decode(
-        publish_raw_logs_response in publish_raw_logs_responses()
+    fn test_publish_raw_log_response_encode_decode(
+        publish_raw_log_response in publish_raw_log_responses()
     ) {
-        check_encode_decode_invariant(publish_raw_logs_response)
+        check_encode_decode_invariant(publish_raw_log_response)
     }
 
     // TODO: add more here as they're implemented
+}
+
+//
+// ---------------- gRPC tests -------------------------------------------------
+//
+// These tests exercise the gRPC machinery. The idea here is to exercise an
+// API's success and error paths with a simple mocked business logic
+// implementation. The gRPC client should be used to exercise the gRPC
+// server. Be careful to set ports such that they don't conflict with anything.
+//
+
+const TENANT_ID: &'static str = "f000b11e-b421-4ffe-87c2-a963b77fd8e9";
+
+//
+// api.pipeline_ingress
+//
+
+struct MockPipelineIngressApi {}
+
+#[derive(Debug, Error)]
+enum MockPipelineIngressApiError {
+    #[error("failed to publish raw log")]
+    PublishRawLogFailed
+}
+
+#[tonic::async_trait]
+impl PipelineIngressApi<MockPipelineIngressApiError> for MockPipelineIngressApi {
+    async fn publish_raw_log(
+        &self,
+        request: PublishRawLogRequest
+    ) -> Result<PublishRawLogResponse, MockPipelineIngressApiError> {
+        let tenant_id = Uuid::parse_str(TENANT_ID).expect("failed to parse tenant_id");
+        assert!(request.tenant_id == tenant_id);
+
+        if request.event_source_id == tenant_id {
+            // we can trigger the error response by sending a request with
+            // event_source_id set to TENANT_ID
+            Err(MockPipelineIngressApiError::PublishRawLogFailed)
+        } else {
+            // otherwise send a success response
+            Ok(PublishRawLogResponse::ok())
+        }
+    }
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn test_publish_raw_log_returns_ok_response() {
+    let (server, shutdown_tx) = PipelineIngressServer::new(
+        MockPipelineIngressApi {},
+        "127.0.0.1:12345".parse().expect("failed to parse socket address")
+    );
+
+    let server_handle = thread::spawn(|| async {
+        server.serve().await.expect("failed to configure server");
+    });
+
+    thread::sleep(Duration::from_millis(2500));
+
+    let mut client = PipelineIngressClient::connect("http://127.0.0.1:12345")
+        .await
+        .expect("could not configure client");
+
+    client.publish_raw_log(PublishRawLogRequest {
+        event_source_id: Uuid::new_v4(),
+        tenant_id: Uuid::parse_str(TENANT_ID).expect("failed to parse tenant_id"),
+        log_event: "success!".into(),
+    }).await.expect("received error response");
+
+    shutdown_tx.send(()).expect("failed to shutdown the server");
+    server_handle.join().expect("failed to join server thread").await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+async fn test_publish_raw_log_returns_err_response() {
+    let (server, shutdown_tx) = PipelineIngressServer::new(
+        MockPipelineIngressApi {},
+        "0.0.0.0:12355".parse().expect("failed to parse socket address")
+    );
+
+    let server_fut = server.serve();
+
+    thread::sleep(Duration::from_millis(250));
+
+    let mut client = PipelineIngressClient::connect("http://0.0.0.0:12355")
+        .await
+        .expect("could not configure client");
+
+    client.publish_raw_log(PublishRawLogRequest {
+        event_source_id: Uuid::new_v4(),
+        tenant_id: Uuid::new_v4(),
+        log_event: "success!".into(),
+    }).await.expect("received error response");
+
+    shutdown_tx.send(()).expect("failed to shutdown server");
+    server_fut.await.expect("failed to configure server");
 }

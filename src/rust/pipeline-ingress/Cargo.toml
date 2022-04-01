@@ -8,5 +8,7 @@ edition = "2021"
 [dependencies]
 kafka = { path = "../kafka", version = "*" }
 rust-proto-new = { path = "../rust-proto-new", version = "*" }
+tokio = { version = "1.14.0", features = ["macros"]}
 thiserror = "1.0.30"
 async-trait = "0.1.53"
+uuid = { version = "0.8.2", features = ["v4"] }

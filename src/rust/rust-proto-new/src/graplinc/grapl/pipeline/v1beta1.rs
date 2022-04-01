@@ -198,6 +198,14 @@ pub struct RawLog {
     pub log_event: Bytes,
 }
 
+impl RawLog {
+    pub fn new(log_event: Bytes) -> Self {
+        RawLog {
+            log_event
+        }
+    }
+}
+
 impl From<RawLogProto> for RawLog {
     fn from(raw_log_proto: RawLogProto) -> Self {
         RawLog {

@@ -1502,6 +1502,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "279fb028e20b3c4c320317955b77c5e0c9701f05a1d309905d6fc702cdc5053e"
 
 [[package]]
+name = "flate2"
+version = "1.0.22"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1e6988e897c1c9c485f43b47a529cef42fde0547f9d8d41a7062518f1d8fc53f"
+dependencies = [
+ "cfg-if 1.0.0",
+ "crc32fast",
+ "libc",
+ "miniz_oxide",
+]
+
+[[package]]
 name = "fnv"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3099,6 +3111,8 @@ dependencies = [
  "kafka",
  "rust-proto-new",
  "thiserror",
+ "tokio",
+ "uuid",
 ]
 
 [[package]]
@@ -3916,6 +3930,7 @@ dependencies = [
  "prost 0.9.0",
  "prost-types 0.9.0",
  "thiserror",
+ "tokio",
  "tonic",
  "tonic-build 0.6.2",
  "uuid",
@@ -4840,6 +4855,7 @@ dependencies = [
  "async-trait",
  "base64",
  "bytes",
+ "flate2",
  "futures-core",
  "futures-util",
  "h2",
