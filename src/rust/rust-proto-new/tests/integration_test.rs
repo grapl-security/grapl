@@ -303,20 +303,21 @@ impl PipelineIngressApi<MockPipelineIngressApiError> for MockPipelineIngressApi 
     }
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn test_publish_raw_log_returns_ok_response() {
     let (server, shutdown_tx) = PipelineIngressServer::new(
         MockPipelineIngressApi {},
-        "127.0.0.1:12345".parse().expect("failed to parse socket address")
+        "[::1]:50051".parse().expect("failed to parse socket address")
     );
 
     let server_handle = thread::spawn(|| async {
+        println!("chuggin' along!");
         server.serve().await.expect("failed to configure server");
     });
 
-    thread::sleep(Duration::from_millis(2500));
+    thread::sleep(Duration::from_millis(60000));
 
-    let mut client = PipelineIngressClient::connect("http://127.0.0.1:12345")
+    let mut client = PipelineIngressClient::connect("http://[::1]:50051")
         .await
         .expect("could not configure client");
 
@@ -334,14 +335,14 @@ async fn test_publish_raw_log_returns_ok_response() {
 async fn test_publish_raw_log_returns_err_response() {
     let (server, shutdown_tx) = PipelineIngressServer::new(
         MockPipelineIngressApi {},
-        "0.0.0.0:12355".parse().expect("failed to parse socket address")
+        "[::1]:50052".parse().expect("failed to parse socket address")
     );
 
     let server_fut = server.serve();
 
     thread::sleep(Duration::from_millis(250));
 
-    let mut client = PipelineIngressClient::connect("http://0.0.0.0:12355")
+    let mut client = PipelineIngressClient::connect("http://[::1]:50052")
         .await
         .expect("could not configure client");
 
