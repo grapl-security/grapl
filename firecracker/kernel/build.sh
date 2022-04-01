@@ -45,8 +45,8 @@ fi
 
 # Move kernel to a stable name, so that Nomad knows which file in the
 # untarred archive to use as the kernel.
-readonly KERNEL_FILENAME="firecracker_kernel"
-readonly ARTIFACT_PATH="${REPOSITORY_ROOT}/dist/${KERNEL_FILENAME}.tar.gz"
+readonly KERNEL_FILENAME="vmlinux"
+readonly ARTIFACT_PATH="${REPOSITORY_ROOT}/dist/firecracker_kernel.tar.gz"
 mv "${KERNEL_BIN_FILE}" "./${KERNEL_FILENAME}"
 
 tar \

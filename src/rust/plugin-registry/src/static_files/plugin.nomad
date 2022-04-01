@@ -155,8 +155,7 @@ job "grapl-plugin" {
 
       artifact {
         source      = var.kernel_artifact_url
-        destination = "local/kernel"
-        mode        = "file"
+        destination = "./"
         headers {
           x-amz-expected-bucket-owner = var.aws_account_id
           x-amz-meta-client-id        = "nomad-deployer"
@@ -165,8 +164,7 @@ job "grapl-plugin" {
 
       artifact {
         source      = var.rootfs_artifact_url
-        destination = "local/rootfs"
-        mode        = "file"
+        destination = "./"
         headers {
           x-amz-expected-bucket-owner = var.aws_account_id
           x-amz-meta-client-id        = "nomad-deployer"
@@ -174,8 +172,8 @@ job "grapl-plugin" {
       }
 
       config {
-        KernelImage = "local/kernel"
-        BootDisk    = "local/rootfs"
+        # KernelImage and BootDisk are the default values of vmlinux/rootfs.ext4
+        # (unfortunately, I kept having trouble setting them explicitly)
         Firecracker = "/usr/bin/firecracker"
         Vcpus       = 1
         Mem         = 128
