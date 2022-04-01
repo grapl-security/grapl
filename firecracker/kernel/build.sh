@@ -35,13 +35,19 @@ readonly BUILD_DIR
 # Copy kernel into dist.
 ########################################
 readonly KERNEL_BIN_DIR="${BUILD_DIR}/firecracker/build/kernel/linux-${KERNEL_VERSION}/"
-readonly KERNEL_BIN_FILE="vmlinux-${KERNEL_VERSION}-x86_64.bin"
+readonly KERNEL_BIN_FILE="${KERNEL_BIN_DIR}/vmlinux-${KERNEL_VERSION}-x86_64.bin"
+
+if [[ ! -f "${KERNEL_BIN_FILE}" ]]; then
+    # https://github.com/firecracker-microvm/firecracker/issues/2912
+    echo "Couldn't find ${KERNEL_BIN_FILE}; the kernel build likely failed" &&
+        exit 42
+fi
 
 # Move kernel to a stable name, so that Nomad knows which file in the
 # untarred archive to use as the kernel.
 readonly KERNEL_FILENAME="firecracker_kernel"
 readonly ARTIFACT_PATH="${REPOSITORY_ROOT}/dist/${KERNEL_FILENAME}.tar.gz"
-mv "${KERNEL_BIN_DIR}/${KERNEL_BIN_FILE}" "./${KERNEL_FILENAME}"
+mv "${KERNEL_BIN_FILE}" "./${KERNEL_FILENAME}"
 
 tar \
     --file="${ARTIFACT_PATH}" \
