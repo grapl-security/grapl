@@ -2,27 +2,27 @@ config:
   aws:region: us-east-1
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: operational-alarms@graplsecurity.com
   grapl:artifacts:
-    analyzer-dispatcher: 20220401153213-3d0c225
-    analyzer-executor: 20220401153213-3d0c225
-    e2e-tests: 20220401153213-3d0c225
-    engagement-creator: 20220401153213-3d0c225
+    analyzer-dispatcher: 20220401213950-056f1ee
+    analyzer-executor: 20220401213950-056f1ee
+    e2e-tests: 20220401213950-056f1ee
+    engagement-creator: 20220401213950-056f1ee
     firecracker_kernel.gz: firecracker-v1.0.0-kernel-4.14.174-eb117d6
     firecracker_kernel.tar.gz: firecracker-v1.0.0-kernel-4.14.174-e0965ed
     firecracker_rootfs.gz: 20220331171521-eb117d6
     firecracker_rootfs.tar.gz: 20220329205538-5ba93c6
-    graph-merger: 20220401153213-3d0c225
-    graphql-endpoint: 20220401153213-3d0c225
-    grapl-web-ui: 20220401153213-3d0c225
-    model-plugin-deployer: 20220401153213-3d0c225
-    node-identifier: 20220401153213-3d0c225
-    node-identifier-retry: 20220401153213-3d0c225
-    organization-management: 20220401153213-3d0c225
-    osquery-generator: 20220401153213-3d0c225
-    plugin-bootstrap: 20220401153213-3d0c225
-    plugin-registry: 20220401153213-3d0c225
-    plugin-work-queue: 20220401153213-3d0c225
-    provisioner: 20220401153213-3d0c225
-    sysmon-generator: 20220401153213-3d0c225
+    graph-merger: 20220401213950-056f1ee
+    graphql-endpoint: 20220401213950-056f1ee
+    grapl-web-ui: 20220401213950-056f1ee
+    model-plugin-deployer: 20220401213950-056f1ee
+    node-identifier: 20220401213950-056f1ee
+    node-identifier-retry: 20220401213950-056f1ee
+    organization-management: 20220401213950-056f1ee
+    osquery-generator: 20220401213950-056f1ee
+    plugin-bootstrap: 20220401213950-056f1ee
+    plugin-registry: 20220401213950-056f1ee
+    plugin-work-queue: 20220401213950-056f1ee
+    provisioner: 20220401213950-056f1ee
+    sysmon-generator: 20220401213950-056f1ee
   grapl:cloudsmith-repository-name: grapl/testing
   grapl:confluent-environment-name: testing
   grapl:env_vars:

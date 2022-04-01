@@ -10,7 +10,7 @@ steps:
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - PULUMI_ACCESS_TOKEN
-      - grapl-security/pulumi#v0.1.2:
+      - grapl-security/pulumi#v0.1.3:
           command: preview
           project_dir: pulumi/grapl
           stack: grapl/testing
@@ -41,7 +41,7 @@ steps:
       - improbable-eng/metahook#v0.4.1:
           post-command: |
             .buildkite/scripts/grapl_testing_stack/dump_artifacts.sh
-      - grapl-security/pulumi#v0.1.2:
+      - grapl-security/pulumi#v0.1.3:
           command: update
           project_dir: pulumi/grapl
           stack: grapl/testing
@@ -58,7 +58,7 @@ steps:
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - PULUMI_ACCESS_TOKEN
-      - grapl-security/pulumi#v0.1.2:
+      - grapl-security/pulumi#v0.1.3:
           command: preview
           project_dir: pulumi/integration_tests
           stack: grapl/testing
@@ -73,7 +73,7 @@ steps:
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - PULUMI_ACCESS_TOKEN
-      - grapl-security/pulumi#v0.1.2:
+      - grapl-security/pulumi#v0.1.3:
           command: update
           project_dir: pulumi/integration_tests
           stack: grapl/testing
