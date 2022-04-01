@@ -30,7 +30,7 @@ steps:
       # Artifacts consumed by "Upload Firecracker Packages"
       - label: ":firecracker: Build Kernel"
         command:
-          - "make dist/firecracker_kernel.gz"
+          - "make dist/firecracker_kernel.tar.gz"
         artifact_paths:
           - "dist/*"
         agents:
@@ -39,7 +39,7 @@ steps:
       # Artifacts consumed by "Upload Firecracker Packages"
       - label: ":firecracker: Build RootFS"
         command:
-          - "make dist/firecracker_rootfs.gz"
+          - "make dist/firecracker_rootfs.tar.gz"
         artifact_paths:
           - "dist/*"
         agents:

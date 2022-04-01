@@ -9,8 +9,8 @@ from infra.path import path_from_root
 
 import pulumi
 
-FIRECRACKER_KERNEL_FILENAME = "firecracker_kernel.gz"
-FIRECRACKER_ROOTFS_FILENAME = "firecracker_rootfs.gz"
+FIRECRACKER_KERNEL_FILENAME = "firecracker_kernel.tar.gz"
+FIRECRACKER_ROOTFS_FILENAME = "firecracker_rootfs.tar.gz"
 
 
 class FirecrackerAssets(pulumi.ComponentResource):
@@ -32,14 +32,14 @@ class FirecrackerAssets(pulumi.ComponentResource):
         super().__init__("grapl:FirecrackerAssets", name, None, opts)
 
         self.kernel_asset = local_or_remote_asset(
-            local_path=path_from_root(f"dist/{FIRECRACKER_KERNEL_FILENAME}"),
+            local_path=path_from_root("dist/firecracker_kernel.tar.gz"),
             artifacts=artifacts,
             artifact_key=FIRECRACKER_KERNEL_FILENAME,
             repository_name=repository_name,
         )
 
         self.rootfs_asset = local_or_remote_asset(
-            local_path=path_from_root(f"dist/{FIRECRACKER_ROOTFS_FILENAME}"),
+            local_path=path_from_root("dist/firecracker_rootfs.tar.gz"),
             artifacts=artifacts,
             artifact_key=FIRECRACKER_ROOTFS_FILENAME,
             repository_name=repository_name,
