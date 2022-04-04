@@ -609,9 +609,6 @@ job "grapl-core" {
         connect {
           sidecar_service {
             proxy {
-              config {
-                protocol = "http"
-              }
 
               # We need to expose the health check for consul to be able to reach it
               expose {
