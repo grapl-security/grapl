@@ -29,6 +29,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let graphql_endpoint = Data::new(config.graphql_endpoint.clone());
         let model_plugin_deployer_endpoint =
             Data::new(config.model_plugin_deployer_endpoint.clone());
+        let plugin_registry_endpoint = Data::new(config.plugin_registry_endpoint.clone());
 
         App::new()
             .wrap(actix_web::middleware::Logger::default())
@@ -42,6 +43,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .app_data(web_client)
             .app_data(graphql_endpoint)
             .app_data(model_plugin_deployer_endpoint)
+            .app_data(plugin_registry_endpoint)
             .app_data(auth_dynamodb_client)
             .configure(routes::config)
             .service(web::scope("/graphQlEndpoint").configure(services::graphql::config))
@@ -49,7 +51,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 web::scope("/modelPluginDeployer")
                     .configure(services::model_plugin_deployer::config),
             )
-            // .service(web::scope("/pluginRegistry").configure(services::plugin_registry_route::config))
+            .service(web::scope("/pluginRegistry").configure(services::plugin_registry::config))
     })
     .bind(&bind_address)?
     .run()

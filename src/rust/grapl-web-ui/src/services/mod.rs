@@ -1,6 +1,6 @@
-pub mod graphql;
-pub mod model_plugin_deployer;
-mod plugin_registry;
+pub(crate) mod graphql;
+pub(crate) mod model_plugin_deployer;
+pub(crate) mod plugin_registry;
 
 use actix_web::{
     error,

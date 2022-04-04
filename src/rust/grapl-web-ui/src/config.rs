@@ -6,6 +6,7 @@ use url::Url;
 use crate::services::{
     graphql::GraphQlEndpointUrl,
     model_plugin_deployer::ModelPluginDeployerEndpoint,
+    plugin_registry::PluginRegistryEndpointUrl,
 };
 
 const KEY_SIZE: usize = 32;
@@ -33,7 +34,7 @@ pub(crate) struct Config {
     pub user_session_table_name: String,
     pub graphql_endpoint: GraphQlEndpointUrl,
     pub model_plugin_deployer_endpoint: ModelPluginDeployerEndpoint,
-    pub plugin_registry:
+    pub plugin_registry_endpoint: PluginRegistryEndpointUrl,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -73,6 +74,11 @@ impl Config {
             .map(parse_url)?
             .map(ModelPluginDeployerEndpoint::from)?;
 
+        // Plugin Registry endpoint backend URL
+        let plugin_registry_endpoint = get_env_var("GRAPL_PLUGIN_REGISTRY_ENDPOINT")
+            .map(parse_url)?
+            .map(PluginRegistryEndpointUrl::from)?;
+
         Ok(Config {
             dynamodb_client,
             bind_address,
@@ -81,6 +87,7 @@ impl Config {
             user_session_table_name,
             graphql_endpoint,
             model_plugin_deployer_endpoint,
+            plugin_registry_endpoint,
         })
     }
 }
