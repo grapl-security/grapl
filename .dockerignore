@@ -8,7 +8,7 @@
 .pants.workdir.file_lock*
 .pids
 build-support/venv/
-dist/
+dist/**
 !dist/*.pex  # There are a few `COPY ./dist/$THING.pex`
 src/rust/target/
 test_artifacts/
