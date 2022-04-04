@@ -1,47 +1,38 @@
-use actix_web::{
-    guard,
-    web
-};
+use actix_web::{guard, web, Result, HttpResponse, HttpRequest};
+use grapl_utils::future_ext::GraplFutureExt;
+use plugin_registry::client::PluginRegistryServiceClient;
+use rust_proto::plugin_registry::{CreatePluginRequest, GetPluginRequest, GetPluginResponse, PluginType};
+use crate::authn::AuthenticatedUser;
 
-pub use crate::graplinc::grapl::api::plugin_registry::client::PluginRegistryServiceClient;
-
-
-// use rust_proto::plugin_registry::{
-//     CreatePluginRequest,
-//     GetPluginRequest,
-//     GetPluginResponse,
-//     PluginType,
-// };
-
-
-pub use crate::graplinc::grapl::api::rust_proto::plugin_registry::{
-    CreatePluginRequest,
-    GetPluginRequest,
-    GetPluginResponse,
-    PluginType,
-};
-
-pub(super) fn config(cfg: &mut web::ServiceConfig) {
+pub(crate) fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::resource("/plugin_registry")
-            .route(web::post().to(create_plugin))
+            .route(web::post().to(create_plugin_post))
             .guard(guard::Post())
             .guard(guard::Header("content-type", "application/json")), // .guard(guard::Header("X-Requested-With", "XMLHttpRequest")),
     );
 }
 
-async fn create_plugin_post() -> Result<(), Box<dyn std::error::Error>> {
+async fn create_plugin_post<T>(
+    req: HttpRequest,
+    payload: web::Payload,
+    // backend_url: web::Data<ModelPluginDeployerEndpoint>,
+    client: web::Data<PluginRegistryServiceClient<T>>,
+    _user: AuthenticatedUser,
+) -> Result<HttpResponse>
+    // T:
+{
     tracing::debug!(
         env=?std::env::args(),
     );
 
     let mut client = PluginRegistryServiceClient::from_env().await?;
-    let tenant_id = "test_for_now";
+    let tenant_id = uuid::Uuid::new_v4();
 
     let request = CreatePluginRequest {
         plugin_artifact: b"???????".to_vec(),
         tenant_id, // todo(AP - Add Tenant ID)
-        display_name: "test_for_now",
+        display_name: "test_for_now".to_owned(),
         plugin_type: PluginType::Generator,
     };
 
@@ -60,5 +51,5 @@ async fn create_plugin_post() -> Result<(), Box<dyn std::error::Error>> {
         .timeout(std::time::Duration::from_secs(5))
         .await??;
 
-    Ok(())
+    todo!()
 }

@@ -33,6 +33,7 @@ pub(crate) struct Config {
     pub user_session_table_name: String,
     pub graphql_endpoint: GraphQlEndpointUrl,
     pub model_plugin_deployer_endpoint: ModelPluginDeployerEndpoint,
+    pub plugin_registry:
 }
 
 #[derive(thiserror::Error, Debug)]
