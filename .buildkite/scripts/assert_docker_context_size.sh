@@ -17,7 +17,7 @@ get_size_of_context_kb() {
             --file - \
             --output "${temp_dir}" \
             .
-        echo >&2 "Dumped context to "${temp_dir}""
+        echo >&2 "Dumped context to ${temp_dir}"
         cd "${temp_dir}"
         du --max-depth=0 | awk '{print $1;}'
     )
