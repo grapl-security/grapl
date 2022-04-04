@@ -30,6 +30,10 @@ steps:
         command:
           - ./pants tailor --check
 
+      - label: ":thinking: Assert Docker Context size"
+        command:
+          - .buildkite/scripts/assert_docker_context_size.sh
+
   - group: ":lint-roller: Lints"
     # Lints are various code quality checks; formatting, style guide
     # enforcement, typechecking, etc.
