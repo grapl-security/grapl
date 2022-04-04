@@ -1924,11 +1924,14 @@ dependencies = [
  "chrono",
  "futures-util",
  "grapl-config",
+ "grapl-utils",
  "hmap",
  "opentelemetry 0.17.0",
+ "plugin-registry",
  "rand 0.8.5",
  "rusoto_core",
  "rusoto_dynamodb",
+ "rust-proto",
  "serde",
  "serde_dynamodb",
  "thiserror",
@@ -1936,6 +1939,7 @@ dependencies = [
  "tracing-opentelemetry 0.17.2",
  "tracing-subscriber",
  "url",
+ "uuid",
 ]
 
 [[package]]
