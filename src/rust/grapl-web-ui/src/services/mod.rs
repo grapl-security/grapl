@@ -1,5 +1,6 @@
 pub mod graphql;
 pub mod model_plugin_deployer;
+mod plugin_registry;
 
 use actix_web::{
     error,

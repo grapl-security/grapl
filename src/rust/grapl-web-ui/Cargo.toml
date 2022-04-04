@@ -5,11 +5,11 @@ edition = "2021"
 
 [dependencies]
 actix-web = { version = "4", default_features = false, features = [
-  "macros",
-  "compress-brotli"
+    "macros",
+    "compress-brotli"
 ] }
 awc = { version = "3", default_features = false, features = [
-  "compress-brotli"
+    "compress-brotli"
 ] }
 actix-files = "0.6"
 actix-session = "0.5"
@@ -19,6 +19,7 @@ chrono = { version = "0.4", default-features = false }
 hmap = "0.1.0"
 futures-util = "0.3"
 opentelemetry = { version = "0.17", features = ["rt-tokio"] }
+plugin-registry = { path = "../plugin-registry" }
 rand = "0.8"
 serde = "1"
 serde_dynamodb = "0.9"
@@ -28,9 +29,12 @@ tracing-opentelemetry = "0.17"
 tracing-subscriber = "0.3"
 url = "2.2"
 grapl-config = { path = "../grapl-config" }
+grapl-utils = { path = "../grapl-utils" }
 rusoto_core = { version = "0.47.0", default_features = false, features = [
-  "rustls"
+    "rustls"
 ] }
 rusoto_dynamodb = { version = "0.47.0", default_features = false, features = [
-  "rustls"
+    "rustls"
 ] }
+rust-proto = { path = "../rust-proto" }
+uuid = { version = "0.8.2", features = ["v4"] }

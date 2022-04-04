@@ -49,7 +49,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 web::scope("/modelPluginDeployer")
                     .configure(services::model_plugin_deployer::config),
             )
-            .service(web::scope("/pluginRegistry").configure(services::pluginRegistry::config))
+            // .service(web::scope("/pluginRegistry").configure(services::plugin_registry_route::config))
     })
     .bind(&bind_address)?
     .run()
