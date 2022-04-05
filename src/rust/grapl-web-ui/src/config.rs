@@ -79,6 +79,7 @@ impl Config {
             .map(parse_url)?
             .map(PluginRegistryEndpointUrl::from)?;
 
+
         Ok(Config {
             dynamodb_client,
             bind_address,

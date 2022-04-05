@@ -1037,7 +1037,7 @@ job "grapl-core" {
         GRAPL_WEB_UI_BIND_ADDRESS            = "0.0.0.0:${NOMAD_PORT_web-ui-port}"
         GRAPL_GRAPHQL_ENDPOINT               = "http://${NOMAD_UPSTREAM_ADDR_graphql-endpoint}"
         GRAPL_MODEL_PLUGIN_DEPLOYER_ENDPOINT = "http://TODO:1111" # Note - MPD is being replaced by a Rust service.
-        GRAPL_PLUGIN_REGISTRY_ENDPOINT       = "http://${NOMAD_UPSTREAM_ADDR_plugin-registry}:${NOMAD_PORT_plugin-registry-port}"
+        GRAPL_PLUGIN_REGISTRY_ADDRESS        = "http://${NOMAD_UPSTREAM_ADDR_plugin-registry}:${NOMAD_PORT_plugin-registry}"
         RUST_LOG                             = var.rust_log
         RUST_BACKTRACE                       = local.rust_backtrace
         OTEL_EXPORTER_JAEGER_AGENT_HOST      = local.tracing_jaeger_endpoint_host
@@ -1057,6 +1057,11 @@ job "grapl-core" {
             upstreams {
               destination_name = "graphql-endpoint"
               local_bind_port  = local.graphql_endpoint_port
+            }
+            upstreams {
+              destination_name = "plugin-registry"
+              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
+              local_bind_port = 1000
             }
           }
         }

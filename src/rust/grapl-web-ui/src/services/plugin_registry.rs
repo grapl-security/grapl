@@ -7,6 +7,7 @@ use actix_web::{
     HttpResponse,
     Result,
 };
+use plugin_registry::client::PluginRegistryServiceClient;
 
 use crate::authn::AuthenticatedUser;
 
@@ -42,7 +43,7 @@ pub(crate) async fn handler(
     client: web::Data<awc::Client>,
     _user: AuthenticatedUser,
 ) -> Result<HttpResponse> {
-    let url = backend_url.get_ref().deref().clone();
+    let url = backend_url.get_ref().deref().clone();?;
 
     super::fwd_request_to_backend_service(req, payload, url, client.get_ref().clone()).await
 }
