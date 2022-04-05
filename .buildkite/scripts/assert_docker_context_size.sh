@@ -32,13 +32,24 @@ all_docker_contexts() {
 }
 
 mapfile -t DIRS_TO_CHECK < <(all_docker_contexts)
+readonly DIRS_TO_CHECK
+
+failed_dirs=()
 
 for dir in "${DIRS_TO_CHECK[@]}"; do
     echo "--- Checking Docker context size of ${dir}"
     size_kb="$(get_size_of_context_kb "${dir}")"
-    echo "Docker context size of ${dir} is ${size_kb}kb"
+    echo "Docker context size of ${dir} is ${size_kb}KB"
     if [[ "${size_kb}" -gt "$((ARBITRARY_SIZE_LIMIT_MB * 1024))" ]]; then
-        echo "That's too big! Maybe you need to modify the .dockerignore?"
-        exit 42
+        failed_dirs+=("${dir}")
     fi
 done
+
+# ${#} means check length
+if [ ${#failed_dirs[@]} -ne 0 ]; then
+    echo "--- Contexts too big!"
+    echo "${failed_dirs[@]}"
+    echo "Exceeded size limit of ${ARBITRARY_SIZE_LIMIT_MB}MB"
+    echo "Maybe you need to modify the .dockerignore?"
+    exit 42
+fi
