@@ -17,7 +17,7 @@ get_size_of_context_kb() {
             --file - \
             --output "${temp_dir}" \
             .
-        echo >&2 "Dumped context to ${temp_dir}"
+        echo >&2 "Dumped ${context_dir} context to ${temp_dir}"
         cd "${temp_dir}"
         du --max-depth=0 | awk '{print $1;}'
     )
@@ -36,10 +36,11 @@ readonly DIRS_TO_CHECK=(
 )
 
 for dir in "${DIRS_TO_CHECK[@]}"; do
+    echo "--- Checking Docker context size of ${dir}"
     size="$(get_size_of_context_kb "${dir}")"
-    echo "--- Docker context size of ${dir} is ${size}kb"
+    echo "Docker context size of ${dir} is ${size}kb"
     if [[ "${size}" -gt "${ARBITRARY_SIZE_LIMIT_KB}" ]]; then
-        echo "That's too big! Maybe you need to modify the Dockerignore?"
+        echo "That's too big! Maybe you need to modify the .dockerignore?"
         exit 42
     fi
 done
