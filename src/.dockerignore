@@ -1,5 +1,7 @@
 # node modules found in any project
 **/node_modules
+**/.yarn
+**/.npm
 
 rust/target
 

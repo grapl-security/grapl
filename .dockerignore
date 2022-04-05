@@ -1,11 +1,15 @@
 **/__pycache__
 **/node_modules
-.git/**
+**/.yarn
+**/.npm
+.git/
 .idea
 .pants.d
 .pants.workdir.file_lock*
 .pids
-.yarn
-build-support/grapl-venv
-src/rust/target/**
-test_artifacts/**
+build-support/venv/
+dist/**
+# There are a few `COPY ./dist/$THING.pex`s we want to allow
+!dist/**/*.pex
+src/rust/target/
+test_artifacts/

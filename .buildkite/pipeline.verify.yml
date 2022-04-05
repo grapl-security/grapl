@@ -236,6 +236,12 @@ steps:
   - label: ":hammer: E2E Tests"
     command:
       - make test-e2e
+      # For most realistic results in this assertion, run it after an E2E build.
+      # This will:
+      # - create some artifacts in dist
+      # - create some engagement-view npm/yarn state
+      # etc.
+      - .buildkite/scripts/assert_docker_context_size.sh
     plugins:
       - grapl-security/vault-login#v0.1.2
       - grapl-security/vault-env#v0.1.0:
