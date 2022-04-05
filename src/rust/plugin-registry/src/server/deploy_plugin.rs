@@ -2,7 +2,10 @@ use std::collections::HashMap;
 
 use nomad_client_gen::models;
 
-use super::service::PluginRegistryServiceConfig;
+use super::{
+    s3_url::get_s3_url,
+    service::PluginRegistryServiceConfig,
+};
 use crate::{
     db::{
         client::PluginRegistryDbClient,
@@ -36,6 +39,11 @@ pub async fn deploy_plugin(
 ) -> Result<(), PluginRegistryServiceError> {
     // --- Convert HCL to JSON Job model
     let job_name = "grapl-plugin"; // Matches what's in `plugin.nomad`
+    let plugin_artifact_url = {
+        let key = &plugin.artifact_s3_key;
+        let bucket = &service_config.plugin_s3_bucket_name;
+        get_s3_url(bucket, key)
+    };
     let job = {
         let job_file_hcl = static_files::PLUGIN_JOB;
         let job_file_vars: NomadVars = HashMap::from([
@@ -47,7 +55,7 @@ pub async fn deploy_plugin(
                 "kernel_artifact_url",
                 service_config.kernel_artifact_url.to_owned(),
             ),
-            ("plugin_artifact_url", plugin.artifact_s3_key),
+            ("plugin_artifact_url", plugin_artifact_url),
             (
                 "plugin_bootstrap_container_image",
                 service_config.plugin_bootstrap_container_image.to_owned(),

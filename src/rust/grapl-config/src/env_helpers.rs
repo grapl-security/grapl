@@ -19,7 +19,7 @@ use sqs_executor::{
 
 use crate::ServiceEnv;
 
-const ENV_ENDPOINT: &'static str = "GRAPL_AWS_ENDPOINT";
+pub const ENV_ENDPOINT: &'static str = "GRAPL_AWS_ENDPOINT";
 const ENV_ACCESS_KEY_ID: &'static str = "GRAPL_AWS_ACCESS_KEY_ID";
 const ENV_ACCESS_KEY_SECRET: &'static str = "GRAPL_AWS_ACCESS_KEY_SECRET";
 

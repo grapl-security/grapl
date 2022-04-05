@@ -34,19 +34,28 @@ readonly BUILD_DIR
 ########################################
 # Copy kernel into dist.
 ########################################
+# this name/dir are determined by Firecracker's devtool script, and are
+# not something under our control
 readonly KERNEL_BIN_DIR="${BUILD_DIR}/firecracker/build/kernel/linux-${KERNEL_VERSION}/"
-readonly KERNEL_BIN_FILE="vmlinux-${KERNEL_VERSION}-x86_64.bin"
-readonly ARTIFACT_PATH="${REPOSITORY_ROOT}/dist/firecracker_kernel.tar.gz"
+readonly KERNEL_BIN_FILE="${KERNEL_BIN_DIR}/vmlinux-${KERNEL_VERSION}-x86_64.bin"
 
-# NOTE about tar: If you specify the full path of the thing-to-be-tar'd,
-#   the tar will contain that full nested path of directories.
-#   Hence the --directory, and basename for KERNEL_BIN_FILE
+if [[ ! -f "${KERNEL_BIN_FILE}" ]]; then
+    # https://github.com/firecracker-microvm/firecracker/issues/2912
+    echo "Couldn't find ${KERNEL_BIN_FILE}; the kernel build likely failed"
+    exit 42
+fi
+
+# Move kernel to a stable name, so that Nomad knows which file in the
+# untarred archive to use as the kernel.
+readonly KERNEL_FILENAME="vmlinux"
+readonly ARTIFACT_PATH="${REPOSITORY_ROOT}/dist/firecracker_kernel.tar.gz"
+mv "${KERNEL_BIN_FILE}" "./${KERNEL_FILENAME}"
+
 tar \
-    --directory "${KERNEL_BIN_DIR}" \
     --file="${ARTIFACT_PATH}" \
     --create \
     --gzip \
-    "${KERNEL_BIN_FILE}"
+    "${KERNEL_FILENAME}"
 
 ########################################
 # Write a .artifact-metadata.json file
