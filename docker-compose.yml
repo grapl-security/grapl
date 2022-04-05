@@ -45,7 +45,6 @@ services:
       PULUMI_CONFIG_PASSPHRASE: local-grapl-passphrase
       DOCKER_USER: "${UID}:${GID}"
       GRAPL_ROOT: "${GRAPL_ROOT}"
-      ETH0_ADDRESS: "${ETH0_ADDRESS}"
       # Other environment variables like MG_ALPHAS are passed in via
       # Pulumi.local-grapl.yaml
     extra_hosts:

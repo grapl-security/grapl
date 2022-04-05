@@ -22,7 +22,6 @@ DIST_DIR = $(GRAPL_ROOT)/dist
 COMPOSE_USER=${UID}:${GID}
 COMPOSE_IGNORE_ORPHANS=1
 COMPOSE_PROJECT_NAME ?= grapl
-ETH0_ADDRESS := $(shell ip address show dev eth0 | grep "inet\b" | awk '{ print $$2 }' | awk -F/ '{ print $$1 }')
 
 export
 
