@@ -74,6 +74,7 @@ job "grapl-plugin" {
 
     count = var.plugin_count
 
+    # an envoy proxy that routes execution requests to the plugin VM.
     task "tenant-plugin-execution-sidecar" {
       driver = "docker"
 
@@ -104,7 +105,12 @@ job "grapl-plugin" {
       }
     }
 
-
+    # a Docker task holding:
+    # - the plugin binary itself (mounted)
+    # - the client certificate for the plugin
+    # - the `bootstrap-server` binary, a GRPC service
+    # the GRPC service will be called by the plugin VM to retrieve the other 
+    # two pieces of information
     task "tenant-plugin-bootstrap-sidecar" {
       driver = "docker"
 
@@ -121,10 +127,19 @@ job "grapl-plugin" {
         change_mode = "restart"
       }
 
+      artifact {
+        source      = var.plugin_artifact_url
+        destination = "local/plugin.bin"
+        mode        = "file"
+        headers {
+          x-amz-expected-bucket-owner = var.aws_account_id
+          x-amz-meta-client-id        = "nomad-deployer"
+        }
+      }
+
       config {
         image = var.plugin_bootstrap_container_image
-        ports = [
-        "plugin_bootstrap_grpc_receiver"]
+        ports = ["plugin_bootstrap_grpc_receiver"]
       }
 
       env {
@@ -135,13 +150,12 @@ job "grapl-plugin" {
       }
     }
 
-
     task "tenant-plugin" {
       driver = "firecracker-task-driver"
 
       artifact {
         source      = var.kernel_artifact_url
-        destination = "local/"
+        destination = "./"
         headers {
           x-amz-expected-bucket-owner = var.aws_account_id
           x-amz-meta-client-id        = "nomad-deployer"
@@ -150,17 +164,7 @@ job "grapl-plugin" {
 
       artifact {
         source      = var.rootfs_artifact_url
-        destination = "local/"
-        headers {
-          x-amz-expected-bucket-owner = var.aws_account_id
-          x-amz-meta-client-id        = "nomad-deployer"
-        }
-      }
-
-      artifact {
-        source      = var.plugin_artifact_url
-        destination = "local/plugin"
-        mode        = "file"
+        destination = "./"
         headers {
           x-amz-expected-bucket-owner = var.aws_account_id
           x-amz-meta-client-id        = "nomad-deployer"
@@ -168,9 +172,8 @@ job "grapl-plugin" {
       }
 
       config {
-        KernelImage = "local/vmlinux"
-        BootDisk    = "local/rootfs.ext4"
-        //        Disks = [ "local/plugin" ]
+        # KernelImage and BootDisk are the default values of vmlinux/rootfs.ext4
+        # (unfortunately, I kept having trouble setting them explicitly)
         Firecracker = "/usr/bin/firecracker"
         Vcpus       = 1
         Mem         = 128
