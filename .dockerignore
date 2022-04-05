@@ -8,8 +8,8 @@
 .pants.workdir.file_lock*
 .pids
 build-support/venv/
-dist/*
+dist/**
 # There are a few `COPY ./dist/$THING.pex`s we want to allow
-!dist/*.pex
+!dist/**.pex
 src/rust/target/
 test_artifacts/
