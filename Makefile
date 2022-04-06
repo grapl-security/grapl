@@ -57,6 +57,10 @@ NONROOT_DOCKER_COMPOSE_CHECK := ${DOCKER_COMPOSE_CHECK} --user=${COMPOSE_USER}
 #
 # This is set in docker-bake.hcl
 DOCKER_FILTER_LABEL := org.opencontainers.image.vendor="Grapl, Inc."
+# We pull some vendor containers directly
+DOCKER_DGRAPH_FILTER_LABEL := maintainer="Dgraph Labs <contact@dgraph.io>"
+# We don't set labels on most volumes. This is one of the few that we do
+DOCKER_VOLUME_FILTER_LABEL := com.docker.compose.project="grapl"
 
 # Run a Pants goal across all Python files
 PANTS_PYTHON_FILTER := ./pants filter --target-type=python_sources,python_tests :: | xargs ./pants
@@ -216,7 +220,7 @@ grapl-template-generator: ## Build the Grapl Template Generator and install it t
 	printf -- '\n${FMT_BOLD}Template Generator${FMT_END} written to ${FMT_BLUE}./bin/grapl-template-generator${FMT_END}\n'
 
 .PHONY: dump-artifacts-local
-dump-artifacts-local:  # Run the script that dumps Nomad/Docker logs after test runs
+dump-artifacts-local:  ## Run the script that dumps Nomad/Docker logs after test runs
 	./pants run ./etc/ci_scripts/dump_artifacts -- \
 		--compose-project="${COMPOSE_PROJECT_NAME}" \
 		--dump-agent-logs
@@ -539,6 +543,8 @@ clean-dist: ## Clean out the `dist` directory
 clean-docker: clean-docker-cache
 clean-docker: clean-docker-containers
 clean-docker: clean-docker-images
+clean-docker: clean-docker-dgraph
+clean-docker: clean-docker-volumes
 clean-docker: ## Clean all Docker-related resources
 
 .PHONY: clean-artifacts
@@ -567,6 +573,18 @@ clean-docker-images: ## Remove all Grapl images
 		--filter=label=$(DOCKER_FILTER_LABEL) \
 		--quiet \
 	| xargs --no-run-if-empty docker rmi --force
+
+clean-docker-volumes: ## Remove all Grapl volumes
+	docker volume prune \
+		--filter=label=$(DOCKER_VOLUME_FILTER_LABEL) \
+		--force
+
+clean-docker-dgraph: ## Remove dgraph images, containers and volumes
+	docker images \
+		--filter=label=$(DOCKER_DGRAPH_FILTER_LABEL) \
+		--quiet \
+	| xargs --no-run-if-empty docker rmi --force
+
 
 .PHONY: clean-engagement-view
 clean-engagement-view:
@@ -622,7 +640,7 @@ buildx-tracing: ## This is a one-time setup for enabling docker buildx traces
       --use
 
 .PHONY: generate-sqlx-data
-generate-sqlx-data:  # Regenerate sqlx-data.json based on queries made in Rust code
+generate-sqlx-data:  ## Regenerate sqlx-data.json based on queries made in Rust code
 	./src/rust/bin/generate_sqlx_data.sh
 
 dist/firecracker_kernel.tar.gz: firecracker/kernel/build.sh | dist
