@@ -1,9 +1,14 @@
-# Every time we bring up Localstack, it goes and downloads Elasticmq.
-# This "fork" just preloads it in the right spot.
-# Saves us time on bringing up Localstack,
-# and avoids an issue wimax@ ran into when running under Nomad.
+# syntax=docker/dockerfile:1.3-labs
 
-FROM localstack/localstack-full:0.12.15 AS localstack-base
-RUN mkdir -p /opt/code/localstack/localstack/infra/elasticmq/ \
-    && wget --quiet https://s3-eu-west-1.amazonaws.com/softwaremill-public/elasticmq-server-1.1.0.jar \
-    && mv elasticmq-server-1.1.0.jar /opt/code/localstack/localstack/infra/elasticmq/elasticmq-server.jar \
+# Every time we bring up Localstack, it goes and downloads Elasticmq.
+# This "fork" just preloads the JAR in the right spot.
+# Due to https://github.com/localstack/localstack/issues/5821
+
+FROM localstack/localstack-light:0.14.2 AS localstack-base
+
+RUN <<EOF
+mkdir -p /opt/code/localstack/localstack/infra/elasticmq/
+URL="https://s3-eu-west-1.amazonaws.com/softwaremill-public/elasticmq-server-1.1.0.jar"
+OUTPUT="/opt/code/localstack/localstack/infra/elasticmq/elasticmq-server.jar"
+curl --location --output "${OUTPUT}" "${URL}"
+EOF
