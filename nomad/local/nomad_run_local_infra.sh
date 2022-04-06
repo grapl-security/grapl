@@ -3,7 +3,7 @@ set -euo pipefail
 
 THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
 GRAPL_ROOT="$(git rev-parse --show-toplevel)"
-NOMAD_FILE="${GRAPL_ROOT}/nomad/local/grapl-local-infra.nomad"
+LOCAL_INFRA_NOMAD_FILE="${GRAPL_ROOT}/nomad/local/grapl-local-infra.nomad"
 OBSERVABILITY_NOMAD_FILE="${GRAPL_ROOT}/nomad/local/observability.nomad"
 
 declare -a NOMAD_VARS=(
@@ -20,13 +20,18 @@ echo "Deploying Nomad local infrastructure"
 timeout 60 bash -c -- 'while [[ -z $(nomad node status 2>&1 | grep ready) ]]; do printf "Waiting for nomad-agent\n";sleep 1;done'
 
 # Do a Validate before a Plan. Helps end-users catch errors.
-nomad job validate "${NOMAD_VARS[@]}" "${NOMAD_FILE}"
+nomad job validate "${NOMAD_VARS[@]}" "${LOCAL_INFRA_NOMAD_FILE}"
 
 # Okay, now the Nomad agent is up, but it might not be ready to accept jobs.
 # Just loop on `nomad job plan` until it can.
 attemptPlan() {
-    nomad job plan "${NOMAD_VARS[@]}" "${NOMAD_FILE}" > /dev/null 2>&1
+    nomad job plan "${NOMAD_VARS[@]}" "${LOCAL_INFRA_NOMAD_FILE}" > /dev/null 2>&1
     echo "$?"
+}
+
+nomad_run() {
+    # Get the last word in this output, which is the eval id
+    nomad job run -detach "${@}" | tail -n1 | awk '{print $NF}'
 }
 
 # fyi: Exit code 1 means "Allocations created or destroyed" and is what we want
@@ -35,18 +40,18 @@ while [[ $(attemptPlan) -ne 1 ]]; do
     sleep 1
 done
 
-nomad job run -verbose "${NOMAD_VARS[@]}" "${NOMAD_FILE}"
+# Kick off all your nomad jobs in parallel
+nomad_evals=()
+nomad_evals+=("$(nomad_run "${NOMAD_VARS[@]}" "${LOCAL_INFRA_NOMAD_FILE}")")
+nomad_evals+=("$(nomad_run "${OBSERVABILITY_NOMAD_FILE}")")
 
-echo "Nomad Job Run complete, checking for task failures"
+# `-monitor` will wait for each one to complete
+for eval_id in "${nomad_evals[@]}"; do
+    echo "Monitoring eval ${eval_id}..."
+    nomad eval status -monitor "${eval_id}"
+done
 
 check_for_task_failures_in_job "grapl-local-infra"
-
-echo "Nomad local-infra deployed!"
-
-nomad job run "${OBSERVABILITY_NOMAD_FILE}"
-
-echo "Nomad Job Run complete, checking for task failures"
-
 check_for_task_failures_in_job "observability"
 
-echo "Nomad observability deployed!"
+echo "Nomad Local Infra deployed!"
