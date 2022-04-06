@@ -66,6 +66,7 @@ variable "analyzer_executor_queue" {
 variable "dgraph_replicas" {
   type    = number
   default = 1
+  # This value must be odd. Otherwise dgraph_zero will exit
 }
 
 variable "dgraph_shards" {
@@ -276,6 +277,7 @@ variable "tracing_endpoint" {
 
 locals {
   dgraph_zero_grpc_private_port_base  = 5080
+  dgraph_zero_http_private_port_base  = 6080
   dgraph_alpha_grpc_private_port_base = 7080
   dgraph_alpha_http_private_port_base = 8080
   dgraph_alpha_grpc_public_port_base  = 9080
@@ -292,6 +294,7 @@ locals {
   dgraph_zeros = [for zero_id in range(1, var.dgraph_replicas) : {
     id : zero_id,
     grpc_private_port : local.dgraph_zero_grpc_private_port_base + zero_id,
+    http_port : local.dgraph_zero_http_private_port_base + zero_id,
   }]
 
   # String that contains all of the Zeros for the Alphas to talk to and ensure they don't go down when one dies
@@ -480,7 +483,7 @@ job "grapl-core" {
                 path {
                   path            = "/health"
                   protocol        = "http"
-                  local_path_port = 6080
+                  local_path_port = zero.value.http_port
                   listener_port   = "healthcheck"
                 }
               }
@@ -621,7 +624,7 @@ job "grapl-core" {
                 path {
                   path            = "/health"
                   protocol        = "http"
-                  local_path_port = 8080
+                  local_path_port = alpha.value.http_port
                   listener_port   = "healthcheck"
                 }
               }
