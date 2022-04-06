@@ -20,8 +20,6 @@
     "d3": "^7.3.0",
     "debug": "^4.3.3",
     "formik": "^2.1.4",
-    "gulp": "^4.0.2",
-    "history": "^5.0.0",
     "http-proxy-middleware": "^2.0.3",
     "jest-dom": "^4.0.0",
     "minimist": "^1.2.3",
