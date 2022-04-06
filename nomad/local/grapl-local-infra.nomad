@@ -82,8 +82,6 @@ locals {
   # Useful for, for instance, talking to Zookeeper from Kafka without Consul Connect
   localhost_within_bridge = attr.unique.network.ip-address
   zookeeper_endpoint      = "${local.localhost_within_bridge}:${var.zookeeper_port}"
-  check_restart_grace = "15s"
-  check_restart_limit = 4
 }
 
 
@@ -127,12 +125,12 @@ job "grapl-local-infra" {
           name     = "check_redis"
           command  = "redis-cli"
           args     = ["ping"]
-          interval = "5s"
+          interval = "20s"
           timeout  = "10s"
 
           check_restart {
-            limit           = local.check_restart_limit
-            grace           = local.check_restart_grace
+            limit           = 2
+            grace           = "30s"
             ignore_warnings = false
           }
         }
@@ -185,12 +183,12 @@ job "grapl-local-infra" {
             "s3",
             "ls"
           ]
-          interval = "5s"
+          interval = "10s"
           timeout  = "10s"
 
           check_restart {
-            limit           = local.check_restart_limit
-            grace           = local.check_restart_grace
+            limit           = 2
+            grace           = "30s"
             ignore_warnings = false
           }
         }
@@ -282,12 +280,12 @@ job "grapl-local-infra" {
             "localhost",
             "${var.kafka_broker_port}"
           ]
-          interval = "5s"
+          interval = "20s"
           timeout  = "10s"
 
           check_restart {
-            limit           = local.check_restart_limit
-            grace           = local.check_restart_grace
+            limit           = 2
+            grace           = "30s"
             ignore_warnings = false
           }
         }
@@ -330,12 +328,12 @@ job "grapl-local-infra" {
             "-c",
             "echo ruok | nc -w 2 localhost ${var.zookeeper_port} | grep imok || exit 2",
           ]
-          interval = "5s"
+          interval = "20s"
           timeout  = "10s"
 
           check_restart {
-            limit           = local.check_restart_limit
-            grace           = local.check_restart_grace
+            limit           = 2
+            grace           = "30s"
             ignore_warnings = false
           }
         }
@@ -374,12 +372,12 @@ job "grapl-local-infra" {
           name     = "check_postgres"
           command  = "pg_isready"
           args     = ["--username", "${var.plugin_registry_db.username}"]
-          interval = "5s"
+          interval = "20s"
           timeout  = "10s"
 
           check_restart {
-            limit           = local.check_restart_limit
-            grace           = local.check_restart_grace
+            limit           = 2
+            grace           = "30s"
             ignore_warnings = false
           }
         }
@@ -417,12 +415,12 @@ job "grapl-local-infra" {
           name     = "check_postgres"
           command  = "pg_isready"
           args     = ["--username", "${var.plugin_work_queue_db.username}"]
-          interval = "5s"
+          interval = "20s"
           timeout  = "10s"
 
           check_restart {
-            limit           = local.check_restart_limit
-            grace           = local.check_restart_grace
+            limit           = 2
+            grace           = "30s"
             ignore_warnings = false
           }
         }
@@ -516,12 +514,12 @@ job "grapl-local-infra" {
           name     = "check_postgres"
           command  = "pg_isready"
           args     = ["--username", "${var.organization_management_db.username}"]
-          interval = "5s"
+          interval = "20s"
           timeout  = "10s"
 
           check_restart {
-            limit           = local.check_restart_limit
-            grace           = local.check_restart_grace
+            limit           = 2
+            grace           = "30s"
             ignore_warnings = false
           }
         }
