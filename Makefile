@@ -59,7 +59,9 @@ NONROOT_DOCKER_COMPOSE_CHECK := ${DOCKER_COMPOSE_CHECK} --user=${COMPOSE_USER}
 DOCKER_FILTER_LABEL := org.opencontainers.image.vendor="Grapl, Inc."
 # We pull some vendor containers directly
 DOCKER_DGRAPH_FILTER_LABEL := maintainer="Dgraph Labs <contact@dgraph.io>"
-# We don't set labels on most volumes. This is one of the few that we do
+# Currently we don't label volumes explicitly. The only labeled volume is the dgraph_export which is labeled
+# automatically by docker-compose
+# TODO label volumes explicitly and then update this filter
 DOCKER_VOLUME_FILTER_LABEL := com.docker.compose.project="grapl"
 
 # Run a Pants goal across all Python files
@@ -574,12 +576,14 @@ clean-docker-images: ## Remove all Grapl images
 		--quiet \
 	| xargs --no-run-if-empty docker rmi --force
 
-clean-docker-volumes: ## Remove all Grapl volumes
+clean-docker-volumes: ## Remove all Grapl labeled volumes
+	# Currently only the dgraph_export volume is labeled so that's the only one affected.
+	# We explicitly don't want to prune the build cache volumes
 	docker volume prune \
 		--filter=label=$(DOCKER_VOLUME_FILTER_LABEL) \
 		--force
 
-clean-docker-dgraph: ## Remove dgraph images, containers and volumes
+clean-docker-dgraph: ## Remove dgraph images
 	docker images \
 		--filter=label=$(DOCKER_DGRAPH_FILTER_LABEL) \
 		--quiet \
