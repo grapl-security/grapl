@@ -232,6 +232,7 @@ steps:
       queue: "beefy"
     artifact_paths:
       - "test_artifacts/**/*"
+      - "src/js/engagement_view/source_map_explorer_result.html"
 
   - label: ":hammer: E2E Tests"
     command:
@@ -254,6 +255,7 @@ steps:
       queue: "beefy"
     artifact_paths:
       - "test_artifacts/**/*"
+      - "src/js/engagement_view/source_map_explorer_result.html"
 
   - label: "Build docs :book:"
     command:
