@@ -3,6 +3,7 @@ use bytes::{
     BytesMut,
 };
 use prost::Message;
+use thiserror::Error;
 
 use crate::{
     graplinc::common::v1beta1::{
@@ -148,6 +149,25 @@ impl SerDe for PublishRawLogResponse {
 }
 
 //
+// gRPC
+//
+
+#[non_exhaustive]
+#[derive(Debug, Error)]
+pub enum HealthcheckError {
+    #[error("healthcheck failed {0}")]
+    HealthcheckFailed(String)
+}
+
+#[non_exhaustive]
+#[derive(Debug)]
+pub enum HealthcheckStatus {
+    Serving,
+    NotServing,
+    Unknown
+}
+
+//
 // client
 //
 
@@ -167,6 +187,18 @@ pub mod client {
     use futures::FutureExt;
     use thiserror::Error;
     use tonic::Request;
+    use tonic_health::{
+        proto::{
+            health_client::HealthClient as HealthClientProto,
+            health_check_response::ServingStatus as ServingStatusProto,
+            HealthCheckRequest as HealthCheckRequestProto
+        },
+    };
+
+    use super::{
+        HealthcheckError,
+        HealthcheckStatus
+    };
 
     #[non_exhaustive]
     #[derive(Debug, Error)]
@@ -211,6 +243,44 @@ pub mod client {
                 .await?)
         }
     }
+
+    pub struct HealthcheckClient {
+        proto_client: HealthClientProto<tonic::transport::Channel>,
+        service_name: &'static str
+    }
+
+    impl HealthcheckClient {
+        pub async fn connect<T>(endpoint: T, service_name: &'static str) -> Result<Self, ConfigurationError>
+        where
+            T: std::convert::TryInto<tonic::transport::Endpoint>,
+            T::Error: std::error::Error + Send + Sync + 'static
+        {
+            Ok(HealthcheckClient {
+                proto_client: HealthClientProto::connect(endpoint).await?,
+                service_name
+            })
+        }
+
+        pub async fn check_health(&mut self) -> Result<HealthcheckStatus, HealthcheckError> {
+            let request = HealthCheckRequestProto {
+                service: self.service_name.to_string(),
+            };
+
+            let response = match self.proto_client.check(request).await {
+                Ok(response) => response.into_inner(),
+                Err(e) => return Err(HealthcheckError::HealthcheckFailed(e.to_string())),
+            };
+
+            match response.status() {
+                ServingStatusProto::Serving => Ok(HealthcheckStatus::Serving),
+                ServingStatusProto::NotServing => Ok(HealthcheckStatus::NotServing),
+                ServingStatusProto::Unknown => Ok(HealthcheckStatus::Unknown),
+                ServingStatusProto::ServiceUnknown => Err(HealthcheckError::HealthcheckFailed(
+                    "service unknown".to_string()
+                )),
+            }
+        }
+    }
 }
 
 //
@@ -227,7 +297,7 @@ pub mod client {
 pub mod server {
     use std::{
         net::SocketAddr,
-        marker::PhantomData
+        marker::PhantomData, time::Duration
     };
 
     use crate::{
@@ -251,14 +321,19 @@ pub mod server {
             self
         },
         FutureExt,
-        TryFutureExt,
+        TryFutureExt, Future,
     };
     use thiserror::Error;
     use tonic::{
         Request,
         Response,
         Status,
-        transport::Server,
+        transport::{Server, NamedService},
+    };
+
+    use super::{
+        HealthcheckStatus,
+        HealthcheckError
     };
 
     //
@@ -345,46 +420,123 @@ pub mod server {
     }
 
     /// The pipeline-ingress server serves the pipeline-ingress API
-    pub struct PipelineIngressServer<T, E>
+    pub struct PipelineIngressServer<T, E, H, F>
     where
         T: PipelineIngressApi<E> + Send + Sync + 'static,
-        E: ToString + Send + Sync + 'static
+        E: ToString + Send + Sync + 'static,
+        H: Fn() -> F + Send + Sync + 'static,
+        F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send,
     {
         api_server: T,
+        healthcheck: H,
+        healthcheck_polling_interval_ms: u64,
         addr: SocketAddr,
         shutdown_rx: Receiver<()>,
+        service_name: &'static str,
         e_: PhantomData<E>,
+        f_: PhantomData<F>,
     }
 
-    impl <T, E> PipelineIngressServer<T, E>
+    impl <T, E, H, F> PipelineIngressServer<T, E, H, F>
     where
         T: PipelineIngressApi<E> + Send + Sync + 'static,
-        E: ToString + Send + Sync + 'static
+        E: ToString + Send + Sync + 'static,
+        H: Fn() -> F + Send + Sync + 'static,
+        F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send,
     {
         /// Construct a new gRPC server which will serve the given API
         /// implementation on the given socket address. Server is constructed in
         /// a non-running state. Call the serve() method to run the server. This
         /// method also returns a channel you can use to trigger server
         /// shutdown.
-        pub fn new(api_server: T, addr: SocketAddr) -> (Self, Sender<()>) {
+        pub fn new(
+            api_server: T,
+            addr: SocketAddr,
+            healthcheck: H,
+            healthcheck_polling_interval_ms: u64
+        ) -> (Self, Sender<()>) {
             let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
             (PipelineIngressServer {
                 api_server,
+                healthcheck,
+                healthcheck_polling_interval_ms,
                 addr,
                 shutdown_rx,
-                e_: PhantomData
+                service_name: PipelineIngressServiceServerProto::<PipelineIngressProto<T, E>>::NAME,
+                e_: PhantomData,
+                f_: PhantomData,
             }, shutdown_tx)
+        }
+
+        /// returns the service name associated with this service. You will need
+        /// this value to construct a HealthcheckClient with which to query this
+        /// service's healthcheck.
+        pub fn service_name(&self) -> &'static str {
+            self.service_name
         }
 
         /// Run the gRPC server and serve the API on this server's socket
         /// address. Returns a ConfigurationError if the gRPC server cannot run.
         pub async fn serve(self) -> Result<(), ConfigurationError> {
+            let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
+
+            // we configure our health reporter initially in the not_serving
+            // state s.t. clients which are waiting for this service to start
+            // can wait for the state change to the serving state
+            health_reporter
+                .set_not_serving::<PipelineIngressServiceServerProto<PipelineIngressProto<T, E>>>()
+                .await;
+
+            let healthcheck_handle = tokio::task::spawn(async move {
+                // I initially tried to break this loop out into its own
+                // function, but I ran into this issue:
+                //
+                // https://github.com/rust-lang/rust/issues/83701
+                //
+                // Unfortunately, the need to parametrize such a function by
+                // self.healthcheck's type and the parameter S in
+                // HealthReporter::set_serving<S>(..) makes this awkward, so I
+                // just inlined the whole thing here.
+                loop {
+                    tokio::time::sleep(Duration::from_millis(
+                        self.healthcheck_polling_interval_ms
+                    )).await;
+
+                    match (self.healthcheck)().await {
+                        Ok(status) => {
+                            match status {
+                                HealthcheckStatus::Serving => health_reporter
+                                    .set_serving::<PipelineIngressServiceServerProto<PipelineIngressProto<T, E>>>()
+                                    .await,
+                                HealthcheckStatus::NotServing => health_reporter
+                                    .set_not_serving::<PipelineIngressServiceServerProto<PipelineIngressProto<T, E>>>()
+                                    .await,
+                                HealthcheckStatus::Unknown => health_reporter
+                                    .set_not_serving::<PipelineIngressServiceServerProto<PipelineIngressProto<T, E>>>()
+                                    .await,
+                            }
+                        },
+                        Err(_) => {
+                            // healthcheck failed, so we'll set_not_serving()
+                            health_reporter
+                                .set_not_serving::<PipelineIngressServiceServerProto<PipelineIngressProto<T, E>>>()
+                                .await
+                        }
+                    }
+                }
+            });
+
             // TODO: add logging interceptor, tls_config, concurrency limits
             Ok(Server::builder()
+               .add_service(health_service)
                .add_service(PipelineIngressServiceServerProto::new(
                    PipelineIngressProto::new(self.api_server)
                ))
                .serve_with_shutdown(self.addr, self.shutdown_rx.map(|_| ()))
+               .then(|result| async move {
+                   healthcheck_handle.abort();
+                   result
+               })
                .await?)
         }
     }

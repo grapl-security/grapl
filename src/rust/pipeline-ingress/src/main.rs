@@ -8,7 +8,7 @@ use rust_proto_new::graplinc::grapl::{
             PipelineIngressApi,
             PipelineIngressServer,
             ConfigurationError as ServerConfigurationError,
-        }
+        }, HealthcheckStatus
     },
     pipeline::{
         v1beta1::{
@@ -100,7 +100,9 @@ async fn main() -> Result<(), ConfigurationError> {
     let producer: Producer<Envelope<RawLog>> = Producer::new("raw-logs")?;
     let (server, _) = PipelineIngressServer::new(
         IngressApi::new(producer),
-        addr.parse()?
+        addr.parse()?,
+        || async { Ok(HealthcheckStatus::Serving) }, // FIXME
+        50 // FIXME
     );
 
     Ok(server.serve().await?)

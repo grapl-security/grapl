@@ -1,7 +1,15 @@
-use std::{fmt::Debug, thread};
-
+use std::{
+    fmt::Debug,
+    collections::HashSet,
+};
 use bytes::Bytes;
+use futures::{
+    channel::oneshot::Sender,
+    lock::Mutex
+};
+use lazy_static::lazy_static;
 use proptest::prelude::*;
+use rand::Rng;
 use rust_proto_new::{
     graplinc::{
         common::v1beta1::{
@@ -16,7 +24,14 @@ use rust_proto_new::{
                 server::{
                     PipelineIngressApi,
                     PipelineIngressServer,
-                }, client::PipelineIngressClient,
+                    ConfigurationError,
+                },
+                client::{
+                    PipelineIngressClient,
+                    HealthcheckClient
+                },
+                HealthcheckStatus,
+                HealthcheckError,
             },
             pipeline::{
                 v1beta1::{
@@ -30,7 +45,15 @@ use rust_proto_new::{
     },
     SerDe,
 };
+use test_context::{
+    test_context,
+    AsyncTestContext
+};
 use thiserror::Error;
+use tokio::{
+    task::JoinHandle,
+    net::TcpListener
+};
 
 //
 // ---------------- strategies ------------------------------------------------
@@ -266,14 +289,71 @@ proptest! {
 // These tests exercise the gRPC machinery. The idea here is to exercise an
 // API's success and error paths with a simple mocked business logic
 // implementation. The gRPC client should be used to exercise the gRPC
-// server. Be careful to set ports such that they don't conflict with anything.
+// server.
 //
 
+// We can use this global TENANT_ID for two purposes:
+//   (1) To make sure some test data made it through to our mocked
+//       application layer.
+//   (2) To send a poison pill to our mocked application layer, to
+//       trigger an error response.
 const TENANT_ID: &'static str = "f000b11e-b421-4ffe-87c2-a963b77fd8e9";
+
+// This approach to port allocation cribs liberally from
+// https://github.com/habitat-sh/habitat/commit/b22190696ca5389cad9b974aef9287b3a253366f
+lazy_static! {
+    static ref CLAIMED_PORTS: Mutex<HashSet<u16>> = Mutex::new(HashSet::new());
+}
+
+fn random_port() -> u16 {
+    let mut rng = rand::thread_rng();
+    rng.gen_range(49152..u16::MAX) // IANA port registrations go through 49152
+}
+
+async fn allocate_port() -> u16 {
+    let mut idx = std::u8::MAX;
+    while idx > 0 {
+        let port = random_port();
+        println!("attempting to bind on port {}", port);
+        match TcpListener::bind(format!("[::1]:{}", port)).await {
+            Ok(_) => {
+                let mut ports = CLAIMED_PORTS.lock().await;
+                if ports.contains(&port) {
+                    // port already in use
+                    println!("port {} already claimed, waiting 0.05s...", port);
+                    tokio::time::sleep(Duration::from_millis(50)).await;
+                } else {
+                    // Nobody is using the port, so we claim it and return it.
+                    // When the TcpListener is dropped the port will be free to
+                    // use in our own code (we'll mostly bind it soon
+                    // enough... mostly).
+                    ports.insert(port);
+                    return port
+                }
+            },
+            Err(_) => {
+                // port already in use
+                println!("failed to bind port {}, waiting 0.05s...", port);
+                tokio::time::sleep(Duration::from_millis(50)).await
+            },
+        }
+        idx -= 1;
+    }
+
+    panic!("could not find unclaimed port to allocate");
+}
 
 //
 // api.pipeline_ingress
 //
+// These tests exercise the transport layer of the pipeline ingress API. The
+// application layer (e.g. business logic) is injected as a dependency, so we
+// test that business logic where it's defined (e.g. in the pipeline ingress
+// service).
+
+// first we implement a simple mock of the service's business logic. We'll use
+// this to exercise the happy path (returning an OK response) and the error path
+// (returning an Err response).
 
 struct MockPipelineIngressApi {}
 
@@ -303,55 +383,128 @@ impl PipelineIngressApi<MockPipelineIngressApiError> for MockPipelineIngressApi 
     }
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
-async fn test_publish_raw_log_returns_ok_response() {
-    let (server, shutdown_tx) = PipelineIngressServer::new(
-        MockPipelineIngressApi {},
-        "[::1]:50051".parse().expect("failed to parse socket address")
-    );
+struct PipelineIngressTestContext {
+    client: PipelineIngressClient,
+    server_handle: JoinHandle<Result<(), ConfigurationError>>,
+    shutdown_tx: Sender<()>,
+}
 
-    let server_handle = thread::spawn(|| async {
-        println!("chuggin' along!");
-        server.serve().await.expect("failed to configure server");
-    });
+async fn wait_until_healthy(endpoint: String, service_name: &'static str) -> Result<(), HealthcheckError> {
+    let mut idx = 0;
+    let mut healthcheck_client = loop {
+        match HealthcheckClient::connect(endpoint.clone(), service_name).await {
+            Ok(client) => break client,
+            Err(e) => {
+                if idx == 20 {
+                    return Err(HealthcheckError::HealthcheckFailed(
+                        "failed to create healthcheck client after 20 tries".to_string()
+                    ))
+                }
 
-    thread::sleep(Duration::from_millis(60000));
+                println!("could not construct healthcheck client, waiting 0.05s: {}", e);
+                tokio::time::sleep(Duration::from_millis(50)).await;
+                idx += 1;
+            },
+        }
+    };
 
-    let mut client = PipelineIngressClient::connect("http://[::1]:50051")
-        .await
-        .expect("could not configure client");
+    let mut idx = 0;
+    loop {
+        match healthcheck_client.check_health().await {
+            Ok(result) => match result {
+                HealthcheckStatus::Serving => return Ok(()),
+                other => {
+                    if idx == 20 {
+                        return Err(HealthcheckError::HealthcheckFailed(
+                            "service still not healthy after 20 tries".to_string()
+                        ))
+                    }
 
-    client.publish_raw_log(PublishRawLogRequest {
+                    println!("service is not yet serving, waiting 0.05s: {:?}", other);
+                    tokio::time::sleep(Duration::from_millis(50)).await;
+                    idx += 1;
+                }
+            },
+            Err(e) => return Err(e),
+        }
+        idx += 1;
+    }
+}
+
+#[tonic::async_trait]
+impl AsyncTestContext for PipelineIngressTestContext {
+    async fn setup() -> Self {
+        let port = allocate_port().await;
+        let socket_address = format!("[::1]:{}", port);
+        let (server, shutdown_tx) = PipelineIngressServer::new(
+            MockPipelineIngressApi {},
+            socket_address.parse()
+                .expect("failed to parse socket address"),
+            || async { Ok(HealthcheckStatus::Serving) },
+            50,
+        );
+
+        let service_name = server.service_name();
+
+        let server_handle = tokio::task::spawn(
+            server.serve()
+        );
+
+        let endpoint = format!("http://{}", socket_address);
+
+        wait_until_healthy(endpoint.clone(), service_name)
+            .await
+            .expect("server never reported healthy");
+
+        let client = PipelineIngressClient::connect(endpoint)
+            .await
+            .expect("could not configure client");
+
+        PipelineIngressTestContext {
+            client,
+            server_handle,
+            shutdown_tx,
+        }
+    }
+
+    async fn teardown(self) {
+        self.shutdown_tx.send(())
+            .expect("failed to shutdown server");
+        self.server_handle.await
+            .expect("failed to join server task")
+            .expect("server configuration failed");
+    }
+}
+
+#[test_context(PipelineIngressTestContext)]
+#[tokio::test]
+async fn test_publish_raw_log_returns_ok_response(
+    ctx: &mut PipelineIngressTestContext
+) {
+    ctx.client.publish_raw_log(PublishRawLogRequest {
         event_source_id: Uuid::new_v4(),
         tenant_id: Uuid::parse_str(TENANT_ID).expect("failed to parse tenant_id"),
         log_event: "success!".into(),
     }).await.expect("received error response");
-
-    shutdown_tx.send(()).expect("failed to shutdown the server");
-    server_handle.join().expect("failed to join server thread").await;
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 1)]
-async fn test_publish_raw_log_returns_err_response() {
-    let (server, shutdown_tx) = PipelineIngressServer::new(
-        MockPipelineIngressApi {},
-        "[::1]:50052".parse().expect("failed to parse socket address")
-    );
+#[test_context(PipelineIngressTestContext)]
+#[tokio::test]
+async fn test_publish_raw_log_returns_err_response(
+    ctx: &mut PipelineIngressTestContext
+) {
+    let tenant_id = Uuid::parse_str(TENANT_ID)
+        .expect("failed to parse tenant_id");
 
-    let server_fut = server.serve();
-
-    thread::sleep(Duration::from_millis(250));
-
-    let mut client = PipelineIngressClient::connect("http://[::1]:50052")
-        .await
-        .expect("could not configure client");
-
-    client.publish_raw_log(PublishRawLogRequest {
-        event_source_id: Uuid::new_v4(),
-        tenant_id: Uuid::new_v4(),
-        log_event: "success!".into(),
-    }).await.expect("received error response");
-
-    shutdown_tx.send(()).expect("failed to shutdown server");
-    server_fut.await.expect("failed to configure server");
+    match ctx.client.publish_raw_log(PublishRawLogRequest {
+        event_source_id: tenant_id,
+        tenant_id,
+        log_event: "fail!".into(),
+    }).await {
+        Ok(res) => {
+            println!("expected error response, received: {:?}", res);
+            panic!("expected error response");
+        },
+        Err(_) => (), // 👍 great success 👍
+    }
 }
