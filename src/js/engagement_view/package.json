@@ -39,12 +39,11 @@
     "react": "^17.0.2",
     "react-async-hook": "^4.0.0",
     "react-dom": "^17.0.2",
-    "react-force-graph": "^1.32.1",
+    "react-force-graph-2d": "^1.23.10",
     "react-router-dom": "^6.2.2",
     "react-scripts": "^5.0.0",
     "react-test-render": "^1.1.2",
     "semantic-ui-react": "^2.1.2",
-    "three": "^0.138.3",
     "typescript": "^4.1.5",
     "typescript-formatter": "^7.2.2",
     "yup": "^0.32.11"
@@ -54,7 +53,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "test:coverage": "CI=true npm test -- --env=jsdom --coverage"
+    "test:coverage": "CI=true npm test -- --env=jsdom --coverage",
+    "analyze-build": "yarn dlx source-map-explorer build/**/*.js --html source_map_explorer_result.html"
   },
   "eslintConfig": {
     "extends": "react-app"

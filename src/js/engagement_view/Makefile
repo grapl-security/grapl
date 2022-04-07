@@ -82,6 +82,7 @@ install-dependencies: ## Install dependencies in the build container if necessar
 build-code: install-dependencies $(FILES)
 build-code: ## Build the code if any files have changed
 	$(DOCKER_RUN) yarn build
+	$(DOCKER_RUN) yarn analyze-build
 	@echo "$${empty_target_message}" > $@
 
 # Note that `run-tests` is a phony target, so it will run each time it

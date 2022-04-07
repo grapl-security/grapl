@@ -15,7 +15,7 @@ steps:
       - label: ":github: Validate CODEOWNERS"
         command: ".buildkite/scripts/validate_codeowners.sh"
         plugins:
-          - docker#v3.8.0:
+          - docker#v3.12.0:
               image: "node"
               entrypoint: "bash"
 
@@ -84,7 +84,7 @@ steps:
           - rustup set profile default
           - make lint-rust-rustfmt
         plugins:
-          - docker#v3.8.0:
+          - docker#v3.12.0:
               image: "rust:${RUST_VERSION}"
 
       - label: ":bash: Linting"
@@ -232,6 +232,8 @@ steps:
       queue: "beefy"
     artifact_paths:
       - "test_artifacts/**/*"
+      # https://github.com/grapl-security/issue-tracker/issues/894
+      - "src/js/engagement_view/source_map_explorer_result.html"
 
   - label: ":hammer: E2E Tests"
     command:
@@ -254,6 +256,8 @@ steps:
       queue: "beefy"
     artifact_paths:
       - "test_artifacts/**/*"
+      # https://github.com/grapl-security/issue-tracker/issues/894
+      - "src/js/engagement_view/source_map_explorer_result.html"
 
   - label: "Build docs :book:"
     command:
