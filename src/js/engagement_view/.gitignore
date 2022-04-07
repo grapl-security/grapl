@@ -30,3 +30,6 @@ build-code
 
 
 /yarn-error.log
+
+build/
+source_map_explorer_result.html
