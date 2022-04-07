@@ -38,7 +38,8 @@ src/rust/grapl-web-ui/frontend/*
 nomad/local/mount-grapl-root-as-volume.nomad
 
 # Distribution / packaging
-build/
+/src/js/engagement_view/build/
+/src/js/engagement_view/source_map_explorer_result.html
 *.zip
 /dist/
 

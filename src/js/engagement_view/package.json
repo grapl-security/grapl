@@ -53,7 +53,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "test:coverage": "CI=true npm test -- --env=jsdom --coverage"
+    "test:coverage": "CI=true npm test -- --env=jsdom --coverage",
+    "analyze-build": "yarn dlx source-map-explorer build/**/*.js --html ${PWD}/source_map_explorer_result.html"
   },
   "eslintConfig": {
     "extends": "react-app"
