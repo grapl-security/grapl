@@ -15,7 +15,7 @@ steps:
       - grapl-security/vault-env#v0.1.0:
           secrets:
             - CLOUDSMITH_API_KEY
-      - artifacts#v1.4.0:
+      - artifacts#v1.5.0:
           # NOTE: this assumes that all artifacts mentioned in this
           # file are stored in Cloudsmith!
           download: all_artifacts.json
