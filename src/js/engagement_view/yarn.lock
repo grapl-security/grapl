@@ -2438,13 +2438,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@opentelemetry/api@npm:^1.0.4":
-  version: 1.1.0
-  resolution: "@opentelemetry/api@npm:1.1.0"
-  checksum: 8be8e8dd20a473639a9bb9b4185b8984f537f86e49829ba1d4c4e909f4480309cb22696b7eb7122882878dac0b5f4ce799d66ed72248568bafed085d6269e1bc
-  languageName: node
-  linkType: hard
-
 "@opentelemetry/auto-instrumentations-web@npm:^0.27.2":
   version: 0.27.2
   resolution: "@opentelemetry/auto-instrumentations-web@npm:0.27.2"
@@ -2470,7 +2463,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@opentelemetry/context-zone@npm:^1.0.0, @opentelemetry/context-zone@npm:^1.0.1":
+"@opentelemetry/context-zone@npm:^1.0.1":
   version: 1.1.1
   resolution: "@opentelemetry/context-zone@npm:1.1.1"
   dependencies:
@@ -2584,23 +2577,6 @@ __metadata:
   peerDependencies:
     "@opentelemetry/api": ^1.0.0
   checksum: 2876b3cc9043bdea697c860bb6117f5d5f72bf50156d9c1115b100e92718caa5b2cbb202796ef3788e101d5fd48e93d2596044fe39bde4a31fd3905d91a45126
-  languageName: node
-  linkType: hard
-
-"@opentelemetry/plugin-react-load@npm:^0.26.1":
-  version: 0.26.1
-  resolution: "@opentelemetry/plugin-react-load@npm:0.26.1"
-  dependencies:
-    "@opentelemetry/context-zone": ^1.0.0
-    "@opentelemetry/core": ^1.0.0
-    "@opentelemetry/sdk-trace-base": ^1.0.0
-    "@opentelemetry/sdk-trace-web": ^1.0.0
-    "@opentelemetry/semantic-conventions": ^1.0.0
-    shimmer: ^1.2.1
-  peerDependencies:
-    "@opentelemetry/api": ^1.0.2
-    react: ^16.13.1 || ^17.0.0
-  checksum: 699daea4884f18971e43825556b9b3512889cfbe897ccc4595aaebd18a44de0fdbb76bb0aada16aa1a0d80f6971ffc4b11243c6603241689347e002f356460c6
   languageName: node
   linkType: hard
 
@@ -8681,12 +8657,10 @@ __metadata:
     "@mui/icons-material": ^5.5.1
     "@mui/material": ^5.5.1
     "@mui/x-data-grid": ^5.6.1
-    "@opentelemetry/api": ^1.0.4
     "@opentelemetry/auto-instrumentations-web": ^0.27.2
     "@opentelemetry/context-zone": ^1.0.1
     "@opentelemetry/exporter-zipkin": ^1.0.1
     "@opentelemetry/instrumentation": ^0.27.0
-    "@opentelemetry/plugin-react-load": ^0.26.1
     "@opentelemetry/resources": ^1.0.1
     "@opentelemetry/sdk-trace-base": ^1.0.1
     "@opentelemetry/sdk-trace-web": ^1.0.1

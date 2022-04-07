@@ -1,9 +1,6 @@
-import React from "react";
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { WebTracerProvider } from "@opentelemetry/sdk-trace-web";
-import { BaseOpenTelemetryComponent } from "@opentelemetry/plugin-react-load";
 import { ZipkinExporter } from "@opentelemetry/exporter-zipkin";
-import { diag, DiagConsoleLogger } from "@opentelemetry/api";
 import { Resource } from "@opentelemetry/resources";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 import { registerInstrumentations } from "@opentelemetry/instrumentation";
@@ -48,16 +45,3 @@ registerInstrumentations({
         }),
     ],
 });
-
-BaseOpenTelemetryComponent.setTracer(serviceName);
-diag.setLogger(new DiagConsoleLogger());
-
-export type TraceProviderProps = {
-    children?: React.ReactNode;
-};
-
-export default function TraceProvider({
-    children,
-}: TraceProviderProps): React.ReactElement {
-    return <>{children}</>;
-}
