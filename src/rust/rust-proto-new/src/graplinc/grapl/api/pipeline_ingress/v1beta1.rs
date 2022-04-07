@@ -96,7 +96,7 @@ impl PublishRawLogResponse {
     /// build a response with created_time set to SystemTime::now()
     pub fn ok() -> Self {
         PublishRawLogResponse {
-            created_time: SystemTime::now()
+            created_time: SystemTime::now(),
         }
     }
 }
@@ -156,7 +156,7 @@ impl SerDe for PublishRawLogResponse {
 #[derive(Debug, Error)]
 pub enum HealthcheckError {
     #[error("healthcheck failed {0}")]
-    HealthcheckFailed(String)
+    HealthcheckFailed(String),
 }
 
 #[non_exhaustive]
@@ -164,7 +164,7 @@ pub enum HealthcheckError {
 pub enum HealthcheckStatus {
     Serving,
     NotServing,
-    Unknown
+    Unknown,
 }
 
 //
@@ -204,7 +204,7 @@ pub mod client {
     #[derive(Debug, Error)]
     pub enum ConfigurationError {
         #[error("failed to connect {0}")]
-        ConnectionError(#[from] tonic::transport::Error)
+        ConnectionError(#[from] tonic::transport::Error),
     }
 
     #[non_exhaustive]
@@ -218,14 +218,14 @@ pub mod client {
     }
 
     pub struct PipelineIngressClient {
-        proto_client: PipelineIngressServiceClientProto<tonic::transport::Channel>
+        proto_client: PipelineIngressServiceClientProto<tonic::transport::Channel>,
     }
 
     impl PipelineIngressClient {
         pub async fn connect<T>(endpoint: T) -> Result<Self, ConfigurationError>
         where
             T: std::convert::TryInto<tonic::transport::Endpoint>,
-            T::Error: std::error::Error + Send + Sync + 'static
+            T::Error: std::error::Error + Send + Sync + 'static,
         {
             Ok(PipelineIngressClient {
                 proto_client: PipelineIngressServiceClientProto::connect(endpoint).await?,
@@ -233,31 +233,39 @@ pub mod client {
         }
 
         pub async fn publish_raw_log(
-            &mut self, raw_log: PublishRawLogRequest
+            &mut self,
+            raw_log: PublishRawLogRequest,
         ) -> Result<PublishRawLogResponse, PipelineIngressApiError> {
-            Ok(self.proto_client.publish_raw_log(Request::new(raw_log.into()))
-                .map(|response| -> Result<PublishRawLogResponse, PipelineIngressApiError> {
-                    let inner = response?.into_inner();
-                    Ok(inner.try_into()?)
-                })
+            Ok(self
+                .proto_client
+                .publish_raw_log(Request::new(raw_log.into()))
+                .map(
+                    |response| -> Result<PublishRawLogResponse, PipelineIngressApiError> {
+                        let inner = response?.into_inner();
+                        Ok(inner.try_into()?)
+                    },
+                )
                 .await?)
         }
     }
 
     pub struct HealthcheckClient {
         proto_client: HealthClientProto<tonic::transport::Channel>,
-        service_name: &'static str
+        service_name: &'static str,
     }
 
     impl HealthcheckClient {
-        pub async fn connect<T>(endpoint: T, service_name: &'static str) -> Result<Self, ConfigurationError>
+        pub async fn connect<T>(
+            endpoint: T,
+            service_name: &'static str,
+        ) -> Result<Self, ConfigurationError>
         where
             T: std::convert::TryInto<tonic::transport::Endpoint>,
-            T::Error: std::error::Error + Send + Sync + 'static
+            T::Error: std::error::Error + Send + Sync + 'static,
         {
             Ok(HealthcheckClient {
                 proto_client: HealthClientProto::connect(endpoint).await?,
-                service_name
+                service_name,
             })
         }
 
@@ -276,7 +284,7 @@ pub mod client {
                 ServingStatusProto::NotServing => Ok(HealthcheckStatus::NotServing),
                 ServingStatusProto::Unknown => Ok(HealthcheckStatus::Unknown),
                 ServingStatusProto::ServiceUnknown => Err(HealthcheckError::HealthcheckFailed(
-                    "service unknown".to_string()
+                    "service unknown".to_string(),
                 )),
             }
         }
@@ -296,10 +304,36 @@ pub mod client {
 /// PipelineIngressServer's constructor.
 pub mod server {
     use std::{
+        marker::PhantomData,
         net::SocketAddr,
-        marker::PhantomData, time::Duration
+        time::Duration,
     };
 
+    use futures::{
+        channel::oneshot::{
+            self,
+            Receiver,
+            Sender,
+        },
+        Future,
+        FutureExt,
+        TryFutureExt,
+    };
+    use thiserror::Error;
+    use tonic::{
+        transport::{
+            NamedService,
+            Server,
+        },
+        Request,
+        Response,
+        Status,
+    };
+
+    use super::{
+        HealthcheckError,
+        HealthcheckStatus,
+    };
     use crate::{
         graplinc::grapl::api::pipeline_ingress::v1beta1::{
             PublishRawLogRequest,
@@ -308,32 +342,11 @@ pub mod server {
         protobufs::graplinc::grapl::api::pipeline_ingress::v1beta1::{
             pipeline_ingress_service_server::{
                 PipelineIngressService as PipelineIngressServiceProto,
-                PipelineIngressServiceServer as PipelineIngressServiceServerProto
+                PipelineIngressServiceServer as PipelineIngressServiceServerProto,
             },
             PublishRawLogRequest as PublishRawLogRequestProto,
             PublishRawLogResponse as PublishRawLogResponseProto,
         },
-    };
-    use futures::{
-        channel::oneshot::{
-            Sender,
-            Receiver,
-            self
-        },
-        FutureExt,
-        TryFutureExt, Future,
-    };
-    use thiserror::Error;
-    use tonic::{
-        Request,
-        Response,
-        Status,
-        transport::{Server, NamedService},
-    };
-
-    use super::{
-        HealthcheckStatus,
-        HealthcheckError
     };
 
     //
@@ -349,41 +362,42 @@ pub mod server {
     struct PipelineIngressProto<T, E>
     where
         T: PipelineIngressApi<E>,
-        E: ToString + 'static
+        E: ToString + 'static,
     {
         api_server: T,
-        _e: PhantomData<E>
+        _e: PhantomData<E>,
     }
 
-    impl <T, E> PipelineIngressProto<T, E>
+    impl<T, E> PipelineIngressProto<T, E>
     where
         T: PipelineIngressApi<E>,
-        E: ToString + 'static
+        E: ToString + 'static,
     {
         fn new(api_server: T) -> Self {
             PipelineIngressProto {
                 api_server,
-                _e: PhantomData
+                _e: PhantomData,
             }
         }
     }
 
     #[tonic::async_trait]
-    impl <T, E> PipelineIngressServiceProto for PipelineIngressProto<T, E>
+    impl<T, E> PipelineIngressServiceProto for PipelineIngressProto<T, E>
     where
         T: PipelineIngressApi<E> + Send + Sync + 'static,
-        E: ToString + Send + Sync + 'static
+        E: ToString + Send + Sync + 'static,
     {
         async fn publish_raw_log(
             &self,
-            request: Request<PublishRawLogRequestProto>
+            request: Request<PublishRawLogRequestProto>,
         ) -> Result<Response<PublishRawLogResponseProto>, Status> {
             let inner_request: PublishRawLogRequest = match request.into_inner().try_into() {
                 Ok(request) => request,
                 Err(e) => return Err(Status::unknown(e.to_string())),
             };
 
-            let response = self.api_server
+            let response = self
+                .api_server
                 .publish_raw_log(inner_request)
                 .map_err(|e| Status::unknown(e.to_string()))
                 .await?;
@@ -405,10 +419,11 @@ pub mod server {
     #[tonic::async_trait]
     pub trait PipelineIngressApi<E>
     where
-        E: ToString + 'static
+        E: ToString + 'static,
     {
         async fn publish_raw_log(
-            &self, request: PublishRawLogRequest
+            &self,
+            request: PublishRawLogRequest,
         ) -> Result<PublishRawLogResponse, E>;
     }
 
@@ -437,7 +452,7 @@ pub mod server {
         f_: PhantomData<F>,
     }
 
-    impl <T, E, H, F> PipelineIngressServer<T, E, H, F>
+    impl<T, E, H, F> PipelineIngressServer<T, E, H, F>
     where
         T: PipelineIngressApi<E> + Send + Sync + 'static,
         E: ToString + Send + Sync + 'static,
@@ -453,19 +468,23 @@ pub mod server {
             api_server: T,
             addr: SocketAddr,
             healthcheck: H,
-            healthcheck_polling_interval_ms: u64
+            healthcheck_polling_interval_ms: u64,
         ) -> (Self, Sender<()>) {
             let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
-            (PipelineIngressServer {
-                api_server,
-                healthcheck,
-                healthcheck_polling_interval_ms,
-                addr,
-                shutdown_rx,
-                service_name: PipelineIngressServiceServerProto::<PipelineIngressProto<T, E>>::NAME,
-                e_: PhantomData,
-                f_: PhantomData,
-            }, shutdown_tx)
+            (
+                PipelineIngressServer {
+                    api_server,
+                    healthcheck,
+                    healthcheck_polling_interval_ms,
+                    addr,
+                    shutdown_rx,
+                    service_name:
+                        PipelineIngressServiceServerProto::<PipelineIngressProto<T, E>>::NAME,
+                    e_: PhantomData,
+                    f_: PhantomData,
+                },
+                shutdown_tx,
+            )
         }
 
         /// returns the service name associated with this service. You will need
@@ -498,24 +517,35 @@ pub mod server {
                 // HealthReporter::set_serving<S>(..) makes this awkward, so I
                 // just inlined the whole thing here.
                 loop {
-                    tokio::time::sleep(Duration::from_millis(
-                        self.healthcheck_polling_interval_ms
-                    )).await;
+                    tokio::time::sleep(Duration::from_millis(self.healthcheck_polling_interval_ms))
+                        .await;
 
                     match (self.healthcheck)().await {
                         Ok(status) => {
                             match status {
-                                HealthcheckStatus::Serving => health_reporter
-                                    .set_serving::<PipelineIngressServiceServerProto<PipelineIngressProto<T, E>>>()
-                                    .await,
-                                HealthcheckStatus::NotServing => health_reporter
-                                    .set_not_serving::<PipelineIngressServiceServerProto<PipelineIngressProto<T, E>>>()
-                                    .await,
-                                HealthcheckStatus::Unknown => health_reporter
-                                    .set_not_serving::<PipelineIngressServiceServerProto<PipelineIngressProto<T, E>>>()
-                                    .await,
+                                HealthcheckStatus::Serving => {
+                                    health_reporter
+                                        .set_serving::<PipelineIngressServiceServerProto<
+                                            PipelineIngressProto<T, E>,
+                                        >>()
+                                        .await
+                                }
+                                HealthcheckStatus::NotServing => {
+                                    health_reporter
+                                        .set_not_serving::<PipelineIngressServiceServerProto<
+                                            PipelineIngressProto<T, E>,
+                                        >>()
+                                        .await
+                                }
+                                HealthcheckStatus::Unknown => {
+                                    health_reporter
+                                        .set_not_serving::<PipelineIngressServiceServerProto<
+                                            PipelineIngressProto<T, E>,
+                                        >>()
+                                        .await
+                                }
                             }
-                        },
+                        }
                         Err(_) => {
                             // healthcheck failed, so we'll set_not_serving()
                             health_reporter
@@ -528,16 +558,16 @@ pub mod server {
 
             // TODO: add logging interceptor, tls_config, concurrency limits
             Ok(Server::builder()
-               .add_service(health_service)
-               .add_service(PipelineIngressServiceServerProto::new(
-                   PipelineIngressProto::new(self.api_server)
-               ))
-               .serve_with_shutdown(self.addr, self.shutdown_rx.map(|_| ()))
-               .then(|result| async move {
-                   healthcheck_handle.abort();
-                   result
-               })
-               .await?)
+                .add_service(health_service)
+                .add_service(PipelineIngressServiceServerProto::new(
+                    PipelineIngressProto::new(self.api_server),
+                ))
+                .serve_with_shutdown(self.addr, self.shutdown_rx.map(|_| ()))
+                .then(|result| async move {
+                    healthcheck_handle.abort();
+                    result
+                })
+                .await?)
         }
     }
 }

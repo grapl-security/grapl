@@ -23,14 +23,14 @@ where
     pub inner_message: T,
 }
 
-impl <T> Envelope<T>
+impl<T> Envelope<T>
 where
-    T: SerDe
+    T: SerDe,
 {
     pub fn new(metadata: Metadata, inner_message: T) -> Self {
         Envelope {
             metadata,
-            inner_message
+            inner_message,
         }
     }
 }

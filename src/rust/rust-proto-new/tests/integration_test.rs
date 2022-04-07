@@ -1,11 +1,12 @@
 use std::{
-    fmt::Debug,
     collections::HashSet,
+    fmt::Debug,
 };
+
 use bytes::Bytes;
 use futures::{
     channel::oneshot::Sender,
-    lock::Mutex
+    lock::Mutex,
 };
 use lazy_static::lazy_static;
 use proptest::prelude::*;
@@ -19,19 +20,19 @@ use rust_proto_new::{
         },
         grapl::{
             api::pipeline_ingress::v1beta1::{
-                PublishRawLogRequest,
-                PublishRawLogResponse,
+                client::{
+                    HealthcheckClient,
+                    PipelineIngressClient,
+                },
                 server::{
+                    ConfigurationError,
                     PipelineIngressApi,
                     PipelineIngressServer,
-                    ConfigurationError,
                 },
-                client::{
-                    PipelineIngressClient,
-                    HealthcheckClient
-                },
-                HealthcheckStatus,
                 HealthcheckError,
+                HealthcheckStatus,
+                PublishRawLogRequest,
+                PublishRawLogResponse,
             },
             pipeline::{
                 v1beta1::{
@@ -47,12 +48,12 @@ use rust_proto_new::{
 };
 use test_context::{
     test_context,
-    AsyncTestContext
+    AsyncTestContext,
 };
 use thiserror::Error;
 use tokio::{
+    net::TcpListener,
     task::JoinHandle,
-    net::TcpListener
 };
 
 //
@@ -328,14 +329,14 @@ async fn allocate_port() -> u16 {
                     // use in our own code (we'll mostly bind it soon
                     // enough... mostly).
                     ports.insert(port);
-                    return port
+                    return port;
                 }
-            },
+            }
             Err(_) => {
                 // port already in use
                 println!("failed to bind port {}, waiting 0.05s...", port);
                 tokio::time::sleep(Duration::from_millis(50)).await
-            },
+            }
         }
         idx -= 1;
     }
@@ -360,14 +361,14 @@ struct MockPipelineIngressApi {}
 #[derive(Debug, Error)]
 enum MockPipelineIngressApiError {
     #[error("failed to publish raw log")]
-    PublishRawLogFailed
+    PublishRawLogFailed,
 }
 
 #[tonic::async_trait]
 impl PipelineIngressApi<MockPipelineIngressApiError> for MockPipelineIngressApi {
     async fn publish_raw_log(
         &self,
-        request: PublishRawLogRequest
+        request: PublishRawLogRequest,
     ) -> Result<PublishRawLogResponse, MockPipelineIngressApiError> {
         let tenant_id = Uuid::parse_str(TENANT_ID).expect("failed to parse tenant_id");
         assert!(request.tenant_id == tenant_id);
@@ -389,7 +390,10 @@ struct PipelineIngressTestContext {
     shutdown_tx: Sender<()>,
 }
 
-async fn wait_until_healthy(endpoint: String, service_name: &'static str) -> Result<(), HealthcheckError> {
+async fn wait_until_healthy(
+    endpoint: String,
+    service_name: &'static str,
+) -> Result<(), HealthcheckError> {
     let mut idx = 0;
     let mut healthcheck_client = loop {
         match HealthcheckClient::connect(endpoint.clone(), service_name).await {
@@ -397,14 +401,17 @@ async fn wait_until_healthy(endpoint: String, service_name: &'static str) -> Res
             Err(e) => {
                 if idx == 20 {
                     return Err(HealthcheckError::HealthcheckFailed(
-                        "failed to create healthcheck client after 20 tries".to_string()
-                    ))
+                        "failed to create healthcheck client after 20 tries".to_string(),
+                    ));
                 }
 
-                println!("could not construct healthcheck client, waiting 0.05s: {}", e);
+                println!(
+                    "could not construct healthcheck client, waiting 0.05s: {}",
+                    e
+                );
                 tokio::time::sleep(Duration::from_millis(50)).await;
                 idx += 1;
-            },
+            }
         }
     };
 
@@ -416,8 +423,8 @@ async fn wait_until_healthy(endpoint: String, service_name: &'static str) -> Res
                 other => {
                     if idx == 20 {
                         return Err(HealthcheckError::HealthcheckFailed(
-                            "service still not healthy after 20 tries".to_string()
-                        ))
+                            "service still not healthy after 20 tries".to_string(),
+                        ));
                     }
 
                     println!("service is not yet serving, waiting 0.05s: {:?}", other);
@@ -438,7 +445,8 @@ impl AsyncTestContext for PipelineIngressTestContext {
         let socket_address = format!("[::1]:{}", port);
         let (server, shutdown_tx) = PipelineIngressServer::new(
             MockPipelineIngressApi {},
-            socket_address.parse()
+            socket_address
+                .parse()
                 .expect("failed to parse socket address"),
             || async { Ok(HealthcheckStatus::Serving) },
             50,
@@ -446,9 +454,7 @@ impl AsyncTestContext for PipelineIngressTestContext {
 
         let service_name = server.service_name();
 
-        let server_handle = tokio::task::spawn(
-            server.serve()
-        );
+        let server_handle = tokio::task::spawn(server.serve());
 
         let endpoint = format!("http://{}", socket_address);
 
@@ -468,9 +474,11 @@ impl AsyncTestContext for PipelineIngressTestContext {
     }
 
     async fn teardown(self) {
-        self.shutdown_tx.send(())
+        self.shutdown_tx
+            .send(())
             .expect("failed to shutdown server");
-        self.server_handle.await
+        self.server_handle
+            .await
             .expect("failed to join server task")
             .expect("server configuration failed");
     }
@@ -478,33 +486,34 @@ impl AsyncTestContext for PipelineIngressTestContext {
 
 #[test_context(PipelineIngressTestContext)]
 #[tokio::test]
-async fn test_publish_raw_log_returns_ok_response(
-    ctx: &mut PipelineIngressTestContext
-) {
-    ctx.client.publish_raw_log(PublishRawLogRequest {
-        event_source_id: Uuid::new_v4(),
-        tenant_id: Uuid::parse_str(TENANT_ID).expect("failed to parse tenant_id"),
-        log_event: "success!".into(),
-    }).await.expect("received error response");
+async fn test_publish_raw_log_returns_ok_response(ctx: &mut PipelineIngressTestContext) {
+    ctx.client
+        .publish_raw_log(PublishRawLogRequest {
+            event_source_id: Uuid::new_v4(),
+            tenant_id: Uuid::parse_str(TENANT_ID).expect("failed to parse tenant_id"),
+            log_event: "success!".into(),
+        })
+        .await
+        .expect("received error response");
 }
 
 #[test_context(PipelineIngressTestContext)]
 #[tokio::test]
-async fn test_publish_raw_log_returns_err_response(
-    ctx: &mut PipelineIngressTestContext
-) {
-    let tenant_id = Uuid::parse_str(TENANT_ID)
-        .expect("failed to parse tenant_id");
+async fn test_publish_raw_log_returns_err_response(ctx: &mut PipelineIngressTestContext) {
+    let tenant_id = Uuid::parse_str(TENANT_ID).expect("failed to parse tenant_id");
 
-    match ctx.client.publish_raw_log(PublishRawLogRequest {
-        event_source_id: tenant_id,
-        tenant_id,
-        log_event: "fail!".into(),
-    }).await {
-        Ok(res) => {
-            println!("expected error response, received: {:?}", res);
-            panic!("expected error response");
-        },
-        Err(_) => (), // 👍 great success 👍
+    if let Ok(res) = ctx
+        .client
+        .publish_raw_log(PublishRawLogRequest {
+            event_source_id: tenant_id,
+            tenant_id,
+            log_event: "fail!".into(),
+        })
+        .await
+    {
+        println!("expected error response, received: {:?}", res);
+        panic!("expected error response");
+    } else {
+        // 👍 great success 👍
     }
 }

@@ -200,9 +200,7 @@ pub struct RawLog {
 
 impl RawLog {
     pub fn new(log_event: Bytes) -> Self {
-        RawLog {
-            log_event
-        }
+        RawLog { log_event }
     }
 }
 

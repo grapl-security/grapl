@@ -1,14 +1,24 @@
-use std::{time::SystemTime, net::AddrParseError, env::VarError};
+use std::{
+    env::VarError,
+    net::AddrParseError,
+    time::SystemTime,
+};
 
+use kafka::{
+    ConfigurationError as KafkaConfigurationError,
+    Producer,
+    ProducerError,
+};
 use rust_proto_new::graplinc::grapl::{
     api::pipeline_ingress::v1beta1::{
-        PublishRawLogRequest,
-        PublishRawLogResponse,
         server::{
+            ConfigurationError as ServerConfigurationError,
             PipelineIngressApi,
             PipelineIngressServer,
-            ConfigurationError as ServerConfigurationError,
-        }, HealthcheckStatus
+        },
+        HealthcheckStatus,
+        PublishRawLogRequest,
+        PublishRawLogResponse,
     },
     pipeline::{
         v1beta1::{
@@ -17,12 +27,6 @@ use rust_proto_new::graplinc::grapl::{
         },
         v1beta2::Envelope,
     },
-};
-
-use kafka::{
-    ConfigurationError as KafkaConfigurationError,
-    Producer,
-    ProducerError
 };
 use thiserror::Error;
 use uuid::Uuid;
@@ -35,21 +39,20 @@ enum IngressApiError {
 }
 
 struct IngressApi {
-    producer: Producer<Envelope<RawLog>>
+    producer: Producer<Envelope<RawLog>>,
 }
 
 impl IngressApi {
     fn new(producer: Producer<Envelope<RawLog>>) -> Self {
-        IngressApi {
-            producer
-        }
+        IngressApi { producer }
     }
 }
 
 #[async_trait::async_trait]
 impl PipelineIngressApi<IngressApiError> for IngressApi {
     async fn publish_raw_log(
-        &self, request: PublishRawLogRequest
+        &self,
+        request: PublishRawLogRequest,
     ) -> Result<PublishRawLogResponse, IngressApiError> {
         let created_time = SystemTime::now();
         let last_updated_time = created_time;
@@ -60,19 +63,19 @@ impl PipelineIngressApi<IngressApiError> for IngressApi {
         // actual edge service, that service should be responsible for
         // generating the trace_id.
         let trace_id = Uuid::new_v4();
-        self.producer.send(
-            Envelope::new(
+        self.producer
+            .send(Envelope::new(
                 Metadata::new(
                     tenant_id,
                     trace_id,
                     0,
                     created_time,
                     last_updated_time,
-                    event_source_id
+                    event_source_id,
                 ),
                 RawLog::new(request.log_event),
-            )
-        ).await?;
+            ))
+            .await?;
 
         Ok(PublishRawLogResponse::ok())
     }
@@ -82,16 +85,16 @@ impl PipelineIngressApi<IngressApiError> for IngressApi {
 #[derive(Debug, Error)]
 enum ConfigurationError {
     #[error("failed to configure kafka client {0}")]
-    KafkaConfigurationError(#[from] KafkaConfigurationError),
+    Kafka(#[from] KafkaConfigurationError),
 
     #[error("failed to configure gRPC server {0}")]
-    ServerConfigurationError(#[from] ServerConfigurationError),
+    Server(#[from] ServerConfigurationError),
 
     #[error("failed to parse socket address {0}")]
-    AddrParseError(#[from] AddrParseError),
+    SocketAddr(#[from] AddrParseError),
 
     #[error("missing environment variable {0}")]
-    MissingEnvironmentVariable(#[from] VarError),
+    EnvironmentVariable(#[from] VarError),
 }
 
 #[tokio::main]
@@ -102,7 +105,7 @@ async fn main() -> Result<(), ConfigurationError> {
         IngressApi::new(producer),
         addr.parse()?,
         || async { Ok(HealthcheckStatus::Serving) }, // FIXME
-        50 // FIXME
+        50,                                          // FIXME
     );
 
     Ok(server.serve().await?)
