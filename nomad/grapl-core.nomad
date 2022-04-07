@@ -525,6 +525,9 @@ job "grapl-core" {
           # Could be potentially replaced with a gateway stanza or something.
           to = alpha.value.http_port
         }
+        port "dgraph-alpha-grpc-pub-port" {
+          static = local.dgraph_alpha_grpc_public_port_base
+        }
       }
 
       task "dgraph-alpha" {
@@ -609,6 +612,9 @@ job "grapl-core" {
         connect {
           sidecar_service {
             proxy {
+              config {
+                protocol = "http"
+              }
 
               # We need to expose the health check for consul to be able to reach it
               expose {
