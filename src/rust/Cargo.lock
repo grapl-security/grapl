@@ -4528,7 +4528,7 @@ dependencies = [
  "async-trait",
  "chrono",
  "criterion",
- "endpoint-plugin",
+ "derive-dynamic-node",
  "graph-generator-lib",
  "grapl-config",
  "grapl-observe",

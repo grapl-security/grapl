@@ -12,7 +12,7 @@ use sqs_executor::{
 use crate::{
     error::SysmonGeneratorError,
     metrics::SysmonGeneratorMetrics,
-    models,
+    model,
 };
 
 #[derive(Clone)]
@@ -62,7 +62,7 @@ where
             .iter()
             .filter_map(|event| {
                 let result: Result<Option<GraphDescription>, _> =
-                    models::generate_graph_from_event(event);
+                    model::generate_graph_from_event(event);
 
                 self.metrics.report_subgraph_generation(&result);
 

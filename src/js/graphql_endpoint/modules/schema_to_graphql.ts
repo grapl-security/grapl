@@ -79,7 +79,10 @@ function getHardcodedOverride(
         return GraphQLList(typeMap.get("File"));
     }
     if (property.name == "parent") {
-        return typeMap.get("Process");
+        return GraphQLList(typeMap.get("Process"));
+    }
+    if (property.name == "dgraph_type") {
+        return GraphQLList(GraphQLString);
     }
     return undefined;
 }

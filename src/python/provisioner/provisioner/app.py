@@ -7,17 +7,12 @@ from typing import TYPE_CHECKING
 
 import boto3
 from argon2 import PasswordHasher
-from grapl_analyzerlib.prelude import (
-    AssetSchema,
+from grapl_analyzerlib.prelude import (  # AssetSchema,; FileSchema,; IpAddressSchema,; IpConnectionSchema,; IpPortSchema,; NetworkConnectionSchema,; ProcessInboundConnectionSchema,; ProcessOutboundConnectionSchema,; ProcessSchema,
     FileSchema,
     GraphClient,
-    IpAddressSchema,
-    IpConnectionSchema,
-    IpPortSchema,
     LensSchema,
-    NetworkConnectionSchema,
-    ProcessInboundConnectionSchema,
-    ProcessOutboundConnectionSchema,
+    MachineSchema,
+    NetworkSocketAddressSchema,
     ProcessSchema,
     RiskSchema,
 )
@@ -49,15 +44,19 @@ def _provision_graph(
     schema_table = dynamodb.Table(GRAPL_SCHEMA_TABLE)
     schema_properties_table = dynamodb.Table(GRAPL_SCHEMA_PROPERTIES_TABLE)
     schemas = [
-        AssetSchema(),
-        ProcessSchema(),
+        MachineSchema(),
         FileSchema(),
-        IpConnectionSchema(),
-        IpAddressSchema(),
-        IpPortSchema(),
-        NetworkConnectionSchema(),
-        ProcessInboundConnectionSchema(),
-        ProcessOutboundConnectionSchema(),
+        NetworkSocketAddressSchema(),
+        ProcessSchema(),
+        # AssetSchema(),
+        # ProcessSchema(),
+        # FileSchema(),
+        # IpConnectionSchema(),
+        # IpAddressSchema(),
+        # IpPortSchema(),
+        # NetworkConnectionSchema(),
+        # ProcessInboundConnectionSchema(),
+        # ProcessOutboundConnectionSchema(),
         RiskSchema(),
         LensSchema(),
     ]

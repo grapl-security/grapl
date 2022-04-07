@@ -95,10 +95,18 @@ impl<'a> TryFrom<&Field<'a, &'a str>> for EdgeRel {
             },
         };
 
+        // match (forward_rel, reverse_rel) {
+        //     ("ToOne", "ToOne") => Ok(EdgeRel::OneToOne),
+        //     ("ToOne", "ToMany") => Ok(EdgeRel::OneToMany),
+        //     ("ToMany", "ToOne") => Ok(EdgeRel::ManyToOne),
+        //     ("ToMany", "ToMany") => Ok(EdgeRel::ManyToMany),
+        //     (_, _) => unreachable!(),
+        // }
+
         match (forward_rel, reverse_rel) {
             ("ToOne", "ToOne") => Ok(EdgeRel::OneToOne),
-            ("ToOne", "ToMany") => Ok(EdgeRel::OneToMany),
-            ("ToMany", "ToOne") => Ok(EdgeRel::ManyToOne),
+            ("ToOne", "ToMany") => Ok(EdgeRel::ManyToOne),
+            ("ToMany", "ToOne") => Ok(EdgeRel::OneToMany),
             ("ToMany", "ToMany") => Ok(EdgeRel::ManyToMany),
             (_, _) => unreachable!(),
         }

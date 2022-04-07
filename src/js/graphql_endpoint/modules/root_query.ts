@@ -155,10 +155,15 @@ function asEnrichedNodeWithSchemas(
     );
     const mostConcreteDgraphType = dgraph_types[0]; // yes, this can be undefined
     const whichPropToDisplay = schemaMap.get(dgraph_types[0])?.display_property;
-    // fall back to just the type.
-    // I don't super love this design - it's putting view logic in the controller layer
-    const display: string =
-        (node as any)[whichPropToDisplay] || mostConcreteDgraphType;
+    let display: any;
+    if (whichPropToDisplay === 'dgraph_type') { 
+        display = mostConcreteDgraphType
+    } else { 
+        display = (node as any)[whichPropToDisplay] || mostConcreteDgraphType;
+    }
+    if (Array.isArray(display)) { 
+        display = display[0];
+    }
     return {
         ...node,
         uid: uidAsInt(node),

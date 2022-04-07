@@ -1,5 +1,5 @@
 pub mod error;
 pub mod generator;
 pub mod metrics;
-pub mod models;
+pub mod model;
 pub mod serialization;

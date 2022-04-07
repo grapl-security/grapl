@@ -142,8 +142,7 @@ job "e2e-tests" {
         image      = var.container_images["e2e-tests"]
         entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
         command = trimspace(<<EOF
-graplctl upload analyzer --analyzer_main_py ./etc/local_grapl/suspicious_svchost/main.py
-graplctl upload analyzer --analyzer_main_py ./etc/local_grapl/unique_cmd_parent/main.py
+graplctl upload analyzer --analyzer_main_py ./etc/local_grapl/dropper/main.py
 graplctl upload sysmon --logfile ./etc/sample_data/dropper.xml
 EOF
         )

@@ -1,0 +1,56 @@
+type Process @grapl(identity_algorithm: "static") {
+    pid: Int! @immutable,
+    guid: String! @static_id,
+    created_timestamp: Int! @immutable,
+    cmdline: String! @immutable,
+    image: String! @immutable,
+    current_directory: String! @immutable,
+    user: String! @immutable,
+
+    children: [Process] @edge(reverse: "parent", reverse_relationship: "ToMany"),
+    parent: [Process] @edge(reverse: "children", reverse_relationship: "ToMany"),
+
+    process_image: [File!] @edge(reverse: "process_executed_from_image", reverse_relationship: "ToMany"),
+
+    created_files: [File] @edge(reverse: "created_by_process", reverse_relationship: "ToMany"),
+
+    process_executed_by_machine: [Machine] @edge(reverse: "machine_process", reverse_relationship: "ToMany"),
+
+    process_connected_to: [NetworkSocketAddress] @edge(reverse: "connection_from_process", reverse_relationship: "ToMany"),
+
+    process_connected_via: [NetworkSocketAddress] @edge(reverse: "connection_from_process_via", reverse_relationship: "ToMany"),
+}
+
+type File @grapl(identity_algorithm: "static") {
+    machine_id: String! @static_id,
+    path: String! @static_id,
+
+    process_executed_from_image: [Process] @edge(reverse: "process_image", reverse_relationship: "ToMany"),
+
+    created_by_process: [Process] @edge(reverse: "created_files", reverse_relationship: "ToMany"),
+
+    file_on_machine: [Machine] @edge(reverse: "machine_files", reverse_relationship: "ToMany"),
+}
+
+type Machine @grapl(identity_algorithm: "static") {
+    machine_id: String! @static_id,
+    hostname: String! @immutable,
+    os: String! @immutable,
+
+    machine_process: [Process] @edge(reverse: "process_executed_by_machine", reverse_relationship: "ToMany"),
+
+    machine_files: [File] @edge(reverse: "file_on_machine", reverse_relationship: "ToMany"),
+}
+
+type NetworkSocketAddress @grapl(identity_algorithm: "static") {
+    transport_protocol: String! @static_id,
+    ip_address: String! @static_id,
+    port_number: String! @static_id,
+
+    network_connection_to: [NetworkSocketAddress] @edge(reverse: "network_connection_from", reverse_relationship: "ToMany"),
+    network_connection_from: [NetworkSocketAddress] @edge(reverse: "network_connection_to", reverse_relationship: "ToMany"),
+
+    connection_from_process: [Process] @edge(reverse: "process_connected_to", reverse_relationship: "ToMany"),
+    connection_from_process_via: [Process] @edge(reverse: "process_connected_via", reverse_relationship: "ToMany"),
+
+}
