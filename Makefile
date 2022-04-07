@@ -478,7 +478,6 @@ down: ## docker-compose down - both stops and removes the containers
 	# LAMBDA_DOCKER_NETWORK environment variable.
 	$(MAKE) stop-nomad-detach
 	docker volume rm grapl-dgraph
-	rm -rf dist/
 	docker-compose $(EVERY_COMPOSE_FILE) down --timeout=0
 	@docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
 	@docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
