@@ -133,7 +133,7 @@ where
             });
     };
 
-    Ok(messages?)
+    messages
 }
 
 #[derive(thiserror::Error, Debug)]
