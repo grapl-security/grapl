@@ -232,6 +232,7 @@ steps:
       queue: "beefy"
     artifact_paths:
       - "test_artifacts/**/*"
+      # https://github.com/grapl-security/issue-tracker/issues/894
       - "src/js/engagement_view/source_map_explorer_result.html"
 
   - label: ":hammer: E2E Tests"
@@ -255,6 +256,7 @@ steps:
       queue: "beefy"
     artifact_paths:
       - "test_artifacts/**/*"
+      # https://github.com/grapl-security/issue-tracker/issues/894
       - "src/js/engagement_view/source_map_explorer_result.html"
 
   - label: "Build docs :book:"
