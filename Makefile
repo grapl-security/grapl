@@ -156,9 +156,12 @@ build-e2e-pex-files:
 build-engagement-view: ## Build website assets to include in grapl-web-ui
 	@echo "--- Building the engagement view"
 	$(ENGAGEMENT_VIEW_MAKE) build-code
+	TARGET_FRONTEND_DIR="${PWD}/src/rust/grapl-web-ui/frontend/"
+	rm -rf "$${TARGET_FRONTEND_DIR}/*"  # Clear out old artifacts
 	cp -r \
 		"${PWD}/src/js/engagement_view/build/." \
-		"${PWD}/src/rust/grapl-web-ui/frontend/"
+		"$${TARGET_FRONTEND_DIR}"
+		
 
 .PHONY: build-grapl-service-prerequisites
 
