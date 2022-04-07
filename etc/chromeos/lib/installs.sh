@@ -281,6 +281,48 @@ download_and_install_tarball() {
     rm -Rf "${temp_dir}"
 }
 
+# Download and install a zip.
+#
+# Assumptions:
+# - URL is HTTPS
+# - URL is for a zip file
+# - The zip has all its contents at the root of the
+#   archive. Everything in the archive will be moved as-is into the
+#   destination directory.
+
+download_and_install_zip() {
+    local -r url="${1}"
+    local -r target_dir="${2}"
+
+    file_name="$(basename "${url}")"
+
+    # Retrieve the archive
+    curl --proto "=https" \
+        --tlsv1.2 \
+        --location \
+        --remote-name \
+        "${url}"
+
+    # Create a dedicated temporary directory to store the extracted
+    # contents of the tarball, prior to moving it.
+    temp_dir="$(mktemp --directory)"
+
+    # Extract the archive into the temporary directory
+    # unzip only has short flags :(
+    unzip -d "${temp_dir}" "${file_name}"
+
+    # Create the destination and move everything to it.
+    mkdir --parents "${target_dir}"
+    mv "${temp_dir}"/* "${target_dir}"
+
+    # Show the contents of the target_dir for visibility and debugging
+    tree "${target_dir}"
+
+    # Clean up after ourselves
+    rm "${file_name}"
+    rm -Rf "${temp_dir}"
+}
+
 install_cni_plugins() {
     echo_banner "Installing CNI plugins required for Nomad bridge networks"
 
@@ -293,7 +335,7 @@ install_cni_plugins() {
 }
 
 install_nomad_firecracker() {
-    echo_banner "Installing Firecracker Nomad driver"
+    echo_banner "Installing Firecracker Nomad driver and dependencies"
 
     repo="cneira/firecracker-task-driver"
     version=$(get_latest_release "${repo}")
@@ -303,6 +345,10 @@ install_nomad_firecracker() {
     download_and_install_tarball \
         "${url_prefix}/firecracker-task-driver-${version}.tar.gz" \
         /opt/nomad/plugins
+
+    #TODO once we've added golang uncomment the below line
+    # install_tc_redirect_tap
+
 }
 
 install_nomad_chromeos_workaround() {
@@ -321,4 +367,21 @@ install_git_hooks() {
 install_sqlx_prepare_deps() {
     cargo install sqlx-cli --no-default-features --features postgres,rustls
     sudo apt install --yes netcat # used for `nc`
+}
+
+install_tc_redirect_tap() {
+    # The tc-redirect-tap cni plugin used by nomad-firecracker-task has no tags or releases or binaries :/
+    # We get to build it ourselves.
+    # This assumes golang is installed
+    download_and_install_zip \
+        "https://github.com/awslabs/tc-redirect-tap/archive/refs/heads/master.zip" \
+        /tmp/tc-redirect-tap
+
+    (cd /tmp/tc-redirect-tap/tc-redirect-tap-master && make all)
+    chmod 0755 /tmp/tc-redirect-tap/tc-redirect-tap-master/tc-redirect-tap
+    sudo chown root:root /tmp/tc-redirect-tap/tc-redirect-tap-master/tc-redirect-tap
+    sudo cp /tmp/tc-redirect-tap/tc-redirect-tap-master/tc-redirect-tap /opt/cni/bin/tc-redirect-tap
+
+    # clean up
+    rm -rf /tmp/tc-redirect-tap
 }
