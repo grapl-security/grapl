@@ -54,7 +54,7 @@ steps:
           # promote them as a group later.
           - ".buildkite/scripts/upload_firecracker_packages.sh"
         plugins:
-          - artifacts#v1.4.0:
+          - artifacts#v1.5.0:
               download:
                 - "dist/*"
           - grapl-security/vault-login#v0.1.2
@@ -84,7 +84,7 @@ steps:
   # will fail.
   - label: ":thinking_face: Anything to promote?"
     plugins:
-      - artifacts#v1.4.0:
+      - artifacts#v1.5.0:
           download: all_artifacts.json
     command:
       - .buildkite/scripts/upload_promotion_step_if_needed.sh
