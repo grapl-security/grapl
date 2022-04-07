@@ -66,7 +66,10 @@ variable "analyzer_executor_queue" {
 variable "dgraph_replicas" {
   type    = number
   default = 1
-  # This value must be odd. Otherwise dgraph_zero will exit
+  validation {
+    condition     = var.dgraph_replicas % 2 == 1
+    error_message = "This value must be odd. Otherwise dgraph_zero will exit."
+  }
 }
 
 variable "dgraph_shards" {
