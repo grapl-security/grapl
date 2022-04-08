@@ -168,7 +168,7 @@ install_nvm() {
     echo_banner "Installing nvm"
     curl --proto "=https" \
         --tlsv1.2 \
-        https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
+        https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
     source_profile
 
     # Make nvm usable ASAP
