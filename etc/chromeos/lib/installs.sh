@@ -35,7 +35,7 @@ _cargo_install() {
 
     echo "Cargo Install:" "${@}"
     echo "(Set FORCE_REINSTALL=1 to force install)"
-    cargo install "${@}"
+    cargo install "${cargo_install_flags[@]}" "${@}"
 }
 
 get_latest_release() {
@@ -105,15 +105,13 @@ install_docker() {
 }
 
 install_rust_and_utilities() {
-    if [[ ! -f "${HOME}/.cargo/env" ]]; then
+    if [[ ! -f "${HOME}/.cargo/env" ]] || should_force_reinstall; then
         echo_banner "Installing rust toolchain"
         curl --proto "=https" \
             --tlsv1.2 \
             --silent \
             --show-error \
             --fail https://sh.rustup.rs | sh
-    else
-        echo_banner "Rust toolchain already installed"
     fi
     # Shellcheck can't follow $HOME or other vars like $USER so we disable the check here
     # shellcheck disable=SC1091
