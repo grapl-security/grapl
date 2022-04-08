@@ -27,6 +27,17 @@ should_force_reinstall() {
     fi
 }
 
+_cargo_install() { 
+    declare -a cargo_install_flags=()
+    if should_force_reinstall; then
+        cargo_install_flags+=("--force")
+    fi
+
+    echo "Cargo Install:" "${@}"
+    echo "(Set FORCE_REINSTALL=1 to force install)"
+    cargo install "${@}" 
+}
+
 get_latest_release() {
     curl --proto "=https" \
         --tlsv1.2 \
@@ -113,14 +124,9 @@ install_rust_and_utilities() {
         bat
     )
 
-    echo_banner "Installing rust utilities (set FORCE_REINSTALL=1 to force)"
+    echo_banner "Installing rust utilities"
 
-    declare -a cargo_install_flags=()
-    if should_force_reinstall; then
-        cargo_install_flags+=("--force")
-    fi
-
-    cargo install "${cargo_install_flags[@]}" "${rust_utilities[@]}"
+    _cargo_install "${rust_utilities[@]}"
 }
 
 install_pyenv() {
@@ -199,28 +205,30 @@ install_nvm() {
 }
 
 install_awsv2() {
-    echo_banner "Installing awscliv2"
-    (
-        cd /tmp
-        curl --proto "=https" \
-            --tlsv1.2 \
-            --output "awscliv2.zip" \
-            "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
-        unzip awscliv2.zip
-        sudo ./aws/install --update
-        sudo rm ./awscliv2.zip
-        sudo rm -rf ./aws
-    )
-    echo_banner "Installing SSM extension"
-    (
-        cd /tmp
-        curl --proto "=https" \
-            --tlsv1.2 \
-            --remote-name \
-            "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb"
-        sudo dpkg -i session-manager-plugin.deb
-        rm ./session-manager-plugin.deb
-    )
+    if should_force_reinstall || ! aws --version; then
+        echo_banner "Installing awscliv2"
+        (
+            cd /tmp
+            curl --proto "=https" \
+                --tlsv1.2 \
+                --output "awscliv2.zip" \
+                "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install --update
+            sudo rm ./awscliv2.zip
+            sudo rm -rf ./aws
+        )
+        echo_banner "Installing SSM extension"
+        (
+            cd /tmp
+            curl --proto "=https" \
+                --tlsv1.2 \
+                --remote-name \
+                "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb"
+            sudo dpkg -i session-manager-plugin.deb
+            rm ./session-manager-plugin.deb
+        )
+    fi
 }
 install_pulumi() {
     echo_banner "Install pulumi"
@@ -346,6 +354,6 @@ install_git_hooks() {
 }
 
 install_sqlx_prepare_deps() {
-    cargo install sqlx-cli --no-default-features --features postgres,rustls
+    _cargo_install sqlx-cli --no-default-features --features postgres,rustls
     sudo apt install --yes netcat # used for `nc`
 }
