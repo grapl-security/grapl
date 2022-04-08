@@ -29,7 +29,7 @@ get_latest_release() {
 
 update_linux() {
     sudo apt update
-    sudo apt upgrade
+    sudo apt upgrade --yes
 }
 
 fix_shell_completion() {
@@ -48,7 +48,7 @@ install_build_tooling() {
         lsb-release
         software-properties-common # for `apt-add-repository``
     )
-    sudo apt install -y "${tools[@]}"
+    sudo apt install --yes "${tools[@]}"
 }
 
 # potentially replace with podman in the future?
@@ -116,7 +116,7 @@ install_rust_and_utilities() {
 
 install_pyenv() {
     echo_banner "Install pyenv and set python version to ${PYENV_PYTHON_VERSION}"
-    sudo apt-get install -y make libssl-dev zlib1g-dev libbz2-dev \
+    sudo apt-get install --yes make libssl-dev zlib1g-dev libbz2-dev \
         libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
         xz-utils tk-dev libffi-dev liblzma-dev
 
@@ -222,7 +222,7 @@ install_pulumi() {
 
 install_utilities() {
     echo_banner "Install useful utilities"
-    sudo apt-get install -y jq dnsutils tree
+    sudo apt-get install --yes jq dnsutils tree
 }
 
 install_hashicorp_tools() {
@@ -237,7 +237,7 @@ install_hashicorp_tools() {
         sudo chmod 644 /etc/apt/trusted.gpg.d/hashicorp-apt.gpg
     sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
     sudo apt-get update
-    sudo apt-get install -y consul nomad packer vault
+    sudo apt-get install --yes consul nomad packer vault
 }
 
 # Download and install a tarball.
