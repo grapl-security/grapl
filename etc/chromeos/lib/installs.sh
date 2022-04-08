@@ -74,13 +74,15 @@ install_build_tooling() {
 # potentially replace with podman in the future?
 install_docker() {
     echo_banner "Install docker"
-    curl --proto "=https" \
-        --tlsv1.2 \
-        --silent \
-        --show-error \
-        --location \
-        https://get.docker.com/ | sh
-    sudo usermod -a -G docker "$USER"
+    if (! command -v docker) || should_force_reinstall; then
+        curl --proto "=https" \
+            --tlsv1.2 \
+            --silent \
+            --show-error \
+            --location \
+            https://get.docker.com/ | sh
+        sudo usermod -a -G docker "$USER"
+    fi
 
     echo_banner "Install docker-compose (v1, old, Python)"
     sudo curl --proto "=https" \
@@ -205,7 +207,7 @@ install_nvm() {
 }
 
 install_awsv2() {
-    if should_force_reinstall || ! aws --version; then
+    if ! command -v aws || should_force_reinstall; then
         echo_banner "Installing awscliv2"
         (
             cd /tmp
