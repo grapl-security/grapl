@@ -18,6 +18,15 @@ echo_banner() {
     echo -e "========================================\n"
 }
 
+should_force_reinstall() {
+    # One flag to represent "let's overwrite all existing installs"
+    if [[ -n "${FORCE_REINSTALL:-}" ]]; then
+        true
+    else
+        false
+    fi
+}
+
 get_latest_release() {
     curl --proto "=https" \
         --tlsv1.2 \
@@ -104,10 +113,10 @@ install_rust_and_utilities() {
         bat
     )
 
-    echo_banner "Installing rust utilities (set FORCE_INSTALL_CARGO_UTILITIES=1 to force)"
+    echo_banner "Installing rust utilities (set FORCE_REINSTALL=1 to force)"
 
     declare -a cargo_install_flags=()
-    if [[ -n "${FORCE_INSTALL_CARGO_UTILITIES:-}" ]]; then
+    if should_force_reinstall; then
         cargo_install_flags+=("--force")
     fi
 
@@ -124,15 +133,10 @@ install_pyenv() {
 
     # shellcheck disable=SC1091
     home_pyenv_dir="$HOME/.pyenv"
-    if [ -d "${home_pyenv_dir}" ]; then
+    if [ -d "${home_pyenv_dir}" ] && should_force_reinstall; then
         echo ".pyenv already exists. Nuking it so that the pyenv is properly installed and configured"
         rm -rf "${home_pyenv_dir}"
     fi
-
-    curl --proto "=https" \
-        --tlsv1.2 \
-        --location \
-        https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash
 
     # This function is stolen from the
     # "If your ~/.profile sources ~/.bashrc (Debian, Ubuntu, Mint)"
@@ -154,9 +158,18 @@ install_pyenv() {
         # shellcheck disable=SC2016
         echo 'eval "$(pyenv init -)"' >> ~/.bashrc
     }
-    setup_pyenv_on_path
-    pyenv install "${PYENV_PYTHON_VERSION}"
+
+    if [ ! -d "${home_pyenv_dir}" ]; then
+        curl --proto "=https" \
+            --tlsv1.2 \
+            --location \
+            https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash
+        setup_pyenv_on_path
+    fi
+
+    pyenv install --skip-existing "${PYENV_PYTHON_VERSION}"
     pyenv global "${PYENV_PYTHON_VERSION}"
+
 }
 
 install_pipx() {
