@@ -27,7 +27,7 @@ should_force_reinstall() {
     fi
 }
 
-_cargo_install() { 
+_cargo_install() {
     declare -a cargo_install_flags=()
     if should_force_reinstall; then
         cargo_install_flags+=("--force")
@@ -35,7 +35,7 @@ _cargo_install() {
 
     echo "Cargo Install:" "${@}"
     echo "(Set FORCE_REINSTALL=1 to force install)"
-    cargo install "${@}" 
+    cargo install "${@}"
 }
 
 get_latest_release() {
