@@ -105,7 +105,7 @@ install_docker() {
 }
 
 install_rust_and_utilities() {
-    if [[ ! -f "${HOME}/.cargo/env" ]] || should_force_reinstall; then
+    if (! command -v rustu) || should_force_reinstall; then
         echo_banner "Installing rust toolchain"
         curl --proto "=https" \
             --tlsv1.2 \
@@ -205,7 +205,7 @@ install_nvm() {
 }
 
 install_awsv2() {
-    if ! command -v aws || should_force_reinstall; then
+    if (! command -v aws) || should_force_reinstall; then
         echo_banner "Installing awscliv2"
         (
             cd /tmp
