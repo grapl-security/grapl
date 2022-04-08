@@ -105,7 +105,7 @@ install_docker() {
 }
 
 install_rust_and_utilities() {
-    if (! command -v rustu) || should_force_reinstall; then
+    if (! command -v rustup) || should_force_reinstall; then
         echo_banner "Installing rust toolchain"
         curl --proto "=https" \
             --tlsv1.2 \
