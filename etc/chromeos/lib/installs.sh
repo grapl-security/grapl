@@ -185,13 +185,15 @@ install_pipx() {
 
 install_nvm() {
     echo_banner "Installing nvm"
+    # This exported variable is actually used by the NVM install script
+    export NVM_DIR="${HOME}/.config/nvm"
+    mkdir --parents "${NVM_DIR}"
+
     curl --proto "=https" \
         --tlsv1.2 \
         https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
     source_profile
 
-    # Make nvm usable ASAP
-    export NVM_DIR="${HOME}/.config/nvm"
     # shellcheck disable=SC1091
     [ -s "${NVM_DIR}/nvm.sh" ] && \. "${NVM_DIR}/nvm.sh" # This loads nvm
     # shellcheck disable=SC1091
