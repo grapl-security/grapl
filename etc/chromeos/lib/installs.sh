@@ -83,21 +83,35 @@ install_docker() {
 }
 
 install_rust_and_utilities() {
-    echo_banner "Installing rust toolchain"
-    curl --proto "=https" \
-        --tlsv1.2 \
-        --silent \
-        --show-error \
-        --fail https://sh.rustup.rs | sh
+    if [[ ! -f "${HOME}/.cargo/env" ]]; then
+        echo_banner "Installing rust toolchain"
+        curl --proto "=https" \
+            --tlsv1.2 \
+            --silent \
+            --show-error \
+            --fail https://sh.rustup.rs | sh
+    else
+        echo_banner "Rust toolchain already installed"
+    fi
     # Shellcheck can't follow $HOME or other vars like $USER so we disable the check here
     # shellcheck disable=SC1091
     source "$HOME/.cargo/env"
 
-    echo_banner "Installing rust utilities (ripgrep, fd-find, dua and bat)"
-    cargo install -f ripgrep
-    cargo install -f fd-find
-    cargo install -f dua
-    cargo install -f bat
+    rust_utilities=(
+        ripgrep
+        fd-find
+        dua
+        bat
+    )
+
+    echo_banner "Installing rust utilities (set FORCE_INSTALL_CARGO_UTILITIES=1 to force)"
+
+    declare -a cargo_install_flags=()
+    if [[ -n "${FORCE_INSTALL_CARGO_UTILITIES:-}" ]]; then
+        cargo_install_flags+=("--force")
+    fi
+
+    cargo install "${cargo_install_flags[@]}" "${rust_utilities[@]}"
 }
 
 install_pyenv() {
