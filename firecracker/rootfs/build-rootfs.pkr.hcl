@@ -72,9 +72,9 @@ locals {
 
   # The base Debootstrap install takes up 252MB
   # The plugin-bootstrap-init built with RUST_BUILD=debug (e.g. locally) is
-  # 200MB
+  # 223MB
   # Give it some buffer
-  image_size_mb = 550
+  image_size_mb = 600
 }
 
 data "amazon-ami" "base-ami" {
