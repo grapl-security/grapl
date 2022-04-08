@@ -18,6 +18,26 @@ echo_banner() {
     echo -e "========================================\n"
 }
 
+should_force_reinstall() {
+    # One flag to represent "let's overwrite all existing installs"
+    if [[ -n "${FORCE_REINSTALL:-}" ]]; then
+        true
+    else
+        false
+    fi
+}
+
+_cargo_install() {
+    declare -a cargo_install_flags=()
+    if should_force_reinstall; then
+        cargo_install_flags+=("--force")
+    fi
+
+    echo "Cargo Install:" "${@}"
+    echo "(Set FORCE_REINSTALL=1 to force install)"
+    cargo install "${cargo_install_flags[@]}" "${@}"
+}
+
 get_latest_release() {
     curl --proto "=https" \
         --tlsv1.2 \
@@ -29,7 +49,7 @@ get_latest_release() {
 
 update_linux() {
     sudo apt update
-    sudo apt upgrade
+    sudo apt upgrade --yes
 }
 
 fix_shell_completion() {
@@ -48,19 +68,21 @@ install_build_tooling() {
         lsb-release
         software-properties-common # for `apt-add-repository``
     )
-    sudo apt install -y "${tools[@]}"
+    sudo apt install --yes "${tools[@]}"
 }
 
 # potentially replace with podman in the future?
 install_docker() {
     echo_banner "Install docker"
-    curl --proto "=https" \
-        --tlsv1.2 \
-        --silent \
-        --show-error \
-        --location \
-        https://get.docker.com/ | sh
-    sudo usermod -a -G docker "$USER"
+    if (! command -v docker) || should_force_reinstall; then
+        curl --proto "=https" \
+            --tlsv1.2 \
+            --silent \
+            --show-error \
+            --location \
+            https://get.docker.com/ | sh
+        sudo usermod -a -G docker "$USER"
+    fi
 
     echo_banner "Install docker-compose (v1, old, Python)"
     sudo curl --proto "=https" \
@@ -83,26 +105,33 @@ install_docker() {
 }
 
 install_rust_and_utilities() {
-    echo_banner "Installing rust toolchain"
-    curl --proto "=https" \
-        --tlsv1.2 \
-        --silent \
-        --show-error \
-        --fail https://sh.rustup.rs | sh
+    if (! command -v rustup) || should_force_reinstall; then
+        echo_banner "Installing rust toolchain"
+        curl --proto "=https" \
+            --tlsv1.2 \
+            --silent \
+            --show-error \
+            --fail https://sh.rustup.rs | sh
+    fi
     # Shellcheck can't follow $HOME or other vars like $USER so we disable the check here
     # shellcheck disable=SC1091
     source "$HOME/.cargo/env"
 
-    echo_banner "Installing rust utilities (ripgrep, fd-find, dua and bat)"
-    cargo install -f ripgrep
-    cargo install -f fd-find
-    cargo install -f dua
-    cargo install -f bat
+    rust_utilities=(
+        ripgrep
+        fd-find
+        dua
+        bat
+    )
+
+    echo_banner "Installing rust utilities"
+
+    _cargo_install "${rust_utilities[@]}"
 }
 
 install_pyenv() {
     echo_banner "Install pyenv and set python version to ${PYENV_PYTHON_VERSION}"
-    sudo apt-get install -y make libssl-dev zlib1g-dev libbz2-dev \
+    sudo apt-get install --yes make libssl-dev zlib1g-dev libbz2-dev \
         libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
         xz-utils tk-dev libffi-dev liblzma-dev
 
@@ -110,15 +139,10 @@ install_pyenv() {
 
     # shellcheck disable=SC1091
     home_pyenv_dir="$HOME/.pyenv"
-    if [ -d "${home_pyenv_dir}" ]; then
+    if [ -d "${home_pyenv_dir}" ] && should_force_reinstall; then
         echo ".pyenv already exists. Nuking it so that the pyenv is properly installed and configured"
         rm -rf "${home_pyenv_dir}"
     fi
-
-    curl --proto "=https" \
-        --tlsv1.2 \
-        --location \
-        https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash
 
     # This function is stolen from the
     # "If your ~/.profile sources ~/.bashrc (Debian, Ubuntu, Mint)"
@@ -140,9 +164,18 @@ install_pyenv() {
         # shellcheck disable=SC2016
         echo 'eval "$(pyenv init -)"' >> ~/.bashrc
     }
-    setup_pyenv_on_path
-    pyenv install "${PYENV_PYTHON_VERSION}"
+
+    if [ ! -d "${home_pyenv_dir}" ]; then
+        curl --proto "=https" \
+            --tlsv1.2 \
+            --location \
+            https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer | bash
+        setup_pyenv_on_path
+    fi
+
+    pyenv install --skip-existing "${PYENV_PYTHON_VERSION}"
     pyenv global "${PYENV_PYTHON_VERSION}"
+
 }
 
 install_pipx() {
@@ -154,7 +187,7 @@ install_nvm() {
     echo_banner "Installing nvm"
     curl --proto "=https" \
         --tlsv1.2 \
-        https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
+        https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
     source_profile
 
     # Make nvm usable ASAP
@@ -172,28 +205,30 @@ install_nvm() {
 }
 
 install_awsv2() {
-    echo_banner "Installing awscliv2"
-    (
-        cd /tmp
-        curl --proto "=https" \
-            --tlsv1.2 \
-            --output "awscliv2.zip" \
-            "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
-        unzip awscliv2.zip
-        sudo ./aws/install --update
-        sudo rm ./awscliv2.zip
-        sudo rm -rf ./aws
-    )
-    echo_banner "Installing SSM extension"
-    (
-        cd /tmp
-        curl --proto "=https" \
-            --tlsv1.2 \
-            --remote-name \
-            "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb"
-        sudo dpkg -i session-manager-plugin.deb
-        rm ./session-manager-plugin.deb
-    )
+    if (! command -v aws) || should_force_reinstall; then
+        echo_banner "Installing awscliv2"
+        (
+            cd /tmp
+            curl --proto "=https" \
+                --tlsv1.2 \
+                --output "awscliv2.zip" \
+                "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install --update
+            sudo rm ./awscliv2.zip
+            sudo rm -rf ./aws
+        )
+        echo_banner "Installing SSM extension"
+        (
+            cd /tmp
+            curl --proto "=https" \
+                --tlsv1.2 \
+                --remote-name \
+                "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb"
+            sudo dpkg -i session-manager-plugin.deb
+            rm ./session-manager-plugin.deb
+        )
+    fi
 }
 install_pulumi() {
     echo_banner "Install pulumi"
@@ -208,7 +243,7 @@ install_pulumi() {
 
 install_utilities() {
     echo_banner "Install useful utilities"
-    sudo apt-get install -y jq dnsutils tree
+    sudo apt-get install --yes jq dnsutils tree
 }
 
 install_hashicorp_tools() {
@@ -223,7 +258,7 @@ install_hashicorp_tools() {
         sudo chmod 644 /etc/apt/trusted.gpg.d/hashicorp-apt.gpg
     sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
     sudo apt-get update
-    sudo apt-get install -y consul nomad packer vault
+    sudo apt-get install --yes consul nomad packer vault
 }
 
 # Download and install a tarball.
@@ -319,6 +354,6 @@ install_git_hooks() {
 }
 
 install_sqlx_prepare_deps() {
-    cargo install sqlx-cli --no-default-features --features postgres,rustls
+    _cargo_install sqlx-cli --no-default-features --features postgres,rustls
     sudo apt install --yes netcat # used for `nc`
 }
