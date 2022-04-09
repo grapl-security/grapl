@@ -391,7 +391,7 @@ impl AsyncTestContext for PipelineIngressTestContext {
     async fn setup() -> Self {
         // binding the tcp listener on port 0 tells the operating system to
         // reserve an unused, ephemeral port
-        let tcp_listener = TcpListener::bind("[::1]:0")
+        let tcp_listener = TcpListener::bind("0.0.0.0:0")
             .await
             .expect("failed to bind tcp listener");
 
@@ -402,7 +402,7 @@ impl AsyncTestContext for PipelineIngressTestContext {
 
         // construct an http URI clients can use to connect to server bound to
         // the port.
-        let endpoint = format!("http://[{}]:{}", socket_address.ip(), socket_address.port());
+        let endpoint = format!("http://{}:{}", socket_address.ip(), socket_address.port());
 
         let (server, shutdown_tx) = PipelineIngressServer::new(
             MockPipelineIngressApi {},
