@@ -1,16 +1,8 @@
-use std::{
-    collections::HashSet,
-    fmt::Debug,
-};
+use std::fmt::Debug;
 
 use bytes::Bytes;
-use futures::{
-    channel::oneshot::Sender,
-    lock::Mutex,
-};
-use lazy_static::lazy_static;
+use futures::channel::oneshot::Sender;
 use proptest::prelude::*;
-use rand::Rng;
 use rust_proto_new::{
     graplinc::{
         common::v1beta1::{
@@ -300,50 +292,6 @@ proptest! {
 //       trigger an error response.
 const TENANT_ID: &'static str = "f000b11e-b421-4ffe-87c2-a963b77fd8e9";
 
-// This approach to port allocation cribs liberally from
-// https://github.com/habitat-sh/habitat/commit/b22190696ca5389cad9b974aef9287b3a253366f
-lazy_static! {
-    static ref CLAIMED_PORTS: Mutex<HashSet<u16>> = Mutex::new(HashSet::new());
-}
-
-fn random_port() -> u16 {
-    let mut rng = rand::thread_rng();
-    rng.gen_range(49152..u16::MAX) // IANA port registrations go through 49152
-}
-
-async fn allocate_port() -> u16 {
-    let mut idx = std::u8::MAX;
-    while idx > 0 {
-        let port = random_port();
-        println!("attempting to bind on port {}", port);
-        match TcpListener::bind(format!("[::1]:{}", port)).await {
-            Ok(_) => {
-                let mut ports = CLAIMED_PORTS.lock().await;
-                if ports.contains(&port) {
-                    // port already in use
-                    println!("port {} already claimed, waiting 0.05s...", port);
-                    tokio::time::sleep(Duration::from_millis(50)).await;
-                } else {
-                    // Nobody is using the port, so we claim it and return it.
-                    // When the TcpListener is dropped the port will be free to
-                    // use in our own code (we'll mostly bind it soon
-                    // enough... mostly).
-                    ports.insert(port);
-                    return port;
-                }
-            }
-            Err(_) => {
-                // port already in use
-                println!("failed to bind port {}, waiting 0.05s...", port);
-                tokio::time::sleep(Duration::from_millis(50)).await
-            }
-        }
-        idx -= 1;
-    }
-
-    panic!("could not find unclaimed port to allocate");
-}
-
 //
 // api.pipeline_ingress
 //
@@ -441,13 +389,24 @@ async fn wait_until_healthy(
 #[tonic::async_trait]
 impl AsyncTestContext for PipelineIngressTestContext {
     async fn setup() -> Self {
-        let port = allocate_port().await;
-        let socket_address = format!("[::1]:{}", port);
+        // binding the tcp listener on port 0 tells the operating system to
+        // reserve an unused, ephemeral port
+        let tcp_listener = TcpListener::bind("[::1]:0")
+            .await
+            .expect("failed to bind tcp listener");
+
+        // determine the actual port which was bound
+        let socket_address = tcp_listener
+            .local_addr()
+            .expect("failed to obtain socket address");
+
+        // construct an http URI clients can use to connect to server bound to
+        // the port.
+        let endpoint = format!("http://[{}]:{}", socket_address.ip(), socket_address.port());
+
         let (server, shutdown_tx) = PipelineIngressServer::new(
             MockPipelineIngressApi {},
-            socket_address
-                .parse()
-                .expect("failed to parse socket address"),
+            tcp_listener,
             || async { Ok(HealthcheckStatus::Serving) },
             50,
         );
@@ -455,8 +414,6 @@ impl AsyncTestContext for PipelineIngressTestContext {
         let service_name = server.service_name();
 
         let server_handle = tokio::task::spawn(server.serve());
-
-        let endpoint = format!("http://{}", socket_address);
 
         wait_until_healthy(endpoint.clone(), service_name)
             .await

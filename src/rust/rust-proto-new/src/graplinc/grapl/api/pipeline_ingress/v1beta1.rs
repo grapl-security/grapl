@@ -305,7 +305,6 @@ pub mod client {
 pub mod server {
     use std::{
         marker::PhantomData,
-        net::SocketAddr,
         time::Duration,
     };
 
@@ -320,6 +319,8 @@ pub mod server {
         TryFutureExt,
     };
     use thiserror::Error;
+    use tokio::net::TcpListener;
+    use tokio_stream::wrappers::TcpListenerStream;
     use tonic::{
         transport::{
             NamedService,
@@ -445,7 +446,7 @@ pub mod server {
         api_server: T,
         healthcheck: H,
         healthcheck_polling_interval_ms: u64,
-        addr: SocketAddr,
+        tcp_listener: TcpListener,
         shutdown_rx: Receiver<()>,
         service_name: &'static str,
         e_: PhantomData<E>,
@@ -466,7 +467,7 @@ pub mod server {
         /// shutdown.
         pub fn new(
             api_server: T,
-            addr: SocketAddr,
+            tcp_listener: TcpListener,
             healthcheck: H,
             healthcheck_polling_interval_ms: u64,
         ) -> (Self, Sender<()>) {
@@ -476,7 +477,7 @@ pub mod server {
                     api_server,
                     healthcheck,
                     healthcheck_polling_interval_ms,
-                    addr,
+                    tcp_listener,
                     shutdown_rx,
                     service_name:
                         PipelineIngressServiceServerProto::<PipelineIngressProto<T, E>>::NAME,
@@ -523,6 +524,7 @@ pub mod server {
                     match (self.healthcheck)().await {
                         Ok(status) => {
                             match status {
+                                // TODO: log each check result
                                 HealthcheckStatus::Serving => {
                                     health_reporter
                                         .set_serving::<PipelineIngressServiceServerProto<
@@ -548,6 +550,7 @@ pub mod server {
                         }
                         Err(_) => {
                             // healthcheck failed, so we'll set_not_serving()
+                            // TODO: log the error
                             health_reporter
                                 .set_not_serving::<PipelineIngressServiceServerProto<PipelineIngressProto<T, E>>>()
                                 .await
@@ -562,7 +565,10 @@ pub mod server {
                 .add_service(PipelineIngressServiceServerProto::new(
                     PipelineIngressProto::new(self.api_server),
                 ))
-                .serve_with_shutdown(self.addr, self.shutdown_rx.map(|_| ()))
+                .serve_with_incoming_shutdown(
+                    TcpListenerStream::new(self.tcp_listener),
+                    self.shutdown_rx.map(|_| ()),
+                )
                 .then(|result| async move {
                     healthcheck_handle.abort();
                     result

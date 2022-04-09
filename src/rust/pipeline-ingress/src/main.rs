@@ -1,6 +1,6 @@
 use std::{
     env::VarError,
-    net::AddrParseError,
+    num::ParseIntError,
     time::SystemTime,
 };
 
@@ -29,6 +29,7 @@ use rust_proto_new::graplinc::grapl::{
     },
 };
 use thiserror::Error;
+use tokio::net::TcpListener;
 use uuid::Uuid;
 
 #[non_exhaustive]
@@ -90,22 +91,40 @@ enum ConfigurationError {
     #[error("failed to configure gRPC server {0}")]
     Server(#[from] ServerConfigurationError),
 
-    #[error("failed to parse socket address {0}")]
-    SocketAddr(#[from] AddrParseError),
-
     #[error("missing environment variable {0}")]
     EnvironmentVariable(#[from] VarError),
+
+    #[error("failed to bind socket address {0}")]
+    SocketError(#[from] std::io::Error),
+
+    #[error("failed to parse integer value {0}")]
+    ParseInt(#[from] ParseIntError),
 }
+
+// async fn check_server_running(
+//     socket_address: String
+// ) -> Result<HealthcheckStatus, HealthcheckError> {
+//     //let stream = TcpStream::connect(socket_address.parse());
+//     Ok(HealthcheckStatus::Serving) // FIXME
+// }
+
+// async fn check_kafka() -> Result<HealthcheckStatus, HealthcheckError> {
+//     Ok(HealthcheckStatus::Serving) // FIXME
+// }
 
 #[tokio::main]
 async fn main() -> Result<(), ConfigurationError> {
-    let addr = std::env::var("PIPELINE_INGRESS_ENDPOINT_ADDRESS")?;
+    let socket_address = std::env::var("PIPELINE_INGRESS_BIND_ADDRESS")?;
+    let healthcheck_polling_interval_ms =
+        std::env::var("PIPELINE_INGRESS_HEALTHCHECK_POLLING_INTERVAL_MS")?.parse()?;
+
     let producer: Producer<Envelope<RawLog>> = Producer::new("raw-logs")?;
+
     let (server, _) = PipelineIngressServer::new(
         IngressApi::new(producer),
-        addr.parse()?,
-        || async { Ok(HealthcheckStatus::Serving) }, // FIXME
-        50,                                          // FIXME
+        TcpListener::bind(socket_address).await?,
+        || async { Ok(HealthcheckStatus::Serving) },
+        healthcheck_polling_interval_ms,
     );
 
     Ok(server.serve().await?)

@@ -13,6 +13,7 @@ prost = "0.10"
 prost-types = "0.10"
 thiserror = "1.0"
 tokio = { version = "1.14", features = ["rt", "time"] }
+tokio-stream = { version = "0.1.8", features = ["net"] }
 tonic = { version = "0.7", features = ["default", "compression"] }
 tonic-health = "0.6"
 uuid = { version = "0.8", features = ["v4"] }
@@ -21,8 +22,6 @@ uuid = { version = "0.8", features = ["v4"] }
 tonic-build = { version = "0.7", features = ["default", "compression"] }
 
 [dev-dependencies]
-lazy_static = "1.4"
 proptest = "1.0"
 tokio = { version = "1.14", features = ["macros", "rt"] }
 test-context = "0.1"
-rand = "0.8"
