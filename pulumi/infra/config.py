@@ -25,6 +25,10 @@ REPOSITORY_ROOT: Final[str] = os.path.join(os.path.dirname(__file__), "../..")
 # note: this ${} is interpolated inside Nomad
 HOST_IP_IN_NOMAD: Final[str] = "${attr.unique.network.ip-address}"
 
+# This is equivalent to what "${attr.unique.network.ip-address}" resolves to but is used for cases where variable
+# interpolation is not available such as network.dns prior to Nomad 1.3.0
+LOCAL_HOST_IP: Final[str] = os.environ["LOCAL_HOST_IP"]
+
 
 def to_bool(input: Optional[Union[str, bool]]) -> Optional[bool]:
     if isinstance(input, bool):

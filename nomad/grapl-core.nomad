@@ -303,6 +303,11 @@ variable "tracing_endpoint" {
   default = ""
 }
 
+variable "dns_server" {
+  type        = string
+  description = "The network.dns.server value. This should be equivalent to the host's ip in order to communicate with dnsmasq and allow consul dns to be available from within containers. This can be replaced as of Nomad 1.3.0 with variable interpolation per https://github.com/hashicorp/nomad/issues/11851."
+}
+
 locals {
   dgraph_zero_grpc_private_port_base  = 5080
   dgraph_zero_http_private_port_base  = 6080
@@ -354,6 +359,7 @@ locals {
 
   # enabled
   rust_backtrace = 1
+  dns_servers    = [var.dns_server]
 }
 
 job "grapl-core" {
@@ -379,6 +385,9 @@ job "grapl-core" {
   group "dgraph-zero-0" {
     network {
       mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
     }
 
     task "dgraph-zero" {
@@ -447,6 +456,9 @@ job "grapl-core" {
     content {
       network {
         mode = "bridge"
+        dns {
+          servers = local.dns_servers
+        }
         port "healthcheck" {
           to = -1
         }
@@ -553,6 +565,9 @@ job "grapl-core" {
     content {
       network {
         mode = "bridge"
+        dns {
+          servers = local.dns_servers
+        }
         port "healthcheck" {
           to = -1
         }
@@ -686,6 +701,9 @@ job "grapl-core" {
 
     network {
       mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
     }
 
     task "graph-merger" {
@@ -744,6 +762,9 @@ job "grapl-core" {
 
     network {
       mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
     }
 
     task "node-identifier" {
@@ -786,6 +807,9 @@ job "grapl-core" {
 
     network {
       mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
     }
 
     task "node-identifier-retry" {
@@ -824,6 +848,12 @@ job "grapl-core" {
   }
 
   group "analyzer-dispatcher" {
+    network {
+      mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
+    }
 
     task "analyzer-dispatcher" {
       driver = "docker"
@@ -865,6 +895,9 @@ job "grapl-core" {
   group "analyzer-executor" {
     network {
       mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
     }
 
     task "analyzer-executor" {
@@ -925,6 +958,9 @@ job "grapl-core" {
   group "engagement-creator" {
     network {
       mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
     }
 
     task "engagement-creator" {
@@ -978,6 +1014,9 @@ job "grapl-core" {
   group "graphql-endpoint" {
     network {
       mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
       port "graphql-endpoint-port" {}
     }
 
@@ -1034,6 +1073,9 @@ job "grapl-core" {
   group "model-plugin-deployer" {
     network {
       mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
       port "model-plugin-deployer" {
       }
     }
@@ -1066,6 +1108,9 @@ job "grapl-core" {
   group "web-ui" {
     network {
       mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
 
       port "web-ui-port" {
       }
@@ -1124,6 +1169,9 @@ job "grapl-core" {
   group "sysmon-generator" {
     network {
       mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
     }
 
     task "sysmon-generator" {
@@ -1156,6 +1204,9 @@ job "grapl-core" {
   group "osquery-generator" {
     network {
       mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
     }
 
     task "osquery-generator" {
@@ -1188,6 +1239,9 @@ job "grapl-core" {
   group "organization-management" {
     network {
       mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
       port "organization-management-port" {
       }
     }
@@ -1282,6 +1336,9 @@ job "grapl-core" {
   group "plugin-registry" {
     network {
       mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
 
       port "plugin-registry-port" {
       }
@@ -1336,6 +1393,9 @@ job "grapl-core" {
   group "plugin-work-queue" {
     network {
       mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
 
       port "plugin-work-queue-port" {
       }
