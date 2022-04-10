@@ -366,8 +366,8 @@ install_git_hooks() {
 }
 
 install_dns_resolver() {
-    # We're using dnsmasq as a lightweight and easy dns resolver since we only need to forward requests to consul dns
-    # This can be switched out for bind, etc as wanted
+    # We're using dnsmasq as a lightweight and easy dns resolver since we only need to forward requests to consul dns.
+    # Ideally we'd be using systemd-resolver but you need systemd 246+ to support forwarding to a port other than 53
     echo_banner "Installing dnsmasq in order to enable consul dns from inside containers."
     sudo apt-get install dnsmasq
 
@@ -390,6 +390,9 @@ server=/consul/127.0.0.1#8600
 EOF
     # restart dnsmasq for it to pick up the consul config file
     sudo systemctl restart dnsmasq
+
+    # ensure that there's no systemd-resolv conflict
+    sudo sed --in-place 's/#DNSStubListener=yes/DNSStubListener=false/' /etc/systemd/resolved.conf
 }
 
 install_sqlx_prepare_deps() {
