@@ -5,7 +5,6 @@ set -euo pipefail
 readonly GRAPL_DEVBOX_DIR="${HOME}/.grapl_devbox"
 readonly GRAPL_DEVBOX_CONFIG="${GRAPL_DEVBOX_DIR}/config"
 
-
 ########################################
 # Helper functions
 ########################################

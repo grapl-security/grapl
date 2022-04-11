@@ -19,11 +19,11 @@ def main() -> None:
     # Notably, this public/private key is not the same one you use with Github
     # but a bespoke one generated just for Devbox usage.
     public_key_name = "devbox-public-key"
-    public_key = aws.ec2.KeyPair(public_key_name,
+    public_key = aws.ec2.KeyPair(
+        public_key_name,
         key_name=public_key_name,
-        public_key=config.require("public-key")
+        public_key=config.require("public-key"),
     )
-
 
     instance_name = "devbox-instance"
     instance = aws.ec2.Instance(
