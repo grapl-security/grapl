@@ -9,15 +9,14 @@ class SecurityGroup(pulumi.ComponentResource):
         self.security_group = aws.ec2.SecurityGroup(
             security_group_name,
             vpc_id=None,
-            # Tags are necessary for the moment so we can look up the resource from a different pulumi stack.
-            # Once this is refactored we can remove the tags
             tags={"Name": security_group_name},
             opts=pulumi.ResourceOptions(parent=self),
         )
 
         # The way SSM works is wild. An agent on the box reaches out to a known
         # IP on 443, and then establishes a bidirectional pipe.
-        # As such, all you need to enable is 443 outbound.
+        # As such, all you need to enable for SSM is 443 outbound.
+        # (However, here we just open *everything* outbound. It's fine.)
         aws.ec2.SecurityGroupRule(
             f"ssm_egress",
             type="egress",
