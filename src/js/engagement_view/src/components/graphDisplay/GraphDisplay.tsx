@@ -1,10 +1,5 @@
-import React, {
-    useEffect,
-    useState,
-    useCallback,
-    useRef,
-} from "react";
-import {ForceGraph2D} from "react-force-graph";
+import React, {useEffect, useState, useCallback, useRef} from "react";
+import ForceGraph2D from "react-force-graph-2d";
 import {nodeFillColor, riskOutline} from "./graphVizualization/nodeColoring";
 import {
     calcLinkColor,
@@ -37,14 +32,20 @@ const defaultClickedState = (): ClickedNodeState => {
     return null;
 };
 
-async function updateGraphAndSetState(lensName: any, state: any, setState: any) {
+async function updateGraphAndSetState(
+    lensName: any,
+    state: any,
+    setState: any
+) {
     if (lensName) {
         await updateGraph(lensName, state as GraphState, setState); // state is safe cast, check that lens name is not null
 
-        console.log("setState", await updateGraph(lensName, state as GraphState, setState))
+        console.log(
+            "setState",
+            await updateGraph(lensName, state as GraphState, setState)
+        );
     }
 }
-
 
 const GraphDisplay = ({lensName, setCurNode}: GraphDisplayProps) => {
     const fgRef: any = useRef(); // fix graph to canvas
@@ -65,7 +66,6 @@ const GraphDisplay = ({lensName, setCurNode}: GraphDisplayProps) => {
         }, 5000);
         return () => clearInterval(interval);
     }, [state, lensName]);
-
 
     const data = state.graphData;
 
@@ -124,14 +124,14 @@ const GraphDisplay = ({lensName, setCurNode}: GraphDisplayProps) => {
     let clickedNodeKey = null;
     if (clickedNode !== null) {
         clickedNodeKey = clickedNode.id;
-    };
+    }
 
     let hoverNodeKey = null;
     if (hoverNode !== null) {
         hoverNodeKey = (hoverNode as any).id;
-    };
+    }
 
-    const nodeStyling = useCallback (
+    const nodeStyling = useCallback(
         (node: any, ctx: any) => {
             const NODE_R = nodeSize(node, data);
 
@@ -152,7 +152,7 @@ const GraphDisplay = ({lensName, setCurNode}: GraphDisplayProps) => {
             ctx.restore();
 
             // Node Fill Styling
-            ctx.save()
+            ctx.save();
             ctx.beginPath();
             ctx.arc(node.x, node.y, NODE_R * 1.2, 0, 2 * Math.PI, false);
             ctx.fillStyle =
@@ -190,7 +190,9 @@ const GraphDisplay = ({lensName, setCurNode}: GraphDisplayProps) => {
             ctx.fillStyle = colors.nodeLabelTxt;
             ctx.fillText(label, node.x, node.y);
             ctx.restore();
-        }, [data.nodes.length, clickedNodeKey, hoverNodeKey]);
+        },
+        [data.nodes.length, clickedNodeKey, hoverNodeKey]
+    );
 
     const linkStyling = (link: any, ctx: any) => {
         ctx.save();
@@ -269,8 +271,8 @@ const GraphDisplay = ({lensName, setCurNode}: GraphDisplayProps) => {
             linkColor={(link) =>
                 highlightLinks.has(link)
                     ? colors.highlightLink
-                    // : "#555"
-                    : calcLinkColor(link as Link, data as VizGraph)
+                    : // : "#555"
+                    calcLinkColor(link as Link, data as VizGraph)
             }
             linkWidth={(link) => (highlightLinks.has(link) ? 5 : 4)}
             linkDirectionalArrowLength={10}
