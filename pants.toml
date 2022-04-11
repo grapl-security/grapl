@@ -63,6 +63,7 @@ repo_id = "f416be7b-e109-4915-8eba-940bcfa310c1"
 root_patterns = [
   "/3rdparty",
   "/build-support",
+  "/devbox",
   "/etc",  # Some of our tests use sample data from here
   "/pants-plugins",
   "/pulumi",
