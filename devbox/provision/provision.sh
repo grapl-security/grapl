@@ -79,5 +79,5 @@ fi
 
 (
     cd "${GRAPL_ROOT}/devbox/provision/pulumi"
-    pulumi up
+    pulumi update --refresh
 )
