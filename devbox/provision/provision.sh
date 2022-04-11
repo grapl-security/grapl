@@ -73,10 +73,9 @@ fi
 ########################################
 # Provision an EC2 instance with Pulumi
 ########################################
-
 (
     cd "${GRAPL_ROOT}/devbox/provision/pulumi"
-    pulumi update --refresh
+    pulumi update --yes
 )
 
 ########################################
