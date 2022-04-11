@@ -16,12 +16,22 @@ def main() -> None:
 
     instance_profile = IamInstanceProfile("instance-profile")
 
+    # Notably, this public/private key is not the same one you use with Github
+    # but a bespoke one generated just for Devbox usage.
+    public_key_name = "devbox-public-key"
+    public_key = aws.ec2.KeyPair(public_key_name,
+        key_name=public_key_name,
+        public_key=config.require("public-key")
+    )
+
+
     instance_name = "devbox-instance"
     instance = aws.ec2.Instance(
         instance_name,
-        instance_type=instance_type,
-        iam_instance_profile=instance_profile.instance_profile.name,
         ami=ami.id,
+        iam_instance_profile=instance_profile.instance_profile.name,
+        instance_type=instance_type,
+        key_name=public_key.id,
         vpc_security_group_ids=[security_group.security_group.id],
         tags={
             "Name": instance_name,

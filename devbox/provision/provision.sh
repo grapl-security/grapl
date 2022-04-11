@@ -29,8 +29,8 @@ source build-support/venv/bin/activate
 # Set up an SSH key specifically for the Devbox
 ########################################
 
-SSH_PRIVATE_KEY_FILE="${GRAPL_DEVBOX_DIR}/ssh_key"
-SSH_PUBLIC_KEY_FILE="${SSH_PRIVATE_KEY_FILE}.pub"
+readonly SSH_PRIVATE_KEY_FILE="${GRAPL_DEVBOX_DIR}/ssh_key"
+readonly SSH_PUBLIC_KEY_FILE="${SSH_PRIVATE_KEY_FILE}.pub"
 
 if [ ! -f "${SSH_PRIVATE_KEY_FILE}" ]; then
     ssh-keygen -t ed25519 -a 100 -C "${USER}@graplsecurity.com" -f "${SSH_PRIVATE_KEY_FILE}"
@@ -56,9 +56,6 @@ fi
     if ! has_key "${config}" "devbox:public-key}"; then
         pulumi config set devbox:public-key -- < "${SSH_PUBLIC_KEY_FILE}"
     fi
-    if ! has_key "${config}" "devbox:private-key}"; then
-        pulumi config set devbox:private-key --secret -- < "${SSH_PRIVATE_KEY_FILE}"
-    fi
     if ! has_key "${config}" "devbox:instance-type}"; then
         # 32GB RAM
         # $5.80 daily reserved cost
@@ -81,6 +78,30 @@ fi
     cd "${GRAPL_ROOT}/devbox/provision/pulumi"
     pulumi update --refresh
 )
+
+########################################
+# Copy some config stuff to a JSON file consumed by ssh.sh
+########################################
+(
+    cd "${GRAPL_ROOT}/devbox/provision/pulumi"
+
+    JQ_TEMPLATE="$(cat <<'EOF'
+{
+    "region": $region, 
+    "instance_id": $instance_id, 
+    "private_key_file": $private_key_file,
+}
+EOF
+)"
+
+    jq --null-input \
+        --arg region "$(pulumi config get aws:region)" \
+        --arg instance_id "$(pulumi stack output devbox-instance-id)" \
+        --arg private_key_file "${SSH_PRIVATE_KEY_FILE}" \
+        "${JQ_TEMPLATE}" \
+        > "${GRAPL_DEVBOX_DIR}/config"
+)
+
 
 ########################################
 # Tell SSH to use SSM trickery on hosts starting with `i-`
