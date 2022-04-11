@@ -5,7 +5,7 @@ from typing_extensions import Final
 
 import pulumi
 
-def get_ssm_policy(opts: pulumi.ResourceOptions=None) -> aws.iam.Policy:
+def build_ssm_policy(opts: pulumi.ResourceOptions=None) -> aws.iam.Policy:
     return aws.iam.Policy(
         "demanaged-AmazonSSMManagedInstanceCore",
         opts=opts,
@@ -60,6 +60,27 @@ def get_ssm_policy(opts: pulumi.ResourceOptions=None) -> aws.iam.Policy:
             }
         ),
     )
+
+def build_ssm_ssh_policy(opts: pulumi.ResourceOptions=None) -> aws.iam.Policy:
+    return aws.iam.Policy(
+        "allow-ssh-over-ssm",
+        opts=opts,
+        policy=json.dumps(
+            {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "ssm:StartSession",
+                        ],
+                        "Resource": "arn:aws:ssm:*:*:document/AWS-StartSSHSession",
+                    },
+                ],
+            }
+        ),
+    )
+
 
 
 def attach_policy(

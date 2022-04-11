@@ -1,7 +1,7 @@
 import json
 import pulumi
 import pulumi_aws as aws
-from infra.demanaged_policies import attach_policy, get_ssm_policy
+from infra.policies import attach_policy, build_ssm_policy, build_ssm_ssh_policy
 
 class IamInstanceProfile(pulumi.ComponentResource):
     def __init__(self, name: str, opts: pulumi.ResourceOptions=None) -> None:
@@ -25,10 +25,15 @@ class IamInstanceProfile(pulumi.ComponentResource):
             ),
             opts=pulumi.ResourceOptions(parent=self)
         )
-        ssm_policy = get_ssm_policy(
+        ssm_policy = build_ssm_policy(
             opts=pulumi.ResourceOptions(parent=self)
         )
         attach_policy(ssm_policy, devbox_role)
+
+        ssm_ssh_policy = build_ssm_ssh_policy(
+            opts=pulumi.ResourceOptions(parent=self)
+        )
+        attach_policy(ssm_ssh_policy, devbox_role)
 
         self.instance_profile = aws.iam.InstanceProfile(
             "devbox-instance-profile",

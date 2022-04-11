@@ -81,3 +81,20 @@ fi
     cd "${GRAPL_ROOT}/devbox/provision/pulumi"
     pulumi update --refresh
 )
+
+########################################
+# Tell SSH to use SSM trickery on hosts starting with `i-`
+########################################
+
+(
+    # Taken from https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-getting-started-enable-ssh-connections.html
+    SSH_CONFIG_APPEND="$(cat <<'EOF'
+host i-* mi-*
+    ProxyCommand sh -c "aws ssm start-session --target %h --document-name AWS-StartSSHSession --parameters 'portNumber=%p'"
+EOF
+    )"
+    touch ~/.ssh/config
+    if ! grep --quiet "${SSH_CONFIG_APPEND}" ~/.ssh/config; then
+        echo "${SSH_CONFIG_APPEND}" >> ~/.ssh/config
+    fi
+)
