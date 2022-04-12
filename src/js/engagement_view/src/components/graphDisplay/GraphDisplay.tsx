@@ -201,6 +201,8 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
         const start = link.source;
         const end = link.target;
 
+        console.log("link", link);
+
         link.color = calcLinkColor(link, data);
 
         // Ignore unbounded links
