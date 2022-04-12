@@ -63,6 +63,7 @@ repo_id = "f416be7b-e109-4915-8eba-940bcfa310c1"
 root_patterns = [
   "/3rdparty",
   "/build-support",
+  "/devbox",
   "/etc",  # Some of our tests use sample data from here
   "/pants-plugins",
   "/pulumi",
@@ -210,5 +211,6 @@ ignore_adding_targets = [
   # We don't run Pulumi through Pants, so we don't need to create
   # `pex_binary` targets for our `__main__.py` files.
   "pulumi/grapl:__main__",
-  "pulumi/integration_tests:__main__"
+  "pulumi/integration_tests:__main__",
+  "devbox/provision:__main__",
 ]
