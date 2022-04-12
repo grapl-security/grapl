@@ -306,6 +306,11 @@ locals {
   # String that contains all of the running Alphas for clients connecting to Dgraph (so they can do loadbalancing)
   alpha_grpc_connect_str = join(",", [for alpha in local.dgraph_alphas : "localhost:${alpha.grpc_public_port}"])
 
+  dgraph_volume_args = {
+    target = "/dgraph"
+    source = "grapl-dgraph-data"
+  }
+
   _redis_trimmed = trimprefix(var.redis_endpoint, "redis://")
   _redis         = split(":", local._redis_trimmed)
   redis_host     = local._redis[0]
@@ -363,6 +368,21 @@ job "grapl-core" {
           "--replicas", "${var.dgraph_replicas}",
           "--raft", "idx=1",
         ]
+
+        mount {
+          type     = "volume"
+          target   = "${local.dgraph_volume_args.target}"
+          source   = "${local.dgraph_volume_args.source}"
+          readonly = false
+          volume_options {
+            labels {
+              # This label is used by our root-level Makefile, DOCKER_VOLUME_FILTER_LABEL
+              # TODO(inickles): Give proper label key and update Makefile comment
+              # TODO(inickles): Unfortunately, we're unable to use dots in volume keys here. Decide on a better name then and reconcile with Makefile.
+              owner = "grapl"
+            }
+          }
+        }
       }
     }
 
@@ -429,6 +449,21 @@ job "grapl-core" {
             "--port_offset", "${zero.value.id}",
             "--peer", "localhost:${local.dgraph_zero_grpc_private_port_base}"
           ]
+
+          mount {
+            type     = "volume"
+            target   = "${local.dgraph_volume_args.target}"
+            source   = "${local.dgraph_volume_args.source}"
+            readonly = false
+            volume_options {
+              labels {
+                # This label is used by our root-level Makefile, DOCKER_VOLUME_FILTER_LABEL
+                # TODO(inickles): Give proper label key and update Makefile comment
+                # TODO(inickles): Unfortunately, we're unable to use dots in volume keys here. Decide on a better name then and reconcile with Makefile.
+                owner = "grapl"
+              }
+            }
+          }
         }
       }
       service {
@@ -531,6 +566,22 @@ job "grapl-core" {
             "--port_offset", "${alpha.value.id}",
             "--zero", "${local.zero_alpha_connect_str}"
           ]
+
+          mount {
+            type     = "volume"
+            target   = "${local.dgraph_volume_args.target}"
+            source   = "${local.dgraph_volume_args.source}"
+            readonly = false
+            volume_options {
+              labels {
+                # This label is used by our root-level Makefile, DOCKER_VOLUME_FILTER_LABEL
+                # TODO(inickles): Give proper label key and update Makefile comment
+                # TODO(inickles): Unfortunately, we're unable to use dots in volume keys here. Decide on a better name then and reconcile with Makefile.
+                owner = "grapl"
+              }
+            }
+          }
+
           ports = ["dgraph-alpha-port"]
         }
       }
