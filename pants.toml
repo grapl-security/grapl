@@ -211,5 +211,6 @@ ignore_adding_targets = [
   # We don't run Pulumi through Pants, so we don't need to create
   # `pex_binary` targets for our `__main__.py` files.
   "pulumi/grapl:__main__",
-  "pulumi/integration_tests:__main__"
+  "pulumi/integration_tests:__main__",
+  "devbox/provision:__main__",
 ]
