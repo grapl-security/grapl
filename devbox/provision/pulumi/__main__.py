@@ -1,8 +1,7 @@
-
 import pulumi_aws as aws
-from provision.infra.ami import get_ami
-from provision.infra.iam_instance_profile import IamInstanceProfile
-from provision.infra.security_group import SecurityGroup
+from infra.ami import get_ami
+from infra.iam_instance_profile import IamInstanceProfile
+from infra.security_group import SecurityGroup
 
 import pulumi
 

@@ -43,7 +43,7 @@ fi
 ########################################
 
 (
-    cd "${GRAPL_ROOT}/devbox/provision"
+    cd "${GRAPL_ROOT}/devbox/provision/pulumi"
     STACK_NAME="grapl/${USER}-devbox"
 
     if ! pulumi stack --show-name --non-interactive; then
@@ -62,7 +62,7 @@ fi
         pulumi config set devbox:instance-type "m5.2xlarge"
     fi
     if ! has_key "${config}" "aws:region"; then
-        echo "Hey there! You should go to '$(pwd)' and run "
+        echo "Hey there! You should go to devbox/provision/pulumi and run "
         echo "'pulumi config set aws:region <value>'"
         echo "Choose well - responsiveness is a genuine concern here!"
         echo "  ex: us-east-2, us-west-2, ap-east-1"
@@ -74,7 +74,7 @@ fi
 # Provision an EC2 instance with Pulumi
 ########################################
 (
-    cd "${GRAPL_ROOT}/devbox/provision"
+    cd "${GRAPL_ROOT}/devbox/provision/pulumi"
     pulumi update --yes
 )
 
@@ -82,7 +82,7 @@ fi
 # Copy some config stuff to a JSON file consumed by ssh.sh
 ########################################
 (
-    cd "${GRAPL_ROOT}/devbox/provision"
+    cd "${GRAPL_ROOT}/devbox/provision/pulumi"
 
     JQ_TEMPLATE="$(
         cat << 'EOF'
