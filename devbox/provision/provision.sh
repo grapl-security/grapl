@@ -29,7 +29,7 @@ source build-support/venv/bin/activate
 # Set up an SSH key specifically for the Devbox
 ########################################
 
-readonly SSH_PRIVATE_KEY_FILE="${GRAPL_DEVBOX_DIR}/ssh_key"
+readonly SSH_PRIVATE_KEY_FILE="${GRAPL_DEVBOX_DIR}/devbox_ed25519_ssh"
 readonly SSH_PUBLIC_KEY_FILE="${SSH_PRIVATE_KEY_FILE}.pub"
 
 if [ ! -f "${SSH_PRIVATE_KEY_FILE}" ]; then
