@@ -4,6 +4,8 @@ set -euo pipefail
 
 readonly GRAPL_ROOT="${PWD}"
 readonly GRAPL_DEVBOX_DIR="${HOME}/.grapl_devbox"
+readonly GRAPL_DEVBOX_CONFIG="${GRAPL_DEVBOX_DIR}/config.env"
+
 mkdir -p "${GRAPL_DEVBOX_DIR}"
 
 ########################################
@@ -73,33 +75,22 @@ fi
 ########################################
 # Provision an EC2 instance with Pulumi
 ########################################
-(
-    cd "${GRAPL_ROOT}/devbox/provision"
-    pulumi update --yes
-)
+pulumi update --yes --cwd="${GRAPL_ROOT}/devbox/provision"
 
 ########################################
-# Copy some config stuff to a JSON file consumed by ssh.sh
+# Copy some config stuff to a .env file consumed by ssh.sh
 ########################################
 (
     cd "${GRAPL_ROOT}/devbox/provision"
 
-    JQ_TEMPLATE="$(
-        cat << 'EOF'
-{
-    "region": $region, 
-    "instance_id": $instance_id, 
-    "private_key_file": $private_key_file,
-}
+    CONTENTS="$(
+        cat << EOF
+GRAPL_DEVBOX_REGION="$(pulumi config get aws:region)"
+GRAPL_DEVBOX_INSTANCE_ID="$(pulumi stack output devbox-instance-id)"
+GRAPL_DEVBOX_PRIVATE_KEY_FILE="${SSH_PRIVATE_KEY_FILE}"
 EOF
     )"
-
-    jq --null-input \
-        --arg region "$(pulumi config get aws:region)" \
-        --arg instance_id "$(pulumi stack output devbox-instance-id)" \
-        --arg private_key_file "${SSH_PRIVATE_KEY_FILE}" \
-        "${JQ_TEMPLATE}" \
-        > "${GRAPL_DEVBOX_DIR}/config"
+    echo "${CONTENTS}" > "${GRAPL_DEVBOX_CONFIG}"
 )
 
 ########################################
