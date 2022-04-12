@@ -1,5 +1,5 @@
 import { mapNodeProps } from "./mapNodeProps";
-import { VizGraph, VizNode } from "../../../types/CustomTypes";
+import { Link, VizGraph, VizNode } from "../../../types/CustomTypes";
 
 // if graph has updated, merge y into x
 export const mergeNodes = (node: VizNode, newNode: VizNode) => {
@@ -123,4 +123,41 @@ export const mergeGraphs = (
     } else {
         return null;
     }
+};
+
+type SummaryLink = {
+    source: number;
+    target: number;
+    name: string;
+    innerLinks: Link[];
+};
+
+const mergeLinks = (links: Link[]): SummaryLink[] => {
+    const mergedLinks: Map<number[], Link[]> = new Map();
+    const newLinks: SummaryLink[] = [];
+
+    // TODO: create new type called inner link that has a source, target, and name
+    //  to preserve directionality. instead of a string[], store an [{}] containing name and original source/destination for Link
+    for (const link of links) {
+        const key = [link.source, link.target];
+        key.sort();
+
+        const names = mergedLinks.get(key) || [];
+
+        names.push(link);
+
+        mergedLinks.set(key, names);
+    }
+
+    // TODO: add names to Link type and pass in []
+    for (const [key, innerLinks] of mergedLinks.entries()) {
+        newLinks.push({
+            source: key[0],
+            target: key[1],
+            name: innerLinks[0].name,
+            innerLinks: innerLinks,
+        });
+    }
+
+    return newLinks;
 };
