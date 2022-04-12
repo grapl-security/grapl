@@ -1,16 +1,23 @@
+from typing import Mapping
+
 import pulumi_aws as aws
 
 import pulumi
 
 
 class SecurityGroup(pulumi.ComponentResource):
-    def __init__(self, name: str, opts: pulumi.ResourceOptions = None) -> None:
+    def __init__(
+        self,
+        name: str,
+        opts: pulumi.ResourceOptions = None,
+        tags: Mapping[str, str] = {},
+    ) -> None:
         super().__init__("devbox:SecurityGroup", name=name, props=None, opts=opts)
         security_group_name = "devbox-security-group"
         self.security_group = aws.ec2.SecurityGroup(
             security_group_name,
             vpc_id=None,
-            tags={"Name": security_group_name},
+            tags={"Name": security_group_name, **tags},
             opts=pulumi.ResourceOptions(parent=self),
         )
 

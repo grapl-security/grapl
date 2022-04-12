@@ -1,4 +1,5 @@
 import json
+from typing import Mapping
 
 import pulumi_aws as aws
 from provision.infra.policies import (
@@ -11,7 +12,12 @@ import pulumi
 
 
 class IamInstanceProfile(pulumi.ComponentResource):
-    def __init__(self, name: str, opts: pulumi.ResourceOptions = None) -> None:
+    def __init__(
+        self,
+        name: str,
+        opts: pulumi.ResourceOptions = None,
+        tags: Mapping[str, str] = {},
+    ) -> None:
         super().__init__("devbox:IamInstanceProfile", name=name, props=None, opts=opts)
         devbox_role = aws.iam.Role(
             "devbox-instance-role",
@@ -31,6 +37,7 @@ class IamInstanceProfile(pulumi.ComponentResource):
                 }
             ),
             opts=pulumi.ResourceOptions(parent=self),
+            tags=tags,
         )
         ssm_policy = build_ssm_policy(opts=pulumi.ResourceOptions(parent=self))
         attach_policy(ssm_policy, devbox_role)
@@ -42,4 +49,5 @@ class IamInstanceProfile(pulumi.ComponentResource):
             "devbox-instance-profile",
             role=devbox_role.name,
             opts=pulumi.ResourceOptions(parent=self),
+            tags=tags,
         )
