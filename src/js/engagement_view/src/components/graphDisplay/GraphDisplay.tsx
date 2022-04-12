@@ -1,14 +1,7 @@
-import React, {
-    useEffect,
-    useState,
-    useMemo,
-    useCallback,
-    useRef,
-} from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import ForceGraph2D from "react-force-graph-2d";
 import { nodeFillColor, riskOutline } from "./graphVizualization/nodeColoring";
 import {
-    calcLinkParticleWidth,
     calcLinkColor,
     calcLinkDirectionalArrowRelPos,
 } from "./graphVizualization/linkCalcs";
@@ -39,36 +32,41 @@ const defaultClickedState = (): ClickedNodeState => {
     return null;
 };
 
+async function updateGraphAndSetState(
+    lensName: any,
+    state: any,
+    setState: any
+) {
+    if (lensName) {
+        await updateGraph(lensName, state as GraphState, setState); // state is safe cast
+    }
+}
+
 const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
     const fgRef: any = useRef(); // fix graph to canvas
     const [state, setState] = useState(defaultGraphDisplayState(lensName));
-
-    async function updateGraphAndSetState() {
-        if (lensName) {
-            await updateGraph(lensName, state as GraphState, setState); // state is safe cast, check that lens name is not null
-        }
-    }
-
-    // TODO is there a way to updateGraphAndSetState immediately on click?
-
-    useEffect(() => {
-        // Set the initial state immediately
-        updateGraphAndSetState();
-
-        // refresh every 10 seconds
-        const interval = setInterval(updateGraphAndSetState, 10000);
-        return () => clearInterval(interval);
-    }, [lensName, state, setState, updateGraphAndSetState]);
-
-    const data = useMemo(() => {
-        const graphData = state.graphData;
-        return graphData;
-    }, [state]);
-
     const [clickedNode, setClickedNode] = useState(defaultClickedState());
     const [highlightNodes, setHighlightNodes] = useState(new Set());
     const [highlightLinks, setHighlightLinks] = useState(new Set());
     const [hoverNode, setHoverNode] = useState(null);
+    const [stopEngine, setStopEngine] = useState(false);
+
+    // TODO is there a way to updateGraphAndSetState immediately on click?
+
+    useEffect(() => {
+        updateGraphAndSetState(lensName, state, setState);
+        // Set the initial state immediately refresh every 5 seconds
+        try {
+            const interval = setInterval(() => {
+                updateGraphAndSetState(lensName, state, setState);
+            }, 1000);
+            return () => clearInterval(interval);
+        } catch (e) {
+            console.debug("Error Updating Graph", e);
+        }
+    }, [state, lensName]);
+
+    const data = state.graphData;
 
     const updateHighlight = useCallback(() => {
         setHighlightNodes(highlightNodes);
@@ -122,15 +120,28 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
         [setHoverNode, updateHighlight, highlightLinks, highlightNodes]
     );
 
-    const nodeStyling = useCallback(
-        (node, ctx) => {
-            node.fx = node.x;
-            node.fy = node.y;
-            ctx.save();
+    //We only want to rerender when the id of a node changes, but we don't want to update based on any of its other attributes
+    let clickedNodeKey = null;
+    if (clickedNode !== null) {
+        clickedNodeKey = clickedNode.id;
+    }
 
+    let hoverNodeKey = null;
+    if (hoverNode !== null) {
+        hoverNodeKey = (hoverNode as any).id;
+    }
+
+    const nodeStyling = useCallback(
+        (node: any, ctx: any) => {
             const NODE_R = nodeSize(node, data);
 
+            ctx.save();
+            node.fx = node.x;
+            node.fy = node.y;
+            ctx.restore();
+
             // Node Border Styling
+            ctx.save();
             ctx.beginPath();
             ctx.arc(node.x, node.y, NODE_R * 1.4, 0, 2 * Math.PI, false);
             ctx.fillStyle =
@@ -138,9 +149,10 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
                     ? colors.hoverNodeFill
                     : riskOutline(node.risk_score);
             ctx.fill();
-            ctx.save();
+            ctx.restore();
 
             // Node Fill Styling
+            ctx.save();
             ctx.beginPath();
             ctx.arc(node.x, node.y, NODE_R * 1.2, 0, 2 * Math.PI, false);
             ctx.fillStyle =
@@ -148,7 +160,7 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
                     ? colors.clickedNode
                     : nodeFillColor(node.dgraph_type[0]);
             ctx.fill();
-            ctx.save();
+            ctx.restore();
 
             // Node Label Styling
             const label = node.nodeLabel;
@@ -157,6 +169,7 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
                 98,
                 NODE_R / ctx.measureText(label).width
             );
+            ctx.save();
             ctx.font = `${fontSize + 5}px Roboto`;
 
             const textWidth = ctx.measureText(label).width;
@@ -171,16 +184,18 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
                 labelBkgdDimensions[0] + 1.25, // rectangle width
                 labelBkgdDimensions[1] + 5.5 // rectangle height
             );
+
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillStyle = colors.nodeLabelTxt;
             ctx.fillText(label, node.x, node.y);
-            ctx.save();
+            ctx.restore();
         },
-        [data, clickedNode, hoverNode]
+        [data.nodes.length, clickedNodeKey, hoverNodeKey]
     );
 
     const linkStyling = (link: any, ctx: any) => {
+        ctx.save();
         const MAX_FONT_SIZE = 8;
         const LABEL_NODE_MARGIN = 12;
         const start = link.source;
@@ -211,15 +226,14 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
         const label = getLinkLabel(link.name);
 
         // Estimate fontSize to fit in link length
-        ctx.font = "50px Roboto";
         const fontSize = Math.min(
             MAX_FONT_SIZE,
             maxTextLength / ctx.measureText(label).width
         );
         ctx.font = `${fontSize + 5}px Roboto`;
+        ctx.fillStyle = "#FFF";
 
         // Draw text label
-        ctx.save();
         ctx.translate(textPos.x, textPos.y);
         ctx.rotate(textAngle);
         ctx.textAlign = "center";
@@ -230,13 +244,26 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
 
     return (
         <ForceGraph2D
-            graphData={data}
             ref={fgRef} // fix graph to canvas
+            graphData={data}
             nodeLabel={"nodeType"} // tooltip on hover, actual label is in nodeCanvasObject
+            backgroundColor={"#18191d"}
+            height={700}
+            width={1000}
+            onEngineStop={() => {
+                if (!stopEngine) {
+                    fgRef.current.zoomToFit(1000, 50);
+                    setStopEngine(true);
+                }
+            }}
             nodeCanvasObject={nodeStyling}
             nodeCanvasObjectMode={() => "after"}
             onNodeHover={nodeHover}
             onNodeClick={nodeClick}
+            onNodeDrag={(node) => {
+                node.fx = node.x;
+                node.fy = node.y;
+            }}
             onNodeDragEnd={(node) => {
                 node.fx = node.x;
                 node.fy = node.y;
@@ -252,14 +279,6 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
                 const _link = link as any;
                 return calcLinkDirectionalArrowRelPos(_link, data);
             }}
-            linkDirectionalParticleSpeed={0.005}
-            linkDirectionalParticleColor={(link) => colors.linkDirParticle}
-            linkDirectionalParticles={1}
-            linkDirectionalParticleWidth={(link) =>
-                highlightLinks.has(link)
-                    ? 4
-                    : calcLinkParticleWidth(link as Link, data as VizGraph) + 1
-            }
             linkCanvasObjectMode={() => "after"}
             linkCanvasObject={linkStyling}
             onLinkHover={(link) => {
@@ -272,6 +291,8 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
                     highlightNodes.add(link.target);
                 }
             }}
+            minZoom={1}
+            maxZoom={5}
             warmupTicks={100}
             cooldownTicks={100}
         />
