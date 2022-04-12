@@ -149,4 +149,3 @@ const mergeSummarizedLinks = (oldLinks: SummaryLink[], newLinks: SummaryLink[]):
     }
     return [updated, Array.from(mergedLinks.values())];
 };
-
