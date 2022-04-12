@@ -7,7 +7,8 @@ def get_ami() -> pulumi.Output[aws.ec2.GetAmiResult]:
     return aws.ec2.get_ami_output(
         owners=["099720109477"],  # Ubuntu / Canonical
         filters=[
-            # the version of Ubuntu
+            # the version of Ubuntu. We may want to upgrade this on a
+            # semi-regular basis; note that would nuke the existing instance.
             aws.ec2.GetAmiFilterArgs(
                 name="name",
                 values=["*ubuntu-focal-20.04-amd64-server-20220404"],
