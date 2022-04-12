@@ -1,7 +1,7 @@
 import json
 import pulumi
 import pulumi_aws as aws
-from infra.policies import attach_policy, build_ssm_policy, build_ssm_ssh_policy
+from provision.infra.policies import attach_policy, build_ssm_policy, build_ssm_ssh_policy
 
 class IamInstanceProfile(pulumi.ComponentResource):
     def __init__(self, name: str, opts: pulumi.ResourceOptions=None) -> None:
