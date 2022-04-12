@@ -38,12 +38,7 @@ async function updateGraphAndSetState(
     setState: any
 ) {
     if (lensName) {
-        await updateGraph(lensName, state as GraphState, setState); // state is safe cast, check that lens name is not null
-
-        console.log(
-            "setState",
-            await updateGraph(lensName, state as GraphState, setState)
-        );
+        await updateGraph(lensName, state as GraphState, setState); // state is safe cast
     }
 }
 
@@ -61,10 +56,14 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
     useEffect(() => {
         updateGraphAndSetState(lensName, state, setState);
         // Set the initial state immediately refresh every 5 seconds
-        const interval = setInterval(() => {
-            updateGraphAndSetState(lensName, state, setState);
-        }, 5000);
-        return () => clearInterval(interval);
+        try {
+            const interval = setInterval(() => {
+                updateGraphAndSetState(lensName, state, setState);
+            }, 1000);
+            return () => clearInterval(interval);
+        } catch (e) {
+            console.debug("Error Updating Graph", e);
+        }
     }, [state, lensName]);
 
     const data = state.graphData;
@@ -121,6 +120,7 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
         [setHoverNode, updateHighlight, highlightLinks, highlightNodes]
     );
 
+    //We only want to rerender when the id of a node changes, but we don't want to update based on any of its other attributes
     let clickedNodeKey = null;
     if (clickedNode !== null) {
         clickedNodeKey = clickedNode.id;
@@ -271,8 +271,7 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
             linkColor={(link) =>
                 highlightLinks.has(link)
                     ? colors.highlightLink
-                    : // : "#555"
-                      calcLinkColor(link as Link, data as VizGraph)
+                    : calcLinkColor(link as Link, data as VizGraph)
             }
             linkWidth={(link) => (highlightLinks.has(link) ? 5 : 4)}
             linkDirectionalArrowLength={10}
