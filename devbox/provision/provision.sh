@@ -77,6 +77,9 @@ EOF
     if ! has_key "${config}" "devbox:public-key}"; then
         pulumi config set devbox:public-key -- < "${SSH_PUBLIC_KEY_FILE}"
     fi
+    if ! has_key "${config}" "devbox:instance-volume-size-gb}"; then
+        pulumi config set devbox:instance-volume-size-gb 100
+    fi
     if ! has_key "${config}" "devbox:instance-type}"; then
         # 32GB RAM
         # $5.80 daily reserved cost
@@ -131,6 +134,8 @@ source "${GRAPL_DEVBOX_CONFIG}"
         cd "${GRAPL_DEVBOX_REMOTE_REPOS}"
         # Gotta do the https because our ssh key can't read from github
         git clone https://github.com/grapl-security/grapl.git
+        cd grapl
+        ./etc/chromeos/setup_chromeos.sh
     fi
 EOF
     )"
