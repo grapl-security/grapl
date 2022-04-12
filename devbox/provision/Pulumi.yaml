@@ -1,0 +1,3 @@
+name: devbox
+runtime: python
+description: Provision a developer box in EC2
