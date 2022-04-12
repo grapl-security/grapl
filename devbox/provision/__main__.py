@@ -1,7 +1,13 @@
+# Pants would resolve this import correctly for us, but since we run this
+# directly through Pulumi sans-Pants we need this grossness
+import sys
+
+sys.path.insert(0, "..")
+
 import pulumi_aws as aws
-from provision_infra.ami import get_ami
-from provision_infra.iam_instance_profile import IamInstanceProfile
-from provision_infra.security_group import SecurityGroup
+from provision.infra.ami import get_ami
+from provision.infra.iam_instance_profile import IamInstanceProfile
+from provision.infra.security_group import SecurityGroup
 
 import pulumi
 

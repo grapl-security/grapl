@@ -1,10 +1,17 @@
 import json
-import pulumi
+
 import pulumi_aws as aws
-from provision_infra.policies import attach_policy, build_ssm_policy, build_ssm_ssh_policy
+from provision.infra.policies import (
+    attach_policy,
+    build_ssm_policy,
+    build_ssm_ssh_policy,
+)
+
+import pulumi
+
 
 class IamInstanceProfile(pulumi.ComponentResource):
-    def __init__(self, name: str, opts: pulumi.ResourceOptions=None) -> None:
+    def __init__(self, name: str, opts: pulumi.ResourceOptions = None) -> None:
         super().__init__("devbox:IamInstanceProfile", name=name, props=None, opts=opts)
         devbox_role = aws.iam.Role(
             "devbox-instance-role",
@@ -23,16 +30,12 @@ class IamInstanceProfile(pulumi.ComponentResource):
                     ],
                 }
             ),
-            opts=pulumi.ResourceOptions(parent=self)
+            opts=pulumi.ResourceOptions(parent=self),
         )
-        ssm_policy = build_ssm_policy(
-            opts=pulumi.ResourceOptions(parent=self)
-        )
+        ssm_policy = build_ssm_policy(opts=pulumi.ResourceOptions(parent=self))
         attach_policy(ssm_policy, devbox_role)
 
-        ssm_ssh_policy = build_ssm_ssh_policy(
-            opts=pulumi.ResourceOptions(parent=self)
-        )
+        ssm_ssh_policy = build_ssm_ssh_policy(opts=pulumi.ResourceOptions(parent=self))
         attach_policy(ssm_ssh_policy, devbox_role)
 
         self.instance_profile = aws.iam.InstanceProfile(

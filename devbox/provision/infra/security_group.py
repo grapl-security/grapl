@@ -1,9 +1,10 @@
-
 import pulumi_aws as aws
+
 import pulumi
 
+
 class SecurityGroup(pulumi.ComponentResource):
-    def __init__(self, name: str, opts: pulumi.ResourceOptions=None) -> None:
+    def __init__(self, name: str, opts: pulumi.ResourceOptions = None) -> None:
         super().__init__("devbox:SecurityGroup", name=name, props=None, opts=opts)
         security_group_name = "devbox-security-group"
         self.security_group = aws.ec2.SecurityGroup(

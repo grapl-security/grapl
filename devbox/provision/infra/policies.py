@@ -1,11 +1,11 @@
 import json
 
 import pulumi_aws as aws
-from typing_extensions import Final
 
 import pulumi
 
-def build_ssm_policy(opts: pulumi.ResourceOptions=None) -> aws.iam.Policy:
+
+def build_ssm_policy(opts: pulumi.ResourceOptions = None) -> aws.iam.Policy:
     return aws.iam.Policy(
         "demanaged-AmazonSSMManagedInstanceCore",
         opts=opts,
@@ -61,7 +61,8 @@ def build_ssm_policy(opts: pulumi.ResourceOptions=None) -> aws.iam.Policy:
         ),
     )
 
-def build_ssm_ssh_policy(opts: pulumi.ResourceOptions=None) -> aws.iam.Policy:
+
+def build_ssm_ssh_policy(opts: pulumi.ResourceOptions = None) -> aws.iam.Policy:
     return aws.iam.Policy(
         "allow-ssh-over-ssm",
         opts=opts,
@@ -80,7 +81,6 @@ def build_ssm_ssh_policy(opts: pulumi.ResourceOptions=None) -> aws.iam.Policy:
             }
         ),
     )
-
 
 
 def attach_policy(

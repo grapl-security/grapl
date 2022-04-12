@@ -1,7 +1,9 @@
-import pulumi
 import pulumi_aws as aws
 
-def get_ami() -> pulumi.Output[aws.ec2.GetAmiIdsResult]:
+import pulumi
+
+
+def get_ami() -> pulumi.Output[aws.ec2.GetAmiResult]:
     return aws.ec2.get_ami_output(
         owners=["099720109477"],  # Ubuntu / Canonical
         filters=[
@@ -22,5 +24,5 @@ def get_ami() -> pulumi.Output[aws.ec2.GetAmiIdsResult]:
                 name="virtualization-type",
                 values=["hvm"],
             ),
-        ]
+        ],
     )
