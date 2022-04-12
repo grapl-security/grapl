@@ -4,6 +4,7 @@ set -euo pipefail
 
 readonly GRAPL_DEVBOX_DIR="${HOME}/.grapl_devbox"
 readonly GRAPL_DEVBOX_CONFIG="${GRAPL_DEVBOX_DIR}/config.env"
+# shellcheck disable=SC1090
 source "${GRAPL_DEVBOX_CONFIG}"
 
 ########################################
