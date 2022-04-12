@@ -49,7 +49,7 @@ fi
     if ! pulumi stack --show-name --non-interactive; then
         pulumi stack init "${STACK_NAME}"
     else
-        echo "Stack already exists"
+        echo "Stack ${STACK_NAME} already exists"
     fi
 
     config=$(pulumi config --json)
