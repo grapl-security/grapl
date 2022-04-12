@@ -2,8 +2,9 @@
 
 set -euo pipefail
 
-readonly GRAPL_DEVBOX_DIR="${HOME}/.grapl_devbox"
-readonly GRAPL_DEVBOX_CONFIG="${GRAPL_DEVBOX_DIR}/config.env"
+THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
+# shellcheck source-path=SCRIPTDIR
+source "${THIS_DIR}/lib.sh"
 # shellcheck disable=SC1090
 source "${GRAPL_DEVBOX_CONFIG}"
 
@@ -16,4 +17,5 @@ AWS_REGION="${GRAPL_DEVBOX_REGION}" \
     ssh \
     -o "IdentitiesOnly=yes" \
     -i "${GRAPL_DEVBOX_PRIVATE_KEY_FILE}" \
-    "${GRAPL_DEVBOX_USER}@${GRAPL_DEVBOX_INSTANCE_ID}"
+    "${GRAPL_DEVBOX_USER}@${GRAPL_DEVBOX_INSTANCE_ID}" \
+    "${@}"

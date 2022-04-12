@@ -3,8 +3,9 @@
 set -euo pipefail
 
 readonly GRAPL_ROOT="${PWD}"
-readonly GRAPL_DEVBOX_DIR="${HOME}/.grapl_devbox"
-readonly GRAPL_DEVBOX_CONFIG="${GRAPL_DEVBOX_DIR}/config.env"
+THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
+# shellcheck source-path=SCRIPTDIR
+source "${THIS_DIR}/../lib.sh"
 
 mkdir -p "${GRAPL_DEVBOX_DIR}"
 
