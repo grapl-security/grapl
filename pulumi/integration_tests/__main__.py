@@ -50,6 +50,24 @@ def _integration_container_images(
     }
 
 
+def _integration_new_container_images(
+    artifacts: ArtifactGetter,
+) -> Mapping[str, DockerImageId]:
+    """
+    Build a map of {task name -> docker image identifier}.
+    """
+    builder = DockerImageIdBuilder(
+        container_repository=config.container_repository(),
+        artifacts=artifacts,
+    )
+
+    return {
+        "rust-integration-tests-new": builder.build_with_tag(
+            "rust-integration-tests-new"
+        )
+    }
+
+
 def main() -> None:
     ##### Preamble
     stack_name = config.STACK_NAME
@@ -94,6 +112,22 @@ def main() -> None:
         "e2e-tests",
         jobspec=path_from_root("nomad/e2e-tests.nomad").resolve(),
         vars=e2e_test_job_vars,
+        opts=pulumi.ResourceOptions(provider=nomad_provider),
+    )
+
+    integration_tests_new_job_vars: NomadVars = {
+        "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
+        "aws_region": aws.get_region().name,
+        "container_images": _integration_new_container_images(artifacts),
+        "kafka_bootstrap_servers": grapl_stack.kafka_bootstrap_servers,
+        "pipeline_ingress_kafka_sasl_username": grapl_stack.pipeline_ingress_kafka_sasl_username,
+        "pipeline_ingress_kafka_sasl_password": grapl_stack.pipeline_ingress_kafka_sasl_password,
+    }
+
+    integration_tests_new = NomadJob(
+        "integration-tests-new",
+        jobspec=path_from_root("nomad/integration-tests-new.nomad").resolve(),
+        vars=integration_tests_new_job_vars,
         opts=pulumi.ResourceOptions(provider=nomad_provider),
     )
 
@@ -177,11 +211,20 @@ class GraplStack:
         )
 
         self.kafka_bootstrap_servers = require_str("kafka-bootstrap-servers")
+
         self.kafka_e2e_sasl_username = require_str("kafka-e2e-sasl-username")
         self.kafka_e2e_sasl_password = require_str("kafka-e2e-sasl-password")
         self.kafka_e2e_consumer_group_name = require_str(
             "kafka-e2e-consumer-group-name"
         )
+
+        self.pipeline_ingress_kafka_sasl_username = (
+            require_str("pipeline-ingress-kafka-sasl-username"),
+        )
+        self.pipeline_ingress_kafka_sasl_password = (
+            require_str("pipeline-ingress-kafka-sasl-password"),
+        )
+
         self.test_user_password_secret_id = require_str("test-user-password-secret-id")
 
 

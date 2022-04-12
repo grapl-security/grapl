@@ -212,6 +212,100 @@ EOF
 ENTRYPOINT [ "/run-tests.sh" ]
 
 
+# build-test-integration-new
+################################################################################
+FROM base AS build-test-integration-new
+
+# For running integration tests we're going to copy the test binaries to a new
+# container base and run the directly, as opposed to running them via `cargo
+# test`. Cargo will recompile tests if it thinks the test binaries in target/
+# are out of date. Because we're using a mount cache when building the sources
+# this directly won't be available in resulting container images. In the past
+# we've `cp -a` the target directory to preserve it, but this can make for an
+# increasingly large container image size, especially when the mount cache is
+# has not been cleaned in a while. To find the test binaries paths we parse
+# the manifest.json from the cargo build.
+# https://github.com/rust-lang/cargo/issues/1924
+# https://github.com/rust-lang/cargo/issues/3670
+
+ENV RUST_INTEGRATION_TEST_FEATURES="pipeline-ingress/integration_tests_new"
+ENV TEST_DIR=/grapl/tests
+
+# This will build the integration test binaries and parse the manifest to find
+# their paths for copying later.
+#
+# Hadolint is confused again, at the time of this writing, SHELL *does*
+# have -o pipefail set on line 9.
+# hadolint ignore=DL4006
+RUN mkdir --parents "${TEST_DIR}"
+RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
+    --mount=type=cache,target="${REGISTRY_CACHE_TARGET}",sharing=locked \
+    --mount=type=cache,target="${RUSTUP_CACHE_TARGET}",sharing=locked \
+    cargo test \
+        --features "${RUST_INTEGRATION_TEST_FEATURES}" \
+        --no-run \
+        --message-format=json \
+        --test "*" | \
+        jq -r "select(.profile.test == true) | .filenames[]" | \
+        xargs \
+          --replace="{}" \
+          cp "{}" "${TEST_DIR}/"
+
+
+# "new" integration tests distribution
+################################################################################
+# We're unable to use one of the 'distroless' container images as a base here
+# because our integration tests require zlib shared library, but we don't have
+# a way of including that in the base image. With a debian image we can apt
+# install as needed, but the debian image we're using has zlib already.
+FROM debian:bullseye-slim AS integration-tests-new
+
+RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tests-apt \
+    apt-get update \
+    && apt-get install --yes --no-install-recommends \
+        ca-certificates=20210119
+
+# Make the Nomad binary available to integration test consumers of NomadCli
+# hadolint ignore=DL3022
+COPY --from=build /nomad/nomad /bin
+
+COPY --from=build-test-integration-new /grapl/tests /tests
+
+COPY --chmod=777 <<-"EOF" /run-tests.sh
+#!/bin/bash
+
+# This script is intended to be used for running integration tests. The exit code of this script will be that of
+# that last test that had a non-zero exit code (test failure), otherwise it
+# will be zero.
+
+EXIT_STATUS=0
+declare -a FAILING_TESTS=()
+
+for test in $(find /tests -type f -executable -exec readlink -f {} \;)
+do
+    echo "--- Executing ${test}"
+    # Redirect stderr so it's inline with stdout
+    "${test}"
+    exit_code=$?
+    if [[ ${exit_code} -ne 0 ]]; then
+        FAILING_TESTS+=("${test}")
+        echo Test failed with exit code ${exit_code}
+        EXIT_STATUS=${exit_code}
+    fi
+done
+
+if [[ ${EXIT_STATUS} -ne 0 ]]; then
+  echo ""
+  echo ">>> FAILING TESTS: ${FAILING_TESTS[@]}"
+  echo "   See .stderr.txt (or the Nomad stderr tab) to see additional failure backtraces."
+fi
+exit ${EXIT_STATUS}
+
+EOF
+
+ENTRYPOINT [ "/run-tests.sh" ]
+
+
 # images for running services
 ################################################################################
 # More information about the base image used here can be found at:
@@ -345,7 +439,6 @@ FROM rust-dist AS model-plugin-deployer
 COPY --from=build /outputs/model-plugin-deployer /
 ENTRYPOINT ["/model-plugin-deployer"]
 
-
 ##### organization-management
 FROM rust-dist AS organization-management-deploy
 
@@ -354,3 +447,12 @@ FROM rust-dist AS organization-management-deploy
 # hadolint ignore=DL3022
 COPY --from=build /outputs/organization-management /
 ENTRYPOINT ["/organization-management"]
+
+##### pipeline-ingress
+FROM rust-dist AS pipeline-ingress-deploy
+
+# Hadolint v2.8.0 appears to be mistaken, this is a false positive
+# https://github.com/hadolint/hadolint/wiki/DL3022
+# hadolint ignore=DL3022
+COPY --from=build /outputs/pipeline-ingress /
+ENTRYPOINT ["/pipeline-ingress"]

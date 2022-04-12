@@ -3164,9 +3164,16 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "kafka",
+ "opentelemetry 0.16.0",
+ "opentelemetry-jaeger",
  "rust-proto-new",
  "thiserror",
  "tokio",
+ "tracing",
+ "tracing-appender",
+ "tracing-futures",
+ "tracing-opentelemetry 0.16.0",
+ "tracing-subscriber",
  "uuid",
 ]
 
