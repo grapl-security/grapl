@@ -15,4 +15,4 @@ AWS_REGION="${GRAPL_DEVBOX_REGION}" \
     ssh \
     -o "IdentitiesOnly=yes" \
     -i "${GRAPL_DEVBOX_PRIVATE_KEY_FILE}" \
-    ubuntu@"${GRAPL_DEVBOX_INSTANCE_ID}"
+    "${GRAPL_DEVBOX_USER}@${GRAPL_DEVBOX_INSTANCE_ID}"

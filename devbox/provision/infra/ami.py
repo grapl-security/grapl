@@ -4,6 +4,10 @@ import pulumi
 
 
 def get_ami() -> pulumi.Output[aws.ec2.GetAmiResult]:
+    # The default user for this AMI is, indeed, 'ubuntu'.
+    # We propagate that information over to the GRAPL_DEVBOX_CONFIG for ssh.
+    pulumi.export("devbox-user", "ubuntu")
+
     return aws.ec2.get_ami_output(
         owners=["099720109477"],  # Ubuntu / Canonical
         filters=[

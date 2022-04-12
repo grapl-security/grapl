@@ -87,6 +87,7 @@ pulumi update --yes --cwd="${GRAPL_ROOT}/devbox/provision"
         cat << EOF
 GRAPL_DEVBOX_REGION="$(pulumi config get aws:region)"
 GRAPL_DEVBOX_INSTANCE_ID="$(pulumi stack output devbox-instance-id)"
+GRAPL_DEVBOX_USER="$(pulumi stack output devbox-user)"
 GRAPL_DEVBOX_PRIVATE_KEY_FILE="${SSH_PRIVATE_KEY_FILE}"
 EOF
     )"
