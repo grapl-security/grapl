@@ -159,5 +159,14 @@ async fn main() -> Result<(), ConfigurationError> {
     tracing::info!("logger configured successfully");
     tracing::info!("starting up!");
 
-    handler().await
+    match handler().await {
+        Ok(res) => {
+            tracing::info!("shutting down");
+            Ok(res)
+        }
+        Err(err) => {
+            tracing::error!("configuration error: {}", err);
+            Err(err)
+        }
+    }
 }
