@@ -13,3 +13,4 @@ dist/**
 !dist/**/*.pex
 src/rust/target/
 test_artifacts/
+devbox/
