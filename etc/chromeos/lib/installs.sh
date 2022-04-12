@@ -174,6 +174,7 @@ install_pyenv() {
         setup_pyenv_on_path
     fi
 
+    source_profile
     pyenv install --skip-existing "${PYENV_PYTHON_VERSION}"
     pyenv global "${PYENV_PYTHON_VERSION}"
 
@@ -247,7 +248,7 @@ install_pulumi() {
 
 install_utilities() {
     echo_banner "Install useful utilities"
-    sudo apt-get install --yes jq dnsutils tree
+    sudo apt-get install --yes jq dnsutils tree unzip
 }
 
 install_hashicorp_tools() {
