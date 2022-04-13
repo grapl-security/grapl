@@ -1,8 +1,11 @@
 from __future__ import annotations
+
+import json
 import logging
 import os
 import sys
 
+from contextlib import contextmanager
 from typing import Any, Dict, List, Tuple, Union, Optional, cast, TypeVar
 
 from grapl_analyzerlib.viewable import traverse_view_iter
@@ -21,11 +24,11 @@ LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 
 
 def delete_edge(txn: Txn, from_uid: int, edge_name: str, to_uid: int) -> None:
-    if edge_name[0] == "~":
-        mut = {"uid": to_uid, edge_name[1:]: {"uid": from_uid}}
+    if isinstance(from_uid, str):
+        from_uid = int(from_uid, 16)
 
-    else:
-        mut = {"uid": from_uid, edge_name: {"uid": to_uid}}
+    if isinstance(to_uid, str):
+        to_uid = int(to_uid, 16)
 
     try:
         res = txn.mutate(del_obj=mut, commit_now=True)
@@ -35,11 +38,13 @@ def delete_edge(txn: Txn, from_uid: int, edge_name: str, to_uid: int) -> None:
 
 
 def create_edge(txn: Txn, from_uid: int, edge_name: str, to_uid: int) -> None:
-    if edge_name[0] == "~":
-        mut = {"uid": to_uid, edge_name[1:]: {"uid": from_uid}}
+    if isinstance(from_uid, str):
+        from_uid = int(from_uid, 16)
 
-    else:
-        mut = {"uid": from_uid, edge_name: {"uid": to_uid}}
+    if isinstance(to_uid, str):
+        to_uid = int(to_uid, 16)
+
+    mut = {"uid": from_uid, edge_name: {"uid": to_uid}}
 
     try:
         res = txn.mutate(set_obj=mut, commit_now=True)
@@ -109,28 +114,30 @@ class EngagementTransaction(Txn):
     ) -> None:
         super().__init__(copying_client, read_only=read_only, best_effort=best_effort)
         self.eg_uid = eg_uid
+        self.client = copying_client.any_client()
 
     def query(
         self, query, variables=None, timeout=None, metadata=None, credentials=None
     ):
         copied_uids = set()
 
-        txn = super().__init__(read_only=True)
+        txn = self.client.txn(read_only=True)
         try:
             res = txn.query(query, variables, timeout, metadata, credentials)
+            decoded_res = json.loads(res.json)
             nodes = {}  # type: Dict[str, Dict[str, Any]]
             edges = []
-            response_into_matrix(res.values(), nodes, edges)
+            response_into_matrix(decoded_res.values(), nodes, edges)
             for node in nodes.values():
-                copied_uids.update(node["uid"])
+                copied_uids.add(node["uid"])
         finally:
             txn.discard()
 
         for uid in copied_uids:
             if uid == self.eg_uid:
                 continue
-            create_edge(super().__init__(read_only=False), self.eg_uid, "scope", uid)
-            create_edge(super().__init__(read_only=False), uid, "in_scope", self.eg_uid)
+            create_edge(self.client.txn(read_only=False), self.eg_uid, "scope", uid)
+            create_edge(self.client.txn(read_only=False), uid, "in_scope", self.eg_uid)
 
         return res
 
@@ -148,13 +155,34 @@ class EngagementClient(object):
         )
         return EngagementClient(engagement_lens.uid, src_client)
 
+    def any_client(self) -> EngagementClient:
+        return self.gclient
+
     def txn(self, read_only=False, best_effort=False) -> EngagementTransaction:
         return EngagementTransaction(
             self, self.eg_uid, read_only=read_only, best_effort=best_effort
         )
 
+    @contextmanager
+    def txn_context(
+        self,
+        read_only: bool = False,
+        best_effort: bool = False,
+    ) -> Iterator[Txn]:
+        """
+        Essentially, this just automates the try-finally in every
+        txn() use case, turning it into a context manager.
+        It'd be nice to - after a full migration to `txn_context` - perhaps restrict calls to `.txn()`
+        """
 
-from grapl_analyzerlib.nodes.lens import LensView
+        txn = self.txn(read_only=False, best_effort=False)
+        try:
+            yield txn
+        finally:
+            txn.discard()
+
+
+from grapl_analyzerlib.nodes.lens import LensView, LensQuery
 from grapl_analyzerlib.nodes.base import BaseQuery
 
 
@@ -192,6 +220,16 @@ class EngagementView(LensView[EV, EQ]):
 
     def get_nodes(self, query: EntityQuery, first: int = 100) -> List["EntityView"]:
         return query.query(self.graph_client, first=first)
+
+    def attach_lens_scope(self, lens_name: str, lens_type: str):
+        lens_query = LensQuery().with_node_key(eq="lens-" + lens_type + lens_name)
+        lens = lens_query.query_first(self.graph_client.gclient)
+
+        if not lens:
+            raise Exception(f"Lens with name {lens_name} and type {lens_type} does not exist")
+
+        for node in lens.get_scope():
+            self.get_node_by_key(node.node_key)
 
     def detach(self, *nodes: EntityView, recursive=False):
         for subgraph in nodes:
