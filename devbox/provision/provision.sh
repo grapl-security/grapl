@@ -140,5 +140,7 @@ source "${GRAPL_DEVBOX_CONFIG}"
     fi
 EOF
     )"
+    # There's a minor race condition here, where Pulumi starts the box but it's
+    # not ready to take SSH-over-SSM commands quite yet.
     "${THIS_DIR}/../ssh.sh" -- "${CMD}"
 )
