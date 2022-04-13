@@ -59,7 +59,7 @@ export type Link = {
 
 export type VizGraph = {
     nodes: VizNode[];
-    links: Link[];
+    links: SummaryLink[];
     index: { [key: number]: VizNode };
 };
 
@@ -88,4 +88,11 @@ export type PaginationState = {
     lenses: Lens[];
     offset: number;
     toggled: boolean;
+};
+
+export type SummaryLink = {
+    source: number;
+    target: number;
+    name: string;
+    innerLinks: Link[];
 };
