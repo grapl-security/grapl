@@ -5,10 +5,6 @@ import {
 
 import { processNode } from "./engagementView/testData/baseData";
 
-test("link label for children", () => {
-    expect(getLinkLabel("children")).toBe("children");
-});
-
 // Test graph styling for high risk process node
 // Assuming if process works, formatting for other node types also works
 test("link label for processes", () => {
