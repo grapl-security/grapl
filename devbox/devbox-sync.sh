@@ -10,7 +10,7 @@ source "${GRAPL_DEVBOX_CONFIG}"
 
 # the --include stuff was inspired by https://stackoverflow.com/posts/63438492/revisions
 
-rsync --archive --verbose --progress \
+rsync --archive --info=progress2 \
     --include='**.gitignore' --exclude='**/.git' --filter=':- .gitignore' --delete-after \
     --rsh "${THIS_DIR}/ssh.sh" \
     "${GRAPL_DEVBOX_LOCAL_GRAPL}/" \

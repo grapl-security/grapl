@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ################################################################################
+# This is more of a building-block, for day-to-day you likely want devbox-do.sh.
 #
 # Usage:
 # ./devbox/ssh.sh

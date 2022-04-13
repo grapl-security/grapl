@@ -14,11 +14,14 @@ from typing_extensions import Final
 
 import pulumi
 
+
 class DevboxProvisionConfig:
     def __init__(self, pulumi_config: pulumi.Config) -> None:
         self.instance_type = pulumi_config.require("instance-type")
         self.public_key = pulumi_config.require("public-key")
-        self.instance_volume_size_gb = pulumi_config.require_int("instance-volume-size-gb")
+        self.instance_volume_size_gb = pulumi_config.require_int(
+            "instance-volume-size-gb"
+        )
 
 
 def main() -> None:
