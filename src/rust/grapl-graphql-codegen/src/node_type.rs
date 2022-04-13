@@ -248,6 +248,9 @@ impl NodeType {
         viewable.push('\n');
         viewable += &self.generate_viewable_get_methods();
 
+        viewable.push('\n');
+        viewable += &self.generate_queryable_node_schema_method();
+
         viewable
     }
 
