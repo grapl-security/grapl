@@ -330,7 +330,7 @@ install_cni_plugins() {
 }
 
 install_nomad_firecracker() {
-    echo_banner "Installing Firecracker Nomad driver"
+    echo_banner "Installing Firecracker Nomad driver and dependencies"
 
     repo="cneira/firecracker-task-driver"
     version=$(get_latest_release "${repo}")
@@ -340,6 +340,13 @@ install_nomad_firecracker() {
     download_and_install_tarball \
         "${url_prefix}/firecracker-task-driver-${version}.tar.gz" \
         /opt/nomad/plugins
+
+    sudo curl --proto "=https" \
+        --tlsv1.2 \
+        --location \
+        --output /opt/cni/bin/tc-redirect-tap \
+        "https://dl.cloudsmith.io/public/grapl/thomas/raw/files/tc-redirect-tap"
+
 }
 
 install_nomad_chromeos_workaround() {

@@ -177,7 +177,9 @@ job "grapl-plugin" {
         Firecracker = "/usr/bin/firecracker"
         Vcpus       = 1
         Mem         = 128
-        Network     = "default"
+        # The CNI config file that this matches is stored in /firecracker/cni
+        # The network name here must match the name in the config file and the file itself ie $NETWORK_NAME.conflist
+        Network = "fctenantplugin"
       }
 
       service {
