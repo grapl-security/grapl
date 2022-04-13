@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useEffectUponMount } from "lib/custom_react_hooks";
 
 import Button from "@material-ui/core/Button";
 import KeyboardArrowDownOutlinedIcon from "@material-ui/icons/KeyboardArrowDownOutlined";
@@ -49,27 +48,29 @@ export function ToggleLensTable({ setLens }: ToggleLensTableProps) {
         setPageState(0);
     };
 
-    async function updateTableStateWithLenses() {
-        const response = await getLenses(
-            toggleTableState.first,
-            toggleTableState.offset
-        );
-        if (response.lenses && response.lenses !== toggleTableState.lenses) {
-            const lenses = toggleTableState.lenses.concat(response.lenses);
-            setLensRetrievedState(lenses as any);
-            setToggleTableState({
-                ...toggleTableState,
-                offset: toggleTableState.offset + response.lenses.length || 0,
-                lenses,
-            });
-        }
-    }
-    // Do an initial updateTableStateWithLenses just once.
-    useEffectUponMount(updateTableStateWithLenses);
-
-    // Schedule an updateTableStateWithLenses every N seconds
     useEffect(() => {
-        const interval = setInterval(updateTableStateWithLenses, 5000);
+        const interval = setInterval(() => {
+            getLenses(toggleTableState.first, toggleTableState.offset).then(
+                (response) => {
+                    if (
+                        response.lenses &&
+                        response.lenses !== toggleTableState.lenses
+                    ) {
+                        const lenses = toggleTableState.lenses.concat(
+                            response.lenses
+                        );
+                        setLensRetrievedState(lenses as any);
+                        setToggleTableState({
+                            ...toggleTableState,
+                            offset:
+                                toggleTableState.offset +
+                                    response.lenses.length || 0,
+                            lenses,
+                        });
+                    }
+                }
+            );
+        }, 5000);
         return () => clearInterval(interval);
     });
 
