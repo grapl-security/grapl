@@ -70,6 +70,10 @@ $(volume_dirs):
 	mkdir -p $@
 
 # ----------------------------------------------------------------------
+regenerate-lockfile: build-image package.json yarn.lock
+regenerate-lockfile: | $(volume_dirs)
+regenerate-lockfile: ## Regenerate the yarn.lock
+	$(DOCKER_RUN) yarn install --mode=update-lockfile
 
 install-dependencies: build-image package.json yarn.lock
 install-dependencies: | $(volume_dirs)
