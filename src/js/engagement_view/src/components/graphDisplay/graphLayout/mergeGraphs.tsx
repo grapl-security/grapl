@@ -1,5 +1,11 @@
 import { mapNodeProps } from "./mapNodeProps";
-import { VizGraph, VizNode } from "../../../types/CustomTypes";
+import {
+    Link,
+    SummaryLink,
+    VizGraph,
+    VizNode,
+} from "../../../types/CustomTypes";
+import { summarizeLinks } from "./vizGraphFromLensScope";
 
 // if graph has updated, merge y into x
 export const mergeNodes = (node: VizNode, newNode: VizNode) => {
@@ -52,7 +58,6 @@ export const mergeGraphs = (
 
     const outputGraph: VizGraph = { nodes: [], links: [], index: {} };
     const nodes = new Map();
-    const links = new Map();
 
     for (const node of curGraph.nodes) {
         nodes.set(node.uid, node);
@@ -69,32 +74,18 @@ export const mergeGraphs = (
             updated = true;
         }
     }
-
-    for (const link of curGraph.links) {
-        if (link) {
-            const _link = link as any;
-            const setLink = _link.source.uid + link.name + _link.target.uid;
-            links.set(setLink, link);
-        }
-    }
-
-    for (const newLink of updateGraph.links) {
-        const getLink = newLink.source + newLink.name + newLink.target;
-        const link = links.get(getLink);
-
-        if (!link) {
-            links.set(newLink.source + newLink.name + newLink.target, newLink);
-            updated = true;
-        }
-    }
+    const [linksUpdated, links] = mergeSummarizedLinks(
+        curGraph.links,
+        updateGraph.links
+    );
+    updated = updated || linksUpdated;
 
     outputGraph.nodes = Array.from(nodes.values());
-    outputGraph.links = Array.from(links.values());
+    outputGraph.links = links;
 
     for (const node of outputGraph.nodes) {
         outputGraph.index[node.uid] = node;
     }
-
     outputGraph.links.forEach((link) => {
         // the graph should not be updated if the link is already in the index array
 
@@ -123,4 +114,54 @@ export const mergeGraphs = (
     } else {
         return null;
     }
+};
+
+const mergeSummarizedLink = (
+    oldLink: SummaryLink,
+    newLink: SummaryLink
+): [boolean, SummaryLink] => {
+    const allInnerLinks = [...oldLink.innerLinks, ...newLink.innerLinks];
+    const summarizedLink = summarizeLinks(allInnerLinks)[0];
+    const updated =
+        summarizedLink.innerLinks.length !== oldLink.innerLinks.length;
+    return [updated, summarizedLink];
+};
+
+// We're normalizing the order because links are bidirectional.
+
+const sortKeys = (link: Link) => {
+    const key = [link.source, link.target];
+    key.sort();
+
+    const sKey = String(key[0]) + String(key[1]);
+
+    return sKey;
+};
+
+const mergeSummarizedLinks = (
+    oldLinks: SummaryLink[],
+    newLinks: SummaryLink[]
+): [boolean, SummaryLink[]] => {
+    let updated = false;
+    const mergedLinks: Map<string, SummaryLink> = new Map();
+
+    for (const link of oldLinks) {
+        const sKey = sortKeys(link);
+        mergedLinks.set(sKey, link);
+    }
+
+    for (const link of newLinks) {
+        const sKey = sortKeys(link);
+        const oldLink = mergedLinks.get(sKey);
+
+        if (oldLink) {
+            const [didMerge, merged] = mergeSummarizedLink(oldLink, link);
+            updated = updated || didMerge;
+            mergedLinks.set(sKey, merged);
+        } else {
+            mergedLinks.set(sKey, link);
+            updated = true;
+        }
+    }
+    return [updated, Array.from(mergedLinks.values())];
 };

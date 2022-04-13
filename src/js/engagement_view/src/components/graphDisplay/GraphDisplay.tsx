@@ -6,7 +6,6 @@ import {
     calcLinkDirectionalArrowRelPos,
 } from "./graphVizualization/linkCalcs";
 import { nodeSize } from "./graphVizualization/nodeCalcs";
-import { getLinkLabel } from "./graphLayout/labels";
 import { updateGraph } from "./graphUpdates/updateGraph";
 import { Link, VizNode, VizGraph } from "../../types/CustomTypes";
 import {
@@ -200,7 +199,6 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
         const LABEL_NODE_MARGIN = 12;
         const start = link.source;
         const end = link.target;
-
         link.color = calcLinkColor(link, data);
 
         // Ignore unbounded links
@@ -223,8 +221,7 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
         if (textAngle > Math.PI / 2) textAngle = -(Math.PI - textAngle);
         if (textAngle < -Math.PI / 2) textAngle = -(-Math.PI - textAngle);
 
-        const label = getLinkLabel(link.name);
-
+        const label = link.name;
         // Estimate fontSize to fit in link length
         const fontSize = Math.min(
             MAX_FONT_SIZE,
