@@ -35,8 +35,10 @@ Forward ports from the EC2 machine to your local machine.
 - `FORWARD_PORT=4646 ./devbox/ssh.sh`
 
 ### "Devbox-Do"
+
 This script will sync your files and then execute a command remotely in the
-correct directory. 
+correct directory.
+
 - `./devbox/devbox-do.sh KEEP_TEST_ENV=1 make test-e2e`
 
 ## Recommendations
