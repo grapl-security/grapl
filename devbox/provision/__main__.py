@@ -15,9 +15,17 @@ from typing_extensions import Final
 import pulumi
 
 
+class DevboxProvisionConfig:
+    def __init__(self, pulumi_config: pulumi.Config) -> None:
+        self.instance_type = pulumi_config.require("instance-type")
+        self.public_key = pulumi_config.require("public-key")
+        self.instance_volume_size_gb = pulumi_config.require_int(
+            "instance-volume-size-gb"
+        )
+
+
 def main() -> None:
-    config = pulumi.Config()
-    instance_type = config.require("instance-type")
+    config = DevboxProvisionConfig(pulumi.Config())
 
     tags: Final[Mapping[str, str]] = {
         "pulumi:project": pulumi.get_project(),
@@ -35,7 +43,7 @@ def main() -> None:
     public_key = aws.ec2.KeyPair(
         public_key_name,
         key_name=public_key_name,
-        public_key=config.require("public-key"),
+        public_key=config.public_key,
         tags=tags,
     )
 
@@ -44,8 +52,11 @@ def main() -> None:
         instance_name,
         ami=ami.id,
         iam_instance_profile=instance_profile.instance_profile.name,
-        instance_type=instance_type,
+        instance_type=config.instance_type,
         key_name=public_key.id,
+        root_block_device=aws.ec2.InstanceRootBlockDeviceArgs(
+            volume_size=config.instance_volume_size_gb,
+        ),
         vpc_security_group_ids=[security_group.security_group.id],
         tags={
             "Name": instance_name,

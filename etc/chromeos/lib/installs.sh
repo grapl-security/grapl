@@ -107,11 +107,12 @@ install_docker() {
 install_rust_and_utilities() {
     if (! command -v rustup) || should_force_reinstall; then
         echo_banner "Installing rust toolchain"
+        # -y means "disable confirmation prompt". No, there's no --yes
         curl --proto "=https" \
             --tlsv1.2 \
             --silent \
             --show-error \
-            --fail https://sh.rustup.rs | sh
+            --fail https://sh.rustup.rs | sh -s -- -y
     fi
     # Shellcheck can't follow $HOME or other vars like $USER so we disable the check here
     # shellcheck disable=SC1091
@@ -173,12 +174,14 @@ install_pyenv() {
         setup_pyenv_on_path
     fi
 
+    source_profile
     pyenv install --skip-existing "${PYENV_PYTHON_VERSION}"
     pyenv global "${PYENV_PYTHON_VERSION}"
 
 }
 
 install_pipx() {
+    echo_banner "Installing pipx"
     python3 -m pip install --user pipx --upgrade
     python3 -m pipx ensurepath
 }
@@ -245,7 +248,7 @@ install_pulumi() {
 
 install_utilities() {
     echo_banner "Install useful utilities"
-    sudo apt-get install --yes jq dnsutils tree
+    sudo apt-get install --yes jq dnsutils tree unzip
 }
 
 install_hashicorp_tools() {
