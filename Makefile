@@ -59,8 +59,8 @@ NONROOT_DOCKER_COMPOSE_CHECK := ${DOCKER_COMPOSE_CHECK} --user=${COMPOSE_USER}
 DOCKER_FILTER_LABEL := org.opencontainers.image.vendor="Grapl, Inc."
 # We pull some vendor containers directly
 DOCKER_DGRAPH_FILTER_LABEL := maintainer="Dgraph Labs <contact@dgraph.io>"
-# Currently we don't label volumes explicitly. The only labeled volume is the dgraph_export which is labeled
-# automatically by docker-compose
+# Currently we don't label volumes explicitly. The only labeled volume is the
+# grapl-dgraph-data which is labeled automatically by docker-compose
 # TODO label volumes explicitly and then update this filter
 DOCKER_VOLUME_FILTER_LABEL := com.docker.compose.project="grapl"
 
@@ -576,7 +576,7 @@ clean-docker-images: ## Remove all Grapl images
 	| xargs --no-run-if-empty docker rmi --force
 
 clean-docker-volumes: ## Remove all Grapl labeled volumes
-	# Currently only the dgraph_export volume is labeled so that's the only one affected.
+	# Currently only the grapl-dgraph-data volume is labeled so that's the only one affected.
 	# We explicitly don't want to prune the build cache volumes
 	docker volume prune \
 		--filter=label=$(DOCKER_VOLUME_FILTER_LABEL) \

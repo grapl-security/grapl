@@ -4,8 +4,6 @@
 # 84xx - debugger ports (see vsc_debugger.py)
 
 version: "3.8"
-volumes:
-  dgraph_export:
 
 services:
   pulumi:
