@@ -4,8 +4,16 @@
 # 84xx - debugger ports (see vsc_debugger.py)
 
 version: "3.8"
+# docker-bake doesn't support volume creation, so we define and label them here
 volumes:
   dgraph_export:
+    # Labels are only applied to newly created volumes. Existing volumes will NOT have labels updated
+    labels:
+      "org.opencontainers.image.title": "dgraph_export"
+      "org.opencontainers.image.vendor": "Grapl, Inc."
+      # This label is for backwards compatibility
+      "com.docker.compose.project": "grapl"
+      maintainer: "Dgraph Labs <contact@dgraph.io>"
 
 services:
   pulumi:
