@@ -151,11 +151,9 @@ const mergeSummarizedLinks = (
     }
 
     for (const link of newLinks) {
-        const key = [link.source, link.target];
-        key.sort();
-        const sKey = String(key[0]) + String(key[1]);
-
+        const sKey = sortKeys(link);
         mergedLinks.set(sKey, link);
+
         const oldLink = mergedLinks.get(sKey);
 
         if (oldLink) {
