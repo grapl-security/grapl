@@ -124,7 +124,6 @@ const mergeSummarizedLink = (
     const summarizedLink = summarizeLinks(allInnerLinks)[0];
     const updated =
         summarizedLink.innerLinks.length !== oldLink.innerLinks.length;
-
     return [updated, summarizedLink];
 };
 
