@@ -308,7 +308,7 @@ locals {
 
   dgraph_volume_args = {
     target = "/dgraph"
-    source = "grapl-dgraph-data"
+    source = "grapl-data-dgraph"
   }
 
   _redis_trimmed = trimprefix(var.redis_endpoint, "redis://")
@@ -374,14 +374,6 @@ job "grapl-core" {
           target   = "${local.dgraph_volume_args.target}"
           source   = "${local.dgraph_volume_args.source}"
           readonly = false
-          volume_options {
-            labels {
-              # This label is used by our root-level Makefile, DOCKER_VOLUME_FILTER_LABEL
-              # TODO(inickles): Give proper label key and update Makefile comment
-              # TODO(inickles): Unfortunately, we're unable to use dots in volume keys here. Decide on a better name then and reconcile with Makefile.
-              owner = "grapl"
-            }
-          }
         }
       }
     }
@@ -455,14 +447,6 @@ job "grapl-core" {
             target   = "${local.dgraph_volume_args.target}"
             source   = "${local.dgraph_volume_args.source}"
             readonly = false
-            volume_options {
-              labels {
-                # This label is used by our root-level Makefile, DOCKER_VOLUME_FILTER_LABEL
-                # TODO(inickles): Give proper label key and update Makefile comment
-                # TODO(inickles): Unfortunately, we're unable to use dots in volume keys here. Decide on a better name then and reconcile with Makefile.
-                owner = "grapl"
-              }
-            }
           }
         }
       }
@@ -572,14 +556,6 @@ job "grapl-core" {
             target   = "${local.dgraph_volume_args.target}"
             source   = "${local.dgraph_volume_args.source}"
             readonly = false
-            volume_options {
-              labels {
-                # This label is used by our root-level Makefile, DOCKER_VOLUME_FILTER_LABEL
-                # TODO(inickles): Give proper label key and update Makefile comment
-                # TODO(inickles): Unfortunately, we're unable to use dots in volume keys here. Decide on a better name then and reconcile with Makefile.
-                owner = "grapl"
-              }
-            }
           }
 
           ports = ["dgraph-alpha-port"]

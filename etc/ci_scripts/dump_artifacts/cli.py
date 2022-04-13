@@ -65,7 +65,7 @@ def main() -> None:
         )
         docker_artifacts.dump_volume(
             compose_project=compose_project,
-            volume_name="grapl-dgraph-data",
+            volume_name="grapl-data-dgraph",
             artifacts_dir=artifacts_dir,
         )
 

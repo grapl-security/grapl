@@ -22,7 +22,7 @@ def _after_tests() -> None:
     Add any "after tests are executed, but before docker-compose down" stuff here.
     """
     # Issue a command to dgraph to export the whole database.
-    # This is then stored on a volume, `grapl-dgraph-data`.
+    # This is then stored on a volume, `grapl-data-dgraph`.
     # The contents of the volume are made available to Buildkite via `make dump-artifacts`
     if DUMP_ARTIFACTS:
         dgraph_host = environ["DGRAPH_HOST"]

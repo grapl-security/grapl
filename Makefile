@@ -59,10 +59,16 @@ NONROOT_DOCKER_COMPOSE_CHECK := ${DOCKER_COMPOSE_CHECK} --user=${COMPOSE_USER}
 DOCKER_FILTER_LABEL := org.opencontainers.image.vendor="Grapl, Inc."
 # We pull some vendor containers directly
 DOCKER_DGRAPH_FILTER_LABEL := maintainer="Dgraph Labs <contact@dgraph.io>"
-# Currently we don't label volumes explicitly. The only labeled volume is the
-# grapl-dgraph-data which is labeled automatically by docker-compose
-# TODO label volumes explicitly and then update this filter
-DOCKER_VOLUME_FILTER_LABEL := com.docker.compose.project="grapl"
+# This filter should differentiate between data volumes, such as those used for
+# DGraph (grapl-data-dgraph), and those used for caching builds
+# (grapl-engagement-view-yarn).
+#
+# Multiple filter arguments can be supplied here.
+#
+# We may want to stick to a naming convention where data volume should just
+# prefix their name to match the filter here, but that doesn't necessarily need
+# to be a strict requirement.
+DOCKER_DATA_VOLUME_FILTERS := --filter=name=grapl-data
 
 # Run a Pants goal across all Python files
 PANTS_PYTHON_FILTER := ./pants filter --target-type=python_sources,python_tests :: | xargs ./pants
@@ -545,7 +551,7 @@ clean-docker: clean-docker-cache
 clean-docker: clean-docker-containers
 clean-docker: clean-docker-images
 clean-docker: clean-docker-dgraph
-clean-docker: clean-docker-volumes
+clean-docker: clean-docker-data-volumes
 clean-docker: ## Clean all Docker-related resources
 
 .PHONY: clean-artifacts
@@ -575,11 +581,10 @@ clean-docker-images: ## Remove all Grapl images
 		--quiet \
 	| xargs --no-run-if-empty docker rmi --force
 
-clean-docker-volumes: ## Remove all Grapl labeled volumes
-	# Currently only the grapl-dgraph-data volume is labeled so that's the only one affected.
+clean-docker-data-volumes: ## Remove all Grapl labeled volumes
 	# We explicitly don't want to prune the build cache volumes
 	docker volume prune \
-		--filter=label=$(DOCKER_VOLUME_FILTER_LABEL) \
+		$(DOCKER_DATA_VOLUME_FILTERS) \
 		--force
 
 clean-docker-dgraph: ## Remove dgraph images
