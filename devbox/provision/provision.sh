@@ -3,8 +3,9 @@
 set -euo pipefail
 
 readonly GRAPL_ROOT="${PWD}"
-readonly GRAPL_DEVBOX_DIR="${HOME}/.grapl_devbox"
-readonly GRAPL_DEVBOX_CONFIG="${GRAPL_DEVBOX_DIR}/config.env"
+THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
+# shellcheck source-path=SCRIPTDIR
+source "${THIS_DIR}/../lib.sh"
 
 mkdir -p "${GRAPL_DEVBOX_DIR}"
 
@@ -41,6 +42,24 @@ else
 fi
 
 ########################################
+# Tell SSH to use SSM trickery on hosts starting with `i-`
+########################################
+
+(
+    # Taken from https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-getting-started-enable-ssh-connections.html
+    SSH_CONFIG_APPEND="$(
+        cat << 'EOF'
+host i-* mi-*
+    ProxyCommand sh -c "aws ssm start-session --target %h --document-name AWS-StartSSHSession --parameters 'portNumber=%p'"
+EOF
+    )"
+    touch ~/.ssh/config
+    if ! grep --quiet "${SSH_CONFIG_APPEND}" ~/.ssh/config; then
+        echo "${SSH_CONFIG_APPEND}" >> ~/.ssh/config
+    fi
+)
+
+########################################
 # Set up Pulumi stack
 ########################################
 
@@ -57,6 +76,9 @@ fi
     config=$(pulumi config --json)
     if ! has_key "${config}" "devbox:public-key}"; then
         pulumi config set devbox:public-key -- < "${SSH_PUBLIC_KEY_FILE}"
+    fi
+    if ! has_key "${config}" "devbox:instance-volume-size-gb}"; then
+        pulumi config set devbox:instance-volume-size-gb 100
     fi
     if ! has_key "${config}" "devbox:instance-type}"; then
         # 32GB RAM
@@ -83,31 +105,40 @@ pulumi update --yes --cwd="${GRAPL_ROOT}/devbox/provision"
 (
     cd "${GRAPL_ROOT}/devbox/provision"
 
-    CONTENTS="$(
+    ENV_CONFIG="$(
         cat << EOF
 GRAPL_DEVBOX_REGION="$(pulumi config get aws:region)"
 GRAPL_DEVBOX_INSTANCE_ID="$(pulumi stack output devbox-instance-id)"
 GRAPL_DEVBOX_USER="$(pulumi stack output devbox-user)"
 GRAPL_DEVBOX_PRIVATE_KEY_FILE="${SSH_PRIVATE_KEY_FILE}"
+GRAPL_DEVBOX_REMOTE_REPOS="/home/$(pulumi stack output devbox-user)/repos"
+GRAPL_DEVBOX_REMOTE_GRAPL="/home/$(pulumi stack output devbox-user)/repos/grapl"
+GRAPL_DEVBOX_LOCAL_GRAPL="${GRAPL_ROOT}"
 EOF
     )"
-    echo "${CONTENTS}" > "${GRAPL_DEVBOX_CONFIG}"
+    echo "${ENV_CONFIG}" > "${GRAPL_DEVBOX_CONFIG}"
 )
 
-########################################
-# Tell SSH to use SSM trickery on hosts starting with `i-`
-########################################
+# Bring these environment variables into the current shell
+# shellcheck disable=SC1090
+source "${GRAPL_DEVBOX_CONFIG}"
 
+########################################
+# One-time changes to the box
+########################################
 (
-    # Taken from https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-getting-started-enable-ssh-connections.html
-    SSH_CONFIG_APPEND="$(
-        cat << 'EOF'
-host i-* mi-*
-    ProxyCommand sh -c "aws ssm start-session --target %h --document-name AWS-StartSSHSession --parameters 'portNumber=%p'"
+    CMD="$(
+        cat << EOF
+    if [ ! -d "${GRAPL_DEVBOX_REMOTE_GRAPL}" ]; then
+        echo "Checking out Grapl repo on remote"
+        mkdir -p "${GRAPL_DEVBOX_REMOTE_REPOS}"
+        cd "${GRAPL_DEVBOX_REMOTE_REPOS}"
+        # Gotta do the https because our ssh key can't read from github
+        git clone https://github.com/grapl-security/grapl.git
+        cd grapl
+        ./etc/chromeos/setup_chromeos.sh
+    fi
 EOF
     )"
-    touch ~/.ssh/config
-    if ! grep --quiet "${SSH_CONFIG_APPEND}" ~/.ssh/config; then
-        echo "${SSH_CONFIG_APPEND}" >> ~/.ssh/config
-    fi
+    "${THIS_DIR}/../ssh.sh" -- "${CMD}"
 )
