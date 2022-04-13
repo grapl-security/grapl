@@ -1,6 +1,14 @@
-import {mapEdges, traverseNeighbors, traverseNodes} from "./graphTraverse";
-import {getNodeLabel} from "./labels";
-import {BaseNodeProperties, Link, Node, Risk, SummaryLink, VizGraph, VizNode,} from "../../../types/CustomTypes";
+import { mapEdges, traverseNeighbors, traverseNodes } from "./graphTraverse";
+import { getNodeLabel } from "./labels";
+import {
+    BaseNodeProperties,
+    Link,
+    Node,
+    Risk,
+    SummaryLink,
+    VizGraph,
+    VizNode,
+} from "../../../types/CustomTypes";
 
 export const getNodeType = (node: BaseNodeProperties) => {
     const dgraphType = node.dgraph_type;

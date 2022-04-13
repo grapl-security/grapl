@@ -1,6 +1,6 @@
-import {mapNodeProps} from "./mapNodeProps";
-import {SummaryLink, VizGraph, VizNode} from "../../../types/CustomTypes";
-import {summarizeLinks} from "./vizGraphFromLensScope";
+import { mapNodeProps } from "./mapNodeProps";
+import { SummaryLink, VizGraph, VizNode } from "../../../types/CustomTypes";
+import { summarizeLinks } from "./vizGraphFromLensScope";
 
 // if graph has updated, merge y into x
 export const mergeNodes = (node: VizNode, newNode: VizNode) => {
@@ -51,7 +51,7 @@ export const mergeGraphs = (
 
     let updated = false;
 
-    const outputGraph: VizGraph = {nodes: [], links: [], index: {}};
+    const outputGraph: VizGraph = { nodes: [], links: [], index: {} };
     const nodes = new Map();
 
     for (const node of curGraph.nodes) {
@@ -69,12 +69,14 @@ export const mergeGraphs = (
             updated = true;
         }
     }
-    const [linksUpdated, links] = mergeSummarizedLinks(curGraph.links, updateGraph.links);
+    const [linksUpdated, links] = mergeSummarizedLinks(
+        curGraph.links,
+        updateGraph.links
+    );
     updated = updated || linksUpdated;
 
     outputGraph.nodes = Array.from(nodes.values());
     outputGraph.links = links;
-
 
     for (const node of outputGraph.nodes) {
         outputGraph.index[node.uid] = node;
@@ -109,15 +111,22 @@ export const mergeGraphs = (
     }
 };
 
-const mergeSummarizedLink = (oldLink: SummaryLink, newLink: SummaryLink): [boolean, SummaryLink] => {
+const mergeSummarizedLink = (
+    oldLink: SummaryLink,
+    newLink: SummaryLink
+): [boolean, SummaryLink] => {
     const allInnerLinks = [...oldLink.innerLinks, ...newLink.innerLinks];
     const summarizedLink = summarizeLinks(allInnerLinks)[0];
-    const updated = summarizedLink.innerLinks.length !== oldLink.innerLinks.length;
+    const updated =
+        summarizedLink.innerLinks.length !== oldLink.innerLinks.length;
 
     return [updated, summarizedLink];
 };
 
-const mergeSummarizedLinks = (oldLinks: SummaryLink[], newLinks: SummaryLink[]): [boolean, SummaryLink[]] => {
+const mergeSummarizedLinks = (
+    oldLinks: SummaryLink[],
+    newLinks: SummaryLink[]
+): [boolean, SummaryLink[]] => {
     let updated = false;
     const mergedLinks: Map<string, SummaryLink> = new Map();
 
@@ -137,11 +146,10 @@ const mergeSummarizedLinks = (oldLinks: SummaryLink[], newLinks: SummaryLink[]):
 
         const oldLink = mergedLinks.get(sKey);
 
-        if(oldLink){
+        if (oldLink) {
             const [didMerge, merged] = mergeSummarizedLink(oldLink, link);
             updated = updated || didMerge;
             mergedLinks.set(sKey, merged);
-
         } else {
             mergedLinks.set(sKey, link);
             updated = true;
@@ -149,5 +157,3 @@ const mergeSummarizedLinks = (oldLinks: SummaryLink[], newLinks: SummaryLink[]):
     }
     return [updated, Array.from(mergedLinks.values())];
 };
-
-
