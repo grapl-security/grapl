@@ -10,7 +10,6 @@ import {
     VizNode,
 } from "../../../types/CustomTypes";
 
-
 export const getNodeType = (node: BaseNodeProperties) => {
     const dgraphType = node.dgraph_type;
 
