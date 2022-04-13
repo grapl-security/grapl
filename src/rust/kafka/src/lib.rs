@@ -117,7 +117,7 @@ impl<T: SerDe> Producer<T> {
         })
     }
 
-    // TODO #[instrument(err)]
+    #[tracing::instrument(err, skip(self))]
     pub async fn send(&self, msg: T) -> Result<(), ProducerError> {
         let serialized = msg.serialize()?.to_vec();
         let record: FutureRecord<Vec<u8>, Vec<u8>> =
@@ -126,10 +126,14 @@ impl<T: SerDe> Producer<T> {
         self.producer
             .send(record, Timeout::Never)
             .map(|res| -> Result<(), ProducerError> {
-                res.map_err(|(e, _)| -> ProducerError {
-                    e.into() // TODO: add erroneous message to error
-                })
-                .map(|_| ()) // TODO: debug log partition and offset
+                res.map_err(|(e, _)| -> ProducerError { e.into() })
+                    .map(|(partition, offset)| {
+                        tracing::trace!(
+                            "wrote message to partition {} offset {}",
+                            partition,
+                            offset
+                        );
+                    })
             })
             .await
     }
@@ -183,7 +187,7 @@ impl<T: SerDe> Consumer<T> {
         })
     }
 
-    // TODO #[instrument(err)]
+    #[tracing::instrument(err, skip(self))]
     pub fn stream(
         &self,
     ) -> Result<impl Stream<Item = Result<T, ConsumerError>> + '_, ConfigurationError> {
@@ -244,7 +248,7 @@ impl<C: SerDe, P: SerDe> StreamProcessor<C, P> {
         })
     }
 
-    // TODO #[instrument(err)]
+    #[tracing::instrument(err, skip(self, event_handler))]
     pub fn stream<'a, F, E>(
         &'a self,
         event_handler: F,

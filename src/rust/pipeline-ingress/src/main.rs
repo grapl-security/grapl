@@ -120,7 +120,7 @@ async fn handler() -> Result<(), ConfigurationError> {
     tracing::info!("kafka producer configured successfully");
 
     tracing::info!("configuring gRPC server");
-    let (server, _) = PipelineIngressServer::new(
+    let (server, _shutdown_tx) = PipelineIngressServer::new(
         IngressApi::new(producer),
         TcpListener::bind(socket_address).await?,
         || async { Ok(HealthcheckStatus::Serving) }, // FIXME: this is garbage

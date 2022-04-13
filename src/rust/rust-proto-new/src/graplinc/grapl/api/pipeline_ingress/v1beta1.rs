@@ -526,6 +526,7 @@ pub mod server {
                             match status {
                                 // TODO: log each check result
                                 HealthcheckStatus::Serving => {
+                                    tracing::info!("healthcheck status \"serving\"");
                                     health_reporter
                                         .set_serving::<PipelineIngressServiceServerProto<
                                             PipelineIngressProto<T, E>,
@@ -533,6 +534,7 @@ pub mod server {
                                         .await
                                 }
                                 HealthcheckStatus::NotServing => {
+                                    tracing::warn!("healthcheck status \"not serving\"");
                                     health_reporter
                                         .set_not_serving::<PipelineIngressServiceServerProto<
                                             PipelineIngressProto<T, E>,
@@ -540,6 +542,7 @@ pub mod server {
                                         .await
                                 }
                                 HealthcheckStatus::Unknown => {
+                                    tracing::warn!("healthcheck status \"unknown\"");
                                     health_reporter
                                         .set_not_serving::<PipelineIngressServiceServerProto<
                                             PipelineIngressProto<T, E>,
@@ -548,9 +551,10 @@ pub mod server {
                                 }
                             }
                         }
-                        Err(_) => {
+                        Err(e) => {
                             // healthcheck failed, so we'll set_not_serving()
                             // TODO: log the error
+                            tracing::error!("healthcheck error {}", e);
                             health_reporter
                                 .set_not_serving::<PipelineIngressServiceServerProto<PipelineIngressProto<T, E>>>()
                                 .await

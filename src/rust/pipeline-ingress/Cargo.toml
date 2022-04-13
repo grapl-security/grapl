@@ -13,7 +13,7 @@ opentelemetry-jaeger = { version = "0.15", features = [
   "rt-tokio"
 ] }
 rust-proto-new = { path = "../rust-proto-new", version = "*" }
-tokio = { version = "1.14", features = ["macros"] }
+tokio = { version = "1.14", features = ["macros", "rt", "rt-multi-thread"] }
 thiserror = "1.0"
 tracing = "0.1"
 tracing-appender = "0.2"

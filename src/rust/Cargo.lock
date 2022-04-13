@@ -2347,6 +2347,7 @@ dependencies = [
  "rdkafka",
  "rust-proto-new",
  "thiserror",
+ "tracing",
 ]
 
 [[package]]
@@ -4063,6 +4064,7 @@ dependencies = [
  "tonic 0.7.1",
  "tonic-build 0.7.0",
  "tonic-health 0.6.0",
+ "tracing",
  "uuid",
 ]
 
