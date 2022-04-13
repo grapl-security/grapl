@@ -1,13 +1,6 @@
-import { traverseNodes, traverseNeighbors, mapEdges } from "./graphTraverse";
-import { getNodeLabel } from "./labels";
-import {
-    Link,
-    VizGraph,
-    BaseNodeProperties,
-    VizNode,
-    Node,
-    Risk,
-} from "../../../types/CustomTypes";
+import {mapEdges, traverseNeighbors, traverseNodes} from "./graphTraverse";
+import {getNodeLabel} from "./labels";
+import {BaseNodeProperties, Link, Node, Risk, SummaryLink, VizGraph, VizNode,} from "../../../types/CustomTypes";
 
 export const getNodeType = (node: BaseNodeProperties) => {
     const dgraphType = node.dgraph_type;
@@ -23,6 +16,34 @@ export const getNodeType = (node: BaseNodeProperties) => {
     return "Unknown Type";
 };
 
+export const summarizeLinks = (links: Link[]): SummaryLink[] => {
+    const mergedLinks: Map<string, Link[]> = new Map();
+    const newLinks: SummaryLink[] = [];
+
+    for (const link of links) {
+        const key = [link.source, link.target];
+        key.sort();
+
+        const sKey = String(key[0]) + String(key[1]);
+
+        const names = mergedLinks.get(sKey) || [];
+
+        names.push(link);
+
+        mergedLinks.set(sKey, names);
+    }
+
+    for (const [key, innerLinks] of mergedLinks.entries()) {
+        newLinks.push({
+            source: innerLinks[0].source,
+            target: innerLinks[0].target,
+            name: innerLinks[0].name,
+            innerLinks: innerLinks,
+        });
+    }
+
+    return newLinks;
+};
 export const vizGraphFromLensScope = (vizGraphData: Node[]): VizGraph => {
     const nodes: VizNode[] = [];
     const links: Link[] = [];
@@ -100,10 +121,11 @@ export const vizGraphFromLensScope = (vizGraphData: Node[]): VizGraph => {
         }
     }
 
+    const summarizedLinks = summarizeLinks(links);
     // Return data in format for react-force-graph display
     return {
         nodes,
-        links,
+        links: summarizedLinks,
         index,
     };
 };
