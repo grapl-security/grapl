@@ -6,7 +6,7 @@ import {
 import { processNode } from "./engagementView/testData/baseData";
 
 test("link label for children", () => {
-    expect(getLinkLabel("children")).toBe("executed");
+    expect(getLinkLabel("children")).toBe("children");
 });
 
 // Test graph styling for high risk process node
@@ -18,3 +18,4 @@ test("link label for processes", () => {
 test("get node label", () => {
     expect(getNodeLabel("Process", processNode as any)).toBe("Process");
 });
+
