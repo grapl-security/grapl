@@ -26,8 +26,6 @@ BUILD @christophermaier
 /.flake8 @christophermaier
 .gitattributes @christophermaier
 /.github/ @christophermaier
-/.gitpod/ @wimax-grapl
-/.gitpod.yml @wimax-grapl
 .gitignore @christophermaier
 /LICENSE @christophermaier
 /LOCAL_UI_WORKFLOW.md @christophermaier
