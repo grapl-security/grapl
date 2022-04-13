@@ -6,9 +6,6 @@ const getNodeLabel = (nodeType: string, node: NodeProperties) => {
 };
 
 const getLinkLabel = (labelType: string) => {
-    if (labelType === "children") {
-        return "executed";
-    }
     return labelType;
 };
 

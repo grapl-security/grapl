@@ -200,9 +200,6 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
         const LABEL_NODE_MARGIN = 12;
         const start = link.source;
         const end = link.target;
-
-        console.log("link", link);
-
         link.color = calcLinkColor(link, data);
 
         // Ignore unbounded links
@@ -226,7 +223,6 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
         if (textAngle < -Math.PI / 2) textAngle = -(-Math.PI - textAngle);
 
         const label = getLinkLabel(link.name);
-
         // Estimate fontSize to fit in link length
         const fontSize = Math.min(
             MAX_FONT_SIZE,

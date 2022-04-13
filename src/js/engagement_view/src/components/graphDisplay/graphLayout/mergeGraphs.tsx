@@ -1,5 +1,6 @@
-import { mapNodeProps } from "./mapNodeProps";
-import { Link, VizGraph, VizNode } from "../../../types/CustomTypes";
+import {mapNodeProps} from "./mapNodeProps";
+import {SummaryLink, VizGraph, VizNode} from "../../../types/CustomTypes";
+import {summarizeLinks} from "./vizGraphFromLensScope";
 
 // if graph has updated, merge y into x
 export const mergeNodes = (node: VizNode, newNode: VizNode) => {
@@ -50,9 +51,8 @@ export const mergeGraphs = (
 
     let updated = false;
 
-    const outputGraph: VizGraph = { nodes: [], links: [], index: {} };
+    const outputGraph: VizGraph = {nodes: [], links: [], index: {}};
     const nodes = new Map();
-    const links = new Map();
 
     for (const node of curGraph.nodes) {
         nodes.set(node.uid, node);
@@ -69,32 +69,16 @@ export const mergeGraphs = (
             updated = true;
         }
     }
-
-    for (const link of curGraph.links) {
-        if (link) {
-            const _link = link as any;
-            const setLink = _link.source.uid + link.name + _link.target.uid;
-            links.set(setLink, link);
-        }
-    }
-
-    for (const newLink of updateGraph.links) {
-        const getLink = newLink.source + newLink.name + newLink.target;
-        const link = links.get(getLink);
-
-        if (!link) {
-            links.set(newLink.source + newLink.name + newLink.target, newLink);
-            updated = true;
-        }
-    }
+    const [linksUpdated, links] = mergeSummarizedLinks(curGraph.links, updateGraph.links);
+    updated = updated || linksUpdated;
 
     outputGraph.nodes = Array.from(nodes.values());
-    outputGraph.links = Array.from(links.values());
+    outputGraph.links = links;
+
 
     for (const node of outputGraph.nodes) {
         outputGraph.index[node.uid] = node;
     }
-
     outputGraph.links.forEach((link) => {
         // the graph should not be updated if the link is already in the index array
 
@@ -125,39 +109,45 @@ export const mergeGraphs = (
     }
 };
 
-type SummaryLink = {
-    source: number;
-    target: number;
-    name: string;
-    innerLinks: Link[];
+const mergeSummarizedLink = (oldLink: SummaryLink, newLink: SummaryLink): [boolean, SummaryLink] => {
+    const allInnerLinks = [...oldLink.innerLinks, ...newLink.innerLinks];
+    const summarizedLink = summarizeLinks(allInnerLinks)[0];
+    const updated = summarizedLink.innerLinks.length !== oldLink.innerLinks.length;
+
+    return [updated, summarizedLink];
 };
 
-const mergeLinks = (links: Link[]): SummaryLink[] => {
-    const mergedLinks: Map<number[], Link[]> = new Map();
-    const newLinks: SummaryLink[] = [];
+const mergeSummarizedLinks = (oldLinks: SummaryLink[], newLinks: SummaryLink[]): [boolean, SummaryLink[]] => {
+    let updated = false;
+    const mergedLinks: Map<string, SummaryLink> = new Map();
 
-    // TODO: create new type called inner link that has a source, target, and name
-    //  to preserve directionality. instead of a string[], store an [{}] containing name and original source/destination for Link
-    for (const link of links) {
+    for (const link of oldLinks) {
         const key = [link.source, link.target];
         key.sort();
 
-        const names = mergedLinks.get(key) || [];
+        const sKey = String(key[0]) + String(key[1]);
 
-        names.push(link);
-
-        mergedLinks.set(key, names);
+        mergedLinks.set(sKey, link);
     }
 
-    // TODO: add names to Link type and pass in []
-    for (const [key, innerLinks] of mergedLinks.entries()) {
-        newLinks.push({
-            source: key[0],
-            target: key[1],
-            name: innerLinks[0].name,
-            innerLinks: innerLinks,
-        });
-    }
+    for (const link of newLinks) {
+        const key = [link.source, link.target];
+        key.sort();
+        const sKey = String(key[0]) + String(key[1]);
 
-    return newLinks;
+        const oldLink = mergedLinks.get(sKey);
+
+        if(oldLink){
+            const [didMerge, merged] = mergeSummarizedLink(oldLink, link);
+            updated = updated || didMerge;
+            mergedLinks.set(sKey, merged);
+
+        } else {
+            mergedLinks.set(sKey, link);
+            updated = true;
+        }
+    }
+    return [updated, Array.from(mergedLinks.values())];
 };
+
+

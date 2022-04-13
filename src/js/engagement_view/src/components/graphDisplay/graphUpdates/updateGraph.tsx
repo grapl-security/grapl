@@ -10,7 +10,7 @@ export const updateGraph = async (
     setEngagementState: (engagementState: GraphState) => void
 ) => {
     if (!lensName) {
-        console.log("No lens names");
+        console.log("No lenses available");
         return;
     }
 
