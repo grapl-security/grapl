@@ -52,4 +52,5 @@ REMOTE_COMMAND="$(
 cd ${CURRENT_DIR_REMOTE}; ${@}
 EOF
 )"
-"${THIS_DIR}/ssh.sh" -t "bash --login -c '${REMOTE_COMMAND}'"
+# -i = interactive; -c = do this command
+"${THIS_DIR}/ssh.sh" -t "bash --login -i -c '${REMOTE_COMMAND}'"
