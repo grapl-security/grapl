@@ -30,6 +30,8 @@ def delete_edge(txn: Txn, from_uid: int, edge_name: str, to_uid: int) -> None:
     if isinstance(to_uid, str):
         to_uid = int(to_uid, 16)
 
+    mut = {"uid": from_uid, edge_name: {"uid": to_uid}}
+
     try:
         res = txn.mutate(del_obj=mut, commit_now=True)
         LOGGER.debug("edge mutation result is: {}".format(res))
