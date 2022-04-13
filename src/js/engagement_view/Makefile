@@ -70,11 +70,16 @@ $(volume_dirs):
 	mkdir -p $@
 
 # ----------------------------------------------------------------------
+yarn.lock: build-image package.json
+yarn.lock: | $(volume_dirs)
+yarn.lock: ## Regenerate the yarn.lock
+	touch yarn.lock
+	$(DOCKER_RUN) yarn install
 
 install-dependencies: build-image package.json yarn.lock
 install-dependencies: | $(volume_dirs)
 install-dependencies: ## Install dependencies in the build container if necessary
-	$(DOCKER_RUN) yarn install
+	$(DOCKER_RUN) yarn install --immutable
 	@echo "$${empty_target_message}" > $@
 
 # Not named `build` because a directory of that name gets generated

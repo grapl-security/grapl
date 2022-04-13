@@ -3,3 +3,4 @@
 3rdparty/python/*.lockfile linguist-generated=true
 src/rust/nomad-client-gen/** linguist-generated=true
 src/rust/**/sqlx-data.json linguist-generated=true
+src/js/**/yarn.lock linguist-generated=true
