@@ -18,4 +18,3 @@ test("link label for processes", () => {
 test("get node label", () => {
     expect(getNodeLabel("Process", processNode as any)).toBe("Process");
 });
-

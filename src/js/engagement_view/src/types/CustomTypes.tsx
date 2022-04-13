@@ -96,4 +96,3 @@ export type SummaryLink = {
     name: string;
     innerLinks: Link[];
 };
-
