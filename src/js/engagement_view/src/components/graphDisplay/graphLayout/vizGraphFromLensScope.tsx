@@ -42,6 +42,7 @@ export const summarizeLinks = (links: Link[]): SummaryLink[] => {
         mergedLinks.set(sKey, names);
     }
 
+    // For now, we're effectively choosing the name and directionality at random. In a future PR we'll specify this behavior.
     for (const [key, innerLinks] of mergedLinks.entries()) {
         newLinks.push({
             source: innerLinks[0].source,

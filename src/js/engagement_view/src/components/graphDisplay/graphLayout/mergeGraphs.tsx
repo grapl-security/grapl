@@ -1,5 +1,10 @@
 import { mapNodeProps } from "./mapNodeProps";
-import { SummaryLink, VizGraph, VizNode } from "../../../types/CustomTypes";
+import {
+    Link,
+    SummaryLink,
+    VizGraph,
+    VizNode,
+} from "../../../types/CustomTypes";
 import { summarizeLinks } from "./vizGraphFromLensScope";
 
 // if graph has updated, merge y into x
@@ -123,6 +128,17 @@ const mergeSummarizedLink = (
     return [updated, summarizedLink];
 };
 
+// We're normalizing the order because links are bidirectional.
+
+const sortKeys = (link: Link) => {
+    const key = [link.source, link.target];
+    key.sort();
+
+    const sKey = String(key[0]) + String(key[1]);
+
+    return sKey;
+};
+
 const mergeSummarizedLinks = (
     oldLinks: SummaryLink[],
     newLinks: SummaryLink[]
@@ -131,11 +147,7 @@ const mergeSummarizedLinks = (
     const mergedLinks: Map<string, SummaryLink> = new Map();
 
     for (const link of oldLinks) {
-        const key = [link.source, link.target];
-        key.sort();
-
-        const sKey = String(key[0]) + String(key[1]);
-
+        const sKey = sortKeys(link);
         mergedLinks.set(sKey, link);
     }
 
