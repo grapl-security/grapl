@@ -127,7 +127,8 @@ source "${GRAPL_DEVBOX_CONFIG}"
 # One-time changes to the box
 ########################################
 (
-    CMD="$(cat <<EOF
+    CMD="$(
+        cat << EOF
     if [ ! -d "${GRAPL_DEVBOX_REMOTE_GRAPL}" ]; then
         echo "Checking out Grapl repo on remote"
         mkdir -p "${GRAPL_DEVBOX_REMOTE_REPOS}"
