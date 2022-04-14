@@ -557,7 +557,7 @@ mod tests {
             "Expected \n'{bigger_string}'\nto contain \n'{subset}'\n"
         );
     }
-    
+
     fn get_test_node_type() -> NodeType {
         NodeType {
             type_name: "Type".to_owned(),
