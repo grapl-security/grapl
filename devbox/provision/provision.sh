@@ -46,16 +46,32 @@ fi
 ########################################
 
 (
+    touch ~/.ssh/config
+
     # Taken from https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-getting-started-enable-ssh-connections.html
-    SSH_CONFIG_APPEND="$(
+    SSH_OVER_SSM_CONFIG_APPEND="$(
         cat << 'EOF'
 host i-* mi-*
     ProxyCommand sh -c "aws ssm start-session --target %h --document-name AWS-StartSSHSession --parameters 'portNumber=%p'"
 EOF
     )"
-    touch ~/.ssh/config
-    if ! grep --quiet "${SSH_CONFIG_APPEND}" ~/.ssh/config; then
-        echo "${SSH_CONFIG_APPEND}" >> ~/.ssh/config
+    if ! grep --quiet "${SSH_OVER_SSM_CONFIG_APPEND}" ~/.ssh/config; then
+        echo "${SSH_OVER_SSM_CONFIG_APPEND}" >> ~/.ssh/config
+    fi
+
+    # From https://puppet.com/blog/speed-up-ssh-by-reusing-connections/
+    SSH_REUSE_CONNECTIONS_CONFIG_APPEND="$(
+        cat << 'EOF'
+host i-* mi-*
+    ControlMaster auto
+    ControlPath ~/.ssh/sockets/%r@%h-%p
+    ControlPersist 600
+EOF
+    )"
+
+    mkdir -p ~/.ssh/sockets
+    if ! grep --quiet "${SSH_REUSE_CONNECTIONS_CONFIG_APPEND}" ~/.ssh/config; then
+        echo "${SSH_REUSE_CONNECTIONS_CONFIG_APPEND}" >> ~/.ssh/config
     fi
 )
 
