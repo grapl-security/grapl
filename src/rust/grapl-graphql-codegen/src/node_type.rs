@@ -169,9 +169,9 @@ impl NodeType {
         let supertype =
             format!("grapl_analyzerlib.nodes.entity.EntityQuery['{view_name}', '{query_name}']");
         let mut queryable = String::with_capacity(256);
-        queryable.push('\n');
-        queryable.push_str("@dataclass(init=False)\n");
-        queryable.push_str(&format!("class {query_name}({supertype}):\n"));
+        queryable += "\n";
+        queryable += "@dataclass(init=False)\n";
+        queryable += &format!("class {query_name}({supertype}):\n");
 
         for predicate in self.predicates.iter() {
             queryable.push_str(&predicate.generate_python_query_def());
@@ -190,26 +190,23 @@ impl NodeType {
 
     #[tracing::instrument(skip(self))]
     pub fn generate_python_viewable(&self) -> String {
-        let mut viewable = String::with_capacity(512);
-
-        let (q, v) = (self.get_query_name(), self.get_view_name());
+        let (query_name, view_name) = (self.get_query_name(), self.get_view_name());
 
         tracing::trace!(
             message="Generating Python Viewable",
             node_type=?self.type_name,
-            query_name=?q,
-            view_name=?v,
+            query_name=?query_name,
+            view_name=?view_name,
         );
 
+        let supertype =
+            format!("grapl_analyzerlib.nodes.entity.EntityView['{view_name}', '{query_name}']");
+
+        let mut viewable = String::with_capacity(512);
         viewable += "\n";
-        viewable = viewable
-            + "class "
-            + &v
-            + &format!(
-                "(grapl_analyzerlib.nodes.entity.EntityView['{}', '{}']):\n",
-                v, q
-            );
-        viewable = viewable + "    queryable = " + &q + "\n\n";
+        viewable += "@dataclass(init=False)\n";
+        viewable += &format!("class {view_name}({supertype}):\n");
+        viewable += &format!("    queryable = {query_name}\n\n");
         viewable += "    def __init__(\n";
         viewable += "        self,\n";
         viewable += "        uid: int,\n";
@@ -554,23 +551,40 @@ pub fn parse_into_node_types<'a>(
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_generate() {
-        let node_type = NodeType {
+    fn assert_contains_str(bigger_string: String, subset: &str) {
+        assert!(
+            bigger_string.contains(subset),
+            "Expected \n'{bigger_string}'\nto contain \n'{subset}'\n"
+        );
+    }
+    
+    fn get_test_node_type() -> NodeType {
+        NodeType {
             type_name: "Type".to_owned(),
             identification_algorithm: IdentificationAlgorithm::Static,
             predicates: vec![],
             edges: vec![],
-        };
+        }
+    }
 
-        let generated_queryable = node_type.generate_python_queryable();
+    #[test]
+    fn test_generate_python_queryable() {
+        let generated = get_test_node_type().generate_python_queryable();
         let expected_str = r#"
 @dataclass(init=False)
 class TypeQuery(grapl_analyzerlib.nodes.entity.EntityQuery['TypeView', 'TypeQuery']):
 "#;
-        assert!(
-            generated_queryable.contains(expected_str),
-            "Expected \n'{generated_queryable}'\nto contain \n'{expected_str}'\n"
-        );
+        assert_contains_str(generated, expected_str);
+    }
+
+    #[test]
+    fn test_generate_python_viewable() {
+        let generated = get_test_node_type().generate_python_viewable();
+        let expected_str = r#"
+@dataclass(init=False)
+class TypeView(grapl_analyzerlib.nodes.entity.EntityView['TypeView', 'TypeQuery']):
+    queryable = TypeQuery
+"#;
+        assert_contains_str(generated, expected_str);
     }
 }
