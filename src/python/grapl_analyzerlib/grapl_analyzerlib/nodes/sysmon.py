@@ -825,6 +825,10 @@ class ProcessSchema(grapl_analyzerlib.nodes.entity.EntitySchema):
     def self_type() -> str:
         return "Process"
 
+    @staticmethod
+    def get_display_property() -> str:
+        return "image"
+
 
 class ProcessQuery(
     grapl_analyzerlib.nodes.entity.EntityQuery["ProcessView", "ProcessQuery"]

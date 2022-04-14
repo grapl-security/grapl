@@ -24,6 +24,8 @@ const defaultGraphDisplayState = (
     return {
         graphData: { nodes: [], links: [], index: {} },
         curLensName: lensName,
+        interval: null,
+        toggle: false,
     };
 };
 
@@ -49,19 +51,45 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
     const [highlightLinks, setHighlightLinks] = useState(new Set());
     const [hoverNode, setHoverNode] = useState(null);
     const [stopEngine, setStopEngine] = useState(false);
+    const lastLens = useRef(lensName);
+    const lastInterval: any = useRef(null);
+    const stateRef: any = useRef(state);
 
     // TODO is there a way to updateGraphAndSetState immediately on click?
 
     useEffect(() => {
-        updateGraphAndSetState(lensName, state, setState);
-        // Set the initial state immediately refresh every 5 seconds
-        try {
-            const interval = setInterval(() => {
-                updateGraphAndSetState(lensName, state, setState);
-            }, 1000);
-            return () => clearInterval(interval);
-        } catch (e) {
-            console.debug("Error Updating Graph", e);
+        stateRef.current = state;
+        // If our lens nodes have changed clear the last interval and load the new state
+        if (lastLens.current !== lensName && lastInterval.current !== null) {
+            console.log("clearing interval because lens changed", lastLens.current, lensName);
+            clearInterval(lastInterval.current);
+            lastInterval.current = null;
+            lastLens.current = lensName;
+            stateRef.current = defaultGraphDisplayState(lensName);
+            updateGraphAndSetState(lensName, defaultGraphDisplayState(lensName), setState);
+        }
+        // If there's no interval and we have a lens selected, start the interval
+        if (lensName && lastInterval.current === null) {
+            console.info("starting new interval", lensName, lastLens.current);
+            try {
+                lastLens.current = lensName;
+                updateGraphAndSetState(lensName, defaultGraphDisplayState(lensName), setState);
+                const interval = setInterval(() => {
+                    // Invalidate the interval if the lens changes - this ensures we never race
+                    if(lastLens.current !== lensName) {
+                        console.info("clearing interval", lastLens.current, lensName)
+                        clearInterval(lastInterval.current);
+                        lastInterval.current = null;
+                        stateRef.current = defaultGraphDisplayState(lensName);
+                    } else {
+                        console.info("interval", lastLens.current, lensName)
+                        updateGraphAndSetState(lensName, stateRef.current, setState);
+                    }
+                }, 1000);
+                lastInterval.current = interval;
+            } catch (e) {
+                console.debug("Error Updating Graph", e);
+            }
         }
     }, [state, lensName]);
 

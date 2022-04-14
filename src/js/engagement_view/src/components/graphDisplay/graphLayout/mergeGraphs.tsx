@@ -51,7 +51,7 @@ export const mergeGraphs = (
     // Merges two graphs into a new graph, returns 'null' when there are no new updates
 
     if (!updateGraph.nodes && !updateGraph.links) {
-        return null;
+        return updateGraph; // Since we send the whole graph down, this implies a new graph
     }
 
     let updated = false;
