@@ -166,12 +166,12 @@ impl NodeType {
             view_name=?view_name,
         );
 
-        let supertype =
+        let superclasses =
             format!("grapl_analyzerlib.nodes.entity.EntityQuery['{view_name}', '{query_name}']");
         let mut queryable = String::with_capacity(256);
         queryable += "\n";
         queryable += "@dataclass(init=False)\n";
-        queryable += &format!("class {query_name}({supertype}):\n");
+        queryable += &format!("class {query_name}({superclasses}):\n");
 
         for predicate in self.predicates.iter() {
             queryable.push_str(&predicate.generate_python_query_def());
@@ -199,13 +199,13 @@ impl NodeType {
             view_name=?view_name,
         );
 
-        let supertype =
+        let superclasses =
             format!("grapl_analyzerlib.nodes.entity.EntityView['{view_name}', '{query_name}']");
 
         let mut viewable = String::with_capacity(512);
         viewable += "\n";
         viewable += "@dataclass(init=False)\n";
-        viewable += &format!("class {view_name}({supertype}):\n");
+        viewable += &format!("class {view_name}({superclasses}):\n");
         viewable += &format!("    queryable = {query_name}\n\n");
         viewable += "    def __init__(\n";
         viewable += "        self,\n";
