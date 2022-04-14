@@ -53,6 +53,8 @@ BUILD @christophermaier
 /src/python/mypy.ini @christophermaier @wimax-grapl
 /src/python/provisioner/ @jgrillo-grapl
 /src/python/python-proto/ @grapl-security/wg-data-infra
+/src/sh/BUILD @wimax-grapl
+/src/sh/shell_colors.sh @wimax-grapl
 /src/rust/analyzer-dispatcher/ @grapl-security/wg-data-infra
 /src/rust/bin/ @christophermaier
 /src/rust/.cargo @christophermaier
