@@ -244,7 +244,6 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
             ref={fgRef} // fix graph to canvas
             graphData={data}
             nodeLabel={"nodeType"} // tooltip on hover, actual label is in nodeCanvasObject
-            // backgroundColor={"#1a2230"}
             height={800}
             width={1500}
             onEngineStop={() => {

@@ -41,7 +41,7 @@ const MetricContainer = () => {
                         style={{ fontSize: "30px" }}
                         className={classes.metricsIcon}
                     />
-                    <h1 className={classes.metricCount}>41</h1>
+                    <h1 className={classes.metricCount}>0</h1>
                     <p>List All </p>
                 </div>
             </Paper>
@@ -56,7 +56,7 @@ const MetricContainer = () => {
                         style={{ fontSize: "30px" }}
                         className={classes.metricsIcon}
                     />
-                    <h1 className={classes.metricCount}>17</h1>
+                    <h1 className={classes.metricCount}>0</h1>
                     <p>Healthy</p>
                 </div>
             </Paper>
@@ -71,7 +71,7 @@ const MetricContainer = () => {
                         style={{ fontSize: "30px" }}
                         className={classes.metricsIcon}
                     />
-                    <h1 className={classes.metricCount}>1</h1>
+                    <h1 className={classes.metricCount}>0</h1>
                     <p>Crashing</p>
                 </div>
             </Paper>
@@ -86,7 +86,7 @@ const MetricContainer = () => {
                         style={{ fontSize: "30px" }}
                         className={classes.metricsIcon}
                     />
-                    <h1 className={classes.metricCount}>23</h1>
+                    <h1 className={classes.metricCount}>0</h1>
                     <p>Alerts</p>
                 </div>
             </Paper>
