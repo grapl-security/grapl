@@ -13,8 +13,15 @@ END=m
 NORMAL=0
 BOLD=1
 
-RED=31
-WHITE=37
+declare -A COLORS=(
+    [RED]=31
+    [GREEN]=32
+    [YELLOW]=33
+    [BLUE]=34
+    [MAGENTA]=35
+    [CYAN]=36
+    [WHITE]=37
+)
 
 RESET="${CSI}${NORMAL}${END}"
 
@@ -25,9 +32,13 @@ function _bold_color() {
 }
 
 function bright_white() {
-    _bold_color "${WHITE}" "${@}"
+    _bold_color "${COLORS[WHITE]}" "${@}"
 }
 
 function bright_red() {
-    _bold_color "${RED}" "${@}"
+    _bold_color "${COLORS[RED]}" "${@}"
+}
+
+function bright_green() {
+    _bold_color "${COLORS[GREEN]}" "${@}"
 }
