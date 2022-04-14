@@ -14,7 +14,7 @@ export function nodeTableHeader(node: VizNode, styles: any) {
                     <TableCell align="left" className={styles.tableHeader}>
                         <b> Property </b>
                     </TableCell>
-                    <TableCell align="right" className={styles.tableHeader}>
+                    <TableCell align="left" className={styles.tableHeader}>
                         <b> Value </b>
                     </TableCell>
                 </TableRow>

@@ -244,9 +244,8 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
             ref={fgRef} // fix graph to canvas
             graphData={data}
             nodeLabel={"nodeType"} // tooltip on hover, actual label is in nodeCanvasObject
-            backgroundColor={"#18191d"}
-            height={700}
-            width={1000}
+            height={800}
+            width={1500}
             onEngineStop={() => {
                 if (!stopEngine) {
                     fgRef.current.zoomToFit(1000, 50);

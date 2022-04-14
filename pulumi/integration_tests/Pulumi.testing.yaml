@@ -11,7 +11,7 @@ config:
     firecracker_rootfs.tar.gz: 20220408141015-9fe3c42
     graph-merger: 20220414152923-2f5195c
     graphql-endpoint: 20220414152923-2f5195c
-    grapl-web-ui: 20220414152923-2f5195c
+    grapl-web-ui: 20220414190257-8f6109f
     model-plugin-deployer: 20220414152923-2f5195c
     node-identifier: 20220414152923-2f5195c
     node-identifier-retry: 20220414152923-2f5195c

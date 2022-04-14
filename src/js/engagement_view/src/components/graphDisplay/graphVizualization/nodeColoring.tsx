@@ -27,7 +27,7 @@ export const nodeFillColor = (nodeType: string) => {
 
 export const riskOutline = (risk: number) => {
     if (risk >= 0 && risk <= 25) {
-        return "#02D084";
+        return "#7FE49F";
     }
     if (risk >= 26 && risk <= 50) {
         return "#13A5E3";
@@ -36,6 +36,6 @@ export const riskOutline = (risk: number) => {
         return "#FFD773";
     }
     if (risk >= 76 && risk <= 100) {
-        return "#E50F14";
+        return "#DA634F";
     }
 };

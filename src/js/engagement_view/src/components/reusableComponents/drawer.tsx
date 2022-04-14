@@ -60,7 +60,7 @@ export const NavigationDrawer = () => {
                     <ListItemIcon>
                         <PolicyIcon className={classes.icons} />
                     </ListItemIcon>
-                    <Link to="/analyzers" style={{ textDecoration: "none" }}>
+                    <Link to="/analyzers" className={classes.navLink}>
                         {" "}
                         Analyzers{" "}
                     </Link>
@@ -70,7 +70,7 @@ export const NavigationDrawer = () => {
                     <ListItemIcon>
                         <BubbleChartIcon className={classes.icons} />
                     </ListItemIcon>
-                    <Link to="/engagements" style={{ textDecoration: "none" }}>
+                    <Link to="/engagements" className={classes.navLink}>
                         {" "}
                         Engagements{" "}
                     </Link>
@@ -80,7 +80,7 @@ export const NavigationDrawer = () => {
                     <ListItemIcon>
                         {<ExtensionIcon className={classes.icons} />}
                     </ListItemIcon>
-                    <Link to="/generators" style={{ textDecoration: "none" }}>
+                    <Link to="/generators" className={classes.navLink}>
                         {" "}
                         Generators{" "}
                     </Link>

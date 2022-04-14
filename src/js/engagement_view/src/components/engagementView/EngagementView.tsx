@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import { Link } from "react-router-dom";
 import clsx from "clsx";
 
 import Drawer from "@material-ui/core/Drawer";
@@ -18,6 +17,11 @@ import { checkLogin } from "../../services/login/checkLoginService";
 
 import { useStyles } from "../graphDisplay/GraphDisplayStyles";
 import CollapsibleNavDrawer from "../reusableComponents/collapsibleDrawer";
+
+import AppBar from "@mui/material/AppBar";
+import Box from "@mui/material/Box";
+import Toolbar from "@mui/material/Toolbar";
+import Typography from "@mui/material/Typography";
 
 type EngagementViewProps = {
     setLens: (lens: string) => void;
@@ -54,43 +58,62 @@ export default function EngagementView({
     };
 
     return (
-        <div className={classes.root}>
-            <IconButton
-                aria-label="open drawer"
-                onClick={handleDrawerOpen}
-                edge="end"
-                className={clsx(
-                    classes.expandLensAndNodeTableIcon,
-                    open && classes.hide
-                )}
-            >
-                <ManageSearchIcon />
-            </IconButton>
+        <>
+            <Box sx={{ flexGrow: 1 }}>
+                <AppBar position="static">
+                    <Toolbar
+                        sx={{ backgroundColor: "#2B3648", display: "flex" }}
+                    >
+                        <div className={classes.root}>
+                            <CollapsibleNavDrawer />
+                            <Typography
+                                variant="h6"
+                                component="div"
+                                className={classes.lensNameDisplay}
+                                sx={{ flexGrow: 1 }}
+                            >
+                                {curLens || ""}
+                            </Typography>
+                            <IconButton
+                                aria-label="open drawer"
+                                onClick={handleDrawerOpen}
+                                edge="end"
+                                className={clsx(
+                                    classes.expandLensAndNodeTableIcon,
+                                    open && classes.hide
+                                )}
+                            >
+                                <ManageSearchIcon sx={{ hover: "none" }} />
+                            </IconButton>
 
-            <Drawer
-                variant="persistent"
-                anchor="right"
-                open={open}
-                classes={{
-                    paper: classes.drawerPaper,
-                }}
-            >
-                <div className={classes.drawerHeader}>
-                    <Button onClick={handleDrawerClose}>
-                        <KeyboardArrowLeftIcon className={classes.close} />
-                    </Button>
-                </div>
+                            <Drawer
+                                variant="persistent"
+                                anchor="right"
+                                open={open}
+                                classes={{
+                                    paper: classes.drawerPaper,
+                                }}
+                            >
+                                <div className={classes.drawerHeader}>
+                                    <Button onClick={handleDrawerClose}>
+                                        <KeyboardArrowLeftIcon
+                                            className={classes.close}
+                                        />
+                                    </Button>
+                                </div>
 
-                <Divider />
+                                <Divider />
 
-                <LensAndNodeTableContainer
-                    setLens={setLens}
-                    curNode={curNode}
-                />
-            </Drawer>
-
-            <p className={classes.lensName}> {curLens || ""} </p>
-        </div>
+                                <LensAndNodeTableContainer
+                                    setLens={setLens}
+                                    curNode={curNode}
+                                />
+                            </Drawer>
+                        </div>
+                    </Toolbar>
+                </AppBar>
+            </Box>
+        </>
     );
 }
 
@@ -132,7 +155,6 @@ export const EngagementUx = () => {
     return (
         <>
             <div className={classes.navIcons}>
-                <CollapsibleNavDrawer />
                 <EngagementView
                     setLens={(lens: string) =>
                         setEngagementState({
