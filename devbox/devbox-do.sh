@@ -21,7 +21,6 @@ source "${GRAPL_DEVBOX_CONFIG}"
 # Step 1: Sync local files to remote
 ####################
 "${THIS_DIR}/devbox-sync.sh"
-echo "Devbox sync complete"
 
 ####################
 # Step 2
