@@ -194,14 +194,14 @@ def main() -> None:
     pipeline_ingress_healthcheck_polling_interval_ms = "5000"
     pulumi.export(
         "pipeline-ingress-healthcheck-polling-interval-ms",
-        pipeline_ingress_healthcheck_polling_interval_ms
+        pipeline_ingress_healthcheck_polling_interval_ms,
     )
     pipeline_ingress_kafka_consumer_group_name = kafka.consumer_group(
         "pipeline-ingress"
     )
     pulumi.export(
         "pipeline-ingress-kafka-consumer-group-name",
-        pipeline_ingress_kafka_consumer_group_name
+        pipeline_ingress_kafka_consumer_group_name,
     )
 
     plugins_bucket = Bucket("plugins-bucket", sse=True)

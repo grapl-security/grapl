@@ -124,7 +124,6 @@ def main() -> None:
         "pipeline_ingress_kafka_consumer_group_name": grapl_stack.pipeline_ingress_kafka_consumer_group_name,
         "pipeline_ingress_kafka_sasl_username": grapl_stack.pipeline_ingress_kafka_sasl_username,
         "pipeline_ingress_kafka_sasl_password": grapl_stack.pipeline_ingress_kafka_sasl_password,
-
     }
 
     integration_tests_new = NomadJob(
