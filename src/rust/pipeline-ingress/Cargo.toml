@@ -23,4 +23,4 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 uuid = { version = "0.8", features = ["v4"] }
 
 [features]
-integration_tests_new = []
+new_integration_tests = []

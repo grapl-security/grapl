@@ -228,7 +228,7 @@ FROM base AS build-test-integration-new
 # https://github.com/rust-lang/cargo/issues/1924
 # https://github.com/rust-lang/cargo/issues/3670
 
-ENV RUST_INTEGRATION_TEST_FEATURES="pipeline-ingress/integration_tests_new"
+ENV RUST_INTEGRATION_TEST_FEATURES="pipeline-ingress/new_integration_tests"
 ENV TEST_DIR=/grapl/tests
 
 # This will build the integration test binaries and parse the manifest to find
@@ -246,7 +246,7 @@ RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
         --no-run \
         --message-format=json \
         --test "*" | \
-        jq -r "select(.profile.test == true) | .filenames[]" | \
+        jq -r "select((.profile.test == true) and (.features[] | contains(\"new_integration_tests\"))) | .filenames[]" | \
         xargs \
           --replace="{}" \
           cp "{}" "${TEST_DIR}/"

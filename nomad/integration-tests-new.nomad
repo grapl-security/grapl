@@ -13,11 +13,6 @@ variable "aws_region" {
   type = string
 }
 
-variable "stack_name" {
-  type        = string
-  description = "The pulumi stack name."
-}
-
 variable "aws_env_vars_for_local" {
   type        = string
   description = <<EOF
@@ -36,6 +31,16 @@ variable "kafka_bootstrap_servers" {
   description = "Comma separated host:port pairs specifying which brokers clients should connect to initially."
 }
 
+variable "pipeline_ingress_healthcheck_polling_interval_ms" {
+  type        = string
+  description = "The amount of time to wait between each healthcheck execution."
+}
+
+variable "pipeline_ingress_kafka_consumer_group_name" {
+  type        = string
+  description = "The name of the consumer group the pipeline-ingress consumers will join."
+}
+
 variable "pipeline_ingress_kafka_sasl_username" {
   type        = string
   description = "The Confluent Cloud API key to configure pipeline-ingress producers and consumers with."
@@ -46,9 +51,8 @@ variable "pipeline_ingress_kafka_sasl_password" {
   description = "The Confluent Cloud API secret to configure pipeline-ingress producers and consumers with."
 }
 
-variable "pipeline_ingress_kafka_consumer_group_name" {
-  type        = string
-  description = "The name of the consumer group the pipeline-ingress consumers will join."
+locals {
+  log_level = "DEBUG"
 }
 
 job "integration-tests-new" {
@@ -94,7 +98,7 @@ job "integration-tests-new" {
       driver = "docker"
 
       config {
-        image = var.container_images["integration-tests-new"]
+        image = var.container_images["rust-integration-tests-new"]
       }
 
       # This writes an env file that gets read by the task automatically
@@ -107,7 +111,6 @@ job "integration-tests-new" {
       env {
         AWS_REGION = var.aws_region
 
-        STACK_NAME      = var.stack_name
         GRAPL_LOG_LEVEL = local.log_level
 
         RUST_BACKTRACE = 1

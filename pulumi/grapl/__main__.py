@@ -191,6 +191,19 @@ def main() -> None:
     model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)
     pulumi.export("model-plugins-bucket", model_plugins_bucket.bucket)
 
+    pipeline_ingress_healthcheck_polling_interval_ms = "5000"
+    pulumi.export(
+        "pipeline-ingress-healthcheck-polling-interval-ms",
+        pipeline_ingress_healthcheck_polling_interval_ms
+    )
+    pipeline_ingress_kafka_consumer_group_name = kafka.consumer_group(
+        "pipeline-ingress"
+    )
+    pulumi.export(
+        "pipeline-ingress-kafka-consumer-group-name",
+        pipeline_ingress_kafka_consumer_group_name
+    )
+
     plugins_bucket = Bucket("plugins-bucket", sse=True)
     pulumi.export("plugins-bucket", plugins_bucket.bucket)
 
@@ -246,10 +259,8 @@ def main() -> None:
         node_identifier_retry_queue=node_identifier_queue.retry_queue_url,
         osquery_generator_queue=osquery_generator_queue.main_queue_url,
         osquery_generator_dead_letter_queue=osquery_generator_queue.dead_letter_queue_url,
-        pipeline_ingress_healthcheck_polling_interval_ms="1000",
-        pipeline_ingress_kafka_consumer_group_name=kafka.consumer_group(
-            "pipeline-ingress"
-        ),
+        pipeline_ingress_healthcheck_polling_interval_ms=pipeline_ingress_healthcheck_polling_interval_ms,
+        pipeline_ingress_kafka_consumer_group_name=pipeline_ingress_kafka_consumer_group_name,
         py_log_level=py_log_level,
         rust_log=rust_log_levels,
         schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
