@@ -15,3 +15,5 @@ rsync --archive --info=progress2 \
     --rsh "${THIS_DIR}/ssh.sh" \
     "${GRAPL_DEVBOX_LOCAL_GRAPL}/" \
     ":${GRAPL_DEVBOX_REMOTE_GRAPL}"
+
+echo_h1 "$(bright_green "Devbox-sync complete")"
