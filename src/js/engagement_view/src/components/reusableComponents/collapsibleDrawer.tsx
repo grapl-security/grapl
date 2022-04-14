@@ -74,7 +74,7 @@ export default function CollapsibleNavDrawer() {
                 aria-label="open drawer"
                 onClick={handleDrawerOpen}
                 edge="start"
-                sx={{ mr: 2, ...(open && { display: "none" }) }}
+                sx={{ mr: 3, ...(open && { display: "none" }) }}
             >
                 <MenuIcon className={classes.navBarOpenCloseIcons} />
             </IconButton>
@@ -111,10 +111,7 @@ export default function CollapsibleNavDrawer() {
                         <ListItemIcon>
                             <PolicyIcon className={classes.icons} />
                         </ListItemIcon>
-                        <Link
-                            to="/analyzers"
-                            style={{ textDecoration: "none" }}
-                        >
+                        <Link to="/analyzers" className={classes.navLink}>
                             {" "}
                             Analyzers{" "}
                         </Link>
@@ -124,10 +121,7 @@ export default function CollapsibleNavDrawer() {
                         <ListItemIcon>
                             <BubbleChartIcon className={classes.icons} />
                         </ListItemIcon>
-                        <Link
-                            to="/engagements"
-                            style={{ textDecoration: "none" }}
-                        >
+                        <Link to="/engagements" className={classes.navLink}>
                             {" "}
                             Engagements{" "}
                         </Link>
@@ -137,10 +131,7 @@ export default function CollapsibleNavDrawer() {
                         <ListItemIcon>
                             {<ExtensionIcon className={classes.icons} />}
                         </ListItemIcon>
-                        <Link
-                            to="/generators"
-                            style={{ textDecoration: "none" }}
-                        >
+                        <Link to="/generators" className={classes.navLink}>
                             {" "}
                             Generators{" "}
                         </Link>
