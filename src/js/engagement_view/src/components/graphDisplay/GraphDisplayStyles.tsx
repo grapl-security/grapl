@@ -42,8 +42,8 @@ export const useStyles = makeStyles((theme) =>
             }),
         },
         expandLensAndNodeTableIcon: {
-            '&:hover': {
-                background: 'none',
+            "&:hover": {
+                background: "none",
             },
             color: "#FFFFFF",
             fontSize: "8rem",
