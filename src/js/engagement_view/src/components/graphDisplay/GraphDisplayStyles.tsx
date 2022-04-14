@@ -70,7 +70,7 @@ export const useStyles = makeStyles((theme) =>
             marginLeft: 0,
         },
         lensName: {
-            margin: "1em",
+            margin: "2em",
             color: theme.palette.primary.light,
             fontWeight: "bold",
         },

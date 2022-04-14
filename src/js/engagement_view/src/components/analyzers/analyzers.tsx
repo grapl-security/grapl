@@ -41,7 +41,7 @@ const MetricContainer = () => {
                         style={{ fontSize: "30px" }}
                         className={classes.metricsIcon}
                     />
-                    <h1>10</h1>
+                    <h1 className={classes.metricCount}>10</h1>
                     <p>List All </p>
                 </div>
             </Paper>
@@ -56,7 +56,7 @@ const MetricContainer = () => {
                         style={{ fontSize: "30px" }}
                         className={classes.metricsIcon}
                     />
-                    <h1>5</h1>
+                    <h1 className={classes.metricCount}>5</h1>
                     <p>Healthy</p>
                 </div>
             </Paper>
@@ -71,7 +71,7 @@ const MetricContainer = () => {
                         style={{ fontSize: "30px" }}
                         className={classes.metricsIcon}
                     />
-                    <h1>2</h1>
+                    <h1 className={classes.metricCount}>2</h1>
                     <p>Crashing</p>
                 </div>
             </Paper>
@@ -86,7 +86,7 @@ const MetricContainer = () => {
                         style={{ fontSize: "30px" }}
                         className={classes.metricsIcon}
                     />
-                    <h1>3</h1>
+                    <h1 className={classes.metricCount}>3</h1>
                     <p>Alerts</p>
                 </div>
             </Paper>
@@ -154,10 +154,10 @@ export const AnalyzersListTable = () => {
 
     const rows = [
         { id: 1, analyzerName: "analyzer_1.py", date: "03/17/22" },
-        { id: 2, analyzerName: "analyzer_2.py", date: "03/17/22" },
-        { id: 3, analyzerName: "analyzer_3.py", date: "03/17/22" },
-        { id: 4, analyzerName: "analyzer_4.py", date: "03/17/22" },
-        { id: 5, analyzerName: "analyzer_5.py", date: "03/17/22" },
+        { id: 2, analyzerName: "analyzer_2.py", date: "03/26/22" },
+        { id: 3, analyzerName: "analyzer_3.py", date: "04/01/22" },
+        { id: 4, analyzerName: "analyzer_4.py", date: "04/11/22" },
+        { id: 5, analyzerName: "analyzer_5.py", date: "04/14/22" },
     ];
 
     return (
@@ -165,12 +165,15 @@ export const AnalyzersListTable = () => {
             <DataGrid
                 sx={{
                     bgcolor: "#212936",
-                    color: "#8997B1",
+                    color: "#FFF",
                     boxShadow: 1,
                     border: 0,
                     borderRadius: 2,
                     p: 2,
                     minWidth: 300,
+                    "& 	.MuiDataGrid-columnHeader": {
+                        color: "#8997B1",
+                    },
                     "& .MuiDataGrid-columnSeparator": {
                         visibility: "hidden",
                     },

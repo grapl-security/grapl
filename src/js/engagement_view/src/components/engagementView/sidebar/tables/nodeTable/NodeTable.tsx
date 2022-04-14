@@ -86,7 +86,7 @@ const NodeTable = ({ node }: NodeTableProps) => {
                                 </TableCell>
                                 <TableCell
                                     className={classes.nodeTableData}
-                                    align="right"
+                                    align="left"
                                 >
                                     {value as any}
                                 </TableCell>

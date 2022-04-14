@@ -18,6 +18,10 @@ export const useStyles = makeStyles((theme) =>
             color: theme.palette.info.contrastText,
             margin: "1em",
         },
+        navLink: {
+            textDecoration: "none",
+            color: theme.palette.info.contrastText,
+        },
         drawer: {
             backgroundColor: theme.palette.background.default,
             color: theme.palette.text.primary,
@@ -79,6 +83,9 @@ export const useStyles = makeStyles((theme) =>
             padding: "1rem",
         },
         tableRow: {
+            color: theme.palette.info.contrastText,
+        },
+        metricCount: {
             color: theme.palette.info.contrastText,
         },
     })

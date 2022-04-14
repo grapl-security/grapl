@@ -54,43 +54,44 @@ export default function EngagementView({
     };
 
     return (
-        <div className={classes.root}>
-            <IconButton
-                aria-label="open drawer"
-                onClick={handleDrawerOpen}
-                edge="end"
-                className={clsx(
-                    classes.expandLensAndNodeTableIcon,
-                    open && classes.hide
-                )}
-            >
-                <ManageSearchIcon />
-            </IconButton>
+        <>
+            <div className={classes.root}>
+                <IconButton
+                    aria-label="open drawer"
+                    onClick={handleDrawerOpen}
+                    edge="end"
+                    className={clsx(
+                        classes.expandLensAndNodeTableIcon,
+                        open && classes.hide
+                    )}
+                >
+                    <ManageSearchIcon />
+                </IconButton>
 
-            <Drawer
-                variant="persistent"
-                anchor="right"
-                open={open}
-                classes={{
-                    paper: classes.drawerPaper,
-                }}
-            >
-                <div className={classes.drawerHeader}>
-                    <Button onClick={handleDrawerClose}>
-                        <KeyboardArrowLeftIcon className={classes.close} />
-                    </Button>
-                </div>
+                <Drawer
+                    variant="persistent"
+                    anchor="right"
+                    open={open}
+                    classes={{
+                        paper: classes.drawerPaper,
+                    }}
+                >
+                    <div className={classes.drawerHeader}>
+                        <Button onClick={handleDrawerClose}>
+                            <KeyboardArrowLeftIcon className={classes.close} />
+                        </Button>
+                    </div>
 
-                <Divider />
+                    <Divider />
 
-                <LensAndNodeTableContainer
-                    setLens={setLens}
-                    curNode={curNode}
-                />
-            </Drawer>
-
-            <p className={classes.lensName}> {curLens || ""} </p>
-        </div>
+                    <LensAndNodeTableContainer
+                        setLens={setLens}
+                        curNode={curNode}
+                    />
+                </Drawer>
+            </div>
+            <p className={classes.lensName}> Viewing Lens: {curLens || ""} </p>
+        </>
     );
 }
 
