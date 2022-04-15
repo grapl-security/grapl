@@ -22,5 +22,10 @@ tracing-opentelemetry = "0.16"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 uuid = { version = "0.8", features = ["v4"] }
 
+[dev-dependencies]
+futures = "0.3"
+test-context = "0.1"
+tokio = { version = "1.14", features = ["macros", "rt"] }
+
 [features]
 new_integration_tests = []

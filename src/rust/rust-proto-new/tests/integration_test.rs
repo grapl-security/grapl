@@ -21,7 +21,6 @@ use rust_proto_new::{
                     PipelineIngressApi,
                     PipelineIngressServer,
                 },
-                HealthcheckError,
                 HealthcheckStatus,
                 PublishRawLogRequest,
                 PublishRawLogResponse,
@@ -338,54 +337,6 @@ struct PipelineIngressTestContext {
     shutdown_tx: Sender<()>,
 }
 
-async fn wait_until_healthy(
-    endpoint: String,
-    service_name: &'static str,
-) -> Result<(), HealthcheckError> {
-    let mut idx = 0;
-    let mut healthcheck_client = loop {
-        match HealthcheckClient::connect(endpoint.clone(), service_name).await {
-            Ok(client) => break client,
-            Err(e) => {
-                if idx == 20 {
-                    return Err(HealthcheckError::HealthcheckFailed(
-                        "failed to create healthcheck client after 20 tries".to_string(),
-                    ));
-                }
-
-                println!(
-                    "could not construct healthcheck client, waiting 0.05s: {}",
-                    e
-                );
-                tokio::time::sleep(Duration::from_millis(50)).await;
-                idx += 1;
-            }
-        }
-    };
-
-    let mut idx = 0;
-    loop {
-        match healthcheck_client.check_health().await {
-            Ok(result) => match result {
-                HealthcheckStatus::Serving => return Ok(()),
-                other => {
-                    if idx == 20 {
-                        return Err(HealthcheckError::HealthcheckFailed(
-                            "service still not healthy after 20 tries".to_string(),
-                        ));
-                    }
-
-                    println!("service is not yet serving, waiting 0.05s: {:?}", other);
-                    tokio::time::sleep(Duration::from_millis(50)).await;
-                    idx += 1;
-                }
-            },
-            Err(e) => return Err(e),
-        }
-        idx += 1;
-    }
-}
-
 #[tonic::async_trait]
 impl AsyncTestContext for PipelineIngressTestContext {
     async fn setup() -> Self {
@@ -408,16 +359,19 @@ impl AsyncTestContext for PipelineIngressTestContext {
             MockPipelineIngressApi {},
             tcp_listener,
             || async { Ok(HealthcheckStatus::Serving) },
-            50,
+            Duration::from_millis(50),
         );
 
         let service_name = server.service_name();
 
         let server_handle = tokio::task::spawn(server.serve());
 
-        wait_until_healthy(endpoint.clone(), service_name)
-            .await
-            .expect("server never reported healthy");
+        HealthcheckClient::wait_until_healthy(
+            endpoint.clone(),
+            service_name,
+            Duration::from_millis(250),
+            Duration::from_millis(10)
+        ).await.expect("pipeline-ingress never reported healthy");
 
         let client = PipelineIngressClient::connect(endpoint)
             .await

@@ -3164,10 +3164,12 @@ name = "pipeline-ingress"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "futures",
  "kafka",
  "opentelemetry 0.16.0",
  "opentelemetry-jaeger",
  "rust-proto-new",
+ "test-context",
  "thiserror",
  "tokio",
  "tracing",

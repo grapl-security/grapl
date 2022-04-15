@@ -1,7 +1,10 @@
 use std::{
     env::VarError,
     num::ParseIntError,
-    time::SystemTime,
+    time::{
+        SystemTime,
+        Duration,
+    },
 };
 
 use kafka::{
@@ -124,7 +127,7 @@ async fn handler() -> Result<(), ConfigurationError> {
         IngressApi::new(producer),
         TcpListener::bind(socket_address).await?,
         || async { Ok(HealthcheckStatus::Serving) }, // FIXME: this is garbage
-        healthcheck_polling_interval_ms,
+        Duration::from_millis(healthcheck_polling_interval_ms),
     );
     tracing::info!("gRPC server configured successfully");
 
@@ -144,7 +147,7 @@ async fn main() -> Result<(), ConfigurationError> {
     // initialize tracing layer
     global::set_text_map_propagator(TraceContextPropagator::new());
     let tracer = opentelemetry_jaeger::new_pipeline()
-        .with_service_name("pipeline_ingress")
+        .with_service_name("pipeline-ingress")
         .install_batch(opentelemetry::runtime::Tokio)
         .unwrap();
 
