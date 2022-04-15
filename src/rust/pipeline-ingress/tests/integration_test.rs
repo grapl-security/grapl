@@ -8,7 +8,7 @@ use std::time::{
 use futures::StreamExt;
 use kafka::{
     Consumer,
-    ConsumerError
+    ConsumerError,
 };
 use opentelemetry::{
     global,
@@ -17,14 +17,14 @@ use opentelemetry::{
 use rust_proto_new::graplinc::grapl::{
     api::pipeline_ingress::v1beta1::{
         client::{
+            HealthcheckClient,
             PipelineIngressClient,
-            HealthcheckClient
         },
         PublishRawLogRequest,
     },
     pipeline::{
-        v1beta2::Envelope,
         v1beta1::RawLog,
+        v1beta2::Envelope,
     },
 };
 use test_context::{
@@ -84,44 +84,43 @@ impl AsyncTestContext for PipelineIngressTestContext {
             "pipeline-ingress",
             Duration::from_millis(10000),
             Duration::from_millis(500),
-        ).await.expect("pipeline-ingress never reported healthy");
+        )
+        .await
+        .expect("pipeline-ingress never reported healthy");
 
         let grpc_client = PipelineIngressClient::connect(endpoint.clone())
             .await
             .expect("could not configure gRPC client");
 
-        PipelineIngressTestContext {
-            grpc_client
-        }
+        PipelineIngressTestContext { grpc_client }
     }
 }
 
 #[test_context(PipelineIngressTestContext)]
 #[tokio::test]
 async fn test_publish_raw_log_sends_message_to_kafka(ctx: &mut PipelineIngressTestContext) {
-    let event_source_id =  Uuid::new_v4();
+    let event_source_id = Uuid::new_v4();
     let tenant_id = Uuid::new_v4();
 
     let kafka_subscriber = tokio::task::spawn(async move {
-        let kafka_consumer = Consumer::new("raw-logs")
-            .expect("could not configure kafka consumer");
-        let contains_expected = kafka_consumer.stream()
+        let kafka_consumer = Consumer::new("raw-logs").expect("could not configure kafka consumer");
+        let contains_expected = kafka_consumer
+            .stream()
             .expect("could not subscribe to the raw-logs topic")
             .any(|res: Result<Envelope<RawLog>, ConsumerError>| async move {
                 let metadata = res.expect("error consuming message from kafka").metadata;
                 metadata.tenant_id == tenant_id && metadata.event_source_id == event_source_id
             });
 
-        assert_eq!(
-            tokio::time::timeout(
-                Duration::from_millis(5000),
-                contains_expected,
-            ).await.expect("failed to consume expected message within 5s"),
-            true
+        assert!(
+            tokio::time::timeout(Duration::from_millis(5000), contains_expected,)
+                .await
+                .expect("failed to consume expected message within 5s")
         );
     });
 
-    let res = ctx.grpc_client
+    let res = ctx
+        .grpc_client
         .publish_raw_log(PublishRawLogRequest {
             event_source_id,
             tenant_id,
@@ -132,6 +131,7 @@ async fn test_publish_raw_log_sends_message_to_kafka(ctx: &mut PipelineIngressTe
 
     assert!(res.created_time < SystemTime::now());
 
-    kafka_subscriber.await
+    kafka_subscriber
+        .await
         .expect("could not join kafka subscriber");
 }

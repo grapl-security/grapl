@@ -2,8 +2,8 @@ use std::{
     env::VarError,
     num::ParseIntError,
     time::{
-        SystemTime,
         Duration,
+        SystemTime,
     },
 };
 

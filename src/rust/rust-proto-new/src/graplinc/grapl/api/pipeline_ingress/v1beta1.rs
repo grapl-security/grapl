@@ -216,7 +216,7 @@ pub mod client {
         HealtcheckFailed(#[from] HealthcheckError),
 
         #[error("timeout elapsed {0}")]
-        TimeoutElapsed(#[from] Elapsed)
+        TimeoutElapsed(#[from] Elapsed),
     }
 
     #[non_exhaustive]
@@ -289,11 +289,9 @@ pub mod client {
 
             let response = match self.proto_client.check(request).await {
                 Ok(response) => response.into_inner(),
-                Err(e) => {
-                    match e.code() {
-                        tonic::Code::NotFound => return Err(HealthcheckError::NotFound(e.to_string())),
-                        _ => return Err(HealthcheckError::HealthcheckFailed(e.to_string())),
-                    }
+                Err(e) => match e.code() {
+                    tonic::Code::NotFound => return Err(HealthcheckError::NotFound(e.to_string())),
+                    _ => return Err(HealthcheckError::HealthcheckFailed(e.to_string())),
                 },
             };
 
@@ -339,8 +337,8 @@ pub mod client {
                         Ok(result) => match result {
                             HealthcheckStatus::Serving => {
                                 tracing::info!("{} is serving requests", service_name);
-                                break Ok(healthcheck_client)
-                            },
+                                break Ok(healthcheck_client);
+                            }
                             other => {
                                 tracing::warn!(
                                     "{} is not yet serving requests, waiting {}ms: {:?}",
@@ -351,28 +349,23 @@ pub mod client {
                                 tokio::time::sleep(polling_interval).await;
                             }
                         },
-                        Err(e) => {
-                            match e {
-                                HealthcheckError::HealthcheckFailed(_) => break Err(e),
-                                HealthcheckError::NotFound(reason) => {
-                                    tracing::warn!(
-                                        "{} healthcheck not found yet, waiting {}ms: {}",
-                                        service_name,
-                                        polling_interval.as_millis(),
-                                        reason
-                                    );
-                                    tokio::time::sleep(polling_interval).await;
-                                }
+                        Err(e) => match e {
+                            HealthcheckError::HealthcheckFailed(_) => break Err(e),
+                            HealthcheckError::NotFound(reason) => {
+                                tracing::warn!(
+                                    "{} healthcheck not found yet, waiting {}ms: {}",
+                                    service_name,
+                                    polling_interval.as_millis(),
+                                    reason
+                                );
+                                tokio::time::sleep(polling_interval).await;
                             }
                         },
                     }
                 }
             };
 
-            tokio::time::timeout(
-                timeout,
-                client_fut.map_err(|e| e.into())
-            ).await?
+            tokio::time::timeout(timeout, client_fut.map_err(|e| e.into())).await?
         }
     }
 }
@@ -605,34 +598,32 @@ pub mod server {
                 // just inlined the whole thing here.
                 loop {
                     match (self.healthcheck)().await {
-                        Ok(status) => {
-                            match status {
-                                HealthcheckStatus::Serving => {
-                                    tracing::info!("healthcheck status \"serving\"");
-                                    health_reporter
+                        Ok(status) => match status {
+                            HealthcheckStatus::Serving => {
+                                tracing::info!("healthcheck status \"serving\"");
+                                health_reporter
                                         .set_serving::<PipelineIngressServiceServerProto<
                                             PipelineIngressProto<T, E>,
                                         >>()
                                         .await
-                                }
-                                HealthcheckStatus::NotServing => {
-                                    tracing::warn!("healthcheck status \"not serving\"");
-                                    health_reporter
-                                        .set_not_serving::<PipelineIngressServiceServerProto<
-                                            PipelineIngressProto<T, E>,
-                                        >>()
-                                        .await
-                                }
-                                HealthcheckStatus::Unknown => {
-                                    tracing::warn!("healthcheck status \"unknown\"");
-                                    health_reporter
-                                        .set_not_serving::<PipelineIngressServiceServerProto<
-                                            PipelineIngressProto<T, E>,
-                                        >>()
-                                        .await
-                                }
                             }
-                        }
+                            HealthcheckStatus::NotServing => {
+                                tracing::warn!("healthcheck status \"not serving\"");
+                                health_reporter
+                                        .set_not_serving::<PipelineIngressServiceServerProto<
+                                            PipelineIngressProto<T, E>,
+                                        >>()
+                                        .await
+                            }
+                            HealthcheckStatus::Unknown => {
+                                tracing::warn!("healthcheck status \"unknown\"");
+                                health_reporter
+                                        .set_not_serving::<PipelineIngressServiceServerProto<
+                                            PipelineIngressProto<T, E>,
+                                        >>()
+                                        .await
+                            }
+                        },
                         Err(e) => {
                             // healthcheck failed, so we'll set_not_serving()
                             tracing::error!("healthcheck error {}", e);

@@ -370,8 +370,10 @@ impl AsyncTestContext for PipelineIngressTestContext {
             endpoint.clone(),
             service_name,
             Duration::from_millis(250),
-            Duration::from_millis(10)
-        ).await.expect("pipeline-ingress never reported healthy");
+            Duration::from_millis(10),
+        )
+        .await
+        .expect("pipeline-ingress never reported healthy");
 
         let client = PipelineIngressClient::connect(endpoint)
             .await
