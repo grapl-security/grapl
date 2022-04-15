@@ -22,8 +22,9 @@ DIST_DIR = $(GRAPL_ROOT)/dist
 COMPOSE_USER=${UID}:${GID}
 COMPOSE_IGNORE_ORPHANS=1
 COMPOSE_PROJECT_NAME ?= grapl
-# Get a non-loopback private ip for the host. Order is not guaranteed
-LOCAL_HOST_IP = $(shell hostname --all-ip-addresses | awk '{ print $$1 }')
+# Get the docker bridge to use as a non-loopback address for dns.
+#This assumes that systemd-resolve has an extra listener here as added by the chromeos setup script.
+LOCAL_HOST_IP = $(shell docker network inspect bridge --format='{{(index .IPAM.Config 0).Gateway}}')
 
 export
 
