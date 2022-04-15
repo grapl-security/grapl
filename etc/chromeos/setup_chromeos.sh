@@ -22,5 +22,4 @@ install_cni_plugins
 install_nomad_chromeos_workaround
 install_nomad_firecracker
 install_sqlx_prepare_deps
-install_dns_resolver
 install_docker # Do this last since it's not idempotent

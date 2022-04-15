@@ -365,36 +365,6 @@ install_git_hooks() {
     ln --symbolic --relative --force "$GIT_ROOT/etc/hooks/pre-commit.sh" "$GIT_ROOT/.git/hooks/pre-commit"
 }
 
-install_dns_resolver() {
-    # We're using dnsmasq as a lightweight and easy dns resolver since we only need to forward requests to consul dns.
-    # Ideally we'd be using systemd-resolver but you need systemd 246+ to support forwarding to a port other than 53
-    echo_banner "Installing dnsmasq in order to enable consul dns from inside containers."
-    sudo apt-get install dnsmasq
-
-    # create consul config file. WARNING: this will overwrite any existing file of the same name!
-    sudo tee /etc/dnsmasq.d/10-consul << EOF
-# Enable forward lookup of the 'consul' domain:
-server=/consul/127.0.0.1#8600
-
-# Uncomment and modify as appropriate to enable reverse DNS lookups for
-# common netblocks found in RFC 1918, 5735, and 6598:
-#rev-server=0.0.0.0/8,127.0.0.1#8600
-#rev-server=10.0.0.0/8,127.0.0.1#8600
-#rev-server=100.64.0.0/10,127.0.0.1#8600
-#rev-server=127.0.0.1/8,127.0.0.1#8600
-#rev-server=169.254.0.0/16,127.0.0.1#8600
-#rev-server=172.16.0.0/12,127.0.0.1#8600
-#rev-server=192.168.0.0/16,127.0.0.1#8600
-#rev-server=224.0.0.0/4,127.0.0.1#8600
-#rev-server=240.0.0.0/4,127.0.0.1#8600
-EOF
-    # restart dnsmasq for it to pick up the consul config file
-    sudo systemctl restart dnsmasq
-
-    # ensure that there's no systemd-resolv conflict
-    sudo sed --in-place 's/#DNSStubListener=yes/DNSStubListener=false/' /etc/systemd/resolved.conf
-}
-
 install_sqlx_prepare_deps() {
     _cargo_install sqlx-cli --no-default-features --features postgres,rustls
     sudo apt install --yes netcat # used for `nc`
