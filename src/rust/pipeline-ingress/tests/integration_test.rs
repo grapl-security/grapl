@@ -29,6 +29,7 @@ use test_context::{
     test_context,
     AsyncTestContext,
 };
+use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::{
     prelude::*,
     EnvFilter,
@@ -41,6 +42,7 @@ struct PipelineIngressTestContext {
     sasl_username: String,
     sasl_password: String,
     consumer_group_name: String,
+    _guard: WorkerGuard,
 }
 
 #[async_trait::async_trait]
@@ -92,13 +94,14 @@ impl AsyncTestContext for PipelineIngressTestContext {
 
         HealthcheckClient::wait_until_healthy(
             endpoint.clone(),
-            "pipeline-ingress",
+            "graplinc.grapl.api.pipeline_ingress.v1beta1.PipelineIngressService",
             Duration::from_millis(10000),
             Duration::from_millis(500),
         )
         .await
         .expect("pipeline-ingress never reported healthy");
 
+        tracing::info!("connecting pipeline-ingress gRPC client");
         let grpc_client = PipelineIngressClient::connect(endpoint.clone())
             .await
             .expect("could not configure gRPC client");
@@ -109,6 +112,7 @@ impl AsyncTestContext for PipelineIngressTestContext {
             sasl_username,
             sasl_password,
             consumer_group_name,
+            _guard,
         }
     }
 }
@@ -125,16 +129,17 @@ async fn test_publish_raw_log_sends_message_to_kafka(ctx: &mut PipelineIngressTe
     let sasl_password = ctx.sasl_password.clone();
     let consumer_group_name = ctx.consumer_group_name.clone();
 
-    let kafka_subscriber = tokio::task::spawn(async move {
-        let kafka_consumer = Consumer::new(
-            bootstrap_servers,
-            sasl_username,
-            sasl_password,
-            consumer_group_name,
-            "raw-logs".to_string(),
-        )
-        .expect("could not configure kafka consumer");
+    tracing::info!("configuring kafka consumer");
+    let kafka_consumer = Consumer::new(
+        bootstrap_servers,
+        sasl_username,
+        sasl_password,
+        consumer_group_name,
+        "raw-logs".to_string(),
+    ).expect("could not configure kafka consumer");
 
+    tracing::info!("creating kafka subscriber thread");
+    let kafka_subscriber = tokio::task::spawn(async move {
         let contains_expected = kafka_consumer
             .stream()
             .expect("could not subscribe to the raw-logs topic")
@@ -143,18 +148,27 @@ async fn test_publish_raw_log_sends_message_to_kafka(ctx: &mut PipelineIngressTe
                 let metadata = envelope.metadata;
                 let raw_log = envelope.inner_message;
                 let expected_log_event: Bytes = "test".into();
+
+                tracing::debug!(message = "consumed kafka message");
+
                 metadata.tenant_id == tenant_id
                     && metadata.event_source_id == event_source_id
                     && raw_log.log_event == expected_log_event
             });
 
+        tracing::info!("consuming kafka messages for 30s");
         assert!(
-            tokio::time::timeout(Duration::from_millis(5000), contains_expected)
+            tokio::time::timeout(Duration::from_millis(30000), contains_expected)
                 .await
-                .expect("failed to consume expected message within 5s")
+                .expect("failed to consume expected message within 30s")
         );
     });
 
+    // we throw in a healthy sleep here to make well sure the kafka consumer is
+    // actually consuming before we throw a message at it
+    tokio::time::sleep(Duration::from_millis(5000)).await;
+
+    tracing::info!("sending publish_raw_log request");
     ctx.grpc_client
         .publish_raw_log(PublishRawLogRequest {
             event_source_id,
@@ -164,6 +178,7 @@ async fn test_publish_raw_log_sends_message_to_kafka(ctx: &mut PipelineIngressTe
         .await
         .expect("received error response");
 
+    tracing::info!("waiting for kafka_subscriber to complete");
     kafka_subscriber
         .await
         .expect("could not join kafka subscriber");

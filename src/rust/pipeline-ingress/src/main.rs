@@ -63,6 +63,7 @@ impl IngressApi {
 
 #[async_trait::async_trait]
 impl PipelineIngressApi<IngressApiError> for IngressApi {
+    #[tracing::instrument(skip(self))]
     async fn publish_raw_log(
         &self,
         request: PublishRawLogRequest,
@@ -158,7 +159,8 @@ async fn handler() -> Result<(), ConfigurationError> {
     );
     tracing::info!(
         message = "gRPC server configured successfully",
-        socket_address = %socket_address
+        socket_address = %socket_address,
+        service_name = %server.service_name(),
     );
 
     tracing::info!(

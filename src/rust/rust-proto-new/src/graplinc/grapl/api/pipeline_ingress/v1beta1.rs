@@ -630,7 +630,7 @@ pub mod server {
                 }
             });
 
-            // TODO: add logging interceptor, tls_config, concurrency limits
+            // TODO: add tower tracing, tls_config, concurrency limits
             Ok(Server::builder()
                 .add_service(health_service)
                 .add_service(PipelineIngressServiceServerProto::new(
