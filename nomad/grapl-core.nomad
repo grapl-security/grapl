@@ -83,7 +83,7 @@ variable "engagement_creator_queue" {
 
 variable "kafka_bootstrap_servers" {
   type        = string
-  description = "The URL of the Kafka bootstrap servers."
+  description = "The URL(s) (possibly comma-separated) of the Kafka bootstrap servers."
 }
 
 variable "redis_endpoint" {

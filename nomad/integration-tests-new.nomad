@@ -28,7 +28,7 @@ EOF
 
 variable "kafka_bootstrap_servers" {
   type        = string
-  description = "Comma separated host:port pairs specifying which brokers clients should connect to initially."
+  description = "The URL(s) (possibly comma-separated) of the Kafka bootstrap servers."
 }
 
 variable "pipeline_ingress_healthcheck_polling_interval_ms" {
@@ -118,10 +118,10 @@ job "integration-tests-new" {
 
         KAFKA_BOOTSTRAP_SERVERS = var.kafka_bootstrap_servers
 
-        PIPELINE_INGRESS_BIND_ADDRESS                    = "0.0.0.0:${NOMAD_UPSTREAM_PORT_pipeline_ingress}"
-        PIPELINE_INGRESS_KAFKA_SASL_USERNAME             = var.pipeline_ingress_kafka_sasl_username
-        PIPELINE_INGRESS_KAFKA_SASL_PASSWORD             = var.pipeline_ingress_kafka_sasl_password
-        PIPELINE_INGRESS_TESTS_KAFKA_CONSUMER_GROUP_NAME = "pipeline-ingress-tests"
+        PIPELINE_INGRESS_BIND_ADDRESS                   = "0.0.0.0:${NOMAD_UPSTREAM_PORT_pipeline_ingress}"
+        PIPELINE_INGRESS_KAFKA_SASL_USERNAME            = var.pipeline_ingress_kafka_sasl_username
+        PIPELINE_INGRESS_KAFKA_SASL_PASSWORD            = var.pipeline_ingress_kafka_sasl_password
+        PIPELINE_INGRESS_TEST_KAFKA_CONSUMER_GROUP_NAME = "pipeline-ingress-test"
 
         NOMAD_SERVICE_ADDRESS = "${attr.unique.network.ip-address}:4646"
       }
