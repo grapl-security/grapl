@@ -90,7 +90,7 @@ job "grapl-provision" {
         image      = var.container_images["provisioner"]
         entrypoint = ["/bin/bash", "-c", "-o", "errexit", "-o", "nounset", "-c"]
         command = trimspace(<<EOF
-if [[ -n "${DGRAPH_DROP_ALL_DATA}" ]]; then
+if [[ "${DGRAPH_DROP_ALL_DATA}" -ne 0 ]]; then
   # Drop all existing data from dgraph
   # from https://discuss.dgraph.io/t/drop-all-data-from-dgraph/5866 
   curl -X POST "${DGRAPH_HTTP_ADDRESS}"/alter -d '{"drop_op": "ALL"}'
