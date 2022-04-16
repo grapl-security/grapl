@@ -136,7 +136,8 @@ async fn test_publish_raw_log_sends_message_to_kafka(ctx: &mut PipelineIngressTe
         sasl_password,
         consumer_group_name,
         "raw-logs".to_string(),
-    ).expect("could not configure kafka consumer");
+    )
+    .expect("could not configure kafka consumer");
 
     tracing::info!("creating kafka subscriber thread");
     let kafka_subscriber = tokio::task::spawn(async move {
