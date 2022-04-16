@@ -400,14 +400,9 @@ pub mod server {
     use thiserror::Error;
     use tokio::net::TcpListener;
     use tokio_stream::wrappers::TcpListenerStream;
-    use tonic::{
-        transport::{
-            NamedService,
-            Server,
-        },
-        Request,
-        Response,
-        Status,
+    use tonic::transport::{
+        NamedService,
+        Server,
     };
 
     use super::{
@@ -427,6 +422,7 @@ pub mod server {
             PublishRawLogRequest as PublishRawLogRequestProto,
             PublishRawLogResponse as PublishRawLogResponseProto,
         },
+        SerDeError,
     };
 
     //
@@ -469,25 +465,22 @@ pub mod server {
     {
         async fn publish_raw_log(
             &self,
-            request: Request<PublishRawLogRequestProto>,
-        ) -> Result<Response<PublishRawLogResponseProto>, Status> {
-            let inner_request: PublishRawLogRequest = match request.into_inner().try_into() {
-                Ok(request) => request,
-                Err(e) => return Err(Status::unknown(e.to_string())),
-            };
+            request: tonic::Request<PublishRawLogRequestProto>,
+        ) -> Result<tonic::Response<PublishRawLogResponseProto>, tonic::Status> {
+            let inner_request: PublishRawLogRequest = request
+                .into_inner()
+                .try_into()
+                .map_err(|e: SerDeError| tonic::Status::unknown(e.to_string()))?;
 
             let response = self
                 .api_server
                 .publish_raw_log(inner_request)
-                .map_err(|e| Status::unknown(e.to_string()))
-                .await?;
+                .map_err(|e| tonic::Status::unknown(e.to_string()))
+                .await?
+                .try_into()
+                .map_err(|e: SerDeError| tonic::Status::unknown(e.to_string()))?;
 
-            let response: PublishRawLogResponseProto = match response.try_into() {
-                Ok(res) => res,
-                Err(e) => return Err(Status::unknown(e.to_string())),
-            };
-
-            Ok(Response::new(response))
+            Ok(tonic::Response::new(response))
         }
     }
 

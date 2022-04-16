@@ -1,10 +1,8 @@
 #![cfg(feature = "new_integration_tests")]
 
-use std::time::{
-    Duration,
-    SystemTime,
-};
+use std::time::Duration;
 
+use bytes::Bytes;
 use futures::StreamExt;
 use kafka::{
     Consumer,
@@ -39,6 +37,10 @@ use uuid::Uuid;
 
 struct PipelineIngressTestContext {
     grpc_client: PipelineIngressClient,
+    bootstrap_servers: String,
+    sasl_username: String,
+    sasl_password: String,
+    consumer_group_name: String,
 }
 
 #[async_trait::async_trait]
@@ -56,7 +58,7 @@ impl AsyncTestContext for PipelineIngressTestContext {
         let tracer = opentelemetry_jaeger::new_pipeline()
             .with_service_name("pipeline-ingress-integration-tests")
             .install_batch(opentelemetry::runtime::Tokio)
-            .unwrap();
+            .expect("could not configure tracer");
 
         // register a subscriber
         let filter = EnvFilter::from_default_env();
@@ -74,9 +76,18 @@ impl AsyncTestContext for PipelineIngressTestContext {
                 .expect("missing environment variable PIPELINE_INGRESS_BIND_ADDRESS")
         );
 
+        let bootstrap_servers = std::env::var("KAFKA_BOOTSTRAP_SERVERS")
+            .expect("missing environment variable KAFKA_BOOTSTRAP_SERVERS");
+        let sasl_username = std::env::var("PIPELINE_INGRESS_KAFKA_SASL_USERNAME")
+            .expect("missing environment variable PIPELINE_INGRESS_KAFKA_SASL_USERNAME");
+        let sasl_password = std::env::var("PIPELINE_INGRESS_KAFKA_SASL_PASSWORD")
+            .expect("missing environment variable PIPELINE_INGRESS_KAFKA_SASL_PASSWORD");
+        let consumer_group_name = std::env::var("PIPELINE_INGRESS_TEST_KAFKA_CONSUMER_GROUP_NAME")
+            .expect("missing environment variable PIPELINE_INGRESS_TEST_KAFKA_CONSUMER_GROUP_NAME");
+
         tracing::info!(
-            "waiting 10s for pipeline-ingress to report healthy at: {}",
-            endpoint
+            message = "waiting 10s for pipeline-ingress to report healthy",
+            endpoint = %endpoint,
         );
 
         HealthcheckClient::wait_until_healthy(
@@ -92,7 +103,13 @@ impl AsyncTestContext for PipelineIngressTestContext {
             .await
             .expect("could not configure gRPC client");
 
-        PipelineIngressTestContext { grpc_client }
+        PipelineIngressTestContext {
+            grpc_client,
+            bootstrap_servers,
+            sasl_username,
+            sasl_password,
+            consumer_group_name,
+        }
     }
 }
 
@@ -101,35 +118,51 @@ impl AsyncTestContext for PipelineIngressTestContext {
 async fn test_publish_raw_log_sends_message_to_kafka(ctx: &mut PipelineIngressTestContext) {
     let event_source_id = Uuid::new_v4();
     let tenant_id = Uuid::new_v4();
+    let log_event: Bytes = "test".into();
+
+    let bootstrap_servers = ctx.bootstrap_servers.clone();
+    let sasl_username = ctx.sasl_username.clone();
+    let sasl_password = ctx.sasl_password.clone();
+    let consumer_group_name = ctx.consumer_group_name.clone();
 
     let kafka_subscriber = tokio::task::spawn(async move {
-        let kafka_consumer = Consumer::new("raw-logs").expect("could not configure kafka consumer");
+        let kafka_consumer = Consumer::new(
+            bootstrap_servers,
+            sasl_username,
+            sasl_password,
+            consumer_group_name,
+            "raw-logs".to_string(),
+        )
+        .expect("could not configure kafka consumer");
+
         let contains_expected = kafka_consumer
             .stream()
             .expect("could not subscribe to the raw-logs topic")
             .any(|res: Result<Envelope<RawLog>, ConsumerError>| async move {
-                let metadata = res.expect("error consuming message from kafka").metadata;
-                metadata.tenant_id == tenant_id && metadata.event_source_id == event_source_id
+                let envelope = res.expect("error consuming message from kafka");
+                let metadata = envelope.metadata;
+                let raw_log = envelope.inner_message;
+                let expected_log_event: Bytes = "test".into();
+                metadata.tenant_id == tenant_id
+                    && metadata.event_source_id == event_source_id
+                    && raw_log.log_event == expected_log_event
             });
 
         assert!(
-            tokio::time::timeout(Duration::from_millis(5000), contains_expected,)
+            tokio::time::timeout(Duration::from_millis(5000), contains_expected)
                 .await
                 .expect("failed to consume expected message within 5s")
         );
     });
 
-    let res = ctx
-        .grpc_client
+    ctx.grpc_client
         .publish_raw_log(PublishRawLogRequest {
             event_source_id,
             tenant_id,
-            log_event: "test".into(),
+            log_event,
         })
         .await
         .expect("received error response");
-
-    assert!(res.created_time < SystemTime::now());
 
     kafka_subscriber
         .await

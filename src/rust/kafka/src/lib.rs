@@ -36,9 +36,6 @@ use thiserror::Error;
 #[non_exhaustive]
 #[derive(Error, Debug)]
 pub enum ConfigurationError {
-    #[error("failed to retrieve value from environment variable {0}")]
-    EnvironmentError(#[from] std::env::VarError),
-
     #[error("failed to construct kafka producer {0}")]
     ProducerCreateFailed(KafkaError),
 
@@ -49,29 +46,32 @@ pub enum ConfigurationError {
     SubscriptionFailed(KafkaError),
 }
 
-fn configure() -> Result<ClientConfig, std::env::VarError> {
-    let bootstrap_servers = std::env::var("KAFKA_BOOTSTRAP_SERVERS")?;
+fn configure(
+    bootstrap_servers: String,
+    sasl_username: String,
+    sasl_password: String,
+) -> ClientConfig {
     if bootstrap_servers.starts_with("SASL_SSL") {
         // running in aws w/ ccloud
         // these configuration values were recommended by confluent cloud:
         // https://docs.confluent.io/cloud/current/client-apps/config-client.html
-        Ok(ClientConfig::new()
+        ClientConfig::new()
             .set("bootstrap.servers", bootstrap_servers)
             .set("security.protocol", "SASL_SSL")
             .set("sasl.mechanisms", "PLAIN")
-            .set("sasl.username", std::env::var("KAFKA_SASL_USERNAME")?)
-            .set("sasl.password", std::env::var("KAFKA_SASL_PASSWORD")?)
+            .set("sasl.username", sasl_username)
+            .set("sasl.password", sasl_password)
             .set("broker.address.ttl", "30000")
             .set("api.version.request", "true")
             .set("api.version.fallback.ms", "0")
             .set("broker.version.fallback", "0.10.0.0")
-            .to_owned())
+            .to_owned()
     } else {
         // running locally
-        Ok(ClientConfig::new()
+        ClientConfig::new()
             .set("bootstrap.servers", bootstrap_servers)
             .set("security.protocol", "PLAINTEXT")
-            .to_owned())
+            .to_owned()
     }
 }
 
@@ -79,8 +79,12 @@ fn configure() -> Result<ClientConfig, std::env::VarError> {
 // Producer
 //
 
-fn producer() -> Result<FutureProducer, ConfigurationError> {
-    configure()?
+fn producer(
+    bootstrap_servers: String,
+    sasl_username: String,
+    sasl_password: String,
+) -> Result<FutureProducer, ConfigurationError> {
+    configure(bootstrap_servers, sasl_username, sasl_password)
         .set("acks", "all")
         .create()
         .map_err(|e| ConfigurationError::ProducerCreateFailed(e))
@@ -109,10 +113,15 @@ where
 /// A producer publishes data to a topic. This producer serializes the data it
 /// is given before publishing.
 impl<T: SerDe> Producer<T> {
-    pub fn new(topic: &str) -> Result<Producer<T>, ConfigurationError> {
+    pub fn new(
+        bootstrap_servers: String,
+        sasl_username: String,
+        sasl_password: String,
+        topic: String,
+    ) -> Result<Producer<T>, ConfigurationError> {
         Ok(Producer {
-            producer: producer()?,
-            topic: topic.to_owned(),
+            producer: producer(bootstrap_servers, sasl_username, sasl_password)?,
+            topic,
             _t: PhantomData,
         })
     }
@@ -129,9 +138,9 @@ impl<T: SerDe> Producer<T> {
                 res.map_err(|(e, _)| -> ProducerError { e.into() })
                     .map(|(partition, offset)| {
                         tracing::trace!(
-                            "wrote message to partition {} offset {}",
-                            partition,
-                            offset
+                            message = "wrote message",
+                            partition = partition,
+                            offset = offset,
                         );
                     })
             })
@@ -143,9 +152,14 @@ impl<T: SerDe> Producer<T> {
 // Consumer
 //
 
-fn consumer() -> Result<StreamConsumer, ConfigurationError> {
-    configure()?
-        .set("group.id", std::env::var("KAFKA_CONSUMER_GROUP_NAME")?)
+fn consumer(
+    bootstrap_servers: String,
+    sasl_username: String,
+    sasl_password: String,
+    consumer_group_name: String,
+) -> Result<StreamConsumer, ConfigurationError> {
+    configure(bootstrap_servers, sasl_username, sasl_password)
+        .set("group.id", consumer_group_name)
         .set("enable.auto.commit", "true")
         .set("auto.offset.reset", "earliest")
         .set("session.timeout.ms", "45000")
@@ -179,10 +193,21 @@ where
 }
 
 impl<T: SerDe> Consumer<T> {
-    pub fn new(topic: &str) -> Result<Consumer<T>, ConfigurationError> {
+    pub fn new(
+        bootstrap_servers: String,
+        sasl_username: String,
+        sasl_password: String,
+        consumer_group_name: String,
+        topic: String,
+    ) -> Result<Consumer<T>, ConfigurationError> {
         Ok(Consumer {
-            consumer: consumer()?,
-            topic: topic.to_owned(),
+            consumer: consumer(
+                bootstrap_servers,
+                sasl_username,
+                sasl_password,
+                consumer_group_name,
+            )?,
+            topic,
             _t: PhantomData,
         })
     }
@@ -239,12 +264,27 @@ where
 
 impl<C: SerDe, P: SerDe> StreamProcessor<C, P> {
     pub fn new(
-        consumer_topic: &str,
-        producer_topic: &str,
+        bootstrap_servers: String,
+        sasl_username: String,
+        sasl_password: String,
+        consumer_group_name: String,
+        consumer_topic: String,
+        producer_topic: String,
     ) -> Result<StreamProcessor<C, P>, ConfigurationError> {
         Ok(StreamProcessor {
-            consumer: Consumer::new(consumer_topic)?,
-            producer: Producer::new(producer_topic)?,
+            consumer: Consumer::new(
+                bootstrap_servers.clone(),
+                sasl_username.clone(),
+                sasl_password.clone(),
+                consumer_group_name,
+                consumer_topic,
+            )?,
+            producer: Producer::new(
+                bootstrap_servers,
+                sasl_username,
+                sasl_password,
+                producer_topic,
+            )?,
         })
     }
 

@@ -284,12 +284,13 @@ proptest! {
 // server.
 //
 
-// We can use this global TENANT_ID for two purposes:
-//   (1) To make sure some test data made it through to our mocked
-//       application layer.
-//   (2) To send a poison pill to our mocked application layer, to
-//       trigger an error response.
+// This global TENANT_ID is used to check that some test data made it through to
+// our mocked application layer
 const TENANT_ID: &'static str = "f000b11e-b421-4ffe-87c2-a963b77fd8e9";
+
+// This global BAD_EVENT_SOURCE_ID is used as a poison pill to trigger the error
+// response in our mocked application layer
+const BAD_EVENT_SOURCE_ID: &'static str = "762d1d31-19c9-4fa5-9eee-91818997adba";
 
 //
 // api.pipeline_ingress
@@ -317,12 +318,15 @@ impl PipelineIngressApi<MockPipelineIngressApiError> for MockPipelineIngressApi 
         &self,
         request: PublishRawLogRequest,
     ) -> Result<PublishRawLogResponse, MockPipelineIngressApiError> {
-        let tenant_id = Uuid::parse_str(TENANT_ID).expect("failed to parse tenant_id");
+        let tenant_id = Uuid::parse_str(TENANT_ID).expect("failed to parse TENANT_ID");
         assert!(request.tenant_id == tenant_id);
 
-        if request.event_source_id == tenant_id {
+        let bad_event_source_id =
+            Uuid::parse_str(BAD_EVENT_SOURCE_ID).expect("failed to parse BAD_EVENT_SOURCE_ID");
+
+        if request.event_source_id == bad_event_source_id {
             // we can trigger the error response by sending a request with
-            // event_source_id set to TENANT_ID
+            // event_source_id set to BAD_EVENT_SOURCE_ID
             Err(MockPipelineIngressApiError::PublishRawLogFailed)
         } else {
             // otherwise send a success response
@@ -403,7 +407,7 @@ async fn test_publish_raw_log_returns_ok_response(ctx: &mut PipelineIngressTestC
     ctx.client
         .publish_raw_log(PublishRawLogRequest {
             event_source_id: Uuid::new_v4(),
-            tenant_id: Uuid::parse_str(TENANT_ID).expect("failed to parse tenant_id"),
+            tenant_id: Uuid::parse_str(TENANT_ID).expect("failed to parse TENANT_ID"),
             log_event: "success!".into(),
         })
         .await
@@ -418,7 +422,8 @@ async fn test_publish_raw_log_returns_err_response(ctx: &mut PipelineIngressTest
     if let Ok(res) = ctx
         .client
         .publish_raw_log(PublishRawLogRequest {
-            event_source_id: tenant_id,
+            event_source_id: Uuid::parse_str(BAD_EVENT_SOURCE_ID)
+                .expect("failed to parse BAD_EVENT_SOURCE_ID"),
             tenant_id,
             log_event: "fail!".into(),
         })
