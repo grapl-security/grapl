@@ -595,9 +595,7 @@ def main() -> None:
         pulumi.export(
             "stateful-resource-urns",
             [
-                # grapl-core contains our dgraph instances
-                nomad_grapl_core.urn,
-                # We need to re-provision after we start a new dgraph
+                # We need to re-provision
                 nomad_grapl_provision.urn,
                 dynamodb_tables.urn,
             ],

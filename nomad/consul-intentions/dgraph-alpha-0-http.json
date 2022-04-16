@@ -1,0 +1,12 @@
+{
+  "Kind": "service-intentions",
+  "Name": "dgraph-alpha-0-http",
+  "Sources": [
+    {
+      "Name": "provisioner",
+      "Action": "allow",
+      "Precedence": 9,
+      "Type": "consul"
+    }
+  ]
+}

@@ -6,6 +6,7 @@ RUN apt-get update \
     && apt-get -y install --no-install-recommends \
         bash=5.1-2+b3 \
         libstdc++6=10.2.1-6 \
+        curl=7.74.0-1.3+deb11u1 \
     && rm -rf /var/lib/apt/lists/* \
     && adduser \
         --disabled-password \
@@ -33,7 +34,7 @@ CMD ["./engagement-creator.pex"]
 ################################################################################
 FROM grapl-python-base AS provisioner-deploy
 COPY ./dist/provisioner.pex .
-CMD ["./provisioner.pex"]
+CMD [":"]
 
 # e2e tests
 ################################################################################
