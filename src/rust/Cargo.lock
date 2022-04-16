@@ -2343,7 +2343,6 @@ version = "0.1.0"
 dependencies = [
  "bytes",
  "futures",
- "proptest",
  "rdkafka",
  "rust-proto-new",
  "thiserror",
@@ -3175,7 +3174,6 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-appender",
- "tracing-futures",
  "tracing-opentelemetry 0.16.0",
  "tracing-subscriber",
  "uuid",

@@ -17,7 +17,6 @@ tokio = { version = "1.14", features = ["macros", "rt", "rt-multi-thread"] }
 thiserror = "1.0"
 tracing = "0.1"
 tracing-appender = "0.2"
-tracing-futures = "0.2"
 tracing-opentelemetry = "0.16"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 uuid = { version = "0.8", features = ["v4"] }
