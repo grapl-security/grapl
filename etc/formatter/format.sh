@@ -64,8 +64,7 @@ prettier \
     ${prettier_arg} \
     ${repo_root}/src/js/graphql_endpoint/**/*.ts \
     ${repo_root}/src/js/engagement_view/src/**/*.ts \
-    ${repo_root}/src/js/engagement_view/src/**/*.tsx \
-    ;
+    ${repo_root}/src/js/engagement_view/src/**/*.tsx &
 PIDS+=("$!")
 
 # Slightly different config for yaml
@@ -75,8 +74,7 @@ prettier \
     ${repo_root}/**/*.yml \
     ${repo_root}/**/*.yaml \
     ${repo_root}/.buildkite/**/*.yml \
-    ${repo_root}/.github/**/*.yml \
-    ;
+    ${repo_root}/.github/**/*.yml &
 PIDS+=("$!")
 
 # No config for markdown
@@ -84,8 +82,7 @@ prettier \
     ${prettier_arg} \
     --prose-wrap always \
     --print-width 80 \
-    ${repo_root}"/{,!(**/(target|*venv)/**)}**/*.md" \
-    ;
+    ${repo_root}"/{,!(**/(target|*venv)/**)}**/*.md" &
 PIDS+=("$!")
 
 # No config for markdown
@@ -93,8 +90,7 @@ prettier \
     ${prettier_arg} \
     --prose-wrap always \
     --print-width 80 \
-    ${repo_root}"/{,!(**/(target|*venv)/**)}**/*.toml" \
-    ;
+    ${repo_root}"/{,!(**/(target|*venv)/**)}**/*.toml" &
 PIDS+=("$!")
 
 # Wait for each test to complete.
