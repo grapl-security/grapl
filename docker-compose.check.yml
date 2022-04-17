@@ -14,7 +14,7 @@ x-common-variables:
 
 services:
   prettier:
-    image: grapl/format
+    image: grapl/prettier
     build:
       context: ./etc/formatter
     working_dir: /workdir/etc/formatter
