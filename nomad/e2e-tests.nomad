@@ -122,14 +122,18 @@ job "e2e-tests" {
         sidecar_service {
           proxy {
             upstreams {
-              # This is a hack, because IDK how to share locals across files
+              # This non-dynamic upstream is a hack, 
+              # because IDK how to share locals across files
               destination_name = "dgraph-alpha-0-grpc-public"
-              local_bind_port  = 9080
+              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
+              local_bind_port = 1000
             }
             upstreams {
               destination_name = "web-ui"
-              local_bind_port  = 1234
+              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
+              local_bind_port = 1001
             }
+
           }
         }
       }
@@ -205,7 +209,7 @@ EOF
         GRAPL_TEST_USER_NAME               = var.test_user_name
         GRAPL_TEST_USER_PASSWORD_SECRET_ID = var.test_user_password_secret_id
 
-        MG_ALPHAS      = "localhost:9080"
+        MG_ALPHAS      = "localhost:${NOMAD_UPSTREAM_PORT_dgraph-alpha-0-grpc-public}"
         RUST_BACKTRACE = 1
         RUST_LOG       = local.log_level
 
@@ -215,5 +219,6 @@ EOF
         KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_group_name
       }
     }
+
   }
 }

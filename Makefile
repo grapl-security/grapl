@@ -323,6 +323,7 @@ test-e2e: ## Build and run e2e tests
 .PHONY: test-with-env
 test-with-env: # (Do not include help text - not to be used directly)
 	stopGrapl() {
+		$(MAKE) dump-artifacts-local
 		# skip if KEEP_TEST_ENV is set
 		if [[ -z "${KEEP_TEST_ENV}" ]]; then
 			@echo "Tearing down test environment"
@@ -331,7 +332,6 @@ test-with-env: # (Do not include help text - not to be used directly)
 		fi
 		# Unset COMPOSE_FILE to help ensure it will be ignored with use of --file
 		unset COMPOSE_FILE
-		$(MAKE) dump-artifacts-local
 		$(MAKE) down
 	}
 	# Ensure we call stop even after test failure, and return exit code from
