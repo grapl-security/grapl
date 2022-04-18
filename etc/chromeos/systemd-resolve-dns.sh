@@ -21,8 +21,9 @@ echo "DNSStubListenerExtra=$DOCKER0_BRIDGE" | sudo tee --append /etc/systemd/res
 sudo systemctl enable systemd-resolved
 sudo systemctl restart systemd-resolved
 
-#set up static dns manually
+#set up default dns with Cloudflare DNS and a fallback to Google DNS
 sudo tee /etc/systemd/resolved.conf.d/dns_servers.conf << EOF
+# This sets up default dns. Everything will default to Cloudflare DNS, and fallback to Google DNS
 [Resolve]
 DNS=1.1.1.1 1.0.0.1 2606:4700:4700::1111 2606:4700:4700::1001
 FallbackDNS=8.8.8.8 8.8.4.4 2001:4860:4860::8888 2001:4860:4860::8844
@@ -31,6 +32,7 @@ EOF
 
 # Set up consul dns forwarding
 sudo tee /etc/systemd/resolved.conf.d/consul.conf << EOF
+# This sets up forwarding to consul dns. Anything ending with .consul will be forwarded
 [Resolve]
 DNS=127.0.0.1:8600
 DNSSEC=false
