@@ -13,7 +13,7 @@ All of these instructions assume you're in our `$GRAPL_ROOT`
 ### Provision a box on EC2
 
 - Make sure you're logged in to AWS SSO.
-- Run `./devbox/provision.sh`.
+- Run `./devbox/provision/provision.sh`.
 - (There is a minor race condition in provision.sh, you may need to run it
   twice. Don't worry, it's idempotent.)
 
