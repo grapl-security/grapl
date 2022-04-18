@@ -202,7 +202,10 @@ async fn main() -> Result<(), ConfigurationError> {
             Ok(res)
         }
         Err(err) => {
-            tracing::error!("configuration error: {}", err);
+            tracing::error!(
+                message = "configuration error",
+                error = ?err,
+            );
             Err(err)
         }
     }

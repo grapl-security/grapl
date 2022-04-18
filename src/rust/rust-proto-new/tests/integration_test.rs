@@ -429,7 +429,10 @@ async fn test_publish_raw_log_returns_err_response(ctx: &mut PipelineIngressTest
         })
         .await
     {
-        println!("expected error response, received: {:?}", res);
+        tracing::error!(
+            message = "expected error response",
+            response = ?res,
+        );
         panic!("expected error response");
     } else {
         // 👍 great success 👍
