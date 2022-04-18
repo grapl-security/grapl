@@ -248,7 +248,7 @@ install_pulumi() {
 
 install_utilities() {
     echo_banner "Install useful utilities"
-    sudo apt-get install --yes jq dnsutils tree unzip
+    sudo apt-get install --yes jq dnsutils tree unzip rsync
 }
 
 install_hashicorp_tools() {
@@ -332,6 +332,17 @@ install_cni_plugins() {
         /opt/cni/bin
 }
 
+install_firecracker() {
+    # This installs a patched version of firecracker from our dropbox
+    sudo curl --proto "=https" \
+        --tlsv1.2 \
+        --location \
+        --output /usr/bin/firecracker \
+        "https://uca407bf360bc42aeddf1f15a307.dl.dropboxusercontent.com/cd/0/get/BjrRVD0hQW7-jSPIoICZEH8DONH4yR2oL5tpNHLiiEQ8Rwl5JXYoJwVvwWk0G2a4QOLL87mrBGNDat7FVLTJYYWV5-Wa88waqlwuzMlu_UO2FEw0AYR_rzLsiqSaNgLUMtKY8QNl-e5E3eZsUECjHKeTrek27YTpOc7bfZXOfzuta1tU9fMgfPwHocH89QOH-ms/file?_download_id=7938492000756063344390311727150356805086251509862764070702265202&_notify_domain=www.dropbox.com&dl=1"
+
+    sudo chmod 0755 /usr/bin/firecracker
+}
+
 install_nomad_firecracker() {
     echo_banner "Installing Firecracker Nomad driver and dependencies"
 
@@ -349,6 +360,8 @@ install_nomad_firecracker() {
         --location \
         --output /opt/cni/bin/tc-redirect-tap \
         "https://dl.cloudsmith.io/public/grapl/thomas/raw/files/tc-redirect-tap"
+
+    sudo chmod 0755 /opt/cni/bin/tc-redirect-tap
 
 }
 
