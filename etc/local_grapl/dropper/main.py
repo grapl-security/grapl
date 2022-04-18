@@ -16,18 +16,26 @@ def process_context(process: ProcessView) -> None:
     process.get_user()
 
 
+def expand_trees(process: ProcessView):
+    process.get_created_files()
+    process.get_process_connected_to()
+    process.get_process_image()
+
+    for child in (process.get_children() or []):
+        expand_trees(child)
+
 class Dropper(Analyzer):
     def get_queries(self) -> OneOrMany[ProcessQuery]:
         second_stage_process = ProcessQuery().with_image()
         return (
             ProcessQuery()
             .with_image()
+            .with_process_connected_to()
             .with_created_files(
                 FileQuery()
-                    .with_path()
-                    .with_process_executed_from_image(second_stage_process)
+                .with_path()
+                .with_process_executed_from_image(second_stage_process)
             )
-            .with_process_connected_to()
             .with_children(second_stage_process)
         )
 
@@ -35,6 +43,7 @@ class Dropper(Analyzer):
         process_context(dropper)
         dropper.get_created_files()
         dropper.get_process_image()
+        expand_trees(dropper)
 
         output.send(
             ExecutionHit(
@@ -52,3 +61,4 @@ class Dropper(Analyzer):
                 ],
             )
         )
+
