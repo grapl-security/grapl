@@ -362,7 +362,7 @@ locals {
   # We set dns configurations to a host private IP (the docker0 bridge interface) to enable consul dns
   # Per https://github.com/hashicorp/nomad/issues/11033, we have to set networking in the nomad file because the docker
   # driver does not use the stub resolver
-  dns_servers    = [var.dns_server]
+  dns_servers = [var.dns_server]
 }
 
 job "grapl-core" {
