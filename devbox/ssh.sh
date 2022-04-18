@@ -7,7 +7,7 @@ set -euo pipefail
 # Usage:
 # ./devbox/ssh.sh
 # ./devbox/ssh.sh -- echo "hello"
-# FORWARD_PORT=4646 ./devbox/ssh.sh  # great for accessing a remote localhost!
+# FORWARD_PORTS=4646,8500,1234 ./devbox/ssh.sh
 ################################################################################
 
 THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
@@ -21,8 +21,12 @@ source "${GRAPL_DEVBOX_CONFIG}"
 ########################################
 
 declare -a PORT_FORWARDING_ARGS=()
-if [ -v FORWARD_PORT ]; then
-    PORT_FORWARDING_ARGS+=("-L" "${FORWARD_PORT}:localhost:${FORWARD_PORT}")
+if [ -v FORWARD_PORTS ]; then
+    # FORWARD_PORTS_ARRAY = FORWARD_PORTS.split(",")
+    IFS="," read -r -a FORWARD_PORTS_ARRAY <<< "$FORWARD_PORTS"
+    for port in "${FORWARD_PORTS_ARRAY[@]}"; do
+        PORT_FORWARDING_ARGS+=("-L" "${port}:localhost:${port}")
+    done
 fi
 
 # Each of these keys is set in the config by devbox/provision/provision.sh
