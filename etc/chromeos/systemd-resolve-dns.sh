@@ -2,8 +2,6 @@
 
 set -euo pipefail
 
-# WARNING: This is not idempotent (yet). Only run this once
-
 # check systemd version
 SYSTEMD_VERSION=$(systemctl --version | head --lines 1 | awk '{ print $2}')
 if [[ $SYSTEMD_VERSION -lt 246 ]]; then
@@ -16,33 +14,16 @@ fi
 # Since systemd-resolved listens on 127.0.0.53, we're going to also have it listen on the docker0 bridge.
 # This will usually resolve to 172.17.0.1
 DOCKER0_BRIDGE=$(docker network inspect bridge --format='{{(index .IPAM.Config 0).Gateway}}')
-echo "DNSStubListenerExtra=$DOCKER0_BRIDGE" | sudo tee --append /etc/systemd/resolved.conf
-
-sudo systemctl enable systemd-resolved
-sudo systemctl restart systemd-resolved
-
-#set up default dns with Cloudflare DNS and a fallback to Google DNS
-sudo tee /etc/systemd/resolved.conf.d/dns_servers.conf << EOF
-# This sets up default dns. Everything will default to Cloudflare DNS, and fallback to Google DNS
-[Resolve]
-DNS=1.1.1.1 1.0.0.1 2606:4700:4700::1111 2606:4700:4700::1001
-FallbackDNS=8.8.8.8 8.8.4.4 2001:4860:4860::8888 2001:4860:4860::8844
-Domains=~.
-EOF
 
 # Set up consul dns forwarding
 sudo tee /etc/systemd/resolved.conf.d/consul.conf << EOF
-# This sets up forwarding to consul dns. Anything ending with .consul will be forwarded
+# This forwards all requests to our extra stub listener to Consul DNS.
 [Resolve]
 DNS=127.0.0.1:8600
 DNSSEC=false
-Domains=~consul
+Domains=~.
+DNSStubListenerExtra=${DOCKER0_BRIDGE}
 EOF
-
-# backup the old resolv.conf
-sudo mv /etc/resolv.conf /etc/resolv.old.conf
-# Switch resolv.conf to use systemd-resolve's stub
-sudo ln -s /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 
 sudo systemctl enable systemd-resolved
 sudo systemctl restart systemd-resolved
