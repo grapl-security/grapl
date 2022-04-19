@@ -1,3 +1,3 @@
 mod outbound;
 
-pub use outbound::generate_outbound_connection_subgraph;
+pub(crate) use outbound::generate_outbound_connection_subgraph;

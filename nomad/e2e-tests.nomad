@@ -24,11 +24,6 @@ variable "analyzer_bucket" {
   description = "The s3 bucket which the analyzer stores items to analyze"
 }
 
-variable "sysmon_generator_queue" {
-  type        = string
-  description = "The URL of the SQS queue for Sysmon logs"
-}
-
 variable "sysmon_log_bucket" {
   type        = string
   description = "The name of the S3 bucket to which Sysmon logs should be uploaded"
@@ -52,7 +47,7 @@ With local-grapl, we have to inject:
 - an access key
 - a secret key
 With prod, these are all taken from the EC2 Instance Metadata in prod.
-We have to provide a default value in prod; otherwise you can end up with a 
+We have to provide a default value in prod; otherwise you can end up with a
 weird nomad state parse error.
 EOF
 }
@@ -134,7 +129,7 @@ job "e2e-tests" {
         sidecar_service {
           proxy {
             upstreams {
-              # This non-dynamic upstream is a hack, 
+              # This non-dynamic upstream is a hack,
               # because IDK how to share locals across files
               destination_name = "dgraph-alpha-0-grpc-public"
               # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
@@ -176,9 +171,8 @@ EOF
         GRAPL_REGION = var.aws_region
         STACK_NAME   = var.stack_name
 
-        GRAPL_ANALYZERS_BUCKET       = var.analyzer_bucket
-        GRAPL_SYSMON_GENERATOR_QUEUE = var.sysmon_generator_queue
-        GRAPL_SYSMON_LOG_BUCKET      = var.sysmon_log_bucket
+        GRAPL_ANALYZERS_BUCKET  = var.analyzer_bucket
+        GRAPL_SYSMON_LOG_BUCKET = var.sysmon_log_bucket
 
         # These are needed due to graplctl's idempotency checks
         GRAPL_SCHEMA_TABLE            = var.schema_table_name

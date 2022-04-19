@@ -155,7 +155,6 @@ group "rust-services" {
     "node-identifier",
     "node-identifier-retry",
     "organization-management",
-    "osquery-generator",
     "pipeline-ingress",
     "plugin-bootstrap",
     "plugin-registry",
@@ -265,7 +264,7 @@ target "_rust-base" {
   inherits = ["_grapl-base"]
   context  = "src"
 
-  # Additional named contexts: 
+  # Additional named contexts:
   # https://www.docker.com/blog/dockerfiles-now-support-multiple-build-contexts/
   contexts = {
     dist-ctx = "dist"
@@ -330,14 +329,6 @@ target "organization-management" {
   target   = "organization-management-deploy"
   tags = [
     upstream_aware_tag("organization-management")
-  ]
-}
-
-target "osquery-generator" {
-  inherits = ["_rust-base"]
-  target   = "osquery-generator-deploy"
-  tags = [
-    upstream_aware_tag("osquery-generator")
   ]
 }
 

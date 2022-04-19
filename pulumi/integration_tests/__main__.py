@@ -114,7 +114,6 @@ def main() -> None:
         "schema_properties_table_name": grapl_stack.schema_properties_table_name,
         "sysmon_log_bucket": grapl_stack.sysmon_log_bucket,
         "schema_table_name": grapl_stack.schema_table_name,
-        "sysmon_generator_queue": grapl_stack.sysmon_generator_queue,
         "test_user_name": grapl_stack.test_user_name,
         "test_user_password_secret_id": grapl_stack.test_user_password_secret_id,
     }
@@ -195,7 +194,6 @@ class GraplStack:
         self.redis_endpoint = require_str("redis-endpoint")
         self.schema_properties_table_name = require_str("schema-properties-table")
         self.schema_table_name = require_str("schema-table")
-        self.sysmon_generator_queue = require_str("sysmon-generator-queue")
         self.sysmon_log_bucket = require_str("sysmon-log-bucket")
         self.test_user_name = require_str("test-user-name")
 

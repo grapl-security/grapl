@@ -2,7 +2,14 @@ use derive_dynamic_node::{
     GraplSessionId,
     NodeDescription,
 };
-use rust_proto::graph_descriptions::*;
+use rust_proto_new::graplinc::grapl::api::graph::v1beta1::{
+    IdStrategy,
+    ImmutableUintProp,
+    NodeDescription,
+    NodeProperty,
+    Session,
+    Strategy,
+};
 
 #[derive(NodeDescription, GraplSessionId)]
 pub struct SpecialProcess {
@@ -39,13 +46,10 @@ fn test_session() {
         ImmutableUintProp { prop: 3 }
     );
 
-    let strategy = special_proc.get_dynamic_node().id_strategy[0]
-        .strategy
-        .as_ref()
-        .unwrap();
+    let strategy = &special_proc.get_dynamic_node().id_strategy[0].strategy;
 
     let strategy = match strategy {
-        rust_proto::graph_descriptions::id_strategy::Strategy::Session(strategy) => strategy,
+        Strategy::Session(strategy) => strategy,
         _ => panic!("Expected session"),
     };
     assert_eq!(strategy.create_time, 0u64);

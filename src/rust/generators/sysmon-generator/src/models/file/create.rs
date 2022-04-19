@@ -6,7 +6,7 @@ use endpoint_plugin::{
     IProcessNode,
     ProcessNode,
 };
-use rust_proto::graph_descriptions::*;
+use rust_proto_new::graplinc::grapl::api::graph::v1beta1::GraphDescription;
 use sysmon_parser::{
     event_data::FileCreateEventData,
     System,
@@ -27,7 +27,7 @@ use crate::{
 /// * A creator `Process` node - denotes the process that created the file
 /// * A subject `File` node - the file that is created as part of this event
 #[tracing::instrument]
-pub fn generate_file_create_subgraph(
+pub(crate) fn generate_file_create_subgraph(
     system: &System,
     event_data: &FileCreateEventData<'_>,
 ) -> Result<GraphDescription, SysmonGeneratorError> {
