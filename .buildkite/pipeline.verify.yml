@@ -52,6 +52,7 @@ steps:
           - make lint-proto-format
 
       - label: ":large_blue_square::face_with_symbols_on_mouth: Protobuf Breaking Changes"
+        soft_fail: true
         command:
           - make lint-proto-breaking
 
