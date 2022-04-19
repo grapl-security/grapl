@@ -118,6 +118,7 @@ job "integration-tests-new" {
 
         KAFKA_BOOTSTRAP_SERVERS = var.kafka_bootstrap_servers
 
+        PIPELINE_INGRESS_CLIENT_ADDRESS                 = "http://${NOMAD_UPSTREAM_ADDR_pipeline_ingress}"
         PIPELINE_INGRESS_KAFKA_SASL_USERNAME            = var.pipeline_ingress_kafka_sasl_username
         PIPELINE_INGRESS_KAFKA_SASL_PASSWORD            = var.pipeline_ingress_kafka_sasl_password
         PIPELINE_INGRESS_TEST_KAFKA_CONSUMER_GROUP_NAME = "pipeline-ingress-test"

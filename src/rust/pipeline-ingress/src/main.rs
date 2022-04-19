@@ -119,10 +119,7 @@ enum ConfigurationError {
 
 #[tracing::instrument(err)]
 async fn handler() -> Result<(), ConfigurationError> {
-    let socket_address = format!(
-        "0.0.0.0:{}",
-        std::env::var("NOMAD_PORT_pipeline-ingress-port")?
-    );
+    let socket_address = std::env::var("PIPELINE_INGRESS_BIND_ADDRESS")?;
 
     let healthcheck_polling_interval_ms =
         std::env::var("PIPELINE_INGRESS_HEALTHCHECK_POLLING_INTERVAL_MS")?.parse()?;

@@ -72,11 +72,8 @@ impl AsyncTestContext for PipelineIngressTestContext {
 
         tracing::info!("logger configured successfully");
 
-        let endpoint = format!(
-            "http://{}",
-            std::env::var("NOMAD_UPSTREAM_ADDR_pipeline-ingress")
-                .expect("missing environment variable NOMAD_UPSTREAM_ADDR_pipeline-ingress")
-        );
+        let endpoint = std::env::var("PIPELINE_INGRESS_CLIENT_ADDRESS")
+            .expect("missing environment variable PIPELINE_INGRESS_CLIENT_ADDRESS");
 
         let bootstrap_servers = std::env::var("KAFKA_BOOTSTRAP_SERVERS")
             .expect("missing environment variable KAFKA_BOOTSTRAP_SERVERS");
