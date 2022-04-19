@@ -1255,7 +1255,6 @@ job "grapl-core" {
       env {
         AWS_REGION                                       = var.aws_region
         NOMAD_SERVICE_ADDRESS                            = "${attr.unique.network.ip-address}:4646"
-        PIPELINE_INGRESS_BIND_ADDRESS                    = "0.0.0.0:${NOMAD_PORT_pipeline-ingress-port}"
         RUST_BACKTRACE                                   = local.rust_backtrace
         RUST_LOG                                         = var.rust_log
         PIPELINE_INGRESS_HEALTHCHECK_POLLING_INTERVAL_MS = var.pipeline_ingress_healthcheck_polling_interval_ms

@@ -74,8 +74,8 @@ impl AsyncTestContext for PipelineIngressTestContext {
 
         let endpoint = format!(
             "http://{}",
-            std::env::var("PIPELINE_INGRESS_BIND_ADDRESS")
-                .expect("missing environment variable PIPELINE_INGRESS_BIND_ADDRESS")
+            std::env::var("NOMAD_UPSTREAM_ADDR_pipeline-ingress")
+                .expect("missing environment variable NOMAD_UPSTREAM_ADDR_pipeline-ingress")
         );
 
         let bootstrap_servers = std::env::var("KAFKA_BOOTSTRAP_SERVERS")
