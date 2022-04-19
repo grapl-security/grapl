@@ -336,7 +336,10 @@ install_firecracker() {
     echo_banner "Installing Firecracker binary"
 
     repo="firecracker-microvm/firecracker"
-    version=$(get_latest_release "${repo}")
+    # v1.0.0 doesn't currently work with the nomad firecracker plugin due to a breaking change. Instead we're hardcoding
+    # the version for now. TODO switch to grabbing the latest version once the nomad plugin is updated
+    # version=$(get_latest_release "${repo}")
+    version="v0.25.2"
 
     url_prefix="https://github.com/${repo}/releases/download/${version}"
 
