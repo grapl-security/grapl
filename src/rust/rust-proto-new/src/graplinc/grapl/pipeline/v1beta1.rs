@@ -49,6 +49,29 @@ impl Metadata {
             event_source_id,
         }
     }
+
+    pub fn create_from(other: Metadata) -> Self {
+        let now = SystemTime::now();
+        Metadata::new(
+            other.tenant_id,
+            other.trace_id,
+            other.retry_count,
+            now,
+            now,
+            other.event_source_id,
+        )
+    }
+
+    pub fn retry(other: Metadata) -> Self {
+        Metadata::new(
+            other.tenant_id,
+            other.trace_id,
+            other.retry_count + 1,
+            other.created_time,
+            SystemTime::now(),
+            other.event_source_id,
+        )
+    }
 }
 
 impl TryFrom<MetadataProto> for Metadata {

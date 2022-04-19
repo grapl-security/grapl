@@ -294,7 +294,7 @@ impl<C: SerDe, P: SerDe> StreamProcessor<C, P> {
         event_handler: F,
     ) -> Result<impl Stream<Item = Result<(), StreamProcessorError>> + 'a, ConfigurationError>
     where
-        F: FnMut(Result<C, StreamProcessorError>) -> Result<P, E> + 'a,
+        F: FnMut(Result<C, StreamProcessorError>) -> Result<Option<P>, E> + 'a,
         E: Display,
     {
         Ok(self
@@ -304,13 +304,18 @@ impl<C: SerDe, P: SerDe> StreamProcessor<C, P> {
             .map(event_handler)
             .map_err(|e| StreamProcessorError::EventHandlerError(e.to_string()))
             .and_then(move |msg| async move {
-                // The underlying FutureProducer::clone() call is inexpensive,
-                // so I think it's acceptable here.
-                self.producer
-                    .clone()
-                    .send(msg)
-                    .map_err(StreamProcessorError::from)
-                    .await
+                match msg {
+                    Some(msg) => {
+                        // The underlying FutureProducer::clone() call is inexpensive,
+                        // so I think it's acceptable here.
+                        self.producer
+                            .clone()
+                            .send(msg)
+                            .map_err(StreamProcessorError::from)
+                            .await
+                    }
+                    None => Ok(()),
+                }
             }))
     }
 }
