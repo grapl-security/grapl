@@ -64,6 +64,7 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "node-identifier-retry": builder.build_with_tag("node-identifier-retry"),
         "organization-management": builder.build_with_tag("organization-management"),
         "osquery-generator": builder.build_with_tag("osquery-generator"),
+        "pipeline-ingress": builder.build_with_tag("pipeline-ingress"),
         "plugin-bootstrap": builder.build_with_tag("plugin-bootstrap"),
         "plugin-registry": builder.build_with_tag("plugin-registry"),
         "plugin-work-queue": builder.build_with_tag("plugin-work-queue"),
@@ -135,6 +136,11 @@ def main() -> None:
 
     dynamodb_tables = dynamodb.DynamoDB()
 
+    kafka = Kafka(
+        "kafka",
+        confluent_environment_name=pulumi_config.require("confluent-environment-name"),
+    )
+
     # TODO: Create these emitters inside the service abstraction if nothing
     # else uses them (or perhaps even if something else *does* use them)
     sysmon_log_emitter = emitter.EventEmitter("sysmon-log")
@@ -185,6 +191,19 @@ def main() -> None:
     model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)
     pulumi.export("model-plugins-bucket", model_plugins_bucket.bucket)
 
+    pipeline_ingress_healthcheck_polling_interval_ms = "5000"
+    pulumi.export(
+        "pipeline-ingress-healthcheck-polling-interval-ms",
+        pipeline_ingress_healthcheck_polling_interval_ms,
+    )
+    pipeline_ingress_kafka_consumer_group_name = kafka.consumer_group(
+        "pipeline-ingress"
+    )
+    pulumi.export(
+        "pipeline-ingress-kafka-consumer-group-name",
+        pipeline_ingress_kafka_consumer_group_name,
+    )
+
     plugins_bucket = Bucket("plugins-bucket", sse=True)
     pulumi.export("plugins-bucket", plugins_bucket.bucket)
 
@@ -233,12 +252,15 @@ def main() -> None:
         engagement_creator_queue=engagement_creator_queue.main_queue_url,
         graph_merger_queue=graph_merger_queue.main_queue_url,
         graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
+        kafka_bootstrap_servers=kafka.bootstrap_servers(),
         model_plugins_bucket=model_plugins_bucket.bucket,
         node_identifier_queue=node_identifier_queue.main_queue_url,
         node_identifier_dead_letter_queue=node_identifier_queue.dead_letter_queue_url,
         node_identifier_retry_queue=node_identifier_queue.retry_queue_url,
         osquery_generator_queue=osquery_generator_queue.main_queue_url,
         osquery_generator_dead_letter_queue=osquery_generator_queue.dead_letter_queue_url,
+        pipeline_ingress_healthcheck_polling_interval_ms=pipeline_ingress_healthcheck_polling_interval_ms,
+        pipeline_ingress_kafka_consumer_group_name=pipeline_ingress_kafka_consumer_group_name,
         py_log_level=py_log_level,
         rust_log=rust_log_levels,
         schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
@@ -277,13 +299,10 @@ def main() -> None:
 
     nomad_grapl_core_timeout = "5m"
 
-    kafka = Kafka(
-        "kafka",
-        confluent_environment_name=pulumi_config.require("confluent-environment-name"),
-    )
+    pulumi.export("kafka-bootstrap-servers", kafka.bootstrap_servers())
+
     e2e_service_credentials = kafka.service_credentials(service_name="e2e-test-runner")
 
-    pulumi.export("kafka-bootstrap-servers", kafka.bootstrap_servers())
     pulumi.export(
         "kafka-e2e-sasl-username", e2e_service_credentials.apply(lambda c: c.api_key)
     )
@@ -292,6 +311,17 @@ def main() -> None:
     )
     pulumi.export(
         "kafka-e2e-consumer-group-name", kafka.consumer_group("e2e-test-runner")
+    )
+
+    pipeline_ingress_kafka_credentials = kafka.service_credentials("pipeline-ingress")
+
+    pulumi.export(
+        "pipeline-ingress-kafka-sasl-username",
+        pipeline_ingress_kafka_credentials.api_key,
+    )
+    pulumi.export(
+        "pipeline-ingress-kafka-sasl-password",
+        pipeline_ingress_kafka_credentials.api_secret,
     )
 
     ConsulIntentions(
@@ -394,6 +424,8 @@ def main() -> None:
             organization_management_db_port=str(organization_management_db.port),
             organization_management_db_username=organization_management_db.username,
             organization_management_db_password=organization_management_db.password,
+            pipeline_ingress_kafka_sasl_username="fake",
+            pipeline_ingress_kafka_sasl_password="fake",
             plugin_registry_db_hostname=plugin_registry_db.hostname,
             plugin_registry_db_port=str(plugin_registry_db.port),
             plugin_registry_db_username=plugin_registry_db.username,
@@ -531,7 +563,6 @@ def main() -> None:
             plugin_work_queue_postgres.password(),
         )
 
-        pulumi.export("kafka-bootstrap-servers", kafka.bootstrap_servers())
         pulumi.export("redis-endpoint", cache.endpoint)
 
         prod_grapl_core_vars: Final[NomadVars] = dict(
@@ -543,6 +574,8 @@ def main() -> None:
             ),
             organization_management_db_username=organization_management_postgres.username(),
             organization_management_db_password=organization_management_postgres.password(),
+            pipeline_ingress_kafka_sasl_username=pipeline_ingress_kafka_credentials.api_key,
+            pipeline_ingress_kafka_sasl_password=pipeline_ingress_kafka_credentials.api_secret,
             plugin_registry_db_hostname=plugin_registry_postgres.host(),
             plugin_registry_db_port=plugin_registry_postgres.port().apply(str),
             plugin_registry_db_username=plugin_registry_postgres.username(),

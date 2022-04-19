@@ -22,7 +22,7 @@ With local-grapl, we have to inject:
 - an access key
 - a secret key
 With prod, these are all taken from the EC2 Instance Metadata in prod.
-We have to provide a default value in prod; otherwise you can end up with a 
+We have to provide a default value in prod; otherwise you can end up with a
 weird nomad state parse error.
 EOF
 }
@@ -34,7 +34,7 @@ variable "redis_endpoint" {
 
 variable "kafka_bootstrap_servers" {
   type        = string
-  description = "Comma separated host:port pairs specifying which brokers clients should connect to initially."
+  description = "The URL(s) (possibly comma-separated) of the Kafka bootstrap servers."
 }
 
 variable "kafka_sasl_username" {

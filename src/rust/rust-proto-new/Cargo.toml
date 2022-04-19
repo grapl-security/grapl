@@ -7,16 +7,22 @@ description = "Wrapper library for Grapl's protocol buffers"
 license = "MIT"
 
 [dependencies]
-bytes = "1.1.0"
-futures = "0.3.0"
-prost = "0.9.0"
-prost-types = "0.9.0"
-thiserror = "1.0.30"
-tonic = "0.6.1"
-uuid = { version = "0.8.2", features = ["v4"] }
+bytes = "1.1"
+futures = "0.3"
+prost = "0.10"
+prost-types = "0.10"
+thiserror = "1.0"
+tokio = { version = "1.14", features = ["rt", "time"] }
+tokio-stream = { version = "0.1.8", features = ["net"] }
+tonic = { version = "0.7", features = ["default", "compression"] }
+tonic-health = "0.6"
+tracing = "0.1"
+uuid = { version = "0.8", features = ["v4"] }
 
 [build-dependencies]
-tonic-build = { version = "0.6.0", features = ["prost"] }
+tonic-build = { version = "0.7", features = ["default", "compression"] }
 
 [dev-dependencies]
-proptest = "1.0.0"
+proptest = "1.0"
+tokio = { version = "1.14", features = ["macros", "rt"] }
+test-context = "0.1"

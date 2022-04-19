@@ -40,6 +40,7 @@ endif
 DOCKER_BUILDX_BAKE_HCL := docker buildx bake --file=docker-bake.hcl $(buildx_builder_args)
 
 COMPOSE_PROJECT_INTEGRATION_TESTS := grapl-integration_tests
+COMPOSE_PROJECT_INTEGRATION_TESTS_NEW := grapl-integration_tests_new
 COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
 
 # All the services defined in the docker-compose.check.yml file are
@@ -173,7 +174,7 @@ build-engagement-view: ## Build website assets to include in grapl-web-ui
 	cp -r \
 		"src/js/engagement_view/build/." \
 		"$${TARGET_FRONTEND_DIR}"
-		
+
 
 .PHONY: build-grapl-service-prerequisites
 
@@ -206,6 +207,11 @@ build-test-e2e: build-e2e-pex-files
 build-test-integration:
 	@echo "--- Building integration test images"
 	docker buildx bake integration-tests $(buildx_builder_args)
+
+.PHONY: build-test-integration-new
+build-test-integration-new:
+	@echo "--- Building \"new\" integration test images"
+	docker buildx bake integration-tests-new $(buildx_builder_args)
 
 ########################################################################
 
@@ -310,6 +316,13 @@ test-integration: build-test-integration
 test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS)
 test-integration: ## Build and run integration tests
 	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh integration-tests 9"
+
+.PHONY: test-integration-new
+test-integration-new: build-local-infrastructure
+test-integration-new: build-test-integration-new
+test-integration-new: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS_NEW)
+test-integration-new: ## Build and run "new" integration tests
+	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh integration-tests-new 9"
 
 .PHONY: test-grapl-template-generator
 test-grapl-template-generator:  # Test that the Grapl Template Generator spits out something compilable.
@@ -502,7 +515,7 @@ stop: ## docker-compose stop - stops (but preserves) the containers
 
 # This is a convenience target for our frontend engineers, to make the dev loop
 # slightly less arduous for grapl-web-ui/engagement-view development.
-# It will *rebuild* the JS/Rust grapl-web-ui dependences, and then 
+# It will *rebuild* the JS/Rust grapl-web-ui dependences, and then
 # restart a currently-running `make up` web ui allocation, which will then
 # retrieve the latest, newly-rebuilt Docker container.
 #
@@ -657,7 +670,7 @@ dist/firecracker_kernel.tar.gz: firecracker/kernel/build.sh | dist
 # TODO: Would be nice to be able to specify the input file prerequisites of
 # this target and make non-PHONY. It's currently PHONY because otherwise,
 # rebuilds would only occur if the dist/plugin-bootstrap-init dir were deleted.
-# NOTE: While this target is PHONY, it *does* represent a real directory in 
+# NOTE: While this target is PHONY, it *does* represent a real directory in
 # dist/
 .PHONY: dist/plugin-bootstrap-init
 dist/plugin-bootstrap-init: | dist  ## Build the Plugin Bootstrap Init (+ associated files) and copy it to dist/

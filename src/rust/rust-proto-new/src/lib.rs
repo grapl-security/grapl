@@ -190,7 +190,7 @@ pub enum SerDeError {
     MissingField(&'static str),
 }
 
-pub trait SerDe: type_url::TypeUrl + Clone {
+pub trait SerDe: type_url::TypeUrl + Clone + std::fmt::Debug {
     fn serialize(self) -> Result<Bytes, SerDeError>;
 
     fn deserialize<B>(buf: B) -> Result<Self, SerDeError>

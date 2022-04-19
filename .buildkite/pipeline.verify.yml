@@ -52,6 +52,7 @@ steps:
           - make lint-proto-format
 
       - label: ":large_blue_square::face_with_symbols_on_mouth: Protobuf Breaking Changes"
+        soft_fail: true
         command:
           - make lint-proto-breaking
 
@@ -234,6 +235,21 @@ steps:
       - "test_artifacts/**/*"
       # https://github.com/grapl-security/issue-tracker/issues/894
       - "src/js/engagement_view/source_map_explorer_result.html"
+
+  - label: ':hammer: "New" Integration Tests'
+    command:
+      - make test-integration-new
+    plugins:
+      - grapl-security/vault-login#v0.1.2
+      - grapl-security/vault-env#v0.1.0:
+          secrets:
+            - grapl/TOOLCHAIN_AUTH_TOKEN
+    env:
+      GRAPL_LOG_LEVEL: "DEBUG"
+    agents:
+      queue: "beefy"
+    artifact_paths:
+      - "test_artifacts/**/*"
 
   - label: ":hammer: E2E Tests"
     command:

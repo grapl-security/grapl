@@ -24,7 +24,7 @@ With local-grapl, we have to inject:
 - an access key
 - a secret key
 With prod, these are all taken from the EC2 Instance Metadata in prod.
-We have to provide a default value in prod; otherwise you can end up with a 
+We have to provide a default value in prod; otherwise you can end up with a
 weird nomad state parse error.
 EOF
 }
@@ -79,6 +79,11 @@ variable "dgraph_shards" {
 
 variable "engagement_creator_queue" {
   type = string
+}
+
+variable "kafka_bootstrap_servers" {
+  type        = string
+  description = "The URL(s) (possibly comma-separated) of the Kafka bootstrap servers."
 }
 
 variable "redis_endpoint" {
@@ -150,6 +155,26 @@ variable "organization_management_db_username" {
 variable "organization_management_db_password" {
   type        = string
   description = "What is the password for the organization management database?"
+}
+
+variable "pipeline_ingress_healthcheck_polling_interval_ms" {
+  type        = string
+  description = "The amount of time to wait between each healthcheck execution."
+}
+
+variable "pipeline_ingress_kafka_consumer_group_name" {
+  type        = string
+  description = "The consumer group for pipeline ingress consumers to join."
+}
+
+variable "pipeline_ingress_kafka_sasl_username" {
+  type        = string
+  description = "The username to authenticate with Confluent Cloud cluster."
+}
+
+variable "pipeline_ingress_kafka_sasl_password" {
+  type        = string
+  description = "The password to authenticate with Confluent Cloud cluster."
 }
 
 variable "plugin_work_queue_db_hostname" {
@@ -1199,6 +1224,54 @@ job "grapl-core" {
     service {
       name = "organization-management"
       port = "organization-management-port"
+      connect {
+        sidecar_service {
+        }
+      }
+    }
+  }
+
+  group "pipeline-ingress" {
+    network {
+      mode = "bridge"
+      port "pipeline-ingress-port" {
+      }
+    }
+
+    task "pipeline-ingress" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["pipeline-ingress"]
+        ports = ["pipeline-ingress-port"]
+      }
+
+      template {
+        data        = var.aws_env_vars_for_local
+        destination = "pipeline-ingress-env"
+        env         = true
+      }
+
+      env {
+        AWS_REGION                                       = var.aws_region
+        NOMAD_SERVICE_ADDRESS                            = "${attr.unique.network.ip-address}:4646"
+        PIPELINE_INGRESS_BIND_ADDRESS                    = "0.0.0.0:${NOMAD_PORT_pipeline-ingress-port}"
+        RUST_BACKTRACE                                   = local.rust_backtrace
+        RUST_LOG                                         = var.rust_log
+        PIPELINE_INGRESS_HEALTHCHECK_POLLING_INTERVAL_MS = var.pipeline_ingress_healthcheck_polling_interval_ms
+        KAFKA_BOOTSTRAP_SERVERS                          = var.kafka_bootstrap_servers
+        KAFKA_CONSUMER_GROUP_NAME                        = var.pipeline_ingress_kafka_consumer_group_name
+        KAFKA_SASL_USERNAME                              = var.pipeline_ingress_kafka_sasl_username
+        KAFKA_SASL_PASSWORD                              = var.pipeline_ingress_kafka_sasl_password
+
+        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
+        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
+      }
+    }
+
+    service {
+      name = "pipeline-ingress"
+      port = "pipeline-ingress-port"
       connect {
         sidecar_service {
         }
