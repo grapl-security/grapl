@@ -95,6 +95,12 @@ job "integration-tests-new" {
               # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
               local_bind_port = 1001
             }
+
+            upstreams {
+              destination_name = "sysmon-generator"
+              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
+              local_bind_port = 1002
+            }
           }
         }
       }

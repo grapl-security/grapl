@@ -7,7 +7,6 @@ from typing import List, Optional
 # Models the order of messages flowing through the pipeline.
 PRIORITIZATION = [
     "sysmon-generator.stdout",
-    "osquery-generator.stdout",
     "node-identifier.stdout",
     "node-identifier-retry.stdout",
     "graph-merger.stdout",

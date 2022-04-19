@@ -2,7 +2,12 @@ use derive_dynamic_node::{
     GraplStaticId,
     NodeDescription,
 };
-use rust_proto::graph_descriptions::*;
+use rust_proto_new::graplinc::grapl::api::graph::v1beta1::{
+    IdStrategy,
+    NodeDescription,
+    NodeProperty,
+    Static,
+};
 
 #[derive(NodeDescription, GraplStaticId)]
 pub struct IpAddress {

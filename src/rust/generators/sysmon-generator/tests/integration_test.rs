@@ -14,14 +14,19 @@ use opentelemetry::{
 };
 use rust_proto_new::{
     graplinc::grapl::{
-        api::pipeline_ingress::v1beta1::{
-            client::PipelineIngressClient,
-            PublishRawLogRequest,
+        api::{
+            graph::v1beta1::{
+                GraphDescription,
+                ImmutableUintProp,
+                NodeDescription,
+                Property,
+            },
+            pipeline_ingress::v1beta1::{
+                client::PipelineIngressClient,
+                PublishRawLogRequest,
+            },
         },
-        pipeline::{
-            v1beta1::RawLog,
-            v1beta2::Envelope,
-        },
+        pipeline::v1beta2::Envelope,
     },
     protocol::healthcheck::client::HealthcheckClient,
 };
@@ -38,8 +43,20 @@ use tracing_subscriber::{
 };
 use uuid::Uuid;
 
-struct PipelineIngressTestContext {
-    grpc_client: PipelineIngressClient,
+fn find_node<'a>(
+    graph: &'a GraphDescription,
+    o_p_name: &str,
+    o_p_value: Property,
+) -> Option<&'a NodeDescription> {
+    graph.nodes.values().find(|n| {
+        n.properties.iter().any(|(p_name, p_value)| {
+            p_name.as_str() == o_p_name && p_value.property.clone() == o_p_value
+        })
+    })
+}
+
+struct SysmonGeneratorTestContext {
+    pipeline_ingress_client: PipelineIngressClient,
     bootstrap_servers: String,
     sasl_username: String,
     sasl_password: String,
@@ -48,7 +65,7 @@ struct PipelineIngressTestContext {
 }
 
 #[async_trait::async_trait]
-impl AsyncTestContext for PipelineIngressTestContext {
+impl AsyncTestContext for SysmonGeneratorTestContext {
     async fn setup() -> Self {
         let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
 
@@ -60,7 +77,7 @@ impl AsyncTestContext for PipelineIngressTestContext {
         // initialize tracing layer
         global::set_text_map_propagator(TraceContextPropagator::new());
         let tracer = opentelemetry_jaeger::new_pipeline()
-            .with_service_name("pipeline-ingress-integration-tests")
+            .with_service_name("sysmon-generator-integration-tests")
             .install_batch(opentelemetry::runtime::Tokio)
             .expect("could not configure tracer");
 
@@ -101,12 +118,12 @@ impl AsyncTestContext for PipelineIngressTestContext {
         .expect("pipeline-ingress never reported healthy");
 
         tracing::info!("connecting pipeline-ingress gRPC client");
-        let grpc_client = PipelineIngressClient::connect(endpoint.clone())
+        let pipeline_ingress_client = PipelineIngressClient::connect(endpoint.clone())
             .await
             .expect("could not configure gRPC client");
 
-        PipelineIngressTestContext {
-            grpc_client,
+        SysmonGeneratorTestContext {
+            pipeline_ingress_client,
             bootstrap_servers,
             sasl_username,
             sasl_password,
@@ -116,12 +133,11 @@ impl AsyncTestContext for PipelineIngressTestContext {
     }
 }
 
-#[test_context(PipelineIngressTestContext)]
+#[test_context(SysmonGeneratorTestContext)]
 #[tokio::test]
-async fn test_publish_raw_log_sends_message_to_kafka(ctx: &mut PipelineIngressTestContext) {
+async fn test_sysmon_event_produces_expected_graph(ctx: &mut SysmonGeneratorTestContext) {
     let event_source_id = Uuid::new_v4();
     let tenant_id = Uuid::new_v4();
-    let log_event: Bytes = "test".into();
 
     let bootstrap_servers = ctx.bootstrap_servers.clone();
     let sasl_username = ctx.sasl_username.clone();
@@ -134,7 +150,7 @@ async fn test_publish_raw_log_sends_message_to_kafka(ctx: &mut PipelineIngressTe
         sasl_username,
         sasl_password,
         consumer_group_name,
-        "raw-logs".to_string(),
+        "generated-graphs".to_string(),
     )
     .expect("could not configure kafka consumer");
 
@@ -146,25 +162,49 @@ async fn test_publish_raw_log_sends_message_to_kafka(ctx: &mut PipelineIngressTe
     let kafka_subscriber = tokio::task::spawn(async move {
         let stream = kafka_consumer
             .stream()
-            .expect("could not subscribe to the raw-logs topic");
+            .expect("could not subscribe to the generated-graphs topic");
 
         // notify the consumer that we're ready to receive messages
         tx.send(())
             .expect("failed to notify sender that consumer is consuming");
 
-        let contains_expected =
-            stream.any(|res: Result<Envelope<RawLog>, ConsumerError>| async move {
+        let contains_expected = stream.any(
+            |res: Result<Envelope<GraphDescription>, ConsumerError>| async move {
                 let envelope = res.expect("error consuming message from kafka");
                 let metadata = envelope.metadata;
-                let raw_log = envelope.inner_message;
-                let expected_log_event: Bytes = "test".into();
+                let generated_graph = envelope.inner_message;
 
                 tracing::debug!(message = "consumed kafka message");
 
-                metadata.tenant_id == tenant_id
-                    && metadata.event_source_id == event_source_id
-                    && raw_log.log_event == expected_log_event
-            });
+                if metadata.tenant_id == tenant_id && metadata.event_source_id == event_source_id {
+                    let parent_process = find_node(
+                        &generated_graph,
+                        "process_id",
+                        ImmutableUintProp { prop: 6132 }.into(),
+                    )
+                    .expect("parent process missing");
+
+                    let child_process = find_node(
+                        &generated_graph,
+                        "process_id",
+                        ImmutableUintProp { prop: 5752 }.into(),
+                    )
+                    .expect("child process missing");
+
+                    let parent_to_child_edge = generated_graph
+                        .edges
+                        .get(parent_process.get_node_key())
+                        .iter()
+                        .flat_map(|edge_list| edge_list.edges.iter())
+                        .find(|edge| edge.to_node_key == child_process.get_node_key())
+                        .expect("missing edge from parent to child");
+
+                    parent_to_child_edge.edge_name == "children"
+                } else {
+                    false
+                }
+            },
+        );
 
         tracing::info!("consuming kafka messages for 30s");
         assert!(
@@ -179,8 +219,10 @@ async fn test_publish_raw_log_sends_message_to_kafka(ctx: &mut PipelineIngressTe
     rx.await
         .expect("failed to receive notification that consumer is consuming");
 
+    let log_event: Bytes = r#"<Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Sysmon' Guid='{5770385F-C22A-43E0-BF4C-06F5698FFBD9}'/><EventID>1</EventID><Version>5</Version><Level>4</Level><Task>1</Task><Opcode>0</Opcode><Keywords>0x8000000000000000</Keywords><TimeCreated SystemTime='2019-07-24T18:05:14.402156600Z'/><EventRecordID>550</EventRecordID><Correlation/><Execution ProcessID='3324' ThreadID='3220'/><Channel>Microsoft-Windows-Sysmon/Operational</Channel><Computer>DESKTOP-FVSHABR</Computer><Security UserID='S-1-5-18'/></System><EventData><Data Name='RuleName'></Data><Data Name='UtcTime'>2019-07-24 18:05:14.399</Data><Data Name='ProcessGuid'>{87E8D3BD-9DDA-5D38-0000-0010A3941D00}</Data><Data Name='ProcessId'>5752</Data><Data Name='Image'>C:\Windows\System32\cmd.exe</Data><Data Name='FileVersion'>10.0.10240.16384 (th1.150709-1700)</Data><Data Name='Description'>Windows Command Processor</Data><Data Name='Product'>Microsoft� Windows� Operating System</Data><Data Name='Company'>Microsoft Corporation</Data><Data Name='OriginalFileName'>Cmd.Exe</Data><Data Name='CommandLine'>"cmd" /C "msiexec /quiet /i cmd.msi"</Data><Data Name='CurrentDirectory'>C:\Users\grapltest\Downloads\</Data><Data Name='User'>DESKTOP-FVSHABR\grapltest</Data><Data Name='LogonGuid'>{87E8D3BD-99C8-5D38-0000-002088140200}</Data><Data Name='LogonId'>0x21488</Data><Data Name='TerminalSessionId'>1</Data><Data Name='IntegrityLevel'>Medium</Data><Data Name='Hashes'>MD5=A6177D080759CF4A03EF837A38F62401,SHA256=79D1FFABDD7841D9043D4DDF1F93721BCD35D823614411FD4EAB5D2C16A86F35</Data><Data Name='ParentProcessGuid'>{87E8D3BD-9DD8-5D38-0000-00109F871D00}</Data><Data Name='ParentProcessId'>6132</Data><Data Name='ParentImage'>C:\Users\grapltest\Downloads\svchost.exe</Data><Data Name='ParentCommandLine'>.\svchost.exe</Data></EventData></Event>"#.into();
+
     tracing::info!("sending publish_raw_log request");
-    ctx.grpc_client
+    ctx.pipeline_ingress_client
         .publish_raw_log(PublishRawLogRequest {
             event_source_id,
             tenant_id,

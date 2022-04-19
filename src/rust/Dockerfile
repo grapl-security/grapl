@@ -230,7 +230,7 @@ FROM base AS build-test-integration-new
 # https://github.com/rust-lang/cargo/issues/1924
 # https://github.com/rust-lang/cargo/issues/3670
 
-ENV RUST_INTEGRATION_TEST_FEATURES="pipeline-ingress/new_integration_tests,plugin-registry/new_integration_tests"
+ENV RUST_INTEGRATION_TEST_FEATURES="pipeline-ingress/new_integration_tests,plugin-registry/new_integration_tests,sysmon-generator/new_integration_tests"
 ENV TEST_DIR=/grapl/tests
 
 # This will build the integration test binaries and parse the manifest to find
@@ -328,12 +328,6 @@ FROM rust-dist AS analyzer-dispatcher-deploy
 COPY --from=build /outputs/analyzer-dispatcher /
 ENTRYPOINT ["/analyzer-dispatcher"]
 
-##### generic-subgraph-generator
-FROM rust-dist AS generic-subgraph-generator-deploy
-
-COPY --from=build /outputs/generic-subgraph-generator /
-ENTRYPOINT ["/generic-subgraph-generator"]
-
 ##### graph-merger
 FROM rust-dist AS graph-merger-deploy
 
@@ -387,12 +381,6 @@ FROM rust-dist AS sysmon-generator-deploy
 
 COPY --from=build /outputs/sysmon-generator /
 ENTRYPOINT ["/sysmon-generator"]
-
-##### osquery-generator
-FROM rust-dist AS osquery-generator-deploy
-
-COPY --from=build /outputs/osquery-generator /
-ENTRYPOINT ["/osquery-generator"]
 
 ##### generator-executor
 FROM rust-dist AS generator-executor-deploy
