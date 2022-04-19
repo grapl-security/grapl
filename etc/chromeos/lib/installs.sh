@@ -333,14 +333,18 @@ install_cni_plugins() {
 }
 
 install_firecracker() {
-    # This installs a patched version of firecracker from our dropbox
-    sudo curl --proto "=https" \
-        --tlsv1.2 \
-        --location \
-        --output /usr/bin/firecracker \
-        "https://uca407bf360bc42aeddf1f15a307.dl.dropboxusercontent.com/cd/0/get/BjrRVD0hQW7-jSPIoICZEH8DONH4yR2oL5tpNHLiiEQ8Rwl5JXYoJwVvwWk0G2a4QOLL87mrBGNDat7FVLTJYYWV5-Wa88waqlwuzMlu_UO2FEw0AYR_rzLsiqSaNgLUMtKY8QNl-e5E3eZsUECjHKeTrek27YTpOc7bfZXOfzuta1tU9fMgfPwHocH89QOH-ms/file?_download_id=7938492000756063344390311727150356805086251509862764070702265202&_notify_domain=www.dropbox.com&dl=1"
+    echo_banner "Installing Firecracker binary"
 
-    sudo chmod 0755 /usr/bin/firecracker
+    repo="firecracker-microvm/firecracker"
+    version=$(get_latest_release "${repo}")
+
+    url_prefix="https://github.com/${repo}/releases/download/${version}"
+
+    download_and_install_tarball \
+        "${url_prefix}/firecracker-${version}-$(arch).tgz" \
+        /tmp/firecracker
+
+    sudo mv "/tmp/firecracker/release-${version}-$(arch)/firecracker-${version}-$(arch)" "/usr/bin/firecracker"
 }
 
 install_nomad_firecracker() {

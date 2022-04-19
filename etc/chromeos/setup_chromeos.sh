@@ -19,6 +19,7 @@ install_awsv2
 install_pulumi
 install_hashicorp_tools
 install_cni_plugins
+install_firecracker
 install_nomad_chromeos_workaround
 install_nomad_firecracker
 install_sqlx_prepare_deps
