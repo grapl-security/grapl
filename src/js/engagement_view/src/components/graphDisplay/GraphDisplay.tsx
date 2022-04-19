@@ -1,10 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import ForceGraph2D from "react-force-graph-2d";
 import { nodeFillColor, riskOutline } from "./graphVizualization/nodeColoring";
-import {
-    calcLinkColor,
-    calcLinkDirectionalArrowRelPos,
-} from "./graphVizualization/linkCalcs";
+import { calcLinkColor } from "./graphVizualization/linkCalcs";
 import { nodeSize } from "./graphVizualization/nodeCalcs";
 import { updateGraph } from "./graphUpdates/updateGraph";
 import { Link, VizNode, VizGraph } from "../../types/CustomTypes";
@@ -270,11 +267,6 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
                     : calcLinkColor(link as Link, data as VizGraph)
             }
             linkWidth={(link) => (highlightLinks.has(link) ? 5 : 4)}
-            linkDirectionalArrowLength={10}
-            linkDirectionalArrowRelPos={(link) => {
-                const _link = link as any;
-                return calcLinkDirectionalArrowRelPos(_link, data);
-            }}
             linkCanvasObjectMode={() => "after"}
             linkCanvasObject={linkStyling}
             onLinkHover={(link) => {
