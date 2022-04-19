@@ -196,9 +196,11 @@ def main() -> None:
         "pipeline-ingress-healthcheck-polling-interval-ms",
         pipeline_ingress_healthcheck_polling_interval_ms,
     )
-    pipeline_ingress_kafka_consumer_group_name = kafka.consumer_group(
-        "pipeline-ingress"
-    )
+    # This is a hack, because pipeline-ingress is not a kafka consumer, only a
+    # producer. The only consumers of this topic are integration tests. That is
+    # why we don't look up the consumer group name in the ccloud-bootstrap
+    # stack outputs (because it's absent).
+    pipeline_ingress_kafka_consumer_group_name = "pipeline-ingress-test"
     pulumi.export(
         "pipeline-ingress-kafka-consumer-group-name",
         pipeline_ingress_kafka_consumer_group_name,
