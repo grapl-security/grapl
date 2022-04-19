@@ -10,10 +10,16 @@ source "${GRAPL_DEVBOX_CONFIG}"
 
 # the --include stuff was inspired by https://stackoverflow.com/posts/63438492/revisions
 
-rsync --archive --info=progress2 \
+if ! rsync --archive --info=progress2 \
     --include='**.gitignore' --exclude='**/.git' --filter=':- .gitignore' --delete-after \
     --rsh "${THIS_DIR}/ssh.sh" \
     "${GRAPL_DEVBOX_LOCAL_GRAPL}/" \
-    ":${GRAPL_DEVBOX_REMOTE_GRAPL}"
+    ":${GRAPL_DEVBOX_REMOTE_GRAPL}" \
+    ; then
+    # TODO in the future: maybe throw an `aws s3 ls` in or something to detect
+    # that the cause is indeed AWS
+    echo_h1 "$(bright_red "It looks like devbox-sync failed. Maybe you need to 'aws sso login'?")"
+    exit 42
+fi
 
 echo_h1 "$(bright_green "Devbox-sync complete")"
