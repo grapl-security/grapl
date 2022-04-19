@@ -182,6 +182,21 @@ variable "plugin_registry_bucket_name" {
   description = "The name of the bucket where plugins are stored"
 }
 
+variable "graph_generator_kafka_sasl_username" {
+  type        = string
+  description = "The username to authenticate with Confluent Cloud cluster."
+}
+
+variable "graph_generator_kafka_sasl_password" {
+  type        = string
+  description = "The password to authenticate with Confluent Cloud cluster."
+}
+
+variable "graph_generator_kafka_consumer_group" {
+  type        = string
+  description = "Consumer group for graph-generator consumers to join."
+}
+
 variable "num_graph_mergers" {
   type        = number
   default     = 1
@@ -253,22 +268,6 @@ variable "user_auth_table" {
 variable "user_session_table" {
   type        = string
   description = "What is the name of the DynamoDB user session table?"
-}
-
-variable "sysmon_generator_queue" {
-  type = string
-}
-
-variable "sysmon_generator_dead_letter_queue" {
-  type = string
-}
-
-variable "osquery_generator_queue" {
-  type = string
-}
-
-variable "osquery_generator_dead_letter_queue" {
-  type = string
 }
 
 variable "tracing_endpoint" {
@@ -1211,50 +1210,18 @@ job "grapl-core" {
       }
 
       env {
-        DEST_BUCKET_NAME                = var.unid_subgraphs_generated_bucket
-        DEAD_LETTER_QUEUE_URL           = var.sysmon_generator_dead_letter_queue
-        SOURCE_QUEUE_URL                = var.sysmon_generator_queue
-        AWS_REGION                      = var.aws_region
-        REDIS_ENDPOINT                  = var.redis_endpoint
-        RUST_LOG                        = var.rust_log
-        RUST_BACKTRACE                  = local.rust_backtrace
+        AWS_REGION = var.aws_region
+
+        RUST_LOG       = var.rust_log
+        RUST_BACKTRACE = local.rust_backtrace
+
         OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
-      }
-    }
-  }
 
-  group "osquery-generator" {
-    network {
-      mode = "bridge"
-      dns {
-        servers = local.dns_servers
-      }
-    }
-
-    task "osquery-generator" {
-      driver = "docker"
-
-      config {
-        image = var.container_images["osquery-generator"]
-      }
-
-      template {
-        data        = var.aws_env_vars_for_local
-        destination = "aws-env-vars-for-local.env"
-        env         = true
-      }
-
-      env {
-        DEST_BUCKET_NAME                = var.unid_subgraphs_generated_bucket
-        DEAD_LETTER_QUEUE_URL           = var.osquery_generator_dead_letter_queue
-        SOURCE_QUEUE_URL                = var.osquery_generator_queue
-        AWS_REGION                      = var.aws_region
-        REDIS_ENDPOINT                  = var.redis_endpoint
-        RUST_LOG                        = var.rust_log
-        RUST_BACKTRACE                  = local.rust_backtrace
-        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
+        KAFKA_BOOTSTRAP_SERVERS        = var.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME            = var.graph_generator_kafka_sasl_username
+        KAFKA_SASL_PASSWORD            = var.graph_generator_kafka_sasl_password
+        GRAPH_GENERATOR_CONSUMER_GROUP = var.graph_generator_kafka_consumer_group
       }
     }
   }

@@ -77,7 +77,6 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "node-identifier": builder.build_with_tag("node-identifier"),
         "node-identifier-retry": builder.build_with_tag("node-identifier-retry"),
         "organization-management": builder.build_with_tag("organization-management"),
-        "osquery-generator": builder.build_with_tag("osquery-generator"),
         "pipeline-ingress": builder.build_with_tag("pipeline-ingress"),
         "plugin-bootstrap": builder.build_with_tag("plugin-bootstrap"),
         "plugin-registry": builder.build_with_tag("plugin-registry"),
@@ -159,7 +158,6 @@ def main() -> None:
     # TODO: Create these emitters inside the service abstraction if nothing
     # else uses them (or perhaps even if something else *does* use them)
     sysmon_log_emitter = emitter.EventEmitter("sysmon-log")
-    osquery_log_emitter = emitter.EventEmitter("osquery-log")
     unid_subgraphs_generated_emitter = emitter.EventEmitter("unid-subgraphs-generated")
     subgraphs_generated_emitter = emitter.EventEmitter("subgraphs-generated")
     subgraphs_merged_emitter = emitter.EventEmitter("subgraphs-merged")
@@ -172,19 +170,12 @@ def main() -> None:
 
     all_emitters = [
         sysmon_log_emitter,
-        osquery_log_emitter,
         unid_subgraphs_generated_emitter,
         subgraphs_generated_emitter,
         subgraphs_merged_emitter,
         dispatched_analyzer_emitter,
         analyzer_matched_emitter,
     ]
-
-    sysmon_generator_queue = ServiceQueue("sysmon-generator")
-    sysmon_generator_queue.subscribe_to_emitter(sysmon_log_emitter)
-
-    osquery_generator_queue = ServiceQueue("osquery-generator")
-    osquery_generator_queue.subscribe_to_emitter(osquery_log_emitter)
 
     node_identifier_queue = ServiceQueue("node-identifier")
     node_identifier_queue.subscribe_to_emitter(unid_subgraphs_generated_emitter)
@@ -248,6 +239,7 @@ def main() -> None:
         container_images=_container_images(artifacts),
         dns_server=config.CONSUL_DNS_IP,
         engagement_creator_queue=engagement_creator_queue.main_queue_url,
+        graph_generator_kafka_consumer_group="graph-generator",
         graph_merger_queue=graph_merger_queue.main_queue_url,
         graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
         kafka_bootstrap_servers=kafka.bootstrap_servers(),
@@ -255,8 +247,6 @@ def main() -> None:
         node_identifier_queue=node_identifier_queue.main_queue_url,
         node_identifier_dead_letter_queue=node_identifier_queue.dead_letter_queue_url,
         node_identifier_retry_queue=node_identifier_queue.retry_queue_url,
-        osquery_generator_queue=osquery_generator_queue.main_queue_url,
-        osquery_generator_dead_letter_queue=osquery_generator_queue.dead_letter_queue_url,
         pipeline_ingress_healthcheck_polling_interval_ms=pipeline_ingress_healthcheck_polling_interval_ms,
         py_log_level=log_levels.PY_LOG_LEVEL,
         rust_log=log_levels.RUST_LOG_LEVELS,
@@ -265,8 +255,6 @@ def main() -> None:
         session_table_name=dynamodb_tables.dynamic_session_table.name,
         subgraphs_merged_bucket=subgraphs_merged_emitter.bucket_name,
         subgraphs_generated_bucket=subgraphs_generated_emitter.bucket_name,
-        sysmon_generator_queue=sysmon_generator_queue.main_queue_url,
-        sysmon_generator_dead_letter_queue=sysmon_generator_queue.dead_letter_queue_url,
         test_user_name=config.GRAPL_TEST_USER_NAME,
         unid_subgraphs_generated_bucket=unid_subgraphs_generated_emitter.bucket_name,
         user_auth_table=dynamodb_tables.user_auth_table.name,
@@ -295,17 +283,6 @@ def main() -> None:
     }
 
     nomad_grapl_core_timeout = "5m"
-
-    pipeline_ingress_kafka_credentials = kafka.service_credentials("pipeline-ingress")
-
-    pulumi.export(
-        "pipeline-ingress-kafka-sasl-username",
-        pipeline_ingress_kafka_credentials.api_key,
-    )
-    pulumi.export(
-        "pipeline-ingress-kafka-sasl-password",
-        pipeline_ingress_kafka_credentials.api_secret,
-    )
 
     ConsulIntentions(
         "consul-intentions",
@@ -346,6 +323,10 @@ def main() -> None:
     plugin_registry_db: NomadServicePostgresResource
     plugin_work_queue_db: NomadServicePostgresResource
     uid_allocator_db: NomadServicePostgresResource
+
+    pipeline_ingress_kafka_credentials = kafka.service_credentials("pipeline-ingress")
+    graph_generator_kafka_credentials = kafka.service_credentials("graph-generator")
+
 
     if config.LOCAL_GRAPL:
         ###################################
@@ -394,11 +375,13 @@ def main() -> None:
 
         local_grapl_core_vars: Final[NomadVars] = dict(
             organization_management_db=organization_management_db.to_nomad_service_db_args(),
-            pipeline_ingress_kafka_sasl_username="fake",
-            pipeline_ingress_kafka_sasl_password="fake",
             plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
             plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
             uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),
+            graph_generator_kafka_sasl_username=graph_generator_kafka_credentials.api_key,
+            graph_generator_kafka_sasl_password=graph_generator_kafka_credentials.api_secret,
+            pipeline_ingress_kafka_sasl_username=pipeline_ingress_kafka_credentials.api_key,
+            pipeline_ingress_kafka_sasl_password=pipeline_ingress_kafka_credentials.api_secret,
             redis_endpoint=redis_endpoint,
             **nomad_inputs,
         )
@@ -510,6 +493,9 @@ def main() -> None:
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
             organization_management_db=organization_management_db.to_nomad_service_db_args(),
+            graph_generator_kafka_sasl_username=graph_generator_kafka_credentials.api_key,
+            graph_generator_kafka_sasl_password=graph_generator_kafka_credentials.api_secret,
+            pipeline_ingress_kafka_sasl_username=pipeline_ingress_kafka_credentials.api_key,
             pipeline_ingress_kafka_sasl_password=pipeline_ingress_kafka_credentials.api_secret,
             pipeline_ingress_kafka_sasl_username=pipeline_ingress_kafka_credentials.api_key,
             plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),

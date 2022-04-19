@@ -18,9 +18,6 @@ config:
     node-identifier:
       RUST_BACKTRACE: "1"
       RUST_LOG: DEBUG
-    osquery-generator:
-      RUST_BACKTRACE: "1"
-      RUST_LOG: DEBUG
     sysmon-generator:
       RUST_BACKTRACE: "1"
       RUST_LOG: DEBUG
