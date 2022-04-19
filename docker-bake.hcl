@@ -177,6 +177,7 @@ group "rust-services" {
     "node-identifier-retry",
     "organization-management",
     "osquery-generator",
+    "pipeline-ingress",
     "plugin-bootstrap",
     "plugin-registry",
     "plugin-work-queue",
@@ -229,11 +230,19 @@ group "integration-tests" {
   ]
 }
 
+group "integration-tests-new" {
+  # NOTE: Please keep this list sorted in alphabetical order
+  targets = [
+    "rust-integration-tests-new"
+  ]
+}
+
 group "all-tests" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
     "e2e-tests",
-    "integration-tests"
+    "integration-tests",
+    "integration-tests-new"
   ]
 }
 
@@ -334,6 +343,14 @@ target "osquery-generator" {
   target   = "osquery-generator-deploy"
   tags = [
     upstream_aware_tag("osquery-generator")
+  ]
+}
+
+target "pipeline-ingress" {
+  inherits = ["_rust-base"]
+  target   = "pipeline-ingress-deploy"
+  tags = [
+    upstream_aware_tag("pipeline-ingress")
   ]
 }
 
@@ -451,6 +468,16 @@ target "rust-integration-tests" {
   target   = "integration-tests"
   tags = [
     local_only_tag("rust-integration-tests")
+  ]
+}
+
+target "rust-integration-tests-new" {
+  inherits = ["_rust-base"]
+  target   = "integration-tests-new"
+  tags = [
+    # Yes, we push this up to Cloudsmith to run tests against AWS
+    # infrastructure; that's why we use `upstream_aware_tag`.
+    upstream_aware_tag("rust-integration-tests-new")
   ]
 }
 

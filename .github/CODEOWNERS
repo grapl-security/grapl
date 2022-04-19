@@ -75,6 +75,7 @@ BUILD @christophermaier
 /src/rust/kafka/ @grapl-security/wg-data-infra
 /src/rust/model-plugin-deployer/ @wimax-grapl
 /src/rust/organization-management/ @andrea-grapl
+/src/rust/pipeline-ingress/ @jgrillo-grapl
 /src/rust/plugin-bootstrap/ @colin-grapl
 /src/rust/plugin-registry/ @colin-grapl
 /src/rust/plugin-sdk/ @colin-grapl

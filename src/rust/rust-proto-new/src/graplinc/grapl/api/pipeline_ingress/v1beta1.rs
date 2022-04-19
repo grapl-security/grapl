@@ -3,6 +3,7 @@ use bytes::{
     BytesMut,
 };
 use prost::Message;
+use thiserror::Error;
 
 use crate::{
     graplinc::common::v1beta1::{
@@ -10,8 +11,8 @@ use crate::{
         Uuid,
     },
     protobufs::graplinc::grapl::api::pipeline_ingress::v1beta1::{
-        PublishRawLogsRequest as PublishRawLogsRequestProto,
-        PublishRawLogsResponse as PublishRawLogsResponseProto,
+        PublishRawLogRequest as PublishRawLogRequestProto,
+        PublishRawLogResponse as PublishRawLogResponseProto,
     },
     type_url,
     SerDe,
@@ -19,20 +20,20 @@ use crate::{
 };
 
 //
-// PublishRawLogsRequest
+// PublishRawLogRequest
 //
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct PublishRawLogsRequest {
+pub struct PublishRawLogRequest {
     pub event_source_id: Uuid,
     pub tenant_id: Uuid,
     pub log_event: Bytes,
 }
 
-impl TryFrom<PublishRawLogsRequestProto> for PublishRawLogsRequest {
+impl TryFrom<PublishRawLogRequestProto> for PublishRawLogRequest {
     type Error = SerDeError;
 
-    fn try_from(request_proto: PublishRawLogsRequestProto) -> Result<Self, Self::Error> {
+    fn try_from(request_proto: PublishRawLogRequestProto) -> Result<Self, Self::Error> {
         let event_source_id = request_proto
             .event_source_id
             .ok_or(SerDeError::MissingField("event_source_id"))?;
@@ -41,7 +42,7 @@ impl TryFrom<PublishRawLogsRequestProto> for PublishRawLogsRequest {
             .tenant_id
             .ok_or(SerDeError::MissingField("tenant_id"))?;
 
-        Ok(PublishRawLogsRequest {
+        Ok(PublishRawLogRequest {
             event_source_id: event_source_id.into(),
             tenant_id: tenant_id.into(),
             log_event: Bytes::from(request_proto.log_event),
@@ -49,9 +50,9 @@ impl TryFrom<PublishRawLogsRequestProto> for PublishRawLogsRequest {
     }
 }
 
-impl From<PublishRawLogsRequest> for PublishRawLogsRequestProto {
-    fn from(request: PublishRawLogsRequest) -> Self {
-        PublishRawLogsRequestProto {
+impl From<PublishRawLogRequest> for PublishRawLogRequestProto {
+    fn from(request: PublishRawLogRequest) -> Self {
+        PublishRawLogRequestProto {
             event_source_id: Some(request.event_source_id.into()),
             tenant_id: Some(request.tenant_id.into()),
             log_event: request.log_event.to_vec(),
@@ -59,14 +60,14 @@ impl From<PublishRawLogsRequest> for PublishRawLogsRequestProto {
     }
 }
 
-impl type_url::TypeUrl for PublishRawLogsRequest {
+impl type_url::TypeUrl for PublishRawLogRequest {
     const TYPE_URL: &'static str =
-        "graplsecurity.com/graplinc.grapl.api.pipeline_ingress.v1beta1.PublishRawLogsRequest";
+        "graplsecurity.com/graplinc.grapl.api.pipeline_ingress.v1beta1.PublishRawLogRequest";
 }
 
-impl SerDe for PublishRawLogsRequest {
+impl SerDe for PublishRawLogRequest {
     fn serialize(self) -> Result<Bytes, SerDeError> {
-        let request_proto = PublishRawLogsRequestProto::from(self);
+        let request_proto = PublishRawLogRequestProto::from(self);
         let mut buf = BytesMut::with_capacity(request_proto.encoded_len());
         request_proto.encode(&mut buf)?;
         Ok(buf.freeze())
@@ -77,52 +78,61 @@ impl SerDe for PublishRawLogsRequest {
         B: bytes::Buf,
         Self: Sized,
     {
-        let request_proto: PublishRawLogsRequestProto = Message::decode(buf)?;
+        let request_proto: PublishRawLogRequestProto = Message::decode(buf)?;
         request_proto.try_into()
     }
 }
 
 //
-// PublishRawLogsResponse
+// PublishRawLogResponse
 //
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct PublishRawLogsResponse {
+pub struct PublishRawLogResponse {
     pub created_time: SystemTime,
 }
 
-impl TryFrom<PublishRawLogsResponseProto> for PublishRawLogsResponse {
+impl PublishRawLogResponse {
+    /// build a response with created_time set to SystemTime::now()
+    pub fn ok() -> Self {
+        PublishRawLogResponse {
+            created_time: SystemTime::now(),
+        }
+    }
+}
+
+impl TryFrom<PublishRawLogResponseProto> for PublishRawLogResponse {
     type Error = SerDeError;
 
-    fn try_from(response_proto: PublishRawLogsResponseProto) -> Result<Self, Self::Error> {
+    fn try_from(response_proto: PublishRawLogResponseProto) -> Result<Self, Self::Error> {
         let created_time = response_proto
             .created_time
             .ok_or(SerDeError::MissingField("created_time"))?;
 
-        Ok(PublishRawLogsResponse {
+        Ok(PublishRawLogResponse {
             created_time: created_time.try_into()?,
         })
     }
 }
 
-impl TryFrom<PublishRawLogsResponse> for PublishRawLogsResponseProto {
+impl TryFrom<PublishRawLogResponse> for PublishRawLogResponseProto {
     type Error = SerDeError;
 
-    fn try_from(response: PublishRawLogsResponse) -> Result<Self, Self::Error> {
-        Ok(PublishRawLogsResponseProto {
+    fn try_from(response: PublishRawLogResponse) -> Result<Self, Self::Error> {
+        Ok(PublishRawLogResponseProto {
             created_time: Some(response.created_time.try_into()?),
         })
     }
 }
 
-impl type_url::TypeUrl for PublishRawLogsResponse {
+impl type_url::TypeUrl for PublishRawLogResponse {
     const TYPE_URL: &'static str =
-        "grapsecurity.com/graplinc.grapl.api.pipeline_ingress.v1beta1.PublishRawLogsResponse";
+        "grapsecurity.com/graplinc.grapl.api.pipeline_ingress.v1beta1.PublishRawLogResponse";
 }
 
-impl SerDe for PublishRawLogsResponse {
+impl SerDe for PublishRawLogResponse {
     fn serialize(self) -> Result<Bytes, SerDeError> {
-        let response_proto = PublishRawLogsResponseProto::try_from(self)?;
+        let response_proto = PublishRawLogResponseProto::try_from(self)?;
         let mut buf = BytesMut::with_capacity(response_proto.encoded_len());
         response_proto.encode(&mut buf)?;
         Ok(buf.freeze())
@@ -133,7 +143,508 @@ impl SerDe for PublishRawLogsResponse {
         B: bytes::Buf,
         Self: Sized,
     {
-        let response_proto: PublishRawLogsResponseProto = Message::decode(buf)?;
+        let response_proto: PublishRawLogResponseProto = Message::decode(buf)?;
         response_proto.try_into()
+    }
+}
+
+//
+// gRPC
+//
+
+#[non_exhaustive]
+#[derive(Debug, Error)]
+pub enum HealthcheckError {
+    #[error("not found {0}")]
+    NotFound(String),
+
+    #[error("healthcheck failed {0}")]
+    HealthcheckFailed(String),
+}
+
+#[non_exhaustive]
+#[derive(Debug)]
+pub enum HealthcheckStatus {
+    Serving,
+    NotServing,
+    Unknown,
+}
+
+//
+// client
+//
+
+/// This module contains the gRPC client for the pipeline ingress API. We
+/// encapsulate all the types generated by the protocol buffer compiler and
+/// instead expose our own "sanitized" version of the API.
+pub mod client {
+    use std::time::Duration;
+
+    use crate::{
+        graplinc::grapl::api::pipeline_ingress::v1beta1::{
+            PublishRawLogRequest,
+            PublishRawLogResponse,
+        },
+        protobufs::graplinc::grapl::api::pipeline_ingress::v1beta1::pipeline_ingress_service_client::PipelineIngressServiceClient as PipelineIngressServiceClientProto,
+        SerDeError,
+    };
+
+    use futures::{FutureExt, TryFutureExt};
+    use thiserror::Error;
+    use tokio::time::error::Elapsed;
+    use tonic::Request;
+    use tonic_health::{
+        proto::{
+            health_client::HealthClient as HealthClientProto,
+            health_check_response::ServingStatus as ServingStatusProto,
+            HealthCheckRequest as HealthCheckRequestProto
+        },
+    };
+
+    use super::{
+        HealthcheckError,
+        HealthcheckStatus
+    };
+
+    #[non_exhaustive]
+    #[derive(Debug, Error)]
+    pub enum ConfigurationError {
+        #[error("failed to connect {0}")]
+        ConnectionError(#[from] tonic::transport::Error),
+
+        #[error("healthcheck failed {0}")]
+        HealtcheckFailed(#[from] HealthcheckError),
+
+        #[error("timeout elapsed {0}")]
+        TimeoutElapsed(#[from] Elapsed),
+    }
+
+    #[non_exhaustive]
+    #[derive(Debug, Error)]
+    pub enum PipelineIngressApiError {
+        #[error("failed to serialize/deserialize {0}")]
+        SerDeError(#[from] SerDeError),
+
+        #[error("received unfavorable gRPC status {0}")]
+        GrpcStatus(#[from] tonic::Status),
+    }
+
+    pub struct PipelineIngressClient {
+        proto_client: PipelineIngressServiceClientProto<tonic::transport::Channel>,
+    }
+
+    impl PipelineIngressClient {
+        pub async fn connect<T>(endpoint: T) -> Result<Self, ConfigurationError>
+        where
+            T: std::convert::TryInto<tonic::transport::Endpoint>,
+            T::Error: std::error::Error + Send + Sync + 'static,
+        {
+            Ok(PipelineIngressClient {
+                proto_client: PipelineIngressServiceClientProto::connect(endpoint).await?,
+            })
+        }
+
+        pub async fn publish_raw_log(
+            &mut self,
+            raw_log: PublishRawLogRequest,
+        ) -> Result<PublishRawLogResponse, PipelineIngressApiError> {
+            self.proto_client
+                .publish_raw_log(Request::new(raw_log.into()))
+                .map(
+                    |response| -> Result<PublishRawLogResponse, PipelineIngressApiError> {
+                        let inner = response?.into_inner();
+                        Ok(inner.try_into()?)
+                    },
+                )
+                .await
+        }
+    }
+
+    pub struct HealthcheckClient {
+        proto_client: HealthClientProto<tonic::transport::Channel>,
+        service_name: &'static str,
+    }
+
+    impl HealthcheckClient {
+        #[tracing::instrument]
+        pub async fn connect<T>(
+            endpoint: T,
+            service_name: &'static str,
+        ) -> Result<Self, ConfigurationError>
+        where
+            T: std::convert::TryInto<tonic::transport::Endpoint> + std::fmt::Debug,
+            T::Error: std::error::Error + Send + Sync + 'static,
+        {
+            Ok(HealthcheckClient {
+                proto_client: HealthClientProto::connect(endpoint).await?,
+                service_name,
+            })
+        }
+
+        #[tracing::instrument(skip(self))]
+        pub async fn check_health(&mut self) -> Result<HealthcheckStatus, HealthcheckError> {
+            let request = HealthCheckRequestProto {
+                service: self.service_name.to_string(),
+            };
+
+            let response = match self.proto_client.check(request).await {
+                Ok(response) => response.into_inner(),
+                Err(e) => match e.code() {
+                    tonic::Code::NotFound => return Err(HealthcheckError::NotFound(e.to_string())),
+                    _ => return Err(HealthcheckError::HealthcheckFailed(e.to_string())),
+                },
+            };
+
+            match response.status() {
+                ServingStatusProto::Serving => Ok(HealthcheckStatus::Serving),
+                ServingStatusProto::NotServing => Ok(HealthcheckStatus::NotServing),
+                ServingStatusProto::Unknown => Ok(HealthcheckStatus::Unknown),
+                ServingStatusProto::ServiceUnknown => Err(HealthcheckError::HealthcheckFailed(
+                    "service unknown".to_string(),
+                )),
+            }
+        }
+
+        #[tracing::instrument]
+        pub async fn wait_until_healthy<T>(
+            endpoint: T,
+            service_name: &'static str,
+            timeout: Duration,
+            polling_interval: Duration,
+        ) -> Result<Self, ConfigurationError>
+        where
+            T: std::convert::TryInto<tonic::transport::Endpoint> + Clone + std::fmt::Debug,
+            T::Error: std::error::Error + Send + Sync + 'static,
+        {
+            let client_fut = async move {
+                let mut healthcheck_client = loop {
+                    match HealthcheckClient::connect(endpoint.clone(), service_name).await {
+                        Ok(client) => break client,
+                        Err(e) => {
+                            tracing::warn!(
+                                "could not construct healthcheck client for {}, waiting {}ms: {}",
+                                service_name,
+                                polling_interval.as_millis(),
+                                e,
+                            );
+                            tokio::time::sleep(polling_interval).await;
+                        }
+                    }
+                };
+
+                loop {
+                    match healthcheck_client.check_health().await {
+                        Ok(result) => match result {
+                            HealthcheckStatus::Serving => {
+                                tracing::info!("{} is serving requests", service_name);
+                                break Ok(healthcheck_client);
+                            }
+                            other => {
+                                tracing::warn!(
+                                    "{} is not yet serving requests, waiting {}ms: {:?}",
+                                    service_name,
+                                    polling_interval.as_millis(),
+                                    other
+                                );
+                                tokio::time::sleep(polling_interval).await;
+                            }
+                        },
+                        Err(e) => match e {
+                            HealthcheckError::HealthcheckFailed(_) => break Err(e),
+                            HealthcheckError::NotFound(reason) => {
+                                tracing::warn!(
+                                    "{} healthcheck not found yet, waiting {}ms: {}",
+                                    service_name,
+                                    polling_interval.as_millis(),
+                                    reason
+                                );
+                                tokio::time::sleep(polling_interval).await;
+                            }
+                        },
+                    }
+                }
+            };
+
+            tokio::time::timeout(timeout, client_fut.map_err(|e| e.into())).await?
+        }
+    }
+}
+
+//
+// server
+//
+
+/// This module contains the gRPC server for serving the pipeline ingress
+/// API. We encapsulate all the types generated by the protocol buffer compiler
+/// and instead expose our own "sanitized" version of the API. Users should
+/// implement their business logic by constructing an object conforming to the
+/// PipelineIngressApi trait. To run the gRPC server implementing that business
+/// logic, inject the PipelineIngressApi implementation into the
+/// PipelineIngressServer's constructor.
+pub mod server {
+    use std::{
+        marker::PhantomData,
+        time::Duration,
+    };
+
+    use futures::{
+        channel::oneshot::{
+            self,
+            Receiver,
+            Sender,
+        },
+        Future,
+        FutureExt,
+        TryFutureExt,
+    };
+    use thiserror::Error;
+    use tokio::net::TcpListener;
+    use tokio_stream::wrappers::TcpListenerStream;
+    use tonic::transport::{
+        NamedService,
+        Server,
+    };
+
+    use super::{
+        HealthcheckError,
+        HealthcheckStatus,
+    };
+    use crate::{
+        graplinc::grapl::api::pipeline_ingress::v1beta1::{
+            PublishRawLogRequest,
+            PublishRawLogResponse,
+        },
+        protobufs::graplinc::grapl::api::pipeline_ingress::v1beta1::{
+            pipeline_ingress_service_server::{
+                PipelineIngressService as PipelineIngressServiceProto,
+                PipelineIngressServiceServer as PipelineIngressServiceServerProto,
+            },
+            PublishRawLogRequest as PublishRawLogRequestProto,
+            PublishRawLogResponse as PublishRawLogResponseProto,
+        },
+        SerDeError,
+    };
+
+    //
+    // protocol buffer stuff
+    //
+
+    /// This struct implements the internal gRPC representation of the pipeline
+    /// ingress server. We've implemented the service trait generated by tonic
+    /// in such a way that it delegates to an externally supplied
+    /// PipelineIngressApi. This way all the protocol buffer compiler generated
+    /// types are encapsulated, and the public API is implemented in terms of
+    /// this crate's sanitized types.
+    struct PipelineIngressProto<T, E>
+    where
+        T: PipelineIngressApi<E>,
+        E: ToString + 'static,
+    {
+        api_server: T,
+        _e: PhantomData<E>,
+    }
+
+    impl<T, E> PipelineIngressProto<T, E>
+    where
+        T: PipelineIngressApi<E>,
+        E: ToString + 'static,
+    {
+        fn new(api_server: T) -> Self {
+            PipelineIngressProto {
+                api_server,
+                _e: PhantomData,
+            }
+        }
+    }
+
+    #[tonic::async_trait]
+    impl<T, E> PipelineIngressServiceProto for PipelineIngressProto<T, E>
+    where
+        T: PipelineIngressApi<E> + Send + Sync + 'static,
+        E: ToString + Send + Sync + 'static,
+    {
+        async fn publish_raw_log(
+            &self,
+            request: tonic::Request<PublishRawLogRequestProto>,
+        ) -> Result<tonic::Response<PublishRawLogResponseProto>, tonic::Status> {
+            let inner_request: PublishRawLogRequest = request
+                .into_inner()
+                .try_into()
+                .map_err(|e: SerDeError| tonic::Status::unknown(e.to_string()))?;
+
+            let response = self
+                .api_server
+                .publish_raw_log(inner_request)
+                .map_err(|e| tonic::Status::unknown(e.to_string()))
+                .await?
+                .try_into()
+                .map_err(|e: SerDeError| tonic::Status::unknown(e.to_string()))?;
+
+            Ok(tonic::Response::new(response))
+        }
+    }
+
+    //
+    // public API
+    //
+
+    /// Implement this trait to define the pipeline ingress API's business logic
+    #[tonic::async_trait]
+    pub trait PipelineIngressApi<E>
+    where
+        E: ToString + 'static,
+    {
+        async fn publish_raw_log(
+            &self,
+            request: PublishRawLogRequest,
+        ) -> Result<PublishRawLogResponse, E>;
+    }
+
+    #[non_exhaustive]
+    #[derive(Debug, Error)]
+    pub enum ConfigurationError {
+        #[error("encountered tonic error {0}")]
+        TonicError(#[from] tonic::transport::Error),
+    }
+
+    /// The pipeline-ingress server serves the pipeline-ingress API
+    pub struct PipelineIngressServer<T, E, H, F>
+    where
+        T: PipelineIngressApi<E> + Send + Sync + 'static,
+        E: ToString + Send + Sync + 'static,
+        H: Fn() -> F + Send + Sync + 'static,
+        F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send,
+    {
+        api_server: T,
+        healthcheck: H,
+        healthcheck_polling_interval: Duration,
+        tcp_listener: TcpListener,
+        shutdown_rx: Receiver<()>,
+        service_name: &'static str,
+        e_: PhantomData<E>,
+        f_: PhantomData<F>,
+    }
+
+    impl<T, E, H, F> PipelineIngressServer<T, E, H, F>
+    where
+        T: PipelineIngressApi<E> + Send + Sync + 'static,
+        E: ToString + Send + Sync + 'static,
+        H: Fn() -> F + Send + Sync + 'static,
+        F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send,
+    {
+        /// Construct a new gRPC server which will serve the given API
+        /// implementation on the given socket address. Server is constructed in
+        /// a non-running state. Call the serve() method to run the server. This
+        /// method also returns a channel you can use to trigger server
+        /// shutdown.
+        pub fn new(
+            api_server: T,
+            tcp_listener: TcpListener,
+            healthcheck: H,
+            healthcheck_polling_interval: Duration,
+        ) -> (Self, Sender<()>) {
+            let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
+            (
+                PipelineIngressServer {
+                    api_server,
+                    healthcheck,
+                    healthcheck_polling_interval,
+                    tcp_listener,
+                    shutdown_rx,
+                    service_name:
+                        PipelineIngressServiceServerProto::<PipelineIngressProto<T, E>>::NAME,
+                    e_: PhantomData,
+                    f_: PhantomData,
+                },
+                shutdown_tx,
+            )
+        }
+
+        /// returns the service name associated with this service. You will need
+        /// this value to construct a HealthcheckClient with which to query this
+        /// service's healthcheck.
+        pub fn service_name(&self) -> &'static str {
+            self.service_name
+        }
+
+        /// Run the gRPC server and serve the API on this server's socket
+        /// address. Returns a ConfigurationError if the gRPC server cannot run.
+        pub async fn serve(self) -> Result<(), ConfigurationError> {
+            let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
+
+            // we configure our health reporter initially in the not_serving
+            // state s.t. clients which are waiting for this service to start
+            // can wait for the state change to the serving state
+            health_reporter
+                .set_not_serving::<PipelineIngressServiceServerProto<PipelineIngressProto<T, E>>>()
+                .await;
+
+            let healthcheck_handle = tokio::task::spawn(async move {
+                // I initially tried to break this loop out into its own
+                // function, but I ran into this issue:
+                //
+                // https://github.com/rust-lang/rust/issues/83701
+                //
+                // Unfortunately, the need to parametrize such a function by
+                // self.healthcheck's type and the parameter S in
+                // HealthReporter::set_serving<S>(..) makes this awkward, so I
+                // just inlined the whole thing here.
+                loop {
+                    match (self.healthcheck)().await {
+                        Ok(status) => match status {
+                            HealthcheckStatus::Serving => {
+                                tracing::info!("healthcheck status \"serving\"");
+                                health_reporter
+                                        .set_serving::<PipelineIngressServiceServerProto<
+                                            PipelineIngressProto<T, E>,
+                                        >>()
+                                        .await
+                            }
+                            HealthcheckStatus::NotServing => {
+                                tracing::warn!("healthcheck status \"not serving\"");
+                                health_reporter
+                                        .set_not_serving::<PipelineIngressServiceServerProto<
+                                            PipelineIngressProto<T, E>,
+                                        >>()
+                                        .await
+                            }
+                            HealthcheckStatus::Unknown => {
+                                tracing::warn!("healthcheck status \"unknown\"");
+                                health_reporter
+                                        .set_not_serving::<PipelineIngressServiceServerProto<
+                                            PipelineIngressProto<T, E>,
+                                        >>()
+                                        .await
+                            }
+                        },
+                        Err(e) => {
+                            // healthcheck failed, so we'll set_not_serving()
+                            tracing::error!("healthcheck error {}", e);
+                            health_reporter
+                                .set_not_serving::<PipelineIngressServiceServerProto<PipelineIngressProto<T, E>>>()
+                                .await
+                        }
+                    }
+
+                    tokio::time::sleep(self.healthcheck_polling_interval).await;
+                }
+            });
+
+            // TODO: add tower tracing, tls_config, concurrency limits
+            Ok(Server::builder()
+                .add_service(health_service)
+                .add_service(PipelineIngressServiceServerProto::new(
+                    PipelineIngressProto::new(self.api_server),
+                ))
+                .serve_with_incoming_shutdown(
+                    TcpListenerStream::new(self.tcp_listener),
+                    self.shutdown_rx.map(|_| ()),
+                )
+                .then(|result| async move {
+                    healthcheck_handle.abort();
+                    result
+                })
+                .await?)
+        }
     }
 }
