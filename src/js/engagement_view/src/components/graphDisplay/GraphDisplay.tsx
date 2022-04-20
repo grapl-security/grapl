@@ -1,20 +1,20 @@
-import React, {useEffect, useState, useCallback, useRef} from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import ForceGraph2D from "react-force-graph-2d";
-import {nodeFillColor, riskOutline} from "./graphVizualization/nodeColoring";
+import { nodeFillColor, riskOutline } from "./graphVizualization/nodeColoring";
 import {
     calcLinkColor,
     calcLinkDirectionalArrowRelPos,
 } from "./graphVizualization/linkCalcs";
-import {nodeSize} from "./graphVizualization/nodeCalcs";
-import {updateGraph} from "./graphUpdates/updateGraph";
-import {Link, VizNode, VizGraph} from "../../types/CustomTypes";
+import { nodeSize } from "./graphVizualization/nodeCalcs";
+import { updateGraph } from "./graphUpdates/updateGraph";
+import { Link, VizNode, VizGraph } from "../../types/CustomTypes";
 import {
     GraphState,
     GraphDisplayState,
     GraphDisplayProps,
 } from "../../types/GraphDisplayTypes";
 
-import {colors} from "./graphVizualization/graphColors";
+import { colors } from "./graphVizualization/graphColors";
 
 type ClickedNodeState = VizNode | null;
 
@@ -22,9 +22,8 @@ const defaultGraphDisplayState = (
     lensName: string | null
 ): GraphDisplayState => {
     return {
-        graphData: {nodes: [], links: [], index: {}},
+        graphData: { nodes: [], links: [], index: {} },
         curLensName: lensName,
-        toggle: false,
     };
 };
 
@@ -42,7 +41,7 @@ async function updateGraphAndSetState(
     }
 }
 
-const GraphDisplay = ({lensName, setCurNode}: GraphDisplayProps) => {
+const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
     const fgRef: any = useRef(); // fix graph to canvas
     const [state, setState] = useState(defaultGraphDisplayState(lensName));
     const [clickedNode, setClickedNode] = useState(defaultClickedState());
@@ -261,7 +260,7 @@ const GraphDisplay = ({lensName, setCurNode}: GraphDisplayProps) => {
             y: start.y + (end.y - start.y) / 2,
         };
 
-        const relLink = {x: end.x - start.x, y: end.y - start.y};
+        const relLink = { x: end.x - start.x, y: end.y - start.y };
         const maxTextLength =
             Math.sqrt(Math.pow(relLink.x, 2) + Math.pow(relLink.y, 2)) -
             LABEL_NODE_MARGIN * 8;
