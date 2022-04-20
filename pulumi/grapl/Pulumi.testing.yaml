@@ -2,28 +2,28 @@ config:
   aws:region: us-east-1
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: operational-alarms@graplsecurity.com
   grapl:artifacts:
-    analyzer-dispatcher: 20220419195806-ed5cf2b
-    analyzer-executor: 20220419154015-09a9024
-    e2e-tests: 20220419154015-09a9024
-    engagement-creator: 20220419150746-398e85f
+    analyzer-dispatcher: 20220420011759-a4bb389
+    analyzer-executor: 20220420011759-a4bb389
+    e2e-tests: 20220420011759-a4bb389
+    engagement-creator: 20220420011759-a4bb389
     firecracker_kernel.gz: firecracker-v1.0.0-kernel-4.14.174-eb117d6
     firecracker_kernel.tar.gz: firecracker-v1.0.0-kernel-4.14.174-c595a79
     firecracker_rootfs.gz: 20220331171521-eb117d6
     firecracker_rootfs.tar.gz: 20220408141015-9fe3c42
-    graph-merger: 20220419195806-ed5cf2b
-    graphql-endpoint: 20220419150746-398e85f
-    grapl-web-ui: 20220419195806-ed5cf2b
-    model-plugin-deployer: 20220419195806-ed5cf2b
-    node-identifier: 20220419195806-ed5cf2b
-    node-identifier-retry: 20220419195806-ed5cf2b
-    organization-management: 20220419195806-ed5cf2b
-    osquery-generator: 20220419195806-ed5cf2b
-    pipeline-ingress: 20220419195806-ed5cf2b
-    plugin-bootstrap: 20220419195806-ed5cf2b
-    plugin-registry: 20220419195806-ed5cf2b
-    plugin-work-queue: 20220419195806-ed5cf2b
-    provisioner: 20220419150746-398e85f
-    sysmon-generator: 20220419195806-ed5cf2b
+    graph-merger: 20220420011759-a4bb389
+    graphql-endpoint: 20220420011759-a4bb389
+    grapl-web-ui: 20220420011759-a4bb389
+    model-plugin-deployer: 20220420011759-a4bb389
+    node-identifier: 20220420011759-a4bb389
+    node-identifier-retry: 20220420011759-a4bb389
+    organization-management: 20220420011759-a4bb389
+    osquery-generator: 20220420011759-a4bb389
+    pipeline-ingress: 20220420011759-a4bb389
+    plugin-bootstrap: 20220420011759-a4bb389
+    plugin-registry: 20220420011759-a4bb389
+    plugin-work-queue: 20220420011759-a4bb389
+    provisioner: 20220420011759-a4bb389
+    sysmon-generator: 20220420011759-a4bb389
   grapl:cloudsmith-repository-name: grapl/testing
   grapl:confluent-environment-name: testing
   grapl:env_vars:

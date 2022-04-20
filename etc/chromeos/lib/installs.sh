@@ -134,7 +134,7 @@ install_pyenv() {
     echo_banner "Install pyenv and set python version to ${PYENV_PYTHON_VERSION}"
     sudo apt-get install --yes make libssl-dev zlib1g-dev libbz2-dev \
         libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
-        xz-utils tk-dev libffi-dev liblzma-dev
+        xz-utils tk-dev libffi-dev liblzma-dev python3-dev
 
     # Check if pyenv directory exists and delete it so we can have a clean.
 
