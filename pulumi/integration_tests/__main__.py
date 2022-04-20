@@ -94,6 +94,7 @@ def main() -> None:
         "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
         "aws_region": aws.get_region().name,
         "container_images": _e2e_container_images(artifacts),
+        "dns_server": config.LOCAL_HOST_IP,
         # Used by graplctl to determine if it should manual-event or not
         "stack_name": grapl_stack.upstream_stack_name,
         "kafka_bootstrap_servers": grapl_stack.kafka_bootstrap_servers,
