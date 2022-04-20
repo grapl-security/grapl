@@ -10,7 +10,7 @@ PYENV_PYTHON_VERSION="3.7.10"
 # more cost-effective, especially the metal ones.
 # As such this section sets up some architecture variables..
 ARCH=$(arch)
-if [ ${ARCH} == "x86_64" ]; then
+if [ "${ARCH}" == "x86_64" ]; then
     hashicorp_arch_alias="amd64"
     ssm_arch_alias="64bit"
 else
