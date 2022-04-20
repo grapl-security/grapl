@@ -5,6 +5,17 @@ set -euo pipefail
 # Set versions
 PYENV_PYTHON_VERSION="3.7.10"
 
+# We're starting to use this for more than chromebooks. As such we're starting to make this architecture-independent.
+# This sets up some architecture aliases
+ARCH=$(arch)
+if [ ${ARCH} == "x86_64" ]; then
+  hashicorp_arch_alias="amd64"
+  ssm_arch_alias="64bit"
+else
+  hashicorp_arch_alias="arm64"
+  ssm_arch_alias="arm64"
+fi
+
 ## helper functions
 source_profile() {
     # Shellcheck can't follow $HOME or other vars like $USER so we disable the check here
@@ -217,7 +228,7 @@ install_awsv2() {
             curl --proto "=https" \
                 --tlsv1.2 \
                 --output "awscliv2.zip" \
-                "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
+                "https://awscli.amazonaws.com/awscli-exe-linux-${ARCH}.zip"
             unzip awscliv2.zip
             sudo ./aws/install --update
             sudo rm ./awscliv2.zip
@@ -229,7 +240,7 @@ install_awsv2() {
             curl --proto "=https" \
                 --tlsv1.2 \
                 --remote-name \
-                "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb"
+                "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_${ssm_arch_alias}/session-manager-plugin.deb"
             sudo dpkg -i session-manager-plugin.deb
             rm ./session-manager-plugin.deb
         )
@@ -261,7 +272,7 @@ install_hashicorp_tools() {
         https://apt.releases.hashicorp.com/gpg |
         sudo gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/hashicorp-apt.gpg --import &&
         sudo chmod 644 /etc/apt/trusted.gpg.d/hashicorp-apt.gpg
-    sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+    sudo apt-add-repository "deb [arch=${hashicorp_arch_alias}] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
     sudo apt-get update
     sudo apt-get install --yes consul nomad packer vault
 }
