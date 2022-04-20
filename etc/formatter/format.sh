@@ -54,52 +54,39 @@ else
     printHelp
 fi
 
-declare -a PIDS=()
-
 # As specified in `docker-compose.formatter.yml`
 readonly repo_root="/workdir"
 
+echo "--- Prettier Typescript"
 prettier \
     --config prettierrc.toml \
     ${prettier_arg} \
     ${repo_root}/src/js/graphql_endpoint/**/*.ts \
     ${repo_root}/src/js/engagement_view/src/**/*.ts \
-    ${repo_root}/src/js/engagement_view/src/**/*.tsx \
-    &
-PIDS+=("$!")
+    ${repo_root}/src/js/engagement_view/src/**/*.tsx
 
 # Slightly different config for yaml
+echo "--- Prettier YAML"
 prettier \
     --config prettierrc-yaml.toml \
     ${prettier_arg} \
     ${repo_root}/**/*.yml \
     ${repo_root}/**/*.yaml \
     ${repo_root}/.buildkite/**/*.yml \
-    ${repo_root}/.github/**/*.yml \
-    &
-PIDS+=("$!")
+    ${repo_root}/.github/**/*.yml
 
 # No config for markdown
+echo "--- Prettier Markdown"
 prettier \
     ${prettier_arg} \
     --prose-wrap always \
     --print-width 80 \
-    ${repo_root}"/{,!(**/(target|*venv)/**)}**/*.md" \
-    &
-PIDS+=("$!")
+    ${repo_root}"/{,!(**/(target|*venv)/**)}**/*.md"
 
 # No config for markdown
+echo "--- Prettier TOML"
 prettier \
     ${prettier_arg} \
     --prose-wrap always \
     --print-width 80 \
-    ${repo_root}"/{,!(**/(target|*venv)/**)}**/*.toml" \
-    &
-PIDS+=("$!")
-
-# Wait for each test to complete.
-EXIT_CODE=0
-for pid in "${PIDS[@]}"; do
-    wait "${pid}" || EXIT_CODE="$?"
-done
-exit "${EXIT_CODE}"
+    ${repo_root}"/{,!(**/(target|*venv)/**)}**/*.toml"
