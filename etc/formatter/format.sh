@@ -81,5 +81,5 @@ prettier \
     ${prettier_arg} \
     --prose-wrap always \
     --print-width 80 \
-    ${repo_root}"/{,!(**/(target|*venv)/**)}**/*.md" \
+    ${repo_root}"/{,!(**/(target|*venv|nomad-client-gen)/**)}**/*.md" \
     ${repo_root}"/{,!(**/(target|*venv)/**)}**/*.toml"
