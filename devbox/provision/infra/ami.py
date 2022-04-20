@@ -1,5 +1,6 @@
-import pulumi
 import pulumi_aws as aws
+
+import pulumi
 
 
 def get_ami() -> pulumi.Output[aws.ec2.GetAmiResult]:
