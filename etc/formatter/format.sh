@@ -59,7 +59,7 @@ readonly repo_root="/workdir"
 
 echo "--- Prettier Typescript"
 prettier \
-    --config prettierrc.toml \
+    --config prettierrc-typescript.toml \
     ${prettier_arg} \
     ${repo_root}/src/js/graphql_endpoint/**/*.ts \
     ${repo_root}/src/js/engagement_view/src/**/*.ts \
@@ -76,17 +76,10 @@ prettier \
     ${repo_root}/.github/**/*.yml
 
 # No config for markdown
-echo "--- Prettier Markdown"
+echo "--- Prettier Markdown, TOML"
 prettier \
     ${prettier_arg} \
     --prose-wrap always \
     --print-width 80 \
-    ${repo_root}"/{,!(**/(target|*venv)/**)}**/*.md"
-
-# No config for markdown
-echo "--- Prettier TOML"
-prettier \
-    ${prettier_arg} \
-    --prose-wrap always \
-    --print-width 80 \
+    ${repo_root}"/{,!(**/(target|*venv)/**)}**/*.md" \
     ${repo_root}"/{,!(**/(target|*venv)/**)}**/*.toml"
