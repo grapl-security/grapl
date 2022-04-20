@@ -11,8 +11,10 @@ use tempfile::NamedTempFile;
 pub enum NomadCliError {
     #[error("IOError {0:?}")]
     IOError(#[from] std::io::Error),
-    #[error("DeserializeJsonError")]
+    #[error("DeserializeJsonError {0:?}")]
     DeserializeJsonError(#[from] serde_json::Error),
+    #[error("NonzeroExitStatus stderr={0:?}")]
+    NonzeroExitStatus(String),
 }
 
 pub type NomadVars = HashMap<&'static str, String>;
@@ -48,7 +50,13 @@ impl NomadCli {
             ioe
         })?;
 
-        Ok(String::from_utf8_lossy(&result.stdout).to_string())
+        if !result.status.success() {
+            let stderr = String::from_utf8_lossy(&result.stderr).to_string();
+            return Err(NomadCliError::NonzeroExitStatus(stderr));
+        };
+
+        let stdout = String::from_utf8_lossy(&result.stdout).to_string();
+        Ok(stdout)
     }
 
     /// Convert HCL2 + variables into a Job

@@ -32,4 +32,11 @@ members = [
 ]
 
 [profile.dev]
-opt-level = 1
+opt-level = "s"
+
+# To override the settings for all dependencies (but not any workspace member),
+# use the "*" package name:
+[profile.dev.package."*"]
+opt-level = "s" # optimzie for size
+debug = 0 # line tables only
+strip = "symbols"

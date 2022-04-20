@@ -18,6 +18,7 @@ use crate::{
     nomad::{
         cli::{
             NomadCli,
+            NomadCliError,
             NomadVars,
         },
         client::{
@@ -27,6 +28,71 @@ use crate::{
     },
     static_files,
 };
+
+// https://github.com/grapl-security/issue-tracker/issues/908
+static USE_HAX_DOCKERIZED_PLUGIN: bool = true;
+
+pub fn get_job(
+    plugin: &PluginRow,
+    service_config: &PluginRegistryServiceConfig,
+    cli: &NomadCli,
+) -> Result<models::Job, NomadCliError> {
+    let plugin_artifact_url = {
+        let key = &plugin.artifact_s3_key;
+        let bucket = &service_config.plugin_s3_bucket_name;
+        get_s3_url(bucket, key)
+    };
+    match USE_HAX_DOCKERIZED_PLUGIN {
+        true => {
+            let job_file_hcl = static_files::HAX_DOCKERIZED_PLUGIN_JOB;
+            let job_file_vars: NomadVars = HashMap::from([
+                (
+                    "aws_account_id",
+                    service_config.plugin_s3_bucket_aws_account_id.to_owned(),
+                ),
+                ("plugin_artifact_url", plugin_artifact_url),
+                (
+                    "plugin_runtime_image",
+                    service_config
+                        .hax_dockerized_plugin_runtime_image
+                        .to_owned(),
+                ),
+                ("plugin_id", plugin.plugin_id.to_string()),
+                ("tenant_id", plugin.tenant_id.to_string()),
+            ]);
+            cli.parse_hcl2(job_file_hcl, job_file_vars)
+        }
+        false => {
+            let job_file_hcl = static_files::PLUGIN_JOB;
+            let job_file_vars: NomadVars = HashMap::from([
+                (
+                    "aws_account_id",
+                    service_config.plugin_s3_bucket_aws_account_id.to_owned(),
+                ),
+                (
+                    "kernel_artifact_url",
+                    service_config.kernel_artifact_url.to_owned(),
+                ),
+                ("plugin_artifact_url", plugin_artifact_url),
+                (
+                    "plugin_bootstrap_container_image",
+                    service_config.plugin_bootstrap_container_image.to_owned(),
+                ),
+                (
+                    "plugin_execution_container_image",
+                    service_config.plugin_execution_container_image.to_owned(),
+                ),
+                ("plugin_id", plugin.plugin_id.to_string()),
+                (
+                    "rootfs_artifact_url",
+                    service_config.rootfs_artifact_url.to_owned(),
+                ),
+                ("tenant_id", plugin.tenant_id.to_string()),
+            ]);
+            cli.parse_hcl2(job_file_hcl, job_file_vars)
+        }
+    }
+}
 
 /// https://github.com/grapl-security/grapl-rfcs/blob/main/text/0000-plugins.md#deployplugin-details
 #[tracing::instrument(skip(client, cli, db_client, plugin), err)]
@@ -39,40 +105,8 @@ pub async fn deploy_plugin(
 ) -> Result<(), PluginRegistryServiceError> {
     // --- Convert HCL to JSON Job model
     let job_name = "grapl-plugin"; // Matches what's in `plugin.nomad`
-    let plugin_artifact_url = {
-        let key = &plugin.artifact_s3_key;
-        let bucket = &service_config.plugin_s3_bucket_name;
-        get_s3_url(bucket, key)
-    };
-    let job = {
-        let job_file_hcl = static_files::PLUGIN_JOB;
-        let job_file_vars: NomadVars = HashMap::from([
-            (
-                "aws_account_id",
-                service_config.plugin_s3_bucket_aws_account_id.to_owned(),
-            ),
-            (
-                "kernel_artifact_url",
-                service_config.kernel_artifact_url.to_owned(),
-            ),
-            ("plugin_artifact_url", plugin_artifact_url),
-            (
-                "plugin_bootstrap_container_image",
-                service_config.plugin_bootstrap_container_image.to_owned(),
-            ),
-            (
-                "plugin_execution_container_image",
-                service_config.plugin_execution_container_image.to_owned(),
-            ),
-            ("plugin_id", plugin.plugin_id.to_string()),
-            (
-                "rootfs_artifact_url",
-                service_config.rootfs_artifact_url.to_owned(),
-            ),
-            ("tenant_id", plugin.tenant_id.to_string()),
-        ]);
-        cli.parse_hcl2(job_file_hcl, job_file_vars)?
-    };
+
+    let job = get_job(&plugin, service_config, &cli)?;
 
     // --- Deploy namespace
     let namespace_name = format!("plugin-{id}", id = plugin.plugin_id);
