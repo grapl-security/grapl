@@ -24,7 +24,6 @@ const defaultGraphDisplayState = (
     return {
         graphData: { nodes: [], links: [], index: {} },
         curLensName: lensName,
-        toggle: false,
     };
 };
 
@@ -87,21 +86,26 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
                 );
                 const interval = setInterval(() => {
                     // Invalidate the interval if the lens changes - this ensures we never race
-                    if (lastLens.current !== lensName) {
-                        console.info(
-                            "clearing interval",
-                            lastLens.current,
-                            lensName
-                        );
-                        clearInterval(lastInterval.current);
-                        lastInterval.current = null;
-                        stateRef.current = defaultGraphDisplayState(lensName);
-                    } else {
-                        updateGraphAndSetState(
-                            lensName,
-                            stateRef.current,
-                            setState
-                        );
+                    try {
+                        if (lastLens.current !== lensName) {
+                            console.info(
+                                "clearing interval",
+                                lastLens.current,
+                                lensName
+                            );
+                            clearInterval(lastInterval.current);
+                            lastInterval.current = null;
+                            stateRef.current =
+                                defaultGraphDisplayState(lensName);
+                        } else {
+                            updateGraphAndSetState(
+                                lensName,
+                                stateRef.current,
+                                setState
+                            );
+                        }
+                    } catch (e) {
+                        console.log("Error setting interval", e);
                     }
                 }, 1000);
                 lastInterval.current = interval;
