@@ -60,28 +60,48 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
         stateRef.current = state;
         // If our lens nodes have changed clear the last interval and load the new state
         if (lastLens.current !== lensName && lastInterval.current !== null) {
-            console.log("clearing interval because lens changed", lastLens.current, lensName);
+            console.log(
+                "clearing interval because lens changed",
+                lastLens.current,
+                lensName
+            );
             clearInterval(lastInterval.current);
             lastInterval.current = null;
             lastLens.current = lensName;
             stateRef.current = defaultGraphDisplayState(lensName);
-            updateGraphAndSetState(lensName, defaultGraphDisplayState(lensName), setState);
+            updateGraphAndSetState(
+                lensName,
+                defaultGraphDisplayState(lensName),
+                setState
+            );
         }
         // If there's no interval and we have a lens selected, start the interval
         if (lensName && lastInterval.current === null) {
             console.info("starting new interval", lensName, lastLens.current);
             try {
                 lastLens.current = lensName;
-                updateGraphAndSetState(lensName, defaultGraphDisplayState(lensName), setState);
+                updateGraphAndSetState(
+                    lensName,
+                    defaultGraphDisplayState(lensName),
+                    setState
+                );
                 const interval = setInterval(() => {
                     // Invalidate the interval if the lens changes - this ensures we never race
-                    if(lastLens.current !== lensName) {
-                        console.info("clearing interval", lastLens.current, lensName)
+                    if (lastLens.current !== lensName) {
+                        console.info(
+                            "clearing interval",
+                            lastLens.current,
+                            lensName
+                        );
                         clearInterval(lastInterval.current);
                         lastInterval.current = null;
                         stateRef.current = defaultGraphDisplayState(lensName);
                     } else {
-                        updateGraphAndSetState(lensName, stateRef.current, setState);
+                        updateGraphAndSetState(
+                            lensName,
+                            stateRef.current,
+                            setState
+                        );
                     }
                 }, 1000);
                 lastInterval.current = interval;
