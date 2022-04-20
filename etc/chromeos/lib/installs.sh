@@ -9,11 +9,11 @@ PYENV_PYTHON_VERSION="3.7.10"
 # This sets up some architecture aliases
 ARCH=$(arch)
 if [ ${ARCH} == "x86_64" ]; then
-  hashicorp_arch_alias="amd64"
-  ssm_arch_alias="64bit"
+    hashicorp_arch_alias="amd64"
+    ssm_arch_alias="64bit"
 else
-  hashicorp_arch_alias="arm64"
-  ssm_arch_alias="arm64"
+    hashicorp_arch_alias="arm64"
+    ssm_arch_alias="arm64"
 fi
 
 ## helper functions
@@ -350,15 +350,24 @@ install_firecracker() {
     # v1.0.0 doesn't currently work with the nomad firecracker plugin due to a breaking change. Instead we're hardcoding
     # the version for now. TODO switch to grabbing the latest version once the nomad plugin is updated
     # version=$(get_latest_release "${repo}")
-    version="v0.25.2"
+    version="v0.18.0"
 
     url_prefix="https://github.com/${repo}/releases/download/${version}"
 
-    download_and_install_tarball \
-        "${url_prefix}/firecracker-${version}-$(arch).tgz" \
-        /tmp/firecracker
+    # This is used for old versions of firecracker
+    sudo curl --proto "=https" \
+        --tlsv1.2 \
+        --location \
+        --output /usr/bin/firecracker \
+        "${url_prefix}/firecracker-${version}"
+    sudo chmod 0755 /usr/bin/firecracker
 
-    sudo mv "/tmp/firecracker/release-${version}-$(arch)/firecracker-${version}-$(arch)" "/usr/bin/firecracker"
+    # TODO switch to grabbing the tarball release once the task driver is upgraded
+    #    download_and_install_tarball \
+    #        "${url_prefix}/firecracker-${version}-${ARCH}.tgz" \
+    #        /tmp/firecracker
+    #
+    #    sudo mv "/tmp/firecracker/release-${version}-${ARCH}/firecracker-${version}-${ARCH}" "/usr/bin/firecracker"
 }
 
 install_nomad_firecracker() {
