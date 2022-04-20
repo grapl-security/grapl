@@ -229,10 +229,9 @@ const handleLensScope = async (
                 node[predicate] &&
                 node[predicate][0]["uid"]
             ) {
-                node[predicate] = batchEnrichNodes(
-                    node[predicate]
-                ).filter((neighbor_of_node: EnrichedNode) =>
-                    uids_in_scope.has(neighbor_of_node["uid"])
+                node[predicate] = batchEnrichNodes(node[predicate]).filter(
+                    (neighbor_of_node: EnrichedNode) =>
+                        uids_in_scope.has(neighbor_of_node["uid"])
                 );
 
                 // If we filtered all the edges down, might as well delete this predicate
