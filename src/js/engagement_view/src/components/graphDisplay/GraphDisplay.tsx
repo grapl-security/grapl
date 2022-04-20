@@ -55,7 +55,7 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
         try {
             const interval = setInterval(() => {
                 updateGraphAndSetState(lensName, state, setState);
-            }, 1000);
+            }, 3000);
             return () => clearInterval(interval);
         } catch (e) {
             console.debug("Error Updating Graph", e);
@@ -191,11 +191,11 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
     );
 
     const linkStyling = (link: any, ctx: any) => {
-        ctx.save();
         const MAX_FONT_SIZE = 8;
         const LABEL_NODE_MARGIN = 12;
         const start = link.source;
         const end = link.target;
+
         link.color = calcLinkColor(link, data);
 
         // Ignore unbounded links
@@ -224,6 +224,7 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
             MAX_FONT_SIZE,
             maxTextLength / ctx.measureText(label).width
         );
+        ctx.save();
         ctx.font = `${fontSize + 5}px Roboto`;
         ctx.fillStyle = "#FFF";
 
@@ -267,8 +268,8 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
                     : calcLinkColor(link as Link, data as VizGraph)
             }
             linkWidth={(link) => (highlightLinks.has(link) ? 5 : 4)}
-            linkCanvasObjectMode={() => "after"}
             linkCanvasObject={linkStyling}
+            linkCanvasObjectMode={() => "after"}
             onLinkHover={(link) => {
                 highlightNodes.clear();
                 highlightLinks.clear();
