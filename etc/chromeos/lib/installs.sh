@@ -5,8 +5,10 @@ set -euo pipefail
 # Set versions
 PYENV_PYTHON_VERSION="3.7.10"
 
-# We're starting to use this for more than chromebooks. As such we're starting to make this architecture-independent.
-# This sets up some architecture aliases
+# We're starting to use this  script for more than chromebooks. As such we're starting to make this
+# architecture-independent, so that in the future we can use it for AWS graviton instances, which are significantly
+# more cost-effective, especially the metal ones.
+# As such this section sets up some architecture variables..
 ARCH=$(arch)
 if [ ${ARCH} == "x86_64" ]; then
     hashicorp_arch_alias="amd64"
