@@ -13,7 +13,8 @@ source "${THIS_DIR}/lib.sh"
 
 export FORWARD_PORTS="4646,8500,1234,16686"
 
-"${THIS_DIR}"/ssh.sh -t "$(cat <<EOF
+"${THIS_DIR}"/ssh.sh -t "$(
+    cat << EOF
     echo -e "Forwarding ports from devbox: $(bright_green "${FORWARD_PORTS}")."
     echo "Hit <ENTER> to end forwarding.";
     read
