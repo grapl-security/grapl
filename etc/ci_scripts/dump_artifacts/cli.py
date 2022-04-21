@@ -10,6 +10,7 @@ from typing import Optional
 
 # Odd path is due to the `/etc` root pattern in pants.toml, fyi
 from ci_scripts.dump_artifacts import docker_artifacts, nomad_artifacts
+from ci_scripts.dump_artifacts.analysis import pipeline_message_flow
 
 # need minimum 3.7 for capture_output=True
 assert sys.version_info >= (
@@ -75,6 +76,12 @@ def main() -> None:
     )
 
     nomad_artifacts.dump_all(artifacts_dir, dump_agent_logs=args.dump_agent_logs)
+
+    # Run meta-analyses on the Nomad logs
+    analysis_dir = artifacts_dir / "analysis"
+    os.makedirs(analysis_dir, exist_ok=False)
+    pipeline_message_flow.analyze_grapl_core(artifacts_dir, analysis_dir)
+
     LOGGER.info(f"--- Artifacts dumped to {artifacts_dir}")
 
 

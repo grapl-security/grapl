@@ -93,10 +93,12 @@ def dump_volume(
 
     # Copy contents of /mounted_volume into artifacts_dir
     subprocess.run(
-        f"docker cp {container_id}:/{volume_name} {artifacts_dir}", shell=True
+        f"docker cp {container_id}:/{volume_name} {artifacts_dir}",
+        shell=True,
+        capture_output=True,
     )
 
-    subprocess.run(f"docker rm {container_id}", shell=True)
+    subprocess.run(f"docker rm {container_id}", shell=True, capture_output=True)
 
 
 def dump_all_docker_logs(compose_project: str, artifacts_dir: Path) -> None:
