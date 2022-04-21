@@ -23,6 +23,7 @@ config:
     plugin-registry: 20220421170433-520a344
     plugin-work-queue: 20220421170433-520a344
     provisioner: 20220421202221-a5dc54e
+    rust-integration-tests-new: 20220421205007-858f3f8
     sysmon-generator: 20220421170433-520a344
   grapl:cloudsmith-repository-name: grapl/testing
   grapl:confluent-environment-name: testing
