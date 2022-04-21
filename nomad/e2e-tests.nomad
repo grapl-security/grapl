@@ -87,17 +87,8 @@ variable "test_user_password_secret_id" {
   description = "The SecretsManager SecretID for the test user's password"
 }
 
-variable "dns_server" {
-  type        = string
-  description = "The network.dns.server value. This should be equivalent to the host's ip in order to communicate with dnsmasq and allow consul dns to be available from within containers. This can be replaced as of Nomad 1.3.0 with variable interpolation per https://github.com/hashicorp/nomad/issues/11851."
-}
-
 locals {
   log_level = "DEBUG"
-  # We set dns configurations to a host private IP (the docker0 bridge interface) to enable consul dns
-  # Per https://github.com/hashicorp/nomad/issues/11033, we have to set networking in the nomad file because the docker
-  # driver does not use the stub resolver
-  dns_servers = [var.dns_server]
 }
 
 job "e2e-tests" {
@@ -122,9 +113,6 @@ job "e2e-tests" {
     network {
       mode = "bridge"
       # TODO: Reintroduce VSC_DEBUGGER_PORT_FOR_GRAPL_E2E_TESTS at some point
-      dns {
-        servers = local.dns_servers
-      }
     }
 
     # Enable service discovery
