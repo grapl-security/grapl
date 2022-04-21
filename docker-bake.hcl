@@ -231,19 +231,12 @@ group "integration-tests" {
   ]
 }
 
-group "integration-tests-new" {
-  # NOTE: Please keep this list sorted in alphabetical order
-  targets = [
-    "rust-integration-tests-new"
-  ]
-}
-
 group "all-tests" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
     "e2e-tests",
     "integration-tests",
-    "integration-tests-new"
+    "rust-integration-tests-new"
   ]
 }
 
