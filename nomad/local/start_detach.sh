@@ -57,6 +57,8 @@ ensure_valid_env() {
 start_nomad_detach() {
     ensure_valid_env
 
+    DOCKER0_BRIDGE=$(docker network inspect bridge --format='{{(index .IPAM.Config 0).Gateway}}')
+
     echo "Starting nomad and consul locally. Logs @ ${NOMAD_LOGS_DEST} and ${CONSUL_LOGS_DEST}."
     # These will run forever until `make stop-nomad-ci` is invoked."
     # shellcheck disable=SC2024
@@ -64,8 +66,8 @@ start_nomad_detach() {
         -config="${THIS_DIR}/nomad-agent-conf.nomad" \
         -dev-connect > "${NOMAD_LOGS_DEST}" &
     # The client is set to 0.0.0.0 here so that it can be reached via pulumi in docker.
-    consul agent \
-        -client 0.0.0.0 -config-file "${THIS_DIR}/consul-agent-conf.hcl" \
+    sudo consul agent \
+        -client "${DOCKER0_BRIDGE}" -bind "${DOCKER0_BRIDGE}" -config-file "${THIS_DIR}/consul-agent-conf.hcl" \
         -dev > "${CONSUL_LOGS_DEST}" &
 
     "${THIS_DIR}/nomad_run_local_infra.sh"

@@ -2,6 +2,10 @@
 # This is not specified by default for nomad agent -dev
 plugin_dir = "/opt/nomad/plugins"
 
+consul {
+  address = "172.17.0.1:8500"
+}
+
 ####################
 # Plugin configs
 ####################

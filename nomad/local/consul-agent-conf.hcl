@@ -17,6 +17,10 @@ telemetry {
   prometheus_retention_time = "30s"
 }
 
+ports {
+  dns = 53
+}
+
 # Set dns recursors so that when consul dns is queried for anything besides .consul, we can still get valid dns entries.
 # We're using Google DNS as the primary, with a fallback to cloudflare dns. These can be switched out as necessary
 recursors = ["8.8.8.8", "8.8.4.4", "1.1.1.1"]
