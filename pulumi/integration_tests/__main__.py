@@ -118,7 +118,8 @@ def main() -> None:
     integration_tests_new_job_vars: NomadVars = {
         "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
         "aws_region": aws.get_region().name,
-        "container_images": _integration_new_container_images(artifacts),
+        # commented out temporarily to get the artifact into cloudsmith
+        # "container_images": _integration_new_container_images(artifacts),
         "kafka_bootstrap_servers": grapl_stack.kafka_bootstrap_servers,
         "pipeline_ingress_healthcheck_polling_interval_ms": grapl_stack.pipeline_ingress_healthcheck_polling_interval_ms,
         "pipeline_ingress_kafka_consumer_group_name": grapl_stack.pipeline_ingress_kafka_consumer_group_name,
