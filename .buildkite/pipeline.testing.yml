@@ -23,18 +23,18 @@ steps:
     artifact_paths:
       - "test_artifacts/**/*"
 
-  - label: ":aws: Integration tests in AWS"
-    agents:
-      queue: "pulumi-staging"
-    plugins:
-      - grapl-security/vault-login#v0.1.2
-      - grapl-security/vault-env#v0.1.0:
-          secrets:
-            - PULUMI_ACCESS_TOKEN
-      - improbable-eng/metahook#v0.4.1:
-          post-command: |
-            .buildkite/scripts/grapl_testing_stack/dump_artifacts.sh
-    command:
-      - .buildkite/scripts/grapl_testing_stack/run_parameterized_job.sh integration-tests-new 6
-    artifact_paths:
-      - "test_artifacts/**/*"
+  # - label: ":aws: Integration tests in AWS"
+  #   agents:
+  #     queue: "pulumi-staging"
+  #   plugins:
+  #     - grapl-security/vault-login#v0.1.2
+  #     - grapl-security/vault-env#v0.1.0:
+  #         secrets:
+  #           - PULUMI_ACCESS_TOKEN
+  #     - improbable-eng/metahook#v0.4.1:
+  #         post-command: |
+  #           .buildkite/scripts/grapl_testing_stack/dump_artifacts.sh
+  #   command:
+  #     - .buildkite/scripts/grapl_testing_stack/run_parameterized_job.sh integration-tests-new 6
+  #   artifact_paths:
+  #     - "test_artifacts/**/*"
