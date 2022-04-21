@@ -162,7 +162,8 @@ group "cloudsmith-images" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
     "e2e-tests",
-    "grapl-services"
+    "grapl-services",
+    "rust-integration-tests-new"
   ]
 }
 
