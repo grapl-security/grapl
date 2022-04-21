@@ -211,7 +211,7 @@ build-test-integration:
 .PHONY: build-test-integration-new
 build-test-integration-new:
 	@echo "--- Building \"new\" integration test images"
-	docker buildx bake integration-tests-new $(buildx_builder_args)
+	docker buildx bake rust-integration-tests-new $(buildx_builder_args)
 
 ########################################################################
 
