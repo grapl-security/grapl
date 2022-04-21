@@ -452,7 +452,7 @@ job "grapl-local-infra" {
           "--log-facility=-",
         ]
         cap_add = [
-          "NET_ADMIN",
+          "NET_BIND_SERVICE",
         ]
         logging {
           type = "journald"
