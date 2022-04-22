@@ -2,7 +2,10 @@ pub use crate::graplinc::grapl::api::plugin_registry::v1beta1_client::{
     PluginRegistryServiceClient,
     PluginRegistryServiceClientError,
 };
-use crate::{protobufs::graplinc::grapl::api::plugin_registry::v1beta1 as proto, SerDeError};
+use crate::{
+    protobufs::graplinc::grapl::api::plugin_registry::v1beta1 as proto,
+    SerDeError,
+};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum PluginType {
@@ -26,9 +29,9 @@ impl TryFrom<&str> for PluginType {
         match value {
             "generator" => Ok(Self::Generator),
             "analyzer" => Ok(Self::Analyzer),
-            unknown => Err(SerDeError::UnknownVariant(
-                std::borrow::Cow::Owned(unknown.to_owned()),
-            )),
+            unknown => Err(SerDeError::UnknownVariant(std::borrow::Cow::Owned(
+                unknown.to_owned(),
+            ))),
         }
     }
 }
@@ -40,9 +43,7 @@ impl TryFrom<String> for PluginType {
         match value.as_str() {
             "generator" => Ok(Self::Generator),
             "analyzer" => Ok(Self::Analyzer),
-            _ => Err(SerDeError::UnknownVariant(
-                std::borrow::Cow::Owned(value),
-            )),
+            _ => Err(SerDeError::UnknownVariant(std::borrow::Cow::Owned(value))),
         }
     }
 }
@@ -52,11 +53,9 @@ impl TryFrom<proto::PluginType> for PluginType {
 
     fn try_from(value: proto::PluginType) -> Result<Self, Self::Error> {
         match value {
-            proto::PluginType::Unspecified => {
-                Err(SerDeError::UnknownVariant(
-                    std::borrow::Cow::Borrowed("PluginType"),
-                ))
-            }
+            proto::PluginType::Unspecified => Err(SerDeError::UnknownVariant(
+                std::borrow::Cow::Borrowed("PluginType"),
+            )),
             proto::PluginType::Generator => Ok(PluginType::Generator),
             proto::PluginType::Analyzer => Ok(PluginType::Analyzer),
         }
@@ -93,9 +92,7 @@ impl TryFrom<proto::Plugin> for Plugin {
         let plugin_binary = value.plugin_binary;
         let plugin_id = value
             .plugin_id
-            .ok_or(SerDeError::MissingField(
-                "Plugin.plugin_id",
-            ))?
+            .ok_or(SerDeError::MissingField("Plugin.plugin_id"))?
             .into();
 
         Ok(Self {
@@ -138,17 +135,13 @@ impl TryFrom<proto::CreatePluginRequest> for CreatePluginRequest {
 
         let tenant_id = value
             .tenant_id
-            .ok_or(SerDeError::MissingField(
-                "CreatePluginRequest.tenant_id",
-            ))?
+            .ok_or(SerDeError::MissingField("CreatePluginRequest.tenant_id"))?
             .into();
         let display_name = value.display_name;
         let plugin_artifact = value.plugin_artifact;
 
         if display_name.is_empty() {
-            return Err(SerDeError::MissingField(
-                "CreatePluginRequest.display_name",
-            ));
+            return Err(SerDeError::MissingField("CreatePluginRequest.display_name"));
         }
 
         if plugin_artifact.is_empty() {
@@ -189,9 +182,7 @@ impl TryFrom<proto::CreatePluginResponse> for CreatePluginResponse {
     fn try_from(value: proto::CreatePluginResponse) -> Result<Self, Self::Error> {
         let plugin_id = value
             .plugin_id
-            .ok_or(SerDeError::MissingField(
-                "CreatePluginResponse.plugin_id",
-            ))?
+            .ok_or(SerDeError::MissingField("CreatePluginResponse.plugin_id"))?
             .into();
 
         Ok(Self { plugin_id })
@@ -216,9 +207,7 @@ impl TryFrom<proto::DeployPluginRequest> for DeployPluginRequest {
     fn try_from(value: proto::DeployPluginRequest) -> Result<Self, Self::Error> {
         let plugin_id = value
             .plugin_id
-            .ok_or(SerDeError::MissingField(
-                "DeployPluginRequest.plugin_id",
-            ))?
+            .ok_or(SerDeError::MissingField("DeployPluginRequest.plugin_id"))?
             .into();
 
         Ok(Self { plugin_id })
@@ -373,9 +362,7 @@ impl TryFrom<proto::GetPluginRequest> for GetPluginRequest {
     fn try_from(value: proto::GetPluginRequest) -> Result<Self, Self::Error> {
         let plugin_id = value
             .plugin_id
-            .ok_or(SerDeError::MissingField(
-                "GetPluginRequest.plugin_id",
-            ))?
+            .ok_or(SerDeError::MissingField("GetPluginRequest.plugin_id"))?
             .into();
 
         let tenant_id = value
@@ -411,9 +398,7 @@ impl TryFrom<proto::GetPluginResponse> for GetPluginResponse {
     fn try_from(value: proto::GetPluginResponse) -> Result<Self, Self::Error> {
         let plugin = value
             .plugin
-            .ok_or(SerDeError::MissingField(
-                "GetPluginResponse.plugin",
-            ))?
+            .ok_or(SerDeError::MissingField("GetPluginResponse.plugin"))?
             .try_into()?;
 
         Ok(Self { plugin })
@@ -438,9 +423,7 @@ impl TryFrom<proto::TearDownPluginRequest> for TearDownPluginRequest {
     fn try_from(value: proto::TearDownPluginRequest) -> Result<Self, Self::Error> {
         let plugin_id = value
             .plugin_id
-            .ok_or(SerDeError::MissingField(
-                "TearDownPluginRequest.plugin_id",
-            ))?
+            .ok_or(SerDeError::MissingField("TearDownPluginRequest.plugin_id"))?
             .into();
 
         Ok(Self { plugin_id })

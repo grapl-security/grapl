@@ -1,5 +1,6 @@
 use std::marker::PhantomData;
 
+use futures::TryFutureExt;
 use proto::plugin_registry_service_server::PluginRegistryService;
 use thiserror::Error;
 use tonic::{
@@ -25,8 +26,6 @@ use crate::{
     protobufs::graplinc::grapl::api::plugin_registry::v1beta1 as proto,
     SerDeError,
 };
-
-use futures::{TryFutureExt};
 
 #[non_exhaustive]
 #[derive(Debug, Error)]
@@ -97,13 +96,13 @@ where
             .into_inner()
             .try_into()
             .map_err(|e: SerDeError| tonic::Status::unknown(e.to_string()))?;
-        
+
         let response = self
             .api_server
             .create_plugin(inner_request)
             .map_err(|e| tonic::Status::unknown(e.to_string()))
             .await?;
-        
+
         Ok(Response::new(response.into()))
     }
 
@@ -115,7 +114,7 @@ where
             .into_inner()
             .try_into()
             .map_err(|e: SerDeError| tonic::Status::unknown(e.to_string()))?;
-        
+
         let response = self
             .api_server
             .get_plugin(inner_request)
@@ -133,7 +132,7 @@ where
             .into_inner()
             .try_into()
             .map_err(|e: SerDeError| tonic::Status::unknown(e.to_string()))?;
-        
+
         let response = self
             .api_server
             .deploy_plugin(inner_request)

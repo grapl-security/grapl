@@ -9,8 +9,8 @@ use tonic::transport::Endpoint;
 use crate::{
     graplinc::grapl::api::plugin_registry::v1beta1 as native,
     protobufs::graplinc::grapl::api::plugin_registry::v1beta1 as proto,
+    SerDeError,
 };
-use crate::SerDeError;
 
 const ADDRESS_ENV_VAR: &'static str = "GRAPL_PLUGIN_REGISTRY_ADDRESS";
 
