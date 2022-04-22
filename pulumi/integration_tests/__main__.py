@@ -11,6 +11,7 @@ from infra.artifacts import ArtifactGetter
 from infra.autotag import register_auto_tags
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.hashicorp_provider import get_nomad_provider_address
+from infra.kafka import Kafka
 from infra.nomad_job import NomadJob, NomadVars
 from infra.path import path_from_root
 
@@ -89,6 +90,14 @@ def main() -> None:
     ##### Business Logic
     grapl_stack = GraplStack(stack_name)
 
+    kafka = Kafka(
+        "kafka",
+        confluent_environment_name=pulumi_config.require("confluent-environment-name"),
+        create_local_topics=False,
+    )
+
+    e2e_kafka_credentials = kafka.service_credentials(service_name="e2e-test-runner")
+
     e2e_test_job_vars: NomadVars = {
         "analyzer_bucket": grapl_stack.analyzer_bucket,
         "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
@@ -96,10 +105,10 @@ def main() -> None:
         "container_images": _e2e_container_images(artifacts),
         # Used by graplctl to determine if it should manual-event or not
         "stack_name": grapl_stack.upstream_stack_name,
-        "kafka_bootstrap_servers": grapl_stack.kafka_bootstrap_servers,
-        "kafka_sasl_username": grapl_stack.kafka_e2e_sasl_username,
-        "kafka_sasl_password": grapl_stack.kafka_e2e_sasl_password,
-        "kafka_consumer_group_name": grapl_stack.kafka_e2e_consumer_group_name,
+        "kafka_bootstrap_servers": kafka.bootstrap_servers(),
+        "kafka_sasl_username": e2e_kafka_credentials.apply(lambda c: c.api_key),
+        "kafka_sasl_password": e2e_kafka_credentials.apply(lambda c: c.api_secret),
+        "kafka_consumer_group_name": kafka.consumer_group("e2e-tests"),
         "schema_properties_table_name": grapl_stack.schema_properties_table_name,
         "sysmon_log_bucket": grapl_stack.sysmon_log_bucket,
         "schema_table_name": grapl_stack.schema_table_name,
@@ -115,14 +124,22 @@ def main() -> None:
         opts=pulumi.ResourceOptions(provider=nomad_provider),
     )
 
+    integration_tests_kafka_credentials = kafka.service_credentials("integration-tests")
+
     integration_tests_new_job_vars: NomadVars = {
         "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
         "aws_region": aws.get_region().name,
         "container_images": _integration_new_container_images(artifacts),
-        "integration_tests_kafka_consumer_group_name": grapl_stack.integration_tests_kafka_consumer_group_name,
-        "integration_tests_kafka_sasl_username": grapl_stack.integration_tests_kafka_sasl_username,
-        "integration_tests_kafka_sasl_password": grapl_stack.integration_tests_kafka_sasl_password,
-        "kafka_bootstrap_servers": grapl_stack.kafka_bootstrap_servers,
+        "integration_tests_kafka_consumer_group_name": kafka.consumer_group(
+            "integration-tests"
+        ),
+        "integration_tests_kafka_sasl_username": integration_tests_kafka_credentials.apply(
+            lambda c: c.api_key
+        ),
+        "integration_tests_kafka_sasl_password": integration_tests_kafka_credentials.apply(
+            lambda c: c.api_secret
+        ),
+        "kafka_bootstrap_servers": kafka.bootstrap_servers(),
         "pipeline_ingress_healthcheck_polling_interval_ms": grapl_stack.pipeline_ingress_healthcheck_polling_interval_ms,
     }
 
@@ -144,9 +161,6 @@ def main() -> None:
             "container_images": _integration_container_images(artifacts),
             "docker_user": os.environ["DOCKER_USER"],
             "grapl_root": os.environ["GRAPL_ROOT"],
-            "kafka_bootstrap_servers": grapl_stack.kafka_bootstrap_servers,
-            "kafka_sasl_username": grapl_stack.kafka_e2e_sasl_username,
-            "kafka_sasl_password": grapl_stack.kafka_e2e_sasl_password,
             "redis_endpoint": grapl_stack.redis_endpoint,
             "schema_properties_table_name": grapl_stack.schema_properties_table_name,
             "test_user_name": grapl_stack.test_user_name,
@@ -210,24 +224,6 @@ class GraplStack:
         )
         self.organization_management_db_password = require_str(
             "organization-management-db-password"
-        )
-
-        self.kafka_bootstrap_servers = require_str("kafka-bootstrap-servers")
-
-        self.kafka_e2e_sasl_username = require_str("kafka-e2e-sasl-username")
-        self.kafka_e2e_sasl_password = require_str("kafka-e2e-sasl-password")
-        self.kafka_e2e_consumer_group_name = require_str(
-            "kafka-e2e-consumer-group-name"
-        )
-
-        self.integration_tests_kafka_consumer_group_name = require_str(
-            "integration-tests-kafka-consumer-group-name"
-        )
-        self.integration_tests_kafka_sasl_username = require_str(
-            "integration-tests-kafka-sasl-username"
-        )
-        self.integration_tests_kafka_sasl_password = require_str(
-            "integration-tests-kafka-sasl-password"
         )
 
         self.pipeline_ingress_healthcheck_polling_interval_ms = require_str(

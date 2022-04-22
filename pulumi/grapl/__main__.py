@@ -197,20 +197,6 @@ def main() -> None:
         pipeline_ingress_healthcheck_polling_interval_ms,
     )
 
-    pulumi.export(
-        "integration-tests-kafka-consumer-group-name",
-        kafka.consumer_group("integration-tests"),
-    )
-    integration_tests_kafka_credentials = kafka.service_credentials("integration-tests")
-    pulumi.export(
-        "integration-tests-kafka-sasl-username",
-        integration_tests_kafka_credentials.apply(lambda c: c.api_key),
-    )
-    pulumi.export(
-        "integration-tests-kafka-sasl-password",
-        integration_tests_kafka_credentials.apply(lambda c: c.api_secret),
-    )
-
     plugins_bucket = Bucket("plugins-bucket", sse=True)
     pulumi.export("plugins-bucket", plugins_bucket.bucket)
 
@@ -304,20 +290,6 @@ def main() -> None:
     }
 
     nomad_grapl_core_timeout = "5m"
-
-    pulumi.export("kafka-bootstrap-servers", kafka.bootstrap_servers())
-
-    e2e_kafka_credentials = kafka.service_credentials(service_name="e2e-test-runner")
-
-    pulumi.export(
-        "kafka-e2e-sasl-username", e2e_kafka_credentials.apply(lambda c: c.api_key)
-    )
-    pulumi.export(
-        "kafka-e2e-sasl-password", e2e_kafka_credentials.apply(lambda c: c.api_secret)
-    )
-    pulumi.export(
-        "kafka-e2e-consumer-group-name", kafka.consumer_group("e2e-test-runner")
-    )
 
     pipeline_ingress_kafka_credentials = kafka.service_credentials("pipeline-ingress")
 
