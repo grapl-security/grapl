@@ -1,10 +1,11 @@
 # 0.1.0-alpha.1
 
-Initial release.
+Pre-release.
 
 Supports the following event types:
 
 - FileCreate
+- FileCreateStreamHash
 - NetworkConnect
 - ProcessCreate
 - ProcessTerminate
