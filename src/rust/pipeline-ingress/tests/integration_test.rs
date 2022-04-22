@@ -81,7 +81,7 @@ impl AsyncTestContext for PipelineIngressTestContext {
             .expect("missing environment variable INTEGRATION_TESTS_KAFKA_SASL_USERNAME");
         let sasl_password = std::env::var("INTEGRATION_TESTS_KAFKA_SASL_PASSWORD")
             .expect("missing environment variable INTEGRATION_TESTS_KAFKA_SASL_PASSWORD");
-        let consumer_group_name = std::env::var("INTEGRATION_TESTS_TEST_KAFKA_CONSUMER_GROUP_NAME")
+        let consumer_group_name = std::env::var("INTEGRATION_TESTS_KAFKA_CONSUMER_GROUP_NAME")
             .expect("missing environment variable INTEGRATION_TESTS_KAFKA_CONSUMER_GROUP_NAME");
 
         tracing::info!(
