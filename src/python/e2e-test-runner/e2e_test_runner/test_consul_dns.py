@@ -6,7 +6,7 @@ import socket
 
 def test_if_consul_dns_resolves() -> None:
     try:
-        ipaddress = socket.gethostbyname("jaeger-zipkin.service.consul")
+        ipaddress = socket.gethostbyname("web-ui.service.consul")
     except socket.gaierror:
         ipaddress = ""
     assert ipaddress
