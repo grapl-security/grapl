@@ -5,7 +5,7 @@ use plugin_registry::client::{
     PluginRegistryServiceClient,
     PluginRegistryServiceClientError,
 };
-use rust_proto::plugin_registry::{
+use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
     CreatePluginRequest,
     DeployPluginRequest,
     PluginType,

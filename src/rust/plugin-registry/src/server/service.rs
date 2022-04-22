@@ -5,7 +5,7 @@ use rusoto_s3::{
     S3Client,
     S3,
 };
-use rust_proto::plugin_registry::{
+use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
     plugin_registry_service_server::{
         PluginRegistryService,
         PluginRegistryServiceServer,

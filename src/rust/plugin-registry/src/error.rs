@@ -2,7 +2,7 @@ use rusoto_s3::{
     GetObjectError,
     PutObjectError,
 };
-use rust_proto::plugin_registry::PluginRegistryDeserializationError;
+use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::PluginRegistryDeserializationError;
 
 use crate::nomad;
 

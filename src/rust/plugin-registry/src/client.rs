@@ -1,6 +1,9 @@
-use std::time::Duration;
+use std::{
+    fmt::Debug,
+    time::Duration,
+};
 
-use rust_proto::plugin_registry::{
+use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
     plugin_registry_service_client::PluginRegistryServiceClient as _PluginRegistryServiceClient,
     CreatePluginRequest,
     CreatePluginRequestProto,
@@ -22,13 +25,7 @@ use rust_proto::plugin_registry::{
     TearDownPluginRequestProto,
     TearDownPluginResponse,
 };
-use tonic::{
-    codegen::{
-        Body,
-        StdError,
-    },
-    transport::Endpoint,
-};
+use tonic::transport::Endpoint;
 
 const ADDRESS_ENV_VAR: &'static str = "GRAPL_PLUGIN_REGISTRY_ADDRESS";
 
@@ -40,41 +37,30 @@ pub enum PluginRegistryServiceClientError {
     PluginRegistryDeserializationError(#[from] PluginRegistryDeserializationError),
 }
 
-pub struct PluginRegistryServiceClient<T> {
-    inner: _PluginRegistryServiceClient<T>,
+pub struct PluginRegistryServiceClient {
+    proto_client: _PluginRegistryServiceClient<tonic::transport::Channel>,
 }
 
-impl PluginRegistryServiceClient<tonic::transport::Channel> {
+impl PluginRegistryServiceClient {
     /// Create a client from environment
     #[tracing::instrument(err)]
     pub async fn from_env() -> Result<Self, Box<dyn std::error::Error>> {
         let address = std::env::var(ADDRESS_ENV_VAR).expect(ADDRESS_ENV_VAR);
-        Self::from_endpoint(address).await
-    }
-
-    /// Create a client from a specific endpoint
-    #[tracing::instrument(err)]
-    pub async fn from_endpoint(address: String) -> Result<Self, Box<dyn std::error::Error>> {
-        tracing::debug!(message = "Connecting to endpoint");
-
-        // TODO: It might make sense to make these values configurable.
         let endpoint = Endpoint::from_shared(address)?
             .timeout(Duration::from_secs(5))
             .concurrency_limit(30);
-        let channel = endpoint.connect().await?;
-        Ok(Self::new(_PluginRegistryServiceClient::new(channel)))
+        Self::connect(endpoint).await
     }
-}
 
-impl<T> PluginRegistryServiceClient<T>
-where
-    T: tonic::client::GrpcService<tonic::body::BoxBody>,
-    T::ResponseBody: Body + Send + 'static,
-    T::Error: Into<StdError>,
-    <T::ResponseBody as Body>::Error: Into<StdError> + Send,
-{
-    pub fn new(inner: _PluginRegistryServiceClient<T>) -> Self {
-        Self { inner }
+    #[tracing::instrument(err)]
+    pub async fn connect<T>(endpoint: T) -> Result<Self, Box<dyn std::error::Error>>
+    where
+        T: std::convert::TryInto<tonic::transport::Endpoint> + Debug,
+        T::Error: std::error::Error + Send + Sync + 'static,
+    {
+        Ok(PluginRegistryServiceClient {
+            proto_client: _PluginRegistryServiceClient::connect(endpoint).await?,
+        })
     }
 
     /// create a new plugin
@@ -83,7 +69,7 @@ where
         request: CreatePluginRequest,
     ) -> Result<CreatePluginResponse, PluginRegistryServiceClientError> {
         let response = self
-            .inner
+            .proto_client
             .create_plugin(CreatePluginRequestProto::from(request))
             .await?;
         let response = response.into_inner();
@@ -96,7 +82,7 @@ where
         request: GetPluginRequest,
     ) -> Result<GetPluginResponse, PluginRegistryServiceClientError> {
         let response = self
-            .inner
+            .proto_client
             .get_plugin(GetPluginRequestProto::from(request))
             .await?;
         let response = response.into_inner();
@@ -109,7 +95,7 @@ where
         request: DeployPluginRequest,
     ) -> Result<DeployPluginResponse, PluginRegistryServiceClientError> {
         let response = self
-            .inner
+            .proto_client
             .deploy_plugin(DeployPluginRequestProto::from(request))
             .await?;
         let response = DeployPluginResponse::try_from(response.into_inner())?;
@@ -120,7 +106,7 @@ where
         &mut self,
         request: TearDownPluginRequest,
     ) -> Result<TearDownPluginResponse, PluginRegistryServiceClientError> {
-        self.inner
+        self.proto_client
             .tear_down_plugin(TearDownPluginRequestProto::from(request))
             .await?;
         todo!()
@@ -131,7 +117,7 @@ where
         &mut self,
         request: GetGeneratorsForEventSourceRequest,
     ) -> Result<GetGeneratorsForEventSourceResponse, PluginRegistryServiceClientError> {
-        self.inner
+        self.proto_client
             .get_generators_for_event_source(GetGeneratorsForEventSourceRequestProto::from(request))
             .await?;
         todo!()
@@ -141,7 +127,7 @@ where
         &mut self,
         request: GetAnalyzersForTenantRequest,
     ) -> Result<GetAnalyzersForTenantResponse, PluginRegistryServiceClientError> {
-        self.inner
+        self.proto_client
             .get_analyzers_for_tenant(GetAnalyzersForTenantRequestProto::from(request))
             .await?;
         todo!()
