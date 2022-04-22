@@ -187,7 +187,7 @@ class Kafka(pulumi.ComponentResource):
 
     def consumer_group(self, service_name: str) -> pulumi.Output[str]:
         if self.confluent_environment is None:
-            return pulumi.Output.from_input("e2e-test-runner")
+            return pulumi.Output.from_input(service_name)
         else:
             return self.confluent_environment.apply(
                 lambda e: _expect(e.services[service_name].consumer_group_name)

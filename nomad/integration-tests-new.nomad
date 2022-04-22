@@ -36,19 +36,19 @@ variable "pipeline_ingress_healthcheck_polling_interval_ms" {
   description = "The amount of time to wait between each healthcheck execution."
 }
 
-variable "pipeline_ingress_kafka_consumer_group_name" {
+variable "integration_tests_kafka_consumer_group_name" {
   type        = string
-  description = "The name of the consumer group the pipeline-ingress consumers will join."
+  description = "The name of the consumer group the integration test consumers will join."
 }
 
-variable "pipeline_ingress_kafka_sasl_username" {
+variable "integration_tests_kafka_sasl_username" {
   type        = string
-  description = "The Confluent Cloud API key to configure pipeline-ingress producers and consumers with."
+  description = "The Confluent Cloud API key to configure integration test consumers with."
 }
 
-variable "pipeline_ingress_kafka_sasl_password" {
+variable "integration_tests_kafka_sasl_password" {
   type        = string
-  description = "The Confluent Cloud API secret to configure pipeline-ingress producers and consumers with."
+  description = "The Confluent Cloud API secret to configure integration test consumers with."
 }
 
 locals {
@@ -118,10 +118,11 @@ job "integration-tests-new" {
 
         KAFKA_BOOTSTRAP_SERVERS = var.kafka_bootstrap_servers
 
-        PIPELINE_INGRESS_CLIENT_ADDRESS                 = "http://${NOMAD_UPSTREAM_ADDR_pipeline_ingress}"
-        PIPELINE_INGRESS_KAFKA_SASL_USERNAME            = var.pipeline_ingress_kafka_sasl_username
-        PIPELINE_INGRESS_KAFKA_SASL_PASSWORD            = var.pipeline_ingress_kafka_sasl_password
-        PIPELINE_INGRESS_TEST_KAFKA_CONSUMER_GROUP_NAME = "pipeline-ingress-test"
+        PIPELINE_INGRESS_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_pipeline_ingress}"
+
+        INTEGRATION_TESTS_KAFKA_SASL_USERNAME       = var.integration_tests_kafka_sasl_username
+        INTEGRATION_TESTS_KAFKA_SASL_PASSWORD       = var.integration_tests_kafka_sasl_password
+        INTEGRATION_TESTS_KAFKA_CONSUMER_GROUP_NAME = var.integration_tests_kafka_consumer_group_name
 
         NOMAD_SERVICE_ADDRESS = "${attr.unique.network.ip-address}:4646"
       }

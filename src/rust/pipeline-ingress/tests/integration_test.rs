@@ -77,12 +77,12 @@ impl AsyncTestContext for PipelineIngressTestContext {
 
         let bootstrap_servers = std::env::var("KAFKA_BOOTSTRAP_SERVERS")
             .expect("missing environment variable KAFKA_BOOTSTRAP_SERVERS");
-        let sasl_username = std::env::var("PIPELINE_INGRESS_KAFKA_SASL_USERNAME")
-            .expect("missing environment variable PIPELINE_INGRESS_KAFKA_SASL_USERNAME");
-        let sasl_password = std::env::var("PIPELINE_INGRESS_KAFKA_SASL_PASSWORD")
-            .expect("missing environment variable PIPELINE_INGRESS_KAFKA_SASL_PASSWORD");
-        let consumer_group_name = std::env::var("PIPELINE_INGRESS_TEST_KAFKA_CONSUMER_GROUP_NAME")
-            .expect("missing environment variable PIPELINE_INGRESS_TEST_KAFKA_CONSUMER_GROUP_NAME");
+        let sasl_username = std::env::var("INTEGRATION_TESTS_KAFKA_SASL_USERNAME")
+            .expect("missing environment variable INTEGRATION_TESTS_KAFKA_SASL_USERNAME");
+        let sasl_password = std::env::var("INTEGRATION_TESTS_KAFKA_SASL_PASSWORD")
+            .expect("missing environment variable INTEGRATION_TESTS_KAFKA_SASL_PASSWORD");
+        let consumer_group_name = std::env::var("INTEGRATION_TESTS_TEST_KAFKA_CONSUMER_GROUP_NAME")
+            .expect("missing environment variable INTEGRATION_TESTS_KAFKA_CONSUMER_GROUP_NAME");
 
         tracing::info!(
             message = "waiting 10s for pipeline-ingress to report healthy",

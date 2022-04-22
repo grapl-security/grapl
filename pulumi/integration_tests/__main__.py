@@ -119,11 +119,11 @@ def main() -> None:
         "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
         "aws_region": aws.get_region().name,
         "container_images": _integration_new_container_images(artifacts),
+        "integration_tests_kafka_consumer_group_name": grapl_stack.integration_tests_kafka_consumer_group_name,
+        "integration_tests_kafka_sasl_username": grapl_stack.integration_tests_kafka_sasl_username,
+        "integration_tests_kafka_sasl_password": grapl_stack.integration_tests_kafka_sasl_password,
         "kafka_bootstrap_servers": grapl_stack.kafka_bootstrap_servers,
         "pipeline_ingress_healthcheck_polling_interval_ms": grapl_stack.pipeline_ingress_healthcheck_polling_interval_ms,
-        "pipeline_ingress_kafka_consumer_group_name": grapl_stack.pipeline_ingress_kafka_consumer_group_name,
-        "pipeline_ingress_kafka_sasl_username": grapl_stack.pipeline_ingress_kafka_sasl_username,
-        "pipeline_ingress_kafka_sasl_password": grapl_stack.pipeline_ingress_kafka_sasl_password,
     }
 
     integration_tests_new = NomadJob(
@@ -220,17 +220,18 @@ class GraplStack:
             "kafka-e2e-consumer-group-name"
         )
 
+        self.integration_tests_kafka_consumer_group_name = require_str(
+            "integration-tests-kafka-consumer-group-name"
+        )
+        self.integration_tests_kafka_sasl_username = require_str(
+            "integration-tests-kafka-sasl-username"
+        )
+        self.integration_tests_kafka_sasl_password = require_str(
+            "integration-tests-kafka-sasl-password"
+        )
+
         self.pipeline_ingress_healthcheck_polling_interval_ms = require_str(
             "pipeline-ingress-healthcheck-polling-interval-ms"
-        )
-        self.pipeline_ingress_kafka_consumer_group_name = require_str(
-            "pipeline-ingress-kafka-consumer-group-name"
-        )
-        self.pipeline_ingress_kafka_sasl_username = require_str(
-            "pipeline-ingress-kafka-sasl-username"
-        )
-        self.pipeline_ingress_kafka_sasl_password = require_str(
-            "pipeline-ingress-kafka-sasl-password"
         )
 
         self.test_user_password_secret_id = require_str("test-user-password-secret-id")

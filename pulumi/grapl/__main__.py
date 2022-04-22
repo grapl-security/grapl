@@ -196,14 +196,27 @@ def main() -> None:
         "pipeline-ingress-healthcheck-polling-interval-ms",
         pipeline_ingress_healthcheck_polling_interval_ms,
     )
-    # This is a hack, because pipeline-ingress is not a kafka consumer, only a
-    # producer. The only consumers of this topic are integration tests. That is
-    # why we don't look up the consumer group name in the ccloud-bootstrap
-    # stack outputs (because it's absent).
-    pipeline_ingress_kafka_consumer_group_name = "pipeline-ingress-test"
+
+    pipeline_ingress_kafka_consumer_group_name = kafka.consumer_group(
+        "pipeline-ingress"
+    )
     pulumi.export(
         "pipeline-ingress-kafka-consumer-group-name",
         pipeline_ingress_kafka_consumer_group_name,
+    )
+
+    pulumi.export(
+        "integration-tests-kafka-consumer-group-name",
+        kafka.consumer_group("integration-tests"),
+    )
+    integration_tests_kafka_credentials = kafka.service_credentials("integration-tests")
+    pulumi.export(
+        "integration-tests-kafka-sasl-username",
+        integration_tests_kafka_credentials.apply(lambda c: c.api_key),
+    )
+    pulumi.export(
+        "integration-tests-kafka-sasl-password",
+        integration_tests_kafka_credentials.apply(lambda c: c.api_secret),
     )
 
     plugins_bucket = Bucket("plugins-bucket", sse=True)
@@ -303,13 +316,13 @@ def main() -> None:
 
     pulumi.export("kafka-bootstrap-servers", kafka.bootstrap_servers())
 
-    e2e_service_credentials = kafka.service_credentials(service_name="e2e-test-runner")
+    e2e_kafka_credentials = kafka.service_credentials(service_name="e2e-test-runner")
 
     pulumi.export(
-        "kafka-e2e-sasl-username", e2e_service_credentials.apply(lambda c: c.api_key)
+        "kafka-e2e-sasl-username", e2e_kafka_credentials.apply(lambda c: c.api_key)
     )
     pulumi.export(
-        "kafka-e2e-sasl-password", e2e_service_credentials.apply(lambda c: c.api_secret)
+        "kafka-e2e-sasl-password", e2e_kafka_credentials.apply(lambda c: c.api_secret)
     )
     pulumi.export(
         "kafka-e2e-consumer-group-name", kafka.consumer_group("e2e-test-runner")
