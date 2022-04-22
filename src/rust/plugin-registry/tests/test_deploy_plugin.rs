@@ -1,13 +1,11 @@
 #![cfg(feature = "integration")]
 
 use grapl_utils::future_ext::GraplFutureExt;
-use plugin_registry::client::{
-    PluginRegistryServiceClient,
-    PluginRegistryServiceClientError,
-};
 use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
     CreatePluginRequest,
     DeployPluginRequest,
+    PluginRegistryServiceClient,
+    PluginRegistryServiceClientError,
     PluginType,
 };
 

@@ -1,6 +1,4 @@
 pub use crate::protobufs::graplinc::grapl::api::plugin_registry::v1beta1::{
-    plugin_registry_service_client,
-    plugin_registry_service_server,
     CreatePluginRequest as CreatePluginRequestProto,
     CreatePluginResponse as CreatePluginResponseProto,
     DeployPluginRequest as DeployPluginRequestProto,
@@ -15,6 +13,13 @@ pub use crate::protobufs::graplinc::grapl::api::plugin_registry::v1beta1::{
     PluginType as PluginTypeProto,
     TearDownPluginRequest as TearDownPluginRequestProto,
     TearDownPluginResponse as TearDownPluginResponseProto,
+};
+pub use crate::{
+    graplinc::grapl::api::plugin_registry::v1beta1_client::{
+        PluginRegistryServiceClient,
+        PluginRegistryServiceClientError,
+    },
+    protobufs::graplinc::grapl::api::plugin_registry::v1beta1::plugin_registry_service_server,
 };
 
 #[derive(Debug, thiserror::Error)]
