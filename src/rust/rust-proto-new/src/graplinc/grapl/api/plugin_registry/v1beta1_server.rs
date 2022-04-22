@@ -26,7 +26,7 @@ use crate::{
     SerDeError,
 };
 
-use super::v1beta1::PluginRegistryDeserializationError;
+use futures::{TryFutureExt};
 
 #[non_exhaustive]
 #[derive(Debug, Error)]
@@ -92,59 +92,76 @@ where
     async fn create_plugin(
         &self,
         request: Request<proto::CreatePluginRequest>,
-    ) -> Result<Response<proto::CreatePluginResponse>, E> {
-        let request: proto::CreatePluginRequest = request.into_inner();
-        let request: CreatePluginRequest = request.try_into()?;
-
-        let response = self.create_plugin(request).await?;
-        let response: proto::CreatePluginResponse = response.into();
-        Ok(Response::new(response))
+    ) -> Result<Response<proto::CreatePluginResponse>, tonic::Status> {
+        let inner_request: CreatePluginRequest = request
+            .into_inner()
+            .try_into()
+            .map_err(|e: SerDeError| tonic::Status::unknown(e.to_string()))?;
+        
+        let response = self
+            .api_server
+            .create_plugin(inner_request)
+            .map_err(|e| tonic::Status::unknown(e.to_string()))
+            .await?;
+        
+        Ok(Response::new(response.into()))
     }
 
     async fn get_plugin(
         &self,
         request: Request<proto::GetPluginRequest>,
-    ) -> Result<Response<proto::GetPluginResponse>, E> {
-        let request: proto::GetPluginRequest = request.into_inner();
-        let request = GetPluginRequest::try_from(request)?;
+    ) -> Result<Response<proto::GetPluginResponse>, tonic::Status> {
+        let inner_request: GetPluginRequest = request
+            .into_inner()
+            .try_into()
+            .map_err(|e: SerDeError| tonic::Status::unknown(e.to_string()))?;
+        
+        let response = self
+            .api_server
+            .get_plugin(inner_request)
+            .map_err(|e| tonic::Status::unknown(e.to_string()))
+            .await?;
 
-        let response = self.get_plugin(request).await?;
-        let response: proto::GetPluginResponse = response.into();
-        Ok(Response::new(response))
+        Ok(Response::new(response.into()))
     }
 
     async fn deploy_plugin(
         &self,
         request: Request<proto::DeployPluginRequest>,
-    ) -> Result<Response<proto::DeployPluginResponse>, E> {
-        let request: proto::DeployPluginRequest = request.into_inner();
-        let request = DeployPluginRequest::try_from(request)?;
+    ) -> Result<Response<proto::DeployPluginResponse>, tonic::Status> {
+        let inner_request: DeployPluginRequest = request
+            .into_inner()
+            .try_into()
+            .map_err(|e: SerDeError| tonic::Status::unknown(e.to_string()))?;
+        
+        let response = self
+            .api_server
+            .deploy_plugin(inner_request)
+            .map_err(|e| tonic::Status::unknown(e.to_string()))
+            .await?;
 
-        let response = self.deploy_plugin(request).await?;
         Ok(Response::new(response.into()))
     }
 
     async fn tear_down_plugin(
         &self,
         _request: Request<proto::TearDownPluginRequest>,
-    ) -> Result<Response<proto::TearDownPluginResponse>, E> {
+    ) -> Result<Response<proto::TearDownPluginResponse>, tonic::Status> {
         todo!()
     }
 
-    #[tracing::instrument(skip(self, request), err)]
+    #[tracing::instrument(skip(self, _request), err)]
     async fn get_generators_for_event_source(
         &self,
-        request: Request<proto::GetGeneratorsForEventSourceRequest>,
-    ) -> Result<Response<proto::GetGeneratorsForEventSourceResponse>, E> {
-        let request = request.into_inner();
-        let _request = GetGeneratorsForEventSourceRequest::try_from(request);
+        _request: Request<proto::GetGeneratorsForEventSourceRequest>,
+    ) -> Result<Response<proto::GetGeneratorsForEventSourceResponse>, tonic::Status> {
         todo!()
     }
 
     async fn get_analyzers_for_tenant(
         &self,
         _request: Request<proto::GetAnalyzersForTenantRequest>,
-    ) -> Result<Response<proto::GetAnalyzersForTenantResponse>, E> {
+    ) -> Result<Response<proto::GetAnalyzersForTenantResponse>, tonic::Status> {
         todo!()
     }
 }

@@ -10,6 +10,7 @@ use crate::{
     graplinc::grapl::api::plugin_registry::v1beta1 as native,
     protobufs::graplinc::grapl::api::plugin_registry::v1beta1 as proto,
 };
+use crate::SerDeError;
 
 const ADDRESS_ENV_VAR: &'static str = "GRAPL_PLUGIN_REGISTRY_ADDRESS";
 
@@ -18,7 +19,7 @@ pub enum PluginRegistryServiceClientError {
     #[error("ErrorStatus")]
     ErrorStatus(#[from] tonic::Status),
     #[error("PluginRegistryDeserializationError")]
-    PluginRegistryDeserializationError(#[from] native::PluginRegistryDeserializationError),
+    PluginRegistryDeserializationError(#[from] SerDeError),
 }
 
 pub struct PluginRegistryServiceClient {
