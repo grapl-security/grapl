@@ -4,7 +4,7 @@ use std::{
 };
 
 use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
-    plugin_registry_service_client::PluginRegistryServiceClient as _PluginRegistryServiceClient,
+    plugin_registry_service_client::PluginRegistryServiceClient as PluginRegistryServiceClientProto,
     CreatePluginRequest,
     CreatePluginRequestProto,
     CreatePluginResponse,
@@ -38,7 +38,7 @@ pub enum PluginRegistryServiceClientError {
 }
 
 pub struct PluginRegistryServiceClient {
-    proto_client: _PluginRegistryServiceClient<tonic::transport::Channel>,
+    proto_client: PluginRegistryServiceClientProto<tonic::transport::Channel>,
 }
 
 impl PluginRegistryServiceClient {
@@ -59,7 +59,7 @@ impl PluginRegistryServiceClient {
         T::Error: std::error::Error + Send + Sync + 'static,
     {
         Ok(PluginRegistryServiceClient {
-            proto_client: _PluginRegistryServiceClient::connect(endpoint).await?,
+            proto_client: PluginRegistryServiceClientProto::connect(endpoint).await?,
         })
     }
 
