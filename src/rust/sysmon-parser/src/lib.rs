@@ -125,5 +125,5 @@ pub use crate::system::System;
 ///
 /// ```
 pub fn parse_events(input: &str) -> SysmonEvents<'_> {
-    SysmonEvents::new(input)
+    SysmonEvents::from(input)
 }
