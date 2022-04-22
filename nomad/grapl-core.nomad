@@ -162,11 +162,6 @@ variable "pipeline_ingress_healthcheck_polling_interval_ms" {
   description = "The amount of time to wait between each healthcheck execution."
 }
 
-variable "pipeline_ingress_kafka_consumer_group_name" {
-  type        = string
-  description = "The consumer group for pipeline ingress consumers to join."
-}
-
 variable "pipeline_ingress_kafka_sasl_username" {
   type        = string
   description = "The username to authenticate with Confluent Cloud cluster."
@@ -1260,7 +1255,6 @@ job "grapl-core" {
         RUST_LOG                                         = var.rust_log
         PIPELINE_INGRESS_HEALTHCHECK_POLLING_INTERVAL_MS = var.pipeline_ingress_healthcheck_polling_interval_ms
         KAFKA_BOOTSTRAP_SERVERS                          = var.kafka_bootstrap_servers
-        KAFKA_CONSUMER_GROUP_NAME                        = var.pipeline_ingress_kafka_consumer_group_name
         KAFKA_SASL_USERNAME                              = var.pipeline_ingress_kafka_sasl_username
         KAFKA_SASL_PASSWORD                              = var.pipeline_ingress_kafka_sasl_password
 

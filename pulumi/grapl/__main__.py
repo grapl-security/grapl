@@ -197,14 +197,6 @@ def main() -> None:
         pipeline_ingress_healthcheck_polling_interval_ms,
     )
 
-    pipeline_ingress_kafka_consumer_group_name = kafka.consumer_group(
-        "pipeline-ingress"
-    )
-    pulumi.export(
-        "pipeline-ingress-kafka-consumer-group-name",
-        pipeline_ingress_kafka_consumer_group_name,
-    )
-
     pulumi.export(
         "integration-tests-kafka-consumer-group-name",
         kafka.consumer_group("integration-tests"),
@@ -275,7 +267,6 @@ def main() -> None:
         osquery_generator_queue=osquery_generator_queue.main_queue_url,
         osquery_generator_dead_letter_queue=osquery_generator_queue.dead_letter_queue_url,
         pipeline_ingress_healthcheck_polling_interval_ms=pipeline_ingress_healthcheck_polling_interval_ms,
-        pipeline_ingress_kafka_consumer_group_name=pipeline_ingress_kafka_consumer_group_name,
         py_log_level=py_log_level,
         rust_log=rust_log_levels,
         schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
