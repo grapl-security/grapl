@@ -6,6 +6,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[non_exhaustive]
 #[derive(Error, Debug, PartialEq)]
 pub enum Error {
+    #[error("starting Sysmon event XML element not found")]
+    SysmonEventNotFound,
     #[error("event is not `{0}`")]
     ExpectEventType(&'static str),
     #[error("failed to parse IP address `{value}` at position `{position}` with `{source}`")]
