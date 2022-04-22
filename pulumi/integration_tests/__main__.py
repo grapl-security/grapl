@@ -108,7 +108,7 @@ def main() -> None:
         "kafka_bootstrap_servers": kafka.bootstrap_servers(),
         "kafka_sasl_username": e2e_kafka_credentials.apply(lambda c: c.api_key),
         "kafka_sasl_password": e2e_kafka_credentials.apply(lambda c: c.api_secret),
-        "kafka_consumer_group_name": kafka.consumer_group("e2e-tests"),
+        "kafka_consumer_group_name": kafka.consumer_group("e2e-test-runner"),
         "schema_properties_table_name": grapl_stack.schema_properties_table_name,
         "sysmon_log_bucket": grapl_stack.sysmon_log_bucket,
         "schema_table_name": grapl_stack.schema_table_name,
