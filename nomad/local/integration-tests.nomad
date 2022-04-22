@@ -32,21 +32,6 @@ variable "redis_endpoint" {
   description = "Where can services find Redis?"
 }
 
-variable "kafka_bootstrap_servers" {
-  type        = string
-  description = "The URL(s) (possibly comma-separated) of the Kafka bootstrap servers."
-}
-
-variable "kafka_sasl_username" {
-  type        = string
-  description = "The Confluent Cloud API key to configure producers and consumers with."
-}
-
-variable "kafka_sasl_password" {
-  type        = string
-  description = "The Confluent Cloud API secret to configure producers and consumers with."
-}
-
 variable "schema_properties_table_name" {
   type        = string
   description = "What is the name of the schema properties table?"
@@ -207,13 +192,10 @@ job "integration-tests" {
         GRAPL_LOG_LEVEL = local.log_level
         # This is a hack, because IDK how to share locals across files
         #MG_ALPHAS                   = local.alpha_grpc_connect_str # TODO: Figure out how to do this
-        MG_ALPHAS               = "localhost:9080"
-        RUST_BACKTRACE          = 1
-        RUST_LOG                = local.log_level
-        REDIS_ENDPOINT          = var.redis_endpoint
-        KAFKA_BOOTSTRAP_SERVERS = var.kafka_bootstrap_servers
-        KAFKA_SASL_USERNAME     = var.kafka_sasl_username
-        KAFKA_SASL_PASSWORD     = var.kafka_sasl_password
+        MG_ALPHAS      = "localhost:9080"
+        RUST_BACKTRACE = 1
+        RUST_LOG       = local.log_level
+        REDIS_ENDPOINT = var.redis_endpoint
 
         GRAPL_MODEL_PLUGIN_DEPLOYER_HOST = "0.0.0.0"
         GRAPL_MODEL_PLUGIN_DEPLOYER_PORT = "${NOMAD_UPSTREAM_PORT_model-plugin-deployer}"
@@ -332,10 +314,6 @@ job "integration-tests" {
         MESSAGECACHE_ADDR = "${local.redis_host}"
         MESSAGECACHE_PORT = "${local.redis_port}"
         IS_RETRY          = "False"
-
-        KAFKA_BOOTSTRAP_SERVERS = var.kafka_bootstrap_servers
-        KAFKA_SASL_USERNAME     = var.kafka_sasl_username
-        KAFKA_SASL_PASSWORD     = var.kafka_sasl_password
 
         GRAPL_LOG_LEVEL = local.log_level
         MG_ALPHAS       = "localhost:9080"

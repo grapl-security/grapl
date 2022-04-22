@@ -196,15 +196,6 @@ def main() -> None:
         "pipeline-ingress-healthcheck-polling-interval-ms",
         pipeline_ingress_healthcheck_polling_interval_ms,
     )
-    # This is a hack, because pipeline-ingress is not a kafka consumer, only a
-    # producer. The only consumers of this topic are integration tests. That is
-    # why we don't look up the consumer group name in the ccloud-bootstrap
-    # stack outputs (because it's absent).
-    pipeline_ingress_kafka_consumer_group_name = "pipeline-ingress-test"
-    pulumi.export(
-        "pipeline-ingress-kafka-consumer-group-name",
-        pipeline_ingress_kafka_consumer_group_name,
-    )
 
     plugins_bucket = Bucket("plugins-bucket", sse=True)
     pulumi.export("plugins-bucket", plugins_bucket.bucket)
@@ -262,7 +253,6 @@ def main() -> None:
         osquery_generator_queue=osquery_generator_queue.main_queue_url,
         osquery_generator_dead_letter_queue=osquery_generator_queue.dead_letter_queue_url,
         pipeline_ingress_healthcheck_polling_interval_ms=pipeline_ingress_healthcheck_polling_interval_ms,
-        pipeline_ingress_kafka_consumer_group_name=pipeline_ingress_kafka_consumer_group_name,
         py_log_level=py_log_level,
         rust_log=rust_log_levels,
         schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
@@ -300,20 +290,6 @@ def main() -> None:
     }
 
     nomad_grapl_core_timeout = "5m"
-
-    pulumi.export("kafka-bootstrap-servers", kafka.bootstrap_servers())
-
-    e2e_service_credentials = kafka.service_credentials(service_name="e2e-test-runner")
-
-    pulumi.export(
-        "kafka-e2e-sasl-username", e2e_service_credentials.apply(lambda c: c.api_key)
-    )
-    pulumi.export(
-        "kafka-e2e-sasl-password", e2e_service_credentials.apply(lambda c: c.api_secret)
-    )
-    pulumi.export(
-        "kafka-e2e-consumer-group-name", kafka.consumer_group("e2e-test-runner")
-    )
 
     pipeline_ingress_kafka_credentials = kafka.service_credentials("pipeline-ingress")
 

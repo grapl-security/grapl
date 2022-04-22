@@ -116,6 +116,7 @@ class Kafka(pulumi.ComponentResource):
         name: str,
         confluent_environment_name: str,
         opts: Optional[pulumi.ResourceOptions] = None,
+        create_local_topics: bool = True,
     ):
         super().__init__("grapl:Kafka", name=name, props=None, opts=opts)
 
@@ -148,15 +149,16 @@ class Kafka(pulumi.ComponentResource):
                 bootstrap_servers=["host.docker.internal:29092"],
                 tls_enabled=False,
             )
-            for topic in topics:
-                KafkaTopic(
-                    f"grapl:kafka:Topic:{topic}",
-                    name=topic,
-                    partitions=1,
-                    replication_factor=1,
-                    config={"compression.type": "zstd"},
-                    opts=pulumi.ResourceOptions(provider=provider),
-                )
+            if create_local_topics:
+                for topic in topics:
+                    KafkaTopic(
+                        f"grapl:kafka:Topic:{topic}",
+                        name=topic,
+                        partitions=1,
+                        replication_factor=1,
+                        config={"compression.type": "zstd"},
+                        opts=pulumi.ResourceOptions(provider=provider),
+                    )
         else:
             confluent_stack_output = StackReference(
                 "grapl/ccloud-bootstrap/ccloud-bootstrap"
@@ -187,7 +189,7 @@ class Kafka(pulumi.ComponentResource):
 
     def consumer_group(self, service_name: str) -> pulumi.Output[str]:
         if self.confluent_environment is None:
-            return pulumi.Output.from_input("e2e-test-runner")
+            return pulumi.Output.from_input(service_name)
         else:
             return self.confluent_environment.apply(
                 lambda e: _expect(e.services[service_name].consumer_group_name)
