@@ -242,7 +242,7 @@ def main() -> None:
         aws_env_vars_for_local=aws_env_vars_for_local,
         aws_region=aws.get_region().name,
         container_images=_container_images(artifacts),
-        dns_server=config.LOCAL_HOST_IP,
+        dns_server=config.CONSUL_DNS_IP,
         engagement_creator_queue=engagement_creator_queue.main_queue_url,
         graph_merger_queue=graph_merger_queue.main_queue_url,
         graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
@@ -329,7 +329,7 @@ def main() -> None:
     nomad_grapl_ingress = NomadJob(
         "grapl-ingress",
         jobspec=path_from_root("nomad/grapl-ingress.nomad").resolve(),
-        vars={"dns_server": config.LOCAL_HOST_IP},
+        vars={"dns_server": config.CONSUL_DNS_IP},
         opts=pulumi.ResourceOptions(
             provider=nomad_provider,
             # This dependson ensures we've switched the web-ui protocol to http instead of tcp prior. Otherwise there's

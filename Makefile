@@ -23,7 +23,7 @@ COMPOSE_USER=${UID}:${GID}
 COMPOSE_IGNORE_ORPHANS=1
 COMPOSE_PROJECT_NAME ?= grapl
 # Get a non-loopback private ip for the host. Order is not guaranteed, but that's ok
-LOCAL_HOST_IP = $(shell hostname --all-ip-addresses | awk '{ print $$1 }')
+CONSUL_DNS_IP = $(shell hostname --all-ip-addresses | awk '{ print $$1 }')
 
 export
 
