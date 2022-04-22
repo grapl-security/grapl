@@ -129,6 +129,7 @@ pub mod graplinc {
             pub mod plugin_registry {
                 pub mod v1beta1;
                 mod v1beta1_client;
+                mod v1beta1_server;
             }
 
             pub mod plugin_sdk {
@@ -196,7 +197,7 @@ pub enum SerDeError {
         assertion: String,
     },
 
-    #[error("Unknown enum variant")]
+    #[error("Unknown enum variant {0}")]
     UnknownVariant(&'static str),
 }
 
