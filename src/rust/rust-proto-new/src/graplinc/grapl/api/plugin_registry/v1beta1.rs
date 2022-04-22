@@ -2,22 +2,7 @@ pub use crate::graplinc::grapl::api::plugin_registry::v1beta1_client::{
     PluginRegistryServiceClient,
     PluginRegistryServiceClientError,
 };
-use crate::{protobufs::graplinc::grapl::api::plugin_registry::v1beta1::{
-    CreatePluginRequest as CreatePluginRequestProto,
-    CreatePluginResponse as CreatePluginResponseProto,
-    DeployPluginRequest as DeployPluginRequestProto,
-    DeployPluginResponse as DeployPluginResponseProto,
-    GetAnalyzersForTenantRequest as GetAnalyzersForTenantRequestProto,
-    GetAnalyzersForTenantResponse as GetAnalyzersForTenantResponseProto,
-    GetGeneratorsForEventSourceRequest as GetGeneratorsForEventSourceRequestProto,
-    GetGeneratorsForEventSourceResponse as GetGeneratorsForEventSourceResponseProto,
-    GetPluginRequest as GetPluginRequestProto,
-    GetPluginResponse as GetPluginResponseProto,
-    Plugin as PluginProto,
-    PluginType as PluginTypeProto,
-    TearDownPluginRequest as TearDownPluginRequestProto,
-    TearDownPluginResponse as TearDownPluginResponseProto,
-}, SerDeError};
+use crate::{protobufs::graplinc::grapl::api::plugin_registry::v1beta1 as proto, SerDeError};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum PluginType {
@@ -62,28 +47,28 @@ impl TryFrom<String> for PluginType {
     }
 }
 
-impl TryFrom<PluginTypeProto> for PluginType {
+impl TryFrom<proto::PluginType> for PluginType {
     type Error = SerDeError;
 
-    fn try_from(value: PluginTypeProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::PluginType) -> Result<Self, Self::Error> {
         match value {
-            PluginTypeProto::Unspecified => {
+            proto::PluginType::Unspecified => {
                 Err(SerDeError::UnknownVariant(
                     std::borrow::Cow::Borrowed("PluginType"),
                 ))
             }
-            PluginTypeProto::Generator => Ok(PluginType::Generator),
-            PluginTypeProto::Analyzer => Ok(PluginType::Analyzer),
+            proto::PluginType::Generator => Ok(PluginType::Generator),
+            proto::PluginType::Analyzer => Ok(PluginType::Analyzer),
         }
         // todo!()
     }
 }
 
-impl From<PluginType> for PluginTypeProto {
+impl From<PluginType> for proto::PluginType {
     fn from(value: PluginType) -> Self {
         match value {
-            PluginType::Generator => PluginTypeProto::Generator,
-            PluginType::Analyzer => PluginTypeProto::Analyzer,
+            PluginType::Generator => proto::PluginType::Generator,
+            PluginType::Analyzer => proto::PluginType::Analyzer,
         }
     }
 }
@@ -99,10 +84,10 @@ pub struct Plugin {
     pub plugin_binary: Vec<u8>,
 }
 
-impl TryFrom<PluginProto> for Plugin {
+impl TryFrom<proto::Plugin> for Plugin {
     type Error = SerDeError;
 
-    fn try_from(value: PluginProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::Plugin) -> Result<Self, Self::Error> {
         let plugin_type = value.plugin_type().try_into()?;
         let display_name = value.display_name;
         let plugin_binary = value.plugin_binary;
@@ -122,9 +107,9 @@ impl TryFrom<PluginProto> for Plugin {
     }
 }
 
-impl From<Plugin> for PluginProto {
+impl From<Plugin> for proto::Plugin {
     fn from(value: Plugin) -> Self {
-        let plugin_type: PluginTypeProto = value.plugin_type.into();
+        let plugin_type: proto::PluginType = value.plugin_type.into();
         Self {
             plugin_id: Some(value.plugin_id.into()),
             display_name: value.display_name,
@@ -145,10 +130,10 @@ pub struct CreatePluginRequest {
     pub plugin_type: PluginType,
 }
 
-impl TryFrom<CreatePluginRequestProto> for CreatePluginRequest {
+impl TryFrom<proto::CreatePluginRequest> for CreatePluginRequest {
     type Error = SerDeError;
 
-    fn try_from(value: CreatePluginRequestProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::CreatePluginRequest) -> Result<Self, Self::Error> {
         let plugin_type = value.plugin_type().try_into()?;
 
         let tenant_id = value
@@ -161,13 +146,13 @@ impl TryFrom<CreatePluginRequestProto> for CreatePluginRequest {
         let plugin_artifact = value.plugin_artifact;
 
         if display_name.is_empty() {
-            return Err(SerDeError::EmptyField(
+            return Err(SerDeError::MissingField(
                 "CreatePluginRequest.display_name",
             ));
         }
 
         if plugin_artifact.is_empty() {
-            return Err(PluginRegistryDeserializationError::EmptyField(
+            return Err(SerDeError::MissingField(
                 "CreatePluginRequest.plugin_artifact",
             ));
         }
@@ -181,9 +166,9 @@ impl TryFrom<CreatePluginRequestProto> for CreatePluginRequest {
     }
 }
 
-impl From<CreatePluginRequest> for CreatePluginRequestProto {
+impl From<CreatePluginRequest> for proto::CreatePluginRequest {
     fn from(value: CreatePluginRequest) -> Self {
-        let plugin_type: PluginTypeProto = value.plugin_type.into();
+        let plugin_type: proto::PluginType = value.plugin_type.into();
         Self {
             plugin_artifact: value.plugin_artifact,
             tenant_id: Some(value.tenant_id.into()),
@@ -198,10 +183,10 @@ pub struct CreatePluginResponse {
     pub plugin_id: uuid::Uuid,
 }
 
-impl TryFrom<CreatePluginResponseProto> for CreatePluginResponse {
+impl TryFrom<proto::CreatePluginResponse> for CreatePluginResponse {
     type Error = SerDeError;
 
-    fn try_from(value: CreatePluginResponseProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::CreatePluginResponse) -> Result<Self, Self::Error> {
         let plugin_id = value
             .plugin_id
             .ok_or(SerDeError::MissingField(
@@ -213,7 +198,7 @@ impl TryFrom<CreatePluginResponseProto> for CreatePluginResponse {
     }
 }
 
-impl From<CreatePluginResponse> for CreatePluginResponseProto {
+impl From<CreatePluginResponse> for proto::CreatePluginResponse {
     fn from(value: CreatePluginResponse) -> Self {
         Self {
             plugin_id: Some(value.plugin_id.into()),
@@ -225,10 +210,10 @@ pub struct DeployPluginRequest {
     pub plugin_id: uuid::Uuid,
 }
 
-impl TryFrom<DeployPluginRequestProto> for DeployPluginRequest {
+impl TryFrom<proto::DeployPluginRequest> for DeployPluginRequest {
     type Error = SerDeError;
 
-    fn try_from(value: DeployPluginRequestProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::DeployPluginRequest) -> Result<Self, Self::Error> {
         let plugin_id = value
             .plugin_id
             .ok_or(SerDeError::MissingField(
@@ -240,7 +225,7 @@ impl TryFrom<DeployPluginRequestProto> for DeployPluginRequest {
     }
 }
 
-impl From<DeployPluginRequest> for DeployPluginRequestProto {
+impl From<DeployPluginRequest> for proto::DeployPluginRequest {
     fn from(value: DeployPluginRequest) -> Self {
         Self {
             plugin_id: Some(value.plugin_id.into()),
@@ -250,15 +235,15 @@ impl From<DeployPluginRequest> for DeployPluginRequestProto {
 
 pub struct DeployPluginResponse {}
 
-impl TryFrom<DeployPluginResponseProto> for DeployPluginResponse {
+impl TryFrom<proto::DeployPluginResponse> for DeployPluginResponse {
     type Error = SerDeError;
 
-    fn try_from(_value: DeployPluginResponseProto) -> Result<Self, Self::Error> {
+    fn try_from(_value: proto::DeployPluginResponse) -> Result<Self, Self::Error> {
         Ok(Self {})
     }
 }
 
-impl From<DeployPluginResponse> for DeployPluginResponseProto {
+impl From<DeployPluginResponse> for proto::DeployPluginResponse {
     fn from(_value: DeployPluginResponse) -> Self {
         Self {}
     }
@@ -269,10 +254,10 @@ pub struct GetAnalyzersForTenantRequest {
     pub tenant_id: uuid::Uuid,
 }
 
-impl TryFrom<GetAnalyzersForTenantRequestProto> for GetAnalyzersForTenantRequest {
+impl TryFrom<proto::GetAnalyzersForTenantRequest> for GetAnalyzersForTenantRequest {
     type Error = SerDeError;
 
-    fn try_from(value: GetAnalyzersForTenantRequestProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::GetAnalyzersForTenantRequest) -> Result<Self, Self::Error> {
         let tenant_id = value
             .tenant_id
             .ok_or(SerDeError::MissingField(
@@ -284,7 +269,7 @@ impl TryFrom<GetAnalyzersForTenantRequestProto> for GetAnalyzersForTenantRequest
     }
 }
 
-impl From<GetAnalyzersForTenantRequest> for GetAnalyzersForTenantRequestProto {
+impl From<GetAnalyzersForTenantRequest> for proto::GetAnalyzersForTenantRequest {
     fn from(value: GetAnalyzersForTenantRequest) -> Self {
         Self {
             tenant_id: Some(value.tenant_id.into()),
@@ -297,12 +282,12 @@ pub struct GetAnalyzersForTenantResponse {
     pub plugin_ids: Vec<uuid::Uuid>,
 }
 
-impl TryFrom<GetAnalyzersForTenantResponseProto> for GetAnalyzersForTenantResponse {
+impl TryFrom<proto::GetAnalyzersForTenantResponse> for GetAnalyzersForTenantResponse {
     type Error = SerDeError;
 
-    fn try_from(value: GetAnalyzersForTenantResponseProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::GetAnalyzersForTenantResponse) -> Result<Self, Self::Error> {
         if value.plugin_ids.is_empty() {
-            return Err(PluginRegistryDeserializationError::EmptyField(
+            return Err(SerDeError::MissingField(
                 "GetAnalyzersForTenantResponse.plugin_ids",
             ));
         }
@@ -312,7 +297,7 @@ impl TryFrom<GetAnalyzersForTenantResponseProto> for GetAnalyzersForTenantRespon
     }
 }
 
-impl From<GetAnalyzersForTenantResponse> for GetAnalyzersForTenantResponseProto {
+impl From<GetAnalyzersForTenantResponse> for proto::GetAnalyzersForTenantResponse {
     fn from(value: GetAnalyzersForTenantResponse) -> Self {
         Self {
             plugin_ids: value.plugin_ids.into_iter().map(uuid::Uuid::into).collect(),
@@ -325,10 +310,10 @@ pub struct GetGeneratorsForEventSourceRequest {
     pub event_source_id: uuid::Uuid,
 }
 
-impl TryFrom<GetGeneratorsForEventSourceRequestProto> for GetGeneratorsForEventSourceRequest {
+impl TryFrom<proto::GetGeneratorsForEventSourceRequest> for GetGeneratorsForEventSourceRequest {
     type Error = SerDeError;
 
-    fn try_from(value: GetGeneratorsForEventSourceRequestProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::GetGeneratorsForEventSourceRequest) -> Result<Self, Self::Error> {
         let event_source_id = value
             .event_source_id
             .ok_or(SerDeError::MissingField(
@@ -340,7 +325,7 @@ impl TryFrom<GetGeneratorsForEventSourceRequestProto> for GetGeneratorsForEventS
     }
 }
 
-impl From<GetGeneratorsForEventSourceRequest> for GetGeneratorsForEventSourceRequestProto {
+impl From<GetGeneratorsForEventSourceRequest> for proto::GetGeneratorsForEventSourceRequest {
     fn from(value: GetGeneratorsForEventSourceRequest) -> Self {
         Self {
             event_source_id: Some(value.event_source_id.into()),
@@ -352,12 +337,12 @@ pub struct GetGeneratorsForEventSourceResponse {
     pub plugin_ids: Vec<uuid::Uuid>,
 }
 
-impl TryFrom<GetGeneratorsForEventSourceResponseProto> for GetGeneratorsForEventSourceResponse {
+impl TryFrom<proto::GetGeneratorsForEventSourceResponse> for GetGeneratorsForEventSourceResponse {
     type Error = SerDeError;
 
-    fn try_from(value: GetGeneratorsForEventSourceResponseProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::GetGeneratorsForEventSourceResponse) -> Result<Self, Self::Error> {
         if value.plugin_ids.is_empty() {
-            return Err(PluginRegistryDeserializationError::EmptyField(
+            return Err(SerDeError::MissingField(
                 "GetGeneratorsForEventSourceResponse.plugin_ids",
             ));
         }
@@ -367,7 +352,7 @@ impl TryFrom<GetGeneratorsForEventSourceResponseProto> for GetGeneratorsForEvent
     }
 }
 
-impl From<GetGeneratorsForEventSourceResponse> for GetGeneratorsForEventSourceResponseProto {
+impl From<GetGeneratorsForEventSourceResponse> for proto::GetGeneratorsForEventSourceResponse {
     fn from(value: GetGeneratorsForEventSourceResponse) -> Self {
         Self {
             plugin_ids: value.plugin_ids.into_iter().map(uuid::Uuid::into).collect(),
@@ -382,10 +367,10 @@ pub struct GetPluginRequest {
     pub tenant_id: uuid::Uuid,
 }
 
-impl TryFrom<GetPluginRequestProto> for GetPluginRequest {
+impl TryFrom<proto::GetPluginRequest> for GetPluginRequest {
     type Error = SerDeError;
 
-    fn try_from(value: GetPluginRequestProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::GetPluginRequest) -> Result<Self, Self::Error> {
         let plugin_id = value
             .plugin_id
             .ok_or(SerDeError::MissingField(
@@ -407,7 +392,7 @@ impl TryFrom<GetPluginRequestProto> for GetPluginRequest {
     }
 }
 
-impl From<GetPluginRequest> for GetPluginRequestProto {
+impl From<GetPluginRequest> for proto::GetPluginRequest {
     fn from(value: GetPluginRequest) -> Self {
         Self {
             plugin_id: Some(value.plugin_id.into()),
@@ -420,10 +405,10 @@ pub struct GetPluginResponse {
     pub plugin: Plugin,
 }
 
-impl TryFrom<GetPluginResponseProto> for GetPluginResponse {
+impl TryFrom<proto::GetPluginResponse> for GetPluginResponse {
     type Error = SerDeError;
 
-    fn try_from(value: GetPluginResponseProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::GetPluginResponse) -> Result<Self, Self::Error> {
         let plugin = value
             .plugin
             .ok_or(SerDeError::MissingField(
@@ -435,7 +420,7 @@ impl TryFrom<GetPluginResponseProto> for GetPluginResponse {
     }
 }
 
-impl From<GetPluginResponse> for GetPluginResponseProto {
+impl From<GetPluginResponse> for proto::GetPluginResponse {
     fn from(value: GetPluginResponse) -> Self {
         Self {
             plugin: Some(value.plugin.into()),
@@ -447,10 +432,10 @@ pub struct TearDownPluginRequest {
     pub plugin_id: uuid::Uuid,
 }
 
-impl TryFrom<TearDownPluginRequestProto> for TearDownPluginRequest {
+impl TryFrom<proto::TearDownPluginRequest> for TearDownPluginRequest {
     type Error = SerDeError;
 
-    fn try_from(value: TearDownPluginRequestProto) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::TearDownPluginRequest) -> Result<Self, Self::Error> {
         let plugin_id = value
             .plugin_id
             .ok_or(SerDeError::MissingField(
@@ -462,7 +447,7 @@ impl TryFrom<TearDownPluginRequestProto> for TearDownPluginRequest {
     }
 }
 
-impl From<TearDownPluginRequest> for TearDownPluginRequestProto {
+impl From<TearDownPluginRequest> for proto::TearDownPluginRequest {
     fn from(value: TearDownPluginRequest) -> Self {
         Self {
             plugin_id: Some(value.plugin_id.into()),
@@ -472,15 +457,15 @@ impl From<TearDownPluginRequest> for TearDownPluginRequestProto {
 
 pub struct TearDownPluginResponse {}
 
-impl TryFrom<TearDownPluginResponseProto> for TearDownPluginResponse {
+impl TryFrom<proto::TearDownPluginResponse> for TearDownPluginResponse {
     type Error = SerDeError;
 
-    fn try_from(_value: TearDownPluginResponseProto) -> Result<Self, Self::Error> {
+    fn try_from(_value: proto::TearDownPluginResponse) -> Result<Self, Self::Error> {
         Ok(Self {})
     }
 }
 
-impl From<TearDownPluginResponse> for TearDownPluginResponseProto {
+impl From<TearDownPluginResponse> for proto::TearDownPluginResponse {
     fn from(_: TearDownPluginResponse) -> Self {
         Self {}
     }
