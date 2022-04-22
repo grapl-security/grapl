@@ -13,13 +13,17 @@ curl_quiet() {
     fi
 }
 
-nomad_dispatch() {
-    # Grab the new Job ID from the Dispatch command
+nomad_allocations_for_eval() {
+    local -r eval_id="${1}"
+    local -r output="$(curl_quiet --request GET "${NOMAD_ADDRESS}/v1/evaluation/${eval_id}/allocations")"
+    local -r alloc_ids="$(echo "${output}" | jq -r '[ .[].ID ]')"
+    echo "${alloc_ids}"
+}
 
+nomad_dispatch() {
     local -r parameterized_batch_job="${1}"
-    local -r dispatch_output=$(curl_quiet --request POST --data "{}" "${NOMAD_ADDRESS}/v1/job/${parameterized_batch_job}/dispatch")
-    local -r job_id=$(echo "${dispatch_output}" | jq -r ".DispatchedJobID")
-    echo "${job_id}"
+    local -r dispatch_output="$(curl_quiet --request POST --data "{}" "${NOMAD_ADDRESS}/v1/job/${parameterized_batch_job}/dispatch")"
+    echo "${dispatch_output}"
 }
 
 url_to_nomad_job_in_ui() {
@@ -110,7 +114,7 @@ check_for_task_failures_in_job() {
     fi
 }
 
-nomad_get_alloc_id() {
+nomad_get_alloc_id_for_task() {
     # Inspired by
     # https://github.com/hashicorp/nomad/issues/698#issuecomment-1031683060
     local -r job_id="${1}"
