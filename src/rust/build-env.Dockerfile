@@ -23,14 +23,16 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-build-en
         unzip=6.0-26
 EOF
 
-# Grab a Nomad binary, which we use in plugin-registry tests for parsing
-# HCL2-with-variables into JSON.
+# Grab a Nomad binary, which we use for parsing HCL2-with-variables into JSON:
+# - in plugin-registry unit tests
 WORKDIR /nomad
 RUN <<EOF
+NOMAD_VERSION="1.2.4"
+ZIP_NAME="nomad_${NOMAD_VERSION}_linux_amd64.zip"
 curl --remote-name --proto '=https' --tlsv1.2 -sSf \
-  https://releases.hashicorp.com/nomad/1.2.4/nomad_1.2.4_linux_amd64.zip
-unzip *.zip
-rm *.zip
+  "https://releases.hashicorp.com/nomad/${NOMAD_VERSION}/${ZIP_NAME}"
+unzip "${ZIP_NAME}"
+rm "${ZIP_NAME}"
 # Put it somewhere on PATH
 mv /nomad/nomad /bin
 EOF
