@@ -53,6 +53,10 @@ use crate::{
 };
 
 impl From<PluginRegistryServiceError> for Status {
+    /**
+     * Convert useful internal errors into tonic::Status that can be
+     * safely sent over the wire. (Don't include any specific IDs etc)
+     */
     fn from(err: PluginRegistryServiceError) -> Self {
         match err {
             PluginRegistryServiceError::SqlxError(sqlx::Error::Configuration(_)) => {

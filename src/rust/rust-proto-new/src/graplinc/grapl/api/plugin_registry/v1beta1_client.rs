@@ -57,8 +57,7 @@ impl PluginRegistryServiceClient {
             .proto_client
             .create_plugin(proto::CreatePluginRequest::from(request))
             .await?;
-        let response = response.into_inner();
-        let response = native::CreatePluginResponse::try_from(response)?;
+        let response = native::CreatePluginResponse::try_from(response.into_inner())?;
         Ok(response)
     }
     /// retrieve the plugin corresponding to the given plugin_id
@@ -70,8 +69,7 @@ impl PluginRegistryServiceClient {
             .proto_client
             .get_plugin(proto::GetPluginRequest::from(request))
             .await?;
-        let response = response.into_inner();
-        let response = native::GetPluginResponse::try_from(response)?;
+        let response = native::GetPluginResponse::try_from(response.into_inner())?;
         Ok(response)
     }
     /// turn on a particular plugin's code

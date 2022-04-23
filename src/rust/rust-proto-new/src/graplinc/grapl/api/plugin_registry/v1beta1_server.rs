@@ -95,7 +95,7 @@ where
 struct PluginRegistryProto<T, E>
 where
     T: PluginRegistryApi<E>,
-    tonic::Status: From<E>,
+    E: Into<tonic::Status>,
 {
     api_server: T,
     _e: PhantomData<E>,
@@ -104,7 +104,7 @@ where
 impl<T, E> PluginRegistryProto<T, E>
 where
     T: PluginRegistryApi<E>,
-    tonic::Status: From<E>,
+    E: Into<tonic::Status>,
 {
     fn new(api_server: T) -> Self {
         PluginRegistryProto {
@@ -224,7 +224,7 @@ pub enum HealthcheckStatus {
 pub struct PluginRegistryServer<T, E, H, F>
 where
     T: PluginRegistryApi<E> + Send + Sync + 'static,
-    tonic::Status: From<E>,
+    E: Into<tonic::Status>,
     H: Fn() -> F + Send + Sync + 'static,
     F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send,
 {
