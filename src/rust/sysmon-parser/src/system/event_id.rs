@@ -3,11 +3,7 @@
 /// <https://docs.microsoft.com/en-us/sysinternals/downloads/sysmon#events>
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Hash)]
-#[cfg_attr(
-    feature = "serde",
-    derive(serde_crate::Serialize, serde_crate::Deserialize),
-    serde(crate = "serde_crate")
-)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum EventId {
     ProcessCreation,
     ProcessChangedFileCreationTime,

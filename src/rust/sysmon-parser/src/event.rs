@@ -17,11 +17,7 @@ use crate::{
 /// `<https://docs.microsoft.com/en-us/sysinternals/downloads/sysmon>`
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Hash, IntoOwned)]
-#[cfg_attr(
-    feature = "serde",
-    derive(serde_crate::Serialize, serde_crate::Deserialize),
-    serde(crate = "serde_crate")
-)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SysmonEvent<'a> {
     /// Defines the information that identifies the provider and how it was enabled, the event, the
     /// channel to which the event was written, and system information such as the process and
