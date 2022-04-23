@@ -31,8 +31,13 @@ await_nomad_job_finish "grapl-provision" 60 "Grapl Provision"
 # the jobspec, since it's a Parameterized Batch Job.
 echo -e "--- Dispatching Nomad job: ${job_to_dispatch}"
 
-job_id=$(nomad_dispatch "${job_to_dispatch}")
-echo "You can view job progress at $(url_to_nomad_job_in_ui "${job_id}")"
+job_dispatch="$(nomad_dispatch "${job_to_dispatch}")"
+
+# Print out some debug info
+job_id="$(echo "${job_dispatch}" | jq -r ".DispatchedJobID")"
+eval_id="$(echo "${job_dispatch}" | jq -r ".EvalID")"
+echo >&2 "Job allocations at start: $(nomad_allocations_for_eval "${eval_id}")"
+echo >&2 "You can view job progress at $(url_to_nomad_job_in_ui "${job_id}")"
 
 dispatch_timed_out=0
 await_nomad_job_finish \
@@ -43,6 +48,7 @@ await_nomad_job_finish \
 
 # Show how each job did
 # TODO: It'd be nice to show this *during* the await_nomad_dispatch_finish,
+echo >&2 "Job allocations at end: $(nomad_allocations_for_eval "${eval_id}")"
 nomad_get_per_task_results "${job_id}"
 
 # Exit if anything failed (thanks -euo pipefail!)
