@@ -1,3 +1,8 @@
+use std::{
+    net::SocketAddr,
+    time::Duration,
+};
+
 use grapl_config::env_helpers::FromEnv;
 use rusoto_s3::{
     GetObjectRequest,
@@ -6,42 +11,31 @@ use rusoto_s3::{
     S3,
 };
 use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
-    plugin_registry_service_server::{
-        PluginRegistryService,
-        PluginRegistryServiceServer,
-    },
     CreatePluginRequest,
-    CreatePluginRequestProto,
     CreatePluginResponse,
-    CreatePluginResponseProto,
     DeployPluginRequest,
-    DeployPluginRequestProto,
     DeployPluginResponse,
-    DeployPluginResponseProto,
     GetAnalyzersForTenantRequest,
-    GetAnalyzersForTenantRequestProto,
     GetAnalyzersForTenantResponse,
-    GetAnalyzersForTenantResponseProto,
     GetGeneratorsForEventSourceRequest,
-    GetGeneratorsForEventSourceRequestProto,
     GetGeneratorsForEventSourceResponse,
-    GetGeneratorsForEventSourceResponseProto,
     GetPluginRequest,
-    GetPluginRequestProto,
     GetPluginResponse,
-    GetPluginResponseProto,
+    HealthcheckStatus,
     Plugin,
+    PluginRegistryApi,
+    PluginRegistryServer,
     PluginType,
     TearDownPluginRequest,
-    TearDownPluginRequestProto,
     TearDownPluginResponse,
-    TearDownPluginResponseProto,
 };
-use tokio::io::AsyncReadExt;
+use structopt::StructOpt;
+use tokio::{
+    io::AsyncReadExt,
+    net::TcpListener,
+};
 use tonic::{
-    transport::Server,
-    Request,
-    Response,
+    async_trait,
     Status,
 };
 
@@ -77,7 +71,7 @@ impl From<PluginRegistryServiceError> for Status {
                 Status::internal("S3 Object was unexpectedly empty")
             }
             PluginRegistryServiceError::IoError(_) => Status::internal("IoError"),
-            PluginRegistryServiceError::PluginRegistryDeserializationError(_) => {
+            PluginRegistryServiceError::SerDeError(_) => {
                 Status::invalid_argument("Unable to deserialize message")
             }
             PluginRegistryServiceError::NomadClientError(_) => {
@@ -92,11 +86,6 @@ impl From<PluginRegistryServiceError> for Status {
         }
     }
 }
-
-use std::net::SocketAddr;
-
-use structopt::StructOpt;
-
 #[derive(StructOpt, Debug)]
 pub struct PluginRegistryConfig {
     #[structopt(flatten)]
@@ -145,7 +134,8 @@ pub struct PluginRegistry {
     config: PluginRegistryServiceConfig,
 }
 
-impl PluginRegistry {
+#[async_trait]
+impl PluginRegistryApi<PluginRegistryServiceError> for PluginRegistry {
     #[tracing::instrument(skip(self, request), err)]
     async fn create_plugin(
         &self,
@@ -275,11 +265,6 @@ impl PluginRegistry {
 }
 
 pub async fn exec_service(config: PluginRegistryConfig) -> Result<(), Box<dyn std::error::Error>> {
-    let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
-    health_reporter
-        .set_serving::<PluginRegistryServiceServer<PluginRegistry>>()
-        .await;
-
     let db_config = config.db_config;
 
     tracing::info!(
@@ -298,7 +283,7 @@ pub async fn exec_service(config: PluginRegistryConfig) -> Result<(), Box<dyn st
 
     let addr = config.service_config.plugin_registry_bind_address;
 
-    let plugin_registry: PluginRegistry = PluginRegistry {
+    let plugin_registry = PluginRegistry {
         db_client: PluginRegistryDbClient::new(&postgres_address).await?,
         nomad_client: NomadClient::from_env(),
         nomad_cli: NomadCli::default(),
@@ -306,27 +291,19 @@ pub async fn exec_service(config: PluginRegistryConfig) -> Result<(), Box<dyn st
         config: config.service_config,
     };
 
+    let healthcheck_polling_interval_ms = 5000; // TODO: un-hardcode
+    let (server, _shutdown_tx) = PluginRegistryServer::new(
+        plugin_registry,
+        TcpListener::bind(addr.clone()).await?,
+        || async { Ok(HealthcheckStatus::Serving) }, // FIXME: this is garbage
+        Duration::from_millis(healthcheck_polling_interval_ms),
+    );
     tracing::info!(
-        message="Starting PluginRegistry",
-        addr=?addr,
+        message = "starting gRPC server",
+        socket_address = %addr,
     );
 
-    Server::builder()
-        .trace_fn(|request| {
-            tracing::info_span!(
-                "PluginRegistry",
-                headers = ?request.headers(),
-                method = ?request.method(),
-                uri = %request.uri(),
-                extensions = ?request.extensions(),
-            )
-        })
-        .add_service(health_service)
-        .add_service(PluginRegistryServiceServer::new(plugin_registry))
-        .serve(addr)
-        .await?;
-
-    Ok(())
+    server.serve().await
 }
 
 fn generate_artifact_s3_key(

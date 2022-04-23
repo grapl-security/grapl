@@ -2,7 +2,7 @@ use rusoto_s3::{
     GetObjectError,
     PutObjectError,
 };
-use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::PluginRegistryDeserializationError;
+use rust_proto_new::SerDeError;
 
 use crate::nomad;
 
@@ -18,8 +18,8 @@ pub enum PluginRegistryServiceError {
     EmptyObject,
     #[error("IoError")]
     IoError(#[from] std::io::Error),
-    #[error("PluginRegistryDeserializationError")]
-    PluginRegistryDeserializationError(#[from] PluginRegistryDeserializationError),
+    #[error("SerDeError")]
+    SerDeError(#[from] SerDeError),
     #[error("NomadClientError")]
     NomadClientError(#[from] nomad::client::NomadClientError),
     #[error("NomadCliError")]

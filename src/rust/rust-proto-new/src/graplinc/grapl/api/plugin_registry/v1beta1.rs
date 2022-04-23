@@ -1,6 +1,15 @@
-pub use crate::graplinc::grapl::api::plugin_registry::v1beta1_client::{
-    PluginRegistryServiceClient,
-    PluginRegistryServiceClientError,
+pub use crate::graplinc::grapl::api::plugin_registry::{
+    v1beta1_client::{
+        PluginRegistryServiceClient,
+        PluginRegistryServiceClientError,
+    },
+    v1beta1_server::{
+        HealthcheckError,
+        HealthcheckStatus,
+        PluginRegistryApi,
+        PluginRegistryApiError,
+        PluginRegistryServer,
+    },
 };
 use crate::{
     protobufs::graplinc::grapl::api::plugin_registry::v1beta1 as proto,
