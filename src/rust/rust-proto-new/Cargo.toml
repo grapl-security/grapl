@@ -35,4 +35,9 @@ uid-allocator = []
 uid-allocator-messages = ["uid-allocator"]
 uid-allocator-server = ["uid-allocator-messages", "uid-allocator"]
 uid-allocator-client = ["uid-allocator-messages", "uid-allocator"]
-uid-allocator-full = ["uid-allocator-messages", "uid-allocator-client", "uid-allocator-server", "uid-allocator"]
+uid-allocator-full = [
+  "uid-allocator-messages",
+  "uid-allocator-client",
+  "uid-allocator-server",
+  "uid-allocator"
+]

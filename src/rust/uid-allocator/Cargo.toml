@@ -10,18 +10,20 @@ name = "uid_allocator"
 name = "uid-allocator"
 path = "src/main.rs"
 
-
 [dependencies]
-rust-proto-new = {path = "../rust-proto-new", features=["uid-allocator-full"]}
-
+rust-proto-new = { path = "../rust-proto-new", features = [
+  "uid-allocator-full"
+] }
 chrono = "0.4.19"
 serde = { version = "1.0.136", features = ["derive"] }
 tokio = { version = "1.17.0", features = ["full"] }
 uuid = { version = "0.8.2", features = ["v4"] }
-
 maplit = "1.0.2"
 tracing = "0.1.32"
-tracing-subscriber = {version = "0.3", default-features = false, features = ["env-filter", "fmt"]}
+tracing-subscriber = { version = "0.3", default-features = false, features = [
+  "env-filter",
+  "fmt"
+] }
 test-log = { version = "0.2.8", features = ["trace"] }
 env_logger = "0.9.0"
 async-recursion = "1.0.0"
@@ -31,7 +33,12 @@ itertools = "0.10.3"
 prost = "0.9.0"
 prost-types = "0.9.0"
 tonic = "0.6.1"
-sqlx = { version = "0.5.11", features = ["postgres", "runtime-tokio-rustls", "uuid", "offline"] }
+sqlx = { version = "0.5.11", features = [
+  "postgres",
+  "runtime-tokio-rustls",
+  "uuid",
+  "offline"
+] }
 thiserror = "1.0.30"
 dashmap = "5.2.0"
 

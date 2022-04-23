@@ -1,3 +1,4 @@
+
 #[cfg(feature = "uid-allocator-server")]
 pub mod server {
     use std::net::SocketAddr;
@@ -31,7 +32,9 @@ pub mod server {
                 Ok(request) => request,
                 Err(e) => return Err(tonic::Status::invalid_argument(e.to_string())),
             };
-            let response = UidAllocatorApi::allocate_ids(self, request).await.map_err(|e| e.into())?;
+            let response = UidAllocatorApi::allocate_ids(self, request)
+                .await
+                .map_err(|e| e.into())?;
             let proto_response = response.into();
             Ok(Response::new(proto_response))
         }
@@ -100,11 +103,18 @@ pub mod server {
 #[cfg(feature = "uid-allocator-client")]
 pub mod client {
     use crate::protocol::status::Status;
-    use crate::graplinc::grapl::api::uid_allocator::v1beta1::messages::{AllocateIdsRequest, AllocateIdsResponse};
 
-    use crate::protobufs::graplinc::grapl::api::uid_allocator::v1beta1::AllocateIdsRequest as AllocateIdsRequestProto;
-    use crate::protobufs::graplinc::grapl::api::uid_allocator::v1beta1::uid_allocator_client::UidAllocatorClient as UidAllocatorClientProto;
-    use crate::SerDeError;
+    use crate::{
+        graplinc::grapl::api::uid_allocator::v1beta1::messages::{
+            AllocateIdsRequest,
+            AllocateIdsResponse,
+        },
+        protobufs::graplinc::grapl::api::uid_allocator::v1beta1::{
+            uid_allocator_client::UidAllocatorClient as UidAllocatorClientProto,
+            AllocateIdsRequest as AllocateIdsRequestProto,
+        },
+        SerDeError,
+    };
 
     #[derive(thiserror::Error, Debug)]
     pub enum UidAllocatorClientError {
@@ -117,24 +127,27 @@ pub mod client {
     }
 
     #[derive(Clone)]
-    pub struct UidAllocatorClient
-    {
+    pub struct UidAllocatorClient {
         inner: UidAllocatorClientProto<tonic::transport::Channel>,
     }
 
     impl UidAllocatorClient {
         pub async fn connect<T>(endpoint: T) -> Result<Self, UidAllocatorClientError>
-            where
-                T: std::convert::TryInto<tonic::transport::Endpoint>,
-                T::Error: std::error::Error + Send + Sync + 'static,
+        where
+            T: std::convert::TryInto<tonic::transport::Endpoint>,
+            T::Error: std::error::Error + Send + Sync + 'static,
         {
             Ok(UidAllocatorClient {
-                inner: UidAllocatorClientProto::connect(endpoint).await
+                inner: UidAllocatorClientProto::connect(endpoint)
+                    .await
                     .map_err(UidAllocatorClientError::ConnectError)?,
             })
         }
 
-        pub async fn allocate_ids(&mut self, request: AllocateIdsRequest) -> Result<AllocateIdsResponse, UidAllocatorClientError> {
+        pub async fn allocate_ids(
+            &mut self,
+            request: AllocateIdsRequest,
+        ) -> Result<AllocateIdsResponse, UidAllocatorClientError> {
             let raw_request: AllocateIdsRequestProto = request.into();
             let raw_response = self.inner.allocate_ids(raw_request).await
                 .map_err(|s| UidAllocatorClientError::Status(s.into()))?;
@@ -148,10 +161,15 @@ pub mod client {
 #[cfg(feature = "uid-allocator-messages")]
 pub mod messages {
 
-    use crate::{SerDeError, type_url};
-    use crate::protobufs::graplinc::grapl::api::uid_allocator::v1beta1::AllocateIdsRequest as AllocateIdsRequestProto;
-    use crate::protobufs::graplinc::grapl::api::uid_allocator::v1beta1::AllocateIdsResponse as AllocateIdsResponseProto;
-    use crate::protobufs::graplinc::grapl::api::uid_allocator::v1beta1::Allocation as AllocationProto;
+    use crate::{
+        protobufs::graplinc::grapl::api::uid_allocator::v1beta1::{
+            AllocateIdsRequest as AllocateIdsRequestProto,
+            AllocateIdsResponse as AllocateIdsResponseProto,
+            Allocation as AllocationProto,
+        },
+        type_url,
+        SerDeError,
+    };
 
     #[derive(Clone, Debug)]
     pub struct Allocation {
@@ -241,10 +259,12 @@ pub mod messages {
     }
 
     impl type_url::TypeUrl for AllocateIdsRequest {
-        const TYPE_URL: &'static str = "graplinc.grapl.api.uid_allocator.v1beta1.AllocateIdsRequest";
+        const TYPE_URL: &'static str =
+            "graplinc.grapl.api.uid_allocator.v1beta1.AllocateIdsRequest";
     }
 
     impl type_url::TypeUrl for AllocateIdsResponse {
-        const TYPE_URL: &'static str = "graplinc.grapl.api.uid_allocator.v1beta1.AllocateIdsResponse";
+        const TYPE_URL: &'static str =
+            "graplinc.grapl.api.uid_allocator.v1beta1.AllocateIdsResponse";
     }
 }

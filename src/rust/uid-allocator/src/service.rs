@@ -1,9 +1,17 @@
-#![allow(warnings)]
-use tonic::{async_trait, Code};
-use crate::allocator::{UidAllocator};
-use tonic::Status;
-use rust_proto_new::graplinc::grapl::api::uid_allocator::v1beta1::messages::{AllocateIdsRequest, AllocateIdsResponse};
-use rust_proto_new::graplinc::grapl::api::uid_allocator::v1beta1::server::UidAllocatorApi;
+use rust_proto_new::graplinc::grapl::api::uid_allocator::v1beta1::{
+    messages::{
+        AllocateIdsRequest,
+        AllocateIdsResponse,
+    },
+    server::UidAllocatorApi,
+};
+use tonic::{
+    async_trait,
+    Code,
+    Status,
+};
+
+use crate::allocator::UidAllocator;
 
 pub struct UidAllocatorService {
     allocator: UidAllocator,
@@ -34,11 +42,14 @@ impl From<UidAllocatorServiceError> for Status {
 impl UidAllocatorApi for UidAllocatorService {
     type Error = UidAllocatorServiceError;
 
-    async fn allocate_ids(&self, request: AllocateIdsRequest) -> Result<AllocateIdsResponse, Self::Error> {
+    async fn allocate_ids(
+        &self,
+        request: AllocateIdsRequest,
+    ) -> Result<AllocateIdsResponse, Self::Error> {
         let AllocateIdsRequest { count, tenant_id } = request;
         // `0` is a sentinel for "let the server decide on the allocation size"
         let count = if count == 0 { 1_000 } else { count };
         let allocation = self.allocator.allocate(tenant_id, count).await?;
-        Ok(AllocateIdsResponse { allocation})
+        Ok(AllocateIdsResponse { allocation })
     }
 }

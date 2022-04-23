@@ -1,15 +1,15 @@
 syntax = "proto3";
 
-import "graplinc/common/v1beta1/types.proto";
-
 package graplinc.grapl.api.uid_allocator.v1beta1;
+
+import "graplinc/common/v1beta1/types.proto";
 
 // Represents a range of allocated ids
 message Allocation {
-   // The first ID in the allocated range
-   uint64 start = 1;
-   // The number of allocated ids - never 0
-   uint32 offset = 2;
+  // The first ID in the allocated range
+  uint64 start = 1;
+  // The number of allocated ids - never 0
+  uint32 offset = 2;
 }
 
 // The request for allocating a range of ids for a given tenant

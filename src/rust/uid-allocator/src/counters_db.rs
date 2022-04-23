@@ -1,6 +1,9 @@
 use sqlx::PgPool;
-use crate::allocator::PreAllocation;
-use crate::service::{UidAllocatorServiceError};
+
+use crate::{
+    allocator::PreAllocation,
+    service::UidAllocatorServiceError,
+};
 
 #[derive(Debug)]
 pub struct Count {
@@ -14,11 +17,15 @@ pub struct CountersDb {
 }
 
 impl CountersDb {
-
-    pub async fn preallocate(&self, tenant_id: uuid::Uuid, size: u32) -> Result<PreAllocation, UidAllocatorServiceError> {
+    pub async fn preallocate(
+        &self,
+        tenant_id: uuid::Uuid,
+        size: u32,
+    ) -> Result<PreAllocation, UidAllocatorServiceError> {
         let mut conn = self.pool.acquire().await?;
         // Increments the tenant's allocation counter by `size`, and returns the new value as well as the previous value
-        let count = sqlx::query_as!(Count,
+        let count = sqlx::query_as!(
+            Count,
             "
             UPDATE counters
             SET counter = counter + $1
@@ -31,16 +38,17 @@ impl CountersDb {
             WHERE counters.tenant_id = $2
             RETURNING counter as new, c.prev
             ",
-        size as i32,
-        tenant_id
-        ).fetch_optional(&mut conn).await?;
+            size as i32,
+            tenant_id
+        )
+        .fetch_optional(&mut conn)
+        .await?;
 
         let count = match count {
             Some(count) => count,
-            None => return Err(UidAllocatorServiceError::UnknownTenant(tenant_id))
+            None => return Err(UidAllocatorServiceError::UnknownTenant(tenant_id)),
         };
 
         Ok(PreAllocation::new(count.prev as u64, count.new as u64))
     }
-
 }
