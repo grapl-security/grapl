@@ -1,11 +1,13 @@
 use derive_into_owned::IntoOwned;
 
 mod file_create;
+mod file_create_stream_hash;
 mod network_connect;
 mod process_creation;
 mod process_terminated;
 
 pub use file_create::FileCreateEventData;
+pub use file_create_stream_hash::FileCreateStreamHashEventData;
 pub use network_connect::NetworkConnectionEventData;
 pub use process_creation::ProcessCreateEventData;
 pub use process_terminated::ProcessTerminatedEventData;
@@ -21,6 +23,11 @@ pub enum EventData<'a> {
     ///
     /// <https://docs.microsoft.com/en-us/sysinternals/downloads/sysmon#event-id-11-filecreate>
     FileCreate(FileCreateEventData<'a>),
+
+    /// Event ID 15: FileCreateStreamHash
+    ///
+    /// https://docs.microsoft.com/en-us/sysinternals/downloads/sysmon#event-id-15-filecreatestreamhash
+    FileCreateStreamHash(FileCreateStreamHashEventData<'a>),
 
     /// Event ID 3: Network connection
     ///
