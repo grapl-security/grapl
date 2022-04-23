@@ -21,13 +21,13 @@ rusoto_s3 = { version = "0.47.0", default_features = false, features = [
 rusoto_sqs = { version = "0.47.0", default_features = false, features = [
   "rustls"
 ] }
-tokio = { version = "1.14.0", features = [
+tokio = { version = "1.17", features = [
   "io-util",
-  "sync",
-  "rt",
   "macros",
+  "rt",
+  "rt-multi-thread",
+  "sync",
   "time",
-  "rt-multi-thread"
 ] }
 redis = { version = "0.21.5", features = ["tokio-comp", "connection-manager"] }
 serde = "1.0.130"

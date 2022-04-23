@@ -51,15 +51,15 @@ serde_derive = "1.0.130"
 thiserror = "1.0.30"
 hex = "0.4.3"
 async-trait = "0.1.51"
-tokio = { version = "1.14.0", features = [
-  "sync",
+tokio = { version = "1.17", features = [
   "macros",
+  "rt-multi-thread",
+  "sync",
   "time",
-  "rt-multi-thread"
 ] }
 hmap = "0.1.0"
 chrono = "0.4.19"
-uuid = { version = "0.8.2", features = ["v4"] }
+uuid = { version = "0.8", features = ["v4"] }
 tap = "1.0.1"
 tracing = "0.1.29"
 

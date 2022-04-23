@@ -7,11 +7,11 @@ edition = "2021"
 [dependencies]
 rust-proto = { path = "../../rust-proto" }
 thiserror = "1.0.30"
-tokio = { version = "1.14.0", features = ["full"] }
+tokio = { version = "1.17", features = ["full"] }
 tonic = { version = "0.6.1", features = ["tls"] }
 tonic-health = "0.5.0"
 tracing = "0.1.29"
-uuid = { version = "0.8.2", features = ["v4"] }
+uuid = { version = "0.8", features = ["v4"] }
 serde = { version = "1.0.136", features = ["derive"] }
 trust-dns-resolver = "0.20.3"
 moka = { version = "0.7", features = ["future"] }

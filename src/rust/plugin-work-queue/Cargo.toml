@@ -17,12 +17,12 @@ grapl-utils = { path = "../grapl-utils" }
 rust-proto = { path = "../rust-proto" }
 structopt = { version = "0.3.26", default-features = false }
 thiserror = "1.0.30"
-tokio = { version = "1.14.0", features = ["full"] }
+tokio = { version = "1.17", features = ["full"] }
 tonic = "0.6.1"
 tonic-health = "0.5.0"
 tracing = "0.1.29"
-uuid = { version = "0.8.2", features = ["v4"] }
-sqlx = { version = "0.5.9", features = [
+uuid = { version = "0.8", features = ["v4"] }
+sqlx = { version = "0.5", features = [
   "chrono",
   "migrate",
   "postgres",

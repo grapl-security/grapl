@@ -36,12 +36,12 @@ tracing = "0.1.29"
 tracing-opentelemetry = "0.16.0"
 tracing-subscriber = { version = "0.3.2", features = ["env-filter", "json"] }
 tracing-futures = "0.2.5"
-tokio = { version = "1.14.0", features = [
-  "sync",
-  "rt",
+tokio = { version = "1.17", features = [
   "macros",
+  "rt",
+  "rt-multi-thread",
+  "sync",
   "time",
-  "rt-multi-thread"
 ] }
 color-eyre = "0.6.0"
 eyre = "0.6.5"
