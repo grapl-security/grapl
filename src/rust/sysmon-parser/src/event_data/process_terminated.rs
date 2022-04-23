@@ -27,11 +27,7 @@ use crate::{
 /// <https://docs.microsoft.com/en-us/sysinternals/downloads/sysmon#event-id-5-process-terminated>
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Hash, IntoOwned)]
-#[cfg_attr(
-    feature = "serde",
-    derive(serde_crate::Serialize, serde_crate::Deserialize),
-    serde(crate = "serde_crate")
-)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ProcessTerminatedEventData<'a> {
     /// <data name="RuleName" inType="win:UnicodeString" outType="xs:string" />
     pub rule_name: Option<Cow<'a, str>>,

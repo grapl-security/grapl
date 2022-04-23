@@ -77,7 +77,6 @@ root_patterns = [
   "/src/python/grapl-common",
   "/src/python/graplctl",
   "/src/python/grapl_e2e_tests",
-  "/src/python/grapl-template-generator",
   "/src/python/grapl-tests-common",
   "/src/python/provisioner",
   "/src/python/python-proto",
@@ -198,9 +197,6 @@ ignore_paths = [
   # generation. For now, we don't need Pants to update this BUILD
   # file.
   "docs/BUILD",
-  # We don't need to update BUILD files that are part of a
-  # Cookiecutter template.
-  "src/python/grapl-template-generator/grapl_template_generator/grapl-templates/rust-grpc-service/{{cookiecutter.project_slug}}/**"
 ]
 ignore_adding_targets = [
   # We don't currently run the `editor_setup.py` file through Pants,

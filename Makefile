@@ -227,14 +227,6 @@ graplctl: ## Build graplctl and install it to ./bin
 	cp ./dist/src.python.graplctl.graplctl/graplctl.pex ./bin/graplctl
 	printf -- '\n${FMT_BOLD}graplctl${FMT_END} written to ${FMT_BLUE}./bin/graplctl${FMT_END}\n'
 
-.PHONY: grapl-template-generator
-grapl-template-generator: ## Build the Grapl Template Generator and install it to ./bin
-	./pants package ./src/python/grapl-template-generator/grapl_template_generator
-	cp \
-		./dist/src.python.grapl-template-generator.grapl_template_generator/grapl_template_generator.pex \
-		./bin/grapl-template-generator
-	printf -- '\n${FMT_BOLD}Template Generator${FMT_END} written to ${FMT_BLUE}./bin/grapl-template-generator${FMT_END}\n'
-
 .PHONY: dump-artifacts-local
 dump-artifacts-local:  ## Run the script that dumps Nomad/Docker logs after test runs
 	./pants run ./etc/ci_scripts/dump_artifacts -- \
@@ -325,10 +317,6 @@ test-integration-new: build-test-integration-new
 test-integration-new: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS_NEW)
 test-integration-new: ## Build and run "new" integration tests
 	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh integration-tests-new 9"
-
-.PHONY: test-grapl-template-generator
-test-grapl-template-generator:  # Test that the Grapl Template Generator spits out something compilable.
-	./src/python/grapl-template-generator/grapl_template_generator_tests/integration_test.sh
 
 .PHONY: test-e2e
 test-e2e: build-local-infrastructure
