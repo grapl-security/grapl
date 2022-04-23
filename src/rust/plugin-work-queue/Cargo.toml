@@ -31,7 +31,7 @@ sqlx = { version = "0.5", features = [
   "offline",
 ] }
 chrono = "0.4.19"
-futures = "0.3.17"
+futures = "0.3"
 
 [dev-dependencies]
 tracing-subscriber = "0.3"

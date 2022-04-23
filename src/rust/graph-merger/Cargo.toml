@@ -43,7 +43,7 @@ prost = "0.9.0"
 base64 = "0.13.0"
 rand = "0.8.4"
 dgraph_query_lib = "0.1.0"
-futures = "0.3.18"
+futures = "0.3"
 async-trait = "0.1.51"
 uuid = "0.8"
 tokio = { version = "1.17", features = [

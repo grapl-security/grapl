@@ -40,7 +40,7 @@ rusoto_s3 = { version = "0.47.0", default_features = false, features = [
 blake3 = "1.2.0"
 structopt = { version = "0.3", default-features = false }
 uuid = { version = "0.8", features = ["v4"] }
-futures = "0.3.17"
+futures = "0.3"
 
 [dev-dependencies]
 test-log = { version = "0.2", default-features = false, features = ["trace"] }
