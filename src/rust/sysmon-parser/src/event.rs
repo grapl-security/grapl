@@ -106,6 +106,9 @@ pub(crate) fn from_tokenizer<'a, 'b: 'a>(
         EventId::FileCreate => {
             EventData::FileCreate(event_data::FileCreateEventData::try_from(tokenizer)?)
         }
+        EventId::FileCreateStreamHash => EventData::FileCreateStreamHash(
+            event_data::FileCreateStreamHashEventData::try_from(tokenizer)?,
+        ),
         EventId::NetworkConnection => {
             EventData::NetworkConnect(event_data::NetworkConnectionEventData::try_from(tokenizer)?)
         }
