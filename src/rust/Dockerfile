@@ -28,15 +28,17 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-base-apt
         pkg-config=0.29.2-1 \
         tcl=8.6.11+1
 
-# Grab a Nomad binary, which we use in plugin-registry for parsing
-# HCL2-with-variables into JSON.
+# Grab a Nomad binary, which we use for parsing HCL2-with-variables into JSON:
+# - in plugin-registry integration tests
+# - in plugin-registry image
 WORKDIR /nomad
 RUN <<EOF
-set -euo pipefail
+NOMAD_VERSION="1.2.4"
+ZIP_NAME="nomad_${NOMAD_VERSION}_linux_amd64.zip"
 curl --remote-name --proto '=https' --tlsv1.2 -sSf \
-  https://releases.hashicorp.com/nomad/1.2.4/nomad_1.2.4_linux_amd64.zip
-unzip *.zip
-rm *.zip
+  "https://releases.hashicorp.com/nomad/${NOMAD_VERSION}/${ZIP_NAME}"
+unzip "${ZIP_NAME}"
+rm "${ZIP_NAME}"
 EOF
 
 # Install rust toolchain before copying sources to avoid unecessarily
@@ -171,7 +173,8 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tests-ap
     && apt-get install --yes --no-install-recommends \
         ca-certificates=20210119
 
-# Make the Nomad binary available to integration test consumers of NomadCli
+# Put the Nomad binary on PATH
+# so that it's available to integration test consumers of NomadCli
 # hadolint ignore=DL3022
 COPY --from=build /nomad/nomad /bin
 
@@ -265,7 +268,8 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tests-ap
     && apt-get install --yes --no-install-recommends \
         ca-certificates=20210119
 
-# Make the Nomad binary available to integration test consumers of NomadCli
+# Put the Nomad binary on PATH
+# so that it's available to integration test consumers of NomadCli
 # hadolint ignore=DL3022
 COPY --from=build /nomad/nomad /bin
 
@@ -362,6 +366,7 @@ FROM rust-dist AS plugin-registry-deploy
 # https://github.com/hadolint/hadolint/wiki/DL3022
 # hadolint ignore=DL3022
 COPY --from=build /outputs/plugin-registry /
+# Put the Nomad binary on PATH for NomadCli class
 # hadolint ignore=DL3022
 COPY --from=build /nomad/nomad /bin
 ENTRYPOINT ["/plugin-registry"]
