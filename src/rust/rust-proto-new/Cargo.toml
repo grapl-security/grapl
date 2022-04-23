@@ -7,6 +7,7 @@ description = "Wrapper library for Grapl's protocol buffers"
 license = "MIT"
 
 [dependencies]
+async-trait = "0.1.53"
 bytes = "1.1.0"
 futures = "0.3.0"
 prost = "0.9.0"
@@ -20,3 +21,10 @@ tonic-build = { version = "0.6.0", features = ["prost"] }
 
 [dev-dependencies]
 proptest = "1.0.0"
+
+[features]
+uid-allocator = []
+uid-allocator-messages = ["uid-allocator"]
+uid-allocator-server = ["uid-allocator-messages", "uid-allocator"]
+uid-allocator-client = ["uid-allocator-messages", "uid-allocator"]
+uid-allocator-full = ["uid-allocator-messages", "uid-allocator-client", "uid-allocator-server", "uid-allocator"]

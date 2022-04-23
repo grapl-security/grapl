@@ -28,6 +28,7 @@ members = [
   "./rust-proto-new",
   "./sqs-executor",
   "./sysmon-parser",
+  "./uid-allocator",
 ]
 
 [profile.dev]
