@@ -213,12 +213,6 @@ steps:
                 - grapl/CODECOV_TOKEN
           - grapl-security/codecov#v0.1.6
 
-      - label: ":writing_hand: Test Grapl Template Generator"
-        command:
-          - make test-grapl-template-generator
-        agents:
-          queue: "beefy"
-
   - label: ":hammer: Integration Tests"
     command:
       - make test-integration
