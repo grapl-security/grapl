@@ -27,6 +27,7 @@ tracing = "0.1.29"
 structopt = { version = "0.3", default-features = false }
 uuid = { version = "0.8", features = ["v4"] }
 futures = "0.3"
+grapl-workspace-hack = { version = "0.1", path = "../grapl-workspace-hack" }
 
 [features]
 integration = []

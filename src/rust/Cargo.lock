@@ -356,6 +356,7 @@ dependencies = [
  "grapl-config",
  "grapl-observe",
  "grapl-service",
+ "grapl-workspace-hack",
  "log",
  "prost 0.9.0",
  "rusoto_core",
@@ -1221,6 +1222,7 @@ checksum = "3ee2393c4a91429dffb4bedf19f4d6abf27d8a732c8ce4980305d782e5426d57"
 name = "derive-dynamic-node"
 version = "1.0.1"
 dependencies = [
+ "grapl-workspace-hack",
  "log",
  "proc-macro2",
  "quote",
@@ -1428,6 +1430,7 @@ name = "endpoint-plugin"
 version = "0.1.0"
 dependencies = [
  "derive-dynamic-node",
+ "grapl-workspace-hack",
  "rust-proto",
  "thiserror",
  "uuid",
@@ -1681,6 +1684,7 @@ dependencies = [
 name = "generator-sdk"
 version = "0.1.0"
 dependencies = [
+ "grapl-workspace-hack",
  "moka",
  "rust-proto",
  "serde",
@@ -1715,6 +1719,7 @@ dependencies = [
  "grapl-config",
  "grapl-observe",
  "grapl-service",
+ "grapl-workspace-hack",
  "lazy_static",
  "log",
  "prost 0.9.0",
@@ -1788,6 +1793,7 @@ dependencies = [
  "grapl-config",
  "grapl-observe",
  "grapl-service",
+ "grapl-workspace-hack",
  "log",
  "prost 0.9.0",
  "rusoto_core",
@@ -1820,6 +1826,7 @@ dependencies = [
  "grapl-observe",
  "grapl-service",
  "grapl-utils",
+ "grapl-workspace-hack",
  "lazy_static",
  "log",
  "lru",
@@ -1862,6 +1869,7 @@ dependencies = [
  "derive-dynamic-node",
  "graph-generator-lib",
  "grapl-config",
+ "grapl-workspace-hack",
  "rust-proto",
 ]
 
@@ -1873,6 +1881,7 @@ dependencies = [
  "color-eyre",
  "eyre",
  "grapl-observe",
+ "grapl-workspace-hack",
  "log",
  "opentelemetry 0.16.0",
  "opentelemetry-jaeger",
@@ -1897,6 +1906,7 @@ version = "0.1.0"
 dependencies = [
  "color-eyre",
  "graphql-parser",
+ "grapl-workspace-hack",
  "serde_json",
  "structopt",
  "thiserror",
@@ -1910,6 +1920,7 @@ version = "0.0.1"
 dependencies = [
  "chrono",
  "dgraph-tonic",
+ "grapl-workspace-hack",
  "lazy_static",
  "log",
  "pin-project",
@@ -1923,6 +1934,7 @@ version = "0.1.0"
 dependencies = [
  "bytes",
  "grapl-config",
+ "grapl-workspace-hack",
  "itertools 0.10.3",
  "libflate",
  "prost 0.9.0",
@@ -1940,6 +1952,7 @@ name = "grapl-utils"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "grapl-workspace-hack",
  "rusoto_core",
  "rusoto_dynamodb",
  "tokio",
@@ -1958,6 +1971,7 @@ dependencies = [
  "chrono",
  "futures-util",
  "grapl-config",
+ "grapl-workspace-hack",
  "hmap",
  "opentelemetry 0.17.0",
  "rand 0.8.5",
@@ -1970,6 +1984,69 @@ dependencies = [
  "tracing-opentelemetry 0.17.2",
  "tracing-subscriber",
  "url",
+]
+
+[[package]]
+name = "grapl-workspace-hack"
+version = "0.1.0"
+dependencies = [
+ "ahash",
+ "bitflags",
+ "byteorder",
+ "bytes",
+ "cc",
+ "chrono",
+ "criterion",
+ "crossbeam-utils 0.8.8",
+ "crypto-common",
+ "digest 0.10.3",
+ "either",
+ "futures-channel",
+ "futures-executor",
+ "futures-io",
+ "futures-sink",
+ "futures-task",
+ "futures-util",
+ "generic-array",
+ "hashbrown",
+ "heck 0.4.0",
+ "hyper",
+ "indexmap",
+ "libc",
+ "log",
+ "memchr",
+ "mime_guess",
+ "num-traits",
+ "prost 0.10.1",
+ "prost 0.9.0",
+ "prost-types 0.10.1",
+ "prost-types 0.9.0",
+ "rand 0.8.5",
+ "regex",
+ "regex-automata",
+ "regex-syntax",
+ "rustls 0.19.1",
+ "serde",
+ "serde_dynamodb",
+ "serde_json",
+ "sha-1",
+ "sha2 0.10.2",
+ "sqlx",
+ "sqlx-core",
+ "sqlx-macros",
+ "subtle",
+ "syn",
+ "time 0.3.9",
+ "tokio",
+ "tokio-stream",
+ "tokio-util 0.6.9",
+ "tokio-util 0.7.1",
+ "tonic 0.6.2",
+ "tracing",
+ "tracing-core",
+ "tracing-subscriber",
+ "uuid",
+ "zstd-sys",
 ]
 
 [[package]]
@@ -2325,6 +2402,7 @@ version = "0.1.0"
 dependencies = [
  "bytes",
  "futures",
+ "grapl-workspace-hack",
  "rdkafka",
  "rust-proto-new",
  "thiserror",
@@ -2622,6 +2700,7 @@ dependencies = [
  "async-trait",
  "bytes",
  "grapl-config",
+ "grapl-workspace-hack",
  "metrics",
  "prost 0.9.0",
  "prost-derive 0.9.0",
@@ -2683,6 +2762,7 @@ dependencies = [
  "grapl-observe",
  "grapl-service",
  "grapl-utils",
+ "grapl-workspace-hack",
  "hex",
  "hmap",
  "prost 0.9.0",
@@ -2723,6 +2803,7 @@ dependencies = [
 name = "nomad-client-gen"
 version = "1.0.0"
 dependencies = [
+ "grapl-workspace-hack",
  "reqwest",
  "serde",
  "serde_derive",
@@ -2958,6 +3039,7 @@ dependencies = [
  "argon2",
  "grapl-config",
  "grapl-utils",
+ "grapl-workspace-hack",
  "prost 0.9.0",
  "rust-proto",
  "sqlx",
@@ -2994,6 +3076,7 @@ dependencies = [
  "grapl-config",
  "grapl-observe",
  "grapl-service",
+ "grapl-workspace-hack",
  "rust-proto",
  "serde",
  "serde_json",
@@ -3135,6 +3218,7 @@ dependencies = [
  "async-trait",
  "bytes",
  "futures",
+ "grapl-workspace-hack",
  "kafka",
  "opentelemetry 0.16.0",
  "opentelemetry-jaeger",
@@ -3191,6 +3275,7 @@ dependencies = [
  "futures",
  "grapl-config",
  "grapl-utils",
+ "grapl-workspace-hack",
  "rust-proto",
  "structopt",
  "thiserror",
@@ -3210,6 +3295,7 @@ dependencies = [
  "futures",
  "grapl-config",
  "grapl-utils",
+ "grapl-workspace-hack",
  "nomad-client-gen",
  "rusoto_core",
  "rusoto_s3",
@@ -3236,6 +3322,7 @@ dependencies = [
  "futures",
  "grapl-config",
  "grapl-utils",
+ "grapl-workspace-hack",
  "rust-proto",
  "sqlx",
  "structopt",
@@ -3951,6 +4038,7 @@ dependencies = [
 name = "rust-proto"
 version = "0.2.10"
 dependencies = [
+ "grapl-workspace-hack",
  "log",
  "prost 0.9.0",
  "prost-types 0.9.0",
@@ -3973,6 +4061,7 @@ version = "0.1.0"
 dependencies = [
  "bytes",
  "futures",
+ "grapl-workspace-hack",
  "proptest",
  "prost 0.10.1",
  "prost-types 0.10.1",
@@ -4485,6 +4574,7 @@ dependencies = [
  "futures-util",
  "grapl-observe",
  "grapl-utils",
+ "grapl-workspace-hack",
  "hex",
  "itertools 0.10.3",
  "lazy_static",
@@ -4598,6 +4688,7 @@ dependencies = [
  "grapl-config",
  "grapl-observe",
  "grapl-service",
+ "grapl-workspace-hack",
  "rust-proto",
  "serde",
  "serde_json",
@@ -4616,6 +4707,7 @@ dependencies = [
  "chrono",
  "criterion",
  "derive-into-owned",
+ "grapl-workspace-hack",
  "memchr",
  "serde",
  "thiserror",

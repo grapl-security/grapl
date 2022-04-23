@@ -41,6 +41,7 @@ metrics = "0.17.0"
 quanta = "0.9.3"
 # Other grapl libs
 grapl-config = { path = "../grapl-config" }
+grapl-workspace-hack = { version = "0.1", path = "../grapl-workspace-hack" }
 
 [dev-dependencies]
 async-trait = "0.1.51"

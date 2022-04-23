@@ -14,3 +14,4 @@ rusoto_core = { version = "0.47.0", default_features = false, features = [
 rusoto_dynamodb = { version = "0.47.0", default_features = false, features = [
   "rustls"
 ] }
+grapl-workspace-hack = { version = "0.1", path = "../grapl-workspace-hack" }

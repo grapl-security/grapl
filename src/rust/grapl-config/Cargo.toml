@@ -47,3 +47,4 @@ color-eyre = "0.6.0"
 eyre = "0.6.5"
 async-trait = "0.1.51"
 tracing-appender = "0.2.0"
+grapl-workspace-hack = { version = "0.1", path = "../grapl-workspace-hack" }

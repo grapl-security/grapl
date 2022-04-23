@@ -29,6 +29,7 @@ members = [
   "./rust-proto-new",
   "./sqs-executor",
   "./sysmon-parser",
+  "grapl-workspace-hack",
 ]
 
 [profile.dev]

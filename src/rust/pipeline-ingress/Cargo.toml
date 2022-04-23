@@ -20,6 +20,7 @@ tracing-appender = "0.2"
 tracing-opentelemetry = "0.16"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 uuid = { version = "0.8", features = ["v4"] }
+grapl-workspace-hack = { version = "0.1", path = "../grapl-workspace-hack" }
 
 [dev-dependencies]
 bytes = "1.1"

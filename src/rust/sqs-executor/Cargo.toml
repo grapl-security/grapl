@@ -46,3 +46,4 @@ hex = "0.4.3"
 chrono = "0.4.19"
 lru = "0.7.0"
 itertools = "0.10.1"
+grapl-workspace-hack = { version = "0.1", path = "../grapl-workspace-hack" }

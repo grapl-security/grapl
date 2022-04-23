@@ -31,6 +31,7 @@ rust-proto = { path = "../rust-proto", version = "*" }
 thiserror = "1.0.26"
 argon2 = { version = "0.4", features = ["std"] }
 structopt = { version = "0.3", default-features = false }
+grapl-workspace-hack = { version = "0.1", path = "../grapl-workspace-hack" }
 
 [build-dependencies]
 tonic-build = { version = "0.6.0", features = ["prost"] }

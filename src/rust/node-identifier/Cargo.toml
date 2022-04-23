@@ -62,6 +62,7 @@ chrono = "0.4.19"
 uuid = { version = "0.8", features = ["v4"] }
 tap = "1.0.1"
 tracing = "0.1.29"
+grapl-workspace-hack = { version = "0.1", path = "../grapl-workspace-hack" }
 
 [dev-dependencies]
 quickcheck = "1.0.3"

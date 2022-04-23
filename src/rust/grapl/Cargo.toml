@@ -11,3 +11,4 @@ derive-dynamic-node = { path = "../derive-dynamic-node" }
 graph-generator-lib = { path = "../generators/graph-generator-lib/" }
 grapl-config = { path = "../grapl-config" }
 rust-proto = { path = "../rust-proto" }
+grapl-workspace-hack = { version = "0.1", path = "../grapl-workspace-hack" }

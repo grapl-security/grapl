@@ -15,3 +15,4 @@ log = "0.4.14"
 regex = "1.5.5"
 thiserror = "1.0.30"
 dgraph-tonic = "0.10.0"
+grapl-workspace-hack = { version = "0.1", path = "../grapl-workspace-hack" }

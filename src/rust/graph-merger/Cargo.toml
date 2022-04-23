@@ -59,6 +59,7 @@ thiserror = "1.0.30"
 tracing-futures = "0.2.5"
 lru = "0.7.0"
 futures-retry = "0.6.0"
+grapl-workspace-hack = { version = "0.1", path = "../grapl-workspace-hack" }
 
 [dev-dependencies]
 tracing-subscriber = "0.3.2"

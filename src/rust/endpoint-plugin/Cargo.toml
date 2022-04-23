@@ -10,3 +10,4 @@ rust-proto = { path = "../rust-proto", version = "*" }
 derive-dynamic-node = { path = "../derive-dynamic-node" }
 uuid = { version = "0.8", features = ["v4"] }
 thiserror = "1.0.30"
+grapl-workspace-hack = { version = "0.1", path = "../grapl-workspace-hack" }

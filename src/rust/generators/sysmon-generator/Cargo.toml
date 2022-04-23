@@ -38,3 +38,4 @@ thiserror = "1.0.30"
 tracing = "0.1.29"
 chrono = { version = "0.4", default-features = false }
 uuid = { version = "0.8", features = ["v4"] }
+grapl-workspace-hack = { version = "0.1", path = "../../grapl-workspace-hack" }

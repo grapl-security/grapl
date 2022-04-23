@@ -24,6 +24,7 @@ xmlparser = "0.13"
 serde = { version = "1.0", default-features = false, features = [
   "derive"
 ], optional = true }
+grapl-workspace-hack = { version = "0.1", path = "../grapl-workspace-hack" }
 
 [dev-dependencies]
 criterion = "0.3"

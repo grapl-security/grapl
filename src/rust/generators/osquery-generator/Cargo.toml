@@ -35,3 +35,4 @@ tokio = { version = "1.17", features = [
 ] }
 thiserror = "1.0.30"
 tracing = "0.1.29"
+grapl-workspace-hack = { version = "0.1", path = "../../grapl-workspace-hack" }

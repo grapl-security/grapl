@@ -17,6 +17,7 @@ thiserror = "1.0.30"
 tonic = "0.6"
 tracing = "0.1.29"
 uuid = { version = "0.8", features = ["v4"] }
+grapl-workspace-hack = { version = "0.1", path = "../grapl-workspace-hack" }
 
 [build-dependencies]
 tonic-build = { version = "0.6.0", features = ["prost"] }
