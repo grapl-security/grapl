@@ -63,13 +63,18 @@ job "grapl-plugin" {
 
         image      = var.plugin_runtime_image
         entrypoint = ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
-        command    = "/mnt/nomad_task_dir/plugin.bin"
+        command = trimspace(<<EOF
+        chmod +x "${PLUGIN_BIN}"
+        "${PLUGIN_BIN}"
+EOF
+        )
 
         mount {
-          type     = "bind"
-          target   = "/mnt/nomad_task_dir"
-          source   = "local/"
-          readonly = true
+          type   = "bind"
+          target = "/mnt/nomad_task_dir"
+          source = "local/"
+          # sigh - we need to `chmod +x` the binary, hence, mount is rw
+          readonly = false
         }
       }
 
@@ -84,9 +89,10 @@ job "grapl-plugin" {
       }
 
       env {
-        TENANT_ID = "${var.tenant_id}"
-        PLUGIN_ID = "${var.plugin_id}"
-        BIND_PORT = "${NOMAD_PORT_plugin-grpc-receiver}"
+        TENANT_ID  = "${var.tenant_id}"
+        PLUGIN_ID  = "${var.plugin_id}"
+        BIND_PORT  = "${NOMAD_PORT_plugin-grpc-receiver}"
+        PLUGIN_BIN = "/mnt/nomad_task_dir/plugin.bin"
       }
 
       service {
