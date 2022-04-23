@@ -133,8 +133,8 @@ pub struct PluginRegistryServiceConfig {
     pub kernel_artifact_url: String,
     #[structopt(env = "PLUGIN_REGISTRY_ROOTFS_ARTIFACT_URL")]
     pub rootfs_artifact_url: String,
-    #[structopt(env = "PLUGIN_REGISTRY_HAX_DOCKERIZED_PLUGIN_RUNTIME_IMAGE")]
-    pub hax_dockerized_plugin_runtime_image: String,
+    #[structopt(env = "PLUGIN_REGISTRY_HAX_DOCKER_PLUGIN_RUNTIME_IMAGE")]
+    pub hax_docker_plugin_runtime_image: String,
 }
 
 pub struct PluginRegistry {

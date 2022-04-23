@@ -682,7 +682,7 @@ job "grapl-core" {
           path     = "/health"
           port     = "healthcheck"
           method   = "GET"
-          interval = "10s"
+          interval = "30s"
           timeout  = "5s"
 
           check_restart {
@@ -1364,7 +1364,7 @@ job "grapl-core" {
         PLUGIN_BOOTSTRAP_CONTAINER_IMAGE                    = var.container_images["plugin-bootstrap"]
         PLUGIN_REGISTRY_KERNEL_ARTIFACT_URL                 = var.plugin_registry_kernel_artifact_url
         PLUGIN_REGISTRY_ROOTFS_ARTIFACT_URL                 = var.plugin_registry_rootfs_artifact_url
-        PLUGIN_REGISTRY_HAX_DOCKERIZED_PLUGIN_RUNTIME_IMAGE = var.container_images["hax-dockerized-plugin-runtime"]
+        PLUGIN_REGISTRY_HAX_DOCKER_PLUGIN_RUNTIME_IMAGE = var.container_images["hax-docker-plugin-runtime"]
         # Plugin Execution code/image doesn't exist yet; change this once it does!
         PLUGIN_EXECUTION_CONTAINER_IMAGE = "grapl/plugin-execution-sidecar-TODO"
         PLUGIN_S3_BUCKET_AWS_ACCOUNT_ID  = var.plugin_s3_bucket_aws_account_id
