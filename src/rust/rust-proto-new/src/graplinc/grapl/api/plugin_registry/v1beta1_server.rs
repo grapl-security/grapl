@@ -1,27 +1,9 @@
-use std::{
-    marker::PhantomData,
-    time::Duration,
-};
+use std::marker::PhantomData;
 
-use futures::{
-    channel::oneshot::{
-        self,
-        Receiver,
-        Sender,
-    },
-    Future,
-    FutureExt,
-    TryFutureExt,
-};
+use futures::TryFutureExt;
 use proto::plugin_registry_service_server::PluginRegistryService;
 use thiserror::Error;
-use tokio::net::TcpListener;
-use tokio_stream::wrappers::TcpListenerStream;
 use tonic::{
-    transport::{
-        NamedService,
-        Server,
-    },
     Request,
     Response,
 };
@@ -41,11 +23,28 @@ use crate::{
         TearDownPluginRequest,
         TearDownPluginResponse,
     },
-    protobufs::graplinc::grapl::api::plugin_registry::v1beta1::{
-        self as proto,
-        plugin_registry_service_server::PluginRegistryServiceServer as PluginRegistryServiceProto,
-    },
+    protobufs::graplinc::grapl::api::plugin_registry::v1beta1::{self as proto, plugin_registry_service_server::PluginRegistryServiceServer as PluginRegistryServiceProto},
     SerDeError,
+};
+
+use std::{
+    time::Duration,
+};
+
+use futures::{
+    channel::oneshot::{
+        self,
+        Receiver,
+        Sender,
+    },
+    Future,
+    FutureExt,
+};
+use tokio::net::TcpListener;
+use tokio_stream::wrappers::TcpListenerStream;
+use tonic::transport::{
+    Server,
+    NamedService,
 };
 
 #[non_exhaustive]
@@ -57,6 +56,7 @@ pub enum PluginRegistryApiError {
     #[error("received unfavorable gRPC status {0}")]
     GrpcStatus(#[from] tonic::Status),
 }
+
 
 /// Implement this trait to define the API business logic
 #[tonic::async_trait]
@@ -197,6 +197,7 @@ where
     }
 }
 
+
 #[non_exhaustive]
 #[derive(Debug, Error)]
 pub enum HealthcheckError {
@@ -214,6 +215,7 @@ pub enum HealthcheckStatus {
     NotServing,
     Unknown,
 }
+
 
 /**
  * !!!!! IMPORTANT !!!!!
@@ -263,7 +265,8 @@ where
                 healthcheck_polling_interval,
                 tcp_listener,
                 shutdown_rx,
-                service_name: PluginRegistryServiceProto::<PluginRegistryProto<T, E>>::NAME,
+                service_name:
+                PluginRegistryServiceProto::<PluginRegistryProto<T, E>>::NAME,
                 e_: PhantomData,
                 f_: PhantomData,
             },
@@ -335,9 +338,9 @@ where
         // TODO: add tower tracing, tls_config, concurrency limits
         Ok(Server::builder()
             .add_service(health_service)
-            .add_service(PluginRegistryServiceProto::new(PluginRegistryProto::new(
-                self.api_server,
-            )))
+            .add_service(PluginRegistryServiceProto::new(
+                PluginRegistryProto::new(self.api_server),
+            ))
             .serve_with_incoming_shutdown(
                 TcpListenerStream::new(self.tcp_listener),
                 self.shutdown_rx.map(|_| ()),
