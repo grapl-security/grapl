@@ -21,7 +21,7 @@ grapl-utils = { path = "../grapl-utils" }
 rust-proto = { path = "../rust-proto" }
 thiserror = "1.0.30"
 tokio = { version = "1.14.0", features = ["full"] }
-tonic = "0.6.1"
+tonic = "0.6"
 tonic-health = "0.5.0"
 tracing = "0.1.29"
 structopt = { version = "0.3", default-features = false }

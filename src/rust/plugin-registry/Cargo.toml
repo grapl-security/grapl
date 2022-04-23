@@ -28,7 +28,7 @@ sqlx = { version = "0.5", features = [
 tempfile = "3.3.0"
 thiserror = "1.0.30"
 tokio = { version = "1.17", features = ["full"] }
-tonic = "0.6.1"
+tonic = "0.6"
 tonic-health = "0.5.0"
 tracing = "0.1.29"
 rusoto_core = { version = "0.47.0", default_features = false, features = [

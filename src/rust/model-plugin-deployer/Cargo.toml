@@ -28,7 +28,7 @@ tokio = { version = "1.17", features = [
   "time",
 ] }
 tokio-stream = "0.1.8"
-tonic = "0.6.1"
+tonic = "0.6"
 tower = "0.4.11"
 # Tracing support
 tracing = "0.1.29"
