@@ -17,7 +17,7 @@ grapl-utils = { path = "../grapl-utils" }
 rust-proto = { path = "../rust-proto" }
 nomad-client-gen = { path = "../nomad-client-gen" }
 serde_json = "1.0.72"
-sqlx = { version = "0.5.9", features = [
+sqlx = { version = "0.5", features = [
   "chrono",
   "migrate",
   "offline",
@@ -27,8 +27,8 @@ sqlx = { version = "0.5.9", features = [
 ] }
 tempfile = "3.3.0"
 thiserror = "1.0.30"
-tokio = { version = "1.14.0", features = ["full"] }
-tonic = "0.6.1"
+tokio = { version = "1.17", features = ["full"] }
+tonic = "0.6"
 tonic-health = "0.5.0"
 tracing = "0.1.29"
 rusoto_core = { version = "0.47.0", default_features = false, features = [
@@ -38,9 +38,9 @@ rusoto_s3 = { version = "0.47.0", default_features = false, features = [
   "rustls"
 ] }
 blake3 = "1.2.0"
-structopt = { version = "0.3.26", default-features = false }
-uuid = { version = "0.8.2", features = ["v4"] }
-futures = "0.3.17"
+structopt = { version = "0.3", default-features = false }
+uuid = { version = "0.8", features = ["v4"] }
+futures = "0.3"
 
 [dev-dependencies]
 test-log = { version = "0.2", default-features = false, features = ["trace"] }

@@ -21,12 +21,12 @@ grapl-utils = { path = "../grapl-utils" }
 rust-proto = { path = "../rust-proto" }
 thiserror = "1.0.30"
 tokio = { version = "1.14.0", features = ["full"] }
-tonic = "0.6.1"
+tonic = "0.6"
 tonic-health = "0.5.0"
 tracing = "0.1.29"
-structopt = { version = "0.3.26", default-features = false }
-uuid = { version = "0.8.2", features = ["v4"] }
-futures = "0.3.17"
+structopt = { version = "0.3", default-features = false }
+uuid = { version = "0.8", features = ["v4"] }
+futures = "0.3"
 
 [features]
 integration = []
