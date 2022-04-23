@@ -30,7 +30,7 @@ tracing-subscriber = "0.3"
 rust-proto = { path = "../rust-proto", version = "*" }
 thiserror = "1.0.26"
 argon2 = { version = "0.4", features = ["std"] }
-structopt = "0.3.25"
+structopt = { version = "0.3", default-features = false }
 
 [build-dependencies]
 tonic-build = { version = "0.6.0", features = ["prost"] }
