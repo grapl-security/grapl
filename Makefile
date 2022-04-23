@@ -526,7 +526,7 @@ stop: ## docker-compose stop - stops (but preserves) the containers
 restart-web-ui: build-engagement-view  ## Rebuild web-ui image, and restart web-ui task in Nomad
 	$(DOCKER_BUILDX_BAKE_HCL) grapl-web-ui
 	source ./nomad/lib/nomad_cli_tools.sh
-	nomad alloc restart "$$(nomad_get_alloc_id grapl-core web-ui)"
+	nomad alloc restart "$$(nomad_get_alloc_id_for_task grapl-core web-ui)"
 
 ##@ Venv Management
 ########################################################################
