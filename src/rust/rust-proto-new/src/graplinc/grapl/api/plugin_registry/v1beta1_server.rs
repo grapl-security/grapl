@@ -1,9 +1,27 @@
-use std::marker::PhantomData;
+use std::{
+    marker::PhantomData,
+    time::Duration,
+};
 
-use futures::TryFutureExt;
+use futures::{
+    channel::oneshot::{
+        self,
+        Receiver,
+        Sender,
+    },
+    Future,
+    FutureExt,
+    TryFutureExt,
+};
 use proto::plugin_registry_service_server::PluginRegistryService;
 use thiserror::Error;
+use tokio::net::TcpListener;
+use tokio_stream::wrappers::TcpListenerStream;
 use tonic::{
+    transport::{
+        NamedService,
+        Server,
+    },
     Request,
     Response,
 };
@@ -23,28 +41,11 @@ use crate::{
         TearDownPluginRequest,
         TearDownPluginResponse,
     },
-    protobufs::graplinc::grapl::api::plugin_registry::v1beta1::{self as proto, plugin_registry_service_server::PluginRegistryServiceServer as PluginRegistryServiceProto},
-    SerDeError,
-};
-
-use std::{
-    time::Duration,
-};
-
-use futures::{
-    channel::oneshot::{
-        self,
-        Receiver,
-        Sender,
+    protobufs::graplinc::grapl::api::plugin_registry::v1beta1::{
+        self as proto,
+        plugin_registry_service_server::PluginRegistryServiceServer as PluginRegistryServiceProto,
     },
-    Future,
-    FutureExt,
-};
-use tokio::net::TcpListener;
-use tokio_stream::wrappers::TcpListenerStream;
-use tonic::transport::{
-    Server,
-    NamedService,
+    SerDeError,
 };
 
 #[non_exhaustive]
@@ -57,12 +58,11 @@ pub enum PluginRegistryApiError {
     GrpcStatus(#[from] tonic::Status),
 }
 
-
 /// Implement this trait to define the API business logic
 #[tonic::async_trait]
 pub trait PluginRegistryApi<E>
 where
-    E: ToString + 'static,
+    E: Into<tonic::Status>,
 {
     async fn create_plugin(&self, request: CreatePluginRequest) -> Result<CreatePluginResponse, E>;
 
@@ -95,7 +95,7 @@ where
 struct PluginRegistryProto<T, E>
 where
     T: PluginRegistryApi<E>,
-    E: ToString + 'static,
+    tonic::Status: From<E>,
 {
     api_server: T,
     _e: PhantomData<E>,
@@ -104,7 +104,7 @@ where
 impl<T, E> PluginRegistryProto<T, E>
 where
     T: PluginRegistryApi<E>,
-    E: ToString + 'static,
+    tonic::Status: From<E>,
 {
     fn new(api_server: T) -> Self {
         PluginRegistryProto {
@@ -118,7 +118,8 @@ where
 impl<T, E> PluginRegistryService for PluginRegistryProto<T, E>
 where
     T: PluginRegistryApi<E> + Send + Sync + 'static,
-    E: ToString + Send + Sync + 'static,
+    E: Send + Sync + 'static,
+    tonic::Status: From<E>,
 {
     async fn create_plugin(
         &self,
@@ -132,7 +133,7 @@ where
         let response = self
             .api_server
             .create_plugin(inner_request)
-            .map_err(|e| tonic::Status::unknown(e.to_string()))
+            .map_err(tonic::Status::from)
             .await?;
 
         Ok(Response::new(response.into()))
@@ -150,7 +151,7 @@ where
         let response = self
             .api_server
             .get_plugin(inner_request)
-            .map_err(|e| tonic::Status::unknown(e.to_string()))
+            .map_err(tonic::Status::from)
             .await?;
 
         Ok(Response::new(response.into()))
@@ -168,7 +169,7 @@ where
         let response = self
             .api_server
             .deploy_plugin(inner_request)
-            .map_err(|e| tonic::Status::unknown(e.to_string()))
+            .map_err(tonic::Status::from)
             .await?;
 
         Ok(Response::new(response.into()))
@@ -197,7 +198,6 @@ where
     }
 }
 
-
 #[non_exhaustive]
 #[derive(Debug, Error)]
 pub enum HealthcheckError {
@@ -216,7 +216,6 @@ pub enum HealthcheckStatus {
     Unknown,
 }
 
-
 /**
  * !!!!! IMPORTANT !!!!!
  * This is almost entirely cargo-culted from PipelineIngressServer.
@@ -225,7 +224,7 @@ pub enum HealthcheckStatus {
 pub struct PluginRegistryServer<T, E, H, F>
 where
     T: PluginRegistryApi<E> + Send + Sync + 'static,
-    E: ToString + Send + Sync + 'static,
+    tonic::Status: From<E>,
     H: Fn() -> F + Send + Sync + 'static,
     F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send,
 {
@@ -242,7 +241,8 @@ where
 impl<T, E, H, F> PluginRegistryServer<T, E, H, F>
 where
     T: PluginRegistryApi<E> + Send + Sync + 'static,
-    E: ToString + Send + Sync + 'static,
+    E: Sync + Send + 'static,
+    tonic::Status: From<E>,
     H: Fn() -> F + Send + Sync + 'static,
     F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send,
 {
@@ -265,8 +265,7 @@ where
                 healthcheck_polling_interval,
                 tcp_listener,
                 shutdown_rx,
-                service_name:
-                PluginRegistryServiceProto::<PluginRegistryProto<T, E>>::NAME,
+                service_name: PluginRegistryServiceProto::<PluginRegistryProto<T, E>>::NAME,
                 e_: PhantomData,
                 f_: PhantomData,
             },
@@ -338,9 +337,9 @@ where
         // TODO: add tower tracing, tls_config, concurrency limits
         Ok(Server::builder()
             .add_service(health_service)
-            .add_service(PluginRegistryServiceProto::new(
-                PluginRegistryProto::new(self.api_server),
-            ))
+            .add_service(PluginRegistryServiceProto::new(PluginRegistryProto::new(
+                self.api_server,
+            )))
             .serve_with_incoming_shutdown(
                 TcpListenerStream::new(self.tcp_listener),
                 self.shutdown_rx.map(|_| ()),
