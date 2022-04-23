@@ -158,11 +158,10 @@ pub async fn deploy_plugin(
     Ok(())
 }
 
-#[cfg(feature = "integration")]
+#[cfg(test)]
 mod tests {
     use super::*;
 
-    #[allow(dead_code)]
     fn arbitrary_service_config() -> PluginRegistryServiceConfig {
         PluginRegistryServiceConfig {
             plugin_registry_bind_address: "1.2.3.4:1234".parse().unwrap(),
@@ -177,10 +176,6 @@ mod tests {
     }
     /// This is used to keep test coverage on the eventually-desirable-but-
     /// currently-deadcode `get_job` logic branch.
-    /// NOTE:
-    /// It doesn't really need to be an integration test, but as it relies on
-    /// the `nomad` binary in the integration-test container, it's a decent
-    /// excuse.
     #[test]
     fn test_get_job_firecracker() -> Result<(), Box<dyn std::error::Error>> {
         let arbitrary_uuid = uuid::Uuid::new_v4();

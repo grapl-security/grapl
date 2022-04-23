@@ -1354,16 +1354,16 @@ job "grapl-core" {
       }
 
       env {
-        AWS_REGION                                          = var.aws_region
-        NOMAD_SERVICE_ADDRESS                               = "${attr.unique.network.ip-address}:4646"
-        PLUGIN_REGISTRY_BIND_ADDRESS                        = "0.0.0.0:${NOMAD_PORT_plugin-registry-port}"
-        PLUGIN_REGISTRY_DB_HOSTNAME                         = var.plugin_registry_db_hostname
-        PLUGIN_REGISTRY_DB_PASSWORD                         = var.plugin_registry_db_password
-        PLUGIN_REGISTRY_DB_PORT                             = var.plugin_registry_db_port
-        PLUGIN_REGISTRY_DB_USERNAME                         = var.plugin_registry_db_username
-        PLUGIN_BOOTSTRAP_CONTAINER_IMAGE                    = var.container_images["plugin-bootstrap"]
-        PLUGIN_REGISTRY_KERNEL_ARTIFACT_URL                 = var.plugin_registry_kernel_artifact_url
-        PLUGIN_REGISTRY_ROOTFS_ARTIFACT_URL                 = var.plugin_registry_rootfs_artifact_url
+        AWS_REGION                                      = var.aws_region
+        NOMAD_SERVICE_ADDRESS                           = "${attr.unique.network.ip-address}:4646"
+        PLUGIN_REGISTRY_BIND_ADDRESS                    = "0.0.0.0:${NOMAD_PORT_plugin-registry-port}"
+        PLUGIN_REGISTRY_DB_HOSTNAME                     = var.plugin_registry_db_hostname
+        PLUGIN_REGISTRY_DB_PASSWORD                     = var.plugin_registry_db_password
+        PLUGIN_REGISTRY_DB_PORT                         = var.plugin_registry_db_port
+        PLUGIN_REGISTRY_DB_USERNAME                     = var.plugin_registry_db_username
+        PLUGIN_BOOTSTRAP_CONTAINER_IMAGE                = var.container_images["plugin-bootstrap"]
+        PLUGIN_REGISTRY_KERNEL_ARTIFACT_URL             = var.plugin_registry_kernel_artifact_url
+        PLUGIN_REGISTRY_ROOTFS_ARTIFACT_URL             = var.plugin_registry_rootfs_artifact_url
         PLUGIN_REGISTRY_HAX_DOCKER_PLUGIN_RUNTIME_IMAGE = var.container_images["hax-docker-plugin-runtime"]
         # Plugin Execution code/image doesn't exist yet; change this once it does!
         PLUGIN_EXECUTION_CONTAINER_IMAGE = "grapl/plugin-execution-sidecar-TODO"
