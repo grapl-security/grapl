@@ -1,40 +1,59 @@
-
 // todo: When rust-proto-new supports its own Status type we can replace the use of Status in this module
 
 #[cfg(feature = "uid-allocator-server")]
 pub mod server {
     use std::net::SocketAddr;
-    use tonic::{Response, Status};
-    use tonic::Request;
-    use tonic::transport::Server;
 
-    use crate::{protobufs::graplinc::grapl::api::uid_allocator::v1beta1::{
-        AllocateIdsRequest as AllocateIdsRequestProto,
-        AllocateIdsResponse as AllocateIdsResponseProto,
-        uid_allocator_server::UidAllocator as UidAllocatorProto,
-    }};
-    use crate::graplinc::grapl::api::uid_allocator::v1beta1::messages::{AllocateIdsRequest, AllocateIdsResponse};
-    use crate::protobufs::graplinc::grapl::api::uid_allocator::v1beta1::uid_allocator_server::UidAllocatorServer as UidAllocatorServerProto;
+    use tonic::{
+        transport::Server,
+        Request,
+        Response,
+        Status,
+    };
+
+    use crate::{
+        graplinc::grapl::api::uid_allocator::v1beta1::messages::{
+            AllocateIdsRequest,
+            AllocateIdsResponse,
+        },
+        protobufs::graplinc::grapl::api::uid_allocator::v1beta1::{
+            uid_allocator_server::{
+                UidAllocator as UidAllocatorProto,
+                UidAllocatorServer as UidAllocatorServerProto,
+            },
+            AllocateIdsRequest as AllocateIdsRequestProto,
+            AllocateIdsResponse as AllocateIdsResponseProto,
+        },
+    };
 
     #[async_trait::async_trait]
     pub trait UidAllocatorApi {
         type Error: Into<Status>;
         // todo: swap out for rust-proto-new::Status when it's available
-        async fn allocate_ids(&self, request: AllocateIdsRequest) -> Result<AllocateIdsResponse, Self::Error>;
+        async fn allocate_ids(
+            &self,
+            request: AllocateIdsRequest,
+        ) -> Result<AllocateIdsResponse, Self::Error>;
     }
 
     #[async_trait::async_trait]
     impl<T, E> UidAllocatorProto for T
-        where T: UidAllocatorApi<Error=E> + Send + Sync + 'static,
-              E: Into<Status> + Send + Sync + 'static,
+    where
+        T: UidAllocatorApi<Error = E> + Send + Sync + 'static,
+        E: Into<Status> + Send + Sync + 'static,
     {
-        async fn allocate_ids(&self, raw_request: Request<AllocateIdsRequestProto>) -> Result<Response<AllocateIdsResponseProto>, Status> {
+        async fn allocate_ids(
+            &self,
+            raw_request: Request<AllocateIdsRequestProto>,
+        ) -> Result<Response<AllocateIdsResponseProto>, Status> {
             let proto_request = raw_request.into_inner();
             let request: AllocateIdsRequest = match proto_request.try_into() {
                 Ok(request) => request,
                 Err(e) => return Err(Status::invalid_argument(e.to_string())),
             };
-            let response = UidAllocatorApi::allocate_ids(self, request).await.map_err(|e| e.into())?;
+            let response = UidAllocatorApi::allocate_ids(self, request)
+                .await
+                .map_err(|e| e.into())?;
             let proto_response = response.into();
             Ok(Response::new(proto_response))
         }
@@ -47,16 +66,18 @@ pub mod server {
     }
 
     pub struct UidAllocatorServer<T, E>
-        where T: UidAllocatorApi<Error=E> + Send + Sync + 'static,
-              E: Into<Status> + Send + Sync + 'static,
+    where
+        T: UidAllocatorApi<Error = E> + Send + Sync + 'static,
+        E: Into<Status> + Send + Sync + 'static,
     {
         server: UidAllocatorServerProto<T>,
         addr: SocketAddr,
     }
 
     impl<T, E> UidAllocatorServer<T, E>
-        where T: UidAllocatorApi<Error=E> + Send + Sync + 'static,
-              E: Into<Status> + Send + Sync + 'static,
+    where
+        T: UidAllocatorApi<Error = E> + Send + Sync + 'static,
+        E: Into<Status> + Send + Sync + 'static,
     {
         pub fn builder(service: T, addr: SocketAddr) -> UidAllocatorServerBuilder<T, E> {
             UidAllocatorServerBuilder::new(service, addr)
@@ -73,16 +94,18 @@ pub mod server {
     }
 
     pub struct UidAllocatorServerBuilder<T, E>
-        where T: UidAllocatorApi<Error=E> + Send + Sync + 'static,
-              E: Into<Status> + Send + Sync + 'static,
+    where
+        T: UidAllocatorApi<Error = E> + Send + Sync + 'static,
+        E: Into<Status> + Send + Sync + 'static,
     {
         server: UidAllocatorServerProto<T>,
         addr: SocketAddr,
     }
 
     impl<T, E> UidAllocatorServerBuilder<T, E>
-        where T: UidAllocatorApi<Error=E> + Send + Sync + 'static,
-              E: Into<Status> + Send + Sync + 'static,
+    where
+        T: UidAllocatorApi<Error = E> + Send + Sync + 'static,
+        E: Into<Status> + Send + Sync + 'static,
     {
         pub fn new(service: T, addr: SocketAddr) -> Self {
             Self {
@@ -103,11 +126,18 @@ pub mod server {
 #[cfg(feature = "uid-allocator-client")]
 pub mod client {
     use tonic::Status;
-    use crate::graplinc::grapl::api::uid_allocator::v1beta1::messages::{AllocateIdsRequest, AllocateIdsResponse};
 
-    use crate::protobufs::graplinc::grapl::api::uid_allocator::v1beta1::AllocateIdsRequest as AllocateIdsRequestProto;
-    use crate::protobufs::graplinc::grapl::api::uid_allocator::v1beta1::uid_allocator_client::UidAllocatorClient as UidAllocatorClientProto;
-    use crate::SerDeError;
+    use crate::{
+        graplinc::grapl::api::uid_allocator::v1beta1::messages::{
+            AllocateIdsRequest,
+            AllocateIdsResponse,
+        },
+        protobufs::graplinc::grapl::api::uid_allocator::v1beta1::{
+            uid_allocator_client::UidAllocatorClient as UidAllocatorClientProto,
+            AllocateIdsRequest as AllocateIdsRequestProto,
+        },
+        SerDeError,
+    };
 
     #[derive(thiserror::Error, Debug)]
     pub enum UidAllocatorClientError {
@@ -120,24 +150,27 @@ pub mod client {
     }
 
     #[derive(Clone)]
-    pub struct UidAllocatorClient
-    {
+    pub struct UidAllocatorClient {
         inner: UidAllocatorClientProto<tonic::transport::Channel>,
     }
 
     impl UidAllocatorClient {
         pub async fn connect<T>(endpoint: T) -> Result<Self, UidAllocatorClientError>
-            where
-                T: std::convert::TryInto<tonic::transport::Endpoint>,
-                T::Error: std::error::Error + Send + Sync + 'static,
+        where
+            T: std::convert::TryInto<tonic::transport::Endpoint>,
+            T::Error: std::error::Error + Send + Sync + 'static,
         {
             Ok(UidAllocatorClient {
-                inner: UidAllocatorClientProto::connect(endpoint).await
+                inner: UidAllocatorClientProto::connect(endpoint)
+                    .await
                     .map_err(UidAllocatorClientError::ConnectError)?,
             })
         }
 
-        pub async fn allocate_ids(&mut self, request: AllocateIdsRequest) -> Result<AllocateIdsResponse, UidAllocatorClientError> {
+        pub async fn allocate_ids(
+            &mut self,
+            request: AllocateIdsRequest,
+        ) -> Result<AllocateIdsResponse, UidAllocatorClientError> {
             let raw_request: AllocateIdsRequestProto = request.into();
             let raw_response = self.inner.allocate_ids(raw_request).await?;
             let proto_response = raw_response.into_inner();
@@ -150,10 +183,15 @@ pub mod client {
 #[cfg(feature = "uid-allocator-messages")]
 pub mod messages {
 
-    use crate::{SerDeError, type_url};
-    use crate::protobufs::graplinc::grapl::api::uid_allocator::v1beta1::AllocateIdsRequest as AllocateIdsRequestProto;
-    use crate::protobufs::graplinc::grapl::api::uid_allocator::v1beta1::AllocateIdsResponse as AllocateIdsResponseProto;
-    use crate::protobufs::graplinc::grapl::api::uid_allocator::v1beta1::Allocation as AllocationProto;
+    use crate::{
+        protobufs::graplinc::grapl::api::uid_allocator::v1beta1::{
+            AllocateIdsRequest as AllocateIdsRequestProto,
+            AllocateIdsResponse as AllocateIdsResponseProto,
+            Allocation as AllocationProto,
+        },
+        type_url,
+        SerDeError,
+    };
 
     #[derive(Clone, Debug)]
     pub struct Allocation {
@@ -243,10 +281,12 @@ pub mod messages {
     }
 
     impl type_url::TypeUrl for AllocateIdsRequest {
-        const TYPE_URL: &'static str = "graplinc.grapl.api.uid_allocator.v1beta1.AllocateIdsRequest";
+        const TYPE_URL: &'static str =
+            "graplinc.grapl.api.uid_allocator.v1beta1.AllocateIdsRequest";
     }
 
     impl type_url::TypeUrl for AllocateIdsResponse {
-        const TYPE_URL: &'static str = "graplinc.grapl.api.uid_allocator.v1beta1.AllocateIdsResponse";
+        const TYPE_URL: &'static str =
+            "graplinc.grapl.api.uid_allocator.v1beta1.AllocateIdsResponse";
     }
 }

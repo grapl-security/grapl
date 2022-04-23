@@ -1,10 +1,14 @@
-use sqlx::PgPool;
-use crate::counters_db::CountersDb;
-use dashmap::DashMap;
-use dashmap::mapref::entry::Entry;
-use crate::service::UidAllocatorServiceError;
+use dashmap::{
+    mapref::entry::Entry,
+    DashMap,
+};
 use rust_proto_new::graplinc::grapl::api::uid_allocator::v1beta1::messages::Allocation;
+use sqlx::PgPool;
 
+use crate::{
+    counters_db::CountersDb,
+    service::UidAllocatorServiceError,
+};
 
 // PreAllocation is intended to be a struct large enough to represent many allocations worth
 // of Uid ranges. When clients request a new allocation, first it is taken from the PreAllocation,
@@ -47,12 +51,10 @@ impl PreAllocation {
                 requested_size = self.end - self.current;
             }
             self.current += requested_size;
-            Some(
-                Allocation {
-                    start: previous,
-                    offset: (self.current - previous) as u32,
-                }
-            )
+            Some(Allocation {
+                start: previous,
+                offset: (self.current - previous) as u32,
+            })
         } else {
             None
         }
@@ -60,7 +62,11 @@ impl PreAllocation {
 }
 
 impl UidAllocator {
-    pub fn new(pool: PgPool, preallocation_size: u32, maximum_allocation_size: u32) -> UidAllocator {
+    pub fn new(
+        pool: PgPool,
+        preallocation_size: u32,
+        maximum_allocation_size: u32,
+    ) -> UidAllocator {
         assert!(preallocation_size > 1);
         assert!(maximum_allocation_size > 1);
         assert!(preallocation_size > maximum_allocation_size);
@@ -68,11 +74,15 @@ impl UidAllocator {
             allocated_ranges: DashMap::with_capacity(2),
             db: CountersDb { pool },
             preallocation_size,
-            maximum_allocation_size
+            maximum_allocation_size,
         }
     }
 
-    pub async fn allocate(&self, tenant_id: uuid::Uuid, size: u32) -> Result<Allocation, UidAllocatorServiceError> {
+    pub async fn allocate(
+        &self,
+        tenant_id: uuid::Uuid,
+        size: u32,
+    ) -> Result<Allocation, UidAllocatorServiceError> {
         // We aren't going to hand out 2^32 ids at once, so we truncate so the maximum allocation size
         let size = std::cmp::min(size, self.maximum_allocation_size);
         // First, we check if we have a PreAllocation for this tenant. If not, we create one.
@@ -83,11 +93,12 @@ impl UidAllocator {
                 // If we have an available allocation we return it immediately.
                 // If the allocation is exhausted, we preallocate more.
                 match allocation {
-                    Some(allocation) => {
-                        Ok(allocation)
-                    }
+                    Some(allocation) => Ok(allocation),
                     None => {
-                        let mut new_preallocation = self.db.preallocate(tenant_id, self.preallocation_size).await?;
+                        let mut new_preallocation = self
+                            .db
+                            .preallocate(tenant_id, self.preallocation_size)
+                            .await?;
                         // Can not fail after preallocation
                         let allocation = new_preallocation.next(size).unwrap();
                         *preallocation = new_preallocation;
@@ -96,7 +107,10 @@ impl UidAllocator {
                 }
             }
             Entry::Vacant(entry) => {
-                let mut preallocation = self.db.preallocate(tenant_id, self.preallocation_size).await?;
+                let mut preallocation = self
+                    .db
+                    .preallocate(tenant_id, self.preallocation_size)
+                    .await?;
                 // Can not fail after preallocation
                 let allocation = preallocation.next(size).unwrap();
                 entry.insert(preallocation);
