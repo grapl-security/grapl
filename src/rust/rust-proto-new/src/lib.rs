@@ -78,6 +78,8 @@ pub(crate) mod protobufs {
                         ));
                     }
                 }
+
+                #[cfg(feature = "uid-allocator")]
                 pub(crate) mod uid_allocator {
                     pub(crate) mod v1beta1 {
                         include!(concat!(
