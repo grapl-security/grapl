@@ -1,8 +1,10 @@
+use rust_proto_new::graplinc::grapl::api::uid_allocator::v1beta1::server::UidAllocatorServer;
 use sqlx::PgPool;
 use structopt::StructOpt;
-use rust_proto_new::graplinc::grapl::api::uid_allocator::v1beta1::server::UidAllocatorServer;
-use uid_allocator::allocator::UidAllocator;
-use uid_allocator::config;
+use uid_allocator::{
+    allocator::UidAllocator,
+    config,
+};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -16,10 +18,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         pool,
         service_config.preallocation_size,
         service_config.maximum_allocation_size,
-        service_config.default_allocation_size
+        service_config.default_allocation_size,
     );
 
-    UidAllocatorServer::builder(allocator, service_config.uid_allocator_bind_address).build().serve().await?;
+    UidAllocatorServer::builder(allocator, service_config.uid_allocator_bind_address)
+        .build()
+        .serve()
+        .await?;
 
     Ok(())
 }

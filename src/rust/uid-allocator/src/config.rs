@@ -1,4 +1,5 @@
 use std::net::SocketAddr;
+
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug, Clone)]
@@ -33,7 +34,6 @@ pub struct UidAllocatorServiceConfig {
     #[structopt(env)]
     /// The address to bind the uid allocator service to
     pub uid_allocator_bind_address: SocketAddr,
-
 
     #[structopt(env)]
     /// Default allocation size indicates how many uids to allocate for a tenant if the
