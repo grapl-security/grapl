@@ -193,7 +193,7 @@ pub enum SerDeError {
     InvalidField {
         field_name: &'static str,
         assertion: String,
-    }
+    },
 
     #[error("Unknown enum variant")]
     UnknownVariant(&'static str),
