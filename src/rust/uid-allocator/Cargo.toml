@@ -52,3 +52,4 @@ quickcheck_macros = "1.0.0"
 tracing-subscriber = "0.3.2"
 
 [features]
+integration = []
