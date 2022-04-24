@@ -41,6 +41,7 @@ sqlx = { version = "0.5.11", features = [
 ] }
 thiserror = "1.0.30"
 dashmap = "5.2.0"
+structopt = "0.3.26"
 
 [build-dependencies]
 tonic-build = { version = "0.6.0", features = ["prost"] }

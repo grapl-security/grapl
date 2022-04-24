@@ -18,7 +18,14 @@ pub mod server {
     #[async_trait::async_trait]
     pub trait UidAllocatorApi {
         type Error: Into<Status>;
-        async fn allocate_ids(&self, request: AllocateIdsRequest) -> Result<AllocateIdsResponse, Self::Error>;
+
+        /// Requests a new allocation of Uids for a given tenant
+        /// Note that it may not always return the requested size, but it will
+        /// never return an empty allocation
+        async fn allocate_ids(
+            &self,
+            request: AllocateIdsRequest,
+        ) -> Result<AllocateIdsResponse, Self::Error>;
     }
 
     #[async_trait::async_trait]
@@ -46,6 +53,7 @@ pub mod server {
         GrpcTransportError(#[from] tonic::transport::Error),
     }
 
+    /// A server construct that drives the UidAllocatorApi implementation.
     pub struct UidAllocatorServer<T, E>
         where T: UidAllocatorApi<Error=E> + Send + Sync + 'static,
               E: Into<tonic::Status> + Send + Sync + 'static,
@@ -84,6 +92,8 @@ pub mod server {
         where T: UidAllocatorApi<Error=E> + Send + Sync + 'static,
               E: Into<tonic::Status> + Send + Sync + 'static,
     {
+        /// Create a new builder for a UidAllocatorServer,
+        /// taking the required arguments upfront.
         pub fn new(service: T, addr: SocketAddr) -> Self {
             Self {
                 server: UidAllocatorServerProto::new(service),
@@ -91,6 +101,8 @@ pub mod server {
             }
         }
 
+        /// Consumes the builder and returns a new `UidAllocatorServer`.
+        /// Note: Panics on invalid build state
         pub fn build(self) -> UidAllocatorServer<T, E> {
             UidAllocatorServer {
                 server: self.server,
