@@ -58,7 +58,7 @@ tokio = { version = "1.17", features = [
   "time",
 ] }
 hmap = "0.1.0"
-chrono = "0.4.19"
+chrono = { version = "0.4", default-features = false }
 uuid = { version = "0.8", features = ["v4"] }
 tap = "1.0.1"
 tracing = "0.1.29"
