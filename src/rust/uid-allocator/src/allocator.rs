@@ -71,6 +71,11 @@ pub struct UidAllocator {
     pub allocated_ranges: Arc<DashMap<uuid::Uuid, PreAllocation>>,
     /// The CountersDb is our source of truth for the last allocated uid for each tenant
     pub db: CountersDb,
+    /// Default allocation size indicates how many uids to allocate for a tenant if the
+    /// client requests an allocation of size `0`.
+    /// Consider values of 10, 100, or 1_000
+    /// Should not be a value greater than `maximum_allocation_size` and must not be `0`.
+    pub default_alloc_size: u32,
     /// How many uids to preallocate when our last preallocation is exhausted
     /// While this can be as large as a u32, it is not recommended to set this to a value
     /// too high. Consider values such as 100, 1000, or 10_000 instead.
@@ -79,7 +84,7 @@ pub struct UidAllocator {
     /// request. Similar to the `preallocation_size` field, this is a value that can be
     /// a full 32bit integer, but is not recommended to be too large. It should also
     /// always me smaller than the preallocation_size.
-    /// Consider values such as 10, 100, or 1000.
+    /// Consider values such as 10, 100, or 1_000.
     pub maximum_allocation_size: u32,
 }
 
@@ -91,13 +96,16 @@ impl UidAllocator {
         pool: PgPool,
         preallocation_size: u32,
         maximum_allocation_size: u32,
+        default_allocation_size: u32,
     ) -> UidAllocator {
-        assert!(preallocation_size > 1);
-        assert!(maximum_allocation_size > 1);
-        assert!(preallocation_size > maximum_allocation_size);
+        assert!(default_allocation_size > 0);
+        assert!(preallocation_size > 0);
+        assert!(maximum_allocation_size > 0);
+        assert!(preallocation_size >= maximum_allocation_size);
         UidAllocator {
             allocated_ranges: Arc::new(DashMap::with_capacity(2)),
             db: CountersDb { pool },
+            default_alloc_size: 0,
             preallocation_size,
             maximum_allocation_size,
         }
