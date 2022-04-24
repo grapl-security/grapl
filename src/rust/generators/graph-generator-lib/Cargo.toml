@@ -30,5 +30,5 @@ serde = "1.0.130"
 serde_json = "1.0.72"
 log = "0.4.14"
 zstd = "0.10.0"
-chrono = "0.4.19"
+chrono = { version = "0.4", default-features = false }
 tokio = "1.17"
