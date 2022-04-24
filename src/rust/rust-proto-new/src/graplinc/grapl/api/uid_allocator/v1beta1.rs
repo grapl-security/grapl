@@ -201,7 +201,7 @@ pub mod messages {
         SerDeError,
     };
 
-    #[derive(Clone, Debug)]
+    #[derive(Copy, Clone, Debug)]
     pub struct Allocation {
         pub start: u64,
         pub offset: u32,
