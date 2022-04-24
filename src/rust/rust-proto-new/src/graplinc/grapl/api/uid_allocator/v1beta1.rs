@@ -1,4 +1,3 @@
-
 #[cfg(feature = "uid-allocator-server")]
 pub mod server {
     use std::net::SocketAddr;
@@ -42,8 +41,8 @@ pub mod server {
             let response = UidAllocatorApi::allocate_ids(self, request)
                 .await
                 .map_err(|e| e.into())?;
-            let proto_response = response.into();
-            Ok(Response::new(proto_response))
+
+            Ok(Response::new(response.into()))
         }
     }
 
@@ -73,6 +72,15 @@ pub mod server {
         pub async fn serve(&mut self) -> Result<(), UidAllocatorServerError> {
             Server::builder()
                 // todo: healthchecks and whatnot
+                .trace_fn(|request| {
+                    tracing::trace_span!(
+                        "UidAllocator",
+                        headers = ?request.headers(),
+                        method = ?request.method(),
+                        uri = %request.uri(),
+                        extensions = ?request.extensions(),
+                    )
+                })
                 .add_service(self.server.clone())
                 .serve(self.addr)
                 .await?;
@@ -172,7 +180,6 @@ pub mod client {
 
 #[cfg(feature = "uid-allocator-messages")]
 pub mod messages {
-
     use crate::{
         protobufs::graplinc::grapl::api::uid_allocator::v1beta1::{
             AllocateIdsRequest as AllocateIdsRequestProto,

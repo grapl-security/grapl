@@ -1,11 +1,18 @@
 use std::sync::Arc;
+
 use dashmap::{
     mapref::entry::Entry,
     DashMap,
 };
-use rust_proto_new::graplinc::grapl::api::uid_allocator::v1beta1::messages::{AllocateIdsRequest, AllocateIdsResponse, Allocation};
+use rust_proto_new::graplinc::grapl::api::uid_allocator::v1beta1::{
+    messages::{
+        AllocateIdsRequest,
+        AllocateIdsResponse,
+        Allocation,
+    },
+    server::UidAllocatorApi,
+};
 use sqlx::PgPool;
-use rust_proto_new::graplinc::grapl::api::uid_allocator::v1beta1::server::UidAllocatorApi;
 
 use crate::{
     counters_db::CountersDb,
@@ -21,7 +28,6 @@ pub struct PreAllocation {
     pub current: u64,
     pub end: u64,
 }
-
 
 impl PreAllocation {
     pub fn new(start: u64, end: u64) -> PreAllocation {
@@ -169,11 +175,12 @@ impl UidAllocator {
 impl UidAllocatorApi for UidAllocator {
     type Error = UidAllocatorServiceError;
 
-    async fn allocate_ids(&self, request: AllocateIdsRequest) -> Result<AllocateIdsResponse, Self::Error> {
+    async fn allocate_ids(
+        &self,
+        request: AllocateIdsRequest,
+    ) -> Result<AllocateIdsResponse, Self::Error> {
         let AllocateIdsRequest { tenant_id, count } = request;
         let allocation = self.allocate(tenant_id, count).await?;
-        Ok(AllocateIdsResponse {
-            allocation,
-        })
+        Ok(AllocateIdsResponse { allocation })
     }
 }

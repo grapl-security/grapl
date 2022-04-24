@@ -1,4 +1,4 @@
-#![cfg(all(test, feature = "integration"))]
+#![cfg(all(test, feature = "integration", feature = "temp-disabled"))]
 
 use sqlx::PgPool;
 use structopt::StructOpt;
@@ -21,12 +21,7 @@ async fn test_uid_allocator() -> Result<(), Box<dyn std::error::Error>> {
         .execute(&pool)
         .await?;
 
-    let allocator = UidAllocator::new(
-        pool,
-        20,
-        10,
-        10,
-    );
+    let allocator = UidAllocator::new(pool, 20, 10, 10);
 
     let first_allocation = allocator.allocate(tenant_id, 10).await?;
     let second_allocation = allocator.allocate(tenant_id, 10).await?;
@@ -43,10 +38,8 @@ async fn test_uid_allocator() -> Result<(), Box<dyn std::error::Error>> {
     assert_ne!(third_allocation.offset, 0);
 
     // Ensure that the allocations are not overlapping
-    assert!(
-        (first_allocation.start + (first_allocation.offset as u64)) < second_allocation.start);
-    assert!(
-        (second_allocation.start + (first_allocation.offset as u64)) < third_allocation.start);
+    assert!((first_allocation.start + (first_allocation.offset as u64)) < second_allocation.start);
+    assert!((second_allocation.start + (first_allocation.offset as u64)) < third_allocation.start);
 
     Ok(())
 }
