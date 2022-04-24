@@ -5200,6 +5200,7 @@ dependencies = [
  "rust-proto-new",
  "serde",
  "sqlx",
+ "structopt",
  "test-log",
  "thiserror",
  "tokio",
