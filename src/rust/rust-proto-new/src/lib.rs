@@ -188,6 +188,15 @@ pub enum SerDeError {
 
     #[error("missing message field {0}")]
     MissingField(&'static str),
+
+    #[error("field {field_name} failed assertion {assertion}")]
+    InvalidField {
+        field_name: &'static str,
+        assertion: String,
+    }
+
+    #[error("Unknown enum variant")]
+    UnknownVariant(&'static str),
 }
 
 pub trait SerDe: type_url::TypeUrl + Clone + std::fmt::Debug {
