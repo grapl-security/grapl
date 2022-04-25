@@ -43,6 +43,7 @@ use crate::{
     db::{
         client::PluginRegistryDbClient,
         models::PluginRow,
+        serde::try_from,
     },
     error::PluginRegistryServiceError,
     nomad::{
@@ -58,33 +59,23 @@ impl From<PluginRegistryServiceError> for Status {
      * safely sent over the wire. (Don't include any specific IDs etc)
      */
     fn from(err: PluginRegistryServiceError) -> Self {
+        type Error = PluginRegistryServiceError;
         match err {
-            PluginRegistryServiceError::SqlxError(sqlx::Error::Configuration(_)) => {
+            Error::SqlxError(sqlx::Error::Configuration(_)) => {
                 Status::internal("Invalid SQL configuration")
             }
-            PluginRegistryServiceError::SqlxError(_) => {
-                Status::internal("Failed to operate on postgres")
+            Error::SqlxError(_) => Status::internal("Failed to operate on postgres"),
+            Error::PutObjectError(_) => Status::internal("Failed to put s3 object"),
+            Error::GetObjectError(_) => Status::internal("Failed to get s3 object"),
+            Error::EmptyObject => Status::internal("S3 Object was unexpectedly empty"),
+            Error::IoError(_) => Status::internal("IoError"),
+            Error::SerDeError(_) => Status::invalid_argument("Unable to deserialize message"),
+            Error::DatabaseSerDeError(_) => {
+                Status::invalid_argument("Unable to deserialize message from database")
             }
-            PluginRegistryServiceError::PutObjectError(_) => {
-                Status::internal("Failed to put s3 object")
-            }
-            PluginRegistryServiceError::GetObjectError(_) => {
-                Status::internal("Failed to get s3 object")
-            }
-            PluginRegistryServiceError::EmptyObject => {
-                Status::internal("S3 Object was unexpectedly empty")
-            }
-            PluginRegistryServiceError::IoError(_) => Status::internal("IoError"),
-            PluginRegistryServiceError::SerDeError(_) => {
-                Status::invalid_argument("Unable to deserialize message")
-            }
-            PluginRegistryServiceError::NomadClientError(_) => {
-                Status::internal("Failed RPC with Nomad")
-            }
-            PluginRegistryServiceError::NomadCliError(_) => {
-                Status::internal("Failed using Nomad CLI")
-            }
-            PluginRegistryServiceError::NomadJobAllocationError => {
+            Error::NomadClientError(_) => Status::internal("Failed RPC with Nomad"),
+            Error::NomadCliError(_) => Status::internal("Failed using Nomad CLI"),
+            Error::NomadJobAllocationError => {
                 Status::internal("Unable to allocate Nomad job - it may be out of resources.")
             }
         }
@@ -182,7 +173,7 @@ impl PluginRegistryApi<PluginRegistryServiceError> for PluginRegistry {
         } = self.db_client.get_plugin(&request.plugin_id).await?;
 
         let s3_key: String = artifact_s3_key;
-        let plugin_type: PluginType = PluginType::try_from(plugin_type)?;
+        let plugin_type: PluginType = try_from(&plugin_type)?;
 
         let get_object_output = self
             .s3

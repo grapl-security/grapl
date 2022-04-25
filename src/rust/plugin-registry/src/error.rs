@@ -4,7 +4,10 @@ use rusoto_s3::{
 };
 use rust_proto_new::SerDeError;
 
-use crate::nomad;
+use crate::{
+    db::serde::DatabaseSerDeError,
+    nomad,
+};
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginRegistryServiceError {
@@ -20,6 +23,8 @@ pub enum PluginRegistryServiceError {
     IoError(#[from] std::io::Error),
     #[error("SerDeError")]
     SerDeError(#[from] SerDeError),
+    #[error("DatabaseSerDeError")]
+    DatabaseSerDeError(#[from] DatabaseSerDeError),
     #[error("NomadClientError")]
     NomadClientError(#[from] nomad::client::NomadClientError),
     #[error("NomadCliError")]

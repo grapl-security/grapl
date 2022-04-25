@@ -31,40 +31,12 @@ impl PluginType {
     }
 }
 
-impl TryFrom<&str> for PluginType {
-    type Error = SerDeError;
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        match value {
-            "generator" => Ok(Self::Generator),
-            "analyzer" => Ok(Self::Analyzer),
-            unknown => Err(SerDeError::UnknownVariant(std::borrow::Cow::Owned(
-                unknown.to_owned(),
-            ))),
-        }
-    }
-}
-
-impl TryFrom<String> for PluginType {
-    type Error = SerDeError;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        match value.as_str() {
-            "generator" => Ok(Self::Generator),
-            "analyzer" => Ok(Self::Analyzer),
-            _ => Err(SerDeError::UnknownVariant(std::borrow::Cow::Owned(value))),
-        }
-    }
-}
-
 impl TryFrom<proto::PluginType> for PluginType {
     type Error = SerDeError;
 
     fn try_from(value: proto::PluginType) -> Result<Self, Self::Error> {
         match value {
-            proto::PluginType::Unspecified => Err(SerDeError::UnknownVariant(
-                std::borrow::Cow::Borrowed("PluginType"),
-            )),
+            proto::PluginType::Unspecified => Err(SerDeError::UnknownVariant("PluginType")),
             proto::PluginType::Generator => Ok(PluginType::Generator),
             proto::PluginType::Analyzer => Ok(PluginType::Analyzer),
         }
