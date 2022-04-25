@@ -44,7 +44,7 @@ impl PluginRegistryServiceClient {
         let response = native::CreatePluginResponse::try_from(response.into_inner())?;
         Ok(response)
     }
-    
+
     /// retrieve the plugin corresponding to the given plugin_id
     pub async fn get_plugin(
         &mut self,

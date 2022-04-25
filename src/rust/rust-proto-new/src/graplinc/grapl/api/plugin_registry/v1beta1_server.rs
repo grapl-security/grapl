@@ -72,17 +72,17 @@ where
 
     async fn tear_down_plugin(
         &self,
-        _request: TearDownPluginRequest,
+        request: TearDownPluginRequest,
     ) -> Result<TearDownPluginResponse, E>;
 
     async fn get_generators_for_event_source(
         &self,
-        _request: GetGeneratorsForEventSourceRequest,
+        request: GetGeneratorsForEventSourceRequest,
     ) -> Result<GetGeneratorsForEventSourceResponse, E>;
 
     async fn get_analyzers_for_tenant(
         &self,
-        _request: GetAnalyzersForTenantRequest,
+        request: GetAnalyzersForTenantRequest,
     ) -> Result<GetAnalyzersForTenantResponse, E>;
 }
 
