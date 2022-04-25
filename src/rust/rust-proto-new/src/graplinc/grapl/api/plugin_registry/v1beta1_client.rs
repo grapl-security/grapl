@@ -12,7 +12,7 @@ use crate::{
     SerDeError,
 };
 
-const ADDRESS_ENV_VAR: &'static str = "GRAPL_PLUGIN_REGISTRY_ADDRESS";
+const ADDRESS_ENV_VAR: &'static str = "PLUGIN_REGISTRY_CLIENT_ADDRESS";
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginRegistryServiceClientError {
