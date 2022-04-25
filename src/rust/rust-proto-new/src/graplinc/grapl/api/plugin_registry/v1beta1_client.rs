@@ -44,6 +44,7 @@ impl PluginRegistryServiceClient {
         let response = native::CreatePluginResponse::try_from(response.into_inner())?;
         Ok(response)
     }
+    
     /// retrieve the plugin corresponding to the given plugin_id
     pub async fn get_plugin(
         &mut self,
@@ -56,6 +57,7 @@ impl PluginRegistryServiceClient {
         let response = native::GetPluginResponse::try_from(response.into_inner())?;
         Ok(response)
     }
+
     /// turn on a particular plugin's code
     pub async fn deploy_plugin(
         &mut self,
@@ -68,6 +70,7 @@ impl PluginRegistryServiceClient {
         let response = native::DeployPluginResponse::try_from(response.into_inner())?;
         Ok(response)
     }
+
     /// turn off a particular plugin's code
     pub async fn tear_down_plugin(
         &mut self,
@@ -78,6 +81,7 @@ impl PluginRegistryServiceClient {
             .await?;
         todo!()
     }
+
     /// Given information about an event source, return all generators that handle that event source
     #[tracing::instrument(skip(self, request), err)]
     pub async fn get_generators_for_event_source(
@@ -91,6 +95,7 @@ impl PluginRegistryServiceClient {
             .await?;
         todo!()
     }
+
     /// Given information about a tenant, return all analyzers for that tenant
     pub async fn get_analyzers_for_tenant(
         &mut self,
