@@ -3220,6 +3220,8 @@ dependencies = [
  "test-log",
  "thiserror",
  "tokio",
+ "tonic 0.7.1",
+ "tonic-health 0.6.0",
  "tracing",
  "tracing-subscriber",
  "uuid",
