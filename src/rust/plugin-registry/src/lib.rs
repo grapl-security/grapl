@@ -1,3 +1,4 @@
+pub mod client;
 mod db;
 pub mod error;
 pub mod nomad;

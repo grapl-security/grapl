@@ -1,6 +1,7 @@
 #![cfg(feature = "new_integration_tests")]
 
 use grapl_utils::future_ext::GraplFutureExt;
+use plugin_registry::client::FromEnv;
 use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
     CreatePluginRequest,
     DeployPluginRequest,

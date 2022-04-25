@@ -1,18 +1,12 @@
-use std::{
-    fmt::Debug,
-    time::Duration,
-};
+use std::fmt::Debug;
 
 use proto::plugin_registry_service_client::PluginRegistryServiceClient as PluginRegistryServiceClientProto;
-use tonic::transport::Endpoint;
 
 use crate::{
     graplinc::grapl::api::plugin_registry::v1beta1 as native,
     protobufs::graplinc::grapl::api::plugin_registry::v1beta1 as proto,
     SerDeError,
 };
-
-const ADDRESS_ENV_VAR: &'static str = "PLUGIN_REGISTRY_CLIENT_ADDRESS";
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginRegistryServiceClientError {
@@ -27,16 +21,6 @@ pub struct PluginRegistryServiceClient {
 }
 
 impl PluginRegistryServiceClient {
-    /// Create a client from environment
-    #[tracing::instrument(err)]
-    pub async fn from_env() -> Result<Self, Box<dyn std::error::Error>> {
-        let address = std::env::var(ADDRESS_ENV_VAR).expect(ADDRESS_ENV_VAR);
-        let endpoint = Endpoint::from_shared(address)?
-            .timeout(Duration::from_secs(5))
-            .concurrency_limit(30);
-        Self::connect(endpoint).await
-    }
-
     #[tracing::instrument(err)]
     pub async fn connect<T>(endpoint: T) -> Result<Self, Box<dyn std::error::Error>>
     where
