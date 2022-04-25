@@ -45,4 +45,4 @@ test-log = { version = "0.2", default-features = false, features = ["trace"] }
 tracing-subscriber = "0.3"
 
 [features]
-integration = []
+new_integration_tests = []
