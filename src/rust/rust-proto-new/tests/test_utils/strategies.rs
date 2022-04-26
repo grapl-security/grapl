@@ -24,6 +24,14 @@ prop_compose! {
     }
 }
 
+pub fn vec_of_uuids() -> impl Strategy<Value = Vec<Uuid>> {
+    proptest::collection::vec(uuids(), 10)
+}
+
+pub fn string_not_empty() -> proptest::string::RegexGeneratorStrategy<String> {
+    proptest::string::string_regex(".+").expect("Invalid regex")
+}
+
 pub mod pipeline {
     use std::fmt::Debug;
 
@@ -161,8 +169,14 @@ pub mod plugin_registry {
         DeployPluginResponse,
         GetAnalyzersForTenantRequest,
         GetAnalyzersForTenantResponse,
+        GetGeneratorsForEventSourceRequest,
+        GetGeneratorsForEventSourceResponse,
+        GetPluginRequest,
+        GetPluginResponse,
         Plugin,
         PluginType,
+        TearDownPluginRequest,
+        TearDownPluginResponse,
     };
 
     use super::*;
@@ -179,7 +193,7 @@ pub mod plugin_registry {
     prop_compose! {
         pub fn plugins()(
             plugin_id in uuids(),
-            display_name in any::<String>(),
+            display_name in string_not_empty(),
             plugin_type in plugin_types(),
             plugin_binary in any::<Vec<u8>>(),
         ) -> Plugin {
@@ -194,9 +208,9 @@ pub mod plugin_registry {
 
     prop_compose! {
         pub fn create_plugin_requests()(
-            plugin_artifact in any::<Vec<u8>>(),
+            plugin_artifact in string_not_empty().prop_map(|s| s.as_bytes().to_vec()),
             tenant_id in uuids(),
-            display_name in any::<String>(),
+            display_name in string_not_empty(),
             plugin_type in plugin_types(),
         ) -> CreatePluginRequest {
             CreatePluginRequest {
@@ -228,7 +242,7 @@ pub mod plugin_registry {
     }
     prop_compose! {
         pub fn get_analyzers_for_tenant_responses()(
-            plugin_ids in proptest::collection::vec(uuids(), 10)
+            plugin_ids in vec_of_uuids()
         ) -> GetAnalyzersForTenantResponse {
             GetAnalyzersForTenantResponse{
                 plugin_ids
@@ -250,12 +264,59 @@ pub mod plugin_registry {
         Just(DeployPluginResponse {})
     }
 
-    /*
-    GetGeneratorsForEventSourceRequest
-    GetGeneratorsForEventSourceResponse
-    GetPluginRequest
-    GetPluginResponse
-    TearDownPluginRequest
-    TearDownPluginResponse
-    */
+    prop_compose! {
+        pub fn get_generators_for_event_source_requests()(
+            event_source_id in uuids()
+        ) -> GetGeneratorsForEventSourceRequest {
+            GetGeneratorsForEventSourceRequest{
+                event_source_id
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn get_generators_for_event_source_responses()(
+            plugin_ids in vec_of_uuids()
+        ) -> GetGeneratorsForEventSourceResponse {
+            GetGeneratorsForEventSourceResponse {
+                plugin_ids
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn get_plugin_requests()(
+            plugin_id in uuids(),
+            tenant_id in uuids(),
+        ) -> GetPluginRequest {
+            GetPluginRequest {
+                plugin_id,
+                tenant_id,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn get_plugin_responses()(
+            plugin in plugins(),
+        ) -> GetPluginResponse {
+            GetPluginResponse {
+                plugin
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn tear_down_plugin_requests()(
+            plugin_id in uuids()
+        ) -> TearDownPluginRequest {
+            TearDownPluginRequest{
+                plugin_id
+            }
+        }
+    }
+
+    pub fn tear_down_plugin_responses() -> impl Strategy<Value = TearDownPluginResponse> {
+        Just(TearDownPluginResponse {})
+    }
 }

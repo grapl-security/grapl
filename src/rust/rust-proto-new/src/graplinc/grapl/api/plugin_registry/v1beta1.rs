@@ -755,3 +755,21 @@ impl From<TearDownPluginResponse> for proto::TearDownPluginResponse {
         Self {}
     }
 }
+
+impl SerDe for TearDownPluginResponse {
+    fn serialize(self) -> Result<Bytes, SerDeError> {
+        let proto = proto::TearDownPluginResponse::from(self);
+        let mut buf = BytesMut::with_capacity(proto.encoded_len());
+        proto.encode(&mut buf)?;
+        Ok(buf.freeze())
+    }
+
+    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
+    where
+        B: bytes::Buf,
+        Self: Sized,
+    {
+        let proto: proto::TearDownPluginResponse = Message::decode(buf)?;
+        proto.try_into()
+    }
+}

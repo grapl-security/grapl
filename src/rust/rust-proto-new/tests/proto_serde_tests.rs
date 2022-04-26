@@ -124,7 +124,7 @@ mod plugin_registry {
             check_encode_decode_invariant(value)
         }
         #[test]
-        fn test_serde_get_analyzers_for_tenant_responses(value in pr_strats::test_serde_get_analyzers_for_tenant_responses()) {
+        fn test_serde_get_analyzers_for_tenant_responses(value in pr_strats::get_analyzers_for_tenant_responses()) {
             check_encode_decode_invariant(value)
         }
         #[test]
@@ -135,5 +135,33 @@ mod plugin_registry {
         fn test_serde_deploy_plugin_responses(value in pr_strats::deploy_plugin_responses()) {
             check_encode_decode_invariant(value)
         }
+
+        //
+
+        #[test]
+        fn test_serde_get_generators_for_event_source_requests(value in pr_strats::get_generators_for_event_source_requests()) {
+            check_encode_decode_invariant(value)
+        }
+        #[test]
+        fn test_serde_get_generators_for_event_source_responses(value in pr_strats::get_generators_for_event_source_responses()) {
+            check_encode_decode_invariant(value)
+        }
+        #[test]
+        fn test_serde_get_plugin_requests(value in pr_strats::get_plugin_requests()) {
+            check_encode_decode_invariant(value)
+        }
+        #[test]
+        fn test_serde_get_plugin_responses(value in pr_strats::get_plugin_responses()) {
+            check_encode_decode_invariant(value)
+        }
+        #[test]
+        fn test_serde_tear_down_plugin_requests(value in pr_strats::tear_down_plugin_requests()) {
+            check_encode_decode_invariant(value)
+        }
+        #[test]
+        fn test_serde_tear_down_plugin_responses(value in pr_strats::tear_down_plugin_responses()) {
+            check_encode_decode_invariant(value)
+        }
+
     }
 }
