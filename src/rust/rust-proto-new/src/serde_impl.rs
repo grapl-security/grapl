@@ -10,16 +10,23 @@ use crate::{
     SerDeError,
 };
 
-pub trait HasAssociatedProto<T> {
-    type Proto: From<T> + Message + Default + TryInto<T, Error = SerDeError>;
+/// Example usage:
+/// 
+/// use crate::protobufs::graplinc::grapl::api::some_service::v1beta1 as proto,
+/// pub struct SomeNativeType {...}
+/// impl ProtobufSerializable<SomeNativeType> for SomeNativeType {
+///    type Protobuf = proto::CorrespondingProtobufType;
+/// }
+pub(crate) trait ProtobufSerializable<T> {
+    type ProtobufMessage: From<T> + TryInto<T, Error = SerDeError> + Message + Default;
 }
 impl<T> SerDe for T
 where
-    T: HasAssociatedProto<T>,
+    T: ProtobufSerializable<T>,
     T: type_url::TypeUrl + Clone + std::fmt::Debug,
 {
     fn serialize(self: T) -> Result<Bytes, SerDeError> {
-        let proto = T::Proto::from(self);
+        let proto = T::ProtobufMessage::from(self);
         let mut buf = BytesMut::with_capacity(proto.encoded_len());
         proto.encode(&mut buf)?;
         Ok(buf.freeze())
@@ -30,7 +37,7 @@ where
         B: bytes::Buf,
         Self: Sized,
     {
-        let proto: T::Proto = Message::decode(buf)?;
+        let proto: T::ProtobufMessage = Message::decode(buf)?;
         proto.try_into()
     }
 }
