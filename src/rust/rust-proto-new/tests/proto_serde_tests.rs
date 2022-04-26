@@ -18,7 +18,10 @@ use rust_proto_new::{
     },
     SerDe,
 };
-use test_utils::strategies;
+use test_utils::{
+    serde::check_encode_decode_invariant,
+    strategies,
+};
 
 fn envelopes<T>(inner_strategy: impl Strategy<Value = T>) -> impl Strategy<Value = Envelope<T>>
 where
@@ -69,18 +72,6 @@ prop_compose! {
 //
 // ---------------- helpers ---------------------------------------------------
 //
-
-// helper function to define a simple encode-decode invariant
-// see: https://hypothesis.works/articles/encode-decode-invariant/
-fn check_encode_decode_invariant<T>(serializable: T)
-where
-    T: SerDe + PartialEq + Clone + Debug,
-{
-    let cloned = serializable.clone();
-    let serialized = serializable.serialize().expect("serialization failed");
-    let deserialized = T::deserialize(serialized).expect("deserialization failed");
-    assert!(cloned == deserialized);
-}
 
 //
 // ---------------- protobuf tests ---------------------------------------------
