@@ -154,17 +154,22 @@ pub mod pipeline_ingress {
 }
 
 pub mod plugin_registry {
-    use super::*;
     use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
-        PluginType, Plugin, CreatePluginRequest, CreatePluginResponse
+        CreatePluginRequest,
+        CreatePluginResponse,
+        Plugin,
+        PluginType,
     };
+
+    use super::*;
 
     pub fn plugin_types() -> BoxedStrategy<PluginType> {
         prop_oneof![
             // For cases without data, `Just` is all you need
             Just(PluginType::Generator),
             Just(PluginType::Analyzer),
-        ].boxed()
+        ]
+        .boxed()
     }
 
     prop_compose! {

@@ -98,8 +98,9 @@ proptest! {
 }
 
 mod plugin_registry {
-    use super::*;
     use strategies::plugin_registry as pr_strats;
+
+    use super::*;
 
     proptest! {
         #[test]
