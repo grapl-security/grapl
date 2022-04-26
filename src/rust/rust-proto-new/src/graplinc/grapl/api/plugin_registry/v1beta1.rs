@@ -1,6 +1,10 @@
 use std::fmt::Debug;
 
-use bytes::{Bytes, BytesMut};
+use bytes::{
+    Bytes,
+    BytesMut,
+};
+use prost::Message;
 
 pub use crate::graplinc::grapl::api::plugin_registry::{
     v1beta1_client::{
@@ -17,10 +21,10 @@ pub use crate::graplinc::grapl::api::plugin_registry::{
 };
 use crate::{
     protobufs::graplinc::grapl::api::plugin_registry::v1beta1 as proto,
-    SerDeError, SerDe, type_url,
+    type_url,
+    SerDe,
+    SerDeError,
 };
-
-use prost::Message;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum PluginType {
@@ -59,6 +63,7 @@ impl From<PluginType> for proto::PluginType {
     }
 }
 
+/*
 impl type_url::TypeUrl for PluginType {
     const TYPE_URL: &'static str =
         "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.PluginType";
@@ -81,6 +86,7 @@ impl SerDe for PluginType {
         proto.try_into()
     }
 }
+*/
 
 #[derive(Debug)]
 pub struct Plugin {
@@ -92,6 +98,11 @@ pub struct Plugin {
     pub plugin_type: PluginType,
     /// The byte representation of the plugin executable
     pub plugin_binary: Vec<u8>,
+}
+
+impl type_url::TypeUrl for Plugin {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.Plugin";
 }
 
 impl TryFrom<proto::Plugin> for Plugin {
@@ -137,6 +148,11 @@ pub struct CreatePluginRequest {
     pub display_name: String,
     /// The type of the plugin
     pub plugin_type: PluginType,
+}
+
+impl type_url::TypeUrl for CreatePluginRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.CreatePluginRequest";
 }
 
 impl TryFrom<proto::CreatePluginRequest> for CreatePluginRequest {
@@ -189,6 +205,11 @@ pub struct CreatePluginResponse {
     pub plugin_id: uuid::Uuid,
 }
 
+impl type_url::TypeUrl for CreatePluginResponse {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.CreatePluginResponse";
+}
+
 impl TryFrom<proto::CreatePluginResponse> for CreatePluginResponse {
     type Error = SerDeError;
 
@@ -214,6 +235,11 @@ pub struct DeployPluginRequest {
     pub plugin_id: uuid::Uuid,
 }
 
+impl type_url::TypeUrl for DeployPluginRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.DeployPluginRequest";
+}
+
 impl TryFrom<proto::DeployPluginRequest> for DeployPluginRequest {
     type Error = SerDeError;
 
@@ -237,6 +263,11 @@ impl From<DeployPluginRequest> for proto::DeployPluginRequest {
 
 pub struct DeployPluginResponse {}
 
+impl type_url::TypeUrl for DeployPluginResponse {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.DeployPluginResponse";
+}
+
 impl TryFrom<proto::DeployPluginResponse> for DeployPluginResponse {
     type Error = SerDeError;
 
@@ -254,6 +285,11 @@ impl From<DeployPluginResponse> for proto::DeployPluginResponse {
 pub struct GetAnalyzersForTenantRequest {
     /// The tenant id for the tenant whose analyzers we wish to fetch
     pub tenant_id: uuid::Uuid,
+}
+
+impl type_url::TypeUrl for GetAnalyzersForTenantRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.GetAnalyzersForTenantRequest";
 }
 
 impl TryFrom<proto::GetAnalyzersForTenantRequest> for GetAnalyzersForTenantRequest {
@@ -284,6 +320,11 @@ pub struct GetAnalyzersForTenantResponse {
     pub plugin_ids: Vec<uuid::Uuid>,
 }
 
+impl type_url::TypeUrl for GetAnalyzersForTenantResponse {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.GetAnalyzersForTenantResponse";
+}
+
 impl TryFrom<proto::GetAnalyzersForTenantResponse> for GetAnalyzersForTenantResponse {
     type Error = SerDeError;
 
@@ -312,6 +353,11 @@ pub struct GetGeneratorsForEventSourceRequest {
     pub event_source_id: uuid::Uuid,
 }
 
+impl type_url::TypeUrl for GetGeneratorsForEventSourceRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.GetGeneratorsForEventSourceRequest";
+}
+
 impl TryFrom<proto::GetGeneratorsForEventSourceRequest> for GetGeneratorsForEventSourceRequest {
     type Error = SerDeError;
 
@@ -337,6 +383,11 @@ impl From<GetGeneratorsForEventSourceRequest> for proto::GetGeneratorsForEventSo
 
 pub struct GetGeneratorsForEventSourceResponse {
     pub plugin_ids: Vec<uuid::Uuid>,
+}
+
+impl type_url::TypeUrl for GetGeneratorsForEventSourceResponse {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.GetGeneratorsForEventSourceResponse";
 }
 
 impl TryFrom<proto::GetGeneratorsForEventSourceResponse> for GetGeneratorsForEventSourceResponse {
@@ -367,6 +418,11 @@ pub struct GetPluginRequest {
     pub plugin_id: uuid::Uuid,
     /// The tenant for which the plugin belongs to
     pub tenant_id: uuid::Uuid,
+}
+
+impl type_url::TypeUrl for GetPluginRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.GetPluginRequest";
 }
 
 impl TryFrom<proto::GetPluginRequest> for GetPluginRequest {
@@ -405,6 +461,11 @@ pub struct GetPluginResponse {
     pub plugin: Plugin,
 }
 
+impl type_url::TypeUrl for GetPluginResponse {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.GetPluginResponse";
+}
+
 impl TryFrom<proto::GetPluginResponse> for GetPluginResponse {
     type Error = SerDeError;
 
@@ -430,6 +491,11 @@ pub struct TearDownPluginRequest {
     pub plugin_id: uuid::Uuid,
 }
 
+impl type_url::TypeUrl for TearDownPluginRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.TearDownPluginRequest";
+}
+
 impl TryFrom<proto::TearDownPluginRequest> for TearDownPluginRequest {
     type Error = SerDeError;
 
@@ -452,6 +518,11 @@ impl From<TearDownPluginRequest> for proto::TearDownPluginRequest {
 }
 
 pub struct TearDownPluginResponse {}
+
+impl type_url::TypeUrl for TearDownPluginResponse {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.TearDownPluginResponse";
+}
 
 impl TryFrom<proto::TearDownPluginResponse> for TearDownPluginResponse {
     type Error = SerDeError;
