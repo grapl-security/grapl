@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+package graplinc.grapl.api.graph_mutation.v1beta1;
+
+import "graplinc/common/v1beta1/types.proto";
+import "graplinc/grapl/api/graph/v1beta1/types.proto";
+
+message PropertyName {
+  string value = 1;
+}
+
+message EdgeName {
+  // The edge name must:
+  // - Be non-empty
+  // - Snake case, `^[a-z]+(_[a-z]+)*$`
+  // - Less than 32 characters
+  string value = 1;
+}
+
+message NodeType {
+  // The node type must:
+  // - Be non-empty
+  // - PascalCase, `^([A-Z][a-z]+)+$`
+  // - Less than 32 characters
+  string value = 1;
+}
+
+message Uid {
+  // Can never be 0
+  uint64 value = 1;
+}
+
+message SetNodePropertyRequest {
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
+  Uid uid = 2;
+  NodeType node_type = 3;
+  PropertyName property_name = 4;
+  graplinc.grapl.api.graph.v1beta1.NodeProperty property = 5;
+}
+
+message SetNodePropertyResponse {
+  // Indicates whether or not the update was redundant, and therefor dropped
+  bool was_redundant = 1;
+}
+
+message CreateEdgeRequest {
+  EdgeName edge_name = 1;
+  graplinc.common.v1beta1.Uuid tenant_id = 2;
+  Uid from_uid = 3;
+  Uid to_uid = 4;
+}
+
+message CreateEdgeResponse {
+  // Indicates whether or not the update was redundant, and therefor dropped
+  bool was_redundant = 1;
+}
+
+message CreateNodeRequest {
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
+  NodeType node_type = 2;
+}
+
+message CreateNodeResponse {
+  // The uid of the newly allocated node
+  Uid uid = 1;
+}
+
+service GraphMutationService {
+  // Create Node allocates a new node in the graph, returning the uid of the new node.
+  rpc CreateNode(CreateNodeRequest) returns (CreateNodeResponse);
+  // SetNodeProperty will update the property of the node with the given uid.
+  // If the node does not exist it will be created.
+  rpc SetNodeProperty(SetNodePropertyRequest) returns (SetNodePropertyResponse);
+  // CreateEdge will create an edge with the name edge_name between the nodes
+  // that have the given uids. It will also create the reverse edge.
+  rpc CreateEdge(CreateEdgeRequest) returns (CreateEdgeResponse);
+}

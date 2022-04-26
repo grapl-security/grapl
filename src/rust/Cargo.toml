@@ -8,6 +8,7 @@ members = [
   "./generators/osquery-generator",
   "./generators/sysmon-generator",
   "./graph-merger",
+  "./graph-mutation-service",
   "./grapl",
   "./grapl-config",
   "./grapl-graphql-codegen",

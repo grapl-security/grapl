@@ -12,6 +12,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut paths = Vec::new();
     get_proto_files("../../proto/graplinc", &mut paths)?;
 
+    assert!(!paths.is_empty());
+
     config
         .build_client(true)
         .build_server(true)

@@ -26,8 +26,18 @@ pub(crate) mod protobufs {
                 pub(crate) mod graph {
                     pub(crate) mod v1beta1 {
                         include!(concat!(
-                            env!("OUT_DIR"),
-                            "/graplinc.grapl.api.graph.v1beta1.rs"
+                        env!("OUT_DIR"),
+                        "/graplinc.grapl.api.graph.v1beta1.rs"
+                        ));
+                    }
+                }
+
+                // #[cfg(feature = "graph-mutation")]
+                pub(crate) mod graph_mutation {
+                    pub(crate) mod v1beta1 {
+                        include!(concat!(
+                        env!("OUT_DIR"),
+                        "/graplinc.grapl.api.graph_mutation.v1beta1.rs"
                         ));
                     }
                 }
@@ -111,6 +121,11 @@ pub mod graplinc {
     pub mod grapl {
         pub mod api {
             pub mod graph {
+                pub mod v1beta1;
+            }
+
+            // #[cfg(feature = "graph-mutation")]
+            pub mod graph_mutation {
                 pub mod v1beta1;
             }
 
