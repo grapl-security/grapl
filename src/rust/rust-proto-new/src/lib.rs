@@ -209,3 +209,5 @@ pub trait SerDe: type_url::TypeUrl + Clone + std::fmt::Debug {
         B: Buf,
         Self: Sized;
 }
+
+pub(crate) mod serde_impl;

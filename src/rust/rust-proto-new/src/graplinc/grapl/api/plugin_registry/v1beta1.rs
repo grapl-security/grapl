@@ -1,11 +1,5 @@
 use std::fmt::Debug;
 
-use bytes::{
-    Bytes,
-    BytesMut,
-};
-use prost::Message;
-
 pub use crate::graplinc::grapl::api::plugin_registry::{
     v1beta1_client::{
         PluginRegistryServiceClient,
@@ -21,8 +15,8 @@ pub use crate::graplinc::grapl::api::plugin_registry::{
 };
 use crate::{
     protobufs::graplinc::grapl::api::plugin_registry::v1beta1 as proto,
+    serde_impl::HasAssociatedProto,
     type_url,
-    SerDe,
     SerDeError,
 };
 
@@ -75,6 +69,10 @@ pub struct Plugin {
     pub plugin_binary: Vec<u8>,
 }
 
+impl HasAssociatedProto<Plugin> for Plugin {
+    type Proto = proto::Plugin;
+}
+
 impl type_url::TypeUrl for Plugin {
     const TYPE_URL: &'static str =
         "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.Plugin";
@@ -110,24 +108,6 @@ impl From<Plugin> for proto::Plugin {
             plugin_type: plugin_type as i32,
             plugin_binary: value.plugin_binary,
         }
-    }
-}
-
-impl SerDe for Plugin {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let proto = proto::Plugin::from(self);
-        let mut buf = BytesMut::with_capacity(proto.encoded_len());
-        proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: bytes::Buf,
-        Self: Sized,
-    {
-        let proto: proto::Plugin = Message::decode(buf)?;
-        proto.try_into()
     }
 }
 
@@ -192,22 +172,8 @@ impl From<CreatePluginRequest> for proto::CreatePluginRequest {
     }
 }
 
-impl SerDe for CreatePluginRequest {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let proto = proto::CreatePluginRequest::from(self);
-        let mut buf = BytesMut::with_capacity(proto.encoded_len());
-        proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: bytes::Buf,
-        Self: Sized,
-    {
-        let proto: proto::CreatePluginRequest = Message::decode(buf)?;
-        proto.try_into()
-    }
+impl HasAssociatedProto<CreatePluginRequest> for CreatePluginRequest {
+    type Proto = proto::CreatePluginRequest;
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -242,22 +208,8 @@ impl From<CreatePluginResponse> for proto::CreatePluginResponse {
     }
 }
 
-impl SerDe for CreatePluginResponse {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let proto = proto::CreatePluginResponse::from(self);
-        let mut buf = BytesMut::with_capacity(proto.encoded_len());
-        proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: bytes::Buf,
-        Self: Sized,
-    {
-        let proto: proto::CreatePluginResponse = Message::decode(buf)?;
-        proto.try_into()
-    }
+impl HasAssociatedProto<CreatePluginResponse> for CreatePluginResponse {
+    type Proto = proto::CreatePluginResponse;
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -291,22 +243,8 @@ impl From<DeployPluginRequest> for proto::DeployPluginRequest {
     }
 }
 
-impl SerDe for DeployPluginRequest {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let proto = proto::DeployPluginRequest::from(self);
-        let mut buf = BytesMut::with_capacity(proto.encoded_len());
-        proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: bytes::Buf,
-        Self: Sized,
-    {
-        let proto: proto::DeployPluginRequest = Message::decode(buf)?;
-        proto.try_into()
-    }
+impl HasAssociatedProto<DeployPluginRequest> for DeployPluginRequest {
+    type Proto = proto::DeployPluginRequest;
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -330,22 +268,8 @@ impl From<DeployPluginResponse> for proto::DeployPluginResponse {
         Self {}
     }
 }
-impl SerDe for DeployPluginResponse {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let proto = proto::DeployPluginResponse::from(self);
-        let mut buf = BytesMut::with_capacity(proto.encoded_len());
-        proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: bytes::Buf,
-        Self: Sized,
-    {
-        let proto: proto::DeployPluginResponse = Message::decode(buf)?;
-        proto.try_into()
-    }
+impl HasAssociatedProto<DeployPluginResponse> for DeployPluginResponse {
+    type Proto = proto::DeployPluginResponse;
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -381,22 +305,8 @@ impl From<GetAnalyzersForTenantRequest> for proto::GetAnalyzersForTenantRequest 
         }
     }
 }
-impl SerDe for GetAnalyzersForTenantRequest {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let proto = proto::GetAnalyzersForTenantRequest::from(self);
-        let mut buf = BytesMut::with_capacity(proto.encoded_len());
-        proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: bytes::Buf,
-        Self: Sized,
-    {
-        let proto: proto::GetAnalyzersForTenantRequest = Message::decode(buf)?;
-        proto.try_into()
-    }
+impl HasAssociatedProto<GetAnalyzersForTenantRequest> for GetAnalyzersForTenantRequest {
+    type Proto = proto::GetAnalyzersForTenantRequest;
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -432,22 +342,8 @@ impl From<GetAnalyzersForTenantResponse> for proto::GetAnalyzersForTenantRespons
         }
     }
 }
-impl SerDe for GetAnalyzersForTenantResponse {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let proto = proto::GetAnalyzersForTenantResponse::from(self);
-        let mut buf = BytesMut::with_capacity(proto.encoded_len());
-        proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: bytes::Buf,
-        Self: Sized,
-    {
-        let proto: proto::GetAnalyzersForTenantResponse = Message::decode(buf)?;
-        proto.try_into()
-    }
+impl HasAssociatedProto<GetAnalyzersForTenantResponse> for GetAnalyzersForTenantResponse {
+    type Proto = proto::GetAnalyzersForTenantResponse;
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -483,22 +379,8 @@ impl From<GetGeneratorsForEventSourceRequest> for proto::GetGeneratorsForEventSo
         }
     }
 }
-impl SerDe for GetGeneratorsForEventSourceRequest {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let proto = proto::GetGeneratorsForEventSourceRequest::from(self);
-        let mut buf = BytesMut::with_capacity(proto.encoded_len());
-        proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: bytes::Buf,
-        Self: Sized,
-    {
-        let proto: proto::GetGeneratorsForEventSourceRequest = Message::decode(buf)?;
-        proto.try_into()
-    }
+impl HasAssociatedProto<GetGeneratorsForEventSourceRequest> for GetGeneratorsForEventSourceRequest {
+    type Proto = proto::GetGeneratorsForEventSourceRequest;
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -533,24 +415,12 @@ impl From<GetGeneratorsForEventSourceResponse> for proto::GetGeneratorsForEventS
         }
     }
 }
-impl SerDe for GetGeneratorsForEventSourceResponse {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let proto = proto::GetGeneratorsForEventSourceResponse::from(self);
-        let mut buf = BytesMut::with_capacity(proto.encoded_len());
-        proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
 
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: bytes::Buf,
-        Self: Sized,
-    {
-        let proto: proto::GetGeneratorsForEventSourceResponse = Message::decode(buf)?;
-        proto.try_into()
-    }
+impl HasAssociatedProto<GetGeneratorsForEventSourceResponse>
+    for GetGeneratorsForEventSourceResponse
+{
+    type Proto = proto::GetGeneratorsForEventSourceResponse;
 }
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct GetPluginRequest {
     /// The identity of the plugin
@@ -595,22 +465,8 @@ impl From<GetPluginRequest> for proto::GetPluginRequest {
         }
     }
 }
-impl SerDe for GetPluginRequest {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let proto = proto::GetPluginRequest::from(self);
-        let mut buf = BytesMut::with_capacity(proto.encoded_len());
-        proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: bytes::Buf,
-        Self: Sized,
-    {
-        let proto: proto::GetPluginRequest = Message::decode(buf)?;
-        proto.try_into()
-    }
+impl HasAssociatedProto<GetPluginRequest> for GetPluginRequest {
+    type Proto = proto::GetPluginRequest;
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -643,22 +499,8 @@ impl From<GetPluginResponse> for proto::GetPluginResponse {
         }
     }
 }
-impl SerDe for GetPluginResponse {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let proto = proto::GetPluginResponse::from(self);
-        let mut buf = BytesMut::with_capacity(proto.encoded_len());
-        proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: bytes::Buf,
-        Self: Sized,
-    {
-        let proto: proto::GetPluginResponse = Message::decode(buf)?;
-        proto.try_into()
-    }
+impl HasAssociatedProto<GetPluginResponse> for GetPluginResponse {
+    type Proto = proto::GetPluginResponse;
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -691,22 +533,8 @@ impl From<TearDownPluginRequest> for proto::TearDownPluginRequest {
         }
     }
 }
-impl SerDe for TearDownPluginRequest {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let proto = proto::TearDownPluginRequest::from(self);
-        let mut buf = BytesMut::with_capacity(proto.encoded_len());
-        proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: bytes::Buf,
-        Self: Sized,
-    {
-        let proto: proto::TearDownPluginRequest = Message::decode(buf)?;
-        proto.try_into()
-    }
+impl HasAssociatedProto<TearDownPluginRequest> for TearDownPluginRequest {
+    type Proto = proto::TearDownPluginRequest;
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -731,20 +559,6 @@ impl From<TearDownPluginResponse> for proto::TearDownPluginResponse {
     }
 }
 
-impl SerDe for TearDownPluginResponse {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let proto = proto::TearDownPluginResponse::from(self);
-        let mut buf = BytesMut::with_capacity(proto.encoded_len());
-        proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: bytes::Buf,
-        Self: Sized,
-    {
-        let proto: proto::TearDownPluginResponse = Message::decode(buf)?;
-        proto.try_into()
-    }
+impl HasAssociatedProto<TearDownPluginResponse> for TearDownPluginResponse {
+    type Proto = proto::TearDownPluginResponse;
 }
