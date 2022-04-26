@@ -13,93 +13,25 @@ use rust_proto_new::{
                 PublishRawLogRequest,
                 PublishRawLogResponse,
             },
-            pipeline::{
-                v1beta1::{
-                    Envelope as EnvelopeV1,
-                    Metadata,
-                    RawLog,
-                },
-                v1beta2::Envelope,
-            },
+            pipeline::v1beta2::Envelope,
         },
     },
     SerDe,
 };
-use test_utils::strategies::{
-    bytes,
-    uuids,
-};
-
-//
-// ---------------- strategies ------------------------------------------------
-//
-
-//
-// RawLog
-//
-
-prop_compose! {
-    fn raw_logs()(
-        log_event in bytes(256)
-    ) -> RawLog {
-        RawLog {
-            log_event
-        }
-    }
-}
-
-//
-// Metadata
-//
-
-prop_compose! {
-    fn metadatas()(
-        tenant_id in uuids(),
-        trace_id in uuids(),
-        retry_count in any::<u32>(),
-        created_time in any::<SystemTime>(),
-        last_updated_time in any::<SystemTime>(),
-        event_source_id in uuids()
-    ) -> Metadata {
-        Metadata {
-            tenant_id,
-            trace_id,
-            retry_count,
-            created_time,
-            last_updated_time,
-            event_source_id,
-        }
-    }
-}
-
-//
-// Envelope
-//
-
-prop_compose! {
-    fn v1_envelopes()(
-        metadata in metadatas(),
-        inner_type in any::<String>(),
-        inner_message in bytes(256),
-    ) -> EnvelopeV1 {
-        EnvelopeV1 {
-            metadata,
-            inner_type,
-            inner_message
-        }
-    }
-}
+use test_utils::strategies;
 
 fn envelopes<T>(inner_strategy: impl Strategy<Value = T>) -> impl Strategy<Value = Envelope<T>>
 where
     T: SerDe + Debug,
 {
-    (metadatas(), inner_strategy).prop_map(|(metadata, inner_message)| -> Envelope<T> {
-        Envelope {
-            metadata,
-            inner_message,
-        }
-    })
+    (strategies::pipeline::metadatas(), inner_strategy).prop_map(
+        |(metadata, inner_message)| -> Envelope<T> {
+            Envelope {
+                metadata,
+                inner_message,
+            }
+        },
+    )
 }
 
 //
@@ -108,9 +40,9 @@ where
 
 prop_compose! {
     fn publish_raw_log_requests()(
-        event_source_id in uuids(),
-        tenant_id in uuids(),
-        log_event in bytes(256),
+        event_source_id in strategies::uuids(),
+        tenant_id in strategies::uuids(),
+        log_event in strategies::bytes(256),
     ) -> PublishRawLogRequest {
         PublishRawLogRequest {
             event_source_id,
@@ -174,7 +106,7 @@ proptest! {
     }
 
     #[test]
-    fn test_uuid_encode_decode(uuid in uuids()) {
+    fn test_uuid_encode_decode(uuid in strategies::uuids()) {
         check_encode_decode_invariant(uuid)
     }
 
@@ -183,22 +115,22 @@ proptest! {
     //
 
     #[test]
-    fn test_metadata_encode_decode(metadata in metadatas()) {
+    fn test_metadata_encode_decode(metadata in strategies::pipeline::metadatas()) {
         check_encode_decode_invariant(metadata)
     }
 
     #[test]
-    fn test_raw_log_encode_decode(raw_log in raw_logs()) {
+    fn test_raw_log_encode_decode(raw_log in strategies::pipeline::raw_logs()) {
         check_encode_decode_invariant(raw_log)
     }
 
     #[test]
-    fn test_v1_envelope_encode_decode(envelope in v1_envelopes()) {
+    fn test_v1_envelope_encode_decode(envelope in strategies::pipeline::v1_envelopes()) {
         check_encode_decode_invariant(envelope)
     }
 
     #[test]
-    fn test_uuid_envelope_encode_decode(envelope in envelopes(uuids())) {
+    fn test_uuid_envelope_encode_decode(envelope in envelopes(strategies::uuids())) {
         check_encode_decode_invariant(envelope)
     }
 
@@ -213,7 +145,7 @@ proptest! {
     }
 
     #[test]
-    fn test_raw_log_envelope_encode_decode(envelope in envelopes(raw_logs())) {
+    fn test_raw_log_envelope_encode_decode(envelope in envelopes(strategies::pipeline::raw_logs())) {
         check_encode_decode_invariant(envelope)
     }
 
