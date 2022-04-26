@@ -379,7 +379,9 @@ impl From<GetGeneratorsForEventSourceRequest> for proto::GetGeneratorsForEventSo
         }
     }
 }
-impl ProtobufSerializable<GetGeneratorsForEventSourceRequest> for GetGeneratorsForEventSourceRequest {
+impl ProtobufSerializable<GetGeneratorsForEventSourceRequest>
+    for GetGeneratorsForEventSourceRequest
+{
     type ProtobufMessage = proto::GetGeneratorsForEventSourceRequest;
 }
 

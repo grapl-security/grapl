@@ -11,7 +11,7 @@ use crate::{
 };
 
 /// Example usage:
-/// 
+///
 /// use crate::protobufs::graplinc::grapl::api::some_service::v1beta1 as proto,
 /// pub struct SomeNativeType {...}
 /// impl ProtobufSerializable<SomeNativeType> for SomeNativeType {
