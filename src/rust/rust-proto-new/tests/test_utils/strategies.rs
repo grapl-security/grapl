@@ -1,3 +1,5 @@
+use std::time::SystemTime;
+
 use bytes::Bytes;
 use proptest::prelude::*;
 use uuid::Uuid;
@@ -23,13 +25,19 @@ prop_compose! {
 }
 
 pub mod pipeline {
-    use std::{time::SystemTime, fmt::Debug};
+    use std::fmt::Debug;
 
-    use rust_proto_new::{graplinc::grapl::{pipeline::{v1beta1::{
-        Envelope as EnvelopeV1,
-        Metadata,
-        RawLog,
-    }, v1beta2::Envelope}, api::pipeline_ingress::v1beta1::{PublishRawLogRequest, PublishRawLogResponse}}, SerDe};
+    use rust_proto_new::{
+        graplinc::grapl::pipeline::{
+            v1beta1::{
+                Envelope as EnvelopeV1,
+                Metadata,
+                RawLog,
+            },
+            v1beta2::Envelope,
+        },
+        SerDe,
+    };
 
     use super::*;
 
@@ -89,20 +97,28 @@ pub mod pipeline {
         }
     }
 
-
-    pub fn envelopes<T>(inner_strategy: impl Strategy<Value = T>) -> impl Strategy<Value = Envelope<T>>
+    pub fn envelopes<T>(
+        inner_strategy: impl Strategy<Value = T>,
+    ) -> impl Strategy<Value = Envelope<T>>
     where
         T: SerDe + Debug,
     {
-        (metadatas(), inner_strategy).prop_map(
-            |(metadata, inner_message)| -> Envelope<T> {
-                Envelope {
-                    metadata,
-                    inner_message,
-                }
-            },
-        )
+        (metadatas(), inner_strategy).prop_map(|(metadata, inner_message)| -> Envelope<T> {
+            Envelope {
+                metadata,
+                inner_message,
+            }
+        })
     }
+}
+
+pub mod pipeline_ingress {
+    use rust_proto_new::graplinc::grapl::api::pipeline_ingress::v1beta1::{
+        PublishRawLogRequest,
+        PublishRawLogResponse,
+    };
+
+    use super::*;
 
     //
     // PublishRawLogRequest
@@ -135,6 +151,4 @@ pub mod pipeline {
             }
         }
     }
-
-
 }

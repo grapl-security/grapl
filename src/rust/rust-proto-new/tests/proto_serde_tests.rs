@@ -1,14 +1,8 @@
-use std::fmt::Debug;
-
 mod test_utils;
 use proptest::prelude::*;
-use rust_proto_new::{
-    graplinc::{
-        common::v1beta1::{
-            Duration,
-            SystemTime,
-        },
-    },
+use rust_proto_new::graplinc::common::v1beta1::{
+    Duration,
+    SystemTime,
 };
 use test_utils::{
     serde::check_encode_decode_invariant,
@@ -88,14 +82,14 @@ proptest! {
 
     #[test]
     fn test_publish_raw_log_request_encode_decode(
-        publish_raw_log_request in strategies::pipeline::publish_raw_log_requests()
+        publish_raw_log_request in strategies::pipeline_ingress::publish_raw_log_requests()
     ) {
         check_encode_decode_invariant(publish_raw_log_request)
     }
 
     #[test]
     fn test_publish_raw_log_response_encode_decode(
-        publish_raw_log_response in strategies::pipeline::publish_raw_log_responses()
+        publish_raw_log_response in strategies::pipeline_ingress::publish_raw_log_responses()
     ) {
         check_encode_decode_invariant(publish_raw_log_response)
     }
