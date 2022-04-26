@@ -88,7 +88,7 @@ impl SerDe for PluginType {
 }
 */
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Plugin {
     /// unique identifier for this plugin
     pub plugin_id: uuid::Uuid,
@@ -156,7 +156,7 @@ impl SerDe for Plugin {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CreatePluginRequest {
     /// the actual plugin code
     pub plugin_artifact: Vec<u8>,
@@ -235,7 +235,7 @@ impl SerDe for CreatePluginRequest {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CreatePluginResponse {
     /// The identity of the plugin that was created
     pub plugin_id: uuid::Uuid,
@@ -285,7 +285,7 @@ impl SerDe for CreatePluginResponse {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DeployPluginRequest {
     pub plugin_id: uuid::Uuid,
 }
@@ -334,7 +334,7 @@ impl SerDe for DeployPluginRequest {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DeployPluginResponse {}
 
 impl type_url::TypeUrl for DeployPluginResponse {
@@ -373,7 +373,7 @@ impl SerDe for DeployPluginResponse {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct GetAnalyzersForTenantRequest {
     /// The tenant id for the tenant whose analyzers we wish to fetch
     pub tenant_id: uuid::Uuid,
@@ -424,7 +424,7 @@ impl SerDe for GetAnalyzersForTenantRequest {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct GetAnalyzersForTenantResponse {
     /// The plugin ids for the analyzers belonging to a tenant
     pub plugin_ids: Vec<uuid::Uuid>,
@@ -475,7 +475,7 @@ impl SerDe for GetAnalyzersForTenantResponse {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct GetGeneratorsForEventSourceRequest {
     /// The event source id
     pub event_source_id: uuid::Uuid,
@@ -526,7 +526,7 @@ impl SerDe for GetGeneratorsForEventSourceRequest {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct GetGeneratorsForEventSourceResponse {
     pub plugin_ids: Vec<uuid::Uuid>,
 }
@@ -576,7 +576,7 @@ impl SerDe for GetGeneratorsForEventSourceResponse {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct GetPluginRequest {
     /// The identity of the plugin
     pub plugin_id: uuid::Uuid,
@@ -638,7 +638,7 @@ impl SerDe for GetPluginRequest {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct GetPluginResponse {
     pub plugin: Plugin,
 }
@@ -686,7 +686,7 @@ impl SerDe for GetPluginResponse {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TearDownPluginRequest {
     pub plugin_id: uuid::Uuid,
 }
@@ -734,7 +734,7 @@ impl SerDe for TearDownPluginRequest {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TearDownPluginResponse {}
 
 impl type_url::TypeUrl for TearDownPluginResponse {
