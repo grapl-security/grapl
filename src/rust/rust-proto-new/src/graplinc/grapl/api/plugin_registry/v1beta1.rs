@@ -88,7 +88,7 @@ impl SerDe for PluginType {
 }
 */
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Plugin {
     /// unique identifier for this plugin
     pub plugin_id: uuid::Uuid,
@@ -138,7 +138,25 @@ impl From<Plugin> for proto::Plugin {
     }
 }
 
-#[derive(Debug)]
+impl SerDe for Plugin {
+    fn serialize(self) -> Result<Bytes, SerDeError> {
+        let proto = proto::Plugin::from(self);
+        let mut buf = BytesMut::with_capacity(proto.encoded_len());
+        proto.encode(&mut buf)?;
+        Ok(buf.freeze())
+    }
+
+    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
+    where
+        B: bytes::Buf,
+        Self: Sized,
+    {
+        let proto: proto::Plugin = Message::decode(buf)?;
+        proto.try_into()
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct CreatePluginRequest {
     /// the actual plugin code
     pub plugin_artifact: Vec<u8>,
@@ -199,7 +217,7 @@ impl From<CreatePluginRequest> for proto::CreatePluginRequest {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CreatePluginResponse {
     /// The identity of the plugin that was created
     pub plugin_id: uuid::Uuid,
@@ -231,6 +249,7 @@ impl From<CreatePluginResponse> for proto::CreatePluginResponse {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct DeployPluginRequest {
     pub plugin_id: uuid::Uuid,
 }
@@ -261,6 +280,7 @@ impl From<DeployPluginRequest> for proto::DeployPluginRequest {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct DeployPluginResponse {}
 
 impl type_url::TypeUrl for DeployPluginResponse {
@@ -282,6 +302,7 @@ impl From<DeployPluginResponse> for proto::DeployPluginResponse {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct GetAnalyzersForTenantRequest {
     /// The tenant id for the tenant whose analyzers we wish to fetch
     pub tenant_id: uuid::Uuid,
@@ -315,6 +336,7 @@ impl From<GetAnalyzersForTenantRequest> for proto::GetAnalyzersForTenantRequest 
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct GetAnalyzersForTenantResponse {
     /// The plugin ids for the analyzers belonging to a tenant
     pub plugin_ids: Vec<uuid::Uuid>,
@@ -348,6 +370,7 @@ impl From<GetAnalyzersForTenantResponse> for proto::GetAnalyzersForTenantRespons
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct GetGeneratorsForEventSourceRequest {
     /// The event source id
     pub event_source_id: uuid::Uuid,
@@ -381,6 +404,7 @@ impl From<GetGeneratorsForEventSourceRequest> for proto::GetGeneratorsForEventSo
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct GetGeneratorsForEventSourceResponse {
     pub plugin_ids: Vec<uuid::Uuid>,
 }
@@ -413,6 +437,7 @@ impl From<GetGeneratorsForEventSourceResponse> for proto::GetGeneratorsForEventS
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct GetPluginRequest {
     /// The identity of the plugin
     pub plugin_id: uuid::Uuid,
@@ -457,6 +482,7 @@ impl From<GetPluginRequest> for proto::GetPluginRequest {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct GetPluginResponse {
     pub plugin: Plugin,
 }
@@ -487,6 +513,7 @@ impl From<GetPluginResponse> for proto::GetPluginResponse {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct TearDownPluginRequest {
     pub plugin_id: uuid::Uuid,
 }
@@ -517,6 +544,7 @@ impl From<TearDownPluginRequest> for proto::TearDownPluginRequest {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct TearDownPluginResponse {}
 
 impl type_url::TypeUrl for TearDownPluginResponse {
