@@ -63,31 +63,6 @@ impl From<PluginType> for proto::PluginType {
     }
 }
 
-/*
-impl type_url::TypeUrl for PluginType {
-    const TYPE_URL: &'static str =
-        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.PluginType";
-}
-
-impl SerDe for PluginType {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let proto = proto::PluginType::from(self);
-        let mut buf = BytesMut::with_capacity(proto.encoded_len());
-        proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: bytes::Buf,
-        Self: Sized,
-    {
-        let proto: proto::PluginType = Message::decode(buf)?;
-        proto.try_into()
-    }
-}
-*/
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct Plugin {
     /// unique identifier for this plugin
