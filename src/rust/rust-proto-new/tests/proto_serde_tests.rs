@@ -103,8 +103,36 @@ mod plugin_registry {
     use super::*;
 
     proptest! {
+        // For the record, codec
         #[test]
-        fn test_codec_plugins(value in pr_strats::plugins()) {
+        fn test_serde_plugins(value in pr_strats::plugins()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_serde_create_plugin_requests(value in pr_strats::create_plugin_requests()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_serde_create_plugin_responses(value in pr_strats::create_plugin_responses()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_serde_get_analyzers_for_tenant_requests(value in pr_strats::get_analyzers_for_tenant_requests()) {
+            check_encode_decode_invariant(value)
+        }
+        #[test]
+        fn test_serde_get_analyzers_for_tenant_responses(value in pr_strats::test_serde_get_analyzers_for_tenant_responses()) {
+            check_encode_decode_invariant(value)
+        }
+        #[test]
+        fn test_serde_deploy_plugin_requests(value in pr_strats::deploy_plugin_requests()) {
+            check_encode_decode_invariant(value)
+        }
+        #[test]
+        fn test_serde_deploy_plugin_responses(value in pr_strats::deploy_plugin_responses()) {
             check_encode_decode_invariant(value)
         }
     }

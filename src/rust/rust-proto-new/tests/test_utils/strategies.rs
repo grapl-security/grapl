@@ -157,6 +157,10 @@ pub mod plugin_registry {
     use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
         CreatePluginRequest,
         CreatePluginResponse,
+        DeployPluginRequest,
+        DeployPluginResponse,
+        GetAnalyzersForTenantRequest,
+        GetAnalyzersForTenantResponse,
         Plugin,
         PluginType,
     };
@@ -213,4 +217,45 @@ pub mod plugin_registry {
             }
         }
     }
+    prop_compose! {
+        pub fn get_analyzers_for_tenant_requests()(
+            tenant_id in uuids(),
+        ) -> GetAnalyzersForTenantRequest {
+            GetAnalyzersForTenantRequest{
+                tenant_id,
+            }
+        }
+    }
+    prop_compose! {
+        pub fn get_analyzers_for_tenant_responses()(
+            plugin_ids in proptest::collection::vec(uuids(), 10)
+        ) -> GetAnalyzersForTenantResponse {
+            GetAnalyzersForTenantResponse{
+                plugin_ids
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn deploy_plugin_requests()(
+            plugin_id in uuids()
+        ) -> DeployPluginRequest {
+            DeployPluginRequest{
+                plugin_id
+            }
+        }
+    }
+
+    pub fn deploy_plugin_responses() -> impl Strategy<Value = DeployPluginResponse> {
+        Just(DeployPluginResponse {})
+    }
+
+    /*
+    GetGeneratorsForEventSourceRequest
+    GetGeneratorsForEventSourceResponse
+    GetPluginRequest
+    GetPluginResponse
+    TearDownPluginRequest
+    TearDownPluginResponse
+    */
 }
