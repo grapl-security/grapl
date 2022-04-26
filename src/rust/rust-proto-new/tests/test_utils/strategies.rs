@@ -23,13 +23,13 @@ prop_compose! {
 }
 
 pub mod pipeline {
-    use std::time::SystemTime;
+    use std::{time::SystemTime, fmt::Debug};
 
-    use rust_proto_new::graplinc::grapl::pipeline::v1beta1::{
+    use rust_proto_new::{graplinc::grapl::{pipeline::{v1beta1::{
         Envelope as EnvelopeV1,
         Metadata,
         RawLog,
-    };
+    }, v1beta2::Envelope}, api::pipeline_ingress::v1beta1::{PublishRawLogRequest, PublishRawLogResponse}}, SerDe};
 
     use super::*;
 
@@ -88,4 +88,53 @@ pub mod pipeline {
             }
         }
     }
+
+
+    pub fn envelopes<T>(inner_strategy: impl Strategy<Value = T>) -> impl Strategy<Value = Envelope<T>>
+    where
+        T: SerDe + Debug,
+    {
+        (metadatas(), inner_strategy).prop_map(
+            |(metadata, inner_message)| -> Envelope<T> {
+                Envelope {
+                    metadata,
+                    inner_message,
+                }
+            },
+        )
+    }
+
+    //
+    // PublishRawLogRequest
+    //
+
+    prop_compose! {
+        pub fn publish_raw_log_requests()(
+            event_source_id in uuids(),
+            tenant_id in uuids(),
+            log_event in bytes(256),
+        ) -> PublishRawLogRequest {
+            PublishRawLogRequest {
+                event_source_id,
+                tenant_id,
+                log_event
+            }
+        }
+    }
+
+    //
+    // PublishRawLogResponse
+    //
+
+    prop_compose! {
+        pub fn publish_raw_log_responses()(
+            created_time in any::<SystemTime>(),
+        ) -> PublishRawLogResponse {
+            PublishRawLogResponse {
+                created_time,
+            }
+        }
+    }
+
+
 }
