@@ -1,3 +1,7 @@
+use std::fmt::Debug;
+
+use bytes::{Bytes, BytesMut};
+
 pub use crate::graplinc::grapl::api::plugin_registry::{
     v1beta1_client::{
         PluginRegistryServiceClient,
@@ -13,8 +17,10 @@ pub use crate::graplinc::grapl::api::plugin_registry::{
 };
 use crate::{
     protobufs::graplinc::grapl::api::plugin_registry::v1beta1 as proto,
-    SerDeError,
+    SerDeError, SerDe, type_url,
 };
+
+use prost::Message;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum PluginType {
@@ -53,6 +59,30 @@ impl From<PluginType> for proto::PluginType {
     }
 }
 
+impl type_url::TypeUrl for PluginType {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.PluginType";
+}
+
+impl SerDe for PluginType {
+    fn serialize(self) -> Result<Bytes, SerDeError> {
+        let proto = proto::PluginType::from(self);
+        let mut buf = BytesMut::with_capacity(proto.encoded_len());
+        proto.encode(&mut buf)?;
+        Ok(buf.freeze())
+    }
+
+    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
+    where
+        B: bytes::Buf,
+        Self: Sized,
+    {
+        let proto: proto::PluginType = Message::decode(buf)?;
+        proto.try_into()
+    }
+}
+
+#[derive(Debug)]
 pub struct Plugin {
     /// unique identifier for this plugin
     pub plugin_id: uuid::Uuid,
@@ -97,6 +127,7 @@ impl From<Plugin> for proto::Plugin {
     }
 }
 
+#[derive(Debug)]
 pub struct CreatePluginRequest {
     /// the actual plugin code
     pub plugin_artifact: Vec<u8>,
@@ -152,6 +183,7 @@ impl From<CreatePluginRequest> for proto::CreatePluginRequest {
     }
 }
 
+#[derive(Debug)]
 pub struct CreatePluginResponse {
     /// The identity of the plugin that was created
     pub plugin_id: uuid::Uuid,

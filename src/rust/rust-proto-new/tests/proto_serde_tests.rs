@@ -96,3 +96,15 @@ proptest! {
 
     // TODO: add more here as they're implemented
 }
+
+mod plugin_registry {
+    use super::*;
+    use strategies::plugin_registry as pr_strats;
+
+    proptest! {
+        #[test]
+        fn test_codec_plugins(value in pr_strats::plugins()) {
+            check_encode_decode_invariant(value)
+        }
+    }
+}

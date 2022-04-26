@@ -152,3 +152,60 @@ pub mod pipeline_ingress {
         }
     }
 }
+
+pub mod plugin_registry {
+    use super::*;
+    use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
+        PluginType, Plugin, CreatePluginRequest, CreatePluginResponse
+    };
+
+    pub fn plugin_types() -> BoxedStrategy<PluginType> {
+        prop_oneof![
+            // For cases without data, `Just` is all you need
+            Just(PluginType::Generator),
+            Just(PluginType::Analyzer),
+        ].boxed()
+    }
+
+    prop_compose! {
+        pub fn plugins()(
+            plugin_id in uuids(),
+            display_name in any::<String>(),
+            plugin_type in plugin_types(),
+            plugin_binary in any::<Vec<u8>>(),
+        ) -> Plugin {
+            Plugin {
+                plugin_id,
+                display_name,
+                plugin_type,
+                plugin_binary,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn create_plugin_requests()(
+            plugin_artifact in any::<Vec<u8>>(),
+            tenant_id in uuids(),
+            display_name in any::<String>(),
+            plugin_type in plugin_types(),
+        ) -> CreatePluginRequest {
+            CreatePluginRequest {
+                plugin_artifact,
+                tenant_id,
+                display_name,
+                plugin_type,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn create_plugin_responses()(
+            plugin_id in uuids(),
+        ) -> CreatePluginResponse {
+            CreatePluginResponse{
+                plugin_id,
+            }
+        }
+    }
+}
