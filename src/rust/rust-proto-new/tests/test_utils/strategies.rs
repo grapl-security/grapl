@@ -347,13 +347,13 @@ pub mod graph {
 
     pub fn properties() -> impl Strategy<Value = Property> {
         prop_oneof![
-            decrement_only_int_props().prop_map(|p| Property::DecrementOnlyIntProp(p)),
-            decrement_only_uint_props().prop_map(|p| Property::DecrementOnlyUintProp(p)),
-            immutable_int_props().prop_map(|p| Property::ImmutableIntProp(p)),
-            immutable_str_props().prop_map(|p| Property::ImmutableStrProp(p)),
-            immutable_uint_props().prop_map(|p| Property::ImmutableUintProp(p)),
-            increment_only_int_props().prop_map(|p| Property::IncrementOnlyIntProp(p)),
-            increment_only_uint_props().prop_map(|p| Property::IncrementOnlyUintProp(p)),
+            decrement_only_int_props().prop_map(Property::DecrementOnlyIntProp),
+            decrement_only_uint_props().prop_map(Property::DecrementOnlyUintProp),
+            immutable_int_props().prop_map(Property::ImmutableIntProp),
+            immutable_str_props().prop_map(Property::ImmutableStrProp),
+            immutable_uint_props().prop_map(Property::ImmutableUintProp),
+            increment_only_int_props().prop_map(Property::IncrementOnlyIntProp),
+            increment_only_uint_props().prop_map(Property::IncrementOnlyUintProp),
         ]
     }
 
