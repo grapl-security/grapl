@@ -1,4 +1,4 @@
-FROM scylladb/scylla
+FROM scylladb/scylla:4.6.3
 
 # This downloads a prebuild static lib for hwloc 2.7.1 which includes a chromeos fix, and replaces the dynamically
 # linked version that scylla uses. See the README for more info
