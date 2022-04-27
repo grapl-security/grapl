@@ -3974,6 +3974,8 @@ dependencies = [
  "proptest",
  "prost 0.10.1",
  "prost-types 0.10.1",
+ "quickcheck",
+ "quickcheck_macros",
  "test-context",
  "thiserror",
  "tokio",
@@ -3982,6 +3984,7 @@ dependencies = [
  "tonic-build 0.7.0",
  "tonic-health 0.6.0",
  "tracing",
+ "tracing-subscriber",
  "uuid",
 ]
 

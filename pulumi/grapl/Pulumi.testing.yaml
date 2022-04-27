@@ -18,12 +18,12 @@ config:
     node-identifier-retry: 20220427165641-abc3bb1
     organization-management: 20220427165641-abc3bb1
     osquery-generator: 20220427165641-abc3bb1
-    pipeline-ingress: 20220427165641-abc3bb1
+    pipeline-ingress: 20220427194540-ef6bb0e
     plugin-bootstrap: 20220427165641-abc3bb1
-    plugin-registry: 20220427165641-abc3bb1
+    plugin-registry: 20220427194540-ef6bb0e
     plugin-work-queue: 20220427165641-abc3bb1
     provisioner: 20220427165641-abc3bb1
-    rust-integration-tests-new: 20220427165641-abc3bb1
+    rust-integration-tests-new: 20220427194540-ef6bb0e
     sysmon-generator: 20220427165641-abc3bb1
   grapl:cloudsmith-repository-name: grapl/testing
   grapl:confluent-environment-name: testing
