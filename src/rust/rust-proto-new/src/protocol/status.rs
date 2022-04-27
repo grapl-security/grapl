@@ -11,37 +11,37 @@ use tonic::{
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Code {
     /// The operation completed successfully.
-    Ok = 0,
+    Ok,
 
     /// Unknown error.
-    Unknown = 1,
+    Unknown,
 
     /// Client specified an invalid argument.
-    InvalidArgument = 2,
+    InvalidArgument,
 
     /// Some requested entity was not found.
-    NotFound = 3,
+    NotFound,
 
     /// Some entity that we attempted to create already exists.
-    AlreadyExists = 4,
+    AlreadyExists,
 
     /// The caller does not have permission to execute the specified operation.
-    PermissionDenied = 5,
+    PermissionDenied,
 
     /// The system is not in a state required for the operation's execution.
-    FailedPrecondition = 6,
+    FailedPrecondition,
 
     /// Operation is not implemented or not supported.
-    Unimplemented = 7,
+    Unimplemented,
 
     /// Internal error.
-    Internal = 8,
+    Internal,
 
     /// The service is currently unavailable.
-    Unavailable = 9,
+    Unavailable,
 
     /// The request does not have valid authentication credentials
-    Unauthenticated = 10,
+    Unauthenticated,
 }
 
 impl Code {
