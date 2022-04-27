@@ -209,7 +209,8 @@ group "local-only-services" {
   targets = [
     "localstack",
     "postgres",
-    "pulumi"
+    "pulumi",
+    "scylladb"
   ]
 }
 
@@ -502,6 +503,15 @@ target "postgres" {
   dockerfile = "Dockerfile"
   tags = [
     local_only_tag("postgres-ext")
+  ]
+  labels = oci_labels
+}
+
+target "scylladb" {
+  context    = "scylladb"
+  dockerfile = "Dockerfile"
+  tags = [
+    local_only_tag("scylladb-ext")
   ]
   labels = oci_labels
 }
