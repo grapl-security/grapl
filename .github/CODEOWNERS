@@ -38,7 +38,7 @@ BUILD @christophermaier
 /pyproject.toml @christophermaier
 /README.md @christophermaier
 /.rustfmt.toml @christophermaier
-/scylladb/ @thomas-grapl
+/scylladb/ @twunderlich-grapl
 /src/js/engagement_view/ @andrea-grapl
 /src/js/graphql_endpoint/ @andrea-grapl
 /src/proto/ @grapl-security/wg-data-infra
