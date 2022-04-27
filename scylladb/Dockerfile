@@ -1,9 +1,10 @@
 FROM debian:bullseye-slim as build
 
 ENV HWLOC_VERSION="2.7.1"
+# At least one of the install-recommends is necessary in order for hwloc to compile. 
+# hadolint ignore=DL3015
 RUN apt-get update \
-    && apt-get -y install \
-        curl=7.74.0-1.3+deb11u1 \
+    && apt-get -y install curl=7.74.0-1.3+deb11u1 \
     libssl-dev=1.1.1n-0+deb11u1 \
     ca-certificates=20210119  \
     gcc=4:10.2.1-1 \
@@ -14,10 +15,9 @@ curl --proto "=https" \
     --location \
     --output /tmp/hwloc-${HWLOC_VERSION}.tar.gz \
 "https://download.open-mpi.org/release/hwloc/v2.7/hwloc-${HWLOC_VERSION}.tar.gz" && \
-cd /tmp && \
-tar -vxzf hwloc-${HWLOC_VERSION}.tar.gz && \
-cd hwloc-${HWLOC_VERSION} && \
-./configure && \
+tar -vxzf /tmp/hwloc-${HWLOC_VERSION}.tar.gz
+WORKDIR /tmp/hwloc-${HWLOC_VERSION}
+RUN ./configure && \
 make && \
 make install
 
