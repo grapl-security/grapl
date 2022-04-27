@@ -324,8 +324,8 @@ pub mod graph {
 
     pub fn strategies() -> impl Strategy<Value = GraphStrategy> {
         prop_oneof![
-            sessions().prop_map(|session| GraphStrategy::Session(session)),
-            statics().prop_map(|static_| GraphStrategy::Static(static_)),
+            sessions().prop_map(GraphStrategy::Session),
+            statics().prop_map(GraphStrategy::Static),
         ]
     }
 
