@@ -135,7 +135,7 @@ FROM base AS build-test-integration
 # https://github.com/rust-lang/cargo/issues/1924
 # https://github.com/rust-lang/cargo/issues/3670
 
-ENV RUST_INTEGRATION_TEST_FEATURES="node-identifier/integration,sqs-executor/integration,model-plugin-deployer/integration,plugin-registry/integration,plugin-work-queue/integration,organization-management/integration"
+ENV RUST_INTEGRATION_TEST_FEATURES="node-identifier/integration,sqs-executor/integration,model-plugin-deployer/integration,plugin-work-queue/integration,organization-management/integration"
 ENV TEST_DIR=/grapl/tests
 
 RUN mkdir --parents "${TEST_DIR}"
@@ -231,7 +231,7 @@ FROM base AS build-test-integration-new
 # https://github.com/rust-lang/cargo/issues/1924
 # https://github.com/rust-lang/cargo/issues/3670
 
-ENV RUST_INTEGRATION_TEST_FEATURES="pipeline-ingress/new_integration_tests"
+ENV RUST_INTEGRATION_TEST_FEATURES="pipeline-ingress/new_integration_tests,plugin-registry/new_integration_tests"
 ENV TEST_DIR=/grapl/tests
 
 # This will build the integration test binaries and parse the manifest to find

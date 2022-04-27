@@ -89,6 +89,12 @@ job "integration-tests-new" {
               # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
               local_bind_port = 1000
             }
+
+            upstreams {
+              destination_name = "plugin-registry"
+              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
+              local_bind_port = 1001
+            }
           }
         }
       }
@@ -119,6 +125,7 @@ job "integration-tests-new" {
         KAFKA_BOOTSTRAP_SERVERS = var.kafka_bootstrap_servers
 
         PIPELINE_INGRESS_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_pipeline_ingress}"
+        PLUGIN_REGISTRY_CLIENT_ADDRESS  = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-registry}"
 
         INTEGRATION_TESTS_KAFKA_SASL_USERNAME       = var.integration_tests_kafka_sasl_username
         INTEGRATION_TESTS_KAFKA_SASL_PASSWORD       = var.integration_tests_kafka_sasl_password

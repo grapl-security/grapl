@@ -96,3 +96,72 @@ proptest! {
 
     // TODO: add more here as they're implemented
 }
+
+mod plugin_registry {
+    use strategies::plugin_registry as pr_strats;
+
+    use super::*;
+
+    proptest! {
+        // For the record, codec
+        #[test]
+        fn test_serde_plugins(value in pr_strats::plugins()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_serde_create_plugin_requests(value in pr_strats::create_plugin_requests()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_serde_create_plugin_responses(value in pr_strats::create_plugin_responses()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_serde_get_analyzers_for_tenant_requests(value in pr_strats::get_analyzers_for_tenant_requests()) {
+            check_encode_decode_invariant(value)
+        }
+        #[test]
+        fn test_serde_get_analyzers_for_tenant_responses(value in pr_strats::get_analyzers_for_tenant_responses()) {
+            check_encode_decode_invariant(value)
+        }
+        #[test]
+        fn test_serde_deploy_plugin_requests(value in pr_strats::deploy_plugin_requests()) {
+            check_encode_decode_invariant(value)
+        }
+        #[test]
+        fn test_serde_deploy_plugin_responses(value in pr_strats::deploy_plugin_responses()) {
+            check_encode_decode_invariant(value)
+        }
+
+        //
+
+        #[test]
+        fn test_serde_get_generators_for_event_source_requests(value in pr_strats::get_generators_for_event_source_requests()) {
+            check_encode_decode_invariant(value)
+        }
+        #[test]
+        fn test_serde_get_generators_for_event_source_responses(value in pr_strats::get_generators_for_event_source_responses()) {
+            check_encode_decode_invariant(value)
+        }
+        #[test]
+        fn test_serde_get_plugin_requests(value in pr_strats::get_plugin_requests()) {
+            check_encode_decode_invariant(value)
+        }
+        #[test]
+        fn test_serde_get_plugin_responses(value in pr_strats::get_plugin_responses()) {
+            check_encode_decode_invariant(value)
+        }
+        #[test]
+        fn test_serde_tear_down_plugin_requests(value in pr_strats::tear_down_plugin_requests()) {
+            check_encode_decode_invariant(value)
+        }
+        #[test]
+        fn test_serde_tear_down_plugin_responses(value in pr_strats::tear_down_plugin_responses()) {
+            check_encode_decode_invariant(value)
+        }
+
+    }
+}
