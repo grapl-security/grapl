@@ -2,9 +2,12 @@ use rusoto_s3::{
     GetObjectError,
     PutObjectError,
 };
-use rust_proto::plugin_registry::PluginRegistryDeserializationError;
+use rust_proto_new::SerDeError;
 
-use crate::nomad;
+use crate::{
+    db::serde::DatabaseSerDeError,
+    nomad,
+};
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginRegistryServiceError {
@@ -18,8 +21,10 @@ pub enum PluginRegistryServiceError {
     EmptyObject,
     #[error("IoError")]
     IoError(#[from] std::io::Error),
-    #[error("PluginRegistryDeserializationError")]
-    PluginRegistryDeserializationError(#[from] PluginRegistryDeserializationError),
+    #[error("SerDeError")]
+    SerDeError(#[from] SerDeError),
+    #[error("DatabaseSerDeError")]
+    DatabaseSerDeError(#[from] DatabaseSerDeError),
     #[error("NomadClientError")]
     NomadClientError(#[from] nomad::client::NomadClientError),
     #[error("NomadCliError")]

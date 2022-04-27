@@ -1,5 +1,5 @@
 use grapl_utils::future_ext::GraplFutureExt;
-use rust_proto::plugin_registry::CreatePluginRequest;
+use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::CreatePluginRequest;
 
 use super::models::{
     PluginDeploymentRow,
