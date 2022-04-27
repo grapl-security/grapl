@@ -586,9 +586,12 @@ clean-docker-images: ## Remove all Grapl images
 
 clean-docker-data-volumes: ## Remove all Grapl labeled volumes
 	# We explicitly don't want to prune the build cache volumes
-	docker volume prune \
-		$(DOCKER_DATA_VOLUME_FILTERS) \
-		--force
+	volumes_to_remove=($$(docker volume ls ${DOCKER_DATA_VOLUME_FILTERS} --quiet))
+	if [ $${#volumes_to_remove[@]} -ne 0 ]; then
+		docker volume rm \
+			"$${volumes_to_remove[@]}" \
+			--force
+	fi
 
 clean-docker-dgraph: ## Remove dgraph images
 	docker images \
