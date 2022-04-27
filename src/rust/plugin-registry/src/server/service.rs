@@ -1,3 +1,8 @@
+use std::{
+    net::SocketAddr,
+    time::Duration,
+};
+
 use grapl_config::env_helpers::FromEnv;
 use rusoto_s3::{
     GetObjectRequest,
@@ -5,43 +10,32 @@ use rusoto_s3::{
     S3Client,
     S3,
 };
-use rust_proto::plugin_registry::{
-    plugin_registry_service_server::{
-        PluginRegistryService,
-        PluginRegistryServiceServer,
-    },
+use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
     CreatePluginRequest,
-    CreatePluginRequestProto,
     CreatePluginResponse,
-    CreatePluginResponseProto,
     DeployPluginRequest,
-    DeployPluginRequestProto,
     DeployPluginResponse,
-    DeployPluginResponseProto,
     GetAnalyzersForTenantRequest,
-    GetAnalyzersForTenantRequestProto,
     GetAnalyzersForTenantResponse,
-    GetAnalyzersForTenantResponseProto,
     GetGeneratorsForEventSourceRequest,
-    GetGeneratorsForEventSourceRequestProto,
     GetGeneratorsForEventSourceResponse,
-    GetGeneratorsForEventSourceResponseProto,
     GetPluginRequest,
-    GetPluginRequestProto,
     GetPluginResponse,
-    GetPluginResponseProto,
+    HealthcheckStatus,
     Plugin,
+    PluginRegistryApi,
+    PluginRegistryServer,
     PluginType,
     TearDownPluginRequest,
-    TearDownPluginRequestProto,
     TearDownPluginResponse,
-    TearDownPluginResponseProto,
 };
-use tokio::io::AsyncReadExt;
+use structopt::StructOpt;
+use tokio::{
+    io::AsyncReadExt,
+    net::TcpListener,
+};
 use tonic::{
-    transport::Server,
-    Request,
-    Response,
+    async_trait,
     Status,
 };
 
@@ -49,6 +43,7 @@ use crate::{
     db::{
         client::PluginRegistryDbClient,
         models::PluginRow,
+        serde::try_from,
     },
     error::PluginRegistryServiceError,
     nomad::{
@@ -59,44 +54,33 @@ use crate::{
 };
 
 impl From<PluginRegistryServiceError> for Status {
+    /**
+     * Convert useful internal errors into tonic::Status that can be
+     * safely sent over the wire. (Don't include any specific IDs etc)
+     */
     fn from(err: PluginRegistryServiceError) -> Self {
+        type Error = PluginRegistryServiceError;
         match err {
-            PluginRegistryServiceError::SqlxError(sqlx::Error::Configuration(_)) => {
+            Error::SqlxError(sqlx::Error::Configuration(_)) => {
                 Status::internal("Invalid SQL configuration")
             }
-            PluginRegistryServiceError::SqlxError(_) => {
-                Status::internal("Failed to operate on postgres")
+            Error::SqlxError(_) => Status::internal("Failed to operate on postgres"),
+            Error::PutObjectError(_) => Status::internal("Failed to put s3 object"),
+            Error::GetObjectError(_) => Status::internal("Failed to get s3 object"),
+            Error::EmptyObject => Status::internal("S3 Object was unexpectedly empty"),
+            Error::IoError(_) => Status::internal("IoError"),
+            Error::SerDeError(_) => Status::invalid_argument("Unable to deserialize message"),
+            Error::DatabaseSerDeError(_) => {
+                Status::invalid_argument("Unable to deserialize message from database")
             }
-            PluginRegistryServiceError::PutObjectError(_) => {
-                Status::internal("Failed to put s3 object")
-            }
-            PluginRegistryServiceError::GetObjectError(_) => {
-                Status::internal("Failed to get s3 object")
-            }
-            PluginRegistryServiceError::EmptyObject => {
-                Status::internal("S3 Object was unexpectedly empty")
-            }
-            PluginRegistryServiceError::IoError(_) => Status::internal("IoError"),
-            PluginRegistryServiceError::PluginRegistryDeserializationError(_) => {
-                Status::invalid_argument("Unable to deserialize message")
-            }
-            PluginRegistryServiceError::NomadClientError(_) => {
-                Status::internal("Failed RPC with Nomad")
-            }
-            PluginRegistryServiceError::NomadCliError(_) => {
-                Status::internal("Failed using Nomad CLI")
-            }
-            PluginRegistryServiceError::NomadJobAllocationError => {
+            Error::NomadClientError(_) => Status::internal("Failed RPC with Nomad"),
+            Error::NomadCliError(_) => Status::internal("Failed using Nomad CLI"),
+            Error::NomadJobAllocationError => {
                 Status::internal("Unable to allocate Nomad job - it may be out of resources.")
             }
         }
     }
 }
-
-use std::net::SocketAddr;
-
-use structopt::StructOpt;
-
 #[derive(StructOpt, Debug)]
 pub struct PluginRegistryConfig {
     #[structopt(flatten)]
@@ -145,7 +129,8 @@ pub struct PluginRegistry {
     config: PluginRegistryServiceConfig,
 }
 
-impl PluginRegistry {
+#[async_trait]
+impl PluginRegistryApi<PluginRegistryServiceError> for PluginRegistry {
     #[tracing::instrument(skip(self, request), err)]
     async fn create_plugin(
         &self,
@@ -188,7 +173,7 @@ impl PluginRegistry {
         } = self.db_client.get_plugin(&request.plugin_id).await?;
 
         let s3_key: String = artifact_s3_key;
-        let plugin_type: PluginType = PluginType::try_from(plugin_type)?;
+        let plugin_type: PluginType = try_from(&plugin_type)?;
 
         let get_object_output = self
             .s3
@@ -274,78 +259,7 @@ impl PluginRegistry {
     }
 }
 
-#[async_trait::async_trait]
-impl PluginRegistryService for PluginRegistry {
-    async fn create_plugin(
-        &self,
-        request: Request<CreatePluginRequestProto>,
-    ) -> Result<Response<CreatePluginResponseProto>, Status> {
-        let request: CreatePluginRequestProto = request.into_inner();
-        let request: CreatePluginRequest =
-            CreatePluginRequest::try_from(request).map_err(PluginRegistryServiceError::from)?;
-
-        let response = self.create_plugin(request).await?;
-        let response: CreatePluginResponseProto = response.into();
-        Ok(Response::new(response))
-    }
-
-    async fn get_plugin(
-        &self,
-        request: Request<GetPluginRequestProto>,
-    ) -> Result<Response<GetPluginResponseProto>, Status> {
-        let request: GetPluginRequestProto = request.into_inner();
-        let request =
-            GetPluginRequest::try_from(request).map_err(PluginRegistryServiceError::from)?;
-
-        let response = self.get_plugin(request).await?;
-        let response: GetPluginResponseProto = response.into();
-        Ok(Response::new(response))
-    }
-
-    async fn deploy_plugin(
-        &self,
-        request: Request<DeployPluginRequestProto>,
-    ) -> Result<Response<DeployPluginResponseProto>, Status> {
-        let request: DeployPluginRequestProto = request.into_inner();
-        let request =
-            DeployPluginRequest::try_from(request).map_err(PluginRegistryServiceError::from)?;
-
-        let response = self.deploy_plugin(request).await?;
-        Ok(Response::new(response.into()))
-    }
-
-    async fn tear_down_plugin(
-        &self,
-        _request: Request<TearDownPluginRequestProto>,
-    ) -> Result<Response<TearDownPluginResponseProto>, Status> {
-        todo!()
-    }
-
-    #[tracing::instrument(skip(self, request), err)]
-    async fn get_generators_for_event_source(
-        &self,
-        request: Request<GetGeneratorsForEventSourceRequestProto>,
-    ) -> Result<Response<GetGeneratorsForEventSourceResponseProto>, Status> {
-        let request = request.into_inner();
-        let _request = GetGeneratorsForEventSourceRequest::try_from(request)
-            .map_err(PluginRegistryServiceError::from)?;
-        todo!()
-    }
-
-    async fn get_analyzers_for_tenant(
-        &self,
-        _request: Request<GetAnalyzersForTenantRequestProto>,
-    ) -> Result<Response<GetAnalyzersForTenantResponseProto>, Status> {
-        todo!()
-    }
-}
-
 pub async fn exec_service(config: PluginRegistryConfig) -> Result<(), Box<dyn std::error::Error>> {
-    let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
-    health_reporter
-        .set_serving::<PluginRegistryServiceServer<PluginRegistry>>()
-        .await;
-
     let db_config = config.db_config;
 
     tracing::info!(
@@ -364,7 +278,7 @@ pub async fn exec_service(config: PluginRegistryConfig) -> Result<(), Box<dyn st
 
     let addr = config.service_config.plugin_registry_bind_address;
 
-    let plugin_registry: PluginRegistry = PluginRegistry {
+    let plugin_registry = PluginRegistry {
         db_client: PluginRegistryDbClient::new(&postgres_address).await?,
         nomad_client: NomadClient::from_env(),
         nomad_cli: NomadCli::default(),
@@ -372,27 +286,19 @@ pub async fn exec_service(config: PluginRegistryConfig) -> Result<(), Box<dyn st
         config: config.service_config,
     };
 
+    let healthcheck_polling_interval_ms = 5000; // TODO: un-hardcode
+    let (server, _shutdown_tx) = PluginRegistryServer::new(
+        plugin_registry,
+        TcpListener::bind(addr.clone()).await?,
+        || async { Ok(HealthcheckStatus::Serving) }, // FIXME: this is garbage
+        Duration::from_millis(healthcheck_polling_interval_ms),
+    );
     tracing::info!(
-        message="Starting PluginRegistry",
-        addr=?addr,
+        message = "starting gRPC server",
+        socket_address = %addr,
     );
 
-    Server::builder()
-        .trace_fn(|request| {
-            tracing::info_span!(
-                "PluginRegistry",
-                headers = ?request.headers(),
-                method = ?request.method(),
-                uri = %request.uri(),
-                extensions = ?request.extensions(),
-            )
-        })
-        .add_service(health_service)
-        .add_service(PluginRegistryServiceServer::new(plugin_registry))
-        .serve(addr)
-        .await?;
-
-    Ok(())
+    server.serve().await
 }
 
 fn generate_artifact_s3_key(

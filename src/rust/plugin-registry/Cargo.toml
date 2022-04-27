@@ -14,7 +14,7 @@ name = "plugin_registry"
 async-trait = "0.1.51"
 grapl-config = { path = "../grapl-config" }
 grapl-utils = { path = "../grapl-utils" }
-rust-proto = { path = "../rust-proto" }
+rust-proto-new = { path = "../rust-proto-new" }
 nomad-client-gen = { path = "../nomad-client-gen" }
 serde_json = "1.0.72"
 sqlx = { version = "0.5", features = [
@@ -28,8 +28,8 @@ sqlx = { version = "0.5", features = [
 tempfile = "3.3.0"
 thiserror = "1.0.30"
 tokio = { version = "1.17", features = ["full"] }
-tonic = "0.6"
-tonic-health = "0.5.0"
+# TODO remove tonic after https://github.com/grapl-security/grapl/pull/1665
+tonic = { version = "0.7", features = ["default", "compression"] }
 tracing = "0.1.29"
 rusoto_core = { version = "0.47.0", default_features = false, features = [
   "rustls"
@@ -47,4 +47,4 @@ test-log = { version = "0.2", default-features = false, features = ["trace"] }
 tracing-subscriber = "0.3"
 
 [features]
-integration = []
+new_integration_tests = []
