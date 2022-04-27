@@ -1,13 +1,29 @@
-FROM scylladb/scylla:4.6.3
+FROM debian:bullseye-slim as build
 
-# This downloads a prebuild static lib for hwloc 2.7.1 which includes a chromeos fix, and replaces the dynamically
-# linked version that scylla uses. See the README for more info
-
-RUN curl --proto "=https" \
+ENV HWLOC_VERSION="2.7.1"
+RUN apt-get update \
+    && apt-get -y install \
+        curl=7.74.0-1.3+deb11u1 \
+    libssl-dev=1.1.1n-0+deb11u1 \
+    ca-certificates=20210119  \
+    gcc=4:10.2.1-1 \
+    cmake=3.18.4-2+deb11u1 \
+    pkg-config=0.29.2-1 && \
+curl --proto "=https" \
     --tlsv1.2 \
     --location \
-    --output /usr/local/lib/libhwloc.so.15.5.3 \
-    "https://dl.cloudsmith.io/public/grapl/thomas/raw/versions/15.5.3/libhwloc.so.15.5.3" && \
-    rm /opt/scylladb/libreloc/libhwloc.so.15 && \
+    --output /tmp/hwloc-${HWLOC_VERSION}.tar.gz \
+"https://download.open-mpi.org/release/hwloc/v2.7/hwloc-${HWLOC_VERSION}.tar.gz" && \
+cd /tmp && \
+tar -vxzf hwloc-${HWLOC_VERSION}.tar.gz && \
+cd hwloc-${HWLOC_VERSION} && \
+./configure && \
+make && \
+make install
+
+FROM scylladb/scylla:4.6.3
+
+COPY --from=build /usr/local/lib/libhwloc.so.15.5.3 /usr/local/lib/libhwloc.so.15.5.3
+RUN rm /opt/scylladb/libreloc/libhwloc.so.15 && \
     ln -sf /usr/local/lib/libhwloc.so.15.5.3 /opt/scylladb/libreloc/libhwloc.so.15
 

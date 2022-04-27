@@ -31,5 +31,3 @@ make install
 
 The .so file will be created in `/usr/local/lib/` and will typically be named
 something similar to `libhwloc.so.15.5.3`
-
-Currently these are uploaded to cloudsmith as raw files
