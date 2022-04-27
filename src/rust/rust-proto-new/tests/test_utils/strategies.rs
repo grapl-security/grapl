@@ -120,6 +120,396 @@ pub mod pipeline {
     }
 }
 
+pub mod graph {
+    use proptest::collection;
+    use rust_proto_new::graplinc::grapl::api::graph::v1beta1::{
+        DecrementOnlyIntProp,
+        DecrementOnlyUintProp,
+        Edge,
+        EdgeList,
+        GraphDescription,
+        IdStrategy,
+        IdentifiedGraph,
+        IdentifiedNode,
+        ImmutableIntProp,
+        ImmutableStrProp,
+        ImmutableUintProp,
+        IncrementOnlyIntProp,
+        IncrementOnlyUintProp,
+        MergedEdge,
+        MergedEdgeList,
+        MergedGraph,
+        MergedNode,
+        NodeDescription,
+        NodeProperty,
+        Property,
+        Session,
+        Static,
+        Strategy as GraphStrategy,
+    };
+
+    use super::*;
+
+    //
+    // DecrementOnlyIntProp
+    //
+
+    prop_compose! {
+        pub fn decrement_only_int_props()(
+            prop in any::<i64>(),
+        ) -> DecrementOnlyIntProp {
+            DecrementOnlyIntProp {
+                prop
+            }
+        }
+    }
+
+    //
+    // DecrementOnlyUintProp
+    //
+
+    prop_compose! {
+        pub fn decrement_only_uint_props()(
+            prop in any::<u64>(),
+        ) -> DecrementOnlyUintProp {
+            DecrementOnlyUintProp {
+                prop
+            }
+        }
+    }
+
+    //
+    // ImmutableIntProp
+    //
+
+    prop_compose! {
+        pub fn immutable_int_props()(
+            prop in any::<i64>(),
+        ) -> ImmutableIntProp {
+            ImmutableIntProp {
+                prop
+            }
+        }
+    }
+
+    //
+    // ImmutableStrProp
+    //
+
+    prop_compose! {
+        pub fn immutable_str_props()(
+            prop in any::<String>(),
+        ) -> ImmutableStrProp {
+            ImmutableStrProp {
+                prop
+            }
+        }
+    }
+
+    //
+    // ImmutableUintProp
+    //
+
+    prop_compose! {
+        pub fn immutable_uint_props()(
+            prop in any::<u64>(),
+        ) -> ImmutableUintProp {
+            ImmutableUintProp {
+                prop
+            }
+        }
+    }
+
+    //
+    // IncrementOnlyIntProp
+    //
+
+    prop_compose! {
+        pub fn increment_only_int_props()(
+            prop in any::<i64>(),
+        ) -> IncrementOnlyIntProp {
+            IncrementOnlyIntProp {
+                prop
+            }
+        }
+    }
+
+    //
+    // IncrementOnlyUintProp
+    //
+
+    prop_compose! {
+        pub fn increment_only_uint_props()(
+            prop in any::<u64>(),
+        ) -> IncrementOnlyUintProp {
+            IncrementOnlyUintProp {
+                prop
+            }
+        }
+    }
+
+    //
+    // Edge
+    //
+
+    prop_compose! {
+        pub fn edges()(
+            to_node_key in any::<String>(),
+            from_node_key in any::<String>(),
+            edge_name in any::<String>(),
+        ) -> Edge {
+            Edge {
+                to_node_key,
+                from_node_key,
+                edge_name,
+            }
+        }
+    }
+
+    //
+    // EdgeList
+    //
+
+    prop_compose! {
+        pub fn edge_lists()(
+            edges in collection::vec(edges(), 10),
+        ) -> EdgeList {
+            EdgeList {
+                edges
+            }
+        }
+    }
+
+    //
+    // Session
+    //
+
+    prop_compose! {
+        pub fn sessions()(
+            primary_key_properties in collection::vec(any::<String>(), 10),
+            primary_key_requires_asset_id in any::<bool>(),
+            create_time in any::<u64>(),
+            last_seen_time in any::<u64>(),
+            terminate_time in any::<u64>(),
+        ) -> Session {
+            Session {
+                primary_key_properties,
+                primary_key_requires_asset_id,
+                create_time,
+                last_seen_time,
+                terminate_time
+            }
+        }
+    }
+
+    //
+    // Static
+    //
+
+    prop_compose! {
+        pub fn statics()(
+            primary_key_properties in collection::vec(any::<String>(), 10),
+            primary_key_requires_asset_id in any::<bool>(),
+        ) -> Static {
+            Static {
+                primary_key_properties,
+                primary_key_requires_asset_id
+            }
+        }
+    }
+
+    //
+    // Strategy
+    //
+
+    pub fn strategies() -> impl Strategy<Value = GraphStrategy> {
+        prop_oneof![
+            sessions().prop_map(GraphStrategy::Session),
+            statics().prop_map(GraphStrategy::Static),
+        ]
+    }
+
+    //
+    // IdStrategy
+    //
+
+    prop_compose! {
+        pub fn id_strategies()(
+            strategy in strategies()
+        ) -> IdStrategy {
+            IdStrategy { strategy }
+        }
+    }
+
+    //
+    // Property
+    //
+
+    pub fn properties() -> impl Strategy<Value = Property> {
+        prop_oneof![
+            decrement_only_int_props().prop_map(Property::DecrementOnlyIntProp),
+            decrement_only_uint_props().prop_map(Property::DecrementOnlyUintProp),
+            immutable_int_props().prop_map(Property::ImmutableIntProp),
+            immutable_str_props().prop_map(Property::ImmutableStrProp),
+            immutable_uint_props().prop_map(Property::ImmutableUintProp),
+            increment_only_int_props().prop_map(Property::IncrementOnlyIntProp),
+            increment_only_uint_props().prop_map(Property::IncrementOnlyUintProp),
+        ]
+    }
+
+    //
+    // NodeProperty
+    //
+
+    prop_compose! {
+        pub fn node_properties()(
+            property in properties()
+        ) -> NodeProperty {
+            NodeProperty { property }
+        }
+    }
+
+    //
+    // NodeDescription
+    //
+
+    prop_compose! {
+        pub fn node_descriptions()(
+            properties in collection::hash_map(any::<String>(), node_properties(), 10),
+            node_key in any::<String>(),
+            node_type in any::<String>(),
+            id_strategy in collection::vec(id_strategies(), 10),
+        ) -> NodeDescription {
+            NodeDescription {
+                properties,
+                node_key,
+                node_type,
+                id_strategy
+            }
+        }
+    }
+
+    //
+    // GraphDescription
+    //
+
+    prop_compose! {
+        pub fn graph_descriptions()(
+            nodes in collection::hash_map(any::<String>(), node_descriptions(), 10),
+            edges in collection::hash_map(any::<String>(), edge_lists(), 10),
+        ) -> GraphDescription {
+            GraphDescription {
+                nodes,
+                edges,
+            }
+        }
+    }
+
+    //
+    // IdentifiedNode
+    //
+
+    prop_compose! {
+        pub fn identified_nodes()(
+            properties in collection::hash_map(any::<String>(), node_properties(), 10),
+            node_key in any::<String>(),
+            node_type in any::<String>(),
+        ) -> IdentifiedNode {
+            IdentifiedNode {
+                properties,
+                node_key,
+                node_type
+            }
+        }
+    }
+
+    //
+    // IdentifiedGraph
+    //
+
+    prop_compose! {
+        pub fn identified_graphs()(
+            nodes in collection::hash_map(any::<String>(), identified_nodes(), 10),
+            edges in collection::hash_map(any::<String>(), edge_lists(), 10),
+        ) -> IdentifiedGraph {
+            IdentifiedGraph {
+                nodes,
+                edges
+            }
+        }
+    }
+
+    //
+    // MergedEdge
+    //
+
+    prop_compose! {
+        pub fn merged_edges()(
+            from_uid in any::<String>(),
+            from_node_key in any::<String>(),
+            to_uid in any::<String>(),
+            to_node_key in any::<String>(),
+            edge_name in any::<String>(),
+        ) -> MergedEdge {
+            MergedEdge {
+                from_uid,
+                from_node_key,
+                to_uid,
+                to_node_key,
+                edge_name
+            }
+        }
+    }
+
+    //
+    // MergedEdgeList
+    //
+
+    prop_compose! {
+        pub fn merged_edge_lists()(
+            edges in collection::vec(merged_edges(), 10),
+        ) -> MergedEdgeList {
+            MergedEdgeList { edges }
+        }
+    }
+
+    //
+    // MergedNode
+    //
+
+    prop_compose! {
+        pub fn merged_nodes()(
+            properties in collection::hash_map(any::<String>(), node_properties(), 10),
+            uid in any::<u64>(),
+            node_key in any::<String>(),
+            node_type in any::<String>(),
+        ) -> MergedNode {
+            MergedNode {
+                properties,
+                uid,
+                node_key,
+                node_type
+            }
+        }
+    }
+
+    //
+    // MergedGraph
+    //
+
+    prop_compose! {
+        pub fn merged_graphs()(
+            nodes in collection::hash_map(any::<String>(), merged_nodes(), 10),
+            edges in collection::hash_map(any::<String>(), merged_edge_lists(), 10),
+        ) -> MergedGraph {
+            MergedGraph {
+                nodes,
+                edges,
+            }
+        }
+    }
+}
+
 pub mod pipeline_ingress {
     use rust_proto_new::graplinc::grapl::api::pipeline_ingress::v1beta1::{
         PublishRawLogRequest,
