@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+import "graplinc/common/v1beta1/types.proto";
+
+package graplinc.grapl.api.uid_allocator.v1beta1;
+
+// Represents a range of allocated ids
+message Allocation {
+   // The first ID in the allocated range
+   uint64 start = 1;
+   // The number of allocated ids - never 0
+   uint32 offset = 2;
+}
+
+// The request for allocating a range of ids for a given tenant
+message AllocateIdsRequest {
+  // How many IDs we'd *like* back. While the type is `uint32`, the maximum value may be much lower.
+  // `0` is a sentinel value that indicates that the server should decide how many IDs to return
+  uint32 count = 1;
+  // The tenant ID that we want to allocate IDs for
+  graplinc.common.v1beta1.Uuid tenant_id = 2;
+}
+
+// The response to an AllocateIdsRequest, containing hte next range of allocated ids
+message AllocateIdsResponse {
+  // The next allocation for the tenant
+  Allocation allocation = 1;
+}
+
+service UidAllocator {
+  // Allocate a range of ids for a tenant. Although the client may request a range, the server will
+  // decide what range to provide, truncating or expanding as necessary.
+  // returns:
+  // OK and a range of ids for the tenant
+  // NOT_FOUND if the tenant does not exist
+  rpc AllocateIds(AllocateIdsRequest) returns (AllocateIdsResponse);
+}

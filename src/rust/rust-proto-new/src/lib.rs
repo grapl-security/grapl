@@ -82,6 +82,14 @@ pub(crate) mod protobufs {
                         ));
                     }
                 }
+                pub(crate) mod uid_allocator {
+                    pub(crate) mod v1beta1 {
+                        include!(concat!(
+                            env!("OUT_DIR"),
+                            "/graplinc.grapl.api.uid_allocator.v1beta1.rs"
+                        ));
+                    }
+                }
             }
 
             pub(crate) mod pipeline {
@@ -143,6 +151,10 @@ pub mod graplinc {
             }
 
             pub mod plugin_work_queue {
+                pub mod v1beta1;
+            }
+            #[cfg(feature = "uid-allocator")]
+            pub mod uid_allocator {
                 pub mod v1beta1;
             }
         }
