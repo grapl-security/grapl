@@ -10,6 +10,8 @@ use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
     PluginType,
 };
 
+pub const SMALL_TEST_BINARY: &'static [u8] = include_bytes!("./small_test_binary.sh");
+
 #[test_log::test(tokio::test)]
 async fn test_deploy_plugin() -> Result<(), Box<dyn std::error::Error>> {
     let mut client = PluginRegistryServiceClient::from_env().await?;
@@ -19,7 +21,7 @@ async fn test_deploy_plugin() -> Result<(), Box<dyn std::error::Error>> {
     let create_response = {
         let display_name = uuid::Uuid::new_v4().to_string();
         let request = CreatePluginRequest {
-            plugin_artifact: b"dummy vec for now".to_vec(),
+            plugin_artifact: SMALL_TEST_BINARY.to_vec(),
             tenant_id: tenant_id.clone(),
             display_name: display_name.clone(),
             plugin_type: PluginType::Generator,

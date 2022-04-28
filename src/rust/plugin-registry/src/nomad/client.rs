@@ -54,6 +54,7 @@ impl NomadClient {
     }
 
     /// Create or update a namespace (primary key'd on `name`)
+    #[tracing::instrument(skip(self, new_namespace), err)]
     pub async fn create_update_namespace(
         &self,
         new_namespace: models::Namespace,
@@ -71,6 +72,7 @@ impl NomadClient {
         .map_err(NomadClientError::from)
     }
 
+    #[tracing::instrument(skip(self, job, job_name, namespace), err)]
     pub async fn create_job(
         &self,
         job: &models::Job,
@@ -93,6 +95,7 @@ impl NomadClient {
         .map_err(NomadClientError::from)
     }
 
+    #[tracing::instrument(skip(self, job, job_name, namespace), err)]
     pub async fn plan_job(
         &self,
         job: &models::Job,
