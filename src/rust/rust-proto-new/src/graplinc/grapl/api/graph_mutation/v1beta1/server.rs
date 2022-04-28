@@ -21,8 +21,7 @@ use tonic::{
     Response,
 };
 
-// temporarily export Status
-pub use tonic::Status;
+use crate::protocol::status::Status;
 
 use crate::SerDeError;
 
@@ -30,7 +29,6 @@ use crate::SerDeError;
 #[tonic::async_trait]
 pub trait GraphMutationApi {
     type Error: Into<Status>;
-    // todo: swap out for rust-proto-new::Status when it's available
     async fn create_node(&self, request: CreateNodeRequest) -> Result<CreateNodeResponse, Self::Error>;
     async fn set_node_property(&self, request: SetNodePropertyRequest) -> Result<SetNodePropertyResponse, Self::Error>;
     async fn create_edge(&self, request: CreateEdgeRequest) -> Result<CreateEdgeResponse, Self::Error>;
