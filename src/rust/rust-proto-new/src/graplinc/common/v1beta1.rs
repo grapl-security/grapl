@@ -7,12 +7,6 @@ use std::time::{
     UNIX_EPOCH,
 };
 
-use bytes::{
-    Buf,
-    Bytes,
-    BytesMut,
-};
-use prost::Message;
 pub use uuid::Uuid;
 
 use crate::{
@@ -21,8 +15,8 @@ use crate::{
         Timestamp as TimestampProto,
         Uuid as UuidProto,
     },
+    serde_impl,
     type_url,
-    SerDe,
     SerDeError,
 };
 
@@ -57,22 +51,8 @@ impl type_url::TypeUrl for Uuid {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.common.v1beta1.Uuid";
 }
 
-impl SerDe for Uuid {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let uuid_proto = UuidProto::from(self);
-        let mut buf = BytesMut::with_capacity(uuid_proto.encoded_len());
-        uuid_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let uuid_proto: UuidProto = Message::decode(buf)?;
-        Ok(uuid_proto.into())
-    }
+impl serde_impl::ProtobufSerializable<Uuid> for Uuid {
+    type ProtobufMessage = UuidProto;
 }
 
 //
@@ -98,22 +78,8 @@ impl type_url::TypeUrl for Duration {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.common.v1beta1.Duration";
 }
 
-impl SerDe for Duration {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let duration_proto = DurationProto::from(self);
-        let mut buf = BytesMut::with_capacity(duration_proto.encoded_len());
-        duration_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let duration_proto: DurationProto = Message::decode(buf)?;
-        Ok(duration_proto.into())
-    }
+impl serde_impl::ProtobufSerializable<Duration> for Duration {
+    type ProtobufMessage = DurationProto;
 }
 
 //
@@ -176,22 +142,8 @@ impl type_url::TypeUrl for SystemTime {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.common.v1beta1.Timestamp";
 }
 
-impl SerDe for SystemTime {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let timestamp_proto = TimestampProto::try_from(self)?;
-        let mut buf = BytesMut::with_capacity(timestamp_proto.encoded_len());
-        timestamp_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let timestamp_proto: TimestampProto = Message::decode(buf)?;
-        timestamp_proto.try_into()
-    }
+impl serde_impl::ProtobufSerializable<SystemTime> for SystemTime {
+    type ProtobufMessage = TimestampProto;
 }
 
 #[cfg(test)]

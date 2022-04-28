@@ -1,14 +1,10 @@
-use bytes::{
-    Buf,
-    Bytes,
-    BytesMut,
-};
-use prost::Message;
+use bytes::Bytes;
 use prost_types::Any as AnyProto;
 
 use crate::{
     graplinc::grapl::pipeline::v1beta1::Metadata,
     protobufs::graplinc::grapl::pipeline::v1beta2::NewEnvelope as NewEnvelopeProto,
+    serde_impl,
     type_url,
     SerDe,
     SerDeError,
@@ -81,23 +77,9 @@ where
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.pipeline.v1beta2.NewEnvelope";
 }
 
-impl<T> SerDe for Envelope<T>
+impl<T> serde_impl::ProtobufSerializable<Envelope<T>> for Envelope<T>
 where
     T: SerDe,
 {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let envelope_proto = NewEnvelopeProto::try_from(self)?;
-        let mut buf = BytesMut::with_capacity(envelope_proto.encoded_len());
-        envelope_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let envelope_proto: NewEnvelopeProto = Message::decode(buf)?;
-        envelope_proto.try_into()
-    }
+    type ProtobufMessage = NewEnvelopeProto;
 }
