@@ -2,7 +2,6 @@ use bytes::{
     Bytes,
     BytesMut,
 };
-use prost::Message;
 
 use crate::{
     graplinc::common::v1beta1::{
@@ -13,8 +12,8 @@ use crate::{
         PublishRawLogRequest as PublishRawLogRequestProto,
         PublishRawLogResponse as PublishRawLogResponseProto,
     },
+    serde_impl,
     type_url,
-    SerDe,
     SerDeError,
 };
 
@@ -64,22 +63,8 @@ impl type_url::TypeUrl for PublishRawLogRequest {
         "graplsecurity.com/graplinc.grapl.api.pipeline_ingress.v1beta1.PublishRawLogRequest";
 }
 
-impl SerDe for PublishRawLogRequest {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let request_proto = PublishRawLogRequestProto::from(self);
-        let mut buf = BytesMut::with_capacity(request_proto.encoded_len());
-        request_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: bytes::Buf,
-        Self: Sized,
-    {
-        let request_proto: PublishRawLogRequestProto = Message::decode(buf)?;
-        request_proto.try_into()
-    }
+impl serde_impl::ProtobufSerializable<PublishRawLogRequest> for PublishRawLogRequest {
+    type ProtobufMessage = PublishRawLogRequestProto;
 }
 
 //
@@ -129,22 +114,8 @@ impl type_url::TypeUrl for PublishRawLogResponse {
         "grapsecurity.com/graplinc.grapl.api.pipeline_ingress.v1beta1.PublishRawLogResponse";
 }
 
-impl SerDe for PublishRawLogResponse {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let response_proto = PublishRawLogResponseProto::try_from(self)?;
-        let mut buf = BytesMut::with_capacity(response_proto.encoded_len());
-        response_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: bytes::Buf,
-        Self: Sized,
-    {
-        let response_proto: PublishRawLogResponseProto = Message::decode(buf)?;
-        response_proto.try_into()
-    }
+impl serde_impl::ProtobufSerializable<PublishRawLogResponse> for PublishRawLogResponse {
+    type ProtobufMessage = PublishRawLogResponseProto;
 }
 
 //
