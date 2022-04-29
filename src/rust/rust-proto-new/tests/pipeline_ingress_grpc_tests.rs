@@ -1,22 +1,24 @@
 use futures::channel::oneshot::Sender;
-use rust_proto_new::graplinc::{
-    common::v1beta1::{
-        Duration,
-        Uuid,
+use rust_proto_new::{
+    graplinc::{
+        common::v1beta1::{
+            Duration,
+            Uuid,
+        },
+        grapl::api::pipeline_ingress::v1beta1::{
+            client::PipelineIngressClient,
+            server::{
+                ConfigurationError,
+                PipelineIngressApi,
+                PipelineIngressServer,
+            },
+            PublishRawLogRequest,
+            PublishRawLogResponse,
+        },
     },
-    grapl::api::pipeline_ingress::v1beta1::{
-        client::{
-            HealthcheckClient,
-            PipelineIngressClient,
-        },
-        server::{
-            ConfigurationError,
-            PipelineIngressApi,
-            PipelineIngressServer,
-        },
+    protocol::healthcheck::{
+        client::HealthcheckClient,
         HealthcheckStatus,
-        PublishRawLogRequest,
-        PublishRawLogResponse,
     },
 };
 use test_context::{
