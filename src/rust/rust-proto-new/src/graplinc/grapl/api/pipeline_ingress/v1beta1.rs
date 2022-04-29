@@ -1,7 +1,4 @@
-use bytes::{
-    Bytes,
-    BytesMut,
-};
+use bytes::Bytes;
 
 use crate::{
     graplinc::common::v1beta1::{
