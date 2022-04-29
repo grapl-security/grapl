@@ -21,30 +21,7 @@ pub struct ClientCacheConfig {
 }
 
 #[cfg(feature = "client")]
-/// Configuration for the DNS resolver used for plugin service discovery
-#[derive(StructOpt, Debug)]
-pub struct ClientDnsConfig {
-    /// IP addresses to use when resolving plugins
-    /// Should almost always be pointed to Consul
-    #[structopt(env)]
-    pub dns_resolver_ips: Vec<std::net::IpAddr>,
-
-    /// The port to use for DNS resolutino. Note that even if you have multiple
-    /// IP addresses they will all resolve via this port
-    #[structopt(env)]
-    pub dns_resolver_port: u16,
-
-    /// The number of entries in the dns cache
-    #[structopt(env, default_value = "128")]
-    pub dns_cache_size: usize,
-
-    /// If this is set, any positive responses with a TTL lower than this value
-    /// will have a TTL of positive_min_ttl instead.
-    /// Unit: Seconds
-    /// Default: 1
-    #[structopt(env, default_value = "1")]
-    pub positive_min_ttl: u64,
-}
+use consul_connect::client_dns_config::ClientDnsConfig;
 
 #[cfg(feature = "client")]
 #[derive(StructOpt, Debug)]

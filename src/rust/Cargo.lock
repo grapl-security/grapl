@@ -924,6 +924,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "245097e9a4535ee1e3e3931fcfcd55a796a44c643e8596ff6566d68f09b87bbc"
 
 [[package]]
+name = "consul-connect"
+version = "1.0.0"
+dependencies = [
+ "structopt",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "trust-dns-resolver",
+]
+
+[[package]]
 name = "convert_case"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1680,6 +1691,7 @@ dependencies = [
 name = "generator-sdk"
 version = "0.1.0"
 dependencies = [
+ "consul-connect",
  "moka",
  "rust-proto",
  "serde",
@@ -1689,7 +1701,6 @@ dependencies = [
  "tonic 0.6.2",
  "tonic-health 0.5.0",
  "tracing",
- "trust-dns-resolver",
  "uuid",
 ]
 

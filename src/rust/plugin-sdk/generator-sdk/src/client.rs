@@ -1,8 +1,9 @@
-use std::{
-    str::FromStr,
-    time::Duration,
-};
+use std::time::Duration;
 
+use consul_connect::resolver::{
+    ConsulConnectResolveError,
+    ConsulConnectResolver,
+};
 use moka::future::{
     Cache,
     CacheBuilder,
@@ -21,42 +22,21 @@ use tonic::{
     },
     Code,
 };
-use trust_dns_resolver::{
-    config::{
-        NameServerConfigGroup,
-        ResolverConfig,
-        ResolverOpts,
-    },
-    error::ResolveError,
-    proto::{
-        error::ProtoError as ProtocolError,
-        rr::rdata::SRV,
-    },
-    Name,
-    TokioAsyncResolver,
-};
 
-use crate::{
-    ClientCacheConfig,
-    ClientDnsConfig,
-};
+use crate::ClientCacheConfig;
 
 #[derive(thiserror::Error, Debug)]
 pub enum GeneratorClientError {
     #[error("Failed to connect to Generator {0}")]
     ConnectError(#[from] tonic::transport::Error),
-    #[error("Failed to resolve name {name}")]
-    EmptyResolution { name: String },
-    #[error("Failed to resolve plugin {0}")]
-    ResolveError(#[from] ResolveError),
     #[error("Plugin domain is invalid URI")]
     InvalidUri(#[from] InvalidUri),
     #[error(transparent)]
     Status(#[from] tonic::Status),
     #[error(transparent)]
-    ProtocolError(#[from] ProtocolError),
-    #[error(transparent)]
     ProtoError(#[from] GeneratorsDeserializationError),
+    #[error(transparent)]
+    ConsulConnectResolveError(#[from] ConsulConnectResolveError),
 }
 
 type ClientCache = Cache<String, GeneratorServiceClient<Channel>>;
@@ -69,14 +49,14 @@ pub struct GeneratorClient {
     /// A public certificate to validate a plugin's domain
     certificate: tonic::transport::Certificate,
     /// An in-process DNS resolver used for plugin service discovery
-    resolver: TokioAsyncResolver,
+    resolver: ConsulConnectResolver,
 }
 
 impl GeneratorClient {
     pub fn new(
         clients: ClientCache,
         certificate: tonic::transport::Certificate,
-        resolver: TokioAsyncResolver,
+        resolver: ConsulConnectResolver,
     ) -> Self {
         Self {
             clients,
@@ -146,27 +126,24 @@ impl GeneratorClient {
         &self,
         plugin_id: String,
     ) -> Result<GeneratorServiceClient<Channel>, GeneratorClientError> {
-        let domain = format!("{}.service.consul.", &plugin_id);
-        tracing::info!(
-            message = "Resolving domain",
-            domain = %domain,
-        );
-        let lowest_pri = self.resolve_lowest_pri(Name::from_str(&domain)?).await?;
+        let resolved_service = self
+            .resolver
+            .resolve_service(format!("plugin-{plugin_id}"))
+            .await?;
         let tls = ClientTlsConfig::new()
             // Sets the CA Certificate against which to verify the server’s TLS certificate.
             .ca_certificate(self.certificate.clone())
-            .domain_name(&domain);
+            .domain_name(&resolved_service.domain);
 
         tracing::info!(
             message = "Connecting to plugin",
-            target = %lowest_pri.target(),
-            port = %lowest_pri.port(),
+            target = %resolved_service.domain,
+            port = %resolved_service.port,
         );
 
         let channel = Channel::from_shared(format!(
             "https://{}:{}",
-            lowest_pri.target(),
-            lowest_pri.port(),
+            resolved_service.domain, resolved_service.port,
         ))?
         .tls_config(tls)?
         .connect()
@@ -179,20 +156,6 @@ impl GeneratorClient {
                 self.clients.invalidate(&plugin_id).await;
                 Err(e.into())
             }
-        }
-    }
-
-    /// Performs the SRV record lookup, returning the record with the lowest priority
-    async fn resolve_lowest_pri(&self, name: Name) -> Result<SRV, GeneratorClientError> {
-        let srvs = self.resolver.srv_lookup(name.clone()).await?;
-
-        let lowest_priority = srvs.iter().min_by_key(|srv| srv.priority());
-
-        match lowest_priority {
-            None => Err(GeneratorClientError::EmptyResolution {
-                name: name.to_string(),
-            }),
-            Some(lowest_priority) => Ok((*lowest_priority).clone()),
         }
     }
 }
@@ -217,26 +180,5 @@ impl From<ClientCacheConfig>
         Cache::builder()
             .time_to_live(Duration::from_secs(cache_config.time_to_live))
             .max_capacity(cache_config.max_capacity)
-    }
-}
-
-impl From<ClientDnsConfig> for TokioAsyncResolver {
-    fn from(dns_config: ClientDnsConfig) -> TokioAsyncResolver {
-        let consul = ResolverConfig::from_parts(
-            None,
-            vec![],
-            NameServerConfigGroup::from_ips_clear(
-                &dns_config.dns_resolver_ips,
-                dns_config.dns_resolver_port,
-                true,
-            ),
-        );
-        let opts = ResolverOpts {
-            cache_size: dns_config.dns_cache_size,
-            positive_min_ttl: Some(Duration::from_secs(dns_config.positive_min_ttl)),
-            ..ResolverOpts::default()
-        };
-
-        TokioAsyncResolver::tokio(consul, opts).unwrap()
     }
 }
