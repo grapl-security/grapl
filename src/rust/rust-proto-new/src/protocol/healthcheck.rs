@@ -1,12 +1,5 @@
-#![allow(warnings)]
-
-use futures::{
-    FutureExt,
-    TryFutureExt,
-};
-use thiserror::Error;
+use futures::TryFutureExt;
 use tokio::time::error::Elapsed;
-use tonic::Request;
 use tonic_health::proto::{
     health_check_response::ServingStatus as ServingStatusProto,
     health_client::HealthClient as HealthClientProto,
