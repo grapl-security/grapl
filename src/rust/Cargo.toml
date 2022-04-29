@@ -2,6 +2,7 @@
 members = [
   "./analyzer-dispatcher",
   "./derive-dynamic-node",
+  "./consul-connect",
   "./endpoint-plugin",
   "./generators/generic-subgraph-generator",
   "./generators/graph-generator-lib",

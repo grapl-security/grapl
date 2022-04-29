@@ -1,0 +1,15 @@
+[package]
+name = "consul-connect"
+version = "1.0.0"
+authors = ["Max Wittek <wimax@graplsecurity.com>"]
+edition = "2021"
+
+[dependencies]
+structopt = { version = "0.3", default-features = false }
+thiserror = "1.0.30"
+tokio = { version = "1.17", features = ["full"] }
+tracing = "0.1.29"
+trust-dns-resolver = "0.20.3"
+
+[features]
+client = []
