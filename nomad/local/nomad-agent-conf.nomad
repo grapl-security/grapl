@@ -2,6 +2,19 @@
 # This is not specified by default for nomad agent -dev
 plugin_dir = "/opt/nomad/plugins"
 
+ui {
+  enabled = true
+  # Add links to consul and vault in the Nomad UI header
+  consul {
+    ui_url = "http://localhost:8500/ui"
+  }
+
+  # TODO enable once vault is used for local grapl
+  #  vault {
+  #    ui_url = "https://vault.example.com:8200/ui"
+  #  }
+}
+
 ####################
 # Plugin configs
 ####################
