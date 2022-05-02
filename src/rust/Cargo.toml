@@ -23,6 +23,7 @@ members = [
   "./organization-management",
   "./pipeline-ingress",
   "./plugin-bootstrap",
+  "./plugin-executor",
   "./plugin-registry",
   "./plugin-sdk/generator-sdk/",
   "./plugin-work-queue",

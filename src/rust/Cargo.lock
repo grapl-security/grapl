@@ -3213,6 +3213,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "plugin-executor"
+version = "0.0.1"
+dependencies = [
+ "async-trait",
+ "generator-sdk",
+ "plugin-work-queue",
+ "rust-proto",
+ "structopt",
+ "tokio",
+ "tonic 0.6.2",
+ "tracing",
+]
+
+[[package]]
 name = "plugin-registry"
 version = "0.1.0"
 dependencies = [
