@@ -5,13 +5,14 @@ use plugin_executor::upstreams::plugin_work_queue_client_from_env;
 use plugin_work_queue::client::PluginWorkQueueServiceClient;
 use rust_proto::plugin_work_queue::{
     ExecutionJob,
-    GetExecuteGeneratorRequest,
+    GetExecuteGeneratorRequest, AcknowledgeGeneratorRequest,
 };
 use structopt::StructOpt;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    GeneratorExecutor::new().await?.main_loop().await
+    let mut generator_executor = GeneratorExecutor::new().await?;
+    generator_executor.main_loop().await
 }
 
 struct GeneratorExecutor {
@@ -40,9 +41,18 @@ impl GeneratorExecutor {
             .get_execute_generator(GetExecuteGeneratorRequest {})
             .await
         {
+            let request_id = get_execute_response.request_id;
             if let Some(job) = get_execute_response.execution_job {
-                self.process_job(job, get_execute_response.request_id)
-                    .await?
+                // Process the job
+                let process_result = self.process_job(job, request_id)
+                    .await;
+
+                // Inform plugin-work-queue whether it worked or if we need
+                // to retry
+                self.plugin_work_queue_client.acknowledge_generator(AcknowledgeGeneratorRequest{
+                    request_id: request_id,
+                    success: process_result.is_ok()
+                }).await?;
             } else {
                 tokio::time::sleep(Duration::from_secs(5)).await;
                 continue;
@@ -58,14 +68,12 @@ impl GeneratorExecutor {
         job: ExecutionJob,
         request_id: i64,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let _generated_graphs = self
+        let _run_generator_response = self
             .generator_client
             .run_generator(job.data, job.plugin_id.to_string())
             .await?;
-
+        
         //kafka_stream.put(generated_graphs).await.unwrap();
-
-        //plugin_work_queue_client.acknowledge().await?.unwrap();
-        Ok(())
+        Ok(()) // TODO replace with above
     }
 }
