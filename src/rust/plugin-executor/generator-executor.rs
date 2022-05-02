@@ -11,7 +11,7 @@ use structopt::StructOpt;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    GeneratorExecutor::new().main_loop().await
+    GeneratorExecutor::new().await?.main_loop().await
 }
 
 struct GeneratorExecutor {
@@ -20,18 +20,18 @@ struct GeneratorExecutor {
 }
 
 impl GeneratorExecutor {
-    fn new() -> Self {
-        let mut generator_client = {
+    async fn new() -> Result<Self, Box<dyn std::error::Error>> {
+        let generator_client = {
             let generator_client_config = generator_sdk::client_config::ClientConfig::from_args();
             GeneratorClient::from(generator_client_config)
         };
 
-        let mut plugin_work_queue_client = PluginWorkQueueServiceClient::from_env().await?;
+        let plugin_work_queue_client = PluginWorkQueueServiceClient::from_env().await?;
 
-        Self {
+        Ok(Self {
             generator_client,
             plugin_work_queue_client,
-        }
+        })
     }
 
     async fn main_loop(&mut self) -> Result<(), Box<dyn std::error::Error>> {
@@ -58,7 +58,7 @@ impl GeneratorExecutor {
         job: ExecutionJob,
         request_id: i64,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let generated_graphs = self
+        let _generated_graphs = self
             .generator_client
             .run_generator(job.data, job.plugin_id.to_string())
             .await?;
