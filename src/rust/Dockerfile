@@ -425,6 +425,15 @@ FROM rust-dist AS osquery-generator-deploy
 COPY --from=build /outputs/osquery-generator /
 ENTRYPOINT ["/osquery-generator"]
 
+##### generator-executor
+FROM rust-dist AS generator-executor-deploy
+
+# Hadolint v2.8.0 appears to be mistaken, this is a false positive
+# https://github.com/hadolint/hadolint/wiki/DL3022
+# hadolint ignore=DL3022
+COPY --from=build /outputs/generator-executor /
+ENTRYPOINT ["/generator-executor"]
+
 ##### web-ui
 FROM rust-dist AS grapl-web-ui-deploy
 
