@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use generator_sdk::client::GeneratorClient;
-use plugin_executor::upstreams::FromEnv;
+use plugin_executor::upstreams::plugin_work_queue_client_from_env;
 use plugin_work_queue::client::PluginWorkQueueServiceClient;
 use rust_proto::plugin_work_queue::{
     ExecutionJob,
@@ -26,7 +26,7 @@ impl GeneratorExecutor {
             GeneratorClient::from(generator_client_config)
         };
 
-        let plugin_work_queue_client = PluginWorkQueueServiceClient::from_env().await?;
+        let plugin_work_queue_client = plugin_work_queue_client_from_env().await?;
 
         Ok(Self {
             generator_client,
