@@ -4,8 +4,9 @@ use generator_sdk::client::GeneratorClient;
 use plugin_executor::upstreams::plugin_work_queue_client_from_env;
 use plugin_work_queue::client::PluginWorkQueueServiceClient;
 use rust_proto::plugin_work_queue::{
+    AcknowledgeGeneratorRequest,
     ExecutionJob,
-    GetExecuteGeneratorRequest, AcknowledgeGeneratorRequest,
+    GetExecuteGeneratorRequest,
 };
 use structopt::StructOpt;
 
@@ -44,15 +45,16 @@ impl GeneratorExecutor {
             let request_id = get_execute_response.request_id;
             if let Some(job) = get_execute_response.execution_job {
                 // Process the job
-                let process_result = self.process_job(job, request_id)
-                    .await;
+                let process_result = self.process_job(job, request_id).await;
 
                 // Inform plugin-work-queue whether it worked or if we need
                 // to retry
-                self.plugin_work_queue_client.acknowledge_generator(AcknowledgeGeneratorRequest{
-                    request_id: request_id,
-                    success: process_result.is_ok()
-                }).await?;
+                self.plugin_work_queue_client
+                    .acknowledge_generator(AcknowledgeGeneratorRequest {
+                        request_id,
+                        success: process_result.is_ok(),
+                    })
+                    .await?;
             } else {
                 tokio::time::sleep(Duration::from_secs(5)).await;
                 continue;
@@ -72,7 +74,7 @@ impl GeneratorExecutor {
             .generator_client
             .run_generator(job.data, job.plugin_id.to_string())
             .await?;
-        
+
         //kafka_stream.put(generated_graphs).await.unwrap();
         Ok(()) // TODO replace with above
     }
