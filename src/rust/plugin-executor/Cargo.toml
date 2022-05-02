@@ -22,7 +22,7 @@ plugin-work-queue = { path = "../plugin-work-queue" }
 rust-proto = { path = "../rust-proto" }
 structopt = { version = "0.3", default-features = false }
 tokio = { version = "1.17", features = ["macros", "rt", "rt-multi-thread"] }
-tonic = "0.6" # TODO move to 0.7 once we upgrade plugin-work-queue to -new
+tonic = "0.6" # TODO remove once we upgrade plugin-work-queue to -new
 tracing = "0.1.29"
 
 [features]
