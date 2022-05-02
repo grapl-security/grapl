@@ -15,7 +15,7 @@ actix-files = "0.6"
 actix-session = "0.5"
 actix-web-opentelemetry = { version = "0.12", features = ["awc"] }
 argon2 = { version = "0.4", features = ["std"] }
-chrono = { version = "0.4", default-features = false }
+chrono = { version = "0.4" }
 hmap = "0.1.0"
 futures-util = "0.3"
 opentelemetry = { version = "0.17", features = ["rt-tokio"] }
