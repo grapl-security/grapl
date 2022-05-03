@@ -175,7 +175,6 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tests-ap
 
 # Put the Nomad binary on PATH
 # so that it's available to integration test consumers of NomadCli
-# hadolint ignore=DL3022
 COPY --from=build /nomad/nomad /bin
 
 COPY --from=build-test-integration /grapl/tests /tests
@@ -271,7 +270,6 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tests-ap
 
 # Put the Nomad binary on PATH
 # so that it's available to integration test consumers of NomadCli
-# hadolint ignore=DL3022
 COPY --from=build /nomad/nomad /bin
 
 COPY --from=build-test-integration-new /grapl/tests /tests
@@ -327,55 +325,38 @@ USER nonroot
 ##### analyzer-dispatcher
 FROM rust-dist AS analyzer-dispatcher-deploy
 
-# Hadolint v2.8.0 appears to be mistaken, this is a false positive
-# https://github.com/hadolint/hadolint/wiki/DL3022
-# hadolint ignore=DL3022
 COPY --from=build /outputs/analyzer-dispatcher /
 ENTRYPOINT ["/analyzer-dispatcher"]
 
 ##### generic-subgraph-generator
 FROM rust-dist AS generic-subgraph-generator-deploy
 
-# Hadolint v2.8.0 appears to be mistaken, this is a false positive
-# https://github.com/hadolint/hadolint/wiki/DL3022
-# hadolint ignore=DL3022
 COPY --from=build /outputs/generic-subgraph-generator /
 ENTRYPOINT ["/generic-subgraph-generator"]
 
 ##### graph-merger
 FROM rust-dist AS graph-merger-deploy
 
-# Hadolint v2.8.0 appears to be mistaken, this is a false positive
-# https://github.com/hadolint/hadolint/wiki/DL3022
-# hadolint ignore=DL3022
 COPY --from=build /outputs/graph-merger /
 ENTRYPOINT ["/graph-merger"]
 
 ##### plugin-work-queue
 FROM rust-dist AS plugin-work-queue-deploy
 
-# Hadolint v2.8.0 appears to be mistaken, this is a false positive
-# https://github.com/hadolint/hadolint/wiki/DL3022
-# hadolint ignore=DL3022
 COPY --from=build /outputs/plugin-work-queue /
 ENTRYPOINT ["/plugin-work-queue"]
 
 ##### plugin-registry
 FROM rust-dist AS plugin-registry-deploy
 
-# Hadolint v2.8.0 appears to be mistaken, this is a false positive
-# https://github.com/hadolint/hadolint/wiki/DL3022
-# hadolint ignore=DL3022
 COPY --from=build /outputs/plugin-registry /
 # Put the Nomad binary on PATH for NomadCli class
-# hadolint ignore=DL3022
 COPY --from=build /nomad/nomad /bin
 ENTRYPOINT ["/plugin-registry"]
 
 ##### plugin-bootstrap
 FROM rust-dist AS plugin-bootstrap-deploy
 
-# hadolint ignore=DL3022
 COPY --from=build /outputs/plugin-bootstrap /
 ENTRYPOINT ["/plugin-bootstrap"]
 
@@ -383,7 +364,6 @@ ENTRYPOINT ["/plugin-bootstrap"]
 # Not "-deploy" since we copy it to dist/.
 FROM scratch AS plugin-bootstrap-init-output
 
-# hadolint ignore=DL3022
 COPY --from=build /outputs/plugin-bootstrap-init /
 # Just to clarify: we're copying these .service files from the repository,
 # through Docker, and then back out to the dist directory in the repository.
@@ -393,45 +373,30 @@ COPY rust/plugin-bootstrap/grapl-plugin.service /
 ##### node-identifier
 FROM rust-dist AS node-identifier-deploy
 
-# Hadolint v2.8.0 appears to be mistaken, this is a false positive
-# https://github.com/hadolint/hadolint/wiki/DL3022
-# hadolint ignore=DL3022
 COPY --from=build /outputs/node-identifier /
 ENTRYPOINT ["/node-identifier"]
 
 ##### node-identifier-retry
 FROM rust-dist AS node-identifier-retry-deploy
 
-# Hadolint v2.8.0 appears to be mistaken, this is a false positive
-# https://github.com/hadolint/hadolint/wiki/DL3022
-# hadolint ignore=DL3022
 COPY --from=build /outputs/node-identifier-retry /
 ENTRYPOINT ["/node-identifier-retry"]
 
 ##### sysmon-generator
 FROM rust-dist AS sysmon-generator-deploy
 
-# Hadolint v2.8.0 appears to be mistaken, this is a false positive
-# https://github.com/hadolint/hadolint/wiki/DL3022
-# hadolint ignore=DL3022
 COPY --from=build /outputs/sysmon-generator /
 ENTRYPOINT ["/sysmon-generator"]
 
 ##### osquery-generator
 FROM rust-dist AS osquery-generator-deploy
 
-# Hadolint v2.8.0 appears to be mistaken, this is a false positive
-# https://github.com/hadolint/hadolint/wiki/DL3022
-# hadolint ignore=DL3022
 COPY --from=build /outputs/osquery-generator /
 ENTRYPOINT ["/osquery-generator"]
 
 ##### web-ui
 FROM rust-dist AS grapl-web-ui-deploy
 
-# Hadolint v2.8.0 appears to be mistaken, this is a false positive
-# https://github.com/hadolint/hadolint/wiki/DL3022
-# hadolint ignore=DL3022
 COPY --from=build /outputs/grapl-web-ui /
 COPY rust/grapl-web-ui/frontend /frontend
 ENTRYPOINT ["/grapl-web-ui"]
@@ -439,26 +404,17 @@ ENTRYPOINT ["/grapl-web-ui"]
 ##### model plugin deployer
 FROM rust-dist AS model-plugin-deployer
 
-# Hadolint v2.8.0 appears to be mistaken, this is a false positive
-# https://github.com/hadolint/hadolint/wiki/DL3022
-# hadolint ignore=DL3022
 COPY --from=build /outputs/model-plugin-deployer /
 ENTRYPOINT ["/model-plugin-deployer"]
 
 ##### organization-management
 FROM rust-dist AS organization-management-deploy
 
-# Hadolint v2.8.0 appears to be mistaken, this is a false positive
-# https://github.com/hadolint/hadolint/wiki/DL3022
-# hadolint ignore=DL3022
 COPY --from=build /outputs/organization-management /
 ENTRYPOINT ["/organization-management"]
 
 ##### pipeline-ingress
 FROM rust-dist AS pipeline-ingress-deploy
 
-# Hadolint v2.8.0 appears to be mistaken, this is a false positive
-# https://github.com/hadolint/hadolint/wiki/DL3022
-# hadolint ignore=DL3022
 COPY --from=build /outputs/pipeline-ingress /
 ENTRYPOINT ["/pipeline-ingress"]
