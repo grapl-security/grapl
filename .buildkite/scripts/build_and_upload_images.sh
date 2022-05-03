@@ -10,6 +10,7 @@ set -euo pipefail
 
 source .buildkite/scripts/lib/artifacts.sh
 source .buildkite/scripts/lib/version.sh
+source .buildkite/scripts/lib/retry.sh
 
 # While we have Docker Compose files present, we have to explicitly
 # declare we're using an HCL file (compose YAML files are used
@@ -36,7 +37,27 @@ echo "--- Building all ${IMAGE_TAG} images"
 # all the buildx file introspection (and thus build-target awareness)
 # localised here.
 make build-image-prerequisites
-docker buildx bake --file="${BUILDX_BAKE_FILE}" --progress "plain" --push "${BUILDX_TARGET}"
+
+# Build targets
+docker buildx bake --file="${BUILDX_BAKE_FILE}" --progress "plain" "${BUILDX_TARGET}"
+
+# Cloudsmith may be having trouble with `buildx --push`, so, experimenting with
+# uploading each one individually.
+{
+    # These are sans-tag
+    mapfile -t image_names < <(
+        docker buildx bake --file="${BUILDX_BAKE_FILE}" --print "${BUILDX_TARGET}" |
+            jq --raw-output '.target | keys | .[]'
+    )
+    readonly container_repository="${CONTAINER_REPOSITORY:-docker.cloudsmith.io/grapl/raw}"
+    for image_name in "${image_names[@]}"; do
+        image_with_tag="${image_name}:${IMAGE_TAG}"
+        fully_qualified_image="${container_repository}/${image_with_tag}"
+        echo "--- Pushing ${image_with_tag} to ${container_repository}"
+        retry 3 \
+            docker push "${fully_qualified_image}"
+    done
+}
 
 readonly sleep_seconds=60
 echo "--- :sleeping::sob: Sleeping for ${sleep_seconds} seconds to give CDNs time to update"
