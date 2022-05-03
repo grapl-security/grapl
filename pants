@@ -273,12 +273,18 @@ function bootstrap_pex {
   echo "${bootstrapped}"
 }
 
-function scrub_PEX_env_vars {
+function scrub_env_vars {
   # Ensure the virtualenv PEX runs as shrink-wrapped.
   # See: https://github.com/pantsbuild/setup/issues/105
   if [[ -n "${!PEX_@}" ]]; then
     warn "Scrubbing ${!PEX_@}"
     unset "${!PEX_@}"
+  fi
+  # Also ensure pip doesn't think packages on PYTHONPATH
+  # are already installed.
+  if [ -n "${PYTHONPATH:-}" ]; then
+    warn "Scrubbing PYTHONPATH"
+    unset PYTHONPATH
   fi
 }
 
@@ -295,7 +301,7 @@ function bootstrap_virtualenv {
       cd "${staging_dir}"
       echo "${VIRTUALENV_REQUIREMENTS}" > requirements.txt
       (
-        scrub_PEX_env_vars
+        scrub_env_vars
         "${python}" "${pex_path}" -r requirements.txt -c virtualenv -o virtualenv.pex
       )
       mkdir -p "$(dirname "${bootstrapped}")"
@@ -355,7 +361,7 @@ function bootstrap_pants {
       virtualenv_path="$(bootstrap_virtualenv "${python}")" || exit 1
       green "Installing ${pants_requirement} into a virtual environment at ${bootstrapped}"
       (
-        scrub_PEX_env_vars
+        scrub_env_vars
         # shellcheck disable=SC2086
         "${python}" "${virtualenv_path}" --quiet --no-download "${staging_dir}/install" && \
         # Grab the latest pip, but don't advance setuptools past 58 which drops support for the
