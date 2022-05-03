@@ -73,6 +73,8 @@ DOCKER_DGRAPH_FILTER_LABEL := maintainer="Dgraph Labs <contact@dgraph.io>"
 # to be a strict requirement.
 DOCKER_DATA_VOLUME_FILTERS := --filter=name=grapl-data
 
+# Run a Pants goal across all proto files
+PANTS_PROTO_FILTER := ./pants filter --target-type=protobuf_sources :: | xargs ./pants
 # Run a Pants goal across all Python files
 PANTS_PYTHON_FILTER := ./pants filter --target-type=python_sources,python_tests :: | xargs ./pants
 # Run a Pants goal across all shell files
@@ -387,16 +389,11 @@ lint-prettier: ## Run ts/js/yaml lint checks
 
 .PHONY: lint-proto
 lint-proto: ## Lint all protobuf definitions
-		./pants filter --target-type=protobuf_sources :: \
-    		| xargs ./pants lint
+		$(PANTS_PROTO_FILTER) lint
 
 .PHONY: lint-proto-breaking
 lint-proto-breaking: ## Check protobuf definitions for breaking changes
 	${DOCKER_COMPOSE_CHECK} buf-breaking-change
-
-.PHONY: lint-proto-format
-lint-proto-format: ## Check that all protobuf files are properly formatted
-	${DOCKER_COMPOSE_CHECK} buf-lint-format
 
 .PHONY: lint-python
 lint-python: ## Run Python lint checks
@@ -446,7 +443,7 @@ format-prettier: ## Reformat js/ts/yaml
 
 .PHONY: format-proto
 format-proto: ## Reformat all Protobuf definitions
-	$(NONROOT_DOCKER_COMPOSE_CHECK) buf-format
+	$(PANTS_PROTO_FILTER) fmt
 
 .PHONY: format-python
 format-python: ## Reformat all Python code
