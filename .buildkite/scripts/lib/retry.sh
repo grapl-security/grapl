@@ -30,7 +30,7 @@ function _retry() {
 
 # Usage:
 #   retry 3 echo "hello"
-function retry() {
+function retry_no_cooldown() {
     local -r retries="${1}"
     shift
 
@@ -39,7 +39,7 @@ function retry() {
 
 # Usage:
 #   retry_with_exponential_cooldown 3 echo "hello"
-function retry_with_exponential_cooldown() {
+function retry() {
     local -r retries="${1}"
     shift
 
