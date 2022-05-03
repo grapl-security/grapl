@@ -64,13 +64,11 @@ start_nomad_detach() {
         -config="${THIS_DIR}/nomad-agent-conf.nomad" \
         -dev-connect > "${NOMAD_LOGS_DEST}" &
     local -r nomad_agent_pid="$!"
-    export nomad_agent_pid
     # The client is set to 0.0.0.0 here so that it can be reached via pulumi in docker.
     consul agent \
         -client 0.0.0.0 -config-file "${THIS_DIR}/consul-agent-conf.hcl" \
         -dev > "${CONSUL_LOGS_DEST}" &
     local -r consul_agent_pid="$!"
-    export consul_agent_pid
 
     # Wait a short period of time before attempting to deploy infrastructure
     (
