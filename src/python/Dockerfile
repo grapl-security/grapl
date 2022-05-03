@@ -50,7 +50,11 @@ FROM grapl-python-base AS e2e-tests
 
 # Copy in the contents of `etc` in order to upload them during e2e tests
 RUN mkdir -p /home/grapl/etc
+# Named context support https://github.com/hadolint/hadolint/issues/830
+# hadolint ignore=DL3022
 COPY --chown=grapl --from=etc-ctx local_grapl etc/local_grapl
+# Named context support https://github.com/hadolint/hadolint/issues/830
+# hadolint ignore=DL3022
 COPY --chown=grapl --from=etc-ctx sample_data/ etc/sample_data
 
 # Copy in `graplctl`, which does the actual uploading during e2e
