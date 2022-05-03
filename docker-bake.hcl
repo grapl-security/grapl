@@ -269,7 +269,13 @@ group "all" {
 # All Rust services defined in src/rust/Dockerfile should inherit from
 # this target.
 target "_rust-base" {
-  context    = "src"
+  context = "src"
+
+  # Additional named contexts: 
+  # https://www.docker.com/blog/dockerfiles-now-support-multiple-build-contexts/
+  contexts = {
+    dist-ctx = "dist"
+  }
   dockerfile = "rust/Dockerfile"
   args = {
     RUST_BUILD = "${RUST_BUILD}"
@@ -404,7 +410,10 @@ target "sysmon-generator" {
 # All Python services defined in src/python/Dockerfile should inherit
 # from this target.
 target "_python-base" {
-  context    = "."
+  contexts = {
+    dist-ctx = "dist"
+    etc-ctx  = "etc"
+  }
   dockerfile = "src/python/Dockerfile"
   labels     = oci_labels
 }

@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.3-labs
+# syntax=docker/dockerfile:1.4
 # We use the above syntax for here documents:
 # https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/syntax.md#user-content-here-documents
 
@@ -397,9 +397,6 @@ ENTRYPOINT ["/osquery-generator"]
 ##### generator-executor
 FROM rust-dist AS generator-executor-deploy
 
-# Hadolint v2.8.0 appears to be mistaken, this is a false positive
-# https://github.com/hadolint/hadolint/wiki/DL3022
-# hadolint ignore=DL3022
 COPY --from=build /outputs/generator-executor /
 ENTRYPOINT ["/generator-executor"]
 
@@ -407,7 +404,9 @@ ENTRYPOINT ["/generator-executor"]
 FROM rust-dist AS grapl-web-ui-deploy
 
 COPY --from=build /outputs/grapl-web-ui /
-COPY rust/grapl-web-ui/frontend /frontend
+# Named context support https://github.com/hadolint/hadolint/issues/830
+# hadolint ignore=DL3022
+COPY --from=dist-ctx frontend /frontend
 ENTRYPOINT ["/grapl-web-ui"]
 
 ##### model plugin deployer
