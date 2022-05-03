@@ -1,5 +1,5 @@
 [GLOBAL]
-pants_version = "2.10.0"
+pants_version = "2.11.0"
 backend_packages = [
   "grapl_setup_py",
   "pants.backend.codegen.protobuf.python",
@@ -19,8 +19,6 @@ backend_packages = [
 pythonpath = [
   "%(buildroot)s/pants-plugins"
 ]
-
-use_deprecated_python_macros = false
 
 build_file_prelude_globs = [
   "pants-plugins/macros.py",

@@ -3,9 +3,9 @@ config:
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: operational-alarms@graplsecurity.com
   grapl:artifacts:
     analyzer-dispatcher: 20220503193316-1007aeb
-    analyzer-executor: 20220503183908-0b9a7e2
-    e2e-tests: 20220503183908-0b9a7e2
-    engagement-creator: 20220503183908-0b9a7e2
+    analyzer-executor: 20220503200742-bbcd73f
+    e2e-tests: 20220503200742-bbcd73f
+    engagement-creator: 20220503200742-bbcd73f
     firecracker_kernel.gz: firecracker-v1.0.0-kernel-4.14.174-eb117d6
     firecracker_kernel.tar.gz: firecracker-v1.0.0-kernel-4.14.174-c595a79
     firecracker_rootfs.gz: 20220331171521-eb117d6
@@ -22,7 +22,7 @@ config:
     plugin-bootstrap: 20220503193316-1007aeb
     plugin-registry: 20220503183908-0b9a7e2
     plugin-work-queue: 20220503193316-1007aeb
-    provisioner: 20220503183908-0b9a7e2
+    provisioner: 20220503200742-bbcd73f
     rust-integration-tests-new: 20220503193316-1007aeb
     sysmon-generator: 20220503193316-1007aeb
   grapl:cloudsmith-repository-name: grapl/testing
