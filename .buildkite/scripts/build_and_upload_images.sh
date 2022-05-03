@@ -49,6 +49,7 @@ docker buildx bake --file="${BUILDX_BAKE_FILE}" --progress "plain" "${BUILDX_TAR
         docker buildx bake --file="${BUILDX_BAKE_FILE}" --print "${BUILDX_TARGET}" |
             jq --raw-output '.target | keys | .[]'
     )
+    # Ideally we wouldn't duplicate this from the docker-bake.hcl.
     readonly container_repository="${CONTAINER_REPOSITORY:-docker.cloudsmith.io/grapl/raw}"
     for image_name in "${image_names[@]}"; do
         image_with_tag="${image_name}:${IMAGE_TAG}"
