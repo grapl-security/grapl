@@ -31,11 +31,11 @@ function _retry() {
 # Usage:
 #   retry 3 echo "hello"
 function retry() {
-    _retry "${@}" 0
+    _retry 0 "${@}"
 }
 
 # Usage:
 #   retry_with_exponential_cooldown 3 echo "hello"
 function retry_with_exponential_cooldown() {
-    _retry "${@}" 2
+    _retry 2 "${@}"
 }
