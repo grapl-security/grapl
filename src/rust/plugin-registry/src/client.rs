@@ -19,8 +19,8 @@ impl FromEnv<PluginRegistryServiceClient, Box<dyn std::error::Error>>
     async fn from_env() -> Result<PluginRegistryServiceClient, Box<dyn std::error::Error>> {
         let address = std::env::var(ADDRESS_ENV_VAR).expect(ADDRESS_ENV_VAR);
         let endpoint = Endpoint::from_shared(address)?
-            .timeout(Duration::from_secs(4))
-            .concurrency_limit(29);
+            .timeout(Duration::from_secs(5))
+            .concurrency_limit(30);
         Self::connect(endpoint).await
     }
 }
