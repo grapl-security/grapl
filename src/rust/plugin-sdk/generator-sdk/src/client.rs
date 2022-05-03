@@ -23,7 +23,10 @@ use tonic::{
     Code,
 };
 
-use crate::ClientCacheConfig;
+use crate::client_config::{
+    ClientCacheConfig,
+    ClientConfig,
+};
 
 #[derive(thiserror::Error, Debug)]
 pub enum GeneratorClientError {
@@ -40,6 +43,7 @@ pub enum GeneratorClientError {
 }
 
 type ClientCache = Cache<String, GeneratorServiceClient<Channel>>;
+type ClientCacheBuilder = CacheBuilder<String, GeneratorServiceClient<Channel>, ClientCache>;
 
 /// The GeneratorClient manages connections to arbitrary generators across arbitrary tenants
 #[derive(Clone)]
@@ -50,6 +54,17 @@ pub struct GeneratorClient {
     certificate: tonic::transport::Certificate,
     /// An in-process DNS resolver used for plugin service discovery
     resolver: ConsulConnectResolver,
+}
+
+impl From<ClientConfig> for GeneratorClient {
+    fn from(config: ClientConfig) -> Self {
+        let resolver = ConsulConnectResolver::from(config.client_dns_config);
+        let certificate = tonic::transport::Certificate::from_pem(
+            config.client_cert_config.public_certificate_pem,
+        );
+        let clients = ClientCacheBuilder::from(config.client_cache_config).build();
+        Self::new(clients, certificate, resolver)
+    }
 }
 
 impl GeneratorClient {
@@ -173,9 +188,7 @@ fn should_evict(status: &tonic::Status) -> bool {
     )
 }
 
-impl From<ClientCacheConfig>
-    for CacheBuilder<String, GeneratorServiceClient<Channel>, ClientCache>
-{
+impl From<ClientCacheConfig> for ClientCacheBuilder {
     fn from(cache_config: ClientCacheConfig) -> Self {
         Cache::builder()
             .time_to_live(Duration::from_secs(cache_config.time_to_live))

@@ -1,0 +1,29 @@
+[package]
+name = "plugin-executor"
+version = "0.0.1"
+edition = "2021"
+
+[[bin]]
+name = "analyzer-executor"
+path = "analyzer-executor.rs"
+
+[[bin]]
+name = "generator-executor"
+path = "generator-executor.rs"
+
+[lib]
+name = "plugin_executor"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+async-trait = "0.1.51"
+generator-sdk = { path = "../plugin-sdk/generator-sdk", features = ["client"] }
+plugin-work-queue = { path = "../plugin-work-queue" }
+rust-proto = { path = "../rust-proto" }
+structopt = { version = "0.3", default-features = false }
+tokio = { version = "1.17", features = ["macros", "rt", "rt-multi-thread"] }
+tonic = "0.6" # TODO remove once we upgrade plugin-work-queue to -new
+tracing = "0.1.29"
+
+[features]
+new_integration_tests = []

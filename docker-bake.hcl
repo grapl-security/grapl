@@ -171,6 +171,7 @@ group "rust-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
     "analyzer-dispatcher",
+    "generator-executor",
     "graph-merger",
     "grapl-web-ui",
     "model-plugin-deployer",
@@ -182,7 +183,7 @@ group "rust-services" {
     "plugin-bootstrap",
     "plugin-registry",
     "plugin-work-queue",
-    "sysmon-generator"
+    "sysmon-generator",
   ]
 }
 
@@ -378,6 +379,14 @@ target "plugin-work-queue" {
   target   = "plugin-work-queue-deploy"
   tags = [
     upstream_aware_tag("plugin-work-queue")
+  ]
+}
+
+target "generator-executor" {
+  inherits = ["_rust-base"]
+  target   = "generator-executor-deploy"
+  tags = [
+    upstream_aware_tag("generator-executor")
   ]
 }
 

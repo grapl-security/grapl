@@ -10,6 +10,7 @@ config:
     firecracker_kernel.tar.gz: firecracker-v1.0.0-kernel-4.14.174-c595a79
     firecracker_rootfs.gz: 20220331171521-eb117d6
     firecracker_rootfs.tar.gz: 20220503183908-0b9a7e2
+    generator-executor: 20220503203404-792a79f
     graph-merger: 20220503193316-1007aeb
     graphql-endpoint: 20220503183908-0b9a7e2
     grapl-web-ui: 20220503183908-0b9a7e2
@@ -20,10 +21,10 @@ config:
     osquery-generator: 20220503193316-1007aeb
     pipeline-ingress: 20220503183908-0b9a7e2
     plugin-bootstrap: 20220503193316-1007aeb
-    plugin-registry: 20220503183908-0b9a7e2
-    plugin-work-queue: 20220503193316-1007aeb
+    plugin-registry: 20220503203404-792a79f
+    plugin-work-queue: 20220503203404-792a79f
     provisioner: 20220503200742-bbcd73f
-    rust-integration-tests-new: 20220503193316-1007aeb
+    rust-integration-tests-new: 20220503203404-792a79f
     sysmon-generator: 20220503193316-1007aeb
   grapl:cloudsmith-repository-name: grapl/testing
   grapl:confluent-environment-name: testing
