@@ -17,7 +17,7 @@ function _retry() {
         if [ "${count}" -lt "${retries}" ]; then
             echo "Retry ${count}/${retries} exited ${exit}, retrying."
             if [[ ${exponential_backoff} -ne 0 ]]; then
-                sleep_time=$((${exponential_backoff} ** count))
+                sleep_time=$(($exponential_backoff ** count))
                 echo " >> Sleeping ${sleep_time}"
                 sleep "${sleep_time}"
             fi
@@ -31,11 +31,17 @@ function _retry() {
 # Usage:
 #   retry 3 echo "hello"
 function retry() {
-    _retry 0 "${@}"
+    local -r retries="${1}"
+    shift
+
+    _retry "${retries}" 0 "${@}"
 }
 
 # Usage:
 #   retry_with_exponential_cooldown 3 echo "hello"
 function retry_with_exponential_cooldown() {
-    _retry 2 "${@}"
+    local -r retries="${1}"
+    shift
+
+    _retry "${retries}" 2 "${@}"
 }
