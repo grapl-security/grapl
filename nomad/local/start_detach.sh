@@ -4,6 +4,7 @@ set -euo pipefail
 
 readonly NOMAD_LOGS_DEST=/tmp/nomad-agent.log
 readonly CONSUL_LOGS_DEST=/tmp/consul-agent.log
+readonly VAULT_LOGS_DEST=/tmp/vault-agent.log
 THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
 readonly THIS_DIR
 
@@ -57,12 +58,15 @@ ensure_valid_env() {
 start_nomad_detach() {
     ensure_valid_env
 
-    echo "Starting nomad and consul locally. Logs @ ${NOMAD_LOGS_DEST} and ${CONSUL_LOGS_DEST}."
+    echo "Starting nomad, vault, and consul locally. Logs @ ${NOMAD_LOGS_DEST}, ${VAULT_LOGS_DEST} and ${CONSUL_LOGS_DEST}."
     # These will run forever until `make stop-nomad-ci` is invoked."
     # shellcheck disable=SC2024
     sudo nomad agent \
         -config="${THIS_DIR}/nomad-agent-conf.nomad" \
         -dev-connect > "${NOMAD_LOGS_DEST}" &
+
+    vault server \
+        -dev > "${VAULT_LOGS_DEST}" &
     # The client is set to 0.0.0.0 here so that it can be reached via pulumi in docker.
     consul agent \
         -client 0.0.0.0 -config-file "${THIS_DIR}/consul-agent-conf.hcl" \
