@@ -44,19 +44,16 @@ docker buildx bake --file="${BUILDX_BAKE_FILE}" --progress "plain" "${BUILDX_TAR
 # Cloudsmith may be having trouble with `buildx --push`, so, experimenting with
 # uploading each one individually.
 {
-    # These are sans-tag
-    mapfile -t image_names < <(
-        docker buildx bake --file="${BUILDX_BAKE_FILE}" --print "${BUILDX_TARGET}" |
-            jq --raw-output '.target | keys | .[]'
+    mapfile -t fully_qualified_images < <(
+        docker buildx bake \
+            --file="${BUILDX_BAKE_FILE}" \
+            --print "${BUILDX_TARGET}" |
+            jq --raw-output '.target | to_entries | .[] | .value.tags[0]'
     )
-    # Ideally we wouldn't duplicate this from the docker-bake.hcl.
-    readonly container_repository="${CONTAINER_REPOSITORY:-docker.cloudsmith.io/grapl/raw}"
-    for image_name in "${image_names[@]}"; do
-        image_with_tag="${image_name}:${IMAGE_TAG}"
-        fully_qualified_image="${container_repository}/${image_with_tag}"
-        echo "--- Pushing ${image_with_tag} to ${container_repository}"
+    for fq_image in "${fully_qualified_images[@]}"; do
+        echo "--- Pushing ${fq_image}"
         retry 3 \
-            docker push "${fully_qualified_image}"
+            docker push "${fq_image}"
     done
 }
 

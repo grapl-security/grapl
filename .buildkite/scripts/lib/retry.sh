@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 
 # Usage:
-#   retry 3 echo "hello"
-function retry() {
+#   _retry 3 3 false
+#   would retry 3x with a backoff of 3, 9, exit
+function _retry() {
     local -r retries="${1}"
+    shift
+
+    local -r exponential_backoff="${1}"
     shift
 
     count=0
@@ -12,9 +16,26 @@ function retry() {
         count=$((count + 1))
         if [ "${count}" -lt "${retries}" ]; then
             echo "Retry ${count}/${retries} exited ${exit}, retrying."
+            if [[ ${exponential_backoff} -ne 0 ]]; then
+                sleep_time=$((${exponential_backoff} ** count))
+                echo " >> Sleeping ${sleep_time}"
+                sleep "${sleep_time}"
+            fi
         else
             echo "Retry ${count}/${retries} exited ${exit}, no more retries left."
             exit "${exit}"
         fi
     done
+}
+
+# Usage:
+#   retry 3 echo "hello"
+function retry() {
+    _retry "${@}" 0
+}
+
+# Usage:
+#   retry_with_exponential_cooldown 3 echo "hello"
+function retry_with_exponential_cooldown() {
+    _retry "${@}" 2
 }
