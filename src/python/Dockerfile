@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.4
+
 # grapl-python-base
 ################################################################################
 FROM python:3.7-slim-bullseye AS grapl-python-base
@@ -21,19 +23,25 @@ ENTRYPOINT ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
 # analyzer-executor
 ################################################################################
 FROM grapl-python-base AS analyzer-executor-deploy
-COPY ./dist/analyzer-executor.pex .
+# Named context support https://github.com/hadolint/hadolint/issues/830
+# hadolint ignore=DL3022
+COPY --from=dist-ctx analyzer-executor.pex .
 CMD ["./analyzer-executor.pex"]
 
 # engagement-creator
 ################################################################################
 FROM grapl-python-base AS engagement-creator-deploy
-COPY ./dist/engagement-creator.pex .
+# Named context support https://github.com/hadolint/hadolint/issues/830
+# hadolint ignore=DL3022
+COPY --from=dist-ctx engagement-creator.pex .
 CMD ["./engagement-creator.pex"]
 
 # Provisioner
 ################################################################################
 FROM grapl-python-base AS provisioner-deploy
-COPY ./dist/provisioner.pex .
+# Named context support https://github.com/hadolint/hadolint/issues/830
+# hadolint ignore=DL3022
+COPY --from=dist-ctx provisioner.pex .
 CMD [":"]
 
 # e2e tests
@@ -42,14 +50,18 @@ FROM grapl-python-base AS e2e-tests
 
 # Copy in the contents of `etc` in order to upload them during e2e tests
 RUN mkdir -p /home/grapl/etc
-COPY --chown=grapl ./etc/local_grapl etc/local_grapl
-COPY --chown=grapl ./etc/sample_data/ etc/sample_data
+COPY --chown=grapl --from=etc-ctx local_grapl etc/local_grapl
+COPY --chown=grapl --from=etc-ctx sample_data/ etc/sample_data
 
 # Copy in `graplctl`, which does the actual uploading during e2e
 RUN mkdir -p /home/grapl/bin
-COPY --chown=grapl dist/src.python.graplctl.graplctl/graplctl.pex /home/grapl/bin/graplctl
+# Named context support https://github.com/hadolint/hadolint/issues/830
+# hadolint ignore=DL3022
+COPY --chown=grapl --from=dist-ctx src.python.graplctl.graplctl/graplctl.pex /home/grapl/bin/graplctl
 
-COPY --chown=grapl ./dist/e2e-tests.pex .
+# Named context support https://github.com/hadolint/hadolint/issues/830
+# hadolint ignore=DL3022
+COPY --chown=grapl --from=dist-ctx e2e-tests.pex .
 CMD ["./e2e-tests.pex"]
 
 ENV PATH=/home/grapl/bin:$PATH

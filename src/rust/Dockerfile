@@ -397,9 +397,6 @@ ENTRYPOINT ["/osquery-generator"]
 ##### generator-executor
 FROM rust-dist AS generator-executor-deploy
 
-# Hadolint v2.8.0 appears to be mistaken, this is a false positive
-# https://github.com/hadolint/hadolint/wiki/DL3022
-# hadolint ignore=DL3022
 COPY --from=build /outputs/generator-executor /
 ENTRYPOINT ["/generator-executor"]
 
@@ -407,6 +404,8 @@ ENTRYPOINT ["/generator-executor"]
 FROM rust-dist AS grapl-web-ui-deploy
 
 COPY --from=build /outputs/grapl-web-ui /
+# Named context support https://github.com/hadolint/hadolint/issues/830
+# hadolint ignore=DL3022
 COPY --from=dist-ctx frontend /frontend
 ENTRYPOINT ["/grapl-web-ui"]
 

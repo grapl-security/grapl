@@ -410,7 +410,10 @@ target "sysmon-generator" {
 # All Python services defined in src/python/Dockerfile should inherit
 # from this target.
 target "_python-base" {
-  context    = "."
+  contexts = {
+    dist-ctx = "dist"
+    etc-ctx = "etc"
+  }
   dockerfile = "src/python/Dockerfile"
   labels     = oci_labels
 }
