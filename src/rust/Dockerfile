@@ -241,6 +241,7 @@ ENV TEST_DIR=/grapl/tests
 # have -o pipefail set on line 9.
 # hadolint ignore=DL4006
 RUN mkdir --parents "${TEST_DIR}"
+# hadolint ignore=DL4006
 RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
     --mount=type=cache,target="${REGISTRY_CACHE_TARGET}",sharing=locked \
     --mount=type=cache,target="${RUSTUP_CACHE_TARGET}",sharing=locked \

@@ -182,13 +182,13 @@ report = ["xml"]
 global_report = "true"
 
 [hadolint]
-version = "v2.8.0"
+version = "v2.10.0"
 known_versions = [
   # The real Hadolint known versions can be seen here, for comparison:
   # https://github.com/pantsbuild/pants/blob/39d0a77ec5c9a7b1e1864b70ba782d52dc33ebaa/src/python/pants/backend/docker/lint/hadolint/subsystem.py#L13
   # This version line was generated via the rules documented here
   # https://github.com/pantsbuild/pants/blob/1d828786c3c0f352e7811e29dd80f7877f5e170c/src/python/pants/core/util_rules/external_tool.py#L131
-  "v2.8.0|linux_x86_64|9dfc155139a1e1e9b3b28f3de9907736b9dfe7cead1c3a0ae7ff0158f3191674|5895708"
+  "v2.10.0|linux_x86_64|8ee6ff537341681f9e91bae2d5da451b15c575691e33980893732d866d3cefc4|2301804"
 ]
 
 [tailor]
