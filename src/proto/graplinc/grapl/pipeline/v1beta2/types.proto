@@ -3,7 +3,6 @@ syntax = "proto3";
 package graplinc.grapl.pipeline.v1beta2;
 
 import "google/protobuf/any.proto";
-import "graplinc/common/v1beta1/types.proto";
 import "graplinc/grapl/pipeline/v1beta1/types.proto";
 
 // A wrapper message for pipeline data. Includes useful metadata to help
