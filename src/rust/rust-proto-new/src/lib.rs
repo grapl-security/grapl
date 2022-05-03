@@ -11,6 +11,7 @@ use prost::{
 use thiserror::Error;
 
 pub mod protocol {
+    pub mod healthcheck;
     pub mod status;
 }
 
@@ -205,6 +206,12 @@ pub enum SerDeError {
     UnknownVariant(&'static str),
 }
 
+impl From<std::convert::Infallible> for SerDeError {
+    fn from(_: std::convert::Infallible) -> Self {
+        unimplemented!()
+    }
+}
+
 pub trait SerDe: type_url::TypeUrl + Clone + std::fmt::Debug {
     fn serialize(self) -> Result<Bytes, SerDeError>;
 
@@ -214,4 +221,70 @@ pub trait SerDe: type_url::TypeUrl + Clone + std::fmt::Debug {
         Self: Sized;
 }
 
-pub(crate) mod serde_impl;
+pub(crate) mod serde_impl {
+    use bytes::{
+        Bytes,
+        BytesMut,
+    };
+    use prost::Message;
+
+    use crate::{
+        type_url,
+        SerDe,
+        SerDeError,
+    };
+
+    /// You can use this blanket implementation to automatically implement SerDe
+    /// for a type YourType defined within this crate. YourType must implement
+    /// either From<proto::YourType> or TryFrom<proto::YourType> and you must
+    /// implement either From<YourType> or TryFrom<YourType> for
+    /// proto::YourType. YourType must also implement type_url::TypeUrl. If
+    /// YourType meets these conditions you can automatically implement SerDe by
+    /// implementing the simpler trait ProtobufSerializable.
+    ///
+    /// Example usage:
+    ///
+    /// use crate::{
+    ///     protobufs::graplinc::v1beta1 as proto,
+    ///     serde_impl,
+    ///     type_url,
+    /// };
+    ///
+    /// pub struct YourType {...}
+    ///
+    /// impl type_url::TypeUrl for YourType {
+    ///     const TYPE_URL: &'static str =
+    ///         "graplsecurity.com/graplinc.v1beta1.YourType";
+    /// }
+    ///
+    /// impl serde_impl::ProtobufSerializable<YourType> for YourType {
+    ///    type ProtobufMessage = proto::YourType;
+    /// }
+    pub(crate) trait ProtobufSerializable<T> {
+        type ProtobufMessage: TryFrom<T> + TryInto<T> + Message + Default;
+    }
+
+    impl<T> SerDe for T
+    where
+        T: ProtobufSerializable<T>,
+        T: type_url::TypeUrl + Clone + std::fmt::Debug,
+        SerDeError: From<<<T as ProtobufSerializable<T>>::ProtobufMessage as TryFrom<T>>::Error>,
+        SerDeError: From<<<T as ProtobufSerializable<T>>::ProtobufMessage as TryInto<T>>::Error>,
+    {
+        fn serialize(self: T) -> Result<Bytes, SerDeError> {
+            let proto = T::ProtobufMessage::try_from(self)?;
+            let mut buf = BytesMut::with_capacity(proto.encoded_len());
+            proto.encode(&mut buf)?;
+            Ok(buf.freeze())
+        }
+
+        fn deserialize<B>(buf: B) -> Result<T, SerDeError>
+        where
+            B: bytes::Buf,
+            Self: Sized,
+        {
+            let proto: T::ProtobufMessage = Message::decode(buf)?;
+            Ok(proto.try_into()?)
+        }
+    }
+}

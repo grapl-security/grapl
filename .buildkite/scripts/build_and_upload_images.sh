@@ -10,6 +10,7 @@ set -euo pipefail
 
 source .buildkite/scripts/lib/artifacts.sh
 source .buildkite/scripts/lib/version.sh
+source .buildkite/scripts/lib/retry.sh
 
 # While we have Docker Compose files present, we have to explicitly
 # declare we're using an HCL file (compose YAML files are used
@@ -36,7 +37,25 @@ echo "--- Building all ${IMAGE_TAG} images"
 # all the buildx file introspection (and thus build-target awareness)
 # localised here.
 make build-image-prerequisites
-docker buildx bake --file="${BUILDX_BAKE_FILE}" --push "${BUILDX_TARGET}"
+
+# Build targets
+docker buildx bake --file="${BUILDX_BAKE_FILE}" --progress "plain" "${BUILDX_TARGET}"
+
+# Cloudsmith may be having trouble with `buildx --push`, so, experimenting with
+# uploading each one individually.
+{
+    mapfile -t fully_qualified_images < <(
+        docker buildx bake \
+            --file="${BUILDX_BAKE_FILE}" \
+            --print "${BUILDX_TARGET}" |
+            jq --raw-output '.target | to_entries | .[] | .value.tags[0]'
+    )
+    for fq_image in "${fully_qualified_images[@]}"; do
+        echo "--- Pushing ${fq_image}"
+        retry 3 \
+            docker push "${fq_image}"
+    done
+}
 
 readonly sleep_seconds=60
 echo "--- :sleeping::sob: Sleeping for ${sleep_seconds} seconds to give CDNs time to update"

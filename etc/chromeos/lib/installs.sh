@@ -266,6 +266,13 @@ install_utilities() {
 
 install_hashicorp_tools() {
     echo_banner "Installing hashicorp tools: consul nomad packer"
+
+    # Set specific versions since we're enabling the hashicorp test repo
+    CONSUL_VERSION="1.12.0"
+    NOMAD_VERSION="1.3.0-1~beta.1"
+    PACKER_VERSION="1.8.0"
+    VAULT_VERSION="1.10.0"
+
     curl --proto '=https' \
         --tlsv1.2 \
         --silent \
@@ -275,8 +282,10 @@ install_hashicorp_tools() {
         sudo gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/hashicorp-apt.gpg --import &&
         sudo chmod 644 /etc/apt/trusted.gpg.d/hashicorp-apt.gpg
     sudo apt-add-repository "deb [arch=${hashicorp_arch_alias}] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+    # allow installing pre-release versions
+    sudo apt-add-repository "deb [arch=${hashicorp_arch_alias}] https://apt.releases.hashicorp.com $(lsb_release -cs) test"
     sudo apt-get update
-    sudo apt-get install --yes consul nomad packer vault
+    sudo apt-get install --yes consul="${CONSUL_VERSION}" nomad="${NOMAD_VERSION}" packer="${PACKER_VERSION}" vault="${VAULT_VERSION}"
 }
 
 # Download and install a tarball.

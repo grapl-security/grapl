@@ -44,6 +44,11 @@ job "grapl-plugin" {
 
   group "plugin" {
     network {
+      mode = "bridge"
+      // TODO
+      // dns {
+      //   servers = local.dns_servers
+      // }
       port "plugin-grpc-receiver" {}
     }
 
@@ -52,6 +57,26 @@ job "grapl-plugin" {
     }
 
     count = var.plugin_count
+
+    service {
+      name = "plugin-${var.plugin_id}"
+      port = "plugin-grpc-receiver"
+      tags = [
+        "plugin",
+        "tenant-${var.tenant_id}",
+        "plugin-${var.plugin_id}"
+      ]
+
+      connect {
+        sidecar_service {
+          proxy {
+            config {
+              protocol = "http"
+            }
+          }
+        }
+      }
+    }
 
     # a Docker task holding:
     # - the plugin binary itself (mounted)
@@ -93,16 +118,6 @@ EOF
         PLUGIN_ID  = "${var.plugin_id}"
         BIND_PORT  = "${NOMAD_PORT_plugin-grpc-receiver}"
         PLUGIN_BIN = "/mnt/nomad_task_dir/plugin.bin"
-      }
-
-      service {
-        name = "plugin-${var.plugin_id}"
-        port = "plugin-grpc-receiver"
-        tags = [
-          "plugin",
-          "tenant-${var.tenant_id}",
-          "plugin-${var.plugin_id}"
-        ]
       }
     }
   }

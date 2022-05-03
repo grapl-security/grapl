@@ -17,24 +17,26 @@ use opentelemetry::{
     sdk::propagation::TraceContextPropagator,
     trace::TraceError,
 };
-use rust_proto_new::graplinc::grapl::{
-    api::pipeline_ingress::v1beta1::{
-        server::{
-            ConfigurationError as ServerConfigurationError,
-            PipelineIngressApi,
-            PipelineIngressServer,
+use rust_proto_new::{
+    graplinc::grapl::{
+        api::pipeline_ingress::v1beta1::{
+            server::{
+                ConfigurationError as ServerConfigurationError,
+                PipelineIngressApi,
+                PipelineIngressServer,
+            },
+            PublishRawLogRequest,
+            PublishRawLogResponse,
         },
-        HealthcheckStatus,
-        PublishRawLogRequest,
-        PublishRawLogResponse,
-    },
-    pipeline::{
-        v1beta1::{
-            Metadata,
-            RawLog,
+        pipeline::{
+            v1beta1::{
+                Metadata,
+                RawLog,
+            },
+            v1beta2::Envelope,
         },
-        v1beta2::Envelope,
     },
+    protocol::healthcheck::HealthcheckStatus,
 };
 use thiserror::Error;
 use tokio::net::TcpListener;
