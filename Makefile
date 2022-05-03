@@ -387,7 +387,8 @@ lint-prettier: ## Run ts/js/yaml lint checks
 
 .PHONY: lint-proto
 lint-proto: ## Lint all protobuf definitions
-	${DOCKER_COMPOSE_CHECK} buf-lint
+		./pants filter --target-type=protobuf_sources :: \
+    		| xargs ./pants lint
 
 .PHONY: lint-proto-breaking
 lint-proto-breaking: ## Check protobuf definitions for breaking changes
