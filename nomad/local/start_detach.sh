@@ -78,14 +78,15 @@ start_nomad_detach() {
         # shellcheck disable=SC2016
         timeout --foreground "${wait_secs}" bash -c -- "$(
             cat << EOF
+                # General rule: Variable defined in this EOF? Use \$
                 set -euo pipefail
                 wait_attempt=1
                 while [[ -z \$(nomad node status 2>&1 | grep ready) ]]; do
-                    if ! ps -p "\${nomad_agent_pid}" > /dev/null; then
+                    if ! ps -p "${nomad_agent_pid}" > /dev/null; then
                         echo "Nomad Agent unexpectedly exited?"
                         exit 42
                     fi
-                    if ! ps -p "\${consul_agent_pid}" > /dev/null; then
+                    if ! ps -p "${consul_agent_pid}" > /dev/null; then
                         echo "Consul Agent unexpectedly exited?"
                         exit 42
                     fi
