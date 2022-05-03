@@ -412,7 +412,7 @@ target "sysmon-generator" {
 target "_python-base" {
   contexts = {
     dist-ctx = "dist"
-    etc-ctx = "etc"
+    etc-ctx  = "etc"
   }
   dockerfile = "src/python/Dockerfile"
   labels     = oci_labels
