@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.3-labs
+# syntax=docker/dockerfile:1.4
 # We use the above syntax for here documents:
 # https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/syntax.md#user-content-here-documents
 
@@ -407,7 +407,7 @@ ENTRYPOINT ["/generator-executor"]
 FROM rust-dist AS grapl-web-ui-deploy
 
 COPY --from=build /outputs/grapl-web-ui /
-COPY rust/grapl-web-ui/frontend /frontend
+COPY --from=dist-ctx frontend /frontend
 ENTRYPOINT ["/grapl-web-ui"]
 
 ##### model plugin deployer

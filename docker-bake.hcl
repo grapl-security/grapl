@@ -269,7 +269,13 @@ group "all" {
 # All Rust services defined in src/rust/Dockerfile should inherit from
 # this target.
 target "_rust-base" {
-  context    = "src"
+  context = "src"
+
+  # Additional named contexts: 
+  # https://www.docker.com/blog/dockerfiles-now-support-multiple-build-contexts/
+  contexts = {
+    dist-ctx = "dist"
+  }
   dockerfile = "rust/Dockerfile"
   args = {
     RUST_BUILD = "${RUST_BUILD}"
