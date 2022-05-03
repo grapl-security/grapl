@@ -36,6 +36,8 @@ echo "--- Building all ${IMAGE_TAG} images"
 # all the buildx file introspection (and thus build-target awareness)
 # localised here.
 make build-image-prerequisites
+
+docker buildx bake --file="${BUILDX_BAKE_FILE}" --progress "plain" "${BUILDX_TARGET}"
 docker buildx bake --file="${BUILDX_BAKE_FILE}" --progress "plain" --push "${BUILDX_TARGET}"
 
 readonly sleep_seconds=60
