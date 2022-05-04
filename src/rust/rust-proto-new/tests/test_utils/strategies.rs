@@ -742,10 +742,10 @@ pub mod plugin_work_queue {
         }
     }
 
-    pub fn acknowledge_generator_response() -> impl Strategy<Value = native::AcknowledgeGeneratorResponse> {
+    pub fn acknowledge_generator_responses(
+    ) -> impl Strategy<Value = native::AcknowledgeGeneratorResponse> {
         Just(native::AcknowledgeGeneratorResponse {})
     }
-
 
     prop_compose! {
         pub fn acknowledge_analyzer_requests()(
@@ -759,15 +759,17 @@ pub mod plugin_work_queue {
         }
     }
 
-    pub fn acknowledge_analyzer_response() -> impl Strategy<Value = native::AcknowledgeAnalyzerResponse> {
+    pub fn acknowledge_analyzer_responses(
+    ) -> impl Strategy<Value = native::AcknowledgeAnalyzerResponse> {
         Just(native::AcknowledgeAnalyzerResponse {})
     }
 
-    pub fn maybe_jobs() -> impl Strategy<Value = Option<native::ExecutionJob>>{
+    pub fn maybe_jobs() -> impl Strategy<Value = Option<native::ExecutionJob>> {
         proptest::option::of(execution_jobs())
     }
 
-    pub fn get_execute_analyzer_requests() -> impl Strategy<Value = native::GetExecuteAnalyzerRequest> {
+    pub fn get_execute_analyzer_requests(
+    ) -> impl Strategy<Value = native::GetExecuteAnalyzerRequest> {
         Just(native::GetExecuteAnalyzerRequest {})
     }
 
@@ -783,7 +785,8 @@ pub mod plugin_work_queue {
         }
     }
 
-    pub fn get_execute_generator_requests() -> impl Strategy<Value = native::GetExecuteGeneratorRequest> {
+    pub fn get_execute_generator_requests(
+    ) -> impl Strategy<Value = native::GetExecuteGeneratorRequest> {
         Just(native::GetExecuteGeneratorRequest {})
     }
 
@@ -800,7 +803,7 @@ pub mod plugin_work_queue {
     }
 
     prop_compose! {
-        pub fn put_execute_analyzer_request()(
+        pub fn put_execute_analyzer_requests()(
             execution_job in execution_jobs(),
         ) -> native::PutExecuteAnalyzerRequest {
             native::PutExecuteAnalyzerRequest {
@@ -809,12 +812,13 @@ pub mod plugin_work_queue {
         }
     }
 
-    pub fn put_execute_analyzer_response() -> impl Strategy<Value = native::PutExecuteAnalyzerResponse> {
+    pub fn put_execute_analyzer_responses(
+    ) -> impl Strategy<Value = native::PutExecuteAnalyzerResponse> {
         Just(native::PutExecuteAnalyzerResponse {})
     }
 
     prop_compose! {
-        pub fn put_execute_generator_request()(
+        pub fn put_execute_generator_requests()(
             execution_job in execution_jobs(),
         ) -> native::PutExecuteGeneratorRequest {
             native::PutExecuteGeneratorRequest {
@@ -823,7 +827,8 @@ pub mod plugin_work_queue {
         }
     }
 
-    pub fn put_execute_generator_response() -> impl Strategy<Value = native::PutExecuteGeneratorResponse> {
+    pub fn put_execute_generator_responses(
+    ) -> impl Strategy<Value = native::PutExecuteGeneratorResponse> {
         Just(native::PutExecuteGeneratorResponse {})
     }
 }
