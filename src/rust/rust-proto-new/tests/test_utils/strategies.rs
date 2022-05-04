@@ -710,3 +710,120 @@ pub mod plugin_registry {
         Just(TearDownPluginResponse {})
     }
 }
+
+pub mod plugin_work_queue {
+    use rust_proto_new::graplinc::grapl::api::plugin_work_queue::v1beta1 as native;
+
+    use super::*;
+
+    prop_compose! {
+        pub fn execution_jobs()(
+            tenant_id in uuids(),
+            plugin_id in uuids(),
+            data in any::<Vec<u8>>(),
+        ) -> native::ExecutionJob {
+            native::ExecutionJob {
+                tenant_id,
+                plugin_id,
+                data,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn acknowledge_generator_requests()(
+            request_id in any::<i64>(),
+            success in any::<bool>(),
+        ) -> native::AcknowledgeGeneratorRequest {
+            native::AcknowledgeGeneratorRequest {
+                request_id,
+                success,
+            }
+        }
+    }
+
+    pub fn acknowledge_generator_response() -> impl Strategy<Value = native::AcknowledgeGeneratorResponse> {
+        Just(native::AcknowledgeGeneratorResponse {})
+    }
+
+
+    prop_compose! {
+        pub fn acknowledge_analyzer_requests()(
+            request_id in any::<i64>(),
+            success in any::<bool>(),
+        ) -> native::AcknowledgeAnalyzerRequest {
+            native::AcknowledgeAnalyzerRequest {
+                request_id,
+                success,
+            }
+        }
+    }
+
+    pub fn acknowledge_analyzer_response() -> impl Strategy<Value = native::AcknowledgeAnalyzerResponse> {
+        Just(native::AcknowledgeAnalyzerResponse {})
+    }
+
+    pub fn maybe_jobs() -> impl Strategy<Value = Option<native::ExecutionJob>>{
+        proptest::option::of(execution_jobs())
+    }
+
+    pub fn get_execute_analyzer_requests() -> impl Strategy<Value = native::GetExecuteAnalyzerRequest> {
+        Just(native::GetExecuteAnalyzerRequest {})
+    }
+
+    prop_compose! {
+        pub fn get_execute_analyzer_responses()(
+            execution_job in maybe_jobs(),
+            request_id in any::<i64>(),
+        ) -> native::GetExecuteAnalyzerResponse {
+            native::GetExecuteAnalyzerResponse {
+                execution_job,
+                request_id,
+            }
+        }
+    }
+
+    pub fn get_execute_generator_requests() -> impl Strategy<Value = native::GetExecuteGeneratorRequest> {
+        Just(native::GetExecuteGeneratorRequest {})
+    }
+
+    prop_compose! {
+        pub fn get_execute_generator_responses()(
+            execution_job in maybe_jobs(),
+            request_id in any::<i64>(),
+        ) -> native::GetExecuteGeneratorResponse {
+            native::GetExecuteGeneratorResponse {
+                execution_job,
+                request_id,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn put_execute_analyzer_request()(
+            execution_job in execution_jobs(),
+        ) -> native::PutExecuteAnalyzerRequest {
+            native::PutExecuteAnalyzerRequest {
+                execution_job,
+            }
+        }
+    }
+
+    pub fn put_execute_analyzer_response() -> impl Strategy<Value = native::PutExecuteAnalyzerResponse> {
+        Just(native::PutExecuteAnalyzerResponse {})
+    }
+
+    prop_compose! {
+        pub fn put_execute_generator_request()(
+            execution_job in execution_jobs(),
+        ) -> native::PutExecuteGeneratorRequest {
+            native::PutExecuteGeneratorRequest {
+                execution_job,
+            }
+        }
+    }
+
+    pub fn put_execute_generator_response() -> impl Strategy<Value = native::PutExecuteGeneratorResponse> {
+        Just(native::PutExecuteGeneratorResponse {})
+    }
+}

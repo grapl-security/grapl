@@ -14,6 +14,7 @@ use crate::{
     SerDeError,
 };
 
+#[derive(Clone)]
 pub struct ExecutionJob {
     pub tenant_id: uuid::Uuid,
     pub plugin_id: uuid::Uuid,
@@ -113,7 +114,7 @@ impl type_url::TypeUrl for AcknowledgeGeneratorRequest {
         "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.AcknowledgeGeneratorRequest";
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AcknowledgeGeneratorResponse {}
 
 impl TryFrom<proto::AcknowledgeGeneratorResponse> for AcknowledgeGeneratorResponse {
@@ -139,7 +140,7 @@ impl type_url::TypeUrl for AcknowledgeGeneratorResponse {
         "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.AcknowledgeGeneratorResponse";
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AcknowledgeAnalyzerRequest {
     pub request_id: i64,
     pub success: bool,
@@ -177,7 +178,7 @@ impl type_url::TypeUrl for AcknowledgeAnalyzerRequest {
         "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.AcknowledgeAnalyzerRequest";
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AcknowledgeAnalyzerResponse {}
 
 impl TryFrom<proto::AcknowledgeAnalyzerResponse> for AcknowledgeAnalyzerResponse {
@@ -203,7 +204,7 @@ impl type_url::TypeUrl for AcknowledgeAnalyzerResponse {
         "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.AcknowledgeAnalyzerResponse";
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GetExecuteAnalyzerRequest {}
 
 impl TryFrom<proto::GetExecuteAnalyzerRequest> for GetExecuteAnalyzerRequest {
@@ -229,7 +230,7 @@ impl type_url::TypeUrl for GetExecuteAnalyzerRequest {
         "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.GetExecuteAnalyzerRequest";
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GetExecuteAnalyzerResponse {
     pub execution_job: Option<ExecutionJob>,
     pub request_id: i64,
@@ -276,7 +277,7 @@ impl type_url::TypeUrl for GetExecuteAnalyzerResponse {
         "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.GetExecuteAnalyzerResponse";
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GetExecuteGeneratorRequest {}
 
 impl TryFrom<proto::GetExecuteGeneratorRequest> for GetExecuteGeneratorRequest {
@@ -302,7 +303,7 @@ impl type_url::TypeUrl for GetExecuteGeneratorRequest {
         "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.GetExecuteGeneratorRequest";
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GetExecuteGeneratorResponse {
     pub execution_job: Option<ExecutionJob>,
     pub request_id: i64,
@@ -349,7 +350,7 @@ impl type_url::TypeUrl for GetExecuteGeneratorResponse {
         "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.GetExecuteGeneratorResponse";
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PutExecuteAnalyzerRequest {
     pub execution_job: ExecutionJob,
 }
@@ -386,7 +387,7 @@ impl type_url::TypeUrl for PutExecuteAnalyzerRequest {
         "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.PutExecuteAnalyzerRequest";
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PutExecuteAnalyzerResponse {}
 
 impl TryFrom<proto::PutExecuteAnalyzerResponse> for PutExecuteAnalyzerResponse {
@@ -412,7 +413,7 @@ impl type_url::TypeUrl for PutExecuteAnalyzerResponse {
         "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.PutExecuteAnalyzerResponse";
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PutExecuteGeneratorRequest {
     pub execution_job: ExecutionJob,
 }
@@ -449,7 +450,7 @@ impl type_url::TypeUrl for PutExecuteGeneratorRequest {
         "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.PutExecuteGeneratorRequest";
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PutExecuteGeneratorResponse {}
 
 impl TryFrom<proto::PutExecuteGeneratorResponse> for PutExecuteGeneratorResponse {
