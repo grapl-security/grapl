@@ -33,9 +33,10 @@ node_modules/
 # Web UI frontend artifacts
 src/rust/grapl-web-ui/frontend/*
 
-# Nomad artifacts
+# Nomad/Consul artifacts
 # This is a generated config file for local grapl
 nomad/local/mount-grapl-root-as-volume.nomad
+nomad/local/consul-dynamic-conf.hcl
 
 # Distribution / packaging
 *.zip
