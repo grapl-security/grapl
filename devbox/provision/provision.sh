@@ -90,13 +90,13 @@ EOF
     fi
 
     config=$(pulumi config --json)
-    if ! has_key "${config}" "devbox:public-key}"; then
+    if ! has_key "${config}" "devbox:public-key"; then
         pulumi config set devbox:public-key -- < "${SSH_PUBLIC_KEY_FILE}"
     fi
-    if ! has_key "${config}" "devbox:instance-volume-size-gb}"; then
+    if ! has_key "${config}" "devbox:instance-volume-size-gb"; then
         pulumi config set devbox:instance-volume-size-gb 100
     fi
-    if ! has_key "${config}" "devbox:instance-type}"; then
+    if ! has_key "${config}" "devbox:instance-type"; then
         # 32GB RAM
         # $5.80 daily reserved cost
         pulumi config set devbox:instance-type "m5.2xlarge"
