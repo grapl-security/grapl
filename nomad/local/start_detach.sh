@@ -54,8 +54,23 @@ ensure_valid_env() {
     fi
 }
 
+create_dynamic_consul_config() {
+    # clear file if it exist
+    if [[ -f "${THIS_DIR}/consul-dynamic-conf.hcl" ]]; then
+        rm "${THIS_DIR}/consul-dynamic-conf.hcl"
+    fi
+
+    GOSSIP_KEY=$(consul keygen)
+
+    # generate the file
+    cat << EOF > "${THIS_DIR}/consul-dynamic-conf.hcl"
+encrypt = "$GOSSIP_KEY"
+EOF
+}
+
 start_nomad_detach() {
     ensure_valid_env
+    create_dynamic_consul_config
 
     echo "Starting nomad and consul locally. Logs @ ${NOMAD_LOGS_DEST} and ${CONSUL_LOGS_DEST}."
     # These will run forever until `make stop-nomad-ci` is invoked."
@@ -67,6 +82,7 @@ start_nomad_detach() {
     # The client is set to 0.0.0.0 here so that it can be reached via pulumi in docker.
     consul agent \
         -client 0.0.0.0 -config-file "${THIS_DIR}/consul-agent-conf.hcl" \
+        -config-file "${THIS_DIR}/consul-dynamic-conf.hcl" \
         -dev > "${CONSUL_LOGS_DEST}" &
     local -r consul_agent_pid="$!"
 

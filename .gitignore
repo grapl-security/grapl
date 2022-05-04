@@ -30,9 +30,10 @@ node_modules/
 # corepack installs the node version in .node. Kinda annoying but makes sense since its not yarn-specific
 .node/
 
-# Nomad artifacts
+# Nomad/Consul artifacts
 # This is a generated config file for local grapl
 nomad/local/mount-grapl-root-as-volume.nomad
+nomad/local/consul-dynamic-conf.hcl
 
 # Distribution / packaging
 *.zip
