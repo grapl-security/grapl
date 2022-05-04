@@ -13,12 +13,6 @@ use crate::{
     type_url,
     SerDeError,
 };
-/*
-pub use crate::graplinc::grapl::api::plugin_work_queue::v1beta1::{
-    plugin_work_queue_service_client,
-    plugin_work_queue_service_server,
-};
-*/
 
 pub struct ExecutionJob {
     pub tenant_id: uuid::Uuid,
