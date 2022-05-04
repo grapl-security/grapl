@@ -55,9 +55,14 @@ ensure_valid_env() {
 }
 
 create_dynamic_consul_config() {
-    # Generate a dynamic consul config to hold secrets
+    # clear file if it exist
+    if [[ -f "${THIS_DIR}/consul-dynamic-conf.hcl" ]]; then
+        rm "${THIS_DIR}/consul-dynamic-conf.hcl"
+    fi
+
     GOSSIP_KEY=$(consul keygen)
-    rm "${THIS_DIR}/consul-dynamic-conf.hcl"
+
+    # generate the file
     cat << EOF > "${THIS_DIR}/consul-dynamic-conf.hcl"
 encrypt = "$GOSSIP_KEY"
 EOF
