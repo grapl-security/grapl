@@ -2,12 +2,13 @@
 
 use std::fmt::Formatter;
 
-use crate::protobufs::graplinc::grapl::api::plugin_work_queue::v1beta1 as proto;
 use proto::{
     get_execute_analyzer_response,
     get_execute_generator_response,
 };
+
 use crate::{
+    protobufs::graplinc::grapl::api::plugin_work_queue::v1beta1 as proto,
     serde_impl::ProtobufSerializable,
     type_url,
     SerDeError,
@@ -72,6 +73,15 @@ impl From<ExecutionJob> for proto::ExecutionJob {
     }
 }
 
+impl ProtobufSerializable<ExecutionJob> for ExecutionJob {
+    type ProtobufMessage = proto::ExecutionJob;
+}
+
+impl type_url::TypeUrl for ExecutionJob {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.ExecutionJob";
+}
+
 #[derive(Debug)]
 pub struct AcknowledgeGeneratorRequest {
     pub request_id: i64,
@@ -100,6 +110,15 @@ impl From<AcknowledgeGeneratorRequest> for proto::AcknowledgeGeneratorRequest {
     }
 }
 
+impl ProtobufSerializable<AcknowledgeGeneratorRequest> for AcknowledgeGeneratorRequest {
+    type ProtobufMessage = proto::AcknowledgeGeneratorRequest;
+}
+
+impl type_url::TypeUrl for AcknowledgeGeneratorRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.AcknowledgeGeneratorRequest";
+}
+
 #[derive(Debug)]
 pub struct AcknowledgeGeneratorResponse {}
 
@@ -115,6 +134,15 @@ impl From<AcknowledgeGeneratorResponse> for proto::AcknowledgeGeneratorResponse 
     fn from(_value: AcknowledgeGeneratorResponse) -> Self {
         Self {}
     }
+}
+
+impl ProtobufSerializable<AcknowledgeGeneratorResponse> for AcknowledgeGeneratorResponse {
+    type ProtobufMessage = proto::AcknowledgeGeneratorResponse;
+}
+
+impl type_url::TypeUrl for AcknowledgeGeneratorResponse {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.AcknowledgeGeneratorResponse";
 }
 
 #[derive(Debug)]
@@ -146,6 +174,15 @@ impl From<AcknowledgeAnalyzerRequest> for proto::AcknowledgeAnalyzerRequest {
     }
 }
 
+impl ProtobufSerializable<AcknowledgeAnalyzerRequest> for AcknowledgeAnalyzerRequest {
+    type ProtobufMessage = proto::AcknowledgeAnalyzerRequest;
+}
+
+impl type_url::TypeUrl for AcknowledgeAnalyzerRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.AcknowledgeAnalyzerRequest";
+}
+
 #[derive(Debug)]
 pub struct AcknowledgeAnalyzerResponse {}
 
@@ -163,6 +200,15 @@ impl From<AcknowledgeAnalyzerResponse> for proto::AcknowledgeAnalyzerResponse {
     }
 }
 
+impl ProtobufSerializable<AcknowledgeAnalyzerResponse> for AcknowledgeAnalyzerResponse {
+    type ProtobufMessage = proto::AcknowledgeAnalyzerResponse;
+}
+
+impl type_url::TypeUrl for AcknowledgeAnalyzerResponse {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.AcknowledgeAnalyzerResponse";
+}
+
 #[derive(Debug)]
 pub struct GetExecuteAnalyzerRequest {}
 
@@ -178,6 +224,15 @@ impl From<GetExecuteAnalyzerRequest> for proto::GetExecuteAnalyzerRequest {
     fn from(_value: GetExecuteAnalyzerRequest) -> Self {
         Self {}
     }
+}
+
+impl ProtobufSerializable<GetExecuteAnalyzerRequest> for GetExecuteAnalyzerRequest {
+    type ProtobufMessage = proto::GetExecuteAnalyzerRequest;
+}
+
+impl type_url::TypeUrl for GetExecuteAnalyzerRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.GetExecuteAnalyzerRequest";
 }
 
 #[derive(Debug)]
@@ -218,6 +273,15 @@ impl From<GetExecuteAnalyzerResponse> for proto::GetExecuteAnalyzerResponse {
     }
 }
 
+impl ProtobufSerializable<GetExecuteAnalyzerResponse> for GetExecuteAnalyzerResponse {
+    type ProtobufMessage = proto::GetExecuteAnalyzerResponse;
+}
+
+impl type_url::TypeUrl for GetExecuteAnalyzerResponse {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.GetExecuteAnalyzerResponse";
+}
+
 #[derive(Debug)]
 pub struct GetExecuteGeneratorRequest {}
 
@@ -233,6 +297,15 @@ impl From<GetExecuteGeneratorRequest> for proto::GetExecuteGeneratorRequest {
     fn from(_value: GetExecuteGeneratorRequest) -> Self {
         Self {}
     }
+}
+
+impl ProtobufSerializable<GetExecuteGeneratorRequest> for GetExecuteGeneratorRequest {
+    type ProtobufMessage = proto::GetExecuteGeneratorRequest;
+}
+
+impl type_url::TypeUrl for GetExecuteGeneratorRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.GetExecuteGeneratorRequest";
 }
 
 #[derive(Debug)]
@@ -273,6 +346,15 @@ impl From<GetExecuteGeneratorResponse> for proto::GetExecuteGeneratorResponse {
     }
 }
 
+impl ProtobufSerializable<GetExecuteGeneratorResponse> for GetExecuteGeneratorResponse {
+    type ProtobufMessage = proto::GetExecuteGeneratorResponse;
+}
+
+impl type_url::TypeUrl for GetExecuteGeneratorResponse {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.GetExecuteGeneratorResponse";
+}
+
 #[derive(Debug)]
 pub struct PutExecuteAnalyzerRequest {
     pub execution_job: ExecutionJob,
@@ -301,6 +383,15 @@ impl From<PutExecuteAnalyzerRequest> for proto::PutExecuteAnalyzerRequest {
     }
 }
 
+impl ProtobufSerializable<PutExecuteAnalyzerRequest> for PutExecuteAnalyzerRequest {
+    type ProtobufMessage = proto::PutExecuteAnalyzerRequest;
+}
+
+impl type_url::TypeUrl for PutExecuteAnalyzerRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.PutExecuteAnalyzerRequest";
+}
+
 #[derive(Debug)]
 pub struct PutExecuteAnalyzerResponse {}
 
@@ -316,6 +407,15 @@ impl From<PutExecuteAnalyzerResponse> for proto::PutExecuteAnalyzerResponse {
     fn from(_value: PutExecuteAnalyzerResponse) -> Self {
         Self {}
     }
+}
+
+impl ProtobufSerializable<PutExecuteAnalyzerResponse> for PutExecuteAnalyzerResponse {
+    type ProtobufMessage = proto::PutExecuteAnalyzerResponse;
+}
+
+impl type_url::TypeUrl for PutExecuteAnalyzerResponse {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.PutExecuteAnalyzerResponse";
 }
 
 #[derive(Debug)]
@@ -346,6 +446,15 @@ impl From<PutExecuteGeneratorRequest> for proto::PutExecuteGeneratorRequest {
     }
 }
 
+impl ProtobufSerializable<PutExecuteGeneratorRequest> for PutExecuteGeneratorRequest {
+    type ProtobufMessage = proto::PutExecuteGeneratorRequest;
+}
+
+impl type_url::TypeUrl for PutExecuteGeneratorRequest {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.PutExecuteGeneratorRequest";
+}
+
 #[derive(Debug)]
 pub struct PutExecuteGeneratorResponse {}
 
@@ -363,10 +472,19 @@ impl From<PutExecuteGeneratorResponse> for proto::PutExecuteGeneratorResponse {
     }
 }
 
+impl ProtobufSerializable<PutExecuteGeneratorResponse> for PutExecuteGeneratorResponse {
+    type ProtobufMessage = proto::PutExecuteGeneratorResponse;
+}
+
+impl type_url::TypeUrl for PutExecuteGeneratorResponse {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_work_queue.v1beta1.PutExecuteGeneratorResponse";
+}
+
 impl From<Option<ExecutionJob>> for get_execute_generator_response::MaybeJob {
     fn from(execution_job: Option<ExecutionJob>) -> Self {
         match execution_job {
-            None => get_execute_generator_response::MaybeJob::NoJobs(proto::NoAvailableJobs{}),
+            None => get_execute_generator_response::MaybeJob::NoJobs(proto::NoAvailableJobs {}),
             Some(job) => get_execute_generator_response::MaybeJob::Job(job.into()),
         }
     }
@@ -387,7 +505,7 @@ impl TryFrom<get_execute_analyzer_response::MaybeJob> for Option<ExecutionJob> {
 impl From<Option<ExecutionJob>> for get_execute_analyzer_response::MaybeJob {
     fn from(execution_job: Option<ExecutionJob>) -> Self {
         match execution_job {
-            None => get_execute_analyzer_response::MaybeJob::NoJobs(proto::NoAvailableJobs{}),
+            None => get_execute_analyzer_response::MaybeJob::NoJobs(proto::NoAvailableJobs {}),
             Some(job) => get_execute_analyzer_response::MaybeJob::Job(job.into()),
         }
     }
@@ -404,4 +522,3 @@ impl TryFrom<get_execute_generator_response::MaybeJob> for Option<ExecutionJob> 
         Ok(maybe_job)
     }
 }
-
