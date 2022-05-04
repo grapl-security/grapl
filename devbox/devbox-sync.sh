@@ -12,6 +12,8 @@ readonly SSH_SCRIPT="${THIS_DIR}/ssh.sh"
 readonly VERBOSE_DEVBOX_SYNC="${VERBOSE_DEVBOX_SYNC:-0}"
 
 rsync_progress_args=()
+# These seemingly similar args - --info=progress and --progress2 - 
+# have very different outputs. Notably, --progress outputs each file.
 if [[ ${VERBOSE_DEVBOX_SYNC} -ne 0 ]]; then
     rsync_progress_args+=(--progress --verbose)
 else
