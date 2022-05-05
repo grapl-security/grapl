@@ -16,12 +16,9 @@ use rust_proto_new::{
             PublishRawLogResponse,
         },
     },
-    protocol::{
-        healthcheck::{
-            client::HealthcheckClient,
-            HealthcheckStatus,
-        },
-        status::Status,
+    protocol::healthcheck::{
+        client::HealthcheckClient,
+        HealthcheckStatus,
     },
 };
 use test_context::{
@@ -69,12 +66,6 @@ struct MockPipelineIngressApi {}
 enum MockPipelineIngressApiError {
     #[error("failed to publish raw log")]
     PublishRawLogFailed,
-}
-
-impl From<MockPipelineIngressApiError> for Status {
-    fn from(e: MockPipelineIngressApiError) -> Self {
-        Status::internal(e.to_string())
-    }
 }
 
 #[tonic::async_trait]

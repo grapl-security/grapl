@@ -147,8 +147,6 @@ pub mod graplinc {
 
             pub mod plugin_work_queue {
                 pub mod v1beta1;
-                mod v1beta1_client;
-                mod v1beta1_server;
             }
         }
 
