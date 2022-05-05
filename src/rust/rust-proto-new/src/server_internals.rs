@@ -4,13 +4,13 @@
 /// Api. This way all the protocol buffer compiler generated
 /// types are encapsulated, and the public API is implemented in terms of
 /// this crate's sanitized types.
-pub struct ApiDelegate<T> {
+pub struct GrpcApi<T> {
     pub api_server: T,
 }
 
-impl<T> ApiDelegate<T> {
+impl<T> GrpcApi<T> {
     pub fn new(api_server: T) -> Self {
-        ApiDelegate { api_server }
+        GrpcApi { api_server }
     }
 }
 

@@ -248,7 +248,7 @@ pub mod server {
             status::Status,
         },
         rpc_translate_proto_to_native,
-        server_internals::ApiDelegate,
+        server_internals::GrpcApi,
         SerDeError,
     };
 
@@ -257,7 +257,7 @@ pub mod server {
     //
 
     #[tonic::async_trait]
-    impl<T> PipelineIngressServiceProto for ApiDelegate<T>
+    impl<T> PipelineIngressServiceProto for GrpcApi<T>
     where
         T: PipelineIngressApi + Send + Sync + 'static,
     {
@@ -331,7 +331,7 @@ pub mod server {
                     healthcheck_polling_interval,
                     tcp_listener,
                     shutdown_rx,
-                    service_name: PipelineIngressServiceServerProto::<ApiDelegate<T>>::NAME,
+                    service_name: PipelineIngressServiceServerProto::<GrpcApi<T>>::NAME,
                     f_: PhantomData,
                 },
                 shutdown_tx,
@@ -350,14 +350,14 @@ pub mod server {
         pub async fn serve(self) -> Result<(), ConfigurationError> {
             // TODO: add tower tracing, tls_config, concurrency limits
             let (healthcheck_handle, health_service) =
-                init_health_service::<PipelineIngressServiceServerProto<ApiDelegate<T>>, _, _>(
+                init_health_service::<PipelineIngressServiceServerProto<GrpcApi<T>>, _, _>(
                     self.healthcheck,
                     self.healthcheck_polling_interval,
                 )
                 .await;
             Ok(Server::builder()
                 .add_service(health_service)
-                .add_service(PipelineIngressServiceServerProto::new(ApiDelegate::new(
+                .add_service(PipelineIngressServiceServerProto::new(GrpcApi::new(
                     self.api_server,
                 )))
                 .serve_with_incoming_shutdown(
