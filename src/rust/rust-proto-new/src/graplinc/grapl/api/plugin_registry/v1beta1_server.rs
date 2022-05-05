@@ -99,8 +99,7 @@ where
 impl<T, E> PluginRegistryService for ApiDelegate<T, E>
 where
     T: PluginRegistryApi<E> + Send + Sync + 'static,
-    E: Send + Sync + 'static,
-    Status: From<E>,
+    E: Into<Status> + Send + Sync + 'static,
 {
     async fn create_plugin(
         &self,
@@ -170,8 +169,7 @@ where
 impl<T, E, H, F> PluginRegistryServer<T, E, H, F>
 where
     T: PluginRegistryApi<E> + Send + Sync + 'static,
-    E: Sync + Send + 'static,
-    Status: From<E>,
+    E: Into<Status> + Send + Sync + 'static,
     H: Fn() -> F + Send + Sync + 'static,
     F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send,
 {

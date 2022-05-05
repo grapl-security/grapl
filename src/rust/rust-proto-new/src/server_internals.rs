@@ -52,7 +52,7 @@ macro_rules! rpc_translate_proto_to_native {
                 .api_server
                 .$rpc_name(native_request)
                 .await
-                .map_err(crate::protocol::status::Status::from)?;
+                .map_err(Into::into)?;
 
             let proto_response = native_response.try_into().map_err(SerDeError::from)?;
 

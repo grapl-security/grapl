@@ -260,8 +260,7 @@ pub mod server {
     impl<T, E> PipelineIngressServiceProto for ApiDelegate<T, E>
     where
         T: PipelineIngressApi<E> + Send + Sync + 'static,
-        E: ToString + Send + Sync + 'static,
-        Status: From<E>,
+        E: Into<Status> + Send + Sync + 'static,
     {
         async fn publish_raw_log(
             &self,
@@ -315,8 +314,7 @@ pub mod server {
     impl<T, E, H, F> PipelineIngressServer<T, E, H, F>
     where
         T: PipelineIngressApi<E> + Send + Sync + 'static,
-        E: ToString + Send + Sync + 'static,
-        Status: From<E>,
+        E: Into<Status> + Send + Sync + 'static,
         H: Fn() -> F + Send + Sync + 'static,
         F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send + Sync + 'static,
     {
