@@ -217,7 +217,6 @@ pub mod server {
         },
         Future,
         FutureExt,
-        TryFutureExt,
     };
     use thiserror::Error;
     use tokio::net::TcpListener;
@@ -248,6 +247,7 @@ pub mod server {
             },
             status::Status,
         },
+        rpc_translate_proto_to_native,
         server_internals::ServerInternalGrpc,
         SerDeError,
     };
@@ -267,21 +267,7 @@ pub mod server {
             &self,
             request: tonic::Request<PublishRawLogRequestProto>,
         ) -> Result<tonic::Response<PublishRawLogResponseProto>, tonic::Status> {
-            // TODO: Port this function to rpc_translate_proto_to_native
-            let inner_request: PublishRawLogRequest = request
-                .into_inner()
-                .try_into()
-                .map_err(|e: SerDeError| tonic::Status::unknown(e.to_string()))?;
-
-            let response = self
-                .api_server
-                .publish_raw_log(inner_request)
-                .map_err(|e| tonic::Status::unknown(e.to_string()))
-                .await?
-                .try_into()
-                .map_err(|e: SerDeError| tonic::Status::unknown(e.to_string()))?;
-
-            Ok(tonic::Response::new(response))
+            rpc_translate_proto_to_native!(self, request, publish_raw_log)
         }
     }
 
