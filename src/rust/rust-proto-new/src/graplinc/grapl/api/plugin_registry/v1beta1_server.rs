@@ -3,8 +3,6 @@ use std::{
     time::Duration,
 };
 
-use crate::server_internals::{ServerInternalGrpc, Api};
-
 use futures::{
     channel::oneshot::{
         self,
@@ -47,6 +45,8 @@ use crate::{
         self as proto,
         plugin_registry_service_server::PluginRegistryServiceServer as PluginRegistryServiceProto,
     },
+    protocol::status::Status,
+    server_internals::ServerInternalGrpc,
     SerDeError,
 };
 
@@ -62,9 +62,9 @@ pub enum PluginRegistryApiError {
 
 /// Implement this trait to define the API business logic
 #[tonic::async_trait]
-pub trait PluginRegistryApi<E>: Api
+pub trait PluginRegistryApi<E>
 where
-    E: Into<tonic::Status>,
+    E: Into<Status>,
 {
     async fn create_plugin(&self, request: CreatePluginRequest) -> Result<CreatePluginResponse, E>;
 
@@ -93,7 +93,7 @@ impl<T, E> PluginRegistryService for ServerInternalGrpc<T, E>
 where
     T: PluginRegistryApi<E> + Send + Sync + 'static,
     E: Send + Sync + 'static,
-    tonic::Status: From<E>,
+    Status: From<E>,
 {
     async fn create_plugin(
         &self,
@@ -107,7 +107,7 @@ where
         let response = self
             .api_server
             .create_plugin(inner_request)
-            .map_err(tonic::Status::from)
+            .map_err(Status::from)
             .await?;
 
         Ok(Response::new(response.into()))
@@ -125,7 +125,7 @@ where
         let response = self
             .api_server
             .get_plugin(inner_request)
-            .map_err(tonic::Status::from)
+            .map_err(Status::from)
             .await?;
 
         Ok(Response::new(response.into()))
@@ -143,7 +143,7 @@ where
         let response = self
             .api_server
             .deploy_plugin(inner_request)
-            .map_err(tonic::Status::from)
+            .map_err(Status::from)
             .await?;
 
         Ok(Response::new(response.into()))
@@ -198,7 +198,7 @@ pub enum HealthcheckStatus {
 pub struct PluginRegistryServer<T, E, H, F>
 where
     T: PluginRegistryApi<E> + Send + Sync + 'static,
-    E: Into<tonic::Status>,
+    E: Into<Status>,
     H: Fn() -> F + Send + Sync + 'static,
     F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send,
 {
@@ -216,7 +216,7 @@ impl<T, E, H, F> PluginRegistryServer<T, E, H, F>
 where
     T: PluginRegistryApi<E> + Send + Sync + 'static,
     E: Sync + Send + 'static,
-    tonic::Status: From<E>,
+    Status: From<E>,
     H: Fn() -> F + Send + Sync + 'static,
     F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send,
 {

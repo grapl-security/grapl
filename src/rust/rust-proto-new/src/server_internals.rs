@@ -1,5 +1,7 @@
 use std::marker::PhantomData;
 
+use crate::protocol::status::Status;
+
 pub trait Api {}
 
 /// This struct implements the internal gRPC representation of the server.
@@ -10,8 +12,7 @@ pub trait Api {}
 /// this crate's sanitized types.
 pub struct ServerInternalGrpc<T, E>
 where
-    T: Api,
-    E: Into<tonic::Status>,
+    E: Into<Status>,
 {
     pub api_server: T,
     _e: PhantomData<E>,
@@ -19,8 +20,7 @@ where
 
 impl<T, E> ServerInternalGrpc<T, E>
 where
-    T: Api,
-    E: Into<tonic::Status>,
+    E: Into<Status>,
 {
     pub fn new(api_server: T) -> Self {
         ServerInternalGrpc {

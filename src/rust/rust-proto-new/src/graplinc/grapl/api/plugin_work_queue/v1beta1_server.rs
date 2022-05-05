@@ -1,7 +1,7 @@
-use std::marker::PhantomData;
-
-use crate::SerDeError;
-use crate::graplinc::grapl::api::plugin_work_queue::v1beta1 as native;
+use crate::{
+    graplinc::grapl::api::plugin_work_queue::v1beta1 as native,
+    SerDeError,
+};
 
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]

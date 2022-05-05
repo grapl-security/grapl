@@ -10,34 +10,34 @@ use rusoto_s3::{
     S3Client,
     S3,
 };
-use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
-    CreatePluginRequest,
-    CreatePluginResponse,
-    DeployPluginRequest,
-    DeployPluginResponse,
-    GetAnalyzersForTenantRequest,
-    GetAnalyzersForTenantResponse,
-    GetGeneratorsForEventSourceRequest,
-    GetGeneratorsForEventSourceResponse,
-    GetPluginRequest,
-    GetPluginResponse,
-    HealthcheckStatus,
-    Plugin,
-    PluginRegistryApi,
-    PluginRegistryServer,
-    PluginType,
-    TearDownPluginRequest,
-    TearDownPluginResponse,
+use rust_proto_new::{
+    graplinc::grapl::api::plugin_registry::v1beta1::{
+        CreatePluginRequest,
+        CreatePluginResponse,
+        DeployPluginRequest,
+        DeployPluginResponse,
+        GetAnalyzersForTenantRequest,
+        GetAnalyzersForTenantResponse,
+        GetGeneratorsForEventSourceRequest,
+        GetGeneratorsForEventSourceResponse,
+        GetPluginRequest,
+        GetPluginResponse,
+        HealthcheckStatus,
+        Plugin,
+        PluginRegistryApi,
+        PluginRegistryServer,
+        PluginType,
+        TearDownPluginRequest,
+        TearDownPluginResponse,
+    },
+    protocol::status::Status,
 };
 use structopt::StructOpt;
 use tokio::{
     io::AsyncReadExt,
     net::TcpListener,
 };
-use tonic::{
-    async_trait,
-    Status,
-};
+use tonic::async_trait;
 
 use crate::{
     db::{

@@ -36,7 +36,10 @@ use rust_proto_new::{
             v1beta2::Envelope,
         },
     },
-    protocol::healthcheck::HealthcheckStatus,
+    protocol::{
+        healthcheck::HealthcheckStatus,
+        status::Status,
+    },
 };
 use thiserror::Error;
 use tokio::net::TcpListener;
@@ -51,6 +54,12 @@ use uuid::Uuid;
 enum IngressApiError {
     #[error("failed to send message to kafka {0}")]
     ProducerError(#[from] ProducerError),
+}
+
+impl From<IngressApiError> for Status {
+    fn from(e: IngressApiError) -> Self {
+        Status::internal(e.to_string())
+    }
 }
 
 struct IngressApi {
