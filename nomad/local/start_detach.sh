@@ -66,7 +66,8 @@ start_nomad_detach() {
         -dev-connect > "${NOMAD_LOGS_DEST}" &
 
     vault server \
-        -dev > "${VAULT_LOGS_DEST}" &
+        -config="${THIS_DIR}/vault-agent-conf.hcl"
+    -dev > "${VAULT_LOGS_DEST}" &
     # The client is set to 0.0.0.0 here so that it can be reached via pulumi in docker.
     consul agent \
         -client 0.0.0.0 -config-file "${THIS_DIR}/consul-agent-conf.hcl" \
