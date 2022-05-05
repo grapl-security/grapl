@@ -24,14 +24,3 @@ where
     let round_trip = serializable.serialize().and_then(T::deserialize);
     round_trip.expect_err("Expected a SerDeError")
 }
-
-pub fn expect_serde_error_with_message<T>(serializable: T, expected_substr: &str)
-where
-    T: SerDe + PartialEq + Clone + Debug,
-{
-    let err = expect_serde_error(serializable).to_string();
-    assert!(
-        err.contains(expected_substr),
-        "Expected error '{err}' to contain '{expected_substr}'"
-    )
-}
