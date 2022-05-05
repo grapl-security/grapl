@@ -7,6 +7,17 @@ use proto::{
     get_execute_generator_response,
 };
 
+pub use crate::graplinc::grapl::api::plugin_work_queue::{
+    v1beta1_client::{
+        PluginWorkQueueServiceClient,
+        PluginWorkQueueServiceClientError,
+    },
+    v1beta1_server::{
+        PluginWorkQueueApi,
+        PluginWorkQueueApiError,
+        PluginWorkQueueServer,
+    },
+};
 use crate::{
     protobufs::graplinc::grapl::api::plugin_work_queue::v1beta1 as proto,
     serde_impl::ProtobufSerializable,

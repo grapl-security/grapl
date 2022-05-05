@@ -11,6 +11,8 @@ pub struct PluginWorkQueueServiceConfig {
     #[structopt(env)]
     pub plugin_work_queue_bind_address: SocketAddr,
     #[structopt(env)]
+    pub plugin_work_queue_healthcheck_polling_interval_ms: u64,
+    #[structopt(env)]
     pub plugin_work_queue_db_hostname: String,
     #[structopt(env)]
     pub plugin_work_queue_db_port: u16,

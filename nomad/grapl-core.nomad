@@ -1417,6 +1417,8 @@ job "grapl-core" {
         PLUGIN_WORK_QUEUE_DB_PASSWORD   = var.plugin_work_queue_db_password
         PLUGIN_WORK_QUEUE_DB_PORT       = var.plugin_work_queue_db_port
         PLUGIN_WORK_QUEUE_DB_USERNAME   = var.plugin_work_queue_db_username
+        # Hardcoded, but makes little sense to pipe up through Pulumi
+        PLUGIN_WORK_QUEUE_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
         PLUGIN_S3_BUCKET_AWS_ACCOUNT_ID = var.plugin_s3_bucket_aws_account_id
         PLUGIN_S3_BUCKET_NAME           = var.plugin_s3_bucket_name
         RUST_BACKTRACE                  = local.rust_backtrace
