@@ -3998,6 +3998,7 @@ dependencies = [
  "futures",
  "proptest",
  "prost 0.10.1",
+ "prost-build 0.10.1",
  "prost-types 0.10.1",
  "quickcheck",
  "quickcheck_macros",
