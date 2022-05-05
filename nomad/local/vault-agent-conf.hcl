@@ -4,9 +4,9 @@ ui = true
 
 api_addr = "http://127.0.0.1:8200"
 
-service_registration "consul" {
-  address = "127.0.0.1:8500"
-}
+#service_registration "consul" {
+#  address = "127.0.0.1:8500"
+#}
 
 # For dev we use in-memory. Do NOT use in prod
 storage "inmem" {}

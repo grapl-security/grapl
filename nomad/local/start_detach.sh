@@ -55,6 +55,13 @@ ensure_valid_env() {
     fi
 }
 
+configure_vault() {
+    export VAULT_ADDR="http://127.0.0.1:8200"
+    vault secrets enable pki
+    # enable intermediate pki
+    vault secrets enable -path=pki_int pki
+}
+
 create_dynamic_consul_config() {
     # clear file if it exist
     if [[ -f "${THIS_DIR}/consul-dynamic-conf.hcl" ]]; then
@@ -62,29 +69,42 @@ create_dynamic_consul_config() {
     fi
 
     GOSSIP_KEY=$(consul keygen)
+    # We're using the root token for the POC of this
+    VAULT_TOKEN=$(cat "${HOME}/.vault-token")
 
     # generate the file
     cat << EOF > "${THIS_DIR}/consul-dynamic-conf.hcl"
 encrypt = "$GOSSIP_KEY"
+connect {
+  enabled = true
+  ca_provider = "vault"
+  ca_config {
+    address = "http://127.0.0.1:8200"
+    token = "$VAULT_TOKEN"
+    root_pki_path = "connect-root"
+    intermediate_pki_path = "connect-intermediate"
+  }
+}
 EOF
 }
 
 start_nomad_detach() {
     ensure_valid_env
-    create_dynamic_consul_config
 
     echo "Starting nomad, vault, and consul locally. Logs @ ${NOMAD_LOGS_DEST}, ${VAULT_LOGS_DEST} and ${CONSUL_LOGS_DEST}."
     # These will run forever until `make stop-nomad-ci` is invoked."
+    vault server \
+        -config="${THIS_DIR}/vault-agent-conf.hcl" \
+        -dev > "${VAULT_LOGS_DEST}" 2>&1 &
+    local -r vault_agent_pid="$!"
+
     # shellcheck disable=SC2024
     sudo nomad agent \
         -config="${THIS_DIR}/nomad-agent-conf.nomad" \
         -dev-connect > "${NOMAD_LOGS_DEST}" &
     local -r nomad_agent_pid="$!"
 
-    vault server \
-        -config="${THIS_DIR}/vault-agent-conf.hcl" \
-        -dev > "${VAULT_LOGS_DEST}" &
-    local -r vault_agent_pid="$!"
+    create_dynamic_consul_config
 
     # The client is set to 0.0.0.0 here so that it can be reached via pulumi in docker.
     consul agent \
