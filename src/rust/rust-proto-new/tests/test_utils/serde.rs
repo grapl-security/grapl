@@ -1,6 +1,9 @@
 use std::fmt::Debug;
 
-use rust_proto_new::{SerDe, SerDeError};
+use rust_proto_new::{
+    SerDe,
+    SerDeError,
+};
 
 // helper function to define a simple encode-decode invariant
 // see: https://hypothesis.works/articles/encode-decode-invariant/
@@ -18,9 +21,7 @@ pub fn expect_serde_error<T>(serializable: T) -> SerDeError
 where
     T: SerDe + PartialEq + Clone + Debug,
 {
-    let round_trip = serializable.serialize().and_then(
-        T::deserialize
-    );
+    let round_trip = serializable.serialize().and_then(T::deserialize);
     round_trip.expect_err("Expected a SerDeError")
 }
 

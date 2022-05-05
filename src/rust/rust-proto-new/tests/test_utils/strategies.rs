@@ -32,8 +32,9 @@ pub fn string_not_empty() -> proptest::string::RegexGeneratorStrategy<String> {
     proptest::string::string_regex(".+").expect("Invalid regex")
 }
 
-pub fn vec_not_empty<T>() -> impl Strategy<Value = Vec<T>> 
-where T: Arbitrary
+pub fn vec_not_empty<T>() -> impl Strategy<Value = Vec<T>>
+where
+    T: Arbitrary,
 {
     any::<Vec<T>>().prop_filter("Only accept non-empty vecs", |v| !v.is_empty())
 }

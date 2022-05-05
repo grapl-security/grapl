@@ -325,6 +325,7 @@ mod plugin_work_queue {
     use strategies::plugin_work_queue as pwq_strats;
 
     use super::*;
+    use crate::test_utils::serde::expect_serde_error_with_message;
 
     proptest! {
         #[test]
@@ -358,13 +359,14 @@ mod plugin_work_queue {
 
         #[test]
         fn test_get_execute_analyzer_responses(
-            value in pwq_strats::get_execute_analyzer_responses().prop_filter("Accept Some(job)s", |v| {
-                v.execution_job.is_some()
-            })
+            value in pwq_strats::get_execute_analyzer_responses()
         ) {
-            check_encode_decode_invariant(value)
+            if let None = value.execution_job {
+                expect_serde_error_with_message(value, ".execution_job");
+            } else {
+                check_encode_decode_invariant(value)
+            }
         }
-        // TODO add a test on GetExecuteGeneratorResponses for None case
 
         #[test]
         fn test_get_execute_generator_requests(value in pwq_strats::get_execute_generator_requests()) {
@@ -373,13 +375,14 @@ mod plugin_work_queue {
 
         #[test]
         fn test_get_execute_generator_responses(
-            value in pwq_strats::get_execute_generator_responses().prop_filter("Accept Some(job)s", |v| {
-                v.execution_job.is_some()
-            })
+            value in pwq_strats::get_execute_generator_responses()
         ) {
-            check_encode_decode_invariant(value)
+            if let None = value.execution_job {
+                expect_serde_error_with_message(value, ".execution_job");
+            } else {
+                check_encode_decode_invariant(value)
+            }
         }
-        // TODO add a test on GetExecuteGeneratorResponses for None case
 
         #[test]
         fn test_put_execute_analyzer_requests(value in pwq_strats::put_execute_analyzer_requests()) {
