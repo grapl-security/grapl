@@ -80,7 +80,7 @@ impl PipelineIngressApi for IngressApi {
     async fn publish_raw_log(
         &self,
         request: PublishRawLogRequest,
-    ) -> Result<PublishRawLogResponse, IngressApiError> {
+    ) -> Result<PublishRawLogResponse, Self::Error> {
         let created_time = SystemTime::now();
         let last_updated_time = created_time;
         let tenant_id = request.tenant_id;

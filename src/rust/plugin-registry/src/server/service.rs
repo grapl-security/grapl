@@ -139,7 +139,7 @@ impl PluginRegistryApi for PluginRegistry {
     async fn create_plugin(
         &self,
         request: CreatePluginRequest,
-    ) -> Result<CreatePluginResponse, PluginRegistryServiceError> {
+    ) -> Result<CreatePluginResponse, Self::Error> {
         let plugin_id = generate_plugin_id(&request.tenant_id, request.plugin_artifact.as_slice());
 
         let s3_key = generate_artifact_s3_key(request.plugin_type, &request.tenant_id, &plugin_id);
@@ -167,7 +167,7 @@ impl PluginRegistryApi for PluginRegistry {
     async fn get_plugin(
         &self,
         request: GetPluginRequest,
-    ) -> Result<GetPluginResponse, PluginRegistryServiceError> {
+    ) -> Result<GetPluginResponse, Self::Error> {
         let PluginRow {
             artifact_s3_key,
             plugin_type,
@@ -217,7 +217,7 @@ impl PluginRegistryApi for PluginRegistry {
     async fn deploy_plugin(
         &self,
         request: DeployPluginRequest,
-    ) -> Result<DeployPluginResponse, PluginRegistryServiceError> {
+    ) -> Result<DeployPluginResponse, Self::Error> {
         let plugin_id = request.plugin_id;
         let plugin_row = self.db_client.get_plugin(&plugin_id).await?;
 
@@ -241,7 +241,7 @@ impl PluginRegistryApi for PluginRegistry {
     async fn tear_down_plugin(
         &self,
         _request: TearDownPluginRequest,
-    ) -> Result<TearDownPluginResponse, PluginRegistryServiceError> {
+    ) -> Result<TearDownPluginResponse, Self::Error> {
         todo!()
     }
 
@@ -249,7 +249,7 @@ impl PluginRegistryApi for PluginRegistry {
     async fn get_generators_for_event_source(
         &self,
         _request: GetGeneratorsForEventSourceRequest,
-    ) -> Result<GetGeneratorsForEventSourceResponse, PluginRegistryServiceError> {
+    ) -> Result<GetGeneratorsForEventSourceResponse, Self::Error> {
         todo!()
     }
 
@@ -258,7 +258,7 @@ impl PluginRegistryApi for PluginRegistry {
     async fn get_analyzers_for_tenant(
         &self,
         _request: GetAnalyzersForTenantRequest,
-    ) -> Result<GetAnalyzersForTenantResponse, PluginRegistryServiceError> {
+    ) -> Result<GetAnalyzersForTenantResponse, Self::Error> {
         todo!()
     }
 }

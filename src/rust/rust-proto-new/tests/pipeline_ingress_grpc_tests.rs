@@ -84,7 +84,7 @@ impl PipelineIngressApi for MockPipelineIngressApi {
     async fn publish_raw_log(
         &self,
         request: PublishRawLogRequest,
-    ) -> Result<PublishRawLogResponse, MockPipelineIngressApiError> {
+    ) -> Result<PublishRawLogResponse, Self::Error> {
         let tenant_id = Uuid::parse_str(TENANT_ID).expect("failed to parse TENANT_ID");
         assert!(request.tenant_id == tenant_id);
 
