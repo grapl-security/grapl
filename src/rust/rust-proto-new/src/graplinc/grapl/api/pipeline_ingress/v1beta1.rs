@@ -267,6 +267,7 @@ pub mod server {
             &self,
             request: tonic::Request<PublishRawLogRequestProto>,
         ) -> Result<tonic::Response<PublishRawLogResponseProto>, tonic::Status> {
+            // TODO: Port this function to rpc_translate_proto_to_native
             let inner_request: PublishRawLogRequest = request
                 .into_inner()
                 .try_into()

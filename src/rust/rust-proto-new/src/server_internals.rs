@@ -29,3 +29,30 @@ where
         }
     }
 }
+
+/// Deduplicates the translation layer code in our Server rpc functions.
+/// - turn a proto-request into a native-request
+/// - feed that into our api server to get a native-response
+/// - turn native-response into Response(proto-response)
+/// Ideally this would be a generic function, but rust has issues with
+/// async function pointers (like self.api_server.any_rpc).
+#[macro_export]
+macro_rules! rpc_translate_proto_to_native {
+    ($self: ident, $rpc_name: ident, $proto_request: ident) => {{
+        {
+            let native_request = $proto_request
+                .into_inner()
+                .try_into()
+                .map_err(|e: crate::SerDeError| tonic::Status::unknown(e.to_string()))?;
+
+            let native_response = $self.api_server.$rpc_name(native_request);
+
+            let proto_response = native_response
+                .map_err(crate::protocol::status::Status::from)
+                .await?
+                .into();
+
+            Ok(tonic::Response::new(proto_response))
+        }
+    }};
+}

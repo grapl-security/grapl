@@ -53,6 +53,7 @@ use crate::{
         },
         status::Status,
     },
+    rpc_translate_proto_to_native,
     server_internals::ServerInternalGrpc,
     SerDeError,
 };
@@ -106,76 +107,42 @@ where
         &self,
         request: Request<proto::CreatePluginRequest>,
     ) -> Result<Response<proto::CreatePluginResponse>, tonic::Status> {
-        let inner_request: CreatePluginRequest = request
-            .into_inner()
-            .try_into()
-            .map_err(|e: SerDeError| tonic::Status::unknown(e.to_string()))?;
-
-        let response = self
-            .api_server
-            .create_plugin(inner_request)
-            .map_err(Status::from)
-            .await?;
-
-        Ok(Response::new(response.into()))
+        rpc_translate_proto_to_native!(self, create_plugin, request)
     }
 
     async fn get_plugin(
         &self,
         request: Request<proto::GetPluginRequest>,
     ) -> Result<Response<proto::GetPluginResponse>, tonic::Status> {
-        let inner_request: GetPluginRequest = request
-            .into_inner()
-            .try_into()
-            .map_err(|e: SerDeError| tonic::Status::unknown(e.to_string()))?;
-
-        let response = self
-            .api_server
-            .get_plugin(inner_request)
-            .map_err(Status::from)
-            .await?;
-
-        Ok(Response::new(response.into()))
+        rpc_translate_proto_to_native!(self, get_plugin, request)
     }
 
     async fn deploy_plugin(
         &self,
         request: Request<proto::DeployPluginRequest>,
     ) -> Result<Response<proto::DeployPluginResponse>, tonic::Status> {
-        let inner_request: DeployPluginRequest = request
-            .into_inner()
-            .try_into()
-            .map_err(|e: SerDeError| tonic::Status::unknown(e.to_string()))?;
-
-        let response = self
-            .api_server
-            .deploy_plugin(inner_request)
-            .map_err(Status::from)
-            .await?;
-
-        Ok(Response::new(response.into()))
+        rpc_translate_proto_to_native!(self, deploy_plugin, request)
     }
 
     async fn tear_down_plugin(
         &self,
-        _request: Request<proto::TearDownPluginRequest>,
+        request: Request<proto::TearDownPluginRequest>,
     ) -> Result<Response<proto::TearDownPluginResponse>, tonic::Status> {
-        todo!()
+        rpc_translate_proto_to_native!(self, tear_down_plugin, request)
     }
 
-    #[tracing::instrument(skip(self, _request), err)]
     async fn get_generators_for_event_source(
         &self,
-        _request: Request<proto::GetGeneratorsForEventSourceRequest>,
+        request: Request<proto::GetGeneratorsForEventSourceRequest>,
     ) -> Result<Response<proto::GetGeneratorsForEventSourceResponse>, tonic::Status> {
-        todo!()
+        rpc_translate_proto_to_native!(self, get_generators_for_event_source, request)
     }
 
     async fn get_analyzers_for_tenant(
         &self,
-        _request: Request<proto::GetAnalyzersForTenantRequest>,
+        request: Request<proto::GetAnalyzersForTenantRequest>,
     ) -> Result<Response<proto::GetAnalyzersForTenantResponse>, tonic::Status> {
-        todo!()
+        rpc_translate_proto_to_native!(self, get_analyzers_for_tenant, request)
     }
 }
 
