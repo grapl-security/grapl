@@ -248,7 +248,7 @@ pub mod server {
             status::Status,
         },
         rpc_translate_proto_to_native,
-        server_internals::ServerInternalGrpc,
+        server_internals::ApiDelegate,
         SerDeError,
     };
 
@@ -257,7 +257,7 @@ pub mod server {
     //
 
     #[tonic::async_trait]
-    impl<T, E> PipelineIngressServiceProto for ServerInternalGrpc<T, E>
+    impl<T, E> PipelineIngressServiceProto for ApiDelegate<T, E>
     where
         T: PipelineIngressApi<E> + Send + Sync + 'static,
         E: ToString + Send + Sync + 'static,
@@ -339,8 +339,7 @@ pub mod server {
                     healthcheck_polling_interval,
                     tcp_listener,
                     shutdown_rx,
-                    service_name:
-                        PipelineIngressServiceServerProto::<ServerInternalGrpc<T, E>>::NAME,
+                    service_name: PipelineIngressServiceServerProto::<ApiDelegate<T, E>>::NAME,
                     e_: PhantomData,
                     f_: PhantomData,
                 },
@@ -360,17 +359,16 @@ pub mod server {
         pub async fn serve(self) -> Result<(), ConfigurationError> {
             // TODO: add tower tracing, tls_config, concurrency limits
             let (healthcheck_handle, health_service) =
-                init_health_service::<
-                    PipelineIngressServiceServerProto<ServerInternalGrpc<T, E>>,
-                    _,
-                    _,
-                >(self.healthcheck, self.healthcheck_polling_interval)
+                init_health_service::<PipelineIngressServiceServerProto<ApiDelegate<T, E>>, _, _>(
+                    self.healthcheck,
+                    self.healthcheck_polling_interval,
+                )
                 .await;
             Ok(Server::builder()
                 .add_service(health_service)
-                .add_service(PipelineIngressServiceServerProto::new(
-                    ServerInternalGrpc::new(self.api_server),
-                ))
+                .add_service(PipelineIngressServiceServerProto::new(ApiDelegate::new(
+                    self.api_server,
+                )))
                 .serve_with_incoming_shutdown(
                     TcpListenerStream::new(self.tcp_listener),
                     self.shutdown_rx.map(|_| ()),

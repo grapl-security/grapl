@@ -10,7 +10,7 @@ pub trait Api {}
 /// Api. This way all the protocol buffer compiler generated
 /// types are encapsulated, and the public API is implemented in terms of
 /// this crate's sanitized types.
-pub struct ServerInternalGrpc<T, E>
+pub struct ApiDelegate<T, E>
 where
     E: Into<Status>,
 {
@@ -18,12 +18,12 @@ where
     _e: PhantomData<E>,
 }
 
-impl<T, E> ServerInternalGrpc<T, E>
+impl<T, E> ApiDelegate<T, E>
 where
     E: Into<Status>,
 {
     pub fn new(api_server: T) -> Self {
-        ServerInternalGrpc {
+        ApiDelegate {
             api_server,
             _e: PhantomData,
         }

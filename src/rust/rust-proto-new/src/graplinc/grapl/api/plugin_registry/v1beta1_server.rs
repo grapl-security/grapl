@@ -53,7 +53,7 @@ use crate::{
         status::Status,
     },
     rpc_translate_proto_to_native,
-    server_internals::ServerInternalGrpc,
+    server_internals::ApiDelegate,
     SerDeError,
 };
 
@@ -96,7 +96,7 @@ where
 }
 
 #[tonic::async_trait]
-impl<T, E> PluginRegistryService for ServerInternalGrpc<T, E>
+impl<T, E> PluginRegistryService for ApiDelegate<T, E>
 where
     T: PluginRegistryApi<E> + Send + Sync + 'static,
     E: Send + Sync + 'static,
@@ -194,7 +194,7 @@ where
                 healthcheck_polling_interval,
                 tcp_listener,
                 shutdown_rx,
-                service_name: PluginRegistryServiceProto::<ServerInternalGrpc<T, E>>::NAME,
+                service_name: PluginRegistryServiceProto::<ApiDelegate<T, E>>::NAME,
                 e_: PhantomData,
                 f_: PhantomData,
             },
@@ -213,7 +213,7 @@ where
     /// address. Returns a ConfigurationError if the gRPC server cannot run.
     pub async fn serve(self) -> Result<(), Box<dyn std::error::Error>> {
         let (healthcheck_handle, health_service) =
-            init_health_service::<PluginRegistryServiceProto<ServerInternalGrpc<T, E>>, _, _>(
+            init_health_service::<PluginRegistryServiceProto<ApiDelegate<T, E>>, _, _>(
                 self.healthcheck,
                 self.healthcheck_polling_interval,
             )
@@ -222,7 +222,7 @@ where
         // TODO: add tower tracing, tls_config, concurrency limits
         Ok(Server::builder()
             .add_service(health_service)
-            .add_service(PluginRegistryServiceProto::new(ServerInternalGrpc::new(
+            .add_service(PluginRegistryServiceProto::new(ApiDelegate::new(
                 self.api_server,
             )))
             .serve_with_incoming_shutdown(
