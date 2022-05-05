@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use rust_proto::plugin_work_queue::{
     plugin_work_queue_service_client::PluginWorkQueueServiceClient as _PluginWorkQueueServiceClient,
     AcknowledgeAnalyzerRequest,
@@ -20,13 +22,7 @@ use rust_proto::plugin_work_queue::{
     PutExecuteGeneratorRequestProto,
     PutExecuteGeneratorResponse,
 };
-use tonic::{
-    codegen::{
-        Body,
-        StdError,
-    },
-    Status,
-};
+use tonic::Status;
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginWorkQueueServiceClientError {
@@ -37,19 +33,24 @@ pub enum PluginWorkQueueServiceClientError {
 }
 
 #[derive(Debug)]
-pub struct PluginWorkQueueServiceClient<T> {
-    inner: _PluginWorkQueueServiceClient<T>,
+pub struct PluginWorkQueueServiceClient {
+    inner: _PluginWorkQueueServiceClient<tonic::transport::Channel>,
 }
 
-impl<T> PluginWorkQueueServiceClient<T>
-where
-    T: tonic::client::GrpcService<tonic::body::BoxBody>,
-    T::ResponseBody: Body + Send + 'static,
-    T::Error: Into<StdError>,
-    <T::ResponseBody as Body>::Error: Into<StdError> + Send,
-{
-    pub fn new(inner: _PluginWorkQueueServiceClient<T>) -> Self {
+impl PluginWorkQueueServiceClient {
+    pub fn new(inner: _PluginWorkQueueServiceClient<tonic::transport::Channel>) -> Self {
         Self { inner }
+    }
+
+    #[tracing::instrument(err)]
+    pub async fn connect<T>(endpoint: T) -> Result<Self, Box<dyn std::error::Error>>
+    where
+        T: std::convert::TryInto<tonic::transport::Endpoint> + Debug,
+        T::Error: std::error::Error + Send + Sync + 'static,
+    {
+        Ok(PluginWorkQueueServiceClient::new(
+            _PluginWorkQueueServiceClient::connect(endpoint).await?,
+        ))
     }
 
     /// Adds a new execution job for a generator
