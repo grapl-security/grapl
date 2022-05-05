@@ -73,7 +73,9 @@ impl IngressApi {
 }
 
 #[async_trait::async_trait]
-impl PipelineIngressApi<IngressApiError> for IngressApi {
+impl PipelineIngressApi for IngressApi {
+    type Error = IngressApiError;
+
     #[tracing::instrument(skip(self))]
     async fn publish_raw_log(
         &self,

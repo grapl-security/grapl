@@ -78,7 +78,9 @@ impl From<MockPipelineIngressApiError> for Status {
 }
 
 #[tonic::async_trait]
-impl PipelineIngressApi<MockPipelineIngressApiError> for MockPipelineIngressApi {
+impl PipelineIngressApi for MockPipelineIngressApi {
+    type Error = MockPipelineIngressApiError;
+
     async fn publish_raw_log(
         &self,
         request: PublishRawLogRequest,

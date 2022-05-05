@@ -132,7 +132,9 @@ pub struct PluginRegistry {
 }
 
 #[async_trait]
-impl PluginRegistryApi<PluginRegistryServiceError> for PluginRegistry {
+impl PluginRegistryApi for PluginRegistry {
+    type Error = PluginRegistryServiceError;
+
     #[tracing::instrument(skip(self, request), err)]
     async fn create_plugin(
         &self,

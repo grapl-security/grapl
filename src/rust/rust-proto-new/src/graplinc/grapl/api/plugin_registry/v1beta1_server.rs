@@ -69,37 +69,42 @@ pub enum PluginRegistryApiError {
 
 /// Implement this trait to define the API business logic
 #[tonic::async_trait]
-pub trait PluginRegistryApi<E>
-where
-    E: Into<Status>,
-{
-    async fn create_plugin(&self, request: CreatePluginRequest) -> Result<CreatePluginResponse, E>;
+pub trait PluginRegistryApi {
+    type Error: Into<Status>;
 
-    async fn get_plugin(&self, request: GetPluginRequest) -> Result<GetPluginResponse, E>;
+    async fn create_plugin(
+        &self,
+        request: CreatePluginRequest,
+    ) -> Result<CreatePluginResponse, Self::Error>;
 
-    async fn deploy_plugin(&self, request: DeployPluginRequest) -> Result<DeployPluginResponse, E>;
+    async fn get_plugin(&self, request: GetPluginRequest)
+        -> Result<GetPluginResponse, Self::Error>;
+
+    async fn deploy_plugin(
+        &self,
+        request: DeployPluginRequest,
+    ) -> Result<DeployPluginResponse, Self::Error>;
 
     async fn tear_down_plugin(
         &self,
         request: TearDownPluginRequest,
-    ) -> Result<TearDownPluginResponse, E>;
+    ) -> Result<TearDownPluginResponse, Self::Error>;
 
     async fn get_generators_for_event_source(
         &self,
         request: GetGeneratorsForEventSourceRequest,
-    ) -> Result<GetGeneratorsForEventSourceResponse, E>;
+    ) -> Result<GetGeneratorsForEventSourceResponse, Self::Error>;
 
     async fn get_analyzers_for_tenant(
         &self,
         request: GetAnalyzersForTenantRequest,
-    ) -> Result<GetAnalyzersForTenantResponse, E>;
+    ) -> Result<GetAnalyzersForTenantResponse, Self::Error>;
 }
 
 #[tonic::async_trait]
-impl<T, E> PluginRegistryService for ApiDelegate<T, E>
+impl<T> PluginRegistryService for ApiDelegate<T>
 where
-    T: PluginRegistryApi<E> + Send + Sync + 'static,
-    E: Into<Status> + Send + Sync + 'static,
+    T: PluginRegistryApi + Send + Sync + 'static,
 {
     async fn create_plugin(
         &self,
@@ -149,10 +154,9 @@ where
  * This is almost entirely cargo-culted from PipelineIngressServer.
  * Lots of opportunities to deduplicate and simplify.
  */
-pub struct PluginRegistryServer<T, E, H, F>
+pub struct PluginRegistryServer<T, H, F>
 where
-    T: PluginRegistryApi<E> + Send + Sync + 'static,
-    E: Into<Status>,
+    T: PluginRegistryApi + Send + Sync + 'static,
     H: Fn() -> F + Send + Sync + 'static,
     F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send + 'static,
 {
@@ -162,14 +166,12 @@ where
     tcp_listener: TcpListener,
     shutdown_rx: Receiver<()>,
     service_name: &'static str,
-    e_: PhantomData<E>,
     f_: PhantomData<F>,
 }
 
-impl<T, E, H, F> PluginRegistryServer<T, E, H, F>
+impl<T, H, F> PluginRegistryServer<T, H, F>
 where
-    T: PluginRegistryApi<E> + Send + Sync + 'static,
-    E: Into<Status> + Send + Sync + 'static,
+    T: PluginRegistryApi + Send + Sync + 'static,
     H: Fn() -> F + Send + Sync + 'static,
     F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send,
 {
@@ -192,8 +194,7 @@ where
                 healthcheck_polling_interval,
                 tcp_listener,
                 shutdown_rx,
-                service_name: PluginRegistryServiceProto::<ApiDelegate<T, E>>::NAME,
-                e_: PhantomData,
+                service_name: PluginRegistryServiceProto::<ApiDelegate<T>>::NAME,
                 f_: PhantomData,
             },
             shutdown_tx,
@@ -211,7 +212,7 @@ where
     /// address. Returns a ConfigurationError if the gRPC server cannot run.
     pub async fn serve(self) -> Result<(), Box<dyn std::error::Error>> {
         let (healthcheck_handle, health_service) =
-            init_health_service::<PluginRegistryServiceProto<ApiDelegate<T, E>>, _, _>(
+            init_health_service::<PluginRegistryServiceProto<ApiDelegate<T>>, _, _>(
                 self.healthcheck,
                 self.healthcheck_polling_interval,
             )

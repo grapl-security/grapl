@@ -257,10 +257,9 @@ pub mod server {
     //
 
     #[tonic::async_trait]
-    impl<T, E> PipelineIngressServiceProto for ApiDelegate<T, E>
+    impl<T> PipelineIngressServiceProto for ApiDelegate<T>
     where
-        T: PipelineIngressApi<E> + Send + Sync + 'static,
-        E: Into<Status> + Send + Sync + 'static,
+        T: PipelineIngressApi + Send + Sync + 'static,
     {
         async fn publish_raw_log(
             &self,
@@ -276,14 +275,12 @@ pub mod server {
 
     /// Implement this trait to define the pipeline ingress API's business logic
     #[tonic::async_trait]
-    pub trait PipelineIngressApi<E>
-    where
-        E: Into<Status>,
-    {
+    pub trait PipelineIngressApi {
+        type Error: Into<Status>;
         async fn publish_raw_log(
             &self,
             request: PublishRawLogRequest,
-        ) -> Result<PublishRawLogResponse, E>;
+        ) -> Result<PublishRawLogResponse, Self::Error>;
     }
 
     #[non_exhaustive]
@@ -294,10 +291,9 @@ pub mod server {
     }
 
     /// The pipeline-ingress server serves the pipeline-ingress API
-    pub struct PipelineIngressServer<T, E, H, F>
+    pub struct PipelineIngressServer<T, H, F>
     where
-        T: PipelineIngressApi<E> + Send + Sync + 'static,
-        E: Into<Status>,
+        T: PipelineIngressApi + Send + Sync + 'static,
         H: Fn() -> F + Send + Sync + 'static,
         F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send + Sync + 'static,
     {
@@ -307,14 +303,12 @@ pub mod server {
         tcp_listener: TcpListener,
         shutdown_rx: Receiver<()>,
         service_name: &'static str,
-        e_: PhantomData<E>,
         f_: PhantomData<F>,
     }
 
-    impl<T, E, H, F> PipelineIngressServer<T, E, H, F>
+    impl<T, H, F> PipelineIngressServer<T, H, F>
     where
-        T: PipelineIngressApi<E> + Send + Sync + 'static,
-        E: Into<Status> + Send + Sync + 'static,
+        T: PipelineIngressApi + Send + Sync + 'static,
         H: Fn() -> F + Send + Sync + 'static,
         F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send + Sync + 'static,
     {
@@ -337,8 +331,7 @@ pub mod server {
                     healthcheck_polling_interval,
                     tcp_listener,
                     shutdown_rx,
-                    service_name: PipelineIngressServiceServerProto::<ApiDelegate<T, E>>::NAME,
-                    e_: PhantomData,
+                    service_name: PipelineIngressServiceServerProto::<ApiDelegate<T>>::NAME,
                     f_: PhantomData,
                 },
                 shutdown_tx,
@@ -357,7 +350,7 @@ pub mod server {
         pub async fn serve(self) -> Result<(), ConfigurationError> {
             // TODO: add tower tracing, tls_config, concurrency limits
             let (healthcheck_handle, health_service) =
-                init_health_service::<PipelineIngressServiceServerProto<ApiDelegate<T, E>>, _, _>(
+                init_health_service::<PipelineIngressServiceServerProto<ApiDelegate<T>>, _, _>(
                     self.healthcheck,
                     self.healthcheck_polling_interval,
                 )
