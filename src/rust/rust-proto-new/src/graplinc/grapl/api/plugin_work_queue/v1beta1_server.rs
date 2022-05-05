@@ -1,4 +1,15 @@
-use crate::graplinc::grapl::api::plugin_registry::v1beta1 as native;
+use crate::SerDeError;
+use crate::graplinc::grapl::api::plugin_work_queue::v1beta1 as native;
+
+#[non_exhaustive]
+#[derive(Debug, thiserror::Error)]
+pub enum PluginWorkQueueApiError {
+    #[error("failed to serialize/deserialize {0}")]
+    SerDeError(#[from] SerDeError),
+
+    #[error("received unfavorable gRPC status {0}")]
+    GrpcStatus(#[from] tonic::Status),
+}
 
 /// Implement this trait to define the API business logic
 #[tonic::async_trait]
@@ -6,26 +17,33 @@ pub trait PluginWorkQueueApi<E>
 where
     E: Into<tonic::Status>,
 {
-    /*
-    async fn create_plugin(&self, request: CreatePluginRequest) -> Result<CreatePluginResponse, E>;
+    async fn put_execute_generator(
+        &mut self,
+        request: native::PutExecuteGeneratorRequest,
+    ) -> Result<native::PutExecuteGeneratorResponse, E>;
 
-    async fn get_plugin(&self, request: GetPluginRequest) -> Result<GetPluginResponse, E>;
+    async fn put_execute_analyzer(
+        &mut self,
+        request: native::PutExecuteAnalyzerRequest,
+    ) -> Result<native::PutExecuteAnalyzerResponse, E>;
 
-    async fn deploy_plugin(&self, request: DeployPluginRequest) -> Result<DeployPluginResponse, E>;
+    async fn get_execute_generator(
+        &mut self,
+        request: native::GetExecuteGeneratorRequest,
+    ) -> Result<native::GetExecuteGeneratorResponse, E>;
 
-    async fn tear_down_plugin(
-        &self,
-        request: TearDownPluginRequest,
-    ) -> Result<TearDownPluginResponse, E>;
+    async fn get_execute_analyzer(
+        &mut self,
+        request: native::GetExecuteAnalyzerRequest,
+    ) -> Result<native::GetExecuteAnalyzerResponse, E>;
 
-    async fn get_generators_for_event_source(
-        &self,
-        request: GetGeneratorsForEventSourceRequest,
-    ) -> Result<GetGeneratorsForEventSourceResponse, E>;
+    async fn acknowledge_generator(
+        &mut self,
+        request: native::AcknowledgeGeneratorRequest,
+    ) -> Result<native::AcknowledgeGeneratorResponse, E>;
 
-    async fn get_analyzers_for_tenant(
-        &self,
-        request: GetAnalyzersForTenantRequest,
-    ) -> Result<GetAnalyzersForTenantResponse, E>;
-    */
+    async fn acknowledge_analyzer(
+        &mut self,
+        request: native::AcknowledgeAnalyzerRequest,
+    ) -> Result<native::AcknowledgeAnalyzerResponse, E>;
 }
