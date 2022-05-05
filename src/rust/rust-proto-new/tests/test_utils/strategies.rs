@@ -32,6 +32,12 @@ pub fn string_not_empty() -> proptest::string::RegexGeneratorStrategy<String> {
     proptest::string::string_regex(".+").expect("Invalid regex")
 }
 
+pub fn vec_not_empty<T>() -> impl Strategy<Value = Vec<T>> 
+where T: Arbitrary
+{
+    any::<Vec<T>>().prop_filter("Only accept non-empty vecs", |v| !v.is_empty())
+}
+
 pub mod pipeline {
     use std::fmt::Debug;
 
@@ -720,7 +726,7 @@ pub mod plugin_work_queue {
         pub fn execution_jobs()(
             tenant_id in uuids(),
             plugin_id in uuids(),
-            data in any::<Vec<u8>>(),
+            data in vec_not_empty::<u8>(),
         ) -> native::ExecutionJob {
             native::ExecutionJob {
                 tenant_id,

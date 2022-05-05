@@ -328,11 +328,6 @@ mod plugin_work_queue {
 
     proptest! {
         #[test]
-        fn test_execution_jobs(value in pwq_strats::execution_jobs()) {
-            check_encode_decode_invariant(value)
-        }
-
-        #[test]
         fn test_acknowledge_generator_requests(value in pwq_strats::acknowledge_generator_requests()) {
             check_encode_decode_invariant(value)
         }
@@ -362,10 +357,14 @@ mod plugin_work_queue {
 
 
         #[test]
-        fn test_get_execute_analyzer_responses(value in pwq_strats::get_execute_analyzer_responses()) {
+        fn test_get_execute_analyzer_responses(
+            value in pwq_strats::get_execute_analyzer_responses().prop_filter("Accept Some(job)s", |v| {
+                v.execution_job.is_some()
+            })
+        ) {
             check_encode_decode_invariant(value)
         }
-
+        // TODO add a test on GetExecuteGeneratorResponses for None case
 
         #[test]
         fn test_get_execute_generator_requests(value in pwq_strats::get_execute_generator_requests()) {
@@ -373,9 +372,14 @@ mod plugin_work_queue {
         }
 
         #[test]
-        fn test_get_execute_generator_responses(value in pwq_strats::get_execute_generator_responses()) {
+        fn test_get_execute_generator_responses(
+            value in pwq_strats::get_execute_generator_responses().prop_filter("Accept Some(job)s", |v| {
+                v.execution_job.is_some()
+            })
+        ) {
             check_encode_decode_invariant(value)
         }
+        // TODO add a test on GetExecuteGeneratorResponses for None case
 
         #[test]
         fn test_put_execute_analyzer_requests(value in pwq_strats::put_execute_analyzer_requests()) {
