@@ -10,7 +10,7 @@ import IconButton from "@mui/material/IconButton";
 import MenuIcon from "@mui/icons-material/Menu";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 
@@ -67,6 +67,15 @@ export default function CollapsibleNavDrawer() {
         setOpen(false);
     };
 
+    const [selectedIndex, setSelectedIndex] = React.useState(1);
+
+    const handleListItemClick = (
+        event: React.MouseEvent<HTMLDivElement, MouseEvent>,
+        index: number
+    ) => {
+        setSelectedIndex(index);
+    };
+
     return (
         <Box sx={{ display: "flex" }}>
             <IconButton
@@ -107,7 +116,11 @@ export default function CollapsibleNavDrawer() {
                 </DrawerHeader>
                 <Divider />
                 <List className={classes.drawer}>
-                    <ListItem button key="Analyzers">
+                    <ListItemButton
+                        key="Analyzers"
+                        selected={selectedIndex === 0}
+                        onClick={(event) => handleListItemClick(event, 0)}
+                    >
                         <ListItemIcon>
                             <PolicyIcon className={classes.icons} />
                         </ListItemIcon>
@@ -115,9 +128,13 @@ export default function CollapsibleNavDrawer() {
                             {" "}
                             Analyzers{" "}
                         </Link>
-                    </ListItem>
+                    </ListItemButton>
 
-                    <ListItem button key="Engagements">
+                    <ListItemButton
+                        key="Engagements"
+                        selected={selectedIndex === 1}
+                        onClick={(event) => handleListItemClick(event, 1)}
+                    >
                         <ListItemIcon>
                             <BubbleChartIcon className={classes.icons} />
                         </ListItemIcon>
@@ -125,9 +142,13 @@ export default function CollapsibleNavDrawer() {
                             {" "}
                             Engagements{" "}
                         </Link>
-                    </ListItem>
+                    </ListItemButton>
 
-                    <ListItem button key="Generators">
+                    <ListItemButton
+                        key="Generators"
+                        selected={selectedIndex === 2}
+                        onClick={(event) => handleListItemClick(event, 2)}
+                    >
                         <ListItemIcon>
                             {<ExtensionIcon className={classes.icons} />}
                         </ListItemIcon>
@@ -135,12 +156,16 @@ export default function CollapsibleNavDrawer() {
                             {" "}
                             Generators{" "}
                         </Link>
-                    </ListItem>
+                    </ListItemButton>
                 </List>
 
                 <List className={classes.drawer}>
                     {["Settings", "Logout"].map((text, index) => (
-                        <ListItem button key={text}>
+                        <ListItemButton
+                            key={text}
+                            selected={selectedIndex === 3}
+                            onClick={(event) => handleListItemClick(event, 3)}
+                        >
                             <ListItemIcon className={classes.icons}>
                                 {index % 2 === 0 ? (
                                     <SettingsIcon className={classes.icons} />
@@ -151,7 +176,7 @@ export default function CollapsibleNavDrawer() {
                                 )}
                             </ListItemIcon>
                             <ListItemText primary={text} />
-                        </ListItem>
+                        </ListItemButton>
                     ))}
                 </List>
             </Drawer>

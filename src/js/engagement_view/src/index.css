@@ -43,8 +43,3 @@ a:hover {
 .MuiPaper-root{
     background-color: #212936;
 }
-
-.btnClass.clicked {
-    background-color: #1976D2;
-    color: #FFFFFF;
-}

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 import Table from "@material-ui/core/Table";
 import TableBody from "@material-ui/core/TableBody";
@@ -15,6 +15,8 @@ import { PaginationState } from "types/CustomTypes";
 
 export const lensTable = (
     state: PaginationState,
+    selectedIdState: number,
+    setSelectedIdState: (selectedIdState: number) => void,
     page: number,
     rowsPerPage: number,
     handleChangePage: (
@@ -71,6 +73,8 @@ export const lensTable = (
                                     lens_type={lens.lens_type}
                                     score={lens.score}
                                     setLens={setLens}
+                                    selectedId={selectedIdState}
+                                    setLensTableState={setSelectedIdState}
                                 />
                             );
                         })}

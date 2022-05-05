@@ -6,11 +6,13 @@ export type SelectLensProps = {
     uid: number;
     lens_type: string;
     setLens: (lens: string) => void;
+    selectedId: number;
+    setLensTableState: (selectedIdState: number) => void;
 };
 
 export type NodeDetailsProps = {
     node: VizNode;
-};
+};  
 
 export type ToggleNodeTableProps = {
     curNode: VizNode | null;
