@@ -20,10 +20,11 @@ impl From<crate::SerDeError> for tonic::Status {
     }
 }
 
-/// Deduplicates the translation layer code in our Server rpc functions.
-/// - turn a proto-request into a native-request
-/// - feed that into our api server to get a native-response
-/// - turn native-response into Response(proto-response)
+/// This macro implements boilerplate code to translate between the native types
+/// exported by this library and tonic/prost types in the transport layer.
+/// - turn a Protobuf request into a Rust-native request
+/// - feed that into our api server to get a Rust-native response
+/// - turn Rust-native response into a Protobuf response
 /// Ideally this would be a generic function, but rust has issues with
 /// async function pointers (like self.api_server.any_rpc).
 #[macro_export]
