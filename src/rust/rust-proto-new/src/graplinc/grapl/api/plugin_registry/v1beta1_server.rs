@@ -45,7 +45,14 @@ use crate::{
         self as proto,
         plugin_registry_service_server::PluginRegistryServiceServer as PluginRegistryServiceProto,
     },
-    protocol::{status::Status, healthcheck::{HealthcheckStatus, HealthcheckError, server::init_health_service}},
+    protocol::{
+        healthcheck::{
+            server::init_health_service,
+            HealthcheckError,
+            HealthcheckStatus,
+        },
+        status::Status,
+    },
     server_internals::ServerInternalGrpc,
     SerDeError,
 };
@@ -240,11 +247,10 @@ where
     /// address. Returns a ConfigurationError if the gRPC server cannot run.
     pub async fn serve(self) -> Result<(), Box<dyn std::error::Error>> {
         let (healthcheck_handle, health_service) =
-            init_health_service::<
-                PluginRegistryServiceProto<ServerInternalGrpc<T, E>>,
-                _,
-                _,
-            >(self.healthcheck, self.healthcheck_polling_interval)
+            init_health_service::<PluginRegistryServiceProto<ServerInternalGrpc<T, E>>, _, _>(
+                self.healthcheck,
+                self.healthcheck_polling_interval,
+            )
             .await;
 
         // TODO: add tower tracing, tls_config, concurrency limits

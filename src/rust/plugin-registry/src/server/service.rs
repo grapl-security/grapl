@@ -22,7 +22,6 @@ use rust_proto_new::{
         GetGeneratorsForEventSourceResponse,
         GetPluginRequest,
         GetPluginResponse,
-        HealthcheckStatus,
         Plugin,
         PluginRegistryApi,
         PluginRegistryServer,
@@ -30,7 +29,10 @@ use rust_proto_new::{
         TearDownPluginRequest,
         TearDownPluginResponse,
     },
-    protocol::status::Status,
+    protocol::{
+        healthcheck::HealthcheckStatus,
+        status::Status,
+    },
 };
 use structopt::StructOpt;
 use tokio::{
