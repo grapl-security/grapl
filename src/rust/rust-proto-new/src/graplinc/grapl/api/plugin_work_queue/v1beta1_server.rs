@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use crate::SerDeError;
 use crate::graplinc::grapl::api::plugin_work_queue::v1beta1 as native;
 
@@ -11,9 +13,11 @@ pub enum PluginWorkQueueApiError {
     GrpcStatus(#[from] tonic::Status),
 }
 
+pub trait Api {}
+
 /// Implement this trait to define the API business logic
 #[tonic::async_trait]
-pub trait PluginWorkQueueApi<E>
+pub trait PluginWorkQueueApi<E>: Api
 where
     E: Into<tonic::Status>,
 {
