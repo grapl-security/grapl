@@ -1,3 +1,4 @@
+import * as React from "react";
 import { Link } from "react-router-dom";
 import { styled, useTheme } from "@mui/material/styles";
 
@@ -6,7 +7,7 @@ import Drawer from "@mui/material/Drawer";
 import List from "@mui/material/List";
 import Icon from "@material-ui/core/Icon";
 
-import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 
@@ -34,6 +35,21 @@ const DrawerHeader = styled("div")(({ theme }) => ({
 export const NavigationDrawer = () => {
     const classes = useStyles();
 
+    const location = window.location.href.split("/").slice().pop();
+
+    let index: number = 0;
+
+    location === "analyzers" ? (index = 0) : (index = 2);
+
+    const [selectedIndex, setSelectedIndex] = React.useState(index);
+
+    const handleListItemClick = (
+        event: React.MouseEvent<HTMLDivElement, MouseEvent>,
+        index: number
+    ) => {
+        setSelectedIndex(index);
+    };
+
     return (
         <Drawer
             sx={{
@@ -56,7 +72,12 @@ export const NavigationDrawer = () => {
             </DrawerHeader>
 
             <List className={classes.drawer}>
-                <ListItem button key="Analyzers">
+                <ListItemButton
+                    button
+                    key="Analyzers"
+                    selected={selectedIndex === 0}
+                    onClick={(event) => handleListItemClick(event, 0)}
+                >
                     <ListItemIcon>
                         <PolicyIcon className={classes.icons} />
                     </ListItemIcon>
@@ -64,9 +85,14 @@ export const NavigationDrawer = () => {
                         {" "}
                         Analyzers{" "}
                     </Link>
-                </ListItem>
+                </ListItemButton>
 
-                <ListItem button key="Engagements">
+                <ListItemButton
+                    button
+                    key="Engagements"
+                    selected={selectedIndex === 1}
+                    onClick={(event) => handleListItemClick(event, 1)}
+                >
                     <ListItemIcon>
                         <BubbleChartIcon className={classes.icons} />
                     </ListItemIcon>
@@ -74,9 +100,14 @@ export const NavigationDrawer = () => {
                         {" "}
                         Engagements{" "}
                     </Link>
-                </ListItem>
+                </ListItemButton>
 
-                <ListItem button key="Generators">
+                <ListItemButton
+                    button
+                    key="Generators"
+                    selected={selectedIndex === 2}
+                    onClick={(event) => handleListItemClick(event, 2)}
+                >
                     <ListItemIcon>
                         {<ExtensionIcon className={classes.icons} />}
                     </ListItemIcon>
@@ -84,12 +115,12 @@ export const NavigationDrawer = () => {
                         {" "}
                         Generators{" "}
                     </Link>
-                </ListItem>
+                </ListItemButton>
             </List>
 
             <List className={classes.drawer}>
                 {["Settings", "Logout"].map((text, index) => (
-                    <ListItem button key={text}>
+                    <ListItemButton button key={text}>
                         <ListItemIcon className={classes.icons}>
                             {index % 2 === 0 ? (
                                 <SettingsIcon className={classes.icons} />
@@ -98,7 +129,7 @@ export const NavigationDrawer = () => {
                             )}
                         </ListItemIcon>
                         <ListItemText primary={text} />
-                    </ListItem>
+                    </ListItemButton>
                 ))}
             </List>
         </Drawer>

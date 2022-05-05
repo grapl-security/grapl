@@ -56,7 +56,12 @@ export const useStyles = makeStyles((theme) =>
             width: "95%",
         },
         tableRow: {
-            background: theme.palette.background.default,
+            "&.Mui-selected": {
+                backgroundColor: "#2B3648",
+                "& > .MuiTableCell-root": {
+                    color: "#1976D2",
+                },
+            },
         },
         lensNameStyle: {
             color: theme.palette.text.primary,

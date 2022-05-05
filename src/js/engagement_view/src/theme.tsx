@@ -30,6 +30,19 @@ const theme = createTheme({
             contrastText: "#FFFFFF",
         },
     },
+    components: {
+        MuiListItemButton: {
+            styleOverrides: {
+                root: {
+                    "&.Mui-selected": {
+                        borderLeft: "5px solid #2196f3",
+                        color: "#1976D2",
+                        background: "#2B3648",
+                    },
+                },
+            },
+        },
+    },
 });
 
 export default theme;
