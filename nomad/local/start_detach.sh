@@ -79,12 +79,12 @@ start_nomad_detach() {
     sudo nomad agent \
         -config="${THIS_DIR}/nomad-agent-conf.nomad" \
         -dev-connect > "${NOMAD_LOGS_DEST}" &
-
     local -r nomad_agent_pid="$!"
 
     vault server \
         -config="${THIS_DIR}/vault-agent-conf.hcl" \
         -dev > "${VAULT_LOGS_DEST}" &
+    local -r vault_agent_pid="$!"
 
     # The client is set to 0.0.0.0 here so that it can be reached via pulumi in docker.
     consul agent \
@@ -105,6 +105,10 @@ start_nomad_detach() {
                 while [[ -z \$(nomad node status 2>&1 | grep ready) ]]; do
                     if ! ps -p "${nomad_agent_pid}" > /dev/null; then
                         echo "Nomad Agent unexpectedly exited?"
+                        exit 42
+                    fi
+                    if ! ps -p "${vault_agent_pid}" > /dev/null; then
+                        echo "Vault Agent unexpectedly exited?"
                         exit 42
                     fi
                     if ! ps -p "${consul_agent_pid}" > /dev/null; then
