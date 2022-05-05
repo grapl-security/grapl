@@ -45,7 +45,7 @@ use crate::{
         self as proto,
         plugin_registry_service_server::PluginRegistryServiceServer as PluginRegistryServiceProto,
     },
-    protocol::status::Status,
+    protocol::{status::Status, healthcheck::{HealthcheckStatus, HealthcheckError, server::init_health_service}},
     server_internals::ServerInternalGrpc,
     SerDeError,
 };
@@ -172,24 +172,6 @@ where
     }
 }
 
-#[non_exhaustive]
-#[derive(Debug, Error)]
-pub enum HealthcheckError {
-    #[error("not found {0}")]
-    NotFound(String),
-
-    #[error("healthcheck failed {0}")]
-    HealthcheckFailed(String),
-}
-
-#[non_exhaustive]
-#[derive(Debug)]
-pub enum HealthcheckStatus {
-    Serving,
-    NotServing,
-    Unknown,
-}
-
 /**
  * !!!!! IMPORTANT !!!!!
  * This is almost entirely cargo-culted from PipelineIngressServer.
@@ -200,7 +182,7 @@ where
     T: PluginRegistryApi<E> + Send + Sync + 'static,
     E: Into<Status>,
     H: Fn() -> F + Send + Sync + 'static,
-    F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send,
+    F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send + 'static,
 {
     api_server: T,
     healthcheck: H,
@@ -257,56 +239,13 @@ where
     /// Run the gRPC server and serve the API on this server's socket
     /// address. Returns a ConfigurationError if the gRPC server cannot run.
     pub async fn serve(self) -> Result<(), Box<dyn std::error::Error>> {
-        let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
-
-        // we configure our health reporter initially in the not_serving
-        // state s.t. clients which are waiting for this service to start
-        // can wait for the state change to the serving state
-        health_reporter
-            .set_not_serving::<PluginRegistryServiceProto<ServerInternalGrpc<T, E>>>()
+        let (healthcheck_handle, health_service) =
+            init_health_service::<
+                PluginRegistryServiceProto<ServerInternalGrpc<T, E>>,
+                _,
+                _,
+            >(self.healthcheck, self.healthcheck_polling_interval)
             .await;
-
-        let healthcheck_handle = tokio::task::spawn(async move {
-            loop {
-                match (self.healthcheck)().await {
-                    Ok(status) => match status {
-                        HealthcheckStatus::Serving => {
-                            tracing::info!("healthcheck status \"serving\"");
-                            health_reporter
-                                    .set_serving::<PluginRegistryServiceProto<
-                                        ServerInternalGrpc<T, E>,
-                                    >>()
-                                    .await
-                        }
-                        HealthcheckStatus::NotServing => {
-                            tracing::warn!("healthcheck status \"not serving\"");
-                            health_reporter
-                                    .set_not_serving::<PluginRegistryServiceProto<
-                                        ServerInternalGrpc<T, E>,
-                                    >>()
-                                    .await
-                        }
-                        HealthcheckStatus::Unknown => {
-                            tracing::warn!("healthcheck status \"unknown\"");
-                            health_reporter
-                                    .set_not_serving::<PluginRegistryServiceProto<
-                                        ServerInternalGrpc<T, E>,
-                                    >>()
-                                    .await
-                        }
-                    },
-                    Err(e) => {
-                        // healthcheck failed, so we'll set_not_serving()
-                        tracing::error!("healthcheck error {}", e);
-                        health_reporter
-                            .set_not_serving::<PluginRegistryServiceProto<ServerInternalGrpc<T, E>>>()
-                            .await
-                    }
-                }
-
-                tokio::time::sleep(self.healthcheck_polling_interval).await;
-            }
-        });
 
         // TODO: add tower tracing, tls_config, concurrency limits
         Ok(Server::builder()
