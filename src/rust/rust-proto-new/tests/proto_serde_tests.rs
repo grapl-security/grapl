@@ -320,3 +320,88 @@ mod plugin_registry {
 
     }
 }
+
+mod plugin_work_queue {
+    use strategies::plugin_work_queue as pwq_strats;
+
+    use super::*;
+    use crate::test_utils::serde::expect_serde_error_with_message;
+
+    proptest! {
+        #[test]
+        fn test_acknowledge_generator_requests(value in pwq_strats::acknowledge_generator_requests()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_acknowledge_generator_responses(value in pwq_strats::acknowledge_generator_responses()) {
+            check_encode_decode_invariant(value)
+        }
+
+
+        #[test]
+        fn test_acknowledge_analyzer_requests(value in pwq_strats::acknowledge_analyzer_requests()) {
+            check_encode_decode_invariant(value)
+        }
+
+
+        #[test]
+        fn test_acknowledge_analyzer_responses(value in pwq_strats::acknowledge_analyzer_responses()) {
+            check_encode_decode_invariant(value)
+        }
+
+
+        #[test]
+        fn test_get_execute_analyzer_requests(value in pwq_strats::get_execute_analyzer_requests()) {
+            check_encode_decode_invariant(value)
+        }
+
+
+        #[test]
+        fn test_get_execute_analyzer_responses(
+            value in pwq_strats::get_execute_analyzer_responses()
+        ) {
+            if let None = value.execution_job {
+                expect_serde_error_with_message(value, ".execution_job");
+            } else {
+                check_encode_decode_invariant(value)
+            }
+        }
+
+        #[test]
+        fn test_get_execute_generator_requests(value in pwq_strats::get_execute_generator_requests()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_get_execute_generator_responses(
+            value in pwq_strats::get_execute_generator_responses()
+        ) {
+            if let None = value.execution_job {
+                expect_serde_error_with_message(value, ".execution_job");
+            } else {
+                check_encode_decode_invariant(value)
+            }
+        }
+
+        #[test]
+        fn test_put_execute_analyzer_requests(value in pwq_strats::put_execute_analyzer_requests()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_put_execute_analyzer_responses(value in pwq_strats::put_execute_analyzer_responses()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_put_execute_generator_requests(value in pwq_strats::put_execute_generator_requests()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_put_execute_generator_responses(value in pwq_strats::put_execute_generator_responses()) {
+            check_encode_decode_invariant(value)
+        }
+    }
+}
