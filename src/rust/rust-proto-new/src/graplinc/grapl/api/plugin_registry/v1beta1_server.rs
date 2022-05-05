@@ -26,6 +26,7 @@ use tonic::{
 };
 
 use crate::{
+    execute_rpc,
     graplinc::grapl::api::plugin_registry::v1beta1::{
         CreatePluginRequest,
         CreatePluginResponse,
@@ -52,7 +53,6 @@ use crate::{
         },
         status::Status,
     },
-    rpc_translate_proto_to_native,
     server_internals::GrpcApi,
     SerDeError,
 };
@@ -110,42 +110,42 @@ where
         &self,
         request: Request<proto::CreatePluginRequest>,
     ) -> Result<Response<proto::CreatePluginResponse>, tonic::Status> {
-        rpc_translate_proto_to_native!(self, request, create_plugin)
+        execute_rpc!(self, request, create_plugin)
     }
 
     async fn get_plugin(
         &self,
         request: Request<proto::GetPluginRequest>,
     ) -> Result<Response<proto::GetPluginResponse>, tonic::Status> {
-        rpc_translate_proto_to_native!(self, request, get_plugin)
+        execute_rpc!(self, request, get_plugin)
     }
 
     async fn deploy_plugin(
         &self,
         request: Request<proto::DeployPluginRequest>,
     ) -> Result<Response<proto::DeployPluginResponse>, tonic::Status> {
-        rpc_translate_proto_to_native!(self, request, deploy_plugin)
+        execute_rpc!(self, request, deploy_plugin)
     }
 
     async fn tear_down_plugin(
         &self,
         request: Request<proto::TearDownPluginRequest>,
     ) -> Result<Response<proto::TearDownPluginResponse>, tonic::Status> {
-        rpc_translate_proto_to_native!(self, request, tear_down_plugin)
+        execute_rpc!(self, request, tear_down_plugin)
     }
 
     async fn get_generators_for_event_source(
         &self,
         request: Request<proto::GetGeneratorsForEventSourceRequest>,
     ) -> Result<Response<proto::GetGeneratorsForEventSourceResponse>, tonic::Status> {
-        rpc_translate_proto_to_native!(self, request, get_generators_for_event_source)
+        execute_rpc!(self, request, get_generators_for_event_source)
     }
 
     async fn get_analyzers_for_tenant(
         &self,
         request: Request<proto::GetAnalyzersForTenantRequest>,
     ) -> Result<Response<proto::GetAnalyzersForTenantResponse>, tonic::Status> {
-        rpc_translate_proto_to_native!(self, request, get_analyzers_for_tenant)
+        execute_rpc!(self, request, get_analyzers_for_tenant)
     }
 }
 

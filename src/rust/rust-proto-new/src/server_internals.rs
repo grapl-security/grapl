@@ -28,7 +28,7 @@ impl From<crate::SerDeError> for tonic::Status {
 /// Ideally this would be a generic function, but rust has issues with
 /// async function pointers (like self.api_server.any_rpc).
 #[macro_export]
-macro_rules! rpc_translate_proto_to_native {
+macro_rules! execute_rpc {
     ($self: ident, $request: ident, $rpc_name: ident) => {{
         {
             let proto_request = $request.into_inner();

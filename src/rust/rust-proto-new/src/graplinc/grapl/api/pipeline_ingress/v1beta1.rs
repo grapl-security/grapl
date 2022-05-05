@@ -227,6 +227,7 @@ pub mod server {
     };
 
     use crate::{
+        execute_rpc,
         graplinc::grapl::api::pipeline_ingress::v1beta1::{
             PublishRawLogRequest,
             PublishRawLogResponse,
@@ -247,7 +248,6 @@ pub mod server {
             },
             status::Status,
         },
-        rpc_translate_proto_to_native,
         server_internals::GrpcApi,
         SerDeError,
     };
@@ -265,7 +265,7 @@ pub mod server {
             &self,
             request: tonic::Request<PublishRawLogRequestProto>,
         ) -> Result<tonic::Response<PublishRawLogResponseProto>, tonic::Status> {
-            rpc_translate_proto_to_native!(self, request, publish_raw_log)
+            execute_rpc!(self, request, publish_raw_log)
         }
     }
 
