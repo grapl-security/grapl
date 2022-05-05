@@ -1,4 +1,3 @@
-#![allow(dead_code)] // TODO remove beofre end of PR
 use std::fmt::Debug;
 
 use proto::plugin_work_queue_service_client::PluginWorkQueueServiceClient as PluginWorkQueueServiceClientProto;
@@ -54,6 +53,7 @@ impl PluginWorkQueueServiceClient {
     }
 
     /// Adds a new execution job for an analyzer
+    #[tracing::instrument(skip(self, request), err)]
     pub async fn put_execute_analyzer(
         &mut self,
         request: native::PutExecuteAnalyzerRequest,
@@ -66,6 +66,7 @@ impl PluginWorkQueueServiceClient {
     }
 
     /// Retrieves a new execution job for a generator
+    #[tracing::instrument(skip(self, request), err)]
     pub async fn get_execute_generator(
         &mut self,
         request: native::GetExecuteGeneratorRequest,
@@ -78,6 +79,7 @@ impl PluginWorkQueueServiceClient {
     }
 
     /// Retrieves a new execution job for an analyzer
+    #[tracing::instrument(skip(self, request), err)]
     pub async fn get_execute_analyzer(
         &mut self,
         request: native::GetExecuteAnalyzerRequest,
@@ -90,6 +92,7 @@ impl PluginWorkQueueServiceClient {
     }
 
     /// Acknowledges the completion of a generator job
+    #[tracing::instrument(skip(self, request), err)]
     pub async fn acknowledge_generator(
         &mut self,
         request: native::AcknowledgeGeneratorRequest,
@@ -102,6 +105,7 @@ impl PluginWorkQueueServiceClient {
     }
 
     /// Acknowledges the completion of an analyzer job
+    #[tracing::instrument(skip(self, request), err)]
     pub async fn acknowledge_analyzer(
         &mut self,
         request: native::AcknowledgeAnalyzerRequest,
