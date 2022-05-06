@@ -57,7 +57,6 @@ COPY rust rust
 
 WORKDIR /grapl/rust
 
-
 ENV CARGO_TARGET_DIR="/grapl/rust/target"
 
 # These variables are just to DRY up some repeated cache target
@@ -66,9 +65,10 @@ ENV CARGO_TARGET_DIR="/grapl/rust/target"
 ENV REGISTRY_CACHE_TARGET="${CARGO_HOME}/registry"
 ENV RUSTUP_CACHE_TARGET="${RUSTUP_HOME}"
 
-# For prost-build to use system protoc
+# Force prost-build to use the apt-installed protoc
 ENV PROTOC=/usr/bin/protoc
 ENV PROTOC_INCLUDE=/usr/include
+ENV PROTOC_NO_VENDOR=0
 
 # build
 ################################################################################
