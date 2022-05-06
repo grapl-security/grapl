@@ -12,39 +12,21 @@ use futures::{
     Future,
     FutureExt,
 };
-use proto::plugin_registry_service_server::PluginRegistryService;
-use thiserror::Error;
+use proto::plugin_work_queue_service_server::{
+    PluginWorkQueueService,
+    PluginWorkQueueServiceServer as ServerProto,
+};
 use tokio::net::TcpListener;
 use tokio_stream::wrappers::TcpListenerStream;
-use tonic::{
-    transport::{
-        NamedService,
-        Server,
-    },
-    Request,
-    Response,
+use tonic::transport::{
+    NamedService,
+    Server,
 };
 
 use crate::{
     execute_rpc,
-    graplinc::grapl::api::plugin_registry::v1beta1::{
-        CreatePluginRequest,
-        CreatePluginResponse,
-        DeployPluginRequest,
-        DeployPluginResponse,
-        GetAnalyzersForTenantRequest,
-        GetAnalyzersForTenantResponse,
-        GetGeneratorsForEventSourceRequest,
-        GetGeneratorsForEventSourceResponse,
-        GetPluginRequest,
-        GetPluginResponse,
-        TearDownPluginRequest,
-        TearDownPluginResponse,
-    },
-    protobufs::graplinc::grapl::api::plugin_registry::v1beta1::{
-        self as proto,
-        plugin_registry_service_server::PluginRegistryServiceServer as PluginRegistryServiceProto,
-    },
+    graplinc::grapl::api::plugin_work_queue::v1beta1 as native,
+    protobufs::graplinc::grapl::api::plugin_work_queue::v1beta1 as proto,
     protocol::{
         healthcheck::{
             server::init_health_service,
@@ -58,8 +40,8 @@ use crate::{
 };
 
 #[non_exhaustive]
-#[derive(Debug, Error)]
-pub enum PluginRegistryApiError {
+#[derive(Debug, thiserror::Error)]
+pub enum PluginWorkQueueApiError {
     #[error("failed to serialize/deserialize {0}")]
     SerDeError(#[from] SerDeError),
 
@@ -69,83 +51,84 @@ pub enum PluginRegistryApiError {
 
 /// Implement this trait to define the API business logic
 #[tonic::async_trait]
-pub trait PluginRegistryApi {
+pub trait PluginWorkQueueApi {
     type Error: Into<Status>;
-
-    async fn create_plugin(
+    async fn put_execute_generator(
         &self,
-        request: CreatePluginRequest,
-    ) -> Result<CreatePluginResponse, Self::Error>;
+        request: native::PutExecuteGeneratorRequest,
+    ) -> Result<native::PutExecuteGeneratorResponse, Self::Error>;
 
-    async fn get_plugin(&self, request: GetPluginRequest)
-        -> Result<GetPluginResponse, Self::Error>;
-
-    async fn deploy_plugin(
+    async fn put_execute_analyzer(
         &self,
-        request: DeployPluginRequest,
-    ) -> Result<DeployPluginResponse, Self::Error>;
+        request: native::PutExecuteAnalyzerRequest,
+    ) -> Result<native::PutExecuteAnalyzerResponse, Self::Error>;
 
-    async fn tear_down_plugin(
+    async fn get_execute_generator(
         &self,
-        request: TearDownPluginRequest,
-    ) -> Result<TearDownPluginResponse, Self::Error>;
+        request: native::GetExecuteGeneratorRequest,
+    ) -> Result<native::GetExecuteGeneratorResponse, Self::Error>;
 
-    async fn get_generators_for_event_source(
+    async fn get_execute_analyzer(
         &self,
-        request: GetGeneratorsForEventSourceRequest,
-    ) -> Result<GetGeneratorsForEventSourceResponse, Self::Error>;
+        request: native::GetExecuteAnalyzerRequest,
+    ) -> Result<native::GetExecuteAnalyzerResponse, Self::Error>;
 
-    async fn get_analyzers_for_tenant(
+    async fn acknowledge_generator(
         &self,
-        request: GetAnalyzersForTenantRequest,
-    ) -> Result<GetAnalyzersForTenantResponse, Self::Error>;
+        request: native::AcknowledgeGeneratorRequest,
+    ) -> Result<native::AcknowledgeGeneratorResponse, Self::Error>;
+
+    async fn acknowledge_analyzer(
+        &self,
+        request: native::AcknowledgeAnalyzerRequest,
+    ) -> Result<native::AcknowledgeAnalyzerResponse, Self::Error>;
 }
 
 #[tonic::async_trait]
-impl<T> PluginRegistryService for GrpcApi<T>
+impl<T> PluginWorkQueueService for GrpcApi<T>
 where
-    T: PluginRegistryApi + Send + Sync + 'static,
+    T: PluginWorkQueueApi + Send + Sync + 'static,
 {
-    async fn create_plugin(
+    async fn put_execute_generator(
         &self,
-        request: Request<proto::CreatePluginRequest>,
-    ) -> Result<Response<proto::CreatePluginResponse>, tonic::Status> {
-        execute_rpc!(self, request, create_plugin)
+        request: tonic::Request<proto::PutExecuteGeneratorRequest>,
+    ) -> Result<tonic::Response<proto::PutExecuteGeneratorResponse>, tonic::Status> {
+        execute_rpc!(self, request, put_execute_generator)
     }
 
-    async fn get_plugin(
+    async fn put_execute_analyzer(
         &self,
-        request: Request<proto::GetPluginRequest>,
-    ) -> Result<Response<proto::GetPluginResponse>, tonic::Status> {
-        execute_rpc!(self, request, get_plugin)
+        request: tonic::Request<proto::PutExecuteAnalyzerRequest>,
+    ) -> Result<tonic::Response<proto::PutExecuteAnalyzerResponse>, tonic::Status> {
+        execute_rpc!(self, request, put_execute_analyzer)
     }
 
-    async fn deploy_plugin(
+    async fn get_execute_generator(
         &self,
-        request: Request<proto::DeployPluginRequest>,
-    ) -> Result<Response<proto::DeployPluginResponse>, tonic::Status> {
-        execute_rpc!(self, request, deploy_plugin)
+        request: tonic::Request<proto::GetExecuteGeneratorRequest>,
+    ) -> Result<tonic::Response<proto::GetExecuteGeneratorResponse>, tonic::Status> {
+        execute_rpc!(self, request, get_execute_generator)
     }
 
-    async fn tear_down_plugin(
+    async fn get_execute_analyzer(
         &self,
-        request: Request<proto::TearDownPluginRequest>,
-    ) -> Result<Response<proto::TearDownPluginResponse>, tonic::Status> {
-        execute_rpc!(self, request, tear_down_plugin)
+        request: tonic::Request<proto::GetExecuteAnalyzerRequest>,
+    ) -> Result<tonic::Response<proto::GetExecuteAnalyzerResponse>, tonic::Status> {
+        execute_rpc!(self, request, get_execute_analyzer)
     }
 
-    async fn get_generators_for_event_source(
+    async fn acknowledge_generator(
         &self,
-        request: Request<proto::GetGeneratorsForEventSourceRequest>,
-    ) -> Result<Response<proto::GetGeneratorsForEventSourceResponse>, tonic::Status> {
-        execute_rpc!(self, request, get_generators_for_event_source)
+        request: tonic::Request<proto::AcknowledgeGeneratorRequest>,
+    ) -> Result<tonic::Response<proto::AcknowledgeGeneratorResponse>, tonic::Status> {
+        execute_rpc!(self, request, acknowledge_generator)
     }
 
-    async fn get_analyzers_for_tenant(
+    async fn acknowledge_analyzer(
         &self,
-        request: Request<proto::GetAnalyzersForTenantRequest>,
-    ) -> Result<Response<proto::GetAnalyzersForTenantResponse>, tonic::Status> {
-        execute_rpc!(self, request, get_analyzers_for_tenant)
+        request: tonic::Request<proto::AcknowledgeAnalyzerRequest>,
+    ) -> Result<tonic::Response<proto::AcknowledgeAnalyzerResponse>, tonic::Status> {
+        execute_rpc!(self, request, acknowledge_analyzer)
     }
 }
 
@@ -154,9 +137,9 @@ where
  * This is almost entirely cargo-culted from PipelineIngressServer.
  * Lots of opportunities to deduplicate and simplify.
  */
-pub struct PluginRegistryServer<T, H, F>
+pub struct PluginWorkQueueServer<T, H, F>
 where
-    T: PluginRegistryApi + Send + Sync + 'static,
+    T: PluginWorkQueueApi + Send + Sync + 'static,
     H: Fn() -> F + Send + Sync + 'static,
     F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send + 'static,
 {
@@ -169,9 +152,9 @@ where
     f_: PhantomData<F>,
 }
 
-impl<T, H, F> PluginRegistryServer<T, H, F>
+impl<T, H, F> PluginWorkQueueServer<T, H, F>
 where
-    T: PluginRegistryApi + Send + Sync + 'static,
+    T: PluginWorkQueueApi + Send + Sync + 'static,
     H: Fn() -> F + Send + Sync + 'static,
     F: Future<Output = Result<HealthcheckStatus, HealthcheckError>> + Send,
 {
@@ -194,7 +177,7 @@ where
                 healthcheck_polling_interval,
                 tcp_listener,
                 shutdown_rx,
-                service_name: PluginRegistryServiceProto::<GrpcApi<T>>::NAME,
+                service_name: ServerProto::<GrpcApi<T>>::NAME,
                 f_: PhantomData,
             },
             shutdown_tx,
@@ -212,7 +195,7 @@ where
     /// address. Returns a ConfigurationError if the gRPC server cannot run.
     pub async fn serve(self) -> Result<(), Box<dyn std::error::Error>> {
         let (healthcheck_handle, health_service) =
-            init_health_service::<PluginRegistryServiceProto<GrpcApi<T>>, _, _>(
+            init_health_service::<ServerProto<GrpcApi<T>>, _, _>(
                 self.healthcheck,
                 self.healthcheck_polling_interval,
             )
@@ -221,9 +204,7 @@ where
         // TODO: add tower tracing, tls_config, concurrency limits
         Ok(Server::builder()
             .add_service(health_service)
-            .add_service(PluginRegistryServiceProto::new(GrpcApi::new(
-                self.api_server,
-            )))
+            .add_service(ServerProto::new(GrpcApi::new(self.api_server)))
             .serve_with_incoming_shutdown(
                 TcpListenerStream::new(self.tcp_listener),
                 self.shutdown_rx.map(|_| ()),

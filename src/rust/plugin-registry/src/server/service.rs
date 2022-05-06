@@ -10,34 +10,36 @@ use rusoto_s3::{
     S3Client,
     S3,
 };
-use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
-    CreatePluginRequest,
-    CreatePluginResponse,
-    DeployPluginRequest,
-    DeployPluginResponse,
-    GetAnalyzersForTenantRequest,
-    GetAnalyzersForTenantResponse,
-    GetGeneratorsForEventSourceRequest,
-    GetGeneratorsForEventSourceResponse,
-    GetPluginRequest,
-    GetPluginResponse,
-    HealthcheckStatus,
-    Plugin,
-    PluginRegistryApi,
-    PluginRegistryServer,
-    PluginType,
-    TearDownPluginRequest,
-    TearDownPluginResponse,
+use rust_proto_new::{
+    graplinc::grapl::api::plugin_registry::v1beta1::{
+        CreatePluginRequest,
+        CreatePluginResponse,
+        DeployPluginRequest,
+        DeployPluginResponse,
+        GetAnalyzersForTenantRequest,
+        GetAnalyzersForTenantResponse,
+        GetGeneratorsForEventSourceRequest,
+        GetGeneratorsForEventSourceResponse,
+        GetPluginRequest,
+        GetPluginResponse,
+        Plugin,
+        PluginRegistryApi,
+        PluginRegistryServer,
+        PluginType,
+        TearDownPluginRequest,
+        TearDownPluginResponse,
+    },
+    protocol::{
+        healthcheck::HealthcheckStatus,
+        status::Status,
+    },
 };
 use structopt::StructOpt;
 use tokio::{
     io::AsyncReadExt,
     net::TcpListener,
 };
-use tonic::{
-    async_trait,
-    Status,
-};
+use tonic::async_trait;
 
 use crate::{
     db::{
@@ -130,12 +132,14 @@ pub struct PluginRegistry {
 }
 
 #[async_trait]
-impl PluginRegistryApi<PluginRegistryServiceError> for PluginRegistry {
+impl PluginRegistryApi for PluginRegistry {
+    type Error = PluginRegistryServiceError;
+
     #[tracing::instrument(skip(self, request), err)]
     async fn create_plugin(
         &self,
         request: CreatePluginRequest,
-    ) -> Result<CreatePluginResponse, PluginRegistryServiceError> {
+    ) -> Result<CreatePluginResponse, Self::Error> {
         let plugin_id = generate_plugin_id(&request.tenant_id, request.plugin_artifact.as_slice());
 
         let s3_key = generate_artifact_s3_key(request.plugin_type, &request.tenant_id, &plugin_id);
@@ -163,7 +167,7 @@ impl PluginRegistryApi<PluginRegistryServiceError> for PluginRegistry {
     async fn get_plugin(
         &self,
         request: GetPluginRequest,
-    ) -> Result<GetPluginResponse, PluginRegistryServiceError> {
+    ) -> Result<GetPluginResponse, Self::Error> {
         let PluginRow {
             artifact_s3_key,
             plugin_type,
@@ -213,7 +217,7 @@ impl PluginRegistryApi<PluginRegistryServiceError> for PluginRegistry {
     async fn deploy_plugin(
         &self,
         request: DeployPluginRequest,
-    ) -> Result<DeployPluginResponse, PluginRegistryServiceError> {
+    ) -> Result<DeployPluginResponse, Self::Error> {
         let plugin_id = request.plugin_id;
         let plugin_row = self.db_client.get_plugin(&plugin_id).await?;
 
@@ -237,7 +241,7 @@ impl PluginRegistryApi<PluginRegistryServiceError> for PluginRegistry {
     async fn tear_down_plugin(
         &self,
         _request: TearDownPluginRequest,
-    ) -> Result<TearDownPluginResponse, PluginRegistryServiceError> {
+    ) -> Result<TearDownPluginResponse, Self::Error> {
         todo!()
     }
 
@@ -245,7 +249,7 @@ impl PluginRegistryApi<PluginRegistryServiceError> for PluginRegistry {
     async fn get_generators_for_event_source(
         &self,
         _request: GetGeneratorsForEventSourceRequest,
-    ) -> Result<GetGeneratorsForEventSourceResponse, PluginRegistryServiceError> {
+    ) -> Result<GetGeneratorsForEventSourceResponse, Self::Error> {
         todo!()
     }
 
@@ -254,7 +258,7 @@ impl PluginRegistryApi<PluginRegistryServiceError> for PluginRegistry {
     async fn get_analyzers_for_tenant(
         &self,
         _request: GetAnalyzersForTenantRequest,
-    ) -> Result<GetAnalyzersForTenantResponse, PluginRegistryServiceError> {
+    ) -> Result<GetAnalyzersForTenantResponse, Self::Error> {
         todo!()
     }
 }
