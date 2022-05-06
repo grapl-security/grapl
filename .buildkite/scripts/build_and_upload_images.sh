@@ -41,21 +41,10 @@ make build-image-prerequisites
 # Build targets
 docker buildx bake --file="${BUILDX_BAKE_FILE}" --progress "plain" "${BUILDX_TARGET}"
 
-# Cloudsmith may be having trouble with `buildx --push`, so, experimenting with
-# uploading each one individually.
-{
-    mapfile -t fully_qualified_images < <(
-        docker buildx bake \
-            --file="${BUILDX_BAKE_FILE}" \
-            --print "${BUILDX_TARGET}" |
-            jq --raw-output '.target | to_entries | .[] | .value.tags[0]'
-    )
-    for fq_image in "${fully_qualified_images[@]}"; do
-        echo "--- Pushing ${fq_image}"
-        retry 3 \
-            docker push "${fq_image}"
-    done
-}
+# If you see MANIFEST_UNKNOWN on this, see 
+# https://github.com/grapl-security/issue-tracker/issues/931
+retry 2 \
+    docker buildx bake --file="${BUILDX_BAKE_FILE}" --progress "plain" --push "${BUILDX_TARGET}"
 
 readonly sleep_seconds=60
 echo "--- :sleeping::sob: Sleeping for ${sleep_seconds} seconds to give CDNs time to update"
