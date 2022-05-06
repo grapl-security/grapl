@@ -104,6 +104,9 @@ start_nomad_detach() {
         -dev-connect > "${NOMAD_LOGS_DEST}" &
     local -r nomad_agent_pid="$!"
 
+    sleep 10
+
+    configure_vault
     create_dynamic_consul_config
 
     # The client is set to 0.0.0.0 here so that it can be reached via pulumi in docker.
