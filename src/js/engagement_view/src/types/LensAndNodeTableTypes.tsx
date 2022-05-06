@@ -12,7 +12,7 @@ export type SelectLensProps = {
 
 export type NodeDetailsProps = {
     node: VizNode;
-};  
+};
 
 export type ToggleNodeTableProps = {
     curNode: VizNode | null;

@@ -22,7 +22,7 @@ export function SelectLens(props: SelectLensProps) {
             className={classes.tableRow}
         >
             <TableCell component="th" scope="row" align="left">
-                {props.lens_type + " :\t\t" + props.lens}
+                {props.lens_type + " :  " + props.lens}
             </TableCell>
 
             <TableCell component="th" scope="row" align="right">

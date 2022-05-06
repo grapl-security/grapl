@@ -11,6 +11,7 @@ const theme = createTheme({
         secondary: {
             main: "#c65454",
             light: "#AFBDD1",
+            contrastText: "#2B3648"
         },
         background: {
             default: "#212936",
@@ -35,7 +36,6 @@ const theme = createTheme({
             styleOverrides: {
                 root: {
                     "&.Mui-selected": {
-                        borderLeft: "5px solid #2196f3",
                         color: "#1976D2",
                         background: "#2B3648",
                     },

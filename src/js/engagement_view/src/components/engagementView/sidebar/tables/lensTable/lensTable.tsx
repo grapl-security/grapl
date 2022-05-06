@@ -14,7 +14,7 @@ import { Lens } from "types/CustomTypes";
 import { PaginationState } from "types/CustomTypes";
 
 export const lensTable = (
-    state: PaginationState,
+    paginationState: PaginationState,
     selectedIdState: number,
     setSelectedIdState: (selectedIdState: number) => void,
     page: number,
@@ -36,7 +36,7 @@ export const lensTable = (
                 aria-label="pagination"
                 rowsPerPageOptions={[5, 10, 25]}
                 component="div"
-                count={state.lenses.length}
+                count={paginationState.lenses.length}
                 rowsPerPage={rowsPerPage}
                 page={page}
                 onPageChange={handleChangePage}
@@ -59,7 +59,7 @@ export const lensTable = (
                 </TableHead>
 
                 <TableBody>
-                    {state.lenses
+                    {paginationState.lenses
                         .slice(
                             page * rowsPerPage,
                             page * rowsPerPage + rowsPerPage
