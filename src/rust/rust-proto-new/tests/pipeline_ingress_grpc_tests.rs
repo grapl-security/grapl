@@ -16,9 +16,12 @@ use rust_proto_new::{
             PublishRawLogResponse,
         },
     },
-    protocol::healthcheck::{
-        client::HealthcheckClient,
-        HealthcheckStatus,
+    protocol::{
+        healthcheck::{
+            client::HealthcheckClient,
+            HealthcheckStatus,
+        },
+        status::Status,
     },
 };
 use test_context::{
@@ -68,12 +71,20 @@ enum MockPipelineIngressApiError {
     PublishRawLogFailed,
 }
 
+impl From<MockPipelineIngressApiError> for Status {
+    fn from(e: MockPipelineIngressApiError) -> Self {
+        Status::internal(e.to_string())
+    }
+}
+
 #[tonic::async_trait]
-impl PipelineIngressApi<MockPipelineIngressApiError> for MockPipelineIngressApi {
+impl PipelineIngressApi for MockPipelineIngressApi {
+    type Error = MockPipelineIngressApiError;
+
     async fn publish_raw_log(
         &self,
         request: PublishRawLogRequest,
-    ) -> Result<PublishRawLogResponse, MockPipelineIngressApiError> {
+    ) -> Result<PublishRawLogResponse, Self::Error> {
         let tenant_id = Uuid::parse_str(TENANT_ID).expect("failed to parse TENANT_ID");
         assert!(request.tenant_id == tenant_id);
 
