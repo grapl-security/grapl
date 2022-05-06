@@ -322,6 +322,18 @@ FROM gcr.io/distroless/cc:debug AS rust-dist
 
 USER nonroot
 
+##### shuttle-rust-to-dist
+# There are a number of artifacts we want to bring back to the host OS.
+# This image will eventually dump its root contents into the host's `dist/`
+# courtesy of its `docker-bake.hcl` specification.
+FROM scratch AS shuttle-rust-to-dist
+
+COPY --from=build /outputs/plugin-bootstrap-init /plugin-bootstrap-init/
+# Just to clarify: we're copying these .service files from the repository,
+# through Docker, and then back out to the dist directory in the repository.
+COPY rust/plugin-bootstrap/grapl-plugin-bootstrap-init.service /plugin-bootstrap-init/
+COPY rust/plugin-bootstrap/grapl-plugin.service /plugin-bootstrap-init/
+
 ##### analyzer-dispatcher
 FROM rust-dist AS analyzer-dispatcher-deploy
 
@@ -359,16 +371,6 @@ FROM rust-dist AS plugin-bootstrap-deploy
 
 COPY --from=build /outputs/plugin-bootstrap /
 ENTRYPOINT ["/plugin-bootstrap"]
-
-##### plugin-bootstrap-init.
-# Not "-deploy" since we copy it to dist/.
-FROM scratch AS plugin-bootstrap-init-output
-
-COPY --from=build /outputs/plugin-bootstrap-init /
-# Just to clarify: we're copying these .service files from the repository,
-# through Docker, and then back out to the dist directory in the repository.
-COPY rust/plugin-bootstrap/grapl-plugin-bootstrap-init.service /
-COPY rust/plugin-bootstrap/grapl-plugin.service /
 
 ##### node-identifier
 FROM rust-dist AS node-identifier-deploy
