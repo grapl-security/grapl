@@ -41,14 +41,6 @@ pub(crate) mod graplinc {
                     }
                 }
             }
-            pub(crate) mod plugin_work_queue {
-                pub(crate) mod v1beta1 {
-                    include!(concat!(
-                        env!("OUT_DIR"),
-                        "/graplinc.grapl.api.plugin_work_queue.v1beta1.rs"
-                    ));
-                }
-            }
         }
         pub(crate) mod pipeline {
             pub mod v1beta1 {
@@ -68,5 +60,4 @@ pub mod organization_management;
 pub mod pipeline;
 pub mod plugin_bootstrap;
 pub mod plugin_sdk;
-pub mod plugin_work_queue;
 pub mod types;

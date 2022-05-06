@@ -12,13 +12,13 @@ path = "src/main.rs"
 name = "plugin_work_queue"
 
 [dependencies]
+async-trait = "0.1"
 grapl-config = { path = "../grapl-config" }
 grapl-utils = { path = "../grapl-utils" }
-rust-proto = { path = "../rust-proto" }
+rust-proto-new = { path = "../rust-proto-new" }
 structopt = { version = "0.3", default-features = false }
 thiserror = "1.0.30"
 tokio = { version = "1.17", features = ["full"] }
-tonic = "0.6"
 tonic-health = "0.5.0"
 tracing = "0.1.29"
 uuid = { version = "0.8", features = ["v4"] }

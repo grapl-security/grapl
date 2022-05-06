@@ -19,10 +19,9 @@ name = "plugin_executor"
 async-trait = "0.1.51"
 generator-sdk = { path = "../plugin-sdk/generator-sdk", features = ["client"] }
 plugin-work-queue = { path = "../plugin-work-queue" }
-rust-proto = { path = "../rust-proto" }
+rust-proto-new = { path = "../rust-proto-new" }
 structopt = { version = "0.3", default-features = false }
 tokio = { version = "1.17", features = ["macros", "rt", "rt-multi-thread"] }
-tonic = "0.6" # TODO remove once we upgrade plugin-work-queue to -new
 tracing = "0.1.29"
 
 [features]

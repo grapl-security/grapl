@@ -3219,10 +3219,9 @@ dependencies = [
  "async-trait",
  "generator-sdk",
  "plugin-work-queue",
- "rust-proto",
+ "rust-proto-new",
  "structopt",
  "tokio",
- "tonic 0.6.2",
  "tracing",
 ]
 
@@ -3256,16 +3255,16 @@ dependencies = [
 name = "plugin-work-queue"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "chrono",
  "futures",
  "grapl-config",
  "grapl-utils",
- "rust-proto",
+ "rust-proto-new",
  "sqlx",
  "structopt",
  "thiserror",
  "tokio",
- "tonic 0.6.2",
  "tonic-health 0.5.0",
  "tracing",
  "tracing-subscriber",

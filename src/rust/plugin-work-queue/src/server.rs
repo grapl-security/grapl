@@ -1,46 +1,25 @@
+use std::time::Duration;
+
 use grapl_utils::future_ext::GraplFutureExt;
-use rust_proto::plugin_work_queue::{
-    plugin_work_queue_service_server::{
-        PluginWorkQueueService,
-        PluginWorkQueueServiceServer,
+use rust_proto_new::{
+    graplinc::grapl::api::plugin_work_queue::{
+        v1beta1,
+        v1beta1::{
+            PluginWorkQueueApi,
+            PluginWorkQueueServer,
+        },
     },
-    AcknowledgeAnalyzerRequest,
-    AcknowledgeAnalyzerRequestProto,
-    AcknowledgeAnalyzerResponse,
-    AcknowledgeAnalyzerResponseProto,
-    AcknowledgeGeneratorRequest,
-    AcknowledgeGeneratorRequestProto,
-    AcknowledgeGeneratorResponse,
-    AcknowledgeGeneratorResponseProto,
-    ExecutionJob,
-    GetExecuteAnalyzerRequest,
-    GetExecuteAnalyzerRequestProto,
-    GetExecuteAnalyzerResponse,
-    GetExecuteAnalyzerResponseProto,
-    GetExecuteGeneratorRequest,
-    GetExecuteGeneratorRequestProto,
-    GetExecuteGeneratorResponse,
-    GetExecuteGeneratorResponseProto,
-    PluginWorkQueueDeserializationError,
-    PutExecuteAnalyzerRequest,
-    PutExecuteAnalyzerRequestProto,
-    PutExecuteAnalyzerResponse,
-    PutExecuteAnalyzerResponseProto,
-    PutExecuteGeneratorRequest,
-    PutExecuteGeneratorRequestProto,
-    PutExecuteGeneratorResponse,
-    PutExecuteGeneratorResponseProto,
+    protocol::{
+        healthcheck::HealthcheckStatus,
+        status::Status,
+    },
+    SerDeError,
 };
 use sqlx::{
     Pool,
     Postgres,
 };
-use tonic::{
-    transport::Server,
-    Request,
-    Response,
-    Status,
-};
+use tokio::net::TcpListener;
 
 use crate::{
     psql_queue::{
@@ -56,7 +35,7 @@ pub enum PluginWorkQueueError {
     #[error("PsqlQueueError {0}")]
     PsqlQueueError(#[from] PsqlQueueError),
     #[error("PluginWorkQueueDeserializationError {0}")]
-    DeserializationError(#[from] PluginWorkQueueDeserializationError),
+    DeserializationError(#[from] SerDeError),
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -117,12 +96,16 @@ impl PluginWorkQueue {
 
         Ok(plugin_work_queue)
     }
+}
+#[async_trait::async_trait]
+impl PluginWorkQueueApi for PluginWorkQueue {
+    type Error = PluginWorkQueueError;
 
     #[tracing::instrument(skip(self, request), err)]
     async fn put_execute_generator(
         &self,
-        request: PutExecuteGeneratorRequest,
-    ) -> Result<PutExecuteGeneratorResponse, PluginWorkQueueError> {
+        request: v1beta1::PutExecuteGeneratorRequest,
+    ) -> Result<v1beta1::PutExecuteGeneratorResponse, PluginWorkQueueError> {
         let tenant_id = request.execution_job.tenant_id;
         let plugin_id = request.execution_job.plugin_id;
         let data = request.execution_job.data;
@@ -131,14 +114,14 @@ impl PluginWorkQueue {
             .put_generator_message(plugin_id, data, tenant_id)
             .await?;
 
-        Ok(PutExecuteGeneratorResponse {})
+        Ok(v1beta1::PutExecuteGeneratorResponse {})
     }
 
     #[tracing::instrument(skip(self, request), err)]
     async fn put_execute_analyzer(
         &self,
-        request: PutExecuteAnalyzerRequest,
-    ) -> Result<PutExecuteAnalyzerResponse, PluginWorkQueueError> {
+        request: v1beta1::PutExecuteAnalyzerRequest,
+    ) -> Result<v1beta1::PutExecuteAnalyzerResponse, PluginWorkQueueError> {
         let tenant_id = request.execution_job.tenant_id;
         let plugin_id = request.execution_job.plugin_id;
         let data = request.execution_job.data;
@@ -147,30 +130,30 @@ impl PluginWorkQueue {
             .put_analyzer_message(plugin_id, data, tenant_id)
             .await?;
 
-        Ok(PutExecuteAnalyzerResponse {})
+        Ok(v1beta1::PutExecuteAnalyzerResponse {})
     }
 
     #[tracing::instrument(skip(self, _request), err)]
     async fn get_execute_generator(
         &self,
-        _request: GetExecuteGeneratorRequest,
-    ) -> Result<GetExecuteGeneratorResponse, PluginWorkQueueError> {
+        _request: v1beta1::GetExecuteGeneratorRequest,
+    ) -> Result<v1beta1::GetExecuteGeneratorResponse, PluginWorkQueueError> {
         let message = self.queue.get_generator_message().await?;
         let message = match message {
             Some(message) => message,
             None => {
-                return Ok(GetExecuteGeneratorResponse {
+                return Ok(v1beta1::GetExecuteGeneratorResponse {
                     execution_job: None,
                     request_id: 0,
                 })
             }
         };
-        let execution_job = ExecutionJob {
+        let execution_job = v1beta1::ExecutionJob {
             tenant_id: message.request.tenant_id,
             plugin_id: message.request.plugin_id,
             data: message.request.pipeline_message,
         };
-        Ok(GetExecuteGeneratorResponse {
+        Ok(v1beta1::GetExecuteGeneratorResponse {
             execution_job: Some(execution_job),
             request_id: message.request.execution_key.into(),
         })
@@ -179,24 +162,24 @@ impl PluginWorkQueue {
     #[tracing::instrument(skip(self, _request), err)]
     async fn get_execute_analyzer(
         &self,
-        _request: GetExecuteAnalyzerRequest,
-    ) -> Result<GetExecuteAnalyzerResponse, PluginWorkQueueError> {
+        _request: v1beta1::GetExecuteAnalyzerRequest,
+    ) -> Result<v1beta1::GetExecuteAnalyzerResponse, PluginWorkQueueError> {
         let message = self.queue.get_analyzer_message().await?;
         let message = match message {
             Some(message) => message,
             None => {
-                return Ok(GetExecuteAnalyzerResponse {
+                return Ok(v1beta1::GetExecuteAnalyzerResponse {
                     execution_job: None,
                     request_id: 0,
                 })
             }
         };
-        let execution_job = ExecutionJob {
+        let execution_job = v1beta1::ExecutionJob {
             tenant_id: message.request.tenant_id,
             plugin_id: message.request.plugin_id,
             data: message.request.pipeline_message,
         };
-        Ok(GetExecuteAnalyzerResponse {
+        Ok(v1beta1::GetExecuteAnalyzerResponse {
             execution_job: Some(execution_job),
             request_id: message.request.execution_key.into(),
         })
@@ -205,8 +188,8 @@ impl PluginWorkQueue {
     #[tracing::instrument(skip(self, request), err)]
     async fn acknowledge_generator(
         &self,
-        request: AcknowledgeGeneratorRequest,
-    ) -> Result<AcknowledgeGeneratorResponse, PluginWorkQueueError> {
+        request: v1beta1::AcknowledgeGeneratorRequest,
+    ) -> Result<v1beta1::AcknowledgeGeneratorResponse, PluginWorkQueueError> {
         let status = match request.success {
             true => psql_queue::Status::Processed,
             false => psql_queue::Status::Failed,
@@ -214,14 +197,14 @@ impl PluginWorkQueue {
         self.queue
             .ack_generator(request.request_id.into(), status)
             .await?;
-        Ok(AcknowledgeGeneratorResponse {})
+        Ok(v1beta1::AcknowledgeGeneratorResponse {})
     }
 
     #[tracing::instrument(skip(self, request), err)]
     async fn acknowledge_analyzer(
         &self,
-        request: AcknowledgeAnalyzerRequest,
-    ) -> Result<AcknowledgeAnalyzerResponse, PluginWorkQueueError> {
+        request: v1beta1::AcknowledgeAnalyzerRequest,
+    ) -> Result<v1beta1::AcknowledgeAnalyzerResponse, PluginWorkQueueError> {
         let status = match request.success {
             true => psql_queue::Status::Processed,
             false => psql_queue::Status::Failed,
@@ -229,120 +212,39 @@ impl PluginWorkQueue {
         self.queue
             .ack_analyzer(request.request_id.into(), status)
             .await?;
-        Ok(AcknowledgeAnalyzerResponse {})
-    }
-}
-
-#[tonic::async_trait]
-impl PluginWorkQueueService for PluginWorkQueue {
-    #[tracing::instrument(err)]
-    async fn put_execute_generator(
-        &self,
-        request: Request<PutExecuteGeneratorRequestProto>,
-    ) -> Result<Response<PutExecuteGeneratorResponseProto>, Status> {
-        let request = request.into_inner();
-        let request: PutExecuteGeneratorRequest =
-            request.try_into().map_err(PluginWorkQueueError::from)?;
-        let response = self.put_execute_generator(request).await?;
-        Ok(Response::new(response.into()))
-    }
-
-    #[tracing::instrument(err)]
-    async fn put_execute_analyzer(
-        &self,
-        request: Request<PutExecuteAnalyzerRequestProto>,
-    ) -> Result<Response<PutExecuteAnalyzerResponseProto>, Status> {
-        let request = request.into_inner();
-        let request: PutExecuteAnalyzerRequest =
-            request.try_into().map_err(PluginWorkQueueError::from)?;
-        let response = self.put_execute_analyzer(request).await?;
-        Ok(Response::new(response.into()))
-    }
-
-    #[tracing::instrument(err)]
-    async fn get_execute_generator(
-        &self,
-        request: Request<GetExecuteGeneratorRequestProto>,
-    ) -> Result<Response<GetExecuteGeneratorResponseProto>, Status> {
-        let request = request.into_inner();
-        let request: GetExecuteGeneratorRequest =
-            request.try_into().map_err(PluginWorkQueueError::from)?;
-        let response = self.get_execute_generator(request).await?;
-        Ok(Response::new(response.into()))
-    }
-
-    #[tracing::instrument(err)]
-    async fn get_execute_analyzer(
-        &self,
-        request: Request<GetExecuteAnalyzerRequestProto>,
-    ) -> Result<Response<GetExecuteAnalyzerResponseProto>, Status> {
-        let request = request.into_inner();
-        let request: GetExecuteAnalyzerRequest =
-            request.try_into().map_err(PluginWorkQueueError::from)?;
-        let response = self.get_execute_analyzer(request).await?;
-        Ok(Response::new(response.into()))
-    }
-
-    #[tracing::instrument(err)]
-    async fn acknowledge_generator(
-        &self,
-        request: Request<AcknowledgeGeneratorRequestProto>,
-    ) -> Result<Response<AcknowledgeGeneratorResponseProto>, Status> {
-        let request = request.into_inner();
-        let request: AcknowledgeGeneratorRequest =
-            request.try_into().map_err(PluginWorkQueueError::from)?;
-        let response = self.acknowledge_generator(request).await?;
-        Ok(Response::new(response.into()))
-    }
-
-    #[tracing::instrument(err)]
-    async fn acknowledge_analyzer(
-        &self,
-        request: Request<AcknowledgeAnalyzerRequestProto>,
-    ) -> Result<Response<AcknowledgeAnalyzerResponseProto>, Status> {
-        let request = request.into_inner();
-        let request: AcknowledgeAnalyzerRequest =
-            request.try_into().map_err(PluginWorkQueueError::from)?;
-        let response = self.acknowledge_analyzer(request).await?;
-        Ok(Response::new(response.into()))
+        Ok(v1beta1::AcknowledgeAnalyzerResponse {})
     }
 }
 
 pub async fn exec_service(
     service_config: PluginWorkQueueServiceConfig,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let (mut health_reporter, health_service) = tonic_health::server::health_reporter();
-    health_reporter
-        .set_serving::<PluginWorkQueueServiceServer<PluginWorkQueue>>()
-        .await;
-
     tracing::info!(
-        message="Connecting to plugin registry table",
+        message="Connecting to plugin-work-queue table",
         service_config=?service_config,
     );
 
     let plugin_work_queue = PluginWorkQueue::try_from(&service_config).await?;
 
     tracing::info!(message = "Performing migration",);
-
     sqlx::migrate!().run(&plugin_work_queue.queue.pool).await?;
 
     tracing::info!(message = "Binding service",);
+    let addr = service_config.plugin_work_queue_bind_address;
+    let healthcheck_polling_interval_ms =
+        service_config.plugin_work_queue_healthcheck_polling_interval_ms;
 
-    Server::builder()
-        .trace_fn(|request| {
-            tracing::info_span!(
-                "PluginWorkQueue",
-                headers = ?request.headers(),
-                method = ?request.method(),
-                uri = %request.uri(),
-                extensions = ?request.extensions(),
-            )
-        })
-        .add_service(health_service)
-        .add_service(PluginWorkQueueServiceServer::new(plugin_work_queue))
-        .serve(service_config.plugin_work_queue_bind_address)
-        .await?;
+    let (server, _shutdown_tx) = PluginWorkQueueServer::new(
+        plugin_work_queue,
+        TcpListener::bind(addr.clone()).await?,
+        || async { Ok(HealthcheckStatus::Serving) }, // FIXME: this is garbage
+        Duration::from_millis(healthcheck_polling_interval_ms),
+    );
 
-    Ok(())
+    tracing::info!(
+        message = "starting gRPC server",
+        socket_address = %addr,
+    );
+
+    server.serve().await
 }
