@@ -363,7 +363,6 @@ lint: lint-hcl
 lint: lint-prettier
 lint: lint-proto
 lint: lint-proto-breaking
-lint: lint-proto-format
 lint: lint-python
 lint: lint-rust
 lint: lint-shell
@@ -389,7 +388,7 @@ lint-prettier: ## Run ts/js/yaml lint checks
 
 .PHONY: lint-proto
 lint-proto: ## Lint all protobuf definitions
-		$(PANTS_PROTO_FILTER) lint
+	$(PANTS_PROTO_FILTER) lint
 
 .PHONY: lint-proto-breaking
 lint-proto-breaking: ## Check protobuf definitions for breaking changes
