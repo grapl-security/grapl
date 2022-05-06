@@ -57,9 +57,9 @@ export const useStyles = makeStyles((theme) =>
         },
         tableRow: {
             "&.Mui-selected": {
-                backgroundColor: "#2B3648",
+                backgroundColor: theme.palette.secondary.contrastText,
                 "& > .MuiTableCell-root": {
-                    color: "#1976D2",
+                    color: theme.palette.background.paper,
                 },
             },
         },

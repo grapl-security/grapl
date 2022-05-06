@@ -83,7 +83,7 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
                 );
                 const interval = setInterval(() => {
                     // Invalidate the interval if the lens changes - this ensures we never race
-                    try{
+                    try {
                         if (lastLens.current !== lensName) {
                             console.info(
                                 "clearing interval",
