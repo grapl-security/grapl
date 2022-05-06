@@ -42,10 +42,12 @@ make build-image-prerequisites
 
 if [[ "${BUILDKITE_RETRY_COUNT}" -eq 0 ]]; then
     echo "--- Build & Pushing all ${IMAGE_TAG} images"
-    docker buildx bake --file="${BUILDX_BAKE_FILE}" \
-        --progress "plain" \
-        --push \
-        "${BUILDX_TARGET}"
+    if ! docker buildx bake --file="${BUILDX_BAKE_FILE}" \
+        --progress "plain" --push "${BUILDX_TARGET}"; then
+        echo "buildx bake --push failed; Buildkite should auto-retry"
+        # Special status for "buildx --push failed"
+        exit 42
+    fi
 else
     echo "--- Building all ${IMAGE_TAG} images"
     # Build targets
