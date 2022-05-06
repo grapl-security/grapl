@@ -29,8 +29,6 @@ readonly BUILDX_TARGET="cloudsmith-images"
 IMAGE_TAG="$(timestamp_and_sha_version)"
 export IMAGE_TAG
 
-echo "--- Building all ${IMAGE_TAG} images"
-
 # NOTE: We could theoretically collapse these two commands into a
 # single Makefile target, but I have opted to structure them like this
 # while we have to do the "check if the image is new" logic to keep
@@ -38,36 +36,35 @@ echo "--- Building all ${IMAGE_TAG} images"
 # localised here.
 make build-image-prerequisites
 
-# Build targets
-docker buildx bake --file="${BUILDX_BAKE_FILE}" --progress "plain" "${BUILDX_TARGET}"
+# https://github.com/grapl-security/issue-tracker/issues/931
+# Try the `buildx --push` first; if retried on Buildkite, do the slower
+# manual approach.
 
-push() {
+if [[ "${BUILDKITE_RETRY_COUNT}" -eq 0 ]]; then
+    echo "--- Build & Pushing all ${IMAGE_TAG} images"
+    docker buildx bake --file="${BUILDX_BAKE_FILE}" \
+        --progress "plain" \
+        --push \
+        "${BUILDX_TARGET}"
+else
+    echo "--- Building all ${IMAGE_TAG} images"
+    # Build targets
+    docker buildx bake --file="${BUILDX_BAKE_FILE}" --progress "plain" "${BUILDX_TARGET}"
+
     echo "--- Pushing all ${IMAGE_TAG} images"
-    # https://github.com/grapl-security/issue-tracker/issues/931
-    # Try the `buildx --push` first; if retried on Buildkite, do the slower
-    # manual approach.
-
-    if [[ "${BUILDKITE_RETRY_COUNT:-0}" -eq 0 ]]; then
-        retry 2 \
-            docker buildx bake --file="${BUILDX_BAKE_FILE}" \
-            --progress "plain" \
-            --push \
-            "${BUILDX_TARGET}"
-    else
-        # Upload each image in serial, not parallel
-        mapfile -t fully_qualified_images < <(
-            docker buildx bake \
-                --file="${BUILDX_BAKE_FILE}" \
-                --print "${BUILDX_TARGET}" |
-                jq --raw-output '.target | to_entries | .[] | .value.tags[0]'
-        )
-        for fq_image in "${fully_qualified_images[@]}"; do
-            echo "--- Pushing ${fq_image}"
-            retry 3 \
-                docker push "${fq_image}"
-        done
-    fi
-}
+    # Upload each image in serial, not parallel
+    mapfile -t fully_qualified_images < <(
+        docker buildx bake \
+            --file="${BUILDX_BAKE_FILE}" \
+            --print "${BUILDX_TARGET}" |
+            jq --raw-output '.target | to_entries | .[] | .value.tags[0]'
+    )
+    for fq_image in "${fully_qualified_images[@]}"; do
+        echo "--- Pushing ${fq_image}"
+        retry 3 \
+            docker push "${fq_image}"
+    done
+fi
 
 push
 
