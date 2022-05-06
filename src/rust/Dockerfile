@@ -71,7 +71,8 @@ ENV RUSTUP_CACHE_TARGET="${RUSTUP_HOME}"
 # Force prost-build to use the apt-installed protoc
 ENV PROTOC=/usr/bin/protoc
 ENV PROTOC_INCLUDE=/usr/include
-ENV PROTOC_NO_VENDOR=0
+ENV PROTOC_NO_VENDOR=1
+ENV SASL2_STATIC=1
 
 # build
 ################################################################################
