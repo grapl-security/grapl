@@ -24,6 +24,7 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-base-apt
         cmake=3.18.4-2+deb11u1 \
         zlib1g=1:1.2.11.dfsg-2+deb11u1 \
         libssl-dev=1.1.1n-0+deb11u1 \
+        libsasl2-2=2.1.27+dfsg-2.1+deb11u1 \
         perl=5.32.1-4+deb11u2 \
         pkg-config=0.29.2-1 \
         tcl=8.6.11+1 \
