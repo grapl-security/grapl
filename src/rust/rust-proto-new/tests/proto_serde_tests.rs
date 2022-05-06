@@ -362,7 +362,7 @@ mod plugin_work_queue {
             value in pwq_strats::get_execute_analyzer_responses()
         ) {
             if let None = value.execution_job {
-                expect_serde_error(value)
+                expect_serde_error(value);
             } else {
                 check_encode_decode_invariant(value)
             }
@@ -378,7 +378,7 @@ mod plugin_work_queue {
             value in pwq_strats::get_execute_generator_responses()
         ) {
             if let None = value.execution_job {
-                expect_serde_error(value)
+                expect_serde_error(value);
             } else {
                 check_encode_decode_invariant(value)
             }
