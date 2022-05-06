@@ -12,6 +12,7 @@ bytes = "1.1"
 futures = "0.3"
 rdkafka = { version = "0.28", features = [
   "cmake-build",
+  "libz-static",
   "ssl-vendored",
   "gssapi-vendored",
   "tokio",
