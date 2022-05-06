@@ -21,12 +21,13 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-base-apt
         jq=1.6-2.1 \
         unzip=6.0-26 \
         build-essential=12.9 \
-        cmake=3.18.4-2+deb11u1 \
         libssl-dev=1.1.1n-0+deb11u1 \
         perl=5.32.1-4+deb11u2 \
         pkg-config=0.29.2-1 \
         tcl=8.6.11+1 \
-        protobuf-compiler=3.12.4-1
+        protobuf-compiler=3.12.4-1 \
+        libprotobuf-dev=3.12.4-1
+
 
 # Grab a Nomad binary, which we use for parsing HCL2-with-variables into JSON:
 # - in plugin-registry integration tests
@@ -64,6 +65,10 @@ ENV CARGO_TARGET_DIR="/grapl/rust/target"
 # meaning to `cargo`, `rustup`, or anything else.
 ENV REGISTRY_CACHE_TARGET="${CARGO_HOME}/registry"
 ENV RUSTUP_CACHE_TARGET="${RUSTUP_HOME}"
+
+# For prost-build to use system protoc
+ENV PROTOC=/usr/bin/protoc
+ENV PROTOC_INCLUDE=/usr/include
 
 # build
 ################################################################################
