@@ -42,6 +42,7 @@ make build-image-prerequisites
 docker buildx bake --file="${BUILDX_BAKE_FILE}" --progress "plain" "${BUILDX_TARGET}"
 
 push() {
+    echo "--- Pushing all ${IMAGE_TAG} images"
     # https://github.com/grapl-security/issue-tracker/issues/931
     # Try the `buildx --push` first; if retried on Buildkite, do the slower
     # manual approach.
