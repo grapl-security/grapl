@@ -388,7 +388,7 @@ lint-prettier: ## Run ts/js/yaml lint checks
 
 .PHONY: lint-proto
 lint-proto: ## Lint all protobuf definitions
-		$(PANTS_PROTO_FILTER) lint
+	$(PANTS_PROTO_FILTER) lint
 
 .PHONY: lint-proto-breaking
 lint-proto-breaking: ## Check protobuf definitions for breaking changes
