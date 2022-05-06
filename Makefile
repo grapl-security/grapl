@@ -363,7 +363,6 @@ lint: lint-hcl
 lint: lint-prettier
 lint: lint-proto
 lint: lint-proto-breaking
-lint: lint-proto-format
 lint: lint-python
 lint: lint-rust
 lint: lint-shell
