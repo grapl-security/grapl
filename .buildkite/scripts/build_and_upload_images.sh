@@ -10,7 +10,6 @@ set -euo pipefail
 
 source .buildkite/scripts/lib/artifacts.sh
 source .buildkite/scripts/lib/version.sh
-source .buildkite/scripts/lib/retry.sh
 
 # While we have Docker Compose files present, we have to explicitly
 # declare we're using an HCL file (compose YAML files are used
@@ -63,8 +62,7 @@ else
     )
     for fq_image in "${fully_qualified_images[@]}"; do
         echo "--- Pushing ${fq_image}"
-        retry 3 \
-            docker push "${fq_image}"
+        docker push "${fq_image}"
     done
 fi
 
