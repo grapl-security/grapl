@@ -3,14 +3,16 @@ name = "generator-sdk"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "example-generator"
+path = "src/example_generator.rs"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 consul-connect = { path = "../../consul-connect" }
-rust-proto = { path = "../../rust-proto" }
+rust-proto-new = { path = "../../rust-proto-new" }
 thiserror = "1.0.30"
 tokio = { version = "1.17", features = ["full"] }
-tonic = { version = "0.6", features = ["tls"] }
-tonic-health = "0.5.0"
 tracing = "0.1.29"
 uuid = { version = "0.8", features = ["v4"] }
 serde = { version = "1.0.136", features = ["derive"] }
