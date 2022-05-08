@@ -28,7 +28,7 @@ message AllocateIdsResponse {
 }
 
 // The UidAllocator provides an API for requesting node ids for a given tenant
-service UidAllocator {
+service UidAllocatorService {
   // Allocate a range of ids for a tenant. Although the client may request a range, the server will
   // decide what range to provide, truncating or expanding as necessary.
   // returns:
