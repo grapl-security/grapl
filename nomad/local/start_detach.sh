@@ -54,8 +54,23 @@ ensure_valid_env() {
     fi
 }
 
+create_dynamic_consul_config() {
+    # clear file if it exist
+    if [[ -f "${THIS_DIR}/consul-dynamic-conf.hcl" ]]; then
+        rm "${THIS_DIR}/consul-dynamic-conf.hcl"
+    fi
+
+    GOSSIP_KEY=$(consul keygen)
+
+    # generate the file
+    cat << EOF > "${THIS_DIR}/consul-dynamic-conf.hcl"
+encrypt = "$GOSSIP_KEY"
+EOF
+}
+
 start_nomad_detach() {
     ensure_valid_env
+    create_dynamic_consul_config
 
     echo "Starting nomad and consul locally. Logs @ ${NOMAD_LOGS_DEST} and ${CONSUL_LOGS_DEST}."
     # These will run forever until `make stop-nomad-ci` is invoked."
@@ -63,10 +78,40 @@ start_nomad_detach() {
     sudo nomad agent \
         -config="${THIS_DIR}/nomad-agent-conf.nomad" \
         -dev-connect > "${NOMAD_LOGS_DEST}" &
+    local -r nomad_agent_pid="$!"
     # The client is set to 0.0.0.0 here so that it can be reached via pulumi in docker.
     consul agent \
         -client 0.0.0.0 -config-file "${THIS_DIR}/consul-agent-conf.hcl" \
+        -config-file "${THIS_DIR}/consul-dynamic-conf.hcl" \
         -dev > "${CONSUL_LOGS_DEST}" &
+    local -r consul_agent_pid="$!"
+
+    # Wait a short period of time before attempting to deploy infrastructure
+    (
+        readonly wait_secs=45
+        # shellcheck disable=SC2016
+        timeout --foreground "${wait_secs}" bash -c -- "$(
+            cat << EOF
+                # General rule: Variable defined in this EOF? Use \$
+                set -euo pipefail
+                wait_attempt=1
+                while [[ -z \$(nomad node status 2>&1 | grep ready) ]]; do
+                    if ! ps -p "${nomad_agent_pid}" > /dev/null; then
+                        echo "Nomad Agent unexpectedly exited?"
+                        exit 42
+                    fi
+                    if ! ps -p "${consul_agent_pid}" > /dev/null; then
+                        echo "Consul Agent unexpectedly exited?"
+                        exit 42
+                    fi
+
+                    echo "Waiting for nomad-agent [\${wait_attempt}/${wait_secs}]"
+                    sleep 1
+                    ((wait_attempt=wait_attempt+1))
+                done
+EOF
+        )"
+    )
 
     "${THIS_DIR}/nomad_run_local_infra.sh"
     echo "Deployment complete"

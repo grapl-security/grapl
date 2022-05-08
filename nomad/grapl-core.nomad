@@ -1412,17 +1412,19 @@ job "grapl-core" {
       }
 
       env {
-        PLUGIN_WORK_QUEUE_BIND_ADDRESS  = "0.0.0.0:${NOMAD_PORT_plugin-work-queue-port}"
-        PLUGIN_WORK_QUEUE_DB_HOSTNAME   = var.plugin_work_queue_db_hostname
-        PLUGIN_WORK_QUEUE_DB_PASSWORD   = var.plugin_work_queue_db_password
-        PLUGIN_WORK_QUEUE_DB_PORT       = var.plugin_work_queue_db_port
-        PLUGIN_WORK_QUEUE_DB_USERNAME   = var.plugin_work_queue_db_username
-        PLUGIN_S3_BUCKET_AWS_ACCOUNT_ID = var.plugin_s3_bucket_aws_account_id
-        PLUGIN_S3_BUCKET_NAME           = var.plugin_s3_bucket_name
-        RUST_BACKTRACE                  = local.rust_backtrace
-        RUST_LOG                        = var.rust_log
-        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
+        PLUGIN_WORK_QUEUE_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_plugin-work-queue-port}"
+        PLUGIN_WORK_QUEUE_DB_HOSTNAME  = var.plugin_work_queue_db_hostname
+        PLUGIN_WORK_QUEUE_DB_PASSWORD  = var.plugin_work_queue_db_password
+        PLUGIN_WORK_QUEUE_DB_PORT      = var.plugin_work_queue_db_port
+        PLUGIN_WORK_QUEUE_DB_USERNAME  = var.plugin_work_queue_db_username
+        # Hardcoded, but makes little sense to pipe up through Pulumi
+        PLUGIN_WORK_QUEUE_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
+        PLUGIN_S3_BUCKET_AWS_ACCOUNT_ID                   = var.plugin_s3_bucket_aws_account_id
+        PLUGIN_S3_BUCKET_NAME                             = var.plugin_s3_bucket_name
+        RUST_BACKTRACE                                    = local.rust_backtrace
+        RUST_LOG                                          = var.rust_log
+        OTEL_EXPORTER_JAEGER_AGENT_HOST                   = local.tracing_jaeger_endpoint_host
+        OTEL_EXPORTER_JAEGER_AGENT_PORT                   = local.tracing_jaeger_endpoint_port
       }
     }
 

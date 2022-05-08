@@ -41,7 +41,7 @@ pub mod server {
     impl<T, E> UidAllocatorProto for T
     where
         T: UidAllocatorApi<Error = E> + Send + Sync + 'static,
-        E: Into<tonic::Status> + Send + Sync + 'static,
+        E: Into<Status> + Send + Sync + 'static,
     {
         async fn allocate_ids(
             &self,
@@ -70,7 +70,7 @@ pub mod server {
     pub struct UidAllocatorServer<T, E>
     where
         T: UidAllocatorApi<Error = E> + Send + Sync + 'static,
-        E: Into<tonic::Status> + Send + Sync + 'static,
+        E: Into<Status> + Send + Sync + 'static,
     {
         server: UidAllocatorServerProto<T>,
         addr: SocketAddr,
@@ -79,7 +79,7 @@ pub mod server {
     impl<T, E> UidAllocatorServer<T, E>
     where
         T: UidAllocatorApi<Error = E> + Send + Sync + 'static,
-        E: Into<tonic::Status> + Send + Sync + 'static,
+        E: Into<Status> + Send + Sync + 'static,
     {
         pub fn builder(service: T, addr: SocketAddr) -> UidAllocatorServerBuilder<T, E> {
             UidAllocatorServerBuilder::new(service, addr)
@@ -107,7 +107,7 @@ pub mod server {
     pub struct UidAllocatorServerBuilder<T, E>
     where
         T: UidAllocatorApi<Error = E> + Send + Sync + 'static,
-        E: Into<tonic::Status> + Send + Sync + 'static,
+        E: Into<Status> + Send + Sync + 'static,
     {
         server: UidAllocatorServerProto<T>,
         addr: SocketAddr,
@@ -116,7 +116,7 @@ pub mod server {
     impl<T, E> UidAllocatorServerBuilder<T, E>
     where
         T: UidAllocatorApi<Error = E> + Send + Sync + 'static,
-        E: Into<tonic::Status> + Send + Sync + 'static,
+        E: Into<Status> + Send + Sync + 'static,
     {
         /// Create a new builder for a UidAllocatorServer,
         /// taking the required arguments upfront.

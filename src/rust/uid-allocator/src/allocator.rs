@@ -81,7 +81,7 @@ pub struct UidAllocator {
     /// client requests an allocation of size `0`.
     /// Consider values of 10, 100, or 1_000
     /// Should not be a value greater than `maximum_allocation_size` and must not be `0`.
-    pub default_alloc_size: u32,
+    pub default_allocation_size: u32,
     /// How many uids to preallocate when our last preallocation is exhausted
     /// While this can be as large as a u32, it is not recommended to set this to a value
     /// too high. Consider values such as 100, 1000, or 10_000 instead.
@@ -111,7 +111,7 @@ impl UidAllocator {
         UidAllocator {
             allocated_ranges: Arc::new(DashMap::with_capacity(2)),
             db: CountersDb { pool },
-            default_alloc_size: 0,
+            default_allocation_size,
             preallocation_size,
             maximum_allocation_size,
         }
@@ -131,8 +131,11 @@ impl UidAllocator {
     pub async fn allocate(
         &self,
         tenant_id: uuid::Uuid,
-        size: u32,
+        mut size: u32,
     ) -> Result<Allocation, UidAllocatorServiceError> {
+        if size == 0 {
+            size = self.default_allocation_size;
+        }
         // We aren't going to hand out 2^32 ids at once, so we truncate so the maximum allocation size
         let size = std::cmp::min(size, self.maximum_allocation_size);
         // First, we check if we have a PreAllocation for this tenant. If not, we create one.
@@ -171,7 +174,7 @@ impl UidAllocator {
     }
 }
 
-#[tonic::async_trait]
+#[async_trait::async_trait]
 impl UidAllocatorApi for UidAllocator {
     type Error = UidAllocatorServiceError;
 
@@ -182,5 +185,20 @@ impl UidAllocatorApi for UidAllocator {
         let AllocateIdsRequest { tenant_id, count } = request;
         let allocation = self.allocate(tenant_id, count).await?;
         Ok(AllocateIdsResponse { allocation })
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_preallocate() {
+        let mut preallocation = PreAllocation::new(1, 10);
+        let allocation = preallocation.next(9).unwrap();
+        assert_eq!(allocation.start, 1);
+        assert_eq!(allocation.offset, 9);
+        assert!(preallocation.next(1).is_none());
     }
 }

@@ -1,22 +1,27 @@
 use futures::channel::oneshot::Sender;
-use rust_proto_new::graplinc::{
-    common::v1beta1::{
-        Duration,
-        Uuid,
+use rust_proto_new::{
+    graplinc::{
+        common::v1beta1::{
+            Duration,
+            Uuid,
+        },
+        grapl::api::pipeline_ingress::v1beta1::{
+            client::PipelineIngressClient,
+            server::{
+                ConfigurationError,
+                PipelineIngressApi,
+                PipelineIngressServer,
+            },
+            PublishRawLogRequest,
+            PublishRawLogResponse,
+        },
     },
-    grapl::api::pipeline_ingress::v1beta1::{
-        client::{
-            HealthcheckClient,
-            PipelineIngressClient,
+    protocol::{
+        healthcheck::{
+            client::HealthcheckClient,
+            HealthcheckStatus,
         },
-        server::{
-            ConfigurationError,
-            PipelineIngressApi,
-            PipelineIngressServer,
-        },
-        HealthcheckStatus,
-        PublishRawLogRequest,
-        PublishRawLogResponse,
+        status::Status,
     },
 };
 use test_context::{
@@ -66,12 +71,20 @@ enum MockPipelineIngressApiError {
     PublishRawLogFailed,
 }
 
+impl From<MockPipelineIngressApiError> for Status {
+    fn from(e: MockPipelineIngressApiError) -> Self {
+        Status::internal(e.to_string())
+    }
+}
+
 #[tonic::async_trait]
-impl PipelineIngressApi<MockPipelineIngressApiError> for MockPipelineIngressApi {
+impl PipelineIngressApi for MockPipelineIngressApi {
+    type Error = MockPipelineIngressApiError;
+
     async fn publish_raw_log(
         &self,
         request: PublishRawLogRequest,
-    ) -> Result<PublishRawLogResponse, MockPipelineIngressApiError> {
+    ) -> Result<PublishRawLogResponse, Self::Error> {
         let tenant_id = Uuid::parse_str(TENANT_ID).expect("failed to parse TENANT_ID");
         assert!(request.tenant_id == tenant_id);
 

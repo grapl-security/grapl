@@ -28,15 +28,45 @@ readonly BUILDX_TARGET="cloudsmith-images"
 IMAGE_TAG="$(timestamp_and_sha_version)"
 export IMAGE_TAG
 
-echo "--- Building all ${IMAGE_TAG} images"
-
 # NOTE: We could theoretically collapse these two commands into a
 # single Makefile target, but I have opted to structure them like this
 # while we have to do the "check if the image is new" logic to keep
 # all the buildx file introspection (and thus build-target awareness)
 # localised here.
 make build-image-prerequisites
-docker buildx bake --file="${BUILDX_BAKE_FILE}" --push "${BUILDX_TARGET}"
+
+# https://github.com/grapl-security/issue-tracker/issues/931
+# Try the `buildx --push` first; if retried on Buildkite, do the slower
+# manual approach.
+
+if [[ "${BUILDKITE_RETRY_COUNT}" -eq 0 ]]; then
+    echo "--- Build & Pushing all ${IMAGE_TAG} images"
+    if ! docker buildx bake --file="${BUILDX_BAKE_FILE}" \
+        --progress "plain" --push "${BUILDX_TARGET}"; then
+        echo "buildx bake --push failed; Buildkite should auto-retry"
+        # Special status for "buildx --push failed"
+        exit 42
+    fi
+else
+    echo "--- Building all ${IMAGE_TAG} images"
+    # Build targets
+    docker buildx bake --file="${BUILDX_BAKE_FILE}" --progress "plain" "${BUILDX_TARGET}"
+
+    echo "--- Pushing all ${IMAGE_TAG} images"
+    # Upload each image in serial, not parallel
+    mapfile -t fully_qualified_images < <(
+        docker buildx bake \
+            --file="${BUILDX_BAKE_FILE}" \
+            --print "${BUILDX_TARGET}" |
+            jq --raw-output '.target | to_entries | .[] | .value.tags[0]'
+    )
+    for fq_image in "${fully_qualified_images[@]}"; do
+        echo "--- Pushing ${fq_image}"
+        docker push "${fq_image}"
+    done
+fi
+
+push
 
 readonly sleep_seconds=60
 echo "--- :sleeping::sob: Sleeping for ${sleep_seconds} seconds to give CDNs time to update"

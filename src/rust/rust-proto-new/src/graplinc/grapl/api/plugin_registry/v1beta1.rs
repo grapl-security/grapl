@@ -6,8 +6,6 @@ pub use crate::graplinc::grapl::api::plugin_registry::{
         PluginRegistryServiceClientError,
     },
     v1beta1_server::{
-        HealthcheckError,
-        HealthcheckStatus,
         PluginRegistryApi,
         PluginRegistryApiError,
         PluginRegistryServer,

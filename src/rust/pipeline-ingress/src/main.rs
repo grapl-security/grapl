@@ -17,23 +17,28 @@ use opentelemetry::{
     sdk::propagation::TraceContextPropagator,
     trace::TraceError,
 };
-use rust_proto_new::graplinc::grapl::{
-    api::pipeline_ingress::v1beta1::{
-        server::{
-            ConfigurationError as ServerConfigurationError,
-            PipelineIngressApi,
-            PipelineIngressServer,
+use rust_proto_new::{
+    graplinc::grapl::{
+        api::pipeline_ingress::v1beta1::{
+            server::{
+                ConfigurationError as ServerConfigurationError,
+                PipelineIngressApi,
+                PipelineIngressServer,
+            },
+            PublishRawLogRequest,
+            PublishRawLogResponse,
         },
-        HealthcheckStatus,
-        PublishRawLogRequest,
-        PublishRawLogResponse,
+        pipeline::{
+            v1beta1::{
+                Metadata,
+                RawLog,
+            },
+            v1beta2::Envelope,
+        },
     },
-    pipeline::{
-        v1beta1::{
-            Metadata,
-            RawLog,
-        },
-        v1beta2::Envelope,
+    protocol::{
+        healthcheck::HealthcheckStatus,
+        status::Status,
     },
 };
 use thiserror::Error;
@@ -51,6 +56,12 @@ enum IngressApiError {
     ProducerError(#[from] ProducerError),
 }
 
+impl From<IngressApiError> for Status {
+    fn from(e: IngressApiError) -> Self {
+        Status::internal(e.to_string())
+    }
+}
+
 struct IngressApi {
     producer: Producer<Envelope<RawLog>>,
 }
@@ -62,12 +73,14 @@ impl IngressApi {
 }
 
 #[async_trait::async_trait]
-impl PipelineIngressApi<IngressApiError> for IngressApi {
+impl PipelineIngressApi for IngressApi {
+    type Error = IngressApiError;
+
     #[tracing::instrument(skip(self))]
     async fn publish_raw_log(
         &self,
         request: PublishRawLogRequest,
-    ) -> Result<PublishRawLogResponse, IngressApiError> {
+    ) -> Result<PublishRawLogResponse, Self::Error> {
         let created_time = SystemTime::now();
         let last_updated_time = created_time;
         let tenant_id = request.tenant_id;

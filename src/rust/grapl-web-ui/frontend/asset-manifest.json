@@ -1,0 +1,14 @@
+{
+  "files": {
+    "main.css": "/static/css/main.46fc6f44.css",
+    "main.js": "/static/js/main.b7f2fbd5.js",
+    "static/media/grapl_logo.svg": "/static/media/grapl_logo.baa4ccffe8ad02a922ae24f8d4cf72f2.svg",
+    "index.html": "/index.html",
+    "main.46fc6f44.css.map": "/static/css/main.46fc6f44.css.map",
+    "main.b7f2fbd5.js.map": "/static/js/main.b7f2fbd5.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.46fc6f44.css",
+    "static/js/main.b7f2fbd5.js"
+  ]
+}

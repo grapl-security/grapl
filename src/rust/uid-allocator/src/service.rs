@@ -5,11 +5,7 @@ use rust_proto_new::graplinc::grapl::api::uid_allocator::v1beta1::{
     },
     server::UidAllocatorApi,
 };
-use tonic::{
-    async_trait,
-    Code,
-    Status,
-};
+use rust_proto_new::protocol::status::Status;
 
 use crate::allocator::UidAllocator;
 
@@ -29,16 +25,16 @@ impl From<UidAllocatorServiceError> for Status {
     fn from(err: UidAllocatorServiceError) -> Self {
         match err {
             UidAllocatorServiceError::SqlxError(err) => {
-                Status::new(Code::Internal, format!("Internal database error: {}", err))
+                Status::internal(format!("Internal database error: {}", err))
             }
             UidAllocatorServiceError::UnknownTenant(tenant_id) => {
-                Status::new(Code::NotFound, format!("Unknown Tenant: {}", tenant_id))
+                Status::not_found(format!("Unknown Tenant: {}", tenant_id))
             }
         }
     }
 }
 
-#[async_trait]
+#[async_trait::async_trait]
 impl UidAllocatorApi for UidAllocatorService {
     type Error = UidAllocatorServiceError;
 

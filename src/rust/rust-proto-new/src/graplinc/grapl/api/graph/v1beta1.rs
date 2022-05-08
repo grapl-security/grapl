@@ -1,12 +1,5 @@
 use std::collections::HashMap;
 
-use bytes::{
-    Buf,
-    Bytes,
-    BytesMut,
-};
-use prost::Message;
-
 use crate::{
     protobufs::graplinc::grapl::api::graph::v1beta1::{
         DecrementOnlyIntProp as DecrementOnlyIntPropProto,
@@ -31,8 +24,8 @@ use crate::{
         Session as SessionProto,
         Static as StaticProto,
     },
+    serde_impl,
     type_url,
-    SerDe,
     SerDeError,
 };
 
@@ -94,22 +87,8 @@ impl type_url::TypeUrl for Session {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.Session";
 }
 
-impl SerDe for Session {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let session_proto = SessionProto::from(self);
-        let mut buf = BytesMut::with_capacity(session_proto.encoded_len());
-        session_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let session_proto: SessionProto = Message::decode(buf)?;
-        Ok(session_proto.into())
-    }
+impl serde_impl::ProtobufSerializable<Session> for Session {
+    type ProtobufMessage = SessionProto;
 }
 
 //
@@ -144,22 +123,8 @@ impl type_url::TypeUrl for Static {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.Static";
 }
 
-impl SerDe for Static {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let static_proto = StaticProto::from(self);
-        let mut buf = BytesMut::with_capacity(static_proto.encoded_len());
-        static_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let static_proto: StaticProto = Message::decode(buf)?;
-        Ok(static_proto.into())
-    }
+impl serde_impl::ProtobufSerializable<Static> for Static {
+    type ProtobufMessage = StaticProto;
 }
 
 //
@@ -232,22 +197,8 @@ impl type_url::TypeUrl for IdStrategy {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.IdStrategy";
 }
 
-impl SerDe for IdStrategy {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let id_strategy_proto = IdStrategyProto::from(self);
-        let mut buf = BytesMut::with_capacity(id_strategy_proto.encoded_len());
-        id_strategy_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let id_strategy_proto: IdStrategyProto = Message::decode(buf)?;
-        id_strategy_proto.try_into()
-    }
+impl serde_impl::ProtobufSerializable<IdStrategy> for IdStrategy {
+    type ProtobufMessage = IdStrategyProto;
 }
 
 impl From<Static> for IdStrategy {
@@ -307,22 +258,8 @@ impl type_url::TypeUrl for IncrementOnlyUintProp {
         "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.IncrementOnlyUintProp";
 }
 
-impl SerDe for IncrementOnlyUintProp {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let increment_only_uint_prop_proto = IncrementOnlyUintPropProto::from(self);
-        let mut buf = BytesMut::with_capacity(increment_only_uint_prop_proto.encoded_len());
-        increment_only_uint_prop_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let increment_only_uint_prop_proto: IncrementOnlyUintPropProto = Message::decode(buf)?;
-        Ok(increment_only_uint_prop_proto.into())
-    }
+impl serde_impl::ProtobufSerializable<IncrementOnlyUintProp> for IncrementOnlyUintProp {
+    type ProtobufMessage = IncrementOnlyUintPropProto;
 }
 
 impl std::string::ToString for IncrementOnlyUintProp {
@@ -384,22 +321,8 @@ impl type_url::TypeUrl for ImmutableUintProp {
         "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.ImmutableUintProp";
 }
 
-impl SerDe for ImmutableUintProp {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let immutable_uint_prop_proto = ImmutableUintPropProto::from(self);
-        let mut buf = BytesMut::with_capacity(immutable_uint_prop_proto.encoded_len());
-        immutable_uint_prop_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let immutable_uint_prop_proto: ImmutableUintPropProto = Message::decode(buf)?;
-        Ok(immutable_uint_prop_proto.into())
-    }
+impl serde_impl::ProtobufSerializable<ImmutableUintProp> for ImmutableUintProp {
+    type ProtobufMessage = ImmutableUintPropProto;
 }
 
 impl std::string::ToString for ImmutableUintProp {
@@ -461,22 +384,8 @@ impl type_url::TypeUrl for DecrementOnlyUintProp {
         "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.DecrementOnlyUintProp";
 }
 
-impl SerDe for DecrementOnlyUintProp {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let decrement_only_uint_prop_proto = DecrementOnlyUintPropProto::from(self);
-        let mut buf = BytesMut::with_capacity(decrement_only_uint_prop_proto.encoded_len());
-        decrement_only_uint_prop_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let decrement_only_uint_prop_proto: DecrementOnlyUintPropProto = Message::decode(buf)?;
-        Ok(decrement_only_uint_prop_proto.into())
-    }
+impl serde_impl::ProtobufSerializable<DecrementOnlyUintProp> for DecrementOnlyUintProp {
+    type ProtobufMessage = DecrementOnlyUintPropProto;
 }
 
 impl std::string::ToString for DecrementOnlyUintProp {
@@ -539,22 +448,8 @@ impl type_url::TypeUrl for IncrementOnlyIntProp {
         "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.IncrementOnlyIntProp";
 }
 
-impl SerDe for IncrementOnlyIntProp {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let increment_only_int_prop_proto = IncrementOnlyIntPropProto::from(self);
-        let mut buf = BytesMut::with_capacity(increment_only_int_prop_proto.encoded_len());
-        increment_only_int_prop_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let increment_only_int_prop_proto: IncrementOnlyIntPropProto = Message::decode(buf)?;
-        Ok(increment_only_int_prop_proto.into())
-    }
+impl serde_impl::ProtobufSerializable<IncrementOnlyIntProp> for IncrementOnlyIntProp {
+    type ProtobufMessage = IncrementOnlyIntPropProto;
 }
 
 impl std::string::ToString for IncrementOnlyIntProp {
@@ -616,22 +511,8 @@ impl type_url::TypeUrl for DecrementOnlyIntProp {
         "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.DecrementOnlyIntProp";
 }
 
-impl SerDe for DecrementOnlyIntProp {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let decrement_only_int_prop_proto = DecrementOnlyIntPropProto::from(self);
-        let mut buf = BytesMut::with_capacity(decrement_only_int_prop_proto.encoded_len());
-        decrement_only_int_prop_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let decrement_only_int_prop_proto: DecrementOnlyIntPropProto = Message::decode(buf)?;
-        Ok(decrement_only_int_prop_proto.into())
-    }
+impl serde_impl::ProtobufSerializable<DecrementOnlyIntProp> for DecrementOnlyIntProp {
+    type ProtobufMessage = DecrementOnlyIntPropProto;
 }
 
 impl std::string::ToString for DecrementOnlyIntProp {
@@ -693,22 +574,8 @@ impl type_url::TypeUrl for ImmutableIntProp {
         "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.ImmutableIntProp";
 }
 
-impl SerDe for ImmutableIntProp {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let immutable_int_prop_proto = ImmutableIntPropProto::from(self);
-        let mut buf = BytesMut::with_capacity(immutable_int_prop_proto.encoded_len());
-        immutable_int_prop_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let immutable_int_prop_proto: ImmutableIntPropProto = Message::decode(buf)?;
-        Ok(immutable_int_prop_proto.into())
-    }
+impl serde_impl::ProtobufSerializable<ImmutableIntProp> for ImmutableIntProp {
+    type ProtobufMessage = ImmutableIntPropProto;
 }
 
 impl std::string::ToString for ImmutableIntProp {
@@ -770,22 +637,8 @@ impl type_url::TypeUrl for ImmutableStrProp {
         "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.ImmutableStrProp";
 }
 
-impl SerDe for ImmutableStrProp {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let immutable_str_prop_proto = ImmutableStrPropProto::from(self);
-        let mut buf = BytesMut::with_capacity(immutable_str_prop_proto.encoded_len());
-        immutable_str_prop_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let immutable_str_prop_proto: ImmutableStrPropProto = Message::decode(buf)?;
-        Ok(immutable_str_prop_proto.into())
-    }
+impl serde_impl::ProtobufSerializable<ImmutableStrProp> for ImmutableStrProp {
+    type ProtobufMessage = ImmutableStrPropProto;
 }
 
 impl std::string::ToString for ImmutableStrProp {
@@ -1121,22 +974,8 @@ impl type_url::TypeUrl for NodeProperty {
         "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.NodeProperty";
 }
 
-impl SerDe for NodeProperty {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let node_property_proto = NodePropertyProto::from(self);
-        let mut buf = BytesMut::with_capacity(node_property_proto.encoded_len());
-        node_property_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let node_property_proto: NodePropertyProto = Message::decode(buf)?;
-        node_property_proto.try_into()
-    }
+impl serde_impl::ProtobufSerializable<NodeProperty> for NodeProperty {
+    type ProtobufMessage = NodePropertyProto;
 }
 
 impl std::string::ToString for NodeProperty {
@@ -1268,22 +1107,8 @@ impl type_url::TypeUrl for NodeDescription {
         "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.NodeDescription";
 }
 
-impl SerDe for NodeDescription {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let node_description_proto = NodeDescriptionProto::from(self);
-        let mut buf = BytesMut::with_capacity(node_description_proto.encoded_len());
-        node_description_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let node_description_proto: NodeDescriptionProto = Message::decode(buf)?;
-        node_description_proto.try_into()
-    }
+impl serde_impl::ProtobufSerializable<NodeDescription> for NodeDescription {
+    type ProtobufMessage = NodeDescriptionProto;
 }
 
 //
@@ -1381,22 +1206,8 @@ impl type_url::TypeUrl for IdentifiedNode {
         "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.IdentifiedNode";
 }
 
-impl SerDe for IdentifiedNode {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let identified_node_proto = IdentifiedNodeProto::from(self);
-        let mut buf = BytesMut::with_capacity(identified_node_proto.encoded_len());
-        identified_node_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let identified_node_proto: IdentifiedNodeProto = Message::decode(buf)?;
-        identified_node_proto.try_into()
-    }
+impl serde_impl::ProtobufSerializable<IdentifiedNode> for IdentifiedNode {
+    type ProtobufMessage = IdentifiedNodeProto;
 }
 
 impl From<NodeDescription> for IdentifiedNode {
@@ -1492,22 +1303,8 @@ impl type_url::TypeUrl for MergedNode {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.MergedNode";
 }
 
-impl SerDe for MergedNode {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let merged_node_proto = MergedNodeProto::from(self);
-        let mut buf = BytesMut::with_capacity(merged_node_proto.encoded_len());
-        merged_node_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let merged_node_proto: MergedNodeProto = Message::decode(buf)?;
-        merged_node_proto.try_into()
-    }
+impl serde_impl::ProtobufSerializable<MergedNode> for MergedNode {
+    type ProtobufMessage = MergedNodeProto;
 }
 
 //
@@ -1545,22 +1342,8 @@ impl type_url::TypeUrl for Edge {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.Edge";
 }
 
-impl SerDe for Edge {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let edge_proto = EdgeProto::from(self);
-        let mut buf = BytesMut::with_capacity(edge_proto.encoded_len());
-        edge_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let edge_proto: EdgeProto = Message::decode(buf)?;
-        Ok(edge_proto.into())
-    }
+impl serde_impl::ProtobufSerializable<Edge> for Edge {
+    type ProtobufMessage = EdgeProto;
 }
 
 //
@@ -1604,22 +1387,8 @@ impl type_url::TypeUrl for MergedEdge {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.MergedEdge";
 }
 
-impl SerDe for MergedEdge {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let merged_edge_proto = MergedEdgeProto::from(self);
-        let mut buf = BytesMut::with_capacity(merged_edge_proto.encoded_len());
-        merged_edge_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let merged_edge_proto: MergedEdgeProto = Message::decode(buf)?;
-        Ok(merged_edge_proto.into())
-    }
+impl serde_impl::ProtobufSerializable<MergedEdge> for MergedEdge {
+    type ProtobufMessage = MergedEdgeProto;
 }
 
 //
@@ -1657,22 +1426,8 @@ impl type_url::TypeUrl for EdgeList {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.EdgeList";
 }
 
-impl SerDe for EdgeList {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let edge_list_proto = EdgeListProto::from(self);
-        let mut buf = BytesMut::with_capacity(edge_list_proto.encoded_len());
-        edge_list_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let edge_list_proto: EdgeListProto = Message::decode(buf)?;
-        Ok(edge_list_proto.into())
-    }
+impl serde_impl::ProtobufSerializable<EdgeList> for EdgeList {
+    type ProtobufMessage = EdgeListProto;
 }
 
 //
@@ -1711,22 +1466,8 @@ impl type_url::TypeUrl for MergedEdgeList {
         "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.MergedEdgeList";
 }
 
-impl SerDe for MergedEdgeList {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let merged_edge_list_proto = MergedEdgeListProto::from(self);
-        let mut buf = BytesMut::with_capacity(merged_edge_list_proto.encoded_len());
-        merged_edge_list_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let merged_edge_list_proto: MergedEdgeListProto = Message::decode(buf)?;
-        Ok(merged_edge_list_proto.into())
-    }
+impl serde_impl::ProtobufSerializable<MergedEdgeList> for MergedEdgeList {
+    type ProtobufMessage = MergedEdgeListProto;
 }
 
 //
@@ -1850,22 +1591,8 @@ impl type_url::TypeUrl for GraphDescription {
         "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.GraphDescription";
 }
 
-impl SerDe for GraphDescription {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let graph_description_proto = GraphDescriptionProto::from(self);
-        let mut buf = BytesMut::with_capacity(graph_description_proto.encoded_len());
-        graph_description_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let graph_description_proto: GraphDescriptionProto = Message::decode(buf)?;
-        graph_description_proto.try_into()
-    }
+impl serde_impl::ProtobufSerializable<GraphDescription> for GraphDescription {
+    type ProtobufMessage = GraphDescriptionProto;
 }
 
 //
@@ -1987,22 +1714,8 @@ impl type_url::TypeUrl for IdentifiedGraph {
         "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.IdentifiedGraph";
 }
 
-impl SerDe for IdentifiedGraph {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let identified_graph_proto = IdentifiedGraphProto::from(self);
-        let mut buf = BytesMut::with_capacity(identified_graph_proto.encoded_len());
-        identified_graph_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let identified_graph_proto: IdentifiedGraphProto = Message::decode(buf)?;
-        identified_graph_proto.try_into()
-    }
+impl serde_impl::ProtobufSerializable<IdentifiedGraph> for IdentifiedGraph {
+    type ProtobufMessage = IdentifiedGraphProto;
 }
 
 //
@@ -2143,22 +1856,8 @@ impl type_url::TypeUrl for MergedGraph {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.MergedGraph";
 }
 
-impl SerDe for MergedGraph {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let merged_graph_proto = MergedGraphProto::from(self);
-        let mut buf = BytesMut::with_capacity(merged_graph_proto.encoded_len());
-        merged_graph_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let merged_graph_proto: MergedGraphProto = Message::decode(buf)?;
-        merged_graph_proto.try_into()
-    }
+impl serde_impl::ProtobufSerializable<MergedGraph> for MergedGraph {
+    type ProtobufMessage = MergedGraphProto;
 }
 
 #[cfg(test)]

@@ -42,3 +42,7 @@ function bright_red() {
 function bright_green() {
     _bold_color "${COLORS[GREEN]}" "${@}"
 }
+
+function bright_yellow() {
+    _bold_color "${COLORS[YELLOW]}" "${@}"
+}

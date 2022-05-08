@@ -26,13 +26,6 @@ services:
         echo "Do not run this service directly; it serves only as a source of common configuration!"
         exit 42
 
-  buf-lint:
-    image: bufbuild/buf:1.3.0
-    command: ["lint", "--verbose"]
-    working_dir: /workdir
-    volumes:
-      - *read-only-workdir
-
   buf-breaking-change:
     image: bufbuild/buf:1.3.0
     command:
@@ -42,14 +35,6 @@ services:
         "https://github.com/grapl-security/grapl.git",
         "--verbose",
       ]
-    working_dir: /workdir
-    volumes:
-      - *read-only-workdir
-
-  # Use buf to check if our protobuf files are correctly formatted.
-  buf-lint-format:
-    image: bufbuild/buf:1.3.0
-    command: ["format", "--diff", "--exit-code"]
     working_dir: /workdir
     volumes:
       - *read-only-workdir
