@@ -192,6 +192,23 @@ variable "plugin_work_queue_db_password" {
   description = "What is the password for the plugin work queue table?"
 }
 
+variable "uid_allocator_db_hostname" {
+  type        = string
+  description = "What is the host for the uid-allocator table?"
+}
+variable "uid_allocator_db_port" {
+  type        = string
+  description = "What is the port for the uid-allocator table?"
+}
+variable "uid_allocator_db_username" {
+  type        = string
+  description = "What is the username for the uid-allocator table?"
+}
+variable "uid_allocator_db_password" {
+  type        = string
+  description = "What is the password for the uid-allocator table?"
+}
+
 variable "plugin_s3_bucket_aws_account_id" {
   type        = string
   description = "The account id that owns the bucket where plugins are stored"
@@ -1437,4 +1454,53 @@ job "grapl-core" {
       }
     }
   }
+
+  group "uid-allocator" {
+    network {
+      mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
+
+      port "uid-allocator-port" {
+      }
+    }
+
+    task "uid-allocator" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["uid-allocator"]
+        ports = ["uid-allocator-port"]
+      }
+
+      template {
+        data        = var.aws_env_vars_for_local
+        destination = "aws-env-vars-for-local.env"
+        env         = true
+      }
+
+      env {
+        UID_ALLOCATOR_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_uid-allocator-port}"
+        UID_ALLOCATOR_DB_HOSTNAME  = var.uid_allocator_db_hostname
+        UID_ALLOCATOR_DB_PASSWORD  = var.uid_allocator_db_password
+        UID_ALLOCATOR_DB_PORT      = var.uid_allocator_db_port
+        UID_ALLOCATOR_DB_USERNAME  = var.uid_allocator_db_username
+        RUST_BACKTRACE                                    = local.rust_backtrace
+        RUST_LOG                                          = var.rust_log
+        OTEL_EXPORTER_JAEGER_AGENT_HOST                   = local.tracing_jaeger_endpoint_host
+        OTEL_EXPORTER_JAEGER_AGENT_PORT                   = local.tracing_jaeger_endpoint_port
+      }
+    }
+
+    service {
+      name = "plugin-work-queue"
+      port = "plugin-work-queue-port"
+      connect {
+        sidecar_service {
+        }
+      }
+    }
+  }
+
 }
