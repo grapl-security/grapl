@@ -26,7 +26,10 @@ sqlx = { version = "0.5", features = [
 ] }
 tracing-futures = "0.2.5"
 tracing = "0.1.29"
-tracing-subscriber = {version = "0.3", default-features = false, features = ["env-filter", "fmt"]}
+tracing-subscriber = { version = "0.3", default-features = false, features = [
+  "env-filter",
+  "fmt"
+] }
 rust-proto = { path = "../rust-proto", version = "*" }
 thiserror = "1.0.26"
 argon2 = { version = "0.4", features = ["std"] }
