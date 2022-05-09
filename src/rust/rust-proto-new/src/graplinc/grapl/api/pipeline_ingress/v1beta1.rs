@@ -152,7 +152,7 @@ pub mod client {
 
     #[non_exhaustive]
     #[derive(Debug, Error)]
-    pub enum PipelineIngressApiError {
+    pub enum PipelineIngressClientError {
         #[error("failed to serialize/deserialize {0}")]
         SerDeError(#[from] SerDeError),
 
@@ -178,11 +178,11 @@ pub mod client {
         pub async fn publish_raw_log(
             &mut self,
             raw_log: PublishRawLogRequest,
-        ) -> Result<PublishRawLogResponse, PipelineIngressApiError> {
+        ) -> Result<PublishRawLogResponse, PipelineIngressClientError> {
             self.proto_client
                 .publish_raw_log(Request::new(raw_log.into()))
                 .map(
-                    |response| -> Result<PublishRawLogResponse, PipelineIngressApiError> {
+                    |response| -> Result<PublishRawLogResponse, PipelineIngressClientError> {
                         let inner = response?.into_inner();
                         Ok(inner.try_into()?)
                     },

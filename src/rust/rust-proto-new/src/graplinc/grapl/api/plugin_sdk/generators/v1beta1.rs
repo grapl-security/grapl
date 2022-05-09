@@ -5,7 +5,6 @@ pub use crate::graplinc::grapl::api::plugin_sdk::generators::{
     },
     v1beta1_server::{
         GeneratorApi,
-        GeneratorApiError,
         GeneratorServer,
     },
 };
