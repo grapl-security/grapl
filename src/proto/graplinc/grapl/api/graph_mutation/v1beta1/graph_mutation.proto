@@ -1,0 +1,119 @@
+syntax = "proto3";
+
+package graplinc.grapl.api.graph_mutation.v1beta1;
+
+import "graplinc/common/v1beta1/types.proto";
+import "graplinc/grapl/api/graph/v1beta1/types.proto";
+
+// Represents whether a mutation was redundant or not
+// Sometimes a mutation is not known to be redundant,
+// ie: "Unspecified", in which case you can not assume
+// redundancy one way or the other
+enum MutationRedundancy {
+  // The operation may or may not have been redundant
+  MUTATION_REDUNDANCY_UNSPECIFIED = 0;
+  // The operation did not need to be applied
+  MUTATION_REDUNDANCY_REDUNDANT = 1;
+  // The operation did need to be applied
+  MUTATION_REDUNDANCY_NOT_REDUNDANT = 2;
+}
+
+// Represents the name of a node property
+message PropertyName {
+  // The property name must:
+  // - Be non-empty
+  // - Snake case, `^[a-z]+(_[a-z]+)*$`
+  // - Less than 32 characters
+  string value = 1;
+}
+
+// Represents the name of an edge
+message EdgeName {
+  // The edge name must:
+  // - Be non-empty
+  // - Snake case, `^[a-z]+(_[a-z]+)*$`
+  // - Less than 32 characters
+  string value = 1;
+}
+
+// The name of a node's type
+message NodeType {
+  // The node type must:
+  // - Be non-empty
+  // - PascalCase, `^([A-Z][a-z]+)+$`
+  // - Less than 32 characters
+  string value = 1;
+}
+
+// A type representing a node's unique identity
+message Uid {
+  // Can never be 0
+  uint64 value = 1;
+}
+
+// A request to update a node's property
+message SetNodePropertyRequest {
+  // The tenant id for which the node belongs
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
+  // The unique identity of the node
+  Uid uid = 2;
+  // The type of the node
+  NodeType node_type = 3;
+  // The name of the property to update
+  PropertyName property_name = 4;
+  // The value to update the node with
+  graplinc.grapl.api.graph.v1beta1.NodeProperty property = 5;
+}
+
+// Represents the result of a node's property being updated
+message SetNodePropertyResponse {
+  // Indicates whether or not the update was redundant, and therefor dropped
+  MutationRedundancy was_redundant = 1;
+}
+
+// A request to create an edge between two nodes
+message CreateEdgeRequest {
+  // The edge name to create from a source to destination node
+  EdgeName edge_name = 1;
+  // The edge name to create from a destination to a source node
+  EdgeName reverse_edge_name = 2;
+  // The tenant id that the ndoes belong to
+  graplinc.common.v1beta1.Uuid tenant_id = 3;
+  // The identity of the source node
+  Uid from_uid = 4;
+  // The identity of the destination node
+  Uid to_uid = 5;
+}
+
+// The response for a CreateEdgeRequest, indicating whether this edge request
+// was redundant or not
+message CreateEdgeResponse {
+  // Indicates whether or not the update was redundant, and therefor dropped
+  MutationRedundancy was_redundant = 1;
+}
+
+// A request to create a new node for a tenant
+message CreateNodeRequest {
+  // The tenant id of the tenant for which this node belongs
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
+  // The type of the node
+  NodeType node_type = 2;
+}
+
+// Contains information on the newly created node
+message CreateNodeResponse {
+  // The uid of the newly allocated node
+  Uid uid = 1;
+}
+
+// Manages the creation and modification of nodes and edges
+service GraphMutationService {
+  // Create Node allocates a new node in the graph, returning the uid of the new node.
+  rpc CreateNode(CreateNodeRequest) returns (CreateNodeResponse);
+  // SetNodeProperty will update the property of the node with the given uid.
+  // If the node does not exist it will be created.
+  rpc SetNodeProperty(SetNodePropertyRequest) returns (SetNodePropertyResponse);
+  // CreateEdge will create an edge with the name edge_name between the nodes
+  // that have the given uids. It will also create the reverse edge.
+  rpc CreateEdge(CreateEdgeRequest) returns (CreateEdgeResponse);
+}

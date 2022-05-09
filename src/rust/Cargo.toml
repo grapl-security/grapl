@@ -12,6 +12,7 @@ members = [
   "./grapl",
   "./grapl-config",
   "./grapl-graphql-codegen",
+  "./graph-mutation-service",
   "./grapl-observe",
   "./grapl-service",
   "./grapl-web-ui",

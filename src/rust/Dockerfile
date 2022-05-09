@@ -426,3 +426,9 @@ FROM rust-dist AS pipeline-ingress-deploy
 
 COPY --from=build /outputs/pipeline-ingress /
 ENTRYPOINT ["/pipeline-ingress"]
+
+##### graph-mutation-service
+FROM rust-dist AS graph-mutation-service-deploy
+
+COPY --from=build /outputs/graph-mutation-service /
+ENTRYPOINT ["/graph-mutation-service"]

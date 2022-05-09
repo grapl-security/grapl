@@ -28,3 +28,10 @@ quickcheck = "1.0"
 quickcheck_macros = "1.0"
 test-context = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[features]
+
+graph-mutation-full = ["graph-mutation-client", "graph-mutation-server", "graph-mutation-messages"]
+graph-mutation-client = ["graph-mutation-messages"]
+graph-mutation-server = ["graph-mutation-messages"]
+graph-mutation-messages = []

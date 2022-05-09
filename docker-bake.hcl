@@ -173,6 +173,7 @@ group "rust-services" {
     "analyzer-dispatcher",
     "generator-executor",
     "graph-merger",
+    "graph-mutation-service",
     "grapl-web-ui",
     "model-plugin-deployer",
     "node-identifier",
@@ -296,6 +297,14 @@ target "graph-merger" {
   target   = "graph-merger-deploy"
   tags = [
     upstream_aware_tag("graph-merger")
+  ]
+}
+
+target "graph-mutation-service" {
+  inherits = ["_rust-base"]
+  target   = "graph-mutation-service-deploy"
+  tags = [
+    upstream_aware_tag("graph-mutation-service")
   ]
 }
 
