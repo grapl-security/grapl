@@ -1,13 +1,11 @@
 use std::time::Duration;
 
 use generator_sdk::client::GeneratorClient;
-use plugin_executor::upstreams::plugin_work_queue_client_from_env;
-use plugin_work_queue::client::PluginWorkQueueServiceClient;
-use rust_proto::plugin_work_queue::{
-    AcknowledgeGeneratorRequest,
-    ExecutionJob,
-    GetExecuteGeneratorRequest,
+use plugin_work_queue::client::{
+    FromEnv,
+    PluginWorkQueueServiceClient,
 };
+use rust_proto_new::graplinc::grapl::api::plugin_work_queue::v1beta1;
 use structopt::StructOpt;
 
 #[tokio::main]
@@ -28,7 +26,7 @@ impl GeneratorExecutor {
             GeneratorClient::from(generator_client_config)
         };
 
-        let plugin_work_queue_client = plugin_work_queue_client_from_env().await?;
+        let plugin_work_queue_client = PluginWorkQueueServiceClient::from_env().await?;
 
         Ok(Self {
             generator_client,
@@ -39,7 +37,7 @@ impl GeneratorExecutor {
     async fn main_loop(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         while let Ok(get_execute_response) = self
             .plugin_work_queue_client
-            .get_execute_generator(GetExecuteGeneratorRequest {})
+            .get_execute_generator(v1beta1::GetExecuteGeneratorRequest {})
             .await
         {
             let request_id = get_execute_response.request_id;
@@ -50,7 +48,7 @@ impl GeneratorExecutor {
                 // Inform plugin-work-queue whether it worked or if we need
                 // to retry
                 self.plugin_work_queue_client
-                    .acknowledge_generator(AcknowledgeGeneratorRequest {
+                    .acknowledge_generator(v1beta1::AcknowledgeGeneratorRequest {
                         request_id,
                         success: process_result.is_ok(),
                     })
@@ -67,7 +65,7 @@ impl GeneratorExecutor {
     #[tracing::instrument(skip(self, job), err)]
     async fn process_job(
         &mut self,
-        job: ExecutionJob,
+        job: v1beta1::ExecutionJob,
         request_id: i64,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let _run_generator_response = self

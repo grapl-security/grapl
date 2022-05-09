@@ -11,10 +11,8 @@ PYENV_PYTHON_VERSION="3.7.10"
 # As such this section sets up some architecture variables..
 ARCH=$(arch)
 if [ "${ARCH}" == "x86_64" ]; then
-    hashicorp_arch_alias="amd64"
     ssm_arch_alias="64bit"
 else
-    hashicorp_arch_alias="arm64"
     ssm_arch_alias="arm64"
 fi
 
@@ -59,6 +57,17 @@ get_latest_release() {
         jq --raw-output '.tag_name'
 }
 ## end helper functions
+
+configure_grapl_repository() {
+    echo_banner "Setting up Grapl Repository"
+    curl --proto "=https" \
+        --tlsv1.2 \
+        --location \
+        --fail \
+        --silent \
+        "https://dl.cloudsmith.io/public/grapl/deb/setup.deb.sh" |
+        sudo -E bash
+}
 
 update_linux() {
     sudo apt update
@@ -268,24 +277,17 @@ install_hashicorp_tools() {
     echo_banner "Installing hashicorp tools: consul nomad packer"
 
     # Set specific versions since we're enabling the hashicorp test repo
-    CONSUL_VERSION="1.12.0"
-    NOMAD_VERSION="1.3.0-1~beta.1"
+    CONSUL_VERSION="1.12.0-1"
+    NOMAD_VERSION="1.3.0-1~rc.1"
+    # packer doesn't have the -1s at the end for some reason
     PACKER_VERSION="1.8.0"
-    VAULT_VERSION="1.10.0"
+    VAULT_VERSION="1.10.2-1"
 
-    curl --proto '=https' \
-        --tlsv1.2 \
-        --silent \
-        --show-error \
-        --fail \
-        https://apt.releases.hashicorp.com/gpg |
-        sudo gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/hashicorp-apt.gpg --import &&
-        sudo chmod 644 /etc/apt/trusted.gpg.d/hashicorp-apt.gpg
-    sudo apt-add-repository "deb [arch=${hashicorp_arch_alias}] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-    # allow installing pre-release versions
-    sudo apt-add-repository "deb [arch=${hashicorp_arch_alias}] https://apt.releases.hashicorp.com $(lsb_release -cs) test"
-    sudo apt-get update
-    sudo apt-get install --yes consul="${CONSUL_VERSION}" nomad="${NOMAD_VERSION}" packer="${PACKER_VERSION}" vault="${VAULT_VERSION}"
+    sudo apt-get install --yes \
+        consul="${CONSUL_VERSION}" \
+        nomad="${NOMAD_VERSION}" \
+        packer="${PACKER_VERSION}" \
+        vault="${VAULT_VERSION}"
 }
 
 # Download and install a tarball.

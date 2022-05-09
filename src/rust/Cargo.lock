@@ -1692,15 +1692,14 @@ dependencies = [
 name = "generator-sdk"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "consul-connect",
  "moka",
- "rust-proto",
+ "rust-proto-new",
  "serde",
  "structopt",
  "thiserror",
  "tokio",
- "tonic 0.6.2",
- "tonic-health 0.5.0",
  "tracing",
  "uuid",
 ]
@@ -3219,10 +3218,9 @@ dependencies = [
  "async-trait",
  "generator-sdk",
  "plugin-work-queue",
- "rust-proto",
+ "rust-proto-new",
  "structopt",
  "tokio",
- "tonic 0.6.2",
  "tracing",
 ]
 
@@ -3256,16 +3254,16 @@ dependencies = [
 name = "plugin-work-queue"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "chrono",
  "futures",
  "grapl-config",
  "grapl-utils",
- "rust-proto",
+ "rust-proto-new",
  "sqlx",
  "structopt",
  "thiserror",
  "tokio",
- "tonic 0.6.2",
  "tonic-health 0.5.0",
  "tracing",
  "tracing-subscriber",
@@ -4988,7 +4986,9 @@ dependencies = [
  "pin-project",
  "prost 0.10.1",
  "prost-derive 0.10.1",
+ "rustls-pemfile",
  "tokio",
+ "tokio-rustls 0.23.3",
  "tokio-stream",
  "tokio-util 0.7.1",
  "tower",

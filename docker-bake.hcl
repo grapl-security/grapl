@@ -248,7 +248,7 @@ group "all" {
     "all-tests",
     "local-only-services",
     "grapl-services",
-    "plugin-bootstrap-init",
+    "export-rust-build-artifacts-to-dist",
   ]
 }
 
@@ -331,7 +331,6 @@ target "node-identifier-retry" {
   ]
 }
 
-
 target "organization-management" {
   inherits = ["_rust-base"]
   target   = "organization-management-deploy"
@@ -364,11 +363,13 @@ target "plugin-bootstrap" {
   ]
 }
 
-target "plugin-bootstrap-init" {
+# A somewhat special target among the Rust targets, as it
+# has an `output =` that dumps its contents into `dist/`.
+target "export-rust-build-artifacts-to-dist" {
   inherits = ["_rust-base"]
-  target   = "plugin-bootstrap-init-output"
+  target   = "export-rust-build-artifacts-to-dist"
   output = [
-    "type=local,dest=${DIST_DIR}/plugin-bootstrap-init"
+    "type=local,dest=${DIST_DIR}"
   ]
 }
 

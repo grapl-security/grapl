@@ -77,7 +77,7 @@ where
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.pipeline.v1beta2.NewEnvelope";
 }
 
-impl<T> serde_impl::ProtobufSerializable<Envelope<T>> for Envelope<T>
+impl<T> serde_impl::ProtobufSerializable for Envelope<T>
 where
     T: SerDe,
 {
