@@ -1692,6 +1692,7 @@ dependencies = [
 name = "generator-sdk"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "consul-connect",
  "moka",
  "rust-proto-new",

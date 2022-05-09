@@ -9,15 +9,16 @@ path = "src/example_generator.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
+async-trait = "0.1"
 consul-connect = { path = "../../consul-connect" }
+moka = { version = "0.7", features = ["future"] }
 rust-proto-new = { path = "../../rust-proto-new" }
+serde = { version = "1.0.136", features = ["derive"] }
+structopt = { version = "0.3", default-features = false }
 thiserror = "1.0.30"
 tokio = { version = "1.17", features = ["full"] }
 tracing = "0.1.29"
 uuid = { version = "0.8", features = ["v4"] }
-serde = { version = "1.0.136", features = ["derive"] }
-moka = { version = "0.7", features = ["future"] }
-structopt = { version = "0.3", default-features = false }
 
 [features]
 internal = ["client"]

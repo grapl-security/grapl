@@ -12,13 +12,8 @@ use rust_proto_new::{
 };
 use tokio::net::TcpListener;
 
-/// This trait is the main interface for Grapl Generator Plugins.
-/// Generators should be very straightforward - essentially they should just be parsers.
-/// Implementations of this trait should be passed into `exec_service`, which will
-/// serve the generator via gRPC.
-
 pub struct GeneratorServiceConfig {
-    address: std::net::SocketAddr,
+    pub address: std::net::SocketAddr,
 }
 
 pub async fn exec_service(
