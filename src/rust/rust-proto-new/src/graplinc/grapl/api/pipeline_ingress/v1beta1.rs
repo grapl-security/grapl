@@ -204,10 +204,7 @@ pub mod client {
 /// logic, inject the PipelineIngressApi implementation into the
 /// PipelineIngressServer's constructor.
 pub mod server {
-    use std::{
-        marker::PhantomData,
-        time::Duration,
-    };
+    use std::time::Duration;
 
     use futures::{
         channel::oneshot::{
@@ -303,7 +300,6 @@ pub mod server {
         tcp_listener: TcpListener,
         shutdown_rx: Receiver<()>,
         service_name: &'static str,
-        f_: PhantomData<F>,
     }
 
     impl<T, H, F> PipelineIngressServer<T, H, F>
@@ -332,7 +328,6 @@ pub mod server {
                     tcp_listener,
                     shutdown_rx,
                     service_name: PipelineIngressServiceServerProto::<GrpcApi<T>>::NAME,
-                    f_: PhantomData,
                 },
                 shutdown_tx,
             )

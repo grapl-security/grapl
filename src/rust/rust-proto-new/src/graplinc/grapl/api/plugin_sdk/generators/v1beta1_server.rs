@@ -1,7 +1,4 @@
-use std::{
-    marker::PhantomData,
-    time::Duration,
-};
+use std::time::Duration;
 
 use futures::{
     channel::oneshot::{
@@ -89,7 +86,6 @@ where
     shutdown_rx: Receiver<()>,
     service_name: &'static str,
     identity: Identity,
-    f_: PhantomData<F>,
 }
 
 impl<T, H, F> GeneratorServer<T, H, F>
@@ -120,7 +116,6 @@ where
                 shutdown_rx,
                 service_name: GeneratorServiceProto::<GrpcApi<T>>::NAME,
                 identity,
-                f_: PhantomData,
             },
             shutdown_tx,
         )
