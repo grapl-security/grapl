@@ -1,7 +1,4 @@
-use std::{
-    marker::PhantomData,
-    time::Duration,
-};
+use std::time::Duration;
 
 use futures::{
     channel::oneshot::{
@@ -38,16 +35,6 @@ use crate::{
     server_internals::GrpcApi,
     SerDeError,
 };
-
-#[non_exhaustive]
-#[derive(Debug, thiserror::Error)]
-pub enum PluginWorkQueueApiError {
-    #[error("failed to serialize/deserialize {0}")]
-    SerDeError(#[from] SerDeError),
-
-    #[error("received unfavorable gRPC status {0}")]
-    GrpcStatus(#[from] tonic::Status),
-}
 
 /// Implement this trait to define the API business logic
 #[tonic::async_trait]
@@ -149,7 +136,6 @@ where
     tcp_listener: TcpListener,
     shutdown_rx: Receiver<()>,
     service_name: &'static str,
-    f_: PhantomData<F>,
 }
 
 impl<T, H, F> PluginWorkQueueServer<T, H, F>
@@ -178,7 +164,6 @@ where
                 tcp_listener,
                 shutdown_rx,
                 service_name: ServerProto::<GrpcApi<T>>::NAME,
-                f_: PhantomData,
             },
             shutdown_tx,
         )

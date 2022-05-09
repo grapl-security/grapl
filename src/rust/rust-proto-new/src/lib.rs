@@ -13,6 +13,7 @@ use thiserror::Error;
 pub mod protocol {
     pub mod healthcheck;
     pub mod status;
+    pub mod tls;
 }
 
 pub(crate) mod server_internals;
@@ -275,19 +276,19 @@ pub(crate) mod serde_impl {
     ///         "graplsecurity.com/graplinc.v1beta1.YourType";
     /// }
     ///
-    /// impl serde_impl::ProtobufSerializable<YourType> for YourType {
+    /// impl serde_impl::ProtobufSerializable for YourType {
     ///    type ProtobufMessage = proto::YourType;
     /// }
-    pub(crate) trait ProtobufSerializable<T> {
-        type ProtobufMessage: TryFrom<T> + TryInto<T> + Message + Default;
+    pub(crate) trait ProtobufSerializable: Sized {
+        type ProtobufMessage: TryFrom<Self> + TryInto<Self> + Message + Default;
     }
 
     impl<T> SerDe for T
     where
-        T: ProtobufSerializable<T>,
+        T: ProtobufSerializable,
         T: type_url::TypeUrl + Clone + std::fmt::Debug,
-        SerDeError: From<<<T as ProtobufSerializable<T>>::ProtobufMessage as TryFrom<T>>::Error>,
-        SerDeError: From<<<T as ProtobufSerializable<T>>::ProtobufMessage as TryInto<T>>::Error>,
+        SerDeError: From<<<T as ProtobufSerializable>::ProtobufMessage as TryFrom<T>>::Error>,
+        SerDeError: From<<<T as ProtobufSerializable>::ProtobufMessage as TryInto<T>>::Error>,
     {
         fn serialize(self: T) -> Result<Bytes, SerDeError> {
             let proto = T::ProtobufMessage::try_from(self)?;

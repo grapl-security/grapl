@@ -14,7 +14,6 @@ pub use crate::graplinc::grapl::api::plugin_work_queue::{
     },
     v1beta1_server::{
         PluginWorkQueueApi,
-        PluginWorkQueueApiError,
         PluginWorkQueueServer,
     },
 };
@@ -79,7 +78,7 @@ impl From<ExecutionJob> for proto::ExecutionJob {
     }
 }
 
-impl ProtobufSerializable<ExecutionJob> for ExecutionJob {
+impl ProtobufSerializable for ExecutionJob {
     type ProtobufMessage = proto::ExecutionJob;
 }
 
@@ -116,7 +115,7 @@ impl From<AcknowledgeGeneratorRequest> for proto::AcknowledgeGeneratorRequest {
     }
 }
 
-impl ProtobufSerializable<AcknowledgeGeneratorRequest> for AcknowledgeGeneratorRequest {
+impl ProtobufSerializable for AcknowledgeGeneratorRequest {
     type ProtobufMessage = proto::AcknowledgeGeneratorRequest;
 }
 
@@ -142,7 +141,7 @@ impl From<AcknowledgeGeneratorResponse> for proto::AcknowledgeGeneratorResponse 
     }
 }
 
-impl ProtobufSerializable<AcknowledgeGeneratorResponse> for AcknowledgeGeneratorResponse {
+impl ProtobufSerializable for AcknowledgeGeneratorResponse {
     type ProtobufMessage = proto::AcknowledgeGeneratorResponse;
 }
 
@@ -180,7 +179,7 @@ impl From<AcknowledgeAnalyzerRequest> for proto::AcknowledgeAnalyzerRequest {
     }
 }
 
-impl ProtobufSerializable<AcknowledgeAnalyzerRequest> for AcknowledgeAnalyzerRequest {
+impl ProtobufSerializable for AcknowledgeAnalyzerRequest {
     type ProtobufMessage = proto::AcknowledgeAnalyzerRequest;
 }
 
@@ -206,7 +205,7 @@ impl From<AcknowledgeAnalyzerResponse> for proto::AcknowledgeAnalyzerResponse {
     }
 }
 
-impl ProtobufSerializable<AcknowledgeAnalyzerResponse> for AcknowledgeAnalyzerResponse {
+impl ProtobufSerializable for AcknowledgeAnalyzerResponse {
     type ProtobufMessage = proto::AcknowledgeAnalyzerResponse;
 }
 
@@ -232,7 +231,7 @@ impl From<GetExecuteAnalyzerRequest> for proto::GetExecuteAnalyzerRequest {
     }
 }
 
-impl ProtobufSerializable<GetExecuteAnalyzerRequest> for GetExecuteAnalyzerRequest {
+impl ProtobufSerializable for GetExecuteAnalyzerRequest {
     type ProtobufMessage = proto::GetExecuteAnalyzerRequest;
 }
 
@@ -279,7 +278,7 @@ impl From<GetExecuteAnalyzerResponse> for proto::GetExecuteAnalyzerResponse {
     }
 }
 
-impl ProtobufSerializable<GetExecuteAnalyzerResponse> for GetExecuteAnalyzerResponse {
+impl ProtobufSerializable for GetExecuteAnalyzerResponse {
     type ProtobufMessage = proto::GetExecuteAnalyzerResponse;
 }
 
@@ -305,7 +304,7 @@ impl From<GetExecuteGeneratorRequest> for proto::GetExecuteGeneratorRequest {
     }
 }
 
-impl ProtobufSerializable<GetExecuteGeneratorRequest> for GetExecuteGeneratorRequest {
+impl ProtobufSerializable for GetExecuteGeneratorRequest {
     type ProtobufMessage = proto::GetExecuteGeneratorRequest;
 }
 
@@ -352,7 +351,7 @@ impl From<GetExecuteGeneratorResponse> for proto::GetExecuteGeneratorResponse {
     }
 }
 
-impl ProtobufSerializable<GetExecuteGeneratorResponse> for GetExecuteGeneratorResponse {
+impl ProtobufSerializable for GetExecuteGeneratorResponse {
     type ProtobufMessage = proto::GetExecuteGeneratorResponse;
 }
 
@@ -389,7 +388,7 @@ impl From<PutExecuteAnalyzerRequest> for proto::PutExecuteAnalyzerRequest {
     }
 }
 
-impl ProtobufSerializable<PutExecuteAnalyzerRequest> for PutExecuteAnalyzerRequest {
+impl ProtobufSerializable for PutExecuteAnalyzerRequest {
     type ProtobufMessage = proto::PutExecuteAnalyzerRequest;
 }
 
@@ -415,7 +414,7 @@ impl From<PutExecuteAnalyzerResponse> for proto::PutExecuteAnalyzerResponse {
     }
 }
 
-impl ProtobufSerializable<PutExecuteAnalyzerResponse> for PutExecuteAnalyzerResponse {
+impl ProtobufSerializable for PutExecuteAnalyzerResponse {
     type ProtobufMessage = proto::PutExecuteAnalyzerResponse;
 }
 
@@ -452,7 +451,7 @@ impl From<PutExecuteGeneratorRequest> for proto::PutExecuteGeneratorRequest {
     }
 }
 
-impl ProtobufSerializable<PutExecuteGeneratorRequest> for PutExecuteGeneratorRequest {
+impl ProtobufSerializable for PutExecuteGeneratorRequest {
     type ProtobufMessage = proto::PutExecuteGeneratorRequest;
 }
 
@@ -478,7 +477,7 @@ impl From<PutExecuteGeneratorResponse> for proto::PutExecuteGeneratorResponse {
     }
 }
 
-impl ProtobufSerializable<PutExecuteGeneratorResponse> for PutExecuteGeneratorResponse {
+impl ProtobufSerializable for PutExecuteGeneratorResponse {
     type ProtobufMessage = proto::PutExecuteGeneratorResponse;
 }
 

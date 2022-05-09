@@ -51,7 +51,7 @@ impl type_url::TypeUrl for Uuid {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.common.v1beta1.Uuid";
 }
 
-impl serde_impl::ProtobufSerializable<Uuid> for Uuid {
+impl serde_impl::ProtobufSerializable for Uuid {
     type ProtobufMessage = UuidProto;
 }
 
@@ -78,7 +78,7 @@ impl type_url::TypeUrl for Duration {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.common.v1beta1.Duration";
 }
 
-impl serde_impl::ProtobufSerializable<Duration> for Duration {
+impl serde_impl::ProtobufSerializable for Duration {
     type ProtobufMessage = DurationProto;
 }
 
@@ -142,7 +142,7 @@ impl type_url::TypeUrl for SystemTime {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.common.v1beta1.Timestamp";
 }
 
-impl serde_impl::ProtobufSerializable<SystemTime> for SystemTime {
+impl serde_impl::ProtobufSerializable for SystemTime {
     type ProtobufMessage = TimestampProto;
 }
 
