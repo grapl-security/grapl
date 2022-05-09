@@ -5,7 +5,7 @@ edition = "2021"
 
 [[bin]]
 name = "example-generator"
-path = "src/example_generator.rs"
+path = "src/examples/example_generator.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
