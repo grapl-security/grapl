@@ -1,33 +1,23 @@
 import * as React from "react";
-import { Link } from "react-router-dom";
-import { styled, useTheme } from "@mui/material/styles";
+import {styled, useTheme} from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
-import List from "@mui/material/List";
 
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import MenuIcon from "@mui/icons-material/Menu";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
 
-import BubbleChartIcon from "@mui/icons-material/BubbleChart";
-import PolicyIcon from "@mui/icons-material/Policy";
-import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
-import SettingsIcon from "@mui/icons-material/Settings";
-import ExtensionIcon from "@mui/icons-material/Extension";
-
-import { useStyles } from "../styles/analyzersAndGeneratorsStyles";
+import {useStyles} from "../styles/analyzersAndGeneratorsStyles";
 import "../../index.css";
 import Img from "../../assets/grapl_logo.svg";
 import Icon from "@material-ui/core/Icon";
+import {NavListItems} from "./drawerList";
 
 const drawerWidth = 300;
 
-const DrawerHeader = styled("div")(({ theme }) => ({
+const DrawerHeader = styled("div")(({theme}) => ({
     display: "flex",
     alignItems: "center",
     margin: "1 em",
@@ -35,9 +25,9 @@ const DrawerHeader = styled("div")(({ theme }) => ({
     color: "#FFFFFF",
 }));
 
-const Main = styled("main", { shouldForwardProp: (prop) => prop !== "open" })<{
+const Main = styled("main", {shouldForwardProp: (prop) => prop !== "open"})<{
     open?: boolean;
-}>(({ theme, open }) => ({
+}>(({theme, open}) => ({
     flexGrow: 1,
     padding: theme.spacing(3),
     transition: theme.transitions.create("margin", {
@@ -67,25 +57,16 @@ export default function CollapsibleNavDrawer() {
         setOpen(false);
     };
 
-    const [selectedIndex, setSelectedIndex] = React.useState(1);
-
-    const handleListItemClick = (
-        event: React.MouseEvent<HTMLDivElement, MouseEvent>,
-        index: number
-    ) => {
-        setSelectedIndex(index);
-    };
-
     return (
-        <Box sx={{ display: "flex" }}>
+        <Box sx={{display: "flex"}}>
             <IconButton
                 color="inherit"
                 aria-label="open drawer"
                 onClick={handleDrawerOpen}
                 edge="start"
-                sx={{ mr: 3, ...(open && { display: "none" }) }}
+                sx={{mr: 3, ...(open && {display: "none"})}}
             >
-                <MenuIcon className={classes.navBarOpenCloseIcons} />
+                <MenuIcon className={classes.navBarOpenCloseIcons}/>
             </IconButton>
             <Drawer
                 sx={{
@@ -104,84 +85,23 @@ export default function CollapsibleNavDrawer() {
                     <div>
                         <IconButton onClick={handleDrawerClose}>
                             {theme.direction === "ltr" ? (
-                                <ChevronLeftIcon className={classes.icons} />
+                                <ChevronLeftIcon className={classes.icons}/>
                             ) : (
-                                <ChevronRightIcon />
+                                <ChevronRightIcon/>
                             )}
                         </IconButton>
                         <Icon>
-                            <img className={classes.logoImage} src={Img} />
+                            <img className={classes.logoImage} src={Img}/>
                         </Icon>
                     </div>
                 </DrawerHeader>
-                <Divider />
-                <List className={classes.drawer}>
-                    <ListItemButton
-                        key="Analyzers"
-                        selected={selectedIndex === 0}
-                        onClick={(event) => handleListItemClick(event, 0)}
-                    >
-                        <ListItemIcon>
-                            <PolicyIcon className={classes.icons} />
-                        </ListItemIcon>
-                        <Link to="/analyzers" className={classes.navLink}>
-                            {" "}
-                            Analyzers{" "}
-                        </Link>
-                    </ListItemButton>
+                <Divider/>
 
-                    <ListItemButton
-                        key="Engagements"
-                        selected={selectedIndex === 1}
-                        onClick={(event) => handleListItemClick(event, 1)}
-                    >
-                        <ListItemIcon>
-                            <BubbleChartIcon className={classes.icons} />
-                        </ListItemIcon>
-                        <Link to="/engagements" className={classes.navLink}>
-                            {" "}
-                            Engagements{" "}
-                        </Link>
-                    </ListItemButton>
+                <NavListItems></NavListItems>
 
-                    <ListItemButton
-                        key="Generators"
-                        selected={selectedIndex === 2}
-                        onClick={(event) => handleListItemClick(event, 2)}
-                    >
-                        <ListItemIcon>
-                            {<ExtensionIcon className={classes.icons} />}
-                        </ListItemIcon>
-                        <Link to="/generators" className={classes.navLink}>
-                            {" "}
-                            Generators{" "}
-                        </Link>
-                    </ListItemButton>
-                </List>
-
-                <List className={classes.drawer}>
-                    {["Settings", "Logout"].map((text, index) => (
-                        <ListItemButton
-                            key={text}
-                            selected={selectedIndex === 3}
-                            onClick={(event) => handleListItemClick(event, 3)}
-                        >
-                            <ListItemIcon className={classes.icons}>
-                                {index % 2 === 0 ? (
-                                    <SettingsIcon className={classes.icons} />
-                                ) : (
-                                    <LogoutOutlinedIcon
-                                        className={classes.icons}
-                                    />
-                                )}
-                            </ListItemIcon>
-                            <ListItemText primary={text} />
-                        </ListItemButton>
-                    ))}
-                </List>
             </Drawer>
             <Main open={open}>
-                <DrawerHeader />
+                <DrawerHeader/>
             </Main>
         </Box>
     );
