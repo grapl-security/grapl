@@ -87,7 +87,7 @@ impl type_url::TypeUrl for Session {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.Session";
 }
 
-impl serde_impl::ProtobufSerializable<Session> for Session {
+impl serde_impl::ProtobufSerializable for Session {
     type ProtobufMessage = SessionProto;
 }
 
@@ -123,7 +123,7 @@ impl type_url::TypeUrl for Static {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.Static";
 }
 
-impl serde_impl::ProtobufSerializable<Static> for Static {
+impl serde_impl::ProtobufSerializable for Static {
     type ProtobufMessage = StaticProto;
 }
 
@@ -197,7 +197,7 @@ impl type_url::TypeUrl for IdStrategy {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.IdStrategy";
 }
 
-impl serde_impl::ProtobufSerializable<IdStrategy> for IdStrategy {
+impl serde_impl::ProtobufSerializable for IdStrategy {
     type ProtobufMessage = IdStrategyProto;
 }
 
@@ -258,7 +258,7 @@ impl type_url::TypeUrl for IncrementOnlyUintProp {
         "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.IncrementOnlyUintProp";
 }
 
-impl serde_impl::ProtobufSerializable<IncrementOnlyUintProp> for IncrementOnlyUintProp {
+impl serde_impl::ProtobufSerializable for IncrementOnlyUintProp {
     type ProtobufMessage = IncrementOnlyUintPropProto;
 }
 
@@ -321,7 +321,7 @@ impl type_url::TypeUrl for ImmutableUintProp {
         "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.ImmutableUintProp";
 }
 
-impl serde_impl::ProtobufSerializable<ImmutableUintProp> for ImmutableUintProp {
+impl serde_impl::ProtobufSerializable for ImmutableUintProp {
     type ProtobufMessage = ImmutableUintPropProto;
 }
 
@@ -384,7 +384,7 @@ impl type_url::TypeUrl for DecrementOnlyUintProp {
         "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.DecrementOnlyUintProp";
 }
 
-impl serde_impl::ProtobufSerializable<DecrementOnlyUintProp> for DecrementOnlyUintProp {
+impl serde_impl::ProtobufSerializable for DecrementOnlyUintProp {
     type ProtobufMessage = DecrementOnlyUintPropProto;
 }
 
@@ -448,7 +448,7 @@ impl type_url::TypeUrl for IncrementOnlyIntProp {
         "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.IncrementOnlyIntProp";
 }
 
-impl serde_impl::ProtobufSerializable<IncrementOnlyIntProp> for IncrementOnlyIntProp {
+impl serde_impl::ProtobufSerializable for IncrementOnlyIntProp {
     type ProtobufMessage = IncrementOnlyIntPropProto;
 }
 
@@ -511,7 +511,7 @@ impl type_url::TypeUrl for DecrementOnlyIntProp {
         "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.DecrementOnlyIntProp";
 }
 
-impl serde_impl::ProtobufSerializable<DecrementOnlyIntProp> for DecrementOnlyIntProp {
+impl serde_impl::ProtobufSerializable for DecrementOnlyIntProp {
     type ProtobufMessage = DecrementOnlyIntPropProto;
 }
 
@@ -574,7 +574,7 @@ impl type_url::TypeUrl for ImmutableIntProp {
         "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.ImmutableIntProp";
 }
 
-impl serde_impl::ProtobufSerializable<ImmutableIntProp> for ImmutableIntProp {
+impl serde_impl::ProtobufSerializable for ImmutableIntProp {
     type ProtobufMessage = ImmutableIntPropProto;
 }
 
@@ -637,7 +637,7 @@ impl type_url::TypeUrl for ImmutableStrProp {
         "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.ImmutableStrProp";
 }
 
-impl serde_impl::ProtobufSerializable<ImmutableStrProp> for ImmutableStrProp {
+impl serde_impl::ProtobufSerializable for ImmutableStrProp {
     type ProtobufMessage = ImmutableStrPropProto;
 }
 
@@ -974,7 +974,7 @@ impl type_url::TypeUrl for NodeProperty {
         "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.NodeProperty";
 }
 
-impl serde_impl::ProtobufSerializable<NodeProperty> for NodeProperty {
+impl serde_impl::ProtobufSerializable for NodeProperty {
     type ProtobufMessage = NodePropertyProto;
 }
 
@@ -1107,7 +1107,7 @@ impl type_url::TypeUrl for NodeDescription {
         "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.NodeDescription";
 }
 
-impl serde_impl::ProtobufSerializable<NodeDescription> for NodeDescription {
+impl serde_impl::ProtobufSerializable for NodeDescription {
     type ProtobufMessage = NodeDescriptionProto;
 }
 
@@ -1206,7 +1206,7 @@ impl type_url::TypeUrl for IdentifiedNode {
         "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.IdentifiedNode";
 }
 
-impl serde_impl::ProtobufSerializable<IdentifiedNode> for IdentifiedNode {
+impl serde_impl::ProtobufSerializable for IdentifiedNode {
     type ProtobufMessage = IdentifiedNodeProto;
 }
 
@@ -1303,7 +1303,7 @@ impl type_url::TypeUrl for MergedNode {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.MergedNode";
 }
 
-impl serde_impl::ProtobufSerializable<MergedNode> for MergedNode {
+impl serde_impl::ProtobufSerializable for MergedNode {
     type ProtobufMessage = MergedNodeProto;
 }
 
@@ -1342,7 +1342,7 @@ impl type_url::TypeUrl for Edge {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.Edge";
 }
 
-impl serde_impl::ProtobufSerializable<Edge> for Edge {
+impl serde_impl::ProtobufSerializable for Edge {
     type ProtobufMessage = EdgeProto;
 }
 
@@ -1387,7 +1387,7 @@ impl type_url::TypeUrl for MergedEdge {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.MergedEdge";
 }
 
-impl serde_impl::ProtobufSerializable<MergedEdge> for MergedEdge {
+impl serde_impl::ProtobufSerializable for MergedEdge {
     type ProtobufMessage = MergedEdgeProto;
 }
 
@@ -1426,7 +1426,7 @@ impl type_url::TypeUrl for EdgeList {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.EdgeList";
 }
 
-impl serde_impl::ProtobufSerializable<EdgeList> for EdgeList {
+impl serde_impl::ProtobufSerializable for EdgeList {
     type ProtobufMessage = EdgeListProto;
 }
 
@@ -1466,7 +1466,7 @@ impl type_url::TypeUrl for MergedEdgeList {
         "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.MergedEdgeList";
 }
 
-impl serde_impl::ProtobufSerializable<MergedEdgeList> for MergedEdgeList {
+impl serde_impl::ProtobufSerializable for MergedEdgeList {
     type ProtobufMessage = MergedEdgeListProto;
 }
 
@@ -1591,7 +1591,7 @@ impl type_url::TypeUrl for GraphDescription {
         "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.GraphDescription";
 }
 
-impl serde_impl::ProtobufSerializable<GraphDescription> for GraphDescription {
+impl serde_impl::ProtobufSerializable for GraphDescription {
     type ProtobufMessage = GraphDescriptionProto;
 }
 
@@ -1714,7 +1714,7 @@ impl type_url::TypeUrl for IdentifiedGraph {
         "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.IdentifiedGraph";
 }
 
-impl serde_impl::ProtobufSerializable<IdentifiedGraph> for IdentifiedGraph {
+impl serde_impl::ProtobufSerializable for IdentifiedGraph {
     type ProtobufMessage = IdentifiedGraphProto;
 }
 
@@ -1856,7 +1856,7 @@ impl type_url::TypeUrl for MergedGraph {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph.v1beta1.MergedGraph";
 }
 
-impl serde_impl::ProtobufSerializable<MergedGraph> for MergedGraph {
+impl serde_impl::ProtobufSerializable for MergedGraph {
     type ProtobufMessage = MergedGraphProto;
 }
 

@@ -60,7 +60,7 @@ impl type_url::TypeUrl for PublishRawLogRequest {
         "graplsecurity.com/graplinc.grapl.api.pipeline_ingress.v1beta1.PublishRawLogRequest";
 }
 
-impl serde_impl::ProtobufSerializable<PublishRawLogRequest> for PublishRawLogRequest {
+impl serde_impl::ProtobufSerializable for PublishRawLogRequest {
     type ProtobufMessage = PublishRawLogRequestProto;
 }
 
@@ -111,7 +111,7 @@ impl type_url::TypeUrl for PublishRawLogResponse {
         "grapsecurity.com/graplinc.grapl.api.pipeline_ingress.v1beta1.PublishRawLogResponse";
 }
 
-impl serde_impl::ProtobufSerializable<PublishRawLogResponse> for PublishRawLogResponse {
+impl serde_impl::ProtobufSerializable for PublishRawLogResponse {
     type ProtobufMessage = PublishRawLogResponseProto;
 }
 

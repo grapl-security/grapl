@@ -49,7 +49,7 @@ impl type_url::TypeUrl for GeneratedGraph {
         "graplsecurity.com/graplinc.grapl.api.plugin_sdk.generators.v1beta1.GeneratedGraph";
 }
 
-impl serde_impl::ProtobufSerializable<GeneratedGraph> for GeneratedGraph {
+impl serde_impl::ProtobufSerializable for GeneratedGraph {
     type ProtobufMessage = proto::GeneratedGraph;
 }
 
@@ -81,7 +81,7 @@ impl type_url::TypeUrl for RunGeneratorRequest {
         "graplsecurity.com/graplinc.grapl.api.plugin_sdk.generators.v1beta1.RunGeneratorRequest";
 }
 
-impl serde_impl::ProtobufSerializable<RunGeneratorRequest> for RunGeneratorRequest {
+impl serde_impl::ProtobufSerializable for RunGeneratorRequest {
     type ProtobufMessage = proto::RunGeneratorRequest;
 }
 
@@ -118,6 +118,6 @@ impl type_url::TypeUrl for RunGeneratorResponse {
         "graplsecurity.com/graplinc.grapl.api.plugin_sdk.generators.v1beta1.RunGeneratorResponse";
 }
 
-impl serde_impl::ProtobufSerializable<RunGeneratorResponse> for RunGeneratorResponse {
+impl serde_impl::ProtobufSerializable for RunGeneratorResponse {
     type ProtobufMessage = proto::RunGeneratorResponse;
 }
