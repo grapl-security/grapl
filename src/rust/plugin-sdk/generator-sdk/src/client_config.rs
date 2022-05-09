@@ -18,7 +18,7 @@ pub struct ClientCacheConfig {
 pub struct ClientCertConfig {
     // the CA Certificate against which to verify the server’s TLS certificate.
     #[structopt(env)]
-    pub public_certificate_pem: Vec<u8>,
+    pub public_certificate_pem: String,
 }
 
 #[derive(StructOpt, Debug)]
@@ -26,7 +26,7 @@ pub struct ClientConfig {
     #[structopt(flatten)]
     pub client_cache_config: ClientCacheConfig,
     #[structopt(flatten)]
-    pub client_cert_config: ClientCertConfig,
-    #[structopt(flatten)]
     pub client_dns_config: consul_connect::client_dns_config::ClientDnsConfig,
+    #[structopt(flatten)]
+    pub client_cert_config: ClientCertConfig,
 }

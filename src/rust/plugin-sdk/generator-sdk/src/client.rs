@@ -23,8 +23,8 @@ use rust_proto_new::{
             Status,
         },
         tls::{
-            Certificate,
-            ClientTlsConfig,
+            Certificate, ClientTlsConfig,
+            //ClientTlsConfig,
         },
     },
 };
@@ -53,7 +53,7 @@ pub struct GeneratorClient {
     /// A bounded cache mapping a plugin ID to a client connected to that plugin
     clients: ClientCache,
     /// A public certificate to validate a plugin's domain
-    certificate: Certificate,
+    certificate: Option<Certificate>,
     /// An in-process DNS resolver used for plugin service discovery
     resolver: ConsulConnectResolver,
 }
@@ -61,7 +61,11 @@ pub struct GeneratorClient {
 impl From<ClientConfig> for GeneratorClient {
     fn from(config: ClientConfig) -> Self {
         let resolver = ConsulConnectResolver::from(config.client_dns_config);
-        let certificate = Certificate::from_pem(config.client_cert_config.public_certificate_pem);
+        let certificate = if config.client_cert_config.public_certificate_pem.is_empty() {
+            None 
+        } else {
+            Some(Certificate::from_pem(&config.client_cert_config.public_certificate_pem.as_bytes().to_vec()))
+        };
         let clients = ClientCacheBuilder::from(config.client_cache_config).build();
         Self::new(clients, certificate, resolver)
     }
@@ -70,7 +74,7 @@ impl From<ClientConfig> for GeneratorClient {
 impl GeneratorClient {
     pub fn new(
         clients: ClientCache,
-        certificate: Certificate,
+        certificate: Option<Certificate>,
         resolver: ConsulConnectResolver,
     ) -> Self {
         Self {
@@ -145,7 +149,11 @@ impl GeneratorClient {
             .await?;
 
         // Sets the CA Certificate against which to verify the server’s TLS certificate.
-        let tls_config = ClientTlsConfig::new(self.certificate.clone(), &resolved_service.domain);
+        let tls_config = if false {
+            Some(ClientTlsConfig::new(self.certificate.as_ref().expect("cert").clone(), &resolved_service.domain))
+        } else {
+            None
+        };
 
         tracing::info!(
             message = "Connecting to plugin",
@@ -158,7 +166,9 @@ impl GeneratorClient {
             resolved_service.domain, resolved_service.port,
         );
 
-        let connect_result = GeneratorServiceClient::connect(endpoint, Some(tls_config)).await;
+        let connect_result = GeneratorServiceClient::connect(endpoint, 
+            tls_config
+        ).await;
 
         match connect_result {
             Ok(x) => Ok(x),

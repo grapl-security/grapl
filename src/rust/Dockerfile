@@ -329,6 +329,7 @@ USER nonroot
 FROM scratch AS export-rust-build-artifacts-to-dist
 
 COPY --from=build /outputs/plugin-bootstrap-init /plugin-bootstrap-init/
+COPY --from=build /outputs/example-generator /
 # Just to clarify: we're copying these .service files from the repository,
 # through Docker, and then back out to the dist directory in the repository.
 COPY rust/plugin-bootstrap/grapl-plugin-bootstrap-init.service /plugin-bootstrap-init/

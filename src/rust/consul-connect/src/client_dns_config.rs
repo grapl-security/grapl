@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{time::Duration, str::FromStr};
 
 use structopt::StructOpt;
 use trust_dns_resolver::{
@@ -10,19 +10,25 @@ use trust_dns_resolver::{
     TokioAsyncResolver,
 };
 
+/// Required due to https://stackoverflow.com/a/50006529
+/// Long story short: StructOpt-with-env + Vec is annoying
+#[derive(Debug)]
+pub struct CommaSeparated<T: FromStr>(Vec<T>);
+impl<T: FromStr> FromStr for CommaSeparated<T> {
+    type Err = <T as FromStr>::Err;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let elements: Result<Vec<_>, _> = s.split(",").map(|s| {
+            T::from_str(s)
+        }).collect();
+        Ok(Self(
+            elements?
+        ))
+    }
+}
+
 /// Configuration for the DNS resolver used for plugin service discovery
 #[derive(StructOpt, Debug)]
 pub struct ClientDnsConfig {
-    /// IP addresses to use when resolving plugins
-    /// Should almost always be pointed to Consul
-    #[structopt(env)]
-    pub dns_resolver_ips: Vec<std::net::IpAddr>,
-
-    /// The port to use for DNS resolutino. Note that even if you have multiple
-    /// IP addresses they will all resolve via this port
-    #[structopt(env)]
-    pub dns_resolver_port: u16,
-
     /// The number of entries in the dns cache
     #[structopt(env, default_value = "128")]
     pub dns_cache_size: usize,
@@ -33,6 +39,16 @@ pub struct ClientDnsConfig {
     /// Default: 1
     #[structopt(env, default_value = "1")]
     pub positive_min_ttl: u64,
+
+    /// The port to use for DNS resolutino. Note that even if you have multiple
+    /// IP addresses they will all resolve via this port
+    #[structopt(env)]
+    pub dns_resolver_port: u16,
+    
+    /// IP addresses to use when resolving plugins
+    /// Should almost always be pointed to Consul
+    #[structopt(env)]
+    pub dns_resolver_ips: CommaSeparated<std::net::IpAddr>,
 }
 
 impl From<ClientDnsConfig> for TokioAsyncResolver {
@@ -41,7 +57,7 @@ impl From<ClientDnsConfig> for TokioAsyncResolver {
             None,
             vec![],
             NameServerConfigGroup::from_ips_clear(
-                &dns_config.dns_resolver_ips,
+                &dns_config.dns_resolver_ips.0,
                 dns_config.dns_resolver_port,
                 true,
             ),
