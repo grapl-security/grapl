@@ -103,6 +103,11 @@ EOF
         }
       }
 
+      env {
+        # Consumed by GeneratorServiceConfig
+        PLUGIN_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_plugin-grpc-receiver}"
+      }
+
       artifact {
         source      = var.plugin_artifact_url
         destination = "local/plugin.bin"

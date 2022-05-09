@@ -10,10 +10,20 @@ use rust_proto_new::{
         tls::Identity,
     },
 };
+use structopt::StructOpt;
 use tokio::net::TcpListener;
 
+#[derive(StructOpt, Debug)]
 pub struct GeneratorServiceConfig {
-    pub address: std::net::SocketAddr,
+    #[structopt(env = "PLUGIN_BIND_ADDRESS")]
+    pub bind_address: std::net::SocketAddr,
+}
+impl GeneratorServiceConfig {
+    /// An alias for Structopt::from_args, so that consumers don't need to
+    /// declare a dependency on structopt
+    pub fn from_env_vars() -> Self {
+        Self::from_args()
+    }
 }
 
 pub async fn exec_service(
@@ -30,14 +40,14 @@ pub async fn exec_service(
     let healthcheck_polling_interval_ms = 5000; // TODO: un-hardcode
     let (server, _shutdown_tx) = GeneratorServer::new(
         graph_generator,
-        TcpListener::bind(config.address.clone()).await?,
+        TcpListener::bind(config.bind_address.clone()).await?,
         || async { Ok(HealthcheckStatus::Serving) }, // FIXME: this is garbage
         Duration::from_millis(healthcheck_polling_interval_ms),
         identity,
     );
     tracing::info!(
         message = "starting gRPC server",
-        socket_address = %config.address,
+        socket_address = %config.bind_address,
     );
 
     server.serve().await
