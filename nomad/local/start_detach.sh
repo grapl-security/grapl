@@ -104,6 +104,7 @@ start_nomad_detach() {
         -dev-connect > "${NOMAD_LOGS_DEST}" &
     local -r nomad_agent_pid="$!"
 
+    # Wait for vault to finish booting up
     sleep 10
 
     configure_vault
@@ -143,6 +144,12 @@ start_nomad_detach() {
                     sleep 1
                     ((wait_attempt=wait_attempt+1))
                 done
+                while [[ 2 -gt \$(consul info | grep service | awk '{ print \$3 }') ]]; do
+                    echo "Waiting for consul-vault certs [\${wait_attempt}/${wait_secs}]"
+                    sleep 1
+                    ((wait_attempt=wait_attempt+1))
+                done
+
 EOF
         )"
     )
