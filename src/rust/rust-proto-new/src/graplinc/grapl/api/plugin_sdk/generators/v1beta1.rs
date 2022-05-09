@@ -1,13 +1,6 @@
-pub use crate::graplinc::grapl::api::plugin_sdk::generators::{
-    v1beta1_client::{
-        GeneratorServiceClient,
-        GeneratorServiceClientError,
-    },
-    v1beta1_server::{
-        GeneratorApi,
-        GeneratorServer,
-    },
-};
+pub mod client;
+pub mod server;
+
 use crate::{
     graplinc::grapl::api::graph::v1beta1::GraphDescription,
     protobufs::graplinc::grapl::api::plugin_sdk::generators::v1beta1 as proto,
