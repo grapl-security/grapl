@@ -14,7 +14,6 @@ pub use crate::graplinc::grapl::api::plugin_work_queue::{
     },
     v1beta1_server::{
         PluginWorkQueueApi,
-        PluginWorkQueueApiError,
         PluginWorkQueueServer,
     },
 };

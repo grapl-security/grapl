@@ -7,7 +7,6 @@ pub use crate::graplinc::grapl::api::plugin_registry::{
     },
     v1beta1_server::{
         PluginRegistryApi,
-        PluginRegistryApiError,
         PluginRegistryServer,
     },
 };
