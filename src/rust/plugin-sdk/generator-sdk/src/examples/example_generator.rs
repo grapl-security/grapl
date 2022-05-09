@@ -11,8 +11,8 @@ use rust_proto_new::{
     graplinc::grapl::api::{
         graph::v1beta1::GraphDescription,
         plugin_sdk::generators::v1beta1::{
+            server::GeneratorApi,
             GeneratedGraph,
-            GeneratorApi,
             RunGeneratorRequest,
             RunGeneratorResponse,
         },

@@ -1,7 +1,4 @@
-use std::{
-    marker::PhantomData,
-    time::Duration,
-};
+use std::time::Duration;
 
 use futures::{
     channel::oneshot::{
@@ -139,7 +136,6 @@ where
     tcp_listener: TcpListener,
     shutdown_rx: Receiver<()>,
     service_name: &'static str,
-    f_: PhantomData<F>,
 }
 
 impl<T, H, F> PluginWorkQueueServer<T, H, F>
@@ -168,7 +164,6 @@ where
                 tcp_listener,
                 shutdown_rx,
                 service_name: ServerProto::<GrpcApi<T>>::NAME,
-                f_: PhantomData,
             },
             shutdown_tx,
         )
