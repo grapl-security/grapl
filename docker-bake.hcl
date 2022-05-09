@@ -248,7 +248,7 @@ group "all" {
     "all-tests",
     "local-only-services",
     "grapl-services",
-    "shuttle-rust-to-dist",
+    "export-rust-build-artifacts-to-dist",
   ]
 }
 
@@ -365,9 +365,9 @@ target "plugin-bootstrap" {
 
 # A somewhat special target among the Rust targets, as it
 # has an `output =` that dumps its contents into `dist/`.
-target "shuttle-rust-to-dist" {
+target "export-rust-build-artifacts-to-dist" {
   inherits = ["_rust-base"]
-  target   = "shuttle-rust-to-dist"
+  target   = "export-rust-build-artifacts-to-dist"
   output = [
     "type=local,dest=${DIST_DIR}"
   ]

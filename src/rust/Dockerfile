@@ -322,11 +322,11 @@ FROM gcr.io/distroless/cc:debug AS rust-dist
 
 USER nonroot
 
-##### shuttle-rust-to-dist
+##### export-rust-build-artifacts-to-dist
 # There are a number of artifacts we want to bring back to the host OS.
 # This image will eventually dump its root contents into the host's `dist/`
 # courtesy of its `docker-bake.hcl` specification.
-FROM scratch AS shuttle-rust-to-dist
+FROM scratch AS export-rust-build-artifacts-to-dist
 
 COPY --from=build /outputs/plugin-bootstrap-init /plugin-bootstrap-init/
 # Just to clarify: we're copying these .service files from the repository,
