@@ -268,10 +268,11 @@ install_hashicorp_tools() {
     echo_banner "Installing hashicorp tools: consul nomad packer"
 
     # Set specific versions since we're enabling the hashicorp test repo
-    CONSUL_VERSION="1.12.0"
-    NOMAD_VERSION="1.3.0-1~beta.1"
+    CONSUL_VERSION="1.12.0-1"
+    NOMAD_VERSION="1.3.0-1~rc.1"
+    # packer doesn't have the -1s at the end for some reason
     PACKER_VERSION="1.8.0"
-    VAULT_VERSION="1.10.0"
+    VAULT_VERSION="1.10.2-1"
 
     curl --proto '=https' \
         --tlsv1.2 \
