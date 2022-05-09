@@ -66,8 +66,6 @@ else
     done
 fi
 
-push
-
 readonly sleep_seconds=60
 echo "--- :sleeping::sob: Sleeping for ${sleep_seconds} seconds to give CDNs time to update"
 # Lately, we've seen failures where images aren't showing up when we
