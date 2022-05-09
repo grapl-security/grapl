@@ -13,7 +13,6 @@ use futures::{
     FutureExt,
 };
 use proto::plugin_registry_service_server::PluginRegistryService;
-use thiserror::Error;
 use tokio::net::TcpListener;
 use tokio_stream::wrappers::TcpListenerStream;
 use tonic::{
@@ -56,16 +55,6 @@ use crate::{
     server_internals::GrpcApi,
     SerDeError,
 };
-
-#[non_exhaustive]
-#[derive(Debug, Error)]
-pub enum PluginRegistryApiError {
-    #[error("failed to serialize/deserialize {0}")]
-    SerDeError(#[from] SerDeError),
-
-    #[error("received unfavorable gRPC status {0}")]
-    GrpcStatus(#[from] tonic::Status),
-}
 
 /// Implement this trait to define the API business logic
 #[tonic::async_trait]

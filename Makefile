@@ -363,7 +363,6 @@ lint: lint-hcl
 lint: lint-prettier
 lint: lint-proto
 lint: lint-proto-breaking
-lint: lint-proto-format
 lint: lint-python
 lint: lint-rust
 lint: lint-shell
@@ -389,7 +388,7 @@ lint-prettier: ## Run ts/js/yaml lint checks
 
 .PHONY: lint-proto
 lint-proto: ## Lint all protobuf definitions
-		$(PANTS_PROTO_FILTER) lint
+	$(PANTS_PROTO_FILTER) lint
 
 .PHONY: lint-proto-breaking
 lint-proto-breaking: ## Check protobuf definitions for breaking changes
@@ -660,8 +659,11 @@ dist/firecracker_kernel.tar.gz: firecracker/kernel/build.sh | dist
 # NOTE: While this target is PHONY, it *does* represent a real directory in
 # dist/
 .PHONY: dist/plugin-bootstrap-init
-dist/plugin-bootstrap-init: | dist  ## Build the Plugin Bootstrap Init (+ associated files) and copy it to dist/
-	$(DOCKER_BUILDX_BAKE_HCL) plugin-bootstrap-init
+dist/plugin-bootstrap-init: _export-rust-build-artifacts-to-dist  ## Build the Plugin Bootstrap Init (+ associated files) and copy it to dist/
+
+.PHONY: _export-rust-build-artifacts-to-dist
+_export-rust-build-artifacts-to-dist: | dist  ## Copy all specified Rust binary artifacts to dist/
+	$(DOCKER_BUILDX_BAKE_HCL) export-rust-build-artifacts-to-dist
 
 # TODO: Would be nice to be able to specify the input file prerequisites of
 # this target, once `dist/plugin-bootstrap-init` is non-PHONY

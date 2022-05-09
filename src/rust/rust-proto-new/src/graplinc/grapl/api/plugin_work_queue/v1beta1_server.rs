@@ -39,16 +39,6 @@ use crate::{
     SerDeError,
 };
 
-#[non_exhaustive]
-#[derive(Debug, thiserror::Error)]
-pub enum PluginWorkQueueApiError {
-    #[error("failed to serialize/deserialize {0}")]
-    SerDeError(#[from] SerDeError),
-
-    #[error("received unfavorable gRPC status {0}")]
-    GrpcStatus(#[from] tonic::Status),
-}
-
 /// Implement this trait to define the API business logic
 #[tonic::async_trait]
 pub trait PluginWorkQueueApi {

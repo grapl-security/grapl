@@ -13,6 +13,7 @@ use thiserror::Error;
 pub mod protocol {
     pub mod healthcheck;
     pub mod status;
+    pub mod tls;
 }
 
 pub(crate) mod server_internals;
@@ -142,6 +143,8 @@ pub mod graplinc {
             pub mod plugin_sdk {
                 pub mod generators {
                     pub mod v1beta1;
+                    mod v1beta1_client;
+                    mod v1beta1_server;
                 }
             }
 

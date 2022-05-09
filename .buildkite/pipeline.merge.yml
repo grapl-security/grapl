@@ -22,6 +22,10 @@ steps:
           server: docker.cloudsmith.io
     agents:
       queue: "docker"
+    retry:
+      automatic:
+        - exit_status: 42 # Special status for "buildx --push failed"
+          limit: 2
     artifact_paths:
       - "*.grapl-artifacts.json"
 
