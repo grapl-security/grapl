@@ -1494,8 +1494,8 @@ job "grapl-core" {
     }
 
     service {
-      name = "plugin-work-queue"
-      port = "plugin-work-queue-port"
+      name = "uid-allocator"
+      port = "uid-allocator-port"
       connect {
         sidecar_service {
         }
