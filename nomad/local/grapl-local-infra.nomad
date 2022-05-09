@@ -539,6 +539,16 @@ job "grapl-local-infra" {
         }
       }
     }
+  }
+
+  group "uid-allocator-db" {
+    network {
+      mode = "bridge"
+      port "postgres" {
+        static = var.uid_allocator_db.port
+        to     = 5432
+      }
+    }
 
     task "uid-allocator-db" {
       driver = "docker"
