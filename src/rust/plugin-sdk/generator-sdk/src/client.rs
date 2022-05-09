@@ -10,8 +10,10 @@ use moka::future::{
 };
 use rust_proto_new::{
     graplinc::grapl::api::plugin_sdk::generators::v1beta1::{
-        GeneratorServiceClient,
-        GeneratorServiceClientError,
+        client::{
+            GeneratorServiceClient,
+            GeneratorServiceClientError,
+        },
         RunGeneratorRequest,
         RunGeneratorResponse,
     },

@@ -66,7 +66,7 @@ pub struct Plugin {
     pub plugin_binary: Vec<u8>,
 }
 
-impl ProtobufSerializable<Plugin> for Plugin {
+impl ProtobufSerializable for Plugin {
     type ProtobufMessage = proto::Plugin;
 }
 
@@ -169,7 +169,7 @@ impl From<CreatePluginRequest> for proto::CreatePluginRequest {
     }
 }
 
-impl ProtobufSerializable<CreatePluginRequest> for CreatePluginRequest {
+impl ProtobufSerializable for CreatePluginRequest {
     type ProtobufMessage = proto::CreatePluginRequest;
 }
 
@@ -205,7 +205,7 @@ impl From<CreatePluginResponse> for proto::CreatePluginResponse {
     }
 }
 
-impl ProtobufSerializable<CreatePluginResponse> for CreatePluginResponse {
+impl ProtobufSerializable for CreatePluginResponse {
     type ProtobufMessage = proto::CreatePluginResponse;
 }
 
@@ -240,7 +240,7 @@ impl From<DeployPluginRequest> for proto::DeployPluginRequest {
     }
 }
 
-impl ProtobufSerializable<DeployPluginRequest> for DeployPluginRequest {
+impl ProtobufSerializable for DeployPluginRequest {
     type ProtobufMessage = proto::DeployPluginRequest;
 }
 
@@ -265,7 +265,7 @@ impl From<DeployPluginResponse> for proto::DeployPluginResponse {
         Self {}
     }
 }
-impl ProtobufSerializable<DeployPluginResponse> for DeployPluginResponse {
+impl ProtobufSerializable for DeployPluginResponse {
     type ProtobufMessage = proto::DeployPluginResponse;
 }
 
@@ -302,7 +302,7 @@ impl From<GetAnalyzersForTenantRequest> for proto::GetAnalyzersForTenantRequest 
         }
     }
 }
-impl ProtobufSerializable<GetAnalyzersForTenantRequest> for GetAnalyzersForTenantRequest {
+impl ProtobufSerializable for GetAnalyzersForTenantRequest {
     type ProtobufMessage = proto::GetAnalyzersForTenantRequest;
 }
 
@@ -339,7 +339,7 @@ impl From<GetAnalyzersForTenantResponse> for proto::GetAnalyzersForTenantRespons
         }
     }
 }
-impl ProtobufSerializable<GetAnalyzersForTenantResponse> for GetAnalyzersForTenantResponse {
+impl ProtobufSerializable for GetAnalyzersForTenantResponse {
     type ProtobufMessage = proto::GetAnalyzersForTenantResponse;
 }
 
@@ -376,9 +376,7 @@ impl From<GetGeneratorsForEventSourceRequest> for proto::GetGeneratorsForEventSo
         }
     }
 }
-impl ProtobufSerializable<GetGeneratorsForEventSourceRequest>
-    for GetGeneratorsForEventSourceRequest
-{
+impl ProtobufSerializable for GetGeneratorsForEventSourceRequest {
     type ProtobufMessage = proto::GetGeneratorsForEventSourceRequest;
 }
 
@@ -415,9 +413,7 @@ impl From<GetGeneratorsForEventSourceResponse> for proto::GetGeneratorsForEventS
     }
 }
 
-impl ProtobufSerializable<GetGeneratorsForEventSourceResponse>
-    for GetGeneratorsForEventSourceResponse
-{
+impl ProtobufSerializable for GetGeneratorsForEventSourceResponse {
     type ProtobufMessage = proto::GetGeneratorsForEventSourceResponse;
 }
 #[derive(Debug, Clone, PartialEq)]
@@ -464,7 +460,7 @@ impl From<GetPluginRequest> for proto::GetPluginRequest {
         }
     }
 }
-impl ProtobufSerializable<GetPluginRequest> for GetPluginRequest {
+impl ProtobufSerializable for GetPluginRequest {
     type ProtobufMessage = proto::GetPluginRequest;
 }
 
@@ -498,7 +494,7 @@ impl From<GetPluginResponse> for proto::GetPluginResponse {
         }
     }
 }
-impl ProtobufSerializable<GetPluginResponse> for GetPluginResponse {
+impl ProtobufSerializable for GetPluginResponse {
     type ProtobufMessage = proto::GetPluginResponse;
 }
 
@@ -532,7 +528,7 @@ impl From<TearDownPluginRequest> for proto::TearDownPluginRequest {
         }
     }
 }
-impl ProtobufSerializable<TearDownPluginRequest> for TearDownPluginRequest {
+impl ProtobufSerializable for TearDownPluginRequest {
     type ProtobufMessage = proto::TearDownPluginRequest;
 }
 
@@ -558,6 +554,6 @@ impl From<TearDownPluginResponse> for proto::TearDownPluginResponse {
     }
 }
 
-impl ProtobufSerializable<TearDownPluginResponse> for TearDownPluginResponse {
+impl ProtobufSerializable for TearDownPluginResponse {
     type ProtobufMessage = proto::TearDownPluginResponse;
 }
