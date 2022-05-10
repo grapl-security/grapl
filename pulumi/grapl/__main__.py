@@ -528,7 +528,7 @@ def main() -> None:
         )
 
         uid_allocator_postgres = Postgres(
-            name="uid-allocator-queue",
+            name="uid-allocator-db",
             subnet_ids=subnet_ids,
             vpc_id=vpc_id,
             availability_zone=availability_zone,
