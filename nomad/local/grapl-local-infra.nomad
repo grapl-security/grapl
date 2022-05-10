@@ -37,7 +37,7 @@ variable "zookeeper_port" {
 # `pulumi/grapl/__main__.py`; sorry for the duplication :(
 variable plugin_registry_db {
   description = "Connection configuration for the Plugin Registry database"
-  type = object({
+  type        = object({
     username = string
     password = string
     port     = number
@@ -51,7 +51,7 @@ variable plugin_registry_db {
 
 variable plugin_work_queue_db {
   description = "Connection configuration for the Plugin Work Queue database"
-  type = object({
+  type        = object({
     username = string
     password = string
     port     = number
@@ -65,7 +65,7 @@ variable plugin_work_queue_db {
 
 variable organization_management_db {
   description = "Connection configuration for the Organization Management database"
-  type = object({
+  type        = object({
     username = string
     password = string
     port     = number
@@ -79,7 +79,7 @@ variable organization_management_db {
 
 variable uid_allocator_db {
   description = "Connection configuration for the Uid Allocator database"
-  type = object({
+  type        = object({
     username = string
     password = string
     port     = number
@@ -167,7 +167,7 @@ job "grapl-local-infra" {
 
       config {
         # Once we move to Kafka, we can go back to the non-fork.
-        image = "localstack-grapl-fork:${var.image_tag}"
+        image             = "localstack-grapl-fork:${var.image_tag}"
         # Was running into this: https://github.com/localstack/localstack/issues/1349
         memory_hard_limit = 2048
         ports             = ["localstack"]
@@ -192,7 +192,7 @@ job "grapl-local-infra" {
           type    = "script"
           name    = "check_s3_ls"
           command = "aws"
-          args = [
+          args    = [
             "--endpoint-url=http://localhost:${var.localstack_port}",
             "s3",
             "ls"
@@ -288,7 +288,7 @@ job "grapl-local-infra" {
           type    = "script"
           name    = "check_kafka"
           command = "nc"
-          args = [
+          args    = [
             "-v", # verbose
             "-z", # "zero I/O mode" - used for scanning
             "localhost",
@@ -337,7 +337,7 @@ job "grapl-local-infra" {
           type    = "script"
           name    = "check_zookeeper"
           command = "/bin/bash"
-          args = [
+          args    = [
             "-o", "errexit", "-o", "nounset", "-o", "pipefail",
             "-c",
             "echo ruok | nc -w 2 localhost ${var.zookeeper_port} | grep imok || exit 2",
@@ -459,7 +459,7 @@ job "grapl-local-infra" {
         #This is an alpine-based dnsmasq container
         image = "4km3/dnsmasq:2.85-r2"
         ports = ["dns"]
-        args = [
+        args  = [
           # Send all queries for .consul to the NOMAD_IP
           "--server", "/consul/${NOMAD_IP_dns}#8600",
           # log to standard out
@@ -582,5 +582,41 @@ job "grapl-local-infra" {
         }
       }
     }
+
+    group "scylla" {
+      network {
+        mode = "bridge"
+        port "internal_node_rpc_1" {
+          to = 7000
+        }
+        port "internal_node_rpc_2" {
+          to = 7001
+        }
+        port "cql" {
+          static = 9042
+          to     = 9042
+        }
+        port "thrift" {
+          static = 9160
+          to     = 9160
+        }
+        port "rest" {
+          static = 10000
+          to     = 10000
+        }
+      }
+
+      task "scylla" {
+        driver = "docker"
+
+        config {
+          image = "scylladb-ext:${var.image_tag}"
+          ports = ["internal_node_rpc_1", "internal_node_rpc_2", "cql", "thrift", "rest"]
+        }
+
+        service {
+          name = "scylla"
+        }
+      }
+    }
   }
-}
