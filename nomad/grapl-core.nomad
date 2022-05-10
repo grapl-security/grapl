@@ -1424,6 +1424,11 @@ job "grapl-core" {
         OTEL_EXPORTER_JAEGER_AGENT_HOST  = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT  = local.tracing_jaeger_endpoint_port
       }
+
+      resources {
+        # Probably too much. Let's figure out buffered writes to s3
+        memory = 1024
+      }
     }
 
     service {
