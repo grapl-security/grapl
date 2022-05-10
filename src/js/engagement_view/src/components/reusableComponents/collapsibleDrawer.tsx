@@ -91,7 +91,11 @@ export default function CollapsibleNavDrawer() {
                             )}
                         </IconButton>
                         <Icon>
-                            <img className={classes.logoImage} src={Img} />
+                            <img
+                                className={classes.logoImage}
+                                src={Img}
+                                alt="Grapl Logo"
+                            />
                         </Icon>
                     </div>
                 </DrawerHeader>

@@ -39,7 +39,11 @@ export const NavigationDrawer = () => {
             <DrawerHeader>
                 <div>
                     <Icon>
-                        <img className={classes.logoImage} src={Img} />
+                        <img
+                            className={classes.logoImage}
+                            src={Img}
+                            alt={"Grapl Logo"}
+                        />
                     </Icon>
                 </div>
             </DrawerHeader>

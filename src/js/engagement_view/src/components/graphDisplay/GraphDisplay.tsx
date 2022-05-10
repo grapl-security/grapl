@@ -168,6 +168,7 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
 
     //We only want to rerender when the id of a node changes, but we don't want to update based on any of its other attributes
     let clickedNodeKey = null;
+
     if (clickedNode !== null) {
         clickedNodeKey = clickedNode.id;
     }
@@ -230,7 +231,7 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
             ctx.fillText(label, node.x, node.y);
             ctx.restore();
         },
-        [data.nodes.length, clickedNodeKey, hoverNodeKey]
+        [clickedNode, data, hoverNode]
     );
 
     const linkStyling = (link: any, ctx: any) => {
