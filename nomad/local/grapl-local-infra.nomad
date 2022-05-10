@@ -526,4 +526,41 @@ job "grapl-local-infra" {
       }
     }
   }
+
+  group "scylla" {
+    network {
+      mode = "bridge"
+      port "internal_node_rpc_1" {
+        to = 7000
+      }
+      port "internal_node_rpc_2" {
+        to = 7001
+      }
+      port "cql" {
+        static = 9042
+        to     = 9042
+      }
+      port "thrift" {
+        static = 9160
+        to     = 9160
+      }
+      port "rest" {
+        static = 10000
+        to     = 10000
+      }
+    }
+
+    task "scylla" {
+      driver = "docker"
+
+      config {
+        image = "scylladb-ext:${var.image_tag}"
+        ports = ["internal_node_rpc_1", "internal_node_rpc_2", "cql", "thrift", "rest"]
+      }
+
+      service {
+        name = "scylla"
+      }
+    }
+  }
 }
