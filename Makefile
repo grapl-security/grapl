@@ -43,7 +43,6 @@ DOCKER_BUILDX_BAKE_HCL := docker buildx bake --file=docker-bake.hcl $(buildx_bui
 
 COMPOSE_PROJECT_INTEGRATION_TESTS := grapl-integration_tests
 COMPOSE_PROJECT_INTEGRATION_TESTS_NEW := grapl-integration_tests_new
-COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
 
 # All the services defined in the docker-compose.check.yml file are
 # run with the same general arguments; just supply the service name to
@@ -123,12 +122,15 @@ help: ## Print this help
 	@printf -- '  ${FMT_PURPLE}KEEP_TEST_ENV=1${FMT_END} make test-integration\n'
 	@printf -- '    to keep the test environment around after a test suite.\n'
 	@printf -- '\n'
+<<<<<<< HEAD
 	@printf -- '  ${FMT_PURPLE}DEBUG_SERVICES${FMT_END}="graphql_endpoint grapl_e2e_tests" make test-e2e\n'
 	@printf -- '    to launch the VSCode Debugger (see ${VSC_DEBUGGER_DOCS_LINK}).\n'
 	@printf -- '\n'
 	@printf -- '  ${FMT_PURPLE}WITH_PULUMI_TRACING=1${FMT_END} makeup \n'
 	@printf -- '    to send pulumi traces to Jaeger (see docs/development/debugging.md).\n'
 	@printf -- '\n'
+=======
+>>>>>>> b601d1fe (remove e2e-tests)
 	@printf -- '  ${FMT_PURPLE}WITH_TRACING=1${FMT_END} make build-local-infrastructure \n'
 	@printf -- '    to send docker build traces to Jaeger (see docs/development/debugging.md).\n'
 	@printf -- '\n'
@@ -164,14 +166,6 @@ build-service-pex-files: ## Build all PEX files needed by Grapl SaaS services
 	@echo "--- Building Grapl service PEX files"
 	./pants --tag="service-pex" package ::
 
-.PHONY: build-e2e-pex-files
-build-e2e-pex-files:
-# Any PEX tagged with `e2e-test-pex` is required for our image. This
-# seems like the most straightforward way of capturing these
-# dependencies at the moment.
-	@echo "--- Building e2e PEX files"
-	./pants --tag="e2e-test-pex" package ::
-
 .PHONY: build-engagement-view
 build-engagement-view: ## Build website assets to include in grapl-web-ui
 	@echo "--- Building the engagement view"
@@ -198,17 +192,12 @@ build-grapl-service-prerequisites: build-engagement-view
 # target!
 .PHONY: build-image-prerequisites
 build-image-prerequisites: ## Build all dependencies that must be copied into our images that we push to our registry
-build-image-prerequisites: build-grapl-service-prerequisites build-e2e-pex-files
+build-image-prerequisites: build-grapl-service-prerequisites
 
 .PHONY: build-local-infrastructure
 build-local-infrastructure: build-grapl-service-prerequisites
 	@echo "--- Building the Grapl SaaS service images and local-only images"
 	$(DOCKER_BUILDX_BAKE_HCL) local-infrastructure
-
-.PHONY: build-test-e2e
-build-test-e2e: build-e2e-pex-files
-	@echo "--- Building e2e testing image"
-	$(DOCKER_BUILDX_BAKE_HCL) e2e-tests
 
 .PHONY: build-test-integration
 build-test-integration:
@@ -322,13 +311,6 @@ test-integration-new: build-test-integration-new
 test-integration-new: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS_NEW)
 test-integration-new: ## Build and run "new" integration tests
 	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh integration-tests-new 9"
-
-.PHONY: test-e2e
-test-e2e: build-local-infrastructure
-test-e2e: build-test-e2e
-test-e2e: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_E2E_TESTS)
-test-e2e: ## Build and run e2e tests
-	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh e2e-tests 6"
 
 # This target is not intended to be used directly from the command line.
 # Think of it as a Context Manager that:
@@ -498,9 +480,8 @@ down: ## docker compose down - both stops and removes the containers
 	# about. This must be the network that is used in Localstack's
 	# LAMBDA_DOCKER_NETWORK environment variable.
 	$(MAKE) stop-nomad-detach
-	docker compose $(EVERY_COMPOSE_FILE) down --timeout=0
-	@docker compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
-	@docker compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
+	docker-compose $(EVERY_COMPOSE_FILE) down --timeout=0
+	@docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
 
 .PHONY: stop
 stop: ## docker compose stop - stops (but preserves) the containers
