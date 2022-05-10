@@ -63,10 +63,10 @@ impl<'a> ProcessTerminatedEventData<'a> {
 
         while let Some(token) = tokenizer.next() {
             match token? {
-                Token::ElementStart { local, .. } => match local.as_str() {
+                Token::ElementStart { local, span, .. } => match local.as_str() {
                     "Data" => {
-                        let name = util::get_name_attribute!(tokenizer);
-                        let value = util::next_text_str_span!(tokenizer);
+                        let (name, value) = util::get_data_name_value(tokenizer, span.start())?;
+                        let value = util::unwrap_or_continue!(value);
 
                         match name {
                             "RuleName" => rule_name = Some(util::unescape_xml(&value)?),
@@ -141,7 +141,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parseprocess_terminated_event() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    fn parse_process_terminated_event() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let xml = r#"
         <EventData>
             <Data Name="RuleName">rule_name</Data>

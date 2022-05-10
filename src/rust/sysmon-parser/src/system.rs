@@ -135,7 +135,7 @@ impl<'a> System<'a> {
 
         while let Some(token) = tokenizer.next() {
             match token? {
-                Token::ElementStart { local, .. } => {
+                Token::ElementStart { local, span, .. } => {
                     match local.as_str() {
                         "Provider" => {
                             let mut name: Option<Cow<str>> = None;
@@ -164,27 +164,27 @@ impl<'a> System<'a> {
                             })
                         }
                         "EventID" => {
-                            let value = util::next_text_str_span!(tokenizer);
+                            let value = util::get_text(tokenizer, span.start())?;
                             event_id = Some(event_id::EventId::from_str(value.as_str())?);
                         }
                         "Version" => {
-                            let value = util::next_text_str_span!(tokenizer);
+                            let value = util::get_text(tokenizer, span.start())?;
                             version = Some(util::parse_int::<u8>(&value)?);
                         }
                         "Level" => {
-                            let value = util::next_text_str_span!(tokenizer);
+                            let value = util::get_text(tokenizer, span.start())?;
                             level = Some(util::parse_int::<u8>(&value)?);
                         }
                         "Task" => {
-                            let value = util::next_text_str_span!(tokenizer);
+                            let value = util::get_text(tokenizer, span.start())?;
                             task = Some(util::parse_int::<u16>(&value)?);
                         }
                         "Opcode" => {
-                            let value = util::next_text_str_span!(tokenizer);
+                            let value = util::get_text(tokenizer, span.start())?;
                             opcode = Some(util::parse_int::<u8>(&value)?);
                         }
                         "Keywords" => {
-                            let value = util::next_text_str_span!(tokenizer);
+                            let value = util::get_text(tokenizer, span.start())?;
                             keywords = Some(util::from_zero_or_hex_str(&value)?);
                         }
                         "TimeCreated" => {
@@ -209,7 +209,7 @@ impl<'a> System<'a> {
                             time_created = Some(time_created::TimeCreated { system_time })
                         }
                         "EventRecordID" => {
-                            let value = util::next_text_str_span!(tokenizer);
+                            let value = util::get_text(tokenizer, span.start())?;
 
                             event_record_id = Some(util::parse_int::<u64>(&value)?);
                         }
@@ -295,11 +295,11 @@ impl<'a> System<'a> {
                             })
                         }
                         "Channel" => {
-                            let value = util::next_text_str_span!(tokenizer);
+                            let value = util::get_text(tokenizer, span.start())?;
                             channel = Some(util::unescape_xml(&value)?);
                         }
                         "Computer" => {
-                            let value = util::next_text_str_span!(tokenizer);
+                            let value = util::get_text(tokenizer, span.start())?;
                             computer = Some(util::unescape_xml(&value)?);
                         }
                         "Security" => {

@@ -45,6 +45,11 @@ pub enum Error {
         position: usize,
         source: uuid::Error,
     },
+    #[error("unable to parse Data element at position `{position}`: {message}")]
+    ParseEventDataXML {
+        message: &'static str,
+        position: usize,
+    },
     // these errors are useful just as they are
     #[error(transparent)]
     XmlError(#[from] xmlparser::Error),
