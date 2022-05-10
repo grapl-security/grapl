@@ -74,7 +74,7 @@ export const lensTable = (
                                     score={lens.score}
                                     setLens={setLens}
                                     selectedId={selectedIdState}
-                                    setLensTableState={setSelectedIdState}
+                                    setSelectedLens={setSelectedIdState}
                                 />
                             );
                         })}

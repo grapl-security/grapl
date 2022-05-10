@@ -15,7 +15,7 @@ export function SelectLens(props: SelectLensProps) {
             hover
             key={props.uid}
             onClick={() => {
-                props.setLensTableState(props.uid);
+                props.setSelectedLens(props.uid);
                 props.setLens(props.lens);
             }}
             selected={props.selectedId === props.uid}
