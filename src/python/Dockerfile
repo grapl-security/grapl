@@ -44,32 +44,6 @@ FROM grapl-python-base AS provisioner-deploy
 COPY --from=dist-ctx provisioner.pex .
 CMD [":"]
 
-# e2e tests
-################################################################################
-FROM grapl-python-base AS e2e-tests
-
-# Copy in the contents of `etc` in order to upload them during e2e tests
-RUN mkdir -p /home/grapl/etc
-# Named context support https://github.com/hadolint/hadolint/issues/830
-# hadolint ignore=DL3022
-COPY --chown=grapl --from=etc-ctx local_grapl etc/local_grapl
-# Named context support https://github.com/hadolint/hadolint/issues/830
-# hadolint ignore=DL3022
-COPY --chown=grapl --from=etc-ctx sample_data/ etc/sample_data
-
-# Copy in `graplctl`, which does the actual uploading during e2e
-RUN mkdir -p /home/grapl/bin
-# Named context support https://github.com/hadolint/hadolint/issues/830
-# hadolint ignore=DL3022
-COPY --chown=grapl --from=dist-ctx src.python.graplctl.graplctl/graplctl.pex /home/grapl/bin/graplctl
-
-# Named context support https://github.com/hadolint/hadolint/issues/830
-# hadolint ignore=DL3022
-COPY --chown=grapl --from=dist-ctx e2e-tests.pex .
-CMD ["./e2e-tests.pex"]
-
-ENV PATH=/home/grapl/bin:$PATH
-
 # integration-tests
 ################################################################################
 FROM grapl-python-base AS integration-tests

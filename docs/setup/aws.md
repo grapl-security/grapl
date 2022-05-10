@@ -142,14 +142,6 @@ To upload the test data, run the following `graplctl` command:
 This will send the test dataset to the appropriate location in S3, which will
 kick off the Grapl data pipeline.
 
-### Execute the end-to-end tests
-
-To deploy end-to-end tests to a Nomad cluster running on AWS, see
-[pulumi/integration_tests/README.md].
-
-Then, using the Nomad UI at `localhost:4646` (courtesy of SSM Port Forwarding),
-kick off the `e2e-tests` parameterized batch job.
-
 ### Logging in to the Grapl UI with the test user
 
 You may use the test user to log into Grapl and interact with the UI. The test

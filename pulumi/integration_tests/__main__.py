@@ -18,22 +18,6 @@ from infra.path import path_from_root
 import pulumi
 
 
-def _e2e_container_images(
-    artifacts: ArtifactGetter,
-) -> Mapping[str, DockerImageId]:
-    """
-    Build a map of {task name -> docker image identifier}.
-    """
-    builder = DockerImageIdBuilder(
-        container_repository=config.container_repository(),
-        artifacts=artifacts,
-    )
-
-    return {
-        "e2e-tests": builder.build_with_tag("e2e-tests"),
-    }
-
-
 def _integration_container_images(
     artifacts: ArtifactGetter,
 ) -> Mapping[str, DockerImageId]:
@@ -94,34 +78,6 @@ def main() -> None:
         "kafka",
         confluent_environment_name=pulumi_config.require("confluent-environment-name"),
         create_local_topics=False,
-    )
-
-    e2e_kafka_credentials = kafka.service_credentials(service_name="e2e-test-runner")
-
-    e2e_test_job_vars: NomadVars = {
-        "analyzer_bucket": grapl_stack.analyzer_bucket,
-        "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
-        "aws_region": aws.get_region().name,
-        "container_images": _e2e_container_images(artifacts),
-        "dns_server": config.CONSUL_DNS_IP,
-        # Used by graplctl to determine if it should manual-event or not
-        "stack_name": grapl_stack.upstream_stack_name,
-        "kafka_bootstrap_servers": kafka.bootstrap_servers(),
-        "kafka_sasl_username": e2e_kafka_credentials.apply(lambda c: c.api_key),
-        "kafka_sasl_password": e2e_kafka_credentials.apply(lambda c: c.api_secret),
-        "kafka_consumer_group_name": kafka.consumer_group("e2e-test-runner"),
-        "schema_properties_table_name": grapl_stack.schema_properties_table_name,
-        "sysmon_log_bucket": grapl_stack.sysmon_log_bucket,
-        "schema_table_name": grapl_stack.schema_table_name,
-        "test_user_name": grapl_stack.test_user_name,
-        "test_user_password_secret_id": grapl_stack.test_user_password_secret_id,
-    }
-
-    e2e_tests = NomadJob(
-        "e2e-tests",
-        jobspec=path_from_root("nomad/e2e-tests.nomad").resolve(),
-        vars=e2e_test_job_vars,
-        opts=pulumi.ResourceOptions(provider=nomad_provider),
     )
 
     integration_tests_kafka_credentials = kafka.service_credentials("integration-tests")

@@ -4,5 +4,4 @@ python_sources(
 
 pex_binary(
     entry_point="cli.py:main",
-    tags=["e2e-test-pex"],
 )
