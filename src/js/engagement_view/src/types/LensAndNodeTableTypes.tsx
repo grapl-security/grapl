@@ -7,7 +7,7 @@ export type SelectLensProps = {
     lens_type: string;
     setLens: (lens: string) => void;
     selectedId: number;
-    setLensTableState: (selectedIdState: number) => void;
+    setSelectedLens: (selectedIdState: number) => void;
 };
 
 export type NodeDetailsProps = {
