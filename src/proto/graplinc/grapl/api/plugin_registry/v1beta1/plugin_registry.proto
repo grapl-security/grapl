@@ -109,7 +109,7 @@ message GetAnalyzersForTenantResponse {
 // A service that manages the state of plugins
 service PluginRegistryService {
   // create a new plugin
-  rpc CreatePlugin(CreatePluginRequest) returns (CreatePluginResponse);
+  rpc CreatePlugin(stream CreatePluginRequest) returns (CreatePluginResponse);
 
   // retrieve the plugin corresponding to the given plugin_id
   rpc GetPlugin(GetPluginRequest) returns (GetPluginResponse);

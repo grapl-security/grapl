@@ -1,5 +1,8 @@
 use std::fmt::Debug;
 
+use grapl_utils::iter_ext::GraplIterExt;
+use tonic::Streaming;
+
 pub use crate::graplinc::grapl::api::plugin_registry::{
     v1beta1_client::{
         PluginRegistryServiceClient,
@@ -171,6 +174,66 @@ impl From<CreatePluginRequest> for proto::CreatePluginRequest {
 
 impl ProtobufSerializable for CreatePluginRequest {
     type ProtobufMessage = proto::CreatePluginRequest;
+}
+
+impl CreatePluginRequest {
+    // Slightly weird chunking scheme: We chop up messages every 4MB.
+    // (abbreviating CreatePluginRequest as CPReq)
+    //
+    // If we send a plugin-artifact that's 9MB the stream will look like
+    // Some(CPReq{plugin_artifact = Vec<4MB>,           tenant_id=1234, ...})
+    // Some(CPReq{plugin_artifact = Vec<different 4MB>, tenant_id=1234, ...})
+    // Some(CPReq{plugin_artifact = Vec<1MB>,           tenant_id=1234, ...})
+    // None
+    // The other fields are filled out but we only consume the other fields
+    // from the initial message.
+    //
+    // If we send a sub-4MB request the stream will look like
+    // Some(CPReq{plugin_artifact = Vec<1MB>, tenant_id=1234, ...})
+    // None
+
+    pub async fn from_stream(
+        mut stream: Streaming<proto::CreatePluginRequest>,
+    ) -> Result<Self, tonic::Status> {
+        // We'll keep appending bytes to the initial_request.
+        let mut initial_request: CreatePluginRequest = stream
+            .message()
+            .await?
+            .expect("Expected initial message")
+            .try_into()?;
+
+        while let Some(proto_request) = stream.message().await? {
+            let mut native_chunk: CreatePluginRequest = proto_request.try_into()?;
+            initial_request
+                .plugin_artifact
+                .append(&mut native_chunk.plugin_artifact)
+        }
+        Ok(initial_request)
+    }
+
+    pub fn into_stream(
+        self,
+        chunk_size: usize,
+    ) -> impl tonic::IntoStreamingRequest<Message = proto::CreatePluginRequest> {
+        // Each request in the stream will have the same non-artifact fields.
+        // Why? Simplicity of implementation.
+        let base_proto_request = proto::CreatePluginRequest::from(Self {
+            tenant_id: self.tenant_id,
+            display_name: self.display_name,
+            plugin_type: self.plugin_type,
+            plugin_artifact: vec![],
+        });
+        // Split the artifact into 4MB chunks. 4MB chosen arbitrarily.
+        let plugin_artifact_byte_chunks = self.plugin_artifact.into_iter().chunks_owned(chunk_size);
+        // `move` so we can capture base_proto_request
+        let chunked_requests = plugin_artifact_byte_chunks.map(move |byte_chunk| {
+            let mut chunk_proto_request = base_proto_request.clone();
+            chunk_proto_request.plugin_artifact = byte_chunk.to_owned();
+            chunk_proto_request
+        });
+
+        futures::stream::iter(chunked_requests)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]

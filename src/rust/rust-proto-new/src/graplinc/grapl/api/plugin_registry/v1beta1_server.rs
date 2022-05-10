@@ -94,9 +94,22 @@ where
 {
     async fn create_plugin(
         &self,
-        request: Request<proto::CreatePluginRequest>,
+        request: Request<tonic::Streaming<proto::CreatePluginRequest>>,
     ) -> Result<Response<proto::CreatePluginResponse>, tonic::Status> {
-        execute_rpc!(self, request, create_plugin)
+        // Special case: this RPC is client-side streaming.
+        let stream = request.into_inner();
+
+        let native_request = CreatePluginRequest::from_stream(stream).await?;
+
+        let native_response = self
+            .api_server
+            .create_plugin(native_request)
+            .await
+            .map_err(Into::into)?;
+
+        let proto_response = native_response.try_into().map_err(SerDeError::from)?;
+
+        Ok(tonic::Response::new(proto_response))
     }
 
     async fn get_plugin(

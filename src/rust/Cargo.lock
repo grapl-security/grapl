@@ -3995,6 +3995,7 @@ version = "0.1.0"
 dependencies = [
  "bytes",
  "futures",
+ "grapl-utils",
  "proptest",
  "prost 0.10.1",
  "prost-types 0.10.1",

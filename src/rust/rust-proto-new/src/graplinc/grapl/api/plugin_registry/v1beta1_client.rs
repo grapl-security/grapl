@@ -37,10 +37,10 @@ impl PluginRegistryServiceClient {
         &mut self,
         request: native::CreatePluginRequest,
     ) -> Result<native::CreatePluginResponse, PluginRegistryServiceClientError> {
-        let response = self
-            .proto_client
-            .create_plugin(proto::CreatePluginRequest::from(request))
-            .await?;
+        // Special case: this RPC is client-side streaming.
+        let request_stream = request.into_stream(4_000_000);
+
+        let response = self.proto_client.create_plugin(request_stream).await?;
         let response = native::CreatePluginResponse::try_from(response.into_inner())?;
         Ok(response)
     }
