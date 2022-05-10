@@ -138,7 +138,6 @@ group "grapl-services" {
 group "cloudsmith-images" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
-    "e2e-tests",
     "grapl-services",
     "rust-integration-tests-new"
   ]
@@ -212,7 +211,6 @@ group "integration-tests" {
 group "all-tests" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
-    "e2e-tests",
     "integration-tests",
     "rust-integration-tests-new"
   ]
@@ -452,16 +450,6 @@ target "graphql-endpoint" {
 
 # Testing Images
 # ----------------------------------------------------------------------
-
-target "e2e-tests" {
-  inherits = ["_python-base"]
-  target   = "e2e-tests"
-  tags = [
-    # Yes, we push this up to Cloudsmith to run tests against AWS
-    # infrastructure; that's why we use `upstream_aware_tag`.
-    upstream_aware_tag("e2e-tests")
-  ]
-}
 
 target "python-integration-tests" {
   inherits = ["_python-base"]
