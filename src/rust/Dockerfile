@@ -272,6 +272,10 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tests-ap
 # so that it's available to integration test consumers of NomadCli
 COPY --from=build /nomad/nomad /bin
 
+# Grab the example generator so we can deploy it in test_deploy_plugin
+RUN mkdir -p /test-fixtures
+COPY --from=build /outputs/example-generator /test-fixtures
+
 COPY --from=build-test-integration-new /grapl/tests /tests
 
 COPY --chmod=777 <<-"EOF" /run-tests.sh

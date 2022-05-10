@@ -258,7 +258,7 @@ impl TryFrom<proto::GetExecuteAnalyzerResponse> for GetExecuteAnalyzerResponse {
 
         Ok(Self {
             request_id,
-            execution_job: execution_job,
+            execution_job,
         })
     }
 }
@@ -327,7 +327,7 @@ impl TryFrom<proto::GetExecuteGeneratorResponse> for GetExecuteGeneratorResponse
 
         Ok(Self {
             request_id,
-            execution_job: execution_job,
+            execution_job,
         })
     }
 }

@@ -133,6 +133,13 @@ job "integration-tests-new" {
 
         NOMAD_SERVICE_ADDRESS = "${attr.unique.network.ip-address}:4646"
       }
+
+      resources {
+        # We need a lot of memory because we load the 150MB
+        # /test-fixtures/example-generator
+        # into memory
+        memory = 1024
+      }
     }
   }
 }

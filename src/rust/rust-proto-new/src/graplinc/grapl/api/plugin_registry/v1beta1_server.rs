@@ -204,6 +204,7 @@ where
 
         // TODO: add tower tracing, tls_config, concurrency limits
         Ok(Server::builder()
+            .max_frame_size(250_000_000)
             .add_service(health_service)
             .add_service(PluginRegistryServiceProto::new(GrpcApi::new(
                 self.api_server,

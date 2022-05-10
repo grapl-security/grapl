@@ -156,10 +156,7 @@ impl GeneratorClient {
 
         // Sets the CA Certificate against which to verify the server’s TLS certificate.
         let tls_config = if let Some(cert) = &self.certificate {
-            Some(ClientTlsConfig::new(
-                cert.clone(),
-                &resolved_service.domain,
-            ))
+            Some(ClientTlsConfig::new(cert.clone(), &resolved_service.domain))
         } else {
             None
         };
