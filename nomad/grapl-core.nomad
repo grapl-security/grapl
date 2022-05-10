@@ -717,8 +717,9 @@ job "grapl-core" {
 
       env {
         PUBLIC_CERTIFICATE_PEM = ""
-        DNS_RESOLVER_IPS = "${var.dns_server}" # TODO ????
+        DNS_RESOLVER_IPS = var.dns_server
         DNS_RESOLVER_PORT = "${NOMAD_PORT_generator-executor-port}"
+        PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
 
         RUST_LOG                    = var.rust_log
         RUST_BACKTRACE              = local.rust_backtrace

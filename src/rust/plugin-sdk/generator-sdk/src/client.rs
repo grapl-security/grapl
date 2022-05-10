@@ -23,8 +23,8 @@ use rust_proto_new::{
             Status,
         },
         tls::{
-            Certificate, ClientTlsConfig,
-            //ClientTlsConfig,
+            Certificate,
+            ClientTlsConfig,
         },
     },
 };
@@ -62,9 +62,15 @@ impl From<ClientConfig> for GeneratorClient {
     fn from(config: ClientConfig) -> Self {
         let resolver = ConsulConnectResolver::from(config.client_dns_config);
         let certificate = if config.client_cert_config.public_certificate_pem.is_empty() {
-            None 
+            None
         } else {
-            Some(Certificate::from_pem(&config.client_cert_config.public_certificate_pem.as_bytes().to_vec()))
+            Some(Certificate::from_pem(
+                &config
+                    .client_cert_config
+                    .public_certificate_pem
+                    .as_bytes()
+                    .to_vec(),
+            ))
         };
         let clients = ClientCacheBuilder::from(config.client_cache_config).build();
         Self::new(clients, certificate, resolver)
@@ -149,8 +155,11 @@ impl GeneratorClient {
             .await?;
 
         // Sets the CA Certificate against which to verify the server’s TLS certificate.
-        let tls_config = if false {
-            Some(ClientTlsConfig::new(self.certificate.as_ref().expect("cert").clone(), &resolved_service.domain))
+        let tls_config = if let Some(cert) = &self.certificate {
+            Some(ClientTlsConfig::new(
+                cert.clone(),
+                &resolved_service.domain,
+            ))
         } else {
             None
         };
@@ -166,9 +175,7 @@ impl GeneratorClient {
             resolved_service.domain, resolved_service.port,
         );
 
-        let connect_result = GeneratorServiceClient::connect(endpoint, 
-            tls_config
-        ).await;
+        let connect_result = GeneratorServiceClient::connect(endpoint, tls_config).await;
 
         match connect_result {
             Ok(x) => Ok(x),

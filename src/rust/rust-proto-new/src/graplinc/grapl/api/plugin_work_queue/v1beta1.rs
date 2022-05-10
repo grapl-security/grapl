@@ -252,17 +252,13 @@ impl TryFrom<proto::GetExecuteAnalyzerResponse> for GetExecuteAnalyzerResponse {
     fn try_from(value: proto::GetExecuteAnalyzerResponse) -> Result<Self, Self::Error> {
         let request_id = value.request_id;
         let maybe_job = value.maybe_job.ok_or(Self::Error::MissingField(
-            "GetExecuteAnalyzerResponse.execution_job",
+            "GetExecuteAnalyzerResponse.maybe_job",
         ))?;
         let execution_job: Option<ExecutionJob> = maybe_job.try_into()?;
 
-        let execution_job = execution_job.ok_or(Self::Error::MissingField(
-            "GetExecuteAnalyzerResponse.execution_job",
-        ))?;
-
         Ok(Self {
             request_id,
-            execution_job: Some(execution_job),
+            execution_job: execution_job,
         })
     }
 }
@@ -329,13 +325,9 @@ impl TryFrom<proto::GetExecuteGeneratorResponse> for GetExecuteGeneratorResponse
         ))?;
         let execution_job: Option<ExecutionJob> = maybe_job.try_into()?;
 
-        let execution_job = execution_job.ok_or(Self::Error::MissingField(
-            "proto::GetExecuteGeneratorResponse.execution_job",
-        ))?;
-
         Ok(Self {
             request_id,
-            execution_job: Some(execution_job),
+            execution_job: execution_job,
         })
     }
 }
