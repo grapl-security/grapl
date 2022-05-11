@@ -124,10 +124,8 @@ class NomadTask:
             return None
 
     def get_events(self) -> str:
-        if self.parent.status not in ["running", "completed"]:
-            event_list = [event["DisplayMessage"] for event in self.events]
-            return "\n".join(event_list)
-        return ""
+        event_list = [event["DisplayMessage"] for event in self.events]
+        return "\n".join(event_list)
 
 
 JobToAllocDict = Dict[str, List[NomadAllocation]]
