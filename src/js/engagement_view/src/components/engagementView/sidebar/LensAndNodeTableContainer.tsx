@@ -12,8 +12,7 @@ import { ToggleNodeDetailTable } from "./tables/toggleNodeDetailTable";
 export const NodeDetails = ({ node }: NodeDetailsProps) => {
     return (
         <>
-            {" "}
-            <NodeTable node={node} />{" "}
+            <NodeTable node={node} />
         </>
     );
 };
