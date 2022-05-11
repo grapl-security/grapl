@@ -717,12 +717,13 @@ job "grapl-core" {
 
       env {
         PUBLIC_CERTIFICATE_PEM = ""
-        DNS_RESOLVER_IPS = var.dns_server
-        DNS_RESOLVER_PORT = "${NOMAD_PORT_generator-executor-port}"
+        DNS_RESOLVER_IPS       = var.dns_server
+        DNS_RESOLVER_PORT      = "${NOMAD_PORT_generator-executor-port}"
+        # Upstreams
         PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
 
-        RUST_LOG                    = var.rust_log
-        RUST_BACKTRACE              = local.rust_backtrace
+        RUST_LOG                        = var.rust_log
+        RUST_BACKTRACE                  = local.rust_backtrace
         OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
       }
@@ -1427,7 +1428,7 @@ job "grapl-core" {
 
       resources {
         # Probably too much. Let's figure out buffered writes to s3
-        memory = 1024
+        memory = 512
       }
     }
 

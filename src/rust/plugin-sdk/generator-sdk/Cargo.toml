@@ -14,7 +14,11 @@ consul-connect = { path = "../../consul-connect" }
 moka = { version = "0.7", features = ["future"] }
 rust-proto-new = { path = "../../rust-proto-new" }
 serde = { version = "1.0.136", features = ["derive"] }
-clap = { version = "3.0", default_features = false, features = ["std", "env", "derive"] }
+clap = { version = "3.0", default_features = false, features = [
+  "std",
+  "env",
+  "derive"
+] }
 thiserror = "1.0.30"
 tokio = { version = "1.17", features = ["full"] }
 tracing = "0.1.29"

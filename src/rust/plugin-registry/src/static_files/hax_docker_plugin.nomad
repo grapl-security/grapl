@@ -119,6 +119,10 @@ EOF
         PLUGIN_BIN = "/mnt/nomad_task_dir/plugin.bin"
         # Consumed by GeneratorServiceConfig
         PLUGIN_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_plugin-grpc-receiver}"
+
+        # Should we make these eventually customizable?
+        RUST_LOG       = "DEBUG"
+        RUST_BACKTRACE = 1
       }
     }
   }

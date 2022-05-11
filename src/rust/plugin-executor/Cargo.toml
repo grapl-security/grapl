@@ -17,7 +17,11 @@ name = "plugin_executor"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 async-trait = "0.1.51"
-clap = { version = "3.0", default_features = false, features = ["std", "env", "derive"] }
+clap = { version = "3.0", default_features = false, features = [
+  "std",
+  "env",
+  "derive"
+] }
 generator-sdk = { path = "../plugin-sdk/generator-sdk", features = ["client"] }
 grapl-config = { path = "../grapl-config" }
 plugin-work-queue = { path = "../plugin-work-queue" }

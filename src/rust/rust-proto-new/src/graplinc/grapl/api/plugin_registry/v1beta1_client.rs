@@ -37,6 +37,8 @@ impl PluginRegistryServiceClient {
         &mut self,
         request: native::CreatePluginRequest,
     ) -> Result<native::CreatePluginResponse, PluginRegistryServiceClientError> {
+        // Might be nice to add a client-side "business-logic validation" hook
+        // i.e. to error based on .plugin_artifact.len()
         let response = self
             .proto_client
             .create_plugin(proto::CreatePluginRequest::from(request))

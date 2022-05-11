@@ -5,7 +5,11 @@ authors = ["Max Wittek <wimax@graplsecurity.com>"]
 edition = "2021"
 
 [dependencies]
-clap = { version = "3.0", default_features = false, features = ["std", "env", "derive"] }
+clap = { version = "3.0", default_features = false, features = [
+  "std",
+  "env",
+  "derive"
+] }
 thiserror = "1.0.30"
 tokio = { version = "1.17", features = ["full"] }
 tracing = "0.1.29"
