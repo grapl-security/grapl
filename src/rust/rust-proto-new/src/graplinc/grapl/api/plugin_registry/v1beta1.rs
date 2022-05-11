@@ -228,7 +228,7 @@ impl CreatePluginRequest {
         // `move` so we can capture base_proto_request
         let chunked_requests = plugin_artifact_byte_chunks.map(move |byte_chunk| {
             let mut chunk_proto_request = base_proto_request.clone();
-            chunk_proto_request.plugin_artifact = byte_chunk.to_owned();
+            chunk_proto_request.plugin_artifact = byte_chunk;
             chunk_proto_request
         });
 
