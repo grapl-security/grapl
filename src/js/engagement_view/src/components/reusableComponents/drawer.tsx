@@ -3,11 +3,9 @@ import { styled } from "@mui/material/styles";
 
 import Drawer from "@mui/material/Drawer";
 
-import Icon from "@material-ui/core/Icon";
-
 import { useStyles } from "../styles/analyzersAndGeneratorsStyles";
 import "../../index.css";
-import Img from "../../assets/grapl_logo.svg";
+import { GraplLogo } from "./graplLogo";
 import { NavListItems } from "./drawerList";
 
 const drawerWidth = 300;
@@ -38,13 +36,7 @@ export const NavigationDrawer = () => {
         >
             <DrawerHeader>
                 <div>
-                    <Icon>
-                        <img
-                            className={classes.logoImage}
-                            src={Img}
-                            alt={"Grapl Logo"}
-                        />
-                    </Icon>
+                    <GraplLogo></GraplLogo>
                 </div>
             </DrawerHeader>
 

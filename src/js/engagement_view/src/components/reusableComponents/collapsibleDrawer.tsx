@@ -11,8 +11,8 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 
 import { useStyles } from "../styles/analyzersAndGeneratorsStyles";
 import "../../index.css";
-import Img from "../../assets/grapl_logo.svg";
-import Icon from "@material-ui/core/Icon";
+
+import { GraplLogo } from "./graplLogo";
 import { NavListItems } from "./drawerList";
 
 const drawerWidth = 300;
@@ -90,13 +90,7 @@ export default function CollapsibleNavDrawer() {
                                 <ChevronRightIcon />
                             )}
                         </IconButton>
-                        <Icon>
-                            <img
-                                className={classes.logoImage}
-                                src={Img}
-                                alt="Grapl Logo"
-                            />
-                        </Icon>
+                        <GraplLogo></GraplLogo>
                     </div>
                 </DrawerHeader>
                 <Divider />
