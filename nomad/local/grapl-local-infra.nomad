@@ -555,11 +555,34 @@ job "grapl-local-infra" {
 
       config {
         image = "scylladb-ext:${var.image_tag}"
+        args = [
+          # Set up scylla in single-node mode instead of in overprovisioned mode, ie DON'T use all available cpu/memory
+          "--smp", "1"
+        ]
         ports = ["internal_node_rpc_1", "internal_node_rpc_2", "cql", "thrift", "rest"]
       }
 
       service {
         name = "scylla"
+
+        check {
+          type     = "script"
+          name     = "nodestatus_check"
+          # TODO actually confirm that the healthcheck is valid
+          command  = "nodetool"
+          args     = ["status"]
+          interval = "30s"
+          timeout  = "10s"
+
+          check_restart {
+            # Wait up to 4 minutes for scylla to be ready. TODO tune this
+            grace           = "4m"
+            limit           = 3
+            ignore_warnings = true
+          }
+
+        }
+
       }
     }
   }
