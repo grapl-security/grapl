@@ -15,8 +15,8 @@ import { PaginationState } from "types/CustomTypes";
 
 export const lensTable = (
     paginationState: PaginationState,
-    selectedIdState: number,
-    setSelectedIdState: (selectedIdState: number) => void,
+    selectedLensIdState: number,
+    setSelectedLensIdState: (selectedLensIdState: number) => void,
     page: number,
     rowsPerPage: number,
     handleChangePage: (
@@ -73,8 +73,8 @@ export const lensTable = (
                                     lens_type={lens.lens_type}
                                     score={lens.score}
                                     setLens={setLens}
-                                    selectedId={selectedIdState}
-                                    setSelectedLens={setSelectedIdState}
+                                    selectedLensId={selectedLensIdState}
+                                    setSelectedLensId={setSelectedLensIdState}
                                 />
                             );
                         })}

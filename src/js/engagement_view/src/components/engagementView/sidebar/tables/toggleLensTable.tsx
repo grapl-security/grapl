@@ -27,7 +27,7 @@ const defaultToggleLensTableState = (): ToggleLensTableState => {
 
 export function ToggleLensTable({ setLens }: ToggleLensTableProps) {
     const classes = useStyles();
-    const [selectedIdState, setSelectedIdState] = useState(0);
+    const [selectedLensIdState, setSelectedLensIdState] = useState(0);
     const [lensRetrievedState, setLensRetrievedState] = useState(null);
     const [toggleTableState, setToggleTableState] = useState(
         defaultToggleLensTableState()
@@ -103,8 +103,8 @@ export function ToggleLensTable({ setLens }: ToggleLensTableProps) {
                     toggleTableState.toggled &&
                     lensTable(
                         toggleTableState,
-                        selectedIdState,
-                        setSelectedIdState,
+                        selectedLensIdState,
+                        setSelectedLensIdState,
                         pageState,
                         rowsPerPageState,
                         handleChangePage,

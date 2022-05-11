@@ -88,6 +88,7 @@ export const useStyles = makeStyles((theme) =>
         metricCount: {
             color: theme.palette.info.contrastText,
         },
+
     })
 );
 

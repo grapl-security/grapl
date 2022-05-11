@@ -15,10 +15,10 @@ export function SelectLens(props: SelectLensProps) {
             hover
             key={props.uid}
             onClick={() => {
-                props.setSelectedLens(props.uid);
+                props.setSelectedLensId(props.uid);
                 props.setLens(props.lens);
             }}
-            selected={props.selectedId === props.uid}
+            selected={props.selectedLensId === props.uid}
             className={classes.tableRow}
         >
             <TableCell component="th" scope="row" align="left">
