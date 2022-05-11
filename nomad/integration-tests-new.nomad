@@ -51,8 +51,9 @@ variable "integration_tests_kafka_sasl_password" {
   description = "The Confluent Cloud API secret to configure integration test consumers with."
 }
 
-locals {
-  log_level = "DEBUG"
+variable "rust_log" {
+  type        = string
+  description = "Controls the logging behavior of Rust-based services."
 }
 
 job "integration-tests-new" {
@@ -117,10 +118,8 @@ job "integration-tests-new" {
       env {
         AWS_REGION = var.aws_region
 
-        GRAPL_LOG_LEVEL = local.log_level
-
         RUST_BACKTRACE = 1
-        RUST_LOG       = local.log_level
+        RUST_LOG       = var.rust_log
 
         KAFKA_BOOTSTRAP_SERVERS = var.kafka_bootstrap_servers
 
@@ -138,7 +137,7 @@ job "integration-tests-new" {
         # We need a lot of memory because we load the 150MB
         # /test-fixtures/example-generator
         # into memory
-        memory = 1024
+        memory = 512
       }
     }
   }
