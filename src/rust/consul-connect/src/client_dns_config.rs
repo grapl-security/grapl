@@ -12,14 +12,14 @@ use trust_dns_resolver::{
     TokioAsyncResolver,
 };
 
-/// Required due to https://stackoverflow.com/a/50006529
-/// Long story short: StructOpt-with-env + Vec is annoying
+/// Long story short: clap::Parser + Vec is annoying
+/// Workaround inspired by https://stackoverflow.com/a/50006529
 #[derive(Debug)]
 pub struct CommaSeparated<T: FromStr>(Vec<T>);
 impl<T: FromStr> FromStr for CommaSeparated<T> {
     type Err = <T as FromStr>::Err;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let elements: Result<Vec<_>, _> = s.split(",").map(|s| T::from_str(s)).collect();
+        let elements: Result<Vec<_>, _> = s.split(",").map(T::from_str).collect();
         Ok(Self(elements?))
     }
 }
@@ -51,14 +51,11 @@ pub struct ClientDnsConfig {
 
 impl From<ClientDnsConfig> for TokioAsyncResolver {
     fn from(dns_config: ClientDnsConfig) -> TokioAsyncResolver {
+        let CommaSeparated(ips) = dns_config.dns_resolver_ips;
         let consul = ResolverConfig::from_parts(
             None,
             vec![],
-            NameServerConfigGroup::from_ips_clear(
-                &dns_config.dns_resolver_ips.0,
-                dns_config.dns_resolver_port,
-                true,
-            ),
+            NameServerConfigGroup::from_ips_clear(&ips, dns_config.dns_resolver_port, true),
         );
         let opts = ResolverOpts {
             cache_size: dns_config.dns_cache_size,
