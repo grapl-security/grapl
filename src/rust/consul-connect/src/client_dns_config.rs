@@ -29,23 +29,23 @@ impl<T: FromStr> FromStr for CommaSeparated<T> {
 pub struct ClientDnsConfig {
     /// The port to use for DNS resolutino. Note that even if you have multiple
     /// IP addresses they will all resolve via this port
-    #[clap(env)]
+    #[clap(env, long)]
     pub dns_resolver_port: u16,
 
     /// IP addresses to use when resolving plugins
     /// Should almost always be pointed to Consul
-    #[clap(env)]
+    #[clap(env, long)]
     pub dns_resolver_ips: CommaSeparated<std::net::IpAddr>,
 
     /// The number of entries in the dns cache
-    #[clap(env, default_value = "128")]
+    #[clap(env, long, default_value = "128")]
     pub dns_cache_size: usize,
 
     /// If this is set, any positive responses with a TTL lower than this value
     /// will have a TTL of positive_min_ttl instead.
     /// Unit: Seconds
     /// Default: 1
-    #[clap(env, default_value = "1")]
+    #[clap(env, long, default_value = "1")]
     pub positive_min_ttl: u64,
 }
 

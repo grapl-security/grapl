@@ -3,11 +3,11 @@
 pub struct ClientCacheConfig {
     /// The number of concurrent plugin clients to hold
     /// Defaults to 1000
-    #[clap(env, default_value = "1000")]
+    #[clap(env, long, default_value = "1000")]
     pub max_capacity: u64,
     /// Total amount of time a given entry will live in seconds
     /// Default to 2 minutes
-    #[clap(env, default_value = "120")]
+    #[clap(env, long, default_value = "120")]
     pub time_to_live: u64,
 }
 
@@ -17,7 +17,7 @@ pub struct ClientCertConfig {
     // the CA Certificate against which to verify the server’s TLS certificate.
     // TODO: Temporarily providing the ability to use no certs, until vault is
     // set up. Eventually remove Option.
-    #[clap(env)]
+    #[clap(env, long)]
     pub public_certificate_pem: Option<String>,
 }
 
