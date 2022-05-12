@@ -1375,6 +1375,13 @@ job "grapl-core" {
         sidecar_service {
         }
       }
+
+      check {
+        type     = "grpc"
+        port     = "pipeline-ingress-port"
+        interval = "10s"
+        timeout  = "3s"
+      }
     }
   }
 
@@ -1438,6 +1445,13 @@ job "grapl-core" {
         sidecar_service {
         }
       }
+
+      check {
+        type     = "grpc"
+        port     = "plugin-registry-port"
+        interval = "10s"
+        timeout  = "3s"
+      }
     }
   }
 
@@ -1489,6 +1503,13 @@ job "grapl-core" {
       connect {
         sidecar_service {
         }
+      }
+
+      check {
+        type     = "grpc"
+        port     = "plugin-work-queue-port"
+        interval = "10s"
+        timeout  = "3s"
       }
     }
   }
