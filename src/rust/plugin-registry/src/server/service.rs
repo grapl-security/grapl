@@ -32,7 +32,6 @@ use rust_proto_new::{
     },
     protocol::healthcheck::HealthcheckStatus,
 };
-use structopt::StructOpt;
 use tokio::{
     io::AsyncReadExt,
     net::TcpListener,
@@ -56,7 +55,7 @@ use crate::{
     server::deploy_plugin,
 };
 
-#[derive(StructOpt, Debug)]
+#[derive(clap::Parser, Debug)]
 pub struct PluginRegistryConfig {
     #[structopt(flatten)]
     db_config: PluginRegistryDbConfig,
@@ -64,37 +63,41 @@ pub struct PluginRegistryConfig {
     service_config: PluginRegistryServiceConfig,
 }
 
-#[derive(StructOpt, Debug)]
+#[derive(clap::Parser, Debug)]
 pub struct PluginRegistryDbConfig {
-    #[structopt(env)]
+    #[clap(long, env)]
     plugin_registry_db_hostname: String,
-    #[structopt(env)]
+    #[clap(long, env)]
     plugin_registry_db_port: u16,
-    #[structopt(env)]
+    #[clap(long, env)]
     plugin_registry_db_username: String,
-    #[structopt(env)]
+    #[clap(long, env)]
     plugin_registry_db_password: String,
 }
 
-#[derive(StructOpt, Debug)]
+#[derive(clap::Parser, Debug)]
 pub struct PluginRegistryServiceConfig {
-    #[structopt(env)]
+    #[clap(long, env)]
     pub plugin_s3_bucket_aws_account_id: String,
-    #[structopt(env)]
+    #[clap(long, env)]
     pub plugin_s3_bucket_name: String,
-    #[structopt(env)]
+    #[clap(long, env)]
     pub plugin_registry_bind_address: SocketAddr,
-    #[structopt(env)]
+    #[clap(long, env)]
     pub plugin_bootstrap_container_image: String,
-    #[structopt(env)]
+    #[clap(long, env)]
     pub plugin_execution_container_image: String,
-    #[structopt(env = "PLUGIN_REGISTRY_KERNEL_ARTIFACT_URL")]
+    #[clap(long, env = "PLUGIN_REGISTRY_KERNEL_ARTIFACT_URL")]
     pub kernel_artifact_url: String,
-    #[structopt(env = "PLUGIN_REGISTRY_ROOTFS_ARTIFACT_URL")]
+    #[clap(long, env = "PLUGIN_REGISTRY_ROOTFS_ARTIFACT_URL")]
     pub rootfs_artifact_url: String,
-    #[structopt(env = "PLUGIN_REGISTRY_HAX_DOCKER_PLUGIN_RUNTIME_IMAGE")]
+    #[clap(long, env = "PLUGIN_REGISTRY_HAX_DOCKER_PLUGIN_RUNTIME_IMAGE")]
     pub hax_docker_plugin_runtime_image: String,
-    #[structopt(env = "PLUGIN_REGISTRY_ARTIFACT_SIZE_LIMIT_MB", default_value = "250")]
+    #[clap(
+        long,
+        env = "PLUGIN_REGISTRY_ARTIFACT_SIZE_LIMIT_MB",
+        default_value = "250"
+    )]
     pub artifact_size_limit_mb: usize,
 }
 

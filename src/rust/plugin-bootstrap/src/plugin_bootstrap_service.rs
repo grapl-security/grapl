@@ -1,13 +1,13 @@
+use clap::Parser;
 use plugin_bootstrap::{
     server::PluginBootstrapper,
     PluginBootstrapServiceConfig,
 };
-use structopt::StructOpt;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (_env, _guard) = grapl_config::init_grapl_env!();
-    let config = PluginBootstrapServiceConfig::from_args();
+    let config = PluginBootstrapServiceConfig::parse();
     tracing::info!(message="Starting Plugin Bootstrap Service", config=?config);
 
     let plugin_bootstrapper =
