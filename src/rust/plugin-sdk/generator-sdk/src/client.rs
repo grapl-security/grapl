@@ -66,7 +66,7 @@ impl From<ClientConfig> for GeneratorClient {
         let certificate = config
             .client_cert_config
             .public_certificate_pem
-            .and_then(|cert| Some(Certificate::from_pem(&cert.as_bytes().to_vec())));
+            .map(|cert| Certificate::from_pem(&cert.as_bytes().to_vec()));
         let clients = ClientCacheBuilder::from(config.client_cache_config).build();
         Self::new(clients, certificate, resolver)
     }
@@ -155,7 +155,7 @@ impl GeneratorClient {
         let tls_config = self
             .certificate
             .as_ref()
-            .and_then(|cert| Some(ClientTlsConfig::new(cert.clone(), &resolved_service.domain)));
+            .map(|cert| ClientTlsConfig::new(cert.clone(), &resolved_service.domain));
 
         tracing::info!(
             message = "Connecting to plugin",
