@@ -592,8 +592,8 @@ job "grapl-local-infra" {
           timeout  = "10s"
 
           check_restart {
-            # Wait up to 4 minutes for scylla to be ready, ie this is a readiness check
-            grace           = "4m"
+            # Set readiness check since Scylla can take a while to boot up
+            grace           = "1m"
             limit           = 3
             ignore_warnings = true
           }
