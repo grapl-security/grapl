@@ -34,8 +34,10 @@ pub enum PluginRegistryServiceError {
     NomadCliError(#[from] nomad::cli::NomadCliError),
     #[error("NomadJobAllocationError")]
     NomadJobAllocationError,
-    #[error("ArtifactTooLargeError")]
+    #[error("ArtifactTooLargeError {0}")]
     ArtifactTooLargeError(String),
+    // TODO: These errs are meant to be human-readable and are not directly
+    // sent over the wire, so add {0}s to them!
 }
 
 impl From<PluginRegistryServiceError> for Status {
