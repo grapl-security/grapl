@@ -15,8 +15,10 @@ pub struct ClientCacheConfig {
 #[derive(clap::Parser, Debug)]
 pub struct ClientCertConfig {
     // the CA Certificate against which to verify the server’s TLS certificate.
+    // TODO: Temporarily providing the ability to use no certs, until vault is
+    // set up. Eventually remove Option.
     #[clap(env)]
-    pub public_certificate_pem: String,
+    pub public_certificate_pem: Option<String>,
 }
 
 #[derive(clap::Parser, Debug)]

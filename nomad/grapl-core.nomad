@@ -716,9 +716,8 @@ job "grapl-core" {
       }
 
       env {
-        PUBLIC_CERTIFICATE_PEM = ""
-        DNS_RESOLVER_IPS       = var.dns_server
-        DNS_RESOLVER_PORT      = "${NOMAD_PORT_generator-executor-port}"
+        DNS_RESOLVER_IPS  = var.dns_server
+        DNS_RESOLVER_PORT = "${NOMAD_PORT_generator-executor-port}"
         # Upstreams
         PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
 

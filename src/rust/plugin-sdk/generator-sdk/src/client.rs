@@ -53,6 +53,8 @@ pub struct GeneratorClient {
     /// A bounded cache mapping a plugin ID to a client connected to that plugin
     clients: ClientCache,
     /// A public certificate to validate a plugin's domain
+    // TODO: Temporarily providing the ability to use no certs, until vault is
+    // set up. Eventually remove Option.
     certificate: Option<Certificate>,
     /// An in-process DNS resolver used for plugin service discovery
     resolver: ConsulConnectResolver,
@@ -61,17 +63,10 @@ pub struct GeneratorClient {
 impl From<ClientConfig> for GeneratorClient {
     fn from(config: ClientConfig) -> Self {
         let resolver = ConsulConnectResolver::from(config.client_dns_config);
-        let certificate = if config.client_cert_config.public_certificate_pem.is_empty() {
-            None
-        } else {
-            Some(Certificate::from_pem(
-                &config
-                    .client_cert_config
-                    .public_certificate_pem
-                    .as_bytes()
-                    .to_vec(),
-            ))
-        };
+        let certificate = config
+            .client_cert_config
+            .public_certificate_pem
+            .and_then(|cert| Some(Certificate::from_pem(&cert.as_bytes().to_vec())));
         let clients = ClientCacheBuilder::from(config.client_cache_config).build();
         Self::new(clients, certificate, resolver)
     }
@@ -80,6 +75,8 @@ impl From<ClientConfig> for GeneratorClient {
 impl GeneratorClient {
     pub fn new(
         clients: ClientCache,
+        // TODO: Temporarily providing the ability to use no certs, until vault is
+        // set up. Eventually remove Option.
         certificate: Option<Certificate>,
         resolver: ConsulConnectResolver,
     ) -> Self {
@@ -155,11 +152,10 @@ impl GeneratorClient {
             .await?;
 
         // Sets the CA Certificate against which to verify the server’s TLS certificate.
-        let tls_config = if let Some(cert) = &self.certificate {
-            Some(ClientTlsConfig::new(cert.clone(), &resolved_service.domain))
-        } else {
-            None
-        };
+        let tls_config = self
+            .certificate
+            .as_ref()
+            .and_then(|cert| Some(ClientTlsConfig::new(cert.clone(), &resolved_service.domain)));
 
         tracing::info!(
             message = "Connecting to plugin",
