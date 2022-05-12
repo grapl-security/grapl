@@ -78,10 +78,10 @@ job "grapl-plugin" {
       }
 
       check {
-        type         = "grpc"
-        port         = "pipeline-ingress-port"
-        interval     = "10s"
-        timeout      = "3s"
+        type     = "grpc"
+        port     = "pipeline-ingress-port"
+        interval = "10s"
+        timeout  = "3s"
       }
     }
 
