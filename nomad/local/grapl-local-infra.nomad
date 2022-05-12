@@ -542,10 +542,10 @@ job "grapl-local-infra" {
         to     = 9042
       }
       port "thrift" {
-        to     = 9160
+        to = 9160
       }
       port "rest" {
-        to     = 10000
+        to = 10000
       }
     }
 
