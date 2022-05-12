@@ -537,15 +537,14 @@ job "grapl-local-infra" {
         to = 7001
       }
       port "cql" {
+        # Let devs connect via localhost:9042 from the host vm
         static = 9042
         to     = 9042
       }
       port "thrift" {
-        static = 9160
         to     = 9160
       }
       port "rest" {
-        static = 10000
         to     = 10000
       }
     }
@@ -560,15 +559,33 @@ job "grapl-local-infra" {
           "--smp", "1"
         ]
         ports = ["internal_node_rpc_1", "internal_node_rpc_2", "cql", "thrift", "rest"]
+
+        # Configure a data volume for scylla. See the "Configuring data volume for storage" section in
+        # https://hub.docker.com/r/scylladb/scylla/
+        mount {
+          type     = "volume"
+          target   = "/var/lib/scylla"
+          source   = "scylla-data"
+          readonly = false
+          volume_options {
+            # Upon initial creation of this volume, *do* copy in the current
+            # contents in the Docker image.
+            no_copy = false
+            labels {
+              maintainer = "Scylla"
+            }
+          }
+        }
+
       }
 
       service {
         name = "scylla"
 
         check {
-          type     = "script"
-          name     = "nodestatus_check"
-          # TODO actually confirm that the healthcheck is valid
+          type = "script"
+          name = "nodestatus_check"
+          # TODO actually confirm that the healthcheck is valid. Really we should be grepping for 'UN' in the response
           command  = "nodetool"
           args     = ["status"]
           interval = "30s"
