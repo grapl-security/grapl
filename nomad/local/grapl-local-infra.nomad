@@ -585,14 +585,14 @@ job "grapl-local-infra" {
         check {
           type = "script"
           name = "nodestatus_check"
-          # TODO actually confirm that the healthcheck is valid. Really we should be grepping for 'UN' in the response
-          command  = "nodetool"
-          args     = ["status"]
+          # We use bin/bash so we can pipe to grep
+          command  = "bin/bash"
+          args     = ["nodetool", "status", "|", "grep", "'UN'"]
           interval = "30s"
           timeout  = "10s"
 
           check_restart {
-            # Wait up to 4 minutes for scylla to be ready. TODO tune this
+            # Wait up to 4 minutes for scylla to be ready, ie this is a readiness check
             grace           = "4m"
             limit           = 3
             ignore_warnings = true
