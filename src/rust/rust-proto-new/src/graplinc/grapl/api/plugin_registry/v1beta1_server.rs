@@ -213,7 +213,6 @@ where
                     extensions = ?request.extensions(),
                 )
             })
-            .max_frame_size(4_000_000)
             .add_service(health_service)
             .add_service(PluginRegistryServiceProto::new(GrpcApi::new(
                 self.api_server,
