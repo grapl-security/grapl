@@ -8,6 +8,7 @@ use rusoto_s3::{
     GetObjectRequest,
     PutObjectRequest,
     S3Client,
+    StreamingBody,
     S3,
 };
 use rust_proto_new::{
@@ -29,10 +30,7 @@ use rust_proto_new::{
         TearDownPluginRequest,
         TearDownPluginResponse,
     },
-    protocol::{
-        healthcheck::HealthcheckStatus,
-        status::Status,
-    },
+    protocol::healthcheck::HealthcheckStatus,
 };
 use structopt::StructOpt;
 use tokio::{
@@ -43,7 +41,10 @@ use tonic::async_trait;
 
 use crate::{
     db::{
-        client::PluginRegistryDbClient,
+        client::{
+            DbCreatePluginArgs,
+            PluginRegistryDbClient,
+        },
         models::PluginRow,
         serde::try_from,
     },
@@ -55,34 +56,6 @@ use crate::{
     server::deploy_plugin,
 };
 
-impl From<PluginRegistryServiceError> for Status {
-    /**
-     * Convert useful internal errors into tonic::Status that can be
-     * safely sent over the wire. (Don't include any specific IDs etc)
-     */
-    fn from(err: PluginRegistryServiceError) -> Self {
-        type Error = PluginRegistryServiceError;
-        match err {
-            Error::SqlxError(sqlx::Error::Configuration(_)) => {
-                Status::internal("Invalid SQL configuration")
-            }
-            Error::SqlxError(_) => Status::internal("Failed to operate on postgres"),
-            Error::PutObjectError(_) => Status::internal("Failed to put s3 object"),
-            Error::GetObjectError(_) => Status::internal("Failed to get s3 object"),
-            Error::EmptyObject => Status::internal("S3 Object was unexpectedly empty"),
-            Error::IoError(_) => Status::internal("IoError"),
-            Error::SerDeError(_) => Status::invalid_argument("Unable to deserialize message"),
-            Error::DatabaseSerDeError(_) => {
-                Status::invalid_argument("Unable to deserialize message from database")
-            }
-            Error::NomadClientError(_) => Status::internal("Failed RPC with Nomad"),
-            Error::NomadCliError(_) => Status::internal("Failed using Nomad CLI"),
-            Error::NomadJobAllocationError => {
-                Status::internal("Unable to allocate Nomad job - it may be out of resources.")
-            }
-        }
-    }
-}
 #[derive(StructOpt, Debug)]
 pub struct PluginRegistryConfig {
     #[structopt(flatten)]
@@ -121,6 +94,8 @@ pub struct PluginRegistryServiceConfig {
     pub rootfs_artifact_url: String,
     #[structopt(env = "PLUGIN_REGISTRY_HAX_DOCKER_PLUGIN_RUNTIME_IMAGE")]
     pub hax_docker_plugin_runtime_image: String,
+    #[structopt(env = "PLUGIN_REGISTRY_ARTIFACT_SIZE_LIMIT_MB", default_value = "250")]
+    pub artifact_size_limit_mb: usize,
 }
 
 pub struct PluginRegistry {
@@ -129,6 +104,19 @@ pub struct PluginRegistry {
     nomad_cli: NomadCli,
     s3: S3Client,
     config: PluginRegistryServiceConfig,
+}
+
+impl PluginRegistry {
+    fn ensure_artifact_size_limit(&self, bytes: &[u8]) -> Result<(), PluginRegistryServiceError> {
+        let limit_mb = &self.config.artifact_size_limit_mb;
+        if bytes.len() > (limit_mb * 1024 * 1024) {
+            Err(PluginRegistryServiceError::ArtifactTooLargeError(format!(
+                "Artifact exceeds {limit_mb}MB"
+            )))
+        } else {
+            Ok(())
+        }
+    }
 }
 
 #[async_trait]
@@ -140,14 +128,23 @@ impl PluginRegistryApi for PluginRegistry {
         &self,
         request: CreatePluginRequest,
     ) -> Result<CreatePluginResponse, Self::Error> {
-        let plugin_id = generate_plugin_id(&request.tenant_id, request.plugin_artifact.as_slice());
+        let CreatePluginRequest {
+            tenant_id,
+            plugin_artifact, // This could be huge, so don't clone it!
+            display_name,
+            plugin_type,
+        } = request;
 
-        let s3_key = generate_artifact_s3_key(request.plugin_type, &request.tenant_id, &plugin_id);
+        self.ensure_artifact_size_limit(&plugin_artifact)?;
+
+        let plugin_id = generate_plugin_id(&tenant_id, plugin_artifact.as_slice());
+
+        let s3_key = generate_artifact_s3_key(plugin_type, &tenant_id, &plugin_id);
 
         self.s3
             .put_object(PutObjectRequest {
-                content_length: Some(request.plugin_artifact.len() as i64),
-                body: Some(request.plugin_artifact.clone().into()),
+                content_length: Some(plugin_artifact.len() as i64),
+                body: Some(StreamingBody::from(plugin_artifact)),
                 bucket: self.config.plugin_s3_bucket_name.clone(),
                 key: s3_key.clone(),
                 expected_bucket_owner: Some(self.config.plugin_s3_bucket_aws_account_id.clone()),
@@ -156,7 +153,15 @@ impl PluginRegistryApi for PluginRegistry {
             .await?;
 
         self.db_client
-            .create_plugin(&plugin_id, &request, &s3_key)
+            .create_plugin(
+                &plugin_id,
+                DbCreatePluginArgs {
+                    tenant_id,
+                    display_name,
+                    plugin_type,
+                },
+                &s3_key,
+            )
             .await?;
 
         let response = CreatePluginResponse { plugin_id };

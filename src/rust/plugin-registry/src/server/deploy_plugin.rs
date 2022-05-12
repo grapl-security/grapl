@@ -172,6 +172,7 @@ mod tests {
             plugin_s3_bucket_aws_account_id: Default::default(),
             plugin_s3_bucket_name: Default::default(),
             rootfs_artifact_url: Default::default(),
+            artifact_size_limit_mb: Default::default(),
         }
     }
     /// This is used to keep test coverage on the eventually-desirable-but-
