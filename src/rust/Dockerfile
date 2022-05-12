@@ -272,6 +272,10 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tests-ap
 # so that it's available to integration test consumers of NomadCli
 COPY --from=build /nomad/nomad /bin
 
+# Grab the example generator so we can deploy it in test_deploy_plugin
+RUN mkdir -p /test-fixtures
+COPY --from=build /outputs/example-generator /test-fixtures
+
 COPY --from=build-test-integration-new /grapl/tests /tests
 
 COPY --chmod=777 <<-"EOF" /run-tests.sh
@@ -329,6 +333,7 @@ USER nonroot
 FROM scratch AS export-rust-build-artifacts-to-dist
 
 COPY --from=build /outputs/plugin-bootstrap-init /plugin-bootstrap-init/
+COPY --from=build /outputs/example-generator /
 # Just to clarify: we're copying these .service files from the repository,
 # through Docker, and then back out to the dist directory in the repository.
 COPY rust/plugin-bootstrap/grapl-plugin-bootstrap-init.service /plugin-bootstrap-init/

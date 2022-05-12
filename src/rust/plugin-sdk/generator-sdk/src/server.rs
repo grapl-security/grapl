@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use clap::Parser;
 use rust_proto_new::{
     graplinc::grapl::api::plugin_sdk::generators::v1beta1::server::{
         GeneratorApi,
@@ -10,10 +11,9 @@ use rust_proto_new::{
         tls::Identity,
     },
 };
-use structopt::StructOpt;
 use tokio::net::TcpListener;
 
-#[derive(StructOpt, Debug)]
+#[derive(clap::Parser, Debug)]
 pub struct GeneratorServiceConfig {
     #[structopt(env = "PLUGIN_BIND_ADDRESS")]
     pub bind_address: std::net::SocketAddr,
@@ -22,7 +22,7 @@ impl GeneratorServiceConfig {
     /// An alias for Structopt::from_args, so that consumers don't need to
     /// declare a dependency on structopt
     pub fn from_env_vars() -> Self {
-        Self::from_args()
+        Self::parse()
     }
 }
 

@@ -6,7 +6,7 @@ import os
 from typing import Mapping, Optional, cast
 
 import pulumi_aws as aws
-from infra import config
+from infra import config, log_levels
 from infra.artifacts import ArtifactGetter
 from infra.autotag import register_auto_tags
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
@@ -131,6 +131,7 @@ def main() -> None:
         "aws_env_vars_for_local": grapl_stack.aws_env_vars_for_local,
         "aws_region": aws.get_region().name,
         "container_images": _integration_new_container_images(artifacts),
+        "rust_log": log_levels.RUST_LOG_LEVELS,
         "integration_tests_kafka_consumer_group_name": kafka.consumer_group(
             "integration-tests"
         ),
