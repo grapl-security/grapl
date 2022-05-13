@@ -559,10 +559,11 @@ pub mod pipeline_ingress {
 }
 
 pub mod plugin_registry {
-    /*
     use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
-        CreatePluginRequest,
-        CreatePluginResponse,
+        CreatePluginRequestChunk,
+        CreatePluginRequestMetadata,
+        CreatePluginRequestV2,
+        CreatePluginResponseV2,
         DeployPluginRequest,
         DeployPluginResponse,
         GetAnalyzersForTenantRequest,
@@ -604,15 +605,30 @@ pub mod plugin_registry {
         }
     }
 
+    pub fn create_plugin_requests() -> impl Strategy<Value = CreatePluginRequestV2> {
+        prop_oneof![
+            create_plugin_request_chunks().prop_map(CreatePluginRequestV2::Chunk),
+            create_plugin_request_metadatas().prop_map(CreatePluginRequestV2::Metadata)
+        ]
+    }
+
     prop_compose! {
-        pub fn create_plugin_requests()(
+        pub fn create_plugin_request_chunks()(
             plugin_artifact in string_not_empty().prop_map(|s| s.as_bytes().to_vec()),
+        ) -> CreatePluginRequestChunk {
+            CreatePluginRequestChunk {
+                plugin_artifact
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn create_plugin_request_metadatas()(
             tenant_id in uuids(),
             display_name in string_not_empty(),
             plugin_type in plugin_types(),
-        ) -> CreatePluginRequest {
-            CreatePluginRequest {
-                plugin_artifact,
+        ) -> CreatePluginRequestMetadata {
+            CreatePluginRequestMetadata {
                 tenant_id,
                 display_name,
                 plugin_type,
@@ -620,15 +636,13 @@ pub mod plugin_registry {
         }
     }
 
-    prop_compose! {
-        pub fn create_plugin_responses()(
-            plugin_id in uuids(),
-        ) -> CreatePluginResponse {
-            CreatePluginResponse{
-                plugin_id,
-            }
-        }
+    pub fn create_plugin_responses() -> impl Strategy<Value = CreatePluginResponseV2> {
+        prop_oneof![
+            Just(CreatePluginResponseV2::AwaitingChunk),
+            uuids().prop_map(CreatePluginResponseV2::PluginId),
+        ]
     }
+
     prop_compose! {
         pub fn get_analyzers_for_tenant_requests()(
             tenant_id in uuids(),
@@ -717,7 +731,6 @@ pub mod plugin_registry {
     pub fn tear_down_plugin_responses() -> impl Strategy<Value = TearDownPluginResponse> {
         Just(TearDownPluginResponse {})
     }
-    */
 }
 
 pub mod plugin_sdk_generators {

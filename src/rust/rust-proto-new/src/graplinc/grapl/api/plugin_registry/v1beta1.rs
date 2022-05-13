@@ -113,6 +113,7 @@ impl From<Plugin> for proto::Plugin {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub enum CreatePluginRequestV2 {
     Metadata(CreatePluginRequestMetadata),
     Chunk(CreatePluginRequestChunk),
@@ -249,6 +250,7 @@ impl ProtobufSerializable for CreatePluginRequestChunk {
     type ProtobufMessage = proto::CreatePluginRequestChunk;
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub enum CreatePluginResponseV2 {
     AwaitingChunk,
     PluginId(uuid::Uuid),
