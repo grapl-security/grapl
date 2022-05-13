@@ -33,8 +33,11 @@ tracing-subscriber = { version = "0.3", default-features = false, features = [
 rust-proto = { path = "../rust-proto", version = "*" }
 thiserror = "1.0.26"
 argon2 = { version = "0.4", features = ["std"] }
-structopt = { version = "0.3", default-features = false }
-env_logger = "0.9.0"
+clap = { version = "3.0", default_features = false, features = [
+  "std",
+  "env",
+  "derive"
+] }
 
 [build-dependencies]
 tonic-build = { version = "0.6.0", features = ["prost"] }

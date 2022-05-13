@@ -712,6 +712,56 @@ job "grapl-core" {
     }
   }
 
+  #######################################
+  ## Begin actual Grapl core services ##
+  #######################################
+
+  group "generator-executor" {
+    network {
+      mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
+      port "generator-executor-port" {}
+    }
+
+    task "generator-executor" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["generator-executor"]
+      }
+
+      env {
+        DNS_RESOLVER_IPS  = var.dns_server
+        DNS_RESOLVER_PORT = "${NOMAD_PORT_generator-executor-port}"
+        # Upstreams
+        PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
+
+        RUST_LOG                        = var.rust_log
+        RUST_BACKTRACE                  = local.rust_backtrace
+        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
+        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
+      }
+    }
+
+    service {
+      name = "generator-executor"
+      connect {
+        sidecar_service {
+          proxy {
+            upstreams {
+              destination_name = "plugin-work-queue"
+              local_bind_port  = 1000
+            }
+            # NOTE: Generator Executor also connects to arbitrary upstreams at
+            # runtime via native Consul Connect in GeneratorClient
+          }
+        }
+      }
+    }
+  }
+
   group "graph-merger" {
     count = var.num_graph_mergers
 
@@ -1342,6 +1392,13 @@ job "grapl-core" {
         sidecar_service {
         }
       }
+
+      check {
+        type     = "grpc"
+        port     = "pipeline-ingress-port"
+        interval = "10s"
+        timeout  = "3s"
+      }
     }
   }
 
@@ -1391,6 +1448,11 @@ job "grapl-core" {
         OTEL_EXPORTER_JAEGER_AGENT_HOST  = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT  = local.tracing_jaeger_endpoint_port
       }
+
+      resources {
+        # Probably too much. Let's figure out buffered writes to s3
+        memory = 512
+      }
     }
 
     service {
@@ -1399,6 +1461,13 @@ job "grapl-core" {
       connect {
         sidecar_service {
         }
+      }
+
+      check {
+        type     = "grpc"
+        port     = "plugin-registry-port"
+        interval = "10s"
+        timeout  = "3s"
       }
     }
   }
@@ -1451,6 +1520,13 @@ job "grapl-core" {
       connect {
         sidecar_service {
         }
+      }
+
+      check {
+        type     = "grpc"
+        port     = "plugin-work-queue-port"
+        interval = "10s"
+        timeout  = "3s"
       }
     }
   }

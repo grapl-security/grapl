@@ -12,6 +12,11 @@ name = "plugin_registry"
 
 [dependencies]
 async-trait = "0.1.51"
+clap = { version = "3.0", default_features = false, features = [
+  "std",
+  "env",
+  "derive"
+] }
 grapl-config = { path = "../grapl-config" }
 grapl-utils = { path = "../grapl-utils" }
 rust-proto-new = { path = "../rust-proto-new" }
@@ -38,7 +43,6 @@ rusoto_s3 = { version = "0.47.0", default_features = false, features = [
   "rustls"
 ] }
 blake3 = "1.2.0"
-structopt = { version = "0.3", default-features = false }
 uuid = { version = "0.8", features = ["v4"] }
 futures = "0.3"
 

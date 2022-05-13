@@ -12,7 +12,7 @@ export const useStyles = makeStyles((theme) =>
             margin: ".5em",
         },
         icons: {
-            color: theme.palette.primary.contrastText,
+            marginRight: "1em",
         },
         navBarOpenCloseIcons: {
             color: theme.palette.info.contrastText,
