@@ -29,25 +29,38 @@ message Plugin {
   bytes plugin_binary = 4;
 }
 
-// A request to create a plugin entry
-message CreatePluginRequest {
-  // the actual plugin code
-  bytes plugin_artifact = 1;
-
-  // Tenant that is deploying this plugin
-  graplinc.common.v1beta1.Uuid tenant_id = 2;
-
-  // The string value to display to a user, non-empty
-  string display_name = 3;
-
-  // The type of the plugin
-  PluginType plugin_type = 4;
+message CreatePluginRequestV2 {
+  oneof inner {
+    CreatePluginRequestMetadata metadata = 1;
+    CreatePluginRequestChunk chunk = 2;
+  }
 }
 
+// A request to create a plugin entry
+message CreatePluginRequestMetadata {
+  // Tenant that is deploying this plugin
+  graplinc.common.v1beta1.Uuid tenant_id = 1;
+
+  // The string value to display to a user, non-empty
+  string display_name = 2;
+
+  // The type of the plugin
+  PluginType plugin_type = 3;
+}
+message CreatePluginRequestChunk {
+  // the actual plugin code
+  bytes plugin_artifact = 1;
+}
+
+message CreatePluginResponseAwaitingChunk {}
+
 // A Response to a plugin entry being created
-message CreatePluginResponse {
-  // The identity of the plugin that was created
-  graplinc.common.v1beta1.Uuid plugin_id = 1;
+message CreatePluginResponseV2 {
+  oneof inner {
+    // The identity of the plugin that was created
+    CreatePluginResponseAwaitingChunk awaiting_chunk = 1;
+    graplinc.common.v1beta1.Uuid plugin_id = 2;
+  }
 }
 
 // A request for a given plugin's information, by plugin_id
@@ -109,7 +122,7 @@ message GetAnalyzersForTenantResponse {
 // A service that manages the state of plugins
 service PluginRegistryService {
   // create a new plugin
-  rpc CreatePlugin(CreatePluginRequest) returns (CreatePluginResponse);
+  rpc CreatePlugin(CreatePluginRequestV2) returns (CreatePluginResponseV2);
 
   // retrieve the plugin corresponding to the given plugin_id
   rpc GetPlugin(GetPluginRequest) returns (GetPluginResponse);

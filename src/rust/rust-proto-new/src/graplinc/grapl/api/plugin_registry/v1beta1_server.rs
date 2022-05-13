@@ -24,8 +24,8 @@ use tonic::{
 use crate::{
     execute_rpc,
     graplinc::grapl::api::plugin_registry::v1beta1::{
-        CreatePluginRequest,
-        CreatePluginResponse,
+        CreatePluginRequestV2,
+        CreatePluginResponseV2,
         DeployPluginRequest,
         DeployPluginResponse,
         GetAnalyzersForTenantRequest,
@@ -60,8 +60,8 @@ pub trait PluginRegistryApi {
 
     async fn create_plugin(
         &self,
-        request: CreatePluginRequest,
-    ) -> Result<CreatePluginResponse, Self::Error>;
+        request: CreatePluginRequestV2,
+    ) -> Result<CreatePluginResponseV2, Self::Error>;
 
     async fn get_plugin(&self, request: GetPluginRequest)
         -> Result<GetPluginResponse, Self::Error>;
@@ -94,8 +94,8 @@ where
 {
     async fn create_plugin(
         &self,
-        request: Request<proto::CreatePluginRequest>,
-    ) -> Result<Response<proto::CreatePluginResponse>, tonic::Status> {
+        request: Request<proto::CreatePluginRequestV2>,
+    ) -> Result<Response<proto::CreatePluginResponseV2>, tonic::Status> {
         execute_rpc!(self, request, create_plugin)
     }
 

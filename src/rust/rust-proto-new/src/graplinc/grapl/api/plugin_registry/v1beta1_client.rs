@@ -35,15 +35,15 @@ impl PluginRegistryServiceClient {
     /// create a new plugin
     pub async fn create_plugin(
         &mut self,
-        request: native::CreatePluginRequest,
-    ) -> Result<native::CreatePluginResponse, PluginRegistryServiceClientError> {
+        request: native::CreatePluginRequestV2,
+    ) -> Result<native::CreatePluginResponseV2, PluginRegistryServiceClientError> {
         // Might be nice to add a client-side "business-logic validation" hook
         // i.e. to error based on .plugin_artifact.len()
         let response = self
             .proto_client
-            .create_plugin(proto::CreatePluginRequest::from(request))
+            .create_plugin(proto::CreatePluginRequestV2::from(request))
             .await?;
-        let response = native::CreatePluginResponse::try_from(response.into_inner())?;
+        let response = native::CreatePluginResponseV2::try_from(response.into_inner())?;
         Ok(response)
     }
 

@@ -559,6 +559,7 @@ pub mod pipeline_ingress {
 }
 
 pub mod plugin_registry {
+    /*
     use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
         CreatePluginRequest,
         CreatePluginResponse,
@@ -716,6 +717,7 @@ pub mod plugin_registry {
     pub fn tear_down_plugin_responses() -> impl Strategy<Value = TearDownPluginResponse> {
         Just(TearDownPluginResponse {})
     }
+    */
 }
 
 pub mod plugin_sdk_generators {

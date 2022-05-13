@@ -255,6 +255,7 @@ mod pipeline_ingress {
     }
 }
 
+/*
 mod plugin_registry {
     use strategies::plugin_registry as pr_strats;
 
@@ -323,6 +324,7 @@ mod plugin_registry {
 
     }
 }
+*/
 
 mod plugin_sdk_generators {
     use strategies::plugin_sdk_generators as gen_strats;
