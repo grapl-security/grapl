@@ -1941,10 +1941,10 @@ dependencies = [
 name = "grapl-graphql-codegen"
 version = "0.1.0"
 dependencies = [
+ "clap 3.1.17",
  "color-eyre",
  "graphql-parser",
  "serde_json",
- "structopt",
  "thiserror",
  "tracing",
  "tracing-subscriber",
@@ -3002,12 +3002,12 @@ name = "organization-management"
 version = "0.1.0"
 dependencies = [
  "argon2",
+ "clap 3.1.17",
  "grapl-config",
  "grapl-utils",
  "prost 0.9.0",
  "rust-proto",
  "sqlx",
- "structopt",
  "test-log",
  "thiserror",
  "tokio",
@@ -3240,11 +3240,11 @@ name = "plugin-bootstrap"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "clap 3.1.17",
  "futures",
  "grapl-config",
  "grapl-utils",
  "rust-proto",
- "structopt",
  "thiserror",
  "tokio",
  "tonic 0.6.2",
@@ -3273,6 +3273,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "blake3",
+ "clap 3.1.17",
  "futures",
  "grapl-config",
  "grapl-utils",
@@ -3282,7 +3283,6 @@ dependencies = [
  "rust-proto-new",
  "serde_json",
  "sqlx",
- "structopt",
  "tempfile",
  "test-log",
  "thiserror",
@@ -3299,12 +3299,12 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "chrono",
+ "clap 3.1.17",
  "futures",
  "grapl-config",
  "grapl-utils",
  "rust-proto-new",
  "sqlx",
- "structopt",
  "thiserror",
  "tokio",
  "tonic-health 0.5.0",
@@ -4594,30 +4594,6 @@ name = "strsim"
 version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6446ced80d6c486436db5c078dde11a9f73d42b57fb273121e160b84f63d894c"
-
-[[package]]
-name = "structopt"
-version = "0.3.26"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c6b5c64445ba8094a6ab0c3cd2ad323e07171012d9c98b0b15651daf1787a10"
-dependencies = [
- "clap 2.34.0",
- "lazy_static",
- "structopt-derive",
-]
-
-[[package]]
-name = "structopt-derive"
-version = "0.4.18"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcb5ae327f9cc13b68763b5749770cb9e048a99bd9dfdfa58d0cf05d5f64afe0"
-dependencies = [
- "heck 0.3.3",
- "proc-macro-error",
- "proc-macro2",
- "quote",
- "syn",
-]
 
 [[package]]
 name = "subtle"
