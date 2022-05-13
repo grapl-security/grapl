@@ -23,7 +23,7 @@ pub struct Certificate {
     inner: tonic::transport::Certificate,
 }
 impl Certificate {
-    pub fn from_pem(pem: Vec<u8>) -> Self {
+    pub fn from_pem(pem: &Vec<u8>) -> Self {
         Self {
             inner: tonic::transport::Certificate::from_pem(pem),
         }

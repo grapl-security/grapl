@@ -5,7 +5,7 @@ sys.path.insert(0, "..")
 from typing import List, Mapping, Optional, Set, cast
 
 import pulumi_aws as aws
-from infra import config, dynamodb, emitter
+from infra import config, dynamodb, emitter, log_levels
 from infra.alarms import OpsAlarms
 from infra.api_gateway import ApiGateway
 from infra.artifacts import ArtifactGetter
@@ -57,6 +57,7 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "analyzer-executor": builder.build_with_tag("analyzer-executor"),
         "dgraph": DockerImageId("dgraph/dgraph:v21.03.1"),
         "engagement-creator": builder.build_with_tag("engagement-creator"),
+        "generator-executor": builder.build_with_tag("generator-executor"),
         "graph-merger": builder.build_with_tag("graph-merger"),
         "graphql-endpoint": builder.build_with_tag("graphql-endpoint"),
         "hax-docker-plugin-runtime": DockerImageId("debian:bullseye-slim"),
@@ -216,19 +217,6 @@ def main() -> None:
         ),
     )
 
-    # To learn more about this syntax, see
-    # https://docs.rs/env_logger/0.9.0/env_logger/#enabling-logging
-    rust_log_levels = ",".join(
-        [
-            "DEBUG",
-            "h2=WARN",
-            "hyper=WARN",
-            "rusoto_core=WARN",
-            "rustls=WARN",
-        ]
-    )
-    py_log_level = "DEBUG"
-
     aws_env_vars_for_local = _get_aws_env_vars_for_local()
     pulumi.export("aws-env-vars-for-local", aws_env_vars_for_local)
 
@@ -255,8 +243,8 @@ def main() -> None:
         osquery_generator_queue=osquery_generator_queue.main_queue_url,
         osquery_generator_dead_letter_queue=osquery_generator_queue.dead_letter_queue_url,
         pipeline_ingress_healthcheck_polling_interval_ms=pipeline_ingress_healthcheck_polling_interval_ms,
-        py_log_level=py_log_level,
-        rust_log=rust_log_levels,
+        py_log_level=log_levels.PY_LOG_LEVEL,
+        rust_log=log_levels.RUST_LOG_LEVELS,
         schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
         schema_table_name=dynamodb_tables.schema_table.name,
         session_table_name=dynamodb_tables.dynamic_session_table.name,
