@@ -275,6 +275,7 @@ target "_rust-base" {
   # https://www.docker.com/blog/dockerfiles-now-support-multiple-build-contexts/
   contexts = {
     dist-ctx = "dist"
+    test-ctx = "test"
   }
   dockerfile = "rust/Dockerfile"
   args = {
