@@ -8,12 +8,18 @@ use chrono::{
     TimeZone,
     Utc,
 };
-use xmlparser::StrSpan;
+use xmlparser::{
+    StrSpan,
+    Token,
+};
 
 use crate::error::{
     Error,
     Result,
 };
+
+mod eventdata_iterator;
+pub(crate) use eventdata_iterator::EventDataIterator;
 
 pub(crate) fn from_zero_or_hex_str(span: &StrSpan) -> Result<u64> {
     let hex_str = span.as_str();
@@ -184,149 +190,125 @@ pub(crate) fn unescape_xml<'a, 'b: 'a>(span: &'a StrSpan<'b>) -> Result<Cow<'b, 
     }
 }
 
-/// Used to parse event data field from a `Data` element, such as "<Data Name="X">Y</Data>", which
-/// should return `Ok("X", Some("Y"))`.
-///
-/// To be called after the tokenizer reaches the start of a `Data` element.
-pub(crate) fn get_data_name_value<'a>(
-    tokenizer: &mut xmlparser::Tokenizer<'a>,
-    position: usize,
-) -> Result<(&'a str, Option<StrSpan<'a>>)> {
-    let name = match tokenizer.next() {
-        Some(Ok(xmlparser::Token::Attribute { local, value, .. })) if local.as_str() == "Name" => {
-            value.as_str()
-        }
-        _ => {
-            return Err(Error::ParseEventDataXML {
-                message: "expected XML attribute `Name`",
-                position,
-            })
-        }
-    };
+fn get_token_position(token: &Token) -> usize {
+    match token {
+        Token::Attribute { span, .. }
+        | Token::Cdata { span, .. }
+        | Token::Comment { span, .. }
+        | Token::Declaration { span, .. }
+        | Token::DtdEnd { span, .. }
+        | Token::DtdStart { span, .. }
+        | Token::ElementEnd { span, .. }
+        | Token::ElementStart { span, .. }
+        | Token::EmptyDtd { span, .. }
+        | Token::EntityDeclaration { span, .. }
+        | Token::ProcessingInstruction { span, .. } => span.start(),
+        Token::Text { text } => text.start(),
+    }
+}
 
-    let value = match tokenizer.next() {
-        // <Data Name="X" />
-        Some(Ok(xmlparser::Token::ElementEnd {
-            end: xmlparser::ElementEnd::Empty,
-            ..
-        })) => {
-            // Sysmon will always return Data elements for event fields that do not have values
-            // (such as for RuleName when rule names are not specified in the config), so we'll
-            // interpret this None instead of an empty string because we'll treat it the same.
-            None
-        }
-        // <Data Name="X">
-        Some(Ok(xmlparser::Token::ElementEnd {
-            end: xmlparser::ElementEnd::Open,
-            ..
-        })) => {
-            let text = match tokenizer.next() {
-                // <Data Name="X">Y</Data>
-                Some(Ok(xmlparser::Token::Text { text })) => {
-                    // advance tokenizer to ElementEnd::Close (</Data>)
-                    match tokenizer.next() {
-                        Some(Ok(xmlparser::Token::ElementEnd {
-                            end: xmlparser::ElementEnd::Close(_, tagname),
-                            ..
-                        })) if tagname.as_str() == "Data" => {}
-                        _ => {
-                            return Err(Error::ParseEventDataXML {
-                                message: "expected `</Data>`",
-                                position,
-                            })
-                        }
-                    }
+fn display_token<'a>(token: &'a Token) -> &'a str {
+    match token {
+        Token::Attribute { span, .. }
+        | Token::Cdata { span, .. }
+        | Token::Comment { span, .. }
+        | Token::Declaration { span, .. }
+        | Token::DtdEnd { span, .. }
+        | Token::DtdStart { span, .. }
+        | Token::ElementEnd { span, .. }
+        | Token::ElementStart { span, .. }
+        | Token::EmptyDtd { span, .. }
+        | Token::EntityDeclaration { span, .. }
+        | Token::ProcessingInstruction { span, .. } => span.as_str(),
+        Token::Text { text } => text.as_str(),
+    }
+}
 
-                    Some(text)
-                }
-                // <Data Name="X"></Data>
-                Some(Ok(xmlparser::Token::ElementEnd {
-                    end: xmlparser::ElementEnd::Close(_, tagname),
-                    ..
-                })) if tagname.as_str() == "Data" => {
-                    // In XML this is the same as the empty element <Data Name="X" />
-                    None
-                }
-                _ => {
-                    return Err(Error::ParseEventDataXML {
-                        message: "expected Token::Text",
-                        position,
-                    })
-                }
-            };
-
-            text
+macro_rules! expect_next_token {
+    ($tokenizer:ident) => {{
+        if let Some(token) = $tokenizer.next() {
+            token?
+        } else {
+            return Err(Error::UnexpectedEndOfStream);
         }
-        _ => {
-            return Err(Error::ParseEventDataXML {
-                message: "unexpected XML token",
-                position,
-            })
-        }
-    };
-
-    Ok((name, value))
+    }};
 }
 
 /// Can be used to retrieve XML text from an element that does not include any attributes or other
 /// elements.
 ///
 /// To be called after the tokenizer reaches the start of an element.
-pub(crate) fn get_text<'a>(
+///
+/// Ex: `>some text</Element>` returns the StrSpan for `some text`.
+pub(crate) fn get_element_text<'a>(
     tokenizer: &mut xmlparser::Tokenizer<'a>,
-    position: usize,
-) -> Result<StrSpan<'a>> {
-    match tokenizer.next() {
-        Some(Ok(xmlparser::Token::ElementEnd {
+    element_name: &str,
+) -> Result<Option<StrSpan<'a>>> {
+    let token = expect_next_token!(tokenizer);
+    match token {
+        // empty-element tag: Ex: `<Element />`
+        xmlparser::Token::ElementEnd {
+            end: xmlparser::ElementEnd::Empty,
+            ..
+        } => {
+            // Sysmon will always return Data elements for event fields that do not have values
+            // (such as for RuleName when rule names are not specified in the config), so we'll
+            // interpret this None instead of an empty string because we'll treat it the same.
+            Ok(None)
+        }
+        // element is open-tag: Ex: `<Element>`
+        xmlparser::Token::ElementEnd {
             end: xmlparser::ElementEnd::Open,
             ..
-        })) => {}
-        _ => {
-            return Err(Error::ParseEventDataXML {
-                message: "expected Token::ElementEnd",
-                position,
-            })
+        } => {
+            let token = expect_next_token!(tokenizer);
+            match token {
+                xmlparser::Token::ElementEnd {
+                    end: xmlparser::ElementEnd::Close(_, tagname),
+                    ..
+                } if tagname.as_str() == element_name => {
+                    // In XML this is the same as the empty element <Element />, so we return None
+                    // for the same reasons noted for the element-empty case.
+                    Ok(None)
+                }
+                xmlparser::Token::Text { text } => {
+                    // before returning advance the tokenizer to the end-tag
+                    let token = expect_next_token!(tokenizer);
+                    match token {
+                        xmlparser::Token::ElementEnd {
+                            end: xmlparser::ElementEnd::Close(_, tagname),
+                            ..
+                        } if tagname.as_str() == element_name => {}
+                        _ => {
+                            return Err(Error::ParseSysmon {
+                                message: format!(
+                                    "expected '</{}>', found: {}",
+                                    element_name,
+                                    display_token(&token)
+                                ),
+                                position: get_token_position(&token),
+                            })
+                        }
+                    }
+
+                    Ok(Some(text))
+                }
+                _ => Err(Error::ParseSysmon {
+                    message: format!(
+                        "expected XML text or '</{}>', found: {}",
+                        element_name,
+                        display_token(&token)
+                    ),
+                    position: get_token_position(&token),
+                }),
+            }
         }
+        _ => Err(Error::ParseSysmon {
+            message: format!("expected '>' or '/>', found: {}", display_token(&token)),
+            position: get_token_position(&token),
+        }),
     }
-
-    let text = match tokenizer.next() {
-        Some(Ok(xmlparser::Token::Text { text })) => text,
-        _ => {
-            return Err(Error::ParseEventDataXML {
-                message: "expected Token::Text",
-                position,
-            })
-        }
-    };
-
-    // advance tokenizer to ElementEnd::Close (e.g. </SomeElement>)
-    match tokenizer.next() {
-        Some(Ok(xmlparser::Token::ElementEnd {
-            end: xmlparser::ElementEnd::Close(_, _),
-            ..
-        })) => {}
-        _ => {
-            return Err(Error::ParseEventDataXML {
-                message: "expected Token::ElementEnd (closing)",
-                position,
-            })
-        }
-    }
-
-    Ok(text)
 }
-
-macro_rules! unwrap_or_continue {
-    ($opt:ident) => {{
-        if let Some(v) = $opt {
-            v
-        } else {
-            continue;
-        }
-    }};
-}
-
-pub(crate) use unwrap_or_continue;
 
 #[cfg(test)]
 mod tests {
@@ -407,131 +389,75 @@ mod tests {
     }
 
     #[test]
-    fn get_data_name_value_with_value() -> Result<()> {
-        let xml = r#"<Data Name='Foo'>Bar</Data>"#;
+    fn get_element_text() -> Result<()> {
+        let xml = r#"<Foo>Bar</Foo>"#;
         let mut tokenizer = xmlparser::Tokenizer::from(xml);
 
-        // advance to attribute
-        tokenizer.next();
-        let (name, value) = get_data_name_value(&mut tokenizer, 0)?;
+        // consume start-tag
+        tokenizer.next().unwrap()?;
 
-        assert_eq!(name, "Foo");
-        assert_eq!(value.unwrap().as_str(), "Bar");
+        let text = super::get_element_text(&mut tokenizer, "Foo")?.map(|s| s.as_str());
+        assert_eq!(text, Some("Bar"));
 
         Ok(())
     }
 
     #[test]
-    fn get_data_name_value_with_empty_value() -> Result<()> {
-        let xml = r#"<Data Name='Foo'></Data>"#;
+    fn get_element_text_empty() -> Result<()> {
+        let xml = r#"<Foo></Foo>"#;
         let mut tokenizer = xmlparser::Tokenizer::from(xml);
 
-        // advance to attribute
-        tokenizer.next();
-        let (name, value) = get_data_name_value(&mut tokenizer, 0)?;
+        // consume start-tag
+        tokenizer.next().unwrap()?;
 
-        assert_eq!(name, "Foo");
-        assert_eq!(value, None);
+        let text = super::get_element_text(&mut tokenizer, "Foo")?.map(|s| s.as_str());
+        assert_eq!(text, None);
 
         Ok(())
     }
 
     #[test]
-    fn get_data_name_value_with_empty_element() -> Result<()> {
-        let xml = r#"<Data Name='Foo' />"#;
+    fn get_element_text_empty2() -> Result<()> {
+        let xml = r#"<Foo/>"#;
         let mut tokenizer = xmlparser::Tokenizer::from(xml);
 
-        // advance to attribute
-        tokenizer.next();
-        let (name, value) = get_data_name_value(&mut tokenizer, 0)?;
+        // consume start-tag
+        tokenizer.next().unwrap()?;
 
-        assert_eq!(name, "Foo");
-        assert_eq!(value, None);
+        let text = super::get_element_text(&mut tokenizer, "Foo")?.map(|s| s.as_str());
+        assert_eq!(text, None);
 
         Ok(())
     }
 
     #[test]
-    fn get_data_name_value_with_error_unexpected_attr() -> Result<()> {
-        let xml = r#"<Data UnexpectedAttribute='Bar' Name='Foo' />"#;
+    fn get_element_text_empty_err() -> Result<()> {
+        let xml = r#"<Foo>Bar</Baz>"#;
         let mut tokenizer = xmlparser::Tokenizer::from(xml);
 
-        // advance to attribute
-        tokenizer.next();
-        let result = get_data_name_value(&mut tokenizer, 0);
+        // consume start-tag
+        tokenizer.next().unwrap()?;
 
-        assert!(matches!(
-            result,
-            Err(crate::error::Error::ParseEventDataXML { .. })
-        ));
+        let text = super::get_element_text(&mut tokenizer, "Foo").unwrap_err();
+        assert!(matches!(text, Error::ParseSysmon { position: 8, .. }));
 
-        Ok(())
-    }
-
-    #[test]
-    fn get_data_name_value_with_error_unexpected_element() -> Result<()> {
-        let xml = r#"<Data Name='Foo'><A />Text</Data>"#;
+        let xml = r#"<Foo>Bar<Baz>"#;
         let mut tokenizer = xmlparser::Tokenizer::from(xml);
 
-        // advance to attribute
-        tokenizer.next();
-        let result = get_data_name_value(&mut tokenizer, 0);
+        // consume start-tag
+        tokenizer.next().unwrap()?;
 
-        assert!(matches!(
-            result,
-            Err(crate::error::Error::ParseEventDataXML { .. })
-        ));
+        let text = super::get_element_text(&mut tokenizer, "Foo").unwrap_err();
+        assert!(matches!(text, Error::ParseSysmon { position: 8, .. }));
 
-        Ok(())
-    }
-
-    #[test]
-    fn get_data_name_value_with_error_unexpected_element2() -> Result<()> {
-        let xml = r#"<Data Name='Foo'><A /></Data>"#;
+        let xml = r#"<Foo>Bar"#;
         let mut tokenizer = xmlparser::Tokenizer::from(xml);
 
-        // advance to attribute
-        tokenizer.next();
-        let result = get_data_name_value(&mut tokenizer, 0);
+        // consume start-tag
+        tokenizer.next().unwrap()?;
 
-        assert!(matches!(
-            result,
-            Err(crate::error::Error::ParseEventDataXML { .. })
-        ));
-
-        Ok(())
-    }
-
-    #[test]
-    fn get_data_name_value_with_error_not_closed() -> Result<()> {
-        let xml = r#"<Data Name='Foo'>"#;
-        let mut tokenizer = xmlparser::Tokenizer::from(xml);
-
-        // advance to attribute
-        tokenizer.next();
-        let result = get_data_name_value(&mut tokenizer, 0);
-
-        assert!(matches!(
-            result,
-            Err(crate::error::Error::ParseEventDataXML { .. })
-        ));
-
-        Ok(())
-    }
-
-    #[test]
-    fn get_data_name_value_with_error_incorrect_close() -> Result<()> {
-        let xml = r#"<Data Name='Foo'></NotData>"#;
-        let mut tokenizer = xmlparser::Tokenizer::from(xml);
-
-        // advance to attribute
-        tokenizer.next();
-        let result = get_data_name_value(&mut tokenizer, 0);
-
-        assert!(matches!(
-            result,
-            Err(crate::error::Error::ParseEventDataXML { .. })
-        ));
+        let text = super::get_element_text(&mut tokenizer, "Foo").unwrap_err();
+        assert!(matches!(text, Error::UnexpectedEndOfStream));
 
         Ok(())
     }

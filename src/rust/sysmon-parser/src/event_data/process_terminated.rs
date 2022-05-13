@@ -5,7 +5,6 @@ use chrono::{
     Utc,
 };
 use derive_into_owned::IntoOwned;
-use xmlparser::Token;
 
 use super::{
     EventData,
@@ -61,34 +60,16 @@ impl<'a> ProcessTerminatedEventData<'a> {
         let mut image = None;
         let mut user = None;
 
-        while let Some(token) = tokenizer.next() {
-            match token? {
-                Token::ElementStart { local, span, .. } => match local.as_str() {
-                    "Data" => {
-                        let (name, value) = util::get_data_name_value(tokenizer, span.start())?;
-                        let value = util::unwrap_or_continue!(value);
-
-                        match name {
-                            "RuleName" => rule_name = Some(util::unescape_xml(&value)?),
-                            "SequenceNumber" => {
-                                sequence_number = Some(util::parse_int::<u64>(&value)?)
-                            }
-                            "UtcTime" => {
-                                utc_time = Some(util::parse_utc_from_str(&value, UTC_TIME_FORMAT)?)
-                            }
-                            "ProcessGuid" => process_guid = Some(util::parse_win_guid_str(&value)?),
-                            "ProcessId" => process_id = Some(util::parse_int::<u32>(&value)?),
-                            "Image" => image = Some(util::unescape_xml(&value)?),
-                            "User" => user = Some(util::unescape_xml(&value)?),
-                            _ => {}
-                        }
-                    }
-                    _ => {}
-                },
-                Token::ElementEnd {
-                    end: xmlparser::ElementEnd::Close(_, name),
-                    ..
-                } if name.as_str() == "EventData" => break,
+        for result in util::EventDataIterator::new(tokenizer)? {
+            let (name, ref value) = result?;
+            match name {
+                "RuleName" => rule_name = Some(util::unescape_xml(value)?),
+                "SequenceNumber" => sequence_number = Some(util::parse_int::<u64>(value)?),
+                "UtcTime" => utc_time = Some(util::parse_utc_from_str(value, UTC_TIME_FORMAT)?),
+                "ProcessGuid" => process_guid = Some(util::parse_win_guid_str(value)?),
+                "ProcessId" => process_id = Some(util::parse_int::<u32>(value)?),
+                "Image" => image = Some(util::unescape_xml(value)?),
+                "User" => user = Some(util::unescape_xml(value)?),
                 _ => {}
             }
         }
