@@ -21,7 +21,7 @@ message AllocateIdsRequest {
   graplinc.common.v1beta1.Uuid tenant_id = 2;
 }
 
-// The response to an AllocateIdsRequest, containing hte next range of allocated ids
+// The response to an AllocateIdsRequest, containing the next range of allocated ids
 message AllocateIdsResponse {
   // The next allocation for the tenant
   Allocation allocation = 1;

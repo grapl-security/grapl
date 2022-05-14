@@ -1550,12 +1550,6 @@ job "grapl-core" {
         ports = ["uid-allocator-port"]
       }
 
-      template {
-        data        = var.aws_env_vars_for_local
-        destination = "aws-env-vars-for-local.env"
-        env         = true
-      }
-
       env {
         UID_ALLOCATOR_BIND_ADDRESS      = "0.0.0.0:${NOMAD_PORT_uid-allocator-port}"
         UID_ALLOCATOR_DB_HOSTNAME       = var.uid_allocator_db_hostname
