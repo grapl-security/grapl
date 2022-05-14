@@ -1,6 +1,13 @@
-use std::{fmt::Debug, pin::Pin};
+use std::{
+    fmt::Debug,
+    pin::Pin,
+};
 
-use futures::{Stream, StreamExt};
+use futures::{
+    stream,
+    Stream,
+    StreamExt,
+};
 use proto::plugin_registry_service_client::PluginRegistryServiceClient as PluginRegistryServiceClientProto;
 
 use crate::{
@@ -40,15 +47,19 @@ impl PluginRegistryServiceClient {
     pub async fn create_plugin(
         &mut self,
         request: Pin<Box<dyn Stream<Item = native::CreatePluginRequestV2> + Send>>,
-    //) -> ResultStream<native::CreatePluginResponseV2, PluginRegistryServiceClientError> {
-    ) -> Result<PinnedStream<native::CreatePluginResponseV2>, PluginRegistryServiceClientError> {
+    ) -> ResultStream<native::CreatePluginResponseV2, PluginRegistryServiceClientError> {
         // Might be nice to add a client-side "business-logic validation" hook
         // i.e. to error based on .plugin_artifact.len()
         let proto_response = self
             .proto_client
             .create_plugin(request.map(Into::into))
-            .await?;
-        let native_response = proto_response.into_inner().map(|result| {
+            .await;
+        // convert this initial Error into a stream
+        if let Err(e) = proto_response {
+            return Box::pin(stream::iter(vec![Err(e.into())]));
+        }
+        let proto_stream = proto_response.unwrap().into_inner();
+        let native_response = proto_stream.map(|result| {
             let result: Result<native::CreatePluginResponseV2, PluginRegistryServiceClientError> = {
                 match result {
                     Ok(proto) => proto.try_into().map_err(Into::into),

@@ -11,6 +11,7 @@ path = "src/main.rs"
 name = "plugin_registry"
 
 [dependencies]
+async-stream = "0.3"
 async-trait = "0.1.51"
 clap = { version = "3.0", default_features = false, features = [
   "std",

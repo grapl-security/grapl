@@ -1,8 +1,9 @@
 use std::{
     net::SocketAddr,
-    time::Duration,
+    time::Duration, pin::Pin,
 };
 
+use futures::{Stream, StreamExt};
 use grapl_config::env_helpers::FromEnv;
 use rusoto_s3::{
     GetObjectRequest,
@@ -13,8 +14,8 @@ use rusoto_s3::{
 };
 use rust_proto_new::{
     graplinc::grapl::api::plugin_registry::v1beta1::{
-        CreatePluginRequest,
-        CreatePluginResponse,
+        CreatePluginRequestV2,
+        CreatePluginResponseV2,
         DeployPluginRequest,
         DeployPluginResponse,
         GetAnalyzersForTenantRequest,
@@ -28,9 +29,9 @@ use rust_proto_new::{
         PluginRegistryServer,
         PluginType,
         TearDownPluginRequest,
-        TearDownPluginResponse,
+        TearDownPluginResponse, CreatePluginRequestMetadata,
     },
-    protocol::healthcheck::HealthcheckStatus,
+    protocol::{healthcheck::HealthcheckStatus, status::Status},
 };
 use tokio::{
     io::AsyncReadExt,
@@ -121,22 +122,38 @@ impl PluginRegistry {
         }
     }
 }
+type ResultStream<T, E> = Pin<Box<dyn Stream<Item = Result<T, E>> + Send + 'static>>;
 
 #[async_trait]
 impl PluginRegistryApi for PluginRegistry {
     type Error = PluginRegistryServiceError;
 
-    #[tracing::instrument(skip(self, request), err)]
+    //#[tracing::instrument(skip(self, request), err)]
     async fn create_plugin(
         &self,
-        request: CreatePluginRequest,
-    ) -> Result<CreatePluginResponse, Self::Error> {
-        let CreatePluginRequest {
+        request: ResultStream<CreatePluginRequestV2, Status>
+    ) -> ResultStream<CreatePluginResponseV2, Status>
+    {
+        type Req = CreatePluginRequestV2;
+        let mut meta: Option<CreatePluginRequestMetadata> = None;
+
+        let body_stream: ResultStream<Vec<u8>, Status> = Box::pin(async_stream::stream! {
+            while let Some(req) = request.next().await {
+                match req {
+                    Ok(Req::Metadata(m)) => meta = Some(m),
+                    Ok(Req::Chunk(c)) => yield Ok(c.plugin_artifact),
+                    Err(e) => yield Err(e)
+                };
+            }
+        });
+
+        3
+        /*
+        let CreatePluginRequestMetadata {
             tenant_id,
-            plugin_artifact, // This could be huge, so don't clone it!
             display_name,
             plugin_type,
-        } = request;
+        } = request.next().await;
 
         self.ensure_artifact_size_limit(&plugin_artifact)?;
 
@@ -169,6 +186,7 @@ impl PluginRegistryApi for PluginRegistry {
 
         let response = CreatePluginResponse { plugin_id };
         Ok(response)
+        */
     }
 
     #[tracing::instrument(skip(self, request), err)]

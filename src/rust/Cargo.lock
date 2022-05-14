@@ -3271,6 +3271,7 @@ dependencies = [
 name = "plugin-registry"
 version = "0.1.0"
 dependencies = [
+ "async-stream",
  "async-trait",
  "blake3",
  "clap 3.1.17",

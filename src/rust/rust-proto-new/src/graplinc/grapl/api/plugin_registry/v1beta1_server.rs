@@ -61,8 +61,6 @@ use crate::{
 // This complicated signature is suggested by Tonic:
 // https://github.com/hyperium/tonic/blob/master/examples/routeguide-tutorial.md#bidirectional-streaming-rpc
 
-type CreatePluginResponseStream<E> = ResultStream<CreatePluginResponseV2, E>;
-
 /// Implement this trait to define the API business logic
 #[tonic::async_trait]
 pub trait PluginRegistryApi {
@@ -70,9 +68,9 @@ pub trait PluginRegistryApi {
 
     // Ideally this would return a Self::Error, but due to `dyn` restrictions
     // that'll probably have to wait until GAT
-    fn create_plugin(
+    async fn create_plugin(
         &self,
-        request: impl Stream<Item = Result<CreatePluginRequestV2, Status>>,
+        request: ResultStream<CreatePluginRequestV2, Status>,
     ) -> ResultStream<CreatePluginResponseV2, Status>;
 
     async fn get_plugin(&self, request: GetPluginRequest)
@@ -107,14 +105,8 @@ where
     T: PluginRegistryApi + Send + Sync + 'static,
     T::Error: Into<Status>,
 {
-    //type CreatePluginStream = mpsc::Receiver<Result<proto::CreatePluginResponseV2, tonic::Status>>;
-    type CreatePluginStream = Pin<
-        Box<
-            dyn Stream<Item = Result<proto::CreatePluginResponseV2, tonic::Status>>
-                + Send
-                + 'static,
-        >,
-    >;
+    type CreatePluginStream = ResultStream<proto::CreatePluginResponseV2, tonic::Status>;
+
     async fn create_plugin(
         &self,
         request: Request<tonic::Streaming<proto::CreatePluginRequestV2>>,
@@ -122,7 +114,7 @@ where
         // Based on
         // https://github.com/rkudryashov/exploring-rust-ecosystem/blob/master/grpc-telegram-bot/server/src/main.rs
 
-        let proto_stream = request.into_inner();
+        let mut proto_stream = request.into_inner();
 
         let native_input_stream: ResultStream<CreatePluginRequestV2, Status> =
             Box::pin(async_stream::try_stream! {
@@ -134,8 +126,8 @@ where
                 }
             });
 
-        let native_output_stream: ResultStream<CreatePluginResponseV2, Status> =
-            self.api_server.create_plugin(native_input_stream);
+        let mut native_output_stream: ResultStream<CreatePluginResponseV2, Status> =
+            self.api_server.create_plugin(native_input_stream).await;
 
         let proto_output_stream: ResultStream<proto::CreatePluginResponseV2, tonic::Status> =
             Box::pin(async_stream::try_stream! {
