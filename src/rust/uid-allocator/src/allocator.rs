@@ -188,7 +188,6 @@ impl UidAllocatorApi for UidAllocator {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;

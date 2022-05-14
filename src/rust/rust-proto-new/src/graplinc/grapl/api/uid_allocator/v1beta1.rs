@@ -164,6 +164,8 @@ pub mod client {
     }
 
     #[derive(Clone)]
+    /// This allocator should rarely be used. Instead, use the CachingUidAllocatorClient
+    /// from the uid-allocator crate.
     pub struct UidAllocatorClient {
         inner: UidAllocatorClientProto<tonic::transport::Channel>,
     }
@@ -200,17 +202,13 @@ pub mod client {
 
 #[cfg(feature = "uid-allocator-messages")]
 pub mod messages {
-    use crate::{
-        protobufs::graplinc::grapl::api::uid_allocator::v1beta1::{
-            AllocateIdsRequest as AllocateIdsRequestProto,
-            AllocateIdsResponse as AllocateIdsResponseProto,
-            Allocation as AllocationProto,
-        },
-        type_url,
-        SerDeError,
-    };
+    use crate::{protobufs::graplinc::grapl::api::uid_allocator::v1beta1::{
+        AllocateIdsRequest as AllocateIdsRequestProto,
+        AllocateIdsResponse as AllocateIdsResponseProto,
+        Allocation as AllocationProto,
+    }, type_url, SerDeError, serde_impl};
 
-    #[derive(Copy, Clone, Debug)]
+    #[derive(Copy, Clone, Debug, PartialEq)]
     pub struct Allocation {
         pub start: u64,
         pub offset: u32,
@@ -236,7 +234,21 @@ pub mod messages {
         }
     }
 
-    #[derive(Clone, Debug)]
+    impl Iterator for Allocation {
+        type Item = u64;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            if self.start == (self.offset as u64) {
+                None
+            } else {
+                let result = self.start;
+                self.start += 1;
+                Some(result)
+            }
+        }
+    }
+
+    #[derive(Clone, Debug, PartialEq)]
     pub struct AllocateIdsRequest {
         pub count: u32,
         pub tenant_id: uuid::Uuid,
@@ -267,7 +279,7 @@ pub mod messages {
         }
     }
 
-    #[derive(Clone, Debug)]
+    #[derive(Clone, Debug, PartialEq)]
     pub struct AllocateIdsResponse {
         pub allocation: Allocation,
     }
@@ -291,6 +303,18 @@ pub mod messages {
                 allocation: Some(response.allocation.into()),
             }
         }
+    }
+
+    impl serde_impl::ProtobufSerializable<Allocation> for Allocation {
+        type ProtobufMessage = AllocationProto;
+    }
+
+    impl serde_impl::ProtobufSerializable<AllocateIdsRequest> for AllocateIdsRequest {
+        type ProtobufMessage = AllocateIdsRequestProto;
+    }
+
+    impl serde_impl::ProtobufSerializable<AllocateIdsResponse> for AllocateIdsResponse {
+        type ProtobufMessage = AllocateIdsResponseProto;
     }
 
     impl type_url::TypeUrl for Allocation {

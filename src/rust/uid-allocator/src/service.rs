@@ -1,11 +1,13 @@
-use rust_proto_new::graplinc::grapl::api::uid_allocator::v1beta1::{
-    messages::{
-        AllocateIdsRequest,
-        AllocateIdsResponse,
+use rust_proto_new::{
+    graplinc::grapl::api::uid_allocator::v1beta1::{
+        messages::{
+            AllocateIdsRequest,
+            AllocateIdsResponse,
+        },
+        server::UidAllocatorApi,
     },
-    server::UidAllocatorApi,
+    protocol::status::Status,
 };
-use rust_proto_new::protocol::status::Status;
 
 use crate::allocator::UidAllocator;
 
