@@ -61,7 +61,7 @@ use crate::{
 // This complicated signature is suggested by Tonic:
 // https://github.com/hyperium/tonic/blob/master/examples/routeguide-tutorial.md#bidirectional-streaming-rpc
 
-type CreatePluginResponseStream<E> = Pin<Box<dyn Stream<Item = Result<CreatePluginResponseV2, E>>>>;
+type CreatePluginResponseStream<E> = ResultStream<CreatePluginResponseV2, E>;
 
 /// Implement this trait to define the API business logic
 #[tonic::async_trait]

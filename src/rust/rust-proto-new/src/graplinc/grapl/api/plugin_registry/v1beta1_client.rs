@@ -1,5 +1,6 @@
-use std::fmt::Debug;
+use std::{fmt::Debug, pin::Pin};
 
+use futures::{Stream, StreamExt};
 use proto::plugin_registry_service_client::PluginRegistryServiceClient as PluginRegistryServiceClientProto;
 
 use crate::{
@@ -20,6 +21,8 @@ pub struct PluginRegistryServiceClient {
     proto_client: PluginRegistryServiceClientProto<tonic::transport::Channel>,
 }
 
+type ResultStream<T, E> = Pin<Box<dyn Stream<Item = Result<T, E>> + Send + 'static>>;
+
 impl PluginRegistryServiceClient {
     #[tracing::instrument(err)]
     pub async fn connect<T>(endpoint: T) -> Result<Self, Box<dyn std::error::Error>>
@@ -35,16 +38,24 @@ impl PluginRegistryServiceClient {
     /// create a new plugin
     pub async fn create_plugin(
         &mut self,
-        request: native::CreatePluginRequestV2,
-    ) -> Result<native::CreatePluginResponseV2, PluginRegistryServiceClientError> {
+        request: Pin<Box<dyn Stream<Item = native::CreatePluginRequestV2> + Send>>,
+    ) -> ResultStream<native::CreatePluginResponseV2, PluginRegistryServiceClientError> {
         // Might be nice to add a client-side "business-logic validation" hook
         // i.e. to error based on .plugin_artifact.len()
-        let response = self
+        let proto_response = self
             .proto_client
-            .create_plugin(proto::CreatePluginRequestV2::from(request))
+            .create_plugin(request.map(Into::into))
             .await?;
-        let response = native::CreatePluginResponseV2::try_from(response.into_inner())?;
-        Ok(response)
+        let native_response = proto_response.into_inner().map(|result| {
+            let result: Result<native::CreatePluginResponseV2, PluginRegistryServiceClientError> = {
+                match result {
+                    Ok(proto) => proto.try_into().map_err(Into::into),
+                    Err(e) => Err(e.into()),
+                }
+            };
+            result
+        });
+        Box::pin(native_response)
     }
 
     /// retrieve the plugin corresponding to the given plugin_id
