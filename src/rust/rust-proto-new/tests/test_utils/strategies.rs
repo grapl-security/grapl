@@ -8,7 +8,7 @@ use uuid::Uuid;
 // Bytes
 //
 
-pub fn bytes(size: usize) -> impl Strategy<Value = Bytes> {
+pub fn bytes(size: usize) -> impl Strategy<Value=Bytes> {
     proptest::collection::vec(any::<u8>(), size).prop_map(Bytes::from)
 }
 
@@ -24,7 +24,7 @@ prop_compose! {
     }
 }
 
-pub fn vec_of_uuids() -> impl Strategy<Value = Vec<Uuid>> {
+pub fn vec_of_uuids() -> impl Strategy<Value=Vec<Uuid>> {
     proptest::collection::vec(uuids(), 10)
 }
 
@@ -32,9 +32,9 @@ pub fn string_not_empty() -> proptest::string::RegexGeneratorStrategy<String> {
     proptest::string::string_regex(".+").expect("Invalid regex")
 }
 
-pub fn vec_not_empty<T>() -> impl Strategy<Value = Vec<T>>
-where
-    T: Arbitrary,
+pub fn vec_not_empty<T>() -> impl Strategy<Value=Vec<T>>
+    where
+        T: Arbitrary,
 {
     any::<Vec<T>>().prop_filter("Only accept non-empty vecs", |v| !v.is_empty())
 }
@@ -113,10 +113,10 @@ pub mod pipeline {
     }
 
     pub fn envelopes<T>(
-        inner_strategy: impl Strategy<Value = T>,
-    ) -> impl Strategy<Value = Envelope<T>>
-    where
-        T: SerDe + Debug,
+        inner_strategy: impl Strategy<Value=T>,
+    ) -> impl Strategy<Value=Envelope<T>>
+        where
+            T: SerDe + Debug,
     {
         (metadatas(), inner_strategy).prop_map(|(metadata, inner_message)| -> Envelope<T> {
             Envelope {
@@ -329,7 +329,7 @@ pub mod graph {
     // Strategy
     //
 
-    pub fn strategies() -> impl Strategy<Value = GraphStrategy> {
+    pub fn strategies() -> impl Strategy<Value=GraphStrategy> {
         prop_oneof![
             sessions().prop_map(GraphStrategy::Session),
             statics().prop_map(GraphStrategy::Static),
@@ -352,7 +352,7 @@ pub mod graph {
     // Property
     //
 
-    pub fn properties() -> impl Strategy<Value = Property> {
+    pub fn properties() -> impl Strategy<Value=Property> {
         prop_oneof![
             decrement_only_int_props().prop_map(Property::DecrementOnlyIntProp),
             decrement_only_uint_props().prop_map(Property::DecrementOnlyUintProp),
@@ -584,7 +584,7 @@ pub mod plugin_registry {
             Just(PluginType::Generator),
             Just(PluginType::Analyzer),
         ]
-        .boxed()
+            .boxed()
     }
 
     prop_compose! {
@@ -657,7 +657,7 @@ pub mod plugin_registry {
         }
     }
 
-    pub fn deploy_plugin_responses() -> impl Strategy<Value = DeployPluginResponse> {
+    pub fn deploy_plugin_responses() -> impl Strategy<Value=DeployPluginResponse> {
         Just(DeployPluginResponse {})
     }
 
@@ -713,7 +713,7 @@ pub mod plugin_registry {
         }
     }
 
-    pub fn tear_down_plugin_responses() -> impl Strategy<Value = TearDownPluginResponse> {
+    pub fn tear_down_plugin_responses() -> impl Strategy<Value=TearDownPluginResponse> {
         Just(TearDownPluginResponse {})
     }
 }
@@ -749,8 +749,7 @@ pub mod plugin_work_queue {
         }
     }
 
-    pub fn acknowledge_generator_responses(
-    ) -> impl Strategy<Value = native::AcknowledgeGeneratorResponse> {
+    pub fn acknowledge_generator_responses() -> impl Strategy<Value=native::AcknowledgeGeneratorResponse> {
         Just(native::AcknowledgeGeneratorResponse {})
     }
 
@@ -766,17 +765,15 @@ pub mod plugin_work_queue {
         }
     }
 
-    pub fn acknowledge_analyzer_responses(
-    ) -> impl Strategy<Value = native::AcknowledgeAnalyzerResponse> {
+    pub fn acknowledge_analyzer_responses() -> impl Strategy<Value=native::AcknowledgeAnalyzerResponse> {
         Just(native::AcknowledgeAnalyzerResponse {})
     }
 
-    pub fn maybe_jobs() -> impl Strategy<Value = Option<native::ExecutionJob>> {
+    pub fn maybe_jobs() -> impl Strategy<Value=Option<native::ExecutionJob>> {
         proptest::option::of(execution_jobs())
     }
 
-    pub fn get_execute_analyzer_requests(
-    ) -> impl Strategy<Value = native::GetExecuteAnalyzerRequest> {
+    pub fn get_execute_analyzer_requests() -> impl Strategy<Value=native::GetExecuteAnalyzerRequest> {
         Just(native::GetExecuteAnalyzerRequest {})
     }
 
@@ -792,8 +789,7 @@ pub mod plugin_work_queue {
         }
     }
 
-    pub fn get_execute_generator_requests(
-    ) -> impl Strategy<Value = native::GetExecuteGeneratorRequest> {
+    pub fn get_execute_generator_requests() -> impl Strategy<Value=native::GetExecuteGeneratorRequest> {
         Just(native::GetExecuteGeneratorRequest {})
     }
 
@@ -819,8 +815,7 @@ pub mod plugin_work_queue {
         }
     }
 
-    pub fn put_execute_analyzer_responses(
-    ) -> impl Strategy<Value = native::PutExecuteAnalyzerResponse> {
+    pub fn put_execute_analyzer_responses() -> impl Strategy<Value=native::PutExecuteAnalyzerResponse> {
         Just(native::PutExecuteAnalyzerResponse {})
     }
 
@@ -834,8 +829,47 @@ pub mod plugin_work_queue {
         }
     }
 
-    pub fn put_execute_generator_responses(
-    ) -> impl Strategy<Value = native::PutExecuteGeneratorResponse> {
+    pub fn put_execute_generator_responses() -> impl Strategy<Value=native::PutExecuteGeneratorResponse> {
         Just(native::PutExecuteGeneratorResponse {})
+    }
+}
+
+pub mod uid_allocator {
+
+    use rust_proto_new::graplinc::grapl::api::uid_allocator::v1beta1::messages as native;
+
+    use super::*;
+
+    prop_compose! {
+        pub fn allocations()(
+            start in 1..(u64::MAX - (u32::MAX as u64)),
+            offset in 1..u32::MAX,
+        ) -> native::Allocation {
+            native::Allocation {
+                start, offset
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn allocate_ids_request()(
+            count in any::<u32>(),
+            tenant_id in uuids(),
+        ) -> native::AllocateIdsRequest {
+            native::AllocateIdsRequest {
+                count,
+                tenant_id,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn allocate_ids_response()(
+            allocation in allocations(),
+        ) -> native::AllocateIdsResponse {
+            native::AllocateIdsResponse {
+                allocation
+            }
+        }
     }
 }
