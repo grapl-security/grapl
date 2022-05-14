@@ -4036,6 +4036,7 @@ dependencies = [
 name = "rust-proto-new"
 version = "0.1.0"
 dependencies = [
+ "async-stream",
  "bytes",
  "futures",
  "proptest",
