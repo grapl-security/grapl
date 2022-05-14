@@ -21,7 +21,8 @@ pub struct PluginRegistryServiceClient {
     proto_client: PluginRegistryServiceClientProto<tonic::transport::Channel>,
 }
 
-type ResultStream<T, E> = Pin<Box<dyn Stream<Item = Result<T, E>> + Send + 'static>>;
+type PinnedStream<T> = Pin<Box<dyn Stream<Item = T> + Send + 'static>>;
+type ResultStream<T, E> = PinnedStream<Result<T, E>>;
 
 impl PluginRegistryServiceClient {
     #[tracing::instrument(err)]
@@ -39,7 +40,8 @@ impl PluginRegistryServiceClient {
     pub async fn create_plugin(
         &mut self,
         request: Pin<Box<dyn Stream<Item = native::CreatePluginRequestV2> + Send>>,
-    ) -> ResultStream<native::CreatePluginResponseV2, PluginRegistryServiceClientError> {
+    //) -> ResultStream<native::CreatePluginResponseV2, PluginRegistryServiceClientError> {
+    ) -> Result<PinnedStream<native::CreatePluginResponseV2>, PluginRegistryServiceClientError> {
         // Might be nice to add a client-side "business-logic validation" hook
         // i.e. to error based on .plugin_artifact.len()
         let proto_response = self
