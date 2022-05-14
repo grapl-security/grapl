@@ -1,13 +1,13 @@
 use std::{time::Duration, pin::Pin};
 
 use futures::{
-    channel::oneshot::{
+    channel::{oneshot::{
         self,
         Receiver,
         Sender,
-    },
+    }, mpsc},
     Future,
-    FutureExt, Stream, StreamExt,
+    FutureExt, Stream, StreamExt, SinkExt,
 };
 use proto::plugin_registry_service_server::PluginRegistryService;
 use tokio::net::TcpListener;
@@ -55,7 +55,8 @@ use crate::{
 
 // This complicated signature is suggested by Tonic:
 // https://github.com/hyperium/tonic/blob/master/examples/routeguide-tutorial.md#bidirectional-streaming-rpc
-type CreatePluginResponseStream<E> = Pin<Box<dyn Stream<Item = Result<CreatePluginResponseV2, E>> + Send  + 'static>>;
+
+type CreatePluginResponseStream<E> = Pin<Box<dyn Stream<Item = Result<CreatePluginResponseV2, E>>>>;
 
 /// Implement this trait to define the API business logic
 #[tonic::async_trait]
@@ -99,55 +100,50 @@ impl<T> PluginRegistryService for GrpcApi<T>
 where
     T: PluginRegistryApi + Send + Sync + 'static,
 {
-    type CreatePluginStream = Pin<Box<dyn Stream<Item = Result<proto::CreatePluginResponseV2, tonic::Status>> + Send  + 'static>>;
+    type CreatePluginStream = mpsc::Receiver<Result<proto::CreatePluginResponseV2, tonic::Status>>;
     async fn create_plugin(
         &self,
         request: Request<tonic::Streaming<proto::CreatePluginRequestV2>>,
     ) -> Result<Response<Self::CreatePluginStream>, tonic::Status>
     {
+        // Based on
+        // https://github.com/rkudryashov/exploring-rust-ecosystem/blob/master/grpc-telegram-bot/server/src/main.rs
+
         type Req = proto::CreatePluginRequestV2;
         type ProtoInner = Result<Req, tonic::Status>;
         type ProtoStream = dyn Stream<Item = ProtoInner>;
         let proto_stream = request.into_inner();
 
-        type NativeInner = Result<CreatePluginRequestV2, tonic::Status>;
-        type NativeStream = dyn Stream<Item = NativeInner>;
-        let native_stream: Pin<Box<NativeStream>> = proto_stream.map(|res: ProtoInner| {
-            res
-            .and_then(|req| CreatePluginRequestV2::try_from(req).map_err(tonic::Status::from))
-        }).boxed();
+        let (
+            mut input_tx,
+            input_rx,
+        ) = mpsc::channel(4);
 
-        type NativeStreamNoErr = dyn Stream<Item = CreatePluginRequestV2>;
-        let native_stream: Pin<Box<NativeStreamNoErr>> = native_stream.map(|res: NativeInner| res?).boxed();
-
-        /*
-        while let Some(res) = proto_stream.next().await {
-            match res {
-                Ok(request) => {
-                    
-                },
-                _ => {
-
-                }
-            }
+        while let Some(proto_request_or_error) = proto_stream.next().await {
+            let nativeized: CreatePluginRequestV2 = proto_request_or_error?.try_into()?;
+            input_tx.send(nativeized);
         }
-        */
-        /*
-        type NativeInner = Result<CreatePluginRequestV2, tonic::Status>;
-        //let native_stream: Box<dyn Stream<Item = NativeInner>> = proto_stream.map_ok(|proto| proto.try_into()?).boxed();
-        let native_stream: Box<dyn Stream<Item = NativeInner>> = proto_stream.map_ok(|proto| proto.try_into()?).boxed();
-        
-        let native_response = self
-            .api_server
-            .create_plugin(native_stream)
-            ;//.map_err(Into::into)?;
 
-        let proto_response = native_response.try_into().map_err(SerDeError::from)?;
-        */
+        let native_output_stream = self.api_server.create_plugin(input_rx).await;
 
+        type NativeErr<T> = <T as PluginRegistryApi>::Error;
+        let proto_output_stream = 
+            native_output_stream.map(|result: Result<CreatePluginResponseV2, NativeErr<T>>| {
+                result.map(Into::into).map_err(Into::into)
+            })
+        ;
 
-        Ok(Response::new(Box::pin(output)
-        as ProtoCreatePluginResponseStream))
+        let (
+            mut output_tx,
+            output_rx,
+        ) = mpsc::channel(4);
+
+        proto_output_stream.send_all(output_tx);
+
+        // fn takes: Stream<Native>, tx.send
+        Ok(Response::new(Box::pin(
+            tokio_stream::wrappers::ReceiverStream::new(output_rx),
+        )))
     }
     
 
