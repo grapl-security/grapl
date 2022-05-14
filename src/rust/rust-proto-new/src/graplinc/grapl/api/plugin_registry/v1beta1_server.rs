@@ -91,17 +91,19 @@ pub trait PluginRegistryApi {
     ) -> Result<GetAnalyzersForTenantResponse, Self::Error>;
 }
 
-type ProtoCreatePluginResponseStream = Pin<Box<(dyn futures::Future<Output = Result<tonic::Response<proto::CreatePluginResponseV2>, tonic::Status>> + std::marker::Send)>>;
+//type ProtoCreatePluginResponseStream = Pin<Box<(dyn futures::Future<Output = Result<tonic::Response<proto::CreatePluginResponseV2>, tonic::Status>> + std::marker::Send)>>;
+
 
 #[tonic::async_trait]
 impl<T> PluginRegistryService for GrpcApi<T>
 where
     T: PluginRegistryApi + Send + Sync + 'static,
 {
+    type CreatePluginStream = Pin<Box<dyn Stream<Item = Result<proto::CreatePluginResponseV2, tonic::Status>> + Send  + 'static>>;
     async fn create_plugin(
         &self,
         request: Request<tonic::Streaming<proto::CreatePluginRequestV2>>,
-    ) -> ProtoCreatePluginResponseStream 
+    ) -> Result<Response<Self::CreatePluginStream>, tonic::Status>
     {
         type Req = proto::CreatePluginRequestV2;
         type ProtoInner = Result<Req, tonic::Status>;
