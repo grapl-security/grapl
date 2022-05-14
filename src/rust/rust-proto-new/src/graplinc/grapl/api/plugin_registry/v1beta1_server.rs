@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{time::Duration, pin::Pin};
 
 use futures::{
     channel::oneshot::{
@@ -7,7 +7,7 @@ use futures::{
         Sender,
     },
     Future,
-    FutureExt,
+    FutureExt, Stream, StreamExt,
 };
 use proto::plugin_registry_service_server::PluginRegistryService;
 use tokio::net::TcpListener;
@@ -53,6 +53,10 @@ use crate::{
     SerDeError,
 };
 
+// This complicated signature is suggested by Tonic:
+// https://github.com/hyperium/tonic/blob/master/examples/routeguide-tutorial.md#bidirectional-streaming-rpc
+type CreatePluginResponseStream<E> = Pin<Box<dyn Stream<Item = Result<CreatePluginResponseV2, E>> + Send  + 'static>>;
+
 /// Implement this trait to define the API business logic
 #[tonic::async_trait]
 pub trait PluginRegistryApi {
@@ -60,8 +64,8 @@ pub trait PluginRegistryApi {
 
     async fn create_plugin(
         &self,
-        request: CreatePluginRequestV2,
-    ) -> Result<CreatePluginResponseV2, Self::Error>;
+        request: impl Stream<Item = CreatePluginRequestV2>,
+    ) -> CreatePluginResponseStream<Self::Error>;
 
     async fn get_plugin(&self, request: GetPluginRequest)
         -> Result<GetPluginResponse, Self::Error>;
@@ -87,6 +91,8 @@ pub trait PluginRegistryApi {
     ) -> Result<GetAnalyzersForTenantResponse, Self::Error>;
 }
 
+type ProtoCreatePluginResponseStream = Pin<Box<(dyn futures::Future<Output = Result<tonic::Response<proto::CreatePluginResponseV2>, tonic::Status>> + std::marker::Send)>>;
+
 #[tonic::async_trait]
 impl<T> PluginRegistryService for GrpcApi<T>
 where
@@ -94,10 +100,54 @@ where
 {
     async fn create_plugin(
         &self,
-        request: Request<proto::CreatePluginRequestV2>,
-    ) -> Result<Response<proto::CreatePluginResponseV2>, tonic::Status> {
-        execute_rpc!(self, request, create_plugin)
+        request: Request<tonic::Streaming<proto::CreatePluginRequestV2>>,
+    ) -> ProtoCreatePluginResponseStream 
+    {
+        type Req = proto::CreatePluginRequestV2;
+        type ProtoInner = Result<Req, tonic::Status>;
+        type ProtoStream = dyn Stream<Item = ProtoInner>;
+        let proto_stream = request.into_inner();
+
+        type NativeInner = Result<CreatePluginRequestV2, tonic::Status>;
+        type NativeStream = dyn Stream<Item = NativeInner>;
+        let native_stream: Pin<Box<NativeStream>> = proto_stream.map(|res: ProtoInner| {
+            res
+            .and_then(|req| CreatePluginRequestV2::try_from(req).map_err(tonic::Status::from))
+        }).boxed();
+
+        type NativeStreamNoErr = dyn Stream<Item = CreatePluginRequestV2>;
+        let native_stream: Pin<Box<NativeStreamNoErr>> = native_stream.map(|res: NativeInner| res?).boxed();
+
+        /*
+        while let Some(res) = proto_stream.next().await {
+            match res {
+                Ok(request) => {
+                    
+                },
+                _ => {
+
+                }
+            }
+        }
+        */
+        /*
+        type NativeInner = Result<CreatePluginRequestV2, tonic::Status>;
+        //let native_stream: Box<dyn Stream<Item = NativeInner>> = proto_stream.map_ok(|proto| proto.try_into()?).boxed();
+        let native_stream: Box<dyn Stream<Item = NativeInner>> = proto_stream.map_ok(|proto| proto.try_into()?).boxed();
+        
+        let native_response = self
+            .api_server
+            .create_plugin(native_stream)
+            ;//.map_err(Into::into)?;
+
+        let proto_response = native_response.try_into().map_err(SerDeError::from)?;
+        */
+
+
+        Ok(Response::new(Box::pin(output)
+        as ProtoCreatePluginResponseStream))
     }
+    
 
     async fn get_plugin(
         &self,
