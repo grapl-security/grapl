@@ -108,7 +108,7 @@ shell: ## Drop into a shell inside the build container
 
 .PHONY: start
 start: extra_docker_run_args := --interactive --tty --network host
-start: build-image
+start: build-code
 start: # Yarn React development server
 	$(DOCKER_RUN) yarn start
 

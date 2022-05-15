@@ -171,6 +171,7 @@ group "rust-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
     "analyzer-dispatcher",
+    "generator-executor",
     "graph-merger",
     "grapl-web-ui",
     "model-plugin-deployer",
@@ -182,7 +183,7 @@ group "rust-services" {
     "plugin-bootstrap",
     "plugin-registry",
     "plugin-work-queue",
-    "sysmon-generator"
+    "sysmon-generator",
   ]
 }
 
@@ -209,7 +210,8 @@ group "local-only-services" {
   targets = [
     "localstack",
     "postgres",
-    "pulumi"
+    "pulumi",
+    "scylladb"
   ]
 }
 
@@ -246,7 +248,7 @@ group "all" {
     "all-tests",
     "local-only-services",
     "grapl-services",
-    "plugin-bootstrap-init",
+    "export-rust-build-artifacts-to-dist",
   ]
 }
 
@@ -267,7 +269,14 @@ group "all" {
 # All Rust services defined in src/rust/Dockerfile should inherit from
 # this target.
 target "_rust-base" {
-  context    = "src"
+  context = "src"
+
+  # Additional named contexts: 
+  # https://www.docker.com/blog/dockerfiles-now-support-multiple-build-contexts/
+  contexts = {
+    dist-ctx = "dist"
+    test-ctx = "test"
+  }
   dockerfile = "rust/Dockerfile"
   args = {
     RUST_BUILD = "${RUST_BUILD}"
@@ -323,7 +332,6 @@ target "node-identifier-retry" {
   ]
 }
 
-
 target "organization-management" {
   inherits = ["_rust-base"]
   target   = "organization-management-deploy"
@@ -356,11 +364,13 @@ target "plugin-bootstrap" {
   ]
 }
 
-target "plugin-bootstrap-init" {
+# A somewhat special target among the Rust targets, as it
+# has an `output =` that dumps its contents into `dist/`.
+target "export-rust-build-artifacts-to-dist" {
   inherits = ["_rust-base"]
-  target   = "plugin-bootstrap-init-output"
+  target   = "export-rust-build-artifacts-to-dist"
   output = [
-    "type=local,dest=${DIST_DIR}/plugin-bootstrap-init"
+    "type=local,dest=${DIST_DIR}"
   ]
 }
 
@@ -380,6 +390,14 @@ target "plugin-work-queue" {
   ]
 }
 
+target "generator-executor" {
+  inherits = ["_rust-base"]
+  target   = "generator-executor-deploy"
+  tags = [
+    upstream_aware_tag("generator-executor")
+  ]
+}
+
 target "sysmon-generator" {
   inherits = ["_rust-base"]
   target   = "sysmon-generator-deploy"
@@ -394,7 +412,10 @@ target "sysmon-generator" {
 # All Python services defined in src/python/Dockerfile should inherit
 # from this target.
 target "_python-base" {
-  context    = "."
+  contexts = {
+    dist-ctx = "dist"
+    etc-ctx  = "etc"
+  }
   dockerfile = "src/python/Dockerfile"
   labels     = oci_labels
 }
@@ -502,6 +523,15 @@ target "postgres" {
   dockerfile = "Dockerfile"
   tags = [
     local_only_tag("postgres-ext")
+  ]
+  labels = oci_labels
+}
+
+target "scylladb" {
+  context    = "scylladb"
+  dockerfile = "Dockerfile"
+  tags = [
+    local_only_tag("scylladb-ext")
   ]
   labels = oci_labels
 }

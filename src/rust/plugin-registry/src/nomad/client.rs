@@ -1,5 +1,6 @@
 use std::net::SocketAddr;
 
+use clap::Parser;
 use nomad_client_gen::{
     apis::{
         configuration::Configuration as InternalConfig,
@@ -9,12 +10,11 @@ use nomad_client_gen::{
     },
     models,
 };
-use structopt::StructOpt;
 
 /// Represents the environment variables needed to construct a NomadClient
-#[derive(StructOpt, Debug)]
+#[derive(clap::Parser, Debug)]
 pub struct NomadClientConfig {
-    #[structopt(env)]
+    #[clap(long, env)]
     /// "${attr.unique.network.ip-address}:4646
     nomad_service_address: SocketAddr,
 }
@@ -41,7 +41,7 @@ pub enum NomadClientError {
 impl NomadClient {
     /// Create a client from environment
     pub fn from_env() -> Self {
-        Self::from_client_config(NomadClientConfig::from_args())
+        Self::from_client_config(NomadClientConfig::parse())
     }
 
     pub fn from_client_config(nomad_client_config: NomadClientConfig) -> Self {
@@ -54,6 +54,7 @@ impl NomadClient {
     }
 
     /// Create or update a namespace (primary key'd on `name`)
+    #[tracing::instrument(skip(self, new_namespace), err)]
     pub async fn create_update_namespace(
         &self,
         new_namespace: models::Namespace,
@@ -71,6 +72,7 @@ impl NomadClient {
         .map_err(NomadClientError::from)
     }
 
+    #[tracing::instrument(skip(self, job, job_name, namespace), err)]
     pub async fn create_job(
         &self,
         job: &models::Job,
@@ -93,6 +95,7 @@ impl NomadClient {
         .map_err(NomadClientError::from)
     }
 
+    #[tracing::instrument(skip(self, job, job_name, namespace), err)]
     pub async fn plan_job(
         &self,
         job: &models::Job,

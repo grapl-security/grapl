@@ -7,6 +7,9 @@ set -euo pipefail
 source etc/chromeos/lib/installs.sh
 
 echo "Starting ChromeOS automated setup"
+
+configure_grapl_repository
+
 update_linux
 fix_shell_completion
 install_build_tooling

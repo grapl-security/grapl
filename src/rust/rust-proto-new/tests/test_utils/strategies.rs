@@ -32,6 +32,13 @@ pub fn string_not_empty() -> proptest::string::RegexGeneratorStrategy<String> {
     proptest::string::string_regex(".+").expect("Invalid regex")
 }
 
+pub fn vec_not_empty<T>() -> impl Strategy<Value = Vec<T>>
+where
+    T: Arbitrary,
+{
+    any::<Vec<T>>().prop_filter("Only accept non-empty vecs", |v| !v.is_empty())
+}
+
 pub mod pipeline {
     use std::fmt::Debug;
 
@@ -117,6 +124,396 @@ pub mod pipeline {
                 inner_message,
             }
         })
+    }
+}
+
+pub mod graph {
+    use proptest::collection;
+    use rust_proto_new::graplinc::grapl::api::graph::v1beta1::{
+        DecrementOnlyIntProp,
+        DecrementOnlyUintProp,
+        Edge,
+        EdgeList,
+        GraphDescription,
+        IdStrategy,
+        IdentifiedGraph,
+        IdentifiedNode,
+        ImmutableIntProp,
+        ImmutableStrProp,
+        ImmutableUintProp,
+        IncrementOnlyIntProp,
+        IncrementOnlyUintProp,
+        MergedEdge,
+        MergedEdgeList,
+        MergedGraph,
+        MergedNode,
+        NodeDescription,
+        NodeProperty,
+        Property,
+        Session,
+        Static,
+        Strategy as GraphStrategy,
+    };
+
+    use super::*;
+
+    //
+    // DecrementOnlyIntProp
+    //
+
+    prop_compose! {
+        pub fn decrement_only_int_props()(
+            prop in any::<i64>(),
+        ) -> DecrementOnlyIntProp {
+            DecrementOnlyIntProp {
+                prop
+            }
+        }
+    }
+
+    //
+    // DecrementOnlyUintProp
+    //
+
+    prop_compose! {
+        pub fn decrement_only_uint_props()(
+            prop in any::<u64>(),
+        ) -> DecrementOnlyUintProp {
+            DecrementOnlyUintProp {
+                prop
+            }
+        }
+    }
+
+    //
+    // ImmutableIntProp
+    //
+
+    prop_compose! {
+        pub fn immutable_int_props()(
+            prop in any::<i64>(),
+        ) -> ImmutableIntProp {
+            ImmutableIntProp {
+                prop
+            }
+        }
+    }
+
+    //
+    // ImmutableStrProp
+    //
+
+    prop_compose! {
+        pub fn immutable_str_props()(
+            prop in any::<String>(),
+        ) -> ImmutableStrProp {
+            ImmutableStrProp {
+                prop
+            }
+        }
+    }
+
+    //
+    // ImmutableUintProp
+    //
+
+    prop_compose! {
+        pub fn immutable_uint_props()(
+            prop in any::<u64>(),
+        ) -> ImmutableUintProp {
+            ImmutableUintProp {
+                prop
+            }
+        }
+    }
+
+    //
+    // IncrementOnlyIntProp
+    //
+
+    prop_compose! {
+        pub fn increment_only_int_props()(
+            prop in any::<i64>(),
+        ) -> IncrementOnlyIntProp {
+            IncrementOnlyIntProp {
+                prop
+            }
+        }
+    }
+
+    //
+    // IncrementOnlyUintProp
+    //
+
+    prop_compose! {
+        pub fn increment_only_uint_props()(
+            prop in any::<u64>(),
+        ) -> IncrementOnlyUintProp {
+            IncrementOnlyUintProp {
+                prop
+            }
+        }
+    }
+
+    //
+    // Edge
+    //
+
+    prop_compose! {
+        pub fn edges()(
+            to_node_key in any::<String>(),
+            from_node_key in any::<String>(),
+            edge_name in any::<String>(),
+        ) -> Edge {
+            Edge {
+                to_node_key,
+                from_node_key,
+                edge_name,
+            }
+        }
+    }
+
+    //
+    // EdgeList
+    //
+
+    prop_compose! {
+        pub fn edge_lists()(
+            edges in collection::vec(edges(), 10),
+        ) -> EdgeList {
+            EdgeList {
+                edges
+            }
+        }
+    }
+
+    //
+    // Session
+    //
+
+    prop_compose! {
+        pub fn sessions()(
+            primary_key_properties in collection::vec(any::<String>(), 10),
+            primary_key_requires_asset_id in any::<bool>(),
+            create_time in any::<u64>(),
+            last_seen_time in any::<u64>(),
+            terminate_time in any::<u64>(),
+        ) -> Session {
+            Session {
+                primary_key_properties,
+                primary_key_requires_asset_id,
+                create_time,
+                last_seen_time,
+                terminate_time
+            }
+        }
+    }
+
+    //
+    // Static
+    //
+
+    prop_compose! {
+        pub fn statics()(
+            primary_key_properties in collection::vec(any::<String>(), 10),
+            primary_key_requires_asset_id in any::<bool>(),
+        ) -> Static {
+            Static {
+                primary_key_properties,
+                primary_key_requires_asset_id
+            }
+        }
+    }
+
+    //
+    // Strategy
+    //
+
+    pub fn strategies() -> impl Strategy<Value = GraphStrategy> {
+        prop_oneof![
+            sessions().prop_map(GraphStrategy::Session),
+            statics().prop_map(GraphStrategy::Static),
+        ]
+    }
+
+    //
+    // IdStrategy
+    //
+
+    prop_compose! {
+        pub fn id_strategies()(
+            strategy in strategies()
+        ) -> IdStrategy {
+            IdStrategy { strategy }
+        }
+    }
+
+    //
+    // Property
+    //
+
+    pub fn properties() -> impl Strategy<Value = Property> {
+        prop_oneof![
+            decrement_only_int_props().prop_map(Property::DecrementOnlyIntProp),
+            decrement_only_uint_props().prop_map(Property::DecrementOnlyUintProp),
+            immutable_int_props().prop_map(Property::ImmutableIntProp),
+            immutable_str_props().prop_map(Property::ImmutableStrProp),
+            immutable_uint_props().prop_map(Property::ImmutableUintProp),
+            increment_only_int_props().prop_map(Property::IncrementOnlyIntProp),
+            increment_only_uint_props().prop_map(Property::IncrementOnlyUintProp),
+        ]
+    }
+
+    //
+    // NodeProperty
+    //
+
+    prop_compose! {
+        pub fn node_properties()(
+            property in properties()
+        ) -> NodeProperty {
+            NodeProperty { property }
+        }
+    }
+
+    //
+    // NodeDescription
+    //
+
+    prop_compose! {
+        pub fn node_descriptions()(
+            properties in collection::hash_map(any::<String>(), node_properties(), 10),
+            node_key in any::<String>(),
+            node_type in any::<String>(),
+            id_strategy in collection::vec(id_strategies(), 10),
+        ) -> NodeDescription {
+            NodeDescription {
+                properties,
+                node_key,
+                node_type,
+                id_strategy
+            }
+        }
+    }
+
+    //
+    // GraphDescription
+    //
+
+    prop_compose! {
+        pub fn graph_descriptions()(
+            nodes in collection::hash_map(any::<String>(), node_descriptions(), 10),
+            edges in collection::hash_map(any::<String>(), edge_lists(), 10),
+        ) -> GraphDescription {
+            GraphDescription {
+                nodes,
+                edges,
+            }
+        }
+    }
+
+    //
+    // IdentifiedNode
+    //
+
+    prop_compose! {
+        pub fn identified_nodes()(
+            properties in collection::hash_map(any::<String>(), node_properties(), 10),
+            node_key in any::<String>(),
+            node_type in any::<String>(),
+        ) -> IdentifiedNode {
+            IdentifiedNode {
+                properties,
+                node_key,
+                node_type
+            }
+        }
+    }
+
+    //
+    // IdentifiedGraph
+    //
+
+    prop_compose! {
+        pub fn identified_graphs()(
+            nodes in collection::hash_map(any::<String>(), identified_nodes(), 10),
+            edges in collection::hash_map(any::<String>(), edge_lists(), 10),
+        ) -> IdentifiedGraph {
+            IdentifiedGraph {
+                nodes,
+                edges
+            }
+        }
+    }
+
+    //
+    // MergedEdge
+    //
+
+    prop_compose! {
+        pub fn merged_edges()(
+            from_uid in any::<String>(),
+            from_node_key in any::<String>(),
+            to_uid in any::<String>(),
+            to_node_key in any::<String>(),
+            edge_name in any::<String>(),
+        ) -> MergedEdge {
+            MergedEdge {
+                from_uid,
+                from_node_key,
+                to_uid,
+                to_node_key,
+                edge_name
+            }
+        }
+    }
+
+    //
+    // MergedEdgeList
+    //
+
+    prop_compose! {
+        pub fn merged_edge_lists()(
+            edges in collection::vec(merged_edges(), 10),
+        ) -> MergedEdgeList {
+            MergedEdgeList { edges }
+        }
+    }
+
+    //
+    // MergedNode
+    //
+
+    prop_compose! {
+        pub fn merged_nodes()(
+            properties in collection::hash_map(any::<String>(), node_properties(), 10),
+            uid in any::<u64>(),
+            node_key in any::<String>(),
+            node_type in any::<String>(),
+        ) -> MergedNode {
+            MergedNode {
+                properties,
+                uid,
+                node_key,
+                node_type
+            }
+        }
+    }
+
+    //
+    // MergedGraph
+    //
+
+    prop_compose! {
+        pub fn merged_graphs()(
+            nodes in collection::hash_map(any::<String>(), merged_nodes(), 10),
+            edges in collection::hash_map(any::<String>(), merged_edge_lists(), 10),
+        ) -> MergedGraph {
+            MergedGraph {
+                nodes,
+                edges,
+            }
+        }
     }
 }
 
@@ -318,5 +715,163 @@ pub mod plugin_registry {
 
     pub fn tear_down_plugin_responses() -> impl Strategy<Value = TearDownPluginResponse> {
         Just(TearDownPluginResponse {})
+    }
+}
+
+pub mod plugin_sdk_generators {
+    use rust_proto_new::graplinc::grapl::api::plugin_sdk::generators::v1beta1 as native;
+
+    use super::*;
+
+    prop_compose! {
+        fn generated_graphs()(
+            graph_description in graph::graph_descriptions()
+        ) -> native::GeneratedGraph {
+            native::GeneratedGraph {
+                graph_description
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn run_generator_requests()(
+            data in any::<Vec<u8>>()
+        ) -> native::RunGeneratorRequest {
+            native::RunGeneratorRequest {
+                data
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn run_generator_responses()(
+            generated_graph in generated_graphs(),
+        ) -> native::RunGeneratorResponse {
+            native::RunGeneratorResponse {
+                generated_graph
+            }
+        }
+    }
+}
+
+pub mod plugin_work_queue {
+    use rust_proto_new::graplinc::grapl::api::plugin_work_queue::v1beta1 as native;
+
+    use super::*;
+
+    prop_compose! {
+        pub fn execution_jobs()(
+            tenant_id in uuids(),
+            plugin_id in uuids(),
+            data in vec_not_empty::<u8>(),
+        ) -> native::ExecutionJob {
+            native::ExecutionJob {
+                tenant_id,
+                plugin_id,
+                data,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn acknowledge_generator_requests()(
+            request_id in any::<i64>(),
+            success in any::<bool>(),
+        ) -> native::AcknowledgeGeneratorRequest {
+            native::AcknowledgeGeneratorRequest {
+                request_id,
+                success,
+            }
+        }
+    }
+
+    pub fn acknowledge_generator_responses(
+    ) -> impl Strategy<Value = native::AcknowledgeGeneratorResponse> {
+        Just(native::AcknowledgeGeneratorResponse {})
+    }
+
+    prop_compose! {
+        pub fn acknowledge_analyzer_requests()(
+            request_id in any::<i64>(),
+            success in any::<bool>(),
+        ) -> native::AcknowledgeAnalyzerRequest {
+            native::AcknowledgeAnalyzerRequest {
+                request_id,
+                success,
+            }
+        }
+    }
+
+    pub fn acknowledge_analyzer_responses(
+    ) -> impl Strategy<Value = native::AcknowledgeAnalyzerResponse> {
+        Just(native::AcknowledgeAnalyzerResponse {})
+    }
+
+    pub fn maybe_jobs() -> impl Strategy<Value = Option<native::ExecutionJob>> {
+        proptest::option::of(execution_jobs())
+    }
+
+    pub fn get_execute_analyzer_requests(
+    ) -> impl Strategy<Value = native::GetExecuteAnalyzerRequest> {
+        Just(native::GetExecuteAnalyzerRequest {})
+    }
+
+    prop_compose! {
+        pub fn get_execute_analyzer_responses()(
+            execution_job in maybe_jobs(),
+            request_id in any::<i64>(),
+        ) -> native::GetExecuteAnalyzerResponse {
+            native::GetExecuteAnalyzerResponse {
+                execution_job,
+                request_id,
+            }
+        }
+    }
+
+    pub fn get_execute_generator_requests(
+    ) -> impl Strategy<Value = native::GetExecuteGeneratorRequest> {
+        Just(native::GetExecuteGeneratorRequest {})
+    }
+
+    prop_compose! {
+        pub fn get_execute_generator_responses()(
+            execution_job in maybe_jobs(),
+            request_id in any::<i64>(),
+        ) -> native::GetExecuteGeneratorResponse {
+            native::GetExecuteGeneratorResponse {
+                execution_job,
+                request_id,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn put_execute_analyzer_requests()(
+            execution_job in execution_jobs(),
+        ) -> native::PutExecuteAnalyzerRequest {
+            native::PutExecuteAnalyzerRequest {
+                execution_job,
+            }
+        }
+    }
+
+    pub fn put_execute_analyzer_responses(
+    ) -> impl Strategy<Value = native::PutExecuteAnalyzerResponse> {
+        Just(native::PutExecuteAnalyzerResponse {})
+    }
+
+    prop_compose! {
+        pub fn put_execute_generator_requests()(
+            execution_job in execution_jobs(),
+        ) -> native::PutExecuteGeneratorRequest {
+            native::PutExecuteGeneratorRequest {
+                execution_job,
+            }
+        }
+    }
+
+    pub fn put_execute_generator_responses(
+    ) -> impl Strategy<Value = native::PutExecuteGeneratorResponse> {
+        Just(native::PutExecuteGeneratorResponse {})
     }
 }

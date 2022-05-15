@@ -44,6 +44,11 @@ job "grapl-plugin" {
 
   group "plugin" {
     network {
+      mode = "bridge"
+      // TODO
+      // dns {
+      //   servers = local.dns_servers
+      // }
       port "plugin-grpc-receiver" {}
     }
 
@@ -52,6 +57,33 @@ job "grapl-plugin" {
     }
 
     count = var.plugin_count
+
+    service {
+      name = "plugin-${var.plugin_id}"
+      port = "plugin-grpc-receiver"
+      tags = [
+        "plugin",
+        "tenant-${var.tenant_id}",
+        "plugin-${var.plugin_id}"
+      ]
+
+      connect {
+        sidecar_service {
+          proxy {
+            config {
+              protocol = "http"
+            }
+          }
+        }
+      }
+
+      check {
+        type     = "grpc"
+        port     = "pipeline-ingress-port"
+        interval = "10s"
+        timeout  = "3s"
+      }
+    }
 
     # a Docker task holding:
     # - the plugin binary itself (mounted)
@@ -91,18 +123,13 @@ EOF
       env {
         TENANT_ID  = "${var.tenant_id}"
         PLUGIN_ID  = "${var.plugin_id}"
-        BIND_PORT  = "${NOMAD_PORT_plugin-grpc-receiver}"
         PLUGIN_BIN = "/mnt/nomad_task_dir/plugin.bin"
-      }
+        # Consumed by GeneratorServiceConfig
+        PLUGIN_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_plugin-grpc-receiver}"
 
-      service {
-        name = "plugin-${var.plugin_id}"
-        port = "plugin-grpc-receiver"
-        tags = [
-          "plugin",
-          "tenant-${var.tenant_id}",
-          "plugin-${var.plugin_id}"
-        ]
+        # Should we make these eventually customizable?
+        RUST_LOG       = "DEBUG"
+        RUST_BACKTRACE = 1
       }
     }
   }

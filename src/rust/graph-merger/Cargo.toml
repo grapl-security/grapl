@@ -53,7 +53,7 @@ tokio = { version = "1.17", features = [
   "sync",
   "time",
 ] }
-chrono = { version = "0.4", default-features = false }
+chrono = "0.4.19"
 tracing = "0.1.29"
 thiserror = "1.0.30"
 tracing-futures = "0.2.5"

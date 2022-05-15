@@ -38,6 +38,7 @@ BUILD @christophermaier
 /pyproject.toml @christophermaier
 /README.md @christophermaier
 /.rustfmt.toml @christophermaier
+/scylladb/ @twunderlich-grapl
 /src/js/engagement_view/ @andrea-grapl
 /src/js/graphql_endpoint/ @andrea-grapl
 /src/proto/ @grapl-security/wg-data-infra
@@ -60,6 +61,7 @@ BUILD @christophermaier
 /src/rust/.cargo/audit.toml @colin-grapl @inickles-grapl
 /src/rust/Cargo.lock @christophermaier
 /src/rust/Cargo.toml @christophermaier
+/src/rust/consul-connect/ @colin-grapl @wimax-grapl
 /src/rust/derive-dynamic-node/ @colin-grapl
 /src/rust/endpoint-plugin/ @inickles-grapl
 /src/rust/generators/ @inickles-grapl
@@ -76,6 +78,7 @@ BUILD @christophermaier
 /src/rust/organization-management/ @andrea-grapl
 /src/rust/pipeline-ingress/ @jgrillo-grapl
 /src/rust/plugin-bootstrap/ @colin-grapl
+/src/rust/plugin-executor/ @wimax-grapl
 /src/rust/plugin-registry/ @colin-grapl
 /src/rust/plugin-sdk/ @colin-grapl
 /src/rust/plugin-work-queue/ @colin-grapl

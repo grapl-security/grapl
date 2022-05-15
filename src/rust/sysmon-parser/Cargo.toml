@@ -15,7 +15,7 @@ default = ["serde"]
 serde = ["dep:serde", "uuid/serde", "chrono/serde"]
 
 [dependencies]
-chrono = { version = "0.4", default-features = false }
+chrono = { version = "0.4" }
 derive-into-owned = "0.2"
 memchr = "2"
 thiserror = "1.0"

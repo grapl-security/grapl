@@ -1,21 +1,22 @@
 #![allow(warnings)]
 
-use crate::SerDeError;
-
-use crate::graplinc::grapl::api::graph::v1beta1::NodeProperty;
-use crate::protobufs::graplinc::grapl::api::graph_mutation::v1beta1::{
-    PropertyName as PropertyNameProto,
-    EdgeName as EdgeNameProto,
-    NodeType as NodeTypeProto,
-    Uid as UidProto,
-    SetNodePropertyRequest as SetNodePropertyRequestProto,
-    SetNodePropertyResponse as SetNodePropertyResponseProto,
-    CreateEdgeRequest as CreateEdgeRequestProto,
-    CreateEdgeResponse as CreateEdgeResponseProto,
-    CreateNodeRequest as CreateNodeRequestProto,
-    CreateNodeResponse as CreateNodeResponseProto,
+use crate::{
+    graplinc::grapl::api::graph::v1beta1::NodeProperty,
+    protobufs::graplinc::grapl::api::graph_mutation::v1beta1::{
+        CreateEdgeRequest as CreateEdgeRequestProto,
+        CreateEdgeResponse as CreateEdgeResponseProto,
+        CreateNodeRequest as CreateNodeRequestProto,
+        CreateNodeResponse as CreateNodeResponseProto,
+        EdgeName as EdgeNameProto,
+        NodeType as NodeTypeProto,
+        PropertyName as PropertyNameProto,
+        SetNodePropertyRequest as SetNodePropertyRequestProto,
+        SetNodePropertyResponse as SetNodePropertyResponseProto,
+        Uid as UidProto,
+    },
+    type_url,
+    SerDeError,
 };
-use crate::type_url;
 
 pub struct PropertyName {
     pub value: String,
@@ -24,17 +25,13 @@ pub struct PropertyName {
 impl TryFrom<PropertyNameProto> for PropertyName {
     type Error = SerDeError;
     fn try_from(proto: PropertyNameProto) -> Result<Self, Self::Error> {
-        Ok(Self {
-            value: proto.value,
-        })
+        Ok(Self { value: proto.value })
     }
 }
 
 impl From<PropertyName> for PropertyNameProto {
     fn from(value: PropertyName) -> Self {
-        Self {
-            value: value.value,
-        }
+        Self { value: value.value }
     }
 }
 
@@ -45,17 +42,13 @@ pub struct EdgeName {
 impl TryFrom<EdgeNameProto> for EdgeName {
     type Error = SerDeError;
     fn try_from(proto: EdgeNameProto) -> Result<Self, Self::Error> {
-        Ok(Self {
-            value: proto.value,
-        })
+        Ok(Self { value: proto.value })
     }
 }
 
 impl From<EdgeName> for EdgeNameProto {
     fn from(value: EdgeName) -> Self {
-        Self {
-            value: value.value,
-        }
+        Self { value: value.value }
     }
 }
 
@@ -66,17 +59,13 @@ pub struct NodeType {
 impl TryFrom<NodeTypeProto> for NodeType {
     type Error = SerDeError;
     fn try_from(proto: NodeTypeProto) -> Result<Self, Self::Error> {
-        Ok(Self {
-            value: proto.value,
-        })
+        Ok(Self { value: proto.value })
     }
 }
 
 impl From<NodeType> for NodeTypeProto {
     fn from(value: NodeType) -> Self {
-        Self {
-            value: value.value,
-        }
+        Self { value: value.value }
     }
 }
 
@@ -94,17 +83,13 @@ impl Uid {
 impl TryFrom<UidProto> for Uid {
     type Error = SerDeError;
     fn try_from(proto: UidProto) -> Result<Self, Self::Error> {
-        Ok(Self {
-            value: proto.value,
-        })
+        Ok(Self { value: proto.value })
     }
 }
 
 impl From<Uid> for UidProto {
     fn from(value: Uid) -> Self {
-        Self {
-            value: value.value,
-        }
+        Self { value: value.value }
     }
 }
 
@@ -119,15 +104,25 @@ pub struct SetNodePropertyRequest {
 impl TryFrom<SetNodePropertyRequestProto> for SetNodePropertyRequest {
     type Error = SerDeError;
     fn try_from(proto: SetNodePropertyRequestProto) -> Result<Self, Self::Error> {
-        let tenant_id = proto.tenant_id.ok_or(SerDeError::MissingField("tenant_id"))?
+        let tenant_id = proto
+            .tenant_id
+            .ok_or(SerDeError::MissingField("tenant_id"))?
             .into();
-        let uid = proto.uid.ok_or(SerDeError::MissingField("uid"))?
+        let uid = proto
+            .uid
+            .ok_or(SerDeError::MissingField("uid"))?
             .try_into()?;
-        let property_name = proto.property_name.ok_or(SerDeError::MissingField("property_name"))?
+        let property_name = proto
+            .property_name
+            .ok_or(SerDeError::MissingField("property_name"))?
             .try_into()?;
-        let property = proto.property.ok_or(SerDeError::MissingField("property"))?
+        let property = proto
+            .property
+            .ok_or(SerDeError::MissingField("property"))?
             .try_into()?;
-        let node_type = proto.node_type.ok_or(SerDeError::MissingField("node_type"))?
+        let node_type = proto
+            .node_type
+            .ok_or(SerDeError::MissingField("node_type"))?
             .try_into()?;
         Ok(Self {
             tenant_id,
@@ -182,13 +177,21 @@ pub struct CreateEdgeRequest {
 impl TryFrom<CreateEdgeRequestProto> for CreateEdgeRequest {
     type Error = SerDeError;
     fn try_from(proto: CreateEdgeRequestProto) -> Result<Self, Self::Error> {
-        let edge_name = proto.edge_name.ok_or(SerDeError::MissingField("edge_name"))?
+        let edge_name = proto
+            .edge_name
+            .ok_or(SerDeError::MissingField("edge_name"))?
             .try_into()?;
-        let tenant_id = proto.tenant_id.ok_or(SerDeError::MissingField("tenant_id"))?
+        let tenant_id = proto
+            .tenant_id
+            .ok_or(SerDeError::MissingField("tenant_id"))?
             .into();
-        let from_uid = proto.from_uid.ok_or(SerDeError::MissingField("from_uid"))?
+        let from_uid = proto
+            .from_uid
+            .ok_or(SerDeError::MissingField("from_uid"))?
             .try_into()?;
-        let to_uid = proto.to_uid.ok_or(SerDeError::MissingField("to_uid"))?
+        let to_uid = proto
+            .to_uid
+            .ok_or(SerDeError::MissingField("to_uid"))?
             .try_into()?;
         Ok(Self {
             edge_name,
@@ -239,9 +242,13 @@ pub struct CreateNodeRequest {
 impl TryFrom<CreateNodeRequestProto> for CreateNodeRequest {
     type Error = SerDeError;
     fn try_from(proto: CreateNodeRequestProto) -> Result<Self, Self::Error> {
-        let tenant_id = proto.tenant_id.ok_or(SerDeError::MissingField("tenant_id"))?
+        let tenant_id = proto
+            .tenant_id
+            .ok_or(SerDeError::MissingField("tenant_id"))?
             .into();
-        let node_type = proto.node_type.ok_or(SerDeError::MissingField("node_type"))?
+        let node_type = proto
+            .node_type
+            .ok_or(SerDeError::MissingField("node_type"))?
             .try_into()?;
         Ok(Self {
             tenant_id,
@@ -266,11 +273,11 @@ pub struct CreateNodeResponse {
 impl TryFrom<CreateNodeResponseProto> for CreateNodeResponse {
     type Error = SerDeError;
     fn try_from(proto: CreateNodeResponseProto) -> Result<Self, Self::Error> {
-        let uid = proto.uid.ok_or(SerDeError::MissingField("uid"))?
+        let uid = proto
+            .uid
+            .ok_or(SerDeError::MissingField("uid"))?
             .try_into()?;
-        Ok(Self {
-            uid,
-        })
+        Ok(Self { uid })
     }
 }
 
@@ -283,42 +290,52 @@ impl From<CreateNodeResponse> for CreateNodeResponseProto {
 }
 
 impl type_url::TypeUrl for PropertyName {
-    const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.PropertyName";
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.PropertyName";
 }
 
 impl type_url::TypeUrl for EdgeName {
-    const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.EdgeName";
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.EdgeName";
 }
 
 impl type_url::TypeUrl for NodeType {
-    const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.NodeType";
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.NodeType";
 }
 
 impl type_url::TypeUrl for Uid {
-    const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.Uid";
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.Uid";
 }
 
 impl type_url::TypeUrl for SetNodePropertyRequest {
-    const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.SetNodePropertyRequest";
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.SetNodePropertyRequest";
 }
 
 impl type_url::TypeUrl for SetNodePropertyResponse {
-    const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.SetNodePropertyResponse";
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.SetNodePropertyResponse";
 }
 
 impl type_url::TypeUrl for CreateEdgeRequest {
-    const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.CreateEdgeRequest";
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.CreateEdgeRequest";
 }
 
 impl type_url::TypeUrl for CreateEdgeResponse {
-    const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.CreateEdgeResponse";
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.CreateEdgeResponse";
 }
 
 impl type_url::TypeUrl for CreateNodeRequest {
-    const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.CreateNodeRequest";
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.CreateNodeRequest";
 }
 
 impl type_url::TypeUrl for CreateNodeResponse {
-    const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.CreateNodeResponse\
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.CreateNodeResponse\
     ";
 }

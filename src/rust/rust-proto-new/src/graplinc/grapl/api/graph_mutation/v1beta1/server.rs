@@ -1,18 +1,5 @@
 #![allow(warnings)]
 
-use crate::protobufs::graplinc::grapl::api::graph_mutation::v1beta1::{
-    CreateNodeRequest as CreateNodeRequestProto,
-    CreateNodeResponse as CreateNodeResponseProto,
-    SetNodePropertyRequest as SetNodePropertyRequestProto,
-    SetNodePropertyResponse as SetNodePropertyResponseProto,
-    CreateEdgeResponse as CreateEdgeResponseProto,
-    CreateEdgeRequest as CreateEdgeRequestProto,
-};
-use crate::protobufs::graplinc::grapl::api::graph_mutation::v1beta1::graph_mutation_service_server::{
-    GraphMutationService as GraphMutationServiceProto,
-    GraphMutationServiceServer as GraphMutationServiceServerProto,
-};
-use crate::graplinc::grapl::api::graph_mutation::v1beta1::messages::{CreateNodeRequest, CreateNodeResponse, SetNodePropertyRequest, SetNodePropertyResponse, CreateEdgeResponse, CreateEdgeRequest};
 use std::net::SocketAddr;
 
 use tonic::{
@@ -21,23 +8,53 @@ use tonic::{
     Response,
 };
 
-use crate::protocol::status::Status;
-
-use crate::SerDeError;
-
+use crate::{
+    graplinc::grapl::api::graph_mutation::v1beta1::messages::{
+        CreateEdgeRequest,
+        CreateEdgeResponse,
+        CreateNodeRequest,
+        CreateNodeResponse,
+        SetNodePropertyRequest,
+        SetNodePropertyResponse,
+    },
+    protobufs::graplinc::grapl::api::graph_mutation::v1beta1::{
+        graph_mutation_service_server::{
+            GraphMutationService as GraphMutationServiceProto,
+            GraphMutationServiceServer as GraphMutationServiceServerProto,
+        },
+        CreateEdgeRequest as CreateEdgeRequestProto,
+        CreateEdgeResponse as CreateEdgeResponseProto,
+        CreateNodeRequest as CreateNodeRequestProto,
+        CreateNodeResponse as CreateNodeResponseProto,
+        SetNodePropertyRequest as SetNodePropertyRequestProto,
+        SetNodePropertyResponse as SetNodePropertyResponseProto,
+    },
+    protocol::status::Status,
+    SerDeError,
+};
 
 #[tonic::async_trait]
 pub trait GraphMutationApi {
     type Error: Into<Status>;
-    async fn create_node(&self, request: CreateNodeRequest) -> Result<CreateNodeResponse, Self::Error>;
-    async fn set_node_property(&self, request: SetNodePropertyRequest) -> Result<SetNodePropertyResponse, Self::Error>;
-    async fn create_edge(&self, request: CreateEdgeRequest) -> Result<CreateEdgeResponse, Self::Error>;
+    async fn create_node(
+        &self,
+        request: CreateNodeRequest,
+    ) -> Result<CreateNodeResponse, Self::Error>;
+    async fn set_node_property(
+        &self,
+        request: SetNodePropertyRequest,
+    ) -> Result<SetNodePropertyResponse, Self::Error>;
+    async fn create_edge(
+        &self,
+        request: CreateEdgeRequest,
+    ) -> Result<CreateEdgeResponse, Self::Error>;
 }
 
 #[tonic::async_trait]
 impl<T, E> GraphMutationServiceProto for T
-    where T: GraphMutationApi<Error=E> + Send + Sync + 'static,
-          E: Into<Status> + Send + Sync + 'static,
+where
+    T: GraphMutationApi<Error = E> + Send + Sync + 'static,
+    E: Into<Status> + Send + Sync + 'static,
 {
     /// Create Node allocates a new node in the graph, returning the uid of the new node.
     async fn create_node(
@@ -45,8 +62,12 @@ impl<T, E> GraphMutationServiceProto for T
         request: tonic::Request<CreateNodeRequestProto>,
     ) -> Result<tonic::Response<CreateNodeResponseProto>, tonic::Status> {
         let request = request.into_inner();
-        let request = request.try_into().map_err(|e: SerDeError| tonic::Status::invalid_argument(e.to_string()))?;
-        let response = GraphMutationApi::create_node(self, request).await.map_err(|e| e.into())?;
+        let request = request
+            .try_into()
+            .map_err(|e: SerDeError| tonic::Status::invalid_argument(e.to_string()))?;
+        let response = GraphMutationApi::create_node(self, request)
+            .await
+            .map_err(|e| e.into())?;
 
         Ok(tonic::Response::new(response.into()))
     }
@@ -57,8 +78,12 @@ impl<T, E> GraphMutationServiceProto for T
         request: tonic::Request<SetNodePropertyRequestProto>,
     ) -> Result<tonic::Response<SetNodePropertyResponseProto>, tonic::Status> {
         let request = request.into_inner();
-        let request = request.try_into().map_err(|e: SerDeError| tonic::Status::invalid_argument(e.to_string()))?;
-        let response = GraphMutationApi::set_node_property(self, request).await.map_err(|e| e.into())?;
+        let request = request
+            .try_into()
+            .map_err(|e: SerDeError| tonic::Status::invalid_argument(e.to_string()))?;
+        let response = GraphMutationApi::set_node_property(self, request)
+            .await
+            .map_err(|e| e.into())?;
 
         Ok(tonic::Response::new(response.into()))
     }
@@ -69,8 +94,12 @@ impl<T, E> GraphMutationServiceProto for T
         request: tonic::Request<CreateEdgeRequestProto>,
     ) -> Result<tonic::Response<CreateEdgeResponseProto>, tonic::Status> {
         let request = request.into_inner();
-        let request: CreateEdgeRequest = request.try_into().map_err(|e: SerDeError| tonic::Status::invalid_argument(e.to_string()))?;
-        let response = GraphMutationApi::create_edge(self, request).await.map_err(|e| e.into())?;
+        let request: CreateEdgeRequest = request
+            .try_into()
+            .map_err(|e: SerDeError| tonic::Status::invalid_argument(e.to_string()))?;
+        let response = GraphMutationApi::create_edge(self, request)
+            .await
+            .map_err(|e| e.into())?;
 
         Ok(tonic::Response::new(response.into()))
     }

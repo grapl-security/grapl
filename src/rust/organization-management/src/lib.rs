@@ -1,20 +1,18 @@
 use std::net::SocketAddr;
 
-use structopt::StructOpt;
-
 pub mod client;
 pub mod server;
 
-#[derive(StructOpt, Debug)]
+#[derive(clap::Parser, Debug)]
 pub struct OrganizationManagementServiceConfig {
-    #[structopt(env)]
+    #[clap(long, env)]
     pub organization_management_bind_address: SocketAddr,
-    #[structopt(env)]
+    #[clap(long, env)]
     pub organization_management_db_hostname: String,
-    #[structopt(env)]
+    #[clap(long, env)]
     pub organization_management_db_port: u16,
-    #[structopt(env)]
+    #[clap(long, env)]
     pub organization_management_db_username: String,
-    #[structopt(env)]
+    #[clap(long, env)]
     pub organization_management_db_password: String,
 }

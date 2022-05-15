@@ -19,8 +19,11 @@ impl FromEnv<PluginRegistryServiceClient, Box<dyn std::error::Error>>
     async fn from_env() -> Result<PluginRegistryServiceClient, Box<dyn std::error::Error>> {
         let address = std::env::var(ADDRESS_ENV_VAR).expect(ADDRESS_ENV_VAR);
         let endpoint = Endpoint::from_shared(address)?
-            .timeout(Duration::from_secs(4))
-            .concurrency_limit(29);
+            // Really high timeout due to the potentially-large binary sent
+            // over `create_plugin`.
+            // https://github.com/grapl-security/issue-tracker/issues/937
+            .timeout(Duration::from_secs(20))
+            .concurrency_limit(30);
         Self::connect(endpoint).await
     }
 }

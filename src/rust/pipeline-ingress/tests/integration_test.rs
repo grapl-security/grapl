@@ -12,18 +12,18 @@ use opentelemetry::{
     global,
     sdk::propagation::TraceContextPropagator,
 };
-use rust_proto_new::graplinc::grapl::{
-    api::pipeline_ingress::v1beta1::{
-        client::{
-            HealthcheckClient,
-            PipelineIngressClient,
+use rust_proto_new::{
+    graplinc::grapl::{
+        api::pipeline_ingress::v1beta1::{
+            client::PipelineIngressClient,
+            PublishRawLogRequest,
         },
-        PublishRawLogRequest,
+        pipeline::{
+            v1beta1::RawLog,
+            v1beta2::Envelope,
+        },
     },
-    pipeline::{
-        v1beta1::RawLog,
-        v1beta2::Envelope,
-    },
+    protocol::healthcheck::client::HealthcheckClient,
 };
 use test_context::{
     test_context,
