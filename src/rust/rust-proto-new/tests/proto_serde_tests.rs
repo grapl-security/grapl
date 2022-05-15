@@ -1,4 +1,5 @@
 mod test_utils;
+
 use proptest::prelude::*;
 use rust_proto_new::graplinc::common::v1beta1::{
     Duration,
@@ -416,6 +417,60 @@ mod plugin_work_queue {
 
         #[test]
         fn test_put_execute_generator_responses(value in pwq_strats::put_execute_generator_responses()) {
+            check_encode_decode_invariant(value)
+        }
+    }
+}
+
+
+mod graph_mutation {
+    use strategies::graph_mutation as mg_strats;
+
+    use super::*;
+
+    proptest! {
+        #[test]
+        fn test_property_names(value in mg_strats::property_names()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_node_types(value in mg_strats::node_types()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_uids(value in mg_strats::uids()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_set_node_property_requests(value in mg_strats::set_node_property_requests()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_set_node_property_responses(value in mg_strats::set_node_property_responses()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_create_edge_requests(value in mg_strats::create_edge_requests()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_create_edge_responses(value in mg_strats::create_edge_responses()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_create_node_requests(value in mg_strats::create_node_requests()) {
+            check_encode_decode_invariant(value)
+        }
+
+        #[test]
+        fn test_create_node_responses(value in mg_strats::create_node_responses()) {
             check_encode_decode_invariant(value)
         }
     }

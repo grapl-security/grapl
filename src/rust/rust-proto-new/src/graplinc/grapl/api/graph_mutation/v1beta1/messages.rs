@@ -1,23 +1,19 @@
 #![allow(warnings)]
 
-use crate::{
-    graplinc::grapl::api::graph::v1beta1::NodeProperty,
-    protobufs::graplinc::grapl::api::graph_mutation::v1beta1::{
-        CreateEdgeRequest as CreateEdgeRequestProto,
-        CreateEdgeResponse as CreateEdgeResponseProto,
-        CreateNodeRequest as CreateNodeRequestProto,
-        CreateNodeResponse as CreateNodeResponseProto,
-        EdgeName as EdgeNameProto,
-        NodeType as NodeTypeProto,
-        PropertyName as PropertyNameProto,
-        SetNodePropertyRequest as SetNodePropertyRequestProto,
-        SetNodePropertyResponse as SetNodePropertyResponseProto,
-        Uid as UidProto,
-    },
-    type_url,
-    SerDeError,
-};
+use crate::{graplinc::grapl::api::graph::v1beta1::NodeProperty, protobufs::graplinc::grapl::api::graph_mutation::v1beta1::{
+    CreateEdgeRequest as CreateEdgeRequestProto,
+    CreateEdgeResponse as CreateEdgeResponseProto,
+    CreateNodeRequest as CreateNodeRequestProto,
+    CreateNodeResponse as CreateNodeResponseProto,
+    EdgeName as EdgeNameProto,
+    NodeType as NodeTypeProto,
+    PropertyName as PropertyNameProto,
+    SetNodePropertyRequest as SetNodePropertyRequestProto,
+    SetNodePropertyResponse as SetNodePropertyResponseProto,
+    Uid as UidProto,
+}, type_url, SerDeError, serde_impl};
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct PropertyName {
     pub value: String,
 }
@@ -35,6 +31,7 @@ impl From<PropertyName> for PropertyNameProto {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct EdgeName {
     pub value: String,
 }
@@ -52,6 +49,7 @@ impl From<EdgeName> for EdgeNameProto {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct NodeType {
     pub value: String,
 }
@@ -69,7 +67,7 @@ impl From<NodeType> for NodeTypeProto {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Uid {
     pub value: u64,
 }
@@ -93,6 +91,7 @@ impl From<Uid> for UidProto {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct SetNodePropertyRequest {
     pub tenant_id: uuid::Uuid,
     pub uid: Uid,
@@ -146,6 +145,7 @@ impl From<SetNodePropertyRequest> for SetNodePropertyRequestProto {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct SetNodePropertyResponse {
     pub was_redundant: bool,
 }
@@ -167,6 +167,7 @@ impl From<SetNodePropertyResponse> for SetNodePropertyResponseProto {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct CreateEdgeRequest {
     pub edge_name: EdgeName,
     pub tenant_id: uuid::Uuid,
@@ -213,6 +214,7 @@ impl From<CreateEdgeRequest> for CreateEdgeRequestProto {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct CreateEdgeResponse {
     pub was_redundant: bool,
 }
@@ -234,6 +236,7 @@ impl From<CreateEdgeResponse> for CreateEdgeResponseProto {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct CreateNodeRequest {
     pub tenant_id: uuid::Uuid,
     pub node_type: NodeType,
@@ -266,6 +269,7 @@ impl From<CreateNodeRequest> for CreateNodeRequestProto {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct CreateNodeResponse {
     pub uid: Uid,
 }
@@ -289,6 +293,11 @@ impl From<CreateNodeResponse> for CreateNodeResponseProto {
     }
 }
 
+
+impl serde_impl::ProtobufSerializable for PropertyName {
+    type ProtobufMessage = PropertyNameProto;
+}
+
 impl type_url::TypeUrl for PropertyName {
     const TYPE_URL: &'static str =
         "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.PropertyName";
@@ -299,9 +308,19 @@ impl type_url::TypeUrl for EdgeName {
         "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.EdgeName";
 }
 
+
+impl serde_impl::ProtobufSerializable for NodeType {
+    type ProtobufMessage = NodeTypeProto;
+}
+
 impl type_url::TypeUrl for NodeType {
     const TYPE_URL: &'static str =
         "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.NodeType";
+}
+
+
+impl serde_impl::ProtobufSerializable for Uid {
+    type ProtobufMessage = UidProto;
 }
 
 impl type_url::TypeUrl for Uid {
@@ -309,9 +328,19 @@ impl type_url::TypeUrl for Uid {
         "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.Uid";
 }
 
+
+impl serde_impl::ProtobufSerializable for SetNodePropertyRequest {
+    type ProtobufMessage = SetNodePropertyRequestProto;
+}
+
 impl type_url::TypeUrl for SetNodePropertyRequest {
     const TYPE_URL: &'static str =
         "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.SetNodePropertyRequest";
+}
+
+
+impl serde_impl::ProtobufSerializable for SetNodePropertyResponse {
+    type ProtobufMessage = SetNodePropertyResponseProto;
 }
 
 impl type_url::TypeUrl for SetNodePropertyResponse {
@@ -319,9 +348,19 @@ impl type_url::TypeUrl for SetNodePropertyResponse {
         "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.SetNodePropertyResponse";
 }
 
+
+impl serde_impl::ProtobufSerializable for CreateEdgeRequest {
+    type ProtobufMessage = CreateEdgeRequestProto;
+}
+
 impl type_url::TypeUrl for CreateEdgeRequest {
     const TYPE_URL: &'static str =
         "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.CreateEdgeRequest";
+}
+
+
+impl serde_impl::ProtobufSerializable for CreateEdgeResponse {
+    type ProtobufMessage = CreateEdgeResponseProto;
 }
 
 impl type_url::TypeUrl for CreateEdgeResponse {
@@ -329,9 +368,19 @@ impl type_url::TypeUrl for CreateEdgeResponse {
         "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.CreateEdgeResponse";
 }
 
+
+impl serde_impl::ProtobufSerializable for CreateNodeRequest {
+    type ProtobufMessage = CreateNodeRequestProto;
+}
+
 impl type_url::TypeUrl for CreateNodeRequest {
     const TYPE_URL: &'static str =
         "graplsecurity.com/graplinc.grapl.api.graph_mutation.v1beta1.CreateNodeRequest";
+}
+
+
+impl serde_impl::ProtobufSerializable for CreateNodeResponse {
+    type ProtobufMessage = CreateNodeResponseProto;
 }
 
 impl type_url::TypeUrl for CreateNodeResponse {

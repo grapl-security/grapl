@@ -875,3 +875,127 @@ pub mod plugin_work_queue {
         Just(native::PutExecuteGeneratorResponse {})
     }
 }
+
+
+
+pub mod graph_mutation {
+    use rust_proto_new::graplinc::grapl::api::graph_mutation::v1beta1::messages as native;
+    use crate::strategies::graph::node_properties;
+    use super::*;
+
+    prop_compose! {
+        pub fn property_names()(
+            value in "^[a-z]+(_[a-z]+)*$",
+        ) -> native::PropertyName {
+            native::PropertyName {
+                value,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn edge_names()(
+            value in "^[a-z]+(_[a-z]+)*$",
+        ) -> native::EdgeName {
+            native::EdgeName {
+                value,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn node_types()(
+            value in "^([A-Z][a-z]+)+$",
+        ) -> native::NodeType {
+            native::NodeType {
+                value,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn uids()(
+            value in 1u64..,
+        ) -> native::Uid {
+            native::Uid {
+                value,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn set_node_property_requests()(
+            tenant_id in uuids(),
+            uid in uids(),
+            node_type in node_types(),
+            property_name in property_names(),
+            property in node_properties(),
+        ) -> native::SetNodePropertyRequest {
+            native::SetNodePropertyRequest {
+                tenant_id,
+                uid,
+                node_type,
+                property_name,
+                property,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn set_node_property_responses()(
+            was_redundant in any::<bool>(),
+        ) -> native::SetNodePropertyResponse {
+            native::SetNodePropertyResponse {
+                was_redundant,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn create_edge_requests()(
+            edge_name in edge_names(),
+            tenant_id in uuids(),
+            from_uid in uids(),
+            to_uid in uids(),
+        ) -> native::CreateEdgeRequest {
+            native::CreateEdgeRequest {
+                edge_name,
+                tenant_id,
+                from_uid,
+                to_uid,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn create_edge_responses()(
+            was_redundant in any::<bool>(),
+        ) -> native::CreateEdgeResponse {
+            native::CreateEdgeResponse {
+                was_redundant,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn create_node_requests()(
+            tenant_id in uuids(),
+            node_type in node_types(),
+        ) -> native::CreateNodeRequest {
+            native::CreateNodeRequest {
+                tenant_id,
+                node_type,
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn create_node_responses()(
+            uid in uids(),
+        ) -> native::CreateNodeResponse {
+            native::CreateNodeResponse {
+                uid,
+            }
+        }
+    }
+}

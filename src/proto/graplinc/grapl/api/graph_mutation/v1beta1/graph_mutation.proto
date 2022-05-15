@@ -6,6 +6,10 @@ import "graplinc/common/v1beta1/types.proto";
 import "graplinc/grapl/api/graph/v1beta1/types.proto";
 
 message PropertyName {
+  // The property name must:
+  // - Be non-empty
+  // - Snake case, `^[a-z]+(_[a-z]+)*$`
+  // - Less than 32 characters
   string value = 1;
 }
 
