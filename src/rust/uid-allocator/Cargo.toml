@@ -19,10 +19,12 @@ serde = { version = "1.0.136", features = ["derive"] }
 tokio = { version = "1.17.0", features = ["full"] }
 uuid = { version = "0.8.2", features = ["v4"] }
 maplit = "1.0.2"
+tracing-appender = "0.2"
+tracing-opentelemetry = "0.16"
 tracing = "0.1.32"
 tracing-subscriber = { version = "0.3", default-features = false, features = [
   "env-filter",
-  "fmt"
+  "json"
 ] }
 test-log = { version = "0.2.8", features = ["trace"] }
 env_logger = "0.9.0"
@@ -42,6 +44,11 @@ thiserror = "1.0.30"
 dashmap = "5.2.0"
 structopt = "0.3.26"
 async-trait = "0.1.53"
+opentelemetry = { version = "0.16", features = ["rt-tokio"] }
+opentelemetry-jaeger = { version = "0.15", features = [
+  "collector_client",
+  "rt-tokio"
+] }
 
 [dev-dependencies]
 quickcheck = "1.0.3"

@@ -82,3 +82,14 @@ impl UidAllocatorServiceConfig {
         Ok(())
     }
 }
+
+#[derive(StructOpt, Debug, Clone)]
+pub struct UidAllocatorClientConfig {
+    #[structopt(env)]
+    /// The address to connect the uid allocator client to
+    pub uid_allocator_connect_address: SocketAddr,
+
+    #[structopt(env)]
+    /// The size for the client to request when allocating uids
+    pub allocation_size: u32,
+}

@@ -2,6 +2,12 @@
 pub mod server {
     use std::net::SocketAddr;
 
+    use futures::FutureExt;
+    use tokio::{
+        net::TcpListener,
+        sync::oneshot::Receiver,
+    };
+    use tokio_stream::wrappers::TcpListenerStream;
     use tonic::{
         transport::Server,
         Request,
@@ -21,7 +27,13 @@ pub mod server {
             AllocateIdsRequest as AllocateIdsRequestProto,
             AllocateIdsResponse as AllocateIdsResponseProto,
         },
-        protocol::status::Status,
+        protocol::{
+            healthcheck::{
+                server::init_health_service,
+                HealthcheckStatus,
+            },
+            status::Status,
+        },
     };
 
     #[async_trait::async_trait]
@@ -64,6 +76,8 @@ pub mod server {
     pub enum UidAllocatorServerError {
         #[error("grpc transport error: {0}")]
         GrpcTransportError(#[from] tonic::transport::Error),
+        #[error("Bind error: {0}")]
+        BindError(std::io::Error),
     }
 
     /// A server construct that drives the UidAllocatorApi implementation.
@@ -74,6 +88,7 @@ pub mod server {
     {
         server: UidAllocatorServerProto<T>,
         addr: SocketAddr,
+        shutdown_rx: Receiver<()>,
     }
 
     impl<T, E> UidAllocatorServer<T, E>
@@ -81,13 +96,27 @@ pub mod server {
         T: UidAllocatorApi<Error = E> + Send + Sync + 'static,
         E: Into<Status> + Send + Sync + 'static,
     {
-        pub fn builder(service: T, addr: SocketAddr) -> UidAllocatorServerBuilder<T, E> {
-            UidAllocatorServerBuilder::new(service, addr)
+        pub fn builder(
+            service: T,
+            addr: SocketAddr,
+            shutdown_rx: Receiver<()>,
+        ) -> UidAllocatorServerBuilder<T, E> {
+            UidAllocatorServerBuilder::new(service, addr, shutdown_rx)
         }
 
-        pub async fn serve(&mut self) -> Result<(), UidAllocatorServerError> {
+        pub async fn serve(self) -> Result<(), UidAllocatorServerError> {
+            let (healthcheck_handle, health_service) =
+                init_health_service::<UidAllocatorServerProto<T>, _, _>(
+                    || async { Ok(HealthcheckStatus::Serving) },
+                    std::time::Duration::from_millis(500),
+                )
+                .await;
+
+            let listener = TcpListener::bind(self.addr)
+                .await
+                .map_err(UidAllocatorServerError::BindError)?;
+
             Server::builder()
-                // todo: healthchecks and whatnot
                 .trace_fn(|request| {
                     tracing::trace_span!(
                         "UidAllocator",
@@ -97,8 +126,16 @@ pub mod server {
                         extensions = ?request.extensions(),
                     )
                 })
-                .add_service(self.server.clone())
-                .serve(self.addr)
+                .add_service(health_service)
+                .add_service(self.server)
+                .serve_with_incoming_shutdown(
+                    TcpListenerStream::new(listener),
+                    self.shutdown_rx.map(|_| ()),
+                )
+                .then(|result| async move {
+                    healthcheck_handle.abort();
+                    result
+                })
                 .await?;
             Ok(())
         }
@@ -111,6 +148,7 @@ pub mod server {
     {
         server: UidAllocatorServerProto<T>,
         addr: SocketAddr,
+        shutdown_rx: Receiver<()>,
     }
 
     impl<T, E> UidAllocatorServerBuilder<T, E>
@@ -120,10 +158,11 @@ pub mod server {
     {
         /// Create a new builder for a UidAllocatorServer,
         /// taking the required arguments upfront.
-        pub fn new(service: T, addr: SocketAddr) -> Self {
+        pub fn new(service: T, addr: SocketAddr, shutdown_rx: Receiver<()>) -> Self {
             Self {
                 server: UidAllocatorServerProto::new(service),
                 addr,
+                shutdown_rx,
             }
         }
 
@@ -133,6 +172,7 @@ pub mod server {
             UidAllocatorServer {
                 server: self.server,
                 addr: self.addr,
+                shutdown_rx: self.shutdown_rx,
             }
         }
     }
@@ -202,11 +242,16 @@ pub mod client {
 
 #[cfg(feature = "uid-allocator-messages")]
 pub mod messages {
-    use crate::{protobufs::graplinc::grapl::api::uid_allocator::v1beta1::{
-        AllocateIdsRequest as AllocateIdsRequestProto,
-        AllocateIdsResponse as AllocateIdsResponseProto,
-        Allocation as AllocationProto,
-    }, type_url, SerDeError, serde_impl};
+    use crate::{
+        protobufs::graplinc::grapl::api::uid_allocator::v1beta1::{
+            AllocateIdsRequest as AllocateIdsRequestProto,
+            AllocateIdsResponse as AllocateIdsResponseProto,
+            Allocation as AllocationProto,
+        },
+        serde_impl,
+        type_url,
+        SerDeError,
+    };
 
     #[derive(Copy, Clone, Debug, PartialEq)]
     pub struct Allocation {

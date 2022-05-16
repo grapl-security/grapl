@@ -5390,6 +5390,8 @@ dependencies = [
  "futures",
  "itertools 0.10.3",
  "maplit",
+ "opentelemetry 0.16.0",
+ "opentelemetry-jaeger",
  "prost 0.9.0",
  "prost-types 0.9.0",
  "quickcheck",
@@ -5403,6 +5405,8 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
+ "tracing-appender",
+ "tracing-opentelemetry 0.16.0",
  "tracing-subscriber",
  "uuid",
 ]
