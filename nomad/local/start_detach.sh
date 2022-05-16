@@ -104,8 +104,8 @@ start_nomad_detach() {
         -dev-connect > "${NOMAD_LOGS_DEST}" &
     local -r nomad_agent_pid="$!"
 
-    # Wait for vault to finish booting up
-    sleep 10
+    # Wait for vault to boot AND give nomad enough time to avoid a race condition where it can't find the consul version
+    sleep 8
 
     configure_vault
     create_dynamic_consul_config
