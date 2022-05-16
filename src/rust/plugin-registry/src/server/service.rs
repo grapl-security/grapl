@@ -3,7 +3,7 @@ use std::{
     time::Duration, pin::Pin,
 };
 
-use futures::{Stream, StreamExt};
+use futures::{Stream, StreamExt, stream};
 use grapl_config::env_helpers::FromEnv;
 use rusoto_s3::{
     GetObjectRequest,
@@ -124,6 +124,17 @@ impl PluginRegistry {
 }
 type ResultStream<T, E> = Pin<Box<dyn Stream<Item = Result<T, E>> + Send + 'static>>;
 
+// Roughly equivalent to `return Err(...)` in a fn -> Result<T, E>
+fn err_stream <T, E> (error: E) -> ResultStream<T, Status> 
+where 
+    T: Sync + Send + 'static,
+    E: Sync + Send + 'static + Into<Status>
+{
+    Box::pin(
+        stream::iter(vec![Err(error.into())])
+    )
+}
+
 #[async_trait]
 impl PluginRegistryApi for PluginRegistry {
     type Error = PluginRegistryServiceError;
@@ -135,17 +146,29 @@ impl PluginRegistryApi for PluginRegistry {
     ) -> ResultStream<CreatePluginResponseV2, Status>
     {
         type Req = CreatePluginRequestV2;
-        let mut meta: Option<CreatePluginRequestMetadata> = None;
 
-        let body_stream: ResultStream<Vec<u8>, Status> = Box::pin(async_stream::stream! {
+        let meta: CreatePluginRequestMetadata = match request.next().await {
+            Some(Ok(Req::Metadata(m))) => m,
+            _ => {
+                return err_stream(Self::Error::StreamError(
+                    "Expected request 0 to be Metadata".to_string()
+                ));
+            }
+        };
+
+        let body_stream: ResultStream<Vec<u8>, Status> = Box::pin(async_stream::try_stream! {
             while let Some(req) = request.next().await {
-                match req {
-                    Ok(Req::Metadata(m)) => meta = Some(m),
-                    Ok(Req::Chunk(c)) => yield Ok(c.plugin_artifact),
-                    Err(e) => yield Err(e)
+                match req? {
+                    Req::Chunk(c) => yield c.plugin_artifact,
+                    _ => {
+                        Err(Self::Error::StreamError(
+                            "Expected request 1+ to be Chunk".to_string()
+                        ))?
+                    }
                 };
             }
         });
+        
 
         3
         /*

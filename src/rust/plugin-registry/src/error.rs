@@ -36,6 +36,8 @@ pub enum PluginRegistryServiceError {
     NomadJobAllocationError,
     #[error("ArtifactTooLargeError {0}")]
     ArtifactTooLargeError(String),
+    #[error("StreamError {0}")]
+    StreamError(String),
     // TODO: These errs are meant to be human-readable and are not directly
     // sent over the wire, so add {0}s to them!
 }
