@@ -118,6 +118,7 @@ start_nomad_detach() {
                     sleep 1
                     ((wait_attempt=wait_attempt+1))
                 done
+                vault status
 EOF
         )"
     )
