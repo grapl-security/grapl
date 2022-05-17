@@ -15,12 +15,12 @@ use tokio::net::TcpListener;
 
 #[derive(clap::Parser, Debug)]
 pub struct GeneratorServiceConfig {
-    #[structopt(env = "PLUGIN_BIND_ADDRESS")]
+    #[clap(long, env = "PLUGIN_BIND_ADDRESS")]
     pub bind_address: std::net::SocketAddr,
 }
 impl GeneratorServiceConfig {
-    /// An alias for Structopt::from_args, so that consumers don't need to
-    /// declare a dependency on structopt
+    /// An alias for clap::parse, so that consumers don't need to
+    /// declare a dependency on clap
     pub fn from_env_vars() -> Self {
         Self::parse()
     }
