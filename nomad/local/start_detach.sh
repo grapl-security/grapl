@@ -56,7 +56,6 @@ ensure_valid_env() {
 }
 
 configure_vault() {
-    export VAULT_ADDR="http://127.0.0.1:8200"
     vault secrets enable pki
     # enable intermediate pki
     vault secrets enable -path=pki_int pki
@@ -104,8 +103,24 @@ start_nomad_detach() {
         -dev-connect > "${NOMAD_LOGS_DEST}" &
     local -r nomad_agent_pid="$!"
 
-    # Wait for vault to boot AND give nomad enough time to avoid a race condition where it can't find the consul version
-    sleep 8
+    # Wait for vault to boot
+    export VAULT_ADDR="http://127.0.0.1:8200"
+    (
+        readonly wait_secs=10
+        # shellcheck disable=SC2016
+        timeout --foreground "${wait_secs}" bash -c -- "$(
+            cat << EOF
+                # General rule: Variable defined in this EOF? Use \$
+                set -euo pipefail
+                wait_attempt=1
+                while [[ -z \$(vault status 2>&1 | grep Sealed | grep false) ]]; do
+                    echo "Waiting for vault to start [\${wait_attempt}/${wait_secs}]"
+                    sleep 1
+                    ((wait_attempt=wait_attempt+1))
+                done
+EOF
+        )"
+    )
 
     configure_vault
     create_dynamic_consul_config
@@ -153,6 +168,9 @@ start_nomad_detach() {
 EOF
         )"
     )
+
+    # Give nomad enough time to get the consul version. This is a workaround for a race condition
+    sleep 7
 
     "${THIS_DIR}/nomad_run_local_infra.sh"
     echo "Deployment complete"
