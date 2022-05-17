@@ -22,6 +22,7 @@ OUTPUT_TYPES: List[OutOrErr] = ["stdout", "stderr"]
 
 nomad_agent_log_path = Path("/tmp/nomad-agent.log").resolve()
 consul_agent_log_path = Path("/tmp/consul-agent.log").resolve()
+vault_agent_log_path = Path("/tmp/vault-agent.log").resolve()
 
 
 def _get_nomad_client(namespace: Optional[str] = None) -> Nomad:
@@ -33,7 +34,7 @@ def _get_nomad_client(namespace: Optional[str] = None) -> Nomad:
 
 def dump_all(artifacts_dir: Path, dump_agent_logs: bool) -> None:
     if dump_agent_logs:
-        _dump_nomad_consul_agent_logs(artifacts_dir)
+        _dump_hashicorp_agent_logs(artifacts_dir)
 
     # Get every namespace.
     nomad_client = _get_nomad_client()
@@ -53,9 +54,10 @@ def dump_all(artifacts_dir: Path, dump_agent_logs: bool) -> None:
         _get_nomad_logs_for_each_service(ns_dir, ns_nomad_client, allocations)
 
 
-def _dump_nomad_consul_agent_logs(artifacts_dir: Path) -> None:
+def _dump_hashicorp_agent_logs(artifacts_dir: Path) -> None:
     shutil.copy2(nomad_agent_log_path, artifacts_dir)
     shutil.copy2(consul_agent_log_path, artifacts_dir)
+    shutil.copy2(vault_agent_log_path, artifacts_dir)
 
 
 @dataclasses.dataclass
