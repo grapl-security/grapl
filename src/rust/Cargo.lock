@@ -3274,6 +3274,7 @@ dependencies = [
  "async-stream",
  "async-trait",
  "blake3",
+ "bytes",
  "clap 3.1.17",
  "futures",
  "grapl-config",

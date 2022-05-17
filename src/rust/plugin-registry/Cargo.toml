@@ -13,6 +13,7 @@ name = "plugin_registry"
 [dependencies]
 async-stream = "0.3"
 async-trait = "0.1.51"
+bytes = "1.1"
 clap = { version = "3.0", default_features = false, features = [
   "std",
   "env",

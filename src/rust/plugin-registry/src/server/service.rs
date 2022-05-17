@@ -3,6 +3,7 @@ use std::{
     time::Duration, pin::Pin,
 };
 
+use bytes::Bytes;
 use futures::{Stream, StreamExt, stream};
 use grapl_config::env_helpers::FromEnv;
 use rusoto_s3::{
@@ -122,7 +123,8 @@ impl PluginRegistry {
         }
     }
 }
-type ResultStream<T, E> = Pin<Box<dyn Stream<Item = Result<T, E>> + Send + 'static>>;
+type PinnedStream<T> = Pin<Box<dyn Stream<Item = T> + Send + 'static>>;
+type ResultStream<T, E> = PinnedStream<Result<T, E>>;
 
 // Roughly equivalent to `return Err(...)` in a fn -> Result<T, E>
 fn err_stream <T, E> (error: E) -> ResultStream<T, Status> 
@@ -147,8 +149,15 @@ impl PluginRegistryApi for PluginRegistry {
     {
         type Req = CreatePluginRequestV2;
 
-        let meta: CreatePluginRequestMetadata = match request.next().await {
+        let CreatePluginRequestMetadata {
+            tenant_id,
+            display_name,
+            plugin_type,
+        } = match request.next().await {
             Some(Ok(Req::Metadata(m))) => m,
+            Some(Err(e)) => {
+                return err_stream(e);
+            }
             _ => {
                 return err_stream(Self::Error::StreamError(
                     "Expected request 0 to be Metadata".to_string()
@@ -156,38 +165,25 @@ impl PluginRegistryApi for PluginRegistry {
             }
         };
 
-        let body_stream: ResultStream<Vec<u8>, Status> = Box::pin(async_stream::try_stream! {
-            while let Some(req) = request.next().await {
-                match req? {
-                    Req::Chunk(c) => yield c.plugin_artifact,
-                    _ => {
-                        Err(Self::Error::StreamError(
-                            "Expected request 1+ to be Chunk".to_string()
-                        ))?
-                    }
-                };
-            }
-        });
-        
-
-        3
-        /*
-        let CreatePluginRequestMetadata {
-            tenant_id,
-            display_name,
-            plugin_type,
-        } = request.next().await;
-
-        self.ensure_artifact_size_limit(&plugin_artifact)?;
-
-        let plugin_id = generate_plugin_id(&tenant_id, plugin_artifact.as_slice());
+        let hash: Vec<u8> = "asdf".into();
+        let plugin_id = generate_plugin_id(&tenant_id, hash.as_slice());
 
         let s3_key = generate_artifact_s3_key(plugin_type, &tenant_id, &plugin_id);
 
+        let body_stream: ResultStream<Bytes, Status> = Box::pin(request.map(|result| {
+            match result? {
+                Req::Chunk(c) => Ok(Bytes::from(c.plugin_artifact)),
+                _ => {
+                    Err(Self::Error::StreamError(
+                        "Expected request 1..N to be Chunk".to_string()
+                    ).into())
+                }
+            }
+        }));
+
         self.s3
             .put_object(PutObjectRequest {
-                content_length: Some(plugin_artifact.len() as i64),
-                body: Some(StreamingBody::from(plugin_artifact)),
+                body: Some(StreamingBody::new(body_stream)),
                 bucket: self.config.bucket_name.clone(),
                 key: s3_key.clone(),
                 expected_bucket_owner: Some(self.config.bucket_aws_account_id.clone()),
@@ -209,7 +205,6 @@ impl PluginRegistryApi for PluginRegistry {
 
         let response = CreatePluginResponse { plugin_id };
         Ok(response)
-        */
     }
 
     #[tracing::instrument(skip(self, request), err)]
