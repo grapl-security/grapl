@@ -69,7 +69,7 @@ create_dynamic_consul_config() {
 
     GOSSIP_KEY=$(consul keygen)
     # We're using the root token for the POC of this
-    VAULT_TOKEN=$(cat "${HOME}/.vault-token")
+    VAULT_TOKEN=$(grep "Root Token" ${VAULT_LOGS_DEST} | awk '{ print $3 }')
 
     # generate the file
     cat << EOF > "${THIS_DIR}/consul-dynamic-conf.hcl"
@@ -118,7 +118,7 @@ start_nomad_detach() {
                     sleep 1
                     ((wait_attempt=wait_attempt+1))
                 done
-                vault status
+                sleep 2
 EOF
         )"
     )
@@ -171,7 +171,7 @@ EOF
     )
 
     # Give nomad enough time to get the consul version. This is a workaround for a race condition
-    sleep 7
+    sleep 5
 
     "${THIS_DIR}/nomad_run_local_infra.sh"
     echo "Deployment complete"
