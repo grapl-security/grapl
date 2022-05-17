@@ -12,7 +12,6 @@ class Bucket(aws.s3.Bucket):
         self,
         name: str,
         sse: bool = False,
-        website_args: Optional[aws.s3.BucketWebsiteArgs] = None,
         opts: Optional[pulumi.ResourceOptions] = None,
     ) -> None:
         """Abstracts logic for creating an S3 bucket for our purposes.
@@ -22,9 +21,6 @@ class Bucket(aws.s3.Bucket):
         sse: Whether or not to apply server-side encryption of
         bucket contents
 
-        website_args: configuration for setting the bucket up to serve web
-        content.
-
         opts: `pulumi.ResourceOptions` for this resource.
 
         """
@@ -33,7 +29,6 @@ class Bucket(aws.s3.Bucket):
         super().__init__(
             name,
             force_destroy=True,
-            website=website_args,
             server_side_encryption_configuration=sse_config,
             opts=opts,
         )
