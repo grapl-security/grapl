@@ -47,10 +47,37 @@ type NetworkSocketAddress @grapl(identity_algorithm: "static") {
     ip_address: String! @static_id,
     port_number: String! @static_id,
 
-    network_connection_to: [NetworkSocketAddress] @edge(reverse: "network_connection_from", reverse_relationship: "ToMany"),
-    network_connection_from: [NetworkSocketAddress] @edge(reverse: "network_connection_to", reverse_relationship: "ToMany"),
+    network_connection_to_a: [TcpConnection] @edge(reverse: "network_connection_from", reverse_relationship: "ToMany"),
+    network_connection_from_a: [TcpConnection] @edge(reverse: "network_connection_to", reverse_relationship: "ToMany"),
 
     connection_from_process: [Process] @edge(reverse: "process_connected_to", reverse_relationship: "ToMany"),
     connection_from_process_via: [Process] @edge(reverse: "process_connected_via", reverse_relationship: "ToMany"),
+}
 
+# "connection" makes sense for TCP and SCTP, but not so much for UDP.
+# what does Sysmon do for the 'initiated' field for UDP? always false?
+# skipping how we should model that for now. but first, ideas?
+#   1. track first and last seen for edges between network socket addresses
+
+
+# Notes:
+#   1. Sysmon only reports UDP traffic when it hasn't seen between two addresses in the last thiry minutes
+#     a. https://github.com/Sysinternals/SysmonForLinux/blob/main/ebpfKern/sysmonUDPrecv.c#L101
+#     b. https://github.com/Sysinternals/SysmonForLinux/blob/9f1b2dac1ad710bc82adf8d22454f5662e22a79a/sysmon_defs.h#L72
+# 
+#     So for a long-lived connection*, like someone playing a video game on one server, we'll see multiple events.
+#
+#     * call it an 'application connection', where it's handled in app space
+#     
+
+# Note: for a TCP connection, if we have similar intstrumentation on both ends then
+# we'll observe two slightly different timestamps, and have two different nodes, even 
+# though they refer to the same connection. Maybe this is fine and we don't have to worry about it.
+# Depends.
+
+type TcpConnection @grapl(identity_algorithm: "static") {
+    created_timestamp: Int! @static_id,
+
+    network_connection_to_b: [NetworkSocketAddress] @edge(reverse: "network_connection_from", reverse_relationship: "ToMany"),
+    network_connection_from_a: [NetworkSocketAddress] @edge(reverse: "network_connection_to", reverse_relationship: "ToMany"),
 }
