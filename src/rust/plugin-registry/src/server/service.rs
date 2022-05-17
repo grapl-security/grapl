@@ -170,13 +170,13 @@ impl PluginRegistryApi for PluginRegistry {
 
         let s3_key = generate_artifact_s3_key(plugin_type, &tenant_id, &plugin_id);
 
-        let body_stream: ResultStream<Bytes, Status> = Box::pin(request.map(|result| {
-            match result? {
-                Req::Chunk(c) => Ok(Bytes::from(c.plugin_artifact)),
+        let body_stream: ResultStream<Bytes, std::io::Error> = Box::pin(request.map(|result| {
+            match result {
+                Ok(Req::Chunk(c)) => Ok(Bytes::from(c.plugin_artifact)),
                 _ => {
-                    Err(Self::Error::StreamError(
+                    Err(std::io::Error::new(std::io::ErrorKind::Other,
                         "Expected request 1..N to be Chunk".to_string()
-                    ).into())
+                    ))
                 }
             }
         }));
