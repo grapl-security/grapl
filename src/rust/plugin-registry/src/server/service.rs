@@ -4,7 +4,7 @@ use std::{
 };
 
 use bytes::Bytes;
-use futures::{Stream, StreamExt, stream};
+use futures::{Stream, StreamExt, stream, channel::mpsc, SinkExt};
 use grapl_config::env_helpers::FromEnv;
 use rusoto_s3::{
     GetObjectRequest,
@@ -149,6 +149,8 @@ impl PluginRegistryApi for PluginRegistry {
     {
         type Req = CreatePluginRequestV2;
 
+        let (mut output_tx, output_rx) = mpsc::channel(4);
+
         let CreatePluginRequestMetadata {
             tenant_id,
             display_name,
@@ -165,12 +167,17 @@ impl PluginRegistryApi for PluginRegistry {
             }
         };
 
+        // Tell client we're ready for the first chunk
+        output_tx.send(Ok(CreatePluginResponseV2::AwaitingChunk)).await;
+
         let hash: Vec<u8> = "asdf".into();
         let plugin_id = generate_plugin_id(&tenant_id, hash.as_slice());
 
         let s3_key = generate_artifact_s3_key(plugin_type, &tenant_id, &plugin_id);
 
-        let body_stream: ResultStream<Bytes, std::io::Error> = Box::pin(request.map(|result| {
+        let body_stream: ResultStream<Bytes, std::io::Error> = Box::pin(request.then(|result| async move {
+            // Let client know we've received this chunk and are ready for the next
+            output_tx.send(Ok(CreatePluginResponseV2::AwaitingChunk)).await;
             match result {
                 Ok(Req::Chunk(c)) => Ok(Bytes::from(c.plugin_artifact)),
                 _ => {
@@ -181,30 +188,40 @@ impl PluginRegistryApi for PluginRegistry {
             }
         }));
 
-        self.s3
-            .put_object(PutObjectRequest {
-                body: Some(StreamingBody::new(body_stream)),
-                bucket: self.config.bucket_name.clone(),
-                key: s3_key.clone(),
-                expected_bucket_owner: Some(self.config.bucket_aws_account_id.clone()),
-                ..Default::default()
-            })
-            .await?;
+        let self: PluginRegistry = self.clone();
 
-        self.db_client
-            .create_plugin(
-                &plugin_id,
-                DbCreatePluginArgs {
-                    tenant_id,
-                    display_name,
-                    plugin_type,
-                },
-                &s3_key,
-            )
-            .await?;
+        tokio::spawn(async move {
+            let s3_put_result = self.s3
+                .put_object(PutObjectRequest {
+                    //content_length: Some(plugin_artifact.len() as i64),
+                    body: Some(StreamingBody::new(body_stream)),
+                    bucket: self.config.plugin_s3_bucket_name.clone(),
+                    key: s3_key.clone(),
+                    expected_bucket_owner: Some(self.config.plugin_s3_bucket_aws_account_id.clone()),
+                    ..Default::default()
+                })
+                .await.map_err(Self::Error::from).map_err(Status::from);
+            if let Err(e) = s3_put_result {
+                output_tx.send(Err(e.into())).await;
+            }
 
-        let response = CreatePluginResponse { plugin_id };
-        Ok(response)
+            let db_create_result = self.db_client
+                .create_plugin(
+                    &plugin_id,
+                    DbCreatePluginArgs {
+                        tenant_id,
+                        display_name,
+                        plugin_type,
+                    },
+                    &s3_key,
+                )
+                .await.map_err(Self::Error::from).map_err(Status::from);
+            match db_create_result {
+                Ok(_) => output_tx.send(Ok(CreatePluginResponseV2::PluginId(plugin_id))),
+                Err(e) => output_tx.send(Err(e)),
+            }.await;
+        });
+        Box::pin(output_rx)
     }
 
     #[tracing::instrument(skip(self, request), err)]
