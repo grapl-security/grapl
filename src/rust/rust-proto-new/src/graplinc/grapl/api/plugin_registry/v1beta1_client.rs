@@ -7,6 +7,7 @@ use futures::{
     Stream,
     StreamExt,
 };
+use grapl_utils::iter_ext::GraplIterExt;
 use proto::plugin_registry_service_client::PluginRegistryServiceClient as PluginRegistryServiceClientProto;
 
 use crate::{
@@ -53,17 +54,19 @@ impl PluginRegistryServiceClient {
         Ok(response)
     }
 
-    // Simplified wrapper function for create_plugin
+    /// Simplified wrapper function for create_plugin
     pub async fn create_plugin(
         &mut self,
         metadata: native::CreatePluginRequestMetadata,
-        chunks: impl Send + Iterator<Item = Vec<u8>> + 'static,
+        plugin_artifact: impl Sized + Iterator<Item = u8> + Send + 'static,
     ) -> Result<native::CreatePluginResponse, PluginRegistryServiceClientError> {
-        let request = futures::stream::iter(
-            vec![native::CreatePluginRequestV2::Metadata(metadata)]
-        ).chain(
-            futures::stream::iter(chunks.map(native::CreatePluginRequestV2::Chunk))
-        );
+        // Split the artifact up into 1MB chunks
+        let plugin_chunks = plugin_artifact.chunks_owned(1024 * 1024);
+        // Send the metadata first followed by N chunks
+        let request =
+            futures::stream::iter(vec![native::CreatePluginRequestV2::Metadata(metadata)]).chain(
+                futures::stream::iter(plugin_chunks.map(native::CreatePluginRequestV2::Chunk)),
+            );
         self.create_plugin_raw(Box::pin(request)).await
     }
 

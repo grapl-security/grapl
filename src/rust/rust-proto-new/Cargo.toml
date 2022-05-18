@@ -7,9 +7,9 @@ description = "Wrapper library for Grapl's protocol buffers"
 license = "MIT"
 
 [dependencies]
-async-stream = "0.3"
 bytes = "1.1"
 futures = "0.3"
+grapl-utils = { path = "../grapl-utils" }
 prost = "0.10"
 prost-types = "0.10"
 thiserror = "1.0"

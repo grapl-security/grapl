@@ -4038,9 +4038,9 @@ dependencies = [
 name = "rust-proto-new"
 version = "0.1.0"
 dependencies = [
- "async-stream",
  "bytes",
  "futures",
+ "grapl-utils",
  "proptest",
  "prost 0.10.1",
  "prost-types 0.10.1",
