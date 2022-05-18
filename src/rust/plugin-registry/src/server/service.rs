@@ -79,7 +79,7 @@ pub struct PluginRegistryDbConfig {
 pub struct PluginRegistryServiceConfig {
     #[clap(long, env = "PLUGIN_REGISTRY_BUCKET_AWS_ACCOUNT_ID")]
     pub bucket_aws_account_id: String,
-    #[clap(long, env = "PLUGIN_REGISTRY_BUCKET_AWS_ACCOUNT_NAME")]
+    #[clap(long, env = "PLUGIN_REGISTRY_BUCKET_NAME")]
     pub bucket_name: String,
     #[clap(long, env)]
     pub plugin_registry_bind_address: SocketAddr,
