@@ -4,7 +4,6 @@ use std::{
 };
 
 use futures::{
-    stream,
     Stream,
     StreamExt,
 };
@@ -28,9 +27,6 @@ pub struct PluginRegistryServiceClient {
     proto_client: PluginRegistryServiceClientProto<tonic::transport::Channel>,
 }
 
-type PinnedStream<T> = Pin<Box<dyn Stream<Item = T> + Send + 'static>>;
-type ResultStream<T, E> = PinnedStream<Result<T, E>>;
-
 impl PluginRegistryServiceClient {
     #[tracing::instrument(err)]
     pub async fn connect<T>(endpoint: T) -> Result<Self, Box<dyn std::error::Error>>
@@ -47,28 +43,13 @@ impl PluginRegistryServiceClient {
     pub async fn create_plugin(
         &mut self,
         request: Pin<Box<dyn Stream<Item = native::CreatePluginRequestV2> + Send>>,
-    ) -> ResultStream<native::CreatePluginResponseV2, PluginRegistryServiceClientError> {
-        // Might be nice to add a client-side "business-logic validation" hook
-        // i.e. to error based on .plugin_artifact.len()
-        let proto_response = self
+    ) -> Result<native::CreatePluginResponse, PluginRegistryServiceClientError> {
+       let response = self
             .proto_client
-            .create_plugin(request.map(Into::into))
-            .await;
-        // convert this initial Error into a stream
-        if let Err(e) = proto_response {
-            return Box::pin(stream::iter(vec![Err(e.into())]));
-        }
-        let proto_stream = proto_response.unwrap().into_inner();
-        let native_response = proto_stream.map(|result| {
-            let result: Result<native::CreatePluginResponseV2, PluginRegistryServiceClientError> = {
-                match result {
-                    Ok(proto) => proto.try_into().map_err(Into::into),
-                    Err(e) => Err(e.into()),
-                }
-            };
-            result
-        });
-        Box::pin(native_response)
+            .create_plugin(request.map(proto::CreatePluginRequestV2::from))
+            .await?;
+        let response = native::CreatePluginResponse::try_from(response.into_inner())?;
+        Ok(response)
     }
 
     /// retrieve the plugin corresponding to the given plugin_id

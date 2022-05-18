@@ -16,7 +16,7 @@ use rusoto_s3::{
 use rust_proto_new::{
     graplinc::grapl::api::plugin_registry::v1beta1::{
         CreatePluginRequestV2,
-        CreatePluginResponseV2,
+        CreatePluginResponse,
         DeployPluginRequest,
         DeployPluginResponse,
         GetAnalyzersForTenantRequest,
@@ -141,15 +141,13 @@ where
 impl PluginRegistryApi for PluginRegistry {
     type Error = PluginRegistryServiceError;
 
-    //#[tracing::instrument(skip(self, request), err)]
+    #[tracing::instrument(skip(self, request), err)]
     async fn create_plugin(
         &self,
         request: ResultStream<CreatePluginRequestV2, Status>
-    ) -> ResultStream<CreatePluginResponseV2, Status>
+    ) -> Result<CreatePluginResponse, Self::Error>
     {
         type Req = CreatePluginRequestV2;
-
-        let (mut output_tx, output_rx) = mpsc::channel(4);
 
         let CreatePluginRequestMetadata {
             tenant_id,
@@ -158,17 +156,14 @@ impl PluginRegistryApi for PluginRegistry {
         } = match request.next().await {
             Some(Ok(Req::Metadata(m))) => m,
             Some(Err(e)) => {
-                return err_stream(e);
+                return Err(e);
             }
             _ => {
-                return err_stream(Self::Error::StreamError(
-                    "Expected request 0 to be Metadata".to_string()
+                return Err(Self::Error::StreamInputError(
+                    "Expected request 0 to be Metadata"
                 ));
             }
         };
-
-        // Tell client we're ready for the first chunk
-        output_tx.send(Ok(CreatePluginResponseV2::AwaitingChunk)).await;
 
         let hash: Vec<u8> = "asdf".into();
         let plugin_id = generate_plugin_id(&tenant_id, hash.as_slice());
@@ -176,10 +171,8 @@ impl PluginRegistryApi for PluginRegistry {
         let s3_key = generate_artifact_s3_key(plugin_type, &tenant_id, &plugin_id);
 
         let body_stream: ResultStream<Bytes, std::io::Error> = Box::pin(request.then(|result| async move {
-            // Let client know we've received this chunk and are ready for the next
-            output_tx.send(Ok(CreatePluginResponseV2::AwaitingChunk)).await;
             match result {
-                Ok(Req::Chunk(c)) => Ok(Bytes::from(c.plugin_artifact)),
+                Ok(Req::Chunk(c)) => Ok(Bytes::from(c)),
                 _ => {
                     Err(std::io::Error::new(std::io::ErrorKind::Other,
                         "Expected request 1..N to be Chunk".to_string()
@@ -188,40 +181,31 @@ impl PluginRegistryApi for PluginRegistry {
             }
         }));
 
-        let self: PluginRegistry = self.clone();
+        let s3_put_result = self.s3
+            .put_object(PutObjectRequest {
+                //content_length: Some(plugin_artifact.len() as i64),
+                body: Some(StreamingBody::new(body_stream)),
+                bucket: self.config.plugin_s3_bucket_name.clone(),
+                key: s3_key.clone(),
+                expected_bucket_owner: Some(self.config.plugin_s3_bucket_aws_account_id.clone()),
+                ..Default::default()
+            })
+            .await?;
 
-        tokio::spawn(async move {
-            let s3_put_result = self.s3
-                .put_object(PutObjectRequest {
-                    //content_length: Some(plugin_artifact.len() as i64),
-                    body: Some(StreamingBody::new(body_stream)),
-                    bucket: self.config.plugin_s3_bucket_name.clone(),
-                    key: s3_key.clone(),
-                    expected_bucket_owner: Some(self.config.plugin_s3_bucket_aws_account_id.clone()),
-                    ..Default::default()
-                })
-                .await.map_err(Self::Error::from).map_err(Status::from);
-            if let Err(e) = s3_put_result {
-                output_tx.send(Err(e.into())).await;
-            }
-
-            let db_create_result = self.db_client
-                .create_plugin(
-                    &plugin_id,
-                    DbCreatePluginArgs {
-                        tenant_id,
-                        display_name,
-                        plugin_type,
-                    },
-                    &s3_key,
-                )
-                .await.map_err(Self::Error::from).map_err(Status::from);
-            match db_create_result {
-                Ok(_) => output_tx.send(Ok(CreatePluginResponseV2::PluginId(plugin_id))),
-                Err(e) => output_tx.send(Err(e)),
-            }.await;
-        });
-        Box::pin(output_rx)
+        let db_create_result = self.db_client
+            .create_plugin(
+                &plugin_id,
+                DbCreatePluginArgs {
+                    tenant_id,
+                    display_name,
+                    plugin_type,
+                },
+                &s3_key,
+            )
+            .await?;
+        Ok(CreatePluginResponse {
+            plugin_id
+        })
     }
 
     #[tracing::instrument(skip(self, request), err)]

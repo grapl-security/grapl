@@ -30,7 +30,7 @@ use crate::{
     execute_rpc,
     graplinc::grapl::api::plugin_registry::v1beta1::{
         CreatePluginRequestV2,
-        CreatePluginResponseV2,
+        CreatePluginResponse,
         DeployPluginRequest,
         DeployPluginResponse,
         GetAnalyzersForTenantRequest,
@@ -64,14 +64,14 @@ use crate::{
 /// Implement this trait to define the API business logic
 #[tonic::async_trait]
 pub trait PluginRegistryApi {
-    type Error: Into<Status>;
+    type Error: Into<Status> 
+        // These two constraints are needed because of the create_plugin streaming API
+        + From<SerDeError> + From<Status>;
 
-    // Ideally this would return a Self::Error, but due to `dyn` restrictions
-    // that'll probably have to wait until GAT
     async fn create_plugin(
         &self,
-        request: ResultStream<CreatePluginRequestV2, Status>,
-    ) -> ResultStream<CreatePluginResponseV2, Status>;
+        request: ResultStream<CreatePluginRequestV2, Self::Error>,
+    ) -> Result<CreatePluginResponse, Self::Error>;
 
     async fn get_plugin(&self, request: GetPluginRequest)
         -> Result<GetPluginResponse, Self::Error>;
@@ -97,52 +97,38 @@ pub trait PluginRegistryApi {
     ) -> Result<GetAnalyzersForTenantResponse, Self::Error>;
 }
 
-type ResultStream<T, E> = Pin<Box<dyn Stream<Item = Result<T, E>> + Send + 'static>>;
+type ResultStream<T, E> = Pin<Box<dyn Stream<Item = Result<T, E>> + Send>>;
 
 #[tonic::async_trait]
 impl<T> PluginRegistryService for GrpcApi<T>
 where
     T: PluginRegistryApi + Send + Sync + 'static,
-    T::Error: Into<Status>,
 {
-    type CreatePluginStream = ResultStream<proto::CreatePluginResponseV2, tonic::Status>;
-
     async fn create_plugin(
         &self,
         request: Request<tonic::Streaming<proto::CreatePluginRequestV2>>,
-    ) -> Result<Response<Self::CreatePluginStream>, tonic::Status> {
-        // Based on
-        // https://github.com/rkudryashov/exploring-rust-ecosystem/blob/master/grpc-telegram-bot/server/src/main.rs
+    ) -> Result<Response<proto::CreatePluginResponse>, tonic::Status> {
+        let proto_request = request.into_inner();
 
-        let mut proto_stream = request.into_inner();
+        let native_request: ResultStream<CreatePluginRequestV2, T::Error> =
+            Box::pin(proto_request
+                .map(|req: Result<proto::CreatePluginRequestV2, tonic::Status>| {
+                    match req {
+                        Ok(proto) => proto.try_into().map_err(T::Error::from),
+                        Err(e) => Err(T::Error::from(Status::from(e))),
+                    }
+                })
+            );
+            
+        let native_response = self
+            .api_server
+            .create_plugin(native_request)
+            .await
+            .map_err(Into::into)?;
 
-        let native_input_stream: ResultStream<CreatePluginRequestV2, Status> =
-            Box::pin(async_stream::try_stream! {
-                while let Some(proto_request_result) = proto_stream.next().await {
-                    let native: CreatePluginRequestV2 = proto_request_result
-                        .map_err(Status::from)?
-                        .try_into()?;
-                    yield native
-                }
-            });
+        let proto_response = native_response.try_into().map_err(SerDeError::from)?;
 
-        let mut native_output_stream: ResultStream<CreatePluginResponseV2, Status> =
-            self.api_server.create_plugin(native_input_stream).await;
-
-        let proto_output_stream: ResultStream<proto::CreatePluginResponseV2, tonic::Status> =
-            Box::pin(async_stream::try_stream! {
-                while let Some(native_response_result) = native_output_stream.next().await {
-                    let protoized: proto::CreatePluginResponseV2 = native_response_result
-                        .map_err(|s: Status| tonic::Status::from(s))
-                        .map(proto::CreatePluginResponseV2::from)?;
-                    yield protoized
-                }
-            });
-
-        // fn takes: Stream<Native>, tx.send
-        Ok(Response::new(
-            Box::pin(proto_output_stream) as Self::CreatePluginStream
-        ))
+        Ok(tonic::Response::new(proto_response))
     }
 
     async fn get_plugin(

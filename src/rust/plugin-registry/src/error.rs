@@ -34,10 +34,10 @@ pub enum PluginRegistryServiceError {
     NomadCliError(#[from] nomad::cli::NomadCliError),
     #[error("NomadJobAllocationError")]
     NomadJobAllocationError,
-    #[error("ArtifactTooLargeError {0}")]
-    ArtifactTooLargeError(String),
-    #[error("StreamError {0}")]
-    StreamError(String),
+    #[error(transparent)]
+    StreamError(Status),
+    #[error("StreamInputError {0}")]
+    StreamInputError(&'static str),
     // TODO: These errs are meant to be human-readable and are not directly
     // sent over the wire, so add {0}s to them!
 }
@@ -66,8 +66,9 @@ impl From<PluginRegistryServiceError> for Status {
             Error::NomadCliError(_) => Status::internal("Failed using Nomad CLI"),
             Error::NomadJobAllocationError => {
                 Status::internal("Unable to allocate Nomad job - it may be out of resources.")
-            }
-            Error::ArtifactTooLargeError(msg) => Status::invalid_argument(msg),
+            },
+            Error::StreamError(_) => Status::internal("Unexpected error in Stream RPC"),
+            Error::StreamInputError(_) => Status::invalid_argument("Unexpected input to Stream RPC"),
         }
     }
 }
