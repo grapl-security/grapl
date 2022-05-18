@@ -39,17 +39,32 @@ impl PluginRegistryServiceClient {
         })
     }
 
-    /// create a new plugin
-    pub async fn create_plugin(
+    /// create a new plugin.
+    /// NOTE: Most consumers will want `create_plugin`, not `create_plugin_raw`.
+    pub async fn create_plugin_raw(
         &mut self,
         request: Pin<Box<dyn Stream<Item = native::CreatePluginRequestV2> + Send>>,
     ) -> Result<native::CreatePluginResponse, PluginRegistryServiceClientError> {
-       let response = self
+        let response = self
             .proto_client
             .create_plugin(request.map(proto::CreatePluginRequestV2::from))
             .await?;
         let response = native::CreatePluginResponse::try_from(response.into_inner())?;
         Ok(response)
+    }
+
+    // Simplified wrapper function for create_plugin
+    pub async fn create_plugin(
+        &mut self,
+        metadata: native::CreatePluginRequestMetadata,
+        chunks: impl Send + Iterator<Item = Vec<u8>> + 'static,
+    ) -> Result<native::CreatePluginResponse, PluginRegistryServiceClientError> {
+        let request = futures::stream::iter(
+            vec![native::CreatePluginRequestV2::Metadata(metadata)]
+        ).chain(
+            futures::stream::iter(chunks.map(native::CreatePluginRequestV2::Chunk))
+        );
+        self.create_plugin_raw(Box::pin(request)).await
     }
 
     /// retrieve the plugin corresponding to the given plugin_id

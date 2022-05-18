@@ -64,9 +64,10 @@ use crate::{
 /// Implement this trait to define the API business logic
 #[tonic::async_trait]
 pub trait PluginRegistryApi {
-    type Error: Into<Status> 
+    type Error: Into<Status>
         // These two constraints are needed because of the create_plugin streaming API
-        + From<SerDeError> + From<Status>;
+        + From<SerDeError>
+        + From<Status>;
 
     async fn create_plugin(
         &self,
@@ -111,15 +112,13 @@ where
         let proto_request = request.into_inner();
 
         let native_request: ResultStream<CreatePluginRequestV2, T::Error> =
-            Box::pin(proto_request
-                .map(|req: Result<proto::CreatePluginRequestV2, tonic::Status>| {
-                    match req {
-                        Ok(proto) => proto.try_into().map_err(T::Error::from),
-                        Err(e) => Err(T::Error::from(Status::from(e))),
-                    }
-                })
-            );
-            
+            Box::pin(proto_request.map(
+                |req: Result<proto::CreatePluginRequestV2, tonic::Status>| match req {
+                    Ok(proto) => proto.try_into().map_err(T::Error::from),
+                    Err(e) => Err(T::Error::from(Status::from(e))),
+                },
+            ));
+
         let native_response = self
             .api_server
             .create_plugin(native_request)

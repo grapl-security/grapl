@@ -3,7 +3,7 @@
 use grapl_utils::future_ext::GraplFutureExt;
 use plugin_registry::client::FromEnv;
 use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
-    CreatePluginRequest,
+    CreatePluginRequestV2,
     DeployPluginRequest,
     PluginRegistryServiceClient,
     PluginRegistryServiceClientError,
@@ -29,12 +29,22 @@ async fn test_deploy_plugin() -> Result<(), Box<dyn std::error::Error>> {
 
     let create_response = {
         let display_name = uuid::Uuid::new_v4().to_string();
+        let chunks = get_example_generator()?.chunks_owned(1024 * 1024);
+        let requests = futures::stream::iter(vec![
+            CreatePluginRequestV2::Metadata(CreatePluginRequestMetadata{
+                tenant_id: tenant_id.clone(),
+                display_name: display_name.clone(),
+                plugin_type: PluginType::Generator,
+            }),
+        ]);
+        /*
         let request = CreatePluginRequest {
             plugin_artifact: get_example_generator()?,
             tenant_id: tenant_id.clone(),
             display_name: display_name.clone(),
             plugin_type: PluginType::Generator,
-        };
+        }; 
+        */
 
         client
             .create_plugin(request)

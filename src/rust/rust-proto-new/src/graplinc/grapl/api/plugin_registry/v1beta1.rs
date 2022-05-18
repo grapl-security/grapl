@@ -1,8 +1,6 @@
 use std::fmt::Debug;
 
-use proto::{
-    create_plugin_request_v2,
-};
+use proto::create_plugin_request_v2;
 
 pub use crate::graplinc::grapl::api::plugin_registry::{
     v1beta1_client::{
@@ -209,7 +207,6 @@ impl From<CreatePluginRequestMetadata> for proto::CreatePluginRequestMetadata {
 impl ProtobufSerializable for CreatePluginRequestMetadata {
     type ProtobufMessage = proto::CreatePluginRequestMetadata;
 }
-
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct CreatePluginResponse {

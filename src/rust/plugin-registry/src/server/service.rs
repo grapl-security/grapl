@@ -1,10 +1,14 @@
 use std::{
     net::SocketAddr,
-    time::Duration, pin::Pin,
+    pin::Pin,
+    time::Duration,
 };
 
 use bytes::Bytes;
-use futures::{Stream, StreamExt, stream, channel::mpsc, SinkExt};
+use futures::{
+    Stream,
+    StreamExt,
+};
 use grapl_config::env_helpers::FromEnv;
 use rusoto_s3::{
     GetObjectRequest,
@@ -15,6 +19,7 @@ use rusoto_s3::{
 };
 use rust_proto_new::{
     graplinc::grapl::api::plugin_registry::v1beta1::{
+        CreatePluginRequestMetadata,
         CreatePluginRequestV2,
         CreatePluginResponse,
         DeployPluginRequest,
@@ -30,9 +35,9 @@ use rust_proto_new::{
         PluginRegistryServer,
         PluginType,
         TearDownPluginRequest,
-        TearDownPluginResponse, CreatePluginRequestMetadata,
+        TearDownPluginResponse,
     },
-    protocol::{healthcheck::HealthcheckStatus, status::Status},
+    protocol::healthcheck::HealthcheckStatus,
 };
 use tokio::{
     io::AsyncReadExt,
@@ -111,31 +116,22 @@ pub struct PluginRegistry {
     config: PluginRegistryServiceConfig,
 }
 
-impl PluginRegistry {
-    fn ensure_artifact_size_limit(&self, bytes: &[u8]) -> Result<(), PluginRegistryServiceError> {
-        let limit_mb = &self.config.artifact_size_limit_mb;
-        if bytes.len() > (limit_mb * 1024 * 1024) {
-            Err(PluginRegistryServiceError::ArtifactTooLargeError(format!(
-                "Artifact exceeds {limit_mb}MB"
-            )))
-        } else {
-            Ok(())
-        }
+fn ensure_artifact_size_limit(
+    size_limit_mb: usize,
+    chunk_idx: usize,
+) -> Result<(), std::io::Error> {
+    if chunk_idx + 1 > size_limit_mb {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "Artifact exceeds {size_limit_mb}MB",
+        ))
+    } else {
+        Ok(())
     }
 }
+
 type PinnedStream<T> = Pin<Box<dyn Stream<Item = T> + Send + 'static>>;
 type ResultStream<T, E> = PinnedStream<Result<T, E>>;
-
-// Roughly equivalent to `return Err(...)` in a fn -> Result<T, E>
-fn err_stream <T, E> (error: E) -> ResultStream<T, Status> 
-where 
-    T: Sync + Send + 'static,
-    E: Sync + Send + 'static + Into<Status>
-{
-    Box::pin(
-        stream::iter(vec![Err(error.into())])
-    )
-}
 
 #[async_trait]
 impl PluginRegistryApi for PluginRegistry {
@@ -144,23 +140,22 @@ impl PluginRegistryApi for PluginRegistry {
     #[tracing::instrument(skip(self, request), err)]
     async fn create_plugin(
         &self,
-        request: ResultStream<CreatePluginRequestV2, Status>
-    ) -> Result<CreatePluginResponse, Self::Error>
-    {
-        type Req = CreatePluginRequestV2;
+        request: ResultStream<CreatePluginRequestV2, Self::Error>,
+    ) -> Result<CreatePluginResponse, Self::Error> {
+        let mut request = request;
 
         let CreatePluginRequestMetadata {
             tenant_id,
             display_name,
             plugin_type,
         } = match request.next().await {
-            Some(Ok(Req::Metadata(m))) => m,
+            Some(Ok(CreatePluginRequestV2::Metadata(m))) => m,
             Some(Err(e)) => {
-                return Err(e);
+                return Err(e.into());
             }
             _ => {
                 return Err(Self::Error::StreamInputError(
-                    "Expected request 0 to be Metadata"
+                    "Expected request 0 to be Metadata",
                 ));
             }
         };
@@ -170,18 +165,23 @@ impl PluginRegistryApi for PluginRegistry {
 
         let s3_key = generate_artifact_s3_key(plugin_type, &tenant_id, &plugin_id);
 
-        let body_stream: ResultStream<Bytes, std::io::Error> = Box::pin(request.then(|result| async move {
-            match result {
-                Ok(Req::Chunk(c)) => Ok(Bytes::from(c)),
-                _ => {
-                    Err(std::io::Error::new(std::io::ErrorKind::Other,
-                        "Expected request 1..N to be Chunk".to_string()
-                    ))
+        let limit_mb = self.config.artifact_size_limit_mb.clone();
+        let body_stream: ResultStream<Bytes, std::io::Error> = Box::pin(request.enumerate().then(
+            move |(chunk_idx, result)| async move {
+                ensure_artifact_size_limit(limit_mb, chunk_idx)
+                    .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidInput, e))?;
+                match result {
+                    Ok(CreatePluginRequestV2::Chunk(c)) => Ok(Bytes::from(c)),
+                    Err(e) => Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
+                    _ => Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidInput,
+                        "Expected request 1..N to be Chunk".to_string(),
+                    )),
                 }
-            }
-        }));
+            },
+        ));
 
-        let s3_put_result = self.s3
+        self.s3
             .put_object(PutObjectRequest {
                 //content_length: Some(plugin_artifact.len() as i64),
                 body: Some(StreamingBody::new(body_stream)),
@@ -192,7 +192,7 @@ impl PluginRegistryApi for PluginRegistry {
             })
             .await?;
 
-        let db_create_result = self.db_client
+        self.db_client
             .create_plugin(
                 &plugin_id,
                 DbCreatePluginArgs {
@@ -203,9 +203,8 @@ impl PluginRegistryApi for PluginRegistry {
                 &s3_key,
             )
             .await?;
-        Ok(CreatePluginResponse {
-            plugin_id
-        })
+
+        Ok(CreatePluginResponse { plugin_id })
     }
 
     #[tracing::instrument(skip(self, request), err)]
