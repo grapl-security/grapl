@@ -20,7 +20,6 @@ pub fn get_example_generator() -> Result<Vec<u8>, std::io::Error> {
 // the lack of streaming. Tackling this is my next task, but I want to unblock
 // other developers for the time being.
 // https://github.com/grapl-security/issue-tracker/issues/937
-#[ignore]
 #[test_log::test(tokio::test)]
 async fn test_deploy_plugin() -> Result<(), Box<dyn std::error::Error>> {
     let mut client = PluginRegistryServiceClient::from_env().await?;
@@ -65,6 +64,9 @@ fn assert_contains(input: &str, expected_substr: &str) {
 /// So we *expect* this call to fail since it's an arbitrary PluginID that
 /// hasn't been created yet
 async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> Result<(), Box<dyn std::error::Error>> {
+    println!("sleeping");
+    std::thread::sleep(std::time::Duration::from_secs(15));
+    println!("slept");
     let mut client = PluginRegistryServiceClient::from_env().await?;
 
     let randomly_selected_plugin_id = uuid::Uuid::new_v4();
