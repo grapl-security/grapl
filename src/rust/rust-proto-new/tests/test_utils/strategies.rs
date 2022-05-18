@@ -560,10 +560,9 @@ pub mod pipeline_ingress {
 
 pub mod plugin_registry {
     use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
-        CreatePluginRequestChunk,
         CreatePluginRequestMetadata,
         CreatePluginRequestV2,
-        CreatePluginResponseV2,
+        CreatePluginResponse,
         DeployPluginRequest,
         DeployPluginResponse,
         GetAnalyzersForTenantRequest,
@@ -607,19 +606,9 @@ pub mod plugin_registry {
 
     pub fn create_plugin_requests() -> impl Strategy<Value = CreatePluginRequestV2> {
         prop_oneof![
-            create_plugin_request_chunks().prop_map(CreatePluginRequestV2::Chunk),
+            any::<Vec<u8>>().prop_map(CreatePluginRequestV2::Chunk),
             create_plugin_request_metadatas().prop_map(CreatePluginRequestV2::Metadata)
         ]
-    }
-
-    prop_compose! {
-        pub fn create_plugin_request_chunks()(
-            plugin_artifact in string_not_empty().prop_map(|s| s.as_bytes().to_vec()),
-        ) -> CreatePluginRequestChunk {
-            CreatePluginRequestChunk {
-                plugin_artifact
-            }
-        }
     }
 
     prop_compose! {
@@ -636,11 +625,14 @@ pub mod plugin_registry {
         }
     }
 
-    pub fn create_plugin_responses() -> impl Strategy<Value = CreatePluginResponseV2> {
-        prop_oneof![
-            Just(CreatePluginResponseV2::AwaitingChunk),
-            uuids().prop_map(CreatePluginResponseV2::PluginId),
-        ]
+    prop_compose! {
+        pub fn create_plugin_responses()(
+            plugin_id in uuids(),
+        ) -> CreatePluginResponse {
+            CreatePluginResponse{
+                plugin_id,
+            }
+        }
     }
 
     prop_compose! {
