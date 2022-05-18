@@ -14,23 +14,23 @@ use crate::{
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginRegistryServiceError {
-    #[error("SqlxError")]
+    #[error(transparent)]
     SqlxError(#[from] sqlx::Error),
-    #[error("S2PutObjectError")]
-    PutObjectError(#[from] rusoto_core::RusotoError<PutObjectError>),
-    #[error("S2GetObjectError")]
-    GetObjectError(#[from] rusoto_core::RusotoError<GetObjectError>),
+    #[error(transparent)]
+    S3PutObjectError(#[from] rusoto_core::RusotoError<PutObjectError>),
+    #[error(transparent)]
+    S3GetObjectError(#[from] rusoto_core::RusotoError<GetObjectError>),
     #[error("EmptyObject")]
     EmptyObject,
-    #[error("IoError")]
+    #[error(transparent)]
     IoError(#[from] std::io::Error),
-    #[error("SerDeError")]
+    #[error(transparent)]
     SerDeError(#[from] SerDeError),
-    #[error("DatabaseSerDeError")]
+    #[error(transparent)]
     DatabaseSerDeError(#[from] DatabaseSerDeError),
-    #[error("NomadClientError")]
+    #[error(transparent)]
     NomadClientError(#[from] nomad::client::NomadClientError),
-    #[error("NomadCliError")]
+    #[error(transparent)]
     NomadCliError(#[from] nomad::cli::NomadCliError),
     #[error("NomadJobAllocationError")]
     NomadJobAllocationError,
@@ -52,8 +52,8 @@ impl From<PluginRegistryServiceError> for Status {
                 Status::internal("Invalid SQL configuration")
             }
             Error::SqlxError(_) => Status::internal("Failed to operate on postgres"),
-            Error::PutObjectError(_) => Status::internal("Failed to put s3 object"),
-            Error::GetObjectError(_) => Status::internal("Failed to get s3 object"),
+            Error::S3PutObjectError(_) => Status::internal("Failed to put s3 object"),
+            Error::S3GetObjectError(_) => Status::internal("Failed to get s3 object"),
             Error::EmptyObject => Status::internal("S3 Object was unexpectedly empty"),
             Error::IoError(_) => Status::internal("IoError"),
             Error::SerDeError(_) => Status::invalid_argument("Unable to deserialize message"),
