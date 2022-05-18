@@ -52,8 +52,8 @@ impl From<PluginRegistryServiceError> for Status {
                 Status::internal("Invalid SQL configuration")
             }
             Error::SqlxError(_) => Status::internal("Failed to operate on postgres"),
-            Error::PutObjectError(_) => Status::internal("Failed to put s3 object"),
-            Error::GetObjectError(_) => Status::internal("Failed to get s3 object"),
+            Error::S3PutObjectError(_) => Status::internal("Failed to put s3 object"),
+            Error::S3GetObjectError(_) => Status::internal("Failed to get s3 object"),
             Error::EmptyObject => Status::internal("S3 Object was unexpectedly empty"),
             Error::IoError(_) => Status::internal("IoError"),
             Error::SerDeError(_) => Status::invalid_argument("Unable to deserialize message"),
