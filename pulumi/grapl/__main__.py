@@ -189,9 +189,9 @@ def main() -> None:
     engagement_creator_queue.subscribe_to_emitter(analyzer_matched_emitter)
 
     analyzers_bucket = Bucket("analyzers-bucket", sse=True)
+    pulumi.export("analyzers-bucket", analyzers_bucket.bucket)
     model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)
     plugin_registry_bucket = Bucket("plugin-registry-bucket", sse=True)
-    pulumi.export("analyzers-bucket", analyzers_bucket.bucket)
 
     all_plugin_buckets = [
         analyzers_bucket,
