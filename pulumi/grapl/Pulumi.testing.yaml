@@ -21,10 +21,10 @@ config:
     osquery-generator: 20220518153612-c55a868
     pipeline-ingress: 20220518153612-c55a868
     plugin-bootstrap: 20220518153612-c55a868
-    plugin-registry: 20220518153612-c55a868
+    plugin-registry: 20220518180108-74098de
     plugin-work-queue: 20220518153612-c55a868
     provisioner: 20220518153612-c55a868
-    rust-integration-tests-new: 20220518153612-c55a868
+    rust-integration-tests-new: 20220518180108-74098de
     sysmon-generator: 20220518153612-c55a868
   grapl:cloudsmith-repository-name: grapl/testing
   grapl:confluent-environment-name: testing
