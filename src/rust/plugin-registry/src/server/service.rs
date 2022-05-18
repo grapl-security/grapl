@@ -77,10 +77,10 @@ pub struct PluginRegistryDbConfig {
 
 #[derive(clap::Parser, Debug)]
 pub struct PluginRegistryServiceConfig {
-    #[clap(long, env)]
-    pub plugin_s3_bucket_aws_account_id: String,
-    #[clap(long, env)]
-    pub plugin_s3_bucket_name: String,
+    #[clap(long, env = "PLUGIN_REGISTRY_BUCKET_AWS_ACCOUNT_ID")]
+    pub bucket_aws_account_id: String,
+    #[clap(long, env = "PLUGIN_REGISTRY_BUCKET_NAME")]
+    pub bucket_name: String,
     #[clap(long, env)]
     pub plugin_registry_bind_address: SocketAddr,
     #[clap(long, env)]
@@ -148,9 +148,9 @@ impl PluginRegistryApi for PluginRegistry {
             .put_object(PutObjectRequest {
                 content_length: Some(plugin_artifact.len() as i64),
                 body: Some(StreamingBody::from(plugin_artifact)),
-                bucket: self.config.plugin_s3_bucket_name.clone(),
+                bucket: self.config.bucket_name.clone(),
                 key: s3_key.clone(),
-                expected_bucket_owner: Some(self.config.plugin_s3_bucket_aws_account_id.clone()),
+                expected_bucket_owner: Some(self.config.bucket_aws_account_id.clone()),
                 ..Default::default()
             })
             .await?;
@@ -190,9 +190,9 @@ impl PluginRegistryApi for PluginRegistry {
         let get_object_output = self
             .s3
             .get_object(GetObjectRequest {
-                bucket: self.config.plugin_s3_bucket_name.clone(),
+                bucket: self.config.bucket_name.clone(),
                 key: s3_key.clone(),
-                expected_bucket_owner: Some(self.config.plugin_s3_bucket_aws_account_id.clone()),
+                expected_bucket_owner: Some(self.config.bucket_aws_account_id.clone()),
                 ..Default::default()
             })
             .await?;
