@@ -134,6 +134,8 @@ EOF
         -dev-connect > "${NOMAD_LOGS_DEST}" &
     local -r nomad_agent_pid="$!"
 
+    cat "${VAULT_LOGS_DEST}"
+
     # Wait a short period of time before attempting to deploy infrastructure
     (
         readonly wait_secs=45
@@ -170,6 +172,9 @@ EOF
 EOF
         )"
     )
+
+    echo "sleep for 10"
+    sleep 10
 
     "${THIS_DIR}/nomad_run_local_infra.sh"
     echo "Deployment complete"
