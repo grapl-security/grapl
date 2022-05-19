@@ -238,7 +238,7 @@ where
             .trace_fn(|request| {
                 tracing::info_span!(
                     "Plugin Registry",
-                    headers = ?request.headers(),
+                    request_id = ?request.headers().get("x-request-id"),
                     method = ?request.method(),
                     uri = %request.uri(),
                     extensions = ?request.extensions(),

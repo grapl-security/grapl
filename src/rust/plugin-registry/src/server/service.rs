@@ -185,9 +185,9 @@ impl PluginRegistryApi for PluginRegistry {
             .put_object(PutObjectRequest {
                 //content_length: Some(plugin_artifact.len() as i64),
                 body: Some(StreamingBody::new(body_stream)),
-                bucket: self.config.plugin_s3_bucket_name.clone(),
+                bucket: self.config.bucket_name.clone(),
                 key: s3_key.clone(),
-                expected_bucket_owner: Some(self.config.plugin_s3_bucket_aws_account_id.clone()),
+                expected_bucket_owner: Some(self.config.bucket_aws_account_id.clone()),
                 ..Default::default()
             })
             .await?;
