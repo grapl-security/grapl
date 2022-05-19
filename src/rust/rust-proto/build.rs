@@ -1,4 +1,7 @@
-use std::ffi::OsStr;
+use std::{
+    ffi::OsStr,
+    path::Path,
+};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut config = tonic_build::configure();
@@ -6,8 +9,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("cargo:rerun-if-changed=../Cargo.lock");
     println!("cargo:rerun-if-changed=build.rs");
 
-    change_on_dir("../../proto/")?;
-    change_on_dir("src/")?;
+    change_on_dir(Path::new("../../proto/"))?;
     config = config.type_attribute(
         ".graplinc.grapl.api.graph", // TODO: all these derives should go away
         "#[derive(serde_derive::Serialize, serde_derive::Deserialize)]",
@@ -488,15 +490,19 @@ fn get_proto_files(path: &str, paths: &mut Vec<String>) -> Result<(), Box<dyn st
     Ok(())
 }
 
-fn change_on_dir(root_dir: &str) -> Result<(), Box<dyn std::error::Error>> {
+fn change_on_dir(root_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let current_dir = std::env::current_dir()?;
     for entry in std::fs::read_dir(current_dir.join(root_dir))? {
         let entry = entry?;
-        if !entry.metadata()?.is_file() {
-            continue;
+        let metadata = entry.metadata()?;
+        if metadata.is_dir() {
+            change_on_dir(&entry.path())?;
         }
-        let path = entry.path();
-        println!("cargo:rerun-if-changed={}", path.display());
+        if metadata.is_file() {
+            let path = entry.path();
+            let path = path.canonicalize()?;
+            println!("cargo:rerun-if-changed={}", path.display());
+        }
     }
     Ok(())
 }
