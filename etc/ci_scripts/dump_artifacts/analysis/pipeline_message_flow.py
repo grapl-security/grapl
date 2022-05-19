@@ -26,7 +26,7 @@ LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 def analyze_grapl_core(artifacts_dir: Path, analysis_dir: Path) -> None:
     grapl_core_dir = (artifacts_dir / "grapl-core").resolve()
     if not grapl_core_dir.exists():
-        LOGGER.debug(f"grapl-core didn't come up, cannto analyze")
+        LOGGER.debug(f"grapl-core didn't come up, can't analyze")
         return
     logs_in_grapl_core = list(grapl_core_dir.iterdir())
     # Find any logs that match the patterns listed in PRIORITIZATION,
