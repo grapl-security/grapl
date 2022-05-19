@@ -1,5 +1,7 @@
-use std::ffi::OsStr;
-use std::path::Path;
+use std::{
+    ffi::OsStr,
+    path::Path,
+};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut config = tonic_build::configure();
@@ -488,7 +490,6 @@ fn get_proto_files(path: &str, paths: &mut Vec<String>) -> Result<(), Box<dyn st
     Ok(())
 }
 
-
 fn change_on_dir(root_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let current_dir = std::env::current_dir()?;
     for entry in std::fs::read_dir(current_dir.join(root_dir))? {
@@ -505,4 +506,3 @@ fn change_on_dir(root_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     }
     Ok(())
 }
-

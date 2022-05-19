@@ -1,5 +1,7 @@
-use std::ffi::OsStr;
-use std::path::Path;
+use std::{
+    ffi::OsStr,
+    path::Path,
+};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = tonic_build::configure();
