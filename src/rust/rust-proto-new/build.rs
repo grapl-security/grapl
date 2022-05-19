@@ -2,12 +2,8 @@ use std::ffi::OsStr;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = tonic_build::configure();
-    println!("cargo:rerun-if-changed=Cargo.toml");
-    println!("cargo:rerun-if-changed=../Cargo.lock");
-    println!("cargo:rerun-if-changed=build.rs");
-
     change_on_dir("../../proto/")?;
-    change_on_dir("src/")?;
+    change_on_dir("../")?;
 
     let mut paths = Vec::new();
     get_proto_files("../../proto/graplinc", &mut paths)?;
