@@ -465,7 +465,7 @@ up: build-local-infrastructure _up
 
 # NOTE: Internal target to decouple the building of images from the
 # running of them. Do not invoke this directly.
-.SILENT: _up
+#.SILENT: _up
 .PHONY: _up
 _up:
 	# Primarily used for bringing up an environment for integration testing.
