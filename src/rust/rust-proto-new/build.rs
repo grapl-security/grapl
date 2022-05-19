@@ -9,7 +9,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("cargo:rerun-if-changed=../Cargo.lock");
     println!("cargo:rerun-if-changed=build.rs");
 
-    change_on_dir(&Path::new("../../proto/"))?;
+    change_on_dir(Path::new("../../proto/"))?;
 
     let mut paths = Vec::new();
     get_proto_files("../../proto/graplinc", &mut paths)?;

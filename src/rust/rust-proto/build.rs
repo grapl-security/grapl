@@ -9,7 +9,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("cargo:rerun-if-changed=../Cargo.lock");
     println!("cargo:rerun-if-changed=build.rs");
 
-    change_on_dir(&Path::new("../../proto/"))?;
+    change_on_dir(Path::new("../../proto/"))?;
     config = config.type_attribute(
         ".graplinc.grapl.api.graph", // TODO: all these derives should go away
         "#[derive(serde_derive::Serialize, serde_derive::Deserialize)]",
