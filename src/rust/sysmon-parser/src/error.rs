@@ -45,6 +45,10 @@ pub enum Error {
         position: usize,
         source: uuid::Error,
     },
+    #[error("unexpected XML at position `{position}`: {message}")]
+    ParseSysmon { message: String, position: usize },
+    #[error("unexpected end of stream")]
+    UnexpectedEndOfStream,
     // these errors are useful just as they are
     #[error(transparent)]
     XmlError(#[from] xmlparser::Error),

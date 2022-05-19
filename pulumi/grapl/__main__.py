@@ -191,7 +191,13 @@ def main() -> None:
     analyzers_bucket = Bucket("analyzers-bucket", sse=True)
     pulumi.export("analyzers-bucket", analyzers_bucket.bucket)
     model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)
-    pulumi.export("model-plugins-bucket", model_plugins_bucket.bucket)
+    plugin_registry_bucket = Bucket("plugin-registry-bucket", sse=True)
+
+    all_plugin_buckets = [
+        analyzers_bucket,
+        model_plugins_bucket,
+        plugin_registry_bucket,
+    ]
 
     pipeline_ingress_healthcheck_polling_interval_ms = "5000"
     pulumi.export(
@@ -199,17 +205,9 @@ def main() -> None:
         pipeline_ingress_healthcheck_polling_interval_ms,
     )
 
-    plugins_bucket = Bucket("plugins-bucket", sse=True)
-    pulumi.export("plugins-bucket", plugins_bucket.bucket)
-
-    plugin_buckets = [
-        analyzers_bucket,
-        model_plugins_bucket,
-    ]
-
     firecracker_s3objs = FirecrackerS3BucketObjects(
         "firecracker-s3-bucket-objects",
-        plugins_bucket=plugins_bucket,
+        plugins_bucket=plugin_registry_bucket,
         firecracker_assets=FirecrackerAssets(
             "firecracker-assets",
             repository_name=config.cloudsmith_repository_name(),
@@ -258,8 +256,8 @@ def main() -> None:
         user_session_table=dynamodb_tables.user_session_table.name,
         plugin_registry_kernel_artifact_url=firecracker_s3objs.kernel_s3obj_url,
         plugin_registry_rootfs_artifact_url=firecracker_s3objs.rootfs_s3obj_url,
-        plugin_s3_bucket_aws_account_id=config.AWS_ACCOUNT_ID,
-        plugin_s3_bucket_name=plugins_bucket.bucket,
+        plugin_registry_bucket_aws_account_id=config.AWS_ACCOUNT_ID,
+        plugin_registry_bucket_name=plugin_registry_bucket.bucket,
     )
 
     provision_vars: Final[NomadVars] = {
@@ -459,11 +457,11 @@ def main() -> None:
             subnet_ids
         ).apply(subnets_to_single_az)
 
-        for _bucket in plugin_buckets:
-            _bucket.grant_put_permission_to(nomad_agent_role)
+        for bucket in all_plugin_buckets:
+            bucket.grant_put_permission_to(nomad_agent_role)
             # Analyzer Dispatcher needs to be able to ListObjects on Analyzers
             # Analyzer Executor needs to be able to ListObjects on Model Plugins
-            _bucket.grant_get_and_list_to(nomad_agent_role)
+            bucket.grant_get_and_list_to(nomad_agent_role)
         for _emitter in all_emitters:
             _emitter.grant_write_to(nomad_agent_role)
             _emitter.grant_read_to(nomad_agent_role)
