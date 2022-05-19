@@ -1,5 +1,7 @@
 import json
+import logging
 import re
+import sys
 from pathlib import Path
 from typing import List, Optional
 
@@ -16,9 +18,17 @@ PRIORITIZATION = [
     "engagement-creator.stdout",
 ]
 
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.INFO)
+LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
+
 
 def analyze_grapl_core(artifacts_dir: Path, analysis_dir: Path) -> None:
-    logs_in_grapl_core = list((artifacts_dir / "grapl-core").iterdir())
+    grapl_core_dir = (artifacts_dir / "grapl-core").resolve()
+    if not grapl_core_dir.exists():
+        LOGGER.debug(f"grapl-core didn't come up, cannto analyze")
+        return
+    logs_in_grapl_core = list(grapl_core_dir.iterdir())
     # Find any logs that match the patterns listed in PRIORITIZATION,
     # in that order.
     maybe_paths = [
