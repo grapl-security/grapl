@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use proto::create_plugin_request_v2;
+use proto::create_plugin_request;
 
 pub use crate::graplinc::grapl::api::plugin_registry::{
     v1beta1_client::{
@@ -111,47 +111,47 @@ impl From<Plugin> for proto::Plugin {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum CreatePluginRequestV2 {
+pub enum CreatePluginRequest {
     Metadata(CreatePluginRequestMetadata),
     Chunk(Vec<u8>),
 }
 
-impl type_url::TypeUrl for CreatePluginRequestV2 {
+impl type_url::TypeUrl for CreatePluginRequest {
     const TYPE_URL: &'static str =
-        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.CreatePluginRequestV2";
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.CreatePluginRequest";
 }
 
-impl TryFrom<proto::CreatePluginRequestV2> for CreatePluginRequestV2 {
+impl TryFrom<proto::CreatePluginRequest> for CreatePluginRequest {
     type Error = SerDeError;
 
-    fn try_from(value: proto::CreatePluginRequestV2) -> Result<Self, Self::Error> {
+    fn try_from(value: proto::CreatePluginRequest) -> Result<Self, Self::Error> {
         match value.inner {
-            Some(create_plugin_request_v2::Inner::Metadata(m)) => {
-                Ok(CreatePluginRequestV2::Metadata(m.try_into()?))
+            Some(create_plugin_request::Inner::Metadata(m)) => {
+                Ok(CreatePluginRequest::Metadata(m.try_into()?))
             }
-            Some(create_plugin_request_v2::Inner::Chunk(c)) => {
-                Ok(CreatePluginRequestV2::Chunk(c.try_into()?))
+            Some(create_plugin_request::Inner::Chunk(c)) => {
+                Ok(CreatePluginRequest::Chunk(c.try_into()?))
             }
-            _ => Err(SerDeError::UnknownVariant("CreatePluginRequestV2.inner")),
+            _ => Err(SerDeError::UnknownVariant("CreatePluginRequest.inner")),
         }
     }
 }
 
-impl From<CreatePluginRequestV2> for proto::CreatePluginRequestV2 {
-    fn from(value: CreatePluginRequestV2) -> Self {
-        proto::CreatePluginRequestV2 {
+impl From<CreatePluginRequest> for proto::CreatePluginRequest {
+    fn from(value: CreatePluginRequest) -> Self {
+        proto::CreatePluginRequest {
             inner: Some(match value {
-                CreatePluginRequestV2::Metadata(m) => {
-                    create_plugin_request_v2::Inner::Metadata(m.into())
+                CreatePluginRequest::Metadata(m) => {
+                    create_plugin_request::Inner::Metadata(m.into())
                 }
-                CreatePluginRequestV2::Chunk(c) => create_plugin_request_v2::Inner::Chunk(c.into()),
+                CreatePluginRequest::Chunk(c) => create_plugin_request::Inner::Chunk(c.into()),
             }),
         }
     }
 }
 
-impl ProtobufSerializable for CreatePluginRequestV2 {
-    type ProtobufMessage = proto::CreatePluginRequestV2;
+impl ProtobufSerializable for CreatePluginRequest {
+    type ProtobufMessage = proto::CreatePluginRequest;
 }
 
 #[derive(Debug, Clone, PartialEq)]

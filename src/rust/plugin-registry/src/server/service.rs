@@ -19,8 +19,8 @@ use rusoto_s3::{
 };
 use rust_proto_new::{
     graplinc::grapl::api::plugin_registry::v1beta1::{
+        CreatePluginRequest,
         CreatePluginRequestMetadata,
-        CreatePluginRequestV2,
         CreatePluginResponse,
         DeployPluginRequest,
         DeployPluginResponse,
@@ -120,7 +120,7 @@ fn ensure_artifact_size_limit(
     size_limit_mb: usize,
     chunk_idx: usize,
 ) -> Result<(), std::io::Error> {
-    if chunk_idx + 1 > size_limit_mb {
+    if chunk_idx >= size_limit_mb {
         Err(std::io::Error::new(
             std::io::ErrorKind::InvalidData,
             "Artifact exceeds {size_limit_mb}MB",
@@ -140,8 +140,10 @@ impl PluginRegistryApi for PluginRegistry {
     #[tracing::instrument(skip(self, request), err)]
     async fn create_plugin(
         &self,
-        request: ResultStream<CreatePluginRequestV2, Self::Error>,
+        request: ResultStream<CreatePluginRequest, Self::Error>,
     ) -> Result<CreatePluginResponse, Self::Error> {
+        let start_time = std::time::SystemTime::now();
+
         let mut request = request;
 
         let CreatePluginRequestMetadata {
@@ -149,7 +151,7 @@ impl PluginRegistryApi for PluginRegistry {
             display_name,
             plugin_type,
         } = match request.next().await {
-            Some(Ok(CreatePluginRequestV2::Metadata(m))) => m,
+            Some(Ok(CreatePluginRequest::Metadata(m))) => m,
             Some(Err(e)) => {
                 return Err(e.into());
             }
@@ -160,18 +162,18 @@ impl PluginRegistryApi for PluginRegistry {
             }
         };
 
-        let hash: Vec<u8> = "asdf".into();
-        let plugin_id = generate_plugin_id(&tenant_id, hash.as_slice());
-
+        let plugin_id = generate_plugin_id();
         let s3_key = generate_artifact_s3_key(plugin_type, &tenant_id, &plugin_id);
 
+        // Convert the incoming request stream of CreatePluginRequest::Chunk
+        // into a stream of Bytes to be sent to Rusoto S3.put_object.
         let limit_mb = self.config.artifact_size_limit_mb.clone();
         let body_stream: ResultStream<Bytes, std::io::Error> = Box::pin(request.enumerate().then(
             move |(chunk_idx, result)| async move {
                 ensure_artifact_size_limit(limit_mb, chunk_idx)
                     .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidInput, e))?;
                 match result {
-                    Ok(CreatePluginRequestV2::Chunk(c)) => Ok(Bytes::from(c)),
+                    Ok(CreatePluginRequest::Chunk(c)) => Ok(Bytes::from(c)),
                     Err(e) => Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
                     _ => Err(std::io::Error::new(
                         std::io::ErrorKind::InvalidInput,
@@ -183,7 +185,6 @@ impl PluginRegistryApi for PluginRegistry {
 
         self.s3
             .put_object(PutObjectRequest {
-                //content_length: Some(plugin_artifact.len() as i64),
                 body: Some(StreamingBody::new(body_stream)),
                 bucket: self.config.bucket_name.clone(),
                 key: s3_key.clone(),
@@ -191,6 +192,16 @@ impl PluginRegistryApi for PluginRegistry {
                 ..Default::default()
             })
             .await?;
+
+        let total_duration = std::time::SystemTime::now()
+            .duration_since(start_time)
+            .unwrap();
+
+        tracing::info!(
+            message = "CreatePlugin benchmark",
+            display_name = ?display_name,
+            duration = ?total_duration.as_millis(),
+        );
 
         self.db_client
             .create_plugin(
@@ -362,13 +373,9 @@ fn generate_artifact_s3_key(
     )
 }
 
-fn generate_plugin_id(tenant_id: &uuid::Uuid, plugin_artifact: &[u8]) -> uuid::Uuid {
-    let mut hasher = blake3::Hasher::new();
-    hasher.update(&b"PLUGIN_ID_NAMESPACE"[..]);
-    hasher.update(tenant_id.as_bytes());
-    hasher.update(plugin_artifact);
-    let mut output = [0; 16];
-    hasher.finalize_xof().fill(&mut output);
-
-    uuid::Uuid::from_bytes(output)
+fn generate_plugin_id() -> uuid::Uuid {
+    // NOTE: Previously we generated plugin-id based off of the plugin binary, but
+    // since the binary is now streamed, + eventually 1 plugin can have different
+    // versions - we decided to make it a random UUID.
+    uuid::Uuid::new_v4()
 }

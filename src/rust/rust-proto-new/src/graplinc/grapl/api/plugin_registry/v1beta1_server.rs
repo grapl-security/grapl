@@ -29,7 +29,7 @@ use tonic::{
 use crate::{
     execute_rpc,
     graplinc::grapl::api::plugin_registry::v1beta1::{
-        CreatePluginRequestV2,
+        CreatePluginRequest,
         CreatePluginResponse,
         DeployPluginRequest,
         DeployPluginResponse,
@@ -71,7 +71,7 @@ pub trait PluginRegistryApi {
 
     async fn create_plugin(
         &self,
-        request: ResultStream<CreatePluginRequestV2, Self::Error>,
+        request: ResultStream<CreatePluginRequest, Self::Error>,
     ) -> Result<CreatePluginResponse, Self::Error>;
 
     async fn get_plugin(&self, request: GetPluginRequest)
@@ -107,13 +107,13 @@ where
 {
     async fn create_plugin(
         &self,
-        request: Request<tonic::Streaming<proto::CreatePluginRequestV2>>,
+        request: Request<tonic::Streaming<proto::CreatePluginRequest>>,
     ) -> Result<Response<proto::CreatePluginResponse>, tonic::Status> {
         let proto_request = request.into_inner();
 
-        let native_request: ResultStream<CreatePluginRequestV2, T::Error> =
+        let native_request: ResultStream<CreatePluginRequest, T::Error> =
             Box::pin(proto_request.map(
-                |req: Result<proto::CreatePluginRequestV2, tonic::Status>| match req {
+                |req: Result<proto::CreatePluginRequest, tonic::Status>| match req {
                     Ok(proto) => proto.try_into().map_err(T::Error::from),
                     Err(e) => Err(T::Error::from(Status::from(e))),
                 },

@@ -25,3 +25,32 @@ pub trait GraplFutureExt: Future {
 }
 
 impl<T: ?Sized> GraplFutureExt for T where T: Future {}
+
+#[async_trait::async_trait]
+pub trait GraplAsyncRetry<Fut, T, E>: Fn() -> Fut
+where
+    Fut: Future<Output = Result<T, E>> + Send,
+    E: Send,
+{
+    /// Helper method to auto-retry an async () -> Result.
+    /// If it still fails `num_retries` times, return the Err.
+    async fn retry(&self, num_retries: u8) -> Result<T, E> {
+        let mut last_err: Option<E> = None;
+        for _ in 0..num_retries {
+            let result = self().await;
+            match result {
+                Ok(t) => return Ok(t),
+                Err(e) => last_err = Some(e),
+            };
+        }
+        Err(last_err.expect("definitely set"))
+    }
+}
+
+impl<F, Fut, T, E> GraplAsyncRetry<Fut, T, E> for F
+where
+    F: Fn() -> Fut,
+    Fut: Future<Output = Result<T, E>> + Send,
+    E: Send,
+{
+}

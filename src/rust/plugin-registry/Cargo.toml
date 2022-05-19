@@ -11,7 +11,6 @@ path = "src/main.rs"
 name = "plugin_registry"
 
 [dependencies]
-async-stream = "0.3"
 async-trait = "0.1.51"
 bytes = "1.1"
 clap = { version = "3.0", default_features = false, features = [
@@ -44,7 +43,6 @@ rusoto_core = { version = "0.47.0", default_features = false, features = [
 rusoto_s3 = { version = "0.47.0", default_features = false, features = [
   "rustls"
 ] }
-blake3 = "1.2.0"
 uuid = { version = "0.8", features = ["v4"] }
 futures = "0.3"
 

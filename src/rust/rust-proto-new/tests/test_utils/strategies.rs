@@ -560,8 +560,8 @@ pub mod pipeline_ingress {
 
 pub mod plugin_registry {
     use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
+        CreatePluginRequest,
         CreatePluginRequestMetadata,
-        CreatePluginRequestV2,
         CreatePluginResponse,
         DeployPluginRequest,
         DeployPluginResponse,
@@ -604,10 +604,10 @@ pub mod plugin_registry {
         }
     }
 
-    pub fn create_plugin_requests() -> impl Strategy<Value = CreatePluginRequestV2> {
+    pub fn create_plugin_requests() -> impl Strategy<Value = CreatePluginRequest> {
         prop_oneof![
-            any::<Vec<u8>>().prop_map(CreatePluginRequestV2::Chunk),
-            create_plugin_request_metadatas().prop_map(CreatePluginRequestV2::Metadata)
+            any::<Vec<u8>>().prop_map(CreatePluginRequest::Chunk),
+            create_plugin_request_metadatas().prop_map(CreatePluginRequest::Metadata)
         ]
     }
 

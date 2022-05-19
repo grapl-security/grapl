@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use async_trait;
+use grapl_utils::future_ext::GraplAsyncRetry;
 use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::PluginRegistryServiceClient;
 use tonic::transport::Endpoint;
 
@@ -18,12 +19,18 @@ impl FromEnv<PluginRegistryServiceClient, Box<dyn std::error::Error>>
     /// Create a client from environment
     async fn from_env() -> Result<PluginRegistryServiceClient, Box<dyn std::error::Error>> {
         let address = std::env::var(ADDRESS_ENV_VAR).expect(ADDRESS_ENV_VAR);
-        let endpoint = Endpoint::from_shared(address)?
-            // Really high timeout due to the potentially-large binary sent
-            // over `create_plugin`.
-            // https://github.com/grapl-security/issue-tracker/issues/937
-            .timeout(Duration::from_secs(20))
+
+        let endpoint = Endpoint::from_shared(address.to_string())?
+            .timeout(Duration::from_secs(5))
             .concurrency_limit(30);
-        Self::connect(endpoint).await
+
+        let retry_result = (|| async { Self::connect(endpoint.clone()).await })
+            .retry(3)
+            .await;
+        // Required to recast the send+sync into non-send+sync
+        match retry_result {
+            Ok(ok) => Ok(ok),
+            Err(e) => Err(e),
+        }
     }
 }

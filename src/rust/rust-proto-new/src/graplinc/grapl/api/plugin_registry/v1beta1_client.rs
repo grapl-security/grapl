@@ -1,7 +1,4 @@
-use std::{
-    fmt::Debug,
-    pin::Pin,
-};
+use std::fmt::Debug;
 
 use futures::{
     Stream,
@@ -30,7 +27,7 @@ pub struct PluginRegistryServiceClient {
 
 impl PluginRegistryServiceClient {
     #[tracing::instrument(err)]
-    pub async fn connect<T>(endpoint: T) -> Result<Self, Box<dyn std::error::Error>>
+    pub async fn connect<T>(endpoint: T) -> Result<Self, Box<dyn std::error::Error + Send + Sync>>
     where
         T: std::convert::TryInto<tonic::transport::Endpoint> + Debug,
         T::Error: std::error::Error + Send + Sync + 'static,
@@ -42,13 +39,16 @@ impl PluginRegistryServiceClient {
 
     /// create a new plugin.
     /// NOTE: Most consumers will want `create_plugin`, not `create_plugin_raw`.
-    pub async fn create_plugin_raw(
+    pub async fn create_plugin_raw<S>(
         &mut self,
-        request: Pin<Box<dyn Stream<Item = native::CreatePluginRequestV2> + Send>>,
-    ) -> Result<native::CreatePluginResponse, PluginRegistryServiceClientError> {
+        request: S,
+    ) -> Result<native::CreatePluginResponse, PluginRegistryServiceClientError>
+    where
+        S: Stream<Item = native::CreatePluginRequest> + Send + 'static,
+    {
         let response = self
             .proto_client
-            .create_plugin(request.map(proto::CreatePluginRequestV2::from))
+            .create_plugin(request.map(proto::CreatePluginRequest::from))
             .await?;
         let response = native::CreatePluginResponse::try_from(response.into_inner())?;
         Ok(response)
@@ -63,11 +63,11 @@ impl PluginRegistryServiceClient {
         // Split the artifact up into 1MB chunks
         let plugin_chunks = plugin_artifact.chunks_owned(1024 * 1024);
         // Send the metadata first followed by N chunks
-        let request =
-            futures::stream::iter(vec![native::CreatePluginRequestV2::Metadata(metadata)]).chain(
-                futures::stream::iter(plugin_chunks.map(native::CreatePluginRequestV2::Chunk)),
-            );
-        self.create_plugin_raw(Box::pin(request)).await
+        let request = futures::stream::iter(vec![native::CreatePluginRequest::Metadata(metadata)])
+            .chain(futures::stream::iter(
+                plugin_chunks.map(native::CreatePluginRequest::Chunk),
+            ));
+        self.create_plugin_raw(request).await
     }
 
     /// retrieve the plugin corresponding to the given plugin_id
