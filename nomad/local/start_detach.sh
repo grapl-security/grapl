@@ -97,12 +97,6 @@ start_nomad_detach() {
         -dev > "${VAULT_LOGS_DEST}" 2>&1 &
     local -r vault_agent_pid="$!"
 
-    # shellcheck disable=SC2024
-    sudo nomad agent \
-        -config="${THIS_DIR}/nomad-agent-conf.nomad" \
-        -dev-connect > "${NOMAD_LOGS_DEST}" &
-    local -r nomad_agent_pid="$!"
-
     # Wait for vault to boot
     export VAULT_ADDR="http://127.0.0.1:8200"
     (
@@ -126,12 +120,19 @@ EOF
     configure_vault
     create_dynamic_consul_config
 
+    # consul should be created prior to nomad to avoid a race condition
     # The client is set to 0.0.0.0 here so that it can be reached via pulumi in docker.
     consul agent \
         -client 0.0.0.0 -config-file "${THIS_DIR}/consul-agent-conf.hcl" \
         -config-file "${THIS_DIR}/consul-dynamic-conf.hcl" \
         -dev > "${CONSUL_LOGS_DEST}" &
     local -r consul_agent_pid="$!"
+
+    # shellcheck disable=SC2024
+    sudo nomad agent \
+        -config="${THIS_DIR}/nomad-agent-conf.nomad" \
+        -dev-connect > "${NOMAD_LOGS_DEST}" &
+    local -r nomad_agent_pid="$!"
 
     # Wait a short period of time before attempting to deploy infrastructure
     (
@@ -169,9 +170,6 @@ EOF
 EOF
         )"
     )
-
-    # Give nomad enough time to get the consul version. This is a workaround for a race condition
-    sleep 5
 
     "${THIS_DIR}/nomad_run_local_infra.sh"
     echo "Deployment complete"
