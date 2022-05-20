@@ -149,9 +149,9 @@ EOF
 
     # Wait a short period of time before attempting to deploy infrastructure
     (
-        readonly wait_secs=15
+        readonly attempts=15
         # shellcheck disable=SC2016
-        timeout --foreground "${wait_secs}" bash -c -- "$(
+        timeout --foreground "${attempts}" bash -c -- "$(
             cat << EOF
                 # General rule: Variable defined in this EOF? Use \$
                 set -euo pipefail
@@ -162,7 +162,7 @@ EOF
                         exit 42
                     fi
 
-                    echo "Waiting for consul-agent [\${wait_attempt}/${wait_secs}]"
+                    echo "Waiting for consul-agent [\${wait_attempt}/${attempts}]"
                     sleep 1
                     ((wait_attempt=wait_attempt+1))
                 done
@@ -178,9 +178,9 @@ EOF
 
     # Ensure Nomad agent is ready
     (
-        readonly wait_secs=30
+        readonly attempts=30
         # shellcheck disable=SC2016
-        timeout --foreground "${wait_secs}" bash -c -- "$(
+        timeout --foreground "${attempts}" bash -c -- "$(
             cat << EOF
                 # General rule: Variable defined in this EOF? Use \$
                 set -euo pipefail
@@ -190,12 +190,13 @@ EOF
                         echo "Nomad Agent unexpectedly exited?"
                         exit 42
                     fi
-                    echo "Waiting for nomad-agent [\${wait_attempt}/${wait_secs}]"
+
+                    echo "Waiting for nomad-agent [\${wait_attempt}/${attempts}]"
                     sleep 1
                     ((wait_attempt=wait_attempt+1))
                 done
                 while [[ 2 -gt \$(consul info | grep service | awk '{ print \$3 }') ]]; do
-                    echo "Waiting for consul-vault certs [\${wait_attempt}/${wait_secs}]"
+                    echo "Waiting for consul-vault certs [\${wait_attempt}/${attempts}]"
                     sleep 1
                     ((wait_attempt=wait_attempt+1))
                 done
