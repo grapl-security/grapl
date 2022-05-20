@@ -33,10 +33,10 @@ where
     E: Send,
 {
     /// Helper method to auto-retry an async () -> Result.
-    /// If it still fails `num_retries` times, return the Err.
+    /// If it fails after `num_retries + 1` times, return the Err.
     async fn retry(&self, num_retries: u8) -> Result<T, E> {
         let mut last_err: Option<E> = None;
-        for _ in 0..num_retries {
+        for _ in 0..num_retries + 1 {
             let result = self().await;
             match result {
                 Ok(t) => return Ok(t),
