@@ -160,24 +160,32 @@ impl PluginRegistryApi for PluginRegistry {
 
         // Convert the incoming request stream of CreatePluginRequest::Chunk
         // into a stream of Bytes to be sent to Rusoto S3.put_object.
-        let body_stream: ResultStream<Bytes, std::io::Error> =
-            Box::pin(request.then(move |result| async move {
-                match result {
-                    Ok(CreatePluginRequest::Chunk(c)) => {
-                        // Bail out if we've exceeded max size
-                        stream_length += c.len();
-                        if stream_length > limit_bytes {
-                            Err(io_input_error(format!(
-                                "Input exceeds limit {limit_bytes} bytes"
-                            )))
-                        } else {
-                            Ok(Bytes::from(c))
-                        }
+        let body_stream: ResultStream<Bytes, std::io::Error> = Box::pin(
+            request
+                .then(|result| async {
+                    match result {
+                        Ok(CreatePluginRequest::Chunk(c)) => Ok(Bytes::from(c)),
+                        Err(e) => Err(io_input_error(e.to_string())),
+                        _ => Err(io_input_error("Expected request 1..N to be Chunk")),
                     }
-                    Err(e) => Err(io_input_error(e.to_string())),
-                    _ => Err(io_input_error("Expected request 1..N to be Chunk")),
-                }
-            }));
+                })
+                .then(move |result| async move {
+                    // Bail out if we've exceeded max size
+                    match result {
+                        Ok(bytes) => {
+                            stream_length += bytes.len();
+                            if stream_length > limit_bytes {
+                                Err(io_input_error(format!(
+                                    "Input exceeds limit {limit_bytes} bytes"
+                                )))
+                            } else {
+                                Ok(bytes)
+                            }
+                        }
+                        Err(e) => Err(e),
+                    }
+                }),
+        );
 
         self.s3
             .put_object(PutObjectRequest {
