@@ -86,7 +86,31 @@ start_nomad_detach() {
         -dev > "${CONSUL_LOGS_DEST}" &
     local -r consul_agent_pid="$!"
 
-    # Wait a short period of time before attempting to deploy infrastructure
+    # Ensure Consul agent is up and running
+    (
+        readonly wait_secs=45
+        # shellcheck disable=SC2016
+        timeout --foreground "${wait_secs}" bash -c -- "$(
+            cat << EOF
+                # General rule: Variable defined in this EOF? Use \$
+                set -euo pipefail
+                wait_attempt=1
+                while [[ -z \$(consul info 2>&1 | grep "leader = true") ]]; do
+                    if ! ps -p "${consul_agent_pid}" > /dev/null; then
+                        echo "Consul Agent unexpectedly exited?"
+                        exit 42
+                    fi
+
+                    echo "Waiting for consul-agent [\${wait_attempt}/${wait_secs}]"
+                    sleep 1
+                    ((wait_attempt=wait_attempt+1))
+                done
+                echo "consul-agent ready"
+EOF
+        )"
+    )
+
+    # Ensure Nomad agent is ready
     (
         readonly wait_secs=45
         # shellcheck disable=SC2016
@@ -100,15 +124,12 @@ start_nomad_detach() {
                         echo "Nomad Agent unexpectedly exited?"
                         exit 42
                     fi
-                    if ! ps -p "${consul_agent_pid}" > /dev/null; then
-                        echo "Consul Agent unexpectedly exited?"
-                        exit 42
-                    fi
 
                     echo "Waiting for nomad-agent [\${wait_attempt}/${wait_secs}]"
                     sleep 1
                     ((wait_attempt=wait_attempt+1))
                 done
+                echo "nomad-agent ready"
 EOF
         )"
     )
