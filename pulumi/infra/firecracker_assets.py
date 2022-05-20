@@ -1,6 +1,5 @@
 from pathlib import Path
 from typing import Optional
-from typing_extensions import Protocol
 
 import pulumi_aws as aws
 from infra import config
@@ -8,6 +7,7 @@ from infra.artifacts import ArtifactGetter
 from infra.bucket import Bucket
 from infra.path import path_from_root
 from infra.s3_url import get_s3_url
+from typing_extensions import Protocol
 
 import pulumi
 
