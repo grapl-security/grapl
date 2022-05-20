@@ -153,7 +153,7 @@ job "grapl-local-infra" {
 
       config {
         # Once we move to Kafka, we can go back to the non-fork.
-        image = "localstack-grapl-fork:${var.image_tag}"
+        image = "localstack/localstack-light:0.14.3"
         # Was running into this: https://github.com/localstack/localstack/issues/1349
         memory_hard_limit = 2048
         ports             = ["localstack"]
@@ -164,7 +164,10 @@ job "grapl-local-infra" {
         DEBUG        = 1
         EDGE_PORT    = var.localstack_port
         SERVICES     = "dynamodb,ec2,iam,s3,secretsmanager,sns,sqs"
-        SQS_PROVIDER = "elasticmq"
+        
+        # Elasticmq overrides. Both are required.
+        SQS_PROVIDER          = "elasticmq"
+        PROVIDER_OVERRIDE_SQS = "legacy"
 
         # These are used by the health check below; "test" is the
         # default value for these credentials in Localstack.
