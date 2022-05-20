@@ -278,7 +278,7 @@ install_hashicorp_tools() {
 
     # Set specific versions since we're enabling the hashicorp test repo
     CONSUL_VERSION="1.12.0-1"
-    NOMAD_VERSION="1.3.0-1"
+    NOMAD_VERSION="1.3.1-1"
     # packer doesn't have the -1s at the end for some reason
     PACKER_VERSION="1.8.0"
     VAULT_VERSION="1.10.2-1"
