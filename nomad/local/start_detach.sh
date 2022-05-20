@@ -73,12 +73,8 @@ start_nomad_detach() {
     create_dynamic_consul_config
 
     echo "Starting nomad and consul locally. Logs @ ${NOMAD_LOGS_DEST} and ${CONSUL_LOGS_DEST}."
-    # These will run forever until `make stop-nomad-ci` is invoked."
-    # shellcheck disable=SC2024
-    sudo nomad agent \
-        -config="${THIS_DIR}/nomad-agent-conf.nomad" \
-        -dev-connect > "${NOMAD_LOGS_DEST}" &
-    local -r nomad_agent_pid="$!"
+    # Consul/Nomad  will run forever until `make down` is invoked."
+
     # The client is set to 0.0.0.0 here so that it can be reached via pulumi in docker.
     consul agent \
         -client 0.0.0.0 -config-file "${THIS_DIR}/consul-agent-conf.hcl" \
@@ -109,6 +105,12 @@ start_nomad_detach() {
 EOF
         )"
     )
+
+    # shellcheck disable=SC2024
+    sudo nomad agent \
+        -config="${THIS_DIR}/nomad-agent-conf.nomad" \
+        -dev-connect > "${NOMAD_LOGS_DEST}" &
+    local -r nomad_agent_pid="$!"
 
     # Ensure Nomad agent is ready
     (
