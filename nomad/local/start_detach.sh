@@ -94,7 +94,7 @@ start_nomad_detach() {
     ensure_valid_env
 
     echo "Starting nomad, vault, and consul locally. Logs @ ${NOMAD_LOGS_DEST}, ${VAULT_LOGS_DEST} and ${CONSUL_LOGS_DEST}."
-    # These will run forever until `make stop-nomad-ci` is invoked."
+    # Consul/Nomad/Vault  will run forever until `make down` is invoked."
     vault server \
         -config="${THIS_DIR}/vault-agent-conf.hcl" \
         -dev > "${VAULT_LOGS_DEST}" 2>&1 &
@@ -133,7 +133,29 @@ EOF
         -dev > "${CONSUL_LOGS_DEST}" &
     local -r consul_agent_pid="$!"
 
-    echo "starting Nomad"
+    # Wait a short period of time before attempting to deploy infrastructure
+    (
+        readonly wait_secs=15
+        # shellcheck disable=SC2016
+        timeout --foreground "${wait_secs}" bash -c -- "$(
+            cat << EOF
+                # General rule: Variable defined in this EOF? Use \$
+                set -euo pipefail
+                wait_attempt=1
+                while [[ -z \$(consul info 2>&1 | grep "leader = true") ]]; do
+                    if ! ps -p "${consul_agent_pid}" > /dev/null; then
+                        echo "Consul Agent unexpectedly exited?"
+                        exit 42
+                    fi
+
+                    echo "Waiting for consul-agent [\${wait_attempt}/${wait_secs}]"
+                    sleep 1
+                    ((wait_attempt=wait_attempt+1))
+                done
+                echo "consul-agent ready"
+EOF
+        )"
+    )
 
     # shellcheck disable=SC2024
     sudo nomad agent \
@@ -141,12 +163,9 @@ EOF
         -dev-connect > "${NOMAD_LOGS_DEST}" &
     local -r nomad_agent_pid="$!"
 
-    cat "${VAULT_LOGS_DEST}"
-    echo "Polling nomad status"
-
-    # Wait a short period of time before attempting to deploy infrastructure
+    # Ensure Nomad agent is ready
     (
-        readonly wait_secs=45
+        readonly wait_secs=30
         # shellcheck disable=SC2016
         timeout --foreground "${wait_secs}" bash -c -- "$(
             cat << EOF
@@ -158,15 +177,6 @@ EOF
                         echo "Nomad Agent unexpectedly exited?"
                         exit 42
                     fi
-                    if ! ps -p "${vault_agent_pid}" > /dev/null; then
-                        echo "Vault Agent unexpectedly exited?"
-                        exit 42
-                    fi
-                    if ! ps -p "${consul_agent_pid}" > /dev/null; then
-                        echo "Consul Agent unexpectedly exited?"
-                        exit 42
-                    fi
-
                     echo "Waiting for nomad-agent [\${wait_attempt}/${wait_secs}]"
                     sleep 1
                     ((wait_attempt=wait_attempt+1))
@@ -176,7 +186,7 @@ EOF
                     sleep 1
                     ((wait_attempt=wait_attempt+1))
                 done
-
+                echo "nomad-agent ready"
 EOF
         )"
     )
