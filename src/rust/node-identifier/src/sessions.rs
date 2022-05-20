@@ -35,7 +35,7 @@ impl TryFrom<HashMap<String, AttributeValue>> for Session {
     }
 }
 
-pub fn shave_int(input: u64, digits: u8) -> u64 {
+pub(crate) fn shave_int(input: u64, digits: u8) -> u64 {
     let digits = 10u64.pow((digits as u32) + 1u32);
     input - (input % digits)
 }

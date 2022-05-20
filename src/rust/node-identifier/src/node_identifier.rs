@@ -1,63 +1,35 @@
 use std::collections::HashMap;
 
-use async_trait::async_trait;
-use dynamic_sessiondb::NodeDescriptionIdentifier;
 use failure::Error;
-use grapl_config::{
-    env_helpers::{
-        s3_event_emitters_from_env,
-        FromEnv,
-    },
-    event_caches,
-};
-use grapl_observe::metric_reporter::MetricReporter;
-use grapl_service::{
-    decoder::ProtoDecoder,
-    serialization::IdentifiedGraphSerializer,
-};
 use grapl_utils::rusoto_ext::dynamodb::GraplDynamoDbClientExt;
-use rusoto_dynamodb::DynamoDbClient;
-use rusoto_sqs::SqsClient;
-use rust_proto::graph_descriptions::{
+use rust_proto_new::graplinc::grapl::api::graph::v1beta1::{
     GraphDescription,
     IdentifiedGraph,
     IdentifiedNode,
     NodeDescription,
 };
-use sessiondb::SessionDb;
-use sqs_executor::{
-    event_handler::{
-        CompletedEvents,
-        EventHandler,
-    },
-    make_ten,
-    s3_event_retriever::S3PayloadRetriever,
-    time_based_key_fn,
-};
 use tap::tap::TapOptional;
-use tracing::{
-    info,
-    warn,
+
+use crate::{
+    dynamic_sessiondb::NodeDescriptionIdentifier,
+    error::NodeIdentifierError,
 };
-
-use crate::error::NodeIdentifierError;
-
-pub mod dynamic_sessiondb;
-mod error;
-pub mod sessiondb;
-pub mod sessions;
 
 /**
-    The `NodeIdentifier` takes in graphs of previously unidentified nodes and performs identification
-    based on the configured strategies for that node type.
+    The `NodeIdentifier` takes in graphs of previously unidentified nodes and
+    performs identification based on the configured strategies for that node
+    type.
 
     The strategies come in two variants:
 
-    * [Session](`rust_proto::graph_descriptions::Session`) - strategy used for nodes with lifetimes (e.g. process, network connection)
-    * [Static](`rust_proto::graph_descriptions::Static`) - strategy used for nodes with canonical and unique identifiers (e.g. aws events)
+    * [Session](`graplinc::grapl::api::graph::v1beta1::Session`) - strategy used
+      for nodes with lifetimes (e.g. process, network connection)
+
+    * [Static](`graplinc::grapl::api::graph::v1beta1::Static`) - strategy used
+      for nodes with canonical and unique identifiers (e.g. aws events)
 */
 #[derive(Clone)]
-pub struct NodeIdentifier<D>
+pub(crate) struct NodeIdentifier<D>
 where
     D: GraplDynamoDbClientExt,
 {
@@ -68,7 +40,7 @@ impl<D> NodeIdentifier<D>
 where
     D: GraplDynamoDbClientExt,
 {
-    pub fn new(dynamic_identifier: NodeDescriptionIdentifier<D>) -> Self {
+    pub(crate) fn new(dynamic_identifier: NodeDescriptionIdentifier<D>) -> Self {
         Self { dynamic_identifier }
     }
 
@@ -79,12 +51,14 @@ where
         Ok(new_node.into())
     }
 
-    /// Performs batch identification of unidentified nodes into identified nodes.
+    /// Performs batch identification of unidentified nodes into identified
+    /// nodes.
     ///
-    /// A map of unidentified node keys to identified node keys will be returned in addition to the
-    /// last error, if any, that occurred while identifying nodes.
+    /// A map of unidentified node keys to identified node keys will be returned
+    /// in addition to the last error, if any, that occurred while identifying
+    /// nodes.
     #[tracing::instrument(skip(self, unidentified_subgraph, identified_graph))]
-    pub async fn identify_nodes(
+    async fn identify_nodes(
         &self,
         unidentified_subgraph: &GraphDescription,
         identified_graph: &mut IdentifiedGraph,
@@ -97,7 +71,7 @@ where
             let identified_node = match self.attribute_node_key(unidentified_node).await {
                 Ok(identified_node) => identified_node,
                 Err(e) => {
-                    warn!(
+                    tracing::warn!(
                         message="Failed to attribute node_key",
                         node_key=?unidentified_node_key,
                         error=?e
@@ -117,16 +91,17 @@ where
         (identified_nodekey_map, attribution_failure)
     }
 
-    /// Takes the edges in the `unidentified_graph` and inserts ones that can be properly identified
-    /// into the `identified_graph` using the `identified_nodekey_map` returned from a previous
-    /// node key identification process.
+    /// Takes the edges in the `unidentified_graph` and inserts ones that can be
+    /// properly identified into the `identified_graph` using the
+    /// `identified_nodekey_map` returned from a previous node key
+    /// identification process.
     #[tracing::instrument(skip(
         self,
         unidentified_subgraph,
         identified_graph,
         identified_nodekey_map
     ))]
-    pub fn identify_edges(
+    fn identify_edges(
         &self,
         unidentified_subgraph: &GraphDescription,
         identified_graph: &mut IdentifiedGraph,
@@ -174,23 +149,13 @@ where
             }
         }
     }
-}
 
-#[async_trait]
-impl<D> EventHandler for NodeIdentifier<D>
-where
-    D: GraplDynamoDbClientExt,
-{
-    type InputEvent = GraphDescription;
-    type OutputEvent = IdentifiedGraph;
-    type Error = NodeIdentifierError;
-
-    #[tracing::instrument(skip(self, unidentified_subgraph, _completed))]
-    async fn handle_event(
-        &mut self,
-        unidentified_subgraph: Self::InputEvent,
-        _completed: &mut CompletedEvents,
-    ) -> Result<Self::OutputEvent, Result<(Self::OutputEvent, Self::Error), Self::Error>> {
+    #[tracing::instrument(skip(self, unidentified_subgraph))]
+    pub(crate) async fn handle_event(
+        &self,
+        unidentified_subgraph: GraphDescription,
+    ) -> Result<IdentifiedGraph, Result<(IdentifiedGraph, NodeIdentifierError), NodeIdentifierError>>
+    {
         /*
            1. for the nodes in the unidentified graph, do the following
                1. identify each node
@@ -206,15 +171,15 @@ where
            5. return as full graph
         */
 
-        info!(
+        tracing::info!(
             message="Identifying a new graph",
             node_count=?unidentified_subgraph.nodes.len(),
             edge_count=?unidentified_subgraph.edges.len(),
         );
 
         if unidentified_subgraph.is_empty() {
-            warn!("Received empty subgraph.");
-            return Ok(IdentifiedGraph::new());
+            tracing::warn!("Received empty subgraph.");
+            return Err(Err(NodeIdentifierError::EmptyGraph));
         }
 
         let mut identified_graph = IdentifiedGraph::new();
@@ -223,7 +188,7 @@ where
             .identify_nodes(&unidentified_subgraph, &mut identified_graph)
             .await;
 
-        info!(
+        tracing::info!(
             message="Performed node identification",
             total_edges=?unidentified_subgraph.nodes.len(),
             identified_edges=?identified_graph.nodes.len()
@@ -235,91 +200,35 @@ where
             identified_nodekey_map,
         );
 
-        info!(
+        tracing::info!(
             message = "Performed edge identification",
             total_edges = unidentified_subgraph.edges.len(),
             identified_edges = identified_graph.edges.len()
         );
 
         match attribution_failure {
-            Some(_) if identified_graph.is_empty() => Err(Err(NodeIdentifierError::Unexpected)),
+            Some(_) if identified_graph.is_empty() => Err(Err(NodeIdentifierError::EmptyGraph)),
             Some(_) => {
-                /* todo: error message is misleading. someone reading this would believe we identified
-                 * a smaller number of nodes that actually identified (due to identities of nodes coalescing)
+                /* todo: error message is misleading. someone reading this would
+                 * believe we identified a smaller number of nodes that actually
+                 * identified (due to identities of nodes coalescing)
                  */
-                warn!(
+                tracing::warn!(
                     message = "Partial Success",
                     identified_nodes = identified_graph.nodes.len(),
                     identified_edges = identified_graph.edges.len(),
                 );
 
-                Err(Ok((identified_graph, NodeIdentifierError::Unexpected))) // todo: Use a real error here
+                Err(Ok((
+                    identified_graph,
+                    NodeIdentifierError::AttributionFailure,
+                )))
             }
             None => {
-                info!("Identified all nodes");
+                tracing::info!("Identified all nodes");
 
                 Ok(identified_graph)
             }
         }
     }
-}
-
-/// # Arguments
-/// ## should_default
-/// should_default (and, further into the code, should_guess) controls the
-/// node identification process behavior around Session-strategy nodes.
-/// If a node uses the Session strategy (common for processes, or network
-/// connections) then the behavior is non-deterministic and heuristic-based.
-/// This argument dictates if a new "session" should be created for a node
-/// if the identification process failed.
-/// New session tracking is expected behavior for the retry handler,
-/// but not for the first-pass node identifier (so additional context can
-/// be received before we determine that a node needs a new session).
-pub async fn handler(should_default: bool) -> Result<(), Box<dyn std::error::Error>> {
-    let (env, _guard) = grapl_config::init_grapl_env!();
-    let source_queue_url = grapl_config::source_queue_url();
-
-    tracing::info!(
-        source_queue_url=?source_queue_url,
-        env=?env,
-        "handler_init"
-    );
-
-    let sqs_client = SqsClient::from_env();
-    let cache = &mut event_caches(&env).await;
-    let serializer = &mut make_ten(async { IdentifiedGraphSerializer::default() }).await;
-    let s3_emitter = &mut s3_event_emitters_from_env(&env, time_based_key_fn).await;
-
-    let s3_payload_retriever = &mut make_ten(async {
-        S3PayloadRetriever::new(
-            |region_str| grapl_config::env_helpers::init_s3_client(&region_str),
-            ProtoDecoder::default(),
-            MetricReporter::new(&env.service_name),
-        )
-    })
-    .await;
-
-    let dynamo = DynamoDbClient::from_env();
-    let dyn_session_db = SessionDb::new(dynamo.clone(), grapl_config::dynamic_session_table_name());
-
-    let dyn_node_identifier = NodeDescriptionIdentifier::new(dyn_session_db, should_default);
-
-    let node_identifier = &mut make_ten(async { NodeIdentifier::new(dyn_node_identifier) }).await;
-
-    info!("Starting process_loop");
-    sqs_executor::process_loop(
-        grapl_config::source_queue_url(),
-        grapl_config::dead_letter_queue_url(),
-        cache,
-        sqs_client.clone(),
-        node_identifier,
-        s3_payload_retriever,
-        s3_emitter,
-        serializer,
-        MetricReporter::new(&env.service_name),
-    )
-    .await;
-
-    info!("Exiting");
-    Ok(())
 }
