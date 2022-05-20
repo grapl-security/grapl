@@ -38,31 +38,6 @@ variable "analyzer_bucket" {
   description = "The s3 bucket which the analyzer stores items to analyze"
 }
 
-variable "analyzer_dispatched_bucket" {
-  type        = string
-  description = "The s3 bucket which the analyzer stores items that have been processed"
-}
-
-variable "analyzer_dispatcher_queue" {
-  type        = string
-  description = "Main queue for the dispatcher"
-}
-
-variable "analyzer_dispatcher_dead_letter_queue" {
-  type        = string
-  description = "Dead letter queue for the analyzer services"
-}
-
-variable "analyzer_matched_subgraphs_bucket" {
-  type        = string
-  description = "The s3 bucket used for storing matches"
-}
-
-variable "analyzer_executor_queue" {
-  type        = string
-  description = "Main queue for the executor"
-}
-
 variable "dgraph_replicas" {
   type    = number
   default = 1
@@ -75,10 +50,6 @@ variable "dgraph_replicas" {
 variable "dgraph_shards" {
   type    = number
   default = 1
-}
-
-variable "engagement_creator_queue" {
-  type = string
 }
 
 variable "kafka_bootstrap_servers" {
@@ -243,14 +214,6 @@ variable "num_graph_mergers" {
   description = "The number of graph merger instances to run."
 }
 
-variable "graph_merger_queue" {
-  type = string
-}
-
-variable "graph_merger_dead_letter_queue" {
-  type = string
-}
-
 variable "test_user_name" {
   type        = string
   description = "The name of the test user"
@@ -267,37 +230,19 @@ variable "num_node_identifiers" {
   description = "The number of node identifiers to run."
 }
 
-variable "num_node_identifier_retries" {
-  type        = number
-  default     = 1
-  description = "The number of node identifier retries to run."
-}
-
-variable "node_identifier_queue" {
-  type = string
-}
-
-variable "node_identifier_dead_letter_queue" {
-  type = string
-}
-
-variable "node_identifier_retry_queue" {
-  type = string
-}
-
-variable "unid_subgraphs_generated_bucket" {
+variable "node_identifier_kafka_sasl_username" {
   type        = string
-  description = "The destination bucket for unidentified subgraphs. Used by generators."
+  description = "The username to authenticate with Confluent Cloud cluster."
 }
 
-variable "subgraphs_merged_bucket" {
+variable "node_identifier_kafka_sasl_password" {
   type        = string
-  description = "The destination bucket for merged subgraphs. Used by Graph Merger."
+  description = "The password to authenticate with Confluent Cloud cluster."
 }
 
-variable "subgraphs_generated_bucket" {
+variable "node_identifier_kafka_consumer_group" {
   type        = string
-  description = "The destination bucket for generated subgraphs. Used by Node identifier."
+  description = "Consumer group for node-identifier consumers to join."
 }
 
 variable "user_auth_table" {
@@ -795,10 +740,11 @@ job "grapl-core" {
         REDIS_ENDPOINT     = var.redis_endpoint
         MG_ALPHAS          = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE = var.schema_table_name
-        # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L165
-        DEST_BUCKET_NAME                = var.subgraphs_merged_bucket
-        SOURCE_QUEUE_URL                = var.graph_merger_queue
-        DEAD_LETTER_QUEUE_URL           = var.graph_merger_dead_letter_queue
+
+        DEST_BUCKET_NAME      = "fake"
+        SOURCE_QUEUE_URL      = "fake"
+        DEAD_LETTER_QUEUE_URL = "fake"
+
         OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
       }
@@ -849,69 +795,26 @@ job "grapl-core" {
       }
 
       env {
-        AWS_REGION                  = var.aws_region
-        RUST_LOG                    = var.rust_log
-        RUST_BACKTRACE              = local.rust_backtrace
-        REDIS_ENDPOINT              = var.redis_endpoint
-        MG_ALPHAS                   = local.alpha_grpc_connect_str # alpha_grpc_connect_str won't work if network mode = grapl network
-        GRAPL_SCHEMA_TABLE          = var.schema_table_name
-        GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
-        # https://github.com/grapl-security/grapl/blob/18b229e824fae99fa2d600750dd3b17387611ef4/pulumi/grapl/__main__.py#L156
-        DEST_BUCKET_NAME                = var.subgraphs_generated_bucket
-        SOURCE_QUEUE_URL                = var.node_identifier_queue
-        DEAD_LETTER_QUEUE_URL           = var.node_identifier_retry_queue
+        AWS_REGION = var.aws_region
+
+        RUST_LOG       = var.rust_log
+        RUST_BACKTRACE = local.rust_backtrace
+
         OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
+
+        KAFKA_BOOTSTRAP_SERVERS        = var.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME            = var.node_identifier_kafka_sasl_username
+        KAFKA_SASL_PASSWORD            = var.node_identifier_kafka_sasl_password
+        NODE_IDENTIFIER_CONSUMER_GROUP = var.node_identifier_kafka_consumer_group
+
+        GRAPL_SCHEMA_TABLE          = var.schema_table_name
+        GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
       }
 
       service {
         name = "node-identifier"
       }
-    }
-  }
-
-  group "node-identifier-retry" {
-    count = var.num_node_identifier_retries
-
-    network {
-      mode = "bridge"
-      dns {
-        servers = local.dns_servers
-      }
-    }
-
-    task "node-identifier-retry" {
-      driver = "docker"
-
-      config {
-        image = var.container_images["node-identifier-retry"]
-      }
-
-      template {
-        data        = var.aws_env_vars_for_local
-        destination = "aws-env-vars-for-local.env"
-        env         = true
-      }
-
-      env {
-        AWS_REGION                      = var.aws_region
-        RUST_LOG                        = var.rust_log
-        RUST_BACKTRACE                  = local.rust_backtrace
-        REDIS_ENDPOINT                  = var.redis_endpoint
-        MG_ALPHAS                       = local.alpha_grpc_connect_str
-        GRAPL_SCHEMA_TABLE              = var.schema_table_name
-        GRAPL_DYNAMIC_SESSION_TABLE     = var.session_table_name
-        DEST_BUCKET_NAME                = var.subgraphs_generated_bucket
-        SOURCE_QUEUE_URL                = var.node_identifier_retry_queue
-        DEAD_LETTER_QUEUE_URL           = var.node_identifier_dead_letter_queue
-        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
-      }
-
-      service {
-        name = "node-identifier-retry"
-      }
-
     }
   }
 
@@ -938,9 +841,9 @@ job "grapl-core" {
         RUST_BACKTRACE = local.rust_backtrace
         # service vars
         GRAPL_ANALYZERS_BUCKET = var.analyzer_bucket
-        DEST_BUCKET_NAME       = var.analyzer_dispatched_bucket
-        SOURCE_QUEUE_URL       = var.analyzer_dispatcher_queue
-        DEAD_LETTER_QUEUE_URL  = var.analyzer_dispatcher_dead_letter_queue
+        DEST_BUCKET_NAME       = "fake"
+        SOURCE_QUEUE_URL       = "fake"
+        DEAD_LETTER_QUEUE_URL  = "fake"
         # tracing vars
         OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
@@ -983,10 +886,10 @@ job "grapl-core" {
         # dgraph vars
         MG_ALPHAS = local.alpha_grpc_connect_str
         # service vars
-        GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET = var.analyzer_matched_subgraphs_bucket
+        GRAPL_ANALYZER_MATCHED_SUBGRAPHS_BUCKET = "fake"
         GRAPL_ANALYZERS_BUCKET                  = var.analyzer_bucket
         GRAPL_MODEL_PLUGINS_BUCKET              = var.model_plugins_bucket
-        SOURCE_QUEUE_URL                        = var.analyzer_executor_queue
+        SOURCE_QUEUE_URL                        = "fake"
         GRPC_ENABLE_FORK_SUPPORT                = 1
         HITCACHE_ADDR                           = local.redis_host
         HITCACHE_PORT                           = local.redis_port
@@ -1039,16 +942,14 @@ job "grapl-core" {
       }
 
       env {
-        # AWS vars
         AWS_DEFAULT_REGION = var.aws_region
-        # python vars
+
         GRAPL_LOG_LEVEL = var.py_log_level
-        # dgraph vars
+
         MG_ALPHAS = local.alpha_grpc_connect_str
 
-        # service vars
-        SOURCE_QUEUE_URL = var.engagement_creator_queue
-        # Tracing endpoint
+        SOURCE_QUEUE_URL = "fake"
+
         OTEL_EXPORTER_ZIPKIN_ENDPOINT = local.tracing_zipkin_endpoint
       }
     }
