@@ -1,5 +1,6 @@
 from pathlib import Path
-from typing import Optional, Protocol
+from typing import Optional
+from typing_extensions import Protocol
 
 import pulumi_aws as aws
 from infra import config
