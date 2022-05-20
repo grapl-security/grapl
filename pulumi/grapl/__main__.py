@@ -16,7 +16,12 @@ from infra.consul_config import ConsulConfig
 from infra.consul_intentions import ConsulIntentions
 from infra.consul_service_default import ConsulServiceDefault
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
-from infra.firecracker_assets import FirecrackerAssets, FirecrackerS3BucketObjects
+from infra.firecracker_assets import (
+    FirecrackerAssets,
+    FirecrackerS3BucketObjects,
+    FirecrackerS3BucketObjectsProtocol,
+    MockFirecrackerS3BucketObjects,
+)
 from infra.hashicorp_provider import (
     get_consul_provider_address,
     get_nomad_provider_address,
@@ -37,6 +42,12 @@ from pulumi.resource import CustomTimeouts, ResourceOptions
 from typing_extensions import Final
 
 import pulumi
+
+"""
+https://github.com/grapl-security/issue-tracker/issues/908
+This can eventually be removed once we remove HaxDocker in favor of Firecracker
+"""
+USE_HAX_DOCKER_RUNTIME: bool = True
 
 
 def _get_subset(inputs: NomadVars, subset: Set[str]) -> NomadVars:
@@ -205,14 +216,18 @@ def main() -> None:
         pipeline_ingress_healthcheck_polling_interval_ms,
     )
 
-    firecracker_s3objs = FirecrackerS3BucketObjects(
-        "firecracker-s3-bucket-objects",
-        plugins_bucket=plugin_registry_bucket,
-        firecracker_assets=FirecrackerAssets(
-            "firecracker-assets",
-            repository_name=config.cloudsmith_repository_name(),
-            artifacts=artifacts,
-        ),
+    firecracker_s3objs: FirecrackerS3BucketObjectsProtocol = (
+        MockFirecrackerS3BucketObjects()
+        if USE_HAX_DOCKER_RUNTIME
+        else FirecrackerS3BucketObjects(
+            "firecracker-s3-bucket-objects",
+            plugins_bucket=plugin_registry_bucket,
+            firecracker_assets=FirecrackerAssets(
+                "firecracker-assets",
+                repository_name=config.cloudsmith_repository_name(),
+                artifacts=artifacts,
+            ),
+        )
     )
 
     aws_env_vars_for_local = _get_aws_env_vars_for_local()
