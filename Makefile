@@ -52,7 +52,7 @@ COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
 # While we would ultimately like to run all these containers as a
 # non-root user, some currently seem to require that; to accommodate
 # all such images, we provide two helpful macros.
-DOCKER_COMPOSE_CHECK := docker-compose --file=docker-compose.check.yml run --rm
+DOCKER_COMPOSE_CHECK := docker compose --file=docker-compose.check.yml run --rm
 NONROOT_DOCKER_COMPOSE_CHECK := ${DOCKER_COMPOSE_CHECK} --user=${COMPOSE_USER}
 
 # Our images are labeled; we can use this to help filter various
@@ -478,29 +478,29 @@ _up:
 	# explicitly unset that here to avoid potential surprises.
 	unset COMPOSE_FILE
 
-	# TODO: This could potentially be replaced with a docker-compose run, but
+	# TODO: This could potentially be replaced with a docker compose run, but
 	#  it doesn't have all these useful flags
 	@echo "--- Running Pulumi"
-	docker-compose \
+	docker compose \
 		--file docker-compose.yml \
 		up --force-recreate --always-recreate-deps --renew-anon-volumes \
 		--exit-code-from pulumi \
 		pulumi
 
 .PHONY: down
-down: ## docker-compose down - both stops and removes the containers
+down: ## docker compose down - both stops and removes the containers
 	# This is only for killing the lambda containers that Localstack
-	# spins up in our network, but that docker-compose doesn't know
+	# spins up in our network, but that docker compose doesn't know
 	# about. This must be the network that is used in Localstack's
 	# LAMBDA_DOCKER_NETWORK environment variable.
 	$(MAKE) stop-nomad-detach
-	docker-compose $(EVERY_COMPOSE_FILE) down --timeout=0
-	@docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
-	@docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
+	docker compose $(EVERY_COMPOSE_FILE) down --timeout=0
+	@docker compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
+	@docker compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
 
 .PHONY: stop
-stop: ## docker-compose stop - stops (but preserves) the containers
-	docker-compose $(EVERY_COMPOSE_FILE) stop
+stop: ## docker compose stop - stops (but preserves) the containers
+	docker compose $(EVERY_COMPOSE_FILE) stop
 
 # This is a convenience target for our frontend engineers, to make the dev loop
 # slightly less arduous for grapl-web-ui/engagement-view development.
@@ -606,8 +606,8 @@ clean-all-rust:
 
 .PHONY: local-pulumi
 local-pulumi: export COMPOSE_PROJECT_NAME="grapl"
-local-pulumi:  ## launch pulumi via docker-compose up
-	docker-compose -f docker-compose.yml run pulumi
+local-pulumi:  ## launch pulumi via docker compose up
+	docker compose -f docker-compose.yml run pulumi
 
 .PHONY: start-nomad-detach
 start-nomad-detach:  ## Start the Nomad environment, detached
