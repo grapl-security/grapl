@@ -116,18 +116,8 @@ pub struct PluginRegistry {
     config: PluginRegistryServiceConfig,
 }
 
-fn ensure_artifact_size_limit(
-    size_limit_mb: usize,
-    chunk_idx: usize,
-) -> Result<(), std::io::Error> {
-    if chunk_idx >= size_limit_mb {
-        Err(std::io::Error::new(
-            std::io::ErrorKind::InvalidData,
-            "Artifact exceeds {size_limit_mb}MB",
-        ))
-    } else {
-        Ok(())
-    }
+fn io_input_error(input: impl std::fmt::Display) -> std::io::Error {
+    std::io::Error::new(std::io::ErrorKind::InvalidInput, input.to_string())
 }
 
 type PinnedStream<T> = Pin<Box<dyn Stream<Item = T> + Send + 'static>>;
@@ -165,23 +155,29 @@ impl PluginRegistryApi for PluginRegistry {
         let plugin_id = generate_plugin_id();
         let s3_key = generate_artifact_s3_key(plugin_type, &tenant_id, &plugin_id);
 
+        let limit_bytes = self.config.artifact_size_limit_mb.clone() * 1024 * 1024;
+        let mut stream_length = 0;
+
         // Convert the incoming request stream of CreatePluginRequest::Chunk
         // into a stream of Bytes to be sent to Rusoto S3.put_object.
-        let limit_mb = self.config.artifact_size_limit_mb.clone();
-        let body_stream: ResultStream<Bytes, std::io::Error> = Box::pin(request.enumerate().then(
-            move |(chunk_idx, result)| async move {
-                ensure_artifact_size_limit(limit_mb, chunk_idx)
-                    .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidInput, e))?;
+        let body_stream: ResultStream<Bytes, std::io::Error> =
+            Box::pin(request.then(move |result| async move {
                 match result {
-                    Ok(CreatePluginRequest::Chunk(c)) => Ok(Bytes::from(c)),
-                    Err(e) => Err(std::io::Error::new(std::io::ErrorKind::Other, e)),
-                    _ => Err(std::io::Error::new(
-                        std::io::ErrorKind::InvalidInput,
-                        "Expected request 1..N to be Chunk".to_string(),
-                    )),
+                    Ok(CreatePluginRequest::Chunk(c)) => {
+                        // Bail out if we've exceeded max size
+                        stream_length += c.len();
+                        if stream_length > limit_bytes {
+                            Err(io_input_error(format!(
+                                "Input exceeds limit {limit_bytes} bytes"
+                            )))
+                        } else {
+                            Ok(Bytes::from(c))
+                        }
+                    }
+                    Err(e) => Err(io_input_error(e.to_string())),
+                    _ => Err(io_input_error("Expected request 1..N to be Chunk")),
                 }
-            },
-        ));
+            }));
 
         self.s3
             .put_object(PutObjectRequest {
@@ -193,15 +189,20 @@ impl PluginRegistryApi for PluginRegistry {
             })
             .await?;
 
-        let total_duration = std::time::SystemTime::now()
-            .duration_since(start_time)
-            .unwrap();
+        // Emit some benchmark info
+        {
+            let total_duration = std::time::SystemTime::now()
+                .duration_since(start_time)
+                .unwrap();
 
-        tracing::info!(
-            message = "CreatePlugin benchmark",
-            display_name = ?display_name,
-            duration = ?total_duration.as_millis(),
-        );
+            let mbyte_per_sec = (stream_length as u64 / (1024 * 1024)) / total_duration.as_secs();
+            tracing::info!(
+                message = "CreatePlugin benchmark",
+                display_name = ?display_name,
+                duration_millis = ?total_duration.as_millis(),
+                mbyte_per_sec = mbyte_per_sec
+            );
+        }
 
         self.db_client
             .create_plugin(
