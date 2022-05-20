@@ -84,7 +84,7 @@ start_nomad_detach() {
 
     # Ensure Consul agent is up and running
     (
-        readonly wait_secs=45
+        readonly wait_secs=15
         # shellcheck disable=SC2016
         timeout --foreground "${wait_secs}" bash -c -- "$(
             cat << EOF
@@ -114,7 +114,7 @@ EOF
 
     # Ensure Nomad agent is ready
     (
-        readonly wait_secs=45
+        readonly wait_secs=30
         # shellcheck disable=SC2016
         timeout --foreground "${wait_secs}" bash -c -- "$(
             cat << EOF
