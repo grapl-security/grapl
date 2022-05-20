@@ -13,13 +13,14 @@ impl<'a> From<&Field<'a, &'a str>> for FieldType {
         field
             .directives
             .iter()
-            .find_map(|d| {
+            .map(|d| {
                 match d.name {
-                    "edge" => Some(FieldType::Edge),
+                    "edge" => FieldType::Edge,
                     // todo: We should be more specific here
-                    _ => Some(FieldType::Predicate),
+                    _ => FieldType::Predicate,
                 }
             })
+            .next()
             .unwrap()
     }
 }
