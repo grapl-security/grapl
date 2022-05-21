@@ -203,12 +203,11 @@ impl PluginRegistryApi for PluginRegistry {
                 .duration_since(start_time)
                 .unwrap();
 
-            let mbyte_per_sec = (stream_length as u64 / (1024 * 1024)) / total_duration.as_secs();
             tracing::info!(
                 message = "CreatePlugin benchmark",
                 display_name = ?display_name,
                 duration_millis = ?total_duration.as_millis(),
-                mbyte_per_sec = mbyte_per_sec
+                size_mb = stream_length / (1024 * 1024)
             );
         }
 
