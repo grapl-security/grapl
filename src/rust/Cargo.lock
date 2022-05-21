@@ -1986,6 +1986,7 @@ name = "grapl-utils"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "clap 3.1.17",
  "rusoto_core",
  "rusoto_dynamodb",
  "tokio",

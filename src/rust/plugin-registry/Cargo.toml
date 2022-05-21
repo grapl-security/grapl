@@ -18,7 +18,7 @@ clap = { version = "3.0", default_features = false, features = [
   "derive"
 ] }
 grapl-config = { path = "../grapl-config" }
-grapl-utils = { path = "../grapl-utils" }
+grapl-utils = { path = "../grapl-utils", features = ["clap"] }
 rust-proto-new = { path = "../rust-proto-new" }
 nomad-client-gen = { path = "../nomad-client-gen" }
 serde_json = "1.0.72"

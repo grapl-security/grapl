@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 
-use clap::Parser;
+use grapl_utils::clap_ext::ParserExt;
 use nomad_client_gen::{
     apis::{
         configuration::Configuration as InternalConfig,
@@ -41,7 +41,7 @@ pub enum NomadClientError {
 impl NomadClient {
     /// Create a client from environment
     pub fn from_env() -> Self {
-        Self::from_client_config(NomadClientConfig::parse())
+        Self::from_client_config(NomadClientConfig::parse_from_env())
     }
 
     pub fn from_client_config(nomad_client_config: NomadClientConfig) -> Self {

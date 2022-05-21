@@ -14,3 +14,11 @@ rusoto_core = { version = "0.47.0", default_features = false, features = [
 rusoto_dynamodb = { version = "0.47.0", default_features = false, features = [
   "rustls"
 ] }
+# Only if clap-ext feature is enabled
+clap = { version = "3.0", optional = true, default_features = false, features = [
+  "env",
+  "derive",
+] }
+
+[features]
+clap = ["dep:clap"]
