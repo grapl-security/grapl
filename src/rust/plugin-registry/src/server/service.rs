@@ -1,6 +1,10 @@
 use std::{
     net::SocketAddr,
     pin::Pin,
+    sync::{
+        atomic::Ordering,
+        Arc,
+    },
     time::Duration,
 };
 
@@ -156,7 +160,9 @@ impl PluginRegistryApi for PluginRegistry {
         let s3_key = generate_artifact_s3_key(plugin_type, &tenant_id, &plugin_id);
 
         let limit_bytes = self.config.artifact_size_limit_mb.clone() * 1024 * 1024;
-        let mut stream_length = 0;
+        let stream_length = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        // Get a handle for the Stream to move
+        let closure_stream_length = stream_length.clone();
 
         // Convert the incoming request stream of CreatePluginRequest::Chunk
         // into a stream of Bytes to be sent to Rusoto S3.put_object.
@@ -169,20 +175,24 @@ impl PluginRegistryApi for PluginRegistry {
                         _ => Err(io_input_error("Expected request 1..N to be Chunk")),
                     }
                 })
-                .then(move |result| async move {
+                .then(move |result| {
                     // Bail out if we've exceeded max size
-                    match result {
-                        Ok(bytes) => {
-                            stream_length += bytes.len();
-                            if stream_length > limit_bytes {
-                                Err(io_input_error(format!(
-                                    "Input exceeds limit {limit_bytes} bytes"
-                                )))
-                            } else {
-                                Ok(bytes)
+                    let stream_length = closure_stream_length.clone();
+                    async move {
+                        match result {
+                            Ok(bytes) => {
+                                if stream_length.fetch_add(bytes.len(), Ordering::SeqCst)
+                                    > limit_bytes
+                                {
+                                    Err(io_input_error(format!(
+                                        "Input exceeds limit {limit_bytes} bytes"
+                                    )))
+                                } else {
+                                    Ok(bytes)
+                                }
                             }
+                            Err(e) => Err(e),
                         }
-                        Err(e) => Err(e),
                     }
                 }),
         );
@@ -197,6 +207,9 @@ impl PluginRegistryApi for PluginRegistry {
             })
             .await?;
 
+        let stream_length: usize = Arc::try_unwrap(stream_length)
+            .expect("Stream has been exhausted by this point")
+            .into_inner();
         // Emit some benchmark info
         {
             let total_duration = std::time::SystemTime::now()
