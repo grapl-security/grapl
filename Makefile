@@ -52,7 +52,7 @@ COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
 # While we would ultimately like to run all these containers as a
 # non-root user, some currently seem to require that; to accommodate
 # all such images, we provide two helpful macros.
-DOCKER_COMPOSE_CHECK := docker-compose --file=docker-compose.check.yml run --rm
+DOCKER_COMPOSE_CHECK := docker compose --file=docker-compose.check.yml run --rm
 NONROOT_DOCKER_COMPOSE_CHECK := ${DOCKER_COMPOSE_CHECK} --user=${COMPOSE_USER}
 
 # Our images are labeled; we can use this to help filter various
@@ -125,6 +125,9 @@ help: ## Print this help
 	@printf -- '\n'
 	@printf -- '  ${FMT_PURPLE}DEBUG_SERVICES${FMT_END}="graphql_endpoint grapl_e2e_tests" make test-e2e\n'
 	@printf -- '    to launch the VSCode Debugger (see ${VSC_DEBUGGER_DOCS_LINK}).\n'
+	@printf -- '\n'
+	@printf -- '  ${FMT_PURPLE}WITH_PULUMI_TRACING=1${FMT_END} makeup \n'
+	@printf -- '    to send pulumi traces to Jaeger (see docs/development/debugging.md).\n'
 	@printf -- '\n'
 	@printf -- '  ${FMT_PURPLE}WITH_TRACING=1${FMT_END} make build-local-infrastructure \n'
 	@printf -- '    to send docker build traces to Jaeger (see docs/development/debugging.md).\n'
@@ -331,6 +334,7 @@ test-e2e: ## Build and run e2e tests
 # Think of it as a Context Manager that:
 # - Before test-time, brings up a `make up`
 # - After test-time, tears it all down and dumps artifacts.
+.SILENT: test-with-env
 .PHONY: test-with-env
 test-with-env: # (Do not include help text - not to be used directly)
 	stopGrapl() {
@@ -464,6 +468,7 @@ up: build-local-infrastructure _up
 
 # NOTE: Internal target to decouple the building of images from the
 # running of them. Do not invoke this directly.
+.SILENT: _up
 .PHONY: _up
 _up:
 	# Primarily used for bringing up an environment for integration testing.
@@ -476,29 +481,29 @@ _up:
 	# explicitly unset that here to avoid potential surprises.
 	unset COMPOSE_FILE
 
-	# TODO: This could potentially be replaced with a docker-compose run, but
+	# TODO: This could potentially be replaced with a docker compose run, but
 	#  it doesn't have all these useful flags
 	@echo "--- Running Pulumi"
-	docker-compose \
+	docker compose \
 		--file docker-compose.yml \
 		up --force-recreate --always-recreate-deps --renew-anon-volumes \
 		--exit-code-from pulumi \
 		pulumi
 
 .PHONY: down
-down: ## docker-compose down - both stops and removes the containers
+down: ## docker compose down - both stops and removes the containers
 	# This is only for killing the lambda containers that Localstack
-	# spins up in our network, but that docker-compose doesn't know
+	# spins up in our network, but that docker compose doesn't know
 	# about. This must be the network that is used in Localstack's
 	# LAMBDA_DOCKER_NETWORK environment variable.
 	$(MAKE) stop-nomad-detach
-	docker-compose $(EVERY_COMPOSE_FILE) down --timeout=0
-	@docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
-	@docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
+	docker compose $(EVERY_COMPOSE_FILE) down --timeout=0
+	@docker compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
+	@docker compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
 
 .PHONY: stop
-stop: ## docker-compose stop - stops (but preserves) the containers
-	docker-compose $(EVERY_COMPOSE_FILE) stop
+stop: ## docker compose stop - stops (but preserves) the containers
+	docker compose $(EVERY_COMPOSE_FILE) stop
 
 # This is a convenience target for our frontend engineers, to make the dev loop
 # slightly less arduous for grapl-web-ui/engagement-view development.
@@ -604,8 +609,8 @@ clean-all-rust:
 
 .PHONY: local-pulumi
 local-pulumi: export COMPOSE_PROJECT_NAME="grapl"
-local-pulumi:  ## launch pulumi via docker-compose up
-	docker-compose -f docker-compose.yml run pulumi
+local-pulumi:  ## launch pulumi via docker compose up
+	docker compose -f docker-compose.yml run pulumi
 
 .PHONY: start-nomad-detach
 start-nomad-detach:  ## Start the Nomad environment, detached
@@ -659,8 +664,11 @@ dist/firecracker_kernel.tar.gz: firecracker/kernel/build.sh | dist
 # NOTE: While this target is PHONY, it *does* represent a real directory in
 # dist/
 .PHONY: dist/plugin-bootstrap-init
-dist/plugin-bootstrap-init: | dist  ## Build the Plugin Bootstrap Init (+ associated files) and copy it to dist/
-	$(DOCKER_BUILDX_BAKE_HCL) plugin-bootstrap-init
+dist/plugin-bootstrap-init: _export-rust-build-artifacts-to-dist  ## Build the Plugin Bootstrap Init (+ associated files) and copy it to dist/
+
+.PHONY: _export-rust-build-artifacts-to-dist
+_export-rust-build-artifacts-to-dist: | dist  ## Copy all specified Rust binary artifacts to dist/
+	$(DOCKER_BUILDX_BAKE_HCL) export-rust-build-artifacts-to-dist
 
 # TODO: Would be nice to be able to specify the input file prerequisites of
 # this target, once `dist/plugin-bootstrap-init` is non-PHONY

@@ -6,6 +6,8 @@ export type SelectLensProps = {
     uid: number;
     lens_type: string;
     setLens: (lens: string) => void;
+    selectedLensId: number;
+    setSelectedLensId: (selectedLensIdState: number) => void;
 };
 
 export type NodeDetailsProps = {

@@ -73,12 +73,8 @@ start_nomad_detach() {
     create_dynamic_consul_config
 
     echo "Starting nomad and consul locally. Logs @ ${NOMAD_LOGS_DEST} and ${CONSUL_LOGS_DEST}."
-    # These will run forever until `make stop-nomad-ci` is invoked."
-    # shellcheck disable=SC2024
-    sudo nomad agent \
-        -config="${THIS_DIR}/nomad-agent-conf.nomad" \
-        -dev-connect > "${NOMAD_LOGS_DEST}" &
-    local -r nomad_agent_pid="$!"
+    # Consul/Nomad  will run forever until `make down` is invoked."
+
     # The client is set to 0.0.0.0 here so that it can be reached via pulumi in docker.
     consul agent \
         -client 0.0.0.0 -config-file "${THIS_DIR}/consul-agent-conf.hcl" \
@@ -86,9 +82,39 @@ start_nomad_detach() {
         -dev > "${CONSUL_LOGS_DEST}" &
     local -r consul_agent_pid="$!"
 
-    # Wait a short period of time before attempting to deploy infrastructure
+    # Ensure Consul agent is up and running
     (
-        readonly wait_secs=45
+        readonly wait_secs=15
+        # shellcheck disable=SC2016
+        timeout --foreground "${wait_secs}" bash -c -- "$(
+            cat << EOF
+                # General rule: Variable defined in this EOF? Use \$
+                set -euo pipefail
+                wait_attempt=1
+                while [[ -z \$(consul info 2>&1 | grep "leader = true") ]]; do
+                    if ! ps -p "${consul_agent_pid}" > /dev/null; then
+                        echo "Consul Agent unexpectedly exited?"
+                        exit 42
+                    fi
+
+                    echo "Waiting for consul-agent [\${wait_attempt}/${wait_secs}]"
+                    sleep 1
+                    ((wait_attempt=wait_attempt+1))
+                done
+                echo "consul-agent ready"
+EOF
+        )"
+    )
+
+    # shellcheck disable=SC2024
+    sudo nomad agent \
+        -config="${THIS_DIR}/nomad-agent-conf.nomad" \
+        -dev-connect > "${NOMAD_LOGS_DEST}" &
+    local -r nomad_agent_pid="$!"
+
+    # Ensure Nomad agent is ready
+    (
+        readonly wait_secs=30
         # shellcheck disable=SC2016
         timeout --foreground "${wait_secs}" bash -c -- "$(
             cat << EOF
@@ -100,15 +126,12 @@ start_nomad_detach() {
                         echo "Nomad Agent unexpectedly exited?"
                         exit 42
                     fi
-                    if ! ps -p "${consul_agent_pid}" > /dev/null; then
-                        echo "Consul Agent unexpectedly exited?"
-                        exit 42
-                    fi
 
                     echo "Waiting for nomad-agent [\${wait_attempt}/${wait_secs}]"
                     sleep 1
                     ((wait_attempt=wait_attempt+1))
                 done
+                echo "nomad-agent ready"
 EOF
         )"
     )

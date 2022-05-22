@@ -12,7 +12,7 @@ use crate::{
 pub enum PluginWorkQueueServiceClientError {
     #[error("ErrorStatus")]
     ErrorStatus(#[from] tonic::Status),
-    #[error("PluginWorkQueueDeserializationError")]
+    #[error(transparent)]
     PluginRegistryDeserializationError(#[from] SerDeError),
 }
 

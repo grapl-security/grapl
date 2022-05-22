@@ -76,6 +76,13 @@ job "grapl-plugin" {
           }
         }
       }
+
+      check {
+        type     = "grpc"
+        port     = "pipeline-ingress-port"
+        interval = "10s"
+        timeout  = "3s"
+      }
     }
 
     # a Docker task holding:
@@ -116,8 +123,13 @@ EOF
       env {
         TENANT_ID  = "${var.tenant_id}"
         PLUGIN_ID  = "${var.plugin_id}"
-        BIND_PORT  = "${NOMAD_PORT_plugin-grpc-receiver}"
         PLUGIN_BIN = "/mnt/nomad_task_dir/plugin.bin"
+        # Consumed by GeneratorServiceConfig
+        PLUGIN_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_plugin-grpc-receiver}"
+
+        # Should we make these eventually customizable?
+        RUST_LOG       = "DEBUG"
+        RUST_BACKTRACE = 1
       }
     }
   }

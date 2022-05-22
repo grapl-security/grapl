@@ -23,7 +23,7 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-base-apt
     && apt-get install --yes --no-install-recommends \
         build-essential=12.9 \
         cmake=3.18.4-2+deb11u1 \
-        libssl-dev=1.1.1n-0+deb11u1 \
+        libssl-dev=1.1.1n-0+deb11u2 \
         perl=5.32.1-4+deb11u2 \
         pkg-config=0.29.2-1 \
         tcl=8.6.11+1
@@ -106,7 +106,7 @@ FROM base AS tarpaulin
 RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tarpaulin-apt \
     apt-get update \
     && apt-get install --yes --no-install-recommends \
-        libssl-dev=1.1.1n-0+deb11u1 \
+        libssl-dev=1.1.1n-0+deb11u2 \
         pkg-config=0.29.2-1
 
 # For test coverage reports
@@ -178,40 +178,10 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tests-ap
 COPY --from=build /nomad/nomad /bin
 
 COPY --from=build-test-integration /grapl/tests /tests
-
-COPY --chmod=777 <<-"EOF" /run-tests.sh
-#!/bin/bash
-
-# This script is intended to be used for running integration tests. The exit code of this script will be that of
-# that last test that had a non-zero exit code (test failure), otherwise it
-# will be zero.
-
-EXIT_STATUS=0
-declare -a FAILING_TESTS=()
-
-for test in $(find /tests -type f -executable -exec readlink -f {} \;)
-do
-    echo "--- Executing ${test}"
-    # Redirect stderr so it's inline with stdout
-    "${test}"
-    exit_code=$?
-    if [[ ${exit_code} -ne 0 ]]; then
-        FAILING_TESTS+=("${test}")
-        echo Test failed with exit code ${exit_code}
-        EXIT_STATUS=${exit_code}
-    fi
-done
-
-if [[ ${EXIT_STATUS} -ne 0 ]]; then
-  echo ""
-  echo ">>> FAILING TESTS: ${FAILING_TESTS[@]}"
-  echo "   See .stderr.txt (or the Nomad stderr tab) to see additional failure backtraces."
-fi
-exit ${EXIT_STATUS}
-
-EOF
-
-ENTRYPOINT [ "/run-tests.sh" ]
+# Named context support https://github.com/hadolint/hadolint/issues/830
+# hadolint ignore=DL3022
+COPY --from=test-ctx ./run/rust-integration-tests.sh /
+ENTRYPOINT [ "/rust-integration-tests.sh" ]
 
 
 # build-test-integration-new
@@ -272,41 +242,15 @@ RUN --mount=type=cache,target=/var/lib/apt/lists,sharing=locked,id=rust-tests-ap
 # so that it's available to integration test consumers of NomadCli
 COPY --from=build /nomad/nomad /bin
 
+# Grab the example generator so we can deploy it in test_deploy_plugin
+RUN mkdir -p /test-fixtures
+COPY --from=build /outputs/example-generator /test-fixtures
+
 COPY --from=build-test-integration-new /grapl/tests /tests
-
-COPY --chmod=777 <<-"EOF" /run-tests.sh
-#!/bin/bash
-
-# This script is intended to be used for running integration tests. The exit code of this script will be that of
-# that last test that had a non-zero exit code (test failure), otherwise it
-# will be zero.
-
-EXIT_STATUS=0
-declare -a FAILING_TESTS=()
-
-for test in $(find /tests -type f -executable -exec readlink -f {} \;)
-do
-    echo "--- Executing ${test}"
-    # Redirect stderr so it's inline with stdout
-    "${test}"
-    exit_code=$?
-    if [[ ${exit_code} -ne 0 ]]; then
-        FAILING_TESTS+=("${test}")
-        echo Test failed with exit code ${exit_code}
-        EXIT_STATUS=${exit_code}
-    fi
-done
-
-if [[ ${EXIT_STATUS} -ne 0 ]]; then
-  echo ""
-  echo ">>> FAILING TESTS: ${FAILING_TESTS[@]}"
-  echo "   See .stderr.txt (or the Nomad stderr tab) to see additional failure backtraces."
-fi
-exit ${EXIT_STATUS}
-
-EOF
-
-ENTRYPOINT [ "/run-tests.sh" ]
+# Named context support https://github.com/hadolint/hadolint/issues/830
+# hadolint ignore=DL3022
+COPY --from=test-ctx ./run/rust-integration-tests.sh /
+ENTRYPOINT [ "/rust-integration-tests.sh" ]
 
 
 # images for running services
@@ -321,6 +265,19 @@ ENTRYPOINT [ "/run-tests.sh" ]
 FROM gcr.io/distroless/cc:debug AS rust-dist
 
 USER nonroot
+
+##### export-rust-build-artifacts-to-dist
+# There are a number of artifacts we want to bring back to the host OS.
+# This image will eventually dump its root contents into the host's `dist/`
+# courtesy of its `docker-bake.hcl` specification.
+FROM scratch AS export-rust-build-artifacts-to-dist
+
+COPY --from=build /outputs/plugin-bootstrap-init /plugin-bootstrap-init/
+COPY --from=build /outputs/example-generator /
+# Just to clarify: we're copying these .service files from the repository,
+# through Docker, and then back out to the dist directory in the repository.
+COPY rust/plugin-bootstrap/grapl-plugin-bootstrap-init.service /plugin-bootstrap-init/
+COPY rust/plugin-bootstrap/grapl-plugin.service /plugin-bootstrap-init/
 
 ##### analyzer-dispatcher
 FROM rust-dist AS analyzer-dispatcher-deploy
@@ -359,16 +316,6 @@ FROM rust-dist AS plugin-bootstrap-deploy
 
 COPY --from=build /outputs/plugin-bootstrap /
 ENTRYPOINT ["/plugin-bootstrap"]
-
-##### plugin-bootstrap-init.
-# Not "-deploy" since we copy it to dist/.
-FROM scratch AS plugin-bootstrap-init-output
-
-COPY --from=build /outputs/plugin-bootstrap-init /
-# Just to clarify: we're copying these .service files from the repository,
-# through Docker, and then back out to the dist directory in the repository.
-COPY rust/plugin-bootstrap/grapl-plugin-bootstrap-init.service /
-COPY rust/plugin-bootstrap/grapl-plugin.service /
 
 ##### node-identifier
 FROM rust-dist AS node-identifier-deploy

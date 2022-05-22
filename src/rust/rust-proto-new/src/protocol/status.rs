@@ -126,6 +126,7 @@ impl From<GrpcCode> for Code {
     }
 }
 
+#[derive(thiserror::Error)]
 pub struct Status {
     /// The gRPC status code, found in the `grpc-status` header.
     code: Code,
@@ -225,6 +226,11 @@ impl Status {
     /// operation.
     pub fn unauthenticated(message: impl Into<String>) -> Status {
         Status::new(Code::Unauthenticated, message)
+    }
+
+    // Retrieve the inner status code.
+    pub fn code(&self) -> Code {
+        self.code
     }
 }
 

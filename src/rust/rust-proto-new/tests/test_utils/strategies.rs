@@ -718,6 +718,42 @@ pub mod plugin_registry {
     }
 }
 
+pub mod plugin_sdk_generators {
+    use rust_proto_new::graplinc::grapl::api::plugin_sdk::generators::v1beta1 as native;
+
+    use super::*;
+
+    prop_compose! {
+        fn generated_graphs()(
+            graph_description in graph::graph_descriptions()
+        ) -> native::GeneratedGraph {
+            native::GeneratedGraph {
+                graph_description
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn run_generator_requests()(
+            data in any::<Vec<u8>>()
+        ) -> native::RunGeneratorRequest {
+            native::RunGeneratorRequest {
+                data
+            }
+        }
+    }
+
+    prop_compose! {
+        pub fn run_generator_responses()(
+            generated_graph in generated_graphs(),
+        ) -> native::RunGeneratorResponse {
+            native::RunGeneratorResponse {
+                generated_graph
+            }
+        }
+    }
+}
+
 pub mod plugin_work_queue {
     use rust_proto_new::graplinc::grapl::api::plugin_work_queue::v1beta1 as native;
 

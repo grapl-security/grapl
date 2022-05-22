@@ -105,7 +105,7 @@ impl type_url::TypeUrl for Metadata {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.pipeline.v1beta1.Metadata";
 }
 
-impl serde_impl::ProtobufSerializable<Metadata> for Metadata {
+impl serde_impl::ProtobufSerializable for Metadata {
     type ProtobufMessage = MetadataProto;
 }
 
@@ -152,7 +152,7 @@ impl type_url::TypeUrl for Envelope {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.pipeline.v1beta1.Envelope";
 }
 
-impl serde_impl::ProtobufSerializable<Envelope> for Envelope {
+impl serde_impl::ProtobufSerializable for Envelope {
     type ProtobufMessage = EnvelopeProto;
 }
 
@@ -191,6 +191,6 @@ impl type_url::TypeUrl for RawLog {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.pipeline.v1beta1.RawLog";
 }
 
-impl serde_impl::ProtobufSerializable<RawLog> for RawLog {
+impl serde_impl::ProtobufSerializable for RawLog {
     type ProtobufMessage = RawLogProto;
 }

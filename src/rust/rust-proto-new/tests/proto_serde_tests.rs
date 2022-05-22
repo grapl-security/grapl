@@ -5,7 +5,10 @@ use rust_proto_new::graplinc::common::v1beta1::{
     SystemTime,
 };
 use test_utils::{
-    serde::check_encode_decode_invariant,
+    serde::{
+        check_encode_decode_invariant,
+        expect_serde_error,
+    },
     strategies,
 };
 
@@ -321,11 +324,31 @@ mod plugin_registry {
     }
 }
 
+mod plugin_sdk_generators {
+    use strategies::plugin_sdk_generators as gen_strats;
+
+    use super::*;
+
+    proptest! {
+        #[test]
+        fn test_serde_run_generator_requests(value in gen_strats::run_generator_requests()) {
+            if value.data.is_empty() {
+                expect_serde_error(value);
+            } else {
+                check_encode_decode_invariant(value)
+            }
+        }
+
+        fn test_serde_run_generator_responses(value in gen_strats::run_generator_responses()) {
+            check_encode_decode_invariant(value)
+        }
+    }
+}
+
 mod plugin_work_queue {
     use strategies::plugin_work_queue as pwq_strats;
 
     use super::*;
-    use crate::test_utils::serde::expect_serde_error;
 
     proptest! {
         #[test]
@@ -361,11 +384,7 @@ mod plugin_work_queue {
         fn test_get_execute_analyzer_responses(
             value in pwq_strats::get_execute_analyzer_responses()
         ) {
-            if let None = value.execution_job {
-                expect_serde_error(value);
-            } else {
-                check_encode_decode_invariant(value)
-            }
+            check_encode_decode_invariant(value)
         }
 
         #[test]
@@ -377,11 +396,7 @@ mod plugin_work_queue {
         fn test_get_execute_generator_responses(
             value in pwq_strats::get_execute_generator_responses()
         ) {
-            if let None = value.execution_job {
-                expect_serde_error(value);
-            } else {
-                check_encode_decode_invariant(value)
-            }
+            check_encode_decode_invariant(value)
         }
 
         #[test]

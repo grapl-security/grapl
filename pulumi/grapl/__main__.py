@@ -5,7 +5,7 @@ sys.path.insert(0, "..")
 from typing import List, Mapping, Optional, Set, cast
 
 import pulumi_aws as aws
-from infra import config, dynamodb, emitter
+from infra import config, dynamodb, emitter, log_levels
 from infra.alarms import OpsAlarms
 from infra.api_gateway import ApiGateway
 from infra.artifacts import ArtifactGetter
@@ -16,7 +16,12 @@ from infra.consul_config import ConsulConfig
 from infra.consul_intentions import ConsulIntentions
 from infra.consul_service_default import ConsulServiceDefault
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
-from infra.firecracker_assets import FirecrackerAssets, FirecrackerS3BucketObjects
+from infra.firecracker_assets import (
+    FirecrackerAssets,
+    FirecrackerS3BucketObjects,
+    FirecrackerS3BucketObjectsProtocol,
+    MockFirecrackerS3BucketObjects,
+)
 from infra.hashicorp_provider import (
     get_consul_provider_address,
     get_nomad_provider_address,
@@ -38,6 +43,12 @@ from typing_extensions import Final
 
 import pulumi
 
+"""
+https://github.com/grapl-security/issue-tracker/issues/908
+This can eventually be removed once we remove HaxDocker in favor of Firecracker
+"""
+USE_HAX_DOCKER_RUNTIME: bool = True
+
 
 def _get_subset(inputs: NomadVars, subset: Set[str]) -> NomadVars:
     return {k: inputs[k] for k in subset}
@@ -57,6 +68,7 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "analyzer-executor": builder.build_with_tag("analyzer-executor"),
         "dgraph": DockerImageId("dgraph/dgraph:v21.03.1"),
         "engagement-creator": builder.build_with_tag("engagement-creator"),
+        "generator-executor": builder.build_with_tag("generator-executor"),
         "graph-merger": builder.build_with_tag("graph-merger"),
         "graphql-endpoint": builder.build_with_tag("graphql-endpoint"),
         "hax-docker-plugin-runtime": DockerImageId("debian:bullseye-slim"),
@@ -190,7 +202,13 @@ def main() -> None:
     analyzers_bucket = Bucket("analyzers-bucket", sse=True)
     pulumi.export("analyzers-bucket", analyzers_bucket.bucket)
     model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)
-    pulumi.export("model-plugins-bucket", model_plugins_bucket.bucket)
+    plugin_registry_bucket = Bucket("plugin-registry-bucket", sse=True)
+
+    all_plugin_buckets = [
+        analyzers_bucket,
+        model_plugins_bucket,
+        plugin_registry_bucket,
+    ]
 
     pipeline_ingress_healthcheck_polling_interval_ms = "5000"
     pulumi.export(
@@ -198,36 +216,19 @@ def main() -> None:
         pipeline_ingress_healthcheck_polling_interval_ms,
     )
 
-    plugins_bucket = Bucket("plugins-bucket", sse=True)
-    pulumi.export("plugins-bucket", plugins_bucket.bucket)
-
-    plugin_buckets = [
-        analyzers_bucket,
-        model_plugins_bucket,
-    ]
-
-    firecracker_s3objs = FirecrackerS3BucketObjects(
-        "firecracker-s3-bucket-objects",
-        plugins_bucket=plugins_bucket,
-        firecracker_assets=FirecrackerAssets(
-            "firecracker-assets",
-            repository_name=config.cloudsmith_repository_name(),
-            artifacts=artifacts,
-        ),
+    firecracker_s3objs: FirecrackerS3BucketObjectsProtocol = (
+        MockFirecrackerS3BucketObjects()
+        if USE_HAX_DOCKER_RUNTIME
+        else FirecrackerS3BucketObjects(
+            "firecracker-s3-bucket-objects",
+            plugins_bucket=plugin_registry_bucket,
+            firecracker_assets=FirecrackerAssets(
+                "firecracker-assets",
+                repository_name=config.cloudsmith_repository_name(),
+                artifacts=artifacts,
+            ),
+        )
     )
-
-    # To learn more about this syntax, see
-    # https://docs.rs/env_logger/0.9.0/env_logger/#enabling-logging
-    rust_log_levels = ",".join(
-        [
-            "DEBUG",
-            "h2=WARN",
-            "hyper=WARN",
-            "rusoto_core=WARN",
-            "rustls=WARN",
-        ]
-    )
-    py_log_level = "DEBUG"
 
     aws_env_vars_for_local = _get_aws_env_vars_for_local()
     pulumi.export("aws-env-vars-for-local", aws_env_vars_for_local)
@@ -255,8 +256,8 @@ def main() -> None:
         osquery_generator_queue=osquery_generator_queue.main_queue_url,
         osquery_generator_dead_letter_queue=osquery_generator_queue.dead_letter_queue_url,
         pipeline_ingress_healthcheck_polling_interval_ms=pipeline_ingress_healthcheck_polling_interval_ms,
-        py_log_level=py_log_level,
-        rust_log=rust_log_levels,
+        py_log_level=log_levels.PY_LOG_LEVEL,
+        rust_log=log_levels.RUST_LOG_LEVELS,
         schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
         schema_table_name=dynamodb_tables.schema_table.name,
         session_table_name=dynamodb_tables.dynamic_session_table.name,
@@ -270,8 +271,8 @@ def main() -> None:
         user_session_table=dynamodb_tables.user_session_table.name,
         plugin_registry_kernel_artifact_url=firecracker_s3objs.kernel_s3obj_url,
         plugin_registry_rootfs_artifact_url=firecracker_s3objs.rootfs_s3obj_url,
-        plugin_s3_bucket_aws_account_id=config.AWS_ACCOUNT_ID,
-        plugin_s3_bucket_name=plugins_bucket.bucket,
+        plugin_registry_bucket_aws_account_id=config.AWS_ACCOUNT_ID,
+        plugin_registry_bucket_name=plugin_registry_bucket.bucket,
     )
 
     provision_vars: Final[NomadVars] = {
@@ -471,11 +472,11 @@ def main() -> None:
             subnet_ids
         ).apply(subnets_to_single_az)
 
-        for _bucket in plugin_buckets:
-            _bucket.grant_put_permission_to(nomad_agent_role)
+        for bucket in all_plugin_buckets:
+            bucket.grant_put_permission_to(nomad_agent_role)
             # Analyzer Dispatcher needs to be able to ListObjects on Analyzers
             # Analyzer Executor needs to be able to ListObjects on Model Plugins
-            _bucket.grant_get_and_list_to(nomad_agent_role)
+            bucket.grant_get_and_list_to(nomad_agent_role)
         for _emitter in all_emitters:
             _emitter.grant_write_to(nomad_agent_role)
             _emitter.grant_read_to(nomad_agent_role)

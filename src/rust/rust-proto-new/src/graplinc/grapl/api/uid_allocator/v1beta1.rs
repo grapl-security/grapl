@@ -350,15 +350,15 @@ pub mod messages {
         }
     }
 
-    impl serde_impl::ProtobufSerializable<Allocation> for Allocation {
+    impl serde_impl::ProtobufSerializable for Allocation {
         type ProtobufMessage = AllocationProto;
     }
 
-    impl serde_impl::ProtobufSerializable<AllocateIdsRequest> for AllocateIdsRequest {
+    impl serde_impl::ProtobufSerializable for AllocateIdsRequest {
         type ProtobufMessage = AllocateIdsRequestProto;
     }
 
-    impl serde_impl::ProtobufSerializable<AllocateIdsResponse> for AllocateIdsResponse {
+    impl serde_impl::ProtobufSerializable for AllocateIdsResponse {
         type ProtobufMessage = AllocateIdsResponseProto;
     }
 

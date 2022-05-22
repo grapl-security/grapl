@@ -192,12 +192,12 @@ variable "plugin_work_queue_db_password" {
   description = "What is the password for the plugin work queue table?"
 }
 
-variable "plugin_s3_bucket_aws_account_id" {
+variable "plugin_registry_bucket_aws_account_id" {
   type        = string
   description = "The account id that owns the bucket where plugins are stored"
 }
 
-variable "plugin_s3_bucket_name" {
+variable "plugin_registry_bucket_name" {
   type        = string
   description = "The name of the bucket where plugins are stored"
 }
@@ -689,6 +689,56 @@ job "grapl-core" {
             limit           = 3
             grace           = "30s"
             ignore_warnings = false
+          }
+        }
+      }
+    }
+  }
+
+  #######################################
+  ## Begin actual Grapl core services ##
+  #######################################
+
+  group "generator-executor" {
+    network {
+      mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
+      port "generator-executor-port" {}
+    }
+
+    task "generator-executor" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["generator-executor"]
+      }
+
+      env {
+        DNS_RESOLVER_IPS  = var.dns_server
+        DNS_RESOLVER_PORT = "${NOMAD_PORT_generator-executor-port}"
+        # Upstreams
+        PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
+
+        RUST_LOG                        = var.rust_log
+        RUST_BACKTRACE                  = local.rust_backtrace
+        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
+        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
+      }
+    }
+
+    service {
+      name = "generator-executor"
+      connect {
+        sidecar_service {
+          proxy {
+            upstreams {
+              destination_name = "plugin-work-queue"
+              local_bind_port  = 1000
+            }
+            # NOTE: Generator Executor also connects to arbitrary upstreams at
+            # runtime via native Consul Connect in GeneratorClient
           }
         }
       }
@@ -1325,6 +1375,13 @@ job "grapl-core" {
         sidecar_service {
         }
       }
+
+      check {
+        type     = "grpc"
+        port     = "pipeline-ingress-port"
+        interval = "10s"
+        timeout  = "3s"
+      }
     }
   }
 
@@ -1366,13 +1423,20 @@ job "grapl-core" {
         PLUGIN_REGISTRY_ROOTFS_ARTIFACT_URL             = var.plugin_registry_rootfs_artifact_url
         PLUGIN_REGISTRY_HAX_DOCKER_PLUGIN_RUNTIME_IMAGE = var.container_images["hax-docker-plugin-runtime"]
         # Plugin Execution code/image doesn't exist yet; change this once it does!
-        PLUGIN_EXECUTION_CONTAINER_IMAGE = "grapl/plugin-execution-sidecar-TODO"
-        PLUGIN_S3_BUCKET_AWS_ACCOUNT_ID  = var.plugin_s3_bucket_aws_account_id
-        PLUGIN_S3_BUCKET_NAME            = var.plugin_s3_bucket_name
-        RUST_BACKTRACE                   = local.rust_backtrace
-        RUST_LOG                         = var.rust_log
-        OTEL_EXPORTER_JAEGER_AGENT_HOST  = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT  = local.tracing_jaeger_endpoint_port
+        PLUGIN_EXECUTION_CONTAINER_IMAGE      = "grapl/plugin-execution-sidecar-TODO"
+        PLUGIN_REGISTRY_BUCKET_AWS_ACCOUNT_ID = var.plugin_registry_bucket_aws_account_id
+        PLUGIN_REGISTRY_BUCKET_NAME           = var.plugin_registry_bucket_name
+
+        # common Rust env vars
+        RUST_BACKTRACE                  = local.rust_backtrace
+        RUST_LOG                        = var.rust_log
+        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
+        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
+      }
+
+      resources {
+        # Probably too much. Let's figure out buffered writes to s3
+        memory = 512
       }
     }
 
@@ -1382,6 +1446,13 @@ job "grapl-core" {
       connect {
         sidecar_service {
         }
+      }
+
+      check {
+        type     = "grpc"
+        port     = "plugin-registry-port"
+        interval = "10s"
+        timeout  = "3s"
       }
     }
   }
@@ -1419,12 +1490,12 @@ job "grapl-core" {
         PLUGIN_WORK_QUEUE_DB_USERNAME  = var.plugin_work_queue_db_username
         # Hardcoded, but makes little sense to pipe up through Pulumi
         PLUGIN_WORK_QUEUE_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
-        PLUGIN_S3_BUCKET_AWS_ACCOUNT_ID                   = var.plugin_s3_bucket_aws_account_id
-        PLUGIN_S3_BUCKET_NAME                             = var.plugin_s3_bucket_name
-        RUST_BACKTRACE                                    = local.rust_backtrace
-        RUST_LOG                                          = var.rust_log
-        OTEL_EXPORTER_JAEGER_AGENT_HOST                   = local.tracing_jaeger_endpoint_host
-        OTEL_EXPORTER_JAEGER_AGENT_PORT                   = local.tracing_jaeger_endpoint_port
+
+        # common Rust env vars
+        RUST_BACKTRACE                  = local.rust_backtrace
+        RUST_LOG                        = var.rust_log
+        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
+        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
       }
     }
 
@@ -1434,6 +1505,13 @@ job "grapl-core" {
       connect {
         sidecar_service {
         }
+      }
+
+      check {
+        type     = "grpc"
+        port     = "plugin-work-queue-port"
+        interval = "10s"
+        timeout  = "3s"
       }
     }
   }

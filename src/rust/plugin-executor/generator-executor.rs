@@ -1,15 +1,16 @@
 use std::time::Duration;
 
+use clap::Parser;
 use generator_sdk::client::GeneratorClient;
 use plugin_work_queue::client::{
     FromEnv,
     PluginWorkQueueServiceClient,
 };
 use rust_proto_new::graplinc::grapl::api::plugin_work_queue::v1beta1;
-use structopt::StructOpt;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let (_env, _guard) = grapl_config::init_grapl_env!();
     let mut generator_executor = GeneratorExecutor::new().await?;
     generator_executor.main_loop().await
 }
@@ -20,9 +21,10 @@ struct GeneratorExecutor {
 }
 
 impl GeneratorExecutor {
+    #[tracing::instrument(err)]
     async fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let generator_client = {
-            let generator_client_config = generator_sdk::client_config::ClientConfig::from_args();
+            let generator_client_config = generator_sdk::client_config::ClientConfig::parse();
             GeneratorClient::from(generator_client_config)
         };
 
@@ -34,6 +36,7 @@ impl GeneratorExecutor {
         })
     }
 
+    #[tracing::instrument(skip(self), err)]
     async fn main_loop(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         while let Ok(get_execute_response) = self
             .plugin_work_queue_client

@@ -1,7 +1,4 @@
-use std::{
-    marker::PhantomData,
-    time::Duration,
-};
+use std::time::Duration;
 
 use futures::{
     channel::oneshot::{
@@ -13,7 +10,6 @@ use futures::{
     FutureExt,
 };
 use proto::plugin_registry_service_server::PluginRegistryService;
-use thiserror::Error;
 use tokio::net::TcpListener;
 use tokio_stream::wrappers::TcpListenerStream;
 use tonic::{
@@ -56,16 +52,6 @@ use crate::{
     server_internals::GrpcApi,
     SerDeError,
 };
-
-#[non_exhaustive]
-#[derive(Debug, Error)]
-pub enum PluginRegistryApiError {
-    #[error("failed to serialize/deserialize {0}")]
-    SerDeError(#[from] SerDeError),
-
-    #[error("received unfavorable gRPC status {0}")]
-    GrpcStatus(#[from] tonic::Status),
-}
 
 /// Implement this trait to define the API business logic
 #[tonic::async_trait]
@@ -166,7 +152,6 @@ where
     tcp_listener: TcpListener,
     shutdown_rx: Receiver<()>,
     service_name: &'static str,
-    f_: PhantomData<F>,
 }
 
 impl<T, H, F> PluginRegistryServer<T, H, F>
@@ -195,7 +180,6 @@ where
                 tcp_listener,
                 shutdown_rx,
                 service_name: PluginRegistryServiceProto::<GrpcApi<T>>::NAME,
-                f_: PhantomData,
             },
             shutdown_tx,
         )
@@ -220,6 +204,15 @@ where
 
         // TODO: add tower tracing, tls_config, concurrency limits
         Ok(Server::builder()
+            .trace_fn(|request| {
+                tracing::info_span!(
+                    "Plugin Registry",
+                    headers = ?request.headers(),
+                    method = ?request.method(),
+                    uri = %request.uri(),
+                    extensions = ?request.extensions(),
+                )
+            })
             .add_service(health_service)
             .add_service(PluginRegistryServiceProto::new(GrpcApi::new(
                 self.api_server,

@@ -102,4 +102,4 @@ ENV PANTS_SETUP_CACHE=/mnt/pants-cache/setup
 
 # /mnt/grapl-root is mounted by `integration-tests.nomad` at runtime.
 WORKDIR /mnt/grapl-root
-CMD ["./test/run/integration-tests-from-docker-container.sh"]
+CMD ["./test/run/py-integration-tests-from-docker-container.sh"]
