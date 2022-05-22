@@ -1,6 +1,9 @@
 #![cfg(feature = "new_integration_tests")]
 
-use grapl_utils::future_ext::GraplFutureExt;
+use grapl_utils::future_ext::{
+    GraplAsyncRetry,
+    GraplFutureExt,
+};
 use plugin_registry::client::FromEnv;
 use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
     CreatePluginRequestMetadata,
@@ -12,17 +15,24 @@ use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
 
 pub const SMALL_TEST_BINARY: &'static [u8] = include_bytes!("./small_test_binary.sh");
 
-pub fn get_example_generator() -> Result<Vec<u8>, std::io::Error> {
+fn get_example_generator() -> Result<Vec<u8>, std::io::Error> {
     std::fs::read("/test-fixtures/example-generator")
 }
 
-// Temporarily skipping this test due to CI failures that I suspect are due to
-// the lack of streaming. Tackling this is my next task, but I want to unblock
-// other developers for the time being.
-// https://github.com/grapl-security/issue-tracker/issues/937
+async fn get_client() -> Result<PluginRegistryServiceClient, PluginRegistryServiceClientError> {
+    // For some reason, I'm seeing nondeterministic failures when initializing
+    // a client.
+    // Suspicions:
+    // - it's due to creating two clients at exactly the same time
+    //   (these two async tests are concurrent)
+    // - maybe something about warming up a connection pool?
+    // Anyway, I have no evidence, but this seems to do the trick. Weird.
+    PluginRegistryServiceClient::from_env.retry(3).await
+}
+
 #[test_log::test(tokio::test)]
 async fn test_deploy_plugin() -> Result<(), Box<dyn std::error::Error>> {
-    let mut client = PluginRegistryServiceClient::from_env().await?;
+    let mut client = get_client().await?;
 
     let tenant_id = uuid::Uuid::new_v4();
 
@@ -64,7 +74,7 @@ fn assert_contains(input: &str, expected_substr: &str) {
 /// So we *expect* this call to fail since it's an arbitrary PluginID that
 /// hasn't been created yet
 async fn test_deploy_plugin_but_plugin_id_doesnt_exist() -> Result<(), Box<dyn std::error::Error>> {
-    let mut client = PluginRegistryServiceClient::from_env().await?;
+    let mut client = get_client().await?;
 
     let randomly_selected_plugin_id = uuid::Uuid::new_v4();
 

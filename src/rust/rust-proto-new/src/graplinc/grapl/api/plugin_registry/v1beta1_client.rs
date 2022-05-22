@@ -15,9 +15,11 @@ use crate::{
 
 #[derive(Debug, thiserror::Error)]
 pub enum PluginRegistryServiceClientError {
-    #[error("ErrorStatus")]
+    #[error("TransportError {0}")]
+    TransportError(#[from] tonic::transport::Error),
+    #[error("ErrorStatus {0}")]
     ErrorStatus(#[from] tonic::Status),
-    #[error("PluginRegistryDeserializationError")]
+    #[error("PluginRegistryDeserializationError {0}")]
     PluginRegistryDeserializationError(#[from] SerDeError),
 }
 
@@ -27,7 +29,7 @@ pub struct PluginRegistryServiceClient {
 
 impl PluginRegistryServiceClient {
     #[tracing::instrument(err)]
-    pub async fn connect<T>(endpoint: T) -> Result<Self, Box<dyn std::error::Error + Send + Sync>>
+    pub async fn connect<T>(endpoint: T) -> Result<Self, PluginRegistryServiceClientError>
     where
         T: std::convert::TryInto<tonic::transport::Endpoint> + Debug,
         T::Error: std::error::Error + Send + Sync + 'static,

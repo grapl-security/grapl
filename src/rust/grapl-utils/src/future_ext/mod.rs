@@ -30,7 +30,7 @@ impl<T: ?Sized> GraplFutureExt for T where T: Future {}
 pub trait GraplAsyncRetry<Fut, T, E>: Fn() -> Fut
 where
     Fut: Future<Output = Result<T, E>> + Send,
-    E: Send,
+    E: std::error::Error + Send + Sync + 'static,
 {
     /// Helper method to auto-retry an async () -> Result.
     /// If it fails after `num_retries + 1` times, return the Err.
@@ -42,6 +42,7 @@ where
                 Ok(t) => return Ok(t),
                 Err(e) => last_err = Some(e),
             };
+            std::thread::sleep(std::time::Duration::from_secs(1));
         }
         Err(last_err.expect("definitely set"))
     }
@@ -51,6 +52,6 @@ impl<F, Fut, T, E> GraplAsyncRetry<Fut, T, E> for F
 where
     F: Fn() -> Fut,
     Fut: Future<Output = Result<T, E>> + Send,
-    E: Send,
+    E: std::error::Error + Send + Sync + 'static,
 {
 }
