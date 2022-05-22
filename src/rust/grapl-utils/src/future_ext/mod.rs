@@ -35,16 +35,15 @@ where
     /// Helper method to auto-retry an async () -> Result.
     /// If it fails after `num_retries + 1` times, return the Err.
     async fn retry(&self, num_retries: u8) -> Result<T, E> {
-        let mut last_err: Option<E> = None;
-        for _ in 0..num_retries + 1 {
-            let result = self().await;
-            match result {
+        let sleep_duration = std::time::Duration::from_secs(1);
+        for i in 0..num_retries + 1 {
+            match self().await {
                 Ok(t) => return Ok(t),
-                Err(e) => last_err = Some(e),
+                Err(e) if i == num_retries => return Err(e),
+                Err(_) => std::thread::sleep(sleep_duration),
             };
-            std::thread::sleep(std::time::Duration::from_secs(1));
         }
-        Err(last_err.expect("definitely set"))
+        unreachable!("Loop should always return");
     }
 }
 
