@@ -2,7 +2,10 @@ use std::{
     net::SocketAddr,
     pin::Pin,
     sync::{
-        atomic::Ordering,
+        atomic::{
+            AtomicUsize,
+            Ordering,
+        },
         Arc,
     },
     time::Duration,
@@ -124,6 +127,23 @@ fn io_input_error(input: impl std::fmt::Display) -> std::io::Error {
     std::io::Error::new(std::io::ErrorKind::InvalidInput, input.to_string())
 }
 
+async fn accumulate_stream_size_to_limit(
+    stream_length: Arc<AtomicUsize>,
+    limit: usize,
+    result: Result<Bytes, std::io::Error>,
+) -> Result<Bytes, std::io::Error> {
+    match result {
+        Ok(bytes) => {
+            if stream_length.fetch_add(bytes.len(), Ordering::SeqCst) > limit {
+                Err(io_input_error(format!("Input exceeds limit {limit} bytes")))
+            } else {
+                Ok(bytes)
+            }
+        }
+        Err(e) => Err(e),
+    }
+}
+
 type PinnedStream<T> = Pin<Box<dyn Stream<Item = T> + Send + 'static>>;
 type ResultStream<T, E> = PinnedStream<Result<T, E>>;
 
@@ -178,22 +198,7 @@ impl PluginRegistryApi for PluginRegistry {
                 .then(move |result| {
                     // Bail out if we've exceeded max size
                     let stream_length = closure_stream_length.clone();
-                    async move {
-                        match result {
-                            Ok(bytes) => {
-                                if stream_length.fetch_add(bytes.len(), Ordering::SeqCst)
-                                    > limit_bytes
-                                {
-                                    Err(io_input_error(format!(
-                                        "Input exceeds limit {limit_bytes} bytes"
-                                    )))
-                                } else {
-                                    Ok(bytes)
-                                }
-                            }
-                            Err(e) => Err(e),
-                        }
-                    }
+                    accumulate_stream_size_to_limit(stream_length, limit_bytes, result)
                 }),
         );
 
