@@ -26,14 +26,14 @@ LOGGER.addHandler(logging.StreamHandler(stream=sys.stdout))
 class Args:
     def __init__(self) -> None:
         parser = argparse.ArgumentParser(
-            description="Dump all Docker logs for a given docker-compose project"
+            description="Dump all Docker logs for a given docker compose project"
         )
         parser.add_argument(
             "--compose-project",
             dest="compose_project",
             required=False,
             default=None,
-            help="Docker Compose project. Do not specify if Docker-Compose is not involved (e.g. running against prod)",
+            help="Docker Compose project. Do not specify if Docker Compose is not involved (e.g. running against prod)",
         )
         parser.add_argument(
             "--dump-agent-logs",

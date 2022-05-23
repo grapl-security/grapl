@@ -36,7 +36,13 @@ We currently have tracing enabled for local grapl. Our current backend is
 8. On the top-right, there is a drop-down menu with Trace Timeline selected.
    Clicking on it will provide a few additional options
 
-### Tracing docker buildx bake
+#### Tracing pulumi
+
+To have pulumi send traces to Jaeger run
+`WITH_PULUMI_TRACING=1 make $MAKECOMMND` where $MAKECOMMAND can be `up` or
+`test-e2e`
+
+#### Tracing docker buildx bake
 
 docker buildx supports sending traces to a backend. Since we build prior to
 running Jaeger, you will need to explicitly set Jaeger up, either via running

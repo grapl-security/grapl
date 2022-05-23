@@ -106,14 +106,6 @@ install_docker() {
         sudo usermod -a -G docker "$USER"
     fi
 
-    echo_banner "Install docker-compose (v1, old, Python)"
-    sudo curl --proto "=https" \
-        --tlsv1.2 \
-        --location \
-        --output /usr/local/bin/docker-compose \
-        "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname --kernel-name)-$(uname --machine)"
-    sudo chmod +x /usr/local/bin/docker-compose
-
     echo_banner "Install docker compose (v2, new, Go) CLI plugin"
     user_docker_cli_plugins_dir="${HOME}/.docker/cli-plugins"
     mkdir --parents "${user_docker_cli_plugins_dir}"
