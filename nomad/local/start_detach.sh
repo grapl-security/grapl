@@ -111,6 +111,11 @@ start_nomad_detach() {
                 set -euo pipefail
                 wait_attempt=1
                 while [[ -z \$(vault status 2>&1 | grep Sealed | grep false) ]]; do
+                    if ! ps -p "${vault_agent_pid}" > /dev/null; then
+                        echo "Vault Agent unexpectedly exited?"
+                        exit 42
+                    fi
+
                     echo "Waiting for vault to start [\${wait_attempt}/${wait_secs}]"
                     sleep 1
                     ((wait_attempt=wait_attempt+1))
