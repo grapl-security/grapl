@@ -56,6 +56,7 @@ ensure_valid_env() {
 }
 
 configure_vault() {
+    echo "configure_vault"
     # We're using the root token for the POC of this
     VAULT_TOKEN=$(grep "Root Token" ${VAULT_LOGS_DEST} | awk '{ print $3 }')
     vault secrets enable pki
@@ -64,6 +65,7 @@ configure_vault() {
 }
 
 create_dynamic_consul_config() {
+    echo "create_dynamic_consul_config"
     # clear file if it exist
     if [[ -f "${THIS_DIR}/consul-dynamic-conf.hcl" ]]; then
         rm "${THIS_DIR}/consul-dynamic-conf.hcl"
