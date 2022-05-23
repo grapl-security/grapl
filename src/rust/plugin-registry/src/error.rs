@@ -34,8 +34,6 @@ pub enum PluginRegistryServiceError {
     NomadCliError(#[from] nomad::cli::NomadCliError),
     #[error("NomadJobAllocationError")]
     NomadJobAllocationError,
-    #[error(transparent)]
-    StreamTonicError(#[from] Status),
     #[error("StreamInputError {0}")]
     StreamInputError(&'static str),
     // TODO: These errs are meant to be human-readable and are not directly
@@ -67,7 +65,6 @@ impl From<PluginRegistryServiceError> for Status {
             Error::NomadJobAllocationError => {
                 Status::internal("Unable to allocate Nomad job - it may be out of resources.")
             }
-            Error::StreamTonicError(_) => Status::internal("Unexpected error in Stream RPC"),
             Error::StreamInputError(_) => {
                 Status::invalid_argument("Unexpected input to Stream RPC")
             }

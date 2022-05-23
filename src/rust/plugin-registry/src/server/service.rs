@@ -123,6 +123,8 @@ fn io_input_error(input: impl std::fmt::Display) -> std::io::Error {
     std::io::Error::new(std::io::ErrorKind::InvalidInput, input.to_string())
 }
 
+/// Keep adding the size of an incoming chunk to an AtomicUsize.
+/// Start throwing errors when it exceeds limit.
 async fn accumulate_stream_size_to_limit(
     stream_length: Arc<AtomicUsize>,
     limit: usize,
@@ -153,7 +155,6 @@ impl PluginRegistryApi for PluginRegistry {
 
         let mut request = request;
 
-        tracing::info!("getting metadata");
         let CreatePluginRequestMetadata {
             tenant_id,
             display_name,
@@ -166,30 +167,31 @@ impl PluginRegistryApi for PluginRegistry {
                 ));
             }
         };
-        tracing::info!("got metadata");
 
         let plugin_id = generate_plugin_id();
         let s3_key = generate_artifact_s3_key(plugin_type, &tenant_id, &plugin_id);
 
+        // Convert the incoming request stream of CreatePluginRequest::Chunk
+        // into a stream of Bytes to be sent to Rusoto S3.put_object.
+        let body_stream = request.then(|result| async {
+            match result {
+                CreatePluginRequest::Chunk(c) => Ok(Bytes::from(c)),
+                _ => Err(io_input_error("Expected request 1..N to be Chunk")),
+            }
+        });
+
+        // While Rusoto reads the stream, keep track of total legth of chunks.
+        // Bail out if we exceed the limit specified in the config.
         let limit_bytes = self.config.artifact_size_limit_mb.clone() * 1024 * 1024;
         let stream_length = Arc::new(std::sync::atomic::AtomicUsize::new(0));
         // Get a handle for the Stream to move
         let stream_length_handle = stream_length.clone();
+        let body_stream = body_stream.then(move |result| {
+            accumulate_stream_size_to_limit(stream_length_handle.clone(), limit_bytes, result)
+        });
 
-        // Convert the incoming request stream of CreatePluginRequest::Chunk
-        // into a stream of Bytes to be sent to Rusoto S3.put_object.
-        let body_stream = request
-            .then(|result| async {
-                match result {
-                    CreatePluginRequest::Chunk(c) => Ok(Bytes::from(c)),
-                    _ => Err(io_input_error("Expected request 1..N to be Chunk")),
-                }
-            })
-            .then(move |result| {
-                // Bail out if we've exceeded max size
-                accumulate_stream_size_to_limit(stream_length_handle.clone(), limit_bytes, result)
-            });
-
+        // Send the Stream into Rusoto, which does the actual awaiting of each
+        // future in the Stream.
         self.s3
             .put_object(PutObjectRequest {
                 body: Some(StreamingBody::new(body_stream)),
@@ -200,14 +202,14 @@ impl PluginRegistryApi for PluginRegistry {
             })
             .await?;
 
-        let stream_length: usize = Arc::try_unwrap(stream_length)
-            .expect("Stream has been exhausted by this point")
-            .into_inner();
         // Emit some benchmark info
         {
+            let stream_length: usize = Arc::try_unwrap(stream_length)
+                .expect("Stream has been exhausted by this point")
+                .into_inner();
             let total_duration = std::time::SystemTime::now()
                 .duration_since(start_time)
-                .unwrap();
+                .unwrap_or_default();
 
             tracing::info!(
                 message = "CreatePlugin benchmark",

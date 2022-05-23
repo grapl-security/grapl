@@ -55,16 +55,10 @@ use crate::{
     SerDeError,
 };
 
-// This complicated signature is suggested by Tonic:
-// https://github.com/hyperium/tonic/blob/master/examples/routeguide-tutorial.md#bidirectional-streaming-rpc
-
 /// Implement this trait to define the API business logic
 #[tonic::async_trait]
 pub trait PluginRegistryApi {
-    type Error: Into<Status> + Send;
-    // These two constraints are needed because of the create_plugin streaming API
-    //+ From<SerDeError>
-    //+ From<Status>;
+    type Error: Into<Status>;
 
     async fn create_plugin(
         &self,
@@ -111,7 +105,7 @@ where
         // - one calling the `.create_plugin` handler
         // (with a tx/rx communicating between the two threads)
 
-        let (mut tx, rx) = futures::channel::mpsc::channel(4);
+        let (mut tx, rx) = futures::channel::mpsc::channel(8);
 
         let proto_to_native_thread = async move {
             ({
