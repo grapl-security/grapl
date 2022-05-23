@@ -1,5 +1,4 @@
 use std::{
-    pin::Pin,
     time::Duration,
 };
 
@@ -11,13 +10,11 @@ use futures::{
     },
     Future,
     FutureExt,
-    Stream,
-    StreamExt,
+    StreamExt, SinkExt,
 };
 use proto::plugin_registry_service_server::PluginRegistryService;
 use tokio::{
     net::TcpListener,
-    task::JoinHandle,
 };
 use tokio_stream::wrappers::TcpListenerStream;
 use tonic::{
@@ -66,7 +63,7 @@ use crate::{
 
 /// Implement this trait to define the API business logic
 #[tonic::async_trait]
-pub trait PluginRegistryApi: Clone {
+pub trait PluginRegistryApi {
     type Error: Into<Status> + Send;
     // These two constraints are needed because of the create_plugin streaming API
     //+ From<SerDeError>
@@ -74,7 +71,7 @@ pub trait PluginRegistryApi: Clone {
 
     async fn create_plugin(
         &self,
-        request: ReceiverStream<CreatePluginRequest>,
+        request: futures::channel::mpsc::Receiver<CreatePluginRequest>,
     ) -> Result<CreatePluginResponse, Self::Error>;
 
     async fn get_plugin(&self, request: GetPluginRequest)
@@ -101,12 +98,10 @@ pub trait PluginRegistryApi: Clone {
     ) -> Result<GetAnalyzersForTenantResponse, Self::Error>;
 }
 
-type ReceiverStream<T> = tokio::sync::mpsc::Receiver<T>;
-
 #[tonic::async_trait]
 impl<T> PluginRegistryService for GrpcApi<T>
 where
-    T: PluginRegistryApi + Send + Sync + 'static + Clone,
+    T: PluginRegistryApi + Send + Sync + 'static,
 {
     async fn create_plugin(
         &self,
@@ -114,30 +109,32 @@ where
     ) -> Result<Response<proto::CreatePluginResponse>, tonic::Status> {
         let mut proto_request = request.into_inner();
 
-        let (tx, rx) = tokio::sync::mpsc::channel(4);
+        // Spin up two Futures 
+        // - one converting incoming protobuf requests to Rust-native requests
+        // - one sending those requests to the `.create_plugin` handler.
+        // (with a tx/rx communicating between the two threads)
 
-        let proto_to_native_thread: JoinHandle<Result<(), tonic::Status>> =
-            tokio::spawn(async move {
+        let (mut tx, rx) = futures::channel::mpsc::channel(4);
+
+        let proto_to_native_thread = async move {
+            ({
                 while let Some(req) = proto_request.next().await {
-                    let req: CreatePluginRequest = req?.try_into()?;
-                    tx.send(req).await?;
+                    let req = req?.try_into()?;
+                    tx.send(req).await.map_err(|e| Status::internal(e.to_string()))?;
                 }
-                drop(tx);
                 Ok(())
-            });
+            } as Result<(), Status>)
+        };
 
-        let api_server_clone = self.api_server.clone();
-        let api_handler_thread: JoinHandle<Result<CreatePluginResponse, Status>> = tokio::spawn(
-            async move { api_server_clone.create_plugin(rx).await.map_err(Into::into) },
-        );
+        let api_handler_thread = async move {
+            ({ self.api_server.create_plugin(rx).await.map_err(Into::into) }
+                as Result<CreatePluginResponse, Status>)
+        };
 
         let native_response: CreatePluginResponse =
             match futures::try_join!(proto_to_native_thread, api_handler_thread,) {
-                Ok(res_tuple) => match res_tuple {
-                    (Err(e), _) => Err(e.into()),
-                    (Ok(_), native_result) => Ok(native_result?),
-                },
-                Err(join_err) => Err(Status::internal("Threading error")),
+                Ok((_, native_result)) => Ok(native_result),
+                Err(err) => Err(err),
             }?;
 
         let proto_response = native_response.try_into().map_err(SerDeError::from)?;

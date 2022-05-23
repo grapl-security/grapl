@@ -1,6 +1,5 @@
 use std::{
     net::SocketAddr,
-    pin::Pin,
     sync::{
         atomic::{
             AtomicUsize,
@@ -12,10 +11,7 @@ use std::{
 };
 
 use bytes::Bytes;
-use futures::{
-    Stream,
-    StreamExt,
-};
+use futures::StreamExt;
 use grapl_config::env_helpers::FromEnv;
 use rusoto_s3::{
     GetObjectRequest,
@@ -144,9 +140,6 @@ async fn accumulate_stream_size_to_limit(
     }
 }
 
-type PinnedStream<T> = Pin<Box<dyn Stream<Item = T> + Send + 'static>>;
-type ResultStream<T, E> = PinnedStream<Result<T, E>>;
-
 #[async_trait]
 impl PluginRegistryApi for PluginRegistry {
     type Error = PluginRegistryServiceError;
@@ -154,7 +147,7 @@ impl PluginRegistryApi for PluginRegistry {
     #[tracing::instrument(skip(self, request), err)]
     async fn create_plugin(
         &self,
-        request: ResultStream<CreatePluginRequest, Self::Error>,
+        request: futures::channel::mpsc::Receiver<CreatePluginRequest>,
     ) -> Result<CreatePluginResponse, Self::Error> {
         let start_time = std::time::SystemTime::now();
 
@@ -165,10 +158,7 @@ impl PluginRegistryApi for PluginRegistry {
             display_name,
             plugin_type,
         } = match request.next().await {
-            Some(Ok(CreatePluginRequest::Metadata(m))) => m,
-            Some(Err(e)) => {
-                return Err(e.into());
-            }
+            Some(CreatePluginRequest::Metadata(m)) => m,
             _ => {
                 return Err(Self::Error::StreamInputError(
                     "Expected request 0 to be Metadata",
