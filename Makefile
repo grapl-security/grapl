@@ -334,7 +334,7 @@ test-e2e: ## Build and run e2e tests
 # Think of it as a Context Manager that:
 # - Before test-time, brings up a `make up`
 # - After test-time, tears it all down and dumps artifacts.
-#.SILENT: test-with-env
+.SILENT: test-with-env
 .PHONY: test-with-env
 test-with-env: # (Do not include help text - not to be used directly)
 	stopGrapl() {
@@ -468,7 +468,7 @@ up: build-local-infrastructure _up
 
 # NOTE: Internal target to decouple the building of images from the
 # running of them. Do not invoke this directly.
-#.SILENT: _up
+.SILENT: _up
 .PHONY: _up
 _up:
 	# Primarily used for bringing up an environment for integration testing.

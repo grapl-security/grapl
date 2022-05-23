@@ -56,7 +56,6 @@ ensure_valid_env() {
 }
 
 configure_vault() {
-    echo "configure_vault"
     # We're using the root token for the POC of this
     VAULT_TOKEN=$(grep "Root Token" ${VAULT_LOGS_DEST} | awk '{ print $3 }')
     vault secrets enable pki
@@ -65,7 +64,6 @@ configure_vault() {
 }
 
 create_dynamic_consul_config() {
-    echo "create_dynamic_consul_config"
     # clear file if it exist
     if [[ -f "${THIS_DIR}/consul-dynamic-conf.hcl" ]]; then
         rm "${THIS_DIR}/consul-dynamic-conf.hcl"
@@ -111,9 +109,8 @@ start_nomad_detach() {
         -config="${THIS_DIR}/vault-agent-conf.hcl" \
         -dev > "${VAULT_LOGS_DEST}" 2>&1 &
     local -r vault_agent_pid="$!"
-    echo "starting vault"
     # sanity check
-    # sleep 5
+    sleep 5
 
     # Wait for vault to boot
     export VAULT_ADDR="http://127.0.0.1:8200"
@@ -170,7 +167,6 @@ EOF
                     sleep 1
                     ((wait_attempt=wait_attempt+1))
                 done
-                echo "consul-agent ready"
 EOF
         )"
     )
@@ -204,7 +200,6 @@ EOF
                     sleep 1
                     ((wait_attempt=wait_attempt+1))
                 done
-                echo "nomad-agent ready"
 EOF
         )"
     )
