@@ -113,7 +113,7 @@ start_nomad_detach() {
     local -r vault_agent_pid="$!"
     echo "starting vault"
     # sanity check
-    sleep 5
+    # sleep 5
 
     # Wait for vault to boot
     export VAULT_ADDR="http://127.0.0.1:8200"
