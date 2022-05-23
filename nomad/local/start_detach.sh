@@ -56,25 +56,20 @@ ensure_valid_env() {
 }
 
 configure_vault() {
-    echo "Starting configure_vault"
+    # We're using the root token for the POC of this
     VAULT_TOKEN=$(grep "Root Token" ${VAULT_LOGS_DEST} | awk '{ print $3 }')
-    echo ${VAULT_TOKEN}
     vault secrets enable pki
     # enable intermediate pki
     vault secrets enable -path=pki_int pki
 }
 
 create_dynamic_consul_config() {
-    echo "Starting create_dynamic_consul_config"
-
     # clear file if it exist
     if [[ -f "${THIS_DIR}/consul-dynamic-conf.hcl" ]]; then
         rm "${THIS_DIR}/consul-dynamic-conf.hcl"
     fi
 
     GOSSIP_KEY=$(consul keygen)
-    # We're using the root token for the POC of this
-    #    VAULT_TOKEN=$(grep "Root Token" ${VAULT_LOGS_DEST} | awk '{ print $3 }')
 
     # generate the file
     cat << EOF > "${THIS_DIR}/consul-dynamic-conf.hcl"
@@ -146,8 +141,6 @@ EOF
     configure_vault
     create_dynamic_consul_config
 
-    echo "Starting consul"
-
     # consul should be created prior to nomad to avoid a race condition
     # The client is set to 0.0.0.0 here so that it can be reached via pulumi in docker.
     consul agent \
@@ -213,8 +206,6 @@ EOF
 EOF
         )"
     )
-
-    echo "sleep for 10"
     sleep 10
 
     "${THIS_DIR}/nomad_run_local_infra.sh"
