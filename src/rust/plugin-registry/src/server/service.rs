@@ -153,6 +153,7 @@ impl PluginRegistryApi for PluginRegistry {
 
         let mut request = request;
 
+        tracing::info!("getting metadata");
         let CreatePluginRequestMetadata {
             tenant_id,
             display_name,
@@ -165,6 +166,7 @@ impl PluginRegistryApi for PluginRegistry {
                 ));
             }
         };
+        tracing::info!("got metadata");
 
         let plugin_id = generate_plugin_id();
         let s3_key = generate_artifact_s3_key(plugin_type, &tenant_id, &plugin_id);
@@ -172,25 +174,21 @@ impl PluginRegistryApi for PluginRegistry {
         let limit_bytes = self.config.artifact_size_limit_mb.clone() * 1024 * 1024;
         let stream_length = Arc::new(std::sync::atomic::AtomicUsize::new(0));
         // Get a handle for the Stream to move
-        let closure_stream_length = stream_length.clone();
+        let stream_length_handle = stream_length.clone();
 
         // Convert the incoming request stream of CreatePluginRequest::Chunk
         // into a stream of Bytes to be sent to Rusoto S3.put_object.
-        let body_stream: ResultStream<Bytes, std::io::Error> = Box::pin(
-            request
-                .then(|result| async {
-                    match result {
-                        Ok(CreatePluginRequest::Chunk(c)) => Ok(Bytes::from(c)),
-                        Err(e) => Err(io_input_error(e.to_string())),
-                        _ => Err(io_input_error("Expected request 1..N to be Chunk")),
-                    }
-                })
-                .then(move |result| {
-                    // Bail out if we've exceeded max size
-                    let stream_length = closure_stream_length.clone();
-                    accumulate_stream_size_to_limit(stream_length, limit_bytes, result)
-                }),
-        );
+        let body_stream = request
+            .then(|result| async {
+                match result {
+                    CreatePluginRequest::Chunk(c) => Ok(Bytes::from(c)),
+                    _ => Err(io_input_error("Expected request 1..N to be Chunk")),
+                }
+            })
+            .then(move |result| {
+                // Bail out if we've exceeded max size
+                accumulate_stream_size_to_limit(stream_length_handle.clone(), limit_bytes, result)
+            });
 
         self.s3
             .put_object(PutObjectRequest {

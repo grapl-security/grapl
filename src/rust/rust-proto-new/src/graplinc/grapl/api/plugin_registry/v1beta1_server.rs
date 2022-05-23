@@ -1,6 +1,4 @@
-use std::{
-    time::Duration,
-};
+use std::time::Duration;
 
 use futures::{
     channel::oneshot::{
@@ -10,12 +8,11 @@ use futures::{
     },
     Future,
     FutureExt,
-    StreamExt, SinkExt,
+    SinkExt,
+    StreamExt,
 };
 use proto::plugin_registry_service_server::PluginRegistryService;
-use tokio::{
-    net::TcpListener,
-};
+use tokio::net::TcpListener;
 use tokio_stream::wrappers::TcpListenerStream;
 use tonic::{
     transport::{
@@ -109,9 +106,9 @@ where
     ) -> Result<Response<proto::CreatePluginResponse>, tonic::Status> {
         let mut proto_request = request.into_inner();
 
-        // Spin up two Futures 
+        // Spin up two Futures
         // - one converting incoming protobuf requests to Rust-native requests
-        // - one sending those requests to the `.create_plugin` handler.
+        // - one calling the `.create_plugin` handler
         // (with a tx/rx communicating between the two threads)
 
         let (mut tx, rx) = futures::channel::mpsc::channel(4);
@@ -120,7 +117,9 @@ where
             ({
                 while let Some(req) = proto_request.next().await {
                     let req = req?.try_into()?;
-                    tx.send(req).await.map_err(|e| Status::internal(e.to_string()))?;
+                    tx.send(req)
+                        .await
+                        .map_err(|e| Status::internal(e.to_string()))?;
                 }
                 Ok(())
             } as Result<(), Status>)
