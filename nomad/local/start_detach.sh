@@ -90,8 +90,21 @@ connect {
 EOF
 }
 
+clear_hashicorp_log_files() {
+    if [[ -f "${CONSUL_LOGS_DEST}" ]]; then
+        rm "${CONSUL_LOGS_DEST}"
+    fi
+    if [[ -f "${NOMAD_LOGS_DEST}" ]]; then
+        rm "${NOMAD_LOGS_DEST}"
+    fi
+    if [[ -f "${VAULT_LOGS_DEST}" ]]; then
+        rm "${VAULT_LOGS_DEST}"
+    fi
+}
+
 start_nomad_detach() {
     ensure_valid_env
+    clear_hashicorp_log_files
 
     echo "Starting nomad, vault, and consul locally. Logs @ ${NOMAD_LOGS_DEST}, ${VAULT_LOGS_DEST} and ${CONSUL_LOGS_DEST}."
     # Consul/Nomad/Vault  will run forever until `make down` is invoked."
@@ -99,6 +112,9 @@ start_nomad_detach() {
         -config="${THIS_DIR}/vault-agent-conf.hcl" \
         -dev > "${VAULT_LOGS_DEST}" 2>&1 &
     local -r vault_agent_pid="$!"
+    echo "starting vault"
+    # sanity check
+    sleep 5
 
     # Wait for vault to boot
     export VAULT_ADDR="http://127.0.0.1:8200"
