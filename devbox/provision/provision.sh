@@ -23,7 +23,7 @@ has_key() {
 ########################################
 if [ ! -f build-support/venv/bin/activate ]; then
     echo "Set up your virtualenv with 'build-support/manage_virtualenv.sh'"
-    exit 42
+    exit 49
 fi
 # shellcheck disable=SC1091
 source build-support/venv/bin/activate
@@ -106,7 +106,7 @@ EOF
         echo "'pulumi config set aws:region <value>'"
         echo "Choose well - responsiveness is a genuine concern here!"
         echo "  ex: us-east-2, us-west-2, ap-east-1"
-        exit 42
+        exit 48
     fi
 )
 

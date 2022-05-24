@@ -123,7 +123,7 @@ start_nomad_detach() {
                 while  ! $(vault status &> /dev/null); do
                     if ! ps -p "${vault_agent_pid}" > /dev/null; then
                         echo "Vault Agent unexpectedly exited?"
-                        exit 42
+                        exit 51
                     fi
 
                     echo "Waiting for vault to start [\${wait_attempt}/${attempts}]"
@@ -159,7 +159,7 @@ EOF
                 while [[ -z \$(consul info 2>&1 | grep "leader = true") ]]; do
                     if ! ps -p "${consul_agent_pid}" > /dev/null; then
                         echo "Consul Agent unexpectedly exited?"
-                        exit 42
+                        exit 51
                     fi
 
                     echo "Waiting for consul-agent [\${wait_attempt}/${attempts}]"
@@ -188,7 +188,7 @@ EOF
                 while [[ -z \$(nomad node status 2>&1 | grep ready) ]]; do
                     if ! ps -p "${nomad_agent_pid}" > /dev/null; then
                         echo "Nomad Agent unexpectedly exited?"
-                        exit 42
+                        exit 51
                     fi
 
                     echo "Waiting for nomad-agent [\${wait_attempt}/${attempts}]"
