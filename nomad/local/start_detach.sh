@@ -109,8 +109,6 @@ start_nomad_detach() {
         -config="${THIS_DIR}/vault-agent-conf.hcl" \
         -dev > "${VAULT_LOGS_DEST}" 2>&1 &
     local -r vault_agent_pid="$!"
-    # sanity check
-    sleep 5
 
     # Wait for vault to boot
     export VAULT_ADDR="http://127.0.0.1:8200"
@@ -122,7 +120,8 @@ start_nomad_detach() {
                 # General rule: Variable defined in this EOF? Use \$
                 set -euo pipefail
                 wait_attempt=1
-                while [[ -z \$(vault status 2>&1 | grep Sealed | grep false) ]]; do
+                # vault status returns an exit code of 0 for unsealed (ie ready), 1 for error and 2 for sealed
+                while [[  \$(vault status 2>&1; echo $?) != 0 ]]; do
                     if ! ps -p "${vault_agent_pid}" > /dev/null; then
                         echo "Vault Agent unexpectedly exited?"
                         exit 42
