@@ -117,6 +117,7 @@ start_nomad_detach() {
         # shellcheck disable=SC2016
         timeout --foreground "${wait_secs}" bash -c -- "$(
             cat << EOF
+                # We need to allow non-zero exit codes for vault status
                 set +e
                 # General rule: Variable defined in this EOF? Use \$
                 wait_attempt=1
@@ -135,7 +136,6 @@ start_nomad_detach() {
                     vault_exit_code=\$(vault status &>/dev/null; echo $?)
                 done
                 echo "Vault is ready"
-                sleep 2
 EOF
         )"
     )
