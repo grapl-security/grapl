@@ -110,7 +110,7 @@ start_nomad_detach() {
     # Wait for vault to boot
     export VAULT_ADDR="http://127.0.0.1:8200"
     (
-        readonly wait_secs=30
+        readonly wait_secs=15
         # shellcheck disable=SC2016
         timeout --foreground "${wait_secs}" bash -c -- "$(
             cat << EOF
@@ -133,7 +133,7 @@ start_nomad_detach() {
                     vault_exit_code=\$(vault status &>/dev/null; echo $?)
                 done
                 echo "Vault is _almost_ ready. Give it a sec..."
-                # Even though vault status says we're ready, its not ready to accept api calls yet
+                # Vault status says vault is ready. LIES! Vault is not ready to accept api calls yet
                 sleep 2
 EOF
         )"
