@@ -2,9 +2,6 @@
 
 set -euo pipefail
 
-# Set versions
-PYENV_PYTHON_VERSION="3.7.10"
-
 # We're starting to use this  script for more than chromebooks. As such we're starting to make this
 # architecture-independent, so that in the future we can use it for AWS graviton instances, which are significantly
 # more cost-effective, especially the metal ones.
@@ -145,7 +142,7 @@ install_rust_and_utilities() {
 }
 
 install_pyenv() {
-    echo_banner "Install pyenv and set python version to ${PYENV_PYTHON_VERSION}"
+    echo_banner "Install pyenv"
     sudo apt-get install --yes make libssl-dev zlib1g-dev libbz2-dev \
         libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
         xz-utils tk-dev libffi-dev liblzma-dev python3-dev
@@ -189,9 +186,10 @@ install_pyenv() {
     fi
 
     source_profile
-    pyenv install --skip-existing "${PYENV_PYTHON_VERSION}"
-    pyenv global "${PYENV_PYTHON_VERSION}"
-
+    pyenv install --skip-existing
+    # Sets global Python to the same thing that is configured in
+    # .python-version in this repository
+    pyenv global "$(pyenv local)"
 }
 
 install_pipx() {
