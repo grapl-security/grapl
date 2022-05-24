@@ -205,7 +205,6 @@ EOF
 EOF
         )"
     )
-    sleep 10
 
     "${THIS_DIR}/nomad_run_local_infra.sh"
     echo "Deployment complete"
