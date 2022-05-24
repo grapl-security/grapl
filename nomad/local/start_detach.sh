@@ -118,10 +118,9 @@ start_nomad_detach() {
                 set +e
                 # General rule: Variable defined in this EOF? Use \$
                 wait_attempt=1
-                # vault status returns an exit code of 0 for unsealed (ie ready), 1 for error and 2 for sealed
+                # vault status returns an exit code of 0 for unsealed, 1 for error and 2 for sealed
                 # Since we only want to capture the exit code, we need to drop all output from the command
-                vault_exit_code=\$(vault status &>/dev/null; echo $?)
-                while [[  \${vault_exit_code} != 0 ]]; do
+                while  ! $(vault status &> /dev/null); do
                     if ! ps -p "${vault_agent_pid}" > /dev/null; then
                         echo "Vault Agent unexpectedly exited?"
                         exit 42
@@ -130,13 +129,11 @@ start_nomad_detach() {
                     echo "Waiting for vault to start [\${wait_attempt}/${wait_secs}]"
                     sleep 1
                     ((wait_attempt=wait_attempt+1))
-                    vault_exit_code=\$(vault status &>/dev/null; echo $?)
                 done
-                echo "Vault is _almost_ ready. Give it a sec..."
-                # Vault status says vault is ready. LIES! Vault is not ready to accept api calls yet
-                sleep 2
 EOF
         )"
+        # Vault is unsealed, but not yet initialized. We need to give it a sec to fully bootstrap
+        sleep 2
     )
 
     configure_vault
