@@ -54,7 +54,7 @@ if DRY_RUN=1 rsync_wrapper; then
     echo "(Enter or Ctrl-C)"
     read -r
 else
-    exit 42
+    exit 46
 fi
 
 rsync_wrapper
