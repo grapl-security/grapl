@@ -30,7 +30,7 @@ if ! rsync --archive "${rsync_progress_args[@]}" \
     # TODO in the future: maybe throw an `aws s3 ls` in or something to detect
     # that the cause is indeed AWS
     echo_h1 "$(bright_red "It looks like devbox-sync failed. Maybe you need to 'aws sso login'?")"
-    exit 42
+    exit 45
 fi
 
 readonly LOW_SPACE_WARNING_LIMIT_GB=5
