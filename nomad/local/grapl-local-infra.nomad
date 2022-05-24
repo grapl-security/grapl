@@ -152,8 +152,11 @@ job "grapl-local-infra" {
       driver = "docker"
 
       config {
-        # Once we move to Kafka, we can go back to the non-fork.
-        image = "localstack-grapl-fork:${var.image_tag}"
+        # https://github.com/localstack/localstack/issues/5824
+        # The bugfix we need is only available post-14.3 in latest starting May 23
+        # Hence pinning by sha, not tag
+        image = "localstack/localstack-light@sha256:a64dbc0b4e05f3647d8f1a09eb743e3d213402312858fb4146a7571a4a4ee6be"
+
         # Was running into this: https://github.com/localstack/localstack/issues/1349
         memory_hard_limit = 2048
         ports             = ["localstack"]
@@ -161,10 +164,9 @@ job "grapl-local-infra" {
       }
 
       env {
-        DEBUG        = 1
-        EDGE_PORT    = var.localstack_port
-        SERVICES     = "dynamodb,ec2,iam,s3,secretsmanager,sns,sqs"
-        SQS_PROVIDER = "elasticmq"
+        DEBUG     = 1
+        EDGE_PORT = var.localstack_port
+        SERVICES  = "dynamodb,ec2,iam,s3,secretsmanager,sns,sqs"
 
         # These are used by the health check below; "test" is the
         # default value for these credentials in Localstack.
