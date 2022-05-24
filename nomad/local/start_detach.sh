@@ -113,7 +113,7 @@ start_nomad_detach() {
     # Wait for vault to boot
     export VAULT_ADDR="http://127.0.0.1:8200"
     (
-        readonly wait_secs=10
+        readonly wait_secs=30
         # shellcheck disable=SC2016
         timeout --foreground "${wait_secs}" bash -c -- "$(
             cat << EOF
@@ -121,7 +121,9 @@ start_nomad_detach() {
                 set -euo pipefail
                 wait_attempt=1
                 # vault status returns an exit code of 0 for unsealed (ie ready), 1 for error and 2 for sealed
-                while [[  \$(vault status 2>&1; echo $?) != 0 ]]; do
+                # Since we only want to capture the exit code, we need to drop all output from the command
+                vault_exit_code=\$(vault status &>/dev/null; echo $?)
+                while [[  \${vault_exit_code} != 0 ]]; do
                     if ! ps -p "${vault_agent_pid}" > /dev/null; then
                         echo "Vault Agent unexpectedly exited?"
                         exit 42
@@ -130,8 +132,8 @@ start_nomad_detach() {
                     echo "Waiting for vault to start [\${wait_attempt}/${wait_secs}]"
                     sleep 1
                     ((wait_attempt=wait_attempt+1))
+                    vault_exit_code=\$(vault status &>/dev/null; echo $?)
                 done
-                sleep 2
 EOF
         )"
     )
