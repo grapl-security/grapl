@@ -118,7 +118,6 @@ start_nomad_detach() {
         timeout --foreground "${wait_secs}" bash -c -- "$(
             cat << EOF
                 # General rule: Variable defined in this EOF? Use \$
-                set -euo pipefail
                 wait_attempt=1
                 # vault status returns an exit code of 0 for unsealed (ie ready), 1 for error and 2 for sealed
                 # Since we only want to capture the exit code, we need to drop all output from the command
