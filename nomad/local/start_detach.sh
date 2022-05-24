@@ -110,9 +110,9 @@ start_nomad_detach() {
     # Wait for vault to boot
     export VAULT_ADDR="http://127.0.0.1:8200"
     (
-        readonly wait_secs=15
+        readonly attempts=15
         # shellcheck disable=SC2016
-        timeout --foreground "${wait_secs}" bash -c -- "$(
+        timeout --foreground "${attempts}" bash -c -- "$(
             cat << EOF
                 # We need to allow non-zero exit codes for vault status
                 set +e
@@ -126,7 +126,7 @@ start_nomad_detach() {
                         exit 42
                     fi
 
-                    echo "Waiting for vault to start [\${wait_attempt}/${wait_secs}]"
+                    echo "Waiting for vault to start [\${wait_attempt}/${attempts}]"
                     sleep 1
                     ((wait_attempt=wait_attempt+1))
                 done
