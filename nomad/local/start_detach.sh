@@ -135,7 +135,9 @@ start_nomad_detach() {
                     ((wait_attempt=wait_attempt+1))
                     vault_exit_code=\$(vault status &>/dev/null; echo $?)
                 done
-                echo "Vault is ready"
+                echo "Vault is _almost_ ready. Give it a sec..."
+                # Even though vault status says we're ready, its not ready to accept api calls yet
+                sleep 2
 EOF
         )"
     )
