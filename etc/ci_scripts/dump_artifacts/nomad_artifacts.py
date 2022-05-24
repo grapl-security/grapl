@@ -55,12 +55,14 @@ def dump_all(artifacts_dir: Path, dump_agent_logs: bool) -> None:
 
 
 def _dump_hashicorp_agent_logs(artifacts_dir: Path) -> None:
-    if os.path.exists(nomad_agent_log_path):
-        shutil.copy2(nomad_agent_log_path, artifacts_dir)
-    if os.path.exists(consul_agent_log_path):
-        shutil.copy2(consul_agent_log_path, artifacts_dir)
-    if os.path.exists(vault_agent_log_path):
-        shutil.copy2(vault_agent_log_path, artifacts_dir)
+    hashicorp_log_paths = [
+        nomad_agent_log_path,
+        consul_agent_log_path,
+        vault_agent_log_path,
+    ]
+    for log_path in hashicorp_log_paths:
+        if os.path.exists(log_path):
+            shutil.copy2(log_path, artifacts_dir)
 
 
 @dataclasses.dataclass
