@@ -88,15 +88,12 @@ EOF
 }
 
 clear_hashicorp_log_files() {
-    if [[ -f "${CONSUL_LOGS_DEST}" ]]; then
-        rm "${CONSUL_LOGS_DEST}"
-    fi
-    if [[ -f "${NOMAD_LOGS_DEST}" ]]; then
-        rm "${NOMAD_LOGS_DEST}"
-    fi
-    if [[ -f "${VAULT_LOGS_DEST}" ]]; then
-        rm "${VAULT_LOGS_DEST}"
-    fi
+    declare -a HASHICORP_LOGS_DESTINATIONS=(CONSUL_LOGS_DEST NOMAD_LOGS_DEST VAULT_LOGS_DEST)
+    for LOG_DEST in "${HASHICORP_LOGS_DESTINATIONS[@]}"; do
+        if [[ -f "${LOG_DEST}" ]]; then
+            rm "${LOG_DEST}"
+        fi
+    done
 }
 
 start_nomad_detach() {
