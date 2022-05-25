@@ -1,6 +1,9 @@
 use rusoto_s3::{
+    AbortMultipartUploadError,
+    CompleteMultipartUploadError,
+    CreateMultipartUploadError,
     GetObjectError,
-    CreateMultipartUploadError, UploadPartError, AbortMultipartUploadError, CompleteMultipartUploadError,
+    UploadPartError,
 };
 use rust_proto_new::{
     protocol::status::Status,

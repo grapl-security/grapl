@@ -1,24 +1,17 @@
 use std::{
     net::SocketAddr,
-    sync::{
-        atomic::{
-            AtomicUsize,
-            Ordering,
-        },
-        Arc,
-    },
     time::Duration,
 };
 
-use bytes::Bytes;
 use futures::StreamExt;
 use grapl_config::env_helpers::FromEnv;
 use rusoto_s3::{
-    GetObjectRequest,
     CreateMultipartUploadRequest,
+    GetObjectRequest,
     S3Client,
+    StreamingBody,
     UploadPartRequest,
-    S3, StreamingBody,
+    S3,
 };
 use rust_proto_new::{
     graplinc::grapl::api::plugin_registry::v1beta1::{
@@ -57,7 +50,10 @@ use crate::{
         models::PluginRow,
         serde::try_from,
     },
-    error::{PluginRegistryServiceError, S3PutError},
+    error::{
+        PluginRegistryServiceError,
+        S3PutError,
+    },
     nomad::{
         cli::NomadCli,
         client::NomadClient,
@@ -119,29 +115,6 @@ pub struct PluginRegistry {
     config: PluginRegistryServiceConfig,
 }
 
-fn io_input_error(input: impl std::fmt::Display) -> std::io::Error {
-    std::io::Error::new(std::io::ErrorKind::InvalidInput, input.to_string())
-}
-
-/// Keep adding the size of an incoming chunk to an AtomicUsize.
-/// Start throwing errors when it exceeds limit.
-async fn accumulate_stream_size_to_limit(
-    stream_length: Arc<AtomicUsize>,
-    limit: usize,
-    result: Result<Bytes, std::io::Error>,
-) -> Result<Bytes, std::io::Error> {
-    match result {
-        Ok(bytes) => {
-            if stream_length.fetch_add(bytes.len(), Ordering::SeqCst) > limit {
-                Err(io_input_error(format!("Input exceeds limit {limit} bytes")))
-            } else {
-                Ok(bytes)
-            }
-        }
-        Err(e) => Err(e),
-    }
-}
-
 #[async_trait]
 impl PluginRegistryApi for PluginRegistry {
     type Error = PluginRegistryServiceError;
@@ -171,68 +144,50 @@ impl PluginRegistryApi for PluginRegistry {
         let plugin_id = generate_plugin_id();
         let s3_key = generate_artifact_s3_key(plugin_type, &tenant_id, &plugin_id);
 
-        // Convert the incoming request stream of CreatePluginRequest::Chunk
-        // into a stream of Bytes to be sent to Rusoto S3.put_object.
-        let body_stream = request.then(|result| async {
-            match result {
-                CreatePluginRequest::Chunk(c) => Ok(Bytes::from(c)),
-                _ => Err(io_input_error("Expected request 1..N to be Chunk")),
-            }
-        });
-
-        // While Rusoto reads the stream, keep track of total legth of chunks.
-        // Bail out if we exceed the limit specified in the config.
-        let limit_bytes = self.config.artifact_size_limit_mb.clone() * 1024 * 1024;
-        let stream_length = Arc::new(std::sync::atomic::AtomicUsize::new(0));
-        // Get a handle for the Stream to move
-        let stream_length_handle = stream_length.clone();
-        let body_stream = body_stream.then(move |result| {
-            accumulate_stream_size_to_limit(stream_length_handle.clone(), limit_bytes, result)
-        });
-
-        let put_handle = self.s3.create_multipart_upload(
-            CreateMultipartUploadRequest{
-                bucket: self.config.bucket_name.clone(),
-                key: s3_key.clone(),
-                expected_bucket_owner: Some(self.config.bucket_aws_account_id.clone()),
-                ..Default::default()
-            }
-        ).await.map_err(S3PutError::from)?;
-        let upload_id = put_handle.upload_id.expect("upload id");
-
-        let body_stream = body_stream.enumerate();
-        body_stream.for_each(|(idx, result)| async {
-            self.s3.upload_part(
-                UploadPartRequest{
-                    body: StreamingBody::new(result),
-                    bucket: self.config.bucket_name.clone(),
-                    key: s3_key.clone(),
-                    expected_bucket_owner: Some(self.config.bucket_aws_account_id.clone()),
-                    upload_id: upload_id.clone(),
-                    part_number: idx,
-                }
-            );
-        });
-
-        // Send the Stream into Rusoto, which does the actual awaiting of each
-        // future in the Stream.
-        /*
-        self.s3
-            .put_object(PutObjectRequest {
-                body: Some(StreamingBody::new(body_stream)),
+        let put_handle = self
+            .s3
+            .create_multipart_upload(CreateMultipartUploadRequest {
                 bucket: self.config.bucket_name.clone(),
                 key: s3_key.clone(),
                 expected_bucket_owner: Some(self.config.bucket_aws_account_id.clone()),
                 ..Default::default()
             })
-            .await?;
-        */
+            .await
+            .map_err(S3PutError::from)?;
+        let upload_id = put_handle.upload_id.expect("upload id");
+
+        let limit_bytes = self.config.artifact_size_limit_mb.clone() * 1024 * 1024;
+        let mut stream_length = 0;
+
+        let mut body_stream = Box::pin(request.enumerate());
+        while let Some((idx, result)) = body_stream.next().await {
+            let bytes = match result {
+                CreatePluginRequest::Chunk(c) => Ok(c),
+                _ => Err(Self::Error::StreamInputError(
+                    "Expected request 1..N to be Chunk",
+                )),
+            }?;
+            stream_length += bytes.len();
+            if stream_length > limit_bytes {
+                Err(Self::Error::StreamInputError("Input exceeds size limit"))?;
+            }
+
+            self.s3
+                .upload_part(UploadPartRequest {
+                    body: Some(StreamingBody::from(bytes)),
+                    bucket: self.config.bucket_name.clone(),
+                    key: s3_key.clone(),
+                    expected_bucket_owner: Some(self.config.bucket_aws_account_id.clone()),
+                    upload_id: upload_id.clone(),
+                    part_number: idx as i64,
+                    ..Default::default()
+                })
+                .await
+                .map_err(S3PutError::from)?;
+        }
 
         // Emit some benchmark info
         {
-            let stream_length: usize = Arc::try_unwrap(stream_length)
-                .expect("Stream has been exhausted by this point")
-                .into_inner();
             let total_duration = std::time::SystemTime::now()
                 .duration_since(start_time)
                 .unwrap_or_default();
@@ -241,7 +196,7 @@ impl PluginRegistryApi for PluginRegistry {
                 message = "CreatePlugin benchmark",
                 display_name = ?display_name,
                 duration_millis = ?total_duration.as_millis(),
-                size_mb = stream_length / (1024 * 1024)
+                stream_length_bytes = stream_length,
             );
         }
 
