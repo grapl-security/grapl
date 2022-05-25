@@ -26,67 +26,82 @@ pub fn generate_process_create_subgraph(
     let timestamp = event_data.utc_time.timestamp_millis();
     let mut graph = GraphDescription::new();
 
-    let mut machine = MachineNode::new(MachineNode::static_strategy());
-    machine
-        .with_machine_id(&system.computer)
-        .with_hostname(&system.computer);
+    let asset = AssetNode::from(system);
 
-    let mut process = ProcessNode::new(ProcessNode::static_strategy());
-    process
+    let mut new_process = ProcessNode::new(ProcessNode::static_strategy());
+    new_process
         .with_pid(event_data.parent_process_id as i64)
         .with_guid(event_data.process_guid.to_string())
-        .with_created_timestamp(timestamp)
-        .with_cmdline(&event_data.command_line)
-        .with_image(&event_data.image)
-        .with_current_directory(&event_data.current_directory)
-        .with_user(&event_data.user);
+        .with_exe(&event_data.image);
 
     let mut parent = ProcessNode::new(ProcessNode::static_strategy());
     parent
         .with_pid(event_data.parent_process_id as i64)
         .with_guid(event_data.parent_process_guid.to_string())
-        .with_cmdline(&event_data.parent_command_line)
-        .with_image(&event_data.parent_image);
+        .with_exe(&event_data.parent_image);
 
-    let mut process_image = FileNode::new(FileNode::static_strategy());
-    process_image
-        .with_machine_id(&system.computer)
+    let mut process_spawn = ProcessSpawnNode::new(ProcessSpawnNode::static_strategy());
+    process_spawn
+        .with_timestamp(timestamp)
+        .with_cmdline(&event_data.command_line)
+        .with_current_directory(&event_data.current_directory)
+        .with_user(&event_data.user)
+        // identity-only fields
+        .with_parent_guid(event_data.parent_process_guid.to_string())
+        .with_child_guid(event_data.process_guid.to_string());
+
+    let mut process_exe = FileNode::new(FileNode::static_strategy());
+    process_exe
+        .with_asset_id(&system.computer)
         .with_path(&event_data.image);
 
     graph.add_edge(
-        "machine_process",
-        machine.clone_node_key(),
-        process.clone_node_key(),
+        "asset_processes",
+        asset.clone_node_key(),
+        new_process.clone_node_key(),
     );
 
     graph.add_edge(
-        "machine_process",
-        machine.clone_node_key(),
+        "asset_processes",
+        asset.clone_node_key(),
         parent.clone_node_key(),
     );
 
     graph.add_edge(
-        "process_image",
-        process.clone_node_key(),
-        process_image.clone_node_key(),
+        "process_exe",
+        new_process.clone_node_key(),
+        process_exe.clone_node_key(),
     );
 
     graph.add_edge(
-        "machine_files",
-        machine.clone_node_key(),
-        process_image.clone_node_key(),
+        "asset_files",
+        asset.clone_node_key(),
+        process_exe.clone_node_key(),
     );
 
     graph.add_edge(
         "children",
         parent.clone_node_key(),
-        process.clone_node_key(),
+        new_process.clone_node_key(),
     );
 
-    graph.add_node(machine);
+    graph.add_edge(
+        "spawned_a",
+        parent.clone_node_key(),
+        process_spawn.clone_node_key(),
+    );
+
+    graph.add_edge(
+        "spawned_b",
+        process_spawn.clone_node_key(),
+        new_process.clone_node_key(),
+    );
+
+    graph.add_node(asset);
     graph.add_node(parent);
-    graph.add_node(process);
-    graph.add_node(process_image);
+    graph.add_node(new_process);
+    graph.add_node(process_exe);
+    graph.add_node(process_spawn);
 
     graph
 }

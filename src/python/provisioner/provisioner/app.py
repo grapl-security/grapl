@@ -8,12 +8,16 @@ from typing import TYPE_CHECKING
 import boto3
 from argon2 import PasswordHasher
 from grapl_analyzerlib.prelude import (  # AssetSchema,; FileSchema,; IpAddressSchema,; IpConnectionSchema,; IpPortSchema,; NetworkConnectionSchema,; ProcessInboundConnectionSchema,; ProcessOutboundConnectionSchema,; ProcessSchema,
-    FileSchema,
     GraphClient,
     LensSchema,
-    MachineSchema,
+    AssetSchema,
+    FileSchema,
     NetworkSocketAddressSchema,
     ProcessSchema,
+    ProcessSpawnSchema,
+    TcpConnectionSchema,
+    IpV4Address,
+    IpV6Address,
     RiskSchema,
 )
 from grapl_analyzerlib.provision import provision_common

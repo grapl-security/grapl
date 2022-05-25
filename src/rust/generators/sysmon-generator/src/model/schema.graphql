@@ -1,57 +1,128 @@
+
+# 'exe' is not required because in the event we want to create a process
+# node after missing the creation event, and the exe has since been unlinked
 type Process @grapl(identity_algorithm: "static") {
     pid: Int! @immutable,
     guid: String! @static_id,
-    created_timestamp: Int! @immutable,
-    cmdline: String! @immutable,
-    image: String! @immutable,
-    current_directory: String! @immutable,
-    user: String! @immutable,
+    # created_timestamp: Int! @immutable,
+    # cmdline: String! @immutable,
+    exe: String @immutable,
+    # current_directory: String! @immutable,
+    # created_as_user: String! @immutable,
 
     children: [Process] @edge(reverse: "parent", reverse_relationship: "ToMany"),
     parent: [Process] @edge(reverse: "children", reverse_relationship: "ToMany"),
+    
+    spawned_a: [ProcessSpawn] @edge(reverse: "spawned_by_a", reverse_relationship: "ToMany"),
+    spawned_by_b: [ProcessSpawn] @edge(reverse: "spawned_b", reverse_relationship: "ToMany"),
 
-    process_image: [File!] @edge(reverse: "process_executed_from_image", reverse_relationship: "ToMany"),
+    process_exe: [File!] @edge(reverse: "process_executed_from_exe", reverse_relationship: "ToMany"),
 
     created_files: [File] @edge(reverse: "created_by_process", reverse_relationship: "ToMany"),
 
-    process_executed_by_machine: [Machine] @edge(reverse: "machine_process", reverse_relationship: "ToMany"),
+    process_executed_by_asset: [Asset] @edge(reverse: "asset_processes", reverse_relationship: "ToMany"),
 
-    process_connected_to: [NetworkSocketAddress] @edge(reverse: "connection_from_process", reverse_relationship: "ToMany"),
+    # process_connected_to: [NetworkSocketAddress] @edge(reverse: "connection_from_process", reverse_relationship: "ToMany"),
 
-    process_connected_via: [NetworkSocketAddress] @edge(reverse: "connection_from_process_via", reverse_relationship: "ToMany"),
+    # process_connected_via: [NetworkSocketAddress] @edge(reverse: "connection_from_process_via", reverse_relationship: "ToMany"),
+
+    process_socket_outbound: [NetworkSocketAddress] @edge(reverse: "socket_process_outbound", reverse_relationship: "ToMany"),
+    process_socket_inbound: [NetworkSocketAddress] @edge(reverse: "socket_process_inbound", reverse_relationship: "ToMany"),
 }
 
+type ProcessSpawn @grapl(identity_algorithm: "static") {
+    timestamp: Int! @immutable,
+    uid: Int @immutable,
+    # i hate that we need this for Sysmon for Linux.. 
+    user: String @immutable,
+    # exe: String! @immutable,
+    cmdline: String! @immutable,    
+    current_directory: String! @immutable,
+
+    # identity-only
+    parent_guid: String! @static_id,
+    child_guid: String! @static_id,
+
+    spawned_b: [Process] @edge(reverse: "spawned_by_b", reverse_relationship: "ToMany"),
+    spawned_by_a: [Process] @edge(reverse: "spawned_a", reverse_relationship: "ToMany"),
+}
+
+# # Process and ProcessSpawn would have an edge to this thing.
+# type LikeUmProcessSnapshotforNOW {
+#     timestamp: Int! @immutable,
+#     uid: Int! @immutable,
+#     guid: String! @static_id,
+
+#     exe: String! @immutable,
+#     cmdline: String! @immutable,    
+#     current_directory: String! @immutable,
+
+
+# }
+
+# type WindowsProcessDetails {
+
+# }
+
+# type LinuxProcessDetails {
+
+# }
+
+# Action
+# A process has a number of UIDs (RUID, EUID, SUID), which can change over the lifetime of the process
+# so having a UID field as part of the process itself doesn't mean much, unless say it referred to the 
+# real uid when the process was created. But at that point, we might as well just make that a field of
+# the 'spawn' action, which leaves room for expansion of a 'set*uid' action node.
+
+# This is the ProcessSpawn I want to write.
+# maybe include capability sets..
+# type ProcessSpawn @grapl(identity_algorithm: "static") {
+#     timestamp: Int! @immutable,
+#     real_uid: Int! @immutable,
+#     real_gid: Int! @immutable,
+
+#     # identity-only
+#     parent_guid: String! @static_id,
+#     child_guid: String! @static_id,
+
+#     spawned_by: [Process] @edge(reverse: "parent", reverse_relationship: "ToMany"),
+# }
+
 type File @grapl(identity_algorithm: "static") {
-    machine_id: String! @static_id,
+    asset_id: String! @static_id,
     path: String! @static_id,
 
-    process_executed_from_image: [Process] @edge(reverse: "process_image", reverse_relationship: "ToMany"),
+    process_executed_from_exe: [Process] @edge(reverse: "process_exe", reverse_relationship: "ToMany"),
 
     created_by_process: [Process] @edge(reverse: "created_files", reverse_relationship: "ToMany"),
 
-    file_on_machine: [Machine] @edge(reverse: "machine_files", reverse_relationship: "ToMany"),
+    file_on_asset: [Asset] @edge(reverse: "asset_files", reverse_relationship: "ToMany"),
 }
 
-type Machine @grapl(identity_algorithm: "static") {
-    machine_id: String! @static_id,
+type Asset @grapl(identity_algorithm: "static") {
+    asset_id: String! @static_id,
     hostname: String! @immutable,
     os: String! @immutable,
 
-    machine_process: [Process] @edge(reverse: "process_executed_by_machine", reverse_relationship: "ToMany"),
+    asset_processes: [Process] @edge(reverse: "process_executed_by_asset", reverse_relationship: "ToMany"),
 
-    machine_files: [File] @edge(reverse: "file_on_machine", reverse_relationship: "ToMany"),
+    asset_files: [File] @edge(reverse: "file_on_asset", reverse_relationship: "ToMany"),
 }
 
 type NetworkSocketAddress @grapl(identity_algorithm: "static") {
     transport_protocol: String! @static_id,
+    port_number: Int! @static_id,
+    # identity-only fields
     ip_address: String! @static_id,
-    port_number: String! @static_id,
 
-    network_connection_to_a: [TcpConnection] @edge(reverse: "network_connection_from", reverse_relationship: "ToMany"),
-    network_connection_from_a: [TcpConnection] @edge(reverse: "network_connection_to", reverse_relationship: "ToMany"),
+    socket_ipv4_address: [IpV4Address] @edge(reverse: "network_sockets_ipv4", reverse_relationship: "ToMany"),
+    socket_ipv6_address: [IpV6Address] @edge(reverse: "network_sockets_ipv6", reverse_relationship: "ToMany"),
 
-    connection_from_process: [Process] @edge(reverse: "process_connected_to", reverse_relationship: "ToMany"),
-    connection_from_process_via: [Process] @edge(reverse: "process_connected_via", reverse_relationship: "ToMany"),
+    tcp_connection_to_a: [TcpConnection] @edge(reverse: "tcp_connection_from_b", reverse_relationship: "ToMany"),
+    tcp_connection_from_a: [TcpConnection] @edge(reverse: "tcp_connection_to_b", reverse_relationship: "ToMany"),
+
+    socket_process_outbound: [Process] @edge(reverse: "process_socket_outbound", reverse_relationship: "ToMany"),
+    socket_process_inbound: [Process] @edge(reverse: "process_socket_inbound", reverse_relationship: "ToMany"),
 }
 
 # "connection" makes sense for TCP and SCTP, but not so much for UDP.
@@ -61,7 +132,7 @@ type NetworkSocketAddress @grapl(identity_algorithm: "static") {
 
 
 # Notes:
-#   1. Sysmon only reports UDP traffic when it hasn't seen between two addresses in the last thiry minutes
+#   1. Sysmon only reports UDP traffic when it hasn't seen between two addresses in the last thirty minutes
 #     a. https://github.com/Sysinternals/SysmonForLinux/blob/main/ebpfKern/sysmonUDPrecv.c#L101
 #     b. https://github.com/Sysinternals/SysmonForLinux/blob/9f1b2dac1ad710bc82adf8d22454f5662e22a79a/sysmon_defs.h#L72
 # 
@@ -75,9 +146,53 @@ type NetworkSocketAddress @grapl(identity_algorithm: "static") {
 # though they refer to the same connection. Maybe this is fine and we don't have to worry about it.
 # Depends.
 
+# use initial sequence number for uniquely identifying a tcp connection across two observation points.
+
+# document the whole diamond pattern that would result from TCP connections from two different assets.
+
 type TcpConnection @grapl(identity_algorithm: "static") {
     created_timestamp: Int! @static_id,
 
-    network_connection_to_b: [NetworkSocketAddress] @edge(reverse: "network_connection_from", reverse_relationship: "ToMany"),
-    network_connection_from_a: [NetworkSocketAddress] @edge(reverse: "network_connection_to", reverse_relationship: "ToMany"),
+    # identity-only fields
+    src_port: Int! @static_id,
+    dst_port: Int! @static_id,
+    src_ip_address: String! @static_id,
+    dst_ip_address: String! @static_id,
+    transport_protocol: String! @static_id,
+    # the process the did the thing
+    process_guid: String! @static_id,
+
+    tcp_connection_to_b: [NetworkSocketAddress] @edge(reverse: "tcp_connection_from_a", reverse_relationship: "ToMany"),
+    tcp_connection_from_b: [NetworkSocketAddress] @edge(reverse: "tcp_connection_to_a", reverse_relationship: "ToMany"),
 }
+
+# because both IP address nodes are just one String field at this point, they could be consolidated.
+# However, we won't want to do that in the future, so we're going to experiment with having the two,
+# which should be exclusive.
+type IpV4Address @grapl(identity_algorithm: "static") {
+    address: String! @static_id,
+
+    network_sockets_ipv4: [NetworkSocketAddress] @edge(reverse: "socket_ipv4_address", reverse_relationship: "ToMany"),
+}
+
+type IpV6Address @grapl(identity_algorithm: "static") {
+    address: String! @static_id,
+
+    network_sockets_ipv6: [NetworkSocketAddress] @edge(reverse: "socket_ipv6_address", reverse_relationship: "ToMany"),
+}
+
+# type TcpPort @grapl(identity_algorithm: "static") {
+#     number: Int! @static_id,
+# }
+
+# 
+# type UdpConnection @grapl(identity_algorithm: "static") {
+#     first_seen_timestamp: 
+#     last_seen_timestamp:
+#     # bytes_count? can we do this?
+
+#     # identity-only fields
+#     process_guid: 
+#     src: NetworkSocketAddress @edge(reverse: "udp_data_sent_to", reverse_relationship: "ToMany"),
+#     dst: NetworkSocketAddress @edge(reverse: "udp_data_sent_from", reverse_relationship: "ToMany"),
+# }

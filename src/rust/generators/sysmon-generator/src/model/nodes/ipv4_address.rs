@@ -5,16 +5,12 @@ use derive_dynamic_node::{
 use rust_proto::graph_descriptions::*;
 
 #[derive(Debug, Clone, PartialEq, Hash, NodeDescription, GraplStaticId)]
-struct Machine {
+struct IpV4Address {
     #[grapl(static_id, immutable)]
-    machine_id: String,
-    #[grapl(immutable)]
-    hostname: String,
-    #[grapl(immutable)]
-    os: String,
+    address: String,
 }
 
-impl IMachineNode for MachineNode {
+impl IIpV4AddressNode for IpV4AddressNode {
     fn get_mut_dynamic_node(&mut self) -> &mut NodeDescription {
         &mut self.dynamic_node
     }

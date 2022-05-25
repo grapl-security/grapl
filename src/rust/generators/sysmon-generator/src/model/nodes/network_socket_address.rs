@@ -9,9 +9,11 @@ struct NetworkSocketAddress {
     #[grapl(static_id, immutable)]
     transport_protocol: String,
     #[grapl(static_id, immutable)]
-    ip_address: String,
-    #[grapl(static_id, immutable)]
     port_number: i64,
+
+    // identity-only fields
+    #[grapl(static_id, immutable)]
+    ip_address: String,
 }
 
 impl INetworkSocketAddressNode for NetworkSocketAddressNode {
