@@ -4,8 +4,16 @@ version = "1.0.0"
 authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2021"
 
+[lib]
+name = "node_identifier"
+path = "src/lib.rs"
+
+[[bin]]
+name = "node-identifier"
+path = "src/main.rs"
+
 [features]
-integration = []
+new_integration_tests = []
 
 [dependencies]
 bytes = "1.1.0"
