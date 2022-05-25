@@ -6,11 +6,8 @@ use std::{
 use futures::StreamExt;
 use grapl_config::env_helpers::FromEnv;
 use rusoto_s3::{
-    CreateMultipartUploadRequest,
     GetObjectRequest,
     S3Client,
-    StreamingBody,
-    UploadPartRequest,
     S3,
 };
 use rust_proto_new::{
@@ -41,6 +38,7 @@ use tokio::{
 };
 use tonic::async_trait;
 
+use super::create_plugin::upload_stream_multipart_to_s3;
 use crate::{
     db::{
         client::{
@@ -50,15 +48,15 @@ use crate::{
         models::PluginRow,
         serde::try_from,
     },
-    error::{
-        PluginRegistryServiceError,
-        S3PutError,
-    },
+    error::PluginRegistryServiceError,
     nomad::{
         cli::NomadCli,
         client::NomadClient,
     },
-    server::deploy_plugin,
+    server::{
+        create_plugin,
+        deploy_plugin,
+    },
 };
 
 #[derive(clap::Parser, Debug)]
@@ -119,6 +117,7 @@ pub struct PluginRegistry {
 impl PluginRegistryApi for PluginRegistry {
     type Error = PluginRegistryServiceError;
 
+    // TODO: This function is so long I'm gonna split it out into its own file soon.
     #[tracing::instrument(skip(self, request), err)]
     async fn create_plugin(
         &self,
@@ -143,49 +142,15 @@ impl PluginRegistryApi for PluginRegistry {
 
         let plugin_id = generate_plugin_id();
         let s3_key = generate_artifact_s3_key(plugin_type, &tenant_id, &plugin_id);
+        let s3_multipart_fields = create_plugin::S3MultipartFields {
+            bucket: self.config.bucket_name.clone(),
+            key: s3_key.clone(),
+            expected_bucket_owner: Some(self.config.bucket_aws_account_id.clone()),
+        };
 
-        let put_handle = self
-            .s3
-            .create_multipart_upload(CreateMultipartUploadRequest {
-                bucket: self.config.bucket_name.clone(),
-                key: s3_key.clone(),
-                expected_bucket_owner: Some(self.config.bucket_aws_account_id.clone()),
-                ..Default::default()
-            })
-            .await
-            .map_err(S3PutError::from)?;
-        let upload_id = put_handle.upload_id.expect("upload id");
-
-        let limit_bytes = self.config.artifact_size_limit_mb.clone() * 1024 * 1024;
-        let mut stream_length = 0;
-
-        let mut body_stream = Box::pin(request.enumerate());
-        while let Some((idx, result)) = body_stream.next().await {
-            let bytes = match result {
-                CreatePluginRequest::Chunk(c) => Ok(c),
-                _ => Err(Self::Error::StreamInputError(
-                    "Expected request 1..N to be Chunk",
-                )),
-            }?;
-            stream_length += bytes.len();
-            if stream_length > limit_bytes {
-                Err(Self::Error::StreamInputError("Input exceeds size limit"))?;
-            }
-
-            self.s3
-                .upload_part(UploadPartRequest {
-                    body: Some(StreamingBody::from(bytes)),
-                    bucket: self.config.bucket_name.clone(),
-                    key: s3_key.clone(),
-                    expected_bucket_owner: Some(self.config.bucket_aws_account_id.clone()),
-                    upload_id: upload_id.clone(),
-                    part_number: idx as i64,
-                    ..Default::default()
-                })
-                .await
-                .map_err(S3PutError::from)?;
-        }
-
+        let multipart_upload =
+            upload_stream_multipart_to_s3(request, &self.s3, &self.config, s3_multipart_fields)
+                .await?;
         // Emit some benchmark info
         {
             let total_duration = std::time::SystemTime::now()
@@ -196,7 +161,7 @@ impl PluginRegistryApi for PluginRegistry {
                 message = "CreatePlugin benchmark",
                 display_name = ?display_name,
                 duration_millis = ?total_duration.as_millis(),
-                stream_length_bytes = stream_length,
+                stream_length_bytes = multipart_upload.stream_length,
             );
         }
 
