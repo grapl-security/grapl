@@ -5,16 +5,26 @@ use derive_dynamic_node::{
 use rust_proto::graph_descriptions::*;
 
 #[derive(Debug, Clone, PartialEq, Hash, NodeDescription, GraplStaticId)]
-struct File {
+struct TcpConnection {
     #[grapl(static_id, immutable)]
-    asset_id: String,
+    timestamp: i64,
+
+    // identity-only fields
     #[grapl(static_id, immutable)]
-    path: String,
-    // #[grapl(last_seen_time, increment)]
-    // last_seen_timestamp: i64,
+    src_port: i64,
+    #[grapl(static_id, immutable)]
+    dst_port: i64,
+    #[grapl(static_id, immutable)]
+    src_ip_address: String,
+    #[grapl(static_id, immutable)]
+    dst_ip_address: String,
+    #[grapl(static_id, immutable)]
+    transport_protocol: String,
+    #[grapl(static_id, immutable)]
+    process_guid: String,
 }
 
-impl IFileNode for FileNode {
+impl ITcpConnectionNode for TcpConnectionNode {
     fn get_mut_dynamic_node(&mut self) -> &mut NodeDescription {
         &mut self.dynamic_node
     }

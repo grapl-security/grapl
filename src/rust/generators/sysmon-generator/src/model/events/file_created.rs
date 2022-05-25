@@ -15,24 +15,21 @@ pub fn generate_file_create_subgraph(
 
     let mut graph = GraphDescription::new();
 
-    let mut machine = MachineNode::new(MachineNode::static_strategy());
-    machine
-        .with_machine_id(&system.computer)
-        .with_hostname(&system.computer);
+    let asset = AssetNode::from(system);
 
     let mut process = ProcessNode::new(ProcessNode::static_strategy());
     process
         .with_pid(event_data.process_id as i64)
         .with_guid(event_data.process_guid.to_string())
-        .with_image(&event_data.image);
+        .with_exe(&event_data.image);
 
     let mut file = FileNode::new(FileNode::static_strategy());
-    file.with_machine_id(&system.computer)
+    file.with_asset_id(&system.computer)
         .with_path(&event_data.target_filename);
 
     graph.add_edge(
-        "machine_process",
-        machine.clone_node_key(),
+        "asset_processes",
+        asset.clone_node_key(),
         process.clone_node_key(),
     );
 
@@ -43,12 +40,12 @@ pub fn generate_file_create_subgraph(
     );
 
     graph.add_edge(
-        "machine_files",
-        machine.clone_node_key(),
+        "asset_files",
+        asset.clone_node_key(),
         file.clone_node_key(),
     );
 
-    graph.add_node(machine);
+    graph.add_node(asset);
     graph.add_node(process);
     graph.add_node(file);
 

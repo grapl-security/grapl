@@ -5,24 +5,26 @@ use derive_dynamic_node::{
 use rust_proto::graph_descriptions::*;
 
 #[derive(Debug, Clone, PartialEq, Hash, NodeDescription, GraplStaticId)]
-struct Process {
+struct ProcessSpawn {
     #[grapl(immutable)]
-    pid: i64,
+    timestamp: i64,
+    #[grapl(immutable)]
+    cmdline: String,
+    #[grapl(immutable)]
+    current_directory: String,
+    #[grapl(immutable)]
+    uid: i64,
+    #[grapl(immutable)]
+    user: String,
+
+    // identity-only fields
     #[grapl(static_id, immutable)]
-    guid: String,
-    // #[grapl(immutable)]
-    // created_timestamp: i64,
-    // #[grapl(immutable)]
-    // cmdline: String,
-    #[grapl(immutable)]
-    exe: String,
-    // #[grapl(immutable)]
-    // current_directory: String,
-    // #[grapl(immutable)]
-    // user: String,
+    parent_guid: String,
+    #[grapl(static_id, immutable)]
+    child_guid: String,
 }
 
-impl IProcessNode for ProcessNode {
+impl IProcessSpawnNode for ProcessSpawnNode {
     fn get_mut_dynamic_node(&mut self) -> &mut NodeDescription {
         &mut self.dynamic_node
     }
