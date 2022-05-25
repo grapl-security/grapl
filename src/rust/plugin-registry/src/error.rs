@@ -1,6 +1,6 @@
 use rusoto_s3::{
     GetObjectError,
-    PutObjectError,
+    CreateMultipartUploadError, UploadPartError, AbortMultipartUploadError, CompleteMultipartUploadError,
 };
 use rust_proto_new::{
     protocol::status::Status,
@@ -13,11 +13,23 @@ use crate::{
 };
 
 #[derive(Debug, thiserror::Error)]
+pub enum S3PutError {
+    #[error(transparent)]
+    CreateError(#[from] rusoto_core::RusotoError<CreateMultipartUploadError>),
+    #[error(transparent)]
+    UploadPartError(#[from] rusoto_core::RusotoError<UploadPartError>),
+    #[error(transparent)]
+    CompleteError(#[from] rusoto_core::RusotoError<CompleteMultipartUploadError>),
+    #[error(transparent)]
+    AbortError(#[from] rusoto_core::RusotoError<AbortMultipartUploadError>),
+}
+
+#[derive(Debug, thiserror::Error)]
 pub enum PluginRegistryServiceError {
     #[error(transparent)]
     SqlxError(#[from] sqlx::Error),
     #[error(transparent)]
-    S3PutObjectError(#[from] rusoto_core::RusotoError<PutObjectError>),
+    S3PutObjectError(#[from] S3PutError),
     #[error(transparent)]
     S3GetObjectError(#[from] rusoto_core::RusotoError<GetObjectError>),
     #[error("EmptyObject")]
@@ -65,8 +77,9 @@ impl From<PluginRegistryServiceError> for Status {
             Error::NomadJobAllocationError => {
                 Status::internal("Unable to allocate Nomad job - it may be out of resources.")
             }
-            Error::StreamInputError(_) => {
-                Status::invalid_argument("Unexpected input to Stream RPC")
+            Error::StreamInputError(e) => {
+                // Since it's regarding user input, we can de-anonymize this message
+                Status::invalid_argument(format!("Unexpected input to Stream RPC: {e}"))
             }
         }
     }

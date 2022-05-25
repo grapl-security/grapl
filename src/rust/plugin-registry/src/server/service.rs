@@ -15,10 +15,10 @@ use futures::StreamExt;
 use grapl_config::env_helpers::FromEnv;
 use rusoto_s3::{
     GetObjectRequest,
-    PutObjectRequest,
+    CreateMultipartUploadRequest,
     S3Client,
-    StreamingBody,
-    S3,
+    UploadPartRequest,
+    S3, StreamingBody,
 };
 use rust_proto_new::{
     graplinc::grapl::api::plugin_registry::v1beta1::{
@@ -57,7 +57,7 @@ use crate::{
         models::PluginRow,
         serde::try_from,
     },
-    error::PluginRegistryServiceError,
+    error::{PluginRegistryServiceError, S3PutError},
     nomad::{
         cli::NomadCli,
         client::NomadClient,
@@ -190,8 +190,33 @@ impl PluginRegistryApi for PluginRegistry {
             accumulate_stream_size_to_limit(stream_length_handle.clone(), limit_bytes, result)
         });
 
+        let put_handle = self.s3.create_multipart_upload(
+            CreateMultipartUploadRequest{
+                bucket: self.config.bucket_name.clone(),
+                key: s3_key.clone(),
+                expected_bucket_owner: Some(self.config.bucket_aws_account_id.clone()),
+                ..Default::default()
+            }
+        ).await.map_err(S3PutError::from)?;
+        let upload_id = put_handle.upload_id.expect("upload id");
+
+        let body_stream = body_stream.enumerate();
+        body_stream.for_each(|(idx, result)| async {
+            self.s3.upload_part(
+                UploadPartRequest{
+                    body: StreamingBody::new(result),
+                    bucket: self.config.bucket_name.clone(),
+                    key: s3_key.clone(),
+                    expected_bucket_owner: Some(self.config.bucket_aws_account_id.clone()),
+                    upload_id: upload_id.clone(),
+                    part_number: idx,
+                }
+            );
+        });
+
         // Send the Stream into Rusoto, which does the actual awaiting of each
         // future in the Stream.
+        /*
         self.s3
             .put_object(PutObjectRequest {
                 body: Some(StreamingBody::new(body_stream)),
@@ -201,6 +226,7 @@ impl PluginRegistryApi for PluginRegistry {
                 ..Default::default()
             })
             .await?;
+        */
 
         // Emit some benchmark info
         {
