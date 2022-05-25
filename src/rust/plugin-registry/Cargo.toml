@@ -18,6 +18,7 @@ clap = { version = "3.0", default_features = false, features = [
   "env",
   "derive"
 ] }
+futures-retry = "0.6.0"
 grapl-config = { path = "../grapl-config" }
 grapl-utils = { path = "../grapl-utils" }
 rust-proto-new = { path = "../rust-proto-new" }

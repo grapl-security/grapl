@@ -1,9 +1,12 @@
 #![cfg(feature = "new_integration_tests")]
 
-use grapl_utils::future_ext::{
-    GraplAsyncRetry,
-    GraplFutureExt,
+use std::time::Duration;
+
+use futures_retry::{
+    FutureRetry,
+    RetryPolicy,
 };
+use grapl_utils::future_ext::GraplFutureExt;
 use plugin_registry::client::FromEnv;
 use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::{
     CreatePluginRequestMetadata,
@@ -19,6 +22,24 @@ fn get_example_generator() -> Result<Vec<u8>, std::io::Error> {
     std::fs::read("/test-fixtures/example-generator")
 }
 
+pub struct GetClientErrorHandler {}
+
+impl futures_retry::ErrorHandler<PluginRegistryServiceClientError> for GetClientErrorHandler {
+    type OutError = PluginRegistryServiceClientError;
+
+    fn handle(
+        &mut self,
+        attempt: usize,
+        e: PluginRegistryServiceClientError,
+    ) -> RetryPolicy<Self::OutError> {
+        let attempt = attempt as u64;
+        match attempt {
+            0..=2 => RetryPolicy::WaitRetry(Duration::from_secs(1)),
+            _ => RetryPolicy::ForwardError(e),
+        }
+    }
+}
+
 async fn get_client() -> Result<PluginRegistryServiceClient, PluginRegistryServiceClientError> {
     // For some reason, I'm seeing nondeterministic failures when initializing
     // a client.
@@ -27,7 +48,13 @@ async fn get_client() -> Result<PluginRegistryServiceClient, PluginRegistryServi
     //   (these two async tests are concurrent)
     // - maybe something about warming up a connection pool?
     // Anyway, I have no evidence, but this seems to do the trick. Weird.
-    PluginRegistryServiceClient::from_env.retry(3).await
+    let (response, _) = FutureRetry::new(
+        PluginRegistryServiceClient::from_env,
+        GetClientErrorHandler {},
+    )
+    .await
+    .map_err(|(err, _)| err)?;
+    Ok(response)
 }
 
 #[test_log::test(tokio::test)]
