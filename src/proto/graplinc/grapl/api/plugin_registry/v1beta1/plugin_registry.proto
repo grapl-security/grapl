@@ -32,7 +32,7 @@ message Plugin {
 message CreatePluginRequest {
   oneof inner {
     CreatePluginRequestMetadata metadata = 1;
-    // the actual plugin binary
+    // Chunks of the plugin binary
     bytes chunk = 2;
   }
 }
