@@ -1,8 +1,7 @@
-use bytes::{
-    Bytes,
-    BytesMut,
-};
-use prost::Message;
+use bytes::Bytes;
+
+pub mod client;
+pub mod server;
 
 use crate::{
     graplinc::common::v1beta1::{
@@ -10,29 +9,29 @@ use crate::{
         Uuid,
     },
     protobufs::graplinc::grapl::api::pipeline_ingress::v1beta1::{
-        PublishRawLogsRequest as PublishRawLogsRequestProto,
-        PublishRawLogsResponse as PublishRawLogsResponseProto,
+        PublishRawLogRequest as PublishRawLogRequestProto,
+        PublishRawLogResponse as PublishRawLogResponseProto,
     },
+    serde_impl,
     type_url,
-    SerDe,
     SerDeError,
 };
 
 //
-// PublishRawLogsRequest
+// PublishRawLogRequest
 //
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct PublishRawLogsRequest {
+pub struct PublishRawLogRequest {
     pub event_source_id: Uuid,
     pub tenant_id: Uuid,
     pub log_event: Bytes,
 }
 
-impl TryFrom<PublishRawLogsRequestProto> for PublishRawLogsRequest {
+impl TryFrom<PublishRawLogRequestProto> for PublishRawLogRequest {
     type Error = SerDeError;
 
-    fn try_from(request_proto: PublishRawLogsRequestProto) -> Result<Self, Self::Error> {
+    fn try_from(request_proto: PublishRawLogRequestProto) -> Result<Self, Self::Error> {
         let event_source_id = request_proto
             .event_source_id
             .ok_or(SerDeError::MissingField("event_source_id"))?;
@@ -41,7 +40,7 @@ impl TryFrom<PublishRawLogsRequestProto> for PublishRawLogsRequest {
             .tenant_id
             .ok_or(SerDeError::MissingField("tenant_id"))?;
 
-        Ok(PublishRawLogsRequest {
+        Ok(PublishRawLogRequest {
             event_source_id: event_source_id.into(),
             tenant_id: tenant_id.into(),
             log_event: Bytes::from(request_proto.log_event),
@@ -49,9 +48,9 @@ impl TryFrom<PublishRawLogsRequestProto> for PublishRawLogsRequest {
     }
 }
 
-impl From<PublishRawLogsRequest> for PublishRawLogsRequestProto {
-    fn from(request: PublishRawLogsRequest) -> Self {
-        PublishRawLogsRequestProto {
+impl From<PublishRawLogRequest> for PublishRawLogRequestProto {
+    fn from(request: PublishRawLogRequest) -> Self {
+        PublishRawLogRequestProto {
             event_source_id: Some(request.event_source_id.into()),
             tenant_id: Some(request.tenant_id.into()),
             log_event: request.log_event.to_vec(),
@@ -59,81 +58,62 @@ impl From<PublishRawLogsRequest> for PublishRawLogsRequestProto {
     }
 }
 
-impl type_url::TypeUrl for PublishRawLogsRequest {
+impl type_url::TypeUrl for PublishRawLogRequest {
     const TYPE_URL: &'static str =
-        "graplsecurity.com/graplinc.grapl.api.pipeline_ingress.v1beta1.PublishRawLogsRequest";
+        "graplsecurity.com/graplinc.grapl.api.pipeline_ingress.v1beta1.PublishRawLogRequest";
 }
 
-impl SerDe for PublishRawLogsRequest {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let request_proto = PublishRawLogsRequestProto::from(self);
-        let mut buf = BytesMut::with_capacity(request_proto.encoded_len());
-        request_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: bytes::Buf,
-        Self: Sized,
-    {
-        let request_proto: PublishRawLogsRequestProto = Message::decode(buf)?;
-        request_proto.try_into()
-    }
+impl serde_impl::ProtobufSerializable for PublishRawLogRequest {
+    type ProtobufMessage = PublishRawLogRequestProto;
 }
 
 //
-// PublishRawLogsResponse
+// PublishRawLogResponse
 //
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct PublishRawLogsResponse {
+pub struct PublishRawLogResponse {
     pub created_time: SystemTime,
 }
 
-impl TryFrom<PublishRawLogsResponseProto> for PublishRawLogsResponse {
+impl PublishRawLogResponse {
+    /// build a response with created_time set to SystemTime::now()
+    pub fn ok() -> Self {
+        PublishRawLogResponse {
+            created_time: SystemTime::now(),
+        }
+    }
+}
+
+impl TryFrom<PublishRawLogResponseProto> for PublishRawLogResponse {
     type Error = SerDeError;
 
-    fn try_from(response_proto: PublishRawLogsResponseProto) -> Result<Self, Self::Error> {
+    fn try_from(response_proto: PublishRawLogResponseProto) -> Result<Self, Self::Error> {
         let created_time = response_proto
             .created_time
             .ok_or(SerDeError::MissingField("created_time"))?;
 
-        Ok(PublishRawLogsResponse {
+        Ok(PublishRawLogResponse {
             created_time: created_time.try_into()?,
         })
     }
 }
 
-impl TryFrom<PublishRawLogsResponse> for PublishRawLogsResponseProto {
+impl TryFrom<PublishRawLogResponse> for PublishRawLogResponseProto {
     type Error = SerDeError;
 
-    fn try_from(response: PublishRawLogsResponse) -> Result<Self, Self::Error> {
-        Ok(PublishRawLogsResponseProto {
+    fn try_from(response: PublishRawLogResponse) -> Result<Self, Self::Error> {
+        Ok(PublishRawLogResponseProto {
             created_time: Some(response.created_time.try_into()?),
         })
     }
 }
 
-impl type_url::TypeUrl for PublishRawLogsResponse {
+impl type_url::TypeUrl for PublishRawLogResponse {
     const TYPE_URL: &'static str =
-        "grapsecurity.com/graplinc.grapl.api.pipeline_ingress.v1beta1.PublishRawLogsResponse";
+        "grapsecurity.com/graplinc.grapl.api.pipeline_ingress.v1beta1.PublishRawLogResponse";
 }
 
-impl SerDe for PublishRawLogsResponse {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let response_proto = PublishRawLogsResponseProto::try_from(self)?;
-        let mut buf = BytesMut::with_capacity(response_proto.encoded_len());
-        response_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: bytes::Buf,
-        Self: Sized,
-    {
-        let response_proto: PublishRawLogsResponseProto = Message::decode(buf)?;
-        response_proto.try_into()
-    }
+impl serde_impl::ProtobufSerializable for PublishRawLogResponse {
+    type ProtobufMessage = PublishRawLogResponseProto;
 }

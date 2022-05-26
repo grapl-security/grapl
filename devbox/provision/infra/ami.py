@@ -8,6 +8,8 @@ def get_ami() -> pulumi.Output[aws.ec2.GetAmiResult]:
     # We propagate that information over to the GRAPL_DEVBOX_CONFIG for ssh.
     pulumi.export("devbox-user", "ubuntu")
 
+    # TODO add support for arm64 architectures so we could use graviton in the future
+    # When that happens , the name will be "*ubuntu-focal-20.04-arm64-server-20220404" and arch will be "arm64"
     return aws.ec2.get_ami_output(
         owners=["099720109477"],  # Ubuntu / Canonical
         filters=[

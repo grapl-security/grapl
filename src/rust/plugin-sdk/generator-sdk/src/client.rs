@@ -1,65 +1,51 @@
-use std::{
-    str::FromStr,
-    time::Duration,
-};
+use std::time::Duration;
 
+use consul_connect::resolver::{
+    ConsulConnectResolveError,
+    ConsulConnectResolver,
+};
 use moka::future::{
     Cache,
     CacheBuilder,
 };
-use rust_proto::plugin_sdk::generators::{
-    generator_service_client::GeneratorServiceClient,
-    GeneratorsDeserializationError,
-    RunGeneratorRequest,
-    RunGeneratorResponse,
-};
-use tonic::{
-    codegen::http::uri::InvalidUri,
-    transport::{
-        Channel,
-        ClientTlsConfig,
+use rust_proto_new::{
+    graplinc::grapl::api::plugin_sdk::generators::v1beta1::{
+        client::{
+            GeneratorServiceClient,
+            GeneratorServiceClientError,
+        },
+        RunGeneratorRequest,
+        RunGeneratorResponse,
     },
-    Code,
-};
-use trust_dns_resolver::{
-    config::{
-        NameServerConfigGroup,
-        ResolverConfig,
-        ResolverOpts,
+    protocol::{
+        status::{
+            Code,
+            Status,
+        },
+        tls::{
+            Certificate,
+            ClientTlsConfig,
+        },
     },
-    error::ResolveError,
-    proto::{
-        error::ProtoError as ProtocolError,
-        rr::rdata::SRV,
-    },
-    Name,
-    TokioAsyncResolver,
 };
 
-use crate::{
+use crate::client_config::{
     ClientCacheConfig,
-    ClientDnsConfig,
+    ClientConfig,
 };
 
 #[derive(thiserror::Error, Debug)]
 pub enum GeneratorClientError {
-    #[error("Failed to connect to Generator {0}")]
-    ConnectError(#[from] tonic::transport::Error),
-    #[error("Failed to resolve name {name}")]
-    EmptyResolution { name: String },
-    #[error("Failed to resolve plugin {0}")]
-    ResolveError(#[from] ResolveError),
-    #[error("Plugin domain is invalid URI")]
-    InvalidUri(#[from] InvalidUri),
     #[error(transparent)]
-    Status(#[from] tonic::Status),
+    Status(#[from] Status),
     #[error(transparent)]
-    ProtocolError(#[from] ProtocolError),
+    GeneratorServiceClientError(#[from] GeneratorServiceClientError),
     #[error(transparent)]
-    ProtoError(#[from] GeneratorsDeserializationError),
+    ConsulConnectResolveError(#[from] ConsulConnectResolveError),
 }
 
-type ClientCache = Cache<String, GeneratorServiceClient<Channel>>;
+type ClientCache = Cache<String, GeneratorServiceClient>;
+type ClientCacheBuilder = CacheBuilder<String, GeneratorServiceClient, ClientCache>;
 
 /// The GeneratorClient manages connections to arbitrary generators across arbitrary tenants
 #[derive(Clone)]
@@ -67,16 +53,32 @@ pub struct GeneratorClient {
     /// A bounded cache mapping a plugin ID to a client connected to that plugin
     clients: ClientCache,
     /// A public certificate to validate a plugin's domain
-    certificate: tonic::transport::Certificate,
+    // TODO: Temporarily providing the ability to use no certs, until vault is
+    // set up. Eventually remove Option.
+    certificate: Option<Certificate>,
     /// An in-process DNS resolver used for plugin service discovery
-    resolver: TokioAsyncResolver,
+    resolver: ConsulConnectResolver,
+}
+
+impl From<ClientConfig> for GeneratorClient {
+    fn from(config: ClientConfig) -> Self {
+        let resolver = ConsulConnectResolver::from(config.client_dns_config);
+        let certificate = config
+            .client_cert_config
+            .public_certificate_pem
+            .map(|cert| Certificate::from_pem(&cert.as_bytes().to_vec()));
+        let clients = ClientCacheBuilder::from(config.client_cache_config).build();
+        Self::new(clients, certificate, resolver)
+    }
 }
 
 impl GeneratorClient {
     pub fn new(
         clients: ClientCache,
-        certificate: tonic::transport::Certificate,
-        resolver: TokioAsyncResolver,
+        // TODO: Temporarily providing the ability to use no certs, until vault is
+        // set up. Eventually remove Option.
+        certificate: Option<Certificate>,
+        resolver: ConsulConnectResolver,
     ) -> Self {
         Self {
             clients,
@@ -99,12 +101,10 @@ impl GeneratorClient {
     ) -> Result<RunGeneratorResponse, GeneratorClientError> {
         let mut client = self.get_client(plugin_id.clone()).await?;
         tracing::info!(message = "Running generator",);
-        let response = client
-            .run_generator(tonic::Request::new(RunGeneratorRequest { data }.into()))
-            .await;
+        let response = client.run_generator(RunGeneratorRequest { data }).await;
         match response {
-            Ok(response) => Ok(response.into_inner().try_into()?),
-            Err(status) if should_evict(&status) => {
+            Ok(response) => Ok(response),
+            Err(GeneratorServiceClientError::ErrorStatus(status)) if should_evict(&status) => {
                 tracing::info!(
                     message = "Manually evicting plugin connection",
                     status = ?status,
@@ -122,7 +122,7 @@ impl GeneratorClient {
     async fn get_client(
         &self,
         plugin_id: String,
-    ) -> Result<GeneratorServiceClient<Channel>, GeneratorClientError> {
+    ) -> Result<GeneratorServiceClient, GeneratorClientError> {
         match self.clients.get(&plugin_id) {
             Some(client) => Ok(client),
             None => {
@@ -145,54 +145,38 @@ impl GeneratorClient {
     async fn new_client_for_plugin(
         &self,
         plugin_id: String,
-    ) -> Result<GeneratorServiceClient<Channel>, GeneratorClientError> {
-        let domain = format!("{}.service.consul.", &plugin_id);
-        tracing::info!(
-            message = "Resolving domain",
-            domain = %domain,
-        );
-        let lowest_pri = self.resolve_lowest_pri(Name::from_str(&domain)?).await?;
-        let tls = ClientTlsConfig::new()
-            // Sets the CA Certificate against which to verify the server’s TLS certificate.
-            .ca_certificate(self.certificate.clone())
-            .domain_name(&domain);
+    ) -> Result<GeneratorServiceClient, GeneratorClientError> {
+        let resolved_service = self
+            .resolver
+            .resolve_service(format!("plugin-{plugin_id}"))
+            .await?;
+
+        // Sets the CA Certificate against which to verify the server’s TLS certificate.
+        let tls_config = self
+            .certificate
+            .as_ref()
+            .map(|cert| ClientTlsConfig::new(cert.clone(), &resolved_service.domain));
 
         tracing::info!(
             message = "Connecting to plugin",
-            target = %lowest_pri.target(),
-            port = %lowest_pri.port(),
+            target = %resolved_service.domain,
+            port = %resolved_service.port,
         );
 
-        let channel = Channel::from_shared(format!(
+        let endpoint = format!(
             "https://{}:{}",
-            lowest_pri.target(),
-            lowest_pri.port(),
-        ))?
-        .tls_config(tls)?
-        .connect()
-        .await;
+            resolved_service.domain, resolved_service.port,
+        );
 
-        match channel {
-            Ok(channel) => Ok(GeneratorServiceClient::new(channel)),
+        let connect_result = GeneratorServiceClient::connect(endpoint, tls_config).await;
+
+        match connect_result {
+            Ok(x) => Ok(x),
             Err(e) => {
                 // If we failed to connect we should invalidate the client from our cache
                 self.clients.invalidate(&plugin_id).await;
                 Err(e.into())
             }
-        }
-    }
-
-    /// Performs the SRV record lookup, returning the record with the lowest priority
-    async fn resolve_lowest_pri(&self, name: Name) -> Result<SRV, GeneratorClientError> {
-        let srvs = self.resolver.srv_lookup(name.clone()).await?;
-
-        let lowest_priority = srvs.iter().min_by_key(|srv| srv.priority());
-
-        match lowest_priority {
-            None => Err(GeneratorClientError::EmptyResolution {
-                name: name.to_string(),
-            }),
-            Some(lowest_priority) => Ok((*lowest_priority).clone()),
         }
     }
 }
@@ -203,40 +187,17 @@ impl GeneratorClient {
 //    that we have somehow connected to the wrong service (shouldn't ever happen)
 // 2. If the service is unavailable. This code is raised when the server disconnects or is
 //    shutting down
-fn should_evict(status: &tonic::Status) -> bool {
+fn should_evict(status: &Status) -> bool {
     matches!(
         status.code(),
         Code::PermissionDenied | Code::Unauthenticated | Code::Unavailable
     )
 }
 
-impl From<ClientCacheConfig>
-    for CacheBuilder<String, GeneratorServiceClient<Channel>, ClientCache>
-{
+impl From<ClientCacheConfig> for ClientCacheBuilder {
     fn from(cache_config: ClientCacheConfig) -> Self {
         Cache::builder()
             .time_to_live(Duration::from_secs(cache_config.time_to_live))
             .max_capacity(cache_config.max_capacity)
-    }
-}
-
-impl From<ClientDnsConfig> for TokioAsyncResolver {
-    fn from(dns_config: ClientDnsConfig) -> TokioAsyncResolver {
-        let consul = ResolverConfig::from_parts(
-            None,
-            vec![],
-            NameServerConfigGroup::from_ips_clear(
-                &dns_config.dns_resolver_ips,
-                dns_config.dns_resolver_port,
-                true,
-            ),
-        );
-        let opts = ResolverOpts {
-            cache_size: dns_config.dns_cache_size,
-            positive_min_ttl: Some(Duration::from_secs(dns_config.positive_min_ttl)),
-            ..ResolverOpts::default()
-        };
-
-        TokioAsyncResolver::tokio(consul, opts).unwrap()
     }
 }

@@ -30,7 +30,7 @@ test("calcLinkParticleWidth", () => {
 
 test("calcLinkColor", () => {
     const link = vizGraphReturnData.links[0];
-    expect(calcLinkColor(link, vizGraphReturnData as any)).toBe("#E50F14");
+    expect(calcLinkColor(link, vizGraphReturnData as any)).toBe("#DA634F");
 });
 
 test("calcLinkRisk", () => {

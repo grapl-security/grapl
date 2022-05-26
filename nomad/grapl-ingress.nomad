@@ -1,5 +1,14 @@
+variable "dns_server" {
+  type        = string
+  description = "The network.dns.server value. This should be equivalent to the host's ip in order to communicate with dnsmasq and allow consul dns to be available from within containers. This can be replaced as of Nomad 1.3.0 with variable interpolation per https://github.com/hashicorp/nomad/issues/11851."
+  default     = ""
+}
+
 locals {
   web_ui_port = 1234
+  # TODO once we upgrade to nomad 1.3.0 replace this with attr.unique.network.ip-address (variable interpolation is
+  # added for network.dns as of 1.3.0
+  dns_servers = [var.dns_server]
 }
 
 job "grapl-ingress" {
@@ -13,6 +22,9 @@ job "grapl-ingress" {
 
     network {
       mode = "host"
+      dns {
+        servers = local.dns_servers
+      }
     }
 
     service {

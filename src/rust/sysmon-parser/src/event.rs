@@ -17,11 +17,7 @@ use crate::{
 /// `<https://docs.microsoft.com/en-us/sysinternals/downloads/sysmon>`
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Hash, IntoOwned)]
-#[cfg_attr(
-    feature = "serde",
-    derive(serde_crate::Serialize, serde_crate::Deserialize),
-    serde(crate = "serde_crate")
-)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SysmonEvent<'a> {
     /// Defines the information that identifies the provider and how it was enabled, the event, the
     /// channel to which the event was written, and system information such as the process and
@@ -78,27 +74,64 @@ impl<'a> SysmonEvent<'a> {
     /// let event = result.unwrap();
     /// assert_eq!(event.system.computer, "hostname");
     /// ```
-    pub fn from_str(input: &'a str) -> Result<SysmonEvent<'a>> {
+    pub fn from_str<'input: 'a>(input: &'input str) -> Result<SysmonEvent<'a>> {
         let mut tokenizer = xmlparser::Tokenizer::from(input);
 
-        let system = System::try_from(&mut tokenizer)?;
-
-        let event_data = match system.event_id {
-            EventId::FileCreate => {
-                EventData::FileCreate(event_data::FileCreateEventData::try_from(&mut tokenizer)?)
-            }
-            EventId::NetworkConnection => EventData::NetworkConnect(
-                event_data::NetworkConnectionEventData::try_from(&mut tokenizer)?,
-            ),
-            EventId::ProcessCreation => EventData::ProcessCreate(
-                event_data::ProcessCreateEventData::try_from(&mut tokenizer)?,
-            ),
-            EventId::ProcessTerminated => EventData::ProcessTerminate(
-                event_data::ProcessTerminatedEventData::try_from(&mut tokenizer)?,
-            ),
-            _ => EventData::Unsupported,
-        };
-
-        Ok(SysmonEvent { system, event_data })
+        from_tokenizer(&mut tokenizer)
     }
+}
+
+#[inline]
+fn find_start_element(tokenizer: &mut xmlparser::Tokenizer) -> Result<()> {
+    for token in tokenizer.by_ref() {
+        match token? {
+            xmlparser::Token::ElementStart { local, .. } if local.as_str() == "Event" => {
+                return Ok(());
+            }
+            _ => {}
+        }
+    }
+
+    Err(crate::error::Error::SysmonEventNotFound)
+}
+
+pub(crate) fn from_tokenizer<'a, 'input: 'a>(
+    tokenizer: &mut xmlparser::Tokenizer<'input>,
+) -> Result<SysmonEvent<'a>> {
+    find_start_element(tokenizer)?;
+
+    let system = System::try_from(tokenizer)?;
+
+    let event_data = match system.event_id {
+        EventId::FileCreate => {
+            EventData::FileCreate(event_data::FileCreateEventData::try_from(tokenizer)?)
+        }
+        EventId::FileCreateStreamHash => EventData::FileCreateStreamHash(
+            event_data::FileCreateStreamHashEventData::try_from(tokenizer)?,
+        ),
+        EventId::NetworkConnection => {
+            EventData::NetworkConnect(event_data::NetworkConnectionEventData::try_from(tokenizer)?)
+        }
+        EventId::ProcessCreation => {
+            EventData::ProcessCreate(event_data::ProcessCreateEventData::try_from(tokenizer)?)
+        }
+        EventId::ProcessTerminated => EventData::ProcessTerminate(
+            event_data::ProcessTerminatedEventData::try_from(tokenizer)?,
+        ),
+        _ => EventData::Unsupported,
+    };
+
+    // Advance tokenizer to end of event
+    for token in tokenizer.by_ref() {
+        match token? {
+            xmlparser::Token::ElementEnd {
+                end: xmlparser::ElementEnd::Close(_, name),
+                ..
+            } if name.as_str() == "Event" => break,
+
+            _ => {}
+        }
+    }
+
+    Ok(SysmonEvent { system, event_data })
 }

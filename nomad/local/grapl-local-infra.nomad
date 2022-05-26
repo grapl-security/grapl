@@ -152,8 +152,11 @@ job "grapl-local-infra" {
       driver = "docker"
 
       config {
-        # Once we move to Kafka, we can go back to the non-fork.
-        image = "localstack-grapl-fork:${var.image_tag}"
+        # https://github.com/localstack/localstack/issues/5824
+        # The bugfix we need is only available post-14.3 in latest starting May 23
+        # Hence pinning by sha, not tag
+        image = "localstack/localstack-light@sha256:a64dbc0b4e05f3647d8f1a09eb743e3d213402312858fb4146a7571a4a4ee6be"
+
         # Was running into this: https://github.com/localstack/localstack/issues/1349
         memory_hard_limit = 2048
         ports             = ["localstack"]
@@ -161,10 +164,9 @@ job "grapl-local-infra" {
       }
 
       env {
-        DEBUG        = 1
-        EDGE_PORT    = var.localstack_port
-        SERVICES     = "dynamodb,ec2,iam,s3,secretsmanager,sns,sqs"
-        SQS_PROVIDER = "elasticmq"
+        DEBUG     = 1
+        EDGE_PORT = var.localstack_port
+        SERVICES  = "dynamodb,ec2,iam,s3,secretsmanager,sns,sqs"
 
         # These are used by the health check below; "test" is the
         # default value for these credentials in Localstack.
@@ -428,60 +430,60 @@ job "grapl-local-infra" {
     }
   }
 
-  # group "dnsmasq" {
-  #   network {
-  #     mode = "bridge"
-  #     port "dns" {
-  #       static = 53
-  #       to     = 53
-  #     }
-  #   }
+  group "dnsmasq" {
+    network {
+      mode = "bridge"
+      port "dns" {
+        static = 53
+        to     = 53
+      }
+    }
 
 
-  #   task "dnsmasq" {
-  #     driver = "docker"
+    task "dnsmasq" {
+      driver = "docker"
 
-  #     config {
-  #       #This is an alpine-based dnsmasq container
-  #       image = "4km3/dnsmasq:2.85-r2"
-  #       ports = ["dns"]
-  #       args = [
-  #         # Send all queries for .consul to the NOMAD_IP
-  #         "--server", "/consul/${NOMAD_IP_dns}#8600",
-  #         # log to standard out
-  #         "--log-facility=-",
-  #       ]
-  #       cap_add = [
-  #         "NET_ADMIN",
-  #       ]
-  #       logging {
-  #         type = "journald"
-  #         config {
-  #           tag = "DNSMASQ"
-  #         }
-  #       }
-  #     }
+      config {
+        #This is an alpine-based dnsmasq container
+        image = "4km3/dnsmasq:2.85-r2"
+        ports = ["dns"]
+        args = [
+          # Send all queries for .consul to the NOMAD_IP
+          "--server", "/consul/${NOMAD_IP_dns}#8600",
+          # log to standard out
+          "--log-facility=-",
+        ]
+        cap_add = [
+          "NET_BIND_SERVICE",
+        ]
+        logging {
+          type = "journald"
+          config {
+            tag = "DNSMASQ"
+          }
+        }
+      }
 
-  #     service {
-  #       name         = "dnsmasq"
-  #       port         = "dns"
-  #       address_mode = "driver"
-  #       tags         = ["dns"]
+      service {
+        name         = "dnsmasq"
+        port         = "dns"
+        address_mode = "driver"
+        tags         = ["dns"]
 
-  #       check {
-  #         type     = "tcp"
-  #         port     = "dns"
-  #         interval = "10s"
-  #         timeout  = "2s"
-  #       }
-  #     }
+        check {
+          type     = "tcp"
+          port     = "dns"
+          interval = "10s"
+          timeout  = "2s"
+        }
+      }
 
-  #     resources {
-  #       cpu    = 50
-  #       memory = 100
-  #     }
-  #   }
-  # }
+      resources {
+        cpu    = 50
+        memory = 100
+      }
+    }
+  }
 
 
   group "organization-management-db" {
@@ -523,6 +525,83 @@ job "grapl-local-infra" {
             ignore_warnings = false
           }
         }
+      }
+    }
+  }
+
+  group "scylla" {
+    network {
+      mode = "bridge"
+      port "internal_node_rpc_1" {
+        to = 7000
+      }
+      port "internal_node_rpc_2" {
+        to = 7001
+      }
+      port "cql" {
+        # Let devs connect via localhost:9042 from the host vm
+        static = 9042
+        to     = 9042
+      }
+      port "thrift" {
+        to = 9160
+      }
+      port "rest" {
+        to = 10000
+      }
+    }
+
+    task "scylla" {
+      driver = "docker"
+
+      config {
+        image = "scylladb-ext:${var.image_tag}"
+        args = [
+          # Set up scylla in single-node mode instead of in overprovisioned mode, ie DON'T use all available cpu/memory
+          "--smp", "1"
+        ]
+        ports = ["internal_node_rpc_1", "internal_node_rpc_2", "cql", "thrift", "rest"]
+
+        # Configure a data volume for scylla. See the "Configuring data volume for storage" section in
+        # https://hub.docker.com/r/scylladb/scylla/
+        mount {
+          type     = "volume"
+          target   = "/var/lib/scylla"
+          source   = "scylla-data"
+          readonly = false
+          volume_options {
+            # Upon initial creation of this volume, *do* copy in the current
+            # contents in the Docker image.
+            no_copy = false
+            labels {
+              maintainer = "Scylla"
+            }
+          }
+        }
+
+      }
+
+      service {
+        name = "scylla"
+
+        check {
+          type = "script"
+          name = "nodestatus_check"
+          # We use bin/bash so we can pipe to grep
+          command  = "bin/bash"
+          args     = ["nodetool", "status", "|", "grep", "'UN'"]
+          interval = "30s"
+          timeout  = "10s"
+
+          check_restart {
+            # Set readiness check since Scylla can take a while to boot up
+            grace           = "1m"
+            limit           = 3
+            ignore_warnings = true
+          }
+
+        }
+
       }
     }
   }

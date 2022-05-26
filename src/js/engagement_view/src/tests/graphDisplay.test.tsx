@@ -82,5 +82,5 @@ test("get nodeFillColor for process", () => {
 });
 
 test("get high riskOutline", () => {
-    expect(riskOutline(80)).toBe("#E50F14");
+    expect(riskOutline(80)).toBe("#DA634F");
 });

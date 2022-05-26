@@ -23,6 +23,7 @@ Not all event types are currently supported. Support for more types is planned
 for future versions. The event types currently supported are:
 
 - FileCreate
+- FileCreateStreamHash
 - NetworkConnect
 - ProcessCreate
 - ProcessTerminate

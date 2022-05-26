@@ -1,25 +1,12 @@
-import { Link } from "react-router-dom";
-import { styled, useTheme } from "@mui/material/styles";
+import * as React from "react";
+import { styled } from "@mui/material/styles";
 
 import Drawer from "@mui/material/Drawer";
 
-import List from "@mui/material/List";
-import Icon from "@material-ui/core/Icon";
-
-import ListItem from "@mui/material/ListItem";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
-
-// Drawer Icons
-import BubbleChartIcon from "@mui/icons-material/BubbleChart";
-import PolicyIcon from "@mui/icons-material/Policy";
-import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
-import SettingsIcon from "@mui/icons-material/Settings";
-import ExtensionIcon from "@mui/icons-material/Extension";
-
 import { useStyles } from "../styles/analyzersAndGeneratorsStyles";
 import "../../index.css";
-import Img from "../../assets/grapl_logo.svg";
+import { GraplLogo } from "./graplLogo";
+import { NavListItems } from "./drawerList";
 
 const drawerWidth = 300;
 
@@ -49,58 +36,11 @@ export const NavigationDrawer = () => {
         >
             <DrawerHeader>
                 <div>
-                    <Icon>
-                        <img className={classes.logoImage} src={Img} />
-                    </Icon>
+                    <GraplLogo></GraplLogo>
                 </div>
             </DrawerHeader>
 
-            <List className={classes.drawer}>
-                <ListItem button key="Analyzers">
-                    <ListItemIcon>
-                        <PolicyIcon className={classes.icons} />
-                    </ListItemIcon>
-                    <Link to="/analyzers" style={{ textDecoration: "none" }}>
-                        {" "}
-                        Analyzers{" "}
-                    </Link>
-                </ListItem>
-
-                <ListItem button key="Engagements">
-                    <ListItemIcon>
-                        <BubbleChartIcon className={classes.icons} />
-                    </ListItemIcon>
-                    <Link to="/engagements" style={{ textDecoration: "none" }}>
-                        {" "}
-                        Engagements{" "}
-                    </Link>
-                </ListItem>
-
-                <ListItem button key="Generators">
-                    <ListItemIcon>
-                        {<ExtensionIcon className={classes.icons} />}
-                    </ListItemIcon>
-                    <Link to="/generators" style={{ textDecoration: "none" }}>
-                        {" "}
-                        Generators{" "}
-                    </Link>
-                </ListItem>
-            </List>
-
-            <List className={classes.drawer}>
-                {["Settings", "Logout"].map((text, index) => (
-                    <ListItem button key={text}>
-                        <ListItemIcon className={classes.icons}>
-                            {index % 2 === 0 ? (
-                                <SettingsIcon className={classes.icons} />
-                            ) : (
-                                <LogoutOutlinedIcon className={classes.icons} />
-                            )}
-                        </ListItemIcon>
-                        <ListItemText primary={text} />
-                    </ListItem>
-                ))}
-            </List>
+            <NavListItems></NavListItems>
         </Drawer>
     );
 };

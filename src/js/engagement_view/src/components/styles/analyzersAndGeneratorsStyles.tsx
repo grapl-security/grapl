@@ -12,11 +12,15 @@ export const useStyles = makeStyles((theme) =>
             margin: ".5em",
         },
         icons: {
-            color: theme.palette.primary.contrastText,
+            marginRight: "1em",
         },
         navBarOpenCloseIcons: {
             color: theme.palette.info.contrastText,
             margin: "1em",
+        },
+        navLink: {
+            textDecoration: "none",
+            color: theme.palette.info.contrastText,
         },
         drawer: {
             backgroundColor: theme.palette.background.default,
@@ -79,6 +83,9 @@ export const useStyles = makeStyles((theme) =>
             padding: "1rem",
         },
         tableRow: {
+            color: theme.palette.info.contrastText,
+        },
+        metricCount: {
             color: theme.palette.info.contrastText,
         },
     })

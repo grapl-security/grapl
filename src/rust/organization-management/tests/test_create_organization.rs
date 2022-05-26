@@ -1,12 +1,12 @@
 #![cfg(feature = "integration")]
 
+use clap::Parser;
 use grapl_utils::future_ext::GraplFutureExt;
 use organization_management::{
     client::OrganizationManagementServiceClient,
     OrganizationManagementServiceConfig,
 };
 use rust_proto::organization_management::CreateOrganizationRequest;
-use structopt::StructOpt;
 
 #[test_log::test(tokio::test)]
 async fn test_create_organization() -> Result<(), Box<dyn std::error::Error>> {
@@ -14,7 +14,7 @@ async fn test_create_organization() -> Result<(), Box<dyn std::error::Error>> {
         env=?std::env::args(),
     );
 
-    let service_config = OrganizationManagementServiceConfig::from_args();
+    let service_config = OrganizationManagementServiceConfig::parse();
 
     let postgres_address = format!(
         "postgresql://{}:{}@{}:{}",

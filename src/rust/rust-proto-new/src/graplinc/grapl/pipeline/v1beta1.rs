@@ -1,11 +1,6 @@
 use std::time::SystemTimeError;
 
-use bytes::{
-    Buf,
-    Bytes,
-    BytesMut,
-};
-use prost::Message;
+use bytes::Bytes;
 
 use crate::{
     graplinc::common::v1beta1::{
@@ -17,8 +12,8 @@ use crate::{
         Metadata as MetadataProto,
         RawLog as RawLogProto,
     },
+    serde_impl,
     type_url,
-    SerDe,
     SerDeError,
 };
 
@@ -34,6 +29,26 @@ pub struct Metadata {
     pub created_time: SystemTime,
     pub last_updated_time: SystemTime,
     pub event_source_id: Uuid,
+}
+
+impl Metadata {
+    pub fn new(
+        tenant_id: Uuid,
+        trace_id: Uuid,
+        retry_count: u32,
+        created_time: SystemTime,
+        last_updated_time: SystemTime,
+        event_source_id: Uuid,
+    ) -> Self {
+        Metadata {
+            tenant_id,
+            trace_id,
+            retry_count,
+            created_time,
+            last_updated_time,
+            event_source_id,
+        }
+    }
 }
 
 impl TryFrom<MetadataProto> for Metadata {
@@ -90,22 +105,8 @@ impl type_url::TypeUrl for Metadata {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.pipeline.v1beta1.Metadata";
 }
 
-impl SerDe for Metadata {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let metadata_proto = MetadataProto::try_from(self)?;
-        let mut buf = BytesMut::with_capacity(metadata_proto.encoded_len());
-        metadata_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let metadata_proto: MetadataProto = Message::decode(buf)?;
-        metadata_proto.try_into()
-    }
+impl serde_impl::ProtobufSerializable for Metadata {
+    type ProtobufMessage = MetadataProto;
 }
 
 //
@@ -151,22 +152,8 @@ impl type_url::TypeUrl for Envelope {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.pipeline.v1beta1.Envelope";
 }
 
-impl SerDe for Envelope {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let envelope_proto = EnvelopeProto::try_from(self)?;
-        let mut buf = BytesMut::with_capacity(envelope_proto.encoded_len());
-        envelope_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let envelope_proto: EnvelopeProto = Message::decode(buf)?;
-        envelope_proto.try_into()
-    }
+impl serde_impl::ProtobufSerializable for Envelope {
+    type ProtobufMessage = EnvelopeProto;
 }
 
 //
@@ -176,6 +163,12 @@ impl SerDe for Envelope {
 #[derive(Debug, PartialEq, Clone)]
 pub struct RawLog {
     pub log_event: Bytes,
+}
+
+impl RawLog {
+    pub fn new(log_event: Bytes) -> Self {
+        RawLog { log_event }
+    }
 }
 
 impl From<RawLogProto> for RawLog {
@@ -198,20 +191,6 @@ impl type_url::TypeUrl for RawLog {
     const TYPE_URL: &'static str = "graplsecurity.com/graplinc.grapl.pipeline.v1beta1.RawLog";
 }
 
-impl SerDe for RawLog {
-    fn serialize(self) -> Result<Bytes, SerDeError> {
-        let raw_log_proto = RawLogProto::from(self);
-        let mut buf = BytesMut::with_capacity(raw_log_proto.encoded_len());
-        raw_log_proto.encode(&mut buf)?;
-        Ok(buf.freeze())
-    }
-
-    fn deserialize<B>(buf: B) -> Result<Self, SerDeError>
-    where
-        B: Buf,
-        Self: Sized,
-    {
-        let raw_log_proto: RawLogProto = Message::decode(buf)?;
-        Ok(raw_log_proto.into())
-    }
+impl serde_impl::ProtobufSerializable for RawLog {
+    type ProtobufMessage = RawLogProto;
 }

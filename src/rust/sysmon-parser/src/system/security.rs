@@ -7,11 +7,7 @@ use derive_into_owned::IntoOwned;
 /// <https://docs.microsoft.com/en-us/windows/win32/wes/eventschema-security-systempropertiestype-element>
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Hash, IntoOwned)]
-#[cfg_attr(
-    feature = "serde",
-    derive(serde_crate::Serialize, serde_crate::Deserialize),
-    serde(crate = "serde_crate")
-)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Security<'a> {
     /// The security identifier (SID) of the user in string form.
     pub user_id: Option<Cow<'a, str>>,

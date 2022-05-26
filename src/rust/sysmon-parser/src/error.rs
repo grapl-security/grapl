@@ -6,6 +6,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[non_exhaustive]
 #[derive(Error, Debug, PartialEq)]
 pub enum Error {
+    #[error("starting Sysmon event XML element not found")]
+    SysmonEventNotFound,
     #[error("event is not `{0}`")]
     ExpectEventType(&'static str),
     #[error("failed to parse IP address `{value}` at position `{position}` with `{source}`")]
@@ -43,6 +45,10 @@ pub enum Error {
         position: usize,
         source: uuid::Error,
     },
+    #[error("unexpected XML at position `{position}`: {message}")]
+    ParseSysmon { message: String, position: usize },
+    #[error("unexpected end of stream")]
+    UnexpectedEndOfStream,
     // these errors are useful just as they are
     #[error(transparent)]
     XmlError(#[from] xmlparser::Error),

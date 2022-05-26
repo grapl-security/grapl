@@ -25,6 +25,12 @@ REPOSITORY_ROOT: Final[str] = os.path.join(os.path.dirname(__file__), "../..")
 # note: this ${} is interpolated inside Nomad
 HOST_IP_IN_NOMAD: Final[str] = "${attr.unique.network.ip-address}"
 
+# This is equivalent to what "${attr.unique.network.ip-address}" resolves to but is used for cases where variable
+# interpolation is not available such as network.dns prior to Nomad 1.3.0
+# Hax: If this is not available such as in Buildkite, we'll default to Google DNS for now.
+# This should be going away once https://github.com/hashicorp/nomad/pull/12817 is merged
+CONSUL_DNS_IP: Final[str] = os.getenv("CONSUL_DNS_IP", "8.8.8.8")
+
 
 def to_bool(input: Optional[Union[str, bool]]) -> Optional[bool]:
     if isinstance(input, bool):

@@ -5,7 +5,7 @@ sys.path.insert(0, "..")
 from typing import List, Mapping, Optional, Set, cast
 
 import pulumi_aws as aws
-from infra import config, dynamodb, emitter
+from infra import config, dynamodb, emitter, log_levels
 from infra.alarms import OpsAlarms
 from infra.api_gateway import ApiGateway
 from infra.artifacts import ArtifactGetter
@@ -16,7 +16,12 @@ from infra.consul_config import ConsulConfig
 from infra.consul_intentions import ConsulIntentions
 from infra.consul_service_default import ConsulServiceDefault
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
-from infra.firecracker_assets import FirecrackerAssets, FirecrackerS3BucketObjects
+from infra.firecracker_assets import (
+    FirecrackerAssets,
+    FirecrackerS3BucketObjects,
+    FirecrackerS3BucketObjectsProtocol,
+    MockFirecrackerS3BucketObjects,
+)
 from infra.hashicorp_provider import (
     get_consul_provider_address,
     get_nomad_provider_address,
@@ -38,6 +43,12 @@ from typing_extensions import Final
 
 import pulumi
 
+"""
+https://github.com/grapl-security/issue-tracker/issues/908
+This can eventually be removed once we remove HaxDocker in favor of Firecracker
+"""
+USE_HAX_DOCKER_RUNTIME: bool = True
+
 
 def _get_subset(inputs: NomadVars, subset: Set[str]) -> NomadVars:
     return {k: inputs[k] for k in subset}
@@ -57,13 +68,16 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "analyzer-executor": builder.build_with_tag("analyzer-executor"),
         "dgraph": DockerImageId("dgraph/dgraph:v21.03.1"),
         "engagement-creator": builder.build_with_tag("engagement-creator"),
+        "generator-executor": builder.build_with_tag("generator-executor"),
         "graph-merger": builder.build_with_tag("graph-merger"),
         "graphql-endpoint": builder.build_with_tag("graphql-endpoint"),
+        "hax-docker-plugin-runtime": DockerImageId("debian:bullseye-slim"),
         "model-plugin-deployer": builder.build_with_tag("model-plugin-deployer"),
         "node-identifier": builder.build_with_tag("node-identifier"),
         "node-identifier-retry": builder.build_with_tag("node-identifier-retry"),
         "organization-management": builder.build_with_tag("organization-management"),
         "osquery-generator": builder.build_with_tag("osquery-generator"),
+        "pipeline-ingress": builder.build_with_tag("pipeline-ingress"),
         "plugin-bootstrap": builder.build_with_tag("plugin-bootstrap"),
         "plugin-registry": builder.build_with_tag("plugin-registry"),
         "plugin-work-queue": builder.build_with_tag("plugin-work-queue"),
@@ -135,6 +149,11 @@ def main() -> None:
 
     dynamodb_tables = dynamodb.DynamoDB()
 
+    kafka = Kafka(
+        "kafka",
+        confluent_environment_name=pulumi_config.require("confluent-environment-name"),
+    )
+
     # TODO: Create these emitters inside the service abstraction if nothing
     # else uses them (or perhaps even if something else *does* use them)
     sysmon_log_emitter = emitter.EventEmitter("sysmon-log")
@@ -183,38 +202,33 @@ def main() -> None:
     analyzers_bucket = Bucket("analyzers-bucket", sse=True)
     pulumi.export("analyzers-bucket", analyzers_bucket.bucket)
     model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)
-    pulumi.export("model-plugins-bucket", model_plugins_bucket.bucket)
+    plugin_registry_bucket = Bucket("plugin-registry-bucket", sse=True)
 
-    plugins_bucket = Bucket("plugins-bucket", sse=True)
-    pulumi.export("plugins-bucket", plugins_bucket.bucket)
-
-    plugin_buckets = [
+    all_plugin_buckets = [
         analyzers_bucket,
         model_plugins_bucket,
+        plugin_registry_bucket,
     ]
 
-    firecracker_s3objs = FirecrackerS3BucketObjects(
-        "firecracker-s3-bucket-objects",
-        plugins_bucket=plugins_bucket,
-        firecracker_assets=FirecrackerAssets(
-            "firecracker-assets",
-            repository_name=config.cloudsmith_repository_name(),
-            artifacts=artifacts,
-        ),
+    pipeline_ingress_healthcheck_polling_interval_ms = "5000"
+    pulumi.export(
+        "pipeline-ingress-healthcheck-polling-interval-ms",
+        pipeline_ingress_healthcheck_polling_interval_ms,
     )
 
-    # To learn more about this syntax, see
-    # https://docs.rs/env_logger/0.9.0/env_logger/#enabling-logging
-    rust_log_levels = ",".join(
-        [
-            "DEBUG",
-            "h2=WARN",
-            "hyper=WARN",
-            "rusoto_core=WARN",
-            "rustls=WARN",
-        ]
+    firecracker_s3objs: FirecrackerS3BucketObjectsProtocol = (
+        MockFirecrackerS3BucketObjects()
+        if USE_HAX_DOCKER_RUNTIME
+        else FirecrackerS3BucketObjects(
+            "firecracker-s3-bucket-objects",
+            plugins_bucket=plugin_registry_bucket,
+            firecracker_assets=FirecrackerAssets(
+                "firecracker-assets",
+                repository_name=config.cloudsmith_repository_name(),
+                artifacts=artifacts,
+            ),
+        )
     )
-    py_log_level = "DEBUG"
 
     aws_env_vars_for_local = _get_aws_env_vars_for_local()
     pulumi.export("aws-env-vars-for-local", aws_env_vars_for_local)
@@ -230,17 +244,20 @@ def main() -> None:
         aws_env_vars_for_local=aws_env_vars_for_local,
         aws_region=aws.get_region().name,
         container_images=_container_images(artifacts),
+        dns_server=config.CONSUL_DNS_IP,
         engagement_creator_queue=engagement_creator_queue.main_queue_url,
         graph_merger_queue=graph_merger_queue.main_queue_url,
         graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
+        kafka_bootstrap_servers=kafka.bootstrap_servers(),
         model_plugins_bucket=model_plugins_bucket.bucket,
         node_identifier_queue=node_identifier_queue.main_queue_url,
         node_identifier_dead_letter_queue=node_identifier_queue.dead_letter_queue_url,
         node_identifier_retry_queue=node_identifier_queue.retry_queue_url,
         osquery_generator_queue=osquery_generator_queue.main_queue_url,
         osquery_generator_dead_letter_queue=osquery_generator_queue.dead_letter_queue_url,
-        py_log_level=py_log_level,
-        rust_log=rust_log_levels,
+        pipeline_ingress_healthcheck_polling_interval_ms=pipeline_ingress_healthcheck_polling_interval_ms,
+        py_log_level=log_levels.PY_LOG_LEVEL,
+        rust_log=log_levels.RUST_LOG_LEVELS,
         schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
         schema_table_name=dynamodb_tables.schema_table.name,
         session_table_name=dynamodb_tables.dynamic_session_table.name,
@@ -254,8 +271,8 @@ def main() -> None:
         user_session_table=dynamodb_tables.user_session_table.name,
         plugin_registry_kernel_artifact_url=firecracker_s3objs.kernel_s3obj_url,
         plugin_registry_rootfs_artifact_url=firecracker_s3objs.rootfs_s3obj_url,
-        plugin_s3_bucket_aws_account_id=config.AWS_ACCOUNT_ID,
-        plugin_s3_bucket_name=plugins_bucket.bucket,
+        plugin_registry_bucket_aws_account_id=config.AWS_ACCOUNT_ID,
+        plugin_registry_bucket_name=plugin_registry_bucket.bucket,
     )
 
     provision_vars: Final[NomadVars] = {
@@ -277,21 +294,15 @@ def main() -> None:
 
     nomad_grapl_core_timeout = "5m"
 
-    kafka = Kafka(
-        "kafka",
-        confluent_environment_name=pulumi_config.require("confluent-environment-name"),
-    )
-    e2e_service_credentials = kafka.service_credentials(service_name="e2e-test-runner")
+    pipeline_ingress_kafka_credentials = kafka.service_credentials("pipeline-ingress")
 
-    pulumi.export("kafka-bootstrap-servers", kafka.bootstrap_servers())
     pulumi.export(
-        "kafka-e2e-sasl-username", e2e_service_credentials.apply(lambda c: c.api_key)
+        "pipeline-ingress-kafka-sasl-username",
+        pipeline_ingress_kafka_credentials.api_key,
     )
     pulumi.export(
-        "kafka-e2e-sasl-password", e2e_service_credentials.apply(lambda c: c.api_secret)
-    )
-    pulumi.export(
-        "kafka-e2e-consumer-group-name", kafka.consumer_group("e2e-test-runner")
+        "pipeline-ingress-kafka-sasl-password",
+        pipeline_ingress_kafka_credentials.api_secret,
     )
 
     ConsulIntentions(
@@ -320,7 +331,7 @@ def main() -> None:
     nomad_grapl_ingress = NomadJob(
         "grapl-ingress",
         jobspec=path_from_root("nomad/grapl-ingress.nomad").resolve(),
-        vars={},
+        vars={"dns_server": config.CONSUL_DNS_IP},
         opts=pulumi.ResourceOptions(
             provider=nomad_provider,
             # This dependson ensures we've switched the web-ui protocol to http instead of tcp prior. Otherwise there's
@@ -394,6 +405,8 @@ def main() -> None:
             organization_management_db_port=str(organization_management_db.port),
             organization_management_db_username=organization_management_db.username,
             organization_management_db_password=organization_management_db.password,
+            pipeline_ingress_kafka_sasl_username="fake",
+            pipeline_ingress_kafka_sasl_password="fake",
             plugin_registry_db_hostname=plugin_registry_db.hostname,
             plugin_registry_db_port=str(plugin_registry_db.port),
             plugin_registry_db_username=plugin_registry_db.username,
@@ -459,11 +472,11 @@ def main() -> None:
             subnet_ids
         ).apply(subnets_to_single_az)
 
-        for _bucket in plugin_buckets:
-            _bucket.grant_put_permission_to(nomad_agent_role)
+        for bucket in all_plugin_buckets:
+            bucket.grant_put_permission_to(nomad_agent_role)
             # Analyzer Dispatcher needs to be able to ListObjects on Analyzers
             # Analyzer Executor needs to be able to ListObjects on Model Plugins
-            _bucket.grant_get_and_list_to(nomad_agent_role)
+            bucket.grant_get_and_list_to(nomad_agent_role)
         for _emitter in all_emitters:
             _emitter.grant_write_to(nomad_agent_role)
             _emitter.grant_read_to(nomad_agent_role)
@@ -531,7 +544,6 @@ def main() -> None:
             plugin_work_queue_postgres.password(),
         )
 
-        pulumi.export("kafka-bootstrap-servers", kafka.bootstrap_servers())
         pulumi.export("redis-endpoint", cache.endpoint)
 
         prod_grapl_core_vars: Final[NomadVars] = dict(
@@ -543,6 +555,8 @@ def main() -> None:
             ),
             organization_management_db_username=organization_management_postgres.username(),
             organization_management_db_password=organization_management_postgres.password(),
+            pipeline_ingress_kafka_sasl_username=pipeline_ingress_kafka_credentials.api_key,
+            pipeline_ingress_kafka_sasl_password=pipeline_ingress_kafka_credentials.api_secret,
             plugin_registry_db_hostname=plugin_registry_postgres.host(),
             plugin_registry_db_port=plugin_registry_postgres.port().apply(str),
             plugin_registry_db_username=plugin_registry_postgres.username(),
@@ -595,9 +609,7 @@ def main() -> None:
         pulumi.export(
             "stateful-resource-urns",
             [
-                # grapl-core contains our dgraph instances
-                nomad_grapl_core.urn,
-                # We need to re-provision after we start a new dgraph
+                # We need to re-provision
                 nomad_grapl_provision.urn,
                 dynamodb_tables.urn,
             ],

@@ -22,6 +22,8 @@ DIST_DIR = $(GRAPL_ROOT)/dist
 COMPOSE_USER=${UID}:${GID}
 COMPOSE_IGNORE_ORPHANS=1
 COMPOSE_PROJECT_NAME ?= grapl
+# Get a non-loopback private ip for the host. Order is not guaranteed, but that's ok
+CONSUL_DNS_IP = $(shell hostname --all-ip-addresses | awk '{ print $$1 }')
 
 export
 
@@ -40,6 +42,7 @@ endif
 DOCKER_BUILDX_BAKE_HCL := docker buildx bake --file=docker-bake.hcl $(buildx_builder_args)
 
 COMPOSE_PROJECT_INTEGRATION_TESTS := grapl-integration_tests
+COMPOSE_PROJECT_INTEGRATION_TESTS_NEW := grapl-integration_tests_new
 COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
 
 # All the services defined in the docker-compose.check.yml file are
@@ -49,7 +52,7 @@ COMPOSE_PROJECT_E2E_TESTS := grapl-e2e_tests
 # While we would ultimately like to run all these containers as a
 # non-root user, some currently seem to require that; to accommodate
 # all such images, we provide two helpful macros.
-DOCKER_COMPOSE_CHECK := docker-compose --file=docker-compose.check.yml run --rm
+DOCKER_COMPOSE_CHECK := docker compose --file=docker-compose.check.yml run --rm
 NONROOT_DOCKER_COMPOSE_CHECK := ${DOCKER_COMPOSE_CHECK} --user=${COMPOSE_USER}
 
 # Our images are labeled; we can use this to help filter various
@@ -59,11 +62,19 @@ NONROOT_DOCKER_COMPOSE_CHECK := ${DOCKER_COMPOSE_CHECK} --user=${COMPOSE_USER}
 DOCKER_FILTER_LABEL := org.opencontainers.image.vendor="Grapl, Inc."
 # We pull some vendor containers directly
 DOCKER_DGRAPH_FILTER_LABEL := maintainer="Dgraph Labs <contact@dgraph.io>"
-# Currently we don't label volumes explicitly. The only labeled volume is the dgraph_export which is labeled
-# automatically by docker-compose
-# TODO label volumes explicitly and then update this filter
-DOCKER_VOLUME_FILTER_LABEL := com.docker.compose.project="grapl"
+# This filter should differentiate between data volumes, such as those used for
+# DGraph (grapl-data-dgraph), and those used for caching builds
+# (grapl-engagement-view-yarn).
+#
+# Multiple filter arguments can be supplied here.
+#
+# We may want to stick to a naming convention where data volume should just
+# prefix their name to match the filter here, but that doesn't necessarily need
+# to be a strict requirement.
+DOCKER_DATA_VOLUME_FILTERS := --filter=name=grapl-data
 
+# Run a Pants goal across all proto files
+PANTS_PROTO_FILTER := ./pants filter --target-type=protobuf_sources :: | xargs ./pants
 # Run a Pants goal across all Python files
 PANTS_PYTHON_FILTER := ./pants filter --target-type=python_sources,python_tests :: | xargs ./pants
 # Run a Pants goal across all shell files
@@ -115,6 +126,9 @@ help: ## Print this help
 	@printf -- '  ${FMT_PURPLE}DEBUG_SERVICES${FMT_END}="graphql_endpoint grapl_e2e_tests" make test-e2e\n'
 	@printf -- '    to launch the VSCode Debugger (see ${VSC_DEBUGGER_DOCS_LINK}).\n'
 	@printf -- '\n'
+	@printf -- '  ${FMT_PURPLE}WITH_PULUMI_TRACING=1${FMT_END} makeup \n'
+	@printf -- '    to send pulumi traces to Jaeger (see docs/development/debugging.md).\n'
+	@printf -- '\n'
 	@printf -- '  ${FMT_PURPLE}WITH_TRACING=1${FMT_END} make build-local-infrastructure \n'
 	@printf -- '    to send docker build traces to Jaeger (see docs/development/debugging.md).\n'
 	@printf -- '\n'
@@ -162,12 +176,12 @@ build-e2e-pex-files:
 build-engagement-view: ## Build website assets to include in grapl-web-ui
 	@echo "--- Building the engagement view"
 	$(ENGAGEMENT_VIEW_MAKE) build-code
-	TARGET_FRONTEND_DIR="src/rust/grapl-web-ui/frontend"
+	TARGET_FRONTEND_DIR="dist/frontend"
 	rm -rf "$${TARGET_FRONTEND_DIR}/*"  # Clear out old artifacts
 	cp -r \
 		"src/js/engagement_view/build/." \
 		"$${TARGET_FRONTEND_DIR}"
-		
+
 
 .PHONY: build-grapl-service-prerequisites
 
@@ -201,6 +215,11 @@ build-test-integration:
 	@echo "--- Building integration test images"
 	docker buildx bake integration-tests $(buildx_builder_args)
 
+.PHONY: build-test-integration-new
+build-test-integration-new:
+	@echo "--- Building \"new\" integration test images"
+	docker buildx bake rust-integration-tests-new $(buildx_builder_args)
+
 ########################################################################
 
 .PHONY: build-prettier-image
@@ -212,14 +231,6 @@ graplctl: ## Build graplctl and install it to ./bin
 	./pants package ./src/python/graplctl/graplctl
 	cp ./dist/src.python.graplctl.graplctl/graplctl.pex ./bin/graplctl
 	printf -- '\n${FMT_BOLD}graplctl${FMT_END} written to ${FMT_BLUE}./bin/graplctl${FMT_END}\n'
-
-.PHONY: grapl-template-generator
-grapl-template-generator: ## Build the Grapl Template Generator and install it to ./bin
-	./pants package ./src/python/grapl-template-generator/grapl_template_generator
-	cp \
-		./dist/src.python.grapl-template-generator.grapl_template_generator/grapl_template_generator.pex \
-		./bin/grapl-template-generator
-	printf -- '\n${FMT_BOLD}Template Generator${FMT_END} written to ${FMT_BLUE}./bin/grapl-template-generator${FMT_END}\n'
 
 .PHONY: dump-artifacts-local
 dump-artifacts-local:  ## Run the script that dumps Nomad/Docker logs after test runs
@@ -305,9 +316,12 @@ test-integration: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_T
 test-integration: ## Build and run integration tests
 	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh integration-tests 9"
 
-.PHONY: test-grapl-template-generator
-test-grapl-template-generator:  # Test that the Grapl Template Generator spits out something compilable.
-	./src/python/grapl-template-generator/grapl_template_generator_tests/integration_test.sh
+.PHONY: test-integration-new
+test-integration-new: build-local-infrastructure
+test-integration-new: build-test-integration-new
+test-integration-new: export COMPOSE_PROJECT_NAME := $(COMPOSE_PROJECT_INTEGRATION_TESTS_NEW)
+test-integration-new: ## Build and run "new" integration tests
+	$(MAKE) test-with-env EXEC_TEST_COMMAND="nomad/bin/run_parameterized_job.sh integration-tests-new 9"
 
 .PHONY: test-e2e
 test-e2e: build-local-infrastructure
@@ -320,9 +334,11 @@ test-e2e: ## Build and run e2e tests
 # Think of it as a Context Manager that:
 # - Before test-time, brings up a `make up`
 # - After test-time, tears it all down and dumps artifacts.
+.SILENT: test-with-env
 .PHONY: test-with-env
 test-with-env: # (Do not include help text - not to be used directly)
 	stopGrapl() {
+		$(MAKE) dump-artifacts-local
 		# skip if KEEP_TEST_ENV is set
 		if [[ -z "${KEEP_TEST_ENV}" ]]; then
 			@echo "Tearing down test environment"
@@ -331,7 +347,6 @@ test-with-env: # (Do not include help text - not to be used directly)
 		fi
 		# Unset COMPOSE_FILE to help ensure it will be ignored with use of --file
 		unset COMPOSE_FILE
-		$(MAKE) dump-artifacts-local
 		$(MAKE) down
 	}
 	# Ensure we call stop even after test failure, and return exit code from
@@ -352,7 +367,6 @@ lint: lint-hcl
 lint: lint-prettier
 lint: lint-proto
 lint: lint-proto-breaking
-lint: lint-proto-format
 lint: lint-python
 lint: lint-rust
 lint: lint-shell
@@ -378,15 +392,11 @@ lint-prettier: ## Run ts/js/yaml lint checks
 
 .PHONY: lint-proto
 lint-proto: ## Lint all protobuf definitions
-	${DOCKER_COMPOSE_CHECK} buf-lint
+	$(PANTS_PROTO_FILTER) lint
 
 .PHONY: lint-proto-breaking
 lint-proto-breaking: ## Check protobuf definitions for breaking changes
 	${DOCKER_COMPOSE_CHECK} buf-breaking-change
-
-.PHONY: lint-proto-format
-lint-proto-format: ## Check that all protobuf files are properly formatted
-	${DOCKER_COMPOSE_CHECK} buf-lint-format
 
 .PHONY: lint-python
 lint-python: ## Run Python lint checks
@@ -436,7 +446,7 @@ format-prettier: ## Reformat js/ts/yaml
 
 .PHONY: format-proto
 format-proto: ## Reformat all Protobuf definitions
-	$(NONROOT_DOCKER_COMPOSE_CHECK) buf-format
+	$(PANTS_PROTO_FILTER) fmt
 
 .PHONY: format-python
 format-python: ## Reformat all Python code
@@ -458,6 +468,7 @@ up: build-local-infrastructure _up
 
 # NOTE: Internal target to decouple the building of images from the
 # running of them. Do not invoke this directly.
+.SILENT: _up
 .PHONY: _up
 _up:
 	# Primarily used for bringing up an environment for integration testing.
@@ -470,34 +481,33 @@ _up:
 	# explicitly unset that here to avoid potential surprises.
 	unset COMPOSE_FILE
 
-	# TODO: This could potentially be replaced with a docker-compose run, but
+	# TODO: This could potentially be replaced with a docker compose run, but
 	#  it doesn't have all these useful flags
 	@echo "--- Running Pulumi"
-	docker-compose \
+	docker compose \
 		--file docker-compose.yml \
 		up --force-recreate --always-recreate-deps --renew-anon-volumes \
 		--exit-code-from pulumi \
 		pulumi
 
 .PHONY: down
-down: ## docker-compose down - both stops and removes the containers
+down: ## docker compose down - both stops and removes the containers
 	# This is only for killing the lambda containers that Localstack
-	# spins up in our network, but that docker-compose doesn't know
+	# spins up in our network, but that docker compose doesn't know
 	# about. This must be the network that is used in Localstack's
 	# LAMBDA_DOCKER_NETWORK environment variable.
 	$(MAKE) stop-nomad-detach
-	docker volume rm grapl-dgraph
-	docker-compose $(EVERY_COMPOSE_FILE) down --timeout=0
-	@docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
-	@docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
+	docker compose $(EVERY_COMPOSE_FILE) down --timeout=0
+	@docker compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
+	@docker compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_E2E_TESTS) down --timeout=0
 
 .PHONY: stop
-stop: ## docker-compose stop - stops (but preserves) the containers
-	docker-compose $(EVERY_COMPOSE_FILE) stop
+stop: ## docker compose stop - stops (but preserves) the containers
+	docker compose $(EVERY_COMPOSE_FILE) stop
 
 # This is a convenience target for our frontend engineers, to make the dev loop
 # slightly less arduous for grapl-web-ui/engagement-view development.
-# It will *rebuild* the JS/Rust grapl-web-ui dependences, and then 
+# It will *rebuild* the JS/Rust grapl-web-ui dependences, and then
 # restart a currently-running `make up` web ui allocation, which will then
 # retrieve the latest, newly-rebuilt Docker container.
 #
@@ -506,7 +516,7 @@ stop: ## docker-compose stop - stops (but preserves) the containers
 restart-web-ui: build-engagement-view  ## Rebuild web-ui image, and restart web-ui task in Nomad
 	$(DOCKER_BUILDX_BAKE_HCL) grapl-web-ui
 	source ./nomad/lib/nomad_cli_tools.sh
-	nomad alloc restart "$$(nomad_get_alloc_id grapl-core web-ui)"
+	nomad alloc restart "$$(nomad_get_alloc_id_for_task grapl-core web-ui)"
 
 ##@ Venv Management
 ########################################################################
@@ -546,7 +556,7 @@ clean-docker: clean-docker-cache
 clean-docker: clean-docker-containers
 clean-docker: clean-docker-images
 clean-docker: clean-docker-dgraph
-clean-docker: clean-docker-volumes
+clean-docker: clean-docker-data-volumes
 clean-docker: ## Clean all Docker-related resources
 
 .PHONY: clean-artifacts
@@ -576,12 +586,10 @@ clean-docker-images: ## Remove all Grapl images
 		--quiet \
 	| xargs --no-run-if-empty docker rmi --force
 
-clean-docker-volumes: ## Remove all Grapl labeled volumes
-	# Currently only the dgraph_export volume is labeled so that's the only one affected.
+clean-docker-data-volumes: ## Remove all Grapl labeled volumes
 	# We explicitly don't want to prune the build cache volumes
-	docker volume prune \
-		--filter=label=$(DOCKER_VOLUME_FILTER_LABEL) \
-		--force
+	docker volume ls ${DOCKER_DATA_VOLUME_FILTERS} --quiet |
+		xargs --no-run-if-empty docker volume rm --force
 
 clean-docker-dgraph: ## Remove dgraph images
 	docker images \
@@ -601,8 +609,8 @@ clean-all-rust:
 
 .PHONY: local-pulumi
 local-pulumi: export COMPOSE_PROJECT_NAME="grapl"
-local-pulumi:  ## launch pulumi via docker-compose up
-	docker-compose -f docker-compose.yml run pulumi
+local-pulumi:  ## launch pulumi via docker compose up
+	docker compose -f docker-compose.yml run pulumi
 
 .PHONY: start-nomad-detach
 start-nomad-detach:  ## Start the Nomad environment, detached
@@ -653,11 +661,14 @@ dist/firecracker_kernel.tar.gz: firecracker/kernel/build.sh | dist
 # TODO: Would be nice to be able to specify the input file prerequisites of
 # this target and make non-PHONY. It's currently PHONY because otherwise,
 # rebuilds would only occur if the dist/plugin-bootstrap-init dir were deleted.
-# NOTE: While this target is PHONY, it *does* represent a real directory in 
+# NOTE: While this target is PHONY, it *does* represent a real directory in
 # dist/
 .PHONY: dist/plugin-bootstrap-init
-dist/plugin-bootstrap-init: | dist  ## Build the Plugin Bootstrap Init (+ associated files) and copy it to dist/
-	$(DOCKER_BUILDX_BAKE_HCL) plugin-bootstrap-init
+dist/plugin-bootstrap-init: _export-rust-build-artifacts-to-dist  ## Build the Plugin Bootstrap Init (+ associated files) and copy it to dist/
+
+.PHONY: _export-rust-build-artifacts-to-dist
+_export-rust-build-artifacts-to-dist: | dist  ## Copy all specified Rust binary artifacts to dist/
+	$(DOCKER_BUILDX_BAKE_HCL) export-rust-build-artifacts-to-dist
 
 # TODO: Would be nice to be able to specify the input file prerequisites of
 # this target, once `dist/plugin-bootstrap-init` is non-PHONY

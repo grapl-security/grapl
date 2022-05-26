@@ -17,6 +17,7 @@
 //! variant. The types that currently are supported are:
 //!
 //!   - [FileCreate]
+//!   - [FileCreateStreamHash]
 //!   - [NetworkConnect]
 //!   - [ProcessCreate]
 //!   - [ProcessTerminate]
@@ -45,6 +46,7 @@
 //! [Sysmon for Linux]: https://github.com/Sysinternals/SysmonForLinux
 //! [xmlparser]: https://github.com/RazrFalcon/xmlparser
 //! [FileCreate]: event_data::FileCreateEventData
+//! [FileCreateStreamHash]: event_data::FileCreateStreamHashEventData
 //! [NetworkConnect]: event_data::NetworkConnectionEventData
 //! [ProcessCreate]: event_data::ProcessCreateEventData
 //! [ProcessTerminate]: event_data::ProcessTerminatedEventData
@@ -125,5 +127,5 @@ pub use crate::system::System;
 ///
 /// ```
 pub fn parse_events(input: &str) -> SysmonEvents<'_> {
-    SysmonEvents::new(input)
+    SysmonEvents::from(input)
 }

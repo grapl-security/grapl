@@ -188,7 +188,7 @@ The `build-test-unit` target is a [Dockerfile](./src/rust/Dockerfile) stage
 that will builds dependencies for `cargo test` that wasn't done so in the
 initial source build, `cargo build`.
 
-We're currently using `docker-compose up` to run our tests concurrently. We
+We're currently using `docker compose up` to run our tests concurrently. We
 have a [helper script](./test/docker-compose-with-error.sh) that checks the
 exit code for each container (test) run. If any test exit code is non-zero, the
 script will return non-zero as well. This allows us to surface non-zero exit
@@ -202,7 +202,7 @@ the Grapl environment locally.
 If you'd like to skip building and run the Grapl environment locally you can run:
 
 ``` bash
-TAG=latest docker-compose up
+TAG=latest docker compose up
 ```
 
 Note that `TAG` should be set to whatever you used in your `make`
@@ -215,14 +215,14 @@ up-to-date with the latest `main` branch on GitHub for development and
 testing. Example:
 
 ``` bash
-TAG=main docker-compose up
+TAG=main docker compose up
 ```
 
 ## Nomad
 Grapl is transitioning to Nomad as our container orchestration. This will replace both AWS Fargate and docker-compose.
 
 ### Nomad local development setup
-Have docker and docker-compose installed. Install Nomad and Consult following the instructions at 
+Have docker and docker compose installed. Install Nomad and Consult following the instructions at 
 https://www.nomadproject.io/downloads and https://www.consul.io/downloads respectively.
 
 Install CNI plugins:

@@ -4,7 +4,7 @@ env:
   BUILDKITE_PLUGIN_VAULT_ENV_SECRET_PREFIX: "secret/data/buildkite/env"
   # TODO: Figure out a way for this to be sourced from our
   # rust-toolchain file
-  RUST_VERSION: 1.60.0
+  RUST_VERSION: 1.61.0
 
 steps:
   - group: ":white_check_mark: Validation"
@@ -47,11 +47,8 @@ steps:
         command:
           - make lint-proto
 
-      - label: ":large_blue_square::lint-roller: Protobuf Format Checking"
-        command:
-          - make lint-proto-format
-
       - label: ":large_blue_square::face_with_symbols_on_mouth: Protobuf Breaking Changes"
+        soft_fail: true
         command:
           - make lint-proto-breaking
 
@@ -212,12 +209,6 @@ steps:
                 - grapl/CODECOV_TOKEN
           - grapl-security/codecov#v0.1.6
 
-      - label: ":writing_hand: Test Grapl Template Generator"
-        command:
-          - make test-grapl-template-generator
-        agents:
-          queue: "beefy"
-
   - label: ":hammer: Integration Tests"
     command:
       - make test-integration
@@ -234,6 +225,21 @@ steps:
       - "test_artifacts/**/*"
       # https://github.com/grapl-security/issue-tracker/issues/894
       - "src/js/engagement_view/source_map_explorer_result.html"
+
+  - label: ':hammer: "New" Integration Tests'
+    command:
+      - make test-integration-new
+    plugins:
+      - grapl-security/vault-login#v0.1.2
+      - grapl-security/vault-env#v0.1.0:
+          secrets:
+            - grapl/TOOLCHAIN_AUTH_TOKEN
+    env:
+      GRAPL_LOG_LEVEL: "DEBUG"
+    agents:
+      queue: "beefy"
+    artifact_paths:
+      - "test_artifacts/**/*"
 
   - label: ":hammer: E2E Tests"
     command:

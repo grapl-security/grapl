@@ -13,7 +13,7 @@ All of these instructions assume you're in our `$GRAPL_ROOT`
 ### Provision a box on EC2
 
 - Make sure you're logged in to AWS SSO.
-- Run `./devbox/provision.sh`.
+- Run `./devbox/provision/provision.sh`.
 - (There is a minor race condition in provision.sh, you may need to run it
   twice. Don't worry, it's idempotent.)
 
@@ -31,8 +31,9 @@ All of these instructions assume you're in our `$GRAPL_ROOT`
 
 Forward ports from the EC2 machine to your local machine.
 
-- `FORWARD_PORT=1234 ./devbox/ssh.sh`
-- `FORWARD_PORT=4646 ./devbox/ssh.sh`
+- `FORWARD_PORTS=1234 ./devbox/ssh.sh`
+- `FORWARD_PORTS=1234,4646,8500 ./devbox/ssh.sh`
+- Or, for the common ports we use, just do `./devbox/forward_common_ports.ssh`
 
 ### "Devbox-Do"
 

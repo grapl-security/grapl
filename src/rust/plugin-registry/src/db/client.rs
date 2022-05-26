@@ -1,5 +1,5 @@
 use grapl_utils::future_ext::GraplFutureExt;
-use rust_proto::plugin_registry::CreatePluginRequest;
+use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::PluginType;
 
 use super::models::{
     PluginDeploymentRow,
@@ -9,6 +9,12 @@ use super::models::{
 
 pub struct PluginRegistryDbClient {
     pool: sqlx::PgPool,
+}
+
+pub struct DbCreatePluginArgs {
+    pub tenant_id: uuid::Uuid,
+    pub display_name: String,
+    pub plugin_type: PluginType,
 }
 
 impl PluginRegistryDbClient {
@@ -55,11 +61,11 @@ impl PluginRegistryDbClient {
         .await
     }
 
-    #[tracing::instrument(skip(self, request, s3_key), err)]
+    #[tracing::instrument(skip(self, args, s3_key), err)]
     pub async fn create_plugin(
         &self,
         plugin_id: &uuid::Uuid,
-        request: &CreatePluginRequest,
+        args: DbCreatePluginArgs,
         s3_key: &str,
     ) -> Result<(), sqlx::Error> {
         sqlx::query!(
@@ -75,9 +81,9 @@ impl PluginRegistryDbClient {
             ON CONFLICT DO NOTHING;
             ",
             plugin_id,
-            &request.plugin_type.type_name(),
-            &request.display_name,
-            &request.tenant_id,
+            &args.plugin_type.type_name(),
+            &args.display_name,
+            &args.tenant_id,
             s3_key,
         )
         .execute(&self.pool)

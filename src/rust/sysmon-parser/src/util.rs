@@ -8,12 +8,18 @@ use chrono::{
     TimeZone,
     Utc,
 };
-use xmlparser::StrSpan;
+use xmlparser::{
+    StrSpan,
+    Token,
+};
 
 use crate::error::{
     Error,
     Result,
 };
+
+mod eventdata_iterator;
+pub(crate) use eventdata_iterator::EventDataIterator;
 
 pub(crate) fn from_zero_or_hex_str(span: &StrSpan) -> Result<u64> {
     let hex_str = span.as_str();
@@ -184,48 +190,125 @@ pub(crate) fn unescape_xml<'a, 'b: 'a>(span: &'a StrSpan<'b>) -> Result<Cow<'b, 
     }
 }
 
-macro_rules! next_text_str_span {
+fn get_token_position(token: &Token) -> usize {
+    match token {
+        Token::Attribute { span, .. }
+        | Token::Cdata { span, .. }
+        | Token::Comment { span, .. }
+        | Token::Declaration { span, .. }
+        | Token::DtdEnd { span, .. }
+        | Token::DtdStart { span, .. }
+        | Token::ElementEnd { span, .. }
+        | Token::ElementStart { span, .. }
+        | Token::EmptyDtd { span, .. }
+        | Token::EntityDeclaration { span, .. }
+        | Token::ProcessingInstruction { span, .. } => span.start(),
+        Token::Text { text } => text.start(),
+    }
+}
+
+fn display_token<'a>(token: &'a Token) -> &'a str {
+    match token {
+        Token::Attribute { span, .. }
+        | Token::Cdata { span, .. }
+        | Token::Comment { span, .. }
+        | Token::Declaration { span, .. }
+        | Token::DtdEnd { span, .. }
+        | Token::DtdStart { span, .. }
+        | Token::ElementEnd { span, .. }
+        | Token::ElementStart { span, .. }
+        | Token::EmptyDtd { span, .. }
+        | Token::EntityDeclaration { span, .. }
+        | Token::ProcessingInstruction { span, .. } => span.as_str(),
+        Token::Text { text } => text.as_str(),
+    }
+}
+
+macro_rules! expect_next_token {
     ($tokenizer:ident) => {{
-        let mut result = None;
-        while let Some(token) = $tokenizer.next() {
-            match token? {
-                Token::Text { text } => result = Some(text),
-                Token::ElementEnd {
-                    end: xmlparser::ElementEnd::Close(_, _),
+        if let Some(token) = $tokenizer.next() {
+            token?
+        } else {
+            return Err(Error::UnexpectedEndOfStream);
+        }
+    }};
+}
+
+/// Can be used to retrieve XML text from an element that does not include any attributes or other
+/// elements.
+///
+/// To be called after the tokenizer reaches the start of an element.
+///
+/// Ex: `>some text</Element>` returns the StrSpan for `some text`.
+pub(crate) fn get_element_text<'a>(
+    tokenizer: &mut xmlparser::Tokenizer<'a>,
+    element_name: &str,
+) -> Result<Option<StrSpan<'a>>> {
+    let token = expect_next_token!(tokenizer);
+    match token {
+        // empty-element tag: Ex: `<Element />`
+        xmlparser::Token::ElementEnd {
+            end: xmlparser::ElementEnd::Empty,
+            ..
+        } => {
+            // Sysmon will always return Data elements for event fields that do not have values
+            // (such as for RuleName when rule names are not specified in the config), so we'll
+            // interpret this None instead of an empty string because we'll treat it the same.
+            Ok(None)
+        }
+        // element is open-tag: Ex: `<Element>`
+        xmlparser::Token::ElementEnd {
+            end: xmlparser::ElementEnd::Open,
+            ..
+        } => {
+            let token = expect_next_token!(tokenizer);
+            match token {
+                xmlparser::Token::ElementEnd {
+                    end: xmlparser::ElementEnd::Close(_, tagname),
                     ..
-                } => break,
-                _ => {}
+                } if tagname.as_str() == element_name => {
+                    // In XML this is the same as the empty element <Element />, so we return None
+                    // for the same reasons noted for the element-empty case.
+                    Ok(None)
+                }
+                xmlparser::Token::Text { text } => {
+                    // before returning advance the tokenizer to the end-tag
+                    let token = expect_next_token!(tokenizer);
+                    match token {
+                        xmlparser::Token::ElementEnd {
+                            end: xmlparser::ElementEnd::Close(_, tagname),
+                            ..
+                        } if tagname.as_str() == element_name => {}
+                        _ => {
+                            return Err(Error::ParseSysmon {
+                                message: format!(
+                                    "expected '</{}>', found: {}",
+                                    element_name,
+                                    display_token(&token)
+                                ),
+                                position: get_token_position(&token),
+                            })
+                        }
+                    }
+
+                    Ok(Some(text))
+                }
+                _ => Err(Error::ParseSysmon {
+                    message: format!(
+                        "expected XML text or '</{}>', found: {}",
+                        element_name,
+                        display_token(&token)
+                    ),
+                    position: get_token_position(&token),
+                }),
             }
         }
-        match result {
-            Some(r) => r,
-            None => continue,
-        }
-    }};
+        _ => Err(Error::ParseSysmon {
+            message: format!("expected '>' or '/>', found: {}", display_token(&token)),
+            position: get_token_position(&token),
+        }),
+    }
 }
-
-macro_rules! get_name_attribute {
-    ($tokenizer:ident) => {{
-        let mut result = None;
-        while let Some(token) = $tokenizer.next() {
-            match token? {
-                Token::Attribute { local, value, .. } => match local.as_str() {
-                    "Name" => result = Some(value.as_str()),
-                    _ => {}
-                },
-                Token::ElementEnd { .. } => break,
-                _ => {}
-            }
-        }
-        match result {
-            Some(r) => r,
-            None => continue,
-        }
-    }};
-}
-
-pub(crate) use get_name_attribute;
-pub(crate) use next_text_str_span;
 
 #[cfg(test)]
 mod tests {
@@ -301,6 +384,80 @@ mod tests {
             Err(Error::InvalidXmlCharacterReference("x110000".to_string())),
             unescape_xml(&StrSpan::from("&#x110000;"))
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn get_element_text() -> Result<()> {
+        let xml = r#"<Foo>Bar</Foo>"#;
+        let mut tokenizer = xmlparser::Tokenizer::from(xml);
+
+        // consume start-tag
+        tokenizer.next().unwrap()?;
+
+        let text = super::get_element_text(&mut tokenizer, "Foo")?.map(|s| s.as_str());
+        assert_eq!(text, Some("Bar"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn get_element_text_empty() -> Result<()> {
+        let xml = r#"<Foo></Foo>"#;
+        let mut tokenizer = xmlparser::Tokenizer::from(xml);
+
+        // consume start-tag
+        tokenizer.next().unwrap()?;
+
+        let text = super::get_element_text(&mut tokenizer, "Foo")?.map(|s| s.as_str());
+        assert_eq!(text, None);
+
+        Ok(())
+    }
+
+    #[test]
+    fn get_element_text_empty2() -> Result<()> {
+        let xml = r#"<Foo/>"#;
+        let mut tokenizer = xmlparser::Tokenizer::from(xml);
+
+        // consume start-tag
+        tokenizer.next().unwrap()?;
+
+        let text = super::get_element_text(&mut tokenizer, "Foo")?.map(|s| s.as_str());
+        assert_eq!(text, None);
+
+        Ok(())
+    }
+
+    #[test]
+    fn get_element_text_empty_err() -> Result<()> {
+        let xml = r#"<Foo>Bar</Baz>"#;
+        let mut tokenizer = xmlparser::Tokenizer::from(xml);
+
+        // consume start-tag
+        tokenizer.next().unwrap()?;
+
+        let text = super::get_element_text(&mut tokenizer, "Foo").unwrap_err();
+        assert!(matches!(text, Error::ParseSysmon { position: 8, .. }));
+
+        let xml = r#"<Foo>Bar<Baz>"#;
+        let mut tokenizer = xmlparser::Tokenizer::from(xml);
+
+        // consume start-tag
+        tokenizer.next().unwrap()?;
+
+        let text = super::get_element_text(&mut tokenizer, "Foo").unwrap_err();
+        assert!(matches!(text, Error::ParseSysmon { position: 8, .. }));
+
+        let xml = r#"<Foo>Bar"#;
+        let mut tokenizer = xmlparser::Tokenizer::from(xml);
+
+        // consume start-tag
+        tokenizer.next().unwrap()?;
+
+        let text = super::get_element_text(&mut tokenizer, "Foo").unwrap_err();
+        assert!(matches!(text, Error::UnexpectedEndOfStream));
 
         Ok(())
     }

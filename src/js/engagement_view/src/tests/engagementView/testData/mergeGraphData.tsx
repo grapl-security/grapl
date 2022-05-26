@@ -157,7 +157,7 @@ export const curGraphData = {
             __photons: [{ __progressRatio: 0.07500000000000066 }],
             index: 0,
             __controlPoints: null,
-            color: "#02D084",
+            color: "#7FE49F",
         },
         {
             source: {
@@ -212,7 +212,7 @@ export const curGraphData = {
             __photons: [{ __progressRatio: 0.07500000000000066 }],
             index: 1,
             __controlPoints: null,
-            color: "#E50F14",
+            color: "#DA634F",
         },
         {
             source: {
@@ -267,7 +267,7 @@ export const curGraphData = {
             __photons: [{ __progressRatio: 0.07500000000000066 }],
             index: 2,
             __controlPoints: null,
-            color: "#E50F14",
+            color: "#DA634F",
         },
         {
             source: {
@@ -324,7 +324,7 @@ export const curGraphData = {
             __photons: [{ __progressRatio: 0.07500000000000066 }],
             index: 3,
             __controlPoints: null,
-            color: "#E50F14",
+            color: "#DA634F",
         },
         {
             source: {
@@ -378,7 +378,7 @@ export const curGraphData = {
             __photons: [{ __progressRatio: 0.07500000000000066 }],
             index: 4,
             __controlPoints: null,
-            color: "#E50F14",
+            color: "#DA634F",
         },
     ],
     index: {
