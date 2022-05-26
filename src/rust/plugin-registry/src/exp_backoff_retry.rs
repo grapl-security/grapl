@@ -22,13 +22,21 @@ where
     type OutError = T;
 
     fn handle(&mut self, attempt: usize, e: T) -> RetryPolicy<Self::OutError> {
+        tracing::info!(
+            message = "Handling retry",
+            attempt = attempt,
+            total = self.retries,
+        );
+        // starts at 1
         let attempt: u32 = attempt
             .try_into()
             .expect("You shouldn't be retrying >u32 times");
-        if attempt < self.retries {
-            let exponent: u32 = u32::pow(2, attempt);
+        if attempt < self.retries + 1 {
+            tracing::info!(message="hello");
+            let exponent: u32 = u32::pow(2, attempt - 1); //start at ^0
             RetryPolicy::WaitRetry(self.duration * exponent)
         } else {
+            tracing::info!(message="WTF");
             RetryPolicy::ForwardError(e)
         }
     }
@@ -61,22 +69,19 @@ mod tests {
 
     #[test]
     fn exponential_retry_works_correctly() {
-        let mut handler = ExponentialBackoffRetryHandler {
-            retries: 3,
-            duration: Duration::from_secs(1),
-        };
+        let mut handler = ExponentialBackoffRetryHandler::default();
         let some_error = "hey";
 
-        let policy = handler.handle(0, some_error);
+        let policy = handler.handle(1, some_error);
         assert_eq!(policy, RetryPolicy::WaitRetry(Duration::from_secs(1)));
 
-        let policy = handler.handle(1, some_error);
+        let policy = handler.handle(2, some_error);
         assert_eq!(policy, RetryPolicy::WaitRetry(Duration::from_secs(2)));
 
-        let policy = handler.handle(2, some_error);
+        let policy = handler.handle(3, some_error);
         assert_eq!(policy, RetryPolicy::WaitRetry(Duration::from_secs(4)));
 
-        let policy = handler.handle(3, some_error);
+        let policy = handler.handle(4, some_error);
         assert_eq!(policy, RetryPolicy::ForwardError(some_error));
     }
 }
