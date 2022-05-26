@@ -121,6 +121,8 @@ async fn upload_body(
 
     let mut body_stream = Box::pin(request.enumerate());
     while let Some((idx, result)) = body_stream.next().await {
+        // S3 PartNumber is one-indexed
+        let part_number = (idx + 1) as i64;
         let bytes = match result {
             CreatePluginRequest::Chunk(c) => Ok(c),
             _ => Err(Error::StreamInputError("Expected request 1..N to be Chunk")),
@@ -132,13 +134,13 @@ async fn upload_body(
 
         tracing::info!(
             message = "Uploading part",
-            upload_id =?upload_id,
-            part =?idx,
+            part_number = part_number,
         );
 
         s3.upload_part(UploadPartRequest {
             body: Some(StreamingBody::from(bytes)),
-            part_number: idx as i64,
+            upload_id: upload_id.clone(),
+            part_number,
             ..s3_multipart_fields.clone().into()
         })
         .await
