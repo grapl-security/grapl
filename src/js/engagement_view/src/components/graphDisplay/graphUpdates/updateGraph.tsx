@@ -31,14 +31,12 @@ export const updateGraph = async (
                         ...engagementState,
                         curLensName: lensName,
                         graphData: mergeUpdatedGraph,
-                        toggle: !engagementState.toggle,
                     });
                 } else {
                     setEngagementState({
                         ...engagementState,
                         curLensName: lensName,
                         graphData: updatedGraph,
-                        toggle: !engagementState.toggle,
                     });
                 }
             }
