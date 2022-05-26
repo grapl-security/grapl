@@ -1,10 +1,7 @@
-use std::time::Duration;
-
 use futures::{
     StreamExt,
     TryFutureExt,
 };
-use grapl_utils::future_ext::GraplFutureExt;
 use rusoto_s3::{
     AbortMultipartUploadRequest,
     CompleteMultipartUploadRequest,
@@ -168,10 +165,8 @@ async fn upload_body(
                 ..s3_multipart_fields.clone().into()
             })
             .map_err(S3PutError::from)
-            .timeout(Duration::from_secs(10))
-            .map_err(S3PutError::from)
         })
-        .await??;
+        .await?;
 
         completed_parts.push(CompletedPart {
             part_number: Some(part_number),

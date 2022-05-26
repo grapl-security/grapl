@@ -106,7 +106,7 @@ where
         // - one calling the `.create_plugin` handler
         // (with a tx/rx communicating between the two threads)
 
-        let (mut tx, rx) = futures::channel::mpsc::channel(2);
+        let (mut tx, rx) = futures::channel::mpsc::channel(8);
 
         let proto_to_native_thread = async move {
             ({
