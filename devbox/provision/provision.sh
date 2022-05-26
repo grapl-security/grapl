@@ -23,7 +23,7 @@ has_key() {
 ########################################
 if [ ! -f build-support/venv/bin/activate ]; then
     echo "Set up your virtualenv with 'build-support/manage_virtualenv.sh'"
-    exit 42
+    exit 49
 fi
 # shellcheck disable=SC1091
 source build-support/venv/bin/activate
@@ -46,16 +46,32 @@ fi
 ########################################
 
 (
+    touch ~/.ssh/config
+
     # Taken from https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-getting-started-enable-ssh-connections.html
-    SSH_CONFIG_APPEND="$(
+    SSH_OVER_SSM_CONFIG_APPEND="$(
         cat << 'EOF'
 host i-* mi-*
     ProxyCommand sh -c "aws ssm start-session --target %h --document-name AWS-StartSSHSession --parameters 'portNumber=%p'"
 EOF
     )"
-    touch ~/.ssh/config
-    if ! grep --quiet "${SSH_CONFIG_APPEND}" ~/.ssh/config; then
-        echo "${SSH_CONFIG_APPEND}" >> ~/.ssh/config
+    if ! grep --quiet "${SSH_OVER_SSM_CONFIG_APPEND}" ~/.ssh/config; then
+        echo "${SSH_OVER_SSM_CONFIG_APPEND}" >> ~/.ssh/config
+    fi
+
+    # From https://puppet.com/blog/speed-up-ssh-by-reusing-connections/
+    SSH_REUSE_CONNECTIONS_CONFIG_APPEND="$(
+        cat << 'EOF'
+host i-* mi-*
+    ControlMaster auto
+    ControlPath ~/.ssh/sockets/%r@%h-%p
+    ControlPersist 600
+EOF
+    )"
+
+    mkdir -p ~/.ssh/sockets
+    if ! grep --quiet "${SSH_REUSE_CONNECTIONS_CONFIG_APPEND}" ~/.ssh/config; then
+        echo "${SSH_REUSE_CONNECTIONS_CONFIG_APPEND}" >> ~/.ssh/config
     fi
 )
 
@@ -74,13 +90,13 @@ EOF
     fi
 
     config=$(pulumi config --json)
-    if ! has_key "${config}" "devbox:public-key}"; then
+    if ! has_key "${config}" "devbox:public-key"; then
         pulumi config set devbox:public-key -- < "${SSH_PUBLIC_KEY_FILE}"
     fi
-    if ! has_key "${config}" "devbox:instance-volume-size-gb}"; then
+    if ! has_key "${config}" "devbox:instance-volume-size-gb"; then
         pulumi config set devbox:instance-volume-size-gb 100
     fi
-    if ! has_key "${config}" "devbox:instance-type}"; then
+    if ! has_key "${config}" "devbox:instance-type"; then
         # 32GB RAM
         # $5.80 daily reserved cost
         pulumi config set devbox:instance-type "m5.2xlarge"
@@ -90,7 +106,7 @@ EOF
         echo "'pulumi config set aws:region <value>'"
         echo "Choose well - responsiveness is a genuine concern here!"
         echo "  ex: us-east-2, us-west-2, ap-east-1"
-        exit 42
+        exit 48
     fi
 )
 

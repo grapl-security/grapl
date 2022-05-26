@@ -11,6 +11,7 @@ const theme = createTheme({
         secondary: {
             main: "#c65454",
             light: "#AFBDD1",
+            contrastText: "#2B3648",
         },
         background: {
             default: "#212936",
@@ -28,6 +29,18 @@ const theme = createTheme({
             main: "#2196f3",
             light: "#65b5f6",
             contrastText: "#FFFFFF",
+        },
+    },
+    components: {
+        MuiListItemButton: {
+            styleOverrides: {
+                root: {
+                    "&.Mui-selected": {
+                        color: "#1976D2",
+                        background: "#2B3648",
+                    },
+                },
+            },
         },
     },
 });

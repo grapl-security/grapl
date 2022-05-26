@@ -87,7 +87,18 @@ job "grapl-provision" {
       driver = "docker"
 
       config {
-        image = var.container_images["provisioner"]
+        image      = var.container_images["provisioner"]
+        entrypoint = ["/bin/bash", "-c", "-o", "errexit", "-o", "nounset", "-c"]
+        command = trimspace(<<EOF
+if [[ "${DGRAPH_DROP_ALL_DATA}" -ne 0 ]]; then
+  # Drop all existing data from dgraph
+  # from https://discuss.dgraph.io/t/drop-all-data-from-dgraph/5866 
+  curl -X POST "${DGRAPH_HTTP_ADDRESS}"/alter -d '{"drop_op": "ALL"}'
+fi
+
+./provisioner.pex
+EOF
+        )
       }
 
       lifecycle {
@@ -106,9 +117,11 @@ job "grapl-provision" {
       env {
         # This is a hack, because IDK how to share locals across files.
         # It's fine if `provision` only hits one alpha.
-        MG_ALPHAS = "localhost:9080"
+        MG_ALPHAS = "localhost:${NOMAD_UPSTREAM_PORT_dgraph-alpha-0-grpc-public}"
 
         AWS_DEFAULT_REGION                 = var.aws_region
+        DGRAPH_DROP_ALL_DATA               = 1
+        DGRAPH_HTTP_ADDRESS                = "${NOMAD_UPSTREAM_ADDR_dgraph-alpha-0-http}"
         GRAPL_SCHEMA_TABLE                 = var.schema_table_name
         GRAPL_SCHEMA_PROPERTIES_TABLE      = var.schema_properties_table_name
         GRAPL_USER_AUTH_TABLE              = var.user_auth_table
@@ -125,9 +138,19 @@ job "grapl-provision" {
         sidecar_service {
           proxy {
             upstreams {
-              # This is a hack, because IDK how to share locals across files
+              # This non-dynamic upstream is a hack, 
+              # because IDK how to share locals across files
               destination_name = "dgraph-alpha-0-grpc-public"
-              local_bind_port  = 9080
+              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
+              local_bind_port = 1000
+            }
+
+            upstreams {
+              # This non-dynamic upstream is a hack, 
+              # because IDK how to share locals across files
+              destination_name = "dgraph-alpha-0-http"
+              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
+              local_bind_port = 1001
             }
           }
         }

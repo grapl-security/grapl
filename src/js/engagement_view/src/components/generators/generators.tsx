@@ -41,7 +41,7 @@ const MetricContainer = () => {
                         style={{ fontSize: "30px" }}
                         className={classes.metricsIcon}
                     />
-                    <h1>41</h1>
+                    <h1 className={classes.metricCount}>0</h1>
                     <p>List All </p>
                 </div>
             </Paper>
@@ -56,7 +56,7 @@ const MetricContainer = () => {
                         style={{ fontSize: "30px" }}
                         className={classes.metricsIcon}
                     />
-                    <h1>17</h1>
+                    <h1 className={classes.metricCount}>0</h1>
                     <p>Healthy</p>
                 </div>
             </Paper>
@@ -71,7 +71,7 @@ const MetricContainer = () => {
                         style={{ fontSize: "30px" }}
                         className={classes.metricsIcon}
                     />
-                    <h1>1</h1>
+                    <h1 className={classes.metricCount}>0</h1>
                     <p>Crashing</p>
                 </div>
             </Paper>
@@ -86,7 +86,7 @@ const MetricContainer = () => {
                         style={{ fontSize: "30px" }}
                         className={classes.metricsIcon}
                     />
-                    <h1>23</h1>
+                    <h1 className={classes.metricCount}>0</h1>
                     <p>Alerts</p>
                 </div>
             </Paper>
@@ -165,12 +165,15 @@ export const GeneratorsListTable = () => {
             <DataGrid
                 sx={{
                     bgcolor: "#212936",
-                    color: "#8997B1",
+                    color: "#FFF",
                     boxShadow: 1,
                     border: 0,
                     borderRadius: 2,
                     p: 2,
                     minWidth: 300,
+                    "& 	.MuiDataGrid-columnHeader": {
+                        color: "#8997B1",
+                    },
                     "& .MuiDataGrid-columnSeparator": {
                         visibility: "hidden",
                     },

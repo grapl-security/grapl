@@ -6,6 +6,15 @@ export const useStyles = makeStyles((theme) =>
     createStyles({
         root: {
             display: "flex",
+            flexDirection: "row",
+            alignItems: "flex-end",
+            justifyContent: "space-between",
+            width: "100vw",
+            height: "10vh",
+        },
+        engagementView: {
+            width: "100vw",
+            display: "flex",
         },
         button: {
             backgroundColor: "#42C6FF",
@@ -22,6 +31,7 @@ export const useStyles = makeStyles((theme) =>
                 easing: theme.transitions.easing.sharp,
                 duration: theme.transitions.duration.leavingScreen,
             }),
+            flex: "auto",
         },
         appBarShift: {
             width: `calc(100% - ${drawerWidth}px)`,
@@ -32,10 +42,13 @@ export const useStyles = makeStyles((theme) =>
             }),
         },
         expandLensAndNodeTableIcon: {
+            "&:hover": {
+                background: "none",
+            },
             color: "#FFFFFF",
-            display: "flex",
-            justify: "flex-end",
-            fontSize: "6em",
+            fontSize: "8rem",
+            flex: "auto", // will not show up without auto property
+            paddingBottom: "1.85rem",
         },
         hide: {
             display: "none",
@@ -69,10 +82,9 @@ export const useStyles = makeStyles((theme) =>
             }),
             marginLeft: 0,
         },
-        lensName: {
-            margin: "1em",
+        lensNameDisplay: {
             color: theme.palette.primary.light,
-            fontWeight: "bold",
+            paddingBottom: "1.85rem",
         },
         headerTitle: {
             fontSize: "35px",

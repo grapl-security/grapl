@@ -2,8 +2,16 @@
 
 set -euo pipefail
 
-# Set versions
-PYENV_PYTHON_VERSION="3.7.10"
+# We're starting to use this  script for more than chromebooks. As such we're starting to make this
+# architecture-independent, so that in the future we can use it for AWS graviton instances, which are significantly
+# more cost-effective, especially the metal ones.
+# As such this section sets up some architecture variables..
+ARCH=$(arch)
+if [ "${ARCH}" == "x86_64" ]; then
+    ssm_arch_alias="64bit"
+else
+    ssm_arch_alias="arm64"
+fi
 
 ## helper functions
 source_profile() {
@@ -47,6 +55,17 @@ get_latest_release() {
 }
 ## end helper functions
 
+configure_grapl_repository() {
+    echo_banner "Setting up Grapl Repository"
+    curl --proto "=https" \
+        --tlsv1.2 \
+        --location \
+        --fail \
+        --silent \
+        "https://dl.cloudsmith.io/public/grapl/deb/setup.deb.sh" |
+        sudo -E bash
+}
+
 update_linux() {
     sudo apt update
     sudo apt upgrade --yes
@@ -83,14 +102,6 @@ install_docker() {
             https://get.docker.com/ | sh
         sudo usermod -a -G docker "$USER"
     fi
-
-    echo_banner "Install docker-compose (v1, old, Python)"
-    sudo curl --proto "=https" \
-        --tlsv1.2 \
-        --location \
-        --output /usr/local/bin/docker-compose \
-        "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname --kernel-name)-$(uname --machine)"
-    sudo chmod +x /usr/local/bin/docker-compose
 
     echo_banner "Install docker compose (v2, new, Go) CLI plugin"
     user_docker_cli_plugins_dir="${HOME}/.docker/cli-plugins"
@@ -131,10 +142,10 @@ install_rust_and_utilities() {
 }
 
 install_pyenv() {
-    echo_banner "Install pyenv and set python version to ${PYENV_PYTHON_VERSION}"
+    echo_banner "Install pyenv"
     sudo apt-get install --yes make libssl-dev zlib1g-dev libbz2-dev \
         libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
-        xz-utils tk-dev libffi-dev liblzma-dev
+        xz-utils tk-dev libffi-dev liblzma-dev python3-dev
 
     # Check if pyenv directory exists and delete it so we can have a clean.
 
@@ -175,9 +186,10 @@ install_pyenv() {
     fi
 
     source_profile
-    pyenv install --skip-existing "${PYENV_PYTHON_VERSION}"
-    pyenv global "${PYENV_PYTHON_VERSION}"
-
+    pyenv install --skip-existing
+    # Sets global Python to the same thing that is configured in
+    # .python-version in this repository
+    pyenv global "$(pyenv local)"
 }
 
 install_pipx() {
@@ -217,7 +229,7 @@ install_awsv2() {
             curl --proto "=https" \
                 --tlsv1.2 \
                 --output "awscliv2.zip" \
-                "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
+                "https://awscli.amazonaws.com/awscli-exe-linux-${ARCH}.zip"
             unzip awscliv2.zip
             sudo ./aws/install --update
             sudo rm ./awscliv2.zip
@@ -229,7 +241,7 @@ install_awsv2() {
             curl --proto "=https" \
                 --tlsv1.2 \
                 --remote-name \
-                "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb"
+                "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_${ssm_arch_alias}/session-manager-plugin.deb"
             sudo dpkg -i session-manager-plugin.deb
             rm ./session-manager-plugin.deb
         )
@@ -248,22 +260,24 @@ install_pulumi() {
 
 install_utilities() {
     echo_banner "Install useful utilities"
-    sudo apt-get install --yes jq dnsutils tree unzip
+    sudo apt-get install --yes jq dnsutils tree unzip rsync
 }
 
 install_hashicorp_tools() {
     echo_banner "Installing hashicorp tools: consul nomad packer"
-    curl --proto '=https' \
-        --tlsv1.2 \
-        --silent \
-        --show-error \
-        --fail \
-        https://apt.releases.hashicorp.com/gpg |
-        sudo gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/hashicorp-apt.gpg --import &&
-        sudo chmod 644 /etc/apt/trusted.gpg.d/hashicorp-apt.gpg
-    sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-    sudo apt-get update
-    sudo apt-get install --yes consul nomad packer vault
+
+    # Set specific versions since we're enabling the hashicorp test repo
+    CONSUL_VERSION="1.12.0-1"
+    NOMAD_VERSION="1.3.1-1"
+    # packer doesn't have the -1s at the end for some reason
+    PACKER_VERSION="1.8.0"
+    VAULT_VERSION="1.10.2-1"
+
+    sudo apt-get install --yes \
+        consul="${CONSUL_VERSION}" \
+        nomad="${NOMAD_VERSION}" \
+        packer="${PACKER_VERSION}" \
+        vault="${VAULT_VERSION}"
 }
 
 # Download and install a tarball.
@@ -332,6 +346,33 @@ install_cni_plugins() {
         /opt/cni/bin
 }
 
+install_firecracker() {
+    echo_banner "Installing Firecracker binary"
+
+    repo="firecracker-microvm/firecracker"
+    # v1.0.0 doesn't currently work with the nomad firecracker plugin due to a breaking change. Instead we're hardcoding
+    # the version for now. TODO switch to grabbing the latest version once the nomad plugin is updated
+    # version=$(get_latest_release "${repo}")
+    version="v0.18.0"
+
+    url_prefix="https://github.com/${repo}/releases/download/${version}"
+
+    # This is used for old versions of firecracker
+    sudo curl --proto "=https" \
+        --tlsv1.2 \
+        --location \
+        --output /usr/bin/firecracker \
+        "${url_prefix}/firecracker-${version}"
+    sudo chmod 0755 /usr/bin/firecracker
+
+    # TODO switch to grabbing the tarball release once the task driver is upgraded
+    #    download_and_install_tarball \
+    #        "${url_prefix}/firecracker-${version}-${ARCH}.tgz" \
+    #        /tmp/firecracker
+    #
+    #    sudo mv "/tmp/firecracker/release-${version}-${ARCH}/firecracker-${version}-${ARCH}" "/usr/bin/firecracker"
+}
+
 install_nomad_firecracker() {
     echo_banner "Installing Firecracker Nomad driver and dependencies"
 
@@ -349,6 +390,8 @@ install_nomad_firecracker() {
         --location \
         --output /opt/cni/bin/tc-redirect-tap \
         "https://dl.cloudsmith.io/public/grapl/thomas/raw/files/tc-redirect-tap"
+
+    sudo chmod 0755 /opt/cni/bin/tc-redirect-tap
 
 }
 

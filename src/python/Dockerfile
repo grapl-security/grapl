@@ -1,11 +1,14 @@
+# syntax=docker/dockerfile:1.4
+
 # grapl-python-base
 ################################################################################
-FROM python:3.7-slim-bullseye AS grapl-python-base
+FROM python:3.8-slim-bullseye AS grapl-python-base
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update \
     && apt-get -y install --no-install-recommends \
         bash=5.1-2+b3 \
         libstdc++6=10.2.1-6 \
+        curl=7.74.0-1.3+deb11u1 \
     && rm -rf /var/lib/apt/lists/* \
     && adduser \
         --disabled-password \
@@ -20,20 +23,26 @@ ENTRYPOINT ["/bin/bash", "-o", "errexit", "-o", "nounset", "-c"]
 # analyzer-executor
 ################################################################################
 FROM grapl-python-base AS analyzer-executor-deploy
-COPY ./dist/analyzer-executor.pex .
+# Named context support https://github.com/hadolint/hadolint/issues/830
+# hadolint ignore=DL3022
+COPY --from=dist-ctx analyzer-executor.pex .
 CMD ["./analyzer-executor.pex"]
 
 # engagement-creator
 ################################################################################
 FROM grapl-python-base AS engagement-creator-deploy
-COPY ./dist/engagement-creator.pex .
+# Named context support https://github.com/hadolint/hadolint/issues/830
+# hadolint ignore=DL3022
+COPY --from=dist-ctx engagement-creator.pex .
 CMD ["./engagement-creator.pex"]
 
 # Provisioner
 ################################################################################
 FROM grapl-python-base AS provisioner-deploy
-COPY ./dist/provisioner.pex .
-CMD ["./provisioner.pex"]
+# Named context support https://github.com/hadolint/hadolint/issues/830
+# hadolint ignore=DL3022
+COPY --from=dist-ctx provisioner.pex .
+CMD [":"]
 
 # e2e tests
 ################################################################################
@@ -41,14 +50,22 @@ FROM grapl-python-base AS e2e-tests
 
 # Copy in the contents of `etc` in order to upload them during e2e tests
 RUN mkdir -p /home/grapl/etc
-COPY --chown=grapl ./etc/local_grapl etc/local_grapl
-COPY --chown=grapl ./etc/sample_data/ etc/sample_data
+# Named context support https://github.com/hadolint/hadolint/issues/830
+# hadolint ignore=DL3022
+COPY --chown=grapl --from=etc-ctx local_grapl etc/local_grapl
+# Named context support https://github.com/hadolint/hadolint/issues/830
+# hadolint ignore=DL3022
+COPY --chown=grapl --from=etc-ctx sample_data/ etc/sample_data
 
 # Copy in `graplctl`, which does the actual uploading during e2e
 RUN mkdir -p /home/grapl/bin
-COPY --chown=grapl dist/src.python.graplctl.graplctl/graplctl.pex /home/grapl/bin/graplctl
+# Named context support https://github.com/hadolint/hadolint/issues/830
+# hadolint ignore=DL3022
+COPY --chown=grapl --from=dist-ctx src.python.graplctl.graplctl/graplctl.pex /home/grapl/bin/graplctl
 
-COPY --chown=grapl ./dist/e2e-tests.pex .
+# Named context support https://github.com/hadolint/hadolint/issues/830
+# hadolint ignore=DL3022
+COPY --chown=grapl --from=dist-ctx e2e-tests.pex .
 CMD ["./e2e-tests.pex"]
 
 ENV PATH=/home/grapl/bin:$PATH
@@ -85,4 +102,4 @@ ENV PANTS_SETUP_CACHE=/mnt/pants-cache/setup
 
 # /mnt/grapl-root is mounted by `integration-tests.nomad` at runtime.
 WORKDIR /mnt/grapl-root
-CMD ["./test/run/integration-tests-from-docker-container.sh"]
+CMD ["./test/run/py-integration-tests-from-docker-container.sh"]

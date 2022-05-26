@@ -87,8 +87,17 @@ variable "test_user_password_secret_id" {
   description = "The SecretsManager SecretID for the test user's password"
 }
 
+variable "dns_server" {
+  type        = string
+  description = "The network.dns.server value. This should be equivalent to the host's ip in order to communicate with dnsmasq and allow consul dns to be available from within containers. This can be replaced as of Nomad 1.3.0 with variable interpolation per https://github.com/hashicorp/nomad/issues/11851."
+  default     = ""
+}
+
 locals {
   log_level = "DEBUG"
+  # TODO once we upgrade to nomad 1.3.0 replace this with attr.unique.network.ip-address (variable interpolation is
+  # added for network.dns as of 1.3.0
+  dns_servers = [var.dns_server]
 }
 
 job "e2e-tests" {
@@ -113,6 +122,9 @@ job "e2e-tests" {
     network {
       mode = "bridge"
       # TODO: Reintroduce VSC_DEBUGGER_PORT_FOR_GRAPL_E2E_TESTS at some point
+      dns {
+        servers = local.dns_servers
+      }
     }
 
     # Enable service discovery
@@ -122,14 +134,18 @@ job "e2e-tests" {
         sidecar_service {
           proxy {
             upstreams {
-              # This is a hack, because IDK how to share locals across files
+              # This non-dynamic upstream is a hack, 
+              # because IDK how to share locals across files
               destination_name = "dgraph-alpha-0-grpc-public"
-              local_bind_port  = 9080
+              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
+              local_bind_port = 1000
             }
             upstreams {
               destination_name = "web-ui"
-              local_bind_port  = 1234
+              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
+              local_bind_port = 1001
             }
+
           }
         }
       }
@@ -204,7 +220,7 @@ EOF
         GRAPL_TEST_USER_NAME               = var.test_user_name
         GRAPL_TEST_USER_PASSWORD_SECRET_ID = var.test_user_password_secret_id
 
-        MG_ALPHAS      = "localhost:9080"
+        MG_ALPHAS      = "localhost:${NOMAD_UPSTREAM_PORT_dgraph-alpha-0-grpc-public}"
         RUST_BACKTRACE = 1
         RUST_LOG       = local.log_level
 
@@ -214,5 +230,6 @@ EOF
         KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_group_name
       }
     }
+
   }
 }

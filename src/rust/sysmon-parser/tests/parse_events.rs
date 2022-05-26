@@ -10,5 +10,7 @@ fn parse_events_events6() {
 <Event><System><Provider Name="Linux-Sysmon" Guid="{ff032593-a8d3-4f13-b0d6-01fc615a0f97}"/><EventID>5</EventID><Version>3</Version><Level>4</Level><Task>5</Task><Opcode>0</Opcode><Keywords>0x8000000000000000</Keywords><TimeCreated SystemTime="2022-01-04T19:52:55.683744000Z"/><EventRecordID>11</EventRecordID><Correlation/><Execution ProcessID="49514" ThreadID="49514"/><Channel>Linux-Sysmon/Operational</Channel><Computer>user-VirtualBox</Computer><Security UserId="0"/></System><EventData><Data Name="RuleName">-</Data><Data Name="UtcTime">2022-01-04 19:52:55.688</Data><Data Name="ProcessGuid">{49e2a5f6-a597-61d4-5d7a-861de5550000}</Data><Data Name="ProcessId">49521</Data><Data Name="Image">/usr/bin/systemctl</Data><Data Name="User">user</Data></EventData></Event>
 "#;
 
+    assert_eq!(sysmon_parser::parse_events(xml).count(), 5);
+
     assert!(sysmon_parser::parse_events(xml).all(|res| res.is_ok()));
 }

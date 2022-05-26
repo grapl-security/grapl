@@ -1,10 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import ForceGraph2D from "react-force-graph-2d";
 import { nodeFillColor, riskOutline } from "./graphVizualization/nodeColoring";
-import {
-    calcLinkColor,
-    calcLinkDirectionalArrowRelPos,
-} from "./graphVizualization/linkCalcs";
+import { calcLinkColor } from "./graphVizualization/linkCalcs";
 import { nodeSize } from "./graphVizualization/nodeCalcs";
 import { updateGraph } from "./graphUpdates/updateGraph";
 import { Link, VizNode, VizGraph } from "../../types/CustomTypes";
@@ -24,8 +21,6 @@ const defaultGraphDisplayState = (
     return {
         graphData: { nodes: [], links: [], index: {} },
         curLensName: lensName,
-        interval: null,
-        toggle: false,
     };
 };
 
@@ -61,29 +56,53 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
         stateRef.current = state;
         // If our lens nodes have changed clear the last interval and load the new state
         if (lastLens.current !== lensName && lastInterval.current !== null) {
-            console.log("clearing interval because lens changed", lastLens.current, lensName);
+            console.log(
+                "clearing interval because lens changed",
+                lastLens.current,
+                lensName
+            );
             clearInterval(lastInterval.current);
             lastInterval.current = null;
             lastLens.current = lensName;
             stateRef.current = defaultGraphDisplayState(lensName);
-            updateGraphAndSetState(lensName, defaultGraphDisplayState(lensName), setState);
+            updateGraphAndSetState(
+                lensName,
+                defaultGraphDisplayState(lensName),
+                setState
+            );
         }
         // If there's no interval and we have a lens selected, start the interval
         if (lensName && lastInterval.current === null) {
             console.info("starting new interval", lensName, lastLens.current);
             try {
                 lastLens.current = lensName;
-                updateGraphAndSetState(lensName, defaultGraphDisplayState(lensName), setState);
+                updateGraphAndSetState(
+                    lensName,
+                    defaultGraphDisplayState(lensName),
+                    setState
+                );
                 const interval = setInterval(() => {
                     // Invalidate the interval if the lens changes - this ensures we never race
-                    if(lastLens.current !== lensName) {
-                        console.info("clearing interval", lastLens.current, lensName)
-                        clearInterval(lastInterval.current);
-                        lastInterval.current = null;
-                        stateRef.current = defaultGraphDisplayState(lensName);
-                    } else {
-                        console.info("interval", lastLens.current, lensName)
-                        updateGraphAndSetState(lensName, stateRef.current, setState);
+                    try {
+                        if (lastLens.current !== lensName) {
+                            console.info(
+                                "clearing interval",
+                                lastLens.current,
+                                lensName
+                            );
+                            clearInterval(lastInterval.current);
+                            lastInterval.current = null;
+                            stateRef.current =
+                                defaultGraphDisplayState(lensName);
+                        } else {
+                            updateGraphAndSetState(
+                                lensName,
+                                stateRef.current,
+                                setState
+                            );
+                        }
+                    } catch (e) {
+                        console.log("Error setting interval", e);
                     }
                 }, 1000);
                 lastInterval.current = interval;
@@ -149,6 +168,7 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
 
     //We only want to rerender when the id of a node changes, but we don't want to update based on any of its other attributes
     let clickedNodeKey = null;
+
     if (clickedNode !== null) {
         clickedNodeKey = clickedNode.id;
     }
@@ -165,10 +185,7 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
             ctx.save();
             node.fx = node.x;
             node.fy = node.y;
-            ctx.restore();
 
-            // Node Border Styling
-            ctx.save();
             ctx.beginPath();
             ctx.arc(node.x, node.y, NODE_R * 1.4, 0, 2 * Math.PI, false);
             ctx.fillStyle =
@@ -176,10 +193,8 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
                     ? colors.hoverNodeFill
                     : riskOutline(node.risk_score);
             ctx.fill();
-            ctx.restore();
 
             // Node Fill Styling
-            ctx.save();
             ctx.beginPath();
             ctx.arc(node.x, node.y, NODE_R * 1.2, 0, 2 * Math.PI, false);
             ctx.fillStyle =
@@ -187,7 +202,6 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
                     ? colors.clickedNode
                     : nodeFillColor(node.dgraph_type[0]);
             ctx.fill();
-            ctx.restore();
 
             // Node Label Styling
             const label = node.nodeLabel;
@@ -196,7 +210,6 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
                 98,
                 NODE_R / ctx.measureText(label).width
             );
-            ctx.save();
             ctx.font = `${fontSize + 5}px Roboto`;
 
             const textWidth = ctx.measureText(label).width;
@@ -218,7 +231,7 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
             ctx.fillText(label, node.x, node.y);
             ctx.restore();
         },
-        [data.nodes.length, clickedNodeKey, hoverNodeKey]
+        [clickedNode, data, hoverNode]
     );
 
     const linkStyling = (link: any, ctx: any) => {
@@ -227,6 +240,7 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
         const LABEL_NODE_MARGIN = 12;
         const start = link.source;
         const end = link.target;
+
         link.color = calcLinkColor(link, data);
 
         // Ignore unbounded links
@@ -272,9 +286,8 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
             ref={fgRef} // fix graph to canvas
             graphData={data}
             nodeLabel={"nodeType"} // tooltip on hover, actual label is in nodeCanvasObject
-            backgroundColor={"#18191d"}
-            height={700}
-            width={1000}
+            height={800}
+            width={1500}
             onEngineStop={() => {
                 if (!stopEngine) {
                     fgRef.current.zoomToFit(1000, 50);
@@ -299,11 +312,6 @@ const GraphDisplay = ({ lensName, setCurNode }: GraphDisplayProps) => {
                     : calcLinkColor(link as Link, data as VizGraph)
             }
             linkWidth={(link) => (highlightLinks.has(link) ? 5 : 4)}
-            linkDirectionalArrowLength={10}
-            linkDirectionalArrowRelPos={(link) => {
-                const _link = link as any;
-                return calcLinkDirectionalArrowRelPos(_link, data);
-            }}
             linkCanvasObjectMode={() => "after"}
             linkCanvasObject={linkStyling}
             onLinkHover={(link) => {

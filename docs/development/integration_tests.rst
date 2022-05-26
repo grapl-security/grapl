@@ -11,9 +11,9 @@ the database from your Github test run!
 
 .. image:: where_to_find_artifacts_on_github.png
 
-- Then, go to ``$GRAPLROOT`` and ``docker-compose up``.
+- Then, go to ``$GRAPLROOT`` and ``docker compose up``.
 
-- Unzip the artifacts and navigate to the folder that looks something like ``dgraph_export/dgraph.r4730.u1103.0108``
+- Unzip the artifacts and navigate to the folder that looks something like ``grapl-data-dgraph/dgraph.r4730.u1103.0108``
 
 - Run ``dgraph live --files g01.rdf.gz`` - this uploads the database state to your local dgraph instance.
 

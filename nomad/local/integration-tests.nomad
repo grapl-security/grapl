@@ -22,7 +22,7 @@ With local-grapl, we have to inject:
 - an access key
 - a secret key
 With prod, these are all taken from the EC2 Instance Metadata in prod.
-We have to provide a default value in prod; otherwise you can end up with a 
+We have to provide a default value in prod; otherwise you can end up with a
 weird nomad state parse error.
 EOF
 }
@@ -30,21 +30,6 @@ EOF
 variable "redis_endpoint" {
   type        = string
   description = "Where can services find Redis?"
-}
-
-variable "kafka_bootstrap_servers" {
-  type        = string
-  description = "Comma separated host:port pairs specifying which brokers clients should connect to initially."
-}
-
-variable "kafka_sasl_username" {
-  type        = string
-  description = "The Confluent Cloud API key to configure producers and consumers with."
-}
-
-variable "kafka_sasl_password" {
-  type        = string
-  description = "The Confluent Cloud API secret to configure producers and consumers with."
 }
 
 variable "schema_properties_table_name" {
@@ -167,21 +152,15 @@ job "integration-tests" {
             }
 
             upstreams {
-              destination_name = "plugin-registry"
+              destination_name = "plugin-work-queue"
               # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
               local_bind_port = 1001
             }
 
             upstreams {
-              destination_name = "plugin-work-queue"
-              # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
-              local_bind_port = 1002
-            }
-
-            upstreams {
               destination_name = "organization-management"
               # port unique but arbitrary - https://github.com/hashicorp/nomad/issues/7135
-              local_bind_port = 1003
+              local_bind_port = 1002
             }
           }
         }
@@ -207,18 +186,14 @@ job "integration-tests" {
         GRAPL_LOG_LEVEL = local.log_level
         # This is a hack, because IDK how to share locals across files
         #MG_ALPHAS                   = local.alpha_grpc_connect_str # TODO: Figure out how to do this
-        MG_ALPHAS               = "localhost:9080"
-        RUST_BACKTRACE          = 1
-        RUST_LOG                = local.log_level
-        REDIS_ENDPOINT          = var.redis_endpoint
-        KAFKA_BOOTSTRAP_SERVERS = var.kafka_bootstrap_servers
-        KAFKA_SASL_USERNAME     = var.kafka_sasl_username
-        KAFKA_SASL_PASSWORD     = var.kafka_sasl_password
+        MG_ALPHAS      = "localhost:9080"
+        RUST_BACKTRACE = 1
+        RUST_LOG       = local.log_level
+        REDIS_ENDPOINT = var.redis_endpoint
 
         GRAPL_MODEL_PLUGIN_DEPLOYER_HOST = "0.0.0.0"
         GRAPL_MODEL_PLUGIN_DEPLOYER_PORT = "${NOMAD_UPSTREAM_PORT_model-plugin-deployer}"
 
-        GRAPL_PLUGIN_REGISTRY_ADDRESS  = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-registry}"
         PLUGIN_WORK_QUEUE_BIND_ADDRESS = "0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-work-queue}"
 
         PLUGIN_WORK_QUEUE_DB_HOSTNAME = "${var.plugin_work_queue_db_hostname}"
@@ -332,10 +307,6 @@ job "integration-tests" {
         MESSAGECACHE_ADDR = "${local.redis_host}"
         MESSAGECACHE_PORT = "${local.redis_port}"
         IS_RETRY          = "False"
-
-        KAFKA_BOOTSTRAP_SERVERS = var.kafka_bootstrap_servers
-        KAFKA_SASL_USERNAME     = var.kafka_sasl_username
-        KAFKA_SASL_PASSWORD     = var.kafka_sasl_password
 
         GRAPL_LOG_LEVEL = local.log_level
         MG_ALPHAS       = "localhost:9080"

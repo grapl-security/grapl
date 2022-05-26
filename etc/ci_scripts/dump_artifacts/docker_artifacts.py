@@ -81,7 +81,7 @@ def dump_volume(
     compose_project: Optional[str], volume_name: str, artifacts_dir: Path
 ) -> None:
     # Make a temporary container with the volume mounted
-    # docker-compose prefixes volume names with the compose project name.
+    # docker compose prefixes volume names with the compose project name.
     prefix = f"{compose_project}_" if compose_project else ""
     container_id = subprocess.run(
         f"docker run -d --volume {prefix}{volume_name}:/{volume_name} alpine true",
@@ -93,10 +93,12 @@ def dump_volume(
 
     # Copy contents of /mounted_volume into artifacts_dir
     subprocess.run(
-        f"docker cp {container_id}:/{volume_name} {artifacts_dir}", shell=True
+        f"docker cp {container_id}:/{volume_name} {artifacts_dir}",
+        shell=True,
+        capture_output=True,
     )
 
-    subprocess.run(f"docker rm {container_id}", shell=True)
+    subprocess.run(f"docker rm {container_id}", shell=True, capture_output=True)
 
 
 def dump_all_docker_logs(compose_project: str, artifacts_dir: Path) -> None:
