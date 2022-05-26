@@ -23,7 +23,7 @@ impl FromEnv<PluginRegistryServiceClient, PluginRegistryServiceClientError>
         let address = std::env::var(ADDRESS_ENV_VAR).expect(ADDRESS_ENV_VAR);
 
         let endpoint = Endpoint::from_shared(address.to_string())?
-            .timeout(Duration::from_secs(5))
+            .timeout(Duration::from_secs(10))
             .concurrency_limit(30);
         Self::connect(endpoint).await
     }

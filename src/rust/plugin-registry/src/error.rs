@@ -25,6 +25,8 @@ pub enum S3PutError {
     CompleteError(#[from] rusoto_core::RusotoError<CompleteMultipartUploadError>),
     #[error(transparent)]
     AbortError(#[from] rusoto_core::RusotoError<AbortMultipartUploadError>),
+    #[error("UploadPart time elapsed")]
+    ElapsedError(#[from] tokio::time::error::Elapsed),
 }
 
 #[derive(Debug, thiserror::Error)]

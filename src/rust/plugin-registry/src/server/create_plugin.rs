@@ -1,4 +1,10 @@
-use futures::StreamExt;
+use std::time::Duration;
+
+use futures::{
+    StreamExt,
+    TryFutureExt,
+};
+use grapl_utils::future_ext::GraplFutureExt;
 use rusoto_s3::{
     AbortMultipartUploadRequest,
     CompleteMultipartUploadRequest,
@@ -11,9 +17,12 @@ use rusoto_s3::{
 use rust_proto_new::graplinc::grapl::api::plugin_registry::v1beta1::CreatePluginRequest;
 
 use super::service::PluginRegistryServiceConfig;
-use crate::error::{
-    PluginRegistryServiceError,
-    S3PutError,
+use crate::{
+    error::{
+        PluginRegistryServiceError,
+        S3PutError,
+    },
+    exp_backoff_retry::simple_exponential_backoff_retry,
 };
 
 #[derive(Clone)]
@@ -140,14 +149,18 @@ async fn upload_body(
 
         tracing::info!(message = "Uploading part", part_number = part_number,);
 
-        s3.upload_part(UploadPartRequest {
-            body: Some(StreamingBody::from(bytes)),
-            upload_id: upload_id.clone(),
-            part_number,
-            ..s3_multipart_fields.clone().into()
+        simple_exponential_backoff_retry(|| {
+            s3.upload_part(UploadPartRequest {
+                body: Some(StreamingBody::from(bytes.clone())),
+                upload_id: upload_id.clone(),
+                part_number,
+                ..s3_multipart_fields.clone().into()
+            })
+            .map_err(S3PutError::from)
+            .timeout(Duration::from_secs(10))
+            .map_err(S3PutError::from)
         })
-        .await
-        .map_err(S3PutError::from)?;
+        .await??;
     }
 
     Ok(UploadStreamMultipartOutput { stream_length })
