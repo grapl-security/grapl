@@ -16,6 +16,9 @@ struct ProcessSpawn {
     uid: i64,
     #[grapl(immutable)]
     user: String,
+    #[grapl(immutable)]
+    parent_user: String,
+
 
     // identity-only fields
     #[grapl(static_id, immutable)]

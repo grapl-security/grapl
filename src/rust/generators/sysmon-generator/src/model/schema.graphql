@@ -35,6 +35,7 @@ type ProcessSpawn @grapl(identity_algorithm: "static") {
     uid: Int @immutable,
     # i hate that we need this for Sysmon for Linux.. 
     user: String @immutable,
+    parent_user: String @immutable,
     # exe: String! @immutable,
     cmdline: String! @immutable,    
     current_directory: String! @immutable,

@@ -884,6 +884,7 @@ def default_processspawn_properties() -> Dict[str, grapl_analyzerlib.node_types.
         "timestamp": grapl_analyzerlib.node_types.PropType(grapl_analyzerlib.node_types.PropPrimitive.Int, False),
         "uid": grapl_analyzerlib.node_types.PropType(grapl_analyzerlib.node_types.PropPrimitive.Int, False),
         "user": grapl_analyzerlib.node_types.PropType(grapl_analyzerlib.node_types.PropPrimitive.Str, False),
+        "parent_user": grapl_analyzerlib.node_types.PropType(grapl_analyzerlib.node_types.PropPrimitive.Str, False),
         "cmdline": grapl_analyzerlib.node_types.PropType(grapl_analyzerlib.node_types.PropPrimitive.Str, False),
         "current_directory": grapl_analyzerlib.node_types.PropType(grapl_analyzerlib.node_types.PropPrimitive.Str, False),
         "parent_guid": grapl_analyzerlib.node_types.PropType(grapl_analyzerlib.node_types.PropPrimitive.Str, False),
@@ -971,6 +972,29 @@ class ProcessSpawnQuery(grapl_analyzerlib.nodes.entity.EntityQuery['ProcessSpawn
         (
             self.with_str_property(
                 "user",
+                eq=eq,
+                contains=contains,
+                starts_with=starts_with,
+                ends_with=ends_with,
+                regexp=regexp,
+                distance_lt=distance_lt
+            )
+        )
+        return self
+
+    def with_parent_user(
+        self,
+        *,
+        eq: Optional[grapl_analyzerlib.comparators.StrOrNot] = None,
+        contains: Optional["grapl_analyzerlib.comparators.OneOrMany[grapl_analyzerlib.comparators.StrOrNot]"] = None,
+        starts_with: Optional["grapl_analyzerlib.comparators.StrOrNot"] = None,
+        ends_with: Optional["grapl_analyzerlib.comparators.StrOrNot"] = None,
+        regexp: Optional["grapl_analyzerlib.comparators.OneOrMany[grapl_analyzerlib.comparators.StrOrNot]"] = None,
+        distance_lt: Optional[Tuple[str, int]] = None,
+    ):
+        (
+            self.with_str_property(
+                "parent_user",
                 eq=eq,
                 contains=contains,
                 starts_with=starts_with,
@@ -1096,6 +1120,7 @@ class ProcessSpawnView(grapl_analyzerlib.nodes.entity.EntityView['ProcessSpawnVi
         timestamp: Optional["int"] = None,
         uid: Optional["int"] = None,
         user: Optional["str"] = None,
+        parent_user: Optional["str"] = None,
         cmdline: Optional["str"] = None,
         current_directory: Optional["str"] = None,
         parent_guid: Optional["str"] = None,
@@ -1108,6 +1133,7 @@ class ProcessSpawnView(grapl_analyzerlib.nodes.entity.EntityView['ProcessSpawnVi
         if timestamp: self.set_predicate("timestamp", timestamp)
         if uid: self.set_predicate("uid", uid)
         if user: self.set_predicate("user", user)
+        if parent_user: self.set_predicate("parent_user", parent_user)
         if cmdline: self.set_predicate("cmdline", cmdline)
         if current_directory: self.set_predicate("current_directory", current_directory)
         if parent_guid: self.set_predicate("parent_guid", parent_guid)
@@ -1123,6 +1149,9 @@ class ProcessSpawnView(grapl_analyzerlib.nodes.entity.EntityView['ProcessSpawnVi
 
     def get_user(self, cached: bool = True) -> Optional[str]:
         return self.get_str("user", cached=cached)
+
+    def get_parent_user(self, cached: bool = True) -> Optional[str]:
+        return self.get_str("parent_user", cached=cached)
 
     def get_cmdline(self, cached: bool = True) -> Optional[str]:
         return self.get_str("cmdline", cached=cached)

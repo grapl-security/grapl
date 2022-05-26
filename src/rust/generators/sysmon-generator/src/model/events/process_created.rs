@@ -50,6 +50,11 @@ pub fn generate_process_create_subgraph(
         .with_parent_guid(event_data.parent_process_guid.to_string())
         .with_child_guid(event_data.process_guid.to_string());
 
+    // add parent_user to ProcessSpawnNode if available
+    if let Some(parent_user) = &event_data.parent_user {
+        process_spawn.with_parent_user(parent_user);
+    }
+
     let mut process_exe = FileNode::new(FileNode::static_strategy());
     process_exe
         .with_asset_id(&system.computer)
