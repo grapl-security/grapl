@@ -89,15 +89,15 @@ pub async fn upload_stream_multipart_to_s3(
         upload_id = ?upload_id,
     );
 
-    match upload_body(
+    let upload_body_result = upload_body(
         request,
         s3,
         config,
         s3_multipart_fields.clone(),
         upload_id.clone(),
     )
-    .await
-    {
+    .await;
+    match upload_body_result {
         Ok(out) => {
             complete_multipart_upload(s3, s3_multipart_fields, upload_id).await?;
             Ok(out)
@@ -109,6 +109,8 @@ pub async fn upload_stream_multipart_to_s3(
     }
 }
 
+/// The initial CreateMultipartUpload has happened. Now upload the entire
+/// body stream.
 async fn upload_body(
     request: futures::channel::mpsc::Receiver<CreatePluginRequest>,
     s3: &S3Client,
@@ -120,6 +122,10 @@ async fn upload_body(
     let mut stream_length = 0;
 
     let mut body_stream = Box::pin(request.enumerate());
+
+    // This is serial, and you're actually able to upload multiple parts
+    // out-of-order in parallel; if we find this to be slow, we can
+    // explore using Stream::for_each_concurrent.
     while let Some((idx, result)) = body_stream.next().await {
         // S3 PartNumber is one-indexed
         let part_number = (idx + 1) as i64;
@@ -132,10 +138,7 @@ async fn upload_body(
             Err(Error::StreamInputError("Input exceeds size limit"))?;
         }
 
-        tracing::info!(
-            message = "Uploading part",
-            part_number = part_number,
-        );
+        tracing::info!(message = "Uploading part", part_number = part_number,);
 
         s3.upload_part(UploadPartRequest {
             body: Some(StreamingBody::from(bytes)),
@@ -155,6 +158,10 @@ async fn complete_multipart_upload(
     s3_multipart_fields: S3MultipartFields,
     upload_id: String,
 ) -> Result<(), Error> {
+    tracing::info!(
+        message = "Completing multipart upload",
+        upload_id = ?upload_id,
+    );
     s3.complete_multipart_upload(CompleteMultipartUploadRequest {
         upload_id,
         ..s3_multipart_fields.clone().into()
@@ -169,6 +176,10 @@ async fn abort_multipart_upload(
     s3_multipart_fields: S3MultipartFields,
     upload_id: String,
 ) -> Result<(), Error> {
+    tracing::info!(
+        message = "Aborting multipart upload",
+        upload_id = ?upload_id,
+    );
     s3.abort_multipart_upload(AbortMultipartUploadRequest {
         upload_id,
         ..s3_multipart_fields.clone().into()
