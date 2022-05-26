@@ -94,6 +94,7 @@ impl<T> PluginRegistryService for GrpcApi<T>
 where
     T: PluginRegistryApi + Send + Sync + 'static,
 {
+    #[tracing::instrument(skip(self, request), err)]
     async fn create_plugin(
         &self,
         request: Request<tonic::Streaming<proto::CreatePluginRequest>>,
@@ -105,7 +106,7 @@ where
         // - one calling the `.create_plugin` handler
         // (with a tx/rx communicating between the two threads)
 
-        let (mut tx, rx) = futures::channel::mpsc::channel(8);
+        let (mut tx, rx) = futures::channel::mpsc::channel(2);
 
         let proto_to_native_thread = async move {
             ({

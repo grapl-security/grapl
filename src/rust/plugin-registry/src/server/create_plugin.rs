@@ -8,6 +8,8 @@ use grapl_utils::future_ext::GraplFutureExt;
 use rusoto_s3::{
     AbortMultipartUploadRequest,
     CompleteMultipartUploadRequest,
+    CompletedMultipartUpload,
+    CompletedPart,
     CreateMultipartUploadRequest,
     S3Client,
     StreamingBody,
@@ -79,6 +81,7 @@ impl From<S3MultipartFields> for AbortMultipartUploadRequest {
 
 pub struct UploadStreamMultipartOutput {
     pub stream_length: usize,
+    pub completed_parts: Vec<CompletedPart>,
 }
 
 type Error = PluginRegistryServiceError;
@@ -108,7 +111,13 @@ pub async fn upload_stream_multipart_to_s3(
     .await;
     match upload_body_result {
         Ok(out) => {
-            complete_multipart_upload(s3, s3_multipart_fields, upload_id).await?;
+            complete_multipart_upload(
+                s3,
+                s3_multipart_fields,
+                upload_id,
+                out.completed_parts.clone(),
+            )
+            .await?;
             Ok(out)
         }
         Err(e) => {
@@ -132,6 +141,8 @@ async fn upload_body(
 
     let mut body_stream = Box::pin(request.enumerate());
 
+    let mut completed_parts: Vec<CompletedPart> = vec![];
+
     // This is serial, and you're actually able to upload multiple parts
     // out-of-order in parallel; if we find this to be slow, we can
     // explore using Stream::for_each_concurrent.
@@ -149,7 +160,7 @@ async fn upload_body(
 
         tracing::info!(message = "Uploading part", part_number = part_number,);
 
-        simple_exponential_backoff_retry(|| {
+        let part_upload = simple_exponential_backoff_retry(|| {
             s3.upload_part(UploadPartRequest {
                 body: Some(StreamingBody::from(bytes.clone())),
                 upload_id: upload_id.clone(),
@@ -161,15 +172,24 @@ async fn upload_body(
             .map_err(S3PutError::from)
         })
         .await??;
+
+        completed_parts.push(CompletedPart {
+            part_number: Some(part_number),
+            e_tag: part_upload.e_tag,
+        });
     }
 
-    Ok(UploadStreamMultipartOutput { stream_length })
+    Ok(UploadStreamMultipartOutput {
+        stream_length,
+        completed_parts,
+    })
 }
 
 async fn complete_multipart_upload(
     s3: &S3Client,
     s3_multipart_fields: S3MultipartFields,
     upload_id: String,
+    completed_parts: Vec<CompletedPart>,
 ) -> Result<(), Error> {
     tracing::info!(
         message = "Completing multipart upload",
@@ -177,6 +197,9 @@ async fn complete_multipart_upload(
     );
     s3.complete_multipart_upload(CompleteMultipartUploadRequest {
         upload_id,
+        multipart_upload: Some(CompletedMultipartUpload {
+            parts: Some(completed_parts),
+        }),
         ..s3_multipart_fields.clone().into()
     })
     .await

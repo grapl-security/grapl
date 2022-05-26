@@ -24,7 +24,7 @@ impl FromEnv<PluginRegistryServiceClient, PluginRegistryServiceClientError>
 
         let endpoint = Endpoint::from_shared(address.to_string())?
             .timeout(Duration::from_secs(10))
-            .concurrency_limit(30);
+            .concurrency_limit(10);
         Self::connect(endpoint).await
     }
 }
