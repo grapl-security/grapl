@@ -9,32 +9,35 @@ from grapl_analyzerlib.nodes.sysmon import ProcessView
 def process_context(process: ProcessView) -> None:
     process.get_pid()
     process.get_guid()
-    process.get_created_timestamp()
-    process.get_cmdline()
-    process.get_image()
-    process.get_current_directory()
-    process.get_user()
+    process.get_exe()
+
+# traverse the outbound connection to include TcpConnection and 
+# NetworkSocketAddress node that's on the receiving end.
+# def process_connection_outbound_context(process: ProcessView) -> None:
+#     (
+#         process.get_process_socket_outbound()
+#     )
 
 
 def expand_trees(process: ProcessView):
     process.get_created_files()
-    process.get_process_connected_to()
-    process.get_process_image()
+    process.get_process_socket_outbound()
+    process.get_process_exe()
 
     for child in (process.get_children() or []):
         expand_trees(child)
 
 class Dropper(Analyzer):
     def get_queries(self) -> OneOrMany[ProcessQuery]:
-        second_stage_process = ProcessQuery().with_image()
+        second_stage_process = ProcessQuery().with_exe()
         return (
             ProcessQuery()
-            .with_image()
-            .with_process_connected_to()
+            .with_exe()
+            .with_process_socket_outbound()
             .with_created_files(
                 FileQuery()
                 .with_path()
-                .with_process_executed_from_image(second_stage_process)
+                .with_process_executed_from_exe(second_stage_process)
             )
             .with_children(second_stage_process)
         )
@@ -42,7 +45,7 @@ class Dropper(Analyzer):
     def on_response(self, dropper: ProcessView, output: Any) -> None:
         process_context(dropper)
         dropper.get_created_files()
-        dropper.get_process_image()
+        dropper.get_process_exe()
         expand_trees(dropper)
 
         output.send(
