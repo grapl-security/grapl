@@ -32,7 +32,7 @@ type Process @grapl(identity_algorithm: "static") {
 
 type ProcessSpawn @grapl(identity_algorithm: "static") {
     timestamp: Int! @immutable,
-    uid: Int @immutable,
+    user_id: Int @immutable,
     # i hate that we need this for Sysmon for Linux.. 
     user: String @immutable,
     parent_user: String @immutable,

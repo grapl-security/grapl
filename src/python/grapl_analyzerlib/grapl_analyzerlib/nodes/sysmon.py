@@ -882,7 +882,7 @@ class ProcessView(grapl_analyzerlib.nodes.entity.EntityView['ProcessView', 'Proc
 def default_processspawn_properties() -> Dict[str, grapl_analyzerlib.node_types.PropType]:
     return {
         "timestamp": grapl_analyzerlib.node_types.PropType(grapl_analyzerlib.node_types.PropPrimitive.Int, False),
-        "uid": grapl_analyzerlib.node_types.PropType(grapl_analyzerlib.node_types.PropPrimitive.Int, False),
+        "user_id": grapl_analyzerlib.node_types.PropType(grapl_analyzerlib.node_types.PropPrimitive.Int, False),
         "user": grapl_analyzerlib.node_types.PropType(grapl_analyzerlib.node_types.PropPrimitive.Str, False),
         "parent_user": grapl_analyzerlib.node_types.PropType(grapl_analyzerlib.node_types.PropPrimitive.Str, False),
         "cmdline": grapl_analyzerlib.node_types.PropType(grapl_analyzerlib.node_types.PropPrimitive.Str, False),
@@ -937,7 +937,7 @@ class ProcessSpawnQuery(grapl_analyzerlib.nodes.entity.EntityQuery['ProcessSpawn
         )
         return self
 
-    def with_uid(
+    def with_user_id(
         self,
         *,
         eq: Optional["grapl_analyzerlib.comparators.IntOrNot"] = None,
@@ -949,7 +949,7 @@ class ProcessSpawnQuery(grapl_analyzerlib.nodes.entity.EntityQuery['ProcessSpawn
     ):
         (
             self.with_int_property(
-                "uid",
+                "user_id",
                 eq=eq,
                 gt=gt,
                 ge=ge,
@@ -1118,7 +1118,7 @@ class ProcessSpawnView(grapl_analyzerlib.nodes.entity.EntityView['ProcessSpawnVi
         graph_client: Any,
         node_types: Set[str],
         timestamp: Optional["int"] = None,
-        uid: Optional["int"] = None,
+        user_id: Optional["int"] = None,
         user: Optional["str"] = None,
         parent_user: Optional["str"] = None,
         cmdline: Optional["str"] = None,
@@ -1131,7 +1131,7 @@ class ProcessSpawnView(grapl_analyzerlib.nodes.entity.EntityView['ProcessSpawnVi
     ) -> None:
         super().__init__(uid, node_key, graph_client, node_types, **kwargs)
         if timestamp: self.set_predicate("timestamp", timestamp)
-        if uid: self.set_predicate("uid", uid)
+        if user_id: self.set_predicate("user_id", user_id)
         if user: self.set_predicate("user", user)
         if parent_user: self.set_predicate("parent_user", parent_user)
         if cmdline: self.set_predicate("cmdline", cmdline)
@@ -1144,8 +1144,8 @@ class ProcessSpawnView(grapl_analyzerlib.nodes.entity.EntityView['ProcessSpawnVi
     def get_timestamp(self, cached: bool = True) -> Optional[int]:
         return self.get_int("timestamp", cached=cached)
 
-    def get_uid(self, cached: bool = True) -> Optional[int]:
-        return self.get_int("uid", cached=cached)
+    def get_user_id(self, cached: bool = True) -> Optional[int]:
+        return self.get_int("user_id", cached=cached)
 
     def get_user(self, cached: bool = True) -> Optional[str]:
         return self.get_str("user", cached=cached)
