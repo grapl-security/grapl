@@ -44,7 +44,7 @@ where
 impl Default for ExponentialBackoffRetryHandler {
     fn default() -> Self {
         Self {
-            retries: 3,
+            retries: 2,
             duration: Duration::from_secs(1),
         }
     }
@@ -65,6 +65,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use std::sync::{Arc, Mutex};
+
     use super::*;
 
     #[test]
@@ -79,9 +81,24 @@ mod tests {
         assert_eq!(policy, RetryPolicy::WaitRetry(Duration::from_secs(2)));
 
         let policy = handler.handle(3, some_error);
-        assert_eq!(policy, RetryPolicy::WaitRetry(Duration::from_secs(4)));
-
-        let policy = handler.handle(4, some_error);
         assert_eq!(policy, RetryPolicy::ForwardError(some_error));
+    }
+
+    #[tokio::test]
+    async fn test_simple_retry() {
+        let counter = Arc::new(Mutex::new(0));
+
+        async fn incr_count(counter: Arc<Mutex<u32>>) -> Result<(), ()> {
+            let mut count = counter.lock().unwrap();
+            *count += 1;
+            Err(())
+        }
+        
+        let result = simple_exponential_backoff_retry(
+            || incr_count(counter.clone())
+        ).await;
+        assert_eq!(result, Err(()));
+        let count = Arc::try_unwrap(counter).unwrap().into_inner().unwrap();
+        assert_eq!(count, 3);
     }
 }
