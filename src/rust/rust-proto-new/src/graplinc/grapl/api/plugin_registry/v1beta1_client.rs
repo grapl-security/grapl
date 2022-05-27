@@ -23,6 +23,7 @@ pub enum PluginRegistryServiceClientError {
     PluginRegistryDeserializationError(#[from] SerDeError),
 }
 
+#[derive(Clone)]
 pub struct PluginRegistryServiceClient {
     proto_client: PluginRegistryServiceClientProto<tonic::transport::Channel>,
 }
