@@ -48,10 +48,14 @@ def _provision_graph(
     schema_table = dynamodb.Table(GRAPL_SCHEMA_TABLE)
     schema_properties_table = dynamodb.Table(GRAPL_SCHEMA_PROPERTIES_TABLE)
     schemas = [
-        MachineSchema(),
+        AssetSchema(),
         FileSchema(),
         NetworkSocketAddressSchema(),
         ProcessSchema(),
+        ProcessSpawnSchema(),
+        TcpConnectionSchema(),
+        IpV4AddressSchema(),
+        IpV6AddressSchema(),
         # AssetSchema(),
         # ProcessSchema(),
         # FileSchema(),
