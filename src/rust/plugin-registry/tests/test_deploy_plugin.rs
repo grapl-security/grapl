@@ -36,29 +36,20 @@ async fn test_deploy_plugin() -> Result<(), Box<dyn std::error::Error>> {
 
     let tenant_id = uuid::Uuid::new_v4();
 
-    tracing::info!(
-        message = "Got to here"
-    );
+    let create_response = {
+        let display_name = uuid::Uuid::new_v4().to_string();
+        let artifact = get_example_generator()?;
+        let metadata = CreatePluginRequestMetadata {
+            tenant_id: tenant_id.clone(),
+            display_name: display_name.clone(),
+            plugin_type: PluginType::Generator,
+        };
 
-    let artifact = get_example_generator()?;
-    let create_response = || {
-        let artifact = artifact.clone();
-        let mut client = client.clone();
-        async move {
-            let display_name = uuid::Uuid::new_v4().to_string();
-            let metadata = CreatePluginRequestMetadata {
-                tenant_id: tenant_id.clone(),
-                display_name: display_name.clone(),
-                plugin_type: PluginType::Generator,
-            };
-
-            client
-                .create_plugin(metadata, artifact.into_iter())
-                .await
-        }
+        client
+            .create_plugin(metadata, artifact.into_iter())
+            .timeout(std::time::Duration::from_secs(5))
+            .await??
     };
-
-    let create_response = simple_exponential_backoff_retry(create_response).await?;
 
     let plugin_id = create_response.plugin_id;
 
