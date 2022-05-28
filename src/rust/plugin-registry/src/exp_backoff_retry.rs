@@ -32,11 +32,11 @@ where
             .try_into()
             .expect("You shouldn't be retrying >u32 times");
         if attempt < self.retries + 1 {
-            tracing::info!(message="hello");
+            tracing::info!(message = "hello");
             let exponent: u32 = u32::pow(2, attempt - 1); //start at ^0
             RetryPolicy::WaitRetry(self.duration * exponent)
         } else {
-            tracing::info!(message="WTF");
+            tracing::info!(message = "WTF");
             RetryPolicy::ForwardError(e)
         }
     }
@@ -65,7 +65,10 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::sync::{Arc, Mutex};
+    use std::sync::{
+        Arc,
+        Mutex,
+    };
 
     use super::*;
 
@@ -93,10 +96,8 @@ mod tests {
             *count += 1;
             Err(())
         }
-        
-        let result = simple_exponential_backoff_retry(
-            || incr_count(counter.clone())
-        ).await;
+
+        let result = simple_exponential_backoff_retry(|| incr_count(counter.clone())).await;
         assert_eq!(result, Err(()));
         let count = Arc::try_unwrap(counter).unwrap().into_inner().unwrap();
         assert_eq!(count, 3);
