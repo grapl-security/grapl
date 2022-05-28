@@ -6,6 +6,7 @@ THIS_DIR=$(dirname "${BASH_SOURCE[0]}")
 cd "${THIS_DIR}/.."
 # Create a virtualenv from Pants
 ./pants export ::
+# shellcheck disable=SC1090
 source "dist/export/python/virtualenv/$(cat .python-version)/bin/activate"
 
 cd "${THIS_DIR}"
