@@ -63,8 +63,8 @@ impl PluginRegistryServiceClient {
         metadata: native::CreatePluginRequestMetadata,
         plugin_artifact: impl Sized + Iterator<Item = u8> + Send + 'static,
     ) -> Result<native::CreatePluginResponse, PluginRegistryServiceClientError> {
-        // Split the artifact up into 1MB chunks
-        let plugin_chunks = plugin_artifact.chunks_owned(1024 * 1024);
+        // Split the artifact up into 5MB chunks
+        let plugin_chunks = plugin_artifact.chunks_owned(1024 * 1024 * 5);
         // Send the metadata first followed by N chunks
         let request = futures::stream::iter(vec![native::CreatePluginRequest::Metadata(metadata)])
             .chain(futures::stream::iter(
