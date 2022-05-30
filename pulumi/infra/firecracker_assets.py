@@ -7,6 +7,7 @@ from infra.artifacts import ArtifactGetter
 from infra.bucket import Bucket
 from infra.path import path_from_root
 from infra.s3_url import get_s3_url
+from typing_extensions import Protocol
 
 import pulumi
 
@@ -47,7 +48,20 @@ class FirecrackerAssets(pulumi.ComponentResource):
         )
 
 
-class FirecrackerS3BucketObjects(pulumi.ComponentResource):
+class FirecrackerS3BucketObjectsProtocol(Protocol):
+    kernel_s3obj_url: pulumi.Output[str]
+    rootfs_s3obj_url: pulumi.Output[str]
+
+
+class MockFirecrackerS3BucketObjects(FirecrackerS3BucketObjectsProtocol):
+    def __init__(self) -> None:
+        self.kernel_s3obj_url = pulumi.Output.from_input("mock kernel s3obj url")
+        self.rootfs_s3obj_url = pulumi.Output.from_input("mock rootfs s3obj url")
+
+
+class FirecrackerS3BucketObjects(
+    pulumi.ComponentResource, FirecrackerS3BucketObjectsProtocol
+):
     def __init__(
         self,
         name: str,

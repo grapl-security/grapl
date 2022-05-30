@@ -57,7 +57,7 @@ Grapl is organized as a monorepo with the following structure:
 
 We use [GNU Make](https://www.gnu.org/software/make/),
 [Docker](https://docs.docker.com/) (version 20.10 or later) and
-[docker-compose](https://docs.docker.com/compose/) for local development. To
+[docker compose](https://docs.docker.com/compose/) for local development. To
 execute a Grapl debug build, execute the following command in the project root:
 
 ``` bash

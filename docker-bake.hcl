@@ -80,29 +80,6 @@ variable "CONTAINER_REGISTRY" {
   default = "docker.cloudsmith.io/grapl/raw"
 }
 
-# Define a set of standard OCI labels to attach to all images.
-#
-# See https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
-#
-# TODO: Ideally, I would like to define a `_grapl_base` target, set the
-# labels there, and then have all our other "base" targets inherit
-# from that. Unfortunately, there is a bug^[1] where multiple layers
-# of inheritance are not properly resolved. Fortunately, this will be fixed
-# when buildx v0.8.0 is released.
-#
-# [1]: https://github.com/docker/buildx/issues/912
-
-variable "oci_labels" {
-  default = {
-    "org.opencontainers.image.authors" = "https://graplsecurity.com"
-    "org.opencontainers.image.source"  = "https://github.com/grapl-security/grapl",
-    # In particular, this `vendor` label is used by various filters in
-    # our top-level Makefile; if you change this, make sure to update
-    # things over there, too.
-    "org.opencontainers.image.vendor" = "Grapl, Inc."
-  }
-}
-
 # Functions
 ########################################################################
 
@@ -209,7 +186,6 @@ group "javascript-services" {
 group "local-only-services" {
   # NOTE: Please keep this list sorted in alphabetical order
   targets = [
-    "localstack",
     "postgres",
     "pulumi",
     "scylladb"
@@ -264,13 +240,30 @@ group "all" {
 # Such targets should only appear in `inherits` arrays, and never in
 # the `targets` list of any group.
 
+# All our container images should ultimately inherit from this target,
+# either directly or indirectly through another target.
+target "_grapl-base" {
+  # Define a set of standard OCI labels to attach to all images.
+  #
+  # See https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
+  labels = {
+    "org.opencontainers.image.authors" = "https://graplsecurity.com"
+    "org.opencontainers.image.source"  = "https://github.com/grapl-security/grapl",
+    # In particular, this `vendor` label is used by various filters in
+    # our top-level Makefile; if you change this, make sure to update
+    # things over there, too.
+    "org.opencontainers.image.vendor" = "Grapl, Inc."
+  }
+}
+
 # Rust Services
 # ----------------------------------------------------------------------
 
 # All Rust services defined in src/rust/Dockerfile should inherit from
 # this target.
 target "_rust-base" {
-  context = "src"
+  inherits = ["_grapl-base"]
+  context  = "src"
 
   # Additional named contexts: 
   # https://www.docker.com/blog/dockerfiles-now-support-multiple-build-contexts/
@@ -282,7 +275,6 @@ target "_rust-base" {
   args = {
     RUST_BUILD = "${RUST_BUILD}"
   }
-  labels = oci_labels
 }
 
 target "analyzer-dispatcher" {
@@ -422,12 +414,12 @@ target "uid-allocator" {
 # All Python services defined in src/python/Dockerfile should inherit
 # from this target.
 target "_python-base" {
+  inherits = ["_grapl-base"]
   contexts = {
     dist-ctx = "dist"
     etc-ctx  = "etc"
   }
   dockerfile = "src/python/Dockerfile"
-  labels     = oci_labels
 }
 
 target "analyzer-executor" {
@@ -458,13 +450,13 @@ target "provisioner" {
 # ----------------------------------------------------------------------
 
 target "graphql-endpoint" {
+  inherits   = ["_grapl-base"]
   context    = "src/js/graphql_endpoint"
   dockerfile = "Dockerfile"
   target     = "graphql-endpoint-deploy"
   tags = [
     upstream_aware_tag("graphql-endpoint")
   ]
-  labels = oci_labels
 }
 
 # Testing Images
@@ -511,37 +503,28 @@ target "rust-integration-tests-new" {
 # None of these are ever pushed to Cloudsmith.
 
 target "pulumi" {
+  inherits   = ["_grapl-base"]
   context    = "."
   dockerfile = "Dockerfile.pulumi"
   tags = [
     local_only_tag("local-pulumi")
   ]
-  labels = oci_labels
-}
-
-target "localstack" {
-  context    = "localstack"
-  dockerfile = "Dockerfile"
-  tags = [
-    local_only_tag("localstack-grapl-fork")
-  ]
-  labels = oci_labels
 }
 
 target "postgres" {
+  inherits   = ["_grapl-base"]
   context    = "postgres"
   dockerfile = "Dockerfile"
   tags = [
     local_only_tag("postgres-ext")
   ]
-  labels = oci_labels
 }
 
 target "scylladb" {
+  inherits   = ["_grapl-base"]
   context    = "scylladb"
   dockerfile = "Dockerfile"
   tags = [
     local_only_tag("scylladb-ext")
   ]
-  labels = oci_labels
 }

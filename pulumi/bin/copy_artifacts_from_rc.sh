@@ -27,7 +27,7 @@ confirmModify() {
     read -r -p "This will modify your ${CURRENT_STACK} config. Continue (y/n)?" choice
     case "${choice}" in
         y | Y) echo "Okay!" ;;
-        *) exit 42 ;;
+        *) exit 46 ;;
     esac
 }
 

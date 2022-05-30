@@ -51,5 +51,5 @@ if [ ${#failed_dirs[@]} -ne 0 ]; then
     echo "${failed_dirs[@]}"
     echo "Exceeded size limit of ${ARBITRARY_SIZE_LIMIT_MB}MB"
     echo "Maybe you need to modify the .dockerignore?"
-    exit 42
+    exit 43
 fi
