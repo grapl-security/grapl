@@ -8,6 +8,8 @@ use futures::{
     },
     Future,
     FutureExt,
+    SinkExt,
+    StreamExt,
 };
 use proto::plugin_registry_service_server::PluginRegistryService;
 use tokio::net::TcpListener;
@@ -60,7 +62,7 @@ pub trait PluginRegistryApi {
 
     async fn create_plugin(
         &self,
-        request: CreatePluginRequest,
+        request: futures::channel::mpsc::Receiver<CreatePluginRequest>,
     ) -> Result<CreatePluginResponse, Self::Error>;
 
     async fn get_plugin(&self, request: GetPluginRequest)
@@ -92,11 +94,46 @@ impl<T> PluginRegistryService for GrpcApi<T>
 where
     T: PluginRegistryApi + Send + Sync + 'static,
 {
+    #[tracing::instrument(skip(self, request), err)]
     async fn create_plugin(
         &self,
-        request: Request<proto::CreatePluginRequest>,
+        request: Request<tonic::Streaming<proto::CreatePluginRequest>>,
     ) -> Result<Response<proto::CreatePluginResponse>, tonic::Status> {
-        execute_rpc!(self, request, create_plugin)
+        let mut proto_request = request.into_inner();
+
+        // Spin up two Futures
+        // - one converting incoming protobuf requests to Rust-native requests
+        // - one calling the `.create_plugin` handler
+        // (with a tx/rx communicating between the two threads)
+
+        let (mut tx, rx) = futures::channel::mpsc::channel(8);
+
+        let proto_to_native_thread = async move {
+            ({
+                while let Some(req) = proto_request.next().await {
+                    let req = req?.try_into()?;
+                    tx.send(req)
+                        .await
+                        .map_err(|e| Status::internal(e.to_string()))?;
+                }
+                Ok(())
+            } as Result<(), Status>)
+        };
+
+        let api_handler_thread = async move {
+            ({ self.api_server.create_plugin(rx).await.map_err(Into::into) }
+                as Result<CreatePluginResponse, Status>)
+        };
+
+        let native_response: CreatePluginResponse =
+            match futures::try_join!(proto_to_native_thread, api_handler_thread,) {
+                Ok((_, native_result)) => Ok(native_result),
+                Err(err) => Err(err),
+            }?;
+
+        let proto_response = native_response.try_into().map_err(SerDeError::from)?;
+
+        Ok(tonic::Response::new(proto_response))
     }
 
     async fn get_plugin(
@@ -207,7 +244,7 @@ where
             .trace_fn(|request| {
                 tracing::info_span!(
                     "Plugin Registry",
-                    headers = ?request.headers(),
+                    request_id = ?request.headers().get("x-request-id"),
                     method = ?request.method(),
                     uri = %request.uri(),
                     extensions = ?request.extensions(),
