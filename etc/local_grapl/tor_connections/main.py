@@ -1,3 +1,4 @@
+import urllib.request
 from typing import Any
 
 from grapl_analyzerlib.analyzer import Analyzer, OneOrMany
@@ -5,16 +6,22 @@ from grapl_analyzerlib.prelude import *
 
 from grapl_analyzerlib.nodes.sysmon import ProcessView
 
-# def get_tor_exit_nodes() -> [String]
-    # latest available from: https://check.torproject.org/torbulkexitlist
-    #
-    # wondering how we could/should update this periodically in Grapl
-    #   opt 1: reach out to https://check.torproject.org/torbulkexitlist directly
-    #   opt 2: use caching service so we don't peg https://check.torproject.org/torbulkexitlist
-    #   opt 3: external service to push new versions of this analyzer with an updated list baked in.
+# Latest ndoe list is available from: https://check.torproject.org/torbulkexitlist
+#
+# Instead of hitting the check.torproject.org for each execution, we could possibly:
+#   - use caching service so we don't peg https://check.torproject.org/torbulkexitlist
+#   - external service to push new versions of this analyzer with an updated static list.
+def fetch_exit_nodes() -> [str]:
+    contents = urllib.request.urlopen("https://check.torproject.org/torbulkexitlist").read()
+    nodes = contents.splitlines()
 
-# def is_tor_exit_node(ip: String) -> bool:
 
+def is_tor_exit_node(ip: str) -> bool:
+    nodes = fetch_exit_nodes()
+    if nodes:
+        ip in nodes
+    else:
+        False
 
 class TorConnections(Analyzer):
     def get_queries(self) -> OneOrMany[ProcessQuery]:
@@ -26,11 +33,13 @@ class TorConnections(Analyzer):
                             TcpConnectionQuery()
                                 .with_tcp_connection_to_b(
                                     NetworkSocketAddressQuery()
-                                        .with_dst_ip_address()
+                                        .with_socket_ipv4_address(
+                                            IpV4AddressQuery()
+                                                .with_address()
+                                        )
                                 )
                         )
                 )
-
         )
 
     def on_response(self, response_view: ProcessView, output: Any) -> None:
@@ -48,15 +57,16 @@ class TorConnections(Analyzer):
 
         # we currently have a hack using ToMany everywhere to work around some issue with edges.
         # hmmm this is mixing both use of identity-only fields and avoiding them, revisit.
-        for netsock_address_src in response_view.process_socket_outbound:
-            for tcp_connection_a in netsock_address.tcp_connection_to_a:
-                for netsock_address_dst in tcp_connection_a.tcp_connection_to_b:
-                    if is_tor_exit_node(netsock_address_dst.dst_ip_address):
+        for netsock_address_src in view.process_socket_outbound:
+        for tcp_connection_a in netsock_address_src.get_tcp_connection_to_a():
+            for netsock_address_dst in tcp_connection_a.get_tcp_connection_to_b():
+                for ipv4_address in netsock_address_dst.get_socket_ipv4_address():
+                    if is_tor_exit_node(ipv4_address.get_address()):
                         output.send(
                             ExecutionHit(
                                 analyzer_name="TorConnections",
                                 node_view=response_view,
-                                risk_score=75,
+                                risk_score=25,
                                 lenses=[
                                     ("analyzer_name", "TorConnections"),
                                 ],
