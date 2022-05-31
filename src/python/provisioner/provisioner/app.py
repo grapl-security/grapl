@@ -16,8 +16,8 @@ from grapl_analyzerlib.prelude import (  # AssetSchema,; FileSchema,; IpAddressS
     ProcessSchema,
     ProcessSpawnSchema,
     TcpConnectionSchema,
-    IpV4Address,
-    IpV6Address,
+    IpV4AddressSchema,
+    IpV6AddressSchema,
     RiskSchema,
 )
 from grapl_analyzerlib.provision import provision_common

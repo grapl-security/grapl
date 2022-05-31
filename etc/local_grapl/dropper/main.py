@@ -55,7 +55,7 @@ class Dropper(Analyzer):
                 risk_score=75,
                 lenses=[
                     ("analyzer_name", "Dropper"),
-                    ("user", dropper.get_user()),
+                    ("exe", dropper.get_exe()),
                 ],
                 # Mark the dropper and its child processes as risky
                 risky_node_keys=[
