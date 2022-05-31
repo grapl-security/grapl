@@ -371,7 +371,7 @@ def main() -> None:
 
         uid_allocator_db = LocalPostgresInstance(
             name="uid-allocator-db",
-            port=5532,
+            port=5732,
         )
 
         pulumi.export("plugin-work-queue-db-hostname", plugin_work_queue_db.hostname)
