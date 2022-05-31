@@ -21,11 +21,11 @@ message CreateLensResponse {
 message MergeLensRequest {
   graplinc.common.v1beta1.Uuid tenant_id = 1;
   // The uid of the engagement to merge from
-  uint64 source_lens_uid = = 1;
+  uint64 source_lens_uid = 2;
   // The uid of the Lens to merge into
-  uint64 target_lens_uid = 2;
+  uint64 target_lens_uid = 3;
   // Whether or not to close the source engagement once it has been merged into the target
-  bool close_source = 3;
+  bool close_source = 4;
 }
 
 // Response for merging lenses
