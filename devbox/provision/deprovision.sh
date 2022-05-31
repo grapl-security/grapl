@@ -9,4 +9,6 @@ source "${THIS_DIR}/../lib.sh"
 
 pulumi destroy --yes --cwd="${GRAPL_ROOT}/devbox/provision"
 
+pulumi config rm "devbox:public-key" --cwd="${GRAPL_ROOT}/devbox/provision"
+
 rm -rf "${GRAPL_DEVBOX_DIR}"
