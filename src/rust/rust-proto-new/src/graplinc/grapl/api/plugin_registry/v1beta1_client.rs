@@ -66,10 +66,12 @@ impl PluginRegistryServiceClient {
         // Split the artifact up into 5MB chunks
         let plugin_chunks = plugin_artifact.chunks_owned(1024 * 1024 * 5);
         // Send the metadata first followed by N chunks
-        let request = futures::stream::iter(vec![native::CreatePluginRequest::Metadata(metadata)])
-            .chain(futures::stream::iter(
-                plugin_chunks.map(native::CreatePluginRequest::Chunk),
-            ));
+        let request = futures::stream::iter(std::iter::once(
+            native::CreatePluginRequest::Metadata(metadata),
+        ))
+        .chain(futures::stream::iter(
+            plugin_chunks.map(native::CreatePluginRequest::Chunk),
+        ));
         self.create_plugin_raw(request).await
     }
 
