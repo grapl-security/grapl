@@ -9,6 +9,7 @@ locals {
   # TODO once we upgrade to nomad 1.3.0 replace this with attr.unique.network.ip-address (variable interpolation is
   # added for network.dns as of 1.3.0
   dns_servers = [var.dns_server]
+  dgraph_alpha_port = 9080
 }
 
 job "grapl-ingress" {
@@ -41,6 +42,27 @@ job "grapl-ingress" {
               service {
                 # the upstream service
                 name  = "web-ui"
+                hosts = ["*"]
+              }
+            }
+          }
+        }
+      }
+    }
+
+    service {
+      name = "dgraph-alpha"
+      port = local.dgraph_alpha_port
+
+      connect {
+        gateway {
+          ingress {
+            listener {
+              port     = local.dgraph_alpha_port
+              protocol = "grpc"
+              service {
+                # the upstream service
+                name  = "dgraph-alpha-0-grpc-public"
                 hosts = ["*"]
               }
             }
