@@ -4,6 +4,8 @@ members = [
   "./derive-dynamic-node",
   "./consul-connect",
   "./endpoint-plugin",
+  "./generator-dispatcher",
+  "./generators/generic-subgraph-generator",
   "./generators/graph-generator-lib",
   "./generators/sysmon-generator",
   "./graph-merger",
