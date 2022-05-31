@@ -77,6 +77,20 @@ variable organization_management_db {
   }
 }
 
+variable uid_allocator_db {
+  description = "Connection configuration for the Uid Allocator database"
+  type = object({
+    username = string
+    password = string
+    port     = number
+  })
+  default = {
+    username = "postgres"
+    password = "postgres"
+    port     = 5732
+  }
+}
+
 locals {
   # This is the equivalent of `localhost` within a bridge network.
   # Useful for, for instance, talking to Zookeeper from Kafka without Consul Connect
@@ -152,8 +166,11 @@ job "grapl-local-infra" {
       driver = "docker"
 
       config {
-        # Once we move to Kafka, we can go back to the non-fork.
-        image = "localstack-grapl-fork:${var.image_tag}"
+        # https://github.com/localstack/localstack/issues/5824
+        # The bugfix we need is only available post-14.3 in latest starting May 23
+        # Hence pinning by sha, not tag
+        image = "localstack/localstack-light@sha256:a64dbc0b4e05f3647d8f1a09eb743e3d213402312858fb4146a7571a4a4ee6be"
+
         # Was running into this: https://github.com/localstack/localstack/issues/1349
         memory_hard_limit = 2048
         ports             = ["localstack"]
@@ -161,10 +178,9 @@ job "grapl-local-infra" {
       }
 
       env {
-        DEBUG        = 1
-        EDGE_PORT    = var.localstack_port
-        SERVICES     = "dynamodb,ec2,iam,s3,secretsmanager,sns,sqs"
-        SQS_PROVIDER = "elasticmq"
+        DEBUG     = 1
+        EDGE_PORT = var.localstack_port
+        SERVICES  = "dynamodb,ec2,iam,s3,secretsmanager,sns,sqs"
 
         # These are used by the health check below; "test" is the
         # default value for these credentials in Localstack.
@@ -526,6 +542,50 @@ job "grapl-local-infra" {
       }
     }
   }
+
+  group "uid-allocator-db" {
+    network {
+      mode = "bridge"
+      port "postgres" {
+        static = var.uid_allocator_db.port
+        to     = 5432
+      }
+    }
+
+    task "uid-allocator-db" {
+      driver = "docker"
+
+      config {
+        image = "postgres-ext:${var.image_tag}"
+        ports = ["postgres"]
+      }
+
+      env {
+        POSTGRES_USER     = var.uid_allocator_db.username
+        POSTGRES_PASSWORD = var.uid_allocator_db.password
+      }
+
+      service {
+        name = "uid-allocator-db"
+
+        check {
+          type     = "script"
+          name     = "check_postgres"
+          command  = "pg_isready"
+          args     = ["--username", "${var.uid_allocator_db.username}"]
+          interval = "20s"
+          timeout  = "10s"
+
+          check_restart {
+            limit           = 2
+            grace           = "30s"
+            ignore_warnings = false
+          }
+        }
+      }
+    }
+  }
+
 
   group "scylla" {
     network {

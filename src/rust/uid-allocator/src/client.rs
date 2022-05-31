@@ -1,8 +1,8 @@
 use dashmap::DashMap;
 use rust_proto_new::graplinc::grapl::api::uid_allocator::v1beta1::{
     client::{
-        UidAllocatorClient,
-        UidAllocatorClientError,
+        UidAllocatorServiceClient,
+        UidAllocatorServiceClientError,
     },
     messages::{
         AllocateIdsRequest,
@@ -11,14 +11,14 @@ use rust_proto_new::graplinc::grapl::api::uid_allocator::v1beta1::{
 };
 
 #[derive(Clone)]
-pub struct CachingUidAllocatorClient {
-    pub allocator: UidAllocatorClient,
+pub struct CachingUidAllocatorServiceClient {
+    pub allocator: UidAllocatorServiceClient,
     pub allocation_map: DashMap<uuid::Uuid, Allocation>,
     pub count: u32,
 }
 
-impl CachingUidAllocatorClient {
-    pub fn new(allocator: UidAllocatorClient, count: u32) -> Self {
+impl CachingUidAllocatorServiceClient {
+    pub fn new(allocator: UidAllocatorServiceClient, count: u32) -> Self {
         Self {
             allocator,
             allocation_map: DashMap::with_capacity(1),
@@ -29,7 +29,7 @@ impl CachingUidAllocatorClient {
     pub async fn allocate_id(
         &mut self,
         tenant_id: uuid::Uuid,
-    ) -> Result<u64, UidAllocatorClientError> {
+    ) -> Result<u64, UidAllocatorServiceClientError> {
         match self.get_from_allocation_map(tenant_id) {
             Some(allocation) => Ok(allocation),
             None => {
@@ -57,9 +57,9 @@ impl CachingUidAllocatorClient {
     }
 }
 
-impl std::fmt::Debug for CachingUidAllocatorClient {
+impl std::fmt::Debug for CachingUidAllocatorServiceClient {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut d = f.debug_struct("CachingUidAllocatorClient");
+        let mut d = f.debug_struct("CachingUidAllocatorServiceClient");
         for entry in self.allocation_map.iter() {
             d.field("tenant_id", entry.key());
         }

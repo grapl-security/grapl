@@ -20,9 +20,9 @@ pub mod server {
             AllocateIdsResponse,
         },
         protobufs::graplinc::grapl::api::uid_allocator::v1beta1::{
-            uid_allocator_server::{
-                UidAllocator as UidAllocatorProto,
-                UidAllocatorServer as UidAllocatorServerProto,
+            uid_allocator_service_server::{
+                UidAllocatorService as UidAllocatorServiceProto,
+                UidAllocatorServiceServer as UidAllocatorServiceServerProto,
             },
             AllocateIdsRequest as AllocateIdsRequestProto,
             AllocateIdsResponse as AllocateIdsResponseProto,
@@ -50,7 +50,7 @@ pub mod server {
     }
 
     #[async_trait::async_trait]
-    impl<T, E> UidAllocatorProto for T
+    impl<T, E> UidAllocatorServiceProto for T
     where
         T: UidAllocatorApi<Error = E> + Send + Sync + 'static,
         E: Into<Status> + Send + Sync + 'static,
@@ -73,7 +73,7 @@ pub mod server {
     }
 
     #[derive(thiserror::Error, Debug)]
-    pub enum UidAllocatorServerError {
+    pub enum UidAllocatorServiceServerError {
         #[error("grpc transport error: {0}")]
         GrpcTransportError(#[from] tonic::transport::Error),
         #[error("Bind error: {0}")]
@@ -81,17 +81,17 @@ pub mod server {
     }
 
     /// A server construct that drives the UidAllocatorApi implementation.
-    pub struct UidAllocatorServer<T, E>
+    pub struct UidAllocatorServiceServer<T, E>
     where
         T: UidAllocatorApi<Error = E> + Send + Sync + 'static,
         E: Into<Status> + Send + Sync + 'static,
     {
-        server: UidAllocatorServerProto<T>,
+        server: UidAllocatorServiceServerProto<T>,
         addr: SocketAddr,
         shutdown_rx: Receiver<()>,
     }
 
-    impl<T, E> UidAllocatorServer<T, E>
+    impl<T, E> UidAllocatorServiceServer<T, E>
     where
         T: UidAllocatorApi<Error = E> + Send + Sync + 'static,
         E: Into<Status> + Send + Sync + 'static,
@@ -100,13 +100,13 @@ pub mod server {
             service: T,
             addr: SocketAddr,
             shutdown_rx: Receiver<()>,
-        ) -> UidAllocatorServerBuilder<T, E> {
-            UidAllocatorServerBuilder::new(service, addr, shutdown_rx)
+        ) -> UidAllocatorServiceServerBuilder<T, E> {
+            UidAllocatorServiceServerBuilder::new(service, addr, shutdown_rx)
         }
 
-        pub async fn serve(self) -> Result<(), UidAllocatorServerError> {
+        pub async fn serve(self) -> Result<(), UidAllocatorServiceServerError> {
             let (healthcheck_handle, health_service) =
-                init_health_service::<UidAllocatorServerProto<T>, _, _>(
+                init_health_service::<UidAllocatorServiceServerProto<T>, _, _>(
                     || async { Ok(HealthcheckStatus::Serving) },
                     std::time::Duration::from_millis(500),
                 )
@@ -114,7 +114,7 @@ pub mod server {
 
             let listener = TcpListener::bind(self.addr)
                 .await
-                .map_err(UidAllocatorServerError::BindError)?;
+                .map_err(UidAllocatorServiceServerError::BindError)?;
 
             Server::builder()
                 .trace_fn(|request| {
@@ -141,35 +141,35 @@ pub mod server {
         }
     }
 
-    pub struct UidAllocatorServerBuilder<T, E>
+    pub struct UidAllocatorServiceServerBuilder<T, E>
     where
         T: UidAllocatorApi<Error = E> + Send + Sync + 'static,
         E: Into<Status> + Send + Sync + 'static,
     {
-        server: UidAllocatorServerProto<T>,
+        server: UidAllocatorServiceServerProto<T>,
         addr: SocketAddr,
         shutdown_rx: Receiver<()>,
     }
 
-    impl<T, E> UidAllocatorServerBuilder<T, E>
+    impl<T, E> UidAllocatorServiceServerBuilder<T, E>
     where
         T: UidAllocatorApi<Error = E> + Send + Sync + 'static,
         E: Into<Status> + Send + Sync + 'static,
     {
-        /// Create a new builder for a UidAllocatorServer,
+        /// Create a new builder for a UidAllocatorServiceServer,
         /// taking the required arguments upfront.
         pub fn new(service: T, addr: SocketAddr, shutdown_rx: Receiver<()>) -> Self {
             Self {
-                server: UidAllocatorServerProto::new(service),
+                server: UidAllocatorServiceServerProto::new(service),
                 addr,
                 shutdown_rx,
             }
         }
 
-        /// Consumes the builder and returns a new `UidAllocatorServer`.
+        /// Consumes the builder and returns a new `UidAllocatorServiceServer`.
         /// Note: Panics on invalid build state
-        pub fn build(self) -> UidAllocatorServer<T, E> {
-            UidAllocatorServer {
+        pub fn build(self) -> UidAllocatorServiceServer<T, E> {
+            UidAllocatorServiceServer {
                 server: self.server,
                 addr: self.addr,
                 shutdown_rx: self.shutdown_rx,
@@ -186,7 +186,7 @@ pub mod client {
             AllocateIdsResponse,
         },
         protobufs::graplinc::grapl::api::uid_allocator::v1beta1::{
-            uid_allocator_client::UidAllocatorClient as UidAllocatorClientProto,
+            uid_allocator_service_client::UidAllocatorServiceClient as UidAllocatorServiceClientProto,
             AllocateIdsRequest as AllocateIdsRequestProto,
         },
         protocol::status::Status,
@@ -194,7 +194,7 @@ pub mod client {
     };
 
     #[derive(thiserror::Error, Debug)]
-    pub enum UidAllocatorClientError {
+    pub enum UidAllocatorServiceClientError {
         #[error("Failed to deserialize response {0}")]
         SerDeError(#[from] SerDeError),
         #[error("Status {0}")]
@@ -204,35 +204,35 @@ pub mod client {
     }
 
     #[derive(Clone)]
-    /// This allocator should rarely be used. Instead, use the CachingUidAllocatorClient
+    /// This allocator should rarely be used. Instead, use the CachingUidAllocatorServiceClient
     /// from the uid-allocator crate.
-    pub struct UidAllocatorClient {
-        inner: UidAllocatorClientProto<tonic::transport::Channel>,
+    pub struct UidAllocatorServiceClient {
+        inner: UidAllocatorServiceClientProto<tonic::transport::Channel>,
     }
 
-    impl UidAllocatorClient {
-        pub async fn connect<T>(endpoint: T) -> Result<Self, UidAllocatorClientError>
+    impl UidAllocatorServiceClient {
+        pub async fn connect<T>(endpoint: T) -> Result<Self, UidAllocatorServiceClientError>
         where
             T: std::convert::TryInto<tonic::transport::Endpoint>,
             T::Error: std::error::Error + Send + Sync + 'static,
         {
-            Ok(UidAllocatorClient {
-                inner: UidAllocatorClientProto::connect(endpoint)
+            Ok(UidAllocatorServiceClient {
+                inner: UidAllocatorServiceClientProto::connect(endpoint)
                     .await
-                    .map_err(UidAllocatorClientError::ConnectError)?,
+                    .map_err(UidAllocatorServiceClientError::ConnectError)?,
             })
         }
 
         pub async fn allocate_ids(
             &mut self,
             request: AllocateIdsRequest,
-        ) -> Result<AllocateIdsResponse, UidAllocatorClientError> {
+        ) -> Result<AllocateIdsResponse, UidAllocatorServiceClientError> {
             let raw_request: AllocateIdsRequestProto = request.into();
             let raw_response = self
                 .inner
                 .allocate_ids(raw_request)
                 .await
-                .map_err(|s| UidAllocatorClientError::Status(s.into()))?;
+                .map_err(|s| UidAllocatorServiceClientError::Status(s.into()))?;
             let proto_response = raw_response.into_inner();
             let response = proto_response.try_into()?;
             Ok(response)

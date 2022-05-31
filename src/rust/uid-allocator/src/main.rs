@@ -1,5 +1,5 @@
 use opentelemetry::sdk::propagation::TraceContextPropagator;
-use rust_proto_new::graplinc::grapl::api::uid_allocator::v1beta1::server::UidAllocatorServer;
+use rust_proto_new::graplinc::grapl::api::uid_allocator::v1beta1::server::UidAllocatorServiceServer;
 use sqlx::PgPool;
 use structopt::StructOpt;
 use tracing_subscriber::prelude::*;
@@ -48,7 +48,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let (_tx, rx) = tokio::sync::oneshot::channel();
-    UidAllocatorServer::builder(allocator, service_config.uid_allocator_bind_address, rx)
+    UidAllocatorServiceServer::builder(allocator, service_config.uid_allocator_bind_address, rx)
         .build()
         .serve()
         .await?;

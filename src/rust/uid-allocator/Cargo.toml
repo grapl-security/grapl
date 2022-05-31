@@ -3,15 +3,8 @@ name = "uid-allocator"
 version = "0.1.0"
 edition = "2021"
 
-[lib]
-name = "uid_allocator"
-
-[[bin]]
-name = "uid-allocator"
-path = "src/main.rs"
-
 [dependencies]
-rust-proto-new = { path = "../rust-proto-new", features = [
+rust-proto-new = { path = "../rust-proto-new", default-features = false, features = [
   "uid-allocator-full"
 ] }
 chrono = "0.4.19"
@@ -56,4 +49,4 @@ quickcheck_macros = "1.0.0"
 tracing-subscriber = "0.3.2"
 
 [features]
-integration = []
+new_integration_tests = []

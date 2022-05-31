@@ -1,3 +1,4 @@
+.python-version @christophermaier
 /3rdparty/ @christophermaier
 /bin/ @christophermaier
 /buf.yaml @christophermaier
@@ -89,6 +90,7 @@ src/rust/rust-proto-new/ @grapl-security/wg-data-infra
 /src/rust/rust-toolchain.toml @inickles-grapl
 /src/rust/sqs-executor/ @inickles-grapl @grapl-security/wg-data-infra
 /src/rust/sysmon-parser/ @inickles-grapl
+/src/rust/uid-allocator/ @colin-grapl
 /test/docker-compose* @inickles-grapl @christophermaier
 /test/run @wimax-grapl
 

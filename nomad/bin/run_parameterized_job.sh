@@ -58,5 +58,5 @@ if [ "${dispatch_timed_out}" -ne "0" ]; then
     important_looking_banner "${job_to_dispatch} timed out."
     nomad_stop_job "${job_id}"
     sleep 5
-    exit 42
+    exit 50
 fi
