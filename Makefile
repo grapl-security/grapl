@@ -490,6 +490,7 @@ _up:
 		--exit-code-from pulumi \
 		pulumi
 
+.SILENT: down
 .PHONY: down
 down: ## docker compose down - both stops and removes the containers
 	# This is only for killing the lambda containers that Localstack

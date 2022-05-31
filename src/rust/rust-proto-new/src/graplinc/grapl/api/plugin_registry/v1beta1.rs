@@ -1,5 +1,7 @@
 use std::fmt::Debug;
 
+use proto::create_plugin_request;
+
 pub use crate::graplinc::grapl::api::plugin_registry::{
     v1beta1_client::{
         PluginRegistryServiceClient,
@@ -109,15 +111,9 @@ impl From<Plugin> for proto::Plugin {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct CreatePluginRequest {
-    /// the actual plugin code
-    pub plugin_artifact: Vec<u8>,
-    /// Tenant that is deploying this plugin
-    pub tenant_id: uuid::Uuid,
-    /// The string value to display to a user, non-empty
-    pub display_name: String,
-    /// The type of the plugin
-    pub plugin_type: PluginType,
+pub enum CreatePluginRequest {
+    Metadata(CreatePluginRequestMetadata),
+    Chunk(Vec<u8>),
 }
 
 impl type_url::TypeUrl for CreatePluginRequest {
@@ -129,6 +125,54 @@ impl TryFrom<proto::CreatePluginRequest> for CreatePluginRequest {
     type Error = SerDeError;
 
     fn try_from(value: proto::CreatePluginRequest) -> Result<Self, Self::Error> {
+        match value.inner {
+            Some(create_plugin_request::Inner::Metadata(m)) => {
+                Ok(CreatePluginRequest::Metadata(m.try_into()?))
+            }
+            Some(create_plugin_request::Inner::Chunk(c)) => {
+                Ok(CreatePluginRequest::Chunk(c.try_into()?))
+            }
+            _ => Err(SerDeError::UnknownVariant("CreatePluginRequest.inner")),
+        }
+    }
+}
+
+impl From<CreatePluginRequest> for proto::CreatePluginRequest {
+    fn from(value: CreatePluginRequest) -> Self {
+        proto::CreatePluginRequest {
+            inner: Some(match value {
+                CreatePluginRequest::Metadata(m) => {
+                    create_plugin_request::Inner::Metadata(m.into())
+                }
+                CreatePluginRequest::Chunk(c) => create_plugin_request::Inner::Chunk(c.into()),
+            }),
+        }
+    }
+}
+
+impl ProtobufSerializable for CreatePluginRequest {
+    type ProtobufMessage = proto::CreatePluginRequest;
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct CreatePluginRequestMetadata {
+    /// Tenant that is deploying this plugin
+    pub tenant_id: uuid::Uuid,
+    /// The string value to display to a user, non-empty
+    pub display_name: String,
+    /// The type of the plugin
+    pub plugin_type: PluginType,
+}
+
+impl type_url::TypeUrl for CreatePluginRequestMetadata {
+    const TYPE_URL: &'static str =
+        "graplsecurity.com/graplinc.grapl.api.plugin_registry.v1beta1.CreatePluginRequestMetadata";
+}
+
+impl TryFrom<proto::CreatePluginRequestMetadata> for CreatePluginRequestMetadata {
+    type Error = SerDeError;
+
+    fn try_from(value: proto::CreatePluginRequestMetadata) -> Result<Self, Self::Error> {
         let plugin_type = value.plugin_type().try_into()?;
 
         let tenant_id = value
@@ -136,20 +180,12 @@ impl TryFrom<proto::CreatePluginRequest> for CreatePluginRequest {
             .ok_or(SerDeError::MissingField("CreatePluginRequest.tenant_id"))?
             .into();
         let display_name = value.display_name;
-        let plugin_artifact = value.plugin_artifact;
 
         if display_name.is_empty() {
             return Err(SerDeError::MissingField("CreatePluginRequest.display_name"));
         }
 
-        if plugin_artifact.is_empty() {
-            return Err(SerDeError::MissingField(
-                "CreatePluginRequest.plugin_artifact",
-            ));
-        }
-
         Ok(Self {
-            plugin_artifact,
             tenant_id,
             display_name,
             plugin_type,
@@ -157,11 +193,10 @@ impl TryFrom<proto::CreatePluginRequest> for CreatePluginRequest {
     }
 }
 
-impl From<CreatePluginRequest> for proto::CreatePluginRequest {
-    fn from(value: CreatePluginRequest) -> Self {
+impl From<CreatePluginRequestMetadata> for proto::CreatePluginRequestMetadata {
+    fn from(value: CreatePluginRequestMetadata) -> Self {
         let plugin_type: proto::PluginType = value.plugin_type.into();
         Self {
-            plugin_artifact: value.plugin_artifact,
             tenant_id: Some(value.tenant_id.into()),
             display_name: value.display_name,
             plugin_type: plugin_type as i32,
@@ -169,8 +204,8 @@ impl From<CreatePluginRequest> for proto::CreatePluginRequest {
     }
 }
 
-impl ProtobufSerializable for CreatePluginRequest {
-    type ProtobufMessage = proto::CreatePluginRequest;
+impl ProtobufSerializable for CreatePluginRequestMetadata {
+    type ProtobufMessage = proto::CreatePluginRequestMetadata;
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -208,7 +243,6 @@ impl From<CreatePluginResponse> for proto::CreatePluginResponse {
 impl ProtobufSerializable for CreatePluginResponse {
     type ProtobufMessage = proto::CreatePluginResponse;
 }
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeployPluginRequest {
     pub plugin_id: uuid::Uuid,
