@@ -2,30 +2,30 @@ config:
   aws:region: us-east-1
   grapl:GRAPL_OPERATIONAL_ALARMS_EMAIL: operational-alarms@graplsecurity.com
   grapl:artifacts:
-    analyzer-dispatcher: 20220531160741-f8b9e9d
-    analyzer-executor: 20220531160741-f8b9e9d
-    e2e-tests: 20220531160741-f8b9e9d
-    engagement-creator: 20220531160741-f8b9e9d
+    analyzer-dispatcher: 20220531171432-a45de0c
+    analyzer-executor: 20220531171432-a45de0c
+    e2e-tests: 20220531171432-a45de0c
+    engagement-creator: 20220531171432-a45de0c
     firecracker_kernel.gz: firecracker-v1.0.0-kernel-4.14.174-eb117d6
     firecracker_kernel.tar.gz: firecracker-v1.0.0-kernel-4.14.174-7e6c0b4
     firecracker_rootfs.gz: 20220331171521-eb117d6
     firecracker_rootfs.tar.gz: 20220503183908-0b9a7e2
-    generator-executor: 20220531160741-f8b9e9d
-    graph-merger: 20220531160741-f8b9e9d
-    graphql-endpoint: 20220531160741-f8b9e9d
-    grapl-web-ui: 20220531160741-f8b9e9d
-    model-plugin-deployer: 20220531160741-f8b9e9d
-    node-identifier: 20220531160741-f8b9e9d
-    node-identifier-retry: 20220531160741-f8b9e9d
-    organization-management: 20220531160741-f8b9e9d
-    osquery-generator: 20220531160741-f8b9e9d
-    pipeline-ingress: 20220531160741-f8b9e9d
-    plugin-bootstrap: 20220531160741-f8b9e9d
-    plugin-registry: 20220531160741-f8b9e9d
-    plugin-work-queue: 20220531160741-f8b9e9d
-    provisioner: 20220531160741-f8b9e9d
-    rust-integration-tests-new: 20220531160741-f8b9e9d
-    sysmon-generator: 20220531160741-f8b9e9d
+    generator-executor: 20220531171432-a45de0c
+    graph-merger: 20220531171432-a45de0c
+    graphql-endpoint: 20220531171432-a45de0c
+    grapl-web-ui: 20220531171432-a45de0c
+    model-plugin-deployer: 20220531171432-a45de0c
+    node-identifier: 20220531171432-a45de0c
+    node-identifier-retry: 20220531171432-a45de0c
+    organization-management: 20220531171432-a45de0c
+    osquery-generator: 20220531171432-a45de0c
+    pipeline-ingress: 20220531171432-a45de0c
+    plugin-bootstrap: 20220531171432-a45de0c
+    plugin-registry: 20220531171432-a45de0c
+    plugin-work-queue: 20220531171432-a45de0c
+    provisioner: 20220531171432-a45de0c
+    rust-integration-tests-new: 20220531171432-a45de0c
+    sysmon-generator: 20220531171432-a45de0c
   grapl:cloudsmith-repository-name: grapl/testing
   grapl:confluent-environment-name: testing
   grapl:env_vars:
