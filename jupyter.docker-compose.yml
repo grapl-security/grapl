@@ -1,0 +1,12 @@
+version: "3.8"
+
+services:
+  grapl-jupyter:
+    image: grapl-jupyter:latest
+    build:
+      context: src/python
+      dockerfile: jupyter.Dockerfile
+    network_mode: host
+    environment:
+      - PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
+
