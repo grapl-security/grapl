@@ -273,7 +273,7 @@ install_hashicorp_tools() {
     PACKER_VERSION="1.8.0"
     VAULT_VERSION="1.10.2-1"
 
-    sudo apt-get install --yes \
+    sudo apt-get install --yes --allow-downgrades \
         consul="${CONSUL_VERSION}" \
         nomad="${NOMAD_VERSION}" \
         packer="${PACKER_VERSION}" \

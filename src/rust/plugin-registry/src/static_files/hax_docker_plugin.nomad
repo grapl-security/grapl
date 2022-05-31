@@ -79,7 +79,7 @@ job "grapl-plugin" {
 
       check {
         type     = "grpc"
-        port     = "pipeline-ingress-port"
+        port     = "plugin-grpc-receiver"
         interval = "10s"
         timeout  = "3s"
       }
