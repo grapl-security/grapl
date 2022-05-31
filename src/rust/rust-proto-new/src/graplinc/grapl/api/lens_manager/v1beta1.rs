@@ -28,6 +28,7 @@ use crate::{
 //
 // CreateLensRequest
 //
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct CreateLensRequest {
     pub tenant_id: Uuid,
@@ -482,6 +483,7 @@ impl serde_impl::ProtobufSerializable for RemoveNodeFromScopeResponse {
 //
 // RemoveNodeFromAllScopesRequest
 //
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct RemoveNodeFromAllScopesRequest{
     pub tenant_id: Uuid,
