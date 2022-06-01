@@ -35,3 +35,7 @@ members = [
 
 [profile.dev]
 opt-level = 1
+# Remove this if you're trying to debug with gdb.
+# Results in a roughly 20x binary size reduction, for example
+# sysmon-generator: 279M -> 16M
+strip = "debuginfo"
