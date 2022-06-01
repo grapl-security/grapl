@@ -42,7 +42,7 @@ endif
 DOCKER_BUILDX_BAKE_HCL := docker buildx bake --file=docker-bake.hcl $(buildx_builder_args)
 
 COMPOSE_PROJECT_INTEGRATION_TESTS := grapl-integration_tests
-COMPOSE_PROJECT_INTEGRATION_TESTS_NEW := grapl-integration_tests_new
+COMPOSE_PROJECT_INTEGRATION_TESTS_NEW := rust-integration-tests-new
 
 # All the services defined in the docker-compose.check.yml file are
 # run with the same general arguments; just supply the service name to
@@ -122,15 +122,9 @@ help: ## Print this help
 	@printf -- '  ${FMT_PURPLE}KEEP_TEST_ENV=1${FMT_END} make test-integration\n'
 	@printf -- '    to keep the test environment around after a test suite.\n'
 	@printf -- '\n'
-<<<<<<< HEAD
-	@printf -- '  ${FMT_PURPLE}DEBUG_SERVICES${FMT_END}="graphql_endpoint grapl_e2e_tests" make test-e2e\n'
-	@printf -- '    to launch the VSCode Debugger (see ${VSC_DEBUGGER_DOCS_LINK}).\n'
-	@printf -- '\n'
 	@printf -- '  ${FMT_PURPLE}WITH_PULUMI_TRACING=1${FMT_END} makeup \n'
 	@printf -- '    to send pulumi traces to Jaeger (see docs/development/debugging.md).\n'
 	@printf -- '\n'
-=======
->>>>>>> b601d1fe (remove e2e-tests)
 	@printf -- '  ${FMT_PURPLE}WITH_TRACING=1${FMT_END} make build-local-infrastructure \n'
 	@printf -- '    to send docker build traces to Jaeger (see docs/development/debugging.md).\n'
 	@printf -- '\n'
@@ -202,12 +196,12 @@ build-local-infrastructure: build-grapl-service-prerequisites
 .PHONY: build-test-integration
 build-test-integration:
 	@echo "--- Building integration test images"
-	docker buildx bake integration-tests $(buildx_builder_args)
+	$(DOCKER_BUILDX_BAKE_HCL) integration-tests $(buildx_builder_args)
 
 .PHONY: build-test-integration-new
 build-test-integration-new:
 	@echo "--- Building \"new\" integration test images"
-	docker buildx bake rust-integration-tests-new $(buildx_builder_args)
+	$(DOCKER_BUILDX_BAKE_HCL) rust-integration-tests-new $(buildx_builder_args)
 
 ########################################################################
 
