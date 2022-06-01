@@ -3,12 +3,19 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from typing import List, Optional, cast
+from typing_extensions import TypedDict
 
 import pulumi_aws as aws
 import pulumi_random as random
 from packaging.version import parse as version_parse
 
 import pulumi
+
+class NomadServiceDbArgs(TypedDict):
+    hostname: str
+    port: int
+    username: str
+    password: str
 
 
 @dataclass
@@ -185,3 +192,11 @@ class Postgres(pulumi.ComponentResource):
     def password(self) -> pulumi.Output[str]:
         # just to be safe...
         return pulumi.Output.secret(self._instance.password)
+
+    def to_nomad_service_db_args(self) -> pulumi.Output[NomadServiceDbArgs]:
+        return pulumi.Output.all(
+            hostname=self.host(),
+            port=self.port(),
+            username=self.username(),
+            password=self.password()
+        ).apply(NomadServiceDbArgs)

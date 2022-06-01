@@ -65,7 +65,7 @@ class NomadJob(pulumi.ComponentResource):
             else:
                 return val
 
-        return {k: dump_value(v) for (k, v) in vars.items()}
+        return {k: pulumi.Output.from_input(v).apply(dump_value) for (k, v) in vars.items()}
 
     def _fix_pulumi_preview(self, vars: NomadVars) -> NomadVars:
         """

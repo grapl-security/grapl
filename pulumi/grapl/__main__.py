@@ -412,10 +412,10 @@ def main() -> None:
         )
 
         local_grapl_core_vars: Final[NomadVars] = dict(
-            organization_management_db=organization_management_db.to_nomad_vars(),
+            organization_management_db=organization_management_db.to_nomad_service_db_args(),
             pipeline_ingress_kafka_sasl_username="fake",
             pipeline_ingress_kafka_sasl_password="fake",
-            plugin_registry_db=plugin_registry_db.to_nomad_vars(),
+            plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
             plugin_work_queue_db_hostname=plugin_work_queue_db.hostname,
             plugin_work_queue_db_port=str(plugin_work_queue_db.port),
             plugin_work_queue_db_username=plugin_work_queue_db.username,
@@ -577,12 +577,7 @@ def main() -> None:
         prod_grapl_core_vars: Final[NomadVars] = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
-            organization_management_db_hostname=organization_management_postgres.host(),
-            organization_management_db_port=organization_management_postgres.port().apply(
-                str
-            ),
-            organization_management_db_username=organization_management_postgres.username(),
-            organization_management_db_password=organization_management_postgres.password(),
+            organization_management_db=organization_management_postgres.to_nomad_service_db_args(),
             pipeline_ingress_kafka_sasl_username=pipeline_ingress_kafka_credentials.api_key,
             pipeline_ingress_kafka_sasl_password=pipeline_ingress_kafka_credentials.api_secret,
             plugin_registry_db_hostname=plugin_registry_postgres.host(),

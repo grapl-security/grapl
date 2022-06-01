@@ -2,16 +2,12 @@ from typing import Optional
 
 import pulumi_postgresql as postgresql
 from infra import config
+from infra.postgres import NomadServiceDbArgs
 from typing_extensions import TypedDict
 
 import pulumi
 
 
-class PostgresDbArgs(TypedDict):
-    hostname: str
-    port: int
-    username: str
-    password: str
 
 
 class LocalPostgresInstance(pulumi.ComponentResource):
@@ -30,10 +26,10 @@ class LocalPostgresInstance(pulumi.ComponentResource):
 
         self.instance = postgresql.Database(name)
 
-    def to_nomad_vars(self) -> pulumi.Output[PostgresDbArgs]:
-        return {
+    def to_nomad_service_db_args(self) -> pulumi.Output[NomadServiceDbArgs]:
+        return pulumi.Output.from_input(NomadServiceDbArgs({
             "hostname": self.hostname,
             "port": self.port,
             "username": self.username,
             "password": self.password,
-        }
+        }))
