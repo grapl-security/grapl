@@ -2659,7 +2659,6 @@ dependencies = [
  "rusoto_credential",
  "rusoto_dynamodb",
  "rusoto_s3",
- "rusoto_sqs",
  "rust-proto-new",
  "serde",
  "serde_dynamodb",
