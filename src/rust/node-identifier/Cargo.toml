@@ -4,68 +4,64 @@ version = "1.0.0"
 authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2021"
 
+[lib]
+name = "node_identifier"
+path = "src/lib.rs"
+
 [[bin]]
 name = "node-identifier"
-path = "src/bin/node-identifier.rs"
-
-[[bin]]
-name = "node-identifier-retry"
-path = "src/bin/node-identifier-retry.rs"
+path = "src/main.rs"
 
 [features]
-integration = []
+new_integration_tests = []
 
 [dependencies]
-rust-proto = { path = "../rust-proto", version = "*" }
-grapl-config = { path = "../grapl-config", version = "*" }
-grapl-observe = { path = "../grapl-observe", version = "*" }
-grapl-service = { path = "../grapl-service" }
-grapl-utils = { path = "../grapl-utils" }
 bytes = "1.1.0"
+chrono = "0.4.19"
 failure = "0.1.8"
-prost = "0.9.0"
-base64 = "0.13.0"
+futures = "0.3"
+grapl-utils = { path = "../grapl-utils" }
+grapl-config = { path = "../grapl-config" }
+hex = "0.4.3"
+hmap = "0.1.0"
+kafka = { path = "../kafka", version = "*" }
+opentelemetry = { version = "0.16", features = ["rt-tokio"] }
+opentelemetry-jaeger = { version = "0.15", features = [
+  "collector_client",
+  "rt-tokio"
+] }
 rusoto_s3 = { version = "0.47.0", default_features = false, features = [
   "rustls"
 ] }
 rusoto_core = { version = "0.47.0", default_features = false, features = [
   "rustls"
 ] }
-rusoto_sqs = { version = "0.47.0", default_features = false, features = [
-  "rustls"
-] }
 rusoto_dynamodb = { version = "0.47.0", default_features = false, features = [
   "rustls"
 ] }
 rusoto_credential = "0.47.0"
+rust-proto-new = { path = "../rust-proto-new", version = "*" }
+serde = "1.0"
 serde_dynamodb = { version = "0.9.0", default_features = false, features = [
   "rustls"
 ] }
 sha2 = "0.9.8"
-sqs-executor = { path = "../sqs-executor/" }
-zstd = "0.10.0"
-futures = "0.3"
-serde = "1.0.130"
-serde_json = "1.0.72"
-serde_derive = "1.0.130"
+tap = "1.0.1"
 thiserror = "1.0.30"
-hex = "0.4.3"
-async-trait = "0.1.51"
 tokio = { version = "1.17", features = [
   "macros",
   "rt-multi-thread",
   "sync",
   "time",
 ] }
-hmap = "0.1.0"
-chrono = "0.4.19"
+tracing = "0.1"
+tracing-appender = "0.2"
+tracing-opentelemetry = "0.16"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 uuid = { version = "0.8", features = ["v4"] }
-tap = "1.0.1"
-tracing = "0.1.29"
 
 [dev-dependencies]
+async-trait = "0.1"
 quickcheck = "1.0.3"
 quickcheck_macros = "1.0.0"
-
-[build-dependencies]
-prost-build = "0.9.0"
+test-context = "0.1"

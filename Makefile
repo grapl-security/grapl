@@ -40,7 +40,7 @@ endif
 DOCKER_BUILDX_BAKE := docker buildx bake $(buildx_builder_args)
 
 COMPOSE_PROJECT_INTEGRATION_TESTS := grapl-integration_tests
-COMPOSE_PROJECT_INTEGRATION_TESTS_NEW := grapl-integration_tests_new
+COMPOSE_PROJECT_INTEGRATION_TESTS_NEW := rust-integration-tests-new
 
 # All the services defined in the docker-compose.check.yml file are
 # run with the same general arguments; just supply the service name to

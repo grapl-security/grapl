@@ -5,7 +5,7 @@ sys.path.insert(0, "..")
 from typing import List, Mapping, Optional, Set, cast
 
 import pulumi_aws as aws
-from infra import config, dynamodb, emitter, log_levels
+from infra import config, dynamodb, log_levels
 from infra.alarms import OpsAlarms
 from infra.api_gateway import ApiGateway
 from infra.artifacts import ArtifactGetter
@@ -37,7 +37,6 @@ from infra.postgres import Postgres
 # web UI.
 # from infra.secret import JWTSecret, TestUserPassword
 from infra.secret import TestUserPassword
-from infra.service_queue import ServiceQueue
 from infra.upstream_stacks import UpstreamStacks
 from pulumi.resource import CustomTimeouts, ResourceOptions
 from typing_extensions import Final
@@ -75,7 +74,6 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "hax-docker-plugin-runtime": DockerImageId("debian:bullseye-slim"),
         "model-plugin-deployer": builder.build_with_tag("model-plugin-deployer"),
         "node-identifier": builder.build_with_tag("node-identifier"),
-        "node-identifier-retry": builder.build_with_tag("node-identifier-retry"),
         "organization-management": builder.build_with_tag("organization-management"),
         "pipeline-ingress": builder.build_with_tag("pipeline-ingress"),
         "plugin-bootstrap": builder.build_with_tag("plugin-bootstrap"),
@@ -155,43 +153,6 @@ def main() -> None:
         confluent_environment_name=pulumi_config.require("confluent-environment-name"),
     )
 
-    # TODO: Create these emitters inside the service abstraction if nothing
-    # else uses them (or perhaps even if something else *does* use them)
-    sysmon_log_emitter = emitter.EventEmitter("sysmon-log")
-    unid_subgraphs_generated_emitter = emitter.EventEmitter("unid-subgraphs-generated")
-    subgraphs_generated_emitter = emitter.EventEmitter("subgraphs-generated")
-    subgraphs_merged_emitter = emitter.EventEmitter("subgraphs-merged")
-    dispatched_analyzer_emitter = emitter.EventEmitter("dispatched-analyzer")
-
-    analyzer_matched_emitter = emitter.EventEmitter("analyzer-matched-subgraphs")
-    pulumi.export(
-        "analyzer-matched-subgraphs-bucket", analyzer_matched_emitter.bucket_name
-    )
-
-    all_emitters = [
-        sysmon_log_emitter,
-        unid_subgraphs_generated_emitter,
-        subgraphs_generated_emitter,
-        subgraphs_merged_emitter,
-        dispatched_analyzer_emitter,
-        analyzer_matched_emitter,
-    ]
-
-    node_identifier_queue = ServiceQueue("node-identifier")
-    node_identifier_queue.subscribe_to_emitter(unid_subgraphs_generated_emitter)
-
-    graph_merger_queue = ServiceQueue("graph-merger")
-    graph_merger_queue.subscribe_to_emitter(subgraphs_generated_emitter)
-
-    analyzer_dispatcher_queue = ServiceQueue("analyzer-dispatcher")
-    analyzer_dispatcher_queue.subscribe_to_emitter(subgraphs_merged_emitter)
-
-    analyzer_executor_queue = ServiceQueue("analyzer-executor")
-    analyzer_executor_queue.subscribe_to_emitter(dispatched_analyzer_emitter)
-
-    engagement_creator_queue = ServiceQueue("engagement-creator")
-    engagement_creator_queue.subscribe_to_emitter(analyzer_matched_emitter)
-
     analyzers_bucket = Bucket("analyzers-bucket", sse=True)
     pulumi.export("analyzers-bucket", analyzers_bucket.bucket)
     model_plugins_bucket = Bucket("model-plugins-bucket", sse=False)
@@ -229,34 +190,21 @@ def main() -> None:
     # These are shared across both local and prod deployments.
     nomad_inputs: Final[NomadVars] = dict(
         analyzer_bucket=analyzers_bucket.bucket,
-        analyzer_dispatched_bucket=dispatched_analyzer_emitter.bucket_name,
-        analyzer_dispatcher_queue=analyzer_dispatcher_queue.main_queue_url,
-        analyzer_executor_queue=analyzer_executor_queue.main_queue_url,
-        analyzer_matched_subgraphs_bucket=analyzer_matched_emitter.bucket_name,
-        analyzer_dispatcher_dead_letter_queue=analyzer_dispatcher_queue.dead_letter_queue_url,
         aws_env_vars_for_local=aws_env_vars_for_local,
         aws_region=aws.get_region().name,
         container_images=_container_images(artifacts),
         dns_server=config.CONSUL_DNS_IP,
-        engagement_creator_queue=engagement_creator_queue.main_queue_url,
-        graph_generator_kafka_consumer_group="graph-generator",
-        graph_merger_queue=graph_merger_queue.main_queue_url,
-        graph_merger_dead_letter_queue=graph_merger_queue.dead_letter_queue_url,
+        graph_generator_kafka_consumer_group=kafka.consumer_group("graph-generator"),
+        node_identifier_kafka_consumer_group=kafka.consumer_group("node-identifier"),
         kafka_bootstrap_servers=kafka.bootstrap_servers(),
         model_plugins_bucket=model_plugins_bucket.bucket,
-        node_identifier_queue=node_identifier_queue.main_queue_url,
-        node_identifier_dead_letter_queue=node_identifier_queue.dead_letter_queue_url,
-        node_identifier_retry_queue=node_identifier_queue.retry_queue_url,
         pipeline_ingress_healthcheck_polling_interval_ms=pipeline_ingress_healthcheck_polling_interval_ms,
         py_log_level=log_levels.PY_LOG_LEVEL,
         rust_log=log_levels.RUST_LOG_LEVELS,
         schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
         schema_table_name=dynamodb_tables.schema_table.name,
         session_table_name=dynamodb_tables.dynamic_session_table.name,
-        subgraphs_merged_bucket=subgraphs_merged_emitter.bucket_name,
-        subgraphs_generated_bucket=subgraphs_generated_emitter.bucket_name,
         test_user_name=config.GRAPL_TEST_USER_NAME,
-        unid_subgraphs_generated_bucket=unid_subgraphs_generated_emitter.bucket_name,
         user_auth_table=dynamodb_tables.user_auth_table.name,
         user_session_table=dynamodb_tables.user_session_table.name,
         plugin_registry_kernel_artifact_url=firecracker_s3objs.kernel_s3obj_url,
@@ -326,6 +274,7 @@ def main() -> None:
 
     pipeline_ingress_kafka_credentials = kafka.service_credentials("pipeline-ingress")
     graph_generator_kafka_credentials = kafka.service_credentials("graph-generator")
+    node_identifier_kafka_credentials = kafka.service_credentials("node-identifier")
 
 
     if config.LOCAL_GRAPL:
@@ -380,6 +329,8 @@ def main() -> None:
             uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),
             graph_generator_kafka_sasl_username=graph_generator_kafka_credentials.api_key,
             graph_generator_kafka_sasl_password=graph_generator_kafka_credentials.api_secret,
+            node_identifier_kafka_sasl_username=node_identifier_kafka_credentials.api_key,
+            node_identifier_kafka_sasl_password=node_identifier_kafka_credentials.api_secret,
             pipeline_ingress_kafka_sasl_username=pipeline_ingress_kafka_credentials.api_key,
             pipeline_ingress_kafka_sasl_password=pipeline_ingress_kafka_credentials.api_secret,
             redis_endpoint=redis_endpoint,
@@ -444,9 +395,6 @@ def main() -> None:
             # Analyzer Dispatcher needs to be able to ListObjects on Analyzers
             # Analyzer Executor needs to be able to ListObjects on Model Plugins
             bucket.grant_get_and_list_to(nomad_agent_role)
-        for _emitter in all_emitters:
-            _emitter.grant_write_to(nomad_agent_role)
-            _emitter.grant_read_to(nomad_agent_role)
 
         cache = Cache(
             "main-cache",
@@ -495,9 +443,10 @@ def main() -> None:
             organization_management_db=organization_management_db.to_nomad_service_db_args(),
             graph_generator_kafka_sasl_username=graph_generator_kafka_credentials.api_key,
             graph_generator_kafka_sasl_password=graph_generator_kafka_credentials.api_secret,
+            node_identifier_kafka_sasl_username=node_identifier_kafka_credentials.api_key,
+            node_identifier_kafka_sasl_password=node_identifier_kafka_credentials.api_secret,
             pipeline_ingress_kafka_sasl_username=pipeline_ingress_kafka_credentials.api_key,
             pipeline_ingress_kafka_sasl_password=pipeline_ingress_kafka_credentials.api_secret,
-            pipeline_ingress_kafka_sasl_username=pipeline_ingress_kafka_credentials.api_key,
             plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
             plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
             uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),

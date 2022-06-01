@@ -26,3 +26,9 @@ pub(crate) enum SysmonGeneratorError {
     #[error("error configuring tracing {0}")]
     TraceError(#[from] opentelemetry::trace::TraceError),
 }
+
+impl From<SysmonGeneratorError> for kafka::StreamProcessorError {
+    fn from(val: SysmonGeneratorError) -> Self {
+        kafka::StreamProcessorError::EventHandlerError(val.to_string())
+    }
+}
