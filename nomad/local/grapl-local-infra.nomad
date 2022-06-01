@@ -35,8 +35,8 @@ variable "zookeeper_port" {
 
 # These Postgres connection data must match what's in
 # `pulumi/grapl/__main__.py`; sorry for the duplication :(
-variable postgres {
-  description = "Connection configuration for every Postgres database"
+variable plugin_registry_db {
+  description = "Connection configuration for the Plugin Registry database"
   type = object({
     username = string
     password = string
@@ -46,6 +46,48 @@ variable postgres {
     username = "postgres"
     password = "postgres"
     port     = 5432
+  }
+}
+
+variable plugin_work_queue_db {
+  description = "Connection configuration for the Plugin Work Queue database"
+  type = object({
+    username = string
+    password = string
+    port     = number
+  })
+  default = {
+    username = "postgres"
+    password = "postgres"
+    port     = 5532
+  }
+}
+
+variable organization_management_db {
+  description = "Connection configuration for the Organization Management database"
+  type = object({
+    username = string
+    password = string
+    port     = number
+  })
+  default = {
+    username = "postgres"
+    password = "postgres"
+    port     = 5632
+  }
+}
+
+variable uid_allocator_db {
+  description = "Connection configuration for the Uid Allocator database"
+  type = object({
+    username = string
+    password = string
+    port     = number
+  })
+  default = {
+    username = "postgres"
+    password = "postgres"
+    port     = 5732
   }
 }
 
@@ -264,6 +306,7 @@ job "grapl-local-infra" {
           }
         }
       }
+
     }
   }
 
@@ -315,16 +358,16 @@ job "grapl-local-infra" {
     }
   }
 
-  group "postgres" {
+  group "plugin-registry-db" {
     network {
       mode = "bridge"
       port "postgres" {
-        static = var.postgres.port
+        static = var.plugin_registry_db.port
         to     = 5432 # postgres default
       }
     }
 
-    task "postgres" {
+    task "plugin-registry-db" {
       driver = "docker"
 
       config {
@@ -333,18 +376,61 @@ job "grapl-local-infra" {
       }
 
       env {
-        POSTGRES_USER     = var.postgres.username
-        POSTGRES_PASSWORD = var.postgres.password
+        POSTGRES_USER     = var.plugin_registry_db.username
+        POSTGRES_PASSWORD = var.plugin_registry_db.password
       }
 
       service {
-        name = "postgres"
+        name = "plugin-registry-db"
 
         check {
           type     = "script"
           name     = "check_postgres"
           command  = "pg_isready"
-          args     = ["--username", "${var.postgres.username}"]
+          args     = ["--username", "${var.plugin_registry_db.username}"]
+          interval = "20s"
+          timeout  = "10s"
+
+          check_restart {
+            limit           = 2
+            grace           = "30s"
+            ignore_warnings = false
+          }
+        }
+      }
+    }
+  }
+
+  group "plugin-work-queue-db" {
+    network {
+      mode = "bridge"
+      port "postgres" {
+        static = var.plugin_work_queue_db.port
+        to     = 5432
+      }
+    }
+
+    task "plugin-work-queue-db" {
+      driver = "docker"
+
+      config {
+        image = "postgres-ext:${var.image_tag}"
+        ports = ["postgres"]
+      }
+
+      env {
+        POSTGRES_USER     = var.plugin_work_queue_db.username
+        POSTGRES_PASSWORD = var.plugin_work_queue_db.password
+      }
+
+      service {
+        name = "plugin-work-queue-db"
+
+        check {
+          type     = "script"
+          name     = "check_postgres"
+          command  = "pg_isready"
+          args     = ["--username", "${var.plugin_work_queue_db.username}"]
           interval = "20s"
           timeout  = "10s"
 
@@ -412,6 +498,94 @@ job "grapl-local-infra" {
       }
     }
   }
+
+
+  group "organization-management-db" {
+    network {
+      mode = "bridge"
+      port "postgres" {
+        static = var.organization_management_db.port
+        to     = 5432
+      }
+    }
+
+    task "organization-management-db" {
+      driver = "docker"
+
+      config {
+        image = "postgres-ext:${var.image_tag}"
+        ports = ["postgres"]
+      }
+
+      env {
+        POSTGRES_USER     = var.organization_management_db.username
+        POSTGRES_PASSWORD = var.organization_management_db.password
+      }
+
+      service {
+        name = "organization-management-db"
+
+        check {
+          type     = "script"
+          name     = "check_postgres"
+          command  = "pg_isready"
+          args     = ["--username", "${var.organization_management_db.username}"]
+          interval = "20s"
+          timeout  = "10s"
+
+          check_restart {
+            limit           = 2
+            grace           = "30s"
+            ignore_warnings = false
+          }
+        }
+      }
+    }
+  }
+
+  group "uid-allocator-db" {
+    network {
+      mode = "bridge"
+      port "postgres" {
+        static = var.uid_allocator_db.port
+        to     = 5432
+      }
+    }
+
+    task "uid-allocator-db" {
+      driver = "docker"
+
+      config {
+        image = "postgres-ext:${var.image_tag}"
+        ports = ["postgres"]
+      }
+
+      env {
+        POSTGRES_USER     = var.uid_allocator_db.username
+        POSTGRES_PASSWORD = var.uid_allocator_db.password
+      }
+
+      service {
+        name = "uid-allocator-db"
+
+        check {
+          type     = "script"
+          name     = "check_postgres"
+          command  = "pg_isready"
+          args     = ["--username", "${var.uid_allocator_db.username}"]
+          interval = "20s"
+          timeout  = "10s"
+
+          check_restart {
+            limit           = 2
+            grace           = "30s"
+            ignore_warnings = false
+          }
+        }
+      }
+    }
+  }
+
 
   group "scylla" {
     network {

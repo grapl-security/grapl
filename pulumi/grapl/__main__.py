@@ -354,34 +354,49 @@ def main() -> None:
         #
         # There's not really a great way to deal with this duplication
         # at the moment, sadly.
-        postgres_db = LocalPostgresInstance(
-            name="postgres-db",
+        organization_management_db = LocalPostgresInstance(
+            name="organization-management-db",
+            port=5632,
+        )
+
+        plugin_registry_db = LocalPostgresInstance(
+            name="plugin-registry-db",
             port=5432,
         )
 
-        pulumi.export("plugin-work-queue-db-hostname", postgres_db.hostname)
-        pulumi.export("plugin-work-queue-db-port", str(postgres_db.port))
-        pulumi.export("plugin-work-queue-db-username", postgres_db.username)
-        pulumi.export("plugin-work-queue-db-password", postgres_db.password)
+        plugin_work_queue_db = LocalPostgresInstance(
+            name="plugin-work-queue-db",
+            port=5532,
+        )
 
-        pulumi.export("uid-allocator-db-hostname", postgres_db.hostname)
-        pulumi.export("uid-allocator-db-port", str(postgres_db.port))
-        pulumi.export("uid-allocator-db-username", postgres_db.username)
-        pulumi.export("uid-allocator-db-password", postgres_db.password)
+        uid_allocator_db = LocalPostgresInstance(
+            name="uid-allocator-db",
+            port=5732,
+        )
+
+        pulumi.export("plugin-work-queue-db-hostname", plugin_work_queue_db.hostname)
+        pulumi.export("plugin-work-queue-db-port", str(plugin_work_queue_db.port))
+        pulumi.export("plugin-work-queue-db-username", plugin_work_queue_db.username)
+        pulumi.export("plugin-work-queue-db-password", plugin_work_queue_db.password)
+
+        pulumi.export("uid-allocator-db-hostname", uid_allocator_db.hostname)
+        pulumi.export("uid-allocator-db-port", str(uid_allocator_db.port))
+        pulumi.export("uid-allocator-db-username", uid_allocator_db.username)
+        pulumi.export("uid-allocator-db-password", uid_allocator_db.password)
 
         # TODO: ADD EXPORTS FOR PLUGIN-REGISTRY
 
         pulumi.export(
-            "organization-management-db-hostname", postgres_db.hostname
+            "organization-management-db-hostname", organization_management_db.hostname
         )
         pulumi.export(
-            "organization-management-db-port", str(postgres_db.port)
+            "organization-management-db-port", str(organization_management_db.port)
         )
         pulumi.export(
-            "organization-management-db-username", postgres_db.username
+            "organization-management-db-username", organization_management_db.username
         )
         pulumi.export(
-            "organization-management-db-password", postgres_db.password
+            "organization-management-db-password", organization_management_db.password
         )
 
         redis_endpoint = f"redis://{config.HOST_IP_IN_NOMAD}:6379"
@@ -397,24 +412,24 @@ def main() -> None:
         )
 
         local_grapl_core_vars: Final[NomadVars] = dict(
-            organization_management_db_hostname=postgres_db.hostname,
-            organization_management_db_port=str(postgres_db.port),
-            organization_management_db_username=postgres_db.username,
-            organization_management_db_password=postgres_db.password,
+            organization_management_db_hostname=organization_management_db.hostname,
+            organization_management_db_port=str(organization_management_db.port),
+            organization_management_db_username=organization_management_db.username,
+            organization_management_db_password=organization_management_db.password,
             pipeline_ingress_kafka_sasl_username="fake",
             pipeline_ingress_kafka_sasl_password="fake",
-            plugin_registry_db_hostname=postgres_db.hostname,
-            plugin_registry_db_port=str(postgres_db.port),
-            plugin_registry_db_username=postgres_db.username,
-            plugin_registry_db_password=postgres_db.password,
-            plugin_work_queue_db_hostname=postgres_db.hostname,
-            plugin_work_queue_db_port=str(postgres_db.port),
-            plugin_work_queue_db_username=postgres_db.username,
-            plugin_work_queue_db_password=postgres_db.password,
-            uid_allocator_db_hostname=postgres_db.hostname,
-            uid_allocator_db_port=str(postgres_db.port),
-            uid_allocator_db_username=postgres_db.username,
-            uid_allocator_db_password=postgres_db.password,
+            plugin_registry_db_hostname=plugin_registry_db.hostname,
+            plugin_registry_db_port=str(plugin_registry_db.port),
+            plugin_registry_db_username=plugin_registry_db.username,
+            plugin_registry_db_password=plugin_registry_db.password,
+            plugin_work_queue_db_hostname=plugin_work_queue_db.hostname,
+            plugin_work_queue_db_port=str(plugin_work_queue_db.port),
+            plugin_work_queue_db_username=plugin_work_queue_db.username,
+            plugin_work_queue_db_password=plugin_work_queue_db.password,
+            uid_allocator_db_hostname=uid_allocator_db.hostname,
+            uid_allocator_db_port=str(uid_allocator_db.port),
+            uid_allocator_db_username=uid_allocator_db.username,
+            uid_allocator_db_password=uid_allocator_db.password,
             redis_endpoint=redis_endpoint,
             **nomad_inputs,
         )
