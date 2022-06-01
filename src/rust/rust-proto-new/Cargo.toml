@@ -29,3 +29,16 @@ quickcheck = "1.0"
 quickcheck_macros = "1.0"
 test-context = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[features]
+default = ["uid-allocator-full"]
+uid-allocator = []
+uid-allocator-messages = ["uid-allocator"]
+uid-allocator-server = ["uid-allocator-messages", "uid-allocator"]
+uid-allocator-client = ["uid-allocator-messages", "uid-allocator"]
+uid-allocator-full = [
+  "uid-allocator-messages",
+  "uid-allocator-client",
+  "uid-allocator-server",
+  "uid-allocator"
+]

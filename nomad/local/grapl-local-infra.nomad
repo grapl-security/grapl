@@ -77,6 +77,20 @@ variable organization_management_db {
   }
 }
 
+variable uid_allocator_db {
+  description = "Connection configuration for the Uid Allocator database"
+  type = object({
+    username = string
+    password = string
+    port     = number
+  })
+  default = {
+    username = "postgres"
+    password = "postgres"
+    port     = 5732
+  }
+}
+
 locals {
   # This is the equivalent of `localhost` within a bridge network.
   # Useful for, for instance, talking to Zookeeper from Kafka without Consul Connect
@@ -528,6 +542,50 @@ job "grapl-local-infra" {
       }
     }
   }
+
+  group "uid-allocator-db" {
+    network {
+      mode = "bridge"
+      port "postgres" {
+        static = var.uid_allocator_db.port
+        to     = 5432
+      }
+    }
+
+    task "uid-allocator-db" {
+      driver = "docker"
+
+      config {
+        image = "postgres-ext:${var.image_tag}"
+        ports = ["postgres"]
+      }
+
+      env {
+        POSTGRES_USER     = var.uid_allocator_db.username
+        POSTGRES_PASSWORD = var.uid_allocator_db.password
+      }
+
+      service {
+        name = "uid-allocator-db"
+
+        check {
+          type     = "script"
+          name     = "check_postgres"
+          command  = "pg_isready"
+          args     = ["--username", "${var.uid_allocator_db.username}"]
+          interval = "20s"
+          timeout  = "10s"
+
+          check_restart {
+            limit           = 2
+            grace           = "30s"
+            ignore_warnings = false
+          }
+        }
+      }
+    }
+  }
+
 
   group "scylla" {
     network {

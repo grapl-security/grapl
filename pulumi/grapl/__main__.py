@@ -84,6 +84,7 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "provisioner": builder.build_with_tag("provisioner"),
         "sysmon-generator": builder.build_with_tag("sysmon-generator"),
         "web-ui": builder.build_with_tag("grapl-web-ui"),
+        "uid-allocator": builder.build_with_tag("uid-allocator"),
     }
 
 
@@ -368,10 +369,20 @@ def main() -> None:
             port=5532,
         )
 
+        uid_allocator_db = LocalPostgresInstance(
+            name="uid-allocator-db",
+            port=5732,
+        )
+
         pulumi.export("plugin-work-queue-db-hostname", plugin_work_queue_db.hostname)
         pulumi.export("plugin-work-queue-db-port", str(plugin_work_queue_db.port))
         pulumi.export("plugin-work-queue-db-username", plugin_work_queue_db.username)
         pulumi.export("plugin-work-queue-db-password", plugin_work_queue_db.password)
+
+        pulumi.export("uid-allocator-db-hostname", uid_allocator_db.hostname)
+        pulumi.export("uid-allocator-db-port", str(uid_allocator_db.port))
+        pulumi.export("uid-allocator-db-username", uid_allocator_db.username)
+        pulumi.export("uid-allocator-db-password", uid_allocator_db.password)
 
         # TODO: ADD EXPORTS FOR PLUGIN-REGISTRY
 
@@ -415,6 +426,10 @@ def main() -> None:
             plugin_work_queue_db_port=str(plugin_work_queue_db.port),
             plugin_work_queue_db_username=plugin_work_queue_db.username,
             plugin_work_queue_db_password=plugin_work_queue_db.password,
+            uid_allocator_db_hostname=uid_allocator_db.hostname,
+            uid_allocator_db_port=str(uid_allocator_db.port),
+            uid_allocator_db_username=uid_allocator_db.username,
+            uid_allocator_db_password=uid_allocator_db.password,
             redis_endpoint=redis_endpoint,
             **nomad_inputs,
         )
@@ -512,6 +527,14 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
+        uid_allocator_postgres = Postgres(
+            name="uid-allocator-db",
+            subnet_ids=subnet_ids,
+            vpc_id=vpc_id,
+            availability_zone=availability_zone,
+            nomad_agent_security_group_id=nomad_agent_security_group_id,
+        )
+
         pulumi.export(
             "organization-management-db-hostname",
             organization_management_postgres.host(),
@@ -544,6 +567,17 @@ def main() -> None:
             plugin_work_queue_postgres.password(),
         )
 
+        pulumi.export("uid-allocator-db-hostname", uid_allocator_postgres.host())
+        pulumi.export("uid-allocator-db-port", uid_allocator_postgres.port().apply(str))
+        pulumi.export(
+            "uid-allocator-db-username",
+            uid_allocator_postgres.username(),
+        )
+        pulumi.export(
+            "uid-allocator-db-password",
+            uid_allocator_postgres.password(),
+        )
+
         pulumi.export("redis-endpoint", cache.endpoint)
 
         prod_grapl_core_vars: Final[NomadVars] = dict(
@@ -565,6 +599,10 @@ def main() -> None:
             plugin_work_queue_db_port=plugin_work_queue_postgres.port().apply(str),
             plugin_work_queue_db_username=plugin_work_queue_postgres.username(),
             plugin_work_queue_db_password=plugin_work_queue_postgres.password(),
+            uid_allocator_db_hostname=uid_allocator_postgres.host(),
+            uid_allocator_db_port=uid_allocator_postgres.port().apply(str),
+            uid_allocator_db_username=uid_allocator_postgres.username(),
+            uid_allocator_db_password=uid_allocator_postgres.password(),
             redis_endpoint=cache.endpoint,
             **nomad_inputs,
         )
