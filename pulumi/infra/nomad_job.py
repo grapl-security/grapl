@@ -1,13 +1,29 @@
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Union
+from typing import Any, Mapping, Optional, Union, cast
 
 import pulumi_nomad as nomad
 from infra.config import STACK_NAME
+from typing_extensions import TypedDict
 
 import pulumi
 
-_ValidNomadVarTypes = pulumi.Input[Union[str, bool, int, Mapping[str, str]]]
+
+class NomadServicePostgresDbArgs(TypedDict):
+    hostname: str
+    port: int
+    username: str
+    password: str
+
+
+_ValidNomadVarTypePrimitives = Union[str, bool, int]
+_ValidNomadVarTypes = pulumi.Input[
+    Union[
+        _ValidNomadVarTypePrimitives,
+        Mapping[str, _ValidNomadVarTypePrimitives],
+        NomadServicePostgresDbArgs,  # Upsettingly, this is a Mapping[str, object]
+    ]
+]
 NomadVars = Mapping[str, Optional[_ValidNomadVarTypes]]
 
 
@@ -51,21 +67,25 @@ class NomadJob(pulumi.ComponentResource):
         convert them correctly.
         """
 
-        def escape_str_value(val: Union[str, int]) -> Union[str, int]:
+        def escape_str_value(
+            val: _ValidNomadVarTypePrimitives,
+        ) -> _ValidNomadVarTypePrimitives:
             if isinstance(val, str):
                 # Gotta do some annoying escaping when the object field contains "${}"
                 return val.replace("${", "$${")
             return val
 
-        def dump_value(val: Optional[_ValidNomadVarTypes]) -> str:
+        def dump_value(val: Any) -> _ValidNomadVarTypePrimitives:
             if isinstance(val, list):
                 return json.dumps(val)
             elif isinstance(val, dict):
                 return json.dumps({k: escape_str_value(v) for (k, v) in val.items()})
             else:
-                return val
+                return cast(_ValidNomadVarTypePrimitives, val)
 
-        return {k: pulumi.Output.from_input(v).apply(dump_value) for (k, v) in vars.items()}
+        return {
+            k: pulumi.Output.from_input(v).apply(dump_value) for (k, v) in vars.items()
+        }
 
     def _fix_pulumi_preview(self, vars: NomadVars) -> NomadVars:
         """
