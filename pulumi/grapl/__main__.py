@@ -412,16 +412,10 @@ def main() -> None:
         )
 
         local_grapl_core_vars: Final[NomadVars] = dict(
-            organization_management_db_hostname=organization_management_db.hostname,
-            organization_management_db_port=str(organization_management_db.port),
-            organization_management_db_username=organization_management_db.username,
-            organization_management_db_password=organization_management_db.password,
+            organization_management_db=organization_management_db.to_nomad_vars(),
             pipeline_ingress_kafka_sasl_username="fake",
             pipeline_ingress_kafka_sasl_password="fake",
-            plugin_registry_db_hostname=plugin_registry_db.hostname,
-            plugin_registry_db_port=str(plugin_registry_db.port),
-            plugin_registry_db_username=plugin_registry_db.username,
-            plugin_registry_db_password=plugin_registry_db.password,
+            plugin_registry_db=plugin_registry_db.to_nomad_vars(),
             plugin_work_queue_db_hostname=plugin_work_queue_db.hostname,
             plugin_work_queue_db_port=str(plugin_work_queue_db.port),
             plugin_work_queue_db_username=plugin_work_queue_db.username,

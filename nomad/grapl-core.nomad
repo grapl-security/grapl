@@ -107,24 +107,14 @@ variable "session_table_name" {
   description = "What is the name of the session table?"
 }
 
-variable "plugin_registry_db_hostname" {
-  type        = string
-  description = "What is the host for the plugin registry table?"
-}
-
-variable "plugin_registry_db_port" {
-  type        = string
-  description = "What is the port for the plugin registry table?"
-}
-
-variable "plugin_registry_db_username" {
-  type        = string
-  description = "What is the username for the plugin registry table?"
-}
-
-variable "plugin_registry_db_password" {
-  type        = string
-  description = "What is the password for the plugin registry table?"
+variable "plugin_registry_db" {
+  type = object({
+    hostname = string
+    port     = number
+    username = string
+    password = string
+  })
+  description = "Vars for the Plugin Registry database"
 }
 
 variable "plugin_registry_kernel_artifact_url" {
@@ -137,24 +127,14 @@ variable "plugin_registry_rootfs_artifact_url" {
   description = "URL specifying the rootfs.tar.gz for the Firecracker VM"
 }
 
-variable "organization_management_db_hostname" {
-  type        = string
-  description = "What is the host for the organization management database?"
-}
-
-variable "organization_management_db_port" {
-  type        = string
-  description = "What is the port for the organization management database?"
-}
-
-variable "organization_management_db_username" {
-  type        = string
-  description = "What is the username for the organization management database?"
-}
-
-variable "organization_management_db_password" {
-  type        = string
-  description = "What is the password for the organization management database?"
+variable "organization_management_db" {
+  type = object({
+    hostname = string
+    port     = number
+    username = string
+    password = string
+  })
+  description = "Vars for the Organization Management database"
 }
 
 variable "pipeline_ingress_healthcheck_polling_interval_ms" {
@@ -1329,10 +1309,10 @@ job "grapl-core" {
         ORGANIZATION_MANAGEMENT_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_organization-management-port}"
         RUST_BACKTRACE                       = local.rust_backtrace
         RUST_LOG                             = var.rust_log
-        ORGANIZATION_MANAGEMENT_DB_HOSTNAME  = var.organization_management_db_hostname
-        ORGANIZATION_MANAGEMENT_DB_PASSWORD  = var.organization_management_db_password
-        ORGANIZATION_MANAGEMENT_DB_PORT      = var.organization_management_db_port
-        ORGANIZATION_MANAGEMENT_DB_USERNAME  = var.organization_management_db_username
+        ORGANIZATION_MANAGEMENT_DB_HOSTNAME  = var.organization_management_db.hostname
+        ORGANIZATION_MANAGEMENT_DB_PASSWORD  = var.organization_management_db.password
+        ORGANIZATION_MANAGEMENT_DB_PORT      = var.organization_management_db.port
+        ORGANIZATION_MANAGEMENT_DB_USERNAME  = var.organization_management_db.username
         OTEL_EXPORTER_JAEGER_AGENT_HOST      = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT      = local.tracing_jaeger_endpoint_port
       }
@@ -1434,10 +1414,10 @@ job "grapl-core" {
         AWS_REGION                                      = var.aws_region
         NOMAD_SERVICE_ADDRESS                           = "${attr.unique.network.ip-address}:4646"
         PLUGIN_REGISTRY_BIND_ADDRESS                    = "0.0.0.0:${NOMAD_PORT_plugin-registry-port}"
-        PLUGIN_REGISTRY_DB_HOSTNAME                     = var.plugin_registry_db_hostname
-        PLUGIN_REGISTRY_DB_PASSWORD                     = var.plugin_registry_db_password
-        PLUGIN_REGISTRY_DB_PORT                         = var.plugin_registry_db_port
-        PLUGIN_REGISTRY_DB_USERNAME                     = var.plugin_registry_db_username
+        PLUGIN_REGISTRY_DB_HOSTNAME                     = var.plugin_registry_db.hostname
+        PLUGIN_REGISTRY_DB_PASSWORD                     = var.plugin_registry_db.password
+        PLUGIN_REGISTRY_DB_PORT                         = var.plugin_registry_db.port
+        PLUGIN_REGISTRY_DB_USERNAME                     = var.plugin_registry_db.username
         PLUGIN_BOOTSTRAP_CONTAINER_IMAGE                = var.container_images["plugin-bootstrap"]
         PLUGIN_REGISTRY_KERNEL_ARTIFACT_URL             = var.plugin_registry_kernel_artifact_url
         PLUGIN_REGISTRY_ROOTFS_ARTIFACT_URL             = var.plugin_registry_rootfs_artifact_url

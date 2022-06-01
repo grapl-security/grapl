@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Mapping, Optional, Union
+from typing import Any, Dict, List, Mapping, Optional, Union
 
 import pulumi_nomad as nomad
 from infra.config import STACK_NAME
@@ -50,10 +50,22 @@ class NomadJob(pulumi.ComponentResource):
         Nomad accepts input of lists and maps, but the Nomad/Pulumi plugin doesn't
         convert them correctly.
         """
-        return {
-            k: json.dumps(v) if isinstance(v, (dict, list)) else v
-            for (k, v) in vars.items()
-        }
+
+        def escape_str_value(val: Union[str, int]) -> Union[str, int]:
+            if isinstance(val, str):
+                # Gotta do some annoying escaping when the object field contains "${}"
+                return val.replace("${", "$${")
+            return val
+
+        def dump_value(val: Optional[_ValidNomadVarTypes]) -> str:
+            if isinstance(val, list):
+                return json.dumps(val)
+            elif isinstance(val, dict):
+                return json.dumps({k: escape_str_value(v) for (k, v) in val.items()})
+            else:
+                return val
+
+        return {k: dump_value(v) for (k, v) in vars.items()}
 
     def _fix_pulumi_preview(self, vars: NomadVars) -> NomadVars:
         """
