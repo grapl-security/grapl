@@ -25,6 +25,8 @@ COMPOSE_PROJECT_NAME ?= grapl
 # Get a non-loopback private ip for the host. Order is not guaranteed, but that's ok
 CONSUL_DNS_IP = $(shell hostname --all-ip-addresses | awk '{ print $$1 }')
 
+export
+
 export EVERY_COMPOSE_FILE=--file docker-compose.yml \
 	--file ./test/docker-compose.unit-tests-js.yml \
 
@@ -194,12 +196,12 @@ build-local-infrastructure: build-grapl-service-prerequisites
 .PHONY: build-test-integration
 build-test-integration:
 	@echo "--- Building integration test images"
-	docker buildx bake integration-tests $(buildx_builder_args)
+	$(DOCKER_BUILDX_BAKE_HCL) integration-tests $(buildx_builder_args)
 
 .PHONY: build-test-integration-new
 build-test-integration-new:
 	@echo "--- Building \"new\" integration test images"
-	docker buildx bake rust-integration-tests-new $(buildx_builder_args)
+	$(DOCKER_BUILDX_BAKE_HCL) rust-integration-tests-new $(buildx_builder_args)
 
 ########################################################################
 
