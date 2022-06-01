@@ -58,21 +58,21 @@ class TorConnections(Analyzer):
         # we currently have a hack using ToMany everywhere to work around some issue with edges.
         # hmmm this is mixing both use of identity-only fields and avoiding them, revisit.
         for netsock_address_src in view.process_socket_outbound:
-        for tcp_connection_a in netsock_address_src.get_tcp_connection_to_a():
-            for netsock_address_dst in tcp_connection_a.get_tcp_connection_to_b():
-                for ipv4_address in netsock_address_dst.get_socket_ipv4_address():
-                    if is_tor_exit_node(ipv4_address.get_address()):
-                        output.send(
-                            ExecutionHit(
-                                analyzer_name="TorConnections",
-                                node_view=response_view,
-                                risk_score=25,
-                                lenses=[
-                                    ("analyzer_name", "TorConnections"),
-                                ],
-                                # Mark the dropper and its child processes as risky
-                                risky_node_keys=[
-                                    response_view.node_key
-                                ],
+            for tcp_connection_a in netsock_address_src.get_tcp_connection_to_a():
+                for netsock_address_dst in tcp_connection_a.get_tcp_connection_to_b():
+                    for ipv4_address in netsock_address_dst.get_socket_ipv4_address():
+                        if is_tor_exit_node(ipv4_address.get_address()):
+                            output.send(
+                                ExecutionHit(
+                                    analyzer_name="TorConnections",
+                                    node_view=response_view,
+                                    risk_score=25,
+                                    lenses=[
+                                        ("analyzer_name", "TorConnections"),
+                                    ],
+                                    # Mark the dropper and its child processes as risky
+                                    risky_node_keys=[
+                                        response_view.node_key
+                                    ],
+                                )
                             )
-                        )
