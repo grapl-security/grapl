@@ -64,5 +64,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 uuid = { version = "0.8", features = ["v4"] }
 
 [dev-dependencies]
+async-trait = "0.1"
 quickcheck = "1.0.3"
 quickcheck_macros = "1.0.0"
+test-context = "0.1"

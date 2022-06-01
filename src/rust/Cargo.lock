@@ -2641,6 +2641,7 @@ checksum = "e5ce46fe64a9d73be07dcbe690a38ce1b293be448fd8ce1e6c1b8062c9f72c6a"
 name = "node-identifier"
 version = "1.0.0"
 dependencies = [
+ "async-trait",
  "bytes",
  "chrono",
  "failure",
@@ -2664,6 +2665,7 @@ dependencies = [
  "serde_dynamodb",
  "sha2 0.9.9",
  "tap",
+ "test-context",
  "thiserror",
  "tokio",
  "tracing",
