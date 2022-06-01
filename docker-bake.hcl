@@ -64,7 +64,7 @@ variable "RELEASE_BUILD" {
 # our Rust projects. Otherwise, we'll stick with the standard debug
 # profile.
 variable "RUST_BUILD" {
-  default = RELEASE_BUILD ? "release" : "debug"
+  default = RELEASE_BUILD ? "release" : "dev-local-grapl"
 }
 
 # This is the directory that certain artifacts will be deposited into

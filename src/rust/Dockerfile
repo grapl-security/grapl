@@ -4,7 +4,7 @@
 
 FROM rust:1-slim-bullseye AS base
 
-ARG RUST_BUILD=debug
+ARG RUST_BUILD=dev-local-grapl
 
 SHELL ["/bin/bash", "-o", "errexit", "-o", "nounset", "-o", "pipefail", "-c"]
 
@@ -76,7 +76,9 @@ RUN --mount=type=cache,target="${CARGO_TARGET_DIR}",sharing=locked \
     --mount=type=cache,target="${RUSTUP_CACHE_TARGET}",sharing=locked <<EOF
     case "${RUST_BUILD}" in
       debug)
-        cargo build ;;
+        cargo build;;
+      dev-local-grapl)
+        cargo build --profile dev-local-grapl;;
       release)
         cargo build --release ;;
       test)
