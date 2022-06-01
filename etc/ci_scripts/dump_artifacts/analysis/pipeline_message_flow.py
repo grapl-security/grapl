@@ -10,7 +10,6 @@ from typing import List, Optional
 PRIORITIZATION = [
     "sysmon-generator.stdout",
     "node-identifier.stdout",
-    "node-identifier-retry.stdout",
     "graph-merger.stdout",
     "analyzer-dispatcher.stdout",
     "analyzer-executor.stdout",

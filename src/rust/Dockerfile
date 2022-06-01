@@ -319,12 +319,6 @@ FROM rust-dist AS node-identifier-deploy
 COPY --from=build /outputs/node-identifier /
 ENTRYPOINT ["/node-identifier"]
 
-##### node-identifier-retry
-FROM rust-dist AS node-identifier-retry-deploy
-
-COPY --from=build /outputs/node-identifier-retry /
-ENTRYPOINT ["/node-identifier-retry"]
-
 ##### sysmon-generator
 FROM rust-dist AS sysmon-generator-deploy
 
@@ -369,4 +363,3 @@ FROM rust-dist AS uid-allocator-deploy
 
 COPY --from=build /outputs/uid-allocator /
 ENTRYPOINT ["/uid-allocator"]
-
