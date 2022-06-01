@@ -94,22 +94,7 @@ async fn handler() -> Result<(), SysmonGeneratorError> {
     );
     tracing::info!("starting up!");
 
-    let stream = stream_processor.stream(
-        |event: Result<Envelope<RawLog>, StreamProcessorError>|
-                       -> Result<Option<Envelope<GraphDescription>>, SysmonGeneratorError> {
-            let envelope = event?;
-            let sysmon_event = SysmonEvent::from_str(
-                std::str::from_utf8(envelope.inner_message.log_event.as_ref())?
-            )?;
-
-            match models::generate_graph_from_event(&sysmon_event)? {
-                Some(graph_description) => Ok(Some(Envelope::new(
-                    Metadata::create_from(envelope.metadata),
-                    graph_description
-                ))),
-                None => Ok(None),
-            }
-        })?;
+    let stream = stream_processor.stream(event_handler)?;
 
     stream
         .for_each_concurrent(
@@ -131,4 +116,21 @@ async fn handler() -> Result<(), SysmonGeneratorError> {
         .await;
 
     Ok(())
+}
+
+async fn event_handler(
+    event: Result<Envelope<RawLog>, StreamProcessorError>,
+) -> Result<Option<Envelope<GraphDescription>>, SysmonGeneratorError> {
+    let envelope = event?;
+    let sysmon_event = SysmonEvent::from_str(std::str::from_utf8(
+        envelope.inner_message.log_event.as_ref(),
+    )?)?;
+
+    match models::generate_graph_from_event(&sysmon_event)? {
+        Some(graph_description) => Ok(Some(Envelope::new(
+            Metadata::create_from(envelope.metadata),
+            graph_description,
+        ))),
+        None => Ok(None),
+    }
 }

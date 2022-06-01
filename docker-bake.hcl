@@ -152,7 +152,6 @@ group "rust-services" {
     "grapl-web-ui",
     "model-plugin-deployer",
     "node-identifier",
-    "node-identifier-retry",
     "organization-management",
     "pipeline-ingress",
     "plugin-bootstrap",
@@ -311,14 +310,6 @@ target "node-identifier" {
   target   = "node-identifier-deploy"
   tags = [
     upstream_aware_tag("node-identifier")
-  ]
-}
-
-target "node-identifier-retry" {
-  inherits = ["_rust-base"]
-  target   = "node-identifier-retry-deploy"
-  tags = [
-    upstream_aware_tag("node-identifier-retry")
   ]
 }
 

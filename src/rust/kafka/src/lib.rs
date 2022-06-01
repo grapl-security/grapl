@@ -1,13 +1,11 @@
-use std::{
-    fmt::Display,
-    marker::PhantomData,
-};
+use std::marker::PhantomData;
 
 use futures::{
     stream::{
         Stream,
         StreamExt,
     },
+    Future,
     FutureExt,
     TryFutureExt,
     TryStreamExt,
@@ -262,7 +260,11 @@ where
     producer: Producer<P>,
 }
 
-impl<C: SerDe, P: SerDe> StreamProcessor<C, P> {
+impl<C, P> StreamProcessor<C, P>
+where
+    C: SerDe,
+    P: SerDe,
+{
     pub fn new(
         bootstrap_servers: String,
         sasl_username: String,
@@ -289,32 +291,33 @@ impl<C: SerDe, P: SerDe> StreamProcessor<C, P> {
     }
 
     #[tracing::instrument(err, skip(self, event_handler))]
-    pub fn stream<'a, F, E>(
+    pub fn stream<'a, F, R, E>(
         &'a self,
         event_handler: F,
-    ) -> Result<impl Stream<Item = Result<(), StreamProcessorError>> + 'a, ConfigurationError>
+    ) -> Result<impl Stream<Item = Result<(), StreamProcessorError>> + '_, ConfigurationError>
     where
-        F: FnMut(Result<C, StreamProcessorError>) -> Result<Option<P>, E> + 'a,
-        E: Display,
+        F: FnMut(Result<C, StreamProcessorError>) -> R + 'a,
+        R: Future<Output = Result<Option<P>, E>> + 'a,
+        E: Into<StreamProcessorError> + 'a,
     {
         Ok(self
             .consumer
             .stream()?
             .map_err(StreamProcessorError::from)
-            .map(event_handler)
-            .map_err(|e| StreamProcessorError::EventHandlerError(e.to_string()))
-            .and_then(move |msg| async move {
-                match msg {
-                    Some(msg) => {
-                        // The underlying FutureProducer::clone() call is inexpensive,
-                        // so I think it's acceptable here.
-                        self.producer
-                            .clone()
-                            .send(msg)
-                            .map_err(StreamProcessorError::from)
-                            .await
-                    }
-                    None => Ok(()),
+            .then(event_handler)
+            .then(move |result| async move {
+                match result {
+                    Ok(msg) => match msg {
+                        Some(msg) => {
+                            self.producer
+                                .clone()
+                                .send(msg)
+                                .map_err(StreamProcessorError::from)
+                                .await
+                        }
+                        None => Ok(()),
+                    },
+                    Err(e) => Err(e.into()),
                 }
             }))
     }

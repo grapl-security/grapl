@@ -40,6 +40,7 @@ impl<D> SessionDb<D>
 where
     D: DynamoDb,
 {
+    // exposed for integration tests
     pub fn new(dynamo: D, table_name: impl Into<String>) -> Self {
         Self {
             dynamo,
@@ -48,7 +49,7 @@ where
     }
 
     #[tracing::instrument(skip(self, unid), err)]
-    pub async fn find_first_session_after(
+    pub(crate) async fn find_first_session_after(
         &self,
         unid: &UnidSession,
     ) -> Result<Option<Session>, Error> {
@@ -90,7 +91,7 @@ where
     }
 
     #[tracing::instrument(skip(self, unid), err)]
-    pub async fn find_last_session_before(
+    pub(crate) async fn find_last_session_before(
         &self,
         unid: &UnidSession,
     ) -> Result<Option<Session>, Error> {
@@ -134,7 +135,7 @@ where
     // new create_time
     // This method assumes that the `session` passed in has already been modified
     #[tracing::instrument(skip(self, session), err)]
-    pub async fn update_session_create_time(
+    pub(crate) async fn update_session_create_time(
         &self,
         session: &Session,
         new_time: u64,
@@ -188,7 +189,7 @@ where
     }
 
     #[tracing::instrument(skip(self, session), err)]
-    pub async fn make_create_time_canonical(&self, session: &Session) -> Result<(), Error> {
+    pub(crate) async fn make_create_time_canonical(&self, session: &Session) -> Result<(), Error> {
         info!(message = "Updating session end time");
         // Use version as a constraint
         let upd_req = UpdateItemInput {
@@ -236,7 +237,7 @@ where
 
     // Update version, and use it as a constraint
     #[tracing::instrument(skip(self, session), err)]
-    pub async fn update_session_end_time(
+    pub(crate) async fn update_session_end_time(
         &self,
         session: &Session,
         new_time: u64,
@@ -295,6 +296,7 @@ where
         Ok(())
     }
 
+    // exposed for integration tests
     #[tracing::instrument(skip(self, session), err)]
     pub async fn create_session(&self, session: &Session) -> Result<(), Error> {
         let put_req = PutItemInput {
@@ -309,7 +311,7 @@ where
     }
 
     #[tracing::instrument(skip(self, session), err)]
-    pub async fn delete_session(&self, session: &Session) -> Result<(), Error> {
+    pub(crate) async fn delete_session(&self, session: &Session) -> Result<(), Error> {
         let del_req = DeleteItemInput {
             key: hmap! {
                 "pseudo_key".to_owned() => AttributeValue {
@@ -330,7 +332,7 @@ where
     }
 
     #[tracing::instrument(skip(self, unid), err)]
-    pub async fn handle_creation_event(&self, unid: UnidSession) -> Result<String, Error> {
+    pub(crate) async fn handle_creation_event(&self, unid: UnidSession) -> Result<String, Error> {
         info!(
             message="Handling unid session creation",
             pseudo_key=?unid.pseudo_key, timestamp=?unid.timestamp
@@ -412,7 +414,7 @@ where
     }
 
     #[tracing::instrument(skip(self, unid), err)]
-    pub async fn handle_last_seen(
+    pub(crate) async fn handle_last_seen(
         &self,
         unid: UnidSession,
         should_default: bool,
@@ -475,6 +477,7 @@ where
         }
     }
 
+    // exposed for integration tests
     #[tracing::instrument(skip(self), err)]
     pub async fn handle_unid_session(
         &self,
@@ -490,6 +493,6 @@ where
     }
 }
 
-pub fn skewed_cmp(ts_1: u64, ts_2: u64) -> bool {
+pub(crate) fn skewed_cmp(ts_1: u64, ts_2: u64) -> bool {
     ts_1 - 10 < ts_2 && ts_1 + 10 > ts_2
 }
