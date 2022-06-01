@@ -25,9 +25,7 @@ COMPOSE_PROJECT_NAME ?= grapl
 # Get a non-loopback private ip for the host. Order is not guaranteed, but that's ok
 CONSUL_DNS_IP = $(shell hostname --all-ip-addresses | awk '{ print $$1 }')
 
-export
-
-export EVERY_COMPOSE_FILE=--file docker-compose.yml \
+EVERY_COMPOSE_FILE=--file docker-compose.yml \
 	--file ./test/docker-compose.unit-tests-js.yml \
 
 # This is used to send docker traces to Jaeger. This is primarily useful for debugging build time performance
