@@ -36,3 +36,10 @@ members = [
 
 [profile.dev]
 opt-level = 1
+
+[profile.dev-local-grapl]
+inherits = "dev"
+# Remove this if you're trying to debug with gdb.
+# Results in a ~20x binary size reduction, for example
+# sysmon-generator: 279M -> 16M
+strip = "debuginfo"
