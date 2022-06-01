@@ -13,7 +13,7 @@
 # required for our local usage of Nomad, because Nomad won't resolve a
 # `latest` tag from the host machine.)
 IMAGE_TAG ?= dev
-RUST_BUILD ?= debug
+RUST_BUILD ?= dev-local-grapl
 UID = $(shell id --user)
 GID = $(shell id --group)
 PWD = $(shell pwd)
