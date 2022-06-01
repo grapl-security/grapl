@@ -64,7 +64,7 @@ variable "RELEASE_BUILD" {
 # our Rust projects. Otherwise, we'll stick with the standard debug
 # profile.
 variable "RUST_BUILD" {
-  default = RELEASE_BUILD ? "release" : "debug"
+  default = RELEASE_BUILD ? "release" : "dev-local-grapl"
 }
 
 # This is the directory that certain artifacts will be deposited into
@@ -161,6 +161,7 @@ group "rust-services" {
     "plugin-registry",
     "plugin-work-queue",
     "sysmon-generator",
+    "uid-allocator",
   ]
 }
 
@@ -397,6 +398,15 @@ target "sysmon-generator" {
     upstream_aware_tag("sysmon-generator")
   ]
 }
+
+target "uid-allocator" {
+  inherits = ["_rust-base"]
+  target   = "uid-allocator-deploy"
+  tags = [
+    upstream_aware_tag("uid-allocator")
+  ]
+}
+
 
 # Python Services
 # ----------------------------------------------------------------------
