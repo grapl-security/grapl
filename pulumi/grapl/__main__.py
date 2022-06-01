@@ -5,7 +5,7 @@ sys.path.insert(0, "..")
 from typing import List, Mapping, Optional, Set, cast
 
 import pulumi_aws as aws
-from infra import config, dynamodb, emitter, log_levels
+from infra import config, dynamodb, log_levels
 from infra.alarms import OpsAlarms
 from infra.api_gateway import ApiGateway
 from infra.artifacts import ArtifactGetter
@@ -425,9 +425,6 @@ def main() -> None:
             # Analyzer Dispatcher needs to be able to ListObjects on Analyzers
             # Analyzer Executor needs to be able to ListObjects on Model Plugins
             bucket.grant_get_and_list_to(nomad_agent_role)
-        for _emitter in all_emitters:
-            _emitter.grant_write_to(nomad_agent_role)
-            _emitter.grant_read_to(nomad_agent_role)
 
         cache = Cache(
             "main-cache",

@@ -73,8 +73,7 @@ async fn handler() -> Result<(), NodeIdentifierError> {
         dynamo.clone(),
         std::env::var("GRAPL_DYNAMIC_SESSION_TABLE")?,
     );
-    let node_identifier =
-        NodeIdentifier::new(NodeDescriptionIdentifier::new(dyn_session_db, true));
+    let node_identifier = NodeIdentifier::new(NodeDescriptionIdentifier::new(dyn_session_db, true));
 
     let bootstrap_servers = std::env::var("KAFKA_BOOTSTRAP_SERVERS")?;
     let sasl_username = std::env::var("KAFKA_SASL_USERNAME")?;
