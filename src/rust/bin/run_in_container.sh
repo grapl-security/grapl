@@ -9,21 +9,10 @@
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
-source "$(dirname "${BASH_SOURCE[0]}")"/../../sh/shell_color.sh
+source "$(dirname "${BASH_SOURCE[0]}")"/../../sh/log.sh
 
 # Logging
 ########################################################################
-# NOTE: All logs get sent to standard error
-
-function log() {
-    echo -e "${@}" >&2
-}
-
-# Handy for logging the exact command to be run, and then running it
-function log_and_run() {
-    log ❯❯ "$(bright_white "$(printf "%q " "${@}")")"
-    "$@"
-}
 
 # Helper function to log information about what volumes we are
 # mounting, and where.
