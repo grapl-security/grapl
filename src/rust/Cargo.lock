@@ -467,9 +467,9 @@ dependencies = [
 
 [[package]]
 name = "async-trait"
-version = "0.1.53"
+version = "0.1.56"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed6aa3524a2dfcf9fe180c51eae2b58738348d819517ceadf95789c51fff7600"
+checksum = "96cf8829f67d2eab0b2dfa42c5d0ef737e0724e4a82b01b3e292456202b19716"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -688,15 +688,15 @@ dependencies = [
 
 [[package]]
 name = "bumpalo"
-version = "3.9.1"
+version = "3.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a4a45a46ab1f2412e53d3a0ade76ffad2025804294569aae387231a0cd6e0899"
+checksum = "37ccbd214614c6783386c1af30caf03192f17891059cecc394b4fb119e363de3"
 
 [[package]]
 name = "bytecount"
-version = "0.6.2"
+version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72feb31ffc86498dacdbd0fcebb56138e7177a8cc5cea4516031d15ae85a742e"
+checksum = "2c676a478f63e9fa2dd5368a42f28bba0d6c560b775f38583c8bbaa7fcd67c9c"
 
 [[package]]
 name = "byteorder"
@@ -1789,39 +1789,31 @@ version = "1.0.0"
 dependencies = [
  "anyhow",
  "async-trait",
- "base64",
- "chrono",
+ "bytes",
  "dgraph-tonic",
  "dgraph_query_lib",
  "futures",
  "futures-retry",
  "grapl-config",
- "grapl-observe",
- "grapl-service",
  "grapl-utils",
+ "kafka",
  "lazy_static",
- "log",
  "lru",
- "prost 0.9.0",
- "rand 0.8.5",
+ "opentelemetry 0.16.0",
+ "opentelemetry-jaeger",
  "rusoto_core",
  "rusoto_credential",
  "rusoto_dynamodb",
- "rusoto_s3",
- "rusoto_sqs",
- "rust-proto",
- "serde",
- "serde_derive",
+ "rust-proto-new",
  "serde_json",
- "sha2 0.9.9",
- "sqs-executor",
+ "test-context",
  "thiserror",
  "tokio",
  "tracing",
- "tracing-futures",
+ "tracing-appender",
+ "tracing-opentelemetry 0.16.0",
  "tracing-subscriber",
  "uuid",
- "zstd",
 ]
 
 [[package]]
@@ -2658,7 +2650,6 @@ dependencies = [
  "rusoto_core",
  "rusoto_credential",
  "rusoto_dynamodb",
- "rusoto_s3",
  "rust-proto-new",
  "serde",
  "serde_dynamodb",
@@ -2798,9 +2789,9 @@ dependencies = [
 
 [[package]]
 name = "openssl-sys"
-version = "0.9.73"
+version = "0.9.74"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9d5fd19fb3e0a8191c1e34935718976a3e70c112ab9a24af6d7cadccd9d90bc0"
+checksum = "835363342df5fba8354c5b453325b110ffd54044e588c539cf2f20a8014e4cb1"
 dependencies = [
  "autocfg",
  "cc",
@@ -4504,9 +4495,9 @@ checksum = "6bdef32e8150c2a081110b42772ffe7d7c9032b606bc226c8260fd97e0976601"
 
 [[package]]
 name = "syn"
-version = "1.0.95"
+version = "1.0.96"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fbaf6116ab8924f39d52792136fb74fd60a80194cf1b1c6ffa6453eef1c3f942"
+checksum = "0748dd251e24453cb8717f0354206b91557e4ec8703673a4b30208f2abaf1ebf"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4749,9 +4740,9 @@ checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
 
 [[package]]
 name = "tokio"
-version = "1.18.2"
+version = "1.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4903bf0427cf68dddd5aa6a93220756f8be0c34fcfa9f5e6191e103e15a31395"
+checksum = "0f392c8f16bda3456c0b00c6de39cb100449b98de55ac41c6cdd2bfcf53a1245"
 dependencies = [
  "bytes",
  "libc",

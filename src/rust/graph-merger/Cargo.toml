@@ -4,48 +4,45 @@ version = "1.0.0"
 authors = ["Insanitybit <insanitybit@gmail.com>"]
 edition = "2021"
 
+[lib]
+name = "graph_merger"
+path = "src/lib.rs"
+
 [[bin]]
 name = "graph-merger"
+path = "src/main.rs"
 
-[lib]
-name = "graph_merger_lib"
+[features]
+new_integration_tests = []
 
 [dependencies]
-rust-proto = { path = "../rust-proto" }
-grapl-config = { path = "../grapl-config", version = "*" }
-grapl-observe = { path = "../grapl-observe", version = "*" }
-grapl-service = { path = "../grapl-service" }
-grapl-utils = { path = "../grapl-utils" }
-lazy_static = "1.4.0"
-anyhow = "1.0.49"
-serde = "1.0.130"
-serde_json = "1.0.72"
-serde_derive = "1.0.130"
-log = "0.4.14"
+anyhow = "1.0"
+async-trait = "0.1"
+bytes = "1.1.0"
+dgraph_query_lib = "0.1.0"
 dgraph-tonic = { version = "0.10.0", features = ["dgraph-1-1"] }
-sqs-executor = { path = "../sqs-executor/" }
-rusoto_s3 = { version = "0.47.0", default_features = false, features = [
-  "rustls"
+futures = "0.3"
+futures-retry = "0.6"
+grapl-config = { path = "../grapl-config", version = "*" }
+grapl-utils = { path = "../grapl-utils" }
+kafka = { path = "../kafka", version = "*" }
+lazy_static = "1.4.0"
+lru = "0.7"
+opentelemetry = { version = "0.16", features = ["rt-tokio"] }
+opentelemetry-jaeger = { version = "0.15", features = [
+  "collector_client",
+  "rt-tokio"
 ] }
 rusoto_core = { version = "0.47.0", default_features = false, features = [
-  "rustls"
-] }
-rusoto_sqs = { version = "0.47.0", default_features = false, features = [
   "rustls"
 ] }
 rusoto_dynamodb = { version = "0.47.0", default_features = false, features = [
   "rustls"
 ] }
 rusoto_credential = "0.47.0"
-sha2 = "0.9.8"
-zstd = "0.10.0"
-prost = "0.9.0"
-base64 = "0.13.0"
-rand = "0.8.4"
-dgraph_query_lib = "0.1.0"
-futures = "0.3"
-async-trait = "0.1.51"
-uuid = "0.8"
+rust-proto-new = { path = "../rust-proto-new", version = "*" }
+serde_json = "1.0"
+thiserror = "1.0"
 tokio = { version = "1.17", features = [
   "macros",
   "rt",
@@ -53,15 +50,11 @@ tokio = { version = "1.17", features = [
   "sync",
   "time",
 ] }
-chrono = "0.4.19"
-tracing = "0.1.29"
-thiserror = "1.0.30"
-tracing-futures = "0.2.5"
-lru = "0.7.0"
-futures-retry = "0.6.0"
+tracing = "0.1"
+tracing-appender = "0.2"
+tracing-opentelemetry = "0.16"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+uuid = { version = "0.8", features = ["v4"] }
 
 [dev-dependencies]
-tracing-subscriber = "0.3.2"
-
-[features]
-integration = []
+test-context = "0.1"

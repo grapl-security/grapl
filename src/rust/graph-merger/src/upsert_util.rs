@@ -1,15 +1,9 @@
 use std::collections::HashMap;
 
-use node_property::Property::{
-    DecrementOnlyInt as ProtoDecrementOnlyIntProp,
-    DecrementOnlyUint as ProtoDecrementOnlyUintProp,
-    ImmutableInt as ProtoImmutableIntProp,
-    ImmutableStr as ProtoImmutableStrProp,
-    ImmutableUint as ProtoImmutableUintProp,
-    IncrementOnlyInt as ProtoIncrementOnlyIntProp,
-    IncrementOnlyUint as ProtoIncrementOnlyUintProp,
+use rust_proto_new::graplinc::grapl::api::graph::v1beta1::{
+    NodeProperty,
+    Property,
 };
-use rust_proto::graph_descriptions::*;
 
 pub struct Escaped(String);
 
@@ -49,17 +43,17 @@ fn escape_quote(s: &str) -> Escaped {
 
 fn escape_prop(node_property: &NodeProperty) -> Escaped {
     match &node_property.property {
-        Some(ProtoIncrementOnlyIntProp(i)) => escape_quote(&i.to_string()),
-        Some(ProtoDecrementOnlyIntProp(i)) => escape_quote(&i.to_string()),
-        Some(ProtoImmutableIntProp(i)) => escape_quote(&i.to_string()),
-        Some(ProtoIncrementOnlyUintProp(i)) => escape_quote(&i.to_string()),
-        Some(ProtoDecrementOnlyUintProp(i)) => escape_quote(&i.to_string()),
-        Some(ProtoImmutableUintProp(i)) => escape_quote(&i.to_string()),
-        Some(ProtoImmutableStrProp(s)) => escape_quote(s.as_inner()),
-        None => panic!("todo"),
+        Property::IncrementOnlyIntProp(prop) => escape_quote(&prop.to_string()),
+        Property::DecrementOnlyIntProp(prop) => escape_quote(&prop.to_string()),
+        Property::ImmutableIntProp(prop) => escape_quote(&prop.to_string()),
+        Property::IncrementOnlyUintProp(prop) => escape_quote(&prop.to_string()),
+        Property::DecrementOnlyUintProp(prop) => escape_quote(&prop.to_string()),
+        Property::ImmutableUintProp(prop) => escape_quote(&prop.to_string()),
+        Property::ImmutableStrProp(prop) => escape_quote(prop.as_inner()),
     }
 }
 
+#[tracing::instrument]
 pub(crate) fn build_upserts(
     query_param: u128,
     node_key: &str,

@@ -195,6 +195,7 @@ def main() -> None:
         dns_server=config.CONSUL_DNS_IP,
         graph_generator_kafka_consumer_group=kafka.consumer_group("graph-generator"),
         node_identifier_kafka_consumer_group=kafka.consumer_group("node-identifier"),
+        graph_merger_kafka_consumer_group=kafka.consumer_group("graph-merger"),
         kafka_bootstrap_servers=kafka.bootstrap_servers(),
         model_plugins_bucket=model_plugins_bucket.bucket,
         pipeline_ingress_healthcheck_polling_interval_ms=pipeline_ingress_healthcheck_polling_interval_ms,
@@ -269,6 +270,7 @@ def main() -> None:
     pipeline_ingress_kafka_credentials = kafka.service_credentials("pipeline-ingress")
     graph_generator_kafka_credentials = kafka.service_credentials("graph-generator")
     node_identifier_kafka_credentials = kafka.service_credentials("node-identifier")
+    graph_merger_kafka_credentials = kafka.service_credentials("graph-merger")
 
     if config.LOCAL_GRAPL:
         ###################################
@@ -345,6 +347,8 @@ def main() -> None:
             graph_generator_kafka_sasl_password=graph_generator_kafka_credentials.api_secret,
             node_identifier_kafka_sasl_username=node_identifier_kafka_credentials.api_key,
             node_identifier_kafka_sasl_password=node_identifier_kafka_credentials.api_secret,
+            graph_merger_kafka_sasl_username=graph_merger_kafka_credentials.api_key,
+            graph_merger_kafka_sasl_password=graph_merger_kafka_credentials.api_secret,
             organization_management_db_hostname=organization_management_db.hostname,
             organization_management_db_port=str(organization_management_db.port),
             organization_management_db_username=organization_management_db.username,
@@ -517,6 +521,8 @@ def main() -> None:
             graph_generator_kafka_sasl_password=graph_generator_kafka_credentials.api_secret,
             node_identifier_kafka_sasl_username=node_identifier_kafka_credentials.api_key,
             node_identifier_kafka_sasl_password=node_identifier_kafka_credentials.api_secret,
+            graph_merger_kafka_sasl_username=graph_merger_kafka_credentials.api_key,
+            graph_merger_kafka_sasl_password=graph_merger_kafka_credentials.api_secret,
             organization_management_db_hostname=organization_management_postgres.host(),
             organization_management_db_port=organization_management_postgres.port().apply(
                 str

@@ -37,15 +37,13 @@ use futures_retry::{
     RetryPolicy,
 };
 use grapl_utils::iter_ext::GraplIterExt;
-use rust_proto::graph_descriptions::*;
-pub use rust_proto::node_property::Property::{
-    DecrementOnlyInt as ProtoDecrementOnlyIntProp,
-    DecrementOnlyUint as ProtoDecrementOnlyUintProp,
-    ImmutableInt as ProtoImmutableIntProp,
-    ImmutableStr as ProtoImmutableStrProp,
-    ImmutableUint as ProtoImmutableUintProp,
-    IncrementOnlyInt as ProtoIncrementOnlyIntProp,
-    IncrementOnlyUint as ProtoIncrementOnlyUintProp,
+use rust_proto_new::graplinc::grapl::api::graph::v1beta1::{
+    Edge,
+    EdgeList,
+    IdentifiedGraph,
+    IdentifiedNode,
+    MergedGraph,
+    MergedNode,
 };
 
 use crate::upsert_util;
@@ -70,6 +68,7 @@ impl GraphMergeHelper {
             .await;
     }
 
+    #[tracing::instrument(skip(self, dgraph_client, identified_graph, merged_graph))]
     async fn upsert_nodes(
         &self,
         dgraph_client: Arc<DgraphClient>,
@@ -175,6 +174,7 @@ impl GraphMergeHelper {
         node_key_map_to_uid
     }
 
+    #[tracing::instrument(skip(self, dgraph_client, identified_graph, node_key_to_uid))]
     async fn upsert_edges(
         &self,
         dgraph_client: Arc<DgraphClient>,
@@ -271,6 +271,7 @@ impl GraphMergeHelper {
             .await;
     }
 
+    #[tracing::instrument(skip(f))]
     async fn enforce_transaction<Factory, Txn>(f: Factory) -> dgraph_tonic::Response
     where
         Factory: FnMut() -> Txn + 'static + Unpin,
@@ -292,6 +293,7 @@ pub struct UpsertErrorHandler {}
 impl futures_retry::ErrorHandler<anyhow::Error> for UpsertErrorHandler {
     type OutError = anyhow::Error;
 
+    #[tracing::instrument(skip(self, attempt, e))]
     fn handle(&mut self, attempt: usize, e: anyhow::Error) -> RetryPolicy<Self::OutError> {
         let attempt = attempt as u64;
         tracing::warn!(
@@ -307,6 +309,7 @@ impl futures_retry::ErrorHandler<anyhow::Error> for UpsertErrorHandler {
     }
 }
 
+#[tracing::instrument(skip(dgraph_client, node_keys))]
 async fn query_for_node_keys(
     dgraph_client: Arc<DgraphClient>,
     node_keys: &[&String],

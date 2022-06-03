@@ -1311,7 +1311,7 @@ impl serde_impl::ProtobufSerializable for MergedNode {
 // Edge
 //
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialOrd, Ord, PartialEq, Eq, Clone)]
 pub struct Edge {
     pub to_node_key: String,
     pub from_node_key: String,

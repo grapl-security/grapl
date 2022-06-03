@@ -214,6 +214,21 @@ variable "num_graph_mergers" {
   description = "The number of graph merger instances to run."
 }
 
+variable "graph_merger_kafka_sasl_username" {
+  type        = string
+  description = "The username to authenticate with Confluent Cloud cluster."
+}
+
+variable "graph_merger_kafka_sasl_password" {
+  type        = string
+  description = "The password to authenticate with Confluent Cloud cluster."
+}
+
+variable "graph_merger_kafka_consumer_group" {
+  type        = string
+  description = "Consumer group for node-identifier consumers to join."
+}
+
 variable "test_user_name" {
   type        = string
   description = "The name of the test user"
@@ -741,9 +756,10 @@ job "grapl-core" {
         MG_ALPHAS          = local.alpha_grpc_connect_str
         GRAPL_SCHEMA_TABLE = var.schema_table_name
 
-        DEST_BUCKET_NAME      = "fake"
-        SOURCE_QUEUE_URL      = "fake"
-        DEAD_LETTER_QUEUE_URL = "fake"
+        KAFKA_BOOTSTRAP_SERVERS     = var.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME         = var.node_identifier_kafka_sasl_username
+        KAFKA_SASL_PASSWORD         = var.node_identifier_kafka_sasl_password
+        GRAPH_MERGER_CONSUMER_GROUP = var.graph_merger_kafka_consumer_group
 
         OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
