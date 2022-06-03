@@ -1,6 +1,4 @@
-from typing import Protocol
-
-from typing_extensions import TypedDict
+from typing_extensions import Protocol, TypedDict
 
 import pulumi
 
