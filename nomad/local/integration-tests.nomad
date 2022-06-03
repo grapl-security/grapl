@@ -64,7 +64,7 @@ variable "plugin_work_queue_db" {
     username = string
     password = string
   })
-  description = "Vars for the plugin-work-queue database"
+  description = "Vars for plugin-work-queue database"
 }
 
 variable "organization_management_db" {
@@ -74,7 +74,7 @@ variable "organization_management_db" {
     username = string
     password = string
   })
-  description = "Vars for the Organization Management database"
+  description = "Vars for organization-management database"
 }
 
 locals {

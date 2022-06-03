@@ -114,7 +114,7 @@ variable "plugin_registry_db" {
     username = string
     password = string
   })
-  description = "Vars for the Plugin Registry database"
+  description = "Vars for plugin-registry database"
 }
 
 variable "plugin_registry_kernel_artifact_url" {
@@ -134,7 +134,7 @@ variable "organization_management_db" {
     username = string
     password = string
   })
-  description = "Vars for the Organization Management database"
+  description = "Vars for organization-management database"
 }
 
 variable "pipeline_ingress_healthcheck_polling_interval_ms" {
@@ -159,7 +159,7 @@ variable "plugin_work_queue_db" {
     username = string
     password = string
   })
-  description = "Vars for the plugin-work-queue database"
+  description = "Vars for plugin-work-queue database"
 }
 
 variable "uid_allocator_db" {
@@ -169,7 +169,7 @@ variable "uid_allocator_db" {
     username = string
     password = string
   })
-  description = "Vars for the uid-allocator database"
+  description = "Vars for uid-allocator database"
 }
 
 variable "plugin_registry_bucket_aws_account_id" {
