@@ -12,7 +12,7 @@ from infra.autotag import register_auto_tags
 from infra.docker_images import DockerImageId, DockerImageIdBuilder
 from infra.hashicorp_provider import get_nomad_provider_address
 from infra.kafka import Kafka
-from infra.nomad_job import NomadJob, NomadVars
+from infra.nomad_job import NomadJob, NomadServicePostgresDbArgs, NomadVars
 from infra.path import path_from_root
 
 import pulumi
@@ -167,14 +167,8 @@ def main() -> None:
             "schema_properties_table_name": grapl_stack.schema_properties_table_name,
             "test_user_name": grapl_stack.test_user_name,
             "test_user_password_secret_id": grapl_stack.test_user_password_secret_id,
-            "plugin_work_queue_db_hostname": grapl_stack.plugin_work_queue_db_hostname,
-            "plugin_work_queue_db_port": grapl_stack.plugin_work_queue_db_port,
-            "plugin_work_queue_db_username": grapl_stack.plugin_work_queue_db_username,
-            "plugin_work_queue_db_password": grapl_stack.plugin_work_queue_db_password,
-            "organization_management_db_hostname": grapl_stack.organization_management_db_hostname,
-            "organization_management_db_port": grapl_stack.organization_management_db_port,
-            "organization_management_db_username": grapl_stack.organization_management_db_username,
-            "organization_management_db_password": grapl_stack.organization_management_db_password,
+            "plugin_work_queue_db": grapl_stack.plugin_work_queue_db,
+            "organization_management_db": grapl_stack.organization_management_db,
         }
 
         integration_tests = NomadJob(
@@ -204,28 +198,11 @@ class GraplStack:
         self.sysmon_log_bucket = require_str("sysmon-log-bucket")
         self.test_user_name = require_str("test-user-name")
 
-        self.plugin_work_queue_db_hostname = require_str(
-            "plugin-work-queue-db-hostname"
+        self.plugin_work_queue_db = cast(
+            NomadServicePostgresDbArgs, ref.require_output("plugin-work-queue-db")
         )
-        self.plugin_work_queue_db_port = require_str("plugin-work-queue-db-port")
-        self.plugin_work_queue_db_username = require_str(
-            "plugin-work-queue-db-username"
-        )
-        self.plugin_work_queue_db_password = require_str(
-            "plugin-work-queue-db-password"
-        )
-
-        self.organization_management_db_hostname = require_str(
-            "organization-management-db-hostname"
-        )
-        self.organization_management_db_port = require_str(
-            "organization-management-db-port"
-        )
-        self.organization_management_db_username = require_str(
-            "organization-management-db-username"
-        )
-        self.organization_management_db_password = require_str(
-            "organization-management-db-password"
+        self.organization_management_db = cast(
+            NomadServicePostgresDbArgs, ref.require_output("organization-management-db")
         )
 
         self.pipeline_ingress_healthcheck_polling_interval_ms = require_str(

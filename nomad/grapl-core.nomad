@@ -152,44 +152,24 @@ variable "pipeline_ingress_kafka_sasl_password" {
   description = "The password to authenticate with Confluent Cloud cluster."
 }
 
-variable "plugin_work_queue_db_hostname" {
-  type        = string
-  description = "What is the host for the plugin work queue table?"
+variable "plugin_work_queue_db" {
+  type = object({
+    hostname = string
+    port     = number
+    username = string
+    password = string
+  })
+  description = "Vars for the plugin-work-queue database"
 }
 
-variable "plugin_work_queue_db_port" {
-  type        = string
-  description = "What is the port for the plugin work queue table?"
-}
-
-variable "plugin_work_queue_db_username" {
-  type        = string
-  description = "What is the username for the plugin work queue table?"
-}
-
-variable "plugin_work_queue_db_password" {
-  type        = string
-  description = "What is the password for the plugin work queue table?"
-}
-
-variable "uid_allocator_db_hostname" {
-  type        = string
-  description = "What is the host for the uid-allocator table?"
-}
-
-variable "uid_allocator_db_port" {
-  type        = string
-  description = "What is the port for the uid-allocator table?"
-}
-
-variable "uid_allocator_db_username" {
-  type        = string
-  description = "What is the username for the uid-allocator table?"
-}
-
-variable "uid_allocator_db_password" {
-  type        = string
-  description = "What is the password for the uid-allocator table?"
+variable "uid_allocator_db" {
+  type = object({
+    hostname = string
+    port     = number
+    username = string
+    password = string
+  })
+  description = "Vars for the uid-allocator database"
 }
 
 variable "plugin_registry_bucket_aws_account_id" {
@@ -1484,10 +1464,10 @@ job "grapl-core" {
 
       env {
         PLUGIN_WORK_QUEUE_BIND_ADDRESS = "0.0.0.0:${NOMAD_PORT_plugin-work-queue-port}"
-        PLUGIN_WORK_QUEUE_DB_HOSTNAME  = var.plugin_work_queue_db_hostname
-        PLUGIN_WORK_QUEUE_DB_PASSWORD  = var.plugin_work_queue_db_password
-        PLUGIN_WORK_QUEUE_DB_PORT      = var.plugin_work_queue_db_port
-        PLUGIN_WORK_QUEUE_DB_USERNAME  = var.plugin_work_queue_db_username
+        PLUGIN_WORK_QUEUE_DB_HOSTNAME  = var.plugin_work_queue_db.hostname
+        PLUGIN_WORK_QUEUE_DB_PASSWORD  = var.plugin_work_queue_db.password
+        PLUGIN_WORK_QUEUE_DB_PORT      = var.plugin_work_queue_db.port
+        PLUGIN_WORK_QUEUE_DB_USERNAME  = var.plugin_work_queue_db.username
         # Hardcoded, but makes little sense to pipe up through Pulumi
         PLUGIN_WORK_QUEUE_HEALTHCHECK_POLLING_INTERVAL_MS = 5000
 
@@ -1537,10 +1517,10 @@ job "grapl-core" {
 
       env {
         UID_ALLOCATOR_BIND_ADDRESS      = "0.0.0.0:${NOMAD_PORT_uid-allocator-port}"
-        UID_ALLOCATOR_DB_HOSTNAME       = var.uid_allocator_db_hostname
-        UID_ALLOCATOR_DB_PASSWORD       = var.uid_allocator_db_password
-        UID_ALLOCATOR_DB_PORT           = var.uid_allocator_db_port
-        UID_ALLOCATOR_DB_USERNAME       = var.uid_allocator_db_username
+        UID_ALLOCATOR_DB_HOSTNAME       = var.uid_allocator_db.hostname
+        UID_ALLOCATOR_DB_PASSWORD       = var.uid_allocator_db.password
+        UID_ALLOCATOR_DB_PORT           = var.uid_allocator_db.port
+        UID_ALLOCATOR_DB_USERNAME       = var.uid_allocator_db.username
         RUST_BACKTRACE                  = local.rust_backtrace
         RUST_LOG                        = var.rust_log
         OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
