@@ -6,7 +6,7 @@ from typing import List, Optional, cast
 
 import pulumi_aws as aws
 import pulumi_random as random
-from infra.nomad_job import NomadServicePostgresDbArgs
+from infra.nomad_service_postgres import NomadServicePostgresDbArgs
 from packaging.version import parse as version_parse
 
 import pulumi
@@ -171,22 +171,6 @@ class Postgres(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self, delete_before_replace=True),
         )
 
-    def host(self) -> pulumi.Output[str]:
-        # Cast needed due to https://github.com/pulumi/pulumi/issues/7679
-        return cast(pulumi.Output[str], self._instance.address)
-
-    def port(self) -> pulumi.Output[int]:
-        # Cast needed due to https://github.com/pulumi/pulumi/issues/7679
-        return cast(pulumi.Output[int], self._instance.port)
-
-    def username(self) -> pulumi.Output[str]:
-        # Cast needed due to https://github.com/pulumi/pulumi/issues/7679
-        return cast(pulumi.Output[str], self._instance.username)
-
-    def password(self) -> pulumi.Output[str]:
-        # just to be safe...
-        return pulumi.Output.secret(self._instance.password)
-
     def to_nomad_service_db_args(self) -> pulumi.Output[NomadServicePostgresDbArgs]:
         return cast(
             pulumi.Output[NomadServicePostgresDbArgs],
@@ -195,5 +179,5 @@ class Postgres(pulumi.ComponentResource):
                 port=self._instance.port,
                 username=self._instance.username,
                 password=self._instance.password,
-            ).apply(lambda out: out),
+            ),
         )

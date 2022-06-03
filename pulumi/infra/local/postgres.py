@@ -2,7 +2,7 @@ from typing import Optional
 
 import pulumi_postgresql as postgresql
 from infra import config
-from infra.nomad_job import NomadServicePostgresDbArgs
+from infra.nomad_service_postgres import NomadServicePostgresDbArgs
 
 import pulumi
 

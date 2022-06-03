@@ -4,17 +4,9 @@ from typing import Any, Mapping, Optional, Union, cast
 
 import pulumi_nomad as nomad
 from infra.config import STACK_NAME
-from typing_extensions import TypedDict
+from infra.nomad_service_postgres import NomadServicePostgresDbArgs
 
 import pulumi
-
-
-class NomadServicePostgresDbArgs(TypedDict):
-    hostname: str
-    port: int
-    username: str
-    password: str
-
 
 _ValidNomadVarTypePrimitives = Union[str, bool, int]
 _ValidNomadVarTypes = pulumi.Input[

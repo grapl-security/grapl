@@ -479,7 +479,7 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
-        organization_management_postgres = Postgres(
+        organization_management_db = Postgres(
             name="organization-management",
             subnet_ids=subnet_ids,
             vpc_id=vpc_id,
@@ -487,7 +487,7 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
-        plugin_registry_postgres = Postgres(
+        plugin_registry_db = Postgres(
             name="plugin-registry",
             subnet_ids=subnet_ids,
             vpc_id=vpc_id,
@@ -495,7 +495,7 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
-        plugin_work_queue_postgres = Postgres(
+        plugin_work_queue_db = Postgres(
             name="plugin-work-queue",
             subnet_ids=subnet_ids,
             vpc_id=vpc_id,
@@ -503,7 +503,7 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
-        uid_allocator_postgres = Postgres(
+        uid_allocator_db = Postgres(
             name="uid-allocator-db",
             subnet_ids=subnet_ids,
             vpc_id=vpc_id,
@@ -513,12 +513,12 @@ def main() -> None:
 
         pulumi.export(
             "organization-management-db",
-            organization_management_postgres.to_nomad_service_db_args(),
+            organization_management_db.to_nomad_service_db_args(),
         )
 
         pulumi.export(
             "plugin-work-queue-db",
-            plugin_work_queue_postgres.to_nomad_service_db_args(),
+            plugin_work_queue_db.to_nomad_service_db_args(),
         )
 
         # Not currently imported in integration tests:
@@ -530,12 +530,12 @@ def main() -> None:
         prod_grapl_core_vars: Final[NomadVars] = dict(
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
-            organization_management_db=organization_management_postgres.to_nomad_service_db_args(),
+            organization_management_db=organization_management_db.to_nomad_service_db_args(),
             pipeline_ingress_kafka_sasl_password=pipeline_ingress_kafka_credentials.api_secret,
             pipeline_ingress_kafka_sasl_username=pipeline_ingress_kafka_credentials.api_key,
-            plugin_registry_db=plugin_registry_postgres.to_nomad_service_db_args(),
-            plugin_work_queue_db=plugin_work_queue_postgres.to_nomad_service_db_args(),
-            uid_allocator_db=uid_allocator_postgres.to_nomad_service_db_args(),
+            plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
+            plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
+            uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),
             redis_endpoint=cache.endpoint,
             **nomad_inputs,
         )

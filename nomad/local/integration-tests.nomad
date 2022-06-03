@@ -173,9 +173,9 @@ job "integration-tests" {
         PLUGIN_WORK_QUEUE_BIND_ADDRESS = "0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-work-queue}"
 
         PLUGIN_WORK_QUEUE_DB_HOSTNAME = var.plugin_work_queue_db.hostname
-        PLUGIN_WORK_QUEUE_DB_PORT     = var.plugin_work_queue.db_port
-        PLUGIN_WORK_QUEUE_DB_USERNAME = var.plugin_work_queue.db_username
-        PLUGIN_WORK_QUEUE_DB_PASSWORD = var.plugin_work_queue.db_password
+        PLUGIN_WORK_QUEUE_DB_PORT     = var.plugin_work_queue_db.port
+        PLUGIN_WORK_QUEUE_DB_USERNAME = var.plugin_work_queue_db.username
+        PLUGIN_WORK_QUEUE_DB_PASSWORD = var.plugin_work_queue_db.password
 
         ORGANIZATION_MANAGEMENT_ADDRESS      = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_organization_management}"
         ORGANIZATION_MANAGEMENT_BIND_ADDRESS = "0.0.0.0:${NOMAD_UPSTREAM_PORT_organization_management}"
