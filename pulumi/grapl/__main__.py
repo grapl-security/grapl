@@ -29,6 +29,7 @@ from infra.hashicorp_provider import (
 from infra.kafka import Kafka
 from infra.local.postgres import LocalPostgresInstance
 from infra.nomad_job import NomadJob, NomadVars
+from infra.nomad_service_postgres import NomadServicePostgresResource
 from infra.path import path_from_root
 from infra.postgres import Postgres
 
@@ -341,6 +342,11 @@ def main() -> None:
         ),
     )
 
+    organization_management_db: NomadServicePostgresResource
+    plugin_registry_db: NomadServicePostgresResource
+    plugin_work_queue_db: NomadServicePostgresResource
+    uid_allocator_db: NomadServicePostgresResource
+
     if config.LOCAL_GRAPL:
         ###################################
         # Local Grapl
@@ -373,19 +379,6 @@ def main() -> None:
             name="uid-allocator-db",
             port=5732,
         )
-
-        pulumi.export(
-            "organization-management-db",
-            organization_management_db.to_nomad_service_db_args(),
-        )
-
-        pulumi.export(
-            "plugin-work-queue-db", plugin_work_queue_db.to_nomad_service_db_args()
-        )
-
-        # Not currently imported in integration tests:
-        # - uid-allocator-db
-        # - plugin-registry-db
 
         redis_endpoint = f"redis://{config.HOST_IP_IN_NOMAD}:6379"
 
@@ -511,20 +504,6 @@ def main() -> None:
             nomad_agent_security_group_id=nomad_agent_security_group_id,
         )
 
-        pulumi.export(
-            "organization-management-db",
-            organization_management_db.to_nomad_service_db_args(),
-        )
-
-        pulumi.export(
-            "plugin-work-queue-db",
-            plugin_work_queue_db.to_nomad_service_db_args(),
-        )
-
-        # Not currently imported in integration tests:
-        # - uid-allocator-db
-        # - plugin-registry-db
-
         pulumi.export("redis-endpoint", cache.endpoint)
 
         prod_grapl_core_vars: Final[NomadVars] = dict(
@@ -587,6 +566,18 @@ def main() -> None:
         )
 
     OpsAlarms(name="ops-alarms")
+
+    pulumi.export(
+        "organization-management-db",
+        organization_management_db.to_nomad_service_db_args(),
+    )
+
+    pulumi.export(
+        "plugin-work-queue-db", plugin_work_queue_db.to_nomad_service_db_args()
+    )
+    # Not currently imported in integration tests:
+    # - uid-allocator-db
+    # - plugin-registry-db
 
 
 if __name__ == "__main__":
