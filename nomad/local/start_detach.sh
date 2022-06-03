@@ -2,6 +2,11 @@
 
 set -euo pipefail
 
+# shellcheck source-path=SCRIPTDIR
+source "$(dirname "${BASH_SOURCE[0]}")"/../../src/sh/log.sh
+# shellcheck source-path=SCRIPTDIR
+source "$(dirname "${BASH_SOURCE[0]}")"/../../src/sh/dependencies.sh
+
 readonly NOMAD_LOGS_DEST=/tmp/nomad-agent.log
 readonly CONSUL_LOGS_DEST=/tmp/consul-agent.log
 readonly VAULT_LOGS_DEST=/tmp/vault-agent.log
@@ -39,28 +44,17 @@ ensure_firecracker_driver_installed() {
     fi
 }
 
-ensure_valid_env() {
+ensure_valid_nomad_env() {
     ensure_cros_bridge_networking_workaround
     ensure_firecracker_driver_installed
-
-    # ensure that all dependencies are available
-    if [[ -z $(command -v nomad) ]]; then
-        echo "Nomad must be installed. Please follow the install instructions at https://www.nomadproject.io/downloads"
-        exit 2
-    fi
-
-    if [[ -z $(command -v consul) ]]; then
-        echo "Consul must be installed. Please follow the install instructions at https://www.consul.io/downloads"
-        exit 2
-    fi
 }
 
 configure_vault() {
     # We're using the root token for the POC of this
     VAULT_TOKEN=$(grep "Root Token" ${VAULT_LOGS_DEST} | awk '{ print $3 }')
-    vault secrets enable pki
+    log_and_run vault secrets enable pki
     # enable intermediate pki
-    vault secrets enable -path=pki_int pki
+    log_and_run vault secrets enable -path=pki_int pki
 }
 
 create_dynamic_consul_config() {
@@ -69,7 +63,7 @@ create_dynamic_consul_config() {
         rm "${THIS_DIR}/consul-dynamic-conf.hcl"
     fi
 
-    GOSSIP_KEY=$(consul keygen)
+    GOSSIP_KEY=$(log_and_run consul keygen)
 
     # generate the file
     cat << EOF > "${THIS_DIR}/consul-dynamic-conf.hcl"
@@ -97,12 +91,12 @@ clear_hashicorp_log_files() {
 }
 
 start_nomad_detach() {
-    ensure_valid_env
+    ensure_valid_nomad_env
     clear_hashicorp_log_files
 
-    echo "Starting nomad, vault, and consul locally. Logs @ ${NOMAD_LOGS_DEST}, ${VAULT_LOGS_DEST} and ${CONSUL_LOGS_DEST}."
+    log "Starting nomad, vault, and consul locally. Logs @ ${NOMAD_LOGS_DEST}, ${VAULT_LOGS_DEST} and ${CONSUL_LOGS_DEST}."
     # Consul/Nomad/Vault  will run forever until `make down` is invoked."
-    vault server \
+    log_and_run vault server \
         -config="${THIS_DIR}/vault-agent-conf.hcl" \
         -dev > "${VAULT_LOGS_DEST}" 2>&1 &
     local -r vault_agent_pid="$!"
@@ -141,7 +135,7 @@ EOF
 
     # consul should be created prior to nomad to avoid a race condition
     # The client is set to 0.0.0.0 here so that it can be reached via pulumi in docker.
-    consul agent \
+    log_and_run consul agent \
         -client 0.0.0.0 -config-file "${THIS_DIR}/consul-agent-conf.hcl" \
         -config-file "${THIS_DIR}/consul-dynamic-conf.hcl" \
         -dev > "${CONSUL_LOGS_DEST}" &
@@ -171,7 +165,7 @@ EOF
     )
 
     # shellcheck disable=SC2024
-    sudo nomad agent \
+    log_and_run sudo nomad agent \
         -config="${THIS_DIR}/nomad-agent-conf.nomad" \
         -dev-connect > "${NOMAD_LOGS_DEST}" &
     local -r nomad_agent_pid="$!"
@@ -205,7 +199,8 @@ EOF
     )
 
     "${THIS_DIR}/nomad_run_local_infra.sh"
-    echo "Deployment complete"
+    log "Deployment complete"
 }
 
+expect_binaries nomad consul vault
 start_nomad_detach
