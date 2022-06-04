@@ -1,3 +1,4 @@
+
 syntax = "proto3";
 
 package graplinc.grapl.api.lens_manager.v1beta1;
@@ -6,15 +7,20 @@ import "graplinc/common/v1beta1/types.proto";
 
 // Request to create a lens
 message CreateLensRequest {
+  // The tenantid for the request for a lens to be created
   graplinc.common.v1beta1.Uuid tenant_id = 1;
+  // Newly created lens' key
   string key = 2;
+  // Value corresponding with key created
   string value = 3;
+  // Is the lens being created a valid lens or not?
   bool is_valid = 4;
 }
 
 // Response from creating a lens
 message CreateLensResponse {
-  uint64 lens_uid = 2;
+  // Unique ID of Lens that was created
+  uint64 lens_uid = 1;
 }
 
 // Request to merge two lenses
@@ -30,22 +36,25 @@ message MergeLensRequest {
 
 // Response for merging lenses
 message MergeLensResponse {
-
+ // empty
 }
 
 // Request to close lens
 message CloseLensRequest {
+  // Tenant ID for lens to be closed
   graplinc.common.v1beta1.Uuid tenant_id = 1;
+  // UID of lens that is being closed
   uint64 lens_uid = 2;
 }
 
 // Response from close a lens
 message CloseLensResponse {
-
+  // empty
 }
 
 // Request to add a node to scope
 message AddNodeToScopeRequest {
+  // Tenant ID for node being added to a scope
   graplinc.common.v1beta1.Uuid tenant_id = 1;
   uint64 lens_uid = 2;
   uint64 uid = 3;
