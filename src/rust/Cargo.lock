@@ -1693,7 +1693,7 @@ name = "generator-dispatcher"
 version = "0.0.1"
 dependencies = [
  "async-trait",
- "clap 3.1.17",
+ "clap 3.1.18",
  "futures",
  "grapl-config",
  "kafka",
@@ -1701,6 +1701,7 @@ dependencies = [
  "rust-proto-new",
  "tokio",
  "tracing",
+ "uuid",
 ]
 
 [[package]]

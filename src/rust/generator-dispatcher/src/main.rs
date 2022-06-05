@@ -11,7 +11,8 @@ use plugin_work_queue::client::{
 };
 use rust_proto_new::graplinc::grapl::{
     api::plugin_work_queue::v1beta1::{
-        PutExecuteGeneratorRequest, ExecutionJob,
+        ExecutionJob,
+        PutExecuteGeneratorRequest,
     },
     pipeline::{
         v1beta1::RawLog,
@@ -50,16 +51,21 @@ impl GeneratorDispatcher {
     async fn main_loop(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let mut stream = self.raw_logs_consumer.stream()?;
         while let Some(raw_log_result) = stream.next().await {
-            let Envelope{inner_message, metadata} = raw_log_result?;
-            let execution_job = ExecutionJob{
+            let Envelope {
+                inner_message,
+                metadata,
+            } = raw_log_result?;
+
+            // HAX TODO we need event source management
+            let hax_temp_plugin_id = uuid::Uuid::new_v4();
+            let execution_job = ExecutionJob {
                 data: inner_message.log_event.to_vec(),
-                plugin_id: "todo-do-event-source-id", // TODO we need event source management
+                plugin_id: hax_temp_plugin_id,
                 tenant_id: metadata.tenant_id,
             };
             self.plugin_work_queue_client
-                .put_execute_generator(PutExecuteGeneratorRequest {
-                    execution_job,
-                });
+                .put_execute_generator(PutExecuteGeneratorRequest { execution_job })
+                .await?;
         }
         // Should we let the process exit if that while-let fails?
         Ok(())
