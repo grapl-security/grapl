@@ -461,7 +461,7 @@ _up:
 		--file docker-compose.yml \
 		up --force-recreate --always-recreate-deps --renew-anon-volumes \
 		--exit-code-from pulumi \
-		pulumi
+		pulumi && echo "✅ Pulumi deployed successfully ✅"
 
 .SILENT: down
 .PHONY: down
