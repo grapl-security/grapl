@@ -1,6 +1,9 @@
 use rusoto_s3::{
+    AbortMultipartUploadError,
+    CompleteMultipartUploadError,
+    CreateMultipartUploadError,
     GetObjectError,
-    PutObjectError,
+    UploadPartError,
 };
 use rust_proto_new::{
     protocol::status::Status,
@@ -13,11 +16,23 @@ use crate::{
 };
 
 #[derive(Debug, thiserror::Error)]
+pub enum S3PutError {
+    #[error(transparent)]
+    CreateError(#[from] rusoto_core::RusotoError<CreateMultipartUploadError>),
+    #[error(transparent)]
+    UploadPartError(#[from] rusoto_core::RusotoError<UploadPartError>),
+    #[error(transparent)]
+    CompleteError(#[from] rusoto_core::RusotoError<CompleteMultipartUploadError>),
+    #[error(transparent)]
+    AbortError(#[from] rusoto_core::RusotoError<AbortMultipartUploadError>),
+}
+
+#[derive(Debug, thiserror::Error)]
 pub enum PluginRegistryServiceError {
     #[error(transparent)]
     SqlxError(#[from] sqlx::Error),
     #[error(transparent)]
-    S3PutObjectError(#[from] rusoto_core::RusotoError<PutObjectError>),
+    S3PutObjectError(#[from] S3PutError),
     #[error(transparent)]
     S3GetObjectError(#[from] rusoto_core::RusotoError<GetObjectError>),
     #[error("EmptyObject")]
@@ -34,8 +49,8 @@ pub enum PluginRegistryServiceError {
     NomadCliError(#[from] nomad::cli::NomadCliError),
     #[error("NomadJobAllocationError")]
     NomadJobAllocationError,
-    #[error("ArtifactTooLargeError {0}")]
-    ArtifactTooLargeError(String),
+    #[error("StreamInputError {0}")]
+    StreamInputError(&'static str),
     // TODO: These errs are meant to be human-readable and are not directly
     // sent over the wire, so add {0}s to them!
 }
@@ -65,7 +80,10 @@ impl From<PluginRegistryServiceError> for Status {
             Error::NomadJobAllocationError => {
                 Status::internal("Unable to allocate Nomad job - it may be out of resources.")
             }
-            Error::ArtifactTooLargeError(msg) => Status::invalid_argument(msg),
+            Error::StreamInputError(e) => {
+                // Since it's regarding user input, we can de-anonymize this message
+                Status::invalid_argument(format!("Unexpected input to Stream RPC: {e}"))
+            }
         }
     }
 }

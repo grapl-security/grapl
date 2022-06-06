@@ -158,5 +158,9 @@ EOF
     )"
     # There's a minor race condition here, where Pulumi starts the box but it's
     # not ready to take SSH-over-SSM commands quite yet.
+    "${THIS_DIR}/../ssh.sh" -- "echo 'ensuring devbox reachable'" || (
+        echo "Wait 5m for the box to come up and rerun to complete provisioning"
+        exit 1
+    )
     "${THIS_DIR}/../ssh.sh" -- "${CMD}"
 )

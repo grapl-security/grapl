@@ -11,6 +11,7 @@ async-trait = "0.1.53"
 bytes = "1.1"
 dashmap = "5.3.3"
 futures = "0.3"
+grapl-utils = { path = "../grapl-utils" }
 prost = "0.10"
 prost-types = "0.10"
 thiserror = "1.0"

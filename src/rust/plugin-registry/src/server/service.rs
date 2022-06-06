@@ -3,17 +3,17 @@ use std::{
     time::Duration,
 };
 
+use futures::StreamExt;
 use grapl_config::env_helpers::FromEnv;
 use rusoto_s3::{
     GetObjectRequest,
-    PutObjectRequest,
     S3Client,
-    StreamingBody,
     S3,
 };
 use rust_proto_new::{
     graplinc::grapl::api::plugin_registry::v1beta1::{
         CreatePluginRequest,
+        CreatePluginRequestMetadata,
         CreatePluginResponse,
         DeployPluginRequest,
         DeployPluginResponse,
@@ -38,6 +38,7 @@ use tokio::{
 };
 use tonic::async_trait;
 
+use super::create_plugin::upload_stream_multipart_to_s3;
 use crate::{
     db::{
         client::{
@@ -52,7 +53,10 @@ use crate::{
         cli::NomadCli,
         client::NomadClient,
     },
-    server::deploy_plugin,
+    server::{
+        create_plugin,
+        deploy_plugin,
+    },
 };
 
 #[derive(clap::Parser, Debug)]
@@ -109,51 +113,57 @@ pub struct PluginRegistry {
     config: PluginRegistryServiceConfig,
 }
 
-impl PluginRegistry {
-    fn ensure_artifact_size_limit(&self, bytes: &[u8]) -> Result<(), PluginRegistryServiceError> {
-        let limit_mb = &self.config.artifact_size_limit_mb;
-        if bytes.len() > (limit_mb * 1024 * 1024) {
-            Err(PluginRegistryServiceError::ArtifactTooLargeError(format!(
-                "Artifact exceeds {limit_mb}MB"
-            )))
-        } else {
-            Ok(())
-        }
-    }
-}
-
 #[async_trait]
 impl PluginRegistryApi for PluginRegistry {
     type Error = PluginRegistryServiceError;
 
+    // TODO: This function is so long I'm gonna split it out into its own file soon.
     #[tracing::instrument(skip(self, request), err)]
     async fn create_plugin(
         &self,
-        request: CreatePluginRequest,
+        request: futures::channel::mpsc::Receiver<CreatePluginRequest>,
     ) -> Result<CreatePluginResponse, Self::Error> {
-        let CreatePluginRequest {
+        let start_time = std::time::SystemTime::now();
+
+        let mut request = request;
+
+        let CreatePluginRequestMetadata {
             tenant_id,
-            plugin_artifact, // This could be huge, so don't clone it!
             display_name,
             plugin_type,
-        } = request;
+        } = match request.next().await {
+            Some(CreatePluginRequest::Metadata(m)) => m,
+            _ => {
+                return Err(Self::Error::StreamInputError(
+                    "Expected request 0 to be Metadata",
+                ));
+            }
+        };
 
-        self.ensure_artifact_size_limit(&plugin_artifact)?;
-
-        let plugin_id = generate_plugin_id(&tenant_id, plugin_artifact.as_slice());
-
+        let plugin_id = generate_plugin_id();
         let s3_key = generate_artifact_s3_key(plugin_type, &tenant_id, &plugin_id);
+        let s3_multipart_fields = create_plugin::S3MultipartFields {
+            bucket: self.config.bucket_name.clone(),
+            key: s3_key.clone(),
+            expected_bucket_owner: Some(self.config.bucket_aws_account_id.clone()),
+        };
 
-        self.s3
-            .put_object(PutObjectRequest {
-                content_length: Some(plugin_artifact.len() as i64),
-                body: Some(StreamingBody::from(plugin_artifact)),
-                bucket: self.config.bucket_name.clone(),
-                key: s3_key.clone(),
-                expected_bucket_owner: Some(self.config.bucket_aws_account_id.clone()),
-                ..Default::default()
-            })
-            .await?;
+        let multipart_upload =
+            upload_stream_multipart_to_s3(request, &self.s3, &self.config, s3_multipart_fields)
+                .await?;
+        // Emit some benchmark info
+        {
+            let total_duration = std::time::SystemTime::now()
+                .duration_since(start_time)
+                .unwrap_or_default();
+
+            tracing::info!(
+                message = "CreatePlugin benchmark",
+                display_name = ?display_name,
+                duration_millis = ?total_duration.as_millis(),
+                stream_length_bytes = multipart_upload.stream_length,
+            );
+        }
 
         self.db_client
             .create_plugin(
@@ -167,8 +177,7 @@ impl PluginRegistryApi for PluginRegistry {
             )
             .await?;
 
-        let response = CreatePluginResponse { plugin_id };
-        Ok(response)
+        Ok(CreatePluginResponse { plugin_id })
     }
 
     #[tracing::instrument(skip(self, request), err)]
@@ -326,13 +335,9 @@ fn generate_artifact_s3_key(
     )
 }
 
-fn generate_plugin_id(tenant_id: &uuid::Uuid, plugin_artifact: &[u8]) -> uuid::Uuid {
-    let mut hasher = blake3::Hasher::new();
-    hasher.update(&b"PLUGIN_ID_NAMESPACE"[..]);
-    hasher.update(tenant_id.as_bytes());
-    hasher.update(plugin_artifact);
-    let mut output = [0; 16];
-    hasher.finalize_xof().fill(&mut output);
-
-    uuid::Uuid::from_bytes(output)
+fn generate_plugin_id() -> uuid::Uuid {
+    // NOTE: Previously we generated plugin-id based off of the plugin binary, but
+    // since the binary is now streamed, + eventually 1 plugin can have different
+    // versions - we decided to make it a random UUID.
+    uuid::Uuid::new_v4()
 }
