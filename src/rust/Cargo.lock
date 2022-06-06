@@ -3299,6 +3299,7 @@ dependencies = [
  "async-trait",
  "bytes",
  "clap 3.1.17",
+ "env_logger 0.9.0",
  "futures",
  "futures-retry",
  "grapl-config",

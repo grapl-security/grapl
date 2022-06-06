@@ -26,7 +26,7 @@ sqlx = { version = "0.5", features = [
 ] }
 tracing-futures = "0.2.5"
 tracing = "0.1.29"
-tracing-subscriber = "0.3"
+tracing-subscriber = {version = "0.3", default-features = false, features = ["env-filter", "fmt"]}
 rust-proto = { path = "../rust-proto", version = "*" }
 thiserror = "1.0.26"
 argon2 = { version = "0.4", features = ["std"] }
@@ -36,12 +36,12 @@ clap = { version = "3.0", default_features = false, features = [
   "derive"
 ] }
 
+
 [build-dependencies]
 tonic-build = { version = "0.6.0", features = ["prost"] }
 
 [dev-dependencies]
 test-log = { version = "0.2", default-features = false, features = ["trace"] }
-tracing-subscriber = "0.3"
 
 [features]
 integration = []
