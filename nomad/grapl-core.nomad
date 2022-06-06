@@ -153,6 +153,21 @@ variable "plugin_registry_bucket_name" {
   description = "The name of the bucket where plugins are stored"
 }
 
+variable "generator_dispatcher_kafka_sasl_username" {
+  type        = string
+  description = "blah blah im refactoring these next PR"
+}
+
+variable "generator_dispatcher_kafka_sasl_password" {
+  type        = string
+  description = "blah blah im refactoring these next PR"
+}
+
+variable "generator_dispatcher_kafka_consumer_group" {
+  type        = string
+  description = "blah blah im refactoring these next PR"
+}
+
 variable "graph_generator_kafka_sasl_username" {
   type        = string
   description = "The username to authenticate with Confluent Cloud cluster."
@@ -641,6 +656,12 @@ job "grapl-core" {
       env {
         # Upstreams
         PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
+
+        # Kafka
+        KAFKA_BOOTSTRAP_SERVERS        = var.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME            = var.generator_dispatcher_kafka_sasl_username
+        KAFKA_SASL_PASSWORD            = var.generator_dispatcher_kafka_sasl_password
+        GRAPH_GENERATOR_CONSUMER_GROUP = var.generator_dispatcher_kafka_consumer_group
 
         RUST_BACKTRACE                  = local.rust_backtrace
         RUST_LOG                        = var.rust_log
