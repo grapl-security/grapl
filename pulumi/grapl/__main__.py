@@ -26,7 +26,7 @@ from infra.hashicorp_provider import (
     get_consul_provider_address,
     get_nomad_provider_address,
 )
-from infra.kafka import Kafka
+from infra.kafka import Credential, Kafka
 from infra.local.postgres import LocalPostgresInstance
 from infra.nomad_job import NomadJob, NomadVars
 from infra.nomad_service_postgres import NomadServicePostgresResource
@@ -189,20 +189,18 @@ def main() -> None:
     pulumi.export("aws-env-vars-for-local", aws_env_vars_for_local)
 
     kafka_services = (
-        "graph-generator",
         "generator-dispatcher",
+        "graph-generator",
         "node-identifier",
         "pipeline-ingress",
     )
     kafka_service_credentials = {
-        service: kafka.service_credentials(service).apply(
-            lambda creds: creds.to_nomad_service_creds()
-        )
+        service: kafka.service_credentials(service).apply(Credential.to_nomad_service_creds)
         for service in kafka_services
     }
     kafka_consumer_services = (
-        "graph-generator",
         "generator-dispatcher",
+        "graph-generator",
         "node-identifier",
     )
     kafka_consumer_groups = {

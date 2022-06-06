@@ -77,7 +77,7 @@ class NomadJob(pulumi.ComponentResource):
             elif isinstance(val, dict):
                 return json.dumps({k: escape_str_value(v) for (k, v) in val.items()})
             else:
-                return val
+                return cast(_ValidNomadVarTypePrimitives, val)
 
         return {
             k: pulumi.Output.from_input(v).apply(dump_value) for (k, v) in vars.items()
