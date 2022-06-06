@@ -567,12 +567,8 @@ def main() -> None:
             plugin_work_queue_postgres.password(),
         )
 
-        pulumi.export(
-            "uid-allocator-db-hostname", uid_allocator_postgres.host()
-        )
-        pulumi.export(
-            "uid-allocator-db-port", uid_allocator_postgres.port().apply(str)
-        )
+        pulumi.export("uid-allocator-db-hostname", uid_allocator_postgres.host())
+        pulumi.export("uid-allocator-db-port", uid_allocator_postgres.port().apply(str))
         pulumi.export(
             "uid-allocator-db-username",
             uid_allocator_postgres.username(),
