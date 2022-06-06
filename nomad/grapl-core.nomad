@@ -113,14 +113,19 @@ variable "pipeline_ingress_healthcheck_polling_interval_ms" {
   description = "The amount of time to wait between each healthcheck execution."
 }
 
-variable "pipeline_ingress_kafka_sasl_username" {
-  type        = string
-  description = "The username to authenticate with Confluent Cloud cluster."
+variable "kafka_credentials" {
+  description = "Map from service-name to kafka credentials for that service"
+  type = map(object({
+    # The username to authenticate with Confluent Cloud cluster. 
+    sasl_username = string
+    # The password to authenticate with Confluent Cloud cluster.
+    sasl_password = string
+  }))
 }
 
-variable "pipeline_ingress_kafka_sasl_password" {
-  type        = string
-  description = "The password to authenticate with Confluent Cloud cluster."
+variable "kafka_consumer_groups" {
+  description = "Map from service-name to the consumer group for that service to join"
+  type        = map(string)
 }
 
 variable "plugin_work_queue_db" {
@@ -153,36 +158,6 @@ variable "plugin_registry_bucket_name" {
   description = "The name of the bucket where plugins are stored"
 }
 
-variable "generator_dispatcher_kafka_sasl_username" {
-  type        = string
-  description = "blah blah im refactoring these next PR"
-}
-
-variable "generator_dispatcher_kafka_sasl_password" {
-  type        = string
-  description = "blah blah im refactoring these next PR"
-}
-
-variable "generator_dispatcher_kafka_consumer_group" {
-  type        = string
-  description = "blah blah im refactoring these next PR"
-}
-
-variable "graph_generator_kafka_sasl_username" {
-  type        = string
-  description = "The username to authenticate with Confluent Cloud cluster."
-}
-
-variable "graph_generator_kafka_sasl_password" {
-  type        = string
-  description = "The password to authenticate with Confluent Cloud cluster."
-}
-
-variable "graph_generator_kafka_consumer_group" {
-  type        = string
-  description = "Consumer group for graph-generator consumers to join."
-}
-
 variable "num_graph_mergers" {
   type        = number
   default     = 1
@@ -203,21 +178,6 @@ variable "num_node_identifiers" {
   type        = number
   default     = 1
   description = "The number of node identifiers to run."
-}
-
-variable "node_identifier_kafka_sasl_username" {
-  type        = string
-  description = "The username to authenticate with Confluent Cloud cluster."
-}
-
-variable "node_identifier_kafka_sasl_password" {
-  type        = string
-  description = "The password to authenticate with Confluent Cloud cluster."
-}
-
-variable "node_identifier_kafka_consumer_group" {
-  type        = string
-  description = "Consumer group for node-identifier consumers to join."
 }
 
 variable "user_auth_table" {
@@ -659,9 +619,9 @@ job "grapl-core" {
 
         # Kafka
         KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
-        KAFKA_SASL_USERNAME       = var.generator_dispatcher_kafka_sasl_username
-        KAFKA_SASL_PASSWORD       = var.generator_dispatcher_kafka_sasl_password
-        KAFKA_CONSUMER_GROUP_NAME = var.generator_dispatcher_kafka_consumer_group
+        KAFKA_SASL_USERNAME       = var.kafka_credentials["generator-dispatcher"].sasl_username
+        KAFKA_SASL_PASSWORD       = var.kafka_credentials["generator-dispatcher"].sasl_password
+        KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_groups["generator-dispatcher"]
 
         RUST_BACKTRACE                  = local.rust_backtrace
         RUST_LOG                        = var.rust_log
@@ -826,9 +786,9 @@ job "grapl-core" {
         OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
 
         KAFKA_BOOTSTRAP_SERVERS        = var.kafka_bootstrap_servers
-        KAFKA_SASL_USERNAME            = var.node_identifier_kafka_sasl_username
-        KAFKA_SASL_PASSWORD            = var.node_identifier_kafka_sasl_password
-        NODE_IDENTIFIER_CONSUMER_GROUP = var.node_identifier_kafka_consumer_group
+        KAFKA_SASL_USERNAME            = var.kafka_credentials["node-identifier"].sasl_username
+        KAFKA_SASL_PASSWORD            = var.kafka_credentials["node-identifier"].sasl_password
+        NODE_IDENTIFIER_CONSUMER_GROUP = var.kafka_consumer_groups["node-identifier"]
 
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
         GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
@@ -1182,9 +1142,9 @@ job "grapl-core" {
         OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
 
         KAFKA_BOOTSTRAP_SERVERS        = var.kafka_bootstrap_servers
-        KAFKA_SASL_USERNAME            = var.graph_generator_kafka_sasl_username
-        KAFKA_SASL_PASSWORD            = var.graph_generator_kafka_sasl_password
-        GRAPH_GENERATOR_CONSUMER_GROUP = var.graph_generator_kafka_consumer_group
+        KAFKA_SASL_USERNAME            = var.kafka_credentials["graph-generator"].sasl_username
+        KAFKA_SASL_PASSWORD            = var.kafka_credentials["graph-generator"].sasl_password
+        GRAPH_GENERATOR_CONSUMER_GROUP = var.kafka_consumer_groups["graph-generator"]
       }
     }
   }
@@ -1270,8 +1230,8 @@ job "grapl-core" {
         RUST_LOG                                         = var.rust_log
         PIPELINE_INGRESS_HEALTHCHECK_POLLING_INTERVAL_MS = var.pipeline_ingress_healthcheck_polling_interval_ms
         KAFKA_BOOTSTRAP_SERVERS                          = var.kafka_bootstrap_servers
-        KAFKA_SASL_USERNAME                              = var.pipeline_ingress_kafka_sasl_username
-        KAFKA_SASL_PASSWORD                              = var.pipeline_ingress_kafka_sasl_password
+        KAFKA_SASL_USERNAME                              = var.kafka_credentials["pipeline-ingress"].sasl_username
+        KAFKA_SASL_PASSWORD                              = var.kafka_credentials["pipeline-ingress"].sasl_password
 
         OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
