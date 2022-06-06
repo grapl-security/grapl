@@ -3,13 +3,6 @@ name = "uid-allocator"
 version = "0.1.0"
 edition = "2021"
 
-[lib]
-name = "uid_allocator"
-
-[[bin]]
-name = "uid-allocator"
-path = "src/main.rs"
-
 [dependencies]
 
 [features]
