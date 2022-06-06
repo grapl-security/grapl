@@ -623,6 +623,45 @@ job "grapl-core" {
   ## Begin actual Grapl core services ##
   #######################################
 
+  group "generator-dispatcher" {
+    network {
+      mode = "bridge"
+      dns {
+        servers = local.dns_servers
+      }
+    }
+
+    task "generator-dispatcher" {
+      driver = "docker"
+
+      config {
+        image = var.container_images["generator-dispatcher"]
+      }
+
+      env {
+        # Upstreams
+        PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
+
+        RUST_BACKTRACE                  = local.rust_backtrace
+        RUST_LOG                        = var.rust_log
+        OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
+        OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
+      }
+    }
+
+    service {
+      name = "generator-dispatcher"
+      connect {
+        sidecar_service {
+          upstreams {
+            destination_name = "plugin-work-queue"
+            local_bind_port  = 1000
+          }
+        }
+      }
+    }
+  }
+
   group "generator-executor" {
     network {
       mode = "bridge"
