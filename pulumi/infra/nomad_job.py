@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Any, Dict, Mapping, Optional, Union, cast
+from typing import Any, Mapping, Optional, Union, cast
 
 import pulumi_nomad as nomad
 from infra.config import STACK_NAME

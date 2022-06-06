@@ -195,7 +195,9 @@ def main() -> None:
         "pipeline-ingress",
     )
     kafka_service_credentials = {
-        service: kafka.service_credentials(service).apply(Credential.to_nomad_service_creds)
+        service: kafka.service_credentials(service).apply(
+            Credential.to_nomad_service_creds
+        )
         for service in kafka_services
     }
     kafka_consumer_services = (
