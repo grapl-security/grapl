@@ -658,10 +658,10 @@ job "grapl-core" {
         PLUGIN_WORK_QUEUE_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_plugin-work-queue}"
 
         # Kafka
-        KAFKA_BOOTSTRAP_SERVERS        = var.kafka_bootstrap_servers
-        KAFKA_SASL_USERNAME            = var.generator_dispatcher_kafka_sasl_username
-        KAFKA_SASL_PASSWORD            = var.generator_dispatcher_kafka_sasl_password
-        GRAPH_GENERATOR_CONSUMER_GROUP = var.generator_dispatcher_kafka_consumer_group
+        KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME       = var.generator_dispatcher_kafka_sasl_username
+        KAFKA_SASL_PASSWORD       = var.generator_dispatcher_kafka_sasl_password
+        KAFKA_CONSUMER_GROUP_NAME = var.generator_dispatcher_kafka_consumer_group
 
         RUST_BACKTRACE                  = local.rust_backtrace
         RUST_LOG                        = var.rust_log
