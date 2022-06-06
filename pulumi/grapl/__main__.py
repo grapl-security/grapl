@@ -68,6 +68,7 @@ def _container_images(artifacts: ArtifactGetter) -> Mapping[str, DockerImageId]:
         "analyzer-executor": builder.build_with_tag("analyzer-executor"),
         "dgraph": DockerImageId("dgraph/dgraph:v21.03.1"),
         "engagement-creator": builder.build_with_tag("engagement-creator"),
+        "generator-dispatcher": builder.build_with_tag("generator-dispatcher"),
         "generator-executor": builder.build_with_tag("generator-executor"),
         "graph-merger": builder.build_with_tag("graph-merger"),
         "graphql-endpoint": builder.build_with_tag("graphql-endpoint"),
@@ -187,6 +188,13 @@ def main() -> None:
     aws_env_vars_for_local = _get_aws_env_vars_for_local()
     pulumi.export("aws-env-vars-for-local", aws_env_vars_for_local)
 
+    pipeline_ingress_kafka_credentials = kafka.service_credentials("pipeline-ingress")
+    generator_dispatcher_kafka_credentials = kafka.service_credentials(
+        "generator-dispatcher"
+    )
+    graph_generator_kafka_credentials = kafka.service_credentials("graph-generator")
+    node_identifier_kafka_credentials = kafka.service_credentials("node-identifier")
+
     # These are shared across both local and prod deployments.
     nomad_inputs: Final[NomadVars] = dict(
         analyzer_bucket=analyzers_bucket.bucket,
@@ -194,11 +202,26 @@ def main() -> None:
         aws_region=aws.get_region().name,
         container_images=_container_images(artifacts),
         dns_server=config.CONSUL_DNS_IP,
+        generator_dispatcher_kafka_consumer_group=kafka.consumer_group(
+            "generator-dispatcher"
+        ),
+        generator_dispatcher_kafka_sasl_password=generator_dispatcher_kafka_credentials.api_secret,
+        generator_dispatcher_kafka_sasl_username=generator_dispatcher_kafka_credentials.api_key,
         graph_generator_kafka_consumer_group=kafka.consumer_group("graph-generator"),
-        node_identifier_kafka_consumer_group=kafka.consumer_group("node-identifier"),
+        graph_generator_kafka_sasl_password=graph_generator_kafka_credentials.api_secret,
+        graph_generator_kafka_sasl_username=graph_generator_kafka_credentials.api_key,
         kafka_bootstrap_servers=kafka.bootstrap_servers(),
         model_plugins_bucket=model_plugins_bucket.bucket,
+        node_identifier_kafka_consumer_group=kafka.consumer_group("node-identifier"),
+        node_identifier_kafka_sasl_password=node_identifier_kafka_credentials.api_secret,
+        node_identifier_kafka_sasl_username=node_identifier_kafka_credentials.api_key,
         pipeline_ingress_healthcheck_polling_interval_ms=pipeline_ingress_healthcheck_polling_interval_ms,
+        pipeline_ingress_kafka_sasl_password=pipeline_ingress_kafka_credentials.api_secret,
+        pipeline_ingress_kafka_sasl_username=pipeline_ingress_kafka_credentials.api_key,
+        plugin_registry_bucket_aws_account_id=config.AWS_ACCOUNT_ID,
+        plugin_registry_bucket_name=plugin_registry_bucket.bucket,
+        plugin_registry_kernel_artifact_url=firecracker_s3objs.kernel_s3obj_url,
+        plugin_registry_rootfs_artifact_url=firecracker_s3objs.rootfs_s3obj_url,
         py_log_level=log_levels.PY_LOG_LEVEL,
         rust_log=log_levels.RUST_LOG_LEVELS,
         schema_properties_table_name=dynamodb_tables.schema_properties_table.name,
@@ -207,10 +230,6 @@ def main() -> None:
         test_user_name=config.GRAPL_TEST_USER_NAME,
         user_auth_table=dynamodb_tables.user_auth_table.name,
         user_session_table=dynamodb_tables.user_session_table.name,
-        plugin_registry_kernel_artifact_url=firecracker_s3objs.kernel_s3obj_url,
-        plugin_registry_rootfs_artifact_url=firecracker_s3objs.rootfs_s3obj_url,
-        plugin_registry_bucket_aws_account_id=config.AWS_ACCOUNT_ID,
-        plugin_registry_bucket_name=plugin_registry_bucket.bucket,
     )
 
     provision_vars: Final[NomadVars] = {
@@ -276,7 +295,6 @@ def main() -> None:
     graph_generator_kafka_credentials = kafka.service_credentials("graph-generator")
     node_identifier_kafka_credentials = kafka.service_credentials("node-identifier")
 
-
     if config.LOCAL_GRAPL:
         ###################################
         # Local Grapl
@@ -327,12 +345,6 @@ def main() -> None:
             plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
             plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
             uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),
-            graph_generator_kafka_sasl_username=graph_generator_kafka_credentials.api_key,
-            graph_generator_kafka_sasl_password=graph_generator_kafka_credentials.api_secret,
-            node_identifier_kafka_sasl_username=node_identifier_kafka_credentials.api_key,
-            node_identifier_kafka_sasl_password=node_identifier_kafka_credentials.api_secret,
-            pipeline_ingress_kafka_sasl_username=pipeline_ingress_kafka_credentials.api_key,
-            pipeline_ingress_kafka_sasl_password=pipeline_ingress_kafka_credentials.api_secret,
             redis_endpoint=redis_endpoint,
             **nomad_inputs,
         )
@@ -441,12 +453,6 @@ def main() -> None:
             # The vars with a leading underscore indicate that the hcl local version of the variable should be used
             # instead of the var version.
             organization_management_db=organization_management_db.to_nomad_service_db_args(),
-            graph_generator_kafka_sasl_username=graph_generator_kafka_credentials.api_key,
-            graph_generator_kafka_sasl_password=graph_generator_kafka_credentials.api_secret,
-            node_identifier_kafka_sasl_username=node_identifier_kafka_credentials.api_key,
-            node_identifier_kafka_sasl_password=node_identifier_kafka_credentials.api_secret,
-            pipeline_ingress_kafka_sasl_username=pipeline_ingress_kafka_credentials.api_key,
-            pipeline_ingress_kafka_sasl_password=pipeline_ingress_kafka_credentials.api_secret,
             plugin_registry_db=plugin_registry_db.to_nomad_service_db_args(),
             plugin_work_queue_db=plugin_work_queue_db.to_nomad_service_db_args(),
             uid_allocator_db=uid_allocator_db.to_nomad_service_db_args(),

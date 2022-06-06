@@ -1689,6 +1689,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "generator-dispatcher"
+version = "0.0.1"
+dependencies = [
+ "async-trait",
+ "clap 3.1.18",
+ "futures",
+ "grapl-config",
+ "kafka",
+ "plugin-work-queue",
+ "rust-proto-new",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "generator-sdk"
 version = "0.1.0"
 dependencies = [
