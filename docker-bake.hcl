@@ -161,6 +161,7 @@ group "rust-services" {
     "plugin-registry",
     "plugin-work-queue",
     "sysmon-generator",
+    "uid-allocator",
   ]
 }
 
@@ -397,6 +398,15 @@ target "sysmon-generator" {
     upstream_aware_tag("sysmon-generator")
   ]
 }
+
+target "uid-allocator" {
+  inherits = ["_rust-base"]
+  target   = "uid-allocator-deploy"
+  tags = [
+    upstream_aware_tag("uid-allocator")
+  ]
+}
+
 
 # Python Services
 # ----------------------------------------------------------------------

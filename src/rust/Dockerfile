@@ -375,3 +375,10 @@ FROM rust-dist AS pipeline-ingress-deploy
 
 COPY --from=build /outputs/pipeline-ingress /
 ENTRYPOINT ["/pipeline-ingress"]
+
+##### uid-allocator
+FROM rust-dist AS uid-allocator-deploy
+
+COPY --from=build /outputs/uid-allocator /
+ENTRYPOINT ["/uid-allocator"]
+

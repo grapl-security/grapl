@@ -58,6 +58,7 @@ trap stop_postgres EXIT
 
 sqlx_prepare "${REPOSITORY_ROOT}/src/rust/plugin-work-queue"
 sqlx_prepare "${REPOSITORY_ROOT}/src/rust/plugin-registry"
+sqlx_prepare "${REPOSITORY_ROOT}/src/rust/uid-allocator"
 
 # Undo the above trap
 trap - EXIT
