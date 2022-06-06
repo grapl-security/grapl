@@ -26,7 +26,7 @@ from infra.hashicorp_provider import (
     get_consul_provider_address,
     get_nomad_provider_address,
 )
-from infra.kafka import Kafka
+from infra.kafka import Credential, Kafka
 from infra.local.postgres import LocalPostgresInstance
 from infra.nomad_job import NomadJob, NomadVars
 from infra.nomad_service_postgres import NomadServicePostgresResource
@@ -188,12 +188,26 @@ def main() -> None:
     aws_env_vars_for_local = _get_aws_env_vars_for_local()
     pulumi.export("aws-env-vars-for-local", aws_env_vars_for_local)
 
-    pipeline_ingress_kafka_credentials = kafka.service_credentials("pipeline-ingress")
-    generator_dispatcher_kafka_credentials = kafka.service_credentials(
-        "generator-dispatcher"
+    kafka_services = (
+        "generator-dispatcher",
+        "graph-generator",
+        "node-identifier",
+        "pipeline-ingress",
     )
-    graph_generator_kafka_credentials = kafka.service_credentials("graph-generator")
-    node_identifier_kafka_credentials = kafka.service_credentials("node-identifier")
+    kafka_service_credentials = {
+        service: kafka.service_credentials(service).apply(
+            Credential.to_nomad_service_creds
+        )
+        for service in kafka_services
+    }
+    kafka_consumer_services = (
+        "generator-dispatcher",
+        "graph-generator",
+        "node-identifier",
+    )
+    kafka_consumer_groups = {
+        service: kafka.consumer_group(service) for service in kafka_consumer_services
+    }
 
     # These are shared across both local and prod deployments.
     nomad_inputs: Final[NomadVars] = dict(
@@ -202,22 +216,11 @@ def main() -> None:
         aws_region=aws.get_region().name,
         container_images=_container_images(artifacts),
         dns_server=config.CONSUL_DNS_IP,
-        generator_dispatcher_kafka_consumer_group=kafka.consumer_group(
-            "generator-dispatcher"
-        ),
-        generator_dispatcher_kafka_sasl_password=generator_dispatcher_kafka_credentials.api_secret,
-        generator_dispatcher_kafka_sasl_username=generator_dispatcher_kafka_credentials.api_key,
-        graph_generator_kafka_consumer_group=kafka.consumer_group("graph-generator"),
-        graph_generator_kafka_sasl_password=graph_generator_kafka_credentials.api_secret,
-        graph_generator_kafka_sasl_username=graph_generator_kafka_credentials.api_key,
         kafka_bootstrap_servers=kafka.bootstrap_servers(),
+        kafka_credentials=kafka_service_credentials,
+        kafka_consumer_groups=kafka_consumer_groups,
         model_plugins_bucket=model_plugins_bucket.bucket,
-        node_identifier_kafka_consumer_group=kafka.consumer_group("node-identifier"),
-        node_identifier_kafka_sasl_password=node_identifier_kafka_credentials.api_secret,
-        node_identifier_kafka_sasl_username=node_identifier_kafka_credentials.api_key,
         pipeline_ingress_healthcheck_polling_interval_ms=pipeline_ingress_healthcheck_polling_interval_ms,
-        pipeline_ingress_kafka_sasl_password=pipeline_ingress_kafka_credentials.api_secret,
-        pipeline_ingress_kafka_sasl_username=pipeline_ingress_kafka_credentials.api_key,
         plugin_registry_bucket_aws_account_id=config.AWS_ACCOUNT_ID,
         plugin_registry_bucket_name=plugin_registry_bucket.bucket,
         plugin_registry_kernel_artifact_url=firecracker_s3objs.kernel_s3obj_url,
@@ -290,10 +293,6 @@ def main() -> None:
     plugin_registry_db: NomadServicePostgresResource
     plugin_work_queue_db: NomadServicePostgresResource
     uid_allocator_db: NomadServicePostgresResource
-
-    pipeline_ingress_kafka_credentials = kafka.service_credentials("pipeline-ingress")
-    graph_generator_kafka_credentials = kafka.service_credentials("graph-generator")
-    node_identifier_kafka_credentials = kafka.service_credentials("node-identifier")
 
     if config.LOCAL_GRAPL:
         ###################################
