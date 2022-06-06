@@ -39,7 +39,6 @@ clap = { version = "3.0", default_features = false, features = [
   "derive"
 ] }
 
-
 [build-dependencies]
 tonic-build = { version = "0.6.0", features = ["prost"] }
 

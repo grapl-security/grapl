@@ -126,7 +126,8 @@ impl TryFrom<MergeLensRequestProto> for MergeLensRequest {
     fn try_from(request_proto: MergeLensRequestProto) -> Result<Self, Self::Error> {
         let tenant_id = request_proto
             .tenant_id
-            .ok_or(SerDeError::MissingField("tenant_id"))?;
+            .ok_or(SerDeError::MissingField("tenant_id"))?
+            .into();
 
         let source_lens_uid = request_proto.source_lens_uid;
 
@@ -172,14 +173,14 @@ pub struct MergeLensResponse {}
 
 impl TryFrom<MergeLensResponseProto> for MergeLensResponse {
     type Error = SerDeError;
-    fn try_from(response_proto: MergeLensResponseProto) -> Result<Self, Self::Error> {
+    fn try_from(_response_proto: MergeLensResponseProto) -> Result<Self, Self::Error> {
         Ok(Self {})
     }
 }
 
 impl From<MergeLensResponse> for MergeLensResponseProto {
-    fn from(response: MergeLensResponse) -> Result<Self, Self::Error> {
-        Ok(Self {})
+    fn from(_request: MergeLensResponse) -> Self {
+        MergeLensResponseProto {}
     }
 }
 
@@ -208,7 +209,8 @@ impl TryFrom<CloseLensRequestProto> for CloseLensRequest {
     fn try_from(request_proto: CloseLensRequestProto) -> Result<Self, Self::Error> {
         let tenant_id = request_proto
             .tenant_id
-            .ok_or(SerDeError::MissingField("tenant_id"))?;
+            .ok_or(SerDeError::MissingField("tenant_id"))?
+            .into();
 
         let lens_uid = request_proto.lens_uid;
 
@@ -247,14 +249,14 @@ pub struct CloseLensResponse {}
 impl TryFrom<CloseLensResponseProto> for CloseLensResponse {
     type Error = SerDeError;
 
-    fn try_from(response_proto: CloseLensResponseProto) -> Result<Self, Self::Error> {
+    fn try_from(_response_proto: CloseLensResponseProto) -> Result<Self, Self::Error> {
         Ok(Self {})
     }
 }
 
 impl From<CloseLensResponse> for CloseLensResponseProto {
-    fn from(response: CloseLensResponse) -> Result<Self, Self::Error> {
-        Ok(Self {})
+    fn from(_request: CloseLensResponse) -> Self {
+        CloseLensResponseProto {}
     }
 }
 
@@ -325,14 +327,14 @@ pub struct AddNodeToScopeResponse {}
 
 impl TryFrom<AddNodeToScopeResponseProto> for AddNodeToScopeResponse {
     type Error = SerDeError;
-    fn try_from(response_proto: AddNodeToScopeResponseProto) -> Result<Self, Self::Error> {
+    fn try_from(_response_proto: AddNodeToScopeResponseProto) -> Result<Self, Self::Error> {
         Ok(Self {})
     }
 }
 
 impl From<AddNodeToScopeResponse> for AddNodeToScopeResponseProto {
-    fn from(response: AddNodeToScopeResponse) -> Result<Self, Self::Error> {
-        Ok(Self {})
+    fn from(_response: AddNodeToScopeResponse) -> Self {
+        AddNodeToScopeResponseProto {}
     }
 }
 
@@ -398,14 +400,14 @@ pub struct RemoveNodeFromScopeResponse {}
 
 impl TryFrom<RemoveNodeFromScopeResponseProto> for RemoveNodeFromScopeResponse {
     type Error = SerDeError;
-    fn try_from(response_proto: RemoveNodeFromScopeResponseProto) -> Result<Self, Self::Error> {
+    fn try_from(_response_proto: RemoveNodeFromScopeResponseProto) -> Result<Self, Self::Error> {
         Ok(Self {})
     }
 }
 
 impl From<RemoveNodeFromScopeResponse> for RemoveNodeFromScopeResponseProto {
-    fn from(response: RemoveNodeFromScopeResponse) -> Result<Self, Self::Error> {
-        Ok(Self {})
+    fn from(_request: RemoveNodeFromScopeResponse) -> Self {
+        RemoveNodeFromScopeResponseProto {}
     }
 }
 
@@ -431,7 +433,7 @@ pub struct RemoveNodeFromAllScopesRequest {
 impl TryFrom<RemoveNodeFromAllScopesRequestProto> for RemoveNodeFromAllScopesRequest {
     type Error = SerDeError;
 
-    fn try_from(request_proto: RemoveNodeFromAllScopesRequest) -> Result<Self, Self::Error> {
+    fn try_from(request_proto: RemoveNodeFromAllScopesRequestProto) -> Result<Self, Self::Error> {
         let tenant_id = request_proto
             .tenant_id
             .ok_or(SerDeError::MissingField("tenant_id"))?;
@@ -471,17 +473,17 @@ impl serde_impl::ProtobufSerializable for RemoveNodeFromAllScopesRequest {
 #[derive(Debug, Clone, PartialEq)]
 pub struct RemoveNodeFromAllScopesResponse {}
 
-impl TryFrom<RemoveNodeFromAllScopesResponse> for RemoveNodeFromAllScopesResponseProto {
+impl TryFrom<RemoveNodeFromAllScopesResponseProto> for RemoveNodeFromAllScopesResponse {
     type Error = SerDeError;
 
-    fn try_from(response: RemoveNodeFromAllScopesResponse) -> Result<Self, Self::Error> {
+    fn try_from(_response: RemoveNodeFromAllScopesResponseProto) -> Result<Self, Self::Error> {
         Ok(Self {})
     }
 }
 
-impl From<RemoveNodeFromAllScopesResponseProto> for RemoveNodeFromAllScopesResponse {
-    fn from(response: RemoveNodeFromAllScopesResponseProto) -> Result<Self, Self::Error> {
-        Ok(Self {})
+impl From<RemoveNodeFromAllScopesResponse> for RemoveNodeFromAllScopesResponseProto {
+    fn from(_response: RemoveNodeFromAllScopesResponse) -> Self {
+        RemoveNodeFromAllScopesResponseProto {}
     }
 }
 
