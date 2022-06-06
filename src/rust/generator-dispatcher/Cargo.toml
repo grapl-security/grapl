@@ -1,0 +1,27 @@
+[package]
+name = "generator-dispatcher"
+version = "0.0.1"
+edition = "2021"
+
+[lib]
+name = "generator_dispatcher"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+async-trait = "0.1.51"
+clap = { version = "3.0", default_features = false, features = [
+  "std",
+  "env",
+  "derive"
+] }
+futures = "0.3"
+grapl-config = { path = "../grapl-config" }
+kafka = { path = "../kafka", version = "*" }
+plugin-work-queue = { path = "../plugin-work-queue" }
+rust-proto-new = { path = "../rust-proto-new" }
+tokio = { version = "1.17", features = ["macros", "rt", "rt-multi-thread"] }
+tracing = "0.1.29"
+uuid = { version = "0.8", features = ["v4"] }
+
+[features]
+new_integration_tests = []

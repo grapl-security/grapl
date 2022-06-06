@@ -461,7 +461,7 @@ _up:
 		--file docker-compose.yml \
 		up --force-recreate --always-recreate-deps --renew-anon-volumes \
 		--exit-code-from pulumi \
-		pulumi
+		pulumi && echo "✅ Pulumi deployed successfully ✅"
 
 .SILENT: down
 .PHONY: down
@@ -471,8 +471,8 @@ down: ## docker compose down - both stops and removes the containers
 	# about. This must be the network that is used in Localstack's
 	# LAMBDA_DOCKER_NETWORK environment variable.
 	$(MAKE) stop-nomad-detach
-	docker-compose $(EVERY_COMPOSE_FILE) down --timeout=0
-	@docker-compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
+	docker compose $(EVERY_COMPOSE_FILE) down --timeout=0
+	@docker compose $(EVERY_COMPOSE_FILE) --project-name $(COMPOSE_PROJECT_INTEGRATION_TESTS) down --timeout=0
 
 .PHONY: stop
 stop: ## docker compose stop - stops (but preserves) the containers
