@@ -653,9 +653,11 @@ job "grapl-core" {
       name = "generator-dispatcher"
       connect {
         sidecar_service {
-          upstreams {
-            destination_name = "plugin-work-queue"
-            local_bind_port  = 1000
+          proxy {
+            upstreams {
+              destination_name = "plugin-work-queue"
+              local_bind_port  = 1000
+            }
           }
         }
       }
