@@ -8,7 +8,6 @@ use prost::{
     DecodeError,
     EncodeError,
 };
-
 use thiserror::Error;
 
 pub mod protocol {
@@ -44,8 +43,8 @@ pub(crate) mod protobufs {
                 pub(crate) mod lens_manager {
                     pub(crate) mod v1beta1 {
                         include!(concat!(
-                        env!("OUT_DIR"),
-                        "/graplinc.grapl.api.lens_manager.v1beta1.rs"
+                            env!("OUT_DIR"),
+                            "/graplinc.grapl.api.lens_manager.v1beta1.rs"
                         ));
                     }
                 }

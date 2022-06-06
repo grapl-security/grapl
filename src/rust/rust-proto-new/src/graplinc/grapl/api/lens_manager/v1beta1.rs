@@ -1,26 +1,23 @@
 use crate::{
-    graplinc::common::v1beta1::{
-        Uuid
-    },
+    graplinc::common::v1beta1::Uuid,
     protobufs::graplinc::grapl::api::lens_manager::v1beta1::{
+        AddNodeToScopeRequest as AddNodeToScopeRequestProto,
+        AddNodeToScopeResponse as AddNodeToScopeResponseProto,
+        CloseLensRequest as CloseLensRequestProto,
+        CloseLensResponse as CloseLensResponseProto,
         CreateLensRequest as CreateLensRequestProto,
         CreateLensResponse as CreateLensResponseProto,
         MergeLensRequest as MergeLensRequestProto,
         MergeLensResponse as MergeLensResponseProto,
-        CloseLensRequest as CloseLensRequestProto,
-        CloseLensResponse as CloseLensResponseProto,
-        AddNodeToScopeRequest as AddNodeToScopeRequestProto,
-        AddNodeToScopeResponse as AddNodeToScopeResponseProto,
+        RemoveNodeFromAllScopesRequest as RemoveNodeFromAllScopesRequestProto,
+        RemoveNodeFromAllScopesResponse as RemoveNodeFromAllScopesResponseProto,
         RemoveNodeFromScopeRequest as RemoveNodeFromScopeRequestProto,
         RemoveNodeFromScopeResponse as RemoveNodeFromScopeResponseProto,
-        // RemoveNodeFromAllScopesRequest as RemoveNodeFromAllScopesRequestProto,
-        // RemoveNodeFromAllScopesResponse as RemoveNodeFromAllScopesResponseProto,
     },
     serde_impl,
     type_url,
     SerDeError,
 };
-
 
 //
 // CreateLensRequest
@@ -94,15 +91,15 @@ impl TryFrom<CreateLensResponseProto> for CreateLensResponse {
     }
 }
 
-impl From<CreateLensResponse> for CreateLensResponseProto{
+impl From<CreateLensResponse> for CreateLensResponseProto {
     fn from(response: CreateLensResponse) -> Self {
-        CreateLensResponseProto{
+        CreateLensResponseProto {
             lens_uid: response.lens_uid,
         }
     }
 }
 
-impl type_url::TypeUrl for CreateLensResponse{
+impl type_url::TypeUrl for CreateLensResponse {
     const TYPE_URL: &'static str =
         "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.CreateLensResponse";
 }
@@ -110,7 +107,6 @@ impl type_url::TypeUrl for CreateLensResponse{
 impl serde_impl::ProtobufSerializable for CreateLensResponse {
     type ProtobufMessage = CreateLensResponseProto;
 }
-
 
 //
 // MergeLensRequest
@@ -122,10 +118,9 @@ pub struct MergeLensRequest {
     pub source_lens_uid: u64,
     pub target_lens_uid: u64,
     pub close_source: bool,
-
 }
 
-impl TryFrom<MergeLensRequestProto> for MergeLensRequest{
+impl TryFrom<MergeLensRequestProto> for MergeLensRequest {
     type Error = SerDeError;
 
     fn try_from(request_proto: MergeLensRequestProto) -> Result<Self, Self::Error> {
@@ -133,14 +128,11 @@ impl TryFrom<MergeLensRequestProto> for MergeLensRequest{
             .tenant_id
             .ok_or(SerDeError::MissingField("tenant_id"))?;
 
-        let source_lens_uid = request_proto
-            .source_lens_uid;
+        let source_lens_uid = request_proto.source_lens_uid;
 
-        let target_lens_uid = request_proto
-            .target_lens_uid;
+        let target_lens_uid = request_proto.target_lens_uid;
 
-        let close_source = request_proto
-            .close_source;
+        let close_source = request_proto.close_source;
 
         Ok(MergeLensRequest {
             tenant_id,
@@ -153,7 +145,7 @@ impl TryFrom<MergeLensRequestProto> for MergeLensRequest{
 
 impl From<MergeLensRequest> for MergeLensRequestProto {
     fn from(request: MergeLensRequest) -> Self {
-        MergeLensRequestProto{
+        MergeLensRequestProto {
             tenant_id: Some(request.tenant_id.into()),
             source_lens_uid: request.source_lens_uid.into(),
             target_lens_uid: request.target_lens_uid.into(),
@@ -162,7 +154,7 @@ impl From<MergeLensRequest> for MergeLensRequestProto {
     }
 }
 
-impl type_url::TypeUrl for MergeLensRequest{
+impl type_url::TypeUrl for MergeLensRequest {
     const TYPE_URL: &'static str =
         "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.MergeLensRequest";
 }
@@ -176,24 +168,22 @@ impl serde_impl::ProtobufSerializable for MergeLensRequest {
 //
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct MergeLensResponse {
-
-}
+pub struct MergeLensResponse {}
 
 impl TryFrom<MergeLensResponseProto> for MergeLensResponse {
     type Error = SerDeError;
     fn try_from(response_proto: MergeLensResponseProto) -> Result<Self, Self::Error> {
-        Ok(Self{})
+        Ok(Self {})
     }
 }
 
-impl From<MergeLensResponse> for MergeLensResponseProto{
+impl From<MergeLensResponse> for MergeLensResponseProto {
     fn from(response: MergeLensResponse) -> Result<Self, Self::Error> {
-        Ok(Self{})
+        Ok(Self {})
     }
 }
 
-impl type_url::TypeUrl for MergeLensResponse{
+impl type_url::TypeUrl for MergeLensResponse {
     const TYPE_URL: &'static str =
         "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.MergeLensResponse";
 }
@@ -215,15 +205,14 @@ pub struct CloseLensRequest {
 impl TryFrom<CloseLensRequestProto> for CloseLensRequest {
     type Error = SerDeError;
 
-    fn try_from(request_proto: CloseLensRequestProto) -> Result<Self, Self::Error>{
+    fn try_from(request_proto: CloseLensRequestProto) -> Result<Self, Self::Error> {
         let tenant_id = request_proto
             .tenant_id
             .ok_or(SerDeError::MissingField("tenant_id"))?;
 
-        let lens_uid = request_proto
-            .lens_uid;
+        let lens_uid = request_proto.lens_uid;
 
-        Ok(CloseLensRequest{
+        Ok(CloseLensRequest {
             tenant_id,
             lens_uid,
         })
@@ -239,8 +228,7 @@ impl From<CloseLensRequest> for CloseLensRequestProto {
     }
 }
 
-
-impl type_url::TypeUrl for CloseLensRequest{
+impl type_url::TypeUrl for CloseLensRequest {
     const TYPE_URL: &'static str =
         "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.CloseLensRequest";
 }
@@ -254,25 +242,23 @@ impl serde_impl::ProtobufSerializable for CloseLensRequest {
 //
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct CloseLensResponse {
-
-}
+pub struct CloseLensResponse {}
 
 impl TryFrom<CloseLensResponseProto> for CloseLensResponse {
     type Error = SerDeError;
 
     fn try_from(response_proto: CloseLensResponseProto) -> Result<Self, Self::Error> {
-        Ok(Self{})
+        Ok(Self {})
     }
 }
 
-impl From<CloseLensResponse> for CloseLensResponseProto{
+impl From<CloseLensResponse> for CloseLensResponseProto {
     fn from(response: CloseLensResponse) -> Result<Self, Self::Error> {
-        Ok(Self{})
+        Ok(Self {})
     }
 }
 
-impl type_url::TypeUrl for CloseLensResponse{
+impl type_url::TypeUrl for CloseLensResponse {
     const TYPE_URL: &'static str =
         "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.CloseLensResponse";
 }
@@ -300,11 +286,9 @@ impl TryFrom<AddNodeToScopeRequestProto> for AddNodeToScopeRequest {
             .tenant_id
             .ok_or(SerDeError::MissingField("tenant_id"))?;
 
-        let lens_uid = request_proto
-            .lens_uid;
+        let lens_uid = request_proto.lens_uid;
 
-        let uid = request_proto
-            .uid;
+        let uid = request_proto.uid;
 
         Ok(AddNodeToScopeRequest {
             tenant_id: tenant_id.into(),
@@ -316,15 +300,15 @@ impl TryFrom<AddNodeToScopeRequestProto> for AddNodeToScopeRequest {
 
 impl From<AddNodeToScopeRequest> for AddNodeToScopeRequestProto {
     fn from(request: AddNodeToScopeRequest) -> Self {
-        AddNodeToScopeRequestProto{
+        AddNodeToScopeRequestProto {
             tenant_id: Some(request.tenant_id.into()),
-            lens_uid:request.lens_uid,
+            lens_uid: request.lens_uid,
             uid: request.uid.into(),
         }
     }
 }
 
-impl type_url::TypeUrl for AddNodeToScopeRequest{
+impl type_url::TypeUrl for AddNodeToScopeRequest {
     const TYPE_URL: &'static str =
         "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.AddNodeToScopeRequest";
 }
@@ -333,29 +317,26 @@ impl serde_impl::ProtobufSerializable for AddNodeToScopeRequest {
     type ProtobufMessage = AddNodeToScopeRequestProto;
 }
 
-
 // AddNodeToScopeResponse
 //
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct AddNodeToScopeResponse {
-
-}
+pub struct AddNodeToScopeResponse {}
 
 impl TryFrom<AddNodeToScopeResponseProto> for AddNodeToScopeResponse {
     type Error = SerDeError;
     fn try_from(response_proto: AddNodeToScopeResponseProto) -> Result<Self, Self::Error> {
-        Ok(Self{})
+        Ok(Self {})
     }
 }
 
-impl From<AddNodeToScopeResponse> for AddNodeToScopeResponseProto{
+impl From<AddNodeToScopeResponse> for AddNodeToScopeResponseProto {
     fn from(response: AddNodeToScopeResponse) -> Result<Self, Self::Error> {
-        Ok(Self{})
+        Ok(Self {})
     }
 }
 
-impl type_url::TypeUrl for AddNodeToScopeResponse{
+impl type_url::TypeUrl for AddNodeToScopeResponse {
     const TYPE_URL: &'static str =
         "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.AddNodeToScopeResponse";
 }
@@ -364,12 +345,11 @@ impl serde_impl::ProtobufSerializable for AddNodeToScopeResponse {
     type ProtobufMessage = AddNodeToScopeResponseProto;
 }
 
-
 //
 // RemoveNodeFromScopeRequest
 //
 #[derive(Debug, Clone, PartialEq)]
-pub struct RemoveNodeFromScopeRequest{
+pub struct RemoveNodeFromScopeRequest {
     pub tenant_id: Uuid,
     pub lens_uid: u64,
 }
@@ -377,7 +357,7 @@ pub struct RemoveNodeFromScopeRequest{
 impl TryFrom<RemoveNodeFromScopeRequestProto> for RemoveNodeFromScopeRequest {
     type Error = SerDeError;
 
-    fn try_from(request_proto: RemoveNodeFromScopeRequestProto) -> Result<Self, Self::Error>{
+    fn try_from(request_proto: RemoveNodeFromScopeRequestProto) -> Result<Self, Self::Error> {
         let tenant_id = request_proto
             .tenant_id
             .ok_or(SerDeError::MissingField("tenant_id"))?;
@@ -391,16 +371,16 @@ impl TryFrom<RemoveNodeFromScopeRequestProto> for RemoveNodeFromScopeRequest {
     }
 }
 
-impl From<RemoveNodeFromScopeRequest> for RemoveNodeFromScopeRequestProto{
-    fn from(request: RemoveNodeFromScopeRequest) -> Self{
-        RemoveNodeFromScopeRequestProto{
+impl From<RemoveNodeFromScopeRequest> for RemoveNodeFromScopeRequestProto {
+    fn from(request: RemoveNodeFromScopeRequest) -> Self {
+        RemoveNodeFromScopeRequestProto {
             tenant_id: Some(request.tenant_id.into()),
             lens_uid: request.lens_uid,
         }
     }
 }
 
-impl type_url::TypeUrl for RemoveNodeFromScopeRequest{
+impl type_url::TypeUrl for RemoveNodeFromScopeRequest {
     const TYPE_URL: &'static str =
         "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.RemoveNodeFromScopeRequest";
 }
@@ -414,24 +394,22 @@ impl serde_impl::ProtobufSerializable for RemoveNodeFromScopeRequest {
 //
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct RemoveNodeFromScopeResponse {
-
-}
+pub struct RemoveNodeFromScopeResponse {}
 
 impl TryFrom<RemoveNodeFromScopeResponseProto> for RemoveNodeFromScopeResponse {
     type Error = SerDeError;
     fn try_from(response_proto: RemoveNodeFromScopeResponseProto) -> Result<Self, Self::Error> {
-        Ok(Self{})
+        Ok(Self {})
     }
 }
 
-impl From<RemoveNodeFromScopeResponse> for RemoveNodeFromScopeResponseProto{
+impl From<RemoveNodeFromScopeResponse> for RemoveNodeFromScopeResponseProto {
     fn from(response: RemoveNodeFromScopeResponse) -> Result<Self, Self::Error> {
-        Ok(Self{})
+        Ok(Self {})
     }
 }
 
-impl type_url::TypeUrl for RemoveNodeFromScopeResponse{
+impl type_url::TypeUrl for RemoveNodeFromScopeResponse {
     const TYPE_URL: &'static str =
         "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.RemoveNodeFromScopeResponse";
 }
@@ -445,9 +423,9 @@ impl serde_impl::ProtobufSerializable for RemoveNodeFromScopeResponse {
 //
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct RemoveNodeFromAllScopesRequest{
+pub struct RemoveNodeFromAllScopesRequest {
     pub tenant_id: Uuid, //
-    pub uid: u64, // never 0, Refinement Type
+    pub uid: u64,        // never 0, Refinement Type
 }
 
 impl TryFrom<RemoveNodeFromAllScopesRequestProto> for RemoveNodeFromAllScopesRequest {
@@ -458,8 +436,7 @@ impl TryFrom<RemoveNodeFromAllScopesRequestProto> for RemoveNodeFromAllScopesReq
             .tenant_id
             .ok_or(SerDeError::MissingField("tenant_id"))?;
 
-        let uid = request_proto
-            .uid;
+        let uid = request_proto.uid;
 
         // check for invalid values for u64 and send back error otherwise deserailize
         Ok(RemoveNodeFromAllScopesRequest {
@@ -478,7 +455,7 @@ impl From<RemoveNodeFromAllScopesRequest> for RemoveNodeFromAllScopesRequestProt
     }
 }
 
-impl type_url::TypeUrl for RemoveNodeFromAllScopesRequest{
+impl type_url::TypeUrl for RemoveNodeFromAllScopesRequest {
     const TYPE_URL: &'static str =
         "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.RemoveNodeFromAllScopesRequest";
 }
@@ -492,25 +469,23 @@ impl serde_impl::ProtobufSerializable for RemoveNodeFromAllScopesRequest {
 //
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct RemoveNodeFromAllScopesResponse {
+pub struct RemoveNodeFromAllScopesResponse {}
 
-}
-
-impl TryFrom<RemoveNodeFromAllScopesResponse> for RemoveNodeFromAllScopesResponseProto{
+impl TryFrom<RemoveNodeFromAllScopesResponse> for RemoveNodeFromAllScopesResponseProto {
     type Error = SerDeError;
 
     fn try_from(response: RemoveNodeFromAllScopesResponse) -> Result<Self, Self::Error> {
-        Ok(Self{})
+        Ok(Self {})
     }
 }
 
-impl From<RemoveNodeFromAllScopesResponseProto> for RemoveNodeFromAllScopesResponse{
+impl From<RemoveNodeFromAllScopesResponseProto> for RemoveNodeFromAllScopesResponse {
     fn from(response: RemoveNodeFromAllScopesResponseProto) -> Result<Self, Self::Error> {
-        Ok(Self{})
+        Ok(Self {})
     }
 }
 
-impl type_url::TypeUrl for RemoveNodeFromAllScopesResponse{
+impl type_url::TypeUrl for RemoveNodeFromAllScopesResponse {
     const TYPE_URL: &'static str =
         "graplsecurity.com/graplinc.grapl.api.lens_manager.v1beta1.RemoveNodeFromAllScopesResponse";
 }
