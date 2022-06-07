@@ -132,9 +132,9 @@ job "integration-tests-new" {
         PIPELINE_INGRESS_CLIENT_ADDRESS = "http://${NOMAD_UPSTREAM_ADDR_pipeline_ingress}"
         PLUGIN_REGISTRY_CLIENT_ADDRESS  = "http://0.0.0.0:${NOMAD_UPSTREAM_PORT_plugin-registry}"
 
-        INTEGRATION_TESTS_KAFKA_SASL_USERNAME       = var.integration_tests_kafka_sasl_username
-        INTEGRATION_TESTS_KAFKA_SASL_PASSWORD       = var.integration_tests_kafka_sasl_password
-        INTEGRATION_TESTS_KAFKA_CONSUMER_GROUP_NAME = var.integration_tests_kafka_consumer_group_name
+        KAFKA_SASL_USERNAME       = var.integration_tests_kafka_sasl_username
+        KAFKA_SASL_PASSWORD       = var.integration_tests_kafka_sasl_password
+        KAFKA_CONSUMER_GROUP_NAME = var.integration_tests_kafka_consumer_group_name
 
         NOMAD_SERVICE_ADDRESS = "${attr.unique.network.ip-address}:4646"
       }

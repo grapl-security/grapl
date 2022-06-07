@@ -3,8 +3,10 @@
 use std::time::Duration;
 
 use bytes::Bytes;
+use clap::Parser;
 use futures::StreamExt;
 use kafka::{
+    config::KafkaConsumerConfig,
     Consumer,
     ConsumerError,
 };
@@ -57,10 +59,7 @@ fn find_node<'a>(
 
 struct NodeIdentifierTestContext {
     pipeline_ingress_client: PipelineIngressClient,
-    bootstrap_servers: String,
-    sasl_username: String,
-    sasl_password: String,
-    consumer_group_name: String,
+    consumer_config: KafkaConsumerConfig,
     _guard: WorkerGuard,
 }
 
@@ -94,15 +93,6 @@ impl AsyncTestContext for NodeIdentifierTestContext {
         let endpoint = std::env::var("PIPELINE_INGRESS_CLIENT_ADDRESS")
             .expect("missing environment variable PIPELINE_INGRESS_CLIENT_ADDRESS");
 
-        let bootstrap_servers = std::env::var("KAFKA_BOOTSTRAP_SERVERS")
-            .expect("missing environment variable KAFKA_BOOTSTRAP_SERVERS");
-        let sasl_username = std::env::var("INTEGRATION_TESTS_KAFKA_SASL_USERNAME")
-            .expect("missing environment variable INTEGRATION_TESTS_KAFKA_SASL_USERNAME");
-        let sasl_password = std::env::var("INTEGRATION_TESTS_KAFKA_SASL_PASSWORD")
-            .expect("missing environment variable INTEGRATION_TESTS_KAFKA_SASL_PASSWORD");
-        let consumer_group_name = std::env::var("INTEGRATION_TESTS_KAFKA_CONSUMER_GROUP_NAME")
-            .expect("missing environment variable INTEGRATION_TESTS_KAFKA_CONSUMER_GROUP_NAME");
-
         tracing::info!(
             message = "waiting 10s for pipeline-ingress to report healthy",
             endpoint = %endpoint,
@@ -122,12 +112,11 @@ impl AsyncTestContext for NodeIdentifierTestContext {
             .await
             .expect("could not configure gRPC client");
 
+        let consumer_config = KafkaConsumerConfig::parse();
+
         NodeIdentifierTestContext {
             pipeline_ingress_client,
-            bootstrap_servers,
-            sasl_username,
-            sasl_password,
-            consumer_group_name,
+            consumer_config,
             _guard,
         }
     }
@@ -139,20 +128,10 @@ async fn test_sysmon_event_produces_identified_graph(ctx: &mut NodeIdentifierTes
     let event_source_id = Uuid::new_v4();
     let tenant_id = Uuid::new_v4();
 
-    let bootstrap_servers = ctx.bootstrap_servers.clone();
-    let sasl_username = ctx.sasl_username.clone();
-    let sasl_password = ctx.sasl_password.clone();
-    let consumer_group_name = ctx.consumer_group_name.clone();
-
     tracing::info!("configuring kafka consumer");
-    let kafka_consumer = Consumer::new(
-        bootstrap_servers,
-        sasl_username,
-        sasl_password,
-        consumer_group_name,
-        "identified-graphs".to_string(),
-    )
-    .expect("could not configure kafka consumer");
+    let kafka_consumer =
+        Consumer::new_from_config(ctx.consumer_config.clone(), "identified-graphs".to_string())
+            .expect("could not configure kafka consumer");
 
     // we'll use this channel to communicate that the consumer is ready to
     // consume messages

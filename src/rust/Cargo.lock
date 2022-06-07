@@ -1693,14 +1693,21 @@ name = "generator-dispatcher"
 version = "0.0.1"
 dependencies = [
  "async-trait",
+ "bytes",
  "clap 3.1.18",
  "futures",
  "grapl-config",
  "kafka",
+ "opentelemetry 0.16.0",
+ "opentelemetry-jaeger",
  "plugin-work-queue",
  "rust-proto-new",
+ "test-context",
  "tokio",
  "tracing",
+ "tracing-appender",
+ "tracing-opentelemetry 0.16.0",
+ "tracing-subscriber",
  "uuid",
 ]
 
@@ -2319,6 +2326,7 @@ name = "kafka"
 version = "0.1.0"
 dependencies = [
  "bytes",
+ "clap 3.1.18",
  "futures",
  "rdkafka",
  "rust-proto-new",
@@ -2660,6 +2668,7 @@ dependencies = [
  "async-trait",
  "bytes",
  "chrono",
+ "clap 3.1.18",
  "failure",
  "futures",
  "grapl-config",
@@ -3092,6 +3101,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "bytes",
+ "clap 3.1.18",
  "futures",
  "kafka",
  "opentelemetry 0.16.0",
@@ -4554,6 +4564,7 @@ dependencies = [
  "async-trait",
  "bytes",
  "chrono",
+ "clap 3.1.18",
  "endpoint-plugin",
  "futures",
  "kafka",

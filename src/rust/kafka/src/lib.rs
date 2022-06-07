@@ -1,5 +1,8 @@
+pub mod config;
+
 use std::marker::PhantomData;
 
+use config::KafkaConsumerConfig;
 use futures::{
     stream::{
         Stream,
@@ -197,7 +200,7 @@ impl<T: SerDe> Consumer<T> {
         sasl_password: String,
         consumer_group_name: String,
         topic: String,
-    ) -> Result<Consumer<T>, ConfigurationError> {
+    ) -> Result<Self, ConfigurationError> {
         Ok(Consumer {
             consumer: consumer(
                 bootstrap_servers,
@@ -208,6 +211,19 @@ impl<T: SerDe> Consumer<T> {
             topic,
             _t: PhantomData,
         })
+    }
+
+    pub fn new_from_config(
+        config: KafkaConsumerConfig,
+        topic: String,
+    ) -> Result<Self, ConfigurationError> {
+        Consumer::new(
+            config.bootstrap_servers,
+            config.sasl_username,
+            config.sasl_password,
+            config.consumer_group_name,
+            topic,
+        )
     }
 
     #[tracing::instrument(err, skip(self))]

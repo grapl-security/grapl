@@ -3,126 +3,29 @@
 use std::time::Duration;
 
 use bytes::Bytes;
-use clap::Parser;
 use futures::StreamExt;
 use kafka::{
-    config::KafkaConsumerConfig,
     Consumer,
     ConsumerError,
 };
-use opentelemetry::{
-    global,
-    sdk::propagation::TraceContextPropagator,
-};
-use rust_proto_new::{
-    graplinc::grapl::{
-        api::{
-            graph::v1beta1::{
-                GraphDescription,
-                ImmutableUintProp,
-                NodeDescription,
-                Property,
-            },
-            pipeline_ingress::v1beta1::{
-                client::PipelineIngressClient,
-                PublishRawLogRequest,
-            },
+use rust_proto_new::graplinc::grapl::{
+    api::{
+        graph::v1beta1::{
+            GraphDescription,
+            ImmutableUintProp,
         },
-        pipeline::v1beta2::Envelope,
+        pipeline_ingress::v1beta1::PublishRawLogRequest,
     },
-    protocol::healthcheck::client::HealthcheckClient,
+    pipeline::v1beta2::Envelope,
 };
-use test_context::{
-    test_context,
-    AsyncTestContext,
-};
+use test_context::test_context;
 use tokio::sync::oneshot;
 use tracing::Instrument;
-use tracing_appender::non_blocking::WorkerGuard;
-use tracing_subscriber::{
-    prelude::*,
-    EnvFilter,
-};
 use uuid::Uuid;
+mod test_utils;
+use test_utils::context::GeneratorDispatcherTestContext;
 
-fn find_node<'a>(
-    graph: &'a GraphDescription,
-    o_p_name: &str,
-    o_p_value: Property,
-) -> Option<&'a NodeDescription> {
-    graph.nodes.values().find(|n| {
-        n.properties.iter().any(|(p_name, p_value)| {
-            p_name.as_str() == o_p_name && p_value.property.clone() == o_p_value
-        })
-    })
-}
-
-struct SysmonGeneratorTestContext {
-    pipeline_ingress_client: PipelineIngressClient,
-    consumer_config: KafkaConsumerConfig,
-    _guard: WorkerGuard,
-}
-
-#[async_trait::async_trait]
-impl AsyncTestContext for SysmonGeneratorTestContext {
-    async fn setup() -> Self {
-        let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
-
-        // initialize json logging layer
-        let log_layer = tracing_subscriber::fmt::layer()
-            .json()
-            .with_writer(non_blocking);
-
-        // initialize tracing layer
-        global::set_text_map_propagator(TraceContextPropagator::new());
-        let tracer = opentelemetry_jaeger::new_pipeline()
-            .with_service_name("sysmon-generator-integration-tests")
-            .install_batch(opentelemetry::runtime::Tokio)
-            .expect("could not configure tracer");
-
-        // register a subscriber
-        let filter = EnvFilter::from_default_env();
-        tracing_subscriber::registry()
-            .with(filter)
-            .with(log_layer)
-            .with(tracing_opentelemetry::layer().with_tracer(tracer))
-            .init();
-
-        tracing::info!("logger configured successfully");
-
-        let endpoint = std::env::var("PIPELINE_INGRESS_CLIENT_ADDRESS")
-            .expect("missing environment variable PIPELINE_INGRESS_CLIENT_ADDRESS");
-
-        tracing::info!(
-            message = "waiting 10s for pipeline-ingress to report healthy",
-            endpoint = %endpoint,
-        );
-
-        HealthcheckClient::wait_until_healthy(
-            endpoint.clone(),
-            "graplinc.grapl.api.pipeline_ingress.v1beta1.PipelineIngressService",
-            Duration::from_millis(10000),
-            Duration::from_millis(500),
-        )
-        .await
-        .expect("pipeline-ingress never reported healthy");
-
-        tracing::info!("connecting pipeline-ingress gRPC client");
-        let pipeline_ingress_client = PipelineIngressClient::connect(endpoint.clone())
-            .await
-            .expect("could not configure gRPC client");
-
-        let consumer_config = KafkaConsumerConfig::parse();
-
-        SysmonGeneratorTestContext {
-            pipeline_ingress_client,
-            consumer_config,
-            _guard,
-        }
-    }
-}
-
-#[test_context(SysmonGeneratorTestContext)]
+#[test_context(GeneratorDispatcherTestContext)]
 #[tokio::test]
 async fn test_sysmon_event_produces_expected_graph(ctx: &mut SysmonGeneratorTestContext) {
     let event_source_id = Uuid::new_v4();
@@ -130,7 +33,7 @@ async fn test_sysmon_event_produces_expected_graph(ctx: &mut SysmonGeneratorTest
 
     tracing::info!("configuring kafka consumer");
     let kafka_consumer =
-        Consumer::new_from_config(ctx.consumer_config.clone(), "generated-graphs".to_string())
+        Consumer::new_from_config(ctx.consumer_config, "generated-graphs".to_string())
             .expect("could not configure kafka consumer");
 
     // we'll use this channel to communicate that the consumer is ready to
