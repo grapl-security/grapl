@@ -1,5 +1,10 @@
+use clap::Parser;
 use futures::StreamExt;
 use kafka::{
+    config::{
+        ConsumerConfig,
+        ProducerConfig,
+    },
     StreamProcessor,
     StreamProcessorError,
 };
@@ -59,40 +64,20 @@ async fn main() -> Result<(), SysmonGeneratorError> {
 
 #[tracing::instrument]
 async fn handler() -> Result<(), SysmonGeneratorError> {
-    let bootstrap_servers = std::env::var("KAFKA_BOOTSTRAP_SERVERS")?;
-    let sasl_username = std::env::var("KAFKA_SASL_USERNAME")?;
-    let sasl_password = std::env::var("KAFKA_SASL_PASSWORD")?;
-    let consumer_group_name = std::env::var("GRAPH_GENERATOR_CONSUMER_GROUP")?;
-    let consumer_topic = "raw-logs".to_string();
-    let producer_topic = "generated-graphs".to_string();
+    let consumer_config = ConsumerConfig::parse();
+    let producer_config = ProducerConfig::parse();
 
     tracing::info!(
-        message = "configuring kafka stream processor",
-        bootstrap_servers = %bootstrap_servers,
-        consumer_group_name = %consumer_group_name,
-        consumer_topic = %consumer_topic,
-        producer_topic = %producer_topic,
+        message = "Configuring Kafka StreamProcessor",
+        consumer_config = ?consumer_config,
+        producer_config = ?producer_config,
     );
 
     // TODO: also construct a stream processor for retries
 
-    let stream_processor = StreamProcessor::new(
-        bootstrap_servers.clone(),
-        sasl_username,
-        sasl_password,
-        consumer_group_name.clone(),
-        consumer_topic.clone(),
-        producer_topic.clone(),
-    )?;
+    let stream_processor = StreamProcessor::new(consumer_config, producer_config)?;
 
-    tracing::info!(
-        message = "kafka stream processor configured successfully",
-        bootstrap_servers = %bootstrap_servers,
-        consumer_group_name = %consumer_group_name,
-        consumer_topic = %consumer_topic,
-        producer_topic = %producer_topic,
-    );
-    tracing::info!("starting up!");
+    tracing::info!(message = "Kafka StreamProcessor configured successfully");
 
     let stream = stream_processor.stream(event_handler)?;
 
@@ -103,12 +88,12 @@ async fn handler() -> Result<(), SysmonGeneratorError> {
                 if let Err(e) = res {
                     // TODO: retry the message?
                     tracing::error!(
-                        message = "error processing kafka message",
+                        message = "Error processing Kafka message",
                         reason = %e,
                     );
                 } else {
                     // TODO: collect some metrics
-                    tracing::debug!(message = "generated graph from sysmon event");
+                    tracing::debug!(message = "Generated graph from sysmon event");
                 }
             },
         )

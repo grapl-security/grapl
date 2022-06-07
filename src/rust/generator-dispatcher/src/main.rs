@@ -1,9 +1,6 @@
 use clap::StructOpt;
 use futures::StreamExt;
-use generator_dispatcher::config::{
-    build_consumer,
-    GeneratorDispatcherConfig,
-};
+use generator_dispatcher::config::GeneratorDispatcherConfig;
 use kafka::Consumer;
 use plugin_work_queue::client::{
     FromEnv,
@@ -38,8 +35,7 @@ impl GeneratorDispatcher {
     async fn new(config: GeneratorDispatcherConfig) -> Result<Self, Box<dyn std::error::Error>> {
         let plugin_work_queue_client = PluginWorkQueueServiceClient::from_env().await?;
 
-        let raw_logs_consumer: Consumer<Envelope<RawLog>> =
-            build_consumer(config.kafka_config, "raw-logs".to_string())?;
+        let raw_logs_consumer: Consumer<Envelope<RawLog>> = Consumer::new(config.kafka_config)?;
 
         Ok(Self {
             plugin_work_queue_client,
