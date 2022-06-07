@@ -622,6 +622,8 @@ job "grapl-core" {
         KAFKA_SASL_USERNAME       = var.kafka_credentials["generator-dispatcher"].sasl_username
         KAFKA_SASL_PASSWORD       = var.kafka_credentials["generator-dispatcher"].sasl_password
         KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_groups["generator-dispatcher"]
+        KAFKA_CONSUMER_TOPIC      = "raw-logs"
+        KAFKA_PRODUCER_TOPIC      = "generated-graphs"
 
         RUST_BACKTRACE                  = local.rust_backtrace
         RUST_LOG                        = var.rust_log
@@ -785,10 +787,12 @@ job "grapl-core" {
         OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
 
-        KAFKA_BOOTSTRAP_SERVERS        = var.kafka_bootstrap_servers
-        KAFKA_SASL_USERNAME            = var.kafka_credentials["node-identifier"].sasl_username
-        KAFKA_SASL_PASSWORD            = var.kafka_credentials["node-identifier"].sasl_password
-        NODE_IDENTIFIER_CONSUMER_GROUP = var.kafka_consumer_groups["node-identifier"]
+        KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME       = var.kafka_credentials["node-identifier"].sasl_username
+        KAFKA_SASL_PASSWORD       = var.kafka_credentials["node-identifier"].sasl_password
+        KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_groups["node-identifier"]
+        KAFKA_CONSUMER_TOPIC      = "generated-graphs"
+        KAFKA_PRODUCER_TOPIC      = "identified-graphs"
 
         GRAPL_SCHEMA_TABLE          = var.schema_table_name
         GRAPL_DYNAMIC_SESSION_TABLE = var.session_table_name
@@ -1141,10 +1145,14 @@ job "grapl-core" {
         OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port
 
-        KAFKA_BOOTSTRAP_SERVERS        = var.kafka_bootstrap_servers
-        KAFKA_SASL_USERNAME            = var.kafka_credentials["graph-generator"].sasl_username
-        KAFKA_SASL_PASSWORD            = var.kafka_credentials["graph-generator"].sasl_password
-        GRAPH_GENERATOR_CONSUMER_GROUP = var.kafka_consumer_groups["graph-generator"]
+        KAFKA_BOOTSTRAP_SERVERS   = var.kafka_bootstrap_servers
+        KAFKA_SASL_USERNAME       = var.kafka_credentials["graph-generator"].sasl_username
+        KAFKA_SASL_PASSWORD       = var.kafka_credentials["graph-generator"].sasl_password
+        KAFKA_CONSUMER_GROUP_NAME = var.kafka_consumer_groups["graph-generator"]
+
+        # Temp, until we change sysmon-generator to use the real Plugin SDK
+        KAFKA_CONSUMER_TOPIC = "raw-logs"
+        KAFKA_PRODUCER_TOPIC = "generated-graphs"
       }
     }
   }
@@ -1232,6 +1240,7 @@ job "grapl-core" {
         KAFKA_BOOTSTRAP_SERVERS                          = var.kafka_bootstrap_servers
         KAFKA_SASL_USERNAME                              = var.kafka_credentials["pipeline-ingress"].sasl_username
         KAFKA_SASL_PASSWORD                              = var.kafka_credentials["pipeline-ingress"].sasl_password
+        KAFKA_PRODUCER_TOPIC                             = "raw-logs"
 
         OTEL_EXPORTER_JAEGER_AGENT_HOST = local.tracing_jaeger_endpoint_host
         OTEL_EXPORTER_JAEGER_AGENT_PORT = local.tracing_jaeger_endpoint_port

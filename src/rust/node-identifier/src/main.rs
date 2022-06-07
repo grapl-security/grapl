@@ -1,6 +1,11 @@
+use clap::Parser;
 use futures::StreamExt;
 use grapl_config::env_helpers::FromEnv;
 use kafka::{
+    config::{
+        ConsumerConfig,
+        ProducerConfig,
+    },
     StreamProcessor,
     StreamProcessorError,
 };
@@ -75,41 +80,21 @@ async fn handler() -> Result<(), NodeIdentifierError> {
     );
     let node_identifier = NodeIdentifier::new(NodeDescriptionIdentifier::new(dyn_session_db, true));
 
-    let bootstrap_servers = std::env::var("KAFKA_BOOTSTRAP_SERVERS")?;
-    let sasl_username = std::env::var("KAFKA_SASL_USERNAME")?;
-    let sasl_password = std::env::var("KAFKA_SASL_PASSWORD")?;
-    let consumer_group_name = std::env::var("NODE_IDENTIFIER_CONSUMER_GROUP")?;
-    let consumer_topic = "generated-graphs".to_string();
-    let producer_topic = "identified-graphs".to_string();
+    let consumer_config = ConsumerConfig::parse();
+    let producer_config = ProducerConfig::parse();
 
     tracing::info!(
-        message = "configuring kafka stream processor",
-        bootstrap_servers = %bootstrap_servers,
-        consumer_group_name = %consumer_group_name,
-        consumer_topic = %consumer_topic,
-        producer_topic = %producer_topic,
+        message = "Configuring Kafka StreamProcessor",
+        consumer_config = ?consumer_config,
+        producer_config = ?producer_config,
     );
 
     // TODO: also construct a stream processor for retries
 
     let stream_processor: StreamProcessor<Envelope<GraphDescription>, Envelope<IdentifiedGraph>> =
-        StreamProcessor::new(
-            bootstrap_servers.clone(),
-            sasl_username,
-            sasl_password,
-            consumer_group_name.clone(),
-            consumer_topic.clone(),
-            producer_topic.clone(),
-        )?;
+        StreamProcessor::new(consumer_config, producer_config)?;
 
-    tracing::info!(
-        message = "kafka stream processor configured successfully",
-        bootstrap_servers = %bootstrap_servers,
-        consumer_group_name = %consumer_group_name,
-        consumer_topic = %consumer_topic,
-        producer_topic = %producer_topic,
-    );
-    tracing::info!("starting up!");
+    tracing::info!(message = "Kafka StreamProcessor configured successfully");
 
     let stream = stream_processor.stream::<_, _, StreamProcessorError>(
         move |event: Result<Envelope<GraphDescription>, StreamProcessorError>| {

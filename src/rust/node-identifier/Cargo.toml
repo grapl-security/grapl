@@ -18,6 +18,11 @@ new_integration_tests = []
 [dependencies]
 bytes = "1.1.0"
 chrono = "0.4.19"
+clap = { version = "3.0", default_features = false, features = [
+  "std",
+  "env",
+  "derive"
+] }
 failure = "0.1.8"
 futures = "0.3"
 grapl-utils = { path = "../grapl-utils" }
