@@ -9,7 +9,7 @@ use std::{
 
 use clap::Parser;
 use kafka::{
-    config::KafkaProducerConfig,
+    config::ProducerConfig,
     ConfigurationError as KafkaConfigurationError,
     Producer,
     ProducerError,
@@ -139,7 +139,7 @@ async fn handler() -> Result<(), ConfigurationError> {
     let healthcheck_polling_interval_ms =
         std::env::var("PIPELINE_INGRESS_HEALTHCHECK_POLLING_INTERVAL_MS")?.parse()?;
 
-    let producer_config = KafkaProducerConfig::parse();
+    let producer_config = ProducerConfig::parse();
 
     let raw_logs_topic = "raw-logs".to_string();
 

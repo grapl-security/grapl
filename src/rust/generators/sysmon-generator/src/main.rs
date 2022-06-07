@@ -2,8 +2,8 @@ use clap::Parser;
 use futures::StreamExt;
 use kafka::{
     config::{
-        KafkaConsumerConfig,
-        KafkaProducerConfig,
+        ConsumerConfig,
+        ProducerConfig,
     },
     StreamProcessor,
     StreamProcessorError,
@@ -64,9 +64,9 @@ async fn main() -> Result<(), SysmonGeneratorError> {
 
 #[tracing::instrument]
 async fn handler() -> Result<(), SysmonGeneratorError> {
-    let consumer_config = KafkaConsumerConfig::parse();
+    let consumer_config = ConsumerConfig::parse();
     let consumer_topic = "raw-logs".to_string();
-    let producer_config = KafkaProducerConfig::parse();
+    let producer_config = ProducerConfig::parse();
     let producer_topic = "generated-graphs".to_string();
 
     tracing::info!(

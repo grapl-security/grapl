@@ -3,8 +3,8 @@ pub mod config;
 use std::marker::PhantomData;
 
 use config::{
-    KafkaConsumerConfig,
-    KafkaProducerConfig,
+    ConsumerConfig,
+    ProducerConfig,
 };
 use futures::{
     stream::{
@@ -117,7 +117,7 @@ where
 /// A producer publishes data to a topic. This producer serializes the data it
 /// is given before publishing.
 impl<T: SerDe> Producer<T> {
-    pub fn new(config: KafkaProducerConfig, topic: String) -> Result<Self, ConfigurationError> {
+    pub fn new(config: ProducerConfig, topic: String) -> Result<Self, ConfigurationError> {
         Ok(Self {
             producer: producer(
                 config.bootstrap_servers,
@@ -196,7 +196,7 @@ where
 }
 
 impl<T: SerDe> Consumer<T> {
-    pub fn new(config: KafkaConsumerConfig, topic: String) -> Result<Self, ConfigurationError> {
+    pub fn new(config: ConsumerConfig, topic: String) -> Result<Self, ConfigurationError> {
         Ok(Self {
             consumer: consumer(
                 config.bootstrap_servers,
@@ -265,9 +265,9 @@ where
     P: SerDe,
 {
     pub fn new(
-        consumer_config: KafkaConsumerConfig,
+        consumer_config: ConsumerConfig,
         consumer_topic: String,
-        producer_config: KafkaProducerConfig,
+        producer_config: ProducerConfig,
         producer_topic: String,
     ) -> Result<StreamProcessor<C, P>, ConfigurationError> {
         Ok(StreamProcessor {

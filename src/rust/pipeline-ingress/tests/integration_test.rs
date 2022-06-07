@@ -6,7 +6,7 @@ use bytes::Bytes;
 use clap::Parser;
 use futures::StreamExt;
 use kafka::{
-    config::KafkaConsumerConfig,
+    config::ConsumerConfig,
     Consumer,
     ConsumerError,
 };
@@ -42,7 +42,7 @@ use uuid::Uuid;
 
 struct PipelineIngressTestContext {
     grpc_client: PipelineIngressClient,
-    consumer_config: KafkaConsumerConfig,
+    consumer_config: ConsumerConfig,
     _guard: WorkerGuard,
 }
 
@@ -95,7 +95,7 @@ impl AsyncTestContext for PipelineIngressTestContext {
             .await
             .expect("could not configure gRPC client");
 
-        let consumer_config = KafkaConsumerConfig::parse();
+        let consumer_config = ConsumerConfig::parse();
 
         PipelineIngressTestContext {
             grpc_client,

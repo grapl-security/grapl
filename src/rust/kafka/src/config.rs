@@ -1,5 +1,5 @@
 #[derive(clap::Parser, Clone, Debug)]
-pub struct KafkaConsumerConfig {
+pub struct ConsumerConfig {
     #[clap(long, env = "KAFKA_BOOTSTRAP_SERVERS")]
     pub bootstrap_servers: String,
     #[clap(long, env = "KAFKA_SASL_USERNAME")]
@@ -11,7 +11,7 @@ pub struct KafkaConsumerConfig {
 }
 
 #[derive(clap::Parser, Clone, Debug)]
-pub struct KafkaProducerConfig {
+pub struct ProducerConfig {
     #[clap(long, env = "KAFKA_BOOTSTRAP_SERVERS")]
     pub bootstrap_servers: String,
     #[clap(long, env = "KAFKA_SASL_USERNAME")]

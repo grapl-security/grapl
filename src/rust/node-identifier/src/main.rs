@@ -3,8 +3,8 @@ use futures::StreamExt;
 use grapl_config::env_helpers::FromEnv;
 use kafka::{
     config::{
-        KafkaConsumerConfig,
-        KafkaProducerConfig,
+        ConsumerConfig,
+        ProducerConfig,
     },
     StreamProcessor,
     StreamProcessorError,
@@ -80,9 +80,9 @@ async fn handler() -> Result<(), NodeIdentifierError> {
     );
     let node_identifier = NodeIdentifier::new(NodeDescriptionIdentifier::new(dyn_session_db, true));
 
-    let consumer_config = KafkaConsumerConfig::parse();
+    let consumer_config = ConsumerConfig::parse();
     let consumer_topic = "generated-graphs".to_string();
-    let producer_config = KafkaProducerConfig::parse();
+    let producer_config = ProducerConfig::parse();
     let producer_topic = "identified-graphs".to_string();
 
     tracing::info!(
