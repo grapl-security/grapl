@@ -40,6 +40,8 @@ use tracing_subscriber::{
 };
 use uuid::Uuid;
 
+static CONSUMER_TOPIC: &'static str = "raw-logs";
+
 struct PipelineIngressTestContext {
     grpc_client: PipelineIngressClient,
     consumer_config: ConsumerConfig,
@@ -95,7 +97,10 @@ impl AsyncTestContext for PipelineIngressTestContext {
             .await
             .expect("could not configure gRPC client");
 
-        let consumer_config = ConsumerConfig::parse();
+        let consumer_config = ConsumerConfig {
+            topic: CONSUMER_TOPIC.to_string(),
+            ..ConsumerConfig::parse()
+        };
 
         PipelineIngressTestContext {
             grpc_client,
@@ -113,8 +118,9 @@ async fn test_publish_raw_log_sends_message_to_kafka(ctx: &mut PipelineIngressTe
     let log_event: Bytes = "test".into();
 
     tracing::info!("configuring kafka consumer");
-    let kafka_consumer = Consumer::new(ctx.consumer_config.clone(), "raw-logs".to_string())
-        .expect("could not configure kafka consumer");
+
+    let kafka_consumer =
+        Consumer::new(ctx.consumer_config.clone()).expect("could not configure kafka consumer");
 
     // we'll use this channel to communicate that the consumer is ready to
     // consume messages

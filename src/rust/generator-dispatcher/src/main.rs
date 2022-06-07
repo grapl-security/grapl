@@ -35,8 +35,7 @@ impl GeneratorDispatcher {
     async fn new(config: GeneratorDispatcherConfig) -> Result<Self, Box<dyn std::error::Error>> {
         let plugin_work_queue_client = PluginWorkQueueServiceClient::from_env().await?;
 
-        let raw_logs_consumer: Consumer<Envelope<RawLog>> =
-            Consumer::new(config.kafka_config, "raw-logs".to_string())?;
+        let raw_logs_consumer: Consumer<Envelope<RawLog>> = Consumer::new(config.kafka_config)?;
 
         Ok(Self {
             plugin_work_queue_client,

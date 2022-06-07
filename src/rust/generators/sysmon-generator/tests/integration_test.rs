@@ -63,6 +63,8 @@ struct SysmonGeneratorTestContext {
     _guard: WorkerGuard,
 }
 
+static CONSUMER_TOPIC: &'static str = "generated-graphs";
+
 #[async_trait::async_trait]
 impl AsyncTestContext for SysmonGeneratorTestContext {
     async fn setup() -> Self {
@@ -112,7 +114,10 @@ impl AsyncTestContext for SysmonGeneratorTestContext {
             .await
             .expect("could not configure gRPC client");
 
-        let consumer_config = ConsumerConfig::parse();
+        let consumer_config = ConsumerConfig {
+            topic: CONSUMER_TOPIC.to_string(),
+            ..ConsumerConfig::parse()
+        };
 
         SysmonGeneratorTestContext {
             pipeline_ingress_client,
@@ -129,8 +134,8 @@ async fn test_sysmon_event_produces_expected_graph(ctx: &mut SysmonGeneratorTest
     let tenant_id = Uuid::new_v4();
 
     tracing::info!("configuring kafka consumer");
-    let kafka_consumer = Consumer::new(ctx.consumer_config.clone(), "generated-graphs".to_string())
-        .expect("could not configure kafka consumer");
+    let kafka_consumer =
+        Consumer::new(ctx.consumer_config.clone()).expect("could not configure kafka consumer");
 
     // we'll use this channel to communicate that the consumer is ready to
     // consume messages

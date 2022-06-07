@@ -135,6 +135,8 @@ job "integration-tests-new" {
         KAFKA_SASL_USERNAME       = var.integration_tests_kafka_sasl_username
         KAFKA_SASL_PASSWORD       = var.integration_tests_kafka_sasl_password
         KAFKA_CONSUMER_GROUP_NAME = var.integration_tests_kafka_consumer_group_name
+        # (this is an invalid topic name, so it'd throw an error if consumed)
+        KAFKA_CONSUMER_TOPIC = "<replace me at integration test setup>"
 
         NOMAD_SERVICE_ADDRESS = "${attr.unique.network.ip-address}:4646"
       }

@@ -65,29 +65,19 @@ async fn main() -> Result<(), SysmonGeneratorError> {
 #[tracing::instrument]
 async fn handler() -> Result<(), SysmonGeneratorError> {
     let consumer_config = ConsumerConfig::parse();
-    let consumer_topic = "raw-logs".to_string();
     let producer_config = ProducerConfig::parse();
-    let producer_topic = "generated-graphs".to_string();
 
     tracing::info!(
         message = "configuring kafka stream processor",
         consumer_config = ?consumer_config,
-        consumer_topic = %consumer_topic,
         producer_config = ?producer_config,
-        producer_topic = %producer_topic,
     );
 
     // TODO: also construct a stream processor for retries
 
-    let stream_processor = StreamProcessor::new(
-        consumer_config,
-        consumer_topic,
-        producer_config,
-        producer_topic,
-    )?;
+    let stream_processor = StreamProcessor::new(consumer_config, producer_config)?;
 
     tracing::info!(message = "kafka stream processor configured successfully",);
-    tracing::info!("starting up!");
 
     let stream = stream_processor.stream(event_handler)?;
 

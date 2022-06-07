@@ -45,6 +45,8 @@ use tracing_subscriber::{
 };
 use uuid::Uuid;
 
+static CONSUMER_TOPIC: &'static str = "identified-graphs";
+
 fn find_node<'a>(
     graph: &'a IdentifiedGraph,
     o_p_name: &str,
@@ -112,7 +114,10 @@ impl AsyncTestContext for NodeIdentifierTestContext {
             .await
             .expect("could not configure gRPC client");
 
-        let consumer_config = ConsumerConfig::parse();
+        let consumer_config = ConsumerConfig {
+            topic: CONSUMER_TOPIC.to_string(),
+            ..ConsumerConfig::parse()
+        };
 
         NodeIdentifierTestContext {
             pipeline_ingress_client,
@@ -130,8 +135,7 @@ async fn test_sysmon_event_produces_identified_graph(ctx: &mut NodeIdentifierTes
 
     tracing::info!("configuring kafka consumer");
     let kafka_consumer =
-        Consumer::new(ctx.consumer_config.clone(), "identified-graphs".to_string())
-            .expect("could not configure kafka consumer");
+        Consumer::new(ctx.consumer_config.clone()).expect("could not configure kafka consumer");
 
     // we'll use this channel to communicate that the consumer is ready to
     // consume messages

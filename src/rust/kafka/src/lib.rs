@@ -117,14 +117,14 @@ where
 /// A producer publishes data to a topic. This producer serializes the data it
 /// is given before publishing.
 impl<T: SerDe> Producer<T> {
-    pub fn new(config: ProducerConfig, topic: String) -> Result<Self, ConfigurationError> {
+    pub fn new(config: ProducerConfig) -> Result<Self, ConfigurationError> {
         Ok(Self {
             producer: producer(
                 config.bootstrap_servers,
                 config.sasl_username,
                 config.sasl_password,
             )?,
-            topic,
+            topic: config.topic,
             _t: PhantomData,
         })
     }
@@ -196,7 +196,7 @@ where
 }
 
 impl<T: SerDe> Consumer<T> {
-    pub fn new(config: ConsumerConfig, topic: String) -> Result<Self, ConfigurationError> {
+    pub fn new(config: ConsumerConfig) -> Result<Self, ConfigurationError> {
         Ok(Self {
             consumer: consumer(
                 config.bootstrap_servers,
@@ -204,7 +204,7 @@ impl<T: SerDe> Consumer<T> {
                 config.sasl_password,
                 config.consumer_group_name,
             )?,
-            topic,
+            topic: config.topic,
             _t: PhantomData,
         })
     }
@@ -266,13 +266,11 @@ where
 {
     pub fn new(
         consumer_config: ConsumerConfig,
-        consumer_topic: String,
         producer_config: ProducerConfig,
-        producer_topic: String,
     ) -> Result<StreamProcessor<C, P>, ConfigurationError> {
         Ok(StreamProcessor {
-            consumer: Consumer::new(consumer_config, consumer_topic)?,
-            producer: Producer::new(producer_config, producer_topic)?,
+            consumer: Consumer::new(consumer_config)?,
+            producer: Producer::new(producer_config)?,
         })
     }
 
