@@ -1693,14 +1693,21 @@ name = "generator-dispatcher"
 version = "0.0.1"
 dependencies = [
  "async-trait",
+ "bytes",
  "clap 3.1.18",
  "futures",
  "grapl-config",
  "kafka",
+ "opentelemetry 0.16.0",
+ "opentelemetry-jaeger",
  "plugin-work-queue",
  "rust-proto-new",
+ "test-context",
  "tokio",
  "tracing",
+ "tracing-appender",
+ "tracing-opentelemetry 0.16.0",
+ "tracing-subscriber",
  "uuid",
 ]
 
