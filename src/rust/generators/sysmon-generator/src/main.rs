@@ -68,7 +68,7 @@ async fn handler() -> Result<(), SysmonGeneratorError> {
     let producer_config = ProducerConfig::parse();
 
     tracing::info!(
-        message = "configuring kafka stream processor",
+        message = "Configuring Kafka StreamProcessor",
         consumer_config = ?consumer_config,
         producer_config = ?producer_config,
     );
@@ -77,7 +77,7 @@ async fn handler() -> Result<(), SysmonGeneratorError> {
 
     let stream_processor = StreamProcessor::new(consumer_config, producer_config)?;
 
-    tracing::info!(message = "kafka stream processor configured successfully",);
+    tracing::info!(message = "Kafka StreamProcessor configured successfully");
 
     let stream = stream_processor.stream(event_handler)?;
 
@@ -88,12 +88,12 @@ async fn handler() -> Result<(), SysmonGeneratorError> {
                 if let Err(e) = res {
                     // TODO: retry the message?
                     tracing::error!(
-                        message = "error processing kafka message",
+                        message = "Error processing Kafka message",
                         reason = %e,
                     );
                 } else {
                     // TODO: collect some metrics
-                    tracing::debug!(message = "generated graph from sysmon event");
+                    tracing::debug!(message = "Generated graph from sysmon event");
                 }
             },
         )

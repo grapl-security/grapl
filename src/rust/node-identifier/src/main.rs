@@ -84,7 +84,7 @@ async fn handler() -> Result<(), NodeIdentifierError> {
     let producer_config = ProducerConfig::parse();
 
     tracing::info!(
-        message = "configuring kafka stream processor",
+        message = "Configuring Kafka StreamProcessor",
         consumer_config = ?consumer_config,
         producer_config = ?producer_config,
     );
@@ -94,7 +94,7 @@ async fn handler() -> Result<(), NodeIdentifierError> {
     let stream_processor: StreamProcessor<Envelope<GraphDescription>, Envelope<IdentifiedGraph>> =
         StreamProcessor::new(consumer_config, producer_config)?;
 
-    tracing::info!(message = "kafka stream processor configured successfully",);
+    tracing::info!(message = "Kafka StreamProcessor configured successfully");
 
     let stream = stream_processor.stream::<_, _, StreamProcessorError>(
         move |event: Result<Envelope<GraphDescription>, StreamProcessorError>| {
