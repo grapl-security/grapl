@@ -1,10 +1,12 @@
 use std::time::Duration;
 
-use clap::Parser;
-use kafka::config::ConsumerConfig;
 use opentelemetry::{
     global,
     sdk::propagation::TraceContextPropagator,
+};
+use plugin_work_queue::client::{
+    FromEnv,
+    PluginWorkQueueServiceClient,
 };
 use rust_proto_new::{
     graplinc::grapl::api::pipeline_ingress::v1beta1::client::PipelineIngressClient,
@@ -19,11 +21,9 @@ use tracing_subscriber::{
 
 pub struct GeneratorDispatcherTestContext {
     pub pipeline_ingress_client: PipelineIngressClient,
-    pub consumer_config: ConsumerConfig,
+    pub plugin_work_queue_client: PluginWorkQueueServiceClient,
     pub _guard: WorkerGuard,
 }
-
-static CONSUMER_TOPIC: &'static str = "raw-logs";
 
 #[async_trait::async_trait]
 impl AsyncTestContext for GeneratorDispatcherTestContext {
@@ -74,13 +74,13 @@ impl AsyncTestContext for GeneratorDispatcherTestContext {
             .await
             .expect("could not configure gRPC client");
 
-        let consumer_config = ConsumerConfig {
-            topic: CONSUMER_TOPIC.to_string(),
-            ..ConsumerConfig::parse()
-        };
+        let plugin_work_queue_client = PluginWorkQueueServiceClient::from_env()
+            .await
+            .expect("plugin-work-queue client");
+
         GeneratorDispatcherTestContext {
             pipeline_ingress_client,
-            consumer_config,
+            plugin_work_queue_client,
             _guard,
         }
     }
