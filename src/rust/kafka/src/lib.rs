@@ -134,15 +134,12 @@ impl<T: SerDe> Producer<T> {
         config: KafkaProducerConfig,
         topic: String,
     ) -> Result<Producer<T>, ConfigurationError> {
-        Ok(Producer {
-            producer: producer(
-                config.bootstrap_servers,
-                config.sasl_username,
-                config.sasl_password,
-            )?,
-            topic,
-            _t: PhantomData,
-        })
+        Self::new(
+            config.bootstrap_servers,
+            config.sasl_username,
+            config.sasl_password,
+            topic
+        )
     }
 
     #[tracing::instrument(err, skip(self))]
@@ -235,7 +232,7 @@ impl<T: SerDe> Consumer<T> {
         config: KafkaConsumerConfig,
         topic: String,
     ) -> Result<Self, ConfigurationError> {
-        Consumer::new(
+        Self::new(
             config.bootstrap_servers,
             config.sasl_username,
             config.sasl_password,
