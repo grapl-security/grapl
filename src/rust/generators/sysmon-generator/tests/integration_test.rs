@@ -129,9 +129,8 @@ async fn test_sysmon_event_produces_expected_graph(ctx: &mut SysmonGeneratorTest
     let tenant_id = Uuid::new_v4();
 
     tracing::info!("configuring kafka consumer");
-    let kafka_consumer =
-        Consumer::new_from_config(ctx.consumer_config.clone(), "generated-graphs".to_string())
-            .expect("could not configure kafka consumer");
+    let kafka_consumer = Consumer::new(ctx.consumer_config.clone(), "generated-graphs".to_string())
+        .expect("could not configure kafka consumer");
 
     // we'll use this channel to communicate that the consumer is ready to
     // consume messages

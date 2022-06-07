@@ -113,9 +113,8 @@ async fn test_publish_raw_log_sends_message_to_kafka(ctx: &mut PipelineIngressTe
     let log_event: Bytes = "test".into();
 
     tracing::info!("configuring kafka consumer");
-    let kafka_consumer =
-        Consumer::new_from_config(ctx.consumer_config.clone(), "raw-logs".to_string())
-            .expect("could not configure kafka consumer");
+    let kafka_consumer = Consumer::new(ctx.consumer_config.clone(), "raw-logs".to_string())
+        .expect("could not configure kafka consumer");
 
     // we'll use this channel to communicate that the consumer is ready to
     // consume messages

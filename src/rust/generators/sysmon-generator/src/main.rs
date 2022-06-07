@@ -79,7 +79,7 @@ async fn handler() -> Result<(), SysmonGeneratorError> {
 
     // TODO: also construct a stream processor for retries
 
-    let stream_processor = StreamProcessor::new_from_config(
+    let stream_processor = StreamProcessor::new(
         consumer_config,
         consumer_topic,
         producer_config,

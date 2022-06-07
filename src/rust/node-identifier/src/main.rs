@@ -96,7 +96,7 @@ async fn handler() -> Result<(), NodeIdentifierError> {
     // TODO: also construct a stream processor for retries
 
     let stream_processor: StreamProcessor<Envelope<GraphDescription>, Envelope<IdentifiedGraph>> =
-        StreamProcessor::new_from_config(
+        StreamProcessor::new(
             consumer_config,
             consumer_topic,
             producer_config,

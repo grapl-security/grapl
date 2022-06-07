@@ -149,7 +149,7 @@ async fn handler() -> Result<(), ConfigurationError> {
         topic = %raw_logs_topic,
     );
     let producer: Producer<Envelope<RawLog>> =
-        Producer::new_from_config(producer_config, raw_logs_topic.clone())?;
+        Producer::new(producer_config, raw_logs_topic.clone())?;
     tracing::info!(message = "kafka producer configured successfully",);
 
     tracing::info!(

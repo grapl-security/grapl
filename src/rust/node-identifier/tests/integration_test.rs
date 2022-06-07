@@ -130,7 +130,7 @@ async fn test_sysmon_event_produces_identified_graph(ctx: &mut NodeIdentifierTes
 
     tracing::info!("configuring kafka consumer");
     let kafka_consumer =
-        Consumer::new_from_config(ctx.consumer_config.clone(), "identified-graphs".to_string())
+        Consumer::new(ctx.consumer_config.clone(), "identified-graphs".to_string())
             .expect("could not configure kafka consumer");
 
     // we'll use this channel to communicate that the consumer is ready to

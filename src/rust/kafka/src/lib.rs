@@ -117,29 +117,16 @@ where
 /// A producer publishes data to a topic. This producer serializes the data it
 /// is given before publishing.
 impl<T: SerDe> Producer<T> {
-    pub fn new(
-        bootstrap_servers: String,
-        sasl_username: String,
-        sasl_password: String,
-        topic: String,
-    ) -> Result<Producer<T>, ConfigurationError> {
-        Ok(Producer {
-            producer: producer(bootstrap_servers, sasl_username, sasl_password)?,
+    pub fn new(config: KafkaProducerConfig, topic: String) -> Result<Self, ConfigurationError> {
+        Ok(Self {
+            producer: producer(
+                config.bootstrap_servers,
+                config.sasl_username,
+                config.sasl_password,
+            )?,
             topic,
             _t: PhantomData,
         })
-    }
-
-    pub fn new_from_config(
-        config: KafkaProducerConfig,
-        topic: String,
-    ) -> Result<Producer<T>, ConfigurationError> {
-        Self::new(
-            config.bootstrap_servers,
-            config.sasl_username,
-            config.sasl_password,
-            topic
-        )
     }
 
     #[tracing::instrument(err, skip(self))]
@@ -209,36 +196,17 @@ where
 }
 
 impl<T: SerDe> Consumer<T> {
-    pub fn new(
-        bootstrap_servers: String,
-        sasl_username: String,
-        sasl_password: String,
-        consumer_group_name: String,
-        topic: String,
-    ) -> Result<Self, ConfigurationError> {
-        Ok(Consumer {
+    pub fn new(config: KafkaConsumerConfig, topic: String) -> Result<Self, ConfigurationError> {
+        Ok(Self {
             consumer: consumer(
-                bootstrap_servers,
-                sasl_username,
-                sasl_password,
-                consumer_group_name,
+                config.bootstrap_servers,
+                config.sasl_username,
+                config.sasl_password,
+                config.consumer_group_name,
             )?,
             topic,
             _t: PhantomData,
         })
-    }
-
-    pub fn new_from_config(
-        config: KafkaConsumerConfig,
-        topic: String,
-    ) -> Result<Self, ConfigurationError> {
-        Self::new(
-            config.bootstrap_servers,
-            config.sasl_username,
-            config.sasl_password,
-            config.consumer_group_name,
-            topic,
-        )
     }
 
     #[tracing::instrument(err, skip(self))]
@@ -297,39 +265,14 @@ where
     P: SerDe,
 {
     pub fn new(
-        bootstrap_servers: String,
-        sasl_username: String,
-        sasl_password: String,
-        consumer_group_name: String,
-        consumer_topic: String,
-        producer_topic: String,
-    ) -> Result<StreamProcessor<C, P>, ConfigurationError> {
-        Ok(StreamProcessor {
-            consumer: Consumer::new(
-                bootstrap_servers.clone(),
-                sasl_username.clone(),
-                sasl_password.clone(),
-                consumer_group_name,
-                consumer_topic,
-            )?,
-            producer: Producer::new(
-                bootstrap_servers,
-                sasl_username,
-                sasl_password,
-                producer_topic,
-            )?,
-        })
-    }
-
-    pub fn new_from_config(
         consumer_config: KafkaConsumerConfig,
         consumer_topic: String,
         producer_config: KafkaProducerConfig,
         producer_topic: String,
     ) -> Result<StreamProcessor<C, P>, ConfigurationError> {
         Ok(StreamProcessor {
-            consumer: Consumer::new_from_config(consumer_config, consumer_topic)?,
-            producer: Producer::new_from_config(producer_config, producer_topic)?,
+            consumer: Consumer::new(consumer_config, consumer_topic)?,
+            producer: Producer::new(producer_config, producer_topic)?,
         })
     }
 
