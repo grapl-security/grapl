@@ -145,7 +145,7 @@ async fn test_sysmon_event_produces_identified_graph(ctx: &mut NodeIdentifierTes
     let kafka_subscriber = tokio::task::spawn(async move {
         let stream = kafka_consumer
             .stream()
-            .expect("could not subscribe to the identified-graphs topic");
+            .expect("could not subscribe to the topic");
 
         // notify the consumer that we're ready to receive messages
         tx.send(())

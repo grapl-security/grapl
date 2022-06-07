@@ -1,9 +1,7 @@
-#![cfg(feature = "new_integration_tests")]
-
 use std::time::Duration;
 
 use clap::Parser;
-use kafka::config::KafkaConsumerConfig;
+use kafka::config::ConsumerConfig;
 use opentelemetry::{
     global,
     sdk::propagation::TraceContextPropagator,
@@ -21,9 +19,11 @@ use tracing_subscriber::{
 
 pub struct GeneratorDispatcherTestContext {
     pub pipeline_ingress_client: PipelineIngressClient,
-    pub consumer_config: KafkaConsumerConfig,
+    pub consumer_config: ConsumerConfig,
     pub _guard: WorkerGuard,
 }
+
+static CONSUMER_TOPIC: &'static str = "raw-logs";
 
 #[async_trait::async_trait]
 impl AsyncTestContext for GeneratorDispatcherTestContext {
@@ -74,9 +74,13 @@ impl AsyncTestContext for GeneratorDispatcherTestContext {
             .await
             .expect("could not configure gRPC client");
 
+        let consumer_config = ConsumerConfig {
+            topic: CONSUMER_TOPIC.to_string(),
+            ..ConsumerConfig::parse()
+        };
         GeneratorDispatcherTestContext {
             pipeline_ingress_client,
-            consumer_config: KafkaConsumerConfig::parse(),
+            consumer_config,
             _guard,
         }
     }

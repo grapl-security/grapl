@@ -27,13 +27,13 @@ use test_utils::context::GeneratorDispatcherTestContext;
 
 #[test_context(GeneratorDispatcherTestContext)]
 #[tokio::test]
-async fn test_sysmon_event_produces_expected_graph(ctx: &mut SysmonGeneratorTestContext) {
+async fn test_sysmon_event_produces_expected_graph(ctx: &mut GeneratorDispatcherTestContext) {
     let event_source_id = Uuid::new_v4();
     let tenant_id = Uuid::new_v4();
 
     tracing::info!("configuring kafka consumer");
     let kafka_consumer =
-        Consumer::new_from_config(ctx.consumer_config, "generated-graphs".to_string())
+        Consumer::new(ctx.consumer_config)
             .expect("could not configure kafka consumer");
 
     // we'll use this channel to communicate that the consumer is ready to
@@ -44,7 +44,7 @@ async fn test_sysmon_event_produces_expected_graph(ctx: &mut SysmonGeneratorTest
     let kafka_subscriber = tokio::task::spawn(async move {
         let stream = kafka_consumer
             .stream()
-            .expect("could not subscribe to the generated-graphs topic");
+            .expect("could not subscribe to the topic");
 
         // notify the consumer that we're ready to receive messages
         tx.send(())
@@ -101,7 +101,7 @@ async fn test_sysmon_event_produces_expected_graph(ctx: &mut SysmonGeneratorTest
     rx.await
         .expect("failed to receive notification that consumer is consuming");
 
-    let log_event: Bytes = r#"<Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><System><Provider Name='Microsoft-Windows-Sysmon' Guid='{5770385F-C22A-43E0-BF4C-06F5698FFBD9}'/><EventID>1</EventID><Version>5</Version><Level>4</Level><Task>1</Task><Opcode>0</Opcode><Keywords>0x8000000000000000</Keywords><TimeCreated SystemTime='2019-07-24T18:05:14.402156600Z'/><EventRecordID>550</EventRecordID><Correlation/><Execution ProcessID='3324' ThreadID='3220'/><Channel>Microsoft-Windows-Sysmon/Operational</Channel><Computer>DESKTOP-FVSHABR</Computer><Security UserID='S-1-5-18'/></System><EventData><Data Name='RuleName'></Data><Data Name='UtcTime'>2019-07-24 18:05:14.399</Data><Data Name='ProcessGuid'>{87E8D3BD-9DDA-5D38-0000-0010A3941D00}</Data><Data Name='ProcessId'>5752</Data><Data Name='Image'>C:\Windows\System32\cmd.exe</Data><Data Name='FileVersion'>10.0.10240.16384 (th1.150709-1700)</Data><Data Name='Description'>Windows Command Processor</Data><Data Name='Product'>Microsoft� Windows� Operating System</Data><Data Name='Company'>Microsoft Corporation</Data><Data Name='OriginalFileName'>Cmd.Exe</Data><Data Name='CommandLine'>"cmd" /C "msiexec /quiet /i cmd.msi"</Data><Data Name='CurrentDirectory'>C:\Users\grapltest\Downloads\</Data><Data Name='User'>DESKTOP-FVSHABR\grapltest</Data><Data Name='LogonGuid'>{87E8D3BD-99C8-5D38-0000-002088140200}</Data><Data Name='LogonId'>0x21488</Data><Data Name='TerminalSessionId'>1</Data><Data Name='IntegrityLevel'>Medium</Data><Data Name='Hashes'>MD5=A6177D080759CF4A03EF837A38F62401,SHA256=79D1FFABDD7841D9043D4DDF1F93721BCD35D823614411FD4EAB5D2C16A86F35</Data><Data Name='ParentProcessGuid'>{87E8D3BD-9DD8-5D38-0000-00109F871D00}</Data><Data Name='ParentProcessId'>6132</Data><Data Name='ParentImage'>C:\Users\grapltest\Downloads\svchost.exe</Data><Data Name='ParentCommandLine'>.\svchost.exe</Data></EventData></Event>"#.into();
+    let log_event: Bytes = r#"i am some sort of raw log event"#;
 
     tracing::info!("sending publish_raw_log request");
     ctx.pipeline_ingress_client
