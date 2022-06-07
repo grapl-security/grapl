@@ -2,7 +2,10 @@ pub mod config;
 
 use std::marker::PhantomData;
 
-use config::KafkaConsumerConfig;
+use config::{
+    KafkaConsumerConfig,
+    KafkaProducerConfig,
+};
 use futures::{
     stream::{
         Stream,
@@ -122,6 +125,21 @@ impl<T: SerDe> Producer<T> {
     ) -> Result<Producer<T>, ConfigurationError> {
         Ok(Producer {
             producer: producer(bootstrap_servers, sasl_username, sasl_password)?,
+            topic,
+            _t: PhantomData,
+        })
+    }
+
+    pub fn new_from_config(
+        config: KafkaProducerConfig,
+        topic: String,
+    ) -> Result<Producer<T>, ConfigurationError> {
+        Ok(Producer {
+            producer: producer(
+                config.bootstrap_servers,
+                config.sasl_username,
+                config.sasl_password,
+            )?,
             topic,
             _t: PhantomData,
         })
@@ -303,6 +321,18 @@ where
                 sasl_password,
                 producer_topic,
             )?,
+        })
+    }
+
+    pub fn new_from_config(
+        consumer_config: KafkaConsumerConfig,
+        consumer_topic: String,
+        producer_config: KafkaProducerConfig,
+        producer_topic: String,
+    ) -> Result<StreamProcessor<C, P>, ConfigurationError> {
+        Ok(StreamProcessor {
+            consumer: Consumer::new_from_config(consumer_config, consumer_topic)?,
+            producer: Producer::new_from_config(producer_config, producer_topic)?,
         })
     }
 

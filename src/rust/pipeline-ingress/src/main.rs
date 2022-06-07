@@ -7,7 +7,9 @@ use std::{
     },
 };
 
+use clap::Parser;
 use kafka::{
+    config::KafkaProducerConfig,
     ConfigurationError as KafkaConfigurationError,
     Producer,
     ProducerError,
@@ -137,28 +139,18 @@ async fn handler() -> Result<(), ConfigurationError> {
     let healthcheck_polling_interval_ms =
         std::env::var("PIPELINE_INGRESS_HEALTHCHECK_POLLING_INTERVAL_MS")?.parse()?;
 
-    let bootstrap_servers = std::env::var("KAFKA_BOOTSTRAP_SERVERS")?;
-    let sasl_username = std::env::var("KAFKA_SASL_USERNAME")?;
-    let sasl_password = std::env::var("KAFKA_SASL_PASSWORD")?;
+    let producer_config = KafkaProducerConfig::parse();
 
     let raw_logs_topic = "raw-logs".to_string();
 
     tracing::info!(
         message = "configuring kafka producer",
-        bootstrap_servers = %bootstrap_servers,
+        producer_config = ?producer_config,
         topic = %raw_logs_topic,
     );
-    let producer: Producer<Envelope<RawLog>> = Producer::new(
-        bootstrap_servers.clone(),
-        sasl_username,
-        sasl_password,
-        raw_logs_topic.clone(),
-    )?;
-    tracing::info!(
-        message = "kafka producer configured successfully",
-        bootstrap_servers = %bootstrap_servers,
-        topic = %raw_logs_topic,
-    );
+    let producer: Producer<Envelope<RawLog>> =
+        Producer::new_from_config(producer_config, raw_logs_topic.clone())?;
+    tracing::info!(message = "kafka producer configured successfully",);
 
     tracing::info!(
         message = "configuring gRPC server",

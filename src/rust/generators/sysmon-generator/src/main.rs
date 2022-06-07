@@ -1,5 +1,10 @@
+use clap::Parser;
 use futures::StreamExt;
 use kafka::{
+    config::{
+        KafkaConsumerConfig,
+        KafkaProducerConfig,
+    },
     StreamProcessor,
     StreamProcessorError,
 };
@@ -59,39 +64,29 @@ async fn main() -> Result<(), SysmonGeneratorError> {
 
 #[tracing::instrument]
 async fn handler() -> Result<(), SysmonGeneratorError> {
-    let bootstrap_servers = std::env::var("KAFKA_BOOTSTRAP_SERVERS")?;
-    let sasl_username = std::env::var("KAFKA_SASL_USERNAME")?;
-    let sasl_password = std::env::var("KAFKA_SASL_PASSWORD")?;
-    let consumer_group_name = std::env::var("GRAPH_GENERATOR_CONSUMER_GROUP")?;
+    let consumer_config = KafkaConsumerConfig::parse();
     let consumer_topic = "raw-logs".to_string();
+    let producer_config = KafkaProducerConfig::parse();
     let producer_topic = "generated-graphs".to_string();
 
     tracing::info!(
         message = "configuring kafka stream processor",
-        bootstrap_servers = %bootstrap_servers,
-        consumer_group_name = %consumer_group_name,
+        consumer_config = ?consumer_config,
         consumer_topic = %consumer_topic,
+        producer_config = ?producer_config,
         producer_topic = %producer_topic,
     );
 
     // TODO: also construct a stream processor for retries
 
-    let stream_processor = StreamProcessor::new(
-        bootstrap_servers.clone(),
-        sasl_username,
-        sasl_password,
-        consumer_group_name.clone(),
-        consumer_topic.clone(),
-        producer_topic.clone(),
+    let stream_processor = StreamProcessor::new_from_config(
+        consumer_config,
+        consumer_topic,
+        producer_config,
+        producer_topic,
     )?;
 
-    tracing::info!(
-        message = "kafka stream processor configured successfully",
-        bootstrap_servers = %bootstrap_servers,
-        consumer_group_name = %consumer_group_name,
-        consumer_topic = %consumer_topic,
-        producer_topic = %producer_topic,
-    );
+    tracing::info!(message = "kafka stream processor configured successfully",);
     tracing::info!("starting up!");
 
     let stream = stream_processor.stream(event_handler)?;
