@@ -21,11 +21,11 @@ async fn test_dispatcher_inserts_job_into_plugin_work_queue(
     let event_source_id = Uuid::new_v4();
     let tenant_id = Uuid::new_v4();
 
-    tracing::info!("creating plugin-work-queue subscriber thread");
-    let mut pwq = ctx.plugin_work_queue_client.clone();
-    let subscriber = tokio::task::spawn(async move {
-        let scanner = async move {
-            while let Ok(get_execute_response) = pwq
+    tracing::info!("creating plugin-work-queue scan thread");
+    let mut pwq_client = ctx.plugin_work_queue_client.clone();
+    let scan_thread = tokio::task::spawn(async move {
+        let scan_for_generator_job = async move {
+            while let Ok(get_execute_response) = pwq_client
                 .get_execute_generator(GetExecuteGeneratorRequest {})
                 .await
             {
@@ -40,7 +40,7 @@ async fn test_dispatcher_inserts_job_into_plugin_work_queue(
             None
         };
 
-        tokio::time::timeout(Duration::from_secs(30), scanner)
+        tokio::time::timeout(Duration::from_secs(30), scan_for_generator_job)
             .await
             .expect("failed to consume expected message within 30s")
     });
@@ -57,10 +57,10 @@ async fn test_dispatcher_inserts_job_into_plugin_work_queue(
         .await
         .expect("received error response");
 
-    tracing::info!("waiting for subscriber to complete");
-    let matching_job = subscriber
-        .instrument(tracing::debug_span!("subscriber"))
+    tracing::info!("waiting for scan_thread to complete");
+    let matching_job = scan_thread
+        .instrument(tracing::debug_span!("scan_thread"))
         .await
-        .expect("could not join subscriber");
+        .expect("could not join scan_thread");
     assert!(matching_job.is_some())
 }
