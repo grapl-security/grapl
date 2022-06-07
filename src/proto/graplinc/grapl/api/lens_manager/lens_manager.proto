@@ -81,7 +81,7 @@ message RemoveNodeFromAllScopesRequest {
 message RemoveNodeFromAllScopesResponse {}
 
 // RPC service to mange Lenses including, create, merge, close, adding, and removing.
-service LensManager {
+service LensManagerService {
   // Create a new lens
   // Returns a CreateLensResponse corresponding to CreateLensRequest
   rpc CreateLens(CreateLensRequest) returns (CreateLensResponse);
