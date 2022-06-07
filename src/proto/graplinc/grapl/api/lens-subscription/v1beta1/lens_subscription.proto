@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+// Represents an operation as applied to a given lens
+message LensUpdate {
+  Operation operation = 1;
+  string lens_type = 2;
+  string lens_name = 3;
+  Uuid tenant_id = 4;
+}
+
+// Describes the subscription to create for a given lens
+message LensSubscription {
+  string lens_type = 1;
+  string lens_name = 2;
+  Uuid tenant_id = 3;
+  // The id of the update to begin from. `0` indicates all updates.
+  uint64 update_id = 4;
+}
+
+// Requests a stream of updates for a given lens
+message SubscribeToLensRequest {
+  LensSubscription lens_subscription = 1;
+}
+
+message SubscribeToLensResponse {
+  LensUpdate operation = 1;
+}
+
+// The `LensSubscriptionService` provides rpcs for building live views of a given lens
+service LensSubscriptionService {
+  // Streams updates for a given lens
+  rpc SubscribeToLens(SubscribeToLensRequest) returns (stream SubscribeToLensResponse);
+}
