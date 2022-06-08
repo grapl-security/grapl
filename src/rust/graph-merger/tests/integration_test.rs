@@ -174,15 +174,22 @@ async fn test_sysmon_event_produces_merged_graph(ctx: &mut GraphMergerTestContex
                     )
                     .expect("child process missing");
 
-                    let parent_to_child_edge = merged_graph
+                    // NOTE: here, unlike node-identifier, we expect the edge
+                    // connecting the parent and child proceses to be *absent*
+                    // in the message emitted to the merged-graphs topic. The
+                    // reason for this is that downstream services (analyzers)
+                    // don't operate on edges, just nodes. So the view of the
+                    // graph diverges at the graph-merger--we now tell one story
+                    // in our Kafka messages and a totally different story in
+                    // Dgraph. This is confusing and we should fix it:
+                    //
+                    // https://app.zenhub.com/workspaces/grapl-6036cbd36bacff000ef314f2/issues/grapl-security/issue-tracker/950
+                    !merged_graph
                         .edges
                         .get(parent_process.get_node_key())
                         .iter()
                         .flat_map(|edge_list| edge_list.edges.iter())
-                        .find(|edge| edge.to_node_key == child_process.get_node_key())
-                        .expect("missing edge from parent to child");
-
-                    parent_to_child_edge.edge_name == "children"
+                        .any(|edge| edge.to_node_key == child_process.get_node_key())
                 } else {
                     false
                 }
