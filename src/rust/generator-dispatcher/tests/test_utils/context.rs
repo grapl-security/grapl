@@ -1,12 +1,13 @@
 use std::time::Duration;
 
+use clap::Parser;
 use opentelemetry::{
     global,
     sdk::propagation::TraceContextPropagator,
 };
-use plugin_work_queue::client::{
-    FromEnv,
-    PluginWorkQueueServiceClient,
+use plugin_work_queue::{
+    psql_queue::PsqlQueue,
+    PluginWorkQueueDbConfig,
 };
 use rust_proto_new::{
     graplinc::grapl::api::pipeline_ingress::v1beta1::client::PipelineIngressClient,
@@ -21,7 +22,7 @@ use tracing_subscriber::{
 
 pub struct GeneratorDispatcherTestContext {
     pub pipeline_ingress_client: PipelineIngressClient,
-    pub plugin_work_queue_client: PluginWorkQueueServiceClient,
+    pub plugin_work_queue_psql_client: PsqlQueue,
     pub _guard: WorkerGuard,
 }
 
@@ -74,13 +75,13 @@ impl AsyncTestContext for GeneratorDispatcherTestContext {
             .await
             .expect("could not configure gRPC client");
 
-        let plugin_work_queue_client = PluginWorkQueueServiceClient::from_env()
+        let plugin_work_queue_psql_client = PsqlQueue::try_from(PluginWorkQueueDbConfig::parse())
             .await
-            .expect("plugin-work-queue client");
+            .expect("plugin_work_queue");
 
         GeneratorDispatcherTestContext {
             pipeline_ingress_client,
-            plugin_work_queue_client,
+            plugin_work_queue_psql_client,
             _guard,
         }
     }

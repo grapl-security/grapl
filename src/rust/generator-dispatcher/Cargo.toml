@@ -31,6 +31,9 @@ opentelemetry-jaeger = { version = "0.15", features = [
   "collector_client",
   "rt-tokio"
 ] }
+plugin-work-queue = { path = "../plugin-work-queue", features = [
+  "new_integration_tests"
+] }
 test-context = "0.1"
 tracing-appender = "0.2"
 tracing-opentelemetry = "0.16"

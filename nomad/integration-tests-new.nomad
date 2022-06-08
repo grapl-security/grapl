@@ -56,6 +56,16 @@ variable "rust_log" {
   description = "Controls the logging behavior of Rust-based services."
 }
 
+variable "plugin_work_queue_db" {
+  type = object({
+    hostname = string
+    port     = number
+    username = string
+    password = string
+  })
+  description = "Vars for plugin-work-queue database"
+}
+
 job "integration-tests-new" {
   datacenters = ["dc1"]
   type        = "batch"
@@ -140,6 +150,11 @@ job "integration-tests-new" {
         KAFKA_CONSUMER_TOPIC = "<replace me at integration test setup>"
 
         NOMAD_SERVICE_ADDRESS = "${attr.unique.network.ip-address}:4646"
+
+        PLUGIN_WORK_QUEUE_DB_HOSTNAME = var.plugin_work_queue_db.hostname
+        PLUGIN_WORK_QUEUE_DB_PORT     = var.plugin_work_queue_db.port
+        PLUGIN_WORK_QUEUE_DB_USERNAME = var.plugin_work_queue_db.username
+        PLUGIN_WORK_QUEUE_DB_PASSWORD = var.plugin_work_queue_db.password
       }
 
       resources {
